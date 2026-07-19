@@ -28,6 +28,7 @@ from typing import Any, Iterator
 import pytest
 
 from game import persistency
+from game.ato.flighttype import FlightType
 from game.ato.loadouts import Loadout
 from game.data.weapons import Pylon
 from game.dcs.aircrafttype import AircraftType
@@ -108,7 +109,9 @@ def _loadout_editor(aircraft: AircraftType) -> Any:
             restrict_weapons_by_stock=False,
         ),
     )
-    flight = SimpleNamespace(unit_type=aircraft)
+    # flight_type drives the §73 "set as default for <task>" row's labels and the
+    # payload name it resolves; CAS is as good as any for a layout measurement.
+    flight = SimpleNamespace(unit_type=aircraft, flight_type=FlightType.CAS)
     member = SimpleNamespace(
         loadout=Loadout.empty_loadout(), use_custom_loadout=False, is_player=False
     )

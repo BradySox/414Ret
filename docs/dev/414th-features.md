@@ -6928,6 +6928,127 @@ the street gear; the E-2 vanishes cleanly before recovery). **Non-Nimitz hull
 dressing was offered and DECLINED (user call 2026-07-18)** — Kuznetsov/Tarawa/
 Forrestal stay bare.
 
+## §73 — Per-airframe default loadout for a task
+
+**What it is.** A one-click *"every F-4E planned as CAS uses **this** loadout"* — the
+**Set as default for &lt;task&gt;** / **Clear default** pair under the pylon list in
+*Edit flight → Payload*, mirroring the §43 fuel-and-properties pair on the aircraft
+settings box. User ask 2026-07-19 ("what if this save button was a quick overwrite, so
+that anytime an F-4 gets planned as a CAS it takes that saved loadout").
+
+**The capability already existed — it was just unreachable.** Retribution resolves a
+planned flight's loadout **by name**: `Loadout.default_for` walks
+`default_loadout_names_for(task)` and takes the first preset the airframe supplies
+(`Retribution CAS`, `Liberation CAS`, the legacy names). `qt_ui/main.py` registers the
+user's `Saved Games/DCS/MissionEditor/UnitPayloads` as pydcs's **preferred** payload
+directory with the repo's `resources/customized_payloads` as **fallback**, and pydcs
+takes the first directory supplying a given name ("Payload directories are iterated in
+decreasing order of preference"). So a user payload saved as `Retribution CAS` has
+always overridden the shipped fit for every future F-4E CAS flight. Nobody could find
+that, because `_create_input_dialog` pre-fills **`Custom CAS`** — a name that appears
+nowhere in any resolution chain — so the obvious action produced a preset the planner
+would never pick.
+
+**Design.** The logic lives in `game/fourteenth/loadout_defaults.py` (game-side, so it
+is mypy-checked and unit-testable); the Qt buttons are a thin caller, and
+`QLoadoutEditor._save_payload` was refactored onto the same writer rather than keeping
+a second copy of the Lua read-modify-write.
+
+- **`override_name_for(task, dcs_unit_type)`** returns the name that **currently wins**
+  — `Loadout.default_for_task_and_aircraft(...).name` — not a hardcoded
+  `Retribution <task>`. That matters where a higher-priority candidate exists: the §71
+  expanded-weapons `(XW)` fits sort *ahead* of the plain name, so a hardcoded name
+  would write an override the planner never reads. It also makes the operation
+  idempotent (once written, our entry is what wins, so the name is stable) and it
+  degrades to the first non-`(XW)` candidate for an airframe with no preset at all.
+- **Scope is global**, exactly like the `UnitPayloads` file it lives in, and the
+  confirm dialog says so in as many words: **both coalitions** (an enemy flight of the
+  same airframe+task resolves the same name), **every campaign** until cleared, and
+  **newly planned flights only** — flights already in the ATO keep what they have.
+- **Non-destructive writes.** `ensure_backup` copies the file into
+  `UnitPayloads/_retribution_backups` before the first modification, and only the one
+  named entry is ever touched, so a hand-authored Mission Editor payload in the same
+  file survives a set *or* a clear. A file that exists but **cannot be parsed is left
+  byte-identical** and the save is refused with a warning — rewriting it from scratch
+  would silently destroy every other payload for that airframe.
+- **Key allocation fixed in passing.** The old `next_key = len(pdict) + 1` collides
+  with a live entry in any file whose keys don't start at 1 (`{2, 3}` → key 3),
+  silently overwriting a payload. Now `max(int keys) + 1`.
+- **No Settings field** — on-disk content is the switch, the §42 map-tiles / §43
+  flight-defaults precedent.
+
+**Clearing** removes the entry and calls `_reload_payloads` (`payloads = None` +
+`load_payloads()`), which re-reads from disk so the repo's shipped preset of the same
+name takes the slot back. `has_override_for` deliberately reads the *user's file*
+rather than the merged in-memory payloads, which cannot tell the user's entry from the
+repo's; it degrades to "no override" on any failure, since it is read on every
+payload-tab build including headless runs with no Saved Games tree.
+
+**Tests.** `tests/fourteenth/test_loadout_defaults.py` registers the scratch directory
+as pydcs's *preferred* dir with the repo payloads behind it — the production
+arrangement — and pins the end-to-end claim: saving an override makes
+`Loadout.default_for_task_and_aircraft` return it, clearing hands the slot back. Plus
+the resolved-name identity, replace-not-duplicate, leave-other-payloads-alone,
+no-key-collision, unparseable-file-untouched, backup-on-first-write, and
+degrade-without-persistency cases. Checklist **Q2** — needs an in-app pass.
+
+### Payload-tab cleanup shipped with it
+
+A read-the-screen audit of the same tab (user ask, 2026-07-19), in descending order of
+teeth:
+
+1. **The `WeaponLaserCodeSelector` AI guard was dead code.** `setDisabled(True)` for a
+   non-player member was immediately undone by an unconditional `setEnabled(True)` two
+   lines below, so the guard never had any effect — and the "AI does not use laser
+   codes" item it added was wrong anyway. This is the *weapon* code (what an LGB seeker
+   looks for), not the TGP code: an AI flight dropping LGBs on a JTAC's designation
+   needs it, which is why the JTAC codes are in the list. Resolved in favour of the
+   working behaviour — the dead guard and the false label are gone, the combo stays
+   usable for AI. Its sibling `OwnLaserCodeInfo` *does* disable for AI, correctly (AI
+   aircraft do not lase for themselves).
+2. **The loadout dropdown read as the stock fit while a custom loadout was loaded.**
+   With *Use custom loadout* ticked the (disabled) box showed
+   `Loadout.default_for(flight).name` — "Retribution CAS" next to pylons that were not
+   Retribution CAS. The selection is load-bearing (unticking the box adopts it), so it
+   is **annotated, not changed**: a `(customised)` flag beside the box, with a tooltip
+   saying the named preset is what unticking would load. `rebind_to_selected_member`
+   also used to call `setCurrentText(member.loadout.name)` — "Custom", matching no item,
+   so the previous member's selection stayed on screen — and now syncs through
+   `sync_loadout_selector` **with signals blocked**, because selecting an item fires
+   `on_new_loadout`, which would overwrite the member's custom loadout with the preset.
+3. **Three `QMessageBox.information(QWidget(), ...)` throwaway parents** became `self` —
+   the same class as the shared-`self.dialog` window-GC bug the §28 audit fixed.
+4. **The laser-code rows showed unconditionally.** Nothing gated them on the loadout
+   having any use for a code, so a jet on Snakeyes and Rockeyes was shown an "Assigned
+   TGP laser code" row, costing two rows of a cramped scrolling list to say nothing.
+   Both rows now live in one container gated on **`Loadout.uses_laser_code()`** — the
+   *existing* predicate the kneeboard gates its Laser Code page on, chosen over a
+   fresh `WeaponType.LGB`/`TGP` check precisely because it also catches stores whose
+   laser use is only visible in their `laser_code` setting (laser Maverick, LJDAM,
+   APKWS). Verified against real presets: the stock F-4E CAS fit (Pave Spike +
+   GBU-12 ×2) keeps the rows; a Snakeye/Rockeye/Sparrow custom loadout loses them.
+   Refreshed on every pylon edit, loadout swap and member change.
+5. **Truncated store names got a tooltip.** The §28 `bound_dropdown_width` cap elides
+   long names in the *closed* combo ("(Special Weapons Adapter) 2x Mk-20 Rockeye -")
+   with no way to read the rest; the open popup keeps its natural width, so a
+   widget-level tooltip tracking the current item covers the gap.
+6. **The fuel spinner and the §46 fuel-plan line disagreed** — a flown F-4E showed
+   "12147" lbs next to "12,149 internal". Two independent conversions from two
+   different sources: the spinner rounded the *integer slider* through a locally
+   duplicated `LBS2KGS_FACTOR`, the brief multiplied the *float* `flight.fuel` by
+   `game.utils.KG_TO_LBS`. Both now convert `flight.fuel` with `KG_TO_LBS`; the
+   duplicated constant is gone.
+7. **The Edit Flight dialog names its flight** (`Edit flight — [CAS] 2 x F-4E ...`)
+   instead of a bare "Edit flight" on every window, matching the sibling
+   `QPackageDialog`/`QWeaponSettingsDialog` which already identify themselves.
+   `Flight.__str__` is contractually non-raising.
+8. **`on_saved_payload` is idempotent** — saving over an existing name (the whole point
+   of setting a task default) updated nothing and stacked a second identical dropdown
+   entry; it now replaces the item's data and selects it.
+
+**Deliberately not touched:** the `TACAN Channel Presel` typo is pydcs mirroring the
+DCS module data (`planes.py`, alongside `ILS Channel Presel`) — not ours to patch.
+
 ## Code audit fixes — 2026-07-07
 
 A full read-only audit of the 414th surface (campaign layer, mission-generator emitters,

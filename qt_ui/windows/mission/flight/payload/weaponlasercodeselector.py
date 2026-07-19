@@ -26,10 +26,15 @@ class WeaponLaserCodeSelector(QComboBox):
     def rebuild(self) -> None:
         with block_signals(self):
             self.clear()
-            if not self.flight_member.is_player:
-                self.setDisabled(True)
-                self.addItem("AI does not use laser codes", None)
-
+            # An AI member used to get a "AI does not use laser codes" entry and a
+            # setDisabled(True) that the unconditional setEnabled(True) below it
+            # immediately undid -- so the guard never had any effect, and the claim
+            # was wrong anyway. This is the *weapon* code (what an LGB's seeker
+            # looks for), not the TGP code: an AI flight dropping LGBs on a JTAC's
+            # designation very much needs it, which is why the JTAC codes are
+            # offered. The dead guard and the false label are gone; the combo stays
+            # usable for AI. Its sibling OwnLaserCodeInfo does disable for AI,
+            # correctly -- AI aircraft do not lase for themselves.
             self.setEnabled(True)
 
             self.addItem("Default (1688)", None)

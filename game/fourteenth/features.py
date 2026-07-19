@@ -574,6 +574,16 @@ FEATURES: tuple[Feature, ...] = (
             "carrier_deck_decorations_aircraft",
         ),
     ),
+    Feature(
+        # §73 default loadout per airframe+task (game/fourteenth/loadout_defaults.py):
+        # one-click "set as default" writing the edited loadout into the payload
+        # NAME the planner resolves for that task, so every future flight of the
+        # airframe+task is planned with it. No Settings field -- on-disk content is
+        # the switch, like the §42 map tiles and the §43 flight defaults.
+        "default_task_loadout",
+        "Per-airframe default loadout for a task",
+        73,
+    ),
     # Always-on engine plugins — major 414th machinery documented in design notes
     # rather than a numbered "Features at a Glance" entry.
     Feature("mantis_iads", "MANTIS IADS engine", plugin_id="mantisiads"),

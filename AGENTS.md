@@ -2521,6 +2521,58 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     doc §72, checklist B25 — needs an in-game pass (statics ride the steaming deck; a
     max-density spawn still fills every spot; AI recovery taxi vs the street gear;
     the corridor set vanishes cleanly before recovery).
+73. **Per-airframe default loadout for a task** — "make every F-4E planned as CAS use
+    *this* loadout", as one click. Retribution resolves a planned flight's loadout **by
+    name** (`Loadout.default_for` → `default_loadout_names_for(task)` → the first preset the
+    airframe supplies), and `qt_ui.main` registers the user's
+    `Saved Games/DCS/MissionEditor/UnitPayloads` as pydcs's **preferred** payload directory
+    with the repo's `resources/customized_payloads` behind it — so a user payload saved
+    under the name a task resolves to already overrode the shipped fit for every future
+    flight. That was **undiscoverable**: the Save Payload dialog pre-fills `Custom <task>`,
+    a name nothing ever resolves, so the obvious action produced a preset the planner would
+    never pick. `game/fourteenth/loadout_defaults.py` makes it first-class — a **"Set as
+    default for &lt;task&gt;"** + **"Clear default"** pair under the pylon list (mirroring the
+    §43 fuel/properties pair on the aircraft box) that resolves the winning name, writes the
+    edited loadout there, and can strip it back out so the shipped fit takes over again.
+    `override_name_for` returns the name that **currently wins** rather than a hardcoded
+    `Retribution <task>`, so it still lands in the right slot when a higher-priority
+    candidate exists (the §71 `(XW)` fits sort ahead of the plain name) and stays idempotent
+    once written. Scope is spelled out in the confirm dialog because it is broad and easy to
+    forget: the override is **global** like the `UnitPayloads` file it lives in — **both
+    coalitions** (an enemy flight of the same airframe+task resolves the same name),
+    **every campaign** until cleared, and **newly planned flights only**. Writes back the
+    file up first (`_retribution_backups`) and only ever touch the single named entry, so a
+    hand-authored Mission Editor payload in the same file survives; a file that exists but
+    **cannot be parsed is left completely alone** (rewriting it would destroy every other
+    payload for that airframe) and the save is refused with a warning. No Settings field —
+    on-disk content is the switch (§42/§43 precedent). Shipped alongside a payload-tab
+    cleanup pass: the laser-code rows now **hide when the loadout has no use for a code**
+    (reusing `Loadout.uses_laser_code()`, the same predicate gating the kneeboard Laser Code
+    page — so a jet on Snakeyes and Rockeyes stops being shown a TGP code row, while the
+    stock Pave Spike + GBU-12 fit still gets one); the loadout dropdown stops **reading as
+    the stock fit while a custom loadout is loaded** (a `(customised)` flag — the selection
+    itself is load-bearing, since unticking "Use custom loadout" adopts it, so it is
+    annotated rather than changed, and member-switching now syncs it with signals blocked so
+    it cannot overwrite a custom loadout); the fuel spinner and the §46 fuel-plan line
+    **agree** (both convert `flight.fuel` with `KG_TO_LBS` instead of the spinner
+    re-rounding the integer slider through a duplicated constant — the flown "12147 lbs" vs
+    "12,149 internal" gap); truncated store names get a **hover tooltip**; saving over an
+    existing payload name **replaces** its dropdown entry instead of stacking a duplicate; a
+    new payload entry can no longer **collide with a live key** in a file whose keys don't
+    start at 1 (`len() + 1` → `max(key) + 1`); the `WeaponLaserCodeSelector`'s AI guard
+    (`setDisabled(True)` immediately undone by an unconditional `setEnabled(True)`, plus a
+    wrong "AI does not use laser codes" label — AI *does* need a weapon code to drop LGBs on
+    a JTAC's designation) is resolved in favour of the working behaviour; three
+    `QMessageBox.information(QWidget(), ...)` throwaway parents become `self` (the §28
+    window-GC class of bug); and the Edit Flight dialog **names its flight** in the title
+    instead of a bare "Edit flight" for every window.
+    (`game/fourteenth/loadout_defaults.py`,
+    `qt_ui/windows/mission/flight/payload/QLoadoutEditor.py`,
+    `qt_ui/windows/mission/flight/payload/QFlightPayloadTab.py`,
+    `qt_ui/windows/mission/flight/payload/QPylonEditor.py`,
+    `qt_ui/windows/mission/flight/payload/weaponlasercodeselector.py`,
+    `qt_ui/windows/mission/QEditFlightDialog.py`; features doc §73, checklist Q2 — needs an
+    in-app pass.)
 
 ---
 

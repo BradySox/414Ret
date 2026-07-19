@@ -3167,6 +3167,35 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
 
 ## Q. Planner / payload UI
 
+### Q2 — Default loadout for an airframe+task, and the payload-tab cleanup · §73 · ☐ UNTESTED (built 2026-07-19; name resolution + the file writer/remover are fully unit-tested, the buttons and the read-the-screen changes are Qt UI)
+- **Headless adjudication:** `tests/fourteenth/test_loadout_defaults.py` drives the real pydcs
+  airframes with the scratch dir registered as pydcs's *preferred* payload directory and the repo's
+  `customized_payloads` behind it — the production arrangement — and pins the end-to-end claim:
+  saving an override makes `Loadout.default_for_task_and_aircraft` return it, clearing hands the slot
+  back to the shipped fit. Also pinned: the resolved name always equals what the task resolves to, a
+  re-save replaces rather than duplicates, clearing leaves a hand-made payload in the same file
+  alone, a new entry never lands on a live key, an unparseable file is left byte-identical, and the
+  first write backs the file up. What CI can't exercise is the buttons and whether the screen now
+  reads correctly.
+- **Setup (defaults):** open a flight's **Edit flight → Payload** tab, tick *Use custom loadout*, build
+  a loadout, then click **Set as default for &lt;task&gt;** and accept the confirm. Plan a *new* package
+  with a flight of the **same airframe and task** and open its Payload tab.
+- **Pass:** the new flight opens carrying the saved loadout. **Clear default** on any flight of that
+  airframe+task returns new flights to the stock fit. The confirm dialog names the payload it will
+  write (e.g. `Retribution CAS`).
+- **Fail signature:** the new flight still gets the stock fit (the override missed the resolved name
+  — check what `override_name_for` returned against the payload actually loaded), or **other saved
+  payloads for that airframe disappear** from the loadout dropdown (the writer clobbered the file
+  instead of editing one entry — the backup is in `UnitPayloads/_retribution_backups`).
+- **Also eyeball (same-pass cleanups):** on a loadout with **no laser-guided weapon and no pod** (e.g.
+  an F-4E on Snakeyes + Rockeyes) the *Assigned TGP laser code* and *Preset laser code for weapons*
+  rows should be **absent**; on the stock F-4E CAS fit (Pave Spike + GBU-12) they should be
+  **present**. With *Use custom loadout* ticked the Loadout box should read `(customised)` beside the
+  preset name. The fuel spinner should match the internal figure in the fuel-plan line below it
+  (they disagreed by ~2 lb). Hovering a truncated store name should show the full name. Stepping the
+  **Flight member** spinner across members must not silently replace a member's custom loadout. The
+  window title should name the flight.
+
 ### Q1 — Per-aircraft flight defaults save + apply · §43 · ☐ UNTESTED (built 2026-07-02; store/apply fully unit-tested, the button + the "new flight opens pre-configured" behaviour is Qt UI)
 - **Headless adjudication:** the store round-trips (save → reload from disk), `apply_flight_defaults` seeds
   fuel + `member.properties` for a BLUE fresh flight, skips RED, no-ops with no saved entry, clamps fuel to

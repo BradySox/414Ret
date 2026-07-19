@@ -218,6 +218,29 @@ class TestFlakGauntlet:
         assert harness.records("explosions") == []
         harness.assert_no_lua_errors()
 
+    def test_gun_killed_between_refreshes_stops_firing(
+        self, harness: DcsPluginHarness
+    ) -> None:
+        """The tick range-tests cached gun POSITIONS (so the hot loop is arithmetic,
+        not one DCS call per aircraft x gun), but liveness is still checked per tick
+        on the guns that pass that test. A gun killed inside the 30 s cache window
+        must go quiet immediately, not keep shooting until the next refresh."""
+        self.aaa_site(harness)
+        self.plane(harness, alt=1500)
+        self.arm(harness)
+
+        harness.advance_to(10)  # inside the first cache window
+        assert harness.records("explosions"), "the live gun should be firing"
+
+        harness.update_unit("RED-AAA", {"life": 0})
+        before = len(harness.records("explosions"))
+        harness.advance_to(25)  # several more ticks, still pre-refresh
+
+        assert (
+            len(harness.records("explosions")) == before
+        ), "a dead gun must stop firing without waiting for the AAA cache refresh"
+        harness.assert_no_lua_errors()
+
 
 class TestAirbaseHarassment:
     def arm(

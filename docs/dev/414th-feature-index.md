@@ -70,7 +70,7 @@ pass checklist `§N` is unregistered, or this table drifts.
 | §56 | Strikeable motorpool depots | — | `motorpool_enabled`, `motorpool_spawn_cap` |
 | §57 | Air-droppable minefields | `minefields` | `air_droppable_minefields`, `auto_plan_minefields` |
 | §58 | Mission-start briefing popup | `briefing` | `mission_briefing_popup` |
-| §59 | Ground AI sleep (graduated culling) | `aisleep` | `perf_ground_ai_sleep` |
+| §59 | Ground AI sleep (graduated culling) | `aisleep` | `perf_ground_ai_sleep`, `perf_aaa_site_sleep` |
 | §60 | SAM guidance-radar redundancy (two track radars per site) | — | — |
 | §61 | Host red-interceptor scramble (F10 bandit spawner) | `redscramble` | `host_red_scramble` |
 | §62 | Squadron-sequenced Hornet/Tomcat board numbers | — | — |

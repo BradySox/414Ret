@@ -196,6 +196,10 @@ if suite.flak and suite.flak.enabled then
         BLAST = tonumber(o.flakBurstPower) or BLAST
     end
 
+    -- Hoisted out of the per-(aircraft x gun) inner loop; ENGAGE_RANGE is fixed once
+    -- the options above are read.
+    local RANGE_SQ = ENGAGE_RANGE * ENGAGE_RANGE
+
     local POLL = 2.5            -- s between flak evaluations
     local HDG_STEADY_DEG = 8    -- heading change under this counts as "steady"
     local ALT_STEADY_M = 40     -- altitude change under this counts as "steady"
@@ -217,6 +221,16 @@ if suite.flak and suite.flak.enabled then
 
     -- Discover alive AAA guns, grouped by coalition. Cached + refreshed (guns die /
     -- spawn late). `fresh` (not `next`) avoids shadowing the Lua builtin.
+    --
+    -- The cache stores each gun's POSITION alongside the unit. The tick's inner loop
+    -- runs once per airborne aircraft per gun, so calling getPoint() in there cost one
+    -- DCS API call per (aircraft x gun) pair every POLL -- on an AAA-dense Vietnam
+    -- laydown (Yankee Station fields ~370 guns) that is tens of thousands of C-API
+    -- calls in a single frame, every 2.5 s, on the sim thread. Gun positions barely
+    -- change (emplacements are static; a repositioning SPAAA moves a couple hundred
+    -- metres against a multi-kilometre engagement radius), so reading them once per
+    -- AAA_REFRESH is accurate enough for a barrage effect and turns the inner loop
+    -- into plain arithmetic. See the tick for the matching liveness-check ordering.
     local aaaCache = { [coalition.side.RED] = {}, [coalition.side.BLUE] = {} }
     local function refreshAAA()
         local ok = pcall(function()
@@ -225,7 +239,10 @@ if suite.flak and suite.flak.enabled then
                 for _, grp in pairs(coalition.getGroups(side, Group.Category.GROUND) or {}) do
                     for _, u in pairs(grp:getUnits() or {}) do
                         if u:isExist() and u:getLife() > 0 and u:hasAttribute("AAA") then
-                            table.insert(fresh[side], u)
+                            local gp = u:getPoint()
+                            if gp then
+                                table.insert(fresh[side], { unit = u, x = gp.x, z = gp.z })
+                            end
                         end
                     end
                 end
@@ -314,12 +331,18 @@ if suite.flak and suite.flak.enabled then
                                     local p = u:getPoint()
                                     local agl = p.y - (land.getHeight({ x = p.x, y = p.z }) or 0)
                                     if agl >= FLOOR and agl <= CEILING then
+                                        -- Cheap first: the range test is pure arithmetic
+                                        -- on the cached position, so the DCS liveness
+                                        -- calls only run for the handful of guns that
+                                        -- could actually shoot (<= MAX_SITES), not for
+                                        -- every gun in the theater. Same result -- a dead
+                                        -- gun is still rejected before it counts.
                                         local sites = 0
                                         for _, gun in pairs(guns) do
-                                            if gun:isExist() and gun:getLife() > 0 then
-                                                local gp = gun:getPoint()
-                                                local dx, dz = p.x - gp.x, p.z - gp.z
-                                                if (dx * dx + dz * dz) <= (ENGAGE_RANGE * ENGAGE_RANGE) then
+                                            local dx, dz = p.x - gun.x, p.z - gun.z
+                                            if (dx * dx + dz * dz) <= RANGE_SQ then
+                                                local g = gun.unit
+                                                if g:isExist() and g:getLife() > 0 then
                                                     sites = sites + 1
                                                     if sites >= MAX_SITES then
                                                         break

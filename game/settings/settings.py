@@ -655,6 +655,7 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                     "perf_disable_untasked_blufor_aircraft",
                     "perf_disable_untasked_opfor_aircraft",
                     "perf_ground_ai_sleep",
+                    "perf_aaa_site_sleep",
                     "perf_culling",
                     "perf_culling_distance",
                     "perf_do_not_cull_threatening_iads",
@@ -3304,6 +3305,25 @@ class Settings:
             "touched. Composes with culling: sleep what you keep, cull only what you "
             "never want to exist. Runtime lives in the 'Ground AI sleep' LUA plugin "
             "(wake radius and cadence tunable there)."
+        ),
+    )
+    perf_aaa_site_sleep: bool = boolean_option(
+        "Also sleep short-range AAA gun sites",
+        page=MISSION_GENERATOR_PAGE,
+        section=PERFORMANCE_SECTION,
+        default=False,
+        enabled_when="perf_ground_ai_sleep",
+        detail=(
+            "Extends the sleep to anti-aircraft gun sites, which is where the sim "
+            "cost of an AAA-doctrine campaign actually lives -- a Vietnam laydown can "
+            "field several hundred guns, many times any other campaign. Only guns "
+            "whose detection range is well inside the wake radius are eligible, so a "
+            "site is always switched back on long before anything reaches the edge of "
+            "its own sensor envelope: what it contributes to the IADS picture, and "
+            "when it opens fire, are unchanged. Search and track radars, dedicated "
+            "early-warning sites, longer-sighted guns such as the Gepard, and every "
+            "SAM or point defense MANTIS actively drives are never touched. Turn this "
+            "on if a gun-heavy mission is stuttering; leave it off otherwise."
         ),
     )
     perf_culling: bool = boolean_option(

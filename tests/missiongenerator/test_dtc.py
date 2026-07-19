@@ -32,6 +32,8 @@ from game.missiongenerator.dtc.cartridge import (
     attach_cartridge_to_unit,
 )
 from game.missiongenerator.dtc.common import (
+    SupportTrack,
+    dedupe_stations,
     known_enemy_threat_sites,
     sanitize_short_name,
     seconds_of_day,
@@ -330,11 +332,12 @@ def test_hornet_cartridge_shape() -> None:
 
     # SA: CAP + tanker racetracks, the SAM ring, styles visible.
     caps = data["SA"]["CAP_PTS"]
-    assert [c["note"] for c in caps] == ["COLT", "ARCO"]
+    # Support orbits lead so the 9-slot SA limit can never squeeze them out.
+    assert [c["note"] for c in caps] == ["ARCO", "COLT"]
     assert caps[0]["id"] == "CAP_PTS_1"
-    assert caps[0]["course"] == pytest.approx(90.0)  # along +y = east
-    assert caps[1]["course"] == pytest.approx(0.0)  # along +x = north
-    assert caps[1]["length"] == pytest.approx(20000.0)
+    assert caps[0]["course"] == pytest.approx(0.0)  # along +x = north
+    assert caps[0]["length"] == pytest.approx(20000.0)
+    assert caps[1]["course"] == pytest.approx(90.0)  # along +y = east
     mez = data["SA"]["MEZ_THRTS"]
     assert len(mez) == 1
     assert mez[0]["threat_type"] == "Custom"
@@ -570,6 +573,60 @@ def test_viper_sections_are_omitted_when_off() -> None:
     assert data["MPD"]["NAV_PTS"] == []
     assert data["MPD"]["GEO_LINES"] == []
     assert len(data["MPD"]["THREAT_PTS"]) == 1
+
+
+def _track(callsign: str, cx: float, cy: float, course: float, length: float) -> Any:
+    half = length / 2.0
+    dx = math.cos(math.radians(course)) * half
+    dy = math.sin(math.radians(course)) * half
+    return SupportTrack(
+        callsign=callsign,
+        kind="CAP",
+        start=Pt(cx - dx, cy - dy),  # type: ignore[arg-type]
+        end=Pt(cx + dx, cy + dy),  # type: ignore[arg-type]
+    )
+
+
+def test_wave_relief_duplicates_collapse_to_stations() -> None:
+    # The nine CAP entries a flown 2026-07-19 miz actually carried (center
+    # x/y, course, length): three stations flown as three jittered waves
+    # each, which filled all nine Hornet SA slots and squeezed out every
+    # tanker/AWACS orbit -- the reported "missing quite a few race tracks".
+    waves = [
+        _track("FORD", -24468, -404462, 56, 43244),
+        _track("FORD", -4741, -383779, 62, 60018),
+        _track("JEDI", 40, -406873, 74, 60759),
+        _track("UZI", -25732, -406336, 56, 59938),
+        _track("UZI", -2637, -379822, 62, 35138),
+        _track("DODGE", 5270, -388631, 74, 44069),
+        _track("PONTI", -20464, -398527, 56, 59184),
+        _track("UZI", -1618, -377906, 62, 34482),
+        _track("COLT", 1501, -401777, 74, 62656),
+    ]
+    stations = dedupe_stations(waves)
+    assert [s.callsign for s in stations] == ["FORD", "FORD", "JEDI"]
+
+
+def test_distinct_stations_survive_dedupe() -> None:
+    far_apart = [
+        _track("ALPHA", 0, 0, 90, 20000),
+        _track("BRAVO", 60000, 0, 90, 20000),  # 60 km away: its own station
+        _track("CHARL", 0, 100, 0, 20000),  # co-located but perpendicular
+    ]
+    assert len(dedupe_stations(far_apart)) == 3
+
+
+def test_hornet_sa_page_keeps_support_and_dedupes_waves() -> None:
+    flight, mission_data, game = _hornet_fixture()
+    # A second wave of the COLT station: jittered a few km, same course.
+    mission_data.flights.append(
+        _support_flight(
+            FlightType.BARCAP, "Colt 2", Pt(-17000, 6500), Pt(-17000, 26500)
+        )
+    )
+    cartridge = build_hornet_cartridge(flight, mission_data, game, "Waves")
+    caps = json.loads(cartridge.to_json())["data"]["SA"]["CAP_PTS"]
+    assert [c["note"] for c in caps] == ["ARCO", "COLT"]
 
 
 def test_old_saves_default_the_flight_options() -> None:

@@ -281,7 +281,10 @@ def _build_sa(
     options = flight.dtc_options
     caps: list[dict[str, Any]] = []
     if options.friendly_orbits:
-        for track in (cap_tracks(mission_data) + support_tracks(mission_data))[
+        # Support orbits first: there are few tankers/AWACS and "where's my
+        # gas" is the page's biggest answer, so the CAP stations absorb any
+        # truncation at the nine-slot SA limit, never the support.
+        for track in (support_tracks(mission_data) + cap_tracks(mission_data))[
             :MAX_CAP_POINTS
         ]:
             caps.append(_cap_point(track, len(caps) + 1))

@@ -1,0 +1,8 @@
+---
+name: VA-65 (Tanker)
+nickname: Tigers
+country: USA
+role: Carrier-based Tanker
+aircraft: A-6E Tanker
+mission_types:
+  - Refueling

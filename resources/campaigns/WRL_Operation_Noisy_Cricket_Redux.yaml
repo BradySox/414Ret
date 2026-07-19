@@ -56,7 +56,7 @@ squadrons:
       size: 2
     - primary: Refueling
       aircraft:
-        - S-3B Tanker
+        - A-6E Tanker
       size: 4
   Blue LHA-1:
     - primary: DEAD

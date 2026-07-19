@@ -40,7 +40,7 @@ squadrons:
     # VRC-40 Det.1
     - primary: Refueling
       aircraft:
-        - S-3B Tanker
+        - A-6E Tanker
       size: 1
     # VAW-126 "Seahawks"
     - primary: AEW&C

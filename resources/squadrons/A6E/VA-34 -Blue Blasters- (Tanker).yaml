@@ -1,0 +1,8 @@
+---
+name: VA-34 (Tanker)
+nickname: Blue Blasters
+country: USA
+role: Carrier-based Tanker
+aircraft: A-6E Tanker
+mission_types:
+  - Refueling

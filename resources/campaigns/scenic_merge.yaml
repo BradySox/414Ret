@@ -56,10 +56,10 @@ squadrons:
       aircraft:
         - VAW-125
       size: 2
-    # S-3 Tankers
+    # A-6 buddy tankers
     - primary: Refueling
       aircraft:
-        - VS-35 (Tanker)
+        - A-6E Tanker
       size: 4
   # BLUFOR LHA
   Naval-4:

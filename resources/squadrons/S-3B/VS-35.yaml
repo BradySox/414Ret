@@ -3,14 +3,11 @@ name: VS-35
 nickname: Blue Wolves
 female_pilot_percentage: 0
 country: USA
-role: Carrier-based Attack
+role: Carrier-based Sea Control
 aircraft: S-3B Viking
 livery: usaf standard
+# Sea control only -- the Viking's land-attack tasks were dropped in favor of the
+# A-6 (see resources/units/aircraft/S-3B.yaml). This list is documentary: the
+# engine derives a squadron's assignable tasks from the airframe, not from here.
 mission_types:
   - Anti-ship
-  - BAI
-  - CAS
-  - DEAD
-  - OCA/Aircraft
-  - OCA/Runway
-  - Strike

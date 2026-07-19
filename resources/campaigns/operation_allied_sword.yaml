@@ -32,7 +32,7 @@ recommended_player_faction:
     - E-2C Hawkeye
   tankers:
     - KC-130
-    - S-3B Tanker
+    - A-6E Tanker
   frontline_units:
     - M113
     - M1043 HMMWV (M2 HMG)
@@ -201,13 +201,13 @@ squadrons:
       size: 2
     - primary: Refueling
       aircraft:
-        - VS-35 (Tanker)
+        - A-6E Tanker
       size: 4
     - primary: Anti-ship
       secondary: air-to-ground
       aircraft:
         - VS-35
-      size: 8
+      size: 4
     - primary: Transport
       aircraft:
         - HSM-40

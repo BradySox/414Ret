@@ -66,7 +66,10 @@ class FormationFlightPlan(LoiterFlightPlan, ABC):
         if (
             speed := self.package.formation_speed(self.flight.is_helo)
         ) and b in self.package_speed_waypoints:
-            return speed
+            # A flight slower than the package formation speed (the tag-along
+            # TARPS bird, which Package.formation_speed excludes from the
+            # minimum) can't fly it; cap at this flight's own capability.
+            return min(speed, self.best_flight_formation_speed)
         return super().speed_between_waypoints(a, b)
 
     @property

@@ -112,3 +112,24 @@ def test_planned_missing_but_min_present_shows_dash() -> None:
     builder = _build([_wp("Takeoff", None, 5000.0)])
     assert builder.rows[0][-1] == "-"
     assert builder.fuel_margin_line() is None
+
+
+def test_post_landing_reference_rows_carry_no_time_or_speed() -> None:
+    # The divert and bullseye ride the jet's route as steerpoints, but the
+    # chained ETA past the landing point ("when you would get there if you kept
+    # flying after landing") is noise: their Time/Departure/GSPD cells stay
+    # blank, matching the Fuel column's reference-row treatment.
+    land = _wp("Land", 3507, 2000, FlightWaypointType.LANDING_POINT)
+    land.tot = datetime.datetime(2026, 1, 1, 0, 55, 24)
+    divert = _wp("Divert", None, None, FlightWaypointType.DIVERT)
+    divert.tot = datetime.datetime(2026, 1, 1, 1, 9, 34)
+    bullseye = _wp("Bullseye", None, None, FlightWaypointType.BULLSEYE)
+    bullseye.tot = datetime.datetime(2026, 1, 1, 1, 15, 12)
+
+    builder = _build([land, divert, bullseye])
+
+    # The landing row keeps its planned recovery time.
+    assert builder.rows[0][5] == "00:55:24"
+    # GSPD / Time / Departure blank on the reference rows.
+    assert builder.rows[1][4:7] == ["", "", ""]
+    assert builder.rows[2][4:7] == ["", "", ""]

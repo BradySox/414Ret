@@ -349,6 +349,37 @@ on OIR/Red Tide — so a full armed recon package reads **1 drone + 2 SEAD Viper
 `game/commander/tasks/primitive/armedrecon.py`; tests `tests/test_armed_recon_planning.py`;
 checklist G25 — the in-mission composition needs a fly).
 
+**The tag-along never paces the package (2026-07-19 fix, the flown Scenic Route kneeboard
+finding "times and speeds are getting weird").** `Package.formation_speed` is the minimum
+`best_flight_formation_speed` over every `FormationFlightPlan` flight — and `TarpsFlightPlan`
+is one, so the auto-added recon **drone dragged the whole package's formation legs to MQ-9
+pace**: a 4-Hornet DEAD package planned its join/target/split legs at 169 kt (kneeboard GSPD
+161), stretched the egress-to-split to 34 minutes, and — because the backward structural
+chain prices the direct ingress→target leg at package speed while the forward takeoff chain
+walks the real route at mixed speeds — blew ~5 minutes of drift through the schedule, eating
+the hold dwell (hold departure 15 s *before* arrival) and inverting nav/join (a **−725 kt**
+kneeboard row). Three-part fix, headless-verified against the flown save: (1)
+`Package.formation_speed` **skips a TARPS flight unless it is the package's primary** (the
+tag-along BDA/overwatch bird flies the package route on its own role-aware ToT offset and
+never sets the shooters' pace; a pure recon *package* still paces its escort to the drone);
+(2) both formation `speed_between_waypoints` sites **cap each flight's formation-leg speed at
+its own capability** (`min(package, own)`) so the excluded drone keeps its own achievable
+169 kt schedule — a strict no-op for every flight that participates in the package minimum;
+(3) the kneeboard `_ground_speed` guards a **zero-or-negative leg time** with "-" instead of
+printing a negative speed (residual structural-vs-chained drift is now sub-minute and absorbed
+by the hold dwell, but custom/manually-timed plans can still degenerate). On the flown save
+the DEAD package re-plans at 422 kt (the AV-8B — the slowest *real* member), the hold dwell
+returns positive (~4:35), every row is monotonic, and the Hornets land 21 minutes earlier
+with the package TOT untouched. Follow-up same day ("why are we giving times for bullseye"):
+the kneeboard's **divert/bullseye reference rows drop Time/Departure/GSPD entirely**
+(`FlightPlanBuilder.REFERENCE_WAYPOINT_TYPES`) — they ride the jet's route as steerpoints,
+but the chained ETA past the landing point is by construction "when you'd get there if you
+kept flying after landing", and the Fuel column already blanked exactly these rows.
+(`game/ato/package.py`, `game/ato/flightplans/formation.py`,
+`game/ato/flightplans/formationattack.py`, `game/missiongenerator/kneeboard.py`; tests
+`tests/ato/flightplans/test_formationattack.py` +
+`tests/missiongenerator/test_flightplan_fuel_column.py`.)
+
 **That drone is a lasing JTAC (2026-07-05, 414th call).** The 414th ripped out the old FLOT
 auto-JTAC (a `jtac_unit` MQ-9 glued to the front line); `JtacInfo` went unproduced and
 `jtac_unit` dormant, but the CTLD JTAC-autolase runtime + the kneeboard/radio consumers stayed

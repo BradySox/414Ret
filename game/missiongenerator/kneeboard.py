@@ -434,6 +434,16 @@ class NumberedWaypoint:
 class FlightPlanBuilder:
     WAYPOINT_DESC_MAX_LEN = 25
 
+    #: Post-landing reference rows: the divert option and the bullseye ride the
+    #: jet's route as steerpoints (so the nav system carries them), but they are
+    #: not flown legs of the plan. The chained ETA past the landing point reads
+    #: "when you would get there if you kept flying after landing" -- noise -- so
+    #: their Time/GSPD cells stay blank, matching the Fuel column's treatment.
+    REFERENCE_WAYPOINT_TYPES = (
+        FlightWaypointType.DIVERT,
+        FlightWaypointType.BULLSEYE,
+    )
+
     def __init__(
         self,
         start_time: datetime.datetime,
@@ -494,6 +504,10 @@ class FlightPlanBuilder:
             if waypoint.waypoint.marks_ground_for_player
             else waypoint.waypoint.alt
         )
+        is_reference = (
+            waypoint.waypoint.waypoint_type
+            in FlightPlanBuilder.REFERENCE_WAYPOINT_TYPES
+        )
         row = [
             str(waypoint.number),
             KneeboardPageWriter.wrap_line(
@@ -502,9 +516,9 @@ class FlightPlanBuilder:
             ),
             self._format_alt(alt),
             self._waypoint_distance(waypoint.waypoint),
-            self._ground_speed(waypoint.waypoint),
-            self._format_time(waypoint.waypoint.tot),
-            self._format_time(waypoint.waypoint.departure_time),
+            "" if is_reference else self._ground_speed(waypoint.waypoint),
+            "" if is_reference else self._format_time(waypoint.waypoint.tot),
+            "" if is_reference else self._format_time(waypoint.waypoint.departure_time),
             self._format_fuel(waypoint.waypoint),
         ]
         self.rows.append(row)
@@ -542,7 +556,9 @@ class FlightPlanBuilder:
         else:
             return "-"
 
-        if (waypoint.tot - last_time).total_seconds() == 0.0:
+        if (waypoint.tot - last_time).total_seconds() <= 0.0:
+            # A zero or negative leg time (drifted structural vs chained clocks,
+            # degenerate manual timing) has no meaningful ground speed.
             return "-"
 
         speed = mps(

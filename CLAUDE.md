@@ -732,6 +732,21 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
    fixed 4-ship (`PlanArmedRecon.ARMED_RECON_FLIGHT_SIZE`); with the threat-gated 2-ship SEAD escort
    resolving to the Viper, the package reads 1 drone + 2 SEAD Vipers + 4 recon. Optional/gated (drops
    if no drone free, never scrubs). Tests `tests/test_armed_recon_planning.py`; checklist G25.
+   **The tag-along never paces the package (2026-07-19 fix, the flown Scenic kneeboard "times and
+   speeds are getting weird")**: `Package.formation_speed` min'ed over EVERY formation plan — the
+   TARPS drone included — so an MQ-9 riding a 4-Hornet DEAD package dragged every formation leg to
+   ~169 kt (kneeboard GSPD 161, a 34-min egress) and the structural-vs-forward clock drift ate the
+   hold dwell (hold departure before arrival, join before nav, a −725 kt row).
+   `Package.formation_speed` now skips a non-primary TARPS flight (a pure recon package still paces
+   its escort to the drone), both formation `speed_between_waypoints` sites cap each flight at its
+   own capability (the excluded drone keeps its own 169-kt schedule; no-op for real members), and
+   the kneeboard guards non-positive leg times with "-". Headless-verified on the flown save: the
+   package re-plans at 422 kt (the AV-8B, the slowest real member), positive hold dwell, monotonic
+   rows, TOT untouched. Same-day follow-up: the divert/bullseye kneeboard rows drop Time/GSPD
+   entirely (reference steerpoints, not flown legs — the chained ETA past the landing point is
+   "if you kept flying after landing" noise; Fuel already blanked these rows). Tests
+   `tests/ato/flightplans/test_formationattack.py` +
+   `tests/missiongenerator/test_flightplan_fuel_column.py`.
    **Role-aware TOT (2026-07-05 de-jumble)**: `TarpsFlightPlan.default_tot_offset` was a flat +2 min
    (BDA-only reasoning) applied to every package. It now reads the package primary — **+2 min** behind
    a Strike/DEAD shooter for a **post-strike BDA** look, but **0** on an Armed Recon package (or a

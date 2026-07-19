@@ -45,8 +45,11 @@ class FormationAttackFlightPlan(FormationFlightPlan, ABC):
                 # No other formation flight in the package (e.g. solo escort
                 # being edited before the strike is added). Use this flight's
                 # own cruise speed as a reasonable fallback.
-                speed = self.best_flight_formation_speed
-            return speed
+                return self.best_flight_formation_speed
+            # A flight slower than the package formation speed (the tag-along
+            # TARPS bird, excluded from the package minimum) can't fly it; cap
+            # at this flight's own capability.
+            return min(speed, self.best_flight_formation_speed)
         return super().speed_between_waypoints(a, b)
 
     @property

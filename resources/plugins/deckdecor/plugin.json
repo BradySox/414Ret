@@ -20,6 +20,11 @@
             "defaultValue": 35
         },
         {
+            "nameInUI": "Clear this early before the Airboss recovery window (s)",
+            "mnemonic": "airbossMarginS",
+            "defaultValue": 300
+        },
+        {
             "nameInUI": "Astern detection cone range (NM)",
             "mnemonic": "coneDistNm",
             "defaultValue": 4.5

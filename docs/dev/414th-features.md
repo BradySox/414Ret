@@ -6658,7 +6658,16 @@ figure up-deck; or M5's tractor pair) — and the `deckdecor` plugin despawns th
 first: friendly **fixed-wing traffic low astern** of the boat (a cone off the
 reciprocal of the emitted BRC — 4.5 NM / 3 000 ft / ±50°, catching the CASE I initial
 up the wake and the CASE III straight-in long before the groove) or a **fallback
-timer** (35 min), plus a one-line "deck respotted for recovery" cue. Emitter
+timer** (35 min), plus a one-line "deck respotted for recovery" cue. **The Airboss
+tie-in**: the sibling `airboss` plugin (default ON) schedules its recovery window
+`windowStartOption` minutes in (default 30 — i.e. BEFORE the plain fallback) and
+steers the boat into wind with U-turns while it is open (the one thing that violates
+the emitted-BRC assumption the cone rests on); when its options are present in the
+mission, deckdecor pulls the clear deadline forward to **window start −
+`airbossMarginS`** (300 s), so the corridor is guaranteed clean before Marshal brings
+anyone down — read from the shared plugin-options table, zero MOOSE API coupling
+(deliberately NOT the `AIRBOSS` object: the airboss plugin stores it in a
+last-boat-wins global, and Airboss can be unticked). Emitter
 `deckdecorluadata.py` → `dcsRetribution.deckDecor` (ship group name to find the moving
 boat, side, BRC, clear names), populated from `MissionData.deck_decor` by the
 tgogenerator hook; emits nothing (plugin no-ops) when no launch-phase static was

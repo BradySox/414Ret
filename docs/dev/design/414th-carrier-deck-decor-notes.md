@@ -189,6 +189,31 @@ back, as a distinct class:
   ship-LINKED static is an unverified DCS behavior; the day someone wants the E-2 to
   visibly reappear at a bow spot, MOOSE `SPAWNSTATIC:InitLinkToUnit` is the path to
   evaluate, in-game first).
+
+### The Airboss tie-in (2026-07-18, "should our work tie into MOOSE airboss?")
+
+The fork's `airboss` plugin (default ON — LSO/Marshal comms, grading, the scheduled
+recovery window) intersects this feature twice:
+
+- **It steers the boat.** `AddRecoveryWindow(…, turnIntoWind=true, …, uturn=true)` —
+  during the window the carrier's real heading drifts off the emitted BRC (≈10°
+  angled-deck offset; 180° transients on the U-turn legs). The ±50° cone absorbs the
+  offset; the transients are neutralized by clearing BEFORE the window (below).
+- **Its window start is known at init** — and with the defaults it opens at +30 min,
+  FIVE MINUTES BEFORE the plain 35-min fallback: a gap where Marshal could recover
+  onto a still-dressed corridor if nothing had tripped the cone. deckdecor therefore
+  reads the sibling options table (`dcsRetribution.plugins.airboss.windowStartOption`
+  — same mission, zero coupling) and pulls its clear deadline forward to window start
+  − `airbossMarginS` (300 s), floored at grace + one poll. The armed log line says
+  which deadline source won ("airboss recovery window" vs "fallback timer").
+
+**Deliberately NOT done:** querying the `AIRBOSS` MOOSE object (the airboss plugin
+stores it in a last-boat-wins global — a pre-existing multi-carrier quirk — and MOOSE
+internals churn), clearing on Airboss FSM events (the plugin can be unticked; the
+cone+timer must stand alone), or letting Airboss own deck objects (it has no deck
+model). Bonus attribution fix from this look: the measured bow-port helo spot
+(+58.5, −31.4) is **Airboss's rescue helo** spawn (`RescueHeloGroup`,
+`enableRescueHelo` default ON), not the §21 CSAR helo as first noted.
 - **What DCS must still prove (checklist B25):** destroy() removes the linked static
   cleanly on a moving deck, and whether the freed stern real estate becomes usable
   for recovery parking (bonus observation — nothing depends on it).

@@ -99,7 +99,7 @@ KNOWN_PARKING_SPOTS: tuple[tuple[float, float], ...] = (
     (-35.5, 34.0),  # six-pack row (extrapolated, 12 m pitch)
     (-84.5, -34.0),  # port quarter (measured; first F-14-capable spot)
     (-96.5, -34.0),  # port quarter (measured)
-    (58.5, -31.4),  # bow-port helo spot (measured; the CSAR helo parks here)
+    (58.5, -31.4),  # bow-port helo spot (measured; Airboss's rescue helo spawns here)
 )
 
 # Minimum centre distance a SMALL static (deck gear / a crew figure) must keep

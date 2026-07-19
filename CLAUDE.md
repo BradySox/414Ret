@@ -2410,7 +2410,12 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     reason": statics can't drive, so the new **`deckdecor` plugin strikes them below**
     (`StaticObject:destroy` = the elevator ride) when friendly fixed-wing traffic shows
     up low astern (4.5 NM/3000 ft/±50° cone off the emitted BRC — catches the CASE I
-    initial + CASE III straight-in) or a 35-min fallback timer, whichever first, with a
+    initial + CASE III straight-in) or a 35-min fallback timer, whichever first —
+    **and the Airboss tie-in**: the sibling `airboss` plugin (default ON) opens its
+    recovery window at +30 min AND steers the boat into wind while it's open, so when
+    its options are present deckdecor pulls the deadline to window start −
+    `airbossMarginS` (300 s) by reading the shared options table (zero MOOSE
+    coupling; never the last-boat-wins `AIRBOSS` global) — with a
     "deck respotted" cue; emitter `deckdecorluadata.py` → `dcsRetribution.deckDecor`
     off `MissionData.deck_decor`; despawn only, no spawns). Guard-tested class rules:
     permanent placements never stand in `LANDING_AREA_KEEP_OUT` (stern threshold +

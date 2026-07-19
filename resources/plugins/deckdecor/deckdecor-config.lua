@@ -51,9 +51,39 @@ if dcsRetribution.plugins and dcsRetribution.plugins.deckdecor then
     end
 end
 
+local AB_MARGIN_S = 300 -- clear this long before the Airboss recovery window
+if dcsRetribution.plugins and dcsRetribution.plugins.deckdecor then
+    AB_MARGIN_S = tonumber(dcsRetribution.plugins.deckdecor.airbossMarginS) or AB_MARGIN_S
+end
+
 local CONE_DIST_M = CONE_DIST_NM * 1852.0
 local CONE_ALT_M = CONE_ALT_FT * 0.3048
 local CONE_COS = math.cos(math.rad(CONE_HALF_DEG))
+
+-- The Airboss tie-in: the sibling airboss plugin (default ON) schedules its
+-- recovery window windowStartOption minutes into the mission and STEERS the
+-- boat into wind (with U-turns) while the window is open -- both reasons the
+-- corridor must already be clean by then. When that plugin's options are
+-- present in the mission, pull the clear deadline forward to window start
+-- minus the margin; the astern cone still handles early or unscheduled
+-- traffic, and the plain fallback covers missions without Airboss.
+local CLEAR_DEADLINE_S = FALLBACK_MIN * 60.0
+local DEADLINE_WHY = "fallback timer"
+do
+    local ab = dcsRetribution.plugins and dcsRetribution.plugins.airboss
+    local windowStartMin = ab and tonumber(ab.windowStartOption)
+    if windowStartMin then
+        local byWindow = windowStartMin * 60.0 - AB_MARGIN_S
+        local floorS = GRACE_S + POLL_S
+        if byWindow < floorS then
+            byWindow = floorS
+        end
+        if byWindow < CLEAR_DEADLINE_S then
+            CLEAR_DEADLINE_S = byWindow
+            DEADLINE_WHY = "airboss recovery window"
+        end
+    end
+end
 
 local function log(msg)
     env.info("DECKDECOR|: " .. msg)
@@ -147,8 +177,8 @@ local function tick()
     for i = 1, #boats do
         local boat = boats[i]
         if not boat.cleared then
-            if timer.getTime() >= FALLBACK_MIN * 60.0 then
-                clearBoat(boat, "fallback timer")
+            if timer.getTime() >= CLEAR_DEADLINE_S then
+                clearBoat(boat, DEADLINE_WHY)
             else
                 local ok, tripped = pcall(approachDetected, boat)
                 if ok and tripped then
@@ -170,6 +200,7 @@ if #boats > 0 then
     timer.scheduleFunction(function(_, _)
         return tick()
     end, {}, timer.getTime() + GRACE_S)
-    log("armed -- " .. #boats .. " boat(s), fallback " .. FALLBACK_MIN .. " min, cone " ..
+    log("armed -- " .. #boats .. " boat(s), clear by " ..
+        string.format("%.0f", CLEAR_DEADLINE_S) .. "s (" .. DEADLINE_WHY .. "), cone " ..
         CONE_DIST_NM .. " NM/" .. CONE_ALT_FT .. " ft astern")
 end

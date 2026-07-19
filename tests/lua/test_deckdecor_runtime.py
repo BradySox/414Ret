@@ -58,20 +58,26 @@ def _aircraft(
     }
 
 
-def _harness(fallback_min: float = 30.0) -> DcsPluginHarness:
+def _harness(
+    fallback_min: float = 30.0, airboss: dict[str, Any] | None = None
+) -> DcsPluginHarness:
     h = DcsPluginHarness()
+    plugins: dict[str, Any] = {
+        "deckdecor": {
+            "pollS": 10,
+            "graceS": 30,
+            "fallbackMin": fallback_min,
+            "airbossMarginS": 300,
+            "coneDistNm": 4.5,
+            "coneAltFt": 3000,
+            "coneHalfDeg": 50,
+        }
+    }
+    if airboss is not None:
+        plugins["airboss"] = airboss
     h.lua.globals().dcsRetribution = h.to_lua(
         {
-            "plugins": {
-                "deckdecor": {
-                    "pollS": 10,
-                    "graceS": 30,
-                    "fallbackMin": fallback_min,
-                    "coneDistNm": 4.5,
-                    "coneAltFt": 3000,
-                    "coneHalfDeg": 50,
-                }
-            },
+            "plugins": plugins,
             "deckDecor": {
                 "boats": [
                     {
@@ -131,6 +137,37 @@ def test_high_ahead_helo_or_deck_traffic_never_clears() -> None:
 
     h.advance_to(600)
     assert h.records("destroyedStatics") == []
+    h.assert_no_lua_errors()
+
+
+def test_airboss_recovery_window_pulls_the_clear_forward() -> None:
+    """With the sibling airboss plugin present (it is default ON), the deck
+    must be clean before its scheduled recovery window opens -- window start
+    minus the margin beats a later fallback timer."""
+    # Window opens at 10 min; margin 300 s -> deadline 300 s, far before the
+    # 30-min fallback.
+    h = _harness(airboss={"windowStartOption": 10})
+    h.load_plugin_script(PLUGIN)
+
+    h.advance_to(290)
+    assert h.records("destroyedStatics") == []
+    h.advance_to(320)
+    assert h.records("destroyedStatics") == [STATIC]
+    h.assert_no_lua_errors()
+
+
+def test_airboss_window_deadline_is_floored_at_the_grace() -> None:
+    """A window earlier than the margin can reach never produces an instant
+    or pre-grace clear -- the deadline floors at grace + one poll."""
+    h = _harness(airboss={"windowStartOption": 1})  # 60 s - 300 s margin < 0
+    h.load_plugin_script(PLUGIN)
+
+    h.advance_to(20)
+    assert h.records("destroyedStatics") == []
+    # Floor is graceS (30) + pollS (10) = 40 s; the first post-grace poll
+    # past the floor clears.
+    h.advance_to(60)
+    assert h.records("destroyedStatics") == [STATIC]
     h.assert_no_lua_errors()
 
 

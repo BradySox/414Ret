@@ -70,12 +70,12 @@
   align-self: center;
 }
 
-.legend-swatch-dashed {
-  height: 10px;
-  border: 1.5px dashed var(--legend-swatch);
-  border-radius: 50%;
-  /* Mirrors the on-map circle fill (fillOpacity 0.18 in Tgo.tsx). */
-  background: color-mix(in srgb, var(--legend-swatch) 18%, transparent);
+/* The dashed family renders its true cased stroke as an inline SVG
+   (StrokeSwatch), wider than the plain swatches so a long-dash pattern
+   still shows at least one full period. */
+.legend-swatch-stroke {
+  width: 40px;
+  height: 12px;
 }
 
 .map-legend-hint {

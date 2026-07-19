@@ -1,30 +1,28 @@
 import { selectDownedPilots } from "../../api/downedPilotSlice";
 import { useAppSelector } from "../../app/hooks";
-import { mapColors } from "../../theme/mapColors";
-import { CircleMarker, LayerGroup, Tooltip } from "react-leaflet";
+import { mapColors, mapStrokes } from "../../theme/mapColors";
+import { CasedCircleMarker } from "../map/CasedShapes";
+import { LayerGroup, Tooltip } from "react-leaflet";
 
 // §21 downed-aviator overlay: MIA evaders (rescue orange, solid) at their last
 // known position — the between-turns host plans the rescue from this marker —
-// and POWs (gray, dashed) at the holding enemy field, where a recapture frees
-// them. Renders nothing when nobody is down. BLUE-only: these are your own
-// aviators, so nothing here is fogged.
+// and POWs (gray, short-dashed) at the holding enemy field, where a recapture
+// frees them. Both cased so the small markers read over any imagery. Renders
+// nothing when nobody is down. BLUE-only: these are your own aviators, so
+// nothing here is fogged.
 export default function DownedPilotsLayer() {
   const pilots = useAppSelector(selectDownedPilots);
   return (
     <LayerGroup>
       {pilots.map((pilot, idx) => {
         const pow = pilot.status === "pow";
-        const color = pow ? mapColors.pilotPow : mapColors.pilotMia;
         return (
-          <CircleMarker
+          <CasedCircleMarker
             key={`downed-pilot-${idx}`}
             center={pilot.position}
             radius={7}
-            color={color}
-            weight={2}
-            dashArray={pow ? "2 4" : undefined}
-            fill={true}
-            fillColor={color}
+            color={pow ? mapColors.pilotPow : mapColors.pilotMia}
+            signature={pow ? mapStrokes.pilotPow : mapStrokes.pilotMia}
             fillOpacity={0.35}
           >
             <Tooltip sticky>
@@ -32,7 +30,7 @@ export default function DownedPilotsLayer() {
               <br />
               {`${pilot.name} — ${pilot.detail}`}
             </Tooltip>
-          </CircleMarker>
+          </CasedCircleMarker>
         );
       })}
     </LayerGroup>

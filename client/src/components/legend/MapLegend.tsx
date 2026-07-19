@@ -1,26 +1,64 @@
-import { mapColors } from "../../theme/mapColors";
+import { StrokeSignature, mapColors, mapStrokes } from "../../theme/mapColors";
 import "./MapLegend.css";
 import { CSSProperties, useState } from "react";
 
 // A compact, collapsible key for the map's colour/shape semantics. The many overlays
 // reuse a small set of meanings (allegiance, ROE, supply, suspected activity) that
-// aren't otherwise decodable -- especially the two dashed circles (amber = suspected
-// enemy to scout; red = ROE off-limits) that used to look alike. Floats bottom-right
-// so it clears the ruler (top-left), layers panel (top-right), campaign ribbon
+// aren't otherwise decodable. The dashed family renders its REAL stroke signature
+// (mapStrokes: pattern + dark contrast casing) as a mini SVG preview, so the legend
+// swatch is literally what the map draws — an area, a zone, a hazard, and a person
+// each read differently even for a colour-blind pilot. Floats bottom-right so it
+// clears the ruler (top-left), layers panel (top-right), campaign ribbon
 // (top-centre), and the events feed + scale bar (bottom-left). Collapsed by default.
 
-type SwatchKind = "fill" | "line" | "dashed";
+type SwatchKind = "fill" | "line";
 
 function Swatch(props: { color: string; kind: SwatchKind }) {
   const base = { "--legend-swatch": props.color } as CSSProperties;
   return <span className={`legend-swatch legend-swatch-${props.kind}`} style={base} />;
 }
 
-interface Row {
-  color: string;
-  kind: SwatchKind;
-  label: string;
+// The on-map cased stroke in miniature: the dark casing line under the coloured
+// dash, true dashArray, capped casing weight so the 12px-tall swatch stays a line.
+function StrokeSwatch(props: { color: string; signature: StrokeSignature }) {
+  const width = 40;
+  const y = 6;
+  return (
+    <svg
+      className="legend-swatch legend-swatch-stroke"
+      width={width}
+      height={12}
+      viewBox={`0 0 ${width} 12`}
+      aria-hidden="true"
+    >
+      <line
+        x1={1}
+        y1={y}
+        x2={width - 1}
+        y2={y}
+        stroke={mapColors.strokeCasing}
+        strokeWidth={Math.min(props.signature.casingWeight, 8)}
+        strokeOpacity={0.75}
+        strokeDasharray={props.signature.dashArray}
+        strokeLinecap={props.signature.lineCap}
+      />
+      <line
+        x1={1}
+        y1={y}
+        x2={width - 1}
+        y2={y}
+        stroke={props.color}
+        strokeWidth={props.signature.weight}
+        strokeDasharray={props.signature.dashArray}
+        strokeLinecap={props.signature.lineCap}
+      />
+    </svg>
+  );
 }
+
+type Row =
+  | { color: string; kind: SwatchKind; label: string }
+  | { color: string; signature: StrokeSignature; label: string };
 
 const ROWS: Row[] = [
   { color: mapColors.friendly, kind: "line", label: "Friendly (forces, threat rings)" },
@@ -36,12 +74,36 @@ const ROWS: Row[] = [
     label: "Radar detection ring: enemy",
   },
   { color: mapColors.flot, kind: "line", label: "Front line (FLOT)" },
-  { color: mapColors.suspected, kind: "dashed", label: "Suspected activity — scout it" },
-  { color: mapColors.offLimits, kind: "dashed", label: "ROE off-limits — no strike" },
-  { color: mapColors.weaponsFree, kind: "dashed", label: "Weapons-free pocket" },
-  { color: mapColors.pilotMia, kind: "fill", label: "Pilot down — evading, fly the rescue" },
-  { color: mapColors.pilotPow, kind: "dashed", label: "POW — held at an enemy field" },
-  { color: mapColors.mine, kind: "dashed", label: "Minefield (your own)" },
+  {
+    color: mapColors.suspected,
+    signature: mapStrokes.suspectedArea,
+    label: "Suspected area — scout it",
+  },
+  {
+    color: mapColors.offLimits,
+    signature: mapStrokes.roeRestricted,
+    label: "ROE off-limits zone — no strike",
+  },
+  {
+    color: mapColors.weaponsFree,
+    signature: mapStrokes.weaponsFree,
+    label: "Weapons-free zone (ROE)",
+  },
+  {
+    color: mapColors.pilotMia,
+    signature: mapStrokes.pilotMia,
+    label: "Pilot down — evading, fly the rescue",
+  },
+  {
+    color: mapColors.pilotPow,
+    signature: mapStrokes.pilotPow,
+    label: "POW — held at an enemy field",
+  },
+  {
+    color: mapColors.mine,
+    signature: mapStrokes.minefield,
+    label: "Minefield (your own)",
+  },
   { color: mapColors.supplyOk, kind: "fill", label: "Supply: healthy" },
   { color: mapColors.supplyMid, kind: "fill", label: "Supply: strained" },
   { color: mapColors.supplyLow, kind: "fill", label: "Supply: low" },
@@ -68,7 +130,11 @@ export default function MapLegend() {
         <div className="map-legend-body">
           {ROWS.map((row) => (
             <div className="map-legend-row" key={row.label}>
-              <Swatch color={row.color} kind={row.kind} />
+              {"signature" in row ? (
+                <StrokeSwatch color={row.color} signature={row.signature} />
+              ) : (
+                <Swatch color={row.color} kind={row.kind} />
+              )}
               <span className="map-legend-label">{row.label}</span>
             </div>
           ))}

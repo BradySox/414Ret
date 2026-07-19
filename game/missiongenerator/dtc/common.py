@@ -165,6 +165,39 @@ def racetrack_ends(
 _CAP_FLIGHT_TYPES = (FlightType.BARCAP, FlightType.TARCAP)
 _SUPPORT_FLIGHT_TYPES = (FlightType.REFUELING, FlightType.AEWC)
 
+#: Two CAP racetracks whose centers sit within this distance on near-parallel
+#: courses are the same patrol *station*: the §6 BARCAP wave relief flies each
+#: station as several flights with jittered tracks, and the SA page wants the
+#: station once, not once per wave (a 3-station/3-wave ATO otherwise burns all
+#: nine Hornet CAP_PTS slots on duplicates and squeezes the tankers out).
+STATION_MERGE_DISTANCE_M = 15_000.0
+STATION_MERGE_COURSE_DEG = 25.0
+
+
+def dedupe_stations(tracks: list[SupportTrack]) -> list[SupportTrack]:
+    """Collapse wave-relief duplicates of the same patrol station.
+
+    Greedy first-kept clustering: a track merges into an already-kept one when
+    their centers are within :data:`STATION_MERGE_DISTANCE_M` and their courses
+    within :data:`STATION_MERGE_COURSE_DEG` (either direction of the leg). The
+    earliest wave's track represents the station.
+    """
+    kept: list[SupportTrack] = []
+    for track in tracks:
+        for existing in kept:
+            dx = track.center[0] - existing.center[0]
+            dy = track.center[1] - existing.center[1]
+            if math.hypot(dx, dy) > STATION_MERGE_DISTANCE_M:
+                continue
+            delta = abs(track.course - existing.course) % 360.0
+            delta = min(delta, 360.0 - delta)
+            # A relief wave may fly the same leg in either direction.
+            if min(delta, abs(delta - 180.0)) <= STATION_MERGE_COURSE_DEG:
+                break
+        else:
+            kept.append(track)
+    return kept
+
 
 def _tracks_of_types(
     mission_data: MissionData,
@@ -192,11 +225,14 @@ def _tracks_of_types(
 
 
 def cap_tracks(mission_data: MissionData) -> list[SupportTrack]:
-    """Every blue CAP station flying this mission (BARCAP + TARCAP)."""
-    return _tracks_of_types(
-        mission_data,
-        _CAP_FLIGHT_TYPES,
-        {FlightType.BARCAP: "CAP", FlightType.TARCAP: "CAP"},
+    """Every blue CAP *station* flying this mission (BARCAP + TARCAP), with
+    the §6 wave-relief duplicates collapsed to one racetrack per station."""
+    return dedupe_stations(
+        _tracks_of_types(
+            mission_data,
+            _CAP_FLIGHT_TYPES,
+            {FlightType.BARCAP: "CAP", FlightType.TARCAP: "CAP"},
+        )
     )
 
 

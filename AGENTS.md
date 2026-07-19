@@ -1113,7 +1113,13 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     / suspected-activity circle so the hidden fragging right-clicks are findable. Client-only (not CI
     type-checked; validated via `tsc` + the `FrontLine` test mock). The four tracks came off the
     56-finding UI audit; deferred: a full right-click context menu + Leaflet-tooltip theming + the deeper
-    flow reworks.
+    flow reworks. **Suspected-circle contrast pass (2026-07-19, the flown Inherent Resolve "circles are
+    really hard to see"):** amber-on-desert-tan washed the concealment circles out — the lone
+    "suspected activity" ring now draws a **dark dashed contrast casing** (`mapColors.strokeCasing`,
+    weight 6 under the amber weight-2.5 dash, aligned dashes, `interactive: false`) so it reads on any
+    imagery, and the fills rose (lone 0.18→0.25, cluster member 0.12→0.16). The cluster **density cloud
+    stays stroke-less** (flown squadron decision, not re-litigated) and the hue stays amber (orange would
+    collide with the FLOT token). `Tgo.tsx` + `mapColors.ts`; tsc+jest green; needs the CI client rebuild.
     **Dialogs are clamped to the screen (2026-07-19, the "windows are clipping / UI scaled screwed
     up" report):** the Edit Flight dialog opened with its **title bar above the top of the display**
     and carried ~260 px of dead space under the form. Measured offscreen on the reported 1440p @150 %

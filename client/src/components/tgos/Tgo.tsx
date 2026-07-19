@@ -38,40 +38,62 @@ function ConcealedTgo(props: TgoProps) {
   // circle keeps the classic dashed "suspected activity" ring.
   const clustered = (props.tgo.concealed_cluster_size ?? 1) >= 2;
   return (
-    <Circle
-      center={props.tgo.position}
-      radius={props.tgo.uncertainty_radius_m!}
-      // Amber "suspected", not red: red is reserved for the ROE off-limits circle,
-      // which is nearly identical in shape. Amber reads as "unknown — investigate".
-      pathOptions={{
-        color: mapColors.suspected,
-        stroke: !clustered,
-        weight: 2,
-        dashArray: "6 6",
-        fillColor: mapColors.suspected,
-        // Lone ring: deep enough to read as an area at a glance over satellite
-        // imagery (0.08 washed out). Cluster member: low, because the fills
-        // stack — 3 overlapping ≈ 0.32, 6 ≈ 0.54, 9 ≈ 0.68 — the density ramp.
-        fillOpacity: clustered ? 0.12 : 0.18,
-        className: "map-interactive",
-      }}
-      eventHandlers={{
-        click: () => {
-          openInfoDialog({ tgoId: props.tgo.id });
-        },
-        contextmenu: () => {
-          openNewPackageDialog({ tgoId: props.tgo.id });
-        },
-      }}
-    >
-      <Tooltip>
-        Suspected enemy activity ({props.tgo.control_point_name})
-        <br />
-        Somewhere in this area — fly recon to localize
-        <br />
-        <i>Left-click: intel · Right-click: plan a package</i>
-      </Tooltip>
-    </Circle>
+    <>
+      {/* Contrast casing: a wider dark dash drawn under the amber ring. Amber
+          alone disappeared into desert satellite imagery (the flown Iraq map);
+          the dark edge makes the ring read on light terrain, the amber core on
+          dark. Same geometry + dashArray, so the dashes align. Non-interactive
+          — the amber ring on top owns the click/tooltip contract. */}
+      {!clustered && (
+        <Circle
+          center={props.tgo.position}
+          radius={props.tgo.uncertainty_radius_m!}
+          pathOptions={{
+            color: mapColors.strokeCasing,
+            weight: 6,
+            opacity: 0.75,
+            dashArray: "6 6",
+            fill: false,
+            interactive: false,
+          }}
+        />
+      )}
+      <Circle
+        center={props.tgo.position}
+        radius={props.tgo.uncertainty_radius_m!}
+        // Amber "suspected", not red: red is reserved for the ROE off-limits circle,
+        // which is nearly identical in shape. Amber reads as "unknown — investigate".
+        pathOptions={{
+          color: mapColors.suspected,
+          stroke: !clustered,
+          weight: 2.5,
+          dashArray: "6 6",
+          fillColor: mapColors.suspected,
+          // Lone ring: deep enough to read as an area at a glance over satellite
+          // imagery (0.18 still washed out on desert tan). Cluster member: low,
+          // because the fills stack — 3 overlapping ≈ 0.41, 6 ≈ 0.65, 9 ≈ 0.79
+          // — the density ramp.
+          fillOpacity: clustered ? 0.16 : 0.25,
+          className: "map-interactive",
+        }}
+        eventHandlers={{
+          click: () => {
+            openInfoDialog({ tgoId: props.tgo.id });
+          },
+          contextmenu: () => {
+            openNewPackageDialog({ tgoId: props.tgo.id });
+          },
+        }}
+      >
+        <Tooltip>
+          Suspected enemy activity ({props.tgo.control_point_name})
+          <br />
+          Somewhere in this area — fly recon to localize
+          <br />
+          <i>Left-click: intel · Right-click: plan a package</i>
+        </Tooltip>
+      </Circle>
+    </>
   );
 }
 

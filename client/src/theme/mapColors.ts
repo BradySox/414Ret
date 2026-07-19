@@ -29,6 +29,10 @@ export const mapColors = {
   offLimits: "#d43a3a", // red dashed: ROE restricted (no-strike) zone
   weaponsFree: "#3ccd5f", // green dashed: free-fire (weapons-free) pocket
   mine: "#c9a227", // gold dashed: your own air-dropped minefield (friendly hazard)
+  // Dark under-stroke drawn beneath a bright dashed ring so it stays legible on
+  // light terrain (desert satellite imagery washed the amber ring out entirely);
+  // on dark terrain the bright dash on top still carries it.
+  strokeCasing: "#141414",
 
   // --- supply readiness (by level, not side) ---
   supplyOk: "#3ccd5f",

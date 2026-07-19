@@ -2969,6 +2969,21 @@ circles read alike), and the map's core planning actions were invisible right-cl
   demoted to a **Display options** footer group; (5) **blue flight paths advertise their click**
   ("Left-click: select this flight" in the tooltip — the one clickable overlay the §28 pass missed).
   Validated with `tsc --noEmit` + the full client jest suite (scratchpad-copy workaround).
+- **The 2026-07-19 suspected-circle contrast pass** ("these UI circles are really hard to see" — a
+  flown Inherent Resolve screenshot showed the amber concealment circles vanishing into the Iraq
+  desert imagery; amber-on-tan has almost no luminance separation, and the cluster density cloud is
+  deliberately stroke-less so it read as terrain discoloration): (1) the lone "suspected activity"
+  ring gains a **contrast casing** — a wider dark dash (`mapColors.strokeCasing`, weight 6 at 0.75)
+  drawn under the amber ring (weight 2 → 2.5), same geometry + `dashArray` so the dashes align; the
+  dark edge carries the ring on light terrain, the amber core on dark, the classic cartographic
+  halo — the casing circle is `interactive: false` so the amber ring keeps the click/tooltip
+  contract; (2) **fills raised**: lone 0.18 → 0.25, cluster member 0.12 → 0.16 (density ramp now
+  3 ≈ 0.41, 6 ≈ 0.65, 9 ≈ 0.79). The **cluster cloud stays stroke-less** — that was a flown
+  squadron decision (the nine-ring klaxon) and is not re-litigated here; the amber hue also stays
+  (`#dd9a3a` — pushing it toward orange would collide with the FLOT's `#fe7d0a`). Client-only
+  (`Tgo.tsx`, `mapColors.ts`); `tsc` + jest green; rides the existing P3 concealment checklist
+  bullet + the CI client rebuild. Candidate follow-up if still faint when flown: apply the same
+  casing to the other dashed circles (ROE off-limits, weapons-free, minefields, POW).
 
 ### Dialogs are clamped to the screen (2026-07-19, the "windows are clipping" report)
 

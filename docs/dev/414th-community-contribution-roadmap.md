@@ -96,7 +96,7 @@ REVIEW). "Strip" = the 414th slice to remove for a clean PR.
 |---|---|---|
 | Recon fog-of-war (§3 PR #1) | #828 | ✅ Rebased + un-drafted 2026-07-19 (one commit on dev @ `acf02b75`, 451 tests green) — awaiting maintainer review |
 | Splash Damage coherent defaults (item 21) | #880 | Opened 2026-07-19 — awaiting maintainer review (offer to split bug-fixes from tuning stands in the PR body) |
-| Cruise missile strikes (§63 core) | #872 (draft) | Un-draft once the defender-wake re-fly (B16) is flown |
+| Cruise missile strikes (§63 core) | #872 | ✅ Ready for review 2026-07-19 — the DM flew the full loop locally ("works 10/10") and the defender launch wake was ported into the PR (Skynet-adapted comments), un-drafted |
 | Curated carrier comms (§65) | #874 (draft) | Un-draft after B18 in-game pass |
 | Culled-region kill tracking | #873 (draft) | Un-draft when validated |
 | Cruise/patrol altitude | #806 | Review response |

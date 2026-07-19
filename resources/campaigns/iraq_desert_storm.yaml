@@ -1,0 +1,473 @@
+---
+name: Iraq - Umm al-Ma'arik (Desert Storm 1991)
+theater: Iraq
+authors: Flash, 414th JFG
+recommended_player_faction: NATO Desert Storm
+recommended_enemy_faction: Iraq 1991
+description:
+  <p>It was said Baghdad was the most well defended city in the world before Desert
+  Storm -- denser than Hanoi at the height of Rolling Thunder. The French-built KARI
+  network ties every SA-2, SA-3 and Roland ring back through sector operations centers
+  to one air defense operations center in Baghdad, and the Iraqi Air Force sits on
+  GCI alert behind it.</p>
+  <p>Tonight that claim gets tested. Coalition air power strikes east out of Al-Asad
+  and the western H-3 desert strip -- put out KARI's eyes, collapse the SAM rings,
+  hunt the Scud launchers that threaten the coalition itself, and grind the army's
+  supply lines until the ground offensive can end it. Saddam has promised his people
+  <em>Umm al-Ma'arik</em> -- the Mother of all Battles. Give it to him.</p>
+miz: iraq_desert_storm.miz
+performance: 2
+# Advanced (networked) IADS -- the KARI network: red SAM hubs carry co-located Command
+# Center + Comms tower M + GeneratorF statics (in the .miz; the ADOC at Baghdad, sector
+# operations centers at Al-Taquddum / Kirkuk / Al-Kut) plus a P-37/1L13 EWR chain. With
+# no iads_config, MANTIS wires each base's SAMs to its nearby comms (<15nm) / power
+# (<35nm) / command center by range -> destroyable per-base C2 cells, the Red Tide
+# pattern. Decapitating the C2 (the F-117's war) degrades the whole net -- and feeds
+# the s52 planning-degradation preseed below.
+advanced_iads: true
+# The air campaign opened at 0300 local on 17 January 1991. The datetime form seeds
+# the clock too, so a new campaign starts on the night-one strikes.
+recommended_start_date: 1991-01-17T03:00:00
+# Sanctioned, blockaded Iraq: a big standing army, thin replacements. The coalition
+# out-buys it from turn one.
+recommended_player_money: 2000
+recommended_enemy_money: 1000
+recommended_enemy_income_multiplier: 0.5
+version: "10.8"
+settings:
+  squadron_start_full: true
+  # 1991 era enforcement: no AMRAAM-era stores or 2000s cueing visors on the
+  # modern-block airframes (both halves of the date gate, per the settings-split
+  # lesson -- the A-10C and F-16CM fly here with era loadouts).
+  restrict_weapons_by_date: true
+  restrict_props_by_date: true
+  # The Iraqi Air Force fought as a GCI-vectored alert force under KARI: more MiGs
+  # on reactive hot-alert, fewer standing forward orbits.
+  opfor_default_qra_reserve: 4
+  # The authored Instant Thunder -> Scud Hunt -> ground-offensive arc below.
+  campaign_phases: true
+  # The will economy carries the political layer: coalition cohesion vs the regime's
+  # resolve, the POW running sore (paraded aircrew drain cohesion every turn until
+  # freed -- a negotiated win brings them home), and the CDE price of a release
+  # inside the Baghdad no-strike circle (the Al-Firdos lesson).
+  vietnam_political_will: true
+  # KARI's C2 is real and destroyable here, so its loss is felt in red's planning
+  # quality (s52) -- and KARI historically repaired and relocated between strikes,
+  # so red's AI may rebuild dead SAM sites (s68).
+  c2_decapitation_effects: true
+  auto_repair_air_defenses: true
+  # Blue-side COMINT (s70): read the KARI net for the ambient take, put a collector
+  # over the fence for the tasking leak, and hunt the transmitting nodes on the DF
+  # gear. Bomb-it-or-tap-it.
+  comint_collection: true
+  red_comms_net: true
+  # s50: real supply convoys run the highway graph below on both sides; red ambush
+  # teams may dig in along the blue western MSR.
+  convoy_ambush: true
+  # s61 host tools for the DM (gated to the host's tag via the plugin option below).
+  host_red_scramble: true
+  # Plugin preseeds (the s36 saved-default-off lesson): a plugin unticked in the
+  # host's saved defaults would otherwise silently kill its preseeded feature.
+  plugins:
+    convoyambush: true
+    # s49 shoot-and-scoot for the authored Scud batteries -- the Great Scud Hunt
+    # needs the launchers to never be where the last recon photo froze them.
+    mobilemissiles: true
+    # s70 C1: the audible KARI UHF net (CW traffic from every alive C2 node).
+    rednet: true
+    redscramble: true
+    redscramble.hostPlayers: Flash
+
+# The Desert Storm political layer: the war is won by breaking the regime's resolve
+# (Umm al-Ma'arik ends at the table in Safwan), and lost only if the coalition itself
+# fractures -- Scud terror, paraded POWs and a CDE catastrophe are Baghdad's only real
+# weapons against it. Feed weights stay at the Vietnam-derived defaults except the ROE
+# violation, priced up: one Al-Firdos is survivable, a habit is not.
+will:
+  blue:
+    label: Coalition cohesion
+    exhaustion_title: The coalition fractures
+    exhaustion_body: >-
+      Scud terror, paraded aircrew and bombed shelters have done what the Iraqi army
+      could not -- the partners waver, the capitals lose their stomach, and the
+      coalition stands down with Saddam still in his palace.
+  red:
+    label: the regime's resolve
+    exhaustion_title: Baghdad capitulates
+    exhaustion_body: >-
+      The army is wrecked on the roads, KARI is blind, and the Mother of all Battles
+      is lost -- Baghdad accepts every coalition term at Safwan.
+  weights:
+    blue_roe_violation: 3.0
+
+# The authored three-phase arc. Baghdad's populated river-bend core sits inside a
+# permanent no-strike circle (both airbase MEZs stay legal targets outside it); a
+# release inside it prices CDE into coalition cohesion at the weight above -- never
+# a hard block, always a bill.
+phases:
+  - key: instant_thunder
+    name: Instant Thunder
+    narrative: >-
+      Night one, and every night after: put out KARI's eyes. The ADOC in Baghdad and
+      the sector operations centers at Al-Taquddum, Kirkuk and Al-Kut are the
+      network's brain; the EWR chain is its eyes; the SA-2 and SA-3 rings around
+      Baghdad are its teeth. Decapitate the C2, roll back the belt, and win the air
+      war the Iraqi Air Force comes up to fight.
+    emphasis: rollback
+    objectives:
+      - Decapitate KARI -- the ADOC and sector operations centers are strikeable C2
+      - Roll back the Baghdad SAM rings -- SEAD opens the corridors everything uses
+      - Kill the EWR chain and the net goes quiet on the DF gear too
+    restricted_zones: &baghdad_cde
+      - shape: circle
+        name: Baghdad -- populated city (no strike)
+        x: 9000
+        y: 16000
+        radius_nm: 4
+    advance_when:
+      enemy_iads_below: 0.55
+  - key: scud_hunt
+    name: The Great Scud Hunt
+    min_turn: 4
+    red_tempo:
+      trail_surge: 1.5
+    narrative: >-
+      The Scuds are flying, and every launch is aimed at the coalition itself. Find
+      the launchers before they shoot -- they relocate between every recon pass --
+      and strangle the highway net that feeds them and the army: Highway 1 north out
+      of Baghdad, the Kirkuk roads, the Habbaniyah line to the front. Baghdad surges
+      its convoys to compensate. Good. More targets.
+    emphasis: interdiction
+    objectives:
+      - Hunt the Scud batteries -- TARPS the suspected sites, then kill the launchers
+      - Interdict the highway convoys -- the army lives on the roads
+      - Keep the pressure on KARI -- the rings repair themselves if you let them
+    restricted_zones: *baghdad_cde
+    advance_when:
+      enemy_iads_below: 0.35
+  - key: umm_al_maarik
+    name: Umm al-Ma'arik -- the ground offensive
+    min_turn: 9
+    narrative: >-
+      The air war is won; now end the whole thing. Take Al-Taquddum and the
+      Habbaniyah line, break the army in the field before it can dig in around the
+      capital, and force the regime to the table. The Mother of all Battles ends at
+      Safwan, one way or the other.
+    emphasis: offensive
+    objectives:
+      - text: Take Al-Taquddum -- the western gate to Baghdad
+        done_when:
+          capture_cp: Al-Taquddum Airport
+      - text: Break the regime's resolve
+        done_when:
+          red_resolve_below: 25
+      - Mind the city -- the no-strike circle holds to the end
+    restricted_zones: *baghdad_cde
+
+# The 1991 highway graph, traced from the real road network per the driveable-corridor
+# standard (tools/supply_route_geo.py, mode `iraq_desert_storm` -- regenerate there,
+# never hand-edit the numbers). RED holds nearly the whole map, so its interior net IS
+# the interdiction target set: Highway 1 (Baghdad-Taji-Samarra-Tikrit-Bayji-Qayyarah),
+# Highway 10 west to the Habbaniyah front, Highway 6 southeast to Kut, the Jabal
+# Hamrin crossing to Kirkuk, and the Kurdish arcs (Altun Kupri, Chamchamal, Makhmur).
+# BLUE's one MSR is the old IPC pipeline-station road H-3 -> H-2 -> H-1 -> Al-Baghdadi
+# that the H airfields are literally named for -- and the s50 ambush alley.
+supply_routes:
+  # Baghdad International -> Al-Salam  (RED city hop: the airport expressway -> the
+  # Dora expressway east to the Rasheed side)
+  - waypoints:
+      - [-142, 160]
+      - [-1397, 8011]
+      - [204, 18268]
+      - [2263, 25199]
+  # Baghdad International -> Al-Taquddum  (RED Highway 10 west through Abu Ghraib ->
+  # Fallujah -> Habbaniyah; the western front's supply line)
+  - waypoints:
+      - [-142, 160]
+      - [4891, -16155]
+      - [10686, -40298]
+      - [13039, -51436]
+      - [9717, -58133]
+  # Baghdad International -> Al-Kut  (RED Highway 6 southeast through Salman Pak ->
+  # Aziziyah -> Numaniyah)
+  - waypoints:
+      - [-142, 160]
+      - [-17606, 33100]
+      - [-38745, 64809]
+      - [-70858, 99496]
+      - [-85732, 143282]
+  # Baghdad International -> Al-Sahra (Tikrit)  (RED Highway 1 north through Taji ->
+  # the Balad junction -> Samarra -> al-Alam)
+  - waypoints:
+      - [-142, 160]
+      - [29131, 2641]
+      - [66809, 5690]
+      - [104842, -30899]
+      - [149397, -46915]
+      - [157133, -61805]
+  # Al-Sahra (Tikrit) -> Qayyarah West  (RED Highway 1 north through Bayji -> Shirqat)
+  - waypoints:
+      - [157133, -61805]
+      - [186264, -65623]
+      - [252031, -84578]
+      - [279544, -97450]
+  # Al-Sahra (Tikrit) -> Kirkuk  (RED: the Tikrit-Kirkuk road over the Jabal Hamrin)
+  - waypoints:
+      - [157133, -61805]
+      - [165918, -37547]
+      - [187853, -14453]
+      - [215459, -534]
+      - [245434, 12825]
+  # Kirkuk -> Erbil  (RED: the Kirkuk-Erbil highway through Altun Kupri)
+  - waypoints:
+      - [245434, 12825]
+      - [276512, -6369]
+      - [298763, -13386]
+      - [315455, -18625]
+      - [330838, -22360]
+  # Kirkuk -> Sulaymaniyah  (RED: the Chamchamal road over the Tasluja pass)
+  - waypoints:
+      - [245434, 12825]
+      - [248510, 36013]
+      - [251777, 56878]
+      - [257319, 85880]
+      - [255226, 100814]
+  # Qayyarah West -> Erbil  (RED: the Tigris crossing at Qayyarah -> Makhmur -> the
+  # Erbil plain)
+  - waypoints:
+      - [279544, -97450]
+      - [280824, -81359]
+      - [279311, -56066]
+      - [304614, -40372]
+      - [330838, -22360]
+  # H-3 Main -> Al-Asad  (the BLUE western MSR: the IPC pipeline-station road
+  # H-3 -> H-2 -> H-1 -> the Haditha junction -> Al-Baghdadi)
+  - waypoints:
+      - [-23566, -419185]
+      - [19255, -324183]
+      - [64579, -259209]
+      - [91181, -186171]
+      - [70431, -156183]
+      - [60819, -165901]
+
+squadrons:
+  # ---- BLUE: Al-Asad Airbase -- the coalition's forward strike wing ----
+  1:
+    - primary: Strike
+      secondary: air-to-ground
+      aircraft:
+        - F-14B Tomcat
+      size: 8
+    # The F-15C wall: the MiG sweep that owned the Desert Storm sky. BARCAP primary
+    # so blue actually stands defensive orbits; the air-to-air secondary feeds every
+    # escort the strike packages need (the escort-starvation fix).
+    - primary: BARCAP
+      secondary: air-to-air
+      aircraft:
+        - F-15C Eagle
+      size: 16
+    - primary: SEAD
+      secondary: any
+      aircraft:
+        - F/A-18C Hornet (Lot 20)
+      size: 8
+    - primary: DEAD
+      secondary: any
+      aircraft:
+        - F-16CM Fighting Falcon (Block 50)
+      size: 8
+    - primary: CAS
+      secondary: air-to-ground
+      aircraft:
+        - A-10C Thunderbolt II (Suite 7)
+      size: 8
+    - primary: SEAD Sweep
+      secondary: air-to-ground
+      aircraft:
+        - F-4E-45MC Phantom II
+      size: 16
+    - primary: OCA/Runway
+      secondary: any
+      aircraft:
+        - F-15E Strike Eagle (Suite 4+)
+      size: 8
+    - primary: Air Assault
+      secondary: any
+      aircraft:
+        - CH-47F Block I
+      size: 4
+    - primary: Escort
+      secondary: any
+      aircraft:
+        - AH-64A Apache
+      size: 4
+    # The Kiowa scouts: armed recon along the Euphrates front.
+    - primary: Armed Recon
+      secondary: any
+      aircraft:
+        - OH-58D(R) Kiowa Warrior
+      size: 4
+  # ---- BLUE: H-3 Main Airbase -- the western desert support strip ----
+  16:
+    - primary: AEW&C
+      aircraft:
+        - E-3A
+      size: 1
+    - primary: Refueling
+      aircraft:
+        - KC-135 Stratotanker
+      size: 1
+    - primary: Refueling
+      aircraft:
+        - KC-135 Stratotanker MPRS
+      size: 1
+
+  # ---- RED: Baghdad International -- the capital's air wing ----
+  2:
+    # "Adnan-1": Iraq's real Il-76-conversion AWACS, flown here by its stand-in.
+    - primary: AEW&C
+      aircraft:
+        - A-50
+      size: 1
+    - primary: Strike
+      secondary: air-to-ground
+      aircraft:
+        - Su-22M4 Fitter-K
+      size: 12
+    # The Foxbat alert force -- GCI-vectored interceptors, defensively roled so the
+    # QRA reserve actually staffs them (the Red Tide red-posture lesson).
+    - primary: BARCAP
+      secondary: air-to-air
+      aircraft:
+        - MiG-25PD Foxbat-E
+      size: 16
+    - primary: BARCAP
+      secondary: air-to-air
+      aircraft:
+        - MiG-23ML Flogger-G
+      size: 16
+  # ---- RED: Al-Salam Airbase -- the Rasheed-side strike wing ----
+  14:
+    - primary: CAS
+      secondary: air-to-ground
+      aircraft:
+        - Su-25 Frogfoot
+      size: 8
+    - primary: BARCAP
+      secondary: air-to-air
+      aircraft:
+        - MiG-23ML Flogger-G
+      size: 16
+    - primary: OCA/Runway
+      secondary: any
+      aircraft:
+        - Tu-22M3 Backfire-C
+      size: 8
+    - primary: DEAD
+      secondary: any
+      aircraft:
+        - Su-24M Fencer-D
+      size: 16
+    - primary: Air Assault
+      secondary: any
+      aircraft:
+        - Mi-8MTV2 Hip
+      size: 4
+    - primary: Escort
+      secondary: any
+      aircraft:
+        - Mi-24P Hind-F
+      size: 4
+    - primary: Transport
+      secondary: any
+      aircraft:
+        - Mi-8MTV2 Hip
+      size: 4
+  # ---- RED: Al-Taquddum -- the western front's ground-attack base ----
+  13:
+    - primary: CAS
+      secondary: air-to-ground
+      aircraft:
+        - Su-25 Frogfoot
+      size: 16
+    # Iraq's Chinese F-6s (MiG-19 pattern) fly the close escort for the Frogfoots.
+    - primary: Escort
+      secondary: any
+      aircraft:
+        - MiG-19P Farmer-B
+      size: 16
+  # ---- RED: Al-Kut -- the Fulcrum reserve ----
+  19:
+    - primary: TARCAP
+      secondary: any
+      aircraft:
+        - MiG-29A Fulcrum-A
+      size: 24
+  # ---- RED: Kirkuk International -- the northern strike/SEAD wing ----
+  10:
+    - primary: SEAD
+      secondary: air-to-ground
+      aircraft:
+        - Su-24M Fencer-D
+      size: 12
+    - primary: CAS
+      secondary: any
+      aircraft:
+        - Su-25 Frogfoot
+      size: 12
+    - primary: SEAD Escort
+      secondary: air-to-ground
+      aircraft:
+        - Su-24M Fencer-D
+      size: 8
+    - primary: BARCAP
+      secondary: air-to-air
+      aircraft:
+        - MiG-29A Fulcrum-A
+      size: 8
+    - primary: Escort
+      secondary: any
+      aircraft:
+        - Mi-24P Hind-F
+      size: 4
+    - primary: Air Assault
+      secondary: any
+      aircraft:
+        - Mi-8MTV2 Hip
+      size: 4
+  # ---- RED: Qayyarah West -- the Badger raid wing ----
+  6:
+    - primary: DEAD
+      secondary: any
+      aircraft:
+        - H-6J Badger
+      size: 8
+    - primary: TARCAP
+      secondary: any
+      aircraft:
+        - Mirage-F1EQ
+      size: 8
+    - primary: Transport
+      secondary: any
+      aircraft:
+        - IL-76MD
+      size: 2
+  # ---- RED: Sulaymaniyah International -- the Fitter interdiction wing ----
+  7:
+    - primary: BAI
+      secondary: air-to-ground
+      aircraft:
+        - Su-22M4 Fitter-K
+      size: 16
+  # ---- RED: Erbil International -- the northern bomber base ----
+  4:
+    - primary: Strike
+      secondary: air-to-ground
+      aircraft:
+        - Tu-22M3 Backfire-C
+      size: 12
+    - primary: BARCAP
+      secondary: any
+      aircraft:
+        - MiG-21bis Fishbed-N
+      size: 8

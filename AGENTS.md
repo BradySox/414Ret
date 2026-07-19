@@ -145,6 +145,19 @@ file. This guide is the map; those are the territory.
     headless-verified 2026-07-07; laydown CI-locked in `tests/fourteenth/test_tanker_war.py`;
     registered 2026-07-18 (the maintenance sweep found it shipped silent — no checklist row or
     docs entries); in-game pass = checklist T2, the platform-AAA on-deck render the riskiest bit)
+  - `414th-desert-storm-campaign-notes.md` — **Iraq "Umm al-Ma'arik (Desert Storm 1991)"**
+    (the DM's homemade DS91 campaign fixed + modernized + promoted 2026-07-19: the KARI IADS
+    as the Red Tide static-trio pattern (ADOC + 3 SOCs + relays at every red base + a P-37/1L13
+    EWR chain, MANTIS range-mode, 86 nodes), the Great Scud Hunt (7 authored Scud batteries ×
+    §49), a 10-route real-highway supply graph (`tools/supply_route_geo.py` mode
+    `iraq_desert_storm`), the Instant Thunder → Scud Hunt → ground-offensive arc with a
+    permanent Baghdad no-strike circle, the Coalition-cohesion will profile, and the
+    Dictator-universe scenery names inherited from the Aladeen miz renamed to the real 1991
+    CENTAF target set. Fixed in passing: 6 silent squadron substitutions (a missing yaml list
+    marker had dissolved the whole MiG-25 squadron) and the escort-starvation blue OOB; the
+    NATO Desert Storm faction gained the A-10C Suite 7 + CH-47F Block I the DM authored
+    (era-clamped by the date-gate preseeds). CI-locked in `tests/fourteenth/test_desert_storm.py`;
+    in-game pass = checklist T3. NEW game required)
   - `414th-red-tide-supply-routes-notes.md` — YAML supply routes + Kastrup preset patch
   - `414th-comms-jam-notes.md` — enemy comms jamming off the IADS comms nodes (§51): why the
     in-game `radioTransmission` path beat SRS injection, the anti-grief guardrails, tuning levers

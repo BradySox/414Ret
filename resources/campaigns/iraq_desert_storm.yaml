@@ -327,6 +327,19 @@ squadrons:
       aircraft:
         - Escadron de chasse 2/5
       size: 8
+    # Daguet's other jet: the ER 33 Mirage F1CR recon det (the F1CT stands in --
+    # it kept the CR's camera nose). Primary TARPS: the French fly the photo-recon
+    # war over KARI. Period detail baked into the laydown: the coalition grounded
+    # these very jets for the first week because they were dead ringers for Iraq's
+    # F1EQs -- which this campaign fields at Qayyarah. Check before you shoot.
+    - primary: TARPS
+      secondary: [BAI]
+      name: ER 1/33 Belfort
+      nickname: Belfort
+      female_pilot_percentage: 0
+      aircraft:
+        - Escadron de Chasse 3/33 Lorraine
+      size: 8
   # ---- BLUE: H-3 Main -- the fighter/strike wing + the Bombcats ----
   16:
     # The F-15C wall: BARCAP primary so blue stands defensive orbits; the

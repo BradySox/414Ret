@@ -180,8 +180,11 @@ file. This guide is the map; those are the territory.
     UK-countried preset in `resources/squadrons/Tornado/`; the GR4 yaml gained an honest
     `max_range: 600` — the unset 150 NM default grounds any rear-based Tornado) + Daguet's
     **EC 2/5 "Île-de-France"** Mirage 2000Cs (the existing France preset bound by name) —
-    the §23 layer gives both national comms identity + pilot names (en_GB / fr_FR),
-    probe-verified. CI-locked in `tests/fourteenth/test_desert_storm.py` (10 tests);
+    the §23 layer gives all three national comms identity + pilot names (en_GB / fr_FR),
+    probe-verified — plus **ER 1/33 "Belfort"**, Daguet's F1CR recon det on primary TARPS
+    (the F1CT stands in, camera nose intact; its yaml gained `TARPS: 700` + honest
+    `max_range: 450`; the same-silhouette-as-red's-F1EQ grounding story is baked into the
+    campaign comment). CI-locked in `tests/fourteenth/test_desert_storm.py` (10 tests);
     in-game pass = checklist T3. NEW game required)
   - `414th-red-tide-supply-routes-notes.md` — YAML supply routes + Kastrup preset patch
   - `414th-comms-jam-notes.md` — enemy comms jamming off the IADS comms nodes (§51): why the

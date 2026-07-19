@@ -83,6 +83,7 @@ ACIG/Osprey IrAF orders of battle for Iraq:
 | E-3/KC-135s | **963rd AWACS / 1701st + 1702nd AREFW(P)** | The Saudi-rear support wings |
 | Tornado GR4 OCA | **No. 31 Squadron RAF "Goldstars"** | Operation Granby's low-level runway attackers (GR4 stands in for the GR1); UK-countried via a new preset — §23 gives British comms identity + pilot names. Faction gained `Tornado GR4`; its yaml gained an honest `max_range: 600` (the unset 150 NM default grounded rear-based Tornados) |
 | Mirage 2000C CAP | **Escadron de chasse 2/5 "Île-de-France"** | Opération Daguet's actual DCA unit — the existing France-countried preset bound by name; French pilot names via `fr_FR` |
+| Mirage F1CT TARPS | **ER 1/33 "Belfort"** | Daguet's F1CR recon det (the F1CT stands in — it kept the CR's camera nose; its yaml gained `TARPS: 700` + an honest `max_range: 450`). Period detail baked in: the coalition grounded these jets the first week as dead ringers for Iraq's F1EQs — which this campaign fields at Qayyarah. Check before you shoot |
 | Red fixed-wing | **Nos. 84 (MiG-25, the night-one kill), 6 + 39 (MiG-29), 63 + 93 (MiG-23), 11 + 47 (MiG-21), 79 (Mirage F1), 8 (all the Fencers, split into flights), 69 + 44 + 109 + 114 (Fitters/Frogfoots), 7 (Tu-22), 10 (bombers), 33 (Il-76), Adnan-1 AEW Flight** | Published IrAF numbers where documented |
 | Red helos | Nos. 2/4/30/55/66 Sqn, IqAAC | **Representative** — IqAAC helo numbers are poorly documented |
 

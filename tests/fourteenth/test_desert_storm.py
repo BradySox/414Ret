@@ -111,7 +111,11 @@ def test_desert_storm_blue_holds_only_the_h3_complex() -> None:
         "KC-135 Stratotanker MPRS",
         "No. 31 Squadron",
         "Escadron de chasse 2/5",
+        "Escadron de Chasse 3/33 Lorraine",
     }
+    # Daguet's recon det flies the photo war: TARPS primary on the F1CR stand-in.
+    belfort = [c for c in squadrons[OFFMAP_KEY] if c["name"] == "ER 1/33 Belfort"]
+    assert belfort and belfort[0]["primary"] == "TARPS"
 
     # The escort-starvation fix survives the move: the F-15C wall stands BARCAP at
     # H-3 Main with the air-to-air secondary that feeds every package escort.
@@ -256,16 +260,33 @@ def test_desert_storm_allied_squadrons_carry_their_nations() -> None:
     assert ada["name"] == "Escadron de chasse 2/5"
     assert ada["country"] == "France"
 
+    # Daguet's recon det: the F1CT (standing in for the F1CR, whose camera nose it
+    # kept) must be recon-capable and long-legged enough to fly from the rear.
+    lorraine = yaml.safe_load(
+        Path("resources/squadrons/Mirage-F1/AAE Squadron 3-33 Lorraine.yaml").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert lorraine["name"] == "Escadron de Chasse 3/33 Lorraine"
+    assert lorraine["country"] == "France"
+    assert lorraine["aircraft"] == "Mirage-F1CT"
+
     faction = json.loads(
         (FACTIONS / "NATO_Desert_Storm.json").read_text(encoding="utf-8")
     )
     assert "Tornado GR4" in faction["aircrafts"]
-    # The off-map basing depends on the honest strike radius (the unset default
-    # of 150 NM grounds a rear-based Tornado).
+    assert "Mirage-F1CT" in faction["aircrafts"]
+    # The off-map basing depends on honest strike radii (the unset default of
+    # 150 NM -- or the F1's old 200 -- grounds a rear-based jet).
     gr4 = yaml.safe_load(
         Path("resources/units/aircraft/Tornado GR4.yaml").read_text(encoding="utf-8")
     )
     assert gr4["max_range"] >= 400
+    f1ct = yaml.safe_load(
+        Path("resources/units/aircraft/Mirage-F1CT.yaml").read_text(encoding="utf-8")
+    )
+    assert f1ct["max_range"] >= 400
+    assert f1ct["tasks"]["TARPS"] == 700
 
 
 def test_desert_storm_will_profile_is_the_coalition_story() -> None:

@@ -7209,7 +7209,19 @@ never be truncated out), then one racetrack per *station*
 one station), then the remaining wave tracks fill whatever slots are left — the
 jet draws all nine racetracks it is physically capable of whenever the ATO
 overflows, and every wave when it fits (DS91 verified: 13 waves + 3 support →
-9/9 slots — 2 tankers, AWACS, 4 stations, 2 extra waves).
+9/9 slots — 2 tankers, AWACS, 4 stations, 2 extra waves). **The SA page
+DISPLAYS one CAP point at a time — the selected one** (third flown finding,
+same day: a 7-entry cartridge drew exactly the `Default_CAP_Point` orbit;
+the entry list is a library the pilot flips through on the jet's DTC/SA CAP
+selection). Two answers: `Default_CAP_Point` is now chosen per flight (a
+BARCAP/TARCAP flight pre-selects its **own station**, matched by orbit
+center; everyone else gets entry 1 — the first tanker, given the emit
+order), and the **whole friendly orbit picture moved to the display that can
+actually show it at once: the §45 F10 drawings now also paint each blue CAP
+*station*** (deduped, thin dashed racetrack + a "CAP &lt;callsign&gt;" label,
+alongside the thicker tanker/AEW&C capsules;
+`DrawingsGenerator._generate_cap_station_orbits`,
+`tests/missiongenerator/test_cap_station_drawings.py`).
 
 **Implementation:** `game/missiongenerator/dtc/` — `cartridge.py` (the model + the
 two pydcs seams: an idempotent `FlyingUnit.dict` wrap emitting the `DTC` key for

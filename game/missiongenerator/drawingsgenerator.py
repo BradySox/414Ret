@@ -230,6 +230,7 @@ class DrawingsGenerator:
         """
         if self.mission_data is None:
             return
+        self._generate_cap_station_orbits()
         info_by_group = {
             info.group_name: info
             for info in [*self.mission_data.tankers, *self.mission_data.awacs]
@@ -270,6 +271,46 @@ class DrawingsGenerator:
                 font_size=14,
             )
             label.name = f"{flight.callsign} label"
+
+    def _generate_cap_station_orbits(self) -> None:
+        """Paint each blue CAP *station* as a thin racetrack on the F10 map.
+
+        The Hornet's SA page displays only the *selected* DTC CAP point (flown
+        2026-07-19), so the F10 map is the one display that can show the whole
+        friendly orbit picture at once. One racetrack per station (the §6 wave
+        relief deduped by the §74 helper), drawn thinner than the tanker/AEW&C
+        capsules and labelled with the station's callsign.
+        """
+        assert self.mission_data is not None
+        from game.missiongenerator.dtc.common import dedupe_stations, raw_cap_tracks
+
+        for station in dedupe_stations(raw_cap_tracks(self.mission_data)):
+            if station.start.distance_to_point(station.end) < 1.0:
+                shape = self.player_layer.add_circle(
+                    station.start,
+                    SUPPORT_ORBIT_RADIUS_M,
+                    line_thickness=3,
+                    color=SUPPORT_ORBIT_LINE,
+                    line_style=LineStyle.Dash,
+                )
+            else:
+                shape = self.player_layer.add_oblong(
+                    station.start,
+                    station.end,
+                    SUPPORT_ORBIT_RADIUS_M,
+                    line_thickness=3,
+                    color=SUPPORT_ORBIT_LINE,
+                    line_style=LineStyle.Dash,
+                )
+            shape.name = f"CAP {station.callsign} orbit"
+            label = self.player_layer.add_text_box(
+                station.start,
+                f"CAP {station.callsign}",
+                color=SUPPORT_LABEL_TEXT,
+                fill=SUPPORT_LABEL_FILL,
+                font_size=12,
+            )
+            label.name = f"CAP {station.callsign} label"
 
     def generate(self) -> None:
         self.generate_frontlines_drawing()

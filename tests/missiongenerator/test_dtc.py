@@ -665,6 +665,30 @@ def test_hornet_sa_page_prioritizes_coverage_then_fills_free_slots() -> None:
     assert [c["note"] for c in caps] == ["ARCO", "COLT", "COLT"]
 
 
+def test_default_cap_point_is_the_flights_own_station() -> None:
+    flight, mission_data, game = _hornet_fixture()
+    # A strike flight defaults to entry 1 (the first support orbit).
+    cartridge = build_hornet_cartridge(flight, mission_data, game, "Strike")
+    assert json.loads(cartridge.to_json())["data"]["SA"]["Default_CAP_Point"] == 1
+
+    # A CAP flight flying the COLT station pre-selects its own racetrack.
+    flight.flight_type = FlightType.BARCAP
+    flight.waypoints = list(flight.waypoints) + [
+        _waypoint(
+            "RACETRACK START", FlightWaypointType.PATROL_TRACK, -20000, 5000, 6000, None
+        ),
+        _waypoint(
+            "RACETRACK END", FlightWaypointType.PATROL, -20000, 25000, 6000, None
+        ),
+    ]
+    cartridge = build_hornet_cartridge(flight, mission_data, game, "Own CAP")
+    data = json.loads(cartridge.to_json())["data"]["SA"]
+    # The client flight is itself the station's first wave, so the merged
+    # station wears its callsign; the COLT relief wave folds into it.
+    assert [c["note"] for c in data["CAP_PTS"]][:2] == ["ARCO", "WIZAR"]
+    assert data["Default_CAP_Point"] == 2  # the flight's own station
+
+
 def _wave_flight(
     callsign: str, cx: float, cy: float, course: float, length: float
 ) -> Any:

@@ -189,6 +189,17 @@ reviewing their PR.
 - **Wave 5: the Lua features.** Cheapest, best-evidenced first (§58 briefing ✓,
   §49 SCUD ✓, §59 sleep after B11) → the Vietnam Ops suite → §50/§57 → the
   CSAR family → MANTIS last, with the track record behind it.
+  **The on-ramp opened 2026-07-19** (the MOOSE/MIST-rework give, inventory items
+  23/24, both drafts per the drafts-first rule): the **Lua harness [#882]** — upstream's
+  ~20 plugins had zero runtime coverage and `lupa` was already in their requirements —
+  and the **51-symbol mist shim [#883]** stacked on it (the fork's 44-symbol shim
+  extended to upstream's full consumer surface incl. Pretense/Skynet/EWRS/ewrj/dismounts,
+  `mist_4_5_126.lua` deleted, the symbol contract CI-pinned). Every later Wave-5 PR
+  ships with harness tests riding #882. **MANTIS stays last** and goes as an
+  *alternative engine* (resurrect the dual-engine `iads_engine` selector from fork
+  git history; upstream's default stays Skynet until they flip it) — never a swap-PR.
+  The fork's EWRS/ewrj/dismounts/Pretense retirements are NOT part of the give
+  (fork-context decisions; the superset shim exists precisely so upstream keeps them).
 - **Wave 6: content + last-mile.** Campaign publications (Red Tide first), the
   Splash Damage defaults PR, the Iran pack re-carve, doctrine-defaults proposals.
 

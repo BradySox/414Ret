@@ -13,6 +13,12 @@
 > sheet, Part B the compatibility pass card (which also captures this note's `[verify]`
 > items as recorded observations). The DM installs on the private-session server; the
 > pass card is what gets flown before Olympus touches a squadron event.
+>
+> **Source-research addendum (same day, post-merge):** the `[verify]` items answerable
+> from Olympus's own source are resolved — spawn naming (`Olympus-<n>`, fixed), delete
+> semantics (silent AI `destroy()` vs real explosion kill), and the MANTIS adoption
+> mechanics (§6b, investigate item closed) — and a **new seam** was found: the shared
+> mission-env `mist` global (§3 table). Folded into §3/§6/§8 and the crib sheet.
 
 ---
 
@@ -89,7 +95,8 @@ proof. Per-system analysis:
 |---|---|---|
 | Debrief truth channel (`state.json` via `dcs_retribution.lua`) | GM spawns are not in the `UnitMap` → their deaths are harmless untracked names in the killed lists (the §37 precedent). Anything a GM spawn **kills** is a native, real campaign loss. | ✅ Exactly the §61 doctrine already: untracked event content. |
 | GM **delete/despawn** of a *tracked* unit | A scripted `destroy()` fires no death event → the campaign never learns → the unit survives at the turn boundary. Graceful (nothing corrupts), but semantically "this never happened". | ⚠️ GM crib sheet: to make a kill campaign-real, kill it (explosion, combat); despawn = erase. **[verify]** which delete flavors Olympus offers. |
-| **MANTIS IADS** (`mantisiads/mantis-config.lua`) | The bridge passes **exact escaped group names** from the Python-emitted IADS table (`collect` → `escape_prefix`); sets are dynamic (`FilterStart`) but only known names match. A GM-spawned SAM therefore **never joins the net**: vanilla DCS AI, radar always-on, no EMCON, no C2/§52 coupling, no §7 MFD hiding, no threat ring, absent from §74 DTC rings. | ✅ Acceptable for event content — but document it so nobody expects a GM SA-10 to behave like an authored one. ❌ Do NOT "fix" this with a blanket `Olympus` prefix in the SAM set: it would sweep every GM ground spawn into MANTIS management and hold GM tank platoons dark/weapons-green. |
+| **MANTIS IADS** (`mantisiads/mantis-config.lua`) | The bridge passes **exact escaped group names** from the Python-emitted IADS table (`collect` → `escape_prefix`); sets are dynamic (`FilterStart`) but only known names match. A GM-spawned SAM therefore **never joins the net**: vanilla DCS AI, radar always-on, no EMCON, no C2/§52 coupling, no §7 MFD hiding, no threat ring, absent from §74 DTC rings. **Source-confirmed both ways (2026-07-20):** Olympus names spawns a fixed `Olympus-<n>` (not user-choosable) so no spawn can ever match a prefix — and conversely MANTIS *would* fully weave in a late birth that did match (`_Check` calls `_RefreshSAMTable` every 3rd detection cycle, rebuilding banding + the SEAD set from the live `FilterStart` set). | ✅ Acceptable for event content — but document it so nobody expects a GM SA-10 to behave like an authored one. ❌ Do NOT "fix" this with a blanket `Olympus` prefix in the SAM set: it would sweep every GM ground spawn into MANTIS management and hold GM tank platoons dark/weapons-green. The clean adoption shape is §6(b). |
+| **Shared `mist` global** (found in the 2026-07-20 source pass) | Olympus injects its **own full MIST** into the mission env (`scripts/lua/backend/mist.lua`) and `OlympusCommand.lua` calls symbols outside the fork's 44-symbol shim (`fixedWing.buildWP`, `DBs.MEunitsById`, `DBs.drawingByName`, `DBs.navPoints`). Both inits are additive (shim: `mist = mist or {}`, `mist.DBs = mist.DBs or {}`) and the shim replicates MIST semantics verbatim — so in either load order, colliding symbols are behaviorally-equivalent replicas and each side's extras survive. Installing Olympus effectively un-retires MIST in the mission env. | ⚠️ Expected benign but **unproven** — the pass card's step-1 proof burden: a fork mover routes AND an Olympus spawn accepts a waypoint, same mission. |
 | QRA / intercept dispatcher | GM-spawned fighters are not dispatcher-managed; the GM steers them directly. And the **AI QRA reserve never scrambles against a GM raid**: the react filter classifies raids by the Retribution `{target} {task}\|…` group-name format, and a no-`\|` name is non-ATO air, never reacted to (`intercept-config.lua` `qra_group_reacts` — documented, deliberate). Airborne BARCAPs/TARCAPs still engage anything detected; the task-blind PLAYER_ALERT cue may still call a human alert flight **[verify]**. | ✅ Want ground-alert defenders against your raid? Spawn and steer them yourself. |
 | Scripted movers (§49 scoot, COIN HVT/VBIED/cells, §50 springs, §21 combatsar divert, CTLD, §9 TIC) | Both sides push tasks/routes at the same controller; the plugins **re-push on a cadence** (§49 every ~8 min, COIN on its poll), so GM re-tasking one of these groups is a tug-of-war the script eventually wins. | ⚠️ GM ROE: hands off script-driven groups unless deliberately accepting the fight. |
 | §59 AI sleep | A slept garrison group's controller is **off** — an Olympus task lands on a dead controller until the wake poll (aircraft within ~15 NM, or a hit) restores it. | ⚠️ For GM-heavy events: fly something near it first, or leave `perf_ground_ai_sleep` off. |
@@ -129,11 +136,17 @@ server setup deserve a docs/dev page (yes) and a features-doc mention (probably 
   a `gm_spawns` state channel (the §57/§63 pattern) → the campaign *optionally* accounts
   GM red reinforcements as real. Runs against the §61 "event content is free" doctrine;
   build only if the DM ever wants campaign-real GM reinforcements. **DEFER.**
-- **(b) IADS adoption** — let a GM SAM join MANTIS. Mechanically plausible (the sets are
-  dynamic; adding an escaped exact name post-`:New` needs investigation — MANTIS may
-  need a set rebuild), but Olympus controls its own spawn names **[verify the
-  convention]**, so this wants either an Olympus-side rename or an F10 "adopt nearest
-  foreign SAM". **DEFER; investigate before promising.**
+- **(b) IADS adoption** — let a GM SAM join MANTIS. **Investigate item RESOLVED
+  (2026-07-20 source pass):** with the fork's `dynamic=true`, MANTIS's sets are
+  `FilterStart()`-live and `MANTIS:_Check` calls `_RefreshSAMTable` every 3rd detection
+  cycle, rebuilding range banding + the SEAD set from the live set — a group added to
+  `MANTIS.SAM_Group` is fully woven in within ~3 cycles, no restart needed. Olympus
+  spawn names are fixed (`Olympus-<n>`), so the prefix route is out (and a blanket
+  `Olympus-` prefix stays forbidden — it would sweep GM tank platoons into SAM
+  management); the clean shape is an F10 GM **"adopt nearest foreign SAM"** that
+  validates the group actually carries SAM radars, then adds it **by object**
+  (`SAM_Group:AddGroup(group)`). **Still DEFER** until a flown event wants GM SAMs
+  inside the net — but it's now specified, not speculative.
 - **(c) Campaign context → Olympus** — already mostly free via ME drawings (§40/§45). If
   gaps appear, extend the fork's drawings pass rather than integrating APIs. **LIKELY
   FREE.**
@@ -156,9 +169,12 @@ state-capture work exists. **OUT OF SCOPE — filed here so the thread isn't los
 - **License** (§1) — blocks vendoring, not running. Ask before any code/tile reuse.
 - **Version churn** — v2 line active (`release-candidate` branch); pin the event server
   to a known-good build.
-- Unverified at time of writing: spawned-group naming convention, delete-event
-  semantics, which ME drawing layers render, `autoexec.cfg` persistence, perf on the
-  heavy laydowns. All fall out of the Tier-0 pass.
+- Now **sourced** from `OlympusCommand.lua` (2026-07-20): spawn naming (`Olympus-<n>`,
+  fixed) and delete semantics (plain AI delete = silent `destroy()` erase;
+  explosive/player delete = real kill) — owed only in-game confirmation. Still
+  unverified: which ME drawing layers render, `autoexec.cfg` persistence, perf on the
+  heavy laydowns, and the shared-`mist` coexistence proof. All fall out of the Tier-0
+  pass.
 - Client side is a browser tab — **nothing for the squadron to install**, which is the
   quiet killer feature for adoption.
 

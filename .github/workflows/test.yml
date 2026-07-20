@@ -4,6 +4,11 @@ jobs:
   python-tests:
     name: Python tests
     runs-on: windows-latest
+    # id-token lets the Codecov upload authenticate via OIDC (no CODECOV_TOKEN
+    # secret). The calling workflow's job must grant the same permissions.
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - uses: actions/checkout@v4
         with:
@@ -18,11 +23,18 @@ jobs:
           pytest --cov --cov-report=xml tests game/missiongenerator/tests game/missiongenerator/kneeboard_recon/tests game/plugins/tests
 
       - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v5
+        with:
+          use_oidc: true
+          files: ./coverage.xml
+          disable_search: true
 
   ts-tests:
     name: Typescript tests
     runs-on: windows-latest
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - uses: actions/checkout@v4
 
@@ -35,4 +47,8 @@ jobs:
           npm test -- --coverage
 
       - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v5
+        with:
+          use_oidc: true
+          files: ./client/coverage/lcov.info
+          disable_search: true

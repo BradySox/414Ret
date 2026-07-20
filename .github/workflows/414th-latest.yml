@@ -16,7 +16,13 @@ jobs:
     uses: ./.github/workflows/lint.yml
 
   test:
+    # Job-level permissions grant the reusable workflow's Codecov OIDC upload
+    # (see test.yml) and override the workflow-level contents: write for this
+    # job only — the release job below keeps its write grant.
     uses: ./.github/workflows/test.yml
+    permissions:
+      contents: read
+      id-token: write
 
   build:
     needs: [lint, test]

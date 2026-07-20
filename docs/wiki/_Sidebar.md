@@ -71,3 +71,14 @@
 
 **Servers**
 - [Dedicated Server Guide](Dedicated-Server-Guide)
+
+**Contributing**
+- [Contributing to DCS Retribution](Contributing-to-DCS-Retribution)
+- [Campaign maintenance](Campaign-maintenance)
+
+*Core development guides*
+- [Developer's Guide](Developers-Guide)
+- [Adding a new aircraft module](New-aircraft-module-checklist)
+- [Adding a new terrain module](New-terrain-module-checklist)
+- [Creating shape files in QGIS for map data](Creating-shape-files-in-QGIS-for-map-data)
+- [Release process](Release-process)

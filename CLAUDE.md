@@ -629,6 +629,18 @@ file. This guide is the map; those are the territory.
     Light/flak/NGFS are this design's P4 flavor, already built)
 - [README.upstream.md](README.upstream.md) — unmodified upstream project README (setup,
   dependencies, wiki links).
+- [docs/wiki/](docs/wiki/) — the player/contributor wiki, mirrored to the GitHub wiki by
+  `wiki-sync.yml` on every push to `main` (edit pages here, never in the wiki UI). Since
+  **2026-07-20** it also carries the **adopted upstream dev-process standards** (user call —
+  "adopt their way of doing things"): `Contributing-to-DCS-Retribution` ·
+  `Campaign-maintenance` · `Developers-Guide` · `New-aircraft-module-checklist` ·
+  `New-terrain-module-checklist` · `Creating-shape-files-in-QGIS-for-map-data` ·
+  `Release-process` — each a mirror of the upstream wiki page with **414th:** delta notes
+  (Python 3.11, the whole-tree Black + out-of-tree pytest + Lua CI gates, the rolling
+  `latest` release vs pinned `-414th` tags, MIST-retired Lua discipline, the two-repo
+  fork-PR → upstream-carve flow, and the fork's extra unit-data/campaign checklist items).
+  See the Conventions bullet below; when upstream revises a page, refresh the mirror and
+  re-check the deltas.
 - `AGENTS.md` mirrors this file — see **Conventions** below for the sync process.
 
 ---
@@ -2943,7 +2955,17 @@ way.)
     single-radar S-300 battalions + a shared EWR per hub, netted by range-mode advanced IADS, with §60
     reverted only for that campaign's S-300/SA-5 via the `Russia 1980 (Red Tide)` faction fork (the
     front's legacy MERAD screen keeps §60 doubling). See `414th-red-tide-campaign-notes.md`.
-- Match the surrounding code's style; run the three validation commands (in `CLAUDE-ci.md`) before pushing.
+- **Upstream dev-process standards (ADOPTED as ours, 2026-07-20 user call).** The upstream wiki's
+  Contributing + Core development guides are the fork's own customs and standards, mirrored with
+  **414th:** delta notes in `docs/wiki/` (see Project Docs). In practice: follow the
+  **Developer's Guide** for dev-env + PR practice (small PRs — one feature/bugfix/change per PR;
+  type annotations on all new code; pre-commit runs Black), the **aircraft/terrain module
+  checklists** (upstream's P0–P2 items plus the fork's additions on each page) when adding module
+  support, the **QGIS shapefile guide** for landmap data, **Campaign maintenance** for the
+  campaign-ownership model (every fork-authored campaign is owned: design note + CI lock), and the
+  **Release process** page for releases (the rolling `latest` IS the release; pinned tags are
+  `v<X.Y.Z>-414th`; never `git push --tags`). When an upstream page changes, refresh the mirror
+  and re-annotate the deltas rather than letting the two drift.
 - Keep the doc faces in sync: when a feature lands or changes, update **both**
   [`README.md`](README.md) (player-facing) and the relevant section of
   [docs/dev/414th-features.md](docs/dev/414th-features.md) (engineering), plus this map if the

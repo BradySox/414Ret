@@ -186,6 +186,18 @@ class LuaGenerator:
             transport_item.add_key_value(
                 "crates", "true" if transport.can_carry_crates else "false"
             )
+            # A fixed-wing troop transport cannot land at the assault zone, so
+            # the CTLD runtime delivers its troops by paradrop instead (player:
+            # airborne unload jumps the stick; AI: auto-drop over the target
+            # zone). Helos keep the stock land/fast-rope behavior.
+            transport_item.add_key_value(
+                "paradrop",
+                (
+                    "true"
+                    if transport.cabin_size > 0 and not transport.helicopter
+                    else "false"
+                ),
+            )
         spawnable_crates_object = logistics_object.add_item("spawnable_crates")
         for unit, weight in spawnable_crates.items():
             crate_item = spawnable_crates_object.add_item()
@@ -843,13 +855,19 @@ class LuaGenerator:
         alone (its eligibility check is purely ``getTypeName() == "C-130J-30"``), so it
         would bolt the EW/ISR menu and behavior onto any other C-130J-30 role. The
         **Combat SAR "King"** orbit must fly clean (a C-130J-30 now that the stock
-        C-130 was retired). Rather than skip the whole EW plugin for the mission --
+        C-130 was retired), and so must a **TRANSPORT** airlifter or an
+        **AIR_ASSAULT** paradrop bird (both fly the CTLD troop/cargo menus, not
+        the EW station). Rather than skip the whole EW plugin for the mission --
         which also stripped EW from a legitimate **JAMMING** C-130J-30 flying
         alongside -- we hand the plugin a per-group deny-list (emitted as
         ``dcsRetribution.EwExcludedGroups``) so it skips only these aircraft and
         still claims the EW jet. Both coalitions; empty when none apply.
         """
-        non_ew = (FlightType.COMBAT_SAR,)
+        non_ew = (
+            FlightType.COMBAT_SAR,
+            FlightType.TRANSPORT,
+            FlightType.AIR_ASSAULT,
+        )
         c130j = AircraftType.named("C-130J-30")
         return [
             flight.group_name

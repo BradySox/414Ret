@@ -64,6 +64,12 @@ Upstream hands you a map that already knows everything. Here you have to go look
 - **SCAR is the RESCAP "Sandy"** of that package — hold near the FLOT with the King and the
   rescue helo, suppress the threats, walk the helo in.
 - **JAMMING** turns the C-130J into an EC-130H/RC-130H-style EW and ISR platform.
+- **The C-130J drops paratroopers.** Air Assault is no longer helo-only: a troop transport
+  flies the same tasking as an airborne drop. Fly it yourself — spawn with the stick already
+  loaded, run in below 3,000 ft AGL, and the CTLD *Unload / Extract Troops* call **jumps
+  them** (they land behind you after a real descent and march on the objective) — or give
+  the flight to the AI, which releases automatically over the drop zone. Landed, the same
+  menu still unloads normally; helicopters keep their landing/fast-rope assault untouched.
 - **Every generated mission is archived** — a named, dated copy lands in a folder DCS's own
   browser lists, so last week's turn re-opens straight from the game.
 

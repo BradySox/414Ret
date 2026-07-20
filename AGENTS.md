@@ -2758,6 +2758,37 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     incl. the real `check_win_loss` branch order + negotiation precedence driven
     duck-typed); features doc §75, checklist B29 — needs an in-app pass + the CI
     client rebuild.
+76. **CTLD paratroopers (fixed-wing air assault)** — fixed-wing troop transports fly
+    Air Assault by **paradrop**, for both the human C-130J-30 and AI transports —
+    the "proper support for paradrops" the C-130J yaml TODO'd since the Hercules-mod
+    purge (#53) made Air Assault helo-only. **Planner:** the Builder gate is now
+    "helo OR troop transport" (`cabin_size > 0`); a fixed-wing flight preloads (no
+    pickup zone, the carrier/off-map branch) and its CTLD assault-area waypoint
+    becomes a real AI run-in at **1,000 ft AGL** (`only_for_player=False` — the old
+    Hercules shape) over the 2,500 m target wpZone; `C-130J-30.yaml` gains
+    `Air Assault: 40` (below the helos' 50 — a helo in range still wins the tasking,
+    the C-130 takes the long-reach/no-helo cases; campaign C-130J squadrons are
+    near-universally `secondary: any`, so NEW games auto-plan it). **Runtime**
+    (`ctld-config.lua` — the config layer, CTLD.lua untouched): the emitter marks
+    paradrop-capable types (fixed-wing + cabin, Python-side); the stock F10
+    **"Unload / Extract Troops" IS the jump command** while airborne (the
+    `unloadExtractTroops` wrap — grounded unload/extraction/helos fall through to
+    stock byte-identically; player jump ceiling 3,000 ft AGL, AI exempt); the stick
+    leaves the aircraft immediately and the troop group ground-spawns at the
+    velocity-projected drop point after a real **descent delay** (AGL ÷ 6.5 m/s,
+    cap 90 s) — a transport killed after the drop still delivers, one killed before
+    never does; landing reuses CTLD's own bookkeeping (wpZone march-to-centre = the
+    existing assault capture behavior, JTAC stick, dropped ledgers) so **no phantom
+    spawns** (the troops are the aircraft's CTLD cargo, losses record natively). An
+    AI release loop (5 s) drops one stick per sortie within 1,200 m of the flight's
+    own zone centre; `preload_troops` now **retries every 30 s** (~2 h give-up) so
+    TOT-delayed late-activated transports stop arriving empty. The C-130J EW
+    deny-list (§2) gains TRANSPORT + AIR_ASSAULT so a hauler/paradrop bird never
+    grows the EW menu. Deliberately v2: An-26/Il-76 cabins, chute visuals, LAPES.
+    Tests `tests/ato/flightplans/test_airassault.py` +
+    `tests/lua/test_ctld_paradrop.py` + the extended EW-deconfliction test;
+    features doc §76, checklist B30 — needs an in-game pass (the AI run-in profile
+    + troops-march-to-capture are DCS-only).
 
 ---
 
@@ -2769,11 +2800,12 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
 - The 414th's primary "all features" working branch in the dev checkout is
   `414th-all-features`; `main` here = that + the Iran pack + a Black/mypy lint pass.
 
-### Upstream PR ledger (**refreshed live 2026-07-19** during the upstream sync — 38 PRs: 10 open / 8 merged / 20 closed. **Three fork PRs merged upstream 2026-07-19** (#805/#843/#854) and geofffranks' #859 (the §56 motorpool source) landed the same day — all four reconciled back into the fork in the `sync/upstream-dev-2026-07-19` merge. Same day, Wave 3 opened: #828 rebased + un-drafted, the Splash Damage defaults PR #880 pushed (item 21, the first last-mile carve), and the VWV v3.2.0 update #881 pushed (item 22). Still re-verify with `gh` before acting; this goes stale fast.)
+### Upstream PR ledger (**refreshed live 2026-07-19** during the upstream sync — 39 PRs: 11 open / 8 merged / 20 closed. **Three fork PRs merged upstream 2026-07-19** (#805/#843/#854) and geofffranks' #859 (the §56 motorpool source) landed the same day — all four reconciled back into the fork in the `sync/upstream-dev-2026-07-19` merge. Same day, Wave 3 opened: #828 rebased + un-drafted, the Splash Damage defaults PR #880 pushed (item 21, the first last-mile carve), the VWV v3.2.0 update #881 pushed (item 22), and the §76 paradrop carve #884 opened as a draft. Still re-verify with `gh` before acting; this goes stale fast.)
 
 Carved out of this work, against `dcs-retribution/dcs-retribution` (all authored by `bradyccox`):
 
 - **Open (awaiting review):**
+  - [#884](https://github.com/dcs-retribution/dcs-retribution/pull/884) fixed-wing air assault by CTLD paradrop (**draft**, opened 2026-07-19) — §76's generic core: the cabin-based planner gate (subsumes `is_hercules`; the Hercules keeps its initial-point ingress + gains a layout-shape pin), the `ctld-config.lua` drop runtime (airborne "Unload / Extract Troops" = jump, descent-delayed ground spawn, AI one-shot zone release, 3,000 ft player ceiling), the preload retry, and `Air Assault: 40` on the C-130J-30 yaml. The fork's lupa-harness runtime test stays fork-side (upstream has no lua harness); the §2 EW deny-list hunk is fork-only. On dev @ `acf02b75`; pytest/Black/mypy green. Fork side = [414Ret#681](https://github.com/BradySox/414Ret/pull/681).
   - [#881](https://github.com/dcs-retribution/dcs-retribution/pull/881) Vietnam War Vessels support → v3.2.0 (inventory item 22, opened 2026-07-19) — upstream's VWV support was frozen at v3.0.0: registers the 3.1.0 Sampans ×5 + Junk civilian craft and the 5 never-registered hulls (Radford / Epperson / Everett F. Larson / Solon Turman / USNS Card; ids from the installed mod's own `Database/Navy/*.lua`), adds all 11 to the `faction.py` eject list, and bumps the wizard label + 4 stale faction `requirements` versions to v3.2.0. Registration-only parity with the fork (no unit yamls/prices — the fork hasn't authored them either). On dev @ `acf02b75`; pytest/Black/mypy green. Fork reconciled same day (same eject entries + its own 4 stale faction strings).
   - [#874](https://github.com/dcs-retribution/dcs-retribution/pull/874) curated carrier comms (**draft**) — §65 verbatim (per-hull boat cards feeding the DCS-rendered CV Operations Data page: hull-number TACAN + boat ident with `alloc_near` nearest-neighbor degrade, hull-keyed ICLS via a shared `IclsAllocator`, 336-band Link 4, stable persisted ATC, flagship named by hull name). NO fork couplings; the port adds only the Pretense allocator-type adaptation (behavior untouched). On dev @ `ef576acc`; pytest/Black/mypy green — opened 2026-07-16. Fork side = [414Ret#611](https://github.com/bradyccox/414Ret/pull/611). See upstreaming-inventory item 19.
   - [#873](https://github.com/dcs-retribution/dcs-retribution/pull/873) culling: keep scenery-objective kill tracking in culled regions (**draft**) — opened 2026-07-16; `MERGEABLE`. (Added by the 2026-07-16 live refresh; it had never been recorded here. Fork-side context not yet written up.)

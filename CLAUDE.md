@@ -641,6 +641,22 @@ file. This guide is the map; those are the territory.
     Light/flak/NGFS are this design's P4 flavor, already built)
 - [README.upstream.md](README.upstream.md) — unmodified upstream project README (setup,
   dependencies, wiki links).
+- [docs/wiki/](docs/wiki/) — the player/contributor wiki, mirrored to the GitHub wiki by
+  `wiki-sync.yml` on every push to `main` (edit pages here, never in the wiki UI). Since
+  **2026-07-20** it also carries the **adopted upstream dev-process standards** (user call —
+  "adopt their way of doing things"): `Contributing-to-DCS-Retribution` ·
+  `Campaign-maintenance` · `Developers-Guide` · `New-aircraft-module-checklist` ·
+  `New-terrain-module-checklist` · `Creating-shape-files-in-QGIS-for-map-data` ·
+  `Release-process` — plus the **Modding Retribution** set (same day, "modding is the
+  important one"): `Motorpools` (§56's authoring reference) · `Modded-Unit-Support` (the
+  11-step mod-support guide every fork pack follows), with the wiki's Customization
+  section renamed to upstream's "Modding Retribution" and `Layouts` linked to
+  `docs/modding/layouts.rst` — each a mirror of the upstream wiki page with **414th:** delta notes
+  (Python 3.11, the whole-tree Black + out-of-tree pytest + Lua CI gates, the rolling
+  `latest` release vs pinned `-414th` tags, MIST-retired Lua discipline, the two-repo
+  fork-PR → upstream-carve flow, and the fork's extra unit-data/campaign checklist items).
+  See the Conventions bullet below; when upstream revises a page, refresh the mirror and
+  re-check the deltas.
 - `AGENTS.md` mirrors this file — see **Conventions** below for the sync process.
 
 ---
@@ -2849,7 +2865,7 @@ Carved out of this work, against `dcs-retribution/dcs-retribution` (all authored
   - [#889](https://github.com/dcs-retribution/dcs-retribution/pull/889) F-14A-135-GR-Early payload `unitType` fix (**draft**, opened 2026-07-20) — inventory item 20: the one-liner + a guard test pinning the field to the filename AND that the Early Tomcat resolves an armed BARCAP loadout (upstream's Early jet flies every tasking unarmed today).
   - [#887](https://github.com/dcs-retribution/dcs-retribution/pull/887) Soviet SHORAD Sborka "Dog Ear" acquisition radar (**draft**, opened 2026-07-20) — the fork's evolved slot-gated + marker-gated implementation (`_add_dog_ear_if_needed` in both `for_layout` + the preset loader, the SHORAD.yaml Search Radar slot, the 3-way test incl. the SAM-site/era exclusions); vanilla unit, no faction edits. Was never in the inventory queue — added as item 23.
   - [#886](https://github.com/dcs-retribution/dcs-retribution/pull/886) CurrentHill Iran Military Assets pack + `[CH] Iran 2020` faction (**draft**, opened late 2026-07-19) — the clean minimal redo of self-withdrawn #784 (that early upload was a monolith dragging in the C-130J plugin/QRA planner/scramble scripts): `pydcs_extensions/iranmilitaryassetspack` (Shahed 136 LM + the 2 IRGCN FACs) + the faction + the `iranmilitaryassetspack` ModSettings toggle/wizard checkbox + the FAC ship-radar registry entries + 3 unit yamls, nothing else — the exact pattern of the six CH packs upstream already carries. Headless probe on upstream dev: 20/20 aircraft / 10/10 preset groups / 6/6 naval / 2/2 missiles / 9/9 AD resolve; mod-off strip verified both ways. 438 tests / mypy / black green. **Review question 2026-07-20** (Druss99, same export-provenance ask as #881): answered in-thread — the file already matches the six in-tree CH packs' bare exporter shape, values from the installed pack's DB + months of fork flight time on these ids; no code change.
-  - [#885](https://github.com/dcs-retribution/dcs-retribution/pull/885) custom victory conditions (**draft**, opened late 2026-07-19) — §75's generic core per the design-note carve spec: `game/victory.py` (minus the will/supply meter fields, the W2 negotiation absorption, and the SITREP/ribbon surfaces — `describe_condition`'s live prose ships as the documented future-UI hook), the `check_win_loss` branch ahead of the stock territory checks, the `initialize_turn` baseline latch, the two Campaign Management knobs, and 28 ported tests incl. the real branch-order wiring. **Draft until the fork's B29 app pass** (the #874 pattern). On dev @ `acf02b75`; 466 tests / mypy / black green.
+  - [#885](https://github.com/dcs-retribution/dcs-retribution/pull/885) custom victory conditions — **CLOSED-CEDED 2026-07-20, no longer open** (was: draft opened late 2026-07-19 carrying §75's generic core — `game/victory.py` minus the meter fields/negotiation absorption/SITREP surfaces, the `check_win_loss` branch, the two knobs, 28 ported tests). Druss99: "I have a local branch for this already so if you don't mind I'll be taking this one" — the DM closed the PR and handed the feature over the same morning. NOT a rejection, NOT a re-carve candidate: fork §75 is unaffected (B29 app pass still owed fork-side), and when Druss99's implementation lands upstream it becomes a **reconcile-on-merge / drift-watch** item vs the fork's shape.
   - [#884](https://github.com/dcs-retribution/dcs-retribution/pull/884) fixed-wing air assault by CTLD paradrop (opened 2026-07-19, **un-drafted late that evening** + Starfire13 pinged for review) — §76's generic core: the cabin-based planner gate (subsumes `is_hercules`; the Hercules keeps its initial-point ingress + gains a layout-shape pin), the `ctld-config.lua` drop runtime (airborne "Unload / Extract Troops" = jump, descent-delayed ground spawn, AI one-shot zone release, 3,000 ft player ceiling), the preload retry, and `Air Assault: 40` on the C-130J-30 yaml. The fork's lupa-harness runtime test stays fork-side (upstream has no lua harness); the §2 EW deny-list hunk is fork-only. On dev @ `acf02b75`; pytest/Black/mypy green. Fork side = [414Ret#681](https://github.com/BradySox/414Ret/pull/681).
   - [#883](https://github.com/dcs-retribution/dcs-retribution/pull/883) replace MIST with a tested 51-symbol compatibility shim (**draft**, opened 2026-07-19, **stacked on #882** — review the shim commit with/after the harness) — the fork's MIST retirement carried upstream: `mist_moose_shim.lua` extended with the eleven symbols only upstream's extra consumers call (dismounts `getGroupPoints`/`marker.remove`, EW-jammer pitch/roll/`makeVec3GL`, EWRS speed conversions, and the Pretense teleport/respawn family — **new implementations validated by the harness, never fork-flown**, since the fork ran no Pretense: the in-game watch item), `mist_4_5_126.lua` deleted, consumers byte-unchanged, one-line rollback. Bonus: the DB tier rebuilds on debounced BIRTH + a 30 s fallback instead of MIST's whole-mission poll. 462 tests green.
   - [#882](https://github.com/dcs-retribution/dcs-retribution/pull/882) headless Lua plugin test harness (**draft**, opened 2026-07-19) — the fork's `tests/lua/` lupa harness carried upstream (virtual clock with DCS reschedule semantics, recorded `trigger.action`/controller/spawn side effects, populated-world + weapon fakes, a minimal MOOSE facade, file-scope/tick/handler error capture; runs inside plain `pytest tests`, zero workflow changes). First consumer: Splash Damage 3 runtime pins (load + tracking start, the percent-normalization contract, track-to-impact, unknown-weapon ignore; power *values* deliberately unpinned while #880 is discussed). **The enabler for the Wave-5 Lua-feature carves.**
@@ -2985,7 +3001,23 @@ way.)
     single-radar S-300 battalions + a shared EWR per hub, netted by range-mode advanced IADS, with §60
     reverted only for that campaign's S-300/SA-5 via the `Russia 1980 (Red Tide)` faction fork (the
     front's legacy MERAD screen keeps §60 doubling). See `414th-red-tide-campaign-notes.md`.
-- Match the surrounding code's style; run the three validation commands (in `CLAUDE-ci.md`) before pushing.
+- **Upstream dev-process standards (ADOPTED as ours, 2026-07-20 user call).** The upstream wiki's
+  Contributing + Core development guides are the fork's own customs and standards, mirrored with
+  **414th:** delta notes in `docs/wiki/` (see Project Docs). In practice: follow the
+  **Developer's Guide** for dev-env + PR practice (small PRs — one feature/bugfix/change per PR;
+  type annotations on all new code; pre-commit runs Black), the **aircraft/terrain module
+  checklists** (upstream's P0–P2 items plus the fork's additions on each page) when adding module
+  support, the **QGIS shapefile guide** for landmap data, **Modded-Unit-Support** (the 11-step
+  guide) for any new mod pack, **Motorpools** when authoring reserve depots into a campaign,
+  **Campaign maintenance** for the campaign-ownership model (every fork-authored campaign is
+  owned: design note + CI lock), and the **Release process** page for releases (the rolling
+  `latest` IS the release; pinned tags are `v<X.Y.Z>-414th`; never `git push --tags`).
+  **Upstream carves ship to these same standards** — they are upstream's own, so a carve is held
+  to them by construction: target `dcs-retribution/dev` via the PR fork, one focused
+  feature/bugfix per PR, upstream's gates validated locally on the upstream tree before push, a
+  `changelog.md` note, fork-only couplings stripped (the harness/plugin extras stay here), and
+  module/campaign content meeting the relevant checklist page. When an upstream page changes,
+  refresh the mirror and re-annotate the deltas rather than letting the two drift.
 - Keep the doc faces in sync: when a feature lands or changes, update **both**
   [`README.md`](README.md) (player-facing) and the relevant section of
   [docs/dev/414th-features.md](docs/dev/414th-features.md) (engineering), plus this map if the

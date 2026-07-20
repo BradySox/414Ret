@@ -24,14 +24,23 @@ Blue/Red Commander roles are sensor-fogged.
   recorded natively at debrief; front line, economy, will, and pilot rosters all feel it.
   A player killed by your spawn is a real pilot + airframe loss (the
   `invulnerable_player_pilots` setting spares the pilot only).
-- **Delete ≠ kill.** An Olympus despawn fires no death event, so the campaign never
-  learns: a deleted *tracked* unit is alive again next turn. To make a kill
-  campaign-real, kill it (weapons, explosion effects). Use delete only to mean "this
-  never happened."
+- **Delete ≠ kill — unless you ask for the bang** (sourced 2026-07-20 from
+  `OlympusCommand.lua`): a **plain delete of an AI unit** calls `unit:destroy()` — no
+  death event, the campaign never learns, a deleted *tracked* unit is alive again next
+  turn ("erase") — while a **delete-with-explosion** (and ANY delete of a
+  player-controlled unit, which always explodes) is a real `trigger.action.explosion`
+  kill: death events fire, the debrief records it. The Olympus delete dialog is
+  literally the ledger switch: explosion = campaign-real, silent = "this never
+  happened". [in-game confirm: pass card step 5]
 - Effects (explosion/napalm/WP) that kill tracked units are real kills like any other.
 
 ### AI reactions to your spawns — know before you spawn
 
+- **Spawn names are fixed `Olympus-<n>`** (units `Olympus-<n>-<i>`; not user-choosable —
+  sourced from `OlympusCommand.lua`'s unit counter). Three consequences, all now
+  source-level facts: no `|` in the name ⇒ the AI QRA reserve can never classify the
+  raid; no match against MANTIS's exact-name prefixes ⇒ the lone-wolf GM SAM; and never
+  in the §59 Python-emitted sleep lists ⇒ **GM spawns are always awake**.
 - **The AI QRA reserve will NOT scramble against a GM raid.** The react filter classifies
   raids by the Retribution `{target} {task}|…` group-name format; a name with no `|` is
   non-ATO air and is *never* reacted to (`intercept-config.lua` `qra_group_reacts`,
@@ -64,6 +73,15 @@ deliberately accept the fight:
 
 ### Seams and switches
 
+- **Shared `mist` global** (sourced 2026-07-20): Olympus injects its **own full MIST**
+  into the mission environment and calls symbols the fork's 44-symbol shim doesn't
+  implement (`mist.fixedWing.buildWP`, `mist.DBs.MEunitsById`, `mist.DBs.drawingByName`,
+  `mist.DBs.navPoints`). Both inits are additive (shim: `mist = mist or {}`,
+  `mist.DBs = mist.DBs or {}`) and the shim replicates MIST semantics verbatim, so
+  either load order is *expected* benign — colliding symbols are behaviorally-equivalent
+  replicas, each side's extras survive. This is the pass card's **step-1 proof burden**:
+  a fork mover must still route AND an Olympus spawn must accept a waypoint, in the same
+  mission. (Yes: installing Olympus un-retires MIST in the mission env.)
 - **§59 AI sleep**: rear garrison groups have their controller OFF until an aircraft
   closes ~15 NM or they take a hit — an Olympus order to a slept group does nothing
   until then. For GM-heavy events, either leave `perf_ground_ai_sleep` off or wake
@@ -91,11 +109,11 @@ into this doc and the exploration note.
 
 | # | Step | PASS looks like | FAIL signature |
 |---|---|---|---|
-| 1 | Generate + load a current-build mission with Olympus running; connect a GM browser. | All plugin banners in dcs.log (`BRIEFING\|`, `REDSCRAMBLE\|`, MANTIS init, TARS/TIC late-init); Olympus map live. | Missing banners; sandbox errors mentioning Olympus. |
+| 1 | Generate + load a current-build mission with Olympus running; connect a GM browser. | All plugin banners in dcs.log (`BRIEFING\|`, `REDSCRAMBLE\|`, MANTIS init, TARS/TIC late-init); Olympus map live; **both `mist` consumers work in the same mission** — a fork mover still routes (§49/COIN) AND an Olympus spawn accepts a waypoint (the shared-global seam, Part A). | Missing banners; sandbox errors mentioning Olympus; script errors naming `mist` symbols from either side. |
 | 2 | Ingress toward a red SAM belt (or watch AI do it). | MANTIS EMCON intact: sites dark until cued, light per range-mode. | Every radar radiating from T0 (set filters broken). |
-| 3 | Spawn a red 2-ship at a red field; waypoint it at blue. | It flies your orders. AI QRA does **not** scramble (non-ATO name, by design); any airborne BARCAP engages normally. Note whether a player alert flight gets the PLAYER_ALERT cue. | AI QRA scrambling against it (filter regression); the spawn refusing tasking. |
+| 3 | Spawn a red 2-ship at a red field; waypoint it at blue. | It flies your orders. AI QRA does **not** scramble (source-confirmed: `Olympus-<n>` names carry no `\|`, so the filter cannot classify them); any airborne BARCAP engages normally. Note whether a player alert flight gets the PLAYER_ALERT cue. | AI QRA scrambling against it (filter regression); the spawn refusing tasking. |
 | 4 | Spawn an SA-6/8 near the ingress. | Fights vanilla-and-alone: radar on, engages in range; no MANTIS log adoption; no campaign-map marker. | MANTIS claiming it; it holding fire inexplicably (would suggest something managed it dark). |
-| 5 | Spawn junk; exercise every Olympus delete flavor. Then delete ONE tracked rear red unit deliberately; end mission. | Debrief: the deleted tracked unit is NOT a loss and survives next turn ("despawn = erase" confirmed). Record which flavor, if any, fires a real death event. | The despawned unit recorded as killed (would change the crib's ledger rules). |
+| 5 | Spawn junk; exercise **both delete flavors** (plain vs with-explosion). Then plain-delete ONE tracked rear red AI unit deliberately; end mission. | Per source: the plain AI delete is a silent `destroy()` — the unit is NOT a loss and survives next turn ("erase"); a delete-with-explosion (and any player-unit delete) records a **real kill** at debrief. | The silently-deleted unit recorded as killed, or the explosive delete missing from the debrief (either changes the crib's ledger rules). |
 | 6 | Kill one tracked red unit with a GM spawn or effect. | Debrief shows the loss; next-turn campaign state reflects it. | The kill missing from the debrief. |
 | 7 | Watch a §49 battery or COIN mover with the Olympus map; optionally re-task one. | The script re-asserts on its next cadence (evidence for the hands-off rule). | The mover permanently hijacked (would mean the cadence re-push broke). |
 | 8 | Heavy laydown, `perf_ground_ai_sleep` ON: order a slept garrison group; then fly near it and re-order. | Nothing happens while slept; wakes on approach; then obeys. | A slept group obeying (sleep broken) or never waking. |
@@ -103,10 +121,10 @@ into this doc and the exploration note.
 | 10 | (If HTTPS configured) transmit on a §70 red-net frequency. | Players tuned there hear the GM. | — (feature simply unavailable without HTTPS). |
 | 11 | Full turn close-out. | Debrief/`state.json` parse clean; §66 mission archive intact; next turn processes normally. | Debrief poll errors; archive missing. |
 
-**Also record while you're in there** (the exploration note's `[verify]` items): the
-actual group names Olympus assigns to spawns · which ME drawing layers (FLOT, §40
-zones, §45 orbit capsules) render on the Olympus map · `autoexec.cfg` surviving a DCS
-update · the delete-flavor semantics from step 5.
+**Also record while you're in there** (the exploration note's remaining `[verify]`
+items): which ME drawing layers (FLOT, §40 zones, §45 orbit capsules) render on the
+Olympus map · `autoexec.cfg` surviving a DCS update · that the sourced spawn-name
+(`Olympus-<n>`) and step-5 delete semantics hold in practice.
 
 ### Results
 

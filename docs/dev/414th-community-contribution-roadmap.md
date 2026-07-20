@@ -184,7 +184,9 @@ reviewing their PR.
 - **Wave 3 (now): finish the open set + the ready fixes.** ✅ #828 rebased + un-drafted;
   ✅ Splash Damage #880 pushed (both 2026-07-19). Still open: fly B16/B18
   and un-draft #872/#874. Push the 🟢 READY inventory items with no crowd collision:
-  blue-block miz markers (item 17), helo CFIT trio (item 16, C8), F-14A payload
+  blue-block miz markers (item 17 — pushed as #891 2026-07-20, self-closed same day
+  after Starfire13's Normandy-density + block-consistency review; re-carve owed with
+  the consistency framing + Normandy pruned, see the inventory row), helo CFIT trio (item 16, C8), F-14A payload
   `unitType` fix (item 20), empty-`aircraft:` crash (item 12), landmap perf re-carve
   (item 1 / #842 closed). **Red Tide campaign publication (item 14)** — the payload
   is built; push it.

@@ -8,6 +8,10 @@ jobs:
 
   test:
     uses: ./.github/workflows/test.yml
+    # Grants the reusable workflow's Codecov OIDC upload (see test.yml).
+    permissions:
+      contents: read
+      id-token: write
 
   build:
     runs-on: windows-latest

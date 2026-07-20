@@ -6,6 +6,18 @@ Every push to `main` runs these workflows:
 2. **`test.yml`** — pytest over `tests` **plus the three out-of-tree test dirs under
    `game/`** (`game/missiongenerator/tests`, `game/missiongenerator/kneeboard_recon/tests`,
    `game/plugins/tests`) — added 2026-07-10; before that those ~245 tests never ran in CI.
+   Both test jobs upload coverage to **Codecov**
+   (https://app.codecov.io/gh/BradySox/414Ret) via `codecov/codecov-action@v5` with
+   **OIDC** (`use_oidc` — no `CODECOV_TOKEN` secret; requires the Codecov GitHub App
+   installed on the repo, and the *calling* workflow's job to grant
+   `id-token: write` — `build.yml` + `414th-latest.yml` both do). The inherited
+   `codecov.yaml` keeps both statuses `informational`, so coverage never blocks a PR
+   or the rolling release; an upload failure is also non-fatal by default — check the
+   step log, not just the green check (the fork's uploads 404'd silently
+   "Repository not found" from fork day one until 2026-07-20, when the repo was
+   activated on codecov.io and the upload switched from deprecated tokenless
+   `@v3` to `@v5` + OIDC). Upstream PRs need none of this — carve PRs get coverage
+   comments from upstream's own Codecov registration automatically.
 3. **`lua-lint.yml`** — Lua syntax gate (blocking): `luac5.1 -p` over every
    `resources/plugins/**/*.lua`. Advisory luacheck (scoped to 414th-authored scripts via
    `.luacheckrc`) runs continue-on-error and reports counts to Step Summary. Decoupled from

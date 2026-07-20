@@ -7,6 +7,12 @@
 > could look like, and a recommendation. Web-sourced facts were pulled 2026-07-20 from the
 > repo/README/wiki/releases pages; anything marked **[verify]** needs confirmation at
 > install time.
+>
+> **Tier 0 GREEN-LIT same day (DM call "1").** The operational half is written:
+> [`docs/dev/414th-olympus-gm-crib.md`](../414th-olympus-gm-crib.md) — Part A the GM crib
+> sheet, Part B the compatibility pass card (which also captures this note's `[verify]`
+> items as recorded observations). The DM installs on the private-session server; the
+> pass card is what gets flown before Olympus touches a squadron event.
 
 ---
 
@@ -84,7 +90,7 @@ proof. Per-system analysis:
 | Debrief truth channel (`state.json` via `dcs_retribution.lua`) | GM spawns are not in the `UnitMap` → their deaths are harmless untracked names in the killed lists (the §37 precedent). Anything a GM spawn **kills** is a native, real campaign loss. | ✅ Exactly the §61 doctrine already: untracked event content. |
 | GM **delete/despawn** of a *tracked* unit | A scripted `destroy()` fires no death event → the campaign never learns → the unit survives at the turn boundary. Graceful (nothing corrupts), but semantically "this never happened". | ⚠️ GM crib sheet: to make a kill campaign-real, kill it (explosion, combat); despawn = erase. **[verify]** which delete flavors Olympus offers. |
 | **MANTIS IADS** (`mantisiads/mantis-config.lua`) | The bridge passes **exact escaped group names** from the Python-emitted IADS table (`collect` → `escape_prefix`); sets are dynamic (`FilterStart`) but only known names match. A GM-spawned SAM therefore **never joins the net**: vanilla DCS AI, radar always-on, no EMCON, no C2/§52 coupling, no §7 MFD hiding, no threat ring, absent from §74 DTC rings. | ✅ Acceptable for event content — but document it so nobody expects a GM SA-10 to behave like an authored one. ❌ Do NOT "fix" this with a blanket `Olympus` prefix in the SAM set: it would sweep every GM ground spawn into MANTIS management and hold GM tank platoons dark/weapons-green. |
-| QRA / intercept dispatcher | GM-spawned fighters are not dispatcher-managed; the GM steers them directly. GM spawns *are* detectable raid traffic to the opposing dispatcher — which is the point. | ✅ |
+| QRA / intercept dispatcher | GM-spawned fighters are not dispatcher-managed; the GM steers them directly. And the **AI QRA reserve never scrambles against a GM raid**: the react filter classifies raids by the Retribution `{target} {task}\|…` group-name format, and a no-`\|` name is non-ATO air, never reacted to (`intercept-config.lua` `qra_group_reacts` — documented, deliberate). Airborne BARCAPs/TARCAPs still engage anything detected; the task-blind PLAYER_ALERT cue may still call a human alert flight **[verify]**. | ✅ Want ground-alert defenders against your raid? Spawn and steer them yourself. |
 | Scripted movers (§49 scoot, COIN HVT/VBIED/cells, §50 springs, §21 combatsar divert, CTLD, §9 TIC) | Both sides push tasks/routes at the same controller; the plugins **re-push on a cadence** (§49 every ~8 min, COIN on its poll), so GM re-tasking one of these groups is a tug-of-war the script eventually wins. | ⚠️ GM ROE: hands off script-driven groups unless deliberately accepting the fight. |
 | §59 AI sleep | A slept garrison group's controller is **off** — an Olympus task lands on a dead controller until the wake poll (aircraft within ~15 NM, or a hit) restores it. | ⚠️ For GM-heavy events: fly something near it first, or leave `perf_ground_ai_sleep` off. |
 | Anti-grief guarantees (§36/§50/§21 player-spawn exclusions, grace periods) | These bound the *automation*. Olympus hands a trusted human unbounded artillery. | ✅ Culture note, not a defect — the guarantees were never about the DM. |
@@ -100,20 +106,17 @@ exception. The ledger stays honest as long as the GM knows the rules: **GM spawn
 red nothing and their deaths mean nothing; everything they kill is real; despawns erase.**
 That asymmetry is the §61 design ("red pays nothing, blue's losses are real") and it
 scales to Olympus unchanged. The Tier-0 deliverable is a one-page **GM crib sheet**
-(candidate: `docs/dev/414th-olympus-gm-crib.md`) carrying the ROE from §3 above.
+carrying the ROE from §3 above — **written**: `docs/dev/414th-olympus-gm-crib.md`.
 
 ## 5. Tier 0 — adopt as event tooling (recommended; zero code)
 
 1. Install on a **private-session server** first (the mid-window private-session card
    culture), not the M2 event.
-2. **Compatibility pass** on a generated mission (one heavy laydown, one COIN):
-   plugins all start (the `BRIEFING|`/`REDSCRAMBLE|`/MANTIS log lines), MANTIS EMCON
-   still behaves on ingress, spawn + steer a red 4-ship, spawn a SAM and confirm it
-   fights vanilla-and-alone, exercise the delete flavors, shell something as GM, run a
-   full debrief → losses land exactly where §3 predicts, `state.json` unremarkable.
-   Note server FPS deltas.
-3. Try the **SRS voice-GCI** trick on the §70 red net frequencies.
-4. Write the GM crib sheet.
+2. **Compatibility pass** — fly the 11-step pass card in
+   `docs/dev/414th-olympus-gm-crib.md` Part B (once on a heavy laydown, once on a COIN
+   campaign; it records this note's `[verify]` items as it goes).
+3. Try the **SRS voice-GCI** trick on the §70 red net frequencies (pass card step 10).
+4. ~~Write the GM crib sheet~~ — written (crib doc Part A).
 5. Start using the GM view as the **observation deck for the in-game-pass backlog**.
 
 Not registered as a feature and no checklist row — nothing ships in the repo. If the

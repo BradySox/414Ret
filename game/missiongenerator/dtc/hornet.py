@@ -155,7 +155,11 @@ def _build_wypt(
     home_wypt = 1
     route_order = 0
     prev_route_wp = None
-    waypoints = flight.waypoints[:MAX_WAYPOINTS] if options.route else []
+    # The kneeboard numbers the flight plan from 0 (row 0 = takeoff/spawn).
+    # Skip that row so the jet's STPT n IS the kneeboard's waypoint n — the
+    # flown off-by-one had every briefed number shifted (target "wp 4" was
+    # STPT 5 in the jet). The dropped point is where the jet spawns anyway.
+    waypoints = flight.waypoints[1 : MAX_WAYPOINTS + 1] if options.route else []
     for number, waypoint in enumerate(waypoints, start=1):
         on_route = is_route_waypoint(waypoint)
         alt_m, altitude_type = client_altitude(waypoint)

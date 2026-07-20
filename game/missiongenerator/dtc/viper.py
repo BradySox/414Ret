@@ -155,7 +155,10 @@ def _build_nav_pts(
     options = flight.dtc_options
     points: list[dict[str, Any]] = []
     prev_route_wp = None
-    waypoints = flight.waypoints if options.route else []
+    # Match the kneeboard's numbering: its row 0 (takeoff/spawn) is not
+    # emitted, so STPT n in the jet is kneeboard waypoint n (the flown
+    # Hornet off-by-one applied here identically).
+    waypoints = flight.waypoints[1:] if options.route else []
     for waypoint in waypoints:
         if len(points) >= MAX_STEERPOINTS:
             return points

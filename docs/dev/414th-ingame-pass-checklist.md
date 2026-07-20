@@ -2218,6 +2218,29 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
   `Squadron.faker` wiring didn't take); blank/garbled names; or a recruitment crash on a locale
   with no gendered names (guarded + test-locked — should be impossible).
 
+### I6 — Squadron country surfaced (dialog selector + campaign `country:` pin) · §23 · ☐ UNTESTED (built 2026-07-20 from the flown Desert Storm finding — Israeli/Greek-voiced F-16s wearing the 23rd TFS name, because an airframe-name squadron pick is a random.choice across every nation's presets under a CJTF faction)
+- **Headless adjudication (2026-07-20):** the config parse, the same-nation-only preset filter
+  (falls through to the def generator rather than hijacking a wrong-nation preset), the
+  override stamp (valid/unknown/unset), and the selector's live write / replace-with-preset
+  re-point / unlisted-country display are covered by `tests/test_squadron_country_pin.py` +
+  `tests/test_airwing_country_selector.py` (offscreen Qt); the 13 DS pins are locked by
+  `test_desert_storm_us_squadrons_pin_their_nation`. **Residual (app/in-sim only):** the
+  selector rendering in the real dialog, and the DS voices actually playing American.
+- **Setup:** New Game → Umm al-Ma'arik (Desert Storm 1991) → Air Wing Configuration. Check each
+  US squadron's new **Country:** selector reads USA (the pin); flip one squadron to another
+  nation and back; use **Replace with preset** once and confirm the selector tracks the new
+  squadron; note the preset dropdown entries now read `Name (Nickname) [Nation]`. Start the
+  campaign, fly/observe a US flight.
+- **Pass:** US flights check in with **American** AI voices (the flown Israeli/Greek roulette is
+  gone); the squadron roster names are American; a country picked in the dialog sticks after
+  Accept Changes and shows on the generated mission's groups (ME: group → Country); Save
+  Config → Load Config keeps the country.
+- **Fail signature:** a US-named squadron still spawns under Israel/Greece (pin not applied — the
+  filter or override didn't take); a dialog country change silently reverts on Accept (live-write
+  wiring broken); after Replace with preset the country/livery edits land on the discarded
+  squadron (the re-point fix regressed); New Game crashes on a campaign with `country:` (the
+  unknown-name degrade failed).
+
 ### H10 — Shared-airframe kneeboard index · §27 · ☐ UNTESTED (standalone page again since the 2026-07-13 back-to-upstream rework; condition not met in the 2026-06-28 pass)
 - **Not exercised (2026-06-28, audience pass — user confirmed the condition wasn't set up):** the mission did **not** have 2+ client flights of the same airframe, so the index had nothing to render — no observation either way, **not** a fail.
 - **Surface history:** briefly a section on the §30 cover page; the 2026-07-13 back-to-upstream

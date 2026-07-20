@@ -116,7 +116,9 @@ Upstream hands you a map that already knows everything. Here you have to go look
   teams dig in along a friendly route. Nothing is telegraphed — the first sign is the TROOPS
   IN CONTACT call.
 - **Nation-specific voiceovers and pilot names per squadron** — a Greek squadron hears Greek
-  and fills with Greek names, instead of one shared faction voice.
+  and fills with Greek names, instead of one shared faction voice. The nation is yours to set:
+  a **Country selector** in the Air Wing Configuration dialog (under Livery), and campaigns can
+  pin `country:` per squadron so a coalition wing's units stop rolling random nations.
 - **The carrier reads like a real boat** — TACAN matching the hull with a boat ident
   (Roosevelt 71X TRO, Stennis 74X STN), stable channels, the ship's real name. Learn Mother's
   card once; it holds all campaign (if a map's own beacon owns the hull channel, the boat

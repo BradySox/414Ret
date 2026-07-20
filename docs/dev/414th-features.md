@@ -2546,6 +2546,51 @@ exactly the intent.
   neutral coalition; (4) `for_squadron`'s faction-primary fallback logs at debug like every other
   skip. Plus perf: the squadron `faker` is resolved once per recruit batch, not once per pilot, and
   the pilot-name locale table is cross-checked against pydcs in a test so a stale key fails CI.
+
+### Surfaced in the UI + campaign yaml (2026-07-20)
+
+The country was **preset-yaml-only**: a campaign block naming an airframe (not a preset) got a
+`random.choice` over every nation's presets under a CJTF faction — the flown Desert Storm finding
+was Israeli/Greek-voiced F-16s wearing the 23rd TFS name — and the only fix was hand-authoring a
+preset yaml (which nobody does). Both authoring layers now surface it (also the upstream Discord
+ask — Starfire's yaml pin, Toad's under-the-livery dropdown):
+
+- **Campaign yaml `country:`** (`SquadronConfig.country`, `campaignairwingconfig.py`): pins the
+  squadron's DCS nation by pydcs country name (e.g. `country: USA`). The pick becomes
+  deterministic in nation — `find_squadron_for_airframe`/`find_squadron_for_task` accept **only**
+  same-nation presets (`resolve_config_country` in `defaultsquadronassigner.py`), and with no
+  same-nation preset the pick falls through to the def generator rather than dragging a
+  wrong-nation preset's livery/authored roster along; `override_squadron_defaults` stamps the
+  pinned country either way (that stamp is what a generated def and a name-bound preset receive).
+  Unpinned configs are byte-identical to before (the filter only exists when `country:` is
+  authored); an unknown name logs and degrades to the unpinned pick, never aborts New Game.
+  **Desert Storm pins all 13 US squadrons** (`country: USA`; the RAF/French units bind
+  nation-countried presets by name and need no pin) — guard
+  `test_desert_storm_us_squadrons_pin_their_nation`.
+- **Air Wing Configuration dialog "Country:" selector** (`SquadronCountrySelector`, under the
+  Livery selector — Toad's spot): every pydcs country sorted by name, opens on the squadron's
+  current nation, **writes `squadron.country` live** (the livery-selector pattern), and a country
+  pydcs doesn't list (mod) is inserted and shown faithfully. Pilot names follow automatically —
+  the New Game wizard shows the dialog *before* `populate_for_turn_0` recruits the roster, and
+  `Squadron.faker` reads `squadron.country` live (mid-campaign changes affect newly recruited
+  pilots only). The preset dropdowns (`SquadronDefSelector`) now suffix each preset with its
+  nation (`VF-103 (Sluggers) [USA]`), and **Save/Load Config round-trips the country**
+  (`_build_air_wing` exports `country:`, the loader's `SquadronConfig` applies it — previously a
+  reload rerolled the nation). Fixed in passing: after **Replace with preset**, the livery
+  selector kept writing to the *discarded* squadron object (`bind_data` now re-points it, and the
+  country selector's `set_squadron` does the same by design).
+
+| Area | Path |
+|---|---|
+| Config field + pick preference | `game/campaignloader/campaignairwingconfig.py`, `game/campaignloader/defaultsquadronassigner.py` |
+| Dialog selector + yaml round-trip | `qt_ui/windows/AirWingConfigurationDialog.py` |
+| Desert Storm pins | `resources/campaigns/iraq_desert_storm.yaml` |
+| Tests | `tests/test_squadron_country_pin.py`, `tests/test_airwing_country_selector.py` (offscreen Qt), `tests/fourteenth/test_desert_storm.py` |
+
+Needs an in-app pass (checklist **I6**): the selector rendering/behaving in the real dialog, and a
+DS re-fly confirming American voices. Deferred: filtering the livery list by the squadron country
+under CJTF (livery filtering still keys off the *faction* country), and an upstream carve — this is
+literally the upstream Discord ask, but it should ride after the fork's app pass.
 - **Review hardening round 2 (2026-07-15, upstream #854 feedback).** Two more carried back: (1)
   **`Game.neutral_country`'s final fallback was the bug it guarded against** — with USAF Aggressors
   as the red faction and a blue CJTF fielding UN and Swiss squadrons, all three preferred neutrals

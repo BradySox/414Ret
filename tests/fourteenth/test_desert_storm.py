@@ -358,3 +358,30 @@ def test_desert_storm_miz_authors_the_kari_network() -> None:
         assert legacy not in mission_lua, legacy
     for renamed in ("Saad 16", "Baba Gurgur", "Daura Oil Refinery"):
         assert renamed in mission_lua, renamed
+
+
+def test_desert_storm_us_squadrons_pin_their_nation() -> None:
+    """Every US unit pins country: USA (#627 surfacing).
+
+    The blue faction is a CJTF, so an airframe-name squadron pick draws a
+    random nation's preset -- the flown finding was Israeli/Greek-voiced
+    F-16s wearing the 23rd TFS name. The three allied units bind
+    nation-countried presets by name and carry their own country; Iraq flies
+    a national faction, so red is deterministic without pins.
+    """
+    blue_bases = {OFFMAP_KEY, 16, 17, 18}
+    allied_preset_squadrons = {
+        "No. 31 Squadron",
+        "Escadron de chasse 2/5",
+        "ER 1/33 Belfort",
+    }
+    seen = 0
+    for base, squadrons in _campaign()["squadrons"].items():
+        if base not in blue_bases:
+            continue
+        for squadron in squadrons:
+            if squadron["name"] in allied_preset_squadrons:
+                continue
+            assert squadron.get("country") == "USA", squadron["name"]
+            seen += 1
+    assert seen == 13  # the full US order of battle, none silently dropped

@@ -1080,9 +1080,22 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     locale table in `game/squadrons/pilotnames.py`) instead of the shared faction locale, so the
     Greek squadron rosters with Greek names, the Iranian with Persian, etc.; unmapped/multinational
     countries fall back to the faction faker (never breaks generation), and the logic is fully
-    unit-tested (`tests/squadrons/test_pilotnames.py`). (`game/missiongenerator/missiongenerator.py`,
-    `game/missiongenerator/aircraft/aircraftgenerator.py`, `game/squadrons/pilotnames.py`;
-    features doc §23, checklist I1/I5.)
+    unit-tested (`tests/squadrons/test_pilotnames.py`). **Surfaced 2026-07-20** (the flown Desert
+    Storm finding — Israeli/Greek-voiced F-16s wearing the 23rd TFS name, because an airframe-name
+    squadron pick is a `random.choice` across every nation's presets under a CJTF faction; also
+    the upstream Discord ask): campaign yamls can pin `country:` per squadron block
+    (`SquadronConfig.country` — the pick then accepts only same-nation presets, falling through to
+    the def generator, and `override_squadron_defaults` stamps the pinned nation; unknown names
+    degrade, never abort New Game; unpinned configs byte-identical), and the Air Wing
+    Configuration dialog gained a **Country selector** under Livery (live-write like the livery
+    selector; preset dropdowns show each preset's nation; Save/Load Config round-trips the
+    country; fixed in passing — after Replace-with-preset the livery selector wrote to the
+    discarded squadron). Desert Storm pins all 13 US squadrons `country: USA`.
+    (`game/missiongenerator/missiongenerator.py`,
+    `game/missiongenerator/aircraft/aircraftgenerator.py`, `game/squadrons/pilotnames.py`,
+    `game/campaignloader/campaignairwingconfig.py`, `game/campaignloader/defaultsquadronassigner.py`,
+    `qt_ui/windows/AirWingConfigurationDialog.py`; features doc §23, checklist I1/I5 + I6 —
+    the surfacing needs an in-app pass + a DS voice re-fly.)
 24. **Date-gated aircraft properties** — era-defining payload-editor *properties* gated by campaign
     date, under their **own `restrict_props_by_date` toggle** (2026-07-15, split from
     `restrict_weapons_by_date` off the upstream #843 review — enforce either or both). Curated

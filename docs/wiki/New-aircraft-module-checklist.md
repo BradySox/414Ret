@@ -11,9 +11,8 @@ often held to a lower standard.
 
 The content below the line can be copied into the feature request for tracking the work.
 Copy the source rather than the rendered view to preserve formatting in the bug. Mods
-should replace the first task (pydcs export) with the instructions in the upstream
-[Modded aircraft support](https://github.com/dcs-retribution/dcs-retribution/wiki/Modded-Unit-Support)
-guide.
+should replace the first task (pydcs export) with the instructions in the
+[Modded aircraft/unit support](Modded-Unit-Support) guide.
 
 ---
 

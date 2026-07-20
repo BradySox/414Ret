@@ -107,12 +107,15 @@ campaign files (ORBAT, threats, and economy read straight from the campaign + fa
 - **[Red Flag 81-2 — First Three Turns](Red-Flag-81-2-First-Three-Turns)** — a worked example of Week One: map the array, Iron Hand the corridor, kill the armor.
 - **[Red Flag 81-2 — Intel Assessment](Red-Flag-81-2-Intel-Assessment)** — the real-exercise study (Red Baron → Red Flag, the aggressors, Constant Peg at Tonopah, the range array) + threat card + read-aloud brief.
 
-## Customization and modding
+## Modding Retribution
 
 - **[Custom Campaigns](Custom-Campaigns)**
+- **[Motorpools](Motorpools)** — author strikeable reserve-armor depots into a campaign (place a Garage A).
 - **[Custom Factions](Custom-Factions)**
-- **[Custom Loadouts](Custom-Loadouts)**
+- **[Layouts](https://github.com/bradyccox/414Ret/blob/main/docs/modding/layouts.rst)** — the ground-object layout format (repo doc).
 - **[Lua Plugins](Lua-Plugins)**
+- **[Custom Loadouts](Custom-Loadouts)**
+- **[Modded aircraft/unit support](Modded-Unit-Support)** — the 11-step guide to shipping support for a DCS mod.
 
 ## Servers
 

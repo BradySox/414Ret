@@ -635,7 +635,11 @@ file. This guide is the map; those are the territory.
   "adopt their way of doing things"): `Contributing-to-DCS-Retribution` ·
   `Campaign-maintenance` · `Developers-Guide` · `New-aircraft-module-checklist` ·
   `New-terrain-module-checklist` · `Creating-shape-files-in-QGIS-for-map-data` ·
-  `Release-process` — each a mirror of the upstream wiki page with **414th:** delta notes
+  `Release-process` — plus the **Modding Retribution** set (same day, "modding is the
+  important one"): `Motorpools` (§56's authoring reference) · `Modded-Unit-Support` (the
+  11-step mod-support guide every fork pack follows), with the wiki's Customization
+  section renamed to upstream's "Modding Retribution" and `Layouts` linked to
+  `docs/modding/layouts.rst` — each a mirror of the upstream wiki page with **414th:** delta notes
   (Python 3.11, the whole-tree Black + out-of-tree pytest + Lua CI gates, the rolling
   `latest` release vs pinned `-414th` tags, MIST-retired Lua discipline, the two-repo
   fork-PR → upstream-carve flow, and the fork's extra unit-data/campaign checklist items).
@@ -2961,11 +2965,17 @@ way.)
   **Developer's Guide** for dev-env + PR practice (small PRs — one feature/bugfix/change per PR;
   type annotations on all new code; pre-commit runs Black), the **aircraft/terrain module
   checklists** (upstream's P0–P2 items plus the fork's additions on each page) when adding module
-  support, the **QGIS shapefile guide** for landmap data, **Campaign maintenance** for the
-  campaign-ownership model (every fork-authored campaign is owned: design note + CI lock), and the
-  **Release process** page for releases (the rolling `latest` IS the release; pinned tags are
-  `v<X.Y.Z>-414th`; never `git push --tags`). When an upstream page changes, refresh the mirror
-  and re-annotate the deltas rather than letting the two drift.
+  support, the **QGIS shapefile guide** for landmap data, **Modded-Unit-Support** (the 11-step
+  guide) for any new mod pack, **Motorpools** when authoring reserve depots into a campaign,
+  **Campaign maintenance** for the campaign-ownership model (every fork-authored campaign is
+  owned: design note + CI lock), and the **Release process** page for releases (the rolling
+  `latest` IS the release; pinned tags are `v<X.Y.Z>-414th`; never `git push --tags`).
+  **Upstream carves ship to these same standards** — they are upstream's own, so a carve is held
+  to them by construction: target `dcs-retribution/dev` via the PR fork, one focused
+  feature/bugfix per PR, upstream's gates validated locally on the upstream tree before push, a
+  `changelog.md` note, fork-only couplings stripped (the harness/plugin extras stay here), and
+  module/campaign content meeting the relevant checklist page. When an upstream page changes,
+  refresh the mirror and re-annotate the deltas rather than letting the two drift.
 - Keep the doc faces in sync: when a feature lands or changes, update **both**
   [`README.md`](README.md) (player-facing) and the relevant section of
   [docs/dev/414th-features.md](docs/dev/414th-features.md) (engineering), plus this map if the

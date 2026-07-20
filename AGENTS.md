@@ -1211,11 +1211,14 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     `record_sitrep` step that reads the debriefing it already has — per-side losses (`loss_counts`),
     base captures (the cached pre-commit snapshot), Combat SAR rescues — into a `Sitrep`
     (`game/sitrep.py`) stored as `game.last_sitrep` (pickled, `__setstate__` default None). Enemy
-    losses are framed as **"claimed"** to respect the recon-fog model. The SITREP renders as a
-    "SITREP — Turn N" section at the **bottom of the Mission Info page** (back where the band first
-    shipped — the §30 cover page that hosted it 2026-06→07 is retired), gated by `sitrep_for_kneeboard`;
-    hidden on turn 1 / a quiet turn / when the `generate_sitrep_kneeboard` toggle (Kneeboards page,
-    default ON) is off. v1 covers losses/captures/rescues; front movement + SCAR commander capture are
+    losses are framed as **"claimed"** to respect the recon-fog model. The SITREP renders as **its
+    own "SITREP — Turn N" kneeboard page** (`SitrepPage`, after Support Info — moved off the Mission
+    Info page bottom 2026-07-19 when a flown busy-turn deck clipped the POW/MIA list at the page
+    edge; the §30 cover that first hosted it stays retired), gated by `sitrep_for_kneeboard`;
+    absent on turn 1 / a quiet turn / when the `generate_sitrep_kneeboard` toggle (Kneeboards page,
+    default ON) is off. The Mission Info BLUF's SAR if-down drill was rewritten the same day to
+    match the real §21 CSAR model (evade toward friendly lines, capture risk climbs with depth,
+    rescue tracks your last known position — "get to high ground" was generic survival copy). v1 covers losses/captures/rescues; front movement + SCAR commander capture are
     deferred. **App-side parity 2026-07-18** (UI audit — the band had quietly become the fork's only
     status screen, trapped in the cockpit): the same `kneeboard_lines()` digest now also renders on
     the web ribbon's **LAST TURN** panel (`CampaignStatusJs.sitrep_lines`) and the Qt debrief's

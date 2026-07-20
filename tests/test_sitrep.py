@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import date
+from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, Iterable, cast
 
@@ -112,6 +113,31 @@ def test_kneeboard_lines_render_held_pows() -> None:
     lines = sitrep.kneeboard_lines()
     assert "POW: Capt Mitchell — held at Mozdok (held)" in lines
     assert not sitrep.is_empty  # a held POW is news even with no losses
+
+
+def test_sitrep_page_renders_standalone(tmp_path: Path) -> None:
+    """The SITREP renders on its own kneeboard page (§29): a busy turn's
+    POW/MIA list clipped at the Mission Info page edge (flown 2026-07-19), so
+    the news moved to a dedicated page with room for the full list."""
+    from game.missiongenerator.kneeboard import SitrepPage
+
+    sitrep = Sitrep(
+        turn=1,
+        day=date(1991, 1, 17),
+        friendly=SideLosses(10, 1, 0),
+        enemy=SideLosses(21, 5, 18),
+        captured=[],
+        lost=[],
+        pilots_recovered=0,
+        pows_held=["Bertrand Lambert — held at Al-Taquddum Airport (held)"],
+        pilots_mia=[
+            "Corey Johnson — evading near H-2 Airbase (downed this turn)",
+            "Garry Stevens — evading near Al-Asad Airbase (downed this turn)",
+        ],
+    )
+    page = tmp_path / "sitrep.png"
+    SitrepPage(sitrep, dark_kneeboard=False).write(page)
+    assert page.exists() and page.stat().st_size > 0
 
 
 def test_a_held_pow_alone_is_not_a_quiet_turn() -> None:

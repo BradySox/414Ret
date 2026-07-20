@@ -3131,15 +3131,20 @@ stores it as `game.last_sitrep`.
 - **Persistence:** `game.last_sitrep` is pickled; `__setstate__` defaults it to `None` for old saves
   (no migration). `None` on turn 1.
 
-### Surface (Mission Info page band)
+### Surface (its own SITREP page)
 
-The model + capture live here; the **render surface is a "SITREP — Turn N" section at the bottom of
-the Mission Info page** (`BriefingPage`). The generator gates the SITREP with
+The model + capture live here; the **render surface is a dedicated "SITREP — Turn N" kneeboard
+page** (`SitrepPage`, inserted after Support Info). The generator gates it with
 `sitrep_for_kneeboard(game.last_sitrep, settings.generate_sitrep_kneeboard)` (returns the `Sitrep`,
 or `None` when the toggle is off / there is no prior turn / the previous turn was quiet via
-`Sitrep.is_empty`) and passes it to the page. *(It shipped first as a band on the `BriefingPage`, was
-consolidated onto the §30 cover page in June, and returned to the Mission Info page when the
-2026-07-13 back-to-upstream kneeboard rework retired the cover.)*
+`Sitrep.is_empty`) — no news, no page. *(History: shipped as a band on the `BriefingPage`, was
+consolidated onto the §30 cover page in June, returned to the Mission Info page bottom when the
+2026-07-13 rework retired the cover, and moved to its own page 2026-07-19 after a flown busy-turn
+deck — 11 losses + a POW + two MIA evaders — clipped the MIA list at the Mission Info page edge.
+The §70 COMINT block stays on Mission Info.)* The same flown pass rewrote the BLUF's **SAR if-down
+drill** to the real §21 CSAR model: "beacon on, squawk 7700, voice on GUARD — evade toward friendly
+lines (capture risk climbs with depth); rescue tracks your last known position" (the old "get to
+high ground" was generic survival copy with no campaign meaning).
 
 ### Files & tests
 
@@ -7209,7 +7214,19 @@ never be truncated out), then one racetrack per *station*
 one station), then the remaining wave tracks fill whatever slots are left — the
 jet draws all nine racetracks it is physically capable of whenever the ATO
 overflows, and every wave when it fits (DS91 verified: 13 waves + 3 support →
-9/9 slots — 2 tankers, AWACS, 4 stations, 2 extra waves).
+9/9 slots — 2 tankers, AWACS, 4 stations, 2 extra waves). **The SA page
+DISPLAYS one CAP point at a time — the selected one** (third flown finding,
+same day: a 7-entry cartridge drew exactly the `Default_CAP_Point` orbit;
+the entry list is a library the pilot flips through on the jet's DTC/SA CAP
+selection). Two answers: `Default_CAP_Point` is now chosen per flight (a
+BARCAP/TARCAP flight pre-selects its **own station**, matched by orbit
+center; everyone else gets entry 1 — the first tanker, given the emit
+order), and the **whole friendly orbit picture moved to the display that can
+actually show it at once: the §45 F10 drawings now also paint each blue CAP
+*station*** (deduped, thin dashed racetrack + a "CAP &lt;callsign&gt;" label,
+alongside the thicker tanker/AEW&C capsules;
+`DrawingsGenerator._generate_cap_station_orbits`,
+`tests/missiongenerator/test_cap_station_drawings.py`).
 
 **Implementation:** `game/missiongenerator/dtc/` — `cartridge.py` (the model + the
 two pydcs seams: an idempotent `FlyingUnit.dict` wrap emitting the `DTC` key for

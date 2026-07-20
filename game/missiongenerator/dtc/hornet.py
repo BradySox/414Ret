@@ -22,6 +22,7 @@ FLOT lines of 7 points, 40 MEZ threats.
 
 from __future__ import annotations
 
+import math
 from typing import TYPE_CHECKING, Any, Optional
 
 from game.missiongenerator.dtc.cartridge import DtcCartridge
@@ -35,6 +36,7 @@ from game.missiongenerator.dtc.common import (
     is_target_waypoint,
     known_enemy_threat_sites,
     leg_speed_kmh,
+    racetrack_ends,
     raw_cap_tracks,
     restricted_zone_outlines,
     seconds_of_day,
@@ -254,6 +256,25 @@ def _build_nav_settings(
     }
 
 
+def _default_cap_index(flight: FlightData, shown: list[SupportTrack]) -> int:
+    """The 1-based CAP point pre-selected on the SA page.
+
+    The jet displays the *selected* CAP point's racetrack, so pick the one
+    this flight most wants at spawn: its own patrol station when it flies a
+    racetrack itself (matched by orbit center), else entry 1 (the first
+    support orbit -- a tanker, given the emit order).
+    """
+    own_start, own_end = racetrack_ends(flight)
+    if own_start is None or own_end is None:
+        return 1
+    own_center = ((own_start.x + own_end.x) / 2, (own_start.y + own_end.y) / 2)
+    for index, track in enumerate(shown, start=1):
+        center = track.center
+        if math.hypot(center[0] - own_center[0], center[1] - own_center[1]) < 1000.0:
+            return index
+    return 1
+
+
 def _cap_point(track: SupportTrack, number: int) -> dict[str, Any]:
     x, y = track.center
     return {
@@ -283,20 +304,26 @@ def _build_sa(
 ) -> dict[str, Any]:
     options = flight.dtc_options
     caps: list[dict[str, Any]] = []
+    default_cap_point = 1
     if options.friendly_orbits:
         # Priority, then completeness, inside the hard nine-slot SA limit:
         # support orbits first (few, and "where's my gas" is the page's
         # biggest answer), then one racetrack per CAP station (coverage can't
         # be squeezed out by wave duplicates), then the remaining §6 wave
-        # tracks fill whatever slots are left -- the jet draws every racetrack
-        # it is physically capable of showing.
+        # tracks fill whatever slots are left. The jet's SA page DISPLAYS one
+        # CAP point at a time -- the selected one (flown 2026-07-19) -- so
+        # the list is a library to flip through, and the pre-selected default
+        # matters: a CAP flight gets its own station up at spawn, everyone
+        # else gets the first tanker.
         raw_waves = raw_cap_tracks(mission_data)
         stations = dedupe_stations(raw_waves)
         kept = {id(track) for track in stations}
         extra_waves = [track for track in raw_waves if id(track) not in kept]
         ordered = support_tracks(mission_data) + stations + extra_waves
-        for track in ordered[:MAX_CAP_POINTS]:
+        shown = ordered[:MAX_CAP_POINTS]
+        for track in shown:
             caps.append(_cap_point(track, len(caps) + 1))
+        default_cap_point = _default_cap_index(flight, shown)
 
     flot_lines: list[dict[str, Any]] = []
     faor_lines: list[dict[str, Any]] = []
@@ -347,7 +374,7 @@ def _build_sa(
         "FAOR_FLOT": {"FAOR": faor_lines, "FLOT": flot_lines},
         "MEZ_THRTS": threats,
         "SETTINGS": _sa_settings(),
-        "Default_CAP_Point": 1,
+        "Default_CAP_Point": default_cap_point,
         "Default_CORRIDORS_Point": 1,
         "Default_FAOR_Line": 1,
         "Default_FLOT_Line": 1,

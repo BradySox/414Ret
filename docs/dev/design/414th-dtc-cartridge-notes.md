@@ -125,6 +125,12 @@ point), 15 THREAT_PTS, 20+20 COMM channels.
   orbits were dropped — and never let wave duplicates squeeze the tankers out.
   (The Viper has no orbit element; its anchors stay one steerpoint per
   station.)
+- **The jet DISPLAYS one CAP point — the selected one** (flown 2026-07-19: a
+  7-entry cartridge drew exactly the `Default_CAP_Point` orbit). The CAP_PTS
+  list is a flip-through library, so the pre-selected default is per flight
+  (own station for a CAP flight, first tanker otherwise), and the
+  see-everything-at-once picture lives on the §45 F10 drawings, which now
+  paint the deduped CAP stations too.
 - **Blue client flights only** — AI don't read cartridges; red clients don't
   exist in this squadron's use.
 - **Best-effort everywhere**: per-flight failures skip the flight; pass-level

@@ -291,19 +291,20 @@ def test_hornet_cartridge_shape() -> None:
     data = payload["data"]
     assert data["terrain"] == "Caucasus"
 
-    # Waypoints: numbered, named, on route 1 in order.
+    # Waypoints: numbered to MATCH THE KNEEBOARD -- its row 0 (takeoff) is not
+    # emitted, so STPT n is kneeboard waypoint n.
     nav_pts = data["WYPT"]["NAV_PTS"]
-    assert [w["wypt_num"] for w in nav_pts] == [1, 2, 3]
-    assert [w["text_note"] for w in nav_pts] == ["TAKEOFF", "TARGET", "LANDING"]
+    assert [w["wypt_num"] for w in nav_pts] == [1, 2]
+    assert [w["text_note"] for w in nav_pts] == ["TARGET", "LANDING"]
     assert all(w["R1"] for w in nav_pts)
-    assert [w["R1_order"] for w in nav_pts] == [1, 2, 3]
+    assert [w["R1_order"] for w in nav_pts] == [1, 2]
 
     # Route sequence: ETA absolute seconds, target flagged, routes 2/3 empty.
     route = data["WYPT"]["NAV_ROUTE"]
     assert route[1] == [] and route[2] == []
-    assert route[0]["STPT2"]["ETA"] == 7 * 3600 + 30 * 60
-    assert route[0]["STPT2"]["TGT"] is True
-    assert route[0]["STPT1"]["TGT"] is False
+    assert route[0]["STPT1"]["ETA"] == 7 * 3600 + 30 * 60
+    assert route[0]["STPT1"]["TGT"] is True
+    assert route[0]["STPT2"]["TGT"] is False
 
     # NAV settings: the boat card pre-tuned.
     nav_settings = data["WYPT"]["NAV_SETTINGS"]
@@ -315,7 +316,7 @@ def test_hornet_cartridge_shape() -> None:
     }
     assert nav_settings["ICLS"] == {"Channel": 11, "OnOff": True}
     assert nav_settings["ACLS"] == {"Frequency": 336.4, "OnOff": True}
-    assert nav_settings["Home_Waypoint"] == {"FPAS_HOME_WP": 3}
+    assert nav_settings["Home_Waypoint"] == {"FPAS_HOME_WP": 2}
 
     # COMM: allocator channels mirrored with names; defaults elsewhere.
     comm1 = data["COMM"]["COMM1"]
@@ -356,17 +357,17 @@ def test_viper_cartridge_shape() -> None:
     data = json.loads(cartridge.to_json())["data"]
 
     nav_pts = data["MPD"]["NAV_PTS"]
-    # Route first, then the tanker + CAP anchors as extra steerpoints.
+    # Route first (kneeboard row 0 / takeoff not emitted, so STPT n matches
+    # the kneeboard), then the tanker + CAP anchors as extra steerpoints.
     assert [p["note"] for p in nav_pts] == [
-        "TAKEOFF",
         "TARGET",
         "LANDING",
         "TKR ARCO",
         "CAP COLT",
     ]
-    assert nav_pts[1]["TOS"] == 7 * 3600 + 30 * 60
-    assert nav_pts[1]["isTOSEnabled"] is True
-    assert nav_pts[3]["R1"] is False
+    assert nav_pts[0]["TOS"] == 7 * 3600 + 30 * 60
+    assert nav_pts[0]["isTOSEnabled"] is True
+    assert nav_pts[2]["R1"] is False
 
     threat = data["MPD"]["THREAT_PTS"]
     assert len(threat) == 1
@@ -384,11 +385,13 @@ def test_cartridges_ground_marked_waypoints_like_the_miz() -> None:
     boundaries) to 0 AGL for client flights; the cartridge must agree or the
     AutoLoad floats the target diamond back up to the AI's track altitude (the
     flown DS91 escort kneeboard's 22,000 ft "Target area")."""
+    takeoff = _waypoint("TAKEOFF", FlightWaypointType.TAKEOFF, 0, 0, 0, None)
     nav = _waypoint("NAV", FlightWaypointType.NAV, 10000, 0, 6705, None)
     target = _waypoint(
         "TARGET", FlightWaypointType.TARGET_GROUP_LOC, 60000, 80000, 6705, None
     )
-    flight = _flight(waypoints=[nav, target])
+    # Kneeboard row 0 (takeoff) is not emitted; NAV/TARGET land on STPT 1/2.
+    flight = _flight(waypoints=[takeoff, nav, target])
     mission_data = _mission_data([flight])
     game = _game()
 
@@ -580,7 +583,7 @@ def test_hornet_sections_are_omitted_when_off() -> None:
     cartridge = build_hornet_cartridge(flight, mission_data, game, "Route Only")
     data = json.loads(cartridge.to_json())["data"]
     assert "SA" not in data
-    assert len(data["WYPT"]["NAV_PTS"]) == 3
+    assert len(data["WYPT"]["NAV_PTS"]) == 2  # kneeboard rows 1..N
     assert data["WYPT"]["NAV_SETTINGS"]["TACAN"]["OnOff"] is False
 
 

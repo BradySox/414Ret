@@ -109,6 +109,10 @@ point), 15 THREAT_PTS, 20+20 COMM channels.
 - **Mirror, never re-plan, the comm channels**: the DTC's channel numbers must
   match the unit `Radio` table the allocator wrote (the kneeboard prints those) —
   the DTC only *names* them. Unassigned channels keep module defaults.
+- **STPT n == kneeboard waypoint n** (flown 2026-07-19: the jet read Takeoff as
+  WP 1, shifting every briefed number by one): the kneeboard numbers the plan
+  from 0, so the cartridge does **not** emit row 0 (takeoff/spawn — the jet's
+  native WYPT 0 is where it spawns anyway) and numbers from 1. Both jets.
 - **Recon-fog discipline**: threat rings filter through
   `tgo.known_for(flight.friendly)` (the threat-intel kneeboard's own leaf) +
   never `map_hidden`. Verified: Red Tide turn 1 → 0 rings; the flown turn-2 save

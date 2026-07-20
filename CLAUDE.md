@@ -2905,6 +2905,18 @@ way.)
 
 ## Conventions
 
+- **ADHD-friendly agent output (STANDARD, 2026-07-20).** The reader has ADHD; every agent
+  reply is shaped so an ADHD brain can act on it. The rules live in the vendored
+  [`i-have-adhd`](https://github.com/ayghri/i-have-adhd) skill
+  (`.claude/skills/i-have-adhd/SKILL.md`, MIT, byte-identical to upstream — update by
+  re-copying upstream's `skills/i-have-adhd/SKILL.md`; keep the sibling `LICENSE`). Treat it
+  as **always-on**, not invoke-on-request: lead with the next action, number multi-step work,
+  end with one concrete next action, defer tangents, restate state each turn ("step 3 of 5"),
+  concrete time estimates, visible wins, matter-of-fact errors, lists capped at 5, no
+  preamble/recap/closing pleasantries. The skill's own exceptions apply (full explanations
+  when asked, confirm destructive actions, stop iterating in a debug spiral, one clarifying
+  question on real ambiguity). Composes with the question convention below: a needed decision
+  still lands in the ❓ block at the end — that block IS the "one concrete next action."
 - **Highlight questions to the user.** Whenever you need a decision or answer from the
   user, make the question visually prominent — never bury it mid-paragraph or at the tail of
   a wall of prose. Put it in its own block at the **end** of the message, set off with a bold

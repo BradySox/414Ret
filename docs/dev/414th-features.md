@@ -3131,15 +3131,20 @@ stores it as `game.last_sitrep`.
 - **Persistence:** `game.last_sitrep` is pickled; `__setstate__` defaults it to `None` for old saves
   (no migration). `None` on turn 1.
 
-### Surface (Mission Info page band)
+### Surface (its own SITREP page)
 
-The model + capture live here; the **render surface is a "SITREP — Turn N" section at the bottom of
-the Mission Info page** (`BriefingPage`). The generator gates the SITREP with
+The model + capture live here; the **render surface is a dedicated "SITREP — Turn N" kneeboard
+page** (`SitrepPage`, inserted after Support Info). The generator gates it with
 `sitrep_for_kneeboard(game.last_sitrep, settings.generate_sitrep_kneeboard)` (returns the `Sitrep`,
 or `None` when the toggle is off / there is no prior turn / the previous turn was quiet via
-`Sitrep.is_empty`) and passes it to the page. *(It shipped first as a band on the `BriefingPage`, was
-consolidated onto the §30 cover page in June, and returned to the Mission Info page when the
-2026-07-13 back-to-upstream kneeboard rework retired the cover.)*
+`Sitrep.is_empty`) — no news, no page. *(History: shipped as a band on the `BriefingPage`, was
+consolidated onto the §30 cover page in June, returned to the Mission Info page bottom when the
+2026-07-13 rework retired the cover, and moved to its own page 2026-07-19 after a flown busy-turn
+deck — 11 losses + a POW + two MIA evaders — clipped the MIA list at the Mission Info page edge.
+The §70 COMINT block stays on Mission Info.)* The same flown pass rewrote the BLUF's **SAR if-down
+drill** to the real §21 CSAR model: "beacon on, squawk 7700, voice on GUARD — evade toward friendly
+lines (capture risk climbs with depth); rescue tracks your last known position" (the old "get to
+high ground" was generic survival copy with no campaign meaning).
 
 ### Files & tests
 

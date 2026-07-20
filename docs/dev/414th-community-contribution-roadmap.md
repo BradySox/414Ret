@@ -55,7 +55,7 @@ upstream PR looks like.
 | Item | Upstream story | Status |
 |---|---|---|
 | **Splash Damage tuned build** | **A fix to shipping defaults, not identity.** Upstream's shipped config turned out internally broken (raw ×130 rockets, 3% scaling double-divided in the bomblet path, static boost 2000, test mode enabled); the 414th's flown values replace them in upstream's own config architecture. | 🔵 **Pushed as [PR #880](https://github.com/dcs-retribution/dcs-retribution/pull/880)** (2026-07-19) — inventory item 21 |
-| **[CH] Iran 2020 faction + pack** | Mod-dependent factions are normal upstream (HDS, CurrentHill assets elsewhere). #784 was **self-withdrawn, never rejected** — re-carve behind the existing mod toggle. | Re-carve candidate |
+| **[CH] Iran 2020 faction + pack** | Mod-dependent factions are normal upstream (HDS, CurrentHill assets elsewhere). #784 was **self-withdrawn, never rejected** — re-carved clean behind a new `iranmilitaryassetspack` toggle, the exact pattern of the six CH packs upstream already carries. | 🔵 **Pushed as [PR #886](https://github.com/dcs-retribution/dcs-retribution/pull/886)** (draft, late 2026-07-19) |
 | **Doctrine default *values*** (QRA radii, engagement ranges, `QRA_SINGLE_SHIP_PROBABILITY`) | The mechanisms are largely upstream (#782 et al.). Propose the tuned numbers as defaults **with the flown rationale**; if upstream prefers different defaults, fine — defaults are their call, the proposal costs one PR. | Rides the QRA-family carves |
 | **C-130J EW physics constants** (spoof curve, burn-through) | Ship **with** the C-130J framework carve as its tested tuning, constants documented (the HANDOFF doc's rationale travels with the PR). Not separable from the framework — sequenced behind it. | Rides the Tier-3 C-130 carve |
 | **TIC stance tuning** | Same shape: the stance profiles are the tested tuning of the TIC engine; they travel with the TIC carve as defaults-with-rationale. | Rides the Tier-3 TIC carve |
@@ -99,6 +99,8 @@ REVIEW). "Strip" = the 414th slice to remove for a clean PR.
 | VWV v3.2.0 registration (item 22) | #881 | Awaiting maintainer review |
 | Lua plugin test harness (the fork's `tests/lua/`) | #882 (draft) | The Wave-5 enabler; un-draft call open |
 | MIST 51-symbol shim (stacked on #882) | #883 (draft) | Review with/after #882; the Pretense teleport/respawn family is the in-game watch item |
+| Custom victory conditions (§75 core) | #885 (draft) | Un-draft after the fork's B29 app pass |
+| [CH] Iran 2020 pack (item, last-mile queue) | #886 (draft) | Un-draft call open — data-only, probe-verified |
 | Splash Damage coherent defaults (item 21) | #880 | Opened 2026-07-19 — awaiting maintainer review (offer to split bug-fixes from tuning stands in the PR body) |
 | Cruise missile strikes (§63 core) | #872 | ✅ Ready for review 2026-07-19 — the DM flew the full loop locally ("works 10/10") and the defender launch wake was ported into the PR (Skynet-adapted comments), un-drafted |
 | Curated carrier comms (§65) | #874 (draft) | Un-draft after B18 in-game pass |

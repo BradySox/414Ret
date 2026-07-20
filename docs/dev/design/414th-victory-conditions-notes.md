@@ -223,6 +223,16 @@ integration + the `check_win_loss` branch + the two settings. The fork-side
 `phases`/`will` interplay stays here. Carve after the in-app pass, the
 §63/§65 pattern (fork PR first, upstream draft second).
 
+**CARVED late 2026-07-19 as upstream draft
+[#885](https://github.com/dcs-retribution/dcs-retribution/pull/885)** —
+exactly this spec (also minus the will/supply meter fields and the W2
+negotiation absorption; `describe_condition`'s live prose ships as the
+documented hook for a future upstream conditions display; 28 of the tests
+ported; 466 green on upstream dev). Opened as a **draft ahead of the B29
+app pass** — the #874 carrier-comms pattern (staged now, un-drafted once
+the fork pass validates the shared engine), not a violation of the
+carve-after-pass rule.
+
 ## Files
 
 - `game/fourteenth/victory.py` — the whole engine (conditions, parse, cache,

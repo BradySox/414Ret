@@ -264,6 +264,10 @@ file. This guide is the map; those are the territory.
   - Drafts / not-yet-landed (design only): `414th-mission-planning-wiki-rework.md`
     (upstream wiki rewrite), `414th-scenery-import-notes.md` (scenery strike targets),
     `turnless.md` (turnless-campaign exploration),
+    `414th-dcs-olympus-notes.md` (DCS Olympus live-GM/RTS layer exploration — the
+    "what if?" answer: run-alongside compatibility map, GM doctrine = §20/§61 untracked
+    event content, Tier 0 recommended as event tooling + the in-game-pass observation
+    deck, all code tiers deferred),
     `414th-coin-HANDOFF.md` (**start here for the COIN line** — the next-session pickup:
     where C1–C3 stand (all merged), the P1 fly-script, the tuning levers, and the
     build-order for C1.5/C4) + `414th-coin-insurgent-replenishment-notes.md` (**the COIN campaign direction** —

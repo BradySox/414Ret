@@ -12,6 +12,12 @@ bound blue Frankfurt and silently never spawned).
 Contract locked here: every marker class also walks the blue block, and a
 blue-block group binds to the nearest BLUE control point when one exists, while
 red-block markers keep the nearest-any proximity convention.
+
+Since 2026-07-20 the rule is total (the upstream #891 review ask): EVERY object
+class walks both blocks — a red-block factory, a red-block front-line path, and
+a blue-block neutral-FOB declaration all generate. The block never decides
+whether an authored object exists; it only declares ownership where that is its
+documented meaning (CP classes, and the bounded blue-marker preference).
 """
 
 from pathlib import Path
@@ -24,7 +30,7 @@ from dcs.countries import (
 from dcs.mission import Mission
 from dcs.statics import Fortification
 from dcs.terrain.caucasus import Caucasus
-from dcs.vehicles import AirDefence
+from dcs.vehicles import AirDefence, Armor, Unarmed
 
 from game import persistency
 from game.campaignloader.mizcampaignloader import MizCampaignLoader
@@ -162,6 +168,78 @@ def test_blue_block_preference_is_scoped_and_bounded(tmp_path: Path) -> None:
     # Marker within the detour bound still prefers the blue field.
     assert len(kutaisi.preset_locations.ewrs) == 1
     assert not senaki.preset_locations.ewrs
+
+
+def _build_cross_block_miz(path: Path) -> None:
+    """The classes that historically read a single country block, each authored
+    in the OTHER block: a red-block factory (was blue-only), a red-block
+    front-line path (was blue-only), and a blue-block neutral-FOB declaration
+    (was red-only). All must generate — the block never decides existence."""
+    mission = Mission(terrain=Caucasus())
+    blue_field = mission.terrain.airports["Kutaisi"]
+    red_field = mission.terrain.airports["Senaki-Kolkhi"]
+    blue_field.set_blue()
+    red_field.set_red()
+
+    blue_country = CombinedJointTaskForcesBlue()
+    red_country = CombinedJointTaskForcesRed()
+    mission.coalition["blue"].add_country(blue_country)
+    mission.coalition["red"].add_country(red_country)
+
+    # RED-block factory on the red field (the intuitive authoring choice; three
+    # shipped campaigns did exactly this and the factory silently never
+    # generated). Binds by proximity like every economy object.
+    mission.static_group(
+        red_country,
+        "Red block factory",
+        Fortification.Workshop_A,
+        red_field.position.point_from_heading(0, 3000),
+    )
+
+    # RED-block front-line path from the blue field to the red field. A path
+    # has no owner; its endpoint CPs bind it.
+    front_line = mission.vehicle_group(
+        red_country,
+        "Red block frontline path",
+        Armor.M_113,
+        blue_field.position,
+    )
+    front_line.add_waypoint(red_field.position)
+
+    # BLUE-block neutral-FOB declaration: the KrAZ itself declares neutrality,
+    # so the block it sits in must not matter.
+    mission.vehicle_group(
+        blue_country,
+        "Neutral FOB Alpha",
+        Unarmed.KrAZ6322,
+        blue_field.position.point_from_heading(180, 20000),
+    )
+
+    mission.save(str(path))
+
+
+def test_cross_block_classes_generate(tmp_path: Path) -> None:
+    miz = tmp_path / "cross_block.miz"
+    _build_cross_block_miz(miz)
+
+    theater = TheaterLoader("caucasus").load()
+    MizCampaignLoader(miz, theater).populate_theater()
+
+    kutaisi = theater.control_point_named("Kutaisi")
+    senaki = theater.control_point_named("Senaki-Kolkhi")
+
+    # The red-block factory generated and bound the red field it sits on.
+    assert len(senaki.preset_locations.factories) == 1
+    assert not kutaisi.preset_locations.factories
+
+    # The red-block front-line path created the convoy route between its
+    # endpoint control points, both directions.
+    assert any(dest.name == "Senaki-Kolkhi" for dest in kutaisi.convoy_routes)
+    assert any(dest.name == "Kutaisi" for dest in senaki.convoy_routes)
+
+    # The blue-block KrAZ produced a NEUTRAL FOB control point.
+    fob = theater.control_point_named("Neutral FOB Alpha")
+    assert fob.starting_coalition is Player.NEUTRAL
 
 
 def _build_dynamic_spawn_miz(path: Path) -> None:

@@ -205,18 +205,27 @@ class MizCampaignLoader:
 
     @property
     def neutral_fobs(self) -> Iterator[VehicleGroup]:
-        for group in self.red.vehicle_group:
+        # The KrAZ itself declares neutrality, so the block it sits in is
+        # irrelevant (historically red-only, which silently dropped a
+        # blue-block declaration).
+        for group in itertools.chain(self.blue.vehicle_group, self.red.vehicle_group):
             if group.units[0].type == self.NEUTRAL_FOB_UNIT_TYPE:
                 yield group
 
-    # 414th marker-block convention: the RED country block is the
-    # coalition-agnostic default marker block (upstream campaigns author BLUE
-    # SAM/EWR sites as red-block markers near blue fields and proximity decides
-    # the owner), so red-block markers bind to the nearest CP of either side.
-    # A group authored in the BLUE block is an explicit blue-ownership
-    # declaration: it was silently dropped for the classes below until
-    # 2026-07-12 (22 authored markers across 7 campaigns never generated), and
-    # now binds with blue preference (see objective_info).
+    # 414th marker-block convention: EVERY object class below reads BOTH CJTF
+    # country blocks -- which block a group was authored in never decides
+    # whether it generates. Single-block readers silently dropped authored
+    # objects (22 blue-block markers across 7 campaigns until 2026-07-12; 3
+    # red-block factories until 2026-07-20). The block carries meaning in
+    # exactly two places: the CP-defining classes above (off-map / carrier /
+    # LHA / FOB), where the block IS the starting owner, and the marker
+    # classes whose callers pass prefer_blue (SAM/EWR/missile/coastal/ship/
+    # offshore), where a BLUE-block group is an explicit blue-ownership
+    # declaration and binds a nearby blue CP (see objective_info). The RED
+    # block stays the coalition-agnostic default marker block (upstream
+    # campaigns author blue SAM/EWR sites as red-block markers near blue
+    # fields; proximity decides the owner). Economy objects, path/lane
+    # definitions, and neutral FOBs ignore the block entirely.
 
     @property
     def ships(self) -> Iterator[ShipGroup]:
@@ -304,7 +313,7 @@ class MizCampaignLoader:
 
     @property
     def factories(self) -> Iterator[StaticGroup]:
-        for group in self.blue.static_group:
+        for group in itertools.chain(self.blue.static_group, self.red.static_group):
             if group.units[0].type in self.FACTORY_UNIT_TYPE:
                 yield group
 
@@ -412,13 +421,16 @@ class MizCampaignLoader:
 
     @property
     def front_line_path_groups(self) -> Iterator[VehicleGroup]:
-        for group in self.country(blue=Player.BLUE).vehicle_group:
+        # A path definition has no owner -- its endpoint CPs bind it -- so the
+        # block is ignored (historically blue-only, which silently dropped a
+        # red-block path).
+        for group in itertools.chain(self.blue.vehicle_group, self.red.vehicle_group):
             if group.units[0].type == self.FRONT_LINE_UNIT_TYPE:
                 yield group
 
     @property
     def shipping_lane_groups(self) -> Iterator[ShipGroup]:
-        for group in self.country(blue=Player.BLUE).ship_group:
+        for group in itertools.chain(self.blue.ship_group, self.red.ship_group):
             if group.units[0].type == self.SHIPPING_LANE_UNIT_TYPE:
                 yield group
 
@@ -442,7 +454,7 @@ class MizCampaignLoader:
 
     @property
     def cp_convoy_spawns(self) -> Iterator[VehicleGroup]:
-        for group in self.country(blue=Player.BLUE).vehicle_group:
+        for group in itertools.chain(self.blue.vehicle_group, self.red.vehicle_group):
             if group.units[0].type == self.CP_CONVOY_SPAWN_TYPE:
                 yield group
 

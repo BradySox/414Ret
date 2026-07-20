@@ -1090,7 +1090,13 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     Configuration dialog gained a **Country selector** under Livery (live-write like the livery
     selector; preset dropdowns show each preset's nation; Save/Load Config round-trips the
     country; fixed in passing — after Replace-with-preset the livery selector wrote to the
-    discarded squadron). Desert Storm pins all 13 US squadrons `country: USA`.
+    discarded squadron). **The selector's list is trimmed to the airframe's operators** (same-day
+    follow-up — a flyable module's DCS roster admits every country, so the Hornet offered the
+    Third Reich): `game/dcs/operatorcountries.py` resolves curated family rows (flyables) → the
+    type's own pydcs roster (AI types) → an AI sibling's roster (F-16C/F-15ESE/M-2000C/AH-64D/
+    CH-47F/Mi-24P) → full-list fallback (mods/warbirds); faction country always appended;
+    typo-guarded (`tests/dcs/test_operator_countries.py`). Desert Storm pins all 13 US squadrons
+    `country: USA`.
     (`game/missiongenerator/missiongenerator.py`,
     `game/missiongenerator/aircraft/aircraftgenerator.py`, `game/squadrons/pilotnames.py`,
     `game/campaignloader/campaignairwingconfig.py`, `game/campaignloader/defaultsquadronassigner.py`,

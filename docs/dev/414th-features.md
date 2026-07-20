@@ -2568,9 +2568,18 @@ ask — Starfire's yaml pin, Toad's under-the-livery dropdown):
   nation-countried presets by name and need no pin) — guard
   `test_desert_storm_us_squadrons_pin_their_nation`.
 - **Air Wing Configuration dialog "Country:" selector** (`SquadronCountrySelector`, under the
-  Livery selector — Toad's spot): every pydcs country sorted by name, opens on the squadron's
-  current nation, **writes `squadron.country` live** (the livery-selector pattern), and a country
-  pydcs doesn't list (mod) is inserted and shown faithfully. Pilot names follow automatically —
+  Livery selector — Toad's spot): opens on the squadron's current nation, **writes
+  `squadron.country` live** (the livery-selector pattern), and a country pydcs doesn't list (mod)
+  is inserted and shown faithfully. **The list is trimmed to the airframe's operators**
+  (2026-07-20 same-day follow-up, the "Third Reich Hornets" screenshot):
+  `game/dcs/operatorcountries.py` resolves, in order, a **curated family-operator row** (flyable
+  modules — the Hornet/A-10/F-4E/F-5E/MiG-21/JF-17/Ka-50/Gazelle/AV-8B — whose DCS roster admits
+  every country, since ED lets any module fly under any nation), the type's **own pydcs roster**
+  when it discriminates (all AI-only types — the GR4 offers 5 nations), a **same-family AI
+  sibling's roster** (F-16C blk50 / F-15ESE / M-2000C / AH-64D / CH-47F / Mi-24P — the AI type
+  carries ED's real operator data), else **no data ⇒ the full list** (mods/warbirds keep the old
+  behavior). The faction's own country is always appended (revert to the shared faction voice);
+  curated ids/names are typo-guarded by test so a pydcs rename fails CI. Pilot names follow automatically —
   the New Game wizard shows the dialog *before* `populate_for_turn_0` recruits the roster, and
   `Squadron.faker` reads `squadron.country` live (mid-campaign changes affect newly recruited
   pilots only). The preset dropdowns (`SquadronDefSelector`) now suffix each preset with its
@@ -2584,8 +2593,9 @@ ask — Starfire's yaml pin, Toad's under-the-livery dropdown):
 |---|---|
 | Config field + pick preference | `game/campaignloader/campaignairwingconfig.py`, `game/campaignloader/defaultsquadronassigner.py` |
 | Dialog selector + yaml round-trip | `qt_ui/windows/AirWingConfigurationDialog.py` |
+| Operator-country resolution | `game/dcs/operatorcountries.py` |
 | Desert Storm pins | `resources/campaigns/iraq_desert_storm.yaml` |
-| Tests | `tests/test_squadron_country_pin.py`, `tests/test_airwing_country_selector.py` (offscreen Qt), `tests/fourteenth/test_desert_storm.py` |
+| Tests | `tests/test_squadron_country_pin.py`, `tests/test_airwing_country_selector.py` (offscreen Qt), `tests/dcs/test_operator_countries.py`, `tests/fourteenth/test_desert_storm.py` |
 
 Needs an in-app pass (checklist **I6**): the selector rendering/behaving in the real dialog, and a
 DS re-fly confirming American voices. Deferred: filtering the livery list by the squadron country

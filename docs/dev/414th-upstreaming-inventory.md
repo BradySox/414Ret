@@ -32,12 +32,22 @@ against them. Baseline: **compliant** — all dev-targeted via the PR fork, one 
 change per PR, upstream gates validated per PR, crowded zones respected. Gaps + calls:
 
 - **Changelog entries** (their Developer's Guide + PR template ask): most open carves
-  ship without a `changelog.md` note. **DM call: draft them all, apply from the dev
-  machine** — ready-to-paste entries live in
-  [414th-upstream-changelog-drafts.md](414th-upstream-changelog-drafts.md) (delete that
-  file once applied). #882 is exempt (dev-only harness, no user-observable behavior);
-  #872 likely already carries one (its dev rebase hit a changelog conflict) — verify
-  before adding. New carves carry an entry from birth per the adopted standard.
+  shipped without a `changelog.md` note. **APPLIED 2026-07-20** (per the DM call to
+  draft them all and apply from the dev machine): all 14 open carves missing an entry
+  got one, committed additively to their PR branches (#788 #792 #794 #806 #828 #874
+  #881 #883 #886 #887 #889 #890 #892 #893). The flagged wordings were re-grounded in
+  the real diffs before pasting — #788 covers any fast-forward flight running off its
+  plan (not just air spawns), #806 is the scatter *band* + patrol floor (not "cruise
+  altitude config"), and #892 **tightens** the EWR pool (the draft said "wider"; the
+  layout's SearchRadar fallbacks are removed while period factions gain the new site
+  presets). Verify-first caught that #872/#873/#880/#884 already carried theirs (the
+  wave carves post-date the adopted rule); #882 stays exempt (dev-only harness). The
+  two closed carves were never applied: #891 (its re-carve writes its own entry, with
+  Normandy pruned the old wording is stale anyway) and #885 (**closed-ceded
+  2026-07-20**: Druss99 has his own victory-conditions branch and asked to take the
+  feature — a drift-watch item vs fork §75 when his lands, not a re-carve). The
+  drafts handoff file is deleted per its own banner. New carves carry an entry from
+  birth per the adopted standard.
 - **#881 review loop**: in motion via fork PR #687 (the USNS Card data fix +
   `tools/verify_mod_export.py`); the held replies post after the desktop export run.
 - **Pre-wave PRs #788/#792/#794/#806**: freshness-check against current dev when next

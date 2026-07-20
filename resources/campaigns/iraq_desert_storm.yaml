@@ -279,6 +279,10 @@ squadrons:
   # deliberately NOT authored (they must match the installed DCS livery set; see the
   # squadron-livery-audit note) -- identity only. female_pilot_percentage is 0
   # everywhere: US combat squadrons were closed to women until 1993.
+  # country: USA pins every US unit's DCS nation (comms voice + pilot names):
+  # the blue faction is a CJTF, so an airframe-name squadron pick otherwise
+  # draws a random nation's preset (the flown Israeli/Greek-voiced F-16 finding).
+  # The RAF/French units bind nation-countried presets by name and need no pin.
   # ---- BLUE: the off-map Saudi rear -- the tanker bridge and the AWACS orbits.
   # The Iraq map has no 60x60 heavy stands west of Baghdad, and historically the
   # big wings never based in Iraq at all: they fly from over the border.
@@ -288,6 +292,7 @@ squadrons:
       name: 963rd AWACS
       nickname: Blue Knights
       female_pilot_percentage: 0
+      country: USA
       aircraft:
         - E-3A
       size: 1
@@ -296,6 +301,7 @@ squadrons:
       name: 1701st AREFW (Provisional)
       nickname: ""
       female_pilot_percentage: 0
+      country: USA
       aircraft:
         - KC-135 Stratotanker
       size: 1
@@ -303,6 +309,7 @@ squadrons:
       name: 1702nd AREFW (Provisional)
       nickname: ""
       female_pilot_percentage: 0
+      country: USA
       aircraft:
         - KC-135 Stratotanker MPRS
       size: 1
@@ -350,6 +357,7 @@ squadrons:
       name: 58th TFS
       nickname: Gorillas
       female_pilot_percentage: 0
+      country: USA
       aircraft:
         - F-15C Eagle
       size: 12
@@ -359,6 +367,7 @@ squadrons:
       name: 561st TFS
       nickname: Black Knights
       female_pilot_percentage: 0
+      country: USA
       aircraft:
         - F-4E-45MC Phantom II
       size: 12
@@ -372,6 +381,7 @@ squadrons:
       name: VF-103
       nickname: Sluggers
       female_pilot_percentage: 0
+      country: USA
       aircraft:
         - F-14B Tomcat
       size: 8
@@ -386,6 +396,7 @@ squadrons:
       name: 23rd TFS
       nickname: Fighting Hawks
       female_pilot_percentage: 0
+      country: USA
       aircraft:
         - F-16CM Fighting Falcon (Block 50)
       size: 8
@@ -396,6 +407,7 @@ squadrons:
       name: VFA-81
       nickname: Sunliners
       female_pilot_percentage: 0
+      country: USA
       aircraft:
         - F/A-18C Hornet (Lot 20)
       size: 8
@@ -405,6 +417,7 @@ squadrons:
       name: 336th TFS
       nickname: Rocketeers
       female_pilot_percentage: 0
+      country: USA
       aircraft:
         - F-15E Strike Eagle (Suite 4+)
       size: 8
@@ -415,6 +428,7 @@ squadrons:
       name: 355th TFS
       nickname: Falcons
       female_pilot_percentage: 0
+      country: USA
       aircraft:
         - A-10C Thunderbolt II (Suite 7)
       size: 8
@@ -426,6 +440,7 @@ squadrons:
       name: 7-101st Aviation
       nickname: Eagle Lift
       female_pilot_percentage: 0
+      country: USA
       aircraft:
         - CH-47F Block I
       size: 4
@@ -436,6 +451,7 @@ squadrons:
       name: 1-101st Aviation
       nickname: Expect No Mercy
       female_pilot_percentage: 0
+      country: USA
       aircraft:
         - AH-64A Apache
       size: 4
@@ -445,6 +461,7 @@ squadrons:
       name: 2-17th Cavalry
       nickname: Out Front
       female_pilot_percentage: 0
+      country: USA
       aircraft:
         - OH-58D(R) Kiowa Warrior
       size: 4

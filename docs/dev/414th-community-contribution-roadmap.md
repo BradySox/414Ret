@@ -94,7 +94,11 @@ REVIEW). "Strip" = the 414th slice to remove for a clean PR.
 
 | Feature | PR | Owes |
 |---|---|---|
-| Recon fog-of-war (§3 PR #1) | #828 | ✅ Rebased + un-drafted 2026-07-19 (one commit on dev @ `acf02b75`, 451 tests green) — awaiting maintainer review |
+| Recon fog-of-war (§3 PR #1) | #828 (draft) | Rebased 2026-07-19 (one commit on dev @ `acf02b75`, 451 tests green); briefly un-drafted, then deliberately re-drafted the same evening — un-draft when ready |
+| Fixed-wing CTLD paradrop (§76 core) | #884 | Un-drafted 2026-07-20, Starfire13 pinged — awaiting maintainer review |
+| VWV v3.2.0 registration (item 22) | #881 | Awaiting maintainer review |
+| Lua plugin test harness (the fork's `tests/lua/`) | #882 (draft) | The Wave-5 enabler; un-draft call open |
+| MIST 51-symbol shim (stacked on #882) | #883 (draft) | Review with/after #882; the Pretense teleport/respawn family is the in-game watch item |
 | Splash Damage coherent defaults (item 21) | #880 | Opened 2026-07-19 — awaiting maintainer review (offer to split bug-fixes from tuning stands in the PR body) |
 | Cruise missile strikes (§63 core) | #872 | ✅ Ready for review 2026-07-19 — the DM flew the full loop locally ("works 10/10") and the defender launch wake was ported into the PR (Skynet-adapted comments), un-drafted |
 | Curated carrier comms (§65) | #874 (draft) | Un-draft after B18 in-game pass |

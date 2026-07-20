@@ -24,6 +24,29 @@ Verify each candidate in-game first (cross-ref
 [414th-ingame-pass-checklist.md](414th-ingame-pass-checklist.md)) — an
 unvalidated "fix" is not something to ask upstream to take.
 
+## 2026-07-20 standards audit (upstream dev-process adoption applied to the open PRs)
+
+The day the upstream Contributing / dev-guide / modding wiki pages were adopted as the
+fork's own standards (CLAUDE.md Conventions), the 21 open upstream PRs were audited
+against them. Baseline: **compliant** — all dev-targeted via the PR fork, one focused
+change per PR, upstream gates validated per PR, crowded zones respected. Gaps + calls:
+
+- **Changelog entries** (their Developer's Guide + PR template ask): most open carves
+  ship without a `changelog.md` note. **DM call: draft them all, apply from the dev
+  machine** — ready-to-paste entries live in
+  [414th-upstream-changelog-drafts.md](414th-upstream-changelog-drafts.md) (delete that
+  file once applied). #882 is exempt (dev-only harness, no user-observable behavior);
+  #872 likely already carries one (its dev rebase hit a changelog conflict) — verify
+  before adding. New carves carry an entry from birth per the adopted standard.
+- **#881 review loop**: in motion via fork PR #687 (the USNS Card data fix +
+  `tools/verify_mod_export.py`); the held replies post after the desktop export run.
+- **Pre-wave PRs #788/#792/#794/#806**: freshness-check against current dev when next
+  touched (the #791 went-stale lesson; #892 is the refresh pattern).
+- **#828**: in re-review — additive commits only from here (their large-PR
+  no-force-push rule).
+- **#886 icons/banners** (Modded-Unit-Support step 9): optional — the fork ships no
+  Shahed UI art either (checked 2026-07-20); author fork-side first if wanted.
+
 ## Readiness legend
 
 | Mark | Meaning |

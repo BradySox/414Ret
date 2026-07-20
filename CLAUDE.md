@@ -2755,6 +2755,37 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     incl. the real `check_win_loss` branch order + negotiation precedence driven
     duck-typed); features doc §75, checklist B29 — needs an in-app pass + the CI
     client rebuild.
+76. **CTLD paratroopers (fixed-wing air assault)** — fixed-wing troop transports fly
+    Air Assault by **paradrop**, for both the human C-130J-30 and AI transports —
+    the "proper support for paradrops" the C-130J yaml TODO'd since the Hercules-mod
+    purge (#53) made Air Assault helo-only. **Planner:** the Builder gate is now
+    "helo OR troop transport" (`cabin_size > 0`); a fixed-wing flight preloads (no
+    pickup zone, the carrier/off-map branch) and its CTLD assault-area waypoint
+    becomes a real AI run-in at **1,000 ft AGL** (`only_for_player=False` — the old
+    Hercules shape) over the 2,500 m target wpZone; `C-130J-30.yaml` gains
+    `Air Assault: 40` (below the helos' 50 — a helo in range still wins the tasking,
+    the C-130 takes the long-reach/no-helo cases; campaign C-130J squadrons are
+    near-universally `secondary: any`, so NEW games auto-plan it). **Runtime**
+    (`ctld-config.lua` — the config layer, CTLD.lua untouched): the emitter marks
+    paradrop-capable types (fixed-wing + cabin, Python-side); the stock F10
+    **"Unload / Extract Troops" IS the jump command** while airborne (the
+    `unloadExtractTroops` wrap — grounded unload/extraction/helos fall through to
+    stock byte-identically; player jump ceiling 3,000 ft AGL, AI exempt); the stick
+    leaves the aircraft immediately and the troop group ground-spawns at the
+    velocity-projected drop point after a real **descent delay** (AGL ÷ 6.5 m/s,
+    cap 90 s) — a transport killed after the drop still delivers, one killed before
+    never does; landing reuses CTLD's own bookkeeping (wpZone march-to-centre = the
+    existing assault capture behavior, JTAC stick, dropped ledgers) so **no phantom
+    spawns** (the troops are the aircraft's CTLD cargo, losses record natively). An
+    AI release loop (5 s) drops one stick per sortie within 1,200 m of the flight's
+    own zone centre; `preload_troops` now **retries every 30 s** (~2 h give-up) so
+    TOT-delayed late-activated transports stop arriving empty. The C-130J EW
+    deny-list (§2) gains TRANSPORT + AIR_ASSAULT so a hauler/paradrop bird never
+    grows the EW menu. Deliberately v2: An-26/Il-76 cabins, chute visuals, LAPES.
+    Tests `tests/ato/flightplans/test_airassault.py` +
+    `tests/lua/test_ctld_paradrop.py` + the extended EW-deconfliction test;
+    features doc §76, checklist B30 — needs an in-game pass (the AI run-in profile
+    + troops-march-to-capture are DCS-only).
 
 ---
 

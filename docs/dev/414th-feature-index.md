@@ -87,6 +87,7 @@ pass checklist `§N` is unregistered, or this table drifts.
 | §73 | Per-airframe default loadout for a task | — | — |
 | §74 | Native DTC data pre-population (F/A-18C + F-16C) | — | `dtc_data_cartridges` |
 | §75 | Custom victory conditions | — | `alternate_victory_domination`, `alternate_victory_attrition` |
+| §76 | CTLD paratroopers (fixed-wing air assault) | `ctld` | — |
 | — | MANTIS IADS engine | `mantisiads` | — |
 | — | Splash Damage (414th tuned) | `splashdamage3` | — |
 | — | AI recon BDA capture (§3 TARPS) | `airecon` | — |

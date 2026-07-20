@@ -612,6 +612,17 @@ FEATURES: tuple[Feature, ...] = (
             "alternate_victory_attrition",
         ),
     ),
+    Feature(
+        # §76 CTLD paratroopers: fixed-wing troop transports (C-130J-30) fly
+        # Air Assault by paradrop -- the planner admits any cabin_size > 0
+        # airframe, and the ctld plugin's config layer jumps the stick (player:
+        # airborne unload; AI: auto-release over the target zone). Rides the
+        # ctld plugin toggle; no Settings field.
+        "ctld_paratroopers",
+        "CTLD paratroopers (fixed-wing air assault)",
+        76,
+        plugin_id="ctld",
+    ),
     # Always-on engine plugins — major 414th machinery documented in design notes
     # rather than a numbered "Features at a Glance" entry.
     Feature("mantis_iads", "MANTIS IADS engine", plugin_id="mantisiads"),

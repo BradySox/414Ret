@@ -51,6 +51,9 @@
     "A-6E Tanker"
   ],
   "frontline_units": [
+    "[CH] Oshkosh L-ATV (M2)",
+    "[CH] Oshkosh L-ATV (Mk19)",
+    "[CH] Oshkosh M-ATV MRAP (Mk19)",
     "MBT M1A2C SEP v3 Abrams",
     "APC MRAP MaxxPro",
     "LAV-25",
@@ -92,6 +95,9 @@
     "[CH] Land Rover Wolf WMIK (Mk19)"
   ],
   "artillery_units": [
+    "[CH] M270A1 MLRS (ATACMS)",
+    "[CH] M270A1 MLRS (GLSDB)",
+    "[CH] M270A1 MLRS (GMLRS)",
     "M109A6 Paladin",
     "M270 Multiple Launch Rocket System",
     "[CH] M270A1 MLRS (GMLRS)",
@@ -189,6 +195,7 @@
     "[CH] M270A1 MLRS (ATACMS)"
   ],
   "air_defense_units": [
+    "[CH] Centurion C-RAM",
     "EWR AN/FPS-117 Radar",
     "Flakpanzer Gepard",
     "M163 Vulcan Air Defense System",

@@ -65,13 +65,15 @@ def test_no_shipped_faction_keeps_mod_presets_with_mods_off() -> None:
         ), f"{path.name} keeps mod preset group(s) with all mods off: {leaks}"
 
 
-def test_cjs_super_hornet_toggles_default_on() -> None:
-    """DM call 2026-07-21: the CJS Super Hornet pack (FA-18E/F, EA-18G, and the
-    ET/FT buddy tankers) defaults ON -- the Growler escort-jammer line rides on
-    it. all_off() must still produce a genuinely mod-free baseline."""
+def test_cjs_super_hornet_defaults_off() -> None:
+    """DM call 2026-07-21 (revised): the CJS Super Hornet pack (FA-18E/F, EA-18G,
+    ET/FT tankers) defaults OFF -- forcing a mod on every client was the wrong
+    lever. Escort jamming (§77) is instead available to a curated set of *vanilla*
+    EW jets, so the Growler is the DM's opt-in premium tier, not a forced default.
+    all_off() must still produce a genuinely mod-free baseline."""
     defaults = ModSettings()
-    assert defaults.fa_18efg
-    assert defaults.fa18ef_tanker
+    assert not defaults.fa_18efg
+    assert not defaults.fa18ef_tanker
     off = ModSettings.all_off()
     assert not off.fa_18efg
     assert not off.fa18ef_tanker

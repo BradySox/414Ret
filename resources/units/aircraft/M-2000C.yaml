@@ -37,7 +37,9 @@ radios:
 #   ReadyALCM: true
 #   RocketBurst: 6
 #   WpBullseye: 0
+escort_jammer_tier: loose
 tasks:
+  Escort Jammer: 150
   BAI: 255
   BARCAP: 630
   CAS: 245

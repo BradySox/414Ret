@@ -12,7 +12,9 @@ max_range: 300
 variants:
   F-15E Strike Eagle:
     display_name: F-15E Strike Eagle (AI)
+escort_jammer_tier: loose
 tasks:
+  Escort Jammer: 150
   BAI: 705
   BARCAP: 470
   CAS: 705

@@ -25,7 +25,9 @@ max_range: 350
 default_livery: vf-142 `ghost riders`
 variants:
   F-14A Tomcat (AI): {}
+escort_jammer_tier: ecm
 tasks:
+  Escort Jammer: 380
   BARCAP: 645
   Escort: 605
   Fighter sweep: 615

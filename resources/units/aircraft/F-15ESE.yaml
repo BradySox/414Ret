@@ -24,7 +24,9 @@ radios:
     # assigned to radio 1 channel 1 no matter what we do.
     intra_flight_radio_index: 1
     inter_flight_radio_index: 2
+escort_jammer_tier: loose
 tasks:
+  Escort Jammer: 150
   BAI: 705
   BARCAP: 470
   CAS: 705

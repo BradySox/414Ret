@@ -18,6 +18,7 @@ from dcs.unittype import FlyingType
 from dcs.weapons_data import weapon_ids
 
 from game.ato import FlightType
+from game.data.escort_jamming import EscortJammerTier
 from game.data.units import HEAVY_BOMBER_DCS_IDS, UnitClass
 from game.dcs.aircraftproperties import PropertyDateGate
 from game.dcs.lasercodeconfig import LaserCodeConfig
@@ -311,6 +312,12 @@ class AircraftType(UnitType[Type[FlyingType]]):
     #: ``date_gated_properties`` block. Empty (gates nothing) for the many airframes
     #: that declare no block.
     property_date_gate: PropertyDateGate = PropertyDateGate()
+
+    #: Graduated escort-jamming tier (§77). Set on the curated set of EW-capable
+    #: airframes alongside the ``Escort Jammer`` task; ``None`` on everything else.
+    #: A ``LOOSE``-tier airframe is only auto-planned when ``escort_jamming_loose``
+    #: is enabled. See :mod:`game.data.escort_jamming`.
+    escort_jammer_tier: Optional[EscortJammerTier] = None
 
     _by_name: ClassVar[dict[str, AircraftType]] = {}
     _by_unit_type: ClassVar[dict[type[FlyingType], list[AircraftType]]] = defaultdict(
@@ -807,6 +814,9 @@ class AircraftType(UnitType[Type[FlyingType]]):
             tanker_refuels_helicopters=data.get("tanker_refuels_helicopters", False),
             property_date_gate=PropertyDateGate.from_data(
                 data.get("date_gated_properties")
+            ),
+            escort_jammer_tier=EscortJammerTier.from_yaml(
+                data.get("escort_jammer_tier")
             ),
         )
 

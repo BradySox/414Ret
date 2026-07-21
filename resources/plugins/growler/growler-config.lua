@@ -72,12 +72,21 @@ for _, rec in ipairs(dcsRetribution.growler.jammers or {}) do
     for _, member in ipairs(rec.protected or {}) do
         prot[#prot + 1] = member.groupName
     end
+    -- Graduated tier (§77): the emitter derives these from the airframe's EW kit.
+    -- defensivePower scales this jammer's spoof bubble; offensive gates whether it
+    -- suppresses SAMs at all (only the dedicated FULL tier does). Missing fields
+    -- (old saves / hand-authored nodes) default to a full-strength dedicated jammer.
+    local defPower = tonumber(rec.defensivePower) or 1.0
+    local offensive = rec.offensive == nil or tostring(rec.offensive) == "1"
     jammers[#jammers + 1] = {
         groupName = rec.groupName,
         side = tonumber(rec.side) or 2,
         isPlayer = tostring(rec.isPlayer) == "1",
+        tier = rec.tier or "full",
+        defensivePower = defPower,
+        offensive = offensive,
         protected = prot,
-        -- AI jams automatically (after grace); a player Growler starts OFF and
+        -- AI jams automatically (after grace); a player jammer starts OFF and
         -- toggles via the F10 menu.
         active = tostring(rec.isPlayer) ~= "1",
     }
@@ -188,7 +197,10 @@ local function spoofTick()
                             local d = flatDist(wp, unit:getPoint())
                             for _, band in ipairs(SPOOF_BANDS) do
                                 if d <= band.dist then
-                                    local pk = band.pk * DEF_POWER
+                                    -- Scale by the global option AND this jammer's
+                                    -- tier (defensivePower): a self-protect pod is a
+                                    -- far weaker bubble than a dedicated ALQ-99.
+                                    local pk = band.pk * DEF_POWER * jam.defensivePower
                                     if math.random(100) <= pk then
                                         weapon:destroy()
                                         spoofed = true
@@ -254,7 +266,9 @@ local function offensiveTick(now)
         return
     end
     for _, jam in ipairs(jammers) do
-        local unit = emittingUnit(jam)
+        -- Only the dedicated FULL tier suppresses SAMs; ECM/self-protect/loose
+        -- jammers defend the package but never pulse a radar onto weapons-hold.
+        local unit = jam.offensive and emittingUnit(jam) or nil
         if unit then
             local jp = unit:getPoint()
             local enemySide = (jam.side == 2) and 1 or 2

@@ -14,7 +14,9 @@ role: Carrier-based Attack
 gunfighter: true
 variants:
   A-7E Corsair II: {}
+escort_jammer_tier: self_protect
 tasks:
+  Escort Jammer: 280
   BAI: 685
   CAS: 685
   DEAD: 340

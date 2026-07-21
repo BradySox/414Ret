@@ -208,5 +208,5 @@ class GeneratorOptions(QtWidgets.QWizardPage):
         self.oh_6_vietnamassetpack.setChecked(s.get("oh_6_vietnamassetpack", False))
         self.ov10a_bronco.setChecked(s.get("ov10a_bronco", False))
         self.vietnamwarvessels.setChecked(s.get("vietnamwarvessels", False))
-        self.fa_18efg.setChecked(s.get("fa_18efg", True))
-        self.fa18ef_tanker.setChecked(s.get("fa18ef_tanker", True))
+        self.fa_18efg.setChecked(s.get("fa_18efg", False))
+        self.fa18ef_tanker.setChecked(s.get("fa18ef_tanker", False))

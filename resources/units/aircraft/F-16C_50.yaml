@@ -56,7 +56,9 @@ radios:
 #   LaserCode1: 8
 #   LaserCode10: 8
 #   LaserCode100: 6
+escort_jammer_tier: self_protect
 tasks:
+  Escort Jammer: 300
   BAI: 700
   BARCAP: 560
   CAS: 700

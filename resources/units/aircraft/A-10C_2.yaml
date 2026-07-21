@@ -31,7 +31,9 @@ radios:
     namer: a10c-ii
     intra_flight_radio_index: 2
     inter_flight_radio_index: 1
+escort_jammer_tier: loose
 tasks:
+  Escort Jammer: 150
   BAI: 835
   CAS: 835
   OCA/Aircraft: 745

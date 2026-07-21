@@ -48,7 +48,9 @@ default_overrides:
   #LaserCodeDigit4: 8
   IsEfbAllowed: true
   #CombatTreeSpoofable: 1 # 0 = all, 1 = historical, 2 = none
+escort_jammer_tier: self_protect
 tasks:
+  Escort Jammer: 300
   Anti-ship: 110
   BAI: 590
   BARCAP: 430

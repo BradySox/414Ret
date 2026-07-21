@@ -19,7 +19,9 @@ variants:
   F-4EJ Kai Phantom II: {}
   F-4F Phantom II: {}
   Phantom F.3: {}
+escort_jammer_tier: self_protect
 tasks:
+  Escort Jammer: 300
   BAI: 595
   BARCAP: 430
   CAS: 595

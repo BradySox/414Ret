@@ -129,16 +129,15 @@ def _tgo(*, x: float, category: str = "ammo", alive: bool = True) -> Any:
     )
 
 
-def test_nearest_legal_target_prefers_caches_and_respects_roe(monkeypatch: Any) -> None:
+def test_nearest_target_prefers_the_nearest_alive_cache(monkeypatch: Any) -> None:
     boat = _carrier()
     boat.position = SimpleNamespace(x=0.0, distance_to_point=lambda p: abs(p.x))
     near_cache = _tgo(x=100.0)
     far_cache = _tgo(x=300.0)
-    dead_cache = _tgo(x=50.0, alive=False)
-    blocked_cache = _tgo(x=10.0)  # nearest but ROE-locked
+    dead_cache = _tgo(x=50.0, alive=False)  # nearer, but dead -> skipped
     red_cp = SimpleNamespace(
         captured=SimpleNamespace(is_red=True),
-        ground_objects=[far_cache, dead_cache, blocked_cache, near_cache],
+        ground_objects=[far_cache, dead_cache, near_cache],
     )
     blue_cp = SimpleNamespace(
         captured=SimpleNamespace(is_red=False), ground_objects=[_tgo(x=1.0)]
@@ -147,13 +146,9 @@ def test_nearest_legal_target_prefers_caches_and_respects_roe(monkeypatch: Any) 
     monkeypatch.setattr(
         co, "plan_carrier_strike", co.plan_carrier_strike
     )  # keep import warm
-    import game.fourteenth.phases as phases
-
-    monkeypatch.setattr(phases, "roe_blocks_target", lambda g, t: t is blocked_cache)
     target = co._nearest_legal_strike_target(game, boat)  # type: ignore[arg-type]
-    assert (
-        target is near_cache
-    )  # nearest ALIVE, non-blocked cache (not the blocked x=10)
+    # nearest ALIVE cache (x=50 is dead; the blue cache at x=1 is enemy-filtered).
+    assert target is near_cache
 
 
 class _Pt:

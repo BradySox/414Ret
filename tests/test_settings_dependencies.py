@@ -60,7 +60,7 @@ def test_enabled_when_masters_are_real_settings() -> None:
 
 def test_normalize_enabled_when() -> None:
     assert normalize_enabled_when(None) is None
-    assert normalize_enabled_when("red_intent") == ("red_intent", True)
+    assert normalize_enabled_when("motorpool_enabled") == ("motorpool_enabled", True)
     assert normalize_enabled_when(("automate_front_line_stance", False)) == (
         "automate_front_line_stance",
         False,
@@ -87,18 +87,18 @@ def _layout_for(section_page: tuple[str, str], settings: Settings) -> Any:
 
 def test_child_greys_out_when_master_is_off(qapp: Any) -> None:
     settings = Settings()
-    settings.red_intent = False
-    layout = _layout_for(("Air Doctrine", "Auto-planner behavior"), settings)
+    settings.motorpool_enabled = False
+    layout = _layout_for(("Campaign Management", "Campaign features"), settings)
 
-    boldness = layout.settings_map["red_intent_boldness"]
-    label = layout.labels_map["red_intent_boldness"]
+    cap = layout.settings_map["motorpool_spawn_cap"]
+    label = layout.labels_map["motorpool_spawn_cap"]
     # Master off -> child control + label disabled on open.
-    assert not boldness.isEnabled()
+    assert not cap.isEnabled()
     assert not label.isEnabled()
 
     # Toggling the master ON re-enables the child live.
-    layout.settings_map["red_intent"].setChecked(True)
-    assert boldness.isEnabled()
+    layout.settings_map["motorpool_enabled"].setChecked(True)
+    assert cap.isEnabled()
     assert label.isEnabled()
 
 

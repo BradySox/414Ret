@@ -9,8 +9,8 @@ from pathlib import Path
 
 import yaml
 
-from game.fourteenth.phases import parse_phases
 from game.fourteenth.political_will import parse_will_profile
+from game.fourteenth.red_tempo import parse_red_tempo
 
 CAMPAIGN = Path("resources/campaigns/iraq_inherent_resolve.yaml")
 
@@ -30,7 +30,6 @@ def test_inherent_resolve_campaign_definition() -> None:
         "vietnam_political_will",
         "vietnam_convoy_interdiction",
         "vietnam_airbase_harassment",
-        "campaign_phases",
         "high_digit_sams",  # the ISIS faction's ERO technicals are HDS content
     ):
         assert data["settings"][key] is True, key
@@ -73,23 +72,11 @@ def test_inherent_resolve_campaign_definition() -> None:
     assert profile.blue.label == "The Coalition's mandate"
     assert profile.red.label == "the caliphate's resolve"
     assert profile.weights.red_cache_lost == 4.0
-    assert profile.weights.blue_roe_violation == 1.0  # CDE pressure, not taboo
     assert profile.weights.red_ground_unit_lost == 0.05  # body count buys nothing
     assert profile.weights.blue_passive_regen == 0.0  # time drains a mandate
 
-    arc = parse_phases(data["phases"])
-    assert [phase.key for phase in arc] == ["isolation", "east_mosul", "west_mosul"]
-    # The Mosul positive-control box is permanent; the West Mosul phase adds the tight
-    # Old City box on top. Never lock a target class -- the caches stay legal targets.
-    zone_counts = [len(phase.restricted_zones) for phase in arc]
-    assert zone_counts == [1, 1, 2]
-    for phase in arc:
-        assert phase.locked_target_classes == ()
-        assert phase.free_fire_zones == ()  # no inverted ROE
-        for z in phase.restricted_zones:
-            assert z.kind == "box"
-            assert z.x is not None and z.y is not None
-            assert z.width_nm > 0.0 and z.height_nm > 0.0
-    # Mosul is always positive-control; the Old City appears only in West Mosul.
-    assert any(z.name.startswith("Mosul") for z in arc[0].restricted_zones)
-    assert any("Old City" in z.name for z in arc[2].restricted_zones)
+    # The East Mosul push surges the caliphate's supply down the ratline (§35).
+    windows = parse_red_tempo(data["red_tempo"])
+    assert [w.from_turn for w in windows] == [6]
+    assert windows[0].name == "East Mosul"
+    assert windows[0].trail_surge == 2.0

@@ -570,8 +570,8 @@ supply_routes:
 # Derived with tools/will_pacing_model.py: elite trail+ground strangulation folds Hanoi
 # ~turn 8-10; average rides the full arc to a Linebacker II negotiated win ~turn 16 (BLUE
 # surviving with margin); a floundering war loses Washington ~turn 11-13. Composes with
-# the escalation tax (blue_will_on_entry, below) and the commitment ceiling
-# (vietnam_commitment_ceiling, above). Labels stay Washington/Hanoi. Per-campaign, so
+# the commitment ceiling (vietnam_commitment_ceiling, above). Labels stay
+# Washington/Hanoi. Per-campaign, so
 # Velvet Thunder / Red Flag 81-2 keep the defaults. Needs the in-game M1 pacing pass --
 # the model is play-archetype driven; real losses vary.
 will:
@@ -588,126 +588,14 @@ will:
     red_convoy_unit_lost: 1.0      # the artery, still the sharpest single lever (was 1.5)
     red_ground_unit_lost: 0.35     # CAS/BAI/Arc Light attrition now pressures resolve too
 
-# Vietnam campaign layer W4: the authored ROE escalation arc (campaign phases P2,
-# spec docs/dev/design/414th-vietnam-political-will-roe-notes.md section 3). Rolling
-# Thunder's restrictions -> the bombing halt -> Linebacker -> Linebacker II. Zones
-# shrink and target classes release as the arc escalates; bleeding political will
-# ACCELERATES escalation (advance_when) -- Washington's patience for restraint runs
-# out. Zone centers are control-point names from this campaign's laydown: the Hanoi
-# ring sits over Kutaisi (where the MiGs, the SA-2s, and the industry actually are),
-# Haiphong over Senaki, and the Tbilisi "PRC border" ring NEVER releases -- MiGs
-# flushed across the border stay safe, exactly like the real war.
-phases:
-  - key: rolling_thunder
-    # Richer opening: the trail runs busy from turn 1 (a 1.5x surge = the two baseline
-    # convoys carry ~15 units each, not 10 -- more Armed Recon targets while the deep
-    # war is still locked). Below the 2.0 threshold, so it does NOT add a third road
-    # (the Bombing Halt's 2.0 does that); it just thickens the opening flow.
-    red_tempo:
-      trail_surge: 1.5
+red_tempo:
+  - from_turn: 1
     name: Rolling Thunder
-    narrative: >-
-      Gradual pressure under Washington's thumb: interdict the flow south, but the
-      deep targets are off the list and the Hanoi-Haiphong heartland is sanctuary.
-    emphasis: interdiction
-    objectives:
-      - Interdict the flow south -- kill the trail convoys before they reach the front
-      - Hold the DMZ -- keep the besieged Khe Sanh outpost alive (Niagara / the Super Gaggle)
-      - Respect the sanctuaries -- zone kills bleed Washington's will
-    restricted_zones:
-      - center: Kutaisi
-        radius_nm: 15
-        name: Hanoi sanctuary (RP VI-A)
-      - center: Senaki-Kolkhi
-        radius_nm: 8
-        name: Haiphong sanctuary (RP VI-B)
-      - center: Tbilisi-Lochini
-        radius_nm: 15
-        name: PRC border buffer
-      # The Laos panhandle segment of the trail (Thanh Hoa -> Ban Laboy Ford) is
-      # politically off-limits under early Rolling Thunder ROE -- interdict the flow
-      # elsewhere. Releases in later phases (this corridor is rolling_thunder only).
-      # A shape-typed CORRIDOR (§40 Path A) rather than a circle -- the first authored
-      # box/corridor zone; tune the width / path freely.
-      - shape: corridor
-        name: Laos trail (off limits under Rolling Thunder)
-        width_nm: 12
-        path:
-          - {x: -266003, y: 623883}
-          - {x: -280620, y: 621859}
-          - {x: -288780, y: 620946}
-    locked_targets: [factory, power, oil, fuel, ammo, comms, ware, airfield]
-    advance_when:
-      blue_will_below: 75
-  - key: bombing_halt
-    red_tempo:
-      trail_surge: 2.0
-      resolve_regen: 1.5
+    trail_surge: 1.5
+  - from_turn: 8
     name: The Bombing Halt
-    narrative: >-
-      Washington halts the deep war to talk. The whole delta closes; the trail war
-      and the front are all that is authorized.
-    emphasis: interdiction
-    objectives:
-      - Ride out the halt -- the trail runs double while Washington talks
-      - Keep the front held -- the trail war is all that is authorized
-    min_turn: 8
-    restricted_zones:
-      - center: Kutaisi
-        radius_nm: 25
-        name: Hanoi-Haiphong sanctuary (expanded for the talks)
-      - center: Tbilisi-Lochini
-        radius_nm: 15
-        name: PRC border buffer
-    locked_targets: [factory, power, oil, fuel, ammo, comms, ware, airfield]
-    advance_when:
-      blue_will_below: 65
-  - key: linebacker
-    red_tempo:
-      ground_offensive: 3
-    # Escalation tax (model 3): resuming the deep bombing after the halt costs Washington
-    # will up front, even though the strikes are now sanctioned -- widening the war frays
-    # the home front (the VG "unrestrained bombing erodes morale" dynamic). Charged once
-    # on entry. An elite player who has already folded Hanoi never pays it.
-    blue_will_on_entry: -3
+    trail_surge: 2.0
+    resolve_regen: 1.5
+  - from_turn: 11
     name: Linebacker
-    narrative: >-
-      The talks stalled and the gloves come part-way off: Haiphong, the airfields and
-      the deep target classes release; only the inner Hanoi ring still binds.
-    emphasis: rollback
-    objectives:
-      - text: Break the SAM belt to under 40% strength
-        done_when:
-          enemy_iads_below: 0.4
-      - Pour strikes onto the released deep target classes
-    min_turn: 11
-    restricted_zones:
-      - center: Kutaisi
-        radius_nm: 6
-        name: Hanoi sanctuary (inner ring)
-      - center: Tbilisi-Lochini
-        radius_nm: 15
-        name: PRC border buffer
-    advance_when:
-      blue_will_below: 50
-      enemy_iads_below: 0.4
-  - key: linebacker_ii
-    # The steepest escalation tax: the Linebacker II "Christmas bombing" drew the loudest
-    # domestic and international outcry of the war. Maximum military effort, maximum
-    # political cost at home -- if the war has dragged this far, patience is expensive.
-    blue_will_on_entry: -5
-    name: Linebacker II
-    narrative: >-
-      Maximum effort. Hanoi releases -- break the regime's resolve at the negotiating
-      table by force. Only the Chinese border still binds; it never releases.
-    emphasis: offensive
-    objectives:
-      - text: Break Hanoi's resolve at the negotiating table
-        done_when:
-          red_resolve_below: 25
-      - Hold Washington's will until Hanoi signs
-    min_turn: 16
-    restricted_zones:
-      - center: Tbilisi-Lochini
-        radius_nm: 15
-        name: PRC border buffer
+    ground_offensive: 3

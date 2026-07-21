@@ -443,8 +443,8 @@ def test_enduring_resolve_campaign_definition() -> None:
 
     import yaml
 
-    from game.fourteenth.phases import parse_phases
     from game.fourteenth.political_will import parse_will_profile
+    from game.fourteenth.red_tempo import parse_red_tempo
 
     path = Path("resources/campaigns/coin_enduring_resolve.yaml")
     data = yaml.safe_load(path.read_text(encoding="utf-8"))
@@ -480,41 +480,14 @@ def test_enduring_resolve_campaign_definition() -> None:
     assert profile.blue.label == "The Coalition's mandate"
     assert profile.red.label == "the insurgency's momentum"
     assert profile.weights.red_cache_lost == 4.0
-    assert profile.weights.blue_roe_violation == 1.0  # CDE pressure, not taboo
     assert profile.weights.red_ground_unit_lost == 0.05  # body count buys nothing
     assert profile.weights.blue_passive_regen == 0.0  # time drains a mandate
 
-    arc = parse_phases(data["phases"])
-    assert [phase.key for phase in arc] == ["disrupt", "clear_hold", "build"]
-    for phase in arc:
-        # The caches must always be legal targets -- never lock ammo (or anything).
-        assert phase.locked_target_classes == ()
-        # The COIN ROE: 4 permanent positive-control VALLEYS (not town rings) -- big
-        # box/corridor no-strike areas over the populated river valleys, shared by
-        # every phase via the YAML anchor. Two corridors (Helmand Green Zone, Musa
-        # Qala Valley) + two boxes (Tarin Kowt Bowl, Delaram), exercising both shapes.
-        assert len(phase.restricted_zones) == 4
-        kinds = sorted(z.kind for z in phase.restricted_zones)
-        assert kinds == ["box", "box", "corridor", "corridor"]
-        names = {z.name for z in phase.restricted_zones}
-        assert names == {
-            "Helmand Green Zone -- positive control",
-            "Musa Qala Valley -- positive control",
-            "Tarin Kowt Bowl -- positive control",
-            "Delaram -- positive control",
-        }
-        # Each corridor carries a >=2-anchor centerline + a lane width; each box a
-        # center + extents.
-        for z in phase.restricted_zones:
-            if z.kind == "corridor":
-                assert len(z.path) >= 2 and z.corridor_width_nm > 0.0
-            else:
-                assert z.x is not None and z.y is not None
-                assert z.width_nm > 0.0 and z.height_nm > 0.0
-
-    # No inverted ROE: dropped the whole-map free-fire inversion for explicit no-strike
-    # valleys, so no phase carries free-fire pockets.
-    assert all(phase.free_fire_zones == () for phase in arc)
+    # The Clear-and-Hold push surges the insurgency's supply down the ratline (§35).
+    windows = parse_red_tempo(data["red_tempo"])
+    assert [w.from_turn for w in windows] == [10]
+    assert windows[0].name == "Clear and Hold"
+    assert windows[0].trail_surge == 2.0
 
 
 def test_despawn_emits_the_tgo_id_not_the_object() -> None:

@@ -106,9 +106,9 @@ def ensure_enemy_trail_convoy(game: "Game") -> None:
     # The opfor of the (BLUE) human -- the side whose trail the player interdicts.
     coalition = game.red
 
-    # W6 red tempo: an authored phase's trail_surge widens the flow -- one more
-    # concurrent column is allowed and each carries a bigger (still capped-source)
-    # budget. Baseline (no authored phase / surge 1.0) keeps the base budget.
+    # W6 red tempo: an authored red-tempo window's trail_surge widens the flow --
+    # one more concurrent column is allowed and each carries a bigger (still
+    # capped-source) budget. Baseline (no active window / surge 1.0) keeps the base.
     from game.fourteenth.red_tempo import trail_surge_multiplier
 
     surge = trail_surge_multiplier(game)

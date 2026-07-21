@@ -28,7 +28,6 @@ from game.fourteenth.political_will import (
     BLUE_PILOT_RESCUED_REFUND,
     BLUE_POW_HELD_PER_TURN,
     BLUE_POW_TAKEN,
-    BLUE_ROE_VIOLATION,
     BLUE_SHIP_LOST,
     RED_AIRFRAME_LOSS,
     RED_BASE_LOST,
@@ -323,42 +322,6 @@ def test_ledger_records_labeled_moves_per_turn() -> None:
     assert red_note is not None and "trail convoys x3" in red_note
 
 
-def test_escalation_tax_reaches_the_ledger() -> None:
-    # Model 3: entering a costed phase (Linebacker) charges its blue_will_on_entry
-    # once, surfaced as a labeled ledger move alongside the other feeds.
-    from game.fourteenth import phases
-    from game.fourteenth.phases import parse_phases
-    from game.fourteenth.political_will import _PROFILE_CACHE, DEFAULT_WILL_PROFILE
-
-    arc = parse_phases(
-        [
-            {"key": "rolling_thunder", "name": "Rolling Thunder"},
-            {"key": "linebacker", "name": "Linebacker", "blue_will_on_entry": -3},
-        ]
-    )
-    phases._ARC_CACHE["Esc Integration"] = arc
-    _PROFILE_CACHE["Esc Integration"] = DEFAULT_WILL_PROFILE
-    try:
-        game = _game()
-        game.turn = 11
-        game.campaign_name = "Esc Integration"
-        game.settings.campaign_phases = True
-        game.current_phase_key = "linebacker"
-        game.theater = SimpleNamespace(
-            ground_objects=[], conflicts=lambda: [], controlpoints=[]
-        )
-        update_political_will(game, _debrief())
-        blue = dict(game.will_ledger[-1].blue_moves)
-        assert blue["escalation: Linebacker"] == -3.0
-        # ...and it does not re-charge on the next turn in the same phase.
-        update_political_will(game, _debrief())
-        labels = [label for label, _v in game.will_ledger[-1].blue_moves]
-        assert not any("escalation" in label for label in labels)
-    finally:
-        del phases._ARC_CACHE["Esc Integration"]
-        _PROFILE_CACHE.pop("Esc Integration", None)
-
-
 def test_ledger_caps_its_length() -> None:
     from game.fourteenth.political_will import WILL_LEDGER_CAP, update_political_will
 
@@ -441,7 +404,6 @@ def test_default_profile_is_the_vietnam_framing() -> None:
     assert weights.blue_base_lost == BLUE_BASE_LOST
     assert weights.blue_enemy_air_claimed == BLUE_ENEMY_AIR_CLAIMED
     assert weights.blue_passive_regen == BLUE_PASSIVE_REGEN
-    assert weights.blue_roe_violation == BLUE_ROE_VIOLATION
     assert weights.blue_ship_lost == BLUE_SHIP_LOST
     assert weights.red_convoy_unit_lost == RED_CONVOY_UNIT_LOST
     assert weights.red_ground_unit_lost == RED_GROUND_UNIT_LOST

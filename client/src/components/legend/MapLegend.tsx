@@ -3,7 +3,7 @@ import "./MapLegend.css";
 import { CSSProperties, useState } from "react";
 
 // A compact, collapsible key for the map's colour/shape semantics. The many overlays
-// reuse a small set of meanings (allegiance, ROE, supply, suspected activity) that
+// reuse a small set of meanings (allegiance, supply, suspected activity) that
 // aren't otherwise decodable. The dashed family renders its REAL stroke signature
 // (mapStrokes: pattern + dark contrast casing) as a mini SVG preview, so the legend
 // swatch is literally what the map draws — an area, a zone, a hazard, and a person
@@ -78,16 +78,6 @@ const ROWS: Row[] = [
     color: mapColors.suspected,
     signature: mapStrokes.suspectedArea,
     label: "Suspected area — scout it",
-  },
-  {
-    color: mapColors.offLimits,
-    signature: mapStrokes.roeRestricted,
-    label: "ROE off-limits zone — no strike",
-  },
-  {
-    color: mapColors.weaponsFree,
-    signature: mapStrokes.weaponsFree,
-    label: "Weapons-free zone (ROE)",
   },
   {
     color: mapColors.pilotMia,

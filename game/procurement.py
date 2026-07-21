@@ -8,10 +8,7 @@ from typing import Iterator, List, Optional, TYPE_CHECKING, Tuple
 from game.config import RUNWAY_REPAIR_COST
 from game.data.units import UnitClass
 from game.dcs.groundunittype import GroundUnitType
-from game.fourteenth.adaptive_procurement import (
-    adjusted_ground_share,
-    repair_air_defenses,
-)
+from game.fourteenth.adaptive_procurement import repair_air_defenses
 from game.theater import ControlPoint, MissionTarget, ParkingType, Player
 
 if TYPE_CHECKING:
@@ -93,16 +90,14 @@ class ProcurementAi:
         weighted_investment = aircraft_investment * air + armor_investment * ground
         if weighted_investment == 0:
             # Turn 0 or all units were destroyed.
-            return adjusted_ground_share(self.game, self.is_player, balance / 100.0)
+            return balance / 100.0
 
         # the more planes we have, the more ground units we want and vice versa
         ground_unit_share = aircraft_investment * air / weighted_investment
         if ground_unit_share > 1.0:
             raise ValueError
 
-        # §68 adaptive procurement: the split reads the side's strategic
-        # posture/phase (no signal = unchanged).
-        return adjusted_ground_share(self.game, self.is_player, ground_unit_share)
+        return ground_unit_share
 
     def spend_budget(self, budget: float) -> float:
         # Record how much each automated step spends so the Finances dialog can

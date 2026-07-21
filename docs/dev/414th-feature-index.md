@@ -51,7 +51,7 @@ pass checklist `§N` is unregistered, or this table drifts.
 | §37 | Super Gaggle hilltop resupply | `vietnamops` | `vietnam_super_gaggle` |
 | §38 | FAC(A) willie-pete target marking | `vietnamops` | `vietnam_fac_marking` |
 | §39 | Snake and nape (napalm CAS) | `vietnamops` | `vietnam_snake_and_nape` |
-| §40 | Campaign phases (inferred arc + planner emphasis) | — | `campaign_phases` |
+| §40 | Campaign phases (inferred arc + planner emphasis) _(retired)_ | — | — |
 | §41 | High Digit SAMs Ultimate Compilation support | — | — |
 | §42 | Local DCS chart base layers (map tiles) | — | — |
 | §43 | Per-aircraft flight defaults (save fuel + properties) | — | — |
@@ -66,7 +66,7 @@ pass checklist `§N` is unregistered, or this table drifts.
 | §52 | Command-center decapitation degrades enemy planning | — | `c2_decapitation_effects` |
 | §53 | War economy | — | `war_economy`, `fuel_air_readiness` |
 | §54 | Munitions availability | — | `restrict_weapons_by_stock` |
-| §55 | Red Intent — adaptive enemy posture | — | `red_intent` |
+| §55 | Red Intent — adaptive enemy posture _(retired)_ | — | — |
 | §56 | Strikeable motorpool depots | — | `motorpool_enabled`, `motorpool_spawn_cap` |
 | §57 | Air-droppable minefields | `minefields` | `air_droppable_minefields`, `auto_plan_minefields` |
 | §58 | Mission-start briefing popup | `briefing` | `mission_briefing_popup` |

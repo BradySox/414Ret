@@ -213,12 +213,10 @@ FEATURES: tuple[Feature, ...] = (
         settings_fields=("vietnam_snake_and_nape",),
     ),
     Feature(
-        # Pure engine feature (no Lua): the Tier-0 phase classifier + the HTN soft
-        # emphasis + the status surfaces, in game/fourteenth/phases.py.
         "campaign_phases",
         "Campaign phases (inferred arc + planner emphasis)",
         40,
-        settings_fields=("campaign_phases",),
+        retired=True,
     ),
     Feature(
         # Gated by the ModSettings/New Game `high_digit_sams` toggle (a wizard
@@ -314,7 +312,7 @@ FEATURES: tuple[Feature, ...] = (
         # produce supply that flows over the transit graph to the front and is consumed
         # there; a starved front recovers less, deploys fewer, and gains less ground
         # (P2), the SITREP shows why (P4a), and fuel depots gate air readiness (P3).
-        # Symmetric; coalition_supply_health/supply_factor feed §55 red intent.
+        # Symmetric.
         "war_economy",
         "War economy",
         53,
@@ -331,16 +329,10 @@ FEATURES: tuple[Feature, ...] = (
         settings_fields=("restrict_weapons_by_stock",),
     ),
     Feature(
-        # Pure engine feature (no Lua): a per-turn RED posture (consolidate/attrition/
-        # surge) in game/fourteenth/red_intent.py that biases the offensive HTN
-        # ordering, the target-shuffle unpredictability, the offensive-commit roll, and
-        # the ground-stance thresholds. Red-only; observe-only until enabled. §53/§54
-        # are the sibling war-economy pair (a separate branch); the §53 supply coupling
-        # (P4) is a read-only drop-in.
         "red_intent",
         "Red Intent — adaptive enemy posture",
         55,
-        settings_fields=("red_intent",),
+        retired=True,
     ),
     Feature(
         # Adopted from upstream PR dcs-retribution#859 (geofffranks). No plugin,
@@ -514,13 +506,11 @@ FEATURES: tuple[Feature, ...] = (
     ),
     Feature(
         # §68 adaptive procurement (game/fourteenth/adaptive_procurement.py):
-        # the AI economy reads the war. The auto-spend ground share shifts with
-        # the side's strategic read (§55 red posture / §40 blue phase), ground
-        # buys are price-weighted instead of uniform random, and -- its own
-        # gate -- each side's commander repairs a couple of destroyed SAM/EWR
-        # units per turn at surviving sites (full price, degraded sites and
-        # radars first; C2/comms stay permanently dead), so a rolled-back IADS
-        # stops being a one-way ratchet.
+        # the AI economy reads the war. Ground buys are price-weighted instead of
+        # uniform random, and -- its own gate -- each side's commander repairs a
+        # couple of destroyed SAM/EWR units per turn at surviving sites (full
+        # price, degraded sites and radars first; C2/comms stay permanently dead),
+        # so a rolled-back IADS stops being a one-way ratchet.
         "adaptive_procurement",
         "Adaptive procurement (posture-coupled spending + SAM repair)",
         68,

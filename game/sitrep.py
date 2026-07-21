@@ -83,15 +83,6 @@ class Sitrep:
     #: getattr) hides the band line. Rides along with real news like the will band.
     blue_supply: Optional[float] = None
     red_supply: Optional[float] = None
-    #: §55 Red Intent: the enemy's current posture ("Surging" / "Consolidating" /
-    #: "Attrition") when red_intent is on. None (and absent on pre-feature pickled
-    #: sitreps -- read via getattr) hides the line. Rides along with real news.
-    red_posture: Optional[str] = None
-    #: §55 Red Intent (2026-07-10): the posture *detail* line -- the intensity word +
-    #: the trend drivers ("Surging (all-in) — ground 4.0x · air holding · IADS falling")
-    #: -- so the smart trend/intensity read is surfaced on the kneeboard, not only as a
-    #: web-ribbon hover tooltip. None falls back to the bare posture word.
-    red_posture_detail: Optional[str] = None
     #: §75 custom victory conditions: the live progress digest ("Victory: Enemy air
     #: force below 10% of start (now 62%)"), capped by the recorder. Empty when no
     #: alternate conditions are configured; rides along with real news like the
@@ -137,8 +128,6 @@ class Sitrep:
         red_c2_status: Optional[str] = None,
         blue_supply: Optional[float] = None,
         red_supply: Optional[float] = None,
-        red_posture: Optional[str] = None,
-        red_posture_detail: Optional[str] = None,
         victory_lines: Optional[List[str]] = None,
     ) -> "Sitrep":
         blue = debriefing.loss_counts(Player.BLUE)
@@ -175,8 +164,6 @@ class Sitrep:
             red_c2_status=red_c2_status,
             blue_supply=blue_supply,
             red_supply=red_supply,
-            red_posture=red_posture,
-            red_posture_detail=red_posture_detail,
             victory_lines=list(victory_lines or []),
         )
 
@@ -213,16 +200,6 @@ class Sitrep:
                 f"Front supply {blue_supply * 100:.0f}% -- enemy "
                 f"{red_supply * 100:.0f}% (claimed)"
             )
-        # §55: red's current posture (getattr for pre-feature pickled sitreps). Prefer
-        # the detail line (intensity word + trend drivers -- "Surging (all-in) — ... ·
-        # IADS falling") so the smart read is visible in the cockpit; fall back to the
-        # bare word for pre-2026-07-10 pickled sitreps that carry no detail.
-        red_posture_detail = getattr(self, "red_posture_detail", None)
-        red_posture = getattr(self, "red_posture", None)
-        if red_posture_detail:
-            lines.append(f"Enemy posture: {red_posture_detail}")
-        elif red_posture:
-            lines.append(f"Enemy posture: {red_posture}")
         # §75: the alternate-ending progress digest (getattr for pre-feature
         # pickled sitreps). Already prefixed ("Victory: …" / "Defeat if: …") and
         # capped by the recorder; rides along with real news.

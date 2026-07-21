@@ -29,7 +29,6 @@ from game.missiongenerator.dtc.common import (
     is_target_waypoint,
     known_enemy_threat_sites,
     leg_speed_kmh,
-    restricted_zone_outlines,
     seconds_of_day,
     support_tracks,
     waypoint_display_name,
@@ -209,10 +208,9 @@ def _build_nav_pts(
 
 
 def _build_geo_lines(game: Game) -> list[dict[str, Any]]:
-    """FLOT + no-strike outlines across the HSD's four line sets."""
+    """FLOT boundaries across the HSD's four line sets."""
     line_sets: list[tuple[str, list[tuple[float, float]]]] = []
     line_sets.extend(flot_segments(game))
-    line_sets.extend(restricted_zone_outlines(game, MAX_GEO_POINTS_PER_SET))
     geo_points: list[dict[str, Any]] = []
     for set_index, (name, points) in enumerate(line_sets[:MAX_GEO_LINE_SETS]):
         flags = {f"L{i}": i == set_index + 1 for i in range(1, 5)}

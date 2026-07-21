@@ -19,9 +19,8 @@ This module is the campaign side of §63:
 * **Auto raids** — :func:`plan_cruise_raids` picks at most one raid per side per
   turn: the launching ship whose best reachable enemy ground object has the
   highest category priority (C2 first, then the war-economy buildings, then
-  anything strikeable), ROE-gated for BLUE via the §40 ``roe_blocks_target`` so
-  a raid is never fragged into a restricted zone. Pure function of game state —
-  idempotent across mission regenerations.
+  anything strikeable). Pure function of game state — idempotent across mission
+  regenerations.
 
 The missiles themselves are real DCS weapons from a real, tracked ship TGO:
 kills record natively at debrief (no phantom spawns, no debrief-schema change),
@@ -324,8 +323,6 @@ def _plan_side_raid(game: "Game", side: str) -> Optional[CruiseRaid]:
 
 def _enemy_raid_targets(game: "Game", side: str) -> Iterator["TheaterGroundObject"]:
     """Alive, raid-legal enemy ground objects for *side*'s raid this turn."""
-    from game.fourteenth.phases import roe_blocks_target
-
     for cp in game.theater.controlpoints:
         owner = cp.captured
         enemy_of_side = owner.is_red if side == "blue" else owner.is_blue
@@ -341,9 +338,6 @@ def _enemy_raid_targets(game: "Game", side: str) -> Iterator["TheaterGroundObjec
             if getattr(tgo, "map_hidden", False):
                 continue
             if not any(unit.alive for unit in tgo.units):
-                continue
-            # Only the player's side honors ROE (the §40 planner gate is BLUE-only).
-            if side == "blue" and roe_blocks_target(game, tgo):
                 continue
             yield tgo
 

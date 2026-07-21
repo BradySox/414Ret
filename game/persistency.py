@@ -29,8 +29,15 @@ _server_port: int = 16880
 
 # fmt: off
 class DummyObject:
-    def __setstate__(self, state: dict[str, Any]) -> None:
-        self.__dict__.update(state)
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        # Permissive so a removed *enum* member (pickle reconstructs it via
+        # ``cls(value)``) degrades to an inert placeholder too, not only a removed
+        # dataclass (reconstructed via ``__new__`` + ``__setstate__``).
+        pass
+
+    def __setstate__(self, state: Any) -> None:
+        if isinstance(state, dict):
+            self.__dict__.update(state)
 
 
 class MigrationUnpickler(pickle.Unpickler):
@@ -363,7 +370,20 @@ class MigrationUnpickler(pickle.Unpickler):
             return DummyObject
         if name in ["CaletaTortel", "Caleta_Tortel_Airport"]:
             return dcs.terrain.Airport  # use base-class if airport was removed
-        
+
+        # Feature removals (2026-07-21, the ROE/§40/§55 drop): the modules were
+        # deleted, so a pre-removal save's pickled PhaseBaseline / RedIntentBaseline /
+        # RedIntentSample / RedPosture / FrontPosture / DrawnZone would raise
+        # ModuleNotFoundError here. Degrade them to an inert placeholder so the save
+        # still loads -- the game/theater __setstate__ no longer restores those
+        # attributes, so the orphaned placeholders are never read.
+        if module in (
+            "game.fourteenth.phases",
+            "game.fourteenth.red_intent",
+            "game.fourteenth.zone_drawings",
+        ):
+            return DummyObject
+
         return None
     
     def _handle_default(self, module: str, name: str) -> Any:

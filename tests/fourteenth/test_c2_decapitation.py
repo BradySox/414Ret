@@ -159,9 +159,9 @@ def _planner_state(ccs: list[bool], planned: list[FlightType], on: bool = True) 
 
     ``ccs`` is the aliveness of RED's command centers; ``planned`` is the
     primary task of each package already on RED's ATO this planning run."""
-    settings = SimpleNamespace(c2_decapitation_effects=on, red_intent=False)
+    settings = SimpleNamespace(c2_decapitation_effects=on)
     theater = _theater([_cp(Player.RED, [_tgo("commandcenter", a) for a in ccs])])
-    game = SimpleNamespace(settings=settings, red_intent_key=None)
+    game = SimpleNamespace(settings=settings)
     ato = SimpleNamespace(
         packages=[SimpleNamespace(primary_task=t) for t in planned],
     )

@@ -18,7 +18,6 @@ from game.missiongenerator.frontlineconflictdescription import (
 from game.theater import TRIGGER_RADIUS_CAPTURE
 
 if TYPE_CHECKING:
-    from game.fourteenth.phases import ResolvedZone
     from game.missiongenerator.aircraft.flightdata import FlightData
     from game.missiongenerator.missiondata import MissionData
 
@@ -30,14 +29,6 @@ CP_NEUTRAL = Rgba(128, 128, 128, 80)
 BLUE_PATH_COLOR = Rgba(0, 0, 255, 100)
 RED_PATH_COLOR = Rgba(255, 0, 0, 100)
 ACTIVE_PATH_COLOR = Rgba(255, 80, 80, 100)
-# ROE restricted zones (campaign phases W4): dashed red like the web map layer, so
-# they read as *rules* (off-limits airspace), not radar coverage.
-ROE_ZONE_LINE = Rgba(212, 58, 58, 220)
-ROE_ZONE_FILL = Rgba(212, 58, 58, 40)
-# Free-fire (weapons-free) pockets -- inverted ROE (COIN): dashed GREEN, the opposite
-# reading of the red restricted zones ("cleared to engage here" vs "off limits").
-FREE_FIRE_LINE = Rgba(60, 205, 95, 220)
-FREE_FIRE_FILL = Rgba(60, 205, 95, 40)
 # Support-package orbits (tankers + AWACS): a cyan dashed racetrack + a label so a
 # pilot can find their tanker / AEW&C on the F10 map in flight (the anti-DTC).
 SUPPORT_ORBIT_LINE = Rgba(0, 200, 255, 255)
@@ -138,53 +129,6 @@ class DrawingsGenerator:
                 line_style=LineStyle.Triangle,
             )
             shape.name = front_line.name
-
-    def _paint_zones(self, zones: list[ResolvedZone], color: Rgba, fill: Rgba) -> None:
-        """Paint resolved ROE zones (circle -> add_circle, else the polygon outline)."""
-        for zone in zones:
-            if zone.kind == "circle":
-                shape = self.player_layer.add_circle(
-                    self.game.point_in_world(*zone.center_xy),
-                    zone.radius_m,
-                    line_thickness=4,
-                    color=color,
-                    fill=fill,
-                    line_style=LineStyle.Dash,
-                )
-            else:
-                points = [self.game.point_in_world(x, y) for x, y in zone.outline_xy]
-                if len(points) < 3:
-                    continue
-                anchor = points[0]
-                shape = self.player_layer.add_freeform_polygon(
-                    anchor,
-                    [p - anchor for p in points],
-                    line_thickness=4,
-                    color=color,
-                    fill=fill,
-                    line_style=LineStyle.Dash,
-                )
-            shape.name = zone.name
-
-    def generate_restricted_zones(self) -> None:
-        """Paint the active phase's ROE zones (red no-strike + green free-fire).
-
-        Reads the same resolved zones the web map layer draws, so the F10 map and the
-        client show identical geometry. Restricted (no-strike) zones paint red;
-        free-fire pockets (inverted ROE, COIN) paint green. No-op outside an authored
-        ROE phase (both lists empty) -- non-ROE campaigns see nothing new.
-        """
-        from game.fourteenth.phases import (
-            active_free_fire_zones,
-            active_restricted_zones,
-        )
-
-        self._paint_zones(
-            active_free_fire_zones(self.game), FREE_FIRE_LINE, FREE_FIRE_FILL
-        )
-        self._paint_zones(
-            active_restricted_zones(self.game), ROE_ZONE_LINE, ROE_ZONE_FILL
-        )
 
     @staticmethod
     def _racetrack_ends(
@@ -316,5 +260,4 @@ class DrawingsGenerator:
         self.generate_frontlines_drawing()
         self.generate_routes()
         self.generate_cps_markers()
-        self.generate_restricted_zones()
         self.generate_support_orbits()

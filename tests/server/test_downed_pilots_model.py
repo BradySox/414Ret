@@ -2,8 +2,8 @@
 
 Guards the contract: nobody down => empty (hides the layer); MIA evaders emit
 at their last known position with the turns-down detail; POWs emit at their
-holding field with the SITREP-matched clock ("N turns left", "(held)" on a
-will campaign); missing pilot/holding-field data degrades, never raises.
+holding field with the SITREP-matched turn-countdown clock ("N turns left");
+missing pilot/holding-field data degrades, never raises.
 """
 
 from __future__ import annotations
@@ -51,7 +51,6 @@ def _game(
     mia: list[Any] | None = None,
     pows: list[Any] | None = None,
     turn: int = 5,
-    will: bool = False,
     holding_cp: Any = None,
 ) -> Any:
     def find_cp(cp_id: Any) -> Any:
@@ -61,7 +60,6 @@ def _game(
 
     return SimpleNamespace(
         turn=turn,
-        settings=SimpleNamespace(vietnam_political_will=will),
         downed_pilots=list(mia or []),
         blue=SimpleNamespace(pending_pow_recoveries=list(pows or [])),
         theater=SimpleNamespace(find_control_point_by_id=find_cp),
@@ -94,14 +92,6 @@ def test_pow_emits_at_the_holding_field_with_the_clock() -> None:
     assert entry.name == "Lt Wells"
     assert entry.detail == "held at Mozdok (2 turns left)"
     assert entry.position.lat == 9.0  # the holding field, not the capture spot
-
-
-def test_pow_on_a_will_campaign_reads_held() -> None:
-    holding = SimpleNamespace(name="Mozdok", position=_latlng_point(9.0, 9.0))
-    pilots = DownedPilotJs.all_in_game(
-        _game(pows=[_pow()], holding_cp=holding, will=True)
-    )
-    assert pilots[0].detail == "held at Mozdok (held)"
 
 
 def test_missing_data_degrades_never_raises() -> None:

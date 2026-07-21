@@ -106,7 +106,6 @@ def _loadout_editor(aircraft: AircraftType) -> Any:
     game = SimpleNamespace(
         settings=SimpleNamespace(
             restrict_weapons_by_date=False,
-            restrict_weapons_by_stock=False,
         ),
     )
     # flight_type drives the §73 "set as default for <task>" row's labels and the

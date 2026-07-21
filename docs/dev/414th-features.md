@@ -237,11 +237,10 @@ Four upstream fixes the fork's QRA had drifted behind, ported with the fork coup
   writers (SquadronDialog, QAircraftRecruitmentMenu, `AirWing.repropagate_qra_reserve`,
   AirWingConfigurationDialog `update_max_size` + `apply`); the SquadronDialog and
   base-menu QRA spinners cap at `max_intercept_reserve` (= untasked + reserve, the
-  unplanned airframes). Two fork couplings: the adjusted pool is also clamped to the §53
-  `fuel_readiness` ceiling (`return_all_pilots_and_aircraft` applies it after subtracting
-  the reserve; exact no-op with `fuel_air_readiness` off), and `set_intercept_reserve`
+  unplanned airframes). Fork coupling: `set_intercept_reserve`
   re-clamps `qra_player_manned` to the new reserve so lowering the reserve can't leave a
-  phantom manned alert flight. Tests merged into
+  phantom manned alert flight. (The former §53 `fuel_readiness` clamp on the pool was removed
+  2026-07-21 with the war economy.) Tests merged into
   `tests/squadrons/test_intercept_reserve.py` / `test_squadron_inventory.py` /
   `test_airwing_qra_propagation.py`.
 - **Cratered-runway gate** (upstream `edb14d94`): `spawn_intercept_templates` skips a
@@ -1932,16 +1931,15 @@ save-migrated), resolving the **holding enemy airfield at capture time**
 captured pilot the KIA, and the capture now flips the aviator to **`PilotStatus.POW`**
 (`pilot.capture()`) so the squadron stops scheduling them while captive (they leave
 `active_pilots`). The POW resolves by: `surviving_pows` (from `Coalition.end_turn`) **frees**
-(`repatriate()` → Active) a POW whose holding field is recaptured; otherwise the hold is a
-**4-turn clock on a normal campaign but INDEFINITE when `vietnam_political_will` is on** (the §48
-running sore drains until freed or the war ends). The **Homecoming** (`resolve_pows_at_game_end`,
-from `process_win_loss`) repatriates all held blue POWs on a negotiated **win** and writes them
-off on a withdrawal **loss**. Every write-off routes through `_write_off`, which **respects
+(`repatriate()` → Active) a POW whose holding field is recaptured; otherwise the hold is
+**always a 4-turn countdown clock** (since the 2026-07-21 will-economy removal there is no longer an
+indefinite will-coupled hold). The **Homecoming** (`resolve_pows_at_game_end`,
+from `process_win_loss`) repatriates all held blue POWs on a **win** and writes them
+off on a **loss**. Every write-off routes through `_write_off`, which **respects
 `invulnerable_player_pilots`** (a player POW is repatriated, not killed). A held POW is surfaced
 on the **SITREP band** (`Sitrep.pows_held` — name @ holding field + clock/"held") and the
-**squadron roster status** (`SquadronDialog`); while held it **drains political will per turn**
-(the Vietnam W1 `blue_pow_held_per_turn` feed). The §51 comms compromise it triggers is time-boxed
-to `COMMS_COMPROMISE_TURNS` off `captured_turn`, so an indefinitely-held POW doesn't jam forever. The dedicated
+**squadron roster status** (`SquadronDialog`). The §51 comms compromise it triggers is time-boxed
+to `COMMS_COMPROMISE_TURNS` off `captured_turn`, so a held POW doesn't jam forever. The dedicated
 recovery *raid* — the `CSAR` flight type + the dynamic `CapturedPilotGroundObject` map objective
 + `commit_pow_recoveries` — was **shelved in the 2026-07-03 rescope** (`game/pow_objectives.py`
 deleted; the TGO class remains a save-compat tombstone; `purge_pow_objectives` sweeps
@@ -2978,7 +2976,7 @@ a declutter pass:
   `concealed_enemy_forces` ← `recon_intel_fog`, `perf_culling_distance` ← `perf_culling`,
   `perf_smoke_spacing` ← `perf_smoke_gen`, `dynamic_slots_hot` ← `dynamic_slots`,
   `supercarrier_deck_crew` ← `supercarrier`, the two squadron-limit knobs ← `enable_squadron_pilot_limits`,
-  `vietnam_commitment_ceiling` ← `vietnam_political_will`, and the **inverse**
+  and the **inverse**
   `default_front_line_stance` ← `("automate_front_line_stance", False)` (editable only when automation
   is off). A guard test (`tests/test_settings_dependencies.py`) fails CI if any `enabled_when` master
   isn't a real setting, plus offscreen-Qt tests prove a child greys/ungreys live with its master.
@@ -3961,16 +3959,15 @@ The **W6 red-tempo** layer (design note
 [`414th-vietnam-red-tempo-notes.md`](design/414th-vietnam-red-tempo-notes.md),
 `game/fourteenth/red_tempo.py`) was NOT removed with the phases — it was **rehomed off the per-phase
 blocks onto a top-level campaign `red_tempo:` schedule of turn-windows**. Each window is
-`{from_turn, name?, trail_surge?, ground_offensive?, resolve_regen?}`, and the window in effect on a
+`{from_turn, name?, trail_surge?, ground_offensive?}`, and the window in effect on a
 given turn is the **last one whose `from_turn` has been reached** (last-window-wins). A `trail_surge`
 window runs bigger, more-concurrent enemy trail convoys (`ensure_enemy_trail_convoy` reads
-`trail_surge_multiplier`) and regains Regime Resolve at `resolve_regen`/turn (once-per-turn guard
-`Game.red_tempo_regen_turn`); a `ground_offensive` window fires a Tet/Easter stance pulse
+`trail_surge_multiplier`); a `ground_offensive` window fires a Tet/Easter stance pulse
 (`apply_red_tempo` in `initialize_turn`, after the coalitions plan) that raises red's front stances to
-AGGRESSIVE (raise-only), still bounded by the W2b static-front clamp so it bleeds BLUE will rather than
-sweep-capturing. Authored on 6 campaigns — 1968 Yankee Station, Velvet Thunder, Desert Storm, Inherent
-Resolve, Enduring Resolve, Red Flag 81-2; a campaign with no block is a complete no-op. Tests:
-`tests/fourteenth/test_red_tempo.py`. In-game pass: checklist **M6**.
+AGGRESSIVE (raise-only) — pressure on the ground battle, never sweep-capturing. (The `resolve_regen`
+lever was dropped 2026-07-21 with the will economy.) Authored on 6 campaigns — 1968 Yankee Station,
+Velvet Thunder, Desert Storm, Inherent Resolve, Enduring Resolve, Red Flag 81-2; a campaign with no
+block is a complete no-op. Tests: `tests/fourteenth/test_red_tempo.py`. In-game pass: checklist **M6**.
 
 ## §41 — High Digit SAMs "Ultimate Compilation" support
 
@@ -4584,39 +4581,19 @@ off restores the stock per-turn rotation + memoryless weather exactly. Requires 
 - **Interval is fixed-band, not a setting.** The 3–7 h advance is a module constant; exposing it as a tunable
   is a trivial follow-up if the pacing wants tuning after an in-game pass.
 
-## §48 — Commitment ceiling (will-coupled war budget)
+## §48 — Commitment ceiling (will-coupled war budget) — REMOVED (2026-07-21)
 
-The **model-3 capstone of the 2026-07-04 "morale ratchet" will redo** (design note
-`docs/dev/design/414th-vietnam-political-will-roe-notes.md` §8). The political-will economy (the
-Vietnam campaign layer) decides the war at the negotiating table, but until a side actually breaks, a
-flagging war had no *material* cost — you kept the same income whether the home front was behind you or
-not. Historically it was the opposite: in Victory Games' *Vietnam 1965-1975*, **US commitment can never
-exceed morale** — as morale falls, forces are drawn down and the war is taken out of your hands.
-
-This couples the will economy to the BLUE war budget. As **Political Will** falls below
-`CEILING_FULL_WILL` (60), `Coalition.end_turn`'s income is scaled down linearly toward
-`CEILING_FLOOR_MULT` (0.5× at will 0) — Congress trims the war budget, so a losing war is starved of
-replacements. Full funding while will stays high; the cut only bites once patience is already low, and
-the floor keeps *some* budget flowing (it pressures, it never hard-locks procurement). BLUE only
-(Washington's appropriation; the insurgent-style regime is not coupled — the VG asymmetry).
-
-**Files.** `game/fourteenth/commitment_ceiling.py` (`will_budget_multiplier` + `apply_commitment_ceiling`),
-hooked at the one BLUE income site (`game/coalition.py` `Coalition.end_turn`). Setting
-`vietnam_commitment_ceiling` (Vietnam Ops page, "Campaign" section, default OFF, preseeded ON in
-`1968_Yankee_Station.yaml`); gated **also** by `vietnam_political_will` (no will economy ⇒ nothing to
-couple to). Off with either toggle ⇒ income is returned untouched, so non-Vietnam campaigns and
-pre-feature saves are unaffected. Messages the player on the turn the budget is cut, so the draw-down is
-legible.
-
-**Companion pieces of the same redo (not §48, documented in the design note §8):** the ratchet
-re-weighting of the whole `will:` block, and the offline `tools/will_pacing_model.py` projector used
-to derive the numbers. (The *escalation tax* companion — a once-per-phase-entry will charge — was
-REMOVED 2026-07-21 with §40's phase machinery.)
-
-**Tests.** `tests/fourteenth/test_commitment_ceiling.py` (multiplier shape + BLUE-only/both-toggle gating +
-message), the pacing-tool guard `tests/fourteenth/test_will_pacing_model.py`,
-and the campaign guards in `tests/test_vietnam_content.py`. In-game passes: checklist **M1** (will pacing)
-+ **M9** (commitment ceiling draw-down). Needs an in-game pass.
+**REMOVED 2026-07-21 (the will-economy drop).** The commitment ceiling
+(`game/fourteenth/commitment_ceiling.py` — the will→BLUE-budget draw-down) and the entire
+political-will economy it capped are gone: the BLUE **Political Will** / RED **Regime Resolve** meters,
+the `negotiation_verdict` win/loss ending, the campaign-authorable `will:` profiles + warship feed, the
+per-turn will feeds/ledger, and the Vietnam campaign-layer **W1 (political will) + W2 (negotiation
+ending) + W2b (static front)** pieces (`game/fourteenth/{political_will,static_front}.py` deleted). The
+Vietnam **W5 GCI ambush** and **W6 red tempo** survive (W6 lost only its `resolve_regen` lever); §21
+POWs now always run a turn-countdown clock, never an indefinite will-coupled hold. Do not restore. The
+design notes [`414th-vietnam-political-will-roe-notes.md`](design/414th-vietnam-political-will-roe-notes.md)
+and [`414th-will-generalization-notes.md`](design/414th-will-generalization-notes.md) are kept as
+historical record only.
 
 ## §49 — Mobile missile relocation (the SCUD hunt)
 
@@ -5121,7 +5098,7 @@ just sourced from C2 health instead of a static slider.
 The effect lands on the *enemy's* next turn, so the player is told the strike worked: a SITREP band line
 (`Sitrep.red_c2_status` → "Enemy C2 degraded (claimed): 1/3 command posts operational", built by
 `c2_status_line`). Framed as **claimed** (the player's own BDA) to respect the recon-fog model, and it
-**rides along with real news** — like the will band, it never forces a SITREP onto an otherwise-quiet turn
+**rides along with the other real news** — it never forces a SITREP onto an otherwise-quiet turn
 (`is_empty` ignores it).
 
 ### Files & tests
@@ -5160,98 +5137,24 @@ The effect lands on the *enemy's* next turn, so the player is told the strike wo
 
 ---
 
-## §53 — War economy
+## §53 — War economy — REMOVED (2026-07-21)
 
-**A per-base materiel supply economy on top of the money budget** (design note
-`docs/dev/design/414th-war-economy-notes.md`). Closes the standing gap that nothing you bomb
-traceably changes what the enemy can field: `game/fourteenth/war_economy.py` runs a
-produce → transport → consume → **bite** loop from `Game.finish_turn`, gated `war_economy`
-(default OFF; Red Tide preseeds).
-
-**The loop.** `Base.supply` is a per-base stockpile (seeded to capacity once via
-`war_economy_seeded`, `__setstate__`-defaulted). Each turn `advance_war_economy`: producers
-(factory/oil/derrick) accrue `production_rate`; every active-front CP consumes a turn's
-`frontline_demand` and refills from its connected producers over the transit graph
-(`_external_supply_sources` via `ControlPoint.transitive_connected_friendly_destinations`),
-neediest first — a front cut off from production can't refill and drains (the interdiction loop).
-`stockpile_capacity` scales with production so a rear factory can hold what it ships.
-
-**The bite (P2).** One `supply_effectiveness(cp) → [_BITE_FLOOR=0.5, 1.0]` multiplier (1.0 when off
-or before the first seed, so turn-1 combat is never penalised) is applied at three sites: the `+0.2`
-per-turn strength recovery (`game.py`, BLUE — only `player_points()` recover), the deployable-unit
-cap (`ControlPoint.front_line_capacity_with`), and the ground-combat `delta`
-(`missionresultsprocessor.py`, scaled by the *winner's* supply). A starved side recovers less,
-deploys fewer units, and gains less ground. **The decoupling trap is solved:** `frontline_demand`
-keys off `base.total_frontline_units` (raw force), never the supply-scaled cap, so `supply_factor`
-can drive the cap bite without recursion.
-
-**Fuel → air readiness (P3).** `fuel_readiness(cp)` scales a base's alive fuel-depot fraction into a
-sortie multiplier `[0.5, 1.0]`, applied at the single per-turn chokepoint
-`Squadron.return_all_pilots_and_aircraft` (`untasked_aircraft = int((owned − reserve) ×
-fuel_readiness(location))`). Both the AI planner and the player's flight-creation UI read
-`untasked_aircraft`, so bombing a base's fuel grounds part of its air for both; bases still *own*
-their jets. Own setting `fuel_air_readiness` (default OFF; Red Tide preseeds). Wires the
-previously-dead `active_fuel_depots_count`.
-
-**Legibility (P4a).** The SITREP gains `blue_supply`/`red_supply`, fed from `coalition_supply_health`
-in `record_sitrep`, rendering "Front supply X% -- enemy Y% (claimed)" on the kneeboard cover so the
-player reads *why* a front stalled.
-
-**Map + base-card legibility (P4b, landed 2026-07-08 post-merge).** Two surfaces:
-- **Base card** (`QBaseMenu2.update_intel_summary`): a **Front supply: X%** line (friendly, active-front
-  CPs only), and `generate_intel_tooltip` now spells out the supply multiplier when it is biting so the
-  displayed deployable-limit reconciles with the P2 cap bite (`int(base × supply_effectiveness)`).
-- **Map overlay** (`SupplyLayer`, wired into the §19 layers panel as "Supply status", default ON):
-  `SupplyNodeJs.all_in_game` emits each BLUE front (coloured green→amber→red by `supply_factor`) + each
-  producer (a blue dashed source ring), fed through `supplySlice`. Empty (layer hidden) unless
-  `war_economy` is on; BLUE-only so enemy logistics stay fogged. `tests/server/test_supply_nodes.py`
-  guards the off→empty / fronts+producers-only / enemy-excluded selection contract.
-
-**Supply-health reads.** `coalition_supply_health(game, coalition)` + `supply_factor(cp)` are
-module-level pure reads consumed at three sites within §53 (recovery, deployable cap, ground-combat delta).
-
-Symmetric; OFF is a proven exact no-op (regression across the combat/controlpoint/frontline/
-ground-planner suites). Tests `tests/fourteenth/test_war_economy.py`. Landed via #531 (merged
-2026-07-08, alongside §55). **Needs an in-game pass:** the multi-turn FLOT response + fuel grounding.
+**REMOVED 2026-07-21 (the campaign-economies drop).** The per-base materiel supply economy
+(`game/fourteenth/war_economy.py`, deleted) is gone: the produce → transport → consume loop, the
+`supply_effectiveness` **bite** on strength recovery / deployable cap / ground-combat, the
+`fuel_readiness` air-grounding (P3), the `coalition_supply_health` / `supply_factor` reads, the SITREP
+front-supply band (P4a), and the base-card + client **Supply status** map overlay (P4b) are all
+removed. Do not restore. Design note
+[`414th-war-economy-notes.md`](design/414th-war-economy-notes.md) is kept as historical record only.
 
 ---
 
-## §54 — Munitions availability
+## §54 — Munitions availability — REMOVED (2026-07-21)
 
-**The air axis of the war economy (§53): an airfield out of a scarce munition can't load it.**
-
-**Taxonomy (M0).** A curated, hand-audited `_SCARCE_MUNITIONS` map in `game/data/weapons.py` — 5
-families (`a2a_medium` / `arm` / `pgm_bomb` / `standoff` / `guided_asm`), keyed by exact
-`WeaponGroup.name` (every rack variant listed) — drives the `WeaponGroup.scarce_family` property.
-Explicit-and-central by design so the tracked set is exactly what was signed off; a guard test
-(`tests/fourteenth/test_scarce_munitions.py`) fails CI if any mapped name stops resolving to a real
-weapon group (the §46 dead-CLSID lesson). Only munitions worth running out of are tracked;
-everything else is infinite.
-
-**Stock + debit (M1).** Each base holds `Base.munitions` (family → loads, `__setstate__` `{}`).
-`advance_munitions` (from `finish_turn`, gated `restrict_weapons_by_stock`): seeds each base to
-`MUNITIONS_CAPACITY`, **debits what the ATO loaded** — iterate `coalition.ato.packages → flights`,
-sum `weapon.weapon_group.scarce_family` per flight, decrement `flight.departure.base` — then
-**rearms** toward capacity scaled by `supply_effectiveness` (a supply-cut base can't fully re-arm).
-The debit is a **once-per-turn turn-boundary step, not a per-generation debit**, so mission
-re-generation never double-counts.
-
-**The gate (M2).** `Loadout.degrade_for_stock(munitions, …)` in `setup_payload` swaps a scarce store
-the base is out of down to the first stocked/non-scarce fallback in `weapon.fallbacks`
-(`_stocked_fallback_for` — JDAM → dumb bomb) or clears the pylon; gated on the setting **and**
-`munitions_seeded` (pre-seed turns aren't falsely starved). This is the authoritative enforcement.
-The payload editor (`QPylonEditor`) additionally greys out + labels "(out of stock)" the depleted
-scarce stores as guidance (the current selection stays selectable).
-
-**Base-card readout (M3, landed 2026-07-08 post-merge).** `QBaseMenu2.update_intel_summary` adds a
-**Munitions** section listing each family's `N/24` stock (with a "(low)" tag at zero), labelled from
-the shared `SCARCE_FAMILY_LABELS` map (`game/data/weapons.py`, a test guards label↔family coverage),
-friendly bases only. Gated on `restrict_weapons_by_stock`.
-
-Gated `restrict_weapons_by_stock` (Mission Generation → Loadouts, default OFF); OFF is an exact
-no-op. Tests `tests/fourteenth/test_munitions_gate.py` (against the real F/A-18C) +
-`test_scarce_munitions.py` + `test_war_economy.py`. Landed via #531 (merged 2026-07-08). **Needs an
-in-app pass:** the loadout grey-out.
+**REMOVED 2026-07-21 (the campaign-economies drop, with the §53 war economy).** The scarce-munitions
+stock economy is gone: the curated `_SCARCE_MUNITIONS` taxonomy (M0), the per-base `Base.munitions`
+stock + debit/rearm (M1), the `Loadout.degrade_for_stock` loadout gate (M2), the payload-editor
+grey-out, and the base-card munitions readout (M3). Do not restore.
 
 ---
 
@@ -6954,13 +6857,13 @@ Design note: [`docs/dev/design/414th-victory-conditions-notes.md`](design/414th-
 concrete conditions — and every semantics decision). The stock win condition is
 literally "the enemy owns zero control points" (`Game.check_win_loss`), which forces a
 limited war ("liberate Abkhazia") into total conquest. This is the shallow, legible
-alternate-endings layer over that default; the deep authored layer (will meters,
-negotiation endings) already exists as the Vietnam W1–W6 arc and is deliberately not
-duplicated here.
+alternate-endings layer over that default. (The deep authored will-meter /
+negotiation-ending layer — the Vietnam W1–W2 arc — was REMOVED 2026-07-21, so §75 is now
+the only alternate-endings layer over the stock territory default.)
 
 **Two tiers, one engine** (`game/fourteenth/victory.py`):
 
-- **Authored:** a campaign YAML `victory:` block (sibling of `will:`/`phases:`) with
+- **Authored:** a campaign YAML `victory:` block (a top-level campaign YAML block) with
   `description` + `win_when`/`lose_when` condition lists. Vocabulary:
   `capture_cps` (ALL named CPs blue), `lose_cps` (ANY named CP red),
   `territory_above`/`territory_below` (fraction of non-neutral CPs),
@@ -6971,14 +6874,12 @@ duplicated here.
   (strength vs the campaign-start baseline; an empty baseline never fires),
   `enemy_air_denied` (no red CP with `runway_is_operational()` — cratered fields and
   sunk carriers are denied, FOB helipads count as air power, a red off-map spawn makes
-  the condition unreachable by construction), the **meter fields** (the same-day
-  adaptation pass — will/supply feed the framework): `blue_will_below`/
-  `red_resolve_below` (0–100 meter scale like `PhaseCondition`, strict `<`, live only
-  while `vietnam_political_will` is on — else never fires and the prose says
-  "(will tracking off)") and `enemy_supply_below`/`friendly_supply_below` (0–100 %
-  via §53 `coalition_supply_health`, live only while `war_economy` is on — the
-  blockade/starvation ending), `min_turn` (guard), `label` (display
-  prefix). Parsed by `parse_victory` on the phases-S5 **rederive-never-pickle** rule
+  the condition unreachable by construction), `min_turn` (guard), `label` (display
+  prefix). (**The will/supply meter fields —
+  `blue_will_below`/`red_resolve_below`/`enemy_supply_below`/`friendly_supply_below` —
+  were REMOVED 2026-07-21** with the will/war economy; only the
+  territorial/destroy/strength/air-denial conditions remain.) Parsed by `parse_victory`
+  on the S5 **rederive-never-pickle** rule
   (`_PROFILE_CACHE` keyed by campaign name; any lookup/parse failure degrades to "no
   profile" with a log). Parse fails loudly (unknown keys, empty entries, bad
   fractions raise) so a broken campaign dies in tests.
@@ -6988,8 +6889,7 @@ duplicated here.
   N% of campaign start → win, capped at 90). They synthesize the same condition
   objects and stack with any authored block.
 
-**Semantics — the deliberate divergence from `PhaseCondition`:** a phase condition is
-an escalation *trigger* (ANY satisfied field advances); a victory entry is a
+**Semantics — requirement, not trigger:** a victory entry is a
 *requirement* — EVERY field set on one entry must hold (AND within the entry), and
 the `win_when`/`lose_when` lists are OR (any fully-met entry ends the war). That is
 what makes `min_turn` a guard instead of nonsense.
@@ -6997,17 +6897,11 @@ what makes `min_turn` a guard instead of nonsense.
 **Evaluation:** `victory_verdict` is the **single alternate-endings branch** in
 `Game.check_win_loss`, ahead of the stock territory defaults (which remain for every
 campaign with nothing configured — alternate conditions ADD to the stock endings,
-never replace them). **The W2 negotiation ending is absorbed inside it** (the
-2026-07-19 "adapt the meters or drop them" pass; audit verdict: adapt, drop nothing
-— will is the ending mechanism for 7 hand-built campaigns and every piece is
-consumed): will/resolve exhaustion is consulted first at exactly the precedence it
-had as its own branch (negotiation loss > negotiation win > authored/knob loss >
-win), `political_will` stays the owner of the exhaustion semantics, and the
-negotiation path carries no victory announce (the profile's era exhaustion banner
-already fires on the crossing edge). Loss precedence throughout (the W2 rule: a
-simultaneous collapse is never a cheap win). Ground truth (`viewer=None`), turn
-boundary only, zero planner coupling (the §17 boundary — an author who wants the AI
-to *pursue* the objectives adds a `phases:` emphasis; the blocks compose). A met
+never replace them). It evaluates the authored/knob conditions with loss precedence
+throughout (a simultaneous collapse is never a cheap win). (**The W2
+negotiation-verdict absorption + the will/supply meter conditions were REMOVED
+2026-07-21** with the will/war economy.) Ground truth (`viewer=None`), turn
+boundary only, zero planner coupling (the §17 boundary). A met
 authored/knob condition is announced once (`game.message`, latched on
 `game.victory_announced`) so the generic Victory!/Defeat! dialog always has a "why"
 beside it in the events feed.
@@ -7023,20 +6917,14 @@ whenever any conditions are configured; its own expander toggle, so it works wit
 `campaign_phases` off) opening a "Victory conditions" block in the arc expander —
 "Any one of these ends the war:" + "Defeat if:" with live-value prose per entry
 ("Enemy air force below 10% of start (now 62%)", "Capture Sukhumi, Gudauta (1/2
-held)") in the phase-objectives tick styling (`CampaignStatusJs.victory` /
+held)") in the objectives tick styling (`CampaignStatusJs.victory` /
 `victory_description` → `VictoryConditionJs`; `client/src/components/campaignstatus/`).
-On a will campaign the checklist **leads with the negotiation ending's rows**, built
-from the campaign's own will profile with zero authoring — "Break Hanoi's resolve
-(now 87 of 100)" / defeat: "Washington's patience runs out (now 62 of 100)" — so the
-chip lights on all 7 will campaigns (both Vietnam, both COIN, Desert Storm, Tanker
-War, Red Flag 81-2) and the meters finally point at their consequence.
 The same prose rides the SITREP band (`Sitrep.victory_lines`, capped at 4 + a "+N
 more" line, recorded by `record_sitrep`) — so the kneeboard band, the web LAST TURN
 panel, and the Qt debrief box show victory progress for free (§29 parity).
 
-**Deliberately not in v1:** raw loss-count defeat (a minimal `will:` profile does it
-properly), sustained-for-N-turns qualifiers on transient conditions, per-campaign
-ending prose (the will profile owns endings), planner pursuit, preseeds (no shipped
+**Deliberately not in v1:** raw loss-count defeat, sustained-for-N-turns qualifiers on
+transient conditions, per-campaign ending prose, planner pursuit, preseeds (no shipped
 campaign changes behavior). **Upstream carve:** prime candidate — Starfire has an
 upstream FR for exactly this; the core (module + `check_win_loss` branch + knobs) has
 zero fork couplings. Carve after the in-app pass, the §63/§65 pattern.

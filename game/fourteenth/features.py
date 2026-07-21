@@ -269,13 +269,10 @@ FEATURES: tuple[Feature, ...] = (
         settings_fields=("continuous_campaign_clock",),
     ),
     Feature(
-        # Pure engine feature (no Lua): couples the will economy to the BLUE war
-        # budget in game/fourteenth/commitment_ceiling.py, hooked in
-        # Coalition.end_turn. Needs vietnam_political_will as well.
         "vietnam_commitment_ceiling",
         "Commitment ceiling (will-coupled war budget)",
         48,
-        settings_fields=("vietnam_commitment_ceiling",),
+        retired=True,
     ),
     Feature(
         "mobile_missile_relocation",
@@ -308,25 +305,16 @@ FEATURES: tuple[Feature, ...] = (
         settings_fields=("c2_decapitation_effects",),
     ),
     Feature(
-        # The materiel supply economy (game/fourteenth/war_economy.py): factories/oil
-        # produce supply that flows over the transit graph to the front and is consumed
-        # there; a starved front recovers less, deploys fewer, and gains less ground
-        # (P2), the SITREP shows why (P4a), and fuel depots gate air readiness (P3).
-        # Symmetric.
         "war_economy",
         "War economy",
         53,
-        settings_fields=("war_economy", "fuel_air_readiness"),
+        retired=True,
     ),
     Feature(
-        # The air axis: a per-base scarce-munitions stock (curated taxonomy in
-        # game/data/weapons.py) debited by what the ATO loads and supply-coupled on
-        # rearm; the loadout gate (Loadout.degrade_for_stock + the payload-editor
-        # grey-out) swaps a store the base is out of down to a stocked fallback.
         "munitions_availability",
         "Munitions availability",
         54,
-        settings_fields=("restrict_weapons_by_stock",),
+        retired=True,
     ),
     Feature(
         "red_intent",

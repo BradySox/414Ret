@@ -24,7 +24,6 @@ import pytest
 import yaml
 
 from game import persistency
-from game.fourteenth.political_will import parse_will_profile
 from game.fourteenth.red_tempo import parse_red_tempo
 
 CAMPAIGN = Path("resources/campaigns/iraq_desert_storm.yaml")
@@ -76,7 +75,6 @@ def test_desert_storm_campaign_definition() -> None:
     for key in (
         "restrict_weapons_by_date",
         "restrict_props_by_date",
-        "vietnam_political_will",
         "c2_decapitation_effects",
         "auto_repair_air_defenses",
         "comint_collection",
@@ -286,12 +284,6 @@ def test_desert_storm_allied_squadrons_carry_their_nations() -> None:
     )
     assert f1ct["max_range"] >= 400
     assert f1ct["tasks"]["TARPS"] == 700
-
-
-def test_desert_storm_will_profile_is_the_coalition_story() -> None:
-    profile = parse_will_profile(_campaign()["will"])
-    assert profile.blue.label == "Coalition cohesion"
-    assert profile.red.label == "the regime's resolve"
 
 
 def test_desert_storm_red_tempo() -> None:

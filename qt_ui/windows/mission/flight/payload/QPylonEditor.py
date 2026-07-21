@@ -52,26 +52,8 @@ class QPylonEditor(QWidget):
         else:
             weapons = pylon.allowed
         allowed = sorted(weapons, key=operator.attrgetter("name"))
-        # §54 M2: grey out scarce munitions the departure airfield is out of (guidance;
-        # the generator enforces it regardless). Only once stocks are seeded; the
-        # currently-selected store is always left selectable so an edit isn't broken.
-        stock_gate = self.game.settings.restrict_weapons_by_stock and getattr(
-            self.game, "munitions_seeded", False
-        )
-        munitions = (
-            getattr(flight.departure.base, "munitions", {}) if stock_gate else {}
-        )
         for i, weapon in enumerate(allowed):
-            out_of_stock = False
-            if stock_gate and weapon != current:
-                family = weapon.weapon_group.scarce_family
-                out_of_stock = family is not None and munitions.get(family, 0) <= 0
-            label = f"{weapon.name} (out of stock)" if out_of_stock else weapon.name
-            self.weapon_combo.addItem(label, weapon)
-            if out_of_stock:
-                item = self.weapon_combo.model().item(i + 1)
-                if item is not None:
-                    item.setEnabled(False)
+            self.weapon_combo.addItem(weapon.name, weapon)
             if current == weapon:
                 self.weapon_combo.setCurrentIndex(i + 1)
 

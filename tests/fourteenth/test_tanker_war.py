@@ -12,8 +12,6 @@ from typing import Any
 
 import yaml
 
-from game.fourteenth.political_will import parse_will_profile
-
 CAMPAIGN = Path("resources/campaigns/tanker_war_1988.yaml")
 FACTIONS = CAMPAIGN.parent.parent / "factions"
 
@@ -32,7 +30,6 @@ def test_tanker_war_campaign_definition() -> None:
 
     # The naval-war identity layer + the Phase 3 coastal hunt preseed on.
     for key in (
-        "vietnam_political_will",
         "mobile_missile_relocation",
         "coastal_missile_relocation",
     ):
@@ -55,14 +52,6 @@ def test_tanker_war_period_iads_is_a_hawk_belt_plus_rapier() -> None:
     assert gf["RED L-LONG 1"] == "Hawk"
     assert gf["RED L-MED 1"] == "Hawk"
     assert gf["RED L-SHORT BANDAR 1"] == "Rapier"
-
-
-def test_tanker_war_will_profile_makes_ships_the_currency() -> None:
-    profile = parse_will_profile(_campaign()["will"])
-    assert profile.blue.label == "Washington's resolve"
-    assert profile.red.label == "Tehran's regime resolve"
-    assert profile.weights.blue_ship_lost == 10.0
-    assert profile.weights.red_ship_lost == 6.0
 
 
 def test_tanker_war_air_oob_is_mod_free_and_period() -> None:

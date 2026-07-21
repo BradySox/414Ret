@@ -9,7 +9,6 @@ from pathlib import Path
 
 import yaml
 
-from game.fourteenth.political_will import parse_will_profile
 from game.fourteenth.red_tempo import parse_red_tempo
 
 CAMPAIGN = Path("resources/campaigns/iraq_inherent_resolve.yaml")
@@ -27,7 +26,6 @@ def test_inherent_resolve_campaign_definition() -> None:
         "coin_ied",
         "coin_hvt",
         "coin_dispersed_cells",
-        "vietnam_political_will",
         "vietnam_convoy_interdiction",
         "vietnam_airbase_harassment",
         "high_digit_sams",  # the ISIS faction's ERO technicals are HDS content
@@ -67,13 +65,6 @@ def test_inherent_resolve_campaign_definition() -> None:
     # from Qayyarah West (id 6, dropped) or the now-red Erbil (id 4).
     assert 6 not in data["squadrons"]
     assert 4 not in data["squadrons"]
-
-    profile = parse_will_profile(data["will"])
-    assert profile.blue.label == "The Coalition's mandate"
-    assert profile.red.label == "the caliphate's resolve"
-    assert profile.weights.red_cache_lost == 4.0
-    assert profile.weights.red_ground_unit_lost == 0.05  # body count buys nothing
-    assert profile.weights.blue_passive_regen == 0.0  # time drains a mandate
 
     # The East Mosul push surges the caliphate's supply down the ratline (§35).
     windows = parse_red_tempo(data["red_tempo"])

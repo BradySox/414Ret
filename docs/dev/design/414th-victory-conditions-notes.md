@@ -1,5 +1,11 @@
 # Custom Victory Conditions (§75)
 
+> **NOTE 2026-07-21** — §75 survives, but its **will/supply meter conditions**
+> (`blue_will_below`/`red_resolve_below`/`enemy_supply_below`/`friendly_supply_below`) and the
+> **W2 negotiation-verdict absorption** were REMOVED with the will/war economy. Only the
+> territorial/destroy/strength/air-denial conditions + the two generic knobs remain. The
+> will/supply-meter and negotiation sections below are historical.
+
 **Status: LANDED (V1 authored block + V2 generic knobs + ribbon/SITREP surfacing;
 same-day adaptation pass — the will/supply meters feed the one ending evaluator).**
 In-app pass = checklist B29.

@@ -75,8 +75,6 @@ def _game(
     domination: int = 0,
     attrition: int = 0,
     campaign_name: Optional[str] = None,
-    will: Optional[tuple[float, float]] = None,
-    supply_on: bool = False,
 ) -> Any:
     wings = {Player.RED: _wing(*red_air), Player.BLUE: _wing(*blue_air)}
     messages: list[tuple[str, str]] = []
@@ -86,17 +84,10 @@ def _game(
         settings=SimpleNamespace(
             alternate_victory_domination=domination,
             alternate_victory_attrition=attrition,
-            vietnam_political_will=will is not None,
-            war_economy=supply_on,
         ),
         turn=turn,
         campaign_name=campaign_name,
         messages=messages,
-        # (blue_will, red_will) when will tracking is on; the coalition stubs
-        # always exist so the supply reader can hand them to a patched
-        # coalition_supply_health.
-        blue=SimpleNamespace(political_will=will[0] if will else None),
-        red=SimpleNamespace(political_will=will[1] if will else None),
     )
     game.message = lambda title, text="": messages.append((title, text))
     return game
@@ -162,27 +153,6 @@ def test_parse_territory_above_one_is_legal() -> None:
     profile = parse_victory({"win_when": [{"territory_above": 1.0}]})
     assert profile is not None
     assert profile.win_when[0].territory_above == 1.0
-
-
-def test_parse_meter_fields() -> None:
-    profile = parse_victory(
-        {
-            "win_when": [{"red_resolve_below": 30, "enemy_supply_below": 25}],
-            "lose_when": [{"blue_will_below": 40}, {"friendly_supply_below": 20}],
-        }
-    )
-    assert profile is not None
-    assert profile.win_when[0].red_resolve_below == 30
-    assert profile.win_when[0].enemy_supply_below == 25
-    assert profile.lose_when[0].blue_will_below == 40
-    assert profile.lose_when[1].friendly_supply_below == 20
-    # Meter thresholds are the meters' own 0-100 scale, exclusive both ends.
-    with pytest.raises(ValueError):
-        parse_victory({"win_when": [{"red_resolve_below": 0}]})
-    with pytest.raises(ValueError):
-        parse_victory({"win_when": [{"red_resolve_below": 100}]})
-    with pytest.raises(ValueError):
-        parse_victory({"lose_when": [{"blue_will_below": 150}]})
 
 
 # --- evaluation -----------------------------------------------------------------------
@@ -430,22 +400,20 @@ def test_verdict_uses_the_label_in_the_banner() -> None:
 
 
 def test_check_win_loss_wiring() -> None:
-    # Drive the REAL Game.check_win_loss with a duck-typed self: the negotiation
-    # branch (off) is consulted first, the §75 branch wins on the domination
-    # knob, and with nothing configured the stock territory checks still rule.
+    # Drive the REAL Game.check_win_loss with a duck-typed self: the §75 branch
+    # wins on the domination knob, and with nothing configured the stock
+    # territory checks still rule.
     from game.game import Game, TurnState
 
     cps = [_cp("A", Player.BLUE), _cp("B", Player.RED)]
     game = _game(cps=cps, domination=50)
     game.blank_canvas_setup = False
-    game.settings.vietnam_political_will = False
     game.theater.player_points = lambda state_check=False: [cps[0]]
     game.theater.enemy_points = lambda state_check=False: [cps[1]]
     assert Game.check_win_loss(cast(Any, game)) is TurnState.WIN
 
     quiet = _game(cps=cps)
     quiet.blank_canvas_setup = False
-    quiet.settings.vietnam_political_will = False
     quiet.theater.player_points = lambda state_check=False: [cps[0]]
     quiet.theater.enemy_points = lambda state_check=False: [cps[1]]
     assert Game.check_win_loss(cast(Any, quiet)) is TurnState.CONTINUE
@@ -485,104 +453,6 @@ def test_describe_without_live_values() -> None:
         game, VictoryCondition(capture_cps=("A",)), baseline, live=False
     )
     assert text == "Capture A"
-
-
-# --- the absorbed negotiation ending + the meter vocabulary ---------------------------
-
-
-def test_negotiation_ending_flows_through_victory_verdict() -> None:
-    # Will exhaustion IS a victory verdict now -- and carries no announce of its
-    # own (update_political_will fires the era banner on the crossing edge).
-    assert victory_verdict(_game(will=(0.0, 50.0))) == "loss"
-    assert victory_verdict(_game(will=(50.0, 0.0))) == "win"
-    # BLUE-loss precedence on a simultaneous collapse (the W2 rule).
-    assert victory_verdict(_game(will=(0.0, 0.0))) == "loss"
-    game = _game(will=(0.0, 50.0))
-    assert victory_verdict(game) == "loss"
-    assert game.messages == []
-    # Meters healthy, nothing else configured: the war goes on.
-    assert victory_verdict(_game(will=(60.0, 60.0))) is None
-
-
-def test_negotiation_outranks_authored_and_knob_conditions() -> None:
-    # An authored/knob win being met never beats a will collapse -- the same
-    # precedence the ending had as its own check_win_loss branch.
-    game = _game(
-        cps=[_cp("A", Player.BLUE), _cp("B", Player.RED)],
-        domination=50,
-        will=(0.0, 50.0),
-    )
-    assert victory_verdict(game) == "loss"
-
-
-def test_check_win_loss_negotiation_precedence() -> None:
-    from game.game import Game, TurnState
-
-    cps = [_cp("A", Player.BLUE), _cp("B", Player.RED)]
-    game = _game(cps=cps, domination=50, will=(0.0, 50.0))
-    game.blank_canvas_setup = False
-    game.theater.player_points = lambda state_check=False: [cps[0]]
-    game.theater.enemy_points = lambda state_check=False: [cps[1]]
-    assert Game.check_win_loss(cast(Any, game)) is TurnState.LOSS
-
-
-def test_will_ending_rows_lead_the_overview() -> None:
-    # A will campaign's VICTORY checklist opens with its real endings, labeled
-    # by the will profile (Vietnam defaults here), zero authoring required.
-    rows = victory_overview(_game(will=(62.0, 87.0)))
-    assert len(rows) == 2
-    assert rows[0]["text"] == "Break Hanoi's resolve (now 87 of 100)"
-    assert rows[0]["defeat"] is False
-    assert rows[0]["met"] is False
-    assert rows[1]["text"] == "Washington's patience runs out (now 62 of 100)"
-    assert rows[1]["defeat"] is True
-    # Will tracking off: no rows, the block stays hidden.
-    assert victory_overview(_game()) == []
-
-
-def test_authored_will_threshold_fields() -> None:
-    game = _game(will=(60.0, 25.0))
-    baseline = _baseline(game)
-    assert condition_met(game, VictoryCondition(red_resolve_below=30), baseline)
-    assert not condition_met(game, VictoryCondition(red_resolve_below=20), baseline)
-    assert not condition_met(game, VictoryCondition(blue_will_below=50), baseline)
-    # Will tracking off: the field can never fire, and the prose says why.
-    off = _game()
-    off_baseline = _baseline(off)
-    assert not condition_met(off, VictoryCondition(red_resolve_below=99), off_baseline)
-    text = describe_condition(
-        off, VictoryCondition(red_resolve_below=30), off_baseline, live=True
-    )
-    assert text == "Hanoi's resolve falls below 30 (will tracking off)"
-
-
-def test_supply_conditions_gated_on_the_war_economy(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    import game.fourteenth.war_economy as war_economy_mod
-
-    monkeypatch.setattr(
-        war_economy_mod, "coalition_supply_health", lambda game, coalition: 0.3
-    )
-    game = _game(supply_on=True)
-    baseline = _baseline(game)
-    assert condition_met(game, VictoryCondition(enemy_supply_below=40), baseline)
-    assert not condition_met(game, VictoryCondition(enemy_supply_below=25), baseline)
-    assert condition_met(game, VictoryCondition(friendly_supply_below=40), baseline)
-    text = describe_condition(
-        game, VictoryCondition(enemy_supply_below=40), baseline, live=True
-    )
-    assert text == "Enemy front supply falls below 40% (now 30%)"
-    # Economy off: never fires, and the prose says why.
-    off = _game()
-    off_baseline = _baseline(off)
-    assert not condition_met(off, VictoryCondition(enemy_supply_below=99), off_baseline)
-    assert (
-        describe_condition(
-            off, VictoryCondition(enemy_supply_below=40), off_baseline, live=True
-        )
-        == "Enemy front supply falls below 40% (war economy off)"
-    )
 
 
 def test_sitrep_lines_are_prefixed_and_capped() -> None:

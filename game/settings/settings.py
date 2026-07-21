@@ -379,13 +379,6 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                 ],
             ),
             (
-                "War economy",
-                [
-                    "war_economy",
-                    "fuel_air_readiness",
-                ],
-            ),
-            (
                 "Insurgency",
                 [
                     "coin_insurgency",
@@ -590,7 +583,6 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                 [
                     "auto_range_fuel_tanks",
                     "fuel_tanks_over_jammers",
-                    "restrict_weapons_by_stock",
                 ],
             ),
         ],
@@ -615,14 +607,6 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
     (
         VIETNAM_OPS_PAGE,
         [
-            (
-                "Campaign",
-                [
-                    "vietnam_political_will",
-                    "vietnam_static_front",
-                    "vietnam_commitment_ceiling",
-                ],
-            ),
             (
                 "Fire support",
                 [
@@ -1575,35 +1559,6 @@ class Settings:
             "live percentage. Adds to the normal endings, never replaces them."
         ),
     )
-    war_economy: bool = boolean_option(
-        "War economy (supply logistics)",
-        page=CAMPAIGN_MANAGEMENT_PAGE,
-        section="War economy",
-        default=False,
-        detail=(
-            "Adds a per-base materiel supply stockpile on top of the money economy: "
-            "factories and oil/derricks produce supply, it flows to the front and is "
-            "consumed there, and a starved front recovers less, deploys fewer units, "
-            "and gains less ground -- so bombing the enemy's production and cutting "
-            "their supply routes visibly thins their front over several turns. "
-            "Symmetric (the enemy interdicts yours too); the SITREP shows each side's "
-            "front supply. Intended for campaigns with a real economy laydown "
-            "(factories + depots) that preseed it on."
-        ),
-    )
-    fuel_air_readiness: bool = boolean_option(
-        "Fuel depots gate air readiness",
-        page=CAMPAIGN_MANAGEMENT_PAGE,
-        section="War economy",
-        default=False,
-        detail=(
-            "An airfield's alive fuel depots gate how many of its aircraft can sortie "
-            "each turn: destroy an enemy base's fuel infrastructure and it flies fewer "
-            "packages (down to a floor; a base with no fuel depots is never penalised). "
-            "Symmetric -- your own grounded bases fly less too. Independent of the "
-            "supply economy above; intended for campaigns with fuel-depot laydowns."
-        ),
-    )
     coin_insurgency: bool = boolean_option(
         "COIN insurgent replenishment",
         page=CAMPAIGN_MANAGEMENT_PAGE,
@@ -1763,21 +1718,6 @@ class Settings:
         section=GENERAL_SECTION,
         default=False,
         detail=("If checked, Bandit's cloud presets will become available."),
-    )
-    restrict_weapons_by_stock: bool = boolean_option(
-        "Restrict munitions to airfield stock (war economy)",
-        page=MISSION_GENERATION_PAGE,
-        section="Loadouts",
-        default=False,
-        detail=(
-            "Track a per-airfield stock of scarce munitions (PGMs, GPS bombs, "
-            "standoff/cruise, anti-radiation, medium/long-range A2A) and rearm it each "
-            "turn -- scaled by the base's supply when the war economy is on, so cutting "
-            "a base off starves its magazines. When a store runs dry the loadout is "
-            "swapped down to the first stocked/non-scarce fallback (JDAM -> dumb bomb) "
-            "or the pylon is cleared, and the payload editor greys the depleted store "
-            "out. Intended for campaigns with a real economy/logistics laydown."
-        ),
     )
     auto_range_fuel_tanks: bool = boolean_option(
         "Add fuel tanks when the route needs the range",
@@ -3085,52 +3025,6 @@ class Settings:
             "Offshore gun ships (battleship/cruiser main batteries) deliver call-for-fire "
             "bombardment against coastal targets. Coastal campaigns only -- has no effect "
             "inland (e.g. Khe Sanh), where naval gunfire never reached."
-        ),
-        default=False,
-    )
-    vietnam_political_will: bool = boolean_option(
-        "Political will tracking",
-        VIETNAM_OPS_PAGE,
-        "Campaign",
-        detail=(
-            "Track each side's political capital for the war -- your Political Will "
-            "(drained by airframe losses -- a heavy bomber is a national event -- "
-            "POWs taken and held, warships sunk, and lost ground) versus the enemy's "
-            "Regime Resolve (drained by logistics strangulation and attrition). "
-            "Decides the war at the negotiating table: break the enemy's resolve "
-            "before your will runs out, or run dry first and be ordered home. "
-            "Territory victory still applies. Framing and feed weights default to "
-            "the Vietnam layer (Washington vs Hanoi); a campaign's will: block can "
-            "re-label and re-weight them for any era."
-        ),
-        default=False,
-    )
-    vietnam_static_front: bool = boolean_option(
-        "Static front (bounded siege line)",
-        VIETNAM_OPS_PAGE,
-        "Campaign",
-        detail=(
-            "The ground front holds as a siege line: it bends with the strength "
-            "battle inside a narrow band around where the campaign started, but "
-            "never sweeps onto a base to capture it -- Vietnam's ground war was "
-            "attrition in place, not maneuver. Deliberate Air Assault operations "
-            "still capture bases (the one territorial lever), and attrition still "
-            "pays out through Political Will, where the war is decided."
-        ),
-        default=False,
-    )
-    vietnam_commitment_ceiling: bool = boolean_option(
-        "Commitment ceiling (will-coupled war budget)",
-        VIETNAM_OPS_PAGE,
-        "Campaign",
-        enabled_when="vietnam_political_will",
-        detail=(
-            "As your Political Will falls, Congress trims the war budget -- your "
-            "income is scaled down toward a floor as the home front turns, so a "
-            "flagging war is starved of replacements (the war is taken away from "
-            "you, not just lost at the table). Full funding while will stays high; "
-            "the cut only bites once patience is already low. Needs Political will "
-            "tracking on; affects your coalition only."
         ),
         default=False,
     )

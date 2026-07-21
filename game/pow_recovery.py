@@ -10,14 +10,12 @@ if TYPE_CHECKING:
     from game.squadrons.pilot import Pilot
     from game.theater import Player
 
-# How many turns a captured pilot is held as a POW before they are written off,
-# on a campaign WITHOUT the political-will economy. Captured pilots come from the
-# Combat SAR enemy-capture race (resources/plugins/combatsar): a snatch party that
-# reaches a downed pilot before rescue seizes them. On a will-economy campaign
-# (vietnam_political_will) the hold is INDEFINITE instead -- the POW drains will
-# every turn until freed or the war ends (the §48 "running sore"), and is only
-# resolved by recapturing the holding field, a negotiated win (Homecoming), or a
-# withdrawal loss (written off). See ``surviving_pows`` / ``resolve_pows_at_game_end``.
+# How many turns a captured pilot is held as a POW before they are written off.
+# Captured pilots come from the Combat SAR enemy-capture race
+# (resources/plugins/combatsar): a snatch party that reaches a downed pilot before
+# rescue seizes them. A POW is resolved by recapturing the holding field (freed),
+# running the hold clock out (written off), or the war ending (a win brings them
+# home, a loss writes them off). See ``surviving_pows`` / ``resolve_pows_at_game_end``.
 DEFAULT_POW_HOLD_TURNS = 4
 
 
@@ -28,9 +26,7 @@ class PendingPowRecovery:
     Persisted on the captured pilot's own ``Coalition``
     (``pending_pow_recoveries``). The aviator is **held alive** while a POW:
     capturing the holding airfield **frees** them (they stay in the squadron);
-    if the hold clock runs out they are **killed** (a permanent loss). While
-    held, each POW drains political will per turn (the Vietnam will economy's
-    ``blue_pow_held_per_turn`` feed).
+    if the hold clock runs out they are **killed** (a permanent loss).
 
     The dedicated recovery *raid* (a ``CSAR`` flight against a dynamic
     captured-pilot map objective) was shelved in the 2026-07-03 CSAR rescope --
@@ -112,17 +108,13 @@ def surviving_pows(
     1. *Freed* -- if the enemy airfield holding the POW is now friendly (the side
        recaptured it), the POW walks free: the aviator is repatriated (back to the
        active roster) and dropped.
-    2. *Indefinite hold* -- on a political-will campaign the POW is **never** auto-
-       written-off: they are held (draining will every turn -- the §48 running sore)
-       until freed or the war ends (``resolve_pows_at_game_end``). Kept.
-    3. *Abandoned* -- otherwise the hold clock decrements; at zero the POW is written
+    2. *Abandoned* -- otherwise the hold clock decrements; at zero the POW is written
        off (killed, or repatriated for an invulnerable player pilot). Dropped.
-    4. Otherwise the POW is kept for another turn.
+    3. Otherwise the POW is kept for another turn.
 
     Returns the survivors; the caller reassigns its ``pending_pow_recoveries``.
     """
     settings = game.settings
-    will_economy = bool(getattr(settings, "vietnam_political_will", False))
     invulnerable = bool(getattr(settings, "invulnerable_player_pilots", False))
     survivors = []
     for entry in pows:
@@ -135,9 +127,6 @@ def surviving_pows(
                 if entry.pilot is not None:
                     entry.pilot.repatriate()  # holding field fell -> POW freed
                 continue
-        if will_economy:
-            survivors.append(entry)  # indefinite: resolved only by free / war's end
-            continue
         entry.turns_remaining -= 1
         if entry.turns_remaining > 0:
             survivors.append(entry)
@@ -149,10 +138,10 @@ def surviving_pows(
 def resolve_pows_at_game_end(game: Game, coalition: Coalition, won: bool) -> None:
     """Settle a coalition's held POWs when the campaign ends.
 
-    A **negotiated win** brings everyone home (the Homecoming -- every POW is
-    repatriated to the active roster); a **withdrawal loss** writes them off
-    (killed, or repatriated for an invulnerable player pilot). Either way the
-    recovery list is cleared. No-op when the side holds no POWs.
+    A **win** brings everyone home (the Homecoming -- every POW is repatriated to
+    the active roster); a **loss** writes them off (killed, or repatriated for an
+    invulnerable player pilot). Either way the recovery list is cleared. No-op when
+    the side holds no POWs.
     """
     invulnerable = bool(getattr(game.settings, "invulnerable_player_pilots", False))
     for entry in coalition.pending_pow_recoveries:

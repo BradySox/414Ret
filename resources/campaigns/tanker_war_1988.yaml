@@ -26,9 +26,6 @@ settings:
   uh_60l: false
   # Mod-free by design: the whole air OOB uses stock/free airframes (Heatblur A-6E Intruder
   # is a free AI aircraft, not the A-6A mod), so no ModSettings preseeds are needed.
-  # 414th naval-war identity layer (Phase 2): the political-will economy (US Resolve vs
-  # Tehran's regime resolve, ship losses as the decisive currency).
-  vietnam_political_will: true
   # Phase 3: the coastal Silkworm batteries shoot-and-scoot (the coastal-missile hunt),
   # alongside the SCUD sites. The shore/island batteries relocate; the platform gun-fort
   # AAA (added to the .miz) does not.
@@ -422,31 +419,3 @@ supply_routes:
       - [393729, -442581]
       - [356905, -487221]
       - [313020, -505678]
-
-# --- Political will economy (gated by vietnam_political_will) --------------------------------
-# Ships are the decisive currency: a US warship sunk is a strategic blow to Washington's
-# resolve (the USS Stark echo); sinking Iran's navy + its oil-platform gun forts breaks
-# Tehran (as Praying Mantis historically did). Grind red resolve to zero -> Iran halts the
-# attacks on shipping (negotiated WIN); Washington's resolve breaks first -> the escort
-# mission is withdrawn (LOSS). Territory victory stays as a fallback.
-will:
-  blue:
-    label: Washington's resolve
-    exhaustion_title: Washington ends the escort mission
-    exhaustion_body: >-
-      The cost of keeping the Strait open has outrun the will to pay it. The escorts
-      stand down and the Gulf is left to Tehran's guns -- whatever the map says.
-  red:
-    label: Tehran's regime resolve
-    exhaustion_title: Tehran halts the attacks on shipping
-    exhaustion_body: >-
-      The navy is wreckage and the platforms burn. Tehran passes quiet word that the
-      sea lanes will be left alone. The pressure at sea did what no army ashore had to.
-  weights:
-    blue_ship_lost: 10.0      # a US frigate/escort lost is front-page news
-    red_ship_lost: 6.0        # sinking Iran's navy/boats is the load-bearing pressure
-    blue_airframe_loss: 1.5
-    red_airframe_loss: 0.5
-    red_ground_unit_lost: 0.4 # the oil-platform gun forts + coastal sites bleed Tehran
-    blue_passive_regen: 0.5
-    red_passive_regen: 0.5

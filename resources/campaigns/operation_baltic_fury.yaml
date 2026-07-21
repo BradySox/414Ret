@@ -137,18 +137,10 @@ settings:
   # with beyond-era kit (both toggles; §24 split restrict_props off restrict_weapons).
   restrict_weapons_by_date: true
   restrict_props_by_date: true
-  # §54 munitions scarcity: an airfield out of a scarce PGM/ARM/A2A store can't load it.
-  # Pairs with war_economy below -- bomb a base's supply and its jets run dry.
-  restrict_weapons_by_stock: true
   # Human-led counter-offensive: keep the blue auto-planner cautious so the 414th's sorties
   # (the SEAD/anti-ship push into the coastal belt) are the player's to fly.
   ownfor_autoplanner_aggressiveness: 10
   oca_target_autoplanner_min_aircraft_count: 40
-  # §53 war economy + §54 air axis: a per-base materiel stockpile on top of money. Produced,
-  # transported to the front, consumed; a starved / interdicted front recovers less and gains
-  # less ground. §53 P3 fuel depots gate air readiness (bomb the fuel, ground the jets).
-  war_economy: true
-  fuel_air_readiness: true
   # §52 command-center decapitation: the advanced-IADS command network feeds red's PLANNING,
   # not just SAM autonomy -- as the player bombs the HQs, red's offensive targeting gets
   # sloppier. Reactive defense untouched. This laydown ships a real per-base C2 network to key on.

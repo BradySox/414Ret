@@ -377,10 +377,19 @@ class MigrationUnpickler(pickle.Unpickler):
         # ModuleNotFoundError here. Degrade them to an inert placeholder so the save
         # still loads -- the game/theater __setstate__ no longer restores those
         # attributes, so the orphaned placeholders are never read.
+        # The will/war economies (§48/§53/§54) were removed too: a save with a
+        # pickled will_ledger (WillLedgerEntry) or any of these deleted modules'
+        # classes would raise ModuleNotFoundError here. The game/coalition
+        # __setstate__ no longer restores those attributes, so the placeholders
+        # are never read.
         if module in (
             "game.fourteenth.phases",
             "game.fourteenth.red_intent",
             "game.fourteenth.zone_drawings",
+            "game.fourteenth.political_will",
+            "game.fourteenth.commitment_ceiling",
+            "game.fourteenth.static_front",
+            "game.fourteenth.war_economy",
         ):
             return DummyObject
 

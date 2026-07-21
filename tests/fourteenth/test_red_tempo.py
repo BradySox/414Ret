@@ -2,9 +2,8 @@
 
 Locks the schedule parse, the last-window-wins selection, the trail-surge
 multiplier (incl. the ground-offensive floor), the ground-offensive stance
-pulse, the resolve regen (gated + once-per-turn), and the announce latch. The
-campaign-YAML lookup is bypassed by patching ``schedule_for`` with parsed
-windows, so no real campaign definition is needed.
+pulse, and the announce latch. The campaign-YAML lookup is bypassed by patching
+``schedule_for`` with parsed windows, so no real campaign definition is needed.
 """
 
 from __future__ import annotations
@@ -31,25 +30,18 @@ def _arc() -> tuple[RedTempoWindow, ...]:
     return parse_red_tempo(
         [
             {"from_turn": 1, "name": "Rolling Thunder", "trail_surge": 1.5},
-            {
-                "from_turn": 8,
-                "name": "The Bombing Halt",
-                "trail_surge": 2.0,
-                "resolve_regen": 1.5,
-            },
+            {"from_turn": 8, "name": "The Bombing Halt", "trail_surge": 2.0},
             {"from_turn": 11, "name": "Linebacker", "ground_offensive": 3},
         ]
     )
 
 
-def _game(turn: int, *, will: bool = False, resolve: float = 50.0) -> Any:
+def _game(turn: int) -> Any:
     game = SimpleNamespace(
         turn=turn,
         campaign_name="Test",
-        settings=SimpleNamespace(vietnam_political_will=will),
-        red=SimpleNamespace(player=SimpleNamespace(), political_will=resolve),
+        red=SimpleNamespace(player=SimpleNamespace()),
         theater=SimpleNamespace(conflicts=lambda: []),
-        red_tempo_regen_turn=None,
         red_tempo_announced_window=None,
         messages=[],
     )
@@ -116,10 +108,9 @@ def test_no_schedule_is_a_noop(monkeypatch: Any) -> None:
     monkeypatch.setattr(red_tempo, "schedule_for", lambda g: ())
     assert active_window(_game(5)) is None
     assert trail_surge_multiplier(_game(5)) == 1.0
-    game = _game(5, will=True)
-    apply_red_tempo(game)  # must not raise / message / move resolve
+    game = _game(5)
+    apply_red_tempo(game)  # must not raise / message
     assert game.messages == []
-    assert game.red.political_will == 50.0
 
 
 # --- trail surge --------------------------------------------------------------
@@ -178,29 +169,12 @@ def test_ground_offensive_never_lowers_a_better_stance(monkeypatch: Any) -> None
     assert red_cp.stances["b"] == CombatStance.BREAKTHROUGH  # kept its better stance
 
 
-# --- resolve regen ------------------------------------------------------------
-
-
-def test_resolve_regen_is_gated_and_once_per_turn(monkeypatch: Any) -> None:
-    monkeypatch.setattr(red_tempo, "schedule_for", lambda g: _arc())
-    # Gated: no gain without vietnam_political_will.
-    off = _game(8, will=False, resolve=50.0)
-    apply_red_tempo(off)
-    assert off.red.political_will == 50.0
-    # On: gains the window's resolve_regen exactly once this turn.
-    on = _game(8, will=True, resolve=50.0)
-    apply_red_tempo(on)
-    assert on.red.political_will == 51.5
-    apply_red_tempo(on)  # a second init this turn does not double-apply
-    assert on.red.political_will == 51.5
-
-
 # --- announce latch -----------------------------------------------------------
 
 
 def test_announce_fires_once_per_window(monkeypatch: Any) -> None:
     monkeypatch.setattr(red_tempo, "schedule_for", lambda g: _arc())
-    game = _game(8, will=True)
+    game = _game(8)
     apply_red_tempo(game)
     assert any("Hanoi answers" in text for _t, text in game.messages)
     count = len(game.messages)

@@ -320,12 +320,6 @@ class Squadron:
         # QRA-reserved airframes are held on alert by the intercept dispatcher,
         # so they are not available to the auto-planner or spawned as filler.
         available = self.owned_aircraft - self.intercept_reserve
-        # §53 P3: a fuel-starved base can sortie fewer of its jets (x1.0 no-op unless
-        # fuel_air_readiness is on and the base has lost fuel depots). Both the planner
-        # and the player read untasked_aircraft, so this grounds air for both.
-        from game.fourteenth.war_economy import fuel_readiness
-
-        available = int(available * fuel_readiness(getattr(self, "location", None)))
         self.untasked_aircraft = max(0, available)
 
     def set_intercept_reserve(self, value: int) -> None:
@@ -341,17 +335,7 @@ class Squadron:
         adjusted = untasked_after_reserve_change(
             self.intercept_reserve, value, self.untasked_aircraft, self.owned_aircraft
         )
-        # §53 P3 coupling: return_all_pilots_and_aircraft scales the pool by the
-        # base's fuel readiness AFTER subtracting the reserve, so a mid-turn edit
-        # must respect the same ceiling -- freeing reserve at a fuel-starved base
-        # must not un-ground jets the depot damage grounded. fuel_readiness is
-        # 1.0 (an exact no-op ceiling) unless fuel_air_readiness is on.
-        from game.fourteenth.war_economy import fuel_readiness
-
-        ceiling = int(
-            max(0, self.owned_aircraft - value)
-            * fuel_readiness(getattr(self, "location", None))
-        )
+        ceiling = max(0, self.owned_aircraft - value)
         self.untasked_aircraft = min(adjusted, ceiling)
         self.intercept_reserve = value
         # §1 player-manned coupling: the player can never man more of the reserve

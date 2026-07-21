@@ -31,13 +31,6 @@ export const mapColors = {
   // on dark terrain the bright dash on top still carries it.
   strokeCasing: "#141414",
 
-  // --- supply readiness (by level, not side) ---
-  supplyOk: "#3ccd5f",
-  supplyMid: "#e0b13a",
-  supplyLow: "#e07a2f",
-  supplyCritical: "#d43a3a",
-  supplyProducer: "#4a90d9",
-
   // --- supply routes ---
   routeFriendly: "#4a90d9", // lifted from #2d3e50 (near-invisible on imagery)
   routeEnemy: "#8c1414",
@@ -86,33 +79,3 @@ export const mapStrokes: Record<
   pilotMia: { weight: 2.5, casingWeight: 6 },
   pilotPow: { dashArray: "3 5", weight: 2.5, casingWeight: 6 },
 };
-
-/**
- * Shared supply-readiness banding (input is the raw supply fraction in [0, 1]).
- *
- * The ribbon chips, the map's supply nodes, and the legend must agree on what
- * each colour *means* — the ribbon used to band at 35/50 (the red-intent
- * decision thresholds) while the map banded at 85/60/50, so the same hue on the
- * two surfaces meant different numbers (2026-07-18 UI audit).
- */
-export type SupplyBand = "ok" | "mid" | "low" | "critical";
-
-export function supplyBand(fraction: number): SupplyBand {
-  if (fraction >= 0.85) return "ok";
-  if (fraction >= 0.6) return "mid";
-  if (fraction >= 0.5) return "low";
-  return "critical";
-}
-
-export function supplyBandColor(fraction: number): string {
-  switch (supplyBand(fraction)) {
-    case "ok":
-      return mapColors.supplyOk;
-    case "mid":
-      return mapColors.supplyMid;
-    case "low":
-      return mapColors.supplyLow;
-    case "critical":
-      return mapColors.supplyCritical;
-  }
-}

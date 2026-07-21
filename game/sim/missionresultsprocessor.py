@@ -6,7 +6,6 @@ from typing import Optional, TYPE_CHECKING
 from game.debriefing import Debriefing
 from game.data.units import FRONTLINE_UNIT_CLASSES
 from game.fourteenth.c2_decapitation import c2_status_line
-from game.fourteenth.war_economy import supply_effectiveness
 from game.ground_forces.combat_stance import CombatStance
 from game.missiongenerator.interceptattrition import (
     fielded_qra_by_squadron,
@@ -78,24 +77,12 @@ class MissionResultsProcessor:
                 self.commit_minefields(debriefing)
             with logged_duration("commit_cruise_missiles"):
                 self.commit_cruise_missiles(debriefing)
-            # Political will feeds AFTER the loss/POW/capture steps (so the held-POW
-            # trickle reads post-recovery state) and BEFORE the SITREP (so the band
-            # shows this turn's fresh values).
-            with logged_duration("record_political_will"):
-                self.record_political_will(debriefing)
             # §70 COMINT (C0): bank this mission's collection. Commit runs before
             # the turn increments, so the stamp is the just-played turn.
             with logged_duration("record_comint_collection"):
                 self.record_comint_collection(debriefing)
             with logged_duration("record_sitrep"):
                 self.record_sitrep(debriefing)
-
-    def record_political_will(self, debriefing: Debriefing) -> None:
-        # Vietnam campaign layer W1 (observe-only): feed both sides' political will
-        # from the turn's debriefing. No-op unless vietnam_political_will is on.
-        from game.fourteenth.political_will import update_political_will
-
-        update_political_will(self.game, debriefing)
 
     def record_comint_collection(self, debriefing: Debriefing) -> None:
         # §70 COMINT (C0): stamp the turn when a surviving blue collector (a §2
@@ -136,25 +123,6 @@ class MissionResultsProcessor:
         # before the turn increments, so game.turn/current_day are the just-played
         # turn. All inputs are debriefing-derived and unaffected by commit order,
         # so this can run last.
-        # The will band rides along only when tracking is on (W1): record_political_will
-        # has already run this commit, so these are the turn's fresh values -- and the
-        # ledger's latest entry is this turn's attribution (the movers lines).
-        will_on = getattr(self.game.settings, "vietnam_political_will", False)
-        blue_note: Optional[str] = None
-        red_note: Optional[str] = None
-        if will_on:
-            from game.fourteenth.political_will import ledger_notes
-
-            blue_note, red_note = ledger_notes(self.game)
-        # War economy (§53 P4): the front-supply band rides along when the economy is
-        # on, so the player can read why a front stalled (the P2 bite). Enemy claimed.
-        blue_supply: Optional[float] = None
-        red_supply: Optional[float] = None
-        if getattr(self.game.settings, "war_economy", False):
-            from game.fourteenth.war_economy import coalition_supply_health
-
-            blue_supply = coalition_supply_health(self.game, self.game.blue)
-            red_supply = coalition_supply_health(self.game, self.game.red)
         # §75: the alternate-ending progress digest -- empty (and hidden) unless
         # the campaign authors a `victory:` block or a knob is on.
         from game.fourteenth.victory import victory_sitrep_lines
@@ -163,28 +131,18 @@ class MissionResultsProcessor:
             debriefing,
             self.game.turn,
             self.game.current_day,
-            blue_will=self.game.blue.political_will if will_on else None,
-            red_will=self.game.red.political_will if will_on else None,
-            blue_will_note=blue_note,
-            red_will_note=red_note,
             pows_held=self._pow_sitrep_lines(),
             pilots_mia=self._mia_sitrep_lines(),
             red_c2_status=c2_status_line(self.game, Player.RED),
-            blue_supply=blue_supply,
-            red_supply=red_supply,
             victory_lines=victory_sitrep_lines(self.game),
         )
 
     def _pow_sitrep_lines(self) -> list[str]:
         """One player-facing line per BLUE aviator currently held POW.
 
-        Named by pilot, located at the holding enemy field, with the lever spelled
-        out: a turn countdown on a normal campaign, "(held)" on a will campaign
-        where the hold is indefinite (freed only by recapture or the war's end).
+        Named by pilot, located at the holding enemy field, with the release
+        clock (a turn countdown until the hold expires) spelled out.
         """
-        will_economy = bool(
-            getattr(self.game.settings, "vietnam_political_will", False)
-        )
         lines: list[str] = []
         for entry in self.game.blue.pending_pow_recoveries:
             name = entry.pilot.name if entry.pilot is not None else "Downed aviator"
@@ -195,11 +153,8 @@ class MissionResultsProcessor:
                     where = cp.name
                 except KeyError:
                     pass
-            if will_economy:
-                clock = "held"
-            else:
-                turns = max(entry.turns_remaining, 0)
-                clock = f"{turns} turn{'s' if turns != 1 else ''} left"
+            turns = max(entry.turns_remaining, 0)
+            clock = f"{turns} turn{'s' if turns != 1 else ''} left"
             lines.append(f"{name} — held at {where} ({clock})")
         return lines
 
@@ -284,10 +239,9 @@ class MissionResultsProcessor:
         (the side that lost them) carrying the airframe unit name and the capture
         position, with the holding enemy airfield resolved immediately. The POW
         is freed if the holding field falls, killed when the hold clock expires
-        (``Coalition.end_turn`` -> ``surviving_pows``), and drains political will
-        per turn held. The shelved recovery raid offered no other path (CSAR
-        rescope 2026-07-03). Fail-safe: an empty capture list (the normal case)
-        is a no-op.
+        (``Coalition.end_turn`` -> ``surviving_pows``). The shelved recovery raid
+        offered no other path (CSAR rescope 2026-07-03). Fail-safe: an empty
+        capture list (the normal case) is a no-op.
         """
         from game.fourteenth.downed_pilots import pilot_from_ledger
         from game.pow_recovery import PendingPowRecovery, resolve_holding_airfield
@@ -783,12 +737,7 @@ class MissionResultsProcessor:
                 else:
                     if player_won:
                         print(status_msg)
-                        # War economy (§53 P2): a starved winner converts a win into
-                        # less ground -- scale the shift by the *winner's* supply so
-                        # interdiction slows an advance. x1.0 no-op unless on+seeded;
-                        # symmetric (whichever side wins). Scales both the winner's
-                        # gain and the loser's loss equally.
-                        won = delta * supply_effectiveness(cp)
+                        won = delta
                         cp.base.affect_strength(won)
                         enemy_cp.base.affect_strength(-won)
                         self.game.message(
@@ -797,7 +746,7 @@ class MissionResultsProcessor:
                         )
                     else:
                         print(status_msg)
-                        won = delta * supply_effectiveness(enemy_cp)
+                        won = delta
                         enemy_cp.base.affect_strength(won)
                         cp.base.affect_strength(-won)
                         self.game.message(

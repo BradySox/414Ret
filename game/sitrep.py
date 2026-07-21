@@ -68,21 +68,6 @@ class Sitrep:
     #: for "bombing the HQ made red plan worse". None hides the line. Rides along
     #: with real news (never forces a SITREP on a quiet turn). getattr-guarded.
     red_c2_status: Optional[str] = None
-    #: Vietnam campaign layer (W1): post-turn Political Will / Regime Resolve
-    #: percentages, set only when vietnam_political_will is on. None (and absent on
-    #: pre-W1 pickled sitreps -- read via getattr) hides the band line entirely.
-    blue_will: Optional[float] = None
-    red_will: Optional[float] = None
-    #: The turn's will attribution (the W1 ledger): one rendered top-movers line
-    #: per side, e.g. '-4.0: heavy bombers x1 down -6.0 · …'. None hides the lines.
-    blue_will_note: Optional[str] = None
-    red_will_note: Optional[str] = None
-    #: §53 P4: per-side front supply health (0.0-1.0) when the war economy is on, so
-    #: the player can read WHY a front stalled (the P2 bite). Enemy value is framed as
-    #: claimed (recon-fog). None (and absent on pre-feature pickled sitreps -- read via
-    #: getattr) hides the band line. Rides along with real news like the will band.
-    blue_supply: Optional[float] = None
-    red_supply: Optional[float] = None
     #: §75 custom victory conditions: the live progress digest ("Victory: Enemy air
     #: force below 10% of start (now 62%)"), capped by the recorder. Empty when no
     #: alternate conditions are configured; rides along with real news like the
@@ -91,9 +76,9 @@ class Sitrep:
 
     @property
     def is_empty(self) -> bool:
-        # Deliberately ignores the will fields: a quiet turn stays quiet even when
-        # will tracking is on (the will line rides along with real news, it isn't
-        # news by itself).
+        # Deliberately ignores the C2/victory lines: a quiet turn stays quiet even
+        # when they're present (they ride along with real news, not news by
+        # themselves).
         return not (
             self.friendly.any
             or self.enemy.any
@@ -119,15 +104,9 @@ class Sitrep:
         debriefing: Debriefing,
         turn: int,
         day: date,
-        blue_will: Optional[float] = None,
-        red_will: Optional[float] = None,
-        blue_will_note: Optional[str] = None,
-        red_will_note: Optional[str] = None,
         pows_held: Optional[List[str]] = None,
         pilots_mia: Optional[List[str]] = None,
         red_c2_status: Optional[str] = None,
-        blue_supply: Optional[float] = None,
-        red_supply: Optional[float] = None,
         victory_lines: Optional[List[str]] = None,
     ) -> "Sitrep":
         blue = debriefing.loss_counts(Player.BLUE)
@@ -155,15 +134,9 @@ class Sitrep:
             captured=captured,
             lost=lost,
             pilots_recovered=len(debriefing.state_data.combat_sar_rescues),
-            blue_will=blue_will,
-            red_will=red_will,
-            blue_will_note=blue_will_note,
-            red_will_note=red_will_note,
             pows_held=list(pows_held or []),
             pilots_mia=list(pilots_mia or []),
             red_c2_status=red_c2_status,
-            blue_supply=blue_supply,
-            red_supply=red_supply,
             victory_lines=list(victory_lines or []),
         )
 
@@ -190,37 +163,11 @@ class Sitrep:
         red_c2 = getattr(self, "red_c2_status", None)
         if red_c2:
             lines.append(f"Enemy C2 degraded (claimed): {red_c2}")
-        # §53 P4: front supply band (getattr for pre-feature pickled sitreps). Lets the
-        # player read why a front stalled -- a starved front stops recovering and gains
-        # less ground (the P2 bite). Enemy framed as claimed (recon-fog).
-        blue_supply = getattr(self, "blue_supply", None)
-        red_supply = getattr(self, "red_supply", None)
-        if blue_supply is not None and red_supply is not None:
-            lines.append(
-                f"Front supply {blue_supply * 100:.0f}% -- enemy "
-                f"{red_supply * 100:.0f}% (claimed)"
-            )
         # §75: the alternate-ending progress digest (getattr for pre-feature
         # pickled sitreps). Already prefixed ("Victory: …" / "Defeat if: …") and
         # capped by the recorder; rides along with real news.
         for victory_line in getattr(self, "victory_lines", None) or []:
             lines.append(victory_line)
-        # getattr: pre-W1 pickled sitreps lack the will fields entirely.
-        blue_will = getattr(self, "blue_will", None)
-        red_will = getattr(self, "red_will", None)
-        if blue_will is not None and red_will is not None:
-            lines.append(
-                f"Political will {blue_will:.0f}% -- enemy resolve {red_will:.0f}% "
-                "(est)"
-            )
-            # The attribution ledger (why the numbers moved); absent on pre-ledger
-            # pickled sitreps and hidden whenever the will line itself is.
-            blue_note = getattr(self, "blue_will_note", None)
-            if blue_note:
-                lines.append(f"Will movers: {blue_note}")
-            red_note = getattr(self, "red_will_note", None)
-            if red_note:
-                lines.append(f"Enemy resolve movers: {red_note}")
         return lines
 
 

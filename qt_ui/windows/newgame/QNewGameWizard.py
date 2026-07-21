@@ -90,6 +90,7 @@ class NewGameWizard(QtWidgets.QWizard):
         )
         mod_settings = ModSettings(
             a4_skyhawk=self.field("a4_skyhawk"),
+            ea6b_prowler=self.field("ea6b_prowler"),
             f4e_expanded_weapons=self.field("f4e_expanded_weapons"),
             f22_raptor=self.field("f22_raptor"),
             f111c=self.field("f111c"),

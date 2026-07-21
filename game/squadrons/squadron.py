@@ -432,7 +432,25 @@ class Squadron:
         return self.aircraft.capable_of(task)
 
     def can_auto_assign(self, task: FlightType) -> bool:
-        return task in self.auto_assignable_mission_types
+        if task not in self.auto_assignable_mission_types:
+            return False
+        # Loose-tier escort jamming (any podded jet -- A-10, F-15E, JF-17,
+        # M-2000C) is only auto-planned when escort_jamming_loose is on. Escort
+        # Jammer is auto-offered to every capable squadron (like TARPS), and a
+        # generated squadron's auto-assignable set is its full task capability, so
+        # without this a loose jet fills the jammer slot whenever the curated
+        # jammers are busy or out of range -- the "A-10/F-15E flying jammer" bug.
+        # The curated tiers (dedicated + built-in ECM + self-protect pod) stay
+        # eligible; only the opt-in stretch tier is gated here.
+        if task is FlightType.ESCORT_JAMMER:
+            tier = self.aircraft.escort_jammer_tier
+            if (
+                tier is not None
+                and tier.is_loose
+                and not self.settings.escort_jamming_loose
+            ):
+                return False
+        return True
 
     def can_auto_assign_mission(
         self,

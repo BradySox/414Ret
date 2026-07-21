@@ -2601,8 +2601,12 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     bubble; **LOOSE** = the opt-in "stretch" tier (any podded jet, even an A-10) — token bubble,
     gated behind `escort_jamming_loose` (Air Doctrine, **default OFF**) so the auto-plannable
     roster stays the curated set and the retired every-fighter `ewrj` behavior never returns
-    silently (`PackageFulfiller.can_plan_escort` counts only non-LOOSE tiers unless the setting
-    is on). **The CJS Super Hornet default flipped back to OFF** (`fa_18efg` + `fa18ef_tanker`,
+    silently. **The gate is `Squadron.can_auto_assign`** (2026-07-21 bug fix — a flown Desert
+    Storm save had 2 F-15E + 2 A-10 jammers with the setting OFF): Escort Jammer is auto-offered
+    to every capable squadron (below), so a LOOSE-tier jet must be excluded at the squadron level
+    or it fills the slot whenever the curated jammers are busy/out of range — checking only that
+    *a* curated jammer exists (the earlier `can_plan_escort` gate) doesn't stop a loose one being
+    *selected*. **The CJS Super Hornet default flipped back to OFF** (`fa_18efg` + `fa18ef_tanker`,
     revised DM call 2026-07-21 — forcing a mod on every client was the wrong lever; the Growler
     is the DM's opt-in premium tier, `ModSettings.all_off()` keeps mods-off tests honest). The
     `FlightType.ESCORT_JAMMER` role (proposed on the SEAD-escort radar-SAM trigger via

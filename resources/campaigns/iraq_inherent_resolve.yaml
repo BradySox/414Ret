@@ -79,6 +79,9 @@ settings:
   # they resolve only with the mod on (and drop silently without it, so a mod-less
   # install still plays).
   high_digit_sams: true
+  # The VMAQ EA-6B Prowler det at Al-Taquddum is the AI-only VSN Prowler mod --
+  # preseed it on so the SEAD squadron resolves (drops silently on a mod-less install).
+  ea6b_prowler: true
 
 red_tempo:
   - from_turn: 6
@@ -244,6 +247,14 @@ squadrons:
       secondary: air-to-ground
       aircraft:
         - Mirage 2000C
+      size: 4
+    # VMAQ EA-6B Prowler det on the Marine field: SEAD/HARM against the captured
+    # SA-6 (Mosul) and SA-8/9/13 crust -- the brief's "enough to make SEAD a real
+    # job." AI-only VSN mod (preseeded on below); drops silently on a mod-less install.
+    - primary: SEAD
+      secondary: [SEAD Escort]
+      aircraft:
+        - EA-6B Prowler
       size: 4
   # Baghdad -- support: the tanker/AWACS bridge, the Combat SAR Jolly, the lifters,
   # and the drone wing (the OIR signature): the Predators fly the persistent ISR

@@ -53,7 +53,7 @@ class UH_60L(HelicopterType):
     charge_total = 90
     chaff_charge_size = 1
     flare_charge_size = 1
-    radio_frequency = 124
+    radio_frequency = 116
 
     panel_radio = {
         2: {

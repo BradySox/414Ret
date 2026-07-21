@@ -2316,7 +2316,7 @@ class vwv_rf101b(PlaneType):
     charge_total = 0
     chaff_charge_size = 0
     flare_charge_size = 0
-    category = "Reconnaissance"  # {78EFB7A2-FD52-4b57-A6A6-3BF0E1D6555F}
+    category = "Interceptor"
     radio_frequency = 127.5
 
     livery_name = "VWV_RF101B"  # from type
@@ -2981,7 +2981,7 @@ class _vap_loudspeakersVietnam(unittype.VehicleType):
 @vehiclemod
 class vap_vc_zil(unittype.VehicleType):
     id = "vap_vc_zil"
-    name = "VAP VC Zil 130 Armed"
+    name = "VAP VC Zil 130"
     detection_range = 750
     threat_range = 500
     air_weapon_dist = 500

@@ -623,6 +623,18 @@ FEATURES: tuple[Feature, ...] = (
         76,
         plugin_id="ctld",
     ),
+    Feature(
+        # §77 Growler escort jamming: the EA-18G-only ESCORT_JAMMER escort role
+        # (auto-added on the SEAD-escort radar-SAM trigger, rides the package
+        # join->split) + the growler plugin's scripted EW effects -- a missile-
+        # spoof bubble over the package and offensive ROE WEAPON_HOLD pulses on
+        # radar SAMs (emissions never toggled). Rides the growler plugin toggle
+        # + the CJS Super Hornet ModSettings (default ON); no Settings field.
+        "growler_escort_jamming",
+        "Growler escort jamming (EA-18G)",
+        77,
+        plugin_id="growler",
+    ),
     # Always-on engine plugins — major 414th machinery documented in design notes
     # rather than a numbered "Features at a Glance" entry.
     Feature("mantis_iads", "MANTIS IADS engine", plugin_id="mantisiads"),

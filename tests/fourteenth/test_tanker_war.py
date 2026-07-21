@@ -12,7 +12,6 @@ from typing import Any
 
 import yaml
 
-from game.fourteenth.phases import parse_phases
 from game.fourteenth.political_will import parse_will_profile
 
 CAMPAIGN = Path("resources/campaigns/tanker_war_1988.yaml")
@@ -34,7 +33,6 @@ def test_tanker_war_campaign_definition() -> None:
     # The naval-war identity layer + the Phase 3 coastal hunt preseed on.
     for key in (
         "vietnam_political_will",
-        "campaign_phases",
         "mobile_missile_relocation",
         "coastal_missile_relocation",
     ):
@@ -65,22 +63,6 @@ def test_tanker_war_will_profile_makes_ships_the_currency() -> None:
     assert profile.red.label == "Tehran's regime resolve"
     assert profile.weights.blue_ship_lost == 10.0
     assert profile.weights.red_ship_lost == 6.0
-
-
-def test_tanker_war_phase_arc_and_target_release() -> None:
-    arc = parse_phases(_campaign()["phases"])
-    assert [p.key for p in arc] == ["tanker_war", "samuel_b_roberts", "praying_mantis"]
-    # Target-release escalation: the oil platforms are off-limits until Praying Mantis.
-    assert "oil" in arc[0].locked_target_classes
-    assert arc[1].locked_target_classes == ("oil",)
-    assert arc[2].locked_target_classes == ()
-    # The neutral shipping-lane zone (a hand-drawn .miz polygon, read via from_drawing) rides
-    # in every phase via the YAML anchor.
-    for phase in arc:
-        assert any(
-            zone.kind == "drawing" and zone.drawing == "Strait of Hormuz shipping lane"
-            for zone in phase.restricted_zones
-        )
 
 
 def test_tanker_war_air_oob_is_mod_free_and_period() -> None:

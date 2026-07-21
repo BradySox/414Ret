@@ -109,9 +109,6 @@ will:
       the valleys go quiet.
   weights:
     blue_airframe_loss: 2.0
-    # 1.0/kill = CDE pressure, not taboo: with rings over every town, a careful
-    # town fight is survivable once -- a carpet habit bleeds the mandate out.
-    blue_roe_violation: 1.0
     blue_base_lost: 5.0
     # An un-swept IED detonation: a modest, steady mandate bleed -- the political cost
     # of an un-secured road. Below a base loss; above a single airframe.
@@ -129,115 +126,11 @@ will:
     red_hvt_escaped: 1.5
     red_passive_regen: 1.0
 
-# Clear -> Hold -> Build, will-coupled. The positive-control valleys (big box/corridor
-# no-strike areas over the populated river valleys) are permanent every phase --
-# collateral inside them pays in mandate, never a hard block. No free-fire inversion:
-# the open desert and the northern gate are simply unrestricted.
-# NOTE: never lock the `ammo` class -- the caches must always be legal targets.
-phases:
-  - key: disrupt
-    name: Disrupt the Network
-    narrative: >-
-      Map the insurgency before you fight it: find the caches, cut the ratline,
-      and open the road out of Kandahar. The strongholds can wait -- their supply
-      cannot.
-    emphasis: interdiction
-    objectives:
-      - Recon and destroy ammo caches -- each one killed slows that stronghold's regeneration
-      - Interdict the trail convoys -- the ratline feeds the momentum meter
-      - Mind the valleys -- fixed strikes inside the positive-control areas bleed the mandate
-      - text: Retake FOB Frontenac -- the gate out of Kandahar
-        done_when:
-          capture_cp: FOB Frontenac
-    restricted_zones: &population_centers
-      # THE COIN LATTICE (positive-control VALLEYS, not town rings): the populated
-      # river valleys where the strongholds and the people are, drawn as big
-      # box/corridor no-strike areas -- "the horror of COIN: everything near
-      # civilians is under JTAC positive control." A fixed strike inside prices CDE
-      # into the mandate (violation weight 1.0: pressure, not taboo); the open
-      # desert and the northern gate stay free-strike. Trail convoys / troops in
-      # contact are never gated, and air assaults (captures) are never blocked, so
-      # the campaign can still retake its objectives. Permanent every phase -- the
-      # towns are always populated. Coordinate-anchored to the real terrain.
-      #
-      # The Helmand "Green Zone": the irrigated belt up the river, Kajaki down to
-      # Marjah through Sangin/Gereshk/Lashkar Gah -- the heart of the population.
-      - shape: corridor
-        name: Helmand Green Zone -- positive control
-        width_nm: 22
-        path:
-          - {x: -181452, y: -106712}  # Kajaki (the dam)
-          - {x: -209658, y: -127043}  # Sangin
-          - {x: -237656, y: -151564}  # Gereshk
-          - {x: -267202, y: -170619}  # Lashkar Gah (provincial capital)
-          - {x: -271880, y: -193810}  # Marjah
-      # The northern feeder valley (Route 611): Now Zad -- Musa Qala -- Kajaki.
-      - shape: corridor
-        name: Musa Qala Valley -- positive control
-        width_nm: 18
-        path:
-          - {x: -173272, y: -162286}  # Now Zad
-          - {x: -168553, y: -136022}  # Musa Qala
-          - {x: -181452, y: -106712}  # Kajaki
-      # The Tarin Kowt bowl (Uruzgan) -- the northern population center.
-      - shape: box
-        name: Tarin Kowt Bowl -- positive control
-        x: -146074
-        y: -30595
-        width_nm: 34
-        height_nm: 28
-      # The Delaram / Ring-Road junction in the west.
-      - shape: box
-        name: Delaram -- positive control
-        x: -199964
-        y: -259516
-        width_nm: 30
-        height_nm: 26
-    advance_when:
-      capture_cp: FOB Frontenac
-  - key: clear_hold
+red_tempo:
+  - from_turn: 10
     name: Clear and Hold
-    min_turn: 10
-    red_tempo:
-      trail_surge: 2.0
-    narrative: >-
-      Take the strongholds back with air assaults -- and hold them. The network
-      answers with a supply surge; a cleared stronghold left alone invites the
-      shadows back in.
-    emphasis: offensive
-    objectives:
-      - text: Clear the Helmand ring -- retake Kamp Hadrian
-        done_when:
-          capture_cp: Kamp Hadrian
-      - text: Bleed the momentum below half
-        done_when:
-          red_resolve_below: 50
-      - Hold what you clear -- garrisons and patience beat body count
-    restricted_zones: *population_centers
-    advance_when:
-      red_resolve_below: 45
-  - key: build
-    name: Break the Momentum
-    min_turn: 20
-    narrative: >-
-      The network is cracking. Keep the caches dead, keep the strongholds held,
-      and take the war to Tarinkot -- momentum, once broken, does not come back.
-    emphasis: offensive
-    objectives:
-      - text: Retake Tarinkot -- the insurgency's northern anchor
-        done_when:
-          capture_cp: Tarinkot
-      - text: Break the insurgency's momentum
-        done_when:
-          red_resolve_below: 25
-    restricted_zones: *population_centers
+    trail_surge: 2.0
 
-# The ratline: red<->red supply corridors between the strongholds. Waypoints trace
-# the REAL driveable corridors (Highway 1, Route 611 up the Helmand valley, the
-# Uruzgan road) -- authored via tools/supply_route_geo.py from real road lat/lons,
-# the 414th standard for all supply-line drawings. Endpoints are exact stronghold
-# XY (closest-CP binding reads first/last waypoint only); red<->red only -- a
-# red<->blue route would create a front line, and this stays an air-assault campaign.
 supply_routes:
   # Farah -> FOB Delaram II  (Highway 1 / the Ring Road, ESE)
   - waypoints:

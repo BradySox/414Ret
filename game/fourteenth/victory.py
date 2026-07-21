@@ -19,9 +19,7 @@ that default:
   ``alternate_victory_attrition`` -- synthesized into the same condition objects
   and stacked with any authored block.
 
-Semantics -- deliberately different from :class:`~game.fourteenth.phases.PhaseCondition`:
-a phase condition is an escalation *trigger*, so ANY satisfied field advances
-the arc. A victory entry is a *requirement*, so EVERY field set on one entry
+Semantics: a victory entry is a *requirement*, so EVERY field set on one entry
 must hold (AND within the entry) and the ``win_when`` / ``lose_when`` lists are
 OR (any fully-met entry ends the war). That is what makes ``min_turn`` usable
 as a guard ("not before turn 4") instead of nonsense ("win at turn 4").
@@ -58,8 +56,8 @@ class VictoryCondition:
     """One ``win_when`` / ``lose_when`` entry.
 
     EVERY set field must hold for the entry to be met (AND) -- the opposite of
-    ``PhaseCondition``'s any-field trigger semantics, documented in the module
-    docstring. ``label`` is an optional authored display prefix; the knobs
+    an any-field trigger, as documented in the module docstring. ``label`` is an
+    optional authored display prefix; the knobs
     synthesize unlabeled entries (their prose already says everything).
     """
 
@@ -88,8 +86,7 @@ class VictoryCondition:
     enemy_ground_below: Optional[float] = None
     #: Blue owned airframes below this fraction of the baseline (``lose_when``).
     friendly_air_below: Optional[float] = None
-    #: The will meters (0-100, the meter's native scale -- the same authoring
-    #: scale as ``PhaseCondition.blue_will_below``). Live only while
+    #: The will meters (0-100, the meter's native scale). Live only while
     #: ``vietnam_political_will`` is on: with will tracking off the field can
     #: never fire, and the UI says so. Strict ``<`` -- these are authored
     #: *thresholds* ("resolve below 30"); the hard exhaustion-at-0 ending is
@@ -124,7 +121,7 @@ class VictoryBaseline:
 
     Latched on the game the first time :func:`ensure_victory_baseline` runs
     (turn 0 for a new game; first load for a pre-feature save -- the accepted
-    ``PhaseBaseline`` migration). Snapshotted unconditionally so a knob flipped
+    late-baseline migration). Snapshotted unconditionally so a knob flipped
     on at turn 20 still measures against the earliest state this build saw.
     ``red_categories`` counts red ground objects per ``category`` so
     ``destroy_categories`` can prove the target class ever existed.
@@ -394,9 +391,8 @@ _FRACTION_KEYS = (
     "enemy_ground_below",
     "friendly_air_below",
 )
-#: Meter-scale thresholds (0-100, matching the meters' own display and the
-#: ``PhaseCondition`` authoring scale) -- vs the ratio fields above, which are
-#: 0-1 fractions of a campaign-start baseline.
+#: Meter-scale thresholds (0-100, matching the meters' own display) -- vs the
+#: ratio fields above, which are 0-1 fractions of a campaign-start baseline.
 _METER_KEYS = (
     "blue_will_below",
     "red_resolve_below",

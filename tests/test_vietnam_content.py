@@ -490,40 +490,6 @@ def test_ch_armor_campaigns_enable_russian_pack(campaign_file: str) -> None:
     )
 
 
-# W4: every Vietnam campaign carries the authored Rolling Thunder -> Linebacker II
-# ROE arc (campaign phases P2). Guard the structure so an edit can't silently drop
-# a campaign's arc or break its parse (a bad block degrades to Tier-0 at runtime,
-# which would quietly lose the whole ROE layer).
-_ROE_ARC_KEYS = ["rolling_thunder", "bombing_halt", "linebacker", "linebacker_ii"]
-
-
-@pytest.mark.parametrize("campaign_file", list(_ERA_PRESEED))
-def test_vietnam_campaign_authored_roe_arc(campaign_file: str) -> None:
-    import yaml
-
-    from game.fourteenth.phases import parse_phases
-
-    with (_CAMPAIGNS / campaign_file).open(encoding="utf-8") as f:
-        data = yaml.safe_load(f)
-    arc = parse_phases(data.get("phases"))
-    assert [p.key for p in arc] == _ROE_ARC_KEYS, campaign_file
-    # Rolling Thunder binds: a sanctuary zone + locked deep-target classes.
-    assert arc[0].restricted_zones and arc[0].locked_target_classes, campaign_file
-    # Escalation is will-coupled from the first phase.
-    assert arc[0].advance_when is not None, campaign_file
-    assert arc[0].advance_when.blue_will_below is not None, campaign_file
-    # Linebacker II: nothing locked, and no sanctuary except the permanent
-    # "PRC border" ring (the Yankee Station coastal-ladder laydown keeps it in
-    # every phase -- MiGs across the border stayed safe in the real war too;
-    # Velvet Thunder releases everything).
-    assert not arc[3].locked_target_classes, campaign_file
-    for zone in arc[3].restricted_zones:
-        assert "PRC border" in zone.name, campaign_file
-    # The scheduled escalation dates are strictly increasing.
-    pins = [p.min_turn for p in arc[1:]]
-    assert pins == sorted(pins) and all(p > 0 for p in pins), campaign_file
-
-
 def test_yankee_station_will_time_pressure() -> None:
     """1968 Yankee Station authors a ``will:`` block that gives Washington a real clock.
 
@@ -559,29 +525,27 @@ def test_yankee_station_will_time_pressure() -> None:
     assert weights.blue_heavy_bomber_loss == 6.0
 
 
-def test_yankee_station_escalation_tax_and_commitment_ceiling() -> None:
-    """The model-3 pieces of the will redo are authored: the escalation tax on the late
-    phases (widening the war costs Washington will even when sanctioned) + the
+def test_yankee_station_red_tempo_and_commitment_ceiling() -> None:
+    """The pieces of the will redo that survive the phases removal: the authored
+    top-level red_tempo schedule (a richer trail opening under Rolling Thunder that
+    surges at the Bombing Halt and rides the Linebacker ground offensive) + the
     commitment-ceiling preseed (will-coupled war budget)."""
     import yaml
 
-    from game.fourteenth.phases import parse_phases
+    from game.fourteenth.red_tempo import parse_red_tempo
     from game.settings import Settings
 
     data = yaml.safe_load(
         (_CAMPAIGNS / "1968_Yankee_Station.yaml").read_text(encoding="utf-8")
     )
-    arc = {p.key: p for p in parse_phases(data.get("phases"))}
-    # Escalation tax: the two escalations cost will (Linebacker II the steeper), and
-    # the opening/halt de-escalations do not.
-    assert arc["rolling_thunder"].blue_will_on_entry == 0.0
-    assert arc["bombing_halt"].blue_will_on_entry == 0.0
-    assert arc["linebacker"].blue_will_on_entry < 0.0
-    assert (
-        arc["linebacker_ii"].blue_will_on_entry < arc["linebacker"].blue_will_on_entry
-    )
-    # Richer opening: the trail runs thicker under Rolling Thunder.
-    assert arc["rolling_thunder"].trail_surge > 1.0
+    windows = parse_red_tempo(data.get("red_tempo"))
+    assert [w.from_turn for w in windows] == [1, 8, 11]
+    # Richer opening: the trail runs thicker under Rolling Thunder from turn 1.
+    assert windows[0].name == "Rolling Thunder"
+    assert windows[0].trail_surge > 1.0
+    # The Bombing Halt surges the trail; Linebacker rides a ground offensive.
+    assert windows[1].trail_surge == 2.0
+    assert windows[2].ground_offensive_turns == 3
     # The commitment ceiling is preseeded on (needs the will economy, also on).
     settings = Settings()
     settings.__dict__.update(Settings.deserialize_state_dict(data.get("settings", {})))

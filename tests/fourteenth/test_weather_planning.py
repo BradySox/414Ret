@@ -90,8 +90,6 @@ def test_visual_attack_names_match_the_offensive_factories() -> None:
 def _planner_state(weather_cls: type | None, on: bool = True) -> Any:
     game = _sky(weather_cls, on)
     game.settings.c2_decapitation_effects = False
-    game.settings.red_intent = False
-    game.red_intent_key = None
     coalition = SimpleNamespace(
         player=Player.RED, game=game, ato=SimpleNamespace(packages=[])
     )

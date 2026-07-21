@@ -14,16 +14,6 @@ if TYPE_CHECKING:
     from game.theater.player import Player
 
 
-#: §55 P3 (seam 4): the attacking stances whose balance threshold RED's posture biases.
-#: Only these are tuned (surge commits sooner, consolidate husbands); the defensive/
-#: neutral stances keep the raw balance, so consolidate never forces a retreat.
-_ATTACK_STANCES = (
-    CombatStance.AGGRESSIVE,
-    CombatStance.ELIMINATION,
-    CombatStance.BREAKTHROUGH,
-)
-
-
 class FrontLineStanceTask(TheaterCommanderTask, ABC):
     def __init__(self, front_line: FrontLine, player: Player) -> None:
         self.front_line = front_line
@@ -68,28 +58,7 @@ class FrontLineStanceTask(TheaterCommanderTask, ABC):
         enemy_forces = self.enemy_cp.deployable_front_line_units
         if enemy_forces == 0:
             return math.inf
-        return (friendly_forces / enemy_forces) * self._posture_commit_factor()
-
-    def _posture_commit_factor(self) -> float:
-        """§55 P3 (seam 4): RED's posture biases the ATTACK-stance thresholds only.
-
-        SURGE inflates the perceived balance (red commits reserves at a lower real
-        advantage), CONSOLIDATE deflates it (red husbands). Returns 1.0 for blue, a
-        stock/observing red, the defensive/neutral stances, and while an authored
-        red_tempo pulse owns the stances -- so the raw balance (and every existing
-        stance test) is preserved unless red is actively surging or consolidating.
-        """
-        if self.stance not in _ATTACK_STANCES:
-            return 1.0
-        coalition = self.friendly_cp.coalition
-        if coalition.player.is_blue:
-            return 1.0
-        from game.fourteenth.red_intent import stance_commit_factor
-
-        # Pass this task's front so red uses its PER-FRONT posture (D) -- committing on
-        # the front it is winning, husbanding on the one it is losing. Falls back to the
-        # theater-wide posture when per-front is off or the front doesn't resolve.
-        return stance_commit_factor(coalition.game, self.front_line)
+        return friendly_forces / enemy_forces
 
     def preconditions_met(self, state: TheaterState) -> bool:
         if not self.management_allowed(state):

@@ -343,10 +343,7 @@ file. This guide is the map; those are the territory.
     close is a free miss. `advance_hvt` from `finish_turn` after C1/C1.5/IED; one HVT at a
     time + `HVT_COOLDOWN_TURNS` (3); new `WillWeights.red_hvt_killed` (default 0.0,
     campaign-priced 4.0) consumed via `consume_hvt_kills` in `update_political_will`'s RED
-    feed. **The CDE dilemma is emergent, not special-cased**: a stronghold on a
-    population-center ring puts the HVT inside a §40 restricted zone, so his kill is *both*
-    the momentum blow *and* a `count_roe_violations` mandate hit — the player chooses a
-    dirty shot, a clean one, or a pass. Reuses the shared `coin.spawn_red_ground_at`.
+    feed. **The CDE dilemma is gone with the §40 removal (2026-07-21):** it depended on §40 restricted zones + `count_roe_violations`, both removed. Reuses the shared `coin.spawn_red_ground_at`.
     Gated `coin_hvt` default OFF, preseeded ON. Tests `tests/fourteenth/test_coin_hvt.py`;
     in-game pass = checklist P5.
     **COIN dispersed cells LANDED 2026-07-03** (`game/fourteenth/coin_dispersed.py` — the
@@ -447,7 +444,7 @@ file. This guide is the map; those are the territory.
     weighted airframe losses with a B-52 multiplier, POWs draining per turn held, ROE
     violations, trail-logistics attrition for RED) with a **negotiation win/loss**
     (`check_win_loss` branch: break Hanoi's resolve before Washington's patience breaks —
-    territory win stays) and (2) **ROE / Route-Package escalation** riding the campaign-phases
+    territory win stays) and (2) **ROE / Route-Package escalation** [REMOVED 2026-07-21 with §40] riding the campaign-phases
     spec's P0–P2 + two authored extensions (`restricted_zones` soft-enforced by will penalties,
     `target_release` gates with RESTRICTED map badges, a Rolling Thunder → Linebacker II arc
     for the 4 Vietnam campaigns; sanctuary airfields fall out of zones). Delivery W1–W5, one PR
@@ -466,24 +463,24 @@ file. This guide is the map; those are the territory.
     band around its campaign-start anchor via a `FrontLine._blue_route_progress` clamp hook,
     so the strength battle bends the line + feeds will but never sweep-captures a base; Air
     Assault stays the one territorial lever; armed/disarmed idempotently from
-    `Game.initialize_turn`; in-game pass = checklist M2); **W3 landed** = campaign-phases P0+P1
-    (feature §40 — generic, all campaigns, `campaign_phases` default ON); **W4 landed** = the ROE
-    escalation layer (authored `phases:` arcs ×4 Vietnam campaigns — Rolling Thunder → Bombing
-    Halt → Linebacker → Linebacker II — with `restricted_zones` soft-enforced by will penalties,
-    `locked_targets` target-release gates + RESTRICTED badges, the red dashed map layer, and
-    will-coupled `advance_when` escalation; in-game pass = checklist M4); **W5 landed** = the
-    GCI-ambush adaptation (`Doctrine.gci_ambush` → late-scramble/close-engage dispatcher tuning
-    + the intercept Lua's hit-and-run leash; sanctuary basing falls out of the W4 zones;
-    checklist M5); **W6 landed** = phase-coupled red tempo (design note
-    `414th-vietnam-red-tempo-notes.md` — Hanoi *answers* the arc: an authored per-phase `red_tempo:`
-    block (`game/fourteenth/red_tempo.py` + the `phases.py` parse) gives the Bombing Halt a
-    `trail_surge` logistics window (2 concurrent, bigger trail convoys + `resolve_regen` 1.5/turn so
-    waiting out the halt costs Washington leverage) and Linebacker a 3-turn Tet/Easter
-    `ground_offensive` stance pulse (raise-only to AGGRESSIVE, still bounded by the W2b clamp —
-    pressure on the will economy, never sweep-captures; the pulse implies the ≥2.0 trail surge);
-    authored-only so Tier-0/generic campaigns are untouched; hook = `apply_red_tempo` in
-    `initialize_turn` after the coalitions plan; checklist M6). **The campaign-layer arc W0–W6 is
-    COMPLETE.** **The will economy generalized 2026-07-02** (design note
+    `Game.initialize_turn`; in-game pass = checklist M2); **W3 (campaign phases, §40) and W4 (the ROE escalation
+    layer — `restricted_zones`, `locked_targets` target-release, the RED dashed map layer) were
+    REMOVED 2026-07-21** (the ROE-mechanic drop; do not restore). **W5 landed** = the GCI-ambush
+    adaptation (`Doctrine.gci_ambush` → late-scramble/close-engage dispatcher tuning + the intercept
+    Lua's hit-and-run leash; checklist M5); **W6 landed, rehomed 2026-07-21** = red tempo (design note
+    `414th-vietnam-red-tempo-notes.md`, `game/fourteenth/red_tempo.py` — Hanoi answers the campaign
+    clock): since the §40 removal it reads a **top-level campaign `red_tempo:` schedule** of
+    turn-windows (each `{from_turn, name?, trail_surge?, ground_offensive?, resolve_regen?}`; the
+    window in effect is the last whose `from_turn` is reached — last-window-wins) instead of the old
+    per-phase blocks — a `trail_surge` logistics window (bigger, more-concurrent trail convoys + a
+    `resolve_regen`/turn so waiting costs the attacker leverage) and a `ground_offensive` stance pulse
+    (raise-only to AGGRESSIVE, still bounded by the W2b clamp — pressure on the will economy, never
+    sweep-captures). Authored on 6 campaigns (1968 Yankee Station, Velvet Thunder, Desert Storm,
+    Inherent Resolve, Enduring Resolve, Red Flag 81-2); campaigns with no block are untouched; hook =
+    `apply_red_tempo` in `initialize_turn` after the coalitions plan; checklist M6). **The
+    campaign-layer arc:** W1/W2 (political will + negotiation ending), W2b (static front), W5 (GCI
+    ambush) and W6 (red tempo, rehomed) remain; W3/W4 and the W2 escalation tax were REMOVED
+    2026-07-21. **The will economy generalized 2026-07-02** (design note
     `414th-will-generalization-notes.md`): the Washington/Hanoi framing + every feed weight are now
     only the *defaults* of a campaign-authorable **will profile** — a `will:` YAML block (sibling of
     `phases:`) re-labels the meters/exhaustion banners and re-weights the feeds, parsed by
@@ -495,36 +492,10 @@ file. This guide is the map; those are the territory.
     pass; Korea dropped) live in that note. The
     Vietnam pieces stay default-off (`vietnam_political_will`/`vietnam_static_front` gated); no
     debrief-schema changes anywhere in the arc),
-    `414th-campaign-phases-notes.md` (**campaign phases** — a thin doctrine-like *phase*
-    layer, active per turn-range, that biases the auto-planner's offensive intent + shows in
-    the UI/kneeboard; three authoring tiers over one `CampaignPhase` object — **Tier 0
-    inference is the default for all 66 campaigns** (a turn-by-turn classifier reads live IADS
-    ratio / air threat / front momentum / territory via existing accessors → rollback →
-    interdiction → offensive, with hysteresis), Tier 1 = YAML-tuned, Tier 2 = authored arcs
-    for the 3 hand-built campaigns; rides the `VIETNAM_DOCTRINE` override precedent, composes
-    with doctrine, never a commander rewrite; reactive defense stays deterministic (§17
-    boundary). A **6-campaign inference pilot** (4 modern + 2 Vietnam) is done — see
-    `414th-campaign-phases-pilot.md` + the reusable `tools/campaign_phase_laydown.py`
-    (`--lite` raw-`.miz` parse / `--engine` real pipeline); it surfaced two threshold
-    refinements now in the spec: an **absolute long+medium-SAM floor** gate and EWR
-    de-weighting. The **all-66 draft table is now `--engine`-authoritative** (re-run
-    2026-07-01 on the real install) — `tools/campaign_phase_classify.py` (the offline §3.2
-    classifier reference impl; `--laydown` consumes a saved engine dump) +
-    `414th-campaign-phases-all66-draft.md` (57 Rollback / 5 Air Superiority / 4 Interdiction).
-    The engine run closed all three `--lite` blind spots (mod-SAM undercount, auto-assign air,
-    and the newly found **generator-filled AA slots**) and corrected the pilot's headline:
-    **Khe Sanh actually fields 4 generated SA-2/SA-3 batteries ⇒ opens Rollback**; the genuine
-    below-floor cases are Shattered Dagger / No Man's Land / Valley of Rotary / Northern
-    Guardian, with Velvet Thunder exactly at the floor (3 sites, keeps Rollback). SAM banding
-    reads TGO `GroupTask` LORAD/MERAD (the DEAD planner's own target set) — `IadsRole` can't
-    band it (its SAM role swallows SHORAD). **P0+P1 LANDED** as feature §40 / Vietnam campaign
-    layer W3 — Tier-0 inference + hysteresis + the HTN soft emphasis + the kneeboard/client
-    status surfaces are live for all campaigns (`campaign_phases`, default ON; the runtime
-    classifier bands by the same LORAD/MERAD set). **P2 + first P3 arcs LANDED** (Vietnam W4):
-    the `phases:` YAML authoring tier, `advance_when` conditions, the ROE zones/release payload
-    + planner gate, and the 4 Vietnam Rolling Thunder → Linebacker II arcs; still open =
-    objectives checklist, per-phase whitelist deltas, `front_line_stance`, the 3 wiki-campaign
-    arcs),
+    `414th-campaign-phases-notes.md`, `414th-campaign-phases-pilot.md`,
+    `414th-campaign-phases-all66-draft.md` **(all removed 2026-07-21)** — the §40 campaign-phases
+    design + the inference pilot + the all-66 classification draft; kept only as historical record now
+    that §40 (the phase classifier, ROE zones, and target-release) is dropped,
     `414th-airwar-planner-consolidation-notes.md` (behavior-preserving consolidation of the
     air-war planner's threat-field + standoff geometry onto one `AirspaceGeometry` service;
     keeps the brain in Python, Tier-C/`Ops.Chief` explicitly out of scope),
@@ -1192,7 +1163,7 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     `*_option` factory) — keyword-only so the frozen subclasses' positional fields are undisturbed.
     `AutoSettingsLayout` stores each field's label + greys a child's **control + label** whenever
     `settings.<master> != value` (live per-section wiring + initial state + post-preset refresh); ~21
-    pairs wired (the `red_intent_*`/`coin_*`/qra/motorpool/squadron/etc. dependents, incl. the **inverse**
+    pairs wired (the `coin_*`/qra/motorpool/squadron/etc. dependents, incl. the **inverse**
     `default_front_line_stance` ← `("automate_front_line_stance", False)`). The detail
     *summarisation* half (first sentence inline + full text on hover past 150 chars) was
     **REVERTED 2026-07-20** (user call off the §75 victory-knob descriptions — reading a setting
@@ -1224,10 +1195,9 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     collide with the FLOT token). **Generalized same day to the family-wide stroke-signature system**
     (user call — "unique looks for each … area, zone and exact target"): `StrokeSignature`/`mapStrokes`
     (`mapColors.ts`) give every dashed-overlay category a **unique dash pattern + weight** so hue is
-    never the only channel — suspected area "6 6" · ROE restricted zone "16 10" · weapons-free zone
-    "16 8 3 8" (dash-dot) · minefield ticks "2 8" · pilot MIA solid · POW "3 5" — all drawn cased by the
+    never the only channel — suspected area "6 6" · minefield ticks "2 8" · pilot MIA solid · POW "3 5" — all drawn cased by the
     shared `CasedCircle`/`CasedPolygon`/`CasedCircleMarker` (`components/map/CasedShapes.tsx`) across
-    `Tgo.tsx`/`RestrictedZonesLayer`/`MinefieldsLayer`/`DownedPilotsLayer`, and the **legend renders the
+    `Tgo.tsx`/`MinefieldsLayer`/`DownedPilotsLayer`, and the **legend renders the
     real signatures** (`StrokeSwatch` mini-SVG previews + taxonomy labels). Exact targets/buildings keep
     their per-type APP-6/SIDC icons (already unique); threat/detection rings deliberately uncased.
     tsc+jest green; needs the CI client rebuild.
@@ -1289,9 +1259,7 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     user markup pass on a flown Scenic Route Merged deck struck the whole page). `CoverPage`,
     `_build_cover_page` and the CAMPAIGN PHASE/ROE band it carried are deleted; the deck opens straight
     on the stock Mission Info page. The SITREP (§29) moved back to the Mission Info page bottom; the
-    flight index (§27) is a standalone conditional page again; the phase/ROE keep their non-kneeboard
-    surfaces (client ribbon, map zone drawings, Qt ROE warning — §40, with `roe_summary_lines` kept in
-    `phases.py` for any future surface). Do not restore the cover — new kneeboard info folds into an
+    flight index (§27) is a standalone conditional page again; the phase/ROE surfaces were removed with §40 (2026-07-21). Do not restore the cover — new kneeboard info folds into an
     existing stock page. (features doc §30.)
 31. **One-page Brief Sheet + deck-wide colour scheme** — RETIRED (2026-07-13, the kneeboard
     back-to-upstream rework): the user's markup struck the Brief Sheet's MISSION/ROUTE/GAME PLAN/
@@ -1499,86 +1467,11 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     proximity heuristic + its drop-range/swath/node options are retired).
     (`game/missiongenerator/vietnamopsluadata.py`, `resources/plugins/vietnamops/`,
     `game/settings/settings.py`; features doc §39, checklist L11 — needs an in-game pass.)
-40. **Campaign phases (inferred arc + planner emphasis)** — every campaign (all 66, zero authoring) knows what
-    *phase* of the air war it is in, the UI shows it, and the auto-planner biases its offensive intent to match
-    (spec `414th-campaign-phases-notes.md`; this is its **P0+P1**, landed as Vietnam campaign layer W3). A
-    turn-by-turn Tier-0 classifier (`game/fourteenth/phases.py`) reads live state via existing accessors —
-    alive enemy long+medium SAM **sites** (TGO `GroupTask` LORAD/MERAD, the DEAD planner's own set — the
-    #379-corrected banding, never `IadsRole`) vs. a lazily-snapshotted turn-0 `PhaseBaseline`, enemy
-    air-superiority airframes, mean front movement, last turn's captures — and picks **Air Superiority →
-    Interdiction → Offensive** with the pilot's **absolute-SAM-floor gate** (a genuinely belt-less theater
-    skips Rollback — Shattered Dagger/Valley of Rotary et al., NOT Khe Sanh, which the generator fills with
-    SA-2/SA-3), a peer-fight guard, min-dwell hysteresis, and monotonic-forward defaulting
-    (regression is authored-only, P2). The active phase reorders **only the offensive middle** of
-    `PlanNextAction`'s HTN root methods (BLUE only; the reactive prefix + tail are fixed — the §17 boundary),
-    shifting which objectives get first claim on offensive jets. Always explains itself (§3.4 legibility:
-    "Interdiction — enemy IADS 22% · air threat low · front static") on
-    a **client campaign-status ribbon** (`CampaignStatusBar` over the map, fed by `GameJs.campaign_status`
-    — which also carries campaign name/turn/date, previously never sent to the client, + the political-will
-    meters on Vietnam campaigns). Gated by `campaign_phases` (default **ON** — [DECIDED] Tier-0 inference is
-    the default; the toggle is the kill switch). **W4 added the authored tier (P2) + the ROE escalation
-    layer**: a campaign `phases:` YAML block overrides Tier 0 (`parse_phases`/`authored_arc_for`, re-derived
-    at load, never pickled) with `min_turn`-scheduled + `advance_when`-accelerated transitions
-    (`blue_will_below` couples escalation to the will economy), **restricted zones** (AI planner gate
-    `roe_blocks_target` in `PackagePlanningTask.fulfill_mission`, BLUE-only; sanctuary airfields fall out;
-    the player is never hard-blocked — zone kills drain will via `count_roe_violations` +
-    `BLUE_ROE_VIOLATION`), **target release** (`locked_targets` classes, RESTRICTED — ROE badge on the TGO
-    tooltip instead of vanishing), a red dashed **map layer** (`GameJs.restricted_zones` →
-    `RestrictedZonesLayer`, Enemy intel group, default ON), and the authored **Rolling Thunder → Bombing
-    Halt → Linebacker → Linebacker II arcs in all 4 Vietnam campaigns** (Kutaisi/Sukhumi/Saipan play Hanoi
-    per laydown; the Yankee Station/Steel Tiger coastal-ladder recast also keeps a permanent Tbilisi "PRC
-    border" ring in every phase). **The 2026-07-02 legibility pass** made the *dynamics* readable:
-    **transition transparency** (the arc expander spells out how the arc leaves each phase — authored
-    `advance_when` with live values on the current phase, Tier-0 classifier thresholds otherwise), the P2
-    **objectives checklist** (`PhaseObjective` + `done_when` live ticks; Tier-0 built-ins + `objectives:`
-    authored in the 4 Vietnam arcs; `PhaseCondition` gains `red_resolve_below`/`capture_cp`, usable in
-    `advance_when` too), the **will-attribution ledger** (`political_will.py` `WillLedgerEntry` on
-    `Game.will_ledger`, capped 60 — labeled per-feed movers surfaced on the meter hover, the expander
-    notes, the SITREP "Will movers" lines, and the per-turn message; the instrument for the M1 pacing
-    pass), and a **pre-flight ROE warning** in the Qt package dialog (`update_roe_warning` via
-    `roe_restriction_reason` — never blocks, just prices the choice). **The 2026-07-02 ROE-zone-shape rework
-    (Path A)** generalized restricted zones from circle-only to `RestrictedZone.kind` = `circle | box |
-    corridor` (a rotatable rectangle for the "Nevada box"/Route-Package rectangles; a shapely
-    buffered-polyline lane for ingress routes/the Ho Chi Minh trail), parsed by `_parse_restricted_zone` (a
-    legacy `{center, radius_nm}` block still parses to a circle byte-identically — the 4 Vietnam arcs are
-    unchanged). One `ResolvedZone.contains` (shapely for box/corridor, distance for circle) gates both the
-    planner and the will-penalty; the zones are now **painted into the generated `.miz`'s F10/ME map**
-    (`DrawingsGenerator.generate_restricted_zones` — `add_circle` / `add_freeform_polygon` of the outline,
-    alongside the always-on frontline/route/CP drawings) and the web layer draws a `<Circle>` or `<Polygon>`
-    by kind (both share `active_restricted_zones`, so cockpit map == web map). **Path B (2026-07-03) LANDED** —
-    a `restricted_zones` entry can be `{from_drawing: "<name>"}`, hanging the zone off a shape the author
-    *drew* in the campaign `.miz`'s Mission Editor instead of typed coordinates: `game/fourteenth/zone_drawings.py`
-    (`read_zone_drawings`) normalizes the loaded mission's drawings into named `DrawnZone`s (v1: Circle → circle,
-    FreeFormPolygon → polygon; Rectangle/Oval/TextBox/unnamed skipped — Rectangle/Oval convention unverified,
-    the polygon tool covers box/corridor), `MizCampaignLoader.populate_theater` stashes them on
-    `theater.zone_drawings` (pickled, getattr-guarded for old saves), and `_resolve_drawing_zone` builds the
-    same `ResolvedZone`. Real `.miz` write/reload/read probe-verified. **Free-fire zones (2026-07-03) LANDED —
-    inverted ROE, the COIN kill boxes**: a phase authoring `free_fire_zones` (same shape system) flips the
-    polarity — the whole map goes **weapons-hold for fixed strikes** except inside the pockets (the OIR
-    Blue-Kill-Box model, per the Rampagers reference). Gate adds "outside the weapons-free area" for a
-    class-carrying target outside every pocket (front-line/convoys never gated; a `restricted_zone` still
-    carves a no-strike hole inside a pocket); `count_roe_violations` counts kills outside the pockets;
-    `roe_summary_lines` leads with a WEAPONS FREE row; painted dashed **green** (vs red restricted) on both
-    the F10/ME map and the web layer (`GameJs.free_fire_zones`). The free-fire capability stays in the engine,
-    but the **COIN campaign no longer uses it** — see the ROE-shape note below. (`game/fourteenth/phases.py`,
-    `game/fourteenth/zone_drawings.py`, `game/theater/conflicttheater.py`,
-    `game/campaignloader/mizcampaignloader.py`, `game/game.py`,
-    `game/commander/tasks/compound/nextaction.py`, `game/commander/tasks/packageplanningtask.py`,
-    `game/fourteenth/political_will.py`, `game/missiongenerator/kneeboard.py`,
-    `game/missiongenerator/drawingsgenerator.py`, `game/server/game/models.py`,
-    `game/server/tgos/models.py`, `client/src/components/campaignstatus/`,
-    `client/src/components/restrictedzones/`; features doc §40, checklist M3 + M4 + M7 + M8 — need an in-game pass +
-    the CI client rebuild.)
-    **COIN ROE-shape rework (2026-07-03):** replaced the COIN campaign's earlier 9 town-ring restricted
-    circles + whole-map free-fire inversion with **4 big box/corridor no-strike "positive-control valleys"**
-    over the real populated river valleys (2 corridors — the Helmand Green Zone Kajaki→Marjah and the Musa
-    Qala 611 feeder; 2 boxes — the Tarin Kowt bowl and the Delaram junction), shared by all three phases via
-    the `&population_centers` YAML anchor. The invisible free-fire inversion is **dropped entirely** (no
-    `free_fire_zones` in any phase) — the open desert and the northern gate are simply unrestricted, and a
-    fixed strike inside a valley prices CDE into the mandate (violation weight 1.0, pressure not taboo); trail
-    convoys / TIC are never gated and air assaults (captures) are never blocked, so the arc still retakes its
-    objectives. Exercises both the box and corridor `RestrictedZone.kind` shapes; CI-locked in
-    `test_enduring_resolve_campaign_definition` (4 zones/phase, no free-fire).
+40. **Campaign phases (inferred arc + planner emphasis)** — REMOVED (2026-07-21): the turn-by-turn
+    phase classifier, its BLUE planner emphasis (the offensive-middle reorder), the ROE
+    restricted/free-fire zones + target-release, and the campaign-status ribbon + kneeboard phase/ROE
+    surfaces are all gone (the ROE-mechanic drop). The shared `PlanNextAction` offensive-order seam
+    the classifier drove stays for §52/§67/§68. Do not restore.
 41. **High Digit SAMs "Ultimate Compilation" support** — the HDS mod support retargeted from the abandoned
     original v1.4.0 to the maintained successor (https://github.com/dcs-sams/HighDigitSAMs-Ultimate-Compilation,
     v1.4.3+), same `high_digit_sams` toggle (wizard label updated). Unit data read from the **installed mod's
@@ -1640,7 +1533,7 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     marks refuel "needed" so an escort tanker always prunes), and an AEWC escort prunes the same way — as
     primaries the A-6 gets a tanker orbit off the boat (launch + recovery gas) and the E-2 an AEWC orbit. The
     hook runs in `Coalition.plan_missions` **before** `TheaterCommander` so the boat's Hornets are claimed for
-    this package first; `_nearest_legal_strike_target` picks the nearest alive, non-ROE-blocked enemy TGO
+    this package first; `_nearest_legal_strike_target` picks the nearest alive enemy TGO
     (preferring ammo caches — the COIN throttle). A **second post-planning pass**
     (`route_carrier_flights_to_buddy_tanker`, run **after** `TheaterCommander`) fixes the boat's *other* carrier
     flights: the commander frags SEAD Sweep/Escort Hornets off the deck in their own tanker-less packages, whose
@@ -1741,8 +1634,7 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     `self.conditions` when active (getattr-guarded for the turn-0 seed), else the legacy formulas; `finish_turn`
     calls `advance_conditions()` for `turn > 1`. **Seamless mid-campaign** on load: the last conditions were
     generated from the `turn // 4` date, so `conditions.start_time.date()` already equals it — the clock reads
-    the same date and marches on (no jump, no migration). Composes with campaign phases (§40), which advance
-    over turns; the calendar now advances in step. Gated `continuous_campaign_clock` (Campaign Management →
+    the same date and marches on (no jump, no migration). The calendar now advances in step with the turn count. Gated `continuous_campaign_clock` (Campaign Management →
     Campaign clock & weather, **default ON**). Tests `tests/weather/test_continuous_campaign_clock.py`.
     (`game/weather/conditions.py`, `game/game.py`, `game/settings/settings.py`; features doc §47, checklist T1
     — needs an in-game pass.)
@@ -1752,11 +1644,7 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     Political Will is a near-one-way **ratchet** (war weariness + a per-turn **POW running-sore** — the one lever
     the GCI-ambush enemy has to pressure Washington — with restores too small to grind a win, so *body count is a
     trap*); RED Regime Resolve is **broadened past the trail** (`red_ground_unit_lost` up so CAS/BAI/**Arc Light**
-    all bleed it, the campaign-ending convoy weight trimmed 1.5→1.0); an **escalation tax**
-    (`CampaignPhase.blue_will_on_entry`, charged once per phase entry via `phases.consume_phase_escalation_cost`
-    into the will ledger — Linebacker −3, the Linebacker II "Christmas bombing" −5) makes *widening the war* cost
-    Washington will even when sanctioned (an elite player who folds Hanoi early never pays it); and a **richer
-    opening** (`red_tempo.trail_surge 1.5` under Rolling Thunder — 15-truck convoys from turn 1). This feature
+    all bleed it, the campaign-ending convoy weight trimmed 1.5→1.0); and a **richer opening** (the top-level `red_tempo` schedule's `trail_surge 1.5` from turn 1 — 15-truck convoys). This feature
     itself is the **commitment ceiling**: as BLUE will falls below 60, `Coalition.end_turn` scales the BLUE war
     budget down linearly toward a 0.5× floor (`game/fourteenth/commitment_ceiling.py` `will_budget_multiplier` /
     `apply_commitment_ceiling`) — a losing war is starved of replacements (the VG "commitment can't exceed
@@ -1765,7 +1653,7 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     derived offline with `tools/will_pacing_model.py` (a standalone projector marching both meters over the arc
     from play archetypes; its default weights are drift-guarded against the real `WillWeights`): elite folds
     Hanoi ~turn 8, average rides to a Linebacker II negotiated win ~turn 16, a floundering war loses Washington
-    ~turn 11. (`game/fourteenth/commitment_ceiling.py`, `game/coalition.py`, `game/fourteenth/phases.py`,
+    ~turn 11. (`game/fourteenth/commitment_ceiling.py`, `game/coalition.py`,
     `game/fourteenth/political_will.py`, `game/settings/settings.py`, `resources/campaigns/1968_Yankee_Station.yaml`;
     features doc §48, checklist M1 + M9 — needs an in-game pass.)
 49. **Mobile missile relocation (the SCUD hunt)** — mobile theater-missile sites (SCUD/SSM TGOs,
@@ -2001,7 +1889,7 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     `fuel_readiness(cp)` scales `Squadron.untasked_aircraft` at the turn boundary, so bombing a base's fuel
     grounds part of its air for the AI planner and the human alike. **P4a** surfaces a SITREP front-supply
     band ("Front supply X% -- enemy Y%") so the player reads *why* a front stalled. Exposes
-    `coalition_supply_health`/`supply_factor`, consumed read-only by §55 red intent. Symmetric; gated
+    `coalition_supply_health`/`supply_factor`. Symmetric; gated
     `war_economy` + `fuel_air_readiness` (Campaign Management → War economy, both default **OFF**, preseeded
     ON in Red Tide); OFF is a proven exact no-op (regression across the combat/controlpoint/frontline/
     ground-planner suites). **P4b** (landed 2026-07-08, post-merge polish): the base-card (`QBaseMenu2`)
@@ -2028,73 +1916,11 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     Tests `tests/fourteenth/test_munitions_gate.py` + `tests/fourteenth/test_scarce_munitions.py` +
     `tests/fourteenth/test_war_economy.py`; features doc §54 — the loadout grey-out + base-card readout need
     an in-app pass.
-55. **Red Intent — adaptive enemy posture** — the "thinking red opponent": the mirror of the
-    BLUE campaign-phases arc (§40) for RED, and unlike the blue arc it carries *memory* across
-    turns. Each turn `game/fourteenth/red_intent.py` resolves a RED **posture** —
-    `CONSOLIDATE` / `ATTRITION` / `SURGE` — from live state (ground-force balance, air strength,
-    resolve) **plus last-turn deltas** (territorial movement vs a lazily-snapshotted turn-0
-    baseline + a base lost last turn) with **asymmetric hysteresis** (dwell to escalate,
-    immediate to consolidate), latches it on `Game` (getattr-guarded, recompute-not-pickle like
-    the phase pointer), announces transitions, and surfaces it on the SITREP band + a colour-coded
-    chip on the campaign-status map ribbon (`CampaignStatusJs.red_posture`). The posture
-    then biases the RED commander across **four planner seams** — all no-ops for blue, a stock
-    red, or when the toggle is off, so the planner is byte-identical to before until red is
-    actively consolidating or surging: (1) **offensive emphasis** — reorders `PlanNextAction`'s
-    offensive methods (surge takes ground first, consolidate leans defensive) through the same
-    name-keyed indirection the blue phases use (`nextaction._offensive_order`, which resolved
-    its "a red arc is deferred" TODO); (2) **unpredictability** — adds to
-    `opfor_planner_unpredictability` (attrition keeps red a little erratic, surge focuses it),
-    stacking with the §52 C2-decap bonus on the same clamp (`targetorder._unpredictability_for`);
-    (3) **aggressiveness** — biases `opfor_autoplanner_aggressiveness` so surge abandons more
-    bases to attack and consolidate defends everything (`objectivefinder.effective_aggressiveness`);
-    (4) **ground husbanding** — scales the *perceived* ground-force balance the ATTACK stance
-    thresholds test (surge commits reserves sooner, consolidate husbands; the defensive/retreat
-    stances are untouched, so consolidate never forces a retreat), and **yields** to an active
-    authored `red_tempo` pulse so a campaign author's Tet/Easter offensive is never double-driven
-    (`frontlinestancetask._posture_commit_factor`). Gated `red_intent` (Air Doctrine, default
-    **OFF**); red-only by design (blue's "intent" is the phase arc). **P4 (the §53 war-economy
-    supply coupling)** is a read-only drop-in via the locked `coalition_supply_health` contract —
-    starved supply will force `CONSOLIDATE` even on a paper advantage — and stays a graceful
-    no-op until the sibling §53/§54 economy lands (design note `414th-red-intent-notes.md`).
-    **Made smarter 2026-07-10** (the memory the design always described but v1 only stubbed as a
-    turn-0 snapshot): (A) **rolling trend memory** — a bounded per-turn `red_intent_history` of
-    turn-stable levels (`RedIntentSample`: resolve, front advance, red SAM-site count, both sides'
-    fighters, red base count, supply) on `Game` (getattr-guarded + `__setstate__` default, trimmed
-    to `MEMORY_LENGTH` 6); the classifier differences the current sample against a `_trend_lookback`
-    sample (~2 turns back, None on turn 1, idempotent same-turn record) for `iads_trend` /
-    `resolve_trend` / `base_trend` / `front_trend`. (C) **richer battle-reading** — those trends bias
-    a *ground-dominant* red to `CONSOLIDATE` (its own IADS/resolve/base attrition digs a winning red
-    in, not only the §53 supply meter), and a **blue-air-collapse opportunity window**
-    (`blue_air_collapsing`, ≥35 % of blue's air-sup force lost over the window) lets red `SURGE` at a
-    lower ground bar (1.2× vs 1.5×). (B) **graduated intensity** — the classifier also yields an
-    `intensity` ∈ [0,1] latched as `red_intent_intensity`; the aggressiveness + ground-commit seams
-    scale their magnitude by it (a runaway 4:1 surge presses harder / a collapsing regime husbands
-    harder), anchored at `DEFAULT_INTENSITY` 0.5 to the v1 midpoints so a typical posture is
-    byte-identical and only the extremes move (unpredictability + emphasis stay posture-only). All
-    no-ops until real trend/margin data exists, so every prior test held byte-for-byte. **Per-front
-    posture + tuning added same day (D + settings):** (D) `_update_front_postures` classifies EACH active
-    front from its own ground balance + the shared theater air/resolve/trend read (per-front hysteresis,
-    latched `FrontPosture` on `game.red_intent_fronts` keyed by cp-id pair), and the **ground-husbanding
-    seam** goes per-front (`stance_commit_factor(game, front)` via `_front_posture_and_intensity`, wired
-    from `frontlinestancetask._posture_commit_factor` passing `self.front_line`) — so red commits on the
-    front it is winning and husbands on the one it is losing; the other three seams + the UI headline stay
-    theater-wide, the per-front breakdown surfaces in the ribbon expander (`front_postures` →
-    `CampaignStatusJs.front_postures`, 2+ divergent fronts). Gated `red_intent_per_front` default ON
-    (off ⇒ theater fallback). Tuning: a `RedIntentTuning`/`tuning_for` object (default = base constants,
-    byte-identical) threads three new Air-Doctrine settings — `red_intent_boldness` (0-100, 50 neutral;
-    the master dial: lowers the surge/opportunity/consolidate ground bars + raises the seam magnitude),
-    `red_intent_dwell_turns` (escalation stickiness), `red_intent_trend_window` (trend lookback) — through
-    the classifier + seams; re-anchored so seam_scale=1 + intensity=0.5 reproduce the v1 numbers. **Surfaced
-    visibly (not hover-only):** the
-    **kneeboard SITREP** "Enemy posture" line now renders the *detail* — intensity word + trend driver
-    ("Surging (all-in) — ground 4.0x · air holding · IADS falling") via `sitrep_posture_detail` +
-    `Sitrep.red_posture_detail` (Python-only, no client rebuild); the **web ribbon chip** shows the
-    intensity word inline ("ENEMY Surging · all-in", `CampaignStatusJs.red_posture_intensity` via
-    `intensity_word`) and the expander gained an "Enemy intent" block with the full `red_posture_detail`
-    "why". Tests `tests/fourteenth/test_red_intent.py` + `tests/test_sitrep.py` +
-    `tests/test_planner_unpredictability.py`; features doc §55, checklist B7 — needs an in-game pass (does
-    red visibly surge when ahead / consolidate when hit / dig in as its IADS is bombed, across a
-    multi-turn campaign; the SITREP posture-detail line + the ribbon intensity read correctly).
+55. **Red Intent — adaptive enemy posture** — REMOVED (2026-07-21): the RED posture classifier
+    (`CONSOLIDATE`/`ATTRITION`/`SURGE`), its four planner seams, the per-front postures, and the
+    ribbon + SITREP posture surfaces are all gone — the symmetric teardown of the §40 removal. The
+    shared unpredictability + offensive-order seams it stacked on stay for §52/§68. Do not restore.
+    (Design note `414th-red-intent-notes.md` bannered removed 2026-07-21.)
 56. **Strikeable motorpool depots** — **adopted from upstream PR
     [dcs-retribution#859](https://github.com/dcs-retribution/dcs-retribution/pull/859)**
     (geofffranks; cherry-picked verbatim + fork-adapted, the Pretense hunk dropped since the fork
@@ -2349,7 +2175,7 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     generation never debits, so mission re-generation is free). Two fire paths share the
     budget: **auto raids** (`plan_cruise_raids` in `game/fourteenth/cruise_raids.py` — at most
     one per side per turn, C2-first target priority then the §53 economy buildings, ≤250 NM,
-    BLUE ROE-gated via §40 `roe_blocks_target`, never ships/`map_hidden`; the plugin fires
+    never ships/`map_hidden`; the plugin fires
     after a launch delay with a vague "LAUNCH WARNING" cue to the defender) and a **player F10
     "Cruise Missile Strike" menu** per owning coalition (salvo onto the last F10 map marker
     from the nearest capable ship, the §34 marker pattern; **marker text `#N`/`N` sizes the
@@ -2477,28 +2303,24 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     player-planned recon untouched), and **a thunderstorm demotes low-level visual attack**
     (`demote_weather_hostile_methods` moves `PlanFrontLineCas`/`AttackBattlePositions`/
     `InterdictReinforcements` to the offensive tail in `PlanNextAction._offensive_order`,
-    AFTER the §40/§55 emphasis — soft demotion, nothing removed; rain does not demote).
+    after any other `_offensive_order` emphasis — soft demotion, nothing removed; rain does not demote).
     **Night is deliberately absent** — no per-airframe night-capability data exists, and
     demoting night CAS would ground an A-10C II alongside an A-1. Gated
     `weather_aware_planning` (Air Doctrine, default **ON** — clear skies are byte-identical).
     Tests `tests/fourteenth/test_weather_planning.py` + the storm case in
     `tests/test_armed_recon_planning.py`; features doc §67, checklist B19 — needs an
     in-game pass.
-68. **Adaptive procurement (posture-coupled spending + SAM repair)** — the AI economy reads
+68. **Adaptive procurement (SAM repair + price-weighted choice)** — the AI economy reads
     the war (`game/fourteenth/adaptive_procurement.py`; `ProcurementAi` was a fixed slider +
-    doctrine ratios + `random.choice`, coupled to nothing built since). Three couplings:
-    **(1) posture/phase budget split** — a surging RED shifts auto-spend toward ground
-    (+0.15 at the §55 intensity midpoint, scaled 0.5+intensity), a consolidating RED
-    husbands ground and rebuilds air (−0.15); BLUE leans air-first under Tier-0 `rollback`
-    (−0.10), ground-first under `offensive` (+0.10); no signal = byte-identical split;
-    **(2) air-defense site repair** (own gate `auto_repair_air_defenses`, default **OFF**) —
+    doctrine ratios + `random.choice`, coupled to nothing built since). Two couplings:
+    **(1) air-defense site repair** (own gate `auto_repair_air_defenses`, default **OFF**) —
     nothing ever rebuilt a dead SAM, so Rollback was a one-way ratchet; each side's AI now
     repairs ≤ `MAX_AIR_DEFENSE_REPAIRS_PER_TURN` (2) dead units/turn at surviving `aa`/`ewr`
     TGOs at full unit price (the player's base-card repair), degraded sites + radars first,
     with the threat-poly invalidation and wreck-marker cleanup the flip needs; **command
     centers/comms are never repaired** (§51/§52 kills stay permanent); BLUE only auto-spends
     when `automate_runway_repair` delegated repairs, RED always; shows as its own Finances
-    row; **(3) price-weighted ground-unit choice** (capability proxy — T-72s over gun trucks,
+    row; **(2) price-weighted ground-unit choice** (capability proxy — T-72s over gun trucks,
     still a weighted roll). Gated `adaptive_procurement` (Campaign Management → Commander
     economy, default **ON**); NOT preseeded (Red Tide feature-locked). Tests
     `tests/fourteenth/test_adaptive_procurement.py`; features doc §68, checklist B20 — needs
@@ -2525,9 +2347,7 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     `comms`/`commandcenter` TGOs (the same objects §51 jams from and §52 decapitates —
     **bomb-it-or-tap-it is emergent**, never special-cased) + alive concealed COIN spawns
     (insurgents run on radios, so the take works on the front-less COIN laydowns). **Tier 0**
-    (net silent) ⇒ nothing; **Tier 1** (net up) ⇒ the ambient take — the §55 posture *detail*
-    is now EARNED (`gated_posture_detail` wraps the `record_sitrep` feed; a silenced net dries
-    it up; the coarse posture chip stays free); **Tier 2** (a blue collector — a §2 JAMMING
+    (net silent) ⇒ nothing; **Tier 1** (net up) ⇒ the ambient take (net-up presence only — the §55 posture-detail earn is gone with §55's removal); **Tier 2** (a blue collector — a §2 JAMMING
     flight or any drone, "a drone is always listening" — flew last mission and survived,
     stamped by `record_comint_collection` at debrief commit; a shot-down collector banks
     nothing) ⇒ a **tasking leak** (the most threatening red offensive package flying THIS
@@ -2735,8 +2555,7 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     steerpoints with ASCII-folded names + the route sequence (per-leg alt/speed, ETA as
     seconds-since-midnight, target flagged); Hornet NAV settings **pre-tuning the §65 boat
     TACAN/ICLS/ACLS** (land arrivals get the field TACAN) + FPAS home waypoint; and the
-    SA/HSD picture — FLOT (the F10 drawing's own geometry), §40 no-strike zones as FAOR/GEO
-    lines, **friendly CAP stations + tanker/AEW&C orbits as CAP_PTS racetracks** (Viper:
+    SA/HSD picture — FLOT (the F10 drawing's own geometry), **friendly CAP stations + tanker/AEW&C orbits as CAP_PTS racetracks** (Viper:
     named extra steerpoints), and **enemy SAM rings as MEZ/THREAT_PTS** ("Custom" type,
     NATO short labels from DCS unit ids) — **recon-fogged via `known_for(flight.friendly)`**
     (the threat-intel kneeboard's leaf; `map_hidden` never emitted): headless-verified 0
@@ -2945,7 +2764,7 @@ Carved out of this work, against `dcs-retribution/dcs-retribution` (all authored
     [#843](https://github.com/dcs-retribution/dcs-retribution/pull/843) era-gate payload-editor options / JHMCS helmet cueing (§24 — **upstream merged the fork's final shape**: `date_gated_properties` blocks in the aircraft yamls + `restrict_props_by_date`, NOT the interim helmet-yaml layout from Druss99's first review; the two sides are byte-convergent. ⚠️ upstream's copy of the 4 aircraft yamls froze a **2026-06-29 snapshot of the fork's task priorities** that the rebalance rubric has since re-tuned — flagged for an upstream data-cleanup PR) ·
     [#805](https://github.com/dcs-retribution/dcs-retribution/pull/805) bulk waypoint altitude UI (upstream's merged version carries the full Druss99 skip-list — `DIVERT`/`CARGO_STOP`/target/pickup/dropoff/`REFUEL`/`RECOVERY_TANKER`; the fork's pre-review copy was upgraded to it in the sync).
   - **Earlier:** [#871](https://github.com/dcs-retribution/dcs-retribution/pull/871) targeting-pod era data (merged 2026-07-15) · [#841](https://github.com/dcs-retribution/dcs-retribution/pull/841) plugin `descriptionInUI` field (§14) · [#793](https://github.com/dcs-retribution/dcs-retribution/pull/793) building-card placeholder (§4) · [#826](https://github.com/dcs-retribution/dcs-retribution/pull/826) weapons coverage/repairs · [#789](https://github.com/dcs-retribution/dcs-retribution/pull/789) inverted OPFOR aggressiveness fix.
-  - Also relevant: geofffranks' [#859](https://github.com/dcs-retribution/dcs-retribution/pull/859) motorpool depots merged 2026-07-19 — the fork pre-adopted it as §56 (+ the #625 drift port), and the sync brought the final extras (the `AttackMotorpools` HTN task, wired into the fork's phase/posture emphasis lists; capture-zone warning already ported).
+  - Also relevant: geofffranks' [#859](https://github.com/dcs-retribution/dcs-retribution/pull/859) motorpool depots merged 2026-07-19 — the fork pre-adopted it as §56 (+ the #625 drift port), and the sync brought the final extras (the `AttackMotorpools` HTN task, wired into the fork's offensive-emphasis lists; capture-zone warning already ported).
 - **Closed unmerged — NEWLY CLOSED since the 2026-06-27 snapshot (⚠️ the ledger had all four listed as "open, awaiting review"; the *reason* each closed was NOT investigated — check the PR before re-carving):**
   - [#851](https://github.com/dcs-retribution/dcs-retribution/pull/851) High Digit SAMs **Ultimate Compilation** support (§41's generic core) — retargets the HDS toggle to the maintained mod: renamed-radar re-points, retired-unit tombstones, the 42 new units + 7 presets + SAMP/T layout, and the `remove_vehicle` id-vs-name strip fix. NO 414th faction enrichment (P-37/SA-7/S-400 wiring stays fork-side). Opened 2026-07-01. Landed on the fork as [414Ret#382](https://github.com/bradyccox/414Ret/pull/382), so the fork keeps it either way.
   - [#847](https://github.com/dcs-retribution/dcs-retribution/pull/847) F-4E-45MC (Heatblur) loadout rebuild **+** Maverick date-fallback fix (period AIM-7E2/9L baseline; AGM-65 date-fallback rerouted Walleye → Mk-20 Rockeye). Opened 2026-06-28; **consolidated the former #845 + #846** (both also closed). Landed on the fork as [414Ret#322](https://github.com/bradyccox/414Ret/pull/322) + [#325](https://github.com/bradyccox/414Ret/pull/325).
@@ -3012,18 +2831,21 @@ way.)
   when asked, confirm destructive actions, stop iterating in a debug spiral, one clarifying
   question on real ambiguity). Composes with the question convention below: a needed decision
   still lands in the ❓ block at the end — that block IS the "one concrete next action."
-- **Highlight questions to the user.** Whenever you need a decision or answer from the
-  user, make the question visually prominent — never bury it mid-paragraph or at the tail of
-  a wall of prose. Put it in its own block at the **end** of the message, set off with a bold
-  marker and a blockquote, e.g.:
-  > ❓ **Need your call:** <the question>
-
-  When you offer choices, **number them (1, 2, 3, …)** and lead with your recommended option,
-  so the user can reply with just a number. List multiple questions as a short numbered set so
-  each can be answered individually. Use **plain highlighted markdown only** (bold + blockquote)
-  — do NOT build a widget or visualization for this. (The `AskUserQuestion` tool already renders
-  prominently and satisfies the convention; otherwise it is for free-text questions in ordinary
-  replies.)
+- **Ask decisions via the AskUserQuestion widget (STANDARD, 2026-07-21 user call).** Whenever
+  you need a decision or a choice from the user, use the **`AskUserQuestion` tool** — the
+  interactive widget with clickable options — **not** a typed "1, 2, 3" list. Lead with your
+  recommended option and mark it "(Recommended)"; give each option a one-line description of what
+  it means / its trade-off. Use `multiSelect` when the choices aren't mutually exclusive, and a
+  short set of questions (≤4) when several independent decisions are on the table. The user
+  considers typed numbered option lists low-effort ("lazy") — the widget is the actual tool for
+  this, so default to it.
+  - **Fallback — plain highlighted markdown** — only for a quick inline either/or where the widget
+    is overkill, or for a **free-text** question with no fixed options. Never bury it mid-paragraph
+    or at the tail of a wall of prose: put it in its own block at the **end** of the message, set
+    off with a bold marker + blockquote, and lead with your recommended option, e.g.:
+    > ❓ **Need your call:** <the question>
+  - Do NOT build a custom widget/visualization (`mcp__visualize`, an Artifact) to ask a question —
+    `AskUserQuestion` is the one decision surface.
 - **Supply lines follow the driveable corridor (STANDARD, 2026-07-03).** Every authored
   `supply_routes:` / shipping-lane drawing must trace the corridor you would actually *drive*
   between the two points — the road, the river valley, the pass — never a straight line across a

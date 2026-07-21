@@ -165,82 +165,14 @@ squadrons:
 
       size: 8
 
-# Vietnam campaign layer W4: the authored ROE escalation arc (campaign phases P2,
-# spec docs/dev/design/414th-vietnam-political-will-roe-notes.md section 3). Rolling
-# Thunder's restrictions -> the bombing halt -> Linebacker -> Linebacker II. Zones
-# shrink and target classes release as the arc escalates; bleeding political will
-# ACCELERATES escalation (advance_when) -- Washington's patience for restraint runs
-# out. Zone centers are control-point names from this campaign's laydown.
-phases:
-  - key: rolling_thunder
-    name: Rolling Thunder
-    narrative: >-
-      Gradual pressure under Washington's thumb: interdict the flow south, but the
-      deep targets are off the list and Saipan is sanctuary.
-    emphasis: interdiction
-    objectives:
-      - Interdict the flow south -- kill the trail convoys before they reach the front
-      - Respect the sanctuaries -- zone kills bleed Washington's will
-    restricted_zones:
-      - center: Saipan Intl
-        radius_nm: 15
-        name: Saipan sanctuary
-    locked_targets: [factory, power, oil, fuel, ammo, comms, ware, airfield]
-    advance_when:
-      blue_will_below: 75
-  - key: bombing_halt
-    red_tempo:
-      trail_surge: 2.0
-      resolve_regen: 1.5
+red_tempo:
+  - from_turn: 8
     name: The Bombing Halt
-    narrative: >-
-      Washington halts the deep war to talk. Restraint tightens; the trail war and
-      the front are all that is authorized.
-    emphasis: interdiction
-    objectives:
-      - Ride out the halt -- the trail runs double while Washington talks
-      - Keep the front held -- the trail war is all that is authorized
-    min_turn: 8
-    restricted_zones:
-      - center: Saipan Intl
-        radius_nm: 22
-        name: Saipan sanctuary (expanded for the talks)
-    locked_targets: [factory, power, oil, fuel, ammo, comms, ware, airfield]
-    advance_when:
-      blue_will_below: 65
-  - key: linebacker
-    red_tempo:
-      ground_offensive: 3
+    trail_surge: 2.0
+    resolve_regen: 1.5
+  - from_turn: 11
     name: Linebacker
-    narrative: >-
-      The talks stalled and the gloves come part-way off: airfields and the deep
-      target classes release, only the inner sanctuary still binds.
-    emphasis: rollback
-    objectives:
-      - text: Break the SAM belt to under 40% strength
-        done_when:
-          enemy_iads_below: 0.4
-      - Pour strikes onto the released deep target classes
-    min_turn: 11
-    restricted_zones:
-      - center: Saipan Intl
-        radius_nm: 6
-        name: Saipan sanctuary (inner ring)
-    advance_when:
-      blue_will_below: 50
-      enemy_iads_below: 0.4
-  - key: linebacker_ii
-    name: Linebacker II
-    narrative: >-
-      Maximum effort. No sanctuaries, no restricted classes -- break the regime's
-      resolve at the negotiating table by force.
-    emphasis: offensive
-    objectives:
-      - text: Break Hanoi's resolve at the negotiating table
-        done_when:
-          red_resolve_below: 25
-      - Hold Washington's will until Hanoi signs
-    min_turn: 16
+    ground_offensive: 3
 
 supply_routes:
   # #50 blue rear corridor (batch 1)

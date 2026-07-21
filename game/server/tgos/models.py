@@ -236,14 +236,6 @@ class TgoJs(BaseModel):
     mobile: bool
     destination: Optional[LeafletPoint]
     user_placed: bool
-    # ROE escalation (campaign phases W4): True while the active authored phase
-    # forbids offensive tasking here (inside a restricted zone or a still-locked
-    # target class). The site stays visible and targetable -- the defining Rolling
-    # Thunder frustration -- it just wears a RESTRICTED badge. `roe_reason` says
-    # WHY ("factory targets are locked this phase" / "inside Hanoi sanctuary") so
-    # a class-locked site far from any circle doesn't read as a render bug.
-    roe_restricted: bool = False
-    roe_reason: str | None = None
     # COIN concealment: set while this TGO's map presence is an uncertainty area.
     # `position` is then the JITTERED circle centre, not the true location.
     uncertainty_radius_m: float | None = None
@@ -288,14 +280,6 @@ class TgoJs(BaseModel):
             and tgo.target_position is not None
         ):
             destination = LeafletPoint.from_latlng(tgo.target_position.latlng())
-        from game.fourteenth.phases import roe_restriction_reason
-
-        roe_reason = (
-            None
-            if blue
-            else roe_restriction_reason(tgo.control_point.coalition.game, tgo)
-        )
-        roe_restricted = roe_reason is not None
         uncertainty = concealed_uncertainty(tgo)
         position = (uncertainty[0] if uncertainty else tgo.position).latlng()
         return TgoJs(
@@ -314,8 +298,6 @@ class TgoJs(BaseModel):
             mobile=mobile,
             destination=destination,
             user_placed=tgo.user_placed,
-            roe_restricted=roe_restricted,
-            roe_reason=roe_reason,
             uncertainty_radius_m=uncertainty[1] if uncertainty else None,
             concealed_cluster_size=(
                 concealed_cluster_size(tgo) if uncertainty else None

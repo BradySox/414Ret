@@ -10,9 +10,9 @@ Sections emitted (schema mined from ``CoreMods/aircraft/FA-18C/DTC``):
   sequence with per-leg altitude/speed/ETA, and ``NAV_SETTINGS`` that auto-tune
   the recovery TACAN / ICLS / ACLS (the §65 boat card, closing the loop) and
   the FPAS home waypoint.
-* ``SA`` -- FLOT line(s) from the live front, §40 no-strike zones as FAOR
-  areas, friendly CAP stations + tanker/AEW&C orbits as CAP_PTS racetracks,
-  and viewer-fogged enemy SAM rings as MEZ threats ("Custom" type; radius NM).
+* ``SA`` -- FLOT line(s) from the live front, friendly CAP stations +
+  tanker/AEW&C orbits as CAP_PTS racetracks, and viewer-fogged enemy SAM
+  rings as MEZ threats ("Custom" type; radius NM).
 * ``TCN`` -- deliberately empty in v1 (the boat's TACAN already auto-tunes via
   NAV_SETTINGS; a stations list needs channel->frequency pairing, deferred).
 
@@ -38,7 +38,6 @@ from game.missiongenerator.dtc.common import (
     leg_speed_kmh,
     racetrack_ends,
     raw_cap_tracks,
-    restricted_zone_outlines,
     seconds_of_day,
     support_tracks,
     waypoint_display_name,
@@ -55,7 +54,6 @@ HORNET_UNIT_TYPE = "FA-18C_hornet"
 MAX_WAYPOINTS = 59
 MAX_CAP_POINTS = 9
 MAX_LINE_POINTS = 7
-MAX_FAOR_LINES = 3
 MAX_FLOT_LINES = 3
 MAX_MEZ_THREATS = 40
 
@@ -340,18 +338,6 @@ def _build_sa(
                     "num": line_num,
                     "note": name,
                     "points": _line_points("FLOT", line_num, points),
-                }
-            )
-        for name, outline in restricted_zone_outlines(game, MAX_LINE_POINTS)[
-            :MAX_FAOR_LINES
-        ]:
-            line_num = len(faor_lines) + 1
-            faor_lines.append(
-                {
-                    "id": f"FAOR_{line_num}",
-                    "num": line_num,
-                    "note": name,
-                    "points": _line_points("FAOR", line_num, outline),
                 }
             )
 

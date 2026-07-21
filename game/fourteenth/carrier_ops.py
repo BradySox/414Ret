@@ -256,15 +256,11 @@ def _carrier_aircraft(
 def _nearest_legal_strike_target(
     game: "Game", carrier: "ControlPoint"
 ) -> Optional["MissionTarget"]:
-    """The nearest enemy strike-worthy ground object to the carrier that the ROE
-    doesn't lock (so the carrier package never gets fragged into a population ring --
-    the same restraint the rest of the BLUE planner honors).
+    """The nearest enemy strike-worthy ground object to the carrier.
 
     Prefers ammo caches (the COIN throttle -- thematically the carrier's job) but
     falls back to any strikeable enemy TGO.
     """
-    from game.fourteenth.phases import roe_blocks_target
-
     caches: list[tuple[float, "MissionTarget"]] = []
     others: list[tuple[float, "MissionTarget"]] = []
     for cp in game.theater.controlpoints:
@@ -279,8 +275,6 @@ def _nearest_legal_strike_target(
             # against -- naming it in the ATO would reveal it (the same skip
             # BattlePositions applies).
             if getattr(tgo, "map_hidden", False):
-                continue
-            if roe_blocks_target(game, tgo):
                 continue
             dist = carrier.position.distance_to_point(tgo.position)
             if getattr(tgo, "category", None) == "ammo":

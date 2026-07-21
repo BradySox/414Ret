@@ -47,8 +47,7 @@ function ConcealedTgo(props: TgoProps) {
       openNewPackageDialog({ tgoId: props.tgo.id });
     },
   };
-  // Amber "suspected", not red: red is reserved for the ROE off-limits zone,
-  // which is nearly identical in shape. Amber reads as "unknown — investigate".
+  // Amber "suspected" reads as "unknown — investigate" rather than a threat.
   const tooltip = (
     <Tooltip>
       Suspected enemy activity ({props.tgo.control_point_name})

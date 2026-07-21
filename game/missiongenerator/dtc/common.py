@@ -307,29 +307,6 @@ def _circle_outline(
     return points
 
 
-def restricted_zone_outlines(
-    game: Game, max_points: int
-) -> list[tuple[str, list[tuple[float, float]]]]:
-    """Active §40 no-strike zones as closed outlines of <= max_points each.
-
-    Reads the same resolved zones the F10/web layers draw, so the cockpit SA
-    page agrees with every other surface. Circles become polygons (the DTC has
-    no circle line element).
-    """
-    from game.fourteenth.phases import active_restricted_zones
-
-    outlines = []
-    for zone in active_restricted_zones(game):
-        if zone.kind == "circle":
-            points = _circle_outline(zone.center_xy, zone.radius_m, max_points - 1)
-        else:
-            points = list(zone.outline_xy)
-            if len(points) < 3:
-                continue
-        outlines.append((zone.name, _decimate_closed(points, max_points)))
-    return outlines
-
-
 @dataclass(frozen=True)
 class ThreatSite:
     """One enemy air-defense site the blue player's map already shows exact."""

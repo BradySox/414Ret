@@ -4,15 +4,14 @@ import { supplyBand } from "../../theme/mapColors";
 import "./CampaignStatusBar.css";
 import { useState } from "react";
 
-// The campaign-status ribbon (campaign phases W3): a slim bar above the map with
-// the campaign name, turn, date, the inferred phase + its "why" string, and — on
-// Vietnam campaigns — the political-will meters. Renders nothing when no game is
-// loaded; each segment self-hides when its data is absent (phases off, will off),
-// so the ribbon degrades gracefully to just "campaign · turn · date".
+// The campaign-status ribbon: a slim bar above the map with the campaign name,
+// turn, date, and — on Vietnam campaigns — the political-will meters. Renders
+// nothing when no game is loaded; each segment self-hides when its data is absent
+// (will off, supply off), so the ribbon degrades gracefully to just
+// "campaign · turn · date".
 //
-// Clicking the phase chip unfolds the ARC EXPANDER: the campaign's whole phase
-// sequence with schedule, locked target classes, and sanctuaries, plus the
-// political-will history sparkline — "where am I in the war, and what may I hit."
+// The VICTORY chip unfolds a checklist expander (win rows + defeat risks) plus the
+// political-will history sparkline — "where am I in the war."
 //
 // It floats over the Leaflet map as a plain positioned div (NOT a Leaflet
 // control/layer, so the map-layer tests and z-index stack are untouched).
@@ -70,45 +69,21 @@ export default function CampaignStatusBar() {
           day: "numeric",
         })
       : status.date;
-  const phases = status.phases ?? [];
   const history = status.will_history ?? [];
   // §75 custom victory conditions: win rows + defeat risks for the expander
   // block; the VICTORY chip renders whenever any are configured.
   const victory = status.victory ?? [];
   const victoryWins = victory.filter((row) => !row.defeat);
   const victoryRisks = victory.filter((row) => row.defeat);
-  const expandable = phases.length > 0 || victory.length > 0;
   const sitrepLines = status.sitrep_lines ?? [];
   return (
     <div className="campaign-status-wrap">
-      <div className="campaign-status-bar" title={status.phase_narrative ?? ""}>
+      <div className="campaign-status-bar">
         <span className="campaign-status-name">
           {status.campaign_name ?? "Campaign"}
         </span>
         <span className="campaign-status-item">Turn {status.turn}</span>
         <span className="campaign-status-item">{dateText}</span>
-        {status.phase_status != null && (
-          <button
-            type="button"
-            className={
-              "campaign-status-phase" + (expandable ? " expandable" : "")
-            }
-            onClick={() => expandable && setExpanded(!expanded)}
-            aria-expanded={expandable ? expanded : undefined}
-            title={
-              expandable
-                ? "Click for the campaign's phase arc"
-                : status.phase_narrative ?? ""
-            }
-          >
-            {status.phase_status}
-            {expandable && (
-              <span className="campaign-status-caret">
-                {expanded ? " ▴" : " ▾"}
-              </span>
-            )}
-          </button>
-        )}
         {victory.length > 0 && (
           <button
             type="button"
@@ -175,31 +150,10 @@ export default function CampaignStatusBar() {
             </span>
           </button>
         )}
-        {(status.red_posture != null ||
-          status.red_supply != null ||
+        {(status.red_supply != null ||
           status.red_c2 != null ||
           status.red_will != null) && (
           <span className="campaign-status-group campaign-status-group-enemy">
-            {status.red_posture != null && (
-              <span
-                className={
-                  "campaign-status-posture posture-" +
-                  status.red_posture.toLowerCase()
-                }
-                title={
-                  status.red_posture_detail ??
-                  "The enemy commander's current posture"
-                }
-              >
-                ENEMY {status.red_posture}
-                {status.red_posture_intensity != null && (
-                  <span className="campaign-status-posture-intensity">
-                    {" · "}
-                    {status.red_posture_intensity}
-                  </span>
-                )}
-              </span>
-            )}
             {status.red_supply != null && (
               <span
                 className={
@@ -235,76 +189,6 @@ export default function CampaignStatusBar() {
       </div>
       {expanded && (
         <div className="campaign-status-panel">
-          {phases.map((phase, idx) => (
-            <div
-              key={phase.key}
-              className={
-                "campaign-phase-row" + (phase.current ? " current" : "")
-              }
-            >
-              <div className="campaign-phase-head">
-                <span className="campaign-phase-index">{idx + 1}</span>
-                <span className="campaign-phase-name">{phase.name}</span>
-                <span className="campaign-phase-when">
-                  {phase.current
-                    ? "now"
-                    : phase.min_turn > 0
-                      ? `~turn ${phase.min_turn}`
-                      : idx === 0
-                        ? "opening"
-                        : "adaptive"}
-                </span>
-              </div>
-              <div className="campaign-phase-body">
-                {phase.narrative && (
-                  <div className="campaign-phase-narrative">
-                    {phase.narrative}
-                  </div>
-                )}
-                {phase.objectives.length > 0 && (
-                  <ul className="campaign-phase-objectives">
-                    {phase.objectives.map((objective, oidx) => (
-                      <li
-                        key={oidx}
-                        className={
-                          objective.done == null
-                            ? "objective-info"
-                            : objective.done
-                              ? "objective-done"
-                              : "objective-open"
-                        }
-                      >
-                        <span className="objective-tick">
-                          {objective.done == null
-                            ? "•"
-                            : objective.done
-                              ? "✓"
-                              : "○"}
-                        </span>
-                        {objective.text}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-                <div className="campaign-phase-rules">
-                  {phase.locked.length > 0 ? (
-                    <span>
-                      Locked: {phase.locked.join(", ")} — everything else (AAA,
-                      armor, troops, trucks on the road) is fair game.
-                    </span>
-                  ) : (
-                    <span>No target classes locked.</span>
-                  )}
-                  {phase.zones.length > 0 && (
-                    <span> Sanctuary: {phase.zones.join(", ")}.</span>
-                  )}
-                </div>
-                {phase.advance && (
-                  <div className="campaign-phase-advance">{phase.advance}.</div>
-                )}
-              </div>
-            </div>
-          ))}
           {victory.length > 0 && (
             <div className="campaign-victory-block">
               <div className="campaign-victory-title">
@@ -355,37 +239,6 @@ export default function CampaignStatusBar() {
                     ))}
                   </ul>
                 </div>
-              )}
-            </div>
-          )}
-          {status.red_posture_detail != null && (
-            <div
-              className={
-                "campaign-status-panel-intent intent-" +
-                (status.red_posture ?? "").toLowerCase()
-              }
-            >
-              <span className="campaign-status-panel-intent-label">
-                Enemy intent
-              </span>
-              <span className="campaign-status-panel-intent-text">
-                {status.red_posture_detail}
-              </span>
-              {(status.front_postures ?? []).length > 1 && (
-                <ul className="campaign-status-panel-fronts">
-                  {(status.front_postures ?? []).map((front) => (
-                    <li
-                      key={front.name}
-                      className={"front-posture posture-" + front.posture.toLowerCase()}
-                    >
-                      <span className="front-posture-name">{front.name}</span>
-                      <span className="front-posture-state">
-                        {front.posture}
-                        {front.intensity != null ? " · " + front.intensity : ""}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
               )}
             </div>
           )}

@@ -174,13 +174,6 @@ def _game(*, dtc_on: bool = True, controlpoints: Optional[list[Any]] = None) -> 
     )
 
 
-@pytest.fixture(autouse=True)
-def _no_restricted_zones(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(
-        "game.fourteenth.phases.active_restricted_zones", lambda game: []
-    )
-
-
 def _sam_cp(*, known: bool = True, hidden: bool = False) -> Any:
     tgo = SimpleNamespace(
         name="SAM SA-2 Site",

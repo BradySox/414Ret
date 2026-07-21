@@ -149,17 +149,10 @@ settings:
   # less ground. §53 P3 fuel depots gate air readiness (bomb the fuel, ground the jets).
   war_economy: true
   fuel_air_readiness: true
-  # §55 red intent: the enemy commander reads the war each turn and adopts a posture
-  # (consolidate / attrition / surge) across turns. With war_economy also on, bombing red's
-  # supply forces a starved red to DIG IN even when it's winning on the ground.
-  red_intent: true
   # §52 command-center decapitation: the advanced-IADS command network feeds red's PLANNING,
   # not just SAM autonomy -- as the player bombs the HQs, red's offensive targeting gets
   # sloppier. Reactive defense untouched. This laydown ships a real per-base C2 network to key on.
   c2_decapitation_effects: true
-  # §40 campaign phases: authored arc below (Rollback -> Interdiction -> Offensive) with the
-  # Copenhagen positive-control no-strike box until the final phase.
-  campaign_phases: true
   # §49 mobile-missile relocation: a coastal SS-26 Iskander battery in the red rear (in the
   # .miz) shoots-and-scoots during the mission; with concealed_enemy_forces (default ON) it
   # shows only as a dashed "suspected activity" circle until a recon bird finds it.
@@ -206,65 +199,6 @@ settings:
     commsjam.intervalSec: 10
     commsjam.maxChannels: 3
     commsjam.powerW: 10000
-# --- §40 campaign phases (authored 3-phase arc). Copenhagen is a positive-control no-strike
-#     circle in phases 1-2; it lifts in the offensive phase. advance_when accelerates on the
-#     enemy IADS falling (fraction of the turn-0 SAM baseline) past the min_turn floor.
-phases:
-  - key: rollback
-    name: "Break the Coastal Wall"
-    emphasis: rollback
-    min_turn: 1
-    narrative:
-      "Win the German Bight and crack the western SAM and coastal anti-ship belt so the fleet
-      can push east. Take the Schleswig neck. Copenhagen is a positive-control no-strike zone."
-    restricted_zones:
-      - shape: circle
-        name: "Copenhagen — positive control"
-        x: 133729
-        y: -489625
-        radius_nm: 22
-    objectives:
-      - "Roll back the coastal anti-ship belt (Rostock / Rügen)"
-      - text: "Take Lübeck"
-        done_when:
-          capture_cp: Lubeck
-    advance_when:
-      min_turn: 5
-      enemy_iads_below: 0.7
-  - key: interdiction
-    name: "Clear the Baltic Coast"
-    emphasis: interdiction
-    min_turn: 5
-    narrative:
-      "Grind up the coast -- Wismar, Rostock, Peenemünde -- killing the coastal missiles and the
-      Baltic Fleet as you go, and cut the red rear toward Szczecin. Copenhagen stays off-limits."
-    restricted_zones:
-      - shape: circle
-        name: "Copenhagen — positive control"
-        x: 133729
-        y: -489625
-        radius_nm: 22
-    objectives:
-      - text: "Take Rostock (Laage)"
-        done_when:
-          capture_cp: Laage
-      - text: "Take Peenemünde"
-        done_when:
-          capture_cp: Peenemunde
-    advance_when:
-      min_turn: 10
-      enemy_iads_below: 0.4
-  - key: offensive
-    name: "Force the Straits — Liberate Copenhagen"
-    emphasis: offensive
-    min_turn: 10
-    narrative:
-      "Force the Danish straits, reduce the Bornholm bastion, and retake Copenhagen. The
-      no-strike box is lifted -- the city is the objective."
-    objectives:
-      - text: "Liberate Copenhagen"
-        done_when:
-          capture_cp: Kastrup
 # --- §75 custom victory: liberate Copenhagen = win; lose the Nordholz bridgehead = defeat.
 #     (Stock territory endings remain in addition to these.)
 victory:

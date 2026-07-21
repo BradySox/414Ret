@@ -21,7 +21,6 @@ import Iadsnetworklayer from "../iadsnetworklayer";
 import DownedPilotsLayer from "../downedpilots";
 import MinefieldsLayer from "../minefields";
 import NavMeshLayer from "../navmesh/NavMeshLayer";
-import RestrictedZonesLayer from "../restrictedzones";
 import SupplyLayer from "../supply";
 import SupplyRoutesLayer from "../supplyrouteslayer";
 import {
@@ -81,8 +80,7 @@ type LayerId =
   | "inclusionZones"
   | "exclusionZones"
   | "seaZones"
-  | "cullingZones"
-  | "restrictedZones";
+  | "cullingZones";
 
 type BaseMap = "clarity" | "firefly" | "topo" | `local:${string}`;
 
@@ -194,12 +192,6 @@ const OVERLAYS: Record<LayerId, { label: string; node: ReactNode }> = {
   exclusionZones: { label: "Exclusion zones", node: <ExclusionZonesLayer /> },
   seaZones: { label: "Sea zones", node: <SeaZonesLayer /> },
   cullingZones: { label: "Culling exclusion zones", node: <CullingExclusionLayer /> },
-  // ROE restricted zones (campaign phases W4). Only authored ROE campaigns emit
-  // zones, so the layer is a no-op everywhere else even while toggled on.
-  restrictedZones: {
-    label: "ROE restricted zones",
-    node: <RestrictedZonesLayer />,
-  },
 };
 
 const ALL_IDS = Object.keys(OVERLAYS) as LayerId[];
@@ -265,14 +257,6 @@ const GROUPS: GroupDef[] = [
     ],
   },
   {
-    // ROE is a rule the player fights under, not enemy intel — it lived under
-    // "Enemy intel" only because that group existed first (2026-07-18 UI audit).
-    key: "roe",
-    title: "Rules of engagement",
-    defaultOpen: true,
-    rows: [{ id: "restrictedZones" }],
-  },
-  {
     key: "allied",
     title: "Allied & flight plans",
     defaultOpen: false,
@@ -324,7 +308,6 @@ const GROUPS: GroupDef[] = [
 ];
 
 const DEFAULT_ON: LayerId[] = [
-  "restrictedZones",
   "controlPoints",
   "aircraft",
   "combat",

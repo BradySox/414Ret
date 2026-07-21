@@ -1,5 +1,7 @@
 ﻿# 414th — Campaign Phases: all-66 Tier-0 draft arcs
 
+> **SUPERSEDED / REMOVED 2026-07-21** — the campaign-phases feature (§40) was removed from the fork (ROE mechanic drop). This draft is kept as a historical record.
+
 **Status:** engine-authoritative (2026-07-01, supersedes the same-day `--lite` draft). Companion
 to [`414th-campaign-phases-notes.md`](414th-campaign-phases-notes.md) (spec) and
 [`414th-campaign-phases-pilot.md`](414th-campaign-phases-pilot.md) (6-campaign pilot). Generated,

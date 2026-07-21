@@ -173,16 +173,11 @@ Upstream hands you a map that already knows everything. Here you have to go look
   materiel chain — factories produce, roads carry, the front spends. Starve it and the enemy
   recovers less, fields fewer units, gives ground. Run a field dry of JDAMs and its jets fall
   back to dumb bombs. Symmetric: protect your own.
-- **The enemy commander plays with intent, and remembers.** It reads the ground balance, its
-  air strength and the *trend* across turns, then holds a posture — **surging** when ahead,
-  **consolidating** under pressure. A winning enemy watching its SAM belt come apart digs in
-  anyway; one that catches your fighters spent lunges through the gap.
 - **Bombing the enemy HQ matters** — knock out its command posts and its planner gets
   measurably sloppier at picking targets **and its offensive tempo thins** (a decapitated
   HQ frags fewer strike packages — never zero). Its reactive defenses never suffer.
 - **Listen before you bomb.** With **COMINT collection** on, that same enemy C2 net is also
-  your intel source: while it's emitting you read the enemy commander's posture, and a
-  collection sortie (the C-130J jamming orbit or any drone) that makes it home buys next
+  your intel source: a collection sortie (the C-130J jamming orbit or any drone) that makes it home buys next
   turn's full take — an intercepted enemy tasking (what's coming, roughly when) and one
   "suspected activity" circle fixed to an exact position. Killing their command posts still
   wrecks their planning — but it also puts out your wiretap. Bomb it or tap it.
@@ -194,14 +189,10 @@ Upstream hands you a map that already knows everything. Here you have to go look
   "suspected clandestine net" with a frequency and an area, the dashed circle on the map is
   the search box, and a needle cut caught during one of its short transmission windows is
   what turns the circle into a fix.
-- **The enemy economy follows its intent.** A surging enemy buys the armor its offensive
-  spends; one consolidating under pressure husbands ground and rebuilds its air arm — and
-  its buys favor its better hardware, not a coin flip over the catalog. Turn on **SAM site
-  repair** and the belt regenerates a couple of units a turn unless you keep pressure on
-  it — a rolled-back IADS stops being a one-way ratchet (command posts stay dead).
-- **Campaign phases** — every campaign knows what phase of the air war it's in (Air
-  Superiority → Interdiction → Offensive), inferred from live IADS, enemy air and front
-  movement. A map ribbon shows the phase *and why*, and the planner leans its tasking to match.
+- **The enemy economy spends smarter.** Its buys favor its better hardware, not a coin flip
+  over the catalog. Turn on **SAM site repair** and the belt regenerates a couple of units a
+  turn unless you keep pressure on it — a rolled-back IADS stops being a one-way ratchet
+  (command posts stay dead).
 - **Wars can end without conquering every base.** A campaign can author real **victory
   conditions** — hold the objective bases, destroy the named high-value targets, knock out
   every enemy command post, grind the enemy air force below a threshold, or deny them any
@@ -235,10 +226,7 @@ Upstream hands you a map that already knows everything. Here you have to go look
 - **Afghanistan — Operation Enduring Resolve** — the first *living* counterinsurgency (a fork
   of Starfire's *Operation Shattered Dagger*). Strongholds **regenerate**, throttled by hidden
   ammo caches you must find and strike; infiltrators creep toward your ungarrisoned bases to
-  take them. The populated valleys are no-strike areas where a strike near civilians costs you
-  at the mandate meter — the desert is free, and troops in contact and air assaults are never
-  restricted. Body count alone wins nothing. Disrupt the Network → Clear and Hold → Break the
-  Momentum.
+  take them. Body count alone wins nothing — patience and the caches you deny decide the war.
 - **Nevada — Red Flag 81-2** — the ultimate war game, played as the war it rehearses: Aggressor
   F-5Es, the Constant Peg MiGs out of Tonopah, an emulator SAM array, KS-19 flak belts. The
   **Groom Lake box never opens**.
@@ -273,11 +261,8 @@ Upstream hands you a map that already knows everything. Here you have to go look
   grind back, so **body count is a trap** — against Hanoi's **Regime Resolve**, which shrugs at
   airframes and bleeds from the trail. The war can **end at the negotiating table**: break
   Hanoi before your will runs out, or run dry and Washington orders the withdrawal, whatever
-  the map says. You fly under **Washington's ROE** — a Rolling Thunder → Linebacker II arc
-  where sanctuary zones are off-limits and deep targets are RESTRICTED. You can always break
-  the rules; will pays the bill. When Hanoi answers — surging the trail during a bombing halt,
-  opening a Tet offensive — a **"Hanoi's response"** briefing makes its plan as legible as
-  yours. Any campaign can carry its own **will profile**, so a Falklands bleeds from sunk ships
+  the map says. When Hanoi answers — surging the trail or opening a Tet-style ground push on a scheduled
+  window — the enemy's tempo shifts against you. Any campaign can carry its own **will profile**, so a Falklands bleeds from sunk ships
   the way Vietnam bleeds from downed B-52s.
 - Plus: **CurrentHill Iran** assets, **High Digit SAMs** (Ultimate Compilation — S-400, SAMP/T,
   Pantsir-SM, period EWRs), the optional **Expanded F-4E Weapons Pack** (check it on the Mods

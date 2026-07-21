@@ -16,7 +16,6 @@ import yaml
 
 from game import persistency
 from game.campaignloader.campaign import Campaign
-from game.fourteenth.phases import parse_phases
 from game.fourteenth.victory import parse_victory
 from game.theater import ConflictTheater
 
@@ -129,10 +128,8 @@ def test_no_markers_leak_onto_the_spare_neutral_fields(tmp_path: Path) -> None:
         assert not leaked, f"{cp.name} (inert spare) caught markers: {leaked}"
 
 
-def test_phases_and_victory_parse() -> None:
+def test_victory_parses() -> None:
     data = yaml.safe_load(YAML.read_text(encoding="utf-8"))
-    phases = parse_phases(data.get("phases"))
-    assert [p.key for p in phases] == ["rollback", "interdiction", "offensive"]
     victory = parse_victory(data.get("victory"))
     assert victory is not None
     assert victory.win_when[0].capture_cps == ("Kastrup",)  # liberate Copenhagen

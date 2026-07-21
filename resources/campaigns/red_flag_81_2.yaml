@@ -350,55 +350,7 @@ supply_routes:
       - [-300420, -121160]
       - [-303620, -132937]
 
-# The authored exercise arc (campaign phases P2, same schema as Yankee Station's
-# Rolling Thunder -> Linebacker II arc; design note section 5). The flag escalates
-# week by week; bleeding the TAC assessment (political will) ACCELERATES escalation
-# -- the exercise pushes harder when the force is struggling. The Groom Lake box is
-# present in EVERY phase and never releases.
-phases:
-  - key: week_one
-    name: "Week One: Familiarization"
-    narrative: >-
-      Fly the corridors, learn the threat array. The deep target complexes are off
-      the list and the rear ranges stay cold; work the FEBA and the convoys while
-      the aggressors probe the packages.
-    emphasis: interdiction
-    restricted_zones:
-      - center: Groom Lake
-        radius_nm: 12
-        name: The Box (R-4808N)
-      - center: Tonopah
-        radius_nm: 8
-        name: Off-range restriction (Tonopah rear)
-    locked_targets: [factory, power, oil, fuel, ammo, comms, ware, airfield]
-    advance_when:
-      blue_will_below: 75
-  - key: week_two
+red_tempo:
+  - from_turn: 6
     name: "Week Two: Force on Force"
-    narrative: >-
-      The deep target classes release and the Red Force answers -- the scripted
-      ground push rolls against the FEBA. Take the fight into the range complexes;
-      the airfields are still off the list.
-    emphasis: rollback
-    min_turn: 6
-    red_tempo:
-      ground_offensive: 2
-    restricted_zones:
-      - center: Groom Lake
-        radius_nm: 12
-        name: The Box (R-4808N)
-    locked_targets: [airfield]
-    advance_when:
-      blue_will_below: 60
-  - key: final_exam
-    name: "Surge Week: Final Exam"
-    narrative: >-
-      Maximum effort. Everything releases -- Tonopah Test Range and the forward
-      strips are OCA targets. Break the Red Force's capacity to contest before the
-      assessment breaks you. Only the Box still binds; it never releases.
-    emphasis: offensive
-    min_turn: 11
-    restricted_zones:
-      - center: Groom Lake
-        radius_nm: 12
-        name: The Box (R-4808N)
+    ground_offensive: 2

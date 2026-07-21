@@ -1,5 +1,7 @@
 # Vietnam campaign layer W6 — phase-coupled red tempo
 
+> **UPDATED 2026-07-21** — red tempo (W6) was REHOMED off the per-phase blocks (removed with §40) onto a top-level campaign `red_tempo:` schedule of turn-windows (each `{from_turn, name?, trail_surge?, ground_offensive?, resolve_regen?}`; the window in effect is the last whose `from_turn` is reached — last-window-wins), authored on 6 campaigns. The per-phase-block details below are historical.
+
 **Status: LANDED 2026-07-01** (same session as the approval; the red air-defense
 doctrine split shipped just before it). Built exactly as designed below —
 `game/fourteenth/red_tempo.py` (the three levers), `CampaignPhase.trail_surge/`

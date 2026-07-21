@@ -137,16 +137,6 @@ class PackagePlanningTask(TheaterCommanderTask, Generic[MissionTargetT]):
             FlightType.REFUELING,
         ):
             self.flights = [f for f in self.flights if f.task is not FlightType.ESCORT]
-        # ROE escalation (campaign phases W4): an authored phase may forbid
-        # offensive tasking inside a restricted zone (Route-Package sanctuaries)
-        # or against a still-locked target class (target_release). BLUE-only --
-        # the ROE is Washington's, not Hanoi's -- and never touches the *player*,
-        # whose enforcement is the soft political-will penalty at debrief.
-        if state.context.coalition.player.is_blue:
-            from game.fourteenth.phases import roe_blocks_target
-
-            if roe_blocks_target(state.context.coalition.game, self.target):
-                return False
         fulfiller = PackageFulfiller(
             state.context.coalition,
             state.context.theater,

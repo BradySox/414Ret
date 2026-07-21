@@ -27,10 +27,8 @@ settings:
   # Mod-free by design: the whole air OOB uses stock/free airframes (Heatblur A-6E Intruder
   # is a free AI aircraft, not the A-6A mod), so no ModSettings preseeds are needed.
   # 414th naval-war identity layer (Phase 2): the political-will economy (US Resolve vs
-  # Tehran's regime resolve, ship losses as the decisive currency) + the authored Tanker
-  # War -> Praying Mantis phase arc + the neutral shipping-lane ROE zone.
+  # Tehran's regime resolve, ship losses as the decisive currency).
   vietnam_political_will: true
-  campaign_phases: true
   # Phase 3: the coastal Silkworm batteries shoot-and-scoot (the coastal-missile hunt),
   # alongside the SCUD sites. The shore/island batteries relocate; the platform gun-fort
   # AAA (added to the .miz) does not.
@@ -449,59 +447,6 @@ will:
     red_ship_lost: 6.0        # sinking Iran's navy/boats is the load-bearing pressure
     blue_airframe_loss: 1.5
     red_airframe_loss: 0.5
-    blue_roe_violation: 4.0   # a weapon released against neutral shipping in the lane
     red_ground_unit_lost: 0.4 # the oil-platform gun forts + coastal sites bleed Tehran
     blue_passive_regen: 0.5
     red_passive_regen: 0.5
-
-# --- Authored phase arc (gated by campaign_phases): Tanker War -> Praying Mantis ------------
-# Target-release escalation: early on you may only defend shipping (engage boats/coastal/
-# SAM threats) -- Iran's oil platforms, C2 and power grid are OFF LIMITS until the mining
-# authorizes retaliation. The neutral Strait shipping lane is a no-strike corridor in every
-# phase (releasing weapons there risks a neutral tanker -> a will penalty).
-# The shipping-lane zone is a named free-form polygon ("Strait of Hormuz shipping lane")
-# hand-drawn on the campaign .miz's F10 map and read via from_drawing -- edit the shape in the
-# Mission Editor, not here.
-phases:
-  - key: tanker_war
-    name: Tanker War
-    narrative: >-
-      Iranian boats, mines and coastal Silkworm batteries prey on Gulf shipping. Escort the
-      tankers and hunt the raiders -- but the neutral sea lanes are watched by the world, and
-      the war ashore is not yet yours to wage.
-    emphasis: interdiction
-    min_turn: 0
-    restricted_zones: &shipping_lane
-      - from_drawing: "Strait of Hormuz shipping lane"
-    locked_targets: [oil, power, commandcenter, comms]
-    objectives:
-      - Keep the Strait of Hormuz open to neutral shipping
-      - Hunt the missile boats and coastal Silkworm sites
-    advance_when:
-      blue_will_below: 80
-  - key: samuel_b_roberts
-    name: USS Samuel B. Roberts
-    narrative: >-
-      14 April 1988: the frigate USS Samuel B. Roberts strikes an Iranian mine and barely
-      limps home. Washington authorizes a proportionate response -- the gloves come off
-      against Iran's air defenses and command network.
-    emphasis: rollback
-    min_turn: 3
-    restricted_zones: *shipping_lane
-    locked_targets: [oil]
-    objectives:
-      - Roll back the coastal SAM belt and the IADS command net
-    advance_when:
-      red_resolve_below: 70
-  - key: praying_mantis
-    name: Operation Praying Mantis
-    narrative: >-
-      18 April 1988: retaliation in full. The Sassan and Sirri oil-platform gun forts, the
-      missile boats, the frigates -- all are targets now. Break the Iranian navy and Tehran's
-      nerve breaks with it.
-    emphasis: offensive
-    min_turn: 6
-    restricted_zones: *shipping_lane
-    objectives:
-      - Destroy the oil-platform gun forts
-      - Break the Iranian navy at sea

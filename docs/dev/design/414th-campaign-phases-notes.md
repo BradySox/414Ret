@@ -1,5 +1,7 @@
 # 414th — Campaign Phases (inferred + authored) — design notes
 
+> **SUPERSEDED / REMOVED 2026-07-21** — the campaign-phases feature (§40) was removed from the fork (ROE mechanic drop). This note is kept as a historical record.
+
 **Status:** **P0 + P1 LANDED** (2026-07-01, Vietnam campaign layer W3 / feature §40 —
 `game/fourteenth/phases.py`, the §2.1 object + §3 Tier-0 classifier + §3.3 hysteresis +
 §4 soft emphasis in `PlanNextAction` + §5 persistence + the kneeboard cover band and the

@@ -8,9 +8,8 @@
  *
  * Values match the pre-existing de-facto colours so nothing shifts visually, with
  * two deliberate reconciliations from the UI audit:
- *   - SUSPECTED (a concealed, un-reconned enemy) moves OFF red onto amber, so the
- *     "go find it" uncertainty circle no longer looks like the red "do NOT strike"
- *     ROE circle (OFF_LIMITS).
+ *   - SUSPECTED (a concealed, un-reconned enemy) uses amber, so the "go find it"
+ *     uncertainty circle reads as "unknown — investigate" rather than a threat.
  *   - ROUTE_FRIENDLY is lifted off the near-black navy that vanished on satellite
  *     imagery to a legible blue.
  */
@@ -24,10 +23,8 @@ export const mapColors = {
   detectionFriendly: "#bb89ff", // violet: friendly radar detection range
   detectionEnemy: "#eee17b", // pale yellow: enemy radar detection range
 
-  // --- intel / ROE ---
+  // --- intel ---
   suspected: "#dd9a3a", // amber dashed: un-reconned "suspected activity"
-  offLimits: "#d43a3a", // red dashed: ROE restricted (no-strike) zone
-  weaponsFree: "#3ccd5f", // green dashed: free-fire (weapons-free) pocket
   mine: "#c9a227", // gold dashed: your own air-dropped minefield (friendly hazard)
   // Dark under-stroke drawn beneath a bright dashed ring so it stays legible on
   // light terrain (desert satellite imagery washed the amber ring out entirely);
@@ -64,8 +61,6 @@ export type MapColorKey = keyof typeof mapColors;
  * so every dashed-family category also differs by pattern:
  *
  *   suspected AREA   - medium dash        (something is in here, go look)
- *   ROE zone         - long dash          (an authored border: firm, legal)
- *   weapons-free     - long dash-dot      (same border family, opposite meaning)
  *   minefield        - tick marks         (a hazard field, your own)
  *   pilot POW        - short dash         (held; freed by recapture)
  *   pilot MIA        - solid              (a live man, exact position)
@@ -83,17 +78,10 @@ export interface StrokeSignature {
 }
 
 export const mapStrokes: Record<
-  | "suspectedArea"
-  | "roeRestricted"
-  | "weaponsFree"
-  | "minefield"
-  | "pilotMia"
-  | "pilotPow",
+  "suspectedArea" | "minefield" | "pilotMia" | "pilotPow",
   StrokeSignature
 > = {
   suspectedArea: { dashArray: "6 6", weight: 2.5, casingWeight: 6 },
-  roeRestricted: { dashArray: "16 10", weight: 3, casingWeight: 7 },
-  weaponsFree: { dashArray: "16 8 3 8", weight: 3, casingWeight: 7 },
   minefield: { dashArray: "2 8", weight: 2.5, casingWeight: 6 },
   pilotMia: { weight: 2.5, casingWeight: 6 },
   pilotPow: { dashArray: "3 5", weight: 2.5, casingWeight: 6 },

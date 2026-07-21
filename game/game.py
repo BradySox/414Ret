@@ -57,12 +57,6 @@ if TYPE_CHECKING:
     from .factions.faction import Faction
     from .fourteenth.downed_pilots import DownedPilot
     from .fourteenth.minefields import Minefield
-    from .fourteenth.phases import PhaseBaseline
-    from .fourteenth.red_intent import (
-        FrontPosture,
-        RedIntentBaseline,
-        RedIntentSample,
-    )
     from .fourteenth.political_will import WillLedgerEntry
     from .fourteenth.super_gaggle import SuperGaggleCommitment
     from .fourteenth.victory import VictoryBaseline
@@ -139,14 +133,6 @@ class Game:
         # BLUE squadrons; None when the feature is off or no gaggle is plannable. Losses are
         # charged back to the squadrons at debrief. Replanned each turn in finish_turn.
         self.super_gaggle_commitment: Optional["SuperGaggleCommitment"] = None
-        # Campaign phases (W3, docs/dev/design/414th-campaign-phases-notes.md §5):
-        # only the *pointer* + the turn-0 baseline persist; phase definitions are
-        # code (Tier 0) and re-derived, never pickled. Resolved each turn in
-        # initialize_turn by game.fourteenth.phases.update_campaign_phase.
-        self.current_phase_key: Optional[str] = None
-        self.phase_entered_on_turn: Optional[int] = None
-        self.phase_status_line: Optional[str] = None
-        self.phase_baseline: Optional["PhaseBaseline"] = None
         # Custom victory conditions (§75): only the campaign-start strength
         # baseline + the announcement latch persist; condition definitions live
         # in the campaign YAML (+ the Settings knobs) and are re-derived, never
@@ -161,42 +147,16 @@ class Game:
         # §54 munitions: latched once per-base munition stocks have been seeded, so
         # the seed happens once. Gated by restrict_weapons_by_stock.
         self.munitions_seeded: bool = False
-        # Red Intent (§55, observe-only P0; docs/dev/design/414th-red-intent-notes.md):
-        # RED's per-turn posture (consolidate/attrition/surge) + the turn-0 front
-        # baseline its territorial memory measures against. Only these pointers persist;
-        # posture definitions are code, re-derived. Resolved each turn in initialize_turn
-        # by game.fourteenth.red_intent.update_red_intent.
-        self.red_intent_key: Optional[str] = None
-        self.red_intent_entered_on_turn: Optional[int] = None
-        self.red_intent_status_line: Optional[str] = None
-        self.red_intent_baseline: Optional["RedIntentBaseline"] = None
-        # Red Intent rolling memory (2026-07-10): a bounded per-turn history of
-        # turn-stable levels the classifier differences for trends (IADS being
-        # dismantled, resolve collapsing, bases bleeding), and the latched intensity
-        # (0-1) the graduated aggressiveness/commit seams read. Both re-derived each
-        # turn; only banked here so trends survive a reload.
-        self.red_intent_history: list["RedIntentSample"] = []
-        self.red_intent_intensity: Optional[float] = None
-        # Per-front postures (§55 D): front key -> FrontPosture, so red commits on the
-        # front it is winning and husbands on the one it is losing. Recompute-not-pickle;
-        # cleared when red_intent_per_front is off.
-        self.red_intent_fronts: dict[str, "FrontPosture"] = {}
         # W6 red tempo: the last turn resolve-regen was applied (idempotence
         # guard for the multiple-init-per-turn cases).
         self.red_tempo_regen_turn: Optional[int] = None
-        # Red-tempo legibility: the last authored phase whose "Hanoi's response"
-        # was announced, so the message fires once per phase (transient guard).
-        self.red_tempo_announced_phase: Optional[str] = None
+        # Red-tempo legibility: the last authored window whose "Hanoi's response"
+        # was announced, so the message fires once per window (transient guard).
+        self.red_tempo_announced_window: Optional[str] = None
         # Political-will attribution ledger (W1 legibility): one entry per flown
         # turn saying WHY the will moved (per-feed components), appended by
         # update_political_will and capped there. Empty outside Vietnam campaigns.
         self.will_ledger: list["WillLedgerEntry"] = []
-        # Model-3 escalation tax: the authored phases whose blue_will_on_entry
-        # cost has been charged, so each charges once per phase entry (persisted --
-        # a will charge must survive a reload, unlike the transient announce flag
-        # above). The legacy scalar (last-charged key) is folded in on read.
-        self.will_escalation_charged_phase: Optional[str] = None
-        self.will_escalation_charged_phases: set[str] = set()
         # COIN C1 per-CP regen anchors (garrison cap / cache total / fractional
         # carry), keyed by str(cp.id). Plain primitives so saves stay simple;
         # populated lazily by game.fourteenth.coin when coin_insurgency is on.
@@ -302,25 +262,10 @@ class Game:
         state.setdefault("last_sitrep", None)
         state.setdefault("client_map_layers", None)
         state.setdefault("super_gaggle_commitment", None)
-        # Campaign phases (W3): pre-feature saves compute a phase on their next
-        # initialize_turn; the baseline re-snapshots then (spec §5 migration).
-        state.setdefault("current_phase_key", None)
-        state.setdefault("phase_entered_on_turn", None)
-        state.setdefault("phase_status_line", None)
-        state.setdefault("phase_baseline", None)
-        # Red Intent (§55): pre-feature saves reclassify on the next initialize_turn.
-        state.setdefault("red_intent_key", None)
-        state.setdefault("red_intent_entered_on_turn", None)
-        state.setdefault("red_intent_status_line", None)
-        state.setdefault("red_intent_baseline", None)
-        state.setdefault("red_intent_history", [])
-        state.setdefault("red_intent_intensity", None)
-        state.setdefault("red_intent_fronts", {})
+        # W6 red tempo: pre-feature saves resolve on their next initialize_turn.
         state.setdefault("red_tempo_regen_turn", None)
-        state.setdefault("red_tempo_announced_phase", None)
+        state.setdefault("red_tempo_announced_window", None)
         state.setdefault("will_ledger", [])
-        state.setdefault("will_escalation_charged_phase", None)
-        state.setdefault("will_escalation_charged_phases", set())
         state.setdefault("coin_state", {})
         state.setdefault("convoy_ambush_state", {})
         state.setdefault("downed_pilots", [])
@@ -859,13 +804,6 @@ class Game:
         with logged_duration("Threat zone computation"):
             self.compute_threat_zones(events)
 
-        # Resolve this turn's campaign phase (W3) BEFORE the coalitions plan, so the
-        # commander's soft emphasis reads the fresh phase. Idempotent under the
-        # multiple-init-per-turn cases above; lazily snapshots the turn-0 baseline.
-        from game.fourteenth.phases import update_campaign_phase
-
-        update_campaign_phase(self)
-
         # Custom victory conditions (§75): latch the campaign-start strength
         # baseline the ratio conditions measure against. Unconditional and
         # cheap, so a knob flipped on at turn 20 still measures against the
@@ -873,14 +811,6 @@ class Game:
         from game.fourteenth.victory import ensure_victory_baseline
 
         ensure_victory_baseline(self)
-
-        # Red Intent (§55): resolve RED's posture for the turn (observe-only in P0 --
-        # latches + surfaces it; no planner seam reads it yet). After the phase so a
-        # later phase can inform it, before the coalitions plan. Idempotent; a no-op
-        # when the red_intent setting is off.
-        from game.fourteenth.red_intent import update_red_intent
-
-        update_red_intent(self)
 
         # §70 COMINT (C0): at Tier 2 (a collector survived last mission + the
         # enemy net is emitting) snap ONE concealed enemy site to exact via the
@@ -940,7 +870,7 @@ class Game:
         # W6 red tempo: during an authored ground-offensive pulse raise Hanoi's
         # front stances (after the coalitions plan, so it has the final say;
         # before GroundPlanner reads cp.stances) + apply any resolve regen.
-        # Fully-guarded no-op without an active authored phase.
+        # Fully-guarded no-op without an active authored window.
         from game.fourteenth.red_tempo import apply_red_tempo
 
         apply_red_tempo(self)

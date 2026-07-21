@@ -292,11 +292,6 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                     "c2_decapitation_effects",
                     "weather_aware_planning",
                     "sead_strike_coordination",
-                    "red_intent",
-                    "red_intent_per_front",
-                    "red_intent_boldness",
-                    "red_intent_dwell_turns",
-                    "red_intent_trend_window",
                 ],
             ),
             (
@@ -367,7 +362,6 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                 # page (they used to be three one-field orphan sections).
                 "Campaign features",
                 [
-                    "campaign_phases",
                     "continuous_campaign_clock",
                     "comint_collection",
                     "long_range_carrier_ops",
@@ -578,6 +572,9 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                 [
                     "cruise_missile_strikes",
                     "cruise_missile_auto_raids",
+                    "cargo_ship_convoys",
+                    "cargo_ship_convoy_max",
+                    "coastal_batteries_engage_ships",
                 ],
             ),
             (
@@ -1227,85 +1224,6 @@ class Settings:
             "several packages massing behind one suppressor. Player packages "
             "are never rescheduled, but a player-flown SEAD still opens a "
             "window the AI pushes behind."
-        ),
-    )
-    red_intent: bool = boolean_option(
-        "Red plays with intent (adaptive posture)",
-        page=CAMPAIGN_DOCTRINE_PAGE,
-        section=GENERAL_SECTION,
-        default=False,
-        detail=(
-            "The enemy commander reads the war each turn -- ground balance, air "
-            "strength, resolve, supply, and how the last turn went -- and adopts a "
-            "posture (consolidate / attrition / surge) that carries across turns, "
-            "instead of planning the same way every turn. The posture then shapes how "
-            "red plans: which offensive missions it prioritises, how predictably it "
-            "picks targets, how many bases it strips for offense, and how readily it "
-            "commits ground reserves. Shown on the SITREP and the campaign status bar. "
-            "Red-only; a campaign with no enemy auto-planner is unaffected."
-        ),
-    )
-    red_intent_per_front: bool = boolean_option(
-        "Red intent adapts per front",
-        enabled_when="red_intent",
-        page=CAMPAIGN_DOCTRINE_PAGE,
-        section=GENERAL_SECTION,
-        default=True,
-        detail=(
-            "With Red Intent on, resolve a separate posture for EACH active front from "
-            "that front's own ground balance (the shared air/resolve/supply/trend read "
-            "still applies), so on a multi-front war red commits its reserves on the "
-            "front it is winning and husbands them on the front it is losing, instead "
-            "of one theater-wide stance. Off falls back to a single theater-wide "
-            "posture. No effect on single-front campaigns or when Red Intent is off."
-        ),
-    )
-    red_intent_boldness: int = bounded_int_option(
-        "Red intent boldness",
-        enabled_when="red_intent",
-        page=CAMPAIGN_DOCTRINE_PAGE,
-        section=GENERAL_SECTION,
-        default=50,
-        min=0,
-        max=100,
-        detail=(
-            "Red's temperament dial (50 = the neutral default). Higher makes red bolder "
-            "-- it surges at a smaller ground edge, seizes opportunity windows more "
-            "readily, digs in only when badly outnumbered, and presses harder once "
-            "committed (bigger aggressiveness/reserve-commitment swing). Lower makes it "
-            "cautious -- it needs a clear advantage to surge and turtles sooner. Only "
-            "affects red when Red Intent is on."
-        ),
-    )
-    red_intent_dwell_turns: int = bounded_int_option(
-        "Red intent posture stickiness (turns)",
-        enabled_when="red_intent",
-        page=CAMPAIGN_DOCTRINE_PAGE,
-        section=GENERAL_SECTION,
-        default=2,
-        min=1,
-        max=6,
-        detail=(
-            "How many turns red must hold a posture before it may ESCALATE to a more "
-            "aggressive one (attrition -> surge). De-escalation to consolidate is always "
-            "immediate -- a command reacts to a setback at once. Higher = a steadier, "
-            "less twitchy enemy; lower = quicker to seize a fleeting advantage. Only "
-            "affects red when Red Intent is on."
-        ),
-    )
-    red_intent_trend_window: int = bounded_int_option(
-        "Red intent trend memory (turns)",
-        enabled_when="red_intent",
-        page=CAMPAIGN_DOCTRINE_PAGE,
-        section=GENERAL_SECTION,
-        default=2,
-        min=1,
-        max=5,
-        detail=(
-            "How many turns back red compares against when reading trends (its IADS "
-            "being dismantled, resolve collapsing, bases bleeding, the enemy air force "
-            "spent). A longer window makes red react to slower, sustained pressure; a "
-            "shorter one to abrupt swings. Only affects red when Red Intent is on."
         ),
     )
     heli_combat_alt_agl: int = bounded_int_option(
@@ -1970,21 +1888,6 @@ class Settings:
 
     # Campaign phases (W3, docs/dev/design/414th-campaign-phases-notes.md). Tier-0
     # inference is the DECIDED default for every campaign; this is the kill switch.
-    campaign_phases: bool = boolean_option(
-        "Campaign phases",
-        CAMPAIGN_MANAGEMENT_PAGE,
-        "Campaign phases",
-        detail=(
-            "The campaign tracks what phase of the air war it is in -- Air "
-            "Superiority (roll back the SAM belt, blunt enemy fighters), "
-            "Interdiction (choke reinforcement and logistics), then the Offensive "
-            "(take ground) -- inferred each turn from the live IADS, air threat, and "
-            "front movement. The phase shows on the kneeboard and status band, and "
-            "the auto-planner leans its offensive tasking to match. Reactive defense "
-            "is never affected. Turn off for the phase-blind stock planner."
-        ),
-        default=True,
-    )
     continuous_campaign_clock: bool = boolean_option(
         "Continuous time & weather",
         CAMPAIGN_MANAGEMENT_PAGE,
@@ -3055,6 +2958,49 @@ class Settings:
             "then war-industry buildings, then anything strikeable. Your own "
             "raids respect the campaign ROE zones. Watch for the LAUNCH WARNING: "
             "an enemy raid is your point-defense SAMs' problem -- or yours."
+        ),
+    )
+    cargo_ship_convoys: bool = boolean_option(
+        "Sea supply convoys (multiple cargo ships per shipment)",
+        page=MISSION_GENERATION_PAGE,
+        section=GENERAL_SECTION,
+        default=True,
+        detail=(
+            "A ground-unit shipment that travels by sea -- a shipping lane between two "
+            "friendly ports with no road link -- sails as a small CONVOY of cargo "
+            "ships instead of one lone hull (about one ship per two units, up to the "
+            "cap below). Each ship carries its own share of the cargo, so losses are "
+            "proportional: sink two of five ships and roughly two-fifths of the "
+            "reinforcement never arrives, the rest still lands. Turn it off for the "
+            "old single-ship behaviour."
+        ),
+    )
+    cargo_ship_convoy_max: int = bounded_int_option(
+        "Maximum cargo ships per sea convoy",
+        enabled_when="cargo_ship_convoys",
+        page=MISSION_GENERATION_PAGE,
+        section=GENERAL_SECTION,
+        default=5,
+        min=1,
+        max=12,
+        detail=(
+            "The most cargo ships a single sea shipment spreads across. A small "
+            "shipment uses fewer; a large one is capped here so a convoy never grows "
+            "unbounded."
+        ),
+    )
+    coastal_batteries_engage_ships: bool = boolean_option(
+        "Coastal batteries engage enemy ships",
+        page=MISSION_GENERATION_PAGE,
+        section=GENERAL_SECTION,
+        default=True,
+        detail=(
+            "Coastal anti-ship missile batteries (Silkworm and the like) are set "
+            "weapons-free with an active alarm state so they fire on any enemy ship "
+            "that enters range -- including sea-supply convoys running the coast. "
+            "Without this they sit passive on DCS AUTO and ignore passing hulls. "
+            "Symmetric: both sides' coastal batteries defend their waters. Turn it off "
+            "to leave coastal batteries on their default passive state."
         ),
     )
     enemy_comms_jamming: bool = boolean_option(

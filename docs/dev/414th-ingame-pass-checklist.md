@@ -247,24 +247,7 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
 - **Pass:** with red's HQs intact, red's offensive target selection is its usual (near-)deterministic set; after the command centers are destroyed, red's opportunistic offensive targets visibly loosen (it services lower-priority strikes/OCA/BAI it wouldn't have before), while its **reactive defense is unchanged** (BARCAP/DEAD-response still deterministic); the next kneeboard SITREP shows "Enemy C2 degraded (claimed): N/M command posts operational". Turning the setting off restores the stock deterministic planner exactly.
 - **Fail signature:** red plans identically before and after the HQ kill (the bonus isn't reaching the shuffler — check `_unpredictability_for` and that the campaign actually has `commandcenter` TGOs); red's *defensive* tasking changes too (the §17 boundary broke — only opportunistic tiers pass through `shuffled_by_priority`); the SITREP line never appears or shows wrong counts (`c2_status_line` / `red_c2_status` wiring); any change at all with the setting off (the gate broke).
 
-### B7 — Red Intent: adaptive enemy posture · §55 · ☐ UNTESTED (built 2026-07-08; **made smarter 2026-07-10** — rolling trend memory + battle-reading + graduated intensity; the posture classifier, asymmetric hysteresis, all four seam helpers, the byte-identical no-ops when off/blue/stock, the offensive-order reorder, the stacked unpredictability + §52 C2 clamp, the aggressiveness bias, the stance-factor + `red_tempo` yield, **plus the new trend classifier, the blue-air-collapse opportunity window, the `_trend_lookback` selector, idempotent history recording, the intensity endpoints, and the intensity-graduated aggressiveness/commit seams** are unit-tested in `tests/fourteenth/test_red_intent.py` + `tests/test_planner_unpredictability.py`; whether red's *played* behaviour visibly changes with posture + trend across a multi-turn campaign needs a fly)
-- **What CI cannot exercise:** whether a RED side actually plays *differently* as its posture shifts — surging (pressing captures/CAS, committing ground reserves at a lower advantage, focused targeting) when it holds the advantage vs consolidating (defending, husbanding, slightly erratic targeting) when it's been hit — and, new for the 2026-07-10 pass, whether red reads the **trend across turns**: digging in (CONSOLIDATE) while still ground-dominant once you've **bombed its SAM belt over a couple of turns** ("IADS falling"), its resolve collapses, or it's bleeding bases; and **surging at a lower ground bar** when your air-superiority force is spent ("enemy air spent"). Whether the graduated intensity is visible (a runaway-ahead red strips more bases / commits sooner than a marginally-ahead one; a collapsing red husbands harder). **Per-front (D):** on a **multi-front** map, whether red commits reserves on the front it is winning while it husbands on the front it is losing (the ribbon expander's per-front breakdown should show them diverge). **Tuning:** whether the `red_intent_boldness` dial visibly changes red's temperament (bolder = surges at a smaller edge and presses harder; timid = needs a clear advantage), and whether `red_intent_dwell_turns` / `red_intent_trend_window` change how sticky / how trend-reactive it is.
-- **Setup:** **Germany — Red Tide** now **preseeds `red_intent` ON** (2026-07-08) — and `war_economy` too, so the supply→posture loop is live — so a NEW Red Tide game exercises this directly. Play several turns; deliberately swing the balance (win/lose ground, bomb/spare red's forces, **bomb red's SAM belt over consecutive turns**, and **bomb red's supply**) while watching the **"ENEMY &lt;posture&gt;" chip on the map ribbon** (which now reads e.g. "Surging (all-in)" / "Consolidating — IADS falling") + the "Enemy posture" SITREP line + red's ATO.
-- **Pass:** the SITREP names a posture that tracks the war (surge when red is ahead, consolidate after red loses a base / is pushed back) and it doesn't flip every turn (hysteresis holds); **the trend memory reads** — sustained IADS/resolve/base attrition digs a still-ground-dominant red in (the detail names the driver), and a collapse of your fighters lets red surge at rough parity; **intensity shows** — the further ahead red is the harder it presses (higher aggressiveness / sooner aggressive stances), the deeper the trouble the harder it husbands; when SURGE, red visibly prioritises taking ground; when CONSOLIDATE, red defends/husbands and its target picks are a little less repetitive; **reactive defense is unchanged** throughout (§17 boundary); an active authored `red_tempo` pulse (Vietnam arcs) still owns the stances (P3 yields). Turning the setting off restores stock red exactly.
-- **Fail signature:** red plays identically regardless of posture (a seam isn't reaching the planner — check `_offensive_order`'s red branch, `effective_aggressiveness`, `stance_commit_factor`); the posture flips every turn (hysteresis broke); the trend never bites (a ground-dominant red never digs in even as its whole SAM belt is bombed — the `red_intent_history`/`_trend_lookback` memory isn't wired, or the samples aren't banking); intensity looks flat (a 4:1 surge acts the same as a 1.5:1 one — `red_intent_intensity` isn't latching or the seams aren't reading it); consolidate forces red into RETREAT rather than DEFENSIVE (the attack-stance-only gate broke); any change with the setting off (the gate broke); the stance bias fights an authored `red_tempo` pulse (the yield broke).
-- **Interim evidence (2026-07-15, headless Red Tide self-play probe, session `gallant-panini-5485e7` — 15
-  AI-vs-AI turns through the real GameGenerator build with the campaign preseeds; NOT the played pass, the
-  row stays open):** the classifier + trend memory + opportunity window all **moved on real campaign
-  state** — turn 0 read "Attrition — ground 1.0x · air holding · front static", turn 1 picked up the real
-  ground imbalance ("Attrition — ground 3.0x · gaining ground"), and from turn 2 red latched **"Surging
-  (all-in)"** with the **"enemy air spent"** driver named in the detail — the blue-air-collapse opportunity
-  window firing after the abstract air war gutted blue's fighters on turn 1. The posture then held stable
-  for 13 straight turns (hysteresis: zero flapping). NOT exercised by the probe: CONSOLIDATE (nothing can
-  bomb red's IADS/supply headless — ground kills are DCS-only, so supply pegged 100 %), the four planner
-  seams' *played* effect, per-front divergence, and the tuning dials. **Caveat for readers:** the §26
-  abstract air war INVERTED the flown M1 result (DCS M1 was a 34:0 blue sweep; the abstract model bled
-  blue 36 jets on turn 1) — read the probe as "the classifier reacts correctly to the war it was shown",
-  never as Red Tide air-balance evidence, and never adjudicate balance off fast-forwarded turns.
+### B7 — Red Intent: adaptive enemy posture · §55 · ✖ REMOVED (2026-07-21) — the adaptive-posture feature was dropped (symmetric with the §40 removal); no pass owed.
 
 ### B8 — Strikeable motorpool depots: strike the reserve, force a repurchase · §56 · ☐ UNTESTED (adopted from upstream PR dcs-retribution#859, 2026-07-08; the reserve split (`reserve_armor_for` == `plan_groundwar`), the populator cap/round-robin/idempotence, the generator's parked/weapon-hold/no-datalink render + offset depot, the 1:1 `base.armor` decrement, and the motorpool-vs-front-line loss separation are unit-tested across `tests/**/test_motorpool_*.py` + `tests/ground_forces/test_reserve_armor.py`; **Red Tide now authors a depot near Haina** — headless-verified to bind to Haina/RED + materialise one `MotorpoolGroundObject` (`tests/fourteenth/test_red_tide_motorpool.py`), so the map/in-mission render is finally flyable)
 - **What CI cannot exercise:** whether the authored depot actually renders (the maintenance-facility icon on the map; the in-mission `Garage_A` building + the grid of parked reserve vehicles), whether killing a parked vehicle decrements the owner's `base.armor` and forces a repurchase next turn *without* shifting the front line, whether the spawn cap holds, and whether the debrief shows the motorpool losses.
@@ -421,8 +404,8 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
 - **Pass:** on a rain/storm turn no Strike/DEAD/Armed Recon package carries the optional TARPS/recon add-on flight (player-planned recon still plannable by hand); on a thunderstorm turn the offensive plan leads with strikes/OCA/IADS and the front-line CAS/BAI packages sit later in the plan (they still exist if jets remain); on a clear turn the ATO is indistinguishable from the setting OFF.
 - **Fail signature:** recon birds fragged into a thunderstorm (the gate didn't reach `_maybe_plan_tarps_recon` — check `recon_suppressed` reads the right game); CAS vanishes entirely in a storm (demotion should reorder, never remove — check `demote_weather_hostile_methods` keeps the set); a clear-sky ATO differs with the setting toggled (the no-op contract broke); a crash on an old save without conditions (the getattr guards).
 
-### B20 — Adaptive procurement: posture-coupled spending + SAM repair · §68 · ☐ UNTESTED (built 2026-07-17; the shift table, intensity scaling, clamps, the repair's gate/cap/priority/budget/exclusions/wreck-cleanup, and the weighted-choice gate are unit-tested in `tests/fourteenth/test_adaptive_procurement.py` — the felt economy needs a multi-turn campaign)
-- **What CI cannot exercise:** red visibly rebuilding a struck SAM site over following turns (`auto_repair_air_defenses` ON): launchers/radar coming back alive at the same site a couple of units per turn, the site's threat ring re-growing, no duplicate wreck models under the repaired units; and (with `red_intent` ON) a surging red's ground purchases visibly outpacing its aircraft buys vs a consolidating red's.
+### B20 — Adaptive procurement: SAM repair + price-weighted choice · §68 · ☐ UNTESTED (built 2026-07-17; the posture/phase budget-split coupling was REMOVED 2026-07-21; the repair's gate/cap/priority/budget/exclusions/wreck-cleanup and the weighted-choice gate are unit-tested in `tests/fourteenth/test_adaptive_procurement.py` — the felt economy needs a multi-turn campaign)
+- **What CI cannot exercise:** red visibly rebuilding a struck SAM site over following turns (`auto_repair_air_defenses` ON): launchers/radar coming back alive at the same site a couple of units per turn, the site's threat ring re-growing, no duplicate wreck models under the repaired units.
 - **Setup:** a campaign with a red SAM belt (Red Tide post-lock, or any modern laydown). Turn ON `auto_repair_air_defenses` (Campaign Management → Commander economy; `adaptive_procurement` is already default ON). DEAD a red SA-10/SA-2's radar + a launcher, end turn a few times, watch the site on the map/intel and red's Finances-visible behavior.
 - **Pass:** the struck site regains ~2 units per turn (radar first) while red's budget shows the spend; a fully-dead site only rebuilds after the partially-alive ones; command centers/comms nodes never come back; with the toggle OFF the site stays dead forever (pre-feature behavior).
 - **Fail signature:** the whole site back in one turn (the cap broke); a repaired unit standing next to its own wreck model (`_clear_wreck_near` didn't fire); C2/comms nodes regenerating (category filter broke — §51/§52 must stay permanent); threat rings not re-growing after repair (`invalidate_threat_poly` not reached); blue money spent on repairs when the player manages repairs manually (the `manage_runways` coupling broke).
@@ -433,10 +416,10 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
 - **Pass:** the ATO shows the strike/BAI/OCA packages targeting SAM-covered objectives with TOTs ~2–10 min after their covering SEAD/DEAD package's TOT (several strikes may share one window — the push); packages against undefended targets keep the random spread; a player package's TOT is never moved by this (and a player-flown SEAD still has AI strikes timed behind it).
 - **Fail signature:** a strike still arriving before its SEAD with both AI (the ring match missed — check the SAM TGO's `max_threat_range` and that the SEAD's target is the TGO); strike TOTs pushed absurdly late (the window should clamp to `earliest_tot` — check `coordinated_strike_tot`); player packages rescheduled (the movability gate broke); mass mid-airs at the shared TOT (packages route separately, but if seen, widen `SEAD_WINDOW_LEAD` spacing per client or stagger within the window).
 
-### B22 — COMINT collection: the campaign take (tiering + leak + reveal) · §70 · ☐ UNTESTED (built 2026-07-18; the tier gating incl. dead-net-beats-collector, the OFF exact no-op, the survivor requirement, drone eligibility, leak determinism, the reveal's range/known/`map_hidden` rules + re-init idempotence, and the posture-detail earn are unit-tested in `tests/fourteenth/test_comint.py` — the kneeboard render + the map snap are app-level)
+### B22 — COMINT collection: the campaign take (tiering + leak + reveal) · §70 · ☐ UNTESTED (built 2026-07-18; the tier gating incl. dead-net-beats-collector, the OFF exact no-op, the survivor requirement, drone eligibility, leak determinism, the reveal's range/known/`map_hidden` rules + re-init idempotence are unit-tested in `tests/fourteenth/test_comint.py` — the kneeboard render + the map snap are app-level)
 - **What CI cannot exercise:** the rendered COMINT block on a real Mission Info kneeboard page, and the map experience of a Tier-2 reveal (an amber suspected-activity circle replaced by the exact enemy symbol at turn start). An in-APP pass (no DCS flight needed beyond generating/ending turns).
 - **Setup:** a COIN campaign (Enduring/Inherent Resolve — insurgent spawns are both sources and reveal candidates) with `comint_collection` ON (Campaign Management → Campaign features). Plan a drone or C-130J JAMMING sortie, end the turn with it surviving, open the next turn's kneeboard + map. Then kill every red comms/CC node (or on COIN, clear the concealed spawns) and end another turn.
-- **Pass:** turn A (net up, no collector): the kneeboard COMINT block reads "Enemy net active … ambient take only" and the SITREP still shows the enemy-posture detail (when `red_intent` is on). Turn B (collector survived): the block adds "Collection sortie banked a full take", an "Intercepted tasking traffic: …" line naming a real red package/objective with a ±30 min window, and — when an eligible concealed site sat within 60 km of a source — a "Transmissions localized: …" line with that circle now an exact symbol on the map (one site only). With `red_comms_net` also on, the block additionally lists the **active nets** (fixed C2 stations by name + frequency + area; each concealed spawn as "suspected clandestine net @ <freq> — <area> area" — NEVER the cell's identity or type; ≤5 lines + a "+N more" tail). Net dead: the block reads "Enemy C2 net silent — no COMINT take." and the posture detail line disappears from the SITREP.
+- **Pass:** turn A (net up, no collector): the kneeboard COMINT block reads "Enemy net active … ambient take only". Turn B (collector survived): the block adds "Collection sortie banked a full take", an "Intercepted tasking traffic: …" line naming a real red package/objective with a ±30 min window, and — when an eligible concealed site sat within 60 km of a source — a "Transmissions localized: …" line with that circle now an exact symbol on the map (one site only). With `red_comms_net` also on, the block additionally lists the **active nets** (fixed C2 stations by name + frequency + area; each concealed spawn as "suspected clandestine net @ <freq> — <area> area" — NEVER the cell's identity or type; ≤5 lines + a "+N more" tail). Net dead: the block reads "Enemy C2 net silent — no COMINT take."
 - **Fail signature:** a COMINT block while the net is dead (source walk broke); two circles snapping in one turn or a snap repeating after a cheat-capture/TGO-purchase re-init (the `comint_reveal_turn` stamp broke); a §50 convoy-ambush team appearing on the map (the `map_hidden` exclusion broke — nothing may telegraph those); the leak naming a different package after a mission re-generation (determinism broke); any COMINT output with the setting OFF.
 
 ### B23 — Red comms net: audible + DF-able enemy C2 · §70 · ☐ UNTESTED (built 2026-07-18; the emitter's frequency plan — x.500 off-grid, GUARD skip, registry reservation, cross-mission determinism, collision probing — and the runtime invariants — grace, per-node stagger, loop+stop windows, `node_dead`, clean no-op — are pinned in `tests/missiongenerator/test_rednetluadata.py` + `tests/lua/test_rednet_runtime.py`; audibility, per-module DF needle behavior against a scripted transmission, and power reach are DCS-only)
@@ -482,6 +465,20 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
 - **Setup (app pass, no DCS needed):** any small campaign. Set Campaign Management → Victory conditions → "Domination victory" to a value just above your current base share (the expander shows the live percentage). Play or skip turns until a capture crosses the threshold. Separately: load any campaign with the knobs at 0 and confirm no VICTORY chip renders anywhere.
 - **Pass:** with a knob set, the green VICTORY chip appears on the ribbon; clicking it unfolds "Victory conditions — Any one of these ends the war:" with live values that update as bases change hands; crossing the threshold at a turn boundary pops the standard Victory! dialog AND the events feed carries "Victory condition met: Hold N% of the bases"; the next turn's SITREP (web LAST TURN + kneeboard band) would have carried the "Victory: …" line; with both knobs 0 and no authored block, no chip, no block, no SITREP line — byte-identical behavior. **Will-campaign half (the absorbed negotiation ending):** on 1968 Yankee Station (or either COIN campaign) the chip appears with NOTHING configured and the checklist leads with the profile's own endings — "Break Hanoi's resolve (now N of 100)" + "Defeat if: Washington's patience runs out (now N of 100)" — with the numbers matching the WILL/RESOLVE ribbon meters; a will collapse still ends the war exactly as before (the era exhaustion banner fires once, no duplicate "Victory condition met" message for the negotiation path).
 - **Fail signature:** a win/loss firing at turn 0 or on load with a threshold below the starting share (working as designed — but if it fires with the knob at 0, the gate broke); the chip present with nothing configured (the overview leaked); a "Victory condition met" banner repeating every check (the `victory_announced` latch broke); the territory win firing while neutral bases are counted in the denominator (the `_territory` filter broke); an authored-campaign block win firing for a condition whose live prose shows unmet (AND semantics regressed to PhaseCondition's OR).
+
+### B30 — CTLD paratroopers (fixed-wing air assault: player + AI C-130 paradrop) · §76 · ☐ UNTESTED (built 2026-07-19 off the "add paratroopers via CTLD" ask; the planner gate + both layout shapes are unit-tested in `tests/ato/flightplans/test_airassault.py`, and the whole Lua runtime — player jump via the stock Unload menu, descent-delayed ground spawn at the velocity-projected point, the 3,000 ft player ceiling, ground/helo fall-through to stock CTLD, the AI one-shot zone release, and the late-activation preload retry — is harness-pinned in `tests/lua/test_ctld_paradrop.py` (9 cases). What no test can model is the DCS AI actually flying the run-in and the dropped infantry behaving)
+
+### B31 — Growler escort jamming (EA-18G ESCORT_JAMMER + growler plugin) · §77 · ☐ UNTESTED (built 2026-07-21; the planner role, emitter shape, and the whole Lua policy — grace, ROE WEAPON_HOLD pulse + OPEN_FIRE restore, radar-SAM-only eligibility, missile-spoof bubble, friendly-fire guard, player-off + F10 menu — are pinned in tests/fourteenth/test_escort_jammer.py + tests/missiongenerator/test_growlerluadata.py + tests/lua/test_growler_runtime.py. PASS: an AI Growler rides a strike package into a radar-SAM ring, the SAM visibly checks fire in pulses while the package is inside the bubble window, and a spoofed missile disappears mid-flight without an explosion at the launcher; a player Growler sees the F10 "Growler jamming" menu and jamming stays dark until toggled ON. FAIL signatures: SAM never fires at all (hold stuck — restore path broken), the Growler orbits away from the package (escort plan regression), a friendly missile vanishing (guard broken), or MANTIS alarm-state weirdness near the pulsed site)
+- **What CI cannot exercise:** whether the AI C-130J actually descends to and overflies the 1,000 ft AGL assault waypoint (vs. cutting the corner at the IP or refusing the descent over terrain); whether the preloaded stick survives the §64 delayed/uncontrolled spawn paths in a real miz; the paradropped infantry marching to the zone centre and contributing to base capture; and the feel of the descent delay (46 s from 1,000 ft).
+- **Setup:** any campaign with a blue C-130J-30 squadron (`secondary: any` covers most). Plan an **Air Assault** package on a nearby enemy FOB/airfield with an AI C-130J flight (helo squadrons out of range or set the flight manually); fly anything nearby to watch. Separately, fly the C-130J-30 yourself on the same tasking: spawn (troops preload ~t+5 s — "Check Cargo" should list ~24), fly to the zone, and use **CTLD → Troop Transport → Unload / Extract Troops** while airborne below 3,000 ft AGL.
+- **Pass:** the AI transport descends toward the target, the coalition gets "paradropped troops from C-130J-30" as it crosses the zone, and the troop group appears on the ground ≤90 s later, marching toward the CP; the player unload while airborne jumps the stick the same way (cargo cleared immediately, troops spawn behind you after the descent), while the same menu on the ground still does a normal CTLD unload; above 3,000 ft AGL the jump is refused with the "Too high to paradrop" message and the troops stay aboard; a helo air assault flown alongside behaves exactly as before (lands at the drop-off zone, no paradrop messages).
+- **Fail signature:** the AI C-130 orbits/overflies with no drop message (release loop never saw it in the zone — check `dcs.log` for `CTLD paradrop - AI check failed`, or the preload never fired and "Check Cargo" is empty — the retry gave up or the unit name drifted); a drop message with no troops ever appearing (the landing pcall errored — `CTLD paradrop - landing failed` in the log); troops spawning INSTANTLY under a fast-moving aircraft miles from the zone (descent delay/projection broken); the player's grounded unload paradropping (the `inAir` gate inverted); paratroopers standing still after landing (wpZone ordering broke — they should march to the zone centre or nearest enemy); the C-130J gaining the EW/ISR F10 menu on a transport/assault tasking (the EW deny-list regressed).
+
+### B32 — Sea-supply convoys + coastal anti-ship engagement · §78 · ☐ UNTESTED (built off the "increase the cargo ships / use the anti-ship batteries" ask; the convoy partition sizing/cap/conservation, the OFF single-hull path, the proportional and overlapping-type commit, and the coastal-ROE gate (on/off/non-coastal) are unit-tested in `tests/fourteenth/test_cargo_ship_convoy.py` (11 cases). What no test can model is DCS naval AI: whether a coastal Silkworm on weapons-free actually acquires and hits a moving 12-kt cargo ship, and the convoy's behaviour running the coast).
+- **What CI cannot exercise:** whether a `hy_launcher` (Silkworm) coastal battery set weapons-free + red alarm autonomously fires on a passing enemy cargo-ship group and scores hits at sea-lane range (DCS coastal-missile-vs-moving-ship AI is the unknown); whether the multi-hull ship group sails the lane in formation without beaching or bunching; and whether proportional losses read correctly in the debrief when only some hulls are sunk.
+- **Setup:** a campaign with a live sea lane whose route passes near an enemy coastal battery. Tanker War 1988 is the target once its strait lanes are authored; otherwise any campaign with a `shipping_lanes` lane routed within Silkworm range of an opposing `hy_launcher` site. Order a ground-unit transfer across the lane (or let the AI), then fly (or fast-forward) the turn and watch the convoy transit the coast.
+- **Pass:** the shipment spawns as **several** cargo ships (not one) sailing the lane in formation; a coastal battery on the enemy shore engages them as they pass within range; and if some ships are sunk, the debrief records **only those hulls'** share of the reinforcement lost (the rest arrive at the destination CP), not the whole transfer.
+- **Fail signature:** still a single cargo ship despite `cargo_ship_convoys` on (the manifest path didn't take — check the shipment actually travels by sea, not road); the coastal battery sits idle as the convoy passes in range (weapons-free/alarm not applied, or the lane is out of the battery's reach — geometry, not code); sinking one ship of a convoy wipes the whole reinforcement (proportional commit regressed) or sinking every ship still delivers units (kill mapping missed a hull); ships spawning on land / stuck at the lane origin (waypoint[0] not in water — an authoring issue, not §77).
 
 ---
 
@@ -670,7 +667,7 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
 - **Pass:** on a carrier mission with several AI packages recovering to the same boat, arrivals reach the overhead one package at a time (Tacview: no two packages' flights co-altitude within ~1 NM in the pattern); the generated ATO shows same-boat landing times ≥5 min apart for AI packages; a player package's TOT is unchanged from what the plan would otherwise assign.
 - **Fail signature:** two AI packages still converging co-altitude in the overhead within a minute of each other (the DCS pattern ignores the spacing — consider widening `CARRIER_RECOVERY_INTERVAL`), or strike TOTs visibly piling up late in the mission window (over-aggressive delays on a crowded deck).
 
-### C10 — Player CAS steerpoints mark the ground · §8 · ☐ UNTESTED (built 2026-07-16 from a user-reported flown Hornet CAS deck — "sometimes target waypoints generate in the air and are unable to be found", FLOT start/end both reading 22000. The CAS FLOT boundaries are planned at `get_combat_altitude` and stamped RADIO, i.e. ~22,000 ft **AGL** — correct for the AI, whose waypoint *is* the track, but a human's steerpoint diamond floats 22,000 ft over the terrain with nothing under it. Every other target waypoint already ships at `meters(0)`; `cas()`'s `meters(1000)` is a FLOOR so it never pulled it down, and `FlightWaypointType.CAS` has no generator dispatch entry so no generation pass touched it. The fix lifts the pre-existing client-zeroing in `PydcsWaypointBuilder.build()` out of its `if self.waypoint.flyover:` nesting onto a shared `FlightWaypoint.marks_ground_for_player`, and the kneeboard derives from the same predicate (it reads the planning model, so a generation-only fix would print 22000 against a grounded steerpoint). The predicate, the kneeboard Alt column, and the flyover non-regression are unit-tested in `tests/ato/test_flightwaypoint_ground_marked.py` + `tests/missiongenerator/test_kneeboard_cas_altitude.py` — whether the cockpit steerpoint actually lands on the deck and a pod will slave to it is DCS-only)
+### C10 — Player CAS steerpoints mark the ground · §8 · ☐ UNTESTED (built 2026-07-16 from a user-reported flown Hornet CAS deck — "sometimes target waypoints generate in the air and are unable to be found", FLOT start/end both reading 22000. The CAS FLOT boundaries are planned at `get_combat_altitude` and stamped RADIO, i.e. ~22,000 ft **AGL** — correct for the AI, whose waypoint *is* the track, but a human's steerpoint diamond floats 22,000 ft over the terrain with nothing under it. Every other target waypoint already ships at `meters(0)`; `cas()`'s `meters(1000)` is a FLOOR so it never pulled it down, and `FlightWaypointType.CAS` has no generator dispatch entry so no generation pass touched it. The fix lifts the pre-existing client-zeroing in `PydcsWaypointBuilder.build()` out of its `if self.waypoint.flyover:` nesting onto a shared `FlightWaypoint.marks_ground_for_player`, and the kneeboard derives from the same predicate (it reads the planning model, so a generation-only fix would print 22000 against a grounded steerpoint). The predicate, the kneeboard Alt column, and the flyover non-regression are unit-tested in `tests/ato/test_flightwaypoint_ground_marked.py` + `tests/missiongenerator/test_kneeboard_cas_altitude.py` — whether the cockpit steerpoint actually lands on the deck and a pod will slave to it is DCS-only. **Widened 2026-07-19** off the flown DS91 escort deck ("Target area 22000" beside Land 0; follow-up call: "all Target and landing waypoints, not just escorts"): every target type (`TARGET_GROUP_LOC`/`TARGET_POINT`/`TARGET_SHIP`) and landing type (`LANDING_POINT`/`CARGO_STOP`) now marks ground — keyed on waypoint semantics, never row position or flight type; the escort TARGET was the one still planned at track altitude, the rest are pinned structurally — and the §74 DTC cartridge emits the same zeroed altitude instead of the planning altitude, so the AutoLoad no longer floats a grounded steerpoint back up. Pass criterion additions: a client **escort** flight's target steerpoint sits on the deck (kneeboard row 0, jet + DTC route agree), and a Hornet/Viper DTC route's CAS/target/landing steerpoint altitudes match the .miz after AutoLoad. Fail signature: target diamond at ~22,000 ft over the objective, or the DTC route re-floating a steerpoint the miz had grounded)
 - **What CI cannot exercise:** whether the 0-AGL steerpoint renders on the deck in the cockpit and a TGP/weapon will actually slave to it, and whether zeroing the FLOT waypoints changes anything about how a *player* flight's route reads or flies (the AI path is untouched by construction).
 - **Setup:** Any campaign with a front line; frag a **player-crewed CAS** flight (the observed case was an F/A-18C off Bandar-e-Jask). A second, **AI-crewed** CAS flight in the same mission is the control.
 - **Pass:** the player flight's FLOT START/FLOT END steerpoints sit **on the terrain** — the HUD/HSI diamond marks ground you can look at, a TGP slaves to it, and the kneeboard Flight Plan prints **0** in the Alt column for those rows (not 22000). The AI CAS flight is **unchanged**: its generated waypoints still carry the combat altitude and it flies its normal track, not a dive at the dirt.
@@ -2212,6 +2209,29 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
   `Squadron.faker` wiring didn't take); blank/garbled names; or a recruitment crash on a locale
   with no gendered names (guarded + test-locked — should be impossible).
 
+### I6 — Squadron country surfaced (dialog selector + campaign `country:` pin) · §23 · ☑ VERIFIED (2026-07-20, user in-game pass, session `dcs-mission-gspd-fuel-222a42`: "896 is flown and good" — the selector + DS `country: USA` pins flown same day they were built; blanket pass, sub-criteria not itemized. NOTE: upstream draft #896 is deliberately HELD as a draft despite the pass — DM call, "don't flip it just in case it was after the lock", the lock being the upstream no-new-PRs freeze until the next beta (~2026-07-25/26 weekend; #896 was opened the day the freeze was learned) — un-draft only on a fresh explicit call once the freeze lifts. Built from the flown Desert Storm finding: Israeli/Greek-voiced F-16s wearing the 23rd TFS name, because an airframe-name squadron pick is a random.choice across every nation's presets under a CJTF faction)
+- **Headless adjudication (2026-07-20):** the config parse, the same-nation-only preset filter
+  (falls through to the def generator rather than hijacking a wrong-nation preset), the
+  override stamp (valid/unknown/unset), and the selector's live write / replace-with-preset
+  re-point / unlisted-country display are covered by `tests/test_squadron_country_pin.py` +
+  `tests/test_airwing_country_selector.py` (offscreen Qt); the 13 DS pins are locked by
+  `test_desert_storm_us_squadrons_pin_their_nation`. **Residual (app/in-sim only):** the
+  selector rendering in the real dialog, and the DS voices actually playing American.
+- **Setup:** New Game → Umm al-Ma'arik (Desert Storm 1991) → Air Wing Configuration. Check each
+  US squadron's new **Country:** selector reads USA (the pin); flip one squadron to another
+  nation and back; use **Replace with preset** once and confirm the selector tracks the new
+  squadron; note the preset dropdown entries now read `Name (Nickname) [Nation]`. Start the
+  campaign, fly/observe a US flight.
+- **Pass:** US flights check in with **American** AI voices (the flown Israeli/Greek roulette is
+  gone); the squadron roster names are American; a country picked in the dialog sticks after
+  Accept Changes and shows on the generated mission's groups (ME: group → Country); Save
+  Config → Load Config keeps the country.
+- **Fail signature:** a US-named squadron still spawns under Israel/Greece (pin not applied — the
+  filter or override didn't take); a dialog country change silently reverts on Accept (live-write
+  wiring broken); after Replace with preset the country/livery edits land on the discarded
+  squadron (the re-point fix regressed); New Game crashes on a campaign with `country:` (the
+  unknown-name degrade failed).
+
 ### H10 — Shared-airframe kneeboard index · §27 · ☐ UNTESTED (standalone page again since the 2026-07-13 back-to-upstream rework; condition not met in the 2026-06-28 pass)
 - **Not exercised (2026-06-28, audience pass — user confirmed the condition wasn't set up):** the mission did **not** have 2+ client flights of the same airframe, so the index had nothing to render — no observation either way, **not** a fail.
 - **Surface history:** briefly a section on the §30 cover page; the 2026-07-13 back-to-upstream
@@ -2779,7 +2799,7 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
   altitude or at low speed (the release ceiling/speed gate wrong); the bite far too strong/weak
   (`napeBlastPower`).
 
-### M1 — Political will pacing & feed weights (campaign layer W1+W2; 2026-07-04 morale-ratchet redo) · §48 · ☐ UNTESTED (the **pre-redo** 2-line-override economy got a user "M1 good" pass 2026-07-04 — but the **same-day morale-ratchet redo re-tuned the whole economy** (design note §8): BLUE ratchet + POW sore, RED broadened past the trail, the escalation tax + richer opening, so the shipped numbers are new and the earlier pass no longer covers them. Numbers derived with `tools/will_pacing_model.py` (elite folds Hanoi ~turn 8, average → Linebacker II win ~turn 16, flounder → withdrawal ~turn 11); the model is play-archetype driven, so the *played* pacing of the redo is exactly this row. The verified-good pre-redo baseline is the sanity floor: the redo should feel no worse)
+### M1 — Political will pacing & feed weights (campaign layer W1+W2; 2026-07-04 morale-ratchet redo) · §48 · ☐ UNTESTED (the **pre-redo** 2-line-override economy got a user "M1 good" pass 2026-07-04 — but the **same-day morale-ratchet redo re-tuned the whole economy** (design note §8): BLUE ratchet + POW sore, RED broadened past the trail, the richer opening, so the shipped numbers are new and the earlier pass no longer covers them. Numbers derived with `tools/will_pacing_model.py` (elite folds Hanoi ~turn 8, average → Linebacker II win ~turn 16, flounder → withdrawal ~turn 11); the model is play-archetype driven, so the *played* pacing of the redo is exactly this row. The verified-good pre-redo baseline is the sanity floor: the redo should feel no worse)
 - **Headless adjudication:** the feed model and the negotiation verdict are locked in
   `tests/fourteenth/test_political_will.py` (weighted losses, POW trickle, rescue refund, clamps, off-switch,
   win/loss/precedence, crossing-edge banners) and the SITREP band in the sitrep tests. What CI *cannot*
@@ -2792,8 +2812,7 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
   no drift since the 07-04 redo). A 20-turn headless Yankee Station self-play (real GameGenerator + campaign
   preseeds + the §26 abstract combat auto-resolving every mission, air-war feeds only — no POW/ROE/convoy
   channels) verified the machinery live: the −0.4/turn war-weariness ratchet, per-feed ledger attribution,
-  the will-coupled `advance_when` acceleration (a collapsing blue raced Rolling Thunder → Linebacker II by
-  turn 2, charging both escalation taxes), and the M9 ceiling tracking will in BOTH directions. **Two
+  and the M9 ceiling tracking will in BOTH directions. **Two
   balance watch-items for the played pass:** (1) **an auto-resolved (unflown) turn is drastically bloodier
   than a DCS-flown one** — the planner frags B-52s into the un-rolled-back IADS from turn 1
   (`strike_through_air_defense_threat`) and the SEAD-less abstract SAM model killed 8 BUFFs + 40 jets on
@@ -2842,66 +2861,9 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
   short of a base it should capture (disarm/gating regression — the clamp must clear when the setting is
   off). Knob: `STATIC_FRONT_BAND` in `game/fourteenth/static_front.py`.
 
-### M3 — Campaign phase arc & planner emphasis · §40 · ◐ PARTIAL (2026-07-01 live Khe Sanh session: ribbon + arc expander + phase copy render correctly on the rebuilt client, authored opening = Rolling Thunder as expected; still owed = a Tier-0 (non-Vietnam) campaign's inferred arc pacing + visible ATO tilt across a transition)
-- **Headless adjudication:** the §3.2 thresholds (SAM floor, peer guard, offensive gate), §3.3 hysteresis
-  (dwell, monotonic-forward, the asymmetric regression margin), the §3.4 legibility string, the update
-  gating/idempotence, and the `PlanNextAction` reactive-prefix/emphasis contract are all locked in
-  `tests/fourteenth/test_phases.py`. What CI *cannot* adjudicate: whether the inferred arc **advances at a
-  believable pace** over a real campaign and whether the emphasis **visibly shifts the ATO** without starving
-  anything critical.
-- **Setup:** any campaign (default ON). Ideal probes: a dense-IADS modern campaign (should open in Air
-  Superiority) and a genuine below-floor campaign — Shattered Dagger / Battle for No Man's Land / Valley of
-  Rotary / Northern Guardian (should open in Interdiction; **not** Khe Sanh — the generator fills 4 SA-2/SA-3
-  batteries there, so it opens in Air Superiority per the #379 engine-authoritative all-66 table). Read the
-  phase on the map ribbon + the kneeboard cover band; play/auto-resolve turns while SEAD attrites the belt.
-- **Pass:** the opening phase matches the engine-authoritative all-66 draft table for the campaign; the
-  ribbon/cover show the same phase + a sensible "why" line; as the SAM belt drops below ~half, the campaign
-  announces and enters Interdiction (after the 2-turn dwell), and the BLUE ATO visibly tilts (more
-  BAI/Armed Recon/OCA, less DEAD-first); with the front advancing and IADS <30 % it enters Offensive (CAS/
-  capture-weighted); the phase never regresses; red planning and reactive defense (BARCAP/QRA/DefendBases)
-  look unchanged; toggling `campaign_phases` off clears the ribbon band and restores stock planning.
-  **2026-07-02 additions** (need a client rebuild): each expander row shows its **objectives checklist**
-  (the measurable IADS goals tick ✓ as the belt drops — verify a tick actually flips across a played
-  transition) and its **transition line** ("Advances once the enemy IADS falls below 50%…" on Tier-0 rows;
-  "Escalates early if will falls below 65 (now …)" with live values on the current authored phase).
-- **Fail signature:** phase flaps turn-to-turn (dwell broken); a genuine below-floor campaign opens in Air
-  Superiority (floor gate miscounting — check `_enemy_sam_sites`, which bands enemy TGOs by `GroupTask`
-  LORAD/MERAD, the DEAD planner's own target set, NOT `IadsRole`); the phase never leaves Air
-  Superiority though the belt is dead (air-threat signal stuck — check red air-superiority squadron counts);
-  the ATO shows no tilt at all across a phase change (emphasis not reaching the planner — check
-  `_offensive_order` and that the coalition is BLUE); defensive flights change with the phase (§17 boundary
-  breach); the ribbon shows nothing on a new game (client build stale — the L7 lesson — or
-  `campaign_status` missing from `/game`); a transition announces every turn (message-once regression).
-  Knobs: the `ROLLBACK_SAM_FLOOR`/`IADS_*`/`PHASE_MIN_DWELL_TURNS` constants in `game/fourteenth/phases.py`.
+### M3 — Campaign phase arc & planner emphasis · §40 · ✖ REMOVED (2026-07-21) — the campaign-phase feature was dropped (the ROE-mechanic drop); no pass owed.
 
-### M4 — ROE escalation arc: zones, target release, will coupling (campaign layer W4) · §40 · ◐ PARTIAL (2026-07-01 live Khe Sanh playthrough, session jolly-einstein: **phase-1 AI obedience VERIFIED** — turn-1 save `Hanoi.retribution` adjudicated headless: 10 BLUE packages (1 CAS / 5 BAI / 3 STRIKE / 1 CSAR), **0 ROE violations**, 34 legal vs 42 locked red TGOs, no planner starvation; **scheduled Halt transition VERIFIED in-game** — turn 8 entered The Bombing Halt on the min_turn pin, zone expanded 20→28 NM, tooltip detail + "Eases at Linebacker (~turn 11)" correct. **Linebacker release redirect VERIFIED** — turn-11 save adjudicated: entered Linebacker on schedule, zone shrunk 28→8 NM (inner ring), STRIKE volume 3→11 with targets pouring onto the freed classes (ware ×4 / factory / comms ×2 / power / fuel), Armed Recon onto the released airfields (Senaki-Kolkhi, Kobuleti), census 34→58 legal, still 0 AI violations. **Linebacker II VERIFIED** — turn-16 save: zone list empty, no locked classes, full arc 1→8→11→16 ran exactly as authored across one fast-forwarded campaign. Still owed = the player-violation will penalty firing live (needs a flown strike into an active zone) + the M1/M2/M5 flown-combat rows. Known observation, not a regression: at Linebacker tempo all strike escorts prune (fighter pool fully consumed by BARCAP/support first — the documented deferred 'reserve a fighter ahead of BARCAP' lever, see the always_escort_strikes note))
-- **Headless adjudication:** authored-arc parsing (all 4 Vietnam YAMLs guarded in
-  `tests/test_vietnam_content.py`), sequential/scheduled/will-accelerated advancement, the planner ROE gate
-  (zone + locked class), and the violation counter are locked in `tests/fourteenth/test_phases.py`. What CI
-  *cannot* adjudicate: whether the arc **feels like Rolling Thunder** in play (restraint that visibly binds,
-  then releases) and whether the AI planner meaningfully redirects rather than starves.
-- **Setup:** a NEW Vietnam campaign (arcs ship in all four). Open the map: the **red dashed sanctuary
-  circles** (Kutaisi/Hanoi + Senaki/Haiphong plus the permanent Tbilisi "PRC border" ring at Yankee
-  Station/Steel Tiger — the coastal-ladder recast; Sukhumi at Khe Sanh, Saipan at Velvet Thunder) should
-  draw, and deep factories/airfields inside show **RESTRICTED — ROE** on hover. Play turns through the arc
-  (Bombing Halt ≈ turn 8, Linebacker ≈ 11, Linebacker II ≈ 16 — earlier if your will bleeds).
-- **Pass:** phase 1: the BLUE auto-planner never frags strike/OCA into the zone or against locked classes
-  (factories/power/airfields), while the front/trail war runs normally; **you** can still strike the zone —
-  the package dialog shows the amber **pre-flight "⚠ ROE" warning** (2026-07-02) when you frag it, the
-  strike flies anyway, and doing so posts "ROE violation" and visibly dents Political Will next debrief
-  (read the exact −4/kill on the meter-hover attribution ledger); transitions announce
-  once, the ribbon/kneeboard track the arc ("phase 2 of 4"), zones shrink at Linebacker and vanish at
-  Linebacker II (except the permanent PRC ring on the Yankee Station/Steel Tiger laydown, which must keep
-  drawing and keep the AI off Tbilisi forever), after which the planner hits the deep targets; a non-Vietnam
-  campaign shows no zones and plans stock, and its package dialog never shows the ROE line.
-- **Fail signature:** the AI strikes into the sanctuary in phase 1 (gate not reached — check
-  `roe_blocks_target` wiring in `PackagePlanningTask.fulfill_mission`); the player is hard-blocked from
-  striking the zone (enforcement must stay soft); no will penalty after a zone kill (violation counter not
-  seeing debrief positions); the arc never advances (min_turns/`advance_when` mis-parsed — check the YAML) or
-  skips straight to Linebacker II on turn 1 (min_turn 0 bug); the zone circle doesn't draw (client build
-  stale — the L7 lesson — or `restricted_zones` missing from `/game`); zones linger after Linebacker II
-  (stale `active_restricted_zones`); the planner deadlocks with nothing to strike in phase 1 (locked-class
-  list too broad for that campaign's target set — trim `locked_targets` in the campaign YAML).
+### M4 — ROE escalation arc (zones, target release, will coupling) · §40 · ✖ REMOVED (2026-07-21) — the ROE escalation layer was dropped; no pass owed.
 
 ### M5 — GCI-ambush MiGs: late scramble, one slash, home (campaign layer W5) · §1 · ☑ VERIFIED (2026-07-02 flown Trail 2 session `wonderful-chatterjee` — the 40 NM late-launch trigger measured in Tacview: Sukhumi 4-ship scrambled with the nearest BLUE at **37.6 NM**, Senaki 4-ship at **31.5 NM**, both inside the 40 NM cap; slash + leash already VERIFIED 2026-07-01 `intelligent-dubinsky`)
 - **Verified (2026-07-02, flown multiplayer session `wonderful-chatterjee` — `Tacview-20260702-171945-…-Trail 2`):**
@@ -2941,10 +2903,10 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
   defined before build_dispatcher — verify load order if edited). Knobs: `AMBUSH_GCI_RADIUS_NM`
   (interceptluadata.py), `AMBUSH_DISENGAGE_NM` / `AMBUSH_FUEL_THRESHOLD` (intercept-config.lua).
 
-### M6 — Phase-coupled red tempo: halt surge, Easter pulse, resolve regen (campaign layer W6) · Vietnam campaign layer · ☐ UNTESTED (built 2026-07-01; parse/window/stance/regen/convoy-surge all unit-tested, the multi-turn campaign feel needs a played arc)
+### M6 — Red tempo: turn-windowed trail surge, ground-offensive pulse, resolve regen (campaign layer W6, rehomed 2026-07-21) · campaign layer · ☐ UNTESTED (built 2026-07-01, rehomed 2026-07-21 to a top-level turn-windowed `red_tempo:` schedule — last-window-wins by `from_turn`, authored on 6 campaigns; parse/window/stance/regen/convoy-surge all unit-tested, the multi-turn campaign feel needs a played arc)
 - **Headless adjudication:** the `red_tempo:` parse, the ground-offensive window math, the raise-only
   stance pulse, the once-per-turn regen guard, the end-to-end convoy surge (second column + doubled skim),
-  and the 4 arcs' authored blocks are all locked in `tests/fourteenth/test_red_tempo.py`. What CI cannot
+  and the 6 campaigns' authored schedules are all locked in `tests/fourteenth/test_red_tempo.py`. What CI cannot
   adjudicate: the multi-turn *feel* — whether the Halt reads as a logistics window and the Linebacker-entry
   ground pulse reads as the Easter Offensive.
 - **Setup:** a NEW Vietnam campaign (Khe Sanh or Yankee Station) with `vietnam_political_will` +
@@ -2959,60 +2921,12 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
 - **Fail signature:** resolve regenerating every init of the same turn (the `red_tempo_regen_turn` guard);
   red stances stuck aggressive after the window (the raise should stop applying — check
   `ground_offensive_active` window math); three+ convoys stacking (the `max_convoys` cap); a Tier-0
-  campaign surging (only *authored* phases may carry `red_tempo` — check `_active_authored_phase`).
-  Knobs: the per-phase `red_tempo:` YAML values; `GROUND_OFFENSIVE_MIN_SURGE` (red_tempo.py).
+  campaign surging (only campaigns with a `red_tempo:` schedule are affected — the window in effect is the last one whose `from_turn` is reached).
+  Knobs: the top-level `red_tempo:` schedule window values; `GROUND_OFFENSIVE_MIN_SURGE` (red_tempo.py).
 
-### M7 — ROE zone shapes: box/corridor painted on the F10/ME map (Path A) + `from_drawing` reader (Path B) · §40 · ☐ UNTESTED (built 2026-07-02/03; parse/resolve/containment/rotation + the drawing reader/resolver locked in `tests/fourteenth/test_phases.py` + `test_zone_drawings.py`, painter/latlng + real `.miz` write/reload seams engine-probed; the drawn shapes + the ME round-trip need an in-game eyeball)
-- **Headless adjudication (Path A):** `_parse_restricted_zone` (circle/box/corridor + the rejects),
-  `_resolve_zone` geometry, `zone.contains` for all kinds, and box `heading` rotation are locked in
-  `tests/fourteenth/test_phases.py`; a real-pydcs probe confirmed `add_freeform_polygon` (box 4-pt, corridor
-  buffered) and `point_in_world(...).latlng()` serialize cleanly.
-- **Headless adjudication (Path B):** `read_zone_drawings` (Circle → circle, FreeFormPolygon → polygon, skips
-  Rectangle/Oval/TextBox/unnamed) is locked in `tests/fourteenth/test_zone_drawings.py` via a real
-  `dict()`→`load_from_dict` round-trip; `from_drawing` parse + `_resolve_drawing_zone` in
-  `test_phases.py`; a probe wrote a `.miz` with a drawn circle + polygon, reloaded it via `Mission.load_file`
-  (the `MizCampaignLoader` path), and read both back. What CI *cannot* adjudicate: whether DCS renders the
-  painted zones on the F10 map, whether they land where authored, and whether a shape drawn by hand in the ME
-  is read back correctly.
-- **Setup (Path A):** author a `box` and a `corridor` `restricted_zones` entry into an active phase of a
-  Vietnam campaign's `phases:` block (see §40 for the schema), start a NEW game, generate the mission, open the
-  `.miz` in the ME (or fly it and check the F10 map).
-- **Setup (Path B):** draw a FreeFormPolygon and a Circle on the campaign `.miz`'s Author layer, name them,
-  reference them with `{from_drawing: "<name>"}` in an active phase, start a NEW game.
-- **Pass:** the box (rotated per `heading`) and the corridor lane appear as red dashed shapes on the F10/ME
-  map at the authored location, matching the web map layer; a `from_drawing` zone gates the planner + paints
-  identically to a typed one; a legacy circle zone is unchanged; a player kill inside any zone drains will.
-- **Fail signature:** a box/corridor drawn in the wrong place or orientation (the `_box_corners` heading
-  convention or the freeform-polygon offset anchoring — anchor must be `outline[0]` with local offsets, per
-  `generate_routes`); a `from_drawing` zone resolving to nothing ("references ME drawing … not found" — name
-  mismatch, or the drawing is a Rectangle/Oval which v1 skips, or it's unnamed); the web map showing a shape
-  the F10 map doesn't (they share `active_restricted_zones`, so a divergence is a rendering bug on one side).
-  Knobs: `ROE_ZONE_LINE`/`ROE_ZONE_FILL` (drawingsgenerator.py); the corridor buffer resolution + the
-  supported-drawing-types list (`zone_drawings.py`).
+### M7 — ROE zone shapes (box/corridor F10/ME map + from_drawing) · §40 · ✖ REMOVED (2026-07-21) — the ROE-zone layer was dropped; no pass owed.
 
-### M8 — COIN positive-control valleys: box/corridor no-strike ROE in play · §40 · ☑ VERIFIED (2026-07-04, user pass — "m8 good") (was ☐ UNTESTED, built 2026-07-03; ROE-shape rework replaced the earlier free-fire kill boxes with 4 box/corridor restricted valleys, all-phase, CI-locked in `tests/fourteenth/test_coin.py` (4 zones/phase — 2 box + 2 corridor, no free-fire); the played feel + red rendering need a campaign)
-- **Headless adjudication:** the 4 restricted valleys (2 corridors + 2 boxes) parse, resolve to shapely
-  geometry, and are shared across all 3 phases; no phase carries free-fire; the ROE gate + violation weight
-  are unit-tested. What CI *cannot* adjudicate: the red box/corridor pockets rendering (web + F10 painted
-  outline), whether the AI planner still fields strike/BAI packages with the valleys off-limits (it should —
-  the desert and the caches stay legal), and whether striking near the towns actually bleeds the mandate.
-- **Setup:** a NEW "Afghanistan - Operation Enduring Resolve (COIN)" game. Check the web map + the F10/ME
-  map on turn 1 (Disrupt); the 4 valleys are permanent, so they look the same across the arc.
-- **Pass:** 4 red dashed no-strike areas on the map — the two corridor lanes (Helmand green zone
-  Kajaki→Marjah; the Musa Qala 611 feeder) + two boxes (Tarin Kowt bowl, Delaram junction) — matching
-  between the web map and the F10/ME map (the kneeboard CAMPAIGN PHASE band that also listed them as
-  OFF LIMITS retired with the §30 cover, 2026-07-13); a
-  player fixed strike *inside* a valley drains the mandate with an "ROE violation" note; a strike in the open
-  desert does not; Armed Recon vs trail convoys flies anywhere and never counts; retaking a stronghold (air
-  assault) never drains the mandate even when the CP sits in a valley.
-- **Fail signature:** AI planner starvation (zero strike packages — the valleys resolved but swallowed every
-  legal target; the caches should still be strikeable in the desert edges); a capture bleeding the mandate
-  (an air assault mis-counted as a fixed strike); the box/corridor outlines missing while the gate works (a
-  render-only bug — the server payload `restricted_zones` vs `RestrictedZonesLayer`, or the
-  `DrawingsGenerator` outline); violations counted for convoy kills (the `target_class is None` exemption
-  failed).
-  Knobs: the `&population_centers` restricted-zone anchor in `coin_enduring_resolve.yaml` (valley
-  extents/widths); `blue_roe_violation` weight (the CDE price).
+### M8 — COIN positive-control valleys (no-strike ROE) · §40 · ✖ REMOVED (2026-07-21) — the ROE-zone layer was dropped; no pass owed. (Was ☑ VERIFIED 2026-07-04 before removal.)
 
 ### M9 — Commitment ceiling: will-coupled war budget draws down (§48) · §48 · ☐ UNTESTED (built 2026-07-04; multiplier shape + gating + message unit-tested in `tests/fourteenth/test_commitment_ceiling.py`; the played draw-down feel + the loss-spiral risk need a campaign)
 - **Headless adjudication:** `will_budget_multiplier` is 1.0 at/above will 60, ramps linearly to 0.5× at

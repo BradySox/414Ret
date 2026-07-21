@@ -87,7 +87,6 @@ def _game(cps: list[Any], *, master: bool = True, auto: bool = True) -> Any:
         settings=SimpleNamespace(
             cruise_missile_strikes=master,
             cruise_missile_auto_raids=auto,
-            campaign_phases=False,
         ),
     )
 

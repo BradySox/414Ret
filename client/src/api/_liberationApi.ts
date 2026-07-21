@@ -537,8 +537,6 @@ export type Tgo = {
   mobile: boolean;
   destination?: LatLng;
   user_placed: boolean;
-  roe_restricted?: boolean;
-  roe_reason?: string | null;
   /** COIN concealment: set while this TGO renders as an uncertainty circle;
       `position` is then the jittered circle centre, not the true location. */
   uncertainty_radius_m?: number | null;
@@ -592,29 +590,6 @@ export type UnculledZone = {
   position: LatLng;
   radius: number;
 };
-export type RestrictedZone = {
-  name: string;
-  kind: string;
-  center: LatLng;
-  radius_m: number;
-  outline: LatLng[];
-  detail?: string;
-};
-export type PhaseObjective = {
-  text: string;
-  done?: boolean | null;
-};
-export type PhaseArcEntry = {
-  key: string;
-  name: string;
-  narrative: string;
-  min_turn: number;
-  locked: string[];
-  zones: string[];
-  current: boolean;
-  advance: string;
-  objectives: PhaseObjective[];
-};
 export type CampaignEvent = {
   turn: number;
   title: string;
@@ -625,22 +600,10 @@ export type VictoryCondition = {
   met: boolean;
   defeat: boolean;
 };
-export type FrontPosture = {
-  name: string;
-  posture: string;
-  intensity?: string | null;
-};
 export type CampaignStatus = {
   campaign_name?: string | null;
   turn: number;
   date: string;
-  phase_name?: string | null;
-  phase_status?: string | null;
-  phase_narrative?: string | null;
-  red_posture?: string | null;
-  red_posture_detail?: string | null;
-  red_posture_intensity?: string | null;
-  front_postures?: FrontPosture[];
   blue_supply?: number | null;
   red_supply?: number | null;
   red_c2?: string | null;
@@ -650,7 +613,6 @@ export type CampaignStatus = {
   red_will_label?: string | null;
   blue_will_note?: string | null;
   red_will_note?: string | null;
-  phases?: PhaseArcEntry[];
   victory?: VictoryCondition[];
   victory_description?: string | null;
   will_history?: [number, number, number][];
@@ -693,8 +655,6 @@ export type Game = {
   blank_canvas_setup: boolean;
   enable_unit_placement: boolean;
   campaign_status?: CampaignStatus | null;
-  restricted_zones?: RestrictedZone[];
-  free_fire_zones?: RestrictedZone[];
   supply_nodes?: SupplyNode[];
   minefields?: Minefield[];
   downed_pilots?: DownedPilot[];

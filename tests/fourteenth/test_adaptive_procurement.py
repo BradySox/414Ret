@@ -1,9 +1,8 @@
 """Adaptive procurement (§68).
 
-Locks the posture/phase-coupled ground-share adjustment (0 without a signal,
-anchored at the §55 intensity midpoint, clamped), the air-defense site repair
-(gate, per-turn cap, priority order, budget skip, category exclusions, wreck
-cleanup), and the price-weighted ground-unit choice gate.
+Locks the air-defense site repair (gate, per-turn cap, priority order, budget
+skip, category exclusions, wreck cleanup) and the price-weighted ground-unit
+choice gate.
 """
 
 from __future__ import annotations
@@ -18,104 +17,11 @@ from dcs.terrain import Caucasus
 
 from game.fourteenth.adaptive_procurement import (
     MAX_AIR_DEFENSE_REPAIRS_PER_TURN,
-    MAX_POSTURE_GROUND_SHIFT,
-    PHASE_GROUND_SHIFT,
-    adjusted_ground_share,
-    ground_share_adjustment,
     repair_air_defenses,
 )
 from game.procurement import ProcurementAi
-from game.theater import Player
 
 _TERRAIN = Caucasus()
-
-
-def _red_game(
-    posture: str | None,
-    intensity: float | None = None,
-    adaptive: bool = True,
-    red_intent: bool = True,
-) -> Any:
-    return SimpleNamespace(
-        settings=SimpleNamespace(adaptive_procurement=adaptive, red_intent=red_intent),
-        red_intent_key=posture,
-        red_intent_intensity=intensity,
-    )
-
-
-def _blue_game(phase_key: str | None, adaptive: bool = True) -> Any:
-    return SimpleNamespace(
-        settings=SimpleNamespace(adaptive_procurement=adaptive, campaign_phases=True),
-        current_phase_key=phase_key,
-    )
-
-
-def test_red_posture_shifts_the_ground_share() -> None:
-    surge = ground_share_adjustment(cast(Any, _red_game("surge")), Player.RED)
-    assert surge == MAX_POSTURE_GROUND_SHIFT  # anchored at the 0.5 midpoint
-    consolidate = ground_share_adjustment(
-        cast(Any, _red_game("consolidate")), Player.RED
-    )
-    assert consolidate == -MAX_POSTURE_GROUND_SHIFT
-    assert ground_share_adjustment(cast(Any, _red_game("attrition")), Player.RED) == 0.0
-    assert ground_share_adjustment(cast(Any, _red_game(None)), Player.RED) == 0.0
-
-
-def test_red_shift_scales_with_intensity() -> None:
-    all_in = ground_share_adjustment(
-        cast(Any, _red_game("surge", intensity=1.0)), Player.RED
-    )
-    assert all_in == MAX_POSTURE_GROUND_SHIFT * 1.5
-    tentative = ground_share_adjustment(
-        cast(Any, _red_game("surge", intensity=0.0)), Player.RED
-    )
-    assert tentative == MAX_POSTURE_GROUND_SHIFT * 0.5
-
-
-def test_blue_phase_shifts_the_ground_share() -> None:
-    assert (
-        ground_share_adjustment(cast(Any, _blue_game("rollback")), Player.BLUE)
-        == -PHASE_GROUND_SHIFT
-    )
-    assert (
-        ground_share_adjustment(cast(Any, _blue_game("offensive")), Player.BLUE)
-        == PHASE_GROUND_SHIFT
-    )
-    assert (
-        ground_share_adjustment(cast(Any, _blue_game("interdiction")), Player.BLUE)
-        == 0.0
-    )
-    assert ground_share_adjustment(cast(Any, _blue_game(None)), Player.BLUE) == 0.0
-
-
-def test_no_shift_when_the_feature_is_off() -> None:
-    assert (
-        ground_share_adjustment(
-            cast(Any, _red_game("surge", adaptive=False)), Player.RED
-        )
-        == 0.0
-    )
-    assert (
-        ground_share_adjustment(
-            cast(Any, _blue_game("offensive", adaptive=False)), Player.BLUE
-        )
-        == 0.0
-    )
-    # red_intent itself off -> no posture resolves -> no shift.
-    assert (
-        ground_share_adjustment(
-            cast(Any, _red_game("surge", red_intent=False)), Player.RED
-        )
-        == 0.0
-    )
-
-
-def test_adjusted_share_is_clamped() -> None:
-    assert adjusted_ground_share(cast(Any, _red_game("surge")), Player.RED, 0.95) == 1.0
-    assert (
-        adjusted_ground_share(cast(Any, _red_game("consolidate")), Player.RED, 0.05)
-        == 0.0
-    )
 
 
 # --- air-defense site repair ---

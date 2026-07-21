@@ -26,6 +26,7 @@ from game.radio.radios import RadioFrequency, RadioRegistry, MHz
 from game.radio.tacan import TacanRegistry
 from game.theater import Airfield
 from game.theater.bullseye import Bullseye
+from game.theater.fogofwar import fog_intact
 from game.theater.player import Player
 from game.unitmap import UnitMap
 from .atisgenerator import AtisGenerator
@@ -89,6 +90,14 @@ class MissionGenerator:
             self.mission.options.load_from_dict(options)
 
     def generate_miz(self, output: Path) -> UnitMap:
+        # The transient §18 fog-of-war reveal is a display overview; a generated
+        # mission is a shared artifact (kneeboard threat pages, §74 DTC threat
+        # rings) that every client receives, so generation always sees the real
+        # fog regardless of the toggle.
+        with fog_intact():
+            return self._generate_miz(output)
+
+    def _generate_miz(self, output: Path) -> UnitMap:
         if self.generation_started:
             raise RuntimeError(
                 "Mission has already begun generating. To reset, create a new "

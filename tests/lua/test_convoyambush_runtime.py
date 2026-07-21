@@ -62,7 +62,7 @@ def test_springs_when_the_convoy_closes() -> None:
             ],
             startGraceS=5,
             pollIntervalS=5,
-            triggerRadiusM=6000,
+            triggerRadiusNm=3.24,  # ~6000 m
         )
     )
     h.load_plugin_script(PLUGIN)
@@ -100,7 +100,7 @@ def test_does_not_spring_while_the_convoy_is_far() -> None:
             ],
             startGraceS=5,
             pollIntervalS=5,
-            triggerRadiusM=6000,
+            triggerRadiusNm=3.24,  # ~6000 m
         )
     )
     h.load_plugin_script(PLUGIN)

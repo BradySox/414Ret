@@ -121,6 +121,19 @@ def is_target_waypoint(waypoint: FlightWaypoint) -> bool:
     return "TARGET" in waypoint.waypoint_type.name
 
 
+def client_altitude(waypoint: FlightWaypoint) -> tuple[float, int]:
+    """Steerpoint altitude in metres + DTC altitudeType (1 = BARO, 2 = RADIO).
+
+    Cartridges are built only for client flights, and the generated .miz zeroes a
+    ground-marked waypoint (target areas, CAS FLOT boundaries, flyovers) to 0 AGL
+    for clients (``PydcsWaypointBuilder.build``); the cartridge must agree or the
+    AutoLoad would float the steerpoint back up to the AI's track altitude.
+    """
+    if waypoint.marks_ground_for_player:
+        return 0.0, 2
+    return waypoint.alt.meters, 2 if waypoint.alt_type == "RADIO" else 1
+
+
 @dataclass(frozen=True)
 class SupportTrack:
     """One friendly racetrack: a CAP station or a tanker/AEW&C orbit."""
@@ -224,16 +237,19 @@ def _tracks_of_types(
     return tracks
 
 
+def raw_cap_tracks(mission_data: MissionData) -> list[SupportTrack]:
+    """Every blue CAP orbit *flight* (each §6 wave separately)."""
+    return _tracks_of_types(
+        mission_data,
+        _CAP_FLIGHT_TYPES,
+        {FlightType.BARCAP: "CAP", FlightType.TARCAP: "CAP"},
+    )
+
+
 def cap_tracks(mission_data: MissionData) -> list[SupportTrack]:
     """Every blue CAP *station* flying this mission (BARCAP + TARCAP), with
     the §6 wave-relief duplicates collapsed to one racetrack per station."""
-    return dedupe_stations(
-        _tracks_of_types(
-            mission_data,
-            _CAP_FLIGHT_TYPES,
-            {FlightType.BARCAP: "CAP", FlightType.TARCAP: "CAP"},
-        )
-    )
+    return dedupe_stations(raw_cap_tracks(mission_data))
 
 
 def support_tracks(mission_data: MissionData) -> list[SupportTrack]:
@@ -289,29 +305,6 @@ def _circle_outline(
             (cx + radius_m * math.cos(angle), cy + radius_m * math.sin(angle))
         )
     return points
-
-
-def restricted_zone_outlines(
-    game: Game, max_points: int
-) -> list[tuple[str, list[tuple[float, float]]]]:
-    """Active §40 no-strike zones as closed outlines of <= max_points each.
-
-    Reads the same resolved zones the F10/web layers draw, so the cockpit SA
-    page agrees with every other surface. Circles become polygons (the DTC has
-    no circle line element).
-    """
-    from game.fourteenth.phases import active_restricted_zones
-
-    outlines = []
-    for zone in active_restricted_zones(game):
-        if zone.kind == "circle":
-            points = _circle_outline(zone.center_xy, zone.radius_m, max_points - 1)
-        else:
-            points = list(zone.outline_xy)
-            if len(points) < 3:
-                continue
-        outlines.append((zone.name, _decimate_closed(points, max_points)))
-    return outlines
 
 
 @dataclass(frozen=True)

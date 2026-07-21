@@ -66,7 +66,7 @@ def test_scoots_each_site_group_after_the_grace() -> None:
     h.add_group(_ground_group("SCUD-B"))
     h.lua.globals().dcsRetribution = h.to_lua(
         {
-            "plugins": {"mobilemissiles": {"startGraceS": 5, "scootRadiusM": 4000}},
+            "plugins": {"mobilemissiles": {"startGraceS": 5, "scootRadiusNm": 2.16}},
             "mobileMissiles": {
                 "sites": [
                     # coords arrive as strings from the emitter; the plugin tonumber()s.
@@ -86,8 +86,8 @@ def test_scoots_each_site_group_after_the_grace() -> None:
     h.advance_to(6)
     routes = _routes(h)
     assert {r["group"] for r in routes} == {"SCUD-A", "SCUD-B"}
-    # Destination = the scoot point (centre.x 1000 + radius 4000).
-    assert all(r["x"] == 5000.0 for r in routes)
+    # Destination = the scoot point (centre.x 1000 + radius ~4000; 2.16 NM -> 4000.3 m).
+    assert all(abs(r["x"] - 5000.0) < 1.0 for r in routes)
     # ...reached via a TWO-waypoint route (current position -> destination); a 1-waypoint
     # route is the launchers-never-move bug this fix closes.
     assert all(r["points"] == 2 for r in routes)

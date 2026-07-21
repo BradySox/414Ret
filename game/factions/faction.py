@@ -730,10 +730,10 @@ class Faction:
             self.remove_preset("David's Sling (Semicircle)")
         # swedish military assets pack
         if not mod_settings.swedishmilitaryassetspack:
-            self.remove_vehicle("Grkpbv90")
-            self.remove_vehicle("Artillerisystem08_SGR77B")
-            self.remove_vehicle("Artillerisystem08_M982")
-            self.remove_vehicle("LvKv9040")
+            self.remove_vehicle("CH_Grkpbv90")
+            self.remove_vehicle("CH_Artillerisystem08_SGR77B")
+            self.remove_vehicle("CH_Artillerisystem08_M982")
+            self.remove_vehicle("CH_LvKv9040")
             self.remove_vehicle("LvS_103_Lavett103_Rb103A")
             self.remove_vehicle("LvS_103_Lavett103_Rb103B")
             self.remove_vehicle("LvS_103_Lavett103_HX_Rb103A")
@@ -742,31 +742,31 @@ class Faction:
             self.remove_vehicle("LvS_103_PM103")
             self.remove_vehicle("LvS_103_PM103_HX")
             self.remove_vehicle("LvS_103_Elverk103")
-            self.remove_vehicle("RBS-70")
-            self.remove_vehicle("RBS-90")
-            self.remove_vehicle("RBS-98")
-            self.remove_vehicle("UndE23")
-            self.remove_vehicle("SwedishinfantryAK4")
-            self.remove_vehicle("SwedishinfantryAK5")
-            self.remove_vehicle("SwedishinfantryAK5GT")
-            self.remove_vehicle("SwedishinfantryKSP90")
-            self.remove_vehicle("SwedishinfantryKSP58")
-            self.remove_vehicle("SwedishinfantryPskott86")
-            self.remove_vehicle("RBS-57")
-            self.remove_vehicle("RBS-58")
-            self.remove_vehicle("AG-90")
-            self.remove_vehicle("CV9040")
+            self.remove_vehicle("CH_RBS-70")
+            self.remove_vehicle("CH_RBS-90")
+            self.remove_vehicle("CH_RBS-98")
+            self.remove_vehicle("CH_UndE23")
+            self.remove_vehicle("CH_SwedishinfantryAK4")
+            self.remove_vehicle("CH_SwedishinfantryAK5")
+            self.remove_vehicle("CH_SwedishinfantryAK5GT")
+            self.remove_vehicle("CH_SwedishinfantryKSP90")
+            self.remove_vehicle("CH_SwedishinfantryKSP58")
+            self.remove_vehicle("CH_SwedishinfantryPskott86")
+            self.remove_vehicle("CH_RBS-57")
+            self.remove_vehicle("CH_RBS-58")
+            self.remove_vehicle("CH_AG-90")
+            self.remove_vehicle("CH_CV9040")
             self.remove_vehicle("CH_Strf9040C")
-            self.remove_vehicle("Strv103")
-            self.remove_vehicle("Strv2000")
-            self.remove_vehicle("Volvo740")
+            self.remove_vehicle("CH_Strv103")
+            self.remove_vehicle("CH_Strv2000")
+            self.remove_vehicle("CH_Volvo740")
             self.remove_vehicle("CH_BVS10")
             self.remove_vehicle("CH_CV9050")
             self.remove_vehicle("CH_Ikv91")
             self.remove_vehicle("CH_Strv123")
             self.remove_vehicle("CH_Strv122")
             self.remove_vehicle("CH_SisuGTP")
-            self.remove_vehicle("RBS-15KA")
+            self.remove_vehicle("CH_RBS-15KA")
             self.remove_ship("Strb90")
             self.remove_ship("HSwMS_Visby")
             self.remove_aircraft("HKP15B")
@@ -776,9 +776,9 @@ class Faction:
             self.remove_preset("LvS-103 Rb103B")
             self.remove_preset("LvS-103 Rb103B Mobile")
             self.remove_preset("RBS-15")
-            self.remove_preset("RBS-70")
-            self.remove_preset("RBS-90")
-            self.remove_preset("RBS-98")
+            self.remove_preset("CH_RBS-70")
+            self.remove_preset("CH_RBS-90")
+            self.remove_preset("CH_RBS-98")
         if not mod_settings.coldwarassets:
             self.remove_aircraft("B_47")
             self.remove_aircraft("B_58")
@@ -828,6 +828,7 @@ class Faction:
             self.remove_ship("USS_Fletcher")  # "USS Fletcher FRAM II Destroyer"
             self.remove_ship("USS_Laffey")  # "[VWV] DD-724 USS Laffey"
             self.remove_ship("USS_Maddox")  # "USS Maddox (DD-731)"
+            self.remove_ship("USS_Maddox_T")  # "USS Maddox Tonkin Incident (DD-731)"
             self.remove_ship("USS_The_Sullivans")  # "USS The Sullivans (DD-537)"
             self.remove_ship("P4")  # "P 4 Torpedo Boat"
             self.remove_ship("ATCH")  # "[VWV] ATC(H) Tango"
@@ -855,6 +856,19 @@ class Faction:
             self.remove_ship("USS Kirk")  # "[VWV] DE-1087 USS Kirk"
             self.remove_ship("[VWV] IX514 (unarmed)")  # "[VWV] IX514 (unarmed)"
             self.remove_ship("[VWV]IX514")  # "[VWV] IX514"
+            self.remove_ship("USS Radford")  # "[VWV] DD-446 USS Radford"
+            self.remove_ship("USS Epperson")  # "[VWV] DD-719 USS Epperson"
+            self.remove_ship(
+                "USS Everett F Larson"
+            )  # "[VWV] DD-830 USS Everett F. Larson"
+            self.remove_ship("AD-30 Solon Turman")  # "[VWV] AD-30 Solon Turman"
+            self.remove_ship("USNS Card")  # "[VWV] T-AKV-40 USNS Card"
+            self.remove_ship("sampan_open")  # "[VWV] Sampan"
+            self.remove_ship("SAMPAN_CANOPY")  # "[VWV] Sampan, Canopy"
+            self.remove_ship("SAMPAN_COVERED")  # "[VWV] Sampan, Covered"
+            self.remove_ship("sampan_covered_ak47")  # "[VWV] Sampan, Covered, AK47"
+            self.remove_ship("sampan_open_box")  # "[VWV] Sampan, Open, Ammo Box"
+            self.remove_ship("Junk")  # "[VWV] Vietnam Junk"
             self.remove_aircraft("vwv_a1_skyraider")  # "A-1H Skyraider"
             self.remove_aircraft("a_37_dragonfly")  # "A-37 Dragonfly"
             self.remove_aircraft("vwv_ad4_skyraider")  # "AD-4 Skyraider"
@@ -1058,25 +1072,22 @@ class Faction:
             self.remove_vehicle("CH_LandRoverWolf")
             self.remove_vehicle("CH_LandRoverWMIK_M2")
             self.remove_vehicle("CH_LandRoverWMIK_MK19")
-            self.remove_vehicle("CH_Scimitar")
-            self.remove_vehicle("CH_Scorpion")
+
             self.remove_vehicle("CH_SkySabreC2")
             self.remove_vehicle("CH_SkySabreGiraffe")
-            self.remove_vehicle("CH_SkySabreLN")
+            self.remove_vehicle("CH_SkySabre")
             self.remove_vehicle("CH_StormerHVM")
             self.remove_vehicle("CH_Warrior")
             self.remove_ship("CH_Type26")
-            self.remove_ship("Type45")
+            self.remove_ship("CH_Type45")
             self.remove_preset("Sky Sabre Battery")
             self.remove_preset("Sky Sabre Battery (Mobile)")
             self.remove_preset("Stormer HVM Battery")
         if not mod_settings.ukrainemilitaryassetspack:
-            self.remove_aircraft("Su-24MU")
-            self.remove_aircraft("MiG-29MU2")
+            self.remove_aircraft("CH_Su-24MU")
+            self.remove_aircraft("CH_MiG-29MU2")
             self.remove_aircraft("CH_Su-27P1M")
-            self.remove_vehicle("T84_OplotM")
-            self.remove_vehicle("BTR-4")
-            self.remove_vehicle("CH_T64BV")
+            self.remove_vehicle("CH_BTR-4")
             self.remove_vehicle("CH_Kozak5")
             self.remove_vehicle("CH_KrAZSpartan")
             self.remove_vehicle("CH_BRDM2L1")

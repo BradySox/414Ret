@@ -4,11 +4,9 @@ The fourth COIN direction (after C1 replenishment, C1.5 re-infiltration, IEDs). 
 war is a manhunt: the strategic prize is not a body count but the **named leader**.
 This layer surfaces a rotating HVT -- a small, named red group near an insurgent
 stronghold, live for a **strike window** -- and drops the insurgency's momentum when
-he is killed inside it. He often shelters where his people are (a stronghold sitting on
-a population-center ROE ring), so the strike carries the **CDE dilemma the rings already
-price**: killing an HVT inside a ring is a real momentum blow *and* a mandate-draining
-ROE violation (the §40 ``count_roe_violations`` charge). Take the shot dirty, wait for a
-clean one, or let the window close -- the choice is the feature.
+he is killed inside it. He often shelters where his people are, so the strike carries a
+real collateral-damage risk: take the shot dirty, wait for a clean one, or let the
+window close -- the choice is the feature.
 
 Turn-boundary force-model work only (``Game.finish_turn``, after C1/C1.5/IED): no Lua, a
 real recon-fogged red TGO that dies through the normal loss path. State lives in
@@ -44,7 +42,7 @@ HVT_WINDOW_TURNS = 4
 HVT_COOLDOWN_TURNS = 3
 
 #: Leader + an escort technical + a guard pair -- a small, findable, named convoy that
-#: patrols its ROE zone in-mission (the ``coin`` plugin drives it), so hunting him reads
+#: patrols its area in-mission (the ``coin`` plugin drives it), so hunting him reads
 #: as running down a moving column rather than bombing a parked jeep.
 HVT_UNITS = 4
 

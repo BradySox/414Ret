@@ -223,6 +223,10 @@ class PackageFulfiller:
                 list(flight.flight_plan.escorted_waypoints())
             ):
                 threats[EscortType.Sead] = True
+                # A radar-SAM-threatened route also warrants an escort jammer
+                # (Growler): same trigger as SEAD, pruned independently when no
+                # ESCORT_JAMMER-capable squadron exists.
+                threats[EscortType.Jammer] = True
         # 414th: under doctrines that always escort strikes (Vietnam), a STRIKE-led
         # package pulls a fighter escort even when no air threat is detected on the
         # route -- the sparse, unpredictable MiG presence still warrants cover and the
@@ -273,6 +277,8 @@ class PackageFulfiller:
                     return True
         elif type == EscortType.Refuel:
             return self.air_wing_can_plan(FlightType.REFUELING)
+        elif type == EscortType.Jammer:
+            return self.air_wing_can_plan(FlightType.ESCORT_JAMMER)
         return False
 
     def plan_mission(

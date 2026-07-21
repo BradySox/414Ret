@@ -131,14 +131,6 @@ def test_red_tide_preseeds_c2_decapitation_effects() -> None:
     assert settings["c2_decapitation_effects"] is True
 
 
-def test_red_tide_preseeds_red_intent() -> None:
-    settings = _campaign_settings()
-    # §55 is default OFF; Red Tide is a peer fight where red has real offensive agency,
-    # and with war_economy also ON the supply->posture loop closes (a starved red digs
-    # in), so the campaign flips it ON (pure turn-model, no plugin dependency).
-    assert settings["red_intent"] is True
-
-
 def test_red_tide_preseeds_the_opfor_qra_reserve() -> None:
     settings = _campaign_settings()
     # The Cold-War Soviet defensive posture depends on red holding a QRA alert reserve.

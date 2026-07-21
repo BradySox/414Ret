@@ -31,13 +31,15 @@ def test_ew_excluded_groups_lists_only_non_ew_c130j_flights(tmp_path: Path) -> N
     other = SimpleNamespace()  # any non-C-130J airframe (never == the C-130J type)
     flights = [
         _fd("KING-1", FlightType.COMBAT_SAR, c130j),  # excluded (King)
+        _fd("TRUCK-1", FlightType.TRANSPORT, c130j),  # excluded (airlifter)
+        _fd("DROP-1", FlightType.AIR_ASSAULT, c130j),  # excluded (paradrop bird)
         _fd("JAM-1", FlightType.JAMMING, c130j),  # NOT excluded -- the EW jet itself
         _fd("KING-HELO", FlightType.COMBAT_SAR, other),  # NOT excluded -- not a C-130J
         _fd("STRIKE-1", FlightType.STRIKE, other),  # NOT excluded
     ]
     gen = LuaGenerator.__new__(LuaGenerator)
     gen.mission_data = SimpleNamespace(flights=flights)  # type: ignore[assignment]
-    assert gen._ew_excluded_c130j_groups() == ["KING-1"]
+    assert gen._ew_excluded_c130j_groups() == ["KING-1", "TRUCK-1", "DROP-1"]
 
 
 def test_ew_excluded_groups_empty_when_no_non_ew_c130j(tmp_path: Path) -> None:

@@ -25,7 +25,8 @@ end
 
 local data = dcsRetribution.coin
 
--- Defaults (metric). Overridable via the plugin options (dcsRetribution.plugins.coin).
+-- Defaults (metric internals). Overridable via the plugin options
+-- (dcsRetribution.plugins.coin) which are imperial in the UI -- NM/ft/kt, converted below.
 local HVT_INTERVAL = 90 -- s between HVT patrol legs
 local HVT_RADIUS = 4000 -- m the HVT wanders from his area centre
 local HVT_SPEED = 25 -- km/h convoy ground speed
@@ -51,20 +52,20 @@ local HARASS_GRACE = 300 -- s, hard no-fire window at mission start (alignment)
 if dcsRetribution.plugins and dcsRetribution.plugins.coin then
     local o = dcsRetribution.plugins.coin
     HVT_INTERVAL = tonumber(o.hvtPatrolIntervalS) or HVT_INTERVAL
-    HVT_RADIUS = tonumber(o.hvtPatrolRadiusM) or HVT_RADIUS
-    HVT_SPEED = tonumber(o.hvtSpeedKmph) or HVT_SPEED
-    VBIED_SPEED = tonumber(o.vbiedSpeedKmph) or VBIED_SPEED
+    HVT_RADIUS = (tonumber(o.hvtPatrolRadiusNm) or HVT_RADIUS / 1852) * 1852 -- NM (UI) -> m
+    HVT_SPEED = (tonumber(o.hvtSpeedKt) or HVT_SPEED / 1.852) * 1.852 -- kt (UI) -> km/h
+    VBIED_SPEED = (tonumber(o.vbiedSpeedKt) or VBIED_SPEED / 1.852) * 1.852 -- kt (UI) -> km/h
     VBIED_INTERVAL = tonumber(o.vbiedRepathS) or VBIED_INTERVAL
     CELL_INTERVAL = tonumber(o.cellPatrolIntervalS) or CELL_INTERVAL
-    CELL_RADIUS = tonumber(o.cellPatrolRadiusM) or CELL_RADIUS
-    CELL_SPEED = tonumber(o.cellSpeedKmph) or CELL_SPEED
-    INFIL_SPEED = tonumber(o.infilSpeedKmph) or INFIL_SPEED
+    CELL_RADIUS = (tonumber(o.cellPatrolRadiusNm) or CELL_RADIUS / 1852) * 1852 -- NM (UI) -> m
+    CELL_SPEED = (tonumber(o.cellSpeedKt) or CELL_SPEED / 1.852) * 1.852 -- kt (UI) -> km/h
+    INFIL_SPEED = (tonumber(o.infilSpeedKt) or INFIL_SPEED / 1.852) * 1.852 -- kt (UI) -> km/h
     INFIL_INTERVAL = tonumber(o.infilRepathS) or INFIL_INTERVAL
     GRACE = tonumber(o.startGraceS) or GRACE
     MIN_JOURNEY = tonumber(o.minJourneyS) or MIN_JOURNEY
     HARASS_INTERVAL = tonumber(o.harassIntervalS) or HARASS_INTERVAL
     HARASS_ROUNDS = tonumber(o.harassRoundsPerEvent) or HARASS_ROUNDS
-    HARASS_DISPERSION = tonumber(o.harassDispersionM) or HARASS_DISPERSION
+    HARASS_DISPERSION = (tonumber(o.harassDispersionFt) or HARASS_DISPERSION / 0.3048) * 0.3048 -- ft (UI) -> m
     HARASS_POWER = tonumber(o.harassBlastPower) or HARASS_POWER
     HARASS_GRACE = tonumber(o.harassGraceS) or HARASS_GRACE
 end

@@ -1,5 +1,7 @@
 # Red Intent — a thinking red opponent (the deferred red arc)
 
+> **SUPERSEDED / REMOVED 2026-07-21** — Red Intent (§55) was removed from the fork (ROE mechanic drop, symmetric with the §40 removal). This note is kept as a historical record.
+
 **Status: P0–P4 LANDED** (feature **§55**, registered — the four planner seams below are all wired
 and unit-tested, gated `red_intent` default OFF; **P4 (the §53 supply coupling) went live when the
 sibling war economy landed**, exactly as the read-only drop-in predicted). The sibling of the

@@ -14,11 +14,14 @@ campaign or shared by accident. The flag is flipped from the main window's
 truth when it is on. AI/planner/threat math already pass ``viewer=None`` and are
 therefore unaffected either way.
 
-This module intentionally has no imports so it can be pulled in from anywhere in
-the theater layer without risk of an import cycle.
+This module intentionally has no project imports so it can be pulled in from
+anywhere in the theater layer without risk of an import cycle.
 """
 
 from __future__ import annotations
+
+from contextlib import contextmanager
+from typing import Iterator
 
 _revealed: bool = False
 
@@ -32,3 +35,22 @@ def set_fog_revealed(value: bool) -> None:
     """Enable/disable the overview. Runtime-only; never written to a save."""
     global _revealed
     _revealed = bool(value)
+
+
+@contextmanager
+def fog_intact() -> Iterator[None]:
+    """Force the real fog for the duration, whatever the overview toggle says.
+
+    The reveal is a *display* overview; anything that bakes fog-gated intel
+    into a shared artifact — mission generation's kneeboard threat pages, the
+    §74 DTC threat rings — must run inside this, or a host generating with the
+    overview ticked hands every client the god-view the module docstring
+    promises can never be shared by accident.
+    """
+    global _revealed
+    previous = _revealed
+    _revealed = False
+    try:
+        yield
+    finally:
+        _revealed = previous

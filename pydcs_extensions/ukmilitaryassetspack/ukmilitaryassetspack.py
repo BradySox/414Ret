@@ -12,9 +12,9 @@ from game.modsupport import shipmod, vehiclemod
 class CH_Ajax(unittype.VehicleType):
     id = "CH_Ajax"
     name = "[CH] Ajax CRV"
-    detection_range = 5000
-    threat_range = 5000
-    air_weapon_dist = 5000
+    detection_range = 0
+    threat_range = 4000
+    air_weapon_dist = 4000
     eplrs = True
 
 
@@ -23,8 +23,8 @@ class CH_AS90(unittype.VehicleType):
     id = "CH_AS90"
     name = "[CH] AS-90 SPG"
     detection_range = 0
-    threat_range = 24000
-    air_weapon_dist = 24000
+    threat_range = 25000
+    air_weapon_dist = 25000
     eplrs = True
 
 
@@ -32,9 +32,9 @@ class CH_AS90(unittype.VehicleType):
 class CH_Challenger2(unittype.VehicleType):
     id = "CH_Challenger2"
     name = "[CH] Challenger 2 MBT"
-    detection_range = 5000
-    threat_range = 4000
-    air_weapon_dist = 4000
+    detection_range = 0
+    threat_range = 3500
+    air_weapon_dist = 1200
     eplrs = True
 
 
@@ -42,9 +42,9 @@ class CH_Challenger2(unittype.VehicleType):
 class CH_Challenger3(unittype.VehicleType):
     id = "CH_Challenger3"
     name = "[CH] Challenger 3 MBT"
-    detection_range = 5000
-    threat_range = 5000
-    air_weapon_dist = 5000
+    detection_range = 0
+    threat_range = 8000
+    air_weapon_dist = 1200
     eplrs = True
 
 
@@ -60,7 +60,7 @@ class CH_LandRoverWolf(unittype.VehicleType):
 @vehiclemod
 class CH_LandRoverWMIK_M2(unittype.VehicleType):
     id = "CH_LandRoverWMIK_M2"
-    name = "[CH] Land Rover Wolf WMIK (M2)"
+    name = "[CH] Land Rover WMIK (M2)"
     detection_range = 0
     threat_range = 1800
     air_weapon_dist = 1800
@@ -70,30 +70,10 @@ class CH_LandRoverWMIK_M2(unittype.VehicleType):
 @vehiclemod
 class CH_LandRoverWMIK_MK19(unittype.VehicleType):
     id = "CH_LandRoverWMIK_MK19"
-    name = "[CH] Land Rover Wolf WMIK (Mk19)"
+    name = "[CH] Land Rover WMIK (MK19)"
     detection_range = 0
     threat_range = 2000
     air_weapon_dist = 2000
-    eplrs = True
-
-
-@vehiclemod
-class CH_Scimitar(unittype.VehicleType):
-    id = "CH_Scimitar"
-    name = "[CH] Scimitar CRV"
-    detection_range = 5000
-    threat_range = 3000
-    air_weapon_dist = 3000
-    eplrs = True
-
-
-@vehiclemod
-class CH_Scorpion(unittype.VehicleType):
-    id = "CH_Scorpion"
-    name = "[CH] Scorpion LT"
-    detection_range = 5000
-    threat_range = 3000
-    air_weapon_dist = 3000
     eplrs = True
 
 
@@ -111,7 +91,7 @@ class CH_SkySabreC2(unittype.VehicleType):
 class CH_SkySabreGiraffe(unittype.VehicleType):
     id = "CH_SkySabreGiraffe"
     name = "[CH] Sky Sabre Giraffe AMB STR (HX)"
-    detection_range = 120000
+    detection_range = 150000
     threat_range = 0
     air_weapon_dist = 0
     eplrs = True
@@ -119,29 +99,29 @@ class CH_SkySabreGiraffe(unittype.VehicleType):
 
 @vehiclemod
 class CH_SkySabreLN(unittype.VehicleType):
-    id = "CH_SkySabreLN"
+    id = "CH_SkySabre"
     name = "[CH] Sky Sabre iLauncher LN (HX)"
     detection_range = 0
-    threat_range = 25000
-    air_weapon_dist = 25000
+    threat_range = 30000
+    air_weapon_dist = 30000
     eplrs = True
 
 
 @vehiclemod
 class CH_StormerHVM(unittype.VehicleType):
     id = "CH_StormerHVM"
-    name = "[CH] Stormer HVM SHORAD"
-    detection_range = 10000
-    threat_range = 7000
-    air_weapon_dist = 7000
+    name = "[CH] Stormer HVM VSHORAD"
+    detection_range = 18000
+    threat_range = 7500
+    air_weapon_dist = 7500
     eplrs = True
 
 
 @vehiclemod
 class CH_Warrior(unittype.VehicleType):
     id = "CH_Warrior"
-    name = "[CH] Warrior IFV"
-    detection_range = 0
+    name = "[CH] FV510 Warrior IFV"
+    detection_range = 6000
     threat_range = 2500
     air_weapon_dist = 2500
     eplrs = True
@@ -153,17 +133,17 @@ class CH_Type26(unittype.ShipType):
     name = "[CH] Type 26 Frigate"
     helicopter_num = 1
     parking = 1
-    detection_range = 450000
-    threat_range = 160000
-    air_weapon_dist = 160000
+    detection_range = 200000
+    threat_range = 30000
+    air_weapon_dist = 30000
 
 
 @shipmod
 class Type45(unittype.ShipType):
-    id = "Type45"
+    id = "CH_Type45"
     name = "[CH] Type 45 Destroyer"
     helicopter_num = 1
     parking = 1
-    detection_range = 450000
-    threat_range = 160000
-    air_weapon_dist = 160000
+    detection_range = 400000
+    threat_range = 120000
+    air_weapon_dist = 120000

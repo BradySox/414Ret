@@ -24,7 +24,6 @@ from game.fourteenth.comint import (
     comint_kneeboard_lines,
     comint_leak_line,
     comint_sources,
-    gated_posture_detail,
     record_comint_collection,
 )
 from game.theater import Player
@@ -161,7 +160,6 @@ def test_off_is_an_exact_noop() -> None:
     game = _game([_tgo("comms")], on=False, collected_turn=4)
     assert collection_tier(cast(Any, game)) == 0
     assert comint_kneeboard_lines(cast(Any, game)) == []
-    assert gated_posture_detail(cast(Any, game), "Surging") == "Surging"
 
     flight = _flight(FlightType.JAMMING)
     game.blue.ato.packages = [_package(FlightType.BARCAP, "x", flight)]
@@ -355,13 +353,3 @@ def test_no_listing_without_a_red_net_plan() -> None:
     game = _game([_tgo("comms")])
     lines = comint_kneeboard_lines(cast(Any, game), None)
     assert not any("Active nets" in line for line in lines)
-
-
-def test_posture_detail_is_earned_by_an_emitting_net() -> None:
-    live = _game([_tgo("comms")])
-    assert gated_posture_detail(cast(Any, live), "Surging (all-in)") == (
-        "Surging (all-in)"
-    )
-    silent = _game([_tgo("comms", alive=False)])
-    assert gated_posture_detail(cast(Any, silent), "Surging (all-in)") is None
-    assert gated_posture_detail(cast(Any, silent), None) is None

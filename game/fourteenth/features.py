@@ -213,12 +213,10 @@ FEATURES: tuple[Feature, ...] = (
         settings_fields=("vietnam_snake_and_nape",),
     ),
     Feature(
-        # Pure engine feature (no Lua): the Tier-0 phase classifier + the HTN soft
-        # emphasis + the status surfaces, in game/fourteenth/phases.py.
         "campaign_phases",
         "Campaign phases (inferred arc + planner emphasis)",
         40,
-        settings_fields=("campaign_phases",),
+        retired=True,
     ),
     Feature(
         # Gated by the ModSettings/New Game `high_digit_sams` toggle (a wizard
@@ -314,7 +312,7 @@ FEATURES: tuple[Feature, ...] = (
         # produce supply that flows over the transit graph to the front and is consumed
         # there; a starved front recovers less, deploys fewer, and gains less ground
         # (P2), the SITREP shows why (P4a), and fuel depots gate air readiness (P3).
-        # Symmetric; coalition_supply_health/supply_factor feed §55 red intent.
+        # Symmetric.
         "war_economy",
         "War economy",
         53,
@@ -331,16 +329,10 @@ FEATURES: tuple[Feature, ...] = (
         settings_fields=("restrict_weapons_by_stock",),
     ),
     Feature(
-        # Pure engine feature (no Lua): a per-turn RED posture (consolidate/attrition/
-        # surge) in game/fourteenth/red_intent.py that biases the offensive HTN
-        # ordering, the target-shuffle unpredictability, the offensive-commit roll, and
-        # the ground-stance thresholds. Red-only; observe-only until enabled. §53/§54
-        # are the sibling war-economy pair (a separate branch); the §53 supply coupling
-        # (P4) is a read-only drop-in.
         "red_intent",
         "Red Intent — adaptive enemy posture",
         55,
-        settings_fields=("red_intent",),
+        retired=True,
     ),
     Feature(
         # Adopted from upstream PR dcs-retribution#859 (geofffranks). No plugin,
@@ -514,13 +506,11 @@ FEATURES: tuple[Feature, ...] = (
     ),
     Feature(
         # §68 adaptive procurement (game/fourteenth/adaptive_procurement.py):
-        # the AI economy reads the war. The auto-spend ground share shifts with
-        # the side's strategic read (§55 red posture / §40 blue phase), ground
-        # buys are price-weighted instead of uniform random, and -- its own
-        # gate -- each side's commander repairs a couple of destroyed SAM/EWR
-        # units per turn at surviving sites (full price, degraded sites and
-        # radars first; C2/comms stay permanently dead), so a rolled-back IADS
-        # stops being a one-way ratchet.
+        # the AI economy reads the war. Ground buys are price-weighted instead of
+        # uniform random, and -- its own gate -- each side's commander repairs a
+        # couple of destroyed SAM/EWR units per turn at surviving sites (full
+        # price, degraded sites and radars first; C2/comms stay permanently dead),
+        # so a rolled-back IADS stops being a one-way ratchet.
         "adaptive_procurement",
         "Adaptive procurement (posture-coupled spending + SAM repair)",
         68,
@@ -610,6 +600,44 @@ FEATURES: tuple[Feature, ...] = (
         settings_fields=(
             "alternate_victory_domination",
             "alternate_victory_attrition",
+        ),
+    ),
+    Feature(
+        # §76 CTLD paratroopers: fixed-wing troop transports (C-130J-30) fly
+        # Air Assault by paradrop -- the planner admits any cabin_size > 0
+        # airframe, and the ctld plugin's config layer jumps the stick (player:
+        # airborne unload; AI: auto-release over the target zone). Rides the
+        # ctld plugin toggle; no Settings field.
+        "ctld_paratroopers",
+        "CTLD paratroopers (fixed-wing air assault)",
+        76,
+        plugin_id="ctld",
+    ),
+    Feature(
+        # §77 Growler escort jamming: the EA-18G-only ESCORT_JAMMER escort role
+        # (auto-added on the SEAD-escort radar-SAM trigger, rides the package
+        # join->split) + the growler plugin's scripted EW effects -- a missile-
+        # spoof bubble over the package and offensive ROE WEAPON_HOLD pulses on
+        # radar SAMs (emissions never toggled). Rides the growler plugin toggle
+        # + the CJS Super Hornet ModSettings (default ON); no Settings field.
+        "growler_escort_jamming",
+        "Growler escort jamming (EA-18G)",
+        77,
+        plugin_id="growler",
+    ),
+    Feature(
+        # §78 sea-supply convoys + coastal anti-ship engagement: a pure-engine feature
+        # (no Lua). cargo_ship_convoys spreads a sea shipment across N hulls with
+        # proportional losses (game/missiongenerator/cargoshipgenerator.py +
+        # game/unitmap.py + the results processor); coastal_batteries_engage_ships sets
+        # coastal batteries weapons-free so they fire on passing ships (tgogenerator.py).
+        "sea_supply_convoys",
+        "Sea-supply convoys + coastal anti-ship engagement",
+        78,
+        settings_fields=(
+            "cargo_ship_convoys",
+            "cargo_ship_convoy_max",
+            "coastal_batteries_engage_ships",
         ),
     ),
     # Always-on engine plugins — major 414th machinery documented in design notes

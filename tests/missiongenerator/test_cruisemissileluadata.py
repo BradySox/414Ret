@@ -82,7 +82,6 @@ def _game(*, master: bool = True, auto: bool = False, with_target: bool = False)
         settings=SimpleNamespace(
             cruise_missile_strikes=master,
             cruise_missile_auto_raids=auto,
-            campaign_phases=False,
         ),
     )
 

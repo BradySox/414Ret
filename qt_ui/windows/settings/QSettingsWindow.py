@@ -1,7 +1,5 @@
 import json
 import logging
-import re
-import textwrap
 import zipfile
 from typing import Callable, Optional, Dict
 
@@ -174,42 +172,6 @@ class CheatSettingsBox(QGroupBox):
         return self.free_placement_checkbox.isChecked()
 
 
-# A detail longer than this is summarised to its first sentence inline and shown in
-# full on hover, so the dense pages stop reading as walls of text.
-INLINE_DETAIL_MAX = 150
-
-
-# Periods inside these do not end a sentence -- naive ". " splitting cut several
-# settings labels at "(e.g. …" (dangling paren, mid-abbreviation).
-_NON_SENTENCE_ENDINGS = ("e.g", "i.e", "etc", "vs", "cf")
-
-
-def _word_cut(detail: str) -> str:
-    """Truncate at the last word boundary under the limit -- never mid-word."""
-    cut = detail[:INLINE_DETAIL_MAX]
-    if " " in cut:
-        cut = cut[: cut.rfind(" ")]
-    return cut.rstrip() + " …"
-
-
-def _summary_line(detail: str) -> str:
-    """The one-line inline hint for a long detail; the full text goes to the tooltip."""
-    for match in re.finditer(r"\. ", detail):
-        prefix = detail[: match.start()]
-        if prefix.lower().endswith(_NON_SENTENCE_ENDINGS):
-            continue
-        first = prefix.strip() + "."
-        # A first "sentence" longer than the limit defeats the summary -- fall
-        # back to the word-boundary cut instead of rendering it whole.
-        if len(first) > INLINE_DETAIL_MAX:
-            break
-        return first + " …"
-    idx = detail.find(" -- ")
-    if idx != -1 and 0 < idx <= INLINE_DETAIL_MAX:
-        return detail[:idx].strip() + " …"
-    return _word_cut(detail)
-
-
 class AutoSettingsLayout(QGridLayout):
     def __init__(
         self,
@@ -228,6 +190,11 @@ class AutoSettingsLayout(QGridLayout):
         # child field's (master, enabled_value) spec.
         self.labels_map: Dict[str, QLabel] = {}
         self.enabled_specs: Dict[str, tuple[str, bool]] = {}
+
+        # The label column absorbs all spare width (the controls keep hugging
+        # the right edge), so word-wrapped descriptions use the whole row
+        # instead of leaving the middle of the window empty.
+        self.setColumnStretch(0, 1)
 
         self.init_ui()
 
@@ -251,22 +218,18 @@ class AutoSettingsLayout(QGridLayout):
         self._wire_dependency_greying()
 
     def add_label(self, row: int, name: str, description: OptionDescription) -> None:
-        wrapped_title = "<br />".join(textwrap.wrap(description.text, width=55))
-        text = f"<strong>{wrapped_title}</strong>"
+        # The full detail renders inline (the 2026-07-20 revert of the
+        # first-sentence + hover-tooltip summarisation -- reading a setting must
+        # not require hovering it), and Qt wraps it to the real label-column
+        # width: the old fixed 55-character textwrap left everything right of
+        # the text column as dead space and made rows needlessly tall.
+        text = f"<strong>{description.text}</strong>"
         tooltip = description.tooltip
         detail = description.detail
         if detail is not None:
-            if len(detail) <= INLINE_DETAIL_MAX:
-                inline = detail
-            else:
-                # Summarise long help to one line; keep the full text on hover so the
-                # dense pages stop drowning their controls in paragraphs.
-                inline = _summary_line(detail)
-                if tooltip is None:
-                    tooltip = detail
-            wrapped = "<br />".join(textwrap.wrap(inline, width=55))
-            text += f"<br />{wrapped}"
+            text += f"<br />{detail}"
         label = QLabel(text)
+        label.setWordWrap(True)
         if tooltip is not None:
             label.setToolTip(tooltip)
         label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)

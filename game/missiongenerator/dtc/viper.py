@@ -23,12 +23,12 @@ from game.missiongenerator.dtc.cartridge import DtcCartridge
 from game.missiongenerator.dtc.common import (
     SupportTrack,
     cap_tracks,
+    client_altitude,
     flot_segments,
     is_route_waypoint,
     is_target_waypoint,
     known_enemy_threat_sites,
     leg_speed_kmh,
-    restricted_zone_outlines,
     seconds_of_day,
     support_tracks,
     waypoint_display_name,
@@ -154,20 +154,24 @@ def _build_nav_pts(
     options = flight.dtc_options
     points: list[dict[str, Any]] = []
     prev_route_wp = None
-    waypoints = flight.waypoints if options.route else []
+    # Match the kneeboard's numbering: its row 0 (takeoff/spawn) is not
+    # emitted, so STPT n in the jet is kneeboard waypoint n (the flown
+    # Hornet off-by-one applied here identically).
+    waypoints = flight.waypoints[1:] if options.route else []
     for waypoint in waypoints:
         if len(points) >= MAX_STEERPOINTS:
             return points
         number = len(points) + 1
         on_route = is_route_waypoint(waypoint)
+        alt_m, altitude_type = client_altitude(waypoint)
         points.append(
             _steerpoint(
                 number,
                 waypoint_display_name(waypoint.display_name or waypoint.name),
                 waypoint.position.x,
                 waypoint.position.y,
-                waypoint.alt.meters,
-                2 if waypoint.alt_type == "RADIO" else 1,
+                alt_m,
+                altitude_type,
                 on_route,
                 leg_speed_kmh(prev_route_wp if on_route else None, waypoint),
                 seconds_of_day(game, waypoint.tot),
@@ -204,10 +208,9 @@ def _build_nav_pts(
 
 
 def _build_geo_lines(game: Game) -> list[dict[str, Any]]:
-    """FLOT + no-strike outlines across the HSD's four line sets."""
+    """FLOT boundaries across the HSD's four line sets."""
     line_sets: list[tuple[str, list[tuple[float, float]]]] = []
     line_sets.extend(flot_segments(game))
-    line_sets.extend(restricted_zone_outlines(game, MAX_GEO_POINTS_PER_SET))
     geo_points: list[dict[str, Any]] = []
     for set_index, (name, points) in enumerate(line_sets[:MAX_GEO_LINE_SETS]):
         flags = {f"L{i}": i == set_index + 1 for i in range(1, 5)}

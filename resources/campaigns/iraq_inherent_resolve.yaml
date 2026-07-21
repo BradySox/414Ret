@@ -75,9 +75,8 @@ settings:
   plugins:
     convoyambush: true
   vietnam_airbase_harassment: true
-  # The inverted political-will economy + the campaign-phase arc.
+  # The inverted political-will economy.
   vietnam_political_will: true
-  campaign_phases: true
   # The insurgent faction's ERO ZU-23 technicals are HDS Ultimate Compilation content --
   # they resolve only with the mod on (and drop silently without it, so a mod-less
   # install still plays).
@@ -102,9 +101,6 @@ will:
       Mosul falls.
   weights:
     blue_airframe_loss: 2.0
-    # 1.0/kill = CDE pressure, not taboo: a careful city fight is survivable once -- a
-    # carpet habit over Mosul bleeds the mandate out.
-    blue_roe_violation: 1.0
     blue_base_lost: 5.0
     blue_ied_detonation: 2.5
     blue_passive_regen: 0.0
@@ -119,99 +115,11 @@ will:
     red_hvt_escaped: 1.5
     red_passive_regen: 1.0
 
-# The three-phase Mosul arc, will-coupled. Mosul city sits inside a permanent no-strike
-# positive-control box (it is always populated); the West Mosul phase adds the tight Old
-# City box on top. Collateral inside them prices CDE into the mandate (violation weight
-# 1.0), never a hard block. No free-fire inversion -- the desert and the plains are simply
-# unrestricted. NOTE: never lock the `ammo` class -- the caches must always be legal targets.
-phases:
-  - key: isolation
-    name: Isolate Mosul
-    narrative: >-
-      Take the ring before you take the city: grind up Highway 1 out of Balad -- Tikrit,
-      Shirqat, then Hammam al-Alil -- peel the eastern belt (Erbil, Kirkuk) with air
-      assaults, and cut the ratline west. Map the caliphate's caches while you do it --
-      their supply is the target, not their fighters.
-    emphasis: interdiction
-    objectives:
-      - Recon and destroy ammo caches -- each one killed slows that stronghold's regeneration
-      - Interdict the trail convoys west toward Tal Afar -- the ratline feeds the resolve meter
-      - Mind the box -- fixed strikes inside the Mosul positive-control area bleed the mandate
-      - text: Take the southern gate -- capture Hammam al-Alil
-        done_when:
-          capture_cp: Hammam al-Alil
-    restricted_zones: &mosul_cde
-      # Mosul itself: the whole built-up city, a big no-strike positive-control box.
-      # Coordinate-anchored to the airfield/city center on the real terrain.
-      - shape: box
-        name: Mosul -- positive control
-        x: 339469
-        y: -94071
-        width_nm: 16
-        height_nm: 12
-    advance_when:
-      capture_cp: Hammam al-Alil
-  - key: east_mosul
+red_tempo:
+  - from_turn: 6
     name: East Mosul
-    min_turn: 6
-    red_tempo:
-      trail_surge: 2.0
-    narrative: >-
-      Cross into the city from the east. The caliphate answers penetrations with waves of
-      VBIEDs and a supply surge down the trail; keep the caches dead and hold what you clear
-      as you close on the Tigris.
-    emphasis: offensive
-    objectives:
-      - text: Clear the eastern ring -- retake Bartella
-        done_when:
-          capture_cp: Bartella
-      - text: Bleed the caliphate's resolve below half
-        done_when:
-          red_resolve_below: 50
-      - Hold what you clear -- garrisons and patience beat body count
-    restricted_zones: *mosul_cde
-    advance_when:
-      red_resolve_below: 45
-  - key: west_mosul
-    name: West Mosul & the Old City
-    min_turn: 14
-    narrative: >-
-      The last and hardest phase: cross the Tigris into West Mosul and the Old City, the
-      densest ground of the war. Every release here is under positive control -- take the
-      airport, break the caliphate's resolve, and end it.
-    emphasis: offensive
-    objectives:
-      - text: Take Mosul International Airport
-        done_when:
-          capture_cp: Mosul International Airport
-      - text: Break the caliphate's resolve
-        done_when:
-          red_resolve_below: 25
-    restricted_zones:
-      - shape: box
-        name: Mosul -- positive control
-        x: 339469
-        y: -94071
-        width_nm: 16
-        height_nm: 12
-      # The Old City on the west bank of the Tigris -- the tightest CDE ground of the battle.
-      - shape: box
-        name: The Old City -- positive control (no strike)
-        x: 337000
-        y: -96500
-        width_nm: 5
-        height_nm: 4
+    trail_surge: 2.0
 
-# The red<->red supply graph, now routed through the in-between towns so the corridor and the
-# belt are continuous (no 100 km empty gaps). The Highway-1 corridor Tikrit -> Bayji -> Shirqat
-# -> Qayyarah -> Hammam al-Alil -> Mosul the ISF grinds up; the Nineveh ring off Mosul (Bartella
-# + the westward Tal Afar ratline toward Syria, the convoy-interdiction target); the NE belt
-# Mosul -> Gwer -> Erbil -> Kirkuk; and the bridges (Makhmur ties Mosul<->Kirkuk, Hawija ties
-# the corridor<->Kirkuk). Endpoints are exact CP XY (closest-CP binding reads first/last
-# waypoint only); the FOB endpoints use the ME-authored positions. All red<->red -- the one
-# blue<->red front (Balad -> Tikrit) is a front-line group in the base miz.
-# TODO(in-app pass): re-trace intermediate waypoints on the real road network via
-# tools/supply_route_geo.py (the 414th supply-line standard).
 supply_routes:
   # --- The Highway 1 corridor (the advance, south -> north):
   # Tikrit -> Bayji

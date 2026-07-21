@@ -49,16 +49,16 @@ def test_default_weights_mirror_the_real_dataclass() -> None:
     assert TOOL.DEFAULT_WEIGHTS == real
 
 
-def test_load_campaign_reads_the_ratchet_overrides() -> None:
+def test_load_campaign_reads_the_red_tempo_schedule() -> None:
     camp = TOOL.load_campaign("1968_Yankee_Station")
-    # The redo's signature overrides are present...
+    # The morale-ratchet will-weight overrides are present...
     assert camp.weights["blue_passive_regen"] == -0.4
     assert camp.weights["red_convoy_unit_lost"] == 1.0
-    # ...and the arc carries the escalation tax on the late phases.
-    by_key = {p.key: p for p in camp.phases}
-    assert by_key["linebacker"].blue_will_on_entry == -3.0
-    assert by_key["linebacker_ii"].blue_will_on_entry == -5.0
-    assert by_key["rolling_thunder"].trail_surge == 1.5
+    # ...and the top-level red_tempo schedule carries the turn windows.
+    by_name = {win.name: win for win in camp.red_tempo}
+    assert by_name["Rolling Thunder"].trail_surge == 1.5
+    assert by_name["The Bombing Halt"].resolve_regen == 1.5
+    assert by_name["Linebacker"].ground_offensive == 3
 
 
 def test_load_campaign_rejects_an_unknown_weight(tmp_path: Any) -> None:

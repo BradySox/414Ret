@@ -1,5 +1,7 @@
 # 414th — Campaign Phases: 6-campaign inference pilot
 
+> **SUPERSEDED / REMOVED 2026-07-21** — the campaign-phases feature (§40) was removed from the fork (ROE mechanic drop). This pilot note is kept as a historical record.
+
 **Status:** pilot complete (2026-07-01). Companion to
 [`414th-campaign-phases-notes.md`](414th-campaign-phases-notes.md) (the spec). This validates
 the Tier-0 classifier's §3.2 thresholds against real laydowns and drafts an inferred arc per

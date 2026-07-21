@@ -47,8 +47,6 @@ settings:
   # The Iraqi Air Force fought as a GCI-vectored alert force under KARI: more MiGs
   # on reactive hot-alert, fewer standing forward orbits.
   opfor_default_qra_reserve: 4
-  # The authored Instant Thunder -> Scud Hunt -> ground-offensive arc below.
-  campaign_phases: true
   # The will economy carries the political layer: coalition cohesion vs the regime's
   # resolve, the POW running sore (paraded aircrew drain cohesion every turn until
   # freed -- a negotiated win brings them home), and the CDE price of a release
@@ -101,85 +99,12 @@ will:
     exhaustion_body: >-
       The army is wrecked on the roads, KARI is blind, and the Mother of all Battles
       is lost -- Baghdad accepts every coalition term at Safwan.
-  weights:
-    blue_roe_violation: 3.0
 
-# The authored three-phase arc. Baghdad's populated river-bend core sits inside a
-# permanent no-strike circle (both airbase MEZs stay legal targets outside it); a
-# release inside it prices CDE into coalition cohesion at the weight above -- never
-# a hard block, always a bill.
-phases:
-  - key: instant_thunder
-    name: Instant Thunder
-    narrative: >-
-      Night one, and every night after: put out KARI's eyes. The ADOC in Baghdad and
-      the sector operations centers at Al-Taquddum, Kirkuk and Al-Kut are the
-      network's brain; the EWR chain is its eyes; the SA-2 and SA-3 rings around
-      Baghdad are its teeth. Decapitate the C2, roll back the belt, and win the air
-      war the Foxbats of Qadessiya come up to fight.
-    emphasis: rollback
-    objectives:
-      - Decapitate KARI -- the ADOC and sector operations centers are strikeable C2
-      - Roll back the Baghdad SAM rings -- SEAD opens the corridors everything uses
-      - Kill the EWR chain and the net goes quiet on the DF gear too
-    restricted_zones: &baghdad_cde
-      - shape: circle
-        name: Baghdad -- populated city (no strike)
-        x: 9000
-        y: 16000
-        radius_nm: 4
-    advance_when:
-      enemy_iads_below: 0.55
-  - key: scud_hunt
+red_tempo:
+  - from_turn: 4
     name: The Great Scud Hunt
-    min_turn: 4
-    red_tempo:
-      trail_surge: 1.5
-    narrative: >-
-      The Scuds are flying, and every launch is aimed at the coalition itself. The
-      western baskets sit right on your doorstep -- find the launchers before they
-      shoot, they relocate between every recon pass -- and strangle the highway net
-      that feeds them and the army. Take H-2 to open the pipeline road; Baghdad
-      surges its convoys to compensate. Good. More targets.
-    emphasis: interdiction
-    objectives:
-      - Hunt the Scud batteries -- TARPS the suspected sites, then kill the launchers
-      - Interdict the highway convoys -- the army lives on the roads
-      - text: Seize H-2 -- the first rung of the ladder
-        done_when:
-          capture_cp: H-2 Airbase
-      - Keep the pressure on KARI -- the rings repair themselves if you let them
-    restricted_zones: *baghdad_cde
-    advance_when:
-      enemy_iads_below: 0.35
-  - key: umm_al_maarik
-    name: Umm al-Ma'arik -- the ground offensive
-    min_turn: 9
-    narrative: >-
-      The air war is won; now end the whole thing. Take Qadessiya -- Al-Asad, the
-      Foxbats' own fortress -- break the army in the field before it can dig in
-      around the capital, and force the regime to the table. The Mother of all
-      Battles ends at Safwan, one way or the other.
-    emphasis: offensive
-    objectives:
-      - text: Take Al-Asad -- Qadessiya, the western fortress
-        done_when:
-          capture_cp: Al-Asad Airbase
-      - text: Break the regime's resolve
-        done_when:
-          red_resolve_below: 25
-      - Mind the city -- the no-strike circle holds to the end
-    restricted_zones: *baghdad_cde
+    trail_surge: 1.5
 
-# The 1991 highway graph, traced from the real road network per the driveable-corridor
-# standard (tools/supply_route_geo.py, mode `iraq_desert_storm` -- regenerate there,
-# never hand-edit the numbers). RED holds nearly the whole map, so its interior net IS
-# the interdiction target set: Highway 1 (Baghdad-Taji-Balad-Samarra-Tikrit-Bayji-
-# Qayyarah-Mosul), Highway 10 west to the Habbaniyah front, Highway 6 southeast to
-# Kut, the Jabal Hamrin crossing to Kirkuk, and the Kurdish arcs (Altun Kupri,
-# Chamchamal, Bartella, Makhmur). BLUE's pipeline-station ladder H-3 -> H-2 ->
-# Al-Asad is authored as M-113 path groups in the .miz (they carry the front line up
-# the ladder and double as the convoy roads once each rung is captured).
 supply_routes:
   # Baghdad International -> Al-Salam  (RED city hop: the airport expressway -> the
   # Dora expressway east to the Rasheed side)
@@ -279,6 +204,10 @@ squadrons:
   # deliberately NOT authored (they must match the installed DCS livery set; see the
   # squadron-livery-audit note) -- identity only. female_pilot_percentage is 0
   # everywhere: US combat squadrons were closed to women until 1993.
+  # country: USA pins every US unit's DCS nation (comms voice + pilot names):
+  # the blue faction is a CJTF, so an airframe-name squadron pick otherwise
+  # draws a random nation's preset (the flown Israeli/Greek-voiced F-16 finding).
+  # The RAF/French units bind nation-countried presets by name and need no pin.
   # ---- BLUE: the off-map Saudi rear -- the tanker bridge and the AWACS orbits.
   # The Iraq map has no 60x60 heavy stands west of Baghdad, and historically the
   # big wings never based in Iraq at all: they fly from over the border.
@@ -288,6 +217,7 @@ squadrons:
       name: 963rd AWACS
       nickname: Blue Knights
       female_pilot_percentage: 0
+      country: USA
       aircraft:
         - E-3A
       size: 1
@@ -296,6 +226,7 @@ squadrons:
       name: 1701st AREFW (Provisional)
       nickname: ""
       female_pilot_percentage: 0
+      country: USA
       aircraft:
         - KC-135 Stratotanker
       size: 1
@@ -303,6 +234,7 @@ squadrons:
       name: 1702nd AREFW (Provisional)
       nickname: ""
       female_pilot_percentage: 0
+      country: USA
       aircraft:
         - KC-135 Stratotanker MPRS
       size: 1
@@ -350,6 +282,7 @@ squadrons:
       name: 58th TFS
       nickname: Gorillas
       female_pilot_percentage: 0
+      country: USA
       aircraft:
         - F-15C Eagle
       size: 12
@@ -359,6 +292,7 @@ squadrons:
       name: 561st TFS
       nickname: Black Knights
       female_pilot_percentage: 0
+      country: USA
       aircraft:
         - F-4E-45MC Phantom II
       size: 12
@@ -372,6 +306,7 @@ squadrons:
       name: VF-103
       nickname: Sluggers
       female_pilot_percentage: 0
+      country: USA
       aircraft:
         - F-14B Tomcat
       size: 8
@@ -386,6 +321,7 @@ squadrons:
       name: 23rd TFS
       nickname: Fighting Hawks
       female_pilot_percentage: 0
+      country: USA
       aircraft:
         - F-16CM Fighting Falcon (Block 50)
       size: 8
@@ -396,6 +332,7 @@ squadrons:
       name: VFA-81
       nickname: Sunliners
       female_pilot_percentage: 0
+      country: USA
       aircraft:
         - F/A-18C Hornet (Lot 20)
       size: 8
@@ -405,6 +342,7 @@ squadrons:
       name: 336th TFS
       nickname: Rocketeers
       female_pilot_percentage: 0
+      country: USA
       aircraft:
         - F-15E Strike Eagle (Suite 4+)
       size: 8
@@ -415,6 +353,7 @@ squadrons:
       name: 355th TFS
       nickname: Falcons
       female_pilot_percentage: 0
+      country: USA
       aircraft:
         - A-10C Thunderbolt II (Suite 7)
       size: 8
@@ -426,6 +365,7 @@ squadrons:
       name: 7-101st Aviation
       nickname: Eagle Lift
       female_pilot_percentage: 0
+      country: USA
       aircraft:
         - CH-47F Block I
       size: 4
@@ -436,6 +376,7 @@ squadrons:
       name: 1-101st Aviation
       nickname: Expect No Mercy
       female_pilot_percentage: 0
+      country: USA
       aircraft:
         - AH-64A Apache
       size: 4
@@ -445,6 +386,7 @@ squadrons:
       name: 2-17th Cavalry
       nickname: Out Front
       female_pilot_percentage: 0
+      country: USA
       aircraft:
         - OH-58D(R) Kiowa Warrior
       size: 4

@@ -1,0 +1,49 @@
+{
+    "nameInUI": "Growler escort jamming (EA-18G)",
+    "descriptionInUI": "Runtime for the ESCORT_JAMMER role. Inert unless the mission generator emits dcsRetribution.growler (an EA-18G escort-jammer flight exists). Each Growler riding a package projects the scripted EW effects of the Timberwolf/Matador escort-jamming family: a defensive bubble that can spoof radar-guided missiles fired at the Growler or the package members it covers (closer to the jammer = harder to hit), and offensive pressure that can force a radar SAM engaging the package onto a temporary weapons-hold pulse. ROE only -- radars keep emitting (SEAD/HARMs still work, radar emissions are NEVER toggled) and the plugin owns no kills beyond the spoofed missile. AI Growlers jam automatically after a startup grace; a player-flown Growler gets an F10 'Growler jamming' menu instead.",
+    "defaultValue": true,
+    "specificOptions": [
+        {
+            "nameInUI": "Seconds between offensive jamming checks",
+            "mnemonic": "tickSec",
+            "defaultValue": 10
+        },
+        {
+            "nameInUI": "Startup grace before AI jamming begins (s)",
+            "mnemonic": "startGraceS",
+            "defaultValue": 120
+        },
+        {
+            "nameInUI": "Offensive jamming power (1.0 = baseline, 0 = off)",
+            "mnemonic": "offensivePower",
+            "defaultValue": 1.0
+        },
+        {
+            "nameInUI": "Defensive missile-spoof power (1.0 = baseline, 0 = off)",
+            "mnemonic": "defensivePower",
+            "defaultValue": 1.0
+        },
+        {
+            "nameInUI": "Max offensive jamming range (NM)",
+            "mnemonic": "maxRangeNm",
+            "defaultValue": 40
+        },
+        {
+            "nameInUI": "Weapons-hold pulse on a jammed SAM (s)",
+            "mnemonic": "holdSec",
+            "defaultValue": 20
+        },
+        {
+            "nameInUI": "Min missile travel before a spoof can fire (m)",
+            "mnemonic": "spoofMinTravelM",
+            "defaultValue": 2000
+        }
+    ],
+    "scriptsWorkOrders": [],
+    "configurationWorkOrders": [
+        {
+            "file": "growler-config.lua",
+            "mnemonic": "growler-config"
+        }
+    ]
+}

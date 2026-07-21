@@ -24,6 +24,7 @@ from dcs.terrain import Caucasus
 
 from game.ato.dtcoptions import DtcOptions
 from game.ato.flighttype import FlightType
+from game.ato.flightwaypoint import GROUND_MARKED_WAYPOINTS
 from game.ato.flightwaypointtype import FlightWaypointType
 from game.missiongenerator.dtc import DtcGenerator
 from game.missiongenerator.dtc.cartridge import DtcCartridge
@@ -69,6 +70,8 @@ def _waypoint(
         tot=tot,
         departure_time=None,
         targets=targets or [],
+        # Mirror the real FlightWaypoint property (none of these fakes fly over).
+        marks_ground_for_player=waypoint_type in GROUND_MARKED_WAYPOINTS,
     )
 
 
@@ -176,13 +179,6 @@ def _game(*, dtc_on: bool = True, controlpoints: Optional[list[Any]] = None) -> 
             conflicts=lambda: [],
             controlpoints=controlpoints or [],
         ),
-    )
-
-
-@pytest.fixture(autouse=True)
-def _no_restricted_zones(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(
-        "game.fourteenth.phases.active_restricted_zones", lambda game: []
     )
 
 
@@ -296,19 +292,20 @@ def test_hornet_cartridge_shape() -> None:
     data = payload["data"]
     assert data["terrain"] == "Caucasus"
 
-    # Waypoints: numbered, named, on route 1 in order.
+    # Waypoints: numbered to MATCH THE KNEEBOARD -- its row 0 (takeoff) is not
+    # emitted, so STPT n is kneeboard waypoint n.
     nav_pts = data["WYPT"]["NAV_PTS"]
-    assert [w["wypt_num"] for w in nav_pts] == [1, 2, 3]
-    assert [w["text_note"] for w in nav_pts] == ["TAKEOFF", "TARGET", "LANDING"]
+    assert [w["wypt_num"] for w in nav_pts] == [1, 2]
+    assert [w["text_note"] for w in nav_pts] == ["TARGET", "LANDING"]
     assert all(w["R1"] for w in nav_pts)
-    assert [w["R1_order"] for w in nav_pts] == [1, 2, 3]
+    assert [w["R1_order"] for w in nav_pts] == [1, 2]
 
     # Route sequence: ETA absolute seconds, target flagged, routes 2/3 empty.
     route = data["WYPT"]["NAV_ROUTE"]
     assert route[1] == [] and route[2] == []
-    assert route[0]["STPT2"]["ETA"] == 7 * 3600 + 30 * 60
-    assert route[0]["STPT2"]["TGT"] is True
-    assert route[0]["STPT1"]["TGT"] is False
+    assert route[0]["STPT1"]["ETA"] == 7 * 3600 + 30 * 60
+    assert route[0]["STPT1"]["TGT"] is True
+    assert route[0]["STPT2"]["TGT"] is False
 
     # NAV settings: the boat card pre-tuned.
     nav_settings = data["WYPT"]["NAV_SETTINGS"]
@@ -320,7 +317,7 @@ def test_hornet_cartridge_shape() -> None:
     }
     assert nav_settings["ICLS"] == {"Channel": 11, "OnOff": True}
     assert nav_settings["ACLS"] == {"Frequency": 336.4, "OnOff": True}
-    assert nav_settings["Home_Waypoint"] == {"FPAS_HOME_WP": 3}
+    assert nav_settings["Home_Waypoint"] == {"FPAS_HOME_WP": 2}
 
     # COMM: allocator channels mirrored with names; defaults elsewhere.
     comm1 = data["COMM"]["COMM1"]
@@ -361,17 +358,17 @@ def test_viper_cartridge_shape() -> None:
     data = json.loads(cartridge.to_json())["data"]
 
     nav_pts = data["MPD"]["NAV_PTS"]
-    # Route first, then the tanker + CAP anchors as extra steerpoints.
+    # Route first (kneeboard row 0 / takeoff not emitted, so STPT n matches
+    # the kneeboard), then the tanker + CAP anchors as extra steerpoints.
     assert [p["note"] for p in nav_pts] == [
-        "TAKEOFF",
         "TARGET",
         "LANDING",
         "TKR ARCO",
         "CAP COLT",
     ]
-    assert nav_pts[1]["TOS"] == 7 * 3600 + 30 * 60
-    assert nav_pts[1]["isTOSEnabled"] is True
-    assert nav_pts[3]["R1"] is False
+    assert nav_pts[0]["TOS"] == 7 * 3600 + 30 * 60
+    assert nav_pts[0]["isTOSEnabled"] is True
+    assert nav_pts[2]["R1"] is False
 
     threat = data["MPD"]["THREAT_PTS"]
     assert len(threat) == 1
@@ -382,6 +379,39 @@ def test_viper_cartridge_shape() -> None:
     comm1 = data["COMM"]["COMM1"]
     assert comm1["Channel_2"] == {"freq": 251.0, "modulation": 1}
     assert "name" not in comm1["Channel_1"]
+
+
+def test_cartridges_ground_marked_waypoints_like_the_miz() -> None:
+    """The .miz zeroes a ground-marked steerpoint (target areas, CAS FLOT
+    boundaries) to 0 AGL for client flights; the cartridge must agree or the
+    AutoLoad floats the target diamond back up to the AI's track altitude (the
+    flown DS91 escort kneeboard's 22,000 ft "Target area")."""
+    takeoff = _waypoint("TAKEOFF", FlightWaypointType.TAKEOFF, 0, 0, 0, None)
+    nav = _waypoint("NAV", FlightWaypointType.NAV, 10000, 0, 6705, None)
+    target = _waypoint(
+        "TARGET", FlightWaypointType.TARGET_GROUP_LOC, 60000, 80000, 6705, None
+    )
+    # Kneeboard row 0 (takeoff) is not emitted; NAV/TARGET land on STPT 1/2.
+    flight = _flight(waypoints=[takeoff, nav, target])
+    mission_data = _mission_data([flight])
+    game = _game()
+
+    hornet = json.loads(
+        build_hornet_cartridge(flight, mission_data, game, "Test FA-18C").to_json()
+    )["data"]
+    nav_pts = hornet["WYPT"]["NAV_PTS"]
+    assert nav_pts[0]["alt"] == 6705 and nav_pts[0]["altitudeType"] == 1
+    assert nav_pts[1]["alt"] == 0 and nav_pts[1]["altitudeType"] == 2
+    # The route sequence carries the same zeroed leg.
+    assert hornet["WYPT"]["NAV_ROUTE"][0]["STPT2"]["alt"] == 0
+
+    flight.aircraft_type = SimpleNamespace(dcs_unit_type=SimpleNamespace(id="F-16C_50"))
+    viper = json.loads(
+        build_viper_cartridge(flight, mission_data, game, "Test F-16C").to_json()
+    )["data"]
+    steerpoints = viper["MPD"]["NAV_PTS"]
+    assert steerpoints[0]["alt"] == 6705 and steerpoints[0]["altitudeType"] == 1
+    assert steerpoints[1]["alt"] == 0 and steerpoints[1]["altitudeType"] == 2
 
 
 def test_unit_dict_and_miz_round_trip(tmp_path: Path) -> None:
@@ -561,7 +591,7 @@ def test_hornet_sections_are_omitted_when_off() -> None:
     cartridge = build_hornet_cartridge(flight, mission_data, game, "Route Only")
     data = json.loads(cartridge.to_json())["data"]
     assert "SA" not in data
-    assert len(data["WYPT"]["NAV_PTS"]) == 3
+    assert len(data["WYPT"]["NAV_PTS"]) == 2  # kneeboard rows 1..N
     assert data["WYPT"]["NAV_SETTINGS"]["TACAN"]["OnOff"] is False
 
 
@@ -631,7 +661,7 @@ def test_distinct_stations_survive_dedupe() -> None:
     assert len(dedupe_stations(far_apart)) == 3
 
 
-def test_hornet_sa_page_keeps_support_and_dedupes_waves() -> None:
+def test_hornet_sa_page_prioritizes_coverage_then_fills_free_slots() -> None:
     flight, mission_data, game = _hornet_fixture()
     # A second wave of the COLT station: jittered a few km, same course.
     mission_data.flights.append(
@@ -641,7 +671,68 @@ def test_hornet_sa_page_keeps_support_and_dedupes_waves() -> None:
     )
     cartridge = build_hornet_cartridge(flight, mission_data, game, "Waves")
     caps = json.loads(cartridge.to_json())["data"]["SA"]["CAP_PTS"]
-    assert [c["note"] for c in caps] == ["ARCO", "COLT"]
+    # Support first, one per station next -- and with slots to spare, the
+    # second wave draws too ("all the racetracks" whenever they fit).
+    assert [c["note"] for c in caps] == ["ARCO", "COLT", "COLT"]
+
+
+def test_default_cap_point_is_the_flights_own_station() -> None:
+    flight, mission_data, game = _hornet_fixture()
+    # A strike flight defaults to entry 1 (the first support orbit).
+    cartridge = build_hornet_cartridge(flight, mission_data, game, "Strike")
+    assert json.loads(cartridge.to_json())["data"]["SA"]["Default_CAP_Point"] == 1
+
+    # A CAP flight flying the COLT station pre-selects its own racetrack.
+    flight.flight_type = FlightType.BARCAP
+    flight.waypoints = list(flight.waypoints) + [
+        _waypoint(
+            "RACETRACK START", FlightWaypointType.PATROL_TRACK, -20000, 5000, 6000, None
+        ),
+        _waypoint(
+            "RACETRACK END", FlightWaypointType.PATROL, -20000, 25000, 6000, None
+        ),
+    ]
+    cartridge = build_hornet_cartridge(flight, mission_data, game, "Own CAP")
+    data = json.loads(cartridge.to_json())["data"]["SA"]
+    # The client flight is itself the station's first wave, so the merged
+    # station wears its callsign; the COLT relief wave folds into it.
+    assert [c["note"] for c in data["CAP_PTS"]][:2] == ["ARCO", "WIZAR"]
+    assert data["Default_CAP_Point"] == 2  # the flight's own station
+
+
+def _wave_flight(
+    callsign: str, cx: float, cy: float, course: float, length: float
+) -> Any:
+    half = length / 2.0
+    dx = math.cos(math.radians(course)) * half
+    dy = math.sin(math.radians(course)) * half
+    return _support_flight(
+        FlightType.BARCAP, callsign, Pt(cx - dx, cy - dy), Pt(cx + dx, cy + dy)
+    )
+
+
+def test_hornet_sa_page_fills_all_nine_slots_when_the_ato_overflows() -> None:
+    flight, mission_data, game = _hornet_fixture()
+    # The nine flown wave tracks (three stations, three waves each) on top of
+    # the fixture's own COLT station + ARCO tanker: 10 raw CAP waves, 1 support.
+    for args in [
+        ("Ford 1", -24468, -404462, 56, 43244),
+        ("Ford 2", -4741, -383779, 62, 60018),
+        ("Jedi 1", 40, -406873, 74, 60759),
+        ("Uzi 1", -25732, -406336, 56, 59938),
+        ("Uzi 2", -2637, -379822, 62, 35138),
+        ("Dodge 1", 5270, -388631, 74, 44069),
+        ("Ponti 1", -20464, -398527, 56, 59184),
+        ("Uzi 3", -1618, -377906, 62, 34482),
+        ("Colt 9", 1501, -401777, 74, 62656),
+    ]:
+        mission_data.flights.append(_wave_flight(*args))
+    cartridge = build_hornet_cartridge(flight, mission_data, game, "Full Page")
+    caps = json.loads(cartridge.to_json())["data"]["SA"]["CAP_PTS"]
+    # Every one of the jet's nine slots is used: the tanker, one racetrack per
+    # station (fixture COLT + the three flown stations), then leftover waves.
+    assert len(caps) == 9
+    assert [c["note"] for c in caps][:5] == ["ARCO", "COLT", "FORD", "FORD", "JEDI"]
 
 
 def test_old_saves_default_the_flight_options() -> None:

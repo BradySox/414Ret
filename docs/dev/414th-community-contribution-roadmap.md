@@ -55,7 +55,7 @@ upstream PR looks like.
 | Item | Upstream story | Status |
 |---|---|---|
 | **Splash Damage tuned build** | **A fix to shipping defaults, not identity.** Upstream's shipped config turned out internally broken (raw ×130 rockets, 3% scaling double-divided in the bomblet path, static boost 2000, test mode enabled); the 414th's flown values replace them in upstream's own config architecture. | 🔵 **Pushed as [PR #880](https://github.com/dcs-retribution/dcs-retribution/pull/880)** (2026-07-19) — inventory item 21 |
-| **[CH] Iran 2020 faction + pack** | Mod-dependent factions are normal upstream (HDS, CurrentHill assets elsewhere). #784 was **self-withdrawn, never rejected** — re-carve behind the existing mod toggle. | Re-carve candidate |
+| **[CH] Iran 2020 faction + pack** | Mod-dependent factions are normal upstream (HDS, CurrentHill assets elsewhere). #784 was **self-withdrawn, never rejected** — re-carved clean behind a new `iranmilitaryassetspack` toggle, the exact pattern of the six CH packs upstream already carries. | 🔵 **Pushed as [PR #886](https://github.com/dcs-retribution/dcs-retribution/pull/886)** (draft, late 2026-07-19) |
 | **Doctrine default *values*** (QRA radii, engagement ranges, `QRA_SINGLE_SHIP_PROBABILITY`) | The mechanisms are largely upstream (#782 et al.). Propose the tuned numbers as defaults **with the flown rationale**; if upstream prefers different defaults, fine — defaults are their call, the proposal costs one PR. | Rides the QRA-family carves |
 | **C-130J EW physics constants** (spoof curve, burn-through) | Ship **with** the C-130J framework carve as its tested tuning, constants documented (the HANDOFF doc's rationale travels with the PR). Not separable from the framework — sequenced behind it. | Rides the Tier-3 C-130 carve |
 | **TIC stance tuning** | Same shape: the stance profiles are the tested tuning of the TIC engine; they travel with the TIC carve as defaults-with-rationale. | Rides the Tier-3 TIC carve |
@@ -94,9 +94,15 @@ REVIEW). "Strip" = the 414th slice to remove for a clean PR.
 
 | Feature | PR | Owes |
 |---|---|---|
-| Recon fog-of-war (§3 PR #1) | #828 | ✅ Rebased + un-drafted 2026-07-19 (one commit on dev @ `acf02b75`, 451 tests green) — awaiting maintainer review |
+| Recon fog-of-war (§3 PR #1) | #828 (draft) | Rebased 2026-07-19 (one commit on dev @ `acf02b75`, 451 tests green); briefly un-drafted, then deliberately re-drafted the same evening — un-draft when ready |
+| Fixed-wing CTLD paradrop (§76 core) | #884 | Un-drafted 2026-07-20, Starfire13 pinged — awaiting maintainer review |
+| VWV v3.2.0 registration (item 22) | #881 | Awaiting maintainer review |
+| Lua plugin test harness (the fork's `tests/lua/`) | #882 (draft) | The Wave-5 enabler; un-draft call open |
+| MIST 51-symbol shim (stacked on #882) | #883 (draft) | Review with/after #882; the Pretense teleport/respawn family is the in-game watch item |
+| Custom victory conditions (§75 core) | #885 (draft) | Un-draft after the fork's B29 app pass |
+| [CH] Iran 2020 pack (item, last-mile queue) | #886 (draft) | Un-draft call open — data-only, probe-verified |
 | Splash Damage coherent defaults (item 21) | #880 | Opened 2026-07-19 — awaiting maintainer review (offer to split bug-fixes from tuning stands in the PR body) |
-| Cruise missile strikes (§63 core) | #872 (draft) | Un-draft once the defender-wake re-fly (B16) is flown |
+| Cruise missile strikes (§63 core) | #872 | ✅ Ready for review 2026-07-19 — the DM flew the full loop locally ("works 10/10") and the defender launch wake was ported into the PR (Skynet-adapted comments), un-drafted |
 | Curated carrier comms (§65) | #874 (draft) | Un-draft after B18 in-game pass |
 | Culled-region kill tracking | #873 (draft) | Un-draft when validated |
 | Cruise/patrol altitude | #806 | Review response |
@@ -178,7 +184,9 @@ reviewing their PR.
 - **Wave 3 (now): finish the open set + the ready fixes.** ✅ #828 rebased + un-drafted;
   ✅ Splash Damage #880 pushed (both 2026-07-19). Still open: fly B16/B18
   and un-draft #872/#874. Push the 🟢 READY inventory items with no crowd collision:
-  blue-block miz markers (item 17), helo CFIT trio (item 16, C8), F-14A payload
+  blue-block miz markers (item 17 — pushed as #891 2026-07-20, self-closed same day
+  after Starfire13's Normandy-density + block-consistency review; re-carve owed with
+  the consistency framing + Normandy pruned, see the inventory row), helo CFIT trio (item 16, C8), F-14A payload
   `unitType` fix (item 20), empty-`aircraft:` crash (item 12), landmap perf re-carve
   (item 1 / #842 closed). **Red Tide campaign publication (item 14)** — the payload
   is built; push it.

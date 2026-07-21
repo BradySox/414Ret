@@ -137,16 +137,6 @@ class PackagePlanningTask(TheaterCommanderTask, Generic[MissionTargetT]):
             FlightType.REFUELING,
         ):
             self.flights = [f for f in self.flights if f.task is not FlightType.ESCORT]
-        # ROE escalation (campaign phases W4): an authored phase may forbid
-        # offensive tasking inside a restricted zone (Route-Package sanctuaries)
-        # or against a still-locked target class (target_release). BLUE-only --
-        # the ROE is Washington's, not Hanoi's -- and never touches the *player*,
-        # whose enforcement is the soft political-will penalty at debrief.
-        if state.context.coalition.player.is_blue:
-            from game.fourteenth.phases import roe_blocks_target
-
-            if roe_blocks_target(state.context.coalition.game, self.target):
-                return False
         fulfiller = PackageFulfiller(
             state.context.coalition,
             state.context.theater,
@@ -172,6 +162,10 @@ class PackagePlanningTask(TheaterCommanderTask, Generic[MissionTargetT]):
         self.propose_flight(FlightType.SEAD_ESCORT, 2, EscortType.Sead)
         self.propose_flight(FlightType.ESCORT, 2, EscortType.AirToAir)
         self.propose_flight(FlightType.SEAD_SWEEP, 2, EscortType.Sead)
+        # Growler escort jamming: added on the same radar-SAM trigger as the
+        # SEAD escorts, pruned silently when no capable squadron (EA-18G only)
+        # is in the wing.
+        self.propose_flight(FlightType.ESCORT_JAMMER, 2, EscortType.Jammer)
 
     def iter_iads_ranges(
         self, state: TheaterState, range_type: RangeType

@@ -11,9 +11,8 @@ the §3 recon-fog shape. This module is the campaign-scale half (Feature A):
   concealed COIN spawns (an insurgency runs on radios; regulars whose C2 dies go
   landline/courier, an insurgency can't).
 * **Tier 0** -- no alive sources: no product ("enemy net silent").
-* **Tier 1** -- sources alive: the ambient national-collection take. The §55
-  red-posture *detail* is earned (``gated_posture_detail``); the coarse posture
-  chip stays free.
+* **Tier 1** -- sources alive: the ambient national-collection take (the C1
+  audible red net + the kneeboard active-nets listing).
 * **Tier 2** -- a blue collector (a §2 JAMMING flight or a drone -- "a drone is
   always listening", the §3 always-filming rule) flew last mission and survived:
   a coarsened **tasking leak** (one red offensive package flying THIS mission)
@@ -331,11 +330,9 @@ def _active_net_lines(red_net: Any) -> list[str]:
 def comint_kneeboard_lines(game: "Game", red_net: Any = None) -> list[str]:
     """The Mission Info COMINT block (empty when the feature is off).
 
-    Tier 0 reads as a consequence, not a bug; Tier 1 names the earn and briefs
-    the active nets (when the §70 C1 red net is transmitting this mission);
-    Tier 2 carries the leak + the reveal. The §55 posture detail is NOT
-    repeated here -- the SITREP band directly above this block already shows
-    it (gated by ``gated_posture_detail``).
+    Tier 0 reads as a consequence, not a bug; Tier 1 briefs the active nets
+    (when the §70 C1 red net is transmitting this mission); Tier 2 carries the
+    leak + the reveal.
     """
     if not comint_enabled(game):
         return []
@@ -360,17 +357,3 @@ def comint_kneeboard_lines(game: "Game", red_net: Any = None) -> list[str]:
     if leak is None and note is None:
         lines.append("No actionable traffic this cycle — enemy offensive net quiet.")
     return lines
-
-
-def gated_posture_detail(game: "Game", detail: Optional[str]) -> Optional[str]:
-    """The Tier-1 earn: the §55 posture *detail* needs an emitting enemy net.
-
-    Pass-through when the feature is off (§55 behavior unchanged); None when
-    COMINT is on and red has gone silent -- the intel dries up with the
-    source. The coarse posture chip is never gated, only the detail.
-    """
-    if detail is None or not comint_enabled(game):
-        return detail
-    if not comint_sources(game):
-        return None
-    return detail

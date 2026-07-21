@@ -111,10 +111,32 @@ point), 15 THREAT_PTS, 20+20 COMM channels.
 - **Mirror, never re-plan, the comm channels**: the DTC's channel numbers must
   match the unit `Radio` table the allocator wrote (the kneeboard prints those) —
   the DTC only *names* them. Unassigned channels keep module defaults.
+- **STPT n == kneeboard waypoint n** (flown 2026-07-19: the jet read Takeoff as
+  WP 1, shifting every briefed number by one): the kneeboard numbers the plan
+  from 0, so the cartridge does **not** emit row 0 (takeoff/spawn — the jet's
+  native WYPT 0 is where it spawns anyway) and numbers from 1. Both jets.
 - **Recon-fog discipline**: threat rings filter through
   `tgo.known_for(flight.friendly)` (the threat-intel kneeboard's own leaf) +
   never `map_hidden`. Verified: Red Tide turn 1 → 0 rings; the flown turn-2 save
-  → exactly the 5 TARPS-confirmed sites of 34.
+  → exactly the 5 TARPS-confirmed sites of 34. Generation runs inside
+  `fogofwar.fog_intact()` (flown 2026-07-19 leak: the §18 reveal overview shorts
+  `known_for` to truth for ANY viewer, and a DM generating with it ticked baked
+  40 exact rings into a cartridge on an unscouted turn — the same latent leak
+  existed for the threat-intel kneeboard). Any future generation-time consumer
+  of fog-gated intel is covered by that wrapper; never read the fog leaves for
+  a shared artifact outside it.
+- **The Hornet SA budget is priority-then-completeness**: support orbits →
+  one racetrack per station (`dedupe_stations`) → leftover §6 wave tracks fill
+  the remaining slots up to the hard nine. Never leave slots empty while real
+  orbits were dropped — and never let wave duplicates squeeze the tankers out.
+  (The Viper has no orbit element; its anchors stay one steerpoint per
+  station.)
+- **The jet DISPLAYS one CAP point — the selected one** (flown 2026-07-19: a
+  7-entry cartridge drew exactly the `Default_CAP_Point` orbit). The CAP_PTS
+  list is a flip-through library, so the pre-selected default is per flight
+  (own station for a CAP flight, first tanker otherwise), and the
+  see-everything-at-once picture lives on the §45 F10 drawings, which now
+  paint the deduped CAP stations too.
 - **Blue client flights only** — AI don't read cartridges; red clients don't
   exist in this squadron's use.
 - **Best-effort everywhere**: per-flight failures skip the flight; pass-level

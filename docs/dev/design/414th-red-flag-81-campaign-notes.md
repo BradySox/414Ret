@@ -161,6 +161,16 @@ constrain a 1:1 copy):
   keep the coalition-agnostic nearest-any convention, which is how blue defenses are
   conventionally authored). A "Hawk at Creech" in the blue block would load today;
   this campaign keeps its Vulcan-marker layout as tuned.
+  **COMPLETED 2026-07-20** (Starfire13's upstream #891 review ask — "consistency in
+  the use of CJTF Blue and Red"): the loader's last single-block classes now chain
+  both blocks too — `factories` was BLUE-only (the "blue-block quirk" above; a sweep
+  found 3 shipped red-block factories silently dropped — TblisiGap,
+  RetakeTheFalklands, operation_allied_sword — now resurrected), and front-line
+  paths / shipping lanes / cp-convoy spawns (blue-only) + the neutral-FOB
+  declaration (red-only) chained with zero shipped cross-block instances. The rule
+  is total: the block never decides whether an authored object exists; it means
+  ownership only for the CP classes and the bounded blue-marker preference.
+  Contract-locked in `tests/test_miz_marker_binding.py`.
 - **Campaign fabric kept as-is:** CPs, the Mercury↔Tolicha front, FOB positions,
   convoy spawn hints, the SAC off-map spawn, and point-defense AAA at red fields are
   Retribution mechanics the reference (a scripted linear campaign) has no analog

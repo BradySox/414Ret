@@ -18,7 +18,6 @@ from game.missiongenerator.frontlineconflictdescription import (
 from game.theater import TRIGGER_RADIUS_CAPTURE
 
 if TYPE_CHECKING:
-    from game.fourteenth.phases import ResolvedZone
     from game.missiongenerator.aircraft.flightdata import FlightData
     from game.missiongenerator.missiondata import MissionData
 
@@ -30,14 +29,6 @@ CP_NEUTRAL = Rgba(128, 128, 128, 80)
 BLUE_PATH_COLOR = Rgba(0, 0, 255, 100)
 RED_PATH_COLOR = Rgba(255, 0, 0, 100)
 ACTIVE_PATH_COLOR = Rgba(255, 80, 80, 100)
-# ROE restricted zones (campaign phases W4): dashed red like the web map layer, so
-# they read as *rules* (off-limits airspace), not radar coverage.
-ROE_ZONE_LINE = Rgba(212, 58, 58, 220)
-ROE_ZONE_FILL = Rgba(212, 58, 58, 40)
-# Free-fire (weapons-free) pockets -- inverted ROE (COIN): dashed GREEN, the opposite
-# reading of the red restricted zones ("cleared to engage here" vs "off limits").
-FREE_FIRE_LINE = Rgba(60, 205, 95, 220)
-FREE_FIRE_FILL = Rgba(60, 205, 95, 40)
 # Support-package orbits (tankers + AWACS): a cyan dashed racetrack + a label so a
 # pilot can find their tanker / AEW&C on the F10 map in flight (the anti-DTC).
 SUPPORT_ORBIT_LINE = Rgba(0, 200, 255, 255)
@@ -139,53 +130,6 @@ class DrawingsGenerator:
             )
             shape.name = front_line.name
 
-    def _paint_zones(self, zones: list[ResolvedZone], color: Rgba, fill: Rgba) -> None:
-        """Paint resolved ROE zones (circle -> add_circle, else the polygon outline)."""
-        for zone in zones:
-            if zone.kind == "circle":
-                shape = self.player_layer.add_circle(
-                    self.game.point_in_world(*zone.center_xy),
-                    zone.radius_m,
-                    line_thickness=4,
-                    color=color,
-                    fill=fill,
-                    line_style=LineStyle.Dash,
-                )
-            else:
-                points = [self.game.point_in_world(x, y) for x, y in zone.outline_xy]
-                if len(points) < 3:
-                    continue
-                anchor = points[0]
-                shape = self.player_layer.add_freeform_polygon(
-                    anchor,
-                    [p - anchor for p in points],
-                    line_thickness=4,
-                    color=color,
-                    fill=fill,
-                    line_style=LineStyle.Dash,
-                )
-            shape.name = zone.name
-
-    def generate_restricted_zones(self) -> None:
-        """Paint the active phase's ROE zones (red no-strike + green free-fire).
-
-        Reads the same resolved zones the web map layer draws, so the F10 map and the
-        client show identical geometry. Restricted (no-strike) zones paint red;
-        free-fire pockets (inverted ROE, COIN) paint green. No-op outside an authored
-        ROE phase (both lists empty) -- non-ROE campaigns see nothing new.
-        """
-        from game.fourteenth.phases import (
-            active_free_fire_zones,
-            active_restricted_zones,
-        )
-
-        self._paint_zones(
-            active_free_fire_zones(self.game), FREE_FIRE_LINE, FREE_FIRE_FILL
-        )
-        self._paint_zones(
-            active_restricted_zones(self.game), ROE_ZONE_LINE, ROE_ZONE_FILL
-        )
-
     @staticmethod
     def _racetrack_ends(
         flight: "FlightData",
@@ -230,6 +174,7 @@ class DrawingsGenerator:
         """
         if self.mission_data is None:
             return
+        self._generate_cap_station_orbits()
         info_by_group = {
             info.group_name: info
             for info in [*self.mission_data.tankers, *self.mission_data.awacs]
@@ -271,9 +216,48 @@ class DrawingsGenerator:
             )
             label.name = f"{flight.callsign} label"
 
+    def _generate_cap_station_orbits(self) -> None:
+        """Paint each blue CAP *station* as a thin racetrack on the F10 map.
+
+        The Hornet's SA page displays only the *selected* DTC CAP point (flown
+        2026-07-19), so the F10 map is the one display that can show the whole
+        friendly orbit picture at once. One racetrack per station (the §6 wave
+        relief deduped by the §74 helper), drawn thinner than the tanker/AEW&C
+        capsules and labelled with the station's callsign.
+        """
+        assert self.mission_data is not None
+        from game.missiongenerator.dtc.common import dedupe_stations, raw_cap_tracks
+
+        for station in dedupe_stations(raw_cap_tracks(self.mission_data)):
+            if station.start.distance_to_point(station.end) < 1.0:
+                shape = self.player_layer.add_circle(
+                    station.start,
+                    SUPPORT_ORBIT_RADIUS_M,
+                    line_thickness=3,
+                    color=SUPPORT_ORBIT_LINE,
+                    line_style=LineStyle.Dash,
+                )
+            else:
+                shape = self.player_layer.add_oblong(
+                    station.start,
+                    station.end,
+                    SUPPORT_ORBIT_RADIUS_M,
+                    line_thickness=3,
+                    color=SUPPORT_ORBIT_LINE,
+                    line_style=LineStyle.Dash,
+                )
+            shape.name = f"CAP {station.callsign} orbit"
+            label = self.player_layer.add_text_box(
+                station.start,
+                f"CAP {station.callsign}",
+                color=SUPPORT_LABEL_TEXT,
+                fill=SUPPORT_LABEL_FILL,
+                font_size=12,
+            )
+            label.name = f"CAP {station.callsign} label"
+
     def generate(self) -> None:
         self.generate_frontlines_drawing()
         self.generate_routes()
         self.generate_cps_markers()
-        self.generate_restricted_zones()
         self.generate_support_orbits()

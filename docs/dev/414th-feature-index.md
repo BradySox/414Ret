@@ -51,7 +51,7 @@ pass checklist `§N` is unregistered, or this table drifts.
 | §37 | Super Gaggle hilltop resupply | `vietnamops` | `vietnam_super_gaggle` |
 | §38 | FAC(A) willie-pete target marking | `vietnamops` | `vietnam_fac_marking` |
 | §39 | Snake and nape (napalm CAS) | `vietnamops` | `vietnam_snake_and_nape` |
-| §40 | Campaign phases (inferred arc + planner emphasis) | — | `campaign_phases` |
+| §40 | Campaign phases (inferred arc + planner emphasis) _(retired)_ | — | — |
 | §41 | High Digit SAMs Ultimate Compilation support | — | — |
 | §42 | Local DCS chart base layers (map tiles) | — | — |
 | §43 | Per-aircraft flight defaults (save fuel + properties) | — | — |
@@ -66,7 +66,7 @@ pass checklist `§N` is unregistered, or this table drifts.
 | §52 | Command-center decapitation degrades enemy planning | — | `c2_decapitation_effects` |
 | §53 | War economy | — | `war_economy`, `fuel_air_readiness` |
 | §54 | Munitions availability | — | `restrict_weapons_by_stock` |
-| §55 | Red Intent — adaptive enemy posture | — | `red_intent` |
+| §55 | Red Intent — adaptive enemy posture _(retired)_ | — | — |
 | §56 | Strikeable motorpool depots | — | `motorpool_enabled`, `motorpool_spawn_cap` |
 | §57 | Air-droppable minefields | `minefields` | `air_droppable_minefields`, `auto_plan_minefields` |
 | §58 | Mission-start briefing popup | `briefing` | `mission_briefing_popup` |
@@ -87,6 +87,9 @@ pass checklist `§N` is unregistered, or this table drifts.
 | §73 | Per-airframe default loadout for a task | — | — |
 | §74 | Native DTC data pre-population (F/A-18C + F-16C) | — | `dtc_data_cartridges` |
 | §75 | Custom victory conditions | — | `alternate_victory_domination`, `alternate_victory_attrition` |
+| §76 | CTLD paratroopers (fixed-wing air assault) | `ctld` | — |
+| §77 | Growler escort jamming (EA-18G) | `growler` | — |
+| §78 | Sea-supply convoys + coastal anti-ship engagement | — | `cargo_ship_convoys`, `cargo_ship_convoy_max`, `coastal_batteries_engage_ships` |
 | — | MANTIS IADS engine | `mantisiads` | — |
 | — | Splash Damage (414th tuned) | `splashdamage3` | — |
 | — | AI recon BDA capture (§3 TARPS) | `airecon` | — |

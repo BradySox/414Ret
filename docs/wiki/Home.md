@@ -107,16 +107,33 @@ campaign files (ORBAT, threats, and economy read straight from the campaign + fa
 - **[Red Flag 81-2 — First Three Turns](Red-Flag-81-2-First-Three-Turns)** — a worked example of Week One: map the array, Iron Hand the corridor, kill the armor.
 - **[Red Flag 81-2 — Intel Assessment](Red-Flag-81-2-Intel-Assessment)** — the real-exercise study (Red Baron → Red Flag, the aggressors, Constant Peg at Tonopah, the range array) + threat card + read-aloud brief.
 
-## Customization and modding
+## Modding Retribution
 
 - **[Custom Campaigns](Custom-Campaigns)**
+- **[Motorpools](Motorpools)** — author strikeable reserve-armor depots into a campaign (place a Garage A).
 - **[Custom Factions](Custom-Factions)**
-- **[Custom Loadouts](Custom-Loadouts)**
+- **[Layouts](https://github.com/bradyccox/414Ret/blob/main/docs/modding/layouts.rst)** — the ground-object layout format (repo doc).
 - **[Lua Plugins](Lua-Plugins)**
+- **[Custom Loadouts](Custom-Loadouts)**
+- **[Modded aircraft/unit support](Modded-Unit-Support)** — the 11-step guide to shipping support for a DCS mod.
 
 ## Servers
 
 - **[Dedicated Server Guide](Dedicated-Server-Guide)**
+
+## Contributing and development
+
+The upstream project's contributing and core development guides, adopted 2026-07-20 as
+the 414th's own customs and standards — we do things upstream's way, with fork
+differences called out in **414th:** notes on each page.
+
+- **[Contributing to DCS Retribution](Contributing-to-DCS-Retribution)** — ways to contribute, and where a 414th contribution goes (fork PR → upstream carve).
+- **[Campaign maintenance](Campaign-maintenance)** — the campaign ownership model, plus the fork's campaign standards.
+- **[Developer's Guide](Developers-Guide)** — dev environment, running from sources, linters/type checks/tests, and the PR workflow.
+- **[Adding a new aircraft module](New-aircraft-module-checklist)** — the P0–P2 checklist, plus the 414th's extra unit-data requirements.
+- **[Adding a new terrain module](New-terrain-module-checklist)** — beacons, theater info, and the landmap.
+- **[Creating shape files in QGIS for map data](Creating-shape-files-in-QGIS-for-map-data)** — the GIS landmap workflow.
+- **[Release process](Release-process)** — the rolling `latest` build and pinned `-414th` releases.
 
 ---
 

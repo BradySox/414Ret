@@ -794,7 +794,6 @@ class BriefingPage(KneeboardPage):
         theater: Optional["ConflictTheater"] = None,
         omit_weather: bool = False,
         bluf_lines: Optional[List[str]] = None,
-        sitrep: Optional[Sitrep] = None,
         comint_lines: Optional[List[str]] = None,
     ) -> None:
         self.flight = flight
@@ -810,12 +809,9 @@ class BriefingPage(KneeboardPage):
         # generator (``_bluf_lines``) and passed in so the page stays decoupled
         # from the threat/code-word models.
         self.bluf_lines = bluf_lines or []
-        # Previous turn's campaign SITREP (§29), rendered as a short section at the
-        # bottom of the page. None on turn 1 / a quiet turn / when the toggle is off.
-        self.sitrep = sitrep
-        # §70 COMINT block (C0), rendered right under the SITREP: the tier status
-        # + (Tier 2) the tasking leak and the reveal note. None/empty when
-        # comint_collection is off.
+        # §70 COMINT block (C0): the tier status + (Tier 2) the tasking leak and
+        # the reveal note. None/empty when comint_collection is off. (The §29
+        # SITREP moved to its own SitrepPage.)
         self.comint_lines = comint_lines or []
         # De-duplication (design §4): drop the weather block when the recon Departure
         # page already carries it. The Friendly Packages list moved to its own page.
@@ -942,12 +938,11 @@ class BriefingPage(KneeboardPage):
             # (what ATIS broadcasts), via game.utils for canonical unit conversions.
             qnh = inches_hg(self._effective_qnh_inhg())
             qnh_in_hg = f"{qnh.inches_hg:.2f}"
-            qnh_mm_hg = f"{qnh.mm_hg:.1f}"
-            qnh_hpa = f"{qnh.hecto_pascals:.1f}"
-            writer.text(
-                f"Temperature: {round(self.weather.atmospheric.temperature_celsius)} °C at sea level"
-            )
-            writer.text(f"QNH: {qnh_in_hg} inHg / {qnh_mm_hg} mmHg / {qnh_hpa} hPa")
+            qnh_hpa = f"{qnh.hecto_pascals:.0f}"
+            temp_c = round(self.weather.atmospheric.temperature_celsius)
+            temp_f = round(self.weather.atmospheric.temperature_celsius * 9 / 5 + 32)
+            writer.text(f"Temperature: {temp_f} °F ({temp_c} °C) at sea level")
+            writer.text(f"QNH: {qnh_in_hg} inHg ({qnh_hpa} hPa)")
             qfe_line = self._format_departure_qfe()
             if qfe_line is not None:
                 writer.text(qfe_line)
@@ -1008,18 +1003,10 @@ class BriefingPage(KneeboardPage):
                 codes.append([str(idx), "" if code is None else str(code)])
             writer.table(codes, ["#", "Laser Code"])
 
-        # Previous turn's campaign SITREP (§29): a short "what happened last turn"
-        # band at the bottom of the page. Already gated (setting / turn 1 / quiet
-        # turn) by the generator, so its presence alone means there is news.
-        if self.sitrep is not None:
-            writer.vspace(8)
-            writer.heading(f"SITREP — Turn {self.sitrep.turn}")
-            writer.rule()
-            for line in self.sitrep.kneeboard_lines():
-                writer.text(line, wrap=True)
-
-        # §70 COMINT (C0): the collection take, right under the SITREP. Empty
+        # §70 COMINT (C0): the collection take. Empty
         # unless comint_collection is on, so the stock deck is unchanged.
+        # (The §29 SITREP that used to render above it moved to its own page —
+        # a busy turn's POW/MIA list clipped at the page edge here.)
         if self.comint_lines:
             writer.vspace(8)
             writer.heading("COMINT")
@@ -2600,6 +2587,28 @@ class NotesPage(KneeboardPage):
         writer.write(path)
 
 
+class SitrepPage(KneeboardPage):
+    """The previous turn's campaign SITREP (§29) on its own page.
+
+    Lived at the bottom of the Mission Info page until a flown 2026-07-19 deck
+    clipped the MIA list at the page edge — a busy turn (many losses, POWs and
+    evaders) overflows a shared page, so the news gets a page of its own.
+    Only generated when there is news (the generator's gates: setting on, not
+    turn 1, not a quiet turn), so a quiet deck is unchanged.
+    """
+
+    def __init__(self, sitrep: Sitrep, dark_kneeboard: bool) -> None:
+        self.sitrep = sitrep
+        self.dark_kneeboard = dark_kneeboard
+
+    def write(self, path: Path) -> None:
+        writer = KneeboardPageWriter(dark_theme=self.dark_kneeboard)
+        writer.title(f"SITREP — Turn {self.sitrep.turn}")
+        for line in self.sitrep.kneeboard_lines():
+            writer.text(line, wrap=True)
+        writer.write(path)
+
+
 def _abbreviated_target_name(name: str) -> str:
     """Shorten verbose target prefixes so long names fit the kneeboard tables.
 
@@ -3051,7 +3060,6 @@ class KneeboardGenerator(MissionInfoGenerator):
                 theater=self.game.theater,
                 omit_weather=omit_weather,
                 bluf_lines=bluf_lines,
-                sitrep=self._briefing_sitrep(),
                 comint_lines=self._briefing_comint(),
             ),
             SupportPage(
@@ -3067,6 +3075,12 @@ class KneeboardGenerator(MissionInfoGenerator):
                 code_words=self._code_words_block(flight),
             ),
         ]
+
+        # Previous turn's campaign SITREP (§29) on its own page: a busy turn's
+        # POW/MIA list clipped at the Mission Info page edge (flown 2026-07-19).
+        # Absent on turn 1 / a quiet turn / when the toggle is off.
+        if (sitrep := self._briefing_sitrep()) is not None:
+            pages.append(SitrepPage(sitrep, self.dark_kneeboard))
 
         # Only create the notes page if there are notes to show.
         if notes := self.game.notes:
@@ -3199,10 +3213,17 @@ class KneeboardGenerator(MissionInfoGenerator):
             lines.append(f"LOADOUT  {loadout}")
 
         # SAR assets on this mission (King / Jolly / Sandy) + the if-down drill.
+        # The drill matches the campaign's real CSAR model (§21): evasion depth
+        # decides capture, an unrecovered evader persists at his last position,
+        # and the rescue package homes on it -- not generic survival advice.
         sar_bits = " · ".join(
             f"{role} {airframe}" for role, airframe in self._brief_sar(flight)
         )
-        if_down = "If down: beacon on, squawk 7700, get to high ground, voice on GUARD"
+        if_down = (
+            "If down: beacon on, squawk 7700, voice on GUARD — evade toward "
+            "friendly lines (capture risk climbs with depth); rescue tracks "
+            "your last known position"
+        )
         lines.append(
             f"SAR      {sar_bits} — {if_down}" if sar_bits else f"SAR      {if_down}"
         )

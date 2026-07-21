@@ -61,10 +61,6 @@ BLUE_PILOT_RESCUED_REFUND = 0.5  # a Combat SAR save softens the airframe blow
 BLUE_BASE_LOST = 3.0
 BLUE_ENEMY_AIR_CLAIMED = 0.25  # restores: a claimed MiG kill plays well at home
 BLUE_PASSIVE_REGEN = 0.5
-#: W4 ROE coupling: each kill inside an active restricted zone (see
-#: phases.count_roe_violations) is a headline -- the sharp soft-enforcement drain
-#: that makes the zones bind the player without hard-blocking them.
-BLUE_ROE_VIOLATION = 4.0
 #: A warship sunk is front-page news (a Sheffield, not a truck). Counted from the
 #: debriefing's ground-object losses by TheaterUnit.is_ship; rare in Vietnam, the
 #: load-bearing feed for naval wars (Falklands re-weights it up).
@@ -159,7 +155,6 @@ class WillWeights:
     blue_base_lost: float = BLUE_BASE_LOST
     blue_enemy_air_claimed: float = BLUE_ENEMY_AIR_CLAIMED
     blue_passive_regen: float = BLUE_PASSIVE_REGEN
-    blue_roe_violation: float = BLUE_ROE_VIOLATION
     blue_ship_lost: float = BLUE_SHIP_LOST
     blue_ied_detonation: float = BLUE_IED_DETONATION
     red_convoy_unit_lost: float = RED_CONVOY_UNIT_LOST
@@ -561,34 +556,6 @@ def _blue_moves(
                 -ieds * weights.blue_ied_detonation,
             )
         )
-
-    # ROE violations (W4): kills inside an active restricted zone draw a sharp
-    # penalty -- the LBJ-era pilot could break the rules, but Washington answered
-    # for it. Zero whenever no authored phase with zones is active.
-    from game.fourteenth.phases import count_roe_violations
-
-    violations = count_roe_violations(game, debriefing)
-    if violations:
-        moves.append(
-            (f"ROE violations x{violations}", -violations * weights.blue_roe_violation)
-        )
-        game.message(
-            "ROE violation",
-            f"{violations} target(s) destroyed inside a restricted zone this "
-            "turn. Washington takes the heat -- political will pays the bill.",
-        )
-
-    # Escalation tax (model 3): entering a more-permissive phase -- resuming or
-    # intensifying the bombing (Linebacker, the Linebacker II Christmas bombing) --
-    # costs Washington will even when the strikes are sanctioned, per the VG
-    # *Vietnam 1965-1975* morale model (unrestrained bombing itself erodes morale).
-    # A one-time labeled move; the latch persists so it charges once per entry.
-    from game.fourteenth.phases import consume_phase_escalation_cost
-
-    escalation = consume_phase_escalation_cost(game)
-    if escalation:
-        phase_name, cost = escalation
-        moves.append((f"escalation: {phase_name}", cost))
 
     # Claimed enemy air kills play well at home (claimed, per the recon-fog framing).
     claimed = debriefing.loss_counts(Player.RED).aircraft

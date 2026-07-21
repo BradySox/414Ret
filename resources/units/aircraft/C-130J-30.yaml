@@ -25,7 +25,11 @@ altitudes:
   cruise: 10000
   combat: 1000
 tasks:
-  # Air Assault: 0 #TODO: Add once we have proper support for paradrops
+  # CTLD paradrop air assault (§76): the C-130J delivers its stick by parachute
+  # over the target zone. Priority sits below the assault helos (50) so a helo
+  # squadron in range still wins the tasking; the C-130 takes the long-reach and
+  # no-helo cases.
+  Air Assault: 40
   Transport: 140
   Jamming: 140
   # Combat SAR "King" role (on-scene command + TACAN beacon + LARS). This is the

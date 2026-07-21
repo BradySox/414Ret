@@ -130,15 +130,17 @@ def test_carrier_factions_keep_a_vanilla_carrier_tanker(name: str) -> None:
     """These wings must still have organic carrier gas WITHOUT any mod enabled.
 
     This is the guard the audit actually needed. The obvious modern replacement,
-    `F/A-18E Tanker`, is gated behind `ModSettings.fa18ef_tanker` (default False), so
-    five factions briefly ended up with no carrier tanker at all in a default game.
-    `GameGenerator` applies ModSettings, so the check must run against the post-mod
-    roster -- reading the raw JSON hides exactly this bug.
+    `F/A-18E Tanker`, is gated behind `ModSettings.fa18ef_tanker` (mod-gated, and a
+    mod-gated tanker must never count as organic gas), so five factions briefly
+    ended up with no carrier tanker at all in a default game. `GameGenerator`
+    applies ModSettings, so the check must run against the post-mod roster --
+    reading the raw JSON hides exactly this bug. all_off() keeps the guard honest
+    now that the CJS toggles default ON.
     """
     faction = Faction.from_dict(
         json.loads((FACTIONS / name).read_text(encoding="utf-8"))
     )
-    faction.apply_mod_settings(ModSettings())
+    faction.apply_mod_settings(ModSettings.all_off())
 
     # `all_aircrafts` is declared list[UnitType[Any]] upstream; narrow it so the
     # AircraftType-only accessors below type-check.

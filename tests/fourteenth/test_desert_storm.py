@@ -24,8 +24,8 @@ import pytest
 import yaml
 
 from game import persistency
-from game.fourteenth.phases import parse_phases
 from game.fourteenth.political_will import parse_will_profile
+from game.fourteenth.red_tempo import parse_red_tempo
 
 CAMPAIGN = Path("resources/campaigns/iraq_desert_storm.yaml")
 FACTIONS = CAMPAIGN.parent.parent / "factions"
@@ -76,7 +76,6 @@ def test_desert_storm_campaign_definition() -> None:
     for key in (
         "restrict_weapons_by_date",
         "restrict_props_by_date",
-        "campaign_phases",
         "vietnam_political_will",
         "c2_decapitation_effects",
         "auto_repair_air_defenses",
@@ -293,30 +292,14 @@ def test_desert_storm_will_profile_is_the_coalition_story() -> None:
     profile = parse_will_profile(_campaign()["will"])
     assert profile.blue.label == "Coalition cohesion"
     assert profile.red.label == "the regime's resolve"
-    # One Al-Firdos is survivable, a habit is not.
-    assert profile.weights.blue_roe_violation == 3.0
 
 
-def test_desert_storm_phase_arc() -> None:
-    arc = parse_phases(_campaign()["phases"])
-    assert [p.key for p in arc] == ["instant_thunder", "scud_hunt", "umm_al_maarik"]
-    # Every phase keeps the Baghdad no-strike circle (the CDE bill, never a hard block).
-    for phase in arc:
-        assert any("Baghdad" in zone.name for zone in phase.restricted_zones), phase.key
-    # Instant Thunder advances on IADS attrition -- the rollback coupling.
-    assert arc[0].advance_when is not None
-    assert arc[0].advance_when.enemy_iads_below == 0.55
-    # The Scud hunt surges the red convoys it hunts, and seizes the first rung;
-    # the ground offensive takes Qadessiya.
-    assert arc[1].trail_surge == 1.5
-    capture_objectives = {
-        objective.done_when.capture_cp
-        for phase in arc
-        for objective in phase.objectives
-        if objective.done_when is not None
-        and objective.done_when.capture_cp is not None
-    }
-    assert capture_objectives == {"H-2 Airbase", "Al-Asad Airbase"}
+def test_desert_storm_red_tempo() -> None:
+    # The Great Scud Hunt surges the red convoys the player interdicts.
+    windows = parse_red_tempo(_campaign()["red_tempo"])
+    assert [w.from_turn for w in windows] == [4]
+    assert windows[0].name == "The Great Scud Hunt"
+    assert windows[0].trail_surge == 1.5
 
 
 def test_desert_storm_supply_graph_is_the_red_interior() -> None:
@@ -358,3 +341,30 @@ def test_desert_storm_miz_authors_the_kari_network() -> None:
         assert legacy not in mission_lua, legacy
     for renamed in ("Saad 16", "Baba Gurgur", "Daura Oil Refinery"):
         assert renamed in mission_lua, renamed
+
+
+def test_desert_storm_us_squadrons_pin_their_nation() -> None:
+    """Every US unit pins country: USA (#627 surfacing).
+
+    The blue faction is a CJTF, so an airframe-name squadron pick draws a
+    random nation's preset -- the flown finding was Israeli/Greek-voiced
+    F-16s wearing the 23rd TFS name. The three allied units bind
+    nation-countried presets by name and carry their own country; Iraq flies
+    a national faction, so red is deterministic without pins.
+    """
+    blue_bases = {OFFMAP_KEY, 16, 17, 18}
+    allied_preset_squadrons = {
+        "No. 31 Squadron",
+        "Escadron de chasse 2/5",
+        "ER 1/33 Belfort",
+    }
+    seen = 0
+    for base, squadrons in _campaign()["squadrons"].items():
+        if base not in blue_bases:
+            continue
+        for squadron in squadrons:
+            if squadron["name"] in allied_preset_squadrons:
+                continue
+            assert squadron.get("country") == "USA", squadron["name"]
+            seen += 1
+    assert seen == 13  # the full US order of battle, none silently dropped

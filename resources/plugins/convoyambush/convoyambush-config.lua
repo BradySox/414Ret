@@ -31,7 +31,7 @@ local POLL = 15 -- s between convoy-proximity checks
 
 if dcsRetribution.plugins and dcsRetribution.plugins.convoyambush then
     local o = dcsRetribution.plugins.convoyambush
-    TRIGGER_RADIUS = tonumber(o.triggerRadiusM) or TRIGGER_RADIUS
+    TRIGGER_RADIUS = (tonumber(o.triggerRadiusNm) or TRIGGER_RADIUS / 1852) * 1852 -- NM (UI) -> m
     GRACE = tonumber(o.startGraceS) or GRACE
     POLL = tonumber(o.pollIntervalS) or POLL
 end

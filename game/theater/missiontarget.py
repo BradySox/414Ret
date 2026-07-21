@@ -39,6 +39,7 @@ class MissionTarget:
                 FlightType.ESCORT,
                 FlightType.TARCAP,
                 FlightType.SEAD_ESCORT,
+                FlightType.ESCORT_JAMMER,
                 FlightType.SEAD_SWEEP,
                 FlightType.ARMED_RECON,
                 # SCAR is no longer a broad anti-armor task: it is the "Sandy"

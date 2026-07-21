@@ -83,9 +83,8 @@ class MissionResultsProcessor:
             # shows this turn's fresh values).
             with logged_duration("record_political_will"):
                 self.record_political_will(debriefing)
-            # §70 COMINT (C0): bank the collection BEFORE the SITREP so the
-            # posture-detail gate reads this turn's fresh state. Commit runs
-            # before the turn increments, so the stamp is the just-played turn.
+            # §70 COMINT (C0): bank this mission's collection. Commit runs before
+            # the turn increments, so the stamp is the just-played turn.
             with logged_duration("record_comint_collection"):
                 self.record_comint_collection(debriefing)
             with logged_duration("record_sitrep"):
@@ -156,19 +155,6 @@ class MissionResultsProcessor:
 
             blue_supply = coalition_supply_health(self.game, self.game.blue)
             red_supply = coalition_supply_health(self.game, self.game.red)
-        # §55: red's posture line + the detail (intensity + trend drivers, so the smart
-        # read shows on the kneeboard). Both None unless red_intent is on.
-        from game.fourteenth.red_intent import (
-            sitrep_posture_detail,
-            sitrep_posture_line,
-        )
-
-        # §70 COMINT (C0), the Tier-1 earn: with comint_collection on, the posture
-        # DETAIL is intel sourced from the enemy's emitting net -- a silenced net
-        # dries it up (the coarse posture chip is never gated). Pass-through when
-        # the feature is off.
-        from game.fourteenth.comint import gated_posture_detail
-
         # §75: the alternate-ending progress digest -- empty (and hidden) unless
         # the campaign authors a `victory:` block or a knob is on.
         from game.fourteenth.victory import victory_sitrep_lines
@@ -186,10 +172,6 @@ class MissionResultsProcessor:
             red_c2_status=c2_status_line(self.game, Player.RED),
             blue_supply=blue_supply,
             red_supply=red_supply,
-            red_posture=sitrep_posture_line(self.game),
-            red_posture_detail=gated_posture_detail(
-                self.game, sitrep_posture_detail(self.game)
-            ),
             victory_lines=victory_sitrep_lines(self.game),
         )
 
@@ -484,12 +466,27 @@ class MissionResultsProcessor:
 
     @staticmethod
     def commit_cargo_ship_losses(debriefing: Debriefing) -> None:
-        for ship in debriefing.cargo_ship_losses:
-            logging.info(
-                f"All units destroyed in cargo ship from {ship.origin} to "
-                f"{ship.destination}."
+        # §77: each sunk hull kills only its own share of the shipment (proportional
+        # losses), so a convoy that runs the coastal gauntlet loses reinforcements in
+        # proportion to how many ships went down. A single-hull convoy carries the whole
+        # transfer, so this reproduces the legacy all-or-nothing loss.
+        for hull in debriefing.cargo_ship_losses:
+            ship = hull.ship
+            for unit_type, count in hull.cargo:
+                for _ in range(count):
+                    try:
+                        ship.kill_unit(unit_type)
+                    except KeyError:
+                        # Already reconciled by another sunk hull of the same convoy
+                        # (or delivered) -- nothing left of this type to lose.
+                        pass
+            manifest = ", ".join(
+                f"{count} {unit_type}" for unit_type, count in hull.cargo
             )
-            ship.kill_all()
+            logging.info(
+                f"Cargo ship sunk in shipment from {ship.origin} to "
+                f"{ship.destination}: lost {manifest or '(empty hull)'}."
+            )
 
     @staticmethod
     def commit_airlift_losses(debriefing: Debriefing) -> None:

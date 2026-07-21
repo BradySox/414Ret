@@ -32,6 +32,7 @@ from PySide6.QtWidgets import (
     QGroupBox,
     QFileDialog,
 )
+from dcs.countries import country_dict
 from dcs.mapping import Point
 
 from game import Game
@@ -42,6 +43,7 @@ from game.campaignloader.campaignairwingconfig import (
 )
 from game.coalition import Coalition
 from game.dcs.aircrafttype import AircraftType
+from game.dcs.operatorcountries import operator_countries
 from game.persistency import airwing_dir
 from game.squadrons import AirWing, Pilot, Squadron
 from game.squadrons.squadrondef import SquadronDef
@@ -142,6 +144,67 @@ class SquadronBaseSelector(QComboBox):
             self.addItem("Select aircraft type first", None)
             self.setEnabled(False)
         self.update()
+
+
+class SquadronCountrySelector(QComboBox):
+    """A combo box for selecting the DCS country a squadron flies under.
+
+    The country drives DCS's nation voiceovers/ATC comms and the naming style of
+    newly recruited pilots (#627). It is normally set by the squadron preset, so
+    an airframe without a preset for the wanted nation used to require authoring
+    a yaml; the selector surfaces it instead. Writes to the squadron immediately,
+    like the livery selector beside it.
+
+    The list is trimmed to the airframe's operator nations (curated family rows
+    for flyable modules, whose DCS roster admits every country; the pydcs
+    per-country roster or an AI sibling's otherwise -- see
+    game/dcs/operatorcountries.py), plus the faction's own country and the
+    squadron's current one; an airframe with no operator data offers the full
+    list.
+    """
+
+    def __init__(self, squadron: Squadron) -> None:
+        super().__init__()
+        self.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
+        self.squadron = squadron
+        self.setToolTip(
+            "DCS nation the squadron's aircraft spawn under. Drives the ATC/comms "
+            "voice and the naming style of newly recruited pilots."
+        )
+        choices = operator_countries(squadron.aircraft.dcs_unit_type)
+        if not choices:
+            # No operator data (a mod, or a type without a curated row): offer
+            # everything rather than an empty choice.
+            choices = [country_type() for country_type in country_dict.values()]
+        by_id = {country.id: country for country in choices}
+        # The faction's own country is always offerable (revert to the shared
+        # faction voice), whatever the airframe.
+        faction_country = squadron.coalition.faction.country
+        by_id.setdefault(faction_country.id, faction_country)
+        for country in sorted(by_id.values(), key=lambda country: country.name):
+            self.addItem(country.name, country)
+        self.set_squadron(squadron)
+        self.currentIndexChanged.connect(self.on_change)
+
+    def set_squadron(self, squadron: Squadron) -> None:
+        """Point the selector at (a possibly replaced) squadron and re-sync."""
+        self.squadron = squadron
+        old_state = self.blockSignals(True)
+        try:
+            index = self.findText(squadron.country.name)
+            if index < 0:
+                # A country pydcs doesn't list (e.g. from a mod): show it
+                # faithfully rather than misreporting the first list entry.
+                self.insertItem(0, squadron.country.name, squadron.country)
+                index = 0
+            self.setCurrentIndex(index)
+        finally:
+            self.blockSignals(old_state)
+
+    def on_change(self) -> None:
+        country = self.currentData()
+        if country is not None:
+            self.squadron.country = country
 
 
 class SquadronSizeSpinner(QSpinBox):
@@ -250,6 +313,10 @@ class SquadronConfigurationBox(QGroupBox):
         self.livery_selector = SquadronLiverySelector(squadron)
         left_column.addWidget(self.livery_selector)
 
+        left_column.addWidget(QLabel("Country:"))
+        self.country_selector = SquadronCountrySelector(squadron)
+        left_column.addWidget(self.country_selector)
+
         task_and_size_row = QHBoxLayout()
         left_column.addLayout(task_and_size_row)
 
@@ -345,8 +412,13 @@ class SquadronConfigurationBox(QGroupBox):
             self.primary_task_selector.setCurrentText(
                 self.primary_task_selector.label_for(self.squadron.primary_task)
             )
+            # Selectors that write to the squadron live must follow a
+            # replace-with-preset to the new squadron object, or later edits
+            # land on the discarded one.
+            self.livery_selector.squadron = self.squadron
             index = self.livery_selector.findText(self.squadron.livery)
             self.livery_selector.setCurrentIndex(index)
+            self.country_selector.set_squadron(self.squadron)
             self.max_size_selector.setValue(self.squadron.max_size)
             self.qra_reserve_selector.setMaximum(self.squadron.max_size)
             self.qra_reserve_selector.setValue(self.squadron.intercept_reserve)
@@ -906,6 +978,9 @@ class AirWingConfigurationDialog(QDialog):
                     "aircraft": [name],
                     "aircraft_type": s.aircraft.display_name,
                     "size": s.max_size,
+                    # Pin the nation so a reload restores the squadron's voice and
+                    # pilot-name style even when the pick falls to a generated def.
+                    "country": s.country.name,
                 }
                 if squadrons.get(key):
                     squadrons[key].append(entry)
@@ -1012,6 +1087,9 @@ class SquadronDefSelector(QComboBox):
                     squadron_name = squadron_def.name
                     if squadron_def.nickname:
                         squadron_name += " (" + squadron_def.nickname + ")"
+                    # Show the nation: under a CJTF faction presets span many
+                    # countries, and the country decides the comms voice (#627).
+                    squadron_name += f" [{squadron_def.country.name}]"
                     self.addItem(squadron_name, squadron_def)
         self.setCurrentIndex(0)
 

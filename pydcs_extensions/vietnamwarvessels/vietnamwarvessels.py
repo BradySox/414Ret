@@ -1615,7 +1615,7 @@ class USS_Oklahoma_City(unittype.ShipType):
 class USS_Bon_Homme_Richard(unittype.ShipType):
     id = "USS Bon Homme Richard"
     name = "[VWV] CVA-31 Bon Homme Richard"
-    plane_num = 8
+    plane_num = 40
     helicopter_num = 8
     parking = 2
     detection_range = 28000
@@ -1726,6 +1726,15 @@ class USS_Laffey(unittype.ShipType):
 class USS_Maddox(unittype.ShipType):
     id = "USS Maddox"
     name = "[VWV] DD-731 USS Maddox"
+    detection_range = 45000
+    threat_range = 18650
+    air_weapon_dist = 18650
+
+
+@shipmod
+class USS_Maddox_T(unittype.ShipType):
+    id = "USS Maddox T"
+    name = "[VWV] DD-731 USS Maddox Tonkin Incident"
     detection_range = 45000
     threat_range = 18650
     air_weapon_dist = 18650
@@ -1860,23 +1869,20 @@ class vap_us_seafloat(unittype.ShipType):
 class Solon_Turman(unittype.ShipType):
     id = "AD-30 Solon Turman"
     name = "[VWV] AD-30 Solon Turman"
-    # GT.airFindDist = 15000 in the mod's own Database/Navy/Solon_Turman.lua; no weapon
-    # data found there, so threat/weapon ranges stay at the UnitType default of 0
-    # (a destroyer tender, not a combatant).
     detection_range = 15000
+    threat_range = 13000
+    air_weapon_dist = 13000
 
 
 @shipmod
 class USNS_Card(unittype.ShipType):
     id = "USNS Card"
     name = "[VWV] T-AKV-40 USNS Card"
-    # No detection/weapon data found in the mod's own Lua (an aircraft ferry, not a
-    # combatant) -- left at the UnitType default of 0 rather than guessed.
+    detection_range = 45000
+    threat_range = 18650
+    air_weapon_dist = 18650
 
 
-# Added in VWV 3.1.0. Unarmed riverine/coastal craft (GT.tags = {"Civilian"},
-# GT.attribute includes wsType_GenericCivShip, "NO_SAM"; no weapon DB entry in the mod's
-# own Lua) -- ids verified against the installed mod's Database/Navy/*.lua, not guessed.
 @shipmod
 class vwv_sampan_open(unittype.ShipType):
     id = "sampan_open"
@@ -2310,7 +2316,7 @@ class vwv_rf101b(PlaneType):
     charge_total = 0
     chaff_charge_size = 0
     flare_charge_size = 0
-    category = "Reconnaissance"  # {78EFB7A2-FD52-4b57-A6A6-3BF0E1D6555F}
+    category = "Interceptor"
     radio_frequency = 127.5
 
     livery_name = "VWV_RF101B"  # from type
@@ -2975,7 +2981,7 @@ class _vap_loudspeakersVietnam(unittype.VehicleType):
 @vehiclemod
 class vap_vc_zil(unittype.VehicleType):
     id = "vap_vc_zil"
-    name = "VAP VC Zil 130 Armed"
+    name = "VAP VC Zil 130"
     detection_range = 750
     threat_range = 500
     air_weapon_dist = 500

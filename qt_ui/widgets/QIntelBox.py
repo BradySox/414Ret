@@ -51,11 +51,6 @@ class QIntelBox(QGroupBox):
         # top-panel cap even when both are active -- five stacked rows overflowed
         # the cap and painted over each other. Each row still hides entirely
         # when its feature is off, so a stock campaign's box is unchanged.
-        self._phase_title = QLabel("Campaign phase:")
-        summary.addWidget(self._phase_title, 0, 3)
-        self.campaign_phase = QLabel()
-        summary.addWidget(self.campaign_phase, 0, 4)
-
         self._will_title = QLabel("Political will:")
         summary.addWidget(self._will_title, 1, 3)
         self.political_will = QLabel()
@@ -145,24 +140,11 @@ class QIntelBox(QGroupBox):
         self._update_campaign_rows()
 
     def _update_campaign_rows(self) -> None:
-        """The campaign-phase (§40) and political-will (Vietnam) rows.
+        """The political-will (Vietnam) row.
 
-        Each row shows only when its feature is live for this game; the full
+        The row shows only when its feature is live for this game; the full
         legibility "why" string rides on the tooltip so the box stays compact.
         """
-        from game.fourteenth.phases import active_phase
-
-        phase = active_phase(self.game) if self.game is not None else None
-        show_phase = phase is not None
-        self._phase_title.setVisible(show_phase)
-        self.campaign_phase.setVisible(show_phase)
-        if phase is not None:
-            self.campaign_phase.setText(phase.name)
-            status = getattr(self.game, "phase_status_line", None) or ""
-            tooltip = f"{status}\n{phase.narrative}".strip()
-            self.campaign_phase.setToolTip(tooltip)
-            self._phase_title.setToolTip(tooltip)
-
         show_will = self.game is not None and getattr(
             self.game.settings, "vietnam_political_will", False
         )

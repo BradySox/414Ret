@@ -1,0 +1,448 @@
+---
+name: Germany - Baltic Fury
+theater: GermanyCW
+authors: 414th JFG
+recommended_player_faction: USA 2020
+recommended_enemy_faction: Redfor (Russia) 2020
+description: >
+  <p>The Russian drive across the North German Plain has spent itself. In three weeks the
+  spearhead overran Schleswig-Holstein, seized the Baltic coast, forced the Danish straits and
+  put the red banner over Copenhagen -- and then it culminated, outrunning its fuel and ground
+  down by the first NATO air. The line has stalled along the Lübeck neck. Now the initiative
+  changes hands, and it comes from the sea.</p>
+  <p>The United States Sixth Fleet is in the German Bight. A carrier strike group built around
+  USS Harry S. Truman steams off the Frisian coast, its Super Hornet wing wing-to-wing with the
+  414th Joint Fighter Group's Raptors and Strike Eagles surging into Nordholz. Ahead lies the
+  hardest air-defense problem in Europe: a coastal anti-ship wall of Bastion-P and Bal missiles
+  that keeps the fleet at arm's length, S-400 regiments over Rostock and Copenhagen, and the
+  Baltic Fleet loose in the approaches.</p>
+  <p>Break the coastal belt. Win the air battle over the Bight and the Baltic approaches. Roll
+  the Red Army back up the coast -- Lübeck, Rostock, Peenemünde -- force the Danish straits, and
+  liberate Copenhagen. He is reeling and out of position. Do not let him set his feet.</p>
+  <p><em>A red storm over the Baltic Approaches -- the maritime flank of the war the Cold War
+  never had.</em></p>
+miz: operation_baltic_fury.miz
+performance: 2
+# Advanced (networked) IADS: red SAM bases carry co-located Command Center + Comms + Generator
+# statics (in the .miz). MANTIS range mode wires each base's SAMs to its nearby comms (<15nm) /
+# power (<35nm) / command center -> destroyable per-base C2 cells. The three strategic S-400
+# hubs (Copenhagen / Rostock / Szczecin) are authored as multi-battalion regiments + a shared
+# EWR (§60 doubling reverted for those, per the SAM-belt STANDARD); the forward MERAD screen
+# (SA-11/17/BUK-M3/SA-6) keeps §60 doubling. See the campaign design note.
+advanced_iads: true
+recommended_start_date: 2027-07-17
+# Blue counter-offensive tuning: NATO out-produces and out-buys the culminated salient.
+recommended_player_money: 800
+recommended_enemy_money: 400
+recommended_player_income_multiplier: 1.3
+recommended_enemy_income_multiplier: 0.7
+version: "10.8"
+# --- Supply routes (real-road corridors, traced from autobahn lat/lon -> terrain XY via
+#     tools/supply_route_geo.py; first/last waypoint = the CP position so binding is exact).
+#     The coastal spine (Lübeck -> Wismar -> Rostock -> Barth -> Peenemünde) is the axis of
+#     advance; Hamburg -> Lübeck drives the turn-1 front at the neck.
+supply_routes:
+  # Bremen (5) -> Hamburg (17)  [blue rear; A1]
+  - waypoints:
+      - [-114116, -781460]
+      - [-99389, -765808]
+      - [-80274, -730620]
+      - [-69630, -705208]
+      - [-63016, -691931]
+  # Nordholz (47) -> Hamburg (17)  [blue rear; coast / Elbe A26]
+  - waypoints:
+      - [-33001, -776115]
+      - [-27159, -768921]
+      - [-56527, -736845]
+      - [-71470, -714965]
+      - [-63016, -691931]
+  # Hamburg (17) -> Lübeck (81)  [FRONT; A1 through the neck]
+  - waypoints:
+      - [-63016, -691931]
+      - [-72644, -678685]
+      - [-57434, -659556]
+      - [-48027, -646760]
+      - [-50635, -640659]
+  # Lübeck (81) -> Wismar (108)  [coastal spine; A20]
+  - waypoints:
+      - [-50635, -640659]
+      - [-46288, -619769]
+      - [-45352, -602292]
+      - [-45742, -587524]
+  # Wismar (108) -> Rostock/Laage (20)  [A20 via Rostock]
+  - waypoints:
+      - [-45742, -587524]
+      - [-44819, -564277]
+      - [-34311, -549649]
+      - [-51929, -536642]
+  # Laage (20) -> Barth (3)  [B105 via Rostock -> Stralsund]
+  - waypoints:
+      - [-51929, -536642]
+      - [-32328, -529539]
+      - [-14192, -512156]
+      - [-8742, -502977]
+  # Barth (3) -> Peenemünde (25)  [B105/B96 via Stralsund]
+  - waypoints:
+      - [-8742, -502977]
+      - [-14720, -478684]
+      - [-30194, -450138]
+      - [-36297, -436060]
+  # Laage (20) -> Neubrandenburg (23)  [red rear; A19/A20]
+  - waypoints:
+      - [-51929, -536642]
+      - [-69398, -520768]
+      - [-90593, -493220]
+      - [-94805, -473244]
+  # Neubrandenburg (23) -> Szczecin-Goleniów (50)  [red deep rear]
+  - waypoints:
+      - [-94805, -473244]
+      - [-104032, -441233]
+      - [-105672, -401359]
+      - [-107006, -368018]
+  # Peenemünde (25) -> Szczecin-Goleniów (50)  [red deep rear; coast]
+  - waypoints:
+      - [-36297, -436060]
+      - [-66829, -420889]
+      - [-92448, -386836]
+      - [-107006, -368018]
+shipping_lanes:
+  # Peenemünde (25) -> Kastrup/Copenhagen (41)  [the straits: Baltic -> Øresund]
+  - waypoints:
+      - [-36297, -436060]
+      - [-28616, -410553]
+      - [64121, -440082]
+      - [73561, -474471]
+      - [86888, -492218]
+      - [107576, -486537]
+      - [127232, -481640]
+      - [133729, -489625]
+  # Peenemünde (25) -> Bornholm (33)  [Baltic island bastion]
+  - waypoints:
+      - [-36297, -436060]
+      - [9923, -403534]
+      - [40803, -374698]
+      - [58025, -362897]
+settings:
+  squadron_start_full: true
+  # --- Required mods: preseed the Mods page so the OOB airframes + the HDS S-400/S-300 hardware
+  #     resolve at New Game. A missing mod REMOVES the unit from the faction, so any squadron
+  #     authored on it is SILENTLY DROPPED -- keep the roster to units these six mods provide.
+  fa_18efg: true                   # F/A-18E/F Super Hornet + EA-18G Growler (the carrier wing)
+  fa18ef_tanker: true              # F/A-18E organic carrier tanker
+  f22_raptor: true                 # F-22A Raptor (Nordholz)
+  usamilitaryassetspack: true      # CurrentHill USA pack (blue ground / air defense)
+  russianmilitaryassetspack: true  # CurrentHill Russia pack ([CH] Ka-52 / Tu-160M2 + red ground)
+  high_digit_sams: true            # HDS Ultimate Compilation (S-400 / S-300 hardware)
+  # 2027 era gate: hide post-era weapons + cockpit properties so the modern jets don't spawn
+  # with beyond-era kit (both toggles; §24 split restrict_props off restrict_weapons).
+  restrict_weapons_by_date: true
+  restrict_props_by_date: true
+  # §54 munitions scarcity: an airfield out of a scarce PGM/ARM/A2A store can't load it.
+  # Pairs with war_economy below -- bomb a base's supply and its jets run dry.
+  restrict_weapons_by_stock: true
+  # Human-led counter-offensive: keep the blue auto-planner cautious so the 414th's sorties
+  # (the SEAD/anti-ship push into the coastal belt) are the player's to fly.
+  ownfor_autoplanner_aggressiveness: 10
+  oca_target_autoplanner_min_aircraft_count: 40
+  # §53 war economy + §54 air axis: a per-base materiel stockpile on top of money. Produced,
+  # transported to the front, consumed; a starved / interdicted front recovers less and gains
+  # less ground. §53 P3 fuel depots gate air readiness (bomb the fuel, ground the jets).
+  war_economy: true
+  fuel_air_readiness: true
+  # §52 command-center decapitation: the advanced-IADS command network feeds red's PLANNING,
+  # not just SAM autonomy -- as the player bombs the HQs, red's offensive targeting gets
+  # sloppier. Reactive defense untouched. This laydown ships a real per-base C2 network to key on.
+  c2_decapitation_effects: true
+  # §49 mobile-missile relocation: a coastal SS-26 Iskander battery in the red rear (in the
+  # .miz) shoots-and-scoots during the mission; with concealed_enemy_forces (default ON) it
+  # shows only as a dashed "suspected activity" circle until a recon bird finds it.
+  mobile_missile_relocation: true
+  # §50 convoy escort/ambush: NATO supply convoys run the rear roads to the front; concealed
+  # recon-team ambushes dig in along the route. Fly CAS/BAI escort or the column is ground down.
+  convoy_ambush: true
+  # Frontline artillery: fields within tube/rocket reach of the Lübeck neck draw sporadic
+  # in-mission standoff harassment fire (never a player-spawn field; startup grace).
+  artillery_base_harassment: true
+  artillery_harassment_reach_km: 42
+  # §51 enemy comms jamming: red's IADS comms masts step on the briefed NATO channels with
+  # duty-cycled barrage noise until struck; the kneeboard carries the JAM BACKUP channel. The
+  # default intel gate applies (red only jams once it takes a NATO comms plan off a captured
+  # aircrew), so winning the Combat SAR race keeps the net clean.
+  enemy_comms_jamming: true
+  # §61 host red-interceptor scramble: F10 "HOST: Red Scramble" clones a red fighter flight at
+  # any red field and vectors it onto the nearest blue fighters (MP events; gated to the host's
+  # static "Flash" name tag). Free/untracked event content.
+  host_red_scramble: true
+  # §59 ground-AI sleep (MP performance): rear garrison + AAA sites idle their DCS controller
+  # until an aircraft closes in (still visible/strikeable, kills record natively). A big win on
+  # this dense IADS + TIC map -- the flown turn 1 showed ANTIFREEZE stutters under the load.
+  perf_ground_ai_sleep: true
+  perf_aaa_site_sleep: true
+  plugins:
+    # advanced_iads (top-level) is this laydown's centerpiece; mantisiads owns its whole runtime.
+    mantisiads: true
+    # §49 SCUD hunt, §50 ambush, §51 comms jam, §61 host scramble, §36/artillery harassment.
+    mobilemissiles: true
+    convoyambush: true
+    commsjam: true
+    redscramble: true
+    vietnamops: true
+    # §51's intel gate arms only off a captured aircrew; combat_sar_captures' only writer is the
+    # combatsar plugin, so pin it on (also protects all over-water rescue + the POW->will feed).
+    combatsar: true
+    aisleep: true                    # §59 ground-AI sleep runtime (perf)
+    # §61 host-menu gate: only DCS names containing "Flash" see the HOST: Red Scramble menu.
+    redscramble.hostPlayers: Flash
+    # §51 comms-jam feel: near-continuous pressure on the top few channels (~90% on-air, capped
+    # to the 3 highest-priority nets; powerW 10000 so it reaches forward of the red C2 node).
+    commsjam.burstSec: 120
+    commsjam.intervalSec: 10
+    commsjam.maxChannels: 3
+    commsjam.powerW: 10000
+# --- §75 custom victory: liberate Copenhagen = win; lose the Nordholz bridgehead = defeat.
+#     (Stock territory endings remain in addition to these.)
+victory:
+  description: "Liberate Copenhagen and break the Russian grip on the Danish straits."
+  win_when:
+    - label: "Copenhagen liberated"
+      min_turn: 6
+      capture_cps: [Kastrup]
+  lose_when:
+    - label: "The bridgehead is lost"
+      lose_cps: [Nordholz]
+squadrons:
+  # ============================ BLUE ============================
+  # ★ CARRIER — offshore at 55.0N 6.8E ([127353, -868754]). Carrier wings are keyed by the
+  #   carrier's NAME (like exercise_bright_star's "Blue CV-1"), not a map airport id. Name the
+  #   CVN group in the .miz EXACTLY this string (it also drives the §65 comms card); if you name
+  #   it differently, change this key to match.
+  CVN-75 Harry S. Truman:
+    - primary: TARCAP
+      secondary: air-to-ground
+      aircraft:
+        - 414th JFG Rhinos
+      aircraft_type: F/A-18E Super Hornet
+      callsign: Victory
+      size: 12
+    - primary: Strike
+      secondary: air-to-ground
+      aircraft:
+        - 414th Strike Rhinos
+      aircraft_type: F/A-18F Super Hornet
+      callsign: Hammer
+      size: 10
+    - primary: SEAD Escort
+      secondary: any
+      aircraft:
+        - VAQ-141 Shadowhawks
+      aircraft_type: EA-18G Growler
+      callsign: Cobra
+      size: 6
+    - primary: AEW&C
+      aircraft:
+        - VAW-125 Tigertails
+      aircraft_type: E-2D Advanced Hawkeye
+      callsign: Ranger
+      size: 2
+    - primary: Refueling
+      aircraft:
+        - Carrier Air Wing Tanker
+      aircraft_type: F/A-18E Tanker
+      size: 3
+    - primary: Air Assault
+      secondary: any
+      aircraft:
+        - HSC Plane Guard
+      aircraft_type: SH-60B Seahawk
+      size: 2
+  # ★ Nordholz (47) — the 414th land wing: Raptors + Strike Eagles.
+  47:
+    - primary: TARCAP
+      secondary: air-to-air
+      aircraft:
+        - 414th Raptor Squadron
+      aircraft_type: F-22A Raptor
+      callsign: Vader
+      size: 12
+    - primary: Strike
+      secondary: air-to-ground
+      aircraft:
+        - 414th Tactical Fighter Squadron
+      aircraft_type: F-15E Strike Eagle (Suite 4+)
+      callsign: Chaos
+      size: 12
+  # Bremen (5) — rear heavies + eyes.
+  5:
+    - primary: AEW&C
+      aircraft:
+        - NATO E-3A Component
+      aircraft_type: E-3A
+      callsign: Magic
+      size: 2
+    - primary: Refueling
+      aircraft:
+        - 100th Air Refueling Wing
+      aircraft_type: KC-135 Stratotanker
+      size: 2
+    - primary: Refueling
+      aircraft:
+        - 351st Air Refueling Squadron
+      aircraft_type: KC-135 Stratotanker MPRS
+      size: 2
+    - primary: Strike
+      secondary: any
+      aircraft:
+        - 34th Bomb Squadron
+      aircraft_type: B-1B Lancer
+      callsign: Bone
+      size: 4
+  # Hamburg (17) — forward CAS / rotary hub, holding the Lübeck neck.
+  17:
+    - primary: CAS
+      secondary: air-to-ground
+      aircraft:
+        - 81st Fighter Squadron
+      aircraft_type: A-10C Thunderbolt II (Suite 7)
+      callsign: Bulldog
+      size: 8
+    - primary: CAS
+      secondary: air-to-ground
+      aircraft:
+        - 12th Combat Aviation Brigade
+      aircraft_type: AH-64D Apache Longbow
+      callsign: Honco
+      size: 4
+    - primary: Air Assault
+      secondary: any
+      aircraft:
+        - 5th Battalion 159th Aviation
+      aircraft_type: CH-47F Block I
+      size: 2
+    - primary: Transport
+      secondary: any
+      aircraft:
+        - 910th Airlift Wing
+      aircraft_type: C-130J-30
+      callsign: Toxic
+      size: 2
+  # ============================ RED ============================
+  # Copenhagen — Kastrup (41): the seized prize + the anti-ship archer.
+  41:
+    - primary: Anti-ship
+      # No `secondary: any` (Red Tide lesson): confine the Backfires to Anti-ship so the planner
+      # doesn't fly them as STRIKE/BARCAP filler. Anti-ship is target-gated, so they rarely fly.
+      aircraft:
+        - 924th Guards Naval Missile-Carrier Aviation Regiment
+      aircraft_type: Tu-22M3 Backfire-C
+      size: 8
+    - primary: BARCAP
+      secondary: air-to-air
+      aircraft:
+        - 98th Guards Fighter Aviation Regiment
+      aircraft_type: Su-30 Flanker-C
+      size: 8
+    - primary: Transport
+      secondary: any
+      aircraft:
+        - 339th Military Transport Aviation Regiment
+      aircraft_type: IL-76MD
+      size: 4
+  # Rostock — Laage (20): coastal PVO, the Baltic approaches barrier.
+  20:
+    - primary: BARCAP
+      secondary: any
+      aircraft:
+        - 790th Fighter Aviation Regiment
+      aircraft_type: MiG-31 Foxhound
+      size: 8
+    - primary: BARCAP
+      secondary: air-to-air
+      aircraft:
+        - 689th Guards Fighter Aviation Regiment
+      aircraft_type: Su-27 Flanker-B
+      size: 8
+  # Peenemünde (25): eastern-shoulder Flankers + naval strike / SEAD.
+  25:
+    - primary: TARCAP
+      secondary: air-to-air
+      aircraft:
+        - 159th Guards Fighter Aviation Regiment
+      aircraft_type: Su-30 Flanker-C
+      size: 8
+    - primary: SEAD
+      secondary: any
+      aircraft:
+        - 4th Guards Naval Assault Aviation Regiment
+      aircraft_type: Su-24M Fencer-D
+      size: 8
+  # Parchim (84): forward regiment closest to the front (defensive-roled).
+  84:
+    - primary: BARCAP
+      secondary: air-to-air
+      aircraft:
+        - 33rd Fighter Aviation Regiment
+      aircraft_type: MiG-29S Fulcrum-C
+      size: 12
+    - primary: Armed Recon
+      secondary: air-to-ground
+      aircraft:
+        - 368th Assault Aviation Regiment
+      aircraft_type: Su-25 Frogfoot
+      size: 8
+  # Wismar (108): forward red rotary FOB behind the front.
+  108:
+    - primary: CAS
+      secondary: air-to-ground
+      aircraft:
+        - 15th Independent Combat Helicopter Regiment
+      aircraft_type: "[CH] Ka-52"
+      size: 4
+    - primary: Escort
+      secondary: any
+      aircraft:
+        - 337th Independent Combat Helicopter Regiment
+      aircraft_type: Mi-24P Hind-F
+      size: 4
+    - primary: Air Assault
+      secondary: any
+      aircraft:
+        - 239th Independent Helicopter Regiment
+      aircraft_type: Mi-8MTV2 Hip
+      size: 4
+  # Szczecin-Goleniów (50): deep SE rear -- heavy iron, eyes, gas, barrier CAP.
+  50:
+    - primary: Strike
+      aircraft:
+        - 1023rd Heavy Bomber Aviation Regiment
+      aircraft_type: Tu-95MS Bear-H
+      size: 4
+    - primary: OCA/Runway
+      secondary: any
+      aircraft:
+        - 121st Guards Heavy Bomber Aviation Regiment
+      aircraft_type: "[CH] Tu-160M2"
+      size: 4
+    - primary: AEW&C
+      aircraft:
+        - 144th Independent Air Reconnaissance Regiment
+      aircraft_type: A-50
+      size: 1
+    - primary: Refueling
+      aircraft:
+        - 203rd Guards Air Refuelling Regiment
+      aircraft_type: IL-78M
+      size: 2
+    - primary: BARCAP
+      secondary: air-to-air
+      aircraft:
+        - 831st Guards Fighter Aviation Regiment
+      aircraft_type: Su-30 Flanker-C
+      size: 8
+  # Bornholm (33): forward Baltic island bastion -- the strait-forcing objective.
+  33:
+    - primary: BARCAP
+      secondary: air-to-air
+      aircraft:
+        - 1st Guards Air Defence Fighter Regiment
+      aircraft_type: MiG-29S Fulcrum-C
+      size: 8

@@ -53,8 +53,8 @@ local GIVE_UP_PUSHES = 2 -- consecutive dry pushes before a group stops being ro
 if dcsRetribution.plugins and dcsRetribution.plugins.mobilemissiles then
     local o = dcsRetribution.plugins.mobilemissiles
     INTERVAL = tonumber(o.scootIntervalS) or INTERVAL
-    RADIUS = tonumber(o.scootRadiusM) or RADIUS
-    SPEED = tonumber(o.scootSpeedKmph) or SPEED
+    RADIUS = (tonumber(o.scootRadiusNm) or RADIUS / 1852) * 1852 -- NM (UI) -> m
+    SPEED = (tonumber(o.scootSpeedKt) or SPEED / 1.852) * 1.852 -- kt (UI) -> km/h
     GRACE = tonumber(o.startGraceS) or GRACE
     FIRE_MARGIN = tonumber(o.fireMarginS) or FIRE_MARGIN
 end

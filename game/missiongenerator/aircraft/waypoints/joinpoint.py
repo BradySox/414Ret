@@ -71,9 +71,16 @@ class JoinPointBuilder(PydcsWaypointBuilder):
             FlightType.SEAD_SWEEP,
             FlightType.SEAD,
             FlightType.SEAD_ESCORT,
+            FlightType.ESCORT_JAMMER,
             FlightType.DEAD,
         ]:
-            if self.flight.flight_type == FlightType.SEAD_ESCORT:
+            if self.flight.flight_type in [
+                FlightType.SEAD_ESCORT,
+                # The Growler escort jammer flies the same engage-radars escort
+                # profile (its ARMs are package self-defense); the scripted
+                # jamming effect rides on top via the growler plugin.
+                FlightType.ESCORT_JAMMER,
+            ]:
                 self.handle_sead_escort(doctrine, waypoint)
                 # Let the AI use ECM to preemptively defend themselves.
                 ecm_option = OptECMUsing(

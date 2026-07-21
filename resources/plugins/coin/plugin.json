@@ -9,20 +9,20 @@
             "defaultValue": 90
         },
         {
-            "nameInUI": "HVT: patrol radius around his area (m)",
-            "mnemonic": "hvtPatrolRadiusM",
-            "defaultValue": 4000,
-            "maximumValue": 20000
+            "nameInUI": "HVT: patrol radius around his area (NM)",
+            "mnemonic": "hvtPatrolRadiusNm",
+            "defaultValue": 2.16,
+            "maximumValue": 10.8
         },
         {
-            "nameInUI": "HVT: convoy ground speed (km/h)",
-            "mnemonic": "hvtSpeedKmph",
-            "defaultValue": 25
+            "nameInUI": "HVT: convoy ground speed (kt)",
+            "mnemonic": "hvtSpeedKt",
+            "defaultValue": 13.5
         },
         {
-            "nameInUI": "VBIED: suicide-vehicle ground speed (km/h)",
-            "mnemonic": "vbiedSpeedKmph",
-            "defaultValue": 45
+            "nameInUI": "VBIED: suicide-vehicle ground speed (kt)",
+            "mnemonic": "vbiedSpeedKt",
+            "defaultValue": 24.3
         },
         {
             "nameInUI": "VBIED: seconds between re-issuing the drive order (anti-stall)",
@@ -45,20 +45,20 @@
             "defaultValue": 150
         },
         {
-            "nameInUI": "Field cell: patrol radius around its patch (m)",
-            "mnemonic": "cellPatrolRadiusM",
-            "defaultValue": 2000,
-            "maximumValue": 20000
+            "nameInUI": "Field cell: patrol radius around its patch (NM)",
+            "mnemonic": "cellPatrolRadiusNm",
+            "defaultValue": 1.08,
+            "maximumValue": 10.8
         },
         {
-            "nameInUI": "Field cell: ground speed (km/h)",
-            "mnemonic": "cellSpeedKmph",
-            "defaultValue": 20
+            "nameInUI": "Field cell: ground speed (kt)",
+            "mnemonic": "cellSpeedKt",
+            "defaultValue": 10.8
         },
         {
-            "nameInUI": "Infiltrator: creep speed toward the target base (km/h)",
-            "mnemonic": "infilSpeedKmph",
-            "defaultValue": 15
+            "nameInUI": "Infiltrator: creep speed toward the target base (kt)",
+            "mnemonic": "infilSpeedKt",
+            "defaultValue": 8.1
         },
         {
             "nameInUI": "Infiltrator: seconds between re-issuing the creep order",
@@ -76,10 +76,10 @@
             "defaultValue": 4
         },
         {
-            "nameInUI": "Indirect fire: impact dispersion around the base (m)",
-            "mnemonic": "harassDispersionM",
-            "defaultValue": 250,
-            "maximumValue": 2000
+            "nameInUI": "Indirect fire: impact dispersion around the base (ft)",
+            "mnemonic": "harassDispersionFt",
+            "defaultValue": 820,
+            "maximumValue": 6562
         },
         {
             "nameInUI": "Indirect fire: per-impact blast power",

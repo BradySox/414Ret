@@ -41,6 +41,10 @@ tasks:
   SEAD: 730
   SEAD Escort: 675
   SEAD Sweep: 680
+  # Growler-only escort jamming (user call 2026-07-21): the ONLY airframe that
+  # declares this task -- the FA-18E/F must never gain it. High priority so a
+  # wing that fields Growlers always fills the jamming escort with them.
+  Escort Jammer: 800
 
 # Air-to-air refueling method (receiver).
 air_refuel_type: probe

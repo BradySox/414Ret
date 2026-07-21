@@ -86,6 +86,7 @@ from game.theater import (
 )
 from game.theater.theatergroundobject import (
     CarrierGroundObject,
+    CoastalSiteGroundObject,
     EwrGroundObject,
     GenericCarrierGroundObject,
     LhaGroundObject,
@@ -446,6 +447,7 @@ class GroundObjectGenerator:
                 self.enable_ewr(vehicle_group)
                 vehicle_group.units[0].name = unit.unit_name
                 self.set_alarm_state(vehicle_group)
+                self.set_coastal_engagement(vehicle_group)
                 GroundForcePainter(faction, vehicle_group.units[0]).apply_livery()
             else:
                 vehicle_unit = self.m.vehicle(unit.unit_name, unit.type)
@@ -554,6 +556,21 @@ class GroundObjectGenerator:
         # detections and never re-states them). Everything else: no option written.
         if force_red or isinstance(self.ground_object, EwrGroundObject):
             group.points[0].tasks.append(OptAlarmState(2))
+
+    def set_coastal_engagement(self, group: MovingGroup[Any]) -> None:
+        # §77: coastal anti-ship batteries (Silkworm et al.) must actively defend their
+        # waters. Like fleets (set_ship_engagement), a ground battery's ship engagement
+        # is OPTION-driven: a forced RED alarm state plus weapon-free ROE make it fire
+        # autonomously on any enemy hull that enters range -- including a sea-supply
+        # convoy running the coast. Without this the battery sits on DCS AUTO and
+        # ignores passing ships (the same passivity that let air defenses ignore the
+        # §63 cruise missiles). Coastal sites only; gated so OFF is byte-identical.
+        if not self.game.settings.coastal_batteries_engage_ships:
+            return
+        if not isinstance(self.ground_object, CoastalSiteGroundObject):
+            return
+        group.points[0].tasks.append(OptAlarmState(2))
+        group.points[0].tasks.append(OptROE(OptROE.Values.WeaponFree))
 
     def set_ship_engagement(self, group: ShipGroup) -> None:
         # Make fleets fight rather than sit passive. Ship weapons engagement in DCS is

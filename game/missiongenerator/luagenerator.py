@@ -35,6 +35,7 @@ from .interceptluadata import (
 )
 from .cruisemissileluadata import populate_cruise_missiles_lua
 from .missiondata import CombatSarTemplates, MissionData
+from .growlerluadata import populate_growler_lua
 from .mobilemissileluadata import populate_mobile_missiles_lua
 from .redscrambleluadata import populate_red_scramble_lua
 from .vietnamopsluadata import populate_vietnam_ops_lua
@@ -423,6 +424,12 @@ class LuaGenerator:
         # convoy and/or mobile VBIED exists; the coin plugin drives them at runtime
         # (the kill/fuse consequence stays in the turn-boundary force model).
         populate_coin_lua(lua_data, self.game, self.mission_data)
+
+        # Growler escort jamming -- emits dcsRetribution.growler only when an
+        # ESCORT_JAMMER flight exists; the growler plugin drives the scripted
+        # jamming effects (missile-spoof bubble + ROE-hold pulses, never
+        # enableEmission) over the package it escorts.
+        populate_growler_lua(lua_data, self.game, self.mission_data)
 
         # Mobile missile sites (the SCUD hunt) -- emits dcsRetribution.mobileMissiles
         # only when the setting is on and a live vehicle-carrying missile site exists;

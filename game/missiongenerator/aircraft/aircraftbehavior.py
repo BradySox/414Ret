@@ -86,6 +86,8 @@ class AircraftBehavior:
             self.configure_sead(group, flight)
         elif self.task == FlightType.SEAD_ESCORT:
             self.configure_sead_escort(group, flight)
+        elif self.task == FlightType.ESCORT_JAMMER:
+            self.configure_escort_jammer(group, flight)
         elif self.task == FlightType.STRIKE:
             self.configure_strike(group, flight)
         elif self.task == FlightType.ANTISHIP:
@@ -501,6 +503,24 @@ class AircraftBehavior:
             # Guided includes ARMs and TALDs (among other things, but those are the useful
             # weapons for SEAD).
             rtb_winchester=OptRTBOnOutOfAmmo.Values.Guided,
+            restrict_jettison=True,
+            mission_uses_gun=False,
+        )
+
+    def configure_escort_jammer(self, group: FlyingGroup[Any], flight: Flight) -> None:
+        # Growler escort jamming: rides the package join->split on the escort
+        # flight plan; the growler plugin drives the scripted jamming effect at
+        # runtime. Configured like a SEAD escort (the SEAD Escort loadout's ARMs
+        # are legitimate self-defense against radars engaging the package) with
+        # one deliberate difference: NO rtb_winchester -- the jamming IS the
+        # payload, so a Growler with empty rails stays with the package instead
+        # of aborting the escort.
+        self.configure_task(flight, group, SEAD, fallback_tasks=[Escort])
+        self.configure_behavior(
+            flight,
+            group,
+            # ReturnFire until JOIN escalates to OpenFire -- see configure_escort.
+            roe=OptROE.Values.ReturnFire,
             restrict_jettison=True,
             mission_uses_gun=False,
         )

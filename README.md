@@ -64,6 +64,11 @@ Upstream hands you a map that already knows everything. Here you have to go look
 - **SCAR is the RESCAP "Sandy"** of that package — hold near the FLOT with the King and the
   rescue helo, suppress the threats, walk the helo in.
 - **JAMMING** turns the C-130J into an EC-130H/RC-130H-style EW and ISR platform.
+- **The Growler jams for the package.** With the CJS Super Hornet pack (now on by default),
+  an EA-18G flies a dedicated **escort jamming** role: it rides your strike package through
+  the SAM belt, can spoof radar missiles fired at anyone under its bubble, and can force a
+  tracking SAM onto brief weapons-hold pulses — closer means stronger, real penetration-escort
+  physics. AI Growlers jam automatically; fly one yourself and you get the F10 jamming menu.
 - **The C-130J drops paratroopers.** Air Assault is no longer helo-only: a troop transport
   flies the same tasking as an airborne drop. Fly it yourself — spawn with the stick already
   loaded, run in below 3,000 ft AGL, and the CTLD *Unload / Extract Troops* call **jumps
@@ -115,6 +120,12 @@ Upstream hands you a map that already knows everything. Here you have to go look
   between same-side bases, real supply columns run both networks; sometimes hidden ambush
   teams dig in along a friendly route. Nothing is telegraphed — the first sign is the TROOPS
   IN CONTACT call.
+- **The sea lanes have traffic too — running the coastal gauntlet.** A shipment between two
+  friendly ports with no road sails as a **convoy of cargo ships** (not one lone hull), each
+  carrying its share, so sinking some ships denies only their share of the reinforcement.
+  And coastal anti-ship batteries (Silkworm and the like) now fire on any enemy ship in
+  range — a convoy that passes an enemy coast has to be escorted or the batteries
+  suppressed, the Tanker War in miniature.
 - **Nation-specific voiceovers and pilot names per squadron** — a Greek squadron hears Greek
   and fills with Greek names, instead of one shared faction voice. The nation is yours to set:
   a **Country selector** in the Air Wing Configuration dialog (under Livery), and campaigns can

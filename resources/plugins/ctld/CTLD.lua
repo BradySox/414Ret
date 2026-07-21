@@ -5906,14 +5906,20 @@ function ctld.addTransportF10MenuOptions(_unitName)
                         _troopCommandsPath, ctld.unloadExtractTroops, { _unitName })
 
                     -- local _loadPath = missionCommands.addSubMenuForGroup(_groupId, "Load From Zone", _troopCommandsPath)
+                    -- 414th: never let a nil transport limit crash the F10 menu build.
+                    -- ctld-config.lua rebuilds unitLoadLimits from Logistics.transports, so a
+                    -- transport whose cabin_size didn't resolve leaves getTransportLimit ->
+                    -- numberOfTroops; fall back once more to a sane default so line 5916's
+                    -- `>=` compare is always number-vs-number.
                     local _transportLimit = ctld.getTransportLimit(_unitTypename)
+                        or ctld.numberOfTroops or 10
                     local itemNb = 0
                     local menuEntries = {}
                     local menuPath = _troopCommandsPath
                     for _, _loadGroup in pairs(ctld.loadableGroups) do
                         if not _loadGroup.side or _loadGroup.side == _unit:getCoalition() then
-                            -- check size & unit
-                            if _transportLimit >= _loadGroup.total then
+                            -- check size & unit (guard a loadable group with no `total`)
+                            if _loadGroup.total and _transportLimit >= _loadGroup.total then
                                 table.insert(menuEntries,
                                     { text = ctld.i18n_translate("Load ") .. _loadGroup.name, group = _loadGroup })
                             end

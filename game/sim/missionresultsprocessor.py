@@ -466,12 +466,27 @@ class MissionResultsProcessor:
 
     @staticmethod
     def commit_cargo_ship_losses(debriefing: Debriefing) -> None:
-        for ship in debriefing.cargo_ship_losses:
-            logging.info(
-                f"All units destroyed in cargo ship from {ship.origin} to "
-                f"{ship.destination}."
+        # §77: each sunk hull kills only its own share of the shipment (proportional
+        # losses), so a convoy that runs the coastal gauntlet loses reinforcements in
+        # proportion to how many ships went down. A single-hull convoy carries the whole
+        # transfer, so this reproduces the legacy all-or-nothing loss.
+        for hull in debriefing.cargo_ship_losses:
+            ship = hull.ship
+            for unit_type, count in hull.cargo:
+                for _ in range(count):
+                    try:
+                        ship.kill_unit(unit_type)
+                    except KeyError:
+                        # Already reconciled by another sunk hull of the same convoy
+                        # (or delivered) -- nothing left of this type to lose.
+                        pass
+            manifest = ", ".join(
+                f"{count} {unit_type}" for unit_type, count in hull.cargo
             )
-            ship.kill_all()
+            logging.info(
+                f"Cargo ship sunk in shipment from {ship.origin} to "
+                f"{ship.destination}: lost {manifest or '(empty hull)'}."
+            )
 
     @staticmethod
     def commit_airlift_losses(debriefing: Debriefing) -> None:

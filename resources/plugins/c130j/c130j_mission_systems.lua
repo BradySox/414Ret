@@ -879,8 +879,10 @@ local function spotJammingTick(name)
     if dist <= maxRange and hasLOS(tp, jp) then
         local prob
         if dist <= fullEff then prob = 1.0 else prob = 0.2 + ((fullEff / dist) * 0.8) end
-        -- Apply radar-type difficulty, softened — spot jamming punches through ECCM
-        local nato = getNatoName(tu)
+        -- Apply radar-type difficulty, softened — spot jamming punches through ECCM.
+        -- Use the NATO type pinned at selection (the radar the player picked), falling back
+        -- to the group's first unit for a target selected before this fix / an old save.
+        local nato = s.spotTargetNato or getNatoName(tu)
         prob = prob + altBoost
         local diff = jamDifficulty[nato] or 1.0
         diff = diff + (1.0 - diff) * CFG_spotPunchThrough
@@ -1660,7 +1662,8 @@ local function refreshSpotTargetList(name, gid, tsMenu)
                 if dist <= CFG_spotMaxRange then
                     local brg    = getBearing(jp, tp)
                     local distNm = math.floor(dist/1852+0.5)
-                    local label  = getNatoName(radar) .. " | " .. brg .. " | " .. distNm .. "nm"
+                    local natoName = getNatoName(radar)
+                    local label  = natoName .. " | " .. brg .. " | " .. distNm .. "nm"
                     local gname  = g:getName()
                     local cmd = missionCommands.addCommandForGroup(gid, label, tsMenu, function()
                         if overheated[name] and (emitterCapacity[name] or 0) < CFG_overheatResetCap then
@@ -1668,6 +1671,11 @@ local function refreshSpotTargetList(name, gid, tsMenu)
                         end
                         ewSettings[name] = ewSettings[name] or {}
                         ewSettings[name].spotTarget = gname
+                        -- 414th: pin the NATO type the player SELECTED (the important radar the
+                        -- menu labelled) so the tick's jam difficulty/duration + the coalition
+                        -- broadcast can't drift to the group's first alive unit -- often the
+                        -- acquisition radar, e.g. you pick "SA-10" but it jams/reports "DE" (Dog Ear).
+                        ewSettings[name].spotTargetNato = natoName
                         emitImmediate(name, "Spot jamming: " .. label)
                     end)
                     table.insert(spotTargetCmds[name], cmd)

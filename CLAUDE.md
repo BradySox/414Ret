@@ -2669,6 +2669,56 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     `tests/lua/test_ctld_paradrop.py` + the extended EW-deconfliction test;
     features doc §76, checklist B30 — needs an in-game pass (the AI run-in profile
     + troops-march-to-capture are DCS-only).
+77. **Growler escort jamming (EA-18G)** — the "AI can't use it" answer: the Timberwolf/
+    Matador EW script family (the C-130 §2 lineage; upstream's `ewrj` gates it player-only)
+    gets its missing decision layer. **CJS Super Hornet pack defaults ON** (`fa_18efg` +
+    `fa18ef_tanker`, DM call 2026-07-21; `ModSettings.all_off()` keeps mods-off tests honest);
+    new **`FlightType.ESCORT_JAMMER`, Growler-ONLY** (capability = the yaml `tasks:` block —
+    only `EA-18G.yaml` declares `Escort Jammer: 800`; the FA-18E/F never fly it, user call):
+    proposed on the SEAD-escort radar-SAM trigger via `EscortType.Jammer`, rides the package
+    join→split on the escort plan with the SEAD-escort engage profile + preemptive ECM, **no
+    winchester-RTB** (empty rails stay with the package — the jamming is the payload), SEAD
+    Escort loadout fallback (ALQ-99 pods + ARMs). Runtime: `growlerluadata.py` emits
+    `dcsRetribution.growler` (jammer + protected package group names; no jammer → no-op) and
+    the `growler` plugin (default ON) drives the effects **ROE-only** (emissions NEVER toggled;
+    MANTIS alarm/EMCON untouched): a defensive missile-spoof bubble over the package (Matador
+    bands, min-travel guard, friendly missiles never touched) + offensive `WEAPON_HOLD` pulses
+    on radar-SAM groups by **escort geometry — effectiveness RISES as the Growler closes**
+    (deliberately the opposite of the C-130's standoff burn-through; never unify them). AI jams
+    automatically after a startup grace; a player Growler starts OFF with an F10 "Growler
+    jamming" menu. Tests `tests/fourteenth/test_escort_jammer.py` +
+    `tests/missiongenerator/test_growlerluadata.py` + `tests/lua/test_growler_runtime.py` (the
+    harness gained `Weapon:destroy` + ground ROE values); features doc §77, checklist B31 —
+    needs an in-game pass (the hold/restore pulse + spoof against a live SAM ring).
+78. **Sea-supply convoys + coastal anti-ship engagement** — makes the sea supply
+    route (the §-less upstream `CargoShip` lane between two friendly ports with no
+    road) a real feature. **Part 1 — convoys with proportional losses**
+    (`cargo_ship_convoys`, Mission Generation → Naval strike, default **ON**): a sea
+    shipment sails as a **convoy of N cargo ships** instead of one lone hull
+    (`game/missiongenerator/cargoshipgenerator.py` `_manifests_for` spreads it ~1 ship
+    per `UNITS_PER_SHIP`=2 units, capped by `cargo_ship_convoy_max` default 5 and by
+    the unit count — never an empty hull), each hull carrying a **round-robin slice** of
+    the cargo. The hull is the loss unit: `unitmap.add_cargo_ship` maps every hull name
+    → a `CargoShipUnit(cargo_slice, ship)`, and `commit_cargo_ship_losses` kills **only
+    a sunk hull's slice** (`ship.kill_unit` per unit, KeyError-guarded), so sinking k of
+    N hulls denies **~k/N** of the reinforcement and the rest still lands — the
+    hard-coded single-hull gate (`add_cargo_ship` used to `raise` on >1 unit) is lifted.
+    The debrief's `cargo_ships` count now tallies **hulls** sunk; `SideLossCounts` +
+    `cargo_ship_losses_by_type` fold across slices. **OFF (or a one-unit shipment) = one
+    hull carrying the whole transfer = byte-identical to the legacy all-or-nothing
+    loss.** **Part 2 — coastal batteries engage ships** (`coastal_batteries_engage_ships`,
+    same section, default **ON**): `CoastalSiteGroundObject` (Silkworm `hy_launcher` et
+    al.) is generated **weapons-free + red alarm** (`tgogenerator.set_coastal_engagement`,
+    mirroring the ship `set_ship_engagement`) so it fires autonomously on any enemy hull
+    in range instead of sitting passive on DCS AUTO (the §63 "AUTO AD ignores it"
+    lesson); symmetric, coastal-only, gated so OFF is byte-identical. **The trigger is
+    geometry** — a convoy sails a *friendly* lane, so an enemy battery only fires if the
+    lane passes within its range of the enemy coast (Tanker War's Praying-Mantis strait
+    box is the showcase; author lanes near the opposing shore). No plugin/Lua/save
+    change. Tests `tests/fourteenth/test_cargo_ship_convoy.py`; features doc §78,
+    checklist B32 — needs an in-game pass (whether a DCS Silkworm on weapons-free
+    actually tracks and hits a moving 12-kt cargo ship is the DCS-only unknown; plus
+    the convoy visibly running the gauntlet with proportional debrief losses).
 
 ---
 

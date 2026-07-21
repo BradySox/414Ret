@@ -11,6 +11,9 @@ class EscortType(Enum):
     AirToAir = auto()
     Sead = auto()
     Refuel = auto()
+    # Growler escort jamming (ESCORT_JAMMER). Appended last so the existing
+    # members keep their auto() values.
+    Jammer = auto()
 
 
 @dataclass(frozen=True)

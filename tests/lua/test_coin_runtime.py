@@ -119,7 +119,7 @@ def test_cell_wander_and_infiltrator_creep_are_routed_after_grace() -> None:
     h.add_group(_ground_group("Infil-1"))
     h.lua.globals().dcsRetribution = h.to_lua(
         {
-            "plugins": {"coin": {"startGraceS": 5, "cellPatrolRadiusM": 2000}},
+            "plugins": {"coin": {"startGraceS": 5, "cellPatrolRadiusNm": 1.08}},
             "coin": {
                 "cells": [{"groups": ["Cell-1"], "x": "1000.0", "y": "0.0"}],
                 "infiltrators": [
@@ -142,8 +142,9 @@ def test_cell_wander_and_infiltrator_creep_are_routed_after_grace() -> None:
     h.advance_to(6)
     by_group = {r["group"]: r for r in _routes(h)}
     assert set(by_group) == {"Cell-1", "Infil-1"}
-    # The cell wanders around its patch (fake getRandPointInCircle = centre.x + radius).
-    assert by_group["Cell-1"]["x"] == 3000.0
+    # The cell wanders around its patch (fake getRandPointInCircle = centre.x + radius;
+    # 1.08 NM -> 2000.2 m, so ~3000).
+    assert abs(by_group["Cell-1"]["x"] - 3000.0) < 1.0
     # The infiltrator creeps straight at the base it is taking (the origin).
     assert by_group["Infil-1"]["x"] == 0.0 and by_group["Infil-1"]["y"] == 0.0
     h.assert_no_lua_errors()

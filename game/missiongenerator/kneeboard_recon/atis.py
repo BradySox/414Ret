@@ -290,9 +290,9 @@ def draw_atis_block(
             ("WIND SFC", f"{block.wind_surface[0]:03d} / {block.wind_surface[1]} kt"),
         ],
         [
-            ("WIND 2000 m", f"{block.wind_2000m[0]:03d} / {block.wind_2000m[1]} kt"),
-            ("WIND 8000 m", f"{block.wind_8000m[0]:03d} / {block.wind_8000m[1]} kt"),
-            ("TEMP", f"{block.temperature_c:+d} °C"),
+            ("WIND 6500 ft", f"{block.wind_2000m[0]:03d} / {block.wind_2000m[1]} kt"),
+            ("WIND 26000 ft", f"{block.wind_8000m[0]:03d} / {block.wind_8000m[1]} kt"),
+            ("TEMP", f"{round(block.temperature_c * 9 / 5 + 32):+d} °F"),
         ],
         [
             ("QNH", block.qnh_display),

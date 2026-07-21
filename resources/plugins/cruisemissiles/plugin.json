@@ -24,9 +24,9 @@
             "defaultValue": 250
         },
         {
-            "nameInUI": "Impact dispersion radius (m)",
-            "mnemonic": "salvoRadiusM",
-            "defaultValue": 100
+            "nameInUI": "Impact dispersion radius (ft)",
+            "mnemonic": "salvoRadiusFt",
+            "defaultValue": 328
         },
         {
             "nameInUI": "F10 call-for-fire menu",

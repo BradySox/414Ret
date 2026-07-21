@@ -938,12 +938,11 @@ class BriefingPage(KneeboardPage):
             # (what ATIS broadcasts), via game.utils for canonical unit conversions.
             qnh = inches_hg(self._effective_qnh_inhg())
             qnh_in_hg = f"{qnh.inches_hg:.2f}"
-            qnh_mm_hg = f"{qnh.mm_hg:.1f}"
-            qnh_hpa = f"{qnh.hecto_pascals:.1f}"
-            writer.text(
-                f"Temperature: {round(self.weather.atmospheric.temperature_celsius)} °C at sea level"
-            )
-            writer.text(f"QNH: {qnh_in_hg} inHg / {qnh_mm_hg} mmHg / {qnh_hpa} hPa")
+            qnh_hpa = f"{qnh.hecto_pascals:.0f}"
+            temp_c = round(self.weather.atmospheric.temperature_celsius)
+            temp_f = round(self.weather.atmospheric.temperature_celsius * 9 / 5 + 32)
+            writer.text(f"Temperature: {temp_f} °F ({temp_c} °C) at sea level")
+            writer.text(f"QNH: {qnh_in_hg} inHg ({qnh_hpa} hPa)")
             qfe_line = self._format_departure_qfe()
             if qfe_line is not None:
                 writer.text(qfe_line)

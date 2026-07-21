@@ -64,7 +64,7 @@ if dcsRetribution.plugins and dcsRetribution.plugins.cruisemissiles then
     end
     PLAYER_SALVO = tonumber(o.playerSalvoSize) or PLAYER_SALVO
     PLAYER_RANGE = (tonumber(o.playerRangeNm) or 250) * NM_TO_M
-    SALVO_RADIUS = tonumber(o.salvoRadiusM) or SALVO_RADIUS
+    SALVO_RADIUS = (tonumber(o.salvoRadiusFt) or SALVO_RADIUS / 0.3048) * 0.3048 -- ft (UI) -> m
     if o.menuEnabled ~= nil then
         MENU = o.menuEnabled
     end

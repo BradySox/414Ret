@@ -9,15 +9,15 @@
             "defaultValue": 480
         },
         {
-            "nameInUI": "Scoot radius around the site's campaign position (m)",
-            "mnemonic": "scootRadiusM",
-            "defaultValue": 4000,
-            "maximumValue": 15000
+            "nameInUI": "Scoot radius around the site's campaign position (NM)",
+            "mnemonic": "scootRadiusNm",
+            "defaultValue": 2.16,
+            "maximumValue": 8.1
         },
         {
-            "nameInUI": "Ground speed while relocating (km/h)",
-            "mnemonic": "scootSpeedKmph",
-            "defaultValue": 30
+            "nameInUI": "Ground speed while relocating (kt)",
+            "mnemonic": "scootSpeedKt",
+            "defaultValue": 16.2
         },
         {
             "nameInUI": "Startup grace before the first relocation (s)",

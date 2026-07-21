@@ -635,6 +635,21 @@ FEATURES: tuple[Feature, ...] = (
         77,
         plugin_id="growler",
     ),
+    Feature(
+        # §78 sea-supply convoys + coastal anti-ship engagement: a pure-engine feature
+        # (no Lua). cargo_ship_convoys spreads a sea shipment across N hulls with
+        # proportional losses (game/missiongenerator/cargoshipgenerator.py +
+        # game/unitmap.py + the results processor); coastal_batteries_engage_ships sets
+        # coastal batteries weapons-free so they fire on passing ships (tgogenerator.py).
+        "sea_supply_convoys",
+        "Sea-supply convoys + coastal anti-ship engagement",
+        78,
+        settings_fields=(
+            "cargo_ship_convoys",
+            "cargo_ship_convoy_max",
+            "coastal_batteries_engage_ships",
+        ),
+    ),
     # Always-on engine plugins — major 414th machinery documented in design notes
     # rather than a numbered "Features at a Glance" entry.
     Feature("mantis_iads", "MANTIS IADS engine", plugin_id="mantisiads"),

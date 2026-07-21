@@ -467,6 +467,11 @@ class Loadout:
         # A SEAD escort typically does not need a different loadout than a regular
         # SEAD flight, so fall back to SEAD if needed.
         loadout_names[FlightType.SEAD_ESCORT].extend(loadout_names[FlightType.SEAD])
+        # The escort jammer (Growler) flies pods + ARMs: the SEAD Escort fit is
+        # the right stores when no dedicated Escort Jammer preset exists.
+        loadout_names[FlightType.ESCORT_JAMMER].extend(
+            loadout_names[FlightType.SEAD_ESCORT]
+        )
         loadout_names[FlightType.SEAD_SWEEP].extend(
             loadout_names[FlightType.SEAD_ESCORT]
         )

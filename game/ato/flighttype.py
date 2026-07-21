@@ -57,6 +57,11 @@ class FlightType(Enum):
     AEWC = "AEW&C"
     TRANSPORT = "Transport"
     SEAD_ESCORT = "SEAD Escort"
+    # Growler-only escort jamming: rides the package join->split like a SEAD
+    # escort; the growler plugin drives the scripted jamming effect at runtime.
+    # Capability comes solely from the yaml `tasks:` block -- only the EA-18G
+    # declares it (user call 2026-07-21: the FA-18E/F never fly this).
+    ESCORT_JAMMER = "Escort Jammer"
     REFUELING = "Refueling"
     FERRY = "Ferry"
     AIR_ASSAULT = "Air Assault"
@@ -121,7 +126,11 @@ class FlightType(Enum):
 
     @property
     def is_escort_type(self) -> bool:
-        return self in {FlightType.ESCORT, FlightType.SEAD_ESCORT}
+        return self in {
+            FlightType.ESCORT,
+            FlightType.SEAD_ESCORT,
+            FlightType.ESCORT_JAMMER,
+        }
 
     @property
     def is_primary_package_task(self) -> bool:
@@ -149,6 +158,7 @@ class FlightType(Enum):
         return self in {
             FlightType.ESCORT,
             FlightType.SEAD_ESCORT,
+            FlightType.ESCORT_JAMMER,
             FlightType.TARCAP,
         }
 
@@ -175,6 +185,7 @@ class FlightType(Enum):
             FlightType.STRIKE: AirEntity.ATTACK_STRIKE,
             FlightType.SWEEP: AirEntity.FIGHTER,
             FlightType.JAMMING: AirEntity.ELECTRONIC_COMBAT_JAMMER,
+            FlightType.ESCORT_JAMMER: AirEntity.ELECTRONIC_COMBAT_JAMMER,
             FlightType.TARPS: AirEntity.RECONNAISSANCE,
             FlightType.SCAR: AirEntity.ATTACK_STRIKE,
             FlightType.TARCAP: AirEntity.FIGHTER,

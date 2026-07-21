@@ -34,6 +34,10 @@ Upstream hands you a map that already knows everything. Here you have to go look
 - **Unscouted field forces have no exact position** — a mobile SAM shows as a dashed amber
   *suspected activity* circle offset from the truth, until recon or an attack pins it down.
   Fixed infrastructure stays exact. The Weasel hunt becomes a real hunt.
+- **Some of those circles are lies** — with the opt-in *decoy zones* enabled, the enemy plants
+  fake contacts that look exactly like a real hidden force. You can't tell a feint from the
+  genuine article without flying recon on it; scout a decoy and it burns away as empty, and
+  fresh ones take their place each turn.
 - **Mobile missiles shoot and scoot**, relocating mid-mission — so the launcher is never
   where the last photo froze it. They stay within a few km of their campaign position, and
   the radar SAM network never moves.

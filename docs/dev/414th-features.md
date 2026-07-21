@@ -7132,6 +7132,93 @@ on/off/non-coastal). **Checklist B32** — needs an in-game pass: whether a DCS 
 weapons-free actually tracks and hits a moving 12-kt cargo ship is the DCS-only unknown,
 plus watching a convoy run the gauntlet with proportional debrief losses.
 
+## §79 — Decoy suspected-activity zones
+
+§3 gave the human planner a **map that lies by omission** — an unscouted enemy field force
+shows as a dashed amber "suspected activity" uncertainty circle rather than an exact marker,
+so the Weasel/strike planner has to fly recon to know what a circle really holds. §79 makes
+the map lie **actively**: it plants *fake* contacts that render as the exact same circle, so
+the planner can no longer trust that a circle means a real force is there. Pure turn-model —
+no plugin, no Lua, no `.miz` change.
+
+### The unitless concealed TGO (and why the AI is immune for free)
+
+A decoy is a **`VehicleGroupGroundObject` with zero units**, concealed like any hidden force,
+carrying a new `TheaterGroundObject.is_decoy` flag (`__setstate__`-defaulted to `False` so old
+saves load clean). It reuses the whole §3 concealment path — the server model jitters the
+centre, the client draws the identical dashed circle with its click/right-click frag contract
+— so on the human map it is **pixel-identical to a real hidden contact**.
+
+The key property is that the deception targets **only the human**:
+
+- The **AI planner enumerates targets on ground truth** (`is_dead()` / alive-unit counts,
+  `viewer=None`, never the fog leaves). A decoy has zero alive units, so it reads as already
+  dead and the planner **skips it automatically** — it is never fragged, never escorted, never
+  costed. No special-case code was needed to shield the AI; the AI-immunity falls out of the
+  unitless design **for free**, and it is the right behaviour: a real strike is never wasted on
+  an empty zone.
+- Because nothing spawns in the `.miz` for a decoy (no units), there is no runtime object to
+  desync, no loss to reconcile, and no phantom-spawn concern — it exists only as a map circle
+  fed from the campaign state.
+
+### Resolving a decoy — burn on recon
+
+Flying recon **onto** a decoy — a TARPS overfly or an attack that would normally discover a
+hidden force — resolves it as empty: the player gets a "no enemy activity … it was a decoy"
+message and the circle is **burned** (the decoy TGO is removed from the theater). A decoy that
+is never scouted simply persists as a standing circle the planner has to keep accounting for.
+
+### The "both" model — authored budget + per-turn refresh
+
+Placement is seeded two ways, which stack:
+
+- **Authored budget** — the `decoy_zone_count` setting, or a top-level campaign `decoy_zones:`
+  YAML block (`budget:` + optional `near_cps:` placement hints, sibling of `will:`/`victory:`),
+  sets how many decoys are live.
+- **Per-turn refresh** — `advance_decoy_zones` (in `game/fourteenth/decoy_zones.py`, hooked in
+  `game/game.py` `finish_turn` right after the COIN `advance_*` calls) **burns the reconned
+  ones and tops the live count back up to budget**, so a player who has methodically scouted and
+  burned a few circles finds fresh ones next turn — the map can't be memorized into a lookup
+  table of "these three are always fake."
+
+Placement puts each decoy a few km off a **front-adjacent red control point** (or the authored
+`near_cps`), on land (terrain-valid), under a `MAX_DECOY_BUDGET` (12) sanity cap so a mis-authored
+budget can't flood the map.
+
+### Gating
+
+Gated `decoy_zones` (Difficulty & Realism, default **OFF**), with
+`enabled_when=concealed_enemy_forces` — a decoy is only convincing when *real* forces are
+**also** drawn as suspected circles; with §3 concealment off, every force is an exact marker and
+any lone circle would obviously be a decoy, so the setting is meaningless and is greyed out.
+**Not preseeded in any campaign** — it is an opt-in difficulty layer.
+
+### Shipped alongside — the suspected-circle restyle
+
+The §40/§53–§55 ROE/economy deletions freed the dashed-red colour (dashed red was the removed
+ROE off-limits zone). The lone "suspected activity" ring now draws an **amber dash over a
+dark-red casing** with a centered **"?" glyph** (clusters keep the stroke-less density cloud and
+get no glyph), via a new **per-signature `casingColor` channel** in `mapColors.ts` (the
+`suspectedCasing` token) honored by `CasedShapes.tsx` + `MapLegend.tsx`, and the "?" drawn by
+`Tgo.tsx` on lone circles. Decoys inherit this rendering unchanged, so a feint remains
+indistinguishable from a genuine hidden contact.
+
+### Files & tests
+
+- `game/fourteenth/decoy_zones.py` — the module (placement, refresh, burn, `advance_decoy_zones`).
+- `game/theater/theatergroundobject.py` — the `is_decoy` flag + `__setstate__` default.
+- `game/game.py` — the `finish_turn` hook.
+- `game/settings/settings.py` — `decoy_zones` + `decoy_zone_count`.
+- `game/fourteenth/features.py` — registered §79.
+- Client restyle: `client/src/theme/mapColors.ts` (the `suspectedCasing` token + `casingColor`
+  channel), `client/src/components/map/CasedShapes.tsx`,
+  `client/src/components/legend/MapLegend.tsx`, `client/src/components/tgos/Tgo.tsx` (the glyph).
+- Tests: `tests/fourteenth/test_decoy_zones.py` (13).
+
+**Checklist B33** — needs an in-game pass: a suspected circle you TARPS/strike reports "no
+activity — decoy" and disappears, fresh ones appear next turn, and the AI never frags a strike
+at an empty zone.
+
 ## Code audit fixes — 2026-07-07
 
 A full read-only audit of the 414th surface (campaign layer, mission-generator emitters,

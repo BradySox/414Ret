@@ -36,7 +36,7 @@ function StrokeSwatch(props: { color: string; signature: StrokeSignature }) {
         y1={y}
         x2={width - 1}
         y2={y}
-        stroke={mapColors.strokeCasing}
+        stroke={props.signature.casingColor ?? mapColors.strokeCasing}
         strokeWidth={Math.min(props.signature.casingWeight, 8)}
         strokeOpacity={0.75}
         strokeDasharray={props.signature.dashArray}

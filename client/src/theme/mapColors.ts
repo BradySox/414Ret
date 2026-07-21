@@ -6,10 +6,12 @@
  * the same thing while meaning opposites. This is the single source of truth: a
  * component (and the on-map legend) decodes a colour by its *meaning*, not its hex.
  *
- * Values match the pre-existing de-facto colours so nothing shifts visually, with
- * two deliberate reconciliations from the UI audit:
- *   - SUSPECTED (a concealed, un-reconned enemy) uses amber, so the "go find it"
- *     uncertainty circle reads as "unknown — investigate" rather than a threat.
+ * Values match the pre-existing de-facto colours, with these deliberate calls:
+ *   - SUSPECTED (a concealed, un-reconned enemy) is an amber dash — "unknown,
+ *     investigate" — over a dark-red casing (enemy allegiance), now that dashed
+ *     red is no longer reserved for the removed ROE off-limits zones; a centred
+ *     "?" glyph marks it as a go-look contact. The two channels carry two facts:
+ *     the red halo says "enemy", the amber dash says "we don't know where yet".
  *   - ROUTE_FRIENDLY is lifted off the near-black navy that vanished on satellite
  *     imagery to a legible blue.
  */
@@ -25,6 +27,7 @@ export const mapColors = {
 
   // --- intel ---
   suspected: "#dd9a3a", // amber dashed: un-reconned "suspected activity"
+  suspectedCasing: "#8c1414", // dark-red halo under the amber dash: enemy, unconfirmed
   mine: "#c9a227", // gold dashed: your own air-dropped minefield (friendly hazard)
   // Dark under-stroke drawn beneath a bright dashed ring so it stays legible on
   // light terrain (desert satellite imagery washed the amber ring out entirely);
@@ -53,10 +56,10 @@ export type MapColorKey = keyof typeof mapColors;
  * imagery (or for a colour-blind pilot) two hues can collapse into each other,
  * so every dashed-family category also differs by pattern:
  *
- *   suspected AREA   - medium dash        (something is in here, go look)
- *   minefield        - tick marks         (a hazard field, your own)
- *   pilot POW        - short dash         (held; freed by recapture)
- *   pilot MIA        - solid              (a live man, exact position)
+ *   suspected AREA   - medium dash, red halo   (enemy in here somewhere, go look)
+ *   minefield        - tick marks              (a hazard field, your own)
+ *   pilot POW        - short dash              (held; freed by recapture)
+ *   pilot MIA        - solid                   (a live man, exact position)
  *
  * `casingWeight` is the dark under-stroke (strokeCasing) drawn beneath the
  * coloured dash by the CasedShapes components, so every one of these reads on
@@ -67,6 +70,10 @@ export interface StrokeSignature {
   dashArray?: string;
   weight: number;
   casingWeight: number;
+  /** Casing (halo) colour; defaults to the neutral dark strokeCasing. A category
+   *  overrides it to carry a second meaning in the halo — e.g. suspected-activity
+   *  uses a dark-red casing so the halo reads "enemy" while the dash reads "unknown". */
+  casingColor?: string;
   lineCap?: "round" | "butt";
 }
 
@@ -74,7 +81,12 @@ export const mapStrokes: Record<
   "suspectedArea" | "minefield" | "pilotMia" | "pilotPow",
   StrokeSignature
 > = {
-  suspectedArea: { dashArray: "6 6", weight: 2.5, casingWeight: 6 },
+  suspectedArea: {
+    dashArray: "6 6",
+    weight: 2.5,
+    casingWeight: 6,
+    casingColor: mapColors.suspectedCasing,
+  },
   minefield: { dashArray: "2 8", weight: 2.5, casingWeight: 6 },
   pilotMia: { weight: 2.5, casingWeight: 6 },
   pilotPow: { dashArray: "3 5", weight: 2.5, casingWeight: 6 },

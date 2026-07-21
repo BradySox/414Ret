@@ -90,6 +90,7 @@ pass checklist `§N` is unregistered, or this table drifts.
 | §76 | CTLD paratroopers (fixed-wing air assault) | `ctld` | — |
 | §77 | Growler escort jamming (EA-18G) | `growler` | — |
 | §78 | Sea-supply convoys + coastal anti-ship engagement | — | `cargo_ship_convoys`, `cargo_ship_convoy_max`, `coastal_batteries_engage_ships` |
+| §79 | Decoy suspected-activity zones | — | `decoy_zones`, `decoy_zone_count` |
 | — | MANTIS IADS engine | `mantisiads` | — |
 | — | Splash Damage (414th tuned) | `splashdamage3` | — |
 | — | AI recon BDA capture (§3 TARPS) | `airecon` | — |

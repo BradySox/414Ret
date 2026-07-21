@@ -29,7 +29,7 @@ interface CasedStyle {
 
 export function casingOptions(signature: StrokeSignature): PathOptions {
   return {
-    color: mapColors.strokeCasing,
+    color: signature.casingColor ?? mapColors.strokeCasing,
     weight: signature.casingWeight,
     opacity: 0.75,
     dashArray: signature.dashArray,

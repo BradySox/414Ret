@@ -1166,7 +1166,11 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     `Tgo.tsx`/`MinefieldsLayer`/`DownedPilotsLayer`, and the **legend renders the
     real signatures** (`StrokeSwatch` mini-SVG previews + taxonomy labels). Exact targets/buildings keep
     their per-type APP-6/SIDC icons (already unique); threat/detection rings deliberately uncased.
-    tsc+jest green; needs the CI client rebuild.
+    tsc+jest green; needs the CI client rebuild. **Restyled 2026-07-21** (the §40/§53–§55 ROE/economy
+    removals freed the red): the lone suspected-activity ring moved to an **amber dash over a
+    dark-red casing** with a centered "?" glyph (clusters keep the stroke-less density cloud), via a
+    new per-signature `casingColor` channel (`suspectedCasing` token) — the §79 decoy zones inherit
+    it, so a feint is indistinguishable from a real hidden contact.
     **Dialogs are clamped to the screen (2026-07-19, the "windows are clipping / UI scaled screwed
     up" report):** the Edit Flight dialog opened with its **title bar above the top of the display**
     and carried ~260 px of dead space under the form. Measured offscreen on the reported 1440p @150 %
@@ -2632,6 +2636,37 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     checklist B32 — needs an in-game pass (whether a DCS Silkworm on weapons-free
     actually tracks and hits a moving 12-kt cargo ship is the DCS-only unknown; plus
     the convoy visibly running the gauntlet with proportional debrief losses).
+79. **Decoy suspected-activity zones** — fake, unitless concealed enemy contacts that render as the
+    *exact* §3 "suspected activity" uncertainty circle a real hidden force draws, so the **human**
+    mission planner can't tell a feint from a genuine hidden contact without spending recon on it.
+    Each decoy is a **unitless concealed `VehicleGroupGroundObject`** carrying a new
+    `TheaterGroundObject.is_decoy` flag (`__setstate__`-defaulted for old saves); because it holds
+    **zero alive units**, the AI planner — which enumerates targets on ground-truth `is_dead()` —
+    skips it automatically, so the deception is **human-only and the AI-immunity is free** (a real
+    strike is never wasted on an empty zone). Flying recon onto a decoy (a TARPS overfly or an
+    attack) resolves it empty — "no enemy activity … it was a decoy" — and the circle is **burned**
+    (removed). "Both" placement model: an **authored budget** (the `decoy_zone_count` setting, or a
+    top-level campaign `decoy_zones:` YAML block with `budget:` + optional `near_cps:` placement
+    hints) seeds the feints, and a **per-turn refresh** (`advance_decoy_zones` in `game/game.py`
+    `finish_turn`, right after the COIN `advance_*` calls) burns the reconned ones and tops the live
+    count back to budget — so the player can't memorize which circles are fake. Decoys seed a few km
+    off **front-adjacent red control points** (or the authored `near_cps`), on land, under a
+    `MAX_DECOY_BUDGET` (12) sanity cap. Pure turn-model — **no plugin, no Lua, no `.miz` change**.
+    Gated `decoy_zones` (Difficulty & Realism, default **OFF**,
+    `enabled_when=concealed_enemy_forces` — the deception only works when *real* forces are also
+    circles, else any circle is obviously a decoy); NOT preseeded in any campaign (opt-in). **Shipped
+    with a suspected-circle restyle** (the ROE/economy §40/§53–§55 deletions freed the red): the lone
+    "suspected activity" ring now draws an **amber dash over a dark-red casing** with a centered
+    **"?" glyph** (clusters keep the stroke-less density cloud, no glyph), via a new per-signature
+    `casingColor` channel in `mapColors.ts` (`suspectedCasing` token) honored by `CasedShapes.tsx` +
+    `MapLegend.tsx` and the `Tgo.tsx` glyph — decoys inherit it, so a feint is pixel-identical to a
+    real contact. Files: `game/fourteenth/decoy_zones.py`, `game/theater/theatergroundobject.py`
+    (the `is_decoy` flag + `__setstate__` default), `game/game.py` (the `finish_turn` hook),
+    `game/settings/settings.py` (`decoy_zones` + `decoy_zone_count`), `game/fourteenth/features.py`
+    (§79), plus the client restyle (`client/src/theme/mapColors.ts`,
+    `client/src/components/map/CasedShapes.tsx`, `client/src/components/legend/MapLegend.tsx`,
+    `client/src/components/tgos/Tgo.tsx`). Tests `tests/fourteenth/test_decoy_zones.py` (13);
+    features doc §79, checklist B33 — needs an in-game pass.
 
 ---
 

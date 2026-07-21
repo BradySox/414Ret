@@ -1191,10 +1191,12 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     `AutoSettingsLayout` stores each field's label + greys a child's **control + label** whenever
     `settings.<master> != value` (live per-section wiring + initial state + post-preset refresh); ~21
     pairs wired (the `red_intent_*`/`coin_*`/qra/motorpool/squadron/etc. dependents, incl. the **inverse**
-    `default_front_line_stance` ← `("automate_front_line_stance", False)`). A `detail` over
-    `INLINE_DETAIL_MAX` (150) now shows its first sentence inline + the full text on hover (the dead
-    `tooltip` field), so dense pages stop being walls of text. Guard + offscreen-Qt greying tests in
-    `tests/test_settings_dependencies.py`. Shipped with the **UI-audit bug fixes**: the defeat-shows-
+    `default_front_line_stance` ← `("automate_front_line_stance", False)`). The detail
+    *summarisation* half (first sentence inline + full text on hover past 150 chars) was
+    **REVERTED 2026-07-20** (user call off the §75 victory-knob descriptions — reading a setting
+    must not require hovering it): every `detail` renders in full inline again, the summariser is
+    deleted, and an authored `tooltip` still shows on hover. Guard + offscreen-Qt greying tests
+    (+ the full-inline-detail guard) in `tests/test_settings_dependencies.py`. Shipped with the **UI-audit bug fixes**: the defeat-shows-
     "Victory!" `onEndGame` enum-truthiness bug, the inverted Air-Wing player-slots caption, the shared
     `self.dialog` window-GC bug, the `QGroundObjectMenu` repair list-mutation, the web `TgosLayer`
     key-by-name → `tgo.id`, the upstream→fork Help/About/Releases links, and dead-component/duplicate-CSS

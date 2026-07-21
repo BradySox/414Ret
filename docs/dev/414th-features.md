@@ -2981,9 +2981,14 @@ a declutter pass:
   `default_front_line_stance` ← `("automate_front_line_stance", False)` (editable only when automation
   is off). A guard test (`tests/test_settings_dependencies.py`) fails CI if any `enabled_when` master
   isn't a real setting, plus offscreen-Qt tests prove a child greys/ungreys live with its master.
-- **Detail summarisation.** A `detail` longer than `INLINE_DETAIL_MAX` (150) now renders only its first
-  sentence inline (`_summary_line`) with the **full text on hover** (the previously near-dead `tooltip`
-  field), so the dense pages stop reading as walls of text; short details are unchanged.
+- **Detail summarisation — REVERTED 2026-07-20.** The 2026-07-10 pass made a `detail` longer than
+  150 chars render only its first sentence inline (`_summary_line`) with the full text on hover.
+  Flown with the §75 victory knobs, the user called it back ("I wanna go back to having it fully
+  show" — reading a setting must not require hovering it): every `detail` renders in full inline
+  again, the summariser (`INLINE_DETAIL_MAX`/`_summary_line`/`_word_cut`) is deleted, and an
+  authored `tooltip` still shows on hover where set. Guarded by
+  `test_long_detail_renders_fully_inline` (offscreen Qt, on the Victory conditions section whose
+  details exceed the old limit).
 
 ### UI audit bug fixes (2026-07-10)
 

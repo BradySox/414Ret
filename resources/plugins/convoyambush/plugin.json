@@ -4,10 +4,10 @@
     "defaultValue": true,
     "specificOptions": [
         {
-            "nameInUI": "Trigger radius: convoy within this of the ambush springs it (m)",
-            "mnemonic": "triggerRadiusM",
-            "defaultValue": 6000,
-            "maximumValue": 30000
+            "nameInUI": "Trigger radius: convoy within this of the ambush springs it (NM)",
+            "mnemonic": "triggerRadiusNm",
+            "defaultValue": 3.24,
+            "maximumValue": 16.2
         },
         {
             "nameInUI": "Startup grace before an ambush can spring (s)",

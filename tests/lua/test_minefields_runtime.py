@@ -65,7 +65,7 @@ def _load(
         "startGraceS": 10,
         "scanIntervalS": 5,
         "detonationCooldownS": 0,
-        "fieldRadiusM": 200,
+        "fieldRadiusFt": 656,  # ~200 m
         "chargesPerField": 6,
     }
     base.update(opts)

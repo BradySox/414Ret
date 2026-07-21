@@ -38,7 +38,7 @@ local MAX_TRACK = 60 -- s: give up tracking a released weapon after this
 
 if dcsRetribution and dcsRetribution.plugins and dcsRetribution.plugins.minefields then
     local o = dcsRetribution.plugins.minefields
-    RADIUS = tonumber(o.fieldRadiusM) or RADIUS
+    RADIUS = (tonumber(o.fieldRadiusFt) or RADIUS / 0.3048) * 0.3048 -- ft (UI) -> m
     CHARGES = tonumber(o.chargesPerField) or CHARGES
     if tonumber(o.tripChancePct) then
         TRIP_CHANCE = tonumber(o.tripChancePct) / 100

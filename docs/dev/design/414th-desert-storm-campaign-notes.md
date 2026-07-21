@@ -74,6 +74,7 @@ ACIG/Osprey IrAF orders of battle for Iraq:
 | F-15C BARCAP | **58th TFS "Gorillas"** | 16 kills — the most of any squadron in the war |
 | F-4E SEAD Sweep | **561st TFS "Black Knights"** | The Wild Weasels (F-4E stands in for the F-4G) |
 | F/A-18C SEAD | **VFA-81 "Sunliners"** | Killed two MiG-21s mid-strike, bombs still aboard |
+| EA-6B SEAD | **VMAQ-2 "Playboys"** | Marine Prowlers, rear-based at Shaikh Isa, Bahrain — the war's dedicated jamming/HARM support. Added 2026-07-21 once the VSN Prowler became a Mods-page toggle; the `NATO Desert Storm` faction gained `EA-6B Prowler` (preseeded on). Off-map rear (parking-exempt) |
 | F-16CM DEAD | **23rd TFS "Fighting Hawks"** | The 52nd TFW Weasel hunter-killer Vipers |
 | F-15E OCA | **336th TFS "Rocketeers"** | The 4th TFW Scud hunters |
 | A-10C CAS | **355th TFS "Falcons"** | Myrtle Beach Hogs out of King Fahd |

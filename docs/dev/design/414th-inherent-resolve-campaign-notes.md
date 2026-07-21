@@ -102,6 +102,13 @@ The crust is the one deliberate divergence from a purist ISIS laydown (which had
 MANPADS/AAA): a thin radar layer that keeps SEAD/DEAD a real job, per the user's call. SA-6 is
 the medium (SEAD-relevant) site at Mosul; SA-8/9/13 are the SHORAD across the ring.
 
+### The VMAQ Prowler det (2026-07-21)
+
+With the VSN EA-6B Prowler now a first-class Mods-page toggle (`ModSettings.ea6b_prowler`,
+preseeded on here), a **VMAQ EA-6B Prowler SEAD det** flies from **Al-Taquddum (13)** alongside the
+Marine Harriers — the dedicated HARM/jamming asset against the SA-6/8 crust that keeps SEAD a real
+job. AI-only (VSN mod); drops silently on a mod-less install.
+
 ### The drone wing (2026-07-05, from the installed-inventory audit)
 
 The user spotted the MQ-9/MQ-1 and asked to use them — they are the OIR signature, and they

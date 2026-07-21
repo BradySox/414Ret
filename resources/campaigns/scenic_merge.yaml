@@ -23,6 +23,9 @@ settings:
   #  Set max frontline width to 30 km
   max_frontline_width: 30
   squadron_start_full: true
+  # The ashore VMAQ EA-6B Prowler det at Al Minhad is the AI-only VSN mod -- preseed
+  # on so the SEAD squadron resolves (drops silently on a mod-less install).
+  ea6b_prowler: true
 squadrons:
   #BLUFOR CVN
   # 414th cleanup 2026-07-17: the deck was carrying two air wings' worth of jets
@@ -118,6 +121,16 @@ squadrons:
       aircraft:
         - VMFA-251
       size: 10
+    # VMAQ-4 "Seahawks" -- Marine EA-6B Prowler det, ashore at Al Minhad with the
+    # Marine Hornets (a VMAQ UDP land deployment). The ashore EW/SEAD asset -- keeps
+    # the decrowded CVN deck clear. AI-only VSN mod (preseeded on); drops mod-less.
+    - primary: SEAD
+      secondary: [SEAD Escort]
+      name: VMAQ-4
+      nickname: Seahawks
+      aircraft:
+        - EA-6B Prowler
+      size: 4
     - primary: SEAD
       secondary: any
       aircraft:

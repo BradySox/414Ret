@@ -51,7 +51,12 @@ def _config(h: DcsPluginHarness, node: dict[str, Any] | None, **options: Any) ->
 
 
 def _jammer_node(
-    group: str, protected: list[str], is_player: bool = False
+    group: str,
+    protected: list[str],
+    is_player: bool = False,
+    tier: str = "full",
+    defensive_power: float = 1.0,
+    offensive: bool = True,
 ) -> dict[str, Any]:
     return {
         "jammers": [
@@ -59,6 +64,9 @@ def _jammer_node(
                 "groupName": group,
                 "side": "2",
                 "isPlayer": "1" if is_player else "0",
+                "tier": tier,
+                "defensivePower": str(defensive_power),
+                "offensive": "1" if offensive else "0",
                 "protected": [{"groupName": name} for name in protected],
             }
         ]
@@ -200,3 +208,50 @@ def test_player_jammer_starts_off_and_gets_the_menu() -> None:
     # ...and the F10 menu was offered to the group.
     menus = h.records("menus")
     assert any("Growler jamming" in str(m) for m in menus)
+
+
+def test_defensive_only_tier_never_pulses_a_sam() -> None:
+    # An ECM/self-protect/loose jammer (offensive=False) defends the package but
+    # never suppresses a radar SAM, no matter how long it's on station.
+    h = DcsPluginHarness()
+    h.add_group(_jammer_group("Zapper 1"))
+    h.add_group(_sam_group("SA-2", x=10000, z=0))
+    _config(
+        h,
+        _jammer_node("Zapper 1", ["Hammer 1"], tier="ecm", offensive=False),
+        startGraceS=30,
+        tickSec=10,
+        offensivePower=2.0,
+        defensivePower=0,
+    )
+    h.load_plugin_script(PLUGIN)
+    h.advance_to(300)
+    h.assert_no_lua_errors()
+    assert not _roe_records(h)
+
+
+def test_zero_tier_power_never_spoofs() -> None:
+    # defensivePower 0 (the tier scalar) zeroes the spoof chance even in the inner
+    # band -- the utility gradient bottoms out at "does nothing", never negative.
+    h = DcsPluginHarness()
+    h.add_group(_jammer_group("Zapper 1"))
+    _config(
+        h,
+        _jammer_node(
+            "Zapper 1", ["Hammer 1"], tier="loose", defensive_power=0.0, offensive=False
+        ),
+        startGraceS=600,
+        defensivePower=2.0,  # global is strong; the per-jammer 0 must still win
+        spoofMinTravelM=0,
+        offensivePower=0,
+    )
+    h.load_plugin_script(PLUGIN)
+    h.fire_shot(
+        {
+            "weapon": {"typeName": "SA2-missile", "x": 400, "z": 0, "alt": 1000},
+            "initiator": "SA-2",
+        }
+    )
+    h.advance_to(10)
+    h.assert_no_lua_errors()
+    assert not h.records("weaponDestroys")

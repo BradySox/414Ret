@@ -602,16 +602,19 @@ FEATURES: tuple[Feature, ...] = (
         plugin_id="ctld",
     ),
     Feature(
-        # §77 Growler escort jamming: the EA-18G-only ESCORT_JAMMER escort role
-        # (auto-added on the SEAD-escort radar-SAM trigger, rides the package
-        # join->split) + the growler plugin's scripted EW effects -- a missile-
-        # spoof bubble over the package and offensive ROE WEAPON_HOLD pulses on
-        # radar SAMs (emissions never toggled). Rides the growler plugin toggle
-        # + the CJS Super Hornet ModSettings (default ON); no Settings field.
+        # §77 Graduated escort jamming: the ESCORT_JAMMER escort role (auto-added
+        # on the SEAD-escort radar-SAM trigger, rides the package join->split) +
+        # the growler plugin's scripted EW effects -- a missile-spoof bubble over
+        # the package (all tiers) and offensive ROE WEAPON_HOLD pulses on radar
+        # SAMs (FULL tier only; emissions never toggled). A role, not one airframe:
+        # dedicated jammers (Growler/Prowler) at full strength, vanilla EW jets at
+        # descending defensive-only tiers, and an opt-in LOOSE tier gated by the
+        # escort_jamming_loose setting. Rides the growler plugin toggle.
         "growler_escort_jamming",
-        "Growler escort jamming (EA-18G)",
+        "Graduated escort jamming (Growler role)",
         77,
         plugin_id="growler",
+        settings_fields=("escort_jamming_loose",),
     ),
     Feature(
         # §78 sea-supply convoys + coastal anti-ship engagement: a pure-engine feature

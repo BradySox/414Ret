@@ -12,7 +12,9 @@ role: Carrier-based Electronic-warfare Aircraft
 gunfighter: false
 variants:
   EA-6B Prowler: {}
+escort_jammer_tier: full
 tasks:
+  Escort Jammer: 790
   SEAD: 620
   SEAD Escort: 585
 

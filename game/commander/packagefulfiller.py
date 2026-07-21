@@ -42,6 +42,7 @@ class PackageFulfiller:
         self.player_missions_asap = settings.auto_ato_player_missions_asap
         self.default_start_type = settings.default_start_type
         self.auto_add_tarps_recon = settings.auto_add_tarps_recon
+        self.escort_jamming_loose = settings.escort_jamming_loose
 
     @property
     def is_player(self) -> bool:
@@ -278,7 +279,26 @@ class PackageFulfiller:
         elif type == EscortType.Refuel:
             return self.air_wing_can_plan(FlightType.REFUELING)
         elif type == EscortType.Jammer:
-            return self.air_wing_can_plan(FlightType.ESCORT_JAMMER)
+            if not self.air_wing_can_plan(FlightType.ESCORT_JAMMER):
+                return False
+            # Graduated escort jamming (§77): the LOOSE "stretch" tier (any podded
+            # jet, even an A-10) is only auto-planned when escort_jamming_loose is
+            # on. Off by default, the curated roster (dedicated jammers + real ECM
+            # + self-protect pods) is the only auto-plannable set, so the retired
+            # "every fighter jams" behaviour never returns silently.
+            if self.escort_jamming_loose:
+                return True
+            return self._has_curated_escort_jammer()
+        return False
+
+    def _has_curated_escort_jammer(self) -> bool:
+        """True if any auto-assignable ESCORT_JAMMER squadron is a non-LOOSE tier."""
+        for squadron in self.air_wing.auto_assignable_for_task(
+            FlightType.ESCORT_JAMMER
+        ):
+            tier = squadron.aircraft.escort_jammer_tier
+            if tier is not None and not tier.is_loose:
+                return True
         return False
 
     def plan_mission(

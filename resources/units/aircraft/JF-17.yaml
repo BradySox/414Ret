@@ -38,7 +38,9 @@ radios:
 #   LaserCode1: 8
 #   LaserCode10: 8
 #   LaserCode100: 6
+escort_jammer_tier: loose
 tasks:
+  Escort Jammer: 150
   Anti-ship: 110
   BAI: 705
   BARCAP: 570

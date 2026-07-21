@@ -2588,27 +2588,36 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     `tests/lua/test_ctld_paradrop.py` + the extended EW-deconfliction test;
     features doc §76, checklist B30 — needs an in-game pass (the AI run-in profile
     + troops-march-to-capture are DCS-only).
-77. **Growler escort jamming (EA-18G)** — the "AI can't use it" answer: the Timberwolf/
-    Matador EW script family (the C-130 §2 lineage; upstream's `ewrj` gates it player-only)
-    gets its missing decision layer. **CJS Super Hornet pack defaults ON** (`fa_18efg` +
-    `fa18ef_tanker`, DM call 2026-07-21; `ModSettings.all_off()` keeps mods-off tests honest);
-    new **`FlightType.ESCORT_JAMMER`, Growler-ONLY** (capability = the yaml `tasks:` block —
-    only `EA-18G.yaml` declares `Escort Jammer: 800`; the FA-18E/F never fly it, user call):
-    proposed on the SEAD-escort radar-SAM trigger via `EscortType.Jammer`, rides the package
-    join→split on the escort plan with the SEAD-escort engage profile + preemptive ECM, **no
-    winchester-RTB** (empty rails stay with the package — the jamming is the payload), SEAD
-    Escort loadout fallback (ALQ-99 pods + ARMs). Runtime: `growlerluadata.py` emits
-    `dcsRetribution.growler` (jammer + protected package group names; no jammer → no-op) and
-    the `growler` plugin (default ON) drives the effects **ROE-only** (emissions NEVER toggled;
-    MANTIS alarm/EMCON untouched): a defensive missile-spoof bubble over the package (Matador
-    bands, min-travel guard, friendly missiles never touched) + offensive `WEAPON_HOLD` pulses
-    on radar-SAM groups by **escort geometry — effectiveness RISES as the Growler closes**
-    (deliberately the opposite of the C-130's standoff burn-through; never unify them). AI jams
-    automatically after a startup grace; a player Growler starts OFF with an F10 "Growler
-    jamming" menu. Tests `tests/fourteenth/test_escort_jammer.py` +
+77. **Graduated escort jamming (the Growler role, for all campaigns)** — the "AI can't use
+    it" answer, made vanilla-friendly: the Timberwolf/Matador EW script family (the C-130 §2
+    lineage; upstream's `ewrj` gates it player-only) gets its missing decision layer, and
+    escort jamming becomes a **role, not one airframe** — its effect scales to how real the
+    jet's EW kit is (`game/data/escort_jamming.py` `EscortJammerTier`, authored per airframe in
+    the unit yaml `escort_jammer_tier` alongside the `Escort Jammer` task priority):
+    **FULL** = dedicated ALQ-99 jammers (EA-18G Growler + **EA-6B Prowler**, both AI-plannable
+    mods) — strong missile-spoof bubble over the package **+** offensive `WEAPON_HOLD` pulses on
+    radar SAMs; **ECM** = built-in-ECM fighters (F/A-18C, F-14) — moderate defensive bubble, no
+    suppression; **SELF_PROTECT** = pod fighters (F-16C, F-4E, AV-8B, A-7E) — weak defensive
+    bubble; **LOOSE** = the opt-in "stretch" tier (any podded jet, even an A-10) — token bubble,
+    gated behind `escort_jamming_loose` (Air Doctrine, **default OFF**) so the auto-plannable
+    roster stays the curated set and the retired every-fighter `ewrj` behavior never returns
+    silently (`PackageFulfiller.can_plan_escort` counts only non-LOOSE tiers unless the setting
+    is on). **The CJS Super Hornet default flipped back to OFF** (`fa_18efg` + `fa18ef_tanker`,
+    revised DM call 2026-07-21 — forcing a mod on every client was the wrong lever; the Growler
+    is the DM's opt-in premium tier, `ModSettings.all_off()` keeps mods-off tests honest). The
+    `FlightType.ESCORT_JAMMER` role (proposed on the SEAD-escort radar-SAM trigger via
+    `EscortType.Jammer`, rides the package join→split, no winchester-RTB — the jamming is the
+    payload — SEAD Escort loadout fallback) is unchanged; blue-only. Runtime: `growlerluadata.py`
+    emits `dcsRetribution.growler` (per-jammer `tier`/`defensivePower`/`offensive` + protected
+    group names; no jammer → no-op) and the `growler` plugin (default ON) scales its spoof bands
+    by the tier's `defensivePower` and only runs the SAM-suppression loop for the FULL tier —
+    **ROE-only** (emissions NEVER toggled; MANTIS alarm/EMCON untouched), effectiveness RISES as
+    the jammer closes (deliberately the opposite of the C-130's standoff burn-through; never
+    unify them). AI jams automatically after a startup grace; a player jammer starts OFF with an
+    F10 "Growler jamming" menu. Tests `tests/fourteenth/test_escort_jammer.py` +
     `tests/missiongenerator/test_growlerluadata.py` + `tests/lua/test_growler_runtime.py` (the
     harness gained `Weapon:destroy` + ground ROE values); features doc §77, checklist B31 —
-    needs an in-game pass (the hold/restore pulse + spoof against a live SAM ring).
+    needs an in-game pass (the tiered hold/restore pulse + spoof against a live SAM ring).
 78. **Sea-supply convoys + coastal anti-ship engagement** — makes the sea supply
     route (the §-less upstream `CargoShip` lane between two friendly ports with no
     road) a real feature. **Part 1 — convoys with proportional losses**

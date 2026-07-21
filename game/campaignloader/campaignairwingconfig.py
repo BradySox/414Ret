@@ -35,13 +35,20 @@ class SquadronConfig:
 
     @property
     def auto_assignable(self) -> set[FlightType]:
-        # TARPS is a support/recon role that no campaign config lists explicitly and
-        # that the "air-to-ground" alias does not cover (it isn't an attack task).
-        # Offer it to every squadron that is actually capable of it (the capability
-        # filter in Squadron.set_auto_assignable_mission_types drops it for the rest),
-        # so the auto-planner can pair a recon bird with Strike/DEAD packages without
-        # requiring per-campaign squadron edits.
-        return set(self.secondary) | {self.primary} | {FlightType.TARPS}
+        # TARPS and Escort Jammer are support/escort roles that no campaign config
+        # lists explicitly and that the "air-to-ground" alias does not cover (neither
+        # is an attack task). Offer each to every squadron actually capable of it (the
+        # capability filter in Squadron.set_auto_assignable_mission_types drops it for
+        # the rest), so the auto-planner can pair a recon bird -- or a dedicated EW jet
+        # (EA-6B/EA-18G) that a campaign authored as a SEAD squadron -- into a package
+        # without requiring per-campaign squadron edits. The Escort Jammer role is
+        # still gated downstream (radar-SAM threat, the loose-tier setting, and the
+        # per-side max_escort_jammers cap in PackageFulfiller.can_plan_escort).
+        return (
+            set(self.secondary)
+            | {self.primary}
+            | {FlightType.TARPS, FlightType.ESCORT_JAMMER}
+        )
 
     @classmethod
     def from_data(cls, data: dict[str, Any]) -> SquadronConfig:

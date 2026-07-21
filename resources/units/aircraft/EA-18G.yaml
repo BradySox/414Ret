@@ -40,7 +40,11 @@ escort_jammer_tier: full
 tasks:
   DEAD: 680
   SEAD: 730
-  SEAD Escort: 675
+  # SEAD Escort below the strike-fighters (F/A-18C 470, F-16C 475) so a Hornet/
+  # Viper wins the SEAD Escort slot and the Growler is freed for the Escort Jammer
+  # slot (800) -- "prefer dedicated jammers as jammers" (user call 2026-07-21).
+  # SEAD (730) / DEAD (680) as a package lead are untouched.
+  SEAD Escort: 400
   SEAD Sweep: 680
   # Growler-only escort jamming (user call 2026-07-21): the ONLY airframe that
   # declares this task -- the FA-18E/F must never gain it. High priority so a

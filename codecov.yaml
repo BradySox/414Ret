@@ -1,3 +1,8 @@
+# Disable the automatic PR coverage comment (the source of the codecov[bot]
+# GitHub notification emails). Coverage is still uploaded and viewable on
+# codecov.io; statuses below stay informational and never block a PR.
+comment: false
+
 coverage:
   status:
     patch:

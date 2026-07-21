@@ -102,8 +102,8 @@ class CH_SkySabreLN(unittype.VehicleType):
     id = "CH_SkySabre"
     name = "[CH] Sky Sabre iLauncher LN (HX)"
     detection_range = 0
-    threat_range = 25000
-    air_weapon_dist = 25000
+    threat_range = 30000
+    air_weapon_dist = 30000
     eplrs = True
 
 

@@ -58,18 +58,30 @@ def _mod_preset_packages(faction: Faction) -> dict[str, set[str]]:
 def test_no_shipped_faction_keeps_mod_presets_with_mods_off() -> None:
     for path in sorted(FACTIONS_DIR.glob("*.json")):
         faction = _load(path)
-        faction.apply_mod_settings(ModSettings())
+        faction.apply_mod_settings(ModSettings.all_off())
         leaks = _mod_preset_packages(faction)
         assert (
             not leaks
         ), f"{path.name} keeps mod preset group(s) with all mods off: {leaks}"
 
 
+def test_cjs_super_hornet_toggles_default_on() -> None:
+    """DM call 2026-07-21: the CJS Super Hornet pack (FA-18E/F, EA-18G, and the
+    ET/FT buddy tankers) defaults ON -- the Growler escort-jammer line rides on
+    it. all_off() must still produce a genuinely mod-free baseline."""
+    defaults = ModSettings()
+    assert defaults.fa_18efg
+    assert defaults.fa18ef_tanker
+    off = ModSettings.all_off()
+    assert not off.fa_18efg
+    assert not off.fa18ef_tanker
+
+
 def test_red_tide_faction_is_pure_vanilla_with_mods_off() -> None:
     """The squadron's campaign runs no mods: with everything off, every unit
     reachable from the fork faction (roster and presets) must be base DCS."""
     faction = _load(RED_TIDE_FACTION)
-    faction.apply_mod_settings(ModSettings())
+    faction.apply_mod_settings(ModSettings.all_off())
     offenders = sorted(
         unit.variant_id
         for unit in faction.accessible_units

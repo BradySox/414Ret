@@ -172,6 +172,10 @@ class PackagePlanningTask(TheaterCommanderTask, Generic[MissionTargetT]):
         self.propose_flight(FlightType.SEAD_ESCORT, 2, EscortType.Sead)
         self.propose_flight(FlightType.ESCORT, 2, EscortType.AirToAir)
         self.propose_flight(FlightType.SEAD_SWEEP, 2, EscortType.Sead)
+        # Growler escort jamming: added on the same radar-SAM trigger as the
+        # SEAD escorts, pruned silently when no capable squadron (EA-18G only)
+        # is in the wing.
+        self.propose_flight(FlightType.ESCORT_JAMMER, 2, EscortType.Jammer)
 
     def iter_iads_ranges(
         self, state: TheaterState, range_type: RangeType

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 import random
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from datetime import datetime, time
 from typing import List, Optional, Sequence, Type
 
@@ -89,8 +89,8 @@ class ModSettings:
     f15d_baz: bool = False
     f_15_idf: bool = False
     f_16_idf: bool = False
-    fa_18efg: bool = False
-    fa18ef_tanker: bool = False
+    fa_18efg: bool = True
+    fa18ef_tanker: bool = True
     f22_raptor: bool = False
     f84g_thunderjet: bool = False
     f100_supersabre: bool = False
@@ -128,6 +128,16 @@ class ModSettings:
     ukrainemilitaryassetspack: bool = False
     mig31bm_foxhound: bool = False
     VSN_F35: bool = False
+
+    @classmethod
+    def all_off(cls) -> "ModSettings":
+        """Every mod disabled, regardless of field defaults.
+
+        Tests (and any 'pure vanilla' check) must use this instead of a bare
+        ModSettings(): the CJS Super Hornet toggles default ON (DM call
+        2026-07-21), so the no-args constructor no longer means 'mods off'.
+        """
+        return cls(**{field.name: False for field in fields(cls)})
 
 
 def apply_default_player_stances(theater: ConflictTheater, settings: Settings) -> None:

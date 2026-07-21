@@ -33,6 +33,7 @@ local Harness = {
         controllerTasks = {}, -- { group, taskId, targetGroupId, t } from Controller:setTask
         controllerResets = {}, -- { group, t } from Controller:resetTask
         options = {}, -- { group, option, value, t } from Controller:setOption
+        weaponDestroys = {}, -- { name, t } from Weapon:destroy (growler spoof)
         spawns = {}, -- { template, alias, base, takeoff, altitude, grouping, speedKt, t }
         roe = {}, -- { group, option, t } from MOOSE Option* calls
         radioTransmissions = {}, -- { file, x, y, z, mod, loop, hz, power, name, t }
@@ -141,6 +142,9 @@ AI = {
             id = { ROE = 0, ALARM_STATE = 9 },
             val = {
                 ALARM_STATE = { AUTO = 0, GREEN = 1, RED = 2 },
+                -- Ground ROE values (match the DCS mission scripting env);
+                -- the growler plugin's weapons-hold pulse sets these.
+                ROE = { OPEN_FIRE = 2, RETURN_FIRE = 3, WEAPON_HOLD = 4 },
             },
         },
     },
@@ -453,6 +457,16 @@ end
 
 function WeaponFake:getVelocity()
     return self.velocity or { x = 0, y = 0, z = 0 }
+end
+
+-- Object:destroy() -- removes the weapon from the world (the growler plugin's
+-- missile spoof). Recorded so tests can assert the spoof fired.
+function WeaponFake:destroy()
+    self.exists = false
+    table.insert(
+        Harness.records.weaponDestroys,
+        { name = self:getTypeName(), t = Harness.now }
+    )
 end
 
 function Harness.makeWeapon(spec)

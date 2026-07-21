@@ -7522,13 +7522,60 @@ zone release, AI-helo never dropped, JTAC stick), extended
 `tests/missiongenerator/test_ew_deconfliction.py`. Checklist **B30** — needs an
 in-game pass (the AI run-in profile and troops-march-to-CP capture are DCS-only).
 
-## §77 — Sea-supply convoys + coastal anti-ship engagement
+## §77 — Growler escort jamming (EA-18G)
+
+The "AI can't use it" answer, shipped. The Timberwolf/Matador EW script family (the same
+lineage as the C-130 §2 Mission Systems and upstream's player-only `ewrj` plugin) always had
+AI entry points — upstream just gated the wiring `if not member.is_player`. This feature is
+the missing decision layer, shaped to the user's doctrine call: **Growlers fly escort
+jamming, not standoff** (the C-130 keeps the standoff racetrack + burn-through physics).
+
+**Airframe (CJS Super Hornet pack, default ON).** `ModSettings.fa_18efg` + `fa18ef_tanker`
+now default **ON** (DM call 2026-07-21) — the fork already carried the full `fa18efg`
+extension, unit yamls, and faction eject wiring; 10 factions (OIR, modern USA/USN,
+Australia, WRL) field the `EA-18G Growler`. `ModSettings.all_off()` keeps the mods-off guard
+tests honest; the default is pinned by `test_cjs_super_hornet_toggles_default_on`.
+
+**Planner (`FlightType.ESCORT_JAMMER`, Growler-ONLY).** Capability comes solely from the
+yaml `tasks:` block — only `EA-18G.yaml` declares `Escort Jammer: 800` (the FA-18E/F never
+fly it, user call). `EscortType.Jammer` is proposed in `propose_common_escorts` on the same
+radar-SAM threat trigger as the SEAD escorts and pruned silently when no capable squadron
+exists. The flight rides the package join→split on `EscortFlightPlan`, gets the SEAD-escort
+engage-radars profile + preemptive ECM at JOIN (its SEAD Escort loadout ARMs are package
+self-defense), and deliberately sets **no winchester-RTB** — a Growler with empty rails
+stays with the package; the jamming is the payload. Loadout resolves "Retribution Escort
+Jammer" first, falling back to the SEAD Escort fit (ALQ-99 pods + ARMs).
+
+**Runtime (`growler` plugin + `growlerluadata.py`).** The emitter lists each ESCORT_JAMMER
+flight + the package group names it protects (`dcsRetribution.growler`; no jammer → no node
+→ no-op). The plugin drives two scripted effects, **ROE only** (emissions are NEVER toggled
+— the C-130 crash lesson; MANTIS alarm/EMCON state untouched): a **defensive missile-spoof
+bubble** (Matador bands 500 m/85% → 7 km/15%, per-second roll, min-travel guard so a spoof
+can't kill the launcher, friendly missiles never touched, silent `weapon:destroy()`) that
+covers the Growler *and* every protected package member; and **offensive WEAPON_HOLD
+pulses** on radar-SAM ("SAM TR") groups by escort geometry — effectiveness **rises as the
+Growler closes** (penetration-escort physics, deliberately the opposite of the C-130's
+standoff burn-through; do not unify them). AI Growlers jam automatically after a startup
+grace; a player-flown Growler starts OFF and gets an F10 "Growler jamming" ON/OFF/Status
+menu. Options: tick, grace, offensive/defensive power, max range, hold pulse, min travel.
+
+**No phantom anything:** the plugin owns no kills beyond the spoofed weapon; the Growler is
+a real tracked airframe; a dead/landed jammer projects nothing.
+
+Tests: `tests/fourteenth/test_escort_jammer.py` (enum/capability/loadout/threat plumbing),
+`tests/missiongenerator/test_growlerluadata.py` (emitter shape),
+`tests/lua/test_growler_runtime.py` (hold+restore, non-radar immunity, spoof, friendly-fire
+guard, player-off+menu; the harness gained `Weapon:destroy` + ground ROE values). Needs an
+in-game pass (checklist B31): the WEAPON_HOLD pulse and the spoof bubble against a live SAM
+ring, and whether the AI escort geometry holds the Growler close enough to matter.
+
+## §78 — Sea-supply convoys + coastal anti-ship engagement
 
 Retribution already models **sea supply routes** — a `CargoShip` transport sails a
 `shipping_lane` between two friendly ports that have no road link between them (the
 transit network prefers roads at 1× cost and only routes over water at 2× when there is
 no land path). It was invisible and unsatisfying: a lone hull crawling at 12 kt, and the
-coastal anti-ship batteries that should threaten it sat idle. §77 turns it into a real
+coastal anti-ship batteries that should threaten it sat idle. §78 turns it into a real
 mechanic on both counts. Pure engine — no Lua, no plugin, no save change. Both gates
 default **ON**; OFF is byte-identical.
 
@@ -7580,7 +7627,7 @@ the strait and the convoys must run the coastal gauntlet.
 
 Tests: `tests/fourteenth/test_cargo_ship_convoy.py` (partition sizing/cap/conservation,
 the OFF single-hull path, proportional and overlapping-type commit, the coastal ROE gate
-on/off/non-coastal). **Checklist B31** — needs an in-game pass: whether a DCS Silkworm on
+on/off/non-coastal). **Checklist B32** — needs an in-game pass: whether a DCS Silkworm on
 weapons-free actually tracks and hits a moving 12-kt cargo ship is the DCS-only unknown,
 plus watching a convoy run the gauntlet with proportional debrief losses.
 

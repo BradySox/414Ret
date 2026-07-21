@@ -47,9 +47,13 @@ class SplitPointBuilder(PydcsWaypointBuilder):
             FlightType.SEAD_SWEEP,
             FlightType.SEAD,
             FlightType.SEAD_ESCORT,
+            FlightType.ESCORT_JAMMER,
             FlightType.DEAD,
         ]:
-            if self.flight.flight_type == FlightType.SEAD_ESCORT:
+            if self.flight.flight_type in [
+                FlightType.SEAD_ESCORT,
+                FlightType.ESCORT_JAMMER,
+            ]:
                 # Moved previous escort split tasks
                 if self.flight.flight_type.is_escort_type:
                     index = len(self.group.points)

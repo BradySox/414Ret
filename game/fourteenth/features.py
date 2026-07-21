@@ -624,14 +624,26 @@ FEATURES: tuple[Feature, ...] = (
         plugin_id="ctld",
     ),
     Feature(
-        # §77 sea-supply convoys + coastal anti-ship engagement: a pure-engine feature
+        # §77 Growler escort jamming: the EA-18G-only ESCORT_JAMMER escort role
+        # (auto-added on the SEAD-escort radar-SAM trigger, rides the package
+        # join->split) + the growler plugin's scripted EW effects -- a missile-
+        # spoof bubble over the package and offensive ROE WEAPON_HOLD pulses on
+        # radar SAMs (emissions never toggled). Rides the growler plugin toggle
+        # + the CJS Super Hornet ModSettings (default ON); no Settings field.
+        "growler_escort_jamming",
+        "Growler escort jamming (EA-18G)",
+        77,
+        plugin_id="growler",
+    ),
+    Feature(
+        # §78 sea-supply convoys + coastal anti-ship engagement: a pure-engine feature
         # (no Lua). cargo_ship_convoys spreads a sea shipment across N hulls with
         # proportional losses (game/missiongenerator/cargoshipgenerator.py +
         # game/unitmap.py + the results processor); coastal_batteries_engage_ships sets
         # coastal batteries weapons-free so they fire on passing ships (tgogenerator.py).
         "sea_supply_convoys",
         "Sea-supply convoys + coastal anti-ship engagement",
-        77,
+        78,
         settings_fields=(
             "cargo_ship_convoys",
             "cargo_ship_convoy_max",

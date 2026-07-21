@@ -14,6 +14,12 @@ recommended_player_money: 1000
 recommended_enemy_money: 1300
 recommended_player_income_multiplier: 1.2
 recommended_enemy_income_multiplier: 0.7
+
+settings:
+  # The VAQ EA-6B Prowler det aboard the CVN is the AI-only VSN mod -- preseed on so
+  # the SEAD squadron resolves (drops silently on a mod-less install).
+  ea6b_prowler: true
+
 squadrons:
   #BLUFOR CVN
   Naval-1:
@@ -26,6 +32,15 @@ squadrons:
       secondary: air-to-ground
       aircraft:
         - VFA-113
+    # VAQ-140 "Patriots" -- the air wing's EA-6B Prowler det (SEAD/HARM). AI-only
+    # VSN mod, preseeded on above; drops silently on a mod-less install.
+    - primary: SEAD
+      secondary: [SEAD Escort]
+      name: VAQ-140
+      nickname: Patriots
+      aircraft:
+        - EA-6B Prowler
+      size: 4
     - primary: AEW&C
       aircraft:
         - VAW-125

@@ -24,8 +24,10 @@ recommended_enemy_income_multiplier: 0.6
 version: "10.8"
 settings:
   uh_60l: false
-  # Mod-free by design: the whole air OOB uses stock/free airframes (Heatblur A-6E Intruder
-  # is a free AI aircraft, not the A-6A mod), so no ModSettings preseeds are needed.
+  # The strike arm stays the free Heatblur A-6E Intruder (not the A-6A/A-7E mods).
+  # The one mod: VAQ-135's EA-6B Prowler EW det (AI-only VSN mod) -- preseed on so
+  # its SEAD squadron resolves (drops silently on a mod-less install).
+  ea6b_prowler: true
   # Phase 3: the coastal Silkworm batteries shoot-and-scoot (the coastal-missile hunt),
   # alongside the SCUD sites. The shore/island batteries relocate; the platform gun-fort
   # AAA (added to the .miz) does not.
@@ -44,6 +46,16 @@ squadrons:
       aircraft:
         - A-6E Intruder
       size: 6
+    # VAQ-135 "Black Ravens" -- CVW-11's EA-6B Prowler det (period-correct: Praying
+    # Mantis flew off USS Enterprise/CVW-11). The dedicated HARM/jamming SEAD asset
+    # alongside the A-6E. AI-only VSN mod (preseeded on); drops silently mod-less.
+    - primary: SEAD
+      secondary: [SEAD Escort]
+      name: VAQ-135
+      nickname: Black Ravens
+      aircraft:
+        - EA-6B Prowler
+      size: 4
     - primary: Strike
       secondary: air-to-ground
       aircraft:

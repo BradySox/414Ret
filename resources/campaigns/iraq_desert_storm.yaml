@@ -39,6 +39,9 @@ recommended_enemy_income_multiplier: 0.5
 version: "10.8"
 settings:
   squadron_start_full: true
+  # VMAQ-2's EA-6B Prowlers are the AI-only VSN mod -- preseed on so the SEAD
+  # squadron resolves (drops silently on a mod-less install).
+  ea6b_prowler: true
   # 1991 era enforcement: no AMRAAM-era stores or 2000s cueing visors on the
   # modern-block airframes (both halves of the date gate, per the settings-split
   # lesson -- the A-10C and F-16CM fly here with era loadouts).
@@ -247,6 +250,18 @@ squadrons:
       aircraft:
         - Escadron de Chasse 3/33 Lorraine
       size: 8
+    # VMAQ-2 "Playboys" flew the Marine EA-6Bs from Shaikh Isa, Bahrain -- rear-based
+    # ELINT/SEAD support for the strike packages hammering the KARI IADS. AI-only VSN
+    # Prowler mod (preseeded on below); drops silently on a mod-less install.
+    - primary: SEAD
+      secondary: [SEAD Escort]
+      name: VMAQ-2
+      nickname: Playboys
+      female_pilot_percentage: 0
+      country: USA
+      aircraft:
+        - EA-6B Prowler
+      size: 4
   # ---- BLUE: H-3 Main -- the fighter/strike wing + the Bombcats ----
   16:
     # The F-15C wall: BARCAP primary so blue stands defensive orbits; the

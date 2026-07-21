@@ -305,6 +305,13 @@ wanted in Phase 3 only, to add AAA/SAM to the oil platforms as "gun forts".)
    the carrier (iron-hand) + **F-4E** ashore. **No mod preseeds — the campaign needs no community
    mods.** (A-6E carries no `max_range` in its data → defaults to 150 NM; fine with the carrier near
    the AO, revisit if the strike reach proves short.)
+   **Update 2026-07-21 (user call — reverses the "No mod preseeds" line above):** once the **VSN
+   EA-6B Prowler** landed as a first-class `ModSettings` Mods-page toggle, the campaign gained
+   **VAQ-135 "Black Ravens"** (CVW-11's Prowler det — period-correct: Praying Mantis flew off USS
+   Enterprise/CVW-11) as a dedicated EA-6B SEAD det on the carrier alongside the A-6E, preseeding
+   `ea6b_prowler: true`. The Prowler is now the campaign's **one** mod dependency (the A-6A/A-7E mods
+   stay off; the strike arm is still the free A-6E). The two CI locks moved to "the Prowler is the
+   intended mod."
 2. **`iran_1988` EWR gap.** The faction's `'EWR P-37 Bar Lock'` (the §41 game-wide add across 16
    factions) does **not** resolve to an `EARLY_WARNING_RADAR` ForceGroup — `generate_ewrs` logged
    `Iran 1988 has no ForceGroup for EWR` and red got no ground EW. Since `tanker_war_1988` is the

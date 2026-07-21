@@ -106,6 +106,7 @@ def test_desert_storm_blue_holds_only_the_h3_complex() -> None:
         "E-3A",
         "KC-135 Stratotanker",
         "KC-135 Stratotanker MPRS",
+        "EA-6B Prowler",  # VMAQ-2 "Playboys" -- rear-based Marine SEAD/EW (Shaikh Isa)
         "No. 31 Squadron",
         "Escadron de chasse 2/5",
         "Escadron de Chasse 3/33 Lorraine",
@@ -359,4 +360,4 @@ def test_desert_storm_us_squadrons_pin_their_nation() -> None:
                 continue
             assert squadron.get("country") == "USA", squadron["name"]
             seen += 1
-    assert seen == 13  # the full US order of battle, none silently dropped
+    assert seen == 14  # 13 US-authored + the VMAQ-2 EA-6B Prowler det (country-pinned)

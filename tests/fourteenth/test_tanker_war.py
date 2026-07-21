@@ -35,10 +35,11 @@ def test_tanker_war_campaign_definition() -> None:
     ):
         assert data["settings"][key] is True, key
 
-    # Mod-free by design: no AI-mod aircraft toggles are preseeded (the strike arm is the
-    # free Heatblur A-6E, not the A-6A/EA-6B/A-7E mods).
-    for mod in ("a6a_intruder", "a7e_corsair2", "ea6b_prowler"):
+    # The strike arm is the free Heatblur A-6E (not the A-6A/A-7E mods), which stay off.
+    # The one AI-mod exception is VAQ-135's EA-6B Prowler EW det, preseeded on.
+    for mod in ("a6a_intruder", "a7e_corsair2"):
         assert not data["settings"].get(mod, False), mod
+    assert data["settings"]["ea6b_prowler"] is True
 
     # The generated gun-fort miz + its build tool ship next to the yaml.
     assert (CAMPAIGN.parent / data["miz"]).exists()
@@ -54,12 +55,12 @@ def test_tanker_war_period_iads_is_a_hawk_belt_plus_rapier() -> None:
     assert gf["RED L-SHORT BANDAR 1"] == "Rapier"
 
 
-def test_tanker_war_air_oob_is_mod_free_and_period() -> None:
+def test_tanker_war_air_oob_is_period_with_the_prowler_det() -> None:
     squadrons = yaml.safe_dump(_campaign()["squadrons"])
     assert "A-6E Intruder" in squadrons  # the free Heatblur strike arm
     assert "A-6A Intruder" not in squadrons  # not the mod
-    assert "EA-6B Prowler" not in squadrons
-    assert "A-7E Corsair II" not in squadrons
+    assert "A-7E Corsair II" not in squadrons  # not the mod
+    assert "EA-6B Prowler" in squadrons  # VAQ-135's EW det -- the one AI mod (VSN)
     assert "Mirage-F1EQ" in squadrons  # the Iraqi Exocet-raider flavor
     # Blue's land Phantoms are the player-flyable Heatblur F-4E-45MC.
     assert "F-4E-45MC Phantom II" in squadrons

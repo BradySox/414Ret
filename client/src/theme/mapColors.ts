@@ -57,6 +57,7 @@ export type MapColorKey = keyof typeof mapColors;
  * so every dashed-family category also differs by pattern:
  *
  *   suspected AREA   - medium dash, red halo   (enemy in here somewhere, go look)
+ *   suspected CLUSTER- lighter dash, red halo  (one of several stacked contacts)
  *   minefield        - tick marks              (a hazard field, your own)
  *   pilot POW        - short dash              (held; freed by recapture)
  *   pilot MIA        - solid                   (a live man, exact position)
@@ -78,13 +79,23 @@ export interface StrokeSignature {
 }
 
 export const mapStrokes: Record<
-  "suspectedArea" | "minefield" | "pilotMia" | "pilotPow",
+  "suspectedArea" | "suspectedCluster" | "minefield" | "pilotMia" | "pilotPow",
   StrokeSignature
 > = {
   suspectedArea: {
     dashArray: "6 6",
     weight: 2.5,
     casingWeight: 6,
+    casingColor: mapColors.suspectedCasing,
+  },
+  // A clustered member gets the SAME red-cased amber dash so it reads on
+  // satellite imagery (a stroke-less fill was invisible on desert/forest tan),
+  // but lighter than a lone circle — several stacked rings would otherwise ring
+  // like klaxons. The stacking fill still carries the density.
+  suspectedCluster: {
+    dashArray: "6 6",
+    weight: 2,
+    casingWeight: 4.5,
     casingColor: mapColors.suspectedCasing,
   },
   minefield: { dashArray: "2 8", weight: 2.5, casingWeight: 6 },

@@ -1158,8 +1158,9 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     really hard to see"):** amber-on-desert-tan washed the concealment circles out — the lone
     "suspected activity" ring now draws a **dark dashed contrast casing** (`mapColors.strokeCasing`,
     weight 6 under the amber weight-2.5 dash, aligned dashes, `interactive: false`) so it reads on any
-    imagery, and the fills rose (lone 0.18→0.25, cluster member 0.12→0.16). The cluster **density cloud
-    stays stroke-less** (flown squadron decision, not re-litigated) and the hue stays amber (orange would
+    imagery, and the fills rose (lone 0.18→0.25, cluster member 0.12→0.16). The cluster density cloud
+    was **stroke-less** at that point (a flown squadron decision — reversed 2026-07-21 below, when it
+    proved invisible on satellite) and the hue stays amber (orange would
     collide with the FLOT token). **Generalized same day to the family-wide stroke-signature system**
     (user call — "unique looks for each … area, zone and exact target"): `StrokeSignature`/`mapStrokes`
     (`mapColors.ts`) give every dashed-overlay category a **unique dash pattern + weight** so hue is
@@ -1170,9 +1171,14 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     their per-type APP-6/SIDC icons (already unique); threat/detection rings deliberately uncased.
     tsc+jest green; needs the CI client rebuild. **Restyled 2026-07-21** (the §40/§53–§55 ROE/economy
     removals freed the red): the lone suspected-activity ring moved to an **amber dash over a
-    dark-red casing** with a centered "?" glyph (clusters keep the stroke-less density cloud), via a
+    dark-red casing** with a centered "?" glyph, via a
     new per-signature `casingColor` channel (`suspectedCasing` token) — the §79 decoy zones inherit
-    it, so a feint is indistinguishable from a real hidden contact.
+    it, so a feint is indistinguishable from a real hidden contact. **Cluster circles bordered
+    2026-07-21** (the flown "I can hardly see these zones" finding — the stroke-less density fill
+    vanished on satellite imagery): a clustered member now draws the same red-cased amber dash but
+    **lighter** (`mapStrokes.suspectedCluster`, weight 2 / casing 4.5 vs the lone 2.5 / 6) so several
+    stacked rings don't ring like klaxons, and its fill still stacks into the density gradient
+    (0.16→0.18); the lone ring keeps the bolder signature + the "?" glyph.
     **Dialogs are clamped to the screen (2026-07-19, the "windows are clipping / UI scaled screwed
     up" report):** the Edit Flight dialog opened with its **title bar above the top of the display**
     and carried ~260 px of dead space under the form. Measured offscreen on the reported 1440p @150 %
@@ -2692,7 +2698,9 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     circles, else any circle is obviously a decoy); NOT preseeded in any campaign (opt-in). **Shipped
     with a suspected-circle restyle** (the ROE/economy §40/§53–§55 deletions freed the red): the lone
     "suspected activity" ring now draws an **amber dash over a dark-red casing** with a centered
-    **"?" glyph** (clusters keep the stroke-less density cloud, no glyph), via a new per-signature
+    **"?" glyph** (a clustered member draws a **lighter** red-cased ring — `mapStrokes.suspectedCluster`,
+    no glyph — over the stacking density fill, bordered 2026-07-21 after the flown "I can hardly see
+    these zones" finding that the stroke-less fill vanished on satellite), via a new per-signature
     `casingColor` channel in `mapColors.ts` (`suspectedCasing` token) honored by `CasedShapes.tsx` +
     `MapLegend.tsx` and the `Tgo.tsx` glyph — decoys inherit it, so a feint is pixel-identical to a
     real contact. Files: `game/fourteenth/decoy_zones.py`, `game/theater/theatergroundobject.py`

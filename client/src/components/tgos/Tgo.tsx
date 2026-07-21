@@ -14,7 +14,7 @@ import { mapColors, mapStrokes } from "../../theme/mapColors";
 import { CasedCircle } from "../map/CasedShapes";
 import MobileTgo from "./MobileTgo";
 import { TgoTooltip, iconForTgo } from "./shared";
-import { Circle, Marker, Tooltip } from "react-leaflet";
+import { Marker, Tooltip } from "react-leaflet";
 import L from "leaflet";
 
 // The centred "?" that marks a lone suspected-activity circle as a go-look
@@ -43,13 +43,13 @@ interface TgoProps {
 function ConcealedTgo(props: TgoProps) {
   const [openNewPackageDialog] = useOpenNewTgoPackageDialogMutation();
   const [openInfoDialog] = useOpenTgoInfoDialogMutation();
-  // Clustered sites (2+ concealed circles at one control point) render as a
-  // DENSITY CLOUD: no per-circle stroke (nine stacked dashed rings rang like
-  // klaxons on the flown Red Tide map) and a low fill that STACKS where the
-  // circles overlap — darker exactly where more units hide, while the union
-  // of the members' own circles covers the area they actually hold. A lone
-  // circle keeps the classic dashed "suspected activity" ring — cased, so it
-  // reads on desert imagery (the flown Iraq map washed bare amber out).
+  // Clustered sites (2+ concealed circles at one control point) still STACK
+  // their fills into a density gradient — darker where more units hide — but
+  // each member now also draws a (lighter) red-cased amber ring. A stroke-less
+  // fill was invisible on satellite imagery (the flown finding: "I can hardly
+  // see these zones"); the lighter cluster signature keeps several stacked
+  // rings from ringing like klaxons while still bordering every circle. A lone
+  // circle keeps the bolder ring plus the "?" glyph.
   const clustered = (props.tgo.concealed_cluster_size ?? 1) >= 2;
   const eventHandlers = {
     click: () => {
@@ -71,21 +71,19 @@ function ConcealedTgo(props: TgoProps) {
   );
   if (clustered) {
     return (
-      <Circle
+      <CasedCircle
         center={props.tgo.position}
         radius={props.tgo.uncertainty_radius_m!}
-        pathOptions={{
-          stroke: false,
-          fillColor: mapColors.suspected,
-          // Low, because the members' fills stack — 3 overlapping ≈ 0.41,
-          // 6 ≈ 0.65, 9 ≈ 0.79 — the density ramp.
-          fillOpacity: 0.16,
-          className: "map-interactive",
-        }}
+        color={mapColors.suspected}
+        signature={mapStrokes.suspectedCluster}
+        // Kept low because the members' fills stack — 3 overlapping ≈ 0.44,
+        // 6 ≈ 0.68 — the density ramp survives the added ring.
+        fillOpacity={0.18}
+        className="map-interactive"
         eventHandlers={eventHandlers}
       >
         {tooltip}
-      </Circle>
+      </CasedCircle>
     );
   }
   return (

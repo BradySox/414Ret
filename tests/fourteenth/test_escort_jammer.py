@@ -158,6 +158,44 @@ def test_non_ew_fighter_is_not_a_jammer() -> None:
     assert not f15c.capable_of(FlightType.ESCORT_JAMMER)
 
 
+def _jammer_squadron_stub(
+    tier: EscortJammerTier, *, loose_setting: bool
+) -> SimpleNamespace:
+    return SimpleNamespace(
+        auto_assignable_mission_types={FlightType.ESCORT_JAMMER, FlightType.SEAD},
+        aircraft=SimpleNamespace(escort_jammer_tier=tier),
+        settings=SimpleNamespace(escort_jamming_loose=loose_setting),
+    )
+
+
+def test_loose_squadron_refuses_escort_jammer_when_setting_off() -> None:
+    """The 'A-10/F-15E flying jammer' bug: Escort Jammer is auto-offered to every
+    capable squadron, so a LOOSE-tier jet (A-10, F-15E) must be excluded from
+    auto-assignment at the squadron level when escort_jamming_loose is off --
+    otherwise it fills the jammer slot whenever the curated jammers are busy."""
+    from game.squadrons.squadron import Squadron
+
+    off = _jammer_squadron_stub(EscortJammerTier.LOOSE, loose_setting=False)
+    assert not Squadron.can_auto_assign(off, FlightType.ESCORT_JAMMER)  # type: ignore[arg-type]
+    # SEAD (a normal enabled task) is unaffected by the loose gate.
+    assert Squadron.can_auto_assign(off, FlightType.SEAD)  # type: ignore[arg-type]
+
+    on = _jammer_squadron_stub(EscortJammerTier.LOOSE, loose_setting=True)
+    assert Squadron.can_auto_assign(on, FlightType.ESCORT_JAMMER)  # type: ignore[arg-type]
+
+
+def test_curated_squadrons_always_auto_assign_escort_jammer() -> None:
+    from game.squadrons.squadron import Squadron
+
+    for tier in (
+        EscortJammerTier.FULL,
+        EscortJammerTier.ECM,
+        EscortJammerTier.SELF_PROTECT,
+    ):
+        stub = _jammer_squadron_stub(tier, loose_setting=False)
+        assert Squadron.can_auto_assign(stub, FlightType.ESCORT_JAMMER)  # type: ignore[arg-type]
+
+
 def test_escort_jammer_loadout_falls_back_to_sead_escort() -> None:
     names = list(Loadout.default_loadout_names_for(FlightType.ESCORT_JAMMER))
     own = names.index("Retribution Escort Jammer")

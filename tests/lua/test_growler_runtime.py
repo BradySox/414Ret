@@ -255,3 +255,101 @@ def test_zero_tier_power_never_spoofs() -> None:
     h.advance_to(10)
     h.assert_no_lua_errors()
     assert not h.records("weaponDestroys")
+
+
+def _full_jammers_node(names: list[str]) -> dict[str, Any]:
+    return {
+        "jammers": [
+            {
+                "groupName": n,
+                "side": "2",
+                "isPlayer": "0",
+                "tier": "full",
+                "defensivePower": "1.0",
+                "offensive": "1",
+                "protected": [],
+            }
+            for n in names
+        ]
+    }
+
+
+def _spoof_count_with(jammer_names: list[str], seed: int) -> int:
+    """Fire a fixed volley of mid-band missiles through the named jammers (all
+    co-located near the origin) and return how many were spoofed, with math.random
+    seeded so the run is deterministic."""
+    h = DcsPluginHarness()
+    for n in jammer_names:
+        # Distinct groups, both at the origin -> both ~1500 m from the volley (the
+        # 2000 m band, pk 50), so the "best bubble" is the same for either.
+        h.add_group(_jammer_group(n, in_air=True))
+    _config(
+        h,
+        _full_jammers_node(jammer_names),
+        startGraceS=600,  # keep the offensive loop quiet
+        offensivePower=0,
+        defensivePower=1.0,
+        spoofMinTravelM=0,
+    )
+    h.load_plugin_script(PLUGIN)
+    for k in range(40):
+        h.fire_shot(
+            {
+                "weapon": {"typeName": f"M{k}", "x": 1500, "z": 0, "alt": 1000},
+                "initiator": "SA-2",
+            }
+        )
+    h.lua.execute(f"math.randomseed({seed})")
+    h.advance_to(2)  # one spoof tick rolls the whole volley
+    h.assert_no_lua_errors()
+    return len(h.records("weaponDestroys"))
+
+
+def test_bubbles_do_not_stack() -> None:
+    # The balance fix: overlapping bubbles must NOT raise a missile's spoof odds.
+    # A missile faces the single strongest bubble and rolls once, so adding an
+    # identical second jammer over the same volley (same seed) produces the
+    # IDENTICAL set of spoofs -- not more. (The pre-fix code rolled once per
+    # jammer and OR'd, which would drive the count up toward every missile.)
+    one = _spoof_count_with(["Shadow 1"], seed=7)
+    two = _spoof_count_with(["Shadow 1", "Shadow 2"], seed=7)
+    assert one == two, f"second jammer changed spoof count: {one} -> {two}"
+    # Sanity: the mid-band volley did spoof a meaningful fraction (not all/none),
+    # so the equality above is a real result, not a degenerate 0 == 0.
+    assert 0 < one < 40
+
+
+def test_suppressed_sam_gets_a_recovery_window() -> None:
+    # The balance fix: a released SAM cannot be re-held until its recovery window
+    # lapses, so jamming stays intermittent no matter how many jammers pile on.
+    h = DcsPluginHarness()
+    h.add_group(_jammer_group("Shadow 1"))
+    h.add_group(_sam_group("SA-2", x=10000, z=0))
+    _config(
+        h,
+        _jammer_node("Shadow 1", []),
+        startGraceS=10,
+        tickSec=10,
+        holdSec=20,
+        recoverySec=30,
+        offensivePower=2.0,  # certain hold when eligible
+        defensivePower=0,
+    )
+    h.load_plugin_script(PLUGIN)
+    h.advance_to(160)
+    h.assert_no_lua_errors()
+    roe = sorted(_roe_records(h), key=lambda r: r["t"])
+    holds = [r["t"] for r in roe if r["value"] == ROE_WEAPON_HOLD]
+    opens = [r["t"] for r in roe if r["value"] == ROE_OPEN_FIRE]
+    # It cycled at least twice (hold -> release -> hold), proving it isn't stuck
+    # permanently held OR never re-engaging.
+    assert len(holds) >= 2 and len(opens) >= 1
+    # After every release (OPEN_FIRE), the next hold is >= recoverySec later:
+    # the guaranteed shoot-back gap.
+    for release in opens:
+        next_holds = [t for t in holds if t > release]
+        if next_holds:
+            assert min(next_holds) - release >= 30, (
+                f"SAM re-held {min(next_holds) - release}s after release "
+                "-- recovery window not honored"
+            )

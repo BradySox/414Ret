@@ -614,7 +614,7 @@ FEATURES: tuple[Feature, ...] = (
         "Graduated escort jamming (Growler role)",
         77,
         plugin_id="growler",
-        settings_fields=("escort_jamming_loose",),
+        settings_fields=("escort_jamming_loose", "max_escort_jammers"),
     ),
     Feature(
         # §78 sea-supply convoys + coastal anti-ship engagement: a pure-engine feature

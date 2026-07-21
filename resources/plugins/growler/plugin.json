@@ -34,6 +34,12 @@
             "defaultValue": 20
         },
         {
+            "nameInUI": "SAM recovery / shoot-back window after a hold (s)",
+            "descriptionInUI": "After a suppressed SAM is released it cannot be re-held for this long, so jamming stays intermittent (held, then a guaranteed shoot-back gap) no matter how many jammers pile on. Keep it >= the hold time.",
+            "mnemonic": "recoverySec",
+            "defaultValue": 30
+        },
+        {
             "nameInUI": "Min missile travel before a spoof can fire (m)",
             "mnemonic": "spoofMinTravelM",
             "defaultValue": 2000

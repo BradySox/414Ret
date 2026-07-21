@@ -129,7 +129,12 @@ def test_escort_jammer_loadout_falls_back_to_sead_escort() -> None:
 
 
 def _fulfiller_stub(
-    *, can_plan: bool, loose: bool, squadron_tiers: list[EscortJammerTier | None]
+    *,
+    can_plan: bool,
+    loose: bool,
+    squadron_tiers: list[EscortJammerTier | None],
+    planned_jammers: int = 0,
+    max_jammers: int = 4,
 ) -> SimpleNamespace:
     squadrons = [
         SimpleNamespace(aircraft=SimpleNamespace(escort_jammer_tier=t))
@@ -138,13 +143,24 @@ def _fulfiller_stub(
     air_wing = SimpleNamespace(
         auto_assignable_for_task=lambda task: iter(squadrons),
     )
+    # A stub ATO already holding `planned_jammers` ESCORT_JAMMER flights.
+    jammer_flights = [
+        SimpleNamespace(flight_type=FlightType.ESCORT_JAMMER)
+        for _ in range(planned_jammers)
+    ]
+    ato = SimpleNamespace(packages=[SimpleNamespace(flights=jammer_flights)])
     stub = SimpleNamespace(
         air_wing_can_plan=lambda task: can_plan,
         escort_jamming_loose=loose,
+        max_escort_jammers=max_jammers,
         air_wing=air_wing,
+        ato=ato,
     )
-    # Bind the real curated-tier helper so can_plan_escort's self-call resolves.
+    # Bind the real self-call helpers so can_plan_escort resolves them on the stub.
     stub._has_curated_escort_jammer = lambda: PackageFulfiller._has_curated_escort_jammer(
+        stub  # type: ignore[arg-type]
+    )
+    stub._escort_jammer_cap_reached = lambda: PackageFulfiller._escort_jammer_cap_reached(
         stub  # type: ignore[arg-type]
     )
     return stub
@@ -161,6 +177,37 @@ def test_loose_only_wing_is_gated_off_by_default() -> None:
     # Only a LOOSE-tier squadron in the wing, setting off -> no jammer planned.
     stub = _fulfiller_stub(
         can_plan=True, loose=False, squadron_tiers=[EscortJammerTier.LOOSE]
+    )
+    assert not PackageFulfiller.can_plan_escort(stub, EscortType.Jammer)  # type: ignore[arg-type]
+
+
+def test_escort_jammer_cap_stops_planning_when_reached() -> None:
+    # Balance: once the ATO already holds max_escort_jammers, no more are planned.
+    at_cap = _fulfiller_stub(
+        can_plan=True,
+        loose=True,
+        squadron_tiers=[EscortJammerTier.FULL],
+        planned_jammers=4,
+        max_jammers=4,
+    )
+    assert not PackageFulfiller.can_plan_escort(at_cap, EscortType.Jammer)  # type: ignore[arg-type]
+    below_cap = _fulfiller_stub(
+        can_plan=True,
+        loose=True,
+        squadron_tiers=[EscortJammerTier.FULL],
+        planned_jammers=3,
+        max_jammers=4,
+    )
+    assert PackageFulfiller.can_plan_escort(below_cap, EscortType.Jammer)  # type: ignore[arg-type]
+
+
+def test_escort_jammer_cap_zero_disables_auto_planning() -> None:
+    stub = _fulfiller_stub(
+        can_plan=True,
+        loose=True,
+        squadron_tiers=[EscortJammerTier.FULL],
+        planned_jammers=0,
+        max_jammers=0,
     )
     assert not PackageFulfiller.can_plan_escort(stub, EscortType.Jammer)  # type: ignore[arg-type]
 

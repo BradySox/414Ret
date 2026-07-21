@@ -7093,14 +7093,37 @@ tick, grace, offensive/defensive power, max range, hold pulse, min travel.
 **No phantom anything:** the plugin owns no kills beyond the spoofed weapon; the jammer is a
 real tracked airframe; a dead/landed jammer projects nothing.
 
+**Balance — the effects don't stack with jammer count.** A jamming escort is a 2-4-ship, and a
+strike-heavy turn against a dense IADS can propose one per package, so ~12 jammers could be
+airborne. Two design choices keep that from flatlining the war:
+
+- **Non-stacking defense.** `spoofTick` finds the **single strongest bubble** covering a missile
+  (highest `band.pk × DEF_POWER × defensivePower` across all eligible jammers) and rolls **once**
+  against it — it does *not* roll per jammer and OR the results, which would drive the spoof
+  chance toward 100% under overlapping bubbles. More jammers widen *coverage*, never raise one
+  missile's odds beyond one good jammer. (Deterministically pinned: adding an identical second
+  jammer over the same seeded volley yields the *identical* spoof set.)
+- **Mandatory SAM recovery window.** After a suppressed SAM is released it enters
+  `samRecoverUntil` and **cannot be re-held for `recoverySec`** (default 30 s), so a mass of FULL
+  jammers can't keep it permanently on weapons-hold — jamming is intermittent (held `holdSec`,
+  then a guaranteed shoot-back gap) at any jammer count. The SAM stays a threat; it just fires in
+  windows.
+
+Ship count *within* a flight is already effect-neutral (the plugin emits one bubble per group,
+from the lead — a 4-ship jams exactly like a 2-ship), so the only count lever is a per-side
+**`max_escort_jammers`** cap (Air Doctrine, default 4, 0 disables auto-planned jammers) enforced
+in `PackageFulfiller.can_plan_escort` by counting the ATO's ESCORT_JAMMER flights — an
+airframe-economy bound, since the effects are already self-limiting. Plugin option `recoverySec`.
+
 Tests: `tests/fourteenth/test_escort_jammer.py` (enum/tier roster/effect gradient/loose
-gate/loadout/threat plumbing), `tests/missiongenerator/test_growlerluadata.py` (emitter shape +
-tier knobs), `tests/lua/test_growler_runtime.py` (hold+restore, non-radar immunity, spoof,
-friendly-fire guard, defensive-only tier never pulses, zero-power never spoofs, player-off+menu;
-the harness gained `Weapon:destroy` + ground ROE values), `test_cjs_super_hornet_defaults_off`.
-Needs an in-game pass (checklist B31): the tiered WEAPON_HOLD pulse (FULL only) and the
-scaled spoof bubble against a live SAM ring, and whether the AI escort geometry holds the
-jammer close enough to matter.
+gate/loadout/threat plumbing + the cap), `tests/missiongenerator/test_growlerluadata.py` (emitter
+shape + tier knobs), `tests/lua/test_growler_runtime.py` (hold+restore, non-radar immunity, spoof,
+friendly-fire guard, defensive-only tier never pulses, zero-power never spoofs, **bubbles don't
+stack**, **SAM recovery window**, player-off+menu; the harness gained `Weapon:destroy` + ground
+ROE values), `test_cjs_super_hornet_defaults_off`. Needs an in-game pass (checklist B31): the
+tiered WEAPON_HOLD pulse (FULL only) and the non-stacking scaled spoof bubble against a live SAM
+ring, whether the AI escort geometry holds the jammer close enough to matter, and that a mass of
+jammers leaves the IADS firing in windows rather than dead.
 
 ## §78 — Sea-supply convoys + coastal anti-ship engagement
 

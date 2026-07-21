@@ -42,6 +42,11 @@ local DEF_POWER = tonumber(opts.defensivePower) or 1.0
 local MAX_RANGE_M = (tonumber(opts.maxRangeNm) or 40) * 1852
 local HOLD_SEC = tonumber(opts.holdSec) or 20
 local SPOOF_MIN_TRAVEL_M = tonumber(opts.spoofMinTravelM) or 2000
+-- Balance: after a suppressed SAM is released it CANNOT be re-held for this long,
+-- guaranteeing a shoot-back window. Without it, many FULL jammers re-hold a SAM
+-- the instant it releases and it is effectively dead forever. This makes jamming
+-- intermittent (held HOLD_SEC, then free >= RECOVERY_SEC) at any jammer count.
+local RECOVERY_SEC = tonumber(opts.recoverySec) or 30
 
 -- Defensive spoof bands (metres from the Growler -> % chance per second).
 -- The Matador bubble, scaled by DEF_POWER.
@@ -65,6 +70,7 @@ local OFF_BANDS = {
 -- ── state ──────────────────────────────────────────────────────────────────
 local jammers = {} -- [i] = { groupName, side, isPlayer, protected = {names}, active }
 local heldSams = {} -- [groupName] = releaseTime (weapons-hold pulse in effect)
+local samRecoverUntil = {} -- [groupName] = time until which it can't be re-held
 local trackedShots = {} -- [i] = { weapon, originX, originZ, victimSide }
 
 for _, rec in ipairs(dcsRetribution.growler.jammers or {}) do
@@ -188,8 +194,17 @@ local function spoofTick()
             local traveled = flatDist(wp, { x = shot.originX, z = shot.originZ })
             local spoofed = false
             if traveled >= SPOOF_MIN_TRAVEL_M then
+                -- NON-STACKING (balance): find the single STRONGEST bubble covering
+                -- this missile and roll ONCE against it -- do NOT roll once per
+                -- jammer and OR the results, or N overlapping bubbles drive the
+                -- spoof chance to ~100% (the "12 jammers in the air" problem). The
+                -- best jammer for a missile is the one giving the highest effective
+                -- pk (nearest band x its tier power); more jammers widen coverage,
+                -- they never raise a single missile's odds beyond one good jammer.
+                local bestPk = 0
+                local bestName = nil
                 for _, jam in ipairs(jammers) do
-                    -- A red-fired missile is spoofed by a blue Growler and vice
+                    -- A red-fired missile is spoofed by a blue jammer and vice
                     -- versa; a friendly missile is never touched.
                     if shot.shooterSide == nil or shot.shooterSide ~= jam.side then
                         local unit = emittingUnit(jam)
@@ -197,30 +212,29 @@ local function spoofTick()
                             local d = flatDist(wp, unit:getPoint())
                             for _, band in ipairs(SPOOF_BANDS) do
                                 if d <= band.dist then
-                                    -- Scale by the global option AND this jammer's
-                                    -- tier (defensivePower): a self-protect pod is a
-                                    -- far weaker bubble than a dedicated ALQ-99.
                                     local pk = band.pk * DEF_POWER * jam.defensivePower
-                                    if math.random(100) <= pk then
-                                        weapon:destroy()
-                                        spoofed = true
-                                        growlerLog(
-                                            "spoofed "
-                                                .. tostring(weapon:getTypeName())
-                                                .. " at "
-                                                .. math.floor(d)
-                                                .. " m from "
-                                                .. jam.groupName
-                                        )
+                                    if pk > bestPk then
+                                        bestPk = pk
+                                        bestName = jam.groupName
                                     end
-                                    break -- only the tightest matching band rolls
+                                    break -- only the tightest matching band counts
                                 end
                             end
                         end
                     end
-                    if spoofed then
-                        break
-                    end
+                end
+                if bestPk > 0 and math.random(100) <= bestPk then
+                    weapon:destroy()
+                    spoofed = true
+                    growlerLog(
+                        "spoofed "
+                            .. tostring(weapon:getTypeName())
+                            .. " (best bubble "
+                            .. tostring(bestName)
+                            .. ", pk "
+                            .. math.floor(bestPk)
+                            .. ")"
+                    )
                 end
             end
             if not spoofed then
@@ -247,6 +261,8 @@ local function releaseDue(now)
     for name, releaseAt in pairs(heldSams) do
         if now >= releaseAt then
             heldSams[name] = nil
+            -- Open a mandatory recovery window before this SAM can be re-held.
+            samRecoverUntil[name] = now + RECOVERY_SEC
             local group = Group.getByName(name)
             if group and group:isExist() then
                 local controller = group:getController()
@@ -273,7 +289,16 @@ local function offensiveTick(now)
             local jp = unit:getPoint()
             local enemySide = (jam.side == 2) and 1 or 2
             for _, group in ipairs(coalition.getGroups(enemySide, Group.Category.GROUND) or {}) do
-                if group and group:isExist() and heldSams[group:getName()] == nil then
+                local gname = group and group:getName()
+                -- Skip a SAM that is already held OR still inside its post-release
+                -- recovery window (the guaranteed shoot-back gap that keeps jamming
+                -- intermittent no matter how many jammers pile on).
+                if
+                    group
+                    and group:isExist()
+                    and heldSams[gname] == nil
+                    and now >= (samRecoverUntil[gname] or 0)
+                then
                     if isRadarSamGroup(group) then
                         local gu = group:getUnits()[1]
                         if gu and gu:isExist() then

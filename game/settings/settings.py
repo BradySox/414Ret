@@ -578,6 +578,9 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                 [
                     "cruise_missile_strikes",
                     "cruise_missile_auto_raids",
+                    "cargo_ship_convoys",
+                    "cargo_ship_convoy_max",
+                    "coastal_batteries_engage_ships",
                 ],
             ),
             (
@@ -3055,6 +3058,49 @@ class Settings:
             "then war-industry buildings, then anything strikeable. Your own "
             "raids respect the campaign ROE zones. Watch for the LAUNCH WARNING: "
             "an enemy raid is your point-defense SAMs' problem -- or yours."
+        ),
+    )
+    cargo_ship_convoys: bool = boolean_option(
+        "Sea supply convoys (multiple cargo ships per shipment)",
+        page=MISSION_GENERATION_PAGE,
+        section=GENERAL_SECTION,
+        default=True,
+        detail=(
+            "A ground-unit shipment that travels by sea -- a shipping lane between two "
+            "friendly ports with no road link -- sails as a small CONVOY of cargo "
+            "ships instead of one lone hull (about one ship per two units, up to the "
+            "cap below). Each ship carries its own share of the cargo, so losses are "
+            "proportional: sink two of five ships and roughly two-fifths of the "
+            "reinforcement never arrives, the rest still lands. Turn it off for the "
+            "old single-ship behaviour."
+        ),
+    )
+    cargo_ship_convoy_max: int = bounded_int_option(
+        "Maximum cargo ships per sea convoy",
+        enabled_when="cargo_ship_convoys",
+        page=MISSION_GENERATION_PAGE,
+        section=GENERAL_SECTION,
+        default=5,
+        min=1,
+        max=12,
+        detail=(
+            "The most cargo ships a single sea shipment spreads across. A small "
+            "shipment uses fewer; a large one is capped here so a convoy never grows "
+            "unbounded."
+        ),
+    )
+    coastal_batteries_engage_ships: bool = boolean_option(
+        "Coastal batteries engage enemy ships",
+        page=MISSION_GENERATION_PAGE,
+        section=GENERAL_SECTION,
+        default=True,
+        detail=(
+            "Coastal anti-ship missile batteries (Silkworm and the like) are set "
+            "weapons-free with an active alarm state so they fire on any enemy ship "
+            "that enters range -- including sea-supply convoys running the coast. "
+            "Without this they sit passive on DCS AUTO and ignore passing hulls. "
+            "Symmetric: both sides' coastal batteries defend their waters. Turn it off "
+            "to leave coastal batteries on their default passive state."
         ),
     )
     enemy_comms_jamming: bool = boolean_option(

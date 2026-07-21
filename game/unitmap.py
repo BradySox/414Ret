@@ -53,6 +53,16 @@ class ConvoyUnit:
 
 
 @dataclass(frozen=True)
+class CargoShipUnit:
+    #: This hull's share of the shipment (unit type -> count). A sea convoy of N ships
+    #: partitions the transfer across N hulls, so sinking one hull kills only its slice
+    #: -- losses are proportional. A single-hull convoy (feature off / a one-unit
+    #: shipment) carries the whole transfer, reproducing the legacy all-or-nothing loss.
+    cargo: tuple[tuple[GroundUnitType, int], ...]
+    ship: CargoShip
+
+
+@dataclass(frozen=True)
 class AirliftUnits:
     cargo: tuple[GroundUnitType, ...]
     transfer: TransferOrder
@@ -77,7 +87,7 @@ class UnitMap:
         self.theater_objects: Dict[str, TheaterUnitMapping] = {}
         self.scenery_objects: Dict[str, SceneryObjectMapping] = {}
         self.convoys: Dict[str, ConvoyUnit] = {}
-        self.cargo_ships: Dict[str, CargoShip] = {}
+        self.cargo_ships: Dict[str, CargoShipUnit] = {}
         self.airlifts: Dict[str, AirliftUnits] = {}
 
     def add_aircraft(self, group: FlyingGroup[Any], flight: Flight) -> None:
@@ -174,21 +184,30 @@ class UnitMap:
     def convoy_unit(self, name: str) -> Optional[ConvoyUnit]:
         return self.convoys.get(name, None)
 
-    def add_cargo_ship(self, group: ShipGroup, ship: CargoShip) -> None:
-        if len(group.units) > 1:
-            # Cargo ship "groups" are single units. Killing the one ship kills the whole
-            # transfer. If we ever want to add escorts or create multiple cargo ships in
-            # a convoy of ships that logic needs to change.
-            raise ValueError("Expected cargo ship to be a single unit group.")
-        unit = group.units[0]
-        # The actual name is a String (the pydcs translatable string), which
-        # doesn't define __eq__.
-        name = str(unit.name)
-        if name in self.cargo_ships:
-            raise RuntimeError(f"Duplicate cargo ship: {name}")
-        self.cargo_ships[name] = ship
+    def add_cargo_ship(
+        self,
+        group: ShipGroup,
+        ship: CargoShip,
+        manifests: list[tuple[tuple[GroundUnitType, int], ...]],
+    ) -> None:
+        # One hull per manifest. Each hull carries a share of the shipment, so killing
+        # a hull kills only its share (proportional losses). A single-manifest convoy
+        # (feature off / one-unit shipment) carries the whole transfer, reproducing the
+        # legacy behaviour where sinking the ship denies the whole reinforcement.
+        if len(group.units) != len(manifests):
+            raise ValueError(
+                f"Cargo ship {ship.name}: {len(group.units)} hulls but "
+                f"{len(manifests)} manifests."
+            )
+        for unit, manifest in zip(group.units, manifests):
+            # The actual name is a String (the pydcs translatable string), which
+            # doesn't define __eq__.
+            name = str(unit.name)
+            if name in self.cargo_ships:
+                raise RuntimeError(f"Duplicate cargo ship: {name}")
+            self.cargo_ships[name] = CargoShipUnit(tuple(manifest), ship)
 
-    def cargo_ship(self, name: str) -> Optional[CargoShip]:
+    def cargo_ship_hull(self, name: str) -> Optional[CargoShipUnit]:
         return self.cargo_ships.get(name, None)
 
     def add_airlift_units(

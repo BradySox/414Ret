@@ -115,6 +115,12 @@ Upstream hands you a map that already knows everything. Here you have to go look
   between same-side bases, real supply columns run both networks; sometimes hidden ambush
   teams dig in along a friendly route. Nothing is telegraphed — the first sign is the TROOPS
   IN CONTACT call.
+- **The sea lanes have traffic too — running the coastal gauntlet.** A shipment between two
+  friendly ports with no road sails as a **convoy of cargo ships** (not one lone hull), each
+  carrying its share, so sinking some ships denies only their share of the reinforcement.
+  And coastal anti-ship batteries (Silkworm and the like) now fire on any enemy ship in
+  range — a convoy that passes an enemy coast has to be escorted or the batteries
+  suppressed, the Tanker War in miniature.
 - **Nation-specific voiceovers and pilot names per squadron** — a Greek squadron hears Greek
   and fills with Greek names, instead of one shared faction voice. The nation is yours to set:
   a **Country selector** in the Air Wing Configuration dialog (under Livery), and campaigns can

@@ -47,11 +47,6 @@ settings:
   # The Iraqi Air Force fought as a GCI-vectored alert force under KARI: more MiGs
   # on reactive hot-alert, fewer standing forward orbits.
   opfor_default_qra_reserve: 4
-  # The will economy carries the political layer: coalition cohesion vs the regime's
-  # resolve, the POW running sore (paraded aircrew drain cohesion every turn until
-  # freed -- a negotiated win brings them home), and the CDE price of a release
-  # inside the Baghdad no-strike circle (the Al-Firdos lesson).
-  vietnam_political_will: true
   # KARI's C2 is real and destroyable here, so its loss is felt in red's planning
   # quality (s52) -- and KARI historically repaired and relocated between strikes,
   # so red's AI may rebuild dead SAM sites (s68).
@@ -79,26 +74,6 @@ settings:
     rednet: true
     redscramble: true
     redscramble.hostPlayers: Flash
-
-# The Desert Storm political layer: the war is won by breaking the regime's resolve
-# (Umm al-Ma'arik ends at the table in Safwan), and lost only if the coalition itself
-# fractures -- Scud terror, paraded POWs and a CDE catastrophe are Baghdad's only real
-# weapons against it. Feed weights stay at the Vietnam-derived defaults except the ROE
-# violation, priced up: one Al-Firdos is survivable, a habit is not.
-will:
-  blue:
-    label: Coalition cohesion
-    exhaustion_title: The coalition fractures
-    exhaustion_body: >-
-      Scud terror, paraded aircrew and bombed shelters have done what the Iraqi army
-      could not -- the partners waver, the capitals lose their stomach, and the
-      coalition stands down with Saddam still in his palace.
-  red:
-    label: the regime's resolve
-    exhaustion_title: Baghdad capitulates
-    exhaustion_body: >-
-      The army is wrecked on the roads, KARI is blind, and the Mother of all Battles
-      is lost -- Baghdad accepts every coalition term at Safwan.
 
 red_tempo:
   - from_turn: 4

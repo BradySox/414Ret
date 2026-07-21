@@ -2,9 +2,9 @@
 
 A pilot the enemy snatch party seizes becomes a ``PendingPowRecovery``: held
 alive, **freed** by recapturing the holding airfield, or **killed** if the hold
-clock runs out (draining political will per turn held). These lock the model
-defaults and the ``surviving_pows`` free/age/kill clock. (The dedicated recovery
-raid was shelved in the 2026-07-03 CSAR rescope.)
+clock runs out. These lock the model defaults and the ``surviving_pows``
+free/age/kill clock. (The dedicated recovery raid was shelved in the 2026-07-03
+CSAR rescope.)
 """
 
 from __future__ import annotations
@@ -37,7 +37,6 @@ class _FakePilot:
 def _game(
     holding: dict[Any, Any],
     *,
-    will_economy: bool = False,
     invulnerable_player_pilots: bool = False,
 ) -> Any:
     def find(cp_id: Any) -> Any:
@@ -48,7 +47,6 @@ def _game(
     return SimpleNamespace(
         theater=SimpleNamespace(find_control_point_by_id=find),
         settings=SimpleNamespace(
-            vietnam_political_will=will_economy,
             invulnerable_player_pilots=invulnerable_player_pilots,
         ),
     )
@@ -93,18 +91,6 @@ def test_surviving_pows_frees_when_holding_airfield_recaptured() -> None:
     assert survivors == []  # the field fell -> the POW walks free (dropped)
     assert pilot.alive and pilot.repatriated  # freed and returned to the roster
     assert held.turns_remaining == 2  # freed before the clock advanced
-
-
-def test_surviving_pows_holds_indefinitely_on_a_will_campaign() -> None:
-    pilot = _FakePilot()
-    # Clock at 1 would be written off on a normal campaign; a will campaign holds.
-    held = PendingPowRecovery("A", 0.0, 0.0, turns_remaining=1, pilot=cast(Any, pilot))
-    survivors = surviving_pows(
-        cast(Any, _game({}, will_economy=True)), Player.BLUE, [held]
-    )
-    assert survivors == [held]  # kept -- resolved only by free / war's end
-    assert pilot.alive and not pilot.repatriated
-    assert held.turns_remaining == 1  # the death clock never advances
 
 
 def test_surviving_pows_repatriates_an_invulnerable_player_pow_at_writeoff() -> None:

@@ -45,17 +45,6 @@ class QIntelBox(QGroupBox):
         self.economic_strength = QLabel()
         summary.addWidget(self.economic_strength, 2, 1)
 
-        # Right column group: campaign phase (§40) + political will (Vietnam /
-        # COIN campaign layer). Placed *beside* the force rows, not stacked
-        # beneath them, so the box stays three rows tall and fits the 70px
-        # top-panel cap even when both are active -- five stacked rows overflowed
-        # the cap and painted over each other. Each row still hides entirely
-        # when its feature is off, so a stock campaign's box is unchanged.
-        self._will_title = QLabel("Political will:")
-        summary.addWidget(self._will_title, 1, 3)
-        self.political_will = QLabel()
-        summary.addWidget(self.political_will, 1, 4)
-
         self.details = QPushButton()
         self.details.setMinimumHeight(50)
         self.details.setMinimumWidth(210)
@@ -116,7 +105,6 @@ class QIntelBox(QGroupBox):
             self.air_strength.setText("no data")
             self.ground_strength.setText("no data")
             self.economic_strength.setText("no data")
-            self._update_campaign_rows()
             return
 
         data = self.game.game_stats.data_per_turn[-1]
@@ -136,32 +124,6 @@ class QIntelBox(QGroupBox):
         if self.game.turn == 0:
             self.air_strength.setText("gathering intel")
             self.ground_strength.setText("gathering intel")
-
-        self._update_campaign_rows()
-
-    def _update_campaign_rows(self) -> None:
-        """The political-will (Vietnam) row.
-
-        The row shows only when its feature is live for this game; the full
-        legibility "why" string rides on the tooltip so the box stays compact.
-        """
-        show_will = self.game is not None and getattr(
-            self.game.settings, "vietnam_political_will", False
-        )
-        self._will_title.setVisible(show_will)
-        self.political_will.setVisible(show_will)
-        if show_will and self.game is not None:
-            blue = getattr(self.game.blue, "political_will", None)
-            red = getattr(self.game.red, "political_will", None)
-            if blue is not None and red is not None:
-                from game.fourteenth.political_will import will_profile_for
-
-                profile = will_profile_for(self.game)
-                self.political_will.setText(f"{blue:.0f}% vs resolve {red:.0f}%")
-                self.political_will.setToolTip(
-                    f"{profile.blue.label} vs {profile.red.label}. Either side "
-                    "hitting zero ends the war at the negotiating table."
-                )
 
     def open_details_window(self) -> None:
         self.details_window = IntelWindow(self.game)

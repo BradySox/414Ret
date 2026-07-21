@@ -9,7 +9,6 @@ import iadsNetworkReducer from "../api/iadsNetworkSlice";
 import mapReducer from "../api/mapSlice";
 import minefieldReducer from "../api/minefieldSlice";
 import navMeshReducer from "../api/navMeshSlice";
-import supplyReducer from "../api/supplySlice";
 import supplyRoutesReducer from "../api/supplyRoutesSlice";
 import tgosReducer from "../api/tgosSlice";
 import threatZonesReducer from "../api/threatZonesSlice";
@@ -33,7 +32,6 @@ const rootReducer = combineReducers({
   map: mapReducer,
   minefields: minefieldReducer,
   navmeshes: navMeshReducer,
-  supply: supplyReducer,
   supplyRoutes: supplyRoutesReducer,
   iadsNetwork: iadsNetworkReducer,
   tgos: tgosReducer,

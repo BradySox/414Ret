@@ -604,30 +604,14 @@ export type CampaignStatus = {
   campaign_name?: string | null;
   turn: number;
   date: string;
-  blue_supply?: number | null;
-  red_supply?: number | null;
   red_c2?: string | null;
-  blue_will?: number | null;
-  red_will?: number | null;
-  blue_will_label?: string | null;
-  red_will_label?: string | null;
-  blue_will_note?: string | null;
-  red_will_note?: string | null;
   victory?: VictoryCondition[];
   victory_description?: string | null;
-  will_history?: [number, number, number][];
   events?: CampaignEvent[];
   sitrep_turn?: number | null;
   sitrep_lines?: string[];
   hvt_name?: string | null;
   hvt_turns_left?: number | null;
-};
-export type SupplyNode = {
-  name: string;
-  position: LatLng;
-  supply: number;
-  production: number;
-  is_front: boolean;
 };
 export type Minefield = {
   position: LatLng;
@@ -655,7 +639,6 @@ export type Game = {
   blank_canvas_setup: boolean;
   enable_unit_placement: boolean;
   campaign_status?: CampaignStatus | null;
-  supply_nodes?: SupplyNode[];
   minefields?: Minefield[];
   downed_pilots?: DownedPilot[];
 };

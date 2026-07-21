@@ -3,7 +3,7 @@ import "./MapLegend.css";
 import { CSSProperties, useState } from "react";
 
 // A compact, collapsible key for the map's colour/shape semantics. The many overlays
-// reuse a small set of meanings (allegiance, supply, suspected activity) that
+// reuse a small set of meanings (allegiance, suspected activity) that
 // aren't otherwise decodable. The dashed family renders its REAL stroke signature
 // (mapStrokes: pattern + dark contrast casing) as a mini SVG preview, so the legend
 // swatch is literally what the map draws — an area, a zone, a hazard, and a person
@@ -94,11 +94,6 @@ const ROWS: Row[] = [
     signature: mapStrokes.minefield,
     label: "Minefield (your own)",
   },
-  { color: mapColors.supplyOk, kind: "fill", label: "Supply: healthy" },
-  { color: mapColors.supplyMid, kind: "fill", label: "Supply: strained" },
-  { color: mapColors.supplyLow, kind: "fill", label: "Supply: low" },
-  { color: mapColors.supplyCritical, kind: "fill", label: "Supply: starved" },
-  { color: mapColors.supplyProducer, kind: "line", label: "Supply producer (factory/oil)" },
   { color: mapColors.routeFriendly, kind: "line", label: "Convoy route: friendly" },
   { color: mapColors.routeEnemy, kind: "line", label: "Convoy route: enemy — interdict" },
   { color: mapColors.routeContested, kind: "line", label: "Convoy route: contested" },

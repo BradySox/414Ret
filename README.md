@@ -48,10 +48,9 @@ Upstream hands you a map that already knows everything. Here you have to go look
 - **Combat SAR makes a downed pilot worth flying for.** Recover an ejected aviator and the
   campaign **spares the pilot** — you still lose the jet. The AI plans the package (King +
   helo + Sandy) by default, any human can fly any seat, and AI ejections count too. Lose the
-  race and the enemy's **snatch party** takes them: a **POW** leaves your roster and drains
-  political will every turn held. Retake the field in time and they're back — a few turns on
-  a normal campaign, indefinitely on a political-will one, where a negotiated victory brings
-  them home. A pilot neither rescued nor captured goes **MIA and keeps evading**, still
+  race and the enemy's **snatch party** takes them: a **POW** leaves your roster while
+  held. Retake the field in time and they're back — a few turns on the hold clock, and a won
+  war brings every held POW home. A pilot neither rescued nor captured goes **MIA and keeps evading**, still
   rescuable next mission — but deep behind the lines they're almost certainly caught. Think
   twice before pressing deep with no rescue plan. **Every downed aviator shows on the
   campaign map**: an MIA evader as a rescue-orange marker at their last known position, a
@@ -169,10 +168,6 @@ Upstream hands you a map that already knows everything. Here you have to go look
 
 ### Systems that make the war strategic
 
-- **Bomb fuel, factories and supply lines and the war effort withers.** Each base runs a real
-  materiel chain — factories produce, roads carry, the front spends. Starve it and the enemy
-  recovers less, fields fewer units, gives ground. Run a field dry of JDAMs and its jets fall
-  back to dumb bombs. Symmetric: protect your own.
 - **Bombing the enemy HQ matters** — knock out its command posts and its planner gets
   measurably sloppier at picking targets **and its offensive tempo thins** (a decapitated
   HQ frags fewer strike packages — never zero). Its reactive defenses never suffer.
@@ -200,11 +195,9 @@ Upstream hands you a map that already knows everything. Here you have to go look
   bases") or **attrition** ("enemy air below 25% of start") ending from settings, so a
   limited war ends when its objective is met instead of demanding total conquest. A green
   VICTORY chip on the map ribbon shows the live checklist ("Enemy air force below 10% of
-  start (now 62%)"); defeat conditions ("lose Kutaisi and Washington pulls the plug") show
-  as risks. On a political-will campaign the checklist opens with the real negotiation
-  endings — "Break Hanoi's resolve (now 87 of 100)" — so the meters finally point at their
-  consequence, and authors can couple the meters into custom endings ("resolve below 30
-  *and* Hue captured", "enemy front supply starved below 25%"). The classic
+  start (now 62%)"); defeat conditions ("lose Kutaisi and the war is lost") show
+  as risks. Authors can combine conditions into custom endings ("hold Sukhumi *and* Gudauta",
+  "enemy air below 10% of start"). The classic
   capture-everything ending always remains.
 - **Warships fire real cruise missile raids** — mark a target, call the strike, and the nearest
   ship ripples a salvo. Magazines are finite and never rearm, so a salvo spent on a truck park
@@ -238,7 +231,7 @@ Upstream hands you a map that already knows everything. Here you have to go look
 - **Persian Gulf — The Tanker War (1988)** — the 1987–88 war on Gulf shipping, building to an
   Operation Praying Mantis climax in the Strait of Hormuz. The 1988 carrier air wing (F-14A,
   A-6E, A-7E) against Iranian naval and coastal power; the currency is **ships, not territory**
-  — the will economy bleeds from sunk hulls, Silkworm batteries fire from the coast, and AAA
+  — Silkworm batteries fire from the coast, and AAA
   gun forts stand on the oil platforms. The one DCS matchup where the Tomcat flies both sides.
 - **Iraq — Umm al-Ma'arik (Desert Storm 1991)** — the air war against "the most well defended
   city in the world," fought the way it really was fought: **from outside**. Blue holds only
@@ -249,21 +242,14 @@ Upstream hands you a map that already knows everything. Here you have to go look
   centers to one destroyable ADOC — decapitate it and the net goes autonomous; leave it and
   it repairs. Night-one start (17 Jan 1991, 0300), a Great Scud Hunt in the western baskets
   against launchers that relocate between recon passes, real-highway convoy interdiction from
-  Baghdad to Mosul, a GCI-alert Iraqi Air Force on hot-pad QRA, and a no-strike circle over
-  Baghdad's river bend that prices collateral into **Coalition cohesion** — one Al-Firdos is
-  survivable, a habit is not. Every squadron is its real 1991 unit — VF-103 Sluggers
+  Baghdad to Mosul, and a GCI-alert Iraqi Air Force on hot-pad QRA. Every squadron is its real 1991 unit — VF-103 Sluggers
   Bombcats, the 58th TFS Gorillas, Task Force Normandy's Apaches, and the Qadessiya
-  Foxbat squadron that drew first blood on night one. Ends where it must: break the
-  regime's resolve at Safwan.
-- **The Vietnam campaign layer changes *why* you fly.** **Political will** — Washington's
-  patience, drained by losses (a downed **B-52** is a national event), by aviators sitting as
-  POWs, and by the war's sheer duration; a one-way ratchet whose restores are too small to
-  grind back, so **body count is a trap** — against Hanoi's **Regime Resolve**, which shrugs at
-  airframes and bleeds from the trail. The war can **end at the negotiating table**: break
-  Hanoi before your will runs out, or run dry and Washington orders the withdrawal, whatever
-  the map says. When Hanoi answers — surging the trail or opening a Tet-style ground push on a scheduled
-  window — the enemy's tempo shifts against you. Any campaign can carry its own **will profile**, so a Falklands bleeds from sunk ships
-  the way Vietnam bleeds from downed B-52s.
+  Foxbat squadron that drew first blood on night one.
+- **The Vietnam campaign layer changes *how* the enemy fights.** When Hanoi answers the
+  campaign clock — surging the Ho Chi Minh Trail or opening a Tet-style ground push on a
+  scheduled window — the enemy's tempo shifts against you. And its MiGs fly a period **GCI
+  ambush**: scramble late, one close slashing pass, and run for home rather than a stand-up
+  BVR duel.
 - Plus: **CurrentHill Iran** assets, **High Digit SAMs** (Ultimate Compilation — S-400, SAMP/T,
   Pantsir-SM, period EWRs), the optional **Expanded F-4E Weapons Pack** (check it on the Mods
   page to arm the Heatblur Phantom for real Weasel SEAD — AGM-78 Standard ARMs by default,

@@ -463,8 +463,8 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
 ### B29 — Custom victory conditions (VICTORY chip + alternate endings) · §75 · ☐ UNTESTED (built 2026-07-19 off the Discord thread — Ramius007's victory CPs/domination + Starfire's HVT-destruction/strength-attrition/air-denial asks; the whole condition engine, the AND-within-entry semantics, loss precedence, the no-vacuous-win guards, the announce latch, and the real `check_win_loss` branch order are unit-tested in `tests/fourteenth/test_victory.py` (30 tests), and the client block passed tsc + the full jest suite locally — but the app render and a knob-driven ending end-to-end are app-only)
 - **What CI cannot exercise:** the ribbon VICTORY chip + expander block actually rendering (the client is not CI-type-checked; needs the CI client rebuild to even ship), the Qt settings page showing the new "Victory conditions" section, the Victory!/Defeat! dialog firing off a knob-met condition on a real game, and the SITREP band line on the next turn's kneeboard.
 - **Setup (app pass, no DCS needed):** any small campaign. Set Campaign Management → Victory conditions → "Domination victory" to a value just above your current base share (the expander shows the live percentage). Play or skip turns until a capture crosses the threshold. Separately: load any campaign with the knobs at 0 and confirm no VICTORY chip renders anywhere.
-- **Pass:** with a knob set, the green VICTORY chip appears on the ribbon; clicking it unfolds "Victory conditions — Any one of these ends the war:" with live values that update as bases change hands; crossing the threshold at a turn boundary pops the standard Victory! dialog AND the events feed carries "Victory condition met: Hold N% of the bases"; the next turn's SITREP (web LAST TURN + kneeboard band) would have carried the "Victory: …" line; with both knobs 0 and no authored block, no chip, no block, no SITREP line — byte-identical behavior. **Will-campaign half (the absorbed negotiation ending):** on 1968 Yankee Station (or either COIN campaign) the chip appears with NOTHING configured and the checklist leads with the profile's own endings — "Break Hanoi's resolve (now N of 100)" + "Defeat if: Washington's patience runs out (now N of 100)" — with the numbers matching the WILL/RESOLVE ribbon meters; a will collapse still ends the war exactly as before (the era exhaustion banner fires once, no duplicate "Victory condition met" message for the negotiation path).
-- **Fail signature:** a win/loss firing at turn 0 or on load with a threshold below the starting share (working as designed — but if it fires with the knob at 0, the gate broke); the chip present with nothing configured (the overview leaked); a "Victory condition met" banner repeating every check (the `victory_announced` latch broke); the territory win firing while neutral bases are counted in the denominator (the `_territory` filter broke); an authored-campaign block win firing for a condition whose live prose shows unmet (AND semantics regressed to PhaseCondition's OR).
+- **Pass:** with a knob set, the green VICTORY chip appears on the ribbon; clicking it unfolds "Victory conditions — Any one of these ends the war:" with live values that update as bases change hands; crossing the threshold at a turn boundary pops the standard Victory! dialog AND the events feed carries "Victory condition met: Hold N% of the bases"; the next turn's SITREP (web LAST TURN + kneeboard band) would have carried the "Victory: …" line; with both knobs 0 and no authored block, no chip, no block, no SITREP line — byte-identical behavior. (The will/supply meter conditions + the absorbed negotiation ending were REMOVED 2026-07-21 with the will/war economy, so only the territorial/destroy/strength/air-denial conditions remain to exercise.)
+- **Fail signature:** a win/loss firing at turn 0 or on load with a threshold below the starting share (working as designed — but if it fires with the knob at 0, the gate broke); the chip present with nothing configured (the overview leaked); a "Victory condition met" banner repeating every check (the `victory_announced` latch broke); the territory win firing while neutral bases are counted in the denominator (the `_territory` filter broke); an authored-campaign block win firing for a condition whose live prose shows unmet (AND semantics regressed to OR).
 
 ### B30 — CTLD paratroopers (fixed-wing air assault: player + AI C-130 paradrop) · §76 · ☐ UNTESTED (built 2026-07-19 off the "add paratroopers via CTLD" ask; the planner gate + both layout shapes are unit-tested in `tests/ato/flightplans/test_airassault.py`, and the whole Lua runtime — player jump via the stock Unload menu, descent-delayed ground spawn at the velocity-projected point, the 3,000 ft player ceiling, ground/helo fall-through to stock CTLD, the AI one-shot zone release, and the late-activation preload retry — is harness-pinned in `tests/lua/test_ctld_paradrop.py` (9 cases). What no test can model is the DCS AI actually flying the run-in and the dropped infantry behaving)
 
@@ -1826,11 +1826,11 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
 - **Pass:** a 2-ship MQ-9 Reaper (or Predator) squadron exists at a rear blue airfield that didn't have one in the campaign yaml; the auto-planner frags it into an A/G package (TARPS/overwatch), it reaches the target area, lases (G26), and films (drone-always-films). On OIR (already fields drones) **no second** drone squadron is auto-added. Turning `auto_jtac_drone` off yields the campaign's authored air wing exactly.
 - **Fail signature:** no drone squadron appears (gate: `has_jtac`/`jtac_unit` a drone/TARPS-capable, setting on, campaign year ≥ the drone's service year — check the faction JSON + start date); a **second** drone squadron on a campaign that already fields one (the existing-drone skip broke); the drone based at the front line or an inoperable field (rear/`can_operate` pick broke); a red drone squadron auto-fielded (blue-only gate broke); **an anachronistic MQ-9 on a Cold-War campaign** (the era gate broke — Red Tide 1988 must stay drone-free); the drone sits idle and never frags (no A/G packages that turn, or the auto-recon hook off — `auto_add_tarps_recon`).
 
-### G28 — POW mechanics: captured pilot benched, held, surfaced, brought home · §21 · ☐ UNTESTED (built 2026-07-06; the POW status transitions, will-aware indefinite hold, invulnerable-player-respecting write-off, Homecoming, SITREP lines, and the §51 compromise expiry are unit-tested in `tests/test_pow_recovery.py` + `tests/squadrons/test_squadron_pilots.py` + `tests/test_sitrep.py` + `tests/missiongenerator/test_commsjamluadata.py` — the multi-turn campaign feel + the roster/SITREP read need a played campaign)
-- **What CI cannot exercise:** whether a captured pilot genuinely disappears from the schedulable roster next turn and reads as "POW" in the squadron dialog; whether the SITREP band names the POW + holding field + clock each turn; whether recapturing the holding field returns the pilot; on a will campaign, whether the indefinite hold keeps draining will (never auto-killing) and whether a negotiated win brings the POWs home; and whether an invulnerable-player POW is returned rather than killed at a normal-campaign clock expiry.
-- **Setup:** lose the Combat SAR race (eject + get captured) on **(a)** a normal campaign (4-turn clock) and **(b)** a Vietnam will campaign (`vietnam_political_will` on, indefinite hold). Note the pilot name. Advance turns watching the squadron roster + the next mission's kneeboard SITREP band; recapture the holding field in one run and ride the clock/war-end in another. **Fast test (thumb on the scale):** tick `[TEST] Combat SAR: force every downed pilot to be captured` (Campaign Management → HQ Automation) so you don't have to lose the race by chance — any ejection near the front becomes a POW in seconds.
-- **Pass:** the captured pilot shows **POW** in the squadron dialog and is never fragged while captive; the SITREP band carries a "POW: <name> — held at <field> (N turns left / held)" line each turn; recapturing the holding field returns the pilot to Active (and clears the line); on a normal campaign the pilot is written off at the 4-turn clock (or, with invulnerable player pilots on, a *player* POW returns instead of dying); on a will campaign the POW is held indefinitely (will keeps bleeding, no death) and a **negotiated win repatriates every POW** (Homecoming) while a withdrawal loss writes them off; §51 jamming from a held POW stops after ~4 turns even if the POW is still held.
-- **Fail signature:** the captured pilot flies again next turn (status not flipped / `active_pilots` still includes POWs); no POW line in the SITREP (the `pows_held` wiring); recapturing the field doesn't free them (`repatriate` / holding-cp match); a player POW killed at clock expiry despite invulnerable-player-pilots (the `_write_off` gate); a will-campaign POW killed at 4 turns (the indefinite branch); no Homecoming on a won will campaign (the `process_win_loss` hook); §51 jams forever off an indefinitely-held POW (the `COMMS_COMPROMISE_TURNS` window / `captured_turn` stamp).
+### G28 — POW mechanics: captured pilot benched, held, surfaced, brought home · §21 · ☐ UNTESTED (built 2026-07-06; the POW status transitions, the 4-turn hold clock, invulnerable-player-respecting write-off, Homecoming, SITREP lines, and the §51 compromise expiry are unit-tested in `tests/test_pow_recovery.py` + `tests/squadrons/test_squadron_pilots.py` + `tests/test_sitrep.py` + `tests/missiongenerator/test_commsjamluadata.py` — the multi-turn campaign feel + the roster/SITREP read need a played campaign. The will-coupled indefinite hold was REMOVED 2026-07-21 — the hold is now always the 4-turn clock.)
+- **What CI cannot exercise:** whether a captured pilot genuinely disappears from the schedulable roster next turn and reads as "POW" in the squadron dialog; whether the SITREP band names the POW + holding field + clock each turn; whether recapturing the holding field returns the pilot; whether a win brings held POWs home (Homecoming) and a loss writes them off; and whether an invulnerable-player POW is returned rather than killed at clock expiry.
+- **Setup:** lose the Combat SAR race (eject + get captured) on any campaign (the 4-turn hold clock is now universal). Note the pilot name. Advance turns watching the squadron roster + the next mission's kneeboard SITREP band; recapture the holding field in one run and ride the clock/war-end in another. **Fast test (thumb on the scale):** tick `[TEST] Combat SAR: force every downed pilot to be captured` (Campaign Management → HQ Automation) so you don't have to lose the race by chance — any ejection near the front becomes a POW in seconds.
+- **Pass:** the captured pilot shows **POW** in the squadron dialog and is never fragged while captive; the SITREP band carries a "POW: <name> — held at <field> (N turns left / held)" line each turn; recapturing the holding field returns the pilot to Active (and clears the line); the pilot is written off at the 4-turn clock (or, with invulnerable player pilots on, a *player* POW returns instead of dying); a **win repatriates every held POW** (Homecoming) while a loss writes them off; §51 jamming from a held POW stops after ~4 turns even if the POW is still held.
+- **Fail signature:** the captured pilot flies again next turn (status not flipped / `active_pilots` still includes POWs); no POW line in the SITREP (the `pows_held` wiring); recapturing the field doesn't free them (`repatriate` / holding-cp match); a player POW killed at clock expiry despite invulnerable-player-pilots (the `_write_off` gate); no Homecoming on a won campaign (the `process_win_loss` hook); §51 jams forever off a held POW (the `COMMS_COMPROMISE_TURNS` window / `captured_turn` stamp).
 
 ### G29 — Persistent evaders + the always-run snatch race · §21 · ◐ PARTIAL (2026-07-11 flown Red Tide M1 `csar-snatch-toggle-question-dfdb7a`: the always-run half is proven live — the no-asset path armed instead of bailing (`Combat SAR - blue has no rescue asset this mission; capture race only` → `survivor ledger started (1 coalition(s), 0 King(s), 1 Sandy(s), capture on, AI-rescue off)`; the old "skipping" line is gone) and `combat_sar_survivors` WAS written (1 unresolved entry at exit; ~20 other ejections were resolved in-mission as their pilot units despawned). **Caveat found:** the one surviving entry was a **DCS dynamic-slot** jet — a player self-spawned a MiG-29A at blue Frankfurt (`dynamic_slots` was ON at generation; DCS names these `<Airbase>_<type>_<n>`) and ramp-ejected to leave (Tacview shows no shoot-down, the jet removed 723 m from its spawn AT the field). `record_downed_pilots` discards it correctly (`unit_map.flight() is None` → "not an airframe this campaign tracks"), so no phantom MIA — but note a dynamic-slot pilot can never go MIA/POW by design. The MIA flip → SITREP/roster → next-mission evader respawn arc still needs a real tracked-airframe shoot-down. Built 2026-07-10, squadron call; the always-emit node, the no-rescue-capability ledger start, the eject → `combat_sar_survivors` sync → snatch spawn, the evader respawn, the MIA record/retire, the depth-weighted turn roll, and the SITREP/roster surfaces are unit-tested in `tests/lua/test_combatsar_ledger.py` + `tests/fourteenth/test_downed_pilots.py` + `tests/test_combat_sar_scoring.py` + `tests/missiongenerator/test_combat_sar_sandy_luadata.py` — the in-DCS snatch spawn without any rescue asset, the evader respawn feel, and the multi-turn evade/capture arc need a fly)
 - **2026-07-17 night fly (fresh Scenic Route Merged turn 1, Tacview `Tacview-20260717-214932`,
@@ -2799,67 +2799,9 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
   altitude or at low speed (the release ceiling/speed gate wrong); the bite far too strong/weak
   (`napeBlastPower`).
 
-### M1 — Political will pacing & feed weights (campaign layer W1+W2; 2026-07-04 morale-ratchet redo) · §48 · ☐ UNTESTED (the **pre-redo** 2-line-override economy got a user "M1 good" pass 2026-07-04 — but the **same-day morale-ratchet redo re-tuned the whole economy** (design note §8): BLUE ratchet + POW sore, RED broadened past the trail, the richer opening, so the shipped numbers are new and the earlier pass no longer covers them. Numbers derived with `tools/will_pacing_model.py` (elite folds Hanoi ~turn 8, average → Linebacker II win ~turn 16, flounder → withdrawal ~turn 11); the model is play-archetype driven, so the *played* pacing of the redo is exactly this row. The verified-good pre-redo baseline is the sanity floor: the redo should feel no worse)
-- **Headless adjudication:** the feed model and the negotiation verdict are locked in
-  `tests/fourteenth/test_political_will.py` (weighted losses, POW trickle, rescue refund, clamps, off-switch,
-  win/loss/precedence, crossing-edge banners) and the SITREP band in the sitrep tests. What CI *cannot*
-  adjudicate is **pacing**: whether the design-§7 weights drive either side to zero on a satisfying arc
-  (~15–30 turns of a normal Vietnam campaign), or collapse/stall the war absurdly fast/slow.
-- **Interim evidence (2026-07-15, session `gallant-panini-5485e7` — projector re-run + a real-engine
-  AI-vs-AI self-play probe; NOT the played pass, the row stays open):**
-  `tools/will_pacing_model.py` on the shipped weights still reproduces the documented full-feed pacing
-  exactly (elite folds Hanoi turn 8 / average → Linebacker II win turn 16 / flounder → withdrawal turn 11 —
-  no drift since the 07-04 redo). A 20-turn headless Yankee Station self-play (real GameGenerator + campaign
-  preseeds + the §26 abstract combat auto-resolving every mission, air-war feeds only — no POW/ROE/convoy
-  channels) verified the machinery live: the −0.4/turn war-weariness ratchet, per-feed ledger attribution,
-  and the M9 ceiling tracking will in BOTH directions. **Two
-  balance watch-items for the played pass:** (1) **an auto-resolved (unflown) turn is drastically bloodier
-  than a DCS-flown one** — the planner frags B-52s into the un-rolled-back IADS from turn 1
-  (`strike_through_air_defense_threat`) and the SEAD-less abstract SAM model killed 8 BUFFs + 40 jets on
-  turn 1 (−85 will in one turn); never adjudicate pacing off fast-forwarded turns, and expect a player who
-  skips/fast-forwards a turn to nuke their own meter. (2) **the claimed-MiG-kill restore can grind** — at
-  +0.3/claim, a blue side taking zero losses out-earns the −0.4 weariness by +3–6/turn (the probe climbed
-  will 0.4 → 63.9 over 16 turns while red bled −3/turn from its own airframe losses toward a turtle win
-  ~turn 30): a patient BARCAP-only squadron could fold Hanoi without ever striking. Consider a per-turn cap
-  or diminishing returns on the kill restore at this row's tuning pass.
-- **Setup:** a NEW Vietnam campaign (any of the four — `vietnam_political_will` preseeds on). Play several
-  turns normally; read the per-turn "Political will" message + the SITREP will band. The 2026-07-02
-  **attribution ledger** is the instrument for this pass: hover the ribbon WILL/RESOLVE meters (or read the
-  SITREP "Will movers"/"Enemy resolve movers" lines) to see exactly which feed moved the number each turn —
-  tune weights from that, not from guessing.
-- **Pass:** both meters move visibly each flown turn but neither side loses double digits from an ordinary
-  turn; a B-52 loss or a POW visibly dents BLUE; convoy kills visibly dent RED; a quiet turn heals slightly;
-  the arc feels like it *would* resolve in 15–30 turns of consistent play; the movers lines name the feeds
-  you'd expect from the turn you just flew.
-- **Fail signature:** will collapses in <5 turns of normal play (weights too hot — halve the loss weights);
-  the meters barely move by turn 10 (too cold); the passive regen out-heals ordinary attrition so the meters
-  pin at 100 (regen too high vs. weights); the exhaustion banner fires repeatedly every turn at zero
-  (crossing-edge regression); a non-Vietnam campaign shows the will message at all (gating regression).
-  Tune the `BLUE_*`/`RED_*` weights in `game/fourteenth/political_will.py` — or, since the 2026-07-02
-  will-profile generalization, per campaign via a `will: weights:` YAML block (no code change; see
-  `414th-will-generalization-notes.md`). The new warship feed (`blue_ship_lost`/`red_ship_lost`) barely
-  moves on the Vietnam defaults — a sunk vessel showing an outsized will swing means a profile weight, not
-  this pass.
+### M1 — Political will pacing & feed weights (campaign layer W1+W2) · §48 · ✖ REMOVED (2026-07-21) — the political-will economy was dropped (the campaign-economies drop); no pass owed.
 
-### M2 — Static front holds the band (campaign layer W2b) · Vietnam campaign layer · ☑ VERIFIED (2026-07-04, user pass — "m2 good") (was ☐ UNTESTED, built 2026-07-01; clamp math + arm/disarm/anchor fully unit-tested, the multi-turn map behaviour needs a played campaign)
-- **Headless adjudication:** the band math, arm/disarm idempotence, anchor-once capture, and the real
-  `FrontLine` clamp path at strength extremes are locked in `tests/fourteenth/test_static_front.py`. What CI
-  *cannot* adjudicate is the **multi-turn map feel**: whether a ±10 % band reads as a living siege line over a
-  played campaign (pressure visibly bends the front) rather than a dead-still one, and that the interplay with
-  captures behaves in a real game.
-- **Setup:** a NEW Vietnam campaign (any of the four — `vietnam_static_front` preseeds on). Play several turns
-  letting the ground war swing (win some front engagements, lose some); watch the front line on the map.
-- **Pass:** the front visibly shifts turn-to-turn with the strength battle but stays inside a narrow band
-  around its campaign-start position; neither side's front ever reaches/captures a base by ground sweep even
-  after a lopsided run of turns; a deliberate **Air Assault still captures** its target base; a non-Vietnam
-  campaign's fronts sweep exactly as before.
-- **Fail signature:** the front sits pinned dead-still across turns while strengths swing (clamp too tight /
-  band effectively 0 — check `STATIC_FRONT_BAND` and that the anchor wasn't captured from an already-clamped
-  position); the front walks onto a base and captures it (arming missed — `apply_static_front` not running in
-  `initialize_turn`, or the setting didn't preseed); an Air Assault fails to capture (the clamp leaked into
-  the capture path — it must only touch `_blue_route_progress`); a **non-Vietnam** campaign's front stops
-  short of a base it should capture (disarm/gating regression — the clamp must clear when the setting is
-  off). Knob: `STATIC_FRONT_BAND` in `game/fourteenth/static_front.py`.
+### M2 — Static front holds the band (campaign layer W2b) · Vietnam campaign layer · ✖ REMOVED (2026-07-21) — the static-front layer was dropped with the will economy; no pass owed. (Was ☑ VERIFIED 2026-07-04 before removal.)
 
 ### M3 — Campaign phase arc & planner emphasis · §40 · ✖ REMOVED (2026-07-21) — the campaign-phase feature was dropped (the ROE-mechanic drop); no pass owed.
 
@@ -2903,54 +2845,30 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
   defined before build_dispatcher — verify load order if edited). Knobs: `AMBUSH_GCI_RADIUS_NM`
   (interceptluadata.py), `AMBUSH_DISENGAGE_NM` / `AMBUSH_FUEL_THRESHOLD` (intercept-config.lua).
 
-### M6 — Red tempo: turn-windowed trail surge, ground-offensive pulse, resolve regen (campaign layer W6, rehomed 2026-07-21) · campaign layer · ☐ UNTESTED (built 2026-07-01, rehomed 2026-07-21 to a top-level turn-windowed `red_tempo:` schedule — last-window-wins by `from_turn`, authored on 6 campaigns; parse/window/stance/regen/convoy-surge all unit-tested, the multi-turn campaign feel needs a played arc)
+### M6 — Red tempo: turn-windowed trail surge, ground-offensive pulse (campaign layer W6, rehomed 2026-07-21) · campaign layer · ☐ UNTESTED (built 2026-07-01, rehomed 2026-07-21 to a top-level turn-windowed `red_tempo:` schedule — last-window-wins by `from_turn`, authored on 6 campaigns; parse/window/stance/convoy-surge all unit-tested, the multi-turn campaign feel needs a played arc. The `resolve_regen` lever was dropped 2026-07-21 with the will economy.)
 - **Headless adjudication:** the `red_tempo:` parse, the ground-offensive window math, the raise-only
-  stance pulse, the once-per-turn regen guard, the end-to-end convoy surge (second column + doubled skim),
+  stance pulse, the end-to-end convoy surge (second column + doubled skim),
   and the 6 campaigns' authored schedules are all locked in `tests/fourteenth/test_red_tempo.py`. What CI cannot
-  adjudicate: the multi-turn *feel* — whether the Halt reads as a logistics window and the Linebacker-entry
-  ground pulse reads as the Easter Offensive.
-- **Setup:** a NEW Vietnam campaign (Khe Sanh or Yankee Station) with `vietnam_political_will` +
-  `vietnam_convoy_interdiction` on; play (or fast-forward) into the Bombing Halt (~turn 8) and across the
-  Linebacker entry (~turn 11).
-- **Pass:** during the Halt, up to TWO trail convoys flow at once with bigger loads (Armed Recon has
-  visibly more trail targets) and Hanoi's resolve ticks UP ~1.5/turn on the Stats will chart while blue's
-  deep war is locked; on Linebacker entry, red front stances go aggressive for ~3 turns (the front presses
-  BLUE inside the W2b band — pressure, not sweep-captures) with the trail surging alongside; after the
-  pulse window red reverts to the commander's own stance choices; a modern (non-authored) campaign shows
+  adjudicate: the multi-turn *feel* — whether the surge window reads as a logistics push and the
+  ground-offensive window reads as an Easter-Offensive pulse.
+- **Setup:** a NEW campaign with a `red_tempo:` schedule (Yankee Station, Velvet Thunder, Desert Storm,
+  Inherent Resolve, Enduring Resolve, or Red Flag 81-2); play (or fast-forward) into a `trail_surge` window
+  and across a `ground_offensive` window.
+- **Pass:** during a `trail_surge` window, up to TWO trail convoys flow at once with bigger loads (Armed
+  Recon has visibly more trail targets); on a `ground_offensive` window, red front stances go aggressive for
+  the window (the front presses BLUE — pressure, not sweep-captures) with the trail surging alongside; after
+  the window red reverts to the commander's own stance choices; a campaign with no `red_tempo:` block shows
   zero change.
-- **Fail signature:** resolve regenerating every init of the same turn (the `red_tempo_regen_turn` guard);
-  red stances stuck aggressive after the window (the raise should stop applying — check
-  `ground_offensive_active` window math); three+ convoys stacking (the `max_convoys` cap); a Tier-0
-  campaign surging (only campaigns with a `red_tempo:` schedule are affected — the window in effect is the last one whose `from_turn` is reached).
+- **Fail signature:** red stances stuck aggressive after the window (the raise should stop applying — check
+  `ground_offensive_active` window math); three+ convoys stacking (the `max_convoys` cap); a campaign with no
+  schedule surging (only campaigns with a `red_tempo:` schedule are affected — the window in effect is the last one whose `from_turn` is reached).
   Knobs: the top-level `red_tempo:` schedule window values; `GROUND_OFFENSIVE_MIN_SURGE` (red_tempo.py).
 
 ### M7 — ROE zone shapes (box/corridor F10/ME map + from_drawing) · §40 · ✖ REMOVED (2026-07-21) — the ROE-zone layer was dropped; no pass owed.
 
 ### M8 — COIN positive-control valleys (no-strike ROE) · §40 · ✖ REMOVED (2026-07-21) — the ROE-zone layer was dropped; no pass owed. (Was ☑ VERIFIED 2026-07-04 before removal.)
 
-### M9 — Commitment ceiling: will-coupled war budget draws down (§48) · §48 · ☐ UNTESTED (built 2026-07-04; multiplier shape + gating + message unit-tested in `tests/fourteenth/test_commitment_ceiling.py`; the played draw-down feel + the loss-spiral risk need a campaign)
-- **Headless adjudication:** `will_budget_multiplier` is 1.0 at/above will 60, ramps linearly to 0.5× at
-  will 0; `apply_commitment_ceiling` cuts only BLUE income, only with both `vietnam_commitment_ceiling` +
-  `vietnam_political_will` on, and messages on the cut. What CI *cannot* adjudicate: whether the budget cut
-  feels like meaningful pressure without a death spiral (less budget → fewer replacements → more relative
-  losses → less will), and whether the message reads clearly in a flown campaign.
-- **Interim evidence (2026-07-15, the M1 self-play probe — see the M1 row):** the ceiling tracked will
-  live in **both directions** (×1.00 → ×0.53 at will ~3, back to ×1.00 as will recovered past 60), and the
-  **loss-spiral this row worries about did not manifest even from will 0.4 at the ×0.5 budget floor** —
-  the probe's blue recovered fully. The floor is doing its "gentle by design" job in the degenerate worst
-  case; what's left for the fly is the *felt* pressure on a human-played losing line.
-- **Setup:** a NEW 1968 Yankee Station game (both toggles preseed on). Play a *losing* line (take losses,
-  ignore the trail) so BLUE will drops below 60; watch the Finances dialog + the "War budget cut" message.
-- **Pass:** while BLUE will ≥ 60 the war budget is untouched; below 60 the per-turn income is visibly trimmed
-  (a "War budget cut" message names the %); at very low will the cut approaches but never exceeds 50%; RED's
-  income is never touched; turning `vietnam_commitment_ceiling` off restores full funding. The pressure feels
-  like a squeeze, not an unrecoverable spiral.
-- **Fail signature:** the cut triggers while will is still healthy (threshold wrong); RED income is cut
-  (BLUE-only gate failed); the budget hits zero (floor failed); the message spams every turn at low will
-  (it should fire only on turns the cut applies); the player is locked into an unrecoverable death spiral
-  (floor too low / ramp too steep — raise `CEILING_FLOOR_MULT` or `CEILING_FULL_WILL`).
-  Knobs: `CEILING_FULL_WILL` (where the cut starts) + `CEILING_FLOOR_MULT` (the floor) in
-  `game/fourteenth/commitment_ceiling.py`.
+### M9 — Commitment ceiling: will-coupled war budget draws down · §48 · ✖ REMOVED (2026-07-21) — the commitment ceiling was dropped with the will economy; no pass owed.
 
 ## N. Mod support
 

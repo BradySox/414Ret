@@ -57,7 +57,6 @@ if TYPE_CHECKING:
     from .factions.faction import Faction
     from .fourteenth.downed_pilots import DownedPilot
     from .fourteenth.minefields import Minefield
-    from .fourteenth.political_will import WillLedgerEntry
     from .fourteenth.super_gaggle import SuperGaggleCommitment
     from .fourteenth.victory import VictoryBaseline
     from .navmesh import NavMesh
@@ -139,24 +138,12 @@ class Game:
         # pickled. Evaluated at the turn boundary by check_win_loss.
         self.victory_baseline: Optional["VictoryBaseline"] = None
         self.victory_announced: set[str] = set()
-        # War economy (§53): latched once the per-base supply stockpiles have been
-        # seeded to capacity, so the seed happens exactly once. Re-derived state
-        # (production, supply factors) is never pickled -- only this flag + the
-        # per-base Base.supply amounts persist.
-        self.war_economy_seeded: bool = False
-        # §54 munitions: latched once per-base munition stocks have been seeded, so
-        # the seed happens once. Gated by restrict_weapons_by_stock.
-        self.munitions_seeded: bool = False
         # W6 red tempo: the last turn resolve-regen was applied (idempotence
         # guard for the multiple-init-per-turn cases).
         self.red_tempo_regen_turn: Optional[int] = None
         # Red-tempo legibility: the last authored window whose "Hanoi's response"
         # was announced, so the message fires once per window (transient guard).
         self.red_tempo_announced_window: Optional[str] = None
-        # Political-will attribution ledger (W1 legibility): one entry per flown
-        # turn saying WHY the will moved (per-feed components), appended by
-        # update_political_will and capped there. Empty outside Vietnam campaigns.
-        self.will_ledger: list["WillLedgerEntry"] = []
         # COIN C1 per-CP regen anchors (garrison cap / cache total / fractional
         # carry), keyed by str(cp.id). Plain primitives so saves stay simple;
         # populated lazily by game.fourteenth.coin when coin_insurgency is on.
@@ -265,19 +252,16 @@ class Game:
         # W6 red tempo: pre-feature saves resolve on their next initialize_turn.
         state.setdefault("red_tempo_regen_turn", None)
         state.setdefault("red_tempo_announced_window", None)
-        state.setdefault("will_ledger", [])
         state.setdefault("coin_state", {})
         state.setdefault("convoy_ambush_state", {})
         state.setdefault("downed_pilots", [])
         state.setdefault("minefields", [])
         state.setdefault("cruise_missile_magazines", {})
         state.setdefault("concealment_salt", None)
-        state.setdefault("war_economy_seeded", False)
-        state.setdefault("munitions_seeded", False)
-        # will_history (a briefly-shipped bespoke per-turn series) was folded into
-        # game_stats' FactionTurnMetadata.political_will; drop it from any save
-        # written in the interim so it doesn't linger as dead state.
+        # The political-will / war-economy meters (§48/§53) were removed; strip
+        # their interim per-save state so it doesn't linger as dead attributes.
         state.pop("will_history", None)
+        state.pop("will_ledger", None)
         self.__dict__.update(state)
         # Heal carcass lists bloated by old saves. Guarded like laser_code_registry
         # below: __destroyed_units postdates the oldest saves, so a pre-2020 save
@@ -564,22 +548,6 @@ class Game:
 
         plan_super_gaggle(self)
 
-        # War economy (§53): the produce -> transport -> store -> consume supply
-        # loop. P0 is observe-only -- seed per-base stockpiles, accrue production,
-        # report the per-side numbers; no combat bite yet. No-op unless the
-        # war_economy setting is on. See game/fourteenth/war_economy.py.
-        from game.fourteenth.war_economy import (
-            advance_munitions,
-            advance_war_economy,
-            supply_effectiveness,
-        )
-
-        advance_war_economy(self)
-        # §54 M1: debit the scarce munitions the ATO loaded from each base and rearm
-        # (supply-scaled). No-op unless restrict_weapons_by_stock is on. Runs after the
-        # supply step so rearm sees this turn's supply.
-        advance_munitions(self)
-
         # Movable ship TGOs snap to their destination and re-parent to the
         # nearest friendly CP. Runs after captures are committed (process_results
         # precedes pass_turn -> finish_turn), so re-parenting sees post-capture
@@ -593,12 +561,7 @@ class Game:
                 for front_line in cp.front_lines.values():
                     front_line.update_position()
                     events.update_front_line(front_line)
-                # War economy (§53 P2): a starved front recovers less between fights
-                # (x1.0 no-op unless war_economy is on and seeded). BLUE only, because
-                # only player_points() get the per-turn recovery bonus in the engine.
-                cp.base.affect_strength(
-                    +PLAYER_BASE_STRENGTH_RECOVERY * supply_effectiveness(cp)
-                )
+                cp.base.affect_strength(+PLAYER_BASE_STRENGTH_RECOVERY)
 
         # After the first mission, reveal surviving MERAD groups. They start hidden
         # so players don't know enemy SA-6/11/17 positions before flying; the first
@@ -713,12 +676,10 @@ class Game:
             return TurnState.CONTINUE
 
         # Alternate endings (§75 custom victory conditions) -- ONE evaluator
-        # ahead of the stock capture-everything defaults. The W2 negotiation
-        # ending (will/resolve exhaustion, gated on vietnam_political_will) is
-        # absorbed inside victory_verdict at highest precedence, followed by
-        # authored `victory:` blocks + the domination/attrition knobs. Returns
-        # None when nothing is configured, so this path costs nothing and the
-        # territory checks below remain the universal fallback.
+        # ahead of the stock capture-everything defaults: authored `victory:`
+        # blocks + the domination/attrition knobs. Returns None when nothing is
+        # configured, so this path costs nothing and the territory checks below
+        # remain the universal fallback.
         from game.fourteenth.victory import victory_verdict
 
         alternate = victory_verdict(self)
@@ -858,14 +819,6 @@ class Game:
         for coalition in self.coalitions:
             process_pending_placements(self, coalition)
             process_respawns(self, coalition)
-
-        # Arm (or disarm) the Vietnam static-front clamp before the ground war is
-        # planned, so this turn's front positions already respect the band.
-        # Idempotent, so safe under the multiple-init-per-turn cases above; a front
-        # that first appears after an Air Assault capture is anchored on first sight.
-        from game.fourteenth.static_front import apply_static_front
-
-        apply_static_front(self)
 
         # W6 red tempo: during an authored ground-offensive pulse raise Hanoi's
         # front stances (after the coalitions plan, so it has the final say;

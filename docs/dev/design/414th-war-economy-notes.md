@@ -1,5 +1,7 @@
 # 414th War Economy & Munitions Availability — design notes
 
+> **SUPERSEDED / REMOVED 2026-07-21** — the war economy (§53, the per-base materiel supply loop + supply/fuel bite) and munitions availability (§54, the scarce-munitions stock economy) were both removed from the fork. This note is kept as a historical record.
+
 **Status:** **§53 P0 LANDED 2026-07-08** (code + tests, Black/mypy/pytest clean); P1–P4,
 §54, and §55 (red intent) to follow. Core decisions locked (below).
 Two coupled features: **§53 War Economy** (the ground-supply loop) + **§54 Munitions

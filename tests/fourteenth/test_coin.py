@@ -443,7 +443,6 @@ def test_enduring_resolve_campaign_definition() -> None:
 
     import yaml
 
-    from game.fourteenth.political_will import parse_will_profile
     from game.fourteenth.red_tempo import parse_red_tempo
 
     path = Path("resources/campaigns/coin_enduring_resolve.yaml")
@@ -452,7 +451,6 @@ def test_enduring_resolve_campaign_definition() -> None:
     # The whole COIN stack preseeds on.
     for key in (
         "coin_insurgency",
-        "vietnam_political_will",
         "vietnam_convoy_interdiction",
         "vietnam_airbase_harassment",
         "high_digit_sams",  # the faction's ERO technicals are HDS content
@@ -475,13 +473,6 @@ def test_enduring_resolve_campaign_definition() -> None:
     assert len(data["supply_routes"]) >= 9
     for route in data["supply_routes"]:
         assert len(route["waypoints"]) >= 2
-
-    profile = parse_will_profile(data["will"])
-    assert profile.blue.label == "The Coalition's mandate"
-    assert profile.red.label == "the insurgency's momentum"
-    assert profile.weights.red_cache_lost == 4.0
-    assert profile.weights.red_ground_unit_lost == 0.05  # body count buys nothing
-    assert profile.weights.blue_passive_regen == 0.0  # time drains a mandate
 
     # The Clear-and-Hold push surges the insurgency's supply down the ratline (§35).
     windows = parse_red_tempo(data["red_tempo"])

@@ -3,9 +3,10 @@ import { gameLoaded, gameUnloaded } from "./actions";
 import { CampaignStatus } from "./liberationApi";
 import { createSlice } from "@reduxjs/toolkit";
 
-// Campaign-status ribbon state: turn/date/campaign name (+ political-will meters
-// on Vietnam campaigns). Fed by the /game payload's campaign_status; null hides
-// the ribbon entirely (e.g. no game loaded, or a pre-feature backend).
+// Campaign-status ribbon state: turn/date/campaign name (+ enemy C2, HVT
+// countdown, victory checklist, last-turn sitrep). Fed by the /game payload's
+// campaign_status; null hides the ribbon entirely (e.g. no game loaded, or a
+// pre-feature backend).
 interface CampaignStatusState {
   status: CampaignStatus | null;
 }

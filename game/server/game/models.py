@@ -58,48 +58,27 @@ class CampaignStatusJs(BaseModel):
     """The campaign-status ribbon payload.
 
     GameJs previously carried no turn, date, or campaign name at all; those --
-    plus, on Vietnam campaigns, the political-will meters and, when configured,
-    the §75 victory rows -- ride in on this small payload. The will fields are
-    None outside `vietnam_political_will` campaigns and the client hides whatever
-    is absent. `will_history` (the sparkline) and `events` (the turn feed) follow
-    the same rule: empty means the client renders nothing.
+    plus, when configured, the §75 victory rows -- ride in on this small payload.
+    `events` (the turn feed) is empty when the client should render nothing.
     """
 
     campaign_name: str | None
     turn: int
     date: str
-    #: §53 war economy: front supply health per side, 0-100 (blue = your logistics,
-    #: red = the enemy's -- bomb it and a starved red digs in, §55). None when
-    #: war_economy is off; the client hides the chips.
-    blue_supply: float | None
-    red_supply: float | None
     #: §52: the enemy command-network status ("1/3 command posts operational") when it
     #: is degraded and c2_decapitation_effects is on -- the ribbon twin of the SITREP
     #: line. None hides the chip.
     red_c2: str | None
-    blue_will: float | None
-    red_will: float | None
-    #: The campaign's authored will framing (the will-profile labels; Vietnam
-    #: defaults) -- the meter tooltips. None whenever the meters are.
-    blue_will_label: str | None
-    red_will_label: str | None
-    #: The latest flown turn's will attribution (the W1 ledger), one rendered
-    #: top-movers line per side -- the meter hover / expander note. None when the
-    #: ledger is empty or will tracking is off.
-    blue_will_note: str | None
-    red_will_note: str | None
     #: §75 custom victory conditions: one row per configured win/lose entry with
     #: live-value prose, empty (block + chip hidden) unless the campaign authors
     #: a `victory:` block or a domination/attrition knob is on. The optional
     #: description is the authored header ("Liberate Abkhazia").
     victory: list[VictoryConditionJs]
     victory_description: str | None
-    #: (turn, blue, red) per flown turn, most recent last; capped for payload size.
-    will_history: list[tuple[int, float, float]]
     events: list[CampaignEventJs]
     #: §29 SITREP parity (2026-07-18 UI audit): the per-turn Sitrep digest the
-    #: kneeboard band renders (losses, POWs, MIA, rescues, will movers, posture),
-    #: previously readable only in the cockpit. None/empty on a quiet turn.
+    #: kneeboard band renders (losses, POWs, MIA, rescues), previously readable
+    #: only in the cockpit. None/empty on a quiet turn.
     sitrep_turn: int | None
     sitrep_lines: list[str]
     #: COIN HVT window countdown (the "invisible clock" audit finding): the live
@@ -110,7 +89,6 @@ class CampaignStatusJs(BaseModel):
 
     @staticmethod
     def from_game(game: Game) -> CampaignStatusJs:
-        from game.fourteenth.political_will import ledger_notes, will_profile_for
         from game.fourteenth.victory import victory_description, victory_overview
 
         victory_rows = [
@@ -119,53 +97,15 @@ class CampaignStatusJs(BaseModel):
             )
             for row in victory_overview(game)
         ]
-        blue_supply: float | None = None
-        red_supply: float | None = None
-        if getattr(game.settings, "war_economy", False):
-            try:
-                from game.fourteenth.war_economy import coalition_supply_health
-
-                blue_supply = coalition_supply_health(game, game.blue) * 100
-                red_supply = coalition_supply_health(game, game.red) * 100
-            except Exception:
-                blue_supply = red_supply = None
         red_c2: str | None = None
         if getattr(game.settings, "c2_decapitation_effects", False):
             from game.fourteenth.c2_decapitation import c2_status_line
             from game.theater.player import Player
 
             red_c2 = c2_status_line(game, Player.RED)
-        blue_will: float | None = None
-        red_will: float | None = None
-        blue_will_label: str | None = None
-        red_will_label: str | None = None
-        blue_will_note: str | None = None
-        red_will_note: str | None = None
-        history: list[tuple[int, float, float]] = []
-        if getattr(game.settings, "vietnam_political_will", False):
-            blue_will = getattr(game.blue, "political_will", None)
-            red_will = getattr(game.red, "political_will", None)
-            profile = will_profile_for(game)
-            blue_will_label = profile.blue.label
-            red_will_label = profile.red.label
-            blue_will_note, red_will_note = ledger_notes(game)
-            # The will trend rides game_stats' per-turn series (one record per
-            # turn, deduped across re-inits) -- the same source the Qt Stats
-            # window charts, covering skipped turns as flat segments.
-            history = [
-                (turn, blue, red)
-                for turn, (blue, red) in enumerate(
-                    (
-                        getattr(data.allied_units, "political_will", None),
-                        getattr(data.enemy_units, "political_will", None),
-                    )
-                    for data in game.game_stats.data_per_turn
-                )
-                if blue is not None and red is not None
-            ][-40:]
         # The last two turns' Information messages, newest first: enough for
-        # "what just happened" (base captures, will moves, Hanoi's response)
-        # without shipping the whole campaign log on every /game pull.
+        # "what just happened" (base captures, Hanoi's response) without
+        # shipping the whole campaign log on every /game pull.
         events = [
             CampaignEventJs(turn=info.turn, title=info.title, text=info.text)
             for info in reversed(game.informations)
@@ -190,67 +130,15 @@ class CampaignStatusJs(BaseModel):
             campaign_name=game.campaign_name,
             turn=game.turn,
             date=game.current_day.isoformat(),
-            blue_supply=blue_supply,
-            red_supply=red_supply,
             red_c2=red_c2,
-            blue_will=blue_will,
-            red_will=red_will,
-            blue_will_label=blue_will_label,
-            red_will_label=red_will_label,
-            blue_will_note=blue_will_note,
-            red_will_note=red_will_note,
             victory=victory_rows,
             victory_description=victory_description(game),
-            will_history=history,
             events=events,
             sitrep_turn=sitrep_turn,
             sitrep_lines=sitrep_lines,
             hvt_name=hvt_name,
             hvt_turns_left=hvt_turns_left,
         )
-
-
-class SupplyNodeJs(BaseModel):
-    """§53 P4b: one BLUE (player) control point on the supply-flow overlay.
-
-    Either a *front* consumer -- coloured by its materiel readiness -- or a
-    *producer* source (factory/oil). Emitted only when ``war_economy`` is on; empty
-    otherwise, which hides the layer (the restricted-zones pattern). BLUE-only:
-    enemy logistics stay fogged.
-    """
-
-    name: str
-    position: LeafletPoint
-    #: Materiel readiness in ``[0, 1]`` (``supply_factor``). ``1.0`` for a producer or
-    #: a quiet CP with no front to starve.
-    supply: float
-    #: Supply produced per turn here (``0`` for a pure consumer).
-    production: float
-    #: True when this CP has an active front consuming supply.
-    is_front: bool
-
-    @staticmethod
-    def all_in_game(game: Game) -> list[SupplyNodeJs]:
-        if not game.settings.war_economy:
-            return []
-        from game.fourteenth.war_economy import production_rate, supply_factor
-
-        nodes: list[SupplyNodeJs] = []
-        for cp in game.theater.control_points_for(game.blue.player):
-            prod = production_rate(cp)
-            is_front = cp.has_active_frontline
-            if prod <= 0.0 and not is_front:
-                continue
-            nodes.append(
-                SupplyNodeJs(
-                    name=cp.name,
-                    position=cp.position.latlng(),
-                    supply=supply_factor(cp),
-                    production=prod,
-                    is_front=is_front,
-                )
-            )
-        return nodes
 
 
 class MinefieldJs(BaseModel):
@@ -316,7 +204,6 @@ class DownedPilotJs(BaseModel):
                     detail=f"evading ({turns} turn{plural} down)",
                 )
             )
-        will_economy = bool(getattr(game.settings, "vietnam_political_will", False))
         for entry in game.blue.pending_pow_recoveries:
             name = entry.pilot.name if entry.pilot is not None else "Downed aviator"
             where = "an unknown location"
@@ -328,11 +215,8 @@ class DownedPilotJs(BaseModel):
                     position = cp.position
                 except KeyError:
                     pass
-            if will_economy:
-                clock = "held"
-            else:
-                turns_left = max(entry.turns_remaining, 0)
-                clock = f"{turns_left} turn{'s' if turns_left != 1 else ''} left"
+            turns_left = max(entry.turns_remaining, 0)
+            clock = f"{turns_left} turn{'s' if turns_left != 1 else ''} left"
             pilots.append(
                 DownedPilotJs(
                     name=name,
@@ -363,12 +247,8 @@ class GameJs(BaseModel):
     # the Place Unit Group dialog, so the client skips the POST entirely and a plain
     # right-click stays free for package planning.
     enable_unit_placement: bool
-    # Campaign-status ribbon: turn/date/campaign (+ political will on Vietnam
-    # campaigns, + §75 victory rows when configured).
+    # Campaign-status ribbon: turn/date/campaign (+ §75 victory rows when configured).
     campaign_status: CampaignStatusJs
-    # War-economy supply-flow overlay (§53 P4b): BLUE fronts + producers with their
-    # materiel readiness. Empty unless war_economy is on, which hides the layer.
-    supply_nodes: list[SupplyNodeJs]
     # §57 air-dropped minefields: BLUE-only live fields (dashed circles). Empty unless
     # air_droppable_minefields is on, which hides the layer; the enemy never sees them.
     minefields: list[MinefieldJs]
@@ -385,7 +265,6 @@ class GameJs(BaseModel):
             blank_canvas_setup=game.blank_canvas_setup,
             enable_unit_placement=game.settings.enable_unit_placement,
             campaign_status=CampaignStatusJs.from_game(game),
-            supply_nodes=SupplyNodeJs.all_in_game(game),
             minefields=MinefieldJs.all_in_game(game),
             downed_pilots=DownedPilotJs.all_in_game(game),
             control_points=ControlPointJs.all_in_game(game),

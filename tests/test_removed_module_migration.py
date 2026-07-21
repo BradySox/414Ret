@@ -1,13 +1,16 @@
-"""Save-load compat for the 2026-07-21 ROE / §40 / §55 feature removal.
+"""Save-load compat for the 2026-07-21 ROE / §40 / §55 and will / war-economy removals.
 
-The modules ``game.fourteenth.{phases, red_intent, zone_drawings}`` were deleted, but a
-pre-removal save pickled ``game.phase_baseline`` (``campaign_phases`` was default ON, so
-nearly every in-progress save carries a ``PhaseBaseline``), plus ``red_intent_*`` state
-(``RedIntentBaseline`` / ``RedIntentSample`` / the ``RedPosture`` / ``FrontPosture``
-enums) and ``theater.zone_drawings`` (``DrawnZone``) when those were enabled. Unpickling
+The modules ``game.fourteenth.{phases, red_intent, zone_drawings}`` were deleted in the ROE
+drop, and ``game.fourteenth.{political_will, commitment_ceiling, static_front, war_economy}``
+in the will / §53 / §54 economy drop. A pre-removal save pickled ``game.phase_baseline``
+(``campaign_phases`` was default ON, so nearly every in-progress save carries a
+``PhaseBaseline``), ``red_intent_*`` state (``RedIntentBaseline`` / ``RedIntentSample`` /
+the ``RedPosture`` / ``FrontPosture`` enums), ``theater.zone_drawings`` (``DrawnZone``), and
+``game.will_ledger`` (a list of ``WillLedgerEntry``) when those were enabled. Unpickling
 those instances would raise ``ModuleNotFoundError``. The ``MigrationUnpickler`` degrades
 them to an inert ``DummyObject`` placeholder so the save still loads; the game/theater
-``__setstate__`` no longer restores those attributes, so the placeholders are never read.
+``__setstate__`` no longer restores those attributes (will_ledger is popped), so the
+placeholders are never read.
 """
 
 from __future__ import annotations
@@ -22,6 +25,10 @@ _REMOVED_MODULES = (
     "game.fourteenth.phases",
     "game.fourteenth.red_intent",
     "game.fourteenth.zone_drawings",
+    "game.fourteenth.political_will",
+    "game.fourteenth.commitment_ceiling",
+    "game.fourteenth.static_front",
+    "game.fourteenth.war_economy",
 )
 
 

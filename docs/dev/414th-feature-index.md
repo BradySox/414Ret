@@ -59,13 +59,13 @@ pass checklist `§N` is unregistered, or this table drifts.
 | §45 | Support-package F10 orbit markers | — | — |
 | §46 | Route-aware fuel-tank planning (fuel-first) | — | `auto_range_fuel_tanks`, `fuel_tanks_over_jammers` |
 | §47 | Continuous campaign clock & weather | — | `continuous_campaign_clock` |
-| §48 | Commitment ceiling (will-coupled war budget) | — | `vietnam_commitment_ceiling` |
+| §48 | Commitment ceiling (will-coupled war budget) _(retired)_ | — | — |
 | §49 | Mobile missile relocation (the SCUD hunt) | `mobilemissiles` | `mobile_missile_relocation`, `coastal_missile_relocation` |
 | §50 | Convoy ambush (a chance, never telegraphed) + ambient supply convoys | `convoyambush` | `convoy_ambush`, `ambient_supply_convoys` |
 | §51 | Enemy comms jamming (IADS comms nodes) | `commsjam` | `enemy_comms_jamming`, `comms_jam_requires_capture` |
 | §52 | Command-center decapitation degrades enemy planning | — | `c2_decapitation_effects` |
-| §53 | War economy | — | `war_economy`, `fuel_air_readiness` |
-| §54 | Munitions availability | — | `restrict_weapons_by_stock` |
+| §53 | War economy _(retired)_ | — | — |
+| §54 | Munitions availability _(retired)_ | — | — |
 | §55 | Red Intent — adaptive enemy posture _(retired)_ | — | — |
 | §56 | Strikeable motorpool depots | — | `motorpool_enabled`, `motorpool_spawn_cap` |
 | §57 | Air-droppable minefields | `minefields` | `air_droppable_minefields`, `auto_plan_minefields` |

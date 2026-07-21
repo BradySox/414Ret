@@ -188,17 +188,6 @@ def _red_cell_census(game: Any) -> int:
     return count
 
 
-def _will_sample(game: Any) -> dict[str, Any]:
-    ledger = getattr(game, "will_ledger", None) or []
-    last = ledger[-1] if ledger else None
-    return {
-        "blue": _safe(lambda: round(game.blue.political_will, 2)),
-        "red": _safe(lambda: round(game.red.political_will, 2)),
-        "last_blue_moves": list(getattr(last, "blue_moves", ()) or ()) if last else [],
-        "last_red_moves": list(getattr(last, "red_moves", ()) or ()) if last else [],
-    }
-
-
 def _sample(game: Any) -> dict[str, Any]:
     from game.fourteenth.coin_hvt import active_hvt_status
 
@@ -212,7 +201,6 @@ def _sample(game: Any) -> dict[str, Any]:
         "caches": _safe(lambda: _cache_census(game), {}),
         "red_cells": _safe(lambda: _red_cell_census(game)),
         "hvt_status": _safe(lambda: active_hvt_status(game)),
-        "will": _will_sample(game),
         "downed_pilots": len(getattr(game, "downed_pilots", []) or []),
         "pows": _safe(lambda: len(game.blue.pending_pow_recoveries), 0),
         "convoys": {"blue": convoys_blue, "red": convoys_red},
@@ -226,19 +214,6 @@ def _sample(game: Any) -> dict[str, Any]:
                 int(cp.base.total_armor)
                 for cp in game.theater.controlpoints
                 if cp.captured.is_red
-            )
-        ),
-        "phase": _safe(lambda: getattr(game, "phase_status_line", None)),
-        "red_posture": _safe(
-            lambda: getattr(game, "red_intent_posture", None)
-            and str(game.red_intent_posture)
-        ),
-        "supply_blue": _safe(
-            lambda: round(
-                __import__(
-                    "game.fourteenth.war_economy", fromlist=["coalition_supply_health"]
-                ).coalition_supply_health(game, game.blue),
-                3,
             )
         ),
     }

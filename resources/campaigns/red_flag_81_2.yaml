@@ -43,8 +43,6 @@ settings:
   vietnam_super_gaggle: true
   vietnam_fac_marking: true
   vietnam_snake_and_nape: true
-  vietnam_political_will: true
-  vietnam_static_front: true
   restrict_weapons_by_date: true
   # Compressed theater: tuck AEW&C/tanker orbits close (same rationale as Yankee
   # Station -- the 80/70 NM defaults sprawl support to the map edge).
@@ -292,7 +290,6 @@ squadrons:
 # snaps first/last waypoints to the nearest control point.
 supply_routes:
   # THE FRONT -- Camp Mercury (BLUE FOB) <-> FOB Tolicha (RED FOB) across the NTS.
-  # vietnam_static_front pins the line near its start anchor.
   - waypoints:
       - [-352000, -103000]
       - [-345000, -112000]

@@ -57,13 +57,6 @@ class Coalition:
         # field falls, killed when the clock expires, draining will meanwhile.
         # Persisted; aged each turn.
         self.pending_pow_recoveries: list[PendingPowRecovery] = []
-        # Vietnam campaign layer (W1): this side's political capital for the war --
-        # BLUE reads it as Political Will (Washington's patience), RED as Regime
-        # Resolve (Hanoi's capacity to absorb punishment). 0-100; fed each turn from
-        # the debriefing when vietnam_political_will is on (observe-only until the
-        # W2 negotiation win/loss lands). Persisted campaign state.
-        # See docs/dev/design/414th-vietnam-political-will-roe-notes.md.
-        self.political_will: float = 100.0
         # Money the automated HQ spent per category last turn (front_line,
         # runways, buildings, ground_objects, aircraft). Surfaced in the
         # Finances dialog so the player sees where their income went.
@@ -167,8 +160,6 @@ class Coalition:
         state.setdefault("pending_pow_recoveries", [])
         # Migration: older saves predate the per-turn HQ expense breakdown.
         state.setdefault("last_turn_expenses", {})
-        # Migration: older saves predate the Vietnam political-will layer (W1).
-        state.setdefault("political_will", 100.0)
 
         self.__dict__.update(state)
 
@@ -216,13 +207,7 @@ class Coalition:
         `Game.finish_turn`.
         """
         self.air_wing.end_turn()
-        # Commitment ceiling: as BLUE Political Will falls, Congress trims the war
-        # budget (a no-op unless vietnam_commitment_ceiling + the will economy are on
-        # and this is BLUE). The war is taken away as the home front turns.
-        from game.fourteenth.commitment_ceiling import apply_commitment_ceiling
-
-        income = Income(self.game, self.player).total
-        self.budget += apply_commitment_ceiling(self.game, self.player, income)
+        self.budget += Income(self.game, self.player).total
 
         # Need to recompute before transfers and deliveries to account for captures.
         # This happens in in initialize_turn as well, because cheating doesn't advance a

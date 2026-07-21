@@ -1,5 +1,7 @@
 # 414th — Political Will & ROE escalation (the Vietnam campaign layer) — design notes
 
+> **SUPERSEDED / REMOVED 2026-07-21** — the political-will economy (BLUE Political Will / RED Regime Resolve meters, the negotiation win/loss ending, the will profiles, and the §48 commitment ceiling), plus the Vietnam campaign-layer W1 (political will) + W2 (negotiation) + W2b (static front) pieces, were removed from the fork. Only W5 (GCI ambush) and W6 (red tempo, rehomed) survive. This note is kept as a historical record.
+
 **Status:** **W1 + W2 LANDED.** W1 = the observe-only political-will model
 (`Coalition.political_will`, the `vietnam_political_will` setting, the debrief feed
 `game/fourteenth/political_will.py` via `missionresultsprocessor.record_political_will`, the

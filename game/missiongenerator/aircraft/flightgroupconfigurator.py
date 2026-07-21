@@ -437,19 +437,6 @@ class FlightGroupConfigurator:
                 target,
             )
 
-        # §54 M2: enforce airfield munitions stock -- swap scarce stores the base is
-        # out of down to a stocked fallback (dumb bombs), or clear the pylon. Only once
-        # the stocks are seeded (so pre-seed turns aren't falsely starved).
-        if self.game.settings.restrict_weapons_by_stock and getattr(
-            self.game, "munitions_seeded", False
-        ):
-            loadout = loadout.degrade_for_stock(
-                self.flight.departure.base.munitions,
-                self.flight.unit_type,
-                self.game.date,
-                self.flight.squadron.coalition.faction,
-            )
-
         loadout = add_range_fuel_tanks(self.flight, loadout, self.game.settings)
 
         for pylon_number, weapon in loadout.pylons.items():

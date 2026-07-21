@@ -18,7 +18,6 @@ at a ``from_turn``. The window in effect on a given turn is the LAST whose
       - from_turn: 8
         name: The Bombing Halt
         trail_surge: 2.0
-        resolve_regen: 1.5
       - from_turn: 11
         name: Linebacker
         ground_offensive: 3
@@ -30,11 +29,7 @@ Levers:
   counter: a surged trail is more Armed-Recon targets carrying real units.
 * ``ground_offensive`` (N turns) -- from the window's ``from_turn``, RED's front
   stances are raised to AGGRESSIVE (never lowered) for N turns, and the trail
-  surges with them. The W2b static-front clamp still bounds the movement: the
-  pulse bends the line and bleeds BLUE's will, it never sweep-captures a base.
-* ``resolve_regen`` -- RED Regime Resolve regained once per turn while the window
-  holds ("just wait out the halt" stops being free for Washington). Gated by
-  ``vietnam_political_will``.
+  surges with them: the pulse bends the line and presses every front.
 
 Re-derived from the campaign YAML by name (never pickled); all entry points are
 guarded no-ops without an authored schedule, so the module costs nothing outside
@@ -63,7 +58,6 @@ class RedTempoWindow:
     name: Optional[str]
     trail_surge: float
     ground_offensive_turns: int
-    resolve_regen: float
 
     @property
     def key(self) -> str:
@@ -97,7 +91,6 @@ def parse_red_tempo(raw: object) -> tuple[RedTempoWindow, ...]:
                 name=entry.get("name"),
                 trail_surge=float(entry.get("trail_surge", 1.0)),
                 ground_offensive_turns=int(entry.get("ground_offensive", 0)),
-                resolve_regen=float(entry.get("resolve_regen", 0.0)),
             )
         )
     windows.sort(key=lambda w: w.from_turn)
@@ -182,7 +175,6 @@ def apply_red_tempo(game: "Game") -> None:
     """
     announce_red_tempo(game)
     _apply_ground_offensive(game)
-    _apply_resolve_regen(game)
 
 
 def _response_text(window: RedTempoWindow) -> Optional[str]:
@@ -200,8 +192,6 @@ def _response_text(window: RedTempoWindow) -> Optional[str]:
         )
     if window.trail_surge >= 2.0:
         parts.append("the Ho Chi Minh Trail runs at surge capacity")
-    if window.resolve_regen > 0:
-        parts.append("the regime's resolve steadies while the bombs are held")
     if not parts:
         return None
     return "Hanoi answers: " + "; ".join(parts) + "."
@@ -253,32 +243,4 @@ def _apply_ground_offensive(game: "Game") -> None:
         logging.info(
             "Red tempo: ground offensive raised %d front stance(s) to AGGRESSIVE",
             raised,
-        )
-
-
-def _apply_resolve_regen(game: "Game") -> None:
-    """Regain Regime Resolve once per turn while the active window holds."""
-    if not getattr(game.settings, "vietnam_political_will", False):
-        return
-    window = active_window(game)
-    if window is None or window.resolve_regen <= 0:
-        return
-    if game.turn < 1:
-        return
-    # initialize_turn can run more than once per turn (settings re-init etc.);
-    # only the first application each turn counts.
-    if getattr(game, "red_tempo_regen_turn", None) == game.turn:
-        return
-    game.red_tempo_regen_turn = game.turn
-
-    from game.fourteenth.political_will import _clamp
-
-    before = game.red.political_will
-    game.red.political_will = _clamp(before + window.resolve_regen)
-    if game.red.political_will > before:
-        logging.info(
-            "Red tempo: resolve regen %+.1f -> %.1f (%s)",
-            window.resolve_regen,
-            game.red.political_will,
-            window.key,
         )

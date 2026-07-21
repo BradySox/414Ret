@@ -1,5 +1,7 @@
 # 414th — Will-system generalization (any-era profiles) — design notes
 
+> **SUPERSEDED / REMOVED 2026-07-21** — the will economy that these campaign-authorable profiles re-labelled and re-weighted was removed from the fork (with the §48 commitment ceiling and the Vietnam W1/W2/W2b pieces). This note is kept as a historical record.
+
 **Status: LANDED 2026-07-02** (labels + tunable weights + the warship feed). This note is
 the spec for the *generic* half of the political-will economy; the Vietnam campaign layer
 that built the mechanic stays specced in `414th-vietnam-political-will-roe-notes.md` — read

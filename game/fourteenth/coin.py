@@ -20,14 +20,14 @@ insurgent-held control point regenerates a small number of garrison units:
   authored can come back), and ``alive_at_last_recon`` is never touched, so the
   player's last recon picture stands until re-flown.
 * **Anchored cap** -- each CP only refills *toward its garrison size when first seen
-  insurgent-held* (turn 0 for a preseeded campaign; the ``static_front`` anchor
-  pattern). The insurgency refills, it never grows.
+  insurgent-held* (turn 0 for a preseeded campaign; anchored to the first-seen
+  state). The insurgency refills, it never grows.
 * **Cache throttle** -- the regen rate scales with the CP's alive **ammo caches**
   (its ``category == "ammo"`` ground objects, anchored the same way). Destroy the
   caches and the trickle collapses to a residual floor
   (:data:`CACHE_HEALTH_FLOOR`, squadron call §7.1 -- infiltration never fully
-  stops; the will economy is what ends the war). A CP authored with *no* caches
-  regenerates at full rate (the author opted out of the mechanic there).
+  stops). A CP authored with *no* caches regenerates at full rate (the author
+  opted out of the mechanic there).
 * **Hard whitelist** -- only cheap irregular kit regenerates:
   :data:`REGEN_UNIT_CLASSES` **and** price <= :data:`REGEN_MAX_UNIT_PRICE`. The
   class set admits IFV/APC because the insurgent *technicals* are class IFV in the
@@ -644,15 +644,16 @@ def _flip(
     rf["active"] = None
     rf["cooldown"] = COOLDOWN_TURNS
     rf.setdefault("pending_flips", 0)
-    rf["pending_flips"] += 1  # consumed by the next update_political_will
+    rf["pending_flips"] += 1  # recorded for any finish_turn-flip consumer
     _announce(game, events, f"{target.name} has fallen to the insurgency.")
 
 
 def consume_reinfiltration_flips(game: "Game") -> int:
     """Number of re-infiltration flips since the last call, cleared to zero.
 
-    The will layer calls this to charge a flip as a lost base -- a ``finish_turn``
-    flip never appears in the debriefing's in-mission ``bases_lost`` count.
+    A re-infiltration flip happens at ``finish_turn``, so it never appears in the
+    debriefing's in-mission ``bases_lost`` count; this records them for any
+    consumer that needs to see a base lost between missions.
     """
     state = getattr(game, "coin_state", None)
     if not isinstance(state, dict):

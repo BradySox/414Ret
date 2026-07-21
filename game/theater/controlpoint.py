@@ -1273,20 +1273,13 @@ class ControlPoint(MissionTarget, SidcDescribable, ABC):
         )
 
     def front_line_capacity_with(self, ammo_depot_count: int) -> int:
-        base = min(
+        return min(
             self.coalition.game.settings.perf_frontline_units_max_supply,
             (
                 FREE_FRONTLINE_UNIT_SUPPLY
                 + ammo_depot_count * AMMO_DEPOT_FRONTLINE_UNIT_CONTRIBUTION
             ),
         )
-        # War economy (§53 P2): a starved front deploys fewer units. Exact no-op
-        # (x1.0) unless war_economy is on and the stockpiles are seeded; recursion-
-        # safe because supply_factor keys off base.total_frontline_units, never this
-        # capacity/deployable path. See game/fourteenth/war_economy.py.
-        from game.fourteenth.war_economy import supply_effectiveness
-
-        return int(base * supply_effectiveness(self))
 
     @property
     def frontline_unit_count_limit(self) -> int:

@@ -21,7 +21,6 @@ import Iadsnetworklayer from "../iadsnetworklayer";
 import DownedPilotsLayer from "../downedpilots";
 import MinefieldsLayer from "../minefields";
 import NavMeshLayer from "../navmesh/NavMeshLayer";
-import SupplyLayer from "../supply";
 import SupplyRoutesLayer from "../supplyrouteslayer";
 import {
   ExclusionZonesLayer,
@@ -44,7 +43,6 @@ type LayerId =
   | "aircraft"
   | "combat"
   | "supplyRoutes"
-  | "supply"
   | "minefields"
   | "downedPilots"
   | "frontLines"
@@ -105,9 +103,6 @@ const OVERLAYS: Record<LayerId, { label: string; node: ReactNode }> = {
   // labelled near-identically ("Supply routes" / "Supply status") and were
   // indistinguishable from the panel (2026-07-18 UI audit).
   supplyRoutes: { label: "Convoy routes", node: <SupplyRoutesLayer /> },
-  // War-economy supply-flow overlay (§53 P4b). Empty unless war_economy is on, so
-  // the layer is a no-op everywhere else even while toggled on.
-  supply: { label: "Supply readiness", node: <SupplyLayer /> },
   // §57 air-dropped minefields (BLUE-only). Empty unless air_droppable_minefields is
   // on, so the layer is a no-op everywhere else even while toggled on.
   minefields: { label: "Minefields", node: <MinefieldsLayer /> },
@@ -226,12 +221,12 @@ const GROUPS: GroupDef[] = [
     ],
   },
   {
-    // Split out of "Friendly & shared" (2026-07-18 UI audit): the three
-    // logistics layers were buried in a 10-row grab-bag.
+    // Split out of "Friendly & shared" (2026-07-18 UI audit): the logistics
+    // layers were buried in a 10-row grab-bag.
     key: "logistics",
     title: "Logistics",
     defaultOpen: true,
-    rows: [{ id: "supplyRoutes" }, { id: "supply" }, { id: "minefields" }],
+    rows: [{ id: "supplyRoutes" }, { id: "minefields" }],
   },
   {
     key: "airdef",
@@ -316,7 +311,6 @@ const DEFAULT_ON: LayerId[] = [
   "ships",
   "otherGround",
   "supplyRoutes",
-  "supply",
   "minefields",
   "downedPilots",
   "frontLines",

@@ -23,6 +23,15 @@ The desktop runbook (one DCS launch covers every installed mod):
 6. ``python tools\\verify_mod_export.py D:\\dcs-export --extension vietnamwarvessels
    --markdown`` (and again with ``--extension iranmilitaryassetspack``).
 
+Heavy-mod gotcha (learned on the 2026-07-20 run, 50+ mods installed): the stock
+exporter crashes DCS at 10% ("Error starting Game GUI" in dcs.log names the line) on
+mod data it never anticipated -- SpecificCallnames keyed by unknown countries, a nil
+vehicle category (HDS Nebo-SVU), nil Rate/ShapeName on modded statics -- and its
+multi-country callnames block emits list closers without commas (CJS Super Hornet),
+leaving planes.py unparseable until repaired. A hardened copy with nil guards +
+per-unit pcall skips lives at ``C:\\Users\\brady\\dcs-export\\pydcs_export.lua``;
+candidate PR for dcs-retribution/pydcs.
+
 Comparison semantics: units join on their literal ``id`` (the DCS type string --
 class names differ between the exporter and the extensions). Fields declared by BOTH
 sides must match; fields only one side declares are listed informationally (the
@@ -43,7 +52,13 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Optional
 
-EXPORT_FILENAMES = ("ships.py", "vehicles.py", "planes.py", "helicopters.py")
+EXPORT_FILENAMES = (
+    "ships.py",
+    "vehicles.py",
+    "planes.py",
+    "helicopters.py",
+    "statics.py",
+)
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 EXTENSIONS_ROOT = REPO_ROOT / "pydcs_extensions"
@@ -76,15 +91,25 @@ def literal_fields(class_node: ast.ClassDef) -> dict[str, Any]:
 
 
 def collect_units(path: Path) -> list[UnitEntry]:
-    """Every module-level class in ``path`` carrying a literal string ``id``."""
+    """Every class in ``path`` carrying a literal string ``id``.
+
+    Nested classes are included when they subclass something -- the export's
+    vehicles.py/statics.py nest unit classes inside category buckets
+    (``class Unarmed: class vap_mutt(unittype.VehicleType): ...``). Base-less
+    nested classes are skipped: those are ``Properties`` option enums, whose
+    members also carry an ``id`` string but are not units.
+    """
     try:
         tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
     except (OSError, SyntaxError) as exc:
         print(f"WARNING: cannot parse {path}: {exc}", file=sys.stderr)
         return []
+    module_level = {node for node in tree.body if isinstance(node, ast.ClassDef)}
     units = []
-    for node in tree.body:
+    for node in ast.walk(tree):
         if not isinstance(node, ast.ClassDef):
+            continue
+        if not node.bases and node not in module_level:
             continue
         fields = literal_fields(node)
         unit_id = fields.get("id")

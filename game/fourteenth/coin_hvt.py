@@ -10,12 +10,13 @@ window close -- the choice is the feature.
 
 Turn-boundary force-model work only (``Game.finish_turn``, after C1/C1.5/IED): no Lua, a
 real recon-fogged red TGO that dies through the normal loss path. State lives in
-``game.coin_state`` (an ``"hvt"`` dict + an ``"hvt_kills"`` counter, plain primitives,
-pickled; ``getattr`` default so pre-feature saves are inert until the toggle is on).
+``game.coin_state`` (an ``"hvt"`` dict of plain primitives, pickled; ``getattr`` default
+so pre-feature saves are inert until the toggle is on).
 
 Everything is behind ``coin_hvt`` (default OFF, requires ``coin_insurgency`` for the red
-strongholds; campaign-preseeded). The momentum drop is priced by the campaign's ``will:``
-profile via ``red_hvt_killed`` (default 0.0 -- inert until weighted up).
+strongholds; campaign-preseeded). A kill (or an escape) is a map/force event only: it
+despawns the convoy and announces the outcome. (It once also moved a political-will
+meter; that coupling went away with the will economy.)
 """
 
 from __future__ import annotations
@@ -91,20 +92,18 @@ def advance_hvt(game: "Game", events: Any = None) -> None:
         return
 
     if hvt.get("active"):
-        _resolve_active_hvt(game, state, hvt, events)
+        _resolve_active_hvt(game, hvt, events)
     else:
         _surface_hvt(game, hvt, events)
 
 
-def _resolve_active_hvt(
-    game: "Game", state: dict[str, Any], hvt: dict[str, Any], events: Any
-) -> None:
+def _resolve_active_hvt(game: "Game", hvt: dict[str, Any], events: Any) -> None:
     active = hvt["active"]
     tgo = _tgo_by_id(game, active.get("tgo_id"))
     name = active.get("name", "the HVT")
     # A blue capture of the host stronghold clears its uncapturable TGOs -- the
-    # convoy vanishing that way is NOT a decapitation (the base fall is already
-    # charged via red_base_lost; crediting the HVT too double-dips the will feed).
+    # convoy vanishing that way is NOT a player decapitation (the base fell and the
+    # HVT slipped away with it, so it reads as an escape, not a strike).
     host_id = active.get("cp_id")
     if host_id is not None:
         host = _cp_by_id(game, host_id)
@@ -120,14 +119,13 @@ def _resolve_active_hvt(
             return
     if tgo is None:
         # The record dangles (the TGO was removed by some other path): not evidence
-        # of a strike. Clear the window without crediting a decapitation -- the
-        # IED/field-cell convention (a kill requires the TGO to have existed and died).
+        # of a strike. Clear the window without announcing a kill -- the IED/field-cell
+        # convention (a kill requires the TGO to have existed and died).
         hvt["active"] = None
         hvt["cooldown"] = HVT_COOLDOWN_TURNS
         return
     if not _tgo_alive(tgo):
-        # Struck: a decapitation. Credit the momentum blow (consumed by the will layer).
-        state["hvt_kills"] = int(state.get("hvt_kills", 0)) + 1
+        # Struck: a decapitation.
         _despawn(game, tgo, events)
         _announce(game, f"HVT {name} eliminated — a blow to the insurgent leadership.")
         hvt["active"] = None
@@ -135,17 +133,11 @@ def _resolve_active_hvt(
         return
     active["turns"] = int(active.get("turns", 0)) + 1
     if active["turns"] >= HVT_WINDOW_TURNS:
-        # The window closed -- he has gone to ground. Since the 2026-07-18 audit
-        # call this is no longer entirely free: the escape is a propaganda coup,
-        # banked here and priced by the campaign's red_hvt_escaped weight (the
-        # host-stronghold-fall path above deliberately never reaches this -- the
-        # base loss is already charged). Kills stay the far bigger lever.
-        state["hvt_escapes"] = int(state.get("hvt_escapes", 0)) + 1
+        # The window closed -- he has gone to ground (a missed chance, no penalty).
         _despawn(game, tgo, events)
         _announce(
             game,
-            f"HVT {name} has gone to ground — the window has closed, and the "
-            "escape plays as propaganda.",
+            f"HVT {name} has gone to ground — the window has closed.",
         )
         hvt["active"] = None
         hvt["cooldown"] = HVT_COOLDOWN_TURNS
@@ -260,30 +252,6 @@ def active_hvt_status(game: "Game") -> Optional[tuple[str, int]]:
         return None
     turns_left = max(HVT_WINDOW_TURNS - int(active.get("turns", 0)), 0)
     return (str(active.get("name", "the HVT")), turns_left)
-
-
-def consume_hvt_kills(game: "Game") -> int:
-    """Number of HVT kills since the last call, cleared to zero. The will layer charges
-    these as a red-momentum drop (a finish_turn detection, never a generic debrief line).
-    """
-    state = getattr(game, "coin_state", None)
-    if not isinstance(state, dict):
-        return 0
-    count = int(state.get("hvt_kills", 0))
-    state["hvt_kills"] = 0
-    return count
-
-
-def consume_hvt_escapes(game: "Game") -> int:
-    """Number of HVT windows that LAPSED since the last call, cleared to zero.
-    The will layer credits these to red resolve as a small propaganda gain
-    (``red_hvt_escaped``); the counter drains even on unpriced campaigns."""
-    state = getattr(game, "coin_state", None)
-    if not isinstance(state, dict):
-        return 0
-    count = int(state.get("hvt_escapes", 0))
-    state["hvt_escapes"] = 0
-    return count
 
 
 def _announce(game: "Game", message: str) -> None:

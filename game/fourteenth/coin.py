@@ -643,27 +643,7 @@ def _flip(
     state[str(target.id)] = _snapshot(target)
     rf["active"] = None
     rf["cooldown"] = COOLDOWN_TURNS
-    rf.setdefault("pending_flips", 0)
-    rf["pending_flips"] += 1  # recorded for any finish_turn-flip consumer
     _announce(game, events, f"{target.name} has fallen to the insurgency.")
-
-
-def consume_reinfiltration_flips(game: "Game") -> int:
-    """Number of re-infiltration flips since the last call, cleared to zero.
-
-    A re-infiltration flip happens at ``finish_turn``, so it never appears in the
-    debriefing's in-mission ``bases_lost`` count; this records them for any
-    consumer that needs to see a base lost between missions.
-    """
-    state = getattr(game, "coin_state", None)
-    if not isinstance(state, dict):
-        return 0
-    rf = state.get("reinfiltration")
-    if not isinstance(rf, dict):
-        return 0
-    flips = int(rf.get("pending_flips", 0))
-    rf["pending_flips"] = 0
-    return flips
 
 
 def _abort_attempt(

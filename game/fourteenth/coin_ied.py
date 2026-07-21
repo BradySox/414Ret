@@ -11,13 +11,14 @@ nothing but the device; leaving it costs Washington.
 
 Turn-boundary force-model work only (``Game.finish_turn``, after C1/C1.5): no Lua, real
 TGOs that fight and die through the normal loss path, recon fog for free (a TGO is hidden
-until reconned, per §3). State lives in ``game.coin_state`` (an ``"ieds"`` list + an
-``"ied_detonations"`` counter, plain primitives, pickled; ``getattr`` default so
-pre-feature saves are inert until the toggle is on).
+until reconned, per §3). State lives in ``game.coin_state`` (an ``"ieds"`` list of plain
+primitives, pickled; ``getattr`` default so pre-feature saves are inert until the toggle
+is on).
 
 Everything is behind ``coin_ied`` (default OFF, requires ``coin_insurgency`` for the
-red-road laydown; campaign-preseeded). The will drain is priced by the campaign's
-``will:`` profile via ``blue_ied_detonation`` (default 0.0 -- inert until weighted up).
+red-road laydown; campaign-preseeded). A detonation is a map/force event only: it
+despawns the device and announces coalition casualties. (It once also drained a
+political-will meter; that coupling went away with the will economy.)
 """
 
 from __future__ import annotations
@@ -82,7 +83,7 @@ def advance_roadside_ieds(game: "Game", events: Any = None) -> None:
         game.coin_state = state
     ieds: list[dict[str, Any]] = state.setdefault("ieds", [])
 
-    _age_live_ieds(game, state, ieds, events)
+    _age_live_ieds(game, ieds, events)
     _replenish_ieds(game, state, ieds, events)
 
 
@@ -97,9 +98,7 @@ def _sweep_disabled(game: "Game", events: Any) -> None:
     state["ieds"] = []
 
 
-def _age_live_ieds(
-    game: "Game", state: dict[str, Any], ieds: list[dict[str, Any]], events: Any
-) -> None:
+def _age_live_ieds(game: "Game", ieds: list[dict[str, Any]], events: Any) -> None:
     survivors: list[dict[str, Any]] = []
     for ied in ieds:
         tgo = _tgo_by_id(game, ied.get("tgo_id"))
@@ -120,7 +119,6 @@ def _age_live_ieds(
             continue
         ied["armed"] = int(ied.get("armed", 0)) + 1
         if ied["armed"] >= _fuse_for(ied):
-            state["ied_detonations"] = int(state.get("ied_detonations", 0)) + 1
             _despawn(game, tgo, events)
             if is_vbied:
                 dest = ied.get("target", "friendly lines")
@@ -298,17 +296,6 @@ def _ied_intact(tgo: Any, is_vbied: bool) -> bool:
         if statics:
             return any(getattr(u, "alive", False) for u in statics)
     return any(getattr(unit, "alive", False) for unit in units)
-
-
-def consume_ied_detonations(game: "Game") -> int:
-    """Number of IED detonations since the last call, cleared to zero. The will layer
-    charges these against the mandate (a finish_turn event, never in the debriefing)."""
-    state = getattr(game, "coin_state", None)
-    if not isinstance(state, dict):
-        return 0
-    count = int(state.get("ied_detonations", 0))
-    state["ied_detonations"] = 0
-    return count
 
 
 def _announce(game: "Game", message: str) -> None:

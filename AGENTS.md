@@ -2614,10 +2614,20 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     **ROE-only** (emissions NEVER toggled; MANTIS alarm/EMCON untouched), effectiveness RISES as
     the jammer closes (deliberately the opposite of the C-130's standoff burn-through; never
     unify them). AI jams automatically after a startup grace; a player jammer starts OFF with an
-    F10 "Growler jamming" menu. Tests `tests/fourteenth/test_escort_jammer.py` +
+    F10 "Growler jamming" menu. **Balance (a 2-4-ship jammer flight × several packages can put
+    ~12 jammers up): effects DON'T stack** — a missile faces only the **single strongest bubble**
+    covering it (rolled once, not OR'd per jammer, so N overlapping bubbles never approach certain
+    spoof), and a suppressed SAM gets a **mandatory `recoverySec` shoot-back window** before ANY
+    jammer can re-hold it (jamming is intermittent, never permanently dead, at any jammer count).
+    Ship count within a flight is already effect-neutral (one bubble per group, from the lead), so
+    the remaining lever is a per-side **`max_escort_jammers`** cap (Air Doctrine, default 4,
+    0=off) enforced in `can_plan_escort` — an airframe-economy bound, since the effects are already
+    self-limiting. Tests `tests/fourteenth/test_escort_jammer.py` +
     `tests/missiongenerator/test_growlerluadata.py` + `tests/lua/test_growler_runtime.py` (the
-    harness gained `Weapon:destroy` + ground ROE values); features doc §77, checklist B31 —
-    needs an in-game pass (the tiered hold/restore pulse + spoof against a live SAM ring).
+    harness gained `Weapon:destroy` + ground ROE values; the balance pass adds a deterministic
+    non-stacking proof + the recovery-window cycle + the cap); features doc §77, checklist B31 —
+    needs an in-game pass (the tiered hold/restore pulse + non-stacking spoof against a live SAM
+    ring, and that a mass of jammers doesn't flatline the IADS).
 78. **Sea-supply convoys + coastal anti-ship engagement** — makes the sea supply
     route (the §-less upstream `CargoShip` lane between two friendly ports with no
     road) a real feature. **Part 1 — convoys with proportional losses**

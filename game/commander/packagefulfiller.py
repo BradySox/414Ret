@@ -43,6 +43,7 @@ class PackageFulfiller:
         self.default_start_type = settings.default_start_type
         self.auto_add_tarps_recon = settings.auto_add_tarps_recon
         self.escort_jamming_loose = settings.escort_jamming_loose
+        self.max_escort_jammers = settings.max_escort_jammers
 
     @property
     def is_player(self) -> bool:
@@ -281,6 +282,12 @@ class PackageFulfiller:
         elif type == EscortType.Jammer:
             if not self.air_wing_can_plan(FlightType.ESCORT_JAMMER):
                 return False
+            # Balance: cap how many escort jammers a side fields per turn. Escort
+            # jamming is proposed on every radar-SAM-threatened package, so a
+            # strike-heavy turn could otherwise put a dozen in the air. Once the
+            # ATO already holds max_escort_jammers of them, stop adding more.
+            if self._escort_jammer_cap_reached():
+                return False
             # Graduated escort jamming (§77): the LOOSE "stretch" tier (any podded
             # jet, even an A-10) is only auto-planned when escort_jamming_loose is
             # on. Off by default, the curated roster (dedicated jammers + real ECM
@@ -290,6 +297,18 @@ class PackageFulfiller:
                 return True
             return self._has_curated_escort_jammer()
         return False
+
+    def _escort_jammer_cap_reached(self) -> bool:
+        """True once the side's ATO already holds ``max_escort_jammers`` jammers."""
+        if self.max_escort_jammers <= 0:
+            return True
+        planned = sum(
+            1
+            for package in self.ato.packages
+            for flight in package.flights
+            if flight.flight_type is FlightType.ESCORT_JAMMER
+        )
+        return planned >= self.max_escort_jammers
 
     def _has_curated_escort_jammer(self) -> bool:
         """True if any auto-assignable ESCORT_JAMMER squadron is a non-LOOSE tier."""

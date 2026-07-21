@@ -295,6 +295,7 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                     "weather_aware_planning",
                     "sead_strike_coordination",
                     "escort_jamming_loose",
+                    "max_escort_jammers",
                 ],
             ),
             (
@@ -1260,6 +1261,24 @@ class Settings:
             "auto-fragged as a token escort jammer -- weakest of all, flavor only. "
             "Off by default so the roster stays the credible curated set and the "
             "retired 'every fighter jams' behavior never returns silently."
+        ),
+    )
+    max_escort_jammers: int = bounded_int_option(
+        "Max escort jammers airborne per side",
+        page=CAMPAIGN_DOCTRINE_PAGE,
+        section=GENERAL_SECTION,
+        default=4,
+        min=0,
+        max=12,
+        detail=(
+            "Caps how many escort-jamming flights (the Growler role) each side's "
+            "auto-planner will frag in one turn. Escort jammers are proposed on "
+            "every radar-SAM-threatened package, so a strike-heavy turn against a "
+            "dense IADS could otherwise put a dozen jammers in the air. The bubble "
+            "and SAM-suppression effects don't stack (a missile faces one bubble, a "
+            "SAM always gets a shoot-back window), so this is mostly an "
+            "airframe-economy bound -- 0 disables auto-planned jammers entirely, "
+            "leaving only any you plan yourself."
         ),
     )
     heli_combat_alt_agl: int = bounded_int_option(

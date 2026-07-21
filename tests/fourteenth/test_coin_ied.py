@@ -1,7 +1,8 @@
-"""COIN roadside-IED lifecycle: spawn on the ratline, clear vs detonate, will feed.
+"""COIN roadside-IED lifecycle: spawn on the ratline, clear vs detonate.
 
 The real TGO spawn is monkeypatched (as in the C1.5 tests); these lock the fuse state
-machine, the road-nearest-the-front placement, the concurrent cap, and the mandate feed.
+machine, the road-nearest-the-front placement, and the concurrent cap. A detonation is
+observed via its announce (the will meter it once fed was removed with the will economy).
 """
 
 from __future__ import annotations
@@ -147,15 +148,14 @@ def test_plants_up_to_the_cap_on_the_ratline(monkeypatch: Any) -> None:
     assert tgo.concealed_route == [(180_000, 0), (120_000, 0)]
 
 
-def test_detonates_after_the_fuse_and_charges_the_mandate(monkeypatch: Any) -> None:
+def test_detonates_after_the_fuse(monkeypatch: Any) -> None:
     game = _ratline(monkeypatch)
     ied.advance_roadside_ieds(game, events=None)  # plant (armed 0)
     # Never cleared: it ages each turn and detonates at FUSE_TURNS.
     for _ in range(ied.FUSE_TURNS):
         ied.advance_roadside_ieds(game, events=None)
-    assert ied.consume_ied_detonations(game) == 1
-    assert ied.consume_ied_detonations(game) == 0  # cleared
-    assert any("detonation" in m[1].lower() for m in game.messages)
+    # Exactly one detonation is announced (the device is despawned on the way out).
+    assert sum(1 for m in game.messages if "detonation" in m[1].lower()) == 1
 
 
 def test_clearing_the_ied_avoids_detonation(monkeypatch: Any) -> None:
@@ -166,8 +166,9 @@ def test_clearing_the_ied_avoids_detonation(monkeypatch: Any) -> None:
     for unit in tgo.units:
         unit.alive = False  # the player struck it
     ied.advance_roadside_ieds(game, events=None)
-    assert ied.consume_ied_detonations(game) == 0  # no detonation
+    # Cleared, not detonated.
     assert any("cleared" in m[1].lower() for m in game.messages)
+    assert not any("detonation" in m[1].lower() for m in game.messages)
 
 
 def test_replants_after_a_clear(monkeypatch: Any) -> None:
@@ -250,8 +251,9 @@ def test_killing_the_device_clears_the_ied_even_if_the_team_survives(
         _Unit(alive=True),
     ]
     ied.advance_roadside_ieds(game, events=None)
-    assert ied.consume_ied_detonations(game) == 0
+    # Killing the device clears the bomb: a clear is announced, never a detonation.
     assert any("cleared" in m[1].lower() for m in game.messages)
+    assert not any("detonation" in m[1].lower() for m in game.messages)
 
 
 def test_killing_the_team_alone_does_not_clear_the_device(monkeypatch: Any) -> None:
@@ -266,7 +268,7 @@ def test_killing_the_team_alone_does_not_clear_the_device(monkeypatch: Any) -> N
     # The bomb is still emplaced: the fuse keeps ticking to detonation.
     for _ in range(ied.FUSE_TURNS):
         ied.advance_roadside_ieds(game, events=None)
-    assert ied.consume_ied_detonations(game) == 1
+    assert any("detonation" in m[1].lower() for m in game.messages)
 
 
 def test_vbied_has_a_shorter_fuse_than_a_static_ied(monkeypatch: Any) -> None:
@@ -279,5 +281,4 @@ def test_vbied_has_a_shorter_fuse_than_a_static_ied(monkeypatch: Any) -> None:
     assert ied.VBIED_FUSE_TURNS < ied.FUSE_TURNS
     for _ in range(ied.VBIED_FUSE_TURNS):
         ied.advance_roadside_ieds(game, events=None)
-    assert ied.consume_ied_detonations(game) == 1
     assert any("VBIED reached" in m[1] for m in game.messages)

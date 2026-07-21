@@ -1,7 +1,9 @@
-"""COIN HVT lifecycle: surface near the front, kill vs escape, momentum feed.
+"""COIN HVT lifecycle: surface near the front, kill vs escape.
 
 The real TGO spawn is monkeypatched (as in the C1.5/IED tests); these lock the window
-state machine, the nearest-front stronghold pick, the kill credit, and the escape path.
+state machine, the nearest-front stronghold pick, the kill path, and the escape path.
+Outcomes are observed via the announce (the will meter the kill/escape once fed was
+removed with the will economy).
 """
 
 from __future__ import annotations
@@ -143,19 +145,18 @@ def test_surfaces_at_the_stronghold_nearest_the_front(monkeypatch: Any) -> None:
     assert any("on the move near CP2" in m[1] for m in game.messages)
 
 
-def test_kill_credits_a_momentum_blow(monkeypatch: Any) -> None:
+def test_kill_resolves_the_hvt(monkeypatch: Any) -> None:
     game = _theater(monkeypatch)
     hvt.advance_hvt(game, events=None)  # surface
     tgo = game.db.tgos[game.coin_state["hvt"]["active"]["tgo_id"]]
     for unit in tgo.units:
         unit.alive = False  # the player struck him
     hvt.advance_hvt(game, events=None)  # detect the kill
-    assert hvt.consume_hvt_kills(game) == 1
-    assert hvt.consume_hvt_kills(game) == 0  # cleared
-    assert hvt.consume_hvt_escapes(game) == 0  # a kill is never an escape
+    # A kill announces the elimination (never an escape), clears the window and cools down.
+    assert any("eliminated" in m[1].lower() for m in game.messages)
+    assert not any("gone to ground" in m[1].lower() for m in game.messages)
     assert game.coin_state["hvt"]["active"] is None
     assert game.coin_state["hvt"]["cooldown"] == hvt.HVT_COOLDOWN_TURNS
-    assert any("eliminated" in m[1].lower() for m in game.messages)
 
 
 def test_vanished_tgo_is_not_a_kill(monkeypatch: Any) -> None:
@@ -168,10 +169,10 @@ def test_vanished_tgo_is_not_a_kill(monkeypatch: Any) -> None:
     host.connected_objectives.clear()  # the TGO vanishes; the stronghold stays red
     game.db.remove(active["tgo_id"])
     hvt.advance_hvt(game, events=None)
-    assert hvt.consume_hvt_kills(game) == 0  # no phantom momentum blow
+    # No kill is announced -- a dangling record is never a credited strike.
+    assert not any("eliminated" in m[1].lower() for m in game.messages)
     assert game.coin_state["hvt"]["active"] is None
     assert game.coin_state["hvt"]["cooldown"] == hvt.HVT_COOLDOWN_TURNS
-    assert not any("eliminated" in m[1].lower() for m in game.messages)
 
 
 def test_escapes_when_the_window_closes_without_a_kill(monkeypatch: Any) -> None:
@@ -179,13 +180,10 @@ def test_escapes_when_the_window_closes_without_a_kill(monkeypatch: Any) -> None
     hvt.advance_hvt(game, events=None)  # surface (turns 0)
     for _ in range(hvt.HVT_WINDOW_TURNS):
         hvt.advance_hvt(game, events=None)  # never killed -> ages out
-    assert hvt.consume_hvt_kills(game) == 0  # no momentum blow for a miss
-    # ...but since the 2026-07-18 audit call the lapse banks a propaganda coup
-    # (consumed by the will layer where red_hvt_escaped is priced).
-    assert hvt.consume_hvt_escapes(game) == 1
-    assert hvt.consume_hvt_escapes(game) == 0  # cleared
-    assert game.coin_state["hvt"]["active"] is None
+    # The window closes: he goes to ground (an escape, never a kill).
     assert any("gone to ground" in m[1].lower() for m in game.messages)
+    assert not any("eliminated" in m[1].lower() for m in game.messages)
+    assert game.coin_state["hvt"]["active"] is None
 
 
 def test_cooldown_gates_the_next_hvt(monkeypatch: Any) -> None:
@@ -205,7 +203,7 @@ def test_cooldown_gates_the_next_hvt(monkeypatch: Any) -> None:
 
 def test_stronghold_capture_is_not_a_decapitation(monkeypatch: Any) -> None:
     """A blue capture of the host stronghold clears the HVT TGO -- that is a
-    base-fall consequence (already priced via red_base_lost), never a kill."""
+    base-fall consequence (he slipped away with the base), never a kill."""
     game = _theater(monkeypatch)
     hvt.advance_hvt(game, events=None)  # surface at CP2
     active = game.coin_state["hvt"]["active"]
@@ -215,9 +213,10 @@ def test_stronghold_capture_is_not_a_decapitation(monkeypatch: Any) -> None:
     game.db.remove(active["tgo_id"])
     host.connected_objectives.clear()
     hvt.advance_hvt(game, events=None)
-    assert hvt.consume_hvt_kills(game) == 0  # no momentum blow
-    assert game.coin_state["hvt"]["active"] is None
+    # A base-fall reads as an escape ("slipped away"), never a kill.
     assert any("slipped away" in m[1].lower() for m in game.messages)
+    assert not any("eliminated" in m[1].lower() for m in game.messages)
+    assert game.coin_state["hvt"]["active"] is None
 
 
 def test_toggle_off_despawns_the_active_hvt(monkeypatch: Any) -> None:

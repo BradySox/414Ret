@@ -262,8 +262,6 @@ def test_stage_progression_seeds_cache_then_flips(monkeypatch: Any) -> None:
     assert game.coin_state["reinfiltration"]["active"] is None
     assert game.coin_state["reinfiltration"]["cooldown"] == co.COOLDOWN_TURNS
     assert tgt.base.commissioned == co.REINFIL_GARRISON
-    assert co.consume_reinfiltration_flips(game) == 1
-    assert co.consume_reinfiltration_flips(game) == 0  # cleared
 
 
 def test_killing_the_cell_aborts_with_cooldown(monkeypatch: Any) -> None:

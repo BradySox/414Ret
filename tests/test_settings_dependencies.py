@@ -67,46 +67,6 @@ def test_normalize_enabled_when() -> None:
     )
 
 
-def test_summary_line_shortens_long_detail() -> None:
-    from qt_ui.windows.settings.QSettingsWindow import INLINE_DETAIL_MAX, _summary_line
-
-    long_detail = (
-        "This is the first sentence and it explains the gist. Then a second "
-        "sentence adds a great deal more detail that would clutter the settings "
-        "page inline and reads far better tucked into a hover tooltip instead."
-    )
-    assert len(long_detail) > INLINE_DETAIL_MAX  # long enough to be summarised
-    summary = _summary_line(long_detail)
-    assert summary == "This is the first sentence and it explains the gist. …"
-
-
-def test_summary_line_skips_abbreviations() -> None:
-    # The period inside "e.g. " is not a sentence break -- naive splitting rendered
-    # several real settings as a dangling "... (e.g. …" (auto_add_tarps_recon et al.).
-    from qt_ui.windows.settings.QSettingsWindow import _summary_line
-
-    detail = (
-        "Appends a photo-recon flight (e.g. F-14 TARPS or a drone) to strikes. "
-        "A second sentence with enough words to push the whole detail well past "
-        "the inline limit so the summariser genuinely fires on this input."
-    )
-    summary = _summary_line(detail)
-    assert summary == (
-        "Appends a photo-recon flight (e.g. F-14 TARPS or a drone) to strikes. …"
-    )
-
-
-def test_summary_line_fallback_never_cuts_mid_word() -> None:
-    # No sentence break at all: the fallback must cut at a word boundary, not at a
-    # raw 150-char slice (target_intel_precision rendered "...target coor …").
-    from qt_ui.windows.settings.QSettingsWindow import INLINE_DETAIL_MAX, _summary_line
-
-    detail = "word " * 60  # 300 chars, no ". " anywhere
-    summary = _summary_line(detail.strip())
-    assert summary.endswith("word …")
-    assert len(summary) <= INLINE_DETAIL_MAX + 2  # the appended " …"
-
-
 # --- Qt: the greying actually fires --------------------------------------------------
 
 
@@ -153,3 +113,26 @@ def test_inverse_dependency_greys_when_master_is_on(qapp: Any) -> None:
 
     layout.settings_map["automate_front_line_stance"].setChecked(False)
     assert stance.isEnabled()
+
+
+def test_long_detail_renders_fully_inline(qapp: Any) -> None:
+    # The first-sentence + hover-tooltip summarisation is REVERTED (2026-07-20
+    # user call): reading a setting must not require hovering it, so the whole
+    # detail renders on the page. Exercised on the Victory conditions section,
+    # whose details are well past the old 150-char summarisation limit.
+    page_section = ("Campaign Management", "Victory conditions")
+    layout = _layout_for(page_section, Settings())
+    checked = 0
+    long_seen = False
+    for name, description in Settings.fields(*page_section):
+        detail = description.detail
+        if detail is None:
+            continue
+        # The label wraps with <br />; joining the wrap back with spaces must
+        # reproduce the full detail -- any truncation breaks this.
+        plain = layout.labels_map[name].text().replace("<br />", " ")
+        assert " ".join(detail.split()) in plain, name
+        checked += 1
+        long_seen = long_seen or len(detail) > 150
+    assert checked >= 1
+    assert long_seen  # the section genuinely exercises the old truncation case

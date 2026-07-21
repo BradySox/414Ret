@@ -24,6 +24,39 @@ Verify each candidate in-game first (cross-ref
 [414th-ingame-pass-checklist.md](414th-ingame-pass-checklist.md)) — an
 unvalidated "fix" is not something to ask upstream to take.
 
+## 2026-07-20 standards audit (upstream dev-process adoption applied to the open PRs)
+
+The day the upstream Contributing / dev-guide / modding wiki pages were adopted as the
+fork's own standards (CLAUDE.md Conventions), the 21 open upstream PRs were audited
+against them. Baseline: **compliant** — all dev-targeted via the PR fork, one focused
+change per PR, upstream gates validated per PR, crowded zones respected. Gaps + calls:
+
+- **Changelog entries** (their Developer's Guide + PR template ask): most open carves
+  shipped without a `changelog.md` note. **APPLIED 2026-07-20** (per the DM call to
+  draft them all and apply from the dev machine): all 14 open carves missing an entry
+  got one, committed additively to their PR branches (#788 #792 #794 #806 #828 #874
+  #881 #883 #886 #887 #889 #890 #892 #893). The flagged wordings were re-grounded in
+  the real diffs before pasting — #788 covers any fast-forward flight running off its
+  plan (not just air spawns), #806 is the scatter *band* + patrol floor (not "cruise
+  altitude config"), and #892 **tightens** the EWR pool (the draft said "wider"; the
+  layout's SearchRadar fallbacks are removed while period factions gain the new site
+  presets). Verify-first caught that #872/#873/#880/#884 already carried theirs (the
+  wave carves post-date the adopted rule); #882 stays exempt (dev-only harness). The
+  two closed carves were never applied: #891 (its re-carve writes its own entry, with
+  Normandy pruned the old wording is stale anyway) and #885 (**closed-ceded
+  2026-07-20**: Druss99 has his own victory-conditions branch and asked to take the
+  feature — a drift-watch item vs fork §75 when his lands, not a re-carve). The
+  drafts handoff file is deleted per its own banner. New carves carry an entry from
+  birth per the adopted standard.
+- **#881 review loop**: in motion via fork PR #687 (the USNS Card data fix +
+  `tools/verify_mod_export.py`); the held replies post after the desktop export run.
+- **Pre-wave PRs #788/#792/#794/#806**: freshness-check against current dev when next
+  touched (the #791 went-stale lesson; #892 is the refresh pattern).
+- **#828**: in re-review — additive commits only from here (their large-PR
+  no-force-push rule).
+- **#886 icons/banners** (Modded-Unit-Support step 9): optional — the fork ships no
+  Shahed UI art either (checked 2026-07-20); author fork-side first if wanted.
+
 ## Readiness legend
 
 | Mark | Meaning |
@@ -76,7 +109,7 @@ unvalidated "fix" is not something to ask upstream to take.
 | 23 | **Soviet SHORAD Sborka "Dog Ear" acquisition radar** (the fork's slot-gated + marker-gated `_add_dog_ear_if_needed` in `forcegroup.py`, the SHORAD.yaml Search Radar slot, the 3-way test with the SAM-site/era exclusions; vanilla unit, no faction edits — was never queued here, added the day it shipped) | 🔵 IN REVIEW — **pushed as draft [PR #887](https://github.com/dcs-retribution/dcs-retribution/pull/887)**, opened 2026-07-20; 441 tests green | Medium/High (SA-9/13/15/19 batteries stop being eyeball-only; objective TO&E data) | n/a (unit-tested; generation-covered) |
 | 24 | **SAM site layout variety + EWR radar pool — the #791 refresh** (the June branch rebased onto dev @ `acf02b75`, zero conflicts, content unchanged; #791 had closed with zero comments — never reviewed) | 🔵 IN REVIEW — **pushed as draft [PR #892](https://github.com/dcs-retribution/dcs-retribution/pull/892)**, opened 2026-07-20; re-validated same day (68 preset groups, 131 factions, 0 bad refs, 438 tests) | High (legacy SA-2/3/5/6 batteries become real sites; EWR buy menu stops offering SAM-system radars) | n/a (resources-only) |
 | 25 | **§60 SAM guidance-radar redundancy** (21 layout yamls ×23 slots `unit_count` 1→2 + second radar positions grafted into the 5 shared templates — fork-only P-14 groups NOT carried; the 29-pair lockstep test, SAMP/T row dropped as HDS-Ultimate-only; the realism-notes rationale attached in the PR body per the roadmap's "balance opinion" classification) | 🔵 IN REVIEW — **pushed as draft [PR #893](https://github.com/dcs-retribution/dcs-retribution/pull/893)**, opened 2026-07-20, **stacked on #892**; 467 tests green | Medium (balance opinion, rationale attached; upstream may park it — offered explicitly) | B12 ☐ |
-| 26 | **Squadron country surfaced — campaign yaml `country:` pin + Air Wing dialog Country selector** (§23 follow-on to the merged #854; `SquadronConfig.country` → same-nation-only preset pick with def-generator fallthrough + `override_squadron_defaults` stamp, the `SquadronCountrySelector` under Livery, preset dropdowns showing each preset's nation, Save/Load Config country round-trip. **This is literally the upstream Discord ask** — Starfire's "set the squadron nation in the campaign yaml … get a preset for that nation if available, or a randomly generated squadron set to that country", Toad's "drop down … under livery basically" — so the carve writes itself; the DS campaign pins stay fork-side) | ⚪ QUEUED (built 2026-07-20; carve after the fork's I6 app pass — the #874 draft-until-flown pattern) | High (asked for by name in upstream's Discord the day it was built) | I6 ☐ |
+| 26 | **Squadron country surfaced — campaign yaml `country:` pin + Air Wing dialog Country selector** (§23 follow-on to the merged #854; `SquadronConfig.country` → same-nation-only preset pick with def-generator fallthrough + `override_squadron_defaults` stamp, the `SquadronCountrySelector` under Livery, preset dropdowns showing each preset's nation, Save/Load Config country round-trip, the livery stale-squadron bind_data fix. **This is literally the upstream Discord ask** — Starfire's "set the squadron nation in the campaign yaml … get a preset for that nation if available, or a randomly generated squadron set to that country", Toad's "drop down … under livery basically" — carved the same day the thread ran; the DS campaign pins stay fork-side) | 🔵 IN REVIEW — **pushed as draft [PR #896](https://github.com/dcs-retribution/dcs-retribution/pull/896)**, opened 2026-07-20 on dev @ `3760cf2a` (447 tests / black / mypy green; upstream carries the game-side tests — the offscreen-Qt selector test stays fork-side, no qt_ui test precedent upstream, the #884 lupa pattern); **draft until the fork's I6 app pass** (#874 pattern) | High (asked for by name in upstream's Discord the day it was built) | I6 ☐ |
 
 ---
 

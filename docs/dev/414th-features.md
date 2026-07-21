@@ -2568,9 +2568,18 @@ ask — Starfire's yaml pin, Toad's under-the-livery dropdown):
   nation-countried presets by name and need no pin) — guard
   `test_desert_storm_us_squadrons_pin_their_nation`.
 - **Air Wing Configuration dialog "Country:" selector** (`SquadronCountrySelector`, under the
-  Livery selector — Toad's spot): every pydcs country sorted by name, opens on the squadron's
-  current nation, **writes `squadron.country` live** (the livery-selector pattern), and a country
-  pydcs doesn't list (mod) is inserted and shown faithfully. Pilot names follow automatically —
+  Livery selector — Toad's spot): opens on the squadron's current nation, **writes
+  `squadron.country` live** (the livery-selector pattern), and a country pydcs doesn't list (mod)
+  is inserted and shown faithfully. **The list is trimmed to the airframe's operators**
+  (2026-07-20 same-day follow-up, the "Third Reich Hornets" screenshot):
+  `game/dcs/operatorcountries.py` resolves, in order, a **curated family-operator row** (flyable
+  modules — the Hornet/A-10/F-4E/F-5E/MiG-21/JF-17/Ka-50/Gazelle/AV-8B — whose DCS roster admits
+  every country, since ED lets any module fly under any nation), the type's **own pydcs roster**
+  when it discriminates (all AI-only types — the GR4 offers 5 nations), a **same-family AI
+  sibling's roster** (F-16C blk50 / F-15ESE / M-2000C / AH-64D / CH-47F / Mi-24P — the AI type
+  carries ED's real operator data), else **no data ⇒ the full list** (mods/warbirds keep the old
+  behavior). The faction's own country is always appended (revert to the shared faction voice);
+  curated ids/names are typo-guarded by test so a pydcs rename fails CI. Pilot names follow automatically —
   the New Game wizard shows the dialog *before* `populate_for_turn_0` recruits the roster, and
   `Squadron.faker` reads `squadron.country` live (mid-campaign changes affect newly recruited
   pilots only). The preset dropdowns (`SquadronDefSelector`) now suffix each preset with its
@@ -2584,13 +2593,16 @@ ask — Starfire's yaml pin, Toad's under-the-livery dropdown):
 |---|---|
 | Config field + pick preference | `game/campaignloader/campaignairwingconfig.py`, `game/campaignloader/defaultsquadronassigner.py` |
 | Dialog selector + yaml round-trip | `qt_ui/windows/AirWingConfigurationDialog.py` |
+| Operator-country resolution | `game/dcs/operatorcountries.py` |
 | Desert Storm pins | `resources/campaigns/iraq_desert_storm.yaml` |
-| Tests | `tests/test_squadron_country_pin.py`, `tests/test_airwing_country_selector.py` (offscreen Qt), `tests/fourteenth/test_desert_storm.py` |
+| Tests | `tests/test_squadron_country_pin.py`, `tests/test_airwing_country_selector.py` (offscreen Qt), `tests/dcs/test_operator_countries.py`, `tests/fourteenth/test_desert_storm.py` |
 
 Needs an in-app pass (checklist **I6**): the selector rendering/behaving in the real dialog, and a
-DS re-fly confirming American voices. Deferred: filtering the livery list by the squadron country
-under CJTF (livery filtering still keys off the *faction* country), and an upstream carve — this is
-literally the upstream Discord ask, but it should ride after the fork's app pass.
+DS re-fly confirming American voices. **Carved upstream same day as draft
+[#896](https://github.com/dcs-retribution/dcs-retribution/pull/896)** (the generic core — yaml pin,
+selector, round-trip, livery re-point fix, game-side tests; the DS pins and the offscreen-Qt test
+stay fork-side; draft until the I6 pass, the #874 pattern). Deferred: filtering the livery list by
+the squadron country under CJTF (livery filtering still keys off the *faction* country).
 - **Review hardening round 2 (2026-07-15, upstream #854 feedback).** Two more carried back: (1)
   **`Game.neutral_country`'s final fallback was the bug it guarded against** — with USAF Aggressors
   as the red faction and a blue CJTF fielding UN and Swiss squadrons, all three preferred neutrals
@@ -2969,9 +2981,14 @@ a declutter pass:
   `default_front_line_stance` ← `("automate_front_line_stance", False)` (editable only when automation
   is off). A guard test (`tests/test_settings_dependencies.py`) fails CI if any `enabled_when` master
   isn't a real setting, plus offscreen-Qt tests prove a child greys/ungreys live with its master.
-- **Detail summarisation.** A `detail` longer than `INLINE_DETAIL_MAX` (150) now renders only its first
-  sentence inline (`_summary_line`) with the **full text on hover** (the previously near-dead `tooltip`
-  field), so the dense pages stop reading as walls of text; short details are unchanged.
+- **Detail summarisation — REVERTED 2026-07-20.** The 2026-07-10 pass made a `detail` longer than
+  150 chars render only its first sentence inline (`_summary_line`) with the full text on hover.
+  Flown with the §75 victory knobs, the user called it back ("I wanna go back to having it fully
+  show" — reading a setting must not require hovering it): every `detail` renders in full inline
+  again, the summariser (`INLINE_DETAIL_MAX`/`_summary_line`/`_word_cut`) is deleted, and an
+  authored `tooltip` still shows on hover where set. Guarded by
+  `test_long_detail_renders_fully_inline` (offscreen Qt, on the Victory conditions section whose
+  details exceed the old limit).
 
 ### UI audit bug fixes (2026-07-10)
 

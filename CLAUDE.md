@@ -1195,8 +1195,11 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     *summarisation* half (first sentence inline + full text on hover past 150 chars) was
     **REVERTED 2026-07-20** (user call off the §75 victory-knob descriptions — reading a setting
     must not require hovering it): every `detail` renders in full inline again, the summariser is
-    deleted, and an authored `tooltip` still shows on hover. Guard + offscreen-Qt greying tests
-    (+ the full-inline-detail guard) in `tests/test_settings_dependencies.py`. Shipped with the **UI-audit bug fixes**: the defeat-shows-
+    deleted, and an authored `tooltip` still shows on hover; the same-day dead-space follow-up
+    also dropped the fixed 55-char textwrap — labels word-wrap to the real column width and the
+    label column takes all spare width, so descriptions flow across the row. Guard +
+    offscreen-Qt greying tests (+ the full-inline-detail guard) in
+    `tests/test_settings_dependencies.py`. Shipped with the **UI-audit bug fixes**: the defeat-shows-
     "Victory!" `onEndGame` enum-truthiness bug, the inverted Air-Wing player-slots caption, the shared
     `self.dialog` window-GC bug, the `QGroundObjectMenu` repair list-mutation, the web `TgosLayer`
     key-by-name → `tgo.id`, the upstream→fork Help/About/Releases links, and dead-component/duplicate-CSS

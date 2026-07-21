@@ -1,6 +1,5 @@
 import json
 import logging
-import textwrap
 import zipfile
 from typing import Callable, Optional, Dict
 
@@ -192,6 +191,11 @@ class AutoSettingsLayout(QGridLayout):
         self.labels_map: Dict[str, QLabel] = {}
         self.enabled_specs: Dict[str, tuple[str, bool]] = {}
 
+        # The label column absorbs all spare width (the controls keep hugging
+        # the right edge), so word-wrapped descriptions use the whole row
+        # instead of leaving the middle of the window empty.
+        self.setColumnStretch(0, 1)
+
         self.init_ui()
 
     def init_ui(self):
@@ -214,17 +218,18 @@ class AutoSettingsLayout(QGridLayout):
         self._wire_dependency_greying()
 
     def add_label(self, row: int, name: str, description: OptionDescription) -> None:
-        wrapped_title = "<br />".join(textwrap.wrap(description.text, width=55))
-        text = f"<strong>{wrapped_title}</strong>"
+        # The full detail renders inline (the 2026-07-20 revert of the
+        # first-sentence + hover-tooltip summarisation -- reading a setting must
+        # not require hovering it), and Qt wraps it to the real label-column
+        # width: the old fixed 55-character textwrap left everything right of
+        # the text column as dead space and made rows needlessly tall.
+        text = f"<strong>{description.text}</strong>"
         tooltip = description.tooltip
         detail = description.detail
         if detail is not None:
-            # The full detail renders inline (the 2026-07-20 revert of the
-            # first-sentence + hover-tooltip summarisation -- reading a setting
-            # must not require hovering it).
-            wrapped = "<br />".join(textwrap.wrap(detail, width=55))
-            text += f"<br />{wrapped}"
+            text += f"<br />{detail}"
         label = QLabel(text)
+        label.setWordWrap(True)
         if tooltip is not None:
             label.setToolTip(tooltip)
         label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)

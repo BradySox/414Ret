@@ -118,19 +118,24 @@ def test_inverse_dependency_greys_when_master_is_on(qapp: Any) -> None:
 def test_long_detail_renders_fully_inline(qapp: Any) -> None:
     # The first-sentence + hover-tooltip summarisation is REVERTED (2026-07-20
     # user call): reading a setting must not require hovering it, so the whole
-    # detail renders on the page. Exercised on the Victory conditions section,
-    # whose details are well past the old 150-char summarisation limit.
+    # detail renders on the page -- and Qt wraps it to the real column width
+    # (word wrap + label-column stretch) instead of a fixed 55-char textwrap
+    # that left the window's middle as dead space. Exercised on the Victory
+    # conditions section, whose details are well past the old 150-char limit.
     page_section = ("Campaign Management", "Victory conditions")
     layout = _layout_for(page_section, Settings())
+    assert layout.columnStretch(0) == 1  # the label column absorbs spare width
     checked = 0
     long_seen = False
     for name, description in Settings.fields(*page_section):
         detail = description.detail
         if detail is None:
             continue
-        # The label wraps with <br />; joining the wrap back with spaces must
-        # reproduce the full detail -- any truncation breaks this.
-        plain = layout.labels_map[name].text().replace("<br />", " ")
+        label = layout.labels_map[name]
+        assert label.wordWrap(), name  # Qt wraps to the column, not textwrap
+        # Any truncation breaks this: the label text must reproduce the full
+        # detail verbatim (whitespace-normalized).
+        plain = " ".join(label.text().replace("<br />", " ").split())
         assert " ".join(detail.split()) in plain, name
         checked += 1
         long_seen = long_seen or len(detail) > 150

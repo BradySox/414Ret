@@ -2988,7 +2988,10 @@ a declutter pass:
   again, the summariser (`INLINE_DETAIL_MAX`/`_summary_line`/`_word_cut`) is deleted, and an
   authored `tooltip` still shows on hover where set. Guarded by
   `test_long_detail_renders_fully_inline` (offscreen Qt, on the Victory conditions section whose
-  details exceed the old limit).
+  details exceed the old limit). **Same-day follow-up (the dead-space screenshot):** the fixed
+  55-char `textwrap` is gone too — labels `setWordWrap(True)` and the grid's label column takes
+  all spare width (`setColumnStretch(0, 1)`), so a description flows across the whole row at the
+  window's real width instead of stacking a tall, narrow text column beside an empty middle.
 
 ### UI audit bug fixes (2026-07-10)
 

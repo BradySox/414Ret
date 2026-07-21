@@ -57,6 +57,16 @@ class GeneratorOptions(QtWidgets.QWizardPage):
             "https://www.digitalcombatsimulator.com/en/files/3338686/"
         )
         self.registerField("f4e_expanded_weapons", self.f4e_expanded_weapons)
+        self.ea6b_prowler = QtWidgets.QCheckBox()
+        self.ea6b_prowler.setToolTip(
+            "Requires the VSN Northrop Grumman EA-6B Prowler mod (AI-only) "
+            "installed in the group's DCS.\n\n"
+            "Adds the EA-6B as an AI electronic-warfare aircraft; factions that "
+            "carry it (US Navy/USAF Cold War through 2020, CJTF-OIR) will field "
+            "it. Not player-flyable.\n\n"
+            "https://forum.dcs.world/topic/256589-vsn-northrop-grumman-ea-6b-prowler/"
+        )
+        self.registerField("ea6b_prowler", self.ea6b_prowler)
 
         aircraft_pairs = [
             ("A-4E-C Skyhawk (v2.3.0)", self.a4_skyhawk),
@@ -65,6 +75,7 @@ class GeneratorOptions(QtWidgets.QWizardPage):
                 "CJS FA-18E/F Super Hornet Tanker (v2.4.5.260501.RC1)",
                 self.fa18ef_tanker,
             ),
+            ("EA-6B Prowler (VSN AI, v2.9.4)", self.ea6b_prowler),
             (
                 "Expanded F-4E Weapons Pack (DSplayer v1.0.11+)",
                 self.f4e_expanded_weapons,
@@ -204,6 +215,7 @@ class GeneratorOptions(QtWidgets.QWizardPage):
         self.f22_raptor.setChecked(s.get("f22_raptor", False))
         self.f111c.setChecked(s.get("f111c", False))
         self.f4e_expanded_weapons.setChecked(s.get("f4e_expanded_weapons", False))
+        self.ea6b_prowler.setChecked(s.get("ea6b_prowler", False))
         self.high_digit_sams.setChecked(s.get("high_digit_sams", False))
         self.oh_6_vietnamassetpack.setChecked(s.get("oh_6_vietnamassetpack", False))
         self.ov10a_bronco.setChecked(s.get("ov10a_bronco", False))

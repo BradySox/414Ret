@@ -23,6 +23,7 @@ from game import persistency
 from game.ato.flighttype import FlightType
 from game.ato.flightplans.escort import EscortFlightPlan
 from game.ato.flightplans.flightplanbuildertypes import FlightPlanBuilderTypes
+from game.campaignloader.campaignairwingconfig import SquadronConfig
 from game.ato.loadouts import Loadout
 from game.commander.missionproposals import EscortType
 from game.commander.packagefulfiller import PackageFulfiller
@@ -111,6 +112,44 @@ def test_dedicated_jammers_do_offensive_suppression() -> None:
         ac = AircraftType.named(variant)
         assert ac.escort_jammer_tier is not None
         assert effect_for(ac.escort_jammer_tier).offensive
+
+
+def test_sead_primary_squadron_auto_offers_escort_jammer() -> None:
+    """A campaign that authored a dedicated EW jet as a SEAD squadron (#717's
+    EA-6B Prowlers: primary SEAD, secondary [SEAD Escort]) still auto-gains the
+    Escort Jammer role -- offered to every capable squadron like TARPS, with no
+    per-campaign edit. The capability filter drops it for non-jammer airframes."""
+    cfg = SquadronConfig.from_data(
+        {
+            "primary": "SEAD",
+            "secondary": ["SEAD Escort"],
+            "aircraft": ["EA-6B Prowler"],
+        }
+    )
+    assert FlightType.ESCORT_JAMMER in cfg.auto_assignable
+    # And the Prowler airframe is genuinely capable, so the filter keeps it.
+    prowler = AircraftType.named("EA-6B Prowler")
+    kept = {t for t in cfg.auto_assignable if prowler.capable_of(t)}
+    assert FlightType.ESCORT_JAMMER in kept
+
+
+def test_dedicated_jammers_prefer_jamming_over_sead_escort() -> None:
+    """'Prefer them as jammers' (user call 2026-07-21): a dedicated jammer
+    out-priorities itself at Escort Jammer over SEAD Escort, AND sits below the
+    strike-fighters at SEAD Escort -- so in a package's escort fill (SEAD Escort
+    resolves first) a Hornet/Viper takes SEAD Escort and the dedicated jammer is
+    freed for the Escort Jammer slot."""
+    hornet_se = AircraftType.named("F/A-18C Hornet (Lot 20)").task_priority(
+        FlightType.SEAD_ESCORT
+    )
+    for variant in ("EA-18G Growler", "EA-6B Prowler"):
+        ac = AircraftType.named(variant)
+        assert ac.task_priority(FlightType.ESCORT_JAMMER) > ac.task_priority(
+            FlightType.SEAD_ESCORT
+        )
+        assert ac.task_priority(FlightType.SEAD_ESCORT) < hornet_se
+        # SEAD as a package lead is untouched -- they're still SEAD shooters.
+        assert ac.task_priority(FlightType.SEAD) > hornet_se
 
 
 def test_non_ew_fighter_is_not_a_jammer() -> None:

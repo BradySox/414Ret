@@ -7115,6 +7115,25 @@ from the lead — a 4-ship jams exactly like a 2-ship), so the only count lever 
 in `PackageFulfiller.can_plan_escort` by counting the ATO's ESCORT_JAMMER flights — an
 airframe-economy bound, since the effects are already self-limiting. Plugin option `recoverySec`.
 
+**Dedicated jammers prefer the jammer slot (2026-07-21).** A flown Persian Gulf tasking showed an
+EA-6B Prowler flying *SEAD Escort* while a Hornet did the jamming — because §717 (same day) fielded
+the Prowlers as `primary: SEAD` squadrons, and (a) a campaign-authored SEAD squadron's enabled
+tasks didn't include Escort Jammer, and (b) even if they had, the Prowler out-priorities the fighter
+at SEAD Escort (585 vs 470), which resolves *before* Escort Jammer in the escort fill. Two data
+changes make the dedicated jammer prefer jamming without touching a single campaign file:
+`SquadronConfig.auto_assignable` now **auto-offers Escort Jammer to every capable squadron** exactly
+like TARPS (the capability filter drops it for non-jammer airframes; the loose-tier + cap gates still
+apply downstream), so §717's SEAD-primary Prowlers gain the role; and the **EA-6B/EA-18G SEAD Escort
+priority drops to 400** (below the strike-fighters' 470/475, above the weak podded SEAD jets), so a
+Hornet/Viper takes SEAD Escort and the freed Prowler/Growler is picked for the Escort Jammer slot
+(790/800) — activating the FULL-tier offensive pulses. A lone dedicated jammer with no strike-fighter
+still flies SEAD Escort (400 > the podded jets), and its SEAD/DEAD *package-lead* priorities (620/730)
+are untouched, so it remains a SEAD shooter — the §717 "iconic Prowler war" intent survives as the
+fallback, not the default. Guards in `test_escort_jammer.py`
+(`test_sead_primary_squadron_auto_offers_escort_jammer`,
+`test_dedicated_jammers_prefer_jamming_over_sead_escort`); the §717 campaign tests
+(desert_storm/inherent_resolve/tanker_war) still pass.
+
 Tests: `tests/fourteenth/test_escort_jammer.py` (enum/tier roster/effect gradient/loose
 gate/loadout/threat plumbing + the cap), `tests/missiongenerator/test_growlerluadata.py` (emitter
 shape + tier knobs), `tests/lua/test_growler_runtime.py` (hold+restore, non-radar immunity, spoof,

@@ -2622,7 +2622,17 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     Ship count within a flight is already effect-neutral (one bubble per group, from the lead), so
     the remaining lever is a per-side **`max_escort_jammers`** cap (Air Doctrine, default 4,
     0=off) enforced in `can_plan_escort` — an airframe-economy bound, since the effects are already
-    self-limiting. Tests `tests/fourteenth/test_escort_jammer.py` +
+    self-limiting. **Dedicated jammers prefer the jammer slot** (2026-07-21 — off a flown Persian
+    Gulf tasking where an EA-6B was flying SEAD Escort while a Hornet jammed): ESCORT_JAMMER is
+    **auto-offered to every capable squadron** like TARPS (`SquadronConfig.auto_assignable`), so a
+    campaign's dedicated EW jet authored as a SEAD squadron (§717's `primary: SEAD` Prowlers) still
+    gains the jammer role with **no per-campaign edit**; and the EA-6B/EA-18G **SEAD Escort priority
+    is dropped to 400** (below the strike-fighters' 470/475, above the weak podded SEAD jets) so in
+    the escort fill (SEAD Escort resolves before Escort Jammer) a Hornet/Viper takes SEAD Escort and
+    the dedicated jammer is freed for the Escort Jammer slot — activating the FULL-tier offensive
+    pulses. A lone Prowler with no strike-fighter still flies SEAD Escort (400 > the podded jets),
+    and SEAD/DEAD as a **package lead** are untouched (620/730), so the Prowler is still a SEAD
+    shooter. Tests `tests/fourteenth/test_escort_jammer.py` +
     `tests/missiongenerator/test_growlerluadata.py` + `tests/lua/test_growler_runtime.py` (the
     harness gained `Weapon:destroy` + ground ROE values; the balance pass adds a deterministic
     non-stacking proof + the recovery-window cycle + the cap); features doc §77, checklist B31 —

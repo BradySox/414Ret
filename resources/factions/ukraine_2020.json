@@ -5,6 +5,9 @@
   "description": "<p>Ukrainian military in the 2020s during the Russo-Ukrainian War. This faction is intended for use with the Currenthill Ukraine Asset Pack.</p>",
   "locales": ["uk_UA"],
   "aircrafts": [
+    "[CH] MiG-29MU2",
+    "[CH] Su-24MU",
+    "[CH] Su-27P1M",
     "IL-76MD",
     "Mi-24V Hind-E",
     "Mi-24P Hind-F",

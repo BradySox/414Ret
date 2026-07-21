@@ -64,8 +64,9 @@ this (it switched entirely to UC), so the dual-toggle variant would be new work.
 
 ## Pre-open checklist
 
-- [ ] DM's mod updates done (CH packs + HDS current)
-- [ ] Fresh export run + `pydcs_extensions/highdigitsams` re-aligned (fork commit)
+- [x] DM's mod updates done (CH packs + HDS current — 2026-07-20 evening)
+- [x] Fresh export run + verified (2026-07-20 evening re-dump: HDS **unchanged** across
+      the update wave — the aligned data + this draft's numbers hold as-is)
 - [ ] Upstream freeze lifted (next beta shipped)
 - [ ] Successor-mod stance confirmed with the DM (UC-only recommended)
 - [ ] Branch built on current upstream `dev`, opened as **draft** (standing rule)

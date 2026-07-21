@@ -29,9 +29,12 @@ CUT_MOD_AIRCRAFT = [
     # (Combat Lancer, 1968). The mod is shipped and the USA Vietnam factions now
     # reference it with f111c:true, so it must NOT be guarded as a cut mod.
     "[CH] B-21",  # -> B-1B Lancer
-    "[CH] MiG-29MU2",  # -> MiG-29S Fulcrum-C
-    "[CH] Su-24MU",  # -> Su-24M Fencer-D
-    "[CH] Su-27P1M",  # -> Su-27 Flanker-B
+    # The three CH Ukraine jets were un-cut 2026-07-20 (the CH-wave faction
+    # utilization pass): the pack is shipped-optional (ukrainemilitaryassetspack
+    # toggle) and ukraine_2020 keeps the vanilla equivalents (MiG-29S / Su-24M /
+    # Su-27) alongside them -- the intentional mod-with-fallback design the
+    # module docstring exempts (the JAS-39 + Viggen pattern). Mod off = the CH
+    # jets silently drop and the vanilla jets carry the faction.
 ]
 
 

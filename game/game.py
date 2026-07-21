@@ -540,6 +540,15 @@ class Game:
 
         advance_dispersed_cells(self, events)
 
+        # Decoy suspected-activity zones (§79): burn the fake contacts the player
+        # reconned last mission and top the live count back up. Fake, unitless
+        # concealed TGOs that render like real hidden forces so the human planner
+        # must confirm before committing; the AI (ground truth) is never fooled.
+        # No-op unless decoy_zones is on. See game/fourteenth/decoy_zones.py.
+        from game.fourteenth.decoy_zones import advance_decoy_zones
+
+        advance_decoy_zones(self, events)
+
         # Vietnam Ops Super Gaggle (§37): (re)plan the turn's resupply run from real BLUE
         # squadrons (drawing the helos + suppressors from actual airframes, whose losses are
         # charged back at debrief), or clear it. No-op unless the setting is on and a besieged

@@ -163,6 +163,13 @@ class TheaterGroundObject(MissionTarget, SidcDescribable, ABC):
         # count toward -- nor are revived by -- the C1 anchor machinery. A
         # reinfiltration flip clears it when the cell becomes real militia.
         self.coin_spawned: bool = False
+        # Decoy suspected-activity zone (§79): a fake, unitless concealed contact
+        # that renders as the same "in here somewhere" circle as a real hidden
+        # force, to make the human planner burn recon confirming it. Because it
+        # has zero alive units the AI planner (ground-truth is_dead) skips it for
+        # free; recon discovery burns it (game/fourteenth/decoy_zones.py). Set
+        # only by that layer; a real force is never a decoy.
+        self.is_decoy: bool = False
 
     def __getstate__(self) -> dict[str, Any]:
         state = self.__dict__.copy()
@@ -191,6 +198,8 @@ class TheaterGroundObject(MissionTarget, SidcDescribable, ABC):
         state.setdefault("map_hidden", False)
         # Old saves predate the COIN transient-spawn marker — not a spawn.
         state.setdefault("coin_spawned", False)
+        # Old saves predate decoy zones — a real site is never a decoy.
+        state.setdefault("is_decoy", False)
         self.__dict__.update(state)
         # Save migration: heal AAA sites that were generated with a stray search
         # radar (the old `fill: true` radar slot). Newly generated campaigns no

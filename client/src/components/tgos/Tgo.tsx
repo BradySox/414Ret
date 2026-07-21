@@ -15,6 +15,18 @@ import { CasedCircle } from "../map/CasedShapes";
 import MobileTgo from "./MobileTgo";
 import { TgoTooltip, iconForTgo } from "./shared";
 import { Circle, Marker, Tooltip } from "react-leaflet";
+import L from "leaflet";
+
+// The centred "?" that marks a lone suspected-activity circle as a go-look
+// contact (built once — it never varies). Non-interactive so clicks fall through
+// to the circle beneath it; the amber matches mapColors.suspected, haloed dark so
+// it reads on light desert imagery.
+const SUSPECTED_GLYPH_ICON = L.divIcon({
+  className: "suspected-glyph-icon",
+  html: `<span style="color:${mapColors.suspected};font-weight:700;font-size:15px;line-height:18px;text-shadow:0 0 2px #141414,0 0 2px #141414;">?</span>`,
+  iconSize: [18, 18],
+  iconAnchor: [9, 9],
+});
 
 interface TgoProps {
   tgo: TgoModel;
@@ -77,19 +89,31 @@ function ConcealedTgo(props: TgoProps) {
     );
   }
   return (
-    <CasedCircle
-      center={props.tgo.position}
-      radius={props.tgo.uncertainty_radius_m!}
-      color={mapColors.suspected}
-      signature={mapStrokes.suspectedArea}
-      // Deep enough to read as an area at a glance over satellite imagery
-      // (0.18 still washed out on desert tan).
-      fillOpacity={0.25}
-      className="map-interactive"
-      eventHandlers={eventHandlers}
-    >
-      {tooltip}
-    </CasedCircle>
+    <>
+      <CasedCircle
+        center={props.tgo.position}
+        radius={props.tgo.uncertainty_radius_m!}
+        color={mapColors.suspected}
+        signature={mapStrokes.suspectedArea}
+        // Deep enough to read as an area at a glance over satellite imagery
+        // (0.18 still washed out on desert tan).
+        fillOpacity={0.25}
+        className="map-interactive"
+        eventHandlers={eventHandlers}
+      >
+        {tooltip}
+      </CasedCircle>
+      {/* The go-look "?" at the (jittered) centre. Non-interactive so the circle
+          under it keeps the click/right-click contract. Only the LONE circle gets
+          one — a cluster renders the density cloud, and a field of "?"s would be
+          exactly the clutter the glyph is meant to cut. */}
+      <Marker
+        position={props.tgo.position}
+        icon={SUSPECTED_GLYPH_ICON}
+        interactive={false}
+        keyboard={false}
+      />
+    </>
   );
 }
 

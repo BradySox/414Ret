@@ -628,6 +628,17 @@ FEATURES: tuple[Feature, ...] = (
             "coastal_batteries_engage_ships",
         ),
     ),
+    Feature(
+        # §79 decoy suspected-activity zones: fake, unitless concealed TGOs that
+        # render as the §3 uncertainty circle so the human planner must burn recon
+        # to tell a feint from a real hidden force; the AI (ground-truth is_dead)
+        # skips them for free. Authored budget + per-turn refresh + burn-on-recon,
+        # all in game/fourteenth/decoy_zones.py (finish_turn). No plugin, no Lua.
+        "decoy_zones",
+        "Decoy suspected-activity zones",
+        79,
+        settings_fields=("decoy_zones", "decoy_zone_count"),
+    ),
     # Always-on engine plugins — major 414th machinery documented in design notes
     # rather than a numbered "Features at a Glance" entry.
     Feature("mantis_iads", "MANTIS IADS engine", plugin_id="mantisiads"),

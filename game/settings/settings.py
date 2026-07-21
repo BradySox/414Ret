@@ -230,6 +230,8 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                     "target_intel_precision",
                     "recon_intel_fog",
                     "concealed_enemy_forces",
+                    "decoy_zones",
+                    "decoy_zone_count",
                     "scar_command_post_intel",
                     "ai_unlimited_fuel",
                 ],
@@ -1057,6 +1059,39 @@ class Settings:
             "planner and threat math always use full truth. The circle is "
             "clickable like a marker, so you can still plan recon or a strike "
             "against the suspected area."
+        ),
+    )
+    decoy_zones: bool = boolean_option(
+        "Decoy suspected-activity zones (fake contacts to bait recon)",
+        enabled_when="concealed_enemy_forces",
+        page=CAMPAIGN_DOCTRINE_PAGE,
+        section=GENERAL_SECTION,
+        default=False,
+        invert=False,
+        detail=(
+            "The enemy plants fake 'suspected activity' circles that look exactly "
+            "like a real concealed force — you cannot tell a genuine hidden contact "
+            "from a feint without flying recon on it. TARPS (or an attack) over a "
+            "decoy reports 'no activity' and clears it; a fresh feint takes its "
+            "place each turn, so you cannot just memorize which are fake. The "
+            "deception targets your planning only — the AI uses full truth and is "
+            "never fooled, and never wastes a strike on an empty zone. Needs "
+            "concealed enemy forces on (otherwise real sites show exact markers and "
+            "any circle would obviously be a decoy)."
+        ),
+    )
+    decoy_zone_count: int = bounded_int_option(
+        "Number of decoy zones standing at once",
+        enabled_when="decoy_zones",
+        page=CAMPAIGN_DOCTRINE_PAGE,
+        section=GENERAL_SECTION,
+        default=4,
+        min=1,
+        max=12,
+        detail=(
+            "How many decoy circles the enemy keeps up at a time; the per-turn "
+            "refresh tops the count back up as you burn them. A campaign can "
+            "override this (and hint placement) with a top-level decoy_zones: block."
         ),
     )
     # NB: the field NAME keeps its historical "scar_" prefix (renaming it would

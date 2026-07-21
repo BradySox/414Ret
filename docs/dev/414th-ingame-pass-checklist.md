@@ -2218,7 +2218,7 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
   `Squadron.faker` wiring didn't take); blank/garbled names; or a recruitment crash on a locale
   with no gendered names (guarded + test-locked — should be impossible).
 
-### I6 — Squadron country surfaced (dialog selector + campaign `country:` pin) · §23 · ☐ UNTESTED (built 2026-07-20 from the flown Desert Storm finding — Israeli/Greek-voiced F-16s wearing the 23rd TFS name, because an airframe-name squadron pick is a random.choice across every nation's presets under a CJTF faction)
+### I6 — Squadron country surfaced (dialog selector + campaign `country:` pin) · §23 · ☑ VERIFIED (2026-07-20, user in-game pass, session `dcs-mission-gspd-fuel-222a42`: "896 is flown and good" — the selector + DS `country: USA` pins flown same day they were built; blanket pass, sub-criteria not itemized. NOTE: upstream draft #896 is deliberately HELD as a draft despite the pass — DM call, "don't flip it just in case it was after the lock", the lock being the upstream no-new-PRs freeze until the next beta (~2026-07-25/26 weekend; #896 was opened the day the freeze was learned) — un-draft only on a fresh explicit call once the freeze lifts. Built from the flown Desert Storm finding: Israeli/Greek-voiced F-16s wearing the 23rd TFS name, because an airframe-name squadron pick is a random.choice across every nation's presets under a CJTF faction)
 - **Headless adjudication (2026-07-20):** the config parse, the same-nation-only preset filter
   (falls through to the def generator rather than hijacking a wrong-nation preset), the
   override stamp (valid/unknown/unset), and the selector's live write / replace-with-preset

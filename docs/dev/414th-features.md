@@ -2597,12 +2597,15 @@ ask — Starfire's yaml pin, Toad's under-the-livery dropdown):
 | Desert Storm pins | `resources/campaigns/iraq_desert_storm.yaml` |
 | Tests | `tests/test_squadron_country_pin.py`, `tests/test_airwing_country_selector.py` (offscreen Qt), `tests/dcs/test_operator_countries.py`, `tests/fourteenth/test_desert_storm.py` |
 
-Needs an in-app pass (checklist **I6**): the selector rendering/behaving in the real dialog, and a
-DS re-fly confirming American voices. **Carved upstream same day as draft
+**I6 VERIFIED 2026-07-20** (user in-game pass the day it was built: "896 is flown and good" —
+the selector + the DS pins flown; blanket pass). **Carved upstream same day as draft
 [#896](https://github.com/dcs-retribution/dcs-retribution/pull/896)** (the generic core — yaml pin,
-selector, round-trip, livery re-point fix, game-side tests; the DS pins and the offscreen-Qt test
-stay fork-side; draft until the I6 pass, the #874 pattern). Deferred: filtering the livery list by
-the squadron country under CJTF (livery filtering still keys off the *faction* country).
+selector, operator-trimmed list, round-trip, livery re-point fix, game-side tests; the DS pins and
+the offscreen-Qt test stay fork-side). **The draft is deliberately HELD despite the pass** — DM
+call 2026-07-20 ("don't flip it just in case it was after the lock" — the upstream no-new-PRs
+freeze until the next beta, ~2026-07-25/26; #896 was opened the day the freeze was learned);
+un-draft only on a fresh explicit call once the freeze lifts. Deferred: filtering the livery list by the squadron country under CJTF (livery
+filtering still keys off the *faction* country).
 - **Review hardening round 2 (2026-07-15, upstream #854 feedback).** Two more carried back: (1)
   **`Game.neutral_country`'s final fallback was the bug it guarded against** — with USAF Aggressors
   as the red faction and a blue CJTF fielding UN and Swiss squadrons, all three preferred neutrals

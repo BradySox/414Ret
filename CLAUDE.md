@@ -2355,17 +2355,21 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     signature).
 72. **Carrier deck decorations (OCN 2 deck dressing)** — every Nimitz-family carrier
     (Stennis + SC CVN-71/72/73/75) gets its deck dressed with **ship-linked static gear
-    and crew**: tow tractors / P-25 crash truck / Hyster forklift / deck hands along the
-    island "street" + the 4-figure LSO platform team — placements **verbatim from the
-    OCN 2 campaign's 13 missions** (Sedlo's deck dressing, extracted from the linked
-    statics in the miz files), rotating between 4 curated street variants per
-    (carrier, turn) crc32 seed. **The hard constraint is parking — and no static may
-    stand ON a spot, ever**: the SC manual's "blocked spot is skipped" claim was
-    FALSIFIED in the first flown mission for late-activated groups (Retribution's
+    and crew**: tow tractors / P-25 crash truck / Hyster forklift / crane / deck hands in
+    the **corral** (the clear staging lane forward of the island) + the 4-figure LSO
+    platform team — placements **from the OCN 2 campaign's 13 missions** (Sedlo's deck
+    dressing, extracted from the linked statics in the miz files), rotating between 6
+    curated street variants per (carrier, turn) crc32 seed. OCN's offsets put the cluster
+    alongside the island, which rendered on the angled-deck foul-line strip; the flown
+    CVN-71 (2026-07-21) user call "out of position, should be in the [corral] circle not
+    the [foul-line] X" translated the whole arrangement forward into the corral via
+    `CORRAL_SHIFT` (clear of every spot by ≥7 m). **The hard constraint is parking — and
+    no static may stand ON a spot, ever**: the SC manual's "blocked spot is skipped" claim
+    was FALSIFIED in the first flown mission for late-activated groups (Retribution's
     dominant §64 spawn path) — a CVN-73 late-activated A-6E pair spawned **INTO** the
     briefly-shipped permanent Seahawk statics (2026-07-18), so the permanent
     aircraft class was removed same day and only two provably parking-free envelopes
-    ship — the LSO sponson (off-deck) and the island street (no documented/observed
+    ship — the LSO sponson (off-deck) and the corral (no documented/observed
     spot) — validated against **Tacview-measured spawn spots** (six-pack row
     +1/−11.5 @ y+34 on a 12 m pitch, port-quarter −84.5/−96.5 @ y−34, the Airboss
     rescue-helo spot +58.5/−31.4) plus the **clip-learned aft spots** (junkyard
@@ -2382,8 +2386,12 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     accents). Gated `carrier_deck_decorations` (Mission Generation → Carrier,
     default **ON**); the second toggle `carrier_deck_decorations_aircraft` (default
     **OFF**, user call 2026-07-18) adds the **LAUNCH-PHASE corridor dressing**: the
-    round-down E-2C (M8/M1 positions) + the port junk row (M4's 5-piece set or M5's
-    pair) standing ONLY during the launch cycle (the arc: shipped static → the user's
+    round-down E-2C (M8/M1 positions) standing ONLY during the launch cycle (a **port
+    junk row** was tried alongside it and **removed** — flown CVN-71 2026-07-21: it sat
+    in the port-quarter *parking* row, not the corridor, and clipped a Hornet on the
+    newly-measured spot at (−108,−34); the launch-phase invariant is now "must fall
+    inside `LANDING_AREA_KEEP_OUT`", replacing the looser aft-of-x rule) (the arc:
+    shipped static → the user's
     screenshot caught it menacing the ramp crossing same day ("how can planes land
     with the E2 there?" — 5.6 m tall, 17.6 m long at the ramp; the static E-2C renders
     FOLDED, user-corrected) → cut → restored per "move the E-2 after the launch is

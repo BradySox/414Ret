@@ -241,9 +241,72 @@ Consequences, same day:
   clip-learned anchors — OCN parks aircraft exactly on them, which is how the lesson
   was bought.
 - **"On a spot" is a hard never for every class**, launch-phase included (spawns run
-  while corridor dressing stands). The stern round-down + port junk row survived the
-  same 30-aircraft mission untouched — evidence they are outside the spawn set —
-  which is why the launch-phase corridor set stays.
+  while corridor dressing stands). The stern round-down E-2 survived the same
+  30-aircraft mission untouched — evidence it is outside the spawn set — which is why
+  it stays. (The port junk row also appeared to survive here, but was later
+  falsified — see the 2026-07-21 section below.)
+
+## The corral reposition (2026-07-21, flown CVN-71 SKINK, second finding)
+
+Same flown mission, a separate issue the user flagged with an annotated
+screenshot: the **street gear was in the wrong place**. The screenshot circled
+the corral (the clear lane forward of the island) and X'd the gear cluster,
+which had spawned on the **angled-deck foul-line strip** alongside/aft of the
+island — "they should have been in the circle not the X".
+
+Root cause: the street gear used OCN's verbatim offsets (x −40..−74, y +12..+26),
+which place the cluster alongside the island. Cross-referenced against the real
+deck geometry (island base x −40..−80 y +20..+55 from `USS_CVN_71.lua`; landing
+touchdown x −104 y −33 port; six-pack spots y +34): those offsets sit in the
+narrow starboard strip between the island and the foul line — reading as "on the
+landing markings." OCN's own **corral** gear (forward of the island) was sparse
+crew only, so rather than lose the rich tractor/crash-truck/forklift/crane
+cluster, the whole OCN arrangement is **translated forward** into the corral by
+`CORRAL_SHIFT = (+30, −6)` (preserves the relative layout). Result: gear at
+x −11..−43, y +7..+20 — forward of the island, starboard of the angled deck,
+inboard of the six-pack, **≥7 m clear of every known spot** (guard-tested across
+all six variants). `ISLAND_STREET_ENVELOPE` moved to the corral box
+(−46, −8, 4, 22); the envelope-bounds guard updated to match.
+
+Method note: the position was confirmed against a **top-down deck map** built
+from the measured spots + the lua geometry before shipping (the perspective
+screenshot alone was ambiguous — repeated deck-geography guesses had failed, so
+the map is the source of truth).
+
+## The port junk row clip (2026-07-21, the flown CVN-71 SKINK)
+
+Third flown mission, third static-placement lesson. The user reported "weird
+spawning" and attached the miz. Tacview forensics on the flown recording measured
+where aircraft actually spawned on deck (their miz positions are meaningless — carrier
+parking starts sit on the carrier reference and DCS assigns real spots at runtime),
+and found a **port-quarter parking spot at (−108, −34)** that was not in
+`KNOWN_PARKING_SPOTS` (the row was only known back to −96.5). A Hornet spawned there
+stood **8.7 m** from the launch-phase port junk-row tractor at (−113.7, −27.6) — a
+wingtip clip.
+
+Root cause: the **port junk row was launch-phase in name only**. The deck-fill round
+placed it at x −105..−114 / y −24..−28 and called it "corridor dressing by the LSO
+platform", but that is **forward and port of the `LANDING_AREA_KEEP_OUT` box**
+(x −170..−120, y −15..+12) — i.e. in the port-quarter *parking* row, not the recovery
+corridor. The weak "aft of x ≤ −100" launch-phase rule let it pass. Fixes:
+
+- **Port junk row removed.** Launch-phase is now the round-down E-2 only (which sits
+  genuinely inside the corridor box and has never clipped across three flown missions).
+- **Invariant tightened**: launch-phase dressing must fall **inside**
+  `LANDING_AREA_KEEP_OUT` — the one zone the plugin actually clears and by definition
+  not a parking area. This replaces `LAUNCH_PHASE_MAX_X`; the guard test enforces
+  containment, so a parking-row position can never be mislabeled launch-phase again.
+- **(−108, −34) added to `KNOWN_PARKING_SPOTS`** (measured), which independently makes
+  the footprint-clearance guard flag the removed junk row too.
+
+The **street gear (starboard) and LSO crew are unaffected**: across two flown
+recordings, deck spawns only ever landed on the six-pack (y +34, forward), the
+port quarter (y −34, aft), and the rescue-helo spot — never the starboard street zone
+(the island's footprint, x −40..−74, y +12..+26). Residual risk remains (I cannot
+enumerate every DCS spot from files — they are model attach-points), so the honest
+posture is: the provably-safe core is the off-deck LSO crew + the runtime-cleared
+round-down E-2; the street gear rests on "no observed spawn there across the flown
+missions," not proof.
 
 The same flight caught the **cone false trip**: the E-2 was struck below at ~5 min
 ("the E-2 gets respoted within the first 5mins") — freshly-launched jets turning

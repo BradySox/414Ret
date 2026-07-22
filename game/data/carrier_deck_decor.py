@@ -1,13 +1,13 @@
 """Curated carrier deck decoration layouts (§72).
 
-Deck-dressing statics for the Nimitz-family carriers, extracted verbatim from
-the OCN 2 (Operation Cerberus North 2) campaign missions -- Sedlo's deck
-dressing language, replayed onto Retribution's carriers: LSO platform crew on
-the port-aft sponson, a "street" of deck equipment (tow tractors, P-25
-firefighting vehicle, Hyster forklift, crane, deck crew) alongside the island,
-and an opt-in LAUNCH-PHASE set in the recovery corridor (the round-down E-2 +
-the port junk-row gear) that the ``deckdecor`` plugin strikes below before
-recovery traffic arrives.
+Deck-dressing statics for the Nimitz-family carriers, extracted from the OCN 2
+(Operation Cerberus North 2) campaign missions -- Sedlo's deck dressing
+language, replayed onto Retribution's carriers: LSO platform crew on the
+port-aft sponson, a "street" of deck equipment (tow tractors, P-25
+firefighting vehicle, Hyster forklift, crane, deck crew) in the corral forward
+of the island, and an opt-in LAUNCH-PHASE round-down E-2 in the recovery
+corridor that the ``deckdecor`` plugin strikes below before recovery traffic
+arrives.
 
 Every static type here is base-game content: the AS32 gear and carrier
 personnel ship in ``CoreMods/tech/USS_Nimitz`` and the CV-59 Hyster forklift in
@@ -17,12 +17,12 @@ ownership required.
 Parking safety is the hard constraint (the whole point of the curation).
 Placement classes and their rules:
 
-- PERMANENT gear (LSO crew + street): only inside envelopes where parking is
-  impossible -- the off-deck LSO sponson and the island street (the strip
-  between the landing-area foul line and the island, flanked by the six-pack
-  row, the corral forward and the junkyard aft; extended to the island's aft
-  corner for the crane accents -- the junkyard's own spots sit further aft,
-  x <= -80 by the SC manual's diagrams). Never inside the recovery corridor.
+- PERMANENT gear (LSO crew + street): only where parking does not happen --
+  the off-deck LSO sponson and the corral, the clear staging lane forward of
+  the island, starboard of the angled-deck foul line and inboard of the
+  six-pack parking row (the OCN by-the-island offsets rendered on the foul-line
+  strip and were repositioned forward, flown CVN-71 2026-07-21). Never inside
+  the recovery corridor, and guard-tested clear of every known spot.
 - LAUNCH-PHASE (the opt-in aircraft tier, default OFF): may stand in the
   recovery corridor because the deckdecor plugin strikes them below before
   recovery (fallback timer / the Airboss window / fixed-wing traffic low
@@ -101,6 +101,8 @@ KNOWN_PARKING_SPOTS: tuple[tuple[float, float], ...] = (
     (-35.5, 34.0),  # six-pack row (extrapolated, 12 m pitch)
     (-84.5, -34.0),  # port quarter (measured; first F-14-capable spot)
     (-96.5, -34.0),  # port quarter (measured)
+    (-108.0, -34.0),  # port quarter, forward end (measured, flown CVN-71 2026-07-21;
+    #                   a Hornet spawned here 8.7 m from the port junk-row static)
     (58.5, -31.4),  # bow-port helo spot (measured; Airboss's rescue helo spawns here)
     # LEARNED the hard way (flown CVN-73, 2026-07-18): late-activated A-6s
     # spawned INTO statics standing at these former aircraft-tier positions --
@@ -132,7 +134,13 @@ def required_spot_clearance_m(static_type: str) -> float:
 
 # The safe envelopes for PERMANENT gear, as (x_min, x_max, y_min, y_max).
 LSO_PLATFORM_ENVELOPE = (-134.0, -126.0, -25.0, -18.0)
-ISLAND_STREET_ENVELOPE = (-74.0, -40.0, 12.5, 26.0)
+# The corral: the clear staging lane FORWARD of the island, starboard of the
+# angled-deck foul line, inboard of the six-pack parking row. This is where the
+# street gear lives after the flown CVN-71 (2026-07-21) reposition -- the user
+# marked the OCN by-the-island offsets (x -40..-74) as "out of position, should
+# be in the [corral] circle not the [foul-line] X". The OCN literals are
+# shifted forward into this box by CORRAL_SHIFT.
+ISLAND_STREET_ENVELOPE = (-46.0, -8.0, 4.0, 22.0)
 
 # The ramp-crossing / wires keep-out (x_min, x_max, y_min, y_max): the stern
 # threshold and touchdown zone that every recovering aircraft crosses a few
@@ -143,11 +151,15 @@ ISLAND_STREET_ENVELOPE = (-74.0, -40.0, 12.5, 26.0)
 # plugin strikes it below before recovery.
 LANDING_AREA_KEEP_OUT = (-170.0, -120.0, -15.0, 12.0)
 
-# Everything launch-phase must be AFT dressing (the recovery corridor / LSO
-# area). Nothing launch-phase may stand forward of this -- forward statics
-# would stand in the bow-catapult taxi flow exactly during the launch cycle
-# (the reason M4's bow set stays excluded entirely).
-LAUNCH_PHASE_MAX_X = -100.0
+# Everything launch-phase must stand INSIDE the recovery-corridor keep-out box
+# (LANDING_AREA_KEEP_OUT) -- that is the ONLY zone the deckdecor plugin clears
+# before recovery, and by definition it is not a parking area. The flown
+# CVN-71 (2026-07-21) proved why this must be the rule and not a looser
+# "aft of x" one: the old port junk row sat at x -105..-114 / y -24..-28 --
+# forward and port of the keep-out box, i.e. squarely in the port-quarter
+# PARKING row -- and a Hornet spawned onto the port-quarter spot at (-108,-34)
+# 8.7 m from its tractor. It was launch-phase in name only. Removed; the
+# guard test now requires every launch-phase item to fall inside the box.
 
 # The LSO platform crew -- identical offsets in all 13 OCN missions.
 LSO_PLATFORM_CREW: list[DeckStatic] = [
@@ -157,11 +169,21 @@ LSO_PLATFORM_CREW: list[DeckStatic] = [
     DeckStatic("Carrier LSO Personell 1", -130.57, -22.34, 203.1),
 ]
 
-# Island street sets, one per source mission, rotated per turn for variety.
-# Placements are verbatim OCN 2 authoring filtered to the safe envelope --
-# never mixed across missions within a zone (mixed sets clip; the M11 tractor
-# vs the M9 crane sit 2 m apart).
-STREET_VARIANTS: list[list[DeckStatic]] = [
+# The corral reposition (flown CVN-71, 2026-07-21). The OCN street gear offsets
+# below place the cluster alongside/aft of the island (x -40..-74), which
+# rendered on the foul-line strip -- the user marked it "out of position, should
+# be in the circle [the corral, forward of the island] not the X". OCN's own
+# forward-corral gear was sparse crew only, so rather than lose the rich
+# tractor/crash-truck/forklift cluster, the whole OCN arrangement is translated
+# forward into the corral by this shift (preserves the relative layout). Every
+# shifted variant clears every KNOWN_PARKING_SPOT by >= 7 m (guard-tested).
+CORRAL_SHIFT = (30.0, -6.0)
+
+# OCN 2 street sets, one per source mission, rotated per turn for variety.
+# Placements are verbatim OCN 2 authoring (by-the-island) -- never mixed across
+# missions within a zone (mixed sets clip). Shifted into the corral by
+# CORRAL_SHIFT to form STREET_VARIANTS below.
+_OCN_STREET_VARIANTS: list[list[DeckStatic]] = [
     # OCN 2 mission 3 street set
     [
         DeckStatic("us carrier tech", -40.37, 20.35, 316.5),
@@ -249,33 +271,29 @@ STREET_VARIANTS: list[list[DeckStatic]] = [
     ],
 ]
 
+# The shipped street sets: OCN arrangements translated forward into the corral.
+STREET_VARIANTS: list[list[DeckStatic]] = [
+    [
+        DeckStatic(
+            it.type, it.x + CORRAL_SHIFT[0], it.y + CORRAL_SHIFT[1], it.angle_deg
+        )
+        for it in variant
+    ]
+    for variant in _OCN_STREET_VARIANTS
+]
+
 # --- Launch-phase dressing (aircraft tier; runtime-cleared) -----------------
 #
-# Statics that stand in/near the recovery corridor during the launch cycle and
-# are struck below by the deckdecor plugin before recovery. Two independent
-# sub-zones, rotated per turn; zones are 25+ m apart so cross-mission
-# combination cannot clip.
+# Statics that stand INSIDE the recovery corridor (LANDING_AREA_KEEP_OUT)
+# during the launch cycle and are struck below by the deckdecor plugin before
+# recovery. Only the round-down E-2 qualifies: it stands on the aft round-down,
+# in the corridor (not a parking area), and no aircraft has ever spawned near
+# it across the flown missions. The OCN "port junk row" was tried here and
+# REMOVED (flown CVN-71, 2026-07-21): it sat forward/port of the corridor box,
+# in the port-quarter parking row, and clipped a spawning Hornet.
 ROUND_DOWN_VARIANTS: list[list[DeckStatic]] = [
     [DeckStatic("E-2C", -152.14, 5.37, 350.0)],  # OCN 2 mission 8
     [DeckStatic("E-2C", -138.04, 5.12, 352.1)],  # OCN 2 mission 1
-]
-
-# The port junk row between the LSO platform and the wires -- gear and hands
-# dressing the LSO approach area during launch.
-PORT_JUNK_VARIANTS: list[list[DeckStatic]] = [
-    # OCN 2 mission 4 set (incl. the fifth LSO figure up-deck of the platform)
-    [
-        DeckStatic("AS32-p25", -120.03, -25.65, 89.6),
-        DeckStatic("us carrier tech", -122.14, -24.90, 250.6),
-        DeckStatic("us carrier tech", -119.34, -28.92, 355.6),
-        DeckStatic("us carrier tech", -118.30, -27.07, 340.6),
-        DeckStatic("Carrier LSO Personell 5", -113.58, -23.42, 325.6),
-    ],
-    # OCN 2 mission 5 set
-    [
-        DeckStatic("AS32-31A", -113.70, -27.63, 265.0),
-        DeckStatic("us carrier tech", -105.66, -24.61, 292.8),
-    ],
 ]
 
 
@@ -305,6 +323,4 @@ def launch_phase_dressing_for(
     """The launch-phase (runtime-cleared) set for one carrier this turn."""
     if not include_aircraft or hull_id not in NIMITZ_DECK_HULLS:
         return []
-    return _pick(ROUND_DOWN_VARIANTS, seed_key, "rounddown", turn) + _pick(
-        PORT_JUNK_VARIANTS, seed_key, "portjunk", turn
-    )
+    return _pick(ROUND_DOWN_VARIANTS, seed_key, "rounddown", turn)

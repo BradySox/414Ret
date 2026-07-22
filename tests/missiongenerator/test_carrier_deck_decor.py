@@ -21,10 +21,8 @@ from game.data.carrier_deck_decor import (
     ISLAND_STREET_ENVELOPE,
     KNOWN_PARKING_SPOTS,
     LANDING_AREA_KEEP_OUT,
-    LAUNCH_PHASE_MAX_X,
     LSO_PLATFORM_CREW,
     LSO_PLATFORM_ENVELOPE,
-    PORT_JUNK_VARIANTS,
     ROUND_DOWN_VARIANTS,
     STATIC_META,
     STREET_VARIANTS,
@@ -48,9 +46,6 @@ def launch_phase() -> Iterator[tuple[str, DeckStatic]]:
     for i, variant in enumerate(ROUND_DOWN_VARIANTS):
         for item in variant:
             yield f"round-down variant {i}", item
-    for i, variant in enumerate(PORT_JUNK_VARIANTS):
-        for item in variant:
-            yield f"port-junk variant {i}", item
 
 
 def everything() -> Iterator[tuple[str, DeckStatic]]:
@@ -99,17 +94,17 @@ def test_no_permanent_static_aircraft_exist() -> None:
 def test_envelopes_stay_off_catapults_and_landing_area() -> None:
     """Guard the envelope constants themselves against accidental widening.
 
-    Street: starboard of the landing-area foul line (y >= +12.5), against the
-    island (never reaching the six-pack row, whose forward-most measured spot
-    clearance is covered by the test above), between the corral (~-38) and the
-    island's aft corner (~-75; the junkyard's own spots sit x <= -80 per the
-    SC manual's diagrams). LSO box: the port-aft sponson, off the deck edge.
-    The bow catapults live at x > +30 -- neither envelope reaches them.
+    Corral (street after the 2026-07-21 reposition): the clear lane FORWARD of
+    the island, starboard of centerline (y >= 0, clear of the port angled deck)
+    but inboard of the six-pack row (y <= +22, i.e. >= 12 m off the y = +34
+    spots), forward of the island's front face (x >= -50) yet well aft of the
+    bow catapults (x <= -8, cats live at x > +30). LSO box: the port-aft
+    sponson, off the deck edge.
     """
     sx0, sx1, sy0, sy1 = ISLAND_STREET_ENVELOPE
-    assert sy0 >= 12.5
-    assert sy1 <= 27.0
-    assert -75.0 <= sx0 and sx1 <= -38.0
+    assert sy0 >= 0.0
+    assert sy1 <= 22.0
+    assert -50.0 <= sx0 and sx1 <= -8.0
     lx0, lx1, ly0, ly1 = LSO_PLATFORM_ENVELOPE
     assert ly1 <= -18.0
     assert lx1 <= -100.0
@@ -131,33 +126,34 @@ def test_only_launch_phase_may_stand_in_the_ramp_crossing_keep_out() -> None:
         ), f"{source}: {item} is inside the landing-area keep-out"
 
 
-def test_launch_phase_is_aft_dressing_only() -> None:
-    """Nothing launch-phase forward of the recovery corridor -- a forward
-    static would stand in the bow-catapult taxi flow exactly during the
-    launch cycle (why M4's bow set stays excluded)."""
+def test_launch_phase_stands_only_inside_the_recovery_corridor() -> None:
+    """Launch-phase dressing may only stand INSIDE the recovery-corridor
+    keep-out box -- the one zone the deckdecor plugin clears before recovery,
+    and by definition not a parking area. The flown CVN-71 (2026-07-21) proved
+    the looser 'aft of x' rule was insufficient: the removed port junk row was
+    aft but sat forward/port of the box, in the port-quarter parking row, and
+    clipped a spawning Hornet."""
     for source, item in launch_phase():
-        assert item.x <= LAUNCH_PHASE_MAX_X, f"{source}: {item} is not aft"
+        assert in_box(
+            item.x, item.y, LANDING_AREA_KEEP_OUT
+        ), f"{source}: {item} is outside the recovery-corridor keep-out"
 
 
 def test_launch_phase_composition_and_gating() -> None:
-    """Launch-phase = one round-down variant + one port junk-row variant;
+    """Launch-phase = one round-down variant (the port junk row was removed);
     empty without the tier or off a Nimitz deck; deterministic per
     (carrier, turn)."""
     lp = launch_phase_dressing_for(CVN_71.id, "CSG 1", 3, True)
-    assert lp[:1] in ROUND_DOWN_VARIANTS
-    assert lp[1:] in PORT_JUNK_VARIANTS
+    assert lp in ROUND_DOWN_VARIANTS
     assert lp == launch_phase_dressing_for(CVN_71.id, "CSG 1", 3, True)
     assert launch_phase_dressing_for(CVN_71.id, "CSG 1", 3, False) == []
     assert launch_phase_dressing_for(LHA_Tarawa.id, "ESG 1", 3, True) == []
-    # Both round-down positions and both port sets appear across turns.
-    seen_round = set()
-    seen_port = set()
-    for turn in range(8):
-        lp = launch_phase_dressing_for(CVN_71.id, "CSG 1", turn, True)
-        seen_round.add(lp[0].x)
-        seen_port.add(lp[1].x)
+    # Both round-down positions appear across turns.
+    seen_round = {
+        launch_phase_dressing_for(CVN_71.id, "CSG 1", turn, True)[0].x
+        for turn in range(8)
+    }
     assert len(seen_round) == len(ROUND_DOWN_VARIANTS)
-    assert len(seen_port) == len(PORT_JUNK_VARIANTS)
 
 
 def test_layout_gating_and_rotation() -> None:

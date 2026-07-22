@@ -2382,8 +2382,12 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     accents). Gated `carrier_deck_decorations` (Mission Generation → Carrier,
     default **ON**); the second toggle `carrier_deck_decorations_aircraft` (default
     **OFF**, user call 2026-07-18) adds the **LAUNCH-PHASE corridor dressing**: the
-    round-down E-2C (M8/M1 positions) + the port junk row (M4's 5-piece set or M5's
-    pair) standing ONLY during the launch cycle (the arc: shipped static → the user's
+    round-down E-2C (M8/M1 positions) standing ONLY during the launch cycle (a **port
+    junk row** was tried alongside it and **removed** — flown CVN-71 2026-07-21: it sat
+    in the port-quarter *parking* row, not the corridor, and clipped a Hornet on the
+    newly-measured spot at (−108,−34); the launch-phase invariant is now "must fall
+    inside `LANDING_AREA_KEEP_OUT`", replacing the looser aft-of-x rule) (the arc:
+    shipped static → the user's
     screenshot caught it menacing the ramp crossing same day ("how can planes land
     with the E2 there?" — 5.6 m tall, 17.6 m long at the ramp; the static E-2C renders
     FOLDED, user-corrected) → cut → restored per "move the E-2 after the launch is

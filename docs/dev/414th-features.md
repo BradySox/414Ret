@@ -6520,10 +6520,14 @@ stands on height + length). A scripted campaign can stage-manage its recoveries 
 that; a dynamic campaign recovers jets every mission. The user's follow-up ("move the
 E-2 after the launch is over… we could fill the round down within reason") is the
 shipped answer: statics can't drive (no AI controller), but they can be **struck
-below**. The launch-phase set (with the tier) rotates two independent aft sub-zones —
-the **round-down E-2C** (M8's or M1's position) and the **port junk row** between the
-LSO platform and the wires (M4's 5-piece set: P-25, three deck hands, the fifth LSO
-figure up-deck; or M5's tractor pair) — and the `deckdecor` plugin despawns them all
+below**. The launch-phase set (with the tier) is the **round-down E-2C** (M8's or M1's
+position, rotated) — the one spot that stands inside the recovery corridor and never on
+a parking spot. (A **port junk row** by the LSO platform was tried alongside it and
+**removed** — flown CVN-71, 2026-07-21: it was launch-phase in name only, sitting
+forward and port of the corridor box in the port-quarter *parking* row, and clipped a
+Hornet spawning onto the newly-measured spot at (−108, −34). The launch-phase invariant
+is now "must fall inside `LANDING_AREA_KEEP_OUT`", which the junk row failed.) The
+`deckdecor` plugin despawns the round-down E-2
 (`StaticObject:destroy`, silent — the elevator ride, narratively) when EITHER fires
 first: friendly **fixed-wing traffic genuinely running in low astern** (a cone off
 the reciprocal of the emitted BRC — 4.5 NM / **1 000 ft** / ±50° / **closing ≥30 kt
@@ -6559,14 +6563,14 @@ last-boat-wins global, and Airboss can be unticked). Emitter
 boat, side, BRC, clear names), populated from `MissionData.deck_decor` by the
 tgogenerator hook; emits nothing (plugin no-ops) when no launch-phase static was
 placed. Despawn only — no runtime spawns, no gameplay-model change. The
-placement-class rules are guard-tested: **permanent** items (gear AND the aircraft
-tier) never stand in the `LANDING_AREA_KEEP_OUT` box (stern threshold + wires); only
-launch-phase may, every launch-phase item is **aft-only** (x ≤ −100 — a forward
-static would stand in the bow-cat taxi flow exactly during launches, why M4's bow set
-stays excluded), and EVERY class clears every measured spot with **per-type footprint
-margins** (an aircraft static needs more clearance than a tractor). Still excluded
-outright: both port-quarter E-2s (foul the measured patio spots the F-14 pairs park
-on, even folded).
+placement-class rules are guard-tested: **permanent** items never stand in the
+`LANDING_AREA_KEEP_OUT` box (stern threshold + wires); **launch-phase** items must fall
+**inside** it (the recovery corridor is the only zone the plugin clears, and it is not
+a parking area — the rule that replaced the looser "aft of x ≤ −100" one after the
+port-junk-row clip); and EVERY class clears every measured spot with **per-type
+footprint margins** (an aircraft static needs more clearance than a tractor). Still
+excluded outright: both port-quarter E-2s (foul the measured patio spots the F-14 pairs
+park on, even folded) and the port junk row (in the port-quarter parking row).
 
 **Mechanism.** A ship-linked static serializes across three levels of the mission
 format, none fully covered by stock pydcs: `linkUnit` (carrier unit id) on the static

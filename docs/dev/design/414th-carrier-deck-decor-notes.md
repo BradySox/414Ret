@@ -241,9 +241,45 @@ Consequences, same day:
   clip-learned anchors — OCN parks aircraft exactly on them, which is how the lesson
   was bought.
 - **"On a spot" is a hard never for every class**, launch-phase included (spawns run
-  while corridor dressing stands). The stern round-down + port junk row survived the
-  same 30-aircraft mission untouched — evidence they are outside the spawn set —
-  which is why the launch-phase corridor set stays.
+  while corridor dressing stands). The stern round-down E-2 survived the same
+  30-aircraft mission untouched — evidence it is outside the spawn set — which is why
+  it stays. (The port junk row also appeared to survive here, but was later
+  falsified — see the 2026-07-21 section below.)
+
+## The port junk row clip (2026-07-21, the flown CVN-71 SKINK)
+
+Third flown mission, third static-placement lesson. The user reported "weird
+spawning" and attached the miz. Tacview forensics on the flown recording measured
+where aircraft actually spawned on deck (their miz positions are meaningless — carrier
+parking starts sit on the carrier reference and DCS assigns real spots at runtime),
+and found a **port-quarter parking spot at (−108, −34)** that was not in
+`KNOWN_PARKING_SPOTS` (the row was only known back to −96.5). A Hornet spawned there
+stood **8.7 m** from the launch-phase port junk-row tractor at (−113.7, −27.6) — a
+wingtip clip.
+
+Root cause: the **port junk row was launch-phase in name only**. The deck-fill round
+placed it at x −105..−114 / y −24..−28 and called it "corridor dressing by the LSO
+platform", but that is **forward and port of the `LANDING_AREA_KEEP_OUT` box**
+(x −170..−120, y −15..+12) — i.e. in the port-quarter *parking* row, not the recovery
+corridor. The weak "aft of x ≤ −100" launch-phase rule let it pass. Fixes:
+
+- **Port junk row removed.** Launch-phase is now the round-down E-2 only (which sits
+  genuinely inside the corridor box and has never clipped across three flown missions).
+- **Invariant tightened**: launch-phase dressing must fall **inside**
+  `LANDING_AREA_KEEP_OUT` — the one zone the plugin actually clears and by definition
+  not a parking area. This replaces `LAUNCH_PHASE_MAX_X`; the guard test enforces
+  containment, so a parking-row position can never be mislabeled launch-phase again.
+- **(−108, −34) added to `KNOWN_PARKING_SPOTS`** (measured), which independently makes
+  the footprint-clearance guard flag the removed junk row too.
+
+The **street gear (starboard) and LSO crew are unaffected**: across two flown
+recordings, deck spawns only ever landed on the six-pack (y +34, forward), the
+port quarter (y −34, aft), and the rescue-helo spot — never the starboard street zone
+(the island's footprint, x −40..−74, y +12..+26). Residual risk remains (I cannot
+enumerate every DCS spot from files — they are model attach-points), so the honest
+posture is: the provably-safe core is the off-deck LSO crew + the runtime-cleared
+round-down E-2; the street gear rests on "no observed spawn there across the flown
+missions," not proof.
 
 The same flight caught the **cone false trip**: the E-2 was struck below at ~5 min
 ("the E-2 gets respoted within the first 5mins") — freshly-launched jets turning

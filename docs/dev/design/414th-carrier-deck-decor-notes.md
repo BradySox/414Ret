@@ -246,6 +246,33 @@ Consequences, same day:
   it stays. (The port junk row also appeared to survive here, but was later
   falsified — see the 2026-07-21 section below.)
 
+## The corral reposition (2026-07-21, flown CVN-71 SKINK, second finding)
+
+Same flown mission, a separate issue the user flagged with an annotated
+screenshot: the **street gear was in the wrong place**. The screenshot circled
+the corral (the clear lane forward of the island) and X'd the gear cluster,
+which had spawned on the **angled-deck foul-line strip** alongside/aft of the
+island — "they should have been in the circle not the X".
+
+Root cause: the street gear used OCN's verbatim offsets (x −40..−74, y +12..+26),
+which place the cluster alongside the island. Cross-referenced against the real
+deck geometry (island base x −40..−80 y +20..+55 from `USS_CVN_71.lua`; landing
+touchdown x −104 y −33 port; six-pack spots y +34): those offsets sit in the
+narrow starboard strip between the island and the foul line — reading as "on the
+landing markings." OCN's own **corral** gear (forward of the island) was sparse
+crew only, so rather than lose the rich tractor/crash-truck/forklift/crane
+cluster, the whole OCN arrangement is **translated forward** into the corral by
+`CORRAL_SHIFT = (+30, −6)` (preserves the relative layout). Result: gear at
+x −11..−43, y +7..+20 — forward of the island, starboard of the angled deck,
+inboard of the six-pack, **≥7 m clear of every known spot** (guard-tested across
+all six variants). `ISLAND_STREET_ENVELOPE` moved to the corral box
+(−46, −8, 4, 22); the envelope-bounds guard updated to match.
+
+Method note: the position was confirmed against a **top-down deck map** built
+from the measured spots + the lua geometry before shipping (the perspective
+screenshot alone was ambiguous — repeated deck-geography guesses had failed, so
+the map is the source of truth).
+
 ## The port junk row clip (2026-07-21, the flown CVN-71 SKINK)
 
 Third flown mission, third static-placement lesson. The user reported "weird

@@ -6448,17 +6448,20 @@ the mod-off stripped-stores signature).
 
 **What it is.** Every Nimitz-family carrier (free Stennis + supercarrier CVN-71/72/73/75)
 gets its deck dressed with ship-linked static deck equipment and crew — tow tractors
-(AS32-31A/-32A), a P-25 crash truck, a CV-59 Hyster forklift, deck hands along the
-island "street", and the four-figure LSO team on the port-aft platform — so the boat
-reads like a working flight deck instead of an empty parking lot. The placements are
-**verbatim Sedlo authoring**: extracted from the 13 missions of the OCN 2 (Operation
-Cerberus North 2) campaign (`E:\DCS World\Mods\campaigns\FA-18C Operation Cerberus
-North 2`, the user's install), which dresses the Truman's deck in every mission, and
-replayed at the same ship-frame offsets. The street arrangement rotates between six
-curated variants (mission 3 / 6 / 9 / 10 / 11 / 12 sets — the M6/M9 sets bring the
-AS32-36A crane accents at the island's aft corner, for which the street envelope
-extends to −74/+26) deterministically on (carrier, turn) — crc32 seeding, the §70
-pattern — so re-generating a turn is stable but consecutive turns vary. User request
+(AS32-31A/-32A), a P-25 crash truck, a CV-59 Hyster forklift, deck hands, and an
+AS32-36A crane in the **corral** (the clear staging lane forward of the island), plus
+the four-figure LSO team on the port-aft platform — so the boat reads like a working
+flight deck instead of an empty parking lot. The placements are **Sedlo authoring**:
+extracted from the 13 missions of the OCN 2 (Operation Cerberus North 2) campaign
+(`E:\DCS World\Mods\campaigns\FA-18C Operation Cerberus North 2`, the user's install),
+which dresses the Truman's deck in every mission. OCN's offsets put the cluster
+alongside the island, which rendered on the angled-deck **foul-line strip** — the flown
+CVN-71 (2026-07-21) user feedback was "out of position, should be in the [corral] circle
+not the [foul-line] X" — so the whole OCN arrangement is translated forward into the
+corral by `CORRAL_SHIFT` (preserving the relative layout, clear of every spot by ≥7 m).
+The arrangement rotates between six curated variants (mission 3 / 6 / 9 / 10 / 11 / 12
+sets, incl. the M6/M9 crane) deterministically on (carrier, turn) — crc32 seeding, the
+§70 pattern — so re-generating a turn is stable but consecutive turns vary. User request
 2026-07-18 ("apply them to ALL retribution carriers for flavor — BUT we need all of
 the parking spots still usable").
 

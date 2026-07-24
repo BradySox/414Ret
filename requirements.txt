@@ -34,7 +34,11 @@ pluggy==1.5.0
 pre-commit==4.2.0
 pydantic==2.11.0b2
 pydantic-settings==2.8.1
-pydcs @ git+https://github.com/dcs-retribution/pydcs@b0fc06a72be9787455747290cdad969c49a827df
+# Carries dcs-retribution/pydcs#34 (native DTC cartridge support) on top of
+# upstream retribution head 57d9575. The commit is pinned on the 414th's pydcs
+# fork so it installs before #34 merges; once upstream merges (merge-commit
+# style, so the sha survives), re-point the URL at dcs-retribution/pydcs.
+pydcs @ git+https://github.com/BradySox/pydcs@e6e7a57997a597d7aea03743ea4398a2ec5b320b
 pyinstaller==6.19.0
 pyinstaller-hooks-contrib==2026.0
 pyparsing==3.2.1

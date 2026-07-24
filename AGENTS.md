@@ -2505,12 +2505,18 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     (`CoreMods/aircraft/<type>/DTC` + `me_managerDTC.lua`; design note
     `414th-dtc-cartridge-notes.md` is the format reference): 59/25 waypoints, 9 CAP pts,
     3+3 FAOR/FLOT ×7 pts, 40/15 threat rings, and the load-bearing `Default_*` style
-    indices (must be 1, the editor inits them to NONE). pydcs knows neither piece (neither
-    org nor root repo, checked): two fork-side seams in `dtc/cartridge.py` — an idempotent
-    `FlyingUnit.dict` wrap emitting the unit `DTC` key + a post-save zip append (before the
-    §66 archive copy, so archives carry cartridges) — with the clean first-class version
-    PR'd to `dcs-retribution/pydcs` (delete the seams when the pin moves). Both hooks
-    best-effort: any failure logs and leaves the pre-feature miz. CH-47F + MiG-29 also ship
+    indices (must be 1, the editor inits them to NONE). Serialization is **first-class
+    pydcs** — the `dcs-retribution/pydcs#34` support (written alongside the feature;
+    also fixes pydcs silently dropping a loaded mission's unit DTC blocks on re-save),
+    pinned in `requirements.txt` at `e6e7a57` on the BradySox/pydcs fork until upstream
+    merges #34 (merge-commit style preserves the sha — re-point the URL at
+    dcs-retribution/pydcs then; the bump also carries the 3 upstream pydcs commits since
+    the old `b0fc06a` pin): `Mission.add_dtc_cartridge` writes the `DTC/*.dtc` files at
+    save, `FlyingUnit.add_dtc_cartridge` emits the unit block, both round-trip through
+    load. (The first shipped version's two fork-side seams — a `FlyingUnit.dict`
+    monkeypatch + a post-save zip append — were deleted with the pin bump.) The
+    generation pass stays best-effort: any failure logs and leaves the pre-feature miz.
+    CH-47F + MiG-29 also ship
     DTC descriptors — add builders when a campaign fields them blue-client. Gated
     `dtc_data_cartridges` (Mission Generation → Cockpit data, default **ON**; OFF is
     byte-identical). Tests `tests/missiongenerator/test_dtc.py` (shapes, fog, mirroring,

@@ -6819,16 +6819,20 @@ alongside the thicker tanker/AEW&C capsules;
 `DrawingsGenerator._generate_cap_station_orbits`,
 `tests/missiongenerator/test_cap_station_drawings.py`).
 
-**Implementation:** `game/missiongenerator/dtc/` — `cartridge.py` (the model + the
-two pydcs seams: an idempotent `FlyingUnit.dict` wrap emitting the `DTC` key for
-units carrying `retribution_dtc`, and a post-save zip append for the `DTC/` files),
-`common.py` (extraction helpers), `hornet.py` / `viper.py` (per-jet builders),
-`generator.py` (`DtcGenerator`, wired in `missiongenerator.py` after the drawings
-pass + after `mission.save`). Both hooks are best-effort — a failure logs and leaves
-the pre-feature miz. CH-47F and the MiG-29 Fulcrum also ship DTC descriptors; add
-builders in `CARTRIDGE_BUILDERS` when a campaign fields them as blue client
-airframes. The clean first-class seams are PR'd to `dcs-retribution/pydcs`; when the
-pin moves, `cartridge.py` shrinks to the model + builders.
+**Implementation:** `game/missiongenerator/dtc/` — `cartridge.py` (the
+`DtcCartridge` model), `common.py` (extraction helpers), `hornet.py` / `viper.py`
+(per-jet builders), `generator.py` (`DtcGenerator`, wired in `missiongenerator.py`
+after the drawings pass). Serialization is **first-class pydcs** (the
+`dcs-retribution/pydcs#34` support, pinned in `requirements.txt` at `e6e7a57` on
+the BradySox fork until upstream merges): `Mission.add_dtc_cartridge` writes the
+`DTC/*.dtc` files at save and `FlyingUnit.add_dtc_cartridge` emits the unit block —
+both round-trip through `Mission.load_file`, which also fixed a latent pydcs bug
+(a loaded mission's unit DTC blocks were silently dropped on re-save). The
+generation pass stays best-effort — a failure logs and leaves the pre-feature miz.
+(The first shipped version carried two fork-side seams — a `FlyingUnit.dict`
+monkeypatch + a post-save zip append — deleted with the pin bump.) CH-47F and the
+MiG-29 Fulcrum also ship DTC descriptors; add builders in `CARTRIDGE_BUILDERS`
+when a campaign fields them as blue client airframes.
 
 Gated `dtc_data_cartridges` (Mission Generation → Cockpit data, default **ON** — the
 kill switch; OFF is byte-identical output). Tests

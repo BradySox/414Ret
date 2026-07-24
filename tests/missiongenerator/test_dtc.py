@@ -27,11 +27,7 @@ from game.ato.flighttype import FlightType
 from game.ato.flightwaypoint import GROUND_MARKED_WAYPOINTS
 from game.ato.flightwaypointtype import FlightWaypointType
 from game.missiongenerator.dtc import DtcGenerator
-from game.missiongenerator.dtc.cartridge import (
-    DtcCartridge,
-    append_cartridges_to_miz,
-    attach_cartridge_to_unit,
-)
+from game.missiongenerator.dtc.cartridge import DtcCartridge
 from game.missiongenerator.dtc.common import (
     SupportTrack,
     dedupe_stations,
@@ -87,6 +83,18 @@ class _Freq:
         self.mhz = mhz
 
 
+class _FakeUnit:
+    """Client-unit stand-in recording the pydcs add_dtc_cartridge call."""
+
+    def __init__(self) -> None:
+        self.dtc_cartridge_names: list[str] = []
+
+    def add_dtc_cartridge(
+        self, name: str, default: bool = True, autoload: bool = True
+    ) -> None:
+        self.dtc_cartridge_names.append(name)
+
+
 def _freq(mhz: float) -> Any:
     return _Freq(mhz)
 
@@ -118,7 +126,7 @@ def _flight(
         group_name=f"{callsign} group",
         callsign=callsign,
         friendly=SimpleNamespace(is_blue=blue),
-        client_units=[SimpleNamespace() for _ in range(clients)],
+        client_units=[_FakeUnit() for _ in range(clients)],
         aircraft_type=SimpleNamespace(dcs_unit_type=SimpleNamespace(id=dcs_id)),
         flight_type=flight_type,
         waypoints=waypoints or [],
@@ -417,25 +425,25 @@ def test_unit_dict_and_miz_round_trip(tmp_path: Path) -> None:
         altitude=6000,
         group_size=2,
     )
-    attach_cartridge_to_unit(group.units[0], "Test FA-18C")
-
-    lead = group.units[0].dict()
-    wing = group.units[1].dict()
-    assert lead["DTC"] == {
-        "Cartridges": [{"default": True, "name": "Test FA-18C"}],
-        "AutoLoad": True,
-    }
-    assert "DTC" not in wing
-
-    miz = tmp_path / "dtc_test.miz"
-    mission.save(str(miz))
     cartridge = DtcCartridge(
         name="Test FA-18C",
         unit_type="FA-18C_hornet",
         terrain="Caucasus",
         data={"COMM": {}, "type": "FA-18C_hornet"},
     )
-    append_cartridges_to_miz(miz, [cartridge])
+    mission.add_dtc_cartridge(cartridge.name, cartridge.to_json())
+    group.units[0].add_dtc_cartridge("Test FA-18C")
+
+    lead = group.units[0].dict()
+    wing = group.units[1].dict()
+    assert lead["DTC"] == {
+        "Cartridges": {1: {"default": True, "name": "Test FA-18C"}},
+        "AutoLoad": True,
+    }
+    assert "DTC" not in wing
+
+    miz = tmp_path / "dtc_test.miz"
+    mission.save(str(miz))
 
     with zipfile.ZipFile(miz) as zf:
         raw = zf.read("DTC/Test FA-18C.dtc")
@@ -446,15 +454,22 @@ def test_unit_dict_and_miz_round_trip(tmp_path: Path) -> None:
         assert '"Cartridges"' in mission_lua
         assert "Test FA-18C" in mission_lua
 
-    # A miz carrying DTC data must still load cleanly (campaign mizzes may be
-    # authored with cartridges; pydcs ignores the extra unit key + zip entry).
+    # The cartridge + unit block round-trip through pydcs load and re-save
+    # (campaign mizzes may be authored with cartridges).
     reloaded = Mission(Caucasus())
     reloaded.load_file(str(miz))
+    assert reloaded.dtc_cartridges == {"Test FA-18C": cartridge.to_json()}
+    miz2 = tmp_path / "dtc_test2.miz"
+    reloaded.save(str(miz2))
+    with zipfile.ZipFile(miz2) as zf:
+        assert "DTC/Test FA-18C.dtc" in zf.namelist()
+        assert '"AutoLoad"' in zf.read("mission").decode("utf-8")
 
 
 def _generator(game: Any, flights: list[Any]) -> DtcGenerator:
+    mission = SimpleNamespace(add_dtc_cartridge=lambda name, content: None)
     return DtcGenerator(
-        SimpleNamespace(),  # type: ignore[arg-type]
+        mission,  # type: ignore[arg-type]
         game,
         _mission_data(flights),
     )

@@ -183,10 +183,6 @@ class MissionGenerator:
         output.parent.mkdir(parents=True, exist_ok=True)
         logging.info("MIZ generation: saving mission to %s", output)
         self.mission.save(output)
-        try:
-            dtc_generator.append_to_miz(output)
-        except Exception:
-            logging.exception("DTC: appending cartridges failed; mission unaffected")
 
         logging.info("MIZ generation: complete")
 

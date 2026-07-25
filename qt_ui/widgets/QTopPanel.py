@@ -51,16 +51,20 @@ class QTopPanel(QFrame):
         pass_turn_text = "Pass Turn"
         if not self.game or self.game.turn == 0:
             pass_turn_text = "Begin Campaign"
+        # Exactly one control in this strip is the primary action, and it is the
+        # one that generates and launches the mission. Everything else here —
+        # Pass Turn, Air Wing, Transfers, Re-roll RED — is an ordinary button.
+        # They all used to carry "btn-primary" too, which is why nothing in the
+        # strip read as more important than anything else.
         self.passTurnButton = QPushButton(pass_turn_text)
         self.passTurnButton.setIcon(CONST.ICONS["PassTurn"])
-        self.passTurnButton.setProperty("style", "btn-primary")
         self.passTurnButton.clicked.connect(self.passTurn)
         if not self.game:
             self.passTurnButton.setEnabled(False)
 
         self.proceedButton = QPushButton("Take off")
         self.proceedButton.setIcon(CONST.ICONS["Proceed"])
-        self.proceedButton.setProperty("style", "start-button")
+        self.proceedButton.setProperty("style", "btn-primary")
         self.proceedButton.clicked.connect(self.launch_mission)
         if not self.game or self.game.turn == 0:
             self.proceedButton.setEnabled(False)
@@ -69,12 +73,10 @@ class QTopPanel(QFrame):
 
         self.air_wing = QPushButton("Air Wing")
         self.air_wing.setDisabled(True)
-        self.air_wing.setProperty("style", "btn-primary")
         self.air_wing.clicked.connect(self.open_air_wing)
 
         self.transfers = QPushButton("Transfers")
         self.transfers.setDisabled(True)
-        self.transfers.setProperty("style", "btn-primary")
         self.transfers.clicked.connect(self.open_transfers)
 
         # Re-plan ONLY the enemy (RED) air tasking for the current turn, keeping the
@@ -85,7 +87,6 @@ class QTopPanel(QFrame):
         # both sides).
         self.reroll_red_button = QPushButton("Re-roll RED")
         self.reroll_red_button.setDisabled(True)
-        self.reroll_red_button.setProperty("style", "btn-primary")
         self.reroll_red_button.setToolTip(
             "Discard and re-plan the RED (enemy) air tasking for this turn while "
             "keeping your BLUE frag untouched. Does not change the clock or weather."

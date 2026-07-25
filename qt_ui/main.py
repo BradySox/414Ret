@@ -37,6 +37,7 @@ from qt_ui import (
     uiconstants,
 )
 from qt_ui.screenfit import ScreenFitFilter
+from qt_ui.theme import build_stylesheet
 from qt_ui.uiflags import UiFlags
 from qt_ui.windows.GameUpdateSignal import GameUpdateSignal
 from qt_ui.windows.QLiberationWindow import QLiberationWindow
@@ -192,12 +193,21 @@ def run_ui(game: Optional[Game], ui_flags: UiFlags) -> None:
 
     # init the theme and load the stylesheet based on the theme index
     liberation_theme.init()
-    with open(
-        "./resources/stylesheets/" + liberation_theme.get_theme_css_file(),
-        encoding="utf-8",
-    ) as stylesheet:
-        logging.info("Loading stylesheet: %s", liberation_theme.get_theme_css_file())
-        app.setStyleSheet(stylesheet.read())
+    if liberation_theme.theme_is_generated():
+        # The shipped theme is built from the design tokens in qt_ui/theme, so
+        # the Qt chrome and the web client can be derived from one palette
+        # instead of two hand-maintained sets of literals.
+        logging.info("Building stylesheet from design tokens")
+        app.setStyleSheet(build_stylesheet())
+    else:
+        with open(
+            "./resources/stylesheets/" + liberation_theme.get_theme_css_file(),
+            encoding="utf-8",
+        ) as stylesheet:
+            logging.info(
+                "Loading stylesheet: %s", liberation_theme.get_theme_css_file()
+            )
+            app.setStyleSheet(stylesheet.read())
 
     first_start = liberation_install.init()
     if first_start:

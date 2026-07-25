@@ -276,7 +276,29 @@ file. This guide is the map; those are the territory.
   - Drafts / not-yet-landed (design only): `414th-mission-planning-wiki-rework.md`
     (upstream wiki rewrite), `414th-scenery-import-notes.md` (scenery strike targets),
     `turnless.md` (turnless-campaign exploration),
-    `414th-ui-redesign-directions.md` (**UI redesign — DECISION PENDING**, 2026-07-25: the
+    `414th-ui-redesign-directions.md` (**UI redesign — DECIDED 2026-07-25: 1 → 2**; D1 step 1
+    LANDED. The DM dropped **D3** ("useless" — second-screen planning was its whole
+    justification), confirmed **D2** as a *requirement* not a nicety ("we need to keep the map
+    visual during planning, once the mission starts it's hidden by the game"), and confirmed
+    **D1** as its prerequisite. Three calls: palette = **cold dark + cyan-teal accent** (chosen
+    because the map already owns amber/orange semantically — suspected activity, FLOT, MIA
+    pilots — so chrome must not compete with map meaning; guarded by a test); order = tokens +
+    shell first so the inspector is built once on final styling; D2 scope = the
+    **flight-planning spine only** (ATO · package · edit flight · squadron), deliberately NOT
+    base menus or target intel, which are consult-once screens. **D1 step 1 landed the same
+    day**: `qt_ui/theme/tokens.py` (the palette/scale single source + `to_css_variables()` for
+    the web client) + `qt_ui/theme/qss.py` (generates the Qt stylesheet — a faithful superset of
+    the 711-line hand-written sheet, plus scrollbar handles/radios/sliders/tooltips/status
+    bar/splitters/list rows/focus states it never covered), **all 27 FlightType task chips**
+    styled (the old sheet had 10, so 17 drew bare), **one toolbar instead of three** (the
+    Discord/Github/Ukraine bar is gone; links stay in Help), **one primary action** (`btn-primary`
+    had been on Pass Turn + Air Wing + Transfers + Re-roll RED — "primary" meant "is a button";
+    now only Take off carries the accent), and the generated theme took **index 1** so existing
+    installs pick it up on launch, with the old sheet preserved at index 2 as "DCS World
+    (legacy)". Guards in `tests/test_theme_tokens.py`; verified by rendering the real sheet
+    against real Qt offscreen (zero parse warnings; caught two radio-button radius defects).
+    Owed: an in-app eyeball (B-series), the D1 step-2 sweep, then D2. Original pitch, for the
+    record: the
     complete ~90-screen inventory of both halves of the app (36 Qt dialog classes / 439
     editable controls / 22.5k lines Qt + 7k lines React), the seven evidence-backed findings
     (everything is a modal over the map · four competing navigation systems · no hierarchy ·

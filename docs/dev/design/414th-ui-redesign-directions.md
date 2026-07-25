@@ -1,9 +1,73 @@
-# 414th UI redesign — three directions (DECISION PENDING)
+# 414th UI redesign — three directions (DECIDED 2026-07-25: **1 → 2**)
 
-**Status:** design only, nothing landed. Three directions are offered for the DM to react to;
-no code has been changed. The rendered version of this note — with live HTML mockups of all
-three directions — is `414th-ui-redesign-mockups.html` alongside this file (open it in a
-browser; it is self-contained).
+**Status:** direction chosen; Direction 1 step 1 has landed. The rendered pitch — with live
+HTML mockups of all three directions — is `414th-ui-redesign-mockups.html` alongside this file
+(open it in a browser; it is self-contained).
+
+## Decision (DM, 2026-07-25)
+
+| | Verdict |
+|---|---|
+| **Direction 3 — Single Surface** | **Dropped.** Second-screen/tablet planning was its whole justification and the DM's reaction was "useless". |
+| **Direction 2 — Command Deck** | **Confirmed, and it is a requirement, not a nicety.** The DM: *"We need to keep the map visual during planning, once the mission starts it's hidden by the game."* |
+| **Direction 1 — Sortie** | **Confirmed** as the prerequisite it always was. |
+
+Three calls made at the same time:
+
+1. **Palette:** cold dark ground, cyan-teal accent. Chosen over the warm/amber option for a
+   concrete reason — the map already uses amber/orange semantically (suspected activity, the
+   FLOT, MIA pilots), so chrome in the same hue would compete with map meaning. Guarded by
+   `test_accent_stays_out_of_the_maps_semantic_hues`.
+2. **Order:** tokens + shell first, then the inspector — so the inspector is built once, on
+   final styling, rather than twice.
+3. **Inspector scope:** the **flight-planning spine** — ATO browsing, package planning, edit
+   flight, squadron detail. Deliberately *not* base menus and *not* target intel / ground
+   objects: those are consult-once screens, not ones iterated against the map. That is a
+   materially smaller Direction 2 than originally pitched.
+
+## Implementation progress
+
+- [x] **D1 step 1 — design tokens + generated stylesheet + shell.** See "What landed" below.
+- [ ] D1 step 2 — the remaining dialogs' shared header/footer pattern; web client re-themed
+      from `to_css_variables()`; delete the ~250 lines of dead `CampaignStatusBar.css`.
+- [ ] D2 — the persistent inspector, over the flight-planning spine only.
+
+## What landed (D1 step 1)
+
+- `qt_ui/theme/tokens.py` — the palette and scale, one source of truth, plus
+  `to_css_variables()` so the web client can be driven from the same values.
+- `qt_ui/theme/qss.py` — generates the Qt stylesheet. A faithful superset of the sheet it
+  replaces: every widget selector and every `style="..."` hook still styled, plus widgets the
+  old sheet never covered (scrollbar handles, radio buttons, sliders, tooltips, the status bar,
+  splitter handles, list/table rows, focus states) which previously fell through to the
+  platform default.
+- **All 27 `FlightType` task chips are styled.** The old sheet covered 10, so 17 task labels
+  rendered with no chip at all.
+- **One toolbar instead of three.** Discord / Github / Ukraine no longer carry the same visual
+  weight as Settings and the campaign controls; they are unchanged in the Help menu. The
+  toolbar is labelled (`ToolButtonTextBesideIcon`) and gained the object name Qt needs to
+  restore its state without warning.
+- **One primary action.** `btn-primary` was applied to Pass Turn, Air Wing, Transfers *and*
+  Re-roll RED — the style named "primary" meant "is a button", which is precisely why nothing
+  in the strip read as more important than anything else. It is now the accent, and only
+  "Take off" carries it.
+- **Theme index 1 is the generated theme**, so existing installs (whose `liberation_theme.json`
+  already stores 1) pick the redesign up on launch. The old hand-written sheet is preserved at
+  index 2 as "DCS World (legacy)" — a bad look is one dropdown away from being reverted rather
+  than a rebuild. A stale saved index no longer crashes at the first `get_theme_*` call.
+- Guards in `tests/test_theme_tokens.py`: every style hook the app sets has a rule, every
+  `FlightType` has a chip, no unresolved f-string markers, balanced braces, the accent stays
+  cool, and the legacy sheet stays selectable.
+
+Verified by rendering the real generated stylesheet against real Qt widgets offscreen: Qt
+parses it with zero warnings and 17 widget classes polish cleanly. Two defects were found and
+fixed that way — radio buttons drew square, because a `border-radius` equal to the full width
+does not round in Qt and because the `border` shorthand resets the radius in the `:checked`
+state.
+
+**Still owed:** an eyeball in the running app on the DM's display (`qt_ui` is not type-checked
+in CI and has no widget tests for styling). Moving the type scale from `px` to `pt`, so it
+follows the system font preference, is deliberately deferred.
 
 **Why now:** every UI change the fork has made so far has been a *repair* — the §28 settings
 IA reorg, the §19 map-layers panel, the §18 fog toggle, the web-map colour tracks, the

@@ -276,6 +276,24 @@ file. This guide is the map; those are the territory.
   - Drafts / not-yet-landed (design only): `414th-mission-planning-wiki-rework.md`
     (upstream wiki rewrite), `414th-scenery-import-notes.md` (scenery strike targets),
     `turnless.md` (turnless-campaign exploration),
+    `414th-ui-redesign-directions.md` (**UI redesign — DECISION PENDING**, 2026-07-25: the
+    complete ~90-screen inventory of both halves of the app (36 Qt dialog classes / 439
+    editable controls / 22.5k lines Qt + 7k lines React), the seven evidence-backed findings
+    (everything is a modal over the map · four competing navigation systems · no hierarchy ·
+    `screenfit.py` exists because only 2 of 34 dialogs were screen-aware · hardcoded hex in
+    two unrelated palettes · the web client has no layout, only corners + zero media queries ·
+    386 lines of CSS still styling the removed §55/§40 features), and **three directions** for
+    the DM to react to — **1 "Sortie"** (restyle: one token file generating the Qt QSS + web
+    CSS; small/very-low-risk), **2 "Command Deck"** (restructure: kill modality, a persistent
+    selection inspector + a six-mode rail; ~9 of 36 dialogs stay modal; staged, no big-bang),
+    **3 "Single Surface"** (replatform: React becomes the whole UI, Qt keeps the window — the
+    drift the codebase is already on, since the map/ribbon/layers/SITREP are web-side, the
+    server already publishes JSON + a WebSocket, and `client/main.js` is an unused Electron
+    wrapper; uniquely buys second-monitor/tablet planning; needs the missing *write* API).
+    Direction 1 is a prerequisite for both others, and D3 steps 1–3 == D1 + read-only pages,
+    so starting there defers the 2-vs-3 call with the token system already paid for. Rendered
+    mockups: `414th-ui-redesign-mockups.html` (self-contained, open in a browser). **No code
+    changed; nothing is landed until the DM picks.**),
     `414th-dcs-olympus-notes.md` (DCS Olympus live-GM/RTS layer exploration — the
     "what if?" answer: run-alongside compatibility map, GM doctrine = §20/§61 untracked
     event content, Tier 0 recommended as event tooling + the in-game-pass observation

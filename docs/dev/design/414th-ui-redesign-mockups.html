@@ -1,0 +1,1382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Retribution UI — Three Directions</title>
+</head>
+<body>
+<style>
+/* ============================================================
+   TOKENS
+   ============================================================ */
+:root{
+  --ground:#EDEFF2;
+  --surface:#FFFFFF;
+  --surface-2:#F5F7F9;
+  --ink:#111820;
+  --ink-2:#3C4854;
+  --muted:#5A6672;
+  --faint:#8894A0;
+  --hair:#D3D9DF;
+  --hair-strong:#B9C2CB;
+  --accent:#B4741A;
+  --accent-bright:#E9A13B;
+  --alert:#B03A44;
+  --ok:#3D7E52;
+
+  --f-display:"Bahnschrift","DIN Alternate","DIN Condensed","Segoe UI Semibold",system-ui,sans-serif;
+  --f-body:"Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+  --f-data:"Cascadia Mono",ui-monospace,"SF Mono",Consolas,"Roboto Mono",monospace;
+
+  --col:68ch;
+  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px; --s6:32px; --s7:48px; --s8:72px;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --ground:#0D1216; --surface:#151C22; --surface-2:#1B242B;
+    --ink:#E4EBF1; --ink-2:#C0CCD6; --muted:#8593A0; --faint:#6B7883;
+    --hair:#242E36; --hair-strong:#33404A;
+    --accent:#E9A13B; --accent-bright:#F5BC64;
+    --alert:#E0737B; --ok:#63B37F;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0D1216; --surface:#151C22; --surface-2:#1B242B;
+  --ink:#E4EBF1; --ink-2:#C0CCD6; --muted:#8593A0; --faint:#6B7883;
+  --hair:#242E36; --hair-strong:#33404A;
+  --accent:#E9A13B; --accent-bright:#F5BC64;
+  --alert:#E0737B; --ok:#63B37F;
+}
+:root[data-theme="light"]{
+  --ground:#EDEFF2; --surface:#FFFFFF; --surface-2:#F5F7F9;
+  --ink:#111820; --ink-2:#3C4854; --muted:#5A6672; --faint:#8894A0;
+  --hair:#D3D9DF; --hair-strong:#B9C2CB;
+  --accent:#B4741A; --accent-bright:#E9A13B;
+  --alert:#B03A44; --ok:#3D7E52;
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0;background:var(--ground);color:var(--ink);
+  font-family:var(--f-body);font-size:16px;line-height:1.62;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3,h4{margin:0;text-wrap:balance;font-weight:600}
+p{margin:0}
+a{color:inherit}
+
+/* ============================================================
+   PAGE FRAME
+   ============================================================ */
+.wrap{max-width:1180px;margin:0 auto;padding:0 var(--s5)}
+.col{max-width:var(--col);margin-inline:auto}
+.stack{display:flex;flex-direction:column}
+.stack>*+*{margin-top:var(--s4)}
+
+.eyebrow{
+  font-family:var(--f-data);font-size:11px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--muted);
+}
+
+/* --- masthead --- */
+.mast{
+  border-bottom:1px solid var(--hair);
+  padding:var(--s8) 0 var(--s6);
+}
+.mast .col{display:flex;flex-direction:column;gap:var(--s4)}
+.mast-rule{
+  display:flex;align-items:center;gap:var(--s3);
+  font-family:var(--f-data);font-size:11px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--muted);
+}
+.mast-rule::after{content:"";flex:1;height:1px;background:var(--hair)}
+.mast h1{
+  font-family:var(--f-display);font-size:clamp(38px,6vw,60px);
+  line-height:1.02;letter-spacing:-.01em;font-weight:700;
+  text-transform:uppercase;
+}
+.mast h1 em{font-style:normal;color:var(--accent)}
+.lede{font-size:19px;line-height:1.55;color:var(--ink-2)}
+.mast-meta{
+  display:flex;flex-wrap:wrap;gap:var(--s2) var(--s5);
+  font-family:var(--f-data);font-size:12px;color:var(--muted);
+  padding-top:var(--s3);border-top:1px solid var(--hair);
+}
+
+/* --- sticky nav --- */
+.nav{
+  position:sticky;top:0;z-index:50;
+  background:color-mix(in srgb,var(--ground) 88%,transparent);
+  backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--hair);
+}
+.nav-in{
+  max-width:1180px;margin:0 auto;padding:var(--s2) var(--s5);
+  display:flex;gap:var(--s2);align-items:center;overflow-x:auto;
+}
+.nav a{
+  font-family:var(--f-data);font-size:11px;letter-spacing:.1em;
+  text-transform:uppercase;text-decoration:none;color:var(--muted);
+  padding:6px 10px;border-radius:2px;white-space:nowrap;
+  border:1px solid transparent;
+}
+.nav a:hover{color:var(--ink);border-color:var(--hair-strong)}
+.nav a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.nav .nav-sp{flex:1}
+
+/* --- sections --- */
+section{padding:var(--s8) 0}
+.sec-head{margin-bottom:var(--s6)}
+.sec-head .num{
+  font-family:var(--f-data);font-size:11px;letter-spacing:.16em;
+  color:var(--accent);text-transform:uppercase;
+}
+.sec-head h2{
+  font-family:var(--f-display);font-size:clamp(26px,3.4vw,36px);
+  text-transform:uppercase;letter-spacing:.005em;line-height:1.08;
+  margin-top:var(--s2);
+}
+.sec-head .sub{color:var(--muted);margin-top:var(--s3);font-size:17px}
+
+h3.sh{
+  font-family:var(--f-display);text-transform:uppercase;
+  font-size:19px;letter-spacing:.03em;margin-top:var(--s6);
+}
+h4.sh4{
+  font-family:var(--f-data);font-size:12px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--muted);
+  margin-top:var(--s5);
+}
+
+/* ============================================================
+   SMALL PARTS
+   ============================================================ */
+.note{
+  border-left:2px solid var(--accent);
+  padding:var(--s3) 0 var(--s3) var(--s4);
+  color:var(--ink-2);font-size:15px;
+}
+.kbd{
+  font-family:var(--f-data);font-size:.88em;
+  background:var(--surface-2);border:1px solid var(--hair);
+  padding:1px 5px;border-radius:2px;color:var(--ink-2);
+}
+
+/* findings list */
+.finds{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:var(--s4)}
+.finds li{display:grid;grid-template-columns:auto 1fr;gap:var(--s4);align-items:start}
+.finds .fx{
+  font-family:var(--f-data);font-size:11px;letter-spacing:.08em;
+  color:var(--alert);border:1px solid currentColor;
+  padding:2px 6px;border-radius:2px;white-space:nowrap;margin-top:3px;
+}
+.finds b{display:block;font-weight:600;font-size:16px}
+.finds span{color:var(--muted);font-size:15px}
+.finds code{font-family:var(--f-data);font-size:.87em;color:var(--ink-2)}
+
+/* pip meters */
+.pips{display:inline-flex;gap:3px;vertical-align:middle}
+.pips i{
+  width:9px;height:9px;border:1px solid var(--hair-strong);
+  border-radius:1px;display:block;
+}
+.pips i.on{background:var(--ink-2);border-color:var(--ink-2)}
+.pips.hot i.on{background:var(--alert);border-color:var(--alert)}
+
+/* tables */
+.tbl-wrap{overflow-x:auto;margin-top:var(--s4);
+  border:1px solid var(--hair);border-radius:3px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:14px;min-width:560px}
+th,td{text-align:left;padding:9px 14px;border-bottom:1px solid var(--hair);vertical-align:top}
+thead th{
+  font-family:var(--f-data);font-size:10.5px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--muted);
+  background:var(--surface-2);position:sticky;top:0;
+}
+tbody tr:last-child td{border-bottom:0}
+td.num,th.num{font-family:var(--f-data);font-variant-numeric:tabular-nums;white-space:nowrap}
+td code{font-family:var(--f-data);font-size:12.5px;color:var(--muted)}
+
+/* ============================================================
+   INVENTORY GRID
+   ============================================================ */
+.inv{display:grid;grid-template-columns:repeat(auto-fill,minmax(232px,1fr));gap:var(--s3);margin-top:var(--s4)}
+.inv-g{
+  border:1px solid var(--hair);border-radius:3px;
+  background:var(--surface);padding:var(--s3) var(--s4) var(--s4);
+}
+.inv-g h5{
+  margin:0 0 var(--s2);font-family:var(--f-data);font-size:10.5px;
+  letter-spacing:.12em;text-transform:uppercase;color:var(--accent);
+  display:flex;justify-content:space-between;gap:8px;
+}
+.inv-g h5 span{color:var(--faint)}
+.inv-g ul{margin:0;padding:0;list-style:none;font-size:13.5px;line-height:1.5}
+.inv-g li{padding:2.5px 0;color:var(--ink-2);border-top:1px solid var(--hair)}
+.inv-g li:first-child{border-top:0}
+.inv-g li i{font-style:normal;color:var(--faint);font-family:var(--f-data);font-size:11px}
+
+/* ============================================================
+   MOCKUP KIT  — one markup, three token sets
+   ============================================================ */
+.slab{padding:var(--s8) 0;border-top:1px solid var(--hair)}
+
+.mk{
+  --mk-bg:#2D3E50; --mk-chrome:#1D2731; --mk-panel:#26333F;
+  --mk-line:#435466; --mk-text:#FFFFFF; --mk-dim:#B7C0C6;
+  --mk-accent:#3592C4; --mk-radius:2px; --mk-gap:6px;
+  --mk-btn:linear-gradient(135deg,#A4B3B9,#85989D); --mk-btn-text:#fff;
+  --mk-btn-border:#97A9A9;
+  --mk-font:"Segoe UI",system-ui,sans-serif;
+  --mk-mono:var(--f-data);
+  --mk-red:#C7524F; --mk-blue:#4A87C4; --mk-amber:#D9A441;
+
+  font-family:var(--mk-font);
+  background:var(--mk-bg);color:var(--mk-text);
+  border:1px solid var(--mk-line);border-radius:4px;overflow:hidden;
+  font-size:11px;line-height:1.35;
+  box-shadow:0 12px 34px rgba(0,0,0,.20);
+  container-type:inline-size;
+}
+.mk *{box-sizing:border-box}
+
+/* titlebar */
+.mk-title{
+  background:var(--mk-chrome);border-bottom:1px solid var(--mk-line);
+  padding:5px 10px;display:flex;align-items:center;gap:8px;
+  font-size:10.5px;color:var(--mk-dim);
+}
+.mk-title .dots{display:flex;gap:4px}
+.mk-title .dots i{width:8px;height:8px;border-radius:50%;background:var(--mk-line);display:block}
+
+/* menubar + toolbars */
+.mk-menu{
+  background:var(--mk-chrome);padding:3px 8px;display:flex;gap:14px;
+  font-size:10.5px;color:var(--mk-dim);border-bottom:1px solid var(--mk-line);
+}
+.mk-tools{
+  background:var(--mk-chrome);border-bottom:1px solid var(--mk-line);
+  padding:4px 8px;display:flex;gap:var(--mk-gap);align-items:center;flex-wrap:wrap;
+}
+.mk-sep{width:1px;align-self:stretch;background:var(--mk-line);margin:0 4px}
+
+/* buttons */
+.mk-b{
+  background:var(--mk-btn);border:1px solid var(--mk-btn-border);
+  color:var(--mk-btn-text);border-radius:var(--mk-radius);
+  padding:3px 8px;font-size:10px;white-space:nowrap;display:inline-block;
+}
+.mk-b.ghost{background:none;border-color:var(--mk-line);color:var(--mk-dim)}
+.mk-b.cta{
+  background:var(--mk-accent);border-color:var(--mk-accent);color:#fff;font-weight:600;
+}
+.mk-b.sm{padding:2px 6px;font-size:9.5px}
+
+/* status strip */
+.mk-strip{
+  background:var(--mk-chrome);border-bottom:1px solid var(--mk-line);
+  padding:6px 10px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  color:var(--mk-dim);
+}
+.mk-stat{display:flex;flex-direction:column;gap:1px;min-width:0}
+.mk-stat b{font-size:12px;color:var(--mk-text);font-family:var(--mk-mono);font-weight:600}
+.mk-stat span{font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--mk-dim);opacity:.8}
+.mk-push{flex:1}
+
+/* body split */
+.mk-body{display:flex;min-height:250px}
+.mk-side{
+  width:150px;flex:none;background:var(--mk-panel);
+  border-right:1px solid var(--mk-line);padding:7px;overflow:hidden;
+}
+.mk-side.right{border-right:0;border-left:1px solid var(--mk-line);width:172px}
+.mk-main{flex:1;display:flex;flex-direction:column;min-width:0}
+
+.mk-h{
+  font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--mk-dim);margin-bottom:5px;display:flex;justify-content:space-between;
+}
+
+/* ATO tree */
+.mk-pkg{margin-bottom:6px}
+.mk-pkg>div:first-child{
+  background:rgba(255,255,255,.06);padding:3px 5px;border-radius:var(--mk-radius);
+  font-size:10px;display:flex;justify-content:space-between;gap:6px;
+}
+.mk-fl{padding:2px 5px 2px 14px;font-size:9.5px;color:var(--mk-dim);
+  display:flex;justify-content:space-between;gap:6px}
+.mk-fl.sel{background:var(--mk-accent);color:#fff;border-radius:var(--mk-radius)}
+
+/* map */
+.mk-map{
+  flex:1;position:relative;min-height:180px;
+  background:
+    radial-gradient(circle at 30% 40%,rgba(255,255,255,.05),transparent 55%),
+    linear-gradient(160deg,#2b3a2c 0%,#33402f 40%,#3a4034 70%,#2f3a3d 100%);
+  overflow:hidden;
+}
+.mk-map svg{position:absolute;inset:0;width:100%;height:100%}
+.mk-mapui{position:absolute;display:flex;gap:4px;flex-wrap:wrap}
+.mk-chip{
+  background:var(--mk-chrome);border:1px solid var(--mk-line);
+  border-radius:var(--mk-radius);padding:3px 7px;font-size:9px;color:var(--mk-dim);
+}
+.mk-info{
+  height:44px;flex:none;background:var(--mk-panel);
+  border-top:1px solid var(--mk-line);padding:5px 9px;overflow:hidden;color:var(--mk-dim);
+  font-size:9.5px;
+}
+
+/* form rows (dialog mockups) */
+.mk-tabs{display:flex;gap:2px;border-bottom:1px solid var(--mk-line);background:var(--mk-chrome);padding:0 6px}
+.mk-tab{
+  padding:5px 9px;font-size:9.5px;color:var(--mk-dim);
+  border:1px solid transparent;border-bottom:0;white-space:nowrap;
+}
+.mk-tab.on{background:var(--mk-bg);color:var(--mk-text);border-color:var(--mk-line);
+  border-radius:var(--mk-radius) var(--mk-radius) 0 0}
+.mk-form{padding:9px 11px;display:flex;flex-direction:column;gap:6px}
+.mk-row{display:grid;grid-template-columns:106px 1fr;gap:8px;align-items:center}
+.mk-row label{font-size:9.5px;color:var(--mk-dim)}
+.mk-in{
+  background:rgba(0,0,0,.22);border:1px solid var(--mk-line);
+  border-radius:var(--mk-radius);padding:3px 6px;font-size:9.5px;color:var(--mk-text);
+}
+.mk-in.sel::after{content:"▾";float:right;opacity:.6}
+.mk-check{display:flex;align-items:center;gap:6px;font-size:9.5px;color:var(--mk-dim)}
+.mk-check i{
+  width:11px;height:11px;border:1px solid var(--mk-line);border-radius:1px;
+  display:block;flex:none;background:rgba(0,0,0,.22);
+}
+.mk-check i.on{background:var(--mk-accent);border-color:var(--mk-accent)}
+.mk-foot{
+  border-top:1px solid var(--mk-line);padding:7px 10px;
+  display:flex;justify-content:flex-end;gap:6px;background:var(--mk-chrome);
+}
+.mk-scroll{position:relative}
+.mk-scroll::after{
+  content:"";position:absolute;right:2px;top:6px;bottom:6px;width:4px;
+  background:var(--mk-line);border-radius:2px;
+}
+
+/* modal stack effect */
+.mk-stackwrap{position:relative;padding:0 0 26px 26px}
+.mk-ghost{
+  position:absolute;border:1px solid var(--mk-line);border-radius:4px;
+  background:var(--mk-bg);opacity:.5;
+}
+
+/* rail (direction 2) */
+.mk-rail{
+  width:62px;flex:none;background:var(--mk-chrome);
+  border-right:1px solid var(--mk-line);padding:8px 4px;
+  display:flex;flex-direction:column;gap:3px;
+}
+.mk-rail div{
+  padding:6px 3px;text-align:center;font-size:8px;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--mk-dim);border-radius:var(--mk-radius);
+  border-left:2px solid transparent;
+}
+.mk-rail div.on{background:rgba(255,255,255,.07);color:var(--mk-text);border-left-color:var(--mk-accent)}
+.mk-rail div b{display:block;font-size:14px;font-weight:400;opacity:.85;margin-bottom:2px}
+
+/* inspector sections */
+.mk-acc{border-top:1px solid var(--mk-line);padding:5px 0}
+.mk-acc:first-of-type{border-top:0}
+.mk-acc>b{font-size:9px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--mk-dim);display:flex;justify-content:space-between;font-weight:400}
+.mk-kv{display:flex;justify-content:space-between;font-size:9.5px;padding:2px 0;gap:8px}
+.mk-kv span{color:var(--mk-dim)}
+.mk-kv b{font-family:var(--mk-mono);font-weight:400}
+
+/* browser chrome (direction 3) */
+.mk-url{
+  background:var(--mk-chrome);padding:6px 10px;display:flex;gap:8px;align-items:center;
+  border-bottom:1px solid var(--mk-line);
+}
+.mk-url .bar{
+  flex:1;background:rgba(0,0,0,.25);border:1px solid var(--mk-line);
+  border-radius:11px;padding:3px 10px;font-size:9.5px;color:var(--mk-dim);
+  font-family:var(--mk-mono);
+}
+.mk-topnav{
+  background:var(--mk-chrome);border-bottom:1px solid var(--mk-line);
+  display:flex;gap:2px;padding:0 10px;align-items:center;
+}
+.mk-topnav .brand{
+  font-weight:700;font-size:11px;letter-spacing:.06em;margin-right:12px;color:var(--mk-text);
+}
+.mk-topnav a{padding:8px 10px;font-size:10px;color:var(--mk-dim);border-bottom:2px solid transparent}
+.mk-topnav a.on{color:var(--mk-text);border-bottom-color:var(--mk-accent)}
+
+/* ---------- THEME: TODAY (as-built) ---------- */
+.t-today{
+  --mk-bg:#2D3E50;--mk-chrome:#1D2731;--mk-panel:#2D3E50;--mk-line:#435466;
+  --mk-text:#fff;--mk-dim:#B7C0C6;--mk-accent:#3592C4;--mk-radius:2px;
+  --mk-btn:linear-gradient(135deg,#A4B3B9,#85989D);--mk-btn-border:#97A9A9;
+}
+/* ---------- THEME: D1 · SORTIE ---------- */
+.t-d1{
+  --mk-bg:#161B21;--mk-chrome:#10151A;--mk-panel:#1C232B;--mk-line:#2B3540;
+  --mk-text:#E8EDF2;--mk-dim:#93A0AC;--mk-accent:#E0902F;--mk-radius:3px;--mk-gap:7px;
+  --mk-btn:#232C35;--mk-btn-border:#39454F;--mk-btn-text:#DCE4EB;
+}
+/* ---------- THEME: D2 · COMMAND DECK ---------- */
+.t-d2{
+  --mk-bg:#0F1419;--mk-chrome:#0A0E12;--mk-panel:#141B22;--mk-line:#232E38;
+  --mk-text:#E6EDF3;--mk-dim:#8A99A7;--mk-accent:#38A3B8;--mk-radius:4px;--mk-gap:7px;
+  --mk-btn:#1A222A;--mk-btn-border:#2C3843;--mk-btn-text:#D6E0E8;
+}
+/* ---------- THEME: D3 · SINGLE SURFACE ---------- */
+.t-d3{
+  --mk-bg:#F7F8FA;--mk-chrome:#FFFFFF;--mk-panel:#FFFFFF;--mk-line:#DEE3E9;
+  --mk-text:#131A22;--mk-dim:#66727E;--mk-accent:#2D6CDF;--mk-radius:6px;--mk-gap:8px;
+  --mk-btn:#FFFFFF;--mk-btn-border:#CFD6DE;--mk-btn-text:#293441;
+}
+.t-d3 .mk-map{
+  background:radial-gradient(circle at 35% 35%,rgba(0,0,0,.05),transparent 60%),
+    linear-gradient(160deg,#DDE5DA 0%,#E4E7DA 45%,#DCE2E4 100%);
+}
+.t-d3 .mk-in{background:#fff;color:var(--mk-text)}
+.t-d3 .mk-check i{background:#fff}
+.t-d3 .mk-tab.on{background:var(--mk-bg)}
+.t-d3 .mk-url .bar{background:#F0F2F5;color:#5A6672}
+.t-d3{box-shadow:0 12px 34px rgba(16,24,32,.14)}
+
+/* settings mock */
+.mk-set{display:flex;min-height:250px}
+.mk-cats{width:126px;flex:none;background:var(--mk-chrome);border-right:1px solid var(--mk-line);padding:6px 4px}
+.mk-cats div{padding:4px 7px;font-size:9.5px;color:var(--mk-dim);border-radius:var(--mk-radius);border-left:2px solid transparent}
+.mk-cats div.on{background:rgba(255,255,255,.07);color:var(--mk-text);border-left-color:var(--mk-accent)}
+.mk-setmain{flex:1;min-width:0;display:flex;flex-direction:column}
+.mk-search{padding:7px 9px;border-bottom:1px solid var(--mk-line);display:flex;gap:6px;align-items:center}
+.mk-search .f{flex:1;background:rgba(0,0,0,.22);border:1px solid var(--mk-line);border-radius:var(--mk-radius);
+  padding:4px 8px;font-size:9.5px;color:var(--mk-dim)}
+.t-d3 .mk-search .f{background:#F0F2F5}
+.mk-setbody{padding:8px 10px;display:flex;flex-direction:column;gap:8px;overflow:hidden}
+.mk-grp{font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--mk-accent);
+  border-bottom:1px solid var(--mk-line);padding-bottom:3px}
+.mk-opt{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:start}
+.mk-opt .t{font-size:10px;color:var(--mk-text)}
+.mk-opt .d{font-size:8.5px;color:var(--mk-dim);line-height:1.4;margin-top:1px}
+.mk-opt.off .t,.mk-opt.off .d{opacity:.4}
+.mk-tog{width:22px;height:12px;border-radius:7px;background:var(--mk-line);position:relative;flex:none;margin-top:2px}
+.mk-tog::after{content:"";position:absolute;top:2px;left:2px;width:8px;height:8px;border-radius:50%;background:var(--mk-dim)}
+.mk-tog.on{background:var(--mk-accent)}
+.mk-tog.on::after{left:12px;background:#fff}
+
+/* mockup caption */
+.cap{
+  font-family:var(--f-data);font-size:11px;color:var(--muted);
+  margin-top:var(--s3);display:flex;gap:8px;align-items:baseline;
+}
+.cap b{color:var(--ink-2);font-weight:600;letter-spacing:.06em;text-transform:uppercase;font-size:10.5px;white-space:nowrap}
+
+.mk-grid{display:grid;gap:var(--s5);margin-top:var(--s5)}
+@media(min-width:900px){.mk-grid.two{grid-template-columns:1fr 1fr}}
+
+/* direction header band */
+.dir-head{display:flex;flex-direction:column;gap:var(--s3);margin-bottom:var(--s5)}
+.dir-tag{
+  display:flex;align-items:center;gap:var(--s3);
+  font-family:var(--f-data);font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+}
+.dir-tag .n{
+  background:var(--ink);color:var(--ground);width:26px;height:26px;
+  display:grid;place-items:center;border-radius:2px;font-size:12px;
+}
+.dir-head h2{font-family:var(--f-display);font-size:clamp(28px,4vw,42px);
+  text-transform:uppercase;line-height:1.02}
+.dir-head .one{font-size:19px;color:var(--ink-2);max-width:60ch}
+
+.meters{
+  display:flex;flex-wrap:wrap;gap:var(--s5);
+  border-top:1px solid var(--hair);border-bottom:1px solid var(--hair);
+  padding:var(--s3) 0;margin:var(--s5) 0;
+}
+.meter{display:flex;flex-direction:column;gap:4px}
+.meter .lab{font-family:var(--f-data);font-size:10px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--muted)}
+.meter .val{display:flex;align-items:center;gap:8px;font-size:13px}
+
+.two-col{display:grid;gap:var(--s5)}
+@media(min-width:860px){.two-col{grid-template-columns:1fr 1fr}}
+.card{
+  border:1px solid var(--hair);border-radius:3px;background:var(--surface);
+  padding:var(--s4) var(--s5) var(--s5);
+}
+.card h4{font-family:var(--f-data);font-size:10.5px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--muted);margin-bottom:var(--s3)}
+.card ul{margin:0;padding-left:1.1em;font-size:14.5px;color:var(--ink-2)}
+.card li{margin:5px 0}
+.card.good h4{color:var(--ok)}
+.card.bad h4{color:var(--alert)}
+
+/* decision block */
+.decide{
+  border:2px solid var(--accent);border-radius:3px;
+  background:var(--surface);padding:var(--s5) var(--s5) var(--s6);
+}
+.decide .eyebrow{color:var(--accent)}
+.decide h3{font-family:var(--f-display);text-transform:uppercase;font-size:24px;
+  margin:var(--s2) 0 var(--s3)}
+.decide ol{margin:var(--s4) 0 0;padding-left:1.3em;font-size:15.5px;color:var(--ink-2)}
+.decide li{margin:var(--s3) 0}
+.decide li b{color:var(--ink)}
+
+footer{border-top:1px solid var(--hair);padding:var(--s6) 0 var(--s8);
+  font-family:var(--f-data);font-size:11.5px;color:var(--faint)}
+
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="nav">
+  <div class="nav-in">
+    <a href="#state">Where it stands</a>
+    <a href="#inventory">Page inventory</a>
+    <a href="#d1">1 · Sortie</a>
+    <a href="#d2">2 · Command Deck</a>
+    <a href="#d3">3 · Single Surface</a>
+    <a href="#compare">Compare</a>
+    <a href="#decide">Your call</a>
+  </div>
+</div>
+
+<header class="mast">
+  <div class="wrap"><div class="col">
+    <div class="mast-rule">414th Joint Fighter Group · Retribution fork</div>
+    <h1>Three ways out of <em>the dialog maze</em></h1>
+    <p class="lede">Retribution's interface is a 2016 Qt app wearing a hand-written stylesheet, with a modern web map bolted into the middle of it. Everything we've done so far has been repair work. This is a pitch for three different redesigns — pick a direction, and the repairs stop being repairs.</p>
+    <div class="mast-meta">
+      <span>~90 screens</span>
+      <span>36 dialogs</span>
+      <span>439 settings controls</span>
+      <span>29,494 lines of UI code</span>
+    </div>
+  </div></div>
+</header>
+
+<div class="wrap">
+
+<!-- ============================================================
+     1 · WHERE IT STANDS
+     ============================================================ -->
+<section id="state">
+  <div class="col sec-head">
+    <div class="num">The problem</div>
+    <h2>Where it stands</h2>
+    <p class="sub">Not opinions. Every point below is something in the code right now.</p>
+  </div>
+
+  <div class="col stack">
+    <p>Retribution is two applications glued together. A PyQt desktop app owns the window, the menus, the sidebar and <b>every single dialog</b>. A React web app owns the map, and is embedded as one pane of a splitter inside that window. The two were designed years apart by different hands, and they have never shared a colour, a font size, or a spacing rule.</p>
+    <p>The result isn't ugly so much as <em>unowned</em>. There's no design system on either side, so every fix is a local patch, and the patches don't add up to a look.</p>
+  </div>
+
+  <!-- TODAY MOCKUP -->
+  <div class="mk-grid">
+    <div>
+      <div class="mk t-today">
+        <div class="mk-title"><div class="dots"><i></i><i></i><i></i></div><span>DCS Retribution — Red Tide — Turn 14</span></div>
+        <div class="mk-menu"><span>File</span><span>Developer tools</span><span>Help</span></div>
+        <div class="mk-tools">
+          <span class="mk-b sm">New</span><span class="mk-b sm">Open</span><span class="mk-b sm">Save</span>
+          <span class="mk-sep"></span>
+          <span class="mk-b sm">Discord</span><span class="mk-b sm">Github</span><span class="mk-b sm">Ukraine</span>
+          <span class="mk-sep"></span>
+          <span class="mk-b sm">Settings</span><span class="mk-b sm">Stats</span><span class="mk-b sm">Notes</span>
+          <span class="mk-b sm">Kneeboards</span><span class="mk-b sm">Finalize Campaign</span><span class="mk-b sm">Save as Campaign</span>
+        </div>
+        <div class="mk-strip">
+          <div class="mk-stat"><b>BLUE vs RED</b><span>Factions</span></div>
+          <div class="mk-stat"><b>0630 · Rain</b><span>Conditions</span></div>
+          <div class="mk-stat"><b>$4,820 M</b><span>Budget</span></div>
+          <div class="mk-stat"><b>12 / 31</b><span>Intel</span></div>
+          <span class="mk-push"></span>
+          <span class="mk-b">Air Wing</span><span class="mk-b">Transfers</span><span class="mk-b">Re-roll RED</span>
+          <span class="mk-b">Pass Turn</span><span class="mk-b cta">Take off</span>
+        </div>
+        <div class="mk-body">
+          <div class="mk-side">
+            <div class="mk-h"><span>Air Tasking Order</span></div>
+            <div class="mk-pkg">
+              <div><span>WOLVERINE</span><span>0714</span></div>
+              <div class="mk-fl"><span>STRIKE ×2</span><span>F/A-18C</span></div>
+              <div class="mk-fl sel"><span>SEAD ×2</span><span>F-16C</span></div>
+              <div class="mk-fl"><span>TARPS ×1</span><span>MQ-9</span></div>
+            </div>
+            <div class="mk-pkg">
+              <div><span>NEWT</span><span>0802</span></div>
+              <div class="mk-fl"><span>BARCAP ×2</span><span>F-15C</span></div>
+            </div>
+            <div class="mk-pkg">
+              <div><span>SCARAB</span><span>0845</span></div>
+              <div class="mk-fl"><span>BAI ×4</span><span>A-10C</span></div>
+            </div>
+          </div>
+          <div class="mk-main">
+            <div class="mk-map">
+              <svg viewBox="0 0 400 200" preserveAspectRatio="none" aria-hidden="true">
+                <path d="M40,178 C110,150 150,120 210,96 C265,74 320,58 372,44" fill="none" stroke="#fe7d0a" stroke-width="3"/>
+                <circle cx="252" cy="72" r="30" fill="none" stroke="#c85050" stroke-width="1.4"/>
+                <circle cx="196" cy="120" r="22" fill="none" stroke="#c85050" stroke-width="1.4"/>
+                <path d="M70,168 L128,138 L188,112 L248,74" fill="none" stroke="#0084ff" stroke-width="1.6"/>
+                <circle cx="70" cy="168" r="3.5" fill="#0084ff"/><circle cx="248" cy="74" r="3.5" fill="#0084ff"/>
+              </svg>
+              <div class="mk-mapui" style="top:7px;left:7px"><span class="mk-chip">Ruler</span></div>
+              <div class="mk-mapui" style="top:7px;left:50%;transform:translateX(-50%)">
+                <span class="mk-chip">Red Tide · Turn 14 · 12 Jul 1988</span><span class="mk-chip">VICTORY</span><span class="mk-chip">LAST TURN</span>
+              </div>
+              <div class="mk-mapui" style="top:7px;right:7px"><span class="mk-chip">Map layers ▾</span></div>
+              <div class="mk-mapui" style="bottom:7px;left:7px"><span class="mk-chip">Events (6) ▴</span></div>
+              <div class="mk-mapui" style="bottom:7px;right:7px"><span class="mk-chip">Legend ▴</span></div>
+            </div>
+            <div class="mk-info">
+              <div style="opacity:.85">T14 · Convoy destroyed near Haina · T14 · SA-6 site at Fulda localized by TARPS · T14 · …</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="cap"><b>Today</b><span>Three toolbars — one of which is social links — a status strip with no hierarchy, and a 100px log squeezed under the map. The map's own chrome floats in four corners with hand-tuned z-indexes.</span></p>
+    </div>
+  </div>
+
+  <div class="col stack" style="margin-top:var(--s7)">
+    <h3 class="sh">Seven things that are actually broken</h3>
+    <ul class="finds">
+      <li>
+        <span class="fx">Modality</span>
+        <div><b>Everything you do is a modal dialog on top of the map.</b>
+        <span>There are <b>36</b> dialog classes. Right-clicking a target on the web map doesn't open anything in the browser — it POSTs to <code>/qt/create-package/…</code> so the <em>Qt</em> app can throw a modal over the top. The moment you edit a flight, the map you were reading it against is gone.</span></div>
+      </li>
+      <li>
+        <span class="fx">Navigation</span>
+        <div><b>Four competing navigation systems, none of them complete.</b>
+        <span>A menubar, three separate toolbars, a row of buttons in the status strip, and the ATO tree. Settings lives in a toolbar; Air Wing lives in the status strip; base details are only reachable by clicking the map. Nothing tells you which is which.</span></div>
+      </li>
+      <li>
+        <span class="fx">Hierarchy</span>
+        <div><b>Discord, Github and Ukraine sit at the same visual weight as “Take off”.</b>
+        <span>They are a peer toolbar to campaign actions. The single most important control in the app — the one that generates and launches the mission — is one grey gradient button among sixteen.</span></div>
+      </li>
+      <li>
+        <span class="fx">Fit</span>
+        <div><b>Dialogs did not fit on real monitors, so we wrote a global clamp.</b>
+        <span><code>qt_ui/screenfit.py</code> is an app-wide event filter that shrinks and repositions <em>every</em> dialog as it opens, because only 2 of 34 ever consulted the screen size. That's a workaround for a layout system that was never sized.</span></div>
+      </li>
+      <li>
+        <span class="fx">Tokens</span>
+        <div><b>The styling is hardcoded hex, in two unrelated palettes.</b>
+        <span>Qt: a 711-line stylesheet of literal colours and gradients with no variables and 139 fixed <code>px</code> rules that fight DPI scaling. Web: no custom properties at all outside the map vectors — <b>seven</b> near-identical greys, <b>two</b> different border colours for the same role, <b>four</b> base font sizes.</span></div>
+      </li>
+      <li>
+        <span class="fx">Layout</span>
+        <div><b>The web client has no layout — only corners.</b>
+        <span>Its root element has zero CSS rules. The ribbon, events feed, legend and layers panel are absolutely positioned into four corners and kept apart by magic numbers and one hand-bumped z-index. There is not a single media query in the entire client.</span></div>
+      </li>
+      <li>
+        <span class="fx">Rot</span>
+        <div><b>Deleted features are still styled.</b>
+        <span>The status ribbon's stylesheet is 386 lines; roughly two-thirds of it styles a posture chip and a campaign-phase panel whose markup was removed months ago. The browser tab still says “React Redux App”.</span></div>
+      </li>
+    </ul>
+
+    <div class="note" style="margin-top:var(--s5)">
+      <b>The pattern.</b> Every one of those is a symptom of the same missing thing: nobody ever decided what this application looks like. That's the decision this document is asking for — not a stylesheet.
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     2 · INVENTORY
+     ============================================================ -->
+<section id="inventory">
+  <div class="col sec-head">
+    <div class="num">The full surface</div>
+    <h2>Everything there is</h2>
+    <p class="sub">You asked me not to miss pages. This is the complete surface — every window, tab, panel and overlay in both halves of the app. Each direction below is scored against all of it.</p>
+  </div>
+
+  <div class="tbl-wrap" style="margin-bottom:var(--s5)">
+    <table>
+      <thead><tr><th>Count</th><th class="num">Qt desktop</th><th class="num">Web client</th></tr></thead>
+      <tbody>
+        <tr><td>Distinct screens &amp; panels</td><td class="num">~90</td><td class="num">7 chrome + 30 map layers</td></tr>
+        <tr><td>Dialog classes</td><td class="num">36</td><td class="num">0 — it defers to Qt</td></tr>
+        <tr><td>Tab sets</td><td class="num">8</td><td class="num">0</td></tr>
+        <tr><td>Editable controls</td><td class="num">439</td><td class="num">40 layer toggles</td></tr>
+        <tr><td>Lines of UI code</td><td class="num">22,507</td><td class="num">6,987</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h4 class="sh4">Qt desktop — every screen</h4>
+  <div class="inv">
+    <div class="inv-g"><h5>Startup <span>4</span></h5><ul>
+      <li>Splash screen</li><li>First-start configuration</li><li>Missing DCS install warning</li><li>About <i>60-name credits, no scroll</i></li>
+    </ul></div>
+
+    <div class="inv-g"><h5>Main window <span>9</span></h5><ul>
+      <li>Menubar <i>File · Dev tools · Help</i></li><li>Toolbar — File</li><li>Toolbar — Links</li><li>Toolbar — Actions</li>
+      <li>Top panel <i>capped at 70px</i></li><li>ATO sidebar</li><li>Info panel <i>100px</i></li><li>Status bar <i>always “Ready”</i></li><li>Map host <i>web view</i></li>
+    </ul></div>
+
+    <div class="inv-g"><h5>Top panel <span>9</span></h5><ul>
+      <li>Factions</li><li>Turn &amp; time</li><li>Weather <i>~15 labels in 70px</i></li><li>Budget button</li>
+      <li>Intel button <i>a grid inside a button</i></li><li>Air Wing · Transfers · Re-roll RED</li><li>Sim speed <i>hidden by default</i></li>
+      <li>Max players</li><li>Conditions dialog <i>double-click only</i></li>
+    </ul></div>
+
+    <div class="inv-g"><h5>ATO sidebar <span>3</span></h5><ul>
+      <li>OPFOR ATO toggle</li><li>Packages <i>custom-painted rows</i></li><li>Flights <i>custom-painted rows</i></li>
+    </ul></div>
+
+    <div class="inv-g"><h5>Package planning <span>4</span></h5><ul>
+      <li>New package <i>min 1000×440</i></li><li>Edit package</li><li>Create flight <i>11 rows</i></li><li>Auto-create <i>9 dense rows</i></li>
+    </ul></div>
+
+    <div class="inv-g"><h5>Edit flight <span>11</span></h5><ul>
+      <li>Tab — General</li><li>· Flight</li><li>· COMMs</li><li>· Flight plan</li><li>· Slots</li><li>· Start type</li><li>· Custom name</li>
+      <li>Tab — Payload <i>densest screen</i></li><li>Tab — Waypoints</li><li>Tab — DTC</li><li>Weapon settings</li>
+    </ul></div>
+
+    <div class="inv-g"><h5>Base menus <span>9</span></h5><ul>
+      <li>Base menu <i>locked to 1024px</i></li><li>Intel summary <i>hand-built HTML</i></li><li>Tab — Airfield Command</li><li>Tab — Ground Forces HQ</li>
+      <li>Tab — Intel</li><li>Tab — Departing Convoys</li><li>Aircraft recruitment</li><li>Armor recruitment <i>20–40 rows</i></li><li>Unit transfer</li>
+    </ul></div>
+
+    <div class="inv-g"><h5>Ground objects <span>3</span></h5><ul>
+      <li>Target intel <i>10 rows, rebuilt each buy</i></li><li>Buy / replace</li><li>Place unit group <i>cheat</i></li>
+    </ul></div>
+
+    <div class="inv-g"><h5>Air wing <span>10</span></h5><ul>
+      <li>Squadrons OWNFOR</li><li>Squadrons OPFOR</li><li>Inventory <i>6-col table</i></li><li>Cheats</li><li>Faction OWNFOR</li><li>Faction OPFOR</li>
+      <li>Squadron detail <i>~25 task checkboxes</i></li><li>Wing config <i>1,205 lines</i></li><li>Add squadron</li><li>Parking warning</li>
+    </ul></div>
+
+    <div class="inv-g"><h5>New Game wizard <span>7</span></h5><ul>
+      <li>Introduction</li><li>Theater <i>busiest page</i></li><li>Factions <i>hundreds of checkboxes</i></li><li>Mods <i>18 toggles</i></li>
+      <li>Campaign options <i>embeds all of Settings</i></li><li>Conclusion</li><li>Save new faction</li>
+    </ul></div>
+
+    <div class="inv-g"><h5>Settings <span>10</span></h5><ul>
+      <li>Difficulty &amp; Realism <i>27</i></li><li>Air Doctrine <i>50</i></li><li>Campaign Management <i>42</i></li><li>Mission Generation <i>59</i></li>
+      <li>Kneeboards <i>7</i></li><li>Vietnam Ops <i>8</i></li><li>Performance <i>21</i></li><li>Cheat menu <i>8 + 20 buttons</i></li>
+      <li>Plugins <i>27 bare rows</i></li><li>Plugin options <i>217 controls</i></li>
+    </ul></div>
+
+    <div class="inv-g"><h5>Reference <span>11</span></h5><ul>
+      <li>Intelligence <i>3 tabs</i></li><li>Finances <i>the only accordion</i></li><li>Stats <i>2 charts</i></li><li>Debriefing <i>unbounded height</i></li>
+      <li>Waiting for mission</li><li>Pending transfers</li><li>Unit info</li><li>Notes</li><li>Custom kneeboards</li><li>Logs</li><li>Preferences</li>
+    </ul></div>
+
+    <div class="inv-g"><h5>Small dialogs <span>8</span></h5><ul>
+      <li>Assign callsign</li><li>Assign TACAN</li><li>Assign ICLS</li><li>Assign frequency</li>
+      <li>Save payload</li><li>Squadron selector</li><li>Add squadron</li><li>Preset squadron</li>
+    </ul></div>
+
+    <div class="inv-g"><h5>Modal prompts <span>20+</span></h5><ul>
+      <li>Launch checks <i>×5</i></li><li>Save / load failures</li><li>Quit confirmation</li><li>Victory · Defeat</li>
+      <li>Waypoint &amp; flight-plan warnings <i>×5</i></li><li>Config save / discard</li>
+    </ul></div>
+  </div>
+
+  <h4 class="sh4">Web client — every surface</h4>
+  <div class="inv">
+    <div class="inv-g"><h5>Chrome <span>7</span></h5><ul>
+      <li>Campaign ribbon</li><li>Victory panel</li><li>SITREP panel</li><li>Events feed</li>
+      <li>Layers panel <i>40 toggles, 8 groups</i></li><li>Legend</li><li>Ruler + scale</li>
+    </ul></div>
+    <div class="inv-g"><h5>Map layers <span>~30</span></h5><ul>
+      <li>Control points · carriers</li><li>Ground objects <i>7 filtered instances</i></li><li>Flight plans <i>3 instances</i></li><li>Threat zones <i>8 instances</i></li>
+      <li>Front lines · supply routes</li><li>IADS network</li><li>Minefields · downed pilots</li><li>Combat · aircraft · waypoints</li><li>Debug overlays <i>×4</i></li>
+    </ul></div>
+    <div class="inv-g"><h5>Tooltips <span>13</span></h5><ul>
+      <li>Base · ground object · flight</li><li>Waypoint · front line · route</li><li>IADS link · threat ring</li><li>Minefield · downed pilot</li><li>Concealed area · drag distance</li>
+    </ul></div>
+  </div>
+
+  <div class="col note" style="margin-top:var(--s5)">
+    Three files under <code>qt_ui/</code> are empty stubs that nothing imports, and the main window still carries the map-display-toggle machinery that moved to the web client years ago. Whatever direction we take, that goes.
+  </div>
+</section>
+<!-- ============================================================
+     DIRECTION 1 — SORTIE
+     ============================================================ -->
+<section id="d1" class="slab">
+  <div class="col dir-head">
+    <div class="dir-tag"><span class="n">1</span><span>Direction one · restyle</span></div>
+    <h2>Sortie</h2>
+    <p class="one">Change nothing about how the app works. Give it a design system and let every screen inherit it at once.</p>
+  </div>
+
+  <div class="col stack">
+    <p>The layout stays exactly as it is: menubar, toolbar, status strip, ATO on the left, map in the middle, log at the bottom, dialogs on top. What changes is that the 711-line stylesheet and the web client's scattered hexes are both replaced by <b>one token file</b> — colour, spacing, type scale, border radius, elevation — from which the Qt stylesheet is generated and the web CSS is written.</p>
+    <p>That single move fixes the thing you notice most: the two halves of the app finally look like one program. The gradients go. The type gets a scale. The toolbar loses the social links. And the one button that matters becomes the one button that's coloured.</p>
+  </div>
+
+  <div class="mk-grid">
+    <div>
+      <div class="mk t-d1">
+        <div class="mk-title"><div class="dots"><i></i><i></i><i></i></div><span>RETRIBUTION — Red Tide</span></div>
+        <div class="mk-tools">
+          <span class="mk-b ghost sm">File</span><span class="mk-b ghost sm">Campaign</span><span class="mk-b ghost sm">Tools</span><span class="mk-b ghost sm">Help</span>
+          <span class="mk-push"></span>
+          <span class="mk-b sm">Air Wing</span><span class="mk-b sm">Transfers</span><span class="mk-b sm">Stats</span><span class="mk-b sm">Settings</span>
+        </div>
+        <div class="mk-strip">
+          <div class="mk-stat"><b>TURN 14</b><span>12 Jul 1988 · 0630</span></div>
+          <div class="mk-stat"><b>Rain · 8 kt</b><span>Conditions</span></div>
+          <div class="mk-stat"><b>$4,820 M</b><span>Budget · +310</span></div>
+          <div class="mk-stat"><b>12 / 31</b><span>Enemy sites known</span></div>
+          <span class="mk-push"></span>
+          <span class="mk-b sm">Pass turn</span>
+          <span class="mk-b cta">Take off ▸</span>
+        </div>
+        <div class="mk-body">
+          <div class="mk-side">
+            <div class="mk-h"><span>Air tasking order</span><span>3 pkg</span></div>
+            <div class="mk-pkg">
+              <div><span>WOLVERINE</span><span>0714</span></div>
+              <div class="mk-fl"><span>Strike ×2</span><span>F/A-18C</span></div>
+              <div class="mk-fl sel"><span>SEAD ×2</span><span>F-16C</span></div>
+              <div class="mk-fl"><span>Recon ×1</span><span>MQ-9</span></div>
+            </div>
+            <div class="mk-pkg">
+              <div><span>NEWT</span><span>0802</span></div>
+              <div class="mk-fl"><span>BARCAP ×2</span><span>F-15C</span></div>
+            </div>
+            <div class="mk-pkg">
+              <div><span>SCARAB</span><span>0845</span></div>
+              <div class="mk-fl"><span>BAI ×4</span><span>A-10C</span></div>
+            </div>
+          </div>
+          <div class="mk-main">
+            <div class="mk-map">
+              <svg viewBox="0 0 400 200" preserveAspectRatio="none" aria-hidden="true">
+                <path d="M40,178 C110,150 150,120 210,96 C265,74 320,58 372,44" fill="none" stroke="#fe7d0a" stroke-width="3"/>
+                <circle cx="252" cy="72" r="30" fill="none" stroke="#c85050" stroke-width="1.4"/>
+                <circle cx="196" cy="120" r="22" fill="none" stroke="#c85050" stroke-width="1.4"/>
+                <path d="M70,168 L128,138 L188,112 L248,74" fill="none" stroke="#E0902F" stroke-width="1.8"/>
+                <circle cx="70" cy="168" r="3.5" fill="#E0902F"/><circle cx="248" cy="74" r="3.5" fill="#E0902F"/>
+              </svg>
+              <div class="mk-mapui" style="top:8px;left:50%;transform:translateX(-50%)">
+                <span class="mk-chip">Red Tide · Turn 14</span><span class="mk-chip">Victory 2 / 4</span><span class="mk-chip">Last turn</span>
+              </div>
+              <div class="mk-mapui" style="top:8px;right:8px"><span class="mk-chip">Layers ▾</span></div>
+              <div class="mk-mapui" style="bottom:8px;right:8px"><span class="mk-chip">Legend ▴</span></div>
+            </div>
+            <div class="mk-info">
+              <div style="display:flex;gap:12px"><span style="color:var(--mk-accent)">T14</span><span>Convoy destroyed near Haina</span><span style="opacity:.5">·</span><span>SA-6 at Fulda localized</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="cap"><b>Main window</b><span>Same bones. One toolbar, grouped by verb. The status strip gains hierarchy — big value, small label. “Take off” is the only accented control on screen.</span></p>
+    </div>
+
+    <div>
+      <div class="mk t-d1">
+        <div class="mk-title"><div class="dots"><i></i><i></i><i></i></div><span>Settings</span></div>
+        <div class="mk-set">
+          <div class="mk-cats">
+            <div>Difficulty</div><div>Air doctrine</div><div class="on">Mission generation</div>
+            <div>Campaign</div><div>Kneeboards</div><div>Vietnam Ops</div><div>Performance</div>
+            <div>Plugins</div><div>Plugin options</div><div>Cheats</div>
+          </div>
+          <div class="mk-setmain">
+            <div class="mk-search"><span class="f">Search all 439 settings…</span><span class="mk-b sm ghost">Reset</span></div>
+            <div class="mk-setbody">
+              <div class="mk-grp">Battlefield life · 11</div>
+              <div class="mk-opt"><div><div class="t">Ambient supply convoys</div><div class="d">Both sides run real supply columns on rear-area roads each turn.</div></div><div class="mk-tog on"></div></div>
+              <div class="mk-opt"><div><div class="t">Convoy ambush</div><div class="d">Hidden enemy teams may dig in along a friendly convoy's route.</div></div><div class="mk-tog on"></div></div>
+              <div class="mk-opt off"><div><div class="t">Artillery base harassment</div><div class="d">Frontline airfields draw sporadic standoff fire.</div></div><div class="mk-tog"></div></div>
+              <div class="mk-grp" style="margin-top:2px">Comms war · 3</div>
+              <div class="mk-opt"><div><div class="t">Enemy comms jamming</div><div class="d">Enemy command posts jam your briefed radio channels.</div></div><div class="mk-tog on"></div></div>
+              <div class="mk-opt off"><div><div class="t">Requires captured aircrew</div><div class="d">Jamming only starts once the enemy captures a pilot.</div></div><div class="mk-tog"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="cap"><b>Settings</b><span>Structure untouched — but a search field over all 439 controls, a type scale that subordinates the prose, and dependent options greyed in place rather than merely disabled.</span></p>
+    </div>
+  </div>
+
+  <div class="col two-col" style="margin-top:var(--s7)">
+    <div class="card good">
+      <h4>What this fixes</h4>
+      <ul>
+        <li>One visual language across Qt and the web map</li>
+        <li>Gradients, mismatched greys and four type scales all gone</li>
+        <li>DPI scaling stops fighting the fixed <code>px</code> rules</li>
+        <li>A real primary action instead of sixteen identical buttons</li>
+        <li>Settings become searchable — the single biggest daily annoyance</li>
+        <li>Every one of the 36 dialogs improves without being touched individually</li>
+      </ul>
+    </div>
+    <div class="card bad">
+      <h4>What it does not fix</h4>
+      <ul>
+        <li>Editing a flight still covers the map with a modal</li>
+        <li>Four navigation systems remain four navigation systems</li>
+        <li>217 plugin options still sit in one flat scrolling page</li>
+        <li>The New Game wizard still embeds the whole settings dialog, cheats included</li>
+        <li>Still desktop-only, still one window, still one screen</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="col">
+    <div class="meters">
+      <div class="meter"><span class="lab">Effort</span><span class="val"><span class="pips"><i class="on"></i><i class="on"></i><i></i><i></i><i></i></span> Small</span></div>
+      <div class="meter"><span class="lab">Risk</span><span class="val"><span class="pips hot"><i class="on"></i><i></i><i></i><i></i><i></i></span> Very low</span></div>
+      <div class="meter"><span class="lab">Ceiling</span><span class="val"><span class="pips"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></span> Modern, still 2016-shaped</span></div>
+    </div>
+
+    <h4 class="sh4">How every surface is covered</h4>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Surface</th><th>Treatment under Sortie</th></tr></thead>
+        <tbody>
+          <tr><td>Main window shell, 3 toolbars, status strip</td><td>Rebuilt as one toolbar + a hierarchical status strip. Social links move into Help.</td></tr>
+          <tr><td>ATO sidebar, info log</td><td>Restyled; log gets a readable row rhythm instead of a 100px squeeze.</td></tr>
+          <tr><td>All 36 dialogs</td><td>Inherit the generated stylesheet. Shared header/footer pattern applied to the ten most-used.</td></tr>
+          <tr><td>Settings — 7 pages / 41 sections / 214 fields</td><td>Same tree, new density + a global search field.</td></tr>
+          <tr><td>Plugin options — 217 controls</td><td>Restyled and searchable; still one page.</td></tr>
+          <tr><td>New Game wizard — 6 pages</td><td>Restyled. Cheat page hidden while no game is loaded.</td></tr>
+          <tr><td>Web map + its 4 floating panels</td><td>Re-themed from the same tokens; dead CSS deleted; the tab finally gets a name.</td></tr>
+          <tr><td>Kneeboards, debrief, stats, finances, notes, logs</td><td>Inherit the stylesheet, no structural change.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     DIRECTION 2 — COMMAND DECK
+     ============================================================ -->
+<section id="d2" class="slab">
+  <div class="col dir-head">
+    <div class="dir-tag"><span class="n">2</span><span>Direction two · restructure</span></div>
+    <h2>Command Deck</h2>
+    <p class="one">Kill the modal. The map never leaves the screen, and what you selected explains itself in a panel beside it.</p>
+  </div>
+
+  <div class="col stack">
+    <p>This is the direction that changes how the app <em>feels</em> rather than how it looks. The insight is that almost nothing in Retribution is genuinely modal — you're not being asked a blocking question, you're inspecting and adjusting a thing you picked on the map. So the 36 dialogs collapse into <b>one persistent inspector</b> on the right that changes contents with your selection, and a <b>mode rail</b> on the left that replaces the toolbar/menubar/status-button scramble.</p>
+    <p>Click a SAM site: the inspector shows it. Click a flight: the inspector shows General, Payload, Waypoints and DTC as sections you scroll, with the flight's route still drawn on the map next to you. Drag a waypoint and watch the fuel figure move. Today that is literally impossible, because the dialog is covering the map.</p>
+    <p>Crucially this is <b>incremental</b>. The inspector can host one converted dialog at a time; everything not yet converted keeps opening as a modal exactly as it does now. There is no big-bang cutover.</p>
+  </div>
+
+  <div class="mk-grid">
+    <div>
+      <div class="mk t-d2">
+        <div class="mk-title"><div class="dots"><i></i><i></i><i></i></div><span>RETRIBUTION · Red Tide · Turn 14</span></div>
+        <div class="mk-strip">
+          <div class="mk-stat"><b>TURN 14</b><span>12 Jul 1988 · 0630</span></div>
+          <div class="mk-stat"><b>$4,820 M</b><span>Budget</span></div>
+          <div class="mk-stat"><b>Rain</b><span>8 kt · 1,400 ft</span></div>
+          <div class="mk-stat"><b>2 / 4</b><span>Victory conditions</span></div>
+          <span class="mk-push"></span>
+          <span class="mk-b sm">Pass turn</span><span class="mk-b cta">Take off ▸</span>
+        </div>
+        <div class="mk-body">
+          <div class="mk-rail">
+            <div class="on"><b>◎</b>Map</div>
+            <div><b>≡</b>ATO</div>
+            <div><b>✥</b>Wing</div>
+            <div><b>◈</b>Intel</div>
+            <div><b>⇄</b>Logi</div>
+            <div><b>⚙</b>Setup</div>
+          </div>
+          <div class="mk-side" style="width:132px">
+            <div class="mk-h"><span>Packages</span><span>3</span></div>
+            <div class="mk-pkg">
+              <div><span>WOLVERINE</span><span>0714</span></div>
+              <div class="mk-fl"><span>Strike ×2</span></div>
+              <div class="mk-fl sel"><span>SEAD ×2</span></div>
+              <div class="mk-fl"><span>Recon ×1</span></div>
+            </div>
+            <div class="mk-pkg"><div><span>NEWT</span><span>0802</span></div><div class="mk-fl"><span>BARCAP ×2</span></div></div>
+            <div class="mk-pkg"><div><span>SCARAB</span><span>0845</span></div><div class="mk-fl"><span>BAI ×4</span></div></div>
+          </div>
+          <div class="mk-main">
+            <div class="mk-map">
+              <svg viewBox="0 0 400 200" preserveAspectRatio="none" aria-hidden="true">
+                <path d="M40,178 C110,150 150,120 210,96 C265,74 320,58 372,44" fill="none" stroke="#fe7d0a" stroke-width="3"/>
+                <circle cx="252" cy="72" r="30" fill="none" stroke="#c85050" stroke-width="1.4"/>
+                <circle cx="196" cy="120" r="22" fill="none" stroke="#c85050" stroke-width="1.4"/>
+                <path d="M70,168 L128,138 L188,112 L248,74" fill="none" stroke="#38A3B8" stroke-width="2"/>
+                <circle cx="128" cy="138" r="4" fill="none" stroke="#38A3B8" stroke-width="1.6"/>
+                <circle cx="188" cy="112" r="4" fill="none" stroke="#38A3B8" stroke-width="1.6"/>
+                <circle cx="70" cy="168" r="3.5" fill="#38A3B8"/><circle cx="248" cy="74" r="3.5" fill="#38A3B8"/>
+              </svg>
+              <div class="mk-mapui" style="bottom:8px;left:8px"><span class="mk-chip">Events 6</span><span class="mk-chip">Legend</span></div>
+              <div class="mk-mapui" style="top:8px;right:8px"><span class="mk-chip">Layers ▾</span></div>
+            </div>
+          </div>
+          <div class="mk-side right">
+            <div class="mk-h"><span style="color:var(--mk-accent)">Flight · SEAD</span><span>✕</span></div>
+            <div style="font-size:12px;margin-bottom:2px">WOLVERINE 2</div>
+            <div style="font-size:9px;color:var(--mk-dim);margin-bottom:6px">2 × F-16C · TOT 0714</div>
+            <div class="mk-acc">
+              <b>General <span>▾</span></b>
+              <div class="mk-kv"><span>Task</span><b>SEAD</b></div>
+              <div class="mk-kv"><span>Departure</span><b>Ramstein</b></div>
+              <div class="mk-kv"><span>Squadron</span><b>23rd TFS</b></div>
+            </div>
+            <div class="mk-acc">
+              <b>Payload <span>▾</span></b>
+              <div class="mk-kv"><span>Loadout</span><b>SEAD</b></div>
+              <div class="mk-kv"><span>Fuel</span><b>80 %</b></div>
+              <div class="mk-kv"><span>Burn</span><b>+310 lb</b></div>
+            </div>
+            <div class="mk-acc">
+              <b>Waypoints <span>▾</span></b>
+              <div class="mk-kv"><span>3 INGRESS</span><b>18,000</b></div>
+              <div class="mk-kv"><span>4 TARGET</span><b>18,000</b></div>
+            </div>
+            <div class="mk-acc"><b>DTC <span>▸</span></b></div>
+          </div>
+        </div>
+      </div>
+      <p class="cap"><b>Flight selected</b><span>The route stays drawn while you edit it. Four former dialog tabs are now four scrollable sections beside the map.</span></p>
+    </div>
+
+    <div>
+      <div class="mk t-d2">
+        <div class="mk-title"><div class="dots"><i></i><i></i><i></i></div><span>RETRIBUTION · Red Tide · Turn 14</span></div>
+        <div class="mk-strip">
+          <div class="mk-stat"><b>TURN 14</b><span>12 Jul 1988 · 0630</span></div>
+          <div class="mk-stat"><b>$4,820 M</b><span>Budget</span></div>
+          <span class="mk-push"></span>
+          <span class="mk-b cta">Take off ▸</span>
+        </div>
+        <div class="mk-body">
+          <div class="mk-rail">
+            <div class="on"><b>◎</b>Map</div><div><b>≡</b>ATO</div><div><b>✥</b>Wing</div>
+            <div><b>◈</b>Intel</div><div><b>⇄</b>Logi</div><div><b>⚙</b>Setup</div>
+          </div>
+          <div class="mk-main">
+            <div class="mk-map">
+              <svg viewBox="0 0 400 200" preserveAspectRatio="none" aria-hidden="true">
+                <path d="M40,178 C110,150 150,120 210,96 C265,74 320,58 372,44" fill="none" stroke="#fe7d0a" stroke-width="3"/>
+                <circle cx="252" cy="72" r="30" fill="none" stroke="#c85050" stroke-width="1.4"/>
+                <circle cx="150" cy="150" r="9" fill="none" stroke="#38A3B8" stroke-width="2"/>
+              </svg>
+              <div class="mk-mapui" style="top:8px;right:8px"><span class="mk-chip">Layers ▾</span></div>
+            </div>
+          </div>
+          <div class="mk-side right">
+            <div class="mk-h"><span style="color:var(--mk-accent)">Airbase</span><span>✕</span></div>
+            <div style="font-size:12px;margin-bottom:2px">Ramstein</div>
+            <div style="font-size:9px;color:var(--mk-dim);margin-bottom:6px">BLUE · runway operational</div>
+            <div class="mk-acc">
+              <b>Airfield command <span>▾</span></b>
+              <div class="mk-kv"><span>Aircraft</span><b>34</b></div>
+              <div class="mk-kv"><span>Squadrons</span><b>4</b></div>
+              <div class="mk-kv"><span>ATC</span><b>251.00</b></div>
+            </div>
+            <div class="mk-acc">
+              <b>Ground forces HQ <span>▾</span></b>
+              <div class="mk-kv"><span>Armor</span><b>18</b></div>
+              <div class="mk-kv"><span>Reserve</span><b>6</b></div>
+            </div>
+            <div class="mk-acc">
+              <b>Intel <span>▾</span></b>
+              <div class="mk-kv"><span>Threats in 60 nm</span><b>3</b></div>
+            </div>
+            <div class="mk-acc"><b>Departing convoys <span>▸</span></b></div>
+            <div style="margin-top:7px;display:flex;gap:5px"><span class="mk-b sm">Buy units</span><span class="mk-b sm ghost">Plan</span></div>
+          </div>
+        </div>
+      </div>
+      <p class="cap"><b>Base selected — same panel</b><span>The base menu's four tabs become the same accordion. One inspector serves every selection type, so there is one interaction to learn instead of thirty-six.</span></p>
+    </div>
+  </div>
+
+  <div class="col two-col" style="margin-top:var(--s7)">
+    <div class="card good">
+      <h4>What this fixes</h4>
+      <ul>
+        <li>You never lose the map to edit something on it</li>
+        <li>One inspector replaces the dialog zoo — one thing to learn</li>
+        <li>Six modes replace four half-navigation systems</li>
+        <li>Dialogs stop needing a global clamp, because they stop being dialogs</li>
+        <li>Room for the log and events feed to actually be readable</li>
+        <li>Can be delivered one screen at a time, shipping value each step</li>
+      </ul>
+    </div>
+    <div class="card bad">
+      <h4>What it costs</h4>
+      <ul>
+        <li>Every converted dialog needs re-parenting into a panel widget</li>
+        <li>A selection/context system has to be built and kept in sync</li>
+        <li>Inspector width is tight for the payload editor — it likely stays a window</li>
+        <li>Muscle memory changes; the squadron will notice on day one</li>
+        <li>Still desktop-only and single-screen</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="col">
+    <div class="meters">
+      <div class="meter"><span class="lab">Effort</span><span class="val"><span class="pips"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i></span> Large, but staged</span></div>
+      <div class="meter"><span class="lab">Risk</span><span class="val"><span class="pips hot"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></span> Moderate</span></div>
+      <div class="meter"><span class="lab">Ceiling</span><span class="val"><span class="pips"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i></span> Feels like a 2026 planning tool</span></div>
+    </div>
+
+    <h4 class="sh4">Where every surface lands</h4>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Surface today</th><th>Becomes</th></tr></thead>
+        <tbody>
+          <tr><td>Base menu — Airfield Command, Ground Forces HQ, Intel, Departing Convoys</td><td>Inspector, four sections</td></tr>
+          <tr><td>Edit flight — General, Payload, Waypoints, DTC</td><td>Inspector, four sections (payload may stay a window)</td></tr>
+          <tr><td>TGO info, unit info, buy/replace menus</td><td>Inspector</td></tr>
+          <tr><td>Package dialog</td><td>Inspector, opened by map right-click</td></tr>
+          <tr><td>Air Wing, squadron, air wing config</td><td><b>Wing</b> mode — full-width page</td></tr>
+          <tr><td>Stats, finances, intel, info log, events</td><td><b>Intel</b> mode — full-width page</td></tr>
+          <tr><td>Transfers, pending transfers, convoys</td><td><b>Logistics</b> mode</td></tr>
+          <tr><td>Settings, plugins, plugin options, preferences, kneeboards, notes</td><td><b>Setup</b> mode — the 439 controls get a page instead of a dialog</td></tr>
+          <tr><td>ATO panel</td><td><b>ATO</b> mode, plus the persistent left list</td></tr>
+          <tr><td>New Game wizard, debrief, callsign/TACAN/ICLS/radio pickers, confirms</td><td><b>Stay modal</b> — these genuinely are</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="note" style="margin-top:var(--s4)">
+      Only the last row stays a dialog. That's roughly <b>9 of 36</b> — everything else becomes a panel or a page.
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     DIRECTION 3 — SINGLE SURFACE
+     ============================================================ -->
+<section id="d3" class="slab">
+  <div class="col dir-head">
+    <div class="dir-tag"><span class="n">3</span><span>Direction three · replatform</span></div>
+    <h2>Single Surface</h2>
+    <p class="one">Stop maintaining two applications. The web client becomes the whole interface; Qt keeps the window and the file dialogs.</p>
+  </div>
+
+  <div class="col stack">
+    <p>Retribution has been drifting this way for two years without anyone deciding to. The map is already a web app. The layers panel, the campaign ribbon, the SITREP, the victory checklist, the events feed, the minefield and downed-pilot overlays — every one of those was built web-side. The server already publishes the game as JSON over HTTP and pushes deltas over a WebSocket. There is even an Electron wrapper sitting in the repo, unused.</p>
+    <p>What's missing is only the <em>write</em> half. Today the browser can't create a package — it POSTs to <code>/qt/create-package/…</code> and asks the desktop app to open a dialog. Direction 3 is the decision to finish the job: build the write endpoints, move the remaining screens into React, and let the Qt shell shrink to a launcher.</p>
+    <p>The payoff is the one nothing else can offer. Planning moves to a <b>second monitor, a laptop or a tablet on the desk</b> while DCS runs fullscreen — and because it's just a page on the local network, others in the squadron can watch the campaign map during a brief without touching your machine.</p>
+  </div>
+
+  <div class="mk-grid">
+    <div>
+      <div class="mk t-d3">
+        <div class="mk-url"><span style="opacity:.5">‹ ›</span><span class="bar">retribution.local &nbsp;· &nbsp;Red Tide — Turn 14</span></div>
+        <div class="mk-topnav">
+          <span class="brand">RETRIBUTION</span>
+          <a class="on">Map</a><a>ATO</a><a>Air wing</a><a>Intel</a><a>Logistics</a><a>Setup</a>
+          <span class="mk-push"></span>
+          <span class="mk-b sm">Pass turn</span><span class="mk-b cta">Take off</span>
+        </div>
+        <div class="mk-strip">
+          <div class="mk-stat"><b>TURN 14</b><span>12 Jul 1988 · 0630</span></div>
+          <div class="mk-stat"><b>$4,820 M</b><span>Budget</span></div>
+          <div class="mk-stat"><b>Rain · 8 kt</b><span>Weather</span></div>
+          <div class="mk-stat"><b>2 / 4</b><span>Victory</span></div>
+        </div>
+        <div class="mk-body">
+          <div class="mk-main">
+            <div class="mk-map">
+              <svg viewBox="0 0 400 200" preserveAspectRatio="none" aria-hidden="true">
+                <path d="M40,178 C110,150 150,120 210,96 C265,74 320,58 372,44" fill="none" stroke="#fe7d0a" stroke-width="3"/>
+                <circle cx="252" cy="72" r="30" fill="none" stroke="#c85050" stroke-width="1.4"/>
+                <circle cx="196" cy="120" r="22" fill="none" stroke="#c85050" stroke-width="1.4"/>
+                <path d="M70,168 L128,138 L188,112 L248,74" fill="none" stroke="#2D6CDF" stroke-width="2"/>
+                <circle cx="70" cy="168" r="3.5" fill="#2D6CDF"/><circle cx="248" cy="74" r="3.5" fill="#2D6CDF"/>
+              </svg>
+              <div class="mk-mapui" style="top:8px;right:8px"><span class="mk-chip">Layers ▾</span></div>
+              <div class="mk-mapui" style="bottom:8px;left:8px"><span class="mk-chip">Events 6</span><span class="mk-chip">Legend</span></div>
+            </div>
+          </div>
+          <div class="mk-side right">
+            <div class="mk-h"><span style="color:var(--mk-accent)">Flight · SEAD</span><span>✕</span></div>
+            <div style="font-size:12px;margin-bottom:2px">WOLVERINE 2</div>
+            <div style="font-size:9px;color:var(--mk-dim);margin-bottom:6px">2 × F-16C · TOT 0714</div>
+            <div class="mk-acc">
+              <b>General <span>▾</span></b>
+              <div class="mk-kv"><span>Task</span><b>SEAD</b></div>
+              <div class="mk-kv"><span>Departure</span><b>Ramstein</b></div>
+            </div>
+            <div class="mk-acc">
+              <b>Payload <span>▾</span></b>
+              <div class="mk-kv"><span>Loadout</span><b>SEAD</b></div>
+              <div class="mk-kv"><span>Fuel</span><b>80 %</b></div>
+            </div>
+            <div class="mk-acc"><b>Waypoints <span>▾</span></b>
+              <div class="mk-kv"><span>4 TARGET</span><b>18,000</b></div>
+            </div>
+            <div style="margin-top:7px;display:flex;gap:5px"><span class="mk-b sm cta">Save</span><span class="mk-b sm">Delete</span></div>
+          </div>
+        </div>
+      </div>
+      <p class="cap"><b>The whole app, in a page</b><span>Shown light to make the point that themes become a real choice — the client today has no light mode and not one media query. Dark ships as the default.</span></p>
+    </div>
+
+    <div>
+      <div class="mk t-d3">
+        <div class="mk-url"><span style="opacity:.5">‹ ›</span><span class="bar">retribution.local/setup</span></div>
+        <div class="mk-topnav">
+          <span class="brand">RETRIBUTION</span>
+          <a>Map</a><a>ATO</a><a>Air wing</a><a>Intel</a><a>Logistics</a><a class="on">Setup</a>
+        </div>
+        <div class="mk-set">
+          <div class="mk-cats">
+            <div>Difficulty</div><div>Air doctrine</div><div>Campaign</div>
+            <div class="on">Mission generation</div><div>Kneeboards</div><div>Performance</div>
+            <div>Plugins</div><div>Cheats</div>
+          </div>
+          <div class="mk-setmain">
+            <div class="mk-search"><span class="f">convoy</span><span class="mk-b sm ghost">6 results</span></div>
+            <div class="mk-setbody">
+              <div class="mk-grp">Mission generation › Battlefield life</div>
+              <div class="mk-opt"><div><div class="t">Ambient supply convoys</div><div class="d">Both sides run real supply columns on rear-area roads each turn.</div></div><div class="mk-tog on"></div></div>
+              <div class="mk-opt"><div><div class="t">Convoy ambush</div><div class="d">Hidden enemy teams may dig in along a friendly convoy's route.</div></div><div class="mk-tog on"></div></div>
+              <div class="mk-grp" style="margin-top:2px">Vietnam Ops › Battlefield &amp; interdiction</div>
+              <div class="mk-opt"><div><div class="t">Convoy interdiction</div><div class="d">Keeps enemy supply columns flowing on the trail so Armed Recon has targets.</div></div><div class="mk-tog on"></div></div>
+              <div class="mk-grp" style="margin-top:2px">Plugin · convoyambush</div>
+              <div class="mk-opt"><div><div class="t">Trigger radius</div><div class="d">How close the convoy must come before the ambush springs.</div></div><div style="font-family:var(--mk-mono);font-size:10px">6 km</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="cap"><b>Setup</b><span>One search across all 439 controls — the 214 settings and the 217 plugin options together, each result showing the path it came from. This is the surface that's worst today and gains most.</span></p>
+    </div>
+  </div>
+
+  <div class="col two-col" style="margin-top:var(--s7)">
+    <div class="card good">
+      <h4>What this fixes</h4>
+      <ul>
+        <li>One application, one design system, one place to change anything</li>
+        <li>Plan from a second screen or a tablet while DCS holds the main display</li>
+        <li>The squadron can open the campaign map during a brief</li>
+        <li>Retires ~22,500 lines of Qt UI over time</li>
+        <li>Real component library, real theming, real responsive layout</li>
+        <li>Every future feature is built once, not twice</li>
+      </ul>
+    </div>
+    <div class="card bad">
+      <h4>What it costs</h4>
+      <ul>
+        <li>The write API doesn't exist yet — packages, flights, purchases, transfers, settings</li>
+        <li>The payload editor is genuinely hard: real pylon data, per-airframe</li>
+        <li>The New Game wizard and faction editor are large rebuilds</li>
+        <li>Longest road to the first visible improvement</li>
+        <li>Two UIs coexist during the transition, which is its own tax</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="col">
+    <div class="meters">
+      <div class="meter"><span class="lab">Effort</span><span class="val"><span class="pips"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span> Largest</span></div>
+      <div class="meter"><span class="lab">Risk</span><span class="val"><span class="pips hot"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i></span> High</span></div>
+      <div class="meter"><span class="lab">Ceiling</span><span class="val"><span class="pips"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span> Highest — and where the code is already heading</span></div>
+    </div>
+
+    <h4 class="sh4">Migration order that keeps the app usable throughout</h4>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th class="num">Step</th><th>Move</th><th>Why this order</th></tr></thead>
+        <tbody>
+          <tr><td class="num">1</td><td>Design system + the four existing web panels</td><td>Pure win, no API work, ships immediately</td></tr>
+          <tr><td class="num">2</td><td>Intel: stats, finances, info log, events, debrief</td><td>Read-only — the API already has the data</td></tr>
+          <tr><td class="num">3</td><td>Setup: settings, plugins, preferences</td><td>One generic write endpoint covers all 439 controls</td></tr>
+          <tr><td class="num">4</td><td>ATO + package/flight editing</td><td>The first real write API; biggest daily payoff</td></tr>
+          <tr><td class="num">5</td><td>Air wing, logistics, base menus</td><td>Purchases and transfers</td></tr>
+          <tr><td class="num">6</td><td>Payload editor, New Game wizard</td><td>Hardest last; Qt keeps them until they're ready</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="note" style="margin-top:var(--s4)">
+      Steps 1–3 are worth doing <b>whichever direction you pick</b> — they're the same work as Direction 1 plus read-only pages. That's the hedge: start there and the choice between 2 and 3 can be made later, with the design system already paid for.
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     COMPARE
+     ============================================================ -->
+<section id="compare">
+  <div class="col sec-head">
+    <div class="num">Comparison</div>
+    <h2>Side by side</h2>
+    <p class="sub">The same seven problems, scored against each direction.</p>
+  </div>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead>
+        <tr><th>Problem today</th><th>1 · Sortie</th><th>2 · Command Deck</th><th>3 · Single Surface</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Two mismatched visual languages</td><td>Solved</td><td>Solved</td><td>Solved — only one remains</td></tr>
+        <tr><td>Everything is a modal over the map</td><td>Unchanged</td><td><b>Solved</b></td><td><b>Solved</b></td></tr>
+        <tr><td>Four navigation systems</td><td>Reduced to two</td><td><b>Solved</b></td><td><b>Solved</b></td></tr>
+        <tr><td>No hierarchy — 16 identical buttons</td><td>Solved</td><td>Solved</td><td>Solved</td></tr>
+        <tr><td>Dialogs don't fit real screens</td><td>Improved</td><td><b>Moot</b> — they stop being dialogs</td><td><b>Moot</b></td></tr>
+        <tr><td>439 controls, no search</td><td>Search added</td><td>Search + a real page</td><td><b>Search across settings and plugins together</b></td></tr>
+        <tr><td>Web client has no layout system</td><td>Re-themed</td><td>Re-themed</td><td><b>Rebuilt properly</b></td></tr>
+        <tr><td>Second screen / tablet / shared viewing</td><td>No</td><td>No</td><td><b>Yes</b></td></tr>
+        <tr><td>Two UIs to maintain forever</td><td>Yes</td><td>Yes</td><td><b>No</b></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="col stack" style="margin-top:var(--s6)">
+    <h3 class="sh">They are not exclusive</h3>
+    <p>Direction 1 is a prerequisite for both of the others — the token system is the same work either way. Direction 2 and Direction 3 are the real fork in the road, and they differ mostly in <em>where</em> the inspector gets built: in Qt, or in React. The honest sequencing is:</p>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>If you want…</th><th>Do this</th></tr></thead>
+        <tbody>
+          <tr><td>A visibly better app soon, with almost no risk</td><td>Direction 1, then stop and reassess</td></tr>
+          <tr><td>The biggest change to how planning <em>feels</em>, staying on Qt</td><td>Direction 1 → Direction 2</td></tr>
+          <tr><td>To end the two-application problem for good</td><td>Direction 1 → Direction 3 steps 2–6</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     DECIDE
+     ============================================================ -->
+<section id="decide">
+  <div class="col">
+    <div class="decide">
+      <div class="eyebrow">What I need from you</div>
+      <h3>React to these, don't pick one</h3>
+      <p style="color:var(--ink-2)">You said you don't know what you want yet — that's fine, and it's why this is three <em>directions</em> rather than three mockups of the same thing. The useful reaction isn't “option 2”; it's which parts made you feel something.</p>
+      <ol>
+        <li><b>Which mockup did you want to keep looking at?</b> Ignore the labels and the cost columns. First reaction only.</li>
+        <li><b>Is losing the map behind a dialog actually annoying you</b>, or have you stopped noticing? If it doesn't bother you, Direction 2's whole premise is wrong and we should say so now.</li>
+        <li><b>Does planning on a second screen or a tablet matter to you?</b> That's the one thing only Direction 3 buys, and it's expensive. If it's a shrug, Direction 3 drops out.</li>
+        <li><b>The three palettes are deliberately different</b> — warm dark, cold dark, light. Any of them wrong on sight? That's cheap to change now and expensive later.</li>
+        <li><b>Anything here you'd actively defend?</b> The ATO sidebar, the toolbar, the current colours — if something works for you, I'd rather know before redesigning around it.</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="col">
+    Every count and quotation in this document was read out of the working tree, not remembered.
+    Screens surveyed: all of <code>qt_ui/</code> and <code>client/src/</code>.
+    The mockups are live HTML — the three directions share one markup skeleton and differ only in their tokens,
+    which is exactly how the real thing would be built.
+  </div>
+</footer>
+
+</div>
+</body>
+</html>

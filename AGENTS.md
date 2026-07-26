@@ -163,13 +163,22 @@ file. This guide is the map; those are the territory.
     IR's own Highway-10 supply route runs through Fallujah; **Haditha/Kut → Desert Storm**;
     **Samarra/Hemrin/Diyala → both**, they sit in the shared Balad–Baghdad triangle; **Alwand
     parked**, 104 km off both AOs), and the verbatim blue-zone-`PROPERTY_1`-category +
-    white-zone-`OBJECT ID` authoring convention. **Kharg Island is deliberately PARKED** (DM call
-    2026-07-26): it converts to 565 km from Al-Kut, the southernmost airfield on the map, and is
-    an *Iranian* terminal — wrong belligerent for 1991, irrelevant to 2016 — so it waits for ED's
-    unfinished **southern** Iraq extension, when it becomes the natural home for the Tanker War
-    campaign (today on PG over substitute WRL geography) + a §78 coastal-battery showcase; a CP
-    cannot bind there until the fork takes upstream's #904 pin (pinned pydcs Iraq has **19
-    airports**, no Kharg — and **no Bahrain**: that is roadmap, not 2.9.28 content). Free wins:
+    white-zone-`OBJECT ID` authoring convention, and the **guard for the authoring footgun** —
+    `from_trigger_zones` RAISES rather than degrading, so a blue zone with no white zones inside
+    (the natural half-finished state) fails **campaign load**; `tools/check_scenery_targets.py`
+    mirrors the loader's pairing rules (errors = no/invalid category, no white zones; warnings =
+    orphaned object-bound white zone, claimed white zone with no `OBJECT ID`), baseline **71
+    campaigns · 712 objectives · 0 errors · 21 pre-existing orphan warnings**, CI-locked in
+    `tests/fourteenth/test_scenery_targets.py`. **HOLD on the new airfields** (DM call
+    2026-07-26): do NOT bind a CP to any 2.9.28 airfield yet — the airfields **are usable**, the
+    blocker is that **the southern Iraq map is not detailed**, so Kharg (+ Zaranj on Afghanistan,
+    Tromso on Kola) wait on ED finishing that extension, not on fork work. Kharg additionally
+    converts to 565 km from Al-Kut, the southernmost airfield on the map, and is an *Iranian*
+    terminal — wrong belligerent for 1991, irrelevant to 2016; when the hold lifts it is the
+    natural home for the Tanker War campaign (today on PG over substitute WRL geography) + a §78
+    coastal-battery showcase, and a CP cannot bind there until the fork takes upstream's #904 pin
+    (pinned pydcs Iraq has **19 airports**, no Kharg — and **no Bahrain**: that is roadmap, not
+    2.9.28 content). Free wins:
     ED **fixed AI traffic at Mosul + H-3 Northwest** (IR's red anchor and DS91's blue complex),
     and Bashur/Al-Salam lighting opens night ops that §47's continuous clock actually reaches.
     **Gate before authoring = are the dam models destructible** (a white zone needs a destroyable

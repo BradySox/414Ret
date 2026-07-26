@@ -78,7 +78,36 @@ is a hard error, not a silent no-op.
 > **Why this can't be scripted from here:** each white zone carries an `OBJECT ID` harvested from
 > the live terrain. Those IDs only exist on a machine with DCS 2.9.28 + the Iraq map installed
 > (via the ME, or the `cwg_scenery_scanner.lua` dump). The map coordinates below take the DM
-> straight to each dam; the object binding is an ME step.
+> straight to each dam; the object binding is an ME step. Deliberately **no injection tool**:
+> the ME already creates both zone kinds correctly, and a generator that guessed quad geometry
+> would only add a way to get it wrong.
+
+### The footgun, and the guard for it
+
+`from_trigger_zones` **raises** rather than degrading. A blue zone with **no white zones inside
+it** — the natural half-finished state while authoring — raises `SceneryGroupError`, and the
+**campaign fails to load**. Same for a missing or misspelled category. Nothing in CI opened the
+campaign `.miz` files to catch that.
+
+`tools/check_scenery_targets.py` now does, mirroring the loader's own pairing rules:
+
+```
+python tools/check_scenery_targets.py                     # every campaign
+python tools/check_scenery_targets.py <campaign>.miz      # one campaign
+python tools/check_scenery_targets.py --quiet             # problems only
+```
+
+It reports **errors** (would break campaign load: no category, invalid category, no white zones)
+and **warnings** (a white zone bound to a map object but claimed by no blue zone; a claimed white
+zone with no `OBJECT ID`, so its damage is never tracked). Non-zero exit on errors.
+
+Baseline at the time of writing: **71 campaigns · 712 scenery objectives · 0 errors · 21
+warnings** — nothing is broken today, and the warnings are pre-existing orphaned authoring
+(`graveyard_of_empires` 6, `clash_of_the_titans` 6, `syria_TheLongRoadToH3` 3, `syria_full_map` 2,
+plus singles in `red_flag_81_2`, `operation_syrian_shield`, `exercise_vegas_nerve`). CTLD pickup
+zones are white but carry no `OBJECT ID`, so they are correctly ignored. The
+`tests/fourteenth/test_scenery_targets.py` guard runs the same check over every shipped campaign
+in CI, so a malformed dam zone fails the build instead of New Game.
 
 ---
 
@@ -135,10 +164,22 @@ targets set the tone (`Baba Gurgur Gas Separation Hall`, `Qayyarah Thermal Power
 
 ---
 
-## Kharg Island: correct call is to park it
+## HOLD on the new airfields (DM call 2026-07-26)
 
-**Verdict: no home in a current campaign. Wait for ED's southern Iraq extension.** (DM call
-2026-07-26, and the geometry agrees.)
+**Standing instruction: do not bind a campaign control point to any of 2.9.28's new airfields
+yet.** The airfields themselves **are usable** — Kharg comes with a real airfield, and once the
+pin moves it would bind like any other. The blocker is not the airfield, it is **what surrounds
+it: the southern part of the Iraq map is not detailed yet.** A CP is only as good as the terrain
+a campaign fights over, so these wait for ED to finish the southern extension.
+
+This is a **hold, not a rejection** — nothing here is unusable, and the hold lifts on ED's
+content, not on any fork work. It covers Kharg on Iraq, and applies equally to the other new
+airfields in this update (**Zaranj** on Afghanistan, **Tromso** on Kola) until someone has
+actually looked at the ground around them.
+
+### Kharg specifically
+
+The geometry backs the hold independently of terrain detail.
 
 Converted to map coordinates Kharg lands at **x −431 455 / y 589 924** — **565 km from Al-Kut**,
 the southernmost airfield on the map, and 712 km from Al-Salam. Desert Storm fights western Iraq
@@ -157,8 +198,9 @@ Where it *does* belong, when the south map lands:
 - It is the natural showcase for **§78 coastal batteries engage ships**, whose design note already
   asks for shipping lanes authored near an opposing shore.
 
-Nothing to do now beyond noting that the **pydcs bump is the gate**: the pinned terrain has no
-Kharg airport, so a control point cannot bind there until the fork picks up upstream's #904 pin.
+Nothing to do now beyond noting that the **pydcs bump is a second gate**: the pinned terrain has
+no Kharg airport, so a control point could not bind there even if the hold were lifted, until the
+fork picks up upstream's #904 pin.
 
 ---
 
@@ -203,5 +245,11 @@ Kharg airport, so a control point cannot bind there until the fork picks up upst
 2. If destructible: author the **Inherent Resolve** set first (Fallujah + Ramadi + Dukan, then the
    shared central three) — biggest historical payoff, and Al-Taquddum makes the pair trivially
    reachable in testing.
-3. Desert Storm set (Haditha + Kut + the shared three).
-4. Register in `414th-features.md` + `README.md` only once targets actually ship in a `.miz`.
+3. Run `python tools/check_scenery_targets.py resources/campaigns/<campaign>.miz` **before
+   committing the miz** — an unfinished blue zone fails campaign load, and this is faster than
+   finding out at New Game.
+4. Desert Storm set (Haditha + Kut + the shared three).
+5. Register in `414th-features.md` + `README.md` only once targets actually ship in a `.miz`.
+
+**Not on this list: binding a CP to Kharg** — see the airfield hold above. It lifts on ED
+finishing the southern map, not on anything the fork does.

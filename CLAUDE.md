@@ -150,6 +150,30 @@ file. This guide is the map; those are the territory.
     headless-verified 2026-07-07; laydown CI-locked in `tests/fourteenth/test_tanker_war.py`;
     registered 2026-07-18 (the maintenance sweep found it shipped silent — no checklist row or
     docs entries); in-game pass = checklist T2, the platform-AAA on-deck render the riskiest bit)
+  - `414th-iraq-map-2928-notes.md` — **what DCS 2.9.28's Iraq map content unlocks** (design +
+    authoring plan, no code/`.miz` edits yet; scoped 2026-07-26 off the 2.9.28.26283 changelog,
+    which upstream picked up as `update dcs to 2.9.28.26283` #904 — a pydcs pin bump + refreshed
+    `resources/terrain-beacons/` for Caucasus/Iraq/Kola). Headline: the **nine new named dams**
+    (Alwand, Dukan, Fallujah, Haditha, Hemrin, Kut, Ramadi, Samarra, Diyala) are consumable as
+    `power` scenery strike targets through the **stock** `SceneryGroup.from_trigger_zones` path
+    with **zero code** — DS91 already ships 57 hand-authored Iraq scenery targets, so this is ME
+    authoring, not engineering. The note carries each dam's computed map XY (via
+    `Point.from_latlng(..., Iraq)`, the `supply_route_geo.py:62` call), the campaign split
+    (**Fallujah/Ramadi/Dukan → Inherent Resolve** — Al-Taquddum sits between the first two and
+    IR's own Highway-10 supply route runs through Fallujah; **Haditha/Kut → Desert Storm**;
+    **Samarra/Hemrin/Diyala → both**, they sit in the shared Balad–Baghdad triangle; **Alwand
+    parked**, 104 km off both AOs), and the verbatim blue-zone-`PROPERTY_1`-category +
+    white-zone-`OBJECT ID` authoring convention. **Kharg Island is deliberately PARKED** (DM call
+    2026-07-26): it converts to 565 km from Al-Kut, the southernmost airfield on the map, and is
+    an *Iranian* terminal — wrong belligerent for 1991, irrelevant to 2016 — so it waits for ED's
+    unfinished **southern** Iraq extension, when it becomes the natural home for the Tanker War
+    campaign (today on PG over substitute WRL geography) + a §78 coastal-battery showcase; a CP
+    cannot bind there until the fork takes upstream's #904 pin (pinned pydcs Iraq has **19
+    airports**, no Kharg — and **no Bahrain**: that is roadmap, not 2.9.28 content). Free wins:
+    ED **fixed AI traffic at Mosul + H-3 Northwest** (IR's red anchor and DS91's blue complex),
+    and Bashur/Al-Salam lighting opens night ops that §47's continuous clock actually reaches.
+    **Gate before authoring = are the dam models destructible** (a white zone needs a destroyable
+    object) — checklist **T4**, which also re-checks the taxi fixes + the DS91 parking-fit invariant
   - `414th-desert-storm-campaign-notes.md` — **Iraq "Umm al-Ma'arik (Desert Storm 1991)"**
     (the DM's homemade DS91 campaign fixed + modernized + promoted 2026-07-19: the KARI IADS
     as the Red Tide static-trio pattern (ADOC + 3 SOCs + comms/power relays at every red base

@@ -21,6 +21,7 @@ version: "10.8"
 settings:
   fa_18efg: true
   f22_raptor: true
+  uh_60l: true
   squadron_start_full: true
 squadrons:
   Blue CV-1:
@@ -46,6 +47,7 @@ squadrons:
     - primary: Air Assault
       secondary: any
       aircraft:
+        - UH-60L
         - UH-60A
       size: 4      
   # Akrotiri

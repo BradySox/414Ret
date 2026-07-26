@@ -1,7 +1,7 @@
 from __future__ import unicode_literals, annotations
 
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 from PySide6 import QtWidgets, QtGui
 from PySide6.QtCore import Signal, QDate, QPoint, QItemSelectionModel, Qt, QModelIndex
@@ -129,17 +129,61 @@ class TheaterConfiguration(QtWidgets.QWizardPage):
         self.show_incompatible_campaigns_checkbox = QCheckBox(
             text="Show incompatible campaigns"
         )
-        show_incompatible_campaigns_checkbox = self.show_incompatible_campaigns_checkbox
-        show_incompatible_campaigns_checkbox.setChecked(False)
+        self.show_incompatible_campaigns_checkbox.setChecked(False)
+
+        # Filter and Sort Controls
+        self.filter_sort_group = QtWidgets.QGroupBox("Filter && Sort Campaigns")
+        filter_sort_group = self.filter_sort_group
+        filter_sort_layout = QtWidgets.QGridLayout()
+        filter_sort_layout.setColumnStretch(1, 1)
+
+        # Get unique values for filters
+        all_versions = set()
+        all_maps = set()
+
+        for campaign in campaigns:
+            all_versions.add(campaign.version)
+            all_maps.add(campaign.data.get("theater", ""))
+
+        # Version filter
+        filter_sort_layout.addWidget(QtWidgets.QLabel("Version:"), 0, 0)
+        self.version_filter = QtWidgets.QComboBox()
+        self.version_filter.addItem("All Versions", None)
+        for version in sorted(all_versions, reverse=True):  # Newest first
+            if version != (0, 0):  # Skip unknown versions
+                self.version_filter.addItem(f"v{version[0]}.{version[1]}", version)
+        self.version_filter.currentTextChanged.connect(self.on_filter_changed)
+        filter_sort_layout.addWidget(self.version_filter, 0, 1)
+
+        # Map filter
+        filter_sort_layout.addWidget(QtWidgets.QLabel("Map:"), 1, 0)
+        self.map_filter = QtWidgets.QComboBox()
+        self.map_filter.addItem("All Maps", "")
+        for map_name in sorted(all_maps):
+            if map_name:  # Skip empty map names
+                self.map_filter.addItem(map_name, map_name)
+        self.map_filter.currentTextChanged.connect(self.on_filter_changed)
+        filter_sort_layout.addWidget(self.map_filter, 1, 1)
+
+        # Sort option
+        filter_sort_layout.addWidget(QtWidgets.QLabel("Sort by:"), 2, 0)
+        self.sort_option = QtWidgets.QComboBox()
+        self.sort_option.addItems(["Name", "Version", "Performance"])
+        self.sort_option.currentTextChanged.connect(self.on_filter_changed)
+        filter_sort_layout.addWidget(self.sort_option, 2, 1)
+
+        filter_sort_layout.addWidget(
+            self.show_incompatible_campaigns_checkbox, 3, 0, 1, 2
+        )
+
+        filter_sort_group.setLayout(filter_sort_layout)
+
         self.campaignList = QCampaignList(
-            campaigns, show_incompatible_campaigns_checkbox.isChecked()
+            campaigns, self.show_incompatible_campaigns_checkbox.isChecked()
         )
-        show_incompatible_campaigns_checkbox.toggled.connect(
-            lambda checked: self.campaignList.setup_content(
-                show_incompatible=checked, era=self._era_filter
-            )
+        self.show_incompatible_campaigns_checkbox.toggled.connect(
+            self.on_filter_changed
         )
-        self.registerField("selectedCampaign", self.campaignList)
 
         # Faction description
         self.campaignMapDescription = QTextBrowser()
@@ -248,7 +292,6 @@ class TheaterConfiguration(QtWidgets.QWizardPage):
                 "campaign_performance_template_EN.j2"
             )
             campaign = self.campaignList.selected_campaign
-            self.setField("selectedCampaign", campaign)
             if campaign is None:
                 self.campaignMapDescription.setText("No campaign selected")
                 self.performanceText.setText("No campaign selected")
@@ -332,8 +375,8 @@ class TheaterConfiguration(QtWidgets.QWizardPage):
 
         layout = QtWidgets.QGridLayout()
         layout.setColumnMinimumWidth(0, 20)
-        layout.addWidget(self.campaignList, 0, 0, 5, 1)
-        layout.addWidget(show_incompatible_campaigns_checkbox, 5, 0, 1, 1)
+        layout.addWidget(filter_sort_group, 0, 0, 1, 1)
+        layout.addWidget(self.campaignList, 1, 0, 5, 1)
         layout.addWidget(docsText, 6, 0, 1, 1)
         layout.addWidget(self.campaignMapDescription, 0, 1, 1, 1)
         layout.addWidget(self.performanceText, 1, 1, 1, 1)
@@ -364,25 +407,39 @@ class TheaterConfiguration(QtWidgets.QWizardPage):
                 "ownership and place defenses on the map yourself."
             )
             self.campaignList.setup_terrain_content()
-        elif vietnam:
-            self.setTitle("Vietnam")
-            self.setSubTitle(
-                "\nChoose a Vietnam-era campaign. The period mechanics (Arc Light, "
-                "AAA flak, era weapons) and recommended factions pre-load on select."
-            )
-            self.campaignList.setup_content(
-                self.show_incompatible_campaigns_checkbox.isChecked(), era="vietnam"
-            )
         else:
-            self.setTitle("Theater configuration")
-            self.setSubTitle("\nChoose a terrain and time period for this game.")
-            self.campaignList.setup_content(
-                self.show_incompatible_campaigns_checkbox.isChecked()
-            )
+            if vietnam:
+                self.setTitle("Vietnam")
+                self.setSubTitle(
+                    "\nChoose a Vietnam-era campaign. The period mechanics (Arc "
+                    "Light, AAA flak, era weapons) and recommended factions "
+                    "pre-load on select."
+                )
+            else:
+                self.setTitle("Theater configuration")
+                self.setSubTitle("\nChoose a terrain and time period for this game.")
+            # The era shell is just one more filter criterion, so it flows through
+            # the same filter/sort pipeline as version/map (upstream #908) rather
+            # than a parallel setup_content argument.
+            self.on_filter_changed()
         # Campaign-specific panels are meaningless for a blank canvas.
         self.campaignMapDescription.setVisible(not terrain_only)
         self.performanceText.setVisible(not terrain_only)
         self.show_incompatible_campaigns_checkbox.setVisible(not terrain_only)
+        self.filter_sort_group.setVisible(not terrain_only)
+
+    def on_filter_changed(self) -> None:
+        """Handle changes in filter or sort options."""
+        version_filter = self.version_filter.currentData()
+        map_filter = self.map_filter.currentData() or ""
+        sort_option = self.sort_option.currentText()
+
+        # Apply filters and sort
+        self.campaignList.set_filters(version_filter, map_filter, self._era_filter)
+        self.campaignList.set_sort_option(sort_option)
+        self.campaignList.setup_content(
+            show_incompatible=self.show_incompatible_campaigns_checkbox.isChecked()
+        )
 
     def on_invert_map(self) -> None:
         blue = self.faction_selection.blueFactionSelect.currentIndex()
@@ -426,29 +483,95 @@ class QCampaignList(QListView):
         self.setMinimumHeight(350)
         self.campaigns = campaigns
         self.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectItems)
+
+        # Filter and sort settings
+        self.current_version_filter: Optional[Tuple[int, int]] = None
+        self.current_map_filter = ""
+        self.current_era_filter: Optional[str] = None
+        self.current_sort_option = "Name"
+
         self.setup_content(show_incompatible)
 
     @property
     def selected_campaign(self) -> Optional[Campaign]:
         return self.currentIndex().data(QCampaignList.CampaignRole)
 
-    def setup_content(self, show_incompatible: bool, era: Optional[str] = None) -> None:
+    def set_filters(
+        self,
+        version_filter: Optional[Tuple[int, int]] = None,
+        map_filter: str = "",
+        era: Optional[str] = None,
+    ) -> None:
+        """Set the filter criteria for campaigns."""
+        self.current_version_filter = version_filter
+        self.current_map_filter = map_filter
+        self.current_era_filter = era
+
+    def set_sort_option(self, sort_option: str) -> None:
+        """Set the sort option for campaigns."""
+        self.current_sort_option = sort_option
+
+    def _filter_campaign(self, campaign: Campaign) -> bool:
+        """Check if a campaign passes all current filters."""
+        if (
+            self.current_version_filter is not None
+            and campaign.version != self.current_version_filter
+        ):
+            return False
+
+        if self.current_map_filter and self.current_map_filter != campaign.data.get(
+            "theater", ""
+        ):
+            return False
+
+        # The era shell (the Intro page's "Vietnam" card) is just another filter.
+        if not campaign.matches_era(self.current_era_filter):
+            return False
+
+        return True
+
+    def _sort_campaigns(self, campaigns: list[Campaign]) -> list[Campaign]:
+        """Sort campaigns based on current sort option."""
+        if self.current_sort_option == "Name":
+            return sorted(campaigns, key=lambda c: c.name.lower())
+        elif self.current_sort_option == "Version":
+            return sorted(
+                campaigns, key=lambda c: c.version, reverse=True
+            )  # Newest first
+        elif self.current_sort_option == "Performance":
+            return sorted(campaigns, key=lambda c: c.performance)
+        else:
+            return campaigns
+
+    def setup_content(self, show_incompatible: bool = False) -> None:
         self.selectionModel().blockSignals(True)
         try:
             self.campaign_model.clear()
+
+            # Filter campaigns
+            filtered_campaigns = []
             for campaign in self.campaigns:
-                if not campaign.matches_era(era):
-                    continue
-                if show_incompatible or campaign.is_compatible:
-                    item = QCampaignItem(campaign)
-                    self.campaign_model.appendRow(item)
+                if (
+                    show_incompatible or campaign.is_compatible
+                ) and self._filter_campaign(campaign):
+                    filtered_campaigns.append(campaign)
+
+            # Sort campaigns
+            sorted_campaigns = self._sort_campaigns(filtered_campaigns)
+
+            # Add to model
+            for campaign in sorted_campaigns:
+                item = QCampaignItem(campaign)
+                self.campaign_model.appendRow(item)
         finally:
             self.selectionModel().blockSignals(False)
 
-        self.selectionModel().setCurrentIndex(
-            self.campaign_model.index(0, 0, QModelIndex()),
-            QItemSelectionModel.SelectionFlag.Select,
-        )
+        # Select first item if available
+        if self.campaign_model.rowCount() > 0:
+            self.selectionModel().setCurrentIndex(
+                self.campaign_model.index(0, 0, QModelIndex()),
+                QItemSelectionModel.SelectionFlag.Select,
+            )
 
     def setup_terrain_content(self) -> None:
         """Populate one row per unique terrain for the blank-canvas terrain picker.

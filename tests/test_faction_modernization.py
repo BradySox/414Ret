@@ -23,7 +23,12 @@ _CAMPAIGNS = _REPO / "resources" / "campaigns"
 # mod-with-fallback designs (e.g. the Swedish JAS-39 + AJS37 Viggen fallback) are
 # deliberately NOT listed -- those mods stay optional.
 CUT_MOD_AIRCRAFT = [
-    "UH-60L",  # -> UH-60A
+    # UH-60L un-cut 2026-07-26 (the upstream weekend sync): upstream #910 now
+    # standardizes on it across a dozen campaigns plus the new usa_israel_2000
+    # faction, and the fork already keeps the `uh_60l` ModSetting with a working
+    # eject path (Faction.apply_mod_settings), so a mods-off game silently drops
+    # the UH-60L exactly like the JAS-39/Viggen mod-with-fallback design this
+    # module's docstring exempts. Re-stripping it every sync was pure merge cost.
     "KC-130J",  # -> KC-135 Stratotanker
     # F-111C Aardvark un-cut 2026-06-28: re-introduced for the Vietnam campaigns
     # (Combat Lancer, 1968). The mod is shipped and the USA Vietnam factions now

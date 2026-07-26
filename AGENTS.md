@@ -169,16 +169,22 @@ file. This guide is the map; those are the territory.
     mirrors the loader's pairing rules (errors = no/invalid category, no white zones; warnings =
     orphaned object-bound white zone, claimed white zone with no `OBJECT ID`), baseline **71
     campaigns · 712 objectives · 0 errors · 21 pre-existing orphan warnings**, CI-locked in
-    `tests/fourteenth/test_scenery_targets.py`. **HOLD on the new airfields** (DM call
-    2026-07-26): do NOT bind a CP to any 2.9.28 airfield yet — the airfields **are usable**, the
-    blocker is that **the southern Iraq map is not detailed**, so Kharg (+ Zaranj on Afghanistan,
-    Tromso on Kola) wait on ED finishing that extension, not on fork work. Kharg additionally
-    converts to 565 km from Al-Kut, the southernmost airfield on the map, and is an *Iranian*
-    terminal — wrong belligerent for 1991, irrelevant to 2016; when the hold lifts it is the
-    natural home for the Tanker War campaign (today on PG over substitute WRL geography) + a §78
-    coastal-battery showcase, and a CP cannot bind there until the fork takes upstream's #904 pin
-    (pinned pydcs Iraq has **19 airports**, no Kharg — and **no Bahrain**: that is roadmap, not
-    2.9.28 content). Free wins:
+    `tests/fourteenth/test_scenery_targets.py`. **The new airfields ARE usable** — unfinished
+    surroundings constrain *how* a field is used, never whether: undetailed terrain only bites
+    where a campaign puts **ground** on it (a front line, `supply_routes:` convoys needing real
+    roads, low-level CAS), none of which follow from basing aircraft there, so the safe patterns
+    are rear/support basing (the DS91 off-map-Saudi pattern), an isolated air-only CP with no
+    front, an island/maritime fight, or a divert field. Per-airfield: **Tromso** (Kola, 72 km from
+    Bardufoss, inside `the_anvil_of_war`'s belt — Kola is mature, 2.9.28 only *polished* it) and
+    **Zaranj** (Afghanistan, 19 km from the existing Nimroz, in `graveyard_of_empires`' western
+    belt) are usable with **no caveat**; **Kharg** is usable **air/naval-only** (an island, so its
+    surroundings are water — no front, no supply routes) either as a CP in a purpose-built
+    maritime scenario or, needing no CP at all, as an `oil`/`fuel`/`derrick` scenery **target**
+    set. Kharg's real blockers are **reach** (565 km from Al-Kut, so no current campaign gets
+    near it — it is also an *Iranian* terminal, wrong belligerent for 1991 and irrelevant to 2016)
+    and the pydcs pin: pinned pydcs Iraq has **19 airports**, no Kharg — and **no Bahrain**, which
+    is roadmap, not 2.9.28 content. It remains the natural home for the Tanker War campaign
+    (today on PG over substitute WRL geography) + a §78 coastal-battery showcase. Free wins:
     ED **fixed AI traffic at Mosul + H-3 Northwest** (IR's red anchor and DS91's blue complex),
     and Bashur/Al-Salam lighting opens night ops that §47's continuous clock actually reaches.
     **Gate before authoring = are the dam models destructible** (a white zone needs a destroyable

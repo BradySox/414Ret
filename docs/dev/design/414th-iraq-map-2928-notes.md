@@ -164,43 +164,74 @@ targets set the tone (`Baba Gurgur Gas Separation Hall`, `Qayyarah Thermal Power
 
 ---
 
-## HOLD on the new airfields (DM call 2026-07-26)
+## Using the new airfields
 
-**Standing instruction: do not bind a campaign control point to any of 2.9.28's new airfields
-yet.** The airfields themselves **are usable** — Kharg comes with a real airfield, and once the
-pin moves it would bind like any other. The blocker is not the airfield, it is **what surrounds
-it: the southern part of the Iraq map is not detailed yet.** A CP is only as good as the terrain
-a campaign fights over, so these wait for ED to finish the southern extension.
+**The airfields added in 2.9.28 are usable. Unfinished surroundings are a constraint on
+*how* you use a field, not a reason to refuse it.**
 
-This is a **hold, not a rejection** — nothing here is unusable, and the hold lifts on ED's
-content, not on any fork work. It covers Kharg on Iraq, and applies equally to the other new
-airfields in this update (**Zaranj** on Afghanistan, **Tromso** on Kola) until someone has
-actually looked at the ground around them.
+### The principle
+
+Undetailed terrain only bites where a campaign puts **ground** on it. An airfield is a spawn
+point, a parking apron and a runway; none of that degrades because the countryside 40 km away is
+low-detail. What degrades is:
+
+- a **front line** dragged through undetailed terrain (ground combat in visible nowhere),
+- **supply routes / convoys**, which need real roads to drive (the driveable-corridor standard) —
+  an unfinished region may simply not have them,
+- **low-level visual work** near the field — CAS, FAC(A), armed recon over ugly ground.
+
+None of that is implied by *basing aircraft there*. So the usable patterns, all of which the fork
+already runs somewhere:
+
+| Pattern | Why unfinished terrain doesn't matter | Precedent |
+|---|---|---|
+| **Rear / support base** — tankers, AEW&C, heavies, transports | The wing takes off and flies to the AO; nobody looks at the ground | DS91's off-map "Coalition Rear (Saudi Arabia)" |
+| **Isolated air-only CP** — no front, no supply routes | With no ground connection there is no front line and no convoy to route | any air-only field |
+| **Island / coastal + maritime fight** | The surroundings are *water*, which is identical everywhere | Tanker War's ships-not-territory model |
+| **Divert / recovery alternate** | Used on the way home, never fought over | every campaign's divert fields |
+
+What to avoid at such a field: making it a front-line anchor, running `supply_routes:` through the
+undetailed region, or centring CAS/armed-recon on it.
+
+### Per-airfield verdict
+
+Distances computed against the pinned pydcs terrains; "in play" = the fork campaigns that already
+field bases in that belt.
+
+| New airfield | Map | Nearest existing field | Verdict |
+|---|---|---|---|
+| **Tromso** | Kola | **Bardufoss 72 km**, Andoya 117 km | **Use it, no caveat.** Kola is a finished, detailed map — 2.9.28's Tromso entries are *polish* (parking-slot resizes, warehouses moved). It lands inside `the_anvil_of_war`'s AO, which already fields **both** Bardufoss and Andoya, and in `exercise_able_archer`'s northern-Norway belt. A real NATO field, so it is period-correct blue basing rather than filler. |
+| **Zaranj** | Afghanistan | **Nimroz 19 km**, Farah 157 km | **Use it, no caveat.** Afghanistan is mature — 2.9.28 *improved* Khost/Tarinkot/Bamyan/Herat/Kandahar/Shindand/Jalalabad. Zaranj sits 19 km from Nimroz, which already exists, so that corner is populated, and it falls in `graveyard_of_empires`' western belt (Farah/Shindand/Herat/Dwyer). Also the natural western-flank or Iranian-border field. |
+| **Kharg** | Iraq | Al-Kut **565 km** | **Usable, but air/naval-only.** It is an **island** — its surroundings are water, so the undetailed southern *land* never enters an air/maritime fight. Give it no front line and no supply routes and the constraint disappears entirely. The real blocker is not detail, it is **reach**: no current campaign operates within 565 km of it, so it needs a maritime scenario built around it (Kharg + a carrier + shipping lanes) rather than being slotted into an existing one. Also gated on the pydcs pin — the pinned terrain has no Kharg airport. |
 
 ### Kharg specifically
 
-The geometry backs the hold independently of terrain detail.
+Kharg lands at **x −431 455 / y 589 924** — **565 km from Al-Kut**, the southernmost airfield on
+the map, and 712 km from Al-Salam. So the thing that keeps it out of *today's* campaigns is
+**reach, not terrain detail**: Desert Storm fights western Iraq and Baghdad, Inherent Resolve
+fights Nineveh 700+ km north, and it is an **Iranian** terminal — wrong belligerent for 1991
+(Iran was neutral) and irrelevant to the 2016 caliphate fight. There is no existing campaign to
+slot it into; it needs one built around it.
 
-Converted to map coordinates Kharg lands at **x −431 455 / y 589 924** — **565 km from Al-Kut**,
-the southernmost airfield on the map, and 712 km from Al-Salam. Desert Storm fights western Iraq
-and Baghdad; Inherent Resolve fights Nineveh, 700+ km north. Neither can reach it, and neither
-should: Kharg is an **Iranian** oil terminal, so it is wrong-belligerent for 1991 (Iran was
-neutral) and irrelevant to the 2016 caliphate fight.
+**Two ways it is usable that need no southern land detail at all:**
 
-Where it *does* belong, when the south map lands:
+1. **As a strike target, with no control point.** Its unique objects (**terminal, oil flares,
+   pipelines**) are a ready-made `oil` / `fuel` / `derrick` scenery target set — the same
+   authoring recipe as the dams — and a target is something you bomb from the air, so the ground
+   around it is irrelevant. Needs only a campaign whose reach extends there (a carrier).
+2. **As an air/naval-only CP in a maritime scenario.** Kharg is an **island**: its surroundings
+   are water, identical everywhere. Kharg + a carrier + shipping lanes, with no front line and no
+   supply routes, never touches the undetailed mainland. This is exactly the Tanker War's
+   ships-not-territory model, and the natural showcase for **§78 coastal batteries engage ships**,
+   whose design note already asks for lanes authored near an opposing shore.
 
-- The **Tanker War (1988)** currently runs on **Persian Gulf** over substitute WRL Noisy Cricket
-  Redux geography. Kharg was *the* Tanker War objective — Iran's primary oil export terminal,
-  bombed by Iraq throughout 1984–88. A southern Iraq map would let that campaign move to the
-  geography that actually contains both belligerents.
-- Its unique objects (**terminal, oil flares, pipelines**) are a ready-made `oil` / `fuel` /
-  `derrick` scenery target set — the same authoring recipe as the dams.
-- It is the natural showcase for **§78 coastal batteries engage ships**, whose design note already
-  asks for shipping lanes authored near an opposing shore.
+The **Tanker War (1988)** currently runs on **Persian Gulf** over substitute WRL Noisy Cricket
+Redux geography. Kharg was *the* Tanker War objective — Iran's primary oil export terminal, bombed
+by Iraq throughout 1984–88 — so a Kharg-centred maritime scenario is the obvious home, either as a
+move of that campaign or as a companion to it.
 
-Nothing to do now beyond noting that the **pydcs bump is a second gate**: the pinned terrain has
-no Kharg airport, so a control point could not bind there even if the hold were lifted, until the
-fork picks up upstream's #904 pin.
+**The one hard gate is the pydcs pin**: the pinned terrain has no Kharg airport, so a control point
+cannot bind there until the fork picks up upstream's #904 pin. Nothing else blocks it.
 
 ---
 

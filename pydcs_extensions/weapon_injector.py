@@ -3,7 +3,6 @@ from typing import Any
 
 from dcs.weapons_data import Weapons, weapon_ids
 
-
 _LEGACY_WEAPON_ALIASES = {
     "SUU_25___8_x_Illumination_Flare__LUU_2B": (
         "SUU_25_x_8_LUU_2___Target_Marker_Flares"

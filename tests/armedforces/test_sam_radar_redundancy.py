@@ -83,36 +83,35 @@ def test_sam_layout_fields_two_guidance_radars(layout_name: str, slot: str) -> N
 # GUIDANCE_RADAR_SLOTS is a hand-maintained allowlist: it pins the guidance
 # slots we know about, but a *new* SAM layout that ships a single engagement
 # radar would simply not appear in it and pass CI silently. The companion guard
-# below closes that hole by discovering every dedicated engagement radar from
-# the layout data itself and asserting each is accounted for -- so a new
-# single-radar site fails until it is either doubled (added to
-# GUIDANCE_RADAR_SLOTS) or explicitly justified (added to KNOWN_SINGLE_RADAR).
+# below closes that hole by DISCOVERING every dedicated engagement radar from
+# the layout data itself and asserting redundancy on each -- so a new
+# single-radar site fails CI until it is either doubled or explicitly named as a
+# deliberate single (see below), without anyone having to remember to extend the
+# hand-list.
 #
-# A "dedicated engagement radar" is a group whose class is TrackRadar (generic
-# launcher-site layouts) or whose explicit units are in radar_db.TRACK_RADARS
-# (the named battery layouts: S-300/Patriot/SA-6/mixed-site etc.). TELAR
-# systems (SA-11/17, Tor, Roland, Tunguska) are excluded by construction --
-# their radar *is* the launcher, so there is no separate radar to blind, and
-# they carry no TrackRadar group. Generic "Search Radar" slots
-# (SearchRadar/SearchTrackRadar classes -- NASAMS-B/C, IRIS-T SLM, THAAD routed
-# through a generic layout) are also out of scope, matching the documented
+# A "dedicated engagement radar" is a group whose class is TrackRadar (the
+# generic launcher-site layouts) or whose explicit units are in
+# radar_db.TRACK_RADARS (the named battery layouts: S-300/Patriot/SA-6/mixed-site
+# etc.). TELAR systems (SA-11/17, Tor, Roland, Tunguska) are excluded by
+# construction -- their radar *is* the launcher, so there is no separate radar to
+# blind, and they carry no TrackRadar group. Generic "Search Radar" slots
+# (SearchRadar/SearchTrackRadar classes -- e.g. NASAMS-B/C, IRIS-T SLM, THAAD
+# routed through a generic layout) are also out of scope, matching the documented
 # limitation on GUIDANCE_RADAR_SLOTS.
 #
-# Deliberate single-radar layouts: the regiment-by-authoring pattern (several
-# single-radar battalions + a shared EWR, netted by MANTIS) for strategic belts
-# -- see docs/dev/design/414th-sam-site-realism-notes.md and the Red Tide S-300
-# restructure. These are single on purpose, not a redundancy gap.
-KNOWN_SINGLE_RADAR = {
-    ("S-300 Site (Single Radar)", "S-300 Site TR"),
-    ("SA-5 Legacy Site (Single Radar Circle)", "Track Radar"),
-    ("SA-5 Legacy Site (Single Radar Semicircle)", "Track Radar"),
-}
+# Deliberate single-radar layouts are the regiment-by-authoring pattern (several
+# single-radar battalions + a shared EWR, netted by MANTIS) for strategic belts;
+# they are single on purpose, not a redundancy gap. The convention is to name
+# such a layout with "Single Radar" -- that is the documented, self-describing
+# escape hatch this guard honors (a deliberate single that is NOT named that way
+# is treated as a bug, which is the point).
+_DELIBERATE_SINGLE_RADAR_MARKER = "Single Radar"
 
 _AIR_DEFENSE_TASKS = set(GroupRole.AIR_DEFENSE.tasks)
 
 
-def _dedicated_engagement_radar_slots() -> list[tuple[str, str]]:
-    slots: list[tuple[str, str]] = []
+def _dedicated_engagement_radar_slots() -> list[tuple[str, str, list[int]]]:
+    slots: list[tuple[str, str, list[int]]] = []
     for layout in LAYOUTS.layouts:
         if not any(task in _AIR_DEFENSE_TASKS for task in layout.tasks):
             continue
@@ -120,21 +119,23 @@ def _dedicated_engagement_radar_slots() -> list[tuple[str, str]]:
             is_track_class = UnitClass.TRACK_RADAR in unit_group.unit_classes
             is_track_typed = bool(set(unit_group.unit_types) & radar_db.TRACK_RADARS)
             if is_track_class or is_track_typed:
-                slots.append((layout.name, unit_group.name))
+                slots.append((layout.name, unit_group.name, unit_group.unit_count))
     return slots
 
 
 def test_no_engagement_radar_layout_escapes_the_redundancy_contract() -> None:
-    """Every dedicated engagement radar is either doubled (GUIDANCE_RADAR_SLOTS)
-    or a documented single (KNOWN_SINGLE_RADAR). Guards against a new SAM layout
-    slipping a single guidance radar past the hand-maintained allowlist."""
-    accounted = set(GUIDANCE_RADAR_SLOTS) | KNOWN_SINGLE_RADAR
-    unaccounted = [
-        pair for pair in _dedicated_engagement_radar_slots() if pair not in accounted
+    """Every discovered dedicated engagement radar must field two radars, unless
+    the layout is a deliberate single (named with "Single Radar"). Guards against
+    a new SAM layout slipping a single guidance radar past the hand-maintained
+    GUIDANCE_RADAR_SLOTS list."""
+    single_radar_gaps = [
+        (name, slot, count)
+        for name, slot, count in _dedicated_engagement_radar_slots()
+        if _DELIBERATE_SINGLE_RADAR_MARKER not in name and count != [2]
     ]
-    assert not unaccounted, (
-        "These layouts field a dedicated engagement radar but are not pinned by "
-        "the redundancy contract -- add each to GUIDANCE_RADAR_SLOTS (double it) "
-        "or KNOWN_SINGLE_RADAR (documented single-radar site): "
-        f"{sorted(unaccounted)}"
+    assert not single_radar_gaps, (
+        "These layouts field a single dedicated engagement radar, so one HARM "
+        "blinds the whole site -- double the guidance slot to unit_count [2], or "
+        f"if it is intentional, name the layout with "
+        f"'{_DELIBERATE_SINGLE_RADAR_MARKER}': {single_radar_gaps}"
     )

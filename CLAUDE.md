@@ -150,6 +150,45 @@ file. This guide is the map; those are the territory.
     headless-verified 2026-07-07; laydown CI-locked in `tests/fourteenth/test_tanker_war.py`;
     registered 2026-07-18 (the maintenance sweep found it shipped silent — no checklist row or
     docs entries); in-game pass = checklist T2, the platform-AAA on-deck render the riskiest bit)
+  - `414th-iraq-map-2928-notes.md` — **what DCS 2.9.28's Iraq map content unlocks** (design +
+    authoring plan, no code/`.miz` edits yet; scoped 2026-07-26 off the 2.9.28.26283 changelog,
+    which upstream picked up as `update dcs to 2.9.28.26283` #904 — a pydcs pin bump + refreshed
+    `resources/terrain-beacons/` for Caucasus/Iraq/Kola). Headline: the **nine new named dams**
+    (Alwand, Dukan, Fallujah, Haditha, Hemrin, Kut, Ramadi, Samarra, Diyala) are consumable as
+    `power` scenery strike targets through the **stock** `SceneryGroup.from_trigger_zones` path
+    with **zero code** — DS91 already ships 57 hand-authored Iraq scenery targets, so this is ME
+    authoring, not engineering. The note carries each dam's computed map XY (via
+    `Point.from_latlng(..., Iraq)`, the `supply_route_geo.py:62` call), the campaign split
+    (**Fallujah/Ramadi/Dukan → Inherent Resolve** — Al-Taquddum sits between the first two and
+    IR's own Highway-10 supply route runs through Fallujah; **Haditha/Kut → Desert Storm**;
+    **Samarra/Hemrin/Diyala → both**, they sit in the shared Balad–Baghdad triangle; **Alwand
+    parked**, 104 km off both AOs), and the verbatim blue-zone-`PROPERTY_1`-category +
+    white-zone-`OBJECT ID` authoring convention, and the **guard for the authoring footgun** —
+    `from_trigger_zones` RAISES rather than degrading, so a blue zone with no white zones inside
+    (the natural half-finished state) fails **campaign load**; `tools/check_scenery_targets.py`
+    mirrors the loader's pairing rules (errors = no/invalid category, no white zones; warnings =
+    orphaned object-bound white zone, claimed white zone with no `OBJECT ID`), baseline **71
+    campaigns · 712 objectives · 0 errors · 21 pre-existing orphan warnings**, CI-locked in
+    `tests/fourteenth/test_scenery_targets.py`. **The new airfields ARE usable** — unfinished
+    surroundings constrain *how* a field is used, never whether: undetailed terrain only bites
+    where a campaign puts **ground** on it (a front line, `supply_routes:` convoys needing real
+    roads, low-level CAS), none of which follow from basing aircraft there, so the safe patterns
+    are rear/support basing (the DS91 off-map-Saudi pattern), an isolated air-only CP with no
+    front, an island/maritime fight, or a divert field. Per-airfield: **Tromso** (Kola, 72 km from
+    Bardufoss, inside `the_anvil_of_war`'s belt — Kola is mature, 2.9.28 only *polished* it) and
+    **Zaranj** (Afghanistan, 19 km from the existing Nimroz, in `graveyard_of_empires`' western
+    belt) are usable with **no caveat**; **Kharg** is usable **air/naval-only** (an island, so its
+    surroundings are water — no front, no supply routes) either as a CP in a purpose-built
+    maritime scenario or, needing no CP at all, as an `oil`/`fuel`/`derrick` scenery **target**
+    set. Kharg's real blockers are **reach** (565 km from Al-Kut, so no current campaign gets
+    near it — it is also an *Iranian* terminal, wrong belligerent for 1991 and irrelevant to 2016)
+    and the pydcs pin: pinned pydcs Iraq has **19 airports**, no Kharg — and **no Bahrain**, which
+    is roadmap, not 2.9.28 content. It remains the natural home for the Tanker War campaign
+    (today on PG over substitute WRL geography) + a §78 coastal-battery showcase. Free wins:
+    ED **fixed AI traffic at Mosul + H-3 Northwest** (IR's red anchor and DS91's blue complex),
+    and Bashur/Al-Salam lighting opens night ops that §47's continuous clock actually reaches.
+    **Gate before authoring = are the dam models destructible** (a white zone needs a destroyable
+    object) — checklist **T4**, which also re-checks the taxi fixes + the DS91 parking-fit invariant
   - `414th-desert-storm-campaign-notes.md` — **Iraq "Umm al-Ma'arik (Desert Storm 1991)"**
     (the DM's homemade DS91 campaign fixed + modernized + promoted 2026-07-19: the KARI IADS
     as the Red Tide static-trio pattern (ADOC + 3 SOCs + comms/power relays at every red base

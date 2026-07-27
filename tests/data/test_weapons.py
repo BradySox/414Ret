@@ -216,9 +216,18 @@ def test_custom_payload_targeting_pods_do_not_fall_back_to_unknown() -> None:
         if (weapon := Weapon.with_clsid(clsid)) is not None and is_targeting_pod(weapon)
     ]
 
+    # Targeting pods deliberately left un-gated (no introduction year) so they
+    # are available regardless of campaign era -- the host jet ships with the pod
+    # as delivered (F-15E, F-14 Bombcat / F-14B(U)), and we want it usable even in
+    # earlier/what-if scenarios (DM call). Exempt from the date-coverage guard
+    # below; every other targeting pod must still carry a year.
+    intentionally_ungated_tgps = {"AN/AAQ-14 LANTIRN"}
+
     assert targeting_pods
     for weapon in targeting_pods:
         assert weapon.weapon_group.type is WeaponType.TGP, weapon.clsid
+        if weapon.weapon_group.name in intentionally_ungated_tgps:
+            continue
         assert weapon.weapon_group.introduction_year is not None, (
             weapon.clsid,
             weapon.weapon_group.name,

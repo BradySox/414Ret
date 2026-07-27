@@ -274,23 +274,30 @@ class QLiberationWindow(QMainWindow):
         self.saveAsAction.setVisible(enabled)
 
     def initToolbar(self):
-        self.tool_bar = self.addToolBar("File")
+        # One toolbar, grouped by verb — campaign file, then the windows you
+        # open during a turn, then the blank-canvas campaign actions.
+        #
+        # This replaces three separate toolbars, one of which held Discord,
+        # Github and Ukraine: community links were carrying the same visual
+        # weight as Settings and the campaign controls. They are unchanged in
+        # the Help menu, which is where a link belongs.
+        self.tool_bar = self.addToolBar("Main")
+        # Toolbars need an object name or saveState()/restoreState() cannot
+        # restore them and Qt warns on every close.
+        self.tool_bar.setObjectName("MainToolBar")
+        self.tool_bar.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
+
         self.tool_bar.addAction(self.newGameAction)
         self.tool_bar.addAction(self.openAction)
         self.tool_bar.addAction(self.saveGameAction)
-
-        self.links_bar = self.addToolBar("Links")
-        self.links_bar.addAction(self.openDiscordAction)
-        self.links_bar.addAction(self.openGithubAction)
-        self.links_bar.addAction(self.ukraineAction)
-
-        self.actions_bar = self.addToolBar("Actions")
-        self.actions_bar.addAction(self.openSettingsAction)
-        self.actions_bar.addAction(self.openStatsAction)
-        self.actions_bar.addAction(self.openNotesAction)
-        self.actions_bar.addAction(self.openCustomKneeboardsAction)
-        self.actions_bar.addAction(self.finalizeCampaignAction)
-        self.actions_bar.addAction(self.saveCampaignAction)
+        self.tool_bar.addSeparator()
+        self.tool_bar.addAction(self.openSettingsAction)
+        self.tool_bar.addAction(self.openStatsAction)
+        self.tool_bar.addAction(self.openNotesAction)
+        self.tool_bar.addAction(self.openCustomKneeboardsAction)
+        self.tool_bar.addSeparator()
+        self.tool_bar.addAction(self.finalizeCampaignAction)
+        self.tool_bar.addAction(self.saveCampaignAction)
 
     def initMenuBar(self):
         self.menu = self.menuBar()

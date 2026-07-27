@@ -1,6 +1,8 @@
 name: AN/AAQ-14 LANTIRN
 type: TGP
-year: 1990
+# No introduction year: the LANTIRN targeting pod ships with its host jets
+# (F-15E, F-14 Bombcat/F-14B(U)) as delivered, so it stays available regardless
+# of the campaign era rather than being date-gated out of earlier scenarios.
 clsids:
   - "{F14-LANTIRN-TP}"
   - "{CAAC1CFD-6745-416B-AFA4-CB57414856D0}"

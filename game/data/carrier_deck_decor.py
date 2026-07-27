@@ -134,13 +134,15 @@ def required_spot_clearance_m(static_type: str) -> float:
 
 # The safe envelopes for PERMANENT gear, as (x_min, x_max, y_min, y_max).
 LSO_PLATFORM_ENVELOPE = (-134.0, -126.0, -25.0, -18.0)
-# The corral: the clear staging lane FORWARD of the island, starboard of the
-# angled-deck foul line, inboard of the six-pack parking row. This is where the
-# street gear lives after the flown CVN-71 (2026-07-21) reposition -- the user
-# marked the OCN by-the-island offsets (x -40..-74) as "out of position, should
-# be in the [corral] circle not the [foul-line] X". The OCN literals are
-# shifted forward into this box by CORRAL_SHIFT.
-ISLAND_STREET_ENVELOPE = (-46.0, -8.0, 4.0, 22.0)
+# The island street: the clear staging strip ALONGSIDE the island, starboard
+# of the angled-deck foul line and inboard of the six-pack parking row. This is
+# where the street gear lives after the flown reposition (2026-07-27) -- the
+# forward corral (the previous 2026-07-21 reposition) was too far forward, so
+# the user marked the cluster "generating in the red instead of the blue" and
+# wanted it pulled back aft, tucked outboard against the island. The OCN
+# literals are shifted into this box by CORRAL_SHIFT. Box is guard-tested clear
+# of the six-pack row (y = +34) and the aft junkyard/El-3 spots (x < -98).
+ISLAND_STREET_ENVELOPE = (-65.0, -30.0, 10.0, 25.0)
 
 # The ramp-crossing / wires keep-out (x_min, x_max, y_min, y_max): the stern
 # threshold and touchdown zone that every recovering aircraft crosses a few
@@ -169,15 +171,17 @@ LSO_PLATFORM_CREW: list[DeckStatic] = [
     DeckStatic("Carrier LSO Personell 1", -130.57, -22.34, 203.1),
 ]
 
-# The corral reposition (flown CVN-71, 2026-07-21). The OCN street gear offsets
-# below place the cluster alongside/aft of the island (x -40..-74), which
-# rendered on the foul-line strip -- the user marked it "out of position, should
-# be in the circle [the corral, forward of the island] not the X". OCN's own
-# forward-corral gear was sparse crew only, so rather than lose the rich
-# tractor/crash-truck/forklift cluster, the whole OCN arrangement is translated
-# forward into the corral by this shift (preserves the relative layout). Every
-# shifted variant clears every KNOWN_PARKING_SPOT by >= 7 m (guard-tested).
-CORRAL_SHIFT = (30.0, -6.0)
+# The island-street reposition (flown, 2026-07-27). History: the OCN street
+# gear offsets below place the cluster on the foul-line strip (x -40..-74),
+# which the user rejected 2026-07-21; that fix shoved the whole cluster +30 m
+# FORWARD into the corral, but the forward corral overshot -- the user marked
+# it "generating in the red instead of the blue" and wanted it pulled back aft
+# and tucked outboard against the island (the clear street between the foul
+# line and the island base). This shift moves the OCN arrangement ~10 m aft of
+# raw / ~5 m outboard vs the old forward corral, preserving the relative
+# layout. Every shifted variant clears every KNOWN_PARKING_SPOT by >= 12 m
+# (guard-tested); the min is 12.7 m at the six-pack row.
+CORRAL_SHIFT = (9.0, -1.0)
 
 # OCN 2 street sets, one per source mission, rotated per turn for variety.
 # Placements are verbatim OCN 2 authoring (by-the-island) -- never mixed across

@@ -2467,20 +2467,22 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
 72. **Carrier deck decorations (OCN 2 deck dressing)** — every Nimitz-family carrier
     (Stennis + SC CVN-71/72/73/75) gets its deck dressed with **ship-linked static gear
     and crew**: tow tractors / P-25 crash truck / Hyster forklift / crane / deck hands in
-    the **corral** (the clear staging lane forward of the island) + the 4-figure LSO
+    the **island street** (the clear staging strip alongside the island) + the 4-figure LSO
     platform team — placements **from the OCN 2 campaign's 13 missions** (Sedlo's deck
     dressing, extracted from the linked statics in the miz files), rotating between 6
-    curated street variants per (carrier, turn) crc32 seed. OCN's offsets put the cluster
-    alongside the island, which rendered on the angled-deck foul-line strip; the flown
-    CVN-71 (2026-07-21) user call "out of position, should be in the [corral] circle not
-    the [foul-line] X" translated the whole arrangement forward into the corral via
-    `CORRAL_SHIFT` (clear of every spot by ≥7 m). **The hard constraint is parking — and
+    curated street variants per (carrier, turn) crc32 seed. OCN's raw offsets put the cluster
+    on the angled-deck foul-line strip (rejected 2026-07-21); that fix shoved it +30 m
+    **forward** into the corral, but the forward corral overshot — the flown call
+    (2026-07-27) "generating in the **red** instead of the **blue**" pulled it back aft +
+    tucked outboard against the island via `CORRAL_SHIFT (+30,−6)→(+9,−1)` (~10 m aft of
+    raw / ~5 m outboard; clear of every spot by ≥12 m, min 12.7 m at the six-pack row;
+    `ISLAND_STREET_ENVELOPE`→`(−65,−30,10,25)`). **The hard constraint is parking — and
     no static may stand ON a spot, ever**: the SC manual's "blocked spot is skipped" claim
     was FALSIFIED in the first flown mission for late-activated groups (Retribution's
     dominant §64 spawn path) — a CVN-73 late-activated A-6E pair spawned **INTO** the
     briefly-shipped permanent Seahawk statics (2026-07-18), so the permanent
     aircraft class was removed same day and only two provably parking-free envelopes
-    ship — the LSO sponson (off-deck) and the corral (no documented/observed
+    ship — the LSO sponson (off-deck) and the island street (no documented/observed
     spot) — validated against **Tacview-measured spawn spots** (six-pack row
     +1/−11.5 @ y+34 on a 12 m pitch, port-quarter −84.5/−96.5 @ y−34, the Airboss
     rescue-helo spot +58.5/−31.4) plus the **clip-learned aft spots** (junkyard

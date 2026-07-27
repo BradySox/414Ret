@@ -94,17 +94,17 @@ def test_no_permanent_static_aircraft_exist() -> None:
 def test_envelopes_stay_off_catapults_and_landing_area() -> None:
     """Guard the envelope constants themselves against accidental widening.
 
-    Corral (street after the 2026-07-21 reposition): the clear lane FORWARD of
+    Island street (after the 2026-07-27 reposition): the clear strip ALONGSIDE
     the island, starboard of centerline (y >= 0, clear of the port angled deck)
-    but inboard of the six-pack row (y <= +22, i.e. >= 12 m off the y = +34
-    spots), forward of the island's front face (x >= -50) yet well aft of the
-    bow catapults (x <= -8, cats live at x > +30). LSO box: the port-aft
-    sponson, off the deck edge.
+    but inboard of the six-pack row (y <= +25, i.e. >= 9 m off the y = +34
+    spots), aft of the bow catapults (x <= -8, cats live at x > +30) yet forward
+    of the aft junkyard/El-3 spots (x >= -70, spots at x <= -98). LSO box: the
+    port-aft sponson, off the deck edge.
     """
     sx0, sx1, sy0, sy1 = ISLAND_STREET_ENVELOPE
     assert sy0 >= 0.0
-    assert sy1 <= 22.0
-    assert -50.0 <= sx0 and sx1 <= -8.0
+    assert sy1 <= 25.0
+    assert -70.0 <= sx0 and sx1 <= -8.0
     lx0, lx1, ly0, ly1 = LSO_PLATFORM_ENVELOPE
     assert ly1 <= -18.0
     assert lx1 <= -100.0

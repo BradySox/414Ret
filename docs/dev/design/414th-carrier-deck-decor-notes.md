@@ -407,8 +407,31 @@ per-mission placements:
 - **Per-hull variety** (different variants on different boats in one theater) falls
   out free of the group-name seed; nothing to do.
 
+## The island-street re-reposition (2026-07-27, flown, red-vs-blue finding)
+
+The 2026-07-21 corral move (above) **overshot forward**. On a later flown mission
+the user annotated a deck screenshot with a **red** circle (where the gear now
+generates — the forward corral) and a **blue** blob (where it should go —
+alongside the island, a bit aft and tucked outboard). "It was good with another
+client until something changed and now they're generating in the red instead of
+the blue." The `+30 m` forward shift had pushed the cluster too far toward the bow.
+
+Fix: pull the cluster back into the **island street** — aft toward the island and
+outboard against it, off the foul-line strip (outboard = away from the port angled
+deck). `CORRAL_SHIFT` retuned `(+30, −6) → (+9, −1)`: ~10 m aft of the raw OCN
+offsets / ~5 m outboard of the old forward corral, preserving the relative layout.
+Result: shifted cluster at x −63.9..−31.4, y +12..+24.7. `ISLAND_STREET_ENVELOPE`
+widened to `(−65, −30, 10, 25)` and the envelope-bounds guard relaxed to match
+(`sx0 ≥ −70`, `sy1 ≤ 25`). Verified clear of every `KNOWN_PARKING_SPOT` — **min
+12.7 m** at the six-pack row (was ≥7 m) — so the outboard tuck stays well off the
+y = +34 six-pack spots and the aft junkyard/El-3 spots (x < −98). Guard tests
+(`test_carrier_deck_decor.py`, 12) green. Needs an in-game eyeball to confirm the
+blue-spot placement (B25).
+
 ## In-game pass
 
 Checklist **B25**: statics ride the steaming deck (no floaters left in the wake), a
 max-density cold spawn still fills every spot vs a decorations-off control, AI
-recovery taxi behaves around the street gear, variant rotates next turn.
+recovery taxi behaves around the street gear, variant rotates next turn, and the
+street gear now sits in the island street (the 2026-07-27 blue spot), not the
+forward corral.

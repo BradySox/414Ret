@@ -6481,16 +6481,18 @@ the mod-off stripped-stores signature).
 **What it is.** Every Nimitz-family carrier (free Stennis + supercarrier CVN-71/72/73/75)
 gets its deck dressed with ship-linked static deck equipment and crew — tow tractors
 (AS32-31A/-32A), a P-25 crash truck, a CV-59 Hyster forklift, deck hands, and an
-AS32-36A crane in the **corral** (the clear staging lane forward of the island), plus
-the four-figure LSO team on the port-aft platform — so the boat reads like a working
+AS32-36A crane in the **island street** (the clear staging strip alongside the island),
+plus the four-figure LSO team on the port-aft platform — so the boat reads like a working
 flight deck instead of an empty parking lot. The placements are **Sedlo authoring**:
 extracted from the 13 missions of the OCN 2 (Operation Cerberus North 2) campaign
 (`E:\DCS World\Mods\campaigns\FA-18C Operation Cerberus North 2`, the user's install),
-which dresses the Truman's deck in every mission. OCN's offsets put the cluster
-alongside the island, which rendered on the angled-deck **foul-line strip** — the flown
-CVN-71 (2026-07-21) user feedback was "out of position, should be in the [corral] circle
-not the [foul-line] X" — so the whole OCN arrangement is translated forward into the
-corral by `CORRAL_SHIFT` (preserving the relative layout, clear of every spot by ≥7 m).
+which dresses the Truman's deck in every mission. OCN's raw offsets put the cluster on
+the angled-deck **foul-line strip** (rejected 2026-07-21); that fix shoved the cluster
++30 m **forward** into the corral, but the forward corral overshot — the flown feedback
+(2026-07-27) was "generating in the **red** instead of the **blue**", i.e. pull it back
+aft and tuck it outboard against the island. `CORRAL_SHIFT` now lands the OCN arrangement
+in the island street (~10 m aft of raw / ~5 m outboard of the old corral, preserving the
+relative layout, clear of every spot by ≥12 m — the min is 12.7 m at the six-pack row).
 The arrangement rotates between six curated variants (mission 3 / 6 / 9 / 10 / 11 / 12
 sets, incl. the M6/M9 crane) deterministically on (carrier, turn) — crc32 seeding, the
 §70 pattern — so re-generating a turn is stable but consecutive turns vary. User request
@@ -6508,11 +6510,11 @@ and every permanent placement lives inside them:
 - **LSO platform sponson** (x −134..−126, y −25..−18): off the deck surface; aircraft
   physically cannot park there. OCN puts the LSO crew there in all 13 missions at
   byte-identical offsets.
-- **Island street** (x −68..−40, y +12.5..+24.5): the strip between the landing-area
-  foul line and the island, flanked by the six-pack row (y = +34), the corral (forward
-  of the island face) and the junkyard (aft). The SC manual's 16-spot layout places no
-  spot there, none was ever observed there, and OCN dresses it in all 13 missions of a
-  flyable campaign.
+- **Island street** (envelope x −65..−30, y +10..+25): the strip between the landing-area
+  foul line and the island, flanked by the six-pack row (y = +34) forward-inboard and the
+  aft junkyard/El-3 spots (x < −98). The SC manual's 16-spot layout places no spot there,
+  none was ever observed there, and OCN dresses it in all 13 missions of a flyable
+  campaign.
 
 The keep-out evidence: parking spawn spots measured from **Tacview recordings of flown
 Retribution carrier missions** (t=0-frame ship-frame transform — parked aircraft only

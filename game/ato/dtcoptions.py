@@ -30,7 +30,7 @@ class DtcOptions:
     route: bool = True
     #: Recovery aids: TACAN/ICLS/ACLS pre-tune + FPAS home waypoint (Hornet).
     nav_aids: bool = True
-    #: FLOT line(s) + ROE no-strike zones (SA FAOR / HSD GEO lines).
+    #: The active front line(s) (SA FLOT lines / HSD GEO lines).
     flot_and_zones: bool = True
     #: Friendly CAP stations + tanker/AEW&C orbits (SA racetracks; Viper
     #: anchor steerpoints).

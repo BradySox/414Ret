@@ -40,10 +40,9 @@ _SECTIONS = (
         "carries no equivalent cartridge section.",
     ),
     (
-        "FLOT + no-strike zones",
+        "Front line (FLOT)",
         "flot_and_zones",
-        "The front line and any ROE no-strike zones on the SA page (Hornet) "
-        "or as HSD lines (Viper).",
+        "The front line on the SA page (Hornet) or as HSD lines (Viper).",
     ),
     (
         "Friendly CAP + tanker/AWACS orbits",

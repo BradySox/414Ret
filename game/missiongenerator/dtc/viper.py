@@ -9,8 +9,8 @@ Sections emitted (schema mined from ``CoreMods/aircraft/F-16C/DTC``):
   named via the ``note`` field; the flight route first, then tanker / AEW&C /
   CAP anchors as extra steerpoints (the SA-page ask, Viper-style -- the jet
   has no orbit element). The ME's DTC editor caps the list at 25.
-* ``MPD.GEO_LINES`` -- up to 4 line sets on the HSD: the FLOT (front lines)
-  first, then §40 no-strike zone outlines.
+* ``MPD.GEO_LINES`` -- the active front lines (FLOT) as up to 4 line sets on
+  the HSD.
 * ``MPD.THREAT_PTS`` -- viewer-fogged enemy SAM rings ("Custom" type, radius
   in meters, <= 15).
 """

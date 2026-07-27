@@ -605,6 +605,48 @@ def test_viper_sections_are_omitted_when_off() -> None:
     assert len(data["MPD"]["THREAT_PTS"]) == 1
 
 
+def test_flot_populates_when_a_front_exists(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The FLOT half of option 4 -- every other test runs a game with no fronts
+    (conflicts() == []), so the front-line geometry reaching FAOR_FLOT (Hornet)
+    and GEO_LINES (Viper) was never exercised. flot_segments itself mirrors the
+    trusted F10 frontline drawing; this locks the builders consuming it."""
+    flight, mission_data, game = _hornet_fixture()
+    segments = [
+        ("Front A", [(1000.0, 2000.0), (3000.0, 4000.0)]),
+        ("Front B", [(5000.0, 6000.0), (7000.0, 8000.0)]),
+    ]
+    monkeypatch.setattr(
+        "game.missiongenerator.dtc.hornet.flot_segments", lambda g: segments
+    )
+    monkeypatch.setattr(
+        "game.missiongenerator.dtc.viper.flot_segments", lambda g: segments
+    )
+
+    hornet = json.loads(
+        build_hornet_cartridge(flight, mission_data, game, "H").to_json()
+    )["data"]
+    flot = hornet["SA"]["FAOR_FLOT"]["FLOT"]
+    assert [line["note"] for line in flot] == ["Front A", "Front B"]
+    assert flot[0]["id"] == "FLOT_1"
+    assert flot[0]["num"] == 1
+    assert [(p["x"], p["y"]) for p in flot[0]["points"]] == [
+        (1000.0, 2000.0),
+        (3000.0, 4000.0),
+    ]
+
+    flight.aircraft_type = SimpleNamespace(dcs_unit_type=SimpleNamespace(id="F-16C_50"))
+    viper = json.loads(
+        build_viper_cartridge(flight, mission_data, game, "V").to_json()
+    )["data"]
+    geo = viper["MPD"]["GEO_LINES"]
+    # Two 2-point fronts = 4 points, tagged to consecutive HSD line sets.
+    assert len(geo) == 4
+    assert geo[0]["note"] == "Front A"
+    assert geo[0]["L1"] is True and geo[0]["L2"] is False
+    assert geo[2]["note"] == "Front B"
+    assert geo[2]["L2"] is True and geo[2]["L1"] is False
+
+
 def _track(callsign: str, cx: float, cy: float, course: float, length: float) -> Any:
     half = length / 2.0
     dx = math.cos(math.radians(course)) * half

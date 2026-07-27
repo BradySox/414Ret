@@ -6805,8 +6805,8 @@ package-mates share the comm plan and SA picture):
   boat card** (`CarrierInfo.tacan/icls_channel/link4_freq`; a land arrival uses the
   field's `RunwayData.tacan`), FPAS home waypoint = the landing steerpoint.
 - **SA / MPD (the situational-awareness picture)** — the FLOT (same
-  `frontline_bounds` geometry as the F10 drawing), §40 no-strike zones as FAOR
-  polygons (Viper: GEO_LINES sets, FLOT first), **friendly CAP stations (BARCAP/
+  `frontline_bounds` geometry as the F10 drawing; Viper: GEO_LINES sets),
+  **friendly CAP stations (BARCAP/
   TARCAP) + tanker/AEW&C orbits as CAP_PTS racetracks** (Viper: named extra
   steerpoints — the jet has no orbit element), and **enemy SAM threat rings as MEZ
   threats / THREAT_PTS** ("Custom" type; radius NM on the Hornet, meters on the
@@ -6876,7 +6876,7 @@ the save, `__setstate__`-defaulted so old saves behave pre-feature): a **tri-sta
 master** (follow the campaign setting / always / never for this flight — the
 per-flight override beats the global toggle in both directions) plus **six section
 switches** — comm presets, route steerpoints + push times, recovery aids
-(TACAN/ICLS/ACLS + FPAS home), FLOT + no-strike zones, friendly CAP/tanker/AWACS
+(TACAN/ICLS/ACLS + FPAS home), the front line (FLOT), friendly CAP/tanker/AWACS
 orbits, and the enemy SAM rings. A section that is off is **omitted from the
 cartridge entirely** (the jet's own defaults stand — e.g. comms off leaves a pilot's
 hand-set presets alone); all sections off builds no cartridge at all. The Edit

@@ -328,7 +328,6 @@ def _build_sa(
         default_cap_point = _default_cap_index(flight, shown)
 
     flot_lines: list[dict[str, Any]] = []
-    faor_lines: list[dict[str, Any]] = []
     if options.flot_and_zones:
         for name, points in flot_segments(game)[:MAX_FLOT_LINES]:
             line_num = len(flot_lines) + 1
@@ -361,7 +360,7 @@ def _build_sa(
     return {
         "CAP_PTS": caps,
         "CORRIDORS": [],
-        "FAOR_FLOT": {"FAOR": faor_lines, "FLOT": flot_lines},
+        "FAOR_FLOT": {"FAOR": [], "FLOT": flot_lines},
         "MEZ_THRTS": threats,
         "SETTINGS": _sa_settings(),
         "Default_CAP_Point": default_cap_point,

@@ -11,7 +11,8 @@ from .liberation_theme import get_theme_icons
 URLS: Dict[str, str] = {
     "Manual": "https://github.com/dcs-retribution/dcs-retribution/wiki",
     "Repository": "https://github.com/bradyccox/414Ret",
-    "ForumThread": "https://forums.eagle.ru/showthread.php?t=214834",
+    # Upstream's live forum thread (#903 retired the dead forums.eagle.ru URL).
+    "ForumThread": "https://forum.dcs.world/topic/368593-dcs-retribution-dynamic-campaign-generator/",
     "Issues": "https://github.com/bradyccox/414Ret/issues",
     "Releases": "https://github.com/bradyccox/414Ret/releases",
 }
@@ -233,6 +234,7 @@ def load_aircraft_icons():
     AIRCRAFT_ICONS["MiG-15bis_FC"] = AIRCRAFT_ICONS["MiG-15bis"]
     AIRCRAFT_ICONS["F-14A-135-GR-Early"] = AIRCRAFT_ICONS["F-14A-135-GR"]
     AIRCRAFT_ICONS["F-14A-95-GR"] = AIRCRAFT_ICONS["F-14A-135-GR"]
+    AIRCRAFT_ICONS["F-14BU"] = AIRCRAFT_ICONS["F-14A-135-GR"]
 
 
 def load_vehicle_icons():

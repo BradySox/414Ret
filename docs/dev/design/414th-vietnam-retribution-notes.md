@@ -93,8 +93,21 @@ P2 (shell/preset) + P3 (behaviour taskings) outstanding.
 - **P2 (New-Game "Vietnam" card) — DONE.** A third radio in the Intro page's "Campaign type" group
   (`IntroPage`, alongside "included" + blank-canvas), registering a `vietnamMode` field. When set,
   `TheaterConfiguration.initializePage` filters the campaign list to `era: vietnam` via the new
-  `Campaign.matches_era(era)` predicate threaded through `QCampaignList.setup_content(..., era=...)`
-  (and the "show incompatible" toggle now re-applies the active `_era_filter`). `accept()` is **unchanged**
+  `Campaign.matches_era(era)` predicate. **Re-plumbed 2026-07-26 onto upstream's filter framework**
+  (upstream [#908](https://github.com/dcs-retribution/dcs-retribution/pull/908) added
+  version/map/performance filters + sort to the same page, so the fork's bespoke era plumbing was
+  dropped in favour of theirs): the era is now just **one more filter criterion** —
+  `QCampaignList.current_era_filter`, set through `set_filters(version, map, era)` and checked in
+  `_filter_campaign` alongside the version/map tests — rather than the old
+  `setup_content(..., era=...)` argument threaded past the other filters. `_set_mode` sets
+  `self._era_filter` and then calls `on_filter_changed()`, the one repopulate path every control
+  shares, so the "show incompatible" toggle, the version/map combos and the era shell can no longer
+  clobber each other's criteria (the old `_era_filter` re-application lambda is gone with them).
+  Blank-canvas mode additionally hides the whole filter group, since a terrain picker has nothing to
+  filter. Upstream also **dropped the `selectedCampaign` wizard field** in the same PR (a filtered
+  list can leave the field pointing at a hidden campaign) and reads
+  `theater_page.campaignList.selected_campaign` directly in `accept()`; the fork follows.
+  `accept()` is otherwise **unchanged**
   — a Vietnam card game is a normal included-campaign game; the card *only* filters the list, and the
   settings/faction pre-seed already rides on per-campaign select (P2 era pre-seed above). Mirrors the proven
   blank-canvas field+initializePage pattern. The filter predicate is game-side + unit-tested

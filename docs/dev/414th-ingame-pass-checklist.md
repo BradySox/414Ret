@@ -263,6 +263,17 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
   heading (upstream `401fbceda`) — when flying this row, also eyeball that the parked lot follows the
   `Garage_A`'s facing instead of sitting in a world-axis N/E grid (Haina's garage is authored at
   heading 0, where the rotation is a no-op — an ME-authored angled garage is what shows it plainly).
+- **Upstream drift sync (2026-07-26, #899/#895 — adopted over the fork's shape):** placement inverted
+  — the **depot static now renders exactly on the authored `Garage_A` marker** and the *vehicle grid*
+  moves clear instead (`_GRID_OFFSET_M` 45.72 m / 150 ft into the building's local +x/+y corner,
+  still heading-rotated); the old opposite-corner `_DEPOT_OFFSET_M` is gone. **Add to this row's pass
+  criteria:** the Garage A building sits on the spot the author placed it (previously it drifted
+  ~70 m diagonally off the marker), with the parked lot offset beside it rather than wrapped around
+  it. Also new: `PlanMotorpoolAttack` now refuses a depot whose reserve pool is empty — on a fresh
+  game (`base.armor` empty at turn 0) the ATO should contain **no** BAI/Strike package against the
+  Haina depot until red has actually banked reserve armor, where before it fragged one at a
+  guaranteed-empty target. Fail signature: an opening-turn ATO strike on an empty depot, or the
+  garage rendering offset from its marker. No save migration — population is ephemeral.
 ### B9 — Air-droppable minefields: mine a road, kill a convoy, carry the field across the turn · §57 · ☐ UNTESTED (built 2026-07-11; **Phase 1 same-turn + Phase 2 persistence shipped**. The drop→track-to-impact→lay→proximity-detonate loop, one-trip-per-unit, charge depletion, the blue-only + non-dispenser reject, the startup grace, and the `minefields_state` write-back (laid `id` 0 / seeded id / charge depletion) are harness-tested in `tests/lua/test_minefields_runtime.py`; the reconcile (create/update/exhaust-remove/untouched/off) + the emitter shape are unit-tested in `tests/fourteenth/test_minefields.py` + `tests/missiongenerator/test_minefieldluadata.py`. The harness models no DCS weapon flight, so the CBU-99 detection + the convoy kill are DCS-only.)
 - **2026-07-11 flown Red Tide M1 (`csar-snatch-toggle-question-dfdb7a`): armed cleanly, nothing laid.**
   Load log `Minefields armed (dispenser 'CBU_99', radius 200m, 6 charges/field, power 100)`, zero Lua
@@ -485,6 +496,12 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
 - **Setup:** a campaign with §3 concealment on (`concealed_enemy_forces`, the default) and at least one front-adjacent red control point. Enable Difficulty & Realism → `decoy_zones` and set `decoy_zone_count` to a few (or author a `decoy_zones:` block). Generate, and note the suspected-activity circles near the front — some are real forces, some decoys, and they must look identical on the map. Fly TARPS or an attack onto one; play/skip a turn to watch the refresh.
 - **Pass:** decoy circles are indistinguishable from real suspected contacts (amber dash / dark-red casing / "?" glyph on lone circles); reconning a decoy reports "no enemy activity … it was a decoy" and removes the circle; next turn the burned decoys are replaced so the live count is topped back to budget; and across several turns the AI never plans a strike/DEAD package against a decoy zone (they carry zero units, so the planner should skip them).
 - **Fail signature:** a decoy circle looking different from a real one (the shared §3 render regressed — a decoy is not inheriting concealment); an AI package fragged at a decoy zone (the unitless TGO is somehow reaching the target enumerator alive); the recon overfly not resolving the decoy or the circle persisting after (the burn path broke); no fresh decoys after a burn (the `advance_decoy_zones` refresh isn't topping back to budget, or the `finish_turn` hook order regressed); the setting live/greyed wrong when `concealed_enemy_forces` is off (the `enabled_when` dependency broke); more than `MAX_DECOY_BUDGET` (12) circles despite a larger authored budget (the cap regressed).
+
+### B34 — Campaign filter & sort in the New Game wizard · §28 · ☐ UNTESTED (adopted 2026-07-26 from upstream PR dcs-retribution#908, taken over the fork's bespoke era plumbing; the game-side predicate `Campaign.matches_era` is unit-tested and the Qt modules import clean, but `qt_ui` is not in the CI mypy path and the campaign-list item build needs the DCS install dir, so the whole wizard page is app-only)
+- **What CI cannot exercise:** that the "Filter && Sort Campaigns" group renders and lays out sanely on the Theater page, that the Version/Map dropdowns are populated from the loaded campaigns (and that a `(0, 0)` unknown version is skipped), that each of the three sorts reorders the list, that the filters **compose** rather than clobber one another, and — the real risk — that pressing through the wizard starts the campaign actually highlighted, now that upstream removed the `selectedCampaign` wizard field and `accept()` reads `campaignList.selected_campaign` directly.
+- **Setup:** open **New Game** → Theater page. Exercise Version, Map, Sort by, and "Show incompatible campaigns" individually and in combination. Then pick a campaign that is *not* first in the list, press through, and confirm the game that starts is the one selected. Separately, take the Introduction page's **Vietnam** card (checklist L5) and the **blank canvas** card and re-enter the Theater page each time.
+- **Pass:** the group renders without clipping the campaign list (§28's screen-fit work applies); each filter narrows the list and each sort reorders it; combining filters ANDs them and none resets another; the Vietnam card's era filter survives touching the other controls; **blank canvas hides the whole filter group** (a terrain picker has nothing to filter) and still shows one row per terrain; and the campaign that starts is always the highlighted one.
+- **Fail signature:** the wizard starts the wrong campaign (the `selectedCampaign` field removal mis-wired — this silently falls back to `campaigns[0]`); changing the "show incompatible" checkbox resetting the version/map/era criteria (something bypassed `on_filter_changed`); the Vietnam card listing non-Vietnam campaigns after touching a dropdown (the era criterion isn't surviving `set_filters`); the filter group visible in blank-canvas mode; an empty list selecting nothing and the page erroring (upstream guards the first-row selection on `rowCount() > 0` — a regression here would throw).
 
 ---
 
@@ -2547,7 +2564,18 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
 - **Fail signature:** orbits still ~150 km back / at the map edge; a tanker sitting inside a SAM ring (buffer
   too low); the buffer not applied (check Air Doctrine page shows 25/20 after campaign-select).
 
-### L5 — New-Game "Vietnam" card · Vietnam mode P2 shell · ☑ VERIFIED (2026-06-28, audience in-game pass — card works; user wants more content added)
+### L5 — New-Game "Vietnam" card · Vietnam mode P2 shell · ◐ PARTIAL (verified 2026-06-28, but **re-plumbed 2026-07-26** onto upstream #908's filter framework — the era filter runs through a different code path now and needs a re-check)
+- **⚠️ Re-verify (2026-07-26 sync):** upstream #908 added version/map/performance filters + sort to the
+  same Theater page, so the fork **dropped its bespoke era plumbing and adopted theirs**. The era is
+  now a criterion inside `QCampaignList._filter_campaign` (`current_era_filter`, set via
+  `set_filters(version, map, era)`), `_set_mode` repopulates through the shared `on_filter_changed()`,
+  and the `selectedCampaign` wizard field is gone (`accept()` reads
+  `campaignList.selected_campaign`). **Re-check on the app:** the Vietnam card still lists only the
+  `era: vietnam` campaigns; picking one and pressing through still starts *that* campaign (the field
+  removal is the risk — a mis-wire would silently start `campaigns[0]`); the era filter **composes**
+  with the new Version/Map/Sort controls instead of one clobbering the other; and going back to the
+  Introduction page and switching to "included" restores the full list. `qt_ui` is not in the CI mypy
+  path and the campaign-list build needs the DCS install dir, so none of this is headless-checkable.
 - **In-game (2026-06-28, audience pass — user: "works but needs more added"):** the New-Game **Vietnam** card works as specified — the radio appears on the Introduction page and the Theater page filters to the Vietnam campaigns. The "needs more added" is a **content** follow-up (more Vietnam campaigns/options surfaced on the card), tracked separately — not a fail of the P2 shell.
 - **Headless adjudication:** the filter predicate `Campaign.matches_era` is unit-tested
   (`tests/test_vietnam_content.py::test_matches_era_drives_the_vietnam_card_filter`) and the Qt modules import

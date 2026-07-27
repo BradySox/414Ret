@@ -32,6 +32,7 @@ recommended_start_date: 1983-11-09
 version: "10.8"
 settings:
   f111c: false
+  uh_60l: true
   squadron_start_full: true
 squadrons:
   #Bodo
@@ -160,6 +161,7 @@ squadrons:
     - primary: Air Assault
       secondary: any
       aircraft:
+        - UH-60L
         - UH-60A
       size: 4
   #Blue LHA

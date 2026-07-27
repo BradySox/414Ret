@@ -116,15 +116,18 @@
 * **[Plugins]** ATIS for player flights via a MOOSE voice-ATIS plugin (per-airfield ATIS frequencies and spoken reports).
 * **[Kneeboard]** New recon kneeboard pages — target reconnaissance (aimpoints, threat rings, area context), a friendly-packages coordination list, and a package-targets theater map. Basemap tiles are fetched and cached at mission generation (offline coastline fallback); adds the `mgrs` dependency and new Kneeboard settings.
 * **[Mission Generator]** New campaign setting "Default laser code for Player flights" controls whether newly-created player flights are assigned a unique allocated TGP/weapon laser code (the new default, matching existing behavior) or stay on 1688. When a code is allocated it is applied to both the TGP/kneeboard code and the weapon code by default, so LGBs home on the player's own code without extra clicks; both remain independently overridable in the payload tab.
-* **[Engine]** Support for DCS 2.9.27 including F-100D and F-14A (Export).
+* **[Engine]** Support for DCS 2.9.28.26283 including F-100D, F-14A (Export), and F-14BU.
 * **[Options]** Add new option to fast forward until player is at the IP.
 * **[Modding]** Update to CJS Super Hornet Mod to v2.4.5.260501.RC1
 * **[Modding]** Update Community A4EC Mod to 2.3.0 (May 2025)
 * **[Mission Generator]** Squadrons now spawn using the proper country instead of CTJF, enabling various DCS AI voiceovers
 * **[Campaigns]** Ability to define motor pool objects which spawn reserve armor
+* **[Campaigns]** Motorpool placement is Garage_A-anchored and empty reserve pools are excluded from attack planning; updated placement measurements are documented.
+* **[UX]** Add the ability to filter campaigns by version, map, and performance — and, in Vietnam mode, by era.
 
 ## Fixes
-* **[Mission Generator]** EWR sites now get the DCS "EWR" enroute task and come up on RED alarm, so their radars actually scan and report contacts (previously they could sit inert). Complements the MANTIS IADS engine, which reads EWR detections but never managed the task list.
+* **[Data]** The F-14A-135-GR Early's payload file declared the wrong unitType, so the Early Tomcat flew every tasking unarmed; its loadouts now resolve (with a guard test pinning the payload to the airframe). (#889)
+* **[Mission Generator]** EWR sites now get the DCS "EWR" enroute task and come up on RED alarm, so their radars actually scan and report contacts (previously they could sit inert, especially with the "red alert state" performance option off). Complements the MANTIS IADS engine, which reads EWR detections but never managed the task list.
 * **[Naval]** Fleets actively defend: warship groups spawn on RED alarm with weapons-free ROE instead of sitting passive (upstream #868).
 * **[Plugins]** CTLD now treats a landed helicopter as on-ground using terrain AGL, so unload/extract works on sloped terrain.
 * **[Plugins]** Fix the escort leash never running (DCS has no `Group.getByID`; look the group up by name via mist), so escorts are actually held to their engagement range.

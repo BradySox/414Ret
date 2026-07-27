@@ -5277,9 +5277,41 @@ The #859 branch kept moving after the fork's adoption; the drift was ported back
   default 10 → 25 AND lowered the spinner max 50 → 25; the fork adopts **only the max 50 → 25** and
   **deliberately keeps default=10** (the MP performance posture — the TIC dense-siege framerate
   history; §59 exists for the same reason). The migrator backfill stays at 10.
-- **Deliberately deferred**: upstream `2697cd0f` (the autoplanner strikes enemy motorpool reserves)
-  is NOT ported here — it collides with the §40 phase / §55 red-intent offensive-emphasis machinery
-  and gets its own designed PR.
+- **The autoplanner landed after all** — upstream `2697cd0f` (the HTN strikes enemy motorpool
+  reserves) was deferred here while it collided with the §40 phase / §55 red-intent
+  offensive-emphasis machinery; both were removed 2026-07-21, and the 2026-07-19 sync brought the
+  `AttackMotorpools` compound task + `PlanMotorpoolAttack` in, wired into the fork's offensive
+  lists. BAI is the doctrinal primary with STRIKE as the fallback, and the package is sized off
+  the live reserve pool (`reserve_armor_for`) rather than the stale `alive_unit_count`.
+
+### Upstream drift sync (2026-07-26)
+
+Upstream [#899](https://github.com/dcs-retribution/dcs-retribution/pull/899) (geofffranks +
+Druss99) and [#895](https://github.com/dcs-retribution/dcs-retribution/pull/895) (Druss99)
+reworked placement and closed a planning hole. **The fork adopts upstream's shape** — our
+motorpool modules were byte-identical to the adoption baseline, so these apply cleanly:
+
+- **The `Garage_A` marker IS the anchor now.** The depot static was previously offset into the
+  *opposite* local corner from the vehicle grid (`_DEPOT_OFFSET_M = 50`, rotated about the origin)
+  so the two could never share a spawn point. Upstream inverted it: the depot renders **exactly at
+  the authored marker** (`position=self.ground_object.position`) and the **grid** moves clear
+  instead, starting at `_GRID_OFFSET_M = 45.72` m (150 ft — an authoring-friendly round number)
+  in the building's local +x/+y corner and still following its heading. The practical win is
+  authoring fidelity: what the campaign author places in the ME is where the garage appears, so
+  the depot no longer drifts ~70 m diagonally off its marker. `_DEPOT_OFFSET_M` is gone.
+- **An empty reserve pool is no longer a plannable target.** `PlanMotorpoolAttack.preconditions_met`
+  now bails on `_rendered_unit_count() <= 0`, so the HTN stops fragging BAI/Strike packages at a
+  depot with nothing parked in it. This matters on the fork specifically because `base.armor` is
+  empty at turn 0 by design — every campaign with an authored depot was offering the planner a
+  guaranteed-empty target on the opening turns.
+- **The capture-zone warning names the distance in nm** ("approximately 2 nm (… meter) capture
+  zone"), since `TRIGGER_RADIUS_CAPTURE` in metres told an author nothing actionable. Red Tide's
+  Haina depot at 4,250 m stays outside it and silent.
+
+`_GRID_OFFSET_M` shifts every depot's parked vehicles relative to saves generated before this, but
+population is ephemeral (rebuilt each mission-gen), so **no save migration is needed** — the next
+generated mission simply parks them in the new spot. Checklist B8 still owns the in-game pass and
+should now also confirm the garage lands on its authored marker.
 
 ---
 

@@ -1,48 +1,37 @@
 local unitPayloads = {
-	["name"] = "F-14A",
+	["name"] = "F-14A (Export)",
 	["payloads"] = {
 		[1] = {
-			["name"] = "CAS",
+			["displayName"] = "Retribution BARCAP",
+			["name"] = "Retribution BARCAP",
 			["pylons"] = {
 				[1] = {
-					["CLSID"] = "{LAU-138 wtip - AIM-9M}",
+					["CLSID"] = "{LAU-7 wtip - AIM-9P}",
 					["num"] = 10,
 				},
 				[2] = {
-					["CLSID"] = "{LAU-138 wtip - AIM-9M}",
+					["CLSID"] = "{LAU-7 wtip - AIM-9P}",
 					["num"] = 1,
 				},
 				[3] = {
-					["CLSID"] = "{PHXBRU3242_2*LAU10 RS}",
+					["CLSID"] = "{SHOULDER AIM-7E}",
 					["num"] = 9,
 				},
 				[4] = {
-					["CLSID"] = "{PHXBRU3242_2*LAU10 LS}",
-					["num"] = 2,
-				},
-				[5] = {
-					["CLSID"] = "{F14-300gal}",
-					["num"] = 8,
-				},
-				[6] = {
-					["CLSID"] = "{F14-300gal}",
-					["num"] = 3,
-				},
-				[7] = {
-					["CLSID"] = "{BRU-32 MK-82}",
+					["CLSID"] = "{AIM_54A_Mk47}",
 					["num"] = 7,
 				},
-				[8] = {
-					["CLSID"] = "{BRU-32 MK-82}",
+				[5] = {
+					["CLSID"] = "{AIM_54A_Mk47}",
 					["num"] = 4,
 				},
-				[9] = {
-					["CLSID"] = "{BRU-32 MK-82}",
-					["num"] = 6,
-				},
-				[10] = {
-					["CLSID"] = "{BRU-32 MK-82}",
+				[6] = {
+					["CLSID"] = "{BELLY AIM-7E}",
 					["num"] = 5,
+				},
+				[7] = {
+					["CLSID"] = "{SHOULDER AIM-7E}",
+					["num"] = 2,
 				},
 			},
 			["tasks"] = {
@@ -50,49 +39,36 @@ local unitPayloads = {
 			},
 		},
 		[2] = {
-			-- Export (Iranian) F-14A had no LANTIRN/PGM capability, so Strike uses iron
-			-- bombs (Mk-82) rather than the Late variant's LGBs.
-			["name"] = "STRIKE",
+			["displayName"] = "Retribution TARCAP",
+			["name"] = "Retribution TARCAP",
 			["pylons"] = {
 				[1] = {
-					["CLSID"] = "{LAU-138 wtip - AIM-9M}",
+					["CLSID"] = "{LAU-7 wtip - AIM-9P}",
 					["num"] = 10,
 				},
 				[2] = {
-					["CLSID"] = "{LAU-138 wtip - AIM-9M}",
+					["CLSID"] = "{LAU-7 wtip - AIM-9P}",
 					["num"] = 1,
 				},
 				[3] = {
-					["CLSID"] = "{SHOULDER AIM-7MH}",
+					["CLSID"] = "{SHOULDER AIM-7E}",
 					["num"] = 9,
 				},
 				[4] = {
-					["CLSID"] = "{SHOULDER AIM-7MH}",
-					["num"] = 2,
-				},
-				[5] = {
-					["CLSID"] = "{F14-300gal}",
-					["num"] = 8,
-				},
-				[6] = {
-					["CLSID"] = "{F14-300gal}",
-					["num"] = 3,
-				},
-				[7] = {
-					["CLSID"] = "{BRU-32 MK-82}",
+					["CLSID"] = "{AIM_54A_Mk47}",
 					["num"] = 7,
 				},
-				[8] = {
-					["CLSID"] = "{BRU-32 MK-82}",
+				[5] = {
+					["CLSID"] = "{AIM_54A_Mk47}",
 					["num"] = 4,
 				},
-				[9] = {
-					["CLSID"] = "{BRU-32 MK-82}",
-					["num"] = 6,
-				},
-				[10] = {
-					["CLSID"] = "{BRU-32 MK-82}",
+				[6] = {
+					["CLSID"] = "{BELLY AIM-7E}",
 					["num"] = 5,
+				},
+				[7] = {
+					["CLSID"] = "{SHOULDER AIM-7E}",
+					["num"] = 2,
 				},
 			},
 			["tasks"] = {
@@ -100,43 +76,36 @@ local unitPayloads = {
 			},
 		},
 		[3] = {
-			["name"] = "CAP",
+			["displayName"] = "Retribution Escort",
+			["name"] = "Retribution Escort",
 			["pylons"] = {
 				[1] = {
-					["CLSID"] = "{LAU-138 wtip - AIM-9M}",
+					["CLSID"] = "{LAU-7 wtip - AIM-9P}",
 					["num"] = 10,
 				},
 				[2] = {
-					["CLSID"] = "{LAU-138 wtip - AIM-9M}",
+					["CLSID"] = "{LAU-7 wtip - AIM-9P}",
 					["num"] = 1,
 				},
 				[3] = {
-					["CLSID"] = "{SHOULDER AIM-7MH}",
-					["num"] = 2,
-				},
-				[4] = {
-					["CLSID"] = "{SHOULDER AIM-7MH}",
+					["CLSID"] = "{SHOULDER AIM-7E}",
 					["num"] = 9,
 				},
-				[5] = {
-					["CLSID"] = "{F14-300gal}",
-					["num"] = 8,
-				},
-				[6] = {
-					["CLSID"] = "{F14-300gal}",
-					["num"] = 3,
-				},
-				[7] = {
+				[4] = {
 					["CLSID"] = "{AIM_54A_Mk47}",
 					["num"] = 7,
 				},
-				[8] = {
+				[5] = {
 					["CLSID"] = "{AIM_54A_Mk47}",
 					["num"] = 4,
 				},
-				[9] = {
-					["CLSID"] = "{BELLY AIM-7MH}",
+				[6] = {
+					["CLSID"] = "{BELLY AIM-7E}",
 					["num"] = 5,
+				},
+				[7] = {
+					["CLSID"] = "{SHOULDER AIM-7E}",
+					["num"] = 2,
 				},
 			},
 			["tasks"] = {
@@ -144,14 +113,254 @@ local unitPayloads = {
 			},
 		},
 		[4] = {
-			["name"] = "BAI",
+			["displayName"] = "Retribution BAI",
+			["name"] = "Retribution BAI",
 			["pylons"] = {
 				[1] = {
-					["CLSID"] = "{LAU-138 wtip - AIM-9M}",
+					["CLSID"] = "{LAU-7 wtip - AIM-9P}",
 					["num"] = 10,
 				},
 				[2] = {
-					["CLSID"] = "{LAU-138 wtip - AIM-9M}",
+					["CLSID"] = "{LAU-7 wtip - AIM-9P}",
+					["num"] = 1,
+				},
+				[3] = {
+					["CLSID"] = "{MAK79_MK82SE 4}",
+					["num"] = 7,
+					["settings"] = {
+						["00_prfx_arm_delay_ctrl_M904E4"] = 4,
+						["00_prfx_function_delay_ctrl_M904E4"] = 0,
+						["01_prfx_arm_delay_ctrl_M905"] = 4,
+						["01_prfx_function_delay_ctrl_M905"] = 0,
+						["NFP_PRESID"] = "MDRN_B_A_GPHD",
+						["NFP_PRESVER"] = 2,
+						["NFP_VIS_DrawArgNo_57"] = 0,
+						["NFP_fuze_type_nose"] = "M904E4",
+						["NFP_fuze_type_tail"] = "M905",
+					},
+				},
+				[4] = {
+					["CLSID"] = "{MAK79_MK82SE 3R}",
+					["num"] = 6,
+					["settings"] = {
+						["00_prfx_arm_delay_ctrl_M904E4"] = 4,
+						["00_prfx_function_delay_ctrl_M904E4"] = 0,
+						["01_prfx_arm_delay_ctrl_M905"] = 4,
+						["01_prfx_function_delay_ctrl_M905"] = 0,
+						["NFP_PRESID"] = "MDRN_B_A_GPHD",
+						["NFP_PRESVER"] = 2,
+						["NFP_VIS_DrawArgNo_57"] = 0,
+						["NFP_fuze_type_nose"] = "M904E4",
+						["NFP_fuze_type_tail"] = "M905",
+					},
+				},
+				[5] = {
+					["CLSID"] = "{MAK79_MK82SE 3L}",
+					["num"] = 5,
+					["settings"] = {
+						["00_prfx_arm_delay_ctrl_M904E4"] = 4,
+						["00_prfx_function_delay_ctrl_M904E4"] = 0,
+						["01_prfx_arm_delay_ctrl_M905"] = 4,
+						["01_prfx_function_delay_ctrl_M905"] = 0,
+						["NFP_PRESID"] = "MDRN_B_A_GPHD",
+						["NFP_PRESVER"] = 2,
+						["NFP_VIS_DrawArgNo_57"] = 0,
+						["NFP_fuze_type_nose"] = "M904E4",
+						["NFP_fuze_type_tail"] = "M905",
+					},
+				},
+				[6] = {
+					["CLSID"] = "{MAK79_MK82SE 4}",
+					["num"] = 4,
+					["settings"] = {
+						["00_prfx_arm_delay_ctrl_M904E4"] = 4,
+						["00_prfx_function_delay_ctrl_M904E4"] = 0,
+						["01_prfx_arm_delay_ctrl_M905"] = 4,
+						["01_prfx_function_delay_ctrl_M905"] = 0,
+						["NFP_PRESID"] = "MDRN_B_A_GPHD",
+						["NFP_PRESVER"] = 2,
+						["NFP_VIS_DrawArgNo_57"] = 0,
+						["NFP_fuze_type_nose"] = "M904E4",
+						["NFP_fuze_type_tail"] = "M905",
+					},
+				},
+				[7] = {
+					["CLSID"] = "{SHOULDER AIM-7E}",
+					["num"] = 9,
+				},
+				[8] = {
+					["CLSID"] = "{SHOULDER AIM-7E}",
+					["num"] = 2,
+				},
+			},
+			["tasks"] = {
+				[1] = 10,
+			},
+		},
+		[5] = {
+			["displayName"] = "Retribution CAS",
+			["name"] = "Retribution CAS",
+			["pylons"] = {
+				[1] = {
+					["CLSID"] = "{LAU-7 wtip - AIM-9P}",
+					["num"] = 10,
+				},
+				[2] = {
+					["CLSID"] = "{LAU-7 wtip - AIM-9P}",
+					["num"] = 1,
+				},
+				[3] = {
+					["CLSID"] = "{SHOULDER AIM-7E}",
+					["num"] = 9,
+				},
+				[4] = {
+					["CLSID"] = "{SHOULDER AIM-7E}",
+					["num"] = 2,
+				},
+				[5] = {
+					["CLSID"] = "{MAK79_CBU99 2R}",
+					["num"] = 7,
+					["settings"] = {
+						["NFP_PRESID"] = "MDRN_CC_A_CBU199",
+						["NFP_PRESVER"] = 2,
+						["NFP_fuze_type_nose"] = "Mk339Mod1",
+						["function_delay_ctrl_00_Mk339Mod1"] = 1.2,
+						["function_delay_ctrl_01_Mk339Mod1"] = 4,
+					},
+				},
+				[6] = {
+					["CLSID"] = "{BRU-32 CBU-99}",
+					["num"] = 6,
+					["settings"] = {
+						["NFP_PRESID"] = "MDRN_CC_A_CBU199",
+						["NFP_PRESVER"] = 2,
+						["NFP_fuze_type_nose"] = "Mk339Mod1",
+						["function_delay_ctrl_00_Mk339Mod1"] = 1.2,
+						["function_delay_ctrl_01_Mk339Mod1"] = 4,
+					},
+				},
+				[7] = {
+					["CLSID"] = "{BRU-32 CBU-99}",
+					["num"] = 5,
+					["settings"] = {
+						["NFP_PRESID"] = "MDRN_CC_A_CBU199",
+						["NFP_PRESVER"] = 2,
+						["NFP_fuze_type_nose"] = "Mk339Mod1",
+						["function_delay_ctrl_00_Mk339Mod1"] = 1.2,
+						["function_delay_ctrl_01_Mk339Mod1"] = 4,
+					},
+				},
+				[8] = {
+					["CLSID"] = "{MAK79_CBU99 2L}",
+					["num"] = 4,
+					["settings"] = {
+						["NFP_PRESID"] = "MDRN_CC_A_CBU199",
+						["NFP_PRESVER"] = 2,
+						["NFP_fuze_type_nose"] = "Mk339Mod1",
+						["function_delay_ctrl_00_Mk339Mod1"] = 1.2,
+						["function_delay_ctrl_01_Mk339Mod1"] = 4,
+					},
+				},
+			},
+			["tasks"] = {
+				[1] = 10,
+			},
+		},
+		[6] = {
+			["displayName"] = "Retribution OCA/Runway",
+			["name"] = "Retribution OCA/Runway",
+			["pylons"] = {
+				[1] = {
+					["CLSID"] = "{LAU-7 wtip - AIM-9P}",
+					["num"] = 10,
+				},
+				[2] = {
+					["CLSID"] = "{LAU-7 wtip - AIM-9P}",
+					["num"] = 1,
+				},
+				[3] = {
+					["CLSID"] = "{BRU-32 MK-84}",
+					["num"] = 7,
+					["settings"] = {
+						["00_prfx_arm_delay_ctrl_M904E4"] = 4,
+						["00_prfx_function_delay_ctrl_M904E4"] = 0,
+						["01_prfx_arm_delay_ctrl_M905"] = 4,
+						["01_prfx_function_delay_ctrl_M905"] = 0,
+						["NFP_PRESID"] = "MDRN_B_A_GPLD",
+						["NFP_PRESVER"] = 2,
+						["NFP_VIS_DrawArgNo_57"] = 0,
+						["NFP_fuze_type_nose"] = "M904E4",
+						["NFP_fuze_type_tail"] = "M905",
+					},
+				},
+				[4] = {
+					["CLSID"] = "{BRU-32 MK-84}",
+					["num"] = 6,
+					["settings"] = {
+						["00_prfx_arm_delay_ctrl_M904E4"] = 4,
+						["00_prfx_function_delay_ctrl_M904E4"] = 0,
+						["01_prfx_arm_delay_ctrl_M905"] = 4,
+						["01_prfx_function_delay_ctrl_M905"] = 0,
+						["NFP_PRESID"] = "MDRN_B_A_GPLD",
+						["NFP_PRESVER"] = 2,
+						["NFP_VIS_DrawArgNo_57"] = 0,
+						["NFP_fuze_type_nose"] = "M904E4",
+						["NFP_fuze_type_tail"] = "M905",
+					},
+				},
+				[5] = {
+					["CLSID"] = "{BRU-32 MK-84}",
+					["num"] = 5,
+					["settings"] = {
+						["00_prfx_arm_delay_ctrl_M904E4"] = 4,
+						["00_prfx_function_delay_ctrl_M904E4"] = 0,
+						["01_prfx_arm_delay_ctrl_M905"] = 4,
+						["01_prfx_function_delay_ctrl_M905"] = 0,
+						["NFP_PRESID"] = "MDRN_B_A_GPLD",
+						["NFP_PRESVER"] = 2,
+						["NFP_VIS_DrawArgNo_57"] = 0,
+						["NFP_fuze_type_nose"] = "M904E4",
+						["NFP_fuze_type_tail"] = "M905",
+					},
+				},
+				[6] = {
+					["CLSID"] = "{BRU-32 MK-84}",
+					["num"] = 4,
+					["settings"] = {
+						["00_prfx_arm_delay_ctrl_M904E4"] = 4,
+						["00_prfx_function_delay_ctrl_M904E4"] = 0,
+						["01_prfx_arm_delay_ctrl_M905"] = 4,
+						["01_prfx_function_delay_ctrl_M905"] = 0,
+						["NFP_PRESID"] = "MDRN_B_A_GPLD",
+						["NFP_PRESVER"] = 2,
+						["NFP_VIS_DrawArgNo_57"] = 0,
+						["NFP_fuze_type_nose"] = "M904E4",
+						["NFP_fuze_type_tail"] = "M905",
+					},
+				},
+				[7] = {
+					["CLSID"] = "{SHOULDER AIM-7E}",
+					["num"] = 9,
+				},
+				[8] = {
+					["CLSID"] = "{SHOULDER AIM-7E}",
+					["num"] = 2,
+				},
+			},
+			["tasks"] = {
+				[1] = 10,
+			},
+		},
+		[7] = {
+			["displayName"] = "Retribution OCA/Aircraft",
+			["name"] = "Retribution OCA/Aircraft",
+			["pylons"] = {
+				[1] = {
+					["CLSID"] = "{LAU-7 wtip - AIM-9P}",
+					["num"] = 10,
+				},
+				[2] = {
+					["CLSID"] = "{LAU-7 wtip - AIM-9P}",
 					["num"] = 1,
 				},
 				[3] = {
@@ -163,27 +372,15 @@ local unitPayloads = {
 					["num"] = 2,
 				},
 				[5] = {
-					["CLSID"] = "{F14-300gal}",
-					["num"] = 8,
-				},
-				[6] = {
-					["CLSID"] = "{F14-300gal}",
-					["num"] = 3,
-				},
-				[7] = {
-					["CLSID"] = "{BRU-32 MK-20}",
+					["CLSID"] = "{BRU3242_LAU10}",
 					["num"] = 7,
 				},
-				[8] = {
-					["CLSID"] = "{BRU-32 MK-20}",
+				[6] = {
+					["CLSID"] = "{BRU3242_2*LAU10 R}",
 					["num"] = 4,
 				},
-				[9] = {
-					["CLSID"] = "{BRU-32 MK-20}",
-					["num"] = 6,
-				},
-				[10] = {
-					["CLSID"] = "{BRU-32 MK-20}",
+				[7] = {
+					["CLSID"] = "{BELLY AIM-7E}",
 					["num"] = 5,
 				},
 			},
@@ -191,56 +388,126 @@ local unitPayloads = {
 				[1] = 10,
 			},
 		},
-		[5] = {
-			["displayName"] = "Retribution OCA/Runway",
-			["name"] = "Retribution OCA/Runway",
+		[8] = {
+			["displayName"] = "Retribution Strike",
+			["name"] = "Retribution Strike",
 			["pylons"] = {
 				[1] = {
-					["CLSID"] = "{LAU-138 wtip - AIM-9M}",
+					["CLSID"] = "{LAU-7 wtip - AIM-9P}",
 					["num"] = 10,
 				},
 				[2] = {
-					["CLSID"] = "{SHOULDER AIM-7MH}",
-					["num"] = 9,
+					["CLSID"] = "{LAU-7 wtip - AIM-9P}",
+					["num"] = 1,
 				},
 				[3] = {
-					["CLSID"] = "{F14-300gal}",
-					["num"] = 8,
+					["CLSID"] = "{MAK79_MK83 3R}",
+					["num"] = 7,
+					["settings"] = {
+						["00_prfx_arm_delay_ctrl_M904E4"] = 4,
+						["00_prfx_function_delay_ctrl_M904E4"] = 0,
+						["01_prfx_arm_delay_ctrl_M905"] = 4,
+						["01_prfx_function_delay_ctrl_M905"] = 0,
+						["NFP_PRESID"] = "MDRN_B_A_GPLD",
+						["NFP_PRESVER"] = 2,
+						["NFP_VIS_DrawArgNo_57"] = 0,
+						["NFP_fuze_type_nose"] = "M904E4",
+						["NFP_fuze_type_tail"] = "M905",
+					},
 				},
 				[4] = {
-					["CLSID"] = "{MAK79_MK82 4}",
-					["num"] = 7,
+					["CLSID"] = "{BRU-32 MK-83}",
+					["num"] = 5,
+					["settings"] = {
+						["00_prfx_arm_delay_ctrl_M904E4"] = 4,
+						["00_prfx_function_delay_ctrl_M904E4"] = 0,
+						["01_prfx_arm_delay_ctrl_M905"] = 4,
+						["01_prfx_function_delay_ctrl_M905"] = 0,
+						["NFP_PRESID"] = "MDRN_B_A_GPLD",
+						["NFP_PRESVER"] = 2,
+						["NFP_VIS_DrawArgNo_57"] = 0,
+						["NFP_fuze_type_nose"] = "M904E4",
+						["NFP_fuze_type_tail"] = "M905",
+					},
 				},
 				[5] = {
-					["CLSID"] = "{MAK79_MK82 4}",
+					["CLSID"] = "{MAK79_MK83 3L}",
 					["num"] = 4,
+					["settings"] = {
+						["00_prfx_arm_delay_ctrl_M904E4"] = 4,
+						["00_prfx_function_delay_ctrl_M904E4"] = 0,
+						["01_prfx_arm_delay_ctrl_M905"] = 4,
+						["01_prfx_function_delay_ctrl_M905"] = 0,
+						["NFP_PRESID"] = "MDRN_B_A_GPLD",
+						["NFP_PRESVER"] = 2,
+						["NFP_VIS_DrawArgNo_57"] = 0,
+						["NFP_fuze_type_nose"] = "M904E4",
+						["NFP_fuze_type_tail"] = "M905",
+					},
 				},
 				[6] = {
-					["CLSID"] = "{F14-300gal}",
-					["num"] = 3,
+					["CLSID"] = "{SHOULDER AIM-7E}",
+					["num"] = 9,
 				},
 				[7] = {
-					["CLSID"] = "{SHOULDER AIM-7MH}",
+					["CLSID"] = "{SHOULDER AIM-7E}",
 					["num"] = 2,
 				},
 				[8] = {
-					["CLSID"] = "{LAU-138 wtip - AIM-9M}",
-					["num"] = 1,
-				},
-				[9] = {
-					["CLSID"] = "{MAK79_MK82 3R}",
+					["CLSID"] = "{BRU-32 MK-83}",
 					["num"] = 6,
-				},
-				[10] = {
-					["CLSID"] = "{MAK79_MK82 3L}",
-					["num"] = 5,
+					["settings"] = {
+						["00_prfx_arm_delay_ctrl_M904E4"] = 4,
+						["00_prfx_function_delay_ctrl_M904E4"] = 0,
+						["01_prfx_arm_delay_ctrl_M905"] = 4,
+						["01_prfx_function_delay_ctrl_M905"] = 0,
+						["NFP_PRESID"] = "MDRN_B_A_GPLD",
+						["NFP_PRESVER"] = 2,
+						["NFP_VIS_DrawArgNo_57"] = 0,
+						["NFP_fuze_type_nose"] = "M904E4",
+						["NFP_fuze_type_tail"] = "M905",
+					},
 				},
 			},
 			["tasks"] = {
-				[1] = 32,
-				[2] = 31,
-				[3] = 34,
-				[4] = 33,
+				[1] = 10,
+			},
+		},
+		[9] = {
+			["displayName"] = "Retribution Fighter sweep",
+			["name"] = "Retribution Fighter sweep",
+			["pylons"] = {
+				[1] = {
+					["CLSID"] = "{LAU-7 wtip - AIM-9P}",
+					["num"] = 10,
+				},
+				[2] = {
+					["CLSID"] = "{LAU-7 wtip - AIM-9P}",
+					["num"] = 1,
+				},
+				[3] = {
+					["CLSID"] = "{SHOULDER AIM-7E}",
+					["num"] = 9,
+				},
+				[4] = {
+					["CLSID"] = "{AIM_54A_Mk47}",
+					["num"] = 7,
+				},
+				[5] = {
+					["CLSID"] = "{AIM_54A_Mk47}",
+					["num"] = 4,
+				},
+				[6] = {
+					["CLSID"] = "{BELLY AIM-7E}",
+					["num"] = 5,
+				},
+				[7] = {
+					["CLSID"] = "{SHOULDER AIM-7E}",
+					["num"] = 2,
+				},
+			},
+			["tasks"] = {
+				[1] = 10,
 			},
 		},
 	},

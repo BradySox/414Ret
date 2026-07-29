@@ -45,9 +45,7 @@ default_overrides:
 #   TacanBand: 0
 #   TacanChannel: 0
 #   UseLAU138: true
-escort_jammer_tier: ecm
 tasks:
-  Escort Jammer: 380
   BAI: 655
   BARCAP: 585
   CAS: 655

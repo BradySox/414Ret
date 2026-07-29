@@ -5,9 +5,10 @@ the safety contracts: the offensive pulse is ROE-only (WEAPON_HOLD then a
 scheduled OPEN_FIRE restore -- emissions are never touched), it waits out the
 startup grace, only radar-SAM ("SAM TR") groups are eligible, a defensive spoof
 destroys a radar-guided missile inside the bubble, the friendly-fire guard
-(a blue Growler never spoofs a blue missile), and a mission with no growler
-node is a clean no-op. Determinism: power options scale the dice to certainty
-(pk*2 -> clamped >= 100%) or zero, so no test rides math.random.
+(a blue jammer never spoofs a blue missile), and a mission with no growler
+node is a clean no-op. The plugin is airframe-agnostic -- an AI Prowler is driven
+identically to an AI Growler. Determinism: power options scale the dice to
+certainty (pk*2 -> clamped >= 100%) or zero, so no test rides math.random.
 """
 
 from __future__ import annotations
@@ -24,13 +25,21 @@ ROE_OPEN_FIRE = 2
 ROE_WEAPON_HOLD = 4
 
 
-def _jammer_group(name: str, side: int = 2, in_air: bool = True) -> dict[str, Any]:
+def _jammer_group(
+    name: str, side: int = 2, in_air: bool = True, unit_type: str = "EA-18G"
+) -> dict[str, Any]:
     return {
         "name": name,
         "side": side,
         "category": 0,  # AIRPLANE
         "units": [
-            {"name": name + "-1", "type": "EA-18G", "airborne": in_air, "x": 0, "z": 0}
+            {
+                "name": name + "-1",
+                "type": unit_type,
+                "airborne": in_air,
+                "x": 0,
+                "z": 0,
+            }
         ],
     }
 
@@ -54,9 +63,6 @@ def _jammer_node(
     group: str,
     protected: list[str],
     is_player: bool = False,
-    tier: str = "full",
-    defensive_power: float = 1.0,
-    offensive: bool = True,
 ) -> dict[str, Any]:
     return {
         "jammers": [
@@ -64,9 +70,6 @@ def _jammer_node(
                 "groupName": group,
                 "side": "2",
                 "isPlayer": "1" if is_player else "0",
-                "tier": tier,
-                "defensivePower": str(defensive_power),
-                "offensive": "1" if offensive else "0",
                 "protected": [{"groupName": name} for name in protected],
             }
         ]
@@ -118,6 +121,28 @@ def test_offensive_pulse_holds_then_restores_after_the_grace() -> None:
     h.assert_no_lua_errors()
 
 
+def test_ai_prowler_pulses_a_radar_sam() -> None:
+    # Airframe-agnostic: an AI EA-6B Prowler runs the same auto-policy as a
+    # Growler -- it suppresses a radar SAM after the grace with no player toggle.
+    h = DcsPluginHarness()
+    h.add_group(_jammer_group("Raven 1", unit_type="EA-6B"))
+    h.add_group(_sam_group("SA-2", x=10000, z=0))
+    _config(
+        h,
+        _jammer_node("Raven 1", ["Hammer 1"]),
+        startGraceS=30,
+        tickSec=10,
+        holdSec=20,
+        offensivePower=2.0,
+        defensivePower=0,
+    )
+    h.load_plugin_script(PLUGIN)
+    h.advance_to(61)
+    h.assert_no_lua_errors()
+    holds = [r for r in _roe_records(h) if r["value"] == ROE_WEAPON_HOLD]
+    assert holds and holds[0]["group"] == "SA-2"
+
+
 def test_non_radar_ground_group_is_never_pulsed() -> None:
     h = DcsPluginHarness()
     h.add_group(_jammer_group("Shadow 1"))
@@ -150,7 +175,7 @@ def test_spoof_destroys_a_missile_inside_the_bubble() -> None:
     )
     h.load_plugin_script(PLUGIN)
     h.assert_no_lua_errors()
-    # A red SAM shot sitting 400 m from the Growler (inner 500 m band).
+    # A red SAM shot sitting 400 m from the jammer (inner 500 m band).
     h.fire_shot(
         {
             "weapon": {"typeName": "SA2-missile", "x": 400, "z": 0, "alt": 1000},
@@ -176,7 +201,7 @@ def test_a_friendly_missile_is_never_spoofed() -> None:
         offensivePower=0,
     )
     h.load_plugin_script(PLUGIN)
-    # A BLUE-fired missile right on top of the blue Growler: never touched.
+    # A BLUE-fired missile right on top of the blue jammer: never touched.
     h.fire_shot(
         {
             "weapon": {"typeName": "AMRAAM", "x": 100, "z": 0, "alt": 1000},
@@ -210,63 +235,13 @@ def test_player_jammer_starts_off_and_gets_the_menu() -> None:
     assert any("Growler jamming" in str(m) for m in menus)
 
 
-def test_defensive_only_tier_never_pulses_a_sam() -> None:
-    # An ECM/self-protect/loose jammer (offensive=False) defends the package but
-    # never suppresses a radar SAM, no matter how long it's on station.
-    h = DcsPluginHarness()
-    h.add_group(_jammer_group("Zapper 1"))
-    h.add_group(_sam_group("SA-2", x=10000, z=0))
-    _config(
-        h,
-        _jammer_node("Zapper 1", ["Hammer 1"], tier="ecm", offensive=False),
-        startGraceS=30,
-        tickSec=10,
-        offensivePower=2.0,
-        defensivePower=0,
-    )
-    h.load_plugin_script(PLUGIN)
-    h.advance_to(300)
-    h.assert_no_lua_errors()
-    assert not _roe_records(h)
-
-
-def test_zero_tier_power_never_spoofs() -> None:
-    # defensivePower 0 (the tier scalar) zeroes the spoof chance even in the inner
-    # band -- the utility gradient bottoms out at "does nothing", never negative.
-    h = DcsPluginHarness()
-    h.add_group(_jammer_group("Zapper 1"))
-    _config(
-        h,
-        _jammer_node(
-            "Zapper 1", ["Hammer 1"], tier="loose", defensive_power=0.0, offensive=False
-        ),
-        startGraceS=600,
-        defensivePower=2.0,  # global is strong; the per-jammer 0 must still win
-        spoofMinTravelM=0,
-        offensivePower=0,
-    )
-    h.load_plugin_script(PLUGIN)
-    h.fire_shot(
-        {
-            "weapon": {"typeName": "SA2-missile", "x": 400, "z": 0, "alt": 1000},
-            "initiator": "SA-2",
-        }
-    )
-    h.advance_to(10)
-    h.assert_no_lua_errors()
-    assert not h.records("weaponDestroys")
-
-
-def _full_jammers_node(names: list[str]) -> dict[str, Any]:
+def _jammers_node(names: list[str]) -> dict[str, Any]:
     return {
         "jammers": [
             {
                 "groupName": n,
                 "side": "2",
                 "isPlayer": "0",
-                "tier": "full",
-                "defensivePower": "1.0",
-                "offensive": "1",
                 "protected": [],
             }
             for n in names
@@ -285,7 +260,7 @@ def _spoof_count_with(jammer_names: list[str], seed: int) -> int:
         h.add_group(_jammer_group(n, in_air=True))
     _config(
         h,
-        _full_jammers_node(jammer_names),
+        _jammers_node(jammer_names),
         startGraceS=600,  # keep the offensive loop quiet
         offensivePower=0,
         defensivePower=1.0,

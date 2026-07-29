@@ -1,10 +1,13 @@
--- Growler escort jamming (EA-18G) -- runtime for the ESCORT_JAMMER role.
+-- Escort jamming (EA-18G Growler / EA-6B Prowler) -- runtime for the
+-- ESCORT_JAMMER role.
 --
 -- Descends from the Timberwolf/Matador EW script family (the same lineage as the
 -- C-130 Mission Systems script and upstream's player-only ewrj plugin), reshaped
 -- into an AI auto-policy: the "AI can't use it" folklore was a wiring gap -- the
 -- effect model is geometry + dice and needs no AI intelligence, only a decision
--- layer, which this file is.
+-- layer, which this file is. The policy is airframe-agnostic: it drives whatever
+-- ESCORT_JAMMER group the emitter names (an AI Growler and an AI Prowler are
+-- handled identically -- there is no EA-18G-specific code path).
 --
 -- Effects (ROE ONLY -- radar emissions are NEVER toggled; enableEmission crashed
 -- DCS in the C-130 line and MANTIS owns alarm/EMCON state):
@@ -69,6 +72,8 @@ local OFF_BANDS = {
 
 -- ── state ──────────────────────────────────────────────────────────────────
 local jammers = {} -- [i] = { groupName, side, isPlayer, protected = {names}, active }
+-- Every ESCORT_JAMMER flight is a dedicated jammer (Growler/Prowler), so every
+-- entry runs the full defensive bubble + offensive SAM-suppression policy.
 local heldSams = {} -- [groupName] = releaseTime (weapons-hold pulse in effect)
 local samRecoverUntil = {} -- [groupName] = time until which it can't be re-held
 local trackedShots = {} -- [i] = { weapon, originX, originZ, victimSide }
@@ -78,19 +83,10 @@ for _, rec in ipairs(dcsRetribution.growler.jammers or {}) do
     for _, member in ipairs(rec.protected or {}) do
         prot[#prot + 1] = member.groupName
     end
-    -- Graduated tier (§77): the emitter derives these from the airframe's EW kit.
-    -- defensivePower scales this jammer's spoof bubble; offensive gates whether it
-    -- suppresses SAMs at all (only the dedicated FULL tier does). Missing fields
-    -- (old saves / hand-authored nodes) default to a full-strength dedicated jammer.
-    local defPower = tonumber(rec.defensivePower) or 1.0
-    local offensive = rec.offensive == nil or tostring(rec.offensive) == "1"
     jammers[#jammers + 1] = {
         groupName = rec.groupName,
         side = tonumber(rec.side) or 2,
         isPlayer = tostring(rec.isPlayer) == "1",
-        tier = rec.tier or "full",
-        defensivePower = defPower,
-        offensive = offensive,
         protected = prot,
         -- AI jams automatically (after grace); a player jammer starts OFF and
         -- toggles via the F10 menu.
@@ -212,7 +208,7 @@ local function spoofTick()
                             local d = flatDist(wp, unit:getPoint())
                             for _, band in ipairs(SPOOF_BANDS) do
                                 if d <= band.dist then
-                                    local pk = band.pk * DEF_POWER * jam.defensivePower
+                                    local pk = band.pk * DEF_POWER
                                     if pk > bestPk then
                                         bestPk = pk
                                         bestName = jam.groupName
@@ -282,9 +278,9 @@ local function offensiveTick(now)
         return
     end
     for _, jam in ipairs(jammers) do
-        -- Only the dedicated FULL tier suppresses SAMs; ECM/self-protect/loose
-        -- jammers defend the package but never pulse a radar onto weapons-hold.
-        local unit = jam.offensive and emittingUnit(jam) or nil
+        -- Every jammer is a dedicated Growler/Prowler, so each pulses radar SAMs
+        -- onto weapons-hold when in range (ROE only -- emissions never toggled).
+        local unit = emittingUnit(jam)
         if unit then
             local jp = unit:getPoint()
             local enemySide = (jam.side == 2) and 1 or 2

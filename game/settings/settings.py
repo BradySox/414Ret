@@ -294,7 +294,6 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                     "c2_decapitation_effects",
                     "weather_aware_planning",
                     "sead_strike_coordination",
-                    "escort_jamming_loose",
                     "max_escort_jammers",
                 ],
             ),
@@ -1247,22 +1246,6 @@ class Settings:
             "window the AI pushes behind."
         ),
     )
-    escort_jamming_loose: bool = boolean_option(
-        "Loose escort jamming (any podded jet)",
-        page=CAMPAIGN_DOCTRINE_PAGE,
-        section=GENERAL_SECTION,
-        default=False,
-        detail=(
-            "Escort jamming (the Growler role) is normally flown by a curated set "
-            "of EW-capable jets -- dedicated jammers (EA-18G / EA-6B) at full "
-            "strength, then fighters with real built-in ECM or a self-protect pod "
-            "at descending, defensive-only strength. With this on, any other jet "
-            "that can bolt on a self-protect ECM pod (even an A-10) can also be "
-            "auto-fragged as a token escort jammer -- weakest of all, flavor only. "
-            "Off by default so the roster stays the credible curated set and the "
-            "retired 'every fighter jams' behavior never returns silently."
-        ),
-    )
     max_escort_jammers: int = bounded_int_option(
         "Max escort jammers airborne per side",
         page=CAMPAIGN_DOCTRINE_PAGE,
@@ -1271,8 +1254,9 @@ class Settings:
         min=0,
         max=12,
         detail=(
-            "Caps how many escort-jamming flights (the Growler role) each side's "
-            "auto-planner will frag in one turn. Escort jammers are proposed on "
+            "Caps how many escort-jamming flights (dedicated jammers -- the EA-18G "
+            "Growler / EA-6B Prowler) each side's auto-planner will frag in one "
+            "turn. Escort jammers are proposed on "
             "every radar-SAM-threatened package, so a strike-heavy turn against a "
             "dense IADS could otherwise put a dozen jammers in the air. The bubble "
             "and SAM-suppression effects don't stack (a missile faces one bubble, a "

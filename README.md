@@ -67,15 +67,13 @@ Upstream hands you a map that already knows everything. Here you have to go look
 - **SCAR is the RESCAP "Sandy"** of that package — hold near the FLOT with the King and the
   rescue helo, suppress the threats, walk the helo in.
 - **JAMMING** turns the C-130J into an EC-130H/RC-130H-style EW and ISR platform.
-- **Escort jamming for every campaign.** A jet flies a dedicated **escort jamming** role —
+- **Escort jamming (Growler / Prowler).** A dedicated jammer flies an **escort jamming** role —
   it rides your strike package through the SAM belt, spoofs radar missiles fired at anyone
-  under its bubble, and (the dedicated jammers) forces a tracking SAM onto brief weapons-hold
-  pulses; closer means stronger, real penetration-escort physics. It's a *graduated* role, not
-  one airframe: a dedicated jammer (EA-18G Growler / EA-6B Prowler, if you enable those mods)
-  is the full-strength tier, and vanilla EW-capable fighters — F/A-18C, F-16C, F-4E, AV-8B,
-  A-7E, F-14 — fill a weaker defensive-only tier so no campaign is left without a jammer. AI
-  jets jam automatically; fly one yourself and you get the F10 jamming menu. (An optional
-  "loose" setting lets *any* podded jet stand in at token strength.)
+  under its bubble, and forces a tracking SAM onto brief weapons-hold pulses; closer means
+  stronger, real penetration-escort physics. Only the two dedicated ALQ-99 jammers do it —
+  the **EA-18G Growler** and the **EA-6B Prowler** (enable those mods) — no Harriers, Hornets,
+  or other podded jets. AI Growlers *and* Prowlers jam automatically; fly one yourself and you
+  get the F10 jamming menu. A per-side cap keeps a strike-heavy turn from putting too many up.
 - **The C-130J drops paratroopers.** Air Assault is no longer helo-only: a troop transport
   flies the same tasking as an airborne drop. Fly it yourself — spawn with the stick already
   loaded, run in below 3,000 ft AGL, and the CTLD *Unload / Extract Troops* call **jumps

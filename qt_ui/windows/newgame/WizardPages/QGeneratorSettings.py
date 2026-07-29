@@ -115,7 +115,7 @@ class GeneratorOptions(QtWidgets.QWizardPage):
                 "CurrentHill Chinese Military Assets (1.1.4)",
                 self.chinesemilitaryassetspack,
             ),
-            ("CurrentHill Iran Military Assets (2.0.0)", self.iranmilitaryassetspack),
+            ("CurrentHill Iran Military Assets (2.1.0)", self.iranmilitaryassetspack),
             (
                 "CurrentHill Russian Military Assets (2.0.1)",
                 self.russianmilitaryassetspack,

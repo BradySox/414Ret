@@ -1004,6 +1004,27 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     transient fog overview (`GET`/`PUT /game/map-layers` → `Game.client_map_layers`). The
     old top-left threat-zone/navmesh/terrain control is folded in; side-effect toggles run via
     `useEffect`, not Leaflet add/remove. Client-only; needs the CI client rebuild (features doc §18).
+    **Air-defense class rows are FILTERS of the "Air defences" master, not layers (reworked
+    2026-07-29)** — off a flown report that read as a §3 fog bug ("with reveal fog of war on, SAM
+    sites show nothing at the actual location, just a blank circle you can only find by hovering").
+    The five rows were *independent* `TgosLayer`s, so two states were reachable that both look like
+    defects: **master off + rows off ⇒ no air-defense marker at all** while *Enemy SAM threat range*
+    (a separate layer over the same TGO slice) kept drawing the rings — a ring anchored to nothing,
+    which is exactly what was reported (the campaign save carried `airDefenses: false` with all four
+    rows false, silently undrawing 54 AD sites **and** 25 §3 concealed "suspected activity" circles;
+    recon fog + the reveal overview were both verified CORRECT headlessly — reveal nulls
+    `uncertainty_radius_m`, populates threat ranges/units, and surfaces the hidden command posts) —
+    and **master on + a row on ⇒ two stacked identical markers**. Now: master off ⇒ no AD icons +
+    the four rows grey out (`RowDef.enabledWhen` / `.ml-row-disabled`, the §28 `enabled_when`
+    convention in the map panel); master on with no row ticked ⇒ every class; with rows ticked ⇒ only
+    those; `normalizeAirDefenseFilters` flips the master on for a stored blob that ticked a class row
+    while the master was off (no map goes empty on upgrade). `TgosLayer` took `tasks?: string[]`
+    (was `task?: string`) and now checks **category first, task second, both required** — the old
+    filter returned on the task check alone, so a task-less TGO fell through to the category check
+    (one task-less `aa` site drew a duplicate marker in all four class layers) and a task match never
+    had its category enforced; `task` serializes as `[name, role]` (tuple-valued `GroupTask` enum),
+    hence `task[0]`. Tests `client/src/components/tgoslayer/TgosLayer.test.tsx`; needs the CI client
+    rebuild.
 20. **Drop-spawn: map right-click unit placement** — right-click blank map space → Qt dialog
     (coalition / category / unit-type picker from all 66 named `LAYOUTS` / unit rows / deploy-timing
     / respawn) → `place_unit_group()` validates terrain + 200 km range, creates TGO, fires SSE so

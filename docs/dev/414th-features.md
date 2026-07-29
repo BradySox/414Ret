@@ -2128,6 +2128,33 @@ dark-themed control: `client/src/components/maplayers/MapLayersControl.tsx` (+ `
   carried by the per-turn autosave, so choices survive turns and reopening the app (QtWebEngine
   drops `localStorage` on reload). Server side: `game/server/game/routes.py` (`MapLayersJs`).
 - **Preset views** — Default / SEAD / Recon / Clean, plus a "Hide all overlays" button.
+- **Air-defense class rows are FILTERS, not layers** (reworked 2026-07-29 off a flown report
+  that read as a fog bug — "with reveal fog of war on, SAM sites show nothing at the actual
+  location, just a blank circle you can only find by hovering"). The row group was five
+  *independent* `TgosLayer`s ("Air defences" + LORAD/MERAD/SHORAD/AAA), which made two states
+  reachable that both look like defects:
+  - **master off + rows off ⇒ no air-defense marker at all**, while *Enemy SAM threat range*
+    (a separate layer reading the same TGO slice) kept drawing the rings — a ring anchored to
+    nothing, identifiable only by hovering it. This was the reported "bug": the campaign save
+    had `airDefenses: false` with all four class rows false, so 54 air-defense sites and 25
+    §3 concealed "suspected activity" circles were silently undrawn. **Recon fog and the
+    reveal overview were both working correctly** (verified headlessly: reveal flips
+    `uncertainty_radius_m` to `None`, populates threat ranges + units, and surfaces the
+    hidden command posts).
+  - **master on + a row on ⇒ two stacked identical markers** on that site (duplicate icon and
+    tooltip).
+  Now `airDefenses` is the single master layer (`AIR_DEFENSE_TASK_ROWS`): off ⇒ no
+  air-defense icons and the four rows grey out (`RowDef.enabledWhen` + `.ml-row-disabled` —
+  the §28 settings `enabled_when` convention applied to the map panel); on with no row ticked
+  ⇒ every class; on with rows ticked ⇒ only those. `normalizeAirDefenseFilters` flips the
+  master on when a stored blob ticked a class row while the master was off, so a pre-rework
+  layer choice keeps showing what it used to instead of emptying the map on upgrade.
+  `TgosLayer` took `tasks?: string[]` (was a single `task?: string`) and now checks
+  **category first, task second, both required** — the old filter returned on the task check
+  alone, so a task-less TGO fell through to the category check (one task-less `aa` site drew a
+  duplicate marker in all four class layers) and a task match never had its category enforced.
+  Note `task` serializes as `[name, role]` — `GroupTask` is a tuple-valued enum — hence
+  `task[0]`. Tests `client/src/components/tgoslayer/TgosLayer.test.tsx`.
 - **Folded in the old top-left control**: threat zones render via the existing
   `ThreatZonesLayer` (+ `ThreatZoneFilter`) and navmesh via `NavMeshLayer` (both already raw);
   terrain and culling gained raw-layer exports (`Inclusion/Exclusion/SeaZonesLayer`,

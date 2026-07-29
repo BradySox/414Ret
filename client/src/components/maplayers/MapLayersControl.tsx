@@ -116,11 +116,14 @@ const OVERLAYS: Record<LayerId, { label: string; node: ReactNode }> = {
     label: "Other ground objects",
     node: <TgosLayer categories={["aa", "factory", "ship"]} exclude />,
   },
-  airDefenses: { label: "Air defences", node: <TgosLayer categories={["aa"]} /> },
-  lorad: { label: "LORAD", node: <TgosLayer categories={["aa"]} task={"LORAD"} /> },
-  merad: { label: "MERAD", node: <TgosLayer categories={["aa"]} task={"MERAD"} /> },
-  shorad: { label: "SHORAD", node: <TgosLayer categories={["aa"]} task={"SHORAD"} /> },
-  aaa: { label: "AAA", node: <TgosLayer categories={["aa"]} task={"AAA"} /> },
+  // "Air defences" is the master air-defense icon layer; the four class rows
+  // below are FILTERS of it, not layers of their own (see AIR_DEFENSE_TASK_ROWS),
+  // so its node is built in the render off the live filter state.
+  airDefenses: { label: "Air defences", node: null },
+  lorad: { label: "LORAD", node: null },
+  merad: { label: "MERAD", node: null },
+  shorad: { label: "SHORAD", node: null },
+  aaa: { label: "AAA", node: null },
   // revealFog and emitterHighlight are side-effect toggles, not visual layers:
   // they are driven by useEffect below, so they render no node.
   revealFog: { label: "Reveal fog of war", node: null },
@@ -191,10 +194,39 @@ const OVERLAYS: Record<LayerId, { label: string; node: ReactNode }> = {
 
 const ALL_IDS = Object.keys(OVERLAYS) as LayerId[];
 
+// The air-defense class rows are FILTERS of the "Air defences" master, not
+// independent layers. Master off => no air-defense icons (and the rows grey out).
+// Master on with nothing ticked => every class. Master on with some ticked =>
+// only those. They used to be five independent TgosLayers, which made two states
+// reachable that both read as bugs: master off + rows off hid every SAM site
+// while its threat rings kept drawing (a ring anchored to nothing — reported
+// 2026-07-29 as a "reveal fog of war" fault), and master on + a row on stacked
+// two identical markers on the same site.
+const AIR_DEFENSE_TASK_ROWS: { id: LayerId; task: string }[] = [
+  { id: "lorad", task: "LORAD" },
+  { id: "merad", task: "MERAD" },
+  { id: "shorad", task: "SHORAD" },
+  { id: "aaa", task: "AAA" },
+];
+
+/** Carry a pre-filter layer choice forward: someone whose stored state ticked a
+ *  class row while the master was off used to see that class, so keep showing it
+ *  rather than silently emptying their map on upgrade. */
+function normalizeAirDefenseFilters(
+  visible: Partial<Record<LayerId, boolean>>
+): Partial<Record<LayerId, boolean>> {
+  if (visible.airDefenses) return visible;
+  if (!AIR_DEFENSE_TASK_ROWS.some((row) => visible[row.id])) return visible;
+  return { ...visible, airDefenses: true };
+}
+
 interface RowDef {
   id: LayerId;
   accent?: boolean;
   sub?: boolean;
+  /** Greyed + unclickable while this master layer is off (the §28 settings
+   *  `enabled_when` convention, applied to the map panel). */
+  enabledWhen?: LayerId;
 }
 
 interface GroupDef {
@@ -234,10 +266,10 @@ const GROUPS: GroupDef[] = [
     defaultOpen: true,
     rows: [
       { id: "airDefenses" },
-      { id: "lorad", sub: true },
-      { id: "merad", sub: true },
-      { id: "shorad", sub: true },
-      { id: "aaa", sub: true },
+      { id: "lorad", sub: true, enabledWhen: "airDefenses" },
+      { id: "merad", sub: true, enabledWhen: "airDefenses" },
+      { id: "shorad", sub: true, enabledWhen: "airDefenses" },
+      { id: "aaa", sub: true, enabledWhen: "airDefenses" },
     ],
   },
   {
@@ -379,7 +411,7 @@ export default function MapLayersControl() {
   const persisted = useMemo(loadPersisted, []);
   const [visible, setVisible] = useState<Record<LayerId, boolean>>(() => ({
     ...fromList(DEFAULT_ON),
-    ...(persisted.visible ?? {}),
+    ...normalizeAirDefenseFilters(persisted.visible ?? {}),
     revealFog: false, // transient: never restored from storage
   }));
   const [baseMap, setBaseMap] = useState<BaseMap>(persisted.baseMap ?? "clarity");
@@ -423,7 +455,11 @@ export default function MapLayersControl() {
           openGroups?: Record<string, boolean>;
         };
         // revealFog is transient and never written to the blob, so it stays off.
-        if (saved.visible) setVisible((v) => ({ ...v, ...saved.visible }));
+        if (saved.visible)
+          setVisible((v) => ({
+            ...v,
+            ...normalizeAirDefenseFilters(saved.visible!),
+          }));
         if (saved.baseMap) setBaseMap(saved.baseMap);
         if (saved.openGroups) setOpenGroups((g) => ({ ...g, ...saved.openGroups }));
       })
@@ -492,6 +528,11 @@ export default function MapLayersControl() {
       .catch((error) => console.log(`Error toggling fog of war: ${error}`));
   }, [dispatch, visible.revealFog]);
 
+  // Ticked air-defense class filters. Empty => the master shows every class.
+  const activeAirDefenseTasks = AIR_DEFENSE_TASK_ROWS.filter(
+    (row) => visible[row.id]
+  ).map((row) => row.task);
+
   const toggle = (id: LayerId) => setVisible((v) => ({ ...v, [id]: !v[id] }));
   const applyPreset = (name: string) =>
     setVisible((v) => ({ ...fromList(PRESETS[name]), revealFog: v.revealFog }));
@@ -510,17 +551,28 @@ export default function MapLayersControl() {
       ? "Topographic"
       : "ImageryClarity";
 
-  const Row = ({ id, accent, sub }: RowDef) => (
-    <label
-      className={
-        "ml-row" + (accent ? " ml-row-accent" : "") + (sub ? " ml-row-sub" : "")
-      }
-    >
-      <input type="checkbox" checked={!!visible[id]} onChange={() => toggle(id)} />
-      <span>{OVERLAYS[id].label}</span>
-      {accent && <span className="ml-badge">overview</span>}
-    </label>
-  );
+  const Row = ({ id, accent, sub, enabledWhen }: RowDef) => {
+    const disabled = enabledWhen !== undefined && !visible[enabledWhen];
+    return (
+      <label
+        className={
+          "ml-row" +
+          (accent ? " ml-row-accent" : "") +
+          (sub ? " ml-row-sub" : "") +
+          (disabled ? " ml-row-disabled" : "")
+        }
+      >
+        <input
+          type="checkbox"
+          checked={!!visible[id]}
+          disabled={disabled}
+          onChange={() => toggle(id)}
+        />
+        <span>{OVERLAYS[id].label}</span>
+        {accent && <span className="ml-badge">overview</span>}
+      </label>
+    );
+  };
 
   const panel = (
     <div className="ml-panel">
@@ -591,6 +643,12 @@ export default function MapLayersControl() {
       )}
       {ALL_IDS.map((id) =>
         visible[id] ? <Fragment key={id}>{OVERLAYS[id].node}</Fragment> : null
+      )}
+      {/* The one master-plus-filters layer: a single TgosLayer narrowed by
+          whichever class rows are ticked (none ticked = every class), so a site
+          can never draw two markers and the rows can never render without it. */}
+      {visible.airDefenses && (
+        <TgosLayer categories={["aa"]} tasks={activeAirDefenseTasks} />
       )}
       {portalEl && createPortal(panel, portalEl)}
     </>

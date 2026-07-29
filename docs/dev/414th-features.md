@@ -7064,72 +7064,57 @@ zone release, AI-helo never dropped, JTAC stick), extended
 `tests/missiongenerator/test_ew_deconfliction.py`. Checklist **B30** — needs an
 in-game pass (the AI run-in profile and troops-march-to-CP capture are DCS-only).
 
-## §77 — Graduated escort jamming (the Growler role, for all campaigns)
+## §77 — Escort jamming (Growler / Prowler, for all campaigns)
 
-The "AI can't use it" answer, made vanilla-friendly. The Timberwolf/Matador EW script family
-(the same lineage as the C-130 §2 Mission Systems and upstream's player-only `ewrj` plugin)
-always had AI entry points — upstream just gated the wiring `if not member.is_player`. This
-feature is the missing decision layer, and escort jamming is a **role, not one airframe**: the
-effect scales to how real the jet's EW kit is, so every campaign that fields a jammer-capable
-jet gets escort jamming, not just the ones running the Growler mod. **Escort jammers fly
+The "AI can't use it" answer. The Timberwolf/Matador EW script family (the same lineage as the
+C-130 §2 Mission Systems and upstream's player-only `ewrj` plugin) always had AI entry points —
+upstream just gated the wiring `if not member.is_player`. This feature is the missing decision
+layer. **Escort jamming is flown only by the two dedicated ALQ-99 jammers — the EA-18G Growler
+and the EA-6B Prowler** (a role reversal from the earlier graduated-tier experiment: user call
+— "only Growlers and Prowlers, no Harriers or anything else with a jammer"). No Hornet/Viper/
+Harrier/Tomcat/A-10 stand-ins, no defensive-only tiers, no loose setting. **Escort jammers fly
 escort, not standoff** (the C-130 keeps the standoff racetrack + burn-through physics).
 
-**The tiers (`game/data/escort_jamming.py` `EscortJammerTier`).** Authored per airframe in the
-unit YAML `escort_jammer_tier`, alongside the `Escort Jammer` task priority that makes it
-plannable:
+**The roster is the two dedicated jammers.** `Escort Jammer` is the only task-priority gate:
+just `EA-18G.yaml` (`Escort Jammer: 800`) and `EA_6B.yaml` (`Escort Jammer: 790`) declare it,
+so only they are `capable_of(ESCORT_JAMMER)` and auto-assignable. Both are AI-plannable mods
+(the CJS Super Hornet's Growler, the VSN Prowler); nobody flies one — the "AI can fly a lot
+more than the flyable modules" insight. No campaign authors the task, so escort jamming appears
+only when a wing fields one of these two airframes (enable the mod). Era self-solves via roster:
+a 1968 or WWII-blue campaign fields neither and simply gets no escort jammer.
 
-| Tier | Airframes | Effect |
-|---|---|---|
-| `FULL` | EA-18G Growler, EA-6B Prowler (dedicated ALQ-99, AI-plannable mods) | strong bubble **+** offensive SAM `WEAPON_HOLD` pulses |
-| `ECM` | F/A-18C, F-14 (built-in ECM) | moderate defensive bubble, no suppression |
-| `SELF_PROTECT` | F-16C, F-4E, AV-8B, A-7E (bolt-on ECM pod) | weak defensive bubble |
-| `LOOSE` | any other podded jet (A-10, F-15E, JF-17, M-2000C …) | token bubble; opt-in only |
-
-The `TierEffect` for each is a `defensive_power` scalar (1.0 → 0.6 → 0.35 → 0.18) plus an
-`offensive` flag (only `FULL`). Since the vanilla fighters carry the task, era self-solves via
-roster: a 1968 or WWII-blue campaign fields no jammer jet and simply gets no escort jammer,
-which is accurate — no vanilla EW escort existed then.
-
-**Mod default flipped OFF (revised DM call 2026-07-21).** `ModSettings.fa_18efg` +
-`fa18ef_tanker` are back to **`False`** — forcing the CJS Super Hornet mod on every client was
-the wrong lever. The Growler is the DM's opt-in premium tier; the vanilla tiers give everyone
-else escort jamming. `ModSettings.all_off()` keeps the mods-off guard tests honest; pinned by
-`test_cjs_super_hornet_defaults_off`. The **EA-6B Prowler** was already faction-wired in 9 blue
-factions (`ea6b_prowler` ModSettings, eject in `faction.py`) with a unit yaml — it just gained
-`Escort Jammer: 790` + `escort_jammer_tier: full`, so the AI can now frag Prowlers (nobody
-flies one — the "AI can fly a lot more than the flyable modules" insight).
-
-**The LOOSE gate (`escort_jamming_loose`, Air Doctrine, default OFF).** All four tiers are
-tagged in YAML, so all are `capable_of(ESCORT_JAMMER)`, but `PackageFulfiller.can_plan_escort`
-counts a LOOSE-tier squadron only when the setting is on (`_has_curated_escort_jammer` requires
-a non-LOOSE tier otherwise). Off by default, the auto-plannable roster is exactly the curated
-set, so the retired every-fighter `ewrj` behavior never returns silently; flip it on and any
-podded jet (even an A-10) can stand in as a token jammer.
+**Mod default OFF (revised DM call 2026-07-21).** `ModSettings.fa_18efg` + `fa18ef_tanker` are
+**`False`** — forcing the CJS Super Hornet mod on every client was the wrong lever. The Growler
+is the DM's opt-in premium jammer. `ModSettings.all_off()` keeps the mods-off guard tests
+honest; pinned by `test_cjs_super_hornet_defaults_off`. The **EA-6B Prowler** is faction-wired
+in 9 blue factions (`ea6b_prowler` ModSettings, eject in `faction.py`) with a unit yaml.
 
 **Planner (`FlightType.ESCORT_JAMMER`).** `EscortType.Jammer` is proposed in
 `propose_common_escorts` on the same radar-SAM threat trigger as the SEAD escorts (pruned when
-no capable squadron exists — or, with loose off, no *curated* one). The flight rides the
-package join→split on `EscortFlightPlan`, gets the SEAD-escort engage-radars profile +
-preemptive ECM at JOIN (its SEAD Escort loadout ARMs are package self-defense), and
-deliberately sets **no winchester-RTB** — empty rails stay with the package; the jamming is
-the payload. Task priority orders preference (Growler 800 > Prowler 790 > Hornet 400 > Tomcat
-380 > pods 300/280 > loose 150). Loadout resolves "Retribution Escort Jammer" first, falling
-back to the SEAD Escort fit. Blue-only.
+no jammer-capable squadron exists or the per-side cap is reached — `can_plan_escort` is now just
+`air_wing_can_plan(ESCORT_JAMMER)` + the cap, no tier/loose logic). The flight rides the package
+join→split on `EscortFlightPlan`, gets the SEAD-escort engage-radars profile + preemptive ECM at
+JOIN (its SEAD Escort loadout ARMs are package self-defense), and deliberately sets **no
+winchester-RTB** — empty rails stay with the package; the jamming is the payload. Task priority
+orders preference (Growler 800 > Prowler 790). Loadout resolves "Retribution Escort Jammer"
+first, falling back to the SEAD Escort fit. Blue-only.
 
 **Runtime (`growler` plugin + `growlerluadata.py`).** The emitter lists each ESCORT_JAMMER
-flight, its **tier** + derived `defensivePower`/`offensive`, and the package group names it
-protects (`dcsRetribution.growler`; no jammer → no node → no-op; an untagged stray jammer
-defaults to `SELF_PROTECT`). The plugin drives the scripted effects **ROE only** (emissions are
-NEVER toggled — the C-130 crash lesson; MANTIS alarm/EMCON state untouched): a **defensive
-missile-spoof bubble** (Matador bands 500 m/85% → 7 km/15%, each band's chance multiplied by
-the jammer's `defensivePower`, per-second roll, min-travel guard so a spoof can't kill the
-launcher, friendly missiles never touched, silent `weapon:destroy()`) covering the jammer *and*
-every protected package member; and — **only for the FULL tier** — **offensive WEAPON_HOLD
-pulses** on radar-SAM ("SAM TR") groups by escort geometry, effectiveness **rising as the
-jammer closes** (penetration-escort physics, deliberately the opposite of the C-130's standoff
-burn-through; do not unify them). AI jets jam automatically after a startup grace; a
-player-flown jammer starts OFF and gets an F10 "Growler jamming" ON/OFF/Status menu. Options:
-tick, grace, offensive/defensive power, max range, hold pulse, min travel.
+flight (group name, side, player flag) and the package group names it protects
+(`dcsRetribution.growler`; no jammer → no node → no-op). It is **airframe-agnostic** — an AI
+Growler and an AI Prowler are emitted identically and the plugin drives whatever group it names
+by name + geometry, with no EA-18G-specific code path (the "make it work with AI Prowlers" ask
+was already true once a Prowler is emitted). The plugin drives the scripted effects **ROE only**
+(emissions are NEVER toggled — the C-130 crash lesson; MANTIS alarm/EMCON state untouched): a
+**defensive missile-spoof bubble** (Matador bands 500 m/85% → 7 km/15% × the global
+`defensivePower` option, per-second roll, min-travel guard so a spoof can't kill the launcher,
+friendly missiles never touched, silent `weapon:destroy()`) covering the jammer *and* every
+protected package member; and **offensive WEAPON_HOLD pulses** on radar-SAM ("SAM TR") groups by
+escort geometry, effectiveness **rising as the jammer closes** (penetration-escort physics,
+deliberately the opposite of the C-130's standoff burn-through; do not unify them). AI jammers
+jam automatically after a startup grace; a player-flown jammer starts OFF and gets an F10
+"Growler jamming" ON/OFF/Status menu. Options: tick, grace, offensive/defensive power, max
+range, hold pulse, min travel.
 
 **No phantom anything:** the plugin owns no kills beyond the spoofed weapon; the jammer is a
 real tracked airframe; a dead/landed jammer projects nothing.
@@ -7139,7 +7124,7 @@ strike-heavy turn against a dense IADS can propose one per package, so ~12 jamme
 airborne. Two design choices keep that from flatlining the war:
 
 - **Non-stacking defense.** `spoofTick` finds the **single strongest bubble** covering a missile
-  (highest `band.pk × DEF_POWER × defensivePower` across all eligible jammers) and rolls **once**
+  (highest `band.pk × DEF_POWER` across all eligible jammers) and rolls **once**
   against it — it does *not* roll per jammer and OR the results, which would drive the spoof
   chance toward 100% under overlapping bubbles. More jammers widen *coverage*, never raise one
   missile's odds beyond one good jammer. (Deterministically pinned: adding an identical second
@@ -7163,11 +7148,12 @@ tasks didn't include Escort Jammer, and (b) even if they had, the Prowler out-pr
 at SEAD Escort (585 vs 470), which resolves *before* Escort Jammer in the escort fill. Two data
 changes make the dedicated jammer prefer jamming without touching a single campaign file:
 `SquadronConfig.auto_assignable` now **auto-offers Escort Jammer to every capable squadron** exactly
-like TARPS (the capability filter drops it for non-jammer airframes; the loose-tier + cap gates still
-apply downstream), so §717's SEAD-primary Prowlers gain the role; and the **EA-6B/EA-18G SEAD Escort
-priority drops to 400** (below the strike-fighters' 470/475, above the weak podded SEAD jets), so a
-Hornet/Viper takes SEAD Escort and the freed Prowler/Growler is picked for the Escort Jammer slot
-(790/800) — activating the FULL-tier offensive pulses. A lone dedicated jammer with no strike-fighter
+like TARPS (the capability filter drops it for the non-jammer airframes — which is now everything but
+the Growler and Prowler; the per-side cap still applies downstream), so §717's SEAD-primary Prowlers
+gain the role; and the **EA-6B/EA-18G SEAD Escort priority drops to 400** (below the strike-fighters'
+470/475, above the weak podded SEAD jets), so a Hornet/Viper takes SEAD Escort and the freed
+Prowler/Growler is picked for the Escort Jammer slot (790/800) — putting it on the jamming role. A
+lone dedicated jammer with no strike-fighter
 still flies SEAD Escort (400 > the podded jets), and its SEAD/DEAD *package-lead* priorities (620/730)
 are untouched, so it remains a SEAD shooter — the §717 "iconic Prowler war" intent survives as the
 fallback, not the default. Guards in `test_escort_jammer.py`
@@ -7175,15 +7161,16 @@ fallback, not the default. Guards in `test_escort_jammer.py`
 `test_dedicated_jammers_prefer_jamming_over_sead_escort`); the §717 campaign tests
 (desert_storm/inherent_resolve/tanker_war) still pass.
 
-Tests: `tests/fourteenth/test_escort_jammer.py` (enum/tier roster/effect gradient/loose
-gate/loadout/threat plumbing + the cap), `tests/missiongenerator/test_growlerluadata.py` (emitter
-shape + tier knobs), `tests/lua/test_growler_runtime.py` (hold+restore, non-radar immunity, spoof,
-friendly-fire guard, defensive-only tier never pulses, zero-power never spoofs, **bubbles don't
-stack**, **SAM recovery window**, player-off+menu; the harness gained `Weapon:destroy` + ground
-ROE values), `test_cjs_super_hornet_defaults_off`. Needs an in-game pass (checklist B31): the
-tiered WEAPON_HOLD pulse (FULL only) and the non-stacking scaled spoof bubble against a live SAM
-ring, whether the AI escort geometry holds the jammer close enough to matter, and that a mass of
-jammers leaves the IADS firing in windows rather than dead.
+Tests: `tests/fourteenth/test_escort_jammer.py` (enum wiring / Growler+Prowler-only roster /
+other airframes not capable / SEAD-primary auto-offer / prefer-jammer priority / loadout / threat
+plumbing + the cap), `tests/missiongenerator/test_growlerluadata.py` (emitter shape + AI-Prowler
+parity), `tests/lua/test_growler_runtime.py` (hold+restore, **AI Prowler pulses a SAM**, non-radar
+immunity, spoof, friendly-fire guard, **bubbles don't stack**, **SAM recovery window**,
+player-off+menu; the harness gained `Weapon:destroy` + ground ROE values),
+`test_cjs_super_hornet_defaults_off`. Needs an in-game pass (checklist B31): the WEAPON_HOLD pulse
+and the non-stacking spoof bubble against a live SAM ring (driven by both an AI Growler and an AI
+Prowler), whether the AI escort geometry holds the jammer close enough to matter, and that a mass
+of jammers leaves the IADS firing in windows rather than dead.
 
 ## §78 — Sea-supply convoys + coastal anti-ship engagement
 

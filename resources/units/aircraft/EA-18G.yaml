@@ -36,7 +36,6 @@ utc_kneeboard: true
 #   HelmetMountedDevice: 1
 #   InnerBoard: 0
 #   OuterBoard: 0
-escort_jammer_tier: full
 tasks:
   DEAD: 680
   SEAD: 730

@@ -42,7 +42,6 @@ class PackageFulfiller:
         self.player_missions_asap = settings.auto_ato_player_missions_asap
         self.default_start_type = settings.default_start_type
         self.auto_add_tarps_recon = settings.auto_add_tarps_recon
-        self.escort_jamming_loose = settings.escort_jamming_loose
         self.max_escort_jammers = settings.max_escort_jammers
 
     @property
@@ -280,22 +279,17 @@ class PackageFulfiller:
         elif type == EscortType.Refuel:
             return self.air_wing_can_plan(FlightType.REFUELING)
         elif type == EscortType.Jammer:
+            # Escort jamming is flown only by dedicated jammers (EA-18G Growler /
+            # EA-6B Prowler -- the only airframes that declare the Escort Jammer
+            # task, §77). Plannable if the wing fields one and the per-side cap
+            # isn't already reached.
             if not self.air_wing_can_plan(FlightType.ESCORT_JAMMER):
                 return False
             # Balance: cap how many escort jammers a side fields per turn. Escort
             # jamming is proposed on every radar-SAM-threatened package, so a
-            # strike-heavy turn could otherwise put a dozen in the air. Once the
-            # ATO already holds max_escort_jammers of them, stop adding more.
-            if self._escort_jammer_cap_reached():
-                return False
-            # Graduated escort jamming (§77): the LOOSE "stretch" tier (any podded
-            # jet, even an A-10) is only auto-planned when escort_jamming_loose is
-            # on. Off by default, the curated roster (dedicated jammers + real ECM
-            # + self-protect pods) is the only auto-plannable set, so the retired
-            # "every fighter jams" behaviour never returns silently.
-            if self.escort_jamming_loose:
-                return True
-            return self._has_curated_escort_jammer()
+            # strike-heavy turn could otherwise put many in the air. Once the ATO
+            # already holds max_escort_jammers of them, stop adding more.
+            return not self._escort_jammer_cap_reached()
         return False
 
     def _escort_jammer_cap_reached(self) -> bool:
@@ -309,16 +303,6 @@ class PackageFulfiller:
             if flight.flight_type is FlightType.ESCORT_JAMMER
         )
         return planned >= self.max_escort_jammers
-
-    def _has_curated_escort_jammer(self) -> bool:
-        """True if any auto-assignable ESCORT_JAMMER squadron is a non-LOOSE tier."""
-        for squadron in self.air_wing.auto_assignable_for_task(
-            FlightType.ESCORT_JAMMER
-        ):
-            tier = squadron.aircraft.escort_jammer_tier
-            if tier is not None and not tier.is_loose:
-                return True
-        return False
 
     def plan_mission(
         self,

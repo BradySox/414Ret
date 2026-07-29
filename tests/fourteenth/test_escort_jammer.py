@@ -1,18 +1,11 @@
-"""CI lock on the graduated ESCORT_JAMMER role (§77, 2026-07-21).
+"""CI lock on the ESCORT_JAMMER role (§77).
 
-Escort jamming is a *role*, not one airframe. The effect scales to how real the
-jet's EW kit is (see :mod:`game.data.escort_jamming`):
-
-- FULL -- dedicated ALQ-99 jammers (EA-18G Growler, EA-6B Prowler): bubble +
-  offensive SAM weapons-hold pulses.
-- ECM -- built-in ECM fighters (F/A-18C, F-14): moderate defensive bubble.
-- SELF_PROTECT -- pod fighters (F-16C, F-4E, AV-8B, A-7E): weak defensive bubble.
-- LOOSE -- the opt-in stretch tier: any podded jet, token effect, never
-  auto-planned unless ``escort_jamming_loose`` is on.
-
-These tests pin the enum wiring, the tier roster + effect gradient, the loose
-gate, the loadout fallback, and the escort-threat plumbing so an upstream merge
-can't quietly drop a seam.
+Escort jamming is flown only by dedicated jammers -- the EA-18G Growler and the
+EA-6B Prowler, the only airframes that declare the ``Escort Jammer`` task. No
+graduated tiers, no podded stand-ins: any other jet (Hornet, Viper, Harrier,
+Tomcat, A-10 ...) is not a jammer. These tests pin the roster, the escort
+plumbing, the per-side cap, and the loadout fallback so an upstream merge can't
+quietly widen the net or drop a seam.
 """
 
 from types import SimpleNamespace
@@ -27,7 +20,6 @@ from game.campaignloader.campaignairwingconfig import SquadronConfig
 from game.ato.loadouts import Loadout
 from game.commander.missionproposals import EscortType
 from game.commander.packagefulfiller import PackageFulfiller
-from game.data.escort_jamming import EscortJammerTier, effect_for
 from game.dcs.aircrafttype import AircraftType
 from game.sidc import AirEntity
 
@@ -63,55 +55,33 @@ def test_escort_jammer_uses_the_escort_flight_plan() -> None:
     )
 
 
-def test_effect_gradient_is_strictly_descending() -> None:
-    """Utility falls off: dedicated -> built-in ECM -> pod -> token; only the
-    dedicated FULL tier ever suppresses SAMs."""
-    full = effect_for(EscortJammerTier.FULL)
-    ecm = effect_for(EscortJammerTier.ECM)
-    sp = effect_for(EscortJammerTier.SELF_PROTECT)
-    loose = effect_for(EscortJammerTier.LOOSE)
-    assert (
-        full.defensive_power
-        > ecm.defensive_power
-        > sp.defensive_power
-        > loose.defensive_power
-        > 0
-    )
-    assert full.offensive
-    assert not ecm.offensive
-    assert not sp.offensive
-    assert not loose.offensive
+# The ONLY airframes that fly escort jamming -- the two dedicated ALQ-99 jammers.
+_DEDICATED_JAMMERS = ("EA-18G Growler", "EA-6B Prowler")
+
+# Everything with a jammer/ECM pod that USED to be a graduated-tier jammer, plus a
+# plain fighter. None of them may fly escort jamming any more.
+_NOT_JAMMERS = (
+    "F/A-18C Hornet (Lot 20)",
+    "F-14B Tomcat",
+    "F-16CM Fighting Falcon (Block 50)",
+    "F-4E-45MC Phantom II",
+    "AV-8B Harrier II Night Attack",
+    "A-7E Corsair II",
+    "A-10C Thunderbolt II (Suite 3)",
+    "F-15C Eagle",
+)
 
 
-# (variant display name -> expected tier). The dedicated jammers are AI-only mods
-# (Growler + Prowler); the rest are curated EW-capable fighters.
-_TIER_ROSTER = {
-    "EA-18G Growler": EscortJammerTier.FULL,
-    "EA-6B Prowler": EscortJammerTier.FULL,
-    "F/A-18C Hornet (Lot 20)": EscortJammerTier.ECM,
-    "F-14B Tomcat": EscortJammerTier.ECM,
-    "F-16CM Fighting Falcon (Block 50)": EscortJammerTier.SELF_PROTECT,
-    "F-4E-45MC Phantom II": EscortJammerTier.SELF_PROTECT,
-    "AV-8B Harrier II Night Attack": EscortJammerTier.SELF_PROTECT,
-    "A-7E Corsair II": EscortJammerTier.SELF_PROTECT,
-    "A-10C Thunderbolt II (Suite 3)": EscortJammerTier.LOOSE,
-}
-
-
-@pytest.mark.parametrize("variant,tier", _TIER_ROSTER.items())
-def test_tier_roster(variant: str, tier: EscortJammerTier) -> None:
+@pytest.mark.parametrize("variant", _DEDICATED_JAMMERS)
+def test_dedicated_jammers_are_the_only_capable_airframes(variant: str) -> None:
     ac = AircraftType.named(variant)
-    assert ac.escort_jammer_tier is tier
-    # Every tagged airframe is plannable as an escort jammer (the loose ones are
-    # gated at plan time, not at the capability level).
     assert ac.capable_of(FlightType.ESCORT_JAMMER)
 
 
-def test_dedicated_jammers_do_offensive_suppression() -> None:
-    for variant in ("EA-18G Growler", "EA-6B Prowler"):
-        ac = AircraftType.named(variant)
-        assert ac.escort_jammer_tier is not None
-        assert effect_for(ac.escort_jammer_tier).offensive
+@pytest.mark.parametrize("variant", _NOT_JAMMERS)
+def test_other_airframes_cannot_escort_jam(variant: str) -> None:
+    ac = AircraftType.named(variant)
+    assert not ac.capable_of(FlightType.ESCORT_JAMMER)
 
 
 def test_sead_primary_squadron_auto_offers_escort_jammer() -> None:
@@ -142,7 +112,7 @@ def test_dedicated_jammers_prefer_jamming_over_sead_escort() -> None:
     hornet_se = AircraftType.named("F/A-18C Hornet (Lot 20)").task_priority(
         FlightType.SEAD_ESCORT
     )
-    for variant in ("EA-18G Growler", "EA-6B Prowler"):
+    for variant in _DEDICATED_JAMMERS:
         ac = AircraftType.named(variant)
         assert ac.task_priority(FlightType.ESCORT_JAMMER) > ac.task_priority(
             FlightType.SEAD_ESCORT
@@ -150,50 +120,6 @@ def test_dedicated_jammers_prefer_jamming_over_sead_escort() -> None:
         assert ac.task_priority(FlightType.SEAD_ESCORT) < hornet_se
         # SEAD as a package lead is untouched -- they're still SEAD shooters.
         assert ac.task_priority(FlightType.SEAD) > hornet_se
-
-
-def test_non_ew_fighter_is_not_a_jammer() -> None:
-    f15c = AircraftType.named("F-15C Eagle")
-    assert f15c.escort_jammer_tier is None
-    assert not f15c.capable_of(FlightType.ESCORT_JAMMER)
-
-
-def _jammer_squadron_stub(
-    tier: EscortJammerTier, *, loose_setting: bool
-) -> SimpleNamespace:
-    return SimpleNamespace(
-        auto_assignable_mission_types={FlightType.ESCORT_JAMMER, FlightType.SEAD},
-        aircraft=SimpleNamespace(escort_jammer_tier=tier),
-        settings=SimpleNamespace(escort_jamming_loose=loose_setting),
-    )
-
-
-def test_loose_squadron_refuses_escort_jammer_when_setting_off() -> None:
-    """The 'A-10/F-15E flying jammer' bug: Escort Jammer is auto-offered to every
-    capable squadron, so a LOOSE-tier jet (A-10, F-15E) must be excluded from
-    auto-assignment at the squadron level when escort_jamming_loose is off --
-    otherwise it fills the jammer slot whenever the curated jammers are busy."""
-    from game.squadrons.squadron import Squadron
-
-    off = _jammer_squadron_stub(EscortJammerTier.LOOSE, loose_setting=False)
-    assert not Squadron.can_auto_assign(off, FlightType.ESCORT_JAMMER)  # type: ignore[arg-type]
-    # SEAD (a normal enabled task) is unaffected by the loose gate.
-    assert Squadron.can_auto_assign(off, FlightType.SEAD)  # type: ignore[arg-type]
-
-    on = _jammer_squadron_stub(EscortJammerTier.LOOSE, loose_setting=True)
-    assert Squadron.can_auto_assign(on, FlightType.ESCORT_JAMMER)  # type: ignore[arg-type]
-
-
-def test_curated_squadrons_always_auto_assign_escort_jammer() -> None:
-    from game.squadrons.squadron import Squadron
-
-    for tier in (
-        EscortJammerTier.FULL,
-        EscortJammerTier.ECM,
-        EscortJammerTier.SELF_PROTECT,
-    ):
-        stub = _jammer_squadron_stub(tier, loose_setting=False)
-        assert Squadron.can_auto_assign(stub, FlightType.ESCORT_JAMMER)  # type: ignore[arg-type]
 
 
 def test_escort_jammer_loadout_falls_back_to_sead_escort() -> None:
@@ -208,18 +134,9 @@ def test_escort_jammer_loadout_falls_back_to_sead_escort() -> None:
 def _fulfiller_stub(
     *,
     can_plan: bool,
-    loose: bool,
-    squadron_tiers: list[EscortJammerTier | None],
     planned_jammers: int = 0,
     max_jammers: int = 4,
 ) -> SimpleNamespace:
-    squadrons = [
-        SimpleNamespace(aircraft=SimpleNamespace(escort_jammer_tier=t))
-        for t in squadron_tiers
-    ]
-    air_wing = SimpleNamespace(
-        auto_assignable_for_task=lambda task: iter(squadrons),
-    )
     # A stub ATO already holding `planned_jammers` ESCORT_JAMMER flights.
     jammer_flights = [
         SimpleNamespace(flight_type=FlightType.ESCORT_JAMMER)
@@ -228,76 +145,36 @@ def _fulfiller_stub(
     ato = SimpleNamespace(packages=[SimpleNamespace(flights=jammer_flights)])
     stub = SimpleNamespace(
         air_wing_can_plan=lambda task: can_plan,
-        escort_jamming_loose=loose,
         max_escort_jammers=max_jammers,
-        air_wing=air_wing,
         ato=ato,
     )
-    # Bind the real self-call helpers so can_plan_escort resolves them on the stub.
-    stub._has_curated_escort_jammer = lambda: PackageFulfiller._has_curated_escort_jammer(
-        stub  # type: ignore[arg-type]
-    )
+    # Bind the real cap helper so can_plan_escort resolves it on the stub.
     stub._escort_jammer_cap_reached = lambda: PackageFulfiller._escort_jammer_cap_reached(
         stub  # type: ignore[arg-type]
     )
     return stub
 
 
-def test_curated_jammer_is_planned_with_loose_off() -> None:
-    stub = _fulfiller_stub(
-        can_plan=True, loose=False, squadron_tiers=[EscortJammerTier.SELF_PROTECT]
-    )
+def test_jammer_is_planned_when_the_wing_fields_one() -> None:
+    stub = _fulfiller_stub(can_plan=True)
     assert PackageFulfiller.can_plan_escort(stub, EscortType.Jammer)  # type: ignore[arg-type]
 
 
-def test_loose_only_wing_is_gated_off_by_default() -> None:
-    # Only a LOOSE-tier squadron in the wing, setting off -> no jammer planned.
-    stub = _fulfiller_stub(
-        can_plan=True, loose=False, squadron_tiers=[EscortJammerTier.LOOSE]
-    )
+def test_no_jammer_capable_squadron_cannot_plan() -> None:
+    stub = _fulfiller_stub(can_plan=False)
     assert not PackageFulfiller.can_plan_escort(stub, EscortType.Jammer)  # type: ignore[arg-type]
 
 
 def test_escort_jammer_cap_stops_planning_when_reached() -> None:
     # Balance: once the ATO already holds max_escort_jammers, no more are planned.
-    at_cap = _fulfiller_stub(
-        can_plan=True,
-        loose=True,
-        squadron_tiers=[EscortJammerTier.FULL],
-        planned_jammers=4,
-        max_jammers=4,
-    )
+    at_cap = _fulfiller_stub(can_plan=True, planned_jammers=4, max_jammers=4)
     assert not PackageFulfiller.can_plan_escort(at_cap, EscortType.Jammer)  # type: ignore[arg-type]
-    below_cap = _fulfiller_stub(
-        can_plan=True,
-        loose=True,
-        squadron_tiers=[EscortJammerTier.FULL],
-        planned_jammers=3,
-        max_jammers=4,
-    )
+    below_cap = _fulfiller_stub(can_plan=True, planned_jammers=3, max_jammers=4)
     assert PackageFulfiller.can_plan_escort(below_cap, EscortType.Jammer)  # type: ignore[arg-type]
 
 
 def test_escort_jammer_cap_zero_disables_auto_planning() -> None:
-    stub = _fulfiller_stub(
-        can_plan=True,
-        loose=True,
-        squadron_tiers=[EscortJammerTier.FULL],
-        planned_jammers=0,
-        max_jammers=0,
-    )
-    assert not PackageFulfiller.can_plan_escort(stub, EscortType.Jammer)  # type: ignore[arg-type]
-
-
-def test_loose_setting_opens_the_stretch_tier() -> None:
-    stub = _fulfiller_stub(
-        can_plan=True, loose=True, squadron_tiers=[EscortJammerTier.LOOSE]
-    )
-    assert PackageFulfiller.can_plan_escort(stub, EscortType.Jammer)  # type: ignore[arg-type]
-
-
-def test_no_jammer_capable_squadron_cannot_plan() -> None:
-    stub = _fulfiller_stub(can_plan=False, loose=True, squadron_tiers=[])
+    stub = _fulfiller_stub(can_plan=True, planned_jammers=0, max_jammers=0)
     assert not PackageFulfiller.can_plan_escort(stub, EscortType.Jammer)  # type: ignore[arg-type]
 
 

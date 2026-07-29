@@ -126,6 +126,22 @@
   color: #aab5c3;
 }
 
+/* A filter row whose master layer is off: greyed and unclickable, so it reads as
+   "turn the master on first" instead of as a dead checkbox. Mirrors the §28
+   settings-dialog `enabled_when` greying. */
+.ml-row-disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.ml-row-disabled:hover {
+  background: none;
+}
+
+.ml-row-disabled input {
+  cursor: default;
+}
+
 .ml-row-accent {
   background: #241a0f;
   border-left: 2px solid #d98a2b;

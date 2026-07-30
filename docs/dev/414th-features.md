@@ -5344,6 +5344,12 @@ should now also confirm the garage lands on its authored marker.
 
 ## §57 — Air-droppable minefields (convoy interdiction)
 
+**⛔ SHELVED 2026-07-30** — dropped from active use by user call, not deleted. Every gate
+(`air_droppable_minefields`, `auto_plan_minefields`, the `minefields` plugin) defaults OFF and
+Red Tide's preseed was removed, so the feature is inert everywhere. All code/tests/Lua/client
+below remain in the tree unchanged; to resume, re-preseed a campaign (see CLAUDE.md §57) or flip
+the settings by hand. The rest of this section still describes the live implementation as-is.
+
 DCS has no mine object, so the 414th **fakes** area mining. A blue jet air-drops a **CBU-99**
 cluster dispenser (carried only by the **"Aerial Minefield"** loadout) and the impact area
 becomes a **scripted proximity minefield** that detonates on any enemy (RED) ground unit — a

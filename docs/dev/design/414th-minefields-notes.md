@@ -1,5 +1,11 @@
 # 414th — Air-droppable minefields (convoy interdiction) · §57
 
+**⛔ SHELVED 2026-07-30** — dropped from active use by user call, not deleted. Every gate
+(`air_droppable_minefields`, `auto_plan_minefields`, the `minefields` plugin) defaults OFF, and
+Red Tide's preseed was removed, so the feature is inert in every campaign. Code, tests, the Lua
+plugin, and the client overlay are all still in the tree. To resume: re-preseed a campaign (see
+CLAUDE.md §57) or flip the settings by hand. The rest of this note is left as-is for reference.
+
 **Status:** DESIGN — spec of record, no code yet (authored 2026-07-11).
 **Feature §57.** Blue-only v1. Delivered in three cohesive, individually-flyable PRs
 (Phase 1 same-turn → Phase 2 persistence → Phase 3 auto-plannable toggle).

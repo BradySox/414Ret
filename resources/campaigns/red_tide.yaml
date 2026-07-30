@@ -316,12 +316,8 @@ settings:
   # captured aircrew (lose the Combat SAR race / hold a POW), so SAR keeps the net
   # clean and a loss teaches the squadron to rotate compromised channels.
   enemy_comms_jamming: true
-  # §57 air-droppable minefields -- the 414th Hornets carry the CBU-99 "Aerial Minefield"
-  # loadout, so blue can mine the Soviet supply roads behind the Fulda front (a field left
-  # undisturbed persists to next turn). auto_plan frags one mining sortie a turn at a red
-  # convoy; fly it or let the AI take it. Needs the 'Air-droppable minefields' LUA plugin.
-  air_droppable_minefields: true
-  auto_plan_minefields: true
+  # §57 air-droppable minefields -- SHELVED 2026-07-30 (not preseeded; default OFF applies).
+  # See CLAUDE.md §57 for how to resume.
   # §52 command-center decapitation -- red's advanced-IADS command network (the 9 co-located
   # Command Center cells wired here by advanced_iads range mode) now feeds red's *planning*,
   # not just its SAM autonomy: as the player bombs those HQs, red's offensive target selection
@@ -357,7 +353,6 @@ settings:
     convoyambush: true
     commsjam: true
     mobilemissiles: true
-    minefields: true
     # §51's intel gate (comms_jam_requires_capture, default ON) arms only off a captured
     # aircrew, and combat_sar_captures has exactly ONE writer in the tree: the combatsar
     # plugin. Disabled, it injects nothing, the global stays {} , the jam loop's type check

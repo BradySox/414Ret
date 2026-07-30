@@ -1,4 +1,5 @@
-"""Save-load compat for the 2026-07-21 ROE / §40 / §55 and will / war-economy removals.
+"""Save-load compat for the 2026-07-21 ROE / §40 / §55 and will / war-economy removals,
+plus the 2026-07-29 §77 escort-jamming tier removal.
 
 The modules ``game.fourteenth.{phases, red_intent, zone_drawings}`` were deleted in the ROE
 drop, and ``game.fourteenth.{political_will, commitment_ceiling, static_front, war_economy}``
@@ -6,11 +7,19 @@ in the will / §53 / §54 economy drop. A pre-removal save pickled ``game.phase_
 (``campaign_phases`` was default ON, so nearly every in-progress save carries a
 ``PhaseBaseline``), ``red_intent_*`` state (``RedIntentBaseline`` / ``RedIntentSample`` /
 the ``RedPosture`` / ``FrontPosture`` enums), ``theater.zone_drawings`` (``DrawnZone``), and
-``game.will_ledger`` (a list of ``WillLedgerEntry``) when those were enabled. Unpickling
-those instances would raise ``ModuleNotFoundError``. The ``MigrationUnpickler`` degrades
-them to an inert ``DummyObject`` placeholder so the save still loads; the game/theater
-``__setstate__`` no longer restores those attributes (will_ledger is popped), so the
-placeholders are never read.
+``game.will_ledger`` (a list of ``WillLedgerEntry``) when those were enabled.
+
+``game.data.escort_jamming`` (``EscortJammerTier`` / ``TierEffect``) was deleted by #734
+when §77 escort jamming was restricted to dedicated jammers: the graduated-tier system,
+and the ``escort_jammer_tier`` field it set on **every** ``AircraftType``, were removed.
+A save written while §77 shipped tiers (#714 .. #734) therefore pickled an
+``EscortJammerTier`` onto its aircraft (the flown ``Red Tide 7-27 M1`` save was one), and
+its unpickle now hits this deleted module.
+
+Unpickling any of these instances would raise ``ModuleNotFoundError``. The
+``MigrationUnpickler`` degrades them to an inert ``DummyObject`` placeholder so the save
+still loads; the game/theater/AircraftType ``__setstate__`` (or the simple fact that no
+live code reads ``escort_jammer_tier`` anymore) means the placeholders are never read.
 """
 
 from __future__ import annotations
@@ -29,6 +38,7 @@ _REMOVED_MODULES = (
     "game.fourteenth.commitment_ceiling",
     "game.fourteenth.static_front",
     "game.fourteenth.war_economy",
+    "game.data.escort_jamming",
 )
 
 
@@ -46,6 +56,18 @@ def test_find_class_degrades_removed_modules_to_placeholder() -> None:
         # instead of raising ModuleNotFoundError from super().find_class.
         assert unpickler.find_class(module, "PhaseBaseline") is DummyObject
         assert unpickler.find_class(module, "AnythingAtAll") is DummyObject
+
+
+def test_escort_jammer_tier_enum_degrades() -> None:
+    # The concrete §77 (#734) case: an AircraftType pickled an
+    # ``EscortJammerTier`` enum member, whose reconstruction is
+    # ``game.data.escort_jamming.EscortJammerTier("full")``. The class must
+    # resolve to the inert placeholder, and calling it with the pickled value
+    # (the enum-reconstruction path) must not raise.
+    unpickler = MigrationUnpickler(io.BytesIO(b""))
+    tier = unpickler.find_class("game.data.escort_jamming", "EscortJammerTier")
+    assert tier is DummyObject
+    assert isinstance(tier("full"), DummyObject)
 
 
 def test_find_class_leaves_live_modules_alone() -> None:

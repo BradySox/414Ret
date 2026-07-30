@@ -133,9 +133,41 @@ rescue to go get the downed pilot.
   fields the essential rescuer only.
 - **Multi-survivor chaining** ("grab the other guy on the way") — OPSTRANSPORT multi-cargo, once
   the core is flown.
-- **Packaged-AI-helo auto-pickup** (scenario A's AI helo auto-flying the rescue) — that is the
-  commandeer-an-airborne-helo problem; for now a player package coordinates the pickup
-  (LARS/F10/voice), which scenario B does anyway.
+
+## Packaged AI-helo auto-pickup + weapons-free Sandy (2026-07-30 flown fix)
+
+Previously deferred, now **implemented** off a flown finding. The player fragged a full recovery
+package — a CH-47D rescue helo + an AH-1W Sandy + a C-130 King — and flew the King himself,
+leaving the CH-47 and the Sandy AI-crewed. Both misbehaved (Tacview + the emitted config +
+the ledger log `1 King, 1 Sandy, capture on, AI-rescue off`):
+
+- **The CH-47 flew its planned CSAR orbit and never approached the pilot** (never closer than
+  23 km). With `autoSpawn` **off** (a rescue-capable helo *was* fragged), the only rescue path
+  was the geometry pickup (`findBoardingHelo`) — which merely *detects* a helo a human has already
+  flown low+slow onto the survivor. Nothing ever **routed** the AI CH-47.
+- **The AH-1W Sandy "flew straight and level without fighting back."** `configure_scar` generates
+  the Sandy with ROE **Open Fire** (engage *designated* targets only), so it would not return fire
+  at an attacker that wasn't its designated target.
+
+The fix (in `combatsar-config.lua`, no Python/emit change):
+
+1. **`commandeerRescueHelo(cfg, coord)`** — finds the nearest alive, **AI-crewed** (not
+   player-flown, `groupHasPlayer`) rescue helo in `cfg.rescueHelos`. `dispatchAIRescue` now tries
+   it FIRST (source order: package rescue helo → parked ramp helo → clone template), and the tick
+   dispatch gate fires when `autoSpawn` is on **or** an AI-crewed rescue helo is commandeerable —
+   so a player package with an AI helo gets an active OPSTRANSPORT pickup, exactly like the
+   on-demand path. An **airborne** package helo is commandeered without `StartUncontrolled` (only
+   the cold parked helo needs the start). A **player-crewed** rescue helo is left alone — the human
+   flies it and the geometry path credits it. The delivery-field resolution no longer requires
+   `cfg.farp` (absent for a player package): it falls back to the nearest resolvable friendly field.
+2. **`setAirWeaponsFree(groupName)`** — a diverted Sandy is set **WEAPON_FREE** (Air ROE) so it
+   actually prosecutes the snatch party / nearby threats instead of ignoring them.
+
+This is still the commandeer-an-airborne-helo path the earlier note flagged as risky (G21) — but
+via `FLIGHTGROUP:AddOpsTransport` (the proven AICSAR routing), **not** the retired `SetTask`
+commandeer that RTB'd. Harness-locked in `tests/lua/test_combatsar_ai_rescue_dispatch.py` (the
+AI-crewed helo IS commandeered, a player-crewed one is NOT). **The actual OPSTRANSPORT flying +
+delivery still ride an in-game re-fly** (checklist G9/G23).
 
 **The fly-critical unknown:** the parked-helo *start-in-place* path (`GROUP:StartUncontrolled()` +
 `FLIGHTGROUP:AddOpsTransport`) is a runtime path I can't verify headlessly — likely fine, but

@@ -385,6 +385,23 @@ if dcsRetribution and dcsRetribution.CombatSAR then
         end)
     end
 
+    -- Put a diverted Sandy on weapons-free so it actually prosecutes the snatch party
+    -- and any threat near the survivor. Flown-test 2026-07-30: the AH-1W Sandy "flew
+    -- straight and level without fighting back" -- SCAR generates with ROE Open Fire
+    -- (engage DESIGNATED only), so it would not return fire at an attacker that wasn't
+    -- its designated target. On the rescue we want it shooting: WEAPON_FREE engages
+    -- everything it detects. Air option (the Sandy is an aircraft), pcall-guarded so a
+    -- missing symbol can never abort the divert.
+    local function setAirWeaponsFree(groupName)
+        pcall(function()
+            local g = Group.getByName(groupName)
+            if not (g and g:isExist()) then return end
+            local con = g:getController()
+            if not con then return end
+            con:setOption(AI.Option.Air.id.ROE, AI.Option.Air.val.ROE.WEAPON_FREE)
+        end)
+    end
+
     -- Spawn a downed-pilot group cloned from the coalition's late-activation template.
     local function spawnSurvivorGroup(cfg, coord, label)
         spawnIndex = spawnIndex + 1
@@ -567,6 +584,46 @@ if dcsRetribution and dcsRetribution.CombatSAR then
         return best, bestName
     end
 
+    -- Find the nearest alive, AI-crewed rescue helo the PLAYER fragged into their
+    -- own recovery package (cfg.rescueHelos). Flown-test 2026-07-30: a player fragged
+    -- a full package (CH-47 rescue helo + AH-1W Sandy + C-130 King) and flew the King
+    -- himself, leaving the CH-47 AI-crewed -- but with autoSpawn off the only rescue
+    -- path was the GEOMETRY pickup (findBoardingHelo), which merely DETECTS a helo a
+    -- human has already flown low+slow onto the survivor; nothing ever ROUTED the AI
+    -- CH-47 to the pilot, so it flew its planned CSAR orbit (Tacview: never closer than
+    -- 23 km). This commandeers such an AI-crewed package helo and flies the same proven
+    -- OPSTRANSPORT pickup the on-demand path uses. A PLAYER-crewed rescue helo is left
+    -- alone (groupHasPlayer) -- the human flies that one and the geometry path credits
+    -- it. Airborne + already-routed, so it is commandeered via FLIGHTGROUP+OPSTRANSPORT
+    -- (not the retired airborne SetTask commandeer that RTB'd, G21).
+    local function commandeerRescueHelo(cfg, survivorCoord)
+        local best, bestName, bestD = nil, nil, nil
+        for _, name in ipairs(cfg.rescueHelos or {}) do
+            if not busyHelos[name] then
+                local g = GROUP:FindByName(name)
+                if g and g:IsAlive() and not groupHasPlayer(g) then
+                    local u = g:GetUnit(1)
+                    local c = u and u:IsAlive() and u:GetCoordinate()
+                    if c and survivorCoord then
+                        local d = c:Get2DDistance(survivorCoord)
+                        if not bestD or d < bestD then best, bestName, bestD = g, name, d end
+                    end
+                end
+            end
+        end
+        return best, bestName
+    end
+
+    -- True if the coalition has an AI-crewed rescue helo we could actively route to a
+    -- survivor RIGHT NOW (drives the tick's dispatch gate even when autoSpawn is off --
+    -- a player package with an AI helo still gets an active rescue). A player-crewed
+    -- helo returns false, so it never triggers the auto-dispatch and stays on the
+    -- geometry pickup path the human flies.
+    local function hasCommandeerableRescueHelo(cfg, survivorCoord)
+        local helo = commandeerRescueHelo(cfg, survivorCoord)
+        return helo ~= nil
+    end
+
     -- AI auto-rescue: send a helo to board the LEDGER's survivor as cargo (MOOSE OPSTRANSPORT, the
     -- proven AICSAR routing) and deliver it to the FARP, crediting the real unit on unload. PREFER a
     -- real PARKED ramp helo (tracked -- started in place, so its loss is recorded); only clone a
@@ -575,9 +632,12 @@ if dcsRetribution and dcsRetribution.CombatSAR then
     local function dispatchAIRescue(entry)
         local ok, err = pcall(function()
             local cfg = entry.cfg
-            if not cfg.farp then return end
             if not (entry.group and entry.group:IsAlive()) then return end
-            local farp = AIRBASE:FindByName(cfg.farp)
+            -- Delivery field: prefer the configured FARP (autoSpawn path emits cfg.farp),
+            -- else the nearest resolvable friendly field to the survivor. A player-package
+            -- rescue helo (autoSpawn off) carries no cfg.farp, so the fallback is what makes
+            -- the commandeered-package-helo path have somewhere to deliver.
+            local farp = cfg.farp and AIRBASE:FindByName(cfg.farp)
             if not farp then
                 -- cfg.farp is the CP display name; a generated FARP's DCS object is named
                 -- "<CP> FARP 0", so this misses for a FARP-based King. Deliver to the
@@ -592,17 +652,30 @@ if dcsRetribution and dcsRetribution.CombatSAR then
             local pickupzone = ZONE_GROUP:New(entry.groupName, entry.group, 300)
             local opstransport = OPSTRANSPORT:New(entry.group, pickupzone, farp:GetZone())
 
-            local helo, heloName = commandeerParkedHelo(cfg, entry.group:GetCoordinate())
+            -- Source order: (1) an AI-crewed rescue helo the player fragged into their own
+            -- package -- airborne, so NO StartUncontrolled; (2) a real parked ramp helo
+            -- (autoSpawn) -- cold, so start it in place; (3) a cold clone template. The
+            -- package helo is preferred because it is the asset the player intended to do
+            -- the rescue (they just left it AI-crewed).
+            local helo, heloName = commandeerRescueHelo(cfg, entry.group:GetCoordinate())
+            local fromParked = false
+            if not helo then
+                helo, heloName = commandeerParkedHelo(cfg, entry.group:GetCoordinate())
+                fromParked = helo ~= nil
+            end
             local fg
             local commandeered = false
             if helo then
                 fg = FLIGHTGROUP:New(helo)
-                -- The parked ramp helo sits cold + uncontrolled; start it so it launches
-                -- into the transport (a *parked* start, not the retired airborne re-task).
-                -- pcall so a missing MOOSE method never aborts the dispatch -- OPSGROUP also
-                -- starts an uncontrolled group when it runs the transport, so this is belt +
-                -- suspenders.
-                pcall(function() helo:StartUncontrolled() end)
+                -- A PARKED ramp helo sits cold + uncontrolled; start it so it launches into
+                -- the transport (a *parked* start, not the retired airborne re-task). An
+                -- already-airborne PACKAGE helo needs no start -- OPSTRANSPORT takes over its
+                -- tasking. pcall so a missing MOOSE method never aborts the dispatch -- OPSGROUP
+                -- also starts an uncontrolled group when it runs the transport, so for the
+                -- parked case this is belt + suspenders.
+                if fromParked then
+                    pcall(function() helo:StartUncontrolled() end)
+                end
                 -- NB: mark busy only on the success path below, so a mid-dispatch error
                 -- never strands a commandeered helo as permanently busy (it stays available
                 -- for the retry).
@@ -638,9 +711,12 @@ if dcsRetribution and dcsRetribution.CombatSAR then
                 end
                 if commandeered and heloName then busyHelos[heloName] = nil end
             end
-            if commandeered then
+            if commandeered and fromParked then
                 msgToCoalition(entry.side,
                     "RESCUE: a rescue helo is launching from the ramp for the downed pilot.")
+            elseif commandeered then
+                msgToCoalition(entry.side,
+                    "RESCUE: a rescue helo is inbound to pick up the downed pilot.")
             else
                 msgToCoalition(entry.side, "RESCUE: an AI rescue helo has launched for the downed pilot.")
             end
@@ -921,6 +997,9 @@ if dcsRetribution and dcsRetribution.CombatSAR then
             env.warning("combatsar: Sandy dispatch error (continuing): " .. tostring(err))
             return
         end
+        -- Weapons-free while it works the rescue, so it engages the snatch party / nearby
+        -- threats instead of flying past them (the flown "straight and level, no fight").
+        setAirWeaponsFree(sandyName)
         busySandy[sandyName] = entry.id
         entry.sandyName = sandyName
         msgToCoalition(entry.side, "SANDY " .. sandyName
@@ -1005,10 +1084,18 @@ if dcsRetribution and dcsRetribution.CombatSAR then
                         end
                     end
                     -- AI auto-rescue after a short grace (lets a player or the orbiting alert
-                    -- react). Retry a FAILED dispatch (a MOOSE template error, etc.) a few times
+                    -- react). Fires when autoSpawn is on (on-demand clone/parked) OR the player
+                    -- fragged an AI-crewed rescue helo into their own package (autoSpawn off) --
+                    -- either way an AI helo is actively ROUTED to the survivor (2026-07-30 flown
+                    -- fix). Retry a FAILED dispatch (a MOOSE template error, etc.) a few times
                     -- with backoff rather than abandoning the survivor on the first error --
                     -- `e.dispatched` is only latched once the dispatch actually succeeds.
-                    if e.state == "down" and e.cfg.autoSpawn and not e.dispatched
+                    local pcForDispatch = e.group and e.group:GetUnit(1)
+                    local pcCoord = pcForDispatch and pcForDispatch:IsAlive()
+                        and pcForDispatch:GetCoordinate()
+                    if e.state == "down" and not e.dispatched
+                        and (e.cfg.autoSpawn
+                            or (pcCoord and hasCommandeerableRescueHelo(e.cfg, pcCoord)))
                         and (timer.getTime() - e.t0) >= AI_DISPATCH_DELAY
                         and (not e.nextDispatchAt or timer.getTime() >= e.nextDispatchAt) then
                         if dispatchAIRescue(e) then

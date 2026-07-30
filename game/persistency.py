@@ -382,6 +382,13 @@ class MigrationUnpickler(pickle.Unpickler):
         # classes would raise ModuleNotFoundError here. The game/coalition
         # __setstate__ no longer restores those attributes, so the placeholders
         # are never read.
+        # §77 graduated escort jamming (#734, 2026-07-29): the tier system was
+        # removed -- game.data.escort_jamming (EscortJammerTier/TierEffect) deleted,
+        # and the escort_jammer_tier field dropped from AircraftType. A save written
+        # while §77 shipped tiers (#714 .. #734) pickled an EscortJammerTier onto
+        # every aircraft, so its unpickle now raises ModuleNotFoundError. Degrade the
+        # enum to the inert placeholder -- nothing reads escort_jammer_tier anymore,
+        # so the orphaned attribute is never touched.
         if module in (
             "game.fourteenth.phases",
             "game.fourteenth.red_intent",
@@ -390,6 +397,7 @@ class MigrationUnpickler(pickle.Unpickler):
             "game.fourteenth.commitment_ceiling",
             "game.fourteenth.static_front",
             "game.fourteenth.war_economy",
+            "game.data.escort_jamming",
         ):
             return DummyObject
 

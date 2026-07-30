@@ -2007,7 +2007,16 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     + `tests/fourteenth/test_red_tide_motorpool.py`; features doc §56, checklist B8 — needs an in-game
     pass (Red Tide, a couple of turns in for red to stock reserve; also confirm the garage lands on
     its authored marker).
-57. **Air-droppable minefields (convoy interdiction)** — DCS has no mine object, so the 414th
+57. **Air-droppable minefields (convoy interdiction)** — **⛔ SHELVED 2026-07-30** (user call —
+    dropping the mechanic from active use, keeping it available to resume later rather than
+    deleting it outright). Not preseeded anywhere (Red Tide's preseed was removed); every gate
+    (`air_droppable_minefields`, `auto_plan_minefields`, the `minefields` plugin) defaults OFF, so
+    the feature is fully inert in every campaign. Code, tests, Lua plugin, and client overlay are
+    **all still in the tree** — nothing below was deleted. **To resume:** re-add
+    `air_droppable_minefields: true` / `auto_plan_minefields: true` / `plugins: {minefields: true}`
+    to a campaign yaml (Red Tide's old block, restorable from git history) or flip the setting by
+    hand; the write-up below is otherwise unchanged and still describes the live implementation.
+    DCS has no mine object, so the 414th
     **fakes** area mining: a blue jet air-drops a **CBU-99** cluster dispenser (the **"Aerial
     Minefield"** loadout on the A-7E / F/A-18C / AV-8B — every dispenser pylon verified pydcs-legal;
     CBU-99 was freed from the A-7E CAS loadout so it is the *exclusive* dispenser) and the impact
@@ -2031,8 +2040,8 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     survivors as `dcsRetribution.minefields` so the plugin re-arms them next mission, exactly where
     they were. Same-turn mining works with just the plugin enabled; the setting adds the persistence.
     The Lua harness gained a `WeaponFake` + `fire_shot` (the snake-and-nape SHOT path had none).
-    **Auto-plan** (`auto_plan_minefields`, default **OFF**, preseeded ON in Red Tide, which fields
-    the Hornet): `game/fourteenth/convoy_mining.py` `plan_convoy_mining` (hooked in `plan_missions`
+    **Auto-plan** (`auto_plan_minefields`, default **OFF**, no longer preseeded anywhere — see the
+    shelved banner above): `game/fourteenth/convoy_mining.py` `plan_convoy_mining` (hooked in `plan_missions`
     before the commander) frags one BAI sortie a turn **at an enemy convoy**, flown by a blue
     A-7E/Hornet/Harrier with the `"Aerial Minefield"` dispenser loadout **forced by name** onto the
     flight's members — the AI (or player) drops the CBU-99 and the plugin lays the field on the
@@ -2046,7 +2055,7 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     `game/fourteenth/convoy_mining.py`, `game/missiongenerator/minefieldluadata.py`,
     `game/missiongenerator/luagenerator.py`, `game/debriefing.py`, `game/coalition.py`,
     `game/sim/missionresultsprocessor.py`, `game/game.py`, `game/settings/settings.py`; features doc
-    §57, checklist B9 — needs an in-game pass.)
+    §57, checklist B9 — SHELVED, no in-game pass owed while inactive.)
 58. **Mission-start briefing popup** — the on-screen greeting the professional DCS campaigns show
     when you slot in, brought to the dynamic campaign. When a pilot enters an aircraft, a short card
     appears for ~12 s: **campaign name · Mission N · date · mission time**, then that pilot's own

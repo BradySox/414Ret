@@ -95,13 +95,12 @@ def test_red_tide_preseeds_the_convoyambush_plugin() -> None:
     assert settings["plugins"]["convoyambush"] is True
 
 
-def test_red_tide_preseeds_the_minefields_plugin() -> None:
+def test_red_tide_does_not_preseed_the_shelved_minefields_feature() -> None:
+    # §57 is SHELVED (2026-07-30) -- Red Tide must not preseed it back on.
     settings = _campaign_settings()
-    # §57 is the ONLY preseeded plugin whose own defaultValue is false, so this pin is
-    # load-bearing for every host regardless of their saved defaults -- not insurance.
-    assert settings["air_droppable_minefields"] is True
-    assert settings["auto_plan_minefields"] is True
-    assert settings["plugins"]["minefields"] is True
+    assert "air_droppable_minefields" not in settings
+    assert "auto_plan_minefields" not in settings
+    assert "minefields" not in settings["plugins"]
 
 
 def test_red_tide_preseeded_plugin_option_keys_are_declared() -> None:

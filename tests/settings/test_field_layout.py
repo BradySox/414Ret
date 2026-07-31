@@ -4,11 +4,15 @@ from dataclasses import fields
 
 from game.settings import Settings
 from game.settings.optiondescription import SETTING_DESCRIPTION_KEY
-from game.settings.settings import FIELD_LAYOUT
+from game.settings.settings import FIELD_LAYOUT, HIDDEN_FIELDS
 
 
 def _user_field_names() -> set[str]:
-    return {f.name for f in fields(Settings) if SETTING_DESCRIPTION_KEY in f.metadata}
+    return {
+        f.name
+        for f in fields(Settings)
+        if SETTING_DESCRIPTION_KEY in f.metadata and f.name not in HIDDEN_FIELDS
+    }
 
 
 def test_field_layout_covers_every_user_field_exactly_once() -> None:
@@ -45,6 +49,23 @@ def test_no_grab_bag_sections_remain() -> None:
         for section in Settings.sections(page):
             count = len(list(Settings.fields(page, section)))
             assert count <= 13, f"{page} / {section} has {count} settings"
+
+
+def test_hidden_fields_are_real_dataclass_fields_but_never_shown() -> None:
+    # §57 (air-droppable minefields) is SHELVED: the fields must keep existing so a
+    # saved settings file with them True still deserializes and the (dormant) code
+    # can still read them -- but they must never appear on any settings surface.
+    all_declared = {
+        f.name for f in fields(Settings) if SETTING_DESCRIPTION_KEY in f.metadata
+    }
+    for name in HIDDEN_FIELDS:
+        assert name in all_declared, f"{name} must stay a declared Settings field"
+        assert name not in FIELD_LAYOUT
+    emitted: set[str] = set()
+    for page in Settings.pages():
+        for section in Settings.sections(page):
+            emitted.update(name for name, _ in Settings.fields(page, section))
+    assert emitted.isdisjoint(HIDDEN_FIELDS)
 
 
 def test_unlisted_field_falls_back_to_its_metadata() -> None:

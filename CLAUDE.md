@@ -2011,11 +2011,20 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     dropping the mechanic from active use, keeping it available to resume later rather than
     deleting it outright). Not preseeded anywhere (Red Tide's preseed was removed); every gate
     (`air_droppable_minefields`, `auto_plan_minefields`, the `minefields` plugin) defaults OFF, so
-    the feature is fully inert in every campaign. Code, tests, Lua plugin, and client overlay are
-    **all still in the tree** — nothing below was deleted. **To resume:** re-add
-    `air_droppable_minefields: true` / `auto_plan_minefields: true` / `plugins: {minefields: true}`
-    to a campaign yaml (Red Tide's old block, restorable from git history) or flip the setting by
-    hand; the write-up below is otherwise unchanged and still describes the live implementation.
+    the feature is fully inert in every campaign. **The two settings fields are additionally
+    hidden from every settings surface** (`Settings.HIDDEN_FIELDS` in `game/settings/settings.py`,
+    excluded from `_user_fields()` — so the Qt Settings dialog and the New Game wizard never show
+    them) — found 2026-07-30 when a *personal saved default* from before the shelving (captured
+    back when Red Tide's now-removed preseed forced it on) stayed visibly checked once nothing
+    masked it. The field/default/save-compat stays (`s.__dict__` deserialization doesn't go
+    through `_user_fields()`), so an old save with either True still loads correctly; the checkbox
+    is just unreachable. Code, tests, Lua plugin, and client overlay are
+    **all still in the tree** — nothing below was deleted. **To resume:** drop the two names from
+    `HIDDEN_FIELDS` and re-add them to the `FIELD_LAYOUT` "Battlefield life" section (both in
+    `game/settings/settings.py`), then re-add `air_droppable_minefields: true` /
+    `auto_plan_minefields: true` / `plugins: {minefields: true}` to a campaign yaml (Red Tide's old
+    block, restorable from git history) or flip the setting by hand; the write-up below is
+    otherwise unchanged and still describes the live implementation.
     DCS has no mine object, so the 414th
     **fakes** area mining: a blue jet air-drops a **CBU-99** cluster dispenser (the **"Aerial
     Minefield"** loadout on the A-7E / F/A-18C / AV-8B — every dispenser pylon verified pydcs-legal;

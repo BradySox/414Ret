@@ -2586,23 +2586,21 @@ ask — Starfire's yaml pin, Toad's under-the-livery dropdown):
   wrong-nation preset's livery/authored roster along; `override_squadron_defaults` stamps the
   pinned country either way (that stamp is what a generated def and a name-bound preset receive).
   Unpinned configs are byte-identical to before (the filter only exists when `country:` is
-  authored); an unknown name logs and degrades to the unpinned pick, never aborts New Game.
+  authored, and an unpinned squadron keeps the picked def's own country — the stock random
+  behavior); an unknown name is a campaign authoring error that **aborts New Game** with a clear
+  message (`resolve_config_country` raises, per the upstream #896 review — signal the bad name
+  loudly rather than silently flying the wrong nation).
   **Desert Storm pins all 13 US squadrons** (`country: USA`; the RAF/French units bind
   nation-countried presets by name and need no pin) — guard
   `test_desert_storm_us_squadrons_pin_their_nation`.
 - **Air Wing Configuration dialog "Country:" selector** (`SquadronCountrySelector`, under the
   Livery selector — Toad's spot): opens on the squadron's current nation, **writes
   `squadron.country` live** (the livery-selector pattern), and a country pydcs doesn't list (mod)
-  is inserted and shown faithfully. **The list is trimmed to the airframe's operators**
-  (2026-07-20 same-day follow-up, the "Third Reich Hornets" screenshot):
-  `game/dcs/operatorcountries.py` resolves, in order, a **curated family-operator row** (flyable
-  modules — the Hornet/A-10/F-4E/F-5E/MiG-21/JF-17/Ka-50/Gazelle/AV-8B — whose DCS roster admits
-  every country, since ED lets any module fly under any nation), the type's **own pydcs roster**
-  when it discriminates (all AI-only types — the GR4 offers 5 nations), a **same-family AI
-  sibling's roster** (F-16C blk50 / F-15ESE / M-2000C / AH-64D / CH-47F / Mi-24P — the AI type
-  carries ED's real operator data), else **no data ⇒ the full list** (mods/warbirds keep the old
-  behavior). The faction's own country is always appended (revert to the shared faction voice);
-  curated ids/names are typo-guarded by test so a pydcs rename fails CI. Pilot names follow automatically —
+  is inserted and shown faithfully. **The list is the full DCS country list** (the operator-trimmed
+  variant — `game/dcs/operatorcountries.py` + the operator-derived default for unpinned CJTF
+  squadrons — was **removed 2026-07-31 per the upstream #896 review**: the maintainer flagged the
+  curated per-airframe tables as "a massive burden when adding a new aircraft module" and asked to
+  allow yaml country specs without changing default behavior). Pilot names follow automatically —
   the New Game wizard shows the dialog *before* `populate_for_turn_0` recruits the roster, and
   `Squadron.faker` reads `squadron.country` live (mid-campaign changes affect newly recruited
   pilots only). The preset dropdowns (`SquadronDefSelector`) now suffix each preset with its
@@ -2616,18 +2614,18 @@ ask — Starfire's yaml pin, Toad's under-the-livery dropdown):
 |---|---|
 | Config field + pick preference | `game/campaignloader/campaignairwingconfig.py`, `game/campaignloader/defaultsquadronassigner.py` |
 | Dialog selector + yaml round-trip | `qt_ui/windows/AirWingConfigurationDialog.py` |
-| Operator-country resolution | `game/dcs/operatorcountries.py` |
 | Desert Storm pins | `resources/campaigns/iraq_desert_storm.yaml` |
-| Tests | `tests/test_squadron_country_pin.py`, `tests/test_airwing_country_selector.py` (offscreen Qt), `tests/dcs/test_operator_countries.py`, `tests/fourteenth/test_desert_storm.py` |
+| Tests | `tests/test_squadron_country_pin.py`, `tests/test_airwing_country_selector.py` (offscreen Qt), `tests/fourteenth/test_desert_storm.py` |
 
 **I6 VERIFIED 2026-07-20** (user in-game pass the day it was built: "896 is flown and good" —
 the selector + the DS pins flown; blanket pass). **Carved upstream same day as draft
 [#896](https://github.com/dcs-retribution/dcs-retribution/pull/896)** (the generic core — yaml pin,
-selector, operator-trimmed list, round-trip, livery re-point fix, game-side tests; the DS pins and
-the offscreen-Qt test stay fork-side). **The draft is deliberately HELD despite the pass** — DM
-call 2026-07-20 ("don't flip it just in case it was after the lock" — the upstream no-new-PRs
-freeze until the next beta, ~2026-07-25/26; #896 was opened the day the freeze was learned);
-un-draft only on a fresh explicit call once the freeze lifts. Deferred: filtering the livery list by the squadron country under CJTF (livery
+selector, round-trip, livery re-point fix, game-side tests; the DS pins and the offscreen-Qt test
+stay fork-side). **Trimmed 2026-07-31 to the maintainer's request** (Druss99 request-changes): the
+curated operator tables + the operator-derived unpinned default were dropped (both fork and carve),
+the selector shows the full country list, and an unknown `country:` name aborts New Game instead of
+degrading — reducing the PR to "allow country specs in the campaign yaml, don't change default
+behavior." Deferred: filtering the livery list by the squadron country under CJTF (livery
 filtering still keys off the *faction* country).
 - **Review hardening round 2 (2026-07-15, upstream #854 feedback).** Two more carried back: (1)
   **`Game.neutral_country`'s final fallback was the bug it guarded against** — with USAF Aggressors

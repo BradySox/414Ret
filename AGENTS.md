@@ -1146,18 +1146,18 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     squadron pick is a `random.choice` across every nation's presets under a CJTF faction; also
     the upstream Discord ask): campaign yamls can pin `country:` per squadron block
     (`SquadronConfig.country` — the pick then accepts only same-nation presets, falling through to
-    the def generator, and `override_squadron_defaults` stamps the pinned nation; unknown names
-    degrade, never abort New Game; unpinned configs byte-identical), and the Air Wing
+    the def generator, and `override_squadron_defaults` stamps the pinned nation; unpinned configs
+    byte-identical, an unpinned squadron keeps the picked def's own country; an unknown `country:`
+    name **aborts New Game** with a clear error — `resolve_config_country` raises), and the Air Wing
     Configuration dialog gained a **Country selector** under Livery (live-write like the livery
-    selector; preset dropdowns show each preset's nation; Save/Load Config round-trips the
-    country; fixed in passing — after Replace-with-preset the livery selector wrote to the
-    discarded squadron). **The selector's list is trimmed to the airframe's operators** (same-day
-    follow-up — a flyable module's DCS roster admits every country, so the Hornet offered the
-    Third Reich): `game/dcs/operatorcountries.py` resolves curated family rows (flyables) → the
-    type's own pydcs roster (AI types) → an AI sibling's roster (F-16C/F-15ESE/M-2000C/AH-64D/
-    CH-47F/Mi-24P) → full-list fallback (mods/warbirds); faction country always appended;
-    typo-guarded (`tests/dcs/test_operator_countries.py`). Desert Storm pins all 13 US squadrons
-    `country: USA`.
+    selector, **full DCS country list**; preset dropdowns show each preset's nation; Save/Load Config
+    round-trips the country; fixed in passing — after Replace-with-preset the livery selector wrote to
+    the discarded squadron). **Trimmed 2026-07-31 to the upstream #896 maintainer request** (Druss99
+    request-changes — the curated per-airframe operator tables were "a massive burden when adding a
+    new aircraft module"): `game/dcs/operatorcountries.py` and the operator-derived unpinned-CJTF
+    default were **removed** (both fork and carve), the selector shows the full list, and unknown
+    countries abort — reducing §896 to "allow country specs in the yaml, don't change default
+    behavior." Desert Storm pins all 13 US squadrons `country: USA`.
     (`game/missiongenerator/missiongenerator.py`,
     `game/missiongenerator/aircraft/aircraftgenerator.py`, `game/squadrons/pilotnames.py`,
     `game/campaignloader/campaignairwingconfig.py`, `game/campaignloader/defaultsquadronassigner.py`,
@@ -2897,7 +2897,7 @@ stages cuts that to 1–2 real hunks each.)
 Carved out of this work, against `dcs-retribution/dcs-retribution` (all authored by `BradySox` — the renamed `bradyccox` account):
 
 - **Open (awaiting review):**
-  - [#896](https://github.com/dcs-retribution/dcs-retribution/pull/896) surface the squadron country — campaign yaml `country:` pin + Air Wing dialog selector (**draft**, opened 2026-07-20 on dev @ `3760cf2a`) — §23's surfacing follow-on (inventory item 26), answering that day's upstream Discord ask verbatim (Starfire: preset-for-the-nation-if-available-else-generated-set-to-it; Toad: dropdown under Livery): `SquadronConfig.country` → same-nation-only preset pick with def-generator fallthrough + `override_squadron_defaults` stamp, the `SquadronCountrySelector` (live-write, faithful mod-country display), preset dropdowns showing each preset's nation, Save/Load Config country round-trip, and the bind_data livery stale-squadron re-point fix. Upstream carries the 9 game-side tests + the operator-trimmed selector list (second commit `64ecc69c`); the offscreen-Qt selector test + the DS `country: USA` pins stay fork-side. 453 tests / black / mypy green. **I6 VERIFIED 2026-07-20** ("896 is flown and good") — **deliberately still a draft through the upstream PR freeze** (see the freeze note above; un-draft on a fresh explicit call once it lifts).
+  - [#896](https://github.com/dcs-retribution/dcs-retribution/pull/896) surface the squadron country — campaign yaml `country:` pin + Air Wing dialog selector (**draft**, opened 2026-07-20 on dev @ `3760cf2a`) — §23's surfacing follow-on (inventory item 26), answering that day's upstream Discord ask verbatim (Starfire: preset-for-the-nation-if-available-else-generated-set-to-it; Toad: dropdown under Livery): `SquadronConfig.country` → same-nation-only preset pick with def-generator fallthrough + `override_squadron_defaults` stamp, the `SquadronCountrySelector` (live-write, faithful mod-country display), preset dropdowns showing each preset's nation, Save/Load Config country round-trip, and the bind_data livery stale-squadron re-point fix. Upstream carries the 9 game-side tests; the offscreen-Qt selector test + the DS `country: USA` pins stay fork-side. 453 tests / black / mypy green. **I6 VERIFIED 2026-07-20** ("896 is flown and good"). **Druss99 request-changes 2026-07-31** — the operator tables are "a massive burden when adding a new aircraft module"; capitulated fully (DM call): `game/dcs/operatorcountries.py` + the operator-derived unpinned-CJTF default removed (fork + carve), the selector shows the full country list, and an unknown `country:` aborts New Game instead of degrading, reducing the PR to "yaml country pin, no default-behavior change." Fork side = branch `claude/pr-896-review-8kg5xf`; the carve still needs the same trim applied + re-request review.
   - [#893](https://github.com/dcs-retribution/dcs-retribution/pull/893) SAM guidance-radar redundancy (**draft**, opened 2026-07-20, **stacked on #892**) — §60 carried upstream with the realism-notes rationale spelled out in the body (a balance call, not TO&E; the regiment-model tension + "park it if you'd rather keep stock single-radar" offered explicitly): 21 layout yamls `unit_count` 1→2 across 23 slots + the 5 shared templates grafted a second radar position (45–121 m offsets, structurally copied from the fork's templates — the fork-only P-14 "EW Radar" groups deliberately NOT carried) + the 29-pair lockstep test (SAMP/T row dropped — HDS-Ultimate-only). 467 tests green.
   - [#892](https://github.com/dcs-retribution/dcs-retribution/pull/892) SAM site layout variety + EWR radar pool (**draft**, opened 2026-07-20) — the **refresh of #791**, which closed with zero comments (never reviewed): the June branch rebased onto dev @ `acf02b75` with zero conflicts, content unchanged, re-validated same day (68 preset groups load; all 131 factions resolve with 0 bad preset refs; 438 tests).
   - [#890](https://github.com/dcs-retribution/dcs-retribution/pull/890) squadron `aircraft:` empty-key New Game crash guard (**draft**, opened 2026-07-20) — inventory item 12, honestly re-pitched: current upstream campaigns no longer ship the pattern (the item's "two campaigns unplayable" claim was stale — upstream's Northern Guardian Transport squadron has since been filled in; the fork hit the crash when its mod purge emptied the key), so the PR sells it as the defensive guard it is (`data.get("aircraft") or []`; iterating None at defaultsquadronassigner.py:61 kills New Game).

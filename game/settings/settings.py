@@ -535,8 +535,6 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                     "civilian_air_traffic",
                     "ambient_supply_convoys",
                     "convoy_ambush",
-                    "air_droppable_minefields",
-                    "auto_plan_minefields",
                     "mission_briefing_popup",
                 ],
             ),
@@ -676,6 +674,20 @@ FIELD_LAYOUT: dict[str, tuple[str, str]] = {
     for section, names in sections
     for name in names
 }
+
+# §57 air-droppable minefields -- SHELVED 2026-07-30. The field/default/save-compat
+# stays (a saved settings file with these True must still deserialize and, if the
+# feature is ever resumed, still work), but the checkbox is pulled out of every
+# settings surface (Qt dialog, New Game wizard) so a stale personal saved-default
+# can't leave it silently checked once no campaign preseed masks it. Not a general
+# mechanism -- there is no other hidden field in this codebase; if that changes,
+# generalize this into real metadata instead of a name set.
+HIDDEN_FIELDS: frozenset[str] = frozenset(
+    {
+        "air_droppable_minefields",
+        "auto_plan_minefields",
+    }
+)
 
 
 @dataclass
@@ -3715,6 +3727,8 @@ class Settings:
     @classmethod
     def _user_fields(cls) -> Iterator[Field[Any]]:
         for settings_field in fields(cls):
+            if settings_field.name in HIDDEN_FIELDS:
+                continue
             if SETTING_DESCRIPTION_KEY in settings_field.metadata:
                 yield settings_field
 

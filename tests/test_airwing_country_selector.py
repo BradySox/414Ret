@@ -6,10 +6,8 @@ immediately (the livery-selector pattern), ``set_squadron`` re-points after a
 replace-with-preset without writing anything itself, and a country pydcs doesn't
 list is shown faithfully instead of misreporting the first list entry.
 
-The list is trimmed to the airframe's operator nations (see
-game/dcs/operatorcountries.py): a Hornet squadron no longer offers the Third
-Reich, the faction's own country is always present, and an airframe with no
-operator data (a mod) falls back to the full list.
+The list is the full DCS country list, plus the squadron's own country when
+pydcs doesn't list it (a mod).
 """
 
 from __future__ import annotations
@@ -87,21 +85,13 @@ def test_unlisted_country_is_shown_faithfully() -> None:
     assert selector.currentText() == "Atlantis"
 
 
-def test_list_is_trimmed_to_the_airframes_operators() -> None:
+def test_list_offers_the_full_country_list() -> None:
     selector = _selector(_squadron(USA()))
     assert selector.findText("USA") >= 0
-    assert selector.findText("Third Reich") == -1
-    assert selector.count() < 20
+    assert selector.count() >= len(country_dict)
 
 
-def test_faction_country_is_always_offered() -> None:
-    # CJTF Blue is no Hornet operator, but reverting to the faction's shared
-    # voice must stay possible.
-    selector = _selector(_squadron(USA()))
-    assert selector.findText("Combined Joint Task Forces Blue") >= 0
-
-
-def test_airframe_without_operator_data_offers_the_full_list() -> None:
+def test_airframe_offers_the_full_list() -> None:
     mod_jet = cast(Any, SimpleNamespace(id="Not A Real Jet"))
     selector = _selector(_squadron(USA(), aircraft=mod_jet))
     assert selector.count() >= len(country_dict)

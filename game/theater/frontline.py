@@ -209,13 +209,18 @@ class FrontLine(MissionTarget):
         Ensures the frontline conflict is never located within the minimum distance
         constant of either end control point.
         """
-        if (distance > self.route_length / 2) and (
-            distance + FRONTLINE_MIN_CP_DISTANCE > self.route_length
-        ):
+        if self.route_length < 2 * FRONTLINE_MIN_CP_DISTANCE:
+            # The route is too short to keep FRONTLINE_MIN_CP_DISTANCE clear of
+            # BOTH ends at once (the two clamp bounds cross). Clamping toward
+            # either end in this case can push the front past the midpoint to
+            # the OTHER side from where the strength ratio placed it -- e.g. a
+            # front that should sit near red's end (blue winning) gets pulled
+            # all the way back toward blue's own CP. Neither bound is
+            # meaningful for a route this short, so just use the midpoint.
+            return self.route_length / 2
+        if distance > self.route_length - FRONTLINE_MIN_CP_DISTANCE:
             distance = self.route_length - FRONTLINE_MIN_CP_DISTANCE
-        elif (distance < self.route_length / 2) and (
-            distance < FRONTLINE_MIN_CP_DISTANCE
-        ):
+        elif distance < FRONTLINE_MIN_CP_DISTANCE:
             distance = FRONTLINE_MIN_CP_DISTANCE
         return distance
 

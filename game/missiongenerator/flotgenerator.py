@@ -1150,7 +1150,18 @@ class FlotGenerator:
         # contact. Rather than spawn them on the front, search laterally around the
         # intended-depth point so the group keeps its depth (and spreads along the
         # front instead of stacking).
-        if reached_depth < distance_from_frontline / 2:
+        if reached_depth == 0:
+            # We couldn't step off the front at all (e.g. spawning right next
+            # to a coastline) -- valid_point is still sitting on the FLOT
+            # itself. Only NOW fall back to the front-axis search. Doing this
+            # for any depth shortfall (not just a total one) is what caused
+            # the original stacking bug: the front-axis search finds the
+            # single nearest valid point to a *target* position, so several
+            # groups with different lateral offsets but similar depth
+            # shortfalls all collapse onto that same point. Once we've
+            # reached ANY perpendicular depth, valid_point is unique to this
+            # group's own lateral offset and can never collapse that way, so
+            # it's always preferred over the front-axis search below.
             desired_point = shifted.point_from_heading(
                 spawn_heading.degrees, distance_from_frontline
             )

@@ -301,7 +301,6 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                 "Recon & SCAR planning",
                 [
                     "auto_add_tarps_recon",
-                    "auto_jtac_drone",
                 ],
             ),
             (
@@ -390,6 +389,8 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                     "coin_hvt",
                     "coin_dispersed_cells",
                     "coin_harassment",
+                    "coin_packaged_jtac_drone",
+                    "auto_jtac_drone",
                 ],
             ),
             (
@@ -1019,23 +1020,6 @@ class Settings:
             "package's escort window. Requires a TARPS-capable squadron in range; "
             "if none is available the flight is simply skipped (the package is "
             "never scrubbed)."
-        ),
-    )
-    auto_jtac_drone: bool = boolean_option(
-        "Auto-field a JTAC drone squadron for the player's side",
-        page=CAMPAIGN_DOCTRINE_PAGE,
-        section=GENERAL_SECTION,
-        default=True,
-        invert=False,
-        detail=(
-            "At New Game, if your faction declares a drone JTAC platform "
-            "(MQ-9 Reaper / Predator) and the campaign does not already field one, "
-            "adds a small ISR drone squadron at your rear-most airfield. The auto-"
-            "planner then frags it forward into air-to-ground packages, where it "
-            "lazes and marks targets for the shooters (and, being a drone, films "
-            "the whole time). Replaces the old front-line auto-JTAC. A campaign that "
-            "hand-places its drones is left untouched; turn this off to keep an "
-            "air wing exactly as the campaign authored it."
         ),
     )
     recon_intel_fog: bool = boolean_option(
@@ -1725,6 +1709,41 @@ class Settings:
             "field a player spawns at or recovers to this mission, and a startup "
             "grace period holds all fire while flights align. Requires COIN "
             "replenishment on; intended for COIN campaigns that preseed it."
+        ),
+    )
+    coin_packaged_jtac_drone: bool = boolean_option(
+        "COIN packaged drone JTAC (instead of the front-line JTAC)",
+        enabled_when="coin_insurgency",
+        page=CAMPAIGN_MANAGEMENT_PAGE,
+        section=GENERAL_SECTION,
+        default=False,
+        detail=(
+            "Replaces the standard front-line JTAC -- an invisible, immortal FAC "
+            "orbiting the FLOT -- with a real, killable drone that rides your "
+            "air-to-ground packages and lazes for the shooters from there. A COIN "
+            "war has no front line for the standard JTAC to orbit, so the FAC ends "
+            "up over empty ground while the fighting happens at the strongholds; "
+            "the packaged drone goes where the package goes. Off (the default) "
+            "keeps the standard front-line JTAC, which is the right model for any "
+            "campaign that has a real FLOT. Requires COIN replenishment on; "
+            "intended for COIN campaigns that preseed it."
+        ),
+    )
+    auto_jtac_drone: bool = boolean_option(
+        "COIN drone JTAC: auto-field the drone squadron",
+        enabled_when="coin_packaged_jtac_drone",
+        page=CAMPAIGN_MANAGEMENT_PAGE,
+        section=GENERAL_SECTION,
+        default=True,
+        invert=False,
+        detail=(
+            "The packaged drone JTAC only appears if your air wing actually fields a "
+            "drone. At New Game, if your faction declares a drone JTAC platform "
+            "(MQ-9 Reaper / Predator) and the campaign does not already field one, "
+            "adds a small ISR drone squadron at your rear-most airfield for the "
+            "auto-planner to frag forward. A campaign that hand-places its drones "
+            "is left untouched; turn this off to keep an air wing exactly as the "
+            "campaign authored it. Requires the packaged drone JTAC on."
         ),
     )
     long_range_carrier_ops: bool = boolean_option(

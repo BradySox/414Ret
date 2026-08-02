@@ -64,6 +64,7 @@ def _coalition(
     *,
     blue: bool = True,
     setting: bool = True,
+    coin_jtac: bool = True,
     has_jtac: bool = True,
     jtac_unit: Optional[_AC] = None,
     existing_drone: bool = False,
@@ -83,7 +84,10 @@ def _coalition(
         player=Player.BLUE if blue else Player.RED,
         opponent=SimpleNamespace(player=Player.RED if blue else Player.BLUE),
         game=SimpleNamespace(
-            settings=SimpleNamespace(auto_jtac_drone=setting),
+            settings=SimpleNamespace(
+                auto_jtac_drone=setting,
+                coin_packaged_jtac_drone=coin_jtac,
+            ),
             theater=SimpleNamespace(controlpoints=cps),
             date=date(year, 1, 1),
         ),
@@ -171,6 +175,15 @@ def test_skips_when_no_blue_airfield_can_operate_the_drone(monkeypatch: Any) -> 
 def test_skips_when_faction_has_no_jtac(monkeypatch: Any) -> None:
     _patch(monkeypatch)
     jd.ensure_jtac_drone_squadron(cast(Any, _coalition(has_jtac=False)))
+    assert added == []
+
+
+def test_skips_a_front_line_jtac_campaign(monkeypatch: Any) -> None:
+    """The drone squadron exists to feed the COIN packaged JTAC. A campaign on the
+    stock front-line JTAC gets no auto-fielded squadron, even with the kill switch on.
+    """
+    _patch(monkeypatch)
+    jd.ensure_jtac_drone_squadron(cast(Any, _coalition(coin_jtac=False)))
     assert added == []
 
 

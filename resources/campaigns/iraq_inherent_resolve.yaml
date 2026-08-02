@@ -63,6 +63,11 @@ settings:
   # field). Complements the front-based Vietnam toggle below (which covers Balad near
   # the Highway-1 front); this one keys off stronghold proximity and covers FOBs.
   coin_harassment: true
+  # The fighting is at the strongholds and in the city, not along the single Highway-1
+  # FLOT, so the stock front-line JTAC (an immortal FAC orbiting the front) spends the
+  # war over empty ground. Swap it for the packaged drone JTAC: the campaign's own
+  # Predators/Reapers ride the air-to-ground packages and laze from inside the fight.
+  coin_packaged_jtac_drone: true
   # The ratline west toward Tal Afar / Syria (real, tracked convoys) and standoff
   # rocket/mortar fire on the forward field at Balad.
   vietnam_convoy_interdiction: true

@@ -2,8 +2,9 @@
 
 A faction's designated UAV (`jtac_unit`), AI-flown in an air-to-ground package,
 is emitted as a `JtacInfo` -> `dcsRetribution.JTACs` -> CTLD autolase + kneeboard +
-radio, so it lazes/marks for the shooters. These lock the qualification gate (blue
-+ AI + jtac airframe + A/G package) and the laser-code choice without a full mission.
+radio, so it lazes/marks for the shooters. These lock the qualification gate (the
+COIN `coin_packaged_jtac_drone` setting + blue + AI + jtac airframe + A/G package)
+and the laser-code choice without a full mission.
 """
 
 from __future__ import annotations
@@ -49,10 +50,13 @@ def _group() -> Any:
     return SimpleNamespace(name="Reaper11", units=[unit])
 
 
-def _generator(*, fc3: bool = False) -> AircraftGenerator:
+def _generator(*, fc3: bool = False, coin_jtac: bool = True) -> AircraftGenerator:
     gen = AircraftGenerator.__new__(AircraftGenerator)
     gen.game = SimpleNamespace(  # type: ignore[assignment]
-        settings=SimpleNamespace(plugins={"ctld.fc3LaserCode": fc3}),
+        settings=SimpleNamespace(
+            plugins={"ctld.fc3LaserCode": fc3},
+            coin_packaged_jtac_drone=coin_jtac,
+        ),
         laser_code_registry=SimpleNamespace(
             alloc_laser_code=lambda: SimpleNamespace(code=1688),
             fc3_code=SimpleNamespace(code=1113),
@@ -123,3 +127,11 @@ def test_fc3_laser_code_is_used_when_the_plugin_option_is_set() -> None:
     gen = _generator(fc3=True)
     gen._maybe_configure_jtac(cast(Any, _flight()), cast(Any, _group()))
     assert _jtacs(gen)[0].code == "1113"
+
+
+def test_no_packaged_jtac_without_the_coin_setting() -> None:
+    """Off (the default) a campaign keeps the stock front-line JTAC, so a drone in an
+    A/G package is just a drone -- otherwise both would laze and double-list."""
+    gen = _generator(coin_jtac=False)
+    gen._maybe_configure_jtac(cast(Any, _flight()), cast(Any, _group()))
+    assert _jtacs(gen) == []

@@ -229,9 +229,16 @@ class AircraftGenerator:
         which the kneeboard/radio surface like any JTAC. No DCS task is added -- the
         drone flies its own package mission (recon overwatch / attack) and lases what
         it overflies; CTLD does the designation. Blue + AI only (a player-flown drone
-        is not an autolase JTAC). Replaces the retired FLOT auto-JTAC (a drone glued
-        to the front line) with a JTAC that actually rides the fight.
+        is not an autolase JTAC).
+
+        COIN-only, and off by default: this replaces the stock front-line JTAC, which
+        stays the model for every campaign with a real FLOT. A COIN war has no front
+        line for that FAC to orbit, so those campaigns opt in via
+        ``coin_packaged_jtac_drone`` and get a JTAC that rides the fight instead. The
+        two are mutually exclusive (``FlotGenerator._generate_front_line_jtac``).
         """
+        if not self.game.settings.coin_packaged_jtac_drone:
+            return
         coalition = flight.coalition
         if not coalition.player.is_blue or flight.client_count:
             return

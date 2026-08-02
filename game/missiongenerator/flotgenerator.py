@@ -13,17 +13,24 @@ from dcs.country import Country
 from dcs.mapping import Point, Vector2
 from dcs.point import PointAction
 from dcs.task import (
+    AFAC,
     AttackGroup,
     ControlledTask,
+    FAC,
     FireAtPoint,
     GoToWaypoint,
     Hold,
+    OrbitAction,
+    SetImmortalCommand,
+    SetInvisibleCommand,
 )
 from dcs.triggers import Event, TriggerOnce
 from dcs.unit import Skill, Vehicle
 from dcs.unitgroup import VehicleGroup
 
+from game.callsigns import callsign_for_support_unit
 from game.data.units import UnitClass
+from game.dcs.aircrafttype import AircraftType
 from game.dcs.groundunittype import GroundUnitType
 from game.ground_forces.ai_ground_planner import (
     CLUSTER_DEPTH_OFFSET,
@@ -39,9 +46,10 @@ from game.radio.radios import RadioRegistry
 from game.theater.controlpoint import ControlPoint, Player
 from game.unitmap import UnitMap
 from game.utils import Heading
+from .aircraft.aircraftpainter import AircraftPainterJtac
 from .frontlineconflictdescription import FrontLineConflictDescription
 from .groundforcepainter import GroundForcePainter
-from .missiondata import MissionData, FrontlineUnitGroupsInfo
+from .missiondata import JtacInfo, MissionData, FrontlineUnitGroupsInfo
 from ..ato import FlightType
 
 if TYPE_CHECKING:
@@ -307,10 +315,11 @@ class FlotGenerator:
             self.conflict.blue_cp,
         )
 
+        self._generate_front_line_jtac()
+
         # Record frontline group membership (group name -> unit type) for the TIC
-        # script + MFD-hiding. Always populated now -- the auto-JTAC FAC drone
-        # that used to gate this block was removed (414th: no auto-JTAC over the
-        # FLOT, for any faction).
+        # script + MFD-hiding. Always populated, independent of whether a JTAC was
+        # generated above.
         for vehicle_group, combat_group in player_groups:
             self.mission_data.player_frontline_groups.append(
                 FrontlineUnitGroupsInfo(
@@ -324,6 +333,80 @@ class FlotGenerator:
                     group_name=vehicle_group.name, unit_type=combat_group.unit_type
                 )
             )
+
+    def _generate_front_line_jtac(self) -> None:
+        """Spawn the stock front-line JTAC: an invisible, immortal FAC orbiting the
+        FLOT, lasing for CAS.
+
+        This is Retribution's standard model and the right one for any campaign with
+        a real front line. It is suppressed only when ``coin_packaged_jtac_drone`` is
+        on: a COIN war has no FLOT worth orbiting, so those campaigns instead fly a
+        real, killable drone inside their air-to-ground packages
+        (``AircraftGenerator._maybe_configure_jtac``). The two are mutually exclusive
+        -- running both would double-laze and double-list on the kneeboard.
+        """
+        if self.game.settings.coin_packaged_jtac_drone:
+            return
+        if not self.game.blue.faction.has_jtac:
+            return
+
+        position = FrontLineConflictDescription.frontline_position(
+            self.conflict.front_line, self.game.theater, self.game.settings
+        )
+
+        freq = self.radio_registry.alloc_uhf()
+        # fc3LaserCode forces every JTAC to 1113 so Su-25/A-10A can lase; otherwise
+        # the front line carries its own allocated code.
+        if self.game.settings.plugins.get("ctld.fc3LaserCode"):
+            code = self.game.laser_code_registry.fc3_code
+        else:
+            code = self.conflict.front_line.laser_code
+
+        utype = self.game.blue.faction.jtac_unit
+        if utype is None:
+            utype = AircraftType.named("MQ-9 Reaper")
+
+        country = self.mission.country(self.game.blue.faction.country.name)
+        jtac = self.mission.flight_group(
+            country=country,
+            name=namegen.next_jtac_name(),
+            aircraft_type=utype.dcs_unit_type,
+            position=position[0],
+            airport=None,
+            altitude=5000,
+            maintask=AFAC,
+        )
+        AircraftPainterJtac(self.game.blue.faction, utype, jtac).apply_livery()
+        cs = jtac.units[0].callsign_dict
+        assert type(cs[1]) == int
+        assert type(cs[2]) == int
+        jtac.points[0].tasks.append(
+            FAC(
+                callsign=cs[1],
+                number=cs[2],
+                frequency=int(freq.mhz),
+                modulation=freq.modulation,
+            )
+        )
+        jtac.points[0].tasks.append(SetInvisibleCommand(True))
+        jtac.points[0].tasks.append(SetImmortalCommand(True))
+        jtac.points[0].tasks.append(
+            OrbitAction(5000, 300, OrbitAction.OrbitPattern.Circle)
+        )
+        frontline = (
+            f"Frontline {self.conflict.blue_cp.name}/{self.conflict.red_cp.name}"
+        )
+        self.mission_data.jtacs.append(
+            JtacInfo(
+                group_name=jtac.name,
+                unit_name=jtac.units[0].name,
+                callsign=callsign_for_support_unit(jtac),
+                region=frontline,
+                code=str(code),
+                blue=Player.BLUE,
+                freq=freq,
+            )
+        )
 
     @staticmethod
     def _tic_managed_role(role: CombatGroupRole) -> bool:

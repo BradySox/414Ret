@@ -69,6 +69,11 @@ settings:
   # below, this works on the front-less air-assault laydown. Silencing a base's fire
   # means pushing its stronghold back.
   coin_harassment: true
+  # This laydown has NO front line, so the stock front-line JTAC (an immortal FAC
+  # orbiting the FLOT) has nothing to orbit and nothing to laze. Swap it for the
+  # packaged drone JTAC: a real, killable Reaper/Predator that rides your air-to-ground
+  # packages and lazes from inside the fight, where the war actually is.
+  coin_packaged_jtac_drone: true
   vietnam_convoy_interdiction: true
   # §50 convoy escort/ambush -- the mirror of interdiction: your OWN supply convoys run
   # the Helmand roads and concealed insurgent ambush teams dig in along the route (peak

@@ -209,16 +209,13 @@ settings:
   # Aeroflot incident, and BVR target discrimination past the FLOT is on the shooter.
   # Deliberately NOT preseeded (the generic default is ON); do not re-add
   # `civilian_air_traffic: false` here without a new squadron call.
-  # Support-orbit standoff (M1 finding): the red A-50/IL-78 anchored on the Fulda front
-  # but the AI depth push (2.5x the buffer, supportorbit.AI_SUPPORT_DEPTH_FACTOR) at the
-  # 80/70 NM defaults parked them 200/175 NM back over Berlin all mission -- too far to
-  # cue low targets at Fulda, leaving the P-14 line as red's whole detection net (and
-  # its death so decisive). 30/25 NM puts the A-50 ~75 NM (~140 km) behind the FLOT
-  # (Halle/Leipzig) -- its ~230 km radar then covers the whole Fulda corridor -- while
-  # the threat-zone floor still keeps every orbit >=1x buffer clear of the enemy threat
-  # boundary (blue's E-3/KC-135 move up on the same numbers, bounded by red's SAM belt).
-  aewc_threat_buffer_min_distance: 30
-  tanker_threat_buffer_min_distance: 25
+  # Support-orbit standoff: the `aewc_threat_buffer_min_distance: 30` /
+  # `tanker_threat_buffer_min_distance: 25` preseeds (the M1 tuning batch, 2026-07-11)
+  # were STRIPPED 2026-08-02 -- the campaign no longer preseeds either, so the generic
+  # defaults (80/70 NM) apply and the AI depth push (2.5x the buffer,
+  # supportorbit.AI_SUPPORT_DEPTH_FACTOR) again holds the red A-50/IL-78 ~200/175 NM
+  # behind the FLOT. Deliberately NOT preseeded; do not re-add without a new squadron
+  # call. The BARCAP-duration preseed below is unaffected and stays.
   # BARCAP endurance (M1 finding): a Schonefeld MiG-29 flew the default 60-min
   # on-station racetrack -- the one real-fuel-burn window under AI unlimited fuel --
   # and flamed out dry at ~75 min airborne with no combat: 60 min at the AI's patrol

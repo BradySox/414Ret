@@ -38,11 +38,16 @@ recommended_enemy_money: 400
 recommended_player_income_multiplier: 1.3
 recommended_enemy_income_multiplier: 0.7
 version: "10.8"
-# Supply routes & shipping lanes — defined entirely in YAML (no .miz-baked M-113/
-# HandyWind groups remain). Waypoints are DCS map coordinates [x, y]; origin/
-# destination CPs are the closest control point to the first/last waypoint.
-# The 5 land routes below were migrated verbatim from the campaign's original
-# road-snapped M-113 front-line groups; trim waypoints freely if desired.
+# Supply routes & shipping lanes — SPLIT SOURCE as of 2026-08-02. The BLUE rear
+# corridors + the Baltic shipping lane live here in YAML; the RED corridors and the
+# Fulda<->Haina FRONT-LINE path live in red_tide.miz as M-113 road-snapped path groups
+# (re-authored in the ME, which snaps to DCS's real road network instead of the ~2 km
+# lat/lon approximation these YAML waypoints use). The loader reads BOTH sources
+# (add_supply_routes for the miz M-113 groups, add_yaml_supply_routes for this block),
+# so a corridor must appear in EXACTLY ONE of them -- authoring it twice creates two
+# overlapping routes whose transfers coalesce into one oversized, spawn-deadlocking
+# convoy group. Waypoints are DCS map coordinates [x, y]; origin/destination CPs are
+# the closest control point to the first/last waypoint (intermediates are free).
 supply_routes:
   # Ramstein (165) -> Frankfurt (163)  [blue rear]
   - waypoints:
@@ -101,123 +106,23 @@ supply_routes:
       - [-405989, -781201]
       - [-405490, -771697]
       - [-401102, -768302]   # Fulda
-  # Fulda (166) -> Haina (161)  [FRONT LINE — path drives the front geometry]
-  # Final waypoint is Haina's exact CP position so closest_control_point() anchors the
-  # red end on Haina (161). The old endpoint (-359860,-710938) was 2.9 km from the neutral
-  # FARP "H Med GDR 12" (180) but 8.9 km from Haina, so it mis-anchored the front short of Haina.
-  - waypoints:
-      - [-401102, -768302]   # Fulda
-      - [-399905, -764132]
-      - [-395589, -762212]
-      - [-391123, -759608]
-      - [-386906, -755266]
-      - [-383503, -747228]
-      - [-378566, -741009]
-      - [-373208, -735489]
-      - [-368927, -729914]
-      - [-363262, -720343]
-      - [-359860, -710938]
-      - [-359857, -702040]   # Haina (161) — exact CP position
-  # Haina (161) -> Wittstock (1)  [red rear]
-  - waypoints:
-      - [-356856, -697852]
-      - [-353202, -693589]
-      - [-348696, -688097]
-      - [-341196, -683154]
-      - [-328635, -676959]
-      - [-318913, -667668]
-      - [-309449, -660054]
-      - [-301319, -653730]
-      - [-294436, -645858]
-      - [-285016, -643449]
-      - [-275595, -639104]
-      - [-266389, -630157]
-      - [-260453, -618757]
-      - [-252022, -612563]
-      - [-245053, -603271]
-      - [-237095, -593334]
-      - [-230255, -587140]
-      - [-219415, -577074]
-      - [-208145, -572600]
-      - [-195971, -571009]
-      - [-184700, -567352]
-      - [-174075, -566879]
-      - [-165300, -557716]
-      - [-154632, -550361]
-      - [-145980, -544569]
-      - [-140210, -539173]
-      - [-132936, -534804]
-  # Wittstock (1) -> Peenemunde (25)  [red rear]
-  - waypoints:
-      - [-131519, -527694]
-      - [-131010, -525226]
-      - [-128980, -523112]
-      - [-127166, -520779]
-      - [-124576, -517808]
-      - [-121222, -515576]
-      - [-117880, -512764]
-      - [-115435, -508829]
-      - [-114328, -504209]
-      - [-111479, -500150]
-      - [-107713, -497431]
-      - [-105316, -491363]
-      - [-101863, -489297]
-      - [-98019, -487146]
-      - [-95191, -483451]
-      - [-91850, -480386]
-      - [-88315, -476288]
-      - [-86379, -472107]
-      - [-84190, -469736]
-      - [-81591, -463135]
-      - [-78067, -458018]
-      - [-73180, -451840]
-      - [-69098, -445299]
-      - [-65748, -444283]
-      - [-60231, -442010]
-      - [-55113, -439888]
-      - [-47960, -436824]
-      - [-45013, -434546]
-      - [-41231, -432791]
-  # Hamburg (17) -> Wittstock (1): northern salient supply via A24/B195 corridor
-  - waypoints:
-      - [-63016, -691931]    # Hamburg
-      - [-98000, -636000]    # Hagenow / A24 junction
-      - [-118000, -591000]    # Parchim area
-      - [-135396, -529213]    # Wittstock
-  # --- Connections added so the orphaned bases join the network and the front can advance
-  #     across the whole theater. Bowed along their real road corridors so the derived
-  #     front geometry follows the autobahns rather than ruler-straight lines (endpoints
-  #     stay anchored on the control points). Nudge in the mission editor if any leg clips.
+  # NOTE (2026-08-02): the RED + FRONT-LINE corridors that used to live here were
+  # re-authored in the ME with the M-113 road-snap tool and now live in red_tide.miz as
+  # M-113 path groups (Armor.M_113 = MizCampaignLoader.FRONT_LINE_UNIT_TYPE, read by
+  # add_supply_routes). They were deleted from this block because the loader runs BOTH
+  # readers -- leaving them here would create a SECOND overlapping route per corridor,
+  # and same-corridor transfers coalesce into one oversized convoy group that deadlocks
+  # at spawn (the §50 lesson). The ME road-snap follows DCS's real road network exactly,
+  # whereas the real-world lat/lon tracing used for the blue routes below lands ~2 km off
+  # (measured on Fulda), so the miz is the better source for anything re-authored.
+  # The BLUE rear corridors below are deliberately KEPT here -- they already trace the
+  # real A61/A60/A6/A3 autobahns and were not redrawn.
   # Hahn (155) -> Frankfurt (163)  [blue rear; follows the A61/A60 dip via Bingen]
   - waypoints:
       - [-437665, -948351]   # Hahn
       - [-445839, -917165]   # A61 toward Rheinboellen
       - [-447964, -885571]   # Bingen / A60 (southward dip)
       - [-444041, -853571]   # Frankfurt
-  # Haina (161) -> Sperenberg (101)  [Berlin axis; bends along the A4 east -> A9 north]
-  - waypoints:
-      - [-359857, -702040]   # Haina
-      - [-345695, -643668]   # A4 east across Thuringia
-      - [-324825, -588549]   # A4/A9 junction area
-      - [-294467, -538031]   # A9 north toward Berlin
-      - [-257400, -490767]   # Sperenberg
-  # Sperenberg (101) -> Schonefeld (26)  [Berlin cluster; A13]
-  - waypoints:
-      - [-257400, -490767]   # Sperenberg
-      - [-246239, -479105]   # A13 north
-      - [-231590, -472324]   # Schonefeld
-  # Schonefeld (26) -> Templin (15)  [Berlin cluster; A10 ring -> A11 north]
-  - waypoints:
-      - [-231590, -472324]   # Schonefeld
-      - [-208513, -461897]   # A10 Berlin ring (east)
-      - [-184569, -459215]   # A11 north
-      - [-159757, -464279]   # Templin
-  # Templin (15) -> Wittstock (1)  [rejoins the northern spine; B198 lake country]
-  - waypoints:
-      - [-159757, -464279]   # Templin
-      - [-145293, -483996]   # B198 west through the lakes
-      - [-136453, -505975]   # E of Wittstock
-      - [-133238, -530216]   # Wittstock
 shipping_lanes:
   # Kastrup (41) → Peenemünde (25): Baltic sea lane
   # Route: Kastrup airport → Drogden channel (port) → south through the Øresund → Køge Bay
@@ -279,6 +184,19 @@ settings:
   # so neither field was shelled on a fresh game. 42 km puts both under fire from turn 1
   # (WP BM-27 Uragan MRLs reach ~35 km, so a ~42 km harassment envelope is period-honest).
   artillery_harassment_reach_km: 42
+  # Front-line ground density (diagnosed 2026-08-02 from the flown M2 Tacview): red's Haina
+  # maneuver force generated near-empty. Two compounding causes -- (1) Haina's deployable-unit
+  # CAP is only the 15-unit floor because NO ammo depot is bound to the front CPs (Red Tide's
+  # depots -- DINGO/WOODPECKER/PIKE -- all sit at REAR bases; the cap is 15 + 12*ammo_depot_units
+  # AT that CP), and (2) this factor -- how much of the cap OPFOR procurement fills -- rode the
+  # DM's saved default of 70(%), not preseeded, so red targeted only 15*0.70 ~= 10 front units.
+  # Fix has TWO knobs: this preseed + one or more `_Ammunition_depot` statics placed near Haina
+  # in red_tide.miz (each depot unit = +12 cap). Front target = (15 + 12*depot_units) * this/100.
+  # With 1 Haina depot (cap 27) and 85% this targets ~23 maneuver units -- the felt-good
+  # WP-echelon density the M2 host reached by hand-adding armor. Red-only (blue keeps its own
+  # frontline_reserves_factor); the code default is 130 but that never applied under the saved 70.
+  # NEEDS the Haina depot in the miz to exceed 15, and a NEW game to take effect.
+  frontline_reserves_factor_red: 85
   # §50 convoy escort/ambush -- friendly NATO supply convoys run the rear roads up to the
   # Fulda front and concealed Spetsnaz/recon-team ambushes dig in along the route; fly
   # CAS/BAI escort or the column is ground down. The rear isn't a safe road, same as the

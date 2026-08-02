@@ -32,3 +32,11 @@ env/
 *.psd
 _wpntools/
 _scenerytools/
+
+# Machine-local DCS backup, written by qt_ui/liberation_install.py
+# replace_mission_scripting_file() from *your* DCS install on launch. It is not
+# source: tracking it pushed one machine's DCS state to everyone, and the copy
+# upstream shipped was a stale Retribution replacement (sanitizeModule calls
+# commented out), so "Restore original" wrote a DESANITIZED file back to DCS.
+# Untracked so each install captures its own faithful stock backup.
+resources/scripts/MissionScripting.original.lua

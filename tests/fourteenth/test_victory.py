@@ -407,13 +407,11 @@ def test_check_win_loss_wiring() -> None:
 
     cps = [_cp("A", Player.BLUE), _cp("B", Player.RED)]
     game = _game(cps=cps, domination=50)
-    game.blank_canvas_setup = False
     game.theater.player_points = lambda state_check=False: [cps[0]]
     game.theater.enemy_points = lambda state_check=False: [cps[1]]
     assert Game.check_win_loss(cast(Any, game)) is TurnState.WIN
 
     quiet = _game(cps=cps)
-    quiet.blank_canvas_setup = False
     quiet.theater.player_points = lambda state_check=False: [cps[0]]
     quiet.theater.enemy_points = lambda state_check=False: [cps[1]]
     assert Game.check_win_loss(cast(Any, quiet)) is TurnState.CONTINUE

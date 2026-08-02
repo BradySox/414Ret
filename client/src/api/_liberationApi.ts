@@ -180,25 +180,6 @@ const injectedRtkApi = api.injectEndpoints({
         method: "POST",
       }),
     }),
-    openPlaceUnitGroupDialog: build.mutation<
-      OpenPlaceUnitGroupDialogApiResponse,
-      OpenPlaceUnitGroupDialogApiArg
-    >({
-      query: (queryArg) => ({
-        url: `/qt/place-unit-group`,
-        method: "POST",
-        body: queryArg.body,
-      }),
-    }),
-    deleteUserPlacedTgo: build.mutation<
-      DeleteUserPlacedTgoApiResponse,
-      DeleteUserPlacedTgoApiArg
-    >({
-      query: (queryArg) => ({
-        url: `/tgos/${queryArg.tgoId}`,
-        method: "DELETE",
-      }),
-    }),
     listSupplyRoutes: build.query<
       ListSupplyRoutesApiResponse,
       ListSupplyRoutesApiArg
@@ -383,15 +364,6 @@ export type SelectFlightApiResponse =
 export type SelectFlightApiArg = {
   flightId: string;
 };
-export type OpenPlaceUnitGroupDialogApiResponse =
-  /** status 200 Successful Response */ any;
-export type OpenPlaceUnitGroupDialogApiArg = {
-  body: { lat: number; lng: number };
-};
-export type DeleteUserPlacedTgoApiResponse = undefined;
-export type DeleteUserPlacedTgoApiArg = {
-  tgoId: string;
-};
 export type ListSupplyRoutesApiResponse =
   /** status 200 Successful Response */ SupplyRoute[];
 export type ListSupplyRoutesApiArg = void;
@@ -447,7 +419,6 @@ export type ControlPoint = {
   id: string;
   name: string;
   blue: boolean;
-  neutral: boolean;
   position: LatLng;
   mobile: boolean;
   destination?: LatLng;
@@ -536,7 +507,6 @@ export type Tgo = {
   task?: string[];
   mobile: boolean;
   destination?: LatLng;
-  user_placed: boolean;
   /** COIN concealment: set while this TGO renders as an uncertainty circle;
       `position` is then the jittered circle centre, not the true location. */
   uncertainty_radius_m?: number | null;
@@ -636,8 +606,6 @@ export type Game = {
   map_center?: LatLng;
   unculled_zones: UnculledZone[];
   map_zones: MapZones;
-  blank_canvas_setup: boolean;
-  enable_unit_placement: boolean;
   campaign_status?: CampaignStatus | null;
   minefields?: Minefield[];
   downed_pilots?: DownedPilot[];
@@ -672,8 +640,6 @@ export const {
   useOpenNewControlPointPackageDialogMutation,
   useOpenControlPointInfoDialogMutation,
   useSelectFlightMutation,
-  useOpenPlaceUnitGroupDialogMutation,
-  useDeleteUserPlacedTgoMutation,
   useListSupplyRoutesQuery,
   useListTgosQuery,
   useGetTgoByIdQuery,

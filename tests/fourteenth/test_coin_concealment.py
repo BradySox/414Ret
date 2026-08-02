@@ -41,14 +41,12 @@ class _Tgo:
         category: str = "armor",
         task: Optional[GroupTask] = None,
         setting_on: bool = False,
-        user_placed: bool = False,
     ) -> None:
         self.id = uuid.UUID(int=0x414)
         self.concealed = concealed
         self._known = known
         self.category = category
         self.task = task
-        self.user_placed = user_placed
         self.concealed_route: Optional[list[tuple[float, float]]] = None
         self.position = _Point(100_000.0, -50_000.0)
         self.control_point = SimpleNamespace(
@@ -190,10 +188,6 @@ def test_fixed_sites_and_infrastructure_stay_exact() -> None:
     # Buildings/ships/etc. never qualify.
     assert _radius_for(_Tgo(category="factory", setting_on=True)) is None
     assert _radius_for(_Tgo(category="ship", setting_on=True)) is None
-    # The player placed it — they know where it is.
-    assert (
-        _radius_for(_Tgo(category="armor", setting_on=True, user_placed=True)) is None
-    )
 
 
 def test_setting_off_leaves_field_forces_exact_but_coin_concealed() -> None:

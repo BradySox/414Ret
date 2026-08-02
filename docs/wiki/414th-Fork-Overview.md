@@ -131,8 +131,6 @@ Full detail: **[Air Defense and the Air War](Air-Defense-and-the-Air-War)**.
 
 ## Additional content and tools
 
-- **[Drop-Spawn Unit Placement](Drop-Spawn-Unit-Placement)** — right-click blank map space to
-  place a unit group (gated behind cheat settings).
 - **CurrentHill Iran** integration — Shahed-136 and IRGCN FAC assets plus a `[CH] Iran 2020`
   faction behind a new-game mod toggle (see **[Custom Factions](Custom-Factions)**).
 - **Four built campaigns** — **Germany - Red Tide** (a *Red Storm Rising*-flavoured 1988 NATO

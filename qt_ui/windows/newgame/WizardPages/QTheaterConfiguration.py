@@ -388,45 +388,30 @@ class TheaterConfiguration(QtWidgets.QWizardPage):
     def initializePage(self) -> None:
         super().initializePage()
         # The Intro page's "Campaign type" card drives which list we present. The
-        # blank-canvas (campaign maker) path only uses the selected campaign for its
-        # terrain, so it gets a clean terrain picker; the "Vietnam" card filters the
-        # campaign list to era: vietnam; otherwise the full included-campaign list.
-        # initializePage fires each time the user arrives from the Introduction page,
-        # so changing the radio re-applies the mode.
+        # "Vietnam" card filters the campaign list to era: vietnam; otherwise the
+        # full included-campaign list. initializePage fires each time the user
+        # arrives from the Introduction page, so changing the radio re-applies the
+        # mode.
         wizard = self.wizard()
-        terrain_only = bool(wizard.field("blankCanvas")) if wizard else False
         vietnam = bool(wizard.field("vietnamMode")) if wizard else False
-        self._set_mode(terrain_only=terrain_only, vietnam=vietnam)
+        self._set_mode(vietnam=vietnam)
 
-    def _set_mode(self, terrain_only: bool, vietnam: bool = False) -> None:
-        self._era_filter = "vietnam" if (vietnam and not terrain_only) else None
-        if terrain_only:
-            self.setTitle("Theater")
+    def _set_mode(self, vietnam: bool = False) -> None:
+        self._era_filter = "vietnam" if vietnam else None
+        if vietnam:
+            self.setTitle("Vietnam")
             self.setSubTitle(
-                "\nPick a terrain. Every airfield starts neutral — you'll paint "
-                "ownership and place defenses on the map yourself."
+                "\nChoose a Vietnam-era campaign. The period mechanics (Arc "
+                "Light, AAA flak, era weapons) and recommended factions "
+                "pre-load on select."
             )
-            self.campaignList.setup_terrain_content()
         else:
-            if vietnam:
-                self.setTitle("Vietnam")
-                self.setSubTitle(
-                    "\nChoose a Vietnam-era campaign. The period mechanics (Arc "
-                    "Light, AAA flak, era weapons) and recommended factions "
-                    "pre-load on select."
-                )
-            else:
-                self.setTitle("Theater configuration")
-                self.setSubTitle("\nChoose a terrain and time period for this game.")
-            # The era shell is just one more filter criterion, so it flows through
-            # the same filter/sort pipeline as version/map (upstream #908) rather
-            # than a parallel setup_content argument.
-            self.on_filter_changed()
-        # Campaign-specific panels are meaningless for a blank canvas.
-        self.campaignMapDescription.setVisible(not terrain_only)
-        self.performanceText.setVisible(not terrain_only)
-        self.show_incompatible_campaigns_checkbox.setVisible(not terrain_only)
-        self.filter_sort_group.setVisible(not terrain_only)
+            self.setTitle("Theater configuration")
+            self.setSubTitle("\nChoose a terrain and time period for this game.")
+        # The era shell is just one more filter criterion, so it flows through
+        # the same filter/sort pipeline as version/map (upstream #908) rather
+        # than a parallel setup_content argument.
+        self.on_filter_changed()
 
     def on_filter_changed(self) -> None:
         """Handle changes in filter or sort options."""
@@ -572,33 +557,3 @@ class QCampaignList(QListView):
                 self.campaign_model.index(0, 0, QModelIndex()),
                 QItemSelectionModel.SelectionFlag.Select,
             )
-
-    def setup_terrain_content(self) -> None:
-        """Populate one row per unique terrain for the blank-canvas terrain picker.
-
-        Each row carries a representative compatible campaign for that terrain (the
-        blank-canvas flow only uses it for ``data["theater"]`` + default factions)
-        but is labelled by the terrain name, so the user picks a map rather than a
-        hand-built campaign.
-        """
-        self.selectionModel().blockSignals(True)
-        try:
-            self.campaign_model.clear()
-            seen: set[str] = set()
-            for campaign in self.campaigns:
-                if not campaign.is_compatible:
-                    continue
-                terrain = campaign.data.get("theater")
-                if not terrain or terrain in seen:
-                    continue
-                seen.add(terrain)
-                item = QCampaignItem(campaign)
-                item.setText(terrain)
-                self.campaign_model.appendRow(item)
-        finally:
-            self.selectionModel().blockSignals(False)
-
-        self.selectionModel().setCurrentIndex(
-            self.campaign_model.index(0, 0, QModelIndex()),
-            QItemSelectionModel.SelectionFlag.Select,
-        )

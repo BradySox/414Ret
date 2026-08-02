@@ -28,7 +28,6 @@ function tgo(id: string, category: string, task: string | null): Tgo {
     // GroupTask is a tuple-valued enum, so it serializes as [name, role].
     task: task === null ? undefined : [task, "AntiAir"],
     mobile: false,
-    user_placed: false,
   };
 }
 

@@ -286,15 +286,10 @@ file. This guide is the map; those are the territory.
     object exists — it means ownership only for the CP-defining classes and the
     bounded blue-marker preference. Contract-locked in
     `tests/test_miz_marker_binding.py`)
-  - `414th-campaign-maker-notes.md` — blank-start campaign maker (**landed through Increment D**,
-    not "in progress": the wizard's "Build your own (blank canvas — experimental)" entry →
-    all-airfields-neutral map paint (left/right-click cycles gray→blue→red) → **Finalize**
-    (prunes unpainted bases, derives fronts, seeds air defenses + economy, staffs airwings) →
-    play → **Save as Campaign** (a `.miz`-less `blank_canvas` YAML that reloads from the New
-    Game list). Create/paint/finalize app-verified 2026-06-24 (checklist BC-A/B/C + the BC-D
-    build half); still owed = the fly-side rows (BC-D fly, BC-E/F/G/H) + the deferred D.4
-    polish (layout fidelity, FUEL/OIL round-trip, squadron presets, `base.armor` inventory
-    seeding))
+  - **Blank-start campaign maker** — REMOVED (2026-08-02): the New Game "Build your own
+    (blank canvas)" wizard entry, the neutral-map paint step, Finalize, Save-as-Campaign, and
+    the `blank_canvas`/`blanktheatergen`/`blankcampaign` machinery are fully ripped out. Any
+    user-saved `blank_canvas` campaign YAML will no longer load. Do not restore.
   - `414th-weapon-dates-proposal.md` — weapon-coverage completion plan + the modern-weapon date-gating rule
   - **MIST → MOOSE consolidation & IADS engine** (✅ COMPLETE 2026-06-25 — MIST retired; read before
     touching IADS/plugins):
@@ -1041,14 +1036,13 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     had its category enforced; `task` serializes as `[name, role]` (tuple-valued `GroupTask` enum),
     hence `task[0]`. Tests `client/src/components/tgoslayer/TgosLayer.test.tsx`; needs the CI client
     rebuild.
-20. **Drop-spawn: map right-click unit placement** — right-click blank map space → Qt dialog
-    (coalition / category / unit-type picker from all 66 named `LAYOUTS` / unit rows / deploy-timing
-    / respawn) → `place_unit_group()` validates terrain + 200 km range, creates TGO, fires SSE so
-    the marker appears immediately. Right-click a user-placed TGO to remove it (`DELETE /tgos/{id}`).
-    Deploy Next Turn queues a `PendingUnitPlacement` materialised at turn start. Two cheat settings:
-    `enable_unit_placement` (unlock) + `enable_free_unit_placement` (no cost).
-    (`game/theater/unitplacement.py`, `qt_ui/windows/groundobject/QPlaceUnitGroupDialog.py`,
-    `client/src/components/liberationmap/MapContextMenu.tsx`; features doc §20.)
+20. **Drop-spawn: map right-click unit placement** — REMOVED (2026-08-02): the map
+    right-click unit-placement cheat is fully ripped out — `game/theater/unitplacement.py`,
+    the `QPlaceUnitGroupDialog`, the `MapContextMenu.tsx` handler, the
+    `POST /qt/place-unit-group` + `DELETE /tgos/{id}` routes, the `enable_unit_placement` /
+    `enable_free_unit_placement` cheat settings, and the `user_placed`/`respawn_enabled`/
+    `pending_deploy` TGO fields are all gone (the shared SSE `delete_tgo` plumbing stays for
+    COIN). Do not restore.
 21. **Combat SAR** — pilot-rescue flight type (`FlightType.COMBAT_SAR`): a rescue helo (CH-47/UH-1)
     + a C-130 "King" (air-tracking **TACAN-only** beacon — no ADF — + F10 LARS survivor-locator) +
     a Sandy (SCAR, §15) escort, driven at runtime by the plugin's **survivor ledger** (`combatsar`

@@ -135,9 +135,6 @@ def _concealed_radius(tgo: TheaterGroundObject) -> Optional[float]:
     if getattr(tgo, "concealed", False):
         # COIN hidden objects: intrinsic, independent of the setting.
         return CONCEALED_RADIUS_M
-    if tgo.user_placed:
-        # The player placed it (drop-spawn) — they know exactly where it is.
-        return None
     settings = tgo.control_point.coalition.game.settings
     if not getattr(settings, "concealed_enemy_forces", False):
         return None
@@ -235,7 +232,6 @@ class TgoJs(BaseModel):
     task: Optional[GroupTask]
     mobile: bool
     destination: Optional[LeafletPoint]
-    user_placed: bool
     # COIN concealment: set while this TGO's map presence is an uncertainty area.
     # `position` is then the JITTERED circle centre, not the true location.
     uncertainty_radius_m: float | None = None
@@ -297,7 +293,6 @@ class TgoJs(BaseModel):
             task=tgo.groups[0].ground_object.task if tgo.groups else None,
             mobile=mobile,
             destination=destination,
-            user_placed=tgo.user_placed,
             uncertainty_radius_m=uncertainty[1] if uncertainty else None,
             concealed_cluster_size=(
                 concealed_cluster_size(tgo) if uncertainty else None

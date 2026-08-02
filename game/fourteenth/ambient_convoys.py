@@ -148,14 +148,14 @@ def _garrison_to_stock(cp: "ControlPoint", needed: int) -> int:
     not die) as one stock unit of the same type appears. Guards keep the base
     defensible: the CP keeps ≥ ``GARRISON_SKIM_FLOOR`` garrison vehicles in
     total, every group keeps ≥ ``GARRISON_SKIM_GROUP_KEEP`` alive, and
-    ``coin_spawned`` / ``user_placed`` / ``map_hidden`` groups are never
-    touched. Unmapped unit types (no ``GroundUnitType``) are skipped."""
+    ``coin_spawned`` / ``map_hidden`` groups are never touched. Unmapped unit
+    types (no ``GroundUnitType``) are skipped."""
     eligible: list[tuple[Any, Any, Any]] = []
     total_alive = 0
     for tgo in getattr(cp, "connected_objectives", None) or ():
         if getattr(tgo, "category", None) != "armor":
             continue
-        if getattr(tgo, "coin_spawned", False) or getattr(tgo, "user_placed", False):
+        if getattr(tgo, "coin_spawned", False):
             continue
         if getattr(tgo, "map_hidden", False):
             continue

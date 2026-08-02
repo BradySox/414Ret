@@ -499,9 +499,9 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
 
 ### B34 — Campaign filter & sort in the New Game wizard · §28 · ☐ UNTESTED (adopted 2026-07-26 from upstream PR dcs-retribution#908, taken over the fork's bespoke era plumbing; the game-side predicate `Campaign.matches_era` is unit-tested and the Qt modules import clean, but `qt_ui` is not in the CI mypy path and the campaign-list item build needs the DCS install dir, so the whole wizard page is app-only)
 - **What CI cannot exercise:** that the "Filter && Sort Campaigns" group renders and lays out sanely on the Theater page, that the Version/Map dropdowns are populated from the loaded campaigns (and that a `(0, 0)` unknown version is skipped), that each of the three sorts reorders the list, that the filters **compose** rather than clobber one another, and — the real risk — that pressing through the wizard starts the campaign actually highlighted, now that upstream removed the `selectedCampaign` wizard field and `accept()` reads `campaignList.selected_campaign` directly.
-- **Setup:** open **New Game** → Theater page. Exercise Version, Map, Sort by, and "Show incompatible campaigns" individually and in combination. Then pick a campaign that is *not* first in the list, press through, and confirm the game that starts is the one selected. Separately, take the Introduction page's **Vietnam** card (checklist L5) and the **blank canvas** card and re-enter the Theater page each time.
-- **Pass:** the group renders without clipping the campaign list (§28's screen-fit work applies); each filter narrows the list and each sort reorders it; combining filters ANDs them and none resets another; the Vietnam card's era filter survives touching the other controls; **blank canvas hides the whole filter group** (a terrain picker has nothing to filter) and still shows one row per terrain; and the campaign that starts is always the highlighted one.
-- **Fail signature:** the wizard starts the wrong campaign (the `selectedCampaign` field removal mis-wired — this silently falls back to `campaigns[0]`); changing the "show incompatible" checkbox resetting the version/map/era criteria (something bypassed `on_filter_changed`); the Vietnam card listing non-Vietnam campaigns after touching a dropdown (the era criterion isn't surviving `set_filters`); the filter group visible in blank-canvas mode; an empty list selecting nothing and the page erroring (upstream guards the first-row selection on `rowCount() > 0` — a regression here would throw).
+- **Setup:** open **New Game** → Theater page. Exercise Version, Map, Sort by, and "Show incompatible campaigns" individually and in combination. Then pick a campaign that is *not* first in the list, press through, and confirm the game that starts is the one selected. Separately, take the Introduction page's **Vietnam** card (checklist L5) and re-enter the Theater page each time.
+- **Pass:** the group renders without clipping the campaign list (§28's screen-fit work applies); each filter narrows the list and each sort reorders it; combining filters ANDs them and none resets another; the Vietnam card's era filter survives touching the other controls; and the campaign that starts is always the highlighted one.
+- **Fail signature:** the wizard starts the wrong campaign (the `selectedCampaign` field removal mis-wired — this silently falls back to `campaigns[0]`); changing the "show incompatible" checkbox resetting the version/map/era criteria (something bypassed `on_filter_changed`); the Vietnam card listing non-Vietnam campaigns after touching a dropdown (the era criterion isn't surviving `set_filters`); an empty list selecting nothing and the page erroring (upstream guards the first-row selection on `rowCount() > 0` — a regression here would throw).
 
 ### B35 — Air-defense class rows are filters of the "Air defences" master · §19 · ☐ UNTESTED (built 2026-07-29 off a flown report that read as a §3 fog bug — "with reveal fog of war on, SAM sites are showing nothing at the actual location, and the only way you can see it on the map is by hovering on the circle". Root cause was NOT fog: the campaign save carried `airDefenses: false` with all four class rows false, and those five were the only layers drawing an air-defense marker, so 54 AD sites and 25 §3 concealed circles went undrawn while *Enemy SAM threat range* — a separate layer over the same TGO slice — kept drawing the rings. Recon fog + the reveal overview were both verified CORRECT headlessly on the reported save. The filter semantics are unit-tested in `client/src/components/tgoslayer/TgosLayer.test.tsx` (5 cases: all-classes, narrowed, task-less exclusion, category enforcement, exclude flag) and the client passed tsc + the full jest suite locally — but the panel render, the greying, and the stored-state migration are app-only. **Needs the CI client rebuild.**)
 - **What CI cannot exercise:** that the four class rows visibly grey out and refuse clicks while "Air defences" is unchecked; that a stored layer blob which ticked a class row with the master off comes back with the master ON (`normalizeAirDefenseFilters`) rather than an empty map; and that no site ever draws two stacked markers.
@@ -2598,9 +2598,8 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
 - **Setup:** Open **New Game**. On the Introduction page, "Campaign type" now has a third option, **Vietnam**.
 - **Pass:** Selecting **Vietnam** → the next (Theater) page is titled "Vietnam" and lists **only** the
   `era: vietnam` campaigns (1968 Yankee Station, Velvet Thunder, Red Flag 81-2); selecting one still pre-loads its settings +
-  recommended factions. Going **back** and choosing "Play an included campaign" restores the full list;
-  "blank canvas" still shows the terrain picker. The "Show incompatible campaigns" toggle keeps the Vietnam
-  filter applied.
+  recommended factions. Going **back** and choosing "Play an included campaign" restores the full list.
+  The "Show incompatible campaigns" toggle keeps the Vietnam filter applied.
 - **Fail signature:** no Vietnam radio; Vietnam shows all campaigns (filter not applied) or an empty list;
   switching back to "included" stays filtered; the "show incompatible" toggle drops the era filter; a crash
   arriving on the Theater page.
@@ -3486,10 +3485,8 @@ them by inspecting the ATO + map, not by flying.
 - G3 (TIC ambient fire / LOS-blocked positions), G4 (C-130J EW/ISR — fly the
   JAMMING slot).
 
-### Session 5 — Coastal front + drop-spawn cheats
-- B1 (forward-CAP / FLOT depth on a coastline/river front), 20-A…20-G (drop-spawn
-  dialog, immediate spawn, removal, deploy-next-turn, terrain + range gates, free
-  cheat).
+### Session 5 — Coastal front
+- B1 (forward-CAP / FLOT depth on a coastline/river front).
 
 Mark each row's **Status** as you go. A cluster of **☑ VERIFIED** Lua-free Python
 rows (B, C, D, E) then becomes the upstream-PR carve-out batch.
@@ -3503,50 +3500,3 @@ rows (B, C, D, E) then becomes the upstream-PR carve-out batch.
   upstream-PR candidates — verify in-game, then carve them out (see the
   upstreaming inventory).
 
----
-
-### §20 Drop-spawn (in-game-pass required)
-
-**Status (user, 2026-07-01): the core UI worked in a prior pass** — "drop spawn was good [in a prior]
-form." Takes **20-A** (right-click blank map → Qt dialog) and **20-B** (confirm → marker appears
-immediately) as user-confirmed. The remaining rows (20-H off-default guard, 20-C remove, 20-D deploy-next-turn,
-20-E terrain, 20-F range, 20-G free-placement) are **not individually confirmed** — check them the next time
-the placement dialog is open.
-
-| # | Observable criterion | Fail signature |
-|---|---|---|
-| 20-A | With **`enable_unit_placement` ON**: right-click blank map → Qt dialog opens with coalition/category/layout pickers | No dialog; console error in devtools |
-| 20-H | With **`enable_unit_placement` OFF** (default): right-click blank map opens **nothing**, and right-click a target marker still opens **package planning** (not the buy dialog) | Buy dialog pops on a plain right-click while the cheat is off (the 2026-06-25 regression) |
-| 20-B | Select "Ground Force", confirm → armor group appears on map immediately | No marker; no SSE event in network tab |
-| 20-C | Right-click a user-placed TGO → marker disappears from map | TGO remains; server returns 403 |
-| 20-D | "Deploy Next Turn" → no immediate marker; after turn advance group materialises | Group never appears; pending list never cleared |
-| 20-E | Place a naval group in sea → succeeds; place on land → error dialog | Terrain check not firing |
-| 20-F | Place beyond 200 km from nearest CP (no free cheat) → error dialog | No range error; TGO placed out of range |
-| 20-G | Enable "Free placement" cheat → no budget deducted | Budget still decremented |
-
-### Campaign maker — blank canvas (in-game-pass required)
-
-Design: `docs/dev/design/414th-campaign-maker-notes.md`.
-
-**Status 2026-06-24 (Retribution-app pass, Afghanistan): core loop VERIFIED.**
-Headless-inspected the finalized save — 0 neutral leftovers (gray pruned), 5 fronts
-derived, 1 squadron each side staffed. Bugs found + fixed this pass: PR #130, #133
-(merged), #138 (open, finalize button). BC-D fly-half + BC-E need DCS; BC-F still pending.
-
-**Update 2026-06-27:** the Increment C "barren finalized save" gap is **closed** — a
-finalized blank canvas now seeds a per-base economy (factory/ammo/fuel/oil) **and** a
-default air-defence/armor laydown (SHORAD + EWR + forward MERAD + BASE_DEFENSE armor),
-routed through the engine's own ground-object generator so the IADS wires up. Headless-
-verified (Caucasus, `[CH] Russia 2020`): 32 ground objects on a 4-base canvas, 11 IADS
-nodes after `begin_turn_0`. New row BC-G covers the in-game flight check.
-
-| # | Layer | Observable criterion | Fail signature | Status |
-|---|---|---|---|---|
-| BC-A | Retribution | "Build your own (blank canvas)" → map opens with **every** airfield **gray/yellow** (neutral), no fronts, no units | Crash on generate; bases pre-coloured; preset units present | **VERIFIED** (after #133) |
-| BC-B | Retribution | **Left-click** cycles gray→blue→red→gray (live SSE); **right-click** reverses | Opens info dialog; no recolor; 403 | **VERIFIED** (needed client rebuild) |
-| BC-C | Retribution | **Finalize Campaign** prunes unpainted gray bases, draws a front between blue/red | Gray bases remain; no front; crash in finalize | **VERIFIED** (0 neutral, 5 fronts) |
-| BC-D | build=Retribution / fly=.miz | Finalize → air-wing dialog → add squadrons from scratch → plan + fly a package | Dialog empty/errors with 0 preconfigured; no flyable aircraft | build VERIFIED (1 sq/side); **fly pending** |
-| BC-E | .miz | Drop-spawn (§20) places SAMs/armor onto the finalized map | Placement broken on a hand-built theater | pending |
-| BC-F | Retribution | Paint inert in a **normal** (non-setup) campaign — click opens info dialog | Bases repaint in a real game (guard not firing) | pending |
-| BC-G | build=Retribution / fly=.miz | A finalized blank canvas has, per owned base, an economy (factory/ammo/fuel/oil) **and** air defence + a BASE_DEFENSE armor group; SAMs/EWR appear on the IADS/threat map and SEAD/strike/BAI have real targets | Finalized save has 0 ground objects (barren); no threat rings; SEAD "no targets"; crash in finalize seeding | ☐ UNTESTED (headless-verified 2026-06-27: 32 TGOs + 11 IADS nodes; faction-template degradation expected) |
-| BC-H | Retribution | **Save as Campaign** (Increment D) toolbar action on a finalized blank canvas → enter a name → it appears in the New Game list → starting it rebuilds ownership + the SAM/EWR/armor/factory/ammo laydown | Action not visible on a finalized blank canvas (or visible on a normal campaign); saved campaign hidden from list (version gate); load crash; rebuilt map barren or wrong sides | ☐ UNTESTED — whole chain **headless-verified 2026-06-27** (finalize sets `from_blank_canvas` → `save_blank_campaign` writes the YAML → `Campaign.from_file` loads it **compatible/listed** → `load_theater` rebuilds; ownership + preset-native counts match). Only the literal button-click + name dialog need the in-app pass |

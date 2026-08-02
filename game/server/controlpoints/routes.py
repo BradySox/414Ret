@@ -6,7 +6,6 @@ from fastapi import APIRouter, Body, Depends, HTTPException, status
 from starlette.responses import Response
 
 from game import Game
-from game.theater.player import Player
 from .models import ControlPointJs
 from ..dependencies import GameContext
 from ..leaflet import LeafletPoint
@@ -100,54 +99,6 @@ def set_destination(
             detail=f"Cannot move {cp} over land.",
         )
     cp.target_position = point
-    from .. import EventStream
-
-    with EventStream.event_context() as events:
-        events.update_control_point(cp)
-
-
-@router.put(
-    "/{cp_id}/coalition",
-    operation_id="paint_control_point_coalition",
-    status_code=status.HTTP_204_NO_CONTENT,
-    response_class=Response,
-)
-def paint_coalition(
-    cp_id: UUID,
-    coalition: str = Body(..., embed=True, title="coalition"),
-    game: Game = Depends(GameContext.require),
-) -> None:
-    """Repaint a control point blue/red/neutral during blank-canvas setup.
-
-    Used by the campaign maker's live-map paint step. ``coalition`` is one of
-    ``"blue"``, ``"red"``, ``"neutral"``.
-    """
-    if not game.blank_canvas_setup:
-        raise HTTPException(
-            status.HTTP_403_FORBIDDEN,
-            detail="Base ownership can only be painted during blank-canvas setup.",
-        )
-
-    cp = game.theater.find_control_point_by_id(cp_id)
-    if cp is None:
-        raise HTTPException(
-            status.HTTP_404_NOT_FOUND,
-            detail=f"Game has no control point with ID {cp_id}",
-        )
-
-    player_by_name = {
-        "blue": Player.BLUE,
-        "red": Player.RED,
-        "neutral": Player.NEUTRAL,
-    }
-    player = player_by_name.get(coalition.lower())
-    if player is None:
-        raise HTTPException(
-            status.HTTP_400_BAD_REQUEST,
-            detail=f"Invalid coalition '{coalition}'; expected blue, red, or neutral.",
-        )
-
-    cp.assign_setup_coalition(game, player)
     from .. import EventStream
 
     with EventStream.event_context() as events:

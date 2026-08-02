@@ -363,6 +363,21 @@ change per PR, upstream gates validated per PR, crowded zones respected. Gaps + 
 > codebases' architectures differ. They are not upstream candidates, but for
 > concrete recorded reasons, not by category.
 
+- **`resources/scripts/MissionScripting.original.lua` is untracked + gitignored**
+  (2026-08-02). Upstream tracks this file, but it is not source: `liberation_install.py`
+  `replace_mission_scripting_file()` **writes** it at launch by copying the file out of
+  *the running machine's* DCS install, so tracking it pushes one person's DCS state to
+  everyone and leaves every contributor's tree permanently dirty. Worse, the copy
+  upstream ships is not a stock DCS file at all — its `sanitizeModule('os'/'io'/'lfs')`
+  calls are commented out (it is a stale snapshot of an *old Retribution replacement*),
+  so "Restore original" writes a **desanitized** `MissionScripting.lua` back to DCS
+  while reporting success. Untracked here so each install captures its own faithful
+  stock backup on first launch; `restore_original_mission_scripting()` already guards
+  on `os.path.isfile`, so an absent backup degrades to a no-op. **Upstream carve
+  candidate** (untrack it there too, or at minimum replace the seed with a genuine
+  stock file) — not yet queued because it needs a decision from upstream on whether
+  they want the seed at all. On a dev-pull, keep the file untracked: if a merge
+  re-adds it, `git rm --cached` it again.
 - **C-130J EW (`c130j`) plugin de-conflict on SOF inserts**
   (`game/missiongenerator/luagenerator.py` `_sof_c130_present`): fork glue between
   two fork features — travels with the C-130J framework carve, never alone.

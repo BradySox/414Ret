@@ -1487,6 +1487,12 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
   captured 23 unit(s)" — zero Lua errors; the Tacview confirms the Shirqat package drone physically overflew
   the target CP at 0.4 km. The G19 capture machinery works in-game; what remains owed for this row is only
   the Vietnam-campaign fly with the RF-101B/RA-5C airframes specifically.
+- **Harness coverage added 2026-08-02** (the code audit's plugin-coverage sweep found `airecon` was the one
+  fork-authored plugin with no headless test): `tests/lua/test_airecon_runtime.py` now pins the contract the
+  debrief depends on — overfly-only capture, one-shot per flight, a flight killed en route confirms nothing,
+  RED-only inside the capture radius, the exact `{unit, life, type}` schema `game/debriefing.py` parses, the
+  `dirty_state` flag without which the ledger never reaches `state.json`, the `captureCap` bound, and the
+  no-node no-op. The harness models no DCS AI, so the Vietnam-airframe fly is still what closes this row.
 - **Root cause of the "0 captures for AI survivors" gap + fix (2026-07-01).** Traced it to the MOOSE
   TARS film engine being **player-only**: `TARS.lua`'s birth handler does
   `if not unit or not unit:GetPlayerName() then return end`, so an AI-flown recon flight is dropped

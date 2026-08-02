@@ -313,6 +313,23 @@ squadrons:
       size: 4
   # Hamburg (17) — forward CAS / rotary hub, holding the Lübeck neck.
   17:
+    # The Finnish detachment. Finland joined NATO in April 2023 -- before Sweden -- and its
+    # F/A-18C Hornets were bought as interceptors, so BARCAP is the historically honest role.
+    # HavLLv 31 (Fighter Squadron 31, Karjalan Lennosto at Rissala) is the Russia-facing
+    # Finnish fighter squadron. Placed at Hamburg deliberately: at 53 km from the nearest red
+    # field it is blue's most exposed base and had NO fast air at all -- only A-10s, Apaches
+    # and lift. It also closes a real hole in the order of battle: blue flew ZERO BARCAP
+    # squadrons against red's SIX, so nothing stood a barrier patrol over blue's own fields.
+    # Unlike the CH Gripen (an AI-only mod airframe), the F/A-18C is a full-fidelity module,
+    # so this is a flyable seat. `country: Finland` pins Finnish comms/voices/pilot names (§23).
+    - primary: BARCAP
+      secondary: air-to-air
+      aircraft:
+        - HavLLv 31
+      aircraft_type: F/A-18C Hornet (Lot 20)
+      country: Finland
+      callsign: Sisu
+      size: 8
     - primary: CAS
       secondary: air-to-ground
       aircraft:

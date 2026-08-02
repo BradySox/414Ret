@@ -278,3 +278,30 @@ def test_gripen_is_fielded_and_is_a_dead_platform(tmp_path: Path) -> None:
     # The unit data rates it top of its own file for DEAD; if that regresses the
     # squadron above would still bind but would stop being the SEAD answer.
     assert gripen[0].task_priority(FlightType.DEAD) >= 700
+
+
+def test_finnish_hornet_squadron_closes_the_barcap_hole() -> None:
+    """Blue flew ZERO BARCAP against red's six until this squadron.
+
+    Finland joined NATO in April 2023 and its Hornets are interceptors, so BARCAP is
+    both the historically honest role and the gap in the order of battle. It sits at
+    Hamburg because that is blue's most exposed field (~53 km from the nearest red
+    base) and had no fast air at all.
+    """
+    data = yaml.safe_load(YAML.read_text(encoding="utf-8"))
+    hamburg = data["squadrons"][17]
+    finns = [s for s in hamburg if s.get("country") == "Finland"]
+    assert len(finns) == 1, "the Finnish Hornet squadron is missing from Hamburg"
+    squadron = finns[0]
+    assert squadron["aircraft_type"] == "F/A-18C Hornet (Lot 20)"
+    assert squadron["primary"] == "BARCAP"
+
+    # The hole it exists to close: blue must field at least one BARCAP squadron.
+    blue_bases = [47, 5, 17, CARRIER_NAME]
+    barcaps = [
+        s
+        for base in blue_bases
+        for s in data["squadrons"].get(base, [])
+        if s["primary"] == "BARCAP"
+    ]
+    assert barcaps, "blue has no BARCAP squadron -- the Finnish detachment was dropped"

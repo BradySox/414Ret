@@ -2,7 +2,7 @@
 name: Germany - Baltic Fury
 theater: GermanyCW
 authors: 414th JFG
-recommended_player_faction: USA 2020
+recommended_player_faction: NATO Baltic 2027
 recommended_enemy_faction: Redfor (Russia) 2020
 description: >
   <p>The Russian drive across the North German Plain has spent itself. In three weeks the
@@ -131,6 +131,12 @@ settings:
   fa18ef_tanker: true              # F/A-18E organic carrier tanker
   f22_raptor: true                 # F-22A Raptor (Nordholz)
   usamilitaryassetspack: true      # CurrentHill USA pack (blue ground / air defense)
+  # The two allies the Baltic actually belongs to (NATO Baltic 2027 faction). Sweden
+  # joined NATO in 2024 and fights in its home water; the UK leads the Joint
+  # Expeditionary Force, the Northern-Europe framework. Both packs are REQUIRED --
+  # without them the allied ground/naval/AD units are stripped from the faction.
+  swedishmilitaryassetspack: true  # LvS-103 area SAM, RBS-15KA coastal, Visby/CB90, Strv 122/123, Archer
+  ukmilitaryassetspack: true       # Type 45 / Type 26 for the CSG screen, Sky Sabre, Challenger 3
   russianmilitaryassetspack: true  # CurrentHill Russia pack ([CH] Ka-52 / Tu-160M2 + red ground)
   high_digit_sams: true            # HDS Ultimate Compilation (S-400 / S-300 hardware)
   # 2027 era gate: hide post-era weapons + cockpit properties so the modern jets don't spawn
@@ -263,6 +269,23 @@ squadrons:
       aircraft_type: F-15E Strike Eagle (Suite 4+)
       callsign: Chaos
       size: 12
+    # The Swedish detachment. F 17 (Blekinge Wing, Ronneby/Kallinge) is the Baltic-facing
+    # Gripen wing, forward-deployed to Nordholz for the counter-offensive. It is here for a
+    # capability reason as well as a thematic one: blue's ONLY other dedicated SEAD/DEAD unit
+    # is the carrier's Growler squadron, which is thin against an 11-site S-400/S-300 belt --
+    # and the CH Gripen's unit data carries DEAD: 790, the highest task priority in its file.
+    # Its RBS-15 Mk4 (160 NM) also gives blue a second anti-ship shooter against the Baltic
+    # Fleet SAG, and Taurus KEPD-350 (270 NM) reaches the coastal belt from standoff.
+    # `country: Sweden` is load-bearing (§23): it pins the squadron to Swedish comms,
+    # voiceovers and pilot names instead of the shared US voice.
+    - primary: DEAD
+      secondary: air-to-ground
+      aircraft:
+        - F 17 Blekinge Wing
+      aircraft_type: "[CH] JAS 39C Gripen"
+      country: Sweden
+      callsign: Viggen
+      size: 8
   # Bremen (5) — rear heavies + eyes.
   5:
     - primary: AEW&C

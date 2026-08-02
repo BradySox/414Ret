@@ -1,24 +1,25 @@
-"""Auto-field a JTAC drone squadron so every JTAC-capable side actually has one.
+"""Auto-field a JTAC drone squadron for a COIN campaign flying the packaged drone JTAC.
 
-The 414th ripped out the old FLOT auto-JTAC (a ``jtac_unit`` MQ-9 spawned glued to the
-front line). Its replacement is the **packaged** drone-as-JTAC (see
-``AircraftGenerator._maybe_configure_jtac``): a drone flown in an air-to-ground package
-lazes for the shooters. But that only fires if a drone squadron actually *exists* and gets
-fragged -- and squadrons are created only from a campaign's ``squadrons:`` block. So on the
-55+ campaigns that never list a drone, no JTAC would ever appear.
+COIN campaigns replace the stock front-line JTAC (an invisible, immortal FAC orbiting the
+FLOT) with the **packaged** drone-as-JTAC (see ``AircraftGenerator._maybe_configure_jtac``):
+a real, killable drone flown in an air-to-ground package that lazes for the shooters from
+inside the fight, because a COIN war has no front line worth orbiting. But that only fires
+if a drone squadron actually *exists* and gets fragged -- and squadrons are created only
+from a campaign's ``squadrons:`` block, so a COIN campaign that never lists a drone would
+have no JTAC at all.
 
-This restores the "every JTAC-capable side has a JTAC" behaviour the FLOT drone had, as a
-real packaged squadron: at New Game, for each blue side whose faction declares a drone JTAC
-platform, auto-field **one small TARPS-tasked drone squadron at the rear-most airfield**. The
-auto-recon hook (``_maybe_plan_tarps_recon``) then frags it forward into A/G packages, where
-it becomes a JTAC (drone-JTAC), and -- being a drone -- it films the whole time (a drone is
-always a sensor). No FLOT unit, no invisible/immortal drone: a real, killable asset that
-rides the fight.
+So, when the packaged drone JTAC is on: at New Game, for each blue side whose faction
+declares a drone JTAC platform, auto-field **one small TARPS-tasked drone squadron at the
+rear-most airfield**. The auto-recon hook (``_maybe_plan_tarps_recon``) then frags it forward
+into A/G packages, where it becomes the JTAC, and -- being a drone -- it films the whole time
+(a drone is always a sensor).
 
 Deliberately conservative: it **skips** a side that already fields any drone squadron (a
 campaign that hand-placed its drones -- e.g. Operation Inherent Resolve -- is untouched),
-runs blue-only, and only for a drone that can actually fly TARPS (so it can self-frag). Gated
-by ``auto_jtac_drone`` (default ON) as a kill switch for balance-sensitive campaigns.
+runs blue-only, and only for a drone that can actually fly TARPS (so it can self-frag).
+Gated by ``coin_packaged_jtac_drone`` (the COIN JTAC model itself) and then by
+``auto_jtac_drone`` as a kill switch for campaigns that want their air wing left exactly
+as authored.
 """
 
 from __future__ import annotations
@@ -55,13 +56,16 @@ def ensure_jtac_drone_squadron(coalition: "Coalition") -> None:
     """Auto-field a JTAC drone squadron for *coalition* if it should have one.
 
     Call once per coalition at New Game, right after the campaign's own squadrons are
-    assigned (``configure_default_air_wing``). No-op unless the side is blue, the
-    ``auto_jtac_drone`` setting is on, the faction declares a TARPS-capable drone JTAC,
-    and it does not already field a drone squadron.
+    assigned (``configure_default_air_wing``). No-op unless the side is blue, the campaign
+    flies the COIN packaged drone JTAC, the ``auto_jtac_drone`` kill switch is on, the
+    faction declares a TARPS-capable drone JTAC, and it does not already field a drone
+    squadron.
     """
     game = coalition.game
     if not coalition.player.is_blue:
         return  # the JTAC feeds the human's lasing/BDA; the AI opponent needs none
+    if not getattr(game.settings, "coin_packaged_jtac_drone", False):
+        return  # a front-line-JTAC campaign needs no drone squadron fielded for this
     if not getattr(game.settings, "auto_jtac_drone", False):
         return
     faction = coalition.faction

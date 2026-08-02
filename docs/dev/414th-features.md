@@ -377,10 +377,22 @@ kept flying after landing", and the Fuel column already blanked exactly these ro
 `tests/ato/flightplans/test_formationattack.py` +
 `tests/missiongenerator/test_flightplan_fuel_column.py`.)
 
-**That drone is a lasing JTAC (2026-07-05, 414th call).** The 414th ripped out the old FLOT
-auto-JTAC (a `jtac_unit` MQ-9 glued to the front line); `JtacInfo` went unproduced and
-`jtac_unit` dormant, but the CTLD JTAC-autolase runtime + the kneeboard/radio consumers stayed
-live. `AircraftGenerator._maybe_configure_jtac` revives it, hung on the **packaged drone**
+**That drone is a lasing JTAC — COIN campaigns only (2026-07-05, 414th call; scoped to COIN
+2026-08-02).** The stock Retribution front-line JTAC — an **invisible, immortal** `jtac_unit`
+FAC orbiting the FLOT at 5,000 ft — is the model for **every campaign with a real front line**,
+and it is **back and default** (`FlotGenerator._generate_front_line_jtac`, a faithful restore of
+upstream's block). The packaged drone-JTAC below was built COIN-first and is now **opt-in per
+campaign**, because the two are **mutually exclusive** (running both double-lazes and
+double-lists on the kneeboard).
+
+The COIN case is the one the stock JTAC can't serve: a COIN laydown has **no FLOT worth
+orbiting** (Enduring Resolve has no front line at all; Inherent Resolve's fighting is at the
+strongholds and in the city, not along its single Highway-1 front), so the immortal FAC spends
+the war over empty ground. Those campaigns set **`coin_packaged_jtac_drone`** (Campaign
+Management → Insurgency, default **OFF**, `enabled_when=coin_insurgency`) and get a JTAC that
+rides the fight instead — which suppresses the front-line JTAC for that campaign.
+
+`AircraftGenerator._maybe_configure_jtac` hangs the JTAC on the **packaged drone**
 instead of a FLOT unit: an AI-flown flight of the faction's `jtac_unit` (the MQ-9/Predator) in
 an **air-to-ground package** (`_JTAC_PACKAGE_PRIMARIES` = Armed Recon / CAS / BAI / Strike —
 option 1; may narrow to {Armed Recon, CAS} later) is emitted as a `JtacInfo` (group name +
@@ -390,26 +402,29 @@ ON**), so the drone lazes and smoke-marks ground targets for the shooters and sh
 kneeboard/radio like any JTAC. **No DCS task is added** — the drone flies its own package
 mission (recon overwatch / attack) and lases what it overflies; CTLD does the designation.
 **Blue + AI only** (a player drone is not an autolase JTAC), **not** invisible/immortal (unlike
-the old FLOT JTAC — the packaged drone is a real asset that can be shot down). The laser code is
+the front-line JTAC — the packaged drone is a real asset that can be shot down). The laser code is
 allocated per JTAC (or forced to 1113 when the `ctld.fc3LaserCode` option is on, for FC3
 receivers). (`game/missiongenerator/aircraft/aircraftgenerator.py`; tests
 `tests/missiongenerator/test_drone_jtac.py`; checklist G26 — needs an in-game pass, including
 whether a moving/overflying drone sustains a useful lase or wants a loiter profile.)
 
-**Auto-fielding the JTAC drone squadron (2026-07-05, 414th call).** The packaged drone-JTAC
-only fires if a drone squadron *exists and gets fragged* — but squadrons are created only from
-a campaign's `squadrons:` block, so the 55+ campaigns that never list a drone would show no
-JTAC (the old FLOT auto-JTAC was always spawned by a special code path — that's gone). This
-restores "every JTAC-capable side has a JTAC" as a real squadron: at New Game
+**Auto-fielding the JTAC drone squadron (2026-07-05, 414th call; COIN-scoped 2026-08-02).** The
+packaged drone-JTAC only fires if a drone squadron *exists and gets fragged* — but squadrons are
+created only from a campaign's `squadrons:` block, so a COIN campaign that never lists a drone
+would have no JTAC at all (its front-line JTAC being suppressed by
+`coin_packaged_jtac_drone`). At New Game
 (`Coalition.configure_default_air_wing` → `ensure_jtac_drone_squadron`,
 `game/fourteenth/jtac_drone.py`), each **blue** side whose faction declares a **drone**
 `jtac_unit` (in `UAV_DCS_IDS`, TARPS-capable) and doesn't **already field a drone** gets one
 small (2-ship) **TARPS-tasked** drone squadron auto-fielded at the **rear-most airfield** (the
 blue field farthest from the nearest enemy base that `can_operate` it). The auto-recon hook
 then frags it forward into A/G packages, where it becomes the JTAC and films the whole time.
-Deliberately conservative: **skips a campaign that already hand-places drones** (e.g. Operation
-Inherent Resolve — untouched), blue-only, and gated by `auto_jtac_drone` (default **ON**) as a
-kill switch for balance-sensitive campaigns. **Era-gated** (`_UAV_SERVICE_YEAR`): many factions
+Deliberately conservative: gated first by **`coin_packaged_jtac_drone`** (a front-line-JTAC
+campaign never auto-fields a drone squadron for this), **skips a campaign that already
+hand-places drones** (e.g. Operation Inherent Resolve — untouched), blue-only, and then gated by
+`auto_jtac_drone` (default **ON**, `enabled_when=coin_packaged_jtac_drone`) as a
+kill switch for campaigns that want their air wing left exactly as authored.
+**Era-gated** (`_UAV_SERVICE_YEAR`): many factions
 carry a lazy default `jtac_unit: MQ-9` even in the 1980s/90s, so the auto-field never drops a
 drone that didn't exist yet — Red Tide is **1988**, and the Reaper (2007) / Predator (1995) /
 WingLoong (2014) are all skipped there (12 Cold-War factions carry the default MQ-9). The floor

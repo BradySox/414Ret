@@ -2,7 +2,7 @@ from pathlib import Path
 
 MAJOR_VERSION = 1
 MINOR_VERSION = 6
-MICRO_VERSION = 2
+MICRO_VERSION = 3
 
 
 def _optional_build_id_component(path: Path) -> str | None:

@@ -27,6 +27,15 @@ if dcsRetribution then
             EWR.redHasRWR = dcsRetribution.plugins.bigeye.redHasRWR
             EWR.redHasIRST = dcsRetribution.plugins.bigeye.redHasIRST
             EWR.reportUnitNameNATO = dcsRetribution.plugins.bigeye.reportUnitNameNATO
+            -- The main script built the INTEL fusion at load time, BEFORE these
+            -- coalition sensor options existed, so re-apply the detection sensor
+            -- types now that datalink/RWR/IRST are set (else the UI toggles no-op).
+            if blueIntel then
+                blueIntel:SetDetectionTypes(true, true, true, EWR.blueHasIRST, EWR.blueHasRWR, EWR.blueHasDLINK)
+            end
+            if redIntel then
+                redIntel:SetDetectionTypes(true, true, true, EWR.redHasIRST, EWR.redHasRWR, EWR.redHasDLINK)
+            end
         end
     end
 end

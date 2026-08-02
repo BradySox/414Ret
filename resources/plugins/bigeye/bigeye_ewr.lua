@@ -92,7 +92,7 @@ EWR.reportUnitNameNATO = true
 blueDetectionGroup = SET_GROUP:New():FilterCoalitions(EWR.blueCoalition):FilterStart()
 blueIntel = INTEL:New(blueDetectionGroup, EWR.blueCoalition, "Blue BigEye")
 blueIntel:SetClusterAnalysis(true, false, false)
-blueIntel:SetDetectionTypes(true, true, true, blueHasIRST, blueHasRWR, blueHasDLINK)
+blueIntel:SetDetectionTypes(true, true, true, EWR.blueHasIRST, EWR.blueHasRWR, EWR.blueHasDLINK)
 blueIntel:SetFilterCategory({ Unit.Category.AIRPLANE, Unit.Category.HELICOPTER })
 if EWR.debug then
     blueIntel:SetVerbosity(2)
@@ -104,7 +104,7 @@ blueIntel:__Start(2)
 redDetectionGroup = SET_GROUP:New():FilterCoalitions(EWR.redCoalition):FilterStart()
 redIntel = INTEL:New(redDetectionGroup, EWR.redCoalition, "Red BigEye")
 redIntel:SetClusterAnalysis(true, false, false)
-redIntel:SetDetectionTypes(true, true, true, redHasIRST, redHasRWR, redHasDLINK)
+redIntel:SetDetectionTypes(true, true, true, EWR.redHasIRST, EWR.redHasRWR, EWR.redHasDLINK)
 redIntel:SetFilterCategory({ Unit.Category.AIRPLANE, Unit.Category.HELICOPTER })
 if EWR.debug then
     redIntel:SetVerbosity(2)

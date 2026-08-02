@@ -72,7 +72,25 @@ sea, **west→northeast**. Same *Red Storm Rising* DNA, opposite axis.
   which gates the community mod's unrelated `JAS39Gripen` airframe. Preseeding the wrong one
   strips the squadron silently, so the pairing is pinned in the tests.
 
-  It is authored as a squadron, not just a faction entry: **F 17 Blekinge Wing** (the real
+  **The Finnish Hornet detachment (2026-08-02).** Finland joined NATO in **April 2023** —
+  before Sweden — and its F/A-18Cs were bought as interceptors, so BARCAP is the
+  historically honest role. **HävLLv 31** (Fighter Squadron 31, Karjalan Lennosto at
+  Rissala — the Russia-facing Finnish fighter squadron) sits at **Hamburg**, `primary:
+  BARCAP`, `country: Finland`, 8 airframes. Two reasons for that placement:
+  - **It closes a real hole.** Blue flew **zero** BARCAP squadrons against red's **six** —
+    nothing stood a barrier patrol over blue's own fields. (Anti-ship looked like the other
+    candidate gap, but the fork rates the F/A-18C **`Anti-ship: 150`**, so the Harpoon idea
+    is not supported by the unit data; its strengths are OCA/Aircraft 730 and BARCAP 555.)
+  - **Hamburg is blue's most exposed base** — ~53 km from the nearest red field, vs 137 km
+    (Nordholz), 152 km (Bremen), 289 km (the carrier) — and it had **no fast air at all**,
+    only A-10s, Apaches and lift.
+
+  Unlike the CH Gripen (an AI-only mod airframe), the **F/A-18C is a full-fidelity module**,
+  so this is a *flyable* seat — the reason it went to Finland rather than onto the boat: the
+  USN retired legacy Hornets from carrier decks in 2019, so a CVN Hornet squadron in 2027
+  would be an anachronism the Finnish one avoids.
+
+  The Gripen is authored as a squadron too, not just a faction entry: **F 17 Blekinge Wing** (the real
   Baltic-facing Gripen wing, Ronneby/Kallinge) forward-deployed to **Nordholz**, `primary:
   DEAD`, `country: Sweden`, 8 airframes. That is a capability fix as much as flavour — blue's
   only other dedicated SEAD/DEAD unit is the carrier's Growler squadron, which is thin against

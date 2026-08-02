@@ -53,9 +53,9 @@ Retribution temporarily modifies your DCS `MissionScripting.lua` so it can recor
 
 On first run, point Retribution at your DCS World installation and your `Saved Games\DCS` folder when prompted. It uses these to detect your installed modules (which determines the aircraft and campaigns available to you) and to write generated missions into the right place.
 
-![The New Game wizard's Introduction page, with the campaign-type radio buttons: Play an included campaign, Vietnam (period Vietnam-only content), and Build your own (blank-start, place your own forces)](https://raw.githubusercontent.com/bradyccox/414Ret/main/docs/wiki/img/new-game-wizard.png)
+![The New Game wizard's Introduction page, with the campaign-type radio buttons: Play an included campaign, and Vietnam (period Vietnam-only content)](https://raw.githubusercontent.com/bradyccox/414Ret/main/docs/wiki/img/new-game-wizard.png)
 
-*The New Game wizard. The fork adds the **Vietnam** content shell and the **Build your own** blank-start path alongside the usual included campaigns.*
+*The New Game wizard. The fork adds the **Vietnam** content shell alongside the usual included campaigns.*
 
 Once it knows where DCS lives, start a campaign from the **New Game** wizard. The wizard walks you through:
 

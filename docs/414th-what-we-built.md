@@ -53,9 +53,8 @@ the fog when you want the full picture.
 moving-target hunt where you pick the real high-value target out of decoys, with an
 optional commander-capture and special-forces recovery loop on top.
 
-**Build your own war.** A **blank-canvas campaign maker**: start from an empty map, paint
-which airfields are yours, and drop SAMs, armor, and ships straight onto the map with a
-right-click. Plus a unified, dark-themed map-layers panel to keep all of it readable.
+**Read the whole map at a glance.** A unified, dark-themed map-layers panel keeps SAM rings,
+routes, IADS links, and recon fog readable — with preset views for SEAD, recon, and a clean map.
 
 *(Full per-feature engineering detail lives in [`docs/dev/414th-features.md`](dev/414th-features.md).)*
 

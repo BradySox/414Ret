@@ -101,7 +101,7 @@ FEATURES: tuple[Feature, ...] = (
         "drop_spawn_placement",
         "Drop-spawn: map right-click unit placement",
         20,
-        settings_fields=("enable_unit_placement", "enable_free_unit_placement"),
+        retired=True,
     ),
     Feature(
         "combat_sar",

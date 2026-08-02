@@ -31,7 +31,7 @@ pass checklist `§N` is unregistered, or this table drifts.
 | §17 | Auto-planner target unpredictability | — | `ownfor_planner_unpredictability`, `opfor_planner_unpredictability` |
 | §18 | Fog-of-war overview toggle | — | — |
 | §19 | Unified map layers panel | — | — |
-| §20 | Drop-spawn: map right-click unit placement | — | `enable_unit_placement`, `enable_free_unit_placement` |
+| §20 | Drop-spawn: map right-click unit placement _(retired)_ | — | — |
 | §21 | Combat SAR | `combatsar` | `auto_combat_sar`, `combat_sar_persistent_pilots`, `combat_sar_surge` |
 | §22 | Kneeboard space-utilisation + custom import | — | — |
 | §23 | Per-squadron DCS country | — | — |

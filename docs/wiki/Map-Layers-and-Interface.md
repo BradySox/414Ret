@@ -75,8 +75,6 @@ too; hovering shows the labeled movers from the will ledger.
   interdiction package: the package dialog opens at the route's enemy end with **Armed Recon
   pre-selected**, and the flight sweeps the hunted road start-to-end. A fully friendly route
   doesn't offer it. See [Vietnam Ops § Convoy interdiction](Vietnam-Ops#4--convoy-interdiction-steel-tiger).
-- **Blank map space** — right-click to place a unit group (cheat-gated); right-click a
-  user-placed group to remove it. See [Drop-Spawn Unit Placement](Drop-Spawn-Unit-Placement).
 - **Front lines** — right-click to plan CAS packages (stock behaviour, still there).
 
 ## What the DCS F10 map shows

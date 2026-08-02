@@ -179,13 +179,6 @@ class Game:
         self.comint_collected_turn: Optional[int] = None
         self.comint_reveal_turn: Optional[int] = None
         self.comint_reveal_note: Optional[str] = None
-        # Transient: True while this is an all-neutral blank-canvas setup game the
-        # player is painting ownership onto (campaign maker). Never persisted.
-        self.blank_canvas_setup = False
-        # True if this game was built from a blank canvas (set at finalize). Gates the
-        # "Save as Campaign" action (campaign maker Increment D) — a hand-built theater
-        # can be bottled as a reusable .miz-less campaign; a normal .miz campaign can't.
-        self.from_blank_canvas = False
         # NB: This is the *start* date. It is never updated.
         self.date = date(start_date.year, start_date.month, start_date.day)
         self.game_stats = GameStats()
@@ -209,8 +202,6 @@ class Game:
         self.current_group_id = 0
         self.name_generator = naming.namegen
         self.laser_code_registry = LaserCodeRegistry()
-        # Drop-spawn: TGOs queued for next-turn materialisation.
-        self.pending_unit_placements: list[Any] = []
 
         self.db = GameDb()
 
@@ -242,9 +233,6 @@ class Game:
         self.on_load(game_still_initializing=True)
 
     def __setstate__(self, state: dict[str, Any]) -> None:
-        state.setdefault("pending_unit_placements", [])
-        state.setdefault("blank_canvas_setup", False)
-        state.setdefault("from_blank_canvas", False)
         state.setdefault("custom_kneeboards", [])
         state.setdefault("last_sitrep", None)
         state.setdefault("client_map_layers", None)
@@ -629,19 +617,6 @@ class Game:
         self.blue.preinit_turn_0(squadrons_start_full)
         self.red.preinit_turn_0(squadrons_start_full)
 
-        if self.blank_canvas_setup:
-            # In a blank-canvas setup game every base is still neutral until the
-            # player paints ownership and hits Finalize, so neither coalition owns
-            # any points. initialize_turn would read that as an instant loss
-            # (check_win_loss) and return early -- before computing the threat
-            # zones / navmesh the map render path asserts on, and before
-            # game_stats.update -- and would also post a bogus "Game Over"
-            # message. Compute just the threat zones (empty, but non-None) so the
-            # setup theater renders for painting. The real turn is initialized
-            # later from the finalized game (see finalize_blank_canvas).
-            self.compute_threat_zones(GameUpdateEvents())
-            return
-
         # TODO: Check for overfull bases.
         # We don't need to actually stream events for turn zero because we haven't given
         # *any* state to the UI yet, so it will need to do a full draw once we do.
@@ -675,15 +650,6 @@ class Game:
         persistency.autosave(self)
 
     def check_win_loss(self) -> TurnState:
-        # A blank-canvas setup game is mid-construction: the player is painting
-        # base ownership and at any moment may have only blue bases (or only red,
-        # or none) before the opponent's side is painted in. That is not a win or
-        # a loss -- evaluating it pops a bogus "Victory!"/"Defeat!" dialog while
-        # the player is still laying out the map. Win/loss only applies once the
-        # campaign is finalized into a normal game.
-        if self.blank_canvas_setup:
-            return TurnState.CONTINUE
-
         # Alternate endings (§75 custom victory conditions) -- ONE evaluator
         # ahead of the stock capture-everything defaults: authored `victory:`
         # blocks + the domination/attrition knobs. Returns None when nothing is
@@ -752,13 +718,6 @@ class Game:
             for_blue: True if the player coalition should be re-initialized.
             squadrons_start_full: True if generator setting was checked.
         """
-        # A blank-canvas setup game has no playable turn to initialize: bases are
-        # neutral and being painted, so bullseye/planning have no opposing points
-        # to work from (closest_opposing_control_points would assert). The setup
-        # game is started via finalize_blank_canvas, not by advancing turns.
-        if self.blank_canvas_setup:
-            return
-
         # Check for win or loss condition FIRST!
         turn_state = self.check_win_loss()
         if turn_state in (TurnState.LOSS, TurnState.WIN):
@@ -818,16 +777,6 @@ class Game:
         from game.pow_recovery import purge_pow_objectives
 
         purge_pow_objectives(self)
-
-        # Materialise any TGOs queued for this turn via drop-spawn.
-        from game.theater.unitplacement import (
-            process_pending_placements,
-            process_respawns,
-        )
-
-        for coalition in self.coalitions:
-            process_pending_placements(self, coalition)
-            process_respawns(self, coalition)
 
         # W6 red tempo: during an authored ground-offensive pulse raise Hanoi's
         # front stances (after the coalitions plan, so it has the final say;

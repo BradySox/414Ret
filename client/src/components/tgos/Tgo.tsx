@@ -1,5 +1,4 @@
 import {
-  useDeleteUserPlacedTgoMutation,
   useOpenNewTgoPackageDialogMutation,
   useOpenTgoInfoDialogMutation,
 } from "../../api/liberationApi";
@@ -118,7 +117,6 @@ function ConcealedTgo(props: TgoProps) {
 function StaticTgo(props: TgoProps) {
   const [openNewPackageDialog] = useOpenNewTgoPackageDialogMutation();
   const [openInfoDialog] = useOpenTgoInfoDialogMutation();
-  const [deleteTgo] = useDeleteUserPlacedTgoMutation();
   const dispatch = useAppDispatch();
   // Raised above other icons while this emitter (or its ring) is hovered.
   const raised = useAppSelector(
@@ -136,11 +134,7 @@ function StaticTgo(props: TgoProps) {
           openInfoDialog({ tgoId: props.tgo.id });
         },
         contextmenu: () => {
-          if (props.tgo.user_placed) {
-            deleteTgo({ tgoId: props.tgo.id });
-          } else {
-            openNewPackageDialog({ tgoId: props.tgo.id });
-          }
+          openNewPackageDialog({ tgoId: props.tgo.id });
         },
         // Hovering the emitter highlights its ring (and vice versa).
         mouseover: () =>

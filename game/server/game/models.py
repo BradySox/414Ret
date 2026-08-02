@@ -240,13 +240,6 @@ class GameJs(BaseModel):
     map_center: LeafletPoint | None
     unculled_zones: list[UnculledZoneJs]
     map_zones: MapZonesJs
-    # True while this is a blank-canvas setup game (campaign maker): the player is
-    # painting base ownership and the map shows the paint affordances + Finalize.
-    blank_canvas_setup: bool
-    # Drop-spawn cheat (§20). When off (default), the map right-click must NOT open
-    # the Place Unit Group dialog, so the client skips the POST entirely and a plain
-    # right-click stays free for package planning.
-    enable_unit_placement: bool
     # Campaign-status ribbon: turn/date/campaign (+ §75 victory rows when configured).
     campaign_status: CampaignStatusJs
     # §57 air-dropped minefields: BLUE-only live fields (dashed circles). Empty unless
@@ -262,8 +255,6 @@ class GameJs(BaseModel):
     @staticmethod
     def from_game(game: Game) -> GameJs:
         return GameJs(
-            blank_canvas_setup=game.blank_canvas_setup,
-            enable_unit_placement=game.settings.enable_unit_placement,
             campaign_status=CampaignStatusJs.from_game(game),
             minefields=MinefieldJs.all_in_game(game),
             downed_pilots=DownedPilotJs.all_in_game(game),

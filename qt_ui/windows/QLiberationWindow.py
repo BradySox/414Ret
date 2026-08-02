@@ -9,7 +9,6 @@ from PySide6.QtGui import QCloseEvent, QIcon, QAction, QGuiApplication, QActionG
 from PySide6.QtWidgets import (
     QApplication,
     QFileDialog,
-    QInputDialog,
     QMainWindow,
     QMessageBox,
     QSplitter,
@@ -42,7 +41,6 @@ from qt_ui.windows.GameUpdateSignal import GameUpdateSignal
 from qt_ui.windows.QDebriefingWindow import QDebriefingWindow
 from qt_ui.windows.basemenu.QBaseMenu2 import QBaseMenu2
 from qt_ui.windows.groundobject.QGroundObjectMenu import QGroundObjectMenu
-from qt_ui.windows.groundobject.QPlaceUnitGroupDialog import QPlaceUnitGroupDialog
 from qt_ui.windows.infos.QInfoPanel import QInfoPanel
 from qt_ui.windows.kneeboards.QCustomKneeboardsWindow import QCustomKneeboardsWindow
 from qt_ui.windows.logs.QLogsWindow import QLogsWindow
@@ -61,7 +59,6 @@ class QLiberationWindow(QMainWindow):
     tgo_info_signal = Signal(TheaterGroundObject)
     control_point_info_signal = Signal(ControlPoint)
     select_flight_signal = Signal(Flight)
-    place_unit_group_signal = Signal(float, float)
 
     def __init__(self, game: Game | None, ui_flags: UiFlags) -> None:
         super().__init__()
@@ -86,7 +83,6 @@ class QLiberationWindow(QMainWindow):
         self.tgo_info_signal.connect(self.open_tgo_info_dialog)
         self.control_point_info_signal.connect(self.open_control_point_info_dialog)
         self.select_flight_signal.connect(self.on_select_flight)
-        self.place_unit_group_signal.connect(self.open_place_unit_group_dialog)
         QtContext.set_callbacks(
             QtCallbacks(
                 lambda target: self.new_package_signal.emit(target),
@@ -94,7 +90,6 @@ class QLiberationWindow(QMainWindow):
                 lambda tgo: self.tgo_info_signal.emit(tgo),
                 lambda cp: self.control_point_info_signal.emit(cp),
                 lambda flight: self.select_flight_signal.emit(flight),
-                lambda lat, lng: self.place_unit_group_signal.emit(lat, lng),
             )
         )
         Dialog.set_game(self.game_model)
@@ -238,27 +233,6 @@ class QLiberationWindow(QMainWindow):
         self.importTemplatesAction = QAction("Import Layouts", self)
         self.importTemplatesAction.triggered.connect(self.import_templates)
 
-        # Campaign maker: visible only while painting a blank-canvas setup game.
-        self.finalizeCampaignAction = QAction("Finalize Campaign", self)
-        self.finalizeCampaignAction.setIcon(QIcon(CONST.ICONS["New"]))
-        self.finalizeCampaignAction.setToolTip(
-            "Build the campaign from the bases you painted: unpainted (gray) bases "
-            "are dropped, fronts are drawn, then you staff your airwings."
-        )
-        self.finalizeCampaignAction.triggered.connect(self.finalizeCampaign)
-        self.finalizeCampaignAction.setVisible(False)
-
-        # Campaign maker: save a finalized blank canvas as a reusable campaign.
-        self.saveCampaignAction = QAction("Save as Campaign", self)
-        self.saveCampaignAction.setIcon(QIcon(CONST.ICONS["New"]))
-        self.saveCampaignAction.setToolTip(
-            "Save this hand-built map as a reusable campaign that appears in the New "
-            "Game list — its ownership and air-defence/armor/economy laydown are "
-            "rebuilt each time you start it."
-        )
-        self.saveCampaignAction.triggered.connect(self.saveCampaign)
-        self.saveCampaignAction.setVisible(False)
-
         self.enable_game_actions(False)
 
     def enable_game_actions(self, enabled: bool):
@@ -275,7 +249,7 @@ class QLiberationWindow(QMainWindow):
 
     def initToolbar(self):
         # One toolbar, grouped by verb — campaign file, then the windows you
-        # open during a turn, then the blank-canvas campaign actions.
+        # open during a turn.
         #
         # This replaces three separate toolbars, one of which held Discord,
         # Github and Ukraine: community links were carrying the same visual
@@ -295,9 +269,6 @@ class QLiberationWindow(QMainWindow):
         self.tool_bar.addAction(self.openStatsAction)
         self.tool_bar.addAction(self.openNotesAction)
         self.tool_bar.addAction(self.openCustomKneeboardsAction)
-        self.tool_bar.addSeparator()
-        self.tool_bar.addAction(self.finalizeCampaignAction)
-        self.tool_bar.addAction(self.saveCampaignAction)
 
     def initMenuBar(self):
         self.menu = self.menuBar()
@@ -466,7 +437,6 @@ class QLiberationWindow(QMainWindow):
         self.game = game
         self._warn_motorpool_capture_zone(game)
         self.updateWindowTitle()
-        self._update_blank_canvas_action()
         GameUpdateSignal.get_instance().game_loaded.emit(self.game)
 
     def _warn_motorpool_capture_zone(self, game: Optional[Game]) -> None:
@@ -488,71 +458,6 @@ class QLiberationWindow(QMainWindow):
                 + "\n".join(str(v) for v in violations),
             ),
         )
-
-    def _update_blank_canvas_action(self) -> None:
-        """Show the Finalize action only while painting a blank-canvas setup game,
-        and the Save-as-Campaign action only on a finalized blank-canvas game."""
-        in_setup = self.game is not None and self.game.blank_canvas_setup
-        self.finalizeCampaignAction.setVisible(in_setup)
-        self.saveCampaignAction.setVisible(
-            self.game is not None
-            and self.game.from_blank_canvas
-            and not self.game.blank_canvas_setup
-        )
-
-    def saveCampaign(self) -> None:
-        """Bottle a finalized blank canvas as a reusable campaign YAML the New Game
-        list can load (campaign maker Increment D)."""
-        from game.campaignloader.blankcampaign import save_blank_campaign
-
-        if self.game is None or not self.game.from_blank_canvas:
-            return
-
-        name, ok = QInputDialog.getText(
-            self,
-            "Save as Campaign",
-            "Campaign name (appears in the New Game list):",
-            text=f"My {self.game.theater.terrain.name} Campaign",
-        )
-        if not ok or not name.strip():
-            return
-
-        try:
-            campaigns_dir = persistency.base_path() / "Retribution" / "Campaigns"
-            path = save_blank_campaign(self.game, campaigns_dir, name.strip())
-        except Exception as exc:  # noqa: BLE001 — surface any IO/serialise failure
-            logging.exception("Failed to save blank-canvas campaign")
-            QMessageBox.warning(self, "Could not save campaign", str(exc))
-            return
-
-        QMessageBox.information(
-            self,
-            "Campaign saved",
-            f"Saved '{name.strip()}' to:\n{path}\n\n"
-            "Start it any time from New Game → it rebuilds this map's ownership and "
-            "air-defence / armor / economy laydown.",
-        )
-
-    def finalizeCampaign(self) -> None:
-        """Build the real campaign from the painted blank-canvas setup game."""
-        from game.campaignloader.blanktheatergen import finalize_blank_canvas
-        from qt_ui.windows.AirWingConfigurationDialog import (
-            AirWingConfigurationDialog,
-        )
-
-        if self.game is None or not self.game.blank_canvas_setup:
-            return
-        try:
-            new_game = finalize_blank_canvas(self.game)
-        except RuntimeError as exc:
-            QMessageBox.warning(self, "Cannot finalize campaign", str(exc))
-            return
-
-        # Staff airwings on the now-owned bases, then start the campaign — the same
-        # tail the new-game wizard runs for an included campaign.
-        AirWingConfigurationDialog(new_game, True, self).exec_()
-        new_game.begin_turn_0(squadrons_start_full=True)
-        self.onGameGenerated(new_game)
 
     def onEndGame(self, state: TurnState):
         if state == TurnState.CONTINUE:
@@ -588,7 +493,6 @@ class QLiberationWindow(QMainWindow):
             self.sim_controller.set_game(game)
             self.game_model.set(self.game)
             self.game_model.init_comms_registry()
-            self._update_blank_canvas_action()
         except AttributeError:
             logging.exception("Incompatible save game")
             QMessageBox.critical(
@@ -737,17 +641,6 @@ class QLiberationWindow(QMainWindow):
         self.debriefing = QDebriefingWindow(debrief)
         self.debriefing.show()
         self.game_model.init_comms_registry()
-
-    def open_place_unit_group_dialog(self, lat: float, lng: float) -> None:
-        if self.game is None:
-            return
-        # Drop-spawn is a cheat (§20). Only intercept the map right-click when
-        # unit placement is enabled; otherwise a plain right-click must stay free
-        # for normal map interaction — e.g. right-clicking a target to plan a
-        # package — instead of popping the buy dialog.
-        if not self.game.settings.enable_unit_placement:
-            return
-        QPlaceUnitGroupDialog(self, lat, lng, self.game_model).exec()
 
     def open_tgo_info_dialog(self, tgo: TheaterGroundObject) -> None:
         QGroundObjectMenu(self, tgo, tgo.control_point, self.game_model).show()

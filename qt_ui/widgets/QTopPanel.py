@@ -173,12 +173,6 @@ class QTopPanel(QFrame):
             self.simSpeedControls.setEnabled(False)
             # No turn to re-plan before the campaign starts.
             self.reroll_red_button.setEnabled(False)
-            # In a blank-canvas setup game the turn-0 button doubles as the
-            # prominent Finalize trigger: passTurn() routes to the window's
-            # finalizeCampaign instead of advancing the turn (which would run a
-            # win/loss check over a half-painted map and pop a bogus dialog).
-            if game.blank_canvas_setup:
-                self.passTurnButton.setText("Finalize Campaign")
         else:
             raise RuntimeError(f"game.turn out of bounds!\n  value = {game.turn}")
 
@@ -203,7 +197,7 @@ class QTopPanel(QFrame):
         from game.sim.gameupdateevents import GameUpdateEvents
 
         game = self.game
-        if game is None or game.blank_canvas_setup or game.turn <= 0:
+        if game is None or game.turn <= 0:
             return
 
         confirm = QMessageBox.question(
@@ -229,15 +223,6 @@ class QTopPanel(QFrame):
             GameUpdateSignal.get_instance().gameStateChanged(state)
 
     def passTurn(self):
-        # In blank-canvas setup mode this button is the Finalize trigger, not a
-        # turn advance: hand off to the main window's finalizeCampaign (which
-        # rebuilds the real campaign from the painted bases and starts it).
-        if self.game is not None and self.game.blank_canvas_setup:
-            finalize = getattr(self.window(), "finalizeCampaign", None)
-            if finalize is not None:
-                finalize()
-            return
-
         with logged_duration("Skipping turn"):
             self.game.pass_turn(no_action=True)
             GameUpdateSignal.get_instance().updateGame(self.game)

@@ -51,9 +51,8 @@ fight.
 
 This fork does not change the core capture rules, but several systems feed into base
 capture indirectly. **Troops In Contact** governs how the frontline ground battle plays out
-as forces close on a base ([Troops In Contact](Troops-In-Contact)), and the **drop-spawn**
-sandbox tool (a gated cheat) lets you place ground units near a friendly command post for
-testing or staging. Enemy command posts can also be hidden from the player map under the
+as forces close on a base ([Troops In Contact](Troops-In-Contact)). Enemy command posts can
+also be hidden from the player map under the
 recon fog-of-war rules until revealed — see [Squadrons and Pilots](Squadrons-and-Pilots)
 and the fog-of-war notes in the project README.
 

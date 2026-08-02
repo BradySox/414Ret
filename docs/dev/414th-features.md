@@ -567,8 +567,7 @@ inside) with the true coordinates **never sent to the client** while concealed. 
   forces qualify by kind: mobile SAM sites (`category == "aa"` with task MERAD/SHORAD/AAA —
   the Weasel hunt), deployed vehicle groups (`"armor"`, tighter 3 km circle), and missile
   sites (`"missile"` — the SCUD hunt). **Fixed infrastructure stays exact**: LORAD strategic
-  sites, EWRs (they emit — passively geolocatable), buildings, ships, airfields, and
-  user-placed (drop-spawn) TGOs.
+  sites, EWRs (they emit — passively geolocatable), buildings, ships, and airfields.
 
 **Road-pinned variant (2026-07-05, user call):** a TGO carrying
 `TheaterGroundObject.concealed_route` (a polyline of `(x, y)` map coordinates — the roadside-IED
@@ -2196,80 +2195,13 @@ dark-themed control: `client/src/components/maplayers/MapLayersControl.tsx` (+ `
 
 ## §20 — Drop-spawn: Map Right-Click Unit Placement
 
-**Status:** Functional; needs an in-game pass (§20 checklist rows 20-A…20-G).
-No Lua component — Python/Qt planner + React client only.
-
-Right-click on blank map space → Qt dialog → spawn a new unit group (armor,
-SAM, EWR, ship, missile/coastal) at any map position, attached to the nearest
-friendly CP.
-
-**Cheat-gated (important).** The map right-click only opens the placement dialog
-when `enable_unit_placement` is on (default OFF). With the cheat off, a plain
-right-click stays free for normal map use — e.g. right-clicking a target marker to
-plan a package — and never pops the buy dialog. The gate is enforced in
-`QLiberationWindow.open_place_unit_group_dialog` (the single Qt chokepoint every
-map right-click funnels through); the client still posts to `/qt/place-unit-group`
-on every right-click, which simply no-ops when the cheat is disabled. *(Regression
-fixed 2026-06-25: the gate was previously missing, so the dialog hijacked every
-right-click — including package-planning ones — regardless of the setting.)*
-
-### Files
-
-| Layer | File |
-|---|---|
-| Data model | `game/theater/theatergroundobject.py` (`user_placed`, `respawn_enabled`, `pending_deploy`) |
-| Core logic | `game/theater/unitplacement.py` — `place_unit_group()`, `PendingUnitPlacement`, `process_pending_placements()`, `process_respawns()` |
-| Settings | `game/settings/settings.py` — `enable_unit_placement`, `enable_free_unit_placement` |
-| Game state | `game/game.py` — `pending_unit_placements: list[Any]`, turn hook, `__setstate__` migration |
-| Server | `game/server/qt/routes.py` — `POST /qt/place-unit-group` |
-| Server | `game/server/tgos/routes.py` — `DELETE /tgos/{id}` |
-| Server | `game/server/tgos/models.py` — `TgoJs.user_placed` |
-| Server events | `game/sim/gameupdateevents.py` — `deleted_tgos`, `delete_tgo()` |
-| Server events | `game/server/eventstream/models.py` — `GameUpdateEventsJs.deleted_tgos` |
-| Qt callback | `game/server/dependencies.py` — `QtCallbacks.open_place_unit_group_dialog` |
-| Qt dialog | `qt_ui/windows/groundobject/QPlaceUnitGroupDialog.py` |
-| Qt window | `qt_ui/windows/QLiberationWindow.py` — `place_unit_group_signal` |
-| Qt settings | `qt_ui/windows/settings/QSettingsWindow.py` — two cheat checkboxes |
-| React API | `client/src/api/_liberationApi.ts` — `openPlaceUnitGroupDialog`, `deleteUserPlacedTgo`, `Tgo.user_placed` |
-| React state | `client/src/api/tgosSlice.ts` — `removeTgo` |
-| React events | `client/src/api/eventstream.tsx` — `deleted_tgos` dispatch |
-| React map | `client/src/components/liberationmap/MapContextMenu.tsx` |
-| React map | `client/src/components/liberationmap/LiberationMap.tsx` — mounts `MapContextMenu` |
-| React TGO | `client/src/components/tgos/Tgo.tsx` — right-click Remove for `user_placed` |
-
-### Behaviour
-
-- Right-click blank map → `MapContextMenu` fires `POST /qt/place-unit-group(lat, lng)`.
-- Qt signal opens `QPlaceUnitGroupDialog`:
-  - **Coalition** selector (Red locked behind `enable_enemy_buy_sell` cheat).
-  - **Category** dropdown — Air Defense SAM/AAA, EWR, Coastal/Missile, Ground Force, Navy.
-  - **Unit type** dropdown — populated from `LAYOUTS.layouts` directly (not `ArmedForces`), so every named layout usable by the faction appears (S-300, SA-2, Patriot, NASAMS, Early-Warning Radar, etc.), not just what the faction normally auto-spawns. `ForceGroup.for_layout(layout, faction)` is created on-the-fly per selection.
-  - **Unit rows** — `QTgoLayoutGroupRow` widgets (reuse buy-menu pattern): unit type selector + count spinner per layout group.
-  - **Deploy timing** — Spawn Now / Deploy Next Turn.
-  - **Respawn** checkbox — auto-revive on destruction each turn.
-  - **Cost / budget** label; Place button disabled when over budget (unless free cheat).
-- On confirm: `place_unit_group()` validates terrain + range (200 km from nearest friendly CP, bypassed by `enable_free_unit_placement`), creates TGO, attaches to CP, registers in `game.db.tgos`, fires SSE `update_tgo` so the marker appears immediately.
-- Deploy Next Turn: queues `PendingUnitPlacement` on `game.pending_unit_placements`; materialised by `process_pending_placements()` at turn start. Budget deducted at queue time.
-- Auto-respawn: `process_respawns()` revives a destroyed user-placed TGO each turn.
-- Right-click on a user-placed TGO → **Remove** → `DELETE /tgos/{id}` → SSE `delete_tgo` → marker removed from React map.
-
-### Dialog unit-type enumeration
-
-The dialog uses `LAYOUTS.layouts` + `ForceGroup.for_layout(layout, faction)` instead of the
-faction's `ArmedForces` groups. This is intentional: `ArmedForces` only contains groups the
-faction is configured to auto-spawn (preset groups + generic layouts that passed faction unit
-checks at game-start). The LAYOUTS approach gives the full menu of 66 named layouts — every
-SAM system, EWR variant, and ship class the campaign engine knows about — filtered down to
-what the selected faction can actually field. If a category shows "(no compatible units for
-this faction)" the faction has no units in the matching `unit_classes` for that layout type.
-
-### Deferred
-
-- Terrain ring overlay (`PlacementModeOverlay.tsx`) — visual land/sea feedback while hovering before click.
-- Pending markers layer — semi-transparent map markers for "deploy next turn" TGOs.
-- FOB establishment — via the same dialog, creates a `Fob` control point dynamically.
-- Relocate — delete + re-place with pre-filled dialog.
-- Budget refund on Remove — `TheaterUnit` lacks a stored price field; needs separate cost tracking on `TheaterGroundObject`.
+**REMOVED (2026-08-02).** The map right-click unit-placement cheat is fully ripped
+out: `game/theater/unitplacement.py`, `QPlaceUnitGroupDialog`, the
+`MapContextMenu.tsx` handler, the `POST /qt/place-unit-group` +
+`DELETE /tgos/{id}` routes, the `enable_unit_placement` /
+`enable_free_unit_placement` settings, and the `user_placed` / `respawn_enabled` /
+`pending_deploy` TGO fields are all gone. The shared SSE `delete_tgo` /
+`deleted_tgos` plumbing stays (COIN uses it). Do not restore.
 
 ---
 

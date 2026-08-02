@@ -14,7 +14,6 @@ The map is the heart of the application. It shows the theater, your bases and th
 
 - **Click a base, ground target, or front-line sector** to select it and open its context — selecting an objective is usually the first step in fragging a package against it.
 - **Click an air-defense site or known enemy ground object** to open its intel/target dialog (see below).
-- **Right-click blank map space** to reach the drop-spawn unit-placement tool, a 414th sandbox feature gated behind cheat settings; right-click a unit you placed to remove it. See [Map Layers and Interface](Map-Layers-and-Interface).
 
 The fork makes the map easier to read: SAM rings, emitters, routes, and IADS links are clearer, and short-range mobile defenses are kept off player datalinks while deliberate-SEAD-sized sites stay visible.
 

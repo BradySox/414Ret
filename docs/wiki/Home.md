@@ -53,7 +53,6 @@ adapted to how this fork actually plans and flies a campaign.
 - **[Troops In Contact](Troops-In-Contact)** — the frontline battle simulation.
 - **[Map Layers and Interface](Map-Layers-and-Interface)** — the unified layers panel and UI work.
 - **[Kneeboards](Kneeboards)** — the cover page, compact 3–4 page deck, SITREP band, and custom import.
-- **[Drop-Spawn Unit Placement](Drop-Spawn-Unit-Placement)** — right-click sandbox placement.
 
 ## Vietnam Ops
 

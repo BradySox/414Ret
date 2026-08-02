@@ -193,18 +193,22 @@ def test_the_plugin_preseed_survives_deserialization_and_wins_the_layering() -> 
 
 
 def test_red_tide_preseeds_the_m1_tuning_batch() -> None:
-    """The flown M1 (2026-07-11) tuning findings, preseeded so a NEW game gets them.
+    """What survives of the flown M1 (2026-07-11) tuning batch.
 
-    - aewc/tanker buffers 30/25 NM: the AI depth push (2.5x) at the 80/70 defaults
-      parked the red A-50/IL-78 200/175 NM back over Berlin, leaving the P-14 line
-      as red's whole detection net.
     - BARCAP 45 min: a Schonefeld MiG-29 flamed out dry at ~75 min airborne; 60 min
       on-station is a whole Fulcrum+tank fuel load at the AI's patrol speed.
     """
     settings = _campaign_settings()
-    assert settings["aewc_threat_buffer_min_distance"] == 30
-    assert settings["tanker_threat_buffer_min_distance"] == 25
     assert settings["desired_barcap_mission_duration"] == 45
+
+
+def test_red_tide_no_longer_preseeds_the_support_orbit_buffers() -> None:
+    # Stripped 2026-08-02: the campaign carries NO aewc/tanker threat-buffer
+    # preseed, so the generic defaults (80/70 NM) apply and the AI depth push
+    # again holds the red A-50/IL-78 deep. Do not re-add without a squadron call.
+    settings = _campaign_settings()
+    assert "aewc_threat_buffer_min_distance" not in settings
+    assert "tanker_threat_buffer_min_distance" not in settings
 
 
 def test_red_tide_keeps_civilian_air_traffic() -> None:

@@ -908,11 +908,15 @@ live save set the same values by hand in Settings):
   `civilian_air_traffic` preseed (generic default ON applies); guard
   `test_red_tide_keeps_civilian_air_traffic`. The gate itself remains available for any
   campaign that wants a sterile picture.
-- **`aewc/tanker_threat_buffer_min_distance: 30/25`** (defaults 80/70): the AI support-orbit
-  depth push (2.5× the buffer) parked the red A-50/IL-78 200/175 NM back over Berlin all
-  mission — too far to cue low targets at Fulda, which made the P-14 line red's entire
-  detection net and its death so decisive. 30 NM puts the A-50 ~75 NM behind the FLOT
-  (Halle/Leipzig), covering the whole Fulda corridor, still threat-zone-floored.
+- **`aewc/tanker_threat_buffer_min_distance: 30/25` — preseed STRIPPED 2026-08-02.** The M1
+  batch had preseeded 30/25 (defaults 80/70) because the AI support-orbit depth push
+  (2.5× the buffer) parked the red A-50/IL-78 200/175 NM back over Berlin all mission — too
+  far to cue low targets at Fulda, which made the P-14 line red's entire detection net and
+  its death so decisive. Both lines were removed from the campaign, so the **generic
+  defaults (80/70 NM) now apply** and the red support orbits again sit deep. The campaign
+  carries NO buffer preseed; guard `test_red_tide_no_longer_preseeds_the_support_orbit_buffers`.
+  Do not re-add without a new squadron call. (The other campaigns that preseed these —
+  Yankee Station, Red Flag 81-2, Velvet Thunder — are untouched.)
 - **`desired_barcap_mission_duration: 45`** (default 60 min): a Schonefeld BARCAP MiG-29
   flamed out dry at ~75 min airborne with no combat — the on-station racetrack is the one
   real-fuel-burn window under AI unlimited fuel, and 60 min at the AI's patrol speed is a

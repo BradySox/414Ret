@@ -95,6 +95,9 @@ Upstream hands you a map that already knows everything. Here you have to go look
   to type — and in multiplayer it arrives with the mission download. Planners keep control:
   the flight editor's **DTC tab** turns the cartridge (or any single section of it) on or off
   per flight, so a pilot who wants their own presets keeps them.
+  The **CJS Super Hornets** (F/A-18E/F and EA-18G) get one too — comms, route and recovery
+  aids — since the mod ships its own cartridge support; their cartridge carries no SA picture,
+  because the mod's cartridge format has no place to put one.
 - **Support orbits are painted on the F10 map** — a cyan racetrack and label for every tanker
   and AWACS, so you can find your gas in flight, cartridge or not.
 - **Fuel first: tanks are fitted for the sortie, then the tanker passes are decided.** A jet

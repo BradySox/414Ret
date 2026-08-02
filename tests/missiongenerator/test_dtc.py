@@ -41,6 +41,10 @@ from game.missiongenerator.dtc.common import (
 )
 from game.missiongenerator.dtc.generator import CARTRIDGE_BUILDERS
 from game.missiongenerator.dtc.hornet import build_hornet_cartridge
+from game.missiongenerator.dtc.superhornet import (
+    SUPER_HORNET_UNIT_TYPES,
+    build_super_hornet_cartridge,
+)
 from game.missiongenerator.dtc.viper import build_viper_cartridge
 
 
@@ -772,3 +776,93 @@ def test_old_saves_default_the_flight_options() -> None:
     assert isinstance(flight.dtc_options, DtcOptions)
     assert flight.dtc_options.enabled is None
     assert flight.dtc_options.any_content
+
+
+# --- CJS Super Hornets (FA-18E/F + EA-18G) ------------------------------------
+
+
+def _super_hornet_fixture(dcs_id: str = "FA-18F") -> tuple[Any, Any, Any]:
+    flight, mission_data, game = _hornet_fixture()
+    flight.aircraft_type = SimpleNamespace(dcs_unit_type=SimpleNamespace(id=dcs_id))
+    return flight, mission_data, game
+
+
+def test_super_hornet_cartridge_shape() -> None:
+    """The mod's descriptor delegates COMM/WYPT to ED's own FA-18C files, so
+    those sections must come out identical to the Hornet's -- but it ships no
+    SA table, so that section must never be emitted."""
+    flight, mission_data, game = _super_hornet_fixture()
+    cartridge = build_super_hornet_cartridge(flight, mission_data, game, "Test SH")
+    assert cartridge is not None
+
+    payload = json.loads(cartridge.to_json())
+    assert payload["type"] == "FA-18F"
+    data = payload["data"]
+    assert data["type"] == "FA-18F"
+    assert "SA" not in data
+    assert "GPS_WYPT" not in data
+    assert set(data) == {"TCN", "type", "name", "terrain", "COMM", "WYPT"}
+
+    # COMM + WYPT are byte-identical to what the Hornet builder emits: same
+    # ED implementation behind the mod's descriptor.
+    hornet = build_hornet_cartridge(flight, mission_data, game, "Test SH")
+    hornet_data = json.loads(hornet.to_json())["data"]
+    assert data["COMM"] == hornet_data["COMM"]
+    assert data["WYPT"] == hornet_data["WYPT"]
+    # The §65 boat card still reaches the jet.
+    assert data["WYPT"]["NAV_SETTINGS"]["TACAN"]["Channel"] == 71
+    assert data["WYPT"]["NAV_SETTINGS"]["ICLS"]["Channel"] == 11
+
+
+@pytest.mark.parametrize("dcs_id", ["FA-18E", "FA-18F", "EA-18G"])
+def test_super_hornet_variants_all_build(dcs_id: str) -> None:
+    flight, mission_data, game = _super_hornet_fixture(dcs_id)
+    cartridge = build_super_hornet_cartridge(flight, mission_data, game, "SH")
+    assert cartridge is not None
+    assert cartridge.unit_type == dcs_id
+    assert json.loads(cartridge.to_json())["data"]["type"] == dcs_id
+
+
+def test_super_hornet_never_emits_sa_even_when_the_planner_asks() -> None:
+    """SA switches stay inert rather than writing a table the mod can't read."""
+    flight, mission_data, game = _super_hornet_fixture()
+    flight.dtc_options = DtcOptions(
+        flot_and_zones=True, friendly_orbits=True, threat_rings=True
+    )
+    cartridge = build_super_hornet_cartridge(flight, mission_data, game, "SA On")
+    assert cartridge is not None
+    assert "SA" not in json.loads(cartridge.to_json())["data"]
+
+
+def test_super_hornet_with_only_sa_sections_builds_nothing() -> None:
+    """any_content passes upstream, but nothing this jet supports is on."""
+    flight, mission_data, game = _super_hornet_fixture()
+    flight.dtc_options = DtcOptions(
+        comms=False,
+        route=False,
+        nav_aids=False,
+        flot_and_zones=True,
+        friendly_orbits=True,
+        threat_rings=True,
+    )
+    assert build_super_hornet_cartridge(flight, mission_data, game, "Empty") is None
+
+
+def test_generator_skips_a_builder_that_returns_none(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setitem(CARTRIDGE_BUILDERS, "FA-18F", lambda *args: None)
+    flight = _flight(dcs_id="FA-18F", callsign="Rhino 1")
+    generator = _generator(_game(), [flight])
+    generator.generate()
+    assert generator.cartridges == []
+    assert not hasattr(flight.client_units[0], "retribution_dtc")
+
+
+def test_super_hornet_ids_are_registered_but_tanker_variants_are_not() -> None:
+    """The mod ships DTC descriptors for E/F/G only -- the ET/FT tanker
+    variants have none, so a cartridge would have nothing to load it."""
+    for dcs_id in SUPER_HORNET_UNIT_TYPES:
+        assert CARTRIDGE_BUILDERS[dcs_id] is build_super_hornet_cartridge
+    assert "FA-18ET" not in CARTRIDGE_BUILDERS
+    assert "FA-18FT" not in CARTRIDGE_BUILDERS

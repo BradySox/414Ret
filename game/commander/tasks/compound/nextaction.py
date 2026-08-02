@@ -70,7 +70,7 @@ class PlanNextAction(CompoundTask[TheaterState]):
 
     # The package types the §52 A2 throttle counts against the C2-health cap.
     # Deliberately only the unambiguous offensive taskings: CAS is excluded
-    # (planned defensively by FrontLineDefense), and SEAD/DEAD are excluded so a
+    # (planned defensively by PlanFrontLineCas), and SEAD/DEAD are excluded so a
     # threat-reactive IADS response is never starved by the throttle (the §17
     # boundary errs conservative in both directions).
     _OFFENSIVE_PACKAGE_TYPES: ClassVar[frozenset[FlightType]] = frozenset(

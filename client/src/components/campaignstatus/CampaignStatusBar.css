@@ -57,40 +57,6 @@
   line-height: inherit;
 }
 
-/* §55 Red Intent: the enemy commander's posture chip, coloured by mood --
-   surging (pressing, dangerous) red, consolidating (husbanding) amber, attrition
-   (grinding) neutral. Hidden when red_intent is off. */
-.campaign-status-posture {
-  font-size: 12px;
-  font-weight: 600;
-  padding: 2px 8px;
-  border-radius: 4px;
-  cursor: default;
-}
-
-.campaign-status-posture.posture-surging {
-  color: #f3d0c8;
-  background: #6b2417;
-}
-
-.campaign-status-posture.posture-consolidating {
-  color: #f0dcae;
-  background: #5a4413;
-}
-
-.campaign-status-posture.posture-attrition {
-  color: #c3ccd8;
-  background: #2c3a4d;
-}
-
-/* The graduated-intensity qualifier on the posture chip ("· all-in", "· dug in"):
-   a lighter, less-bold suffix so it reads as "how hard" without competing with the
-   posture word itself. */
-.campaign-status-posture-intensity {
-  font-weight: 400;
-  opacity: 0.85;
-}
-
 /* §52 enemy-C2 chip in a distinct command slate. */
 .campaign-status-c2 {
   color: #cdd6e2;
@@ -196,64 +162,6 @@
   gap: 8px;
 }
 
-.campaign-phase-row {
-  border-left: 3px solid #23344a;
-  padding: 4px 10px;
-}
-
-.campaign-phase-row.current {
-  border-left-color: #cfe0f3;
-  background: #1c283a;
-  border-radius: 0 4px 4px 0;
-}
-
-.campaign-phase-head {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-}
-
-.campaign-phase-index {
-  color: #8593a5;
-  font-size: 11px;
-}
-
-.campaign-phase-name {
-  font-weight: 600;
-  color: #e8f0fb;
-}
-
-.campaign-phase-when {
-  margin-left: auto;
-  color: #9aa6b6;
-  font-size: 11px;
-}
-
-.campaign-phase-row.current .campaign-phase-when {
-  color: #cfe0f3;
-  font-weight: 600;
-}
-
-.campaign-phase-narrative {
-  color: #aeb9c8;
-  margin-top: 2px;
-}
-
-.campaign-phase-rules {
-  color: #8593a5;
-  margin-top: 2px;
-  font-size: 11px;
-}
-
-/* Transition transparency: how the arc leaves this phase (live values on the
-   current phase). Styled as a quiet footnote under the rules. */
-.campaign-phase-advance {
-  color: #b9a06a;
-  margin-top: 2px;
-  font-size: 11px;
-  font-style: italic;
-}
-
 /* The phase objectives checklist: live done-ticks on measurable goals, plain
    bullets on display-only guidance. */
 .campaign-phase-objectives {
@@ -321,66 +229,3 @@
   color: #e79a86;
 }
 
-/* §55 (2026-07-10): the enemy-intent block in the expander -- the posture's full "why"
-   (intensity + trend drivers: "Surging (all-in) — ... · IADS falling") made visible on
-   click, not just as a chip hover. A posture-coloured left border ties it to the chip. */
-.campaign-status-panel-intent {
-  border-top: 1px solid #23344a;
-  padding-top: 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.campaign-status-panel-intent-label {
-  color: #9aa6b6;
-  font-size: 11px;
-}
-
-.campaign-status-panel-intent-text {
-  color: #cdd6e2;
-  border-left: 3px solid #2c3a4d;
-  padding-left: 8px;
-}
-
-.campaign-status-panel-intent.intent-surging .campaign-status-panel-intent-text {
-  border-left-color: #6b2417;
-}
-
-.campaign-status-panel-intent.intent-consolidating .campaign-status-panel-intent-text {
-  border-left-color: #5a4413;
-}
-
-/* §55 (D): the per-front posture breakdown -- one row per active front, so a
-   multi-front war shows red committing on one front and husbanding on another. */
-.campaign-status-panel-fronts {
-  list-style: none;
-  margin: 4px 0 0;
-  padding: 0 0 0 8px;
-  font-size: 11px;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.campaign-status-panel-fronts .front-posture {
-  display: flex;
-  gap: 8px;
-}
-
-.campaign-status-panel-fronts .front-posture-name {
-  color: #9aa6b6;
-  min-width: 120px;
-}
-
-.campaign-status-panel-fronts .front-posture.posture-surging .front-posture-state {
-  color: #e79a86;
-}
-
-.campaign-status-panel-fronts .front-posture.posture-consolidating .front-posture-state {
-  color: #dcc07a;
-}
-
-.campaign-status-panel-fronts .front-posture.posture-attrition .front-posture-state {
-  color: #aeb9c8;
-}

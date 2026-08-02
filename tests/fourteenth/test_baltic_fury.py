@@ -11,6 +11,7 @@ mods enabled at New Game, which headless load can't exercise.
 
 from collections import Counter
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import yaml
 
@@ -134,3 +135,146 @@ def test_victory_parses() -> None:
     assert victory is not None
     assert victory.win_when[0].capture_cps == ("Kastrup",)  # liberate Copenhagen
     assert victory.lose_when[0].lose_cps == ("Nordholz",)  # lose the bridgehead
+
+
+# --- The NATO Baltic 2027 coalition faction (Sweden + UK allied contingents) -----------
+#
+# The campaign's blue side is a purpose-built coalition faction rather than plain
+# `USA 2020`: Sweden joined NATO in 2024 and the campaign fights in its home water,
+# and the UK leads the Joint Expeditionary Force. The risk these pins cover is the
+# fork's documented silent-drop path -- `Faction.from_dict` DISCARDS a unit string it
+# cannot resolve, so a pack rename (the CH 1.5.0 wave renamed ids wholesale) would
+# quietly empty the allied contingents instead of failing, and the campaign would still
+# load looking fine.
+
+FACTION_JSON = Path("resources/factions/nato_baltic_2027.json")
+FACTION_NAME = "NATO Baltic 2027"
+
+if TYPE_CHECKING:
+    from game.factions.faction import Faction
+
+# One signature unit per allied capability the coalition exists to provide.
+SWEDISH_CONTRIBUTION = {
+    "[CH] Visby Class Corvette",  # Baltic archipelago littoral
+    "[CH] Strv 122 MBT",
+    "[CH] UndE 23 (RBS 70/90/98) STR",
+}
+UK_CONTRIBUTION = {
+    "[CH] Type 45 Destroyer",  # carrier-screen area air defence
+    "[CH] Type 26 Frigate",
+    "[CH] Challenger 3 MBT",
+    "[CH] Sky Sabre C2 (HX)",
+}
+# Preset SAM/coastal sites the allies bring that plain USA 2020 cannot field.
+ALLIED_PRESETS = {
+    "RBS-15",  # blue coastal anti-ship -- the mirror of red's Bastion/Bal belt
+    "LvS-103 Rb103B",  # Swedish long-range area SAM
+    "Sky Sabre Battery",  # UK point defence for recaptured fields
+}
+
+
+def _faction() -> "Faction":
+    import json
+
+    from game.factions.faction import Faction
+
+    return Faction.from_dict(json.loads(FACTION_JSON.read_text(encoding="utf-8")))
+
+
+def test_campaign_flies_the_coalition_faction() -> None:
+    data = yaml.safe_load(YAML.read_text(encoding="utf-8"))
+    assert data["recommended_player_faction"] == FACTION_NAME
+    # The allied units are mod-gated: a missing pack STRIPS them from the faction, so
+    # the campaign must preseed both packs or the contingents silently never appear.
+    settings = data["settings"]
+    assert settings["swedishmilitaryassetspack"] is True
+    assert settings["ukmilitaryassetspack"] is True
+    assert settings["usamilitaryassetspack"] is True
+
+
+def test_no_faction_unit_string_is_silently_dropped(tmp_path: Path) -> None:
+    """Every authored string must resolve -- the CH-rename silent-drop guard."""
+    persistency.setup(str(tmp_path), False, 0)
+    import json
+
+    authored = json.loads(FACTION_JSON.read_text(encoding="utf-8"))
+    faction = _faction()
+    for json_key, attr in [
+        ("aircrafts", "aircraft"),
+        ("frontline_units", "frontline_units"),
+        ("artillery_units", "artillery_units"),
+        ("infantry_units", "infantry_units"),
+        ("logistics_units", "logistics_units"),
+        ("naval_units", "naval_units"),
+        ("air_defense_units", "air_defense_units"),
+        ("preset_groups", "preset_groups"),
+        ("missiles", "missiles"),
+    ]:
+        want = len(dict.fromkeys(authored.get(json_key, [])))
+        got = len(getattr(faction, attr))
+        assert got >= want, (
+            f"{json_key}: {want - got} string(s) silently dropped -- a unit id was "
+            f"renamed or the pack is not registered"
+        )
+
+
+def test_allied_contingents_are_present(tmp_path: Path) -> None:
+    persistency.setup(str(tmp_path), False, 0)
+    faction = _faction()
+    fielded = {u.display_name for u in faction.frontline_units}
+    fielded |= {u.display_name for u in faction.naval_units}
+    fielded |= {u.display_name for u in faction.air_defense_units}
+    missing = (SWEDISH_CONTRIBUTION | UK_CONTRIBUTION) - fielded
+    assert not missing, f"allied contingent lost units: {sorted(missing)}"
+
+    presets = {g.name for g in faction.preset_groups}
+    assert (
+        ALLIED_PRESETS <= presets
+    ), f"missing allied sites: {ALLIED_PRESETS - presets}"
+
+
+def test_faction_degrades_cleanly_with_the_mods_off(tmp_path: Path) -> None:
+    """Mods off must strip the allied units, not crash -- the eject-path guard."""
+    persistency.setup(str(tmp_path), False, 0)
+    from game.theater.start_generator import ModSettings
+
+    faction = _faction()
+    before = len(faction.frontline_units)
+    faction.apply_mod_settings(ModSettings())  # every mod toggle off
+    after = len(faction.frontline_units)
+    assert after < before, "mods-off did not strip the CH units"
+    assert after > 0, "mods-off stripped the vanilla core too"
+    assert not any(u.display_name.startswith("[CH]") for u in faction.frontline_units)
+
+
+def test_swedish_gripen_squadron_is_authored_and_country_pinned() -> None:
+    """The Gripen is blue's dedicated DEAD unit -- and its own mod gate is subtle.
+
+    ``CH_JAS39C`` ships INSIDE the CurrentHill Sweden pack and is gated by
+    ``swedishmilitaryassetspack``; the separate ``jas39_gripen`` ModSetting gates the
+    community mod's unrelated ``JAS39Gripen`` airframe. Preseeding the wrong one would
+    strip this squadron silently, so pin the pairing.
+    """
+    data = yaml.safe_load(YAML.read_text(encoding="utf-8"))
+    nordholz = data["squadrons"][47]
+    gripens = [s for s in nordholz if s.get("aircraft_type") == "[CH] JAS 39C Gripen"]
+    assert len(gripens) == 1, "the Swedish Gripen squadron is missing from Nordholz"
+    squadron = gripens[0]
+    # §23: without the country pin it flies under the shared US voice.
+    assert squadron["country"] == "Sweden"
+    # Blue's only other dedicated SEAD/DEAD unit is the carrier Growler squadron.
+    assert squadron["primary"] == "DEAD"
+    assert data["settings"]["swedishmilitaryassetspack"] is True
+
+
+def test_gripen_is_fielded_and_is_a_dead_platform(tmp_path: Path) -> None:
+    persistency.setup(str(tmp_path), False, 0)
+    from game.ato.flighttype import FlightType
+
+    faction = _faction()
+    gripen = [a for a in faction.aircraft if a.display_name == "[CH] JAS 39C Gripen"]
+    assert gripen, "the Gripen was dropped from the faction"
+    assert gripen[0].dcs_unit_type.id == "CH_JAS39C"
+    # The unit data rates it top of its own file for DEAD; if that regresses the
+    # squadron above would still bind but would stop being the SEAD answer.
+    assert gripen[0].task_priority(FlightType.DEAD) >= 700

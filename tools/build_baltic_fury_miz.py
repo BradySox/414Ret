@@ -20,10 +20,19 @@ the FACTION supplies the real mod (CH/HDS) units at generation. Every marker her
 is a VANILLA DCS unit (the exact marker types the loader keys on), so the miz
 round-trips through pydcs losslessly (mod units would corrupt the save).
 
-The laydown tables below are the single source of truth -- edit them and re-run;
-a hand edit to the .miz is lost on the next build.
+⚠️ THIS WAS A ONE-TIME BOOTSTRAP. The DM built the laydown out in the Mission Editor
+on 2026-07-20, so `operation_baltic_fury.miz` -- NOT the tables below -- is now the
+source of truth, and `main()` REFUSES to run when the miz exists unless you pass
+--force. (This docstring used to claim the opposite; corrected 2026-08-02.)
 
-Usage: python tools/build_baltic_fury_miz.py
+--force no longer reproduces the original bootstrap either: it rebuilds from
+`red_tide.miz`, which has moved on since (road-snapped supply routes + a Haina ammo
+depot, 2026-08-02). If the laydown ever needs regenerating, convert to the
+Enduring/Inherent Resolve decorate-a-base pattern first -- commit the hand-authored
+miz as `operation_baltic_fury_base.miz` and reduce this tool to an additive pass over
+it (see tools/build_iraq_inherent_resolve_miz.py for the reference implementation).
+
+Usage: python tools/build_baltic_fury_miz.py   (refuses unless --force)
 """
 
 import sys

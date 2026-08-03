@@ -262,7 +262,18 @@ file. This guide is the map; those are the territory.
     destroyers stay concentrated with the carrier/LHA groups; 250 km rings **13 → 4**. The
     heavy preset was **deleted, not left registered-and-unused** — an unreferenced Navy
     preset is a hazard, since any future unpinned marker coin-flips onto it. `Naval-17/18/27`
-    are unpinned deliberately (they bind BLUE and screen the US carrier group), and **a preset must fill every layout slot it wants to control**
+    are unpinned deliberately (they bind BLUE and screen the US carrier group). **The
+    Type 055 is REMOVED from the roster (flown Tacview 2026-08-03):** the first mission
+    produced **374 launches, essentially all in the first five minutes** — both fleets
+    emptied their AShM magazines before the player was airborne and the carrier died to
+    **ten YJ-21 ASBMs fired between t=11s and t=99s**. Three causes compound: ships spawn
+    `OptROE.WeaponFree` + alarm RED (`set_ship_engagement`, long-standing), modern AShM
+    out-range the theatre (YJ-18 ~540 km vs a 205 km Guam–Saipan gap), and the compressed
+    laydown put both fleets ~300 km apart at t=0. The 055 is the only YJ-21 carrier and the
+    YJ-21 cannot realistically be intercepted; the 052D's YJ-18 demonstrably can (99 SM
+    intercept shots in the same file). Deferred alternatives: push the PLAN past the 500 km
+    detection range (undoes the compression) or give ships a weapons-hold start (engine
+    change, own setting + in-game pass), and **a preset must fill every layout slot it wants to control**
     (a frigates-only preset leaves Destroyer×2 empty, `has_unit_for_layout_group` fills it
     from the roster, and the roster's destroyers are the 250 km hulls — so the "light"
     group silently came back out at 250 km); in-game pass = checklist **T5**, the riskiest bit being whether

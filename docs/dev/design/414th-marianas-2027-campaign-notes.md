@@ -213,6 +213,33 @@ escort preset leaves the Naval Group layout's Destroyer×2 slot empty,
 250 km hulls — so the "light" group came back out at 250 km. The Type 052B (30 km) is in
 the preset for that reason.
 
+### The YJ-21 is out (flown finding, Tacview 2026-08-03)
+
+The first flown mission produced **374 weapon launches, essentially all inside the first
+five minutes** -- both fleets emptied their anti-ship magazines before the player was
+airborne, and the carrier was dead. Ten **YJ-21** anti-ship ballistic missiles left the
+rails between t=11s and t=99s.
+
+Three things compound, only one of them this campaign's doing:
+
+1. Every ship spawns `OptROE.WeaponFree` + alarm RED (`set_ship_engagement`) and fires
+   autonomously the moment anything enters weapon range. Long-standing engine behaviour.
+2. Modern AShM out-range the theatre. The YJ-18 reaches ~540 km against a 205 km
+   Guam-Saipan gap, so "in range" is permanently true.
+3. Compressing the naval laydown put both fleets ~300 km apart at t=0, so the salvo lands
+   on turn 1 rather than never.
+
+**The Type 055 is therefore removed from the roster.** It is the only hull carrying the
+YJ-21, which cannot realistically be intercepted -- as opposed to the Type 052D's YJ-18,
+which the flown file shows Standard missiles defeating (99 interceptor shots). Red keeps
+its long-range punch; the player keeps a counter. Ring count fell out of it too: 250 km
+rings 4 -> 3, and sites covering Andersen 2 -> 1.
+
+Deliberately NOT done, and worth revisiting if the exchange still feels wrong: pushing the
+PLAN groups back past the Type 055's 500 km detection range (walks back the compression),
+and giving ships a weapons-hold start so the naval fight begins when someone initiates it
+(an engine change affecting every campaign, needs its own setting and an in-game pass).
+
 ### Ring *size* is its own constraint, separate from coverage
 
 A second DM screenshot, after the coverage fix, still read as a wall of red. Measuring

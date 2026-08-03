@@ -511,13 +511,15 @@ def test_every_naval_marker_is_pinned_inshore() -> None:
     # The Destroyer slot must be filled by the preset: an empty slot is filled from the
     # roster, whose destroyers are the 250 km hulls.
     assert "Type 052B Destroyer" in escort["units"]
-    for hull in (
-        "[CH] Type 055 Destroyer",
-        "[CH] Type 052D Destroyer",
-        "[CH] Type 054B Frigate",
-    ):
+    for hull in ("[CH] Type 052D Destroyer", "[CH] Type 054B Frigate"):
         assert hull not in escort["units"], hull
         assert hull in data["naval_units"], f"{hull} must stay available to the fleet"
+
+    # The Type 055 is the ONLY hull carrying the YJ-21 anti-ship ballistic missile, which
+    # cannot realistically be intercepted. A flown mission put ten of them in the air
+    # inside 99 seconds and killed the carrier before the player got airborne. The 052D
+    # keeps the fleet's reach with the YJ-18, which Standard missiles do defeat.
+    assert "[CH] Type 055 Destroyer" not in data["naval_units"]
 
 
 def test_no_land_sam_site_covers_guam() -> None:

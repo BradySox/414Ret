@@ -194,6 +194,9 @@ local unitPayloads = {
 				[2] = {
 					["CLSID"] = "{GBU_31_V_2B}",
 					["num"] = 2,
+					["settings"] = {
+						["NFP_VIS_DrawArgNo_57"] = 1,
+					},
 				},
 				[3] = {
 					["CLSID"] = "{FPU_8A_FUEL_TANK}",
@@ -214,6 +217,9 @@ local unitPayloads = {
 				[7] = {
 					["CLSID"] = "{GBU_31_V_2B}",
 					["num"] = 8,
+					["settings"] = {
+						["NFP_VIS_DrawArgNo_57"] = 1,
+					},
 				},
 				[8] = {
 					["CLSID"] = "{5CE2FF2A-645A-4197-B48D-8720AC69394F}",
@@ -340,18 +346,30 @@ local unitPayloads = {
 				[4] = {
 					["CLSID"] = "{GBU_31_V_4B}",
 					["num"] = 7,
+					["settings"] = {
+						["NFP_VIS_DrawArgNo_57"] = 1,
+					},
 				},
 				[5] = {
 					["CLSID"] = "{GBU_31_V_4B}",
 					["num"] = 3,
+					["settings"] = {
+						["NFP_VIS_DrawArgNo_57"] = 1,
+					},
 				},
 				[6] = {
 					["CLSID"] = "{GBU_31_V_4B}",
 					["num"] = 2,
+					["settings"] = {
+						["NFP_VIS_DrawArgNo_57"] = 1,
+					},
 				},
 				[7] = {
 					["CLSID"] = "{GBU_31_V_4B}",
 					["num"] = 8,
+					["settings"] = {
+						["NFP_VIS_DrawArgNo_57"] = 1,
+					},
 				},
 				[8] = {
 					["CLSID"] = "{40EF17B7-F508-45de-8566-6FFECC0C1AB8}",

@@ -83,18 +83,30 @@ local unitPayloads = {
 				[7] = {
 					["CLSID"] = "{BRU-32 MK-82}",
 					["num"] = 7,
+					["settings"] = {
+						["NFP_VIS_DrawArgNo_57"] = 1,
+					},
 				},
 				[8] = {
 					["CLSID"] = "{BRU-32 MK-82}",
 					["num"] = 4,
+					["settings"] = {
+						["NFP_VIS_DrawArgNo_57"] = 1,
+					},
 				},
 				[9] = {
 					["CLSID"] = "{BRU-32 MK-82}",
 					["num"] = 6,
+					["settings"] = {
+						["NFP_VIS_DrawArgNo_57"] = 1,
+					},
 				},
 				[10] = {
 					["CLSID"] = "{BRU-32 MK-82}",
 					["num"] = 5,
+					["settings"] = {
+						["NFP_VIS_DrawArgNo_57"] = 1,
+					},
 				},
 			},
 			["tasks"] = {
@@ -131,18 +143,30 @@ local unitPayloads = {
 				[7] = {
 					["CLSID"] = "{BRU-32 GBU-16}",
 					["num"] = 7,
+					["settings"] = {
+						["NFP_VIS_DrawArgNo_57"] = 1,
+					},
 				},
 				[8] = {
 					["CLSID"] = "{BRU-32 GBU-16}",
 					["num"] = 4,
+					["settings"] = {
+						["NFP_VIS_DrawArgNo_57"] = 1,
+					},
 				},
 				[9] = {
 					["CLSID"] = "{BRU-32 GBU-16}",
 					["num"] = 6,
+					["settings"] = {
+						["NFP_VIS_DrawArgNo_57"] = 1,
+					},
 				},
 				[10] = {
 					["CLSID"] = "{BRU-32 GBU-16}",
 					["num"] = 5,
+					["settings"] = {
+						["NFP_VIS_DrawArgNo_57"] = 1,
+					},
 				},
 			},
 			["tasks"] = {
@@ -267,10 +291,16 @@ local unitPayloads = {
 				[7] = {
 					["CLSID"] = "{BRU-32 GBU-12}",
 					["num"] = 7,
+					["settings"] = {
+						["NFP_VIS_DrawArgNo_57"] = 1,
+					},
 				},
 				[8] = {
 					["CLSID"] = "{BRU-32 GBU-12}",
 					["num"] = 4,
+					["settings"] = {
+						["NFP_VIS_DrawArgNo_57"] = 1,
+					},
 				},
 				[9] = {
 					["CLSID"] = "{BRU-32 MK-20}",
@@ -353,10 +383,16 @@ local unitPayloads = {
 				[4] = {
 					["CLSID"] = "{MAK79_MK82 4}",
 					["num"] = 7,
+					["settings"] = {
+						["NFP_VIS_DrawArgNo_57"] = 1,
+					},
 				},
 				[5] = {
 					["CLSID"] = "{MAK79_MK82 4}",
 					["num"] = 4,
+					["settings"] = {
+						["NFP_VIS_DrawArgNo_57"] = 1,
+					},
 				},
 				[6] = {
 					["CLSID"] = "{F14-300gal}",
@@ -373,10 +409,16 @@ local unitPayloads = {
 				[9] = {
 					["CLSID"] = "{MAK79_MK82 3R}",
 					["num"] = 6,
+					["settings"] = {
+						["NFP_VIS_DrawArgNo_57"] = 1,
+					},
 				},
 				[10] = {
 					["CLSID"] = "{MAK79_MK82 3L}",
 					["num"] = 5,
+					["settings"] = {
+						["NFP_VIS_DrawArgNo_57"] = 1,
+					},
 				},
 			},
 			["tasks"] = {

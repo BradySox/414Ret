@@ -458,9 +458,10 @@ local unitPayloads = {
 					},
 				},
 				[2] = {
-					["CLSID"] = "{SUPERHORNET_PYLON_02_MB_MK_1X_GBU-31V}",
+					["CLSID"] = "{SUPERHORNET_PYLON_02_OB_MK_1X_GBU-32}",
 					["num"] = 2,
 					["settings"] = {
+						["NFP_VIS_DrawArgNo_57"] = 1,
 						["01_prfx_arm_delay_ctrl_FMU139CB_LD"] = 4,
 						["01_prfx_function_delay_ctrl_FMU139CB_LD"] = 0,
 						["NFP_PRESID"] = "MDRN_B_A_PGM_TAILONLY",
@@ -469,9 +470,10 @@ local unitPayloads = {
 					},
 				},
 				[3] = {
-					["CLSID"] = "{SUPERHORNET_PYLON_03_IB_MK_1X_GBU-31V}",
+					["CLSID"] = "{SUPERHORNET_PYLON_03_MB_MK_1X_GBU-31_V_4B}",
 					["num"] = 3,
 					["settings"] = {
+						["NFP_VIS_DrawArgNo_57"] = 1,
 						["01_prfx_arm_delay_ctrl_FMU139CB_LD"] = 4,
 						["01_prfx_function_delay_ctrl_FMU139CB_LD"] = 0,
 						["NFP_PRESID"] = "MDRN_B_A_PGM_TAILONLY",
@@ -492,9 +494,10 @@ local unitPayloads = {
 					["num"] = 6,
 				},
 				[7] = {
-					["CLSID"] = "{SUPERHORNET_PYLON_09_IB_MK_1X_GBU-31V}",
+					["CLSID"] = "{SUPERHORNET_PYLON_09_MB_MK_1X_GBU-31_V_4B}",
 					["num"] = 7,
 					["settings"] = {
+						["NFP_VIS_DrawArgNo_57"] = 1,
 						["01_prfx_arm_delay_ctrl_FMU139CB_LD"] = 4,
 						["01_prfx_function_delay_ctrl_FMU139CB_LD"] = 0,
 						["NFP_PRESID"] = "MDRN_B_A_PGM_TAILONLY",
@@ -503,9 +506,10 @@ local unitPayloads = {
 					},
 				},
 				[8] = {
-					["CLSID"] = "{SUPERHORNET_PYLON_10_MB_MK_1X_GBU-31V}",
+					["CLSID"] = "{SUPERHORNET_PYLON_10_OB_MK_1X_GBU-32}",
 					["num"] = 8,
 					["settings"] = {
+						["NFP_VIS_DrawArgNo_57"] = 1,
 						["01_prfx_arm_delay_ctrl_FMU139CB_LD"] = 4,
 						["01_prfx_function_delay_ctrl_FMU139CB_LD"] = 0,
 						["NFP_PRESID"] = "MDRN_B_A_PGM_TAILONLY",
@@ -714,9 +718,10 @@ local unitPayloads = {
 					},
 				},
 				[2] = {
-					["CLSID"] = "{SUPERHORNET_PYLON_02_MB_MK_1X_GBU-31V}",
+					["CLSID"] = "{SUPERHORNET_PYLON_02_OB_MK_1X_GBU-32}",
 					["num"] = 2,
 					["settings"] = {
+						["NFP_VIS_DrawArgNo_57"] = 1,
 						["01_prfx_arm_delay_ctrl_FMU139CB_LD"] = 4,
 						["01_prfx_function_delay_ctrl_FMU139CB_LD"] = 0,
 						["NFP_PRESID"] = "MDRN_B_A_PGM_TAILONLY",
@@ -725,9 +730,10 @@ local unitPayloads = {
 					},
 				},
 				[3] = {
-					["CLSID"] = "{SUPERHORNET_PYLON_03_IB_MK_1X_GBU-31V}",
+					["CLSID"] = "{SUPERHORNET_PYLON_03_MB_MK_1X_GBU-31_V_4B}",
 					["num"] = 3,
 					["settings"] = {
+						["NFP_VIS_DrawArgNo_57"] = 1,
 						["01_prfx_arm_delay_ctrl_FMU139CB_LD"] = 4,
 						["01_prfx_function_delay_ctrl_FMU139CB_LD"] = 0,
 						["NFP_PRESID"] = "MDRN_B_A_PGM_TAILONLY",
@@ -748,9 +754,10 @@ local unitPayloads = {
 					["num"] = 6,
 				},
 				[7] = {
-					["CLSID"] = "{SUPERHORNET_PYLON_09_IB_MK_1X_GBU-31V}",
+					["CLSID"] = "{SUPERHORNET_PYLON_09_MB_MK_1X_GBU-31_V_4B}",
 					["num"] = 7,
 					["settings"] = {
+						["NFP_VIS_DrawArgNo_57"] = 1,
 						["01_prfx_arm_delay_ctrl_FMU139CB_LD"] = 4,
 						["01_prfx_function_delay_ctrl_FMU139CB_LD"] = 0,
 						["NFP_PRESID"] = "MDRN_B_A_PGM_TAILONLY",
@@ -759,9 +766,10 @@ local unitPayloads = {
 					},
 				},
 				[8] = {
-					["CLSID"] = "{SUPERHORNET_PYLON_10_MB_MK_1X_GBU-31V}",
+					["CLSID"] = "{SUPERHORNET_PYLON_10_OB_MK_1X_GBU-32}",
 					["num"] = 8,
 					["settings"] = {
+						["NFP_VIS_DrawArgNo_57"] = 1,
 						["01_prfx_arm_delay_ctrl_FMU139CB_LD"] = 4,
 						["01_prfx_function_delay_ctrl_FMU139CB_LD"] = 0,
 						["NFP_PRESID"] = "MDRN_B_A_PGM_TAILONLY",

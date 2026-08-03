@@ -67,18 +67,30 @@ local unitPayloads = {
 				[4] = {
 					["CLSID"] = "{BRU-32 GBU-12}",
 					["num"] = 7,
+					["settings"] = {
+						["NFP_VIS_DrawArgNo_57"] = 1,
+					},
 				},
 				[5] = {
 					["CLSID"] = "{BRU-32 GBU-12}",
 					["num"] = 6,
+					["settings"] = {
+						["NFP_VIS_DrawArgNo_57"] = 1,
+					},
 				},
 				[6] = {
 					["CLSID"] = "{BRU-32 GBU-12}",
 					["num"] = 5,
+					["settings"] = {
+						["NFP_VIS_DrawArgNo_57"] = 1,
+					},
 				},
 				[7] = {
 					["CLSID"] = "{BRU-32 GBU-12}",
 					["num"] = 4,
+					["settings"] = {
+						["NFP_VIS_DrawArgNo_57"] = 1,
+					},
 				},
 				[8] = {
 					["CLSID"] = "{F14-300gal}",
@@ -118,18 +130,30 @@ local unitPayloads = {
 				[4] = {
 					["CLSID"] = "{BRU-32 GBU-16}",
 					["num"] = 7,
+					["settings"] = {
+						["NFP_VIS_DrawArgNo_57"] = 1,
+					},
 				},
 				[5] = {
 					["CLSID"] = "{BRU-32 GBU-16}",
 					["num"] = 6,
+					["settings"] = {
+						["NFP_VIS_DrawArgNo_57"] = 1,
+					},
 				},
 				[6] = {
 					["CLSID"] = "{BRU-32 GBU-16}",
 					["num"] = 5,
+					["settings"] = {
+						["NFP_VIS_DrawArgNo_57"] = 1,
+					},
 				},
 				[7] = {
 					["CLSID"] = "{BRU-32 GBU-16}",
 					["num"] = 4,
+					["settings"] = {
+						["NFP_VIS_DrawArgNo_57"] = 1,
+					},
 				},
 				[8] = {
 					["CLSID"] = "{F14-300gal}",
@@ -321,6 +345,9 @@ local unitPayloads = {
 				[4] = {
 					["CLSID"] = "{MAK79_MK82 4}",
 					["num"] = 4,
+					["settings"] = {
+						["NFP_VIS_DrawArgNo_57"] = 1,
+					},
 				},
 				[5] = {
 					["CLSID"] = "{F14-300gal}",
@@ -337,14 +364,23 @@ local unitPayloads = {
 				[8] = {
 					["CLSID"] = "{MAK79_MK82 4}",
 					["num"] = 7,
+					["settings"] = {
+						["NFP_VIS_DrawArgNo_57"] = 1,
+					},
 				},
 				[9] = {
 					["CLSID"] = "{MAK79_MK82 3R}",
 					["num"] = 6,
+					["settings"] = {
+						["NFP_VIS_DrawArgNo_57"] = 1,
+					},
 				},
 				[10] = {
 					["CLSID"] = "{MAK79_MK82 3L}",
 					["num"] = 5,
+					["settings"] = {
+						["NFP_VIS_DrawArgNo_57"] = 1,
+					},
 				},
 			},
 			["tasks"] = {

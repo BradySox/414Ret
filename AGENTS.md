@@ -3449,6 +3449,48 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     never deferred, air superiority always on the turn-1 ramp, DEAD before strike, Red Tide
     never defers CAS); features doc §82, design note
     `docs/dev/design/414th-wing-growth-notes.md`, checklist B40 — needs an in-game pass.
+83. **SP Pilot Mode (pre-turn card + aircraft-first sortie board)** — the express lane for
+    the single-player loop, which dies at a reproducible place: create a campaign, fly turn
+    1, **accept results**, never play turn 2. The stop point is neither flying nor the
+    debrief (the player gets all the way through `process_debriefing`) but the moment the
+    map returns and the game says *"now plan turn 2"*. Diagnosis: **in MP you play a pilot;
+    in SP you play the DM AND the pilot, and the DM job has no fun in it** — an MP host pays
+    the commander cost once for eight sorties, an SP player pays it for one, before any
+    reward. **Additive and default OFF** (`sp_pilot_mode`, 414th Features → Single-player
+    flow); the map/ATO/hand-planning path is untouched. **S1** = an "Accept results && fly
+    next" button on the debrief window running the identical `process_results` → `pass_turn`
+    work (extracted to `_process_turn`, shared by both buttons) and then opening the board.
+    **S2** = the two-step board (`game/fourteenth/sp_pilot_mode.py`): step 1 the **airframe**
+    as the PRIMARY axis — every type the wing can put up, **not** filtered by what the
+    commander fragged (a flat sortie list keeps offering the same three Hornet missions) —
+    then step 2 the sortie via the ladder, **rung 1** seat an existing planned flight
+    (`FlightMembers.set_pilot`, zero planner involvement) → **rung 2** join an existing
+    package in the role it still needs. **The role comes from the air war, not the player**
+    (escort/strike/jamming — two variety axes, one player-driven), so step 2 leads with
+    role+package, never the target. **One seat, AI wingmen, exactly as in MP**
+    (`client_count` stays 1 — same generation path MP already exercises). **S3** = the
+    pre-turn briefing (`game/fourteenth/pre_turn_briefing.py`), built on the finding that
+    **the fork already computes almost every reason to continue and points them the wrong
+    way in time** — `Sitrep` carries `pilots_mia`/`pows_held`/`red_c2_status`/`victory_lines`
+    and renders all of it only AFTER the player commits. Five urgency-ordered sections
+    (a named person on a clock outranks a statistic): **rescue** — §21 evaders, and the one
+    genuinely new number, **the capture odds** (`capture_chance` already scales 10%→90% with
+    depth and was never shown; "every turn you skip is a roll" only lands when the roll is
+    stated) + POWs; **consequence** — §52 C2 damage, attributed ("their planning is worse
+    because of you"); **objective** — §75 progress; **anticipation** — §82 upcoming arrivals;
+    **open loops** — §3 unidentified contacts (real or a §79 decoy — only a sortie tells you)
+    + located §49 launchers that scoot. A **pure view**: computes nothing new, mutates
+    nothing, zero planner coupling (§3 viewer discipline), and every section is individually
+    guarded so a briefing never breaks a turn. **Deliberately not done:** rung 3 (a
+    standalone frag — a private war built to order is what the "put me in existing packages"
+    spec rules out); rung 2's *mutation* (the board offers joins, but building the flight is
+    the ATO's own add-flight path — the dialog says so plainly rather than failing silently);
+    and the structural "1 of 25 packages" problem, whose real lever is **smaller SP ATOs**
+    (planner work, its own change). Tests
+    `tests/fourteenth/test_sp_pilot_mode.py` (20) +
+    `tests/fourteenth/test_pre_turn_briefing.py` (16); features doc §83, design note
+    `docs/dev/design/414th-single-player-loop-notes.md`, checklist B41 — **`qt_ui` is not CI
+    type-checked and the dialog cannot be driven headlessly, so it needs an in-app pass.**
 
 ---
 

@@ -672,6 +672,12 @@ FEATURES: tuple[Feature, ...] = (
         settings_fields=("naval_weapon_release_stagger", "naval_magazines"),
     ),
     Feature("wing_growth", "The Wing Grows", 82),
+    Feature(
+        "sp_pilot_mode",
+        "SP Pilot Mode",
+        83,
+        settings_fields=("sp_pilot_mode",),
+    ),
     # Always-on engine plugins — major 414th machinery documented in design notes
     # rather than a numbered "Features at a Glance" entry.
     Feature("mantis_iads", "MANTIS IADS engine", plugin_id="mantisiads"),

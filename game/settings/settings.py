@@ -369,6 +369,7 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                     "long_range_carrier_ops",
                     "motorpool_enabled",
                     "motorpool_spawn_cap",
+                    "sp_pilot_mode",
                 ],
             ),
             (
@@ -742,6 +743,9 @@ FEATURE_GATE_FIELDS: dict[str, list[str]] = {
         "auto_repair_air_defenses",  # §68
         "auto_range_fuel_tanks",  # §46
         "fuel_tanks_over_jammers",  # §46
+    ],
+    "Single-player flow": [
+        "sp_pilot_mode",  # §83
     ],
     "Campaign clock & era": [
         "continuous_campaign_clock",  # §47
@@ -2185,6 +2189,26 @@ class Settings:
             "find them (-> POW, which can compromise your comms). There is no "
             "death clock; the depth roll is the clock. Turn OFF to return to the "
             "old behaviour (an un-rescued pilot is lost at debrief)."
+        ),
+    )
+    sp_pilot_mode: bool = boolean_option(
+        "SP Pilot Mode (fly the next turn without planning it)",
+        CAMPAIGN_MANAGEMENT_PAGE,
+        "Campaign features",
+        default=False,
+        detail=(
+            "For single-player: after accepting mission results, offer to fly the "
+            "next turn straight away instead of returning to the map to plan it. "
+            "You pick an AIRCRAFT first -- any type your wing can put up, not just "
+            "the ones the commander happened to frag -- and then a sortie in that "
+            "jet, taking ONE seat with AI wingmen exactly as in multiplayer. The "
+            "role comes from the air war (escort, strike, jamming -- whatever the "
+            "package needs), so the aircraft is your variety choice and the job is "
+            "the war's. Also shows a pre-turn briefing of the reasons this turn "
+            "matters: aviators evading with their capture odds, enemy command "
+            "damage you caused, victory progress, and scheduled squadron arrivals. "
+            "The normal map/ATO planning path is untouched -- this is an express "
+            "lane, not a replacement."
         ),
     )
     combat_sar_surge: bool = boolean_option(

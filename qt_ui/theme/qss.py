@@ -440,6 +440,15 @@ QTextBrowser[style="info-desc"] {{
     padding: {s.space_1}px {s.space_3}px;
 }}
 
+/* An urgent line -- something on a clock the player should act on this turn
+   (§83's evading aviators). Amber is the fork's established "pay attention"
+   colour on the map and the kneeboard; the chrome accent is deliberately not
+   amber, so this never competes with it. */
+QLabel[style="warning"] {{
+    color: {p.warning};
+    font-weight: 600;
+}}
+
 QLabel[style="small"], QLabel[style="text-xs"] {{ font-size: {s.text_xs}px; }}
 QLabel[style="text-sm"] {{ font-size: {s.text_sm}px; }}
 QLabel[style="text-md"] {{ font-size: {s.text_md}px; }}

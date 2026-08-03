@@ -1,6 +1,20 @@
 # 414th Single-Player Campaign Loop — "SP Pilot Mode"
 
-> **STATUS: DESIGN ONLY (2026-08-03). Nothing is landed.** No code, no settings field, no
+> **STATUS: LANDED 2026-08-03 as feature §83** (S1 + S2 + S3; S4's guardrails are
+> honoured throughout). Engineering detail lives in `414th-features.md` §83; this note
+> keeps the diagnosis, the reasons-to-continue taxonomy and the open calls.
+> **App-side pass owed: checklist B41.**
+>
+> What landed: the `sp_pilot_mode` gate (default OFF), the "Accept results && fly next"
+> button, `game/fourteenth/sp_pilot_mode.py` (the aircraft-first board, ladder rungs 1-2)
+> and `game/fourteenth/pre_turn_briefing.py` (the five-section pre-turn card, including
+> the capture odds that were computed every turn and never shown).
+>
+> What deliberately did **not** land: rung 3 (a standalone frag), rung 2's *mutation*
+> (the board offers joins; building the flight is the ATO's own add-flight path), and
+> smaller SP ATOs — the structural fix, which is planner work and its own change.
+>
+> Original status line: **DESIGN ONLY (2026-08-03). Nothing is landed.** No code, no settings field, no
 > plugin. This note scopes the problem, the seams, and the open squadron calls. Do not
 > treat any name below as an existing API.
 

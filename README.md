@@ -183,6 +183,19 @@ Upstream hands you a map that already knows everything. Here you have to go look
 
 ### Systems that make the war strategic
 
+- **Single-player express lane.** If you play solo, the campaign can stop asking you to be
+  the commander. Turn on **SP Pilot Mode** and the debrief gains an *Accept results & fly
+  next* button: it processes the turn and hands you a board instead of the map. You pick
+  **an aircraft first** — anything your wing can put up, not just the types the AI
+  commander happened to task — and then a sortie in that jet, taking one seat with AI
+  wingmen exactly like flying in a squadron night. The **job** comes from the war: escort
+  one night, strike the next, jamming after that, depending on what the package needs.
+  Above the board is a short brief on why *this* turn matters — the pilot still evading
+  behind the lines and the odds he is captured before you reach him, the enemy command
+  network you have been dismantling, how close the campaign is to its victory conditions,
+  and which squadron arrives next. The ordinary map and mission planner are untouched;
+  this is a shortcut, not a replacement.
+
 - **The wing grows.** Campaigns can schedule reinforcements to arrive on turns you know
   about in advance — *"Finnish Hornets turn 3, Swedish Gripens turn 5, the Bone turn 9."*
   Not more of what you already fly: **new airframes**, so what you can take off in changes

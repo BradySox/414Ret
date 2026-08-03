@@ -129,6 +129,41 @@ def test_no_markers_leak_onto_the_spare_neutral_fields(tmp_path: Path) -> None:
         assert not leaked, f"{cp.name} (inert spare) caught markers: {leaked}"
 
 
+def test_no_preset_marker_sits_on_a_runway(tmp_path: Path) -> None:
+    """No authored marker may sit on an airfield's reference point.
+
+    An ``Airfield`` control point's position is the DCS airfield reference point
+    -- what pydcs uses for a ``StartType.Runway`` spawn -- so a marker authored at
+    the raw control-point coordinate puts its objects on the runway. The
+    bootstrap generator did that for the three ammunition depots (Hamburg,
+    Peenemünde, Szczecin); they are now 1.5 km off their fields.
+    """
+    persistency.setup(str(tmp_path), False, 0)
+    _, theater = _theater()
+
+    keep_out = 500.0
+    offenders = []
+    for cp in theater.controlpoints:
+        airport = cp.dcs_airport
+        if airport is None:
+            continue
+        preset_locations = cp.preset_locations
+        for attribute in dir(preset_locations):
+            if attribute.startswith("_"):
+                continue
+            markers = getattr(preset_locations, attribute)
+            if not isinstance(markers, list):
+                continue
+            for marker in markers:
+                distance = marker.distance_to_point(airport.position)
+                if distance < keep_out:
+                    offenders.append(
+                        f"{marker.original_name} ({attribute}) is {distance:.0f} m "
+                        f"from the {cp.name} reference point"
+                    )
+    assert not offenders, "markers parked on a runway: " + "; ".join(offenders)
+
+
 def test_victory_parses() -> None:
     data = yaml.safe_load(YAML.read_text(encoding="utf-8"))
     victory = parse_victory(data.get("victory"))

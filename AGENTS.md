@@ -514,11 +514,29 @@ file. This guide is the map; those are the territory.
     ops uses exactly this), so join = ask the package → `ProposedFlight(task,
     preferred_type)` → fulfil → seat, with escort prunes/ROE/join-split/TOT free. **Call #2
     SETTLED: one seat, AI wingmen, exactly as in MP** (`client_count` stays 1 — no multi-slot
-    bookkeeping, same generation path MP already exercises). It also **revised the
-    note's own recommendation**: the first cut called S2 a pure speed feature and pitched
-    S1+S3, but for a variety-motivated player the airframe picker IS the pull into turn 2, so
-    **S1+S2 are the ship and S3 the amplifier**, with a "not flown yet this campaign" variety
-    read-out as the cheapest engagement win. Records what already exists so it isn't rebuilt
+    bookkeeping, same generation path MP already exercises). **DM steer, same day — "I'm
+    looking more for reasons to continue, but this is a great start" — settles the note's
+    swinging recommendation: S1+S2 are the VEHICLE, S3 is the PAYLOAD.** S3 is now the
+    note's centre of gravity, built on the finding that **the fork already computes almost
+    every reason it needs and points them the wrong way in time** — `Sitrep` today carries
+    `pilots_mia` / `pows_held` / `red_c2_status` / `victory_lines` (named people on clocks,
+    proof your bombing changed enemy behaviour, live victory progress) and renders **all of
+    it only after the player has committed to the next turn**. The taxonomy, ranked by
+    strength × cheapness: (1) **a named person on a clock you caused** — §21's MIA evader,
+    depth-weighted capture roll re-run every turn you don't go, with the §21 surge already
+    opening the next turn with the rescue airborne; (2) **proof your sortie changed the
+    war** — §52 already measurably degrades red planning and already says so; (3) **open
+    loops you opened** — un-killed recon contacts, scooted §49 batteries, unburned §79
+    decoys; (4) **a visible finish line** — §75 shipped the mechanism and **no campaign
+    authors a `victory:` block**, the largest motivational return for zero engine risk;
+    (5) **anticipation** — deliveries/repairs/replenishment are turn-counted and unsurfaced;
+    (6) **dread** — §W6 red tempo + §70 COMINT leaks framed as intel estimates; (7) **a
+    record that is yours** — the one gap needing new state (`PilotRecord` tracks only
+    `missions_flown`, no kills/rescues). Plus the cheap multiplier: **make the S2 choice
+    carry consequence** ("cache — slows regeneration", "HVT window closes in 2 turns"), which
+    converts picking tonight's jet into deciding what the war does next. Explicitly NOT
+    fixed: the structural "1 of 25 packages" problem, whose real lever is **smaller SP ATOs**
+    (planner work, its own note). Records what already exists so it isn't rebuilt
     (`AutoAtoBehavior`, `auto_ato_player_missions_asap`, §43/§73 defaults); 7 open squadron
     calls remain; smaller SP ATOs / victory-arc authoring / a pilot career page deferred),
     `414th-ui-redesign-directions.md` (**UI redesign — DECIDED 2026-07-25: 1 → 2**; D1 step 1

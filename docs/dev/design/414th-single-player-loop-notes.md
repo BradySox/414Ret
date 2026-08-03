@@ -176,22 +176,113 @@ marker in step 1 is probably the single cheapest engagement win in this note.
 This is the piece that reproduces the MP experience: *you choose your jet and your
 sortie from what the DM fragged, you do not build the ATO.*
 
-### S3 — the pre-turn hook card
+### S3 — the reasons to continue
 
-The motivation half. Before the player commits to the turn, show the reasons this
-specific turn matters — sourced from state the fork **already tracks** but only surfaces
-after commitment:
+DM steer 2026-08-03, after reading the S1/S2 spec: *"I'm looking more for reasons to
+continue, but this is a great start."* S1 and S2 are the delivery mechanism. **This
+section is the actual answer to the question the note was opened for**, and it is
+where the remaining design effort belongs.
 
-- **§21 downed pilots.** An MIA evader's capture probability climbs with depth toward 90%
-  and re-rolls every turn. "Capt. Reyes is evading 22 NM inside — every turn you skip is
-  a roll for the POW cage" is a reason to fly turn 2 that has nothing to do with the FLOT.
-- **§75 victory progress.** Which conditions are met, which are one objective away.
-- **COIN clocks** (IED 3-turn fuse, HVT 4-turn window, dispersed-cell 3-turn maturation) —
-  already turn-counted, already expiring, currently invisible until you are airborne.
-- **§29 SITREP** — pulled *forward* of the commitment instead of onto the next kneeboard.
+#### The finding that shapes everything below
 
-None of this needs new game state. It is a read-only view of things `finish_turn` already
-computed.
+The fork already computes almost every reason-to-continue it needs. `Sitrep`
+(`game/sitrep.py`) today carries `pilots_mia`, `pows_held`, `red_c2_status` and
+`victory_lines` — named people on clocks, proof that your bombing changed enemy
+behaviour, and live victory progress. All of it is real, all of it is per-turn, and
+**all of it renders only after the player has committed to the next turn** (kneeboard
+band, web LAST TURN panel, Qt debrief box).
+
+**The reasons already exist and are pointed the wrong way in time.** That reframes S3
+from "invent motivation" to "move an existing surface earlier and sharpen its framing" —
+which is why it stays the cheapest stage in the note.
+
+#### The taxonomy — seven reasons, ranked by strength × cheapness
+
+**1. A named person on a clock you caused.** *(strongest, nearly free)*
+§21's MIA evader is the best hook the fork owns: a **named** aviator, down because of
+*your* mission, with a depth-weighted capture roll re-run **every turn you don't go**
+(10% near the front → 90% at 40 NM+). §21's recovery surge then opens the next turn
+with the rescue package **already airborne**. That is a complete, working,
+emotionally-loaded loop that the player currently cannot see until they have already
+decided to play. Needed: promote it to the headline of the pre-turn card, framed as
+pressure ("Capt. Reyes — 22 NM inside, 4 turns down; every turn you skip is a roll for
+the cage"), not as a status line. POWs are the same hook one stage later.
+
+**2. Proof that your sortie changed the war.** *(strongest structural fix, cheap)*
+The honest SP complaint is "I flew 1 of 25 packages and the war moved for reasons I
+didn't cause." §52 already **disproves** that when the player kills C2 — enemy planning
+degrades measurably (unpredictability up, offensive package cap down) and
+`red_c2_status` already says so. Generalise it: attribute outcomes to the player's own
+flight wherever the debrief can. "Your strike on the Haina command post cut red to 2 of
+3 command posts — they fragged four fewer offensive packages this turn." That single
+sentence is worth more than any amount of UI speed.
+
+**3. Open loops you personally opened.** *(cheap, high curiosity value)*
+Recon and hunting create unfinished business by construction and the fork already
+tracks it: TARPS/AI-recon captures (§3/§12), §3 concealed contacts you circled but never
+identified, §49 missile batteries that scooted after you found them, §79 decoys you have
+not burned. "You photographed 3 SAM sites; 2 are still alive. The SCUD battery you found
+has moved." Curiosity is a renewable resource and this is a read-out over existing state.
+
+**4. A visible finish line.** *(no engine work, pure content)*
+§75 shipped the mechanism and **no shipped campaign authors a `victory:` block**, so
+every SP campaign is still an open-ended capture-everything grind with no progress bar.
+MP campaigns get their finish line socially (the event calendar ends). SP has nothing.
+Authoring 6–10-turn objective ladders on the shipped campaigns is the single largest
+motivational return available for zero engine risk — and `victory_lines` already renders
+the progress once a block exists.
+
+**5. Anticipation — something is arriving.** *(cheap read-out)*
+Deliveries in transit, pilot replenishment, runway repair timers and procurement are all
+already turn-counted. "Four replacement Vipers arrive turn 12." "Balad's runway is
+repaired in 2 turns." A dated future event is a reason to reach a specific turn, and
+none of it is currently surfaced before commitment.
+
+**6. Dread — the enemy is building toward something.** *(cheap, campaigns already author it)*
+§W6 red tempo already schedules trail surges and offensive windows per campaign, and §70
+COMINT Tier 2 already leaks red's most threatening package of the coming mission. Surface
+these as *intel estimates* rather than certainties ("collection suggests an increase in
+enemy offensive tempo") and the player has a reason to be there when it lands — plus a
+reason to fly the collector that produced the estimate.
+
+**7. A record that is yours.** *(smallest engine gap in the list)*
+Sunk cost made visible: your kills, your sorties, your squadron's losses under your
+command, who you have rescued. **Gap:** `PilotRecord` (`game/squadrons/pilot.py`) tracks
+only `missions_flown` — no kills, no rescues. Everything else is present in the squadron
+and downed-pilot records. This is the one reason on the list needing new persisted state,
+so it is last.
+
+#### Composition
+
+1, 2 and 3 are per-turn and personal — they answer *"why fly tonight."* 4, 5 and 6 are
+arc-level — they answer *"why finish this campaign."* 7 is cumulative — it answers *"why
+this campaign rather than a new one,"* which is precisely the choice the player is
+currently making wrong. A card carrying one line from each band is a complete answer.
+
+**Everything except 7 is a read-only view of state `finish_turn` already computed.**
+
+#### The sortie board is itself a reason, if the choice has consequences
+
+S2 currently offers a *flavour* choice — which jet, which role. It can cheaply become a
+**campaign** choice by showing what each offered sortie would actually change:
+
+- "Cache at Shirqat — slows insurgent regeneration" (§C1 throttle)
+- "HVT window closes in 2 turns — kill him or he's gone" (COIN HVT)
+- "Command post at Haina — degrades red planning" (§52)
+- "Evader pickup — Capt. Reyes, 4 turns down"
+
+Each line is one lookup against machinery that already exists. It converts "pick tonight's
+jet" into "decide what the war does next," and a decision you *made* is a far stronger
+reason to come back and see the result than a mission you were merely assigned. This is
+the cheapest available answer to "I flew 1 of 25 packages and nothing I did mattered."
+
+#### What this does NOT fix
+
+The structural version of that complaint — that the auto-planner services 25 packages
+whether or not the player flies — is untouched by any read-out. The real lever is
+**smaller SP ATOs**: fewer, larger, more consequential packages so one sortie is a
+meaningful fraction of the turn. That touches the planner, needs its own note, and
+should not be smuggled into this one. Recorded here so it is not mistaken for solved.
 
 ### S4 — guardrails
 
@@ -220,11 +311,23 @@ airframe picker a **motivation** surface, not a convenience one — "which jet d
 fly tonight" is itself the pull into turn 2. S2 is therefore not deferrable, and the
 variety read-out inside it is the cheapest engagement win on offer.
 
-Current reading: **S1 + S2 are the ship, S3 is the amplifier.** S3 stays cheap and stays
-recommended, but it is no longer the load-bearing motivational piece it was pitched as.
+**Revised again, same day, by the DM's steer** *("I'm looking more for reasons to
+continue, but this is a great start")*. The note has now swung twice, so state the
+settled position plainly:
+
+- **S1 + S2 are the vehicle.** They remove the reason to stop and they make the airframe
+  variety real. They are a great start — and on their own they deliver the existing
+  feeling faster, which is not the goal.
+- **S3 is the payload.** The reasons to continue are the actual ask, and the S3 taxonomy
+  above is where the remaining design effort goes.
+
+Neither half works alone: reasons the player never sees before committing are the
+current bug, and a fast path to a turn with no stakes is a faster treadmill. **Build S3's
+content; deliver it through S1/S2's surfaces.**
 
 The deeper fix — making the player's sortie *consequential* out of 25 — is a separate
-question and probably means smaller ATOs in SP, not better UI.
+question and probably means smaller ATOs in SP, not better UI. See "What this does NOT
+fix" under S3.
 
 ## Open squadron calls
 

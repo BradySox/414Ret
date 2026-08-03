@@ -511,7 +511,26 @@ file. This guide is the map; those are the territory.
     base, def claiming, save compat (new pending state, `__setstate__` empty default, campaign
     edits need a NEW game), the Air Wing Config dialog, and `squadrons_start_full`
     interaction. 6 open calls incl. visible-vs-surprise, red schedules (code symmetric, never
-    announced as fact), and `available_until_turn` departures as the use-it-or-lose-it v2),
+    announced as fact), and `available_until_turn` departures as the use-it-or-lose-it v2.
+    **First campaigns picked 2026-08-03: Red Tide + Baltic Fury** — with the note's key
+    distinction that **additive** arrivals (new squadrons appear later; total force grows)
+    do NOT invert "turn 1 is the best mission", only **deferred** ones do (existing turn-1
+    squadrons held back; turn 1 deliberately weaker) — which makes the motivationally
+    correct flavour also a real balance change to an already-tuned campaign. **⚠️ Red Tide
+    is FEATURE-LOCKED and a schedule there is a new feature + laydown change + re-opened
+    balance pass all at once — it needs an EXPLICIT lock override (would be #3, after the
+    S-300 regiments and the SA-15/SA-19 roster), and it is the weak candidate on merits
+    anyway** (its Frankfurt wing already fields nine fixed-wing types on turn 1, so variety
+    isn't what it lacks). **Baltic Fury is the clean pilot**: no lock, and the real NATO
+    accession timeline hands over the schedule — Finland (Apr 2023) then Sweden (Mar 2024) —
+    so turn 3 **HavLLv 31** Finnish F/A-18C (closes blue's BARCAP hole: blue flies ZERO
+    BARCAP squadrons vs red's six; a full-fidelity module ⇒ a flyable new seat), turn 5
+    **F 17 Blekinge Wing** Gripen (blue's only dedicated DEAD outside the Growlers, vs an
+    11-site S-400/S-300 belt — the biggest capability unlock), turn 7 **34th BS B-1B**;
+    F-22A deliberately stays turn 1 (withholding the air-superiority backbone isn't a slope,
+    it's a different campaign). Load-bearing caveat: turns 1–4 with no BARCAP and no Gripen
+    DEAD may simply be too hard — hence the sequencing: build the feature unauthored, author
+    Baltic Fury as the pilot and fly it, THEN decide if Red Tide is worth the override),
     `414th-single-player-loop-notes.md` (**SP Pilot Mode** — why SP campaigns die after turn 1
     while the 414th's MP campaigns finish: in MP you play a *pilot*, in SP you play the DM
     **and** the pilot, and the DM job has no fun in it. The stop point is reproducibly "accept

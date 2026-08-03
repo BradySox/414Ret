@@ -175,6 +175,76 @@ reason to keep playing. Both halves are needed:
 6. **Which campaigns author one first?** This is content work and the real test of whether
    the feature lands.
 
+## First campaigns — Red Tide and Baltic Fury (DM pick, 2026-08-03)
+
+### The choice that has to be made first: additive or deferred
+
+Adding arrivals to an *existing, balanced* campaign comes in two flavours, and they are
+not the same feature:
+
+- **Additive** — squadrons that do not exist today arrive on a later turn. Total force
+  **grows**; turn 1 is unchanged. Gentle, but it does **not** invert "turn 1 is the best
+  mission" — it just makes turn 8 stronger than turn 1 was.
+- **Deferred** — squadrons that exist today are **held back** to a later turn. Total force
+  is unchanged at the end; **turn 1 is deliberately weaker**. This is the flavour that
+  actually produces the upward slope the feature exists for.
+
+**Deferred is the motivationally correct one and the riskier one**, because it is a real
+balance change to an already-tuned campaign: the early turns get harder, and by exactly
+the capability that was withheld. Any schedule below is therefore a playtest proposal,
+not a tuning claim.
+
+### ⚠️ Red Tide is FEATURE-LOCKED — this needs an explicit override
+
+`414th-red-tide-campaign-notes.md` carries a feature lock effective **Friday night
+2026-07-17**: *"Do NOT add new features, mechanics, content, or laydown scope to this
+campaign … NOT allowed without an explicit new user go-ahead that overrides this lock:
+adding a brand-new feature/plugin/setting to Red Tide, expanding the laydown, or
+re-opening the balance pass. If in doubt, ask the user before touching it."*
+
+A wing-growth schedule is all three at once — a new feature, a laydown change, and (in the
+deferred flavour) a re-opened balance pass. There are two recorded precedents for
+overriding the lock (the S-300 regiment restructure and the SA-15/SA-19 roster addition),
+both explicitly granted and both recorded as overrides at the time. **This one needs the
+same explicit call before any Red Tide edit**, and if granted it should be recorded as
+lock-override #3 in the Red Tide note.
+
+Red Tide is also the awkward candidate on the merits: its Frankfurt wing already fields
+nine fixed-wing types on turn 1 (F-16CM, F/A-18C, F-15C, F-14B, GAF JG 74, A-10C, F-15E,
+Mirage F1EE, C-130J) plus the Ramstein heavies. Variety is not what it lacks — so a
+schedule there would have to be the **deferred** flavour to mean anything, which is the
+maximum-balance-impact option on the fork's most carefully tuned campaign.
+
+### Baltic Fury — the clean candidate
+
+No lock, a modern roster, and — unusually — **a real-world accession timeline that hands
+the schedule to us**. Finland joined NATO in April 2023, Sweden in March 2024, and the
+campaign already reasons about both in its own comments. Staggering the two coalition
+detachments is therefore era-honest, not arbitrary.
+
+Proposed (deferred flavour, ordered by narrative *and* capability):
+
+| Turn | Arrival | Why this one |
+|---|---|---|
+| 1 | Core US wing — carrier (Rhinos / Growler / E-2D / tanker), Nordholz F-15E, Bremen E-3A + KC-135s, Hamburg A-10C / Apache / CH-47 / C-130 | The campaign as it opens today, minus the four below |
+| 3 | **HavLLv 31** — Finnish F/A-18C | Finland acceded first. Closes blue's BARCAP hole (blue flies **zero** BARCAP squadrons against red's six), so its arrival is felt immediately. A full-fidelity module ⇒ a **flyable** new seat |
+| 5 | **F 17 Blekinge Wing** — Swedish Gripen | Sweden acceded second. Blue's only dedicated DEAD unit outside the Growlers, against an 11-site S-400/S-300 belt — the single largest capability unlock in the campaign |
+| 7 | **34th BS** — B-1B | The heavy stick arrives once the belt is being rolled back. Thematically the escalation beat |
+| — | **F-22A** stays turn 1 | Deliberately *not* scheduled: it is the campaign's air-superiority backbone, and withholding it would not be a slope, it would be a different campaign |
+
+**The balance caveat is load-bearing:** turns 1–4 would run with no BARCAP squadron and no
+Gripen DEAD against six red BARCAP regiments and a dense SAM belt. That is a genuinely
+harder opening, and it may simply be too hard. It wants a playtest before it is called
+tuned — which is an argument for shipping the *feature* first, gated and unauthored, and
+authoring Baltic Fury's schedule as the first content pass afterwards.
+
+### Sequencing recommendation
+
+1. Build the feature (unauthored — no campaign changes ⇒ byte-identical everywhere).
+2. Author **Baltic Fury** first, as the pilot, and fly the opening turns.
+3. Only then decide whether Red Tide is worth a lock override — with real evidence about
+   how much a deferred schedule actually changes an opening.
+
 ## Test plan
 
 - Headless: a squadron with `available_from_turn: 4` is **absent** from

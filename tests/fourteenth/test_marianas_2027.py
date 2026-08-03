@@ -1,0 +1,322 @@
+"""CI lock on the "Marianas - Second Island Chain (2027)" campaign.
+
+The modern-day China fight. Almost everything that makes it work degrades
+*silently* at runtime -- a faction airframe that stops resolving substitutes, a mod
+pack that is not preseeded drops the PLA kit back to Soviet legacy hardware, a
+setting whose name drifts is simply ignored, and an airfield whose miz coalition is
+reset to NEUTRAL stops being a control point at all (``Airport.is_neutral()``
+returns False for NEUTRAL, so ``MizCampaignLoader.control_points`` skips it) -- so
+the shipped definition is asserted here rather than trusted.
+
+Sibling of tests/fourteenth/test_inherent_resolve.py and test_tanker_war.py.
+"""
+
+from pathlib import Path
+from typing import Any
+
+import pytest
+import yaml
+from dcs.mission import Mission
+from dcs.vehicles import AirDefence, MissilesSS
+
+from game import persistency
+from game.campaignloader.mizcampaignloader import MizCampaignLoader
+
+CAMPAIGN = Path("resources/campaigns/marianas_2027.yaml")
+MIZ = CAMPAIGN.parent / "marianas_2027.miz"
+FACTIONS = CAMPAIGN.parent.parent / "factions"
+
+
+@pytest.fixture(autouse=True)
+def _persistency(tmp_path: Path) -> None:
+    """AircraftType.named lazily loads unit data, which needs a save-dir root."""
+    persistency.setup(str(tmp_path), prefer_liberation_payloads=False, port=16885)
+
+
+def _campaign() -> dict[str, Any]:
+    return yaml.safe_load(CAMPAIGN.read_text(encoding="utf-8"))
+
+
+def _mission() -> Mission:
+    mission = Mission()
+    mission.load_file(str(MIZ))
+    return mission
+
+
+def test_campaign_definition() -> None:
+    data = _campaign()
+    assert data["theater"] == "MarianaIslands"
+    assert data["recommended_player_faction"] == "USA 2020"
+    assert data["recommended_enemy_faction"] == "China 2020"
+    assert str(data["recommended_start_date"]).startswith("2027")
+    # The generated miz + the tool that generates it ship together. Never hand-edit
+    # the miz -- re-run the tool.
+    assert MIZ.exists()
+    assert (FACTIONS.parent.parent / "tools/build_marianas_2027_miz.py").exists()
+
+
+def test_mod_packs_are_preseeded() -> None:
+    # Campaign settings re-seed the New Game "Mods" checkboxes. Without the China
+    # pack the PLA ground/naval kit silently degrades to Soviet legacy hardware;
+    # without the CJS pack the carrier loses its Growler det (§77) and its organic
+    # tanker.
+    settings = _campaign()["settings"]
+    for mod in (
+        "chinesemilitaryassetspack",
+        "usamilitaryassetspack",
+        "fa_18efg",
+        "fa18ef_tanker",
+    ):
+        assert settings[mod] is True, mod
+
+
+def test_the_carrier_air_wing_is_period_correct() -> None:
+    """No Prowler on a 2027 deck.
+
+    The Navy retired the EA-6B in 2015 (USMC 2019), so a Prowler here is the same
+    anachronism as red flying a J-7B. Electronic attack is the EA-18G, which also
+    outranks every other airframe for the §77 Escort Jammer role (800 vs 790).
+    """
+    carrier = yaml.safe_dump(_campaign()["squadrons"]["Naval-1"])
+    assert "EA-6B" not in carrier
+    assert "EA-18G Growler" in carrier
+    # The organic recovery tanker. Probe/drogue, like the air wing it feeds -- it
+    # cannot service Andersen's boom receivers (see the tanker-compatibility test).
+    assert "F/A-18E Tanker" in carrier
+    assert "F/A-18F Super Hornet" in carrier
+
+
+def test_the_carrier_keeps_a_mod_free_hornet_squadron() -> None:
+    """The CJS pack is a mod, so the deck must not be entirely mod-gated.
+
+    One legacy F/A-18C squadron is retained deliberately: a pilot who has not
+    installed the Super Hornet mod still has a carrier jet to slot into. Removing it
+    means also dropping the fa_18efg preseed.
+    """
+    blocks = _campaign()["squadrons"]["Naval-1"]
+    legacy = [
+        block
+        for block in blocks
+        if "F/A-18C Hornet (Lot 20)" in (block.get("aircraft") or [])
+    ]
+    assert legacy, "the carrier air wing has no un-modded Hornet squadron left"
+
+
+def test_naval_and_missile_features_are_preseeded() -> None:
+    settings = _campaign()["settings"]
+    # The PLARF hunt is the campaign's signature: scooting launchers you can only
+    # find by flying recon at them.
+    assert settings["mobile_missile_relocation"] is True
+    assert settings["concealed_enemy_forces"] is True
+    # The missile exchange at sea, and island logistics under coastal fire.
+    for key in (
+        "cruise_missile_strikes",
+        "cruise_missile_auto_raids",
+        "cargo_ship_convoys",
+        "coastal_batteries_engage_ships",
+    ):
+        assert settings[key] is True, key
+
+
+def test_runtime_plugins_are_preseeded() -> None:
+    # A saved plugin default of "off" silently kills the runtime half of a feature
+    # even with its setting on (the §36 lesson), so every plugin the settings above
+    # depend on is preseeded.
+    plugins = _campaign()["plugins"]
+    for plugin in (
+        "mobilemissiles",
+        "cruisemissiles",
+        "convoyambush",
+        "aisleep",
+        "rednet",
+    ):
+        assert plugins[plugin] is True, plugin
+
+
+def test_guam_is_blue_and_the_chain_is_red() -> None:
+    """Ownership is the whole premise: Guam holds, the chain is occupied."""
+    airports = _mission().terrain.airports
+    for name in ("Andersen AFB", "Antonio B. Won Pat Intl", "Olf Orote"):
+        assert airports[name].is_blue(), f"{name} must be blue"
+    for name in ("Rota Intl", "Tinian Intl", "Saipan Intl", "Pagan Airstrip"):
+        assert airports[name].is_red(), f"{name} must be red"
+
+
+def test_every_based_airfield_is_actually_a_control_point() -> None:
+    """A NEUTRAL airfield is dropped entirely by the loader.
+
+    ``MizCampaignLoader.control_points`` gates on
+    ``is_blue() or is_red() or is_neutral()``, and pydcs's ``is_neutral()`` returns
+    False for a NEUTRAL coalition -- so a field reset to NEUTRAL silently stops
+    existing, taking every squadron the yaml based there with it.
+    """
+    airports = _mission().terrain.airports
+    based = {
+        name
+        for name in _campaign()["squadrons"]
+        if name in airports  # carriers/LHAs/FOBs are group names, not airfields
+    }
+    assert based, "no airfield-based squadrons found -- key format changed?"
+    for name in based:
+        airport = airports[name]
+        assert (
+            airport.is_blue() or airport.is_red()
+        ), f"{name} bases squadrons but is NEUTRAL, so it is not a control point"
+
+
+def test_north_west_field_stays_out() -> None:
+    # pydcs reports it with zero runways: it can host no fixed wing, so it is
+    # deliberately left NEUTRAL (and therefore not a control point).
+    airport = _mission().terrain.airports["North West Field"]
+    assert not airport.is_blue() and not airport.is_red()
+    assert not airport.runways
+
+
+def test_red_fields_fit_their_parking() -> None:
+    """Squadrons must not out-number the ramp they are based on.
+
+    Rota (9 slots), Tinian (4) and Pagan Airstrip (3) are tiny; Olf Orote has 4.
+    A campaign edit that oversubscribes one of them spawns aircraft into each other.
+    """
+    mission = _mission()
+    airports = mission.terrain.airports
+    squadrons = _campaign()["squadrons"]
+    for name, blocks in squadrons.items():
+        airport = airports.get(name)
+        if airport is None:
+            continue
+        based = sum(block.get("size", 12) for block in blocks)
+        slots = len(airport.parking_slots)
+        assert based <= slots, f"{name}: {based} airframes based on {slots} slots"
+
+
+def test_theatre_missile_sites_exist_on_the_contested_islands() -> None:
+    """The PLARF hunt needs missile-category markers; Repartee shipped none."""
+    mission = _mission()
+    sites = [
+        group
+        for coalition in mission.coalition.values()
+        for country in coalition.countries.values()
+        for group in country.vehicle_group
+        if group.units[0].type == MizCampaignLoader.MISSILE_SITE_UNIT_TYPE
+    ]
+    assert MizCampaignLoader.MISSILE_SITE_UNIT_TYPE == MissilesSS.Scud_B.id
+    assert len(sites) == 3, f"expected 3 PLARF sites, found {len(sites)}"
+    assert {g.name for g in sites} == {
+        "Rota PLARF Site",
+        "Tinian PLARF Site",
+        "Saipan PLARF Site",
+    }
+
+
+def test_rota_has_a_sam_battery() -> None:
+    # Rota was NEUTRAL upstream and carries no authored garrison, so the red field
+    # nearest Guam would otherwise be undefended.
+    mission = _mission()
+    names = {
+        group.name
+        for coalition in mission.coalition.values()
+        for country in coalition.countries.values()
+        for group in country.vehicle_group
+        if group.units[0].type in MizCampaignLoader.MEDIUM_RANGE_SAM_UNIT_TYPES
+    }
+    assert "Rota SAM Site" in names
+    assert AirDefence.S_75M_Volhov.id in MizCampaignLoader.MEDIUM_RANGE_SAM_UNIT_TYPES
+
+
+def test_red_air_is_period_correct() -> None:
+    """No J-7B. Repartee's 2010 OOB still flew a 1960s MiG-21 copy in a modern war."""
+    squadrons = yaml.safe_dump(_campaign()["squadrons"])
+    assert "J-7B" not in squadrons
+    # The pieces that make red a modern opponent rather than a legacy one.
+    for airframe in ("Su-30MKK Flanker-G", "J-11A Flanker-L", "KJ-2000", "H-6J Badger"):
+        assert airframe in squadrons, airframe
+
+
+def test_blue_outnumbers_red_in_the_air() -> None:
+    """Blue is the side on the offensive here, and the OOB has to say so.
+
+    Repartee shipped the ratio backwards (165 red vs 62 blue) because six carrier
+    squadrons omitted ``size`` and silently defaulted to 12 each.
+    """
+    squadrons = _campaign()["squadrons"]
+    blue_bases = {
+        "Andersen AFB",
+        "Antonio B. Won Pat Intl",
+        "Olf Orote",
+        "Naval-1",
+        "Naval-2",
+    }
+    blue = red = 0
+    for base, blocks in squadrons.items():
+        for block in blocks:
+            # Every block states its size explicitly -- an omitted size is the bug.
+            assert "size" in block, f"{base}: squadron block omits an explicit size"
+            if base in blue_bases:
+                blue += block["size"]
+            else:
+                red += block["size"]
+    assert blue > red, f"blue {blue} must out-mass red {red}"
+
+
+BLUE_BASES = {
+    "Andersen AFB",
+    "Antonio B. Won Pat Intl",
+    "Olf Orote",
+    "Naval-1",
+    "Naval-2",
+}
+
+
+def _blue_aircraft_types(tankers: bool) -> list[Any]:
+    """Resolve blue's authored airframes -- the tankers, or everything else.
+
+    A squadron `aircraft:` entry may name either an airframe or a squadron preset;
+    only the former resolves, and this campaign authors airframes throughout, so a
+    KeyError means "preset" and anything else is a real failure worth surfacing.
+    """
+    from game.dcs.aircrafttype import AircraftType
+
+    out = []
+    for base, blocks in _campaign()["squadrons"].items():
+        if base not in BLUE_BASES:
+            continue
+        for block in blocks:
+            if (block.get("primary") == "Refueling") is not tankers:
+                continue
+            for name in block.get("aircraft") or []:
+                try:
+                    out.append(AircraftType.named(name))
+                except KeyError:  # a squadron preset, not an airframe
+                    continue
+    return out
+
+
+def test_every_blue_receiver_has_a_compatible_blue_tanker() -> None:
+    """Boom jets need a boom tanker; probe jets need a drogue.
+
+    The KC-135 **MPRS** is `tanker_refuel_types: probe` — a *drogue* tanker, not a
+    boom one. Basing only an MPRS at Andersen left the entire land wing (F-15C/E,
+    F-16CM, B-1B — all `air_refuel_type: boom`) with nothing it could tank from,
+    which no other test noticed because both entries are simply "a tanker".
+    """
+    tankers = _blue_aircraft_types(tankers=True)
+    assert tankers, "blue fields no tankers at all"
+    for receiver in _blue_aircraft_types(tankers=False):
+        if receiver.air_refuel_type is None:
+            continue  # untagged receivers are permissive by design
+        assert any(
+            receiver.can_refuel_from(tanker) for tanker in tankers
+        ), f"{receiver} ({receiver.air_refuel_type}) has no compatible blue tanker"
+
+
+def test_guam_keeps_two_blue_supply_roads() -> None:
+    """§50 ambient convoys + the ambush roll need same-side road corridors."""
+    routes = _campaign()["supply_routes"]
+    assert len(routes) == 2
+    for route in routes:
+        waypoints = route["waypoints"]
+        # Both roads start at Won Pat; each traces a real Guam highway, so an
+        # intermediate corridor is mandatory (never a straight line).
+        assert waypoints[0] == [-24, -78]
+        assert len(waypoints) >= 4, "supply route must follow the driveable corridor"

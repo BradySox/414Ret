@@ -1,0 +1,269 @@
+# Marianas — Second Island Chain (2027)
+
+**Status:** BUILT + headless-verified 2026-08-02. CI-locked in
+`tests/fourteenth/test_marianas_2027.py` (16 tests). Needs an in-game pass —
+checklist **T5**. NEW game required.
+
+The 414th's modern-day China campaign, and the answer to "can DCS's current maps host a
+high-scale fight against China?"
+
+---
+
+## Why Marianas, and why nothing else
+
+DCS ships **no Chinese terrain** — no Taiwan, no South China Sea, no mainland. So a China
+war can only be fought where China would have to come to *us*, and exactly one map is that
+place with **zero fiction required**: the Marianas. Guam is the Second Island Chain,
+Andersen AFB is the airfield the PLA Rocket Force was built to range, and Apra Harbor is
+where the fleet ties up. The DF-26 is nicknamed the "Guam killer" for a reason.
+
+The alternatives were weighed and rejected as campaign homes:
+
+| Map | Verdict |
+|---|---|
+| **Marianas** | ✅ Real geography, real target set, real belligerents. |
+| Persian Gulf | ◐ Best campaign real estate on the list, but needs a PLAN-expeditionary fiction. |
+| South Atlantic | ◐ Right *shape* (island chain, carrier vs land-based anti-ship), wrong hemisphere. |
+| Afghanistan | ◐ The only map that borders China; no credible at-scale PLA story. |
+| Nevada | ◐ Red Flag with PLA aggressors — training, not a war. |
+| Syria / Sinai / Iraq / Kola / GermanyCW / Caucasus | ✖ No story at all. |
+
+**The hard limit to remember:** the mainland is unreachable, so this is by construction an
+*expeditionary* war. That is a feature here — it makes the campaign a defense-of-Guam and
+roll-back fight rather than an invasion nobody could stage.
+
+---
+
+## What this forks, and why it is a fork rather than an edit
+
+Fuzzle's **Marianas - Pacific Repartee** (`pacific_repartee.yaml`, US Navy 2005 vs China
+2010) is the only pre-existing China campaign. A headless audit on 2026-08-02 found it
+loads clean and furnishes properly — 15 CPs, 106 TGOs, ~590 units, the `ea6b_prowler`
+preseed resolving — but it is not a modern fight, and six defects block it from becoming
+one:
+
+1. **Red air does not modernize with the faction.** Airframes are hardcoded per squadron,
+   so swapping the enemy to `China 2020` upgrades the ground and naval kit (HQ-22, HQ-17A,
+   LD-3000, Type 052D/054B/056A/022) and leaves the air force flying **J-7B** — a 1960s
+   MiG-21 copy — into a 2020s war.
+2. **No red AEW&C exists.** Both China factions declare the KJ-2000; nothing fielded it.
+3. **165 red airframes vs 62 blue.** Six carrier squadron blocks omitted `size:` and
+   silently defaulted to 12 each — 72 J-15s across three carriers.
+4. **No `missile`-category TGO anywhere**, so the pack's DF-21D / CJ-10 / YJ-12B are never
+   placed and §49's shoot-and-scoot has nothing to hunt.
+5. **Blue is 2005** — F-14B, Hornet Lot 20, A-6E tanker, S-3B, AH-1W.
+6. **Zero fork-feature preseeds** — no `plugins:` block at all, and §49 / §63 / §78 / §59
+   all off.
+
+Forking rather than editing keeps Fuzzle's 2005 scenario intact (and keeps the fork's copy
+convergent with upstream's), which is the campaign-ownership model the wiki's *Campaign
+maintenance* page asks for.
+
+The **laydown** is inherited wholesale — `marianas_2027.miz` is generated from
+`pacific_repartee.miz` by `tools/build_marianas_2027_miz.py`, which is the source of truth
+for the *edits* only. **Never hand-edit the miz; re-run the tool.** Every unit in the source
+is vanilla, so pydcs round-trips it losslessly (the mod-unit caveat does not apply).
+
+---
+
+## The premise inversion
+
+Repartee's story is a lone carrier group retaking a Guam that China already holds. That caps
+the campaign at **three blue CPs and no runway**, which in turn caps its scale: every blue
+airframe has to be carrier-capable, so there is no place for the aircraft that would actually
+fight this war — B-1s, F-15Es, KC-135s, E-3s.
+
+This campaign inverts it. **Guam is American soil and holds**; the PLA took Rota, Tinian and
+Saipan and pushed up the northern chain, and the war is fought northward. That buys:
+
+- **Andersen AFB (194 parking slots)** — the only ramp on the map that can base a heavy
+  wing, and the historically correct hub.
+- A real south→north axis of advance across ~200 km of water: Guam → Rota → Tinian/Saipan →
+  the northern chain, ending at the isolated Marine detachment on Farallon de Pajaros
+  (FOB Uracus), which Repartee already authored and which becomes the campaign's far objective.
+- 18 CPs instead of 15, and an honest offensive ratio (**158 blue vs 98 red airframes**).
+
+---
+
+## Two dormant airfields, and the loader trap that hid them
+
+The Marianas map has **8 airfields**; Repartee used 4. The other four were `NEUTRAL`, and a
+NEUTRAL airfield is **not** a control point — it is dropped entirely:
+
+```python
+# MizCampaignLoader.control_points
+if airport.is_blue() or airport.is_red() or airport.is_neutral():
+```
+
+pydcs's `Airport.is_neutral()` returns **False** for a NEUTRAL coalition, so the guard is
+really "blue or red", and a NEUTRAL field silently ceases to exist. (Neutral control points
+are real in this engine, but they are declared explicitly via `NEUTRAL_FOB_UNIT_TYPE` — never
+inferred from an airport.)
+
+So the build tool declares them:
+
+- **Rota Intl → RED** (9 slots): 90 km off Guam — the red strike field pointed at Andersen.
+- **Pagan Airstrip → RED** (3 slots): extends the chain north alongside the existing FOB Pagan.
+- **Olf Orote → BLUE** (4 slots): the Guam OLF, one small Harrier det.
+- **North West Field stays NEUTRAL** deliberately — pydcs reports it with **zero runways**,
+  so it can host no fixed wing. A guard test pins this so a future edit does not "helpfully"
+  activate it.
+
+Because Rota was never owned, it carries **no authored garrison of any kind** — so the tool
+also adds one medium-range SAM marker there, or the red field nearest Guam would be naked.
+
+---
+
+## The PLARF hunt (the campaign's signature)
+
+Three `MissilesSS.Scud_B` markers in the red block — the loader's missile-site convention —
+on **Rota, Tinian and Saipan**. The red faction's own roster fills them (China 2020 declares
+DF-21D, CJ-10 and YJ-12B), §49 `mobile_missile_relocation` makes them shoot and scoot between
+recon passes, and §3 `concealed_enemy_forces` means an un-scouted site draws a dashed
+"suspected activity" circle rather than an exact marker. Together that is an actual hunt: the
+launcher is never quite where the last photo froze it.
+
+**Why nothing north of Saipan.** The Marianas landmap only covers **Guam, Rota, Tinian and
+Saipan** — Anatahan, Pagan, Agrihan and Uracus are all `is_in_sea` as far as
+`ConflictTheater.is_on_land` is concerned. This is a pre-existing property of the terrain
+data inherited from Repartee (whose four FOBs all sit on those islands), not something this
+campaign introduced, and it is worth knowing before authoring anything ground-related up
+there. It also happens to be the right threat picture anyway: a launcher 500 km up the chain
+ranges nothing that matters, while Rota/Tinian/Saipan range Guam and the carrier group.
+
+Every authored marker position is validated against the real landmap by the build tool, which
+**raises** rather than degrading if it cannot find land — the same fail-loudly posture as the
+scenery-target checker.
+
+---
+
+## Order of battle
+
+**BLUE — USA 2020** (158 airframes / 21 squadrons)
+
+| Base | Squadrons |
+|---|---|
+| Andersen AFB (194 slots) | F-15C ×12 BARCAP · F-15E ×12 Strike · F-16CM ×12 SEAD · **B-1B ×6 Anti-ship** · E-3A ×3 · **KC-135 ×4 (boom) + KC-135 MPRS ×2 (drogue)** · **C-130J-30 ×4 Transport** |
+| Antonio B. Won Pat Intl (23) | F/A-18C ×12 BARCAP · A-10C II ×8 CAS |
+| Olf Orote (4) | AV-8B ×4 BAI |
+| CVN (Naval-1) | F/A-18E ×12 BARCAP · **F/A-18C ×12 BARCAP** · F/A-18F ×10 Anti-ship · F/A-18E ×8 SEAD · **EA-18G ×5 (VAQ-136)** · **F/A-18E Tanker ×4** · E-2D ×4 · SH-60B ×4 |
+| LHA (Naval-2) | AV-8B ×8 BAI · AH-64D ×6 CAS · UH-60A ×6 Transport |
+
+### Tankers: boom and drogue are not interchangeable
+
+**Caught after the first cut shipped (DM correction).** Andersen was given a KC-135
+**MPRS** as its only tanker — on the assumption that "multi-point" meant it served both
+methods. It does not: `KC135MPRS.yaml` declares `tanker_refuel_types: [probe]`, because the
+MPRS kit *is* the wing drogue pods. Meanwhile **every jet at Andersen and Won Pat is a boom
+receiver** — F-15C, F-15E, F-16CM, B-1B and A-10C all carry `air_refuel_type: boom` — so the
+entire land-based wing had nothing it could tank from.
+
+Andersen now bases **both**: a plain **KC-135 ×4 (boom)** for the USAF wing, and a **KC-135
+MPRS ×2 (drogue)** det for the Harriers off Olf Orote and the LHA, and as backup for the
+carrier air. `test_every_blue_receiver_has_a_compatible_blue_tanker` now walks every authored
+blue airframe and asserts some blue tanker's `can_refuel_from` accepts it — the invariant that
+would have caught this, and which no "does it have a tanker?" check ever would, since both
+entries simply read as "a tanker".
+
+### The carrier air wing is transitional on purpose
+
+The first cut put an **EA-6B Prowler** on the deck, following Repartee's existing
+`ea6b_prowler` mod precedent. That was wrong: the Navy retired the Prowler in **2015** and
+the Marines in **2019**, so it is precisely the anachronism this campaign strips out of red
+(the J-7B). The wing is now the CJS Super Hornet package — `fa_18efg` (E/F/G) and
+`fa18ef_tanker` (ET/FT), both preseeded:
+
+- **EA-18G replaces the EA-6B.** §77's runtime is airframe-agnostic (it drives whatever
+  ESCORT_JAMMER group the emitter names), so the swap carries no runtime risk, and the
+  Growler outranks every other airframe for the role — **Escort Jammer 800** vs the
+  Prowler's 790. VAQ-136 "Gauntlets" is a real Growler squadron, so the authored name stays.
+- **The F/A-18E Tanker is the organic recovery tanker**, and it is *not* interchangeable
+  with Andersen's boom tanker. `FA-18ET` is `tanker_refuel_types: probe`; so is the
+  **KC-135 MPRS**, whose multi-point kit is *drogue* pods — it is a drogue tanker, not a
+  boom one. Its `Refueling` task priority is 0, which is fine —
+  `AircraftType.capable_of` gates on *presence* in `task_priorities`, not on the value.
+- **One legacy F/A-18C squadron is kept deliberately.** CJS is a mod; an all-Super-Hornet
+  deck would make every carrier jet mod-gated and lock out any MP pilot who has not
+  installed it. A guard test pins the legacy squadron's existence — remove it only if the
+  `fa_18efg` preseed goes with it.
+
+§74 shipped native DTC cartridges for `FA-18E` / `FA-18F` / `EA-18G` on 2026-08-02, so the
+Super Hornets spawn with comms, route and the §65 recovery aids already loaded (no SA
+section — CJS stripped `SA` out of its descriptor, so no FLOT, CAP racetracks or threat
+rings on those three).
+
+**RED — China 2020** (98 airframes / 15 squadrons)
+
+| Base | Squadrons |
+|---|---|
+| Saipan Intl (19) | J-11A ×10 BARCAP · **KJ-2000 ×2 AEW&C** · **H-6J ×6 Anti-ship** |
+| Rota Intl (9) | Su-30MKK ×6 Strike · IL-78M ×2 |
+| Tinian Intl (4) | FC-1 ×4 BARCAP |
+| Pagan Airstrip (3) | IL-76MD ×2 |
+| 3 × PLAN carrier | J-15 ×10 BARCAP/TARCAP + ×8 Strike/Anti-ship each |
+| 2 × PLAN LHA | Mi-24P ×6 CAS · Mi-8MTV2 ×6 Transport |
+
+**No J-7B** — pinned by a test. The modern PLAAF that DCS can actually field is
+J-11A + Su-30MKK + J-15 + FC-1 + H-6J + KJ-2000; there is no J-10/J-16/J-20 module or AI unit.
+
+**Every block states an explicit `size:`** — also pinned by a test, because the omitted-size
+default is exactly what produced Repartee's inverted 165:62 ratio.
+
+**Parking fit is a standing invariant** (the DS91 pattern): a test asserts no base is
+oversubscribed against its real `parking_slots` count. Rota (9), Tinian (4), Pagan Airstrip (3)
+and Olf Orote (4) are tiny and will not absorb a casual squadron addition.
+
+---
+
+## How it plays
+
+The islands are not connected, so **ground fronts never form** — captures are made with Air
+Assault packages (helicopters off Olf Orote and the LHA, or **§76 C-130J paradrops**), and
+everything between the islands is an anti-ship and long-range strike fight. That was Repartee's
+identity and it is kept.
+
+Preseeded feature set, and why each earns its place:
+
+- **§49 `mobile_missile_relocation` + §3 `concealed_enemy_forces`** — the PLARF hunt above.
+- **§63 `cruise_missile_strikes` + auto raids** — both fleets carry real, finite, no-rearm
+  magazines. Sinking a shooter ends its raids. This is the feature the campaign was waiting for.
+- **§78 `cargo_ship_convoys` + `coastal_batteries_engage_ships`** — island logistics sail as
+  multi-hull convoys that attrit proportionally, past Silkworm batteries that actually engage.
+- **§50 `ambient_supply_convoys` + `convoy_ambush`** on Guam's two blue road corridors.
+- **§70 `comint_collection` + `red_comms_net`** — the PLA net is audible and homeable.
+- **§59 `perf_ground_ai_sleep` + `perf_aaa_site_sleep`** — a three-carrier PLAN order of
+  battle plus island garrisons is a heavy maritime laydown.
+- **§77 escort jamming** rides along free: VAQ-136's Growlers are authored SEAD, and
+  `SquadronConfig.auto_assignable` offers the Escort Jammer role to every capable squadron,
+  so they fly in front of the strike packages without a per-campaign edit.
+
+Mod packs are preseeded through the campaign `settings:` block, which re-seeds the New Game
+**Mods** checkboxes (`QGeneratorSettings.update_settings`): `chinesemilitaryassetspack` (a
+hard requirement — without it the PLA kit degrades to Soviet legacy hardware),
+`usamilitaryassetspack`, and the CJS pair `fa_18efg` + `fa18ef_tanker`. Every runtime plugin
+the settings depend on is preseeded too (the §36 saved-defaults-off lesson).
+
+**Red fields no ambient convoys, by geography** — no two red bases share an island, so there
+is no red→red road. This is the same deliberate no-op as the nine campaigns the §50 batch-2
+pass could not serve.
+
+---
+
+## Open questions for the in-game pass (T5)
+
+- Do the three PLARF sites actually scoot on their islands? Rota/Tinian are small — the §49
+  4 km scoot radius may push a launcher into the sea, which the relocation code does not
+  currently check against the landmap. **This is the row's highest-value observation.**
+- Does the DF-21D/CJ-10 kit render and fire at all from a `missile` TGO on these islands?
+- Do Andersen's heavy squadrons (B-1B, KC-135, E-3A) fit their stands dimensionally? The
+  parking-fit test counts slots, not the slot_version-2 dimensions the DS91 audit needed.
+- Does the AI actually fly Air Assault captures across water at these ranges?
+- Frame rate with three PLAN carrier groups plus garrisons, with §59 sleep on.
+
+## Deliberately not done
+
+- **North West Field** (0 runways) and a fourth PLARF site north of Saipan (no landmap).
+- **An all-Super-Hornet deck** — historically right for 2027, but it would mod-gate every
+  carrier jet. The transitional wing above keeps one legacy Hornet squadron instead.
+- **A red→red supply road** — geography forbids it.
+- **Front lines** — the islands are not connected; Air Assault is the capture mechanic.

@@ -150,6 +150,59 @@ file. This guide is the map; those are the territory.
     headless-verified 2026-07-07; laydown CI-locked in `tests/fourteenth/test_tanker_war.py`;
     registered 2026-07-18 (the maintenance sweep found it shipped silent — no checklist row or
     docs entries); in-game pass = checklist T2, the platform-AAA on-deck render the riskiest bit)
+  - `414th-marianas-2027-campaign-notes.md` — **Marianas "Second Island Chain (2027)"** (the
+    fork's **modern-day China campaign**, built 2026-08-02). DCS ships no Chinese terrain, so a
+    China war can only be fought where China must come to *us* — and exactly one map is that
+    place with **zero fiction**: Guam is the Second Island Chain and Andersen AFB is the target
+    set the PLA Rocket Force was built to range. **USA 2020 vs China 2020** on the CurrentHill
+    China pack. Forked from Fuzzle's `pacific_repartee` laydown (rather than edited in place —
+    campaign-ownership model; his 2005 scenario stays intact and convergent with upstream) after
+    a headless audit found that campaign **cannot** be modernized by a faction swap: red
+    airframes are hardcoded, so `China 2020` upgrades the ground/naval kit and leaves **J-7B**
+    (a 1960s MiG-21 copy) flying; no red AEW&C is authored though both factions declare the
+    KJ-2000; **165 red vs 62 blue** because six carrier blocks omitted `size:` and defaulted to
+    12 each; **no `missile`-category TGO anywhere**, so the pack's DF-21D/CJ-10/YJ-12B are never
+    placed; and there is no `plugins:` block at all. **Three structural changes**: (1) **the
+    premise is inverted** — Guam is US soil and *holds*, the PLA took Rota/Tinian/Saipan, and the
+    war is fought northward; that unlocks **Andersen's 194-slot ramp**, the only one on the map
+    that can base a heavy wing (B-1B/KC-135/E-3A/C-130J), instead of Repartee's carrier-only
+    3-CP cap. (2) **Two dormant airfields are activated** — the Marianas map has 8 fields and
+    Repartee used 4, because a `NEUTRAL` airfield **is not a control point**: `control_points`
+    gates on `is_blue() or is_red() or is_neutral()` and pydcs's `Airport.is_neutral()` returns
+    **False** for NEUTRAL, so such a field silently ceases to exist (neutral CPs are real, but
+    only via the explicit `NEUTRAL_FOB_UNIT_TYPE` declaration). Rota (the red strike field 90 km
+    off Guam) and Pagan Airstrip go RED, Olf Orote BLUE; **North West Field stays NEUTRAL on
+    purpose** — pydcs reports it with **zero runways**. Rota was never owned so it carries no
+    authored garrison at all, hence one added SAM marker. (3) **Three PLARF sites** (Rota/Tinian/
+    Saipan) make §49 shoot-and-scoot + §3 concealment into the campaign's signature hunt.
+    **Landmap gotcha, worth knowing before authoring anything on this map:** only **Guam, Rota,
+    Tinian and Saipan** exist in the Marianas landmap — Anatahan, Pagan, Agrihan and Uracus are
+    all `is_in_sea` (pre-existing terrain data, inherited from Repartee, whose four FOBs sit on
+    them), which is why no missile site is authored north of Saipan. Miz is **GENERATED** by
+    `tools/build_marianas_2027_miz.py` (edits the ownership + adds the markers on top of
+    `pacific_repartee.miz`, every added position landmap-validated, raises rather than degrading;
+    all-vanilla so pydcs round-trips losslessly) — **never hand-edit it**. Preseeds §49+§3, §63
+    cruise raids, §78 sea convoys + coastal anti-ship, §50 on Guam's two blue roads, §70 COMINT,
+    §59 AI sleep, and every matching plugin (the §36 lesson). **The carrier air wing is the CJS
+    Super Hornet package** (`fa_18efg` + `fa18ef_tanker` preseeded — the first campaign to preseed
+    them): the Navy retired the EA-6B in 2015/USMC 2019, so a Prowler on a 2027 deck is the same
+    anachronism as red's J-7B — VAQ-136 flies **EA-18G** (Escort Jammer 800 vs the Prowler's 790,
+    and §77's runtime is airframe-agnostic so the swap is risk-free), the organic tanker is the
+    **F/A-18E Tanker** (its `Refueling` priority of 0 is fine — `capable_of` gates on presence,
+    not value), and §74's 2026-08-02 DTC cartridges cover all three. **Tanker gotcha, caught by
+    the DM after the first cut:** the **KC-135 MPRS is a DROGUE tanker**
+    (`tanker_refuel_types: probe` — the multi-point kit *is* the wing drogue pods), not a
+    both-methods one; every jet at Andersen/Won Pat is `air_refuel_type: boom` (F-15C/E, F-16CM,
+    B-1B, A-10C), so an MPRS-only Andersen left the whole land wing unable to tank. Andersen now
+    bases **KC-135 ×4 (boom) + KC-135 MPRS ×2 (drogue)**, and a standing test walks every blue
+    airframe asserting some blue tanker's `can_refuel_from` accepts it. **One legacy F/A-18C squadron is kept on the deck
+    on purpose** (guard-tested) so an MP pilot without the mod still has a carrier ride. No front lines (the islands aren't connected —
+    Air Assault and §76 C-130J paradrops are the capture mechanic); red fields no ambient convoys
+    because no two red bases share an island. Headless-verified end-to-end (18 CPs — BLUE 6 /
+    RED 12 — 110 TGOs/592 units, all 37 squadrons resolve, **158 blue vs 98 red**); CI-locked in
+    `tests/fourteenth/test_marianas_2027.py` (16 tests incl. standing parking-fit,
+    tanker-compatibility, explicit-`size:` and mod-free-carrier-squadron invariants); in-game pass = checklist **T5**, the riskiest bit being whether
+    a launcher scoots into the sea (the §49 radius is not landmap-checked). NEW game required
   - `414th-iraq-map-2928-notes.md` — **what DCS 2.9.28's Iraq map content unlocks** (design +
     authoring plan, no code/`.miz` edits yet; scoped 2026-07-26 off the 2.9.28.26283 changelog,
     which upstream picked up as `update dcs to 2.9.28.26283` #904 — a pydcs pin bump + refreshed

@@ -37,6 +37,7 @@ from .cruisemissileluadata import populate_cruise_missiles_lua
 from .missiondata import CombatSarTemplates, MissionData
 from .growlerluadata import populate_growler_lua
 from .mobilemissileluadata import populate_mobile_missiles_lua
+from .navalmagazineluadata import populate_naval_magazines_lua
 from .redscrambleluadata import populate_red_scramble_lua
 from .vietnamopsluadata import populate_vietnam_ops_lua
 
@@ -461,6 +462,14 @@ class LuaGenerator:
         # debit. The missiles are real weapons from a tracked ship -- kills record
         # natively.
         populate_cruise_missiles_lua(lua_data, self.game, self.mission_data)
+
+        # Cross-turn naval magazines (§81) -- emits dcsRetribution.navalMagazines only
+        # when the stagger or the magazine is on and a live naval group exists; the
+        # navalmagazines plugin releases ships to weapons-free across a window (they
+        # generate on ReturnFire) and counts real anti-ship shots against the campaign
+        # stock, mirroring expenditure back for the turn-boundary debit. Its weapon set
+        # is disjoint from §63's above, so a shot is never charged to both magazines.
+        populate_naval_magazines_lua(lua_data, self.game, self.mission_data)
 
         # Enemy comms jamming (§51) -- emits dcsRetribution.commsJam only when the
         # plan computed before this pass exists (setting on + alive enemy C2 node +

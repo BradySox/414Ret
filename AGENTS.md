@@ -356,6 +356,15 @@ file. This guide is the map; those are the territory.
   - `414th-cruise-missile-raids-notes.md` — ship-launched cruise missile raids (§63 LANDED
     2026-07-15): the no-rearm campaign magazine debited only by the debrief report, emitter-time
     raid planning, the curated LACM hull set, and the deferred Tier-3 right-click/SITREP surfacing
+  - `414th-naval-magazines-notes.md` — **cross-turn naval magazines** (§81 N1+N2 LANDED
+    2026-08-03 off the flown Marianas 2027 Tacview): the three separate facts behind
+    "the whole fleet salvos in the opening minute, every turn" and which tier fixes
+    which, why the key is `group_name` (not `original_name`), why §63 double-counting
+    is solved by **disjoint weapon sets** rather than by unifying the two magazines,
+    why `ReturnFire` beat `WeaponHold`, and **the load-bearing unknown** — DCS ROE is
+    per-group, not per-weapon, so whether a held/winchester ship still engages an
+    aircraft that hasn't shot at it is fly-only (checklist B39, test it FIRST).
+    Deferred: N3 replenishment, N4 the unit-card readout
   - `414th-comint-notes.md` — **blue-side COMINT** (§70, the §51 mirror; all 5 squadron calls
     RESOLVED 2026-07-18 — keep ambient tier · pin reveal · collectors = C-130 + drones ·
     UHF-first band plan off the DF-module audit (Hornet/Tomcat/Phantom/Tiger all home,
@@ -3096,6 +3105,55 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     setting, no plugin, no save change; upstream-shared code — carve candidate. Tests
     `tests/armedforces/test_naval_hull_mixing.py` (9); features doc §80, checklist B38 — needs an
     in-game pass (whether DCS sails a multi-class group as one formation).
+81. **Cross-turn naval magazines** — the fleet's anti-ship missiles are finite, and it stops
+    dumping them all in the opening minute. Off the flown Marianas 2027 Tacview (374 weapon
+    launches, essentially all inside the first five minutes): **three separate facts** combined
+    into one bad outcome — (1) `TgoGenerator.set_ship_engagement` spawns every ship
+    `WeaponFree` + alarm RED because ship weapons are **OPTION-driven** (an `EngageTargets`
+    task is air-only and crashed the naval AI when tried), so a hull fires the instant anything
+    enters range; (2) a modern AShM **out-ranges the theatre** (YJ-18 ~540 km vs the 205 km
+    Guam–Saipan gap), so "in range" is true at t=0 and the whole fleet salvos at once; and
+    (3) a DCS mission is a **fresh spawn**, so loadouts reset and red re-dumped a full magazine
+    *every turn* — sinking hulls was the only way volume ever fell. Hull culling shrinks each
+    salvo and fixes neither (1) nor (3). Two independently-gated tiers, both mirroring §63's
+    proven shape (`game/fourteenth/naval_magazines.py`, emitter
+    `game/missiongenerator/navalmagazineluadata.py`, runtime `resources/plugins/navalmagazines/`):
+    **N1 staggered release** (`naval_weapon_release_stagger`, Mission Generation → Naval strike,
+    default **OFF**) — ships generate **`ReturnFire`** and the plugin releases each group to
+    weapons-free at its own moment **spread evenly** across `[releaseMinS, releaseMaxS]`
+    (120–900 s; evenly rather than rolled independently, so a small fleet can't randomly land
+    every release in one frame — the §49 stagger lesson). **`ReturnFire`, never `WeaponHold`**:
+    the point is to delay *initiation*, and a holding fleet is a defenceless one — which is
+    also why the load-bearing unknown is whether a DCS ship on `ReturnFire` engages an
+    *inbound aircraft that hasn't shot at it yet* (unverifiable outside DCS; **test this
+    first**). Runtime only, no persisted state. **N2 the magazine** (`naval_magazines`, same
+    section, default **OFF**) — each naval group carries a persisted anti-ship stock
+    (`game.naval_magazines`, keyed by the same stable `TheaterGroup.group_name` §63 uses —
+    the TheaterGroup lives in the save, so the key survives regeneration; capacity from the
+    curated `ASHM_MAGAZINE_BY_TYPE` summed over alive hulls at first sight, default 8),
+    emitted as this mission's hard cap; the plugin hooks **`S_EVENT_SHOT`**, matches the
+    weapon type against `ASHM_WEAPON_PATTERNS` (plain **substring**, upper-cased — never a Lua
+    pattern, the §70 lesson), decrements, and at zero drops the group back to `ReturnFire` —
+    **winchester, not disarmed**. Expenditure mirrors into the new `naval_magazines_state`
+    Lua→Python channel (the §57/§63 `f.state` pattern) and is debited at the turn boundary;
+    **generation never debits**, so re-generating a mission is free (the §54 lesson). **No
+    double-count with §63 by construction**: the two magazines meter **disjoint weapon sets**
+    — the land-attack families §63 meters (`BGM_109`, the `3M14` Kalibr) are absent here, and
+    nothing as loose as `Kalibr` is used (it would catch the land-attack 3M14 alongside the
+    anti-ship 3M54); a Burke legitimately appears in *both* hull tables because it carries
+    Tomahawks *and* Harpoons. **Never add a land-attack family to the pattern list.** A group
+    that starts a mission dry is still emitted (so the plugin holds it at `ReturnFire` rather
+    than letting a spent fleet fight as if freshly loaded) and is never released by the
+    stagger. Symmetric — blue's Burkes are bound exactly as red's Type 055s. The plugin owns
+    no spawns and no kills: it sets ROE and counts real weapon releases, so hull losses record
+    natively as always. Surfaced by `winchester_lines` (blue only — enemy residual stock stays
+    hidden, like every magazine readout). **Deferred:** N3 replenishment (refill at a friendly
+    port, so sustaining a fleet is a logistics decision) and N4's unit-card readout, both only
+    worth doing once N2 is flown. Tests `tests/fourteenth/test_naval_magazines.py` +
+    `tests/missiongenerator/test_navalmagazineluadata.py` +
+    `tests/lua/test_navalmagazines_runtime.py`; features doc §81, checklist B39 — needs an
+    in-game pass (the `ReturnFire` air-defence question above is the gate; then that a
+    staggered fleet still fights, and that the winchester drop fires on real AShM releases).
 
 ---
 

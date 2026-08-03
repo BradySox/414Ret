@@ -7494,6 +7494,123 @@ stay submarines, and riverine/patrol boats pair only with boats.
 **Checklist B38** — needs an in-game pass: a mixed-hull group sails and fights as one DCS group
 (formation, speed, station-keeping) with no beaching or bunching.
 
+## §81 — Cross-turn naval magazines
+
+The flown Marianas 2027 Tacview recorded **374 weapon launches, essentially all inside the
+first five minutes**, and the DM's read named the problem exactly: *"in real life they would
+not dump the entire Chinese fleet's magazines in the opening shots of the war — if this
+campaign goes 20 turns they can't keep dumping 20+ per turn."*
+
+### Three facts, one bad outcome
+
+They need separating because they have different fixes:
+
+1. **Ships fire autonomously and instantly.** `TgoGenerator.set_ship_engagement` spawns every
+   ship `OptROE.WeaponFree` with alarm RED, because that is the only way DCS makes a fleet
+   fight: ship weapons are **OPTION-driven**, and an `EngageTargets` task is air-only —
+   feeding it to the naval AI crashed DCS (`ACCESS_VIOLATION` in
+   `AI::ControllerStack::start`). So a ship shoots the moment anything enters range.
+2. **Modern anti-ship missiles out-range the theatre.** The YJ-18 reaches ~540 km against a
+   205 km Guam–Saipan gap, so "in range" is permanently true from t=0 and the whole fleet
+   salvos in the opening minute rather than fighting a developing battle.
+3. **A DCS mission is a fresh spawn.** Loadouts reset every turn, so red re-dumped a full
+   magazine *every single turn*. Sinking hulls was the **only** way volume ever went down —
+   there was no ammunition dimension to the naval war at all.
+
+Hull culling (Marianas 2027, red 93 → 45 hulls) shrinks each salvo. It does nothing about
+(1) or (3).
+
+### N1 — staggered release (`naval_weapon_release_stagger`, default OFF)
+
+The generator spawns ships **`ReturnFire`** instead of `WeaponFree`, and the `navalmagazines`
+plugin releases each group to weapons-free at its own moment, **spread evenly** across
+`[releaseMinS, releaseMaxS]` (120–900 s). Evenly rather than rolled independently, so a small
+fleet cannot randomly land every release in the same few seconds — the §49 lesson, where
+everything firing in one frame was itself a measured problem.
+
+**`ReturnFire`, never `WeaponHold`.** The point is to delay *initiation*, not to disarm
+anybody: a holding fleet is a defenceless fleet. This is also the feature's load-bearing
+unknown — see below.
+
+Runtime only. No persisted state, no campaign coupling.
+
+### N2 — the magazine (`naval_magazines`, default OFF)
+
+Each naval group carries a persisted anti-ship stock on `game.naval_magazines`, keyed by the
+same stable `TheaterGroup.group_name` (`"<id> | <name>"`) §63's magazines use — the
+`TheaterGroup` lives in the campaign save, so the key survives mission regeneration. Capacity
+comes from the curated `ASHM_MAGAZINE_BY_TYPE`, summed over the group's **alive** hulls at
+first sight (default 8 for an unlisted hull; a hull that carries no anti-ship missile simply
+never fires one, so the default costs nothing). Seeding is idempotent — an existing entry is
+never re-upped, so expenditure persists.
+
+The emitted `remaining` is this mission's **hard cap**. The plugin hooks `S_EVENT_SHOT`,
+matches the weapon's `typeName` against `ASHM_WEAPON_PATTERNS` (plain **substring** on the
+upper-cased name — never a Lua pattern, since weapon ids carry magic characters, the §70
+lesson), decrements, and at zero drops the group back to `ReturnFire`: **winchester, not
+disarmed**. A group that starts a mission dry is still emitted so the plugin can hold it —
+otherwise a spent fleet fights on as if freshly loaded — and is never released by the stagger.
+
+Expenditure mirrors into the new `naval_magazines_state` Lua→Python channel (the §57/§63
+`f.state` pattern, `dirty_state`-flagged) and `reconcile_naval_magazines` debits at the turn
+boundary. **Generation never debits**, so re-generating a mission is free (the §54 lesson).
+There is no rearm.
+
+### No double-count with §63, by construction
+
+§63 meters **land-attack** cruise missiles fired by a scripted `FireAtPoint`; §81 meters
+**anti-ship** missiles fired autonomously. The two magazines meter **disjoint weapon sets**:
+the land-attack families are absent from `ASHM_WEAPON_PATTERNS` — no `BGM_109`, no `3M14`, and
+nothing as loose as `Kalibr` (which would catch the land-attack 3M14 alongside the anti-ship
+3M54). A Burke legitimately appears in *both* hull tables, because it carries Tomahawks *and*
+Harpoons; that is fine precisely because the weapon sets do not overlap. A guard test pins it.
+
+**Never add a land-attack family to the pattern list.**
+
+### The load-bearing unknown
+
+**Whether a DCS ship on `ReturnFire` engages an inbound aircraft that has not yet fired at
+it.** DCS ROE is per *group*, not per weapon type — there is no way to say "no more anti-ship
+missiles, but keep shooting SAMs" — so `ReturnFire` is the chosen compromise for both a
+pre-release and a winchester ship. If DCS does not honour it that way, a spent ship is also a
+defenceless one. That may be acceptable (it is out of the fight either way) but it must be a
+deliberate call, not a surprise. **Test this first**, before trusting either tier.
+
+### Symmetry, and what the plugin does not own
+
+Symmetric: blue's Burkes are bound by exactly the same rule as red's Type 055s. The plugin
+sets ROE and counts real weapon releases — **no spawns, no kills** — so hull losses record
+natively as always (the §35/§37/§49 discipline).
+
+`winchester_lines` surfaces blue expenditure for the SITREP; enemy residual stock stays
+hidden, like every other magazine readout.
+
+### Deferred
+
+- **N3 replenishment** — magazines refill slowly, or only at a friendly port, so sustaining a
+  fleet becomes a logistics decision rather than a free reset. Only worth doing once N2 is
+  flown.
+- **N4 unit-card readout** — remaining stock on the ground-object dialog (`tgo_magazines` is
+  already written for it).
+
+### Files & tests
+
+- `game/fourteenth/naval_magazines.py` — the hull table, the weapon patterns, seeding,
+  emission, reconciliation, the SITREP lines.
+- `game/missiongenerator/navalmagazineluadata.py` — the emitter
+  (`dcsRetribution.navalMagazines`).
+- `resources/plugins/navalmagazines/` — the runtime (stagger + `S_EVENT_SHOT` metering).
+- `game/missiongenerator/tgogenerator.py` — `set_ship_engagement`'s `ReturnFire` branch.
+- `game/debriefing.py` — the `naval_magazines_state` channel (its parser is now shared with
+  §63's, both being `{group=, fired=}`).
+- `game/sim/missionresultsprocessor.py` — `commit_naval_magazines`.
+- `game/game.py` — `naval_magazines` + its `__setstate__` default.
+- Tests: `tests/fourteenth/test_naval_magazines.py`,
+  `tests/missiongenerator/test_navalmagazineluadata.py`,
+  `tests/lua/test_navalmagazines_runtime.py`.
+
+**Checklist B39** — needs an in-game pass.
+
 ## Code audit fixes — 2026-07-07
 
 A full read-only audit of the 414th surface (campaign layer, mission-generator emitters,

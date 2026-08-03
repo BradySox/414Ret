@@ -77,6 +77,8 @@ class MissionResultsProcessor:
                 self.commit_minefields(debriefing)
             with logged_duration("commit_cruise_missiles"):
                 self.commit_cruise_missiles(debriefing)
+            with logged_duration("commit_naval_magazines"):
+                self.commit_naval_magazines(debriefing)
             # §70 COMINT (C0): bank this mission's collection. Commit runs before
             # the turn increments, so the stamp is the just-played turn.
             with logged_duration("record_comint_collection"):
@@ -116,6 +118,15 @@ class MissionResultsProcessor:
         from game.fourteenth.cruise_raids import reconcile_cruise_missiles
 
         reconcile_cruise_missiles(self.game, debriefing)
+
+    def commit_naval_magazines(self, debriefing: Debriefing) -> None:
+        # §81: debit each naval group's persisted anti-ship magazine by what the
+        # navalmagazines plugin reported fired -- the only debit site, so mission
+        # re-generation never double-counts. The weapon set is disjoint from §63's,
+        # so a shot is never charged twice. No-op when nothing was reported.
+        from game.fourteenth.naval_magazines import reconcile_naval_magazines
+
+        reconcile_naval_magazines(self.game, debriefing)
 
     def record_sitrep(self, debriefing: Debriefing) -> None:
         # Capture a one-turn campaign summary for the next turn's kneeboard cover

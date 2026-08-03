@@ -98,38 +98,57 @@ def roll_depth(pressure: float, rng: Optional[random.Random] = None) -> int:
 
 
 def _older_group(group: WeaponGroup, depth: int) -> WeaponGroup:
-    """Walk `depth` rungs down, stopping at a boundary, a newer rung, or the end.
+    """Walk down to `depth` provably-older rungs, hopping over newer ones.
 
-    A rung is only taken when it is provably OLDER. `fallback` answers "what do I
-    use instead when this is unavailable", which is a DATE-GATING answer and is
-    **not** required to be monotonic in year: 18 same-category fallbacks in the
-    shipped data point at a *newer* weapon -- `2xAIM-120B` (1994) ->
-    `AIM-120C` (2018), whose yaml says outright "if we've run out of doubles,
-    start over with the singles", and `AGM-65E` (1985) -> `AGM-65G` (1989) ->
-    `AGM-65F` (1991).
+    A rung is only ever *taken* when it is provably older than the deepest rung
+    accepted so far, so the result can never be newer than `group`. That guard is
+    load-bearing, because `fallback` answers "what do I use instead when this is
+    unavailable" -- a DATE-GATING answer, which is **not** monotonic in year.
+    **18 same-category fallbacks in the shipped data point at a newer weapon**, and
+    date gating cannot catch it: in a 1991 campaign `AGM-65E` and `AGM-65F` are
+    both legal, so an unguarded walk silently *upgrades* the flight.
 
-    Following those would hand a flight *better* weapons the longer the war ran,
-    and date gating cannot catch it -- in a 1991 campaign AGM-65E and AGM-65F are
-    both legal, so nothing downstream clamps the upgrade. An unknown year is
-    unprovable, so the walk stops there too.
+    A newer rung is **skipped, not treated as the end of the ladder** -- keep
+    walking past it. Stopping dead there loses real depth, and the rung on the
+    far side is usually the one actually wanted:
+
+    * `2xAIM-120B` (1994) -> ~~AIM-120C (2018)~~ -> **AIM-120B** (1994): the
+      single rail of the same generation. Fewer missiles, not newer ones -- which
+      is exactly what that yaml's "if we've run out of doubles, start over with
+      the singles" was reaching for.
+    * `AGM-65E` (1985) -> ~~AGM-65G, AGM-65F~~ -> **AGM-65B** (1975).
+
+    Worth +15 groups of usable depth over stopping (191 -> 206) at zero upgrade
+    paths. An undated rung is unprovable, so it ends the walk; `seen` guards
+    against a fallback cycle.
     """
     category = getattr(group, "category", None)
     # A save written before WeaponGroup.category existed restores groups without
     # it; treat unknown as "do not cross" rather than guessing.
-    if category is None:
+    if category is None or group.introduction_year is None:
         return group
+
     current = group
-    for _ in range(depth):
-        older = current.fallback
-        if older is None:
+    probe = group
+    seen = {group.name}
+    taken = 0
+    while taken < depth:
+        older = probe.fallback
+        if older is None or older.name in seen:
             break
+        seen.add(older.name)
         if getattr(older, "category", None) != category:
             break
-        this_year = current.introduction_year
+        probe = older
         older_year = older.introduction_year
-        if this_year is None or older_year is None or older_year > this_year:
+        if older_year is None:
             break
+        current_year = current.introduction_year
+        assert current_year is not None  # `current` only ever holds dated groups
+        if older_year > current_year:
+            continue  # newer -- hop over it and keep looking
         current = older
+        taken += 1
     return current
 
 

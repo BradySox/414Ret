@@ -149,29 +149,37 @@ class TestSubstitutionIsNeverAnUpgrade:
                     f"({got.introduction_year}) at depth {depth} is an UPGRADE"
                 )
 
-    def test_the_double_amraam_rack_does_not_become_a_newer_single(self) -> None:
+    def test_the_double_amraam_rack_degrades_to_the_single_rail(self) -> None:
         """2xAIM-120B (1994) declares AIM-120C (2018) as its fallback.
 
         The yaml says so outright -- "if we've run out of doubles, start over with
         the singles" -- which is right for date gating and wrong here twice over:
-        it halves the magazine AND hands over a newer missile. In a 2027 campaign
-        (Baltic Fury, Marianas) both are date-legal, so nothing else stops it.
+        AIM-120C halves the magazine AND is newer. In a 2027 campaign (Baltic Fury,
+        Marianas) both are date-legal, so nothing downstream stops it.
+
+        Hopping over it lands on the rung that comment was actually reaching for:
+        AIM-120B, the single rail of the SAME generation -- fewer missiles, not
+        newer ones.
         """
         rack = WeaponGroup.named("2xAIM-120B")
         assert rack.fallback is not None
         assert rack.fallback.name == "AIM-120C"
         rack_year = rack.introduction_year
-        single_year = rack.fallback.introduction_year
-        assert rack_year is not None and single_year is not None
-        assert single_year > rack_year
-        assert _older_group(rack, MAX_DEPTH) is rack
+        skipped_year = rack.fallback.introduction_year
+        assert rack_year is not None and skipped_year is not None
+        assert skipped_year > rack_year, "the trap: the fallback is newer"
 
-    def test_the_maverick_ladder_does_not_walk_upward(self) -> None:
+        got = _older_group(rack, 1)
+        assert got.name == "AIM-120B"
+        assert got.introduction_year == rack_year
+
+    def test_the_maverick_ladder_hops_over_its_newer_rungs(self) -> None:
         """AGM-65E (1985) -> AGM-65G (1989) -> AGM-65F (1991).
 
         All three are legal in Desert Storm (1991), so before the year guard a
         depth-2 roll turned an AGM-65E into an AGM-65F -- strictly newer, in a
-        shipped campaign, unclamped.
+        shipped campaign, unclamped. Both newer rungs are now hopped, so the
+        Maverick still has real depth to reach into.
         """
         maverick = WeaponGroup.named("AGM-65E")
         start = maverick.introduction_year
@@ -180,6 +188,24 @@ class TestSubstitutionIsNeverAnUpgrade:
             got = _older_group(maverick, depth)
             got_year = got.introduction_year
             assert got_year is not None and got_year <= start
+        assert _older_group(maverick, 1).name == "AGM-65B"
+
+    def test_a_newer_rung_does_not_end_the_ladder(self) -> None:
+        """Stopping dead at a newer rung costs real depth.
+
+        Hopping is worth +15 groups of usable depth across the shipped data, which
+        matters because the point of the feature is to USE the magazine's depth
+        wherever it exists -- air-to-air, air-to-ground or anti-ship alike.
+        """
+        with_depth = 0
+        for group in WeaponGroup._by_name.values():
+            if getattr(group, "category", None) is None:
+                continue
+            if group.type in PROTECTED_TYPES:
+                continue
+            if _older_group(group, 1) is not group:
+                with_depth += 1
+        assert with_depth >= 206
 
     def test_an_undated_rung_stops_the_walk(self) -> None:
         """An unknown year is unprovable, so it is not treated as older."""

@@ -7948,6 +7948,80 @@ Files: `game/fourteenth/sp_pilot_mode.py`, `game/fourteenth/pre_turn_briefing.py
 `docs/dev/design/414th-single-player-loop-notes.md`. Checklist: **B41** (in-app).
 
 
+## §84 — Old-stock loadout attrition
+
+**The problem.** Every flight of the same airframe and task carries a **byte-identical**
+loadout. `Loadout.default_for` → `default_for_task_and_aircraft` resolves by *name*, walking
+the task's candidate names and returning the **first** payload that exists and validates —
+there is no randomness anywhere in that path. So six BARCAP flights put up six identical
+magazines of the newest missile the campaign date allows, which is not how a war goes:
+squadrons burn the good stock first and the tail of a campaign is flown on whatever is left
+in the bunker.
+
+**The mechanism.** `degrade_loadout_for_stock` (`game/fourteenth/stock_attrition.py`) rolls a
+depth **per flight** and walks the loadout that far down **the fallback ladder the weapon
+data already declares**. That is the whole trick — "old stock" needs no new data, because the
+ladder is already the generational one:
+
+    AIM-120C → AIM-120B → AIM-7MH → AIM-7M → AIM-7F → ...
+
+so a deep roll is literally what breaks out the Sparrows.
+
+**Where it hooks.** The only two planning sites, `FlightMembers.from_roster` and
+`FlightMembers.resize` (`game/ato/flightmembers.py`). The result is stored on the members and
+pickled, so **the roll is stable across re-generation** — no deterministic seeding needed,
+unlike §3 concealment. `resize` clones `self.members[0].loadout` when growing an existing
+flight, so every jet in a flight matches: the roll is per *flight*, not per jet.
+
+**Scaling with the campaign clock.** `attrition_pressure` reads
+`stock_attrition_start` at turn 1 and adds `stock_attrition_per_turn` each turn, capped at
+`stock_attrition_max` (defaults 0 % / 4 % / 50 %). `roll_depth` is **geometric in that
+pressure** — each further rung needs another hit — so one rung down is common, three is rare,
+and both get likelier as the war drags. Note the top bucket is truncated at `MAX_DEPTH` (3),
+so `P(MAX_DEPTH) = p**MAX_DEPTH`; at exactly p = 0.5 that equals the bucket below it, which
+is why the test asserts the tail is *far rarer than one rung* rather than ordering the last
+two.
+
+**The load-bearing guard: `WeaponGroup.category`.** `WeaponType` **cannot** express a weapon
+family — it distinguishes pods and jammers, but a Sidewinder and a JDAM are both `UNKNOWN`.
+And several fallbacks cross families *on purpose*:
+
+| Group | Fallback | Why it is authored that way |
+| --- | --- | --- |
+| `AN/ASQ-228 ATFLIR` | `AIM-120C` | no pod available → put something on the station |
+| `AN/ALQ-131 ECM` | `2xAIM-120C` | same |
+| `AGM-84A` | `GBU-24` | no Harpoon → put a bomb on the ship |
+
+Those are a sane **last resort for date gating** and absurd as attrition: they would hang a
+missile on the targeting-pod station. So `WeaponGroup` gained a **`category`** — the
+`resources/weapons` subdirectory it loaded from (`a2a-missiles`, `bombs`, `pods`, `rockets`,
+`standoff`), set with `object.__setattr__` at load exactly like `target_overrides`, and read
+with `getattr` so a group restored from a pre-feature save (or a synthesized one: the clean
+pylon, unknown clsids) reads as *do not cross*. `_older_group` stops at a category boundary,
+and `PROTECTED_TYPES` (`TGP`/`JAMMER`/`OFFENSIVE_JAMMER`/`DECOY`) are never substituted at
+all.
+
+**What it never does.** Touch a **player-customised** loadout (`is_custom`), run with the
+feature off, or make anything *newer* — date gating is untouched and still runs afterwards in
+the mission generator, so the result can only ever be older than the campaign allows. Every
+guard returns the **original loadout object**, so OFF is byte-identical.
+
+**A free win from the existing data.** `resources/weapons/a2a-missiles/AIM-120B-2X.yaml`
+already authors `fallback: AIM-120C` under the comment *"If we've run out of doubles, start
+over with the singles."* — so a double rack degrading to a single rail (fewer missiles, not
+just older ones) is the weapon data's own stated intent, inherited for free.
+
+**Settings.** `stock_attrition` (414th Features → Auto-planner behaviour, default **OFF**)
+plus `stock_attrition_start` / `stock_attrition_per_turn` / `stock_attrition_max` (Mission
+Generation → Loadouts, `enabled_when=stock_attrition`).
+
+**Measured** on a real F/A-18C `Retribution BARCAP` fit at the defaults: turns 1 and 5 all six
+flights identical; turn 12 one flight on AIM-7MH + AIM-9L; turn 25 three of six on old stock
+(AIM-120B, AIM-7M, AIM-9L/9M) — with `AN/ASQ-228 ATFLIR` untouched in every case.
+
+Tests: `tests/fourteenth/test_stock_attrition.py` (21). Checklist: **B42**.
+
+
 ## Code audit fixes — 2026-07-07
 
 A full read-only audit of the 414th surface (campaign layer, mission-generator emitters,

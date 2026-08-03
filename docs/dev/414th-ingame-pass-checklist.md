@@ -3561,3 +3561,24 @@ rows (B, C, D, E) then becomes the upstream-PR carve-out batch.
   upstream-PR candidates — verify in-game, then carve them out (see the
   upstreaming inventory).
 
+
+### B42 — Old-stock loadout attrition · §84 · ☐ UNTESTED (built 2026-08-03)
+
+**Setup:** any campaign, `stock_attrition` ON (414th Features → Auto-planner behaviour).
+Defaults are 0 % at turn 1, +4 %/turn, 50 % ceiling — so turn 1 is deliberately a no-op.
+Fastest exercise is to raise `stock_attrition_start` to ~40 % for the test.
+
+**Pass criterion:** plan several flights of the SAME airframe and task (six BARCAP is the
+motivating case) and confirm in the payload editor that they are no longer all identical —
+some carry the current missile, some a generation back, and a deep roll reaches two or three
+back (AIM-120C → AIM-120B → AIM-7MH). Every jet WITHIN one flight must match. Then fly one
+of the degraded flights and confirm DCS actually spawns the substituted stores.
+
+**Fail signatures to watch for:**
+- A **targeting pod, jammer or decoy replaced by a missile** — the category guard failed.
+  This is the one that matters; `AN/ASQ-228 ATFLIR` declares `AIM-120C` as its fallback.
+- A store the aircraft cannot mount, or an **empty station** where a weapon was.
+- A loadout you customised yourself being altered.
+- Loadouts **changing when you re-generate the same turn** (the roll is stored on the flight
+  and must be stable).
+- Jets within one flight carrying different stores.

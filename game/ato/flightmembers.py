@@ -8,6 +8,7 @@ from .flightroster import FlightRoster
 from .iflightroster import IFlightRoster
 from .loadouts import Loadout
 from ..data.weapons import Weapon
+from ..fourteenth.stock_attrition import degrade_loadout_for_stock
 
 if TYPE_CHECKING:
     from game.squadrons import Pilot, Squadron
@@ -27,7 +28,7 @@ class FlightMembers(IFlightRoster):
     @staticmethod
     def from_roster(flight: Flight, roster: FlightRoster) -> FlightMembers:
         members = FlightMembers(flight)
-        loadout = Loadout.default_for(flight)
+        loadout = degrade_loadout_for_stock(Loadout.default_for(flight), flight)
         if flight.squadron.aircraft.variant_id == "F-15I Ra'am":
             loadout.pylons[16] = Weapon.with_clsid("{IDF_MODS_PROJECT_F-15I_Raam_Dome}")
         members.members = [FlightMember(p, loadout) for p in roster.pilots]
@@ -61,9 +62,14 @@ class FlightMembers(IFlightRoster):
             self.members = self.members[:new_size]
             return
         if self.max_size:
+            # Growing an existing flight copies what it is already carrying, so a
+            # flight stays internally consistent -- the stock roll is per flight,
+            # not per jet.
             loadout = self.members[0].loadout.clone()
         else:
-            loadout = Loadout.default_for(self.flight)
+            loadout = degrade_loadout_for_stock(
+                Loadout.default_for(self.flight), self.flight
+            )
         if self.flight.squadron.aircraft.variant_id == "F-15I Ra'am":
             loadout.pylons[16] = Weapon.with_clsid("{IDF_MODS_PROJECT_F-15I_Raam_Dome}")
         for _ in range(new_size - self.max_size):

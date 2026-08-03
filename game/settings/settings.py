@@ -589,6 +589,9 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                 [
                     "auto_range_fuel_tanks",
                     "fuel_tanks_over_jammers",
+                    "stock_attrition_start",
+                    "stock_attrition_per_turn",
+                    "stock_attrition_max",
                 ],
             ),
         ],
@@ -743,6 +746,7 @@ FEATURE_GATE_FIELDS: dict[str, list[str]] = {
         "auto_repair_air_defenses",  # §68
         "auto_range_fuel_tanks",  # §46
         "fuel_tanks_over_jammers",  # §46
+        "stock_attrition",  # §84
     ],
     "Single-player flow": [
         "sp_pilot_mode",  # §83
@@ -2018,6 +2022,71 @@ class Settings:
             "centerline ALQ-184 planned through two refuel passes -- three bags and "
             "one pass beat the pod. Only jammer pods are ever traded (never a TGP, "
             "decoy, or ordnance); player-customised loadouts are left untouched."
+        ),
+    )
+
+    stock_attrition: bool = boolean_option(
+        "Squadrons run down their good stock as the campaign wears on",
+        page=MISSION_GENERATION_PAGE,
+        section="Loadouts",
+        default=False,
+        detail=(
+            "Without this, every flight of the same aircraft and task carries a "
+            "byte-identical loadout, so six BARCAP flights put up six identical "
+            "magazines of the newest missile the campaign date allows. With it on, "
+            "each flight rolls for how deep into the old stock it is reaching and "
+            "steps that far down the weapon's own fallback ladder -- AIM-120C to "
+            "AIM-120B, and on a deep roll all the way to the Sparrows. The chance "
+            "climbs every turn (see the three settings below), so the opening turns "
+            "are well supplied and the late campaign is flown on what is left in the "
+            "bunker. Substitutions never leave the weapon's family and never touch "
+            "pods, jammers or decoys, and a loadout you customised yourself is left "
+            "exactly as you built it."
+        ),
+    )
+
+    stock_attrition_start: int = bounded_int_option(
+        "Chance of old stock on turn 1 (%)",
+        page=MISSION_GENERATION_PAGE,
+        section="Loadouts",
+        default=0,
+        min=0,
+        max=100,
+        enabled_when="stock_attrition",
+        detail=(
+            "Where the campaign opens. Zero means turn 1 is fully supplied and every "
+            "flight carries the best available weapon."
+        ),
+    )
+
+    stock_attrition_per_turn: int = bounded_int_option(
+        "Added chance per turn (%)",
+        page=MISSION_GENERATION_PAGE,
+        section="Loadouts",
+        default=4,
+        min=0,
+        max=25,
+        enabled_when="stock_attrition",
+        detail=(
+            "How fast the good stock runs out. At the default a campaign reaches a "
+            "one-in-four chance around turn 7 and hits the ceiling below in the "
+            "mid-teens."
+        ),
+    )
+
+    stock_attrition_max: int = bounded_int_option(
+        "Most a campaign ever runs down (%)",
+        page=MISSION_GENERATION_PAGE,
+        section="Loadouts",
+        default=50,
+        min=0,
+        max=100,
+        enabled_when="stock_attrition",
+        detail=(
+            "The ceiling the per-turn climb stops at, so a long campaign never "
+            "becomes one where nobody carries a modern weapon. This is also the "
+            "chance of each FURTHER step down the ladder, so it governs how often a "
+            "flight goes two or three generations back rather than one."
         ),
     )
 

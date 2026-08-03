@@ -3491,6 +3491,39 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     `tests/fourteenth/test_pre_turn_briefing.py` (16); features doc §83, design note
     `docs/dev/design/414th-single-player-loop-notes.md`, checklist B41 — **`qt_ui` is not CI
     type-checked and the dialog cannot be driven headlessly, so it needs an in-app pass.**
+84. **Old-stock loadout attrition** — squadrons burn the good stock first, so the tail of a
+    campaign is flown on what is left in the bunker. Every flight of the same airframe and
+    task used to carry a **byte-identical** loadout: `Loadout.default_for` resolves by NAME
+    and returns the **first** payload that validates, with zero randomness anywhere in the
+    path, so six BARCAP flights put up six identical magazines of the newest missile the
+    date allows. `degrade_loadout_for_stock` (`game/fourteenth/stock_attrition.py`) rolls a
+    depth **per flight** and walks the loadout that far down **the fallback ladder the
+    weapon data already declares** — so "old stock" needs no new data: AIM-120C → AIM-120B →
+    **AIM-7MH** is the ladder, and a deep roll is what breaks out the Sparrows. Hooked at the
+    only two planning sites (`FlightMembers.from_roster` / `resize`), where the result is
+    stored on the members and pickled, so **the roll is stable across re-generation** with no
+    seeding needed; growing a flight clones what it already carries, so the roll is per
+    flight, not per jet. **Pressure scales with the campaign clock** —
+    `stock_attrition_start` at turn 1, `+stock_attrition_per_turn` each turn, capped at
+    `stock_attrition_max` (0 / 4 / 50 %) — and **depth is geometric in that pressure**, so
+    one rung is common, three is rare, and both get likelier as the war drags. **Three
+    guards, one of them load-bearing:** `WeaponType` **cannot** express a weapon family (a
+    Sidewinder and a JDAM are both `UNKNOWN`), and several fallbacks cross families *on
+    purpose* — `AN/ASQ-228 ATFLIR → AIM-120C`, `AN/ALQ-131 ECM → 2xAIM-120C`,
+    `AGM-84A → GBU-24` — which are a sane last resort for **date gating** but absurd as
+    attrition (they would hang a missile on the targeting-pod station). So `WeaponGroup`
+    gained a **`category`** (the `resources/weapons` subdirectory it loaded from,
+    `object.__setattr__` like `target_overrides`, `getattr`-guarded for old saves) and the
+    walk stops at a category boundary; equipment types (`TGP`/`JAMMER`/`OFFENSIVE_JAMMER`/
+    `DECOY`) are never touched at all; and a **player-customised loadout is left exactly as
+    built**. Date gating is untouched and still runs afterwards, so this can only ever make a
+    loadout older, never newer than the campaign allows. Falls out of the existing data for
+    free: `AIM-120B-2X.yaml` already authors `# If we've run out of doubles, start over with
+    the singles`, so a double rack degrading to a single rail is the data's own intent.
+    Gated `stock_attrition` (414th Features → Auto-planner behaviour, default **OFF**); OFF
+    or turn 1 at the default 0 % start returns the original loadout object untouched. Tests
+    `tests/fourteenth/test_stock_attrition.py` (21); features doc §84, checklist B42 — needs
+    an in-game pass.
 
 ---
 

@@ -678,6 +678,17 @@ FEATURES: tuple[Feature, ...] = (
         83,
         settings_fields=("sp_pilot_mode",),
     ),
+    Feature(
+        "stock_attrition",
+        "Old-stock loadout attrition",
+        84,
+        settings_fields=(
+            "stock_attrition",
+            "stock_attrition_start",
+            "stock_attrition_per_turn",
+            "stock_attrition_max",
+        ),
+    ),
     # Always-on engine plugins — major 414th machinery documented in design notes
     # rather than a numbered "Features at a Glance" entry.
     Feature("mantis_iads", "MANTIS IADS engine", plugin_id="mantisiads"),

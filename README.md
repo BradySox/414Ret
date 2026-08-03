@@ -263,6 +263,21 @@ Upstream hands you a map that already knows everything. Here you have to go look
   Baghdad to Mosul, and a GCI-alert Iraqi Air Force on hot-pad QRA. Every squadron is its real 1991 unit — VF-103 Sluggers
   Bombcats, the 58th TFS Gorillas, Task Force Normandy's Apaches, and the Qadessiya
   Foxbat squadron that drew first blood on night one.
+- **Marianas — Second Island Chain (2027)** — the modern-day China fight, on the one DCS map
+  that needs no fiction to host it: Guam *is* the Second Island Chain, and Andersen AFB is the
+  target set the PLA Rocket Force was built around. A Taiwan crisis went kinetic; the opening
+  salvo cratered Guam's ramps while amphibious groups took Rota, Tinian and Saipan. Guam held —
+  now hold the ramp you have left and fight north up the chain to the Marine detachment still
+  cut off on Farallon de Pajaros. A **modern PLA air-defence belt** — an S-300PMU-2 on Tinian and an HQ-22 on Rota anchoring HQ-7 and HQ-17A point defence — and **road-mobile PLARF launchers** shoot and scoot between recon
+  passes, so a site is never quite where the last photo froze it; three PLAN carrier groups and
+  a Badger regiment contest the sea, both fleets trading **cruise missiles from finite magazines
+  that never rearm**, and sea shipments run a coastal-battery gauntlet. The boat flies a modern
+  air wing — Super Hornets, a **Growler** electronic-attack det jamming ahead of the strike
+  packages, and an organic Super Hornet tanker — with a legacy Hornet squadron kept aboard so
+  nobody is locked out of a carrier jet. Guam runs both a boom and a drogue tanker, because
+  the bombers and the jets off the boat do not refuel the same way. The islands aren't
+  connected — no ground front ever forms, so **islands change hands by air assault**, by
+  helicopter off the LHA or by C-130J paradrop.
 - **The Vietnam campaign layer changes *how* the enemy fights.** When Hanoi answers the
   campaign clock — surging the Ho Chi Minh Trail or opening a Tet-style ground push on a
   scheduled window — the enemy's tempo shifts against you. And its MiGs fly a period **GCI

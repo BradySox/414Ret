@@ -6335,12 +6335,10 @@ both COIN campaigns. State on `Game` (`comint_collected_turn` / `comint_reveal_t
 **C1 — the audible red net (LANDED 2026-07-18, same day).** The same C2 nodes now
 *transmit*. With `red_comms_net` on (Mission Generation → Battlefield life, default
 **OFF**), `plan_red_net` (`game/missiongenerator/rednetluadata.py`, run in the §51 plan
-slot with the mission `RadioRegistry`) assigns each alive enemy comms/CC node a
+slot with the mission `RadioRegistry`) assigns each transmitting enemy comms/CC node a
 **deterministic UHF AM net frequency**: seeded from the node name (crc32 — stable across
-missions, so the net lives at the same spot on the dial) at **x.500 MHz**, deliberately
-off the whole-MHz grid every briefed blue channel allocates on (collision-free by
-construction), GUARD's slot skipped, the frequency **reserved in the registry**, and
-collisions linearly probed in sorted-name order. The plan rides `MissionData.red_net`;
+missions, so the net lives at the same spot on the dial) at **x.500 MHz**, GUARD's slot
+skipped, and collisions linearly probed in sorted-name order. The plan rides `MissionData.red_net`;
 `populate_red_net_lua` emits `dcsRetribution.redNet`. The `resources/plugins/rednet/`
 runtime (plugin `defaultValue` ON — the §36 saved-default-off lesson) keys each node's net
 in **windows**: a looped, original synthesized CW clip (`rednet-cw.wav`, "VVV 414 414 K"
@@ -6378,14 +6376,48 @@ with a "+N more" tail. The plan threads `MissionData.red_net` →
 `KneeboardGenerator(red_net=…)` → `comint_kneeboard_lines(game, red_net)`; no listing
 when B is off (each feature degrades gracefully alone, designed to pair).
 
+**Band discipline — the station cap + the guard band (2026-08-02, off the flown "COMINT is
+bleeding into mission frequencies" report).** C1 shipped on a claim that turned out to be
+half true: **x.500 MHz is only off-limits to the *inter-flight* allocator**. `BLUFOR_UHF`
+steps a whole MHz, but per-flight aircraft radios (`alloc_for_radio`, e.g. AN/ARC-164
+225–400 @ **25 kHz**), field ATC, and ATIS all allocate on the 25 kHz grid — on which
+x.500 and both its neighbours are perfectly ordinary slots. So "collision-free by
+construction" was never true; the only thing holding the line was that `plan_red_net` runs
+late and probed past an **exact** `ChannelInUseError`, which still left a net free to key
+up **one 25 kHz detent** off a briefed channel — and left anything allocated *after* the
+plan (ATIS runs later) free to park beside a carrier. Two fixes, both in
+`rednetluadata.py`:
+
+* **The station cap.** Every red C2 TGO plus every concealed COIN spawn was a
+  transmitter — a KARI-style IADS (DS91: comms/power relays at *every* red base) or a COIN
+  laydown is dozens of carriers across 225–400, which is the "bleeding" as experienced.
+  `red_net_max_stations` (Mission Generation → Comms war, default **3**, min 1 / max 12,
+  `enabled_when=red_comms_net`) caps who goes on the air; `_stations_on_the_air` picks by
+  **range to the nearest blue CP** (a net you can hear and DF earns a dial slot; one 400 km
+  in the rear is clutter), deterministic tie-break by name, with **one slot anchored per
+  kind** so a crowd of near cells can't push the fixed C2 net off the dial (or vice versa).
+  A theater with no blue position (headless fixtures) falls back to name order. Emission
+  order stays name-sorted, so frequencies are unchanged by which anchors won.
+* **The guard band.** `NET_GUARD_HZ` (100 kHz = four detents): a candidate is rejected
+  unless it clears **every** allocated frequency in the band by that margin — compared by
+  **hertz, modulation-blind**, since `RadioFrequency` equality includes modulation and an
+  AM/FM pair at the same hertz is one spot on the dial to a pilot — and on success
+  `_reserve_guard_band` reserves the carrier **plus every 25 kHz detent inside the band**,
+  closing it to every later allocator.
+
+The `red_comms_net` setting detail, the plugin description, and the runtime header all
+dropped the "by construction" claim for the guard-band one.
+
 Tests: `tests/fourteenth/test_comint.py` (tier gating incl. the dead-net-beats-collector
 rule, the OFF exact no-op, the survivor requirement, drone eligibility, leak determinism +
 ranking, the reveal's nearest-pick/range/already-known/`map_hidden` rules + re-init
 idempotence, the posture-detail earn, the active-nets listing's identity-hiding + cap +
 absence without a plan, the map_hidden source exclusion) +
 `tests/missiongenerator/test_rednetluadata.py` (the freq plan: off-grid, GUARD skip,
-reservation, determinism, probing; COIN cells emit clandestine, concealed comms =
-clandestine, `map_hidden` never emitted, the area field) +
+reservation, determinism, probing past both an exact hit and a one-detent neighbour, the
+reserved guard band, the station cap + its default + the nearest-blue pick + the
+per-kind anchor; COIN cells emit clandestine, concealed comms = clandestine,
+`map_hidden` never emitted, the area field) +
 `tests/lua/test_rednet_runtime.py` (grace, stagger, loop+stop windows, `node_dead`,
 no-op, the clandestine short-window/long-gap schedule alongside a fixed station).
 Checklist B22 — needs an in-app pass (the kneeboard block + nets listing render + the

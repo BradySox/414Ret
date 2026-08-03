@@ -185,9 +185,12 @@ Upstream hands you a map that already knows everything. Here you have to go look
   turn's full take — an intercepted enemy tasking (what's coming, roughly when) and one
   "suspected activity" circle fixed to an exact position. Killing their command posts still
   wrecks their planning — but it also puts out your wiretap. Bomb it or tap it.
-- **And the enemy net is really on the air.** Turn on the **enemy radio net** and their
-  command posts transmit coded morse traffic in periodic windows on fixed UHF frequencies —
-  off your comms plan, so you only hear it by hunting the dial. Phantom, Tomcat, Hornet and
+- **And the enemy net is really on the air.** Turn on the **enemy radio net** and a handful
+  of their command posts transmit coded morse traffic in periodic windows on fixed UHF
+  frequencies — held clear of every channel your comms plan uses (nothing ever keys up on
+  or beside a briefed channel), so you only hear it by hunting the dial. How many stations
+  are up at once is a setting: a few by default, so catching one on the air is an event
+  rather than background noise. Phantom, Tomcat, Hornet and
   Tiger needles can home on an open transmission window; kill the node and its net goes
   silent for good. Hidden insurgent cells carry radios too: your kneeboard briefs a
   "suspected clandestine net" with a frequency and an area, the dashed circle on the map is

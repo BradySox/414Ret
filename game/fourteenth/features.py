@@ -524,7 +524,11 @@ FEATURES: tuple[Feature, ...] = (
         "COMINT collection (blue-side communications intelligence)",
         70,
         plugin_id="rednet",
-        settings_fields=("comint_collection", "red_comms_net"),
+        settings_fields=(
+            "comint_collection",
+            "red_comms_net",
+            "red_net_max_stations",
+        ),
     ),
     # §71 is gated by ModSettings.f4e_expanded_weapons (a Mods-page checkbox),
     # not a Settings field, so like the §10 asset pack it carries no wiring refs.

@@ -213,12 +213,14 @@ def test_theatre_missile_sites_exist_on_the_contested_islands() -> None:
     }
 
 
-def test_rota_has_a_long_range_sam_battery() -> None:
+def test_rota_has_a_point_defence_battery() -> None:
     """Rota was NEUTRAL upstream and carries no authored garrison of its own.
 
-    The band is deliberate: the campaign pins this site to an **HQ-22**, which
-    declares ``GroupTask.LORAD``. On a medium marker that pin is silently discarded
-    and the site rolls an SA-11 instead, so the marker must be a long-range one.
+    The band is deliberate and it is a SHORT one: Rota sits **75 km from Andersen**, so
+    a long-range battery here covers the airfield the player has to fly out of (an
+    HQ-22 reaches 170 km). The marker band and the HQ-7 pin have to agree, because
+    ``get_unit_group_for_task`` silently discards an override whose task does not match
+    the band.
     """
     mission = _mission()
     names = {
@@ -226,11 +228,11 @@ def test_rota_has_a_long_range_sam_battery() -> None:
         for coalition in mission.coalition.values()
         for country in coalition.countries.values()
         for group in country.vehicle_group
-        if group.units[0].type in MizCampaignLoader.LONG_RANGE_SAM_UNIT_TYPES
+        if group.units[0].type in MizCampaignLoader.SHORT_RANGE_SAM_UNIT_TYPES
     }
     assert "Rota SAM Site" in names
-    assert _campaign()["ground_forces"]["Rota SAM Site"] == "HQ-22"
-    assert AirDefence.S_300PS_5P85C_ln.id in MizCampaignLoader.LONG_RANGE_SAM_UNIT_TYPES
+    assert _campaign()["ground_forces"]["Rota SAM Site"] == "HQ-7"
+    assert AirDefence.Strela_1_9P31.id in MizCampaignLoader.SHORT_RANGE_SAM_UNIT_TYPES
 
 
 def test_red_air_is_period_correct() -> None:
@@ -459,3 +461,55 @@ def test_the_raptor_has_an_authored_max_range() -> None:
         raptor.max_mission_range.meters > default_fallback_m
     ), "F-22A.yaml lost its max_range and fell back to the 150 NM default"
     assert raptor.max_mission_range >= eagle.max_mission_range
+
+
+def test_scattered_naval_groups_cannot_blanket_guam() -> None:
+    """Ship markers roll RANDOMLY among the faction's Navy presets.
+
+    ``generate_ships`` calls ``random_group_for_task(GroupTask.NAVY)`` and never
+    consults ``ground_forces``, so naval composition is set purely by which Navy
+    ForceGroups the faction registers -- pinning a ship marker does nothing.
+
+    That matters because the Type 055/052D reach **250 km** while Guam-to-Saipan is
+    only 205 km: register a heavy preset and every scattered surface group blankets
+    Andersen. Measured, that put 13 red sites over Guam or the carrier group on turn 1.
+    Only the inshore (frigate + light destroyer) preset is registered; the HHQ-9 hulls
+    still reach the fleet through the carrier and amphibious groups, which draw
+    straight from ``naval_units``.
+    """
+    import json
+
+    data = json.loads((FACTIONS / "china_2027.json").read_text(encoding="utf-8"))
+    navy_presets = [p for p in data["preset_groups"] if "Navy" in p]
+    assert navy_presets == ["Chinese Navy 2027 Escort"], (
+        "exactly one Navy preset may be registered -- ship markers pick at random, so a "
+        "second (heavy) preset makes every scattered group a coin flip over Guam"
+    )
+
+    preset = yaml.safe_load(
+        (FACTIONS.parent / "groups/Chinese-Navy-2027-Escort.yaml").read_text(
+            encoding="utf-8"
+        )
+    )
+    # The Destroyer slot must be filled by the preset. Leaving it empty makes
+    # `has_unit_for_layout_group` fill it from the roster -- whose destroyers are the
+    # 250 km hulls -- so a "light" group silently comes back out at 250 km.
+    assert "Type 052B Destroyer" in preset["units"]
+    for hull in ("[CH] Type 055 Destroyer", "[CH] Type 052D Destroyer"):
+        assert hull not in preset["units"], hull
+        assert hull in data["naval_units"], f"{hull} must stay available to the fleet"
+
+
+def test_no_land_sam_site_covers_guam() -> None:
+    """Rota is 75 km from Andersen; Tinian is 175 km.
+
+    Any long-range battery on Rota puts the airfield the player flies out of inside a
+    SAM envelope on turn 1 (an HQ-22 reaches 170 km). Rota therefore gets point defence
+    only, and the long-range anchor starts at Tinian where the HQ-22's ring stops just
+    short of Guam. The S-300PMU-2 (200 km) is deliberately not authored anywhere in the
+    corridor -- there is no site in it from which that ring misses Andersen.
+    """
+    pins = _campaign()["ground_forces"]
+    assert pins["Rota SAM Site"] == "HQ-7"
+    assert pins["Ground-1"] == "HQ-22"
+    assert "SA-20B/S-300PMU-2" not in pins.values()

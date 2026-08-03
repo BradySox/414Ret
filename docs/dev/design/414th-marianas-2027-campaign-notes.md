@@ -1,7 +1,7 @@
 # Marianas — Second Island Chain (2027)
 
 **Status:** BUILT + headless-verified 2026-08-02. CI-locked in
-`tests/fourteenth/test_marianas_2027.py` (21 tests). Needs an in-game pass —
+`tests/fourteenth/test_marianas_2027.py` (23 tests). Needs an in-game pass —
 checklist **T5**. NEW game required.
 
 The 414th's modern-day China campaign, and the answer to "can DCS's current maps host a
@@ -180,6 +180,70 @@ scenery-target checker.
 | Olf Orote (4) | AV-8B ×4 BAI |
 | CVN (Naval-1) | F/A-18E ×12 BARCAP · **F/A-18C ×12 BARCAP** · F/A-18F ×10 Anti-ship · F/A-18E ×8 SEAD · **EA-18G ×5 (VAQ-136)** · **F/A-18E Tanker ×4** · E-2D ×4 · SH-60B ×4 |
 | LHA (Naval-2) | AV-8B ×8 BAI · AH-64D ×6 CAS · UH-60A ×6 Transport |
+
+### Guam must not start under a SAM umbrella
+
+A DM screenshot of turn 1 showed Guam blanketed by overlapping red rings. Measured:
+**13 of 31 red sites covered Andersen or the carrier group.** Two of this campaign's own
+changes had compounded — an HQ-22 pinned on Rota, and 250 km hulls put in the corridor.
+
+The governing number is that **Guam→Saipan is 205 km while the HHQ-9 reaches 250 km**, so
+a modern PLAN group anywhere in the corridor covers Guam by construction. The fix is
+placement and composition, not capability:
+
+| | Before | After |
+|---|---|---|
+| Rota (**75 km** from Andersen) | HQ-22, 170 km ring | **HQ-7 point defence** (marker re-banded SHORT) |
+| Tinian (175 km) | S-300PMU-2, 200 km | **HQ-22, 170 km** — stops 5 km short of Guam |
+| Scattered ship markers | heavy preset, 250 km | **inshore preset only** (054A/054B + 052B) |
+
+**No land SAM site covers Guam any more**, and total coverage is down to **3 of 30** —
+all three being escorts of the two amphibious groups, which draw from `naval_units` and
+so still carry HHQ-9 hulls. Those are mobile and killable rather than a fixed wall, and
+an amphibious group having real air defence is correct; leaving them is deliberate.
+
+Third `ground_forces` rule, learned here: **naval groups cannot be pinned at all.**
+`generate_ships` calls `random_group_for_task(GroupTask.NAVY)` and never consults the
+block, so ship composition is set purely by *which Navy presets the faction registers* —
+and registering two makes every scattered group a coin flip. Exactly one is registered.
+
+Fourth: **a preset must fill every layout slot it wants to control.** A frigates-only
+escort preset leaves the Naval Group layout's Destroyer×2 slot empty,
+`has_unit_for_layout_group` fills it from the roster, and the roster's destroyers are the
+250 km hulls — so the "light" group came back out at 250 km. The Type 052B (30 km) is in
+the preset for that reason.
+
+### The PLAN fleet had to be rebuilt around the HHQ-9 shooters
+
+A DM look at the red ships found carrier groups screened by **Type 022 missile boats
+and Type 056A corvettes**. The cause is the stock preset: `Chinese-Navy.yaml` supplies
+Type 052C / 052B / 054A, and those satisfy the Naval Group layout's **Frigate ×2 /
+Destroyer ×2** slots outright — so `has_unit_for_layout_group` never fills from the
+faction roster and the CurrentHill **Type 055 and Type 052D never appear at all**,
+despite being the only Chinese hulls with a long-range area SAM.
+
+Measured air-defence reach:
+
+| Hull | Reach | | Hull | Reach |
+|---|---|---|---|---|
+| **Type 055** | **250 km** | | Type 054A | 45 km |
+| **Type 052D** | **250 km** | | Type 052B | 30 km |
+| Type 052C | 150 km | | Type 056A | **8 km** |
+| | | | Type 022 | **4 km** |
+
+So a task group could bottom out at 4 km of air defence. New preset
+`resources/groups/Chinese-Navy-2027.yaml` is built on Type 055 + Type 052D (Destroyer
+slot) and Type 054B + Type 054A (Frigate slot), and `China 2027` drops the littoral
+Type 022 / Type 056A and the superseded Type 052B from `naval_units` so they cannot be
+drafted as blue-water escorts at all. Every red hull now carries ≥45 km, with the
+HHQ-9 shooters at 250 km — a PLAN group is an area-denial problem to be rolled back,
+not flown around. `test_the_plan_fleet_is_built_on_long_range_sam_shooters` locks it.
+
+**Squadrons start full** (`squadron_start_full: true`). Come-as-you-are: the war opened
+with a missile salvo on Guam, and with no land front the player cannot trade time for
+mass. Note the key is **singular** — the Theater wizard page reads
+`s.get("squadron_start_full", ...)` even though its own field is `squadrons_start_full`,
+so a plural typo silently does nothing. Pinned by a test.
 
 ### The Raptor det, and the data gap it exposed
 

@@ -109,14 +109,13 @@ MISSILE_SITES: tuple[tuple[str, str], ...] = (
 # Rota was NEUTRAL in Repartee, so it carries no authored garrison at all -- which
 # would leave the red strike field nearest Guam (and its PLARF site) undefended.
 #
-# This is authored as a LONG-range marker, not a medium one, and that is load-bearing:
-# the campaign pins it to an **HQ-22**, and the HQ-22 preset declares `GroupTask.LORAD`.
-# `StartGenerator.get_unit_group_for_task` only honours a `ground_forces` override when
-# the preset's task matches the marker's band, so an HQ-22 pinned onto a medium marker
-# is silently discarded and the site rolls an SA-11 instead (measured). A long marker
-# also puts a genuine long-range battery on the red field nearest Guam, which is the
-# point.
-LONG_SAM_SITES: tuple[tuple[str, str], ...] = (("Rota SAM Site", "Rota Intl"),)
+# The band is SHORT, and that is load-bearing. Rota is only **75 km from Andersen**, so
+# any long-range battery sited here puts Guam inside a SAM envelope on turn 1 -- an
+# HQ-22 (170 km) covers the airfield with 95 km to spare. Rota gets point defence; the
+# long-range belt starts at Tinian, 175 km out. (The campaign pins this marker to HQ-7,
+# and `get_unit_group_for_task` only honours an override whose task matches the marker
+# band, so the band and the pin have to agree -- see the ground_forces block.)
+SHORT_SAM_SITES: tuple[tuple[str, str], ...] = (("Rota SAM Site", "Rota Intl"),)
 
 # ---------------------------------------------------------------------------
 # Naval laydown, in metres (x = north, y = east; Guam sits at the origin).
@@ -369,7 +368,7 @@ def main() -> None:
             )
 
     author(MISSILE_SITES, MissilesSS.Scud_B, "missile sites")
-    author(LONG_SAM_SITES, AirDefence.S_300PS_5P85C_ln, "long-range SAM sites")
+    author(SHORT_SAM_SITES, AirDefence.Strela_1_9P31, "point-defence SAM sites")
 
     _fob_to_red(mission)
     _reseat_naval(mission, theater, BLUE_NAVAL, "blue carrier group")

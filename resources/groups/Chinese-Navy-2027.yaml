@@ -1,0 +1,27 @@
+# The modern PLAN surface group.
+#
+# The stock `Chinese Navy` preset supplies Type 052C / 052B / 054A. Those satisfy the
+# Naval Group layout's Frigate and Destroyer slots outright, so `has_unit_for_layout_group`
+# never fills from the faction roster and the CurrentHill **Type 055 and Type 052D never
+# appear at all** -- which matters, because they are the only Chinese hulls carrying a
+# long-range area-defence SAM:
+#
+#   Type 055    250 km      Type 054A    45 km      Type 056A     8 km
+#   Type 052D   250 km      Type 052B    30 km      Type 022      4 km
+#   Type 052C   150 km
+#
+# A task group built from the stock preset tops out at 150 km and can bottom out at
+# 30 km. This one is built around the HHQ-9 shooters, so a PLAN group is a real
+# area-denial problem that has to be rolled back rather than flown around.
+name: Chinese Navy 2027
+tasks:
+  - Navy
+units:
+  # Destroyer slot -- the HHQ-9 shooters (both are class Destroyer in the unit data).
+  - "[CH] Type 055 Destroyer"
+  - "[CH] Type 052D Destroyer"
+  # Frigate slot -- HHQ-16 escorts.
+  - "[CH] Type 054B Frigate"
+  - Type 054A Frigate
+layouts:
+  - Naval Group

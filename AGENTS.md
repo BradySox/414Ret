@@ -199,7 +199,7 @@ file. This guide is the map; those are the territory.
     Air Assault and §76 C-130J paradrops are the capture mechanic); red fields no ambient convoys
     because no two red bases share an island. Headless-verified end-to-end (18 CPs — BLUE 6 /
     RED 13 — 110 TGOs/572 units, all 38 squadrons resolve, **164 blue vs 98 red**); CI-locked in
-    `tests/fourteenth/test_marianas_2027.py` (21 tests incl. standing parking-fit,
+    `tests/fourteenth/test_marianas_2027.py` (23 tests incl. standing parking-fit,
     tanker-compatibility, pin-band-match, no-sandwich, explicit-`size:` and
     mod-free-carrier-squadron invariants). **Enemy faction `China 2027`** =
     `china_2020.json` with the obsolete **HQ-2 dropped** and **SA-20/S-300PMU-1 +
@@ -227,7 +227,32 @@ file. This guide is the map; those are the territory.
     out of the PLAN carrier groups (108–157 NM) and everything north of Saipan; now an
     honest `max_range: 450` (fleet-wide data fix, upstream-carve candidate). Still
     wrong in that yaml and deliberately untouched: its radios are the **P-51's
-    SCR-522**, flagged by an in-tree comment and left for its own change; in-game pass = checklist **T5**, the riskiest bit being whether
+    SCR-522**, flagged by an in-tree comment and left for its own change.
+    **PLAN fleet rebuilt on the HHQ-9 shooters (DM finding):** carrier groups were being
+    screened by **Type 022 missile boats (4 km AD) and Type 056A corvettes (8 km)** while
+    the **Type 055 and Type 052D (250 km) never appeared at all** — the stock
+    `Chinese-Navy.yaml` preset supplies Type 052C/052B/054A, which satisfy the Naval Group
+    layout's Frigate×2/Destroyer×2 slots outright, so `has_unit_for_layout_group` never
+    fills from the faction roster. New preset `resources/groups/Chinese-Navy-2027.yaml`
+    (Type 055 + 052D + 054B + 054A) and `China 2027` drops the littoral 022/056A + the
+    superseded 052B from `naval_units`, so every red hull now carries ≥45 km AD.
+    **`squadron_start_full: true`** — note the key is **singular**; the Theater wizard page
+    reads `s.get("squadron_start_full", ...)` while its own field is `squadrons_start_full`,
+    so a plural typo silently does nothing (pinned by a test).
+    **Turn-1 SAM umbrella over Guam fixed (DM screenshot):** measured **13 of 31** red
+    sites covering Andersen or the CSG. Governing number: **Guam→Saipan is 205 km, HHQ-9
+    reaches 250 km**, so a modern PLAN group anywhere in the corridor covers Guam by
+    construction — Rota (**75 km out**) dropped from HQ-22 to **HQ-7 point defence**
+    (marker re-banded SHORT), Tinian's S-300PMU-2 → **HQ-22 (170 km, stops 5 km short)**,
+    and the scattered ship markers use an **inshore-only preset**. Now **3 of 30**, all
+    amphibious-group escorts (mobile/killable, deliberately kept). **Two more
+    `ground_forces` rules:** naval groups **cannot be pinned at all** (`generate_ships`
+    calls `random_group_for_task(GroupTask.NAVY)` and never reads the block — composition
+    comes from *which Navy presets the faction registers*, and registering two makes every
+    group a coin flip), and **a preset must fill every layout slot it wants to control**
+    (a frigates-only preset leaves Destroyer×2 empty, `has_unit_for_layout_group` fills it
+    from the roster, and the roster's destroyers are the 250 km hulls — so the "light"
+    group silently came back out at 250 km); in-game pass = checklist **T5**, the riskiest bit being whether
     a launcher scoots into the sea (the §49 radius is not landmap-checked). NEW game required
   - `414th-iraq-map-2928-notes.md` — **what DCS 2.9.28's Iraq map content unlocks** (design +
     authoring plan, no code/`.miz` edits yet; scoped 2026-07-26 off the 2.9.28.26283 changelog,

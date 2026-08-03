@@ -15,6 +15,14 @@ recommended_player_income_multiplier: 1.2
 recommended_enemy_income_multiplier: 0.8
 
 settings:
+  # Every squadron fields its full authored strength on turn 1. This is a come-as-you-
+  # are fight -- the war opened with a missile salvo on Guam, nobody spins up a training
+  # pipeline first -- and with no land front the player cannot trade time for mass.
+  # NOTE the key is `squadron_start_full` (singular), not the wizard's field name
+  # `squadrons_start_full`; the Theater page reads the singular form and a typo here
+  # silently does nothing.
+  squadron_start_full: true
+
   # -- Mod packs. Campaign settings re-seed the New Game "Mods" checkboxes
   # (QGeneratorSettings.update_settings), so these arrive ticked. The China pack is a
   # hard requirement -- without it the PLA ground/naval kit degrades to Soviet legacy
@@ -87,17 +95,22 @@ plugins:
 #   1. Overrides reach AUTHORED MARKERS ONLY. A base's own generated air defences roll
 #      from the faction roster and cannot be pinned -- which is why the faction itself
 #      had to be fixed. Pinning alone still let SA-2 and HQ-2 spawn as base defences.
-#   2. The preset's task must match the marker's band, or the override is silently
+#   2. NAVAL groups cannot be pinned at all -- `generate_ships` calls
+#      `random_group_for_task(GroupTask.NAVY)` and never looks at this block, so ship
+#      composition is controlled by which Navy presets the faction registers.
+#   3. The preset's task must match the marker's band, or the override is silently
 #      DISCARDED and the site rolls normally (StartGenerator.get_unit_group_for_task).
 ground_forces:
-  # Tinian: the long-range crown. China really does operate the S-300PMU-2, and from
-  # Tinian it ranges across the strait toward Guam -- the campaign's hardest SEAD
-  # problem, and the reason High Digit SAMs is required rather than optional.
-  Ground-1: SA-20B/S-300PMU-2
-  # Rota, the red field nearest Guam: an HQ-22, the PLA's own modern long-range SAM.
-  # Its marker is authored LONG for exactly this reason -- HQ-22 declares LORAD, so on
-  # a medium marker this pin would silently do nothing (measured).
-  Rota SAM Site: HQ-22
+  # Tinian: the long-range anchor, and the northern edge of what the player can be
+  # allowed to face on turn 1. Tinian is 175 km from Andersen and the HQ-22 reaches
+  # 170 km, so the envelope stops just short of Guam -- it dominates the Rota approach
+  # without putting the airfield itself under a SAM. (The S-300PMU-2 reaches 200 km:
+  # there is NO site in the Guam-Saipan corridor where it does not cover Andersen, so
+  # it is left to the northern bases' own defences rather than authored here.)
+  Ground-1: HQ-22
+  # Rota is 75 km from Andersen -- close enough that ANY long-range system here covers
+  # Guam. It gets point defence only; its marker is authored SHORT to match.
+  Rota SAM Site: HQ-7
   # Point defence on the occupied islands: HQ-7, the PLA's own short-range system.
   Ground-3: HQ-7
   Ground-7: HQ-7

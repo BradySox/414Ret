@@ -493,14 +493,23 @@ file. This guide is the map; those are the territory.
     new campaign being cheaper than the next turn, and the §29 SITREP explaining why turn 2
     matters only *after* you commit to turn 2. Scopes an additive express lane in four stages
     — S1 "Accept results & fly next" (chains the existing `process_debriefing` →
-    `pass_turn` → generate path), S2 the 3-sortie board (re-seat one flight via
-    `FlightMembers.set_pilot`; everything else stays AI), S3 the pre-turn hook card (§21 MIA
-    capture clocks, §75 victory progress, the COIN fuses/windows — all already-tracked state,
-    pulled *ahead* of the commitment), S4 the guardrails. Records what already exists so it
-    isn't rebuilt (`AutoAtoBehavior`, `auto_ato_player_missions_asap`, §43/§73 defaults) and
-    the honest risk: **speed is not motivation** — S1+S2 remove the reason to stop, only S3
-    supplies a reason to continue, so a one-stage ship should be S1+S3. Six open squadron
-    calls; smaller SP ATOs / victory-arc authoring / a pilot career page deliberately deferred),
+    `pass_turn` → generate path), S2 the **aircraft-first two-step board**, S3 the pre-turn
+    hook card (§21 MIA capture clocks, §75 victory progress, the COIN fuses/windows — all
+    already-tracked state, pulled *ahead* of the commitment), S4 the guardrails.
+    **DM spec 2026-08-03 — "I like to fly a lot of different aircraft":** the **airframe is
+    the primary axis**, chosen FIRST (the whole wing, not filtered by what the commander
+    fragged), and the package options are picked underneath it — a flat sortie list would
+    keep offering the same three Hornet sorties. That ordering **settles open call #1**
+    (offer-only vs. frag-for-you) as **both, laddered**: seat an existing flight of that type
+    → **join an existing package** (an extra section/escort, so it stays inside the
+    commander's plan — the rung that's easy to overlook) → frag a new package (last resort,
+    the only planner-touching rung; rungs 1–2 are a defensible v1). It also **revised the
+    note's own recommendation**: the first cut called S2 a pure speed feature and pitched
+    S1+S3, but for a variety-motivated player the airframe picker IS the pull into turn 2, so
+    **S1+S2 are the ship and S3 the amplifier**, with a "not flown yet this campaign" variety
+    read-out as the cheapest engagement win. Records what already exists so it isn't rebuilt
+    (`AutoAtoBehavior`, `auto_ato_player_missions_asap`, §43/§73 defaults); 7 open squadron
+    calls remain; smaller SP ATOs / victory-arc authoring / a pilot career page deferred),
     `414th-ui-redesign-directions.md` (**UI redesign — DECIDED 2026-07-25: 1 → 2**; D1 step 1
     LANDED. The DM dropped **D3** ("useless" — second-screen planning was its whole
     justification), confirmed **D2** as a *requirement* not a nicety ("we need to keep the map

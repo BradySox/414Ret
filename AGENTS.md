@@ -101,18 +101,24 @@ file. This guide is the map; those are the territory.
     recovery raid shelved). Supersedes the eight earlier CSAR/SCAR notes (each is bannered).
   - `414th-aircraft-task-rebalance-rubric.md` — aircraft task-priority rebalance rubric
   - `414th-red-tide-campaign-notes.md` — Red Tide campaign laydown + `.miz`/faction edits.
-    **🔒 FEATURE LOCK effective FRIDAY NIGHT 2026-07-17** (user correction 2026-07-12 — the
-    earlier "locked 2026-07-11" was the intent, not the date): until the Friday-night
-    regeneration (new build + a turn 1 processed from the M1 session JSON), new features and
-    Red Tide preseeds MAY land; from then on, no new features/laydown/balance (bug fixes +
-    in-game-pass verification + tuning-to-intended still OK); the banner atop that note is
-    the source of truth. **S-300 regiment restructure 2026-07-12 (landed pre-lock; recorded
-    at the time as a lock-override go-ahead):** the three rear S-300 hubs
+    **🔓 FEATURE LOCK LIFTED 2026-08-03 (DM call: "Red Tide feature lock is not existent").**
+    Red Tide takes new features/mechanics/content/laydown again **on the same terms as any
+    other campaign** — ordinary design + test + in-game-pass bar, no special permission gate;
+    **there is no longer a "Red Tide lock override" process** (the two earlier overrides stay
+    in the note as history, not precedent). Still true as engineering judgement, not as a
+    rule: it is a **shipped, flown, balanced** build with squadron history, so a
+    balance-re-skewing change owes a playtest, and a NEW-game requirement must be said
+    loudly. **Two deliberate exclusions survive the lift because they were SEPARATE calls,
+    not lock consequences** — the §71 F-4E pack stays un-preseeded (the DM's personal
+    option) and §57 minefields stay shelved fork-wide; the lift does not re-open either.
+    The banner atop that note is the source of truth (the original lock text is retained
+    there, collapsed, as history). **Historical — S-300 regiment restructure 2026-07-12
+    (landed pre-lock; recorded at the time as a lock-override go-ahead):** the three rear S-300 hubs
     (Sperenberg/Kastrup/Schönefeld) were restructured into **3-battalion regiments +
     shared EWR** (the reference implementation of the SAM-belt STANDARD) — single-radar battalions
     via the `Russia 1980 (Red Tide)` faction fork (§60 reverted for RT's S-300/SA-5 only; front
     legacy SAMs keep §60 doubling). NEW game required; tests in `test_red_tide_sam_regiments.py`.
-    **Lock-override #2 same day (user call off the roster era-audit):** the fork faction gained the
+    **Historical — lock-override #2 same day (user call off the roster era-audit):** the fork faction gained the
     **SA-15 Tor + SA-19 Tunguska** (era-correct '86/'82) so the regiments' point defense can actually
     intercept ARMs under the MANTIS SHORAD link (G30) — red's roster was otherwise IR-only SA-9/13 +
     the Osa, none of which DCS tasks against missiles. Roster otherwise audited era-clean vs July
@@ -516,12 +522,11 @@ file. This guide is the map; those are the territory.
     distinction that **additive** arrivals (new squadrons appear later; total force grows)
     do NOT invert "turn 1 is the best mission", only **deferred** ones do (existing turn-1
     squadrons held back; turn 1 deliberately weaker) — which makes the motivationally
-    correct flavour also a real balance change to an already-tuned campaign. **⚠️ Red Tide
-    is FEATURE-LOCKED and a schedule there is a new feature + laydown change + re-opened
-    balance pass all at once — it needs an EXPLICIT lock override (would be #3, after the
-    S-300 regiments and the SA-15/SA-19 roster), and it is the weak candidate on merits
-    anyway** (its Frankfurt wing already fields nine fixed-wing types on turn 1, so variety
-    isn't what it lacks). **ORDERING PRINCIPLE (DM call 2026-08-03): the schedule IS the air
+    correct flavour also a real balance change to an already-tuned campaign. **Red Tide's feature
+    lock was LIFTED 2026-08-03** (DM: "not existent"), so its schedule needs no override —
+    but it remains the weaker candidate on merits (its Frankfurt wing already fields nine
+    fixed-wing types on turn 1, so variety isn't what it lacks) and, as a shipped balanced
+    build, a deferred schedule there still owes a playtest. **ORDERING PRINCIPLE (DM call 2026-08-03): the schedule IS the air
     campaign — SEAD/DEAD before strike.** Turn 1 = the door-kickers (air superiority,
     SEAD/DEAD, and the enablers — AEW&C/tankers/ISR); later = the exploiters (strike, deep
     interdiction, heavy bombers). Strictly better than the note's first draft on three
@@ -2551,7 +2556,7 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     polls every 30 s after a 60 s grace (radius/cadence/grace are plugin options; plugin
     `defaultValue` ON so the setting is the only gate, the §36 lesson). Composes with culling
     (untouched, the far tier): sleep what you keep, cull what should never exist. Default **OFF**
-    until flown; NOT preseeded in Red Tide (feature-locked) — flip it for the next MP event. Tests
+    until flown; NOT preseeded in Red Tide — flip it for the next MP event (the RT lock lifted 2026-08-03; this stayed unpreseeded pending a fly, not because of the lock). Tests
     `tests/missiongenerator/test_aisleepluadata.py` + `tests/lua/test_aisleep_runtime.py` (the
     harness gained a `ControllerFake` + `aiOnOff` records + `fire_hit`).
     **AAA gun sites added 2026-07-19** (`perf_aaa_site_sleep`, default **OFF**,
@@ -2809,7 +2814,7 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     when `automate_runway_repair` delegated repairs, RED always; shows as its own Finances
     row; **(2) price-weighted ground-unit choice** (capability proxy — T-72s over gun trucks,
     still a weighted roll). Gated `adaptive_procurement` (Campaign Management → Commander
-    economy, default **ON**); NOT preseeded (Red Tide feature-locked). Tests
+    economy, default **ON**); NOT preseeded (pending a fly; the Red Tide lock lifted 2026-08-03). Tests
     `tests/fourteenth/test_adaptive_procurement.py`; features doc §68, checklist B20 — needs
     an in-game pass.
 69. **Cross-package SEAD-before-strike coordination** — packages were timed independently,

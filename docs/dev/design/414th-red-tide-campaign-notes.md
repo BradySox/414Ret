@@ -1,5 +1,30 @@
 # 414th Red Tide Campaign Notes
 
+> ## 🔓 FEATURE LOCK LIFTED — 2026-08-03 (DM call: *"Red Tide feature lock is not existent"*)
+>
+> **The feature lock below is NO LONGER IN FORCE.** Red Tide may take new features,
+> mechanics, content and laydown scope again, on the same terms as any other campaign — an
+> ordinary design + test + in-game-pass bar, not a special permission gate. There is no
+> longer any such thing as a "Red Tide lock override"; earlier overrides (#1 the S-300
+> regiment restructure, #2 the SA-15/SA-19 roster) stay in the record below as history of
+> what was done and why, not as precedent for a process that still exists.
+>
+> **What has NOT changed** — the reasons the lock was written are still good engineering
+> judgement, just no longer enforced as a rule:
+> - Red Tide is a **shipped, flown, balanced** build with squadron history behind it. A
+>   change that re-skews its balance still owes a playtest before it is called tuned.
+> - Its saves are live. A change requiring a NEW game still has to say so loudly.
+> - "Force one more system in late and break it" is still how it would get broken.
+>
+> Deliberate call-outs that survive the lift because they were **separate calls**, not lock
+> consequences: the §71 F-4E pack stays un-preseeded (the DM's personal option), and §57
+> minefields stay shelved fork-wide. Do not treat the lift as re-opening those.
+>
+> ---
+>
+> <details>
+> <summary>Historical: the original lock text (2026-07-17 → 2026-08-03)</summary>
+>
 > ## 🔒 FEATURE LOCK — Red Tide (effective FRIDAY NIGHT 2026-07-17; user correction 2026-07-12)
 >
 > **The lock takes effect Friday night 2026-07-17**, when the user regenerates the campaign
@@ -93,6 +118,8 @@
 > same as the app. A bad run is fully re-runnable — `--out-save` writes a new file and
 > nothing is consumed until M2. Keep the archive folder intact through the Friday
 > regeneration (and after — it is the season's historical record of M1).
+>
+> </details>
 
 Design and build notes for **Germany - Red Tide** (`resources/campaigns/red_tide.yaml`
 + `red_tide.miz`), the 414th's reworked GermanyCW scenario. Read this before editing the

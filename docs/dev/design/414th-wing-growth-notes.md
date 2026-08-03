@@ -194,26 +194,20 @@ balance change to an already-tuned campaign: the early turns get harder, and by 
 the capability that was withheld. Any schedule below is therefore a playtest proposal,
 not a tuning claim.
 
-### ⚠️ Red Tide is FEATURE-LOCKED — this needs an explicit override
+### Red Tide — the lock is gone (2026-08-03)
 
-`414th-red-tide-campaign-notes.md` carries a feature lock effective **Friday night
-2026-07-17**: *"Do NOT add new features, mechanics, content, or laydown scope to this
-campaign … NOT allowed without an explicit new user go-ahead that overrides this lock:
-adding a brand-new feature/plugin/setting to Red Tide, expanding the laydown, or
-re-opening the balance pass. If in doubt, ask the user before touching it."*
+`414th-red-tide-campaign-notes.md` carried a feature lock from 2026-07-17 that would have
+made a schedule here a new feature, a laydown change and a re-opened balance pass all at
+once. **The DM lifted it on 2026-08-03** — *"Red Tide feature lock is not existent"* — so
+Red Tide is authorable on the same terms as any other campaign and **no override is
+needed**. The note's banner records the lift and keeps the original lock text as history.
 
-A wing-growth schedule is all three at once — a new feature, a laydown change, and (in the
-deferred flavour) a re-opened balance pass. There are two recorded precedents for
-overriding the lock (the S-300 regiment restructure and the SA-15/SA-19 roster addition),
-both explicitly granted and both recorded as overrides at the time. **This one needs the
-same explicit call before any Red Tide edit**, and if granted it should be recorded as
-lock-override #3 in the Red Tide note.
-
-Red Tide is also the awkward candidate on the merits: its Frankfurt wing already fields
-nine fixed-wing types on turn 1 (F-16CM, F/A-18C, F-15C, F-14B, GAF JG 74, A-10C, F-15E,
-Mirage F1EE, C-130J) plus the Ramstein heavies. Variety is not what it lacks — so a
-schedule there would have to be the **deferred** flavour to mean anything, which is the
-maximum-balance-impact option on the fork's most carefully tuned campaign.
+What survives the lift is judgement, not process: Red Tide is a **shipped, flown, balanced**
+build with squadron history behind it, so a schedule that re-skews its opening still owes a
+playtest before anyone calls it tuned. And it remains the *weaker* of the two candidates on
+merits — its Frankfurt wing already fields nine fixed-wing types on turn 1, so variety is
+not what it lacks. Its value here is the **defensive** arc (below), which is a genuinely
+different shape from Baltic Fury's and worth having authored somewhere.
 
 ### The ordering principle — the schedule is the air campaign
 
@@ -265,7 +259,7 @@ Residual A/G capability during turns 1–6 is deliberate and sufficient: the F/A
 `secondary: air-to-ground`, and the A-10C/Apache set covers CAS. The player is not without
 bombs — they are without *deep* strike, which is the point.
 
-### Red Tide — defensive arc (contingent on the lock override)
+### Red Tide — defensive arc
 
 Red Tide opens the other way round: this is the Fulda Gap, blue is **holding**, and there
 is no door to kick on turn 1. So SEAD-then-strike is the wrong template — the arc is
@@ -282,16 +276,19 @@ in a defensive battle the A-10s and the attack helos are load-bearing from turn 
 | 6 | **414th TFS F-15E** (BAI) | **Counter-attack opens.** Deep interdiction of the second echelon is exactly the capability a stabilised front unlocks |
 | 8 | **20th BS B-52H** (Strike) | **The heavy stick**, once blue owns enough of the sky to fly it |
 
-**Still blocked on the lock.** Even in this gentler shape it is a laydown + balance change
-to a locked, shipped campaign, so it needs the explicit override described above. Recorded
-here so the design exists if and when that call is made — no Red Tide file is touched.
+**Unblocked, but still second in line.** With the lock lifted this is authorable whenever
+wanted. The sequencing below is now a *preference* (learn from the offensive arc first),
+not a permission gate — and note this defensive shape is the gentler of the two anyway,
+since it defers only the counter-offensive assets and never touches the CAS or rotary
+force the Gap fight needs from turn 1.
 
 ### Sequencing recommendation
 
 1. Build the feature (unauthored — no campaign changes ⇒ byte-identical everywhere).
 2. Author **Baltic Fury** first, as the pilot, and fly the opening turns.
-3. Only then decide whether Red Tide is worth a lock override — with real evidence about
-   how much a deferred schedule actually changes an opening.
+3. Then author **Red Tide**'s defensive arc, with real evidence from Baltic Fury about how
+   much a deferred schedule actually changes an opening. No permission gate — just the
+   playtest bar any shipped, balanced campaign deserves.
 
 ## Test plan
 

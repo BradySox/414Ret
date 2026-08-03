@@ -521,16 +521,32 @@ file. This guide is the map; those are the territory.
     balance pass all at once — it needs an EXPLICIT lock override (would be #3, after the
     S-300 regiments and the SA-15/SA-19 roster), and it is the weak candidate on merits
     anyway** (its Frankfurt wing already fields nine fixed-wing types on turn 1, so variety
-    isn't what it lacks). **Baltic Fury is the clean pilot**: no lock, and the real NATO
-    accession timeline hands over the schedule — Finland (Apr 2023) then Sweden (Mar 2024) —
-    so turn 3 **HavLLv 31** Finnish F/A-18C (closes blue's BARCAP hole: blue flies ZERO
-    BARCAP squadrons vs red's six; a full-fidelity module ⇒ a flyable new seat), turn 5
-    **F 17 Blekinge Wing** Gripen (blue's only dedicated DEAD outside the Growlers, vs an
-    11-site S-400/S-300 belt — the biggest capability unlock), turn 7 **34th BS B-1B**;
-    F-22A deliberately stays turn 1 (withholding the air-superiority backbone isn't a slope,
-    it's a different campaign). Load-bearing caveat: turns 1–4 with no BARCAP and no Gripen
-    DEAD may simply be too hard — hence the sequencing: build the feature unauthored, author
-    Baltic Fury as the pilot and fly it, THEN decide if Red Tide is worth the override),
+    isn't what it lacks). **ORDERING PRINCIPLE (DM call 2026-08-03): the schedule IS the air
+    campaign — SEAD/DEAD before strike.** Turn 1 = the door-kickers (air superiority,
+    SEAD/DEAD, and the enablers — AEW&C/tankers/ISR); later = the exploiters (strike, deep
+    interdiction, heavy bombers). Strictly better than the note's first draft on three
+    counts: arrivals feel **earned** (the B-1B on turn 7 is the consequence of six turns of
+    killing SAMs — the campaign teaches its own doctrine); it **fixes** the balance risk
+    instead of creating one (the first draft deferred the Gripen DEAD *against the belt* —
+    the scary deferral; deferring **strike** is safe by construction, since the early
+    campaign genuinely cannot use deep strike yet); and it settles additive-vs-deferred as
+    **deferred, with the right things deferred**. **Corollary: the arc depends on whether the
+    campaign opens offensively or defensively** — SEAD-then-strike is the *offensive* shape,
+    a back-foot campaign runs **hold → stabilise → counter-attack**; the two picked campaigns
+    are one of each. **Baltic Fury (offensive, the clean pilot)**: no lock, and accession
+    order and doctrinal order *agree* — T1 F-22A/F/A-18E TARCAP + EA-18G + every enabler +
+    the Hamburg CAS/rotary set (the land battle runs from turn 1); T3 **HavLLv 31** Finnish
+    F/A-18C BARCAP (first accession; closes blue's real hole — ZERO blue BARCAP squadrons vs
+    red's six; full-fidelity module ⇒ a flyable seat); T5 **F 17 Blekinge Wing** Gripen DEAD
+    (rollback opens; T1–4 deliberately Growler-thin — that's the pressure, not a gap); T7
+    **F-15E + F/A-18F Strike Rhinos**; T9 **34th BS B-1B** (deep strike last). Residual A/G
+    during T1–6 is deliberate and sufficient (F/A-18E `secondary: air-to-ground` + the
+    A-10C/Apache set) — the player lacks *deep* strike, not bombs. **Red Tide (defensive,
+    contingent on the override)**: the Fulda Gap has no door to kick, so the arc is hold →
+    stabilise → counter-attack and **CAS cannot be deferred** — T1 the air-superiority trio +
+    F-16CM DEAD + F/A-18C SEAD + enablers + A-10C + the whole Fulda rotary hub; T4 Mirage
+    F1EE; T6 F-15E BAI (counter-attack opens); T8 B-52H. Sequencing: build the feature
+    unauthored, author Baltic Fury and fly it, THEN decide on the override),
     `414th-single-player-loop-notes.md` (**SP Pilot Mode** — why SP campaigns die after turn 1
     while the 414th's MP campaigns finish: in MP you play a *pilot*, in SP you play the DM
     **and** the pilot, and the DM job has no fun in it. The stop point is reproducibly "accept

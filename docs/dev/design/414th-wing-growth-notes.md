@@ -215,28 +215,76 @@ Mirage F1EE, C-130J) plus the Ramstein heavies. Variety is not what it lacks —
 schedule there would have to be the **deferred** flavour to mean anything, which is the
 maximum-balance-impact option on the fork's most carefully tuned campaign.
 
-### Baltic Fury — the clean candidate
+### The ordering principle — the schedule is the air campaign
 
-No lock, a modern roster, and — unusually — **a real-world accession timeline that hands
-the schedule to us**. Finland joined NATO in April 2023, Sweden in March 2024, and the
-campaign already reasons about both in its own comments. Staggering the two coalition
-detachments is therefore era-honest, not arbitrary.
+**DM call 2026-08-03: order the schedule doctrinally — SEAD/DEAD before strike.** You roll
+the air-defence belt back first; the strike assets are worth having only once they can
+survive over the target. So the question "what starts on turn 1 and what arrives later" has
+a real answer instead of an arbitrary one:
 
-Proposed (deferred flavour, ordered by narrative *and* capability):
+> **Turn 1 = the door-kickers** (air superiority, SEAD/DEAD, and the enablers that make
+> them work — AEW&C, tankers, ISR). **Later = the exploiters** (strike, deep interdiction,
+> heavy bombers).
 
-| Turn | Arrival | Why this one |
+This is a strictly better design than the first draft of this section, on three counts:
+
+1. **It makes the arrivals feel earned.** The B-1B showing up on turn 7 is not a gift, it
+   is the consequence of the player having spent six turns killing SAMs. The campaign
+   *teaches* its own doctrine.
+2. **It fixes the balance risk instead of creating one.** The first draft deferred the
+   Gripen DEAD to turn 5, which meant holding back the belt-killer *against the belt* — the
+   scary deferral. Deferring **strike** instead is safe by construction: you do not need
+   deep strike before the SAMs are down, so the withheld capability is one the early
+   campaign genuinely cannot use yet.
+3. **It settles the additive-vs-deferred question.** Deferred — but with the *right things*
+   deferred. That distinction is the whole content of the call.
+
+**Corollary: the arc depends on whether the campaign opens offensively or defensively.**
+SEAD-then-strike is the shape of an *offensive* air campaign. A campaign that opens on the
+back foot has a different natural arc — **hold → stabilise → counter-attack** — and its
+arrivals should track *that*. The two picked campaigns happen to be one of each, which
+makes them a good pair to author.
+
+### Baltic Fury — offensive arc (the clean pilot)
+
+No lock, a modern roster, and a real-world accession timeline that supplies the coalition
+beats rather than inventing them: Finland joined NATO April 2023, Sweden March 2024, and
+the campaign already reasons about both in its own comments. Note the accession order and
+the doctrinal order **agree** here — Finland's Hornets are defensive counter-air, Sweden's
+Gripens are the DEAD rollback — so nothing has to be fudged.
+
+| Turn | Arrival | Phase / why |
 |---|---|---|
-| 1 | Core US wing — carrier (Rhinos / Growler / E-2D / tanker), Nordholz F-15E, Bremen E-3A + KC-135s, Hamburg A-10C / Apache / CH-47 / C-130 | The campaign as it opens today, minus the four below |
-| 3 | **HavLLv 31** — Finnish F/A-18C | Finland acceded first. Closes blue's BARCAP hole (blue flies **zero** BARCAP squadrons against red's six), so its arrival is felt immediately. A full-fidelity module ⇒ a **flyable** new seat |
-| 5 | **F 17 Blekinge Wing** — Swedish Gripen | Sweden acceded second. Blue's only dedicated DEAD unit outside the Growlers, against an 11-site S-400/S-300 belt — the single largest capability unlock in the campaign |
-| 7 | **34th BS** — B-1B | The heavy stick arrives once the belt is being rolled back. Thematically the escalation beat |
-| — | **F-22A** stays turn 1 | Deliberately *not* scheduled: it is the campaign's air-superiority backbone, and withholding it would not be a slope, it would be a different campaign |
+| 1 | **F-22A** (TARCAP) · **F/A-18E Rhinos** (TARCAP) · **EA-18G Growler** (SEAD escort) · **E-2D / E-3A / KC-135 ×2 / F/A-18E tanker** · Hamburg's **A-10C / Apache / CH-47 / C-130** | **Kick the door.** Air superiority, the one SEAD unit, every enabler. The ground-support set stays turn 1 because the land battle runs from turn 1 regardless |
+| 3 | **HavLLv 31** — Finnish F/A-18C (BARCAP) | **Defensive counter-air.** First accession, and it closes blue's real hole — blue flies **zero** BARCAP squadrons against red's six. Full-fidelity module ⇒ a flyable new seat |
+| 5 | **F 17 Blekinge Wing** — Swedish Gripen (DEAD) | **The rollback opens properly.** Blue's only dedicated DEAD outside the Growlers, against an 11-site S-400/S-300 belt. Turns 1–4 are deliberately Growler-thin, which is the *pressure*, not a gap |
+| 7 | **414th TFS F-15E** (Nordholz) · **414th Strike Rhinos F/A-18F** (carrier) | **Strike phase.** The belt is coming down; now the campaign can bomb properly |
+| 9 | **34th BS** — B-1B | **Deep strike last.** The most survivability-dependent asset arrives when it can actually survive |
 
-**The balance caveat is load-bearing:** turns 1–4 would run with no BARCAP squadron and no
-Gripen DEAD against six red BARCAP regiments and a dense SAM belt. That is a genuinely
-harder opening, and it may simply be too hard. It wants a playtest before it is called
-tuned — which is an argument for shipping the *feature* first, gated and unauthored, and
-authoring Baltic Fury's schedule as the first content pass afterwards.
+Residual A/G capability during turns 1–6 is deliberate and sufficient: the F/A-18E carries
+`secondary: air-to-ground`, and the A-10C/Apache set covers CAS. The player is not without
+bombs — they are without *deep* strike, which is the point.
+
+### Red Tide — defensive arc (contingent on the lock override)
+
+Red Tide opens the other way round: this is the Fulda Gap, blue is **holding**, and there
+is no door to kick on turn 1. So SEAD-then-strike is the wrong template — the arc is
+**hold the Gap → stabilise → counter-attack**, and what arrives later is the
+counter-offensive capability, not the strike package per se.
+
+That also explains why CAS cannot be deferred here the way deep strike can in Baltic Fury:
+in a defensive battle the A-10s and the attack helos are load-bearing from turn 1.
+
+| Turn | Arrival | Phase / why |
+|---|---|---|
+| 1 | **F-15C · F-14B · GAF JG 74** (air superiority) · **F-16CM DEAD · F/A-18C SEAD** · **E-3A / KC-135 ×2** · **A-10C** + the whole Fulda rotary hub · **C-130J** | **Hold.** Everything needed to contest the Gap and keep the SAM belt honest. A defensive campaign cannot defer its CAS |
+| 4 | **Ala 14 Mirage F1EE** (Escort) | **Stabilise.** A coalition reinforcement beat; adds escort depth as the counter-air fight grinds |
+| 6 | **414th TFS F-15E** (BAI) | **Counter-attack opens.** Deep interdiction of the second echelon is exactly the capability a stabilised front unlocks |
+| 8 | **20th BS B-52H** (Strike) | **The heavy stick**, once blue owns enough of the sky to fly it |
+
+**Still blocked on the lock.** Even in this gentler shape it is a laydown + balance change
+to a locked, shipped campaign, so it needs the explicit override described above. Recorded
+here so the design exists if and when that call is made — no Red Tide file is touched.
 
 ### Sequencing recommendation
 

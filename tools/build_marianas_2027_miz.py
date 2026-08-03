@@ -151,32 +151,37 @@ RED_NAVAL: dict[str, tuple[int, int]] = {
     "OPLHA-1": (95_000, 70_000),  # amphibious group off Rota
 }
 
-# The red screen, spread across the occupied waters instead of trailing north to 854 km.
-# Each pair sits with the control point or task group it screens.
+# The red screen. SIX groups, not eighteen.
+#
+# A flown mission produced 374 weapon launches in the opening five minutes because every
+# ship fires autonomously the moment a target is in range (`set_ship_engagement` spawns
+# them WeaponFree + alarm RED) and modern AShM out-range the whole theatre. The volume
+# driver was hull count: eighteen escort markers plus the carrier and amphibious groups
+# put **93 red hulls in 23 groups** at sea against blue's 15. A real fleet does not empty
+# its magazines in the first minute of a war, and a 20-turn campaign cannot sustain it.
+#
+# Six screens, spread down the chain, cut red to roughly a third of the hulls while still
+# giving every occupied island and each carrier group a covering escort.
 RED_ESCORTS: dict[str, tuple[int, int]] = {
     "Naval-16": (100_000, 20_000),  # Rota
-    "Naval-15": (60_000, 85_000),
     "Naval-13": (150_000, 55_000),  # Tinian
-    "Naval-14": (185_000, 60_000),
     "Naval-12": (200_000, 135_000),  # Saipan
-    "Naval-11": (160_000, 140_000),
     "Naval-10": (250_000, 175_000),  # with the NE carrier group
-    "Naval-9": (205_000, 235_000),
     "Naval-8": (300_000, 75_000),  # with the NW carrier group
-    "Naval-7": (265_000, 15_000),
-    "Naval-5": (230_000, 295_000),  # with the outer carrier group
     "Naval-19": (175_000, 250_000),
-    "Naval-20": (130_000, 145_000),  # with the amphibious groups
-    "Naval-21": (170_000, 155_000),
-    "Naval-22": (75_000, 95_000),
-    "Naval-23": (115_000, 40_000),
-    "Naval-24": (330_000, 140_000),  # screening FOB Anatahan
-    "Naval-26": (295_000, 125_000),
 }
 
 # A blue FOB 780 km behind red lines is what made the map read as a sandwich; the
 # northern chain is red depth, not a blue toehold.
 FOBS_TO_RED = ("FOB Uracus",)
+
+# Ship markers deleted outright from the source miz. Repartee authored 21 of them; each
+# one becomes a full naval group, and hull count is what drove the 374-launch opening
+# salvo. Only the six in RED_ESCORTS plus the three blue-screen markers survive.
+CULLED_SHIP_MARKERS = (
+    "Naval-5", "Naval-7", "Naval-9", "Naval-11", "Naval-14", "Naval-15",
+    "Naval-20", "Naval-21", "Naval-22", "Naval-23", "Naval-24", "Naval-26",
+)
 
 # Search parameters for _place_on_land, in metres. The minimum keeps a launcher off
 # the airfield it anchors to; the maximum keeps it on the same small island.
@@ -233,6 +238,20 @@ def _reseat_naval(
         print(
             f"  {name:<10} -> ({x/1000:7.0f}, {y/1000:7.0f}) km   moved {moved:5.0f} km"
         )
+
+
+def _cull_ship_markers(mission: Mission) -> None:
+    """Delete surplus ship markers -- every one generates a whole naval group."""
+    print()
+    print("culled ship markers:")
+    removed = 0
+    for coalition in mission.coalition.values():
+        for country in coalition.countries.values():
+            for group in list(country.ship_group):
+                if group.name in CULLED_SHIP_MARKERS:
+                    country.ship_group.remove(group)
+                    removed += 1
+    print(f"  removed {removed} of {len(CULLED_SHIP_MARKERS)} named markers")
 
 
 def _fob_to_red(mission: Mission) -> None:
@@ -370,6 +389,7 @@ def main() -> None:
     author(MISSILE_SITES, MissilesSS.Scud_B, "missile sites")
     author(SHORT_SAM_SITES, AirDefence.Strela_1_9P31, "point-defence SAM sites")
 
+    _cull_ship_markers(mission)
     _fob_to_red(mission)
     _reseat_naval(mission, theater, BLUE_NAVAL, "blue carrier group")
     _reseat_naval(mission, theater, BLUE_ESCORTS, "blue escort screen")

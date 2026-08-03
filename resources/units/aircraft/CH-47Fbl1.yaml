@@ -21,12 +21,19 @@ role: Transport
 variants:
   CH-47F Block I: {}
 radios:
+  # The Chinook carries three radios in pydcs' panel_radio: 1 is the VHF-FM set
+  # (presets 30-79 MHz), 2 is the UHF set (presets 250-305 MHz), 3 is the narrow
+  # FM homing radio. Inter-flight presets -- departure ATC, AWACS, JTAC, the
+  # package frequency, tankers, divert ATC -- are all allocated out of the
+  # 225-400 MHz UHF band (RadioRegistry.alloc_uhf), so they must land on radio
+  # 2. They were previously written to radio 1, which cannot tune any of them,
+  # while the UHF radio went unused.
   intra_flight: AN/ARC-186(V) FM
-  inter_flight: AN/ARC-186(V) FM
+  inter_flight: AN/ARC-164
   channels:
     type: common
     intra_flight_radio_index: 1
-    inter_flight_radio_index: 1
+    inter_flight_radio_index: 2
 tasks:
   Air Assault: 120
   Combat SAR: 85

@@ -8,15 +8,21 @@ which sets introduction_year=None. `Weapon.available_on` reads that as "always
 available", so those stores were ungated with no fallback.
 
 That is not academic: `resources/customized_payloads/F-22A.lua` frags
-{AIM-120D-3} in 12 fits AND {MAKO_A2A_C} in all six of the Raptor's
-"Retribution ..." fits, so every F-22A A2A sortie in the eleven campaigns that
-preseed the pack was carrying an ungated AIM-120D and two ungated hypersonic
-AAMs -- including Clash of the Titans, set in 2006.
+{AIM-120D-3} in 12 fits, so every F-22A A2A sortie in the eleven campaigns that
+preseed the pack was carrying an ungated AIM-120D -- including Clash of the
+Titans, set in 2006.
+
+The pack's payloads also put 2x Mako in all six of the Raptor's "Retribution
+..." fits. Per the DM's 2026-08-03 call, AIM-260A is blue's top-end air-to-air
+missile, so those stations now carry AIM-260A and nothing Retribution plans
+frags a hypersonic. Mako stays registered anyway -- it is still selectable in
+the payload editor, and an unregistered clsid is ungated in every era, so
+deleting the group would be a regression rather than a removal.
 
 These tests pin the registration itself, so a pack update that adds new pylon
-stores fails here rather than silently shipping another ungated missile, and
-pin the two ends of the Mako date call: gated out of the pre-2019 campaigns,
-kept in the two campaigns actually set in 2027.
+stores fails here rather than silently shipping another ungated missile; that
+no shipped fit frags Mako; and that the Raptor's real fit survives the 2027
+date gate in the two campaigns actually set in 2027.
 """
 
 from __future__ import annotations
@@ -96,14 +102,29 @@ def test_the_amraam_ladder_is_ordered() -> None:
         assert lower.introduction_year <= higher.introduction_year
 
 
-def test_the_raptor_keeps_its_shipped_fit_in_the_2027_campaigns() -> None:
-    """Registering Mako must not disarm a campaign that was built expecting it.
+def test_aim_260a_is_blues_top_end_and_mako_is_not_fragged() -> None:
+    """DM call 2026-08-03: AIM-260A is the ceiling; nothing plans a hypersonic.
 
-    Unlike the other stores added alongside it, Mako is in all six of the
-    F-22A's shipped Retribution fits, so its date is a live balance decision --
-    Baltic Fury (2027-07-17) and Marianas 2027 (2027-04-12) must still get it.
+    The F-22A pack's own payloads put 2x Mako in all six of the Raptor's
+    "Retribution ..." fits. Those stations carry AIM-260A instead, so no
+    generated loadout in any campaign frags {MAKO_A2A_C}.
     """
-    for clsid in ("{MAKO_A2A_C}", "{AIM-120D-3}", "{AIM-9XX}"):
+    for payload in Path("resources/customized_payloads").glob("*.lua"):
+        assert "MAKO" not in payload.read_text(
+            encoding="utf-8", errors="replace"
+        ), f"{payload.name} frags a hypersonic; AIM-260A is blue's top-end missile"
+
+    raptor = Path("resources/customized_payloads/F-22A.lua").read_text(encoding="utf-8")
+    assert raptor.count('"{AIM-260A}"') == 12  # 2 per fit across the six A2A fits
+
+
+def test_the_raptor_keeps_its_shipped_fit_in_the_2027_campaigns() -> None:
+    """The stores the Raptor actually frags must survive the 2027 date gate.
+
+    Baltic Fury (2027-07-17) and Marianas 2027 (2027-04-12) are the two
+    campaigns set in 2027, so registering these must not strip the fit.
+    """
+    for clsid in ("{AIM-260A}", "{AIM-120D-3}", "{AIM-9XX}"):
         weapon = Weapon.with_clsid(clsid)
         assert weapon is not None
         assert weapon.available_on(
@@ -111,10 +132,15 @@ def test_the_raptor_keeps_its_shipped_fit_in_the_2027_campaigns() -> None:
         ), f"{clsid} would be stripped from the Raptor's 2027 fit"
 
 
-def test_mako_is_gated_out_of_the_pre_2019_campaigns() -> None:
-    """Clash of the Titans (2006) fields the pack and was flying hypersonics."""
+def test_mako_stays_registered_so_a_hand_load_is_still_gated() -> None:
+    """Deleting the group is not neutral -- it would be ungated in every era.
+
+    The store is still selectable in the payload editor, so it must keep a
+    date even though nothing frags it. Clash of the Titans is 2006.
+    """
     weapon = Weapon.with_clsid("{MAKO_A2A_C}")
     assert weapon is not None
+    assert weapon.weapon_group.introduction_year is not None
     assert not weapon.available_on(
         datetime.date(2006, 1, 27), _NoOverrides()  # type: ignore[arg-type]
     )

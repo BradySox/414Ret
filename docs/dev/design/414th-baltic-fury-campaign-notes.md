@@ -236,12 +236,29 @@ preseeding the pack carried an ungated AIM-120D and two ungated hypersonic AAMs 
 Clash of the Titans, set in **2006**. Now dated and laddered (C 2018 → D 2019 → 260A 2026 →
 Mako 2027).
 
-**Mako's date was the one live balance call**, because unlike the others it is in the shipped
-fits: 2027 is deliberately late enough to sit after AIM-260A (Mako is the less mature of the two,
-unveiled 2024 with no IOC) and early enough that **Baltic Fury and Marianas 2027 keep the Raptor
-fit they ship with today** — registering it takes nothing away from a campaign built expecting
-it, while pre-2019 campaigns step down to a period-correct AMRAAM (2006 → AIM-120B, verified).
-Guarded by `tests/test_modern_amraam_weapons.py`, which pins both ends of that call.
+**AIM-260A is blue's top-end A2A missile — the Mako is cut (DM call 2026-08-03).** The pack's
+own payloads put 2× Mako in all six of the Raptor's `Retribution ...` fits; those two stations
+now carry **AIM-260A** instead (pylon-legal on stations 5 and 7 per the pack's own `Pylon5` /
+`Pylon7` classes), so nothing Retribution plans frags a hypersonic in any campaign.
+
+Mako stays **registered** rather than deleted, because deleting it is not neutral — the store is
+still selectable in the payload editor, and an unregistered clsid is ungated in *every* era, so
+dropping the file would put an ungated hypersonic back in a 2006 campaign the moment anyone
+hand-loaded it. It keeps its 2027 date (after AIM-260A, the less mature of the two) and is simply
+never auto-fragged. If the fork ever wants AIM-260A to be a ceiling even a hand-load can't beat,
+park Mako's year past every shipped campaign — do not delete the file.
+
+Verified end-to-end through the real `degrade_for_date` path on the Raptor's BARCAP fit:
+
+| Campaign | Date | Raptor carries |
+|---|---|---|
+| Clash of the Titans | 2006 | 2× AIM-9M + 6× AIM-120B |
+| Vegas Nerve | 2011 | 2× AIM-9M + 6× AIM-120B |
+| Noisy Cricket | 2019 | 2× AIM-9X + 6× AIM-120D |
+| **Baltic Fury / Marianas 2027** | 2027 | **2× AIM-9X + 4× AIM-120D + 2× AIM-260A** |
+
+Guarded by `tests/test_modern_amraam_weapons.py`, which pins that no shipped fit frags Mako, that
+the 2027 fit survives the date gate, and that Mako stays registered-and-gated.
 
 ---
 

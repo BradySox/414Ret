@@ -1,22 +1,26 @@
 # Mako multi-mission hypersonic missile, shipped by the F-22A pack, which types it
-# as an active-radar AAM ({MAKO_A2A_C}). Unlike the other stores registered
-# alongside it, this one is NOT payload-editor-only: all six of the Raptor's
-# "Retribution ..." fits carry 2x Mako, so it flies on every F-22A A2A sortie in
-# the eleven campaigns that preseed the pack.
+# as an active-radar AAM ({MAKO_A2A_C}).
 #
-# `year` is 2027 -- Mako was unveiled in 2024 as a company-funded design and has
-# no IOC to cite, so this is a judgement call, made deliberately conservative in
-# two directions at once. It sits AFTER AIM-260A (2026) because Mako is the less
-# mature of the two, keeping the ladder monotonic; and it is early enough that
-# the two campaigns actually set in 2027 (Baltic Fury, Marianas 2027) keep the
-# Raptor fit they ship with today, so registering it takes nothing away from a
-# campaign that was built expecting it. What it DOES fix is the pre-2019
-# campaigns that field the pack -- an unregistered clsid is treated as available
-# in every era, so Clash of the Titans (2006) was flying hypersonic AAMs. Those
-# now step down the ladder to a period-correct AMRAAM.
+# NOT IN ANY SHIPPED FIT, ON PURPOSE (DM call 2026-08-03): AIM-260A is blue's
+# top-end air-to-air missile in this fork. The pack's own payloads put 2x Mako in
+# all six of the Raptor's "Retribution ..." fits; those two stations now carry
+# AIM-260A instead (pylon-legal on stations 5 and 7 -- see the pack's Pylon5 /
+# Pylon7 classes), so nothing Retribution plans ever frags a hypersonic.
 #
-# Raise this if the fork ever wants a stricter 2027; the Raptors would then fall
-# back to AIM-260A, which is itself unfielded, so retune both together.
+# It stays REGISTERED rather than deleted because deleting it is not neutral: an
+# unregistered clsid falls through `WeaponGroup.register_unknown_weapons`, which
+# sets introduction_year=None, and `Weapon.available_on` reads that as "available
+# in every era with no fallback". Since the store is still selectable in the
+# payload editor, dropping this file would put an ungated hypersonic back in a
+# 2006 campaign the moment anyone hand-loaded it. Registered, it is gated like
+# everything else.
+#
+# `year` is 2027: Mako was unveiled in 2024 as a company-funded design and has no
+# IOC to cite, so this sits AFTER AIM-260A (2026) as the less mature of the two,
+# which keeps the ladder monotonic. The date is now only reachable by a deliberate
+# hand-load in a 2027+ campaign; if the fork ever wants AIM-260A to be an absolute
+# ceiling that even a hand-load cannot beat, park this year past every shipped
+# campaign instead of deleting the file.
 name: Mako
 year: 2027
 fallback: AIM-260A

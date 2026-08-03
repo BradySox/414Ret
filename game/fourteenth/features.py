@@ -647,6 +647,17 @@ FEATURES: tuple[Feature, ...] = (
         79,
         settings_fields=("decoy_zones", "decoy_zone_count"),
     ),
+    Feature(
+        # A layout slot generated one type of unit repeated N times, so every ship
+        # group put to sea as four copies of one hull. NavalLayout.mix_unit_types
+        # deals a type per slot around the lead hull, restricted to the lead's own
+        # unit family (layout.UNIT_FAMILIES) and capped at MAX_MIXED_UNIT_TYPES, and
+        # the carrier/LHA screens were widened to every surface combatant. Pure
+        # generation behavior — no setting, no plugin.
+        "mixed_hull_ship_groups",
+        "Mixed-hull ship groups",
+        80,
+    ),
     # Always-on engine plugins — major 414th machinery documented in design notes
     # rather than a numbered "Features at a Glance" entry.
     Feature("mantis_iads", "MANTIS IADS engine", plugin_id="mantisiads"),

@@ -134,6 +134,12 @@ Upstream hands you a map that already knows everything. Here you have to go look
   And coastal anti-ship batteries (Silkworm and the like) now fire on any enemy ship in
   range — a convoy that passes an enemy coast has to be escorted or the batteries
   suppressed, the Tanker War in miniature.
+- **Ship groups are task groups, not four copies of one hull.** A carrier screen generates as
+  a mix of whatever surface combatants the navy fields — Burkes, a Perry, a Ticonderoga —
+  instead of four identical destroyers, and the same goes for every naval objective on the
+  map. The mix stays sensible: a patrol boat never joins a cruiser's screen, submarines pair
+  with submarines, and a navy that only fields one hull of a class still gets a coherent
+  group. (New games only — the composition is decided when the campaign is generated.)
 - **Nation-specific voiceovers and pilot names per squadron** — a Greek squadron hears Greek
   and fills with Greek names, instead of one shared faction voice. The nation is yours to set:
   a **Country selector** in the Air Wing Configuration dialog (under Livery), and campaigns can

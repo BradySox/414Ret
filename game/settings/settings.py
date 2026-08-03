@@ -2026,20 +2026,22 @@ class Settings:
     )
 
     stock_attrition: bool = boolean_option(
-        "Squadrons run down their good stock as the campaign wears on",
+        "Mix old and new stock in loadouts",
         page=MISSION_GENERATION_PAGE,
         section="Loadouts",
-        default=False,
+        default=True,
         detail=(
             "Without this, every flight of the same aircraft and task carries a "
             "byte-identical loadout, so six BARCAP flights put up six identical "
             "magazines of the newest missile the campaign date allows. With it on, "
-            "each flight rolls for how deep into the old stock it is reaching and "
-            "steps that far down the weapon's own fallback ladder -- AIM-120C to "
-            "AIM-120B, and on a deep roll all the way to the Sparrows. The chance "
-            "climbs every turn (see the three settings below), so the opening turns "
-            "are well supplied and the late campaign is flown on what is left in the "
-            "bunker. Substitutions never leave the weapon's family and never touch "
+            "each weapon station rolls separately for how deep into the old stock it "
+            "is reaching and steps that far down that weapon's own fallback ladder, "
+            "so a Hornet that wants four long-range missiles can come out carrying a "
+            "couple of AIM-120s and a couple of Sparrows on the same jet -- and no "
+            "two flights are loaded quite alike. The chance also climbs every turn "
+            "(see the three settings below), so a long campaign is increasingly "
+            "flown on what is left in the bunker. Substitutions never leave the "
+            "weapon's family, never end up NEWER than what they replace, never touch "
             "pods, jammers or decoys, and a loadout you customised yourself is left "
             "exactly as you built it."
         ),
@@ -2049,13 +2051,16 @@ class Settings:
         "Chance of old stock on turn 1 (%)",
         page=MISSION_GENERATION_PAGE,
         section="Loadouts",
-        default=0,
+        default=20,
         min=0,
         max=100,
         enabled_when="stock_attrition",
         detail=(
-            "Where the campaign opens. Zero means turn 1 is fully supplied and every "
-            "flight carries the best available weapon."
+            "Where the campaign opens, rolled per weapon station. At the default 20% "
+            "roughly one station in five reaches for older stock from turn 1, so "
+            "magazines are mixed straight away rather than uniform. Zero means turn 1 "
+            "is fully supplied and every flight carries the best available weapon, "
+            "with variety only appearing as the campaign wears on."
         ),
     )
 

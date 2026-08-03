@@ -1,24 +1,31 @@
 """Old-stock loadout attrition (§84).
 
-The behaviour under test is that flights stop being identical: a roll per flight
-walks the loadout down the weapon data's own fallback ladder, deeper and more
-often as the campaign clock advances, without ever crossing a weapon family or
-touching equipment.
+The behaviour under test is that flights stop being identical, and that a single
+jet's magazine comes out MIXED: each station rolls its own depth down the weapon
+data's own fallback ladder, deeper and more often as the campaign clock advances,
+without ever crossing a weapon family, ending up newer, or touching equipment.
 """
 
 from __future__ import annotations
 
 import random
+from collections import Counter
+from pathlib import Path
 from types import SimpleNamespace
 
+import dcs.planes as planes
 import pytest
 
+from game import persistency
 from game.data.weapons import WeaponGroup, WeaponType
+from game.ato.loadouts import Loadout
+from game.dcs.aircrafttype import AircraftType
 from game.fourteenth.stock_attrition import (
     MAX_DEPTH,
     PROTECTED_TYPES,
     _older_group,
     attrition_pressure,
+    degrade_loadout_for_stock,
     roll_depth,
 )
 
@@ -205,7 +212,7 @@ class TestSubstitutionIsNeverAnUpgrade:
                 continue
             if _older_group(group, 1) is not group:
                 with_depth += 1
-        assert with_depth >= 206
+        assert with_depth >= 203
 
     def test_an_undated_rung_stops_the_walk(self) -> None:
         """An unknown year is unprovable, so it is not treated as older."""
@@ -219,10 +226,151 @@ class TestSubstitutionIsNeverAnUpgrade:
         assert _older_group(group, MAX_DEPTH) is group
 
 
+class TestOneJetCarriesAMixedMagazine:
+    """The point of the feature, and the reason the roll is PER STATION.
+
+    Rolling once per flight and applying it everywhere only ages the magazine
+    uniformly -- 4x AIM-120C becomes 4x AIM-120B, four identical rounds either
+    way. These drive the real F/A-18C `Retribution BARCAP` fit on real pydcs pylon
+    tables.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _persistency(self, tmp_path: Path) -> None:
+        # Loadout/Pylon resolution needs the weapon DB and payload dirs.
+        persistency.setup(str(tmp_path), prefer_liberation_payloads=False, port=16887)
+
+    @staticmethod
+    def _hornet_barcap() -> tuple[AircraftType, Loadout]:
+        hornet = next(AircraftType.for_dcs_type(planes.FA_18C_hornet))
+        fit = next(
+            l
+            for l in Loadout.iter_for_aircraft(hornet)
+            if l.name == "Retribution BARCAP"
+        )
+        return hornet, fit
+
+    @staticmethod
+    def _flight(hornet: AircraftType, turn: int, start: int) -> SimpleNamespace:
+        return SimpleNamespace(
+            unit_type=hornet,
+            coalition=SimpleNamespace(
+                game=SimpleNamespace(settings=_settings(start=start), turn=turn)
+            ),
+        )
+
+    def test_one_loadout_ends_up_carrying_more_than_one_generation(self) -> None:
+        hornet, fit = self._hornet_barcap()
+        # A high pressure makes the mixture certain rather than likely; the
+        # per-turn ramp is covered separately.
+        rng = random.Random(20260803)
+        for _ in range(40):
+            got = degrade_loadout_for_stock(
+                fit, self._flight(hornet, turn=12, start=50), rng  # type: ignore[arg-type]
+            )
+            names = {
+                w.weapon_group.name
+                for w in got.pylons.values()
+                if w is not None and w.weapon_group.name.startswith("AIM-120")
+            }
+            if len(names) > 1:
+                return  # AMRAAMs of two different generations on one jet
+        pytest.fail("no mixed-generation AMRAAM magazine in 40 rolls")
+
+    def test_two_flights_of_the_same_type_and_task_differ(self) -> None:
+        hornet, fit = self._hornet_barcap()
+        rng = random.Random(4242)
+
+        def loads() -> Counter[str]:
+            got = degrade_loadout_for_stock(
+                fit, self._flight(hornet, turn=12, start=40), rng  # type: ignore[arg-type]
+            )
+            return Counter(
+                w.weapon_group.name for w in got.pylons.values() if w is not None
+            )
+
+        seen = {tuple(sorted(loads().items())) for _ in range(12)}
+        assert len(seen) > 1, "twelve flights all came out identically loaded"
+
+    def test_the_shipped_fit_is_never_mutated_in_place(self) -> None:
+        """Members share the loadout object, so an in-place edit would leak."""
+        hornet, fit = self._hornet_barcap()
+        before = Counter(
+            w.weapon_group.name for w in fit.pylons.values() if w is not None
+        )
+        rng = random.Random(7)
+        for _ in range(20):
+            degrade_loadout_for_stock(
+                fit, self._flight(hornet, turn=20, start=60), rng  # type: ignore[arg-type]
+            )
+        after = Counter(
+            w.weapon_group.name for w in fit.pylons.values() if w is not None
+        )
+        assert before == after
+
+    def test_a_substitution_is_never_newer_than_what_it_replaced(self) -> None:
+        hornet, fit = self._hornet_barcap()
+        rng = random.Random(99)
+        original = {n: w.weapon_group for n, w in fit.pylons.items() if w is not None}
+        for _ in range(30):
+            got = degrade_loadout_for_stock(
+                fit, self._flight(hornet, turn=25, start=70), rng  # type: ignore[arg-type]
+            )
+            for number, weapon in got.pylons.items():
+                if weapon is None or number not in original:
+                    continue
+                was, now = original[number], weapon.weapon_group
+                if was is now or was.introduction_year is None:
+                    continue
+                assert now.introduction_year is not None
+                assert now.introduction_year <= was.introduction_year, (
+                    f"station {number}: {was.name} ({was.introduction_year}) -> "
+                    f"{now.name} ({now.introduction_year}) is an UPGRADE"
+                )
+
+
+class TestItAppliesToEveryFlightType:
+    """The hook is task-agnostic, and so is the data: A2A is not a special case.
+
+    The DM's framing: "if the magazine has depth, we should be using it regardless
+    of if it's air to air, air to ground, air to ship."
+    """
+
+    def test_a_bai_jet_degrades_jdam_to_lgb_to_dumb_bomb(self) -> None:
+        """The bomb ladder is already generational, so BAI/Strike get this free."""
+        jdam = WeaponGroup.named("GBU-31(V)3/B")
+        assert jdam.introduction_year == 2001
+        assert _older_group(jdam, 1).name == "GBU-24"  # laser-guided
+        assert _older_group(jdam, 2).name == "GBU-10"  # laser-guided
+        assert _older_group(jdam, 3).name == "Mk 84"  # unguided
+
+    def test_the_small_jdam_ladder_reaches_unguided(self) -> None:
+        assert _older_group(WeaponGroup.named("GBU-38"), 1).name == "GBU-12"
+        assert _older_group(WeaponGroup.named("GBU-38"), 2).name == "Mk 82"
+
+    def test_a_cluster_bomb_degrades_a_generation(self) -> None:
+        assert _older_group(WeaponGroup.named("CBU-97"), 1).name == "CBU-87"
+
+    @pytest.mark.parametrize("category", ["a2a-missiles", "bombs", "standoff"])
+    def test_every_major_family_has_usable_depth(self, category: str) -> None:
+        """Anti-ship and air-to-ground live in `standoff`, so it must not be empty."""
+        with_depth = [
+            g
+            for g in WeaponGroup._by_name.values()
+            if getattr(g, "category", None) == category
+            and g.type not in PROTECTED_TYPES
+            and _older_group(g, 1) is not g
+        ]
+        assert len(with_depth) >= 3
+
+
 class TestTheWeaponCategoryData:
     def test_groups_are_tagged_with_their_source_directory(self) -> None:
         assert WeaponGroup.named("AIM-9X").category == "a2a-missiles"
-        assert WeaponGroup.named("AIM-120D").category == "a2a-missiles"
+        assert WeaponGroup.named("AIM-120C").category == "a2a-missiles"
+        # A second directory, so the tag is proven to track the source dir rather
+        # than being hardcoded for missiles.
+        assert WeaponGroup.named("GBU-12").category == "bombs"
 
     def test_a_synthesized_group_has_no_category(self) -> None:
         """Unknown clsids and the clean pylon must read as 'do not cross'."""

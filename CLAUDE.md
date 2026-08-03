@@ -3497,16 +3497,31 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     and returns the **first** payload that validates, with zero randomness anywhere in the
     path, so six BARCAP flights put up six identical magazines of the newest missile the
     date allows. `degrade_loadout_for_stock` (`game/fourteenth/stock_attrition.py`) rolls a
-    depth **per flight** and walks the loadout that far down **the fallback ladder the
+    depth **per weapon station** and walks that station down **the fallback ladder the
     weapon data already declares** — so "old stock" needs no new data: AIM-120C → AIM-120B →
-    **AIM-7MH** is the ladder, and a deep roll is what breaks out the Sparrows. Hooked at the
+    **AIM-7MH** is the ladder, and a deep roll is what breaks out the Sparrows.
+    **Per STATION, not per flight, and that is the whole point** (DM call 2026-08-03 —
+    "what I'm looking for is mixing and matching on the same flight"): one roll for the
+    whole aircraft only ages the magazine *uniformly*, turning 4× AIM-120C into
+    4× AIM-120B — four identical rounds either way. Rolling each station means a Hornet
+    that wants four long-range missiles comes out with **a couple of AMRAAMs and a couple
+    of Sparrows on the same jet**, which is what loading out of a picked-over bunker looks
+    like. **It is not an A2A feature** — the hook is task-agnostic and so is the data, so
+    BAI/Strike get the generational bomb ladder for free
+    (`GBU-31(V)3/B` 2001 → `GBU-24` 1986 → `GBU-10` 1976 → `Mk 84` 1955 — JDAM to LGB to
+    dumb bomb; `GBU-38` → `GBU-12` → `Mk 82`; `CBU-97` → `CBU-87`), and **68 % of all
+    non-protected weapon groups have usable depth** (a2a-missiles 80 %, bombs 79 %,
+    standoff — A2G + anti-ship — 58 %). Hooked at the
     only two planning sites (`FlightMembers.from_roster` / `resize`), where the result is
     stored on the members and pickled, so **the roll is stable across re-generation** with no
-    seeding needed; growing a flight clones what it already carries, so the roll is per
-    flight, not per jet. **Pressure scales with the campaign clock** —
+    seeding needed; growing a flight clones what it already carries, so the mixture is the
+    flight's, not per jet (jet-to-jet variation would need per-member loadouts). **Pressure
+    scales with the campaign clock** —
     `stock_attrition_start` at turn 1, `+stock_attrition_per_turn` each turn, capped at
-    `stock_attrition_max` (0 / 4 / 50 %) — and **depth is geometric in that pressure**, so
-    one rung is common, three is rare, and both get likelier as the war drags. **Three
+    `stock_attrition_max` (**20** / 4 / 50 %) — and **depth is geometric in that pressure**, so
+    one rung is common, three is rare, and both get likelier as the war drags. The 20 %
+    baseline is deliberate: a 0 % start (the first cut's default) leaves turn 1 uniformly
+    best-equipped, which is exactly the case the feature exists to fix. **Three
     guards, one of them load-bearing:** `WeaponType` **cannot** express a weapon family (a
     Sidewinder and a JDAM are both `UNKNOWN`), and several fallbacks cross families *on
     purpose* — `AN/ASQ-228 ATFLIR → AIM-120C`, `AN/ALQ-131 ECM → 2xAIM-120C`,
@@ -3531,11 +3546,19 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     across all 306 groups × depths 0–3 while the headline
     `AIM-120C → AIM-120B → AIM-7MH → AIM-7M` Sparrow break-out is untouched. Date gating
     still runs afterwards, so a substitution can never be newer than the campaign allows —
-    but that is a *ceiling*, not the ordering guarantee. Gated `stock_attrition` (414th
-    Features → Auto-planner behaviour, default **OFF**); OFF or turn 1 at the default 0 %
-    start returns the original loadout object untouched. Tests
-    `tests/fourteenth/test_stock_attrition.py` (25, incl. a repo-wide
-    never-an-upgrade invariant over every group); features doc §84, checklist B42 — needs
+    but that is a *ceiling*, not the ordering guarantee. A newer rung is also **hopped, not
+    treated as the end of the ladder**, which is what recovers the rung actually wanted
+    (`2xAIM-120B` → ~~AIM-120C~~ → **AIM-120B**, the single rail of the same generation:
+    fewer missiles, not newer ones; `AGM-65E` → **AGM-65B**) — worth +15 groups of usable
+    depth, 191 → 206, spread across a2a **and** standoff **and** bombs. Gated
+    `stock_attrition` (414th Features → Auto-planner behaviour, default **ON** — DM call
+    2026-08-03, "it's the behaviour I asked for"; OFF returns the original loadout object
+    untouched and is byte-identical). Tests
+    `tests/fourteenth/test_stock_attrition.py` (36 — a repo-wide never-an-upgrade invariant
+    over every group, the JDAM→LGB→dumb-bomb ladder, and four that drive the real F/A-18C
+    `Retribution BARCAP` fit on real pydcs pylon tables to prove one jet ends up mixed, that
+    twelve flights are not identical, and that the shipped fit is never mutated in place);
+    features doc §84, checklist B42 — needs
     an in-game pass.
 
 ---

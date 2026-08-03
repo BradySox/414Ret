@@ -7,10 +7,17 @@ put up six identical magazines of the newest missile the campaign date allows,
 which is not how a war goes -- squadrons burn the good stock first and the tail
 of the campaign is flown on whatever is left in the bunker.
 
-This walks a flight's loadout DOWN the fallback ladder the weapon data already
-declares, by a depth rolled per flight. The ladder is the generational one
-(AIM-120C -> AIM-120B -> AIM-7MH -> AIM-7M ...), so "old stock" needs no new
+This walks a loadout DOWN the fallback ladder the weapon data already declares,
+**rolling a depth for each station separately**. The ladder is the generational
+one (AIM-120C -> AIM-120B -> AIM-7MH -> AIM-7M ...), so "old stock" needs no new
 data: a deep roll is what breaks out the Sparrows.
+
+Per *station* is the whole point. One roll for the whole aircraft only ages the
+magazine uniformly -- 4x AIM-120C becomes 4x AIM-120B, four identical rounds
+either way. Rolling each station means a Hornet that wants four long-range
+missiles comes out with **a couple of AMRAAMs and a couple of Sparrows on the
+same jet**, which is what a squadron loading out of a picked-over bunker looks
+like.
 
 Three things keep it honest:
 
@@ -173,11 +180,22 @@ def degrade_loadout_for_stock(
     flight: Flight,
     rng: Optional[random.Random] = None,
 ) -> Loadout:
-    """Return `loadout` aged by a per-flight roll, or the original untouched.
+    """Return `loadout` with a mixed magazine, or the original untouched.
 
-    Guarded at every step: the feature off, a custom loadout, a turn-1 zero
-    pressure, a depth roll of 0, or a loadout with nothing substitutable all
-    return the input object unchanged.
+    **The roll is PER PYLON, not per flight.** Rolling once and applying it to
+    every station just ages the whole magazine uniformly -- a Hornet's 4x
+    AIM-120C becomes 4x AIM-120B, which is still four identical rounds of
+    whatever generation. What a squadron actually hangs on a jet is what the
+    bunker has: some of the good stuff and some of the old, on the same aircraft.
+    So each station rolls its own depth, and a 4-AMRAAM Hornet comes out carrying
+    a couple of AIM-120s and a couple of Sparrows.
+
+    Every jet in the flight shares this loadout object, so the mixture is the
+    flight's -- a flight loads the same way, and jet-to-jet variation would need
+    per-member loadouts.
+
+    Guarded at every step: the feature off, a custom loadout, zero pressure, or a
+    loadout with nothing substitutable all return the input object unchanged.
     """
     try:
         game = flight.coalition.game
@@ -194,15 +212,16 @@ def degrade_loadout_for_stock(
     if pressure <= 0:
         return loadout
 
-    depth = roll_depth(pressure, rng)
-    if depth <= 0:
-        return loadout
-
     unit_type = flight.unit_type
     new_pylons = dict(loadout.pylons)
-    substituted = False
+    depths: list[int] = []
     for number, weapon in loadout.pylons.items():
         if weapon is None:
+            continue
+        # Each station reaches into the bunker on its own, which is what puts
+        # AMRAAMs and Sparrows on the same jet.
+        depth = roll_depth(pressure, rng)
+        if depth <= 0:
             continue
         try:
             pylon = Pylon.for_aircraft(unit_type, number)
@@ -211,16 +230,19 @@ def degrade_loadout_for_stock(
         older = _substitute(weapon, pylon, depth)
         if older is not None:
             new_pylons[number] = older
-            substituted = True
+            depths.append(depth)
 
-    if not substituted:
+    if not depths:
         return loadout
 
     logging.debug(
-        "Stock attrition: %s %s aged %d rung(s) at turn %d (pressure %.2f)",
+        "Stock attrition: %s %s -- %d of %d stations aged (deepest %d rung(s)) "
+        "at turn %d (pressure %.2f)",
         flight.unit_type.dcs_unit_type.id,
         loadout.name,
-        depth,
+        len(depths),
+        len(loadout.pylons),
+        max(depths),
         game.turn,
         pressure,
     )

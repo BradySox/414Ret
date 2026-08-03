@@ -7959,23 +7959,51 @@ squadrons burn the good stock first and the tail of a campaign is flown on whate
 in the bunker.
 
 **The mechanism.** `degrade_loadout_for_stock` (`game/fourteenth/stock_attrition.py`) rolls a
-depth **per flight** and walks the loadout that far down **the fallback ladder the weapon
-data already declares**. That is the whole trick — "old stock" needs no new data, because the
-ladder is already the generational one:
+depth **for each weapon station separately** and walks that station down **the fallback ladder
+the weapon data already declares**. That is the whole trick — "old stock" needs no new data,
+because the ladder is already the generational one:
 
     AIM-120C → AIM-120B → AIM-7MH → AIM-7M → AIM-7F → ...
 
 so a deep roll is literally what breaks out the Sparrows.
 
+**Per station, not per flight — this is the point of the feature.** (DM call 2026-08-03:
+*"what I'm looking for is mixing and matching on the same flight."*) One roll applied to the
+whole aircraft only ages the magazine **uniformly**: 4× AIM-120C becomes 4× AIM-120B, which is
+four identical rounds either way — a different uniform load, not a mixed one. Rolling each
+station means a Hornet that wants four long-range missiles comes out carrying **a couple of
+AMRAAMs and a couple of Sparrows on the same jet**. Measured on the real `Retribution BARCAP`
+fit at the 20 % baseline, one flight came out with `2xAIM-120B` + `2xAIM-120C` + `AIM-120C` +
+`AIM-120B` and mixed AIM-9M/9X; at turn 12 another carried an `AIM-7MH` alongside its AMRAAMs.
+
+**It is not an air-to-air feature.** The hook is task-agnostic (it runs for every flight
+regardless of task) and so is the weapon data, so BAI/Strike/anti-ship inherit the same
+behaviour with no extra work — the guided-bomb ladder is generational too:
+
+    GBU-31(V)3/B (2001) → GBU-24 (1986) → GBU-10 (1976) → Mk 84 (1955)
+    GBU-38 (2002)       → GBU-12 (1976) → Mk 82 (1955)
+    CBU-97 (1992)       → CBU-87 (1986) → Mk 82 (1955)
+
+i.e. **JDAM → LGB → dumb bomb**. Depth is available on **68 %** of all non-protected weapon
+groups: `a2a-missiles` 80 %, `bombs` 79 %, `standoff` (air-to-ground + anti-ship) 58 %,
+`rockets` 33 %, `pods` 0 % (deliberately protected). A per-category test asserts every major
+family keeps usable depth so a future guard cannot quietly narrow it to A2A only.
+
 **Where it hooks.** The only two planning sites, `FlightMembers.from_roster` and
 `FlightMembers.resize` (`game/ato/flightmembers.py`). The result is stored on the members and
 pickled, so **the roll is stable across re-generation** — no deterministic seeding needed,
 unlike §3 concealment. `resize` clones `self.members[0].loadout` when growing an existing
-flight, so every jet in a flight matches: the roll is per *flight*, not per jet.
+flight, and all members share the one loadout object, so the mixture is the *flight's* — a
+flight loads the same way. Jet-to-jet variation within a flight would need per-member loadouts
+and is deliberately not done.
 
 **Scaling with the campaign clock.** `attrition_pressure` reads
 `stock_attrition_start` at turn 1 and adds `stock_attrition_per_turn` each turn, capped at
-`stock_attrition_max` (defaults 0 % / 4 % / 50 %). `roll_depth` is **geometric in that
+`stock_attrition_max` (defaults **20 %** / 4 % / 50 %). The non-zero baseline matters: the
+first cut defaulted `start` to 0, which leaves turn 1 uniformly best-equipped — precisely the
+case the feature exists to fix — so "a mixture" only appeared around turn 7. At 20 % per
+station, magazines are mixed from turn 1 and the climb deepens them later. `roll_depth` is
+**geometric in that
 pressure** — each further rung needs another hit — so one rung down is common, three is rare,
 and both get likelier as the war drags. Note the top bucket is truncated at `MAX_DEPTH` (3),
 so `P(MAX_DEPTH) = p**MAX_DEPTH`; at exactly p = 0.5 that equals the bucket below it, which
@@ -8030,7 +8058,7 @@ date gating running afterwards is a *ceiling* ("never newer than the campaign al
 not the same claim and does not by itself prevent an upgrade. Every guard returns the
 **original loadout object**, so OFF is byte-identical.
 
-**Settings.** `stock_attrition` (414th Features → Auto-planner behaviour, default **OFF**)
+**Settings.** `stock_attrition` (414th Features → Auto-planner behaviour, default **ON** — DM call 2026-08-03, "it's the behaviour I asked for"; OFF is byte-identical)
 plus `stock_attrition_start` / `stock_attrition_per_turn` / `stock_attrition_max` (Mission
 Generation → Loadouts, `enabled_when=stock_attrition`).
 
@@ -8038,7 +8066,7 @@ Generation → Loadouts, `enabled_when=stock_attrition`).
 flights identical; turn 12 one flight on AIM-7MH + AIM-9L; turn 25 three of six on old stock
 (AIM-120B, AIM-7M, AIM-9L/9M) — with `AN/ASQ-228 ATFLIR` untouched in every case.
 
-Tests: `tests/fourteenth/test_stock_attrition.py` (25, incl. a repo-wide never-an-upgrade invariant). Checklist: **B42**.
+Tests: `tests/fourteenth/test_stock_attrition.py` (36 — the repo-wide never-an-upgrade invariant, the JDAM→LGB→dumb-bomb ladder, per-family depth floors, and four that drive the real F/A-18C `Retribution BARCAP` fit on real pydcs pylon tables: one jet ends up mixed, twelve flights are not identical, the shipped fit is never mutated in place, and no station is ever upgraded). Checklist: **B42**.
 
 
 ## Code audit fixes — 2026-07-07

@@ -101,18 +101,24 @@ file. This guide is the map; those are the territory.
     recovery raid shelved). Supersedes the eight earlier CSAR/SCAR notes (each is bannered).
   - `414th-aircraft-task-rebalance-rubric.md` — aircraft task-priority rebalance rubric
   - `414th-red-tide-campaign-notes.md` — Red Tide campaign laydown + `.miz`/faction edits.
-    **🔒 FEATURE LOCK effective FRIDAY NIGHT 2026-07-17** (user correction 2026-07-12 — the
-    earlier "locked 2026-07-11" was the intent, not the date): until the Friday-night
-    regeneration (new build + a turn 1 processed from the M1 session JSON), new features and
-    Red Tide preseeds MAY land; from then on, no new features/laydown/balance (bug fixes +
-    in-game-pass verification + tuning-to-intended still OK); the banner atop that note is
-    the source of truth. **S-300 regiment restructure 2026-07-12 (landed pre-lock; recorded
-    at the time as a lock-override go-ahead):** the three rear S-300 hubs
+    **🔓 FEATURE LOCK LIFTED 2026-08-03 (DM call: "Red Tide feature lock is not existent").**
+    Red Tide takes new features/mechanics/content/laydown again **on the same terms as any
+    other campaign** — ordinary design + test + in-game-pass bar, no special permission gate;
+    **there is no longer a "Red Tide lock override" process** (the two earlier overrides stay
+    in the note as history, not precedent). Still true as engineering judgement, not as a
+    rule: it is a **shipped, flown, balanced** build with squadron history, so a
+    balance-re-skewing change owes a playtest, and a NEW-game requirement must be said
+    loudly. **Two deliberate exclusions survive the lift because they were SEPARATE calls,
+    not lock consequences** — the §71 F-4E pack stays un-preseeded (the DM's personal
+    option) and §57 minefields stay shelved fork-wide; the lift does not re-open either.
+    The banner atop that note is the source of truth (the original lock text is retained
+    there, collapsed, as history). **Historical — S-300 regiment restructure 2026-07-12
+    (landed pre-lock; recorded at the time as a lock-override go-ahead):** the three rear S-300 hubs
     (Sperenberg/Kastrup/Schönefeld) were restructured into **3-battalion regiments +
     shared EWR** (the reference implementation of the SAM-belt STANDARD) — single-radar battalions
     via the `Russia 1980 (Red Tide)` faction fork (§60 reverted for RT's S-300/SA-5 only; front
     legacy SAMs keep §60 doubling). NEW game required; tests in `test_red_tide_sam_regiments.py`.
-    **Lock-override #2 same day (user call off the roster era-audit):** the fork faction gained the
+    **Historical — lock-override #2 same day (user call off the roster era-audit):** the fork faction gained the
     **SA-15 Tor + SA-19 Tunguska** (era-correct '86/'82) so the regiments' point defense can actually
     intercept ARMs under the MANTIS SHORAD link (G30) — red's roster was otherwise IR-only SA-9/13 +
     the Osa, none of which DCS tasks against missiles. Roster otherwise audited era-clean vs July
@@ -486,6 +492,146 @@ file. This guide is the map; those are the territory.
   - Drafts / not-yet-landed (design only): `414th-mission-planning-wiki-rework.md`
     (upstream wiki rewrite), `414th-scenery-import-notes.md` (scenery strike targets),
     `turnless.md` (turnless-campaign exploration),
+    `414th-wing-growth-notes.md` (**The Wing Grows** — scheduled squadron arrivals, split out
+    of the SP-loop note's §S3 reason 5b at the DM's request because it is a real feature, not
+    a read-out: a campaign-authored `available_from_turn:` (+ optional `arrival_note:`) on a
+    squadron block, so **new airframe types** land mid-campaign on a schedule the player sees
+    coming ("F-14 det turn 4, Prowlers turn 6"). Hits two of the three SP-diagnosis factors —
+    it converts the DM's own variety motivator into the forward hook, and it **inverts "turn 1
+    is the best mission by construction"** by giving the campaign an upward slope. **The build
+    is smaller than expected, and the reason is `ControlPoint.squadrons` being a DERIVED
+    property** (it filters `air_wing.iter_squadrons()` on `squadron.location`), so there is no
+    base→squadron list to maintain: the moment a squadron joins the wing it appears at its
+    base, `best_squadrons_for` sees it, and **the planner needs no change at all**. Likewise
+    `AirWing.reset()`/`populate_for_turn_0()`/`end_turn()` all walk `iter_squadrons()`, so a
+    pending squadron is untouched for free. Shape: build the Squadron at turn 0 exactly as
+    today (reusing preset pick / §23 country pin / def claiming — one construction path, and
+    a deterministic schedule) but hold it in a pending list instead of `add_squadron`, then
+    promote + populate it in `Coalition.initialize_turn` (`Squadron.populate_for_turn_0` is
+    already generic despite its name — worth renaming). Announcement is BOTH halves: the
+    schedule shown **ahead** (greyed on the SP board's step 1 + the S3 anticipation band —
+    the jet you can't fly yet is the advert) and the event on the turn via a new `Sitrep`
+    `arrivals` field, which buys kneeboard + web LAST TURN + Qt debrief at once. Edge cases
+    owed answers: **parking** (an arrival base full since turn 0 clamps SILENTLY today — a
+    regression in spirit vs the standing parking-fit invariant), a lost/enemy-held arrival
+    base, def claiming, save compat (new pending state, `__setstate__` empty default, campaign
+    edits need a NEW game), the Air Wing Config dialog, and `squadrons_start_full`
+    interaction. 6 open calls incl. visible-vs-surprise, red schedules (code symmetric, never
+    announced as fact), and `available_until_turn` departures as the use-it-or-lose-it v2.
+    **First campaigns picked 2026-08-03: Red Tide + Baltic Fury** — with the note's key
+    distinction that **additive** arrivals (new squadrons appear later; total force grows)
+    do NOT invert "turn 1 is the best mission", only **deferred** ones do (existing turn-1
+    squadrons held back; turn 1 deliberately weaker) — which makes the motivationally
+    correct flavour also a real balance change to an already-tuned campaign. **Red Tide's feature
+    lock was LIFTED 2026-08-03** (DM: "not existent"), so its schedule needs no override —
+    but it remains the weaker candidate on merits (its Frankfurt wing already fields nine
+    fixed-wing types on turn 1, so variety isn't what it lacks) and, as a shipped balanced
+    build, a deferred schedule there still owes a playtest. **ORDERING PRINCIPLE (DM call 2026-08-03): the schedule IS the air
+    campaign — SEAD/DEAD before strike.** Turn 1 = the door-kickers (air superiority,
+    SEAD/DEAD, and the enablers — AEW&C/tankers/ISR); later = the exploiters (strike, deep
+    interdiction, heavy bombers). Strictly better than the note's first draft on three
+    counts: arrivals feel **earned** (the B-1B on turn 7 is the consequence of six turns of
+    killing SAMs — the campaign teaches its own doctrine); it **fixes** the balance risk
+    instead of creating one (the first draft deferred the Gripen DEAD *against the belt* —
+    the scary deferral; deferring **strike** is safe by construction, since the early
+    campaign genuinely cannot use deep strike yet); and it settles additive-vs-deferred as
+    **deferred, with the right things deferred**. **Corollary: the arc depends on whether the
+    campaign opens offensively or defensively** — SEAD-then-strike is the *offensive* shape,
+    a back-foot campaign runs **hold → stabilise → counter-attack**; the two picked campaigns
+    are one of each. **Baltic Fury (offensive, the clean pilot)**: no lock, and accession
+    order and doctrinal order *agree* — T1 F-22A/F/A-18E TARCAP + EA-18G + every enabler +
+    the Hamburg CAS/rotary set (the land battle runs from turn 1); T3 **HavLLv 31** Finnish
+    F/A-18C BARCAP (first accession; closes blue's real hole — ZERO blue BARCAP squadrons vs
+    red's six; full-fidelity module ⇒ a flyable seat); T5 **F 17 Blekinge Wing** Gripen DEAD
+    (rollback opens; T1–4 deliberately Growler-thin — that's the pressure, not a gap); T7
+    **F-15E + F/A-18F Strike Rhinos**; T9 **34th BS B-1B** (deep strike last). Residual A/G
+    during T1–6 is deliberate and sufficient (F/A-18E `secondary: air-to-ground` + the
+    A-10C/Apache set) — the player lacks *deep* strike, not bombs. **Red Tide (defensive,
+    contingent on the override)**: the Fulda Gap has no door to kick, so the arc is hold →
+    stabilise → counter-attack and **CAS cannot be deferred** — T1 the air-superiority trio +
+    F-16CM DEAD + F/A-18C SEAD + enablers + A-10C + the whole Fulda rotary hub; T4 Mirage
+    F1EE; T6 F-15E BAI (counter-attack opens); T8 B-52H. Sequencing: build the feature
+    unauthored, author Baltic Fury and fly it, THEN decide on the override),
+    `414th-single-player-loop-notes.md` (**SP Pilot Mode** — why SP campaigns die after turn 1
+    while the 414th's MP campaigns finish: in MP you play a *pilot*, in SP you play the DM
+    **and** the pilot, and the DM job has no fun in it. The stop point is reproducibly "accept
+    results → now plan turn 2", compounded by turn 1 being the best mission by construction, a
+    new campaign being cheaper than the next turn, and the §29 SITREP explaining why turn 2
+    matters only *after* you commit to turn 2. Scopes an additive express lane in four stages
+    — S1 "Accept results & fly next" (chains the existing `process_debriefing` →
+    `pass_turn` → generate path), S2 the **aircraft-first two-step board**, S3 the pre-turn
+    hook card (§21 MIA capture clocks, §75 victory progress, the COIN fuses/windows — all
+    already-tracked state, pulled *ahead* of the commitment), S4 the guardrails.
+    **DM spec 2026-08-03 — "I like to fly a lot of different aircraft":** the **airframe is
+    the primary axis**, chosen FIRST (the whole wing, not filtered by what the commander
+    fragged), and the package options are picked underneath it — a flat sortie list would
+    keep offering the same three Hornet sorties. That ordering **settles open call #1**
+    (offer-only vs. frag-for-you) as **both, laddered**: seat an existing flight of that type
+    → **join an existing package** (the headline rung — it stays inside the commander's plan)
+    → a standalone sortie (**explicit opt-in only**, never silently generated; the only
+    planner-touching rung; rungs 1–2 are a defensible v1). **DM spec, same day — "I would
+    like to be put into existing packages, should still be escort, strike, jamming, whatever
+    the planner decides":** two independent variety axes — the player picks the **airframe**,
+    the **air war picks the role** — so step 2 leads with role+package (never filtered to one
+    task family) and rung 3 is demoted to a surfaced last resort. Rung 2 turns out to be
+    cheap — **but not for the reason first written; corrected 2026-08-03 on a DM challenge
+    ("these feel like they might need a major rework?") by reading both paths end to end.**
+    `ProposedFlight.preferred_type` **holds** (`PackageBuilder.plan_flight` →
+    `best_squadron_for(preferred_type=…)`; §44 carrier ops is the shipped exerciser) — but it
+    builds a NEW package, so it is **rung 3's** mechanism, not rung 2's.
+    `check_needed_escorts` was **overstated twice**: it takes a `PackageBuilder`, and
+    `PackageBuilder.__init__` **always constructs a fresh `Package`**, so an existing planned
+    package cannot be handed to it (its body reads only `package.flights` /
+    `primary_flight`, so re-pointing it at `Package` is 1 real + 3 test call sites — small,
+    but a change, not "already exists"); and it answers "what is this route **threatened
+    by**" pre-escort, NOT "what is still missing" on a finished package. **The rework isn't
+    needed because rung 2 shouldn't go through the commander at all** — adding a flight to an
+    existing package is already what the ATO UI does on *Add Flight*
+    (`QFlightCreator.create_flight` → `PackageModel.add_flight`), i.e. `Flight(package,
+    squadron, …)` + `Package.add_flight` + a TOT update. **Corrected rung costs: all three
+    rungs need ZERO engine change** (1 = `set_pilot`, 2 = the UI's own add-flight path,
+    3 = `plan_mission` + `preferred_type`); the only optional edit is the role *suggestion*
+    (re-point `check_needed_escorts` at `Package`, or just infer absent roles from the
+    package's existing flights — free). **Call #2
+    SETTLED: one seat, AI wingmen, exactly as in MP** (`client_count` stays 1 — no multi-slot
+    bookkeeping, same generation path MP already exercises). **DM steer, same day — "I'm
+    looking more for reasons to continue, but this is a great start" — settles the note's
+    swinging recommendation: S1+S2 are the VEHICLE, S3 is the PAYLOAD.** S3 is now the
+    note's centre of gravity, built on the finding that **the fork already computes almost
+    every reason it needs and points them the wrong way in time** — `Sitrep` today carries
+    `pilots_mia` / `pows_held` / `red_c2_status` / `victory_lines` (named people on clocks,
+    proof your bombing changed enemy behaviour, live victory progress) and renders **all of
+    it only after the player has committed to the next turn**. The taxonomy, ranked by
+    strength × cheapness: (1) **a named person on a clock you caused** — §21's MIA evader,
+    depth-weighted capture roll re-run every turn you don't go, with the §21 surge already
+    opening the next turn with the rescue airborne; (2) **proof your sortie changed the
+    war** — §52 already measurably degrades red planning and already says so; (3) **open
+    loops you opened** — un-killed recon contacts, scooted §49 batteries, unburned §79
+    decoys; (4) **a visible finish line** — §75 shipped the mechanism and **no campaign
+    authors a `victory:` block**, the largest motivational return for zero engine risk;
+    (5) **anticipation** — repairs/replenishment are turn-counted and unsurfaced (**accuracy
+    caveat: `pending_deliveries` is a ONE-TURN buffer**, `deliver_all` zeroes it at the next
+    boundary, so "4 Vipers arrive turn 12" is not representable and aircraft replenishment
+    can only announce "next turn"); **(5b) THE WING GROWS** — DM proposal 2026-08-03,
+    endorsed: new airframes/squadrons on an **announced schedule** ("F-14 det turn 4",
+    "Prowlers turn 6"), which converts the DM's own variety motivator into the campaign's
+    forward hook AND inverts the "turn 1 is the best mission" factor. **Premise checked and
+    half-corrected:** aircraft replenishment into existing squadrons exists but only delivers
+    more of what you already fly; **mid-campaign arrival of new squadrons/types does not
+    exist at all** (the `squadrons:` block applies at turn 0, `Squadron` has no activation
+    turn — its `arrival` is an unrelated `ControlPoint` property), so this is NEW machinery,
+    not a missing announcement — small and additive (a campaign `available_from_turn:`, held
+    out of the air wing until then, unset = today's behaviour), **scoped 2026-08-03 into its
+    own note** `414th-wing-growth-notes.md`;
+    (6) **dread** — §W6 red tempo + §70 COMINT leaks framed as intel estimates; (7) **a
+    record that is yours** — the one gap needing new state (`PilotRecord` tracks only
+    `missions_flown`, no kills/rescues). Plus the cheap multiplier: **make the S2 choice
+    carry consequence** ("cache — slows regeneration", "HVT window closes in 2 turns"), which
+    converts picking tonight's jet into deciding what the war does next. Explicitly NOT
+    fixed: the structural "1 of 25 packages" problem, whose real lever is **smaller SP ATOs**
+    (planner work, its own note). Records what already exists so it isn't rebuilt
+    (`AutoAtoBehavior`, `auto_ato_player_missions_asap`, §43/§73 defaults); 7 open squadron
+    calls remain; smaller SP ATOs / victory-arc authoring / a pilot career page deferred),
     `414th-ui-redesign-directions.md` (**UI redesign — DECIDED 2026-07-25: 1 → 2**; D1 step 1
     LANDED. The DM dropped **D3** ("useless" — second-screen planning was its whole
     justification), confirmed **D2** as a *requirement* not a nicety ("we need to keep the map
@@ -2410,7 +2556,7 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     polls every 30 s after a 60 s grace (radius/cadence/grace are plugin options; plugin
     `defaultValue` ON so the setting is the only gate, the §36 lesson). Composes with culling
     (untouched, the far tier): sleep what you keep, cull what should never exist. Default **OFF**
-    until flown; NOT preseeded in Red Tide (feature-locked) — flip it for the next MP event. Tests
+    until flown; NOT preseeded in Red Tide — flip it for the next MP event (the RT lock lifted 2026-08-03; this stayed unpreseeded pending a fly, not because of the lock). Tests
     `tests/missiongenerator/test_aisleepluadata.py` + `tests/lua/test_aisleep_runtime.py` (the
     harness gained a `ControllerFake` + `aiOnOff` records + `fire_hit`).
     **AAA gun sites added 2026-07-19** (`perf_aaa_site_sleep`, default **OFF**,
@@ -2668,7 +2814,7 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     when `automate_runway_repair` delegated repairs, RED always; shows as its own Finances
     row; **(2) price-weighted ground-unit choice** (capability proxy — T-72s over gun trucks,
     still a weighted roll). Gated `adaptive_procurement` (Campaign Management → Commander
-    economy, default **ON**); NOT preseeded (Red Tide feature-locked). Tests
+    economy, default **ON**); NOT preseeded (pending a fly; the Red Tide lock lifted 2026-08-03). Tests
     `tests/fourteenth/test_adaptive_procurement.py`; features doc §68, checklist B20 — needs
     an in-game pass.
 69. **Cross-package SEAD-before-strike coordination** — packages were timed independently,
@@ -3253,6 +3399,56 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     `tests/lua/test_navalmagazines_runtime.py`; features doc §81, checklist B39 — needs an
     in-game pass (the `ReturnFire` air-defence question above is the gate; then that a
     staggered fleet still fights, and that the winchester drop fires on real AShM releases).
+82. **The Wing Grows (scheduled squadron arrivals)** — a campaign can hold a squadron back
+    and have it join the air wing on an **announced later turn**
+    (`available_from_turn:` + optional `arrival_note:` on a squadron block). Aimed at the
+    structural reason SP campaigns die after turn 1: **turn 1 is the best mission by
+    construction** (full wing, full ramp, no attrition), so every later turn is a degraded
+    copy and nothing ever gets better. A schedule inverts that — the turn-1 wing is no
+    longer the whole wing you will ever have — and it converts the DM's own stated
+    motivator (variety) into the campaign's forward hook: you play to turn 6 because that
+    is when you get to fly the Prowler. **Premise half-corrected when built:** aircraft
+    replenishment into an existing squadron exists (`pending_deliveries`) but is a
+    ONE-TURN buffer delivering more of what you already fly; **mid-campaign arrival of a
+    new squadron/type did not exist at all** (the `squadrons:` block is consumed at turn 0),
+    so this is new machinery, not a missing announcement. **It is small for a specific
+    reason: `ControlPoint.squadrons` is a DERIVED property** (it filters
+    `air_wing.iter_squadrons()` on `squadron.location`), so there is no base→squadron list
+    to maintain — a squadron appears at its base and is plannable the moment it joins the
+    wing, and **the planner needs no change at all**; likewise `AirWing.reset()` /
+    `populate_for_turn_0()` / `end_turn()` all walk `iter_squadrons()`, so a pending
+    squadron is untouched by per-turn processing for free. The squadron is **built at turn
+    0 exactly as today** (preset pick, §23 country pin, callsign overrides, def claiming)
+    and parked in `AirWing.pending_arrivals`; `promote_due_arrivals`
+    (`game/fourteenth/wing_growth.py`) runs from `Game.initialize_turn` **before** the
+    coalitions initialize, so an arrival is populated + plannable on its own turn, and
+    promoted squadrons leave the pending list (naturally idempotent under the base-capture
+    / TGO buy-sell re-inits). Announcement = a new `Sitrep.arrivals` field, which buys the
+    kneeboard band + web LAST TURN + Qt debrief at once; unlike the §52/§75 lines an
+    arrival **counts as news** so it surfaces on a quiet turn. Red schedules work (code is
+    symmetric) but are **never announced**. A malformed `available_from_turn` **raises** so
+    New Game aborts loudly rather than shipping a wing that never grows; unset =
+    byte-identical. **Ordering principle — SEAD/DEAD before strike:** turn 1 is the
+    door-kickers (air superiority, SEAD/DEAD, enablers), later arrivals are the exploiters
+    (strike, deep interdiction, bombers) — which makes arrivals feel *earned* AND is the
+    safe way to defer, since the early campaign cannot use deep strike before the belt is
+    down. **The arc differs by how the campaign opens**, so the two shipped schedules are
+    different shapes: **Baltic Fury** (offensive — kick the door → rollback → strike) T3
+    Finnish F/A-18C BARCAP · T5 Swedish Gripen DEAD · T7 F-15E + F/A-18F Strike · T9 B-1B,
+    with the real NATO accession order (Finland Apr 2023, Sweden Mar 2024) agreeing with
+    the doctrinal order and turns 1–4 deliberately Growler-thin; **Red Tide** (defensive —
+    hold → stabilise → counter-attack) T4 Mirage F1EE Escort · T6 F-15E BAI · T8 B-52H,
+    where **CAS is never deferred** because the Gap fight needs it from turn 1 (its feature
+    lock was lifted 2026-08-03, so no override was needed). NEW game required (the schedule
+    is consumed at turn 0); `__setstate__` defaults keep old saves loading. Deferred:
+    announcing under-strength arrivals (parking clamps silently), holding an arrival whose
+    base is enemy-held, `available_until_turn` departures, and rendering
+    `upcoming_arrivals` ahead of the turn (waiting on the SP Pilot Mode board). Tests
+    `tests/fourteenth/test_wing_growth.py` (22) +
+    `tests/fourteenth/test_wing_growth_campaigns.py` (20, which pins the *rules* — enablers
+    never deferred, air superiority always on the turn-1 ramp, DEAD before strike, Red Tide
+    never defers CAS); features doc §82, design note
+    `docs/dev/design/414th-wing-growth-notes.md`, checklist B40 — needs an in-game pass.
 
 ---
 

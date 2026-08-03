@@ -13,6 +13,7 @@ from ..theater import ControlPoint, MissionTarget
 from ..utils import Distance
 
 if TYPE_CHECKING:
+    from game.fourteenth.wing_growth import PendingSquadron
     from game.game import Game
     from game.theater.player import Player
     from ..ato.flighttype import FlightType
@@ -26,6 +27,14 @@ class AirWing:
         self.squadron_defs = SquadronDefLoader(game, faction).load()
         self.squadron_def_generator = SquadronDefGenerator(faction)
         self.settings = game.settings
+        #: "The Wing Grows" (414th): squadrons built at turn 0 but scheduled to
+        #: join the wing on a later turn. Empty unless a campaign authors
+        #: `available_from_turn:`. See game/fourteenth/wing_growth.py.
+        self.pending_arrivals: list[PendingSquadron] = []
+        #: Whether populate_for_turn_0 filled this wing's squadrons. Recorded so
+        #: a scheduled arrival populates by the same rule as the rest of the
+        #: wing instead of inventing its own.
+        self.squadrons_started_full = False
 
     def __setstate__(self, state: dict[str, Any]) -> None:
         # Migration: Convert old boolean player values to Player enum
@@ -36,6 +45,10 @@ class AirWing:
                 state["player"] = Player.BLUE
             else:
                 state["player"] = Player.RED
+
+        # Pre-wing-growth saves carry neither field.
+        state.setdefault("pending_arrivals", [])
+        state.setdefault("squadrons_started_full", False)
 
         self.__dict__.update(state)
 
@@ -237,6 +250,9 @@ class AirWing:
         return list(self.iter_squadrons())[index]
 
     def populate_for_turn_0(self, squadrons_start_full: bool) -> None:
+        # Remembered for "The Wing Grows": a squadron that joins on a later turn
+        # populates by the same rule the rest of the wing used.
+        self.squadrons_started_full = squadrons_start_full
         for squadron in self.iter_squadrons():
             squadron.populate_for_turn_0(squadrons_start_full)
 

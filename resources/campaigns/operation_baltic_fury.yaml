@@ -222,6 +222,9 @@ squadrons:
       aircraft_type: F/A-18E Super Hornet
       callsign: Victory
       size: 12
+    # §82 The Wing Grows — the strike phase. SEAD/DEAD before strike: the deep
+    # strike arm arrives once the S-400/S-300 belt is being rolled back (the
+    # Gripens land turn 5), not while it is still intact.
     - primary: Strike
       secondary: air-to-ground
       aircraft:
@@ -229,6 +232,8 @@ squadrons:
       aircraft_type: F/A-18F Super Hornet
       callsign: Hammer
       size: 10
+      available_from_turn: 7
+      arrival_note: "CVW-3 strike detachment surges aboard"
     - primary: SEAD Escort
       secondary: any
       aircraft:
@@ -262,6 +267,7 @@ squadrons:
       aircraft_type: F-22A Raptor
       callsign: Vader
       size: 12
+    # §82 The Wing Grows — strike phase, paired with the carrier's Strike Rhinos.
     - primary: Strike
       secondary: air-to-ground
       aircraft:
@@ -269,6 +275,8 @@ squadrons:
       aircraft_type: F-15E Strike Eagle (Suite 4+)
       callsign: Chaos
       size: 12
+      available_from_turn: 7
+      arrival_note: "Strike Eagles forward-deploy to Nordholz"
     # The Swedish detachment. F 17 (Blekinge Wing, Ronneby/Kallinge) is the Baltic-facing
     # Gripen wing, forward-deployed to Nordholz for the counter-offensive. It is here for a
     # capability reason as well as a thematic one: blue's ONLY other dedicated SEAD/DEAD unit
@@ -278,6 +286,11 @@ squadrons:
     # Fleet SAG, and Taurus KEPD-350 (270 NM) reaches the coastal belt from standoff.
     # `country: Sweden` is load-bearing (§23): it pins the squadron to Swedish comms,
     # voiceovers and pilot names instead of the shared US voice.
+    # §82 The Wing Grows — the DEAD rollback opens. Sweden acceded to NATO in
+    # March 2024, after Finland, so the accession order and the doctrinal order
+    # (defensive counter-air before offensive DEAD) agree. Turns 1-4 are
+    # deliberately Growler-thin against the 11-site belt: that is the pressure
+    # the arrival relieves, not a gap.
     - primary: DEAD
       secondary: air-to-ground
       aircraft:
@@ -286,6 +299,8 @@ squadrons:
       country: Sweden
       callsign: Viggen
       size: 8
+      available_from_turn: 5
+      arrival_note: "Sweden joins the coalition — Ronneby/Kallinge"
   # Bremen (5) — rear heavies + eyes.
   5:
     - primary: AEW&C
@@ -304,6 +319,8 @@ squadrons:
         - 351st Air Refueling Squadron
       aircraft_type: KC-135 Stratotanker MPRS
       size: 2
+    # §82 The Wing Grows — deep strike last. The most survivability-dependent
+    # asset in the wing arrives when it can actually survive over the target.
     - primary: Strike
       secondary: any
       aircraft:
@@ -311,6 +328,8 @@ squadrons:
       aircraft_type: B-1B Lancer
       callsign: Bone
       size: 4
+      available_from_turn: 9
+      arrival_note: "34th BS deploys from Ellsworth"
   # Hamburg (17) — forward CAS / rotary hub, holding the Lübeck neck.
   17:
     # The Finnish detachment. Finland joined NATO in April 2023 -- before Sweden -- and its
@@ -322,6 +341,10 @@ squadrons:
     # squadrons against red's SIX, so nothing stood a barrier patrol over blue's own fields.
     # Unlike the CH Gripen (an AI-only mod airframe), the F/A-18C is a full-fidelity module,
     # so this is a flyable seat. `country: Finland` pins Finnish comms/voices/pilot names (§23).
+    # §82 The Wing Grows — defensive counter-air. Finland acceded April 2023,
+    # first of the two, and this closes blue's real hole (blue otherwise flies
+    # ZERO BARCAP squadrons against red's six). A full-fidelity module, so the
+    # arrival is a flyable seat and not just an AI reinforcement.
     - primary: BARCAP
       secondary: air-to-air
       aircraft:
@@ -330,6 +353,8 @@ squadrons:
       country: Finland
       callsign: Sisu
       size: 8
+      available_from_turn: 3
+      arrival_note: "Finland joins the coalition — Karjalan Lennosto"
     - primary: CAS
       secondary: air-to-ground
       aircraft:

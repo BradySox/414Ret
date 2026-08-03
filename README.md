@@ -183,6 +183,20 @@ Upstream hands you a map that already knows everything. Here you have to go look
 
 ### Systems that make the war strategic
 
+- **The wing grows.** Campaigns can schedule reinforcements to arrive on turns you know
+  about in advance — *"Finnish Hornets turn 3, Swedish Gripens turn 5, the Bone turn 9."*
+  Not more of what you already fly: **new airframes**, so what you can take off in changes
+  as the war goes on. It also fixes something structural about turn 1 — it used to be the
+  best mission in the campaign by construction (full wing, full ramp, nothing lost), which
+  made every later turn a slightly worse copy. Now the wing you start with is not the wing
+  you end with. The schedules follow the shape of a real air campaign: you get the
+  door-kickers first — air superiority, SEAD/DEAD, the tankers and AWACS that make them
+  work — and the deep-strike aircraft show up once the SAM belt is actually coming down, so
+  a bomber arriving feels earned rather than handed to you. **Operation Baltic Fury** and
+  **Red Tide** ship with schedules, and they are deliberately different: Baltic Fury is a
+  counter-offensive that opens by kicking the door in, while Red Tide is a defensive fight
+  for the Fulda Gap that never withholds the CAS holding the line.
+
 - **Bombing the enemy HQ matters** — knock out its command posts and its planner gets
   measurably sloppier at picking targets **and its offensive tempo thins** (a decapitated
   HQ frags fewer strike packages — never zero). Its reactive defenses never suffer.

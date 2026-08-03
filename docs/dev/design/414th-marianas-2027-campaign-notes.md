@@ -1,7 +1,7 @@
 # Marianas — Second Island Chain (2027)
 
 **Status:** BUILT + headless-verified 2026-08-02. CI-locked in
-`tests/fourteenth/test_marianas_2027.py` (16 tests). Needs an in-game pass —
+`tests/fourteenth/test_marianas_2027.py` (19 tests). Needs an in-game pass —
 checklist **T5**. NEW game required.
 
 The 414th's modern-day China campaign, and the answer to "can DCS's current maps host a
@@ -84,6 +84,38 @@ Saipan and pushed up the northern chain, and the war is fought northward. That b
 - 18 CPs instead of 15, and an honest offensive ratio (**158 blue vs 98 red airframes**).
 
 ---
+
+## The laydown had to be re-seated (DM finding, 2026-08-02)
+
+The first cut inverted the premise but left the fleet where Fuzzle put it, and that was
+wrong in a way that only shows on the map. Repartee's story is a lone CSG fighting
+**south** to retake a Chinese Guam, so its carrier group starts at the **far north** of
+the chain and FOB Uracus (781 km north) is blue's toehold. Flip Guam blue without moving
+any of that and **blue holds both ends with red sandwiched between them** — which is
+exactly what the DM reported.
+
+Three edits fix the axis, and they are now encoded in the build tool rather than left as
+hand edits:
+
+| Group | From | To |
+|---|---|---|
+| Naval-1 (CVN-74) | (824, 199) km | **(−54, −111)** — SW of Guam |
+| Naval-2 (LHA-1) | (840, 185) km | **(−102, −70)** — SW of Guam |
+| FOB Uracus | BLUE block | **RED** — the northern chain is red depth, not a blue island |
+| Naval-18, Naval-27 | scattered | pulled in as the CSG's screen |
+
+A second problem was underneath it: **red's fleet was parked in its own deep rear** —
+three carrier groups at 398/545/679 km and two LHAs at 511/523 km, i.e. 220–500 km
+*behind* the islands the player has to retake. They could not contest anything, and
+blue's B-1Bs would have flown 400–680 km to reach them. The PLAN groups are now in the
+Guam–Saipan corridor: carriers at 200/230/290 km (≈300 km off Guam — inside J-15 and
+H-6J reach, and reachable by blue), amphibious groups on the lodgements they landed
+(off Rota at 95 km, off Tinian/Saipan at 150 km), and the 18-hull escort screen spread
+across 60–330 km instead of trailing out to 854 km.
+
+Result, south → north: blue occupies −102…+11 km (LHA · escorts · CVN · Guam's three
+airfields); red occupies 60…781 km unbroken. `test_no_blue_base_sits_behind_the_red_chain`
+locks it.
 
 ## Two dormant airfields, and the loader trap that hid them
 
@@ -192,7 +224,37 @@ Super Hornets spawn with comms, route and the §65 recovery aids already loaded 
 section — CJS stripped `SA` out of its descriptor, so no FLOT, CAP racetracks or threat
 rings on those three).
 
-**RED — China 2020** (98 airframes / 15 squadrons)
+**RED — China 2027** (98 airframes / 15 squadrons)
+
+The enemy is a **fork faction**, `resources/factions/china_2027.json`, and the reason is
+worth recording. The DM asked whether High Digit SAMs should be on. Measured, it adds
+**only the HQ-2** to `China 2020` and **nothing at all** to `USA 2020` — and the HQ-2 is
+a 1960s S-75 derivative that would displace HQ-22 sites. `Redfor (China) 2020` *can*
+field the S-300PMU family with HDS, but it is a CJTF-Red faction that also rolls
+**SA-2/S-75 and SA-6**, loses the Chinese country identity (§23 voices, zh_CN pilot
+names) and mixes Soviet legacy kit into the ground and naval OOB. Switching to it was
+tried and measured: red spawned SA-2 and HQ-2 sites as **base defences**, which
+`ground_forces` cannot reach.
+
+So `China 2027` = `China 2020` with the **HQ-2 dropped** and **SA-20/S-300PMU-1 +
+SA-20B/S-300PMU-2 added**. Modern, era-clean, natively Chinese, and it makes
+`high_digit_sams` a hard campaign requirement rather than a flavour toggle.
+
+### Two rules about `ground_forces` overrides, learned the hard way
+
+1. **They reach authored markers only.** A base's own generated air defences roll from
+   the faction roster and cannot be pinned — which is why the *faction* had to be fixed.
+2. **The preset's task must match the marker's band, or the override is silently
+   discarded.** `StartGenerator.get_unit_group_for_task` gates on `task in fg.tasks`.
+   The HQ-22 declares `LORAD`, so pinning it onto a medium marker did nothing at all and
+   the site rolled an SA-11 — no warning anywhere. Rota's marker is therefore authored
+   **long-range**. `test_ground_forces_pins_match_their_marker_band` now catches this
+   class of silent failure.
+
+Belt as generated: **1× S-300PMU-2 (Tinian)** · **1× HQ-22 (Rota)** · 5× SA-11 ·
+8× HQ-7 · HQ-17A / LD-3000 / PGZ-09 / PGZ-95 / PGL-625 point defence · Silkworm coastal ·
+3× CJ-10 PLARF. Zero SA-2, zero SA-6, zero HQ-2.
+
 
 | Base | Squadrons |
 |---|---|

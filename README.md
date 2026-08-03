@@ -259,7 +259,7 @@ Upstream hands you a map that already knows everything. Here you have to go look
   target set the PLA Rocket Force was built around. A Taiwan crisis went kinetic; the opening
   salvo cratered Guam's ramps while amphibious groups took Rota, Tinian and Saipan. Guam held —
   now hold the ramp you have left and fight north up the chain to the Marine detachment still
-  cut off on Farallon de Pajaros. **Road-mobile PLARF launchers** shoot and scoot between recon
+  cut off on Farallon de Pajaros. A **modern PLA air-defence belt** — an S-300PMU-2 on Tinian and an HQ-22 on Rota anchoring HQ-7 and HQ-17A point defence — and **road-mobile PLARF launchers** shoot and scoot between recon
   passes, so a site is never quite where the last photo froze it; three PLAN carrier groups and
   a Badger regiment contest the sea, both fleets trading **cruise missiles from finite magazines
   that never rearm**, and sea shipments run a coastal-battery gauntlet. The boat flies a modern

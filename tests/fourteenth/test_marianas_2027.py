@@ -47,7 +47,7 @@ def test_campaign_definition() -> None:
     data = _campaign()
     assert data["theater"] == "MarianaIslands"
     assert data["recommended_player_faction"] == "USA 2020"
-    assert data["recommended_enemy_faction"] == "China 2020"
+    assert data["recommended_enemy_faction"] == "China 2027"
     assert str(data["recommended_start_date"]).startswith("2027")
     # The generated miz + the tool that generates it ship together. Never hand-edit
     # the miz -- re-run the tool.
@@ -64,6 +64,9 @@ def test_mod_packs_are_preseeded() -> None:
     for mod in (
         "chinesemilitaryassetspack",
         "usamilitaryassetspack",
+        # High Digit SAMs is a hard requirement: the enemy faction's long-range belt
+        # (S-300PMU-1/PMU-2) exists only with it.
+        "high_digit_sams",
         "fa_18efg",
         "fa18ef_tanker",
     ):
@@ -209,19 +212,24 @@ def test_theatre_missile_sites_exist_on_the_contested_islands() -> None:
     }
 
 
-def test_rota_has_a_sam_battery() -> None:
-    # Rota was NEUTRAL upstream and carries no authored garrison, so the red field
-    # nearest Guam would otherwise be undefended.
+def test_rota_has_a_long_range_sam_battery() -> None:
+    """Rota was NEUTRAL upstream and carries no authored garrison of its own.
+
+    The band is deliberate: the campaign pins this site to an **HQ-22**, which
+    declares ``GroupTask.LORAD``. On a medium marker that pin is silently discarded
+    and the site rolls an SA-11 instead, so the marker must be a long-range one.
+    """
     mission = _mission()
     names = {
         group.name
         for coalition in mission.coalition.values()
         for country in coalition.countries.values()
         for group in country.vehicle_group
-        if group.units[0].type in MizCampaignLoader.MEDIUM_RANGE_SAM_UNIT_TYPES
+        if group.units[0].type in MizCampaignLoader.LONG_RANGE_SAM_UNIT_TYPES
     }
     assert "Rota SAM Site" in names
-    assert AirDefence.S_75M_Volhov.id in MizCampaignLoader.MEDIUM_RANGE_SAM_UNIT_TYPES
+    assert _campaign()["ground_forces"]["Rota SAM Site"] == "HQ-22"
+    assert AirDefence.S_300PS_5P85C_ln.id in MizCampaignLoader.LONG_RANGE_SAM_UNIT_TYPES
 
 
 def test_red_air_is_period_correct() -> None:
@@ -320,3 +328,93 @@ def test_guam_keeps_two_blue_supply_roads() -> None:
         # intermediate corridor is mandatory (never a straight line).
         assert waypoints[0] == [-24, -78]
         assert len(waypoints) >= 4, "supply route must follow the driveable corridor"
+
+
+def test_china_2027_faction_is_a_modern_pla() -> None:
+    """The enemy is a fork faction, and both edits to it are load-bearing.
+
+    `China 2020` cannot field a long-range SAM at all; `Redfor (China) 2020` can, but
+    is a CJTF-Red faction that also rolls SA-2/SA-6 and loses the Chinese country
+    identity. `China 2027` is China 2020 with the obsolete HQ-2 dropped and the
+    S-300PMU family added -- modern, era-clean, and still natively Chinese.
+    """
+    import json
+
+    data = json.loads((FACTIONS / "china_2027.json").read_text(encoding="utf-8"))
+    assert data["name"] == "China 2027"
+    assert data["country"] == "China"  # keeps §23 voices + zh_CN pilot names
+    presets = data["preset_groups"]
+    # The HQ-2 is a 1960s S-75 derivative; leaving it in lets base defences roll it.
+    assert "HQ-2" not in presets
+    for era_wrong in ("SA-2/S-75", "SA-6"):
+        assert era_wrong not in presets, era_wrong
+    for modern in ("SA-20/S-300PMU-1", "SA-20B/S-300PMU-2", "HQ-22", "HQ-7"):
+        assert modern in presets, modern
+
+
+def test_ground_forces_pins_match_their_marker_band() -> None:
+    """A pin whose task does not match its marker's band is SILENTLY discarded.
+
+    ``StartGenerator.get_unit_group_for_task`` only honours a ``ground_forces``
+    override when ``task in fg.tasks``. Pinning the HQ-22 (which declares LORAD) onto
+    a medium marker therefore did nothing at all and the site rolled an SA-11 instead
+    -- with no warning anywhere. Every pin is checked against its marker here.
+    """
+    from game.campaignloader.campaign import Campaign
+    from game.data.groups import GroupTask
+
+    band_for_task = {
+        GroupTask.LORAD: MizCampaignLoader.LONG_RANGE_SAM_UNIT_TYPES,
+        GroupTask.MERAD: MizCampaignLoader.MEDIUM_RANGE_SAM_UNIT_TYPES,
+        GroupTask.SHORAD: MizCampaignLoader.SHORT_RANGE_SAM_UNIT_TYPES,
+        GroupTask.AAA: MizCampaignLoader.AAA_UNIT_TYPES,
+    }
+    markers = {
+        group.name: group.units[0].type
+        for coalition in _mission().coalition.values()
+        for country in coalition.countries.values()
+        for group in country.vehicle_group
+    }
+    config = Campaign.from_file(CAMPAIGN).load_ground_forces_config()
+    pinned = list(config)
+    assert pinned, "no ground_forces pins found -- block removed?"
+    for name in pinned:
+        assert name in markers, f"{name} is pinned but is not a marker in the miz"
+        force_group = config[name]
+        assert force_group is not None
+        unit_type = markers[name]
+        ok = any(
+            task in force_group.tasks and unit_type in types
+            for task, types in band_for_task.items()
+        )
+        assert ok, (
+            f"{name}: marker type {unit_type} does not match any task of "
+            f"{force_group.name} ({[t.name for t in force_group.tasks]}) -- "
+            "the override would be silently discarded"
+        )
+
+
+def test_no_blue_base_sits_behind_the_red_chain() -> None:
+    """Blue holds the southern end; red holds everything north of it.
+
+    The first cut inverted Guam to blue but left Fuzzle's carrier group at the far
+    NORTH of the chain (his premise was a lone CSG fighting south), and left FOB
+    Uracus blue 780 km behind red lines -- so blue held both ends with red sandwiched
+    between. The map has to read as one axis.
+    """
+    from game.campaignloader.campaign import Campaign
+
+    theater = Campaign.from_file(CAMPAIGN).load_theater(advanced_iads=False)
+    blue: list[tuple[float, str]] = []
+    red: list[tuple[float, str]] = []
+    for cp in theater.controlpoints:
+        (blue if cp.starting_coalition.is_blue else red).append(
+            (cp.position.x, cp.name)
+        )
+    assert blue and red
+    northernmost_blue = max(blue)
+    southernmost_red = min(red)
+    assert northernmost_blue[0] < southernmost_red[0], (
+        f"{northernmost_blue[1]} (blue) sits north of {southernmost_red[1]} (red) -- "
+        "the laydown is sandwiched again"
+    )

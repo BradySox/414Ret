@@ -6,7 +6,7 @@ miz already carries a furnished 15-CP island chain (four FOBs, three PLAN carrie
 groups, two LHAs, the SAM/EWR/armor/strike markers and the Guam supply road), and
 its every unit is vanilla, so pydcs round-trips it losslessly.
 
-Four edits are applied, all of which the source miz cannot express by itself:
+Five edits are applied, all of which the source miz cannot express by itself:
 
 1.  **Guam goes blue.**  Repartee's premise is a lone carrier task group retaking a
     Guam that China already holds, which caps the campaign at three blue CPs and no
@@ -31,11 +31,22 @@ Four edits are applied, all of which the source miz cannot express by itself:
     missile site; one goes on each of Rota, Tinian and Saipan (see MISSILE_SITES
     for why none are authored further north).
 
-4.  **Rota gets a SAM battery.**  It was NEUTRAL and therefore carries no authored
-    garrison of any kind, which would leave the newly-red field nearest Guam naked.
+4.  **Rota gets a long-range SAM battery.**  It was NEUTRAL and therefore carries no
+    authored garrison of any kind, which would leave the newly-red field nearest Guam
+    naked.  The band matters -- see ``LONG_SAM_SITES``.
+
+5.  **The naval laydown is re-seated.**  Repartee sailed the blue carrier group in
+    from the far NORTH (its premise is a lone CSG fighting south to retake a Chinese
+    Guam).  Inverting the premise without moving the fleet left blue holding both ends
+    of the chain with red sandwiched between them, and parked red's three carrier
+    groups 220-500 km behind the very islands the player has to retake.  Blue's CSG and
+    LHA now operate south-west of Guam, FOB Uracus (a blue island 780 km behind red
+    lines) reverts to red, and red's carriers, amphibious groups and escort screen are
+    pulled south into the Guam-Saipan corridor where they can actually contest it.
 
 Every added marker position is validated against the real landmap
-(``ConflictTheater.is_on_land``) so nothing is authored into the sea.
+(``ConflictTheater.is_on_land``) so nothing is authored into the sea, and every naval
+position is checked to be OFF land for the same reason.
 
 Run from the repo root::
 
@@ -96,10 +107,77 @@ MISSILE_SITES: tuple[tuple[str, str], ...] = (
 )
 
 # Rota was NEUTRAL in Repartee, so it carries no authored garrison at all -- which
-# would leave the red strike field nearest Guam (and its PLARF site) undefended.  One
-# medium-range SAM marker gives it a real battery; the marker type only selects the
-# band, the red faction's own roster fills it (HQ-22 / SA-11 for China 2020).
-MEDIUM_SAM_SITES: tuple[tuple[str, str], ...] = (("Rota SAM Site", "Rota Intl"),)
+# would leave the red strike field nearest Guam (and its PLARF site) undefended.
+#
+# This is authored as a LONG-range marker, not a medium one, and that is load-bearing:
+# the campaign pins it to an **HQ-22**, and the HQ-22 preset declares `GroupTask.LORAD`.
+# `StartGenerator.get_unit_group_for_task` only honours a `ground_forces` override when
+# the preset's task matches the marker's band, so an HQ-22 pinned onto a medium marker
+# is silently discarded and the site rolls an SA-11 instead (measured). A long marker
+# also puts a genuine long-range battery on the red field nearest Guam, which is the
+# point.
+LONG_SAM_SITES: tuple[tuple[str, str], ...] = (("Rota SAM Site", "Rota Intl"),)
+
+# ---------------------------------------------------------------------------
+# Naval laydown, in metres (x = north, y = east; Guam sits at the origin).
+#
+# The islands run NNE from Guam: Rota (76, 49), Tinian (167, 90), Saipan (180, 102),
+# then the far-north FOBs at 317 / 512 / 585 / 781. The fight is the 0-205 km corridor,
+# so that is where the fleets belong.
+# ---------------------------------------------------------------------------
+
+# Blue's carrier and amphibious groups, south-west of Guam -- close enough to cover the
+# island and to strike up the chain, far enough to keep the boat out of the first salvo.
+BLUE_NAVAL: dict[str, tuple[int, int]] = {
+    "Naval-1": (-53_583, -111_230),  # CVN-74 John C. Stennis
+    "Naval-2": (-102_353, -70_160),  # LHA-1 Tarawa
+}
+
+# Three escort markers held close to Guam. A ship marker binds to the nearest control
+# point and prefers a blue one, so these become the carrier group's screen rather than
+# red hulls (Naval-17 is left where Repartee had it).
+BLUE_ESCORTS: dict[str, tuple[int, int]] = {
+    "Naval-18": (20_000, -86_417),
+    "Naval-27": (-91_230, 13_690),
+}
+
+# The PLAN covering force: two groups east and north-east of Saipan and one to the west,
+# all ~290-340 km off Guam -- inside J-15/H-6J reach of the island, and reachable by
+# blue's B-1B and carrier air. Amphibious groups sit on the lodgements they landed.
+RED_NAVAL: dict[str, tuple[int, int]] = {
+    "Naval-4": (230_000, 210_000),  # carrier, NE of Saipan
+    "Naval-3": (290_000, 40_000),  # carrier, NW of Saipan
+    "Naval-28": (200_000, 270_000),  # carrier, the outer eastern group
+    "OPLHA": (150_000, 120_000),  # amphibious group off Tinian/Saipan
+    "OPLHA-1": (95_000, 70_000),  # amphibious group off Rota
+}
+
+# The red screen, spread across the occupied waters instead of trailing north to 854 km.
+# Each pair sits with the control point or task group it screens.
+RED_ESCORTS: dict[str, tuple[int, int]] = {
+    "Naval-16": (100_000, 20_000),  # Rota
+    "Naval-15": (60_000, 85_000),
+    "Naval-13": (150_000, 55_000),  # Tinian
+    "Naval-14": (185_000, 60_000),
+    "Naval-12": (200_000, 135_000),  # Saipan
+    "Naval-11": (160_000, 140_000),
+    "Naval-10": (250_000, 175_000),  # with the NE carrier group
+    "Naval-9": (205_000, 235_000),
+    "Naval-8": (300_000, 75_000),  # with the NW carrier group
+    "Naval-7": (265_000, 15_000),
+    "Naval-5": (230_000, 295_000),  # with the outer carrier group
+    "Naval-19": (175_000, 250_000),
+    "Naval-20": (130_000, 145_000),  # with the amphibious groups
+    "Naval-21": (170_000, 155_000),
+    "Naval-22": (75_000, 95_000),
+    "Naval-23": (115_000, 40_000),
+    "Naval-24": (330_000, 140_000),  # screening FOB Anatahan
+    "Naval-26": (295_000, 125_000),
+}
+
+# A blue FOB 780 km behind red lines is what made the map read as a sandwich; the
+# northern chain is red depth, not a blue toehold.
+FOBS_TO_RED = ("FOB Uracus",)
 
 # Search parameters for _place_on_land, in metres. The minimum keeps a launcher off
 # the airfield it anchors to; the maximum keeps it on the same small island.
@@ -109,6 +187,70 @@ STEP_M = 250
 BEARING_STEP_DEG = 15
 # Two authored sites on the same island must not stack on top of each other.
 MIN_SEPARATION_M = 1_200
+
+
+def _all_groups(mission: Mission) -> dict[str, object]:
+    """Every ship/vehicle group in the mission, keyed by name."""
+    found: dict[str, object] = {}
+    for coalition in mission.coalition.values():
+        for country in coalition.countries.values():
+            for attr in ("ship_group", "vehicle_group"):
+                for group in getattr(country, attr):
+                    found[group.name] = group
+    return found
+
+
+def _move_group(group: object, x: int, y: int) -> float:
+    """Translate a group -- units and route points alike -- to (x, y).
+
+    Setting ``group.position`` alone does not move anything: the units and the route
+    carry their own coordinates, so the whole group is shifted by the delta.
+    """
+    origin = group.position  # type: ignore[attr-defined]
+    dx, dy = x - origin.x, y - origin.y
+    for unit in group.units:  # type: ignore[attr-defined]
+        unit.position.x += dx
+        unit.position.y += dy
+    for point in group.points:  # type: ignore[attr-defined]
+        point.position.x += dx
+        point.position.y += dy
+    return (dx * dx + dy * dy) ** 0.5
+
+
+def _reseat_naval(
+    mission: Mission, theater: object, table: dict[str, tuple[int, int]], heading: str
+) -> None:
+    print()
+    print(f"{heading}:")
+    groups = _all_groups(mission)
+    for name, (x, y) in table.items():
+        group = groups.get(name)
+        if group is None:
+            raise RuntimeError(f"{name} is not a group in the source miz")
+        moved = _move_group(group, x, y) / 1000
+        position = group.position  # type: ignore[attr-defined]
+        if theater.is_on_land(position):  # type: ignore[attr-defined]
+            raise RuntimeError(f"{name} would be placed on land at ({x}, {y})")
+        print(
+            f"  {name:<10} -> ({x/1000:7.0f}, {y/1000:7.0f}) km   moved {moved:5.0f} km"
+        )
+
+
+def _fob_to_red(mission: Mission) -> None:
+    """Re-block a FOB declaration: for a FOB the country block IS the owner."""
+    blue = mission.country(MizCampaignLoader.BLUE_COUNTRY.name)
+    red = mission.country(MizCampaignLoader.RED_COUNTRY.name)
+    assert blue is not None and red is not None
+    print()
+    print("FOB ownership:")
+    for name in FOBS_TO_RED:
+        match = [g for g in blue.vehicle_group if g.name == name]
+        if not match:
+            raise RuntimeError(f"{name} is not a blue-block FOB in the source miz")
+        group = match[0]
+        blue.vehicle_group.remove(group)
+        red.add_vehicle_group(group)
+        print(f"  {name:<14} BLUE -> RED")
 
 
 def _theater() -> object:
@@ -227,7 +369,13 @@ def main() -> None:
             )
 
     author(MISSILE_SITES, MissilesSS.Scud_B, "missile sites")
-    author(MEDIUM_SAM_SITES, AirDefence.S_75M_Volhov, "medium SAM sites")
+    author(LONG_SAM_SITES, AirDefence.S_300PS_5P85C_ln, "long-range SAM sites")
+
+    _fob_to_red(mission)
+    _reseat_naval(mission, theater, BLUE_NAVAL, "blue carrier group")
+    _reseat_naval(mission, theater, BLUE_ESCORTS, "blue escort screen")
+    _reseat_naval(mission, theater, RED_NAVAL, "PLAN task groups")
+    _reseat_naval(mission, theater, RED_ESCORTS, "PLAN escort screen")
 
     mission.save(str(DEST))
     print(f"\nwrote {DEST.relative_to(_REPO_ROOT)}")

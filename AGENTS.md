@@ -154,8 +154,7 @@ file. This guide is the map; those are the territory.
     fork's **modern-day China campaign**, built 2026-08-02). DCS ships no Chinese terrain, so a
     China war can only be fought where China must come to *us* — and exactly one map is that
     place with **zero fiction**: Guam is the Second Island Chain and Andersen AFB is the target
-    set the PLA Rocket Force was built to range. **USA 2020 vs China 2020** on the CurrentHill
-    China pack. Forked from Fuzzle's `pacific_repartee` laydown (rather than edited in place —
+    set the PLA Rocket Force was built to range. **USA 2020 vs the fork faction `China 2027`** on the CurrentHill China pack + High Digit SAMs. Forked from Fuzzle's `pacific_repartee` laydown (rather than edited in place —
     campaign-ownership model; his 2005 scenario stays intact and convergent with upstream) after
     a headless audit found that campaign **cannot** be modernized by a faction swap: red
     airframes are hardcoded, so `China 2020` upgrades the ground/naval kit and leaves **J-7B**
@@ -199,9 +198,27 @@ file. This guide is the map; those are the territory.
     on purpose** (guard-tested) so an MP pilot without the mod still has a carrier ride. No front lines (the islands aren't connected —
     Air Assault and §76 C-130J paradrops are the capture mechanic); red fields no ambient convoys
     because no two red bases share an island. Headless-verified end-to-end (18 CPs — BLUE 6 /
-    RED 12 — 110 TGOs/592 units, all 37 squadrons resolve, **158 blue vs 98 red**); CI-locked in
-    `tests/fourteenth/test_marianas_2027.py` (16 tests incl. standing parking-fit,
-    tanker-compatibility, explicit-`size:` and mod-free-carrier-squadron invariants); in-game pass = checklist **T5**, the riskiest bit being whether
+    RED 13 — 110 TGOs/572 units, all 37 squadrons resolve, **158 blue vs 98 red**); CI-locked in
+    `tests/fourteenth/test_marianas_2027.py` (19 tests incl. standing parking-fit,
+    tanker-compatibility, pin-band-match, no-sandwich, explicit-`size:` and
+    mod-free-carrier-squadron invariants). **Enemy faction `China 2027`** =
+    `china_2020.json` with the obsolete **HQ-2 dropped** and **SA-20/S-300PMU-1 +
+    SA-20B/S-300PMU-2 added**, so `high_digit_sams` is a hard requirement. Measured
+    alternatives, for the record: HDS adds **only the HQ-2** to stock China 2020 and
+    **nothing** to USA 2020; `Redfor (China) 2020` can field the S-300PMU family but also
+    rolls **SA-2/SA-6** (observed spawning as *base defences*, which `ground_forces`
+    cannot reach) and loses the Chinese country identity. **Two `ground_forces` rules
+    learned here:** overrides reach **authored markers only** (base defences roll from the
+    faction roster), and the preset's task must match the marker's **band** or the override
+    is **silently discarded** (`get_unit_group_for_task` gates on `task in fg.tasks`) —
+    the HQ-22 declares LORAD, so it needs a long marker, which is why Rota's is one.
+    **Laydown re-seated 2026-08-02 off a DM finding** ("the CSG at the very north and
+    Andersen blue with all the Red sandwiched in between"): inverting the premise without
+    moving Fuzzle's north-anchored fleet left blue holding **both ends**. Blue's CVN/LHA
+    now sit SW of Guam, **FOB Uracus reverts to RED** (a blue island 780 km behind red
+    lines was the other half of the sandwich), and red's 3 carriers / 2 LHAs / 18-hull
+    screen are pulled from 398–854 km into the **60–330 km Guam–Saipan corridor** so they
+    can contest it. Blue now occupies −102…+11 km and red 60…781 km, unbroken; in-game pass = checklist **T5**, the riskiest bit being whether
     a launcher scoots into the sea (the §49 radius is not landmap-checked). NEW game required
   - `414th-iraq-map-2928-notes.md` — **what DCS 2.9.28's Iraq map content unlocks** (design +
     authoring plan, no code/`.miz` edits yet; scoped 2026-07-26 off the 2.9.28.26283 changelog,

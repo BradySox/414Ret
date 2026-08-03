@@ -5,7 +5,7 @@ authors: 414th Joint Fighter Group (laydown forked from Fuzzle's Pacific Reparte
 description: <p>The modern-day China fight, on the one DCS map that needs no fiction to host it. Guam is the Second Island Chain, and Andersen AFB is the target set the PLA Rocket Force was built around.</p><p><strong>Backstory:</strong> A Taiwan-strait crisis went kinetic. In the opening hours the PLARF salvoed Guam - cratering ramps at Andersen and Won Pat and putting the carrier group on the back foot - while PLAN amphibious groups took Rota, Tinian and Saipan and pushed marines up the northern chain. Guam held. Now the coalition has to hold the ramp it has left, kill the launchers that are still ranging it, and fight its way back up the island chain to relieve the Marine detachment still holding out on Farallon de Pajaros.</p><p><strong>How this plays:</strong> the islands are not connected, so ground fronts never form - captures are made with Air Assault packages (transport helicopters off Olf Orote and the LHA, or C-130J paradrops), and the war between them is an anti-ship and long-range strike fight. Hunt the road-mobile PLARF launchers before they scoot; put the carrier's Prowlers in front of the strike packages; and remember that the enemy's fleet shoots back with cruise missiles.</p>
 version: "10.9"
 recommended_player_faction: USA 2020
-recommended_enemy_faction: China 2020
+recommended_enemy_faction: China 2027
 miz: marianas_2027.miz
 performance: 1
 recommended_start_date: 2027-04-12
@@ -21,6 +21,10 @@ settings:
   # hardware -- and the USA pack backs the modern blue air-defense presets.
   chinesemilitaryassetspack: true
   usamilitaryassetspack: true
+  # High Digit SAMs is a HARD requirement, not a nicety: it is what puts the S-300PMU
+  # family in PLA hands, and the enemy faction's long-range belt is built on it. With
+  # the mod off, those presets silently disappear and red loses its top SAM tier.
+  high_digit_sams: true
   # The CJS Super Hornet pack. The US Navy retired the EA-6B in 2015 (USMC 2019), so a
   # Prowler on a 2027 deck is the same anachronism as red flying a J-7B -- the carrier's
   # electronic-attack det is an EA-18G, and the organic tanker is a Super Hornet. Both
@@ -69,6 +73,38 @@ plugins:
   convoyambush: true
   aisleep: true
   rednet: true
+
+# Red SAM placement. The enemy is the fork faction "China 2027" (= China 2020 with the
+# obsolete HQ-2 retired and the S-300PMU-1/PMU-2 added), so nothing era-wrong can roll
+# in the first place; these pins decide WHERE the heavy batteries stand.
+#
+# Two hard-won rules live in this block:
+#   1. Overrides reach AUTHORED MARKERS ONLY. A base's own generated air defences roll
+#      from the faction roster and cannot be pinned -- which is why the faction itself
+#      had to be fixed. Pinning alone still let SA-2 and HQ-2 spawn as base defences.
+#   2. The preset's task must match the marker's band, or the override is silently
+#      DISCARDED and the site rolls normally (StartGenerator.get_unit_group_for_task).
+ground_forces:
+  # Tinian: the long-range crown. China really does operate the S-300PMU-2, and from
+  # Tinian it ranges across the strait toward Guam -- the campaign's hardest SEAD
+  # problem, and the reason High Digit SAMs is required rather than optional.
+  Ground-1: SA-20B/S-300PMU-2
+  # Rota, the red field nearest Guam: an HQ-22, the PLA's own modern long-range SAM.
+  # Its marker is authored LONG for exactly this reason -- HQ-22 declares LORAD, so on
+  # a medium marker this pin would silently do nothing (measured).
+  Rota SAM Site: HQ-22
+  # Point defence on the occupied islands: HQ-7, the PLA's own short-range system.
+  Ground-3: HQ-7
+  Ground-7: HQ-7
+  Ground-10: HQ-7
+  Ground-15: HQ-7
+  Ground-17: HQ-7
+  Ground-19: HQ-7
+  Ground-21: HQ-7
+  Ground-22: HQ-7
+  # NOT pinned, deliberately: the remaining medium markers (Ground-4/5/11/12/14/16).
+  # China 2027's only MERAD preset is the SA-11 (its HQ-16 analogue), so the roll can
+  # only produce that one system anyway and a pin would be pure decoration.
 
 squadrons:
   # ==================== BLUE -- Guam ====================

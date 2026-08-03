@@ -155,22 +155,28 @@ C2_HUBS = [
     (-40000, -440000),  # Peenemünde
 ]
 
+# ⚠️ NEVER place a marker at a control point's raw coordinate. An Airfield CP's
+# position IS the DCS airfield reference point -- the same point pydcs uses for a
+# `StartType.Runway` spawn -- so a marker authored there parks its objects on the
+# runway. The original bootstrap did exactly that; the coordinates below are the
+# hand-corrected positions now in the miz (~0.9-3.4 km off each field).
+
 # --- Economy (§53): (kind, x, y) --------------------------------------------
 BLUE_ECONOMY = [
-    ("factory", -114116, -781460),  # Bremen
-    ("ammo", -63016, -691931),  # Hamburg
+    ("factory", -114834, -782931),  # Bremen
+    ("ammo", -61955, -692992),  # Hamburg
 ]
 RED_ECONOMY = [
-    ("factory", -51929, -536642),  # Rostock
-    ("ammo", -36297, -436060),  # Peenemünde
-    ("factory", 133729, -489625),  # Copenhagen
-    ("ammo", -107006, -368018),  # Szczecin
+    ("factory", -52781, -536539),  # Rostock
+    ("ammo", -37746, -436448),  # Peenemünde
+    ("factory", 133011, -492964),  # Copenhagen
+    ("ammo", -108066, -369079),  # Szczecin
 ]
 
 # --- Blue base air defense (AAA-only by loader rule; faction buys Patriot) ---
 BLUE_DEFENSE = [
-    (-33001, -776115),  # Nordholz
-    (-114116, -781460),  # Bremen
+    (-32354, -776811),  # Nordholz
+    (-114261, -780009),  # Bremen
 ]
 
 

@@ -7,6 +7,7 @@ from game.lasercodes.lasercode import LaserCode
 from game.missiongenerator.aircraft.flightgroupconfigurator import (
     FlightGroupConfigurator,
 )
+from game.radio.radios import MHz, RadioFrequency, RadioRegistry
 
 
 class _StubRegistry(ILaserCodeRegistry):
@@ -120,3 +121,86 @@ def test_merge_does_not_mutate_input_base(laser_code: LaserCode) -> None:
         base, _StubWeapon(), laser_code  # type: ignore[arg-type]
     )
     assert base == snapshot
+
+
+class _StubSupportInfo:
+    """Stands in for TankerInfo/AwacsInfo; only the channel is read."""
+
+    def __init__(self, freq: RadioFrequency) -> None:
+        self.freq = freq
+
+
+class _StubMissionData:
+    def __init__(self) -> None:
+        self.tankers: list[Any] = []
+        self.awacs: list[Any] = []
+
+
+class _StubFlight:
+    def __init__(self, frequency: Optional[RadioFrequency] = None) -> None:
+        self.frequency = frequency
+
+
+def _configurator(
+    flight: _StubFlight, mission_data: _StubMissionData
+) -> FlightGroupConfigurator:
+    """A configurator with only the collaborators dedicated_support_frequency reads."""
+    configurator = object.__new__(FlightGroupConfigurator)
+    configurator.flight = flight  # type: ignore[assignment]
+    configurator.mission_data = mission_data  # type: ignore[assignment]
+    configurator.radio_registry = RadioRegistry()
+    return configurator
+
+
+def test_first_support_flight_keeps_the_package_frequency() -> None:
+    """Nothing has claimed the channel yet, so no channel is wasted."""
+    mission_data = _StubMissionData()
+    configurator = _configurator(_StubFlight(), mission_data)
+    package_freq = MHz(396)
+
+    assert configurator.dedicated_support_frequency(package_freq) == package_freq
+
+
+def test_second_support_flight_in_a_package_gets_its_own_frequency() -> None:
+    """The regression this guards: the long range carrier strike puts a buddy tanker
+    and an E-2 in one package, so both inherited the package frequency. DCS builds the
+    comms menu per frequency, so only the AEW&C answered and the tanker was
+    unreachable."""
+    mission_data = _StubMissionData()
+    package_freq = MHz(396)
+    mission_data.tankers.append(_StubSupportInfo(package_freq))
+    configurator = _configurator(_StubFlight(), mission_data)
+
+    channel = configurator.dedicated_support_frequency(package_freq)
+
+    assert channel != package_freq
+    assert channel in configurator.radio_registry.allocated_channels
+
+
+def test_a_tanker_does_not_share_the_aewc_channel() -> None:
+    mission_data = _StubMissionData()
+    package_freq = MHz(396)
+    mission_data.awacs.append(_StubSupportInfo(package_freq))
+    configurator = _configurator(_StubFlight(), mission_data)
+
+    assert configurator.dedicated_support_frequency(package_freq) != package_freq
+
+
+def test_an_explicit_flight_frequency_is_left_alone() -> None:
+    """Only the inherited package frequency is replaced; a deliberate assignment
+    stands even if it collides."""
+    mission_data = _StubMissionData()
+    pinned = MHz(396)
+    mission_data.awacs.append(_StubSupportInfo(pinned))
+    configurator = _configurator(_StubFlight(frequency=pinned), mission_data)
+
+    assert configurator.dedicated_support_frequency(pinned) == pinned
+
+
+def test_support_frequencies_covers_both_tankers_and_aewc() -> None:
+    mission_data = _StubMissionData()
+    mission_data.tankers.append(_StubSupportInfo(MHz(245)))
+    mission_data.awacs.append(_StubSupportInfo(MHz(287)))
+    configurator = _configurator(_StubFlight(), mission_data)
+
+    assert configurator.support_frequencies() == {MHz(245), MHz(287)}

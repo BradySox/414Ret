@@ -277,6 +277,7 @@ class FlightGroupConfigurator:
             FlightType.REFUELING,
             FlightType.RECOVERY,
         }:
+            freq = self.dedicated_support_frequency(freq)
             self.register_air_support(freq)
         elif self.flight.client_count and self.flight.squadron.radio_presets:
             freq = self.flight.squadron.radio_presets["intra_flight"][0]
@@ -285,6 +286,31 @@ class FlightGroupConfigurator:
 
         self.group.set_frequency(freq.mhz)
         return freq
+
+    def dedicated_support_frequency(self, channel: RadioFrequency) -> RadioFrequency:
+        """Keeps every tanker and AEW&C flight on a channel of its own.
+
+        Support flights normally inherit their package frequency, which is fine while
+        each one is the only support flight in its package (the theater tanker/AEW&C
+        packages). A package that fields two of them - the long range carrier strike
+        puts a buddy tanker *and* an E-2 in as primary flights - would otherwise hand
+        both the same frequency, and DCS builds the comms menu per frequency: only one
+        of the two answers, so the other is unreachable from the cockpit.
+
+        An explicitly assigned flight frequency is honored as-is; only the inherited
+        package frequency is replaced.
+        """
+        if self.flight.frequency is not None:
+            return channel
+        if channel not in self.support_frequencies():
+            return channel
+        return self.radio_registry.alloc_uhf()
+
+    def support_frequencies(self) -> set[RadioFrequency]:
+        """The channels already claimed by tanker/AEW&C flights this mission."""
+        return {tanker.freq for tanker in self.mission_data.tankers} | {
+            awacs.freq for awacs in self.mission_data.awacs
+        }
 
     def register_air_support(self, channel: RadioFrequency) -> None:
         callsign = callsign_for_support_unit(self.group)

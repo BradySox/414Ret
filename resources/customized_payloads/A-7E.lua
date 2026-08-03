@@ -198,10 +198,16 @@ local unitPayloads = {
 				[1] = {
 					["CLSID"] = "{BRU41A_6*MK82AIR}",
 					["num"] = 1,
+					["settings"] = {
+						["NFP_VIS_DrawArgNo_57"] = 1,
+					},
 				},
 				[2] = {
 					["CLSID"] = "{BRU41A_6*MK82AIR}",
 					["num"] = 2,
+					["settings"] = {
+						["NFP_VIS_DrawArgNo_57"] = 1,
+					},
 				},
 				[3] = {
 					["CLSID"] = "{A7E_AERO1D}",
@@ -222,10 +228,16 @@ local unitPayloads = {
 				[7] = {
 					["CLSID"] = "{BRU41A_6*MK82AIR}",
 					["num"] = 7,
+					["settings"] = {
+						["NFP_VIS_DrawArgNo_57"] = 1,
+					},
 				},
 				[8] = {
 					["CLSID"] = "{BRU41A_6*MK82AIR}",
 					["num"] = 8,
+					["settings"] = {
+						["NFP_VIS_DrawArgNo_57"] = 1,
+					},
 				},
 				[9] = {
 					["CLSID"] = "{B1EF6B0E-3D91-4047-A7A5-A99E7D8B4A8B}",
@@ -242,10 +254,16 @@ local unitPayloads = {
 				[1] = {
 					["CLSID"] = "{BRU41A_6*MK82}",
 					["num"] = 1,
+					["settings"] = {
+						["NFP_VIS_DrawArgNo_57"] = 1,
+					},
 				},
 				[2] = {
 					["CLSID"] = "{BRU41A_6*MK82}",
 					["num"] = 2,
+					["settings"] = {
+						["NFP_VIS_DrawArgNo_57"] = 1,
+					},
 				},
 				[3] = {
 					["CLSID"] = "{A7E_AERO1D}",
@@ -266,10 +284,16 @@ local unitPayloads = {
 				[7] = {
 					["CLSID"] = "{BRU41A_6*MK82}",
 					["num"] = 7,
+					["settings"] = {
+						["NFP_VIS_DrawArgNo_57"] = 1,
+					},
 				},
 				[8] = {
 					["CLSID"] = "{BRU41A_6*MK82}",
 					["num"] = 8,
+					["settings"] = {
+						["NFP_VIS_DrawArgNo_57"] = 1,
+					},
 				},
 				[9] = {
 					["CLSID"] = "{B1EF6B0E-3D91-4047-A7A5-A99E7D8B4A8B}",
@@ -331,6 +355,9 @@ local unitPayloads = {
 				[1] = {
 					["CLSID"] = "{BRU41A_6*MK82}",
 					["num"] = 1,
+					["settings"] = {
+						["NFP_VIS_DrawArgNo_57"] = 1,
+					},
 				},
 				[2] = {
 					["CLSID"] = "{BRU41A_6*CBU99_mod6}",
@@ -359,6 +386,9 @@ local unitPayloads = {
 				[8] = {
 					["CLSID"] = "{BRU41A_6*MK82}",
 					["num"] = 8,
+					["settings"] = {
+						["NFP_VIS_DrawArgNo_57"] = 1,
+					},
 				},
 				[9] = {
 					["CLSID"] = "{B1EF6B0E-3D91-4047-A7A5-A99E7D8B4A8B}",

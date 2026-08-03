@@ -229,3 +229,126 @@ are GUID CLSIDs) for BARCAP/TARCAP/Escort/Sweep/Intercept, TARPS must resolve th
 preset, and the Early file's `unitType` field is pinned. Corollary to the reset policy
 above: **a preset file must cover every task the airframe can be auto-planned on** —
 "the engine will fall back" is never true; the fallback is an unarmed jet.
+
+## 2026-08-02 addendum — carrier airframes carry the Navy case
+
+Off the DM's ask that "the carrier should be using the *navy* version of bombs when able
+to" (GBU-31(V)4/B white case, not the Air Force (V)3/B green case).
+
+**The actionable set is smaller than it looks.** DCS models only three AF/Navy store pairs:
+`GBU-31(V)1/B`↔`(V)2/B` (Mk-84 body), `GBU-31(V)3/B`↔`(V)4/B` (BLU-109 penetrator), and
+`GBU-24A/B`↔`GBU-24B/B`. Everything else a carrier jet drops — GBU-10/12/16, GBU-38,
+Mk-82/83/84 — is **one store shared by both services**, with the Navy variation expressed
+through the cockpit fuzing menu rather than a separate weapon. So there is nothing to pick
+for the 500 lb and 1000 lb classes; only the 2000 lb classes have a case to get wrong.
+
+A sweep of every carrier-capable airframe's shipped fits found the fork already correct
+almost everywhere: the player Hornet (`FA-18C_hornet.lua`) and the Bombcat (`F-14BU.lua`)
+ship `GBU_31_V_2B`/`GBU_31_V_4B`, and the Harrier ships `GBU_32_V_2B` (the 1000 lb JDAM has
+no AF twin in DCS). The one offender was the **CJS Super Hornet** — `FA-18E.lua` /
+`FA-18F.lua`, fits `Retribution Strike` and `Retribution OCA/Runway`, flying 4× (V)3/B.
+
+**The mod constrains the fix**, which is why the "when able to" clause is load-bearing.
+CJS clears the Navy `(V)4/B` on **only the two midboard stations** — verified in the
+installed mod's own `Entry/FA-18EFG_HARDPOINTS_V2.lua:479,753`, and matching the
+`pydcs_extensions` tables — while the AF `(V)3/B` is cleared on four. A straight 4× swap is
+impossible. The fits are re-authored to:
+
+| pydcs pylon | station | store |
+|---|---|---|
+| 2 | STA 02 | `{SUPERHORNET_PYLON_02_OB_MK_1X_GBU-32}` — 1× GBU-32(V)2/B |
+| 3 | STA 03 | `{SUPERHORNET_PYLON_03_MB_MK_1X_GBU-31_V_4B}` — 1× GBU-31(V)4/B |
+| 7 | STA 09 | `{SUPERHORNET_PYLON_09_MB_MK_1X_GBU-31_V_4B}` — 1× GBU-31(V)4/B |
+| 8 | STA 10 | `{SUPERHORNET_PYLON_10_OB_MK_1X_GBU-32}` — 1× GBU-32(V)2/B |
+
+Four bombs as before, all white case, 6000 lb against the old 8000 lb — the mod's ceiling
+for an all-Navy load that keeps a 2000 lb penetrator. The `NFP` fuze settings block
+(`MDRN_B_A_PGM_TAILONLY` / `FMU139CB_LD`) carries over unchanged; it is JDAM-family generic.
+
+**The gotcha worth remembering: a CJS pylon index is not a station.** Pylon 2 reaches
+STA 02 *and* 03, pylon 3 reaches 03 and 04, pylon 7 reaches 08 and 09, pylon 8 reaches 09
+and 10. The obvious "backfill the outboards with the BRU-55 2× GBU-32" idea puts those pairs
+on STA 03/09 — the same midboards the `(V)4` now claims — which the mod's own
+`SUPERHORNET_PYLON03_MIDBOARD_L_FORBIDDEN` / `..._PYLON09_MIDBOARD_R_FORBIDDEN` lists
+reject. Both directions were checked before authoring: the outboard singles are absent from
+those lists, and the outboard lists carry no GBU-32/`(V)4` entries. Because DCS strips an
+illegal store **silently**, a station collision here reads as a naked jet with no error.
+
+New guard: `tests/fourteenth/test_navy_bomb_variants.py` — a fork-wide sweep asserting no
+carrier-capable airframe ships an AF-cased store on a pylon where the Navy twin is
+mountable (confirmed to fail on the pre-fix data), plus a pin on the authored Super Hornet
+fit including the four stores' pylon legality and that they resolve to four *distinct*
+physical stations. Like the sweep above it reads the payload `.lua` files directly rather
+than through `FlyingType.load_payloads`, so it asserts what this repo ships and never picks
+up a developer's own `Saved Games/.../UnitPayloads` — which, note, **takes priority over the
+shipped presets at runtime**, so a personal saved payload of the same name still wins.
+
+Noted in passing, not fixed: `resources/customized_payloads/FA-18C.lua` binds
+`unitType = "F/A-18C"` (the AI-only Hornet) and still carries AF `{GBU-31V3B}`, but that
+airframe has **no unit data file** in this fork (`No data for F/A-18C; it will not be
+available`), so the file is dead — as are the `F/A-18C` entries in the dozen factions that
+list it. Same shape as the other AI twins of module aircraft (`F/A-18A`, `F-5E`, `Hawk`,
+`L-39C`, `Mirage-F1C`), i.e. deliberate upstream behaviour, not a regression. Left alone;
+the sweep skips it for the same reason.
+
+### The other half — the white case is a *setting*, not a store
+
+The store swap above only covers the 2000 lb classes, because those are the only
+AF/Navy pairs DCS models as separate weapons. The **white (thermally protected) body**
+at every other size is a per-loadout **visual setting**:
+
+```lua
+["settings"] = { ["NFP_VIS_DrawArgNo_57"] = 1 },   -- 1 = Navy white, 0 = green
+```
+
+written by the Mission Editor's weapon-settings ("fuzing") panel and applied to draw
+argument 57 of the bomb model. **Reference: ED's own
+`CoreMods/aircraft/F14/UnitPayloads/F-14BU.lua` sets `1` on every bomb the Bombcat
+carries** (GBU-12/16/24E/38/31(V)2) — the canonical "Navy jet, all bombs white" layout.
+Confirmed empirically by a DM-built test miz (2026-08-02) carrying the same
+`{BRU55_2*GBU-38}` twice, one at `1` and one at `0`.
+
+Three traps:
+
+- **`0.1` on the same key is a missile visual** (AIM-9/9X seeker), not a casing. The
+  argument is model-specific — only ever write it on bomb entries. A positive
+  bomb-name gate is what keeps it off things like the A-6E's `{HB_A6E_D704}` buddy pod.
+- **`NFP_PRESID`** (`MDRN_B_A_PGM_TWINWELL_USN`, `MDRN_B_A_PGM_HTP_USN`, …) is declared
+  **by the weapon itself** (`AircraftWeaponPack/JDAM.lua` et al.), not chosen per
+  loadout — it is *not* the casing selector, and its `_USN` variants exist only for the
+  TWINWELL and HTP families. Likewise **"TP" in a DCS bomb name means Training
+  Practice** (inert), not thermally protected.
+- **Whether a store supports the setting at all is decidable**: a weapon declared with
+  `Get_Combined_GUISettings_Preset(...)` has a fuze **and visual** section; one declared
+  with `Get_Fuze_GUISettings_Preset(...)` has fuze only. Cluster munitions (Mk-20,
+  CBU-99, CBU-105) are Fuze-only and correctly carry no casing. The preset *definitions*
+  are compiled into DCS binaries — there is no readable Lua — so that declaration call
+  is the only programmatic signal available.
+
+The pass sets `= 1` on every bomb entry of the US Navy/USMC strike jets —
+`FA-18C_hornet`, `FA-18E`/`F` (CJS), `AV8BNA`, `A6E`, `A-7E`, the three
+`F-14A-135-GR`/`Early`/`F-14B`, and `F-14BU`.
+
+**It writes the casing key and nothing else** (DM call 2026-08-02 — "keep everything
+default besides the color"). An entry that already had a settings block gets the one key
+set or inserted, every other key untouched; an entry with no block gets a block
+containing only the casing key, so fuze type, arm/function delay and preset id all stay
+at the DCS default exactly as before. The first cut authored a *full* ME-style block per
+preset and was reverted: it silently introduced fuzing settings onto airframes that had
+never carried any, which is a behaviour change nobody asked for and a much worse failure
+mode than a bomb staying green. Worth recording anyway, since it is the trap if that
+approach is ever revisited: the presets do **not** share fuze values —
+`MDRN_B_A_PGM_HTP_USN` uses **FMU-143 at 5.5 / 0.03**, not the FMU-139 numbers of the
+other JDAM presets.
+
+Deliberately excluded: **`F-14A-95-GR`** is the Export (Iranian) Tomcat; the **VSN** and
+**VWV** mods (wrong nation, and the coating postdates Vietnam); cluster munitions; and
+`{BRU-32 GBU-24}` (Paveway III — no observed exemplar block, so the Tomcats' GBU-24 stays
+green until one exists).
+
+Guards added to `tests/fourteenth/test_navy_bomb_variants.py`: on a Navy jet the key may
+be absent (that store has no visual section) but must never be `0`, and a floor list pins
+that the jets this was actually asked for still carry it. Both were confirmed to fail
+when reverted.
+
+In-game pass = checklist **B36**.

@@ -1488,6 +1488,28 @@ behavior, so it's an upstream-PR candidate. Tests: `tests/test_dead_planning.py`
   (carve candidates). Checklist **C8** — needs an in-game pass.
 - AWACS orbit stacking + direction: `game/ato/flightplans/aewc.py`.
 - Tanker orbit placement/deconfliction: `game/ato/flightplans/theaterrefueling.py`.
+- **Support flights sharing one radio channel (the flown "I can't talk to the A-6 tanker",
+  fixed 2026-08-02).** A player-flown carrier strike could not raise its own buddy tanker on
+  any channel, while the theater KC-135 answered normally. Root cause is in
+  `FlightGroupConfigurator.setup_radios` (`game/missiongenerator/aircraft/flightgroupconfigurator.py`):
+  an AEWC/REFUELING/RECOVERY flight inherits its **package** frequency. That is correct while
+  each support flight is the only one in its package (the theater tanker and AEW&C packages each
+  get their own), but **§44 long-range carrier ops deliberately puts a buddy tanker *and* an E-2
+  in as primary flights of the same package** (`game/fourteenth/carrier_ops.py`) — so both took
+  the one package channel. The flown miz had `Milestone 8` (A-6E) and `Wizard 7` (E-2C) both on
+  **396.0 AM**; DCS builds the comms menu per frequency, so only the AEW&C answered and the
+  tanker was unreachable from the cockpit (the §74 DTC cartridge corroborated it — COMM2
+  channels 3/4/5 all resolved to 396.0 and all took the AEW&C's name). `setup_radios` now routes
+  the inherited channel through `dedicated_support_frequency`, which allocates a fresh UHF when
+  another tanker/AEW&C flight already holds it (`support_frequencies` reads the
+  `MissionData.tankers`/`awacs` registrations, so the check covers both classes and both
+  coalitions). The **first** support flight in a package still keeps the package frequency, so no
+  channel is wasted in the common single-support case, and an **explicitly assigned**
+  `Flight.frequency` is honored as-is — only the inherited package channel is replaced.
+  Generation-time ⇒ **existing saves fix themselves on the next regeneration, no NEW game.**
+  Tests: `tests/missiongenerator/aircraft/test_flightgroupconfigurator.py`. Upstream-shared
+  (carve candidate — `setup_radios` is upstream code; only the §44 package shape that exposes it
+  is fork-side).
 - **Carrier-recovery stagger (the flown Scenic Route midair, fixed 2026-07-16).** Two AI
   packages (an OX S-3B and a CATERPILLAR Hornet) recovering to CVN-71 in the same window
   converged co-altitude at ~1,000 ft and collided 2.7 NM from the boat — blue's only losses
@@ -1603,6 +1625,33 @@ behavior, so it's an upstream-PR candidate. Tests: `tests/test_dead_planning.py`
   `game/campaignloader/campaignairwingconfig.py`. Generic upstream-code fix on upstream
   campaigns (upstream-PR candidate). Test:
   `tests/test_campaignairwingconfig_empty.py::test_authored_empty_aircraft_key_reads_as_any`.
+- **Supply convoys spawning on the runway (2026-08-02, the flown Baltic Fury report "why are
+  units generating on the runway").** A convoy's spawn is `Convoy.route_start` — literally
+  `convoy_routes[destination][0]`, the first waypoint of the authored supply route. An
+  `Airfield` control point's `position` **is** the DCS airfield reference point — pydcs uses
+  that exact point for a `StartType.Runway` spawn (`_flying_group_from_airport`) — so any
+  campaign that anchored a route endpoint on the control-point coordinate parked its whole
+  departing convoy on the runway. Confirmed in the flown miz: `Convoy 001` (3 vehicles) at
+  0.3 m from the Bremen reference and `Convoy 002` at 0.4 m from Nordholz. The de-stack
+  mechanism that would otherwise have saved it — miz-authored cp-convoy spawn markers
+  (`M1043_HMMWV_Armament` groups → `MizCampaignLoader._construct_cp_spawnpoints`) — is
+  authored by **0 of 72** campaign mizzes, so `_find_closest_cp_spawn` returns nothing and
+  every unit piles onto waypoint 0. `ConvoyGenerator.spawn_position` now walks the spawn out
+  along the **authored corridor** (never off it) to the first point ≥
+  `AIRFIELD_SPAWN_CLEARANCE_M` (1500 m — clears a runway half-length plus aprons while keeping
+  the convoy at the base, still BAI-targetable and inside its defensive umbrella) that is also
+  on land, bounded by `MAX_SPAWN_WALK_M` (5 km) so a fouled approach never marches the convoy
+  toward the enemy. Every failure mode degrades to today's behaviour: no runway (FOB/FARP/
+  carrier), an already-clear endpoint, an authored spawn chain (respected wholesale — moving
+  only the lead would strand it ahead of the rest), or no clear ground in budget all return the
+  authored point unchanged. Generation-time, so **existing saves are fixed by the next
+  regeneration** — no new game. Headless-verified on the flown save: both convoys move
+  0.3/0.4 m → ~1503 m clear. Upstream-shared (upstream's miz-drawn `front_line_path_groups`
+  have the same waypoint-0-at-the-CP pattern); carve candidate. The campaign-data half of the
+  same report — 3 Baltic Fury ammunition depots authored at 0 m from the Hamburg/Peenemünde/
+  Szczecin references — is fixed in the miz and CI-locked in `tests/fourteenth/test_baltic_fury.py`
+  (design note `414th-baltic-fury-campaign-notes.md`). Tests
+  `tests/missiongenerator/test_convoy_spawn_clearance.py`.
 
 ---
 
@@ -6308,12 +6357,10 @@ both COIN campaigns. State on `Game` (`comint_collected_turn` / `comint_reveal_t
 **C1 — the audible red net (LANDED 2026-07-18, same day).** The same C2 nodes now
 *transmit*. With `red_comms_net` on (Mission Generation → Battlefield life, default
 **OFF**), `plan_red_net` (`game/missiongenerator/rednetluadata.py`, run in the §51 plan
-slot with the mission `RadioRegistry`) assigns each alive enemy comms/CC node a
+slot with the mission `RadioRegistry`) assigns each transmitting enemy comms/CC node a
 **deterministic UHF AM net frequency**: seeded from the node name (crc32 — stable across
-missions, so the net lives at the same spot on the dial) at **x.500 MHz**, deliberately
-off the whole-MHz grid every briefed blue channel allocates on (collision-free by
-construction), GUARD's slot skipped, the frequency **reserved in the registry**, and
-collisions linearly probed in sorted-name order. The plan rides `MissionData.red_net`;
+missions, so the net lives at the same spot on the dial) at **x.500 MHz**, GUARD's slot
+skipped, and collisions linearly probed in sorted-name order. The plan rides `MissionData.red_net`;
 `populate_red_net_lua` emits `dcsRetribution.redNet`. The `resources/plugins/rednet/`
 runtime (plugin `defaultValue` ON — the §36 saved-default-off lesson) keys each node's net
 in **windows**: a looped, original synthesized CW clip (`rednet-cw.wav`, "VVV 414 414 K"
@@ -6351,14 +6398,48 @@ with a "+N more" tail. The plan threads `MissionData.red_net` →
 `KneeboardGenerator(red_net=…)` → `comint_kneeboard_lines(game, red_net)`; no listing
 when B is off (each feature degrades gracefully alone, designed to pair).
 
+**Band discipline — the station cap + the guard band (2026-08-02, off the flown "COMINT is
+bleeding into mission frequencies" report).** C1 shipped on a claim that turned out to be
+half true: **x.500 MHz is only off-limits to the *inter-flight* allocator**. `BLUFOR_UHF`
+steps a whole MHz, but per-flight aircraft radios (`alloc_for_radio`, e.g. AN/ARC-164
+225–400 @ **25 kHz**), field ATC, and ATIS all allocate on the 25 kHz grid — on which
+x.500 and both its neighbours are perfectly ordinary slots. So "collision-free by
+construction" was never true; the only thing holding the line was that `plan_red_net` runs
+late and probed past an **exact** `ChannelInUseError`, which still left a net free to key
+up **one 25 kHz detent** off a briefed channel — and left anything allocated *after* the
+plan (ATIS runs later) free to park beside a carrier. Two fixes, both in
+`rednetluadata.py`:
+
+* **The station cap.** Every red C2 TGO plus every concealed COIN spawn was a
+  transmitter — a KARI-style IADS (DS91: comms/power relays at *every* red base) or a COIN
+  laydown is dozens of carriers across 225–400, which is the "bleeding" as experienced.
+  `red_net_max_stations` (Mission Generation → Comms war, default **3**, min 1 / max 12,
+  `enabled_when=red_comms_net`) caps who goes on the air; `_stations_on_the_air` picks by
+  **range to the nearest blue CP** (a net you can hear and DF earns a dial slot; one 400 km
+  in the rear is clutter), deterministic tie-break by name, with **one slot anchored per
+  kind** so a crowd of near cells can't push the fixed C2 net off the dial (or vice versa).
+  A theater with no blue position (headless fixtures) falls back to name order. Emission
+  order stays name-sorted, so frequencies are unchanged by which anchors won.
+* **The guard band.** `NET_GUARD_HZ` (100 kHz = four detents): a candidate is rejected
+  unless it clears **every** allocated frequency in the band by that margin — compared by
+  **hertz, modulation-blind**, since `RadioFrequency` equality includes modulation and an
+  AM/FM pair at the same hertz is one spot on the dial to a pilot — and on success
+  `_reserve_guard_band` reserves the carrier **plus every 25 kHz detent inside the band**,
+  closing it to every later allocator.
+
+The `red_comms_net` setting detail, the plugin description, and the runtime header all
+dropped the "by construction" claim for the guard-band one.
+
 Tests: `tests/fourteenth/test_comint.py` (tier gating incl. the dead-net-beats-collector
 rule, the OFF exact no-op, the survivor requirement, drone eligibility, leak determinism +
 ranking, the reveal's nearest-pick/range/already-known/`map_hidden` rules + re-init
 idempotence, the posture-detail earn, the active-nets listing's identity-hiding + cap +
 absence without a plan, the map_hidden source exclusion) +
 `tests/missiongenerator/test_rednetluadata.py` (the freq plan: off-grid, GUARD skip,
-reservation, determinism, probing; COIN cells emit clandestine, concealed comms =
-clandestine, `map_hidden` never emitted, the area field) +
+reservation, determinism, probing past both an exact hit and a one-detent neighbour, the
+reserved guard band, the station cap + its default + the nearest-blue pick + the
+per-kind anchor; COIN cells emit clandestine, concealed comms = clandestine,
+`map_hidden` never emitted, the area field) +
 `tests/lua/test_rednet_runtime.py` (grace, stagger, loop+stop windows, `node_dead`,
 no-op, the clandestine short-window/long-gap schedule alongside a fixed station).
 Checklist B22 — needs an in-app pass (the kneeboard block + nets listing render + the
@@ -7340,6 +7421,78 @@ indistinguishable from a genuine hidden contact.
 **Checklist B33** — needs an in-game pass: a suspected circle you TARPS/strike reports "no
 activity — decoy" and disappears, fresh ones appear next turn, and the AI never frags a strike
 at an empty zone.
+
+## §80 — Mixed-hull ship groups
+
+Every ship group put to sea as N copies of one hull: four identical Arleigh Burkes ringing the
+carrier, two identical corvettes as a "naval group". Not a data problem — a **generation**
+one. A layout slot (`TgoLayoutUnitGroup`) picked **one** DCS unit type
+(`random_dcs_unit_type_for_group`) and `generate_units` stamped that single type into every
+position in the slot. Whatever the faction's roster held, the group came out uniform.
+
+### The fix — a type per slot, not per group
+
+`TgoLayoutUnitGroup.generate_units` now takes **one type per position** instead of
+`(type, amount)`, and `ForceGroup.mixed_dcs_unit_types_for_group` deals that list:
+
+1. The **lead** type is picked exactly as before (so the old distribution over classes is
+   preserved and the change is a strict refinement, not a reroll).
+2. Candidates are narrowed to the lead's own **unit family** — `layout.UNIT_FAMILIES`, today
+   the single set `{Frigate, Destroyer, Cruiser}`; **every other class is its own family**. So
+   a carrier screen mixes destroyers, frigates and a cruiser, while a patrol boat never turns
+   up in a cruiser's slot, a submarine never surfaces in a surface action group, and two
+   carriers never share a slot (which would confuse `find_carrier_unit`, whose flagship is
+   `groups[0].units[0]`).
+3. The distinct count is capped at `MAX_MIXED_UNIT_TYPES` (3) so a deep roster produces a
+   **task group, not a one-of-everything zoo**; each chosen type appears at least once and the
+   remaining slots are dealt from them, so a 4-ship screen off a 2-hull navy is not forced into
+   an even 2/2 split.
+
+A pool with no siblings (an explicit `unit_types:` list, or a faction fielding one hull of the
+class) degrades to the old uniform group — **the change can only ever add variety.**
+
+### Gating: naval only, and never the buy menu
+
+Mixing is a **layout-kind** property, not a setting: `TgoLayout.mix_unit_types` is `False` and
+`NavalLayout` overrides it to `True`, so SAM sites, EWRs, armor groups and missile sites keep
+generating uniformly (a SAM battery's launchers must stay one type). A layout YAML can override
+a single slot with `mix_unit_types: true|false`. The mixing parameter on
+`ForceGroup.create_theater_group_for_tgo` defaults **off**, so the **buy menu** — where the
+player explicitly picked a hull — is untouched and still generates exactly what was chosen.
+
+### The layouts, while we were in there
+
+The naval layouts were the other half of "all one hull": the carrier screen was declared
+`unit_classes: [Destroyer]`, which both forced one class and locked the layout out of
+frigate-only navies (hence the duplicate `Carrier Group with Frigate escort`, whose `.miz` is
+byte-identical).
+
+- **Carrier Group / LHA Group** — the screen accepts every surface combatant
+  (`Destroyer, Cruiser, Frigate`), so a US CSG generates Burkes + Perrys + a Ticonderoga.
+- **Carrier / LHA Group with Frigate escort** — kept as the deliberate **light screen**
+  (frigate-led, `Frigate, Destroyer`, no cruiser) rather than a redundant copy that would
+  regenerate the uniform-frigate look for single-frigate navies.
+- **Naval Group** — the class split per slot is the point (a layered task group) and is kept;
+  the two required slots gained `fallback_classes` so a navy missing a class can still put the
+  layout to sea.
+
+Headless-verified end-to-end on real campaigns (Tanker War 1988, Pacific Repartee, Velvet
+Thunder): every multi-ship group generates mixed, carriers stay single-hull, submarine pairs
+stay submarines, and riverine/patrol boats pair only with boats.
+
+### Files & tests
+
+- `game/layout/layout.py` — `UNIT_FAMILIES`/`unit_family`, `MAX_MIXED_UNIT_TYPES`, the
+  per-slot `generate_units`, `TgoLayout.mix_unit_types` + `mixes_unit_types`,
+  `NavalLayout.mix_unit_types = True`.
+- `game/layout/layoutmapping.py` + `layoutloader.py` — the `mix_unit_types` YAML key.
+- `game/armedforces/forcegroup.py` — `mixed_dcs_unit_types_for_group` + the
+  `create_theater_group_for_tgo` parameter.
+- `resources/layouts/naval/*.yaml` — the widened screens and the Naval Group fallbacks.
+- Tests: `tests/armedforces/test_naval_hull_mixing.py` (9).
+
+**Checklist B38** — needs an in-game pass: a mixed-hull group sails and fights as one DCS group
+(formation, speed, station-keeping) with no beaching or bunching.
 
 ## Code audit fixes — 2026-07-07
 

@@ -229,11 +229,33 @@ a campaign wants one — Red Tide post-M2 is the natural first customer). The UH
 carries everything for now; the LF/MF CW agent net and the VHF-FM ground net remain
 future band expansions.
 
+**Band discipline (2026-08-02, off the flown "COMINT is bleeding into mission frequencies"
+report).** Two assumptions in the landed shape did not survive contact:
+
+1. **"Every comms-active object transmits" does not scale.** It is the right *source*
+   definition for the COMINT take (feature A counts emitters), but as a *transmitter* list
+   it puts a theater's whole C2 net plus every insurgent cell on the dial at once — dozens
+   of carriers across 225–400 MHz. The take stays exhaustive; the **air** is now capped
+   (`red_net_max_stations`, default 3), picked nearest-blue with one slot anchored per kind
+   so neither the fixed net nor the clandestine hunt can be crowded out. Catching a station
+   on the air is supposed to be an event; a full band makes it ambient.
+2. **"x.500 MHz cannot collide by construction" was wrong.** It only dodges the whole-MHz
+   *inter-flight* allocator; per-flight aircraft radios, ATC, and ATIS allocate on the
+   **25 kHz** grid, where x.500 is an ordinary slot. The late-running exact-match probe
+   still allowed a net one detent off a briefed channel, and allowed anything allocated
+   after the plan (ATIS) to park beside a carrier. Now: a 100 kHz **guard band** that a
+   candidate must clear against every allocated frequency (hertz-compared, modulation-blind
+   — `RadioFrequency` equality includes modulation, but a pilot's dial does not), and the
+   whole band is reserved on assignment. Design rule going forward: **the half-MHz offset
+   is cosmetic; the guard band is the guarantee.**
+
 ### Settings
 
-`red_comms_net` — Mission Generation → Battlefield life, default **OFF** until flown.
+`red_comms_net` — Mission Generation → Comms war, default **OFF** until flown.
 Independent of `comint_collection` but designed to pair (A lists the nets B transmits;
-either degrades gracefully alone).
+either degrades gracefully alone). `red_net_max_stations` (same section, default **3**,
+`enabled_when=red_comms_net`) is the band-volume knob: how many stations are on the air at
+once. Raise for a busier band, lower to make a catch rarer.
 
 ### Files & tests
 

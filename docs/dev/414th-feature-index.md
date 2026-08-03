@@ -93,6 +93,7 @@ pass checklist `§N` is unregistered, or this table drifts.
 | §79 | Decoy suspected-activity zones | — | `decoy_zones`, `decoy_zone_count` |
 | §80 | Mixed-hull ship groups | — | — |
 | §81 | Cross-turn naval magazines | `navalmagazines` | `naval_weapon_release_stagger`, `naval_magazines` |
+| §82 | The Wing Grows | — | — |
 | — | MANTIS IADS engine | `mantisiads` | — |
 | — | Splash Damage (414th tuned) | `splashdamage3` | — |
 | — | AI recon BDA capture (§3 TARPS) | `airecon` | — |

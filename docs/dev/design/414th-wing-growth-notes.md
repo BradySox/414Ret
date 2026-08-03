@@ -1,9 +1,20 @@
 # The Wing Grows — scheduled squadron arrivals
 
-> **STATUS: DESIGN ONLY (2026-08-03). Nothing is landed.** No code, no settings field, no
-> campaign edits. Split out of `414th-single-player-loop-notes.md` §S3 reason **5b** at the
-> DM's request, because unlike the rest of that note's motivation layer this is a real
-> feature rather than a read-out.
+> **STATUS: LANDED 2026-08-03 as feature §82.** The engine half and both authored
+> schedules are in: `game/fourteenth/wing_growth.py`, `available_from_turn:` /
+> `arrival_note:` on a squadron block, `Sitrep.arrivals`, and schedules on **Operation
+> Baltic Fury** (offensive arc) and **Red Tide** (defensive arc). No settings field — a
+> campaign that authors nothing is byte-identical. Engineering detail lives in
+> `414th-features.md` §82; this note keeps the design rationale, the ordering principle
+> and the open calls. **In-game pass owed: checklist B40.**
+>
+> Still deferred (see "Edge cases" below): announcing under-strength arrivals, holding an
+> arrival whose base is enemy-held, `available_until_turn` departures, and rendering
+> `upcoming_arrivals` ahead of the turn (waiting on the SP Pilot Mode board).
+>
+> Split out of `414th-single-player-loop-notes.md` §S3 reason **5b** at the DM's request,
+> because unlike the rest of that note's motivation layer this is a real feature rather
+> than a read-out.
 
 ---
 

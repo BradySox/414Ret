@@ -304,12 +304,19 @@ settings:
 squadrons:
   #Ramstein — rear heavy-iron + the eyes: the B-52s, the 414th Strike Eagles, and the E-3A.
   165:
+    # §82 The Wing Grows — the heavy stick, once blue owns enough of the sky to
+    # fly it. Red Tide opens DEFENSIVELY (holding the Gap), so its arc is
+    # hold -> stabilise -> counter-attack: what arrives later is the
+    # counter-offensive capability, never the CAS the defensive battle needs
+    # from turn 1.
     - primary: Strike
       secondary: any
       aircraft:
         - 20th Bomb Squadron
       aircraft_type: B-52H Stratofortress
       size: 4
+      available_from_turn: 8
+      arrival_note: "SAC deploys the 20th BS to Ramstein"
     - primary: AEW&C
       aircraft:
         - NATO E-3A Component
@@ -371,6 +378,8 @@ squadrons:
       aircraft_type: A-10C Thunderbolt II (Suite 3)
       callsign: Bulldog
       size: 8
+    # §82 The Wing Grows — the counter-attack opens. Deep interdiction of the
+    # Soviet second echelon is exactly the capability a stabilised front unlocks.
     - primary: BAI
       secondary: air-to-ground
       aircraft:
@@ -378,6 +387,10 @@ squadrons:
       aircraft_type: F-15E Strike Eagle (Suite 4+)
       callsign: Phantom
       size: 12
+      available_from_turn: 6
+      arrival_note: "Strike Eagle wing arrives at Frankfurt"
+    # §82 The Wing Grows — stabilise. A coalition reinforcement beat that adds
+    # escort depth as the counter-air fight over the Gap grinds on.
     - primary: Escort
       secondary: air-to-air
       aircraft:
@@ -385,6 +398,8 @@ squadrons:
       aircraft_type: Mirage-F1EE
       callsign: Dagger
       size: 6
+      available_from_turn: 4
+      arrival_note: "Ala 14 deploys north — Spanish contribution"
     - primary: Transport
       secondary: any
       aircraft:

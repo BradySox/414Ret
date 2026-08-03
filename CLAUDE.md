@@ -3399,6 +3399,56 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     `tests/lua/test_navalmagazines_runtime.py`; features doc §81, checklist B39 — needs an
     in-game pass (the `ReturnFire` air-defence question above is the gate; then that a
     staggered fleet still fights, and that the winchester drop fires on real AShM releases).
+82. **The Wing Grows (scheduled squadron arrivals)** — a campaign can hold a squadron back
+    and have it join the air wing on an **announced later turn**
+    (`available_from_turn:` + optional `arrival_note:` on a squadron block). Aimed at the
+    structural reason SP campaigns die after turn 1: **turn 1 is the best mission by
+    construction** (full wing, full ramp, no attrition), so every later turn is a degraded
+    copy and nothing ever gets better. A schedule inverts that — the turn-1 wing is no
+    longer the whole wing you will ever have — and it converts the DM's own stated
+    motivator (variety) into the campaign's forward hook: you play to turn 6 because that
+    is when you get to fly the Prowler. **Premise half-corrected when built:** aircraft
+    replenishment into an existing squadron exists (`pending_deliveries`) but is a
+    ONE-TURN buffer delivering more of what you already fly; **mid-campaign arrival of a
+    new squadron/type did not exist at all** (the `squadrons:` block is consumed at turn 0),
+    so this is new machinery, not a missing announcement. **It is small for a specific
+    reason: `ControlPoint.squadrons` is a DERIVED property** (it filters
+    `air_wing.iter_squadrons()` on `squadron.location`), so there is no base→squadron list
+    to maintain — a squadron appears at its base and is plannable the moment it joins the
+    wing, and **the planner needs no change at all**; likewise `AirWing.reset()` /
+    `populate_for_turn_0()` / `end_turn()` all walk `iter_squadrons()`, so a pending
+    squadron is untouched by per-turn processing for free. The squadron is **built at turn
+    0 exactly as today** (preset pick, §23 country pin, callsign overrides, def claiming)
+    and parked in `AirWing.pending_arrivals`; `promote_due_arrivals`
+    (`game/fourteenth/wing_growth.py`) runs from `Game.initialize_turn` **before** the
+    coalitions initialize, so an arrival is populated + plannable on its own turn, and
+    promoted squadrons leave the pending list (naturally idempotent under the base-capture
+    / TGO buy-sell re-inits). Announcement = a new `Sitrep.arrivals` field, which buys the
+    kneeboard band + web LAST TURN + Qt debrief at once; unlike the §52/§75 lines an
+    arrival **counts as news** so it surfaces on a quiet turn. Red schedules work (code is
+    symmetric) but are **never announced**. A malformed `available_from_turn` **raises** so
+    New Game aborts loudly rather than shipping a wing that never grows; unset =
+    byte-identical. **Ordering principle — SEAD/DEAD before strike:** turn 1 is the
+    door-kickers (air superiority, SEAD/DEAD, enablers), later arrivals are the exploiters
+    (strike, deep interdiction, bombers) — which makes arrivals feel *earned* AND is the
+    safe way to defer, since the early campaign cannot use deep strike before the belt is
+    down. **The arc differs by how the campaign opens**, so the two shipped schedules are
+    different shapes: **Baltic Fury** (offensive — kick the door → rollback → strike) T3
+    Finnish F/A-18C BARCAP · T5 Swedish Gripen DEAD · T7 F-15E + F/A-18F Strike · T9 B-1B,
+    with the real NATO accession order (Finland Apr 2023, Sweden Mar 2024) agreeing with
+    the doctrinal order and turns 1–4 deliberately Growler-thin; **Red Tide** (defensive —
+    hold → stabilise → counter-attack) T4 Mirage F1EE Escort · T6 F-15E BAI · T8 B-52H,
+    where **CAS is never deferred** because the Gap fight needs it from turn 1 (its feature
+    lock was lifted 2026-08-03, so no override was needed). NEW game required (the schedule
+    is consumed at turn 0); `__setstate__` defaults keep old saves loading. Deferred:
+    announcing under-strength arrivals (parking clamps silently), holding an arrival whose
+    base is enemy-held, `available_until_turn` departures, and rendering
+    `upcoming_arrivals` ahead of the turn (waiting on the SP Pilot Mode board). Tests
+    `tests/fourteenth/test_wing_growth.py` (22) +
+    `tests/fourteenth/test_wing_growth_campaigns.py` (20, which pins the *rules* — enablers
+    never deferred, air superiority always on the turn-1 ramp, DEAD before strike, Red Tide
+    never defers CAS); features doc §82, design note
+    `docs/dev/design/414th-wing-growth-notes.md`, checklist B40 — needs an in-game pass.
 
 ---
 

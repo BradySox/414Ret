@@ -486,6 +486,32 @@ file. This guide is the map; those are the territory.
   - Drafts / not-yet-landed (design only): `414th-mission-planning-wiki-rework.md`
     (upstream wiki rewrite), `414th-scenery-import-notes.md` (scenery strike targets),
     `turnless.md` (turnless-campaign exploration),
+    `414th-wing-growth-notes.md` (**The Wing Grows** — scheduled squadron arrivals, split out
+    of the SP-loop note's §S3 reason 5b at the DM's request because it is a real feature, not
+    a read-out: a campaign-authored `available_from_turn:` (+ optional `arrival_note:`) on a
+    squadron block, so **new airframe types** land mid-campaign on a schedule the player sees
+    coming ("F-14 det turn 4, Prowlers turn 6"). Hits two of the three SP-diagnosis factors —
+    it converts the DM's own variety motivator into the forward hook, and it **inverts "turn 1
+    is the best mission by construction"** by giving the campaign an upward slope. **The build
+    is smaller than expected, and the reason is `ControlPoint.squadrons` being a DERIVED
+    property** (it filters `air_wing.iter_squadrons()` on `squadron.location`), so there is no
+    base→squadron list to maintain: the moment a squadron joins the wing it appears at its
+    base, `best_squadrons_for` sees it, and **the planner needs no change at all**. Likewise
+    `AirWing.reset()`/`populate_for_turn_0()`/`end_turn()` all walk `iter_squadrons()`, so a
+    pending squadron is untouched for free. Shape: build the Squadron at turn 0 exactly as
+    today (reusing preset pick / §23 country pin / def claiming — one construction path, and
+    a deterministic schedule) but hold it in a pending list instead of `add_squadron`, then
+    promote + populate it in `Coalition.initialize_turn` (`Squadron.populate_for_turn_0` is
+    already generic despite its name — worth renaming). Announcement is BOTH halves: the
+    schedule shown **ahead** (greyed on the SP board's step 1 + the S3 anticipation band —
+    the jet you can't fly yet is the advert) and the event on the turn via a new `Sitrep`
+    `arrivals` field, which buys kneeboard + web LAST TURN + Qt debrief at once. Edge cases
+    owed answers: **parking** (an arrival base full since turn 0 clamps SILENTLY today — a
+    regression in spirit vs the standing parking-fit invariant), a lost/enemy-held arrival
+    base, def claiming, save compat (new pending state, `__setstate__` empty default, campaign
+    edits need a NEW game), the Air Wing Config dialog, and `squadrons_start_full`
+    interaction. 6 open calls incl. visible-vs-surprise, red schedules (code symmetric, never
+    announced as fact), and `available_until_turn` departures as the use-it-or-lose-it v2),
     `414th-single-player-loop-notes.md` (**SP Pilot Mode** — why SP campaigns die after turn 1
     while the 414th's MP campaigns finish: in MP you play a *pilot*, in SP you play the DM
     **and** the pilot, and the DM job has no fun in it. The stop point is reproducibly "accept
@@ -555,8 +581,8 @@ file. This guide is the map; those are the territory.
     exist at all** (the `squadrons:` block applies at turn 0, `Squadron` has no activation
     turn — its `arrival` is an unrelated `ControlPoint` property), so this is NEW machinery,
     not a missing announcement — small and additive (a campaign `available_from_turn:`, held
-    out of the air wing until then, unset = today's behaviour), owed its own note as the
-    highest-value item that is NOT free;
+    out of the air wing until then, unset = today's behaviour), **scoped 2026-08-03 into its
+    own note** `414th-wing-growth-notes.md`;
     (6) **dread** — §W6 red tempo + §70 COMINT leaks framed as intel estimates; (7) **a
     record that is yours** — the one gap needing new state (`PilotRecord` tracks only
     `missions_flown`, no kills/rescues). Plus the cheap multiplier: **make the S2 choice

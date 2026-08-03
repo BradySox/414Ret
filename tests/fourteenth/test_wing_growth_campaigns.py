@@ -25,7 +25,11 @@ from typing import Any, Dict, List, NamedTuple, Optional
 import pytest
 import yaml
 
-from game.campaignloader.campaignairwingconfig import SquadronConfig
+from game.campaignloader.campaign import Campaign
+from game.campaignloader.campaignairwingconfig import (
+    CampaignAirWingConfig,
+    SquadronConfig,
+)
 
 BALTIC_FURY = Path("resources/campaigns/operation_baltic_fury.yaml")
 RED_TIDE = Path("resources/campaigns/red_tide.yaml")
@@ -225,3 +229,55 @@ def test_red_tide_counter_offensive_arrives_in_order() -> None:
     strike = arrival_turns(RED_TIDE, "Strike")
     assert escort and bai and strike
     assert max(escort) < min(bai) and max(bai) < min(strike)
+
+
+# ------------------------------------------------- the real loader binds them
+
+#: The base each scheduled squadron must actually land on. A yaml-level check
+#: cannot catch a base-id typo, because
+#: ``CampaignAirWingConfig.from_campaign_data`` *logs a warning and skips* a
+#: squadron whose base it cannot resolve -- so a bad id silently deletes the
+#: arrival instead of failing. These pin the resolved ControlPoint names.
+EXPECTED_BINDINGS = {
+    BALTIC_FURY: {
+        (3, "Hamburg", "F/A-18C Hornet (Lot 20)"),
+        (5, "Nordholz", "[CH] JAS 39C Gripen"),
+        (7, "Nordholz", "F-15E Strike Eagle (Suite 4+)"),
+        (7, "CVN-75 Harry S. Truman", "F/A-18F Super Hornet"),
+        (9, "Bremen", "B-1B Lancer"),
+    },
+    RED_TIDE: {
+        (4, "Frankfurt", "Mirage-F1EE"),
+        (6, "Frankfurt", "F-15E Strike Eagle (Suite 4+)"),
+        (8, "Ramstein", "B-52H Stratofortress"),
+    },
+}
+
+
+@pytest.mark.parametrize("campaign", ALL_CAMPAIGNS, ids=lambda p: p.stem)
+def test_every_scheduled_squadron_binds_to_its_real_control_point(
+    campaign: Path,
+) -> None:
+    loaded = Campaign.from_file(campaign)
+    theater = loaded.load_theater(loaded.advanced_iads)
+    config = CampaignAirWingConfig.from_campaign_data(
+        loaded.data.get("squadrons", {}), theater
+    )
+
+    bound = set()
+    for control_point, squadron_configs in config.by_location.items():
+        for squadron_config in squadron_configs:
+            if not squadron_config.available_from_turn:
+                continue
+            aircraft = (
+                squadron_config.aircraft_type or (squadron_config.aircraft or [""])[0]
+            )
+            bound.add(
+                (
+                    squadron_config.available_from_turn,
+                    control_point.name,
+                    str(aircraft),
+                )
+            )
+
+    assert bound == EXPECTED_BINDINGS[campaign]

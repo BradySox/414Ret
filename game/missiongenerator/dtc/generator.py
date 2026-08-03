@@ -1,9 +1,9 @@
 """DTC cartridge generation pass (§74).
 
 Builds one cartridge **per blue client flight** of a DTC-capable airframe
-(FA-18C, F-16C -- the two modules with native DCS DTC support today), binds it
-to the flight's client units with ``AutoLoad``, and appends the JSON files to
-the saved miz. Per-flight rather than per-type because each flight flies its
+(FA-18C and F-16C natively, plus the CJS Super Hornets FA-18E/F + EA-18G, whose
+mod ships its own DTC descriptor), binds it to the flight's client units with
+``AutoLoad``, and appends the JSON files to the saved miz. Per-flight rather than per-type because each flight flies its
 own route -- a package's four Hornet flights get four cartridges, each loading
 its own steerpoints while sharing the mission comm plan and SA picture.
 
@@ -15,7 +15,7 @@ the pass; the miz without cartridges is exactly the pre-feature miz).
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING, Callable, Optional
 
 from dcs.mission import Mission
 
@@ -25,6 +25,10 @@ from game.missiongenerator.dtc.cartridge import (
     attach_cartridge_to_unit,
 )
 from game.missiongenerator.dtc.hornet import HORNET_UNIT_TYPE, build_hornet_cartridge
+from game.missiongenerator.dtc.superhornet import (
+    SUPER_HORNET_UNIT_TYPES,
+    build_super_hornet_cartridge,
+)
 from game.missiongenerator.dtc.viper import VIPER_UNIT_TYPE, build_viper_cartridge
 
 if TYPE_CHECKING:
@@ -34,15 +38,20 @@ if TYPE_CHECKING:
     from game.missiongenerator.aircraft.flightdata import FlightData
     from game.missiongenerator.missiondata import MissionData
 
-CartridgeBuilder = Callable[..., DtcCartridge]
+#: A builder returns ``None`` when nothing the airframe supports is switched on
+#: (e.g. a Super Hornet with only the SA sections enabled -- see
+#: :mod:`game.missiongenerator.dtc.superhornet`); the generator then skips it.
+CartridgeBuilder = Callable[..., Optional[DtcCartridge]]
 
 #: DCS unit type id -> cartridge builder. Only modules with native DTC support
-#: belong here (the ME ships a ``CoreMods/aircraft/<type>/DTC`` descriptor for
-#: each). CH-47F and the MiG-29 Fulcrum also have descriptors; add them when a
-#: campaign fields them as blue client airframes.
+#: belong here (a ``DTC`` descriptor must ship in the module's own directory --
+#: ``CoreMods/aircraft/<type>/DTC`` for stock jets, the mod's own folder for the
+#: CJS Super Hornets). CH-47F and the MiG-29 Fulcrum also have descriptors; add
+#: them when a campaign fields them as blue client airframes.
 CARTRIDGE_BUILDERS: dict[str, CartridgeBuilder] = {
     HORNET_UNIT_TYPE: build_hornet_cartridge,
     VIPER_UNIT_TYPE: build_viper_cartridge,
+    **{unit: build_super_hornet_cartridge for unit in SUPER_HORNET_UNIT_TYPES},
 }
 
 
@@ -84,6 +93,8 @@ class DtcGenerator:
             return
         name = self._unique_name(flight, used_names)
         cartridge = builder(flight, self.mission_data, self.game, name)
+        if cartridge is None:
+            return
         for unit in clients:
             attach_cartridge_to_unit(unit, cartridge.name)
         self.cartridges.append(cartridge)

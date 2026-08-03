@@ -401,14 +401,27 @@ def _sa_settings() -> dict[str, Any]:
     }
 
 
-def build_hornet_cartridge(
-    flight: FlightData, mission_data: MissionData, game: Game, name: str
+def build_hornet_family_cartridge(
+    flight: FlightData,
+    mission_data: MissionData,
+    game: Game,
+    name: str,
+    unit_type: str,
+    *,
+    with_sa: bool,
 ) -> DtcCartridge:
+    """Assemble a cartridge for any airframe on the Hornet DTC schema.
+
+    ``with_sa`` is False for descriptors that ship no ``SA`` table (the CJS
+    Super Hornets -- see :mod:`game.missiongenerator.dtc.superhornet`); those
+    sections are then dropped rather than emitted into a table the module
+    cannot parse.
+    """
     terrain = game.theater.terrain.name
     options = flight.dtc_options
     data: dict[str, Any] = {
         "TCN": [],
-        "type": HORNET_UNIT_TYPE,
+        "type": unit_type,
         "name": name,
         "terrain": terrain,
     }
@@ -419,8 +432,20 @@ def build_hornet_cartridge(
     if options.route or options.nav_aids:
         carrier = _find_carrier(flight, mission_data)
         data["WYPT"] = _build_wypt(flight, game, carrier)
-    if options.flot_and_zones or options.friendly_orbits or options.threat_rings:
+    if with_sa and (
+        options.flot_and_zones or options.friendly_orbits or options.threat_rings
+    ):
         data["SA"] = _build_sa(flight, mission_data, game)
-    return DtcCartridge(
-        name=name, unit_type=HORNET_UNIT_TYPE, terrain=terrain, data=data
+    return DtcCartridge(name=name, unit_type=unit_type, terrain=terrain, data=data)
+
+
+#: The section keys a cartridge can carry; used to spot an empty one.
+CARTRIDGE_SECTIONS = ("COMM", "WYPT", "SA")
+
+
+def build_hornet_cartridge(
+    flight: FlightData, mission_data: MissionData, game: Game, name: str
+) -> DtcCartridge:
+    return build_hornet_family_cartridge(
+        flight, mission_data, game, name, HORNET_UNIT_TYPE, with_sa=True
     )

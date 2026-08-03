@@ -177,3 +177,89 @@ The clean first-class version (unit attrs + `load_from_dict` round-trip + a
 - CH-47F / MiG-29 builders when a campaign fields them blue-client.
 - v2 candidates: TCN stations, ALR-67/CMDS program tables, corridors for transit
   lanes, MEZ from the §40 restricted circles.
+
+---
+
+## CJS Super Hornets — FA-18E/F + EA-18G (2026-08-02)
+
+The community CJS mod ships **native DTC descriptors of its own** at
+`<mod>/Core Module/DTC/{FA-18E,FA-18F,EA-18G}_DTC.lua` (~21.6 KB each, all three
+identical bar the `type`/`name`), so these airframes take a cartridge exactly like
+the stock jets. Mined the same way as the ED descriptors above.
+
+**They are thin wrappers around ED's Hornet DTC.** The load-time block `dofile`s
+ED's *own* implementations:
+
+```
+CoreMods/aircraft/FA-18C/DTC/defs.lua
+CoreMods/aircraft/FA-18C/DTC/COMM/{COMM_common,COMM1,COMM2}.lua
+CoreMods/aircraft/FA-18C/DTC/WYPT/{WYPT_NAV,ROUTE_SEQ,NAV_SETTINGS}.lua
+CoreMods/aircraft/FA-18C/DTC/ALR67/{CMDS,RWR}.lua
+CoreMods/aircraft/FA-18C/DTC/TCN/TACAN.lua
+```
+
+So the **COMM and WYPT schemas are ED's, not CJS's** — which is why
+`game/missiongenerator/dtc/superhornet.py` reuses the Hornet builder's emit verbatim
+(`build_hornet_family_cartridge`, factored out of `hornet.py`) instead of
+reimplementing. A test asserts both sections come out byte-identical to the Hornet's.
+
+**What the descriptor does *not* have — the one real limitation.** The CJS `data`
+table is:
+
+```lua
+data = { ALR67 = {CMDS, RWR}, COMM = {COMM1, COMM2, mirror_*},
+         WYPT = {NAV_PTS, NAV_ROUTE, NAV_SETTINGS, terrain, mirror_NAV_PTS},
+         TCN = {}, type = "FA-18F", name = "FA-18F", terrain = "" }
+```
+
+There is **no `SA` table and no `GPS_WYPT`**. Four independent confirmations, because
+this is the one claim the whole `with_sa=False` decision rests on:
+
+1. **The `data` table above is the complete table** — `ALR67`/`COMM`/`WYPT`/`TCN` plus
+   `type`/`name`/`terrain`, nothing else.
+2. **Token counts, CJS vs ED** (all three CJS descriptors + their `defs.lua`):
+   `SA` **0** vs ED's 205 · `CAP_PTS` 0 vs 43 · `MEZ_THRTS` 0 vs 49 · `FAOR_FLOT` 0 vs 42.
+3. **The panel list.** CJS declares five — `pWYPT`, `pRTE_SEQ`, `pTACAN`, `pCOMM`,
+   `pALR67`. ED declares eight: the same five **plus `pSA`, `pGPS_WYPT`, `pHARM`**. The
+   ME's DTC editor for a Super Hornet therefore has no SA tab at all.
+4. **The `.dlg` carries a hollow `pSA` stub** — exactly one `pSA` reference (ED's has
+   **196**), whose entire contents are a single static label reading `"Panel SA"`.
+
+Read together: CJS forked an ED Hornet descriptor and **stripped SA out** (along with
+GPS_WYPT and HARM), leaving an empty panel shell. Since the `.lua` never lists `pSA` in
+`MAIN_panels` and `data` has no `SA` key, nothing populates or reads it.
+
+🔎 **That stub is the tripwire.** If a future CJS release fills `pSA` in and adds the
+`SA` table, flipping `with_sa=True` lights up the entire picture — FLOT, CAP racetracks,
+threat rings — with **no other code change**. Re-check it after a mod update: grep the
+descriptor for `SA` and compare the panel list against ED's.
+
+The Super Hornet therefore gets the comm plan, steerpoints/route and the §65 recovery
+aids, but **none of the SA picture** — no FLOT, no CAP/tanker racetracks, no enemy
+threat rings. Implemented as
+`with_sa=False`: the planner's three SA switches go inert rather than emitting a
+table the module cannot parse. A flight with *only* SA sections enabled passes the
+generator's `any_content` gate but yields nothing, so the builder returns `None`
+(`CartridgeBuilder` is now `Optional`-returning) — an empty AutoLoading cartridge is
+worse than no cartridge.
+
+`FA-18ET`/`FA-18FT` (tanker variants) are deliberately unregistered: no descriptor
+ships for them, so a cartridge would have nothing to load it.
+
+### Drift risk — read before trusting this
+
+Unlike the rest of §74, this targets a **mod** descriptor. Two consequences:
+
+1. **A CJS release can change the schema.** Adding `SA` would be the welcome case
+   (flip `with_sa=True` and the whole picture lights up); renaming or restructuring
+   COMM/WYPT would silently produce a cartridge the jet rejects. Re-mine
+   `<mod>/DTC/FA-18F_DTC.lua` after a mod update.
+2. **The descriptor is already partly stale.** `initialize_TACAN()` `dofile`s
+   `CoreMods/aircraft/FA-18C/DTC/TCN/TACAN_defs.lua`, which **no longer exists** in
+   current DCS (ED's `TCN/` now holds only `TACAN.lua`). That call is lazy — it fires
+   only when the ME DTC editor's TCN panel opens — and harmless to us because §74
+   emits `"TCN": []`. But it is the same staleness that broke the mod's *cockpit*
+   scripts and crashed the SA page (2026-08-02); treat mod-vs-current-DCS drift as
+   the default assumption, not the exception.
+
+In-game pass: checklist **B28**, CJS bullet.

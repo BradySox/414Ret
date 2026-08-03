@@ -2639,7 +2639,7 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     `qt_ui/windows/mission/flight/payload/weaponlasercodeselector.py`,
     `qt_ui/windows/mission/QEditFlightDialog.py`; features doc §73, checklist Q2 — needs an
     in-app pass.)
-74. **Native DTC data pre-population (F/A-18C + F-16C)** — the jet starts with the mission
+74. **Native DTC data pre-population (F/A-18C + F-16C + CJS Super Hornets)** — the jet starts with the mission
     already in the avionics, via **DCS's native Data Transfer Cartridge** (the mechanism
     reverse-confirmed from a hand-built MP mission flown 2026-07-18 that pre-loaded the DM's
     Hornet with zero pilot action; supersedes the retired §11, whose revisit condition —
@@ -2667,7 +2667,26 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     §66 archive copy, so archives carry cartridges) — with the clean first-class version
     PR'd to `dcs-retribution/pydcs` (delete the seams when the pin moves). Both hooks
     best-effort: any failure logs and leaves the pre-feature miz. CH-47F + MiG-29 also ship
-    DTC descriptors — add builders when a campaign fields them blue-client. Gated
+    DTC descriptors — add builders when a campaign fields them blue-client.
+    **CJS Super Hornets added 2026-08-02** (`dtc/superhornet.py`, ids `FA-18E`/`FA-18F`/
+    `EA-18G`): the mod ships its own DTC descriptors, and they are **thin wrappers that
+    `dofile` ED's own `CoreMods/aircraft/FA-18C/DTC` COMM/WYPT/NAV_SETTINGS
+    implementations**, so the Hornet builder's emit is reused verbatim
+    (`build_hornet_family_cartridge`, factored out of `hornet.py`; a test pins the two
+    sections byte-identical). **No SA section** — the CJS `data` table declares only
+    `ALR67`/`COMM`/`WYPT`/`TCN` (no `SA`, no `GPS_WYPT`; `SA` occurs **0** times across all
+    three descriptors vs **205** in ED's, the panel list is 5 vs ED's 8 — ED adds `pSA` —
+    and the `.dlg` keeps only a hollow `"Panel SA"` stub, 1 reference vs ED's 196: CJS
+    forked an ED descriptor and stripped SA out. **That stub is the tripwire** — if a CJS
+    release fills it in, flipping `with_sa=True` lights up the whole picture with no other
+    change), so these jets get comms + route +
+    §65 recovery aids but **no FLOT, CAP racetracks or threat rings**; the three SA switches
+    go inert (`with_sa=False`) and an SA-only flight builds **no cartridge**
+    (`CartridgeBuilder` is now `Optional`-returning; the generator skips `None`). Tanker
+    variants `FA-18ET`/`FA-18FT` are NOT registered (no descriptor ships for them).
+    ⚠️ Built against a **mod** descriptor, so it can drift with a CJS release — the mod's own
+    `initialize_TACAN()` already `dofile`s a `TCN/TACAN_defs.lua` that no longer exists in
+    DCS (lazy + harmless here, since §74 emits `"TCN": []`). Gated
     `dtc_data_cartridges` (Mission Generation → Cockpit data, default **ON**; OFF is
     byte-identical). Tests `tests/missiongenerator/test_dtc.py` (shapes, fog, mirroring,
     the seams, a real miz round-trip through pydcs load). **Planner controls (same day,

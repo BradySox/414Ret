@@ -51,11 +51,24 @@ class Beacon:
     name: str
     callsign: str
     beacon_type: BeaconType
-    hertz: int
+    #: None for beacons that carry no radio frequency at all. The exported
+    #: beacon data has `hertz: null` on every terrain -- channel-addressed
+    #: TACANs and the Russian RSBN/PRMG systems -- so this is normal data, not
+    #: a broken export.
+    hertz: Optional[int]
     channel: Optional[int]
 
     @property
-    def frequency(self) -> RadioFrequency:
+    def frequency(self) -> Optional[RadioFrequency]:
+        """The beacon's frequency, or None if it has none.
+
+        Do NOT wrap a null `hertz` in a `RadioFrequency` anyway: that builds a
+        frequency object every consumer must special-case (`__str__`, any
+        comparison, the radio registry's band math) and every one of them will
+        raise on it instead of skipping it.
+        """
+        if self.hertz is None:
+            return None
         return RadioFrequency(self.hertz)
 
     @property

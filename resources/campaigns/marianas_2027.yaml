@@ -395,34 +395,34 @@ squadrons:
       secondary: air-to-air
       aircraft:
         - J-15 Flanker X-2
-      size: 10
+      size: 14
     - primary: Strike
       secondary: air-to-ground
       aircraft:
         - J-15 Flanker X-2
-      size: 8
+      size: 12
   Naval-4:
     - primary: BARCAP
       secondary: air-to-air
       aircraft:
         - J-15 Flanker X-2
-      size: 10
+      size: 14
     - primary: Anti-ship
       secondary: air-to-ground
       aircraft:
         - J-15 Flanker X-2
-      size: 8
+      size: 12
   Naval-28:
     - primary: TARCAP
       secondary: air-to-air
       aircraft:
         - J-15 Flanker X-2
-      size: 10
+      size: 14
     - primary: Strike
       secondary: air-to-ground
       aircraft:
         - J-15 Flanker X-2
-      size: 8
+      size: 12
 
   # ==================== RED -- the amphibious groups ====================
   OPLHA:
@@ -430,12 +430,40 @@ squadrons:
       secondary: air-to-ground
       aircraft:
         - Mi-24P Hind-F
-      size: 6
+      size: 10
   OPLHA-1:
     - primary: Transport
       aircraft:
         - Mi-8MTV2 Hip
+      size: 10
+
+  # The northern chain garrisons. Blue now fields two carriers and an RN group across a
+  # 760 km frontage; the far-north islands were holding it with nothing but ground troops.
+  # FOBs are helipads, so these are rotary -- which is also what an island garrison flies.
+  FOB Agrihan:
+    - primary: Transport
+      secondary: air-to-ground
+      aircraft:
+        - Mi-8MTV2 Hip
       size: 6
+  FOB Anatahan:
+    - primary: CAS
+      secondary: air-to-ground
+      aircraft:
+        - Mi-24P Hind-F
+      size: 6
+  FOB Uracus:
+    - primary: Transport
+      secondary: air-to-ground
+      aircraft:
+        - Mi-8MTV2 Hip
+      size: 6
+  FOB Pagan:
+    - primary: CAS
+      secondary: air-to-ground
+      aircraft:
+        - Mi-24P Hind-F
+      size: 4
 
 supply_routes:
   # Guam, Route 1 / Marine Corps Drive north through Dededo and Yigo. Inherited from

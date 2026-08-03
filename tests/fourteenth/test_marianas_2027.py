@@ -258,6 +258,8 @@ def test_blue_outnumbers_red_in_the_air() -> None:
         "Olf Orote",
         "Naval-1",
         "Naval-2",
+        "Naval-30",  # second US carrier
+        "Naval-31",  # RN amphibious group
     }
     blue = red = 0
     for base, blocks in squadrons.items():

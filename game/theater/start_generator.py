@@ -272,6 +272,43 @@ class ControlPointGroundObjectGenerator:
         )
         self.control_point.connected_objectives.append(ground_object)
 
+    def get_unit_group_for_task(
+        self, position: PresetLocation, task: GroupTask
+    ) -> Optional[ForceGroup]:
+        tgo_config = self.generator_settings.tgo_config
+        fg = tgo_config[position.original_name]
+        valid_fg = (
+            fg
+            and task in fg.tasks
+            and all([u in self.faction.accessible_units for u in fg.units])
+        )
+        if valid_fg:
+            assert fg
+            # Fill an unsatisfied layout slot from the pool that can actually satisfy
+            # it. A naval layout's slots want Frigate/Destroyer/Cruiser classes, which
+            # no ground unit has, so filling a NAVY group from `ground_units` can only
+            # ever leave the slot empty and silently shrink the group.
+            fill_pool = (
+                self.faction.naval_units
+                if task is GroupTask.NAVY
+                else self.faction.ground_units
+            )
+            for layout in fg.layouts:
+                for lg in layout.groups:
+                    for ug in lg.unit_groups:
+                        if not fg.has_unit_for_layout_group(ug) and ug.fill:
+                            for g in fill_pool:
+                                if g.unit_class in ug.unit_classes:
+                                    fg.units.append(g)
+            unit_group: Optional[ForceGroup] = fg
+        else:
+            if fg:
+                logging.warning(
+                    f"Override in ground_forces failed for {fg} at {position.original_name}"
+                )
+            unit_group = self.armed_forces.random_group_for_task(task)
+        return unit_group
+
     def generate_navy(self) -> None:
         if self.control_point.captured.is_neutral:
             return
@@ -282,7 +319,16 @@ class ControlPointGroundObjectGenerator:
         if self.control_point.captured.is_red and skip_enemy_navy:
             return
         for position in self.control_point.preset_locations.ships:
-            unit_group = self.armed_forces.random_group_for_task(GroupTask.NAVY)
+            # Naval groups honour a campaign's `ground_forces` override like every
+            # other class. They previously called `random_group_for_task` directly, so
+            # a pinned ship marker was silently ignored and composition could only be
+            # steered by *which* Navy ForceGroups a faction registered -- which is a
+            # blunt, whole-faction lever: with two registered, every marker on the map
+            # became a coin flip between them. That matters wherever hull choice is a
+            # placement decision rather than a roster one (an inshore escort group vs a
+            # carrier group's area-defence screen sit 200 km apart and want different
+            # ships).
+            unit_group = self.get_unit_group_for_task(position, GroupTask.NAVY)
             if not unit_group:
                 logging.warning(f"{self.faction_name} has no ForceGroup for Navy")
                 return
@@ -500,34 +546,6 @@ class AirbaseGroundObjectGenerator(ControlPointGroundObjectGenerator):
         self.generate_motorpools()
         self.generate_missile_sites()
         self.generate_coastal_sites()
-
-    def get_unit_group_for_task(
-        self, position: PresetLocation, task: GroupTask
-    ) -> Optional[ForceGroup]:
-        tgo_config = self.generator_settings.tgo_config
-        fg = tgo_config[position.original_name]
-        valid_fg = (
-            fg
-            and task in fg.tasks
-            and all([u in self.faction.accessible_units for u in fg.units])
-        )
-        if valid_fg:
-            assert fg
-            for layout in fg.layouts:
-                for lg in layout.groups:
-                    for ug in lg.unit_groups:
-                        if not fg.has_unit_for_layout_group(ug) and ug.fill:
-                            for g in self.faction.ground_units:
-                                if g.unit_class in ug.unit_classes:
-                                    fg.units.append(g)
-            unit_group: Optional[ForceGroup] = fg
-        else:
-            if fg:
-                logging.warning(
-                    f"Override in ground_forces failed for {fg} at {position.original_name}"
-                )
-            unit_group = self.armed_forces.random_group_for_task(task)
-        return unit_group
 
     def generate_armor_groups(self) -> None:
         for position in self.control_point.preset_locations.armor_groups:

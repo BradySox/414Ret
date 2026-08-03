@@ -150,6 +150,123 @@ file. This guide is the map; those are the territory.
     headless-verified 2026-07-07; laydown CI-locked in `tests/fourteenth/test_tanker_war.py`;
     registered 2026-07-18 (the maintenance sweep found it shipped silent — no checklist row or
     docs entries); in-game pass = checklist T2, the platform-AAA on-deck render the riskiest bit)
+  - `414th-marianas-2027-campaign-notes.md` — **Marianas "Second Island Chain (2027)"** (the
+    fork's **modern-day China campaign**, built 2026-08-02). DCS ships no Chinese terrain, so a
+    China war can only be fought where China must come to *us* — and exactly one map is that
+    place with **zero fiction**: Guam is the Second Island Chain and Andersen AFB is the target
+    set the PLA Rocket Force was built to range. **USA 2020 vs the fork faction `China 2027`** on the CurrentHill China pack + High Digit SAMs. Forked from Fuzzle's `pacific_repartee` laydown (rather than edited in place —
+    campaign-ownership model; his 2005 scenario stays intact and convergent with upstream) after
+    a headless audit found that campaign **cannot** be modernized by a faction swap: red
+    airframes are hardcoded, so `China 2020` upgrades the ground/naval kit and leaves **J-7B**
+    (a 1960s MiG-21 copy) flying; no red AEW&C is authored though both factions declare the
+    KJ-2000; **165 red vs 62 blue** because six carrier blocks omitted `size:` and defaulted to
+    12 each; **no `missile`-category TGO anywhere**, so the pack's DF-21D/CJ-10/YJ-12B are never
+    placed; and there is no `plugins:` block at all. **Three structural changes**: (1) **the
+    premise is inverted** — Guam is US soil and *holds*, the PLA took Rota/Tinian/Saipan, and the
+    war is fought northward; that unlocks **Andersen's 194-slot ramp**, the only one on the map
+    that can base a heavy wing (B-1B/KC-135/E-3A/C-130J), instead of Repartee's carrier-only
+    3-CP cap. (2) **Two dormant airfields are activated** — the Marianas map has 8 fields and
+    Repartee used 4, because a `NEUTRAL` airfield **is not a control point**: `control_points`
+    gates on `is_blue() or is_red() or is_neutral()` and pydcs's `Airport.is_neutral()` returns
+    **False** for NEUTRAL, so such a field silently ceases to exist (neutral CPs are real, but
+    only via the explicit `NEUTRAL_FOB_UNIT_TYPE` declaration). Rota (the red strike field 90 km
+    off Guam) and Pagan Airstrip go RED, Olf Orote BLUE; **North West Field stays NEUTRAL on
+    purpose** — pydcs reports it with **zero runways**. Rota was never owned so it carries no
+    authored garrison at all, hence one added SAM marker. (3) **Three PLARF sites** (Rota/Tinian/
+    Saipan) make §49 shoot-and-scoot + §3 concealment into the campaign's signature hunt.
+    **Landmap gotcha, worth knowing before authoring anything on this map:** only **Guam, Rota,
+    Tinian and Saipan** exist in the Marianas landmap — Anatahan, Pagan, Agrihan and Uracus are
+    all `is_in_sea` (pre-existing terrain data, inherited from Repartee, whose four FOBs sit on
+    them), which is why no missile site is authored north of Saipan. Miz is **GENERATED** by
+    `tools/build_marianas_2027_miz.py` (edits the ownership + adds the markers on top of
+    `pacific_repartee.miz`, every added position landmap-validated, raises rather than degrading;
+    all-vanilla so pydcs round-trips losslessly) — **never hand-edit it**. Preseeds §49+§3, §63
+    cruise raids, §78 sea convoys + coastal anti-ship, §50 on Guam's two blue roads, §70 COMINT,
+    §59 AI sleep, and every matching plugin (the §36 lesson). **The carrier air wing is the CJS
+    Super Hornet package** (`fa_18efg` + `fa18ef_tanker` preseeded — the first campaign to preseed
+    them): the Navy retired the EA-6B in 2015/USMC 2019, so a Prowler on a 2027 deck is the same
+    anachronism as red's J-7B — VAQ-136 flies **EA-18G** (Escort Jammer 800 vs the Prowler's 790,
+    and §77's runtime is airframe-agnostic so the swap is risk-free), the organic tanker is the
+    **F/A-18E Tanker** (its `Refueling` priority of 0 is fine — `capable_of` gates on presence,
+    not value), and §74's 2026-08-02 DTC cartridges cover all three. **Tanker gotcha, caught by
+    the DM after the first cut:** the **KC-135 MPRS is a DROGUE tanker**
+    (`tanker_refuel_types: probe` — the multi-point kit *is* the wing drogue pods), not a
+    both-methods one; every jet at Andersen/Won Pat is `air_refuel_type: boom` (F-15C/E, F-16CM,
+    B-1B, A-10C), so an MPRS-only Andersen left the whole land wing unable to tank. Andersen now
+    bases **KC-135 ×4 (boom) + KC-135 MPRS ×2 (drogue)**, and a standing test walks every blue
+    airframe asserting some blue tanker's `can_refuel_from` accepts it. **One legacy F/A-18C squadron is kept on the deck
+    on purpose** (guard-tested) so an MP pilot without the mod still has a carrier ride. No front lines (the islands aren't connected —
+    Air Assault and §76 C-130J paradrops are the capture mechanic); red fields no ambient convoys
+    because no two red bases share an island. Headless-verified end-to-end (18 CPs — BLUE 6 /
+    RED 13 — 110 TGOs/572 units, all 38 squadrons resolve, **164 blue vs 98 red**); CI-locked in
+    `tests/fourteenth/test_marianas_2027.py` (23 tests incl. standing parking-fit,
+    tanker-compatibility, pin-band-match, no-sandwich, explicit-`size:` and
+    mod-free-carrier-squadron invariants). **Enemy faction `China 2027`** =
+    `china_2020.json` with the obsolete **HQ-2 dropped** and **SA-20/S-300PMU-1 +
+    SA-20B/S-300PMU-2 added**, so `high_digit_sams` is a hard requirement. Measured
+    alternatives, for the record: HDS adds **only the HQ-2** to stock China 2020 and
+    **nothing** to USA 2020; `Redfor (China) 2020` can field the S-300PMU family but also
+    rolls **SA-2/SA-6** (observed spawning as *base defences*, which `ground_forces`
+    cannot reach) and loses the Chinese country identity. **Two `ground_forces` rules
+    learned here:** overrides reach **authored markers only** (base defences roll from the
+    faction roster), and the preset's task must match the marker's **band** or the override
+    is **silently discarded** (`get_unit_group_for_task` gates on `task in fg.tasks`) —
+    the HQ-22 declares LORAD, so it needs a long marker, which is why Rota's is one.
+    **Laydown re-seated 2026-08-02 off a DM finding** ("the CSG at the very north and
+    Andersen blue with all the Red sandwiched in between"): inverting the premise without
+    moving Fuzzle's north-anchored fleet left blue holding **both ends**. Blue's CVN/LHA
+    now sit SW of Guam, **FOB Uracus reverts to RED** (a blue island 780 km behind red
+    lines was the other half of the sandwich), and red's 3 carriers / 2 LHAs / 18-hull
+    screen are pulled from 398–854 km into the **60–330 km Guam–Saipan corridor** so they
+    can contest it. Blue now occupies −102…+11 km and red 60…781 km, unbroken.
+    **F-22A det at Andersen** (`f22_raptor` preseeded — the real Raptor rotation base),
+    kept *alongside* a trimmed F-15C squadron so a host without the mod still has an
+    air-superiority arm (the carrier's legacy-Hornet pattern). Fixed in passing:
+    **`F-22A.yaml` authored no `max_range`**, so it silently fell back to the 150 NM
+    default — less than half the F-15C's 400 — which would have range-gated the Raptor
+    out of the PLAN carrier groups (108–157 NM) and everything north of Saipan; now an
+    honest `max_range: 450` (fleet-wide data fix, upstream-carve candidate). Still
+    wrong in that yaml and deliberately untouched: its radios are the **P-51's
+    SCR-522**, flagged by an in-tree comment and left for its own change.
+    **PLAN fleet rebuilt on the HHQ-9 shooters (DM finding):** carrier groups were being
+    screened by **Type 022 missile boats (4 km AD) and Type 056A corvettes (8 km)** while
+    the **Type 055 and Type 052D (250 km) never appeared at all** — the stock
+    `Chinese-Navy.yaml` preset supplies Type 052C/052B/054A, which satisfy the Naval Group
+    layout's Frigate×2/Destroyer×2 slots outright, so `has_unit_for_layout_group` never
+    fills from the faction roster. New preset `resources/groups/Chinese-Navy-2027.yaml`
+    (Type 055 + 052D + 054B + 054A) and `China 2027` drops the littoral 022/056A + the
+    superseded 052B from `naval_units`, so every red hull now carries ≥45 km AD.
+    **`squadron_start_full: true`** — note the key is **singular**; the Theater wizard page
+    reads `s.get("squadron_start_full", ...)` while its own field is `squadrons_start_full`,
+    so a plural typo silently does nothing (pinned by a test).
+    **Turn-1 SAM umbrella over Guam fixed (DM screenshot):** measured **13 of 31** red
+    sites covering Andersen or the CSG. Governing number: **Guam→Saipan is 205 km, HHQ-9
+    reaches 250 km**, so a modern PLAN group anywhere in the corridor covers Guam by
+    construction — Rota (**75 km out**) dropped from HQ-22 to **HQ-7 point defence**
+    (marker re-banded SHORT), Tinian's S-300PMU-2 → **HQ-22 (170 km, stops 5 km short)**,
+    and the scattered ship markers use an **inshore-only preset**. Now **3 of 30**, all
+    amphibious-group escorts (mobile/killable, deliberately kept). **Two more
+    `ground_forces` rules:** naval groups **cannot be pinned at all** (`generate_ships`
+    called `random_group_for_task(GroupTask.NAVY)` and never read the block — **FIXED
+    2026-08-03 as a generic engine change**: `generate_navy` now routes through
+    `get_unit_group_for_task`, and that method moved up from `AirbaseGroundObjectGenerator`
+    to `ControlPointGroundObjectGenerator` so the carrier/LHA generators inherit it; the
+    fill pool also now follows the task (`naval_units` for NAVY — it was always
+    `ground_units`, so a naval slot could only ever be filled by a ground unit, i.e. never,
+    silently shrinking the group). Upstream-carve candidate. Remaining un-pinnable:
+    LHA/carrier CP escorts, which `LhaGroundObjectGenerator` builds from `naval_units`
+    rather than a marker). **Ring SIZE is its own constraint:** after the coverage fix the
+    map still read as a wall of red — **13 of 30 rings were 250 km** (only 2 contained
+    Andersen, but Guam→Saipan is 205 km, so one HHQ-9 group covers a third of the theatre).
+    Every ship marker is now pinned to the inshore escort preset and the area-defence
+    destroyers stay concentrated with the carrier/LHA groups; 250 km rings **13 → 4**. The
+    heavy preset was **deleted, not left registered-and-unused** — an unreferenced Navy
+    preset is a hazard, since any future unpinned marker coin-flips onto it. `Naval-17/18/27`
+    are unpinned deliberately (they bind BLUE and screen the US carrier group), and **a preset must fill every layout slot it wants to control**
+    (a frigates-only preset leaves Destroyer×2 empty, `has_unit_for_layout_group` fills it
+    from the roster, and the roster's destroyers are the 250 km hulls — so the "light"
+    group silently came back out at 250 km); in-game pass = checklist **T5**, the riskiest bit being whether
+    a launcher scoots into the sea (the §49 radius is not landmap-checked). NEW game required
   - `414th-iraq-map-2928-notes.md` — **what DCS 2.9.28's Iraq map content unlocks** (design +
     authoring plan, no code/`.miz` edits yet; scoped 2026-07-26 off the 2.9.28.26283 changelog,
     which upstream picked up as `update dcs to 2.9.28.26283` #904 — a pydcs pin bump + refreshed

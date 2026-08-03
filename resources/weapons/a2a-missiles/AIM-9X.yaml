@@ -72,3 +72,8 @@ clsids:
   - "{SUPERHORNET_PYLON_02_MO_SW_MOD_2X_AIM-9X2}"   #  [ STA 02/03 | 79 / 80 | LAU127 ] - 1x/1x AIM-9X II Sidewinder - IR AAM, (Modern Missiles Mod Required)
   - "{SUPERHORNET_PYLON_10_MO_SW_MOD_2X_AIM-9X2}"   #  [ STA 09/10 | 79 / 80 | LAU127 ] - 1x/1x AIM-9X II Sidewinder - IR AAM, (Modern Missiles Mod Required)
   - "Herc_Ammo_AIM9X_missiles"   # Ammo AIM-9X*30 [5676lb]
+  # F-22A pack Block II stores. Grouped with AIM-9X rather than split into their
+  # own group, matching how the CJS Super Hornet's AIM-9X2 stores above are already
+  # treated -- this fork does not model the Block II as a separate generation.
+  - "{AIM9X-BLKII}"   # AIM9X-BLKII Sidewinder IR AAM
+  - "{LAU_115_2xAIM9X-II}"   # 2x AIM9X-BLKII Sidewinder IR AAM

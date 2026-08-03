@@ -197,6 +197,43 @@ to the SAM-belt STANDARD:
 `redscramble`, `vietnamops`, `combatsar`. **Mods:** `f22_raptor`, `fa_18efg`, `fa18ef_tanker`,
 `usamilitaryassetspack`, `high_digit_sams`, `russianmilitaryassetspack`.
 
+### The Modern Missiles mod — EVALUATED AND REJECTED (2026-08-03)
+
+The DM proposed adopting Nightstorm's **Modern Missiles v1.30** (DCS User Files 3328022) for this
+campaign. **Do not adopt it, and do not preseed it.** The readme settles all three questions:
+
+1. **It is an in-place core-file swap, not an asset pack.** It overwrites `Bazar` / `CoreMods` /
+   `MissionEditor` in the DCS install root via `.cmd` scripts, keeping the stock clsids — "the
+   avionics for the aircraft will still show the old versions", "the mission editor labels them as
+   AIM-120B's". So there is **nothing to register**: no `pydcs_extensions` module, no `ModSettings`
+   toggle, no wizard checkbox, no faction edit. Retribution cannot see it, and therefore cannot
+   gate it per campaign.
+2. **It shifts the whole Sidewinder ladder one rung, globally** — "AIM-9L becomes AIM-9X", plus
+   "performance improvements to the AIM-9M". `AIM-9L.yaml` is year 1976 and `AIM-9M.yaml` is 1982,
+   so it silently defeats §24 date gating exactly where the fork can least afford it: **Red Tide**
+   (1988-07-13) and **Desert Storm** (1991-01-17) both resolve 9L/9M as their top Sidewinder, and
+   Red Tide is a shipped, flown, balanced build. Un-scoping it means every pilot runs
+   `AAM_AIM_9L.cmd` between campaigns. It also breaks IC and needs MP version lockstep.
+3. **The payoff here is near zero, because the capability is already in the two packs this
+   campaign already requires.** The F-22A pack ships its own `{AIM-120D-3}` (self-contained, no
+   annotation) and `F-22A.lua` already frags it in 12 fits; the CJS Super Hornet pack ships
+   AIM-120D and AIM-9X2 stores.
+
+**Do NOT "fix" this by re-pointing the Super Hornet fits at the pack's D/9X-2 stores.** Those come
+in two flavours and neither is usable here: the `*_AI` ones are labelled **"(AI Only)"**, and the
+player-usable ones are labelled **"(Modern Missiles Mod Required)"** — i.e. the CJS pack declares
+this very mod as a dependency. Re-pointing would either break the flyable Rhino seats or make the
+campaign require the mod, reintroducing everything in (2). The Super Hornet fits stay on
+AIM-120C + AIM-9X deliberately.
+
+What *did* come out of the evaluation is a real data fix, applied fork-wide (see
+`resources/weapons/a2a-missiles/AIM-120D.yaml`): the packs' AIM-120D / AIM-260A / AIM9X-BLKII
+clsids were **unregistered**, so `register_unknown_weapons` gave them `introduction_year=None` and
+`Weapon.available_on` treated them as always-available with no fallback — meaning the Raptors'
+AIM-120D-3 was ungated in *every* era. Now dated and laddered (C → D → 260A), which changes
+nothing here (2027 unlocks all three) and only bites pre-2019 campaigns. Guarded by
+`tests/test_modern_amraam_weapons.py`.
+
 ---
 
 ## Miz generation (`tools/build_baltic_fury_miz.py`)

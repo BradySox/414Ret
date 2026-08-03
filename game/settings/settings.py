@@ -571,6 +571,8 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                     "cargo_ship_convoys",
                     "cargo_ship_convoy_max",
                     "coastal_batteries_engage_ships",
+                    "naval_weapon_release_stagger",
+                    "naval_magazines",
                 ],
             ),
             (
@@ -730,6 +732,8 @@ FEATURE_GATE_FIELDS: dict[str, list[str]] = {
         "coastal_batteries_engage_ships",  # §78
         "mobile_missile_relocation",  # §49
         "coastal_missile_relocation",  # §49
+        "naval_weapon_release_stagger",  # §81
+        "naval_magazines",  # §81
     ],
     "Auto-planner behaviour": [
         "weather_aware_planning",  # §67
@@ -3184,6 +3188,41 @@ class Settings:
             "The most cargo ships a single sea shipment spreads across. A small "
             "shipment uses fewer; a large one is capped here so a convoy never grows "
             "unbounded."
+        ),
+    )
+    naval_weapon_release_stagger: bool = boolean_option(
+        "Stagger naval weapons release",
+        page=MISSION_GENERATION_PAGE,
+        section=GENERAL_SECTION,
+        default=False,
+        detail=(
+            "Warships start the mission on return-fire and are released to "
+            "weapons-free one group at a time across a window, instead of every "
+            "hull opening up at once. A modern anti-ship missile out-ranges the "
+            "whole theatre, so without this the fleets are in range of each other "
+            "from the moment the mission loads and the entire naval battle happens "
+            "in the first five minutes. They still defend themselves while they "
+            "wait -- this delays who shoots first, it does not disarm anyone. "
+            "Symmetric. Runs via the 'Naval magazines & weapons release' LUA "
+            "plugin -- keep that plugin enabled or this setting does nothing."
+        ),
+    )
+    naval_magazines: bool = boolean_option(
+        "Cross-turn naval magazines (anti-ship missiles do not rearm)",
+        page=MISSION_GENERATION_PAGE,
+        section=GENERAL_SECTION,
+        default=False,
+        detail=(
+            "Every warship group carries a finite campaign stock of anti-ship "
+            "missiles. A mission is a fresh spawn, so without this a fleet reloads "
+            "for free every turn and can empty its tubes again and again; with it, "
+            "what a group fires this mission is gone for the rest of the war. A "
+            "group that runs dry drops back to return-fire -- winchester, not "
+            "disarmed: it still shoots back, it just has no missiles left to open "
+            "with. Land-attack cruise missiles are counted separately by their own "
+            "setting, so nothing is charged twice. Symmetric. Runs via the 'Naval "
+            "magazines & weapons release' LUA plugin -- keep that plugin enabled "
+            "or this setting does nothing."
         ),
     )
     coastal_batteries_engage_ships: bool = boolean_option(

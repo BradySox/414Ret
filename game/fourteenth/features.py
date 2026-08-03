@@ -658,6 +658,19 @@ FEATURES: tuple[Feature, ...] = (
         "Mixed-hull ship groups",
         80,
     ),
+    Feature(
+        # §81 cross-turn naval magazines: ships spawn ReturnFire and release to
+        # weapons-free on a stagger (N1), and every anti-ship missile fired is
+        # charged against a persisted per-group campaign stock that never rearms
+        # (N2) -- so a fleet cannot dump its tubes in the opening minute of every
+        # turn. game/fourteenth/naval_magazines.py + the navalmagazines plugin;
+        # the weapon set is disjoint from §63's land-attack magazine.
+        "naval_magazines",
+        "Cross-turn naval magazines",
+        81,
+        plugin_id="navalmagazines",
+        settings_fields=("naval_weapon_release_stagger", "naval_magazines"),
+    ),
     # Always-on engine plugins — major 414th machinery documented in design notes
     # rather than a numbered "Features at a Glance" entry.
     Feature("mantis_iads", "MANTIS IADS engine", plugin_id="mantisiads"),

@@ -95,10 +95,7 @@ plugins:
 #   1. Overrides reach AUTHORED MARKERS ONLY. A base's own generated air defences roll
 #      from the faction roster and cannot be pinned -- which is why the faction itself
 #      had to be fixed. Pinning alone still let SA-2 and HQ-2 spawn as base defences.
-#   2. NAVAL groups cannot be pinned at all -- `generate_ships` calls
-#      `random_group_for_task(GroupTask.NAVY)` and never looks at this block, so ship
-#      composition is controlled by which Navy presets the faction registers.
-#   3. The preset's task must match the marker's band, or the override is silently
+#   2. The preset's task must match the marker's band, or the override is silently
 #      DISCARDED and the site rolls normally (StartGenerator.get_unit_group_for_task).
 ground_forces:
   # Tinian: the long-range anchor, and the northern edge of what the player can be
@@ -111,6 +108,30 @@ ground_forces:
   # Rota is 75 km from Andersen -- close enough that ANY long-range system here covers
   # Guam. It gets point defence only; its marker is authored SHORT to match.
   Rota SAM Site: HQ-7
+  # NAVAL PLACEMENT. The HHQ-9 hulls reach 250 km and Guam-to-Saipan is only 205 km, so
+  # hull choice is a placement decision: a heavy group anywhere in the corridor puts
+  # Andersen inside a SAM envelope on turn 1. Markers working the occupied islands get
+  # the inshore preset; the ones standing off with the carrier groups (all >250 km from
+  # Guam) keep the HHQ-9 shooters.
+  Naval-16: Chinese Navy 2027 Escort
+  Naval-15: Chinese Navy 2027 Escort
+  Naval-13: Chinese Navy 2027 Escort
+  Naval-14: Chinese Navy 2027 Escort
+  Naval-12: Chinese Navy 2027 Escort
+  Naval-11: Chinese Navy 2027 Escort
+  Naval-20: Chinese Navy 2027 Escort
+  Naval-21: Chinese Navy 2027 Escort
+  Naval-22: Chinese Navy 2027 Escort
+  Naval-23: Chinese Navy 2027 Escort
+  Naval-10: Chinese Navy 2027
+  Naval-9: Chinese Navy 2027
+  Naval-8: Chinese Navy 2027
+  Naval-7: Chinese Navy 2027
+  Naval-5: Chinese Navy 2027
+  Naval-19: Chinese Navy 2027
+  Naval-24: Chinese Navy 2027
+  Naval-26: Chinese Navy 2027
+
   # Point defence on the occupied islands: HQ-7, the PLA's own short-range system.
   Ground-3: HQ-7
   Ground-7: HQ-7

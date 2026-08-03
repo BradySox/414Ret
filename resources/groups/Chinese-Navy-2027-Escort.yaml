@@ -16,8 +16,9 @@ tasks:
 # roster, and the roster's destroyers are the 250 km Type 055 / 052D -- so a "light"
 # escort group silently came back out at 250 km (measured). The Type 052B (30 km) is the
 # light destroyer that keeps the group inshore.
+# The Type 054B is NOT here: its HHQ-16 reaches 160 km, which from Rota (90 km off
+# Andersen) still covers Guam. It stays in `Chinese Navy 2027` for the stand-off groups.
 units:
-  - "[CH] Type 054B Frigate"
   - Type 054A Frigate
   - Type 052B Destroyer
 layouts:

@@ -371,12 +371,15 @@ def test_ground_forces_pins_match_their_marker_band() -> None:
         GroupTask.MERAD: MizCampaignLoader.MEDIUM_RANGE_SAM_UNIT_TYPES,
         GroupTask.SHORAD: MizCampaignLoader.SHORT_RANGE_SAM_UNIT_TYPES,
         GroupTask.AAA: MizCampaignLoader.AAA_UNIT_TYPES,
+        # Naval markers have no SAM band -- the ship marker type IS the band.
+        GroupTask.NAVY: {MizCampaignLoader.SHIP_UNIT_TYPE},
     }
     markers = {
         group.name: group.units[0].type
         for coalition in _mission().coalition.values()
         for country in coalition.countries.values()
-        for group in country.vehicle_group
+        for attr in ("vehicle_group", "ship_group")
+        for group in getattr(country, attr)
     }
     config = Campaign.from_file(CAMPAIGN).load_ground_forces_config()
     pinned = list(config)
@@ -463,41 +466,45 @@ def test_the_raptor_has_an_authored_max_range() -> None:
     assert raptor.max_mission_range >= eagle.max_mission_range
 
 
-def test_scattered_naval_groups_cannot_blanket_guam() -> None:
-    """Ship markers roll RANDOMLY among the faction's Navy presets.
+def test_naval_groups_are_pinned_by_position() -> None:
+    """Hull choice is a placement decision, so ship markers are pinned individually.
 
-    ``generate_ships`` calls ``random_group_for_task(GroupTask.NAVY)`` and never
-    consults ``ground_forces``, so naval composition is set purely by which Navy
-    ForceGroups the faction registers -- pinning a ship marker does nothing.
+    ``generate_ships`` used to call ``random_group_for_task(GroupTask.NAVY)`` directly,
+    ignoring ``ground_forces`` entirely -- so naval composition could only be steered by
+    which Navy presets a faction registered, a whole-faction lever that made every
+    marker a coin flip. It now goes through ``get_unit_group_for_task`` like every other
+    class (which also had to move up to ``ControlPointGroundObjectGenerator`` so carrier
+    and LHA generators inherit it).
 
-    That matters because the Type 055/052D reach **250 km** while Guam-to-Saipan is
-    only 205 km: register a heavy preset and every scattered surface group blankets
-    Andersen. Measured, that put 13 red sites over Guam or the carrier group on turn 1.
-    Only the inshore (frigate + light destroyer) preset is registered; the HHQ-9 hulls
-    still reach the fleet through the carrier and amphibious groups, which draw
-    straight from ``naval_units``.
+    That matters here because the HHQ-9 reaches **250 km** while Guam-to-Saipan is only
+    205 km: a heavy group anywhere in the corridor puts Andersen inside a SAM envelope.
+    Inshore markers get frigates; the stand-off markers keep the HHQ-9 shooters.
     """
     import json
 
+    pins = _campaign()["ground_forces"]
     data = json.loads((FACTIONS / "china_2027.json").read_text(encoding="utf-8"))
-    navy_presets = [p for p in data["preset_groups"] if "Navy" in p]
-    assert navy_presets == ["Chinese Navy 2027 Escort"], (
-        "exactly one Navy preset may be registered -- ship markers pick at random, so a "
-        "second (heavy) preset makes every scattered group a coin flip over Guam"
-    )
+    for preset in ("Chinese Navy 2027", "Chinese Navy 2027 Escort"):
+        assert preset in data["preset_groups"], preset
 
-    preset = yaml.safe_load(
+    inshore = {n for n, g in pins.items() if g == "Chinese Navy 2027 Escort"}
+    standoff = {n for n, g in pins.items() if g == "Chinese Navy 2027"}
+    assert inshore and standoff, "both naval tiers must be placed deliberately"
+    assert not (inshore & standoff)
+
+    escort = yaml.safe_load(
         (FACTIONS.parent / "groups/Chinese-Navy-2027-Escort.yaml").read_text(
             encoding="utf-8"
         )
     )
-    # The Destroyer slot must be filled by the preset. Leaving it empty makes
-    # `has_unit_for_layout_group` fill it from the roster -- whose destroyers are the
-    # 250 km hulls -- so a "light" group silently comes back out at 250 km.
-    assert "Type 052B Destroyer" in preset["units"]
+    # The Destroyer slot must be filled by the preset itself: leaving it empty makes
+    # `has_unit_for_layout_group` fill it from the roster, whose destroyers are the
+    # 250 km hulls, so a "light" group silently comes back out at 250 km.
+    assert "Type 052B Destroyer" in escort["units"]
+    # 160 km from Rota (90 km off Andersen) still covers Guam.
+    assert "[CH] Type 054B Frigate" not in escort["units"]
     for hull in ("[CH] Type 055 Destroyer", "[CH] Type 052D Destroyer"):
-        assert hull not in preset["units"], hull
-        assert hull in data["naval_units"], f"{hull} must stay available to the fleet"
+        assert hull not in escort["units"], hull
 
 
 def test_no_land_sam_site_covers_guam() -> None:

@@ -247,9 +247,15 @@ file. This guide is the map; those are the territory.
     and the scattered ship markers use an **inshore-only preset**. Now **3 of 30**, all
     amphibious-group escorts (mobile/killable, deliberately kept). **Two more
     `ground_forces` rules:** naval groups **cannot be pinned at all** (`generate_ships`
-    calls `random_group_for_task(GroupTask.NAVY)` and never reads the block — composition
-    comes from *which Navy presets the faction registers*, and registering two makes every
-    group a coin flip), and **a preset must fill every layout slot it wants to control**
+    called `random_group_for_task(GroupTask.NAVY)` and never read the block — **FIXED
+    2026-08-03 as a generic engine change**: `generate_navy` now routes through
+    `get_unit_group_for_task`, and that method moved up from `AirbaseGroundObjectGenerator`
+    to `ControlPointGroundObjectGenerator` so the carrier/LHA generators inherit it; the
+    fill pool also now follows the task (`naval_units` for NAVY — it was always
+    `ground_units`, so a naval slot could only ever be filled by a ground unit, i.e. never,
+    silently shrinking the group). Upstream-carve candidate. Remaining un-pinnable:
+    LHA/carrier CP escorts, which `LhaGroundObjectGenerator` builds from `naval_units`
+    rather than a marker), and **a preset must fill every layout slot it wants to control**
     (a frigates-only preset leaves Destroyer×2 empty, `has_unit_for_layout_group` fills it
     from the roster, and the roster's destroyers are the 250 km hulls — so the "light"
     group silently came back out at 250 km); in-game pass = checklist **T5**, the riskiest bit being whether

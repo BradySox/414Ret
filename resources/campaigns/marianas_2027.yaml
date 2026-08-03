@@ -77,6 +77,32 @@ settings:
   perf_ground_ai_sleep: true
   perf_aaa_site_sleep: true
 
+  # -- Making the auto-planner fight. Measured on a flown turn-1 save whose ATO came
+  # out 100% defensive: 33 packages, 28 of them BARCAP, and ZERO strike/SEAD/DEAD/
+  # anti-ship. Two independent causes compounded, and BOTH of these lines are needed
+  # -- either one alone leaves the offensive ATO empty.
+  #
+  # 1. BARCAP was eating the entire fighter force. Rounds per objective are
+  #    ceil(desired_player_mission_duration / (desired_barcap_mission_duration -
+  #    barcap_overlap_time)), so the 60-minute mission against the stock 45-minute
+  #    station needed TWO rounds over each of 7 objectives = 28 BARCAP flights = all
+  #    66 fighters in the wing. Every offensive package then scrubbed for want of its
+  #    mandatory escort (modern doctrine has plan_strikes_without_full_escort=False
+  #    and strike_escort_reserve=0, and neither is campaign-authorable). Holding the
+  #    station for the full mission drops it to ONE round -- 14 BARCAP flights -- and
+  #    frees ~28 fighters to escort the shooters. This is not a fudge: a 60-minute
+  #    CAP vulnerability window is exactly how carrier BARCAP is flown, and this wing
+  #    has the KC-135s plus organic Super Hornet tankers to hold it.
+  desired_barcap_mission_duration: 60
+  # 2. The 150 NM default cannot serve this theatre. Guam to Uracus is 780 km (421 NM)
+  #    and the PLAN groups are spread the length of the chain, so at 150 NM the deep
+  #    half of the enemy order of battle was not merely unattacked, it was unreachable
+  #    -- the range gate rejected every squadron before the target was considered.
+  #    (Raising this ALONE changed nothing, because BARCAP still held every fighter;
+  #    it is what decides how much of red you can reach once they are free.) Same
+  #    campaign-preseed precedent as Enduring Resolve's 800 km carrier stand-off.
+  max_mission_range_planes: 400
+
 plugins:
   # Saved plugin defaults layer UNDER campaign preseeds, so a host whose defaults have
   # these unticked would otherwise silently lose the runtime half of each feature
@@ -108,29 +134,21 @@ ground_forces:
   # Rota is 75 km from Andersen -- close enough that ANY long-range system here covers
   # Guam. It gets point defence only; its marker is authored SHORT to match.
   Rota SAM Site: HQ-7
-  # NAVAL PLACEMENT. The HHQ-9 reaches 250 km and Guam-to-Saipan is only 205 km, so one
+  # NAVAL PLACEMENT. Six screens survive the cull (see the build tool); the rest of
+  # Repartee's 21 ship markers are deleted outright, because every marker becomes a
+  # whole naval group and hull count is what produced the 374-launch opening salvo. The HHQ-9 reaches 250 km and Guam-to-Saipan is only 205 km, so one
   # heavy group covers a third of the theatre. EVERY scattered surface marker is an
   # inshore escort; the area-defence destroyers stay concentrated with the three carrier
   # groups, which draw them from the roster. Eight extra 250 km rings did not make the
   # campaign harder, it made the map unreadable (measured: 13 of 30 rings were 250 km).
   Naval-16: Chinese Navy 2027 Escort
-  Naval-15: Chinese Navy 2027 Escort
-  Naval-13: Chinese Navy 2027 Escort
-  Naval-14: Chinese Navy 2027 Escort
-  Naval-12: Chinese Navy 2027 Escort
-  Naval-11: Chinese Navy 2027 Escort
-  Naval-20: Chinese Navy 2027 Escort
-  Naval-21: Chinese Navy 2027 Escort
-  Naval-22: Chinese Navy 2027 Escort
-  Naval-23: Chinese Navy 2027 Escort
-  Naval-10: Chinese Navy 2027 Escort
-  Naval-9: Chinese Navy 2027 Escort
-  Naval-8: Chinese Navy 2027 Escort
-  Naval-7: Chinese Navy 2027 Escort
-  Naval-5: Chinese Navy 2027 Escort
-  Naval-19: Chinese Navy 2027 Escort
   Naval-24: Chinese Navy 2027 Escort
-  Naval-26: Chinese Navy 2027 Escort
+  Naval-9: Chinese Navy 2027 Escort
+  Naval-13: Chinese Navy 2027 Escort
+  Naval-12: Chinese Navy 2027 Escort
+  Naval-10: Chinese Navy 2027 Escort
+  Naval-8: Chinese Navy 2027 Escort
+  Naval-19: Chinese Navy 2027 Escort
 
   # Point defence on the occupied islands: HQ-7, the PLA's own short-range system.
   Ground-3: HQ-7
@@ -283,6 +301,59 @@ squadrons:
         - SH-60B Seahawk
       size: 4
 
+  # The second US carrier. A single CVN could not both cover Guam and push north, and
+  # with the PLAN spread from Saipan to Uracus the coalition needs two decks.
+  Naval-30:
+    - primary: BARCAP
+      secondary: any
+      aircraft:
+        - F/A-18E Super Hornet
+      size: 12
+    - primary: Strike
+      secondary: air-to-ground
+      aircraft:
+        - F/A-18F Super Hornet
+      size: 10
+    - primary: SEAD
+      secondary: air-to-ground
+      aircraft:
+        - F/A-18C Hornet (Lot 20)
+      size: 10
+    - primary: AEW&C
+      aircraft:
+        - E-2D Advanced Hawkeye
+      size: 3
+    - primary: Refueling
+      aircraft:
+        - F/A-18E Tanker
+      size: 3
+    - primary: Transport
+      aircraft:
+        - SH-60B Seahawk
+      size: 3
+
+  # The Royal Navy amphibious group. DCS has no RN amphib, so this is a Tarawa hull with
+  # a UK-countried air group -- the §23 country pin gives it British comms and pilot
+  # names, the same substitution the campaign already makes for the PLAN's Kuznetsov.
+  Naval-31:
+    - primary: BAI
+      secondary: air-to-ground
+      country: UK
+      aircraft:
+        - AV-8B Harrier II Night Attack
+      size: 8
+    - primary: CAS
+      secondary: air-to-ground
+      country: UK
+      aircraft:
+        - AH-64D Apache Longbow
+      size: 4
+    - primary: Transport
+      country: UK
+      aircraft:
+        - UH-60A
+      size: 4
+
   Naval-2:
     - primary: BAI
       secondary: air-to-ground
@@ -350,34 +421,34 @@ squadrons:
       secondary: air-to-air
       aircraft:
         - J-15 Flanker X-2
-      size: 10
+      size: 14
     - primary: Strike
       secondary: air-to-ground
       aircraft:
         - J-15 Flanker X-2
-      size: 8
+      size: 12
   Naval-4:
     - primary: BARCAP
       secondary: air-to-air
       aircraft:
         - J-15 Flanker X-2
-      size: 10
+      size: 14
     - primary: Anti-ship
       secondary: air-to-ground
       aircraft:
         - J-15 Flanker X-2
-      size: 8
+      size: 12
   Naval-28:
     - primary: TARCAP
       secondary: air-to-air
       aircraft:
         - J-15 Flanker X-2
-      size: 10
+      size: 14
     - primary: Strike
       secondary: air-to-ground
       aircraft:
         - J-15 Flanker X-2
-      size: 8
+      size: 12
 
   # ==================== RED -- the amphibious groups ====================
   OPLHA:
@@ -385,12 +456,40 @@ squadrons:
       secondary: air-to-ground
       aircraft:
         - Mi-24P Hind-F
-      size: 6
+      size: 10
   OPLHA-1:
     - primary: Transport
       aircraft:
         - Mi-8MTV2 Hip
+      size: 10
+
+  # The northern chain garrisons. Blue now fields two carriers and an RN group across a
+  # 760 km frontage; the far-north islands were holding it with nothing but ground troops.
+  # FOBs are helipads, so these are rotary -- which is also what an island garrison flies.
+  FOB Agrihan:
+    - primary: Transport
+      secondary: air-to-ground
+      aircraft:
+        - Mi-8MTV2 Hip
       size: 6
+  FOB Anatahan:
+    - primary: CAS
+      secondary: air-to-ground
+      aircraft:
+        - Mi-24P Hind-F
+      size: 6
+  FOB Uracus:
+    - primary: Transport
+      secondary: air-to-ground
+      aircraft:
+        - Mi-8MTV2 Hip
+      size: 6
+  FOB Pagan:
+    - primary: CAS
+      secondary: air-to-ground
+      aircraft:
+        - Mi-24P Hind-F
+      size: 4
 
 supply_routes:
   # Guam, Route 1 / Marine Corps Drive north through Dededo and Yigo. Inherited from

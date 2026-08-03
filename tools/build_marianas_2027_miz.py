@@ -58,6 +58,7 @@ The tool is the source of truth for the *edits*; the laydown it inherits belongs
 
 from __future__ import annotations
 
+import copy
 import sys
 from pathlib import Path
 from typing import Iterable, Optional
@@ -128,8 +129,8 @@ SHORT_SAM_SITES: tuple[tuple[str, str], ...] = (("Rota SAM Site", "Rota Intl"),)
 # Blue's carrier and amphibious groups, south-west of Guam -- close enough to cover the
 # island and to strike up the chain, far enough to keep the boat out of the first salvo.
 BLUE_NAVAL: dict[str, tuple[int, int]] = {
-    "Naval-1": (-53_583, -111_230),  # CVN-74 John C. Stennis
-    "Naval-2": (-102_353, -70_160),  # LHA-1 Tarawa
+    "Naval-1": (-140_000, -190_000),  # CVN-74 -- pulled back from Guam
+    "Naval-2": (-205_000, -130_000),  # LHA-1 Tarawa -- pulled back
 }
 
 # Three escort markers held close to Guam. A ship marker binds to the nearest control
@@ -144,39 +145,72 @@ BLUE_ESCORTS: dict[str, tuple[int, int]] = {
 # all ~290-340 km off Guam -- inside J-15/H-6J reach of the island, and reachable by
 # blue's B-1B and carrier air. Amphibious groups sit on the lodgements they landed.
 RED_NAVAL: dict[str, tuple[int, int]] = {
-    "Naval-4": (230_000, 210_000),  # carrier, NE of Saipan
-    "Naval-3": (290_000, 40_000),  # carrier, NW of Saipan
-    "Naval-28": (200_000, 270_000),  # carrier, the outer eastern group
-    "OPLHA": (150_000, 120_000),  # amphibious group off Tinian/Saipan
-    "OPLHA-1": (95_000, 70_000),  # amphibious group off Rota
+    # Pushed back out. The first flown mission had the PLAN groups ~300 km off Guam,
+    # which with 250 km air-defence hulls and 540 km anti-ship missiles meant both fleets
+    # were mutually engaged at t=0. Every group now sits BEYOND 250 km of Andersen, so no
+    # red ring reaches the airfield and the exchange has to be closed to, not inherited.
+    "Naval-3": (500_000, 40_000),  # carrier, northern approaches
+    "Naval-4": (330_000, 180_000),  # carrier, MID-CHAIN off Saipan/Anatahan
+    "Naval-28": (760_000, 80_000),  # carrier, FAR NORTH covering FOB Uracus
+    "OPLHA": (240_000, 150_000),  # amphibious group, 266 km out
+    "OPLHA-1": (610_000, 60_000),  # amphibious group, northern chain
 }
 
-# The red screen, spread across the occupied waters instead of trailing north to 854 km.
-# Each pair sits with the control point or task group it screens.
+# The red screen. SIX groups, not eighteen.
+#
+# A flown mission produced 374 weapon launches in the opening five minutes because every
+# ship fires autonomously the moment a target is in range (`set_ship_engagement` spawns
+# them WeaponFree + alarm RED) and modern AShM out-range the whole theatre. The volume
+# driver was hull count: eighteen escort markers plus the carrier and amphibious groups
+# put **93 red hulls in 23 groups** at sea against blue's 15. A real fleet does not empty
+# its magazines in the first minute of a war, and a 20-turn campaign cannot sustain it.
+#
+# Six screens, spread down the chain, cut red to roughly a third of the hulls while still
+# giving every occupied island and each carrier group a covering escort.
 RED_ESCORTS: dict[str, tuple[int, int]] = {
-    "Naval-16": (100_000, 20_000),  # Rota
-    "Naval-15": (60_000, 85_000),
-    "Naval-13": (150_000, 55_000),  # Tinian
-    "Naval-14": (185_000, 60_000),
-    "Naval-12": (200_000, 135_000),  # Saipan
-    "Naval-11": (160_000, 140_000),
-    "Naval-10": (250_000, 175_000),  # with the NE carrier group
-    "Naval-9": (205_000, 235_000),
-    "Naval-8": (300_000, 75_000),  # with the NW carrier group
-    "Naval-7": (265_000, 15_000),
-    "Naval-5": (230_000, 295_000),  # with the outer carrier group
-    "Naval-19": (175_000, 250_000),
-    "Naval-20": (130_000, 145_000),  # with the amphibious groups
-    "Naval-21": (170_000, 155_000),
-    "Naval-22": (75_000, 95_000),
-    "Naval-23": (115_000, 40_000),
-    "Naval-24": (330_000, 140_000),  # screening FOB Anatahan
-    "Naval-26": (295_000, 125_000),
+    # Eight screens spread across the whole red half rather than bunched in the corridor.
+    # These are frigate groups (~45 km), so they shape where the fight is without putting
+    # an envelope over anything; two stay forward with the occupied islands and the rest
+    # cover the approaches to the carrier and amphibious groups.
+    "Naval-16": (120_000, 40_000),  # forward, off Rota/Tinian
+    "Naval-13": (215_000, 115_000),  # forward, off Saipan
+    "Naval-12": (300_000, 210_000),
+    "Naval-9": (255_000, 320_000),
+    "Naval-10": (390_000, 120_000),
+    "Naval-24": (330_000, 330_000),
+    "Naval-8": (455_000, 200_000),
+    "Naval-19": (460_000, 30_000),
 }
 
 # A blue FOB 780 km behind red lines is what made the map read as a sandwich; the
 # northern chain is red depth, not a blue toehold.
 FOBS_TO_RED = ("FOB Uracus",)
+
+# Ship markers deleted outright from the source miz. Repartee authored 21 of them; each
+# one becomes a full naval group, and hull count is what drove the 374-launch opening
+# salvo. Only the six in RED_ESCORTS plus the three blue-screen markers survive.
+CULLED_SHIP_MARKERS = (
+    "Naval-5",
+    "Naval-7",
+    "Naval-11",
+    "Naval-14",
+    "Naval-15",
+    "Naval-20",
+    "Naval-21",
+    "Naval-22",
+    "Naval-23",
+    "Naval-26",
+)
+
+# Blue reinforcements. DCS has no LHA but the Tarawa, so the RN amphibious group is a
+# Tarawa hull flying a UK-countried air group (the §23 per-squadron country pin) -- the
+# same substitution the fork already makes for the PLAN's Kuznetsov-as-Chinese-carrier.
+# Each entry clones an existing hull group, so it inherits a valid unit record.
+BLUE_ADDITIONS: tuple[tuple[str, str, int, int], ...] = (
+    # (clone of, new CP name, x, y)
+    ("Naval-1", "Naval-30", -240_000, -60_000),  # second US carrier, west of Guam
+    ("Naval-2", "Naval-31", -150_000, -260_000),  # RN amphibious group, south-west
+)
 
 # Search parameters for _place_on_land, in metres. The minimum keeps a launcher off
 # the airfield it anchors to; the maximum keeps it on the same small island.
@@ -233,6 +267,49 @@ def _reseat_naval(
         print(
             f"  {name:<10} -> ({x/1000:7.0f}, {y/1000:7.0f}) km   moved {moved:5.0f} km"
         )
+
+
+def _clone_ship_groups(mission: Mission) -> None:
+    """Add blue CPs by cloning an existing hull group.
+
+    pydcs exposes no ``Mission.ship_group`` factory, and a carrier/LHA control point is
+    just a ship group of the right type in the right country block -- so the cheapest
+    correct way to add one is to deep-copy a hull that already works and re-id it.
+    """
+    print()
+    print("blue additions:")
+    blue = mission.country(MizCampaignLoader.BLUE_COUNTRY.name)
+    assert blue is not None
+    existing = {g.name: g for g in blue.ship_group}
+    for src_name, new_name, x, y in BLUE_ADDITIONS:
+        src = existing.get(src_name)
+        if src is None:
+            raise RuntimeError(f"cannot clone {src_name}: not a blue ship group")
+        clone = copy.deepcopy(src)
+        clone.id = mission.next_group_id()
+        clone.name = new_name
+        for unit in clone.units:
+            unit.id = mission.next_unit_id()
+            unit.name = f"{new_name} {unit.type}"
+        _move_group(clone, x, y)
+        blue.add_ship_group(clone)
+        print(
+            f"  {new_name:<10} <- clone of {src_name:<9} at ({x/1000:6.0f},{y/1000:6.0f}) km"
+        )
+
+
+def _cull_ship_markers(mission: Mission) -> None:
+    """Delete surplus ship markers -- every one generates a whole naval group."""
+    print()
+    print("culled ship markers:")
+    removed = 0
+    for coalition in mission.coalition.values():
+        for country in coalition.countries.values():
+            for group in list(country.ship_group):
+                if group.name in CULLED_SHIP_MARKERS:
+                    country.ship_group.remove(group)
+                    removed += 1
+    print(f"  removed {removed} of {len(CULLED_SHIP_MARKERS)} named markers")
 
 
 def _fob_to_red(mission: Mission) -> None:
@@ -370,6 +447,8 @@ def main() -> None:
     author(MISSILE_SITES, MissilesSS.Scud_B, "missile sites")
     author(SHORT_SAM_SITES, AirDefence.Strela_1_9P31, "point-defence SAM sites")
 
+    _cull_ship_markers(mission)
+    _clone_ship_groups(mission)
     _fob_to_red(mission)
     _reseat_naval(mission, theater, BLUE_NAVAL, "blue carrier group")
     _reseat_naval(mission, theater, BLUE_ESCORTS, "blue escort screen")

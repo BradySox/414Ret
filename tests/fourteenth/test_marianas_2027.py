@@ -11,6 +11,7 @@ the shipped definition is asserted here rather than trusted.
 Sibling of tests/fourteenth/test_inherent_resolve.py and test_tanker_war.py.
 """
 
+import re
 from pathlib import Path
 from typing import Any
 
@@ -257,6 +258,8 @@ def test_blue_outnumbers_red_in_the_air() -> None:
         "Olf Orote",
         "Naval-1",
         "Naval-2",
+        "Naval-30",  # second US carrier
+        "Naval-31",  # RN amphibious group
     }
     blue = red = 0
     for base, blocks in squadrons.items():
@@ -511,13 +514,15 @@ def test_every_naval_marker_is_pinned_inshore() -> None:
     # The Destroyer slot must be filled by the preset: an empty slot is filled from the
     # roster, whose destroyers are the 250 km hulls.
     assert "Type 052B Destroyer" in escort["units"]
-    for hull in (
-        "[CH] Type 055 Destroyer",
-        "[CH] Type 052D Destroyer",
-        "[CH] Type 054B Frigate",
-    ):
+    for hull in ("[CH] Type 052D Destroyer", "[CH] Type 054B Frigate"):
         assert hull not in escort["units"], hull
         assert hull in data["naval_units"], f"{hull} must stay available to the fleet"
+
+    # The Type 055 is the ONLY hull carrying the YJ-21 anti-ship ballistic missile, which
+    # cannot realistically be intercepted. A flown mission put ten of them in the air
+    # inside 99 seconds and killed the carrier before the player got airborne. The 052D
+    # keeps the fleet's reach with the YJ-18, which Standard missiles do defeat.
+    assert "[CH] Type 055 Destroyer" not in data["naval_units"]
 
 
 def test_no_land_sam_site_covers_guam() -> None:
@@ -533,3 +538,20 @@ def test_no_land_sam_site_covers_guam() -> None:
     assert pins["Rota SAM Site"] == "HQ-7"
     assert pins["Ground-1"] == "HQ-22"
     assert "SA-20B/S-300PMU-2" not in pins.values()
+
+
+def test_a_culled_ship_marker_is_never_also_pinned() -> None:
+    """A marker cannot be both deleted from the miz and pinned in the campaign.
+
+    Black reformatted the cull tuple one-entry-per-line, an edit missed it, and two
+    markers ended up in CULLED_SHIP_MARKERS *and* in ground_forces -- deleted from the
+    miz while the campaign still claimed to place them. Silent, because a pin for a
+    marker that does not exist simply never fires.
+    """
+    tool = Path("tools/build_marianas_2027_miz.py").read_text(encoding="utf-8")
+    culled = set(
+        re.findall(r'"(Naval-\d+)"', tool[tool.index("CULLED_SHIP_MARKERS") :][:400])
+    )
+    pinned = {n for n in _campaign()["ground_forces"] if n.startswith("Naval-")}
+    assert culled, "cull list not found -- did the tool rename it?"
+    assert not (culled & pinned), sorted(culled & pinned)

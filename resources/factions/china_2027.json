@@ -2,7 +2,7 @@
     "country": "China",
     "name": "China 2027",
     "authors": "Eclipse (China 2020); 414th Joint Fighter Group (2027 IADS)",
-    "description": "<p>The PLA of the late 2020s. Identical to China 2020 except for the strategic SAM belt: the obsolete HQ-2 is retired and the <strong>S-300PMU-1 and S-300PMU-2</strong> (SA-20/SA-20B) join the roster, so the air-defence network is a modern layered IADS rather than a Cold War one. <strong>Requires High Digit SAMs</strong> for the S-300PMU family; without it those presets drop and the faction degrades to the China 2020 belt. The surface fleet is built on the <strong>Type 055 and Type 052D</strong> (HHQ-9, 250 km) via the <code>Chinese Navy 2027</code> preset; the littoral Type 022 and Type 056A and the superseded Type 052B are dropped so a task group is never screened by 4-8 km hulls.</p>",
+    "description": "<p>The PLA of the late 2020s. Identical to China 2020 except for the strategic SAM belt: the obsolete HQ-2 is retired and the <strong>S-300PMU-1 and S-300PMU-2</strong> (SA-20/SA-20B) join the roster, so the air-defence network is a modern layered IADS rather than a Cold War one. <strong>Requires High Digit SAMs</strong> for the S-300PMU family; without it those presets drop and the faction degrades to the China 2020 belt. The surface fleet is built on the <strong>Type 055 and Type 052D</strong> (HHQ-9, 250 km) via the <code>Chinese Navy 2027</code> preset; the littoral Type 022 and Type 056A and the superseded Type 052B are dropped so a task group is never screened by 4-8 km hulls. The <strong>Type 055 is deliberately absent</strong>: it is the only hull carrying the <strong>YJ-21</strong> anti-ship ballistic missile, which cannot realistically be intercepted -- a flown mission had ten of them airborne inside 99 seconds and the carrier dead before the player was. The Type 052D keeps the fleet's long-range punch with the YJ-18, which Standard missiles do defeat.</p>",
     "locales": [
         "zh_CN"
     ],
@@ -73,8 +73,7 @@
         "Type 093 Attack Submarine",
         "Type 071 Amphibious Transport Dock",
         "[CH] Type 054B Frigate",
-        "[CH] Type 052D Destroyer",
-        "[CH] Type 055 Destroyer"
+        "[CH] Type 052D Destroyer"
     ],
     "air_defense_units": [
         "EWR 1L13",

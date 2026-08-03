@@ -1488,6 +1488,28 @@ behavior, so it's an upstream-PR candidate. Tests: `tests/test_dead_planning.py`
   (carve candidates). Checklist **C8** — needs an in-game pass.
 - AWACS orbit stacking + direction: `game/ato/flightplans/aewc.py`.
 - Tanker orbit placement/deconfliction: `game/ato/flightplans/theaterrefueling.py`.
+- **Support flights sharing one radio channel (the flown "I can't talk to the A-6 tanker",
+  fixed 2026-08-02).** A player-flown carrier strike could not raise its own buddy tanker on
+  any channel, while the theater KC-135 answered normally. Root cause is in
+  `FlightGroupConfigurator.setup_radios` (`game/missiongenerator/aircraft/flightgroupconfigurator.py`):
+  an AEWC/REFUELING/RECOVERY flight inherits its **package** frequency. That is correct while
+  each support flight is the only one in its package (the theater tanker and AEW&C packages each
+  get their own), but **§44 long-range carrier ops deliberately puts a buddy tanker *and* an E-2
+  in as primary flights of the same package** (`game/fourteenth/carrier_ops.py`) — so both took
+  the one package channel. The flown miz had `Milestone 8` (A-6E) and `Wizard 7` (E-2C) both on
+  **396.0 AM**; DCS builds the comms menu per frequency, so only the AEW&C answered and the
+  tanker was unreachable from the cockpit (the §74 DTC cartridge corroborated it — COMM2
+  channels 3/4/5 all resolved to 396.0 and all took the AEW&C's name). `setup_radios` now routes
+  the inherited channel through `dedicated_support_frequency`, which allocates a fresh UHF when
+  another tanker/AEW&C flight already holds it (`support_frequencies` reads the
+  `MissionData.tankers`/`awacs` registrations, so the check covers both classes and both
+  coalitions). The **first** support flight in a package still keeps the package frequency, so no
+  channel is wasted in the common single-support case, and an **explicitly assigned**
+  `Flight.frequency` is honored as-is — only the inherited package channel is replaced.
+  Generation-time ⇒ **existing saves fix themselves on the next regeneration, no NEW game.**
+  Tests: `tests/missiongenerator/aircraft/test_flightgroupconfigurator.py`. Upstream-shared
+  (carve candidate — `setup_radios` is upstream code; only the §44 package shape that exposes it
+  is fork-side).
 - **Carrier-recovery stagger (the flown Scenic Route midair, fixed 2026-07-16).** Two AI
   packages (an OX S-3B and a CATERPILLAR Hornet) recovering to CVN-71 in the same window
   converged co-altitude at ~1,000 ft and collided 2.7 NM from the boat — blue's only losses

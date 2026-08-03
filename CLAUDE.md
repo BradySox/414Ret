@@ -940,7 +940,24 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
    Fury's 3 ammo depots authored at 0 m from the Hamburg/Peenemünde/Szczecin references moved
    1.5 km off, CI-locked by `test_no_preset_marker_sits_on_a_runway`; its Peenemünde supply
    routes cross open water and still need a road re-trace (see the campaign note). Tests
-   `tests/missiongenerator/test_convoy_spawn_clearance.py`.
+   `tests/missiongenerator/test_convoy_spawn_clearance.py`. **Support flights sharing one
+   radio channel (2026-08-02, the flown "I can't talk to the A-6 tanker"):** an
+   AEWC/REFUELING/RECOVERY flight inherits its **package** frequency, which is correct while
+   it is the only support flight in that package (the theater tanker/AEW&C packages) — but
+   **§44 long-range carrier ops puts a buddy tanker AND an E-2 in as primary flights of the
+   same package**, so both took the one channel (flown miz: `Milestone 8` and `Wizard 7` both
+   on 396.0 AM). DCS builds the comms menu per frequency, so only the AEW&C answered and the
+   tanker was unreachable; the theater KC-135, on its own package channel, worked fine.
+   `setup_radios` now routes the inherited channel through `dedicated_support_frequency`,
+   which allocates a fresh UHF when another tanker/AEW&C already holds it (`support_frequencies`
+   reads the `MissionData.tankers`/`awacs` registrations — both classes, both coalitions). The
+   **first** support flight in a package keeps the package frequency (no channel wasted in the
+   common case), and an **explicitly assigned** `Flight.frequency` is honored as-is. Same §74
+   DTC symptom: COMM2 channels 3/4/5 all resolved to 396.0 under the AEW&C's name.
+   Generation-time ⇒ **existing saves fix themselves on the next regeneration, no NEW game.**
+   Upstream-shared (`setup_radios` is upstream code; only the §44 package shape that exposes it
+   is fork-side); carve candidate. Tests
+   `tests/missiongenerator/aircraft/test_flightgroupconfigurator.py`.
 9. **TIC — Troops In Contact** — scripted frontline firefights with per-stance movement +
    414th ambient-fire extension (plugin, default ON).
 10. **CurrentHill Iran assets pack** — Shahed-136, IRGCN FAC, `[CH] Iran 2020` faction.

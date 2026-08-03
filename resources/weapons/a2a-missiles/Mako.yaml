@@ -1,0 +1,24 @@
+# Mako multi-mission hypersonic missile, shipped by the F-22A pack, which types it
+# as an active-radar AAM ({MAKO_A2A_C}). Unlike the other stores registered
+# alongside it, this one is NOT payload-editor-only: all six of the Raptor's
+# "Retribution ..." fits carry 2x Mako, so it flies on every F-22A A2A sortie in
+# the eleven campaigns that preseed the pack.
+#
+# `year` is 2027 -- Mako was unveiled in 2024 as a company-funded design and has
+# no IOC to cite, so this is a judgement call, made deliberately conservative in
+# two directions at once. It sits AFTER AIM-260A (2026) because Mako is the less
+# mature of the two, keeping the ladder monotonic; and it is early enough that
+# the two campaigns actually set in 2027 (Baltic Fury, Marianas 2027) keep the
+# Raptor fit they ship with today, so registering it takes nothing away from a
+# campaign that was built expecting it. What it DOES fix is the pre-2019
+# campaigns that field the pack -- an unregistered clsid is treated as available
+# in every era, so Clash of the Titans (2006) was flying hypersonic AAMs. Those
+# now step down the ladder to a period-correct AMRAAM.
+#
+# Raise this if the fork ever wants a stricter 2027; the Raptors would then fall
+# back to AIM-260A, which is itself unfielded, so retune both together.
+name: Mako
+year: 2027
+fallback: AIM-260A
+clsids:
+  - "{MAKO_A2A_C}"   # Mako Multi-Mission Hypersonic Missile - Active Radar AAM

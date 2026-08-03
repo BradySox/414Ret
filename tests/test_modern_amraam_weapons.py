@@ -1,17 +1,22 @@
 """The modern AMRAAM/JATM stores the F-22A and CJS Super Hornet packs ship are
 date-gated like every other missile.
 
-Both packs register AIM-120D (and the F-22A pack AIM-260A and AIM9X-BLKII)
-clsids, but none of them appeared in resources/weapons -- and an unregistered
-clsid falls through `WeaponGroup.register_unknown_weapons`, which sets
-introduction_year=None. `Weapon.available_on` reads that as "always available",
-so those stores were ungated with no fallback: `resources/customized_payloads/
-F-22A.lua` frags {AIM-120D-3} in 12 fits, which a 1991 campaign would have
-happily flown.
+Both packs register AIM-120D (and the F-22A pack AIM-260A, AIM9X-BLKII and the
+Mako hypersonic) clsids, but none of them appeared in resources/weapons -- and
+an unregistered clsid falls through `WeaponGroup.register_unknown_weapons`,
+which sets introduction_year=None. `Weapon.available_on` reads that as "always
+available", so those stores were ungated with no fallback.
 
-These tests pin the registration itself, so a pack update that adds new
-AIM-120D/AIM-260A pylon stores fails here rather than silently shipping another
-ungated missile.
+That is not academic: `resources/customized_payloads/F-22A.lua` frags
+{AIM-120D-3} in 12 fits AND {MAKO_A2A_C} in all six of the Raptor's
+"Retribution ..." fits, so every F-22A A2A sortie in the eleven campaigns that
+preseed the pack was carrying an ungated AIM-120D and two ungated hypersonic
+AAMs -- including Clash of the Titans, set in 2006.
+
+These tests pin the registration itself, so a pack update that adds new pylon
+stores fails here rather than silently shipping another ungated missile, and
+pin the two ends of the Mako date call: gated out of the pre-2019 campaigns,
+kept in the two campaigns actually set in 2027.
 """
 
 from __future__ import annotations
@@ -59,6 +64,7 @@ def _group_of(clsid: str) -> WeaponGroup:
         (r"AIM-120D|AIM_120D", "AIM-120D"),
         (r"AIM-260A|AIM_260A", "AIM-260A"),
         (r"AIM9X-BLKII|2xAIM9X-II", "AIM-9X"),
+        (r"MAKO", "Mako"),
     ],
 )
 def test_every_pack_store_is_registered_to_its_group(
@@ -71,24 +77,47 @@ def test_every_pack_store_is_registered_to_its_group(
 
 
 def test_the_amraam_ladder_is_ordered() -> None:
-    """C -> D -> 260A must not let a later missile arrive before an earlier one.
+    """C -> D -> 260A -> Mako must not let a later missile arrive before an earlier one.
 
     Repo-wide monotonicity is deliberately NOT an invariant (cross-family
     fallbacks like a targeting pod falling back to a missile are intentional),
     so this is scoped to the one ladder these files add to.
     """
-    jatm = WeaponGroup.named("AIM-260A")
-    amraam_d = WeaponGroup.named("AIM-120D")
-    amraam_c = WeaponGroup.named("AIM-120C")
+    ladder = [
+        WeaponGroup.named(name) for name in ("AIM-120C", "AIM-120D", "AIM-260A", "Mako")
+    ]
 
-    assert amraam_d.fallback is amraam_c
-    assert jatm.fallback is amraam_d
+    for lower, higher in zip(ladder, ladder[1:]):
+        assert (
+            higher.fallback is lower
+        ), f"{higher.name} should fall back to {lower.name}"
+        assert lower.introduction_year is not None
+        assert higher.introduction_year is not None
+        assert lower.introduction_year <= higher.introduction_year
 
-    assert amraam_c.introduction_year is not None
-    assert amraam_d.introduction_year is not None
-    assert jatm.introduction_year is not None
-    assert amraam_c.introduction_year <= amraam_d.introduction_year
-    assert amraam_d.introduction_year <= jatm.introduction_year
+
+def test_the_raptor_keeps_its_shipped_fit_in_the_2027_campaigns() -> None:
+    """Registering Mako must not disarm a campaign that was built expecting it.
+
+    Unlike the other stores added alongside it, Mako is in all six of the
+    F-22A's shipped Retribution fits, so its date is a live balance decision --
+    Baltic Fury (2027-07-17) and Marianas 2027 (2027-04-12) must still get it.
+    """
+    for clsid in ("{MAKO_A2A_C}", "{AIM-120D-3}", "{AIM-9XX}"):
+        weapon = Weapon.with_clsid(clsid)
+        assert weapon is not None
+        assert weapon.available_on(
+            datetime.date(2027, 4, 12), _NoOverrides()  # type: ignore[arg-type]
+        ), f"{clsid} would be stripped from the Raptor's 2027 fit"
+
+
+def test_mako_is_gated_out_of_the_pre_2019_campaigns() -> None:
+    """Clash of the Titans (2006) fields the pack and was flying hypersonics."""
+    weapon = Weapon.with_clsid("{MAKO_A2A_C}")
+    assert weapon is not None
+    assert not weapon.available_on(
+        datetime.date(2006, 1, 27), _NoOverrides()  # type: ignore[arg-type]
+    )
 
 
 @pytest.mark.parametrize(

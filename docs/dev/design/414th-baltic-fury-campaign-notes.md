@@ -227,12 +227,21 @@ campaign require the mod, reintroducing everything in (2). The Super Hornet fits
 AIM-120C + AIM-9X deliberately.
 
 What *did* come out of the evaluation is a real data fix, applied fork-wide (see
-`resources/weapons/a2a-missiles/AIM-120D.yaml`): the packs' AIM-120D / AIM-260A / AIM9X-BLKII
-clsids were **unregistered**, so `register_unknown_weapons` gave them `introduction_year=None` and
-`Weapon.available_on` treated them as always-available with no fallback — meaning the Raptors'
-AIM-120D-3 was ungated in *every* era. Now dated and laddered (C → D → 260A), which changes
-nothing here (2027 unlocks all three) and only bites pre-2019 campaigns. Guarded by
-`tests/test_modern_amraam_weapons.py`.
+`resources/weapons/a2a-missiles/AIM-120D.yaml`): the packs' AIM-120D / AIM-260A / AIM9X-BLKII /
+Mako clsids were **unregistered**, so `register_unknown_weapons` gave them
+`introduction_year=None` and `Weapon.available_on` treated them as always-available with no
+fallback. Not academic — `F-22A.lua` frags `{AIM-120D-3}` in 12 fits and `{MAKO_A2A_C}` in **all
+six** of the Raptor's `Retribution ...` fits, so every F-22A A2A sortie in the eleven campaigns
+preseeding the pack carried an ungated AIM-120D and two ungated hypersonic AAMs — including
+Clash of the Titans, set in **2006**. Now dated and laddered (C 2018 → D 2019 → 260A 2026 →
+Mako 2027).
+
+**Mako's date was the one live balance call**, because unlike the others it is in the shipped
+fits: 2027 is deliberately late enough to sit after AIM-260A (Mako is the less mature of the two,
+unveiled 2024 with no IOC) and early enough that **Baltic Fury and Marianas 2027 keep the Raptor
+fit they ship with today** — registering it takes nothing away from a campaign built expecting
+it, while pre-2019 campaigns step down to a period-correct AMRAAM (2006 → AIM-120B, verified).
+Guarded by `tests/test_modern_amraam_weapons.py`, which pins both ends of that call.
 
 ---
 

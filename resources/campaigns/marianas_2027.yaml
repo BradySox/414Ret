@@ -108,29 +108,19 @@ ground_forces:
   # Rota is 75 km from Andersen -- close enough that ANY long-range system here covers
   # Guam. It gets point defence only; its marker is authored SHORT to match.
   Rota SAM Site: HQ-7
-  # NAVAL PLACEMENT. The HHQ-9 reaches 250 km and Guam-to-Saipan is only 205 km, so one
+  # NAVAL PLACEMENT. Six screens survive the cull (see the build tool); the rest of
+  # Repartee's 21 ship markers are deleted outright, because every marker becomes a
+  # whole naval group and hull count is what produced the 374-launch opening salvo. The HHQ-9 reaches 250 km and Guam-to-Saipan is only 205 km, so one
   # heavy group covers a third of the theatre. EVERY scattered surface marker is an
   # inshore escort; the area-defence destroyers stay concentrated with the three carrier
   # groups, which draw them from the roster. Eight extra 250 km rings did not make the
   # campaign harder, it made the map unreadable (measured: 13 of 30 rings were 250 km).
   Naval-16: Chinese Navy 2027 Escort
-  Naval-15: Chinese Navy 2027 Escort
   Naval-13: Chinese Navy 2027 Escort
-  Naval-14: Chinese Navy 2027 Escort
   Naval-12: Chinese Navy 2027 Escort
-  Naval-11: Chinese Navy 2027 Escort
-  Naval-20: Chinese Navy 2027 Escort
-  Naval-21: Chinese Navy 2027 Escort
-  Naval-22: Chinese Navy 2027 Escort
-  Naval-23: Chinese Navy 2027 Escort
   Naval-10: Chinese Navy 2027 Escort
-  Naval-9: Chinese Navy 2027 Escort
   Naval-8: Chinese Navy 2027 Escort
-  Naval-7: Chinese Navy 2027 Escort
-  Naval-5: Chinese Navy 2027 Escort
   Naval-19: Chinese Navy 2027 Escort
-  Naval-24: Chinese Navy 2027 Escort
-  Naval-26: Chinese Navy 2027 Escort
 
   # Point defence on the occupied islands: HQ-7, the PLA's own short-range system.
   Ground-3: HQ-7

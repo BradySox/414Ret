@@ -179,8 +179,18 @@ FOBS_TO_RED = ("FOB Uracus",)
 # one becomes a full naval group, and hull count is what drove the 374-launch opening
 # salvo. Only the six in RED_ESCORTS plus the three blue-screen markers survive.
 CULLED_SHIP_MARKERS = (
-    "Naval-5", "Naval-7", "Naval-9", "Naval-11", "Naval-14", "Naval-15",
-    "Naval-20", "Naval-21", "Naval-22", "Naval-23", "Naval-24", "Naval-26",
+    "Naval-5",
+    "Naval-7",
+    "Naval-9",
+    "Naval-11",
+    "Naval-14",
+    "Naval-15",
+    "Naval-20",
+    "Naval-21",
+    "Naval-22",
+    "Naval-23",
+    "Naval-24",
+    "Naval-26",
 )
 
 # Search parameters for _place_on_land, in metres. The minimum keeps a launcher off

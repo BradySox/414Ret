@@ -271,9 +271,12 @@ file. This guide is the map; those are the territory.
     out-range the theatre (YJ-18 ~540 km vs a 205 km Guam–Saipan gap), and the compressed
     laydown put both fleets ~300 km apart at t=0. The 055 is the only YJ-21 carrier and the
     YJ-21 cannot realistically be intercepted; the 052D's YJ-18 demonstrably can (99 SM
-    intercept shots in the same file). Deferred alternatives: push the PLAN past the 500 km
-    detection range (undoes the compression) or give ships a weapons-hold start (engine
-    change, own setting + in-game pass), and **a preset must fill every layout slot it wants to control**
+    intercept shots in the same file). **The weapons-hold-start alternative was BUILT the
+    next day as §81 N1** (`naval_weapon_release_stagger`) alongside the N2 magazine — both
+    default OFF and deliberately **not preseeded here** until checklist B39 passes, so this
+    campaign still relies on the 055 removal + the hull cull for now; the remaining deferred
+    option is pushing the PLAN past the 500 km detection range (which undoes the
+    compression). Also: **a preset must fill every layout slot it wants to control**
     (a frigates-only preset leaves Destroyer×2 empty, `has_unit_for_layout_group` fills it
     from the roster, and the roster's destroyers are the 250 km hulls — so the "light"
     group silently came back out at 250 km).
@@ -400,24 +403,6 @@ file. This guide is the map; those are the territory.
   - `414th-iads-c2-consequences-notes.md` — the IADS C2 family beyond comms (§52 Feature A LANDED —
     command-center kills degrade enemy planning; Feature B power→radar-blackout is mostly MANTIS
     already + legibility, deferred; records why datalink/GPS jamming is NOT feasible in DCS)
-  - `414th-naval-magazine-notes.md` — **cross-turn naval magazines (SCOPED 2026-08-03,
-    nothing built)**. Off the flown Marianas 2027 Tacview (374 launches, essentially all
-    in the opening five minutes). Separates three causes that need different fixes: ships
-    spawn `WeaponFree`+alarm RED because that is the only way DCS makes a fleet fight
-    (`set_ship_engagement`; an `EngageTargets` task is air-only and crashed the naval AI),
-    modern AShM out-range the theatre (YJ-18 ~540 km vs a 205 km gap) so "in range" is
-    permanently true, and **a DCS mission is a fresh spawn** so loadouts reset every turn —
-    sinking hulls is currently the ONLY way missile volume ever falls. Tiers: **N1**
-    staggered release (ships spawn `WeaponHold`, a plugin frees each group on a stagger —
-    the §49 precedent; runtime-only, no state, fixes the flown symptom and should go
-    first), **N2** the real magazine (`Game.naval_magazines` keyed by
-    `original_name`, `S_EVENT_SHOT` counting against a curated AShM pattern list, winchester
-    → **`OptROE.ReturnFire`**, a `naval_magazine_state` debrief channel — mirroring §63's
-    proven no-rearm shape, and keeping its rule that **generation never debits**), **N3**
-    replenishment, **N4** surfacing. **Load-bearing unknown, test before building N2:** DCS
-    ROE is per-GROUP not per-weapon, so a winchester ship on `ReturnFire` may also lose its
-    air defence — unverifiable outside a flown mission. Also open: not double-counting §63's
-    own shots, and blue symmetry.
   - `414th-cruise-missile-raids-notes.md` — ship-launched cruise missile raids (§63 LANDED
     2026-07-15): the no-rearm campaign magazine debited only by the debrief report, emitter-time
     raid planning, the curated LACM hull set, and the deferred Tier-3 right-click/SITREP surfacing

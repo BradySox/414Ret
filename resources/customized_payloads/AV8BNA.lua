@@ -16,10 +16,16 @@ local unitPayloads = {
 				[3] = {
 					["CLSID"] = "{GBU_32_V_2B}",
 					["num"] = 7,
+					["settings"] = {
+						["NFP_VIS_DrawArgNo_57"] = 1,
+					},
 				},
 				[4] = {
 					["CLSID"] = "{GBU_32_V_2B}",
 					["num"] = 6,
+					["settings"] = {
+						["NFP_VIS_DrawArgNo_57"] = 1,
+					},
 				},
 				[5] = {
 					["CLSID"] = "{A111396E-D3E8-4b9c-8AC9-2432489304D5}",
@@ -28,10 +34,16 @@ local unitPayloads = {
 				[6] = {
 					["CLSID"] = "{GBU_32_V_2B}",
 					["num"] = 3,
+					["settings"] = {
+						["NFP_VIS_DrawArgNo_57"] = 1,
+					},
 				},
 				[7] = {
 					["CLSID"] = "{GBU_32_V_2B}",
 					["num"] = 2,
+					["settings"] = {
+						["NFP_VIS_DrawArgNo_57"] = 1,
+					},
 				},
 			},
 			["tasks"] = {
@@ -127,18 +139,30 @@ local unitPayloads = {
 				[3] = {
 					["CLSID"] = "{BRU-70A_3*GBU-54}",
 					["num"] = 7,
+					["settings"] = {
+						["NFP_VIS_DrawArgNo_57"] = 1,
+					},
 				},
 				[4] = {
 					["CLSID"] = "{BRU-70A_2*GBU-54_RIGHT}",
 					["num"] = 6,
+					["settings"] = {
+						["NFP_VIS_DrawArgNo_57"] = 1,
+					},
 				},
 				[5] = {
 					["CLSID"] = "{BRU-70A_2*GBU-54_LEFT}",
 					["num"] = 3,
+					["settings"] = {
+						["NFP_VIS_DrawArgNo_57"] = 1,
+					},
 				},
 				[6] = {
 					["CLSID"] = "{BRU-70A_3*GBU-54}",
 					["num"] = 2,
+					["settings"] = {
+						["NFP_VIS_DrawArgNo_57"] = 1,
+					},
 				},
 				[7] = {
 					["CLSID"] = "{A111396E-D3E8-4b9c-8AC9-2432489304D5}",
@@ -168,18 +192,30 @@ local unitPayloads = {
 				[4] = {
 					["CLSID"] = "{GBU_32_V_2B}",
 					["num"] = 7,
+					["settings"] = {
+						["NFP_VIS_DrawArgNo_57"] = 1,
+					},
 				},
 				[5] = {
 					["CLSID"] = "{GBU_32_V_2B}",
 					["num"] = 6,
+					["settings"] = {
+						["NFP_VIS_DrawArgNo_57"] = 1,
+					},
 				},
 				[6] = {
 					["CLSID"] = "{GBU_32_V_2B}",
 					["num"] = 3,
+					["settings"] = {
+						["NFP_VIS_DrawArgNo_57"] = 1,
+					},
 				},
 				[7] = {
 					["CLSID"] = "{GBU_32_V_2B}",
 					["num"] = 2,
+					["settings"] = {
+						["NFP_VIS_DrawArgNo_57"] = 1,
+					},
 				},
 			},
 			["tasks"] = {
@@ -205,6 +241,9 @@ local unitPayloads = {
 				[4] = {
 					["CLSID"] = "{BRU-70A_2*GBU-54_LEFT}",
 					["num"] = 7,
+					["settings"] = {
+						["NFP_VIS_DrawArgNo_57"] = 1,
+					},
 				},
 				[5] = {
 					["CLSID"] = "{AGM_122_SIDEARM}",
@@ -217,6 +256,9 @@ local unitPayloads = {
 				[7] = {
 					["CLSID"] = "{BRU-70A_2*GBU-54_RIGHT}",
 					["num"] = 2,
+					["settings"] = {
+						["NFP_VIS_DrawArgNo_57"] = 1,
+					},
 				},
 			},
 			["tasks"] = {
@@ -275,6 +317,9 @@ local unitPayloads = {
 				[3] = {
 					["CLSID"] = "{GBU_32_V_2B}",
 					["num"] = 3,
+					["settings"] = {
+						["NFP_VIS_DrawArgNo_57"] = 1,
+					},
 				},
 				[4] = {
 					["CLSID"] = "{6CEB49FC-DED8-4DED-B053-E1F033FF72D3}",
@@ -283,14 +328,23 @@ local unitPayloads = {
 				[5] = {
 					["CLSID"] = "{GBU_32_V_2B}",
 					["num"] = 6,
+					["settings"] = {
+						["NFP_VIS_DrawArgNo_57"] = 1,
+					},
 				},
 				[6] = {
 					["CLSID"] = "{GBU_32_V_2B}",
 					["num"] = 7,
+					["settings"] = {
+						["NFP_VIS_DrawArgNo_57"] = 1,
+					},
 				},
 				[7] = {
 					["CLSID"] = "{GBU_32_V_2B}",
 					["num"] = 2,
+					["settings"] = {
+						["NFP_VIS_DrawArgNo_57"] = 1,
+					},
 				},
 			},
 			["tasks"] = {

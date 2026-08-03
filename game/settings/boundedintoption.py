@@ -26,6 +26,7 @@ def bounded_int_option(
     tooltip: Optional[str] = None,
     causes_expensive_game_update: bool = False,
     enabled_when: Optional[Union[str, EnabledWhen]] = None,
+    advanced: bool = False,
     **kwargs: Any,
 ) -> int:
     return field(
@@ -40,6 +41,7 @@ def bounded_int_option(
                 min=min,
                 max=max,
                 enabled_when=normalize_enabled_when(enabled_when),
+                advanced=advanced,
             )
         },
         default=default,

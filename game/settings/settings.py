@@ -1,5 +1,5 @@
-from collections.abc import Iterator
-from dataclasses import Field, dataclass, field, fields
+from collections.abc import Iterable, Iterator
+from dataclasses import MISSING, Field, dataclass, field, fields
 from datetime import timedelta
 from enum import Enum, unique
 from typing import Any, Dict, Optional
@@ -7,10 +7,10 @@ from typing import Any, Dict, Optional
 from dcs.forcedoptions import ForcedOptions
 
 from .booleanoption import boolean_option
-from .boundedfloatoption import bounded_float_option
-from .boundedintoption import bounded_int_option
+from .boundedfloatoption import BoundedFloatOption, bounded_float_option
+from .boundedintoption import BoundedIntOption, bounded_int_option
 from .choicesoption import choices_option
-from .minutesoption import minutes_option
+from .minutesoption import MinutesOption, minutes_option
 from .optiondescription import OptionDescription, SETTING_DESCRIPTION_KEY
 from .skilloption import skill_option
 from ..ato.starttype import StartType
@@ -670,11 +670,133 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
     ),
 ]
 
+# ---------------------------------------------------------------------------
+# The 414th Features page.
+#
+# The fork layers ~80 features on upstream, and the habit of shipping each one
+# behind its own gate had scattered those gates through the doctrine / campaign /
+# mission pages, where they sat indistinguishable from ordinary choices: nothing
+# told you that "Convoy ambush" is a whole subsystem while the spinner under it
+# is one of its knobs. Worse, every new feature landed on whichever topical page
+# looked closest, so those pages grew without bound.
+#
+# The gates now live on one page, and the split is a deliberate mental model:
+#
+#     the Features page answers "what is running"
+#     the topical pages answer  "how it behaves"
+#
+# So a feature's on/off switch moves here; its tuning knobs stay next to the
+# subject they tune. `FEATURE_GATE_FIELDS` is the boolean-gate set from the
+# feature registry (game/fourteenth/features.py) -- it is a literal here rather
+# than an import because game/__init__ already pulls in this module, so importing
+# the registry would be circular. `tests/fourteenth/test_features_registry.py`
+# fails CI if the two fall out of step, which is the same registry-plus-test
+# discipline the feature index already uses.
+#
+# Deliberately NOT moved: the Vietnam Ops page's own gates. That page is already
+# exactly a scoped features page, and emptying it to re-list the same eight
+# toggles here would be churn without a reader benefit.
+FEATURES_PAGE = "414th Features"
+
+FEATURE_GATE_FIELDS: dict[str, list[str]] = {
+    "Recon, concealment & intel": [
+        "recon_intel_fog",  # §3
+        "concealed_enemy_forces",  # §3
+        "decoy_zones",  # §79
+        "scar_command_post_intel",  # §15
+        "comint_collection",  # §70
+        "red_comms_net",  # §70
+    ],
+    "Combat search & rescue": [
+        "auto_combat_sar",  # §21
+        "combat_sar_persistent_pilots",  # §21
+        "combat_sar_surge",  # §21
+    ],
+    "Battlefield life": [
+        "ambient_supply_convoys",  # §50
+        "convoy_ambush",  # §50
+        "artillery_base_harassment",  # §36
+        "motorpool_enabled",  # §56
+        "mission_briefing_popup",  # §58
+    ],
+    "Electronic & command warfare": [
+        "enemy_comms_jamming",  # §51
+        "comms_jam_requires_capture",  # §51
+        "c2_decapitation_effects",  # §52
+    ],
+    "Naval & missile strike": [
+        "long_range_carrier_ops",  # §44
+        "cruise_missile_strikes",  # §63
+        "cruise_missile_auto_raids",  # §63
+        "cargo_ship_convoys",  # §78
+        "coastal_batteries_engage_ships",  # §78
+        "mobile_missile_relocation",  # §49
+        "coastal_missile_relocation",  # §49
+        "naval_weapon_release_stagger",  # §81
+        "naval_magazines",  # §81
+    ],
+    "Auto-planner behaviour": [
+        "weather_aware_planning",  # §67
+        "sead_strike_coordination",  # §69
+        "adaptive_procurement",  # §68
+        "auto_repair_air_defenses",  # §68
+        "auto_range_fuel_tanks",  # §46
+        "fuel_tanks_over_jammers",  # §46
+    ],
+    "Campaign clock & era": [
+        "continuous_campaign_clock",  # §47
+        "restrict_props_by_date",  # §24
+    ],
+    "Cockpit & kneeboard": [
+        "dtc_data_cartridges",  # §74
+        "generate_sitrep_kneeboard",  # §29
+    ],
+    "Carrier": [
+        "carrier_deck_decorations",  # §72
+        "carrier_deck_decorations_aircraft",  # §72
+    ],
+    "Host & event tools": [
+        "host_red_scramble",  # §61
+    ],
+    "Performance": [
+        "perf_ground_ai_sleep",  # §59
+        "perf_aaa_site_sleep",  # §59
+    ],
+}
+
+#: Flat set of every field the Features page claims, for the layout rebuild below.
+_FEATURE_GATE_NAMES: frozenset[str] = frozenset(
+    name for names in FEATURE_GATE_FIELDS.values() for name in names
+)
+
+# The spec with the feature gates lifted out of their old topical sections, then
+# the Features page appended. A section left empty by the lift is dropped rather
+# than rendering as an empty group box.
+_LAYOUT_SPEC_WITHOUT_GATES: list[tuple[str, list[tuple[str, list[str]]]]] = [
+    (
+        page,
+        [
+            (section, kept)
+            for section, names in sections
+            if (kept := [n for n in names if n not in _FEATURE_GATE_NAMES])
+        ],
+    )
+    for page, sections in _LAYOUT_SPEC
+]
+
+_EFFECTIVE_LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
+    *_LAYOUT_SPEC_WITHOUT_GATES,
+    (
+        FEATURES_PAGE,
+        [(section, names) for section, names in FEATURE_GATE_FIELDS.items()],
+    ),
+]
+
 # Flattened field -> (page, section). Insertion order (and thus UI order) is the
 # spec order above.
 FIELD_LAYOUT: dict[str, tuple[str, str]] = {
     name: (page, section)
-    for page, sections in _LAYOUT_SPEC
+    for page, sections in _EFFECTIVE_LAYOUT_SPEC
     for section, names in sections
     for name in names
 }
@@ -692,6 +814,56 @@ HIDDEN_FIELDS: frozenset[str] = frozenset(
         "auto_plan_minefields",
     }
 )
+
+# ---------------------------------------------------------------------------
+# Basic vs advanced.
+#
+# The dialog shows a section's basic options and folds the rest behind a "Show N
+# advanced options" link. The rule is deliberately mechanical rather than 213
+# hand-made judgment calls, so it can be read and argued with in one sitting:
+#
+#     advanced  ==  a numeric tuning knob (int / float / duration)
+#
+# A number answers "how much" about a behaviour you have already chosen, which is
+# the definition of a knob you reach for second. Booleans and choices stay basic:
+# they answer "which" or "whether", and those are the decisions that shape a
+# campaign.
+#
+# Two exceptions to the rule, both explicit below: numbers that ARE the decision
+# (the difficulty economy/skill dials the preset bar drives, so the preset and the
+# page can never disagree about what matters), and a short list of expert booleans
+# that fail the spirit of the rule.
+#
+# `advanced=True` on an individual declaration also works and wins; prefer it for
+# a new field whose home is obvious, and this table for bulk classification.
+_PRESET_DRIVEN_FIELDS: frozenset[str] = frozenset(
+    {
+        "player_income_multiplier",
+        "enemy_income_multiplier",
+    }
+)
+
+_ALWAYS_BASIC_FIELDS: frozenset[str] = frozenset(
+    {
+        # Squadron/airframe scale reads as a headline campaign choice, not a knob.
+        "default_start_type",
+    }
+)
+
+#: Expert booleans/choices that the "numbers are advanced" rule alone would leave
+#: in front of every player. These are debugging and test aids, not gameplay.
+_ADVANCED_NON_NUMERIC_FIELDS: frozenset[str] = frozenset(
+    {
+        "combat_sar_test_force_capture",
+        "combat_sar_test_easy_rescue",
+        "switch_baro_fix",
+        "ground_start_scenery_remove_triggers",
+    }
+)
+
+#: ``Settings.__dict__`` key holding the field names a campaign pre-seeded. Not a
+#: dataclass field on purpose -- see Settings.campaign_preseeded_fields.
+CAMPAIGN_PRESEED_KEY = "_campaign_preseeded_fields"
 
 
 @dataclass
@@ -3749,6 +3921,64 @@ class Settings:
         # FIELD_LAYOUT is the curated UI grouping; fall back to the field's own
         # page=/section= metadata for anything not listed there.
         return FIELD_LAYOUT.get(name, (description.page, description.section))
+
+    @classmethod
+    def is_advanced(cls, name: str, description: OptionDescription) -> bool:
+        """Should the dialog fold this option behind the "advanced" disclosure?
+
+        See the basic-vs-advanced note above ``_PRESET_DRIVEN_FIELDS``: numeric
+        knobs are advanced, "whether/which" options are not, with two explicit
+        exception lists. An ``advanced=True`` on the declaration always wins.
+        """
+        if description.advanced:
+            return True
+        if name in _ADVANCED_NON_NUMERIC_FIELDS:
+            return True
+        if name in _PRESET_DRIVEN_FIELDS or name in _ALWAYS_BASIC_FIELDS:
+            return False
+        return isinstance(
+            description, (BoundedIntOption, BoundedFloatOption, MinutesOption)
+        )
+
+    def is_default(self, name: str) -> bool:
+        """Is this field still at its declared default?
+
+        Powers the dialog's "only show what I've changed" filter. Unknown or
+        unreadable fields report True (i.e. "nothing to see") so the filter can
+        never hide a field by erroring on it.
+        """
+        for settings_field in fields(self):
+            if settings_field.name != name:
+                continue
+            default = settings_field.default
+            if default is MISSING:
+                return True
+            try:
+                return bool(self.__dict__.get(name) == default)
+            except Exception:  # pragma: no cover - exotic __eq__
+                return True
+        return True
+
+    def campaign_preseeded_fields(self) -> frozenset[str]:
+        """Field names the selected campaign pre-seeded in its ``settings:`` block.
+
+        Recorded by the New Game wizard when it layers a campaign's settings over
+        the defaults, and carried in the save so the in-campaign dialog can badge
+        them too. Stored as a plain ``__dict__`` key rather than a dataclass field
+        precisely so it is not itself a setting: ``_user_fields`` only yields
+        fields carrying an option descriptor, so this never renders.
+        """
+        stored = self.__dict__.get(CAMPAIGN_PRESEED_KEY)
+        if isinstance(stored, (frozenset, set, list, tuple)):
+            return frozenset(str(name) for name in stored)
+        return frozenset()
+
+    def record_campaign_preseeds(self, names: Iterable[str]) -> None:
+        """Remember which fields a campaign set (see campaign_preseeded_fields)."""
+        known = {f.name for f in fields(self)}
+        self.__dict__[CAMPAIGN_PRESEED_KEY] = frozenset(
+            name for name in names if name in known
+        )
 
     @classmethod
     def _ordered_user_fields(cls) -> list[Field[Any]]:

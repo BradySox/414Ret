@@ -77,27 +77,53 @@ def qapp() -> Iterator[Any]:
     yield QApplication.instance() or QApplication([])
 
 
-def _layout_for(section_page: tuple[str, str], settings: Settings) -> Any:
+def _layout_for(
+    section_page: tuple[str, str], settings: Settings, hub: Any = None
+) -> Any:
     from qt_ui.windows.settings.QSettingsWindow import AutoSettingsLayout
 
     page, section = section_page
     sc = SimpleNamespace(settings=settings)
-    return AutoSettingsLayout(page, section, sc, lambda: None)  # type: ignore[arg-type]
+    return AutoSettingsLayout(page, section, sc, lambda: None, None, hub)  # type: ignore[arg-type]
+
+
+def _section_of(settings: Settings, field: str) -> tuple[str, str]:
+    for page in settings.pages():
+        for section in settings.sections(page):
+            if field in dict(settings.fields(page, section)):
+                return page, section
+    raise AssertionError(f"{field} is not rendered anywhere")
 
 
 def test_child_greys_out_when_master_is_off(qapp: Any) -> None:
+    """The master and its child now live on different pages.
+
+    `motorpool_enabled` is a feature gate (Features page) and
+    `motorpool_spawn_cap` is one of its knobs (Campaign Management), so this also
+    covers the cross-page half of the dependency wiring.
+    """
+    from qt_ui.windows.settings.QSettingsWindow import SettingsDependencyHub
+
     settings = Settings()
     settings.motorpool_enabled = False
-    layout = _layout_for(("Campaign Management", "Campaign features"), settings)
 
-    cap = layout.settings_map["motorpool_spawn_cap"]
-    label = layout.labels_map["motorpool_spawn_cap"]
+    hub = SettingsDependencyHub()
+    master_layout = _layout_for(
+        _section_of(settings, "motorpool_enabled"), settings, hub
+    )
+    child_layout = _layout_for(
+        _section_of(settings, "motorpool_spawn_cap"), settings, hub
+    )
+    assert master_layout is not child_layout, "fixture assumes a cross-section pair"
+
+    cap = child_layout.settings_map["motorpool_spawn_cap"]
+    label = child_layout.labels_map["motorpool_spawn_cap"]
     # Master off -> child control + label disabled on open.
     assert not cap.isEnabled()
     assert not label.isEnabled()
 
-    # Toggling the master ON re-enables the child live.
-    layout.settings_map["motorpool_enabled"].setChecked(True)
+    # Toggling the master ON re-enables the child live, from another page.
+    master_layout.settings_map["motorpool_enabled"].setChecked(True)
     assert cap.isEnabled()
     assert label.isEnabled()
 

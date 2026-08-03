@@ -27,6 +27,7 @@ def bounded_float_option(
     detail: Optional[str] = None,
     tooltip: Optional[str] = None,
     enabled_when: Optional[Union[str, EnabledWhen]] = None,
+    advanced: bool = False,
     **kwargs: Any,
 ) -> float:
     return field(
@@ -42,6 +43,7 @@ def bounded_float_option(
                 max=max,
                 divisor=divisor,
                 enabled_when=normalize_enabled_when(enabled_when),
+                advanced=advanced,
             )
         },
         default=default,

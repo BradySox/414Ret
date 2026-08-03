@@ -35,3 +35,9 @@ class OptionDescription:
     #: the subclasses' positional fields (invert, min/max, choices, ...) are unaffected
     #: by adding it to the base -- existing positional constructor calls keep working.
     enabled_when: Optional[EnabledWhen] = field(default=None, kw_only=True)
+    #: Marks an expert / tuning knob. The settings dialog hides advanced options
+    #: behind a per-section "Show N advanced options" disclosure so a section reads
+    #: as the handful of choices that actually shape a campaign, with the numbers
+    #: that fine-tune them one click away. Search always reaches them regardless.
+    #: Keyword-only for the same reason as ``enabled_when``.
+    advanced: bool = field(default=False, kw_only=True)

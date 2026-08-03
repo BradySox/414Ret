@@ -2946,6 +2946,39 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     `client/src/components/map/CasedShapes.tsx`, `client/src/components/legend/MapLegend.tsx`,
     `client/src/components/tgos/Tgo.tsx`). Tests `tests/fourteenth/test_decoy_zones.py` (13);
     features doc §79, checklist B33 — needs an in-game pass.
+80. **Mixed-hull ship groups** — a ship group used to put to sea as **N copies of one hull**
+    (four identical Arleigh Burkes ringing the carrier), because a layout slot picked ONE unit
+    type (`random_dcs_unit_type_for_group`) and `generate_units` stamped it into every position.
+    `TgoLayoutUnitGroup.generate_units` now takes **one type per position** and
+    `ForceGroup.mixed_dcs_unit_types_for_group` deals that list: the **lead** type is picked
+    exactly as before (so the change is a strict refinement, not a reroll), candidates are
+    narrowed to the lead's own **unit family** (`layout.UNIT_FAMILIES` — today the single set
+    `{Frigate, Destroyer, Cruiser}`; **every other class is its own family**, so a patrol boat
+    never turns up in a cruiser's slot, a submarine never surfaces in a surface action group,
+    and two carriers never share a slot — `find_carrier_unit` resolves the flagship as
+    `groups[0].units[0]`), and the distinct count is capped at `MAX_MIXED_UNIT_TYPES` (3) so a
+    deep roster produces a **task group, not a one-of-everything zoo** (each chosen type appears
+    once, the rest of the slots are dealt from them, so a 4-ship screen off a 2-hull navy is not
+    forced into an even 2/2 split). A pool with no siblings — an explicit `unit_types:` list, or
+    a faction fielding one hull of the class — degrades to the old uniform group, so **the change
+    can only ever add variety**. Mixing is a **layout-kind property, not a setting**:
+    `TgoLayout.mix_unit_types` is False and `NavalLayout` overrides it True, so SAM sites, EWRs,
+    armor and missile groups keep generating uniformly (a battery's launchers must stay one type);
+    a layout YAML can override a single slot with `mix_unit_types: true|false`; and the parameter
+    on `ForceGroup.create_theater_group_for_tgo` defaults **off** so the **buy menu** — where the
+    player picked a hull explicitly — still generates exactly what was chosen. **The layouts, in
+    passing:** the carrier/LHA screens were declared `unit_classes: [Destroyer]`, which both forced
+    one class and locked the layout out of frigate-only navies (hence the duplicate "…with Frigate
+    escort", whose `.miz` is byte-identical) — the screens now accept every surface combatant
+    (`Destroyer, Cruiser, Frigate`), the Frigate-escort variants are kept as the deliberate **light
+    screen** (frigate-led, `Frigate, Destroyer`, no cruiser) rather than a redundant copy that
+    would regenerate the uniform look, and `Naval Group` keeps its per-slot class split (a layered
+    task group) with new `fallback_classes` so a navy missing a class can still put it to sea.
+    Generation-time ⇒ **NEW game required** (existing saves keep their generated groups).
+    Headless-verified end to end on Tanker War 1988 / Pacific Repartee / Velvet Thunder. No
+    setting, no plugin, no save change; upstream-shared code — carve candidate. Tests
+    `tests/armedforces/test_naval_hull_mixing.py` (9); features doc §80, checklist B38 — needs an
+    in-game pass (whether DCS sails a multi-class group as one formation).
 
 ---
 

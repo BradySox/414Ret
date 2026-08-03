@@ -145,21 +145,61 @@ re-seat the chosen flight through `FlightMembers.set_pilot` (which already claim
 returns pilots correctly) so `Flight.client_count` becomes 1. §43/§73 defaults apply on
 the normal path.
 
-**Rung 2 is better supported than expected — both halves already exist:**
+##### Verified against the code, 2026-08-03 — one earlier claim corrected
 
-- *"What does this package still need?"* → `PackageFulfiller.check_needed_escorts`
-  (`game/commander/packagefulfiller.py`) already returns the `EscortType` set a package
-  warrants — `AirToAir`, `Sead`, and `Jammer` (§77) — computed from real threat-zone
-  intersections against the package's own escorted waypoints.
-- *"Put THIS airframe in that slot."* → `ProposedFlight.preferred_type`
-  (`game/commander/missionproposals.py`) already pins a specific `AircraftType` into a
-  proposed flight, and §44 long-range carrier ops already uses exactly this to force
-  chosen airframes through `PackageFulfiller`.
+An earlier draft of this note asserted that rung 2 was "already supported" by
+`PackageFulfiller.check_needed_escorts` plus `ProposedFlight.preferred_type`. The DM
+pushed back — *"these feel like they might need a major rework?"* — so both were read
+end to end. **Half of that was wrong, and the correction makes rung 2 cheaper, not more
+expensive.**
 
-So rung 2 is roughly: ask the package what it needs → build a `ProposedFlight` with that
-task and `preferred_type` = the player's jet → fulfil it → seat the player. The escort
-prune rules, ROE, join/split geometry and TOT all come along for free, which is the
-entire reason to join a package rather than frag beside one.
+**`ProposedFlight.preferred_type` — the claim holds.** `PackageBuilder.plan_flight`
+passes it straight into `AirWing.best_squadron_for(..., preferred_type=plan.preferred_type,
+...)`, and §44 (`game/fourteenth/carrier_ops.py`) builds `ProposedFlight`s with it and
+calls `fulfiller.plan_mission(...)`. Pinning a chosen airframe into a **newly built**
+package is a shipped, exercised path. This is **rung 3's** mechanism.
+
+**`check_needed_escorts` — the claim was overstated, twice.**
+
+1. *Ownership.* It takes a `PackageBuilder`, and `PackageBuilder.__init__` **always
+   constructs a fresh `Package`** (`self.package = Package(location, flight_db, ...)`).
+   There is no way to hand it an existing, already-planned package, so "ask the package
+   what it needs" does not work as written. Its body reads only `builder.package.flights`
+   and `builder.package.primary_flight`, so a signature change to take a `Package` is
+   small — 1 real call site (`packagefulfiller.py:388`) plus 3 test sites, one of which
+   already calls it unbound against a stub — but it *is* a change, not something that
+   already exists.
+2. *Semantics.* It answers "what is this route **threatened by**", evaluated while the
+   package is being built, **before** escorts are added. Called on a finished package it
+   does not mean "what is still missing" — you would have to subtract the escorts already
+   present.
+
+**But the rework the DM suspected is not needed, because rung 2 should not go through the
+commander at all.** Adding a flight to an existing package is already a shipped operation
+— it is what the ATO UI does every time a human clicks *Add Flight* on a package
+(`QFlightCreator.create_flight` → `PackageModel.add_flight`), and it reduces to:
+
+```python
+flight = Flight(package, squadron, size, task, start_type, divert, roster=roster)
+package.add_flight(flight)   # then update the package TOT
+```
+
+`Flight.__init__` takes the target package directly and `Package.add_flight` appends to
+it. No `PackageBuilder`, no `PackageFulfiller`, no new engine seam.
+
+##### Corrected cost of each rung
+
+| Rung | Mechanism | Engine change |
+|---|---|---|
+| 1 — seat an existing flight | `FlightMembers.set_pilot` | **none** |
+| 2 — join an existing package | `Flight(package, …)` + `Package.add_flight` + TOT update (the UI's own path) | **none** |
+| 3 — frag a standalone sortie | `PackageFulfiller.plan_mission` with `preferred_type` (§44's pattern) | **none** |
+| *role suggestion* | either re-point `check_needed_escorts` at `Package`, **or** infer absent roles from the package's own flights | small, or none |
+
+The role suggestion is the only place any engine edit appears, and it is optional: the
+package's existing flights already say which roles are present, which is enough to offer
+"this package has no SEAD escort." Reach for `check_needed_escorts` only if the
+threat-derived *should it have one* judgement is wanted too.
 
 Open question this raises, for the call list: when a package needs *nothing*, may the
 player still be added as a surplus section (a second striker), or is "nothing needed"
@@ -233,10 +273,46 @@ motivational return available for zero engine risk — and `victory_lines` alrea
 the progress once a block exists.
 
 **5. Anticipation — something is arriving.** *(cheap read-out)*
-Deliveries in transit, pilot replenishment, runway repair timers and procurement are all
-already turn-counted. "Four replacement Vipers arrive turn 12." "Balad's runway is
-repaired in 2 turns." A dated future event is a reason to reach a specific turn, and
-none of it is currently surfaced before commitment.
+Runway repair timers, pilot replenishment and pending deliveries are turn-counted and
+unsurfaced before commitment. **Accuracy caveat, checked 2026-08-03:**
+`Squadron.pending_deliveries` is a **one-turn buffer** — `deliver_all` zeroes it at the
+next turn boundary — so "four Vipers arrive on turn 12" is *not* representable today.
+Aircraft replenishment can only ever announce "next turn," which is weak anticipation.
+Runway repair is the one existing multi-turn clock.
+
+**5b. THE WING GROWS — new airframes and squadrons on an announced schedule.**
+*(DM proposal 2026-08-03, endorsed: "is awesome")*
+The sharpest form of anticipation, and the one aimed directly at this DM's stated
+motivator: *"F-14 det arrives turn 4," "Prowlers turn 6."* If variety is what pulls the
+player forward, then **scheduling variety's arrival converts the player's own motivator
+into the campaign's forward hook** — you play to turn 6 because that is when you get to
+fly the Prowler. It also inverts factor (1) in the diagnosis above: turn 1 stops being
+the best mission by construction, because the wing on turn 1 is no longer the whole wing
+you will ever have.
+
+**Premise check — this one is only half-true today, and the half that matters is the
+missing half.** The DM's framing was "reinforcement machinery already exists; nothing
+announces it." Verified:
+
+- **Aircraft replenishment into existing squadrons: exists** (`pending_deliveries`,
+  procurement) — but one-turn only, per above, and it delivers *more of what you already
+  fly*. It does not serve variety at all.
+- **New squadrons / new airframe types arriving mid-campaign: does not exist.** A
+  campaign's `squadrons:` block is applied at turn 0 and the air wing is fixed from
+  there; `Squadron` carries no arrival turn or activation concept (the only `arrival` on
+  it is a `ControlPoint` property, unrelated). So the announced F-14 det is **new
+  machinery**, not a missing announcement.
+
+**Good news: it is small, and it is the additive kind.** A campaign-authored
+`available_from_turn:` on a squadron config, the squadron held out of the air wing until
+that turn, then activated and announced. No planner change (the commander simply gains
+squadrons it did not have), no save-format risk beyond one field, and unset behaves
+exactly as today. The campaign layer already authors squadrons per base with full
+control, so the authoring surface exists.
+
+This deserves its own scoped section — probably its own note — because unlike the rest of
+S3 it is a real feature rather than a read-out. Recorded here as the highest-value item
+that is **not** free, so the note does not misrepresent it as one.
 
 **6. Dread — the enemy is building toward something.** *(cheap, campaigns already author it)*
 §W6 red tempo already schedules trail surges and offensive windows per campaign, and §70

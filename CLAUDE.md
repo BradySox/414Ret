@@ -508,11 +508,25 @@ file. This guide is the map; those are the territory.
     the planner decides":** two independent variety axes — the player picks the **airframe**,
     the **air war picks the role** — so step 2 leads with role+package (never filtered to one
     task family) and rung 3 is demoted to a surfaced last resort. Rung 2 turns out to be
-    well-supported already: `PackageFulfiller.check_needed_escorts` answers "what does this
-    package still need" (AirToAir/Sead/Jammer, off real threat-zone intersections) and
-    `ProposedFlight.preferred_type` already pins a chosen airframe into a package (§44 carrier
-    ops uses exactly this), so join = ask the package → `ProposedFlight(task,
-    preferred_type)` → fulfil → seat, with escort prunes/ROE/join-split/TOT free. **Call #2
+    cheap — **but not for the reason first written; corrected 2026-08-03 on a DM challenge
+    ("these feel like they might need a major rework?") by reading both paths end to end.**
+    `ProposedFlight.preferred_type` **holds** (`PackageBuilder.plan_flight` →
+    `best_squadron_for(preferred_type=…)`; §44 carrier ops is the shipped exerciser) — but it
+    builds a NEW package, so it is **rung 3's** mechanism, not rung 2's.
+    `check_needed_escorts` was **overstated twice**: it takes a `PackageBuilder`, and
+    `PackageBuilder.__init__` **always constructs a fresh `Package`**, so an existing planned
+    package cannot be handed to it (its body reads only `package.flights` /
+    `primary_flight`, so re-pointing it at `Package` is 1 real + 3 test call sites — small,
+    but a change, not "already exists"); and it answers "what is this route **threatened
+    by**" pre-escort, NOT "what is still missing" on a finished package. **The rework isn't
+    needed because rung 2 shouldn't go through the commander at all** — adding a flight to an
+    existing package is already what the ATO UI does on *Add Flight*
+    (`QFlightCreator.create_flight` → `PackageModel.add_flight`), i.e. `Flight(package,
+    squadron, …)` + `Package.add_flight` + a TOT update. **Corrected rung costs: all three
+    rungs need ZERO engine change** (1 = `set_pilot`, 2 = the UI's own add-flight path,
+    3 = `plan_mission` + `preferred_type`); the only optional edit is the role *suggestion*
+    (re-point `check_needed_escorts` at `Package`, or just infer absent roles from the
+    package's existing flights — free). **Call #2
     SETTLED: one seat, AI wingmen, exactly as in MP** (`client_count` stays 1 — no multi-slot
     bookkeeping, same generation path MP already exercises). **DM steer, same day — "I'm
     looking more for reasons to continue, but this is a great start" — settles the note's
@@ -529,7 +543,20 @@ file. This guide is the map; those are the territory.
     loops you opened** — un-killed recon contacts, scooted §49 batteries, unburned §79
     decoys; (4) **a visible finish line** — §75 shipped the mechanism and **no campaign
     authors a `victory:` block**, the largest motivational return for zero engine risk;
-    (5) **anticipation** — deliveries/repairs/replenishment are turn-counted and unsurfaced;
+    (5) **anticipation** — repairs/replenishment are turn-counted and unsurfaced (**accuracy
+    caveat: `pending_deliveries` is a ONE-TURN buffer**, `deliver_all` zeroes it at the next
+    boundary, so "4 Vipers arrive turn 12" is not representable and aircraft replenishment
+    can only announce "next turn"); **(5b) THE WING GROWS** — DM proposal 2026-08-03,
+    endorsed: new airframes/squadrons on an **announced schedule** ("F-14 det turn 4",
+    "Prowlers turn 6"), which converts the DM's own variety motivator into the campaign's
+    forward hook AND inverts the "turn 1 is the best mission" factor. **Premise checked and
+    half-corrected:** aircraft replenishment into existing squadrons exists but only delivers
+    more of what you already fly; **mid-campaign arrival of new squadrons/types does not
+    exist at all** (the `squadrons:` block applies at turn 0, `Squadron` has no activation
+    turn — its `arrival` is an unrelated `ControlPoint` property), so this is NEW machinery,
+    not a missing announcement — small and additive (a campaign `available_from_turn:`, held
+    out of the air wing until then, unset = today's behaviour), owed its own note as the
+    highest-value item that is NOT free;
     (6) **dread** — §W6 red tempo + §70 COMINT leaks framed as intel estimates; (7) **a
     record that is yours** — the one gap needing new state (`PilotRecord` tracks only
     `missions_flown`, no kills/rescues). Plus the cheap multiplier: **make the S2 choice

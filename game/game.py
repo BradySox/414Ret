@@ -167,6 +167,14 @@ class Game:
         # generation). Lazily populated by game.fourteenth.cruise_raids when
         # cruise_missile_strikes is on. There is no rearm.
         self.cruise_missile_magazines: dict[str, int] = {}
+        # §81 cross-turn naval magazines: each naval group's remaining ANTI-SHIP
+        # missile stock, keyed by the same stable TheaterGroup.group_name — seeded
+        # on first sight, debited at the turn boundary from what the plugin reports
+        # fired (never at generation). Lazily populated by
+        # game.fourteenth.naval_magazines when naval_magazines is on. A disjoint
+        # weapon set from the §63 magazine above, so the two never double-charge.
+        # There is no rearm.
+        self.naval_magazines: dict[str, int] = {}
         # Per-campaign secret salt for the §3 concealment jitter seed (id XOR salt),
         # so the jittered "suspected activity" centre is deterministic but not
         # recomputable from the public TGO id. Lazily set on first use; persisted.
@@ -245,6 +253,7 @@ class Game:
         state.setdefault("downed_pilots", [])
         state.setdefault("minefields", [])
         state.setdefault("cruise_missile_magazines", {})
+        state.setdefault("naval_magazines", {})
         state.setdefault("concealment_salt", None)
         # The political-will / war-economy meters (§48/§53) were removed; strip
         # their interim per-save state so it doesn't linger as dead attributes.

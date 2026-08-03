@@ -92,6 +92,7 @@ pass checklist `§N` is unregistered, or this table drifts.
 | §78 | Sea-supply convoys + coastal anti-ship engagement | — | `cargo_ship_convoys`, `cargo_ship_convoy_max`, `coastal_batteries_engage_ships` |
 | §79 | Decoy suspected-activity zones | — | `decoy_zones`, `decoy_zone_count` |
 | §80 | Mixed-hull ship groups | — | — |
+| §81 | Cross-turn naval magazines | `navalmagazines` | `naval_weapon_release_stagger`, `naval_magazines` |
 | — | MANTIS IADS engine | `mantisiads` | — |
 | — | Splash Damage (414th tuned) | `splashdamage3` | — |
 | — | AI recon BDA capture (§3 TARPS) | `airecon` | — |

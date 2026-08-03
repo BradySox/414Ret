@@ -221,6 +221,12 @@ Upstream hands you a map that already knows everything. Here you have to go look
   ship ripples a salvo. Magazines are finite and never rearm, so a salvo spent on a truck park
   is one you don't have for the command bunker. A launch puts the defender's SAMs around the
   aimpoint on alert, so point defense gets its shot.
+- **Fleets can run out of missiles** — a modern anti-ship missile out-ranges the whole map, so
+  two fleets used to empty their tubes at each other in the first five minutes of every mission,
+  reloading for free the next turn. Now warships can be released to weapons-free a group at a
+  time instead of all at once, and every anti-ship missile fired is gone for the rest of the war.
+  A ship that runs dry still defends itself — it just has nothing left to open with, and the war
+  goes on for another eighteen turns.
 - Plus: strikeable **motor pool** depots, **enemy comms jamming** learned off a captured pilot,
   air-droppable **minefields**, and a **host F10 menu** to scramble bandits at a quiet event.
 

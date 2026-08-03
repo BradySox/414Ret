@@ -177,6 +177,15 @@ class StateData:
     #: double-counts. Empty on pre-feature state files / when the feature is off.
     cruise_missiles_state: list[tuple[str, int]]
 
+    #: ``(naval_group_name, fired)`` per naval group that fired ANTI-SHIP missiles
+    #: this mission (the §81 ``navalmagazines`` plugin mirrors its expenditure).
+    #: ``reconcile_naval_magazines`` debits the persisted campaign magazine by
+    #: ``fired`` at the turn boundary -- the only debit site, so re-generating a
+    #: mission never double-counts. The weapon set is disjoint from
+    #: ``cruise_missiles_state``'s land-attack families, so a shot is never
+    #: charged to both. Empty on pre-feature state files / when the feature is off.
+    naval_magazines_state: list[tuple[str, int]]
+
     @classmethod
     def from_json(cls, data: Dict[str, Any], unit_map: UnitMap) -> StateData:
         def clean_unit_list(unit_list: List[Any]) -> List[str]:
@@ -341,11 +350,11 @@ class StateData:
 
         minefields_state = parse_minefields_state(data.get("minefields_state", []))
 
-        def parse_cruise_missiles_state(raw: Any) -> list[tuple[str, int]]:
-            # The §63 cruisemissiles plugin writes {group=, fired=} per ship group that
-            # launched (or the Lua JSON encoder yields [] when none, and pre-feature
-            # state files omit the key). Pull the tuple defensively, skipping
-            # malformed / unnamed entries.
+        def parse_group_fired_state(raw: Any) -> list[tuple[str, int]]:
+            # The §63 cruisemissiles and §81 navalmagazines plugins both write
+            # {group=, fired=} per group that launched (or the Lua JSON encoder yields
+            # [] when none, and pre-feature state files omit the key). Pull the tuple
+            # defensively, skipping malformed / unnamed entries.
             if not isinstance(raw, list):
                 return []
             out: list[tuple[str, int]] = []
@@ -358,8 +367,11 @@ class StateData:
                     out.append((group, int(fired)))
             return out
 
-        cruise_missiles_state = parse_cruise_missiles_state(
+        cruise_missiles_state = parse_group_fired_state(
             data.get("cruise_missiles_state", [])
+        )
+        naval_magazines_state = parse_group_fired_state(
+            data.get("naval_magazines_state", [])
         )
 
         return cls(
@@ -375,6 +387,7 @@ class StateData:
             combat_sar_survivors=combat_sar_survivors,
             minefields_state=minefields_state,
             cruise_missiles_state=cruise_missiles_state,
+            naval_magazines_state=naval_magazines_state,
         )
 
 

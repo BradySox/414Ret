@@ -1603,6 +1603,33 @@ behavior, so it's an upstream-PR candidate. Tests: `tests/test_dead_planning.py`
   `game/campaignloader/campaignairwingconfig.py`. Generic upstream-code fix on upstream
   campaigns (upstream-PR candidate). Test:
   `tests/test_campaignairwingconfig_empty.py::test_authored_empty_aircraft_key_reads_as_any`.
+- **Supply convoys spawning on the runway (2026-08-02, the flown Baltic Fury report "why are
+  units generating on the runway").** A convoy's spawn is `Convoy.route_start` — literally
+  `convoy_routes[destination][0]`, the first waypoint of the authored supply route. An
+  `Airfield` control point's `position` **is** the DCS airfield reference point — pydcs uses
+  that exact point for a `StartType.Runway` spawn (`_flying_group_from_airport`) — so any
+  campaign that anchored a route endpoint on the control-point coordinate parked its whole
+  departing convoy on the runway. Confirmed in the flown miz: `Convoy 001` (3 vehicles) at
+  0.3 m from the Bremen reference and `Convoy 002` at 0.4 m from Nordholz. The de-stack
+  mechanism that would otherwise have saved it — miz-authored cp-convoy spawn markers
+  (`M1043_HMMWV_Armament` groups → `MizCampaignLoader._construct_cp_spawnpoints`) — is
+  authored by **0 of 72** campaign mizzes, so `_find_closest_cp_spawn` returns nothing and
+  every unit piles onto waypoint 0. `ConvoyGenerator.spawn_position` now walks the spawn out
+  along the **authored corridor** (never off it) to the first point ≥
+  `AIRFIELD_SPAWN_CLEARANCE_M` (1500 m — clears a runway half-length plus aprons while keeping
+  the convoy at the base, still BAI-targetable and inside its defensive umbrella) that is also
+  on land, bounded by `MAX_SPAWN_WALK_M` (5 km) so a fouled approach never marches the convoy
+  toward the enemy. Every failure mode degrades to today's behaviour: no runway (FOB/FARP/
+  carrier), an already-clear endpoint, an authored spawn chain (respected wholesale — moving
+  only the lead would strand it ahead of the rest), or no clear ground in budget all return the
+  authored point unchanged. Generation-time, so **existing saves are fixed by the next
+  regeneration** — no new game. Headless-verified on the flown save: both convoys move
+  0.3/0.4 m → ~1503 m clear. Upstream-shared (upstream's miz-drawn `front_line_path_groups`
+  have the same waypoint-0-at-the-CP pattern); carve candidate. The campaign-data half of the
+  same report — 3 Baltic Fury ammunition depots authored at 0 m from the Hamburg/Peenemünde/
+  Szczecin references — is fixed in the miz and CI-locked in `tests/fourteenth/test_baltic_fury.py`
+  (design note `414th-baltic-fury-campaign-notes.md`). Tests
+  `tests/missiongenerator/test_convoy_spawn_clearance.py`.
 
 ---
 

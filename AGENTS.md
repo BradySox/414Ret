@@ -923,7 +923,24 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
    entries the movable ones space around (the human's recovery is never rescheduled), and the
    recovery-tanker ETAs are collected after the stagger so tankers time against the real
    landings. Always-on (no setting — arrival-time-only, like the §62 modex). Upstream-shared;
-   checklist C9.
+   checklist C9. **Convoy runway spawns (2026-08-02, the flown Baltic Fury "why are units
+   generating on the runway"):** a convoy spawns at `Convoy.route_start` = the authored supply
+   route's waypoint 0, and an `Airfield` CP's `position` **IS** the DCS airfield reference point
+   — the same point pydcs uses for a `StartType.Runway` spawn — so a route anchored on the CP
+   coordinate parks the whole convoy on the runway (flown miz: 3 vehicles 0.3 m from Bremen's
+   reference, 3 more 0.4 m from Nordholz's). The intended de-stack — miz-authored cp-convoy
+   spawn markers (`M1043_HMMWV_Armament` → `_construct_cp_spawnpoints`) — is used by **0 of 72**
+   campaigns, so every unit piles onto waypoint 0. `ConvoyGenerator.spawn_position` now walks
+   the spawn along the **authored corridor** to the first on-land point ≥ 1500 m from the field
+   (`AIRFIELD_SPAWN_CLEARANCE_M`), bounded by `MAX_SPAWN_WALK_M` (5 km); no runway / already
+   clear / an authored spawn chain / no clear ground in budget all degrade to today's behaviour.
+   Generation-time ⇒ **existing saves fix themselves on the next regeneration, no NEW game**
+   (headless-verified on the flown save: 0.3 m → 1503 m). Upstream-shared (upstream's miz-drawn
+   `front_line_path_groups` share the pattern); carve candidate. Campaign-data half: Baltic
+   Fury's 3 ammo depots authored at 0 m from the Hamburg/Peenemünde/Szczecin references moved
+   1.5 km off, CI-locked by `test_no_preset_marker_sits_on_a_runway`; its Peenemünde supply
+   routes cross open water and still need a road re-trace (see the campaign note). Tests
+   `tests/missiongenerator/test_convoy_spawn_clearance.py`.
 9. **TIC — Troops In Contact** — scripted frontline firefights with per-stance movement +
    414th ambient-fire extension (plugin, default ON).
 10. **CurrentHill Iran assets pack** — Shahed-136, IRGCN FAC, `[CH] Iran 2020` faction.

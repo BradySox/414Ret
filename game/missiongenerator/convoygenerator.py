@@ -21,6 +21,25 @@ if TYPE_CHECKING:
     from game.theater.player import Player
 
 
+#: How far a convoy must start from an airfield's reference point.
+#:
+#: A DCS airfield's reference point is the position pydcs itself uses for a
+#: ``StartType.Runway`` spawn, i.e. the runway. An ``Airfield`` control point's
+#: ``position`` *is* that point, so a supply route whose first waypoint was
+#: authored at the control point parks the whole convoy on the runway. 1.5 km
+#: clears a typical runway half-length plus its aprons while keeping the convoy
+#: at the base -- still BAI-targetable and inside the field's defensive umbrella.
+AIRFIELD_SPAWN_CLEARANCE_M = 1500.0
+
+#: Never walk a convoy more than this far down its route looking for clear
+#: ground; if the whole approach is fouled, leave the spawn where it was
+#: authored rather than marching the convoy toward the enemy.
+MAX_SPAWN_WALK_M = 5000.0
+
+#: Sampling interval used while walking the route out of the keep-out circle.
+SPAWN_WALK_STEP_M = 50.0
+
+
 class ConvoyGenerator:
     def __init__(self, mission: Mission, game: Game, unit_map: UnitMap) -> None:
         self.mission = mission
@@ -35,16 +54,65 @@ class ConvoyGenerator:
                 for convoy in coalition.transfers.convoys:
                     self.generate_convoy(convoy)
 
+    def spawn_position(self, convoy: Convoy) -> Point:
+        """Where the convoy's lead vehicle parks at mission start.
+
+        Normally the authored start of the supply route. When that point sits on
+        the origin airfield's reference point -- the runway -- walk the authored
+        route away from the field until clear, so the convoy does not block
+        takeoffs. Falls back to the authored point whenever no clear spot is
+        found within :data:`MAX_SPAWN_WALK_M`.
+        """
+        start = convoy.route_start
+        airport = convoy.origin.dcs_airport
+        if airport is None:
+            return start
+
+        reference = airport.position
+        if start.distance_to_point(reference) >= AIRFIELD_SPAWN_CLEARANCE_M:
+            return start
+
+        theater = self.game.theater
+        walked = 0.0
+        last = start
+        for waypoint in convoy.origin.convoy_route_to(convoy.destination)[1:]:
+            leg = last.distance_to_point(waypoint)
+            if leg <= 0:
+                continue
+            steps = max(1, int(leg / SPAWN_WALK_STEP_M))
+            for step in range(1, steps + 1):
+                if walked + leg * (step / steps) > MAX_SPAWN_WALK_M:
+                    return start
+                candidate = last.lerp(waypoint, step / steps)
+                if candidate.distance_to_point(
+                    reference
+                ) >= AIRFIELD_SPAWN_CLEARANCE_M and theater.is_on_land(candidate):
+                    logging.debug(
+                        "Moved %s spawn %.0fm clear of the %s reference point",
+                        convoy.name,
+                        candidate.distance_to_point(start),
+                        convoy.origin.name,
+                    )
+                    return candidate
+            walked += leg
+            last = waypoint
+        return start
+
     def generate_convoy(self, convoy: Convoy) -> VehicleGroup:
+        spawns_tuple = convoy.origin.convoy_spawns.get(convoy.destination)
+
+        # An authored spawn chain positions every unit after the lead explicitly;
+        # moving only the lead would strand it ahead of the rest, so respect the
+        # author's placement wholesale.
+        position = convoy.route_start if spawns_tuple else self.spawn_position(convoy)
+
         group = self._create_mixed_unit_group(
             convoy.name,
-            convoy.route_start,
+            position,
             convoy.units,
             convoy.player_owned,
         )
         group.manualHeading = True
-
-        spawns_tuple = convoy.origin.convoy_spawns.get(convoy.destination)
 
         if spawns_tuple:
             spawns = list(spawns_tuple)

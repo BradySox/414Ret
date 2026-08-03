@@ -201,11 +201,15 @@ to the SAM-belt STANDARD:
 
 ## Miz generation (`tools/build_baltic_fury_miz.py`)
 
-The miz is **script-generated**, not hand-built — `python tools/build_baltic_fury_miz.py`
-reshapes the all-vanilla `red_tide.miz` into this laydown and writes
-`resources/campaigns/operation_baltic_fury.miz`. Edit the laydown tables in the script and
-re-run; a hand edit to the miz is lost on the next build (the Red Flag 81-2 / Enduring Resolve
-convention).
+⚠️ **The miz is the source of truth — the script was a one-time bootstrap.** The DM built the
+laydown out in the Mission Editor on 2026-07-20, so `resources/campaigns/operation_baltic_fury.miz`
+is authoritative and `main()` **refuses to run** unless you pass `--force` (which would wipe those
+edits, and no longer reproduces the bootstrap anyway — it rebuilds from a `red_tide.miz` that has
+since moved on). Edit the miz in the ME. The tool's laydown tables are kept in sync with the miz
+only so a hypothetical `--force` doesn't reintroduce known-bad placements. (This section used to
+claim the opposite; corrected 2026-08-02.)
+
+The bootstrap below is retained as the record of how the laydown was originally derived.
 
 How it works (all conventions read straight from `game/campaignloader/mizcampaignloader.py`):
 
@@ -233,6 +237,36 @@ How it works (all conventions read straight from `game/campaignloader/mizcampaig
 **Finish:** load a New Game (mods enabled) → eyeball top-down (FLOT at the neck, carrier offshore,
 belt where intended) → CI test + doc sync. The mods must be enabled for faction/TGO resolution;
 headless `load_theater` validates structure but not the mod-backed generation.
+
+## Never author at a control point's raw coordinate (fixed 2026-08-02)
+
+An `Airfield` control point's `position` **is** the DCS airfield reference point — the same point
+pydcs uses for a `StartType.Runway` spawn — so anything authored at the raw CP coordinate is put
+**on the runway**. The bootstrap's economy/defense tables did exactly that. The DM's ME pass had
+already moved the factories and AAA (0.9–3.4 km off their fields), but the **three ammunition
+depots were missed** and sat at 0 m from the Hamburg, Peenemünde and Szczecin references. They are
+now 1.5 km off each field, on land, on a bearing ≥30° away from every supply road leaving that base
+(so they never collide with a convoy forming up). `tools/build_baltic_fury_miz.py`'s tables were
+synced to the miz's real positions and carry a warning; the invariant is CI-locked by
+`test_no_preset_marker_sits_on_a_runway` in `tests/fourteenth/test_baltic_fury.py` (no preset
+marker within 500 m of an airfield reference).
+
+The **supply routes** have the same anchoring — all 10 `supply_routes:` endpoints in the yaml sit
+on their airfield reference to under 1 m, which parked every departing convoy on the runway. That
+half is fixed **engine-side** rather than in the yaml (see features doc §8, `ConvoyGenerator`):
+the generator walks a convoy's spawn back out along the authored corridor until it is 1.5 km clear
+of the field, which fixes existing saves on the next regeneration and covers every campaign — Red
+Tide has 3 endpoints with the same defect.
+
+### Open: the Peenemünde routes cross open water
+
+Found while fixing the above, **not fixed**. Both supply routes touching Peenemünde run as straight
+lines across the Peenestrom/Achterwasser rather than following roads — the first 5 km of the
+Peenemünde→Neubrandenburg leg and 6 of the first 8 km of Peenemünde→Szczecin are water. A red
+convoy on either would try to drive across a strait. The spawn guard degrades safely here (no land
+inside its walk budget ⇒ it leaves the spawn where authored, i.e. no worse than today), but the
+routes themselves need a real road re-trace per the "supply lines follow the driveable corridor"
+standard (`tools/supply_route_geo.py`).
 
 ## References
 - Campaign: [`resources/campaigns/operation_baltic_fury.yaml`](../../../resources/campaigns/operation_baltic_fury.yaml)

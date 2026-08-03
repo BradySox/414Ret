@@ -14,10 +14,13 @@
 -- HVT convoy, or an authored concealed comms site) keys short windows with long silence
 -- (clandestineWindowSec/clandestineGapSec) -- catch the window and DF it, or wait out the next.
 --
--- The frequencies are allocated in Python (game/missiongenerator/rednetluadata.py) at x.500 MHz --
--- off the whole-MHz grid every briefed blue channel allocates on -- so the net can NEVER land on a
--- friendly channel by construction. Nothing here targets blue radios; hearing the enemy requires
--- deliberately tuning off-plan.
+-- The frequencies are allocated in Python (game/missiongenerator/rednetluadata.py) at x.500 MHz,
+-- and every candidate must clear a 100 kHz guard band around EVERY frequency the mission's
+-- RadioRegistry has allocated (the whole guard band is then reserved), so a net never keys up on
+-- or one detent beside a briefed channel. Only a handful of stations are emitted at all -- the
+-- Python side caps them (red_net_max_stations) so a theater-wide C2 net plus every insurgent cell
+-- can't fill the UHF band with carriers. Nothing here targets blue radios; hearing the enemy
+-- requires deliberately tuning off-plan.
 --
 -- Audio + DF geometry ONLY -- the plugin owns no kills and changes no gameplay model. Killing the
 -- node is an ordinary strike on an ordinary IADS TGO (recorded natively); this script merely takes

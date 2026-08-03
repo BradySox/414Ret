@@ -81,7 +81,7 @@ pass checklist `§N` is unregistered, or this table drifts.
 | §67 | Weather-aware auto-planning | — | `weather_aware_planning` |
 | §68 | Adaptive procurement (posture-coupled spending + SAM repair) | — | `adaptive_procurement`, `auto_repair_air_defenses` |
 | §69 | Cross-package SEAD-before-strike coordination | — | `sead_strike_coordination` |
-| §70 | COMINT collection (blue-side communications intelligence) | `rednet` | `comint_collection`, `red_comms_net` |
+| §70 | COMINT collection (blue-side communications intelligence) | `rednet` | `comint_collection`, `red_comms_net`, `red_net_max_stations` |
 | §71 | Expanded F-4E Weapons Pack (AGM-78/-88 Weasel fits) | — | — |
 | §72 | Carrier deck decorations (OCN 2 deck dressing) | `deckdecor` | `carrier_deck_decorations`, `carrier_deck_decorations_aircraft` |
 | §73 | Per-airframe default loadout for a task | — | — |

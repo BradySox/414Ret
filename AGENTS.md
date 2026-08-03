@@ -2485,8 +2485,8 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     **C1 LANDED same day — the audible UHF red net**: `plan_red_net`
     (`game/missiongenerator/rednetluadata.py`, the §51 plan slot) assigns each alive enemy
     C2 node a **deterministic x.500 MHz UHF AM frequency** (crc32 off the node name — same
-    spot on the dial every mission; off the whole-MHz blue-allocation grid by construction,
-    GUARD's slot skipped, registry-reserved, collisions probed in sorted-name order) and the
+    spot on the dial every mission; GUARD's slot skipped, collisions probed in sorted-name
+    order) and the
     `rednet` plugin (`defaultValue` ON, the §36 lesson) keys **windowed, staggered** (§49)
     looped CW traffic — an original synthesized morse clip (`rednet-cw.wav` via
     `otherResourceFiles` → `l10n/DEFAULT/`, the §58 lesson) — from the node's position via
@@ -2506,7 +2506,29 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     never the identity; capped 5 + "+N more") via `MissionData.red_net` →
     `KneeboardGenerator(red_net=…)`. **The design note's C0–C2 arc is COMPLETE** (an
     authored static field-site TGO stays deferred until a campaign wants the loader
-    convention). Tests `tests/fourteenth/test_comint.py` +
+    convention).
+    **BAND DISCIPLINE 2026-08-02** (the flown "COMINT is bleeding into mission
+    frequencies" report) — two landed assumptions were wrong. **(1) "x.500 cannot collide
+    by construction" was false**: only the *inter-flight* `BLUFOR_UHF` allocator steps a
+    whole MHz; per-flight aircraft radios (`alloc_for_radio`, e.g. AN/ARC-164 225–400),
+    field ATC, and ATIS all allocate on the **25 kHz** grid, where x.500 is an ordinary
+    slot — the late-running exact-match probe still let a net key up **one detent** off a
+    briefed channel, and let anything allocated after the plan (ATIS) park beside a
+    carrier. Now a candidate must clear `NET_GUARD_HZ` (100 kHz) against **every**
+    allocated frequency in the band — compared by **hertz, modulation-blind**, since
+    `RadioFrequency` equality includes modulation but a pilot's dial does not — and
+    `_reserve_guard_band` then reserves the carrier **plus every 25 kHz detent in the
+    band**, closing it to every later allocator. **The half-MHz offset is cosmetic; the
+    guard band is the guarantee.** **(2) Every comms-active object transmitting does not
+    scale**: it is the right *source* set for the take, but as a *transmitter* list a
+    KARI-style IADS (DS91 relays at every red base) or a COIN laydown puts dozens of
+    carriers across 225–400. New `red_net_max_stations` (Mission Generation → Comms war,
+    default **3**, min 1/max 12, `enabled_when=red_comms_net`) caps who is on the air;
+    `_stations_on_the_air` picks by **range to the nearest blue CP** (name tie-break; no
+    blue position ⇒ name order) with **one slot anchored per kind**, so a crowd of near
+    cells can't push the fixed C2 net off the dial or vice versa, and emits name-sorted so
+    frequencies don't shift with the anchors. Tests
+    `tests/fourteenth/test_comint.py` +
     `tests/missiongenerator/test_rednetluadata.py` + `tests/lua/test_rednet_runtime.py`;
     features doc §70, checklist B22 (in-app) + B23 (in-game).
 71. **Expanded F-4E Weapons Pack (AGM-78/-88 Weasel fits)** — the upstream #663/#733 mod

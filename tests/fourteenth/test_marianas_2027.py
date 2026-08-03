@@ -11,6 +11,7 @@ the shipped definition is asserted here rather than trusted.
 Sibling of tests/fourteenth/test_inherent_resolve.py and test_tanker_war.py.
 """
 
+import re
 from pathlib import Path
 from typing import Any
 
@@ -535,3 +536,20 @@ def test_no_land_sam_site_covers_guam() -> None:
     assert pins["Rota SAM Site"] == "HQ-7"
     assert pins["Ground-1"] == "HQ-22"
     assert "SA-20B/S-300PMU-2" not in pins.values()
+
+
+def test_a_culled_ship_marker_is_never_also_pinned() -> None:
+    """A marker cannot be both deleted from the miz and pinned in the campaign.
+
+    Black reformatted the cull tuple one-entry-per-line, an edit missed it, and two
+    markers ended up in CULLED_SHIP_MARKERS *and* in ground_forces -- deleted from the
+    miz while the campaign still claimed to place them. Silent, because a pin for a
+    marker that does not exist simply never fires.
+    """
+    tool = Path("tools/build_marianas_2027_miz.py").read_text(encoding="utf-8")
+    culled = set(
+        re.findall(r'"(Naval-\d+)"', tool[tool.index("CULLED_SHIP_MARKERS") :][:400])
+    )
+    pinned = {n for n in _campaign()["ground_forces"] if n.startswith("Naval-")}
+    assert culled, "cull list not found -- did the tool rename it?"
+    assert not (culled & pinned), sorted(culled & pinned)

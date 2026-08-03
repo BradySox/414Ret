@@ -144,11 +144,15 @@ BLUE_ESCORTS: dict[str, tuple[int, int]] = {
 # all ~290-340 km off Guam -- inside J-15/H-6J reach of the island, and reachable by
 # blue's B-1B and carrier air. Amphibious groups sit on the lodgements they landed.
 RED_NAVAL: dict[str, tuple[int, int]] = {
-    "Naval-4": (230_000, 210_000),  # carrier, NE of Saipan
-    "Naval-3": (290_000, 40_000),  # carrier, NW of Saipan
-    "Naval-28": (200_000, 270_000),  # carrier, the outer eastern group
-    "OPLHA": (150_000, 120_000),  # amphibious group off Tinian/Saipan
-    "OPLHA-1": (95_000, 70_000),  # amphibious group off Rota
+    # Pushed back out. The first flown mission had the PLAN groups ~300 km off Guam,
+    # which with 250 km air-defence hulls and 540 km anti-ship missiles meant both fleets
+    # were mutually engaged at t=0. Every group now sits BEYOND 250 km of Andersen, so no
+    # red ring reaches the airfield and the exchange has to be closed to, not inherited.
+    "Naval-3": (420_000, 60_000),  # carrier, north-west
+    "Naval-4": (360_000, 260_000),  # carrier, north-east
+    "Naval-28": (300_000, 400_000),  # carrier, the far eastern group
+    "OPLHA": (240_000, 150_000),  # amphibious group, 266 km out
+    "OPLHA-1": (280_000, 40_000),  # amphibious group, 270 km out
 }
 
 # The red screen. SIX groups, not eighteen.
@@ -163,12 +167,18 @@ RED_NAVAL: dict[str, tuple[int, int]] = {
 # Six screens, spread down the chain, cut red to roughly a third of the hulls while still
 # giving every occupied island and each carrier group a covering escort.
 RED_ESCORTS: dict[str, tuple[int, int]] = {
-    "Naval-16": (100_000, 20_000),  # Rota
-    "Naval-13": (150_000, 55_000),  # Tinian
-    "Naval-12": (200_000, 135_000),  # Saipan
-    "Naval-10": (250_000, 175_000),  # with the NE carrier group
-    "Naval-8": (300_000, 75_000),  # with the NW carrier group
-    "Naval-19": (175_000, 250_000),
+    # Eight screens spread across the whole red half rather than bunched in the corridor.
+    # These are frigate groups (~45 km), so they shape where the fight is without putting
+    # an envelope over anything; two stay forward with the occupied islands and the rest
+    # cover the approaches to the carrier and amphibious groups.
+    "Naval-16": (120_000, 40_000),  # forward, off Rota/Tinian
+    "Naval-13": (215_000, 115_000),  # forward, off Saipan
+    "Naval-12": (300_000, 210_000),
+    "Naval-9": (255_000, 320_000),
+    "Naval-10": (390_000, 120_000),
+    "Naval-24": (330_000, 330_000),
+    "Naval-8": (455_000, 200_000),
+    "Naval-19": (460_000, 30_000),
 }
 
 # A blue FOB 780 km behind red lines is what made the map read as a sandwich; the
@@ -181,7 +191,6 @@ FOBS_TO_RED = ("FOB Uracus",)
 CULLED_SHIP_MARKERS = (
     "Naval-5",
     "Naval-7",
-    "Naval-9",
     "Naval-11",
     "Naval-14",
     "Naval-15",
@@ -189,7 +198,6 @@ CULLED_SHIP_MARKERS = (
     "Naval-21",
     "Naval-22",
     "Naval-23",
-    "Naval-24",
     "Naval-26",
 )
 

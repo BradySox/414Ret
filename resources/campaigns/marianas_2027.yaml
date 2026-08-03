@@ -116,6 +116,8 @@ ground_forces:
   # groups, which draw them from the roster. Eight extra 250 km rings did not make the
   # campaign harder, it made the map unreadable (measured: 13 of 30 rings were 250 km).
   Naval-16: Chinese Navy 2027 Escort
+  Naval-24: Chinese Navy 2027 Escort
+  Naval-9: Chinese Navy 2027 Escort
   Naval-13: Chinese Navy 2027 Escort
   Naval-12: Chinese Navy 2027 Escort
   Naval-10: Chinese Navy 2027 Escort

@@ -226,6 +226,39 @@ this very mod as a dependency. Re-pointing would either break the flyable Rhino 
 campaign require the mod, reintroducing everything in (2). The Super Hornet fits stay on
 AIM-120C + AIM-9X deliberately.
 
+#### Verified against the installed mod + the live DCS (2026-08-03, DM's machine)
+
+The three points above were reasoned from the readme. They were then checked against the real
+files at `E:\DCS World\OVGME MODS\Modern Missiles` — **all three hold verbatim** (the `.cmd`
+swap scripts, the in-place overwrite of `Bazar/World/Shapes` + `CoreMods/aircraft/
+AircraftWeaponPack/{aim9,aim120}_family.lua` + `MissionEditor/data/images`, the
+"mission editor labels them as AIM-120B's" line, and "AIM-9L becomes AIM-9X"). No new clsids
+anywhere: it edits ED's *existing* weapon families in place, which is exactly why Retribution
+cannot see it.
+
+**A fourth reason emerged, and it is the strongest — the mod is a year stale and enabling it
+would DELETE live DCS content.** It ships `VERSION.txt = 2.9.0`; the install is
+**2.9.28.26385** (built 2026-07-28), and ED touched both files it replaces within the last two
+weeks. The mod's copies are not a superset:
+
+| File | Mod copy | Live | Delta |
+| --- | --- | --- | --- |
+| `aim9_family.lua` | 1501 lines | **1631** | mod is **130 lines short**, 459 lines differ |
+| `aim120_family.lua` | 620 lines | 602 | 500 lines differ |
+| `DLZ_Refference.lua` | ships a `Backup/` copy | **does not exist** | ED removed/renamed it |
+
+Diffing the declarations, the live `aim9_family.lua` defines **AIM-9D, AIM-9G and AIM-9H** and
+the mod's year-old copy **does not**. Those are the Vietnam-era Sidewinders, and this fork
+depends on them directly: `resources/weapons/a2a-missiles/AIM-9{D,G,H}.yaml` register them
+(1965 / 1970 / 1972) and `vwv_crusader.lua` + `vwv_crusader_np.lua` frag them on the F-8. So
+enabling the mod would remove the definitions out from under the Crusader fits, and DCS
+silently strips a store it cannot resolve — the **F-8 flies naked**, the same failure mode §71
+documents for `(XW)` fits without their pylon injection.
+
+Bottom line: this is not "a mod we chose not to adopt", it is a mod that **cannot safely be
+enabled on this install at all** until its author rebuilds it against current DCS. Re-check the
+line counts above before reconsidering it after any mod update.
+
 What *did* come out of the evaluation is a real data fix, applied fork-wide (see
 `resources/weapons/a2a-missiles/AIM-120D.yaml`): the packs' AIM-120D / AIM-260A / AIM9X-BLKII /
 Mako clsids were **unregistered**, so `register_unknown_weapons` gave them

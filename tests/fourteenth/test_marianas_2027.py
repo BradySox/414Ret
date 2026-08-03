@@ -466,45 +466,58 @@ def test_the_raptor_has_an_authored_max_range() -> None:
     assert raptor.max_mission_range >= eagle.max_mission_range
 
 
-def test_naval_groups_are_pinned_by_position() -> None:
-    """Hull choice is a placement decision, so ship markers are pinned individually.
+def test_every_naval_marker_is_pinned_inshore() -> None:
+    """One Navy preset, and every ship marker pinned to it.
 
-    ``generate_ships`` used to call ``random_group_for_task(GroupTask.NAVY)`` directly,
-    ignoring ``ground_forces`` entirely -- so naval composition could only be steered by
-    which Navy presets a faction registered, a whole-faction lever that made every
-    marker a coin flip. It now goes through ``get_unit_group_for_task`` like every other
-    class (which also had to move up to ``ControlPointGroundObjectGenerator`` so carrier
-    and LHA generators inherit it).
+    The HHQ-9 reaches **250 km** while Guam-to-Saipan is only 205 km, so a single heavy
+    surface group covers a third of the theatre. Giving the scattered markers the heavy
+    preset produced **13 of 30 rings at 250 km** -- which does not make the campaign
+    harder, it makes the map unreadable. The area-defence destroyers stay concentrated
+    with the carrier and LHA groups, which draw them from ``naval_units``.
 
-    That matters here because the HHQ-9 reaches **250 km** while Guam-to-Saipan is only
-    205 km: a heavy group anywhere in the corridor puts Andersen inside a SAM envelope.
-    Inshore markers get frigates; the stand-off markers keep the HHQ-9 shooters.
+    Two invariants, both learned the hard way:
+      * exactly ONE Navy preset may be registered -- an unpinned marker rolls at random
+        among them (``generate_ships`` -> ``random_group_for_task``), so a second preset
+        is a live hazard even if nothing references it today;
+      * EVERY ship marker is pinned explicitly, so composition never depends on a roll.
     """
     import json
 
-    pins = _campaign()["ground_forces"]
     data = json.loads((FACTIONS / "china_2027.json").read_text(encoding="utf-8"))
-    for preset in ("Chinese Navy 2027", "Chinese Navy 2027 Escort"):
-        assert preset in data["preset_groups"], preset
+    navy_presets = [p for p in data["preset_groups"] if "Navy" in p]
+    assert navy_presets == ["Chinese Navy 2027 Escort"], navy_presets
 
-    inshore = {n for n, g in pins.items() if g == "Chinese Navy 2027 Escort"}
-    standoff = {n for n, g in pins.items() if g == "Chinese Navy 2027"}
-    assert inshore and standoff, "both naval tiers must be placed deliberately"
-    assert not (inshore & standoff)
+    pins = _campaign()["ground_forces"]
+    naval_pins = {n for n, g in pins.items() if g == "Chinese Navy 2027 Escort"}
+    markers = {
+        group.name
+        for coalition in _mission().coalition.values()
+        for country in coalition.countries.values()
+        for group in country.ship_group
+        if group.units[0].type == MizCampaignLoader.SHIP_UNIT_TYPE
+    }
+    # These three sit next to Guam and bind BLUE (a ship marker prefers a blue control
+    # point), so they generate the carrier group's own screen from USA 2020. Pinning them
+    # to a Chinese preset would hand the US fleet PLA frigates.
+    blue_screen = {"Naval-17", "Naval-18", "Naval-27"}
+    unpinned = markers - naval_pins - blue_screen
+    assert not unpinned, f"red ship markers left to a random roll: {sorted(unpinned)}"
 
     escort = yaml.safe_load(
         (FACTIONS.parent / "groups/Chinese-Navy-2027-Escort.yaml").read_text(
             encoding="utf-8"
         )
     )
-    # The Destroyer slot must be filled by the preset itself: leaving it empty makes
-    # `has_unit_for_layout_group` fill it from the roster, whose destroyers are the
-    # 250 km hulls, so a "light" group silently comes back out at 250 km.
+    # The Destroyer slot must be filled by the preset: an empty slot is filled from the
+    # roster, whose destroyers are the 250 km hulls.
     assert "Type 052B Destroyer" in escort["units"]
-    # 160 km from Rota (90 km off Andersen) still covers Guam.
-    assert "[CH] Type 054B Frigate" not in escort["units"]
-    for hull in ("[CH] Type 055 Destroyer", "[CH] Type 052D Destroyer"):
+    for hull in (
+        "[CH] Type 055 Destroyer",
+        "[CH] Type 052D Destroyer",
+        "[CH] Type 054B Frigate",
+    ):
         assert hull not in escort["units"], hull
+        assert hull in data["naval_units"], f"{hull} must stay available to the fleet"
 
 
 def test_no_land_sam_site_covers_guam() -> None:

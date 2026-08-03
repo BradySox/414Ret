@@ -213,6 +213,31 @@ escort preset leaves the Naval Group layout's Destroyer×2 slot empty,
 250 km hulls — so the "light" group came back out at 250 km. The Type 052B (30 km) is in
 the preset for that reason.
 
+### Ring *size* is its own constraint, separate from coverage
+
+A second DM screenshot, after the coverage fix, still read as a wall of red. Measuring
+the rings rather than just their coverage explained it: **13 of 30 red rings were
+250 km**. Only two actually contained Andersen — but Guam→Saipan is 205 km, so a single
+HHQ-9 group covers a third of the theatre, and thirteen overlapping ones are simply an
+unreadable map. Eight of those were self-inflicted: scattered surface markers pinned to
+the heavy preset.
+
+Final shape: **every ship marker is pinned to the inshore escort preset**, and the
+area-defence destroyers stay concentrated with the carrier and LHA groups (which draw
+from `naval_units`, not from a marker). 250 km rings **13 → 4**; 18 of the 30 rings are
+now 45 km. The heavy `Chinese Navy 2027` preset was deleted rather than left registered
+and unused — an unreferenced Navy preset is a live hazard, because any future unpinned
+marker would coin-flip onto it.
+
+Still covering Andersen: the two amphibious groups' own escorts (101 and 175 km out).
+Those come from `LhaGroundObjectGenerator` and cannot be pinned; clearing them means
+either stripping the HHQ-9 hulls from the roster entirely or moving the LHAs off the
+lodgements they landed on. Left deliberately.
+
+Note the three markers next to Guam (`Naval-17/18/27`) are unpinned **on purpose**: a
+ship marker prefers a blue control point, so those generate the US carrier group's own
+screen from USA 2020.
+
 ### The PLAN fleet had to be rebuilt around the HHQ-9 shooters
 
 A DM look at the red ships found carrier groups screened by **Type 022 missile boats

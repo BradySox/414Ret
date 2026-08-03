@@ -255,7 +255,14 @@ file. This guide is the map; those are the territory.
     `ground_units`, so a naval slot could only ever be filled by a ground unit, i.e. never,
     silently shrinking the group). Upstream-carve candidate. Remaining un-pinnable:
     LHA/carrier CP escorts, which `LhaGroundObjectGenerator` builds from `naval_units`
-    rather than a marker), and **a preset must fill every layout slot it wants to control**
+    rather than a marker). **Ring SIZE is its own constraint:** after the coverage fix the
+    map still read as a wall of red — **13 of 30 rings were 250 km** (only 2 contained
+    Andersen, but Guam→Saipan is 205 km, so one HHQ-9 group covers a third of the theatre).
+    Every ship marker is now pinned to the inshore escort preset and the area-defence
+    destroyers stay concentrated with the carrier/LHA groups; 250 km rings **13 → 4**. The
+    heavy preset was **deleted, not left registered-and-unused** — an unreferenced Navy
+    preset is a hazard, since any future unpinned marker coin-flips onto it. `Naval-17/18/27`
+    are unpinned deliberately (they bind BLUE and screen the US carrier group), and **a preset must fill every layout slot it wants to control**
     (a frigates-only preset leaves Destroyer×2 empty, `has_unit_for_layout_group` fills it
     from the roster, and the roster's destroyers are the 250 km hulls — so the "light"
     group silently came back out at 250 km); in-game pass = checklist **T5**, the riskiest bit being whether

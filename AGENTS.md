@@ -501,9 +501,20 @@ file. This guide is the map; those are the territory.
     fragged), and the package options are picked underneath it — a flat sortie list would
     keep offering the same three Hornet sorties. That ordering **settles open call #1**
     (offer-only vs. frag-for-you) as **both, laddered**: seat an existing flight of that type
-    → **join an existing package** (an extra section/escort, so it stays inside the
-    commander's plan — the rung that's easy to overlook) → frag a new package (last resort,
-    the only planner-touching rung; rungs 1–2 are a defensible v1). It also **revised the
+    → **join an existing package** (the headline rung — it stays inside the commander's plan)
+    → a standalone sortie (**explicit opt-in only**, never silently generated; the only
+    planner-touching rung; rungs 1–2 are a defensible v1). **DM spec, same day — "I would
+    like to be put into existing packages, should still be escort, strike, jamming, whatever
+    the planner decides":** two independent variety axes — the player picks the **airframe**,
+    the **air war picks the role** — so step 2 leads with role+package (never filtered to one
+    task family) and rung 3 is demoted to a surfaced last resort. Rung 2 turns out to be
+    well-supported already: `PackageFulfiller.check_needed_escorts` answers "what does this
+    package still need" (AirToAir/Sead/Jammer, off real threat-zone intersections) and
+    `ProposedFlight.preferred_type` already pins a chosen airframe into a package (§44 carrier
+    ops uses exactly this), so join = ask the package → `ProposedFlight(task,
+    preferred_type)` → fulfil → seat, with escort prunes/ROE/join-split/TOT free. **Call #2
+    SETTLED: one seat, AI wingmen, exactly as in MP** (`client_count` stays 1 — no multi-slot
+    bookkeeping, same generation path MP already exercises). It also **revised the
     note's own recommendation**: the first cut called S2 a pure speed feature and pitched
     S1+S3, but for a variety-motivated player the airframe picker IS the pull into turn 2, so
     **S1+S2 are the ship and S3 the amplifier**, with a "not flown yet this campaign" variety

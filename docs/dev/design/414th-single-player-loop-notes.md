@@ -96,36 +96,74 @@ turn: type, squadron, home field, airframes ready, pilots available. Not filtere
 what the commander planned (see the ladder below) — filtered only by what genuinely
 exists and is flyable.
 
-**Step 2 — pick the package.** The sorties available to *that* airframe: task, target,
-TOT, threat summary, field, and whether you are joining an existing package or flying
-alone. Take one seat; everything else on the ATO stays AI-crewed and sim-resolves
-exactly as today.
+**Step 2 — pick the package.** The sorties available to *that* airframe: **role**,
+package, target, TOT, threat summary, field, and who else is going. Take one seat;
+everything else on the ATO stays AI-crewed and sim-resolves exactly as today.
+
+#### Two axes of variety: you pick the jet, the planner picks the job
+
+DM specification 2026-08-03: *"I would like to be put into existing packages, should
+still be escort, strike, jamming, whatever the planner decides."*
+
+So the board is **not** a mission-type menu. The player chooses the **airframe**; the
+**role comes from what the air war actually needs that turn** — escort one night, strike
+the next, ESCORT_JAMMER (§77) the night after, because that is what the packages
+require. Two independent variety axes, only one of which the player drives.
+
+This matters for step 2's presentation: **lead with the role and the package**, not with
+the target. "Escort — WOLVERINE strike on Haina, TOT 0742, 2× SA-6 on route" is the
+useful line. And step 2 must never be filtered to one task family: a multi-role jet
+should surface strike, SEAD escort and BARCAP options side by side if the packages want
+them.
 
 #### The sortie ladder (and why it settles open call #1)
 
 Aircraft-first forces the answer to "offer-only, or may the board frag for you?" — it
 must be **both**, in a strict preference order, or picking a jet the commander ignored
-this turn dead-ends:
+this turn dead-ends. The DM's "put me into existing packages" makes rungs 1–2 **the
+model**, not merely the preferred path:
 
 1. **Take a seat in an existing planned flight** of that airframe. Zero planner
    involvement — pure `FlightMembers.set_pilot`. Always preferred.
 2. **Add a flight to an existing package.** Your jet joins a package that is already
-   going — an extra section, an escort, a second striker. The package already owns the
-   target, the TOT and the coordination, so this stays inside the commander's plan
-   rather than inventing a private war. *This rung is the interesting one and is easy to
-   overlook.*
-3. **Frag a new package** for that squadron against a valid target. Last resort, and the
-   only rung that touches the planner.
+   going, in **the role that package still needs** — an escort it lacks, a jammer, a
+   second striker. The package already owns the target, the TOT and the coordination, so
+   this stays inside the commander's plan rather than inventing a private war. *This is
+   the headline rung.*
+3. **Frag a standalone sortie.** Only when no package can use that airframe at all, and
+   **surfaced explicitly** ("no package needs a Tomcat this turn — fly a standalone
+   sortie?") rather than silently generated. A private war built to order is precisely
+   what the spec above rules out, so this rung must never be reached by default.
 
-Rung 1 is free, rung 2 is cheap, rung 3 is the one that needs care. A v1 that ships
-rungs 1–2 only is defensible — it would just mean some airframes show "no sortie
-available this turn," which is honest and still leaves the jet visible in step 1.
+A v1 shipping rungs 1–2 only is defensible — some airframes would show "no sortie this
+turn," which is honest and still leaves the jet visible in step 1.
 
 #### Mechanically
 
-Plan the turn with player pilots **not** auto-seated, then re-seat the one chosen flight
-through `FlightMembers.set_pilot` (which already claims/returns pilots correctly) so
-`Flight.client_count` becomes 1. §43/§73 defaults apply on the normal path.
+Rung 1 is the simple case: plan the turn with player pilots **not** auto-seated, then
+re-seat the chosen flight through `FlightMembers.set_pilot` (which already claims and
+returns pilots correctly) so `Flight.client_count` becomes 1. §43/§73 defaults apply on
+the normal path.
+
+**Rung 2 is better supported than expected — both halves already exist:**
+
+- *"What does this package still need?"* → `PackageFulfiller.check_needed_escorts`
+  (`game/commander/packagefulfiller.py`) already returns the `EscortType` set a package
+  warrants — `AirToAir`, `Sead`, and `Jammer` (§77) — computed from real threat-zone
+  intersections against the package's own escorted waypoints.
+- *"Put THIS airframe in that slot."* → `ProposedFlight.preferred_type`
+  (`game/commander/missionproposals.py`) already pins a specific `AircraftType` into a
+  proposed flight, and §44 long-range carrier ops already uses exactly this to force
+  chosen airframes through `PackageFulfiller`.
+
+So rung 2 is roughly: ask the package what it needs → build a `ProposedFlight` with that
+task and `preferred_type` = the player's jet → fulfil it → seat the player. The escort
+prune rules, ROE, join/split geometry and TOT all come along for free, which is the
+entire reason to join a package rather than frag beside one.
+
+Open question this raises, for the call list: when a package needs *nothing*, may the
+player still be added as a surplus section (a second striker), or is "nothing needed"
+a no-offer?
 
 #### Variety is the point, so measure it
 
@@ -195,8 +233,12 @@ question and probably means smaller ATOs in SP, not better UI.
    flight → join an existing package → frag a new one). Picking the jet first makes
    offer-only a dead end whenever the commander ignored that airframe this turn. Rungs
    1–2 are a defensible v1; rung 3 is the only one that touches the planner.
-2. **Seat scope** — lead of an existing flight, or the whole flight as your wingmen?
-   (Recommend: one seat, existing flight; wingmen stay AI as in MP.)
+2. ~~**Seat scope** — lead of an existing flight, or the whole flight as your wingmen?~~
+   **SETTLED 2026-08-03: one seat, AI wingmen — exactly as in MP.** The player takes a
+   single seat in a flight; the rest of the flight, the rest of the package and the rest
+   of the ATO stay AI-crewed. This keeps `Flight.client_count` at 1 and means no
+   multi-slot bookkeeping, no missing-pilot dialogs, and the same generation path an MP
+   event already exercises.
 3. **Is the sortie choice binding?** After taking a seat, can you still open the map and
    edit the flight, or does the board go straight to generate? (Recommend: editable —
    never trap the player.)
@@ -209,10 +251,17 @@ question and probably means smaller ATOs in SP, not better UI.
    ready right now, or the whole wing with the unavailable ones greyed and reasoned
    ("no airframes — 3 turns to delivery")? (Recommend: whole wing, greyed — seeing the
    jet you can't fly yet is itself a reason to play the turn that unlocks it.)
-8. **Rung-3 target selection.** When the board frags a new package, does it take the
-   commander's next-best unserviced target, or the nearest valid one for that airframe?
-   And does spending those airframes degrade the AI's own plan for the turn? (This is
-   the only rung with planner side effects — worth deciding before it is built.)
+8. **Rung-3 target selection.** When the board frags a standalone sortie, does it take
+   the commander's next-best unserviced target, or the nearest valid one for that
+   airframe? And does spending those airframes degrade the AI's own plan for the turn?
+   (Only rung with planner side effects, and the spec already demotes it to an explicit
+   opt-in — worth deciding before it is built.)
+9. **Surplus sections on rung 2.** When `check_needed_escorts` says a package needs
+   nothing, may the player still join as a surplus section (a second striker riding the
+   package's target and TOT), or is "nothing needed" a no-offer for that package?
+   (Recommend: allow it, capped at one surplus flight per package — it widens the
+   step-2 list a lot on quiet turns and costs the plan nothing, since the package was
+   already going.)
 
 ## Deferred / non-goals
 
@@ -231,8 +280,13 @@ question and probably means smaller ATOs in SP, not better UI.
   ready-airframe / available-pilot counts honestly.
 - Headless: for a chosen airframe, the sortie ladder resolves in order — an existing
   flight of that type is offered before a package-join, and a package-join before a
-  fresh frag; an airframe with no possibility at any rung returns empty rather than
+  standalone frag; an airframe with no possibility at any rung returns empty rather than
   raising.
+- Headless: rung 2 offers the role the package actually needs — a package whose
+  `check_needed_escorts` reports `Sead`/`Jammer` offers those roles, and the resulting
+  flight is fulfilled with `preferred_type` equal to the chosen airframe.
+- Headless: seating never exceeds one player slot — the chosen flight ends at
+  `client_count == 1` and every other flight in the package stays AI-crewed.
 - Headless: after `pass_turn`, the offer function returns N flights, all blue, all from
   player-capable squadrons, none already client-crewed.
 - Headless: seating one flight sets exactly that flight's `client_count` to 1, returns

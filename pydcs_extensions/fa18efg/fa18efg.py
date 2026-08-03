@@ -14260,7 +14260,11 @@ class FA_18ET(PlaneType):
     chaff_charge_size = 1
     flare_charge_size = 1
     eplrs = True
-    networked_datalink = True
+    # pydcs `DataLink.for_aircraft_id` only knows FA-18E/F + EA-18G; the tanker
+    # variant ids raise there, killing mission generation outright. The mod ships
+    # no DTC/datalink descriptor for them either (see dtc/superhornet.py), so the
+    # honest value is False -- pydcs then skips datalink setup entirely.
+    networked_datalink = False
     category = "Tankers"  # {8A302789-A55D-4897-B647-66493FA6826F}
     radio_frequency = 305
 
@@ -14802,7 +14806,11 @@ class FA_18FT(PlaneType):
     chaff_charge_size = 1
     flare_charge_size = 1
     eplrs = True
-    networked_datalink = True
+    # pydcs `DataLink.for_aircraft_id` only knows FA-18E/F + EA-18G; the tanker
+    # variant ids raise there, killing mission generation outright. The mod ships
+    # no DTC/datalink descriptor for them either (see dtc/superhornet.py), so the
+    # honest value is False -- pydcs then skips datalink setup entirely.
+    networked_datalink = False
     category = "Tankers"  # {8A302789-A55D-4897-B647-66493FA6826F}
     radio_frequency = 305
 

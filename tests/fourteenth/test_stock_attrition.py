@@ -122,6 +122,77 @@ class TestSubstitutionStaysInsideTheWeaponFamily:
             assert _older_group(amraam, depth).category == "a2a-missiles"
 
 
+class TestSubstitutionIsNeverAnUpgrade:
+    """`fallback` is a date-gating answer and is NOT monotonic in year.
+
+    18 same-category fallbacks in the shipped data point at a newer weapon, so an
+    unguarded walk hands a flight *better* stores the longer the war runs. Date
+    gating cannot catch it: where both rungs are legal for the campaign date,
+    nothing downstream clamps the upgrade.
+    """
+
+    def test_no_group_at_any_depth_ever_gets_newer(self) -> None:
+        for group in WeaponGroup._by_name.values():
+            start = group.introduction_year
+            if start is None:
+                continue
+            for depth in range(MAX_DEPTH + 1):
+                got = _older_group(group, depth)
+                if got is group:
+                    continue
+                assert got.introduction_year is not None, (
+                    f"{group.name} -> {got.name} at depth {depth}: "
+                    "walked to an undated group"
+                )
+                assert got.introduction_year <= start, (
+                    f"{group.name} ({start}) -> {got.name} "
+                    f"({got.introduction_year}) at depth {depth} is an UPGRADE"
+                )
+
+    def test_the_double_amraam_rack_does_not_become_a_newer_single(self) -> None:
+        """2xAIM-120B (1994) declares AIM-120C (2018) as its fallback.
+
+        The yaml says so outright -- "if we've run out of doubles, start over with
+        the singles" -- which is right for date gating and wrong here twice over:
+        it halves the magazine AND hands over a newer missile. In a 2027 campaign
+        (Baltic Fury, Marianas) both are date-legal, so nothing else stops it.
+        """
+        rack = WeaponGroup.named("2xAIM-120B")
+        assert rack.fallback is not None
+        assert rack.fallback.name == "AIM-120C"
+        rack_year = rack.introduction_year
+        single_year = rack.fallback.introduction_year
+        assert rack_year is not None and single_year is not None
+        assert single_year > rack_year
+        assert _older_group(rack, MAX_DEPTH) is rack
+
+    def test_the_maverick_ladder_does_not_walk_upward(self) -> None:
+        """AGM-65E (1985) -> AGM-65G (1989) -> AGM-65F (1991).
+
+        All three are legal in Desert Storm (1991), so before the year guard a
+        depth-2 roll turned an AGM-65E into an AGM-65F -- strictly newer, in a
+        shipped campaign, unclamped.
+        """
+        maverick = WeaponGroup.named("AGM-65E")
+        start = maverick.introduction_year
+        assert start is not None
+        for depth in range(MAX_DEPTH + 1):
+            got = _older_group(maverick, depth)
+            got_year = got.introduction_year
+            assert got_year is not None and got_year <= start
+
+    def test_an_undated_rung_stops_the_walk(self) -> None:
+        """An unknown year is unprovable, so it is not treated as older."""
+        group = WeaponGroup(
+            name="undated-probe",
+            type=WeaponType.UNKNOWN,
+            introduction_year=None,
+            fallback_name="AIM-120B",
+        )
+        object.__setattr__(group, "category", "a2a-missiles")
+        assert _older_group(group, MAX_DEPTH) is group
+
+
 class TestTheWeaponCategoryData:
     def test_groups_are_tagged_with_their_source_directory(self) -> None:
         assert WeaponGroup.named("AIM-9X").category == "a2a-missiles"

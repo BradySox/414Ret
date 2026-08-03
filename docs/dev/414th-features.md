@@ -8001,15 +8001,34 @@ pylon, unknown clsids) reads as *do not cross*. `_older_group` stops at a catego
 and `PROTECTED_TYPES` (`TGP`/`JAMMER`/`OFFENSIVE_JAMMER`/`DECOY`) are never substituted at
 all.
 
-**What it never does.** Touch a **player-customised** loadout (`is_custom`), run with the
-feature off, or make anything *newer* — date gating is untouched and still runs afterwards in
-the mission generator, so the result can only ever be older than the campaign allows. Every
-guard returns the **original loadout object**, so OFF is byte-identical.
+**The year guard — the trap the first cut fell into.** `fallback` answers *"what do I use
+**instead** when this is unavailable"*. That is a **date-gating** answer, and it is **not
+monotonic in year**: **18 same-category fallbacks in the shipped data point at a NEWER
+weapon**. Following them makes "old stock attrition" hand a flight *better* weapons the longer
+the war runs — the exact inverse of the feature.
 
-**A free win from the existing data.** `resources/weapons/a2a-missiles/AIM-120B-2X.yaml`
-already authors `fallback: AIM-120C` under the comment *"If we've run out of doubles, start
-over with the singles."* — so a double rack degrading to a single rail (fewer missiles, not
-just older ones) is the weapon data's own stated intent, inherited for free.
+| Group | Fallback | The problem |
+| --- | --- | --- |
+| `2xAIM-120B` (1994) | `AIM-120C` (2018) | halves the magazine **and** upgrades the missile |
+| `AGM-65E` (1985) | `AGM-65G` (1989) → `AGM-65F` (1991) | walks *up* two rungs |
+| `R-60 x 2` (1973) | `R-60M` (1982) | Red Tide (1988) MiGs get newer missiles |
+
+The `AIM-120B-2X.yaml` comment *"If we've run out of doubles, start over with the singles"* is
+correct for date gating and was **misread by the first cut as a free win** — it is wrong here
+twice over. And the Maverick row is the proof that **date gating cannot save us**: all three
+Mavericks are legal in Desert Storm (1991), so nothing downstream clamps the upgrade.
+
+`_older_group` therefore takes a rung only when it is **provably older** (an *undated* rung is
+unprovable, so the walk stops there too). Measured: **0 upgrade paths** across all 306 groups ×
+depths 0–3, with the headline `AIM-120C → AIM-120B → AIM-7MH → AIM-7M` Sparrow break-out
+unchanged. A repo-wide invariant test asserts it over every group, so new weapon data cannot
+reintroduce it silently.
+
+**What it never does.** Touch a **player-customised** loadout (`is_custom`), run with the
+feature off, or make anything *newer*. Note the ordering guarantee is the **year guard above** —
+date gating running afterwards is a *ceiling* ("never newer than the campaign allows"), which is
+not the same claim and does not by itself prevent an upgrade. Every guard returns the
+**original loadout object**, so OFF is byte-identical.
 
 **Settings.** `stock_attrition` (414th Features → Auto-planner behaviour, default **OFF**)
 plus `stock_attrition_start` / `stock_attrition_per_turn` / `stock_attrition_max` (Mission
@@ -8019,7 +8038,7 @@ Generation → Loadouts, `enabled_when=stock_attrition`).
 flights identical; turn 12 one flight on AIM-7MH + AIM-9L; turn 25 three of six on old stock
 (AIM-120B, AIM-7M, AIM-9L/9M) — with `AN/ASQ-228 ATFLIR` untouched in every case.
 
-Tests: `tests/fourteenth/test_stock_attrition.py` (21). Checklist: **B42**.
+Tests: `tests/fourteenth/test_stock_attrition.py` (25, incl. a repo-wide never-an-upgrade invariant). Checklist: **B42**.
 
 
 ## Code audit fixes — 2026-07-07

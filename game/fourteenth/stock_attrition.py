@@ -26,9 +26,17 @@ Three things keep it honest:
   LAST RESORT for date gating but absurd as attrition: they would hang a missile
   on the targeting-pod station. So the walk stops at a category boundary, and
   equipment types (pods, jammers, decoys) are never touched at all.
+* **A rung is only taken when it is provably older.** `fallback` is a
+  date-gating answer and is not monotonic in year -- 18 same-category fallbacks
+  in the shipped data point at a NEWER weapon (`2xAIM-120B` 1994 ->
+  `AIM-120C` 2018; `AGM-65E` 1985 -> `AGM-65G` 1989 -> `AGM-65F` 1991). Date
+  gating cannot save us here, because in a 1991 campaign AGM-65E and AGM-65F are
+  both legal, so an unguarded walk would silently *upgrade* the flight. See
+  `_older_group`.
 
-Date gating is untouched and still runs afterwards in the mission generator, so
-this can only ever make a loadout older, never newer than the campaign allows.
+Date gating still runs afterwards in the mission generator, so a substitution can
+never be newer than the campaign allows -- but that is a ceiling, not this
+module's ordering guarantee, which is the year guard above.
 """
 
 from __future__ import annotations
@@ -90,16 +98,36 @@ def roll_depth(pressure: float, rng: Optional[random.Random] = None) -> int:
 
 
 def _older_group(group: WeaponGroup, depth: int) -> WeaponGroup:
-    """Walk `depth` rungs down, stopping at a family boundary or the end."""
+    """Walk `depth` rungs down, stopping at a boundary, a newer rung, or the end.
+
+    A rung is only taken when it is provably OLDER. `fallback` answers "what do I
+    use instead when this is unavailable", which is a DATE-GATING answer and is
+    **not** required to be monotonic in year: 18 same-category fallbacks in the
+    shipped data point at a *newer* weapon -- `2xAIM-120B` (1994) ->
+    `AIM-120C` (2018), whose yaml says outright "if we've run out of doubles,
+    start over with the singles", and `AGM-65E` (1985) -> `AGM-65G` (1989) ->
+    `AGM-65F` (1991).
+
+    Following those would hand a flight *better* weapons the longer the war ran,
+    and date gating cannot catch it -- in a 1991 campaign AGM-65E and AGM-65F are
+    both legal, so nothing downstream clamps the upgrade. An unknown year is
+    unprovable, so the walk stops there too.
+    """
     category = getattr(group, "category", None)
+    # A save written before WeaponGroup.category existed restores groups without
+    # it; treat unknown as "do not cross" rather than guessing.
+    if category is None:
+        return group
     current = group
     for _ in range(depth):
         older = current.fallback
         if older is None:
             break
-        # A save written before WeaponGroup.category existed restores groups
-        # without it; treat unknown as "do not cross" rather than guessing.
-        if getattr(older, "category", None) != category or category is None:
+        if getattr(older, "category", None) != category:
+            break
+        this_year = current.introduction_year
+        older_year = older.introduction_year
+        if this_year is None or older_year is None or older_year > this_year:
             break
         current = older
     return current

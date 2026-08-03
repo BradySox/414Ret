@@ -3516,13 +3516,26 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     `object.__setattr__` like `target_overrides`, `getattr`-guarded for old saves) and the
     walk stops at a category boundary; equipment types (`TGP`/`JAMMER`/`OFFENSIVE_JAMMER`/
     `DECOY`) are never touched at all; and a **player-customised loadout is left exactly as
-    built**. Date gating is untouched and still runs afterwards, so this can only ever make a
-    loadout older, never newer than the campaign allows. Falls out of the existing data for
-    free: `AIM-120B-2X.yaml` already authors `# If we've run out of doubles, start over with
-    the singles`, so a double rack degrading to a single rail is the data's own intent.
-    Gated `stock_attrition` (414th Features → Auto-planner behaviour, default **OFF**); OFF
-    or turn 1 at the default 0 % start returns the original loadout object untouched. Tests
-    `tests/fourteenth/test_stock_attrition.py` (21); features doc §84, checklist B42 — needs
+    built**. **The year guard is the second load-bearing one** (added on review before merge,
+    after the first cut shipped without it): `fallback` answers "what do I use *instead* when
+    this is unavailable", which is a **date-gating** answer and is **not monotonic in year** —
+    **18 same-category fallbacks in the shipped data point at a NEWER weapon**, so an
+    unguarded walk hands a flight *better* stores the longer the war runs. `2xAIM-120B`
+    (1994) → `AIM-120C` (2018) is the trap the first cut mistook for a free win (the yaml's
+    own `# If we've run out of doubles, start over with the singles` — right for date gating,
+    wrong here **twice**: it halves the magazine *and* upgrades the missile), and
+    `AGM-65E` (1985) → `AGM-65G` (1989) → `AGM-65F` (1991) is the proof that **date gating
+    cannot save us** — all three are legal in Desert Storm (1991), so nothing downstream
+    clamps the upgrade. `_older_group` now takes a rung only when it is **provably older**
+    (an undated rung is unprovable, so the walk stops), measured to leave **0 upgrade paths**
+    across all 306 groups × depths 0–3 while the headline
+    `AIM-120C → AIM-120B → AIM-7MH → AIM-7M` Sparrow break-out is untouched. Date gating
+    still runs afterwards, so a substitution can never be newer than the campaign allows —
+    but that is a *ceiling*, not the ordering guarantee. Gated `stock_attrition` (414th
+    Features → Auto-planner behaviour, default **OFF**); OFF or turn 1 at the default 0 %
+    start returns the original loadout object untouched. Tests
+    `tests/fourteenth/test_stock_attrition.py` (25, incl. a repo-wide
+    never-an-upgrade invariant over every group); features doc §84, checklist B42 — needs
     an in-game pass.
 
 ---

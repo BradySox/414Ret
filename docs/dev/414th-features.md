@@ -2879,7 +2879,104 @@ starts on page 2) and for `paginate()` expanding a flight's block. `pages_by_air
 ## §28 — Settings IA reorg + difficulty presets
 
 Two coupled UX wins on the settings surface (the in-game **Settings** dialog and the **New Game**
-wizard both render from the same `QSettingsWidget`).
+wizard both render from the same `QSettingsWidget`), plus the 2026-08-03 surface rework below.
+
+### The 2026-08-03 surface rework (search · Features page · advanced disclosure)
+
+**Start with the audit, because it changed the plan.** The question was "is the settings
+interface bloated?" — a census of every user-visible field said:
+
+| | |
+|---|---|
+| User-visible fields | **213** (the §28 reorg's own doc still claimed 174) |
+| Fields with **zero** consumers anywhere in the tree | **0** |
+| Inherited from upstream @`e9b2387e` / added by the fork | **121 / 92** |
+| Fork-added gates on features that have **never been flown** | **41** |
+| Gates qualifying as "verified + default-ON → make unconditional" | **2** |
+
+So there was nothing to retire. A kill switch on unverified runtime Lua is doing exactly its
+job, and the two that *did* qualify (§49 `mobile_missile_relocation`, §58
+`mission_briefing_popup`) are both defensible as real choices. The honest conclusion:
+**the settings surface is a mirror of the in-game-pass backlog** — 92 outstanding checklist
+rows keep 41 toggles alive, and it will keep growing until the fly queue drains. Field-by-field
+deletion is not the lever; how the surface is *presented* is. Nothing was deleted.
+
+Three composing changes, all in the metadata-driven layer — no field declarations moved, no
+values or defaults changed, no save migration:
+
+**1. The filter bar** (`SettingsFilter`, spanning the top of the dialog)
+
+- A search box matching **label + detail + tooltip + field name**. Every whitespace-separated
+  term must hit, so `carrier deck` narrows rather than widening the way substring search would.
+- **"Only changed"**, built on the new `Settings.is_default(name)` — which reports `True` for
+  an unknown or unreadable field, so the filter can never hide a row by erroring on it.
+- Per-page **match counts** on the category list (`Air Doctrine  (2)`), with zero-match pages
+  greyed, so you can see *where* the matches are without clicking through eight pages.
+- A **`● SET BY CAMPAIGN`** badge on every option the selected campaign pre-seeded. Recorded by
+  the New Game wizard (`Settings.record_campaign_preseeds`, called *before* the plugins merge
+  so it captures what the campaign author actually authored) and read back via
+  `campaign_preseeded_fields()`. Stored as a plain `__dict__` key (`CAMPAIGN_PRESEED_KEY`)
+  rather than a dataclass field **on purpose**: `_user_fields()` only yields fields carrying an
+  option descriptor, so it rides along in the save without ever becoming a setting itself. The
+  badge is re-rendered in `update_from_settings`, because the wizard swaps campaigns underneath
+  an already-built dialog.
+
+**2. The `414th Features` page**
+
+The **39** boolean per-feature gates move off the topical pages into eleven themed sections.
+The split is a deliberate mental model:
+
+> the Features page answers **"what is running"**; the topical pages answer **"how it behaves"**.
+
+A feature's on/off switch moves here; its tuning knobs stay next to the subject they tune. This
+is the root-cause fix — new features now have an obvious home instead of landing on whichever
+doctrine page looked closest.
+
+- `FEATURE_GATE_FIELDS` is a **literal** in `settings.py`, not an import of
+  `game/fourteenth/features.py`: `game/__init__` already imports settings, so the import would
+  be circular. `tests/test_settings_filter.py::test_feature_gate_list_matches_the_registry`
+  pins the two together — the same registry-plus-test discipline as the feature index.
+- **The Vietnam Ops page keeps its own eight gates.** It is already exactly a scoped features
+  page; emptying it to re-list the same toggles here would be churn without a reader benefit.
+- The lift is done by rebuilding `_LAYOUT_SPEC` (`_LAYOUT_SPEC_WITHOUT_GATES` →
+  `_EFFECTIVE_LAYOUT_SPEC`), dropping any section the lift leaves empty rather than rendering
+  an empty group box. `FIELD_LAYOUT` is display-only, so **campaign preseeds are unaffected** —
+  they key on the field name.
+
+**3. Basic / advanced disclosure**
+
+`OptionDescription.advanced` (keyword-only, exactly like `enabled_when`, so the frozen
+subclasses' positional fields are undisturbed) plus a per-section **"▸ Show N advanced
+options"** link. The bulk classification is **one mechanical rule** rather than 213 judgment
+calls:
+
+> **advanced == a numeric tuning knob** (int / float / duration).
+
+A number answers "how much" about a behaviour you already chose; booleans and choices answer
+"whether" or "which", and those are the decisions that shape a campaign. Two explicit exception
+lists carry the cases the rule gets wrong: `_PRESET_DRIVEN_FIELDS` (the economy dials the
+difficulty preset bar drives — the preset and the page must never disagree about what matters)
+and `_ADVANCED_NON_NUMERIC_FIELDS`, four expert/debug booleans. That last list is where the
+**CSAR test toggles** (`combat_sar_test_force_capture` / `combat_sar_test_easy_rescue`) went;
+they had been sitting in Campaign Management next to real gameplay settings.
+
+Search deliberately **bypasses** the disclosure: if you typed a knob's name, "it is behind a
+link" would be a worse answer than showing it. The disclosure hides itself while a query is
+active for the same reason.
+
+Result: **142 basic / 71 advanced**, and Air Doctrine reads **48 → 9** options by default.
+
+**The defect this surfaced.** `enabled_when` greying was wired *per section*, which worked only
+because a master and its dependants happened to be declared together. Moving the gates broke
+the live re-enable — `motorpool_enabled` is now on Features while `motorpool_spawn_cap` stayed
+on Campaign Management. `SettingsDependencyHub` fixes it: every layout registers, and any
+control that is somebody's master (`dependency_masters()`, computed once from the field
+metadata) broadcasts to all of them. Greying is now correct across page and section boundaries,
+which it never actually was — the old code just never had a cross-section pair to get wrong.
+
+Tests: `tests/test_settings_filter.py` (17, driving the real Qt widgets under the offscreen
+platform) and the rewritten cross-page case in `tests/test_settings_dependencies.py`.
+`qt_ui` is not CI type-checked, so this needs an in-app eyeball — checklist **B39**.
 
 ### The information-architecture reorg
 

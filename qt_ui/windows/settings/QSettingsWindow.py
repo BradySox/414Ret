@@ -1,6 +1,8 @@
 import json
 import logging
 import zipfile
+from dataclasses import dataclass
+from functools import lru_cache
 from typing import Callable, Optional, Dict
 
 from PySide6 import QtWidgets
@@ -15,6 +17,7 @@ from PySide6.QtWidgets import (
     QGroupBox,
     QHBoxLayout,
     QLabel,
+    QLineEdit,
     QListView,
     QPushButton,
     QScrollArea,
@@ -146,6 +149,84 @@ class CheatSettingsBox(QGroupBox):
         return self.opfor_buysell_checkbox.isChecked()
 
 
+@dataclass
+class SettingsFilter:
+    """What the dialog's filter bar is currently asking for.
+
+    One instance is shared by every page, so the search box, the "only what I've
+    changed" box, and each section's advanced disclosure all read the same state.
+    """
+
+    #: Case-folded free text matched against a field's label, detail and name.
+    query: str = ""
+    #: Show only options whose value differs from the shipped default.
+    modified_only: bool = False
+
+    @property
+    def searching(self) -> bool:
+        return bool(self.query)
+
+    def matches(
+        self, name: str, description: OptionDescription, settings: Settings
+    ) -> bool:
+        if self.modified_only and settings.is_default(name):
+            return False
+        if not self.query:
+            return True
+        haystack = " ".join(
+            part
+            for part in (
+                name,
+                description.text,
+                description.detail,
+                description.tooltip,
+            )
+            if part
+        ).casefold()
+        # Every whitespace-separated term must appear, so "carrier deck" narrows
+        # rather than widening the way a plain substring match would.
+        return all(term in haystack for term in self.query.split())
+
+
+@lru_cache(maxsize=1)
+def dependency_masters() -> frozenset[str]:
+    """Every field that some other field's ``enabled_when`` depends on.
+
+    Used to decide which controls must broadcast a change to the whole dialog
+    (see SettingsDependencyHub). Computed once from the field metadata.
+    """
+    masters: set[str] = set()
+    for page in Settings.pages():
+        for section in Settings.sections(page):
+            for _name, description in Settings.fields(page, section):
+                if description.enabled_when is not None:
+                    masters.add(description.enabled_when[0])
+    return frozenset(masters)
+
+
+class SettingsDependencyHub:
+    """Keeps ``enabled_when`` greying live across page and section boundaries.
+
+    The greying used to be wired per-section, which worked only because a master
+    and its dependants happened to be declared together. They no longer always
+    are -- a feature's gate lives on the Features page while its tuning knobs stay
+    on the topical page -- so a master's change has to reach every section, not
+    just its own. Each layout registers itself here and every master control
+    broadcasts, which is cheap: the refresh is a handful of setEnabled calls and
+    only fires on an actual user toggle.
+    """
+
+    def __init__(self) -> None:
+        self._layouts: list["AutoSettingsLayout"] = []
+
+    def register(self, layout: "AutoSettingsLayout") -> None:
+        self._layouts.append(layout)
+
+    def broadcast(self) -> None:
+        for layout in self._layouts:
+            layout.refresh_enabled_states()
+
+
 class AutoSettingsLayout(QGridLayout):
     def __init__(
         self,
@@ -153,17 +234,33 @@ class AutoSettingsLayout(QGridLayout):
         section: str,
         sc: SettingsContainer,
         write_full_settings: Callable[[], None],
+        settings_filter: Optional[SettingsFilter] = None,
+        dependency_hub: Optional[SettingsDependencyHub] = None,
     ) -> None:
         super().__init__()
         self.page = page
         self.section = section
         self.sc = sc
         self.write_full_settings = write_full_settings
+        self.filter = (
+            settings_filter if settings_filter is not None else SettingsFilter()
+        )
+        self.hub = (
+            dependency_hub if dependency_hub is not None else SettingsDependencyHub()
+        )
+        self.hub.register(self)
         self.settings_map: Dict[str, QWidget] = {}
         # For the dependency-greying (enabled_when): the label per field, and each
         # child field's (master, enabled_value) spec.
         self.labels_map: Dict[str, QLabel] = {}
         self.enabled_specs: Dict[str, tuple[str, bool]] = {}
+        #: Every field in this section, in row order, plus its descriptor -- the
+        #: filter and the advanced disclosure both walk this.
+        self.descriptions: Dict[str, OptionDescription] = {}
+        #: Names folded behind the "Show N advanced options" disclosure.
+        self.advanced_names: set[str] = set()
+        #: Disclosure state; the search bar overrides it while a query is active.
+        self.show_advanced = False
 
         # The label column absorbs all spare width (the controls keep hugging
         # the right edge), so word-wrapped descriptions use the whole row
@@ -176,6 +273,9 @@ class AutoSettingsLayout(QGridLayout):
         for row, (name, description) in enumerate(
             Settings.fields(self.page, self.section)
         ):
+            self.descriptions[name] = description
+            if Settings.is_advanced(name, description):
+                self.advanced_names.add(name)
             self.add_label(row, name, description)
             if isinstance(description, BooleanOption):
                 self.add_checkbox_for(row, name, description)
@@ -197,13 +297,9 @@ class AutoSettingsLayout(QGridLayout):
         # not require hovering it), and Qt wraps it to the real label-column
         # width: the old fixed 55-character textwrap left everything right of
         # the text column as dead space and made rows needlessly tall.
-        text = f"<strong>{description.text}</strong>"
-        tooltip = description.tooltip
-        detail = description.detail
-        if detail is not None:
-            text += f"<br />{detail}"
-        label = QLabel(text)
+        label = QLabel(self._label_html(name, description))
         label.setWordWrap(True)
+        tooltip = description.tooltip
         if tooltip is not None:
             label.setToolTip(tooltip)
         label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
@@ -212,16 +308,82 @@ class AutoSettingsLayout(QGridLayout):
         if description.enabled_when is not None:
             self.enabled_specs[name] = description.enabled_when
 
+    def _label_html(self, name: str, description: OptionDescription) -> str:
+        """The label's rich text, including the "set by campaign" badge.
+
+        Rebuilt on refresh rather than baked in at construction, because the New
+        Game wizard swaps campaigns underneath a dialog that is already built.
+        """
+        text = f"<strong>{description.text}</strong>"
+        if name in self.sc.settings.campaign_preseeded_fields():
+            # The campaign author chose this value deliberately; say so, so that
+            # changing it reads as overriding the campaign rather than editing a
+            # stock default.
+            text += (
+                ' <span style="color:#4ec9b0;font-size:10px;">'
+                "&#9679;&nbsp;SET BY CAMPAIGN</span>"
+            )
+        if description.detail is not None:
+            text += f"<br />{description.detail}"
+        return text
+
+    # --- filtering + advanced disclosure ---------------------------------------------
+
+    def _set_row_visible(self, name: str, visible: bool) -> None:
+        label = self.labels_map.get(name)
+        if label is not None:
+            label.setVisible(visible)
+        control = self.settings_map.get(name)
+        if control is None:
+            return
+        if isinstance(control, QWidget):
+            control.setVisible(visible)
+        else:
+            # FloatSpinSlider / TimeInputs are QHBoxLayouts of a slider + spinner;
+            # a layout has no visibility of its own, so walk its children.
+            for i in range(control.count()):
+                item = control.itemAt(i)
+                child = item.widget() if item is not None else None
+                if child is not None:
+                    child.setVisible(visible)
+
+    def apply_filter(self) -> tuple[int, int]:
+        """Show the rows the current filter wants. Returns (shown, hidden_advanced).
+
+        While a search is running the advanced disclosure is bypassed -- if you
+        typed the name of a tuning knob, being told "it is behind a link" would be
+        a worse answer than showing it.
+        """
+        shown = 0
+        hidden_advanced = 0
+        for name, description in self.descriptions.items():
+            matched = self.filter.matches(name, description, self.sc.settings)
+            if matched and name in self.advanced_names:
+                if not (self.show_advanced or self.filter.searching):
+                    self._set_row_visible(name, False)
+                    hidden_advanced += 1
+                    continue
+            self._set_row_visible(name, matched)
+            if matched:
+                shown += 1
+        return shown, hidden_advanced
+
     # --- dependency greying (enabled_when) -------------------------------------------
 
     def _wire_dependency_greying(self) -> None:
         """Grey a child field's control + label whenever its master's value doesn't
-        match. Masters and children share a section here, so the master's own change
-        signal drives the refresh live; the initial pass sets the state on open."""
-        for master in {master for master, _ in self.enabled_specs.values()}:
-            widget = self.settings_map.get(master)
-            if widget is not None:
-                self._connect_change(widget, self.refresh_enabled_states)
+        match.
+
+        A master and its dependants are no longer guaranteed to share a section
+        (a feature's gate lives on the Features page; its knobs stay on the topical
+        page), so any control in this section that is a master for *anything*
+        broadcasts to every registered layout rather than refreshing only itself.
+        The initial pass sets the state on open.
+        """
+        masters = dependency_masters()
+        for name, widget in self.settings_map.items():
+            if name in masters:
+                self._connect_change(widget, self.hub.broadcast)
         self.refresh_enabled_states()
 
     def refresh_enabled_states(self) -> None:
@@ -358,6 +520,11 @@ class AutoSettingsLayout(QGridLayout):
                 widget.setValue(value)
             elif isinstance(widget, TimeInputs):
                 widget.spinner.setValue(value.seconds // 60)
+            # The campaign badge belongs to the campaign, not the value, and the
+            # wizard swaps campaigns under a built dialog -- so re-render it here.
+            label = self.labels_map.get(name)
+            if label is not None:
+                label.setText(self._label_html(name, description))
         # Re-apply dependency greying after the values change (e.g. a difficulty
         # preset flipped a master toggle).
         self.refresh_enabled_states()
@@ -370,13 +537,57 @@ class AutoSettingsGroup(QGroupBox):
         section: str,
         sc: SettingsContainer,
         write_full_settings: Callable[[], None],
+        settings_filter: Optional[SettingsFilter] = None,
+        dependency_hub: Optional[SettingsDependencyHub] = None,
     ) -> None:
         super().__init__(section)
-        self.layout = AutoSettingsLayout(page, section, sc, write_full_settings)
-        self.setLayout(self.layout)
+        self.grid = AutoSettingsLayout(
+            page, section, sc, write_full_settings, settings_filter, dependency_hub
+        )
+
+        # A section with advanced knobs gets a disclosure row under its options.
+        # It is a plain flat button rather than a QGroupBox checkbox so it reads
+        # as "there is more here" instead of "this group is disabled".
+        self.disclosure = QPushButton()
+        self.disclosure.setFlat(True)
+        self.disclosure.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.disclosure.clicked.connect(self._toggle_advanced)
+        self.grid.addWidget(
+            self.disclosure, self.grid.rowCount(), 0, 1, 2, Qt.AlignmentFlag.AlignLeft
+        )
+
+        self.setLayout(self.grid)
+        self.apply_filter()
+
+    def _toggle_advanced(self) -> None:
+        self.grid.show_advanced = not self.grid.show_advanced
+        self.apply_filter()
+
+    def apply_filter(self) -> int:
+        """Re-run the filter over this section. Returns how many rows are shown."""
+        shown, hidden_advanced = self.grid.apply_filter()
+        has_advanced = bool(self.grid.advanced_names)
+        # Hide the disclosure while searching: search already reaches advanced
+        # rows, so the link would offer to reveal something already revealed.
+        if not has_advanced or self.grid.filter.searching:
+            self.disclosure.setVisible(False)
+        else:
+            self.disclosure.setVisible(True)
+            if self.grid.show_advanced:
+                self.disclosure.setText("▾  Hide advanced options")
+            else:
+                self.disclosure.setText(
+                    f"▸  Show {hidden_advanced} advanced option"
+                    f"{'' if hidden_advanced == 1 else 's'}"
+                )
+                if not hidden_advanced:
+                    # Everything advanced was filtered out anyway.
+                    self.disclosure.setVisible(False)
+        self.setVisible(bool(shown))
+        return shown
 
     def update_from_settings(self) -> None:
-        self.layout.update_from_settings()
+        self.grid.update_from_settings()
 
 
 class AutoSettingsPageLayout(QVBoxLayout):
@@ -385,16 +596,36 @@ class AutoSettingsPageLayout(QVBoxLayout):
         page: str,
         sc: SettingsContainer,
         write_full_settings: Callable[[], None],
+        settings_filter: Optional[SettingsFilter] = None,
+        dependency_hub: Optional[SettingsDependencyHub] = None,
     ) -> None:
         super().__init__()
         self.setAlignment(Qt.AlignmentFlag.AlignTop)
 
-        self.widgets = []
+        self.widgets: list[AutoSettingsGroup] = []
         for section in Settings.sections(page):
             self.widgets.append(
-                AutoSettingsGroup(page, section, sc, write_full_settings)
+                AutoSettingsGroup(
+                    page,
+                    section,
+                    sc,
+                    write_full_settings,
+                    settings_filter,
+                    dependency_hub,
+                )
             )
             self.addWidget(self.widgets[-1])
+
+        # Shown instead of an empty page when a filter matches nothing here.
+        self.empty_label = QLabel("No options on this page match the filter.")
+        self.empty_label.setWordWrap(True)
+        self.empty_label.setVisible(False)
+        self.addWidget(self.empty_label)
+
+    def apply_filter(self) -> int:
+        shown = sum(w.apply_filter() for w in self.widgets)
+        self.empty_label.setVisible(not shown)
+        return shown
 
     def update_from_settings(self) -> None:
         for w in self.widgets:
@@ -407,13 +638,20 @@ class AutoSettingsPage(QWidget):
         page: str,
         sc: SettingsContainer,
         write_full_settings: Callable[[], None],
+        settings_filter: Optional[SettingsFilter] = None,
+        dependency_hub: Optional[SettingsDependencyHub] = None,
     ) -> None:
         super().__init__()
-        self.layout = AutoSettingsPageLayout(page, sc, write_full_settings)
-        self.setLayout(self.layout)
+        self.page_layout = AutoSettingsPageLayout(
+            page, sc, write_full_settings, settings_filter, dependency_hub
+        )
+        self.setLayout(self.page_layout)
+
+    def apply_filter(self) -> int:
+        return self.page_layout.apply_filter()
 
     def update_from_settings(self) -> None:
-        self.layout.update_from_settings()
+        self.page_layout.update_from_settings()
 
 
 class DifficultyPresetBar(QGroupBox):
@@ -516,9 +754,13 @@ class QSettingsWidget(QtWidgets.QWizardPage, SettingsContainer):
         self.settings = game.settings if game else settings
         self.game = game
 
+        self.filter = SettingsFilter()
+        self.dependency_hub = SettingsDependencyHub()
         self.pages: dict[str, AutoSettingsPage] = {}
         for page in Settings.pages():
-            self.pages[page] = AutoSettingsPage(page, self, self.applySettings)
+            self.pages[page] = AutoSettingsPage(
+                page, self, self.applySettings, self.filter, self.dependency_hub
+            )
 
         self.pluginsPage = PluginsPage(self)
         self.pluginsOptionsPage = PluginOptionsPage(self)
@@ -604,17 +846,78 @@ class QSettingsWidget(QtWidgets.QWizardPage, SettingsContainer):
             self.onSelectionChanged
         )
 
-        self.layout.addWidget(self.categoryList, 0, 0, 1, 1)
-        self.layout.addLayout(self.right_layout, 0, 1, 5, 1)
+        self.layout.addLayout(self._build_filter_bar(), 0, 0, 1, 2)
+        self.layout.addWidget(self.categoryList, 1, 0, 1, 1)
+        self.layout.addLayout(self.right_layout, 1, 1, 5, 1)
 
         load = QPushButton("Load Settings")
         load.clicked.connect(self.load_settings)
-        self.layout.addWidget(load, 1, 0, 1, 1)
+        self.layout.addWidget(load, 2, 0, 1, 1)
         save = QPushButton("Save Settings")
         save.clicked.connect(self.save_settings)
-        self.layout.addWidget(save, 2, 0, 1, 1)
+        self.layout.addWidget(save, 3, 0, 1, 1)
 
         self.setLayout(self.layout)
+        self.apply_filter()
+
+    def _build_filter_bar(self) -> QHBoxLayout:
+        """Search + "only what I've changed", spanning the top of the dialog.
+
+        There are 200+ options across eight pages; without a way to ask for one by
+        name, finding a setting means remembering which page it was filed under.
+        """
+        bar = QHBoxLayout()
+
+        self.search_box = QLineEdit()
+        self.search_box.setPlaceholderText(
+            "Search settings by name or description (e.g. carrier, fuel, SAM)…"
+        )
+        self.search_box.setClearButtonEnabled(True)
+        self.search_box.textChanged.connect(self._on_search_changed)
+        bar.addWidget(self.search_box, 1)
+
+        self.modified_only_box = QCheckBox("Only changed")
+        self.modified_only_box.setToolTip(
+            "Show only options whose value differs from the shipped default — "
+            "including everything the selected campaign pre-seeded."
+        )
+        self.modified_only_box.toggled.connect(self._on_modified_only_toggled)
+        bar.addWidget(self.modified_only_box)
+
+        self.filter_summary = QLabel()
+        bar.addWidget(self.filter_summary)
+        return bar
+
+    def _on_search_changed(self, text: str) -> None:
+        self.filter.query = text.strip().casefold()
+        self.apply_filter()
+
+    def _on_modified_only_toggled(self, checked: bool) -> None:
+        self.filter.modified_only = checked
+        self.apply_filter()
+
+    def apply_filter(self) -> None:
+        """Re-run the filter across every page and annotate the category list.
+
+        Each page's row shows its match count while a filter is active, so you can
+        see *where* the matches are without clicking through all eight pages.
+        """
+        active = self.filter.searching or self.filter.modified_only
+        total = 0
+        for row, (name, page) in enumerate(self.pages.items()):
+            shown = page.apply_filter()
+            total += shown
+            item = self.categoryModel.item(row)
+            if item is None:
+                continue
+            item.setText(f"{name}  ({shown})" if active else name)
+            item.setEnabled(bool(shown) or not active)
+        if not active:
+            self.filter_summary.setText("")
+        elif total:
+            self.filter_summary.setText(f"{total} match{'' if total == 1 else 'es'}")
+        else:
+            self.filter_summary.setText("No matches")
 
     def initCheatLayout(self):
         self.cheatPage = QWidget()
@@ -723,6 +1026,13 @@ class QSettingsWidget(QtWidgets.QWizardPage, SettingsContainer):
 
         if self.difficulty_preset_bar is not None:
             self.difficulty_preset_bar.refresh(self.settings)
+
+        # Values just changed, so "only changed" and the campaign badges can both
+        # have gone stale -- re-run the filter over the refreshed controls. Guarded
+        # because the wizard calls update_from_settings() during construction, before
+        # the filter bar exists.
+        if getattr(self, "search_box", None) is not None:
+            self.apply_filter()
 
         self.updating_ui = False
 

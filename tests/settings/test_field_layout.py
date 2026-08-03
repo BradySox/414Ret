@@ -39,6 +39,9 @@ def test_pages_are_in_the_designed_order() -> None:
         "Kneeboards",
         "Vietnam Ops",
         "Performance",
+        # Last on purpose: the per-feature on/off gates, lifted off the topical
+        # pages so those hold choices rather than a mix of choices and switches.
+        "414th Features",
     ]
 
 

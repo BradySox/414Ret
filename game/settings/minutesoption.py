@@ -26,6 +26,7 @@ def minutes_option(
     detail: Optional[str] = None,
     tooltip: Optional[str] = None,
     enabled_when: Optional[Union[str, EnabledWhen]] = None,
+    advanced: bool = False,
     **kwargs: Any,
 ) -> timedelta:
     return field(
@@ -40,6 +41,7 @@ def minutes_option(
                 min=min,
                 max=max,
                 enabled_when=normalize_enabled_when(enabled_when),
+                advanced=advanced,
             )
         },
         default=default,

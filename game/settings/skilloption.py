@@ -10,6 +10,7 @@ def skill_option(
     default: str,
     detail: Optional[str] = None,
     tooltip: Optional[str] = None,
+    advanced: bool = False,
     **kwargs: Any,
 ) -> str:
     return choices_option(
@@ -20,5 +21,6 @@ def skill_option(
         ["Average", "Good", "High", "Excellent"],
         detail=detail,
         tooltip=tooltip,
+        advanced=advanced,
         **kwargs,
     )

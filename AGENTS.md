@@ -1414,7 +1414,52 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     also dropped the fixed 55-char textwrap — labels word-wrap to the real column width and the
     label column takes all spare width, so descriptions flow across the row. Guard +
     offscreen-Qt greying tests (+ the full-inline-detail guard) in
-    `tests/test_settings_dependencies.py`. Shipped with the **UI-audit bug fixes**: the defeat-shows-
+    `tests/test_settings_dependencies.py`.
+    **Surface rework 2026-08-03 ("do you ever feel like the whole settings interface is
+    bloated?").** The audit that started it is worth recording because it *changed the plan*:
+    a census of all **213** user-visible fields (the §28 reorg's own doc still said 174 — the
+    surface had grown 39 fields in ~4 weeks) found **zero dead fields**, only **2** that
+    qualified as "verified feature + default-ON gate, safe to make unconditional", and **41
+    fork-added gates on features that have never had an in-game pass**. The conclusion:
+    **the settings surface is a mirror of the in-game-pass backlog** (92 outstanding rows) —
+    a kill switch on unverified runtime Lua is doing its job, so deleting fields is not the
+    lever, and nothing was retired. The split is **121 inherited from upstream @`e9b2387e` /
+    92 fork-added**. What shipped instead is three composing surface changes, all in the
+    metadata-driven layer (no per-field edits, no behaviour change, no save migration):
+    **(1) a filter bar** — a search box matching label + detail + field name across every
+    page (all terms must hit, so "carrier deck" narrows), an **"Only changed"** box built on
+    the new `Settings.is_default`, per-page match counts on the category list, and a
+    **"● SET BY CAMPAIGN" badge** on every field the selected campaign preseeded
+    (`Settings.record_campaign_preseeds` / `campaign_preseeded_fields`, recorded by the New
+    Game wizard, stored as a plain `__dict__` key so it is carried in the save but is never
+    itself a setting). **(2) the `414th Features` page** — the **39** boolean per-feature
+    gates lifted off the topical pages into eleven themed sections, on a deliberate mental
+    model: **the Features page answers "what is running", the topical pages answer "how it
+    behaves"**, so a feature's switch moves and its tuning knobs stay next to their subject.
+    The list (`FEATURE_GATE_FIELDS`) is a **literal** in `settings.py` because `game/__init__`
+    already imports settings, so importing `game/fourteenth/features.py` would be circular —
+    a test pins it to the registry instead (the same registry-plus-test discipline as the
+    feature index), and the **Vietnam Ops page keeps its own eight gates** since it is already
+    a scoped features page. **(3) basic/advanced disclosure** — `OptionDescription.advanced`
+    (keyword-only, like `enabled_when`) plus a per-section "Show N advanced options" link,
+    with the bulk classification by one mechanical rule rather than 213 judgment calls:
+    **a numeric tuning knob is advanced**; booleans and choices answer "whether/which" and
+    stay basic. Two explicit exception lists — the preset-driven economy dials stay basic
+    (the preset bar drives them, so the page must not bury them) and four expert/test
+    booleans are forced advanced, which is where the **CSAR test toggles**
+    (`combat_sar_test_force_capture` / `combat_sar_test_easy_rescue`) went: they were sitting
+    in Campaign Management beside real gameplay settings. Air Doctrine reads **48 → 9**
+    options by default; the whole surface is **142 basic / 71 advanced**.
+    **One real defect fixed along the way:** `enabled_when` greying was wired *per section*,
+    which only ever worked because a master and its dependants happened to be declared
+    together — moving the gates broke the live re-enable (`motorpool_enabled` on Features,
+    `motorpool_spawn_cap` on Campaign Management). The new `SettingsDependencyHub` broadcasts
+    a master's change to every registered layout, so greying is now correct across page and
+    section boundaries; `dependency_masters()` keeps it to the controls that are actually
+    somebody's master. Tests `tests/test_settings_filter.py` (17, driving the real Qt widgets
+    offscreen) + the rewritten cross-page case in `tests/test_settings_dependencies.py`;
+    `qt_ui` is not CI type-checked, so this needs an in-app eyeball — checklist B39.
+    Shipped with the **UI-audit bug fixes**: the defeat-shows-
     "Victory!" `onEndGame` enum-truthiness bug, the inverted Air-Wing player-slots caption, the shared
     `self.dialog` window-GC bug, the `QGroundObjectMenu` repair list-mutation, the web `TgosLayer`
     key-by-name → `tgo.id`, the upstream→fork Help/About/Releases links, and dead-component/duplicate-CSS
@@ -1937,7 +1982,9 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     `stop_after_time(hold + MISSILE_FIRE_WINDOW_S)` (240 s; flown volleys complete within ~40 s of
     the deadline) so the task ends through the normal completion path before the plugin's 300 s
     margin routes the group; the window/margin coupling is pinned by
-    `test_fire_window_stays_inside_the_plugin_scoot_margin`. Re-fly owed (S2 stays PARTIAL).
+    `test_fire_window_stays_inside_the_plugin_scoot_margin`. (The re-fly this owed was flown
+    the same night — **S2 is VERIFIED**; this prose lagged the checklist row until the
+    2026-08-03 settings audit caught the drift.)
     **Single-digit-FPS storm found + fixed 2026-07-17** (the first flown test on the fixed build,
     a fresh 39-site game): every site armed at the same moment, so ALL sites routed **in the same
     frame** every interval (continuous DCS ANTIFREEZE from the first scoot tick — before any drone

@@ -31,6 +31,7 @@ def choices_option(
     detail: Optional[str] = None,
     tooltip: Optional[str] = None,
     enabled_when: Optional[Union[str, EnabledWhen]] = None,
+    advanced: bool = False,
     **kwargs: Any,
 ) -> ValueT:
     if not isinstance(choices, Mapping):
@@ -46,6 +47,7 @@ def choices_option(
                 causes_expensive_game_update=False,
                 choices=dict(choices),
                 enabled_when=normalize_enabled_when(enabled_when),
+                advanced=advanced,
             )
         },
         default=default,

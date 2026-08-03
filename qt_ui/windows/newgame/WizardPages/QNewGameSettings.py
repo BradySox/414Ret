@@ -44,6 +44,11 @@ class NewGameSettings(QtWidgets.QWizardPage):
         # campaign doesn't mention (e.g. a plugin option added after the campaign was
         # authored), and the settings UI would KeyError reading the missing option.
         # Always layer the campaign's plugins over the defaults, unconditionally.
+        # Remember what the campaign chose *before* the plugins merge below adds a
+        # key the campaign may not have authored, so the settings dialog can badge
+        # exactly the options this campaign pre-seeded (rather than every option
+        # that happens to differ from stock).
+        settings.record_campaign_preseeds(campaign.settings.keys())
         campaign_settings["plugins"] = {
             **settings.__dict__.get("plugins", {}),
             **campaign_settings.get("plugins", {}),

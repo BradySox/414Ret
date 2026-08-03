@@ -125,6 +125,8 @@ def load_icons():
     ICONS["Performance"] = ICONS["Generator"]
     # Vietnam Ops (period-ops suite) settings page.
     ICONS["Vietnam Ops"] = ICONS["Ordnance"]
+    # The 414th Features page — every fork feature's on/off gate in one place.
+    ICONS["414th Features"] = ICONS["Hangar"]
 
     ICONS["TaskCAS"] = QPixmap("./resources/ui/tasks/cas.png")
     ICONS["TaskCAP"] = QPixmap("./resources/ui/tasks/cap.png")

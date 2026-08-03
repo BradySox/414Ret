@@ -197,10 +197,66 @@ to the SAM-belt STANDARD:
 `redscramble`, `vietnamops`, `combatsar`. **Mods:** `f22_raptor`, `fa_18efg`, `fa18ef_tanker`,
 `usamilitaryassetspack`, `high_digit_sams`, `russianmilitaryassetspack`.
 
-### The Modern Missiles mod — EVALUATED AND REJECTED (2026-08-03)
+### The Modern Missiles mod — AMRAAM half ADOPTED, Sidewinder half REJECTED (2026-08-03)
 
-The DM proposed adopting Nightstorm's **Modern Missiles v1.30** (DCS User Files 3328022) for this
-campaign. **Do not adopt it, and do not preseed it.** The readme settles all three questions:
+> **⚠️ This section was rewritten the same day it was written. The first version rejected the mod
+> outright and was WRONG about scope** — it answered "should Retribution adopt this as an asset
+> pack" when the DM's actual goal was "how does the rest of the blue fleet get AIM-120Ds". The
+> mod ships **independent per-missile scripts**, and the two strongest objections below apply
+> only to the *Sidewinder* script, which nobody needs to run. The original text is kept as
+> points 1–3 because points 1 and 3 still stand and point 2 is the reason the Sidewinder half
+> stays out.
+
+**The DM's goal, and it is historically correct:** the AIM-120D (now D-3) is the current US/allied
+AMRAAM — the whole blue force fields it in real life — and this fork tops the entire blue fleet out
+at **AIM-120C (2018)**. In a 2027 campaign that is the same anachronism as red's J-7B.
+
+**There is no data-only path to it.** Measured across all 287 registered aircraft: exactly **four**
+can mount a Retribution-visible AIM-120D store — **F-22A** (3 stores) and the CJS **FA-18E / FA-18F
+/ EA-18G** (40 each). Nothing pylon-legal exists for the F-15C, F-16C or F/A-18C, so no yaml or
+payload edit can reach them. The mod's in-place upgrade of the stock AIM-120 is the **only**
+mechanism that does.
+
+**Verdict: run `AAM_AIM_120D.cmd`, never `AAM_AIM_9X2.cmd`.** The scripts are fully independent —
+the AMRAAM one copies only the AIM-120 texture, the AIM-120 shape, `aim120_family.lua` and the ME
+icon. It **never touches `aim9_family.lua`**, which is where both of the serious objections lived:
+
+* **The era breakage (point 2) is Sidewinder-only.** `AIM-120B` is dated 1994, so **Red Tide
+  (1988) and Desert Storm (1991) field no AMRAAM at all** and are untouched by the AMRAAM swap.
+  The original text named those two campaigns; that was the 9L→9X shift, not this.
+* **The content deletion is Sidewinder-only.** The mod's year-old `aim9_family.lua` is missing
+  **AIM-9D / AIM-9G / AIM-9H** (which `vwv_crusader.lua` frags). Its `aim120_family.lua` is
+  missing **nothing** — a declaration diff against the live file returns exactly one entry, a
+  LAU-115 rack *label* restyle, not a weapon.
+
+**What the AMRAAM swap still costs, accepted knowingly:**
+
+1. **It cannot be date-gated.** It keeps the stock clsid, so Retribution still sees "AIM-120B"
+   (1994). Every campaign from 1994 to ~2018 that fields AMRAAMs silently flies D-model
+   performance — that is the six pre-2019 pack campaigns (Clash of the Titans 2006, Vectron's Claw
+   2005, Red Sea Rising 2005, The Anvil of War 2007, Vegas Nerve 2011, Desert Aladeen 2012).
+   Mitigation is the OVGME toggle: enable for the modern campaigns (Baltic Fury, Marianas 2027),
+   disable for period ones. There is no in-engine fix — invisibility to Retribution is inherent to
+   an in-place swap.
+2. **It reverts a year of ED AMRAAM tuning.** Mod copy 620 lines vs live 602, ~500 differing —
+   no weapons lost, but ED's changes since 2.9.0 are. Re-check after any DCS or mod update; the
+   mod ships `VERSION.txt 2.9.0` against a **2.9.28.26385** install.
+3. **Breaks IC, needs MP lockstep** — every pilot on the server must match. OVGME makes that a
+   click, but it is a real operational cost for events.
+4. **Avionics still read AIM-120B** (the readme says so outright). Cosmetic.
+
+**Still open (needs an in-game check before building):** whether to re-point the CJS Super Hornet
+fits at the pack's own **"(Modern Missiles Mod Required)"** D stores, which *are* Retribution-visible
+and already date-gated at 2019. The §71 `(XW)` `pylons_allow` pattern is the obvious mechanism, but
+it **would not protect a mod-less host here**: those pylon entries are present even with the mod
+absent (measured — 40 stores visible on FA-18E/F with the mod not applied), so the gate would pass
+and the fallback would never fire. What a mod-less spawn actually does with that store is unknown
+and must be flown before this is wired up.
+
+---
+
+**Original text (2026-08-03, superseded above).** Points 1 and 3 stand; point 2 is why the
+Sidewinder script stays out:
 
 1. **It is an in-place core-file swap, not an asset pack.** It overwrites `Bazar` / `CoreMods` /
    `MissionEditor` in the DCS install root via `.cmd` scripts, keeping the stock clsids — "the
@@ -219,12 +275,13 @@ campaign. **Do not adopt it, and do not preseed it.** The readme settles all thr
    annotation) and `F-22A.lua` already frags it in 12 fits; the CJS Super Hornet pack ships
    AIM-120D and AIM-9X2 stores.
 
-**Do NOT "fix" this by re-pointing the Super Hornet fits at the pack's D/9X-2 stores.** Those come
-in two flavours and neither is usable here: the `*_AI` ones are labelled **"(AI Only)"**, and the
-player-usable ones are labelled **"(Modern Missiles Mod Required)"** — i.e. the CJS pack declares
-this very mod as a dependency. Re-pointing would either break the flyable Rhino seats or make the
-campaign require the mod, reintroducing everything in (2). The Super Hornet fits stay on
-AIM-120C + AIM-9X deliberately.
+**On re-pointing the Super Hornet fits at the pack's D/9X-2 stores.** Those come in two flavours:
+the `*_AI` ones are labelled **"(AI Only)"**, and the player-usable ones are labelled
+**"(Modern Missiles Mod Required)"** — i.e. the CJS pack declares this very mod as a dependency.
+The original text ruled this out on the grounds that it would make the campaign require the mod;
+**that objection dissolves once the mod is adopted deliberately** (see the verdict above), so it is
+reopened as the "still open" item rather than a prohibition. It remains gated on an in-game check
+of the mod-less case. Until then the Super Hornet fits stay on AIM-120C + AIM-9X.
 
 #### Verified against the installed mod + the live DCS (2026-08-03, DM's machine)
 
@@ -236,28 +293,49 @@ AircraftWeaponPack/{aim9,aim120}_family.lua` + `MissionEditor/data/images`, the
 anywhere: it edits ED's *existing* weapon families in place, which is exactly why Retribution
 cannot see it.
 
-**A fourth reason emerged, and it is the strongest — the mod is a year stale and enabling it
-would DELETE live DCS content.** It ships `VERSION.txt = 2.9.0`; the install is
-**2.9.28.26385** (built 2026-07-28), and ED touched both files it replaces within the last two
-weeks. The mod's copies are not a superset:
+**But reading the `.cmd` files is what corrected the verdict.** The scripts are **per missile
+family and fully independent** — verbatim, `AAM_AIM_120D.cmd` copies exactly four things:
 
-| File | Mod copy | Live | Delta |
-| --- | --- | --- | --- |
-| `aim9_family.lua` | 1501 lines | **1631** | mod is **130 lines short**, 459 lines differ |
-| `aim120_family.lua` | 620 lines | 602 | 500 lines differ |
-| `DLZ_Refference.lua` | ships a `Backup/` copy | **does not exist** | ED removed/renamed it |
+    Bazar\World\textures\AIM-120.zip
+    Bazar\World\Shapes\aim-120b.edm
+    CoreMods\aircraft\AircraftWeaponPack\aim120_family.lua
+    MissionEditor\data\images\Loadout\Weapon\us_AIM-120B.png
+
+`aim9_family.lua` appears **only** in `AAM_AIM_9X2.cmd` / `AAM_AIM_2000.cmd` /
+`AAM_PYTHON_5.cmd` / `AAM_AIM_9L.cmd`. So "the mod" is not one decision — the AMRAAM upgrade and
+the Sidewinder ladder shift are separately installable, and every objection that named a
+Sidewinder is scoped to scripts we never run. (Each family also ships its own restore script:
+`AAM_AIM_120B.cmd` returns the AMRAAM to stock, `AAM_AIM_9L.cmd` the Sidewinders.)
+
+The mod is currently **not applied** on this install — verified by diffing the live weapon files
+against both the mod's and the stock backups.
+
+**The staleness finding — and why it condemns only the Sidewinder half.** The mod ships
+`VERSION.txt = 2.9.0`; the install is **2.9.28.26385** (built 2026-07-28), and ED touched both
+files it replaces within the last two weeks. The mod's copies are not a superset:
+
+| File | Mod copy | Live | Delta | Verdict |
+| --- | --- | --- | --- | --- |
+| `aim9_family.lua` | 1501 lines | **1631** | **130 lines short**, 459 differ | ⛔ **deletes weapons** |
+| `aim120_family.lua` | 620 lines | 602 | 500 differ | ✅ deletes nothing |
+| `DLZ_Refference.lua` | ships a `Backup/` copy | **does not exist** | ED removed/renamed it | (backup only, never copied) |
 
 Diffing the declarations, the live `aim9_family.lua` defines **AIM-9D, AIM-9G and AIM-9H** and
 the mod's year-old copy **does not**. Those are the Vietnam-era Sidewinders, and this fork
 depends on them directly: `resources/weapons/a2a-missiles/AIM-9{D,G,H}.yaml` register them
 (1965 / 1970 / 1972) and `vwv_crusader.lua` + `vwv_crusader_np.lua` frag them on the F-8. So
-enabling the mod would remove the definitions out from under the Crusader fits, and DCS
-silently strips a store it cannot resolve — the **F-8 flies naked**, the same failure mode §71
-documents for `(XW)` fits without their pylon injection.
+running the **Sidewinder** script would remove the definitions out from under the Crusader fits,
+and DCS silently strips a store it cannot resolve — the **F-8 flies naked**, the same failure mode
+§71 documents for `(XW)` fits without their pylon injection.
 
-Bottom line: this is not "a mod we chose not to adopt", it is a mod that **cannot safely be
-enabled on this install at all** until its author rebuilds it against current DCS. Re-check the
-line counts above before reconsidering it after any mod update.
+**The same diff run on `aim120_family.lua` comes back clean:** exactly one live declaration is
+absent from the mod's copy, and it is a `LAU-115: 2 x LAU-127 …` rack **label** restyle, not a
+weapon. So the AMRAAM script loses ED's tuning but no content.
+
+Bottom line: **`AAM_AIM_120D.cmd` is safe to run and is the only way to reach the rest of the blue
+fleet; `AAM_AIM_9X2.cmd` must never be run on this install** until its author rebuilds against
+current DCS. Re-check both line counts and re-run the declaration diff after any DCS or mod update
+— the reason the AMRAAM half is safe is a *measurement*, not a property of the mod.
 
 What *did* come out of the evaluation is a real data fix, applied fork-wide (see
 `resources/weapons/a2a-missiles/AIM-120D.yaml`): the packs' AIM-120D / AIM-260A / AIM9X-BLKII /

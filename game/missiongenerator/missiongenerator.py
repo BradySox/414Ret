@@ -237,7 +237,10 @@ class MissionGenerator:
         used multiple times.
         """
         for beacon in Beacons.iter_theater(self.game.theater):
-            unique_map_frequencies.add(beacon.frequency)
+            # A channel-addressed TACAN / RSBN / PRMG beacon has no frequency to
+            # reserve; every terrain ships some (1 on Marianas, 80 on Germany CW).
+            if (beacon_frequency := beacon.frequency) is not None:
+                unique_map_frequencies.add(beacon_frequency)
             if beacon.is_tacan:
                 if beacon.channel is None:
                     logging.warning(f"TACAN beacon has no channel: {beacon.callsign}")

@@ -1,7 +1,7 @@
 # Marianas — Second Island Chain (2027)
 
 **Status:** BUILT + headless-verified 2026-08-02. CI-locked in
-`tests/fourteenth/test_marianas_2027.py` (19 tests). Needs an in-game pass —
+`tests/fourteenth/test_marianas_2027.py` (21 tests). Needs an in-game pass —
 checklist **T5**. NEW game required.
 
 The 414th's modern-day China campaign, and the answer to "can DCS's current maps host a
@@ -171,15 +171,39 @@ scenery-target checker.
 
 ## Order of battle
 
-**BLUE — USA 2020** (158 airframes / 21 squadrons)
+**BLUE — USA 2020** (164 airframes / 23 squadrons)
 
 | Base | Squadrons |
 |---|---|
-| Andersen AFB (194 slots) | F-15C ×12 BARCAP · F-15E ×12 Strike · F-16CM ×12 SEAD · **B-1B ×6 Anti-ship** · E-3A ×3 · **KC-135 ×4 (boom) + KC-135 MPRS ×2 (drogue)** · **C-130J-30 ×4 Transport** |
+| Andersen AFB (194 slots) | **F-22A ×8 BARCAP** · F-15C ×10 BARCAP · F-15E ×12 Strike · F-16CM ×12 SEAD · **B-1B ×6 Anti-ship** · E-3A ×3 · **KC-135 ×4 (boom) + KC-135 MPRS ×2 (drogue)** · **C-130J-30 ×4 Transport** |
 | Antonio B. Won Pat Intl (23) | F/A-18C ×12 BARCAP · A-10C II ×8 CAS |
 | Olf Orote (4) | AV-8B ×4 BAI |
 | CVN (Naval-1) | F/A-18E ×12 BARCAP · **F/A-18C ×12 BARCAP** · F/A-18F ×10 Anti-ship · F/A-18E ×8 SEAD · **EA-18G ×5 (VAQ-136)** · **F/A-18E Tanker ×4** · E-2D ×4 · SH-60B ×4 |
 | LHA (Naval-2) | AV-8B ×8 BAI · AH-64D ×6 CAS · UH-60A ×6 Transport |
+
+### The Raptor det, and the data gap it exposed
+
+Andersen is the real-world F-22 rotation base and the Raptor is the one blue airframe
+that beats a J-11A or J-15 on merit rather than on numbers, so the wing carries an
+**8-ship det** (`f22_raptor` preseeded). The **F-15C squadron stays alongside it**,
+trimmed 12 → 10 rather than replaced: the F-22 is a mod, and without it blue would
+otherwise have no air-superiority arm at all. Same safety pattern as the carrier's
+legacy Hornet squadron, and guard-tested the same way.
+
+Adding it surfaced a real data gap: **`F-22A.yaml` authored no `max_range`**, so the
+airframe silently fell back to the 150 NM default — *less than half* the F-15C's
+authored 400 NM. That is backwards for a fighter whose internal-fuel radius exceeds the
+Eagle's, and in this campaign it would have range-gated the Raptor out of the deep half
+of the map: it could not have reached the PLAN carrier groups (108–157 NM) or anything
+north of Saipan, while the older Eagle could. Now `max_range: 450`, in step with the
+fleet's deliberately conservative values (F-15C 400, F-16C 350), and pinned by
+`test_the_raptor_has_an_authored_max_range`. The fallback logs a warning and nothing
+else, which is exactly why it went unnoticed.
+
+Left alone deliberately: the same yaml declares **`SCR-522`** — the P-51 Mustang's
+1940s radio — for both intra- and inter-flight comms, with an in-tree comment already
+admitting it is wrong. It feeds the radio allocator, so it is a real bug, but fixing it
+touches every campaign that fields the F-22 and belongs in its own change.
 
 ### Tankers: boom and drogue are not interchangeable
 

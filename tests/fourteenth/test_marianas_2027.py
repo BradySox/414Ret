@@ -69,6 +69,7 @@ def test_mod_packs_are_preseeded() -> None:
         "high_digit_sams",
         "fa_18efg",
         "fa18ef_tanker",
+        "f22_raptor",
     ):
         assert settings[mod] is True, mod
 
@@ -418,3 +419,43 @@ def test_no_blue_base_sits_behind_the_red_chain() -> None:
         f"{northernmost_blue[1]} (blue) sits north of {southernmost_red[1]} (red) -- "
         "the laydown is sandwiched again"
     )
+
+
+def test_andersen_fields_raptors_without_losing_its_mod_free_fighter() -> None:
+    """The F-22A det, and the Eagle squadron that must survive alongside it.
+
+    Guam is the real-world Raptor rotation base and the F-22A is the one blue airframe
+    that beats a J-11A/J-15 on merit rather than on numbers -- but it is a mod. The
+    F-15C squadron is kept deliberately so a host without the mod still has an
+    air-superiority arm, exactly as the carrier keeps a legacy Hornet squadron.
+    """
+    blocks = _campaign()["squadrons"]["Andersen AFB"]
+    by_airframe = {
+        airframe: block
+        for block in blocks
+        for airframe in (block.get("aircraft") or [])
+    }
+    assert "F-22A Raptor" in by_airframe
+    assert "F-15C Eagle" in by_airframe, (
+        "the mod-free air-superiority squadron was removed; if that is intended, the "
+        "f22_raptor preseed has to go with it"
+    )
+
+
+def test_the_raptor_has_an_authored_max_range() -> None:
+    """An airframe with no ``max_range`` silently falls back to 150 NM.
+
+    That is less than half the F-15C's authored 400 NM, so an un-authored Raptor is
+    range-gated out of the deep half of this campaign -- it could not reach the PLAN
+    carrier groups (108-157 NM) or anything north of Saipan -- while the older Eagle
+    could. The fallback is a warning at load and nothing else, so it is pinned here.
+    """
+    from game.dcs.aircrafttype import AircraftType
+
+    raptor = AircraftType.named("F-22A Raptor")
+    eagle = AircraftType.named("F-15C Eagle")
+    default_fallback_m = 277_800  # 150 NM
+    assert (
+        raptor.max_mission_range.meters > default_fallback_m
+    ), "F-22A.yaml lost its max_range and fell back to the 150 NM default"
+    assert raptor.max_mission_range >= eagle.max_mission_range

@@ -198,8 +198,8 @@ file. This guide is the map; those are the territory.
     on purpose** (guard-tested) so an MP pilot without the mod still has a carrier ride. No front lines (the islands aren't connected —
     Air Assault and §76 C-130J paradrops are the capture mechanic); red fields no ambient convoys
     because no two red bases share an island. Headless-verified end-to-end (18 CPs — BLUE 6 /
-    RED 13 — 110 TGOs/572 units, all 37 squadrons resolve, **158 blue vs 98 red**); CI-locked in
-    `tests/fourteenth/test_marianas_2027.py` (19 tests incl. standing parking-fit,
+    RED 13 — 110 TGOs/572 units, all 38 squadrons resolve, **164 blue vs 98 red**); CI-locked in
+    `tests/fourteenth/test_marianas_2027.py` (21 tests incl. standing parking-fit,
     tanker-compatibility, pin-band-match, no-sandwich, explicit-`size:` and
     mod-free-carrier-squadron invariants). **Enemy faction `China 2027`** =
     `china_2020.json` with the obsolete **HQ-2 dropped** and **SA-20/S-300PMU-1 +
@@ -218,7 +218,16 @@ file. This guide is the map; those are the territory.
     now sit SW of Guam, **FOB Uracus reverts to RED** (a blue island 780 km behind red
     lines was the other half of the sandwich), and red's 3 carriers / 2 LHAs / 18-hull
     screen are pulled from 398–854 km into the **60–330 km Guam–Saipan corridor** so they
-    can contest it. Blue now occupies −102…+11 km and red 60…781 km, unbroken; in-game pass = checklist **T5**, the riskiest bit being whether
+    can contest it. Blue now occupies −102…+11 km and red 60…781 km, unbroken.
+    **F-22A det at Andersen** (`f22_raptor` preseeded — the real Raptor rotation base),
+    kept *alongside* a trimmed F-15C squadron so a host without the mod still has an
+    air-superiority arm (the carrier's legacy-Hornet pattern). Fixed in passing:
+    **`F-22A.yaml` authored no `max_range`**, so it silently fell back to the 150 NM
+    default — less than half the F-15C's 400 — which would have range-gated the Raptor
+    out of the PLAN carrier groups (108–157 NM) and everything north of Saipan; now an
+    honest `max_range: 450` (fleet-wide data fix, upstream-carve candidate). Still
+    wrong in that yaml and deliberately untouched: its radios are the **P-51's
+    SCR-522**, flagged by an in-tree comment and left for its own change; in-game pass = checklist **T5**, the riskiest bit being whether
     a launcher scoots into the sea (the §49 radius is not landmap-checked). NEW game required
   - `414th-iraq-map-2928-notes.md` — **what DCS 2.9.28's Iraq map content unlocks** (design +
     authoring plan, no code/`.miz` edits yet; scoped 2026-07-26 off the 2.9.28.26283 changelog,

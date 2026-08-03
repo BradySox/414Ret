@@ -25,3 +25,9 @@ tasks:
 
 # Air-to-air refueling method (receiver).
 air_refuel_type: boom
+
+# Without this the airframe falls back to the 150 NM default -- less than half the
+# F-15C's authored 400 NM, which is backwards for a fighter whose internal-fuel combat
+# radius exceeds the Eagle's. 450 keeps it in step with the rest of the fleet's
+# (deliberately conservative) values: F-15C 400, F-16C 350.
+max_range: 450

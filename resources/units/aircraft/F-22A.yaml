@@ -13,10 +13,16 @@ role: Stealth Air-Superiority Fighter
 variants:
   F-22A Raptor: {}
 radios:
-  # I seriously doubt this is using the Mustang's radio but this is what was
-  # here before.
-  intra_flight: SCR-522
-  inter_flight: SCR-522
+  # Was SCR-522 (the P-51's set) with a comment doubting it. The doubt was
+  # right about the name and wrong about the band: the Grinnelli mod's
+  # F-22A.lua models a plain editable VHF radio (HumanRadio, 100.000-156.000
+  # MHz AM), which is exactly the SCR-522's range, so the placeholder happened
+  # to allocate tunable frequencies. An AN/ARC-210 would not - its first range
+  # is 225-400 MHz and that is what the allocator draws from, so a player F-22A
+  # would be assigned an intra-flight channel the cockpit cannot tune.
+  # Repointed to a correctly-named entry covering the band the mod actually has.
+  intra_flight: F-22A VHF
+  inter_flight: F-22A VHF
 tasks:
   BARCAP: 725
   Escort: 680

@@ -379,6 +379,22 @@ RADIOS: List[Radio] = [
             ),
         ),
     ),
+    # F-22A (Grinnelli Designs mod).
+    #
+    # NOT an AN/ARC-210, despite the real jet's UHF-capable CNI suite. The mod's
+    # own F-22A.lua declares:
+    #
+    #     HumanRadio = { frequency = 127.5, editable = true,
+    #                    minFrequency = 100.000, maxFrequency = 156.000,
+    #                    modulation = MODULATION_AM }
+    #
+    # so the modelled cockpit radio tunes 100-156 MHz AM and nothing else.
+    # AN/ARC-210's first range is 225-400 MHz, and random_frequency() only ever
+    # draws from ranges[0], so declaring one here would hand every player-crewed
+    # F-22A flight an intra-flight channel its cockpit physically cannot tune.
+    # Band-identical to the SCR-522 the yaml used to borrow; named honestly for
+    # the same reason A.R.I. 1063 and R&S Series 6000 are separate entries.
+    Radio("F-22A VHF", (RadioRange(MHz(100), MHz(156), kHz(25), Modulation.AM),)),
 ]
 
 

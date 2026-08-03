@@ -73,6 +73,13 @@ class Sitrep:
     #: alternate conditions are configured; rides along with real news like the
     #: will band. Absent on pre-feature pickled sitreps (read via getattr).
     victory_lines: List[str] = field(default_factory=list)
+    #: "The Wing Grows" (414th): squadrons that joined the air wing this turn,
+    #: e.g. "VF-154 (F-14A) arrived at Nordholz". Appended by
+    #: wing_growth.promote_due_arrivals during turn initialization, which runs
+    #: after this sitrep was recorded -- the list is mutated in place, which a
+    #: frozen dataclass permits. Absent on pre-feature pickled sitreps (read via
+    #: getattr).
+    arrivals: List[str] = field(default_factory=list)
 
     @property
     def is_empty(self) -> bool:
@@ -87,6 +94,10 @@ class Sitrep:
             or self.pilots_recovered
             or getattr(self, "pows_held", None)
             or getattr(self, "pilots_mia", None)
+            # An arrival IS news -- unlike the C2/victory lines it is a discrete
+            # event, and "the Prowlers arrived" is exactly the thing a quiet
+            # turn should still tell the player.
+            or getattr(self, "arrivals", None)
         )
 
     @property
@@ -168,6 +179,9 @@ class Sitrep:
         # capped by the recorder; rides along with real news.
         for victory_line in getattr(self, "victory_lines", None) or []:
             lines.append(victory_line)
+        # The Wing Grows (getattr for pre-feature pickled sitreps).
+        for arrival in getattr(self, "arrivals", None) or []:
+            lines.append(f"ARRIVED: {arrival}")
         return lines
 
 

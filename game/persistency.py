@@ -437,6 +437,13 @@ def setup(user_folder: str, prefer_liberation_payloads: bool, port: int) -> None
     _prefer_liberation_payloads = prefer_liberation_payloads
     _server_port = port
     _create_dir_if_needed(save_dir())
+    # A mod payload file pydcs cannot parse otherwise raises out of whatever first
+    # asked for a loadout -- which aborts a whole planning pass when that caller is
+    # inside plan_missions. Patched here because every entry point (app, tools,
+    # tests) goes through setup(); qt_ui.main also calls it, and it is idempotent.
+    from game.dcs.payloadpatch import patch_pydcs_payload_loader
+
+    patch_pydcs_payload_loader()
 
 
 def base_path() -> Path:

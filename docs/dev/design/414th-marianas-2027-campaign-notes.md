@@ -451,6 +451,63 @@ pass could not serve.
 
 ---
 
+## The turn-1 ATO was 100% defensive (diagnosed + fixed 2026-08-03)
+
+Flown save `china.retribution`, turn 1: **33 packages, 28 of them BARCAP, ZERO offensive
+flights** — no strike, SEAD, DEAD, anti-ship or OCA — with 71 of the wing's 223 airframes
+tasked and every offensive squadron (F-15E, F-16CM, B-1B, both F/A-18F squadrons, the
+Growler, all 20 Harriers) sitting at 0. The commander was **not** blind: `TheaterState`
+showed 25 enemy air defenses, 25 strike targets, 13 enemy ships, 6 vulnerable CPs. Three
+causes, established by re-planning the real save with one lever moved at a time:
+
+1. **BARCAP demand consumed the entire fighter force.** Rounds per objective are
+   `ceil(desired_player_mission_duration / (desired_barcap_mission_duration -
+   barcap_overlap_time))`, then `AirspaceGeometry.barcap_rounds` scales by threat up to
+   `BARCAP_THREAT_CEILING` (2) **and doubles again for a fleet CP**. This laydown has
+   **four fleet CPs** (2 CVN + 2 LHA — the fleet expansion) out of seven defended
+   objectives, so the ceiling case is 4x4 + 3x2 = **22 flights = 44 of the wing's 66
+   fighters**. Every offensive package then proposed its escort into an empty pool and
+   scrubbed, because modern doctrine had `plan_strikes_without_full_escort=False` **and**
+   `strike_escort_reserve=0`.
+2. **The 150 NM range gate cannot serve a 421 NM theatre.** Guam→Uracus is 780 km. Raising
+   it **alone changed nothing** (BARCAP still held every fighter) — it decides how much of
+   red is reachable once fighters are free, and it is worth a lot: with escorts available,
+   400 NM vs 300 NM moved anti-ship 6→10 and added the deep Strike packages.
+3. `strike_through_air_defense_threat` was **not** a factor — flipping it changed nothing.
+
+Fixes, all three needed:
+
+| Lever | Where | Value |
+|---|---|---|
+| `strike_escort_reserve` | `MODERN_DOCTRINE` (fork-wide) | 0 → **8** |
+| `max_mission_range_planes` | campaign `settings:` | 150 → **400** |
+| `desired_barcap_mission_duration` | campaign `settings:` | 45 → **60 min** (2 rounds → 1) |
+
+The doctrine change was taken **fork-wide rather than campaign-scoped** (DM call): the
+squeeze is a *ratio* problem, not a fighter-poor-era one, so any modern campaign with more
+exposed objectives than fighters hits it. Cold War/WWII untouched; Red Tide is Cold War
+doctrine and is unaffected.
+
+Measured on a freshly generated game, BLUE: **26 pkg / 22 BARCAP / 2 offensive / 74 aircraft
+→ 27 pkg / 14 BARCAP / 25 offensive / 143 aircraft.** RED (also modern doctrine) gains
+symmetrically, 0 → 2 offensive.
+
+**Found on the way, and load-bearing:** the CJS Super Hornet payload files index their pylon
+tables with named constants (`[WTL] = ...`), which pydcs cannot parse. The raise truncated
+the payload scan *before* `resources/customized_payloads`, so the fork's own authored fits
+were never read — **FA-18F and EA-18G had ZERO loadouts, FA-18E had 2 of 13**. Fixed in
+`game/dcs/payloadpatch.py` (skip the file, keep walking); restores 13/13/4. See
+`tests/fourteenth/test_super_hornet_payloads.py`.
+
+**The CH Arleigh Burke Flight III is dropped from every blue faction.** The mod genuinely
+declares `airWeaponDist = airFindDist = 650000` (**351 NM**, verified against the installed
+`CH Military Asset Pack USA 1.5.0` database — this is not a fork transcription error), vs
+160 km for the Flight IIA. A single hull blanketing the theatre in a threat ring corrupts
+threat-zone math for both sides. Re-tuning the value was rejected: it would diverge the
+registration from the mod and break the export-verification invariant.
+
+---
+
 ## Open questions for the in-game pass (T5)
 
 - Do the three PLARF sites actually scoot on their islands? Rota/Tinian are small — the §49

@@ -414,10 +414,18 @@ def test_dispatcher_tuning_passes_settings_through_for_other_doctrines() -> None
 
 
 def test_vietnam_reserves_fighters_for_strike_escort() -> None:
-    # The "reserve a fighter ahead of BARCAP" lever: only Vietnam holds fighters
-    # back so always_escort_strikes can actually fill (naked-B-52 playtest fix).
+    # The "reserve a fighter ahead of BARCAP" lever, added for the naked-B-52
+    # playtest so always_escort_strikes could actually fill.
     assert VIETNAM_DOCTRINE.strike_escort_reserve == 4
-    for d in (MODERN_DOCTRINE, COLDWAR_DOCTRINE, WWII_DOCTRINE):
+    # Modern gained its own reserve on 2026-08-03: the squeeze is a ratio problem,
+    # not a fighter-poor-era one, and a modern theater hits it whenever exposed
+    # objectives outnumber the fighter pool (Marianas 2027 planned 22 BARCAP
+    # flights = 44 of 66 fighters and every offensive package scrubbed for want of
+    # an escort). Larger than Vietnam's because a modern package is escort-hungrier
+    # -- SEAD escort and jammer slots on top of the A2A escort.
+    assert MODERN_DOCTRINE.strike_escort_reserve == 8
+    # The eras that have never shown the failure keep stock behaviour.
+    for d in (COLDWAR_DOCTRINE, WWII_DOCTRINE):
         assert d.strike_escort_reserve == 0
 
 

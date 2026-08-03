@@ -262,7 +262,6 @@ file. This guide is the map; those are the territory.
     destroyers stay concentrated with the carrier/LHA groups; 250 km rings **13 → 4**. The
     heavy preset was **deleted, not left registered-and-unused** — an unreferenced Navy
     preset is a hazard, since any future unpinned marker coin-flips onto it. `Naval-17/18/27`
-<<<<<<< HEAD
     are unpinned deliberately (they bind BLUE and screen the US carrier group). **The
     Type 055 is REMOVED from the roster (flown Tacview 2026-08-03):** the first mission
     produced **374 launches, essentially all in the first five minutes** — both fleets
@@ -275,12 +274,45 @@ file. This guide is the map; those are the territory.
     intercept shots in the same file). Deferred alternatives: push the PLAN past the 500 km
     detection range (undoes the compression) or give ships a weapons-hold start (engine
     change, own setting + in-game pass), and **a preset must fill every layout slot it wants to control**
-=======
-    are unpinned deliberately (they bind BLUE and screen the US carrier group), and **a preset must fill every layout slot it wants to control**
->>>>>>> origin/main
     (a frigates-only preset leaves Destroyer×2 empty, `has_unit_for_layout_group` fills it
     from the roster, and the roster's destroyers are the 250 km hulls — so the "light"
-    group silently came back out at 250 km); in-game pass = checklist **T5**, the riskiest bit being whether
+    group silently came back out at 250 km).
+    **Turn-1 ATO was 100% defensive — diagnosed + fixed 2026-08-03** (flown `china.retribution`:
+    33 packages, 28 BARCAP, **zero** strike/SEAD/DEAD/anti-ship, 71 of 223 airframes tasked,
+    every offensive squadron at 0 — while `TheaterState` showed 25 SAM sites / 25 strike
+    targets / 13 ships, so the commander was not blind). Established by re-planning the real
+    save one lever at a time. **(1) BARCAP ate the fighter force**: rounds are
+    `ceil(player_mission_duration / (barcap_duration - overlap))` then threat-scaled to
+    `BARCAP_THREAT_CEILING` (2) **and doubled again for a fleet CP** — this laydown has
+    **four** fleet CPs (2 CVN + 2 LHA) of 7 defended objectives, so the ceiling case is
+    4×4 + 3×2 = **22 flights = 44 of the wing's 66 fighters**; offensive packages then
+    proposed escorts into an empty pool and scrubbed (modern doctrine had
+    `plan_strikes_without_full_escort=False` **and** `strike_escort_reserve=0`, neither
+    campaign-authorable). **(2) the 150 NM gate cannot serve a 421 NM theatre** (Guam→Uracus
+    780 km) — raising it **alone changed nothing** (BARCAP still held every fighter); it
+    decides how much of red is *reachable* once they are free (400 vs 300 NM moved anti-ship
+    6→10 and added the deep Strike packages). **(3)** `strike_through_air_defense_threat` was
+    **not** a factor. Fixes, all three needed: **`MODERN_DOCTRINE.strike_escort_reserve` 0 → 8**
+    (taken **fork-wide, DM call** — the squeeze is a *ratio* problem, not a fighter-poor-era
+    one, so any modern campaign with more exposed objectives than fighters hits it; Cold
+    War/WWII untouched, Red Tide is Cold War doctrine and unaffected) + campaign preseeds
+    `max_mission_range_planes: 400` and `desired_barcap_mission_duration: 60` (2 rounds → 1).
+    Measured on a fresh game, BLUE **26 pkg / 22 BARCAP / 2 offensive / 74 ac → 27 pkg /
+    14 BARCAP / 25 offensive / 143 ac**; RED (also modern) 0 → 2. **Found on the way:** the CJS
+    Super Hornet payload files index their pylon tables with named constants (`[WTL] = …`),
+    which pydcs cannot parse — and the raise truncated the payload scan *before*
+    `resources/customized_payloads`, so the fork's own authored fits were never read
+    (**FA-18F and EA-18G had ZERO loadouts, FA-18E 2 of 13**). `game/dcs/payloadpatch.py` skips
+    the file and keeps walking (called from `persistency.setup`, so headless paths are covered
+    too — the app-side copy in `qt_ui/main.py` is now a wrapper); restores 13/13/4. Tests
+    `tests/fourteenth/test_super_hornet_payloads.py`. **The CH Arleigh Burke Flight III is
+    dropped from every blue faction** (`usa_2020`, `blufor_current`, `nato_baltic_2027`): the
+    mod genuinely declares `airWeaponDist = airFindDist = 650000` (**351 NM**, verified against
+    the installed `CH Military Asset Pack USA 1.5.0` database — NOT a fork transcription error)
+    vs 160 km for the Flight IIA, and one hull blanketing the theatre in a threat ring corrupts
+    threat-zone math for both sides; re-tuning the value was rejected (it would diverge the
+    registration from the mod and break the export-verification invariant).
+    In-game pass = checklist **T5**, the riskiest bit being whether
     a launcher scoots into the sea (the §49 radius is not landmap-checked). NEW game required
   - `414th-iraq-map-2928-notes.md` — **what DCS 2.9.28's Iraq map content unlocks** (design +
     authoring plan, no code/`.miz` edits yet; scoped 2026-07-26 off the 2.9.28.26283 changelog,

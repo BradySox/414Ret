@@ -315,6 +315,19 @@ MODERN_DOCTRINE = Doctrine(
     escort_spacing=feet(2000),
     sead_escort_engagement_range=nautical_miles(40),
     escort_engagement_range=nautical_miles(30),
+    # The reserve was left at 0 here on the assumption that the squeeze it solves is a
+    # fighter-poor-era problem (Vietnam sets 4). It is not -- it is a RATIO problem, and
+    # a modern theater hits it whenever exposed objectives outnumber the fighter pool.
+    # Measured on Marianas 2027 (Guam vs the PLA, 7 defended objectives of which FOUR
+    # are fleet CPs -- and `AirspaceGeometry.barcap_rounds` doubles rounds for a fleet):
+    # BARCAP demand came to 22 flights = 44 of the wing's 66 fighters, so every strike,
+    # SEAD, DEAD and anti-ship package that proposed an escort found the pool empty and
+    # scrubbed (modern doctrine also has plan_strikes_without_full_escort=False). The
+    # ATO was 100% defensive: 26 packages, 22 of them BARCAP, 2 offensive flights.
+    # With this reserve, `trim_rounds_for_escort_reserve` gives up BARCAP rounds at the
+    # least-threatened bases (never below one round each) and the same wing plans 14
+    # BARCAP + 25 offensive flights. 8 airframes = four 2-ship escorts held back.
+    strike_escort_reserve=8,
 )
 
 COLDWAR_DOCTRINE = Doctrine(

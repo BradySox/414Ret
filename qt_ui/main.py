@@ -1,7 +1,6 @@
 import argparse
 import logging
 import ntpath
-import re
 import sys
 import tempfile
 from datetime import datetime
@@ -15,8 +14,6 @@ from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import QApplication, QCheckBox, QSplashScreen
 from dcs.liveries.liverycache import LiveryCache
 from dcs.payloads import PayloadDirectories
-from dcs.unittype import FlyingType
-import dcs.lua as dcs_lua
 
 from game import Game, VERSION, logging_config, persistency
 from game.ato import FlightType
@@ -48,109 +45,13 @@ from qt_ui.windows.preferences.QLiberationFirstStartWindow import (
 THIS_DIR = Path(__file__).parent
 
 
-def _uses_unsupported_lua_table_indices(lua_text: str) -> bool:
-    local_names = set(re.findall(r"^\s*local\s+([A-Za-z_]\w*)\s*=", lua_text, re.M))
-    return any(
-        re.search(rf"\[\s*{re.escape(name)}\s*\]\s*=", lua_text) for name in local_names
-    )
-
-
-def _payload_unit_type_from_text(lua_text: str) -> Optional[str]:
-    match = re.search(
-        r'(?:\["unitType"\]|unitType)\s*=\s*"([^"]+)"',
-        lua_text,
-    )
-    if match:
-        return match.group(1)
-    return None
-
-
 def _patch_pydcs_payload_loader() -> None:
-    # pydcs's load_payloads() catches SyntaxError but not ValueError.
-    # Some mod payload Lua files (e.g. CJS Super Hornet v2.4) use local variable
-    # names as table indices ([OBL], [JML], etc.) which the pydcs Lua parser
-    # cannot handle and raises ValueError.  We patch load_payloads() so those
-    # files are skipped with a warning rather than crashing the whole turn.
-    import types
-    import dcs.lua as lua
+    # Moved to game.dcs.payloadpatch so headless entry points (tools, tests, the
+    # sim) get the same protection; persistency.setup() also calls it. Kept as a
+    # thin wrapper because main() calls it before persistency.setup().
+    from game.dcs.payloadpatch import patch_pydcs_payload_loader
 
-    original_load_payloads = FlyingType.load_payloads.__func__  # type: ignore[attr-defined]
-
-    @classmethod  # type: ignore[misc]
-    def _patched_load_payloads(cls):  # type: ignore[override]
-        from dcs.payloads import PayloadDirectories
-        import sys
-
-        if FlyingType._UnitPayloadGlobals is None:
-            from dcs import task
-
-            FlyingType._UnitPayloadGlobals = {
-                v.internal_name: v.id for k, v in task.MainTask.map.items()
-            }
-
-        FlyingType.scan_payload_dir()
-        if cls.payloads is not None:
-            return cls.payloads
-        cls.payloads = {}
-
-        for payload_dir in PayloadDirectories.payload_dirs():
-            if not payload_dir.exists():
-                continue
-            for payload_path in payload_dir.glob("*.lua"):
-                lua_text: Optional[str] = None
-                try:
-                    FlyingType._payload_cache[payload_path]
-                except KeyError:
-                    lua_text = payload_path.read_text(encoding="utf-8")
-                    payload_unit_type = _payload_unit_type_from_text(lua_text)
-                    if payload_unit_type is None:
-                        continue
-                    FlyingType._payload_cache[payload_path] = payload_unit_type
-                if (
-                    FlyingType._payload_cache[payload_path] == cls.id
-                    and payload_path.exists()
-                ):
-                    if lua_text is None:
-                        lua_text = payload_path.read_text(encoding="utf-8")
-                    if _uses_unsupported_lua_table_indices(lua_text):
-                        import logging as _logging
-
-                        _logging.getLogger("pydcs").warning(
-                            "Skipping payload file with unsupported Lua syntax "
-                            "(local variable indices): %s",
-                            payload_path,
-                        )
-                        continue
-                    try:
-                        payload_main = lua.loads(
-                            lua_text,
-                            _globals=FlyingType._UnitPayloadGlobals,
-                        )
-                    except SyntaxError:
-                        print(
-                            f"Error parsing lua file '{payload_path}'",
-                            file=sys.stderr,
-                        )
-                        raise
-                    except ValueError:
-                        import logging as _logging
-
-                        _logging.getLogger("pydcs").warning(
-                            "Skipping payload file with unsupported Lua syntax "
-                            "(local variable indices): %s",
-                            payload_path,
-                        )
-                        continue
-                    pays = payload_main["unitPayloads"]
-                    if pays["unitType"] == cls.id:
-                        for load in pays["payloads"].values():
-                            name = load["name"]
-                            if name not in cls.payloads:
-                                cls.payloads[load["name"]] = load
-
-        return cls.payloads
-
-    FlyingType.load_payloads = _patched_load_payloads
+    patch_pydcs_payload_loader()
 
 
 def inject_custom_payloads(user_path: Path) -> None:

@@ -77,6 +77,32 @@ settings:
   perf_ground_ai_sleep: true
   perf_aaa_site_sleep: true
 
+  # -- Making the auto-planner fight. Measured on a flown turn-1 save whose ATO came
+  # out 100% defensive: 33 packages, 28 of them BARCAP, and ZERO strike/SEAD/DEAD/
+  # anti-ship. Two independent causes compounded, and BOTH of these lines are needed
+  # -- either one alone leaves the offensive ATO empty.
+  #
+  # 1. BARCAP was eating the entire fighter force. Rounds per objective are
+  #    ceil(desired_player_mission_duration / (desired_barcap_mission_duration -
+  #    barcap_overlap_time)), so the 60-minute mission against the stock 45-minute
+  #    station needed TWO rounds over each of 7 objectives = 28 BARCAP flights = all
+  #    66 fighters in the wing. Every offensive package then scrubbed for want of its
+  #    mandatory escort (modern doctrine has plan_strikes_without_full_escort=False
+  #    and strike_escort_reserve=0, and neither is campaign-authorable). Holding the
+  #    station for the full mission drops it to ONE round -- 14 BARCAP flights -- and
+  #    frees ~28 fighters to escort the shooters. This is not a fudge: a 60-minute
+  #    CAP vulnerability window is exactly how carrier BARCAP is flown, and this wing
+  #    has the KC-135s plus organic Super Hornet tankers to hold it.
+  desired_barcap_mission_duration: 60
+  # 2. The 150 NM default cannot serve this theatre. Guam to Uracus is 780 km (421 NM)
+  #    and the PLAN groups are spread the length of the chain, so at 150 NM the deep
+  #    half of the enemy order of battle was not merely unattacked, it was unreachable
+  #    -- the range gate rejected every squadron before the target was considered.
+  #    (Raising this ALONE changed nothing, because BARCAP still held every fighter;
+  #    it is what decides how much of red you can reach once they are free.) Same
+  #    campaign-preseed precedent as Enduring Resolve's 800 km carrier stand-off.
+  max_mission_range_planes: 400
+
 plugins:
   # Saved plugin defaults layer UNDER campaign preseeds, so a host whose defaults have
   # these unticked would otherwise silently lose the runtime half of each feature

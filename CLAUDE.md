@@ -486,6 +486,21 @@ file. This guide is the map; those are the territory.
   - Drafts / not-yet-landed (design only): `414th-mission-planning-wiki-rework.md`
     (upstream wiki rewrite), `414th-scenery-import-notes.md` (scenery strike targets),
     `turnless.md` (turnless-campaign exploration),
+    `414th-single-player-loop-notes.md` (**SP Pilot Mode** — why SP campaigns die after turn 1
+    while the 414th's MP campaigns finish: in MP you play a *pilot*, in SP you play the DM
+    **and** the pilot, and the DM job has no fun in it. The stop point is reproducibly "accept
+    results → now plan turn 2", compounded by turn 1 being the best mission by construction, a
+    new campaign being cheaper than the next turn, and the §29 SITREP explaining why turn 2
+    matters only *after* you commit to turn 2. Scopes an additive express lane in four stages
+    — S1 "Accept results & fly next" (chains the existing `process_debriefing` →
+    `pass_turn` → generate path), S2 the 3-sortie board (re-seat one flight via
+    `FlightMembers.set_pilot`; everything else stays AI), S3 the pre-turn hook card (§21 MIA
+    capture clocks, §75 victory progress, the COIN fuses/windows — all already-tracked state,
+    pulled *ahead* of the commitment), S4 the guardrails. Records what already exists so it
+    isn't rebuilt (`AutoAtoBehavior`, `auto_ato_player_missions_asap`, §43/§73 defaults) and
+    the honest risk: **speed is not motivation** — S1+S2 remove the reason to stop, only S3
+    supplies a reason to continue, so a one-stage ship should be S1+S3. Six open squadron
+    calls; smaller SP ATOs / victory-arc authoring / a pilot career page deliberately deferred),
     `414th-ui-redesign-directions.md` (**UI redesign — DECIDED 2026-07-25: 1 → 2**; D1 step 1
     LANDED. The DM dropped **D3** ("useless" — second-screen planning was its whole
     justification), confirmed **D2** as a *requirement* not a nicety ("we need to keep the map

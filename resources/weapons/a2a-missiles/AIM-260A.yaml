@@ -1,0 +1,11 @@
+# AIM-260A (JATM), shipped by the F-22A pack. Dated at its projected IOC; no
+# stock or fork payload frags it today, so this only date-gates what the payload
+# editor offers. Falls back to AIM-120D.
+name: AIM-260A
+year: 2026
+fallback: AIM-120D
+clsids:
+  - "{AIM-260A}"   # AIM-260A - Active Radar AAM
+  - "{AIM_260A_IRST_LEFT}"   # AIM-260A - Active Radar AAM + IRST POD
+  - "{AIM_260A_IRST_RIGHT}"   # AIM-260A - Active Radar AAM + IRST POD
+  - "{LAU_115_2xAIM-260A}"   # 2x AIM-260A - Active Radar AAM

@@ -159,10 +159,41 @@ def _older_group(group: WeaponGroup, depth: int) -> WeaponGroup:
     return current
 
 
+def store_family(clsid: str) -> str:
+    """The store's namespace -- a mod prefix like `SUPERHORNET`, or "" for stock.
+
+    A mod that models its own pylons namespaces every store it ships
+    (`{SUPERHORNET_PYLON_10_AM_1X_AIM-120C}`) **and inherits the stock entries
+    into the same pydcs pylon table**. So a stock store is `can_equip`-legal on
+    the mod jet while not actually being mountable on the mod's own geometry, and
+    DCS silently drops a store it cannot resolve -- the pylon spawns **EMPTY**.
+    That is the same failure mode §71 documents for `(XW)` fits flown without
+    their pylon injection.
+
+    Observed on a generated Marianas mission: a CJS F/A-18E had its station-8
+    `{SUPERHORNET_PYLON_10_AM_1X_AIM-120C}` aged to `{LAU-115 - AIM-7H}`, a stock
+    Hornet rack, because `AIM-7MH` registers **four clsids and not one of them is
+    Super-Hornet-native** (unlike AIM-120C/AIM-120B/AIM-9X, which carry 22/24/62
+    mod stores and therefore substituted mod-natively all along).
+    """
+    head = clsid.strip("{}")
+    marker = "_PYLON_"
+    if marker in head:
+        return head.split(marker, 1)[0]
+    return ""
+
+
 def _substitute(weapon: Weapon, pylon: Pylon, depth: int) -> Optional[Weapon]:
-    """The oldest same-family weapon within `depth` rungs that fits this pylon."""
+    """The oldest same-family weapon within `depth` rungs that fits this pylon.
+
+    "Family" is two things at once: the weapon family (`_older_group`) and the
+    **store family** (`store_family`). A substitution that leaves the store family
+    is refused outright rather than downgraded further -- a flight keeping its
+    modern missile is strictly better than one carrying an invisible older one.
+    """
     if weapon.weapon_group.type in PROTECTED_TYPES:
         return None
+    family = store_family(weapon.clsid)
     # Try the requested depth first, then shallower, so a flight that cannot go
     # three rungs deep on this station still goes as deep as it can.
     for attempt in range(depth, 0, -1):
@@ -170,6 +201,8 @@ def _substitute(weapon: Weapon, pylon: Pylon, depth: int) -> Optional[Weapon]:
         if group is weapon.weapon_group:
             continue
         for candidate in group.weapons:
+            if store_family(candidate.clsid) != family:
+                continue
             if pylon.can_equip(candidate):
                 return candidate
     return None

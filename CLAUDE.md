@@ -3531,7 +3531,20 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     `object.__setattr__` like `target_overrides`, `getattr`-guarded for old saves) and the
     walk stops at a category boundary; equipment types (`TGP`/`JAMMER`/`OFFENSIVE_JAMMER`/
     `DECOY`) are never touched at all; and a **player-customised loadout is left exactly as
-    built**. **The year guard is the second load-bearing one** (added on review before merge,
+    built**. **The STORE-family guard is the third** (`store_family`, added 2026-08-04 off a
+    flown Marianas miz): a mod that models its own pylons namespaces every store it ships
+    (`{SUPERHORNET_PYLON_10_AM_1X_AIM-120C}`) **and inherits the stock entries into the same
+    pydcs pylon table**, so a stock store passes `can_equip` on the mod jet without being
+    mountable on the mod's geometry — DCS drops it and **the pylon spawns EMPTY** (the §71
+    `(XW)`-without-injection failure mode). Observed: a CJS F/A-18E's station-8 AMRAAM aged to
+    `{LAU-115 - AIM-7H}`, a **stock Hornet rack**, because `AIM-7MH` registers four clsids and
+    **none is Super-Hornet-native** — unlike AIM-120C/B/9X, which carry 22/24/62 mod stores and
+    substituted mod-natively all along. A substitution that would leave the store family is now
+    **refused outright** rather than downgraded further (a flight keeping its modern missile
+    beats one carrying an invisible older one); measured **0** family-leaving substitutions
+    across every Super Hornet station × store × depth. Note this is a *registration* gap in
+    `AIM-7MH.yaml` as much as a walk bug — registering the mod's Sparrows would let that rung
+    be used mod-natively. **The year guard is the second load-bearing one** (added on review before merge,
     after the first cut shipped without it): `fallback` answers "what do I use *instead* when
     this is unavailable", which is a **date-gating** answer and is **not monotonic in year** —
     **18 same-category fallbacks in the shipped data point at a NEWER weapon**, so an

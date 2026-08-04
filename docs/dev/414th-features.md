@@ -1486,6 +1486,33 @@ behavior, so it's an upstream-PR candidate. Tests: `tests/test_dead_planning.py`
   `tests/missiongenerator/test_helo_terrain_anchors.py`,
   `tests/missiongenerator/test_airstart_unit_alt_type.py`. All three are upstream-shared
   (carve candidates). Checklist **C8** — needs an in-game pass.
+- **"Mission cannot be saved due to errors" — locked speed on the second of two adjacent
+  TOTs (the recurring generated-mission rejection, fixed 2026-08-03).** DCS refused to load
+  a generated Marianas turn-2 miz with *"All waypoints (2-2) have locked speed and
+  surrounded by waypoints 1 and 2 with locked time!"* on `Kunlun Shan BARCAP|27|68|J-15
+  Flanker X-2|`. The rejection rule is `verifyRouteSeg_` in DCS's own
+  `MissionEditor/modules/me_route.lua`: walking the route TOT to TOT, every segment bounded
+  by two ETA-locked waypoints must contain at least one waypoint with an **unlocked speed**
+  in the range `(from, to]` — **inclusive of the closing waypoint**, so two *adjacent*
+  ETA-locked waypoints are rejected whenever the second one is also speed-locked.
+  `WaypointGenerator._resolve_locked_speed_time_conflicts` modelled the span as strictly
+  interior (it only unlocked a waypoint with an ETA-locked neighbour on **both** sides), so
+  the adjacent case was invisible to it. The trigger is `PydcsWaypointBuilder.set_waypoint_tot`,
+  which speed-locks a waypoint whose ETA clamps to 0: an **air-started** flight whose next TOT
+  has already elapsed gets an ETA-0 spawn point (`ensure_in_flight_route_has_locked_time`)
+  immediately followed by an ETA-0 TOT waypoint, both speed-locked — hence the "I get this a
+  lot" pattern, since it needs only a regeneration after the sim has advanced past a
+  racetrack/JOIN TOT. The resolver is now a faithful port of the DCS rule (interior unlocking
+  is unchanged; if the inclusive span still has no unlocked speed, the closing waypoint's
+  speed lock is dropped too). Times are never touched — they sync the flight to its package
+  and late activation requires the first waypoint's TOT. The `_route_is_dcs_legal` helper in
+  `tests/missiongenerator/test_helo_terrain_anchors.py` was likewise carrying the old
+  strictly-interior model and is now a port of `verifyRoute`. Verified by replaying the
+  archived rejected route (§66 archive `marianas_second_island_chain_2027_turn02_20260803-231832.miz`)
+  through the new resolver: rejected → legal. Tests
+  `tests/missiongenerator/aircraft/test_waypointgenerator.py`. Upstream-shared (carve
+  candidate) — no setting, no save change, existing saves fix themselves on the next
+  generation.
 - AWACS orbit stacking + direction: `game/ato/flightplans/aewc.py`.
 - Tanker orbit placement/deconfliction: `game/ato/flightplans/theaterrefueling.py`.
 - **Support flights sharing one radio channel (the flown "I can't talk to the A-6 tanker",

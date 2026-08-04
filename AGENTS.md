@@ -1280,6 +1280,27 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
    Upstream-shared (`setup_radios` is upstream code; only the §44 package shape that exposes it
    is fork-side); carve candidate. Tests
    `tests/missiongenerator/aircraft/test_flightgroupconfigurator.py`.
+   **"Mission cannot be saved due to errors" — locked speed on the second of two adjacent
+   TOTs (2026-08-03, the recurring generated-mission rejection):** DCS refused a generated
+   Marianas turn-2 miz with *"All waypoints (2-2) have locked speed and surrounded by
+   waypoints 1 and 2 with locked time!"*. The rule is `verifyRouteSeg_` in DCS's own
+   `MissionEditor/modules/me_route.lua` — walking the route TOT to TOT, each segment bounded
+   by two ETA-locked waypoints needs one **speed-unlocked** waypoint in `(from, to]`,
+   **inclusive of the closing waypoint**, so two *adjacent* ETA-locked waypoints are rejected
+   when the second is also speed-locked.
+   `WaypointGenerator._resolve_locked_speed_time_conflicts` modelled the span as strictly
+   interior (unlocking only waypoints with an ETA-locked neighbour on **both** sides), so the
+   adjacent case was invisible. The trigger is `set_waypoint_tot` speed-locking a waypoint
+   whose ETA clamps to 0: an **air-started** flight whose next TOT has already elapsed gets an
+   ETA-0 spawn point (`ensure_in_flight_route_has_locked_time`) immediately followed by an
+   ETA-0 TOT waypoint, both speed-locked — which is why it recurs (it needs only a
+   regeneration after the sim has advanced past a racetrack/JOIN TOT). The resolver is now a
+   faithful port of the DCS rule; times are never touched (they sync the package, and late
+   activation requires the first waypoint's TOT). The `_route_is_dcs_legal` test helper
+   carried the same wrong model and is now a port of `verifyRoute`. Proven by replaying the
+   §66-archived rejected route through the new resolver (rejected → legal). Tests
+   `tests/missiongenerator/aircraft/test_waypointgenerator.py`. Generation-time ⇒ **existing
+   saves fix themselves on the next regeneration.** Upstream-shared; carve candidate.
 9. **TIC — Troops In Contact** — scripted frontline firefights with per-stance movement +
    414th ambient-fire extension (plugin, default ON).
 10. **CurrentHill Iran assets pack** — Shahed-136, IRGCN FAC, `[CH] Iran 2020` faction.

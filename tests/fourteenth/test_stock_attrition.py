@@ -17,7 +17,7 @@ import dcs.planes as planes
 import pytest
 
 from game import persistency
-from game.data.weapons import WeaponGroup, WeaponType
+from game.data.weapons import Weapon, WeaponGroup, WeaponType
 from game.ato.loadouts import Loadout
 from game.dcs.aircrafttype import AircraftType
 from game.fourteenth.stock_attrition import (
@@ -212,7 +212,9 @@ class TestSubstitutionIsNeverAnUpgrade:
                 continue
             if _older_group(group, 1) is not group:
                 with_depth += 1
-        assert with_depth >= 203
+        # Measured 206 against the shipped weapon data. A drop means either the
+        # walk was narrowed or weapon groups were removed -- both worth a look.
+        assert with_depth >= 206
 
     def test_an_undated_rung_stops_the_walk(self) -> None:
         """An unknown year is unprovable, so it is not treated as older."""
@@ -226,27 +228,46 @@ class TestSubstitutionIsNeverAnUpgrade:
         assert _older_group(group, MAX_DEPTH) is group
 
 
+#: A real F/A-18C air-to-air magazine: four AMRAAMs on the LAU-115 rails plus two
+#: Sidewinders on the tips. Stations and clsids are the airframe's own pydcs pylon
+#: table, so the substitutions below are pylon-legal for real.
+#:
+#: Built here from explicit clsids rather than resolved by name from a shipped
+#: `Retribution BARCAP` payload file, because payload *directories* are registered
+#: by `qt_ui.main.inject_custom_payloads` and not by `persistency.setup`. A
+#: name-resolved fit therefore passes on a developer box (which has the user's own
+#: `Saved Games/.../UnitPayloads`) and raises `StopIteration` in CI, which has no
+#: DCS install and no user payloads at all. Explicit clsids are hermetic.
+HORNET_A2A_STATIONS = {
+    1: "{5CE2FF2A-645A-4197-B48D-8720AC69394F}",  # AIM-9X, left tip
+    2: "{LAU-115 - AIM-120C}",  # AIM-120C
+    3: "{LAU-115 - AIM-120C}",  # AIM-120C
+    7: "{LAU-115 - AIM-120C_R}",  # AIM-120C
+    8: "{LAU-115 - AIM-120C_R}",  # AIM-120C
+    9: "{5CE2FF2A-645A-4197-B48D-8720AC69394F}",  # AIM-9X, right tip
+}
+
+
 class TestOneJetCarriesAMixedMagazine:
     """The point of the feature, and the reason the roll is PER STATION.
 
     Rolling once per flight and applying it everywhere only ages the magazine
     uniformly -- 4x AIM-120C becomes 4x AIM-120B, four identical rounds either
-    way. These drive the real F/A-18C `Retribution BARCAP` fit on real pydcs pylon
-    tables.
+    way. These drive a real F/A-18C air-to-air magazine on real pydcs pylon tables.
     """
 
     @pytest.fixture(autouse=True)
     def _persistency(self, tmp_path: Path) -> None:
-        # Loadout/Pylon resolution needs the weapon DB and payload dirs.
+        # Weapon.with_clsid and Pylon.for_aircraft need the weapon DB.
         persistency.setup(str(tmp_path), prefer_liberation_payloads=False, port=16887)
 
     @staticmethod
     def _hornet_barcap() -> tuple[AircraftType, Loadout]:
         hornet = next(AircraftType.for_dcs_type(planes.FA_18C_hornet))
-        fit = next(
-            l
-            for l in Loadout.iter_for_aircraft(hornet)
-            if l.name == "Retribution BARCAP"
+        fit = Loadout(
+            "Retribution BARCAP",
+            {n: Weapon.with_clsid(c) for n, c in HORNET_A2A_STATIONS.items()},
+            date=None,
         )
         return hornet, fit
 

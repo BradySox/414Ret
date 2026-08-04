@@ -8052,6 +8052,26 @@ depths 0–3, with the headline `AIM-120C → AIM-120B → AIM-7MH → AIM-7M` S
 unchanged. A repo-wide invariant test asserts it over every group, so new weapon data cannot
 reintroduce it silently.
 
+**The store-family guard (2026-08-04).** A mod that models its own pylons namespaces every
+store it ships (`{SUPERHORNET_PYLON_10_AM_1X_AIM-120C}`) **and inherits the stock entries into the
+same pydcs pylon table**. A stock store therefore passes `can_equip` on the mod jet without being
+mountable on the mod's own geometry, and DCS silently drops a store it cannot resolve -- **the pylon
+spawns EMPTY**, the same failure mode §71 documents for `(XW)` fits flown without their pylon
+injection.
+
+Found on a generated Marianas mission: a CJS F/A-18E's station-8
+`{SUPERHORNET_PYLON_10_AM_1X_AIM-120C}` had been aged to `{LAU-115 - AIM-7H}` -- a **stock Hornet
+rack** -- because `AIM-7MH` registers four clsids and **not one of them is Super-Hornet-native**.
+AIM-120C / AIM-120B / AIM-9X carry 22 / 24 / 62 mod stores respectively and had been substituting
+mod-natively all along, which is why only the deep Sparrow rung misbehaved.
+
+`store_family(clsid)` reads the namespace ahead of `_PYLON_` (`"SUPERHORNET"`, or `""` for stock),
+and a substitution that would leave the family is **refused outright** rather than downgraded
+further -- a flight keeping its modern missile is strictly better than one carrying an invisible
+older one. Measured **0** family-leaving substitutions across every Super Hornet station x store x
+depth. Worth noting this is a *registration* gap in `AIM-7MH.yaml` as much as a walk bug:
+registering the mod's own Sparrow stores would make that rung usable mod-natively.
+
 **What it never does.** Touch a **player-customised** loadout (`is_custom`), run with the
 feature off, or make anything *newer*. Note the ordering guarantee is the **year guard above** —
 date gating running afterwards is a *ceiling* ("never newer than the campaign allows"), which is
@@ -8066,7 +8086,7 @@ Generation → Loadouts, `enabled_when=stock_attrition`).
 flights identical; turn 12 one flight on AIM-7MH + AIM-9L; turn 25 three of six on old stock
 (AIM-120B, AIM-7M, AIM-9L/9M) — with `AN/ASQ-228 ATFLIR` untouched in every case.
 
-Tests: `tests/fourteenth/test_stock_attrition.py` (36 — the repo-wide never-an-upgrade invariant, the JDAM→LGB→dumb-bomb ladder, per-family depth floors, and four that drive the real F/A-18C `Retribution BARCAP` fit on real pydcs pylon tables: one jet ends up mixed, twelve flights are not identical, the shipped fit is never mutated in place, and no station is ever upgraded). Checklist: **B42**.
+Tests: `tests/fourteenth/test_stock_attrition.py` (39 — the repo-wide never-an-upgrade invariant, the JDAM→LGB→dumb-bomb ladder, per-family depth floors, and four that drive the real F/A-18C `Retribution BARCAP` fit on real pydcs pylon tables: one jet ends up mixed, twelve flights are not identical, the shipped fit is never mutated in place, and no station is ever upgraded). Checklist: **B42**.
 
 
 ## Code audit fixes — 2026-07-07

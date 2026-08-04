@@ -450,3 +450,67 @@ class TestTheLoadoutHook:
         )
         loadout = SimpleNamespace(is_custom=is_custom)
         assert degrade_loadout_for_stock(loadout, flight) is loadout  # type: ignore[arg-type]
+
+
+class TestSubstitutionStaysInsideTheStoreFamily:
+    """A mod jet must never be handed a stock store.
+
+    A mod that models its own pylons namespaces every store it ships AND inherits
+    the stock entries into the same pydcs pylon table, so a stock store passes
+    `can_equip` on the mod jet without being mountable on the mod's geometry --
+    DCS drops it and the pylon spawns EMPTY.
+
+    Found on a generated Marianas mission: a CJS F/A-18E's station-8
+    `{SUPERHORNET_PYLON_10_AM_1X_AIM-120C}` had been aged to `{LAU-115 - AIM-7H}`,
+    a stock Hornet rack, because `AIM-7MH` registers four clsids and none of them
+    is Super-Hornet-native.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _persistency(self, tmp_path: Path) -> None:
+        persistency.setup(str(tmp_path), prefer_liberation_payloads=False, port=16888)
+
+    def test_store_family_reads_the_mod_namespace(self) -> None:
+        from game.fourteenth.stock_attrition import store_family
+
+        assert store_family("{SUPERHORNET_PYLON_10_AM_1X_AIM-120C}") == "SUPERHORNET"
+        assert store_family("{LAU-115 - AIM-7H}") == ""
+        assert store_family("{AGM_84D}") == ""
+
+    def test_the_observed_case_now_ages_mod_natively(self) -> None:
+        from game.data.weapons import Pylon
+        from game.fourteenth.stock_attrition import _substitute
+        from pydcs_extensions.fa18efg.fa18efg import FA_18E
+
+        rhino = next(AircraftType.for_dcs_type(FA_18E))
+        weapon = Weapon.with_clsid("{SUPERHORNET_PYLON_10_AM_1X_AIM-120C}")
+        assert weapon is not None
+        got = _substitute(weapon, Pylon.for_aircraft(rhino, 8), MAX_DEPTH)
+        assert got is not None, "the mod ships an older AMRAAM here; use it"
+        assert "SUPERHORNET" in got.clsid
+
+    def test_no_super_hornet_store_is_ever_swapped_for_a_stock_one(self) -> None:
+        from game.data.weapons import Pylon
+        from game.fourteenth.stock_attrition import _substitute
+        from pydcs_extensions.fa18efg.fa18efg import FA_18E
+
+        rhino = next(AircraftType.for_dcs_type(FA_18E))
+        checked = 0
+        for station in range(1, 11):
+            try:
+                pylon = Pylon.for_aircraft(rhino, station)
+            except (KeyError, IndexError, AttributeError):
+                continue
+            for candidate in pylon.allowed:
+                if "SUPERHORNET" not in candidate.clsid:
+                    continue
+                checked += 1
+                for depth in range(1, MAX_DEPTH + 1):
+                    got = _substitute(candidate, pylon, depth)
+                    if got is None:
+                        continue
+                    assert "SUPERHORNET" in got.clsid, (
+                        f"station {station}: {candidate.clsid} -> {got.clsid} "
+                        "left the mod's store family"
+                    )
+        assert checked > 100, "expected to exercise the mod's whole store set"

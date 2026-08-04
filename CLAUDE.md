@@ -3544,7 +3544,26 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     beats one carrying an invisible older one); measured **0** family-leaving substitutions
     across every Super Hornet station × store × depth. Note this is a *registration* gap in
     `AIM-7MH.yaml` as much as a walk bug — registering the mod's Sparrows would let that rung
-    be used mod-natively. **The year guard is the second load-bearing one** (added on review before merge,
+    be used mod-natively. **The same class of defect was ALREADY in the authored fits and was
+    fixed the same day** (the reported symptom — "the Super Hornets are generating with empty
+    inside pylons where fuel tanks would normally be"): **34 stock stores across the FA-18E/F
+    `Retribution …` fits** were re-pointed at the mod's own equivalents — `{AGM_84D}` →
+    `{SUPERHORNET_PYLON_03/09_MB_SM_1X_AGM-84D}`, `{AN_ASQ_228}` →
+    `{SUPERHORNET_PYLON_05_TP_ASQ228}`, `LAU_117_AGM_65F` →
+    `{SUPERHORNET_PYLON_02/10_OB_MV_1X_AGM-65F}`, `{BRU_42A_x3_ADM_141A}` →
+    `{SUPERHORNET_PYLON_03/09_IB_TD_3X_BRU_ADM-141A}`, and the stock Litening
+    `{A111396E-…}` on the **centre-line** (ME column 6 — the visible one, in the DEAD and
+    OCA/Aircraft fits) → `{SUPERHORNET_PYLON_06_CN_TP_AAQ28}`. The mod's **12 TALD stores were
+    registered** into `ADM-141A.yaml` so the re-point does not recreate the #771
+    ungated-store hole. Verified 0 non-mod-native / 0 non-pylon-legal stores remaining and all
+    14 E/F tasks still resolving; guards in
+    `tests/fourteenth/test_super_hornet_payloads.py`. **ME column gotcha worth knowing:** the
+    CJS row is `INT | 11 | 10 | 9 | 8|7 | 6 | 5|4 | 3 | 2 | 1` — ten columns for eleven
+    pylons, so `8|7` and `5|4` are **merged, either/or** slots (the inboard tank *or* the cheek
+    AMRAAM, never both). That is why the BARCAP fit (`PYLON_04`/`PYLON_08`) and the SEAD fit
+    (`PYLON_05`/`PYLON_07`) look contradictory and are in fact both correct. Separately and
+    **not** a bug: the E's `Retribution BARCAP`/`Escort` fits author **no station 5**, so their
+    centre-line is deliberately bare (two inboard tanks + internal aux). **The year guard is the second load-bearing one** (added on review before merge,
     after the first cut shipped without it): `fallback` answers "what do I use *instead* when
     this is unavailable", which is a **date-gating** answer and is **not monotonic in year** —
     **18 same-category fallbacks in the shipped data point at a NEWER weapon**, so an

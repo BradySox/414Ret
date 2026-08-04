@@ -23,7 +23,7 @@ local unitPayloads = {
 					["num"] = 8,
 				},
 				[5] = {
-					["CLSID"] = "{MAKO_A2A_C}",
+					["CLSID"] = "{AIM-260A}",
 					["num"] = 7,
 				},
 				[6] = {
@@ -35,7 +35,7 @@ local unitPayloads = {
 					["num"] = 3,
 				},
 				[8] = {
-					["CLSID"] = "{MAKO_A2A_C}",
+					["CLSID"] = "{AIM-260A}",
 					["num"] = 5,
 				},
 			},
@@ -63,7 +63,7 @@ local unitPayloads = {
 					["num"] = 8,
 				},
 				[5] = {
-					["CLSID"] = "{MAKO_A2A_C}",
+					["CLSID"] = "{AIM-260A}",
 					["num"] = 7,
 				},
 				[6] = {
@@ -75,7 +75,7 @@ local unitPayloads = {
 					["num"] = 3,
 				},
 				[8] = {
-					["CLSID"] = "{MAKO_A2A_C}",
+					["CLSID"] = "{AIM-260A}",
 					["num"] = 5,
 				},
 			},
@@ -103,7 +103,7 @@ local unitPayloads = {
 					["num"] = 8,
 				},
 				[5] = {
-					["CLSID"] = "{MAKO_A2A_C}",
+					["CLSID"] = "{AIM-260A}",
 					["num"] = 7,
 				},
 				[6] = {
@@ -115,7 +115,7 @@ local unitPayloads = {
 					["num"] = 3,
 				},
 				[8] = {
-					["CLSID"] = "{MAKO_A2A_C}",
+					["CLSID"] = "{AIM-260A}",
 					["num"] = 5,
 				},
 			},
@@ -143,7 +143,7 @@ local unitPayloads = {
 					["num"] = 8,
 				},
 				[5] = {
-					["CLSID"] = "{MAKO_A2A_C}",
+					["CLSID"] = "{AIM-260A}",
 					["num"] = 7,
 				},
 				[6] = {
@@ -155,7 +155,7 @@ local unitPayloads = {
 					["num"] = 3,
 				},
 				[8] = {
-					["CLSID"] = "{MAKO_A2A_C}",
+					["CLSID"] = "{AIM-260A}",
 					["num"] = 5,
 				},
 			},
@@ -183,7 +183,7 @@ local unitPayloads = {
 					["num"] = 8,
 				},
 				[5] = {
-					["CLSID"] = "{MAKO_A2A_C}",
+					["CLSID"] = "{AIM-260A}",
 					["num"] = 7,
 				},
 				[6] = {
@@ -195,7 +195,7 @@ local unitPayloads = {
 					["num"] = 3,
 				},
 				[8] = {
-					["CLSID"] = "{MAKO_A2A_C}",
+					["CLSID"] = "{AIM-260A}",
 					["num"] = 5,
 				},
 			},
@@ -223,7 +223,7 @@ local unitPayloads = {
 					["num"] = 8,
 				},
 				[5] = {
-					["CLSID"] = "{MAKO_A2A_C}",
+					["CLSID"] = "{AIM-260A}",
 					["num"] = 7,
 				},
 				[6] = {
@@ -235,7 +235,7 @@ local unitPayloads = {
 					["num"] = 3,
 				},
 				[8] = {
-					["CLSID"] = "{MAKO_A2A_C}",
+					["CLSID"] = "{AIM-260A}",
 					["num"] = 5,
 				},
 			},

@@ -7948,6 +7948,127 @@ Files: `game/fourteenth/sp_pilot_mode.py`, `game/fourteenth/pre_turn_briefing.py
 `docs/dev/design/414th-single-player-loop-notes.md`. Checklist: **B41** (in-app).
 
 
+## §84 — Old-stock loadout attrition
+
+**The problem.** Every flight of the same airframe and task carries a **byte-identical**
+loadout. `Loadout.default_for` → `default_for_task_and_aircraft` resolves by *name*, walking
+the task's candidate names and returning the **first** payload that exists and validates —
+there is no randomness anywhere in that path. So six BARCAP flights put up six identical
+magazines of the newest missile the campaign date allows, which is not how a war goes:
+squadrons burn the good stock first and the tail of a campaign is flown on whatever is left
+in the bunker.
+
+**The mechanism.** `degrade_loadout_for_stock` (`game/fourteenth/stock_attrition.py`) rolls a
+depth **for each weapon station separately** and walks that station down **the fallback ladder
+the weapon data already declares**. That is the whole trick — "old stock" needs no new data,
+because the ladder is already the generational one:
+
+    AIM-120C → AIM-120B → AIM-7MH → AIM-7M → AIM-7F → ...
+
+so a deep roll is literally what breaks out the Sparrows.
+
+**Per station, not per flight — this is the point of the feature.** (DM call 2026-08-03:
+*"what I'm looking for is mixing and matching on the same flight."*) One roll applied to the
+whole aircraft only ages the magazine **uniformly**: 4× AIM-120C becomes 4× AIM-120B, which is
+four identical rounds either way — a different uniform load, not a mixed one. Rolling each
+station means a Hornet that wants four long-range missiles comes out carrying **a couple of
+AMRAAMs and a couple of Sparrows on the same jet**. Measured on the real `Retribution BARCAP`
+fit at the 20 % baseline, one flight came out with `2xAIM-120B` + `2xAIM-120C` + `AIM-120C` +
+`AIM-120B` and mixed AIM-9M/9X; at turn 12 another carried an `AIM-7MH` alongside its AMRAAMs.
+
+**It is not an air-to-air feature.** The hook is task-agnostic (it runs for every flight
+regardless of task) and so is the weapon data, so BAI/Strike/anti-ship inherit the same
+behaviour with no extra work — the guided-bomb ladder is generational too:
+
+    GBU-31(V)3/B (2001) → GBU-24 (1986) → GBU-10 (1976) → Mk 84 (1955)
+    GBU-38 (2002)       → GBU-12 (1976) → Mk 82 (1955)
+    CBU-97 (1992)       → CBU-87 (1986) → Mk 82 (1955)
+
+i.e. **JDAM → LGB → dumb bomb**. Depth is available on **68 %** of all non-protected weapon
+groups: `a2a-missiles` 80 %, `bombs` 79 %, `standoff` (air-to-ground + anti-ship) 58 %,
+`rockets` 33 %, `pods` 0 % (deliberately protected). A per-category test asserts every major
+family keeps usable depth so a future guard cannot quietly narrow it to A2A only.
+
+**Where it hooks.** The only two planning sites, `FlightMembers.from_roster` and
+`FlightMembers.resize` (`game/ato/flightmembers.py`). The result is stored on the members and
+pickled, so **the roll is stable across re-generation** — no deterministic seeding needed,
+unlike §3 concealment. `resize` clones `self.members[0].loadout` when growing an existing
+flight, and all members share the one loadout object, so the mixture is the *flight's* — a
+flight loads the same way. Jet-to-jet variation within a flight would need per-member loadouts
+and is deliberately not done.
+
+**Scaling with the campaign clock.** `attrition_pressure` reads
+`stock_attrition_start` at turn 1 and adds `stock_attrition_per_turn` each turn, capped at
+`stock_attrition_max` (defaults **20 %** / 4 % / 50 %). The non-zero baseline matters: the
+first cut defaulted `start` to 0, which leaves turn 1 uniformly best-equipped — precisely the
+case the feature exists to fix — so "a mixture" only appeared around turn 7. At 20 % per
+station, magazines are mixed from turn 1 and the climb deepens them later. `roll_depth` is
+**geometric in that
+pressure** — each further rung needs another hit — so one rung down is common, three is rare,
+and both get likelier as the war drags. Note the top bucket is truncated at `MAX_DEPTH` (3),
+so `P(MAX_DEPTH) = p**MAX_DEPTH`; at exactly p = 0.5 that equals the bucket below it, which
+is why the test asserts the tail is *far rarer than one rung* rather than ordering the last
+two.
+
+**The load-bearing guard: `WeaponGroup.category`.** `WeaponType` **cannot** express a weapon
+family — it distinguishes pods and jammers, but a Sidewinder and a JDAM are both `UNKNOWN`.
+And several fallbacks cross families *on purpose*:
+
+| Group | Fallback | Why it is authored that way |
+| --- | --- | --- |
+| `AN/ASQ-228 ATFLIR` | `AIM-120C` | no pod available → put something on the station |
+| `AN/ALQ-131 ECM` | `2xAIM-120C` | same |
+| `AGM-84A` | `GBU-24` | no Harpoon → put a bomb on the ship |
+
+Those are a sane **last resort for date gating** and absurd as attrition: they would hang a
+missile on the targeting-pod station. So `WeaponGroup` gained a **`category`** — the
+`resources/weapons` subdirectory it loaded from (`a2a-missiles`, `bombs`, `pods`, `rockets`,
+`standoff`), set with `object.__setattr__` at load exactly like `target_overrides`, and read
+with `getattr` so a group restored from a pre-feature save (or a synthesized one: the clean
+pylon, unknown clsids) reads as *do not cross*. `_older_group` stops at a category boundary,
+and `PROTECTED_TYPES` (`TGP`/`JAMMER`/`OFFENSIVE_JAMMER`/`DECOY`) are never substituted at
+all.
+
+**The year guard — the trap the first cut fell into.** `fallback` answers *"what do I use
+**instead** when this is unavailable"*. That is a **date-gating** answer, and it is **not
+monotonic in year**: **18 same-category fallbacks in the shipped data point at a NEWER
+weapon**. Following them makes "old stock attrition" hand a flight *better* weapons the longer
+the war runs — the exact inverse of the feature.
+
+| Group | Fallback | The problem |
+| --- | --- | --- |
+| `2xAIM-120B` (1994) | `AIM-120C` (2018) | halves the magazine **and** upgrades the missile |
+| `AGM-65E` (1985) | `AGM-65G` (1989) → `AGM-65F` (1991) | walks *up* two rungs |
+| `R-60 x 2` (1973) | `R-60M` (1982) | Red Tide (1988) MiGs get newer missiles |
+
+The `AIM-120B-2X.yaml` comment *"If we've run out of doubles, start over with the singles"* is
+correct for date gating and was **misread by the first cut as a free win** — it is wrong here
+twice over. And the Maverick row is the proof that **date gating cannot save us**: all three
+Mavericks are legal in Desert Storm (1991), so nothing downstream clamps the upgrade.
+
+`_older_group` therefore takes a rung only when it is **provably older** (an *undated* rung is
+unprovable, so the walk stops there too). Measured: **0 upgrade paths** across all 306 groups ×
+depths 0–3, with the headline `AIM-120C → AIM-120B → AIM-7MH → AIM-7M` Sparrow break-out
+unchanged. A repo-wide invariant test asserts it over every group, so new weapon data cannot
+reintroduce it silently.
+
+**What it never does.** Touch a **player-customised** loadout (`is_custom`), run with the
+feature off, or make anything *newer*. Note the ordering guarantee is the **year guard above** —
+date gating running afterwards is a *ceiling* ("never newer than the campaign allows"), which is
+not the same claim and does not by itself prevent an upgrade. Every guard returns the
+**original loadout object**, so OFF is byte-identical.
+
+**Settings.** `stock_attrition` (414th Features → Auto-planner behaviour, default **ON** — DM call 2026-08-03, "it's the behaviour I asked for"; OFF is byte-identical)
+plus `stock_attrition_start` / `stock_attrition_per_turn` / `stock_attrition_max` (Mission
+Generation → Loadouts, `enabled_when=stock_attrition`).
+
+**Measured** on a real F/A-18C `Retribution BARCAP` fit at the defaults: turns 1 and 5 all six
+flights identical; turn 12 one flight on AIM-7MH + AIM-9L; turn 25 three of six on old stock
+(AIM-120B, AIM-7M, AIM-9L/9M) — with `AN/ASQ-228 ATFLIR` untouched in every case.
+
+Tests: `tests/fourteenth/test_stock_attrition.py` (36 — the repo-wide never-an-upgrade invariant, the JDAM→LGB→dumb-bomb ladder, per-family depth floors, and four that drive the real F/A-18C `Retribution BARCAP` fit on real pydcs pylon tables: one jet ends up mixed, twelve flights are not identical, the shipped fit is never mutated in place, and no station is ever upgraded). Checklist: **B42**.
+
+
 ## Code audit fixes — 2026-07-07
 
 A full read-only audit of the 414th surface (campaign layer, mission-generator emitters,

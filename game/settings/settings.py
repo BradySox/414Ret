@@ -28,6 +28,18 @@ class AutoAtoBehavior(Enum):
 
 
 @unique
+class CloudPresetPack(Enum):
+    """A community cloud-preset weather mod whose presets the mission generator may
+    use. Only one can be active at a time: the packs share the same preset keys
+    (Preset35+) but map them to different clouds, so they must not be mixed."""
+
+    NONE = "None (stock DCS presets)"
+    BANDIT = "Bandit's Cloud Presets"
+    WEATHER2 = "Weather 2.0 (Bandit)"
+    ATMOSX = "ATMOS-X"
+
+
+@unique
 class NightMissions(Enum):
     DayAndNight = "nightmissions_nightandday"
     OnlyDay = "nightmissions_onlyday"
@@ -119,6 +131,7 @@ class IadsEngine(Enum):
 
 SERIALIZABLE_ENUM_TYPES = (
     AutoAtoBehavior,
+    CloudPresetPack,
     NightMissions,
     FastForwardStopCondition,
     CombatResolutionMethod,
@@ -445,7 +458,7 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                 [
                     "squadron_random_chance",
                     "apply_target_overrides_to_loadouts",
-                    "use_bandit_clouds",
+                    "cloud_preset_pack",
                 ],
             ),
         ],
@@ -1981,12 +1994,18 @@ class Settings:
             "target-based settings. This includes settings for degraded loadouts."
         ),
     )
-    use_bandit_clouds: bool = boolean_option(
-        "Use Bandit's clouds",
+    cloud_preset_pack: CloudPresetPack = choices_option(
+        "Custom cloud preset pack",
         page=CAMPAIGN_MANAGEMENT_PAGE,
         section=GENERAL_SECTION,
-        default=False,
-        detail=("If checked, Bandit's cloud presets will become available."),
+        default=CloudPresetPack.NONE,
+        choices={v.value: v for v in CloudPresetPack},
+        detail=(
+            "Make a community cloud-preset weather mod's presets available to the "
+            "mission generator. Pick the pack you have installed in DCS. Only one can "
+            "be active at a time, since the packs reuse the same preset keys for "
+            "different clouds. 'None' uses the stock DCS presets."
+        ),
     )
     auto_range_fuel_tanks: bool = boolean_option(
         "Add fuel tanks when the route needs the range",
@@ -3823,6 +3842,17 @@ class Settings:
                 else CarrierDeckPolicy.LAST_RESORT
             )
 
+        # Pre-pack saves carried a boolean "use Bandit's clouds"; the packs are now
+        # a choice (several mods ship presets under the same Preset35+ keys, so only
+        # one may be injected). Keep whichever the save had; the old key is dropped
+        # in the obsolete-key sweep below.
+        if "cloud_preset_pack" not in migrated and "use_bandit_clouds" in migrated:
+            migrated["cloud_preset_pack"] = (
+                CloudPresetPack.BANDIT
+                if migrated["use_bandit_clouds"]
+                else CloudPresetPack.NONE
+            )
+
         if "ai_radio_behavior" not in migrated:
             silence_ai_radios = migrated.get("silence_ai_radios", False)
             limit_ai_radios = migrated.get("limit_ai_radios", True)
@@ -3888,6 +3918,9 @@ class Settings:
             # Consolidated into the CarrierDeckPolicy enum (value already
             # migrated above).
             "player_flights_sixpack",
+            # Replaced by the CloudPresetPack choice, so several community cloud
+            # mods are selectable (value already migrated above).
+            "use_bandit_clouds",
         ):
             migrated.pop(obsolete_key, None)
 

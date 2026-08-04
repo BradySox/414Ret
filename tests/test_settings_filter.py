@@ -191,6 +191,8 @@ class _Container:
 def _group(
     qt_app: object, settings: Settings, page: str, section: str
 ) -> tuple[Any, Any]:
+    from PySide6.QtWidgets import QVBoxLayout, QWidget
+
     from qt_ui.windows.settings.QSettingsWindow import AutoSettingsGroup, SettingsFilter
 
     settings_filter = SettingsFilter()
@@ -201,6 +203,18 @@ def _group(
         lambda: None,
         settings_filter,
     )
+    # Give the group a shown parent, the way a page does. A section is never
+    # visible while parentless in the real dialog (that is what made it flash as
+    # its own top-level window), so isVisible() only means anything once it is
+    # adopted -- and the first filter pass is the page's job, not the group's.
+    host = QWidget()
+    layout = QVBoxLayout()
+    layout.addWidget(group)
+    host.setLayout(layout)
+    host.show()
+    group.apply_filter()
+    # Keep the parent alive for the test's lifetime.
+    group._test_host = host  # type: ignore[attr-defined]
     return group, settings_filter
 
 
@@ -311,3 +325,50 @@ def test_campaign_badge_renders_and_clears(qt_app: object) -> None:
     settings.record_campaign_preseeds([name])
     group.update_from_settings()
     assert "SET BY CAMPAIGN" in group.grid.labels_map[name].text()
+
+
+# --- regressions from the surface rework --------------------------------------------
+
+
+def test_building_a_page_never_spawns_a_top_level_window(qt_app: object) -> None:
+    """Opening Settings flashed a bare window per section before this was fixed.
+
+    Qt promotes a *visible parentless* widget to its own top-level window, and the
+    filter's first pass ran inside AutoSettingsGroup.__init__ -- before the page's
+    layout had adopted the group. Every section with a visible row therefore
+    appeared briefly as its own window (36 of them on a stock Settings).
+    """
+    from PySide6.QtWidgets import QWidget
+
+    from qt_ui.windows.settings.QSettingsWindow import AutoSettingsPage, SettingsFilter
+
+    settings = Settings()
+    shown_parentless: list[str] = []
+    original = QWidget.setVisible
+
+    def spy(self: QWidget, visible: bool) -> None:
+        if visible and self.parentWidget() is None:
+            shown_parentless.append(type(self).__name__)
+        original(self, visible)
+
+    QWidget.setVisible = spy  # type: ignore[method-assign]
+    try:
+        pages = [
+            AutoSettingsPage(
+                page,
+                _Container(settings),  # type: ignore[arg-type]
+                lambda: None,
+                SettingsFilter(),
+            )
+            for page in settings.pages()
+        ]
+    finally:
+        QWidget.setVisible = original  # type: ignore[method-assign]
+
+    assert not shown_parentless, f"shown while parentless: {set(shown_parentless)}"
+
+    # ...and the sections are still there once the page is real.
+    page_widget = pages[0]
+    groups = page_widget.page_layout.widgets
+    assert groups
+    assert any(g.isVisibleTo(page_widget) for g in groups)

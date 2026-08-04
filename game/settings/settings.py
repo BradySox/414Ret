@@ -4178,7 +4178,15 @@ class Settings:
             return {"Enum": str(obj)}
         elif isinstance(obj, timedelta):
             return {"timedelta": round(obj.seconds / 60)}
-        return obj
+        elif isinstance(obj, (set, frozenset)):
+            # The campaign-preseed record is a frozenset; sorted so a saved
+            # settings file is stable between runs.
+            return sorted(str(item) for item in obj)
+        # Never return obj unchanged: json takes a `default` that hands back its
+        # own argument as a container of itself and dies with "Circular reference
+        # detected", which says nothing about what actually failed. Raising the
+        # TypeError json expects names the offending type instead.
+        raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
 
     @staticmethod
     def obj_hook(obj: Any) -> Any:

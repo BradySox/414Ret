@@ -558,7 +558,9 @@ class AutoSettingsGroup(QGroupBox):
         )
 
         self.setLayout(self.grid)
-        self.apply_filter()
+        # The first filter pass is deliberately NOT run here: this group has no
+        # parent yet, and showing a parentless widget makes it a top-level window.
+        # AutoSettingsPage runs it once its layout has adopted every group.
 
     def _toggle_advanced(self) -> None:
         self.grid.show_advanced = not self.grid.show_advanced
@@ -584,7 +586,11 @@ class AutoSettingsGroup(QGroupBox):
                 if not hidden_advanced:
                     # Everything advanced was filtered out anyway.
                     self.disclosure.setVisible(False)
-        self.setVisible(bool(shown))
+        # Never show ourselves while parentless -- Qt turns a visible parentless
+        # widget into its own top-level window, which is what made the settings
+        # dialog flash a bare window per section as it opened. The page re-runs
+        # the filter once its layout has adopted us.
+        self.setVisible(bool(shown) and self.parentWidget() is not None)
         return shown
 
     def update_from_settings(self) -> None:
@@ -647,6 +653,9 @@ class AutoSettingsPage(QWidget):
             page, sc, write_full_settings, settings_filter, dependency_hub
         )
         self.setLayout(self.page_layout)
+        # Only now do the sections have a parent, so making them visible cannot
+        # spawn top-level windows. This page is still hidden, so nothing shows.
+        self.apply_filter()
 
     def apply_filter(self) -> int:
         return self.page_layout.apply_filter()

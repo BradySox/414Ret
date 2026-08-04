@@ -129,25 +129,32 @@ def test_mixed_route_subdivides_only_the_long_radio_legs() -> None:
 
 
 def _route_is_dcs_legal(points: list[MovingPoint]) -> bool:
-    """The two mission-start route validations DCS applies to lock flags."""
+    """Port of DCS's own route validation (``verifyRoute`` /
+    ``verifyRouteSeg_`` in ``MissionEditor/modules/me_route.lua``).
+
+    DCS walks the route TOT to TOT. For each segment bounded by two locked
+    times, at least one waypoint in the range ``(from, to]`` -- inclusive of
+    the closing waypoint -- must have an unlocked speed. For a segment with a
+    locked time at only one end, every waypoint in that same range must be
+    speed-locked. Indices here are 0-based; DCS's are 1-based.
+    """
     n = len(points)
-    eta_before = [False] * n
-    seen = False
-    for i in range(n):
-        eta_before[i] = seen
-        seen = seen or points[i].ETA_locked
-    eta_after = [False] * n
-    seen = False
-    for i in range(n - 1, -1, -1):
-        eta_after[i] = seen
-        seen = seen or points[i].ETA_locked
-    for i in range(n):
-        bracketed = eta_before[i] and eta_after[i]
-        if points[i].speed_locked and bracketed:
-            return False  # "locked speed ... surrounded by ... locked time"
-        if not points[i].speed_locked and not points[i].ETA_locked and not bracketed:
+    if n < 2:
+        return True
+    start = 0
+    while True:
+        end = next((i for i in range(start + 1, n) if points[i].ETA_locked), n - 1)
+        span = range(start + 1, end + 1)
+        if points[start].ETA_locked and points[end].ETA_locked:
+            if all(points[i].speed_locked for i in span):
+                return False  # "All waypoints (N-M) have locked speed ..."
+        elif not points[start].ETA_locked and not points[end].ETA_locked:
+            return False  # "Route has no waypoints with locked time!"
+        elif any(not points[i].speed_locked for i in span):
             return False  # "both unlocked speed and time and not surrounded ..."
-    return True
+        if end == n - 1:
+            return True
+        start = end
 
 
 def test_anchors_on_an_unbracketed_leg_are_dcs_legal() -> None:

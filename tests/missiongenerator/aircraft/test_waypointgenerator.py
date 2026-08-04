@@ -64,6 +64,33 @@ def test_leaves_untrapped_speed_locks_alone() -> None:
     assert [p.speed_locked for p in points] == [True, False, False, True, True, True]
 
 
+def test_unlocks_second_of_two_adjacent_tot_locked_waypoints() -> None:
+    """DCS's span is INCLUSIVE of the closing TOT waypoint, so two adjacent
+    TOT-locked waypoints are rejected when the second one is also speed-locked.
+
+    This is the route of the turn-2 Marianas "Kunlun Shan BARCAP|27|68|J-15
+    Flanker X-2|" that DCS refused to load with "All waypoints (2-2) have locked
+    speed and surrounded by waypoints 1 and 2 with locked time!": an air-started
+    BARCAP whose racetrack TOT had already elapsed, so its ETA clamped to 0 and
+    set_waypoint_tot speed-locked it right behind the ETA-0 spawn point.
+    """
+    points = [
+        _wp(eta_locked=True, speed_locked=True, name=""),  # in-flight spawn
+        _wp(eta_locked=True, speed_locked=True, name="RACETRACK START"),
+        _wp(eta_locked=False, speed_locked=True, name="RACETRACK END"),
+        _wp(eta_locked=False, speed_locked=True, name="NAV"),
+        _wp(eta_locked=False, speed_locked=True, name="LANDING"),
+    ]
+
+    _generator(points)._resolve_locked_speed_time_conflicts()
+
+    # Only the racetrack start is freed: the spawn point opens the route and the
+    # RTB legs have no TOT after them, so both keep their locked speed.
+    assert [p.speed_locked for p in points] == [True, False, True, True, True]
+    # The spawn point keeps its locked time -- late activation requires it.
+    assert [p.ETA_locked for p in points] == [True, True, False, False, False]
+
+
 def test_unlocks_a_run_of_trapped_speed_locked_waypoints() -> None:
     """Every locked-speed waypoint in a run bounded by TOT-locked waypoints on
     both sides is unlocked."""

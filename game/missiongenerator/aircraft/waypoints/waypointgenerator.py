@@ -182,44 +182,73 @@ class WaypointGenerator:
         point.speed_locked = True
 
     def _resolve_locked_speed_time_conflicts(self) -> None:
-        """Unlock the speed on any waypoint that has a locked speed while sitting
-        between time-locked (TOT) waypoints.
+        """Unlock speeds DCS's route validator refuses to load the mission with.
 
-        DCS rejects that combination at mission start ("All waypoints (N-M) have
-        locked speed and surrounded by waypoints ... with locked time"): the
-        bounding TOTs already determine the segment's speed, so a locked speed in
-        between is contradictory. It happens e.g. on a carrier escort whose JOIN
-        TOT clamps to the mission start -- the waypoint then gets a locked speed
-        (because ETA == 0) and is trapped between TOT-locked neighbours. Keep the
-        times (needed to sync with the escorted package) and drop the speed lock
-        so DCS can honour them. Split/RTB legs keep their locked speed since no
-        TOT-locked waypoint follows them.
+        The rule is ``verifyRouteSeg_`` in DCS's own
+        ``MissionEditor/modules/me_route.lua``: for every pair of consecutive
+        TOT-locked waypoints ``(from, to)``, at least one waypoint in the range
+        ``(from, to]`` must have an UNLOCKED speed -- the bounding TOTs already
+        determine that segment's timing, so DCS needs one waypoint whose speed
+        it is free to solve for. Otherwise the mission refuses to load with
+        "All waypoints (N-M) have locked speed and surrounded by waypoints ...
+        with locked time!".
+
+        Note the range is INCLUSIVE of ``to``: two ADJACENT TOT-locked
+        waypoints are rejected whenever the second one also carries a locked
+        speed. That is not a hypothetical -- ``set_waypoint_tot`` speed-locks a
+        waypoint whose ETA clamps to 0, so an in-flight (air-started) flight
+        whose next TOT has already elapsed spawns with an ETA-0 spawn point
+        immediately followed by an ETA-0 TOT waypoint, both speed-locked. A
+        turn-2 Marianas J-15 BARCAP hit exactly this ("(2-2) ... waypoints 1
+        and 2").
+
+        Repairs, in the order DCS cares about them:
+
+        1. Every speed-locked waypoint strictly between two TOTs is unlocked
+           (a carrier escort's clamped JOIN, the inserted helo terrain anchors).
+        2. If that leaves the inclusive span with no unlocked speed at all --
+           i.e. the two TOTs are adjacent and the closing one is speed-locked --
+           the closing waypoint's speed lock is dropped too.
+
+        Times are never touched: they sync the flight with its package, and the
+        first waypoint's TOT is required by late activation. Split/RTB legs keep
+        their locked speed since no TOT-locked waypoint follows them.
         """
         points = self.group.points
         n = len(points)
-        eta_locked_before = [False] * n
-        seen = False
-        for i in range(n):
-            eta_locked_before[i] = seen
-            if getattr(points[i], "ETA_locked", False):
-                seen = True
-        eta_locked_after = False
-        for i in range(n - 1, -1, -1):
-            if (
-                getattr(points[i], "speed_locked", False)
-                and eta_locked_before[i]
-                and eta_locked_after
-            ):
-                points[i].speed_locked = False
-                logging.debug(
-                    "%s: unlocked speed on waypoint %d (%s); a locked speed "
-                    "between TOT-locked waypoints is rejected by DCS.",
-                    self.flight,
-                    i,
-                    getattr(points[i], "name", ""),
-                )
-            if getattr(points[i], "ETA_locked", False):
-                eta_locked_after = True
+        if n < 2:
+            return
+
+        def eta_locked(index: int) -> bool:
+            return bool(getattr(points[index], "ETA_locked", False))
+
+        def unlock(index: int, reason: str) -> None:
+            points[index].speed_locked = False
+            logging.debug(
+                "%s: unlocked speed on waypoint %d (%s); %s is rejected by DCS.",
+                self.flight,
+                index,
+                getattr(points[index], "name", ""),
+                reason,
+            )
+
+        start = 0
+        while start < n - 1:
+            # The closing waypoint of this segment, mirroring DCS's own walk:
+            # the next TOT-locked waypoint, else the end of the route.
+            end = next((i for i in range(start + 1, n) if eta_locked(i)), n - 1)
+            if eta_locked(start) and eta_locked(end):
+                for i in range(start + 1, end):
+                    if getattr(points[i], "speed_locked", False):
+                        unlock(i, "a locked speed between TOT-locked waypoints")
+                span = range(start + 1, end + 1)
+                if all(getattr(points[i], "speed_locked", False) for i in span):
+                    unlock(
+                        end,
+                        "a locked speed on every waypoint between two TOT-locked "
+                        "waypoints",
+                    )
+            start = end
 
     def _insert_helo_terrain_anchors(self) -> None:
         """Subdivide long AGL helo route legs with terrain re-anchoring points.

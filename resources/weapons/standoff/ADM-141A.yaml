@@ -10,3 +10,22 @@ clsids:
   - "{BRU_42A_x1_ADM_141A}"
   - "{BRU_42A_x2_ADM_141A}"
   - "{BRU_42A_x3_ADM_141A}"
+  # The CJS Super Hornet pack's own TALD stores. Registered because the fork's
+  # FA-18E/F SEAD fits now frag these instead of the stock BRU_42A ones: the mod
+  # inherits ED's entries into its pylon table, so a stock store is can_equip-legal
+  # on the mod jet without being mountable on the mod's geometry, and DCS silently
+  # drops it -- the pylon spawns empty. Unregistered they would fall through
+  # `register_unknown_weapons` to introduction_year=None, i.e. "available in every
+  # era with no fallback" (the same hole #771 closed for the modern AMRAAMs).
+  - "{SUPERHORNET_PYLON_02_MB_TD_1X_BRU_ADM-141A}"
+  - "{SUPERHORNET_PYLON_02_MB_TD_2X_BRU_ADM-141A}"
+  - "{SUPERHORNET_PYLON_02_MB_TD_3X_BRU_ADM-141A}"
+  - "{SUPERHORNET_PYLON_03_IB_TD_1X_BRU_ADM-141A}"
+  - "{SUPERHORNET_PYLON_03_IB_TD_2X_BRU_ADM-141A}"
+  - "{SUPERHORNET_PYLON_03_IB_TD_3X_BRU_ADM-141A}"
+  - "{SUPERHORNET_PYLON_09_IB_TD_1X_BRU_ADM-141A}"
+  - "{SUPERHORNET_PYLON_09_IB_TD_2X_BRU_ADM-141A}"
+  - "{SUPERHORNET_PYLON_09_IB_TD_3X_BRU_ADM-141A}"
+  - "{SUPERHORNET_PYLON_10_MB_TD_1X_BRU_ADM-141A}"
+  - "{SUPERHORNET_PYLON_10_MB_TD_2X_BRU_ADM-141A}"
+  - "{SUPERHORNET_PYLON_10_MB_TD_3X_BRU_ADM-141A}"

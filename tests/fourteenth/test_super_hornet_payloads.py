@@ -30,6 +30,7 @@ are covered by ``tests/fourteenth/test_navy_bomb_variants.py``.
 
 from __future__ import annotations
 
+import re
 from collections.abc import Iterator
 from pathlib import Path
 
@@ -149,3 +150,81 @@ def test_patching_the_payload_loader_is_idempotent() -> None:
     once = FlyingType.load_payloads.__func__  # type: ignore[attr-defined]
     patch_pydcs_payload_loader()
     assert FlyingType.load_payloads.__func__ is once  # type: ignore[attr-defined]
+
+
+class TestTheAuthoredFitsUseTheModsOwnStores:
+    """A CJS jet must never be authored a stock store.
+
+    The mod models its own pylons and namespaces every store it ships
+    (``{SUPERHORNET_PYLON_10_AM_1X_AIM-120C}``) **and inherits ED's entries into
+    the same pydcs pylon table**. So a stock store passes ``can_equip`` on the mod
+    jet without being mountable on the mod's geometry, DCS silently drops a store
+    it cannot resolve, and the pylon spawns EMPTY -- the failure mode §71
+    documents for ``(XW)`` fits flown without their pylon injection.
+
+    Reported from a generated Marianas mission as "the Super Hornets are
+    generating with empty inside pylons where fuel tanks would normally be". The
+    centre-line was the visible one: the DEAD / OCA-Aircraft fits authored a stock
+    Litening (``{A111396E-...}``) on station 5. 34 stock stores across the E and F
+    fits were re-pointed at the mod's own equivalents.
+    """
+
+    CLSID_AND_STATION = re.compile(
+        r'\["CLSID"\]\s*=\s*"([^"]*)".*?\["num"\]\s*=\s*(\d+)', re.S
+    )
+
+    @staticmethod
+    def _payload_files() -> Iterator[tuple[str, Path]]:
+        root = Path(__file__).resolve().parents[2] / "resources" / "customized_payloads"
+        for name in ("FA-18E", "FA-18F", "EA-18G"):
+            path = root / f"{name}.lua"
+            assert path.exists(), f"missing authored payloads for {name}"
+            yield name, path
+
+    def _stores(self) -> Iterator[tuple[str, str, int]]:
+        for name, path in self._payload_files():
+            src = path.read_text(encoding="utf-8", errors="replace")
+            for clsid, num in self.CLSID_AND_STATION.findall(src):
+                if clsid:
+                    yield name, clsid, int(num)
+
+    def test_no_authored_store_is_a_stock_store(self) -> None:
+        foreign = [(n, c, s) for n, c, s in self._stores() if "SUPERHORNET" not in c]
+        assert not foreign, (
+            "stock stores authored on a CJS jet -- DCS will drop these and the "
+            f"pylon will spawn empty: {foreign[:8]}"
+        )
+
+    def test_the_centreline_tgp_is_the_mods_own(self) -> None:
+        """The specific store behind the reported empty centre-line."""
+        stores = {(n, c, s) for n, c, s in self._stores()}
+        assert not [x for x in stores if x[1].startswith("{A111396E")]
+        assert any(
+            c == "{SUPERHORNET_PYLON_06_CN_TP_AAQ28}" for _, c, _ in stores
+        ), "the DEAD/OCA fits should carry the mod's own centre-line pod"
+
+    def test_every_authored_store_is_registered_in_the_weapon_data(self) -> None:
+        """Anything we newly point at must be date-gated, not ungated.
+
+        An unregistered clsid falls through ``register_unknown_weapons`` to
+        ``introduction_year=None``, which ``Weapon.available_on`` reads as
+        "available in every era with no fallback" -- the hole #771 closed for the
+        modern AMRAAMs. Fuel tanks and the JSOW rack are pre-existing exceptions
+        (era-agnostic hardware, and §84 skips them since they carry no category).
+        """
+        from game.data.weapons import Weapon, WeaponGroup
+
+        WeaponGroup.load_all()
+        unregistered = set()
+        for _, clsid, _ in self._stores():
+            weapon = Weapon.with_clsid(clsid)
+            group = getattr(weapon, "weapon_group", None)
+            if getattr(group, "name", None) in (None, "Unknown"):
+                unregistered.add(clsid)
+        # Tanks / racks are allowed to be unregistered; ordnance is not.
+        offenders = {
+            c
+            for c in unregistered
+            if "_FT_" not in c and "FT_AUX" not in c and "BRU55" not in c
+        }
+        assert not offenders, f"unregistered ordnance: {sorted(offenders)}"

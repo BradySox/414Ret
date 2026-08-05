@@ -151,7 +151,8 @@
     "HEMTT C-RAM Phalanx",
     "M6 Linebacker",
     "[CH] Centurion C-RAM",
-    "[CH] LAV-AD SPAAGM"
+    "[CH] LAV-AD SPAAGM",
+    "EWR AN/FPS-117 Control Shelter"
   ],
   "requirements": {
     "CurrentHill USA Asset Pack": "https://www.currenthill.com/usa"

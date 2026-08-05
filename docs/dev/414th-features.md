@@ -8293,10 +8293,33 @@ fuel/power. NEW game required (generation-time). Tests extended in
 `tests/armedforces/test_sam_support_vehicles.py` (82 — whitelist presence without truck
 displacement, faction resolution, the KUNG-reaches-the-CP-slot proof). Checklist: **B44**.
 
+**EWR-site support sections (same day, the follow-on portion).** The generic EWR site was a
+single radar unit — no C2 shelter, no power, no trucks — and EWRs are the MANTIS backbone on
+every campaign. `Early-Warning_Radar.miz` gained three appended groups (C2 ×1 / Power ×2 /
+Logistics ×2 positions, ≥25 m dispersed, template origin unmoved) and the layout three
+**optional** slots. The C2 and Power slots are explicit **`unit_types` whitelists, not
+`unit_classes`** — a class-based C2 slot would pull every CommandPost unit the faction can
+reach (a Patriot ECS or a Buk CC parked at an EWR site); the whitelist (ZIL-131 KUNG /
+Ural-375 PBU / FPS-117 ECS; `generator_5i57`) plus faction-access gating keeps the kit
+**nation-correct by construction**, and a faction with none renders a bare radar exactly as
+before (optional → silently skipped; `usable_by_faction` unaffected, WW2 factions untouched).
+The Logistics slot selects by class, so it deals the faction's own trucks/bowsers — right
+nation for free. Access: **`air_defense_units`** membership (KUNG + 5I57 for the Soviet-pattern
+actives — Red Tide red, Vietnam 1970, Iraq 1991; the **FPS-117 ECS shelter** for the FPS-117
+owners — RT blue, DS91 NATO, USA 2020), deliberately NOT `logistics_units`: ground procurement
+buys from there and the planner cannot deploy CommandPost/Power classes, so they would be
+dead-weight purchases. One intended spillover: preset-granted access counts too, so any faction
+fielding a Soviet SAM preset (China 2010 via HQ-2/SA-10) gets the Soviet kit at its EWRs — all
+of it zero-detection/zero-threat, so the site's MANTIS contribution is unchanged.
+**Headless-verified: all 6 Red Tide EWR sites** render radar + KUNG + 1–2 power stations +
+trucks/bowsers. Tests extended (91 in `test_sam_support_vehicles.py` — slot presence +
+positions, the whitelist-not-class guard, six nation-correctness cases both ways, the
+no-kit-faction bare-radar case).
+
 **Deferred from the wiring pass:** HQ-22's support section (no Logistics slot; a Chinese battery
 deserves CH-pack kit, not Russian bowsers), power/fuel *slots* at non-S-300 sites (template
-surgery), EWR-site support sections, and any use of the GPS spoofers (other agent) or the
-Gazetchik-E decoy (needs its own design — likely §79-adjacent).
+surgery), and any use of the GPS spoofers (other agent) or the Gazetchik-E decoy (needs its own
+design — likely §79-adjacent).
 
 
 ## Code audit fixes — 2026-07-07

@@ -324,3 +324,88 @@ def test_no_layout_declares_a_dead_slot(layout_yaml: Path) -> None:
         f"{dead}. They will be silently dropped. Groups in the template: "
         f"{sorted(miz_groups)}"
     )
+
+
+# --- EWR-site support sections (the 2026-08-04 follow-on) ------------------------
+
+# The generic EWR site was a single radar unit -- no C2 shelter, no power, no
+# trucks. The template gained three appended groups and the layout three optional
+# whitelist slots. Access is gated by the faction's own lists, so the kit is
+# nation-correct by construction and a faction with none renders a bare radar.
+EWR_LAYOUT = "Early-Warning Radar"
+EWR_SUPPORT_SLOTS = (
+    "Early-Warning Radar C2",
+    "Early-Warning Radar Power",
+    "Early-Warning Radar Logistics",
+)
+
+
+def test_ewr_layout_declares_its_support_slots() -> None:
+    layout = LAYOUTS.by_name(EWR_LAYOUT)
+    present = {ug.name for ug in layout.all_unit_groups}
+    for slot in EWR_SUPPORT_SLOTS:
+        assert slot in present, f"EWR layout lost its {slot!r} slot"
+    for slot in EWR_SUPPORT_SLOTS:
+        for unit_group in [ug for ug in layout.all_unit_groups if ug.name == slot]:
+            assert len(unit_group.layout_units) >= max(unit_group.unit_count)
+
+
+def test_ewr_c2_slot_is_a_whitelist_not_a_class() -> None:
+    """A class-based C2 slot would pull every CommandPost unit the faction can
+    reach -- a Patriot ECS or a Buk CC parked at an EWR site. The whitelist plus
+    faction-access gating is what keeps the kit nation-correct."""
+    layout = LAYOUTS.by_name(EWR_LAYOUT)
+    c2 = [ug for ug in layout.all_unit_groups if ug.name == "Early-Warning Radar C2"]
+    assert len(c2) == 1
+    assert not c2[0].unit_classes, "the C2 slot must whitelist unit_types only"
+    assert {t.id for t in c2[0].unit_types} == {
+        "ZIL-131 KUNG",
+        "Ural-375 PBU",
+        "FPS-117 ECS",
+    }
+
+
+# faction -> (units its EWR C2/Power slots must offer, units they must NOT).
+EWR_KIT_BY_FACTION = {
+    # Soviet-pattern: KUNG C2 + 5I57 power, never the FPS-117 shelter.
+    "Russia 1980 (Red Tide)": ({"ZIL-131 KUNG", "generator_5i57"}, {"FPS-117 ECS"}),
+    "Vietnam 1970": ({"ZIL-131 KUNG", "generator_5i57"}, {"FPS-117 ECS"}),
+    "Iraq 1991": ({"ZIL-131 KUNG", "generator_5i57"}, {"FPS-117 ECS"}),
+    # Western FPS-117 owners: the ECS shelter, never the Soviet kit.
+    "Blufor Late Cold War (80s)": ({"FPS-117 ECS"}, {"ZIL-131 KUNG", "generator_5i57"}),
+    "NATO Desert Storm": ({"FPS-117 ECS"}, {"ZIL-131 KUNG", "generator_5i57"}),
+    "USA 2020": ({"FPS-117 ECS"}, {"ZIL-131 KUNG", "generator_5i57"}),
+}
+
+
+@pytest.mark.parametrize("faction_name,kit", sorted(EWR_KIT_BY_FACTION.items()))
+def test_ewr_site_offers_nation_correct_support(
+    faction_name: str, kit: tuple[set[str], set[str]]
+) -> None:
+    from game.armedforces.forcegroup import ForceGroup
+    from game.factions import FACTIONS
+
+    wanted, forbidden = kit
+    layout = LAYOUTS.by_name(EWR_LAYOUT)
+    group = ForceGroup.for_layout(layout, FACTIONS[faction_name])
+    offered: set[str] = set()
+    for unit_group in layout.all_unit_groups:
+        if unit_group.name in ("Early-Warning Radar C2", "Early-Warning Radar Power"):
+            offered |= {t.id for t in group.dcs_unit_types_for_group(unit_group)}
+    assert wanted <= offered, f"{faction_name} EWR kit missing {wanted - offered}"
+    assert (
+        not offered & forbidden
+    ), f"{faction_name} EWR site offers wrong-nation kit: {offered & forbidden}"
+
+
+def test_ewr_layout_still_usable_by_a_faction_with_no_support_kit() -> None:
+    """The support slots are optional: a faction fielding none of the whitelist
+    renders a bare radar exactly as before, and the layout stays usable."""
+    from game.factions import FACTIONS
+
+    faction = FACTIONS["Germany 1944"]
+    layout = LAYOUTS.by_name(EWR_LAYOUT)
+    assert layout.usable_by_faction(faction)
+    for unit_group in layout.all_unit_groups:
+        if unit_group.name == "Early-Warning Radar C2":
+            assert unit_group.possible_types_for_faction(faction) == []

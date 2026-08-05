@@ -3670,9 +3670,19 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     faction-fill trucks), and 10 active-campaign factions roster era-correct refuellers
     (`logistics_units` → convoys/FLOT/generic-site fill; the COIN insurgents get the
     **civilian-liveried ATZ-5** on the ratline). Headless: 11/17 RT legacy sites rolled a
-    refuelling section. **GPS spoofers deliberately un-wired — another agent owns them.** Tests
-    `tests/armedforces/test_sam_support_vehicles.py` (82, incl. a **repo-wide dead-slot guard**
-    failing if any anti-air layout declares a slot no group in its `.miz` is named after);
+    refuelling section. **GPS spoofers deliberately un-wired — another agent owns them.**
+    **EWR-site support sections (same day):** the generic EWR template (a lone radar) gained
+    appended C2/Power/Logistics groups + three optional layout slots — C2/Power are
+    **`unit_types` whitelists, never classes** (a class-based C2 slot would park a Patriot ECS
+    or Buk CC at an EWR site), gated by faction access via **`air_defense_units`** (NOT
+    `logistics_units` — procurement would buy undeployable dead weight): KUNG + 5I57 for the
+    Soviet actives, the **FPS-117 ECS shelter** for RT blue/DS91/USA 2020; the Logistics slot
+    is class-based so each nation's own trucks deal in for free; all kit zero-detection, MANTIS
+    unchanged; a no-kit faction renders a bare radar as before. Headless: **all 6 RT EWR sites**
+    render radar + KUNG + 1–2 DPS + trucks. Tests
+    `tests/armedforces/test_sam_support_vehicles.py` (91, incl. a **repo-wide dead-slot guard**
+    failing if any anti-air layout declares a slot no group in its `.miz` is named after, and
+    six both-ways nation-correctness cases for the EWR kit);
     features doc §85 (+ the "Unit-coverage sweep — 2026-08-04" section), checklist B43 + B44 —
     needs an in-game pass.
 

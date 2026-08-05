@@ -3620,9 +3620,11 @@ rolled a refuelling section (the roll is per-site, so expect *most* but not all)
 
 **Pass criterion:** legacy SA-2/SA-3/SA-5/SA-6 sites field trucks OR a fuel bowser in their
 logistics spots (one type per site — the mixed truck+fuel+power spread is S-300-only by design);
-on Yankee Station, an HQ-2 site renders the **ZIL-131 KUNG** C2 truck; and over a few turns a
-supply convoy is seen carrying a refueller (blue M978 / red ATZ family / a COIN campaign's
-civilian ATZ-5 on the ratline). Kills record as ordinary ground losses.
+on Yankee Station, an HQ-2 site renders the **ZIL-131 KUNG** C2 truck; **EWR sites render their
+support section** (Red Tide: radar + KUNG + 1–2 diesel power stations + trucks — headless showed
+all 6; a western FPS-117 site renders the ECS shelter instead, never the Soviet kit); and over a
+few turns a supply convoy is seen carrying a refueller (blue M978 / red ATZ family / a COIN
+campaign's civilian ATZ-5 on the ratline). Kills record as ordinary ground losses.
 
 **Fail signatures to watch for:**
 - A bowser or the KUNG **clipping** launcher/radar models (positions are the templates' existing

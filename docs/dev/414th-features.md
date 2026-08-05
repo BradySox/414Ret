@@ -8348,13 +8348,28 @@ entries exists as a red/blue miz group), so both this bug class and the neutrals
 loudly. The "DEAD" flags an earlier naive scan raised against the building layouts were false
 alarms — they load through their statics lists.
 
+**C2 compound furnishing (same day, DM call — the §51/§52 semantics change accepted).** The comms
+station (a bare TV tower) and the command center (one building) now render as compounds: comms
+gets a **comms van** (KUNG/PBU whitelist) + 1–2 **5I57 generators** + trucks; the command center
+gets a **C2 shelter section** (the **GCI Station (KRU)** for 1980s+ Soviet factions — era-gated,
+Vietnam 1970 rolls the PBU instead — plus KUNG/PBU) + generators + trucks. Access rides the same
+`air_defense_units` gating (the three Soviet actives gained the PBU, RT/Iraq the GCI station);
+western factions render the bare buildings (no western C2 van is registered).
+**The semantics change, explicit and on purpose:** §51's comms-jam emitter transmits from **every
+alive unit** of a node and §70 counts a source alive while any unit lives — so killing the tower
+alone no longer silences the site; the surviving van keeps transmitting until the compound dies
+(thematically right — the van IS a transmitter). §52 counts a command center **alive while any
+unit lives** — full decapitation now requires killing the C2 vehicles too, raising the strike
+weight for a §52/§63 C2 kill accordingly. The layout comments and the tests both state this.
+**Scope rule again:** layout-generated C2 only — **Desert Storm's KARI network is the showcase
+(all 13 comms relays + all 4 command centers furnished, GCI stations at the centers)**; Red
+Tide's scenery-authored 9-node network stays exactly as authored. Power *plants* deliberately
+stay bare (they ARE the power category — a generator beside a power station is noise).
+
 **Deferred from the wiring pass:** HQ-22's support section (no Logistics slot; a Chinese battery
 deserves CH-pack kit, not Russian bowsers), power/fuel *slots* at non-S-300 sites (template
-surgery), furnishing for comms/command-center buildings — **deliberately excluded** because §51
-targets "alive" comms TGOs and §52 counts command-center deaths, and adding vehicles changes what
-"dead" means for both (kill the tower, trucks keep the TGO alive) — that interaction needs its own
-call — and any use of the GPS spoofers (other agent) or the Gazetchik-E decoy (needs its own
-design — likely §79-adjacent).
+surgery), a western comms/C2 van (no vanilla unit exists to register), and any use of the GPS
+spoofers (other agent) or the Gazetchik-E decoy (needs its own design — likely §79-adjacent).
 
 
 ## Code audit fixes — 2026-07-07

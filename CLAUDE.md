@@ -3684,15 +3684,22 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     bowser** — each gain one optional class-based Logistics vehicle group (2 appended
     `buildings.miz` positions), dealt from the faction's own roster; reaches
     **layout-generated** objectives only (hand-authored named targets — DS91's CENTAF set —
-    never touch layouts and stay as authored, by design); comms/command-center furnishing
-    **deliberately excluded** (§51 targets "alive" comms TGOs and §52 counts CC deaths — added
-    vehicles would change what "dead" means; needs its own call). **Two template landmines,
+    never touch layouts and stay as authored, by design). **C2 compound furnishing (same day,
+    DM call — the §51/§52 semantics change ACCEPTED):** the comms tower gains a comms van
+    (KUNG/PBU) + 5I57s + trucks, the command center a C2 shelter section (**GCI Station (KRU)**
+    for 1980s+ Soviets — era-gated, Vietnam 1970 rolls the PBU — + KUNG/PBU) + generators +
+    trucks; §51 transmits from **every alive unit** of a node and §52 counts a CC alive while
+    **any unit lives**, so killing the building alone no longer silences/decaps a site — the
+    surviving van keeps transmitting, and a full §52 kill must take the vehicles too (stated in
+    the layout comments + tests). **DS91's KARI is the showcase** (13/13 relays + 4/4 centers
+    furnished, GCI shelters at the centers); RT's scenery-authored 9-node network stays as
+    authored; power plants stay bare on purpose. **Two template landmines,
     now CI-locked:** pydcs saves miz countries **name-sorted** and the loader anchors each
     layout's origin on the first matched unit (vehicles before statics per country), so support
     groups live under **blue/USAF Aggressors** — the only blue country sorting after USA — with
     an origin-pinned-at-(0,0) test; and pydcs seeds unused countries into **NEUTRALS**, which
     the loader never scans (pop into blue first or the groups silently load as nothing). Tests
-    `tests/armedforces/test_sam_support_vehicles.py` (131, incl. the dead-slot guard now
+    `tests/armedforces/test_sam_support_vehicles.py` (136, incl. the dead-slot guard now
     **repo-wide across all five layout families** with the loader's real name-or-statics
     matching, and six both-ways nation-correctness cases for the EWR kit);
     features doc §85 (+ the "Unit-coverage sweep — 2026-08-04" section), checklist B43 + B44 —

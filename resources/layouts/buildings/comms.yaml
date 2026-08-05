@@ -12,4 +12,32 @@ groups:
       unit_types:
         - TV tower
         - Comms tower M
+    # 414th: the station's working site -- the comms van, its generators, and
+    # trucks. §51/§70 SEMANTICS, on purpose (DM call 2026-08-04): the comms-jam
+    # emitter transmits from every ALIVE unit of the node and §70 counts a
+    # source alive while any unit lives, so killing the tower alone no longer
+    # silences the site -- the surviving van keeps transmitting until the
+    # compound is dead. C2/Power are access-gated whitelists (nation-correct;
+    # a faction with none renders the bare tower as before).
+    - name: comms1 C2
+      optional: true
+      unit_count:
+        - 1
+      unit_types:
+        - ZIL-131 KUNG
+        - Ural-375 PBU
+    - name: comms1 Power
+      optional: true
+      unit_count:
+        - 1
+        - 2
+      unit_types:
+        - generator_5i57
+    - name: comms1 Logistics
+      optional: true
+      unit_count:
+        - 1
+        - 2
+      unit_classes:
+        - Logistics
 layout_file: resources/layouts/buildings/buildings.miz

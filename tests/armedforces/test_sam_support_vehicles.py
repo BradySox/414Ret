@@ -464,3 +464,71 @@ def test_furnished_building_offers_the_faction_roster() -> None:
     offered = {t.id for t in group.dcs_unit_types_for_group(slot)}
     assert "ATZ-10" in offered, "the fuel farm cannot roll a fuel bowser"
     assert "Ural-375" in offered
+
+
+# --- C2 compound furnishing (comms + command center; DM call 2026-08-04) ---------
+
+# The §51/§52 SEMANTICS CHANGE IS DELIBERATE and these tests document it: the
+# comms-jam emitter transmits from every ALIVE unit of a node, §70 counts a
+# source alive while any unit lives, and §52 counts a command center alive
+# while any unit lives -- so with the compound furnished, killing the building
+# alone no longer silences/decapitates the site. The surviving comms van keeps
+# transmitting; full decapitation must kill the C2 vehicles too.
+C2_BUILDINGS = {
+    "comms": ("comms1 C2", "comms1 Power", "comms1 Logistics"),
+    "command_center": (
+        "CommandCenter C2",
+        "CommandCenter Power",
+        "CommandCenter Logistics",
+    ),
+}
+
+
+@pytest.mark.parametrize("layout_name,slots", sorted(C2_BUILDINGS.items()))
+def test_c2_building_declares_its_compound(
+    layout_name: str, slots: tuple[str, ...]
+) -> None:
+    layout = LAYOUTS.by_name(layout_name)
+    present = {ug.name for ug in layout.all_unit_groups}
+    for slot in slots:
+        assert slot in present, f"{layout_name} lost its {slot!r} slot"
+    for unit_group in layout.all_unit_groups:
+        if unit_group.name in slots:
+            assert unit_group.optional
+            assert len(unit_group.layout_units) >= max(unit_group.unit_count)
+            if "C2" in unit_group.name or "Power" in unit_group.name:
+                assert unit_group.unit_types and not unit_group.unit_classes, (
+                    f"{unit_group.name} must whitelist unit_types -- a class-based "
+                    f"slot would pull wrong-nation or wrong-role CommandPost units"
+                )
+
+
+@pytest.mark.parametrize("layout_name", sorted(C2_BUILDINGS))
+def test_c2_building_origin_still_anchors_on_the_building(layout_name: str) -> None:
+    layout = LAYOUTS.by_name(layout_name)
+    first = layout.groups[0].unit_groups[0].layout_units[0]
+    assert abs(first.position.x) < 0.5 and abs(first.position.y) < 0.5
+
+
+def test_command_center_kit_is_nation_and_era_correct() -> None:
+    from game.armedforces.forcegroup import ForceGroup
+    from game.factions import FACTIONS
+
+    layout = LAYOUTS.by_name("command_center")
+    c2_slot = [ug for ug in layout.all_unit_groups if ug.name == "CommandCenter C2"][0]
+
+    # Red Tide (1988): the full kit including the GCI station shelter.
+    rt = ForceGroup.for_layout(layout, FACTIONS["Russia 1980 (Red Tide)"])
+    rt_offered = {t.id for t in rt.dcs_unit_types_for_group(c2_slot)}
+    assert "GCI_station_MiG29" in rt_offered
+
+    # Vietnam 1970: the GCI station is 1980s kit and must NOT appear; the
+    # PBU (1961) carries the era.
+    vn = ForceGroup.for_layout(layout, FACTIONS["Vietnam 1970"])
+    vn_offered = {t.id for t in vn.dcs_unit_types_for_group(c2_slot)}
+    assert "GCI_station_MiG29" not in vn_offered
+    assert "Ural-375 PBU" in vn_offered
+
+    # USA 2020: no Soviet kit -- the bunker renders bare.
+    us = ForceGroup.for_layout(layout, FACTIONS["USA 2020"])
+    assert us.dcs_unit_types_for_group(c2_slot) == []

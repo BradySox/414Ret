@@ -3626,9 +3626,14 @@ all 6; a western FPS-117 site renders the ECS shelter instead, never the Soviet 
 **layout-generated economy buildings are furnished** (a generated fuel farm / ammo depot /
 factory / warehouse fields 1–2 trucks or a bowser beside the statics; hand-authored named targets
 — DS91's CENTAF set, RT's authored factories — stay bare **by design**, and any authored building
-cluster having MOVED from earlier saves is the origin-shift fail signature); and over a few turns
-a supply convoy is seen carrying a refueller (blue M978 / red ATZ family / a COIN campaign's
-civilian ATZ-5 on the ratline). Kills record as ordinary ground losses.
+cluster having MOVED from earlier saves is the origin-shift fail signature);
+**the C2 compounds render and their kill semantics hold** (Desert Storm is the showcase: all 13
+KARI comms relays + 4 command centers field vans/GCI shelters/generators/trucks; RT's
+scenery-authored network stays as authored; **verify a §51 comms node keeps jamming after the
+tower dies while its van survives, and stops when the compound is dead** — that is the accepted
+§51/§52 semantics change, not a bug; a §52 decap now requires the vehicles dead too); and over a
+few turns a supply convoy is seen carrying a refueller (blue M978 / red ATZ family / a COIN
+campaign's civilian ATZ-5 on the ratline). Kills record as ordinary ground losses.
 
 **Fail signatures to watch for:**
 - A bowser or the KUNG **clipping** launcher/radar models (positions are the templates' existing

@@ -1686,7 +1686,9 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     section boundaries; `dependency_masters()` keeps it to the controls that are actually
     somebody's master. Tests `tests/test_settings_filter.py` (17, driving the real Qt widgets
     offscreen) + the rewritten cross-page case in `tests/test_settings_dependencies.py`;
-    `qt_ui` is not CI type-checked, so this needs an in-app eyeball — checklist B39.
+    `qt_ui` is not CI type-checked, so it needed an in-app eyeball — checklist B46
+    (renumbered from a duplicate B40 2026-08-05; §82 owns B40), **VERIFIED 2026-08-05**
+    (user app pass).
     Shipped with the **UI-audit bug fixes**: the defeat-shows-
     "Victory!" `onEndGame` enum-truthiness bug, the inverted Air-Wing player-slots caption, the shared
     `self.dialog` window-GC bug, the `QGroundObjectMenu` repair list-mutation, the web `TgosLayer`
@@ -3390,9 +3392,22 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     (120–900 s; evenly rather than rolled independently, so a small fleet can't randomly land
     every release in one frame — the §49 stagger lesson). **`ReturnFire`, never `WeaponHold`**:
     the point is to delay *initiation*, and a holding fleet is a defenceless one — which is
-    also why the load-bearing unknown is whether a DCS ship on `ReturnFire` engages an
-    *inbound aircraft that hasn't shot at it yet* (unverifiable outside DCS; **test this
-    first**). Runtime only, no persisted state. **N2 the magazine** (`naval_magazines`, same
+    also why the load-bearing unknown was whether a DCS ship on `ReturnFire` engages an
+    *inbound aircraft that hasn't shot at it yet*. **ANSWERED 2026-08-05, BADLY** (the B39
+    first fly — two Marianas missions where an emitter bug, fixed same day, kept the fleet
+    held all mission): a `ReturnFire` fleet fired **zero** shots in 110 min, including while
+    13 Harpoons sank the SUGARGLIDER Type 071 LHA with its HHQ-16 escorts silent alongside —
+    **`ReturnFire` = no missile defense at all**, so a held/winchester group is defenseless;
+    **reworked same day (DM call): RELEASE-ON-ATTACK** — the first enemy weapon aimed at
+    (SHOT target) or landing on (HIT) a managed group releases it to weapons-free
+    immediately, held OR winchester (friendly fire never releases; an attacked winchester
+    group is never re-dropped and its overshoot stays counted), so the hold decides who
+    starts the war, never who may defend. The same fly found + fixed the emitter bug: `LuaData.serialize`
+    **drops a node's `add_key_value` entries whenever the node also has child items**, so the
+    `stagger`/`metered` switches never reached the miz (`stagger false … metered false` at
+    load) — they are now named child items (`add_item().set_value()`, the CombatSAR
+    `autoSpawn` pattern), pinned by a serialization-level test; an AST audit cleared every
+    other emitter of the mix. Runtime only, no persisted state. **N2 the magazine** (`naval_magazines`, same
     section, default **OFF**) — each naval group carries a persisted anti-ship stock
     (`game.naval_magazines`, keyed by the same stable `TheaterGroup.group_name` §63 uses —
     the TheaterGroup lives in the save, so the key survives regeneration; capacity from the

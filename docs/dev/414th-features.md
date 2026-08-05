@@ -7691,7 +7691,7 @@ Harpoons; that is fine precisely because the weapon sets do not overlap. A guard
 
 **Never add a land-attack family to the pattern list.**
 
-### The load-bearing unknown
+### The load-bearing unknown — ANSWERED 2026-08-05, BADLY
 
 **Whether a DCS ship on `ReturnFire` engages an inbound aircraft that has not yet fired at
 it.** DCS ROE is per *group*, not per weapon type — there is no way to say "no more anti-ship
@@ -7699,6 +7699,21 @@ missiles, but keep shooting SAMs" — so `ReturnFire` is the chosen compromise f
 pre-release and a winchester ship. If DCS does not honour it that way, a spent ship is also a
 defenceless one. That may be acceptable (it is out of the fight either way) but it must be a
 deliberate call, not a surprise. **Test this first**, before trusting either tier.
+
+**Flown answer (2026-08-05, the B39 first fly):** an emitter serialization bug (see the
+design note — `LuaData.serialize` drops a node's key-values when it also has child items, so
+the `stagger`/`metered` switches never reached the miz; fixed same day, switches are now
+named child items pinned by a serialization-level test) kept the whole fleet on
+generation-side `ReturnFire` for two full missions — and the fleet fired **nothing**. Not
+one SAM in 110 minutes: an F-22 loitered unengaged at 24.9 km from an 054A/052B group, and
+13 AGM-84D sank the SUGARGLIDER Type 071 LHA while its HHQ-16 escorts sat silent a few km
+away (the 2026-08-03 WeaponFree fly of the same theatre scored 99 SM intercepts).
+**A `ReturnFire` naval group mounts no missile defense and does not return fire even under
+direct anti-ship attack.** Reworked same day (DM call): **release-on-attack** — the first
+enemy weapon aimed at (SHOT target) or landing on (HIT) a managed group releases it to
+weapons-free immediately, held or winchester; friendly fire never releases; an attacked
+winchester group is never re-dropped to ReturnFire and its overshoot stays counted for the
+debit. Details + harness pins in the design note; the B39 re-fly runs on this build.
 
 ### Symmetry, and what the plugin does not own
 

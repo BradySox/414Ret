@@ -254,6 +254,14 @@ Upstream hands you a map that already knows everything. Here you have to go look
   time instead of all at once, and every anti-ship missile fired is gone for the rest of the war.
   A ship that runs dry still defends itself — it just has nothing left to open with, and the war
   goes on for another eighteen turns.
+- **GPS jamming** — enemy jamming sites deny satellite guidance over an area around themselves.
+  A JDAM, JSOW, JASSM or SLAM-ER released inside the bubble flies its whole normal profile and
+  then lands well off the aimpoint — the further inside you released, the further off it goes —
+  so the target survives and the pass has to be flown again. Laser and TV weapons are unaffected,
+  so the answer is to change how you deliver, stand off outside the bubble, or find and kill the
+  jammer, which puts your accuracy back the moment it dies. A jamming area you've actually
+  scouted is briefed on the kneeboard; one you haven't, isn't — the first sign of that one is a
+  bomb that goes long.
 - Plus: strikeable **motor pool** depots, **enemy comms jamming** learned off a captured pilot,
   air-droppable **minefields**, and a **host F10 menu** to scramble bandits at a quiet event.
 

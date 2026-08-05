@@ -704,6 +704,17 @@ FEATURES: tuple[Feature, ...] = (
         "SAM battery support section (refuellers + power)",
         85,
     ),
+    Feature(
+        "gps_jamming",
+        "GPS jamming (satellite-guided weapons go long)",
+        86,
+        plugin_id="gpsjamming",
+        settings_fields=(
+            "gps_jamming",
+            "gps_jamming_default_reach_nm",
+            "gps_jamming_miss_radius_m",
+        ),
+    ),
     # Always-on engine plugins — major 414th machinery documented in design notes
     # rather than a numbered "Features at a Glance" entry.
     Feature("mantis_iads", "MANTIS IADS engine", plugin_id="mantisiads"),

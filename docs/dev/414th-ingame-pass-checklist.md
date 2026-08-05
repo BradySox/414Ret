@@ -3651,3 +3651,45 @@ bunker / Predator GCS). Kills record as ordinary ground losses.
   *generic*-layout sites and in convoys).
 - Legacy sites that previously rolled trucks now **never** rolling trucks (the whitelist
   addition must widen the roll, not displace it).
+
+
+### B45 — GPS jamming (satellite-guided weapons go long) · §86 · ☐ UNTESTED (built 2026-08-04)
+
+**Setup:** a campaign fielding a jamming site — pin the `GPS Jamming Site (Red)` preset onto an
+authored red EWR marker, which puts an `EW Radio Jammer (Red)` in the same group as the EWR.
+`gps_jamming` ON (414th Features → Electronic & command warfare) **and** the `gpsjamming`
+plugin ticked — the plugin is the runtime, so an unticked plugin silently kills the setting
+(the §36 lesson). Fly a strike with JDAMs at a target inside the jammer's reach (27 nm for
+these units — their own DCS-declared 50 km).
+
+**Pass criterion:** the JDAM releases, flies its whole normal profile, and detonates ~200 m off
+the aimpoint instead of on it — and the target survives. The firing flight gets ONE
+"GPS DENIED" cue on its first spoofed weapon. A laser weapon (GBU-12) dropped on the same pass
+hits normally. After killing the jammer, the very next JDAM hits normally — in the same
+mission. The kneeboard's `GPS` line appears only once recon has identified the site.
+
+**Fail signatures to watch for:**
+- **A bomb that detonates ON target AND produces a second explosion off it** — the predictive
+  terminal gate lost the race against a real JDAM's terminal profile (the top risk; the harness
+  flies a constant-rate descent, DCS does not). Raise `terminalAglFt` or shorten `trackStepS`.
+- **Nothing happens at all** — check the plugin is enabled and that a live jammer is actually
+  in the mission (`DCSRetribution|GPSJamming: armed` vs `inert` in dcs.log).
+- **A laser, TV, IR or anti-radiation weapon missing** — the pattern list leaked; this is the
+  one that turns the feature into a bug report.
+- The weapon **visibly vanishing** rather than reading as a bomb that went long (a
+  `Weapon:destroy()` legibility problem, not a logic one).
+- Your OWN side's weapons being degraded by your OWN jammer.
+- The cue firing once per bomb instead of once per flight.
+- An un-scouted jammer appearing on the kneeboard (a recon-fog leak).
+
+**Second half of the pass — the site must be huntable.** The jammer truck itself emits nothing
+an RWR or ARM can see (DCS gives it no radar at all), which is why it is paired with the EWR.
+Confirm:
+- The site **paints your RWR** and a **HARM will lock it** — you are locking the EWR, which is
+  the intended design, not a bug.
+- **Kill the jammer truck specifically** (guns/CBU, not the radar) → the next JDAM hits
+  normally, even though the radar beside it is still alive and still on your RWR. This is the
+  per-unit liveness contract; a failure here means jamming survives its own jammer.
+- **Kill only the radar** → the site drops off RWR but **jamming continues**. Also correct.
+- Every EWR site in a campaign that does *not* use the jamming presets still generates with
+  **no** jammer (the slot is optional + `fill: false`).

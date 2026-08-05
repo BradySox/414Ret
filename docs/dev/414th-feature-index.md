@@ -97,6 +97,7 @@ pass checklist `§N` is unregistered, or this table drifts.
 | §83 | SP Pilot Mode | — | `sp_pilot_mode` |
 | §84 | Old-stock loadout attrition | — | `stock_attrition`, `stock_attrition_start`, `stock_attrition_per_turn`, `stock_attrition_max` |
 | §85 | SAM battery support section (refuellers + power) | — | — |
+| §86 | GPS jamming (satellite-guided weapons go long) | `gpsjamming` | `gps_jamming`, `gps_jamming_default_reach_nm`, `gps_jamming_miss_radius_m` |
 | — | MANTIS IADS engine | `mantisiads` | — |
 | — | Splash Damage (414th tuned) | `splashdamage3` | — |
 | — | AI recon BDA capture (§3 TARPS) | `airecon` | — |

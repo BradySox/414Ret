@@ -1,0 +1,32 @@
+# 414th (§86): a RED early-warning site with a GPS-jamming section attached.
+#
+# The jammer is deliberately NOT a standalone site. A real GPS jammer emits in
+# L-band, which no RWR covers and no HARM homes on, so a lone jammer would be
+# invisible to the tools a pilot hunts emitters with -- findable only by recon,
+# and never prosecutable by SEAD. Pairing it with the early-warning radar gives
+# the site a real, always-on emitter (MANTIS never holds an EWR dark), so it
+# paints RWRs and takes HARMs like any other radar.
+#
+# The jammer's own liveness is tracked per-UNIT by the §86 runtime, so killing
+# the jammer truck stops the jamming even though the radar beside it survives --
+# and killing the radar blinds the site without stopping the jamming. Both are
+# worth a bomb, for different reasons.
+#
+# Pin this preset onto an authored EWR marker (ground_forces) to field it; no
+# existing EWR site changes, because the layout's jammer slot is optional and
+# fill: false.
+name: GPS Jamming Site (Red)
+tasks:
+  - EarlyWarningRadar
+units:
+  - EWR 1L13
+  - EWR 55G6
+  - EWR P-37 Bar Lock
+  # The ARM-able emitter. The EWRs put the site on RWR but carry no
+  # RADAR_BAND*_FOR_ARM attributes, so a HARM cannot home on them; the ST-68U
+  # does, which is what makes this site a real SEAD target rather than just a
+  # radar contact you have to go and bomb by hand.
+  - SAM SA-5 S-200 ST-68U "Tin Shield" SR
+  - EW Radio Jammer (Red)
+layouts:
+  - Early-Warning Radar

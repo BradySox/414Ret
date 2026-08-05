@@ -564,6 +564,8 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                     "comms_jam_requires_capture",
                     "red_comms_net",
                     "red_net_max_stations",
+                    "gps_jamming_default_reach_nm",
+                    "gps_jamming_miss_radius_m",
                 ],
             ),
             (
@@ -740,6 +742,7 @@ FEATURE_GATE_FIELDS: dict[str, list[str]] = {
         "enemy_comms_jamming",  # §51
         "comms_jam_requires_capture",  # §51
         "c2_decapitation_effects",  # §52
+        "gps_jamming",  # §85
     ],
     "Naval & missile strike": [
         "long_range_carrier_ops",  # §44
@@ -3413,6 +3416,57 @@ class Settings:
             "collection (the same nodes are its intel source). Runs via the "
             "'Red comms net' LUA plugin -- keep that plugin enabled or this "
             "setting does nothing."
+        ),
+    )
+    gps_jamming: bool = boolean_option(
+        "GPS jamming (satellite-guided weapons go long)",
+        page=MISSION_GENERATION_PAGE,
+        section=GENERAL_SECTION,
+        default=False,
+        detail=(
+            "Enemy GPS-jamming ground sites deny satellite guidance over an area "
+            "around themselves. A JDAM, JSOW, JASSM, SLAM-ER or KAB-*S released "
+            "into a live jammer's bubble is put down off the aimpoint -- further "
+            "off the deeper inside the bubble it was -- so the pass fails and the "
+            "target survives. Laser, TV and IR weapons are unaffected, so the "
+            "answer is to change delivery method, stand off outside the bubble, "
+            "or find and kill the jammer (which restores accuracy at once, in the "
+            "same mission). Symmetric: a site degrades the other side's weapons "
+            "only. Known jamming areas are briefed on the kneeboard, but only once "
+            "recon has actually found the site. Inert unless a campaign fields a "
+            "unit that jams. Runs via the 'GPS jamming' LUA plugin -- keep that "
+            "plugin enabled or this setting does nothing."
+        ),
+    )
+    gps_jamming_default_reach_nm: float = bounded_float_option(
+        "GPS denial reach (nm)",
+        enabled_when="gps_jamming",
+        page=MISSION_GENERATION_PAGE,
+        section=GENERAL_SECTION,
+        default=30.0,
+        min=5.0,
+        max=150.0,
+        divisor=1,
+        detail=(
+            "How far a jamming site denies GPS, for units whose own data file "
+            "names no reach. Keep it local rather than theatre-wide: a bubble a "
+            "package can plan around (and a strike can remove) is a decision, "
+            "while a map-sized one just switches a weapon class off."
+        ),
+    )
+    gps_jamming_miss_radius_m: float = bounded_float_option(
+        "Miss distance at full jamming (m)",
+        enabled_when="gps_jamming",
+        page=MISSION_GENERATION_PAGE,
+        section=GENERAL_SECTION,
+        default=200.0,
+        min=25.0,
+        max=1500.0,
+        divisor=1,
+        detail=(
+            "How far off the aimpoint a fully-jammed weapon lands. Scaled down "
+            "toward the edge of the bubble, so a store clipping the fringe is "
+            "nudged and one released over the emitter is thrown well clear."
         ),
     )
     red_net_max_stations: int = bounded_int_option(

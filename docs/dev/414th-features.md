@@ -8191,6 +8191,147 @@ separation, preset access, and a **repo-wide dead-slot guard** that fails if *an
 declares a slot no group in its `.miz` is named after). Checklist: **B43**.
 
 
+## §86 — GPS jamming (satellite-guided weapons go long)
+
+**The constraint that shapes everything.** DCS models **no GPS receiver**. No scripting API
+degrades a jet's navigation, a weapon's guidance quality, or a JDAM's CEP — which is why every
+earlier look at GPS/datalink jamming (see `414th-iads-c2-consequences-notes.md`) recorded it as
+*not feasible*. The way through is to stop trying to jam the aircraft and **jam the weapon**:
+track the released store and make it miss. That turns out to be more honest than it sounds,
+because what a GPS jammer actually does to a strike package is exactly "your satellite-guided
+weapons do not hit what you aimed at."
+
+**The mechanism** (`resources/plugins/gpsjamming/gpsjamming-config.lua`): `S_EVENT_SHOT` starts
+a track on any store matching the curated satellite-guided pattern list → the first sample the
+store is inside a live **enemy** jammer's reach, roll `degradeChancePct` **once** (the outcome
+is remembered either way, so a long glide cannot re-roll itself into a certainty) → the store
+flies its **entire normal profile** → at the terminal gate it is `destroy()`ed and a
+`trigger.action.explosion` produced at a scored offset. The pilot sees the release, the fall
+and the bang, just in the wrong place. Miss distance scales with jamming strength (1 at the
+emitter, 0 at the bubble edge), so a store clipping the fringe is nudged and one released
+overhead is thrown clear.
+
+**The predictive terminal gate is the non-obvious half.** A plain `agl <= floor` test **fails
+for fast weapons**: a store descending at 400 m/s covers 800 m in a 2 s sample step, so it can
+be at 900 m AGL on one tick and already detonated on the aimpoint by the next — the jamming
+silently does nothing, the worst failure mode (it reads as the feature being off). The gate
+fires when the store would already be *through* the floor by the next sample
+(`floor = max(terminalAgl, descentRate × trackStep × 2)`), so a coarse sample step makes the
+destroy happen **higher**, never later than impact.
+
+**No phantom spawns, no invented losses** (the §35/§37/§49 discipline). The store is a real
+weapon from a real jet; the script spawns nothing and owns no kills beyond the miss explosion,
+whose damage is ordinary DCS damage recorded natively. A weapon that vanishes before the gate
+(it impacted, or a SHORAD killed it) is simply dropped — a degraded store that got that far hit
+normally and is deliberately **not** re-detonated, since we cannot know it did not already do
+its damage. The jammer is an ordinary strikeable TGO, and killing it drops it from the live-site
+check on the very next weapon, so **accuracy returns inside the same mission**.
+
+**Identification — the unit-yaml contract.** The *presence* of a `gps_jamming` block in a ground
+unit's own data file is what makes it a jammer (`GpsJammingProperties`,
+`game/dcs/groundunittype.py` — the §24 `date_gated_properties` precedent):
+
+```yaml
+gps_jamming:
+  radius_nm: 45        # optional — falls back to the campaign setting (30 nm)
+  miss_radius_m: 350   # optional — falls back to the campaign setting (200 m)
+```
+
+`gps_jamming: {}` (or `true`) is a jammer on the campaign defaults. Chosen deliberately so that
+**adding a jammer is a data edit** — register the vehicle, write its yaml, add the block; no id
+list in Python needs touching, so unit work and feature work never have to land together. A site
+with several jammer types takes the **longest** declared reach and the **worst** declared miss.
+
+**The curated weapon list** (`GPS_GUIDED_WEAPON_PATTERNS`, emitted to Lua so it has exactly one
+home; matched as plain case-insensitive **substrings, never Lua patterns** — weapon names carry
+`-` and `(`, the §70 lesson). **In:** JDAM (GBU-31/32/38), GBU-54 (Laser JDAM — its *baseline*
+mode is GPS/INS and the runtime cannot see whether anyone is lasing), JSOW, JASSM, SLAM-ER, WCMD
+dispensers, KAB-500S/1500S (GLONASS, so red eats its own medicine). **Out, and load-bearing:**
+every laser, TV, IR and anti-radiation weapon — a Paveway that mysteriously misses is a bug
+report, not a feature — plus the §63/§81 ship-launched cruise missiles, which are their own flown
+features. Pinned in both directions by `tests/fourteenth/test_gps_jamming.py`.
+
+**Squadron calls (2026-08-04).** *Symmetric* — a site degrades the **opposing** coalition only,
+so a blue jammer works the day one is fielded (red owns them in practice). *The player is told,
+both ways* — a recon-**fogged** kneeboard BLUF line (`GPS  <site> 30nm — GPS weapons unreliable
+inside; use laser/TV or stand off`), so an **un-scouted jammer is not briefed** and finding it is
+worth a recon sortie; plus a **one-shot in-cockpit cue** the first time a flight's weapon is
+spoofed, so a failed pass reads as jamming rather than as a broken sim.
+
+**What the player does about it:** change delivery method (laser/TV are unaffected — the intended
+counter, and the reason the exclusions are load-bearing), stand off outside the bubble, or kill
+the jammer.
+
+**Making the jammer huntable — the RWR/HARM pairing.** The units are DCS's own
+`GPS_Spoofer_Red`/`GPS_Spoofer_Blue` ("Radio jammer"), and their stock DB entry
+(`CoreMods/tech/TechWeaponPack/Database/vehicles/Unarmed/Radio_jammer_Red.lua`) declares
+`GT_t.ws = 0` with **no `GT.WS`, no `GT.Sensors`, no `searchRadarFrequencies`** — so they are
+invisible to RWR and cannot be locked by an ARM. (A real GPS jammer transmits in L-band anyway,
+which no RWR covers and no HARM homes on, so this is faithful — and unplayable: the jammer could
+only ever be found by recon, and SEAD could never prosecute it.)
+
+Rather than ship a DCS mod adding an emitter to the truck (possible — clone the DB entry and add
+`GT.WS.radar_type` + `searchRadarFrequencies` + `GT.Sensors` + `wsType_Radar` — but it would put
+the whole squadron on a mod install), the jammer is **paired with a real vanilla emitter**: an
+optional `GPS Jammer 0` slot on the **`Early-Warning Radar` layout**, plus the two preset groups
+`GPS Jamming Site (Red)`/`(Blue)`. An EWR is exactly the right partner because **MANTIS never
+holds an EWR dark** (detection rides on dedicated EWR sites + AWACS), so the site is *always*
+emitting — it paints RWRs, takes HARMs, and SEAD can service it like any other radar.
+
+**Being on RWR and being HARM-able are two different DCS attributes, and no one unit here has
+both** — which is why the site fields *two* radars. `GT.WS.radar_type` is what puts a unit on the
+RWR (the EWRs have it); `RADAR_BAND1/2_FOR_ARM` is what an anti-radiation seeker homes on, and
+**the EWRs do not carry it** (verified: `EWR_FPS-117` declares only `"EWR"`, and of the units in
+DCS's TechWeaponPack carrying the ARM bands, not one is an EWR). An EWR alone would therefore
+give an RWR contact you cannot shoot a HARM at. The acquisition radars *do* carry the bands, so
+the site also fields one — **ST-68U "Tin Shield"** (red) / **NASAMS MPQ-64F1** (blue) — riding in
+the same EWR-role group, so MANTIS still never holds it dark. That slot is `unit_count: [2]`
+because the ST-68U is a track-radar class and the standing §60 redundancy contract applies: one
+HARM must not blind the site outright.
+
+Both slots are `optional: true` + `fill: false` and the presets are opt-in, so **every existing
+EWR site in every shipped campaign generates exactly as before**; a campaign fields a jamming
+site by pinning one of the presets onto an authored EWR marker. Country gating does the rest —
+the red preset can reach only the red jammer, the blue preset only the blue one (proven by
+test).
+
+**Preseeded in Operation Baltic Fury** (2027) on **EWR-26** (13.9 km from Laage, the site blue
+meets on the way north) and **EWR-27** (8.5 km from Kastrup, the campaign's victory objective —
+so the Copenhagen push becomes "kill the jammer before you can JDAM the prize"). The other three
+red EWRs stay ordinary radar sites. Red Tide is deliberately **not** a candidate: it is 1988, and
+GPS-guided weapons postdate it entirely.
+
+This is what forced the **per-unit liveness** contract above: the jammer shares its DCS group
+with the radar, so a group-level check would keep denying GPS on the strength of the surviving
+radar beside the wreck of the actual jammer — unkillable jamming. Killing the truck stops the
+jamming; killing the radar blinds the site without stopping it. Both are worth a bomb, for
+different reasons.
+
+**Settings.** `gps_jamming` (414th Features → Electronic & command warfare, default **OFF**,
+preseeded nowhere) + `gps_jamming_default_reach_nm` (30) / `gps_jamming_miss_radius_m` (200)
+(Mission Generation → Comms war, `enabled_when=gps_jamming`). Plugin options cover the degrade
+chance (85 %), terminal altitude (100 ft AGL), miss power (400 kg), the shooter cue, grace, and
+the track step. **The plugin is the runtime** — a saved default with the `gpsjamming` plugin
+unticked silently kills the setting (the §36 lesson).
+
+**Deliberately not done:** aircraft navigation degradation (impossible, and it would lie to the
+pilot's own cockpit); a dedicated map overlay (the site is an ordinary TGO and already draws);
+§74 DTC coupling (a cartridge carries steerpoints, not guidance quality); and **planner
+awareness** — the auto-planner does not yet avoid jammed areas or re-pick loadouts, a real
+follow-up kept out of v1 so the runtime can be flown alone.
+
+Files: `game/fourteenth/gps_jamming.py`, `game/dcs/groundunittype.py`,
+`game/missiongenerator/gpsjammingluadata.py`, `game/missiongenerator/luagenerator.py`,
+`game/missiongenerator/kneeboard.py`, `game/settings/settings.py`,
+`resources/plugins/gpsjamming/`, `resources/units/ground_units/GPS_Spoofer_{Red,Blue}.yaml`,
+`resources/layouts/anti_air/Early-Warning_Radar.{yaml,miz}`,
+`resources/groups/GPS-Jamming-Site-{Red,Blue}.yaml`.
+Tests: `tests/fourteenth/test_gps_jamming.py` (39) +
+`tests/missiongenerator/test_gpsjammingluadata.py` (4) +
+`tests/lua/test_gpsjamming_runtime.py` (12). Design note:
+[`414th-gps-jamming-notes.md`](design/414th-gps-jamming-notes.md). Checklist: **B45**.
+
+
 ## Unit-coverage sweep — 2026-08-04
 
 The §85 investigation raised an obvious follow-up from the DM: *"scrub my local install of all

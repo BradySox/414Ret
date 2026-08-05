@@ -41,3 +41,51 @@ groups:
         - 2
       unit_classes:
         - Logistics
+    # 414th (§86): the site's GPS-jamming section, parked beside the radar.
+    #
+    # It lives HERE, in the same DCS group as the early-warning radar, on
+    # purpose. A GPS jammer emits in L-band, which no RWR covers and no HARM
+    # homes on, so a jammer standing alone would be invisible to the tools a
+    # pilot actually hunts emitters with -- you could only find it by recon.
+    # Co-locating it with the EWR gives the site a real, always-on emitter
+    # (MANTIS never holds an EWR dark), so it paints RWRs and takes HARMs like
+    # any other radar, and SEAD can prosecute it. The jammer's own liveness is
+    # tracked per-UNIT by the runtime, so killing the truck stops the jamming
+    # even though the radar beside it survives.
+    #
+    # optional + fill: false -- only a preset that explicitly supplies a jammer
+    # fields one, so every existing EWR site generates exactly as before.
+    - name: GPS Jammer 0
+      optional: true
+      fill: false
+      unit_count:
+        - 1
+        - 2
+      unit_types:
+        - GPS_Spoofer_Red
+        - GPS_Spoofer_Blue
+    # The site's ARM-able emitter -- and it is a SEPARATE unit from the EWR for a
+    # measured reason. Two different DCS attributes decide the two halves of being
+    # huntable, and no single unit here has both:
+    #
+    #   * `GT.WS.radar_type` puts a unit on the RWR. The EWR has this.
+    #   * `RADAR_BAND1/2_FOR_ARM` is what an anti-radiation seeker homes on -- and
+    #     the EWRs do NOT carry it (verified: EWR_FPS-117 declares only "EWR"; of
+    #     the units in DCS's TechWeaponPack that carry the ARM bands, not one is an
+    #     EWR). So an EWR alone gives an RWR contact you cannot HARM.
+    #
+    # The acquisition radars DO carry the ARM bands (ST-68U "Tin Shield" for red,
+    # NASAMS MPQ-64F1 for blue), so one of those parked at the site makes it a real
+    # SEAD target. It rides in the EWR-role group, so MANTIS still never holds the
+    # site dark. Same optional + fill: false gate -- no existing site changes.
+    # unit_count 2, not 1: the ST-68U is a track-radar class, so the standing §60
+    # redundancy contract applies -- one HARM must not blind the site outright.
+    # Two emitters also make the SEAD fight here less one-and-done.
+    - name: GPS Jammer Radar 0
+      optional: true
+      fill: false
+      unit_count:
+        - 2
+      unit_types:
+        - RLS_19J6
+        - NASAMS_Radar_MPQ64F1

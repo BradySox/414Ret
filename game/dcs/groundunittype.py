@@ -68,6 +68,55 @@ SkynetProperties = IadsProperties
 
 
 @dataclass(frozen=True)
+class GpsJammingProperties:
+    """Per-unit-type GPS-denial reach, from the unit definition's ``gps_jamming``
+    block (§85).
+
+    The block's *presence* is what makes a ground unit a GPS jammer -- the fields
+    are optional tuning::
+
+        gps_jamming:
+          radius_nm: 45        # optional; falls back to the campaign setting
+          miss_radius_m: 250   # optional; falls back to the campaign setting
+
+    Keeping the reach in the unit's own data file (the §24 ``date_gated_properties``
+    precedent) means adding a jammer to the fork is a *data* edit: register the
+    vehicle, write its yaml, add the block. No id list in Python needs touching,
+    so the unit author and this feature never have to land together.
+    """
+
+    radius_nm: Optional[float] = None
+    miss_radius_m: Optional[float] = None
+
+    @classmethod
+    def from_data(cls, data: Any) -> Optional[GpsJammingProperties]:
+        """Parse the yaml block. ``None`` when the unit declares none (the
+        overwhelmingly common case); an empty/``true`` block is a jammer on the
+        campaign defaults."""
+        if data is None or data is False:
+            return None
+        if data is True:
+            return cls()
+        if not isinstance(data, dict):
+            logging.warning("Ignoring malformed gps_jamming block: %r", data)
+            return None
+        return cls(
+            radius_nm=_optional_float(data.get("radius_nm")),
+            miss_radius_m=_optional_float(data.get("miss_radius_m")),
+        )
+
+
+def _optional_float(value: Any) -> Optional[float]:
+    if value is None:
+        return None
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        logging.warning("Ignoring non-numeric gps_jamming value: %r", value)
+        return None
+
+
+@dataclass(frozen=True)
 class GroundUnitType(UnitType[Type[VehicleType]]):
     spawn_weight: int
     # Field name kept as ``skynet_properties`` to stay compatible with existing
@@ -79,6 +128,11 @@ class GroundUnitType(UnitType[Type[VehicleType]]):
     # Defines if we should place the ground unit with an inverted heading.
     # Some units like few Launchers have to be placed backwards to be able to fire.
     reversed_heading: bool = False
+
+    # §85: set when the unit definition carries a `gps_jamming` block, i.e. this
+    # vehicle denies GPS to the opposing side's satellite-guided weapons. None
+    # (the default) for every ordinary unit.
+    gps_jamming: Optional[GpsJammingProperties] = None
 
     _by_name: ClassVar[dict[str, GroundUnitType]] = {}
     _by_unit_type: ClassVar[dict[type[VehicleType], list[GroundUnitType]]] = (
@@ -203,4 +257,5 @@ class GroundUnitType(UnitType[Type[VehicleType]]):
                 data.get("skynet_properties", {})
             ),
             reversed_heading=data.get("reversed_heading", False),
+            gps_jamming=GpsJammingProperties.from_data(data.get("gps_jamming")),
         )

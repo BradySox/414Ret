@@ -46,6 +46,7 @@ local Harness = {
         errors = {}, -- env.error + errors escaping scheduled functions
     },
     groupsByName = {},
+    unitsByName = {},
     groupsBySideCat = {}, -- [side][category] -> list
     airbases = {}, -- name -> AirbaseFake (Harness.addAirbase)
     markPanels = {},
@@ -280,6 +281,13 @@ Group.getByName = function(name)
     return Harness.groupsByName[name]
 end
 
+-- Unit.getByName: the per-unit lookup the gpsjamming plugin uses so a jammer's
+-- liveness is its own, not its group's.
+Unit = Unit or {}
+Unit.getByName = function(name)
+    return Harness.unitsByName[name]
+end
+
 -- spec = { name, side, category, units = { { name, type, x, z, alt, agl?, life,
 -- exists, airborne, attributes = {...}, velocity = {x,y,z} }, ... } }
 function Harness.addGroup(spec)
@@ -308,6 +316,7 @@ function Harness.addGroup(spec)
             group = grp,
         }, UnitFake)
         table.insert(grp.units, unit)
+        Harness.unitsByName[unit.name] = unit
     end
     Harness.groupsByName[spec.name] = grp
     Harness.groupsBySideCat[spec.side] = Harness.groupsBySideCat[spec.side] or {}
@@ -451,8 +460,20 @@ function WeaponFake:getTypeName()
     return self.typeName or "FAKE_WPN"
 end
 
+-- A released weapon FLIES: its position integrates its velocity from the moment of
+-- release, so a plugin that gates on altitude (the GPS-jamming terminal gate) sees a
+-- store actually descend. A weapon with no velocity (the default) never moves, so
+-- every pre-existing test is unaffected.
 function WeaponFake:getPoint()
-    return { x = self.x or 0, y = self.alt or 0, z = self.z or 0 }
+    local x, y, z = self.x or 0, self.alt or 0, self.z or 0
+    local v = self.velocity
+    if v then
+        local dt = Harness.now - (self.bornAt or 0)
+        x = x + (v.x or 0) * dt
+        y = y + (v.y or 0) * dt
+        z = z + (v.z or 0) * dt
+    end
+    return { x = x, y = y, z = z }
 end
 
 function WeaponFake:getVelocity()
@@ -478,6 +499,7 @@ function Harness.makeWeapon(spec)
         velocity = spec.velocity,
         exists = spec.exists,
         vanishAt = spec.vanishAt,
+        bornAt = Harness.now,
     }, WeaponFake)
 end
 

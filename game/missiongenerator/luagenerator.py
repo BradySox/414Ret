@@ -35,6 +35,7 @@ from .interceptluadata import (
 )
 from .cruisemissileluadata import populate_cruise_missiles_lua
 from .missiondata import CombatSarTemplates, MissionData
+from .gpsjammingluadata import populate_gps_jamming_lua
 from .growlerluadata import populate_growler_lua
 from .mobilemissileluadata import populate_mobile_missiles_lua
 from .navalmagazineluadata import populate_naval_magazines_lua
@@ -431,6 +432,13 @@ class LuaGenerator:
         # jamming effects (missile-spoof bubble + ROE-hold pulses, never
         # enableEmission) over the package it escorts.
         populate_growler_lua(lua_data, self.game, self.mission_data)
+
+        # GPS jamming (§85) -- emits dcsRetribution.gpsJamming only when the
+        # setting is on and a live GPS-jamming ground site exists; the gpsjamming
+        # plugin tracks each satellite-guided weapon released into a jammer's
+        # bubble and puts it down off the aimpoint. Real ordnance from a real
+        # jet: no spawns, and killing the jammer restores accuracy at once.
+        populate_gps_jamming_lua(lua_data, self.game, self.mission_data)
 
         # Mobile missile sites (the SCUD hunt) -- emits dcsRetribution.mobileMissiles
         # only when the setting is on and a live vehicle-carrying missile site exists;

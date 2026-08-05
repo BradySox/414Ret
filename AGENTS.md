@@ -3720,7 +3720,24 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     is worth a recon sortie) plus a **one-shot cockpit cue** on a flight's first spoofed weapon,
     so a failed pass reads as jamming rather than a broken sim; *GPS-guided air ordnance only*.
     The counters are change delivery method (laser/TV unaffected), stand off, or kill the
-    jammer. Gated `gps_jamming` (414th Features → Electronic & command warfare, default **OFF**,
+    jammer. **Making the jammer huntable — the RWR/HARM pairing:** the units are DCS's own
+    `GPS_Spoofer_Red`/`Blue` ("Radio jammer"), whose stock DB entry declares `GT_t.ws = 0`
+    with **no `GT.WS`, no `GT.Sensors`, no `searchRadarFrequencies`** — so they are invisible
+    to RWR and un-lockable by an ARM (faithful, since a real GPS jammer is L-band, and
+    unplayable, since SEAD could never prosecute it). Rather than ship a DCS mod adding an
+    emitter to the truck (possible — clone the DB entry and add `GT.WS.radar_type` +
+    `searchRadarFrequencies` + `GT.Sensors` + `wsType_Radar` — but it puts the whole squadron
+    on a mod install; **offered and declined 2026-08-04**), the jammer is **paired with a real
+    vanilla emitter**: an optional `GPS Jammer 0` slot on the **`Early-Warning Radar` layout**
+    + the presets `GPS Jamming Site (Red)`/`(Blue)`. An EWR is the right partner because
+    **MANTIS never holds an EWR dark**, so the site is always emitting — it paints RWRs, takes
+    HARMs, and SEAD services it like any other radar. The slot is `optional: true` +
+    `fill: false` and the presets are opt-in, so **every shipped EWR site generates exactly as
+    before**; a campaign fields one by pinning a preset onto an authored EWR marker, and
+    country gating keeps each side to its own jammer. This pairing is what forced the
+    **per-unit liveness** contract: the jammer shares its DCS group with the radar, so a
+    group-level check would keep denying GPS on the strength of the surviving radar beside the
+    wreck of the actual jammer — unkillable jamming. Gated `gps_jamming` (414th Features → Electronic & command warfare, default **OFF**,
     preseeded nowhere) + `gps_jamming_default_reach_nm` (30) / `gps_jamming_miss_radius_m` (200)
     (Mission Generation → Comms war); **the `gpsjamming` plugin is the runtime**, so an unticked
     plugin silently kills the setting (the §36 lesson). Deliberately not done: aircraft

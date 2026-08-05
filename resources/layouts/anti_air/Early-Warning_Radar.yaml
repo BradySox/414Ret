@@ -12,3 +12,26 @@ groups:
       fallback_classes:
         - SearchRadar
         - SearchTrackRadar
+    # 414th (§86): the site's GPS-jamming section, parked beside the radar.
+    #
+    # It lives HERE, in the same DCS group as the early-warning radar, on
+    # purpose. A GPS jammer emits in L-band, which no RWR covers and no HARM
+    # homes on, so a jammer standing alone would be invisible to the tools a
+    # pilot actually hunts emitters with -- you could only find it by recon.
+    # Co-locating it with the EWR gives the site a real, always-on emitter
+    # (MANTIS never holds an EWR dark), so it paints RWRs and takes HARMs like
+    # any other radar, and SEAD can prosecute it. The jammer's own liveness is
+    # tracked per-UNIT by the runtime, so killing the truck stops the jamming
+    # even though the radar beside it survives.
+    #
+    # optional + fill: false -- only a preset that explicitly supplies a jammer
+    # fields one, so every existing EWR site generates exactly as before.
+    - name: GPS Jammer 0
+      optional: true
+      fill: false
+      unit_count:
+        - 1
+        - 2
+      unit_types:
+        - GPS_Spoofer_Red
+        - GPS_Spoofer_Blue

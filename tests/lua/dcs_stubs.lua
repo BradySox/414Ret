@@ -46,6 +46,7 @@ local Harness = {
         errors = {}, -- env.error + errors escaping scheduled functions
     },
     groupsByName = {},
+    unitsByName = {},
     groupsBySideCat = {}, -- [side][category] -> list
     airbases = {}, -- name -> AirbaseFake (Harness.addAirbase)
     markPanels = {},
@@ -280,6 +281,13 @@ Group.getByName = function(name)
     return Harness.groupsByName[name]
 end
 
+-- Unit.getByName: the per-unit lookup the gpsjamming plugin uses so a jammer's
+-- liveness is its own, not its group's.
+Unit = Unit or {}
+Unit.getByName = function(name)
+    return Harness.unitsByName[name]
+end
+
 -- spec = { name, side, category, units = { { name, type, x, z, alt, agl?, life,
 -- exists, airborne, attributes = {...}, velocity = {x,y,z} }, ... } }
 function Harness.addGroup(spec)
@@ -308,6 +316,7 @@ function Harness.addGroup(spec)
             group = grp,
         }, UnitFake)
         table.insert(grp.units, unit)
+        Harness.unitsByName[unit.name] = unit
     end
     Harness.groupsByName[spec.name] = grp
     Harness.groupsBySideCat[spec.side] = Harness.groupsBySideCat[spec.side] or {}

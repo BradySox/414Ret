@@ -1,0 +1,15 @@
+# 414th (§86): the BLUE mirror of GPS-Jamming-Site-Red.
+#
+# §86 is symmetric in code -- a site denies GPS to the OPPOSING coalition -- so
+# this exists for the day a blue faction fields a jammer (and so that a red
+# campaign can be mirrored without new engineering). See the red preset for why
+# the jammer is paired with an early-warning radar rather than standing alone.
+name: GPS Jamming Site (Blue)
+tasks:
+  - EarlyWarningRadar
+units:
+  - EWR AN/FPS-117 Radar
+  - EWR AN/FPS-117 Radar (domed)
+  - EW Radio Jammer (Blue)
+layouts:
+  - Early-Warning Radar

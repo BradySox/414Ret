@@ -147,6 +147,66 @@ flown features and coupling them to an unflown one buys nothing.
 - **400 kg miss explosion**, deliberately below a real JDAM warhead: a jammed
   bomb is a miss, not a relocated hit.
 
+## Making the jammer huntable (RWR / HARM) — 2026-08-04
+
+The DM asked whether the EW truck could be made to emit something RWR and HARM
+can see. Checked against the installed DCS, not from memory.
+
+**The stock unit emits nothing.**
+`CoreMods/tech/TechWeaponPack/Database/vehicles/Unarmed/Radio_jammer_Red.lua`:
+
+```lua
+GT_t.ws = 0                       -- no weapon system at all
+GT.DetectionRange = 50000
+GT.attribute = { ... "Trucks", "Jammer" }
+-- no GT.WS, no GT.Sensors, no searchRadarFrequencies
+```
+
+A unit only lights an RWR / draws an ARM when it declares an emitter. The SON-9
+sitting next to it in the same pack has all three:
+
+```lua
+GT.WS.radar_type = 103                            -- the RWR lookup ID
+GT.WS.searchRadarFrequencies = {{2.7e9, 2.9e9}}   -- the band an ARM homes on
+GT.Sensors = { RADAR = "son-9 tr" }
+GT.attribute = { ...wsType_Radar... }
+```
+
+This is faithful — a real GPS jammer transmits in L-band, which no RWR covers and
+no HARM homes on — and **unplayable**: the jammer could only ever be found by
+recon, and SEAD could never prosecute it.
+
+**The mod route (offered, declined).** A vehicle mod cloning that DB entry and
+adding the four lines would work, and needs no 3D work (mods can reference an
+existing ED model). Two caveats made it the wrong first move: every client must
+install it (the CH-pack situation), and **each aircraft module ships its own RWR
+lookup table**, which a mod cannot extend — so a *new* emitter ID renders as
+unknown/blank on most jets, and the practical choice is to borrow an existing
+`radar_type`, at which point the contact reads as that SAM radar anyway.
+
+**The vanilla route (chosen).** Pair the jammer with a real emitter instead: an
+optional `GPS Jammer 0` slot on the **`Early-Warning Radar` layout** plus the
+`GPS Jamming Site (Red)`/`(Blue)` presets. An EWR is the right partner
+specifically because **MANTIS never holds an EWR dark** — detection rides on
+dedicated EWR sites and AWACS — so the site is *always* emitting. It paints
+RWRs, takes HARMs, and SEAD services it like any other radar, with zero mod and
+zero integrity-check exposure.
+
+Non-regression is structural: the slot is `optional: true` + `fill: false` and
+the presets are opt-in, so every shipped EWR site generates exactly as before.
+Country gating keeps each side to its own jammer (test-pinned).
+
+**This pairing is what forced the per-unit liveness contract.** The jammer shares
+its DCS group with the radar, so the original group-level `siteAlive` check would
+have kept denying GPS on the strength of the surviving radar beside the wreck of
+the actual jammer — unkillable jamming. The emitter now sends jammer **unit**
+names (`TheaterUnit.unit_name`) and the runtime checks `Unit.getByName`, so:
+
+- kill the **truck** → jamming stops, radar still on your RWR;
+- kill the **radar** → site off RWR, jamming continues.
+
+Both are worth a bomb, for different reasons.
+
 ## What the player does about it
 
 1. **Change delivery method** — laser and TV weapons are unaffected. This is the

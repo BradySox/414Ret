@@ -29,10 +29,14 @@ class _UnitType:
 
 class _Unit:
     def __init__(
-        self, jams: Optional[GpsJammingProperties], alive: bool = True
+        self,
+        jams: Optional[GpsJammingProperties],
+        alive: bool = True,
+        unit_name: str = "0001 | GPS jammer",
     ) -> None:
         self.unit_type = _UnitType(jams)
         self.alive = alive
+        self.unit_name = unit_name
 
 
 class _Group:
@@ -108,7 +112,7 @@ def test_a_live_site_is_emitted_with_everything_the_runtime_needs() -> None:
     # 45 nm / 350 m, from the unit definition rather than the campaign defaults.
     assert "83340" in lua  # 45 nm in metres
     assert 'missRadiusM = "350.0"' in lua
-    assert '"Haina jammer grp"' in lua
+    assert '"0001 | GPS jammer"' in lua
 
 
 def test_the_weapon_patterns_come_from_python() -> None:

@@ -8368,6 +8368,33 @@ spoofed, so a failed pass reads as jamming rather than as a broken sim.
 counter, and the reason the exclusions are load-bearing), stand off outside the bubble, or kill
 the jammer.
 
+**Making the jammer huntable — the RWR/HARM pairing.** The units are DCS's own
+`GPS_Spoofer_Red`/`GPS_Spoofer_Blue` ("Radio jammer"), and their stock DB entry
+(`CoreMods/tech/TechWeaponPack/Database/vehicles/Unarmed/Radio_jammer_Red.lua`) declares
+`GT_t.ws = 0` with **no `GT.WS`, no `GT.Sensors`, no `searchRadarFrequencies`** — so they are
+invisible to RWR and cannot be locked by an ARM. (A real GPS jammer transmits in L-band anyway,
+which no RWR covers and no HARM homes on, so this is faithful — and unplayable: the jammer could
+only ever be found by recon, and SEAD could never prosecute it.)
+
+Rather than ship a DCS mod adding an emitter to the truck (possible — clone the DB entry and add
+`GT.WS.radar_type` + `searchRadarFrequencies` + `GT.Sensors` + `wsType_Radar` — but it would put
+the whole squadron on a mod install), the jammer is **paired with a real vanilla emitter**: an
+optional `GPS Jammer 0` slot on the **`Early-Warning Radar` layout**, plus the two preset groups
+`GPS Jamming Site (Red)`/`(Blue)`. An EWR is exactly the right partner because **MANTIS never
+holds an EWR dark** (detection rides on dedicated EWR sites + AWACS), so the site is *always*
+emitting — it paints RWRs, takes HARMs, and SEAD can service it like any other radar.
+
+The slot is `optional: true` + `fill: false` and the presets are opt-in, so **every existing EWR
+site in every shipped campaign generates exactly as before**; a campaign fields a jamming site by
+pinning one of the presets onto an authored EWR marker. Country gating does the rest — the red
+preset can reach only the red jammer, the blue preset only the blue one (proven by test).
+
+This is what forced the **per-unit liveness** contract above: the jammer shares its DCS group
+with the radar, so a group-level check would keep denying GPS on the strength of the surviving
+radar beside the wreck of the actual jammer — unkillable jamming. Killing the truck stops the
+jamming; killing the radar blinds the site without stopping it. Both are worth a bomb, for
+different reasons.
+
 **Settings.** `gps_jamming` (414th Features → Electronic & command warfare, default **OFF**,
 preseeded nowhere) + `gps_jamming_default_reach_nm` (30) / `gps_jamming_miss_radius_m` (200)
 (Mission Generation → Comms war, `enabled_when=gps_jamming`). Plugin options cover the degrade
@@ -8384,9 +8411,12 @@ follow-up kept out of v1 so the runtime can be flown alone.
 Files: `game/fourteenth/gps_jamming.py`, `game/dcs/groundunittype.py`,
 `game/missiongenerator/gpsjammingluadata.py`, `game/missiongenerator/luagenerator.py`,
 `game/missiongenerator/kneeboard.py`, `game/settings/settings.py`,
-`resources/plugins/gpsjamming/`. Tests: `tests/fourteenth/test_gps_jamming.py` (34) +
+`resources/plugins/gpsjamming/`, `resources/units/ground_units/GPS_Spoofer_{Red,Blue}.yaml`,
+`resources/layouts/anti_air/Early-Warning_Radar.{yaml,miz}`,
+`resources/groups/GPS-Jamming-Site-{Red,Blue}.yaml`.
+Tests: `tests/fourteenth/test_gps_jamming.py` (39) +
 `tests/missiongenerator/test_gpsjammingluadata.py` (4) +
-`tests/lua/test_gpsjamming_runtime.py` (11). Design note:
+`tests/lua/test_gpsjamming_runtime.py` (12). Design note:
 [`414th-gps-jamming-notes.md`](design/414th-gps-jamming-notes.md). Checklist: **B45**.
 
 

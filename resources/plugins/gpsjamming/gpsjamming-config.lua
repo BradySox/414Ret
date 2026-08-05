@@ -66,7 +66,7 @@ end
 -- Sites.
 ---------------------------------------------------------------------------------------------------
 
--- Emitted site records -> { x, z, reach, miss, side, groups }. The emitter frame is the pydcs
+-- Emitted site records -> { x, z, reach, miss, side, units }. The emitter frame is the pydcs
 -- Point (x north, y east); the DCS world frame calls the second axis z, hence y -> z here.
 local sites = {}
 
@@ -75,14 +75,14 @@ local function buildSites()
         return
     end
     for _, rec in ipairs(cfg.sites) do
-        local groups = {}
-        if type(rec.groups) == "table" then
-            for _, g in ipairs(rec.groups) do
-                groups[#groups + 1] = g
+        local units = {}
+        if type(rec.units) == "table" then
+            for _, u in ipairs(rec.units) do
+                units[#units + 1] = u
             end
         end
         local reach = tonumber(rec.reachM) or 0
-        if reach > 0 and #groups > 0 then
+        if reach > 0 and #units > 0 then
             sites[#sites + 1] = {
                 name = rec.name or "GPS jammer",
                 -- The OWNER's side. A weapon is degraded only if its shooter is on
@@ -92,37 +92,32 @@ local function buildSites()
                 z = tonumber(rec.y) or 0,
                 reach = reach,
                 miss = tonumber(rec.missRadiusM) or 200,
-                groups = groups,
+                units = units,
             }
         end
     end
 end
 
--- A site jams only while it still has metal on the ground. Re-checked (cheaply, and only when
--- a tracked weapon is actually in the air) so a jammer killed mid-mission stops denying GPS on
+-- A site jams only while a JAMMER VEHICLE is still alive. Re-checked (cheaply, and only when a
+-- tracked weapon is actually in the air) so a jammer killed mid-mission stops denying GPS on
 -- the very next weapon -- the reward for finding and striking it.
+--
+-- Deliberately per-UNIT, not per-group: a jammer shares its DCS group with the rest of its site
+-- (its escort, and -- in the intended laydown -- the radar that puts the site on RWR), so a
+-- group-level check would keep jamming on the strength of a surviving truck beside the wreck of
+-- the actual jammer. The player must be able to kill the thing that is jamming them.
 local function siteAlive(site)
-    for i = 1, #site.groups do
-        local ok, g = pcall(Group.getByName, site.groups[i])
-        if ok and g and g:isExist() then
-            local okUnits, units = pcall(function()
-                return g:getUnits()
+    for i = 1, #site.units do
+        local ok, u = pcall(Unit.getByName, site.units[i])
+        if ok and u and u:isExist() then
+            -- getLife is not on every fake/mod object; a unit that exists but cannot
+            -- report health counts as alive (fail toward "the jammer still works",
+            -- never toward a silent feature-off).
+            local okLife, life = pcall(function()
+                return u:getLife()
             end)
-            if okUnits and type(units) == "table" then
-                for _, u in ipairs(units) do
-                    if u and u:isExist() then
-                        -- getLife is not on every fake/mod object; a unit that
-                        -- exists but cannot report health counts as alive (fail
-                        -- toward "the jammer still works", never toward a silent
-                        -- feature-off).
-                        local okLife, life = pcall(function()
-                            return u:getLife()
-                        end)
-                        if not okLife or life == nil or life > 0 then
-                            return true
-                        end
-                    end
-                end
+            if not okLife or life == nil or life > 0 then
+                return true
             end
         end
     end

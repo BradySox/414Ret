@@ -99,9 +99,16 @@ class GpsJammerSite:
     #: Denial reach and the miss the runtime scores at full strength.
     reach: Distance
     miss_radius: Distance
-    #: The generated DCS group names carrying the jammer, so the runtime can
-    #: re-check liveness: a site the player kills mid-mission stops jamming.
-    group_names: tuple[str, ...]
+    #: The generated DCS *unit* names of the jammer vehicles themselves, so the
+    #: runtime can re-check liveness: a jammer the player kills mid-mission stops
+    #: denying GPS.
+    #:
+    #: Unit names, NOT group names -- a jammer shares its DCS group with whatever
+    #: else the site fields (its escort, its radar), so a group-level liveness
+    #: check would keep jamming after the jammer truck itself was destroyed, on
+    #: the strength of some surviving truck beside it. The player must be able to
+    #: kill the thing that is jamming them.
+    unit_names: tuple[str, ...]
 
 
 def gps_jamming_enabled(game: "Game") -> bool:
@@ -162,26 +169,23 @@ def _site_for_tgo(
     default_miss: Distance,
 ) -> Optional[GpsJammerSite]:
     """Build the site record for a TGO that carries live jammer vehicles."""
-    groups: list[str] = []
+    units: list[str] = []
     # A site with several jammer types takes the LONGEST declared reach and the
     # WORST declared miss: the strongest emitter present is what the weapon
     # actually hears. Units that declare neither ride the campaign defaults.
     reach = default_reach
     miss = default_miss
     for group in getattr(tgo, "groups", []) or []:
-        group_name = getattr(group, "group_name", None)
-        if not group_name:
-            continue
-        group_jams = False
-        for props in _live_jammer_properties(group):
-            group_jams = True
+        for unit, props in _live_jammers(group):
+            name = getattr(unit, "unit_name", None)
+            if not name:
+                continue
+            units.append(str(name))
             if props.radius_nm is not None:
                 reach = max(reach, nautical_miles(props.radius_nm))
             if props.miss_radius_m is not None:
                 miss = max(miss, meters(props.miss_radius_m))
-        if group_jams:
-            groups.append(group_name)
-    if not groups:
+    if not units:
         return None
     position = getattr(tgo, "position", None)
     if position is None or not hasattr(position, "x"):
@@ -193,12 +197,12 @@ def _site_for_tgo(
         y=float(position.y),
         reach=reach,
         miss_radius=miss,
-        group_names=tuple(groups),
+        unit_names=tuple(units),
     )
 
 
-def _live_jammer_properties(group: Any) -> Iterator[Any]:
-    """The ``GpsJammingProperties`` of every ALIVE jammer unit in the group.
+def _live_jammers(group: Any) -> Iterator[tuple[Any, Any]]:
+    """Every ALIVE jammer unit in the group, with its ``GpsJammingProperties``.
 
     A destroyed jammer stops denying GPS immediately -- that is the whole reward
     for finding and striking it, so liveness is checked here as well as at
@@ -210,7 +214,7 @@ def _live_jammer_properties(group: Any) -> Iterator[Any]:
         unit_type = getattr(unit, "unit_type", None)
         props = getattr(unit_type, "gps_jamming", None)
         if props is not None:
-            yield props
+            yield unit, props
 
 
 def _campaign_default_reach(game: "Game") -> Distance:

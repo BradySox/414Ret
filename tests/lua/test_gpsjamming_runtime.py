@@ -59,8 +59,8 @@ def _jammer_group(name: str = "Haina jammer grp", alive: bool = True) -> dict[st
         "category": 2,  # GROUND
         "units": [
             {
-                "name": name + "-1",
-                "type": "SPN-30",
+                "name": "0001 | GPS jammer",
+                "type": "GPS_Spoofer_Red",
                 "x": JAMMER_X,
                 "z": JAMMER_Z,
                 "life": 100 if alive else 0,
@@ -93,7 +93,7 @@ def _load(
                 "y": str(JAMMER_Z),
                 "reachM": str(REACH_M),
                 "missRadiusM": str(MISS_M),
-                "groups": ["Haina jammer grp"],
+                "units": ["0001 | GPS jammer"],
             }
         ]
     cfg: dict[str, Any] = {
@@ -236,6 +236,52 @@ def test_a_jammer_never_degrades_its_own_sides_weapons() -> None:
 
     h.advance_to(60)
     assert h.records("explosions") == []
+    h.assert_no_lua_errors()
+
+
+def test_the_jammer_dies_on_its_own_not_on_its_groups() -> None:
+    """The intended laydown puts the jammer in a site WITH a radar (so the site
+    shows on RWR and takes HARMs). Liveness must therefore be per-UNIT: kill the
+    jammer truck and the jamming stops, even though its group-mates survive.
+
+    A group-level check would keep denying GPS on the strength of the surviving
+    radar beside the wreck of the actual jammer -- unkillable jamming.
+    """
+    h = DcsPluginHarness()
+    h.add_group(_blue_striker())
+    h.add_group(
+        {
+            "name": "Haina jammer grp",
+            "side": 1,
+            "category": 2,
+            "units": [
+                # The jammer itself: destroyed.
+                {
+                    "name": "0001 | GPS jammer",
+                    "type": "GPS_Spoofer_Red",
+                    "x": JAMMER_X,
+                    "z": JAMMER_Z,
+                    "life": 0,
+                },
+                # Its RWR/HARM-visible radar, still very much alive.
+                {
+                    "name": "0002 | RD-75",
+                    "type": "RD_75",
+                    "x": JAMMER_X + 60,
+                    "z": JAMMER_Z,
+                    "life": 100,
+                },
+            ],
+        }
+    )
+    _load(h)
+    h.advance_to(20)
+    _release(h)
+
+    h.advance_to(60)
+    assert (
+        h.records("explosions") == []
+    ), "a dead jammer must stop denying GPS even when its group survives"
     h.assert_no_lua_errors()
 
 

@@ -21,7 +21,18 @@ from game.fourteenth.gps_jamming import (
     briefed_jammer_areas,
     gps_jammer_sites,
 )
+from game import persistency
+from game.data.units import UnitClass
 from game.utils import meters, nautical_miles
+
+
+@pytest.fixture()
+def _layouts(tmp_path_factory: pytest.TempPathFactory) -> None:
+    """ForceGroup/layout preset loading reads the DCS saved-game folder, which
+    only exists once the app boots. Point it at an empty temp dir so loading
+    falls back to the bundled resources/ presets."""
+    persistency.setup(str(tmp_path_factory.mktemp("saved_games")), False, 0)
+
 
 # -- test doubles -------------------------------------------------------------
 
@@ -43,11 +54,16 @@ class FakeUnitType:
 
 
 class FakeUnit:
+    _seq = 0
+
     def __init__(
         self, alive: bool = True, jams: Optional[GpsJammingProperties] = None
     ) -> None:
         self.alive = alive
         self.unit_type = FakeUnitType(jams)
+        FakeUnit._seq += 1
+        # The generator's real shape: "<zero-padded id> | <name>".
+        self.unit_name = f"{FakeUnit._seq:04d} | GPS jammer"
 
 
 class FakeGroup:
@@ -133,7 +149,7 @@ def test_a_unit_with_the_yaml_block_is_a_jammer_on_the_campaign_defaults() -> No
     assert site.coalition == "red"
     assert site.reach == nautical_miles(30)
     assert site.miss_radius == meters(200)
-    assert site.group_names == ("Haina jammer grp",)
+    assert len(site.unit_names) == 1 and " | GPS jammer" in site.unit_names[0]
 
 
 def test_a_unit_without_the_block_never_jams() -> None:
@@ -322,6 +338,68 @@ def test_the_shipped_ew_radio_jammers_are_the_feature_s_units() -> None:
             f"{variant} jams to {reach.nautical_miles:.0f} nm but DCS declares "
             f"{declared} m of reach"
         )
+
+
+def test_the_ewr_layout_carries_an_optional_jammer_slot(_layouts: None) -> None:
+    """The RWR/HARM pairing (§86).
+
+    A GPS jammer emits in L-band, which no RWR covers and no HARM homes on, so a
+    lone jammer could only ever be found by recon. Parking it in the EWR site
+    gives it a real always-on emitter to hide behind -- the site paints RWRs and
+    takes HARMs like any other radar.
+
+    The slot must be optional + fill: false, or every existing EWR site in every
+    shipped campaign would start fielding jammers.
+    """
+    from game.layout import LAYOUTS
+
+    LAYOUTS.initialize()
+    layout = next(
+        (lay for lay in LAYOUTS.layouts if lay.name == "Early-Warning Radar"), None
+    )
+    assert layout is not None, "the Early-Warning Radar layout must exist"
+
+    slot = None
+    for group in layout.groups:
+        for unit_group in group.unit_groups:
+            if unit_group.name == "GPS Jammer 0":
+                slot = unit_group
+    assert slot is not None, "the EWR layout must carry the jammer slot"
+    assert slot.optional is True, "an existing EWR site must not be forced to jam"
+    assert slot.fill is False, "faction fill must never drop a jammer into an EWR site"
+    # The slot names a group that really exists in the shared .miz -- a slot
+    # naming a missing group is SILENTLY dropped (the dead-config class of bug).
+    assert len(slot.layout_units) >= 1, "the slot's .miz position group is missing"
+    ids = {unit_type.id for unit_type in (slot.unit_types or [])}
+    assert ids == {"GPS_Spoofer_Red", "GPS_Spoofer_Blue"}
+
+
+def test_each_jamming_site_preset_pairs_a_radar_with_its_own_sides_jammer(
+    _layouts: None,
+) -> None:
+    """Each preset must field BOTH halves -- the emitter that makes the site
+    huntable, and the jammer that makes it worth hunting -- and must not be able
+    to reach the other coalition's jammer."""
+    from game.armedforces.forcegroup import ForceGroup
+    from game.layout import LAYOUTS
+
+    LAYOUTS.initialize()
+    for preset_name, own, other in (
+        ("GPS Jamming Site (Red)", "GPS_Spoofer_Red", "GPS_Spoofer_Blue"),
+        ("GPS Jamming Site (Blue)", "GPS_Spoofer_Blue", "GPS_Spoofer_Red"),
+    ):
+        group = ForceGroup.from_preset_group(preset_name)
+        ids = {unit.dcs_unit_type.id for unit in group.units}
+        assert own in ids, f"{preset_name} must field its own jammer"
+        assert other not in ids, f"{preset_name} must not reach the other side's"
+        # ...and at least one real emitter, so the site is RWR-visible/HARM-able.
+        radars = [
+            unit
+            for unit in group.units
+            if unit.unit_class is UnitClass.EARLY_WARNING_RADAR
+        ]
+        assert radars, f"{preset_name} must pair the jammer with an EWR emitter"
+        assert "Early-Warning Radar" in {lay.name for lay in group.layouts}
 
 
 def test_no_other_shipped_unit_jams_by_accident() -> None:

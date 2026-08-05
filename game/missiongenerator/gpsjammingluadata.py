@@ -70,6 +70,8 @@ def populate_gps_jamming_lua(
         rec.add_key_value("y", str(site.y))
         rec.add_key_value("reachM", str(site.reach.meters))
         rec.add_key_value("missRadiusM", str(site.miss_radius.meters))
-        # The exact names Group.getByName needs (TheaterGroup.group_name, what
-        # the generator stamps onto the .miz vehicle group).
-        rec.add_data_array("groups", list(site.group_names))
+        # The exact names Unit.getByName needs (TheaterUnit.unit_name, what the
+        # generator stamps onto the .miz vehicle). UNITS, not groups: a jammer
+        # shares its group with the rest of the site, so a group-level liveness
+        # check would keep jamming after the jammer truck itself was killed.
+        rec.add_data_array("units", list(site.unit_names))

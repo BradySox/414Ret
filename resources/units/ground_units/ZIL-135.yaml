@@ -1,0 +1,9 @@
+class: Logistics
+description: The eight-wheeled ZIL-135, best known as the carrier chassis for Soviet rocket and
+  missile systems and used as a heavy cargo hauler.
+introduced: 1960
+origin: USSR/Russia
+price: 3
+role: Heavy Cargo / Missile Chassis
+variants:
+  "Truck ZIL-135": null

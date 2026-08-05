@@ -1,0 +1,9 @@
+class: Power
+description: The APA-80 ground power unit on a ZIL-131 chassis, the standard Soviet airfield
+  and field-site power cart.
+introduced: 1967
+origin: USSR/Russia
+price: 4
+role: Mobile Ground Power Unit
+variants:
+  "GPU APA-80 (ZIL-131)": null

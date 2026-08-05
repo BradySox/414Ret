@@ -31,13 +31,29 @@ groups:
     - name: S-300 Site Logistics
       optional: true
       unit_count:
-        - 1
+        # 414th: the textbook configuration is THE configuration (DM call
+        # 2026-08-04) -- fixed count, no bare-site roll
         - 2
       unit_types:
         - GAZ-66
         - Ural-375
         - Ural-4320-31
         - Ural-4320T
+    # 414th: refuelling section. No Power slot here -- the 5I57A diesel power
+    # station is S-300 kit; an SA-2/SA-3 site draws from the site's own genset.
+    - name: S-300 Site Fuel
+      optional: true
+      fill: false
+      unit_count:
+        # 414th: the textbook configuration is THE configuration (DM call
+        # 2026-08-04) -- fixed count, no bare-site roll
+        - 2
+      unit_types:
+        - ATZ-5
+        - ATZ-10
+        - ATMZ-5
+        - ATZ-60_Maz
+        - TZ-22_KrAZ
   - PD:
     - name: S-300 Site SHORAD1
       sub_task: PointDefense

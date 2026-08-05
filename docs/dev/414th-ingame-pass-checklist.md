@@ -3582,3 +3582,72 @@ of the degraded flights and confirm DCS actually spawns the substituted stores.
 - Loadouts **changing when you re-generate the same turn** (the roll is stored on the flight
   and must be stable).
 - Jets within one flight carrying different stores.
+
+
+### B43 — SAM battery support section (refuellers + power) · §85 · ☐ UNTESTED (built 2026-08-04)
+
+**Setup:** a NEW game on any campaign whose red side fields an S-300 family site (Red Tide is
+the reference — 7 of them). No setting to flip; the support section is unconditional layout
+data. Generate the mission and look at any SA-10/SA-20/S-400 site in the Mission Editor, then
+fly on it.
+
+**Pass criterion:** the site renders like the DM's training-server reference — radars, C2 and
+six launchers as before, **plus** a cargo truck, 1–2 fuel bowsers (ATZ-5/ATZ-10/ATMZ-5/ATZ-60/
+TZ-22) and 1–2 **Diesel Power Station 5I57A**, dispersed off the flanks rather than stacked on
+the battery. Killing them must record as ordinary ground kills at debrief. Separately, generate
+a campaign with a **Sky Sabre** battery and confirm it now spawns SHORAD point defence (it
+never has).
+
+**Fail signatures to watch for:**
+- Support vehicles **overlapping or clipping** a launcher/radar (the template positions clear
+  everything by ≥50 m, but only DCS can confirm the models fit).
+- A site generating **two bowsers and no generator** (or vice versa) — the fuel and power slots
+  were merged; a unit group fields exactly one type.
+- The site's **existing** units having MOVED relative to earlier saves — the new groups were
+  appended so the template origin is unmoved; if the battery shifted, the origin moved.
+- Fuel bowsers appearing **at a front line** in numbers that look wrong. Expected: they ride
+  along with cargo trucks like the existing Urals/M818s. A **5I57A at a front line is a bug**
+  (`UnitClass.POWER` must never be deployable).
+- Any S-300 site generating **no** support at all — check the faction actually fields the
+  S-300 preset group, since access comes from the preset, not the faction's `logistics_units`.
+
+
+### B44 — Support kit at legacy SAM sites + fuel convoys · §85 · ☐ UNTESTED (built 2026-08-04)
+
+**Setup:** a NEW game on Red Tide (or Desert Storm / Yankee Station). No setting; the wiring is
+layout/preset/faction data. Headless baseline on a fresh Red Tide: 11 of 17 legacy SAM sites
+rolled a refuelling section (the roll is per-site, so expect *most* but not all).
+
+**Pass criterion:** legacy SA-2/SA-3/SA-5/SA-6 sites field trucks OR a fuel bowser in their
+logistics spots (one type per site — the mixed truck+fuel+power spread is S-300-only by design);
+on Yankee Station, an HQ-2 site renders the **ZIL-131 KUNG** C2 truck; **EWR sites render their
+support section** (Red Tide: radar + KUNG + 1–2 diesel power stations + trucks — headless showed
+all 6; a western FPS-117 site renders the ECS shelter instead, never the Soviet kit);
+**layout-generated economy buildings are furnished** (a generated fuel farm / ammo depot /
+factory / warehouse fields 1–2 trucks or a bowser beside the statics; hand-authored named targets
+— DS91's CENTAF set, RT's authored factories — stay bare **by design**, and any authored building
+cluster having MOVED from earlier saves is the origin-shift fail signature);
+**the C2 compounds render and their kill semantics hold** (Desert Storm is the showcase: all 13
+KARI comms relays + 4 command centers field vans/GCI shelters/generators/trucks; RT's
+scenery-authored network stays as authored; **verify a §51 comms node keeps jamming after the
+tower dies while its van survives, and stops when the compound is dead** — that is the accepted
+§51/§52 semantics change, not a bug; a §52 decap now requires the vehicles dead too); and over a
+few turns a supply convoy is seen carrying a refueller (blue M978 / red ATZ family / a COIN
+campaign's civilian ATZ-5 on the ratline); **the do-them-all closure renders** (a legacy SA-2/3/5/6
+site fields trucks AND a bowser — DS91 headless showed 46/46; an S-300/HQ-22 site renders the
+deterministic textbook spread of 2 trucks + 2 bowsers + 2 power stations; Marianas' Tinian
+HQ-22 fields the Soviet fuel kit; a modern HDS campaign's SA-20+ site places the **Gazetchik-E
+decoy** — THE fly question: does an ARM actually get seduced by it, and does it show as a
+separate killable unit; a modern US comms/CC compound renders the Trojan Spirit / fire-control
+bunker / Predator GCS). Kills record as ordinary ground losses.
+
+**Fail signatures to watch for:**
+- A bowser or the KUNG **clipping** launcher/radar models (positions are the templates' existing
+  Logistics/CP spots, but only DCS confirms the model footprints).
+- The KUNG at an SA-11/SA-17/Hawk site (those keep their organic C2 — a KUNG there means the
+  preset edit leaked).
+- ATZ-10/ATMZ-5 at a **Vietnam-era** site (the shared layouts deliberately carry only the
+  1965–67 trio; the 80s pair should only appear via Red Tide / Iraq 1991 faction fill at
+  *generic*-layout sites and in convoys).
+- Legacy sites that previously rolled trucks now **never** rolling trucks (the whitelist
+  addition must widen the roll, not displace it).

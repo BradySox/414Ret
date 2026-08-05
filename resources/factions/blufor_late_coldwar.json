@@ -77,7 +77,8 @@
     "M270 Multiple Launch Rocket System"
   ],
   "logistics_units": [
-    "Truck M818 6x6"
+    "Truck M818 6x6",
+    "Refueler M978 HEMTT"
   ],
   "infantry_units": [
     "Infantry M249",
@@ -100,7 +101,9 @@
     "M163 Vulcan Air Defense System",
     "M48 Chaparral",
     "Flakpanzer Gepard",
-    "Roland 2 (Marder Chassis)"
+    "Roland 2 (Marder Chassis)",
+    "EWR AN/FPS-117 Control Shelter",
+    "C2 Fire Control Bunker"
   ],
   "carrier_names": [
     "CVN-59 Forrestal",

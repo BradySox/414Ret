@@ -103,7 +103,8 @@
     "Truck M1083 A1P2 MTV [CH]",
     "[CH] Oshkosh HEMTT M977",
     "[CH] Oshkosh HEMTT M983",
-    "[CH] Oshkosh MTVR MK23"
+    "[CH] Oshkosh MTVR MK23",
+    "Refueler M978 HEMTT"
   ],
   "infantry_units": [
     "Infantry M249",
@@ -150,7 +151,11 @@
     "HEMTT C-RAM Phalanx",
     "M6 Linebacker",
     "[CH] Centurion C-RAM",
-    "[CH] LAV-AD SPAAGM"
+    "[CH] LAV-AD SPAAGM",
+    "EWR AN/FPS-117 Control Shelter",
+    "C2 Fire Control Bunker",
+    "C2 Predator UAV Comms Link",
+    "C2 Predator UAV Ground Control Station"
   ],
   "requirements": {
     "CurrentHill USA Asset Pack": "https://www.currenthill.com/usa"

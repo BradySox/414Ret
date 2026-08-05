@@ -11,4 +11,36 @@ groups:
         - 1
       unit_types:
         - .Command Center
+    # 414th: the headquarters compound -- the GCI/command shelters, generators
+    # and trucks around the bunker. §52 SEMANTICS, on purpose (DM call
+    # 2026-08-04): a command center counts as alive while ANY unit lives, so
+    # full decapitation now requires killing the C2 vehicles too, not just
+    # collapsing the building -- the strike weight for a §52 kill goes up
+    # accordingly. Access-gated whitelists keep the kit nation-correct; a
+    # faction with none renders the bare bunker as before.
+    - name: CommandCenter C2
+      optional: true
+      unit_count:
+        - 1
+        - 2
+      unit_types:
+        - GCI_station_MiG29
+        - Ural-375 PBU
+        - ZIL-131 KUNG
+        - fire_control
+        - Predator GCS
+    - name: CommandCenter Power
+      optional: true
+      unit_count:
+        - 1
+        - 2
+      unit_types:
+        - generator_5i57
+    - name: CommandCenter Logistics
+      optional: true
+      unit_count:
+        - 1
+        - 2
+      unit_classes:
+        - Logistics
 layout_file: resources/layouts/buildings/buildings.miz

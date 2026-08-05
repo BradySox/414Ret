@@ -50,7 +50,12 @@
   ],
   "logistics_units": [
     "LUV UAZ-469 Jeep",
-    "Truck Ural-375"
+    "Truck Ural-375",
+    "Refueler ATZ-5",
+    "Refueler ATZ-60 (MAZ-7410)",
+    "Refueler TZ-22 (KrAZ-258B1)",
+    "Refueler ATMZ-5",
+    "Refueler ATZ-10"
   ],
   "infantry_units": [
     "SAM SA-7B Strela-2M manpad",
@@ -80,7 +85,11 @@
     "SA-13 Gopher (9K35 Strela-10M3)",
     "AAA ZU-23 Closed Emplacement",
     "ZU-23 on Ural-375",
-    "ZSU-23-4 Shilka"
+    "ZSU-23-4 Shilka",
+    "C2 ZIL-131 KUNG",
+    "Diesel Power Station 5I57A",
+    "C2 Ural-375 PBU",
+    "C2 GCI Station (KRU)"
   ],
   "missiles": [
     "SSM SS-1C Scud-B"

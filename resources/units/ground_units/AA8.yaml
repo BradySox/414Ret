@@ -1,0 +1,8 @@
+class: Logistics
+description: The AA-7.2/60 heavy airfield crash tender.
+introduced: 1975
+origin: USSR/Russia
+price: 4
+role: Airfield Crash Tender
+variants:
+  "Firefighter AA-7.2/60": null

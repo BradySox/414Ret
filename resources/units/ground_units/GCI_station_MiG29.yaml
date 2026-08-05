@@ -1,0 +1,9 @@
+class: CommandPost
+description: Ground-controlled intercept station -- the shelter from which a Soviet sector
+  controller vectors interceptors onto a raid.
+introduced: 1980
+origin: USSR/Russia
+price: 14
+role: Ground-Controlled Intercept Station
+variants:
+  "C2 GCI Station (KRU)": null

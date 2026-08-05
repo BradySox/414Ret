@@ -6,6 +6,12 @@ units:
   - SAM P19 "Flat Face" SR (SA-2/3)
   - SAM SA-6 Kub "Straight Flush" STR
   - SAM SA-6 Kub "Gainful" TEL
+  # 414th: battery support section
+  - Truck GAZ-66
+  - Truck Ural-375
+  - Refueler ATZ-5
+  - Refueler ATZ-60 (MAZ-7410)
+  - Refueler TZ-22 (KrAZ-258B1)
 layouts:
   - SA-6 Reinforced Site (Circle)
   - SA-6 Reinforced Site (Semicircle)

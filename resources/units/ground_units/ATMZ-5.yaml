@@ -1,0 +1,10 @@
+class: Logistics
+description: Ural-based 5,000-litre refueller with an integrated filtering and
+  metering set, used where fuel quality control is required at the point of issue.
+introduced: 1975
+manufacturer: Ural
+origin: USSR/Russia
+price: 3
+role: Fuel Tanker with Filtration Set
+variants:
+  Refueler ATMZ-5: null

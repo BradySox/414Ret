@@ -87,7 +87,8 @@ groups:
     - name: S-300 Site Logistics
       optional: true
       unit_count:
-        - 1
+        # 414th: the textbook configuration is THE configuration (DM call
+        # 2026-08-04) -- fixed count, no bare-site roll
         - 2
       unit_types:
         - GAZ-66
@@ -95,6 +96,44 @@ groups:
         - Ural-375
         - Ural-4320-31
         - Ural-4320T
+    # 414th: the battery's refuelling section and its diesel power stations.
+    # Fuel and power are SEPARATE slots because a unit group fields exactly one
+    # type -- a single mixed slot would yield two bowsers or two generators,
+    # never one of each. Both are optional and fill: false, so a faction with
+    # neither simply skips them.
+    - name: S-300 Site Fuel
+      optional: true
+      fill: false
+      unit_count:
+        # 414th: the textbook configuration is THE configuration (DM call
+        # 2026-08-04) -- fixed count, no bare-site roll
+        - 2
+      unit_types:
+        - ATZ-5
+        - ATZ-10
+        - ATMZ-5
+        - ATZ-60_Maz
+        - TZ-22_KrAZ
+    - name: S-300 Site Power
+      optional: true
+      fill: false
+      unit_count:
+        # 414th: the textbook configuration is THE configuration (DM call
+        # 2026-08-04) -- fixed count, no bare-site roll
+        - 2
+      unit_types:
+        - generator_5i57
+    # 414th: the 34Ya6E Gazetchik-E decoy emitter (HDS mod unit -- carried only
+    # by the already-HDS-gated modern presets, so a vanilla game never sees it).
+    # Whether the DCS unit actually seduces ARMs is the in-game-pass question.
+    - name: S-300 Site Decoy
+      optional: true
+      fill: false
+      unit_count:
+        - 1
+        - 2
+      unit_types:
+        - 34Ya6E Gazetchik E decoy
   - PD:
     - name: S-300 Site SHORAD1
       optional: true

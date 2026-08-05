@@ -39,6 +39,7 @@ from dcs.ships import (
     LHA_Tarawa,
     Stennis,
     Type_071,
+    VINSON,
     hms_invincible,
     Essex,
 )
@@ -1571,6 +1572,10 @@ class NavalControlPoint(
                     CVN_72,
                     CVN_73,
                     CVN_75,
+                    # 414th: CVN-70 was registered as a usable hull 2026-08-04. A
+                    # carrier missing from this list is treated as SUNK the moment
+                    # a campaign bases on it, so it has to be added here too.
+                    VINSON,
                     Essex,
                 ]:
                     return True

@@ -1,0 +1,9 @@
+class: CommandPost
+description: The ground control station that flies a Predator and exploits its sensor feed --
+  the reason a drone orbit exists.
+introduced: 1995
+origin: USA
+price: 16
+role: UAV Ground Control Station
+variants:
+  "C2 Predator UAV Ground Control Station": null

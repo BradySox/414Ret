@@ -8,5 +8,16 @@ units:
   - SAM SA-20 S-300PMU1 TR 30N6E
   - SAM SA-20 S-300PMU1 LN 5P85CE
   - SAM SA-20 S-300PMU1 LN 5P85DE
+  # 414th: battery support section (cargo / fuel / power slots)
+  - Truck GAZ-66
+  - Truck KAMAZ 43101
+  - Truck Ural-375
+  - Refueler ATZ-5
+  - Refueler ATZ-10
+  - Refueler ATMZ-5
+  - Refueler ATZ-60 (MAZ-7410)
+  - Refueler TZ-22 (KrAZ-258B1)
+  - Diesel Power Station 5I57A
+  - EW 34Ya6E Gazetchik-E Decoy
 layouts:
   - S-300 Site

@@ -38,7 +38,10 @@
     "Truck GAZ-66",
     "LUV UAZ-469 Jeep",
     "Truck Bedford",
-    "Truck Opel Blitz"
+    "Truck Opel Blitz",
+    "Refueler ATZ-5",
+    "Refueler ATZ-60 (MAZ-7410)",
+    "Refueler TZ-22 (KrAZ-258B1)"
   ],
   "infantry_units": [
     "Infantry AK-74 Rus",
@@ -56,7 +59,10 @@
     "AAA ZU-23 Emplacement",
     "ZSU-23-4 Shilka",
     "ZSU-57-2 'Sparka'",
-    "ZU-23 on Ural-375"
+    "ZU-23 on Ural-375",
+    "C2 ZIL-131 KUNG",
+    "Diesel Power Station 5I57A",
+    "C2 Ural-375 PBU"
   ],
   "naval_units": [
     "Boat Armed Hi-speed",

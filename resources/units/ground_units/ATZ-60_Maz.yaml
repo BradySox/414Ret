@@ -1,0 +1,10 @@
+class: Logistics
+description: Heavy refuelling tractor-trailer built on the MAZ-7410 tractor unit,
+  used for bulk fuel movement to dispersed airfields and strategic SAM sites.
+introduced: 1965
+manufacturer: MAZ
+origin: USSR/Russia
+price: 3
+role: Heavy Fuel Tanker
+variants:
+  Refueler ATZ-60 (MAZ-7410): null

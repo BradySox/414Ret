@@ -6,5 +6,15 @@ units:
   - "[CH] HQ-22 H-200 STR"
   - "[CH] HQ-22 LN"
   - "[CH] SX2190 Truck"
+  # 414th: battery support section
+  - Truck GAZ-66
+  - Truck Ural-375
+  - Truck KAMAZ 43101
+  - Refueler ATZ-5
+  - Refueler ATZ-60 (MAZ-7410)
+  - Refueler TZ-22 (KrAZ-258B1)
+  - Refueler ATMZ-5
+  - Refueler ATZ-10
+  - Diesel Power Station 5I57A
 layouts:
   - HQ-22 Battery

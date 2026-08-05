@@ -72,7 +72,8 @@
     "M270 Multiple Launch Rocket System"
   ],
   "logistics_units": [
-    "Truck M818 6x6"
+    "Truck M818 6x6",
+    "Refueler M978 HEMTT"
   ],
   "infantry_units": [
     "Infantry M249",
@@ -96,7 +97,10 @@
     "EWR AN/FPS-117 Radar",
     "M1097 Heavy HMMWV Avenger",
     "HEMTT C-RAM Phalanx",
-    "M6 Linebacker"
+    "M6 Linebacker",
+    "C2 Fire Control Bunker",
+    "C2 Predator UAV Comms Link",
+    "C2 Predator UAV Ground Control Station"
   ],
   "requirements": {},
   "carrier_names": [

@@ -1,0 +1,9 @@
+class: CommandPost
+description: The SKP-11 mobile control tower, used to run flight operations from a dispersal
+  strip or a damaged airfield.
+introduced: 1970
+origin: USSR/Russia
+price: 10
+role: Mobile Air Traffic Control
+variants:
+  "C2 SKP-11 Mobile ATC": null

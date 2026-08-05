@@ -170,6 +170,11 @@ def test_second_support_flight_in_a_package_gets_its_own_frequency() -> None:
     package_freq = MHz(396)
     mission_data.tankers.append(_StubSupportInfo(package_freq))
     configurator = _configurator(_StubFlight(), mission_data)
+    # In production the package frequency was handed out by this same registry, so
+    # the fresh alloc_uhf (a random draw avoiding only ALLOCATED channels) can never
+    # re-draw it. Mirror that here or the test flakes ~1 in 175 runs on the draw
+    # landing on 396.000 exactly.
+    configurator.radio_registry.reserve(package_freq)
 
     channel = configurator.dedicated_support_frequency(package_freq)
 
@@ -182,6 +187,9 @@ def test_a_tanker_does_not_share_the_aewc_channel() -> None:
     package_freq = MHz(396)
     mission_data.awacs.append(_StubSupportInfo(package_freq))
     configurator = _configurator(_StubFlight(), mission_data)
+    # See test_second_support_flight...: reserve the package frequency as the real
+    # registry would have, so the random re-draw cannot land on it (the flake).
+    configurator.radio_registry.reserve(package_freq)
 
     assert configurator.dedicated_support_frequency(package_freq) != package_freq
 

@@ -1,0 +1,9 @@
+class: Logistics
+description: The ZIL-131 tractor that hauls and transloads S-75 (SA-2) rounds between the
+  stowage area and the launch rails.
+introduced: 1957
+origin: USSR/Russia
+price: 3
+role: Missile Transloader
+variants:
+  "Tractor S-75 (ZIL-131)": null

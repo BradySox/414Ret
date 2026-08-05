@@ -1,0 +1,8 @@
+class: Logistics
+description: A heavy Belarusian cargo truck used across the former Soviet states.
+introduced: 1997
+origin: Belarus
+price: 3
+role: Heavy Cargo Truck
+variants:
+  "Truck MAZ-6303": null

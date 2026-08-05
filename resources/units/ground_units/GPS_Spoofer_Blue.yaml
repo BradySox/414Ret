@@ -1,0 +1,10 @@
+class: ElectronicWarfare
+description: Ground-based radio jammer. DCS lists it as a Radio jammer with a 50 km detection
+  range; its exact in-sim effect is unverified and should be confirmed in a test
+  mission before any feature is built on it.
+introduced: 2010
+origin: Multinational
+price: 8
+role: Ground Radio / Navigation Jammer
+variants:
+  "EW Radio Jammer (Blue)": null

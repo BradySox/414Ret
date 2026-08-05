@@ -8,5 +8,15 @@ units:
   - SAM SA-21 S-400 TR 92N6E (truck)
   - SAM SA-21 S-400 LN 51P6A (48N6DM)
   - SAM SA-21 S-400 LN 51P6A (9M96E2)
+  # 414th: battery support section (cargo / fuel / power slots)
+  - Truck GAZ-66
+  - Truck KAMAZ 43101
+  - Truck Ural-375
+  - Refueler ATZ-5
+  - Refueler ATZ-10
+  - Refueler ATMZ-5
+  - Refueler ATZ-60 (MAZ-7410)
+  - Refueler TZ-22 (KrAZ-258B1)
+  - Diesel Power Station 5I57A
 layouts:
   - S-300 Site

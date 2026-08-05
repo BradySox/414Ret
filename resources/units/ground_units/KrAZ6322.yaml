@@ -1,0 +1,9 @@
+class: Logistics
+description: A heavy 6x6 cargo truck, the modern Ukrainian and Russian general-purpose
+  logistics hauler.
+introduced: 1994
+origin: Ukraine
+price: 3
+role: Heavy Cargo Truck
+variants:
+  "Truck KrAZ-6322 6x6": null

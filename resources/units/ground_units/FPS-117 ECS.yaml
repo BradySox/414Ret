@@ -1,0 +1,9 @@
+class: CommandPost
+description: The engagement control shelter of an AN/FPS-117 long-range surveillance radar. It
+  carries no sensor of its own -- it is where the radar's picture is worked.
+introduced: 1980
+origin: USA
+price: 14
+role: Radar Engagement Control Shelter
+variants:
+  "EWR AN/FPS-117 Control Shelter": null

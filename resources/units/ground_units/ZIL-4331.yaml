@@ -1,0 +1,8 @@
+class: Logistics
+description: The ZIL-4331 medium cargo truck, the late-Soviet successor to the ZIL-130.
+introduced: 1986
+origin: USSR/Russia
+price: 3
+role: Medium Cargo Truck
+variants:
+  "Truck ZIL-4331": null

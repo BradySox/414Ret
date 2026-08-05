@@ -1,0 +1,8 @@
+class: Logistics
+description: The TACR2A Truck Airfield Crash Rescue, the RAF's rapid-intervention vehicle.
+introduced: 1970
+origin: UK
+price: 4
+role: Airfield Crash Tender
+variants:
+  "Firefighter RAF TACR2A": null

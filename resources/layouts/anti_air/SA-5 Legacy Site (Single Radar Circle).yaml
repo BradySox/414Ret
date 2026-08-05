@@ -32,6 +32,12 @@ groups:
         - Ural-375
         - Ural-4320-31
         - Ural-4320T
+        # 414th: the battery's refuelling section -- one Logistics slot rolls
+        # one type, so a site fields trucks OR a bowser (the 1960s trio is
+        # era-safe for every campaign that fields these legacy SAMs).
+        - ATZ-5
+        - ATZ-60_Maz
+        - TZ-22_KrAZ
   - PD:
     - name: PD
       sub_task: PointDefense

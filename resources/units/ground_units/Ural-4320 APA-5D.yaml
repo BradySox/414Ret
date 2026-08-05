@@ -1,0 +1,9 @@
+class: Power
+description: The APA-5D ground power unit on a Ural-4320 chassis, supplying starting and
+  servicing power to aircraft and deployed equipment.
+introduced: 1977
+origin: USSR/Russia
+price: 4
+role: Mobile Ground Power Unit
+variants:
+  "GPU APA-5D (Ural-4320)": null

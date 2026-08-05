@@ -1,0 +1,11 @@
+class: Logistics
+description: Light 5,000-litre refueller on a GAZ-66 chassis. The workhorse fuel
+  bowser of Soviet air-defence sites, kept dispersed a short distance from the
+  launchers it services.
+introduced: 1966
+manufacturer: GAZ
+origin: USSR/Russia
+price: 3
+role: Light Fuel Tanker
+variants:
+  Refueler ATZ-5: null

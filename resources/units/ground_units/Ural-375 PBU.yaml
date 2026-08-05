@@ -1,0 +1,9 @@
+class: CommandPost
+description: The PBU command shelter on a Ural chassis -- the mobile command post of a Soviet
+  regiment or air-defence sector.
+introduced: 1961
+origin: USSR/Russia
+price: 10
+role: Mobile Command Post
+variants:
+  "C2 Ural-375 PBU": null

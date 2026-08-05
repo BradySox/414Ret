@@ -1,0 +1,9 @@
+class: CommandPost
+description: A hardened bunker housing a fire control centre, directing coastal or
+  anti-aircraft gunnery.
+introduced: 1940
+origin: Multinational
+price: 12
+role: Hardened Fire Direction Centre
+variants:
+  "C2 Fire Control Bunker": null

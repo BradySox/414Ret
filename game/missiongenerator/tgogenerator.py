@@ -345,16 +345,35 @@ def farp_truck_types_for_country(
 #:
 #: The anchor sits at the CENTRE of the oval rather than on its edge, which is what
 #: makes this station-keeping rather than wandering: the group's mean position stays
-#: its campaign position, and worst-case displacement is only half the diagonal
-#: (~4 NM at these numbers), so the campaign map, the drawn threat rings and the
-#: turn-boundary model all stay honest however long the mission runs.
-STATION_LEG = nautical_miles(8)
-STATION_WIDTH = nautical_miles(2)
-STATION_SPEED = knots(12)
+#: its campaign position, and worst-case displacement is only half the diagonal, so
+#: the campaign map, the drawn threat rings and the turn-boundary model all stay
+#: honest however long the mission runs.
+#:
+#: The SIZE is set by the smallest thing it must not invalidate -- a ship's own THREAT
+#: RING, which the map draws at the marker. Half the diagonal here is ~1.6 NM (about
+#: 3,200 yd): 18% of the shortest-legged escort's 16 km air-defence radius, 7% of a
+#: Type 054A's 45 km and 3% of a Burke's 100 km, so every ring that matters for
+#: mission planning stays substantially true. An 8 x 2 NM oval was rejected on exactly
+#: that measurement -- its 4.1 NM displacement was several times a Molniya's *entire*
+#: 2 km engagement radius, which would leave a short-legged hull sitting wholly
+#: outside its own drawn ring. It also matches real practice, where a screen station
+#: is quoted in thousands of yards from the guide: WWII carrier doctrine's "Circle
+#: Six" and "Circle Nine" are 6,000 and 9,000 yd for the WHOLE screen, not for one
+#: ship's wander.
+#:
+#: Collision between groups is deliberately NOT the governing constraint: the closest
+#: two naval groups in any shipped campaign are 17 NM apart, so tracks stay disjoint
+#: by a wide margin at any size considered.
+STATION_LEG = nautical_miles(3)
+STATION_WIDTH = nautical_miles(1)
+#: Economical loiter, not a transit: a ~48 min lap, so a hull is visibly under way all
+#: mission without a fast ship standing on the helm around a small track.
+STATION_SPEED = knots(10)
 #: Spacing of the water samples taken along each leg. DCS naval AI does no land
 #: avoidance whatsoever, so a leg is usable only if the whole line is sea -- two clear
-#: endpoints with an island between them would sail the group onto the beach.
-STATION_WATER_SAMPLE = nautical_miles(1)
+#: endpoints with an island between them would sail the group onto the beach. Half a
+#: mile rather than a mile, so the shorter legs are still sampled several times.
+STATION_WATER_SAMPLE = nautical_miles(0.5)
 #: Candidate long-axis bearings, tried in a deterministic per-group order until one is
 #: clear. A ship in open water takes its first choice; one in a strait or a bay ends up
 #: oriented along the water it actually has, which is what a real station looks like.

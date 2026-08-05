@@ -101,6 +101,26 @@ def test_the_group_never_leaves_its_campaign_area() -> None:
         assert anchor.distance_to_point(point.position) <= limit + 1.0
 
 
+#: The shortest air-defence radius among escorts in regular use — the Albatros/Rezky
+#: classes, 16 km in the DCS unit data. (A Molniya missile boat is shorter still at
+#: 2 km, but a ring that small is not something anyone plans a mission against.)
+SHORT_ESCORT_AD_RANGE_M = 16_000.0
+
+
+def test_the_station_stays_small_against_a_ship_threat_ring() -> None:
+    """The measurement that sets the size of the oval, pinned so it cannot drift.
+
+    The map draws a ship's threat ring at its marker, so displacement from the marker
+    is straight error in that ring. The first cut of this feature used an 8 x 2 NM
+    oval, whose 4.1 NM reach was 48% of the ring below and several times a Molniya's
+    entire 2 km engagement radius — a hull could sit wholly outside its own drawn
+    ring. Keep the reach a small fraction of the shortest ring that matters.
+    """
+    reach = ((STATION_LEG.meters / 2) ** 2 + (STATION_WIDTH.meters / 2) ** 2) ** 0.5
+
+    assert reach <= 0.25 * SHORT_ESCORT_AD_RANGE_M
+
+
 def test_the_circuit_loops_back_to_the_first_corner() -> None:
     group = _ship_group()
     _generator(_open_ocean()).hold_station(group)
@@ -139,10 +159,15 @@ def test_land_reorients_the_track_rather_than_beaching_the_group() -> None:
     along whatever water the group actually has -- which is what a real station in
     a strait looks like.
 
-    Here the only sea is a channel narrower than the oval is long, so the long axis
-    has to lie along the channel: laid across it, the ends would ground.
+    Here the only sea is a channel narrower than the oval is long but wider than it
+    is broad, so the long axis has to lie along the channel: laid across it, the ends
+    would ground.
     """
-    channel_half_width = 3_000.0
+    channel_half_width = 1_500.0
+    # The premise only holds while the channel is between the oval's half-width and
+    # its half-length; otherwise every orientation fits (or none does) and the test
+    # would pass without proving anything.
+    assert STATION_WIDTH.meters / 2 < channel_half_width < STATION_LEG.meters / 2
 
     def is_in_sea(point: Point) -> bool:
         return abs(point.y - ANCHOR[1]) < channel_half_width

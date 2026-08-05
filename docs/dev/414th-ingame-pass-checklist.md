@@ -3705,8 +3705,17 @@ not classified as sea) — that hull must still generate and fight exactly as be
 **Pass criterion:** open the generated miz in the Mission Editor and each ship marker group
 shows **5 waypoints** — the spawn plus a 4-corner oval — with a *Switch Waypoint* action on the
 last one pointing at waypoint 2. In game, the group is **under way from mission start**, laps
-the oval, and after a full lap is still within ~4 NM of where the campaign map draws it.
+the oval (~48 min), and is never more than **~1.6 NM** from where the campaign map draws it.
 Carriers and LHAs are unchanged: they still steam into wind for recovery.
+
+**Judge the size in the air, not on paper.** The 3 × 1 NM oval was sized off the threat-ring
+measurement (displacement must stay a small fraction of a ship's own air-defence radius, which
+the map draws at the marker), so it is deliberately tight — a *station*, not a patrol area. The
+question to answer while flying it is whether that still reads as a ship under way and whether
+a pre-planned coordinate is meaningfully stale by the time you arrive. If it wants to be
+bigger, `STATION_LEG` / `STATION_WIDTH` / `STATION_SPEED` are together at the top of
+`tgogenerator.py` — but note `test_the_station_stays_small_against_a_ship_threat_ring` caps the
+reach at 25 % of a 16 km escort ring, and that guard should be argued with rather than deleted.
 
 **Fail signatures to watch for:**
 - **A group that never moves.** Either DCS declined the route, or every bearing failed the

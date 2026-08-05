@@ -3820,9 +3820,22 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     transiting off station, whereas an anchor-centred oval keeps the group's **mean position on
     its campaign position** — it holds station under way, and the campaign map, the drawn
     threat rings and the turn-boundary model all stay honest. The envelope is the bound that
-    answers "they can't wander off": `STATION_LEG` 8 NM × `STATION_WIDTH` 2 NM at
-    `STATION_SPEED` 12 kt puts a hard **~4.1 NM ceiling on displacement from the marker**,
-    forever, with a ~1.7 h lap so a normal mission never repeats a track.
+    answers "they can't wander off": `STATION_LEG` 3 NM × `STATION_WIDTH` 1 NM at
+    `STATION_SPEED` 10 kt puts a hard **~1.6 NM ceiling on displacement from the marker**,
+    forever, with a ~48 min lap so the hull is visibly under way all mission.
+    **The SIZE is set by the ship's own threat ring, which the map draws at the marker — so
+    displacement is straight error in that ring.** The first cut was an **8 × 2 NM** oval
+    picked by feel and it is wrong: its 4.1 NM reach is **~4× a Molniya's entire 2 km
+    engagement radius** (a hull sitting wholly outside its own drawn ring) and 48 % of an
+    Albatros/Rezky's 16 km; at 3 × 1 those become 1.5× and **18 %**, with a Type 054A's 45 km
+    at 7 % and a Burke's 100 km at 3 %. Real practice agrees — a naval *station* is quoted in
+    **thousands of yards from the guide** (WWII carrier doctrine's "Circle Six"/"Circle Nine"
+    are 6,000/9,000 yd for the **whole screen**), so ~3,200 yd is a station and ~7,600 yd was
+    an entire screen's radius applied to one hull. **Collision between groups is deliberately
+    NOT the constraint** — measured, the closest two naval groups in any shipped campaign are
+    **17 NM** apart, so tracks are disjoint by a wide margin either way, which is why the
+    threat rings had to set the number. Guard:
+    `test_the_station_stays_small_against_a_ship_threat_ring` (fails on the old 8 × 2).
     **No plugin, no Lua, nothing at runtime** — the waypoints are ordinary route points and
     the loop is the Mission Editor's own `SwitchWaypoint` action, so DCS's naval AI sails it
     itself. That is *why* it composes: a §63 cruise-missile `FireAtPoint` is **pushed** onto
@@ -3846,7 +3859,7 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     tanker_war_1988 2/2 · 1968_Yankee_Station 2/3** ship markers put on station, the one miss
     being a hull whose spawn the landmap does not classify as sea (the safe degrade firing).
     NEW mission only — regeneration picks it up, no new game and no save migration. Tests
-    `tests/missiongenerator/test_naval_station_keeping.py` (10); features doc §87, checklist
+    `tests/missiongenerator/test_naval_station_keeping.py` (11); features doc §87, checklist
     B46 — needs an in-game pass (whether DCS loops a *naval* group on `SwitchWaypoint` is the
     one genuine unknown; the fallback needs no task at all — author enough waypoints to
     outlast the mission — and that a mixed-hull §80 group sails the circuit in formation).

@@ -8366,13 +8366,43 @@ marker at the centre of the track that stays true on average and bounded absolut
 
 | knob | value | consequence |
 | --- | --- | --- |
-| `STATION_LEG` | 8 NM | long axis |
-| `STATION_WIDTH` | 2 NM | leg separation |
-| `STATION_SPEED` | 12 kt | ≈1.7 h per lap — a normal mission never repeats a track |
-| — | **≈4.1 NM** | hard ceiling on displacement from the marker, forever |
+| `STATION_LEG` | 3 NM | long axis |
+| `STATION_WIDTH` | 1 NM | leg separation |
+| `STATION_SPEED` | 10 kt | ≈48 min per lap — visibly under way all mission |
+| — | **≈1.6 NM** | hard ceiling on displacement from the marker, forever |
 
 Corners are ordered so the circuit is two long legs joined by two short ones — four 90° turns
 rather than a 180° reversal at each end.
+
+### What sets the size — the ship's own threat ring
+
+The first cut used an **8 × 2 NM** oval, picked by feel. It is wrong, and the thing that
+proves it is the ring the map draws *at the marker*: displacement from the marker is straight
+error in that ring. Measured against the air-defence radii in the DCS unit data:
+
+| hull | AD radius | error at 4.1 NM (8 × 2) | error at 1.6 NM (3 × 1) |
+| --- | --- | --- | --- |
+| Molniya | 2 km (1.1 NM) | **~4× the entire ring** | 1.5× the ring |
+| Albatros / Rezky | 16 km (8.6 NM) | 48% | **18%** |
+| Type 054A | 45 km (24 NM) | 17% | **7%** |
+| Burke / Perry / Ticonderoga | 100 km (54 NM) | 8% | **3%** |
+
+At 8 × 2 a short-legged hull could sit **wholly outside its own drawn threat ring**. At 3 × 1
+every ring that anyone plans a mission against stays substantially true. The Molniya is left
+as a known limit rather than a target: a 1.1 NM ring is smaller than any useful patrol and is
+not something a strike is planned around.
+
+Real practice points the same way. A naval *station* is quoted in **thousands of yards from
+the guide** — WWII carrier doctrine's "Circle Six" and "Circle Nine" are 6,000 and 9,000 yd
+for the **whole screen**, with individual screen stations as close as 1,000 yd. The 1.6 NM
+(≈3,200 yd) reach sits inside that band; 4.1 NM was roughly the radius of an entire carrier
+screen, applied to one ship's wander.
+
+**Collision between groups is deliberately not the governing constraint.** Measured across the
+shipped campaigns, the closest two naval groups anywhere are **17 NM** apart, so tracks stay
+disjoint by a wide margin at any size considered — the constraint had to come from the threat
+rings instead. `test_the_station_stays_small_against_a_ship_threat_ring` pins the result (it
+fails on the old 8 × 2 numbers).
 
 ### Nothing runs at runtime
 
@@ -8444,7 +8474,7 @@ with no new game and no save migration.
 
 Files: `game/missiongenerator/tgogenerator.py` (`hold_station`, `_station_racetrack`,
 `_racetrack_corners`, `_track_is_clear`, and the `STATION_*` constants).
-Tests: `tests/missiongenerator/test_naval_station_keeping.py` (10). Checklist: **B46**.
+Tests: `tests/missiongenerator/test_naval_station_keeping.py` (11). Checklist: **B46**.
 
 
 ## Unit-coverage sweep — 2026-08-04

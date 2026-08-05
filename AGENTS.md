@@ -3807,6 +3807,49 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     `tests/lua/test_gpsjamming_runtime.py` (11); features doc §86, design note
     `docs/dev/design/414th-gps-jamming-notes.md`, checklist B45 — needs an in-game pass (the
     terminal gate beating a real JDAM's terminal profile is the genuine unknown).
+87. **Naval station-keeping racetracks** — enemy ships stop being stationary targets. A ship
+    TGO only ever got waypoints when the campaign was *repositioning* it
+    (`sail_to_destination`, gated on `ShipGroundObject.target_position`); with no destination
+    it generated a **zero-waypoint route** and sat motionless on its campaign marker for the
+    entire mission, so last turn's recon photo — or a pre-planned coordinate — was always
+    still good. (This is also why blue's boats appeared to move and red's never did: the blue
+    carrier steams into wind, and only *relocating* ships sailed.)
+    `GroundObjectGenerator.hold_station` gives every other ship group a **racetrack centred on
+    its anchor** instead. **The centring is the whole design**, not a detail: a circuit drawn
+    *around* the marker would have the group steam a full radius clear of it and read as
+    transiting off station, whereas an anchor-centred oval keeps the group's **mean position on
+    its campaign position** — it holds station under way, and the campaign map, the drawn
+    threat rings and the turn-boundary model all stay honest. The envelope is the bound that
+    answers "they can't wander off": `STATION_LEG` 8 NM × `STATION_WIDTH` 2 NM at
+    `STATION_SPEED` 12 kt puts a hard **~4.1 NM ceiling on displacement from the marker**,
+    forever, with a ~1.7 h lap so a normal mission never repeats a track.
+    **No plugin, no Lua, nothing at runtime** — the waypoints are ordinary route points and
+    the loop is the Mission Editor's own `SwitchWaypoint` action, so DCS's naval AI sails it
+    itself. That is *why* it composes: a §63 cruise-missile `FireAtPoint` is **pushed** onto
+    the queue and pops back to this route when the salvo ends, where a scripted `mist.goRoute`
+    (a `setTask`) would have wiped it — the §49 fire-then-scoot clobber, avoided by
+    construction rather than worked around; §81's ROE/alarm ride `points[0]` and are untouched.
+    **Land is handled in Python, where the landmap already lives** — DCS naval AI does no land
+    avoidance whatsoever, so each candidate orientation is sampled with `theater.is_in_sea()`
+    every 1 NM along **every leg** (two clear endpoints with an island between them would
+    beach the group), and 12 bearings are tried in a **crc32-of-group-name order** so a ship in
+    open water takes its first choice, one in a strait ends up oriented **along** the water it
+    actually has, regeneration re-derives the same station rather than reshuffling the fleet,
+    and a whole fleet doesn't steam in parallel like a parade. Every failure degrades to
+    **today's stationary behaviour**: no landmap, no clear orientation, or a spawn the landmap
+    won't confirm as open water (a marker inside a harbour polygon) simply stays put.
+    **Carrier and LHA control points are untouched** — `GenericCarrierGenerator` overrides
+    `generate()`, so `steam_into_wind` and the §72 airboss keep the boats. Symmetric, and
+    **no setting** (the §80 precedent — same file, same generation-time shape: this is not
+    unverified runtime Lua, so a kill switch would only add to the §28 surface). Measured
+    across the shipped naval campaigns: **marianas_2027 11/11 · pacific_repartee 21/21 ·
+    tanker_war_1988 2/2 · 1968_Yankee_Station 2/3** ship markers put on station, the one miss
+    being a hull whose spawn the landmap does not classify as sea (the safe degrade firing).
+    NEW mission only — regeneration picks it up, no new game and no save migration. Tests
+    `tests/missiongenerator/test_naval_station_keeping.py` (10); features doc §87, checklist
+    B46 — needs an in-game pass (whether DCS loops a *naval* group on `SwitchWaypoint` is the
+    one genuine unknown; the fallback needs no task at all — author enough waypoints to
+    outlast the mission — and that a mixed-hull §80 group sails the circuit in formation).
 
 ---
 

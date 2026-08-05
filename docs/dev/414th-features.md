@@ -8332,6 +8332,121 @@ Tests: `tests/fourteenth/test_gps_jamming.py` (39) +
 [`414th-gps-jamming-notes.md`](design/414th-gps-jamming-notes.md). Checklist: **B45**.
 
 
+## §87 — Naval station-keeping racetracks
+
+Enemy ships were stationary targets, and the reason is a single missing `else`.
+
+`GroundObjectGenerator.generate()` gave a ship group waypoints in exactly one case: when the
+campaign was **repositioning** it, via `sail_to_destination` gated on
+`ShipGroundObject.target_position`. With no destination that turn — the normal state — the
+group generated with a **zero-waypoint route** and sat motionless on its campaign marker for
+the whole mission. Last turn's recon photo was always still good, and a coordinate written
+down once stayed valid forever.
+
+That also explains the asymmetry the DM observed, that *blue* ships seemed to move and red's
+never did. Two unrelated paths move blue hulls: `steam_into_wind` turns the carrier for
+recovery (`GenericCarrierGenerator` overrides `generate()` entirely), and any ship the campaign
+happens to be relocating sails. Neither is a patrol, and neither ever applied to a red marker
+sitting on station.
+
+### A racetrack, not a circuit — and the anchor is at its centre
+
+`hold_station` gives every otherwise-idle ship group a **flattened oval centred on its own
+spawn position**. The centring is the design, not an implementation detail:
+
+- A circuit drawn **around** the anchor makes the group steam a full radius clear of its
+  marker and keep going — it reads as a ship *transiting off station*, i.e. fleeing.
+- An oval **centred on** the anchor keeps the group's **mean position at its campaign
+  position**. It holds station under way, which is what an escort, a picket or a barrier
+  patrol actually does.
+
+The second property is what keeps the rest of the game honest. The campaign map, the drawn
+threat rings and the turn-boundary force model all place the group at its marker, and with the
+marker at the centre of the track that stays true on average and bounded absolutely:
+
+| knob | value | consequence |
+| --- | --- | --- |
+| `STATION_LEG` | 8 NM | long axis |
+| `STATION_WIDTH` | 2 NM | leg separation |
+| `STATION_SPEED` | 12 kt | ≈1.7 h per lap — a normal mission never repeats a track |
+| — | **≈4.1 NM** | hard ceiling on displacement from the marker, forever |
+
+Corners are ordered so the circuit is two long legs joined by two short ones — four 90° turns
+rather than a 180° reversal at each end.
+
+### Nothing runs at runtime
+
+The waypoints are ordinary route points and the loop is `SwitchWaypoint`, the Mission Editor's
+own "go to waypoint N" action, so **DCS's naval AI sails the whole thing itself**: no plugin,
+no Lua, no emitter, no scheduled task. The loop targets waypoint **2**, never 1 — waypoint 1 is
+the spawn at the centre of the oval, so it is the one-time run-out onto station and must not
+become a leg of the repeating circuit.
+
+That choice is also why the feature composes instead of colliding:
+
+- **§63 cruise-missile raids survive it.** The plugin uses `PushTask`, which pushes the
+  `FireAtPoint` onto the queue and pops back to the underlying route when the salvo ends. The
+  scripted alternative — `mist.goRoute`, a `setTask` — would have **wiped** the pending fire
+  mission, which is precisely the §49 fire-then-scoot clobber. Here it is avoided by
+  construction rather than worked around with hold deadlines.
+- **§81's ROE and alarm state are untouched.** Those are tasks on `points[0]`; appending
+  waypoints does not disturb them, so a staggered or winchester fleet behaves identically.
+- **§80 mixed-hull groups** sail the circuit as one formation, same as any other route.
+
+### Land is handled in Python, where the landmap already lives
+
+DCS naval AI does **no land avoidance whatsoever**, so a bad waypoint beaches the group. Every
+candidate orientation is validated with `theater.is_in_sea()` sampled every 1 NM along **every
+leg**, including the run-out — two clear endpoints with an island between them would ground the
+group, so endpoint checks alone are not enough. Twelve bearings (30° apart) are tried in a
+**crc32-of-group-name** order, which buys four things at once:
+
+1. A group in open water takes its first choice.
+2. A group in a strait or a bay ends up oriented **along** the water it actually has — which is
+   what a real station in confined water looks like.
+3. Regeneration re-derives the same station instead of reshuffling the fleet (crc32 rather than
+   `hash()`, which is salted per process).
+4. Different groups get different orientations, so a fleet does not steam in parallel like a
+   parade.
+
+This is strictly better than doing it at runtime: the §49 scoot radius is famously **not**
+landmap-checked (the open risk on the Marianas T5 row), and this version cannot inherit that.
+
+**Every failure degrades to today's stationary behaviour** — no landmap, no clear orientation
+in any of the twelve bearings, or a spawn the landmap will not confirm as open water (a marker
+inside a harbour polygon). A ship authored alongside a pier simply stays put.
+
+### Scope and measurement
+
+Symmetric, and **carrier/LHA control points are deliberately untouched** —
+`GenericCarrierGenerator` overrides `generate()`, so `steam_into_wind` and the §72 airboss keep
+the boats.
+
+**No setting**, following §80 — same file, same generation-time shape. Per the §28 audit the
+settings surface is a mirror of the in-game-pass backlog, and a kill switch earns its place on
+*unverified runtime Lua*; this is bounded generation behaviour that degrades safely, so a
+toggle would only add to the surface.
+
+Measured against the real landmaps, using each campaign's authored miz ship markers:
+
+| campaign | ship markers | put on station |
+| --- | --- | --- |
+| `marianas_2027` | 11 | 11 (100%) |
+| `pacific_repartee` | 21 | 21 (100%) |
+| `tanker_war_1988` | 2 | 2 (100%) |
+| `1968_Yankee_Station` | 3 | 2 (67%) |
+
+The single miss is a hull whose spawn the landmap does not classify as sea — the safe degrade
+firing, not a defect.
+
+**NEW mission only**: generation-time, so existing saves pick it up on the next regeneration
+with no new game and no save migration.
+
+Files: `game/missiongenerator/tgogenerator.py` (`hold_station`, `_station_racetrack`,
+`_racetrack_corners`, `_track_is_clear`, and the `STATION_*` constants).
+Tests: `tests/missiongenerator/test_naval_station_keeping.py` (10). Checklist: **B46**.
+
+
 ## Unit-coverage sweep — 2026-08-04
 
 The §85 investigation raised an obvious follow-up from the DM: *"scrub my local install of all

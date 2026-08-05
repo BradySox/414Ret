@@ -3693,3 +3693,35 @@ Confirm:
 - **Kill only the radar** → the site drops off RWR but **jamming continues**. Also correct.
 - Every EWR site in a campaign that does *not* use the jamming presets still generates with
   **no** jammer (the slot is optional + `fill: false`).
+
+### B46 — Naval station-keeping racetracks · §87 · ☐ UNTESTED (built 2026-08-05)
+
+**Setup:** any campaign with authored ship markers — **Marianas 2027** is the intended one
+(11/11 markers put on station, headless-verified, and its PLAN hulls are what prompted this).
+No setting and no plugin to enable; regenerate a turn and the ships carry routes. Also worth a
+pass on **1968 Yankee Station**, whose `Naval-3` deliberately gets **no** track (its spawn is
+not classified as sea) — that hull must still generate and fight exactly as before.
+
+**Pass criterion:** open the generated miz in the Mission Editor and each ship marker group
+shows **5 waypoints** — the spawn plus a 4-corner oval — with a *Switch Waypoint* action on the
+last one pointing at waypoint 2. In game, the group is **under way from mission start**, laps
+the oval, and after a full lap is still within ~4 NM of where the campaign map draws it.
+Carriers and LHAs are unchanged: they still steam into wind for recovery.
+
+**Fail signatures to watch for:**
+- **A group that never moves.** Either DCS declined the route, or every bearing failed the
+  water check. `Naval-3`-style silence is correct; a Marianas hull sitting still is not.
+- **A group that stops after one lap** — `SwitchWaypoint` does not loop a *naval* group. This
+  is the one genuine unknown and the reason for this row. Fallback needs no task at all:
+  author enough waypoints to outlast the mission.
+- **A grounded or beached hull**, or one steering into an island — the leg sampling missed
+  terrain the landmap does not model. Note the campaign and position; the fix is a tighter
+  `STATION_WATER_SAMPLE` or a smaller oval, not disabling the feature.
+- **A ship that stops fighting while under way** — the route must not have disturbed the ROE
+  and alarm options on waypoint 0 (§81 sets those there).
+- **A §63 cruise raid that never launches** from a stationed ship — the pushed `FireAtPoint`
+  should ripple and the hull should then resume its lap. This is the interaction the design
+  relies on `PushTask` for, so it is worth confirming rather than assuming.
+- **A §80 mixed-hull group scattering** instead of sailing the circuit in formation.
+- Ships drifting far enough that a **drawn threat ring visibly no longer covers what it
+  should** — the ~4 NM ceiling is meant to keep this a non-issue.

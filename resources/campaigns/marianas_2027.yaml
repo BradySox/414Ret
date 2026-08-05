@@ -109,7 +109,6 @@ plugins:
   # (the §36 lesson). Preseed every plugin the settings above depend on.
   mobilemissiles: true
   cruisemissiles: true
-  convoyambush: true
   aisleep: true
   rednet: true
 

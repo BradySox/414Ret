@@ -186,9 +186,9 @@ settings:
   plugins:
     # advanced_iads (top-level) is this laydown's centerpiece; mantisiads owns its whole runtime.
     mantisiads: true
-    # §49 SCUD hunt, §50 ambush, §51 comms jam, §61 host scramble, §36/artillery harassment.
+    # §49 SCUD hunt, §51 comms jam, §61 host scramble, §36/artillery harassment.
+    # (§50's ambush spring is authored as native DCS triggers -- no plugin.)
     mobilemissiles: true
-    convoyambush: true
     commsjam: true
     redscramble: true
     vietnamops: true

@@ -285,7 +285,8 @@ FEATURES: tuple[Feature, ...] = (
         "convoy_ambush",
         "Convoy ambush (a chance, never telegraphed) + ambient supply convoys",
         50,
-        plugin_id="convoyambush",
+        # No plugin: the ambush spring is authored as native DCS trigger rules at
+        # generation (game/missiongenerator/convoyambushgenerator.py).
         settings_fields=("convoy_ambush", "ambient_supply_convoys"),
     ),
     Feature(

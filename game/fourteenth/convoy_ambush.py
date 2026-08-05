@@ -22,9 +22,12 @@ No phantom spawns (the §35/§37 lesson):
   :func:`game.fourteenth.coin.spawn_red_ground_at` -- killing it is a real red ground loss
   recorded natively at debrief.
 
-The Lua ``convoyambush`` plugin only *springs* the ambushes (each team holds fire until
-the convoy closes, then goes weapons-free with a cue) -- movement / cosmetics only, never
-a kill it owns. That keeps the loss accounting entirely in the turn-boundary force model.
+The *spring* itself is authored as native DCS trigger rules at generation
+(``game/missiongenerator/convoyambushgenerator.py``): each team is dug in weapons-hold on
+its own waypoint 0 and flips to weapons-free when a trigger sees the convoy enter a zone
+on the ambush point. ROE / cues only, never a kill it owns -- so the loss accounting stays
+entirely in the turn-boundary force model. There is no Lua plugin (and therefore no plugin
+a host can untick to silently disable this).
 
 One turn-boundary step runs from ``Game.finish_turn`` (after the §35 enemy-trail top-up
 and the ambient-convoy layer -- ``game/fourteenth/ambient_convoys.py``, which keeps a few

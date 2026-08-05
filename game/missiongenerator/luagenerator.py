@@ -26,7 +26,6 @@ from .coinluadata import populate_coin_lua
 from .deckdecorluadata import populate_deck_decor_lua
 from .commsjamluadata import populate_comms_jam_lua
 from .rednetluadata import populate_red_net_lua
-from .convoyambushluadata import populate_convoy_ambush_lua
 from .minefieldluadata import populate_minefields_lua
 from .interceptluadata import (
     DefenseZoneEntry,
@@ -450,12 +449,6 @@ class LuaGenerator:
         # aisleep plugin sleeps each group's controller until an aircraft closes
         # inside the wake radius (performance only -- no gameplay-model change).
         populate_ai_sleep_lua(lua_data, self.game, self.mission_data)
-
-        # Convoy escort / ambush (§50) -- emits dcsRetribution.convoyAmbush only when the
-        # setting is on and a live blue-convoy/red-ambush pairing exists; the convoyambush
-        # plugin springs the dug-in team when the convoy closes (movement/ROE only, the
-        # loss accounting stays in the turn-boundary force model).
-        populate_convoy_ambush_lua(lua_data, self.game, self.mission_data)
 
         # Air-dropped minefields (§57 Phase 2) -- emits dcsRetribution.minefields only when
         # air_droppable_minefields is on and a live persisted field exists, so the plugin

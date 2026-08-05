@@ -1,9 +1,12 @@
 """Naval-magazine emitter (dcsRetribution.navalMagazines) -- the §81 config bridge.
 
-Locks the shape the ``navalmagazines`` plugin consumes: the two tier switches,
-one ``group``/``coalition``/``remaining`` record per live naval group (including
-a dry one, so the plugin knows to hold it), and no node at all when both tiers
-are off or no naval group exists.
+Locks the shape the ``navalmagazines`` plugin consumes: one
+``group``/``coalition``/``remaining`` record per live naval group (including a dry
+one, so the plugin knows to hold it), and no node at all when metering is off or
+no naval group exists.
+
+N1's staggered release is deliberately absent -- it is authored into the mission at
+generation, so the stagger setting alone must never produce a node.
 """
 
 from __future__ import annotations
@@ -83,14 +86,10 @@ def test_emits_each_live_naval_group_with_its_magazine() -> None:
     }
 
 
-def test_the_tier_switches_ride_on_the_node() -> None:
-    switches = _switches(_node(_game(stagger=True, metered=False)))
-    assert switches["stagger"] == "true"
-    assert switches["metered"] == "false"
-
-    switches = _switches(_node(_game(stagger=False, metered=True)))
-    assert switches["stagger"] == "false"
-    assert switches["metered"] == "true"
+def test_the_stagger_alone_emits_nothing() -> None:
+    """N1 is authored at generation, so it needs no runtime and no node. Emitting
+    one anyway would load the plugin for a tier it no longer implements."""
+    assert _node(_game(stagger=True, metered=False)) is None
 
 
 def test_a_dry_group_is_still_emitted() -> None:

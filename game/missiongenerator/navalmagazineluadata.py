@@ -2,23 +2,23 @@
 
 The §81 emitter. Python owns the campaign side (the persisted per-group
 anti-ship stock — ``game/fourteenth/naval_magazines``); this hands the
-``navalmagazines`` plugin:
+``navalmagazines`` plugin N2's per-group stock: ``group``/``coalition``/
+``remaining`` anti-ship missiles. The plugin counts real ``S_EVENT_SHOT``
+releases and drops a spent group back to ``ReturnFire``.
 
-* ``stagger`` — N1's weapons-release switch. When on, the generator has already
-  spawned every ship ``ReturnFire`` (``TgoGenerator.set_ship_engagement``) and
-  the plugin releases each group to weapons-free at its own moment inside the
-  window, so the exchange develops instead of detonating at t=0.
-* ``magazines`` — N2's per-group stock: ``group``/``coalition``/``remaining``
-  anti-ship missiles. The plugin counts real ``S_EVENT_SHOT`` releases and drops
-  a spent group back to ``ReturnFire``.
+**N1 is not here.** The weapons-release stagger is authored at generation as a
+start-conditioned ``ControlledTask`` on each ship group
+(``TgoGenerator.set_ship_engagement``), because "at time T, set this group's
+ROE" is exactly what a DCS start condition expresses — no runtime needed, and
+no plugin a host can untick to silently disable it. Only the magazine, which
+must count weapon releases as they happen, needs a script at all.
 
 The plugin mirrors what actually fired into the ``naval_magazines_state``
 debrief channel; the turn boundary debits from that report, never from this
 emit — so re-generating the mission is free.
 
-Emits nothing unless at least one tier is enabled and a live naval group
-exists, so a normal mission carries no ``navalMagazines`` node and the plugin
-no-ops.
+Emits nothing unless metering is on and a live naval group exists, so a normal
+mission carries no ``navalMagazines`` node and the plugin no-ops.
 """
 
 from __future__ import annotations
@@ -36,10 +36,7 @@ def populate_naval_magazines_lua(
     root: "LuaData", game: "Game", mission_data: "MissionData"
 ) -> None:
     """Build the ``dcsRetribution.navalMagazines`` subtree."""
-    settings = game.settings
-    stagger = bool(getattr(settings, "naval_weapon_release_stagger", False))
-    metered = bool(getattr(settings, "naval_magazines", False))
-    if not (stagger or metered):
+    if not bool(getattr(game.settings, "naval_magazines", False)):
         return
 
     from game.fourteenth.naval_magazines import naval_group_magazines
@@ -49,8 +46,6 @@ def populate_naval_magazines_lua(
         return
 
     node = root.add_item("navalMagazines")
-    node.add_key_value("stagger", "true" if stagger else "false")
-    node.add_key_value("metered", "true" if metered else "false")
     group_list = node.add_item("magazines")
     for group in groups:
         rec = group_list.add_item()

@@ -131,11 +131,12 @@ def test_runtime_plugins_are_preseeded() -> None:
     for plugin in (
         "mobilemissiles",
         "cruisemissiles",
-        "convoyambush",
         "aisleep",
         "rednet",
     ):
         assert plugins[plugin] is True, plugin
+    # §50 needs no plugin -- its ambush spring is authored as native DCS triggers.
+    assert "convoyambush" not in plugins
 
 
 def test_guam_is_blue_and_the_chain_is_red() -> None:

@@ -180,11 +180,11 @@ def test_inject_configuration_defers_the_config_script() -> None:
     from game.plugins.luaplugin import LuaPluginDefinition
 
     definition = LuaPluginDefinition.from_json(
-        "convoyambush", Path("resources/plugins/convoyambush/plugin.json")
+        "mobilemissiles", Path("resources/plugins/mobilemissiles/plugin.json")
     )
     plugin = LuaPlugin.__new__(LuaPlugin)
     plugin.definition = definition
-    plugin.identifier = "convoyambush"
+    plugin.identifier = "mobilemissiles"
     gen = MagicMock()
     plugin.inject_configuration(gen)
     gen.inject_plugin_script.assert_called_once()

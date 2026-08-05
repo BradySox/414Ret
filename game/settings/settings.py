@@ -3208,9 +3208,7 @@ class Settings:
             "sign is the TROOPS IN CONTACT call when an ambush springs, and supporting "
             "the column (or not) is your call. Left unsupported, an ambushed convoy is "
             "ground down and the supplies never arrive. The convoy and the ambushers "
-            "are real, tracked units -- both sides' losses count. Runs via the 'Convoy "
-            "ambush' LUA plugin -- keep that plugin enabled or this setting does "
-            "nothing."
+            "are real, tracked units -- both sides' losses count."
         ),
     )
     air_droppable_minefields: bool = boolean_option(
@@ -3323,8 +3321,7 @@ class Settings:
             "from the moment the mission loads and the entire naval battle happens "
             "in the first five minutes. They still defend themselves while they "
             "wait -- this delays who shoots first, it does not disarm anyone. "
-            "Symmetric. Runs via the 'Naval magazines & weapons release' LUA "
-            "plugin -- keep that plugin enabled or this setting does nothing."
+            "Symmetric."
         ),
     )
     naval_magazines: bool = boolean_option(

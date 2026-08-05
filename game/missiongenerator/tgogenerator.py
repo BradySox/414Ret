@@ -583,15 +583,39 @@ class GroundObjectGenerator:
         # Upstream ships likewise engage on ROE/alarm alone.
         #
         # §81 N1: with the weapons-release stagger on, ships instead generate on
-        # ReturnFire and the navalmagazines plugin releases each group to
-        # weapons-free at its own moment inside a window -- because a modern
-        # anti-ship missile out-ranges the whole theatre, so "in range" is true at
-        # t=0 and an unstaggered fleet empties its tubes in the opening minute.
-        # ReturnFire, never WeaponHold: the point is to delay INITIATION, and a
-        # holding ship would be a defenceless one while it waits.
+        # ReturnFire and carry a start-conditioned task that frees them at their
+        # own moment inside a window -- because a modern anti-ship missile
+        # out-ranges the whole theatre, so "in range" is true at t=0 and an
+        # unstaggered fleet empties its tubes in the opening minute. ReturnFire,
+        # never WeaponHold: the point is to delay INITIATION, and a holding ship
+        # would be a defenceless one while it waits.
+        #
+        # Authored here rather than scripted: "at time T, set this group's ROE" is
+        # precisely a DCS start condition, and Python knows the whole fleet, so it
+        # can spread the releases evenly instead of a plugin re-deriving the same
+        # ordering at runtime.
+        from game.fourteenth.naval_magazines import (
+            is_winchester_at_generation,
+            naval_release_schedule,
+        )
+
         if getattr(self.game.settings, "naval_weapon_release_stagger", False):
             group.points[0].tasks.append(OptROE(OptROE.Values.ReturnFire))
+            release = naval_release_schedule(self.game).get(group.name)
+            if release is not None:
+                free = ControlledTask(OptROE(OptROE.Values.WeaponFree))
+                free.start_after_time(release)
+                group.points[0].tasks.append(free)
+            # No release time == a dry magazine: nothing to open fire with, so the
+            # group simply stays at ReturnFire for the mission.
             return
+
+        # Stagger off, but a group that spent its tubes in earlier turns must not
+        # fight as if freshly loaded (§81 N2 -- winchester, not disarmed).
+        if is_winchester_at_generation(self.game, group.name):
+            group.points[0].tasks.append(OptROE(OptROE.Values.ReturnFire))
+            return
+
         group.points[0].tasks.append(OptROE(OptROE.Values.WeaponFree))
 
     def _register_theater_unit(

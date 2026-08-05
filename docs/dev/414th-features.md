@@ -4971,20 +4971,34 @@ debug toggle still see ground truth.
 and take the decision away from the player. If the player wants air over the column, they frag it
 themselves (or divert something already airborne when the TIC call comes).
 
-**Emitter (`game/missiongenerator/convoyambushluadata.py` `populate_convoy_ambush_lua`, wired in
-`luagenerator.py` after the mobile-missile emitter).** For each live pairing it emits the ambush team's
-alive `group_name`s + centre and the targeted convoy's group name (the generated `VehicleGroup` name =
-`convoy.name`) as `dcsRetribution.convoyAmbush = { ambushes = { {groups, x, y, convoyGroups}, … } }`. A
-pairing whose TGO is gone or fully dead is dropped; setting off ⇒ no node ⇒ plugin no-ops.
+**The spring: native DCS triggers, authored at generation
+(`game/missiongenerator/convoyambushgenerator.py` `ConvoyAmbushGenerator`, run from
+`MissionGenerator.generate_miz` right after the convoys are generated — both the teams and the convoy
+must already exist as real groups).** For each live pairing it authors:
 
-**Runtime (`resources/plugins/convoyambush/`).** One scheduled loop per ambush team. The team starts dug
-in — alarm-green + weapons-hold (all ROE calls `pcall`-wrapped). After a startup grace (default 120 s) it
-polls every `pollIntervalS` (15 s): when any convoy unit closes inside `triggerRadiusM` (6 km) of the
-ambush centre it **springs** — weapons-free + alarm-red, one "TROOPS IN CONTACT — support welcome" cue to
-BLUE, one F10 mark on the position, then latches. A team the convoy never reaches (or whose convoy is
-already gone) **stays dug in and silent** — the old max-hold "spring anyway" fallback is removed, because
-a TIC call with no convoy under fire would telegraph a fight nobody drove into. A team wiped before it
-springs stops scheduling.
+- **the dug-in state** — `OptAlarmState` green + `OptROE` weapons-hold appended to each team group's
+  waypoint 0, the same idiom `TgoGenerator.set_ship_engagement` uses for fleets;
+- **a hidden `TriggerZoneCircular`** (6 km) on the ambush point — hidden so nothing is telegraphed;
+- **one `TriggerOnce`** conditioned on `TimeAfter`(120 s startup grace) **AND**
+  `PartOfGroupInZone(convoy_group, zone)` — deliberately the convoy's *own* group, not the coalition,
+  so a player overflying the ambush cannot spring it — whose actions raise a per-ambush user flag
+  (`ambush-<tgo id>`) and fire the "TROOPS IN CONTACT — support welcome" `MessageToCoalition` plus a
+  `MarkToCoalition` on the zone;
+- **the spring itself** — two flag-gated `ControlledTask`s on the same waypoint 0 that flip the team to
+  alarm-red / weapons-free the moment its flag is raised (`start_if_user_flag`, the mirror of the
+  escort split's `stop_if_user_flag` in `joinpoint.configure_escort_tasks`).
+
+A team the convoy never reaches stays dug in and silent — the ambush must remain a surprise the column
+drives into, never a telegraphed objective. A fully-dead team, a missing pairing, or a convoy that was
+not generated this mission (its transfer completed) authors nothing for that pairing.
+
+**There is no Lua plugin.** Until 2026-08-05 this was the `convoyambush` plugin polling every 15 s and
+walking every unit of every convoy — a re-implementation of the trigger engine DCS already runs, which
+also cost a plugin a host could untick and thereby silently disable the feature whatever the setting
+said (the §36 lesson), which is why it had to be preseeded into seven campaigns. Authoring the same
+behaviour removed 572 lines across five files, all seven preseeds, and that entire failure mode; DCS
+also evaluates the zone continuously rather than once every 15 s. **Nothing about the feature's design
+changed** — same radius, same grace, same cue, same ROE-only discipline.
 
 ### Files & tests
 
@@ -4993,10 +5007,9 @@ springs stops scheduling.
 | Force model | `game/fourteenth/ambient_convoys.py` (`ensure_ambient_convoys`, both sides) + `game/fourteenth/convoy_ambush.py` (`seed_convoy_ambushes`), hooked in order in `game/game.py` `finish_turn` |
 | Visibility | `game/theater/theatergroundobject.py` (`map_hidden` + the `hidden_on_player_map` leaf), `game/server/eventstream/models.py` (SSE filter), `game/commander/battlepositions.py` (planner skip) |
 | State | `game.convoy_ambush_state` (declared in `Game.__init__`, `setdefault` in `__setstate__`) |
-| Emitter | `game/missiongenerator/convoyambushluadata.py` (wired in `luagenerator.py` after the mobile-missile emitter) |
-| Runtime | `resources/plugins/convoyambush/` (`plugin.json` + `convoyambush-config.lua`; registered in `plugins.json`) |
+| Spring | `game/missiongenerator/convoyambushgenerator.py` (`ConvoyAmbushGenerator`, run from `missiongenerator.py` after `ConvoyGenerator`/`CargoShipGenerator`) — native DCS trigger rules, **no plugin** |
 | Settings | `game/settings/settings.py` (`ambient_supply_convoys` + `convoy_ambush`, Mission Generation → Battlefield life, both default **ON**) |
-| Tests | `tests/fourteenth/test_ambient_convoys.py` (the randomized both-sides top-up, same-road stacking, corridor orientation, COIN kit, every guard); `tests/fourteenth/test_convoy_ambush.py` (the chance roll + gauntlet placement + the map_hidden contract + the `ROAD_BEARING_CAMPAIGNS` inventory guard); `tests/missiongenerator/test_convoyambushluadata.py` (emit shape/gates); `tests/lua/test_convoyambush_runtime.py` (grace, spring-on-close, silent-without-convoy, dead-team, no-node) |
+| Tests | `tests/fourteenth/test_ambient_convoys.py` (the randomized both-sides top-up, same-road stacking, corridor orientation, COIN kit, every guard); `tests/fourteenth/test_convoy_ambush.py` (the chance roll + gauntlet placement + the map_hidden contract + the `ROAD_BEARING_CAMPAIGNS` inventory guard); `tests/missiongenerator/test_convoyambushgenerator.py` (the authored zone/trigger/conditions/actions, per-ambush flags, the dug-in options, serialization, every guard — driven against a real `dcs.Mission`) |
 
 ### Gotchas / deferred
 
@@ -5008,10 +5021,11 @@ springs stops scheduling.
   when the turn is finalized, because the teams must be real units in the force model and the `.miz`.
   From the cockpit it is indistinguishable from an in-mission roll — nothing about the outcome is
   visible anywhere until an ambush springs.
-- **Plugin dependency (the §36 lesson).** The ambush runtime is the `convoyambush` plugin; a saved default
-  of it unticked silently kills the `convoy_ambush` setting (the ambient convoys themselves are pure engine
-  and need no plugin). The four flagship campaigns still preseed `plugins: {convoyambush: true}` (and the
-  setting, now redundantly — kept as explicit intent that forces it ON over a user's saved-off default).
+- **No plugin dependency (2026-08-05).** The §36 trap used to apply here — the runtime was the
+  `convoyambush` plugin, so a saved default of it unticked silently killed the `convoy_ambush` setting,
+  which is why seven campaigns preseeded `plugins: {convoyambush: true}`. The spring is now authored as
+  native DCS trigger rules at generation, so the setting is the only gate, the preseeds are gone, and
+  there is nothing left to untick. The ambient convoys were always pure engine and never needed one.
 - **Standard since 2026-07-06:** both settings default **ON** for new games (existing saves keep their
   stored `convoy_ambush` choice; `ambient_supply_convoys` arrives ON via the `__setstate__` default merge).
 - **A blue→blue supply road is the hard prerequisite for the blue half** (found by the 2026-07-05 flown
@@ -7646,17 +7660,31 @@ Hull culling (Marianas 2027, red 93 → 45 hulls) shrinks each salvo. It does no
 
 ### N1 — staggered release (`naval_weapon_release_stagger`, default OFF)
 
-The generator spawns ships **`ReturnFire`** instead of `WeaponFree`, and the `navalmagazines`
-plugin releases each group to weapons-free at its own moment, **spread evenly** across
-`[releaseMinS, releaseMaxS]` (120–900 s). Evenly rather than rolled independently, so a small
-fleet cannot randomly land every release in the same few seconds — the §49 lesson, where
-everything firing in one frame was itself a measured problem.
+`TgoGenerator.set_ship_engagement` spawns ships **`ReturnFire`** instead of `WeaponFree` and
+appends a `ControlledTask(OptROE(WeaponFree))` whose `start_after_time` is that group's own
+release moment, **spread evenly** across `[NAVAL_RELEASE_WINDOW_START_S,
+NAVAL_RELEASE_WINDOW_END_S]` (120–900 s, in `game/fourteenth/naval_magazines.py`). Evenly
+rather than rolled independently, so a small fleet cannot randomly land every release in the
+same few seconds — the §49 lesson, where everything firing in one frame was itself a measured
+problem.
+
+**Authored at generation, not scripted (2026-08-05).** "At time T, set this group's ROE" is
+exactly what a DCS start condition expresses, and Python already knows the whole fleet, so it
+computes the schedule (`naval_release_schedule`) and writes it into the mission. This was a
+plugin that re-derived the same ordering at runtime; moving it deleted N1 from the Lua
+entirely, along with the `stagger` emit flag, the two release plugin options, and the §36 trap
+where an unticked plugin silently disabled the setting. **Behaviour is unchanged** — same
+window, same even spread, same `ReturnFire` start.
 
 **`ReturnFire`, never `WeaponHold`.** The point is to delay *initiation*, not to disarm
 anybody: a holding fleet is a defenceless fleet. This is also the feature's load-bearing
 unknown — see below.
 
-Runtime only. No persisted state, no campaign coupling.
+A group that starts the mission **dry** is never scheduled (nothing to release it for) and, with
+metering on, generates `ReturnFire` even when the stagger is off — winchester from t=0 rather
+than fighting as if freshly loaded. That start-up case used to be the plugin's job too.
+
+No persisted state of its own, no campaign coupling.
 
 ### N2 — the magazine (`naval_magazines`, default OFF)
 
@@ -7720,18 +7748,22 @@ hidden, like every other magazine readout.
 ### Files & tests
 
 - `game/fourteenth/naval_magazines.py` — the hull table, the weapon patterns, seeding,
-  emission, reconciliation, the SITREP lines.
+  emission, reconciliation, the SITREP lines, **and N1's release schedule**
+  (`naval_release_schedule` + `is_winchester_at_generation` + the window constants).
+- `game/missiongenerator/tgogenerator.py` — `set_ship_engagement`: the `ReturnFire` branch and
+  the authored `ControlledTask` release (N1 in full).
 - `game/missiongenerator/navalmagazineluadata.py` — the emitter
-  (`dcsRetribution.navalMagazines`).
-- `resources/plugins/navalmagazines/` — the runtime (stagger + `S_EVENT_SHOT` metering).
-- `game/missiongenerator/tgogenerator.py` — `set_ship_engagement`'s `ReturnFire` branch.
+  (`dcsRetribution.navalMagazines`), **N2 only**; it emits nothing when metering is off.
+- `resources/plugins/navalmagazines/` — the runtime, **`S_EVENT_SHOT` metering only**.
 - `game/debriefing.py` — the `naval_magazines_state` channel (its parser is now shared with
   §63's, both being `{group=, fired=}`).
 - `game/sim/missionresultsprocessor.py` — `commit_naval_magazines`.
 - `game/game.py` — `naval_magazines` + its `__setstate__` default.
 - Tests: `tests/fourteenth/test_naval_magazines.py`,
+  `tests/missiongenerator/test_naval_release_stagger.py` (N1: the schedule + what is authored
+  onto a real pydcs ship group),
   `tests/missiongenerator/test_navalmagazineluadata.py`,
-  `tests/lua/test_navalmagazines_runtime.py`.
+  `tests/lua/test_navalmagazines_runtime.py` (N2 metering).
 
 **Checklist B39** — needs an in-game pass.
 

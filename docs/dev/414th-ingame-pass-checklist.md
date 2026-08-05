@@ -3622,9 +3622,13 @@ rolled a refuelling section (the roll is per-site, so expect *most* but not all)
 logistics spots (one type per site — the mixed truck+fuel+power spread is S-300-only by design);
 on Yankee Station, an HQ-2 site renders the **ZIL-131 KUNG** C2 truck; **EWR sites render their
 support section** (Red Tide: radar + KUNG + 1–2 diesel power stations + trucks — headless showed
-all 6; a western FPS-117 site renders the ECS shelter instead, never the Soviet kit); and over a
-few turns a supply convoy is seen carrying a refueller (blue M978 / red ATZ family / a COIN
-campaign's civilian ATZ-5 on the ratline). Kills record as ordinary ground losses.
+all 6; a western FPS-117 site renders the ECS shelter instead, never the Soviet kit);
+**layout-generated economy buildings are furnished** (a generated fuel farm / ammo depot /
+factory / warehouse fields 1–2 trucks or a bowser beside the statics; hand-authored named targets
+— DS91's CENTAF set, RT's authored factories — stay bare **by design**, and any authored building
+cluster having MOVED from earlier saves is the origin-shift fail signature); and over a few turns
+a supply convoy is seen carrying a refueller (blue M978 / red ATZ family / a COIN campaign's
+civilian ATZ-5 on the ratline). Kills record as ordinary ground losses.
 
 **Fail signatures to watch for:**
 - A bowser or the KUNG **clipping** launcher/radar models (positions are the templates' existing

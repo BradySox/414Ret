@@ -8316,9 +8316,44 @@ trucks/bowsers. Tests extended (91 in `test_sam_support_vehicles.py` — slot pr
 positions, the whitelist-not-class guard, six nation-correctness cases both ways, the
 no-kit-faction bare-radar case).
 
+**Economy building furnishing (same day, the "Ammo, Factory, anything" pass).** The audit's next
+target was the objective buildings themselves: **the fuel farm was 8 static tanks and not one
+bowser**; the ammo depot, factory and warehouse were equally lifeless static dioramas. Each of the
+four now carries **one optional Logistics vehicle group** (2 positions in `buildings.miz`, clear
+of the building footprints) dealt from the faction's own `Logistics` roster — nation-correct with
+zero per-faction wiring, and with the registered refuellers in those rosters a fuel farm can now
+roll an ATZ-10 at the loading rack. A faction with no Logistics unit renders the bare statics
+exactly as before. **Scope rule discovered in verification:** the furnishing reaches
+**layout-generated** objectives only — a campaign's hand-authored named targets (Desert Storm's
+"Saad 16 Research Complex" / "Baba Gurgur Fuel Depot" CENTAF set, Red Tide's authored factories)
+are built straight from the campaign miz and never touch the layouts, so **authored content stays
+exactly as its author placed it**, which is correct, not a gap.
+
+**Two template landmines found doing it (both now impossible to repeat silently):**
+
+1. **pydcs saves miz countries SORTED BY NAME, and the layout loader anchors each layout's
+   template origin on the first unit of the first matched group — iterating vehicle groups before
+   statics within a country.** A vehicle group added under the statics' own country (or any
+   country sorting before it) steals the origin, and every authored building cluster on every
+   campaign shifts by the vehicle's offset. The support groups therefore live under
+   **blue/USAF Aggressors** — the only blue country sorting after "USA", where the statics live —
+   and `test_economy_building_origin_still_anchors_on_the_building` pins the origin at (0,0).
+2. **pydcs seeds every unused country into the NEUTRALS coalition, and the loader only scans
+   red+blue** — the first attempt put the groups under a neutrals-resident country and they
+   loaded as nothing, with no error. The country must be popped from neutrals into blue first.
+
+The dead-slot guard is now **repo-wide** (all five layout families, 90 templates, with the
+loader's real matching semantics — a slot is alive if its own name *or* one of its `statics`
+entries exists as a red/blue miz group), so both this bug class and the neutrals variant fail CI
+loudly. The "DEAD" flags an earlier naive scan raised against the building layouts were false
+alarms — they load through their statics lists.
+
 **Deferred from the wiring pass:** HQ-22's support section (no Logistics slot; a Chinese battery
 deserves CH-pack kit, not Russian bowsers), power/fuel *slots* at non-S-300 sites (template
-surgery), and any use of the GPS spoofers (other agent) or the Gazetchik-E decoy (needs its own
+surgery), furnishing for comms/command-center buildings — **deliberately excluded** because §51
+targets "alive" comms TGOs and §52 counts command-center deaths, and adding vehicles changes what
+"dead" means for both (kill the tower, trucks keep the TGO alive) — that interaction needs its own
+call — and any use of the GPS spoofers (other agent) or the Gazetchik-E decoy (needs its own
 design — likely §79-adjacent).
 
 

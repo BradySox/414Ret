@@ -3679,10 +3679,22 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     Soviet actives, the **FPS-117 ECS shelter** for RT blue/DS91/USA 2020; the Logistics slot
     is class-based so each nation's own trucks deal in for free; all kit zero-detection, MANTIS
     unchanged; a no-kit faction renders a bare radar as before. Headless: **all 6 RT EWR sites**
-    render radar + KUNG + 1–2 DPS + trucks. Tests
-    `tests/armedforces/test_sam_support_vehicles.py` (91, incl. a **repo-wide dead-slot guard**
-    failing if any anti-air layout declares a slot no group in its `.miz` is named after, and
-    six both-ways nation-correctness cases for the EWR kit);
+    render radar + KUNG + 1–2 DPS + trucks. **Economy building furnishing (same day):** the
+    fuel/ammo/factory/warehouse layouts — the fuel farm was 8 static tanks and **not one
+    bowser** — each gain one optional class-based Logistics vehicle group (2 appended
+    `buildings.miz` positions), dealt from the faction's own roster; reaches
+    **layout-generated** objectives only (hand-authored named targets — DS91's CENTAF set —
+    never touch layouts and stay as authored, by design); comms/command-center furnishing
+    **deliberately excluded** (§51 targets "alive" comms TGOs and §52 counts CC deaths — added
+    vehicles would change what "dead" means; needs its own call). **Two template landmines,
+    now CI-locked:** pydcs saves miz countries **name-sorted** and the loader anchors each
+    layout's origin on the first matched unit (vehicles before statics per country), so support
+    groups live under **blue/USAF Aggressors** — the only blue country sorting after USA — with
+    an origin-pinned-at-(0,0) test; and pydcs seeds unused countries into **NEUTRALS**, which
+    the loader never scans (pop into blue first or the groups silently load as nothing). Tests
+    `tests/armedforces/test_sam_support_vehicles.py` (131, incl. the dead-slot guard now
+    **repo-wide across all five layout families** with the loader's real name-or-statics
+    matching, and six both-ways nation-correctness cases for the EWR kit);
     features doc §85 (+ the "Unit-coverage sweep — 2026-08-04" section), checklist B43 + B44 —
     needs an in-game pass.
 

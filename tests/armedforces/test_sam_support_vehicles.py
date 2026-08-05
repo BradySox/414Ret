@@ -284,19 +284,26 @@ def _miz_group_names(miz: Path) -> set[str]:
     return names
 
 
-def _anti_air_layout_yamls() -> list[Path]:
-    return sorted(ANTI_AIR_LAYOUT_DIR.glob("*.yaml"))
+def _all_layout_yamls() -> list[Path]:
+    """Every layout family, not just anti-air -- the dead-slot bug is generic."""
+    return sorted(Path("resources/layouts").rglob("*.yaml"))
 
 
-@pytest.mark.parametrize("layout_yaml", _anti_air_layout_yamls(), ids=lambda p: p.name)
+@pytest.mark.parametrize("layout_yaml", _all_layout_yamls(), ids=lambda p: p.name)
 def test_no_layout_declares_a_dead_slot(layout_yaml: Path) -> None:
     """Every slot a layout declares must exist as a group in its .miz template.
 
     THE failure mode this whole change came from. `LayoutLoader._load_from_miz`
-    iterates the MIZ's groups and looks each up in the mapping -- so a slot the
-    yaml declares that no MIZ group is named after is never created, with no
-    warning and no error. It had silently disabled the S-300 family's logistics
-    section and the Sky Sabre battery's point defence.
+    iterates the MIZ's red+blue groups and looks each up in the mapping -- so a
+    slot the yaml declares that no MIZ group is named after is never created,
+    with no warning and no error. It had silently disabled the S-300 family's
+    logistics section and the Sky Sabre battery's point defence. The loader
+    matches a MIZ group against either the slot's own name or an entry in the
+    slot's `statics` list (the building layouts are carried entirely by their
+    statics), so a slot is alive if any of those names exists as a group. The
+    red+blue restriction matters too: a group parked in the NEUTRALS block is
+    invisible to the loader (found the hard way -- pydcs seeds unused countries
+    into neutrals, and a support group added under one never loaded).
     """
     data = yaml.safe_load(layout_yaml.read_text(encoding="utf-8"))
     layout_file = data.get("layout_file")
@@ -304,21 +311,13 @@ def test_no_layout_declares_a_dead_slot(layout_yaml: Path) -> None:
     assert miz.is_file(), f"{layout_yaml.name} points at a missing template {miz}"
 
     miz_groups = _miz_group_names(miz)
-    declared = [
-        slot["name"]
-        for group in data["groups"]
-        for slots in group.values()
-        for slot in slots
-    ]
-    # A slot may also be satisfied by one of its `statics` entries.
-    statics = {
-        static
-        for group in data["groups"]
-        for slots in group.values()
-        for slot in slots
-        for static in slot.get("statics", [])
-    }
-    dead = [n for n in declared if n not in miz_groups and n not in statics]
+    dead = []
+    for group in data["groups"]:
+        for slots in group.values():
+            for slot in slots:
+                candidates = {slot["name"], *slot.get("statics", [])}
+                if not candidates & miz_groups:
+                    dead.append(slot["name"])
     assert not dead, (
         f"{layout_yaml.name} declares slots with no matching group in {miz.name}: "
         f"{dead}. They will be silently dropped. Groups in the template: "
@@ -409,3 +408,59 @@ def test_ewr_layout_still_usable_by_a_faction_with_no_support_kit() -> None:
     for unit_group in layout.all_unit_groups:
         if unit_group.name == "Early-Warning Radar C2":
             assert unit_group.possible_types_for_faction(faction) == []
+
+
+# --- Economy building furnishing (the 2026-08-04 "Ammo, Factory, anything" pass) --
+
+# The fuel farm, ammo depot, factory and warehouse were pure static dioramas --
+# eight fuel tanks and not one bowser. Each now carries one optional Logistics
+# vehicle group dealt from the faction's own roster.
+FURNISHED_BUILDINGS = ["fuel1", "ammo1", "ware1", "factory1"]
+
+
+@pytest.mark.parametrize("layout_name", FURNISHED_BUILDINGS)
+def test_economy_building_has_a_logistics_slot(layout_name: str) -> None:
+    layout = LAYOUTS.by_name(layout_name)
+    slots = [
+        ug for ug in layout.all_unit_groups if ug.name == f"{layout_name} Logistics"
+    ]
+    assert len(slots) == 1, f"{layout_name} lost its Logistics slot"
+    slot = slots[0]
+    assert slot.optional, "must be optional: a truck-less faction keeps bare statics"
+    assert UnitClass.LOGISTICS in slot.unit_classes, (
+        "class-based on purpose -- the faction's own trucks deal in, so the kit "
+        "is nation-correct with zero per-faction wiring"
+    )
+    assert len(slot.layout_units) >= max(slot.unit_count)
+
+
+@pytest.mark.parametrize("layout_name", FURNISHED_BUILDINGS)
+def test_economy_building_origin_still_anchors_on_the_building(
+    layout_name: str,
+) -> None:
+    """The template origin must stay on the layout's first static.
+
+    The loader anchors a layout on the first unit of the first matched group,
+    iterating vehicle groups before statics within a country. A vehicle group
+    added under the wrong country steals the origin, and every authored
+    building position on every campaign shifts by the vehicle's offset. The
+    origin unit's relative offset is (0,0) by construction -- pin it.
+    """
+    layout = LAYOUTS.by_name(layout_name)
+    first = layout.groups[0].unit_groups[0].layout_units[0]
+    assert abs(first.position.x) < 0.5 and abs(first.position.y) < 0.5, (
+        f"{layout_name}'s template origin moved off its first static -- the "
+        f"support vehicle group is being loaded before the statics"
+    )
+
+
+def test_furnished_building_offers_the_faction_roster() -> None:
+    from game.armedforces.forcegroup import ForceGroup
+    from game.factions import FACTIONS
+
+    layout = LAYOUTS.by_name("fuel1")
+    group = ForceGroup.for_layout(layout, FACTIONS["Russia 1980 (Red Tide)"])
+    slot = [ug for ug in layout.all_unit_groups if ug.name == "fuel1 Logistics"][0]
+    offered = {t.id for t in group.dcs_unit_types_for_group(slot)}
+    assert "ATZ-10" in offered, "the fuel farm cannot roll a fuel bowser"
+    assert "Ural-375" in offered

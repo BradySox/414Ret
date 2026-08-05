@@ -1,0 +1,54 @@
+{
+    "nameInUI": "GPS jamming (satellite-guided weapons go long)",
+    "descriptionInUI": "Runtime for GPS denial. Inert unless the mission generator emits dcsRetribution.gpsJamming (the 'GPS jamming' setting is on and a live GPS-jamming ground site exists). DCS models no GPS receiver, so the effect is scripted on the WEAPON: a satellite-guided store (JDAM, JSOW, JASSM, SLAM-ER, KAB-500S -- never laser, TV or IR weapons) released into a live jammer's bubble is tracked in flight, then destroyed just short of impact and detonated a scored distance off the aimpoint. The bomb visibly goes long; the deeper inside the bubble, the further off. Real ordnance from a real jet: this script spawns nothing and owns no kills beyond producing the miss explosion, and killing the jammer restores accuracy immediately. Symmetric -- a site degrades the OPPOSING side's weapons only. The firing flight gets one cue the first time a weapon of theirs is spoofed, so a failed pass reads as jamming rather than as a bug.",
+    "defaultValue": true,
+    "specificOptions": [
+        {
+            "nameInUI": "Chance a weapon inside the bubble is degraded (%)",
+            "descriptionInUI": "Rolled ONCE per weapon, the first tick it is inside a live jammer's reach. Below 100 some stores get through, so a package can still score hits inside a jammed area.",
+            "mnemonic": "degradeChancePct",
+            "defaultValue": 85,
+            "maximumValue": 100
+        },
+        {
+            "nameInUI": "Terminal altitude the spoofed weapon is destroyed at (ft AGL)",
+            "descriptionInUI": "The weapon flies its whole normal profile and is removed only this low, so the pilot sees the release, the fall and the detonation -- just in the wrong place.",
+            "mnemonic": "terminalAglFt",
+            "defaultValue": 100
+        },
+        {
+            "nameInUI": "Miss explosion power (kg TNT eq)",
+            "descriptionInUI": "The detonation produced at the off-target point. Deliberately below a real JDAM's warhead: a jammed bomb is a miss, not a relocated hit.",
+            "mnemonic": "missPower",
+            "defaultValue": 400
+        },
+        {
+            "nameInUI": "Announce the first spoofed weapon to the firing flight",
+            "mnemonic": "cueShooter",
+            "defaultValue": true
+        },
+        {
+            "nameInUI": "Startup grace before jamming begins (s)",
+            "mnemonic": "startGraceS",
+            "defaultValue": 60
+        },
+        {
+            "nameInUI": "Weapon-track sample step (s)",
+            "descriptionInUI": "Keep small. The terminal gate is predictive (it fires when the weapon would be through the floor by the NEXT sample), so a coarse step only makes the destroy happen higher, never later than impact.",
+            "mnemonic": "trackStepS",
+            "defaultValue": 0.2
+        },
+        {
+            "nameInUI": "Give up tracking a released weapon after (s)",
+            "mnemonic": "maxTrackS",
+            "defaultValue": 600
+        }
+    ],
+    "scriptsWorkOrders": [],
+    "configurationWorkOrders": [
+        {
+            "file": "gpsjamming-config.lua",
+            "mnemonic": "gpsjamming-config"
+        }
+    ]
+}

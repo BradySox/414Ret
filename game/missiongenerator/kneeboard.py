@@ -3207,6 +3207,13 @@ class KneeboardGenerator(MissionInfoGenerator):
         if sam:
             lines.append(f"         SAM {sam}")
 
+        # Known enemy GPS-denial areas (§85). Recon-fogged like every other intel
+        # leaf: an un-scouted jammer is NOT briefed, so the first sign of it is a
+        # pass that goes long -- finding it is worth a recon sortie.
+        gps = self._brief_gps_jamming(flight)
+        if gps:
+            lines.append(f"         GPS {gps}")
+
         # One-line ordnance summary from the lead jet's generated pylons.
         loadout = _brief_loadout(flight.units)
         if loadout:
@@ -3283,6 +3290,34 @@ class KneeboardGenerator(MissionInfoGenerator):
         except Exception:
             pass
         return "Enemy CAP possible near the front."
+
+    def _brief_gps_jamming(self, flight: FlightData, limit: int = 3) -> str:
+        """Known enemy GPS-denial areas: 'Haina 30nm · Wittstock 45nm'.
+
+        Empty (so the BLUF line is omitted) when the feature is off, when the
+        enemy fields no jammer, or -- the interesting case -- when one exists but
+        recon has not identified it yet. Fully guarded: a briefing must never fail
+        to generate because an intel lookup hiccuped.
+        """
+        try:
+            from game.fourteenth.gps_jamming import briefed_jammer_areas
+
+            areas = briefed_jammer_areas(self.game, flight.friendly)
+            if not areas:
+                return ""
+            bits = [
+                f"{area.name} {area.reach.nautical_miles:.0f}nm"
+                for area in areas[:limit]
+            ]
+            more = len(areas) - len(bits)
+            if more > 0:
+                bits.append(f"+{more} more")
+            return (
+                " · ".join(bits)
+                + " — GPS weapons unreliable inside; use laser/TV or stand off."
+            )
+        except Exception:
+            return ""
 
     def _brief_sar(self, flight: FlightData) -> List[Tuple[str, str]]:
         """King / Jolly / Sandy rescue assets from the side's Combat SAR + SCAR flights.

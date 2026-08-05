@@ -3613,6 +3613,65 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     twelve flights are not identical, and that the shipped fit is never mutated in place);
     features doc §84, checklist B42 — needs
     an in-game pass.
+85. **GPS jamming (satellite-guided weapons go long)** — enemy GPS-jamming ground sites deny
+    satellite guidance over an area, so a JDAM/JSOW/JASSM/SLAM-ER/KAB-*S released into the
+    bubble lands off the aimpoint and the pass fails. **The constraint that shapes the whole
+    feature: DCS models NO GPS receiver** — no API degrades a jet's navigation, a weapon's
+    guidance quality or a JDAM's CEP, which is why every earlier look at GPS jamming
+    (`414th-iads-c2-consequences-notes.md`) recorded it as *not feasible*. The way through is
+    to stop jamming the aircraft and **jam the weapon**: `S_EVENT_SHOT` starts a track on any
+    store matching the curated satellite-guided pattern list; the first sample it is inside a
+    live **enemy** jammer's reach, roll `degradeChancePct` **once** (remembered either way, so
+    a long glide can't re-roll itself into a certainty); the store then flies its **entire
+    normal profile** and only at the terminal gate is `destroy()`ed and detonated at a scored
+    offset. The pilot sees the release, the fall and the bang — in the wrong place. Miss
+    distance scales with jamming strength (1 at the emitter, 0 at the bubble edge), so a store
+    clipping the fringe is nudged and one released overhead is thrown clear. **The predictive
+    terminal gate is the non-obvious half:** a plain `agl <= floor` test **fails for fast
+    weapons** (a store descending at 400 m/s covers 800 m in a 2 s step, so it can be at 900 m
+    AGL one tick and detonated on the aimpoint the next — the jamming silently doing nothing,
+    the worst failure mode since it reads as the feature being off), so the gate fires when the
+    store would already be *through* the floor by the next sample
+    (`floor = max(terminalAgl, descentRate × trackStep × 2)`) — a coarse step makes the destroy
+    happen **higher**, never later than impact. **No phantom spawns / no invented losses** (the
+    §35/§37/§49 discipline): the store is a real weapon from a real jet, the script spawns
+    nothing and owns no kills beyond the miss explosion (ordinary DCS damage, recorded
+    natively), and a weapon that vanishes before the gate is simply dropped — a degraded store
+    that got that far hit normally and is deliberately **not** re-detonated. The jammer is an
+    ordinary strikeable TGO and killing it drops it from the live-site check on the very next
+    weapon, so **accuracy returns inside the same mission**. **Identification is a unit-yaml
+    contract, not an id list** — the *presence* of a `gps_jamming:` block in a ground unit's own
+    data file makes it a jammer (`GpsJammingProperties`, the §24 `date_gated_properties`
+    precedent; `radius_nm`/`miss_radius_m` optional, `{}` or `true` = campaign defaults), chosen
+    so **adding a jammer is a data edit** and unit work never has to land together with feature
+    work; a mixed site takes the **longest** declared reach and the **worst** declared miss.
+    **The curated weapon list** (`GPS_GUIDED_WEAPON_PATTERNS`, emitted to Lua so it has exactly
+    one home; plain case-insensitive **substrings, never Lua patterns** — weapon names carry `-`
+    and `(`, the §70 lesson) is **in:** JDAM (GBU-31/32/38), GBU-54 (Laser JDAM — its *baseline*
+    mode is GPS/INS and the runtime can't see whether anyone is lasing), JSOW, JASSM, SLAM-ER,
+    WCMD, KAB-500S/1500S (GLONASS, so red eats its own medicine); **out, and load-bearing:**
+    every laser/TV/IR/anti-radiation weapon (a Paveway that mysteriously misses is a bug report,
+    not a feature) plus the §63/§81 ship-launched cruise missiles (their own flown features).
+    **Squadron calls 2026-08-04:** *symmetric* (a site degrades the **opposing** coalition only,
+    so a blue jammer works the day one is fielded); *the player is told both ways* — a
+    recon-**fogged** kneeboard BLUF line (an un-scouted jammer is **not** briefed, so finding it
+    is worth a recon sortie) plus a **one-shot cockpit cue** on a flight's first spoofed weapon,
+    so a failed pass reads as jamming rather than a broken sim; *GPS-guided air ordnance only*.
+    The counters are change delivery method (laser/TV unaffected), stand off, or kill the
+    jammer. Gated `gps_jamming` (414th Features → Electronic & command warfare, default **OFF**,
+    preseeded nowhere) + `gps_jamming_default_reach_nm` (30) / `gps_jamming_miss_radius_m` (200)
+    (Mission Generation → Comms war); **the `gpsjamming` plugin is the runtime**, so an unticked
+    plugin silently kills the setting (the §36 lesson). Deliberately not done: aircraft
+    navigation degradation (impossible, and it would lie to the pilot's own cockpit), a
+    dedicated map overlay (the site is an ordinary TGO and already draws), §74 DTC coupling (a
+    cartridge carries steerpoints, not guidance quality), and **planner awareness** (the
+    auto-planner does not yet avoid jammed areas or re-pick loadouts — a real follow-up kept out
+    of v1 so the runtime can be flown alone). Tests
+    `tests/fourteenth/test_gps_jamming.py` (34) +
+    `tests/missiongenerator/test_gpsjammingluadata.py` (4) +
+    `tests/lua/test_gpsjamming_runtime.py` (11); features doc §85, design note
+    `docs/dev/design/414th-gps-jamming-notes.md`, checklist B43 — needs an in-game pass (the
+    terminal gate beating a real JDAM's terminal profile is the genuine unknown).
 
 ---
 

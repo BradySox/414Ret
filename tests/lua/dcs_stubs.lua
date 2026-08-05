@@ -480,6 +480,12 @@ function WeaponFake:getVelocity()
     return self.velocity or { x = 0, y = 0, z = 0 }
 end
 
+-- Weapon:getTarget() -- the unit a guided shot is aimed at (nil for dumb ordnance),
+-- set via fireShot's optional `target` group name.
+function WeaponFake:getTarget()
+    return self.target
+end
+
 -- Object:destroy() -- removes the weapon from the world (the growler plugin's
 -- missile spoof). Recorded so tests can assert the spoof fired.
 function WeaponFake:destroy()
@@ -504,16 +510,23 @@ function Harness.makeWeapon(spec)
 end
 
 -- Fire an S_EVENT_SHOT. spec = { weapon = { typeName, x, z, alt, velocity, vanishAt },
--- initiator = "<group name>" } -- the group's first unit is the shooter.
+-- initiator = "<group name>", target = "<group name>" } -- the group's first unit is the
+-- shooter; target (optional) sets weapon:getTarget() to that group's first unit, the DCS
+-- shape a guided anti-ship/AG shot carries.
 function Harness.fireShot(spec)
     local initiator = nil
     local g = spec.initiator and Harness.groupsByName[spec.initiator] or nil
     if g then
         initiator = g:getUnit(1)
     end
+    local weapon = Harness.makeWeapon(spec.weapon or {})
+    local tg = spec.target and Harness.groupsByName[spec.target] or nil
+    if tg then
+        weapon.target = tg:getUnit(1)
+    end
     Harness.fireEvent({
         id = world.event.S_EVENT_SHOT,
-        weapon = Harness.makeWeapon(spec.weapon or {}),
+        weapon = weapon,
         initiator = initiator,
     })
 end

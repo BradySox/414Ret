@@ -49,8 +49,12 @@ def populate_naval_magazines_lua(
         return
 
     node = root.add_item("navalMagazines")
-    node.add_key_value("stagger", "true" if stagger else "false")
-    node.add_key_value("metered", "true" if metered else "false")
+    # Named child items, NOT add_key_value: LuaData.serialize drops a node's
+    # key-values whenever the node also has child items (the magazines list
+    # below), so key-values here silently never reach the miz — the 2026-08-05
+    # first fly ran with both flags false.
+    node.add_item("stagger").set_value("true" if stagger else "false")
+    node.add_item("metered").set_value("true" if metered else "false")
     group_list = node.add_item("magazines")
     for group in groups:
         rec = group_list.add_item()

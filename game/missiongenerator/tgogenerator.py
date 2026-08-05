@@ -12,6 +12,7 @@ import logging
 import random
 from collections import defaultdict
 from typing import Any, Dict, List, Optional, TYPE_CHECKING, Type, Tuple
+from zlib import crc32
 
 import dcs.vehicles
 from dcs import Mission, Point, unitgroup
@@ -42,6 +43,7 @@ from dcs.task import (
     FireAtPoint,
     OptAlarmState,
     OptROE,
+    SwitchWaypoint,
 )
 from dcs.terrain import Airport
 from dcs.translation import String
@@ -96,7 +98,7 @@ from game.theater.theatergroundobject import (
 )
 from game.theater.theatergroup import SceneryUnit, IadsGroundGroup
 from game.unitmap import UnitMap
-from game.utils import Heading, feet, knots, mps
+from game.utils import Heading, feet, knots, mps, nautical_miles, pairwise
 
 if TYPE_CHECKING:
     from game import Game
@@ -334,6 +336,50 @@ def farp_truck_types_for_country(
     return tanker_type, ammo_truck_type, power_truck_type
 
 
+#: Naval station-keeping racetrack. A ship group with no campaign destination used to
+#: generate with a zero-waypoint route: it sat motionless on its campaign marker for the
+#: whole mission, so last turn's recon photo (or a pre-planned coordinate) was always
+#: still good and every hull was a stationary target. These give it an anchor-centred
+#: racetrack to hold station on -- a warship on a barrier patrol, not one transiting
+#: away.
+#:
+#: The anchor sits at the CENTRE of the oval rather than on its edge, which is what
+#: makes this station-keeping rather than wandering: the group's mean position stays
+#: its campaign position, and worst-case displacement is only half the diagonal, so
+#: the campaign map, the drawn threat rings and the turn-boundary model all stay
+#: honest however long the mission runs.
+#:
+#: The SIZE is set by the smallest thing it must not invalidate -- a ship's own THREAT
+#: RING, which the map draws at the marker. Half the diagonal here is ~1.6 NM (about
+#: 3,200 yd): 18% of the shortest-legged escort's 16 km air-defence radius, 7% of a
+#: Type 054A's 45 km and 3% of a Burke's 100 km, so every ring that matters for
+#: mission planning stays substantially true. An 8 x 2 NM oval was rejected on exactly
+#: that measurement -- its 4.1 NM displacement was several times a Molniya's *entire*
+#: 2 km engagement radius, which would leave a short-legged hull sitting wholly
+#: outside its own drawn ring. It also matches real practice, where a screen station
+#: is quoted in thousands of yards from the guide: WWII carrier doctrine's "Circle
+#: Six" and "Circle Nine" are 6,000 and 9,000 yd for the WHOLE screen, not for one
+#: ship's wander.
+#:
+#: Collision between groups is deliberately NOT the governing constraint: the closest
+#: two naval groups in any shipped campaign are 17 NM apart, so tracks stay disjoint
+#: by a wide margin at any size considered.
+STATION_LEG = nautical_miles(3)
+STATION_WIDTH = nautical_miles(1)
+#: Economical loiter, not a transit: a ~48 min lap, so a hull is visibly under way all
+#: mission without a fast ship standing on the helm around a small track.
+STATION_SPEED = knots(10)
+#: Spacing of the water samples taken along each leg. DCS naval AI does no land
+#: avoidance whatsoever, so a leg is usable only if the whole line is sea -- two clear
+#: endpoints with an island between them would sail the group onto the beach. Half a
+#: mile rather than a mile, so the shorter legs are still sampled several times.
+STATION_WATER_SAMPLE = nautical_miles(0.5)
+#: Candidate long-axis bearings, tried in a deterministic per-group order until one is
+#: clear. A ship in open water takes its first choice; one in a strait or a bay ends up
+#: oriented along the water it actually has, which is what a real station looks like.
+STATION_BEARING_STEP = 30
+
+
 class GroundObjectGenerator:
     """generates the DCS groups and units from the TheaterGroundObject"""
 
@@ -402,6 +448,11 @@ class GroundObjectGenerator:
                     self.sail_to_destination(
                         self.ground_object.target_position, ship_group
                     )
+                else:
+                    # No campaign destination this turn, so the group would
+                    # otherwise generate with a zero-waypoint route and sit on its
+                    # marker all mission. Put it on station instead.
+                    self.hold_station(ship_group)
 
     @staticmethod
     def _contains_mobile_air_defense(units: list[TheaterUnit]) -> bool:
@@ -519,6 +570,88 @@ class GroundObjectGenerator:
         group.add_waypoint(destination, speed.kph)
         self.ground_object.rotate(heading)
         return heading
+
+    def hold_station(self, group: ShipGroup) -> None:
+        """Sail a ship group around an anchor-centred racetrack so it holds station
+        under way instead of parking on its campaign marker for the whole mission.
+
+        DCS flies the circuit itself: the waypoints are ordinary route points and the
+        loop is the Mission Editor's own SwitchWaypoint action, so nothing runs at
+        runtime -- no plugin, no Lua, no scheduled task. That also means the route
+        survives a pushed task: a §63 cruise-missile FireAtPoint is pushed onto the
+        queue and pops back to this route when the salvo is done (a scripted
+        mist.goRoute, which is a setTask, would have wiped it instead).
+
+        No-op -- leaving today's stationary behaviour -- when the theater has no
+        landmap to validate against, or when land leaves no clear orientation at all:
+        a ship authored alongside in a harbour or inside a tight anchorage simply
+        stays put rather than steaming into the pier.
+        """
+        anchor = group.points[0].position
+        corners = self._station_racetrack(anchor, group.name)
+        if corners is None:
+            return
+        group.points[0].speed = STATION_SPEED.meters_per_second
+        for corner in corners:
+            group.add_waypoint(corner, STATION_SPEED.kph)
+        # Loop the oval forever. Back to waypoint 2 (the first corner), never 1:
+        # waypoint 1 is the spawn at the CENTRE of the oval, so it is the one-time
+        # run-out onto station and must not become a leg of the repeating circuit.
+        group.points[-1].tasks.append(
+            SwitchWaypoint(from_waypoint=len(group.points), to_waypoint=2)
+        )
+
+    def _station_racetrack(self, anchor: Point, name: str) -> Optional[List[Point]]:
+        """The four corners of a clear racetrack centred on `anchor`, or None if the
+        surrounding water cannot hold one."""
+        if not self.game.theater.landmap:
+            # Without a landmap, is_in_sea() answers False everywhere, so nothing
+            # could be validated. Leave the group stationary rather than sail it
+            # blind into a coastline.
+            return None
+        # Deterministic per group: regenerating a turn re-derives the same station
+        # instead of reshuffling the whole fleet's patrol pattern. crc32 rather than
+        # hash() because str hashing is salted per process (PYTHONHASHSEED).
+        count = 360 // STATION_BEARING_STEP
+        first = crc32(name.encode("utf-8")) % count
+        for offset in range(count):
+            bearing = ((first + offset) % count) * STATION_BEARING_STEP
+            corners = self._racetrack_corners(anchor, bearing)
+            # anchor -> first corner is the run-out; the corners then close the loop.
+            if self._track_is_clear([anchor, *corners, corners[0]]):
+                return corners
+        return None
+
+    @staticmethod
+    def _racetrack_corners(anchor: Point, bearing: float) -> List[Point]:
+        """A flattened oval centred on `anchor` with its long axis on `bearing`.
+
+        Ordered so the circuit is two long legs joined by two short ones, i.e. four
+        90-degree turns rather than a 180-degree reversal at each end.
+        """
+        along = STATION_LEG.meters / 2
+        across = STATION_WIDTH.meters / 2
+        starboard = (bearing + 90) % 360
+        port = (bearing + 270) % 360
+        head = anchor.point_from_heading(bearing, along)
+        tail = anchor.point_from_heading((bearing + 180) % 360, along)
+        return [
+            head.point_from_heading(starboard, across),
+            tail.point_from_heading(starboard, across),
+            tail.point_from_heading(port, across),
+            head.point_from_heading(port, across),
+        ]
+
+    def _track_is_clear(self, path: List[Point]) -> bool:
+        """True when every point along every leg of `path` is open water."""
+        theater = self.game.theater
+        step = STATION_WATER_SAMPLE.meters
+        for start, end in pairwise(path):
+            samples = max(1, int(start.distance_to_point(end) // step))
+            for i in range(samples + 1):
+                if not theater.is_in_sea(start.lerp(end, i / samples)):
+                    return False
+        return True
 
     def create_static_group(self, unit: TheaterUnit) -> None:
         static_group = self.m.static_group(

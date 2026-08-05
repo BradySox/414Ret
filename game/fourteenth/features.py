@@ -715,6 +715,22 @@ FEATURES: tuple[Feature, ...] = (
             "gps_jamming_miss_radius_m",
         ),
     ),
+    Feature(
+        # §87 naval station-keeping: a ship TGO with no campaign destination
+        # generated with a zero-waypoint route and sat motionless on its marker all
+        # mission, so every hull was a stationary target and a pre-planned
+        # coordinate was always good. GroundObjectGenerator.hold_station gives it an
+        # anchor-CENTRED racetrack (the mean position stays the campaign position,
+        # so the map/threat rings/turn model stay honest) that DCS sails itself via
+        # ordinary route waypoints + the ME's own SwitchWaypoint loop -- no plugin,
+        # no Lua, nothing at runtime. Legs are water-sampled against the theater
+        # landmap, and a group with no clear orientation keeps today's stationary
+        # behaviour. Carrier/LHA control points are untouched (steam_into_wind).
+        # Pure generation behavior -- no setting, no plugin, no save change.
+        "naval_station_keeping",
+        "Naval station-keeping racetracks",
+        87,
+    ),
     # Always-on engine plugins — major 414th machinery documented in design notes
     # rather than a numbered "Features at a Glance" entry.
     Feature("mantis_iads", "MANTIS IADS engine", plugin_id="mantisiads"),

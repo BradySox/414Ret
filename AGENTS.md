@@ -3807,6 +3807,62 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     `tests/lua/test_gpsjamming_runtime.py` (11); features doc §86, design note
     `docs/dev/design/414th-gps-jamming-notes.md`, checklist B45 — needs an in-game pass (the
     terminal gate beating a real JDAM's terminal profile is the genuine unknown).
+87. **Naval station-keeping racetracks** — enemy ships stop being stationary targets. A ship
+    TGO only ever got waypoints when the campaign was *repositioning* it
+    (`sail_to_destination`, gated on `ShipGroundObject.target_position`); with no destination
+    it generated a **zero-waypoint route** and sat motionless on its campaign marker for the
+    entire mission, so last turn's recon photo — or a pre-planned coordinate — was always
+    still good. (This is also why blue's boats appeared to move and red's never did: the blue
+    carrier steams into wind, and only *relocating* ships sailed.)
+    `GroundObjectGenerator.hold_station` gives every other ship group a **racetrack centred on
+    its anchor** instead. **The centring is the whole design**, not a detail: a circuit drawn
+    *around* the marker would have the group steam a full radius clear of it and read as
+    transiting off station, whereas an anchor-centred oval keeps the group's **mean position on
+    its campaign position** — it holds station under way, and the campaign map, the drawn
+    threat rings and the turn-boundary model all stay honest. The envelope is the bound that
+    answers "they can't wander off": `STATION_LEG` 3 NM × `STATION_WIDTH` 1 NM at
+    `STATION_SPEED` 10 kt puts a hard **~1.6 NM ceiling on displacement from the marker**,
+    forever, with a ~48 min lap so the hull is visibly under way all mission.
+    **The SIZE is set by the ship's own threat ring, which the map draws at the marker — so
+    displacement is straight error in that ring.** The first cut was an **8 × 2 NM** oval
+    picked by feel and it is wrong: its 4.1 NM reach is **~4× a Molniya's entire 2 km
+    engagement radius** (a hull sitting wholly outside its own drawn ring) and 48 % of an
+    Albatros/Rezky's 16 km; at 3 × 1 those become 1.5× and **18 %**, with a Type 054A's 45 km
+    at 7 % and a Burke's 100 km at 3 %. Real practice agrees — a naval *station* is quoted in
+    **thousands of yards from the guide** (WWII carrier doctrine's "Circle Six"/"Circle Nine"
+    are 6,000/9,000 yd for the **whole screen**), so ~3,200 yd is a station and ~7,600 yd was
+    an entire screen's radius applied to one hull. **Collision between groups is deliberately
+    NOT the constraint** — measured, the closest two naval groups in any shipped campaign are
+    **17 NM** apart, so tracks are disjoint by a wide margin either way, which is why the
+    threat rings had to set the number. Guard:
+    `test_the_station_stays_small_against_a_ship_threat_ring` (fails on the old 8 × 2).
+    **No plugin, no Lua, nothing at runtime** — the waypoints are ordinary route points and
+    the loop is the Mission Editor's own `SwitchWaypoint` action, so DCS's naval AI sails it
+    itself. That is *why* it composes: a §63 cruise-missile `FireAtPoint` is **pushed** onto
+    the queue and pops back to this route when the salvo ends, where a scripted `mist.goRoute`
+    (a `setTask`) would have wiped it — the §49 fire-then-scoot clobber, avoided by
+    construction rather than worked around; §81's ROE/alarm ride `points[0]` and are untouched.
+    **Land is handled in Python, where the landmap already lives** — DCS naval AI does no land
+    avoidance whatsoever, so each candidate orientation is sampled with `theater.is_in_sea()`
+    every 1 NM along **every leg** (two clear endpoints with an island between them would
+    beach the group), and 12 bearings are tried in a **crc32-of-group-name order** so a ship in
+    open water takes its first choice, one in a strait ends up oriented **along** the water it
+    actually has, regeneration re-derives the same station rather than reshuffling the fleet,
+    and a whole fleet doesn't steam in parallel like a parade. Every failure degrades to
+    **today's stationary behaviour**: no landmap, no clear orientation, or a spawn the landmap
+    won't confirm as open water (a marker inside a harbour polygon) simply stays put.
+    **Carrier and LHA control points are untouched** — `GenericCarrierGenerator` overrides
+    `generate()`, so `steam_into_wind` and the §72 airboss keep the boats. Symmetric, and
+    **no setting** (the §80 precedent — same file, same generation-time shape: this is not
+    unverified runtime Lua, so a kill switch would only add to the §28 surface). Measured
+    across the shipped naval campaigns: **marianas_2027 11/11 · pacific_repartee 21/21 ·
+    tanker_war_1988 2/2 · 1968_Yankee_Station 2/3** ship markers put on station, the one miss
+    being a hull whose spawn the landmap does not classify as sea (the safe degrade firing).
+    NEW mission only — regeneration picks it up, no new game and no save migration. Tests
+    `tests/missiongenerator/test_naval_station_keeping.py` (11); features doc §87, checklist
+    B46 — needs an in-game pass (whether DCS loops a *naval* group on `SwitchWaypoint` is the
+    one genuine unknown; the fallback needs no task at all — author enough waypoints to
+    outlast the mission — and that a mixed-hull §80 group sails the circuit in formation).
 
 ---
 

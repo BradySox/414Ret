@@ -152,7 +152,10 @@
     "M6 Linebacker",
     "[CH] Centurion C-RAM",
     "[CH] LAV-AD SPAAGM",
-    "EWR AN/FPS-117 Control Shelter"
+    "EWR AN/FPS-117 Control Shelter",
+    "C2 Fire Control Bunker",
+    "C2 Predator UAV Comms Link",
+    "C2 Predator UAV Ground Control Station"
   ],
   "requirements": {
     "CurrentHill USA Asset Pack": "https://www.currenthill.com/usa"

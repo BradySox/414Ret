@@ -44,7 +44,12 @@
     "logistics_units": [
         "LUV UAZ-469 Jeep",
         "Truck Ural-375",
-        "[CH] SX2190 Truck"
+        "[CH] SX2190 Truck",
+        "Refueler ATZ-5",
+        "Refueler ATZ-60 (MAZ-7410)",
+        "Refueler TZ-22 (KrAZ-258B1)",
+        "Refueler ATMZ-5",
+        "Refueler ATZ-10"
     ],
     "infantry_units": [
         "Infantry AK-74 Rus",

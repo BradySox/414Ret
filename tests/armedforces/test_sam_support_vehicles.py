@@ -166,18 +166,137 @@ SIXTIES_FUEL_TRIO = {"ATZ-5", "ATZ-60_Maz", "TZ-22_KrAZ"}
 
 
 @pytest.mark.parametrize("layout_name", DEDICATED_LEGACY_LAYOUTS)
-def test_legacy_sam_logistics_whitelist_offers_fuel(layout_name: str) -> None:
-    """The dedicated layouts whitelist Logistics by unit_types, so refuellers
-    reach those sites only if listed. The trucks must survive alongside them --
-    the addition must never displace the cargo trucks from the roll."""
+def test_legacy_sam_fields_the_truck_and_fuel_spread(layout_name: str) -> None:
+    """Trucks AND fuel, in separate slots (the S-300 spread, extended to the
+    legacy families in the 'do them all' pass).
+
+    The Logistics whitelist must stay TRUCKS-ONLY: a bowser in that whitelist
+    makes `has_unit_for_layout_group` skip the faction truck fill (a fuel unit
+    satisfies the slot), which is exactly the trucks-OR-fuel behaviour this
+    pass replaced. The trio lives in the dedicated Fuel slot instead --
+    fill:false, preset-carried, era-safe for every legacy campaign."""
     layout = LAYOUTS.by_name(layout_name)
-    slots = [ug for ug in layout.all_unit_groups if ug.name == "Logistics"]
-    assert len(slots) == 1, f"{layout_name} lost its Logistics slot"
-    types = {t.id for t in slots[0].unit_types}
-    assert SIXTIES_FUEL_TRIO <= types, f"{layout_name} lost its refuelling section"
-    assert (
-        "GAZ-66" in types or "Ural-375" in types
-    ), f"{layout_name}: the fuel addition displaced the cargo trucks"
+    logistics = [ug for ug in layout.all_unit_groups if ug.name == "Logistics"]
+    assert len(logistics) == 1, f"{layout_name} lost its Logistics slot"
+    truck_types = {t.id for t in logistics[0].unit_types}
+    assert not truck_types & SIXTIES_FUEL_TRIO, (
+        f"{layout_name}: bowsers back in the Logistics whitelist -- this "
+        f"reintroduces trucks-OR-fuel and displaces the faction truck fill"
+    )
+    assert "GAZ-66" in truck_types or "Ural-375" in truck_types
+
+    fuel = [ug for ug in layout.all_unit_groups if ug.name == "Fuel"]
+    assert len(fuel) == 1, f"{layout_name} has no Fuel slot"
+    assert fuel[0].optional and not fuel[0].fill
+    assert {t.id for t in fuel[0].unit_types} == SIXTIES_FUEL_TRIO
+    assert len(fuel[0].layout_units) >= max(fuel[0].unit_count)
+
+
+GENERIC_LAUNCHER_LAYOUTS = [
+    "4 Launcher Site (Circle)",
+    "4 Launcher Site (Semicircle)",
+    "6 Launcher Site (Circle)",
+    "6 Launcher Site (Semicircle)",
+]
+
+
+@pytest.mark.parametrize("layout_name", GENERIC_LAUNCHER_LAYOUTS)
+def test_generic_launcher_site_has_a_fuel_slot(layout_name: str) -> None:
+    layout = LAYOUTS.by_name(layout_name)
+    fuel = [ug for ug in layout.all_unit_groups if ug.name == "Fuel"]
+    assert len(fuel) == 1, f"{layout_name} has no Fuel slot"
+    assert fuel[0].optional and not fuel[0].fill
+    assert len(fuel[0].layout_units) >= max(fuel[0].unit_count)
+
+
+# Every legacy/generic family preset carries its own trucks + bowsers now (the
+# S-300 pattern), so both the Logistics and the Fuel slot resolve family-wide.
+PRESET_SUPPORT_KIT = {
+    "SA-2/S-75": {"Truck GAZ-66", "Refueler ATZ-5"},
+    "SA-2/S-75 with ZSU-23/57": {"Truck GAZ-66", "Refueler ATZ-5"},
+    "SA-3/S-125": {"Truck GAZ-66", "Refueler ATZ-5"},
+    "SA-5/S-200": {"Truck GAZ-66", "Refueler TZ-22 (KrAZ-258B1)"},
+    "SA-5/S-200 (Single Radar)": {"Truck GAZ-66", "Refueler TZ-22 (KrAZ-258B1)"},
+    "SA-6": {"Truck GAZ-66", "Refueler ATZ-5"},
+    "HQ-2": {"Truck GAZ-66", "Refueler ATZ-5"},
+    "SA-11": {"Truck KAMAZ 43101", "Refueler ATZ-10"},
+    "SA-17": {"Truck KAMAZ 43101", "Refueler ATZ-10"},
+    "Hawk": {"Truck M818 6x6", "Refueler M978 HEMTT"},
+    # DM call 2026-08-04: China runs the Soviet fuel kit.
+    "HQ-22": {"Truck KAMAZ 43101", "Refueler ATZ-10", "Diesel Power Station 5I57A"},
+}
+
+
+@pytest.mark.parametrize("preset_name,expected", sorted(PRESET_SUPPORT_KIT.items()))
+def test_family_preset_carries_its_support_kit(
+    preset_name: str, expected: set[str]
+) -> None:
+    from game.armedforces.forcegroup import ForceGroup
+
+    group = ForceGroup.from_preset_group(preset_name)
+    have = {u.variant_id for u in group.units}
+    missing = expected - have
+    assert not missing, f"{preset_name} is missing {sorted(missing)}"
+
+
+def test_hq22_battery_declares_the_s300_support_slots() -> None:
+    """China's HQ-22 uses the shared S-300 template, whose support groups have
+    existed since §85 -- the slots just needed declaring."""
+    layout = LAYOUTS.by_name("HQ-22 Battery")
+    present = {ug.name for ug in layout.all_unit_groups}
+    for slot in ("S-300 Site Logistics", "S-300 Site Fuel", "S-300 Site Power"):
+        assert slot in present, f"HQ-22 Battery lost its {slot!r} slot"
+
+
+# The Gazetchik-E decoy is an HDS MOD unit (pydcs_extensions/highdigitsams), so
+# it may ride only the already-HDS-gated modern S-300 presets -- a vanilla game
+# must never see it. SA-10/SA-10B/SA-12 and the single-radar preset (Red Tide's)
+# stay decoy-free: era and vanilla-satefy both.
+DECOY_PRESETS = [
+    "SA-20/S-300PMU-1",
+    "SA-20B/S-300PMU-2",
+    "SA-21/S-400",
+    "SA-23/S-300VM",
+    "SA-23B/S-300V4",
+]
+NO_DECOY_PRESETS = ["SA-10/S-300PS", "SA-10B/S-300PS", "SA-10/S-300PS (Single Radar)"]
+
+
+def _preset_names() -> set[str]:
+    names = set()
+    for path in sorted(PRESET_GROUP_DIR.glob("*.yaml")):
+        names.add(yaml.safe_load(path.read_text(encoding="utf-8"))["name"])
+    return names
+
+
+def test_gazetchik_decoy_rides_only_hds_gated_presets() -> None:
+    from game.armedforces.forcegroup import ForceGroup
+
+    all_names = _preset_names()
+    for name in DECOY_PRESETS:
+        if name not in all_names:
+            # Preset display names can drift; fail loudly rather than skip.
+            raise AssertionError(
+                f"decoy preset {name!r} not found in {sorted(all_names)}"
+            )
+        group = ForceGroup.from_preset_group(name)
+        assert "EW 34Ya6E Gazetchik-E Decoy" in {u.variant_id for u in group.units}
+    for name in NO_DECOY_PRESETS:
+        if name not in all_names:
+            continue
+        group = ForceGroup.from_preset_group(name)
+        assert "EW 34Ya6E Gazetchik-E Decoy" not in {u.variant_id for u in group.units}
+
+
+def test_s300_layout_offers_the_decoy_to_a_carrying_preset() -> None:
+    from game.armedforces.forcegroup import ForceGroup
+
+    group = ForceGroup.from_preset_group("SA-20/S-300PMU-1")
+    layout = LAYOUTS.by_name(group.layouts[0].name)
+    decoy = [ug for ug in layout.all_unit_groups if ug.name == "S-300 Site Decoy"]
+    assert len(decoy) == 1
+    offered = [t.id for t in group.dcs_unit_types_for_group(decoy[0])]
+    assert offered == ["34Ya6E Gazetchik E decoy"]
 
 
 # Era-correct refuellers on the active campaigns' factions. The faction loader
@@ -529,6 +648,59 @@ def test_command_center_kit_is_nation_and_era_correct() -> None:
     assert "GCI_station_MiG29" not in vn_offered
     assert "Ural-375 PBU" in vn_offered
 
-    # USA 2020: no Soviet kit -- the bunker renders bare.
+    # USA 2020: the western kit (fire-control bunker + Predator GCS), and
+    # never the Soviet shelters.
     us = ForceGroup.for_layout(layout, FACTIONS["USA 2020"])
-    assert us.dcs_unit_types_for_group(c2_slot) == []
+    us_offered = {t.id for t in us.dcs_unit_types_for_group(c2_slot)}
+    assert us_offered == {"fire_control", "Predator GCS"}
+    assert not us_offered & {"GCI_station_MiG29", "ZIL-131 KUNG", "Ural-375 PBU"}
+
+
+def test_china_2027_rosters_the_soviet_fuel_kit() -> None:
+    """DM call 2026-08-04: 'China totally has refuelers or can use Soviet
+    stuff' -- the PLA runs the Soviet bowsers in convoys and at its sites."""
+    from game.factions import FACTIONS
+
+    faction = FACTIONS["China 2027"]
+    have = {u.variant_id for u in faction.logistics_units}
+    assert {"Refueler ATZ-10", "Refueler ATZ-5"} <= have
+
+
+def test_western_factions_reach_their_c2_kit() -> None:
+    """The registered US C2 kit (fire-control bunker, Predator GCS + Trojan
+    Spirit) is access-gated like the Soviet shelters; era decides who gets the
+    Predator vans (1995+ only)."""
+    from game.factions import FACTIONS
+
+    modern = {u.variant_id for u in FACTIONS["USA 2020"].air_defense_units}
+    assert {
+        "C2 Fire Control Bunker",
+        "C2 Predator UAV Comms Link",
+        "C2 Predator UAV Ground Control Station",
+    } <= modern
+
+    coldwar = {
+        u.variant_id for u in FACTIONS["Blufor Late Cold War (80s)"].air_defense_units
+    }
+    assert "C2 Fire Control Bunker" in coldwar
+    assert (
+        "C2 Predator UAV Comms Link" not in coldwar
+    ), "the Predator vans are 1995+ kit and must not reach a 1988 faction"
+
+
+@pytest.mark.parametrize(
+    "layout_name",
+    ["S-300 Site", "S-300 Site (Single Radar)", "HQ-22 Battery"],
+)
+def test_textbook_configuration_is_the_only_configuration(layout_name: str) -> None:
+    """DM call 2026-08-04: the textbook SA-10 site IS the configuration -- the
+    support section renders at FULL strength every time, never a 1-of-2 roll.
+    2 trucks + 2 bowsers + 2 power stations, deterministically."""
+    layout = LAYOUTS.by_name(layout_name)
+    for slot in ("S-300 Site Logistics", "S-300 Site Fuel", "S-300 Site Power"):
+        groups = [ug for ug in layout.all_unit_groups if ug.name == slot]
+        assert len(groups) == 1, f"{layout_name} lost {slot!r}"
+        assert groups[0].unit_count == [2], (
+            f"{layout_name}/{slot}: the textbook spread must be a fixed 2, "
+            f"not a roll ({groups[0].unit_count})"
+        )

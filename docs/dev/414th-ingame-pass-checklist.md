@@ -3633,7 +3633,13 @@ scenery-authored network stays as authored; **verify a §51 comms node keeps jam
 tower dies while its van survives, and stops when the compound is dead** — that is the accepted
 §51/§52 semantics change, not a bug; a §52 decap now requires the vehicles dead too); and over a
 few turns a supply convoy is seen carrying a refueller (blue M978 / red ATZ family / a COIN
-campaign's civilian ATZ-5 on the ratline). Kills record as ordinary ground losses.
+campaign's civilian ATZ-5 on the ratline); **the do-them-all closure renders** (a legacy SA-2/3/5/6
+site fields trucks AND a bowser — DS91 headless showed 46/46; an S-300/HQ-22 site renders the
+deterministic textbook spread of 2 trucks + 2 bowsers + 2 power stations; Marianas' Tinian
+HQ-22 fields the Soviet fuel kit; a modern HDS campaign's SA-20+ site places the **Gazetchik-E
+decoy** — THE fly question: does an ARM actually get seduced by it, and does it show as a
+separate killable unit; a modern US comms/CC compound renders the Trojan Spirit / fire-control
+bunker / Predator GCS). Kills record as ordinary ground losses.
 
 **Fail signatures to watch for:**
 - A bowser or the KUNG **clipping** launcher/radar models (positions are the templates' existing

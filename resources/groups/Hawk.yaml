@@ -6,6 +6,9 @@ units:
   - SAM Hawk Platoon Command Post (PCP)
   - SAM Hawk TR (AN/MPQ-46)
   - SAM Hawk LN M192
+  # 414th: battery support section
+  - Truck M818 6x6
+  - Refueler M978 HEMTT
 layouts:
   - 6 Launcher Site (Semicircle)
   - 6 Launcher Site (Circle)

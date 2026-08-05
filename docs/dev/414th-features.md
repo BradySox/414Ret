@@ -8366,10 +8366,42 @@ weight for a §52/§63 C2 kill accordingly. The layout comments and the tests bo
 Tide's scenery-authored 9-node network stays exactly as authored. Power *plants* deliberately
 stay bare (they ARE the power category — a generator beside a power station is noise).
 
-**Deferred from the wiring pass:** HQ-22's support section (no Logistics slot; a Chinese battery
-deserves CH-pack kit, not Russian bowsers), power/fuel *slots* at non-S-300 sites (template
-surgery), a western comms/C2 van (no vanilla unit exists to register), and any use of the GPS
-spoofers (other agent) or the Gazetchik-E decoy (needs its own design — likely §79-adjacent).
+**The "do them all" closure (same day — every deferred item except the GPS spoofers).**
+
+1. **The legacy truck-AND-fuel spread.** The three shared launcher templates
+   (`6_Launcher_Circle` / `6_Launcher_Semicircle` / `8_Launcher_Circle`) gained a "Fuel" group,
+   and the pass-1 fuel trio moved OUT of the 12 dedicated layouts' Logistics whitelists into a
+   dedicated `Fuel` slot (`fill: false`, preset-carried). The distinction is load-bearing: a
+   bowser in a Logistics whitelist satisfies `has_unit_for_layout_group` and **displaces the
+   faction truck fill** — which is exactly the trucks-OR-fuel roll this replaces. Every legacy
+   and generic Soviet family preset (SA-2 ×2, SA-3, SA-5 ×2, SA-6, HQ-2, SA-11, SA-17) now
+   carries era-correct trucks + bowsers (60s trio for the 60s systems, +KamAZ/ATMZ-5/ATZ-10 for
+   the 80s Buks), Hawk carries the M818 + M978. **Headless: 46/46 Desert Storm legacy SAM sites
+   field trucks AND fuel.** The four generic launcher layouts gained the same fill:false Fuel
+   slot (full bowser whitelist, preset-gated).
+2. **HQ-22's support section** — DM call: *"China totally has refuelers or can use Soviet
+   stuff."* The HQ-22 battery (which shares the S-300 template, so §85's support groups were
+   already positioned) declares the Logistics/Fuel/Power slots, its preset carries trucks + the
+   Soviet bowsers + the 5I57, and `china_2027` rosters the five bowsers for convoys.
+   Headless-verified on Marianas: Tinian's HQ-22 renders SX2190 + Urals + TZ-22 bowsers + 5I57.
+3. **Western C2 kit** — the registered US units close the "no western van" gap: the comms C2
+   whitelist gains the **Trojan Spirit** sat-comms terminal, the command-center whitelist the
+   **fire-control bunker** and **Predator GCS**; access era-gated (`usa_2020`/OEF/OIR get the
+   Predator vans, the Cold-War-era blufor/NATO-DS only the bunker — a 1995+ van must never
+   reach a 1988 faction, test-pinned).
+4. **The Gazetchik-E decoy** — confirmed an **HDS mod unit** (`pydcs_extensions/highdigitsams`),
+   so it rides **only the already-HDS-gated modern presets** (SA-20/SA-20B/SA-21/SA-23/SA-23B) —
+   a vanilla game can never see it, and Red Tide's single-radar preset stays decoy-free (era).
+   New `S-300 Site Decoy` slot + template group. Whether the DCS unit genuinely seduces ARMs is
+   an explicit in-game-pass question on B44.
+5. **The textbook configuration is THE configuration** (DM call: *"the old ones before we
+   started can be trashed"*): the S-300-family support slots stopped rolling 1–2 — every
+   S-300/HQ-22 site now renders **2 trucks + 2 bowsers + 2 power stations deterministically**,
+   pinned by `test_textbook_configuration_is_the_only_configuration`.
+
+**Still deferred, now for concrete reasons only:** the GPS spoofers (another agent owns them)
+and 2_Launcher/Patriot-template fuel (point-defence pairs don't warrant it; the Patriot already
+has its EPP + HEMTT).
 
 
 ## Code audit fixes — 2026-07-07

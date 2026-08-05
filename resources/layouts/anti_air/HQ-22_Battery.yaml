@@ -33,6 +33,41 @@ groups:
         - 3
       unit_types:
         - CH_HQ22_LN
+    # 414th: the battery support section -- the S-300 template's groups (§85).
+    # DM call 2026-08-04: China runs the Soviet fuel kit, so the whitelists
+    # mirror the S-300 family's.
+    - name: S-300 Site Logistics
+      optional: true
+      unit_count:
+        # 414th: the textbook configuration is THE configuration (DM call
+        # 2026-08-04) -- fixed count, no bare-site roll
+        - 2
+      unit_types:
+        - GAZ-66
+        - KAMAZ Truck
+        - Ural-375
+    - name: S-300 Site Fuel
+      optional: true
+      fill: false
+      unit_count:
+        # 414th: the textbook configuration is THE configuration (DM call
+        # 2026-08-04) -- fixed count, no bare-site roll
+        - 2
+      unit_types:
+        - ATZ-5
+        - ATZ-10
+        - ATMZ-5
+        - ATZ-60_Maz
+        - TZ-22_KrAZ
+    - name: S-300 Site Power
+      optional: true
+      fill: false
+      unit_count:
+        # 414th: the textbook configuration is THE configuration (DM call
+        # 2026-08-04) -- fixed count, no bare-site roll
+        - 2
+      unit_types:
+        - generator_5i57
   - PD:
     - name: S-300 Site SHORAD1
       optional: true

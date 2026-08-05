@@ -37,6 +37,21 @@ groups:
         - 2
       unit_classes:
         - Logistics
+    # 414th: the battery's refuelling section (preset-carried; fill:false so a
+    # faction's trucks are never displaced from the Logistics slot).
+    - name: Fuel
+      optional: true
+      fill: false
+      unit_count:
+        - 1
+        - 2
+      unit_types:
+        - ATZ-5
+        - ATZ-60_Maz
+        - TZ-22_KrAZ
+        - ATMZ-5
+        - ATZ-10
+        - M978 HEMTT Tanker
   - PD: # Point Defense as separate group
     - name: PD
       sub_task: PointDefense

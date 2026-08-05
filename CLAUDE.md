@@ -3693,13 +3693,28 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     surviving van keeps transmitting, and a full §52 kill must take the vehicles too (stated in
     the layout comments + tests). **DS91's KARI is the showcase** (13/13 relays + 4/4 centers
     furnished, GCI shelters at the centers); RT's scenery-authored 9-node network stays as
-    authored; power plants stay bare on purpose. **Two template landmines,
+    authored; power plants stay bare on purpose. **The "do-them-all" closure (same day):**
+    the legacy families got the full **truck-AND-fuel spread** — the 3 shared launcher
+    templates gained a `Fuel` group, the pass-1 trio moved OUT of the Logistics whitelists
+    into fill:false Fuel slots (a bowser in a Logistics whitelist DISPLACES the faction truck
+    fill — the load-bearing distinction), and every Soviet family preset + Hawk carries
+    era-correct trucks+bowsers (headless: **46/46 DS91 legacy sites** field both); **HQ-22**
+    declares the S-300 support slots and China runs the Soviet fuel kit (DM call — preset +
+    `china_2027` roster; Marianas' Tinian battery renders SX2190/Urals/TZ-22s/5I57); **western
+    C2 kit** closes the no-western-van gap (Trojan Spirit at comms, fire-control bunker +
+    Predator GCS at CCs, era-gated — no 1995 van on a 1988 faction, test-pinned); the
+    **Gazetchik-E decoy** (confirmed HDS-mod) rides only the HDS-gated modern S-300 presets
+    (SA-20/20B/21/23/23B) via the new `S-300 Site Decoy` slot — vanilla can never see it, RT
+    stays decoy-free, ARM-seduction is an explicit B44 fly question; and **the textbook
+    configuration is THE configuration** (DM call) — S-300-family support slots stopped
+    rolling 1–2: every site renders 2 trucks + 2 bowsers + 2 DPS deterministically,
+    test-pinned. **Two template landmines,
     now CI-locked:** pydcs saves miz countries **name-sorted** and the loader anchors each
     layout's origin on the first matched unit (vehicles before statics per country), so support
     groups live under **blue/USAF Aggressors** — the only blue country sorting after USA — with
     an origin-pinned-at-(0,0) test; and pydcs seeds unused countries into **NEUTRALS**, which
     the loader never scans (pop into blue first or the groups silently load as nothing). Tests
-    `tests/armedforces/test_sam_support_vehicles.py` (136, incl. the dead-slot guard now
+    `tests/armedforces/test_sam_support_vehicles.py` (161, incl. the dead-slot guard now
     **repo-wide across all five layout families** with the loader's real name-or-statics
     matching, and six both-ways nation-correctness cases for the EWR kit);
     features doc §85 (+ the "Unit-coverage sweep — 2026-08-04" section), checklist B43 + B44 —

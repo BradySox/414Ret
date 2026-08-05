@@ -27,6 +27,8 @@ groups:
         - GCI_station_MiG29
         - Ural-375 PBU
         - ZIL-131 KUNG
+        - fire_control
+        - Predator GCS
     - name: CommandCenter Power
       optional: true
       unit_count:

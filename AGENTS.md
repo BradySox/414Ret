@@ -3730,14 +3730,26 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     on a mod install; **offered and declined 2026-08-04**), the jammer is **paired with a real
     vanilla emitter**: an optional `GPS Jammer 0` slot on the **`Early-Warning Radar` layout**
     + the presets `GPS Jamming Site (Red)`/`(Blue)`. An EWR is the right partner because
-    **MANTIS never holds an EWR dark**, so the site is always emitting — it paints RWRs, takes
-    HARMs, and SEAD services it like any other radar. The slot is `optional: true` +
+    **MANTIS never holds an EWR dark**, so the site is always emitting. **But being on RWR and
+    being HARM-able are two DIFFERENT DCS attributes and no one unit has both** — `radar_type`
+    puts a unit on the RWR (the EWRs have it), `RADAR_BAND1/2_FOR_ARM` is what an ARM seeker
+    homes on and **the EWRs do NOT carry it** (verified: `EWR_FPS-117` declares only `"EWR"`;
+    of the ARM-band units in DCS's TechWeaponPack, not one is an EWR), so an EWR alone is a
+    contact you cannot HARM. The site therefore also fields an ARM-flagged acquisition radar —
+    **ST-68U "Tin Shield"** (red) / **NASAMS MPQ-64F1** (blue) — in the same EWR-role group
+    (still never held dark), at `unit_count: [2]` because the ST-68U is a track-radar class and
+    the standing §60 redundancy contract applies. Both slots are `optional: true` +
     `fill: false` and the presets are opt-in, so **every shipped EWR site generates exactly as
     before**; a campaign fields one by pinning a preset onto an authored EWR marker, and
     country gating keeps each side to its own jammer. This pairing is what forced the
     **per-unit liveness** contract: the jammer shares its DCS group with the radar, so a
     group-level check would keep denying GPS on the strength of the surviving radar beside the
-    wreck of the actual jammer — unkillable jamming. Gated `gps_jamming` (414th Features → Electronic & command warfare, default **OFF**,
+    wreck of the actual jammer — unkillable jamming. **Preseeded in Operation Baltic Fury**
+    (2027) on **EWR-26** (13.9 km from Laage, the site blue meets on the way north) and
+    **EWR-27** (8.5 km from Kastrup, the campaign's victory objective, so the Copenhagen push
+    becomes "kill the jammer before you can JDAM the prize"); the other three red EWRs stay
+    ordinary radar sites. **Red Tide is deliberately NOT a candidate — it is 1988, and
+    GPS-guided weapons postdate it entirely** (DM call 2026-08-04). Gated `gps_jamming` (414th Features → Electronic & command warfare, default **OFF**,
     preseeded nowhere) + `gps_jamming_default_reach_nm` (30) / `gps_jamming_miss_radius_m` (200)
     (Mission Generation → Comms war); **the `gpsjamming` plugin is the runtime**, so an unticked
     plugin silently kills the setting (the §36 lesson). Deliberately not done: aircraft

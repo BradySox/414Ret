@@ -176,6 +176,13 @@ settings:
   # this dense IADS + TIC map -- the flown turn 1 showed ANTIFREEZE stutters under the load.
   perf_ground_ai_sleep: true
   perf_aaa_site_sleep: true
+  # §86 GPS jamming: red EW Radio Jammers deny satellite guidance around two of its
+  # early-warning sites (see ground_forces below), so a JDAM/JSOW/JASSM released inside the
+  # bubble lands off the aimpoint. Laser and TV weapons are unaffected -- the counter is to
+  # change delivery, stand off, or kill the jammer, which restores accuracy at once. This is
+  # a 2027 campaign, which is what makes the mechanic legal: the jammers are 2010 kit and the
+  # weapons they deny are 1997+, so a Cold War laydown (Red Tide) can never field this.
+  gps_jamming: true
   plugins:
     # advanced_iads (top-level) is this laydown's centerpiece; mantisiads owns its whole runtime.
     mantisiads: true
@@ -189,6 +196,7 @@ settings:
     # combatsar plugin, so pin it on (also protects all over-water rescue + the POW->will feed).
     combatsar: true
     aisleep: true                    # §59 ground-AI sleep runtime (perf)
+    gpsjamming: true                 # §86 GPS jamming runtime -- the setting does NOTHING without it
     # §61 host-menu gate: only DCS names containing "Flash" see the HOST: Red Scramble menu.
     redscramble.hostPlayers: Flash
     # §51 comms-jam feel: near-continuous pressure on the top few channels (~90% on-air, capped
@@ -197,6 +205,27 @@ settings:
     commsjam.intervalSec: 10
     commsjam.maxChannels: 3
     commsjam.powerW: 10000
+# --- §86 GPS jamming: two of red's five early-warning sites also field an EW Radio Jammer.
+#
+#     The jammer is pinned to an EWR marker on purpose. A GPS jammer emits in L-band, which no
+#     RWR covers and no HARM homes on, so a jammer standing alone would be invisible to the
+#     tools a pilot hunts emitters with -- findable only by recon, never prosecutable by SEAD.
+#     Sharing the site with the early-warning radar gives it a real always-on emitter to be
+#     found by (MANTIS never holds an EWR dark). Killing the jammer truck stops the jamming;
+#     killing the radar blinds the site without stopping it. Both are worth a bomb.
+#
+#     TWO sites, chosen off the geography, so the mechanic has a life across the campaign
+#     rather than being a turn-1 single point of failure:
+#       * EWR-26 (13.9 km from Laage, mid-map) is the one blue meets on the way north.
+#       * EWR-27 (8.5 km from Kastrup) sits on the campaign's victory objective, so the
+#         Copenhagen push is a "kill the jammer before you can JDAM the prize" problem.
+#     The other three EWRs (Barth / Szczecin / Bornholm) stay ordinary radar sites.
+#
+#     The preset supplies its own jammer, so no faction edit is needed, and the layout's
+#     jammer slot is optional + fill: false -- every other EWR site generates exactly as before.
+ground_forces:
+  EWR-26: GPS Jamming Site (Red)
+  EWR-27: GPS Jamming Site (Red)
 # --- §75 custom victory: liberate Copenhagen = win; lose the Nordholz bridgehead = defeat.
 #     (Stock territory endings remain in addition to these.)
 victory:

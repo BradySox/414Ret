@@ -373,6 +373,20 @@ def test_the_ewr_layout_carries_an_optional_jammer_slot(_layouts: None) -> None:
     ids = {unit_type.id for unit_type in (slot.unit_types or [])}
     assert ids == {"GPS_Spoofer_Red", "GPS_Spoofer_Blue"}
 
+    # The companion ARM-able emitter slot, under the same gate.
+    radar_slot = None
+    for group in layout.groups:
+        for unit_group in group.unit_groups:
+            if unit_group.name == "GPS Jammer Radar 0":
+                radar_slot = unit_group
+    assert radar_slot is not None, "the ARM-able emitter slot must exist"
+    assert radar_slot.optional is True and radar_slot.fill is False
+    assert len(radar_slot.layout_units) >= 1
+    assert {unit_type.id for unit_type in (radar_slot.unit_types or [])} == {
+        "RLS_19J6",
+        "NASAMS_Radar_MPQ64F1",
+    }
+
 
 def test_each_jamming_site_preset_pairs_a_radar_with_its_own_sides_jammer(
     _layouts: None,
@@ -399,6 +413,17 @@ def test_each_jamming_site_preset_pairs_a_radar_with_its_own_sides_jammer(
             if unit.unit_class is UnitClass.EARLY_WARNING_RADAR
         ]
         assert radars, f"{preset_name} must pair the jammer with an EWR emitter"
+        # ...and an ARM-able acquisition radar. Being on the RWR and being
+        # HARM-able are two DIFFERENT DCS attributes: `GT.WS.radar_type` puts a
+        # unit on the RWR (the EWRs have it), `RADAR_BAND1/2_FOR_ARM` is what an
+        # anti-radiation seeker homes on -- and the EWRs do NOT carry it. Without
+        # this second radar the site is a contact you cannot shoot a HARM at.
+        arm_able = [
+            unit
+            for unit in group.units
+            if unit.dcs_unit_type.id in {"RLS_19J6", "NASAMS_Radar_MPQ64F1"}
+        ]
+        assert arm_able, f"{preset_name} must field an ARM-able acquisition radar"
         assert "Early-Warning Radar" in {lay.name for lay in group.layouts}
 
 

@@ -10,6 +10,9 @@ tasks:
 units:
   - EWR AN/FPS-117 Radar
   - EWR AN/FPS-117 Radar (domed)
+  # The ARM-able emitter (see the red preset): the FPS-117 has no
+  # RADAR_BAND*_FOR_ARM attributes, the NASAMS MPQ-64F1 does.
+  - SAM NASAMS SR MPQ64F1
   - EW Radio Jammer (Blue)
 layouts:
   - Early-Warning Radar

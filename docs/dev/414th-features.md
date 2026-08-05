@@ -8384,10 +8384,28 @@ optional `GPS Jammer 0` slot on the **`Early-Warning Radar` layout**, plus the t
 holds an EWR dark** (detection rides on dedicated EWR sites + AWACS), so the site is *always*
 emitting — it paints RWRs, takes HARMs, and SEAD can service it like any other radar.
 
-The slot is `optional: true` + `fill: false` and the presets are opt-in, so **every existing EWR
-site in every shipped campaign generates exactly as before**; a campaign fields a jamming site by
-pinning one of the presets onto an authored EWR marker. Country gating does the rest — the red
-preset can reach only the red jammer, the blue preset only the blue one (proven by test).
+**Being on RWR and being HARM-able are two different DCS attributes, and no one unit here has
+both** — which is why the site fields *two* radars. `GT.WS.radar_type` is what puts a unit on the
+RWR (the EWRs have it); `RADAR_BAND1/2_FOR_ARM` is what an anti-radiation seeker homes on, and
+**the EWRs do not carry it** (verified: `EWR_FPS-117` declares only `"EWR"`, and of the units in
+DCS's TechWeaponPack carrying the ARM bands, not one is an EWR). An EWR alone would therefore
+give an RWR contact you cannot shoot a HARM at. The acquisition radars *do* carry the bands, so
+the site also fields one — **ST-68U "Tin Shield"** (red) / **NASAMS MPQ-64F1** (blue) — riding in
+the same EWR-role group, so MANTIS still never holds it dark. That slot is `unit_count: [2]`
+because the ST-68U is a track-radar class and the standing §60 redundancy contract applies: one
+HARM must not blind the site outright.
+
+Both slots are `optional: true` + `fill: false` and the presets are opt-in, so **every existing
+EWR site in every shipped campaign generates exactly as before**; a campaign fields a jamming
+site by pinning one of the presets onto an authored EWR marker. Country gating does the rest —
+the red preset can reach only the red jammer, the blue preset only the blue one (proven by
+test).
+
+**Preseeded in Operation Baltic Fury** (2027) on **EWR-26** (13.9 km from Laage, the site blue
+meets on the way north) and **EWR-27** (8.5 km from Kastrup, the campaign's victory objective —
+so the Copenhagen push becomes "kill the jammer before you can JDAM the prize"). The other three
+red EWRs stay ordinary radar sites. Red Tide is deliberately **not** a candidate: it is 1988, and
+GPS-guided weapons postdate it entirely.
 
 This is what forced the **per-unit liveness** contract above: the jammer shares its DCS group
 with the radar, so a group-level check would keep denying GPS on the strength of the surviving

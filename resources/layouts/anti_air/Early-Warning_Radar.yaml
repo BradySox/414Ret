@@ -35,3 +35,28 @@ groups:
       unit_types:
         - GPS_Spoofer_Red
         - GPS_Spoofer_Blue
+    # The site's ARM-able emitter -- and it is a SEPARATE unit from the EWR for a
+    # measured reason. Two different DCS attributes decide the two halves of being
+    # huntable, and no single unit here has both:
+    #
+    #   * `GT.WS.radar_type` puts a unit on the RWR. The EWR has this.
+    #   * `RADAR_BAND1/2_FOR_ARM` is what an anti-radiation seeker homes on -- and
+    #     the EWRs do NOT carry it (verified: EWR_FPS-117 declares only "EWR"; of
+    #     the units in DCS's TechWeaponPack that carry the ARM bands, not one is an
+    #     EWR). So an EWR alone gives an RWR contact you cannot HARM.
+    #
+    # The acquisition radars DO carry the ARM bands (ST-68U "Tin Shield" for red,
+    # NASAMS MPQ-64F1 for blue), so one of those parked at the site makes it a real
+    # SEAD target. It rides in the EWR-role group, so MANTIS still never holds the
+    # site dark. Same optional + fill: false gate -- no existing site changes.
+    # unit_count 2, not 1: the ST-68U is a track-radar class, so the standing §60
+    # redundancy contract applies -- one HARM must not blind the site outright.
+    # Two emitters also make the SEAD fight here less one-and-done.
+    - name: GPS Jammer Radar 0
+      optional: true
+      fill: false
+      unit_count:
+        - 2
+      unit_types:
+        - RLS_19J6
+        - NASAMS_Radar_MPQ64F1

@@ -22,6 +22,11 @@ units:
   - EWR 1L13
   - EWR 55G6
   - EWR P-37 Bar Lock
+  # The ARM-able emitter. The EWRs put the site on RWR but carry no
+  # RADAR_BAND*_FOR_ARM attributes, so a HARM cannot home on them; the ST-68U
+  # does, which is what makes this site a real SEAD target rather than just a
+  # radar contact you have to go and bomb by hand.
+  - SAM SA-5 S-200 ST-68U "Tin Shield" SR
   - EW Radio Jammer (Red)
 layouts:
   - Early-Warning Radar

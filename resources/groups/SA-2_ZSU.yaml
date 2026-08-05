@@ -10,6 +10,12 @@ units:
   # 414th: battery C2 truck -- fills the generic layout's dormant
   # fill:false Command Post slot (preset-carried units only).
   - C2 ZIL-131 KUNG
+  # 414th: battery support section
+  - Truck GAZ-66
+  - Truck Ural-375
+  - Refueler ATZ-5
+  - Refueler ATZ-60 (MAZ-7410)
+  - Refueler TZ-22 (KrAZ-258B1)
 layouts:
   - 6 Launcher Site (Semicircle)
   - 6 Launcher Site (Circle)

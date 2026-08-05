@@ -28,9 +28,17 @@ groups:
         - Ural-375
         - Ural-4320-31
         - Ural-4320T
-        # 414th: the battery's refuelling section -- one Logistics slot rolls
-        # one type, so a site fields trucks OR a bowser (the 1960s trio is
-        # era-safe for every campaign that fields these legacy SAMs).
+    # 414th: the battery's refuelling section, now its own slot so a site
+    # fields trucks AND a bowser (the S-300 spread). fill:false -- the family
+    # preset carries the era-correct bowsers; the 1960s trio is safe for every
+    # campaign that fields these legacy SAMs.
+    - name: Fuel
+      optional: true
+      fill: false
+      unit_count:
+        - 1
+        - 2
+      unit_types:
         - ATZ-5
         - ATZ-60_Maz
         - TZ-22_KrAZ

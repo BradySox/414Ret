@@ -20,4 +20,15 @@ groups:
         - 3
       unit_types:
         - Tech hangar A
+    # 414th: the site's working traffic -- one optional vehicle group dealt from
+    # the faction's own Logistics roster (nation-correct for free; trucks or,
+    # with the registered refuellers, a fuel bowser). A faction with no
+    # Logistics unit renders the bare statics exactly as before.
+    - name: factory1 Logistics
+      optional: true
+      unit_count:
+        - 1
+        - 2
+      unit_classes:
+        - Logistics
 layout_file: resources/layouts/buildings/buildings.miz

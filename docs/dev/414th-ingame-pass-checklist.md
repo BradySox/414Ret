@@ -3620,9 +3620,26 @@ rolled a refuelling section (the roll is per-site, so expect *most* but not all)
 
 **Pass criterion:** legacy SA-2/SA-3/SA-5/SA-6 sites field trucks OR a fuel bowser in their
 logistics spots (one type per site — the mixed truck+fuel+power spread is S-300-only by design);
-on Yankee Station, an HQ-2 site renders the **ZIL-131 KUNG** C2 truck; and over a few turns a
-supply convoy is seen carrying a refueller (blue M978 / red ATZ family / a COIN campaign's
-civilian ATZ-5 on the ratline). Kills record as ordinary ground losses.
+on Yankee Station, an HQ-2 site renders the **ZIL-131 KUNG** C2 truck; **EWR sites render their
+support section** (Red Tide: radar + KUNG + 1–2 diesel power stations + trucks — headless showed
+all 6; a western FPS-117 site renders the ECS shelter instead, never the Soviet kit);
+**layout-generated economy buildings are furnished** (a generated fuel farm / ammo depot /
+factory / warehouse fields 1–2 trucks or a bowser beside the statics; hand-authored named targets
+— DS91's CENTAF set, RT's authored factories — stay bare **by design**, and any authored building
+cluster having MOVED from earlier saves is the origin-shift fail signature);
+**the C2 compounds render and their kill semantics hold** (Desert Storm is the showcase: all 13
+KARI comms relays + 4 command centers field vans/GCI shelters/generators/trucks; RT's
+scenery-authored network stays as authored; **verify a §51 comms node keeps jamming after the
+tower dies while its van survives, and stops when the compound is dead** — that is the accepted
+§51/§52 semantics change, not a bug; a §52 decap now requires the vehicles dead too); and over a
+few turns a supply convoy is seen carrying a refueller (blue M978 / red ATZ family / a COIN
+campaign's civilian ATZ-5 on the ratline); **the do-them-all closure renders** (a legacy SA-2/3/5/6
+site fields trucks AND a bowser — DS91 headless showed 46/46; an S-300/HQ-22 site renders the
+deterministic textbook spread of 2 trucks + 2 bowsers + 2 power stations; Marianas' Tinian
+HQ-22 fields the Soviet fuel kit; a modern HDS campaign's SA-20+ site places the **Gazetchik-E
+decoy** — THE fly question: does an ARM actually get seduced by it, and does it show as a
+separate killable unit; a modern US comms/CC compound renders the Trojan Spirit / fire-control
+bunker / Predator GCS). Kills record as ordinary ground losses.
 
 **Fail signatures to watch for:**
 - A bowser or the KUNG **clipping** launcher/radar models (positions are the templates' existing
@@ -3634,6 +3651,8 @@ civilian ATZ-5 on the ratline). Kills record as ordinary ground losses.
   *generic*-layout sites and in convoys).
 - Legacy sites that previously rolled trucks now **never** rolling trucks (the whitelist
   addition must widen the roll, not displace it).
+
+
 ### B45 — GPS jamming (satellite-guided weapons go long) · §86 · ☐ UNTESTED (built 2026-08-04)
 
 **Setup:** a campaign fielding a jamming site — pin the `GPS Jamming Site (Red)` preset onto an

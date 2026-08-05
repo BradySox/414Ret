@@ -87,7 +87,8 @@ groups:
     - name: S-300 Site Logistics
       optional: true
       unit_count:
-        - 1
+        # 414th: the textbook configuration is THE configuration (DM call
+        # 2026-08-04) -- fixed count, no bare-site roll
         - 2
       unit_types:
         - GAZ-66
@@ -104,7 +105,8 @@ groups:
       optional: true
       fill: false
       unit_count:
-        - 1
+        # 414th: the textbook configuration is THE configuration (DM call
+        # 2026-08-04) -- fixed count, no bare-site roll
         - 2
       unit_types:
         - ATZ-5
@@ -116,10 +118,22 @@ groups:
       optional: true
       fill: false
       unit_count:
-        - 1
+        # 414th: the textbook configuration is THE configuration (DM call
+        # 2026-08-04) -- fixed count, no bare-site roll
         - 2
       unit_types:
         - generator_5i57
+    # 414th: the 34Ya6E Gazetchik-E decoy emitter (HDS mod unit -- carried only
+    # by the already-HDS-gated modern presets, so a vanilla game never sees it).
+    # Whether the DCS unit actually seduces ARMs is the in-game-pass question.
+    - name: S-300 Site Decoy
+      optional: true
+      fill: false
+      unit_count:
+        - 1
+        - 2
+      unit_types:
+        - 34Ya6E Gazetchik E decoy
   - PD:
     - name: S-300 Site SHORAD1
       optional: true

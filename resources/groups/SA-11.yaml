@@ -6,6 +6,15 @@ units:
   - SAM SA-11 Buk "Gadfly" Snow Drift SR
   - SAM SA-11 Buk "Gadfly" C2
   - SAM SA-11 Buk "Gadfly" Fire Dome TEL
+  # 414th: battery support section
+  - Truck GAZ-66
+  - Truck Ural-375
+  - Truck KAMAZ 43101
+  - Refueler ATZ-5
+  - Refueler ATZ-60 (MAZ-7410)
+  - Refueler TZ-22 (KrAZ-258B1)
+  - Refueler ATMZ-5
+  - Refueler ATZ-10
 layouts:
   - 4 Launcher Site (Semicircle)
   - 4 Launcher Site (Circle)

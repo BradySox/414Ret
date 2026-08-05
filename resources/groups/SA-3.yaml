@@ -5,6 +5,12 @@ units:
   - SAM P19 "Flat Face" SR (SA-2/3)
   - SAM SA-3 S-125 "Low Blow" TR
   - SAM SA-3 S-125 "Goa" LN
+  # 414th: battery support section
+  - Truck GAZ-66
+  - Truck Ural-375
+  - Refueler ATZ-5
+  - Refueler ATZ-60 (MAZ-7410)
+  - Refueler TZ-22 (KrAZ-258B1)
 layouts:
   - SA-3 Site (4 Launcher Semicircle)
   - SA-3 Site (4 Launcher Circle)

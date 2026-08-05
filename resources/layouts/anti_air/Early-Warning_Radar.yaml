@@ -12,6 +12,35 @@ groups:
       fallback_classes:
         - SearchRadar
         - SearchTrackRadar
+    # 414th: the site's support section (§85 follow-on). Explicit unit_types
+    # whitelists, NOT unit_classes -- a class-based C2 slot would pull every
+    # CommandPost unit the faction can reach (a Patriot ECS or Buk CC at an EWR
+    # site). Access is gated by the faction's own lists, so a faction fielding
+    # none of these renders no support (optional -> silently skipped) and the
+    # kit stays nation-correct by construction. All listed units carry zero
+    # detection/threat, so the site's MANTIS contribution is unchanged.
+    - name: Early-Warning Radar C2
+      optional: true
+      unit_count:
+        - 1
+      unit_types:
+        - ZIL-131 KUNG
+        - Ural-375 PBU
+        - FPS-117 ECS
+    - name: Early-Warning Radar Power
+      optional: true
+      unit_count:
+        - 1
+        - 2
+      unit_types:
+        - generator_5i57
+    - name: Early-Warning Radar Logistics
+      optional: true
+      unit_count:
+        - 1
+        - 2
+      unit_classes:
+        - Logistics
     # 414th (§86): the site's GPS-jamming section, parked beside the radar.
     #
     # It lives HERE, in the same DCS group as the early-warning radar, on

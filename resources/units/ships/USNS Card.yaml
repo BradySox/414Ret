@@ -1,0 +1,4 @@
+class: Boat
+price: 10
+variants:
+  "[VWV] T-AKV-40 USNS Card": null

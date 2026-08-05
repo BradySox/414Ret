@@ -1,0 +1,8 @@
+class: Logistics
+description: A lift truck used to move munitions and cargo pallets around a ramp.
+introduced: 1980
+origin: Multinational
+price: 3
+role: Airfield Lift Truck
+variants:
+  "GD-20 Lift Truck": null

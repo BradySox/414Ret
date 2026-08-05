@@ -1,0 +1,9 @@
+class: CommandPost
+description: The Trojan Spirit satellite terminal that carries a Predator's control and sensor
+  link back to the exploitation cell.
+introduced: 1995
+origin: USA
+price: 16
+role: Satellite Communications Terminal
+variants:
+  "C2 Predator UAV Comms Link": null

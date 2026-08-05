@@ -16,6 +16,11 @@ class UnitClass(Enum):
     CRUISER = "Cruiser"
     DESTROYER = "Destroyer"
     EARLY_WARNING_RADAR = "EarlyWarningRadar"
+    # Ground electronic-warfare kit: jammers and radar decoys. Deliberately NOT
+    # referenced by any layout's `unit_classes`, so registering a unit under it
+    # cannot change generation on its own -- it exists so the EW units the fork
+    # now registers have an honest class to be wired from later.
+    ELECTRONIC_WARFARE = "ElectronicWarfare"
     FORTIFICATION = "Fortification"
     FRIGATE = "Frigate"
     HELICOPTER = "Helicopter"

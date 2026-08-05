@@ -50,7 +50,12 @@
   ],
   "logistics_units": [
     "LUV UAZ-469 Jeep",
-    "Truck Ural-375"
+    "Truck Ural-375",
+    "Refueler ATZ-5",
+    "Refueler ATZ-60 (MAZ-7410)",
+    "Refueler TZ-22 (KrAZ-258B1)",
+    "Refueler ATMZ-5",
+    "Refueler ATZ-10"
   ],
   "infantry_units": [
     "SAM SA-7B Strela-2M manpad",

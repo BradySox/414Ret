@@ -1,0 +1,11 @@
+class: Logistics
+description: Heavy aviation refueller on a KrAZ-255B chassis, carrying roughly 10,000
+  litres of fuel. Standard Soviet and Warsaw Pact bulk refuelling vehicle for both
+  airfield ramps and the diesel generators of a deployed SAM regiment.
+introduced: 1980
+manufacturer: KrAZ
+origin: USSR/Russia
+price: 3
+role: Bulk Fuel Tanker
+variants:
+  Refueler ATZ-10: null

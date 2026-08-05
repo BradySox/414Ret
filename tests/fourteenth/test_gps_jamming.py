@@ -298,3 +298,41 @@ def test_the_yaml_block_reaches_the_loaded_unit_type() -> None:
         Unarmed.Ural_375, "Test truck", {"class": "Logistics"}
     )
     assert ordinary.gps_jamming is None
+
+
+def test_the_shipped_ew_radio_jammers_are_the_feature_s_units() -> None:
+    """The real tie-in, on real registered data (§85's `GPS_Spoofer_*` units).
+
+    These are the vehicles the feature exists for, so their yamls must actually
+    carry the block -- and their reach must be the unit's OWN declared
+    `detection_range` (50 km), not an invented number, so the bubble matches what
+    DCS says the vehicle can hear.
+    """
+    from game.dcs.groundunittype import GroundUnitType
+    from game.utils import meters
+
+    for variant in ("EW Radio Jammer (Red)", "EW Radio Jammer (Blue)"):
+        unit = GroundUnitType.named(variant)
+        assert unit.gps_jamming is not None, f"{variant} must declare gps_jamming"
+        assert unit.gps_jamming.radius_nm is not None
+        declared = unit.dcs_unit_type.detection_range
+        reach = nautical_miles(unit.gps_jamming.radius_nm)
+        # Within a nautical mile of the DCS-declared detection range.
+        assert abs(reach.meters - declared) < meters(1852).meters, (
+            f"{variant} jams to {reach.nautical_miles:.0f} nm but DCS declares "
+            f"{declared} m of reach"
+        )
+
+
+def test_no_other_shipped_unit_jams_by_accident() -> None:
+    """A stray `gps_jamming` block anywhere else would silently deny GPS across
+    a campaign that never asked for it."""
+    from game.dcs.groundunittype import GroundUnitType
+
+    GroundUnitType._load_all()
+    jammers = {
+        unit.variant_id
+        for unit in GroundUnitType._by_name.values()
+        if unit.gps_jamming is not None
+    }
+    assert jammers == {"EW Radio Jammer (Red)", "EW Radio Jammer (Blue)"}

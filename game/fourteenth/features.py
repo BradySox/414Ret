@@ -690,9 +690,24 @@ FEATURES: tuple[Feature, ...] = (
         ),
     ),
     Feature(
+        # §85 SAM battery support section -- the refuelling section and 5I57A
+        # diesel power stations a real S-300 site carries. Pure unit-data +
+        # layout-data (7 new resources/units/ground_units yamls, 3 new position
+        # groups in the shared S-300_Site.miz, the S-300-family Logistics/Fuel/
+        # Power slots, and the support units added to the 11 S-300-family preset
+        # groups). No setting, no plugin, no save change. Also fixes two DEAD
+        # slots -- layout slots naming a group that does not exist in the .miz
+        # are silently dropped -- which had disabled the S-300 family's logistics
+        # section and the Sky Sabre battery's point defence outright. CI-locked in
+        # tests/armedforces/test_sam_support_vehicles.py.
+        "sam_support_vehicles",
+        "SAM battery support section (refuellers + power)",
+        85,
+    ),
+    Feature(
         "gps_jamming",
         "GPS jamming (satellite-guided weapons go long)",
-        85,
+        86,
         plugin_id="gpsjamming",
         settings_fields=(
             "gps_jamming",

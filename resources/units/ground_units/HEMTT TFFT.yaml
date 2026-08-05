@@ -1,0 +1,9 @@
+class: Logistics
+description: The Tactical Firefighting Truck on a HEMTT chassis -- the US forward airfield
+  crash tender.
+introduced: 1998
+origin: USA
+price: 4
+role: Airfield Crash Tender
+variants:
+  "Firefighter HEMTT TFFT": null

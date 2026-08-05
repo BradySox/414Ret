@@ -1,0 +1,9 @@
+class: Logistics
+description: The civilian-liveried ATZ-5 fuel bowser, at home on an insurgent ratline or a
+  commandeered depot as well as a military ramp.
+introduced: 1966
+origin: USSR/Russia
+price: 3
+role: Civilian Fuel Tanker
+variants:
+  "Refueler ATZ-5 civil": null

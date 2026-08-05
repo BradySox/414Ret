@@ -1,0 +1,10 @@
+class: ElectronicWarfare
+description: The 34Ya6E Gazetchik-E, a decoy emitter deployed alongside an S-300 battery. It
+  mimics the site's radar signature and can generate corner-reflector and smoke
+  effects, so an anti-radiation shot may be spent on empty ground.
+introduced: 2000
+origin: USSR/Russia
+price: 6
+role: Radar Decoy / Emitter Simulator
+variants:
+  "EW 34Ya6E Gazetchik-E Decoy": null

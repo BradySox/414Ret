@@ -1,0 +1,8 @@
+class: Logistics
+description: The ATsP-6 airfield fire tender on a Ural chassis.
+introduced: 1970
+origin: USSR/Russia
+price: 4
+role: Airfield Crash Tender
+variants:
+  "Firefighter Ural ATsP-6": null

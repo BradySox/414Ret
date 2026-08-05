@@ -1,0 +1,11 @@
+class: Logistics
+description: The tanker variant of the M977 Heavy Expanded Mobility Tactical Truck,
+  carrying 2,500 US gallons. The US Army's standard forward-area bulk fuel carrier,
+  used to service both aircraft and the generator sets of a deployed battery.
+introduced: 1985
+manufacturer: Oshkosh
+origin: USA
+price: 3
+role: Bulk Fuel Tanker
+variants:
+  Refueler M978 HEMTT: null

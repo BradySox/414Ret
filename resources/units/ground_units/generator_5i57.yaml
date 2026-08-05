@@ -1,0 +1,12 @@
+class: Power
+description: The 5I57A diesel power station, the mobile generator set that supplies
+  a deployed S-300 battery with electrical power. Sited a short distance from the
+  radars and command post it feeds; destroying it takes the battery off line until
+  it is replaced.
+introduced: 1982
+manufacturer: Almaz-Antey
+origin: USSR/Russia
+price: 6
+role: Mobile Diesel Power Station
+variants:
+  Diesel Power Station 5I57A: null

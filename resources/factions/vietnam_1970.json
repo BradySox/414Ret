@@ -38,7 +38,10 @@
     "Truck GAZ-66",
     "LUV UAZ-469 Jeep",
     "Truck Bedford",
-    "Truck Opel Blitz"
+    "Truck Opel Blitz",
+    "Refueler ATZ-5",
+    "Refueler ATZ-60 (MAZ-7410)",
+    "Refueler TZ-22 (KrAZ-258B1)"
   ],
   "infantry_units": [
     "Infantry AK-74 Rus",

@@ -8116,7 +8116,188 @@ flights identical; turn 12 one flight on AIM-7MH + AIM-9L; turn 25 three of six 
 Tests: `tests/fourteenth/test_stock_attrition.py` (39 — the repo-wide never-an-upgrade invariant, the JDAM→LGB→dumb-bomb ladder, per-family depth floors, and four that drive the real F/A-18C `Retribution BARCAP` fit on real pydcs pylon tables: one jet ends up mixed, twelve flights are not identical, the shipped fit is never mutated in place, and no station is ever upgraded). Checklist: **B42**.
 
 
-## §85 — GPS jamming (satellite-guided weapons go long)
+## §85 — SAM battery support section (refuellers + power)
+
+**The problem** (DM finding, 2026-08-04, off a textbook SA-10 site built on the 414th training
+server): the real site carries a **refuelling section** (2× ATZ-5, an ATZ-60 MAZ) and **two 5I57A
+diesel power stations** alongside its cargo trucks; Retribution generated the radars, the C2, the
+six launchers — and no support at all. The trigger question was "ATZ-10 is a refuelling truck, why
+are we not using it in SAM sites?" It turned out to be **three** independent causes, and the third
+is the interesting one.
+
+1. **No refueller was a registered unit.** `resources/units/ground_units/` had no yaml for
+   `ATZ-10`, `ATZ-5`, `ATZ-60_Maz`, `ATMZ-5`, `TZ-22_KrAZ`, `M978 HEMTT Tanker`, or
+   `generator_5i57` (the "DPS" in the DM's screenshot — DCS calls it *Diesel Power Station
+   5I57A*, and pydcs files it under `AirDefence`, not `Unarmed`). No yaml ⇒ never a
+   `GroundUnitType` ⇒ never in `Faction.accessible_units` ⇒ `has_access_to_dcs_type` returns
+   False ⇒ **unusable by any layout**. The one place an ATZ-10 *did* appear is
+   `tgogenerator.py`'s hardcoded `_SOVIET_TANKERS` FARP/airfield ground-support pool, which
+   bypasses the unit registry entirely — which is exactly why it was only ever seen on a ramp.
+2. **No faction listed one.** 139 factions author a `logistics_units` block; every one is cargo
+   trucks and jeeps (UAZ-469 ×57, M818 ×55, Ural-375 ×47). Zero refuellers fork-wide.
+3. **The S-300 family's `S-300 Site Logistics` slot was DEAD CONFIG.** The layout yaml declared
+   it — with an explicit GAZ-66/KAMAZ/Ural whitelist — but **no group of that name existed in the
+   shared `S-300_Site.miz`**. `LayoutLoader._load_from_miz` walks the *MIZ's* groups and looks each
+   up in the mapping (`LayoutMapping.group_for_name`), so a slot the yaml names that no MIZ group
+   is named after is never instantiated, **with no warning and no error**. So an
+   S-300/SA-10/SA-20/S-400 site had never generated a single support vehicle, whatever the faction
+   rostered.
+
+**The fix.** Data only — no setting, no plugin, no Lua, no save change.
+
+- **7 new unit yamls.** The five Soviet refuellers + the M978 HEMTT are `class: Logistics`
+  (price 3); the 5I57A is **`class: Power`** (price 6), the class the Patriot's EPP and the
+  LvS-103 Elverk already use. That class choice is load-bearing: `UnitClass.LOGISTICS` is in the
+  ground planner's `_DEPLOYABLE_UNIT_CLASSES`, so the bowsers ride to the FLOT with the cargo
+  trucks (realistic, and identical to the existing Ural/M818 behaviour), while `UnitClass.POWER`
+  is in neither `FRONTLINE_UNIT_CLASSES` nor `_DEPLOYABLE_UNIT_CLASSES` — a diesel generator never
+  marches to a front line.
+- **3 new position groups in `S-300_Site.miz`** — `S-300 Site Logistics` (the slot that was dead),
+  `S-300 Site Fuel`, `S-300 Site Power`, two positions each, dispersed off the flanks of the
+  battery and clearing every existing unit by ≥50 m. Positions are appended, so the template origin
+  (`S-300 Site AAA-0`) is unmoved and every existing offset is byte-identical. pydcs round-trips
+  this template losslessly (all-vanilla units, verified before and after).
+- **Fuel and Power are SEPARATE slots, and must stay separate.** A unit group fields exactly one
+  type, so a single merged "support" slot would generate two bowsers *or* two generators, never one
+  of each.
+- **Layout yamls**: the three S-300-family layouts gain the Fuel slot (`optional: true`,
+  `fill: false`, explicit `unit_types`) and — except the SA-2/SA-3 Mixed Site, since the 5I57A is
+  S-300 kit — the Power slot.
+- **Preset groups, not faction jsons.** The 11 S-300-family preset groups gain the cargo trucks +
+  refuellers + DPS in their `units:` list, which is what makes `has_access_to_dcs_type` pass. This
+  is the **Patriot precedent** — `MIM-104_Patriot_Stationary.yaml` already carries its own EPP
+  (class Power) and an Oshkosh HEMTT support truck the same way — and it means **no faction json
+  changed**.
+
+**Fixed in passing — the same bug, elsewhere.** `Sky_Sabre_Battery.yaml` declared its point-defence
+slot as `Point Defense` while the group in `8_Launcher_Circle.miz` is called `PD`, so **a Sky Sabre
+battery has never fielded any SHORAD**. Renamed to `PD`.
+
+**Headless-verified** end to end on Red Tide: all 7 generated S-300 sites now field a cargo truck +
+a refueller + 1–2 diesel power stations, and the theater carries 26 refuellers + 12 power stations
+where it previously carried none.
+
+**Balance.** ~+18 to an S-300 site that already costs ~230 (the radars alone are 24–30 each), so
+under 8 %. The support units are unarmed soft targets: they add strike value and a legible
+"there is a real battery here" read, not threat. `max_threat_range` is unchanged, so SEAD/DEAD
+targeting is unaffected.
+
+Files: `resources/units/ground_units/{ATZ-10,ATZ-5,ATZ-60_Maz,ATMZ-5,TZ-22_KrAZ,M978 HEMTT
+Tanker,generator_5i57}.yaml`, `resources/layouts/anti_air/{S-300_Site.miz,S-300_Site.yaml,S-300 Site
+(Single Radar).yaml,SA-2-SA-3 Mixed Site.yaml,Sky_Sabre_Battery.yaml}`, `resources/groups/` (11
+S-300-family presets). Tests: `tests/armedforces/test_sam_support_vehicles.py` (58 — registration,
+the Power-never-deploys invariant, slot presence, template position counts, the fuel/power
+separation, preset access, and a **repo-wide dead-slot guard** that fails if *any* anti-air layout
+declares a slot no group in its `.miz` is named after). Checklist: **B43**.
+
+
+## Unit-coverage sweep — 2026-08-04
+
+The §85 investigation raised an obvious follow-up from the DM: *"scrub my local install of all
+units we can use. There is SO many support vehicles we are not utilizing."* He was right, and the
+gap was measurable.
+
+**The tool.** `tools/audit_unit_coverage.py` diffs what the engine can place against what the fork
+has registered. It is a *coverage* report (does a yaml exist at all), the complement of
+`tools/verify_mod_export.py`, which checks that a registered unit's *values* still match the live
+install. Run it after any DCS or mod-pack update:
+
+```
+python tools/audit_unit_coverage.py --csv coverage.csv
+```
+
+The list is pydcs's `vehicle_map`/`ship_map` **with `pydcs_extensions` loaded** (importing `game`
+is what pulls them in), so every mod pack the fork registers is included — the 2026-08-04 run
+confirmed all eight CH packs, HDS, VWV, Massun92 and ColdWar are covered. A mod installed with *no*
+`pydcs_extensions` entry is invisible to this tool; that is a different gap whose fix is an
+extension module, not a unit yaml.
+
+**Baseline: 130 of 834 placeable units had no yaml.** The worst categories were exactly the ones
+the DM named — EW/jamming/comms at **29 %** usable, power at 67 %, support trucks at 68 %,
+command & control at 80 %.
+
+**Registered in this sweep (35 units), registration-only.** A unit still reaches a mission only
+through a faction roster or a preset group, so **none of this changes generation on its own** —
+`Faction.accessible_units` is built from the faction's own lists plus its preset groups, and a unit
+in neither is unreachable. Wiring each category into layouts/factions is a deliberate later pass.
+
+| Group | Units | Class chosen |
+|---|---|---|
+| Electronic warfare | 34Ya6E Gazetchik-E decoy, 2× "Radio jammer" (`GPS_Spoofer_Blue`/`Red`) | new `UnitClass.ELECTRONIC_WARFARE` |
+| Command & control | GCI station (KRU), Ural-375 PBU, ZIL-131 KUNG, SKP-11 mobile ATC, Predator GCS, Predator Trojan Spirit, fire-control bunker, AN/FPS-117 ECS | `CommandPost` |
+| Power | APA-5D (Ural-4320), APA-80 (ZIL-131) | `Power` |
+| SAM components | RD-75 Amazonka | `SpecializedRadar` |
+| Support / airfield | S-75 ZIL transloader, KrAZ-6322, MAZ-6303, ZIL-135, ZIL-4331, GD-20 lift truck, 4 crash tenders, civil ATZ-5 | `Logistics` |
+| Ships | 4 VWV destroyers (Radford, Everett F. Larson, Maddox TI, Epperson), Solon Turman, USNS Card, CVN-70 Carl Vinson, Tango SSK, Zvezdny, SS Atlantic Conveyor | real hull classes |
+
+**Class choices are load-bearing, and the constraint is which classes a layout selects by.** A
+`unit_classes:` slot pulls from the faction's accessible units, so registering under a
+layout-referenced class *can* change generation. `Power` and the new `ElectronicWarfare` are
+referenced by **no** layout, so they are inert by construction. `CommandPost` is referenced, but
+every CP slot in the shipped layouts is `optional: true, fill: false` — and `ForceGroup.from_layout`
+skips an `optional and not fill` slot outright while `initialize_for_faction` only fills when
+`fill` is set — so a C2 truck cannot displace a proper SAM command post. `Logistics` *is* filled
+from the faction, which is the intended path: these trucks are meant to reach generic SAM logistics
+slots and supply convoys once a faction rosters them.
+
+**One landmine closed on the way.** `ControlPoint.runway_is_operational()` whitelists carrier hulls
+by type, and a carrier missing from it is treated as **sunk** the moment a campaign bases on it.
+CVN-70 was not in the list, so registering it would have shipped a trap for whoever first authored
+a Vinson CP. Added.
+
+**After the sweep: 95 unregistered**, and the remainder is deliberate — railway rolling stock,
+buses and civilian cars, VAP scenery props (bamboo houses, ammo boxes, barrels), the drivable M92
+ramp tugs, ME payload placeholders (`PL-5EII Loadout` et al.), and smoke/field-hide pseudo-units.
+Refuellers, command & control, power and radar/sensor are all at **100 %**.
+
+**Unverified, flagged deliberately:** DCS calls `GPS_Spoofer_Blue`/`Red` a *"Radio jammer"* and
+gives them a 50 km detection range, but their actual in-sim effect is unconfirmed. The name may be
+aspirational. Confirm in a test mission before building anything (§51 comms jamming or §70 COMINT)
+on top of them — the unit yamls say so too. **The GPS spoofer pair is deliberately excluded from
+the wiring pass below** (DM call, 2026-08-04 — another agent owns their wiring; registration-only
+here).
+
+**The wiring pass (same day, DM call — "start by editing the stuff we touch most often").** The
+registration batch was deliberately inert; this makes the most-played generation paths field the
+kit. Three edits, most-touched first:
+
+1. **The dedicated legacy Soviet SAM layouts** — SA-2 Battery ×4, SA-3 Site ×2, SA-5 Legacy ×4,
+   SA-6 Reinforced ×2 (Red Tide's front belt, the Vietnam set, Desert Storm's KARI crust, the COIN
+   SA-6s) — get the **1960s refuellers (ATZ-5 / ATZ-60 / TZ-22)** appended to their existing
+   Logistics `unit_types` whitelist. These layouts whitelist by type, so faction rosters can't
+   reach them; the trio is 1965–67, era-safe for every campaign that can field these SAMs (which is
+   also why ATZ-10/ATMZ-5 stay out of the *shared* layouts — no ground-unit date gating exists to
+   stop a 1968 site rolling 1980 kit). **One slot rolls ONE type**, so a legacy site now fields
+   trucks *or* a bowser — the trucks-AND-fuel-AND-power spread stays an S-300 signature (separate
+   slots, §85); giving the legacy sites the same would mean template surgery across six shared
+   `.miz` files, deferred.
+2. **The two C2-less generic-layout Soviet presets** — SA-2_ZSU and HQ-2 — carry the **ZIL-131
+   KUNG**, which fills the generic launcher layouts' dormant `fill: false` Command Post slot (only
+   preset-carried CommandPost units render there; SA-11/SA-17/Hawk already field their real C2).
+   Yankee Station's PRC HQ-2 ring is the first customer. **No Logistics units were added to
+   generic-layout presets, on purpose**: the Logistics slot there is `fill: true`, and a preset
+   Logistics unit makes `has_unit_for_layout_group` skip the faction fill — i.e. it would
+   *displace* the faction's own trucks rather than join them. Faction rosters serve that slot.
+3. **Era-correct refuellers on the active campaigns' factions** (`logistics_units`, 10 files) —
+   Red Tide red gets all five Soviet bowsers (≤1980), RT blue / DS91 NATO / OEF / OIR / USA 2020
+   get the M978 (1985), Vietnam 1970 the 60s trio, Iraq 1991 the full Soviet set, and **the two
+   COIN insurgent factions get the civilian-liveried ATZ-5** (`ural_atz5_civil`) — a fuel bowser
+   on the ratline. Roster membership is what reaches **supply convoys** (§50 ambient / §35 trail),
+   **FLOT LOGI groups**, and **every generic-layout Logistics slot** via faction fill. This
+   honours the DM's §85 convoy call ("refuellers in convoys — yes, realistic").
+
+**Headless-verified on Red Tide**: all 10 factions resolve their additions (the loader silently
+drops unknown unit strings — now test-guarded), and a fresh game generated **11 of 17 legacy SAM
+sites with a refuelling section** (16 bowsers) plus 3 blue M978s, on top of §85's S-300
+fuel/power. NEW game required (generation-time). Tests extended in
+`tests/armedforces/test_sam_support_vehicles.py` (82 — whitelist presence without truck
+displacement, faction resolution, the KUNG-reaches-the-CP-slot proof). Checklist: **B44**.
+
+**Deferred from the wiring pass:** HQ-22's support section (no Logistics slot; a Chinese battery
+deserves CH-pack kit, not Russian bowsers), power/fuel *slots* at non-S-300 sites (template
+surgery), EWR-site support sections, and any use of the GPS spoofers (other agent) or the
+Gazetchik-E decoy (needs its own design — likely §79-adjacent).
+## §86 — GPS jamming (satellite-guided weapons go long)
 
 **The constraint that shapes everything.** DCS models **no GPS receiver**. No scripting API
 degrades a jet's navigation, a weapon's guidance quality, or a JDAM's CEP — which is why every
@@ -8206,7 +8387,7 @@ Files: `game/fourteenth/gps_jamming.py`, `game/dcs/groundunittype.py`,
 `resources/plugins/gpsjamming/`. Tests: `tests/fourteenth/test_gps_jamming.py` (34) +
 `tests/missiongenerator/test_gpsjammingluadata.py` (4) +
 `tests/lua/test_gpsjamming_runtime.py` (11). Design note:
-[`414th-gps-jamming-notes.md`](design/414th-gps-jamming-notes.md). Checklist: **B43**.
+[`414th-gps-jamming-notes.md`](design/414th-gps-jamming-notes.md). Checklist: **B45**.
 
 
 ## Code audit fixes — 2026-07-07

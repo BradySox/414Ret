@@ -1,0 +1,9 @@
+class: SpecializedRadar
+description: The RD-75 Amazonka radio rangefinder of an S-75 (SA-2) site, providing range data
+  to the Fan Song engagement radar.
+introduced: 1960
+origin: USSR/Russia
+price: 12
+role: Radio Rangefinder
+variants:
+  "SA-2 RD-75 Amazonka": null

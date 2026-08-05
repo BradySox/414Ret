@@ -7,5 +7,15 @@ units:
   - SAM SA-20B S-300PMU2 CP 54K6E2
   - SAM SA-20B S-300PMU2 TR 92H6E(truck)
   - SAM SA-20B S-300PMU2 LN 5P85SE2
+  # 414th: battery support section (cargo / fuel / power slots)
+  - Truck GAZ-66
+  - Truck KAMAZ 43101
+  - Truck Ural-375
+  - Refueler ATZ-5
+  - Refueler ATZ-10
+  - Refueler ATMZ-5
+  - Refueler ATZ-60 (MAZ-7410)
+  - Refueler TZ-22 (KrAZ-258B1)
+  - Diesel Power Station 5I57A
 layouts:
   - S-300 Site

@@ -95,6 +95,31 @@ groups:
         - Ural-375
         - Ural-4320-31
         - Ural-4320T
+    # 414th: the battery's refuelling section and its diesel power stations.
+    # Fuel and power are SEPARATE slots because a unit group fields exactly one
+    # type -- a single mixed slot would yield two bowsers or two generators,
+    # never one of each. Both are optional and fill: false, so a faction with
+    # neither simply skips them.
+    - name: S-300 Site Fuel
+      optional: true
+      fill: false
+      unit_count:
+        - 1
+        - 2
+      unit_types:
+        - ATZ-5
+        - ATZ-10
+        - ATMZ-5
+        - ATZ-60_Maz
+        - TZ-22_KrAZ
+    - name: S-300 Site Power
+      optional: true
+      fill: false
+      unit_count:
+        - 1
+        - 2
+      unit_types:
+        - generator_5i57
   - PD:
     - name: S-300 Site SHORAD1
       optional: true

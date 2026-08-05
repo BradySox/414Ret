@@ -73,7 +73,8 @@
     "M270 Multiple Launch Rocket System"
   ],
   "logistics_units": [
-    "Truck M818 6x6"
+    "Truck M818 6x6",
+    "Refueler M978 HEMTT"
   ],
   "infantry_units": [
     "Infantry M249",

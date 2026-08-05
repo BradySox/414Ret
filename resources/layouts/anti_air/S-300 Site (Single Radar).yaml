@@ -88,6 +88,28 @@ groups:
         - Ural-375
         - Ural-4320-31
         - Ural-4320T
+    # 414th: refuelling section + diesel power stations. Separate slots because a
+    # unit group fields exactly one type. See S-300_Site.yaml.
+    - name: S-300 Site Fuel
+      optional: true
+      fill: false
+      unit_count:
+        - 1
+        - 2
+      unit_types:
+        - ATZ-5
+        - ATZ-10
+        - ATMZ-5
+        - ATZ-60_Maz
+        - TZ-22_KrAZ
+    - name: S-300 Site Power
+      optional: true
+      fill: false
+      unit_count:
+        - 1
+        - 2
+      unit_types:
+        - generator_5i57
   - PD:
     - name: S-300 Site SHORAD1
       optional: true

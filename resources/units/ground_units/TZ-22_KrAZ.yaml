@@ -1,0 +1,11 @@
+class: Logistics
+description: Semi-trailer fuel tanker drawn by a KrAZ-258B1 tractor, the largest
+  Soviet mobile fuel carrier and the usual means of replenishing a deployed
+  regiment's diesel power stations.
+introduced: 1967
+manufacturer: KrAZ
+origin: USSR/Russia
+price: 3
+role: Heavy Fuel Semi-Trailer
+variants:
+  Refueler TZ-22 (KrAZ-258B1): null

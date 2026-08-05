@@ -34,7 +34,11 @@ groups:
       unit_classes:
         - Logistics
   - PD:
-    - name: Point Defense
+    # 414th: must be "PD" -- the slot name is matched against the group name in
+    # 8_Launcher_Circle.miz, and a name with no matching group is silently
+    # dropped. As "Point Defense" this slot never loaded, so a Sky Sabre battery
+    # fielded no SHORAD at all.
+    - name: PD
       sub_task: PointDefense
       optional: true
       unit_count:

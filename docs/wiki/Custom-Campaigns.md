@@ -146,115 +146,40 @@ the source of truth — edit the script and re-run it; a hand edit to the `.miz`
 next build. Hand-authored campaigns (Red Tide, 1968 Yankee Station) still edit the `.miz` directly.
 
 <a name="authoring-the-campaign-layer"></a>
-## Authoring the campaign layer (phases, ROE, political will)
+## Removed: phases, ROE zones, and political will
 
-A campaign can author the full **[phases / ROE / will machinery](Campaign-Phases-and-ROE)**
-straight from its YAML. All of it is optional — omit everything and the campaign runs the
-default inferred phase arc.
+Earlier versions of this fork let a campaign author a `phases:` arc, ROE
+restricted/free-fire zones, and a `will:` political-will profile. **All three were removed
+on 2026-07-21** along with the war economy they fed, and the settings and YAML keys that
+drove them no longer exist.
 
-### `phases:` — an authored arc
+If you are reading an older campaign YAML or an old design note, treat those blocks as
+historical: they are ignored at load, not honoured. Do not re-add them.
 
-```yaml
-phases:
-  - key: rolling_thunder
-    name: Rolling Thunder
-    narrative: >-
-      Shown in the ribbon and the arc expander.
-    emphasis: interdiction        # planner lean: e.g. interdiction | offensive
-    min_turn: 0
-    objectives:                   # optional live checklist in the arc expander
-      - Interdict the flow south  # plain line, or a tickable condition:
-      - text: Retake FOB Frontenac
-        done_when:
-          capture_cp: FOB Frontenac
-    restricted_zones: [...]       # see below
-    locked_targets: [factory, power, oil, airfield]   # RESTRICTED-badged classes
-    red_tempo:                    # optional red answer to the phase
-      trail_surge: 2.0            # convoy budget multiplier (also: stance pulse, resolve_regen)
-    advance_when:                 # accelerates past min_turn
-      blue_will_below: 75         # or red_resolve_below / capture_cp: <CP name>
-```
+| Removed | What replaced it |
+|---|---|
+| `phases:` and the inferred phase arc | Nothing — campaign shape is expressed through the laydown, supply routes, and squadron availability |
+| ROE restricted / free-fire zones | Nothing — the map's ROE overlays went with it |
+| `will:` profiles, BLUE Political Will / RED Regime Resolve, the negotiation ending | An authored `victory:` block — explicit win/lose conditions (captured CPs, destroyed targets, territory or strength thresholds) instead of a meter. Currently used by Operation Baltic Fury; not yet documented on this wiki |
 
-Phases advance sequentially and forward-only: the next phase's `min_turn`, or the current
-phase's `advance_when`, whichever fires first.
+## The `settings:` block
 
-### ROE zones — three shapes, or draw them in the ME
-
-A `restricted_zones:` entry is one of:
-
-```yaml
-- center: Kutaisi        # circle around a control point…
-  radius_nm: 15
-  name: Hanoi sanctuary (RP VI-A)
-- x: -209658             # …or a circle around raw coordinates (towns aren't CPs)
-  y: -127043
-  radius_nm: 5
-  name: Sangin -- population center
-- shape: box             # rotatable rectangle
-  name: KB GERESHK
-  x: -237656
-  y: -151564
-  width_nm: 20
-  height_nm: 10
-  heading: 41            # degrees clockwise from north
-- shape: corridor        # buffered lane along a path
-  name: Laos trail (off limits under Rolling Thunder)
-  width_nm: 12
-  path:
-    - {x: -266003, y: 623883}
-    - {x: -280620, y: 621859}
-    - {x: -288780, y: 620946}
-- from_drawing: "PRC border ring"   # read from a NAMED shape drawn in the campaign .miz
-```
-
-`from_drawing` reads a **named Circle or free-form Polygon** you drew in the DCS Mission
-Editor's drawing tools — draw the zone where you can see the terrain instead of typing
-coordinates. (Rectangles/Ovals aren't read yet — draw a box as a 4-point polygon. Unnamed
-drawings are skipped; a missing name logs and degrades, never crashes.)
-
-A phase can instead author **`free_fire_zones:`** (same shapes) to invert the polarity — the
-whole map goes weapons-hold for fixed strikes *except* inside a zone (the COIN kill-box model).
-Restricted zones then carve no-strike holes inside the pockets. Front-line forces and convoys
-are never gated in either polarity.
-
-### `will:` — a campaign-authorable political-will profile
-
-The Washington/Hanoi framing and every feed weight are only the defaults. A `will:` block
-(sibling of `phases:`) relabels the meters and banners and re-weights every feed:
-
-```yaml
-will:
-  blue:
-    label: The Coalition's mandate
-    exhaustion_title: The Coalition withdraws
-    exhaustion_body: >-
-      The mandate is spent -- the capitals order the drawdown…
-  red:
-    label: the insurgency's momentum
-    exhaustion_title: The insurgency collapses
-    exhaustion_body: >-
-      The caches are ash, the ratline is cut…
-  weights:
-    blue_airframe_loss: 2.0
-    blue_roe_violation: 1.0
-    blue_passive_regen: 0.0      # time itself drains the mandate
-    red_ground_unit_lost: 0.05   # body count worth ~nothing (COIN)
-    red_cache_lost: 4.0          # caches are the currency
-    red_passive_regen: 1.0
-    # ...plus base losses, POWs, ship losses per side
-```
-
-Any parse failure degrades to the Vietnam defaults, so a will block can never break a campaign
-load.
-
-### `settings:` preseeds
-
-The `settings:` block flips feature toggles on for anyone who selects the campaign — the four
-Vietnam campaigns preseed the [Vietnam Ops](Vietnam-Ops) suite, and Enduring Resolve preseeds
-`coin_insurgency`, `vietnam_convoy_interdiction` (the ratline), `vietnam_political_will`,
-`high_digit_sams`, and the carrier pair `long_range_carrier_ops` + `max_mission_range_planes`
-(widen the range gate so a standoff carrier's squadrons are assignable at all — see
+The `settings:` block flips feature toggles on for anyone who selects the campaign, so a
+campaign ships with the mechanics it was designed around already enabled. Five campaigns
+currently preseed parts of the [Vietnam Ops](Vietnam-Ops) suite (1968 Yankee Station,
+Velvet Thunder, Red Flag 81-2, and both COIN campaigns), and Enduring Resolve additionally
+preseeds the COIN stack (`coin_insurgency`, `coin_reinfiltration`, `coin_ied`, `coin_hvt`,
+`coin_dispersed_cells`, …), `high_digit_sams`, and the carrier pair
+`long_range_carrier_ops` + `max_mission_range_planes` (widen the range gate so a standoff
+carrier's squadrons are assignable at all — see
 [Air Defense and the Air War](Air-Defense-and-the-Air-War#long-range-carrier-ops)).
+
+A preseed only sets the **default** for a new campaign — the player can still change any of
+it in Settings before starting.
+
+> A setting that a campaign preseeds but the feature's **plugin** is left unticked is a
+> silent no-op: the toggle is on and nothing runs. If a campaign depends on a Lua feature,
+> preseed the plugin too.
 
 ## Authoring and importing a campaign
 
@@ -326,9 +251,11 @@ is rooted in the real 1968 war. It demonstrates a different toolbox:
   `russianmilitaryassetspack` (`[CH]` armor), `ov10a_bronco`, `a4_skyhawk`, etc.
 - **Carrier-capable airframes only on carriers** — A-4E/A-6/F-8E/E-2C/RA-5C, not the land-based
   DCS F-4 (a real gotcha; see [Squadrons and Pilots](Squadrons-and-Pilots)).
-- **The whole Vietnam Ops + campaign-layer suite** — Arc Light, flak, naval gunfire, convoy
-  interdiction, airbase harassment, Super Gaggle, the political-will economy, and the Rolling
-  Thunder → Linebacker II ROE arc, all pre-seeded in the `settings:` + `phases:` blocks.
+- **The whole Vietnam Ops suite** — Arc Light, flak, naval gunfire, convoy interdiction,
+  airbase harassment, Super Gaggle — pre-seeded in the `settings:` block, plus a
+  `red_tempo:` schedule so Hanoi answers the campaign clock. (It also carried the
+  political-will economy and a Rolling Thunder → Linebacker II ROE arc; both were removed
+  on 2026-07-21 — see [Removed](#removed-phases-roe-zones-and-political-will) above.)
 
 Design log: `docs/dev/design/414th-vietnam-retribution-notes.md` (framing) +
 `docs/dev/design/414th-vietnam-ops-notes.md` (the mechanics). See also
@@ -342,14 +269,8 @@ describes, used in anger:
 
 - **A generated `.miz`** (`tools/build_coin_enduring_resolve_miz.py`) — the stronghold/cache
   laydown lives in the script's tables, never in hand edits.
-- **A 3-phase authored arc** (Disrupt → Clear and Hold → Break the Momentum) with
-  `capture_cp`/`red_resolve_below` advance conditions, live objectives, and a `red_tempo:`
-  trail surge.
-- **Inverted ROE**: permanent circle `restricted_zones` over the nine real towns (coordinate-
-  anchored — towns aren't CPs) plus growing `free_fire_zones` kill boxes per phase, including a
-  rotated box up the Route-611 green zone.
-- **A fully rewritten `will:` profile** — relabeled meters, inverted weights (body count ≈ 0,
-  caches 4.0, no blue passive regen).
+- **A `red_tempo:` schedule** — turn-windows that surge the insurgent ratline and raise red's
+  ground stance, so the campaign's pressure changes over its run.
 - **Corridor-standard `supply_routes`** authored from real road lat/lons via
   `tools/supply_route_geo.py` (Highway 1, Route 611, the Uruzgan road).
 - **`settings:` preseeds** for the whole COIN stack plus the carrier pair
@@ -360,7 +281,8 @@ Design logs: `docs/dev/design/414th-coin-*.md`.
 
 ## See also
 
-- [Campaign Phases and ROE](Campaign-Phases-and-ROE) — what the authored blocks drive at runtime
+- ~~Campaign Phases and ROE~~ — the feature was removed on 2026-07-21; that page is retained
+  only as a record of how it worked
 - [Custom Factions](Custom-Factions) — who fights and with what units
 - [Custom Loadouts](Custom-Loadouts) — per-aircraft default payloads
 - [Lua Plugins](Lua-Plugins) — the in-mission scripting layer

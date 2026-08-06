@@ -146,8 +146,22 @@ flown features and coupling them to an unflown one buys nothing.
   simply disabled".
 - **200 m miss at full strength.** A clean miss that still reads as "the bomb
   went long", not "the bomb vanished".
-- **400 kg miss explosion**, deliberately below a real JDAM warhead: a jammed
-  bomb is a miss, not a relocated hit.
+- **The miss detonates with the store's OWN warhead** (2026-08-05, DM ask: "can
+  we make this scale with the size of the bomb?"). It used to be a flat 400 kg
+  for everything, so a 500 lb GBU-38 and a 2000 lb GBU-31 made the same bang.
+  The runtime now reads `desc.warhead.explosiveMass` off the weapon descriptor --
+  kg of TNT equivalent, exactly the unit `trigger.action.explosion` wants -- and
+  detonates with that, scaled by `missPowerScalePct` (default 100 = the full
+  warhead, which is what a bomb landing off-target actually does). `mass` is the
+  next best thing if `explosiveMass` is absent; a store reporting neither (a mod
+  weapon with a thin descriptor) falls back to the flat `missPower`, which is
+  precisely the pre-scaling behaviour, so the change can only add fidelity.
+  Measured effect: the small JDAM drops 400 -> ~87 kg while the big one stays
+  ~430, i.e. it mostly stops small bombs over-cratering.
+  **Unverified in-install:** this DCS build ships the weapon DB packed, so the
+  exact descriptor field could not be read from disk. The runtime logs which
+  path it took ("reports no warhead mass -- miss uses the fallback"), so the
+  in-game pass confirms it in one line of dcs.log.
 
 ## Making the jammer huntable (RWR / HARM) — 2026-08-04
 
@@ -283,6 +297,30 @@ ARM-flagged radar, is a 1950s SA-2 Fan Song.
 identical hole naval groups had until `generate_navy` was routed through
 `get_unit_group_for_task` (2026-08-03). Fixed the same way; upstream-carve
 candidate, and independent of this feature.
+
+## The radar was removed — 2026-08-05
+
+The 2026-08-04 pass added an ARM-flagged acquisition radar to every jamming site so
+SEAD could prosecute it. The DM reversed that: *"why are we generating two radars
+anyways. The EW jammers do not need to be targetable by harms."*
+
+Correct, and it is the realistic answer. A GPS jammer transmits in **L-band**; no
+RWR covers it and no anti-radiation seeker homes on it. DCS agrees — the stock
+unit declares `GT_t.ws = 0` with no `GT.WS`, `GT.Sensors` or
+`searchRadarFrequencies`. Making it HARM-able was the *unrealistic* option, taken
+to solve a findability problem that recon already solves.
+
+The site is now a **strike target**: found by recon, killed with bombs, kept from
+being a free kill by its point defence.
+
+Two costs went with it:
+
+* the second radar in every site (and the §60 doubling it dragged in), and
+* the radar in the faction roster, which — being a `SearchRadar` class — leaked
+  into unrelated SAM sites in roughly one game in five. **Only the jammer is
+  granted now**, and `ElectronicWarfare` is referenced by no layout, so it can
+  never be faction-filled anywhere. The trade-off recorded in the access-trap
+  section above is therefore gone entirely, not merely accepted.
 
 ## What the player does about it
 

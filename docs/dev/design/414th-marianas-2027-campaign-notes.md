@@ -155,6 +155,19 @@ recon passes, and §3 `concealed_enemy_forces` means an un-scouted site draws a 
 "suspected activity" circle rather than an exact marker. Together that is an actual hunt: the
 launcher is never quite where the last photo froze it.
 
+> ⚠️ **FLOWN 2026-08-05: the scoot half of this does NOT happen.** Across two missions
+> (Tacviews `Tacview-20260805-190738` + `-203549`) **all nine `CH_CJ10` launchers of all three
+> sites moved 0.00 km** — while the drivable vehicles sharing those groups (the §85 refuellers,
+> the PGZ-09/PGL-625/LD-3000 SHORAD) jittered only 0.05–0.31 km, i.e. the group is **pinned by
+> an undrivable member**, with `mobile_missile_relocation` and the `mobilemissiles` plugin both
+> preseeded and routes being pushed the whole time. `CH_CJ10` is now in §49's
+> `IMMOBILE_UNIT_IDS`, so the sites are no longer routed at all (no futile pushes, no ground-AI
+> churn) — which makes the behaviour honest rather than fixing it. **As authored, the three
+> PLARF sites are stationary targets**: §3 concealment still hides them until scouted, but once
+> photographed the coordinate stays good. Restoring the hunt needs launcher hardware DCS will
+> actually drive; the roster's DF-21D and YJ-12B are the obvious candidates to test next, since
+> nothing yet establishes whether they drive any better than the CJ-10.
+
 **Why nothing north of Saipan.** The Marianas landmap only covers **Guam, Rota, Tinian and
 Saipan** — Anatahan, Pagan, Agrihan and Uracus are all `is_in_sea` as far as
 `ConflictTheater.is_on_land` is concerned. This is a pre-existing property of the terrain

@@ -480,6 +480,16 @@ function WeaponFake:getVelocity()
     return self.velocity or { x = 0, y = 0, z = 0 }
 end
 
+-- Weapon:getDesc() -- the gpsjamming plugin reads desc.warhead.explosiveMass so a
+-- miss detonates with the store's own warhead. A spec with no warhead models the
+-- thin-descriptor case (a mod store), which must fall back to the flat power.
+function WeaponFake:getDesc()
+    if self.warhead == nil then
+        return {}
+    end
+    return { warhead = self.warhead }
+end
+
 -- Weapon:getTarget() -- the unit a guided shot is aimed at (nil for dumb ordnance),
 -- set via fireShot's optional `target` group name.
 function WeaponFake:getTarget()
@@ -505,6 +515,7 @@ function Harness.makeWeapon(spec)
         velocity = spec.velocity,
         exists = spec.exists,
         vanishAt = spec.vanishAt,
+        warhead = spec.warhead,
         bornAt = Harness.now,
     }, WeaponFake)
 end

@@ -48,7 +48,19 @@ COASTAL_DEFENSE_CATEGORY = "coastal"
 #: first scoot-tick minute of the 2026-07-17 Scenic Route fly, ANTIFREEZE for
 #: the whole mission). A group containing any of these is never emitted;
 #: mod coastal sites with genuinely mobile launchers still scoot.
-IMMOBILE_UNIT_IDS = frozenset({"hy_launcher", "Silkworm_SR"})
+#:
+#: ``CH_CJ10`` joined on the 2026-08-05 Marianas evidence: across two flown
+#: missions all NINE launchers of all THREE PLARF sites moved **0.00 km** --
+#: while the drivable vehicles sharing those groups (the §85 bowsers, the
+#: PGZ-09/PGL-625/LD-3000 SHORAD) only jittered 0.05-0.31 km, which is the
+#: signature of a group pinned by an undrivable member rather than one that was
+#: never routed. The sites fired 25+ CJ-10s and then sat for the remaining ~25
+#: minutes, so it reads as the same post-fire pin already recorded for the
+#: CH_Shahed136 -- but on this hardware the site fires early every mission, so
+#: "pinned after firing" and "never scoots" are the same thing in play.
+#: ``CH_Shahed136`` is deliberately NOT listed: its never-fired sites drive
+#: fine, so excluding it would kill a scoot that does work before the salvo.
+IMMOBILE_UNIT_IDS = frozenset({"hy_launcher", "Silkworm_SR", "CH_CJ10"})
 
 
 def populate_mobile_missiles_lua(

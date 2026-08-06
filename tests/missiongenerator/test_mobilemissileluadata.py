@@ -196,3 +196,26 @@ def test_immobile_silkworm_hardware_is_never_routed() -> None:
     )
     sites = _sites(_game([silkworm, radar_only, mobile], on=False, coastal=True))
     assert [s["groups"][0] for s in sites] == ["0092 | Mobile AShM"]
+
+
+def test_the_ch_cj10_plarf_launcher_is_never_routed() -> None:
+    """Flown 2026-08-05 on Marianas 2027: across two missions all nine CH_CJ10
+    launchers of all three PLARF sites moved 0.00 km, while the drivable
+    vehicles sharing those groups only jittered 0.05-0.31 km -- a group pinned
+    by an undrivable member. Routing it buys nothing but ground-AI churn, so
+    the whole site is excluded; a mobile missile site alongside still scoots."""
+    from types import SimpleNamespace as NS
+
+    def typed_unit(type_id: str) -> Any:
+        return NS(alive=True, is_vehicle=True, is_static=False, type=NS(id=type_id))
+
+    plarf = _tgo(
+        "missile",
+        "0007 | URCHIN (Missile)",
+        # The real flown composition: launchers + a §85 bowser + SHORAD.
+        [typed_unit("CH_CJ10"), typed_unit("ATZ-5"), typed_unit("CH_PGZ09")],
+        _Point(1.0, 2.0),
+    )
+    scud = _tgo("missile", "0008 | SCUD", [typed_unit("Scud_B")], _Point(5.0, 6.0))
+    sites = _sites(_game([plarf, scud], on=True))
+    assert [s["groups"][0] for s in sites] == ["0008 | SCUD"]

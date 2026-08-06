@@ -254,7 +254,10 @@ def test_every_region_key_is_a_real_terrain_name() -> None:
     for _, obj in inspect.getmembers(terrain_module, inspect.isclass):
         if issubclass(obj, Terrain) and obj is not Terrain:
             try:
-                real.add(obj().name)
+                # Every concrete terrain supplies its own name/projection/bounds, so
+                # it takes no arguments -- but mypy only sees the abstract base's
+                # 4-argument __init__.
+                real.add(obj().name)  # type: ignore[call-arg]
             except Exception:  # pragma: no cover - a terrain that needs an install
                 continue
 

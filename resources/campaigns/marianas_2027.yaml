@@ -15,6 +15,15 @@ recommended_player_income_multiplier: 1.2
 recommended_enemy_income_multiplier: 0.8
 
 settings:
+  # §86 GPS jamming: red EW companies deny satellite guidance within 15 nm of two sites
+  # (see ground_forces). A JDAM/JSOW/JASSM aimed at anything inside a bubble lands off the
+  # aimpoint -- standing off does not help, because the weapon flies through the bubble
+  # whatever range it was released from. Change delivery (laser/TV are untouched) or kill the
+  # jammer, which restores accuracy at once. Runs via the 'GPS jamming' LUA plugin, preseeded
+  # below -- the setting does NOTHING without it.
+  gps_jamming: true
+  plugins:
+    gpsjamming: true            # §86 runtime -- the setting does nothing without it
   # Every squadron fields its full authored strength on turn 1. This is a come-as-you-
   # are fight -- the war opened with a missile salvo on Guam, nobody spins up a training
   # pipeline first -- and with no land front the player cannot trade time for mass.
@@ -122,7 +131,20 @@ plugins:
 #      had to be fixed. Pinning alone still let SA-2 and HQ-2 spawn as base defences.
 #   2. The preset's task must match the marker's band, or the override is silently
 #      DISCARDED and the site rolls normally (StartGenerator.get_unit_group_for_task).
+# --- §86 GPS jamming: two jamming sites, pinned onto existing EWR markers.
+#     A standalone `GPS Jamming Site` deliberately, NOT a jamming-equipped SAM battery: it adds
+#     no SAM coverage, so it changes this campaign's air-defence balance as little as a jamming
+#     site can. The marker still generates a radar site (the ST-68U emits, so it stays on RWR
+#     and HARM-able and still feeds the IADS) -- it just also denies GPS within 15 nm.
+#     Two sites, the most widely separated free RED-owned EWR markers, so the bubbles cannot
+#     overlap (effects do not stack, so overlap would buy redundancy rather than depth).
+#     RED-owned matters: the override gate checks the units against the OWNING control
+#     point's faction, so a marker that binds to a blue CP is silently discarded and an
+#     ordinary EWR generates there instead.
+#     China's EW companies deploy with the PLARF/PLAAF belt on the northern islands.
 ground_forces:
+  Ground-20: GPS Jamming Site (Red)
+  FOB Bandar-e-Jask-1: GPS Jamming Site (Red)
   # Tinian: the long-range anchor, and the northern edge of what the player can be
   # allowed to face on turn 1. Tinian is 175 km from Andersen and the HQ-22 reaches
   # 170 km, so the envelope stops just short of Guam -- it dominates the Rota approach

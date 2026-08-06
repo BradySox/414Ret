@@ -7,21 +7,16 @@
 # the theater changes -- no existing layout is touched, and a campaign that does
 # not pin the preset never sees one.
 #
-# WHY IT CARRIES A RADAR. A GPS jammer emits in L-band, which no RWR covers and
-# no HARM homes on, so a jammer standing alone would be invisible to the tools a
-# pilot hunts emitters with -- findable only by recon, never prosecutable by
-# SEAD. Being on the RWR and being HARM-able are also two DIFFERENT DCS
-# attributes, and no one unit here has both:
+# IT CARRIES NO RADAR, ON PURPOSE (DM call 2026-08-05). An earlier cut paired the
+# jammer with an ARM-flagged acquisition radar so SEAD could prosecute the site.
+# That was dropped: a real GPS jammer transmits in L-band, which no RWR covers
+# and no HARM homes on, so making it HARM-able was the unrealistic option. It is
+# also what forced a second radar into every site and a radar into the faction
+# roster (where it leaked into unrelated SAM sites).
 #
-#   * `GT.WS.radar_type` puts a unit on the RWR.
-#   * `RADAR_BAND1/2_FOR_ARM` is what an anti-radiation seeker homes on -- and
-#     the EWRs do NOT carry it (verified: `EWR_FPS-117` declares only "EWR"; of
-#     the units in DCS's TechWeaponPack carrying the ARM bands, not one is an
-#     EWR).
-#
-# The acquisition radars carry both, so the site fields one: ST-68U "Tin Shield"
-# (red) / NASAMS MPQ-64F1 (blue). That is what makes this a real SEAD target
-# instead of a coordinate you have to go and bomb by hand.
+# So the site is a STRIKE target, not a SEAD target: you find it with recon (the
+# §3 fog surfaces it, and the kneeboard briefs it once scouted) and you kill it
+# with bombs. Its point defence is what stops that being free.
 #
 # TASK. EarlyWarningRadar, because `IadsRole.for_task` maps it to `EWR` -- the
 # ONE air-defence role MANTIS never holds dark under EMCON. A site tasked
@@ -48,16 +43,6 @@ groups:
       unit_types:
         - GPS_Spoofer_Red
         - GPS_Spoofer_Blue
-    # The ARM-able emitter (see above). unit_count 2, not 1: the ST-68U is a
-    # track-radar class, so the standing §60 redundancy contract applies -- one
-    # HARM must not blind the site outright, and two emitters make the SEAD fight
-    # here less one-and-done.
-    - name: GPS Jammer Radar
-      unit_count:
-        - 2
-      unit_types:
-        - RLS_19J6
-        - NASAMS_Radar_MPQ64F1
     # Point defence, so the site is not a free pass for anything that wanders
     # overhead. Optional: a faction with no SHORAD simply fields none.
     - name: GPS Jammer Security

@@ -542,7 +542,7 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
 - **Pass:** every bomb hangs in the **white** thermally-protected body, and each one still fuzes and detonates normally on release.
 - **Fail signature:** a green-bodied bomb on any of those jets (either the store has no visual section, or a key-only settings block isn't enough for that store — remove it, or fall back to a full ME-written block for that one store); a bomb that hangs correctly but **fails to detonate or arms wrong** (unexpected, since no fuze key is written — but if it happens, delete the added `settings` block, which restores the pre-2026-08-02 state exactly); a weirdly-deformed or half-drawn store (draw arg 57 means something else on that model — the AIM-9 seeker case, which is why the pass is gated to bomb CLSIDs only); or the setting silently ignored after a DCS/CJS update (re-check the store's declaration for `Get_Combined_` vs `Get_Fuze_`).
 
-### B38 — Mixed-hull ship groups · §80 · ☑ VERIFIED (2026-08-05, user recall `units-runway-generation-bf755e` — "we already said was good, this doc might be out of date?". **Provenance, honestly:** the doc was NOT out of date — `git log -S B38` over this file returns exactly ONE commit, `c37f48967`, the §80 feature commit that CREATED the row, so no earlier session ever recorded a verdict here. The pass is real but it was lost before it reached the repo, which is the standing "results get clobbered" failure mode: a verdict given in conversation and never written the same turn. Recorded now on the DM's recall) (was ☐ UNTESTED, built 2026-08-02 off the "ship preset layouts are very basic — stop them generating as all one single hull type" ask. A layout slot picked ONE unit type and stamped it into every position, so a carrier screen was four identical Burkes whatever the faction's roster held. The per-slot type dealing, the family restriction (a boat never pairs with a cruiser, two carriers never share a slot), the `MAX_MIXED_UNIT_TYPES` cap, the single-hull degrade and the naval-only gating are unit-tested in `tests/armedforces/test_naval_hull_mixing.py` (9 cases), and generation was headless-verified end to end on Tanker War 1988 / Pacific Repartee / Velvet Thunder. What no test can model is how DCS sails the resulting group.)
+### B38 — Mixed-hull ship groups · §80 · ☑ VERIFIED (2026-08-05, flown Marianas 2027, Tacviews `Tacview-20260805-190738` + `-203549`, session `pr-merge-code-audit-7e8b4c`: **20 of 26 naval groups generated MIXED** — e.g. `WEEVIL (Escort)` = PERRY ×2 + TICONDEROG + Arleigh Burke IIa, `GROUPER (Escort)` = CH_Type054B ×2 + Type052D + Type_054A, `WORM (Escort)` = CH_Arleigh_Burke_IIA + PERRY + Burke ×2 — while every carrier/LHA group stayed **uniform**, which is the designed single-unit flagship slot, and **no patrol boat, submarine or second carrier leaked into a surface screen** (the family restriction held). **The DCS-only unknown is ANSWERED: a mixed-class group sails as one formation.** The widest gap between any two hulls of the same group was measured at t=300/1500/2800 s and is **constant to 2 decimal places** across the whole 48-min mission — 1.80–2.16 km for the §87 racetrack groups, 2.89–2.90 km for 2-ship escorts, 16.96–17.00 km for the 4-ship carrier screens (their authored ring geometry) — so no drift, no bunching, no stragglers, and every unit of each group logged an identical path length. Mixed hulls at mixed top speeds held station exactly as uniform ones did.) (was ☐ UNTESTED, built 2026-08-02 off the "ship preset layouts are very basic — stop them generating as all one single hull type" ask. A layout slot picked ONE unit type and stamped it into every position, so a carrier screen was four identical Burkes whatever the faction's roster held. The per-slot type dealing, the family restriction (a boat never pairs with a cruiser, two carriers never share a slot), the `MAX_MIXED_UNIT_TYPES` cap, the single-hull degrade and the naval-only gating are unit-tested in `tests/armedforces/test_naval_hull_mixing.py` (9 cases), and generation was headless-verified end to end on Tanker War 1988 / Pacific Repartee / Velvet Thunder. What no test can model is how DCS sails the resulting group.)
 - **What CI cannot exercise:** whether a **single DCS group containing several ship classes** behaves — formation keeping and turn behaviour at mixed top speeds (a Perry is a knot slower than a Burke), station-keeping on the layout's positions with different hull lengths, and whether the group's waypoint/speed handling still works when the group leader is now a different class than before. Also unmodelled: the visual read of the screen from the cockpit, and the mixed group's threat behaviour (each hull brings its own SAM fit, which is the point).
 - **Setup:** any campaign with a carrier and a navy fielding more than one hull of a class — Tanker War 1988 (US CVN + Iranian navy) or Pacific Repartee (PLAN Type 052B/052C/054A) are the fastest. Start a **NEW game** (this is generation-time; existing saves keep their already-generated groups), then look at the carrier screen and any "Naval Group"/"Naval Two Ship" objective on the map and in the mission. Fly (or fast-forward) a turn and watch a group under way.
 - **Pass:** the carrier screen is a **mix** of hulls (e.g. Burkes + a Perry + a Ticonderoga) rather than four of one; the group sails as one formation at the slowest hull's speed without collisions, bunching or stragglers; the flagship of a carrier objective is still the carrier; and no group mixes a patrol boat or submarine into a surface combatant screen.
@@ -3086,6 +3086,7 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
   Loadouts).
 
 ### S2 — Mobile missile sites relocate (the SCUD hunt) · §49 · ☑ VERIFIED (2026-07-17 night fly: stagger + immobile-exclusion + give-up all proven live, FPS storm gone; one noted collateral — slow-recovering fired SCUDs can be given up before they finish packing)
+- **Hardware caveat found 2026-08-05 (flown Marianas 2027, Tacviews `Tacview-20260805-190738` + `-203549`): the CurrentHill `CH_CJ10` launcher does not drive, so a site built on it never scoots.** All **nine** launchers across all **three** PLARF sites moved **0.00 km** in both missions — not one metre — while the drivable vehicles sharing those groups (the §85 bowsers ATZ-5/TZ-22/GAZ-66 and the PGZ-09/PGL-625/LD-3000 SHORAD) jittered only 0.05–0.31 km, the signature of a group **pinned by an undrivable member** rather than one that was never routed. `mobile_missile_relocation` + the `mobilemissiles` plugin were both preseeded and `CH_CJ10` was not excluded, so the plugin was pushing routes the whole time. The sites fired 25+ CJ-10s and then sat for the remaining ~25 minutes, i.e. the same post-fire pin already recorded for `CH_Shahed136` — but this hardware fires early every mission, so "pinned after firing" and "never scoots" are the same thing in play. **Fixed by adding `CH_CJ10` to `IMMOBILE_UNIT_IDS`** so the site is never emitted (no futile pushes, no ground-AI churn); `CH_Shahed136` is deliberately NOT excluded because its never-fired sites do drive. **Consequence for T5: Marianas' authored "hunt the launchers" mechanic does not exist** — those three sites are stationary targets, and making them scoot needs launcher hardware DCS will drive.
 - **2026-07-17 night fly (fresh Scenic Route Merged turn 1 on the #631/#632 build, Tacview
   `Tacview-20260717-214932`, session `tacview-test-analysis-5bb161`): all three FPS fixes
   VERIFIED.** (1) **Stagger:** move onsets of the 16 never-fired/scooting sites spread
@@ -3338,6 +3339,11 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
 - **Deliberately not in scope:** rail interdiction (§35 is road-graph-only; new engine work).
 
 ### T5 — Marianas "Second Island Chain (2027)" campaign plays · Marianas 2027 campaign · ☐ UNTESTED (built 2026-08-02 — the fork's modern-day China campaign, forked from Fuzzle's Pacific Repartee laydown after a headless audit found that one loads clean but cannot be modernized in place (red airframes are hardcoded, so a `China 2020` swap upgrades ground/naval and leaves **J-7B** flying; no red AEW&C; 165 red vs 62 blue because six carrier blocks omitted `size:`; no `missile` TGO anywhere; zero feature preseeds). Guam is inverted to BLUE (Andersen's 194-slot ramp is the only one on the map that bases a heavy wing), two dormant NEUTRAL airfields are activated, and three PLARF sites are authored. Headless-verified end-to-end (18 CPs — BLUE 5 / RED 13 — 110 TGOs / 572 units, all 38 squadrons resolve, 164 blue vs 98 red airframes, the 3 missile TGOs binding Rota/Tinian/Saipan); CI-locked in `tests/fourteenth/test_marianas_2027.py` (23 tests incl. the parking-fit, tanker-boom/drogue-compatibility, ground_forces pin-band-match, no-blue-behind-the-chain, explicit-`size:` and mod-free-carrier-squadron invariants); design note `414th-marianas-2027-campaign-notes.md`. Miz is GENERATED by `tools/build_marianas_2027_miz.py` — never hand-edit it. NEW game required.)
+- **First flown evidence 2026-08-05** (Tacviews `Tacview-20260805-184424` / `-190738` / `-200950` / `-203549`, session `pr-merge-code-audit-7e8b4c`) — the campaign loads and fights, and four things were learned:
+  - **§49 shoot-and-scoot does NOT work here** — see the S2 hardware caveat: all 9 `CH_CJ10` launchers sat at 0.00 km, so the authored "hunt the launchers" signature mechanic is not in play. The three PLARF sites are stationary targets until the hardware changes.
+  - **§80 mixed hulls verified** (see B38) and **§87 station-keeping verified** on this laydown: pre-§87 generation had every authored naval group parked at 0.1 km; post-§87 the same groups sail 12–24 km on station with formation spacing unchanged.
+  - **A blue anti-ship package flew with no escort, CAP, tanker or AEW&C airborne and lost 4 of 8 F/A-18F** to red QRA (Su-30s from Rota, JF-17s from Tinian — §1 working). Worth a look at how that package was planned.
+  - **Red's planned air force never launched**: 15 airframes (J-11A ×6, H-6J ×6, **KJ-2000 ×2**) spawned `uncontrolled` on the Saipan ramp and only QRA scrambles flew, so red fought with zero AEW&C airborne and no standing BARCAP — undercutting the GCI posture the campaign is built around.
 - **What CI cannot exercise:** whether the §49 scoot actually works on islands this small; whether the DF-21D/CJ-10 kit renders and fires from a `missile` TGO here at all; whether Andersen's heavy squadrons fit their stands *dimensionally* (the parking-fit test counts slots, not the slot_version-2 dimensions the DS91 audit needed); whether the AI flies Air Assault captures across 90–200 km of open water; and the frame rate with three PLAN carrier groups up.
 - **Setup:** NEW game, "Marianas - Second Island Chain (2027)", USA 2020 vs **China 2027**, with the **Chinese Military Assets Pack**, **High Digit SAMs**, the **CJS Super Hornet** pack and the **F-22A Raptor** mod ticked (all arrive ticked — the campaign preseeds them). Fly or fast-forward two turns. Watch (1) a PLARF site across a turn boundary, (2) an Air Assault package sent at Rota, (3) the carrier-group magazine after a cruise-missile raid.
 - **Pass:** the three PLARF sites relocate **and stay on their island**; their launchers are China-pack DF-21D/CJ-10/YJ-12B rather than Soviet substitutes; §3 draws them as suspected-activity circles until reconned; Andersen's B-1B/KC-135/E-3A all spawn on real stands without clipping; an Air Assault package reaches and takes Rota; the §63 magazine debits and does not rearm; **Tinian fields an S-300PMU-2 and Rota an HQ-22** (the two pinned batteries) with no SA-2/SA-6/HQ-2 anywhere; the map reads as one south→north axis with nothing blue north of Guam; **every PLAN task group is screened by Type 055/052D** (250 km HHQ-9) rather than 4-8 km missile boats and corvettes; the carrier's EA-18G det and F/A-18E tanker spawn, and the Growler is auto-fragged into the §77 Escort Jammer slot ahead of a strike package.
@@ -3544,55 +3550,10 @@ mission. The kneeboard's `GPS` line appears only once recon has identified the s
 - The cue firing once per bomb instead of once per flight.
 - An un-scouted jammer appearing on the kneeboard (a recon-fog leak).
 
-**Second half of the pass — the site must be huntable.** The jammer truck itself emits nothing
-an RWR or ARM can see (DCS gives it no radar at all), which is why it is paired with the EWR.
-Confirm:
-- The site **paints your RWR** and a **HARM will lock it** — you are locking the EWR, which is
-  the intended design, not a bug.
-- **Kill the jammer truck specifically** (guns/CBU, not the radar) → the next JDAM hits
-  normally, even though the radar beside it is still alive and still on your RWR. This is the
-  per-unit liveness contract; a failure here means jamming survives its own jammer.
-- **Kill only the radar** → the site drops off RWR but **jamming continues**. Also correct.
-- Every EWR site in a campaign that does *not* use the jamming presets still generates with
-  **no** jammer (the slot is optional + `fill: false`).
-
-### B47 — Naval station-keeping racetracks · §87 · ☐ UNTESTED (built 2026-08-05; renumbered B46 → B47 on 2026-08-05 — §28's settings-surface row had been renumbered B40 → B46 the SAME day, so two rows briefly claimed B46 and a verdict recorded against "B46" would have landed on the wrong feature)
-
-**Setup:** any campaign with authored ship markers — **Marianas 2027** is the intended one
-(11/11 markers put on station, headless-verified, and its PLAN hulls are what prompted this).
-No setting and no plugin to enable; regenerate a turn and the ships carry routes. Also worth a
-pass on **1968 Yankee Station**, whose `Naval-3` deliberately gets **no** track (its spawn is
-not classified as sea) — that hull must still generate and fight exactly as before.
-
-**Pass criterion:** open the generated miz in the Mission Editor and each ship marker group
-shows **5 waypoints** — the spawn plus a 4-corner oval — with a *Switch Waypoint* action on the
-last one pointing at waypoint 2. In game, the group is **under way from mission start**, laps
-the oval (~48 min), and is never more than **~1.6 NM** from where the campaign map draws it.
-Carriers and LHAs are unchanged: they still steam into wind for recovery.
-
-**Judge the size in the air, not on paper.** The 3 × 1 NM oval was sized off the threat-ring
-measurement (displacement must stay a small fraction of a ship's own air-defence radius, which
-the map draws at the marker), so it is deliberately tight — a *station*, not a patrol area. The
-question to answer while flying it is whether that still reads as a ship under way and whether
-a pre-planned coordinate is meaningfully stale by the time you arrive. If it wants to be
-bigger, `STATION_LEG` / `STATION_WIDTH` / `STATION_SPEED` are together at the top of
-`tgogenerator.py` — but note `test_the_station_stays_small_against_a_ship_threat_ring` caps the
-reach at 25 % of a 16 km escort ring, and that guard should be argued with rather than deleted.
-
-**Fail signatures to watch for:**
-- **A group that never moves.** Either DCS declined the route, or every bearing failed the
-  water check. `Naval-3`-style silence is correct; a Marianas hull sitting still is not.
-- **A group that stops after one lap** — `SwitchWaypoint` does not loop a *naval* group. This
-  is the one genuine unknown and the reason for this row. Fallback needs no task at all:
-  author enough waypoints to outlast the mission.
-- **A grounded or beached hull**, or one steering into an island — the leg sampling missed
-  terrain the landmap does not model. Note the campaign and position; the fix is a tighter
-  `STATION_WATER_SAMPLE` or a smaller oval, not disabling the feature.
-- **A ship that stops fighting while under way** — the route must not have disturbed the ROE
-  and alarm options on waypoint 0 (§81 sets those there).
-- **A §63 cruise raid that never launches** from a stationed ship — the pushed `FireAtPoint`
-  should ripple and the hull should then resume its lap. This is the interaction the design
-  relies on `PushTask` for, so it is worth confirming rather than assuming.
-- **A §80 mixed-hull group scattering** instead of sailing the circuit in formation.
-- Ships drifting far enough that a **drawn threat ring visibly no longer covers what it
-  should** — the ~4 NM ceiling is meant to keep this a non-issue.
+**Second half of the pass — the site is a STRIKE target, not a SEAD target.** The jammer emits
+nothing an RWR or ARM can see, by design (a real GPS jammer is L-band). Confirm:
+- The site does **not** appear on your RWR and a HARM will **not** lock it. That is correct.
+- You find it by **recon** — it surfaces as a §3 contact, and the kneeboard briefs the area once
+  scouted — and kill it with bombs.
+- **Killing the jammer trucks restores accuracy** on the very next GPS weapon.
+- Every campaign that does not pin a jamming preset still generates its ordinary sites unchanged.

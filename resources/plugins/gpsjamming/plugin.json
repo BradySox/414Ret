@@ -17,10 +17,17 @@
             "defaultValue": 100
         },
         {
-            "nameInUI": "Miss explosion power (kg TNT eq)",
-            "descriptionInUI": "The detonation produced at the off-target point. Deliberately below a real JDAM's warhead: a jammed bomb is a miss, not a relocated hit.",
+            "nameInUI": "Fallback miss explosion power (kg TNT eq)",
+            "descriptionInUI": "Used ONLY for a weapon that does not report its own warhead (a mod store with a thin descriptor). Everything else detonates with its real warhead, scaled below.",
             "mnemonic": "missPower",
             "defaultValue": 400
+        },
+        {
+            "nameInUI": "Miss detonation size, as % of the weapon's own warhead",
+            "descriptionInUI": "The miss detonates with the store's REAL explosive mass, so a 2000 lb JDAM craters like one and a 500 lb JDAM does not. 100 = the full warhead, which is what a bomb landing off-target actually does; lower it if you want a jammed pass to be less destructive than a clean miss.",
+            "mnemonic": "missPowerScalePct",
+            "defaultValue": 100,
+            "maximumValue": 200
         },
         {
             "nameInUI": "Announce the first spoofed weapon to the firing flight",

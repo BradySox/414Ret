@@ -377,6 +377,8 @@ def test_ground_forces_pins_match_their_marker_band() -> None:
         GroupTask.AAA: MizCampaignLoader.AAA_UNIT_TYPES,
         # Naval markers have no SAM band -- the ship marker type IS the band.
         GroupTask.NAVY: {MizCampaignLoader.SHIP_UNIT_TYPE},
+        # §86 jamming sites are EWR-tasked, so they pin onto EWR-band markers.
+        GroupTask.EARLY_WARNING_RADAR: {MizCampaignLoader.EWR_UNIT_TYPE},
     }
     markers = {
         group.name: group.units[0].type

@@ -32,7 +32,8 @@
 
 local DEGRADE_CHANCE = 0.85 -- probability a store inside a bubble is degraded (rolled once)
 local TERMINAL_AGL = 30.48 -- m (100 ft): destroy the spoofed store at/below this height
-local MISS_POWER = 400 -- explosion power (kg TNT eq) at the off-target point
+local MISS_POWER = 400 -- fallback explosion power (kg TNT eq) when the weapon reports no warhead
+local MISS_POWER_SCALE = 1.0 -- multiplier on the weapon's OWN explosive mass
 local CUE_SHOOTER = true -- one text cue to the firing flight on its first spoof
 local GRACE = 60 -- s before any weapon can be degraded
 local TRACK_STEP = 0.2 -- s: weapon-track sample step
@@ -50,6 +51,9 @@ if dcsRetribution and dcsRetribution.plugins and dcsRetribution.plugins.gpsjammi
         TERMINAL_AGL = tonumber(o.terminalAglFt) * 0.3048 -- ft (UI) -> m
     end
     MISS_POWER = tonumber(o.missPower) or MISS_POWER
+    if tonumber(o.missPowerScalePct) then
+        MISS_POWER_SCALE = tonumber(o.missPowerScalePct) / 100
+    end
     if o.cueShooter ~= nil then
         CUE_SHOOTER = o.cueShooter and true or false
     end
@@ -165,6 +169,26 @@ local function buildPatterns()
     end
 end
 
+-- The miss detonation is the store's OWN warhead, so a 2000 lb JDAM craters like one
+-- and a 500 lb JDAM does not. DCS reports this on the weapon descriptor
+-- (`desc.warhead.explosiveMass`, kg TNT equivalent -- exactly the unit
+-- trigger.action.explosion wants); `mass` is the whole warhead and is the next best
+-- thing. A store that reports neither -- a mod weapon with a thin descriptor -- falls
+-- back to the configured flat power, which is precisely the pre-scaling behaviour, so
+-- this can only ever add fidelity.
+local function warheadPower(wpn)
+    local ok, desc = pcall(function()
+        return wpn:getDesc()
+    end)
+    if ok and type(desc) == "table" and type(desc.warhead) == "table" then
+        local kg = tonumber(desc.warhead.explosiveMass) or tonumber(desc.warhead.mass)
+        if kg and kg > 0 then
+            return kg * MISS_POWER_SCALE, true
+        end
+    end
+    return MISS_POWER, false
+end
+
 local function isSatelliteGuided(typeName)
     local t = string.lower(typeName or "")
     if t == "" then
@@ -233,7 +257,7 @@ local function detonateOffTarget(track)
     pcall(function()
         track.wpn:destroy()
     end)
-    pcall(trigger.action.explosion, { x = x, y = h, z = z }, MISS_POWER)
+    pcall(trigger.action.explosion, { x = x, y = h, z = z }, track.power or MISS_POWER)
 end
 
 local function sample(track)
@@ -376,6 +400,7 @@ local function onShot(event)
             groupName = g:getName()
         end
     end)
+    local power, fromWarhead = warheadPower(wpn)
     tracked[#tracked + 1] = {
         wpn = wpn,
         side = side,
@@ -383,7 +408,19 @@ local function onShot(event)
         shotTime = timer.getTime(),
         decided = false,
         degraded = false,
+        -- Resolved at RELEASE, not at impact: the weapon object may already be gone
+        -- by the time we detonate the miss.
+        power = power,
     }
+    if not fromWarhead then
+        log(
+            string.format(
+                "%s reports no warhead mass -- miss uses the fallback %d kg",
+                tostring(typeName),
+                MISS_POWER
+            )
+        )
+    end
     if not trackerArmed then
         trackerArmed = true
         timer.scheduleFunction(trackLoop, {}, timer.getTime() + TRACK_STEP)

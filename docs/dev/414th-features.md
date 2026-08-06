@@ -4801,6 +4801,23 @@ actually drive (the setting copy says so). Tests
 `test_immobile_silkworm_hardware_is_never_routed` +
 `test_site_loops_are_staggered_across_the_interval`.
 
+**The CH_CJ10 PLARF launcher joined the exclusion (2026-08-05, two flown Marianas 2027 missions —
+Tacviews `-190738` and `-203549`).** **All nine launchers of all three PLARF sites moved 0.00 km**
+— not one metre, in either mission — while the drivable vehicles sharing those groups (the §85
+refuellers ATZ-5 / TZ-22 / GAZ-66 and the PGZ-09 / PGL-625 / LD-3000 SHORAD) jittered only
+0.05–0.31 km. That asymmetry is the signature of a group **pinned by an undrivable member**, not
+one that was never routed: `mobile_missile_relocation` and the `mobilemissiles` plugin were both
+preseeded and `CH_CJ10` was not excluded, so the plugin pushed routes all mission. The sites fired
+25+ CJ-10s and then sat for the remaining ~25 minutes, so mechanically it reads as the same
+post-fire pin as the Shahed below — but this hardware fires early every mission, so "pinned after
+firing" and "never scoots" are the same thing in play. `CH_CJ10` is therefore in
+`IMMOBILE_UNIT_IDS` (no futile pushes, no ground-AI churn) while **`CH_Shahed136` deliberately is
+not**, since its never-fired sites drive fine and excluding it would kill a scoot that does work
+before the salvo. Test `test_the_ch_cj10_plarf_launcher_is_never_routed`. **Campaign consequence:**
+Marianas 2027's authored "§49 shoot-and-scoot + §3 concealment make the PLARF hunt the campaign's
+signature" is **not true in play** — those three sites are stationary targets, and restoring the
+mechanic needs launcher hardware DCS will drive.
+
 **The CH Shahed post-fire pin + the give-up rule (2026-07-17, the flown Scenic Route Merged 39-site
 Tacview).** The fire-window fix is **proven on vanilla hardware** — every Scud_B battery that fired
 then scooted (13/13, 546–3057 m, towed-AAA escorts included) — but all 8 fired `CH_Shahed136` sites
@@ -8324,17 +8341,23 @@ sites or on two bubbles that overlap. Overlap is called out specifically because
 stack** — a weapon faces only the single strongest bubble covering it (the §77 non-stacking rule)
 — so a second overlapping site adds no decision for the player and killing one restores nothing.
 
-**Being on RWR and being HARM-able are two different DCS attributes, and no one unit has both**,
-which is why a site fields a radar as well as the jammer. `GT.WS.radar_type` is what puts a unit
-on the RWR; `RADAR_BAND1/2_FOR_ARM` is what an anti-radiation seeker homes on, and **the EWRs do
-not carry it** (verified: `EWR_FPS-117` declares only `"EWR"`, and of the units in DCS's
-TechWeaponPack carrying the ARM bands, not one is an EWR). The stock jammer carries *neither* —
-its DB entry declares `GT_t.ws = 0` with no `GT.WS`, no `GT.Sensors`, no `searchRadarFrequencies`
-— which is faithful (a real GPS jammer is L-band) and unplayable, since SEAD could never
-prosecute it. The standalone site therefore fields an ARM-flagged acquisition radar, **ST-68U
-"Tin Shield"** (red) / **NASAMS MPQ-64F1** (blue), at `unit_count: [2]` because the ST-68U is a
-track-radar class and the standing §60 redundancy contract applies. An attached section needs no
-radar of its own — the SAM battery around it already emits.
+**It carries no radar, and is a STRIKE target rather than a SEAD target** (DM call 2026-08-05).
+An earlier cut paired the jammer with an ARM-flagged acquisition radar so a HARM could home on
+the site. That is now dropped, and dropping it is the *realistic* answer: a real GPS jammer
+transmits in **L-band**, which no RWR covers and no anti-radiation seeker homes on, so making it
+HARM-able was the unrealistic option. The stock jammer's own DB entry agrees — it declares
+`GT_t.ws = 0` with no `GT.WS`, no `GT.Sensors`, no `searchRadarFrequencies`, i.e. DCS models it
+as emitting nothing an aircraft can see.
+
+So the site is found by **recon** (the §3 fog surfaces it as a contact; the kneeboard briefs the
+area once scouted) and killed with **bombs**. Its point defence is what stops that being free —
+an optional SHORAD/AAA slot filled from the owning faction, so a faction with no SHORAD (China
+2027) fields an undefended site.
+
+Dropping the radar removed two costs as well as the unrealism: a second radar in every site, and
+a radar in the faction roster — where, being a `SearchRadar` class, it leaked into unrelated SAM
+sites in roughly one game in five. **Only the jammer is granted now**, and its
+`ElectronicWarfare` class is referenced by no layout, so it can never be faction-filled anywhere.
 
 **Task = EarlyWarningRadar**, because `IadsRole.for_task` maps it to `EWR`, the one air-defence
 role MANTIS never holds dark under EMCON. A site tasked MERAD/LORAD/SHORAD would be held dark
@@ -8351,6 +8374,15 @@ and the campaign generating a different shape every time (measured: 2-to-4 sites
 only 2 were pinned). Grant access through `air_defense_units` instead: the units become reachable,
 the preset is not a random candidate, and the laydown is exactly what the campaign pins.
 
+**Fielded in four modern campaigns** (2026-08-05), each with two sites on well-separated
+RED-owned markers: **Baltic Fury** (2027), **Marianas 2027** (China), **Slava Ukraini** (2026 —
+the war where GPS jamming is least surprising) and **Into the Hornets Nest** (2022). The era
+filter is the jammer's own 2010 introduction, which excludes the Cold War and Desert Storm
+laydowns outright. **A pin must bind to a control point owned by the side that fields the
+jammer** — the override gate checks the preset against the *owning* CP's faction, so a red
+preset on a blue-CP marker is silently discarded (caught when three campaigns each generated one
+of their two pinned sites); a test now enforces it.
+
 **Preseeded in Operation Baltic Fury** (2027) on two dedicated markers added by
 `tools/build_baltic_fury_miz.py --gps-jamming` — `GPSJAM-1` on the Copenhagen approach (~5 km
 from Kastrup, the victory objective, so the final push is "kill the jammer before you can JDAM the
@@ -8362,8 +8394,11 @@ GPS-guided weapons postdate it entirely.
 **Settings.** `gps_jamming` (414th Features → Electronic & command warfare, default **OFF**,
 preseeded nowhere) + `gps_jamming_default_reach_nm` (30) / `gps_jamming_miss_radius_m` (200)
 (Mission Generation → Comms war, `enabled_when=gps_jamming`). Plugin options cover the degrade
-chance (85 %), terminal altitude (100 ft AGL), miss power (400 kg), the shooter cue, grace, and
-the track step. **The plugin is the runtime** — a saved default with the `gpsjamming` plugin
+chance (85 %), terminal altitude (100 ft AGL), the shooter cue, grace, and the track step. **The
+miss detonates with the store's own warhead** (`desc.warhead.explosiveMass`, scaled by
+`missPowerScalePct`, default 100 %), so a 2000 lb JDAM craters like one and a 500 lb JDAM does
+not; a store reporting no warhead falls back to the flat `missPower`, which is the pre-scaling
+behaviour exactly. **The plugin is the runtime** — a saved default with the `gpsjamming` plugin
 unticked silently kills the setting (the §36 lesson).
 
 **Deliberately not done:** aircraft navigation degradation (impossible, and it would lie to the
@@ -8528,7 +8563,7 @@ with no new game and no save migration.
 
 Files: `game/missiongenerator/tgogenerator.py` (`hold_station`, `_station_racetrack`,
 `_racetrack_corners`, `_track_is_clear`, and the `STATION_*` constants).
-Tests: `tests/missiongenerator/test_naval_station_keeping.py` (11). Checklist: **B47**.
+Tests: `tests/missiongenerator/test_naval_station_keeping.py` (11). Checklist: **B46**.
 
 
 ## Unit-coverage sweep — 2026-08-04

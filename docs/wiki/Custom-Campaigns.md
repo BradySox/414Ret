@@ -160,7 +160,7 @@ historical: they are ignored at load, not honoured. Do not re-add them.
 |---|---|
 | `phases:` and the inferred phase arc | Nothing — campaign shape is expressed through the laydown, supply routes, and squadron availability |
 | ROE restricted / free-fire zones | Nothing — the map's ROE overlays went with it |
-| `will:` profiles, BLUE Political Will / RED Regime Resolve, the negotiation ending | An authored `victory:` block — explicit win/lose conditions (captured CPs, destroyed targets, territory or strength thresholds) instead of a meter. Currently used by Operation Baltic Fury; not yet documented on this wiki |
+| `will:` profiles, BLUE Political Will / RED Regime Resolve, the negotiation ending | An authored `victory:` block — explicit win/lose conditions (captured CPs, destroyed targets or categories, territory and strength thresholds, each with an optional `min_turn` guard). Used by Baltic Fury, Red Flag 81-2, Enduring Resolve and 1968 Yankee Station |
 
 ## The `settings:` block
 

@@ -1686,7 +1686,9 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     section boundaries; `dependency_masters()` keeps it to the controls that are actually
     somebody's master. Tests `tests/test_settings_filter.py` (17, driving the real Qt widgets
     offscreen) + the rewritten cross-page case in `tests/test_settings_dependencies.py`;
-    `qt_ui` is not CI type-checked, so this needs an in-app eyeball — checklist B39.
+    `qt_ui` is not CI type-checked, so it needed an in-app eyeball — checklist B46
+    (renumbered from a duplicate B40 2026-08-05; §82 owns B40), **VERIFIED 2026-08-05**
+    (user app pass).
     Shipped with the **UI-audit bug fixes**: the defeat-shows-
     "Victory!" `onEndGame` enum-truthiness bug, the inverted Air-Wing player-slots caption, the shared
     `self.dialog` window-GC bug, the `QGroundObjectMenu` repair list-mutation, the web `TgosLayer`
@@ -3398,22 +3400,27 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     proven shape (`game/fourteenth/naval_magazines.py`, emitter
     `game/missiongenerator/navalmagazineluadata.py`, runtime `resources/plugins/navalmagazines/`):
     **N1 staggered release** (`naval_weapon_release_stagger`, Mission Generation → Naval strike,
-    default **OFF**) — **authored at generation, NO plugin** (`TgoGenerator.set_ship_engagement`):
-    ships generate **`ReturnFire`** and carry a `ControlledTask(OptROE(WeaponFree))` whose
-    `start_after_time` is that group's own release moment, **spread evenly** across
-    `[NAVAL_RELEASE_WINDOW_START_S, NAVAL_RELEASE_WINDOW_END_S]` (120–900 s; evenly rather than
-    rolled independently, so a small fleet can't randomly land every release in one frame — the
-    §49 stagger lesson). **`ReturnFire`, never `WeaponHold`**: the point is to delay *initiation*,
-    and a holding fleet is a defenceless one — which is also why the load-bearing unknown is
-    whether a DCS ship on `ReturnFire` engages an *inbound aircraft that hasn't shot at it yet*
-    (unverifiable outside DCS; **test this first**). A group that starts **dry** is never
-    scheduled and (with metering on) generates `ReturnFire` even with the stagger off —
-    winchester from t=0, never fighting as if freshly loaded. **Simplified 2026-08-05** (the
-    plugin audit): "at time T, set this group's ROE" is exactly a DCS start condition and Python
-    already knows the whole fleet, so the schedule (`naval_release_schedule`) is computed in
-    Python and written into the miz — deleting N1 from the Lua entirely along with the `stagger`
-    emit flag, the two release plugin options and the §36 unticked-plugin trap. Behaviour
-    unchanged. No persisted state of its own. **N2 the magazine** (`naval_magazines`, same
+    default **OFF**) — ships generate **`ReturnFire`** and the plugin releases each group to
+    weapons-free at its own moment **spread evenly** across `[releaseMinS, releaseMaxS]`
+    (120–900 s; evenly rather than rolled independently, so a small fleet can't randomly land
+    every release in one frame — the §49 stagger lesson). **`ReturnFire`, never `WeaponHold`**:
+    the point is to delay *initiation*, and a holding fleet is a defenceless one — which is
+    also why the load-bearing unknown was whether a DCS ship on `ReturnFire` engages an
+    *inbound aircraft that hasn't shot at it yet*. **ANSWERED 2026-08-05, BADLY** (the B39
+    first fly — two Marianas missions where an emitter bug, fixed same day, kept the fleet
+    held all mission): a `ReturnFire` fleet fired **zero** shots in 110 min, including while
+    13 Harpoons sank the SUGARGLIDER Type 071 LHA with its HHQ-16 escorts silent alongside —
+    **`ReturnFire` = no missile defense at all**, so a held/winchester group is defenseless;
+    **reworked same day (DM call): RELEASE-ON-ATTACK** — the first enemy weapon aimed at
+    (SHOT target) or landing on (HIT) a managed group releases it to weapons-free
+    immediately, held OR winchester (friendly fire never releases; an attacked winchester
+    group is never re-dropped and its overshoot stays counted), so the hold decides who
+    starts the war, never who may defend. The same fly found + fixed the emitter bug: `LuaData.serialize`
+    **drops a node's `add_key_value` entries whenever the node also has child items**, so the
+    `stagger`/`metered` switches never reached the miz (`stagger false … metered false` at
+    load) — they are now named child items (`add_item().set_value()`, the CombatSAR
+    `autoSpawn` pattern), pinned by a serialization-level test; an AST audit cleared every
+    other emitter of the mix. Runtime only, no persisted state. **N2 the magazine** (`naval_magazines`, same
     section, default **OFF**) — each naval group carries a persisted anti-ship stock
     (`game.naval_magazines`, keyed by the same stable `TheaterGroup.group_name` §63 uses —
     the TheaterGroup lives in the save, so the key survives regeneration; capacity from the
@@ -3429,16 +3436,14 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     nothing as loose as `Kalibr` is used (it would catch the land-attack 3M14 alongside the
     anti-ship 3M54); a Burke legitimately appears in *both* hull tables because it carries
     Tomahawks *and* Harpoons. **Never add a land-attack family to the pattern list.** A group
-    that starts a mission dry is still emitted (so the readouts stay honest) and is generated
-    `ReturnFire` rather than letting a spent fleet fight as if freshly loaded.
-    Symmetric — blue's Burkes are bound exactly as red's Type 055s. The plugin owns
+    that starts a mission dry is still emitted (so the plugin holds it at `ReturnFire` rather
+    than letting a spent fleet fight as if freshly loaded) and is never released by the
+    stagger. Symmetric — blue's Burkes are bound exactly as red's Type 055s. The plugin owns
     no spawns and no kills: it sets ROE and counts real weapon releases, so hull losses record
     natively as always. Surfaced by `winchester_lines` (blue only — enemy residual stock stays
     hidden, like every magazine readout). **Deferred:** N3 replenishment (refill at a friendly
     port, so sustaining a fleet is a logistics decision) and N4's unit-card readout, both only
     worth doing once N2 is flown. Tests `tests/fourteenth/test_naval_magazines.py` +
-    `tests/missiongenerator/test_naval_release_stagger.py` (N1: the schedule + the tasks
-    authored onto a real pydcs ship group) +
     `tests/missiongenerator/test_navalmagazineluadata.py` +
     `tests/lua/test_navalmagazines_runtime.py`; features doc §81, checklist B39 — needs an
     in-game pass (the `ReturnFire` air-defence question above is the gate; then that a
@@ -3830,6 +3835,62 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     `tests/lua/test_gpsjamming_runtime.py` (11); features doc §86, design note
     `docs/dev/design/414th-gps-jamming-notes.md`, checklist B45 — needs an in-game pass (the
     terminal gate beating a real JDAM's terminal profile is the genuine unknown).
+87. **Naval station-keeping racetracks** — enemy ships stop being stationary targets. A ship
+    TGO only ever got waypoints when the campaign was *repositioning* it
+    (`sail_to_destination`, gated on `ShipGroundObject.target_position`); with no destination
+    it generated a **zero-waypoint route** and sat motionless on its campaign marker for the
+    entire mission, so last turn's recon photo — or a pre-planned coordinate — was always
+    still good. (This is also why blue's boats appeared to move and red's never did: the blue
+    carrier steams into wind, and only *relocating* ships sailed.)
+    `GroundObjectGenerator.hold_station` gives every other ship group a **racetrack centred on
+    its anchor** instead. **The centring is the whole design**, not a detail: a circuit drawn
+    *around* the marker would have the group steam a full radius clear of it and read as
+    transiting off station, whereas an anchor-centred oval keeps the group's **mean position on
+    its campaign position** — it holds station under way, and the campaign map, the drawn
+    threat rings and the turn-boundary model all stay honest. The envelope is the bound that
+    answers "they can't wander off": `STATION_LEG` 3 NM × `STATION_WIDTH` 1 NM at
+    `STATION_SPEED` 10 kt puts a hard **~1.6 NM ceiling on displacement from the marker**,
+    forever, with a ~48 min lap so the hull is visibly under way all mission.
+    **The SIZE is set by the ship's own threat ring, which the map draws at the marker — so
+    displacement is straight error in that ring.** The first cut was an **8 × 2 NM** oval
+    picked by feel and it is wrong: its 4.1 NM reach is **~4× a Molniya's entire 2 km
+    engagement radius** (a hull sitting wholly outside its own drawn ring) and 48 % of an
+    Albatros/Rezky's 16 km; at 3 × 1 those become 1.5× and **18 %**, with a Type 054A's 45 km
+    at 7 % and a Burke's 100 km at 3 %. Real practice agrees — a naval *station* is quoted in
+    **thousands of yards from the guide** (WWII carrier doctrine's "Circle Six"/"Circle Nine"
+    are 6,000/9,000 yd for the **whole screen**), so ~3,200 yd is a station and ~7,600 yd was
+    an entire screen's radius applied to one hull. **Collision between groups is deliberately
+    NOT the constraint** — measured, the closest two naval groups in any shipped campaign are
+    **17 NM** apart, so tracks are disjoint by a wide margin either way, which is why the
+    threat rings had to set the number. Guard:
+    `test_the_station_stays_small_against_a_ship_threat_ring` (fails on the old 8 × 2).
+    **No plugin, no Lua, nothing at runtime** — the waypoints are ordinary route points and
+    the loop is the Mission Editor's own `SwitchWaypoint` action, so DCS's naval AI sails it
+    itself. That is *why* it composes: a §63 cruise-missile `FireAtPoint` is **pushed** onto
+    the queue and pops back to this route when the salvo ends, where a scripted `mist.goRoute`
+    (a `setTask`) would have wiped it — the §49 fire-then-scoot clobber, avoided by
+    construction rather than worked around; §81's ROE/alarm ride `points[0]` and are untouched.
+    **Land is handled in Python, where the landmap already lives** — DCS naval AI does no land
+    avoidance whatsoever, so each candidate orientation is sampled with `theater.is_in_sea()`
+    every 1 NM along **every leg** (two clear endpoints with an island between them would
+    beach the group), and 12 bearings are tried in a **crc32-of-group-name order** so a ship in
+    open water takes its first choice, one in a strait ends up oriented **along** the water it
+    actually has, regeneration re-derives the same station rather than reshuffling the fleet,
+    and a whole fleet doesn't steam in parallel like a parade. Every failure degrades to
+    **today's stationary behaviour**: no landmap, no clear orientation, or a spawn the landmap
+    won't confirm as open water (a marker inside a harbour polygon) simply stays put.
+    **Carrier and LHA control points are untouched** — `GenericCarrierGenerator` overrides
+    `generate()`, so `steam_into_wind` and the §72 airboss keep the boats. Symmetric, and
+    **no setting** (the §80 precedent — same file, same generation-time shape: this is not
+    unverified runtime Lua, so a kill switch would only add to the §28 surface). Measured
+    across the shipped naval campaigns: **marianas_2027 11/11 · pacific_repartee 21/21 ·
+    tanker_war_1988 2/2 · 1968_Yankee_Station 2/3** ship markers put on station, the one miss
+    being a hull whose spawn the landmap does not classify as sea (the safe degrade firing).
+    NEW mission only — regeneration picks it up, no new game and no save migration. Tests
+    `tests/missiongenerator/test_naval_station_keeping.py` (11); features doc §87, checklist
+    B46 — needs an in-game pass (whether DCS loops a *naval* group on `SwitchWaypoint` is the
+    one genuine unknown; the fallback needs no task at all — author enough waypoints to
+    outlast the mission — and that a mixed-hull §80 group sails the circuit in formation).
 
 ---
 

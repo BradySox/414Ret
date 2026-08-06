@@ -1,12 +1,9 @@
 """Naval-magazine emitter (dcsRetribution.navalMagazines) -- the §81 config bridge.
 
-Locks the shape the ``navalmagazines`` plugin consumes: one
-``group``/``coalition``/``remaining`` record per live naval group (including a dry
-one, so the plugin knows to hold it), and no node at all when metering is off or
-no naval group exists.
-
-N1's staggered release is deliberately absent -- it is authored into the mission at
-generation, so the stagger setting alone must never produce a node.
+Locks the shape the ``navalmagazines`` plugin consumes: the two tier switches,
+one ``group``/``coalition``/``remaining`` record per live naval group (including
+a dry one, so the plugin knows to hold it), and no node at all when both tiers
+are off or no naval group exists.
 """
 
 from __future__ import annotations
@@ -73,7 +70,15 @@ def _records(node: Any, key: str) -> list[dict[str, Any]]:
 
 
 def _switches(node: Any) -> dict[str, Any]:
-    return {str(v.key): v.value for v in node.value if isinstance(v, LuaValue)}
+    # The switches are named CHILD ITEMS, not key-values: LuaData.serialize
+    # drops a node's key-values whenever it also has child items (the
+    # magazines list), so key-value switches would never reach the miz.
+    out: dict[str, Any] = {}
+    for key in ("stagger", "metered"):
+        item = node.get_item(key)
+        if item is not None and isinstance(item.value, LuaValue):
+            out[key] = item.value.value
+    return out
 
 
 def test_emits_each_live_naval_group_with_its_magazine() -> None:
@@ -86,10 +91,29 @@ def test_emits_each_live_naval_group_with_its_magazine() -> None:
     }
 
 
-def test_the_stagger_alone_emits_nothing() -> None:
-    """N1 is authored at generation, so it needs no runtime and no node. Emitting
-    one anyway would load the plugin for a tier it no longer implements."""
-    assert _node(_game(stagger=True, metered=False)) is None
+def test_the_tier_switches_ride_on_the_node() -> None:
+    switches = _switches(_node(_game(stagger=True, metered=False)))
+    assert switches["stagger"] == "true"
+    assert switches["metered"] == "false"
+
+    switches = _switches(_node(_game(stagger=False, metered=True)))
+    assert switches["stagger"] == "false"
+    assert switches["metered"] == "true"
+
+
+def test_the_switches_survive_serialization() -> None:
+    """The 2026-08-05 first fly ran with both tiers OFF at runtime because the
+    switches were emitted as key-values on a node that also has child items --
+    a shape ``LuaData.serialize`` silently drops. The switches must appear in
+    the SERIALIZED text, which is what actually reaches the miz."""
+    root = LuaData("dcsRetribution")
+    populate_naval_magazines_lua(
+        root, _game(stagger=True, metered=False), mission_data=None  # type: ignore[arg-type]
+    )
+    text = root.serialize()
+    assert 'stagger = "true"' in text
+    assert 'metered = "false"' in text
+    assert "magazines" in text
 
 
 def test_a_dry_group_is_still_emitted() -> None:

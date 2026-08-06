@@ -8,6 +8,12 @@ group is dropped back to ReturnFire (winchester, never weapons-hold), a group
 that starts dry is never released, land-attack weapons are ignored so §63's
 magazine is never double-charged, and a mission with no navalMagazines node is a
 clean no-op.
+
+Release-on-attack (the 2026-08-05 flown finding — a DCS group on ReturnFire
+mounts no missile defense at all): the first ENEMY weapon aimed at (SHOT target)
+or landing on (HIT) a managed group frees it to weapons-free immediately — held
+or winchester — a friendly shot never does, and an attacked winchester group
+keeps defending (its overshoot stays counted).
 """
 
 from __future__ import annotations
@@ -35,17 +41,18 @@ def _ship_group(name: str, side: int) -> dict[str, Any]:
 def _config(
     magazines: list[dict[str, Any]],
     *,
+    stagger: bool = True,
+    metered: bool = True,
     options: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """The node is emitted only when metering is on, so its presence IS the switch.
-
-    N1's staggered release is no longer here at all -- it is authored into the mission
-    at generation (tests/fourteenth/test_naval_magazines.py covers the schedule, and
-    tests/missiongenerator/test_naval_release_stagger.py the authored tasks).
-    """
     return {
         "plugins": {"navalmagazines": options or {}},
-        "navalMagazines": {"magazines": magazines},
+        "navalMagazines": {
+            # Values arrive as strings from the emitter; the plugin coerces.
+            "stagger": "true" if stagger else "false",
+            "metered": "true" if metered else "false",
+            "magazines": magazines,
+        },
     }
 
 
@@ -62,6 +69,81 @@ def _state(h: DcsPluginHarness) -> list[dict[str, Any]]:
     return h.to_python(h.lua.globals().naval_magazines_state) or []
 
 
+def test_releases_are_spread_across_the_window_not_stacked() -> None:
+    h = DcsPluginHarness()
+    names = ["0001 | A", "0002 | B", "0003 | C"]
+    for name in names:
+        h.add_group(_ship_group(name, int(h.side.BLUE)))
+    _load(
+        h,
+        _config(
+            [{"group": n, "coalition": "blue", "remaining": "8"} for n in names],
+            options={"releaseMinS": 100, "releaseMaxS": 400},
+        ),
+    )
+    h.advance_to(500)
+    h.assert_no_lua_errors()
+
+    released = [r for r in _roe(h) if r["value"] == ROE_WEAPON_FREE]
+    assert {r["group"] for r in released} == set(names)
+    times = sorted(r["t"] for r in released)
+    # Evenly spread over [100, 400] for three groups.
+    assert times == [100, 250, 400]
+
+
+def test_nothing_is_released_before_the_window_opens() -> None:
+    h = DcsPluginHarness()
+    h.add_group(_ship_group("0001 | A", int(h.side.BLUE)))
+    _load(
+        h,
+        _config(
+            [{"group": "0001 | A", "coalition": "blue", "remaining": "8"}],
+            options={"releaseMinS": 300, "releaseMaxS": 300},
+        ),
+    )
+    h.advance_to(299)
+    assert _roe(h) == []
+    h.advance_to(301)
+    assert [r["value"] for r in _roe(h)] == [ROE_WEAPON_FREE]
+    h.assert_no_lua_errors()
+
+
+def test_a_dry_group_is_never_released() -> None:
+    h = DcsPluginHarness()
+    h.add_group(_ship_group("0001 | Spent", int(h.side.BLUE)))
+    _load(
+        h,
+        _config(
+            [{"group": "0001 | Spent", "coalition": "blue", "remaining": "0"}],
+            options={"releaseMinS": 100, "releaseMaxS": 100},
+        ),
+    )
+    h.advance_to(300)
+    h.assert_no_lua_errors()
+    assert [r for r in _roe(h) if r["value"] == ROE_WEAPON_FREE] == []
+
+
+def test_a_dry_group_is_pulled_to_return_fire_when_the_stagger_is_off() -> None:
+    """Without the stagger the generator left every ship weapons-free, so a group
+    that starts the mission spent must be pulled back at load."""
+    h = DcsPluginHarness()
+    h.add_group(_ship_group("0001 | Spent", int(h.side.BLUE)))
+    h.add_group(_ship_group("0002 | Loaded", int(h.side.BLUE)))
+    _load(
+        h,
+        _config(
+            [
+                {"group": "0001 | Spent", "coalition": "blue", "remaining": "0"},
+                {"group": "0002 | Loaded", "coalition": "blue", "remaining": "4"},
+            ],
+            stagger=False,
+        ),
+    )
+    h.assert_no_lua_errors()
+    held = [r for r in _roe(h) if r["value"] == ROE_RETURN_FIRE]
+    assert [r["group"] for r in held] == ["0001 | Spent"]
+
+
 def test_an_antiship_shot_decrements_and_mirrors_into_the_state() -> None:
     h = DcsPluginHarness()
     h.add_group(_ship_group("0001 | Burke", int(h.side.BLUE)))
@@ -69,6 +151,7 @@ def test_an_antiship_shot_decrements_and_mirrors_into_the_state() -> None:
         h,
         _config(
             [{"group": "0001 | Burke", "coalition": "blue", "remaining": "3"}],
+            stagger=False,
         ),
     )
     for _ in range(2):
@@ -89,6 +172,7 @@ def test_the_last_shot_takes_the_group_winchester_to_return_fire() -> None:
         h,
         _config(
             [{"group": "0001 | Burke", "coalition": "blue", "remaining": "1"}],
+            stagger=False,
         ),
     )
     h.fire_shot({"initiator": "0001 | Burke", "weapon": {"typeName": "RGM_84F"}})
@@ -108,6 +192,7 @@ def test_a_land_attack_shot_is_never_charged_to_the_antiship_magazine() -> None:
         h,
         _config(
             [{"group": "0001 | Burke", "coalition": "blue", "remaining": "2"}],
+            stagger=False,
         ),
     )
     for weapon in ("BGM_109B", "weapons.missiles.BGM_109B", "3M14"):
@@ -125,11 +210,160 @@ def test_a_shot_from_an_untracked_group_is_ignored() -> None:
         h,
         _config(
             [{"group": "0001 | Burke", "coalition": "blue", "remaining": "2"}],
+            stagger=False,
         ),
     )
     h.fire_shot({"initiator": "0009 | Stranger", "weapon": {"typeName": "YJ-83"}})
     h.assert_no_lua_errors()
     assert _state(h) == []
+
+
+def test_metering_off_leaves_shots_uncounted() -> None:
+    h = DcsPluginHarness()
+    h.add_group(_ship_group("0001 | Burke", int(h.side.BLUE)))
+    _load(
+        h,
+        _config(
+            [{"group": "0001 | Burke", "coalition": "blue", "remaining": "2"}],
+            metered=False,
+            options={"releaseMinS": 100, "releaseMaxS": 100},
+        ),
+    )
+    h.advance_to(200)
+    h.fire_shot({"initiator": "0001 | Burke", "weapon": {"typeName": "YJ-83"}})
+    h.assert_no_lua_errors()
+    assert _state(h) == []
+    # The stagger still runs, and with metering off a dry emit cannot hold it.
+    assert [r["value"] for r in _roe(h)] == [ROE_WEAPON_FREE]
+
+
+def test_an_enemy_shot_at_a_held_group_releases_it_immediately() -> None:
+    """The hold decides who STARTS the war, never who may defend — a targeted
+    group goes weapons-free at the shot, and its scheduled release is a no-op."""
+    h = DcsPluginHarness()
+    h.add_group(_ship_group("0001 | Held", int(h.side.BLUE)))
+    h.add_group(_ship_group("0099 | Raider", int(h.side.RED)))
+    _load(
+        h,
+        _config(
+            [{"group": "0001 | Held", "coalition": "blue", "remaining": "8"}],
+            options={"releaseMinS": 300, "releaseMaxS": 300},
+        ),
+    )
+    h.advance_to(50)
+    h.fire_shot(
+        {
+            "initiator": "0099 | Raider",
+            "weapon": {"typeName": "AGM_84D_Harpoon"},
+            "target": "0001 | Held",
+        }
+    )
+    freed = [r for r in _roe(h) if r["value"] == ROE_WEAPON_FREE]
+    assert [(r["group"], r["t"]) for r in freed] == [("0001 | Held", 50)]
+    # The scheduled stagger release later must not double-fire.
+    h.advance_to(400)
+    h.assert_no_lua_errors()
+    freed = [r for r in _roe(h) if r["value"] == ROE_WEAPON_FREE]
+    assert len(freed) == 1
+
+
+def test_a_friendly_shot_never_releases_a_held_group() -> None:
+    h = DcsPluginHarness()
+    h.add_group(_ship_group("0001 | Held", int(h.side.BLUE)))
+    h.add_group(_ship_group("0002 | Clumsy", int(h.side.BLUE)))
+    _load(
+        h,
+        _config(
+            [{"group": "0001 | Held", "coalition": "blue", "remaining": "8"}],
+            options={"releaseMinS": 300, "releaseMaxS": 300},
+        ),
+    )
+    h.advance_to(50)
+    h.fire_shot(
+        {
+            "initiator": "0002 | Clumsy",
+            "weapon": {"typeName": "AGM_84D_Harpoon"},
+            "target": "0001 | Held",
+        }
+    )
+    h.assert_no_lua_errors()
+    assert [r for r in _roe(h) if r["value"] == ROE_WEAPON_FREE] == []
+
+
+def test_a_hit_releases_a_held_group() -> None:
+    """The HIT backstop: dumb ordnance carries no SHOT target, but a shell
+    landing on the group is reason enough to defend."""
+    h = DcsPluginHarness()
+    h.add_group(_ship_group("0001 | Held", int(h.side.BLUE)))
+    _load(
+        h,
+        _config(
+            [{"group": "0001 | Held", "coalition": "blue", "remaining": "8"}],
+            options={"releaseMinS": 300, "releaseMaxS": 300},
+        ),
+    )
+    h.advance_to(60)
+    h.fire_hit("0001 | Held")
+    h.assert_no_lua_errors()
+    freed = [r for r in _roe(h) if r["value"] == ROE_WEAPON_FREE]
+    assert [(r["group"], r["t"]) for r in freed] == [("0001 | Held", 60)]
+
+
+def test_an_attacked_dry_group_is_released_anyway() -> None:
+    """A spent group is passive until attacked — then it defends itself, even
+    though the ordinary release path refuses a dry magazine."""
+    h = DcsPluginHarness()
+    h.add_group(_ship_group("0001 | Spent", int(h.side.BLUE)))
+    h.add_group(_ship_group("0099 | Raider", int(h.side.RED)))
+    _load(
+        h,
+        _config(
+            [{"group": "0001 | Spent", "coalition": "blue", "remaining": "0"}],
+            stagger=False,
+        ),
+    )
+    # Pulled to ReturnFire at load (dry, stagger off)...
+    assert [r["value"] for r in _roe(h)] == [ROE_RETURN_FIRE]
+    h.fire_shot(
+        {
+            "initiator": "0099 | Raider",
+            "weapon": {"typeName": "YJ-83"},
+            "target": "0001 | Spent",
+        }
+    )
+    h.assert_no_lua_errors()
+    # ...and released the moment the enemy fires at it.
+    assert [r["value"] for r in _roe(h)] == [ROE_RETURN_FIRE, ROE_WEAPON_FREE]
+
+
+def test_an_attacked_winchester_group_keeps_defending_and_counts_overshoot() -> None:
+    """Running dry while under attack must NOT re-defang the ship — no ReturnFire
+    drop — and anything it fires past its stock is still counted for the debit."""
+    h = DcsPluginHarness()
+    h.add_group(_ship_group("0001 | Burke", int(h.side.BLUE)))
+    h.add_group(_ship_group("0099 | Raider", int(h.side.RED)))
+    _load(
+        h,
+        _config(
+            [{"group": "0001 | Burke", "coalition": "blue", "remaining": "1"}],
+            stagger=False,
+        ),
+    )
+    h.fire_shot(
+        {
+            "initiator": "0099 | Raider",
+            "weapon": {"typeName": "YJ-83"},
+            "target": "0001 | Burke",
+        }
+    )
+    for _ in range(2):
+        h.fire_shot({"initiator": "0001 | Burke", "weapon": {"typeName": "RGM_84F"}})
+    h.assert_no_lua_errors()
+    # Winchester announced, but never dropped back to ReturnFire while under attack.
+    assert any("WINCHESTER" in str(t.get("text", "")) for t in h.records("texts"))
+    assert [r for r in _roe(h) if r["value"] == ROE_RETURN_FIRE] == []
+    # The overshoot past the 1-round stock is still recorded for the turn debit.
+    assert _state(h) == [{"group": "0001 | Burke", "fired": 2}]
 
 
 def test_no_node_is_a_clean_no_op() -> None:
@@ -148,6 +382,7 @@ def test_custom_weapon_patterns_are_honored() -> None:
         h,
         _config(
             [{"group": "0001 | Burke", "coalition": "blue", "remaining": "2"}],
+            stagger=False,
             options={"ashmWeaponPatterns": "SOME_MOD_ASHM"},
         ),
     )

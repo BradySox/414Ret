@@ -18,17 +18,11 @@ launches, essentially all inside the opening five minutes):
 Two independently-gated tiers answer that, mirroring §63's proven shape:
 
 * **N1, staggered release** (``naval_weapon_release_stagger``) — ships generate
-  ``ReturnFire`` instead of ``WeaponFree``, each carrying a ``ControlledTask``
-  that flips it to weapons-free at its own moment inside a window
-  (:func:`naval_release_schedule`, authored by ``TgoGenerator``). ``ReturnFire``
-  rather than ``WeaponHold`` deliberately: a holding fleet is a defenceless one,
-  and the point is to delay *initiation*, not to disarm anybody.
-
-  This is **authored at generation, not scripted** — "at time T, set this
-  group's ROE" is exactly what a DCS start condition expresses, and Python
-  already knows the whole fleet, so it can spread the releases evenly rather
-  than having a plugin re-derive the same ordering at runtime. No plugin means
-  nothing a host can untick to silently disable the stagger (the §36 lesson).
+  ``ReturnFire`` instead of ``WeaponFree`` and the plugin releases each group to
+  weapons-free at its own moment inside a window. ``ReturnFire`` rather than
+  ``WeaponHold`` deliberately: a holding fleet is a defenceless one, and the
+  point is to delay *initiation*, not to disarm anybody. Runtime only, no
+  persisted state.
 * **N2, the magazine** (``naval_magazines``) — each naval group carries a
   persisted anti-ship missile stock (:data:`ASHM_MAGAZINE_BY_TYPE`, summed over
   the group's alive hulls at first sight), emitted as this mission's hard cap.
@@ -125,13 +119,6 @@ ASHM_WEAPON_PATTERNS: tuple[str, ...] = (
 )
 
 
-#: N1's weapons-release window, in seconds after mission start. The fleet's releases
-#: are spread evenly across it: the first group opens up at the start of the window and
-#: the last at its end, so an exchange develops instead of detonating at t=0.
-NAVAL_RELEASE_WINDOW_START_S = 120
-NAVAL_RELEASE_WINDOW_END_S = 900
-
-
 @dataclass(frozen=True)
 class NavalGroupMagazine:
     """One live naval group's emitted state for this mission."""
@@ -180,58 +167,6 @@ def naval_group_magazines(game: "Game") -> list[NavalGroupMagazine]:
         )
         for tgo, group in _naval_groups(game)
     ]
-
-
-def naval_release_schedule(game: "Game") -> dict[str, int]:
-    """``group_name`` -> seconds after mission start at which it goes weapons-free.
-
-    N1's stagger, resolved at generation. The releases are spread **evenly** across
-    the window rather than rolled independently, so a small fleet cannot randomly
-    land every release in the same few seconds (the §49 stagger lesson — everything
-    firing in one frame was itself a measured problem).
-
-    A group that starts the mission with a dry magazine is **omitted**: there is
-    nothing to release it for, so it is left at ``ReturnFire`` — winchester, but
-    still able to defend itself. Empty when the stagger is off.
-    """
-    if not getattr(game.settings, "naval_weapon_release_stagger", False):
-        return {}
-
-    metered = bool(getattr(game.settings, "naval_magazines", False))
-    mags: dict[str, int] = {}
-    if metered:
-        ensure_magazines(game)
-        mags = magazines(game)
-
-    names = [
-        group.group_name
-        for _tgo, group in _naval_groups(game)
-        if not metered or mags.get(group.group_name, 0) > 0
-    ]
-    if not names:
-        return {}
-
-    start = NAVAL_RELEASE_WINDOW_START_S
-    span = max(0, NAVAL_RELEASE_WINDOW_END_S - start)
-    if len(names) == 1:
-        return {names[0]: start}
-    return {
-        name: int(round(start + span * index / (len(names) - 1)))
-        for index, name in enumerate(names)
-    }
-
-
-def is_winchester_at_generation(game: "Game", group_name: str) -> bool:
-    """Whether *group_name* starts this mission with no anti-ship stock left.
-
-    Such a group generates ``ReturnFire`` whatever the stagger says: a fleet that
-    spent its tubes in earlier turns must not fight as if freshly loaded. False
-    when metering is off (nothing is tracked, so nothing is spent).
-    """
-    if not getattr(game.settings, "naval_magazines", False):
-        return False
-    ensure_magazines(game)
-    return magazines(game).get(group_name, 0) <= 0
 
 
 def reconcile_naval_magazines(game: "Game", debriefing: "Debriefing") -> None:

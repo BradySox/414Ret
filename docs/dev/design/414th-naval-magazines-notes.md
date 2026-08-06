@@ -126,7 +126,7 @@ never release it (stagger on) or pull it back to `ReturnFire` at load (stagger o
 
 ---
 
-## The load-bearing unknown
+## The load-bearing unknown — ANSWERED 2026-08-05, BADLY
 
 **Whether a DCS ship on `ReturnFire` engages an inbound aircraft that has not yet
 fired at it.**
@@ -136,6 +136,53 @@ missiles, but keep shooting SAMs". `ReturnFire` is chosen over `WeaponHold` prec
 because it should leave the ship able to defend itself — but whether DCS honours it
 that way against an aircraft that hasn't shot first is unverified and cannot be
 settled without flying it.
+
+**Flown answer (2026-08-05, two Marianas 2027 missions, Tacviews
+`Tacview-20260805-184424` + `-190738`):** an emitter serialization bug (the
+`stagger`/`metered` switches were dropped from the miz — see the fix note below) meant
+the plugin never released anyone, so both missions accidentally ran a pure held-fleet
+experiment: every ship sat on generation-side `ReturnFire` for the full 110 minutes.
+Result — **zero ship weapon launches of any kind**, including while blue Super Hornets
+put 13 AGM-84D into the SUGARGLIDER Type 071 LHA group and sank the LHA with its
+HHQ-16 escorts a few km away, and while an F-22 loitered at 24.9 km from an
+054A/052B group. The 2026-08-03 WeaponFree fly of the same theatre produced 99 SM
+intercept shots, so the contrast is clean: **a DCS naval group on `ReturnFire` mounts
+no missile defense and does not return fire even under direct anti-ship attack.**
+A held or winchester group is a defenseless one.
+
+**Decision (DM call, same day): RELEASE-ON-ATTACK — built 2026-08-05.** The hold shapes
+who *starts* the war, never who may defend:
+
+- The first **enemy** weapon aimed at a managed group (`S_EVENT_SHOT` with
+  `weapon:getTarget()` in the group) or landing on it (`S_EVENT_HIT` — the backstop for
+  dumb ordnance; a nil initiator still releases, a known friendly one never does — the
+  §77 friendly-fire guard) releases that group to weapons-free immediately, **held OR
+  winchester**, and marks it `underAttack`.
+- An `underAttack` group that runs dry is **not** re-dropped to ReturnFire (that would
+  re-defang a ship the enemy is actively shooting at); it may overshoot its magazine
+  defending itself, and the overshoot is still counted and debited (the persisted stock
+  clamps at zero). An *unattacked* winchester group still drops — spent and unbothered
+  means back to holding.
+- The scheduled stagger release is idempotent against an earlier attack release
+  (`released` latch), and the event handler now registers under either tier (N1-only
+  needs it too).
+- Harness pins: immediate release on an enemy targeted shot (+ the scheduled release
+  no-op), friendly shot never releases, HIT releases, an attacked dry group is released
+  despite the dry-refusal path, and the attacked-winchester keep-defending + overshoot
+  count. The stub `WeaponFake` gained `getTarget()` (set via `fireShot`'s optional
+  `target` group).
+
+### The emitter bug (fixed 2026-08-05)
+
+`LuaData.serialize` ignores a node's `add_key_value` entries whenever the node also
+has child items — the magazines list serialized, the two switches silently vanished,
+and the plugin correctly read absent-as-false (`NAVALMAGAZINES|: armed -- 29 naval
+group(s), stagger false (3600s-3600s), metered false`; the plugin *options* ride a
+different injection path and were unaffected). The switches are now named child items
+(`node.add_item("stagger").set_value(...)` — the flown CombatSAR `autoSpawn` pattern),
+pinned by a serialization-level test in
+`tests/missiongenerator/test_navalmagazineluadata.py`. An AST audit across every
+`*luadata.py` emitter found no other node mixing the two shapes.
 
 If it does not, a spent (or not-yet-released) ship is also a defenceless one. That may
 be acceptable — it is out of the fight either way — but it must be a deliberate call,

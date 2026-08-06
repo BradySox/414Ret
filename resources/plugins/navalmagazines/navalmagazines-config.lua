@@ -1,25 +1,36 @@
 ---------------------------------------------------------------------------------------------------
--- Cross-turn naval magazines runtime (§81 N2 -- the magazine).
+-- Cross-turn naval magazines runtime (§81).
 --
 -- Reads dcsRetribution.navalMagazines (game/missiongenerator/navalmagazineluadata.py):
+--   stagger   = true|false   -- N1: ships generated ReturnFire, release them on a stagger
+--   metered   = true|false   -- N2: enforce the campaign anti-ship magazine
 --   magazines = { { group=, coalition=, remaining= }, ... }
 --
--- Why this exists: a DCS mission is a fresh spawn, so without bookkeeping a fleet reloads for free
--- every single turn and the naval war has no ammunition dimension at all -- sinking hulls was the
--- only way volume ever went down.
+-- Why this exists: a DCS ship is weapons-free with a RED alarm state from t=0 (ship weapons are
+-- OPTION-driven -- there is no task to withhold them), and a modern anti-ship missile out-ranges
+-- the whole theatre, so "in range" is true immediately and an entire fleet ripples its tubes in
+-- the opening minute. Worse, a mission is a fresh spawn: without bookkeeping the fleet reloads
+-- for free every single turn.
 --
--- Each group's emitted `remaining` is this mission's hard anti-ship expenditure cap. Every
--- S_EVENT_SHOT whose weapon type matches the anti-ship pattern list decrements it; at zero the
--- group drops back to ReturnFire -- WINCHESTER, still able to defend itself but out of the
--- anti-ship fight until the campaign says otherwise. There is no rearm: expenditure mirrors into
--- the naval_magazines_state debrief channel and Python debits the persisted magazine at the turn
--- boundary. A mission that fires nothing debits nothing.
+-- N1 -- STAGGERED RELEASE. The generator spawns ships ReturnFire (never WeaponHold), and each
+-- group is released to weapons-free at its own moment inside [releaseMinS, releaseMaxS], so the
+-- exchange develops across the mission instead of detonating at once.
 --
--- N1 (the staggered weapons release) is deliberately NOT here. "At time T, set this group's ROE"
--- is exactly what a DCS start condition expresses, so it is authored at generation as a
--- ControlledTask on each ship group (TgoGenerator.set_ship_engagement) -- no runtime, and nothing
--- a host can untick to silently disable it. Generation also handles the group that starts the
--- mission already dry: it is simply generated ReturnFire.
+-- RELEASE-ON-ATTACK (2026-08-05 flown finding, the B39 first fly): a DCS naval group on
+-- ReturnFire mounts NO missile defense at all -- an LHA died to 13 Harpoons with its HHQ-16
+-- escorts silent alongside, and a held fleet fired zero shots in 110 minutes. So the hold
+-- shapes who STARTS the war, never who may defend: the first ENEMY weapon aimed at (SHOT
+-- target) or landing on (HIT) a managed group releases it to weapons-free immediately -- held
+-- OR winchester. An attacked winchester group may overshoot its magazine defending itself; the
+-- overshoot is still counted and debited (the persisted stock clamps at zero).
+--
+-- N2 -- THE MAGAZINE. Each group's emitted `remaining` is this mission's hard anti-ship
+-- expenditure cap. Every S_EVENT_SHOT whose weapon type matches the anti-ship pattern list
+-- decrements it; at zero the group drops back to ReturnFire -- WINCHESTER, out of the anti-ship
+-- fight until the campaign says otherwise (and, per the flown finding above, passive UNTIL
+-- attacked -- release-on-attack is what lets a spent ship still fight back). There is no rearm:
+-- expenditure mirrors into the naval_magazines_state debrief channel and Python debits the
+-- persisted magazine at the turn boundary. A mission that fires nothing debits nothing.
 --
 -- The land-attack cruise missiles §63 meters (Tomahawk, the 3M14 Kalibr) are deliberately absent
 -- from the pattern list, so the two magazines meter disjoint weapon sets and can never both
@@ -40,15 +51,23 @@ local data = dcsRetribution.navalMagazines
 -- Read the enums when DCS exposes them, fall back to the documented literals otherwise.
 local ROE_ID = (AI and AI.Option and AI.Option.Naval and AI.Option.Naval.id
     and AI.Option.Naval.id.ROE) or 0
+local ROE_WEAPON_FREE = 0
 local ROE_RETURN_FIRE = 3
 
 -- Defaults. Overridable via the plugin options (dcsRetribution.plugins.navalmagazines).
+local RELEASE_MIN = 120 -- s after mission start: the weapons-release window opens
+local RELEASE_MAX = 900 -- s after mission start: the weapons-release window closes
 local ANNOUNCE = true -- cue the owning coalition when a group goes winchester
 local PATTERNS = "HARPOON,RGM_84,AGM_84,EXOCET,MM_38,MM_40,YJ,C_802,C_602,"
     .. "P_500,P_700,P_270,P_1000,KH_35,3M24,3M54,SS_N,NSM,RBS15,OTOMAT"
 
 if dcsRetribution.plugins and dcsRetribution.plugins.navalmagazines then
     local o = dcsRetribution.plugins.navalmagazines
+    RELEASE_MIN = tonumber(o.releaseMinS) or RELEASE_MIN
+    RELEASE_MAX = tonumber(o.releaseMaxS) or RELEASE_MAX
+    if RELEASE_MAX < RELEASE_MIN then
+        RELEASE_MAX = RELEASE_MIN
+    end
     if o.announceWinchester ~= nil then
         ANNOUNCE = o.announceWinchester
     end
@@ -63,9 +82,15 @@ end
 -- actually flushes.
 naval_magazines_state = naval_magazines_state or {}
 
+local STAGGER = data.stagger == true or data.stagger == "true"
+local METERED = data.metered == true or data.metered == "true"
+
 local remaining = {} -- group name -> anti-ship missiles left this mission
 local groupSide = {} -- group name -> coalition.side
+local groupOrder = {} -- ordered group names, for the release stagger
 local fired = {} -- group name -> its naval_magazines_state entry
+local released = {} -- group name -> true once weapons-free (stagger or attack)
+local underAttack = {} -- group name -> true once the enemy has fired at it
 
 local function sideOf(name)
     if name == "red" then
@@ -78,6 +103,7 @@ for _, m in ipairs(data.magazines or {}) do
     if m.group then
         remaining[m.group] = tonumber(m.remaining) or 0
         groupSide[m.group] = sideOf(m.coalition)
+        groupOrder[#groupOrder + 1] = m.group
     end
 end
 
@@ -128,7 +154,49 @@ local function recordFired(groupName, count)
     dirty_state = true
 end
 
--- Charge a shot against the shooter's magazine, and hold a spent group at ReturnFire.
+-- N1: release one group to weapons-free. A group whose magazine is already dry is deliberately
+-- left at ReturnFire -- there is nothing to release it for. Idempotent: an attack release
+-- earlier makes the scheduled release a no-op.
+local function releaseGroup(groupName)
+    if released[groupName] then
+        return nil
+    end
+    if METERED and (remaining[groupName] or 0) <= 0 then
+        env.info(string.format(
+            "NAVALMAGAZINES|: %s stays ReturnFire at release (magazine dry)", groupName))
+        return nil
+    end
+    released[groupName] = true
+    setRoe(groupName, ROE_WEAPON_FREE)
+    env.info(string.format("NAVALMAGAZINES|: %s released weapons-free", groupName))
+    return nil
+end
+
+-- Release-on-attack: the hold shapes who STARTS the war, never who may defend (see the header --
+-- a ReturnFire group is proven defenseless). Fires for held AND winchester groups; a dry group
+-- released this way may overshoot its magazine defending itself, which stays counted.
+local function releaseUnderAttack(groupName)
+    if underAttack[groupName] then
+        return
+    end
+    underAttack[groupName] = true
+    released[groupName] = true
+    setRoe(groupName, ROE_WEAPON_FREE)
+    env.info(string.format(
+        "NAVALMAGAZINES|: %s under attack -- released weapons-free", groupName))
+end
+
+-- Spread the releases evenly across the window rather than rolling each independently, so a
+-- small fleet cannot randomly land every release in the same few seconds (the §49 stagger
+-- lesson -- everything firing in one frame was itself a measured problem).
+local function releaseTime(index, total)
+    if total <= 1 or RELEASE_MAX <= RELEASE_MIN then
+        return RELEASE_MIN
+    end
+    return RELEASE_MIN + (RELEASE_MAX - RELEASE_MIN) * (index - 1) / (total - 1)
+end
+
+-- N2: charge a shot against the shooter's magazine, and hold a spent group at ReturnFire.
 local function chargeShot(groupName)
     local left = remaining[groupName]
     if left == nil then
@@ -141,7 +209,12 @@ local function chargeShot(groupName)
     end
     remaining[groupName] = left
     if left <= 0 then
-        setRoe(groupName, ROE_RETURN_FIRE)
+        -- A group already under attack keeps weapons-free: dropping it back would
+        -- re-defang a ship the enemy is actively shooting at (the flown ReturnFire
+        -- finding). Its overshoot stays counted above.
+        if not underAttack[groupName] then
+            setRoe(groupName, ROE_RETURN_FIRE)
+        end
         env.info(string.format("NAVALMAGAZINES|: %s WINCHESTER anti-ship", groupName))
         if ANNOUNCE then
             navMsg(groupSide[groupName] or coalition.side.BLUE, string.format(
@@ -151,23 +224,71 @@ local function chargeShot(groupName)
     end
 end
 
+-- The managed group a world object belongs to, or nil. pcall-guarded: a weapon's target
+-- can be scenery/a static with no getGroup.
+local function managedGroupOfUnit(obj)
+    if not obj then
+        return nil
+    end
+    local ok, name = pcall(function()
+        local grp = obj.getGroup and obj:getGroup() or nil
+        return grp and grp:getName() or nil
+    end)
+    if ok and name and groupSide[name] ~= nil then
+        return name
+    end
+    return nil
+end
+
+-- Friendly-fire guard (the §77 lesson): only ENEMY fire releases a held group.
+local function isEnemyOf(initiator, groupName)
+    local ok, side = pcall(function()
+        return initiator:getCoalition()
+    end)
+    if not ok or side == nil then
+        return false
+    end
+    return side ~= groupSide[groupName]
+end
+
 local handler = {}
 
 function handler:onEvent(event)
-    if not (event and event.id == world.event.S_EVENT_SHOT) then
+    if not event then
         return
     end
     local ok, err = pcall(function()
-        local initiator, weapon = event.initiator, event.weapon
-        if not (initiator and weapon) then
-            return
-        end
-        if not isAntiShipWeapon(weapon:getTypeName()) then
-            return
-        end
-        local grp = initiator:getGroup()
-        if grp then
-            chargeShot(grp:getName())
+        if event.id == world.event.S_EVENT_SHOT then
+            local initiator, weapon = event.initiator, event.weapon
+            if not weapon then
+                return
+            end
+            -- N2: charge a real anti-ship release against the shooter's magazine.
+            if METERED and initiator and isAntiShipWeapon(weapon:getTypeName()) then
+                local grp = initiator:getGroup()
+                if grp then
+                    chargeShot(grp:getName())
+                end
+            end
+            -- Release-on-attack: ANY enemy weapon aimed at a managed group frees it to
+            -- defend -- not just anti-ship ordnance (a Maverick or an LGB is an attack too).
+            local tOk, target = pcall(function()
+                return weapon.getTarget and weapon:getTarget() or nil
+            end)
+            if tOk and target then
+                local name = managedGroupOfUnit(target)
+                if name and initiator and isEnemyOf(initiator, name) then
+                    releaseUnderAttack(name)
+                end
+            end
+        elseif event.id == world.event.S_EVENT_HIT then
+            -- The backstop for weapons that carry no SHOT target (dumb bombs, guns). A nil
+            -- initiator (debris, an unknown shooter) still releases -- being hit is reason
+            -- enough to defend; a known FRIENDLY hit never does.
+            local name = managedGroupOfUnit(event.target)
+            if name and (not event.initiator or isEnemyOf(event.initiator, name)) then
+                releaseUnderAttack(name)
+            end
         end
     end)
     if not ok then
@@ -176,13 +297,32 @@ function handler:onEvent(event)
 end
 
 local ok, err = pcall(function()
-    local count = 0
-    for _ in pairs(remaining) do
-        count = count + 1
-    end
+    -- The handler always runs: N2 needs the shot metering, and release-on-attack must
+    -- free a held group under either tier.
     world.addEventHandler(handler)
+    if METERED then
+        -- A group that starts the mission dry never gets to open fire with missiles it does not
+        -- have. With the stagger on it is simply never released; without it, the generator left
+        -- every ship weapons-free, so pull the dry ones back now.
+        if not STAGGER then
+            for _, name in ipairs(groupOrder) do
+                if (remaining[name] or 0) <= 0 then
+                    setRoe(name, ROE_RETURN_FIRE)
+                end
+            end
+        end
+    end
+    if STAGGER then
+        for index, name in ipairs(groupOrder) do
+            timer.scheduleFunction(
+                releaseGroup, name,
+                timer.getTime() + releaseTime(index, #groupOrder)
+            )
+        end
+    end
     env.info(string.format(
-        "NAVALMAGAZINES|: armed -- metering %d naval group(s)", count))
+        "NAVALMAGAZINES|: armed -- %d naval group(s), stagger %s (%ds-%ds), metered %s",
+        #groupOrder, tostring(STAGGER), RELEASE_MIN, RELEASE_MAX, tostring(METERED)))
 end)
 if not ok then
     env.error("NAVALMAGAZINES|: setup error: " .. tostring(err))

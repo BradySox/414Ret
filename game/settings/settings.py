@@ -3321,7 +3321,8 @@ class Settings:
             "from the moment the mission loads and the entire naval battle happens "
             "in the first five minutes. They still defend themselves while they "
             "wait -- this delays who shoots first, it does not disarm anyone. "
-            "Symmetric."
+            "Symmetric. Runs via the 'Naval magazines & weapons release' LUA "
+            "plugin -- keep that plugin enabled or this setting does nothing."
         ),
     )
     naval_magazines: bool = boolean_option(

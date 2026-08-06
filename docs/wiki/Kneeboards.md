@@ -1,9 +1,18 @@
 # Kneeboards
 
-The fork reworks the generated kneeboard deck so a pilot can actually brief off it in the cockpit:
-a single **cover page** always leads the deck, an optional **compact 3–4 page deck** replaces the
-old ~10-page sprawl, and you can **import your own kneeboard images** per campaign. This page
-explains what each pilot gets and the settings that control it.
+The fork reworks the generated kneeboard deck so a pilot can actually brief off it in the cockpit,
+and you can **import your own kneeboard images** per campaign. This page explains what each pilot
+gets and the settings that control it.
+
+> ⚠️ **This page is out of date and is being reworked.** The 2026-07-13 "back to basics" pass
+> retired the dedicated **cover page** (§30), the **compact 3–4 page deck** (§25) and the
+> **Brief Sheet** (§31), and the standalone **Fuel Ladder** was folded into the flight plan as
+> a Fuel column (2026-07-05). The deck is now upstream's page set — Mission Info → Support
+> Info → Notes → the task page, plus the setting-gated extras — with the kept 414th content
+> folded into those pages: the BLUF, the threat cards, the colour palette, the code words, the
+> SITREP page, and the shared-airframe flight index. **Treat the "cover page", "compact deck",
+> "Brief Sheet" and "Fuel Ladder" sections below as historical.** Custom kneeboard import and
+> the SITREP band are current.
 
 In DCS, kneeboards are scoped **per airframe**: every pilot flying a given type sees all of that
 type's flight decks stacked together. The fork's layout is built around that fact.
@@ -15,12 +24,7 @@ type's flight decks stacked together. The fork's layout is built around that fac
 Every flight's deck now opens on a dedicated **cover page** that consolidates, in one sheet:
 
 - **Operation / turn / date header** — every deck tells you what op and which turn it is.
-- **Campaign phase & ROE band** — the current [campaign phase](Campaign-Phases-and-ROE) with its
-  reasoning, and the month's rules **spelled out**: OFF LIMITS zones, LOCKED target classes,
-  CLEARED classes (or the WEAPONS FREE kill-box list on an inverted-ROE campaign). Brief the
-  ROE from the cockpit.
-- **Campaign SITREP** — a "what happened last turn" digest (see below), including the labeled
-  **will movers** on a political-will campaign.
+- **Campaign SITREP** — a "what happened last turn" digest (see below).
 - **Shared-airframe flight index** — when 2+ client flights share the airframe, a callsign / task /
   start-page index so you can find your flight in the stacked deck (a lone flight skips it).
 - **Friendly-package list** — in compact mode the coalition package list rides here.

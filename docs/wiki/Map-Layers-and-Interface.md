@@ -1,7 +1,7 @@
 # Map Layers and Interface
 
 414Ret reworks the campaign map's layer controls into a single panel, adds new campaign-state
-overlays (the status ribbon, the ROE zone layer), paints planning information onto the **DCS F10
+overlays (the status ribbon), paints planning information onto the **DCS F10
 map** so it survives into the cockpit, and surfaces more planner reasoning in the dialogs you use
 to plan and debrief.
 
@@ -33,20 +33,6 @@ grouping, presets, and persistence.
   show a chart of the *DCS* terrain instead of mismatching real-world imagery. Purely local
   content; whatever is on disk is what appears.
 
-### ROE zones (restricted & weapons-free)
-
-On a campaign with an authored [ROE layer](Campaign-Phases-and-ROE#the-roe-layer), the Enemy
-intel group carries a **zones layer** (default on):
-
-- **Red dashed** shapes — restricted (no-strike) zones: sanctuary circles, Route-Package boxes,
-  off-limits corridors. Tooltip: *"RESTRICTED (ROE)"* plus what the zone is and when it eases.
-- **Green dashed** shapes — free-fire kill boxes on an inverted-ROE (COIN) campaign. Tooltip:
-  *"WEAPONS FREE (ROE)"*.
-
-The same shapes are painted into the generated mission's **F10 map** (below), so the web map and
-the cockpit always agree. Locked target classes additionally show a **RESTRICTED — ROE badge**
-on their map tooltip instead of vanishing.
-
 ### Reveal fog of war
 
 The panel also carries a transient **"Reveal fog of war"** checkbox (in the Enemy intel
@@ -63,11 +49,9 @@ planning the opposing side, or just checking the truth. See
 ## The campaign-status ribbon
 
 A slim ribbon over the map shows the campaign's live strategic state: **campaign name, turn,
-date**, and the current **[campaign phase](Campaign-Phases-and-ROE)** chip ("Interdiction —
-enemy IADS 22% · air threat low · front static"). Click the chip to expand the whole phase arc —
-every phase's restrictions and releases, the objectives checklist with live ticks, and what
-advances the current phase. On a political-will campaign the two **will meters** ride the ribbon
-too; hovering shows the labeled movers from the will ledger.
+date**, and — on a campaign that authors a `victory:` block — a green **VICTORY** chip. Click it
+to expand the win/lose checklist with live values ("Any one of these ends the war: …"). The
+ribbon also carries the **LAST TURN** panel: the same SITREP digest the kneeboard band shows.
 
 ## Right-click actions on the map
 
@@ -88,8 +72,6 @@ map into the cockpit — briefable on the F10 map with no DTC and no screenshots
   [corridor standard](Custom-Campaigns#supply-routes-follow-the-driveable-corridor), so the
   line on the map is the road the trucks are on.
 - **Control points** — a colored capture-radius circle per airbase/FARP (blue/red/gray).
-- **ROE zones** — active restricted zones in dashed red, free-fire kill boxes in dashed green,
-  named; identical geometry to the web layer.
 - **Tanker & AWACS orbits** — every blue tanker and AEW&C racetrack as a **cyan dashed capsule**
   with a label: callsign, type, **radio frequency, and TACAN** (e.g. `Texaco 1-1 KC-135 ·
   251.0 AM TCN 31Y`). The reliable, DTC-free answer to "where's my gas?" — check F10, read the
@@ -113,16 +95,13 @@ not just raw numbers:
   mission end-state, bases captured/lost, runway damage, and loss counts for both sides —
   above the full casualty tables.
 - **Package context bar.** The package summary line shows primary task, flight count, player
-  slots, the actual time-on-target, and departure bases in one line. On an ROE campaign it also
-  carries the **pre-flight ROE warning** when the target is restricted — it prices the choice,
-  it never blocks it.
+  slots, the actual time-on-target, and departure bases in one line.
 - **Flight-creation context.** Creating a flight shows a live summary of what your selected
   task / aircraft / squadron choice means; squadron hover text lists primary role,
   auto-assignability, spare aircraft, base, and distance to target.
 
 ## See also
 
-- [Campaign-Phases-and-ROE](Campaign-Phases-and-ROE) — the ribbon, zones, and will meters
 - [Fog-of-War-and-Reconnaissance](Fog-of-War-and-Reconnaissance)
 - [The-Retribution-UI](The-Retribution-UI)
 - [Custom-Campaigns](Custom-Campaigns) — authoring the supply corridors and zones the map draws

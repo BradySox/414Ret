@@ -11,7 +11,6 @@
 
 **Campaign mechanics**
 - [Mission Planning](Mission-planning)
-- [Campaign Phases & ROE](Campaign-Phases-and-ROE)
 - [Air Defense & the Air War](Air-Defense-and-the-Air-War)
 - [IADS Engine: MANTIS](IADS-Engine-MANTIS)
 - [Frontline Stances & Movement](Frontline-Stances-and-Movement)

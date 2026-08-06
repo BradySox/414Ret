@@ -72,20 +72,19 @@ Full detail: **[Air Defense and the Air War](Air-Defense-and-the-Air-War)**.
 
 ## The campaign knows what war it's in — and what month
 
-- Every campaign tracks its **[campaign phase](Campaign-Phases-and-ROE)** (Air Superiority →
-  Rollback → Interdiction → Offensive, inferred live from the IADS, air threat, and front) —
-  shown on a **status ribbon** over the map and the kneeboard cover, always with its reasoning —
-  and the auto-planner leans its offensive tasking to match.
-- Campaigns can author the layer on top: a named **phase arc** with objectives, a **Rules-of-
-  Engagement layer** (no-strike sanctuaries, locked target classes — or inverted, free-fire
-  kill boxes), and a **political-will economy** that ends the war at the negotiating table with
-  campaign-authorable meters and feed weights. The AI planner obeys the ROE; you are only ever
-  *priced*, never blocked.
+- Campaigns can author **[custom victory conditions](Custom-Campaigns)** — an explicit
+  `victory:` block (capture these bases, destroy these targets, hold this much territory,
+  break the enemy's air arm) instead of grinding the map flat, shown live on the status
+  ribbon and the SITREP.
 - The shipped flavours: the **[Vietnam campaign layer](Vietnam-Campaign-Layer)** (Washington vs
-  Hanoi, the Rolling Thunder → Linebacker II arc, ambush MiGs, Alpha Strikes, a red side whose
-  tempo answers the arc) and the **[COIN campaign](Enduring-Resolve-Campaign-Briefing)** (the
-  inverted model: kill boxes, population rings, an insurgency that regenerates from its ammo
-  caches).
+  Hanoi, ambush MiGs, Alpha Strikes, era-authentic planner ranges, a red side whose tempo
+  answers the campaign clock) and the **[COIN campaign](Enduring-Resolve-Campaign-Briefing)**
+  (the inverted model: an insurgency that regenerates from its ammo caches, re-infiltrates
+  cleared ground, and hides among the population).
+
+> Removed on 2026-07-21: the inferred **campaign-phase** arc, the **ROE zone** layer, and
+> the **political-will economy**. The old machinery is described, for historical reference
+> only, on [Campaign Phases and ROE](Campaign-Phases-and-ROE).
 - The **[Vietnam Ops](Vietnam-Ops)** suite adds the era's mission-level mechanics — Arc Light
   carpets, the AAA flak gauntlet, naval gunfire, trail-convoy interdiction, airbase harassment,
   the Super Gaggle, FAC(A) willie-pete marking, snake-and-nape — all opt-in, preseeded by the
@@ -159,7 +158,6 @@ restrictions) to turn it off
 
 - [Getting Started](Getting-Started)
 - [Mission Planning](Mission-planning)
-- [Campaign Phases and ROE](Campaign-Phases-and-ROE)
 - [Fog of War and Reconnaissance](Fog-of-War-and-Reconnaissance)
 - [Air Defense and the Air War](Air-Defense-and-the-Air-War)
 - [Home](Home)

@@ -12,11 +12,8 @@ your datalink so you plan SEAD against the sites that matter. This page explains
 how it changes what you see when you build packages.
 
 For the per-task fragging detail (SEAD vs DEAD, BARCAP timing, escorts), see
-[Mission-planning](Mission-planning). Two campaign-level layers also steer the planner's
-*offensive* priorities: the **[campaign phase](Campaign-Phases-and-ROE)** (which objectives get
-first claim on offensive jets this month) and, on ROE campaigns, the restricted-zone gate (the
-AI never strikes into an active sanctuary). Reactive defense — everything on this page — is
-never touched by either.
+[Mission-planning](Mission-planning). Reactive defense — everything on this page — is
+planned deterministically and is never reordered by campaign-level effects.
 
 ## QRA intercept reserve
 

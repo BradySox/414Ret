@@ -16,8 +16,8 @@ sections). Every feature is independently opt-in, and turning its toggle off rem
 behaviour cleanly, exactly like MANTIS, Combat SAR, and TIC.
 
 > Vietnam content now comes in **two layers**. This page is the *mission-level* Ops suite — flak,
-> Arc Light, the trail, the gaggle. The *campaign-level* war — political will, the Rolling
-> Thunder → Linebacker II ROE arc, ambush MiGs, the Easter Offensive — is
+> Arc Light, the trail, the gaggle. The *campaign-level* war — era taskings and engagement
+> ranges, Alpha Strikes, ambush MiGs, and red's tempo — is
 > **[The Vietnam Campaign Layer](Vietnam-Campaign-Layer)**.
 
 ---
@@ -37,8 +37,6 @@ Doctrine, and the rest). The mission-level suite:
 | Battlefield & interdiction | Super Gaggle hilltop resupply | [§6 Super Gaggle](#6--super-gaggle-hilltop-resupply) |
 | Battlefield & interdiction | FAC(A) willie-pete target marking | [§7 FAC(A) marking](#7--faca-willie-pete-target-marking) |
 | Battlefield & interdiction | Snake and nape (napalm CAS) | [§8 Snake and nape](#8--snake-and-nape-napalm-cas) |
-| Campaign | Political will tracking | [The Campaign Layer](Vietnam-Campaign-Layer) |
-| Campaign | Static front (bounded siege line) | [The Campaign Layer](Vietnam-Campaign-Layer) |
 
 **Gating model.** Every toggle defaults **OFF**, so a modern campaign never sees flak puffs or
 carpet bombing. The Vietnam campaign YAMLs (1968 Yankee Station, Velvet Thunder, Red Flag
@@ -74,10 +72,9 @@ unaffected — the heavy-bomber gate means only the big jets carpet.
 - **Losses stay native.** A bomber shot down before the run-in simply never drops its carpet;
   where the box overlaps real ground targets the damage is real.
 - **Tunable** (plugin options): carpet length/width, per-blast power, release range.
-- **Pairs with the campaign layer:** under Vietnam doctrine the B-52s now arrive as a massed,
-  escorted [Alpha Strike](Vietnam-Campaign-Layer#the-real-alpha-strike) instead of a lone naked
-  section — and losing one is a national event on the
-  [political-will meter](Vietnam-Campaign-Layer#political-will).
+- **Pairs with the campaign layer:** under Vietnam doctrine the B-52s arrive as a massed,
+  escorted [Alpha Strike](Vietnam-Campaign-Layer) instead of a lone naked section — and a
+  heavy bomber is an expensive thing to lose.
 
 ## 2 — AAA flak gauntlet
 
@@ -272,9 +269,8 @@ squadron airframe losses at the next debrief.
 
 ## See also
 
-- **[The Vietnam Campaign Layer](Vietnam-Campaign-Layer)** — the war *over* the war: political
-  will, the Rolling Thunder → Linebacker II ROE arc, ambush MiGs, Alpha Strikes, and the enemy's
-  phase-coupled tempo.
+- **[The Vietnam Campaign Layer](Vietnam-Campaign-Layer)** — the war *over* the war: era
+  taskings and engagement ranges, ambush MiGs, Alpha Strikes, and the enemy's tempo.
 - **[Combat SAR](Combat-SAR)** and **[SCAR](SCAR)** — the Sandy/King rescue package, the other
   half of the Vietnam-era content.
 - **[Troops In Contact](Troops-In-Contact)** — the frontline firefight sim the flak/convoy effects

@@ -1,18 +1,28 @@
-# 414th (§86): the BLUE mirror of GPS-Jamming-Site-Red.
+# 414th (§86) -- a placeable GPS jamming site (BLUE).
 #
-# §86 is symmetric in code -- a site denies GPS to the OPPOSING coalition -- so
-# this exists for the day a blue faction fields a jammer (and so that a red
-# campaign can be mirrored without new engineering). See the red preset for why
-# the jammer is paired with an early-warning radar rather than standing alone.
+# Pin this onto an authored air-defence marker in a campaign's `ground_forces`
+# block to put a jamming site wherever you want it -- beside a SAM belt, on an
+# objective, covering an approach. It brings its own layout
+# (`GPS Jamming Site`), so it touches nothing else in the theater and no
+# campaign sees one unless it asks for it.
+#
+# What it fields: the jammer(s) that deny GPS, an ARM-able acquisition radar so
+# the site paints RWRs and takes HARMs (a GPS jammer is L-band and invisible to
+# both on its own -- see the layout for the measured detail), and point defence.
+#
+# Killing the jammer trucks stops the jamming; killing the radars blinds the site
+# without stopping it. Both are worth a bomb, for different reasons.
+#
+# EVERY unit listed here must be reachable by the faction that uses it: the
+# override gate is `all(u in faction.accessible_units for u in fg.units)`, so ONE
+# unreachable unit silently discards the whole pin and the marker falls back to
+# an ordinary site. Registering this preset in a faction's `preset_groups` is
+# what makes its units accessible.
 name: GPS Jamming Site (Blue)
 tasks:
   - EarlyWarningRadar
 units:
-  - EWR AN/FPS-117 Radar
-  - EWR AN/FPS-117 Radar (domed)
-  # The ARM-able emitter (see the red preset): the FPS-117 has no
-  # RADAR_BAND*_FOR_ARM attributes, the NASAMS MPQ-64F1 does.
-  - SAM NASAMS SR MPQ64F1
   - EW Radio Jammer (Blue)
+  - SAM NASAMS SR MPQ64F1
 layouts:
-  - Early-Warning Radar
+  - GPS Jamming Site

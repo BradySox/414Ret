@@ -214,18 +214,29 @@ settings:
 #     found by (MANTIS never holds an EWR dark). Killing the jammer truck stops the jamming;
 #     killing the radar blinds the site without stopping it. Both are worth a bomb.
 #
-#     TWO sites, chosen off the geography, so the mechanic has a life across the campaign
-#     rather than being a turn-1 single point of failure:
-#       * EWR-26 (13.9 km from Laage, mid-map) is the one blue meets on the way north.
-#       * EWR-27 (8.5 km from Kastrup) sits on the campaign's victory objective, so the
-#         Copenhagen push is a "kill the jammer before you can JDAM the prize" problem.
-#     The other three EWRs (Barth / Szczecin / Bornholm) stay ordinary radar sites.
+#     The jamming sites are their OWN markers (GPSJAM-1/2, added by
+#     `tools/build_baltic_fury_miz.py --gps-jamming`), not a modifier bolted onto the EWR net.
+#     Red's early-warning chain and its GPS-denial belt are separate installations you attack
+#     separately: killing an EWR blinds the radar picture, killing a jamming site gives you
+#     your satellite guidance back, and neither does the other's job.
 #
-#     The preset supplies its own jammer, so no faction edit is needed, and the layout's
-#     jammer slot is optional + fill: false -- every other EWR site generates exactly as before.
+#     Placed to cover what blue actually wants to JDAM:
+#       * GPSJAM-1 -- the Copenhagen approach, ~5 km from Kastrup, the victory objective. The
+#         final push is a "kill the jammer before you can JDAM the prize" problem.
+#       * GPSJAM-2 -- Rostock, the central approach blue fights up on the way north.
+#
+#     Each site brings its own layout: the jammer trucks, an ARM-able ST-68U acquisition radar
+#     so the site paints RWRs and takes HARMs (a GPS jammer is L-band and invisible to both on
+#     its own), and point defence.
+#
+#     The preset must list ONLY units the faction can reach: the override gate is
+#     `all(u in faction.accessible_units for u in fg.units)`, so ONE unreachable unit silently
+#     discards the whole pin and the marker falls back to an ordinary site (exactly what
+#     happened on the first cut -- the jammer was in no faction). The preset is registered in
+#     `redfor_russia_2020.json`'s preset_groups, which is what makes its units accessible.
 ground_forces:
-  EWR-26: GPS Jamming Site (Red)
-  EWR-27: GPS Jamming Site (Red)
+  GPSJAM-1: GPS Jamming Site (Red)
+  GPSJAM-2: GPS Jamming Site (Red)
 # --- §75 custom victory: liberate Copenhagen = win; lose the Nordholz bridgehead = defeat.
 #     (Stock territory endings remain in addition to these.)
 victory:

@@ -8,6 +8,7 @@ reads as a bug rather than as a feature.
 
 from __future__ import annotations
 
+import pathlib
 from dataclasses import dataclass
 from typing import Any, Optional
 
@@ -317,75 +318,96 @@ def test_the_yaml_block_reaches_the_loaded_unit_type() -> None:
 
 
 def test_the_shipped_ew_radio_jammers_are_the_feature_s_units() -> None:
-    """The real tie-in, on real registered data (§85's `GPS_Spoofer_*` units).
+    """The real tie-in, on real registered data: the two DCS "Radio jammer"
+    vehicles are the feature's units, and both declare the same deliberate reach.
 
-    These are the vehicles the feature exists for, so their yamls must actually
-    carry the block -- and their reach must be the unit's OWN declared
-    `detection_range` (50 km), not an invented number, so the bubble matches what
-    DCS says the vehicle can hear.
+    15 nm is BELOW the 50 km (27 nm) DCS declares for the vehicle, and that is the
+    point: the bubble is a GPS-denied TARGET area, not a denied release area (a
+    weapon aimed inside it flies through it whatever the release range), so the
+    radius is the size of the target set that loses guidance. 27 nm denied a large
+    share of a medium map.
     """
     from game.dcs.groundunittype import GroundUnitType
-    from game.utils import meters
 
     for variant in ("EW Radio Jammer (Red)", "EW Radio Jammer (Blue)"):
         unit = GroundUnitType.named(variant)
         assert unit.gps_jamming is not None, f"{variant} must declare gps_jamming"
-        assert unit.gps_jamming.radius_nm is not None
-        declared = unit.dcs_unit_type.detection_range
-        reach = nautical_miles(unit.gps_jamming.radius_nm)
-        # Within a nautical mile of the DCS-declared detection range.
-        assert abs(reach.meters - declared) < meters(1852).meters, (
-            f"{variant} jams to {reach.nautical_miles:.0f} nm but DCS declares "
-            f"{declared} m of reach"
+        assert (
+            unit.gps_jamming.radius_nm == 15
+        ), f"{variant} should deny a target cluster (15 nm), not a region"
+        # Sanity: still well inside what DCS says the vehicle can hear.
+        assert nautical_miles(unit.gps_jamming.radius_nm).meters < (
+            unit.dcs_unit_type.detection_range
         )
 
 
-def test_the_ewr_layout_carries_an_optional_jammer_slot(_layouts: None) -> None:
-    """The RWR/HARM pairing (§86).
+def test_the_standalone_jamming_site_layout_is_self_contained(
+    _layouts: None,
+) -> None:
+    """Model 1: a placeable site of its own.
 
-    A GPS jammer emits in L-band, which no RWR covers and no HARM homes on, so a
-    lone jammer could only ever be found by recon. Parking it in the EWR site
-    gives it a real always-on emitter to hide behind -- the site paints RWRs and
-    takes HARMs like any other radar.
-
-    The slot must be optional + fill: false, or every existing EWR site in every
-    shipped campaign would start fielding jammers.
+    It must bring both halves -- the jammers, and an ARM-able acquisition radar
+    so the site paints RWRs and takes HARMs (a GPS jammer is L-band and invisible
+    to both on its own) -- and must NOT be `generic`, so it can never be rolled at
+    an ordinary air-defence marker by accident.
     """
     from game.layout import LAYOUTS
 
     LAYOUTS.initialize()
     layout = next(
-        (lay for lay in LAYOUTS.layouts if lay.name == "Early-Warning Radar"), None
+        (lay for lay in LAYOUTS.layouts if lay.name == "GPS Jamming Site"), None
     )
-    assert layout is not None, "the Early-Warning Radar layout must exist"
+    assert layout is not None, "the standalone GPS Jamming Site layout must exist"
+    assert not layout.generic, "must be preset-only, never rolled by accident"
 
-    slot = None
-    for group in layout.groups:
-        for unit_group in group.unit_groups:
-            if unit_group.name == "GPS Jammer 0":
-                slot = unit_group
-    assert slot is not None, "the EWR layout must carry the jammer slot"
-    assert slot.optional is True, "an existing EWR site must not be forced to jam"
-    assert slot.fill is False, "faction fill must never drop a jammer into an EWR site"
-    # The slot names a group that really exists in the shared .miz -- a slot
-    # naming a missing group is SILENTLY dropped (the dead-config class of bug).
-    assert len(slot.layout_units) >= 1, "the slot's .miz position group is missing"
-    ids = {unit_type.id for unit_type in (slot.unit_types or [])}
-    assert ids == {"GPS_Spoofer_Red", "GPS_Spoofer_Blue"}
-
-    # The companion ARM-able emitter slot, under the same gate.
-    radar_slot = None
-    for group in layout.groups:
-        for unit_group in group.unit_groups:
-            if unit_group.name == "GPS Jammer Radar 0":
-                radar_slot = unit_group
-    assert radar_slot is not None, "the ARM-able emitter slot must exist"
-    assert radar_slot.optional is True and radar_slot.fill is False
-    assert len(radar_slot.layout_units) >= 1
-    assert {unit_type.id for unit_type in (radar_slot.unit_types or [])} == {
+    slots = {
+        unit_group.name: unit_group
+        for group in layout.groups
+        for unit_group in group.unit_groups
+    }
+    jammer = slots.get("GPS Jammer")
+    assert jammer is not None and len(jammer.layout_units) >= 1
+    assert {t.id for t in (jammer.unit_types or [])} == {
+        "GPS_Spoofer_Red",
+        "GPS_Spoofer_Blue",
+    }
+    radar = slots.get("GPS Jammer Radar")
+    assert radar is not None, "the site must carry an ARM-able emitter"
+    # unit_count 2: the ST-68U is a track-radar class, so the standing 60
+    # redundancy contract applies -- one HARM must not blind the site.
+    assert radar.unit_count == [2]
+    assert {t.id for t in (radar.unit_types or [])} == {
         "RLS_19J6",
         "NASAMS_Radar_MPQ64F1",
     }
+
+
+def test_a_sam_site_can_carry_an_attached_jamming_section(_layouts: None) -> None:
+    """Model 2: the section that puts a jammer INSIDE an existing threat ring.
+
+    Optional + fill: false is what keeps every shipped S-300 site unchanged --
+    only a preset that explicitly lists a jammer fields one.
+    """
+    from game.layout import LAYOUTS
+
+    LAYOUTS.initialize()
+    for layout_name in ("S-300 Site", "S-300 Site (Single Radar)"):
+        layout = next((lay for lay in LAYOUTS.layouts if lay.name == layout_name), None)
+        assert layout is not None, f"{layout_name} must exist"
+        slot = next(
+            (
+                unit_group
+                for group in layout.groups
+                for unit_group in group.unit_groups
+                if unit_group.name == "S-300 Site GPS Jammer"
+            ),
+            None,
+        )
+        assert slot is not None, f"{layout_name} must offer the jamming section"
+        assert (
+            slot.optional is True and slot.fill is False
+        ), "an existing S-300 site must never grow a jammer on its own"
+        assert len(slot.layout_units) >= 1, "the .miz position group is missing"
 
 
 def test_each_jamming_site_preset_pairs_a_radar_with_its_own_sides_jammer(
@@ -407,12 +429,6 @@ def test_each_jamming_site_preset_pairs_a_radar_with_its_own_sides_jammer(
         assert own in ids, f"{preset_name} must field its own jammer"
         assert other not in ids, f"{preset_name} must not reach the other side's"
         # ...and at least one real emitter, so the site is RWR-visible/HARM-able.
-        radars = [
-            unit
-            for unit in group.units
-            if unit.unit_class is UnitClass.EARLY_WARNING_RADAR
-        ]
-        assert radars, f"{preset_name} must pair the jammer with an EWR emitter"
         # ...and an ARM-able acquisition radar. Being on the RWR and being
         # HARM-able are two DIFFERENT DCS attributes: `GT.WS.radar_type` puts a
         # unit on the RWR (the EWRs have it), `RADAR_BAND1/2_FOR_ARM` is what an
@@ -424,7 +440,7 @@ def test_each_jamming_site_preset_pairs_a_radar_with_its_own_sides_jammer(
             if unit.dcs_unit_type.id in {"RLS_19J6", "NASAMS_Radar_MPQ64F1"}
         ]
         assert arm_able, f"{preset_name} must field an ARM-able acquisition radar"
-        assert "Early-Warning Radar" in {lay.name for lay in group.layouts}
+        assert "GPS Jamming Site" in {lay.name for lay in group.layouts}
 
 
 def test_no_other_shipped_unit_jams_by_accident() -> None:
@@ -439,3 +455,144 @@ def test_no_other_shipped_unit_jams_by_accident() -> None:
         if unit.gps_jamming is not None
     }
     assert jammers == {"EW Radio Jammer (Red)", "EW Radio Jammer (Blue)"}
+
+
+def test_ewr_markers_honour_a_ground_forces_pin(_layouts: None) -> None:
+    """`generate_ewrs` must route through `get_unit_group_for_task`.
+
+    It used to call `random_group_for_task` directly, so a campaign's
+    `ground_forces` pin on an EWR marker was silently ignored -- the identical
+    hole naval groups had until `generate_navy` was routed through the same
+    method. The failure did not look like a pin failure either: because the
+    pinned preset is also registered on the faction (that is how its units become
+    `accessible_units`), it joined the EWR candidate pool and was picked at a
+    RANDOM SUBSET of markers, so the campaign generated a different shape every
+    time (measured 1-to-5 of 5 sites before the fix).
+
+    Pinned to the source rather than a full generation, which needs the mods
+    enabled at New Game and cannot run headless.
+    """
+    import inspect
+
+    from game.theater.start_generator import AirbaseGroundObjectGenerator
+
+    source = inspect.getsource(AirbaseGroundObjectGenerator.generate_ewrs)
+    # Comments discuss the old call by name, so compare code lines only.
+    code = "\n".join(
+        line for line in source.splitlines() if not line.strip().startswith("#")
+    )
+    assert "self.get_unit_group_for_task(" in code, (
+        "generate_ewrs must honour ground_forces pins -- calling "
+        "random_group_for_task directly silently ignores them"
+    )
+    assert "random_group_for_task" not in code
+
+
+# -- density guard: few, large-effect, non-overlapping -------------------------
+
+#: A campaign may field at most this many GPS-jamming sites.
+#:
+#: Bubbles are big and INVISIBLE on the campaign map, so a heavy hand is easy to
+#: author and hard to notice until someone flies it -- the Marianas lesson, where
+#: 13 of 30 max-radius rings "did not make the campaign harder, it made the map
+#: unreadable". Few large-effect sites on distinct target clusters is the shape.
+MAX_JAMMING_SITES_PER_CAMPAIGN = 3
+
+
+def _campaign_jamming_pins() -> dict[str, list[tuple[str, str]]]:
+    """{campaign yaml stem: [(marker name, preset name), ...]} for every pin whose
+    preset fields a GPS jammer -- both placement models, since a standalone site
+    and a jamming-equipped SAM battery both reach the map through a pin."""
+    import yaml as _yaml
+
+    from game.armedforces.forcegroup import ForceGroup
+
+    out: dict[str, list[tuple[str, str]]] = {}
+    for path in pathlib.Path("resources/campaigns").glob("*.yaml"):
+        data = _yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        pins = data.get("ground_forces") or {}
+        found: list[tuple[str, str]] = []
+        for marker, preset_name in pins.items():
+            try:
+                preset = ForceGroup.from_preset_group(preset_name)
+            except KeyError:
+                continue  # an unknown preset is a different test's problem
+            if any(
+                getattr(unit, "gps_jamming", None) is not None for unit in preset.units
+            ):
+                found.append((str(marker), str(preset_name)))
+        if found:
+            out[path.stem] = found
+    return out
+
+
+def test_no_campaign_fields_more_than_three_jamming_sites(_layouts: None) -> None:
+    from game.layout import LAYOUTS
+
+    LAYOUTS.initialize()
+    for campaign, pins in _campaign_jamming_pins().items():
+        assert len(pins) <= MAX_JAMMING_SITES_PER_CAMPAIGN, (
+            f"{campaign} authors {len(pins)} GPS-jamming sites "
+            f"({[m for m, _ in pins]}); the cap is "
+            f"{MAX_JAMMING_SITES_PER_CAMPAIGN}. Jamming bubbles are large and "
+            "invisible on the map -- a few placed on distinct target clusters "
+            "read as a decision, a carpet reads as the weapon class being off."
+        )
+
+
+def test_jamming_bubbles_do_not_overlap(_layouts: None) -> None:
+    """Two bubbles covering the same ground buy redundancy, not depth.
+
+    The runtime does NOT stack effects -- a weapon faces only the single
+    strongest bubble covering it (the §77 non-stacking rule) -- so a second
+    overlapping site adds no new decision for the player, and killing one
+    restores nothing. Deliberate defence-in-depth is a fair reason to override
+    this, but it should be a conscious one.
+    """
+    from dcs.mission import Mission
+
+    from game.armedforces.forcegroup import ForceGroup
+    from game.layout import LAYOUTS
+    from game.utils import nautical_miles
+
+    LAYOUTS.initialize()
+    for campaign, pins in _campaign_jamming_pins().items():
+        miz = pathlib.Path("resources/campaigns") / f"{campaign}.miz"
+        if not miz.exists():
+            continue
+        mission = Mission()
+        mission.load_file(str(miz))
+        positions = {
+            group.name: (group.units[0].position.x, group.units[0].position.y)
+            for coalition in mission.coalition.values()
+            for country in coalition.countries.values()
+            for group in country.vehicle_group
+            if group.units
+        }
+        placed: list[tuple[str, float, float, float]] = []
+        for marker, preset_name in pins:
+            if marker not in positions:
+                continue
+            radii = []
+            for unit in ForceGroup.from_preset_group(preset_name).units:
+                jamming = getattr(unit, "gps_jamming", None)
+                if jamming is None:
+                    continue
+                radii.append(
+                    nautical_miles(jamming.radius_nm).meters
+                    if jamming.radius_nm
+                    else DEFAULT_REACH.meters
+                )
+            reach = max(radii)
+            x, y = positions[marker]
+            placed.append((marker, x, y, reach))
+        for i, (name_a, xa, ya, ra) in enumerate(placed):
+            for name_b, xb, yb, rb in placed[i + 1 :]:
+                gap = ((xa - xb) ** 2 + (ya - yb) ** 2) ** 0.5
+                assert gap >= ra + rb, (
+                    f"{campaign}: jamming bubbles {name_a} and {name_b} overlap "
+                    f"({gap / 1000:.0f} km apart, radii sum "
+                    f"{(ra + rb) / 1000:.0f} km). Effects do not stack, so the "
+                    "second site adds no decision -- spread them onto distinct "
+                    "target clusters."
+                )

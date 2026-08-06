@@ -1,32 +1,28 @@
-# 414th (§86): a RED early-warning site with a GPS-jamming section attached.
+# 414th (§86) -- a placeable GPS jamming site (RED).
 #
-# The jammer is deliberately NOT a standalone site. A real GPS jammer emits in
-# L-band, which no RWR covers and no HARM homes on, so a lone jammer would be
-# invisible to the tools a pilot hunts emitters with -- findable only by recon,
-# and never prosecutable by SEAD. Pairing it with the early-warning radar gives
-# the site a real, always-on emitter (MANTIS never holds an EWR dark), so it
-# paints RWRs and takes HARMs like any other radar.
+# Pin this onto an authored air-defence marker in a campaign's `ground_forces`
+# block to put a jamming site wherever you want it -- beside a SAM belt, on an
+# objective, covering an approach. It brings its own layout
+# (`GPS Jamming Site`), so it touches nothing else in the theater and no
+# campaign sees one unless it asks for it.
 #
-# The jammer's own liveness is tracked per-UNIT by the §86 runtime, so killing
-# the jammer truck stops the jamming even though the radar beside it survives --
-# and killing the radar blinds the site without stopping the jamming. Both are
-# worth a bomb, for different reasons.
+# What it fields: the jammer(s) that deny GPS, an ARM-able acquisition radar so
+# the site paints RWRs and takes HARMs (a GPS jammer is L-band and invisible to
+# both on its own -- see the layout for the measured detail), and point defence.
 #
-# Pin this preset onto an authored EWR marker (ground_forces) to field it; no
-# existing EWR site changes, because the layout's jammer slot is optional and
-# fill: false.
+# Killing the jammer trucks stops the jamming; killing the radars blinds the site
+# without stopping it. Both are worth a bomb, for different reasons.
+#
+# EVERY unit listed here must be reachable by the faction that uses it: the
+# override gate is `all(u in faction.accessible_units for u in fg.units)`, so ONE
+# unreachable unit silently discards the whole pin and the marker falls back to
+# an ordinary site. Registering this preset in a faction's `preset_groups` is
+# what makes its units accessible.
 name: GPS Jamming Site (Red)
 tasks:
   - EarlyWarningRadar
 units:
-  - EWR 1L13
-  - EWR 55G6
-  - EWR P-37 Bar Lock
-  # The ARM-able emitter. The EWRs put the site on RWR but carry no
-  # RADAR_BAND*_FOR_ARM attributes, so a HARM cannot home on them; the ST-68U
-  # does, which is what makes this site a real SEAD target rather than just a
-  # radar contact you have to go and bomb by hand.
-  - SAM SA-5 S-200 ST-68U "Tin Shield" SR
   - EW Radio Jammer (Red)
+  - SAM SA-5 S-200 ST-68U "Tin Shield" SR
 layouts:
-  - Early-Warning Radar
+  - GPS Jamming Site

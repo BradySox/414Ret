@@ -3441,15 +3441,18 @@ class Settings:
         enabled_when="gps_jamming",
         page=MISSION_GENERATION_PAGE,
         section=GENERAL_SECTION,
-        default=30.0,
+        default=15.0,
         min=5.0,
         max=150.0,
         divisor=1,
         detail=(
             "How far a jamming site denies GPS, for units whose own data file "
-            "names no reach. Keep it local rather than theatre-wide: a bubble a "
-            "package can plan around (and a strike can remove) is a decision, "
-            "while a map-sized one just switches a weapon class off."
+            "names no reach. This is the size of the denied TARGET area, not a "
+            "denied release area -- a weapon aimed at anything inside the bubble "
+            "flies through it whatever range it was launched from, so standing "
+            "off does not help against a covered target. Keep it local: a bubble "
+            "that denies a target cluster is a decision, while a map-sized one "
+            "just switches a weapon class off."
         ),
     )
     gps_jamming_miss_radius_m: float = bounded_float_option(

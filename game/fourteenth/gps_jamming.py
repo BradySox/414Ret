@@ -73,10 +73,16 @@ GPS_GUIDED_WEAPON_PATTERNS: tuple[str, ...] = (
     "KAB-1500S",
 )
 
-#: The reach a jammer gets when its unit definition names none. A local denial
-#: bubble, not a theater blanket: big enough that a strike package must plan
-#: around it, small enough that one recon sortie plus one strike removes it.
-DEFAULT_REACH = nautical_miles(30)
+#: The reach a jammer gets when its unit definition names none.
+#:
+#: Sized off what the bubble actually IS: a GPS-denied **target** area, not a
+#: denied release area. A weapon aimed at anything inside the bubble flies
+#: through the bubble whatever range it was released from, so standing off does
+#: not help a covered target -- the radius is simply the size of the target set
+#: that loses satellite guidance. At 27-30 nm one site denied a large share of a
+#: medium map; 15 nm denies a target cluster, so a campaign can field two or
+#: three on distinct clusters and most of the theatre stays GPS-usable.
+DEFAULT_REACH = nautical_miles(15)
 
 #: How far off the aimpoint a fully-jammed weapon lands when the unit definition
 #: and the campaign setting both stay quiet. Far enough to be a clean miss, close

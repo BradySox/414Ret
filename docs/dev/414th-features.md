@@ -8541,7 +8541,7 @@ with no new game and no save migration.
 
 Files: `game/missiongenerator/tgogenerator.py` (`hold_station`, `_station_racetrack`,
 `_racetrack_corners`, `_track_is_clear`, and the `STATION_*` constants).
-Tests: `tests/missiongenerator/test_naval_station_keeping.py` (11). Checklist: **B46**.
+Tests: `tests/missiongenerator/test_naval_station_keeping.py` (11). Checklist: **B47**.
 
 
 ## Unit-coverage sweep — 2026-08-04

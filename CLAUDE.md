@@ -3924,7 +3924,7 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     being a hull whose spawn the landmap does not classify as sea (the safe degrade firing).
     NEW mission only — regeneration picks it up, no new game and no save migration. Tests
     `tests/missiongenerator/test_naval_station_keeping.py` (11); features doc §87, checklist
-    B46 — needs an in-game pass (whether DCS loops a *naval* group on `SwitchWaypoint` is the
+    B47 — needs an in-game pass (whether DCS loops a *naval* group on `SwitchWaypoint` is the
     one genuine unknown; the fallback needs no task at all — author enough waypoints to
     outlast the mission — and that a mixed-hull §80 group sails the circuit in formation).
 

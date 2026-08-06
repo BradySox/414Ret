@@ -19,8 +19,9 @@ see the **[Campaign Briefing Handbook](Red-Flag-81-2-Campaign-Briefing)**. Three
 > Vietnam mechanics as the simulation layer); the **enemy ground army on the FEBA is the fiction's
 > invention** (the real Red Flag ground targets didn't shoot back on maneuver); red flies
 > **MiG-17F/MiG-21MF/MiG-21bis alongside the F-5Es** (the real 4477th flew MiG-17s and MiG-21s —
-> the types are right, the quantities are gameplay); and the will/resolve meters read the **TAC
-> exercise assessment** into the Vietnam political-will engine. Module stand-ins: F-4E-45MC for
+> the types are right, the quantities are gameplay); and the exercise's pass/fail is modelled as
+> **authored victory conditions** (break the Red Force, or take the range; write off your own
+> detachment and the flag is scored a failure). Module stand-ins: F-4E-45MC for
 > the 336th's F-4Es (exact), A-10A (exact), RF-101B standing in for the RF-4C, B-52H for the
 > B-52D/G, CH-47D/UH-1H for the period lift. The range laydown itself is **re-pointed at the
 > commercial 81-2 campaign's own mission files** (2026-07-02) — the site positions below are the
@@ -92,8 +93,9 @@ The Phantom was the backbone TAC fighter of Red Flag's first decade:
   range), **convoys**, **tank arrays** (the two Kawich Valley arrays in the campaign), the
   Tolicha **train marshalling yard and POL farm**, industrial complexes, radar/SAM/AAA sites.
 - **The Box:** the **Groom Lake restricted airspace** sat inside the range complex and was
-  **never** released to exercise traffic. Enter it and your flag was over. In the campaign it
-  never releases either — violations bleed the assessment (Political Will) instead of your wings.
+  **never** released to exercise traffic. Enter it and your flag was over. In the campaign
+  nothing enforces it any more — but Groom is named in no victory condition, so the sanctuary
+  holds unless you choose to break it.
 
 ## Section IV — Friendly forces, January 1981
 
@@ -166,10 +168,9 @@ THE ARRAY
 RULES TO LIVE BY (they're why Red Flag exists)
   • Film first (TARPS), then strike. An unmapped site is the one that gets you.
   • Vary IP, axis, altitude EVERY pass. One pass, haul ass.
-  • The BOX never opens. 12 NM around Groom — enter it and the assessment bleeds.
-  • Every jet is Will. Every capture is Will, every turn. A B-52 is SEVERAL jets' worth.
-  • ROE by week: W1 corridors only (deep classes locked) · W2 deep targets open,
-    airfields locked · SURGE everything opens. The cover page prints it. Read it.
+  • The BOX never opens. 12 NM around Groom. Nothing stops you now — that is the point.
+  • Every jet counts. Below 40% strength the detachment is written off. A B-52 hurts.
+  • Every target class is legal from turn 1. The escalation is yours to impose.
 ===========================================================
 ```
 
@@ -195,8 +196,8 @@ head-on and fair. They'll sit low behind the ridges under GCI, let you push deep
 strikers one time, hard, right at the target — then they'll be gone before you turn around. And
 north of them, out of Tonopah Test Range — **real MiGs.** You didn't hear that. You'll also never
 overfly the block of airspace around Groom Lake. Not once. Not chasing a kill, not cutting a
-corner home. **The Box is closed.** It stays closed all three weeks, and every violation gets
-briefed to people whose signatures matter.
+corner home. **The Box is closed.** It stays closed all three weeks — nothing in the sim will
+stop you, which is exactly why it is a test of the crew and not of the software.
 
 The ground threat is the array: **SA-2, SA-3 and SA-6 sites around Tolicha Peak and the range
 complexes that behave exactly like the ones over Hanoi**, Fire Can-directed hundred-millimeter

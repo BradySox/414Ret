@@ -52,16 +52,21 @@ the simulation** — which is why the whole **Vietnam mechanics stack rides alon
 
 | Mechanic | Red Flag reading |
 |---|---|
-| **Political Will** (BLUE) | The TAC exercise assessment — bleed jets, blow the ROE, and the flag is scored a failure (*"Washington orders withdrawal"* reads as *the exercise is called off*) |
-| **Regime Resolve** (RED) | Red Force's capacity to keep contesting — break it and the detachment **graduates** (*"Hanoi agrees to terms"* is the fiction's language; the aggressors are playing Hanoi) |
-| **Static front** | The simulated FEBA on the ranges — it bends under pressure, never sweeps the map; **Air Assault is the territorial lever** |
-| **Authored phase arc** | The exercise period structure: Week One → Force on Force → Surge Week (§4) |
+| **Victory conditions** | The exercise assessment — break the Red Force or take the range, or write the detachment off trying (§3) |
+| **The front** | The simulated FEBA on the ranges; **Air Assault is the territorial lever** |
 | **GCI ambush** (red doctrine) | The documented aggressor playbook — late scramble, one slash through the package, home |
 | **[Vietnam Ops](Vietnam-Ops) runtime** | The range environment: flak gauntlet = the AAA sims, Arc Light = SAC's B-52 cells (they flew Red Flag from the start), convoy interdiction = the moving convoy targets, FAC willie pete = the OV-10s that flew Red Flag I |
 
-Both meters + the current phase show live on the **campaign status ribbon**; the kneeboard
-**cover page prints the ROE** every mission. Mechanics reference:
-[Vietnam Campaign Layer](Vietnam-Campaign-Layer).
+The victory checklist shows live on the **campaign status ribbon** — click the VICTORY chip to
+expand it. Mechanics reference: [Vietnam Campaign Layer](Vietnam-Campaign-Layer).
+
+> **Changed 2026-07-21.** This campaign was originally scored on the **political-will economy**
+> — a TAC assessment meter against Red Force's resolve, with a negotiated ending — inside an
+> escalating **ROE arc** that released target classes week by week. Both were removed fork-wide.
+> The exercise framing survives as **authored victory conditions** (§3); the week-by-week
+> release schedule does not, so **every target class is legal from turn 1** and the Box is now
+> a matter of your own discipline. Old machinery, for reference only:
+> [Campaign Phases and ROE](Campaign-Phases-and-ROE).
 
 ---
 
@@ -77,7 +82,7 @@ Both meters + the current phase show live on the **campaign status ribbon**; the
 | **Posture** | Blue = the deployed Blue Force pushing into the ranges; Red = integrated air/ground defense of the range complex |
 | **Economy** | Blue $2500 / ×1.5 vs Red $1200 / ×1.0 |
 | **Threat profile** | **SA-2/SA-3 emulator rings + AAA belts** on the corridors, aggressor F-5Es + MiGs on GCI ambush. No MANPADS-era saturation — it's 1981 training iron |
-| **The Vietnam layer** | Political will, static front, negotiation ending, three-phase arc + **the Box** (§4) |
+| **The Vietnam layer** | Era doctrine: GCI-ambush aggressors, Alpha Strikes, period engagement ranges |
 | **Vietnam Ops suite** | All ON except naval gunfire (no sea): Arc Light, flak gauntlet, convoy interdiction, airbase harassment, Super Gaggle, FAC(A), snake-and-nape |
 | **Era gating** | `restrict_weapons_by_date: true` — 1981 stores (AIM-7F/AIM-9 era; no JHMCS-era cockpit options) |
 | **Difficulty** | `enemy_skill: High` — **the aggressors are hand-picked; their airframes are the handicap.** Player pilots invulnerable, day-only |
@@ -99,7 +104,7 @@ escalating week, and **break the Red Force before the assessment breaks you.**
 | **Creech (Indian Springs AAF, its 1981 name)** | BLUE | Forward helo/FAC field on the range boundary |
 | **Camp Mercury** (FOB) | BLUE | Blue's toe-hold inside the range boundary — the Super Gaggle destination when pressed |
 | **Tonopah Test Range** | RED | The red air hub — the 4477th "Red Eagles" flew their real MiGs from this exact field in 1981 |
-| **Groom Lake** | RED | **The Box** — the sanctuary your ROE never releases (§4) |
+| **Groom Lake** | RED | **The Box** — never a victory objective (§3); the sanctuary you do not enter |
 | **Pahute Mesa / Beatty / Tonopah** | RED | Forward strip, western logistics node, rear depot |
 | **FOB Tolicha** | RED | The red FEBA anchor south of Pahute Mesa |
 | **Strategic Air Command** (off-map) | BLUE | SAC's B-52 Arc Light + tanker cells |
@@ -109,33 +114,40 @@ Red's rear web (Tonopah → TTR → Pahute → Tolicha, plus the Beatty corridor
 those are your **convoy interdiction** targets, never new fronts. The **static front** clamps the
 line: it bends and bleeds, but **Air Assault captures are how ground actually changes hands**.
 
-**The three endings:**
+**The endings** (authored in the campaign's `victory:` block — the ribbon's VICTORY chip shows
+them live):
 
-1. **WIN — break the Red Force:** grind **Regime Resolve** to zero — attrit the aggressor
-   squadrons, the ground army, and the range logistics. The detachment graduates.
-2. **WIN — territory:** take the range complex by Air Assault (Surge Week releases the airfields
-   as OCA targets and the helos do the taking).
-3. **LOSS — the assessment:** bleed **Political Will** to zero — lost jets (a **B-52 costs several
-   times a fighter**), pilots captured and held (§11), Box violations — and the flag is scored a
-   failure.
+1. **WIN — break the Red Force.** Red air strength below **35 %** of what it started with, from
+   turn 4. Attrit the aggressor squadrons: this is the graduation the exercise is actually for.
+2. **WIN — take the range complex.** Hold **Tonopah, Tonopah Test Range, Pahute Mesa and
+   Beatty** together, from turn 6. Air Assault is how ground changes hands.
+3. **LOSS — the detachment is written off.** Your own air strength below **40 %**, from turn 3.
+   The flag is scored a failure.
+4. **LOSS — Nellis is lost.** The deployment ramp falls and there is no exercise left to fly.
+
+**Groom Lake appears in none of them.** That is deliberate: the Box is not a victory objective,
+so nothing in the campaign ever asks you to take it — the sanctuary holds by construction now
+that the ROE layer that enforced it is gone.
 
 ---
 
-## 4 · The escalation arc & the Box
+## 4 · The Box
 
-The flag escalates week by week — restrictions release as you prove the force. Bleeding will
-**accelerates** the schedule (the exercise pushes harder when the force is struggling). The AI
-planner obeys the ROE; you can always break it — the strike goes through and the assessment pays.
+> **The week-by-week escalation arc was removed on 2026-07-21** along with the ROE layer that
+> drove it. There is no longer a Week One / Force on Force / Surge Week schedule, and no target
+> class is locked at any point — **everything is legal from turn 1**. The table below is kept as
+> the exercise's *intended* shape: fly it as a self-imposed tempo if you want the escalation
+> feel, because nothing enforces it now.
 
 | Phase | Arrives | The rules | Red's answer |
 |---|---|---|---|
 | **Week One: Familiarization** | turn 1 | **The Box (Groom Lake, 12 NM)** + an 8 NM off-range ring over Tonopah are restricted. **All deep target classes locked** (factories, depots, comms, airfields…). Fly the corridors: the FEBA, the convoys, the armor arrays, the emulator sites. | — |
-| **Week Two: Force on Force** | ~turn 6 (sooner if will < 75) | Tonopah ring drops; deep classes **release except airfields**. Take the fight into the range complexes. | A **2-turn ground push** against the FEBA — the flag's scripted counterattack |
-| **Surge Week: Final Exam** | ~turn 11 (sooner if will < 60) | **Everything releases** — TTR and the forward strips become OCA targets. Maximum effort. | — |
-| **The Box** | **always** | **Groom Lake 12 NM never opens.** Enter it on the real range and you're grounded; here it drains Political Will per violation. The MiG reserve inside is *supposed* to be untouchable. |
+| **Week Two: Force on Force** | ~turn 6 | Tonopah ring drops; deep classes **release except airfields**. Take the fight into the range complexes. | A **2-turn ground push** against the FEBA — the flag's scripted counterattack |
+| **Surge Week: Final Exam** | ~turn 11 | **Everything releases** — TTR and the forward strips become OCA targets. Maximum effort. | — |
+| **The Box** | **always** | **Groom Lake, 12 NM.** On the real range, entering it grounds you. Here nothing stops you any more — but the campaign never asks you to take Groom, and the MiG reserve inside is *supposed* to be untouchable. Treat it as a hard deck of your own. |
 
-The zones draw as red dashed rings on the map; locked targets wear a **RESTRICTED** badge; the
-kneeboard cover page prints the current rules every mission.
+The zone overlays and the RESTRICTED badges went with the ROE layer, so the Box is not drawn on
+the map — brief it, and hold each other to it.
 
 ---
 
@@ -248,12 +260,14 @@ player spawns at is never targeted that mission.
 ### Surge Week — Final Exam *(~turn 11+)*
 - **The law:** everything releases. Only the Box still binds — it always binds.
 - **Maximum effort:** OCA onto **Tonopah Test Range** and the forward strips; Air Assault
-  captures up the corridor (the static front never sweeps — the helos take the ground); break
-  **Regime Resolve** before the assessment breaks you.
-- **Goal:** graduation — *"Hanoi agrees to terms,"* or the ranges are yours.
+  captures up the corridor (the helos take the ground); break the aggressor squadrons before
+  attrition breaks your detachment.
+- **Goal:** graduation — red air below 35 %, or the range complex (Tonopah · TTR · Pahute Mesa
+  · Beatty) is yours.
 
 > One idea through all three weeks: **the aggressors are the test, the array is the terrain, and
-> the meters are the score.** Fly disciplined, film everything, and never feed a BUFF to the guns.
+> your own airframe count is the score.** Fly disciplined, film everything, and never feed a BUFF
+> to the guns — the loss condition is your own attrition.
 
 ---
 
@@ -350,8 +364,8 @@ MISSION #: [____]      MC: [callsign]
 Same system as the other Vietnam campaigns ([Combat SAR](Combat-SAR)), desert edition — and the
 same **campaign stakes**: a rescued pilot is spared at debrief; a pilot the Red Force reaches
 first is **captured** (the exercise fiction: "processed as a POW by the Red Force players") and
-**drains Political Will every turn held** at a red field, until a CSAR raid or a field capture
-frees them — or the 4-turn clock runs out.
+held at a red field on a **4-turn clock** — recapture the field and they walk free, let the clock
+run out and the aviator is gone. Every pilot lost is a pilot not flying tomorrow.
 
 - **The race:** ejection → enemy snatch teams spawn and go for the survivor. Kill them or beat
   them to the pickup.

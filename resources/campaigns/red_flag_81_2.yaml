@@ -30,6 +30,25 @@ performance: 1
 version: "10.8"
 advanced_iads: true
 
+victory:
+  description: >-
+    Break the Red Force or take the range complex. The Box never opens --
+    Groom Lake is the aggressors' sanctuary and is deliberately absent from
+    every capture condition below, exactly as the exercise ROE intended.
+  win_when:
+    - label: "Red Force combat-ineffective"
+      min_turn: 4
+      enemy_air_below: 0.35
+    - label: "The range complex is taken"
+      min_turn: 6
+      capture_cps: [Tonopah, Tonopah Test Range, Pahute Mesa, Beatty]
+  lose_when:
+    - label: "The detachment is written off"
+      min_turn: 3
+      friendly_air_below: 0.4
+    - label: "Nellis is lost"
+      lose_cps: [Nellis]
+
 settings:
   # Vietnam mechanics preseed (era pre-seed, per the design note
   # docs/dev/design/414th-red-flag-81-campaign-notes.md section 6). Red Flag IS the

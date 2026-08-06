@@ -1,5 +1,26 @@
 # Campaign Phases and Rules of Engagement
 
+> # ⛔ REMOVED — historical record only
+>
+> **Everything on this page was removed from 414Ret on 2026-07-21 and no longer exists.**
+> The campaign-phase classifier, the ROE restricted / free-fire zone layer, the phase and
+> ROE map + kneeboard surfaces, and the political-will economy (BLUE Political Will / RED
+> Regime Resolve and the negotiated ending) are all gone, along with the settings and the
+> campaign YAML blocks — `phases:`, `restricted_zones:`, `free_fire_zones:`, `will:` — that
+> drove them. A campaign authoring any of those keys today is ignored, not honoured.
+>
+> **What to read instead:** campaign endings are now an authored `victory:` block with
+> explicit win/lose conditions — see
+> **[Custom Campaigns](Custom-Campaigns#removed-phases-roe-zones-and-political-will)**.
+> Red's changing pressure over a campaign's run is a `red_tempo:` schedule; see
+> **[The Vietnam Campaign Layer](Vietnam-Campaign-Layer)**.
+>
+> This page is kept **only** so that older design notes, campaign files, and briefings that
+> reference the machinery can still be understood. **Do not author against it, and do not
+> use it as a model for new work.**
+
+---
+
 Every 414Ret campaign knows what **phase of the air war it is in**, shows it to you, and leans
 the auto-planner's offensive tasking to match. On top of the phase machinery ride two optional
 layers a campaign can author: a **Rules-of-Engagement layer** (no-strike zones, locked target

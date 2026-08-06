@@ -7,8 +7,8 @@ and tactics. Pair with the
 
 > 🟢 **Era & loadouts.** `restrict_weapons_by_date: true` — the loadout editor enforces the 1981
 > stores list (AIM-7F/AIM-9 era, dumb iron + Rockeye, no modern cueing), so the kit below is what
-> you'll actually be offered. The meta-rule on every card: **every airframe is Political Will,
-> every capture drains it per turn, and the Box never opens.**
+> you'll actually be offered. The meta-rule on every card: **every airframe you lose counts
+> against you** — the detachment is written off below 40 % strength — **and the Box never opens.**
 
 ---
 
@@ -173,8 +173,8 @@ COMMS: LZ brief with the FAC; deconflict with the strike stack.
 ==================  COMBAT SAR · THE RACE  ==================
 JOB: When a pilot ejects over the ranges, the Red Force snatch teams spawn and
 RACE you to the survivor. Win: the pilot is spared at debrief (airframe still
-lost). Lose: CAPTURED — a POW at a red field, draining Political Will EVERY
-turn held; freed by a CSAR raid or a field capture; killed past the 4-turn clock.
+lost). Lose: CAPTURED — a POW at a red field on a 4-turn clock; freed by
+recapturing the field, gone for good if the clock runs out.
 
 THE PACKAGE: Sandy escort (an AI Sandy auto-diverts to a live ejection) +
   helo pickup + the C-130 KING overhead (TACAN + F10 locator).

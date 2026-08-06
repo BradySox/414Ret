@@ -11,7 +11,7 @@ hold the FEBA, open the corridors. Copy the shape, not the specifics.*
 > laydown is re-pointed at the commercial 81-2 reference miz (2026-07-02) — read exact site
 > positions off the live map, the plan's logic holds.*
 
-> **The standing ROE (Week One):** **the Box (Groom Lake, 12 NM)** + the Tonopah off-range ring
+> **The standing ROE (self-imposed):** **the Box (Groom Lake, 12 NM)** + the Tonopah off-range ring
 > (8 NM); **all deep target classes locked**. Legal: the FEBA, the armor arrays, the convoys, the
 > AAA, and the **SA-2/SA-3/SA-6/SA-8 sites** (ground objects — Iron Hand is open for business
 > from turn 1).
@@ -169,8 +169,9 @@ Per the [three-week plan](Red-Flag-81-2-Campaign-Briefing#7--campaign-conops--th
 finish Week One with the corridors open and the arrays dying, weather the **Force on Force** push
 (~turn 6 — a 2-turn red ground offensive), then spend Week Two's release on the **mock airfield
 complex and the depots**. **Surge Week** (~turn 11) opens the airfields: OCA onto Tonopah Test
-Range, Air Assault captures up the corridor, and the endgame — break **Regime Resolve** before
-the assessment breaks you. The Box never opens; it never will.
+Range, Air Assault captures up the corridor, and the endgame — break the aggressor squadrons
+(red air below 35 %) or take the range complex, before your own attrition writes the detachment
+off. The Box never opens; it never will.
 
 > Re-plan every turn off the **live map, the SITREP, and the meters**. The loop: film → open the
 > corridor → kill the ground → manage the arc → mass when it counts. **The aggressors are the

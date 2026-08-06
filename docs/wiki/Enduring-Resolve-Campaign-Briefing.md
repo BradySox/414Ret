@@ -3,18 +3,16 @@
 **Afghanistan - Operation Enduring Resolve (COIN)** is the 414th's counter-insurgency campaign:
 Helmand and Uruzgan provinces, **April 2006**, on the **DCS Afghanistan** map. It is a fork of
 Starfire's *Operation Shattered Dagger* laydown, rebuilt as a **living insurgency**: the enemy
-regrows from its ammo caches, resupplies down a real ratline, and can't be beaten by body count —
-while you fight under **inverted rules of engagement** where the whole map is weapons-hold except
-inside this phase's kill boxes.
+regrows from its ammo caches, resupplies down a real ratline, and can't be beaten by body
+count.
 
 This is not a front-line war. There are **no front lines** at all — it's strongholds, towns,
 caches, convoys, and a clock.
 
 > **The one-paragraph version:** find and destroy the **ammo caches** that feed each stronghold's
 > regeneration, interdict the **ratline convoys**, and take the strongholds with **air assaults**
-> — inside the kill boxes, without hitting the towns — before the Coalition's **mandate** runs
-> out. Killing fighters wins you almost nothing. Killing their supply and their momentum wins the
-> war.
+> — then *hold* them, or the insurgency walks back in. Killing fighters wins you almost nothing.
+> Killing their supply wins the war.
 
 ---
 
@@ -26,9 +24,9 @@ caches, convoys, and a clock.
 | **High Digit SAMs (Ultimate Compilation)** | Recommended — the insurgent ZU-23 technicals/emplacements are HDS content. Without the mod they drop silently (the campaign still plays, with less AAA texture). |
 | **A NEW game** | The campaign, factions, and `.miz` are current-build content — start fresh, don't load an old save. |
 
-The campaign pre-seeds its own toggles (`coin_insurgency`, convoy interdiction, airbase
-harassment, political will, carrier ops, HDS) — select it in the New Game wizard and it lights up
-correctly out of the box.
+The campaign pre-seeds its own toggles (the COIN stack, convoy interdiction, airbase
+harassment, carrier ops, HDS) — select it in the New Game wizard and it lights up correctly out
+of the box.
 
 ---
 
@@ -41,49 +39,31 @@ driveable roads — Highway 1 (the Ring Road), Route 611 up the Helmand valley, 
 road — moving genuine reinforcement columns between strongholds.
 
 Nine **population centers** — Lashkar Gah, Gereshk, Sangin, Musa Qala, Now Zad, Kajaki, Marjah,
-Delaram, Tarin Kowt — are under permanent positive control: **no-strike rings** that never lift,
-in any phase. The insurgents know it. Half their cells and caches sit inside those rings, where
-only a careful, self-disciplined player can dig them out — and where every mistake bleeds the
-mandate.
+Delaram, Tarin Kowt — were authored as permanent no-strike rings. The ROE layer that enforced
+them was removed on 2026-07-21, so nothing in the game prices a careless shot any more; half the
+cells and caches still sit in and around the towns, and digging them out cleanly is now a matter
+of your own discipline rather than a scored one.
 
 **The coalition** flies from Kandahar and Camp Bastion, with a carrier — **CVN-74 John C.
 Stennis** — holding station in the Gulf of Oman, ~400+ NM from the AO, flying the real OEF
 Arabian-Sea cycle (see [the carrier's war](#the-carriers-war) below).
 
-## Victory — the two meters
+## Victory — how the campaign ends
 
-*This campaign runs the [political-will economy](Campaign-Phases-and-ROE#the-political-will-economy)
-with a fully inverted profile.*
+> **Changed 2026-07-21.** This campaign was originally won or lost on a **political-will
+> economy** — a Coalition mandate that drained from casualties and collateral damage against
+> an insurgent momentum meter — with a negotiated ending. **That economy was removed**, along
+> with the kill-box / population-ring ROE layer that priced your shots into it.
 
-- **The Coalition's mandate** (blue) — drained by lost airframes, lost bases, and **ROE
-  violations** (any kill inside a town ring or outside every kill box). It never regenerates:
-  **time itself is a cost**. Exhaust it and *"The Coalition withdraws — the mandate is spent…
-  and the valleys go back to the shadows."*
-- **The insurgency's momentum** (red) — barely dented by dead fighters (≈nothing per body), but
-  drained hard by **destroyed ammo caches**, **lost strongholds**, and **killed ratline
-  convoys**. Break it and *"The insurgency collapses — the caches are ash, the ratline is cut,
-  and the fighters melt away."*
+The campaign currently ends on Retribution's **standard territorial rules**: hold the map,
+take the enemy's bases. It does **not** author a custom `victory:` block, so there is no
+insurgency-specific win condition today — clearing and *holding* the strongholds is the
+practical objective, and the §C1.5 re-infiltration mechanic is what makes "holding" cost
+something.
 
-Territory victory (clear every stronghold) still applies, but the meters are the real war. Watch
-the **will ledger** (hover the meter; the SITREP lists the movers) to see exactly what moved them
-each turn.
-
-## The rules of engagement — kill boxes and rings
-
-This campaign inverts the normal ROE model (full mechanics on
-[Campaign Phases and ROE](Campaign-Phases-and-ROE#free-fire-kill-boxes-inverted-roe)):
-
-- The **whole map is weapons-hold** for fixed strike targets — **except inside the phase's
-  named kill boxes** (KB GERESHK, KB SANGIN, KB MARJAH…), drawn **green dashed** on both the
-  web map and the cockpit F10 map.
-- The **9 town rings** are red dashed no-strike zones that never lift — and they carve
-  no-strike holes even *inside* a kill box. Lashkar Gah, the provincial capital, never gets a
-  kill box at all.
-- **Troops in contact and convoys are always legal** — the ratline war never waits on
-  clearance.
-- The **AI planner is hard-gated** to the pockets. **You are never hard-blocked** — the package
-  dialog warns you, and the debrief prices it: about 1 point of mandate per ROE-violating kill.
-  One careful town fight is survivable; a carpet-bombing habit bleeds you out.
+Play it as a campaign you grind down rather than one you win on points: kill the ammo caches
+to throttle regeneration, hold what you clear, and hunt the leadership and the cells before
+they mature.
 
 ## The living insurgency
 
@@ -109,31 +89,19 @@ What makes this campaign different from a stronghold shooting gallery
 
 Turning `coin_insurgency` off reverts the campaign to a static one-shot clearance.
 
-## The phase arc — Disrupt → Clear and Hold → Break the Momentum
+## The three-act shape
 
-An authored arc (see it in the ribbon's arc expander, with live objective ticks):
+The campaign was authored as a three-act arc — **Disrupt the Network → Clear and Hold →
+Break the Momentum** — and the laydown still reflects it, but the `phases:` machinery that
+drove it (with its ROE kill boxes and objective ticks) was removed on 2026-07-21. Treat the
+acts as **narrative guidance for how to sequence your war**, not as anything the game tracks:
 
-### Phase 1 — Disrupt the Network *(opens turn 0 · 4 kill boxes)*
-
-Map the insurgency before fighting it. **KB GERESHK** (the Route-611 green-zone corridor, the
-phase's main AO), **KB SANGIN**, **KB MARJAH**, **KB FRONTENAC**. Objectives: recon and destroy
-caches, interdict the trail, and **retake FOB Frontenac** — the Kandahar gate, and the capture
-that advances the arc.
-
-### Phase 2 — Clear and Hold *(≈turn 10 · 8 kill boxes · the trail surges)*
-
-The AO opens north: **KB MUSA QALA**, **KB NOW ZAD**, **KB KAJAKI**, **KB HADRIAN** join.
-Take strongholds with air assaults and *hold* them — a cleared stronghold left alone invites the
-shadows back. The network answers with a **2× trail surge** the whole phase. Objectives: retake
-Kamp Hadrian, bleed momentum below half. Advances when momentum falls below 45.
-
-### Phase 3 — Break the Momentum *(≈turn 20 · 10 kill boxes · terminal)*
-
-**KB DELARAM** (west) and **KB TARIN KOWT** (north) open for the finishing push. Objectives:
-retake **Tarinkot** — the insurgency's northern anchor — and drive momentum below 25.
-
-Kill boxes only ever **grow** — ground once cleared for fires stays cleared. Every capture
-objective sits inside its own kill box, so the campaign never punishes its own assault.
+1. **Disrupt** — map the insurgency before fighting it. Recon the Route-611 green zone and the
+   Highway-1 corridor; find the caches and the cells before committing ground.
+2. **Clear and Hold** — take the strongholds and *garrison* them. The trail surges here (the
+   red tempo schedule doubles the convoy budget), so interdiction matters most in this act.
+3. **Break the Momentum** — hunt the leadership and the dispersed cells, and keep the caches
+   dead so the regeneration you shut off stays off.
 
 ## Your forces
 
@@ -181,21 +149,15 @@ Expect Navy jets over Helmand every turn, properly tanked, without you fragging 
 1. **Recon first.** The fog model is the campaign. Fly TARPS/recon over strongholds to find the
    caches — and **re-fly** positions you cleared, because your old photos go stale as cells
    regenerate.
-2. **Kill caches.** The single best target class in the campaign: throttles regen at the source
-   *and* drains momentum ~4 points each. The carrier's daily strike helps; deliberate Strike/BAI
-   packages into the kill boxes do the heavy lifting.
+2. **Kill caches.** The single best target class in the campaign — it throttles regeneration at
+   the source. The carrier's daily strike helps; deliberate Strike/BAI packages do the heavy
+   lifting.
 3. **Work the ratline.** Right-click an enemy supply route to frag an Armed Recon sweep down
-   the road. Every convoy killed is real reinforcement denied plus a momentum hit. During the
-   Phase-2 surge this is a target-rich environment — and ignoring it feeds the strongholds.
-   Mind the corridors that thread the town rings (Route 611, the Helmand highway): convoys are
-   always legal, but your misses aren't.
+   the road. Every convoy killed is real reinforcement denied. During the trail surge this is a
+   target-rich environment — and ignoring it feeds the strongholds.
 4. **Assault and hold.** Air Assault is the territorial lever — Frontenac, then Hadrian, then
-   Tarinkot, per the arc. A stronghold flipped blue stops regenerating and costs the insurgency
-   5 points of momentum.
-5. **Protect the mandate.** No passive regen means every turn costs you. Losses hurt (~2 per
-   airframe), lost bases hurt badly, and ROE violations are death by a thousand cuts. Fly the
-   discipline: check the green box before you release, and treat the town rings as hard
-   overlays even though the sim will let you shoot.
+   Tarinkot. A stronghold flipped blue stops regenerating, but an ungarrisoned one gets
+   re-infiltrated over about four announced turns: taking ground is the easy half.
 
 ## Status
 
@@ -207,11 +169,9 @@ testing. Fly it and report.
 
 ## See also
 
-- **[Campaign Phases and ROE](Campaign-Phases-and-ROE)** — the phase/ROE/will machinery this
-  campaign is built on.
 - **[Vietnam Ops § Convoy interdiction](Vietnam-Ops#4--convoy-interdiction-steel-tiger)** — the
   trail-convoy mechanics the ratline rides on.
 - **[Fog of War and Reconnaissance](Fog-of-War-and-Reconnaissance)** — why your recon picture
   goes stale.
-- **[Custom Campaigns](Custom-Campaigns)** — how the campaign's YAML (phases, will profile,
-  kill boxes, supply corridors) is authored.
+- **[Custom Campaigns](Custom-Campaigns)** — how the campaign's YAML (settings preseeds,
+  supply corridors, squadrons) is authored.

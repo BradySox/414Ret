@@ -33,14 +33,11 @@ A few things worth knowing before you frag:
   order every turn. Reactive threat response stays strictly deterministic — variety never
   delays a real defensive reaction. See
   [Air-Defense-and-the-Air-War](Air-Defense-and-the-Air-War).
-- **Rules of engagement can gate targets.** On a campaign with an active
-  [ROE layer](Campaign-Phases-and-ROE#the-roe-layer), locked targets wear a **RESTRICTED — ROE**
-  badge, the **AI planner won't frag into restricted zones at all**, and when *you* frag a
-  restricted target the package dialog shows an **ROE warning** before you commit — it prices
-  the choice (a will penalty at the debrief) but never blocks you.
-- **The campaign phase leans the ATO.** The current
-  [campaign phase](Campaign-Phases-and-ROE) biases which offensive objectives the auto-planner
-  services first — check the status ribbon to see the current phase's emphasis.
+- **A decapitated enemy plans worse.** Killing an enemy command center degrades that side's
+  auto-planner — its opportunistic target order gets noisier and its offensive package ceiling
+  shrinks — so striking C2 has a measurable effect on next turn's ATO.
+- **Weather leans the ATO.** Rain and storms suppress the automatic recon add-on, and a
+  thunderstorm pushes low-level visual attack tasks down the offensive order.
 
 ## Mission timing
 

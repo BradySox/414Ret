@@ -2,101 +2,29 @@
 
 The **campaign layer** is the war *over* the war. The [Vietnam Ops](Vietnam-Ops) suite makes the
 *missions* feel like 1968 — flak, Arc Light, the trail. This layer makes the **campaign** play
-like it: you don't win by rolling the front to Hanoi (you can't — the front barely moves), you
-win at the **negotiating table**, by breaking Hanoi's resolve before Washington's patience runs
-out, inside an escalating **Rules-of-Engagement arc** that decides what you're even *allowed* to
-hit this month — against an enemy that fights, and escalates, the way the NVAF and NVA actually
-did.
+like it: era-authentic taskings and engagement ranges, Alpha Strikes massed on one target,
+MiGs that ambush from GCI rather than fly Western BARCAP, and a red side whose tempo answers
+the campaign clock.
 
 It ships in the **three Vietnam campaigns** (1968 Yankee Station · Operation Velvet Thunder ·
-Red Flag 81-2), which pre-seed the toggles on. Everything is default-off
-globally: a modern or Cold-War campaign sees none of it.
+Red Flag 81-2), which pre-seed the toggles on. Everything is default-off globally: a modern or
+Cold-War campaign sees none of it.
 
-> **New game required for the doctrine half.** The political will, front, phases, and ROE arc
-> all pick up on any save — but the *doctrine*-side behaviour (Alpha Strikes, ambush MiGs, the
-> fighter economy, red's air-defense posture) is baked into a campaign when it's created. Start
-> a fresh Vietnam campaign to get all of it.
+> **New game required.** The doctrine-side behaviour — Alpha Strikes, ambush MiGs, the fighter
+> economy, red's air-defense posture, the period planner ranges — is baked into a campaign when
+> it is created. Start a fresh Vietnam campaign to get it.
+
+> **Removed on 2026-07-21.** This layer originally carried a **political-will economy** (win at
+> the negotiating table by breaking Hanoi's resolve before Washington's patience ran out), a
+> **static front**, and an escalating **Rolling Thunder → Linebacker II ROE arc** that decided
+> what you were allowed to hit each month. All three are gone, along with the `will:`,
+> `phases:` and zone blocks that authored them; the old machinery is described for historical
+> reference only on [Campaign Phases and ROE](Campaign-Phases-and-ROE). What survives from that
+> work is **red tempo** (below) and the **GCI ambush** posture.
 
 ---
 
-## Political will
-
-*Toggle: **Political will tracking** (Vietnam Ops page, "Campaign" section) — pre-seeded on.*
-
-Two meters decide the war:
-
-- **Your Political Will** — Washington's patience. Drained by **airframe losses** (weighted by
-  type: **losing a B-52 is a national event**), **POWs** sitting in Hanoi (a per-turn drain for
-  every turn they're held — another reason Combat SAR matters), **ROE violations** (kills inside
-  an active restricted zone — see the arc below), and lost ground.
-- **The enemy's Regime Resolve** — Hanoi's capacity to absorb the war. Drained by **attrition**
-  and by **strangling the trail** (logistics losses hurt the regime more than body counts).
-
-Hit zero on either side and the war ends at the table, whatever the map says:
-
-- **Regime Resolve exhausted → you WIN**: *"Hanoi agrees to terms."* No base capture required —
-  the pressure campaign did what the front line never had to.
-- **Political Will exhausted → you LOSE**: *"Washington orders withdrawal."*
-- Territory victory still applies — a conventional map win stays a win.
-
-**Where you see it:** the two meters live on the **campaign status ribbon** over the map (with a
-trend sparkline), a **Political will tab** in the Stats window graphs both sides across the whole
-campaign, the turn SITREP calls out big swings, and the Intel box in the Qt UI carries the
-current numbers.
-
-**And you always see *why*.** Every will movement is recorded in a labeled **will ledger** —
-hover a meter for the top movers, and the SITREP lists them ("Will movers: F-4E ×2 lost, trail
-convoy destroyed"). If Washington's patience dropped four points last turn, the ledger says
-exactly what did it.
-
-> The will economy is not Vietnam-only anymore: the Washington/Hanoi framing and every feed
-> weight are just the defaults of a campaign-authorable **will profile** — the
-> [COIN campaign](Enduring-Resolve-Campaign-Briefing) relabels the meters and inverts the
-> weights entirely. See [Campaign Phases and ROE](Campaign-Phases-and-ROE#the-political-will-economy).
-
-## The static front
-
-*Toggle: **Static front (bounded siege line)** — pre-seeded on.*
-
-Vietnam's ground war was **attrition in place, not maneuver** — Khe Sanh was besieged for
-77 days without the line meaningfully moving. With this on, each front **bends with the strength
-battle inside a narrow band (±10 %) around where the campaign started** but never sweeps onto a
-base to capture it. The strength battle still matters — it feeds the will economy, where the war
-is actually decided — and **deliberate Air Assault operations remain the one territorial lever**
-if you want to take ground the hard way.
-
-## The ROE arc — Rolling Thunder to Linebacker II
-
-All four Vietnam campaigns run an authored **campaign-phase arc** (a Vietnam-flavoured layer on
-the generic [campaign phases](Vietnam-Campaign-Layer#campaign-phases-generic) feature):
-
-**Rolling Thunder → The Bombing Halt → Linebacker → Linebacker II**
-
-Each phase carries the era's **political restrictions**, and the map shows them:
-
-- **Restricted zones** — red dashed shapes (sanctuaries: Hanoi's ring, the PRC border buffer,
-  and — new — the **Laos-trail corridor**, off limits under early Rolling Thunder). Zones come
-  in [three shapes](Campaign-Phases-and-ROE#restricted-zones-no-strike) — circles, rotatable
-  boxes, buffered corridors — and are drawn both on the web map (map layers panel, "Enemy intel"
-  group; hover a zone for what it is and when it eases) **and painted into the generated
-  mission's F10 map**, so your wingman's cockpit shows the same lines. The **AI planner will not
-  task strikes inside them**. *You* are never hard-blocked — the LBJ-era pilot could always
-  break the rules — but the package dialog **warns you at planning time**, and kills inside an
-  active zone are **ROE violations** that drain your Political Will at the debrief.
-- **Target release** — early phases keep whole target classes **locked** (factories, power, oil,
-  airfields…). Locked targets show a **RESTRICTED — ROE** badge on their tooltip instead of
-  vanishing — you can see the target you're not allowed to hit yet, which is the defining
-  Rolling Thunder frustration, on purpose.
-- **The schedule** — the arc advances on historical-feeling turn pins (Halt ≈ turn 8,
-  Linebacker ≈ 11, Linebacker II ≈ 16), **accelerated by your bleeding will**: as Washington's
-  patience drops, restraint gets voted out and escalation comes early. Historically backwards-
-  sounding; historically true.
-- **The phase ribbon** over the map names the current phase, explains it, and (click the chip)
-  expands the whole arc with what each phase locked and released — plus each phase's
-  **objectives checklist** with live ✓/○ ticks, and **exactly what advances the current phase**
-  (the authored conditions with their live values), so the escalation is never a mystery.
-
-## Red answers the arc
+## Red answers the campaign clock
 
 The enemy isn't a mirror of you, and it isn't static either.
 
@@ -143,36 +71,24 @@ not just what things are called:
   packages can't spend the last fighters, so the MiGCAP goes where the MiGs will actually be:
   on the bombers' wing.
 
-<a name="campaign-phases-generic"></a>
-> **Campaign phases in general.** The phase machinery isn't Vietnam-only — *every* campaign
-> tracks a phase, shows it, and leans the planner to match; the Vietnam campaigns simply
-> *author* their arc, which is what carries the ROE payload and the red tempo. The generic
-> machinery (inferred arcs, zone shapes, ME-drawn zones, kill boxes, will profiles) now has its
-> own page: **[Campaign Phases and ROE](Campaign-Phases-and-ROE)**.
-
 ## Practical notes
 
-- **Turning it off.** Each piece has its own toggle (Vietnam Ops page "Campaign" section +
-  Campaign Management for phases); all default off globally and are pre-seeded by the four
-  Vietnam campaigns. Toggling mid-campaign is safe — the layer arms/disarms cleanly.
+- **Turning it off.** Each piece has its own toggle on the Vietnam Ops page; all default off
+  globally and are pre-seeded by the Vietnam campaigns. Toggling mid-campaign is safe — the
+  layer arms/disarms cleanly.
 - **New Game.** The New Game wizard's **Vietnam** card filters the campaign list to the era, and
   selecting a Vietnam campaign pre-seeds the Ops + campaign-layer toggles in one step.
-- **Watch your losses, not just your kills.** Under the will economy a "successful" strike that
-  costs two Phantoms and leaves a POW in Hanoi can be a net loss. Combat SAR sorties, ROE
-  discipline, and trail interdiction are all *strategic* acts here, not flavour.
-- **Status.** The layer's model logic is fully unit-tested and the ROE arc has been verified
-  across a live fast-forwarded campaign (turns 1 → 8 → 11 → 16 ran exactly as authored, zero AI
-  violations). The flown-combat rows — will pacing, the front band under fire, ambush-MiG feel,
-  the red tempo's multi-turn feel — are on the in-game pass checklist (M1–M6).
+- **Watch your losses, not just your kills.** A "successful" strike that costs two Phantoms and
+  leaves a crew in Hanoi is a poor trade — squadrons are finite and a captured pilot stops
+  flying. Combat SAR sorties and trail interdiction are strategic acts here, not flavour.
+- **Status.** The layer's model logic is unit-tested. The flown-combat rows — ambush-MiG feel
+  and the red tempo's multi-turn feel — are on the in-game pass checklist (M5–M6).
 
 ## See also
 
-- **[Campaign Phases and ROE](Campaign-Phases-and-ROE)** — the generic phase/ROE/will machinery
-  this layer authors.
 - **[Vietnam Ops](Vietnam-Ops)** — the mission-level suite this layer sits on: Arc Light, flak,
   the trail, the gaggle, napalm.
 - **[Air Defense & the Air War](Air-Defense-and-the-Air-War)** — the generic CAP/escort planning
   this doctrine tunes.
-- **[Combat SAR](Combat-SAR)** — rescue the pilot before he becomes a will-draining POW.
-- **[Map Layers & Interface](Map-Layers-and-Interface)** — the restricted-zones layer, campaign
-  ribbon, and events feed.
+- **[Combat SAR](Combat-SAR)** — rescue the pilot before he becomes a POW.
+- **[Map Layers & Interface](Map-Layers-and-Interface)** — the campaign ribbon and events feed.

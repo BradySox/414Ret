@@ -102,8 +102,6 @@ airfield**. The capture is the campaign consequence for losing the rescue fight:
 
 - **Recapture the holding airfield** with the ground war and the POW walks free (they stay in
   the squadron).
-- Every turn they are held **drains your side's political will** (on campaigns with the will
-  economy).
 - A POW left too long is on a **4-turn clock** — abandon them past it and the aviator is
   **killed for good**.
 

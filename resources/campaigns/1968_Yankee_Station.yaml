@@ -59,6 +59,21 @@ advanced_iads: true
 control_point_strengths:
   Sochi-Adler: 0.35
 
+victory:
+  description: >-
+    You will never take Hanoi -- the front barely moves. Win by breaking the
+    North's air arm, or by cutting the trail at the passes.
+  win_when:
+    - label: "The North's air arm is broken"
+      min_turn: 8
+      enemy_air_below: 0.30
+    - label: "The trail is cut"
+      min_turn: 10
+      capture_cps: [FOB Mu Gia, FOB Ban Karai, FOB Tchepone]
+  lose_when:
+    - label: "Khe Sanh falls"
+      lose_cps: [FOB Khe Sanh]
+
 settings:
   # Vietnam Ops period mechanics (era pre-seed). Coastal carrier war -> naval gunfire on.
   # Convoy interdiction models the Ho Chi Minh Trail from the Laotian-panhandle FOBs

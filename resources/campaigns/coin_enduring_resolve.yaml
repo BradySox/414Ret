@@ -41,6 +41,24 @@ recommended_start_date: 2006-04-24
 recommended_enemy_money: 250
 recommended_enemy_income_multiplier: 0.25
 version: "10.8"
+victory:
+  description: >-
+    You do not win this by body count. Break the insurgency's supply -- every
+    ammunition cache dead -- or clear and HOLD the three strongholds that anchor
+    the network.
+  win_when:
+    - label: "The network is broken"
+      min_turn: 6
+      destroy_categories: [ammo]
+    - label: "The Helmand is held"
+      min_turn: 10
+      capture_cps: [Tarinkot, Kamp Hadrian, FOB Frontenac]
+  lose_when:
+    - label: "Kandahar is lost"
+      lose_cps: [Kandahar]
+    - label: "Camp Bastion is lost"
+      lose_cps: [Camp Bastion]
+
 settings:
   squadron_start_full: true
   # The COIN stack (feature docs: 414th-coin-insurgent-replenishment-notes.md):

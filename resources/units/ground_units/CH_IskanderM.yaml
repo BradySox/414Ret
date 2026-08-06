@@ -1,5 +1,15 @@
+# TOMBSTONE (2026-08-06): this yaml no longer registers. `CH_IskanderM` is not
+# declared by any pydcs extension -- the CurrentHill Russia pack dropped it when ED
+# integrated the system into base DCS as `CHAP_9K720_HE` / `CHAP_9K720_Cluster`
+# (the same wave that renamed the rest of the pack to `CH_`), so nothing maps this
+# filename to a DCS type and no GroundUnitType is built from it. Kept, not deleted,
+# on the HDS precedent: a retired id stays as a save-compat tombstone. Three
+# factions still list its display name "[CH] Iskander-M SRBM"; the faction loader
+# drops an unresolvable unit string silently, and all three also list the live
+# CHAP_9K720 pair, so they still field the Iskander. NEVER reference this file --
+# the live unit is CHAP_9K720_HE / CHAP_9K720_Cluster (priced to match, 70).
 class: Missile
-description: "The 9K720 Iskander (Russian: \xD0\x98\xD1\x81\xD0\xBA\xD0\xB0\xD0\xBD\xD0\xB4\xD0\xB5\xD1\x80; 
+description: "The 9K720 Iskander (Russian: \xD0\x98\xD1\x81\xD0\xBA\xD0\xB0\xD0\xBD\xD0\xB4\xD0\xB5\xD1\x80;
   NATO reporting name SS-26 Stone) is a Russian mobile short-range ballistic missile system. It has a range of 
   500 kilometres (270 nmi; 310 mi). It was intended to replace the OTR-21 Tochka in the Russian military by 
   2020."

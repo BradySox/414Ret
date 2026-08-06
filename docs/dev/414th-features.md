@@ -4898,11 +4898,25 @@ archaeology and still only produced a verdict for one of the three PLARF launche
 the next flown mission answers "which of these can drive?" from `dcs.log` alone.
 
 **Still open, and worth knowing before authoring a hunt:** `CH_CJ10` does not drive, `CH_Shahed136`
-pins only *after* firing, and **`CH_IskanderM`/`CH_IskanderK`/`CH_DF21D`/`CH_YJ12B` have never been
-established either way**. Marianas 2027's signature "hunt the launchers before they scoot" therefore
-does not currently exist in play (all three of its PLARF sites roll from a pool whose one measured
-member is immobile), and Baltic Fury's Iskander battery is unmeasured. Neither is fixable from the
-data available offline — the fly criteria are on checklist **S2**.
+pins only *after* firing, and **`CHAP_9K720_HE`/`CHAP_9K720_Cluster`/`CH_IskanderK`/`CH_DF21D`/
+`CH_YJ12B` have never been established either way**. Marianas 2027's signature "hunt the launchers
+before they scoot" therefore does not currently exist in play (all three of its PLARF sites roll
+from a pool whose one measured member is immobile), and Baltic Fury's Iskander battery is
+unmeasured. Neither is fixable from the data available offline — the fly criteria are on checklist
+**S2**.
+
+Two entries did NOT come from a Tacview, and did not need to. **`v1_launcher`** (added 2026-08-06)
+is a 1944 launch ramp — a poured emplacement of exactly the `hy_launcher` shape — and its
+`class: Missile` puts it in this emitter's category while `mobile_missile_relocation` defaults ON,
+so it was a latent ANTIFREEZE waiting for the first WWII campaign to author a missile marker. None
+does today (`germany_1944` is its only faction and neither of its campaigns places one), so the
+flag closes a trap rather than fixing an observed failure. And the Iskander-M above is listed under
+its **`CHAP_9K720_*`** ids on purpose: **`CH_IskanderM.yaml` is a tombstone that no longer
+registers** — no pydcs extension declares that id, because the CurrentHill Russia pack dropped it
+when ED integrated the system into base DCS under `CHAP_`. Three factions (`CH_russia_2020`,
+`redfor_current`, `redfor_russia_2020`) still list its display name `"[CH] Iskander-M SRBM"`, which
+the faction loader drops silently; all three also list the live pair, so they do still field the
+Iskander and the dead string costs nothing but confusion.
 
 ## §50 — Convoy ambush (a chance, never telegraphed) + ambient supply convoys
 

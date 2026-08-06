@@ -61,11 +61,18 @@ COASTAL_DEFENSE_CATEGORY = "coastal"
 #: ``CH_Shahed136`` is deliberately NOT listed: its never-fired sites drive
 #: fine, so excluding it would kill a scoot that does work before the salvo.
 #:
+#: ``v1_launcher`` is the one entry NOT recovered from a Tacview, and it does not
+#: need to be: a 1944 V-1 ramp is a poured emplacement, the same shape as the
+#: Silkworm above, and ``class: Missile`` puts it in this emitter's category while
+#: ``mobile_missile_relocation`` defaults ON. No shipped campaign generates one
+#: (germany_1944 is its only faction and neither of its campaigns authors a missile
+#: marker), so this closes the trap before a WWII laydown inherits the ANTIFREEZE.
+#:
 #: The verdicts now live in the units' own definitions as ``mobile: false``
 #: (``GroundUnitType.mobile``), where the flown evidence sits next to the unit;
 #: this set is the fallback for a DCS type with no registered yaml, and a test
 #: keeps the two in lockstep.
-IMMOBILE_UNIT_IDS = frozenset({"hy_launcher", "Silkworm_SR", "CH_CJ10"})
+IMMOBILE_UNIT_IDS = frozenset({"hy_launcher", "Silkworm_SR", "CH_CJ10", "v1_launcher"})
 
 
 def populate_mobile_missiles_lua(

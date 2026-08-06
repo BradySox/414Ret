@@ -4814,6 +4814,23 @@ actually drive (the setting copy says so). Tests
 `test_immobile_silkworm_hardware_is_never_routed` +
 `test_site_loops_are_staggered_across_the_interval`.
 
+**The CH_CJ10 PLARF launcher joined the exclusion (2026-08-05, two flown Marianas 2027 missions —
+Tacviews `-190738` and `-203549`).** **All nine launchers of all three PLARF sites moved 0.00 km**
+— not one metre, in either mission — while the drivable vehicles sharing those groups (the §85
+refuellers ATZ-5 / TZ-22 / GAZ-66 and the PGZ-09 / PGL-625 / LD-3000 SHORAD) jittered only
+0.05–0.31 km. That asymmetry is the signature of a group **pinned by an undrivable member**, not
+one that was never routed: `mobile_missile_relocation` and the `mobilemissiles` plugin were both
+preseeded and `CH_CJ10` was not excluded, so the plugin pushed routes all mission. The sites fired
+25+ CJ-10s and then sat for the remaining ~25 minutes, so mechanically it reads as the same
+post-fire pin as the Shahed below — but this hardware fires early every mission, so "pinned after
+firing" and "never scoots" are the same thing in play. `CH_CJ10` is therefore in
+`IMMOBILE_UNIT_IDS` (no futile pushes, no ground-AI churn) while **`CH_Shahed136` deliberately is
+not**, since its never-fired sites drive fine and excluding it would kill a scoot that does work
+before the salvo. Test `test_the_ch_cj10_plarf_launcher_is_never_routed`. **Campaign consequence:**
+Marianas 2027's authored "§49 shoot-and-scoot + §3 concealment make the PLARF hunt the campaign's
+signature" is **not true in play** — those three sites are stationary targets, and restoring the
+mechanic needs launcher hardware DCS will drive.
+
 **The CH Shahed post-fire pin + the give-up rule (2026-07-17, the flown Scenic Route Merged 39-site
 Tacview).** The fire-window fix is **proven on vanilla hardware** — every Scud_B battery that fired
 then scooted (13/13, 546–3057 m, towed-AAA escorts included) — but all 8 fired `CH_Shahed136` sites

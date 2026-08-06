@@ -1,96 +1,102 @@
 # Kneeboards
 
-The fork reworks the generated kneeboard deck so a pilot can actually brief off it in the cockpit,
-and you can **import your own kneeboard images** per campaign. This page explains what each pilot
-gets and the settings that control it.
-
-> ⚠️ **This page is out of date and is being reworked.** The 2026-07-13 "back to basics" pass
-> retired the dedicated **cover page** (§30), the **compact 3–4 page deck** (§25) and the
-> **Brief Sheet** (§31), and the standalone **Fuel Ladder** was folded into the flight plan as
-> a Fuel column (2026-07-05). The deck is now upstream's page set — Mission Info → Support
-> Info → Notes → the task page, plus the setting-gated extras — with the kept 414th content
-> folded into those pages: the BLUF, the threat cards, the colour palette, the code words, the
-> SITREP page, and the shared-airframe flight index. **Treat the "cover page", "compact deck",
-> "Brief Sheet" and "Fuel Ladder" sections below as historical.** Custom kneeboard import and
-> the SITREP band are current.
+414Ret generates the kneeboard deck a pilot actually briefs off in the cockpit. The deck is
+**upstream's page set**, with the fork's additions folded into those pages rather than bolted on as
+new ones — plus you can **import your own kneeboard images** per campaign.
 
 In DCS, kneeboards are scoped **per airframe**: every pilot flying a given type sees all of that
 type's flight decks stacked together. The fork's layout is built around that fact.
 
 ---
 
-## The cover page (always first)
+## What's in the deck
 
-Every flight's deck now opens on a dedicated **cover page** that consolidates, in one sheet:
+Pages are generated per client flight, in this order. Only the first two are unconditional — the
+rest appear when they have something to say, or when their setting is on.
 
-- **Operation / turn / date header** — every deck tells you what op and which turn it is.
-- **Campaign SITREP** — a "what happened last turn" digest (see below).
-- **Shared-airframe flight index** — when 2+ client flights share the airframe, a callsign / task /
-  start-page index so you can find your flight in the stacked deck (a lone flight skips it).
-- **Friendly-package list** — in compact mode the coalition package list rides here.
+| # | Page | When |
+|---|---|---|
+| 1 | **Mission Info** | always — the BLUF, flight plan, bullseye, weather |
+| 2 | **Support Info** | always — package flights, radios, AWACS/tanker/JTAC, code words, airfields |
+| 3 | **SITREP — Turn N** | previous turn had news, and `generate_sitrep_kneeboard` is on |
+| 4 | **Notes** | the campaign has notes |
+| 5 | **Task page** (e.g. SEAD/Strike Target Info) | the task has one, and it isn't superseded by the recon detail page |
+| 6 | **Threat Intel Brief** | `generate_threat_intel_kneeboard` **(default ON)** and enemy air defenses exist |
+| 7 | **Recon** overview / detail / airfield-departure | `generate_target_recon_kneeboard` |
+| 8 | **Friendly Packages** + targets map | `generate_all_packages_kneeboard` |
 
-Because the cover is page 1, the flight's own pages start on page 2 (the index's page numbers account
-for this).
+A **flight index** is prepended when 2+ client flights share the airframe — see below.
+
+### Mission Info — the BLUF
+
+The lead page opens with a **BLUF** block that answers "what am I doing and what will kill me"
+before the flight plan:
+
+- **THREATS AIR / SAM** — compact one-line summaries of what is up and what is emitting.
+- **LOADOUT** — a one-line summary of what you are actually carrying.
+- **SAR** — the if-down drill, written to match the real Combat SAR model: evade toward friendly
+  lines, capture risk climbs the deeper you went down, rescue tracks your last known position.
+- **JAM BACKUP** — when enemy comms jamming is active, the clean backup UHF channel, printed next
+  to the PUSH / SUCCESS / ABORT code words.
+
+The flight plan below it carries a **Fuel** column — planned fuel remaining at each steerpoint —
+and a one-line **RTB margin** call-out, amber when the margin goes negative. A patrol flight also
+gets an **on-station endurance** line ("On station 45 min planned; fuel supports ~50 min before
+bingo"), because the planned dwell is doctrine and the gas is the real answer.
+
+Reference steerpoints (divert, bullseye) print no Time/GSPD — a chained ETA past the landing point
+is noise, not information.
+
+![The Mission Info kneeboard page: a BLUF block listing task, code words, jam-backup channel, air and SAM threats, loadout and the SAR drill, above the airfield table and a flight plan whose right-hand column shows planned fuel at each steerpoint](https://raw.githubusercontent.com/bradyccox/414Ret/main/docs/wiki/img/kneeboard-mission-info-bluf.png)
+
+*A real generated Mission Info page (Baltic Fury, an F/A-18F on OCA/Runway). The BLUF answers the
+brief before the flight plan starts; the plan's right-hand **Fuel** column and the **RTB margin**
+line below it are the retired Fuel Ladder page, folded in where you actually read it.*
+
+### Support Info — comms and the code words
+
+Package flights, the radio ladder, AWACS/tanker/JTAC, and the departure/arrival airfield rows. The
+colour-keyed **code words** block rides here.
+
+![The Support Info kneeboard page: the package's flights with callsigns, tasks, types and radio channels, a colour-keyed code-words block, then AEW&C and tanker tables with frequencies, TACAN and time on station](https://raw.githubusercontent.com/bradyccox/414Ret/main/docs/wiki/img/kneeboard-support-info.png)
+
+*The same flight's Support Info page. Every other flight in the package with its channel, the
+code words colour-keyed (blue push, green success, red abort — "(you)" marks your own call), then
+the AEW&C and tanker ladders with TACAN and time on station.*
+
+### The threat cards
+
+The enemy air-defense dossier: one card per system with guidance, band, range and ceiling,
+**recon-fog aware** — you get cards for what you have actually scouted, not the ground truth. This
+is on by default and is the single most useful page in the deck for a SEAD or strike crew.
+
+### Shared-airframe flight index
+
+DCS stacks every deck for an airframe together, so a four-flight Hornet mission is a wall of pages.
+When 2+ client flights share a type, the generator keeps each flight's pages in a contiguous,
+callsign-sorted block and prepends a one-page **index** — callsign, task, start page — so you can
+find yours. A lone flight skips it.
+
+### Layout
+
+Sparse pages (Combat SAR, Support Info, Mission Info) use a light heading + underline-rule layout
+that fills the page instead of boxing content into a corner, and long friendly-package lists flow
+into two columns. Tables measure their rendered width and word-wrap the widest column rather than
+running off the right edge. A theme-aware four-colour scheme — blue nav/comms, amber threats/fuel,
+green success, red abort — runs across the pages that use it.
 
 ---
 
-## Compact deck (default ON)
+## Campaign SITREP page
 
-`compact_kneeboard` folds the optional kneeboard content into **at most four pages** instead of the
-old ~10-page deck:
+After a turn is resolved, the next mission's deck carries a **"SITREP — Turn N"** page: a cockpit
+intel brief of what happened last turn — per-side losses, base captures, Combat SAR rescues, MIA
+evaders and POWs. Enemy losses are framed as **"claimed"** to respect the recon-fog model (you
+don't get perfect BDA for free). It is absent on turn 1, on a quiet turn, or when the toggle is
+off.
 
-| Page | Contents |
-|---|---|
-| **P1 — Brief Sheet** | The consolidated one-pager (below). |
-| **P2 — Threats & Targets** | Target ALIC over the enemy air-defense threat cards, colour-coded. |
-| **P3 — Comms & Coordination** | Radios + AWACS/tanker/JTAC + code words + brevity. |
-| **P4 — Flex** | The recon target photo when target-recon imagery is on, otherwise the Fuel Ladder. |
-
-![A Threats & Targets kneeboard page: a SEAD target-area ALIC table over the enemy air-defense threat cards, each SAM card listing guidance, band, range and ceiling](https://raw.githubusercontent.com/bradyccox/414Ret/main/docs/wiki/img/kneeboard-threats.png)
-
-*A generated Threats & Targets page (P2): the target ALIC over the enemy-AD threat cards. In the compact deck these cards are colour-coded (amber MEZ/detect, blue HARM/cues); the shot above is from the full deck.*
-
-Turning `compact_kneeboard` **off** restores the full multi-page deck **byte-for-byte** — the map
-image and Notes page come back, and each section gets its own page again. The compact deck is a
-separate assembly path, so nothing is lost by switching.
-
-**Wide tables fit instead of clipping.** Kneeboard tables now measure their rendered width and
-word-wrap the widest column to fit the page — so a 3-channel comms ladder keeps its FREQ column
-and a long cue list wraps instead of running off the right edge.
-
-### The Brief Sheet
-
-The compact deck's lead page is a single scannable **Brief Sheet** modelled on a printed squadron
-one-pager: header, mission, the **full route — every steerpoint with its number and planned time**
-(`HOLD 1 12:32 → TKR 2 12:38 → JOIN 3 12:49 → TGT 5-8 13:01 → LAND 10`; multiple strike points
-collapse to one range), admin, threats (air + SAM), game plan, comms, code
-words, bullseye, fields (RWY/ATC/TCN), WX (departure-field QNH/QFE + surface wind), loadout, laser,
-and Combat SAR — **auto-filled** from the
-flight plan, the jet's pylons, and the enemy faction. Empty fields render a `______` fill-in blank
-like a real template, so the layout never collapses.
-
-A theme-aware **four-colour scheme** runs across the compact deck — blue nav/comms, amber
-threats/fuel, green success, red abort — so P1, the P2 threat cards, and the P3 code words read as one
-product.
-
-### Fuel Ladder
-
-One glanceable **Fuel** column (planned remaining) per steerpoint, with the RTB surplus — surfaced
-once, replacing the old redundant Plan/Min/Margin trio. Aircraft with no fuel-burn data get a
-sanity-banded **estimate** rather than a blank.
-
-![A Fuel & Packages kneeboard page showing the Fuel Ladder: planned remaining vs. minimum-to-RTB per steerpoint with the margin, plus Bingo/Joker figures](https://raw.githubusercontent.com/bradyccox/414Ret/main/docs/wiki/img/kneeboard-fuel-ladder.png)
-
-*The Fuel Ladder: planned fuel remaining at each steerpoint against minimum-to-RTB, with the surplus margin and Bingo/Joker.*
-
----
-
-## Campaign SITREP band
-
-After a turn is resolved, the next mission's cover page carries a **"SITREP — Turn N"** digest — a
-cockpit intel brief of what happened last turn: per-side losses, base captures, and Combat SAR
-rescues. Enemy losses are framed as **"claimed"** to respect the recon-fog model (you don't get
-perfect BDA for free). It's hidden on turn 1, on a quiet turn, or when the toggle is off.
+It sits on **its own page** rather than at the bottom of Mission Info: a busy turn's POW/MIA list
+clipped at the page edge (found on a flown deck, 2026-07-19).
 
 ---
 
@@ -111,19 +117,35 @@ Old saves migrate automatically (no custom kneeboards until you add them).
 
 ## Settings reference
 
-![The Kneeboards settings page with toggles for generating the target-recon page, the friendly-packages page, the brief-sheet/BLUF page, the comms/code-words/brevity card, and the extra threat-search radius](https://raw.githubusercontent.com/bradyccox/414Ret/main/docs/wiki/img/settings-kneeboards.png)
+All five live on the **Kneeboards** settings page.
 
-*The Kneeboards settings page — the toggles that decide which optional pages the compact deck folds in.*
+| Setting | Default | Effect |
+|---|---|---|
+| `generate_threat_intel_kneeboard` | **ON** | The enemy air-defense dossier page (recon-fog aware) |
+| `generate_sitrep_kneeboard` | **ON** | The previous-turn SITREP page |
+| `generate_target_recon_kneeboard` | OFF | Recon overview / detail / airfield-departure pages |
+| `generate_all_packages_kneeboard` | OFF | Friendly-packages list + targets map |
+| `generate_dark_kneeboard` | OFF | Dark theme, for night flying |
+| `target_recon_extra_threat_search_nmi` | 0 | Widen the recon page's threat search beyond the target area |
+| Custom kneeboards | — | *Kneeboards* toolbar action — per-campaign images injected into client flights |
 
-| Setting | Page | Default | Effect |
-|---|---|---|---|
-| `compact_kneeboard` | Kneeboards | ON | Fold the optional deck into ≤4 pages; off = full multi-page deck |
-| `generate_sitrep_kneeboard` | Kneeboards | ON | Add the previous-turn SITREP band to the cover page |
-| Custom kneeboards | *Kneeboards* toolbar | — | Import per-campaign images injected into client flights |
+---
 
-> **In-game-pass status:** the cover-page render and the compact deck are cockpit-confirmed; the
-> SITREP number accuracy across turns and the shared-airframe index still warrant an eyeball on a
-> live multi-flight deck.
+## Retired — do not expect these
+
+The 2026-07-13 "back to basics" pass removed a large amount of fork-specific kneeboard machinery in
+favour of upstream's page set. If you are reading an older note or an old screenshot:
+
+| Retired | What happened to it |
+|---|---|
+| **Cover page** (§30) | Deleted. The deck opens on Mission Info. New content folds into an existing stock page instead of adding one. |
+| **Compact 3–4 page deck** (§25) | Deleted, with `compact_kneeboard`. The folding machinery was the fork's biggest divergence in `kneeboard.py`. |
+| **Brief Sheet** (§31) | Deleted — every row duplicated a stock page. The BLUF, the code words and the colour palette are what survived. |
+| **Fuel Ladder page** | Folded into the flight plan as the **Fuel** column + RTB margin call-out. |
+| **Brevity card** | Deleted except its code words, now on Support Info. |
+| **Phase & ROE band** | Removed 2026-07-21 with the campaign-phase and ROE features themselves. |
+
+---
 
 ## See also
 

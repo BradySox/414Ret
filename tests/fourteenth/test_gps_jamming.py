@@ -346,10 +346,9 @@ def test_the_standalone_jamming_site_layout_is_self_contained(
 ) -> None:
     """Model 1: a placeable site of its own.
 
-    It must bring both halves -- the jammers, and an ARM-able acquisition radar
-    so the site paints RWRs and takes HARMs (a GPS jammer is L-band and invisible
-    to both on its own) -- and must NOT be `generic`, so it can never be rolled at
-    an ordinary air-defence marker by accident.
+    It fields the jammers and its point defence, and deliberately NO radar, and
+    must not be `generic`, so it can never be rolled at an ordinary air-defence
+    marker by accident.
     """
     from game.layout import LAYOUTS
 
@@ -371,15 +370,11 @@ def test_the_standalone_jamming_site_layout_is_self_contained(
         "GPS_Spoofer_Red",
         "GPS_Spoofer_Blue",
     }
-    radar = slots.get("GPS Jammer Radar")
-    assert radar is not None, "the site must carry an ARM-able emitter"
-    # unit_count 2: the ST-68U is a track-radar class, so the standing 60
-    # redundancy contract applies -- one HARM must not blind the site.
-    assert radar.unit_count == [2]
-    assert {t.id for t in (radar.unit_types or [])} == {
-        "RLS_19J6",
-        "NASAMS_Radar_MPQ64F1",
-    }
+    assert "GPS Jammer Radar" not in slots, (
+        "the site carries NO radar on purpose -- a real GPS jammer is L-band, so "
+        "making it HARM-able was the unrealistic option (DM call 2026-08-05). It "
+        "is a strike target found by recon, not a SEAD target."
+    )
 
 
 def test_a_sam_site_can_carry_an_attached_jamming_section(_layouts: None) -> None:
@@ -429,17 +424,11 @@ def test_each_jamming_site_preset_pairs_a_radar_with_its_own_sides_jammer(
         assert own in ids, f"{preset_name} must field its own jammer"
         assert other not in ids, f"{preset_name} must not reach the other side's"
         # ...and at least one real emitter, so the site is RWR-visible/HARM-able.
-        # ...and an ARM-able acquisition radar. Being on the RWR and being
-        # HARM-able are two DIFFERENT DCS attributes: `GT.WS.radar_type` puts a
-        # unit on the RWR (the EWRs have it), `RADAR_BAND1/2_FOR_ARM` is what an
-        # anti-radiation seeker homes on -- and the EWRs do NOT carry it. Without
-        # this second radar the site is a contact you cannot shoot a HARM at.
-        arm_able = [
+        assert not [
             unit
             for unit in group.units
             if unit.dcs_unit_type.id in {"RLS_19J6", "NASAMS_Radar_MPQ64F1"}
-        ]
-        assert arm_able, f"{preset_name} must field an ARM-able acquisition radar"
+        ], f"{preset_name} must field no radar -- the site is a strike target"
         assert "GPS Jamming Site" in {lay.name for lay in group.layouts}
 
 
@@ -596,3 +585,47 @@ def test_jamming_bubbles_do_not_overlap(_layouts: None) -> None:
                     "second site adds no decision -- spread them onto distinct "
                     "target clusters."
                 )
+
+
+def test_every_jamming_pin_sits_on_ground_its_owner_holds(_layouts: None) -> None:
+    """A jamming pin must bind to a control point owned by the side that fields
+    the jammer, or it is silently discarded.
+
+    The override gate checks the preset's units against the OWNING control
+    point's faction (`get_unit_group_for_task` reads `self.faction`), so a red
+    jamming preset pinned to a marker that binds to a BLUE control point fails
+    the check and an ordinary site generates there instead -- no error, no
+    warning that reaches the author, just a campaign quietly missing the feature
+    it asked for. Caught exactly this way when three campaigns each generated one
+    of their two pinned sites.
+    """
+    import yaml as _yaml
+
+    from game.campaignloader.campaign import Campaign
+    from game.layout import LAYOUTS
+
+    LAYOUTS.initialize()
+    for campaign, pins in _campaign_jamming_pins().items():
+        path = pathlib.Path("resources/campaigns") / f"{campaign}.yaml"
+        data = _yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        theater = Campaign.from_file(path).load_theater(
+            advanced_iads=bool(data.get("advanced_iads", False))
+        )
+        owner_of: dict[str, str] = {}
+        for control_point in theater.controlpoints:
+            if control_point.starting_coalition.name == "NEUTRAL":
+                side = "neutral"
+            else:
+                side = "blue" if control_point.starting_coalition.is_blue else "red"
+            for location in control_point.preset_locations.ewrs:
+                owner_of[location.original_name] = side
+        for marker, preset_name in pins:
+            if marker not in owner_of:
+                continue  # not an EWR-band marker; a different placement model
+            side = owner_of[marker]
+            wanted = "blue" if "(Blue)" in preset_name else "red"
+            assert side == wanted, (
+                f"{campaign}: {marker} is pinned to {preset_name} but binds to a "
+                f"{side.upper()} control point -- the override will be silently "
+                "discarded and an ordinary site generated there instead"
+            )

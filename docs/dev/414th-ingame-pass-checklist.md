@@ -3692,55 +3692,10 @@ mission. The kneeboard's `GPS` line appears only once recon has identified the s
 - The cue firing once per bomb instead of once per flight.
 - An un-scouted jammer appearing on the kneeboard (a recon-fog leak).
 
-**Second half of the pass — the site must be huntable.** The jammer truck itself emits nothing
-an RWR or ARM can see (DCS gives it no radar at all), which is why it is paired with the EWR.
-Confirm:
-- The site **paints your RWR** and a **HARM will lock it** — you are locking the EWR, which is
-  the intended design, not a bug.
-- **Kill the jammer truck specifically** (guns/CBU, not the radar) → the next JDAM hits
-  normally, even though the radar beside it is still alive and still on your RWR. This is the
-  per-unit liveness contract; a failure here means jamming survives its own jammer.
-- **Kill only the radar** → the site drops off RWR but **jamming continues**. Also correct.
-- Every EWR site in a campaign that does *not* use the jamming presets still generates with
-  **no** jammer (the slot is optional + `fill: false`).
-
-### B46 — Naval station-keeping racetracks · §87 · ☐ UNTESTED (built 2026-08-05)
-
-**Setup:** any campaign with authored ship markers — **Marianas 2027** is the intended one
-(11/11 markers put on station, headless-verified, and its PLAN hulls are what prompted this).
-No setting and no plugin to enable; regenerate a turn and the ships carry routes. Also worth a
-pass on **1968 Yankee Station**, whose `Naval-3` deliberately gets **no** track (its spawn is
-not classified as sea) — that hull must still generate and fight exactly as before.
-
-**Pass criterion:** open the generated miz in the Mission Editor and each ship marker group
-shows **5 waypoints** — the spawn plus a 4-corner oval — with a *Switch Waypoint* action on the
-last one pointing at waypoint 2. In game, the group is **under way from mission start**, laps
-the oval (~48 min), and is never more than **~1.6 NM** from where the campaign map draws it.
-Carriers and LHAs are unchanged: they still steam into wind for recovery.
-
-**Judge the size in the air, not on paper.** The 3 × 1 NM oval was sized off the threat-ring
-measurement (displacement must stay a small fraction of a ship's own air-defence radius, which
-the map draws at the marker), so it is deliberately tight — a *station*, not a patrol area. The
-question to answer while flying it is whether that still reads as a ship under way and whether
-a pre-planned coordinate is meaningfully stale by the time you arrive. If it wants to be
-bigger, `STATION_LEG` / `STATION_WIDTH` / `STATION_SPEED` are together at the top of
-`tgogenerator.py` — but note `test_the_station_stays_small_against_a_ship_threat_ring` caps the
-reach at 25 % of a 16 km escort ring, and that guard should be argued with rather than deleted.
-
-**Fail signatures to watch for:**
-- **A group that never moves.** Either DCS declined the route, or every bearing failed the
-  water check. `Naval-3`-style silence is correct; a Marianas hull sitting still is not.
-- **A group that stops after one lap** — `SwitchWaypoint` does not loop a *naval* group. This
-  is the one genuine unknown and the reason for this row. Fallback needs no task at all:
-  author enough waypoints to outlast the mission.
-- **A grounded or beached hull**, or one steering into an island — the leg sampling missed
-  terrain the landmap does not model. Note the campaign and position; the fix is a tighter
-  `STATION_WATER_SAMPLE` or a smaller oval, not disabling the feature.
-- **A ship that stops fighting while under way** — the route must not have disturbed the ROE
-  and alarm options on waypoint 0 (§81 sets those there).
-- **A §63 cruise raid that never launches** from a stationed ship — the pushed `FireAtPoint`
-  should ripple and the hull should then resume its lap. This is the interaction the design
-  relies on `PushTask` for, so it is worth confirming rather than assuming.
-- **A §80 mixed-hull group scattering** instead of sailing the circuit in formation.
-- Ships drifting far enough that a **drawn threat ring visibly no longer covers what it
-  should** — the ~4 NM ceiling is meant to keep this a non-issue.
+**Second half of the pass — the site is a STRIKE target, not a SEAD target.** The jammer emits
+nothing an RWR or ARM can see, by design (a real GPS jammer is L-band). Confirm:
+- The site does **not** appear on your RWR and a HARM will **not** lock it. That is correct.
+- You find it by **recon** — it surfaces as a §3 contact, and the kneeboard briefs the area once
+  scouted — and kill it with bombs.
+- **Killing the jammer trucks restores accuracy** on the very next GPS weapon.
+- Every campaign that does not pin a jamming preset still generates its ordinary sites unchanged.

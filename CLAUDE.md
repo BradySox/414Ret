@@ -3842,20 +3842,15 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     non-overlapping, CI-guarded** — bubbles are large and **invisible on the map**, so a heavy
     hand is easy to author and hard to notice (the Marianas "wall of rings" lesson), and
     overlap specifically buys nothing because **effects do not stack** (a weapon faces only the
-    strongest covering bubble, the §77 rule). **Making the jammer huntable:** the units are
-    DCS's own `GPS_Spoofer_Red`/`Blue` ("Radio jammer"), whose stock DB entry declares
-    `GT_t.ws = 0` with **no `GT.WS`, no `GT.Sensors`, no `searchRadarFrequencies`** — invisible
-    to RWR and un-lockable by an ARM (faithful, since a real GPS jammer is L-band, and
-    unplayable, since SEAD could never prosecute it). **Being on RWR and being HARM-able are
-    two DIFFERENT DCS attributes and no one unit has both** — `radar_type` puts a unit on the
-    RWR, `RADAR_BAND1/2_FOR_ARM` is what an ARM seeker homes on and **the EWRs do NOT carry it**
-    (verified: `EWR_FPS-117` declares only `"EWR"`; of the ARM-band units in DCS's
-    TechWeaponPack, not one is an EWR) — so the standalone site fields an ARM-flagged
-    acquisition radar (**ST-68U "Tin Shield"** red / **NASAMS MPQ-64F1** blue) at
-    `unit_count: [2]` per the standing §60 contract; an attached section needs none, the
-    battery already emits. A DCS mod adding the four missing DB lines to the truck was
-    **offered and declined 2026-08-04** (it puts the squadron on a mod install, and each jet
-    ships its own RWR table a mod cannot extend). **Task = EarlyWarningRadar**, the one
+    strongest covering bubble, the §77 rule). **It carries NO radar and is a STRIKE target, not a SEAD
+    target** (DM call 2026-08-05, reversing the 2026-08-04 pairing): a real GPS jammer is
+    **L-band**, which no RWR covers and no ARM homes on, so making it HARM-able was the
+    *unrealistic* option — and DCS agrees, the stock unit declares `GT_t.ws = 0` with no
+    `GT.WS`/`GT.Sensors`/`searchRadarFrequencies`. You find it by **recon** (§3 surfaces it, the
+    kneeboard briefs the area once scouted) and kill it with **bombs**; its optional SHORAD slot
+    stops that being free (a faction with no SHORAD — China 2027 — fields an undefended site).
+    Dropping the radar also removed the faction-roster leak: **only the jammer is granted**, and
+    `ElectronicWarfare` is referenced by no layout, so it can never be faction-filled anywhere. **Task = EarlyWarningRadar**, the one
     air-defence role MANTIS never holds dark. **Granting faction access matters:
     `accessible_units` chains `preset_groups`, so registering the preset there grants access
     BUT also makes the site a `random_group_for_task` candidate — measured 2-to-4 sites
@@ -3863,8 +3858,14 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     passing, a generic engine bug: **`generate_ewrs` called `random_group_for_task` directly
     and never read the `ground_forces` block, so an EWR marker could not be pinned at all** —
     the identical hole naval groups had until `generate_navy` was routed through
-    `get_unit_group_for_task` (2026-08-03); upstream-carve candidate. **Preseeded in Operation
-    Baltic Fury** (2027) on two dedicated `GPSJAM-*` markers (Copenhagen approach ~5 km from
+    `get_unit_group_for_task` (2026-08-03); upstream-carve candidate. **Fielded in four modern campaigns**
+    (2026-08-05), two well-separated RED-owned sites each: **Baltic Fury** (2027), **Marianas
+    2027**, **Slava Ukraini** (2026) and **Into the Hornets Nest** (2022) — the era filter is
+    the jammer's own 2010 introduction, which excludes the Cold War/Desert Storm laydowns
+    outright. **A pin must bind to a CP owned by the side fielding the jammer** (the gate checks
+    the *owning* CP's faction, so a red preset on a blue-CP marker is silently discarded —
+    caught when three campaigns each generated one of two pinned sites; test-guarded).
+    **Preseeded in Operation Baltic Fury** on two dedicated `GPSJAM-*` markers (Copenhagen approach ~5 km from
     the Kastrup victory objective; Rostock on the central axis) added additively by
     `tools/build_baltic_fury_miz.py --gps-jamming` — their own markers, NOT a modifier on the
     EWR net, so red's radar chain and its GPS-denial belt are attacked separately. **Red Tide

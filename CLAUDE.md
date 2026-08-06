@@ -3415,7 +3415,14 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     (SHOT target) or landing on (HIT) a managed group releases it to weapons-free
     immediately, held OR winchester (friendly fire never releases; an attacked winchester
     group is never re-dropped and its overshoot stays counted), so the hold decides who
-    starts the war, never who may defend. The same fly found + fixed the emitter bug: `LuaData.serialize`
+    starts the war, never who may defend. **The re-fly ("CIWS fired but no SAMs") added the
+    second half: release the FORMATION, not the group** — a carrier/LHA objective is **two
+    DCS groups** and the area-defence SAMs ride the **escorts**, so the targeted Type 071
+    fired the AK-630 CIWS that is its whole AAW fit and died while its HHQ-16 escorts
+    **1.91 km** away sat holding, never having been shot at. An attack now also frees every
+    managed friendly group within `formationReleaseKm` (default **15 km**; the flown geometry
+    is unambiguous — screen 1.91 km, next task force 59.02 km), **one hop, never a cascade**,
+    same-coalition only. The same fly found + fixed the emitter bug: `LuaData.serialize`
     **drops a node's `add_key_value` entries whenever the node also has child items**, so the
     `stagger`/`metered` switches never reached the miz (`stagger false … metered false` at
     load) — they are now named child items (`add_item().set_value()`, the CombatSAR

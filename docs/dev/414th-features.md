@@ -7727,7 +7727,16 @@ direct anti-ship attack.** Reworked same day (DM call): **release-on-attack** �
 enemy weapon aimed at (SHOT target) or landing on (HIT) a managed group releases it to
 weapons-free immediately, held or winchester; friendly fire never releases; an attacked
 winchester group is never re-dropped to ReturnFire and its overshoot stays counted for the
-debit. Details + harness pins in the design note; the B39 re-fly runs on this build.
+debit.
+
+**The re-fly added the other half — release the FORMATION, not the group.** On the fixed
+build the release fired correctly and the targeted Type 071 LHA fought with the AK-630 CIWS
+that is its entire AAW fit, and still died: a Retribution carrier/LHA objective is **two DCS
+groups**, and the area-defence SAMs are on the **escort** group, which nobody had shot at.
+An attack now frees every managed friendly group within `formationReleaseKm` (default
+**15 km**, plugin option, 0 = targeted-only), same coalition, **one hop — never a cascade**.
+The flown geometry makes the radius safe: the screen rode **1.91 km** off its flagship and
+the next task force was **59.02 km** away. Details + harness pins in the design note.
 
 ### Symmetry, and what the plugin does not own
 

@@ -335,18 +335,13 @@ class FlotGenerator:
             )
 
     def _generate_front_line_jtac(self) -> None:
-        """Spawn the stock front-line JTAC: an invisible, immortal FAC orbiting the
-        FLOT, lasing for CAS.
+        """Spawn the front-line JTAC: an invisible, immortal FAC orbiting the FLOT,
+        lasing for CAS.
 
-        This is Retribution's standard model and the right one for any campaign with
-        a real front line. It is suppressed only when ``coin_packaged_jtac_drone`` is
-        on: a COIN war has no FLOT worth orbiting, so those campaigns instead fly a
-        real, killable drone inside their air-to-ground packages
-        (``AircraftGenerator._maybe_configure_jtac``). The two are mutually exclusive
-        -- running both would double-laze and double-list on the kneeboard.
+        This is Retribution's standard model and, since the packaged-drone JTAC was
+        stripped on 2026-08-05, the only one -- gated on nothing but whether the
+        faction fields a JTAC, as upstream intends.
         """
-        if self.game.settings.coin_packaged_jtac_drone:
-            return
         if not self.game.blue.faction.has_jtac:
             return
 

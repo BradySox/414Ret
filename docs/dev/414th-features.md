@@ -377,61 +377,48 @@ kept flying after landing", and the Fuel column already blanked exactly these ro
 `tests/ato/flightplans/test_formationattack.py` +
 `tests/missiongenerator/test_flightplan_fuel_column.py`.)
 
-**That drone is a lasing JTAC — COIN campaigns only (2026-07-05, 414th call; scoped to COIN
-2026-08-02).** The stock Retribution front-line JTAC — an **invisible, immortal** `jtac_unit`
-FAC orbiting the FLOT at 5,000 ft — is the model for **every campaign with a real front line**,
-and it is **back and default** (`FlotGenerator._generate_front_line_jtac`, a faithful restore of
-upstream's block). The packaged drone-JTAC below was built COIN-first and is now **opt-in per
-campaign**, because the two are **mutually exclusive** (running both double-lazes and
-double-lists on the kneeboard).
+**JTAC is upstream's, unmodified (packaged-drone model STRIPPED 2026-08-05).** The fork briefly
+ran two mutually-exclusive JTAC models — upstream's front-line FAC, and a 414th packaged drone
+that rode air-to-ground packages and lased from there. The drone model is **removed** on a DM
+call ("G26, 27 need stripped from the build, leave G32 as its default behavior"; the target
+state being upstream's own behaviour — "it fields an AI drone for each faction over the front
+line period thats it").
 
-The COIN case is the one the stock JTAC can't serve: a COIN laydown has **no FLOT worth
-orbiting** (Enduring Resolve has no front line at all; Inherent Resolve's fighting is at the
-strongholds and in the city, not along its single Highway-1 front), so the immortal FAC spends
-the war over empty ground. Those campaigns set **`coin_packaged_jtac_drone`** (Campaign
-Management → Insurgency, default **OFF**, `enabled_when=coin_insurgency`) and get a JTAC that
-rides the fight instead — which suppresses the front-line JTAC for that campaign.
+There is now **exactly one JTAC model, and no setting governs it**:
+`FlotGenerator._generate_front_line_jtac` spawns an **invisible, immortal** `jtac_unit` FAC
+orbiting the FLOT at 5,000 ft, on the front line's own laser code (forced to 1113 under
+`ctld.fc3LaserCode` so FC3 receivers can lase), gated on nothing but `faction.has_jtac`,
+**blue-side**, defaulting to the **MQ-9 Reaper** when a faction declares no `jtac_unit`.
 
-`AircraftGenerator._maybe_configure_jtac` hangs the JTAC on the **packaged drone**
-instead of a FLOT unit: an AI-flown flight of the faction's `jtac_unit` (the MQ-9/Predator) in
-an **air-to-ground package** (`_JTAC_PACKAGE_PRIMARIES` = Armed Recon / CAS / BAI / Strike —
-option 1; may narrow to {Armed Recon, CAS} later) is emitted as a `JtacInfo` (group name +
-allocated laser code + UHF freq + callsign + the target as its region). That flows to
-`dcsRetribution.JTACs` → `ctld-config.lua` `ctld.JTACAutoLase` (**autolase + smoke both default
-ON**), so the drone lazes and smoke-marks ground targets for the shooters and shows on the
-kneeboard/radio like any JTAC. **No DCS task is added** — the drone flies its own package
-mission (recon overwatch / attack) and lases what it overflies; CTLD does the designation.
-**Blue + AI only** (a player drone is not an autolase JTAC), **not** invisible/immortal (unlike
-the front-line JTAC — the packaged drone is a real asset that can be shot down). The laser code is
-allocated per JTAC (or forced to 1113 when the `ctld.fc3LaserCode` option is on, for FC3
-receivers). (`game/missiongenerator/aircraft/aircraftgenerator.py`; tests
-`tests/missiongenerator/test_drone_jtac.py`; checklist G26 — needs an in-game pass, including
-whether a moving/overflying drone sustains a useful lase or wants a loiter profile.)
+**Checked line-by-line against `upstream/dev`.** The fork's extracted method is behaviourally
+identical to upstream's inline `# Add JTAC` block: same gate, same blue-only scope, same
+`str(code)` / `Player.BLUE` / `callsign_for_support_unit(jtac)`, and the `position` the method
+recomputes is the *same* `FrontLineConflictDescription.frontline_position` call that upstream
+reads out of the enclosing scope. **One divergence is deliberate and stays:** upstream records
+`player_frontline_groups` *inside* its `has_jtac` block, so a blue side without a JTAC reports
+no frontline groups at all — an upstream bug, not JTAC behaviour, and it must not be
+"restored" in the name of fidelity.
 
-**Auto-fielding the JTAC drone squadron (2026-07-05, 414th call; COIN-scoped 2026-08-02).** The
-packaged drone-JTAC only fires if a drone squadron *exists and gets fragged* — but squadrons are
-created only from a campaign's `squadrons:` block, so a COIN campaign that never lists a drone
-would have no JTAC at all (its front-line JTAC being suppressed by
-`coin_packaged_jtac_drone`). At New Game
-(`Coalition.configure_default_air_wing` → `ensure_jtac_drone_squadron`,
-`game/fourteenth/jtac_drone.py`), each **blue** side whose faction declares a **drone**
-`jtac_unit` (in `UAV_DCS_IDS`, TARPS-capable) and doesn't **already field a drone** gets one
-small (2-ship) **TARPS-tasked** drone squadron auto-fielded at the **rear-most airfield** (the
-blue field farthest from the nearest enemy base that `can_operate` it). The auto-recon hook
-then frags it forward into A/G packages, where it becomes the JTAC and films the whole time.
-Deliberately conservative: gated first by **`coin_packaged_jtac_drone`** (a front-line-JTAC
-campaign never auto-fields a drone squadron for this), **skips a campaign that already
-hand-places drones** (e.g. Operation Inherent Resolve — untouched), blue-only, and then gated by
-`auto_jtac_drone` (default **ON**, `enabled_when=coin_packaged_jtac_drone`) as a
-kill switch for campaigns that want their air wing left exactly as authored.
-**Era-gated** (`_UAV_SERVICE_YEAR`): many factions
-carry a lazy default `jtac_unit: MQ-9` even in the 1980s/90s, so the auto-field never drops a
-drone that didn't exist yet — Red Tide is **1988**, and the Reaper (2007) / Predator (1995) /
-WingLoong (2014) are all skipped there (12 Cold-War factions carry the default MQ-9). The floor
-applies only to the AUTO-field; a campaign that deliberately fields a drone is its author's call.
-Verified: the gate qualifies real modern factions (bluefor_modern / usa_2005 / israel_2017 →
-MQ-9, drone + TARPS-capable) and the era floor skips a 1988 start. Tests
-`tests/fourteenth/test_jtac_drone.py`; checklist G27 — the fielded-and-fragged loop needs a fly.
+**Removed by the strip:** the `coin_packaged_jtac_drone` and `auto_jtac_drone` settings (and
+their Insurgency layout entries), `game/fourteenth/jtac_drone.py` (`ensure_jtac_drone_squadron`
+— the auto-fielded rear ISR drone squadron that existed only to guarantee the packaged JTAC a
+drone), `AircraftGenerator._maybe_configure_jtac` with `_JTAC_PACKAGE_PRIMARIES`, the
+`Coalition.configure_default_air_wing` hook, the `coin_packaged_jtac_drone: true` preseeds in
+both COIN campaigns, and `tests/fourteenth/test_jtac_drone.py` +
+`tests/missiongenerator/test_drone_jtac.py`.
+
+Removed settings are **save-safe**: `Settings.deserialize_state_dict` looks each stored key up
+against a fresh `Settings()` and passes unknown values straight through, so an old save's two
+keys survive as inert `__dict__` entries — the same path the §20 and §53–§55 removals took.
+
+**Coverage note worth keeping.** The two deleted test files covered the *drone* side and the
+mutual exclusion; nothing anywhere tested the front-line FAC itself, so the strip would have
+left the build's only JTAC model with zero coverage.
+`tests/missiongenerator/test_front_line_jtac.py` replaces it: the `has_jtac` gate both ways
+(using a sentinel raised from `frontline_position` to prove the body is reached), plus a guard
+that the two stripped settings are really gone rather than left dead for someone to re-wire.
+The full generator body still is not exercised — it builds a real pydcs flight group, resolves
+a livery and needs theater geometry — so the FAC actually lasing remains checklist **G32**.
 
 - Enum + behavior: `game/ato/flighttype.py`, `game/missiongenerator/aircraft/aircraftbehavior.py`
   `configure_tarps()` — a single flyover of the target area, ReturnFire ROE, no offensive

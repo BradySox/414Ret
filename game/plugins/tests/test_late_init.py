@@ -5,7 +5,6 @@ from unittest.mock import MagicMock
 
 from game.missiongenerator.luagenerator import LuaGenerator
 from game.plugins.luaplugin import LuaPlugin
-from game.plugins.tars import TarsPlugin
 from game.plugins.tic import TicPlugin
 
 
@@ -36,11 +35,6 @@ def test_tic_gates_on_frontline_groups_only() -> None:
     assert tic.should_late_init(_gen(tic_groups=[])) is False
 
 
-def test_tars_gates_on_enabled() -> None:
-    assert _enabled_plugin(TarsPlugin, "tars", True).should_late_init(_gen()) is True
-    assert _enabled_plugin(TarsPlugin, "tars", False).should_late_init(_gen()) is False
-
-
 def test_plain_plugin_has_no_late_init() -> None:
     plain = _enabled_plugin(LuaPlugin, "ctld", True)
     assert plain.late_init_files() == []
@@ -52,10 +46,7 @@ def test_plain_plugin_has_no_late_init() -> None:
 
 def test_declared_late_init_files_exist() -> None:
     root = Path("resources/plugins")
-    for identifier, cls in (
-        ("tic", TicPlugin),
-        ("tars", TarsPlugin),
-    ):
+    for identifier, cls in (("tic", TicPlugin),):
         plugin = cls.__new__(cls)
         for filename in plugin.late_init_files():
             assert (
@@ -79,15 +70,6 @@ def test_inject_late_init_passes_files_comment_and_preamble() -> None:
     assert files == ["TIC_v1.1.lua", "tic_414_init.lua"]
     assert comment == "Load TIC_v1.1 (frontline battle sim)"
     assert preamble is not None and "GLSCO.AutoInitialize = false" in preamble
-
-
-def test_tars_late_init_has_no_preamble() -> None:
-    tars = TarsPlugin.__new__(TarsPlugin)
-    tars.identifier = "tars"
-    gen = MagicMock()
-    tars.inject_late_init(gen)
-    _, _, _, preamble = gen.inject_late_plugin_scripts.call_args.args
-    assert preamble is None
 
 
 def test_helper_emits_one_trigger_with_all_files() -> None:

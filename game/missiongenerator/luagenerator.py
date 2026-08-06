@@ -19,7 +19,7 @@ from game.plugins import LuaPluginManager
 from game.theater import TheaterGroundObject
 from game.theater.iadsnetwork.iadsrole import IadsRole
 from game.utils import escape_string_for_lua, nautical_miles
-from .aireconluadata import populate_ai_recon_lua
+from .reconluadata import populate_recon_lua
 from .aisleepluadata import populate_ai_sleep_lua
 from .briefingluadata import populate_briefing_lua
 from .coinluadata import populate_coin_lua
@@ -416,10 +416,10 @@ class LuaGenerator:
         # when a suite feature is enabled; the vietnamops plugin gates on data presence.
         populate_vietnam_ops_lua(lua_data, self.game, self.mission_data)
 
-        # AI recon auto-capture -- emits dcsRetribution.AIRecon only when there are
-        # AI-flown player-coalition TARPS flights; the airecon plugin records their BDA
+        # Recon BDA capture -- emits dcsRetribution.Recon only when the mission has
+        # BLUE recon-capable flights (player AND AI); the recon plugin banks their take
         # (the player TARS path is player-only and never fires for AI recon; G19).
-        populate_ai_recon_lua(lua_data, self.game, self.mission_data)
+        populate_recon_lua(lua_data, self.game, self.mission_data)
 
         # COIN in-mission movement -- emits dcsRetribution.coin only when a live HVT
         # convoy and/or mobile VBIED exists; the coin plugin drives them at runtime

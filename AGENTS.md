@@ -138,7 +138,7 @@ file. This guide is the map; those are the territory.
     Afar/Syria ratline); the 3-phase Isolate → East Mosul → West Mosul/Old City arc with a permanent Mosul
     positive-control box (+ a tight Old City box in the last phase). **Drone wing added 2026-07-05**
     (user call off the installed-inventory audit): Baghdad hosts RQ-1A Predator ×4 `primary: TARPS`
-    (persistent ISR — the `airecon` plugin banks AI drone overflights as confirmed BDA, so the drones
+    (persistent ISR — the `recon` plugin banks drone overflights as confirmed BDA, so the drones
     localize the concealed IED/cell circles) + MQ-9 Reaper ×4 `primary: BAI`; the shared unit yamls
     gained `TARPS: 700` + honest `max_range` (800/400 NM) and both drones joined the faction
     `aircrafts` (the MQ-9 was previously only its JTAC unit). **The miz is now the ER
@@ -1147,16 +1147,31 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
    exact coords never sent to the client) instead of an exact marker; LORAD/EWR/buildings/ships
    stay exact, discovery snaps it to the real symbol, and the COIN insurgent spawns conceal
    intrinsically via `TheaterGroundObject.concealed` (`concealed_uncertainty` in
-   `game/server/tgos/models.py`; checklist G24). **AI recon BDA capture** (`airecon` plugin, added
-   2026-07-01) closes the G19 gap that the MOOSE TARS film path is **player-only** (its birth
-   handler drops any non-player unit), so auto-paired *AI* recon flights confirmed nothing:
-   `populate_ai_recon_lua` (`aireconluadata.py`) emits each AI-flown, player-coalition (BLUE)
-   **recon-capable** flight + its target; the `airecon` plugin watches each and, when it survives to
-   overfly (within a trigger range of the target), records the enemy ground units there into the same
-   `tars_recon_captures` ledger the player film menu feeds — so the debrief
-   (`debriefing.py`→`tars_reconned_tgos`) treats an AI recon capture identically. A shot-down /
-   aborting recon flight confirms nothing (one-shot). Player-crewed flights are never emitted (still
-   the F10 film path); blue-only. Emitter-tested; runtime Lua needs an in-game pass (checklist G19).
+   `game/server/tgos/models.py`; checklist G24). **Recon BDA capture — ONE mechanism for both crews (`recon` plugin;
+   rebuilt 2026-08-05, replacing the `tars` + `airecon` pair)**. Recon previously ran two unrelated
+   implementations of one question: MOOSE `Ops.TARS` event callbacks for the player (an F10 "film"
+   menu) and a geometric overflight check for the AI. They could not agree by construction and
+   failed differently, which is why "is TARS broken" had no answer. **MOOSE `Ops.TARS` is cut**: all
+   it contributed to the campaign was a unit NAME scraped off a `Snapshot` whose schema was never
+   confirmed — `snap.name or snap.unitName or snap.UnitName` sat under a comment saying the one-time
+   `env.info` dump existed so the schema "can be confirmed in-game", so if all three guesses were
+   wrong the player path recorded nothing, silently, while the AI path kept working.
+   `populate_recon_lua` (`reconluadata.py`) now emits **every** BLUE recon-capable flight — player
+   AND AI, which is load-bearing: with the film menu gone, excluding players would leave a human
+   recon sortie confirming nothing at all — and the `recon` plugin watches each, banking the enemy
+   ground/ship units near the target into the same `tars_recon_captures` ledger the debrief already
+   parses (`debriefing.py`→`tars_reconned_tgos`), so nothing downstream changed. **Recon is
+   automatic on overfly** (DM call): fly the profile over the target and it confirms; no menu, no
+   film limit. The take is shaped by **sensor** (a TARPS tasking reads wider than a drone's ball),
+   by **altitude** (a high fast pass resolves less — full radius to 20,000 ft, degrading to 40 % by
+   40,000 ft) and by **cloud cover** from the campaign's own weather, which §47/§67 model and recon
+   previously ignored entirely. **Timing is deliberately asymmetric:** the CAPTURE fires on overfly,
+   but the CUE is held until the flight LANDS (DM call — you get the read-out when the take is home).
+   The capture is NOT gated on landing, because missions routinely end before flights land, so
+   gating it on touchdown would silently destroy most recon; a cue is cosmetic, a capture is not.
+   A shot-down / aborting flight confirms nothing (one-shot); blue-only. Tests
+   `game/missiongenerator/tests/test_reconluadata.py` + `tests/lua/test_recon_runtime.py`; runtime
+   needs an in-game pass (checklist G19).
    **A drone is always filming (2026-07-05, 414th rule)**: `_feeds_ai_recon` counts a flight as recon
    if it is TARPS-tasked (any airframe) **OR a drone** (`UAV_DCS_IDS` in `game/data/units.py` — a
    curated set; DCS has no UAV flag, `category` buckets drones as generic "Air") **regardless of the
@@ -1167,7 +1182,7 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
    optional TARPS flight into **Armed Recon** packages (not just Strike/DEAD); `TarpsFlightPlan` was
    widened to accept a `ControlPoint` target (armed recon sweeps a CP corridor, not a TGO). On a
    UAV-fielding faction the TARPS bird IS the drone, so OIR gets a Predator/Reaper in every armed
-   recon package (and the `airecon` loop banks its overflight as BDA). Armed recon primary is now a
+   recon package (and the `recon` loop banks its overflight as BDA). Armed recon primary is now a
    fixed 4-ship (`PlanArmedRecon.ARMED_RECON_FLIGHT_SIZE`); with the threat-gated 2-ship SEAD escort
    resolving to the Viper, the package reads 1 drone + 2 SEAD Vipers + 4 recon. Optional/gated (drops
    if no drone free, never scrubs). Tests `tests/test_armed_recon_planning.py`; checklist G25.
@@ -1312,7 +1327,9 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     pre-loaded reliably and ED is shipping native DTC. Do not restore the OLD
     implementation — **superseded by §74** (ED's native cartridge shipped; the
     rebuilt-from-scratch export shares nothing with this one). (§11)
-12. **TARS recon engine** — MOOSE Ops.TARS runtime for TARPS, feeds confirmed BDA (default ON).
+12. **Recon engine** — the `recon` plugin: one geometric capture rule for player AND AI recon,
+    sensor/altitude/weather-shaped, feeding confirmed BDA (default ON). MOOSE `Ops.TARS` was cut
+    2026-08-05; see §3.
 13. **Flight Control ATC** — RETIRED (2026-06-26): half-baked MOOSE FLIGHTCONTROL tower
     comms plugin; removed. Do not restore. (§13)
 14. **Plugin Options UI** — `descriptionInUI` field + label/default polish across all plugins.

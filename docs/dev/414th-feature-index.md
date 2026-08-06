@@ -23,7 +23,7 @@ pass checklist `§N` is unregistered, or this table drifts.
 | §9 | TIC — Troops In Contact | `tic` | — |
 | §10 | CurrentHill Iran assets pack | — | — |
 | §11 | Native DCS DTC cartridge export _(retired)_ | — | — |
-| §12 | TARS recon engine | `tars` | — |
+| §12 | Recon engine (TARPS + drone BDA) | `recon` | — |
 | §13 | Flight Control ATC _(retired)_ | — | — |
 | §14 | Plugin Options UI | — | — |
 | §15 | SCAR — RESCAP "Sandy" rescue escort | `combatsar` | `scar_command_post_intel` |
@@ -101,4 +101,3 @@ pass checklist `§N` is unregistered, or this table drifts.
 | §87 | Naval station-keeping racetracks | — | — |
 | — | MANTIS IADS engine | `mantisiads` | — |
 | — | Splash Damage (414th tuned) | `splashdamage3` | — |
-| — | AI recon BDA capture (§3 TARPS) | `airecon` | — |

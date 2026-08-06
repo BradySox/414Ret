@@ -140,6 +140,13 @@ Upstream hands you a map that already knows everything. Here you have to go look
   map. The mix stays sensible: a patrol boat never joins a cruiser's screen, submarines pair
   with submarines, and a navy that only fields one hull of a class still gets a coherent
   group. (New games only — the composition is decided when the campaign is generated.)
+- **A missile battery looks like a battery.** A SCUD or Iskander site used to be three
+  launchers and a jeep; it now generates with its support park — a pair of cargo trucks, a
+  transporter/loader, a fuel bowser and (where the faction has one) a command-and-staff
+  vehicle, in that nation's own kit. It reads as a real emplacement from the air, which
+  matters when the launchers are hiding under a suspected-activity circle and shoot-and-scoot
+  between your recon passes. Launchers also **cost money** now — a theatre ballistic missile
+  was free to buy and free to repair. (New games only.)
 - **Nation-specific voiceovers and pilot names per squadron** — a Greek squadron hears Greek
   and fills with Greek names, instead of one shared faction voice. The nation is yours to set:
   a **Country selector** in the Air Wing Configuration dialog (under Livery), and campaigns can

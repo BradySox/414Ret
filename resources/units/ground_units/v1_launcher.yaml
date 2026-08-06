@@ -1,3 +1,5 @@
+# A 1944 launch ramp: cheap, fixed, and inaccurate by design.
+price: 20
 class: Missile
 variants:
   V-1 Launch Ramp: null

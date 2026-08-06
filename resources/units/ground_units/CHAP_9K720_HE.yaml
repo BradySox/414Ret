@@ -6,6 +6,7 @@ description: "The 9K720 Iskander (Russian: \xD0\x98\xD1\x81\xD0\xBA\xD0\xB0\xD0\
 introduced: 2006
 manufacturer: Votkinsk Plant State Production Association
 origin: Russia
-price: 0
+# Same system as CH_IskanderM -- keep the two priced identically.
+price: 70
 variants:
   "SRBM 9K720 Iskander HE [CH]": null

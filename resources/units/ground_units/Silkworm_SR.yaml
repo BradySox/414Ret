@@ -1,4 +1,7 @@
 class: SearchRadar
 price: 0
+# §49: the Silkworm battery's search radar shares its launcher's fixed
+# emplacement -- see hy_launcher.yaml for the flown evidence.
+mobile: false
 variants:
   AShM Silkworm SR: null

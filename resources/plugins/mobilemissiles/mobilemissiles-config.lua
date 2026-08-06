@@ -150,6 +150,29 @@ local function startSite(site, startDelay)
         end)
         return ok and p or nil
     end
+    -- The distinct DCS type names still alive in a group, for the give-up log.
+    -- A group that will not drive is pinned by ONE of its members, and which one
+    -- is the whole question: every entry in the emitter's IMMOBILE_UNIT_IDS was
+    -- found by reading a Tacview after the fact, because the log only ever said
+    -- which GROUP was stuck. Naming the types turns the next flown mission into a
+    -- one-line verdict ("giving up on X [CH_CJ10, CH_SX2190]") instead of
+    -- archaeology.
+    local function typesOf(g)
+        local seen, names = {}, {}
+        pcall(function()
+            for _, u in ipairs(g:getUnits() or {}) do
+                if u and u:isExist() then
+                    local t = u:getTypeName()
+                    if t and not seen[t] then
+                        seen[t] = true
+                        names[#names + 1] = t
+                    end
+                end
+            end
+        end)
+        table.sort(names)
+        return table.concat(names, ", ")
+    end
     local function tick()
         local groups = aliveGroups(site.groups)
         if #groups == 0 then
@@ -181,6 +204,7 @@ local function startSite(site, startDelay)
                     if rec.dry >= GIVE_UP_PUSHES then
                         rec.stuck = true
                         env.info("MOBILEMISSILES|: giving up on " .. name
+                            .. " [" .. typesOf(g) .. "]"
                             .. " (no movement across " .. rec.dry .. " route pushes)")
                     end
                 end

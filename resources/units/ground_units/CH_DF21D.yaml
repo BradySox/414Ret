@@ -1,4 +1,6 @@
 class: AntiShipMissile
-price: 0
+# The carrier-killer ASBM: the most expensive launcher in the fork, matching
+# the artillery ceiling (PHL-16 85).
+price: 85
 variants:
   "[CH] DF-21D LBASBM": null

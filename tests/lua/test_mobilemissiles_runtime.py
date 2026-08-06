@@ -216,6 +216,38 @@ def test_stuck_group_is_given_up_after_dry_pushes() -> None:
     h.assert_no_lua_errors()
 
 
+def test_the_give_up_log_names_the_units_that_pinned_the_group() -> None:
+    """Which unit pinned the group is the whole question, and the log used to say
+    only which GROUP was stuck -- so every IMMOBILE_UNIT_IDS entry so far had to be
+    recovered from a Tacview after the fact. Naming the types makes the next flown
+    mission a one-line verdict.
+    """
+    h = _harness_with_mist()
+    group = _ground_group("PLARF-1")
+    group["units"] = [
+        {"name": "PLARF-1-u1", "type": "CH_CJ10"},
+        {"name": "PLARF-1-u2", "type": "CH_SX2190"},
+        # A second launcher of the same type must not be listed twice.
+        {"name": "PLARF-1-u3", "type": "CH_CJ10"},
+    ]
+    h.add_group(group)
+    h.lua.globals().dcsRetribution = h.to_lua(
+        {
+            "plugins": {"mobilemissiles": {"startGraceS": 5, "scootIntervalS": 50}},
+            "mobileMissiles": {
+                "sites": [{"groups": ["PLARF-1"], "x": "0.0", "y": "0.0"}]
+            },
+        }
+    )
+    h.load_plugin_script(PLUGIN)
+    h.advance_to(500)
+
+    give_ups = [i for i in h.records("infos") if "giving up on PLARF-1" in i]
+    assert len(give_ups) == 1, h.records("infos")
+    assert "[CH_CJ10, CH_SX2190]" in give_ups[0]
+    h.assert_no_lua_errors()
+
+
 def test_moving_group_is_never_given_up() -> None:
     """Real movement between pushes resets the dry count, so a healthy scooting
     group keeps being routed for the whole mission."""

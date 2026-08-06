@@ -2266,6 +2266,16 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     the count) — a spent battery is left alone (its magazine is empty; the scoot protects *loaded*
     launchers) instead of drawing futile pushes all mission. Tests
     `test_stuck_group_is_given_up_after_dry_pushes` + `test_moving_group_is_never_given_up`.
+    **Mobility is a unit-data contract 2026-08-06:** every exclusion so far was recovered from a
+    Tacview after the fact, so the verdicts moved into the units' own definitions as
+    **`mobile: false`** (`GroundUnitType.mobile` — the §24 `date_gated_properties` / §86
+    `gps_jamming` precedent; `hy_launcher`/`Silkworm_SR`/`CH_CJ10` carry it with their flown
+    evidence attached) with `IMMOBILE_UNIT_IDS` kept as the fallback for a DCS type with no
+    registered yaml and a test pinning the two in lockstep — so the next finding is a data edit,
+    not a code change. The give-up log now also **names the unit types**
+    (`giving up on <group> [CH_CJ10, CH_SX2190]`), which is what makes the next flown mission
+    conclusive: **`CH_IskanderM`/`CH_IskanderK`/`CH_DF21D`/`CH_YJ12B` have never been established
+    either way** (Baltic Fury's Iskander battery is the cheapest test).
     The same flown test drove the
     **no-front support-orbit fix** (a front-less naval map marched red's A-50 200 NM AWAY from the
     fleet — `support_orbit_anchor` now skips the AI depth march with no FLOT; features doc §8-adjacent
@@ -3785,6 +3795,40 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     matching, and six both-ways nation-correctness cases for the EWR kit);
     features doc §85 (+ the "Unit-coverage sweep — 2026-08-04" section), checklist B43 + B44 —
     needs an in-game pass.
+    **MISSILE batteries got the same treatment 2026-08-06** (DM question, off the 9K720
+    Iskander's published system list — TEL · transporter/loader · command-and-staff ·
+    information-preparation · maintenance · life-support): a missile site generated **three
+    launchers and a UAZ-469 jeep**, from the ONE generic layout
+    (`resources/layouts/defenses/missile.yaml`) behind every SCUD/Iskander/CJ-10/V-1/ATACMS site
+    in the fork — **33 shipped campaigns author missile markers** (DS91 9 sites, Marianas 3, RT 2,
+    Baltic Fury 1). **DCS models 3 of those 7 roles** with distinct hardware (TEL; a
+    transporter/loader stand-in — `ZIL-135`, the 8×8 that carries Soviet theatre rockets,
+    `S_75_ZIL`, a literal missile transporter, `CH_HEMTT_M977` for NATO; and the §85 C2 kit), so
+    the section is transport + transload + fuel + command, **not** a transcription of the TO&E —
+    and **zero new unit registrations were needed**, §85 had already registered every candidate.
+    Slots (textbook fixed counts): 3 launchers · **2 cargo trucks** · 1 transporter/loader ·
+    1 refueller · 1 command-and-staff vehicle · the unchanged optional AAA/SHORAD; four positions
+    appended to `missile.miz` with the pre-existing offsets **byte-identical** and the template
+    anchor (`ScudGenerator 3`) untouched, so no authored site moves. **The displacement fix:** the
+    old class-based `Logistics` slot picks ONE type from a pool that since §85 also holds bowsers,
+    so the bowser *replaced* the cargo truck (what the flown Marianas sites showed) — cargo is now
+    an explicit multi-national truck whitelist (`fallback_classes: [Logistics]` so nothing
+    generates bare) and fuel is its own slot; measured, all **36** missile-fielding factions fill
+    cargo + transload, 29 field a refueller, 11 a command vehicle. Same trap re-caught mid-build:
+    the transload slot's first cut used the Logistics fallback and resolved **9 of 11 candidates
+    to bowsers** for Russia 2020. **§49 shapes the section** — every unit shares ONE DCS group with
+    the launchers and `mist.goRoute` routes a group whole, so one undrivable member pins the
+    battery: drivable metal only, no statics, no trailers, and deliberately **no 5I57A power
+    station** (S-300 kit, and absent from the Iskander's list); enforced by
+    `test_no_support_unit_can_pin_the_scoot`. **Launchers are no longer free:** every one was
+    `price: 0` (Scud-B, Iskander-M/K, CJ-10, Shahed-136, the V-1 ramp, the whole coastal anti-ship
+    family) while missile + coastal sites **are** purchasable and repair cost IS the unit price —
+    now V-1 20 · Shahed 25 · Silkworm 30 · Scud-B 40 · RBS-15KA 55 · Bal 60 · Iskander-M 70
+    (= both 9K720 registrations) · YJ-12B 70 · Iskander-K/CJ-10/Bastion-P 75 · DF-21D 85, scaled
+    against the already-priced `CH_M270A1_ATACMS` (45) and the artillery ladder; a full SCUD
+    battery ≈135 vs ≈230 for an S-300 site. Tests
+    `tests/armedforces/test_missile_site_support.py` (34); features doc §85, checklist **B47** —
+    needs an in-game pass (NEW game required; the composition is generated at campaign start).
 86. **GPS jamming (satellite-guided weapons go long)** — enemy GPS-jamming ground sites deny
     satellite guidance over an area, so a JDAM/JSOW/JASSM/SLAM-ER/KAB-*S released into the
     bubble lands off the aimpoint and the pass fails. **The constraint that shapes the whole

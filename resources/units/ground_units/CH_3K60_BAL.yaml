@@ -1,4 +1,5 @@
 class: AntiShipMissile
-price: 0
+# Bal (SS-N-25) coastal battery.
+price: 60
 variants:
   "[CH] Bal LBASM TEL": null

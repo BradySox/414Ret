@@ -134,6 +134,19 @@ class GroundUnitType(UnitType[Type[VehicleType]]):
     # (the default) for every ordinary unit.
     gps_jamming: Optional[GpsJammingProperties] = None
 
+    # §49: can this vehicle actually DRIVE in DCS? A handful of "vehicles" are
+    # fixed emplacements (the vanilla Silkworm battery) or mod models DCS refuses
+    # to route (`CH_CJ10`), and routing a group that contains one produces no
+    # movement -- only a per-frame ground-AI leveling storm. `mobile: false` in
+    # the unit definition keeps such a unit out of the shoot-and-scoot emitter.
+    #
+    # It lives in the unit's own data file (the §24 `date_gated_properties` / §86
+    # `gps_jamming` precedent) because every entry so far was discovered by
+    # FLYING and reading a Tacview: recording the verdict next to the unit makes
+    # the next finding a data edit with its evidence attached, instead of another
+    # id appended to a set in Python.
+    mobile: bool = True
+
     _by_name: ClassVar[dict[str, GroundUnitType]] = {}
     _by_unit_type: ClassVar[dict[type[VehicleType], list[GroundUnitType]]] = (
         defaultdict(list)
@@ -258,4 +271,5 @@ class GroundUnitType(UnitType[Type[VehicleType]]):
             ),
             reversed_heading=data.get("reversed_heading", False),
             gps_jamming=GpsJammingProperties.from_data(data.get("gps_jamming")),
+            mobile=bool(data.get("mobile", True)),
         )

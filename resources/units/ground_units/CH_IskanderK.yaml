@@ -7,6 +7,7 @@ description: "The Iskander-K is the cruise-missile variant of the Russian 9K720 
 introduced: 2006
 manufacturer: Votkinsk Plant State Production Association
 origin: Russia
-price: 0
+# The cruise variant: longer reach than the SRBM, priced just above it.
+price: 75
 variants:
   "[CH] Iskander-K GLCM": null

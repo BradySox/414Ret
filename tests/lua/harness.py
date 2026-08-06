@@ -109,6 +109,10 @@ class DcsPluginHarness:
         """Fire an S_EVENT_HIT on a group's first unit (the victim)."""
         self.harness.fireHit(group_name)
 
+    def fire_land(self, group_name: str) -> None:
+        """Fire an S_EVENT_LAND for a group's first unit (an aircraft touching down)."""
+        self.harness.fireLand(group_name)
+
     def pending_scheduled(self) -> int:
         return int(self.harness.pendingCount())
 

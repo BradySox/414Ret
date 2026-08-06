@@ -75,7 +75,7 @@ FEATURES: tuple[Feature, ...] = (
         11,
         retired=True,
     ),
-    Feature("tars_recon_engine", "TARS recon engine", 12, plugin_id="tars"),
+    Feature("recon_engine", "Recon engine (TARPS + drone BDA)", 12, plugin_id="recon"),
     Feature("flight_control_atc", "Flight Control ATC", 13, retired=True),
     Feature("plugin_options_ui", "Plugin Options UI", 14),
     Feature(
@@ -736,7 +736,6 @@ FEATURES: tuple[Feature, ...] = (
     # rather than a numbered "Features at a Glance" entry.
     Feature("mantis_iads", "MANTIS IADS engine", plugin_id="mantisiads"),
     Feature("splash_damage", "Splash Damage (414th tuned)", plugin_id="splashdamage3"),
-    Feature("ai_recon_capture", "AI recon BDA capture (§3 TARPS)", plugin_id="airecon"),
 )
 
 # Path (relative to repo root) of the generated feature-catalog doc.

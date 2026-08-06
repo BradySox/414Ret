@@ -562,6 +562,17 @@ function Harness.fireHit(groupName)
     })
 end
 
+-- Fire an S_EVENT_LAND for a group's first unit (the aircraft touching down).
+-- The initiator is the real UnitFake so getGroup():getName() works in the handler,
+-- which is how the recon plugin matches a landing back to its pending BDA cue.
+function Harness.fireLand(groupName)
+    local g = Harness.groupsByName[groupName]
+    Harness.fireEvent({
+        id = world.event.S_EVENT_LAND,
+        initiator = g and g:getUnit(1) or nil,
+    })
+end
+
 trigger = {
     smokeColor = { Green = 0, Red = 1, White = 2, Orange = 3, Blue = 4 },
     action = {

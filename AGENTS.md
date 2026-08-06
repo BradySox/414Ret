@@ -138,7 +138,7 @@ file. This guide is the map; those are the territory.
     Afar/Syria ratline); the 3-phase Isolate → East Mosul → West Mosul/Old City arc with a permanent Mosul
     positive-control box (+ a tight Old City box in the last phase). **Drone wing added 2026-07-05**
     (user call off the installed-inventory audit): Baghdad hosts RQ-1A Predator ×4 `primary: TARPS`
-    (persistent ISR — the `airecon` plugin banks AI drone overflights as confirmed BDA, so the drones
+    (persistent ISR — the `recon` plugin banks drone overflights as confirmed BDA, so the drones
     localize the concealed IED/cell circles) + MQ-9 Reaper ×4 `primary: BAI`; the shared unit yamls
     gained `TARPS: 700` + honest `max_range` (800/400 NM) and both drones joined the faction
     `aircrafts` (the MQ-9 was previously only its JTAC unit). **The miz is now the ER
@@ -1147,16 +1147,31 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
    exact coords never sent to the client) instead of an exact marker; LORAD/EWR/buildings/ships
    stay exact, discovery snaps it to the real symbol, and the COIN insurgent spawns conceal
    intrinsically via `TheaterGroundObject.concealed` (`concealed_uncertainty` in
-   `game/server/tgos/models.py`; checklist G24). **AI recon BDA capture** (`airecon` plugin, added
-   2026-07-01) closes the G19 gap that the MOOSE TARS film path is **player-only** (its birth
-   handler drops any non-player unit), so auto-paired *AI* recon flights confirmed nothing:
-   `populate_ai_recon_lua` (`aireconluadata.py`) emits each AI-flown, player-coalition (BLUE)
-   **recon-capable** flight + its target; the `airecon` plugin watches each and, when it survives to
-   overfly (within a trigger range of the target), records the enemy ground units there into the same
-   `tars_recon_captures` ledger the player film menu feeds — so the debrief
-   (`debriefing.py`→`tars_reconned_tgos`) treats an AI recon capture identically. A shot-down /
-   aborting recon flight confirms nothing (one-shot). Player-crewed flights are never emitted (still
-   the F10 film path); blue-only. Emitter-tested; runtime Lua needs an in-game pass (checklist G19).
+   `game/server/tgos/models.py`; checklist G24). **Recon BDA capture — ONE mechanism for both crews (`recon` plugin;
+   rebuilt 2026-08-05, replacing the `tars` + `airecon` pair)**. Recon previously ran two unrelated
+   implementations of one question: MOOSE `Ops.TARS` event callbacks for the player (an F10 "film"
+   menu) and a geometric overflight check for the AI. They could not agree by construction and
+   failed differently, which is why "is TARS broken" had no answer. **MOOSE `Ops.TARS` is cut**: all
+   it contributed to the campaign was a unit NAME scraped off a `Snapshot` whose schema was never
+   confirmed — `snap.name or snap.unitName or snap.UnitName` sat under a comment saying the one-time
+   `env.info` dump existed so the schema "can be confirmed in-game", so if all three guesses were
+   wrong the player path recorded nothing, silently, while the AI path kept working.
+   `populate_recon_lua` (`reconluadata.py`) now emits **every** BLUE recon-capable flight — player
+   AND AI, which is load-bearing: with the film menu gone, excluding players would leave a human
+   recon sortie confirming nothing at all — and the `recon` plugin watches each, banking the enemy
+   ground/ship units near the target into the same `tars_recon_captures` ledger the debrief already
+   parses (`debriefing.py`→`tars_reconned_tgos`), so nothing downstream changed. **Recon is
+   automatic on overfly** (DM call): fly the profile over the target and it confirms; no menu, no
+   film limit. The take is shaped by **sensor** (a TARPS tasking reads wider than a drone's ball),
+   by **altitude** (a high fast pass resolves less — full radius to 20,000 ft, degrading to 40 % by
+   40,000 ft) and by **cloud cover** from the campaign's own weather, which §47/§67 model and recon
+   previously ignored entirely. **Timing is deliberately asymmetric:** the CAPTURE fires on overfly,
+   but the CUE is held until the flight LANDS (DM call — you get the read-out when the take is home).
+   The capture is NOT gated on landing, because missions routinely end before flights land, so
+   gating it on touchdown would silently destroy most recon; a cue is cosmetic, a capture is not.
+   A shot-down / aborting flight confirms nothing (one-shot); blue-only. Tests
+   `game/missiongenerator/tests/test_reconluadata.py` + `tests/lua/test_recon_runtime.py`; runtime
+   needs an in-game pass (checklist G19).
    **A drone is always filming (2026-07-05, 414th rule)**: `_feeds_ai_recon` counts a flight as recon
    if it is TARPS-tasked (any airframe) **OR a drone** (`UAV_DCS_IDS` in `game/data/units.py` — a
    curated set; DCS has no UAV flag, `category` buckets drones as generic "Air") **regardless of the
@@ -1167,7 +1182,7 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
    optional TARPS flight into **Armed Recon** packages (not just Strike/DEAD); `TarpsFlightPlan` was
    widened to accept a `ControlPoint` target (armed recon sweeps a CP corridor, not a TGO). On a
    UAV-fielding faction the TARPS bird IS the drone, so OIR gets a Predator/Reaper in every armed
-   recon package (and the `airecon` loop banks its overflight as BDA). Armed recon primary is now a
+   recon package (and the `recon` loop banks its overflight as BDA). Armed recon primary is now a
    fixed 4-ship (`PlanArmedRecon.ARMED_RECON_FLIGHT_SIZE`); with the threat-gated 2-ship SEAD escort
    resolving to the Viper, the package reads 1 drone + 2 SEAD Vipers + 4 recon. Optional/gated (drops
    if no drone free, never scrubs). Tests `tests/test_armed_recon_planning.py`; checklist G25.
@@ -1192,42 +1207,30 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
    standalone recon), a **find/overwatch** pass on station with the shooters, not two minutes behind a
    strike moment that never happens. The `configure_tarps` behavior (flyover, ReturnFire) is unchanged;
    only the timing is now role-split.
-   **JTAC: stock front-line FAC by default, packaged drone for COIN (2026-07-05, 414th call;
-   RESCOPED 2026-08-02 — the drone work had been built COIN-first but shipped globally, deleting
-   upstream's JTAC for every campaign)**. Two mutually-exclusive models, one setting:
-   **(1) the stock front-line JTAC is restored and is again the default** —
-   `FlotGenerator._generate_front_line_jtac` is a faithful restore of upstream's block (an
-   **invisible, immortal** `jtac_unit` FAC orbiting the FLOT at 5,000 ft on the front line's own
-   laser code, or 1113 under `ctld.fc3LaserCode`), gated only on `faction.has_jtac`; it is the
-   right model for any campaign with a real FLOT and needs no setting.
-   **(2) the packaged drone JTAC is COIN-only, opt-in** via **`coin_packaged_jtac_drone`**
-   (Campaign Management → Insurgency, default **OFF**, `enabled_when=coin_insurgency`; preseeded
-   ON in **both COIN campaigns** and nowhere else). The COIN case is what the stock FAC can't
-   serve — a COIN laydown has no FLOT worth orbiting (Enduring Resolve has no front line at all;
-   Inherent Resolve's war is at the strongholds and in the city, not on its one Highway-1 front),
-   so the immortal FAC would orbit empty ground all war. With it on, the front-line JTAC is
-   **suppressed** and `AircraftGenerator._maybe_configure_jtac` instead hangs the JTAC on the
-   **packaged drone**: an AI flight of the faction's `jtac_unit` in an A/G package
-   (`_JTAC_PACKAGE_PRIMARIES` = Armed Recon/CAS/BAI/Strike) is emitted as a `JtacInfo` →
-   `dcsRetribution.JTACs` → `ctld.JTACAutoLase` (autolase + smoke default ON), so it lazes/marks
-   for the shooters + shows on the kneeboard/radio. No DCS task added (CTLD does the designation);
-   blue + AI only; a real (killable) asset, not invisible/immortal. **Never run both** — two JTACs
-   double-laze and double-list the kneeboard; the mutual exclusion is the contract, pinned by tests
-   on both sides. Tests `tests/missiongenerator/test_drone_jtac.py`; checklist G26 + **G32** (the
-   restored front-line FAC).
-   **Auto-fielding the JTAC drone squadron (2026-07-05; COIN-scoped 2026-08-02)**: the packaged
-   JTAC only fires if a drone squadron exists, but squadrons come only from a campaign's
-   `squadrons:` block — so a COIN campaign that never lists a drone would have no JTAC at all
-   (its front-line FAC being suppressed). `ensure_jtac_drone_squadron` (`game/fourteenth/jtac_drone.py`,
-   hooked in `Coalition.configure_default_air_wing` after the campaign's own assignment) auto-fields one
-   small (2-ship) TARPS-tasked drone squadron at the **rear-most** blue airfield for any blue side whose
-   faction declares a **drone** `jtac_unit` (`UAV_DCS_IDS`, TARPS-capable) and doesn't **already field a
-   drone** (so OIR and other hand-placed-drone campaigns are untouched). The auto-recon hook frags it
-   forward → drone-JTAC + always-films. Gated first by `coin_packaged_jtac_drone` (a front-line-JTAC
-   campaign never auto-fields one — this is the 2026-08-02 fix), then `auto_jtac_drone` (default ON,
-   kill switch, `enabled_when=coin_packaged_jtac_drone`) + **era-gated**
-   (`_UAV_SERVICE_YEAR` — 12 Cold-War factions carry a lazy default MQ-9 jtac_unit; a 1988 campaign like
-   Red Tide never auto-fields a 2007 Reaper). Tests `tests/fourteenth/test_jtac_drone.py`; checklist G27.
+   **JTAC is upstream's, unmodified — the packaged-drone model is STRIPPED (2026-08-05, DM call:
+   "G26, 27 need stripped from the build, leave G32 as its default behavior"; the upstream
+   behaviour is what is wanted — "it fields an AI drone for each faction over the front line
+   period thats it").** There is now exactly ONE JTAC model and no setting governs it:
+   `FlotGenerator._generate_front_line_jtac` spawns an **invisible, immortal** `jtac_unit` FAC
+   orbiting the FLOT at 5,000 ft on the front line's own laser code (1113 under
+   `ctld.fc3LaserCode`), gated on nothing but `faction.has_jtac`, blue-side, defaulting to the
+   MQ-9 Reaper when a faction declares no `jtac_unit`. **Verified against `upstream/dev`
+   line-by-line:** the fork's extracted method is behaviourally identical to upstream's inline
+   `# Add JTAC` block — same gate, same blue-only scope, same `str(code)` / `Player.BLUE` /
+   `callsign_for_support_unit`, and the `position` it recomputes is the *same*
+   `FrontLineConflictDescription.frontline_position` call upstream reads from the enclosing
+   scope. **One deliberate divergence, kept:** upstream records `player_frontline_groups`
+   *inside* its `has_jtac` block, so a blue side with no JTAC reports no frontline groups at all;
+   the fork does it unconditionally. That is an upstream bug, it is not JTAC behaviour, and it
+   must NOT be "restored". What was removed: the `coin_packaged_jtac_drone` +
+   `auto_jtac_drone` settings, `game/fourteenth/jtac_drone.py`
+   (`ensure_jtac_drone_squadron`), `AircraftGenerator._maybe_configure_jtac` +
+   `_JTAC_PACKAGE_PRIMARIES`, the `Coalition.configure_default_air_wing` hook, both COIN
+   campaign preseeds, and the two test files. Removed settings are save-safe — an old save's
+   keys land as dead `__dict__` entries via `deserialize_state_dict`, the §20/§55 precedent.
+   Replacement coverage in `tests/missiongenerator/test_front_line_jtac.py` (the FAC had NO
+   test of its own before this — the deleted files only ever covered the drone side and the
+   exclusion between them); checklist **G32**, with G26/G27 retired.
 4. **UI transparency** — Target Intel panel, Mission Impact debrief summary, package context
    bar, flight-creation context, building-card cleanup.
 5. **Player target location precision** — `Approximate` mode offsets steerpoints + hides exact
@@ -1324,7 +1327,9 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     pre-loaded reliably and ED is shipping native DTC. Do not restore the OLD
     implementation — **superseded by §74** (ED's native cartridge shipped; the
     rebuilt-from-scratch export shares nothing with this one). (§11)
-12. **TARS recon engine** — MOOSE Ops.TARS runtime for TARPS, feeds confirmed BDA (default ON).
+12. **Recon engine** — the `recon` plugin: one geometric capture rule for player AND AI recon,
+    sensor/altitude/weather-shaped, feeding confirmed BDA (default ON). MOOSE `Ops.TARS` was cut
+    2026-08-05; see §3.
 13. **Flight Control ATC** — RETIRED (2026-06-26): half-baked MOOSE FLIGHTCONTROL tower
     comms plugin; removed. Do not restore. (§13)
 14. **Plugin Options UI** — `descriptionInUI` field + label/default polish across all plugins.

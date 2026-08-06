@@ -142,7 +142,7 @@ def record_comint_collection(game: "Game", debriefing: "Debriefing") -> None:
 
     Runs before the turn increments (commit-time ``game.turn`` is the
     just-played turn), so Tier 2 next turn is ``comint_collected_turn ==
-    turn - 1``. A shot-down collector collects nothing (the ``airecon``
+    turn - 1``. A shot-down collector collects nothing (the ``recon``
     one-shot precedent).
     """
     if not comint_enabled(game):

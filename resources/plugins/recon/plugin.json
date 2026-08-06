@@ -1,0 +1,56 @@
+{
+    "nameInUI": "Recon BDA capture (TARPS + drones)",
+    "descriptionInUI": "Turns a surviving recon overflight into confirmed battle-damage assessment, lifting the campaign fog-of-war on what was actually seen. Covers BOTH player-flown and AI-flown recon through one shared rule -- fly the recon profile over the target and it confirms; there is no film menu to remember. A TARPS-tasked flight of any airframe feeds it, and so does any drone whatever its tasking (a drone is always filming). How much it sees depends on the sensor, on how high and fast the pass was, and on the weather: an overcast day or a high fast run brings home less than a proper recon profile. The read-out arrives when the flight lands, not over the target. A recon flight shot down or aborting before the target confirms nothing. Inert unless the mission has recon flights.",
+    "defaultValue": true,
+    "specificOptions": [
+        {
+            "nameInUI": "Overfly range that triggers the capture (NM)",
+            "mnemonic": "triggerRangeNm",
+            "defaultValue": 5,
+            "minimumValue": 1,
+            "maximumValue": 40
+        },
+        {
+            "nameInUI": "Max units captured per recon flight",
+            "mnemonic": "captureCap",
+            "defaultValue": 25,
+            "minimumValue": 1,
+            "maximumValue": 200
+        },
+        {
+            "nameInUI": "Seconds between recon-flight position checks",
+            "mnemonic": "pollS",
+            "defaultValue": 10,
+            "minimumValue": 2,
+            "maximumValue": 60
+        },
+        {
+            "nameInUI": "Altitude the sensor still reads at full range (ft)",
+            "mnemonic": "optimalAltFt",
+            "defaultValue": 20000,
+            "minimumValue": 1000,
+            "maximumValue": 40000
+        },
+        {
+            "nameInUI": "Altitude the sensor is fully degraded by (ft)",
+            "mnemonic": "ceilingAltFt",
+            "defaultValue": 40000,
+            "minimumValue": 2000,
+            "maximumValue": 60000
+        },
+        {
+            "nameInUI": "Fraction of sensor range kept at the ceiling (%)",
+            "mnemonic": "minAltitudeFactor",
+            "defaultValue": 40,
+            "minimumValue": 5,
+            "maximumValue": 100
+        }
+    ],
+    "scriptsWorkOrders": [],
+    "configurationWorkOrders": [
+        {
+            "file": "recon-config.lua",
+            "mnemonic": "recon-config"
+        }
+    ]
+}

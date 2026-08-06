@@ -208,6 +208,30 @@ attack can never ripple across the map — pinned by a three-group A→B→C tes
 Also pinned: an enemy formation is never freed by our own attack (coalition check), and
 `formationReleaseKm: 0` restores targeted-group-only release.
 
+**Re-fly #2 (`Tacview-20260805-203549`) — the defense leg passes.** The log shows both
+lines in the same second (`… under attack` / `… in the attacked formation`), and the
+Tacview shows the escort screen fighting for its flagship:
+
+| t | event |
+|---|---|
+| 2146.8 s | first AGM-84D away at the LHA |
+| **2154.9 s** | **escort's first HHQ-16FE — 8.1 s after the launch** |
+| 2158–2214 s | 4 more HHQ-16FE during the shooters' launch window |
+| 2639 s | the LHA opens up with its AK-630s (1,273 rounds) |
+| 2645–2693 s | escort terminal defence: 5 × HHQ-10 + 194 CIWS |
+
+The LHA still sank (t=2687): all 16 Harpoons reached terminal at 0.2–2.5 km, none
+intercepted en route — the early HHQ-16FE shots were hail-marys at Super Hornets 105 km
+out, well beyond the missile's reach, and the real defence was the terminal HHQ-10/CIWS
+layer. Sixteen AShM against two escorts is a genuine saturation strike, so a lost
+amphib is a fair outcome; the previous fly's LHA died without a shot fired by anyone.
+
+**What that fly did NOT exercise: the magazines.** It carried leftover diagnostic options
+`releaseMinS/MaxS = 3600`, so no group was ever released on schedule inside a 48-minute
+mission and **no ship fired a single anti-ship missile**. N2 is still unflown; re-fly with
+the defaults (120/900). A separate smaller mission the same evening (5 naval groups,
+120s–900s) did log a scheduled `released weapons-free`, so the stagger timer itself runs.
+
 ### The emitter bug (fixed 2026-08-05)
 
 `LuaData.serialize` ignores a node's `add_key_value` entries whenever the node also

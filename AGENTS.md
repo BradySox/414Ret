@@ -2284,14 +2284,26 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     `randint(1, 6)` teams of `AMBUSH_TEAM_SIZE` via `_ambush_points` — stratified-random slots interpolated
     **along the route polyline**, 15 % end-margins, so a big roll reads as a spread gauntlet — recording
     the pairings on `game.convoy_ambush_state`; the dice live in module `_RNG`s so tests script them. The
-    old `plan_convoy_escort` auto-frag is **deleted**. The emitter `game/missiongenerator/convoyambushluadata.py`
-    (`dcsRetribution.convoyAmbush`) lists each live pairing's ambush-team group names + centre + the targeted
-    convoy's group name, and the `resources/plugins/convoyambush/` plugin **springs** each dug-in team:
-    alarm-green/weapons-hold until a convoy unit closes inside the trigger radius (6 km) — then weapons-free +
-    a "TROOPS IN CONTACT" cue + an F10 mark, after a startup grace; a team its convoy never reaches **stays
-    dug in and silent** (the max-hold "spring anyway" fallback is removed — it would telegraph a fight nobody
-    drove into). **ROE/cue only** — the firefight is reconciled in the turn-boundary force model, so a mover
-    shot down is recorded natively (the §35/§37/§49 discipline). Gated `convoy_ambush` (Mission Generation →
+    old `plan_convoy_escort` auto-frag is **deleted**. **The spring is authored as NATIVE DCS TRIGGERS at
+    generation — there is no plugin** (`game/missiongenerator/convoyambushgenerator.py`
+    `ConvoyAmbushGenerator`, run after `ConvoyGenerator` so both the teams and the convoy exist as real
+    groups): each team is dug in with `OptAlarmState` green + `OptROE` weapons-hold on waypoint 0 (the
+    `set_ship_engagement` idiom), a **hidden** `TriggerZoneCircular` (6 km) sits on the ambush point, and one
+    `TriggerOnce` conditioned on `TimeAfter`(120 s grace) **AND** `PartOfGroupInZone(convoy_group, zone)` —
+    the convoy's OWN group, never the coalition, so an overflying player can't spring it — raises a
+    per-ambush user flag (`ambush-<tgo id>`) and fires the "TROOPS IN CONTACT" `MessageToCoalition` +
+    `MarkToCoalition`; two flag-gated `ControlledTask`s on the same waypoint flip the team to
+    alarm-red/weapons-free (`start_if_user_flag`, the mirror of the flown escort-split
+    `stop_if_user_flag`). A team its convoy never reaches **stays dug in and silent** (the max-hold "spring
+    anyway" fallback is removed — it would telegraph a fight nobody drove into). **ROE/cue only** — the
+    firefight is reconciled in the turn-boundary force model, so a mover shot down is recorded natively (the
+    §35/§37/§49 discipline). **Simplified 2026-08-05** (the plugin audit): this was the `convoyambush` Lua
+    plugin polling every 15 s and walking every convoy unit — a re-implementation of the trigger engine DCS
+    already runs, which also carried the §36 trap (an unticked plugin silently killed the setting, hence
+    preseeds in 7 campaigns). Authoring it removed **572 lines across 5 files**, all 7 plugin preseeds and
+    that failure mode; DCS evaluates the zone continuously instead of every 15 s. Design unchanged (same
+    radius, grace, cue, ROE-only discipline); the spring had **never fired in a flown test** (S3: "the spring
+    never fired because the convoy never drove"), so nothing working was disturbed. Gated `convoy_ambush` (Mission Generation →
     Battlefield life, default **ON** since the 2026-07-06 standardization — the §49 kill-switch precedent;
     existing saves keep their stored choice), still preseeded ON + the plugin preseeded ON (the §36
     saved-default-off lesson) in COIN Enduring/Inherent Resolve, 1968 Yankee Station, and Red Tide. **A
@@ -2320,8 +2332,9 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     Broadway for Velvet Thunder, and the Guam road — red-owned there — for Pacific Repartee); guarded by
     `test_batch2_campaign_keeps_its_red_road`. Every campaign now fields at least one side's convoys except
     the handful with no two same-side land bases at all. Tests `tests/fourteenth/test_convoy_ambush.py` +
-    `tests/fourteenth/test_ambient_convoys.py` + `tests/missiongenerator/test_convoyambushluadata.py` +
-    `tests/lua/test_convoyambush_runtime.py`; features doc §50, checklist S3 + S5 — needs an in-game pass.
+    `tests/fourteenth/test_ambient_convoys.py` + `tests/missiongenerator/test_convoyambushgenerator.py`
+    (the authored zone/trigger/conditions/actions, per-ambush flags, dug-in options, serialization and every
+    guard, driven against a real `dcs.Mission`); features doc §50, checklist S3 + S5 — needs an in-game pass.
     **Tuned 2026-07-09** (flown Red Tide: "excessive, and should be light not MBTs"): the ambush teams
     spawned as `GroupTask.FRONT_LINE` **armor** (MBT groups) and could pile up (a 2-convoy turn maxed
     to 12). Now the teams use a **light raider kit** (`coin.ambush_unit_types` — a gun-truck + riflemen

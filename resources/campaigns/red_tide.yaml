@@ -261,11 +261,11 @@ settings:
   # defaults disabled "Vietnam Ops (period mechanics)" -- reasonable on a
   # conventional-campaign squadron -- doesn't silently lose the feature. Layered
   # over their defaults like every other recommended setting; still uncheckable
-  # in the wizard. Same reasoning preseeds the convoyambush plugin for §50,
-  # the commsjam plugin for §51, and the mobilemissiles plugin for the §49 SCUD hunt.
+  # in the wizard. Same reasoning preseeds the commsjam plugin for §51 and the
+  # mobilemissiles plugin for the §49 SCUD hunt. (§50's ambush spring needs no
+  # plugin -- it is authored as native DCS trigger rules at generation.)
   plugins:
     vietnamops: true
-    convoyambush: true
     commsjam: true
     mobilemissiles: true
     # §51's intel gate (comms_jam_requires_capture, default ON) arms only off a captured

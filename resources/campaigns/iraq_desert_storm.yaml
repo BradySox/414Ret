@@ -68,7 +68,6 @@ settings:
   # Plugin preseeds (the s36 saved-default-off lesson): a plugin unticked in the
   # host's saved defaults would otherwise silently kill its preseeded feature.
   plugins:
-    convoyambush: true
     # s49 shoot-and-scoot for the authored Scud batteries (incl. the two western
     # baskets on the H-3 front) -- the Great Scud Hunt needs the launchers to never
     # be where the last recon photo froze them.

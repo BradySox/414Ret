@@ -3208,9 +3208,7 @@ class Settings:
             "sign is the TROOPS IN CONTACT call when an ambush springs, and supporting "
             "the column (or not) is your call. Left unsupported, an ambushed convoy is "
             "ground down and the supplies never arrive. The convoy and the ambushers "
-            "are real, tracked units -- both sides' losses count. Runs via the 'Convoy "
-            "ambush' LUA plugin -- keep that plugin enabled or this setting does "
-            "nothing."
+            "are real, tracked units -- both sides' losses count."
         ),
     )
     air_droppable_minefields: bool = boolean_option(

@@ -85,8 +85,11 @@ def test_desert_storm_campaign_definition() -> None:
         assert data["settings"][key] is True, key
     # The s36 lesson: every preseeded feature's plugin is preseeded with it.
     plugins = data["settings"]["plugins"]
-    for plugin in ("convoyambush", "mobilemissiles", "rednet", "redscramble"):
+    for plugin in ("mobilemissiles", "rednet", "redscramble"):
         assert plugins[plugin] is True, plugin
+    # §50 is the exception: its ambush spring is authored as native DCS triggers,
+    # so it has no plugin to preseed (and none to accidentally untick).
+    assert "convoyambush" not in plugins
     assert plugins["redscramble.hostPlayers"] == "Flash"
 
 

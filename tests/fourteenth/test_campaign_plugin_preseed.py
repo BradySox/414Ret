@@ -88,11 +88,13 @@ def test_red_tide_preseeds_the_mantisiads_plugin_for_advanced_iads() -> None:
     assert campaign["settings"]["plugins"]["mantisiads"] is True
 
 
-def test_red_tide_preseeds_the_convoyambush_plugin() -> None:
+def test_red_tide_enables_convoy_ambushes_without_a_plugin() -> None:
     settings = _campaign_settings()
-    # §50's spring/cue runtime lives in the convoyambush plugin -- same trap as the rest.
     assert settings["convoy_ambush"] is True
-    assert settings["plugins"]["convoyambush"] is True
+    # §50's spring is authored as native DCS trigger rules at generation
+    # (ConvoyAmbushGenerator), so there is deliberately no plugin here -- and
+    # therefore no plugin a host can untick to silently kill the feature.
+    assert "convoyambush" not in settings["plugins"]
 
 
 def test_red_tide_does_not_preseed_the_shelved_minefields_feature() -> None:

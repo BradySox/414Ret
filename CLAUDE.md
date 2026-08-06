@@ -3781,7 +3781,9 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     live **enemy** jammer's reach, roll `degradeChancePct` **once** (remembered either way, so
     a long glide can't re-roll itself into a certainty); the store then flies its **entire
     normal profile** and only at the terminal gate is `destroy()`ed and detonated at a scored
-    offset. The pilot sees the release, the fall and the bang — in the wrong place. Miss
+    offset, **with its own warhead** (`desc.warhead.explosiveMass` × `missPowerScalePct`, so a
+    2000 lb JDAM craters like one and a 500 lb JDAM does not; a store reporting no warhead falls
+    back to the flat power = the pre-scaling behaviour). The pilot sees the release, the fall and the bang — in the wrong place. Miss
     distance scales with jamming strength (1 at the emitter, 0 at the bubble edge), so a store
     clipping the fringe is nudged and one released overhead is thrown clear. **The predictive
     terminal gate is the non-obvious half:** a plain `agl <= floor` test **fails for fast

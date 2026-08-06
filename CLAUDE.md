@@ -1137,6 +1137,27 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
    unplanned airframes, clamped by the §53 fuel-readiness ceiling + re-clamping
    `qra_player_manned`), and a cratered runway fields no QRA (templates, cue, and the base-card
    count all suppressed until repair).
+   **The per-base backstop EWR is REMOVED and must not be restored (2026-08-06, flown Red Tide
+   at Sperenberg: "the QRA invisible EWR is offset from the runway and causing collision issues
+   on the taxiways").** The fork spawned a "hidden/invisible/immortal" EWR at every alert base
+   via `mist.dynAdd` at the **airbase reference point + 300 m NE**, as a guaranteed detection
+   source for when the IADS network is dead. **DCS has no non-colliding ground unit**: mist's
+   `hidden` only suppresses the F10 map symbol and `SetCommandInvisible` only blinds the AI's
+   *sensors* — the model and its collision box stayed on the ramp, and a `55G6 EWR` mast is
+   enormous. 300 m NE of a reference point lands in the taxiway/apron network on a real field
+   and AI taxi routing has no way around it. **Upstream PR #782 deleted it for exactly this
+   reason** ("which DCS placed on runways/taxiways at the airbase reference point and broke AI
+   taxi routing"), and the fork now matches: detection is the IADS `Ewr`/`SamAsEwr` network
+   alone (`ewr_group_names`, already present — the removal is a pure subtraction), so the
+   §1 escape note above is corrected — detection is no longer "riding the backstop", there is
+   no backstop. **The by-design consequence, same as upstream: a side whose EWR/SAM-as-EWR
+   network is wiped out loses GCI detection and stops scrambling** (no radar, no GCI); with no
+   detection source the plugin logs and builds no dispatcher rather than erroring. Dead with it:
+   `DEFAULT_BACKSTOP_EWR_TYPE`, `InterceptEntry.backstop_ewr_type` and `.country_id`, and the
+   `backstopEwrType`/`countryId` emits (upstream emits neither). Generation + runtime only ⇒
+   **existing saves fix themselves on the next regeneration, no NEW game.** Tests
+   `tests/lua/test_intercept_filter.py` (nothing is spawned onto the field; a wiped-out network
+   simply stops scrambling) + `tests/missiongenerator/test_interceptluadata.py`.
 2. **JAMMING flight type** — C-130J as EC-130H/RC-130H EW+ISR platform (`c130j` plugin);
    the old generic `ewrj` fighter-pod jammer is retired and must not be restored.
 3. **TARPS recon + BDA fog-of-war** — player F-14 photo recon; viewer-aware fog (damage lag +

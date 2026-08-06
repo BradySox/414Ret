@@ -212,12 +212,41 @@ Four upstream fixes the fork's QRA had drifted behind, ported with the fork coup
   Retribution IADS group name carries parens (`"0041 | LION (EWR)"`) that read as pattern
   captures — so the wide-area EWR half of QRA detection matched **zero** groups and the
   dispatchers were detecting on the paren-free `QRA_Backstop_*` base EWRs **only**.
-  `intercept-config.lua` now escapes the FULL merged `detection_prefixes` list (backstop
-  names too) with the same `gsub` the fork already proved in `mantis-config.lua`'s
-  `escape_prefix` (everything except `-`, which Moose's own gsub handles). This expands
-  real detection from base-local backstops to the whole IADS EWR network — fold verifying
-  it into the A5 forward-defense fly. Pinned in `tests/lua/test_intercept_filter.py` (the
-  plugin's chunk-return test hook + a recording MOOSE fake).
+  `intercept-config.lua` now escapes the `detection_prefixes` list with the same `gsub` the
+  fork already proved in `mantis-config.lua`'s `escape_prefix` (everything except `-`, which
+  Moose's own gsub handles). This expanded real detection from base-local backstops to the
+  whole IADS EWR network — fold verifying it into the A5 forward-defense fly. Pinned in
+  `tests/lua/test_intercept_filter.py` (the plugin's chunk-return test hook + a recording
+  MOOSE fake). (The backstops themselves are gone as of 2026-08-06 — see below — so the
+  escape is now the *only* thing standing between the dispatcher and an empty detection set.)
+- **The per-base backstop EWR is removed** (2026-08-06, flown Red Tide at Sperenberg: *"the
+  QRA invisible EWR is offset from the runway and causing collision issues on the taxiways"*).
+  The fork spawned a "hidden/invisible/immortal" EWR at every alert base with `mist.dynAdd`,
+  at the **airbase reference point + 300 m NE**, so QRA had a guaranteed detection source even
+  with the IADS network dead. The premise is unachievable: **DCS has no non-colliding ground
+  unit.** mist's `hidden` only suppresses the F10 map symbol, and `SetCommandInvisible` only
+  blinds the AI's *sensors* — the model and its collision box remain. A `55G6 EWR` is a large
+  lattice mast, and 300 m NE of a reference point lands squarely in the taxiway/apron network
+  of a real field, where AI taxi routing has no way around it. **Upstream PR #782 deleted the
+  same mechanism for the same reason** — its header reads *"we no longer spawn a per-base
+  backstop EWR, which DCS placed on runways/taxiways at the airbase reference point and broke
+  AI taxi routing"* — so the fork adopts upstream's shape rather than inventing a third
+  placement rule (any scheme that puts an object on an operating airfield has this bug; moving
+  it far enough away to be safe is just the IADS network with extra steps).
+  Detection is now the IADS `Ewr`/`SamAsEwr` network alone. `ewr_group_names` was already
+  present and already the primary source, so the change is a **pure subtraction**: the
+  `spawn_backstop_ewr` + `protect_group` helpers, the per-base spawn loop, and the merge of
+  `backstop_names` into `detection_prefixes` are gone, along with `DEFAULT_BACKSTOP_EWR_TYPE`,
+  `InterceptEntry.backstop_ewr_type`, `InterceptEntry.country_id` and the `backstopEwrType` /
+  `countryId` emits (upstream emits neither — both existed solely to feed the backstop).
+  **The by-design consequence, accepted upstream and here: a coalition whose EWR/SAM-as-EWR
+  network is wiped out loses GCI detection and stops scrambling** — no radar, no GCI. With no
+  detection source the plugin logs and builds no dispatcher rather than erroring. Runtime +
+  generation only, so **existing saves are fixed by the next regeneration** — no new game.
+  Tests: `tests/lua/test_intercept_filter.py` gained a `mist.dynAdd` recorder asserting the
+  plugin spawns **nothing** and a wiped-out-network case asserting it builds no dispatcher and
+  raises no error; `tests/missiongenerator/test_interceptluadata.py` pins that neither
+  `backstopEwrType` nor `countryId` is ever emitted again.
 - **React-task filter** (upstream `5e565bb5` + `f0bd1b63`): the dispatcher no longer
   scrambles against ANY airborne enemy — each per-coalition dispatcher's
   `EvaluateGCI`/`EvaluateENGAGE` is wrapped to skip a detection cluster with no

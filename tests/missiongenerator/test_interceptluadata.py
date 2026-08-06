@@ -22,8 +22,6 @@ def _entry(**kw: object) -> InterceptEntry:
         engagement_range_nm=60,
         gci_max_radius_nm=100,
         comms_enabled=True,
-        country_id=2,
-        backstop_ewr_type="FPS-117",
     )
     base.update(kw)
     return InterceptEntry(**base)  # type: ignore[arg-type]
@@ -76,20 +74,19 @@ def test_grouping_is_serialized() -> None:
     assert "grouping" in serialized
 
 
-def test_country_id_is_serialized() -> None:
-    root = LuaData("dcsRetribution")
-    populate_intercept_lua(root, [_entry(country_id=82)])
-    serialized = root.serialize()
-    assert "countryId" in serialized
-    assert "82" in serialized
+def test_the_backstop_ewr_is_never_emitted() -> None:
+    """The per-base backstop EWR is gone; nothing may re-introduce its inputs.
 
-
-def test_backstop_ewr_type_is_serialized() -> None:
+    It was a real vehicle spawned at the airbase reference point, and DCS has no
+    non-colliding ground unit -- it stood on the taxiway network and broke AI
+    taxi routing (flown Red Tide at Sperenberg, 2026-08-06). Detection comes from
+    the IADS EWR/SAM-as-EWR network alone.
+    """
     root = LuaData("dcsRetribution")
-    populate_intercept_lua(root, [_entry(backstop_ewr_type="55G6 EWR")])
+    populate_intercept_lua(root, [_entry()])
     serialized = root.serialize()
-    assert "backstopEwrType" in serialized
-    assert "55G6 EWR" in serialized
+    assert "backstopEwrType" not in serialized
+    assert "countryId" not in serialized
 
 
 def test_empty_entries_creates_player_alert_bucket() -> None:

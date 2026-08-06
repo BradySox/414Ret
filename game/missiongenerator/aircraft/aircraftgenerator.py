@@ -26,7 +26,6 @@ from game.ato.package import Package
 from game.ato.starttype import StartType
 from game.missiongenerator.countryassigner import CountryAssigner
 from game.missiongenerator.interceptluadata import (
-    DEFAULT_BACKSTOP_EWR_TYPE,
     InterceptEntry,
     PlayerAlertEntry,
     dispatcher_tuning,
@@ -373,10 +372,6 @@ class AircraftGenerator:
                             engagement_range_nm=tuning.engage_nm,
                             gci_max_radius_nm=tuning.scramble_nm,
                             comms_enabled=comms_enabled,
-                            country_id=country.id,
-                            backstop_ewr_type=DEFAULT_BACKSTOP_EWR_TYPE[
-                                "BLUE" if base_is_blue else "RED"
-                            ],
                             ambush=tuning.ambush,
                             disengage_radius_nm=tuning.disengage_nm,
                         )

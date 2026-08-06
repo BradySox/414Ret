@@ -148,12 +148,28 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
   `lua_pattern_escape`) — before it, every parenthesized IADS group name ("0041 | LION (EWR)")
   failed Moose's `FilterPrefixes` pattern match, so QRA detection rode the paren-free
   `QRA_Backstop_*` base EWRs ONLY. All prior A1–A5 evidence was flown on backstop-only detection.
-  When flying A5, also confirm the wide-area net: kill a base's backstop-adjacent raid picture by
-  approaching from a direction only a *forward EWR site* covers and confirm the rear fields still
-  see it (scramble fires before the raid is within backstop range of any alert base). Fail
-  signature: detection behaves exactly base-local (scrambles only once a raid is nearly on top of
-  an alert field) despite an alive forward EWR network, or `dcs.log` shows an empty detection set
-  for a coalition with live `(EWR)` groups.
+  When flying A5, also confirm the wide-area net: approach from a direction only a *forward EWR
+  site* covers and confirm the rear fields still see it. Fail signature: detection behaves
+  exactly base-local (scrambles only once a raid is nearly on top of an alert field) despite an
+  alive forward EWR network, or `dcs.log` shows an empty detection set for a coalition with live
+  `(EWR)` groups.
+- **2026-08-06 backstop-removal addendum (fold into this fly, and it RAISES A5's stakes):** the
+  per-base backstop EWR is **gone** — it was a real vehicle at the airbase reference point +
+  300 m NE, and DCS has no non-colliding ground unit, so a 55G6 mast stood in the taxiway network
+  and broke AI taxi routing (flown Red Tide at Sperenberg; upstream PR #782 removed it for the
+  same reason). **Detection is now the IADS EWR/SAM-as-EWR network alone**, which means the
+  escape addendum above is no longer a nice-to-have — if it ever regresses, QRA detection is
+  *empty*, not merely base-local. Two things to confirm on this fly:
+  *(1)* **No object stands on any alert base's ramp/taxiways.** Walk (or F10) an alert field at
+  mission start — Sperenberg is the known-bad case — and confirm AI flights taxi out without
+  stopping, weaving around an obstacle, or piling up. Fail signature: an EWR/radar model sitting
+  ~420 m NE of the airfield reference point, or AI holding on a taxiway for no visible reason.
+  *(2)* **QRA still scrambles with the backstop gone.** Any alert base whose coalition has a live
+  EWR/SAM network must still launch. Fail signature: `dcs.log` shows
+  `"no detection sources for <coalition>; QRA will not scramble"` on a side that visibly has live
+  `(EWR)` / SAM groups — that is a broken IADS publish, not the intended no-radar case.
+  **Deliberately not a bug:** a side with its radar network genuinely wiped out no longer
+  scrambles at all. That is the accepted trade (no radar, no GCI), upstream's behaviour too.
 
 ### A6 — Escort pre-join ROE: ReturnFire at spawn, OpenFire at JOIN · §8 · ☑ VERIFIED (2026-08-05, user pass `units-runway-generation-bf755e` — "A6 is good") (was ☐ UNTESTED, built 2026-07-12 from the flown Red Tide M1 finding — the user-observed "locked until the package forms at join" behavior, code-confirmed: escorts spawned OptROE=OpenFire(2) = "engage ONLY designated targets" with their one designating task attaching at JOIN, so the whole hold/transit window had an EMPTY legal-target set — mechanically unable to return fire (TOAD Escort's MiG-29s died at t=2056/2078 with JOIN ETA 2055, merged at gun range, silent; SCARAB Escort fired post-join only). The spawn ROE for both escort types, the JOIN OptROE(OpenFire) escalation, and the non-escort no-op are unit-tested in `tests/missiongenerator/test_escort_prejoin_roe.py` — whether the DCS AI actually returns fire pre-join and escorts identically post-join is DCS-only)
 - **What CI cannot exercise:** whether a pre-join escort under attack now actually returns fire (vs the old evade-only death), whether ReturnFire keeps it on its hold/join timeline (never freelancing at detected contacts), and whether post-join escort behavior is genuinely unchanged (engages fighters threatening the escorted flight at the doctrine range).

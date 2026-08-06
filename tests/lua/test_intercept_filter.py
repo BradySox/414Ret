@@ -8,10 +8,10 @@ gotcha the lua-lint syntax gate cannot:
 * Moose ``SET_GROUP:FilterPrefixes`` matches names with Lua-pattern semantics
   (``string.find``, only ``-`` pre-escaped), so a raw parenthesized Retribution
   group name ("0041 | LION (EWR)") reads as a pattern capture and never matches
-  its own group — the wide-area EWR half of QRA detection was empty (masked by
-  the paren-free ``QRA_Backstop_*`` names);
-* the FULL merged detection list — IADS EWR network AND backstop names — is
-  escaped before it reaches ``FilterPrefixes``;
+  its own group — QRA detection was empty and no base ever scrambled;
+* every detection prefix is escaped before it reaches ``FilterPrefixes``;
+* nothing is spawned onto the airfield: the per-base backstop EWR is gone
+  (2026-08-06), so ``mist.dynAdd`` must never be called;
 * the task-type reaction filter: QRA reacts only to air-to-ground taskings
   parsed from the namegen group name (Strike/BAI/OCA-Runway/OCA-Aircraft/
   Anti-ship/Armed Recon — no DEAD, no Air Assault), a cluster reacts as soon
@@ -122,28 +122,11 @@ function mist.scheduleFunction(fn, vars, t)
         return fn(unpack(vars or {}))
     end, {}, t)
 end
+InterceptTest.dynAdds = {}
 function mist.dynAdd(spec)
-    -- Register the spawned backstop EWR as a real harness group so the build's
-    -- GROUP:FindByName existence check sees it.
-    local units = {}
-    for _, u in ipairs(spec.units or {}) do
-        units[#units + 1] = { name = u.name, type = u.type, x = u.x, z = u.y }
-    end
-    DcsHarness.addGroup({
-        name = spec.groupName,
-        side = coalition.side.BLUE,
-        category = Group.Category.GROUND,
-        units = units,
-    })
-end
-
--- protect_group calls these on the freshly spawned backstop; the harness
--- MooseGroup metatable (shared by every GROUP:FindByName result) lacks them.
-do
-    DcsHarness.addGroup({ name = "__metatable_probe__", side = 0, category = 2, units = {} })
-    local mt = getmetatable(GROUP:FindByName("__metatable_probe__"))
-    mt.SetCommandInvisible = function() end
-    mt.SetCommandImmortal = function() end
+    -- Records only. The plugin must never spawn anything: the backstop EWR it
+    -- used to place at the airbase reference point stood on the taxiways.
+    table.insert(InterceptTest.dynAdds, spec)
 end
 
 -- Moose SET_GROUP:FilterPrefixes matcher (Moose.lua): string.find with the
@@ -187,8 +170,6 @@ def _intercept_record(airbase: str, squadron_id: str) -> dict[str, str]:
         "engagementRangeNm": "38",
         "gciMaxRadiusNm": "60",
         "commsEnabled": "false",
-        "countryId": "2",
-        "backstopEwrType": "FPS-117",
         "ambushPosture": "false",
         "disengageRadiusNm": "0",
     }
@@ -231,8 +212,8 @@ def test_escaped_prefix_matches_where_raw_fails() -> None:
         assert matches(name, module.pattern_escape(name)), f"no match: {name}"
 
 
-def test_full_merged_detection_list_is_escaped() -> None:
-    """FilterPrefixes receives the escaped EWR network AND the backstop name."""
+def test_the_detection_list_is_the_escaped_iads_network() -> None:
+    """FilterPrefixes receives the escaped IADS EWR network — and only that."""
     harness = DcsPluginHarness()
     _load(harness, ewr_names=["0041 | LION (EWR)", "0114 | LORIKEET (S-300)"])
     harness.advance_to(BUILD_DELAY_S + 1)
@@ -242,8 +223,41 @@ def test_full_merged_detection_list_is_escaped() -> None:
     assert prefixes == [
         "0041 | LION %(EWR%)",
         "0114 | LORIKEET %(S-300%)",  # "-" stays raw for Moose's own gsub
-        "QRA_Backstop_BLUE_Test AFB",
     ]
+
+
+def test_nothing_is_spawned_onto_the_airfield() -> None:
+    """The backstop EWR is gone and must not come back.
+
+    It was a real vehicle placed at the airbase reference point + 300 m NE. DCS
+    has no non-colliding ground unit -- mist's ``hidden`` only drops the F10
+    symbol and ``SetCommandInvisible`` only blinds AI sensors -- so a 55G6 mast
+    stood in the taxiway network and AI taxi routing had no way past it (flown
+    Red Tide at Sperenberg; upstream PR #782 removed it for the same reason).
+    """
+    harness = DcsPluginHarness()
+    _load(harness, ewr_names=list(PAREN_NAMES))
+    harness.advance_to(BUILD_DELAY_S + 1)
+    harness.assert_no_lua_errors()
+
+    # An empty Lua table converts to {}, so test emptiness rather than equality.
+    spawns = harness.to_python(harness.lua.globals().InterceptTest.dynAdds)
+    assert not spawns, f"the plugin spawned something onto the field: {spawns}"
+
+
+def test_a_wiped_out_radar_network_simply_stops_scrambling() -> None:
+    """No EWR net => no detection source => no dispatcher, and no crash.
+
+    This is the deliberate consequence of dropping the backstop: QRA sees what
+    its radar network sees.
+    """
+    harness = DcsPluginHarness()
+    _load(harness, ewr_names=[])
+    harness.advance_to(BUILD_DELAY_S + 1)
+    harness.assert_no_lua_errors()
+
+    dispatchers = harness.to_python(harness.lua.globals().InterceptTest.dispatchers)
+    assert not dispatchers
 
 
 def test_escape_leaves_dash_for_moose() -> None:

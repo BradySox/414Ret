@@ -2242,7 +2242,17 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     mobile launchers), and the plugin **staggers each site's loop** by `(i-1)·interval/N` so route
     pushes spread across the interval instead of landing together. Tests
     `test_immobile_silkworm_hardware_is_never_routed` +
-    `test_site_loops_are_staggered_across_the_interval`. **The flown 39-site Tacview (same day)
+    `test_site_loops_are_staggered_across_the_interval`.
+    **`CH_CJ10` joined the exclusion 2026-08-05 off the flown Marianas evidence** (two missions,
+    Tacviews `-190738` + `-203549`): **all 9 launchers of all 3 PLARF sites moved 0.00 km** while
+    the drivable vehicles in the same groups (the §85 bowsers, the PGZ-09/PGL-625/LD-3000 SHORAD)
+    jittered only 0.05–0.31 km — a group **pinned by an undrivable member**, with the setting and
+    plugin both preseeded and routes being pushed the whole time. It reads as the same post-fire
+    pin as the Shahed below, but this hardware fires early every mission so "pinned after firing"
+    and "never scoots" coincide. **`CH_Shahed136` is deliberately NOT excluded** (its never-fired
+    sites drive). Consequence: **Marianas 2027's authored "hunt the launchers" mechanic does not
+    exist** — those sites are stationary targets until the campaign fields a drivable launcher
+    (checklist S2 caveat + T5). **The flown 39-site Tacview (same day)
     proved the fire-window fix on vanilla hardware** — 13/13 fired Scud_B batteries scooted after
     their volleys (S2's SCUD half closed) — **and found the residual: all 8 fired `CH_Shahed136`
     sites stay pinned post-salvo** (the never-fired ones drive fine; a mod-side post-fire state

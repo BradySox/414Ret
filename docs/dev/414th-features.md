@@ -8375,8 +8375,11 @@ GPS-guided weapons postdate it entirely.
 **Settings.** `gps_jamming` (414th Features → Electronic & command warfare, default **OFF**,
 preseeded nowhere) + `gps_jamming_default_reach_nm` (30) / `gps_jamming_miss_radius_m` (200)
 (Mission Generation → Comms war, `enabled_when=gps_jamming`). Plugin options cover the degrade
-chance (85 %), terminal altitude (100 ft AGL), miss power (400 kg), the shooter cue, grace, and
-the track step. **The plugin is the runtime** — a saved default with the `gpsjamming` plugin
+chance (85 %), terminal altitude (100 ft AGL), the shooter cue, grace, and the track step. **The
+miss detonates with the store's own warhead** (`desc.warhead.explosiveMass`, scaled by
+`missPowerScalePct`, default 100 %), so a 2000 lb JDAM craters like one and a 500 lb JDAM does
+not; a store reporting no warhead falls back to the flat `missPower`, which is the pre-scaling
+behaviour exactly. **The plugin is the runtime** — a saved default with the `gpsjamming` plugin
 unticked silently kills the setting (the §36 lesson).
 
 **Deliberately not done:** aircraft navigation degradation (impossible, and it would lie to the

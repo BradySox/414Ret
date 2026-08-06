@@ -116,20 +116,23 @@ def _release(
     wtype: str = "GBU-31",
     shooter: str = "Hammer",
     descent: float = 200.0,
+    warhead: dict[str, Any] | None = None,
 ) -> None:
-    """Drop a store that descends at `descent` m/s toward (x, z)."""
-    h.fire_shot(
-        {
-            "weapon": {
-                "typeName": wtype,
-                "x": x,
-                "z": z,
-                "alt": alt,
-                "velocity": {"x": 0.0, "y": -descent, "z": 0.0},
-            },
-            "initiator": shooter,
-        }
-    )
+    """Drop a store that descends at `descent` m/s toward (x, z).
+
+    `warhead` models what DCS reports on the weapon descriptor; None models a
+    store with a thin descriptor (a mod weapon), which must fall back.
+    """
+    weapon: dict[str, Any] = {
+        "typeName": wtype,
+        "x": x,
+        "z": z,
+        "alt": alt,
+        "velocity": {"x": 0.0, "y": -descent, "z": 0.0},
+    }
+    if warhead is not None:
+        weapon["warhead"] = warhead
+    h.fire_shot({"weapon": weapon, "initiator": shooter})
 
 
 def _miss_distance(boom: dict[str, Any]) -> float:
@@ -351,4 +354,76 @@ def test_a_fast_store_is_caught_before_impact() -> None:
     destroys = h.records("weaponDestroys")
     assert destroys, "a fast store must still be caught in the air"
     assert len(h.records("explosions")) == 1
+    h.assert_no_lua_errors()
+
+
+# -- the miss detonates with the weapon's OWN warhead --------------------------
+
+
+def test_a_big_bomb_craters_harder_than_a_small_one() -> None:
+    """A 2000 lb JDAM and a 500 lb JDAM must not make the same bang.
+
+    The miss uses the store's real explosive mass (`desc.warhead.explosiveMass`),
+    so the crater scales with what was actually dropped.
+    """
+    powers = {}
+    for wtype, explosive in (("GBU-31", 429.0), ("GBU-38", 87.0)):
+        h = DcsPluginHarness()
+        h.add_group(_blue_striker())
+        h.add_group(_jammer_group())
+        _load(h)
+        h.advance_to(20)
+        _release(h, wtype=wtype, warhead={"explosiveMass": explosive})
+        h.advance_to(60)
+        booms = h.records("explosions")
+        assert len(booms) == 1, f"{wtype} should produce one miss detonation"
+        powers[wtype] = booms[0]["power"]
+        h.assert_no_lua_errors()
+
+    assert powers["GBU-31"] == 429.0
+    assert powers["GBU-38"] == 87.0
+    assert powers["GBU-31"] > powers["GBU-38"]
+
+
+def test_the_scale_option_trims_the_miss_detonation() -> None:
+    h = DcsPluginHarness()
+    h.add_group(_blue_striker())
+    h.add_group(_jammer_group())
+    _load(h, missPowerScalePct=50)
+    h.advance_to(20)
+    _release(h, warhead={"explosiveMass": 400.0})
+
+    h.advance_to(60)
+    assert h.records("explosions")[0]["power"] == 200.0
+    h.assert_no_lua_errors()
+
+
+def test_explosive_mass_is_preferred_over_total_warhead_mass() -> None:
+    """`explosiveMass` is the TNT-equivalent filler, which is the unit
+    trigger.action.explosion wants; `mass` is the whole warhead and is only the
+    next best thing."""
+    h = DcsPluginHarness()
+    h.add_group(_blue_striker())
+    h.add_group(_jammer_group())
+    _load(h)
+    h.advance_to(20)
+    _release(h, warhead={"explosiveMass": 87.0, "mass": 241.0})
+
+    h.advance_to(60)
+    assert h.records("explosions")[0]["power"] == 87.0
+    h.assert_no_lua_errors()
+
+
+def test_a_store_with_no_warhead_data_falls_back_to_the_flat_power() -> None:
+    """A mod store with a thin descriptor must still make a bang -- the
+    pre-scaling behaviour exactly, so this can only ever add fidelity."""
+    h = DcsPluginHarness()
+    h.add_group(_blue_striker())
+    h.add_group(_jammer_group())
+    _load(h, missPower=400)
+    h.advance_to(20)
+    _release(h)  # no warhead in the descriptor
+
+    h.advance_to(60)
+    assert h.records("explosions")[0]["power"] == 400
     h.assert_no_lua_errors()

@@ -22,6 +22,54 @@ the theater in the **DCS Mission Editor**; you edit metadata and balance in the 
 > only the standard YAML-plus-`.miz` campaign path. Don't look for Pretense settings or
 > campaign files here.
 
+### Which CJTF block does each object go in?
+
+Every object in the `.miz` is a **marker**: you place a specific unit type, and
+`MizCampaignLoader` reads its **position** to create an objective — the actual system that
+spawns is filled from the recommended faction's roster. Which **country block** you place
+the marker in is part of the convention, and getting it wrong is the single most common
+authoring mistake, because a mis-blocked marker is **ignored silently** — no warning, no
+error, the objective simply never exists.
+
+This mirrors upstream's *Unit Type Quick Reference*; the **414th:** note below records
+where this fork differs.
+
+| Objective | Block | Marker unit |
+|---|---|---|
+| EWR | **Red** | EWR 1L13 |
+| Long range SAM | **Red** | Patriot LN M901 · S-300PS TEL C · S-300PS TEL D |
+| Medium range SAM | **Red** | Hawk LN M192 · NASAMS LN AIM-120B/C · SA-2 LN SM-90 · SA-3 5P73 |
+| Short range SAM | **Red** | Avenger · Rapier LN · SA-19 Tunguska · SA-9 Strela 1 |
+| Ship | **Red** | Arleigh Burke IIa |
+| Missile site | **Red** | SSM SS-1C Scud-B |
+| Coastal defense | **Red** | AShM SS-N-2 Silkworm |
+| Offshore strike target | **Red** | Oil Platform |
+| Neutral FOB | **Red** | KrAZ6322 |
+| Factory | **Blue** | Workshop A |
+| Supply route | **Blue** | M113 (with waypoints) |
+| Shipping lane | **Blue** | Bulker Handy Wind (with waypoints) |
+| AAA | Either | Flak 18 · Vulcan M163 · ZSU-23-4 Shilka |
+| Armor group / garrison | Either | MBT M1A2 Abrams |
+| Ammo depot | Either | Ammunition depot |
+| Strike target | Either | Tech combine |
+| Comms · Power · Command Center | Either | Comms tower M · GeneratorF · Command Center |
+| FOB · Invisible FOB | Either — **the block sets the owner** | Truck SKP-11 · Truck M939 Heavy |
+| Carrier · LHA · Off-map spawn | Either — **the block sets the owner** | Stennis · Tarawa · F-15C |
+
+For the last two rows the block is not a convention but the **declaration of who starts
+owning it** — a CJTF Blue carrier is blue's, a CJTF Red FOB is red's. Everywhere else the
+owner comes from proximity to the nearest control point, not from the block.
+
+> **414th:** this fork's `MizCampaignLoader` reads **both** country blocks for **every**
+> class, so a mis-blocked marker that upstream ignores **will** generate here. That is a
+> deliberate deviation (it also rescues genuinely mis-blocked authored content), but it
+> cuts both ways: authoring mistakes become live objectives instead of staying inert.
+> Measured against the upstream campaign set, the difference is 483 objects across 12
+> campaigns — **443 of them in the two Normandy campaigns alone**, where 336 short-range
+> SAM markers sit under CJTF Blue. **Author to the table above anyway**: it keeps a
+> campaign portable to upstream, and it keeps "did I mean to place this?" an explicit
+> choice rather than an accident.
+
 ### Key YAML fields
 
 ```yaml

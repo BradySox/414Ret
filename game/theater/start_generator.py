@@ -573,9 +573,20 @@ class AirbaseGroundObjectGenerator(ControlPointGroundObjectGenerator):
             self.generate_aa_at(position, aa_tasking)
 
     def generate_ewrs(self) -> None:
+        # EWR markers honour a campaign's `ground_forces` override like every other
+        # class. They previously called `random_group_for_task` directly, so a pinned
+        # EWR marker was SILENTLY IGNORED -- the identical hole naval groups had until
+        # `generate_navy` was routed through here (2026-08-03). It is worth spelling
+        # out how this failed, because it did not look like a pin failure: if the
+        # pinned preset also happens to be registered on the faction (which is how its
+        # units become `accessible_units` in the first place), it joins the EWR-task
+        # candidate pool, so `random_group_for_task` picks it at a RANDOM SUBSET of the
+        # markers. The campaign then generates a different shape every time it is
+        # created -- measured 1-to-5 of 5 pinned sites taking the override across six
+        # generations -- rather than failing outright the way a discarded pin does.
         for position in self.control_point.preset_locations.ewrs:
-            unit_group = self.armed_forces.random_group_for_task(
-                GroupTask.EARLY_WARNING_RADAR
+            unit_group = self.get_unit_group_for_task(
+                position, GroupTask.EARLY_WARNING_RADAR
             )
             if not unit_group:
                 logging.error(

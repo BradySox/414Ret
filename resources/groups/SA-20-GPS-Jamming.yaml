@@ -1,0 +1,40 @@
+# 414th (§86) -- an SA-20 battery WITH an attached GPS-jamming section.
+#
+# The second half of the §86 placement model. The standalone `GPS Jamming Site`
+# puts denial anywhere; this puts it INSIDE an existing threat ring, which is the
+# more interesting version: killing the jammer means going into the S-300's
+# envelope instead of strafing a soft truck in a field. It is also where a real
+# EW company actually sits.
+#
+# Identical to `SA-20/S-300PMU-1` in every other respect -- same units, same
+# layout -- so pinning this instead of the plain preset changes nothing about the
+# battery itself. The layout's jammer slot is optional + fill: false, so it is
+# THIS preset listing the jammer that makes the section appear.
+#
+# Kill notes: the jammer's liveness is tracked per UNIT, so killing the two
+# trucks stops the GPS denial while the battery fights on; killing the battery
+# leaves the trucks jamming until someone goes back for them.
+name: SA-20/S-300PMU-1 (GPS jamming)
+tasks:
+  - LORAD
+units:
+  - SAM SA-20 S-300PMU1 SR 5N66E
+  - SAM SA-20 S-300PMU1 SR 64N6E
+  - SAM SA-20 S-300PMU1 CP 54K6
+  - SAM SA-20 S-300PMU1 TR 30N6E
+  - SAM SA-20 S-300PMU1 LN 5P85CE
+  - SAM SA-20 S-300PMU1 LN 5P85DE
+  # Battery support section (cargo / fuel / power slots)
+  - Truck GAZ-66
+  - Truck KAMAZ 43101
+  - Truck Ural-375
+  - Refueler ATZ-5
+  - Refueler ATZ-10
+  - Refueler ATMZ-5
+  - Refueler ATZ-60 (MAZ-7410)
+  - Refueler TZ-22 (KrAZ-258B1)
+  - Diesel Power Station 5I57A
+  # The §86 jamming section.
+  - EW Radio Jammer (Red)
+layouts:
+  - S-300 Site

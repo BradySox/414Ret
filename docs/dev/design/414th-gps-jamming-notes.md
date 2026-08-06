@@ -1,7 +1,8 @@
-# GPS jamming (§85) — design notes
+# GPS jamming (§86) — design notes
 
-**Status: LANDED 2026-08-04.** Gated `gps_jamming`, default **OFF**, preseeded
-nowhere. Needs an in-game pass (checklist B43).
+**Status: LANDED 2026-08-04; placement/density/reach redesigned 2026-08-05.**
+Gated `gps_jamming`, default **OFF**. Preseeded in Operation Baltic Fury only.
+Needs an in-game pass (checklist B45).
 
 ---
 
@@ -91,7 +92,7 @@ makes that unit a jammer:
 class: Fortification
 price: 40
 gps_jamming:
-  radius_nm: 45        # optional — falls back to the campaign setting (30 nm)
+  radius_nm: 15        # optional — falls back to the campaign setting (15 nm)
   miss_radius_m: 350   # optional — falls back to the campaign setting (200 m)
 variants:
   R-330Zh Zhitel: null
@@ -127,7 +128,7 @@ Paveway that mysteriously misses is a bug report, not a feature. Also out:
 flown features and coupling them to an unflown one buys nothing.
 `tests/fourteenth/test_gps_jamming.py` pins both directions.
 
-## Squadron calls (2026-08-04)
+## Squadron calls (2026-08-04/05)
 
 | Call | Decision |
 |---|---|
@@ -137,8 +138,9 @@ flown features and coupling them to an unflown one buys nothing.
 
 ## Defaults, and why
 
-- **30 nm reach.** A local denial bubble a package can plan around and a strike
-  can remove — not a theatre blanket, which just switches a weapon class off.
+- **15 nm reach.** Sized off what the bubble IS — a denied *target* area (see the
+  2026-08-05 pass below). At 27-30 nm one site denied a large share of a medium
+  map; 15 nm denies a target cluster.
 - **85 % degrade chance.** Below 100 so some stores get through: a package can
   still score inside a jammed area, and the player cannot conclude "GPS is
   simply disabled".
@@ -207,12 +209,89 @@ names (`TheaterUnit.unit_name`) and the runtime checks `Unit.getByName`, so:
 
 Both are worth a bomb, for different reasons.
 
+## Placement, density and reach — the 2026-08-05 design pass
+
+The first cut bolted the jammer onto the EWR layout. That was a workaround, and
+the DM stopped it: *"we gotta think this through and do it right."* The pass
+turned up one fact that reframes everything, and three decisions.
+
+### The fact: the bubble is a denied TARGET area, not a denied RELEASE area
+
+The runtime degrades a weapon that *flies through* a live bubble. A weapon aimed
+at anything inside the bubble therefore passes through it **whatever range it was
+released from**. Standing off does **not** help against a covered target; it only
+changes *which* targets are covered. The radius is simply the size of the target
+set that loses satellite guidance.
+
+Earlier drafts of this note (and the settings text) listed "stand off" as a
+counter. That was wrong and is corrected: the counters are **change delivery
+method** (laser/TV are untouched) or **kill the jammer**.
+
+### Decision 1 — placement: both models
+
+| Model | What it is | When to use it |
+|---|---|---|
+| Standalone `GPS Jamming Site` | Own marker, own point defence, own ARM-able radar | Denial anywhere: an objective, an approach, a bridge |
+| Attached `S-300 Site GPS Jammer` section | A slot on the S-300-family layouts, used by `SA-20/S-300PMU-1 (GPS jamming)` | Denial *inside* a threat ring — killing it means entering the S-300's envelope |
+
+A jammer alone in a field is a free kill and nobody has to think; a jammer inside
+a SAM ring is the actual dilemma. But denial is often wanted where no SAM is, so
+both exist. Both are `optional` + `fill: false` and preset-driven, so every
+shipped site generates exactly as before.
+
+### Decision 2 — density: ≤3 per campaign, non-overlapping, CI-guarded
+
+Bubbles are large and **invisible on the campaign map**, so a heavy hand is easy
+to author and hard to notice until someone flies it — the Marianas lesson, where
+13 of 30 max-radius rings "did not make the campaign harder, it made the map
+unreadable".
+
+Overlap is called out separately because **effects do not stack**: a weapon faces
+only the single strongest bubble covering it (the §77 non-stacking rule), so a
+second overlapping site adds no decision and killing one restores nothing.
+
+Both rules are enforced by tests that walk every campaign's `ground_forces` pins.
+
+### Decision 3 — reach: 15 nm
+
+Deliberately below the 50 km (27 nm) DCS declares for the vehicle. At 27 nm a
+single site denied a large share of a medium map, which switches a weapon class
+off rather than posing a question. 15 nm denies a target *cluster*, so two or
+three can coexist on distinct clusters and most of the theatre stays GPS-usable.
+
+### The access trap, worth knowing before authoring
+
+The override gate is `all(u in faction.accessible_units for u in fg.units)` — one
+unreachable unit silently discards the whole pin and the marker falls back to an
+ordinary site. `accessible_units` chains `preset_groups`, so registering the
+preset there grants access **but also makes the site a `random_group_for_task`
+candidate**: unpinned EWR markers then roll jamming sites and the campaign
+generates a different shape every time (measured 2-to-4 sites when only 2 were
+pinned). **Grant access through `air_defense_units` instead.**
+
+The cost of that route is that a granted unit joins the faction-fill pool: the
+ST-68U turned up as a search radar at an unrelated SAM site in roughly one game
+in five. Accepted deliberately — an ST-68U is era-plausible wherever it lands for
+a 2027 Russian faction, and era-correctness at the jamming site (the thing the
+player looks at) matters more. The alternative, reusing the faction's native
+ARM-flagged radar, is a 1950s SA-2 Fan Song.
+
+### Engine bug found on the way
+
+`generate_ewrs` called `random_group_for_task` directly and never read the
+`ground_forces` block, so **an EWR marker could not be pinned at all** — the
+identical hole naval groups had until `generate_navy` was routed through
+`get_unit_group_for_task` (2026-08-03). Fixed the same way; upstream-carve
+candidate, and independent of this feature.
+
 ## What the player does about it
 
 1. **Change delivery method** — laser and TV weapons are unaffected. This is the
    intended counter and the reason the exclusions are load-bearing.
-2. **Stand off** — the bubble is finite and briefed once found.
-3. **Kill the jammer** — an ordinary strike, with an immediate in-mission reward.
+2. **Kill the jammer** — an ordinary strike, with an immediate in-mission reward.
+
+Standing off is **not** a counter for a covered target (see the bubble note
+above); it only decides which targets are covered in the first place.
 
 ## Deliberately not done
 
@@ -227,7 +306,7 @@ Both are worth a bomb, for different reasons.
   re-pick loadouts. That is a real follow-up (route/loadout awareness), kept out
   of v1 so the runtime can be flown on its own first.
 
-## In-game pass (checklist B43)
+## In-game pass (checklist B45)
 
 The DCS-only unknowns, in order of risk:
 

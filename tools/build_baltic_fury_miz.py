@@ -133,6 +133,20 @@ EWR_SITES = [
     (-106000, -370000),  # Szczecin
     (58000, -364000),  # Bornholm
 ]
+# §86 GPS jamming sites -- their own markers, NOT bolted onto the EWR net, so
+# red's early-warning chain and its GPS-denial belt are separate things a player
+# can attack separately. Placed to cover what blue actually wants to JDAM:
+# Copenhagen (the victory objective) and the central approach up to Rostock.
+# The `GPS Jamming Site (Red)` preset is pinned to these in the campaign yaml.
+#
+# NOTE ON NAMING: markers take their number from ONE shared counter in the order
+# they are created below, so these are appended LAST -- inserting them earlier
+# would renumber every marker after them and silently break the campaign's
+# `ground_forces` pins.
+GPS_JAMMING_SITES = [
+    (126500, -489500),  # Copenhagen approach -- covers the Kastrup objective
+    (-41000, -541000),  # Rostock -- the central push blue fights through
+]
 # Coastal anti-ship wall (Bastion-P / Bal LBASM), sea-facing. COASTAL marker.
 COASTAL_ANTISHIP = [
     (-21425, -544701),  # Rostock coast
@@ -290,5 +304,41 @@ def main() -> None:
     print(f"saved {DST}")
 
 
+def add_gps_jamming_markers() -> None:
+    """ADDITIVE: drop the §86 jamming-site markers into the hand-authored miz.
+
+    `main()` refuses to run once the miz has been edited in the Mission Editor,
+    which it now has -- so the jamming sites ship as an additive pass (the
+    Inherent Resolve / Marianas pattern) rather than a regeneration that would
+    discard the DM's laydown. Idempotent: re-running adds nothing.
+
+    They are EWR-band markers because the `GPS Jamming Site (Red)` preset is
+    EarlyWarningRadar-tasked -- the one air-defence role MANTIS never holds dark,
+    which is what keeps the site's radar emitting (on RWR, and HARM-able) for the
+    whole mission. Names are explicit, not counter-derived, so they can never
+    renumber an existing marker.
+    """
+    m = Mission()
+    m.load_file(str(DST))
+    terrain = m.terrain
+    red = m.country("Combined Joint Task Forces Red")
+    existing = {g.name for g in red.vehicle_group}
+    added = 0
+    for i, (x, y) in enumerate(GPS_JAMMING_SITES, start=1):
+        name = f"GPSJAM-{i}"
+        if name in existing:
+            continue
+        m.vehicle_group(red, name, EWR_MARKER, Point(x, y, terrain))
+        added += 1
+    if added:
+        m.save(str(DST))
+    print(f"{DST}: {added} GPS jamming marker(s) added")
+
+
 if __name__ == "__main__":
-    main()
+    import sys
+
+    if "--gps-jamming" in sys.argv:
+        add_gps_jamming_markers()
+    else:
+        main()

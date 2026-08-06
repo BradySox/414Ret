@@ -3656,12 +3656,15 @@ bunker / Predator GCS). Kills record as ordinary ground losses.
 
 ### B45 — GPS jamming (satellite-guided weapons go long) · §86 · ☐ UNTESTED (built 2026-08-04)
 
-**Setup:** a campaign fielding a jamming site — pin the `GPS Jamming Site (Red)` preset onto an
-authored red EWR marker, which puts an `EW Radio Jammer (Red)` in the same group as the EWR.
-`gps_jamming` ON (414th Features → Electronic & command warfare) **and** the `gpsjamming`
-plugin ticked — the plugin is the runtime, so an unticked plugin silently kills the setting
-(the §36 lesson). Fly a strike with JDAMs at a target inside the jammer's reach (27 nm for
-these units — their own DCS-declared 50 km).
+**Setup:** Operation Baltic Fury preseeds this — two jamming sites at `GPSJAM-1` (Copenhagen
+approach, ~5 km from Kastrup) and `GPSJAM-2` (Rostock). `gps_jamming` ON (414th Features →
+Electronic & command warfare) **and** the `gpsjamming` plugin ticked — the plugin is the
+runtime, so an unticked plugin silently kills the setting (the §36 lesson). Fly a strike with
+JDAMs at a target within **15 nm** of a site.
+
+Note the bubble is a denied **target** area, not a denied release area: a weapon aimed at
+anything inside it flies through it whatever range you released from, so do NOT expect standing
+off to help. Laser/TV delivery and killing the jammer are the counters.
 
 **Pass criterion:** the JDAM releases, flies its whole normal profile, and detonates ~200 m off
 the aimpoint instead of on it — and the target survives. The firing flight gets ONE

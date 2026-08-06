@@ -124,6 +124,28 @@ groups:
         - 2
       unit_types:
         - 34Ya6E Gazetchik E decoy
+    # 414th (§86): an OPTIONAL GPS-jamming section attached to the battery.
+    #
+    # The other half of the §86 placement model. A standalone `GPS Jamming Site`
+    # exists for putting denial anywhere; this is for putting it INSIDE an
+    # existing threat ring, which is the more interesting version -- killing the
+    # jammer then means going into the SAM's envelope, instead of strafing a soft
+    # truck in a field. It is also where a real EW company sits.
+    #
+    # optional + fill: false, so it appears ONLY when a preset explicitly supplies
+    # a jammer. Every shipped S-300 site generates exactly as before.
+    #
+    # The jammer's liveness is tracked PER UNIT by the runtime, so killing these
+    # trucks stops the jamming even though the battery around them survives.
+    - name: S-300 Site GPS Jammer
+      optional: true
+      fill: false
+      unit_count:
+        - 1
+        - 2
+      unit_types:
+        - GPS_Spoofer_Red
+        - GPS_Spoofer_Blue
   - PD:
     - name: S-300 Site SHORAD1
       optional: true

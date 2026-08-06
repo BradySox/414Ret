@@ -8296,54 +8296,81 @@ inside; use laser/TV or stand off`), so an **un-scouted jammer is not briefed** 
 worth a recon sortie; plus a **one-shot in-cockpit cue** the first time a flight's weapon is
 spoofed, so a failed pass reads as jamming rather than as a broken sim.
 
-**What the player does about it:** change delivery method (laser/TV are unaffected — the intended
-counter, and the reason the exclusions are load-bearing), stand off outside the bubble, or kill
-the jammer.
+**What the player does about it:** change delivery method (laser/TV are unaffected — the
+intended counter, and the reason the exclusions are load-bearing), or kill the jammer. Standing
+off is NOT a counter for a covered target (see the bubble note below).
 
-**Making the jammer huntable — the RWR/HARM pairing.** The units are DCS's own
-`GPS_Spoofer_Red`/`GPS_Spoofer_Blue` ("Radio jammer"), and their stock DB entry
-(`CoreMods/tech/TechWeaponPack/Database/vehicles/Unarmed/Radio_jammer_Red.lua`) declares
-`GT_t.ws = 0` with **no `GT.WS`, no `GT.Sensors`, no `searchRadarFrequencies`** — so they are
-invisible to RWR and cannot be locked by an ARM. (A real GPS jammer transmits in L-band anyway,
-which no RWR covers and no HARM homes on, so this is faithful — and unplayable: the jammer could
-only ever be found by recon, and SEAD could never prosecute it.)
+**Placement — two models, both explicit.** The design question "where does a jammer live" was
+worked through on 2026-08-05 and answered *both* ways, because the two cases want different
+things:
 
-Rather than ship a DCS mod adding an emitter to the truck (possible — clone the DB entry and add
-`GT.WS.radar_type` + `searchRadarFrequencies` + `GT.Sensors` + `wsType_Radar` — but it would put
-the whole squadron on a mod install), the jammer is **paired with a real vanilla emitter**: an
-optional `GPS Jammer 0` slot on the **`Early-Warning Radar` layout**, plus the two preset groups
-`GPS Jamming Site (Red)`/`(Blue)`. An EWR is exactly the right partner because **MANTIS never
-holds an EWR dark** (detection rides on dedicated EWR sites + AWACS), so the site is *always*
-emitting — it paints RWRs, takes HARMs, and SEAD can service it like any other radar.
+* **A standalone site** (`GPS Jamming Site` layout + the `GPS Jamming Site (Red)`/`(Blue)`
+  presets) — its own marker, its own point defence, its own ARM-able radar. Put denial anywhere:
+  on an objective, covering an approach, guarding a bridge.
+* **An attached section** (the `S-300 Site GPS Jammer` slot on the S-300-family layouts, used by
+  the `SA-20/S-300PMU-1 (GPS jamming)` preset) — puts the jammer *inside* an existing threat
+  ring, which is the more interesting version: killing it means going into the S-300's envelope
+  instead of strafing a soft truck in a field. It is also where a real EW company sits.
 
-**Being on RWR and being HARM-able are two different DCS attributes, and no one unit here has
-both** — which is why the site fields *two* radars. `GT.WS.radar_type` is what puts a unit on the
-RWR (the EWRs have it); `RADAR_BAND1/2_FOR_ARM` is what an anti-radiation seeker homes on, and
-**the EWRs do not carry it** (verified: `EWR_FPS-117` declares only `"EWR"`, and of the units in
-DCS's TechWeaponPack carrying the ARM bands, not one is an EWR). An EWR alone would therefore
-give an RWR contact you cannot shoot a HARM at. The acquisition radars *do* carry the bands, so
-the site also fields one — **ST-68U "Tin Shield"** (red) / **NASAMS MPQ-64F1** (blue) — riding in
-the same EWR-role group, so MANTIS still never holds it dark. That slot is `unit_count: [2]`
-because the ST-68U is a track-radar class and the standing §60 redundancy contract applies: one
-HARM must not blind the site outright.
+Both are `optional` + `fill: false` and preset-driven, so **every shipped site generates exactly
+as before** — a campaign gets a jammer only where it pins one.
 
-Both slots are `optional: true` + `fill: false` and the presets are opt-in, so **every existing
-EWR site in every shipped campaign generates exactly as before**; a campaign fields a jamming
-site by pinning one of the presets onto an authored EWR marker. Country gating does the rest —
-the red preset can reach only the red jammer, the blue preset only the blue one (proven by
-test).
+**THE BUBBLE IS A DENIED *TARGET* AREA, NOT A DENIED *RELEASE* AREA.** This is the fact that
+drives placement and sizing, and it is easy to get backwards: the runtime degrades a weapon that
+*flies through* a live bubble, so a weapon aimed at anything inside the bubble passes through it
+**whatever range it was released from**. Standing off therefore does **not** help against a
+covered target — it only changes *which* targets are covered. The radius is simply the size of
+the target set that loses satellite guidance. The counters are **change delivery method**
+(laser/TV are untouched) or **kill the jammer**.
 
-**Preseeded in Operation Baltic Fury** (2027) on **EWR-26** (13.9 km from Laage, the site blue
-meets on the way north) and **EWR-27** (8.5 km from Kastrup, the campaign's victory objective —
-so the Copenhagen push becomes "kill the jammer before you can JDAM the prize"). The other three
-red EWRs stay ordinary radar sites. Red Tide is deliberately **not** a candidate: it is 1988, and
+That is why the reach is **15 nm**, deliberately below the 50 km (27 nm) DCS declares for the
+vehicle: at 27 nm a single site denied a large share of a medium map, which switches a weapon
+class off rather than posing a question. 15 nm denies a target cluster, so a campaign can field
+two or three on distinct clusters and most of the theatre stays GPS-usable.
+
+**Density: at most 3 per campaign, non-overlapping — CI-guarded.** Bubbles are large and
+**invisible on the campaign map**, so a heavy hand is easy to author and hard to notice until
+somebody flies it (the Marianas lesson: 13 of 30 max-radius rings "did not make the campaign
+harder, it made the map unreadable"). Two tests in `tests/fourteenth/test_gps_jamming.py` walk
+every campaign's `ground_forces` pins, resolve each preset, and fail on more than three jamming
+sites or on two bubbles that overlap. Overlap is called out specifically because **effects do not
+stack** — a weapon faces only the single strongest bubble covering it (the §77 non-stacking rule)
+— so a second overlapping site adds no decision for the player and killing one restores nothing.
+
+**Being on RWR and being HARM-able are two different DCS attributes, and no one unit has both**,
+which is why a site fields a radar as well as the jammer. `GT.WS.radar_type` is what puts a unit
+on the RWR; `RADAR_BAND1/2_FOR_ARM` is what an anti-radiation seeker homes on, and **the EWRs do
+not carry it** (verified: `EWR_FPS-117` declares only `"EWR"`, and of the units in DCS's
+TechWeaponPack carrying the ARM bands, not one is an EWR). The stock jammer carries *neither* —
+its DB entry declares `GT_t.ws = 0` with no `GT.WS`, no `GT.Sensors`, no `searchRadarFrequencies`
+— which is faithful (a real GPS jammer is L-band) and unplayable, since SEAD could never
+prosecute it. The standalone site therefore fields an ARM-flagged acquisition radar, **ST-68U
+"Tin Shield"** (red) / **NASAMS MPQ-64F1** (blue), at `unit_count: [2]` because the ST-68U is a
+track-radar class and the standing §60 redundancy contract applies. An attached section needs no
+radar of its own — the SAM battery around it already emits.
+
+**Task = EarlyWarningRadar**, because `IadsRole.for_task` maps it to `EWR`, the one air-defence
+role MANTIS never holds dark under EMCON. A site tasked MERAD/LORAD/SHORAD would be held dark
+until cued, so it would be off the RWR and un-HARM-able for most of the mission — exactly what
+the radar is there to prevent. The site consequently also contributes to its side's IADS
+detection, which reads correctly (it *is* a radar site).
+
+**Granting a faction access is what makes a pin work, and how you do it matters.** The override
+gate is `all(u in faction.accessible_units for u in fg.units)`, so **one** unreachable unit
+silently discards the whole pin and the marker falls back to an ordinary site. `accessible_units`
+chains `preset_groups`, so registering the preset there grants access — **but it also makes the
+site a `random_group_for_task` candidate**, which had unpinned EWR markers rolling jamming sites
+and the campaign generating a different shape every time (measured: 2-to-4 sites across runs when
+only 2 were pinned). Grant access through `air_defense_units` instead: the units become reachable,
+the preset is not a random candidate, and the laydown is exactly what the campaign pins.
+
+**Preseeded in Operation Baltic Fury** (2027) on two dedicated markers added by
+`tools/build_baltic_fury_miz.py --gps-jamming` — `GPSJAM-1` on the Copenhagen approach (~5 km
+from Kastrup, the victory objective, so the final push is "kill the jammer before you can JDAM the
+prize") and `GPSJAM-2` at Rostock on the central axis. They are **their own markers, not a
+modifier on the EWR net**: red's early-warning chain and its GPS-denial belt are separate
+installations you attack separately. Red Tide is deliberately not a candidate — it is 1988, and
 GPS-guided weapons postdate it entirely.
-
-This is what forced the **per-unit liveness** contract above: the jammer shares its DCS group
-with the radar, so a group-level check would keep denying GPS on the strength of the surviving
-radar beside the wreck of the actual jammer — unkillable jamming. Killing the truck stops the
-jamming; killing the radar blinds the site without stopping it. Both are worth a bomb, for
-different reasons.
 
 **Settings.** `gps_jamming` (414th Features → Electronic & command warfare, default **OFF**,
 preseeded nowhere) + `gps_jamming_default_reach_nm` (30) / `gps_jamming_miss_radius_m` (200)
@@ -8362,9 +8389,11 @@ Files: `game/fourteenth/gps_jamming.py`, `game/dcs/groundunittype.py`,
 `game/missiongenerator/gpsjammingluadata.py`, `game/missiongenerator/luagenerator.py`,
 `game/missiongenerator/kneeboard.py`, `game/settings/settings.py`,
 `resources/plugins/gpsjamming/`, `resources/units/ground_units/GPS_Spoofer_{Red,Blue}.yaml`,
-`resources/layouts/anti_air/Early-Warning_Radar.{yaml,miz}`,
-`resources/groups/GPS-Jamming-Site-{Red,Blue}.yaml`.
-Tests: `tests/fourteenth/test_gps_jamming.py` (39) +
+`resources/layouts/anti_air/GPS_Jamming_Site.{yaml,miz}`,
+`resources/layouts/anti_air/S-300{_Site, Site (Single Radar)}.yaml` + `S-300_Site.miz`,
+`resources/groups/GPS-Jamming-Site-{Red,Blue}.yaml`,
+`resources/groups/SA-20-GPS-Jamming.yaml`, `game/theater/start_generator.py`.
+Tests: `tests/fourteenth/test_gps_jamming.py` (45) +
 `tests/missiongenerator/test_gpsjammingluadata.py` (4) +
 `tests/lua/test_gpsjamming_runtime.py` (12). Design note:
 [`414th-gps-jamming-notes.md`](design/414th-gps-jamming-notes.md). Checklist: **B45**.

@@ -100,7 +100,11 @@ def test_iads_coastal_naval_belt(tmp_path: Path) -> None:
     assert belt["medium_range_sams"] == 4, "forward MERAD screen"
     assert belt["short_range_sams"] == 9, "per-base point defense"
     assert belt["coastal_defenses"] == 5, "coastal anti-ship wall"
-    assert belt["ewrs"] == 5
+    # 5 early-warning sites + the 2 §86 GPS jamming sites, which are authored as
+    # EWR-BAND markers (the GPS Jamming Site preset is EarlyWarningRadar-tasked --
+    # the one air-defence role MANTIS never holds dark, which is what keeps the
+    # site's radar emitting so it stays on RWR and HARM-able all mission).
+    assert belt["ewrs"] == 7, "5 EWRs + 2 GPS jamming sites"
     assert belt["missile_sites"] == 1, "coastal SS-26 (SCUD hunt)"
     assert belt["ships"] == 3, "Baltic Fleet SAG"
     # advanced-IADS C2 cells (one trio per red hub).

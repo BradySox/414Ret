@@ -58,6 +58,11 @@ line below it are the retired Fuel Ladder page, folded in where you actually rea
 Package flights, the radio ladder, AWACS/tanker/JTAC, and the departure/arrival airfield rows. The
 colour-keyed **code words** block rides here.
 
+The top row of that table is **your own flight on its intra-flight channel** — the people directly
+flying with you — which is why it reads **`Flight`** rather than a callsign, and why it sits on a
+different channel (COMM1) from the rest of the package (COMM2). Give the flight a **custom name**
+in the ATO and that name replaces `Flight` here.
+
 ![The Support Info kneeboard page: the package's flights with callsigns, tasks, types and radio channels, a colour-keyed code-words block, then AEW&C and tanker tables with frequencies, TACAN and time on station](https://raw.githubusercontent.com/bradyccox/414Ret/main/docs/wiki/img/kneeboard-support-info.png)
 
 *The same flight's Support Info page. Every other flight in the package with its channel, the

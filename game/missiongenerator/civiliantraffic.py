@@ -8,25 +8,39 @@ surface (the recurring ``woCharacterHuman`` / GermanyCW-FARP sim crashes came fr
 RAT resolving an unresolvable *heliport id* and spawning a malformed unit, which is
 why the rotary layer had to be disabled entirely).
 
-Here the campaign engine -- which already knows every airfield, its coalition and
-position, and the front line -- plans the routes itself. The geometry (neutral pool,
-front keep-out, reachable-neighbour pairing, multi-leg chaining, density) is ordinary
-Python that CI can test instead of "fly it and hope".
+**Revisited 2026-08-05 and RAT stays retired.** It was reopened as "I think RAT is
+the real answer" and closed the other way in the same conversation, for two reasons
+worth keeping written down: RAT was never cut on taste (it crashed the sim, above),
+and it does not fix what is actually wrong. Pressed on the symptom, the DM named the
+two real issues as **civil identity** and **airways vs milk runs** -- RAT addresses
+neither (it would not make an An-26 read as an airliner), and its one genuine
+differentiator, ATC / living airfield, was explicitly not among the complaints.
 
-Design (see PR discussion):
-- **Multi-leg milk runs.** Each civilian flies a chain of short rear-area legs and
-  lands at the end, so it stays airborne ~1-1.5 h and a *staggered* fleet keeps the
-  map occupied across a long (2 h) mission **without any respawn loop** -- the respawn
-  churn was the other RAT crash path.
-- **Hybrid spawn.** A few high-cruising heavies **air-start** at t=0 for instant
-  presence (at altitude, where pop-in is unobtrusive and terrain-safe); everything
-  else -- all helos and light props -- **ground/runway-starts** at a neutral airdrome
-  and climbs out for real (no pop-in). Crucially this is *not* RAT: a plain pydcs
-  ground-start at a real airdrome is what the old template code did safely; the crash
-  was RAT cloning onto *heliports*, which never happens here.
-- Low flyers (helos, light props) route on **RADIO (AGL) altitude** so they stay low
-  without clipping terrain. Traffic is invisible to AI (never targeted, never affects
-  combat) with weapon-hold ROE, under the neutral coalition.
+So the rebuild stayed here, and fixed those two things:
+
+**1. Civil identity is a data table** -- see ``civilianfleet.py``. The roster used to
+be applied globally, so Antonovs and Hips flew over Nevada and the Marianas; worse,
+modern civil traffic flew over 1944 Normandy. Fleet, operator names and cruise levels
+are now chosen per region.
+
+**2. Airways, not milk runs.** Each civilian used to fly a chain of five short
+rear-area legs and land -- a meander that existed ONLY to keep the aircraft airborne
+long enough to cover a mission without a respawn loop. Real civil traffic flies
+straight, high, and across. Routes are now single long transits at a realistic
+flight level, which is cheaper, more realistic, terrain-safe by construction, and
+almost certainly fixes the third complaint ("too little / it disappears") on its own:
+low-level traffic pottering between rear fields is *invisible* to a player at
+altitude, so the felt sparsity was substantially a visibility problem.
+
+**Why the endpoint pool could safely widen.** The old code drew endpoints only from
+airfields Retribution does not control, which collapses the pool on maps where the
+engine owns everything. For an *overflight* the endpoints are only direction anchors
+-- the aircraft air-starts en route at cruise and never touches either one -- so the
+neutral pool is now a preference rather than a hard requirement, with any airfield
+used as a fallback when too few neutral ones exist to draw a transit.
+
+Traffic remains invisible to AI (never targeted, never affects combat) with
+weapon-hold ROE, under the neutral coalition.
 """
 
 from __future__ import annotations
@@ -37,10 +51,8 @@ import random
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Optional, Sequence, Type
 
-from dcs.helicopters import Mi_8MT, Mi_26, SA342M, UH_1H
 from dcs.mapping import Point
 from dcs.mission import StartType
-from dcs.planes import An_26B, An_30M, C_130, IL_76MD, Yak_40, Yak_52
 from dcs.task import OptROE, SetInvisibleCommand
 from dcs.unittype import FlyingType, ShipType
 
@@ -53,6 +65,8 @@ from pydcs_extensions.vietnamwarvessels.vietnamwarvessels import (
     vwv_sampan_open_box,
 )
 
+from .civilianfleet import CRUISE_PROFILE, CivilRegion, region_for
+
 if TYPE_CHECKING:
     from dcs.country import Country
     from dcs.mission import Mission
@@ -61,69 +75,29 @@ if TYPE_CHECKING:
 
 # ── Routing knobs ─────────────────────────────────────────────────────────────
 KEEPOUT_M = 75_000  # ~40 NM bubble around each active front; civilians avoid it.
-FW_MAXDIST_M = 280_000  # fixed-wing per-leg cap (~150 NM)
-HELO_MAXDIST_M = 130_000  # rotary per-leg cap (~70 NM)
+#: An airway has to actually cross something to read as a transit rather than a hop.
+MIN_TRANSIT_M = 150_000  # ~80 NM
+#: Rotary traffic is local by nature -- a helicopter does not fly an airway.
+HELO_MAXDIST_M = 130_000  # ~70 NM
 STRAY_CHANCE = 0.08  # chance a field inside the keep-out is kept anyway
-# Ground departures are spread across this window so a multi-leg fleet keeps the map
-# occupied through a long mission (each flight is airborne ~1-1.5 h).
+#: Departures are spread across this window so the sky fills over the mission rather
+#: than all at once.
 STAGGER_WINDOW_S = 6_600  # 110 min
-FW_LEGS = 5  # legs per fixed-wing milk run
-HELO_LEGS = 4  # legs per rotary milk run
-AIR_START_PER_TYPE = 1  # heavies air-started at t=0 for instant presence
-# Only types cruising at/above this MSL altitude are eligible to air-start (so the
-# pop-in is high and terrain-safe); everything lower ground-starts and climbs.
+#: Most airway traffic air-starts at cruise: pop-in at FL200+ is unobtrusive and
+#: terrain-safe, and it means transits exist from mission start instead of taking an
+#: hour to climb into view. A few ground-start so departures are visible too.
+AIR_START_FRACTION = 0.7
+#: Only types cruising at/above this MSL altitude may air-start.
 AIR_START_MIN_ALT_M = 3_000
 
-# Per aircraft type: (altitude, speed m/s, radio_alt). ``radio_alt`` flies the route
-# on AGL altitude (low flyers stay low without clipping terrain); heavies cruise on
-# barometric/MSL altitude where the value is high enough to clear rear-area terrain.
-_PROFILE: dict[Type[FlyingType], tuple[int, int, bool]] = {
-    C_130: (5_000, 140, False),
-    An_26B: (5_000, 120, False),
-    Yak_40: (6_000, 150, False),  # civilian regional trijet; air-start-eligible cruiser
-    Yak_52: (400, 50, True),
-    # Variety pass (2026-07-05, from the installed-inventory audit): more vanilla
-    # base-game silhouettes so a long mission doesn't cycle the same four shapes.
-    IL_76MD: (7_000, 190, False),  # heavy freighter; air-start-eligible cruiser
-    An_30M: (4_500, 120, False),  # survey/mapping turboprop
-    Mi_8MT: (200, 50, True),
-    UH_1H: (200, 50, True),
-    SA342M: (250, 55, True),
-    Mi_26: (250, 55, True),  # heavy-lift helo, low and slow like the rest
-}
-FW_TYPES: tuple[Type[FlyingType], ...] = (
-    C_130,
-    An_26B,
-    Yak_40,
-    Yak_52,
-    IL_76MD,
-    An_30M,
-)
-HELO_TYPES: tuple[Type[FlyingType], ...] = (Mi_8MT, UH_1H, SA342M, Mi_26)
-
-# ── Naval civilian traffic (Sampans/Junks) ──────────────────────────────────────
-# Only spawned when the campaign's faction requirements call for Vietnam War Vessels
-# (see _faction_requires_vwv) -- these hulls don't exist outside that mod. Real-world
-# top speed for both hull families is ~1-2 m/s, so unlike the air milk runs these never
-# leave the immediate vicinity of their anchor; a tight loiter near a known-water point
-# (a carrier/LHA control point) is realistic and avoids needing real water pathfinding.
-NAVAL_TYPES: tuple[Type[ShipType], ...] = (
-    vwv_junk,
-    vwv_sampan_open,
-    vwv_sampan_canopy,
-    vwv_sampan_covered,
-    vwv_sampan_covered_ak47,
-    vwv_sampan_open_box,
-)
-NAVAL_SPEED_MS = 1.5  # matches the mod's own ~1-2 m/s hull speeds
-NAVAL_LOITER_RADIUS_M = 1_500  # tight loiter around the anchor
-NAVAL_LOITER_LEGS = 3  # waypoints in the loiter chain, excluding the anchor itself
-NAVAL_PER_ANCHOR = (1, 2)  # min/max boats spawned per coastal anchor
+FLEET_DENSITY = (1, 3)  # per fixed-wing type, scaled by pool size
+HELO_DENSITY = (1, 2)
+HELO_LEGS = 2  # a short local hop, not a meander
 
 
 @dataclass(frozen=True)
 class _Field:
-    """A neutral airfield available as a civilian route endpoint."""
+    """An airfield usable as a civilian route endpoint."""
 
     name: str
     point: Point
@@ -131,17 +105,18 @@ class _Field:
 
 @dataclass(frozen=True)
 class CivilianRoute:
-    """One planned civilian flight: a chain of neutral fields it flies and lands at."""
+    """One planned civilian flight."""
 
     aircraft_type: Type[FlyingType]
     chain: tuple[_Field, ...]  # >= 2 fields; [0] is departure, [-1] is landing
     air_start: bool
-    air_start_point: Optional[Point]  # set iff air_start (partway into the first leg)
+    air_start_point: Optional[Point]  # set iff air_start (partway along the route)
     altitude_m: int
     speed_ms: int
     radio_alt: bool
     start_time_s: int
     is_helo: bool
+    callsign: str  # the operator + flight number the map shows
 
 
 def _neutral_country(mission: "Mission") -> "Optional[Country]":
@@ -195,32 +170,165 @@ def density(pool_size: int, lo: int, hi: int) -> int:
     return max(lo, min(hi, n))
 
 
-def _neighbours(field: _Field, pool: Sequence[_Field], cap2: float) -> list[_Field]:
-    return [b for b in pool if b is not field and _dist2(field.point, b.point) <= cap2]
+def airway_pairs(pool: Sequence[_Field], min_transit_m: float) -> list[tuple[int, int]]:
+    """Index pairs far enough apart to be a transit rather than a local hop.
+
+    This is the whole of "airways, not milk runs": instead of walking a chain of short
+    reachable legs, pick two endpoints that are genuinely distant and fly the straight
+    line between them.
+    """
+    min2 = min_transit_m * min_transit_m
+    return [
+        (i, j)
+        for i in range(len(pool))
+        for j in range(i + 1, len(pool))
+        if _dist2(pool[i].point, pool[j].point) >= min2
+    ]
 
 
-def build_chain(
-    start: _Field,
+def _flight_number(rng: random.Random) -> int:
+    return rng.randint(100, 999)
+
+
+def plan_airways(
     pool: Sequence[_Field],
-    cap_m: float,
-    n_legs: int,
+    region: CivilRegion,
+    per_type: tuple[int, int],
     rng: random.Random,
-) -> tuple[_Field, ...]:
-    """Walk a path of up to ``n_legs`` legs through the reachable graph, never
-    immediately doubling back, so the route is a meandering regional milk run whose
-    every leg is within the cap (and therefore stays in the rear)."""
+    min_transit_m: float = MIN_TRANSIT_M,
+) -> list[CivilianRoute]:
+    """Plan the fixed-wing overflight layer: straight, high, long transits.
+
+    Falls back to the longest pairs available when no pair clears ``min_transit_m``
+    (a small map, or a heavily pruned pool), so a cramped theatre still gets traffic
+    rather than silently getting none.
+    """
+    if len(pool) < 2 or not region.fleet:
+        return []
+
+    pairs = airway_pairs(pool, min_transit_m)
+    if not pairs:
+        # No true transit available -- take the longest legs the map can offer.
+        pairs = sorted(
+            ((i, j) for i in range(len(pool)) for j in range(i + 1, len(pool))),
+            key=lambda p: _dist2(pool[p[0]].point, pool[p[1]].point),
+            reverse=True,
+        )[:8]
+    if not pairs:
+        return []
+
+    count = density(len(pool), *per_type)
+    routes: list[CivilianRoute] = []
+    for aircraft_type in region.fleet:
+        profile = CRUISE_PROFILE.get(aircraft_type)
+        if profile is None:
+            continue
+        altitude_m, speed_ms, radio_alt = profile
+        air_eligible = altitude_m >= AIR_START_MIN_ALT_M and not radio_alt
+        for _ in range(count):
+            i, j = rng.choice(pairs)
+            start, end = pool[i], pool[j]
+            if rng.random() < 0.5:  # fly the airway in either direction
+                start, end = end, start
+
+            air = air_eligible and rng.random() < AIR_START_FRACTION
+            air_point: Optional[Point] = None
+            start_time = 0
+            if air:
+                # Somewhere along the transit, so a fleet is spread down the airway
+                # instead of stacked over one field.
+                frac = rng.uniform(0.15, 0.85)
+                a, b = start.point, end.point
+                air_point = Point(
+                    a.x + (b.x - a.x) * frac,
+                    a.y + (b.y - a.y) * frac,
+                    a._terrain,
+                )
+            else:
+                start_time = rng.randint(0, STAGGER_WINDOW_S)
+
+            operator = rng.choice(region.operators) if region.operators else "CIVIL"
+            routes.append(
+                CivilianRoute(
+                    aircraft_type=aircraft_type,
+                    chain=(start, end),
+                    air_start=air,
+                    air_start_point=air_point,
+                    altitude_m=altitude_m,
+                    speed_ms=speed_ms,
+                    radio_alt=radio_alt,
+                    start_time_s=start_time,
+                    is_helo=False,
+                    callsign=f"{operator} {_flight_number(rng)}",
+                )
+            )
+    return routes
+
+
+def plan_local_rotary(
+    pool: Sequence[_Field],
+    region: CivilRegion,
+    per_type: tuple[int, int],
+    rng: random.Random,
+    cap_m: float = HELO_MAXDIST_M,
+) -> list[CivilianRoute]:
+    """Plan the rotary layer: short local hops, low and on AGL.
+
+    Helicopters deliberately do NOT fly airways -- local work between nearby fields is
+    what civil rotary traffic actually is, so the milk-run rewrite does not apply here.
+    """
+    reachable = prune_to_reachable(pool, cap_m)
+    if len(reachable) < 2 or not region.helos:
+        return []
+
     cap2 = cap_m * cap_m
-    chain: list[_Field] = [start]
-    previous: Optional[_Field] = None
-    current = start
-    for _ in range(n_legs):
-        options = [n for n in _neighbours(current, pool, cap2) if n is not previous]
-        if not options:
-            break
-        nxt = rng.choice(options)
-        chain.append(nxt)
-        previous, current = current, nxt
-    return tuple(chain)
+    count = density(len(reachable), *per_type)
+    routes: list[CivilianRoute] = []
+    for aircraft_type in region.helos:
+        profile = CRUISE_PROFILE.get(aircraft_type)
+        if profile is None:
+            continue
+        altitude_m, speed_ms, radio_alt = profile
+        for _ in range(count):
+            start = rng.choice(reachable)
+            options = [
+                f
+                for f in reachable
+                if f is not start and _dist2(start.point, f.point) <= cap2
+            ]
+            if not options:
+                continue
+            chain = [start]
+            current = start
+            for _ in range(HELO_LEGS):
+                nxt = [
+                    f
+                    for f in reachable
+                    if f is not current and _dist2(current.point, f.point) <= cap2
+                ]
+                if not nxt:
+                    break
+                current = rng.choice(nxt)
+                chain.append(current)
+            if len(chain) < 2:
+                continue
+
+            operator = rng.choice(region.operators) if region.operators else "CIVIL"
+            routes.append(
+                CivilianRoute(
+                    aircraft_type=aircraft_type,
+                    chain=tuple(chain),
+                    air_start=False,
+                    air_start_point=None,
+                    altitude_m=altitude_m,
+                    speed_ms=speed_ms,
+                    radio_alt=radio_alt,
+                    start_time_s=rng.randint(0, STAGGER_WINDOW_S),
+                    is_helo=True,
+                    callsign=f"{operator} {_flight_number(rng)}",
+                )
+            )
+    return routes
 
 
 def loiter_chain(
@@ -243,59 +351,6 @@ def loiter_chain(
     return tuple(points)
 
 
-def plan_routes(
-    pool: Sequence[_Field],
-    cap_m: float,
-    types: Sequence[Type[FlyingType]],
-    per_type: tuple[int, int],
-    n_legs: int,
-    air_start_per_type: int,
-    rng: random.Random,
-) -> list[CivilianRoute]:
-    """Plan one traffic layer: for each aircraft type, a density-scaled number of
-    multi-leg milk runs. The first ``air_start_per_type`` of an air-start-eligible
-    type (high cruiser) air-start at t=0; the rest ground-start, staggered."""
-    reachable = prune_to_reachable(pool, cap_m)
-    if len(reachable) < 2:
-        return []
-    count = density(len(reachable), *per_type)
-    routes: list[CivilianRoute] = []
-    for aircraft_type in types:
-        altitude_m, speed_ms, radio_alt = _PROFILE[aircraft_type]
-        air_eligible = altitude_m >= AIR_START_MIN_ALT_M and not radio_alt
-        for i in range(count):
-            chain = build_chain(rng.choice(reachable), reachable, cap_m, n_legs, rng)
-            if len(chain) < 2:
-                continue
-            air = air_eligible and i < air_start_per_type
-            air_point: Optional[Point] = None
-            start_time = 0
-            if air:
-                frac = rng.uniform(0.25, 0.75)
-                a, b = chain[0].point, chain[1].point
-                air_point = Point(
-                    a.x + (b.x - a.x) * frac,
-                    a.y + (b.y - a.y) * frac,
-                    a._terrain,
-                )
-            else:
-                start_time = rng.randint(0, STAGGER_WINDOW_S)
-            routes.append(
-                CivilianRoute(
-                    aircraft_type=aircraft_type,
-                    chain=chain,
-                    air_start=air,
-                    air_start_point=air_point,
-                    altitude_m=altitude_m,
-                    speed_ms=speed_ms,
-                    radio_alt=radio_alt,
-                    start_time_s=start_time,
-                    is_helo=bool(aircraft_type.helicopter),
-                )
-            )
-    return routes
-
-
 class CivilianTrafficGenerator:
     """Plans and spawns the civilian background-traffic layer into the mission."""
 
@@ -306,10 +361,19 @@ class CivilianTrafficGenerator:
         self.game = game
         self.rng = rng or random.Random()
 
-    def neutral_fields(self) -> list[_Field]:
-        """Every map airfield Retribution does not control, admitted past the front
-        keep-out. The campaign owns the front line, so this is computed here rather
-        than re-derived at runtime in Lua."""
+    def region(self) -> CivilRegion:
+        return region_for(getattr(self.mission.terrain, "name", ""))
+
+    def route_fields(self) -> list[_Field]:
+        """Airfields usable as route endpoints, admitted past the front keep-out.
+
+        Prefers airfields Retribution does not control -- a civil flight plan should
+        not read as using an active military base -- but falls back to every admitted
+        airfield when too few neutral ones remain to draw a transit. That fallback is
+        the fix for maps where the engine owns nearly every field and the neutral pool
+        collapsed to nothing; for an overflight the endpoints are only direction
+        anchors, since the aircraft air-starts en route and never touches either.
+        """
         controlled = {
             cp.dcs_airport.name
             for cp in self.game.theater.controlpoints
@@ -319,13 +383,16 @@ class CivilianTrafficGenerator:
             Point(front.position.x, front.position.y, self.mission.terrain)
             for front in self.game.theater.conflicts()
         ]
-        fields: list[_Field] = []
+        neutral: list[_Field] = []
+        every: list[_Field] = []
         for name, airport in self.mission.terrain.airports.items():
-            if name in controlled:
+            if not admit_field(airport.position, fronts, self.rng):
                 continue
-            if admit_field(airport.position, fronts, self.rng):
-                fields.append(_Field(name=name, point=airport.position))
-        return fields
+            field = _Field(name=name, point=airport.position)
+            every.append(field)
+            if name not in controlled:
+                neutral.append(field)
+        return neutral if len(neutral) >= 2 else every
 
     def _neutral_country(self) -> "Optional[Country]":
         return _neutral_country(self.mission)
@@ -334,29 +401,38 @@ class CivilianTrafficGenerator:
         if not self.game.settings.civilian_air_traffic:
             logging.info("Civilian air traffic disabled by settings")
             return
+        region = self.region()
+        if not region.fleet and not region.helos:
+            # A theatre with no plausible civil traffic (the WWII maps). Deliberate.
+            logging.info(
+                "Civilian air traffic: no civil fleet for this theatre — skipping"
+            )
+            return
         country = self._neutral_country()
         if country is None:
             logging.warning("No neutral country available — skipping civilian traffic")
             return
 
-        pool = self.neutral_fields()
-        routes = plan_routes(
-            pool, FW_MAXDIST_M, FW_TYPES, (1, 3), FW_LEGS, AIR_START_PER_TYPE, self.rng
-        ) + plan_routes(
-            pool, HELO_MAXDIST_M, HELO_TYPES, (1, 2), HELO_LEGS, 0, self.rng
-        )
+        pool = self.route_fields()
+        routes = plan_airways(
+            pool, region, FLEET_DENSITY, self.rng
+        ) + plan_local_rotary(pool, region, HELO_DENSITY, self.rng)
 
         spawned = sum(
             1 for idx, route in enumerate(routes) if self._spawn(country, idx, route)
         )
         logging.info(
-            "Civilian traffic: %d flights from a %d-field neutral pool",
+            "Civilian traffic: %d flights (%d airway, %d rotary) from a %d-field pool",
             spawned,
+            sum(1 for r in routes if not r.is_helo),
+            sum(1 for r in routes if r.is_helo),
             len(pool),
         )
 
     def _spawn(self, country: "Country", idx: int, route: CivilianRoute) -> bool:
-        name = f"CIV_{route.aircraft_type.id}_{idx}"
+        # The callsign IS the identity a player sees on the F10 map; the index keeps
+        # group names unique when two flights draw the same operator and number.
+        name = f"{route.callsign} [{idx}]"
         try:
             if route.air_start:
                 assert route.air_start_point is not None
@@ -382,7 +458,8 @@ class CivilianTrafficGenerator:
                     group_size=1,
                 )
 
-            # Intermediate legs (the final field is handled by land_at).
+            # Intermediate legs (the final field is handled by land_at). An airway has
+            # none -- that is the point.
             for field in route.chain[1:-1]:
                 waypoint = group.add_waypoint(
                     field.point, route.altitude_m, route.speed_ms
@@ -401,6 +478,26 @@ class CivilianTrafficGenerator:
             logging.exception("Failed to spawn civilian flight %s", name)
             return False
         return True
+
+
+# ── Naval civilian traffic (Sampans/Junks) ──────────────────────────────────────
+# Only spawned when the campaign's faction requirements call for Vietnam War Vessels
+# (see _faction_requires_vwv) -- these hulls don't exist outside that mod. Real-world
+# top speed for both hull families is ~1-2 m/s, so unlike the air transits these never
+# leave the immediate vicinity of their anchor; a tight loiter near a known-water point
+# (a carrier/LHA control point) is realistic and avoids needing real water pathfinding.
+NAVAL_TYPES: tuple[Type[ShipType], ...] = (
+    vwv_junk,
+    vwv_sampan_open,
+    vwv_sampan_canopy,
+    vwv_sampan_covered,
+    vwv_sampan_covered_ak47,
+    vwv_sampan_open_box,
+)
+NAVAL_SPEED_MS = 1.5  # matches the mod's own ~1-2 m/s hull speeds
+NAVAL_LOITER_RADIUS_M = 1_500  # tight loiter around the anchor
+NAVAL_LOITER_LEGS = 3  # waypoints in the loiter chain, excluding the anchor itself
+NAVAL_PER_ANCHOR = (1, 2)  # min/max boats spawned per coastal anchor
 
 
 def _faction_requires_vwv(faction: "Faction") -> bool:

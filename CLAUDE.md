@@ -1040,10 +1040,10 @@ plugins. When a feature has both, the Python side sets up and the Lua side execu
 move runtime logic into the planner or vice versa.
 
 **Plugin script injection (the uniform late-init pass).** Most 414th plugins are normal
-work-order plugins. TIC, TARS, and SCAR additionally need their main script loaded **after**
+work-order plugins. TIC and MooseAtis additionally need their main script loaded **after**
 every plugin's config table exists (their init reads `dcsRetribution.plugins.<name>` / MOOSE
 at file scope) — an ordering the per-plugin work-order pass can't express. They are `LuaPlugin`
-subclasses (`game/plugins/{tic,tars,scar}.py`, registered in `manager.py`'s `_PLUGIN_CLASSES`)
+subclasses (`game/plugins/{tic,mooseatis}.py`, registered in `manager.py`'s `_PLUGIN_CLASSES`)
 declaring `late_init_files()` / `late_init_preamble()` / `should_late_init()`; `inject_plugins()`
 runs a **second pass** that calls `inject_late_init()` on each after the normal config pass. A
 missing/renamed init file is now caught by a test (`game/plugins/tests/test_late_init.py`)
@@ -2274,8 +2274,15 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     registered yaml and a test pinning the two in lockstep — so the next finding is a data edit,
     not a code change. The give-up log now also **names the unit types**
     (`giving up on <group> [CH_CJ10, CH_SX2190]`), which is what makes the next flown mission
-    conclusive: **`CH_IskanderM`/`CH_IskanderK`/`CH_DF21D`/`CH_YJ12B` have never been established
-    either way** (Baltic Fury's Iskander battery is the cheapest test).
+    conclusive: **`CHAP_9K720_HE`/`CHAP_9K720_Cluster`/`CH_IskanderK`/`CH_DF21D`/`CH_YJ12B` have
+    never been established either way** (Baltic Fury's Iskander battery is the cheapest test).
+    **`v1_launcher` joined the exclusion 2026-08-06 without a Tacview** — a 1944 launch ramp is a
+    poured emplacement of exactly the `hy_launcher` shape, and `class: Missile` puts it in this
+    emitter's category with the setting defaulting ON, so it was a latent ANTIFREEZE waiting for
+    the first WWII campaign to author a missile marker (none does today). Note the Iskander-M is
+    tested as **`CHAP_9K720_*`**: `CH_IskanderM.yaml` is a **tombstone that no longer registers**
+    (ED integrated the CurrentHill system into base DCS under the `CHAP_` ids), and three factions
+    still carry its dead display name alongside the live pair.
     The same flown test drove the
     **no-front support-orbit fix** (a front-less naval map marched red's A-50 200 NM AWAY from the
     fleet — `support_orbit_anchor` now skips the AI depth march with no FLOT; features doc §8-adjacent

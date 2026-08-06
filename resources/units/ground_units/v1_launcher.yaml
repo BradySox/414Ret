@@ -1,5 +1,15 @@
 # A 1944 launch ramp: cheap, fixed, and inaccurate by design.
 price: 20
+# §49: a launch ramp is a poured emplacement, not a vehicle -- the same shape as
+# `hy_launcher`, whose flown evidence is recorded in its own yaml (0 m of movement
+# plus a per-frame ground-AI levelling storm). Flagged on the hardware rather than
+# on a Tacview because the class is unambiguous: `class: Missile` puts a V-1 site in
+# the §49 emitter's category, and `mobile_missile_relocation` defaults ON, so the
+# first campaign to author a missile marker on a WWII map would have inherited the
+# Silkworm's ANTIFREEZE. No shipped campaign generates one today (germany_1944 is
+# the only faction fielding it, and neither of its campaigns authors a marker), so
+# this closes a latent trap rather than fixing an observed one.
+mobile: false
 class: Missile
 variants:
   V-1 Launch Ramp: null

@@ -3775,16 +3775,16 @@ class Settings:
         new_state.update(migrated_state)
         self.__dict__.update(new_state)
 
-        # One-time migration: the TARS plugin ships enabled by default, but a save
-        # created before it existed (or before it was flipped to default-on) can
-        # have it recorded as off. Force it on once for such saves. Keyed on the
-        # marker being absent from the *raw* unpickled state, so an already-migrated
-        # save or a new campaign that has deliberately turned it off is never
-        # re-stomped. (The retired Flight Control plugin was also flipped here; its
-        # dead option keys are pruned below.)
-        if "applied_recon_plugins_default" not in state:
-            for plugin_id in ("tars",):
-                self.set_plugin_option(plugin_id, True)
+        # This used to force the TARS plugin on once for saves predating it. Both
+        # recon plugins it covered ("tars", "airecon") were retired on 2026-08-05
+        # when MOOSE Ops.TARS was cut, so the force-enable had become a write of a
+        # dead key that nothing reads (`LuaPluginManager.load_settings` iterates
+        # plugins.json, never the saved keys). Its successor needs no migration: a
+        # pre-retirement save carries no "recon" key at all, so the plugin falls
+        # back to its own `defaultValue: true`, and a save that deliberately turned
+        # recon off must keep it off. The marker is still stamped so the meaning of
+        # its absence stays stable for any future recon-plugin migration; the dead
+        # option keys are pruned below.
         self.applied_recon_plugins_default = True
 
         # Drop retired plugin option keys so dead configuration does not persist
@@ -3800,12 +3800,19 @@ class Settings:
         # FLIGHTCONTROL ATC plugin was retired as a half-baked feature. The "arty"
         # (CG ArtySpotter) and "artymbot" (Mbot Call-Artillery) player fire-support
         # scripts were retired as unused: both had been silently dropped from the
-        # active plugin list and their directories are now removed.
+        # active plugin list and their directories are now removed. The "tars"
+        # (MOOSE Ops.TARS) and "airecon" plugins were retired on 2026-08-05 when the
+        # two split recon implementations were replaced by the single "recon" plugin
+        # (§12); a save made before that still carries their keys.
         for plugin_key in [
             key
             for key in self.plugins
             if key == "herculescargo"
             or key.startswith("herculescargo.")
+            or key == "tars"
+            or key.startswith("tars.")
+            or key == "airecon"
+            or key.startswith("airecon.")
             or key == "ewrj"
             or key.startswith("ewrj.")
             or key == "dismounts"

@@ -6,10 +6,10 @@ plugins. When a feature has both, the Python side sets up and the Lua side execu
 move runtime logic into the planner or vice versa.
 
 **Plugin script injection (the uniform late-init pass).** Most 414th plugins are normal
-work-order plugins. TIC, TARS, and MooseAtis additionally need their main script loaded **after**
+work-order plugins. TIC and MooseAtis additionally need their main script loaded **after**
 every plugin's config table exists (their init reads `dcsRetribution.plugins.<name>` / MOOSE
 at file scope) — an ordering the per-plugin work-order pass can't express. They are `LuaPlugin`
-subclasses (`game/plugins/{tic,tars,mooseatis}.py`, registered in `manager.py`'s `_PLUGIN_CLASSES`)
+subclasses (`game/plugins/{tic,mooseatis}.py`, registered in `manager.py`'s `_PLUGIN_CLASSES`)
 declaring `late_init_files()` / `late_init_preamble()` / `should_late_init()`; `inject_plugins()`
 runs a **second pass** that calls `inject_late_init()` on each after the normal config pass. A
 missing/renamed init file is now caught by a test (`game/plugins/tests/test_late_init.py`)
@@ -84,7 +84,9 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
    414th ambient-fire extension (plugin, default ON).
 10. **CurrentHill Iran assets pack** — Shahed-136, IRGCN FAC, `[CH] Iran 2020` faction.
 11. **Native DCS DTC cartridge export** — RETIRED (2026-06-26): half-baked; removed.
-12. **TARS recon engine** — MOOSE Ops.TARS runtime for TARPS, feeds confirmed BDA (default ON).
+12. **Recon engine** — the `recon` plugin: one geometric capture rule for player AND AI recon,
+    sensor/altitude/weather-shaped, feeding confirmed BDA (default ON). MOOSE `Ops.TARS` was
+    cut 2026-08-05.
 13. **Flight Control ATC** — RETIRED (2026-06-26): half-baked; removed.
 14. **Plugin Options UI** — `descriptionInUI` field + label/default polish across all plugins.
 15. **SCAR** — player-flown Strike Coordination and Reconnaissance against a moving HVT

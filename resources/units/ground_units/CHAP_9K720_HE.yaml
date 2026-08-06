@@ -6,7 +6,9 @@ description: "The 9K720 Iskander (Russian: \xD0\x98\xD1\x81\xD0\xBA\xD0\xB0\xD0\
 introduced: 2006
 manufacturer: Votkinsk Plant State Production Association
 origin: Russia
-# Same system as CH_IskanderM -- keep the two priced identically.
+# The live Iskander-M registration (ED integrated the CurrentHill system into base
+# DCS as CHAP_9K720_*; CH_IskanderM.yaml is a tombstone that no longer registers).
+# Keep this and CHAP_9K720_Cluster priced identically -- same system, same TEL.
 price: 70
 variants:
   "SRBM 9K720 Iskander HE [CH]": null

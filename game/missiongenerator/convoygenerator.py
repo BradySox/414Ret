@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import itertools
 import logging
-from typing import TYPE_CHECKING, List
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, List, Optional, Tuple
 
 from dcs import Mission
 from dcs.mapping import Point
@@ -38,6 +39,21 @@ MAX_SPAWN_WALK_M = 5000.0
 
 #: Sampling interval used while walking the route out of the keep-out circle.
 SPAWN_WALK_STEP_M = 50.0
+
+
+@dataclass(frozen=True)
+class SpawnPlan:
+    """How a convoy is laid out at mission start."""
+
+    #: Where the lead vehicle parks.
+    position: Point
+
+    #: The authored spawn chain to lay the rest of the convoy along, if any.
+    spawns: Optional[Tuple[Point, ...]]
+
+    #: Whether ``position`` had to be walked clear of the origin's runway. When it
+    #: was, the authored start is no longer a waypoint the convoy should drive to.
+    cleared: bool
 
 
 class ConvoyGenerator:
@@ -98,13 +114,37 @@ class ConvoyGenerator:
             last = waypoint
         return start
 
-    def generate_convoy(self, convoy: Convoy) -> VehicleGroup:
-        spawns_tuple = convoy.origin.convoy_spawns.get(convoy.destination)
+    def spawn_plan(self, convoy: Convoy) -> SpawnPlan:
+        """Where the convoy parks, and whether its authored chain survives.
 
-        # An authored spawn chain positions every unit after the lead explicitly;
-        # moving only the lead would strand it ahead of the rest, so respect the
-        # author's placement wholesale.
-        position = convoy.route_start if spawns_tuple else self.spawn_position(convoy)
+        An authored spawn chain positions every unit after the lead explicitly;
+        moving only the lead would strand it ahead of the rest, so the author's
+        placement is respected wholesale -- unless the chain itself begins on the
+        runway. It is built by interpolating *from the route's endpoint*, so a
+        route authored on the airfield reference point yields a chain whose lead
+        vehicle parks on the runway however well the marker was placed. Clearing
+        the field wins over honoring the chain.
+        """
+        spawns = convoy.origin.convoy_spawns.get(convoy.destination)
+        position = self.spawn_position(convoy)
+        cleared = position.distance_to_point(convoy.route_start) > 0
+        if spawns and cleared:
+            logging.warning(
+                "%s's spawn chain at %s begins on the runway; spawning the convoy "
+                "clear of the field instead",
+                convoy.name,
+                convoy.origin.name,
+            )
+            return SpawnPlan(position, None, True)
+        if spawns:
+            return SpawnPlan(convoy.route_start, spawns, False)
+        return SpawnPlan(position, None, cleared)
+
+    def generate_convoy(self, convoy: Convoy) -> VehicleGroup:
+        plan = self.spawn_plan(convoy)
+        position = plan.position
+        spawns_tuple = plan.spawns
+        cleared = plan.cleared
 
         group = self._create_mixed_unit_group(
             convoy.name,
@@ -136,7 +176,10 @@ class ConvoyGenerator:
         wpts: List[Point] = []
         route = convoy.origin.convoy_route_to(convoy.destination)
         if self.game.settings.convoys_travel_full_distance:
-            wpts.extend(route)
+            # When the spawn was walked clear of the runway, the authored start is
+            # the point we just moved away from -- keeping it as the first waypoint
+            # would drive the convoy straight back onto it.
+            wpts.extend(route[1:] if cleared else route)
         else:
             # convoys_travel_full_distance is disabled, so have the convoy only move the
             # first segment on the route. This option aims to remove long routes for

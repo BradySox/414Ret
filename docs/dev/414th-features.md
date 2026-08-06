@@ -1648,9 +1648,11 @@ behavior, so it's an upstream-PR candidate. Tests: `tests/test_dead_planning.py`
   departing convoy on the runway. Confirmed in the flown miz: `Convoy 001` (3 vehicles) at
   0.3 m from the Bremen reference and `Convoy 002` at 0.4 m from Nordholz. The de-stack
   mechanism that would otherwise have saved it — miz-authored cp-convoy spawn markers
-  (`M1043_HMMWV_Armament` groups → `MizCampaignLoader._construct_cp_spawnpoints`) — is
-  authored by **0 of 72** campaign mizzes, so `_find_closest_cp_spawn` returns nothing and
-  every unit piles onto waypoint 0. `ConvoyGenerator.spawn_position` now walks the spawn out
+  (`M1043_HMMWV_Armament` groups → `MizCampaignLoader._construct_cp_spawnpoints`) — was not
+  authored anywhere near Bremen or Nordholz, so `_find_closest_cp_spawn` returned nothing and
+  every unit piled onto waypoint 0. (**The "0 of 72 campaigns" claim originally written here
+  was wrong** — 26 campaigns author them; see the 2026-08-06 entry below, where that error is
+  what let the bug survive its own fix.) `ConvoyGenerator.spawn_position` now walks the spawn out
   along the **authored corridor** (never off it) to the first point ≥
   `AIRFIELD_SPAWN_CLEARANCE_M` (1500 m — clears a runway half-length plus aprons while keeping
   the convoy at the base, still BAI-targetable and inside its defensive umbrella) that is also
@@ -1666,6 +1668,48 @@ behavior, so it's an upstream-PR candidate. Tests: `tests/test_dead_planning.py`
   Szczecin references — is fixed in the miz and CI-locked in `tests/fourteenth/test_baltic_fury.py`
   (design note `414th-baltic-fury-campaign-notes.md`). Tests
   `tests/missiongenerator/test_convoy_spawn_clearance.py`.
+- **The runway guard's two escape hatches (2026-08-06, the flown Caucasus - Slava Ukraini report
+  "tanks drove on the runway and broke the AI taking off").** Eight T-80UDs (`Convoy 001`) spawned
+  with their lead vehicle **on Anapa-Vityazevo's airport reference point**, strung 214 m across
+  runway 22, while eight AI flights (~24 aircraft, all `TakeOffParkingHot`) taxied out. The
+  2026-08-02 guard above was present in the running build and **never executed**, because
+  `generate_convoy` reads `position = convoy.route_start if spawns_tuple else spawn_position(...)`
+  — an authored spawn chain is respected wholesale — and this route had one. Three defects, all
+  needed:
+  1. **`_find_closest_cp_spawn` had no distance bound.** It returned the nearest
+     `M1043 HMMWV Armament` marker *anywhere on the map*. Slava Ukraini authors 6, all serving
+     other routes; the nearest to Anapa (`Ground-42`, **9.4 km** away) belongs to the Anapa→Maykop
+     front route heading the opposite way. `_interpolate_points` builds its chain **starting at
+     the route's endpoint** and interpolating toward the marker at 100 ft separation, so it
+     produced **441 points running from the runway** — and the miz confirms the mechanism exactly:
+     unit spacing 30.49 m (= 100 ft) on the precise bearing to `Ground-42`. Measured fork-wide:
+     **388 route endpoints claim a marker, 308 of them within 2 km (legitimate), but 66 from
+     markers 10–447 km away** (Red Tide two at ~171 km, Desert Storm one at 447 km; Novorossiysk's
+     reverse leg drew a **1677-point** chain off the same 185 km marker). New
+     `MizCampaignLoader.MAX_CP_CONVOY_SPAWN_DISTANCE_M` (**5 km** — comfortably covers a large
+     airbase complex, and the measured legit population clusters far below it) drops the claims
+     388 → 322 with a worst remainder of 4 954 m. A dropped chain is not a loss: the convoy falls
+     back to an ordinary group spawn, which the clearance guard then protects.
+  2. **A chain built from the endpoint begins on the runway whenever the route does**, however
+     well the marker was placed. The decision is extracted to `ConvoyGenerator.spawn_plan` →
+     `SpawnPlan(position, spawns, cleared)`, which **discards the chain and clears the field**
+     when the spawn had to be walked out (logged as a warning naming the convoy and field). A
+     *fouled* approach — no clear ground inside the walk budget — keeps the chain instead, since
+     discarding it there would leave the convoy on the runway **and** stacked on one point.
+  3. **`wpts.extend(route)` included `route[0]`.** Even a convoy whose spawn was walked clear had
+     the authored point as its first commanded waypoint, so it drove straight back onto the runway
+     — visible in the flown miz as group waypoint 1 sitting 0.4 m from the reference. The authored
+     start is now skipped when the spawn was cleared (`route[1:]`); an un-cleared convoy keeps the
+     full route byte-identically.
+  Campaign-data half: Slava Ukraini's §50 batch-1 blue rear corridor authored **both** endpoints
+  on airport reference points (`[-5412, 243129]` is Anapa's, `[-40918, 279256]` is Novorossiysk's),
+  so both fields were exposed. Both moved ~2 km down the same corridor; headless-verified that each
+  end still binds its own control point, sits on land, and now carries no spawn chain (441 → 0,
+  1677 → 0) while the legitimate Anapa→Maykop chain (136 points) is preserved. Generation-time, so
+  **existing saves fix themselves on the next regeneration** — no new game. Upstream-shared (the
+  cp-convoy spawn-route feature is upstream's); carve candidate. Tests
+  `tests/campaignloader/test_cp_convoy_spawn_distance.py` (6) +
+  `tests/missiongenerator/test_convoy_spawn_clearance.py` (4 new).
 
 ---
 

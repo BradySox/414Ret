@@ -1,4 +1,5 @@
 class: AntiShipMissile
-price: 0
+# Supersonic 300 km AShM -- the hull-killer of the coastal set.
+price: 70
 variants:
   "[CH] YJ-12B LBASM": null

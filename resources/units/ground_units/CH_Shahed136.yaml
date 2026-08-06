@@ -3,7 +3,8 @@ description: "The Shahed 136 is an Iranian loitering munition optimized for long
 introduced: 2021
 manufacturer: HESA
 origin: Iran
-price: 0
+# Cheap by construction -- the whole point of the airframe is mass at low cost.
+price: 25
 role: Long-Range Land-Attack Missile
 variants:
   "[CH] Shahed 136 LM": {}

@@ -3087,6 +3087,7 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
 
 ### S2 — Mobile missile sites relocate (the SCUD hunt) · §49 · ☑ VERIFIED (2026-07-17 night fly: stagger + immobile-exclusion + give-up all proven live, FPS storm gone; one noted collateral — slow-recovering fired SCUDs can be given up before they finish packing)
 - **Hardware caveat found 2026-08-05 (flown Marianas 2027, Tacviews `Tacview-20260805-190738` + `-203549`): the CurrentHill `CH_CJ10` launcher does not drive, so a site built on it never scoots.** All **nine** launchers across all **three** PLARF sites moved **0.00 km** in both missions — not one metre — while the drivable vehicles sharing those groups (the §85 bowsers ATZ-5/TZ-22/GAZ-66 and the PGZ-09/PGL-625/LD-3000 SHORAD) jittered only 0.05–0.31 km, the signature of a group **pinned by an undrivable member** rather than one that was never routed. `mobile_missile_relocation` + the `mobilemissiles` plugin were both preseeded and `CH_CJ10` was not excluded, so the plugin was pushing routes the whole time. The sites fired 25+ CJ-10s and then sat for the remaining ~25 minutes, i.e. the same post-fire pin already recorded for `CH_Shahed136` — but this hardware fires early every mission, so "pinned after firing" and "never scoots" are the same thing in play. **Fixed by adding `CH_CJ10` to `IMMOBILE_UNIT_IDS`** so the site is never emitted (no futile pushes, no ground-AI churn); `CH_Shahed136` is deliberately NOT excluded because its never-fired sites do drive. **Consequence for T5: Marianas' authored "hunt the launchers" mechanic does not exist** — those three sites are stationary targets, and making them scoot needs launcher hardware DCS will drive.
+- **Which launchers drive is now answerable from `dcs.log` alone (2026-08-06).** The verdict moved into the unit definitions as `mobile: false` (`hy_launcher`, `Silkworm_SR`, `CH_CJ10`, each with its flown evidence in a comment) and the plugin's give-up line now **names the unit types**: `MOBILEMISSILES|: giving up on <group> [CH_CJ10, CH_SX2190] (no movement across 2 route pushes)`. **Still unestablished either way: `CH_IskanderM`, `CH_IskanderK`, `CH_DF21D`, `CH_YJ12B`** — Baltic Fury's Iskander battery is the cheapest test (one site, preseeded). **Fly criterion:** on any campaign with a mod launcher, grep `dcs.log` for `MOBILEMISSILES|: giving up` and record the bracketed types; a type that appears across two missions goes in its yaml as `mobile: false` (a data edit, no code change), a type that never appears drives fine. A group carrying a §85-style support park now also disambiguates the two failure modes by itself: support trucks jittering 0.05–0.31 km while the launchers read 0.00 km is the pinned-by-an-undrivable-member signature.
 - **2026-07-17 night fly (fresh Scenic Route Merged turn 1 on the #631/#632 build, Tacview
   `Tacview-20260717-214932`, session `tacview-test-analysis-5bb161`): all three FPS fixes
   VERIFIED.** (1) **Stagger:** move onsets of the 16 never-fired/scooting sites spread
@@ -3557,3 +3558,40 @@ nothing an RWR or ARM can see, by design (a real GPS jammer is L-band). Confirm:
   scouted — and kill it with bombs.
 - **Killing the jammer trucks restores accuracy** on the very next GPS weapon.
 - Every campaign that does not pin a jamming preset still generates its ordinary sites unchanged.
+
+
+### B47 — Missile battery support section + priced launchers · §85 · ☐ UNTESTED (built 2026-08-06)
+
+**Setup:** a NEW game (the composition is generated at campaign start, so an existing save keeps its
+old three-launchers-and-a-jeep sites). Best coverage in one pass: **Desert Storm** (9 authored Scud
+batteries, the Great Scud Hunt) or **Red Tide** (2, plus the C2 kit its faction rosters). No setting
+— the wiring is layout + unit data.
+
+**Pass criterion:** a missile site renders as a **battery**, not three launchers and a jeep — 3
+launchers + **2 cargo trucks** + a transporter/loader + a fuel bowser + (on Red Tide / Iraq 1991) a
+**ZIL-131 KUNG**, **Ural-375 PBU** or **GCI station** command vehicle, all within ~60 m of the
+launcher line and ≥20 m apart. On USA 2020 the same site reads in NATO kit (M818/M1083 trucks, a
+HEMTT M977 as the loader, an M978 bowser, a Trojan Spirit or fire-control bunker). Germany 1944's
+V-1 site fields an Opel Blitz pair + an Sd.Kfz.7 and **no** bowser or C2 (correct — that faction has
+neither). **The battery still scoots** (§49): the whole group relocates together, support trucks
+included. Killing support units records as ordinary ground losses.
+
+**Second half — the buy menu.** Open a base's ground-object purchase for a missile or coastal site
+and confirm the launchers now **cost money** (Scud-B 40, Iskander-M 70, CJ-10 75, DF-21D 85, Silkworm
+30 …) instead of being free, and that repairing a killed launcher is charged at the same price.
+
+**Fail signatures to watch for:**
+- **The battery stops scooting on a campaign where it used to** — the §49 pin, and the thing to
+  check first. Every support type is supposed to be drivable; `dcs.log` will name the offender
+  (`MOBILEMISSILES|: giving up on <group> [types]`, see S2). This is the one regression this change
+  could plausibly cause.
+- Support vehicles **clipping** a launcher model (spacing is ≥25 m in the template, but only DCS
+  confirms the footprints), or spawning on a slope/in water at a campaign's authored site.
+- A **fuel bowser standing in as the transporter/loader**, or a site that fields a bowser and *no*
+  cargo truck — both are the displacement bug this change fixed, returning.
+- An S-300-style **diesel power station** at a missile site (deliberately excluded — it would pin
+  the scoot; if one appears, the S-300 slots leaked into this layout).
+- **Any campaign's authored missile site having MOVED** from where it sat before — the template
+  anchor must not have shifted (guarded by a test, but the map is the proof).
+- A missile site the AI can no longer afford to rebuild, or an economy visibly distorted by the new
+  prices (they are ~135 for a full SCUD battery against ~230 for an S-300 site).

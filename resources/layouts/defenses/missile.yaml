@@ -4,16 +4,143 @@ tasks:
   - Missile
 groups:
   - Missile:
+    # The launchers. Everything else on this site exists to serve these three.
     - name: ScudGenerator 0
       unit_count:
         - 3
       unit_classes:
         - Missile
+    # 414th (§85): the battery's support section.
+    #
+    # A theatre-missile battery is not three launchers and a jeep, which is what
+    # this layout generated: the real thing (see the 9K720 Iskander's own system
+    # list -- TEL, transporter/loader, command-and-staff vehicle, information
+    # preparation station, maintenance vehicle, life support vehicle) is a small
+    # convoy of trucks around the launchers. DCS models three of those roles with
+    # distinct hardware and the rest with the same cargo truck repeated, so this
+    # section is transport + transload + fuel + command, not a transcription of
+    # the full TO&E.
+    #
+    # Every slot is drivable metal ON PURPOSE. All of these share one DCS group
+    # with the launchers, mist.goRoute routes a group as a whole, and one
+    # undrivable member pins the entire battery (the §49 IMMOBILE_UNIT_IDS
+    # finding) -- so no statics, no trailers, and no power station (a 5I57A is
+    # S-300 kit, and is not in the Iskander's list anyway).
+    #
+    # Slots are optional so a faction that fields none of this simply generates
+    # the site it generated before.
     - name: ScudGenerator 1
+      optional: true
+      unit_count:
+        # 414th: the textbook configuration is THE configuration (the §85 call) --
+        # a fixed pair of cargo trucks, not a 0-2 roll that can leave a bare site.
+        - 2
+      # An explicit truck list rather than `unit_classes: [Logistics]`, because a
+      # class-based slot picks ONE type from a pool that now also holds refuellers
+      # (§85 put bowsers in ten factions' logistics rosters), so the bowser
+      # DISPLACED the cargo truck instead of joining it -- exactly what the flown
+      # Marianas PLARF sites showed. The fuel section below is its own slot, so a
+      # battery now fields both.
+      unit_types:
+        - GAZ-66
+        - GAZ-3307
+        - GAZ-3308
+        - KAMAZ Truck
+        - Ural-375
+        - Ural-4320T
+        - Ural-4320-31
+        - ZIL-4331
+        - KrAZ6322
+        - CH_KrAZ6322
+        - MAZ-6303
+        - CH_SX2190
+        - M 818
+        - CHAP_M1083
+        - CH_MTVR
+        - Land_Rover_101_FC
+        - Blitz_36-6700A
+        - Bedford_MWD
+        - CCKW_353
+        - Type_94_Truck
+      # A faction that hauls with something not on that list still gets its own
+      # trucks (the EWR pattern: prefer the right hardware, never generate empty).
+      fallback_classes:
+        - Logistics
+    # The transporter/loader -- the vehicle that makes a reload possible, and the
+    # one support role with real hardware behind it: the ZIL-135 is the 8x8 that
+    # carries Soviet theatre rockets, the S-75 tractor is a literal missile
+    # transporter, and the HEMTT M977 is the US cargo/crane truck. DCS ships no
+    # Iskander transloader, so these stand in for it.
+    #
+    # The ordinary cargo trucks are listed too, deliberately, and NOT as
+    # `fallback_classes: [Logistics]` -- the fallback resolves to the faction's
+    # whole logistics pool, which since §85 is mostly fuel bowsers, so a Soviet
+    # battery kept drawing a second ATZ-10 as its "transloader" (measured: 9 of
+    # 11 candidates for Russia 2020). Most 1960s-80s rosters field no heavy
+    # hauler at all, and a Ural with a crane IS what reloaded a real SS-1C, so a
+    # plain truck here is the honest answer rather than a duplicated bowser.
+    - name: Missile Site Transload
+      optional: true
       unit_count:
         - 1
-      unit_classes:
-        - Logistics
+      unit_types:
+        - ZIL-135
+        - S_75_ZIL
+        - KrAZ6322
+        - CH_KrAZ6322
+        - MAZ-6303
+        - Ural-4320-31
+        - CH_SX2190
+        - CH_HEMTT_M977
+        - CH_HEMTT_M983
+        - CHAP_M1083
+        - M 818
+        - GD-20
+        - Sd_Kfz_7
+        - M4_Tractor
+        # Cargo trucks, as the universal stand-in (see above).
+        - GAZ-66
+        - GAZ-3307
+        - GAZ-3308
+        - KAMAZ Truck
+        - Ural-375
+        - Ural-4320T
+        - ZIL-4331
+        - CH_MTVR
+        - Land_Rover_101_FC
+        - Blitz_36-6700A
+        - Bedford_MWD
+        - CCKW_353
+        - Type_94_Truck
+    # The refuelling section. Fuel and cargo are SEPARATE slots because a unit
+    # group fields exactly one type -- a single merged slot yields two trucks or
+    # two bowsers, never one of each (the §85 lesson, re-learned here).
+    - name: Missile Site Fuel
+      optional: true
+      unit_count:
+        - 1
+      unit_types:
+        - ATZ-5
+        - ATZ-10
+        - ATMZ-5
+        - ATZ-60_Maz
+        - TZ-22_KrAZ
+        - M978 HEMTT Tanker
+        - ural_atz5_civil
+    # The command-and-staff vehicle. No fallback and no class list: a class-based
+    # CommandPost slot resolves against the faction's whole accessible roster and
+    # would park an S-300 54K6 command post at a SCUD site.
+    - name: Missile Site C2
+      optional: true
+      unit_count:
+        - 1
+      unit_types:
+        - ZIL-131 KUNG
+        - Ural-375 PBU
+        - GCI_station_MiG29
+        - SKP-11
+        - Predator TrojanSpirit
+        - fire_control
     - name: ScudGenerator 2
       optional: true
       unit_count:

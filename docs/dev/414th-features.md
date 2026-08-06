@@ -4876,6 +4876,34 @@ same philosophy, different object class).
 - **Deferred:** per-side gating (currently symmetric), and coupling the *fired* missile events to a
   scoot-away reaction (real shoot-THEN-scoot needs an S_EVENT_SHOT hook — v2 if the wander plays well).
 
+### Mobility is a unit-data contract now (2026-08-06)
+
+Every entry in `IMMOBILE_UNIT_IDS` was discovered the same expensive way: fly a mission, read a
+Tacview, notice a launcher's track is a single point, append an id to a frozenset in Python. Two
+changes make the next one cheap.
+
+**`mobile: false` in the unit's own definition** (`GroundUnitType.mobile`, the §24
+`date_gated_properties` / §86 `gps_jamming` precedent). `hy_launcher`, `Silkworm_SR` and `CH_CJ10`
+carry it, each with its flown evidence in a comment next to the flag, and `_is_immobile` in the
+emitter reads it. `IMMOBILE_UNIT_IDS` survives as the fallback for a DCS type with **no** registered
+yaml (statics, unregistered mod hardware) and as the thing an unknown type is never matched against
+by accident; `test_immobile_ids_and_unit_definitions_stay_in_lockstep` fails CI if the two disagree,
+so there is one source of truth in practice. Adding a launcher to the exclusion is now a data edit
+with its reason attached, not a code change.
+
+**The give-up log names the units.** The plugin already stops routing a group after two dry pushes,
+but it logged only *which group* was stuck — which is why the Marianas verdict needed Tacview
+archaeology and still only produced a verdict for one of the three PLARF launcher types. It now logs
+`MOBILEMISSILES|: giving up on <group> [CH_CJ10, CH_SX2190] (no movement across 2 route pushes)`, so
+the next flown mission answers "which of these can drive?" from `dcs.log` alone.
+
+**Still open, and worth knowing before authoring a hunt:** `CH_CJ10` does not drive, `CH_Shahed136`
+pins only *after* firing, and **`CH_IskanderM`/`CH_IskanderK`/`CH_DF21D`/`CH_YJ12B` have never been
+established either way**. Marianas 2027's signature "hunt the launchers before they scoot" therefore
+does not currently exist in play (all three of its PLARF sites roll from a pool whose one measured
+member is immobile), and Baltic Fury's Iskander battery is unmeasured. Neither is fixable from the
+data available offline — the fly criteria are on checklist **S2**.
+
 ## §50 — Convoy ambush (a chance, never telegraphed) + ambient supply convoys
 
 The **mirror of the §35 Vietnam-Ops convoy interdiction.** Interdiction gives the player *enemy* convoys
@@ -8231,6 +8259,66 @@ S-300-family presets). Tests: `tests/armedforces/test_sam_support_vehicles.py` (
 the Power-never-deploys invariant, slot presence, template position counts, the fuel/power
 separation, preset access, and a **repo-wide dead-slot guard** that fails if *any* anti-air layout
 declares a slot no group in its `.miz` is named after). Checklist: **B43**.
+
+### Missile batteries get the same treatment (2026-08-06)
+
+**The problem** (DM question, off the 9K720 Iskander's published system list — TEL, transporter and
+loader, command-and-staff vehicle, information preparation station, maintenance vehicle, life
+support vehicle): a missile site generated **three launchers and a UAZ-469 jeep**. One generic
+layout (`resources/layouts/defenses/missile.yaml`) is behind every SCUD / Iskander / CJ-10 / V-1 /
+ATACMS site in the fork, and **33 of the shipped campaigns author missile markers** (Desert Storm 9
+sites, Marianas 3, Red Tide 2, Baltic Fury 1), so it is not a rare object.
+
+**What DCS can actually model is 3 of those 7 roles** — TEL, a transporter/loader stand-in
+(`ZIL-135`, the 8×8 that carries Soviet theatre rockets; `S_75_ZIL`, a literal missile transporter;
+`CH_HEMTT_M977`, the US cargo/crane truck), and a command-and-staff vehicle (the §85 kit:
+`ZIL-131 KUNG` / `Ural-375 PBU` / `GCI_station_MiG29`, plus `Predator TrojanSpirit` / `fire_control`
+for NATO). Information preparation, maintenance and life support are all the same KAMAZ repeated, so
+they are represented by the cargo pair rather than transcribed. **Zero new unit registrations were
+needed** — §85 had already registered every candidate.
+
+**The slots** (textbook fixed counts, the §85 call — a battery renders the same park every time, so
+it is recognisable from the air): 3 launchers · **2 cargo trucks** · 1 transporter/loader · 1
+refueller · 1 command-and-staff vehicle · the unchanged optional AAA and SHORAD escorts. Four
+positions were appended to `missile.miz`; the pre-existing offsets are byte-identical and the
+template anchor (`ScudGenerator 3`, whose first unit the loader anchors on) is untouched, so no
+campaign's authored site moves.
+
+**The displacement fix, and why it was needed.** The old `Logistics` slot was class-based, and a
+class slot picks **one** type from a pool that since §85 also holds fuel bowsers — so the bowser
+*replaced* the cargo truck rather than joining it, which is exactly what the flown Marianas PLARF
+sites showed. Cargo is now an explicit multi-national truck whitelist (with
+`fallback_classes: [Logistics]` so a faction hauling with something unlisted still fills), and fuel
+is its own slot. Measured: every one of the 36 missile-fielding factions fills cargo and transload;
+29 also field a refueller; 11 field a command vehicle. Same trap caught once more during the build —
+the transload slot's first cut used `fallback_classes: [Logistics]`, which resolved to **9 of 11
+candidates being bowsers** for Russia 2020 (a second ATZ-10 as the "transloader"), so the cargo
+trucks are listed explicitly there too.
+
+**The §49 constraint shapes the section.** Every one of these shares **one DCS group** with the
+launchers, `mist.goRoute` routes a group as a whole, and a single undrivable member pins the whole
+battery — so the section is drivable metal only: no statics, no trailers, and deliberately **no
+5I57A power station** (S-300 kit, and not in the Iskander's list anyway).
+`test_no_support_unit_can_pin_the_scoot` enforces it against the unit data.
+
+**Launchers are no longer free.** Every launcher in the fork was `price: 0` — Scud_B, Iskander-M/K,
+CJ-10, Shahed-136, the V-1 ramp, and the whole coastal anti-ship family — while missile and coastal
+sites *are* purchasable (`GroupRole.DEFENSES`) and the ground-object repair cost is the unit price.
+So the buy menu sold theatre ballistic missiles for nothing and rebuilding a killed launcher was
+free. Priced against the existing `CH_M270A1_ATACMS` (45) and the artillery scale (Uragan 40, Smerch
+60, PHL-16 85): V-1 20 · Shahed-136 25 · Silkworm 30 · Scud-B 40 · RBS-15KA 55 · Bal 60 ·
+Iskander-M 70 (= both 9K720 registrations) · YJ-12B 70 · Iskander-K / CJ-10 / Bastion-P 75 ·
+DF-21D 85. A 3-launcher SCUD battery now costs ~135 with its support, against ~230 for an S-300 site.
+
+Files: `resources/layouts/defenses/{missile.yaml,missile.miz}`, `resources/units/ground_units/`
+(14 launcher prices + 3 `mobile:` flags), `game/dcs/groundunittype.py`,
+`game/missiongenerator/mobilemissileluadata.py`,
+`resources/plugins/mobilemissiles/mobilemissiles-config.lua`. Tests:
+`tests/armedforces/test_missile_site_support.py` (34 — pricing and its ordering, slot shape and
+fixed counts, a unit-id typo guard, both displacement guards, per-faction fill across all 36
+missile-fielding factions, the drivability invariant, the `IMMOBILE_UNIT_IDS`↔unit-data lockstep,
+the emitter skipping an undrivable launcher on real DCS types, template-offset preservation, and an
+end-to-end battery generation). Checklist: **B47**.
 
 
 ## §86 — GPS jamming (satellite-guided weapons go long)

@@ -60,6 +60,11 @@ COASTAL_DEFENSE_CATEGORY = "coastal"
 #: "pinned after firing" and "never scoots" are the same thing in play.
 #: ``CH_Shahed136`` is deliberately NOT listed: its never-fired sites drive
 #: fine, so excluding it would kill a scoot that does work before the salvo.
+#:
+#: The verdicts now live in the units' own definitions as ``mobile: false``
+#: (``GroundUnitType.mobile``), where the flown evidence sits next to the unit;
+#: this set is the fallback for a DCS type with no registered yaml, and a test
+#: keeps the two in lockstep.
 IMMOBILE_UNIT_IDS = frozenset({"hy_launcher", "Silkworm_SR", "CH_CJ10"})
 
 
@@ -121,6 +126,26 @@ def populate_mobile_missiles_lua(
             rec.add_data_array("fireHoldS", [str(site["holds"][n]) for n in names])
 
 
+def _is_immobile(dcs_type: Any) -> bool:
+    """True if this DCS type physically cannot drive (see IMMOBILE_UNIT_IDS).
+
+    Reads the unit definition's ``mobile:`` flag, falling back to the id set for
+    a type with no registered ``GroundUnitType`` (statics, unregistered mod
+    hardware) so an unknown type is never treated as immobile by accident.
+    """
+    type_id = getattr(dcs_type, "id", None)
+    if type_id is None:
+        return False
+    if type_id in IMMOBILE_UNIT_IDS:
+        return True
+    try:
+        from game.dcs.groundunittype import GroundUnitType
+
+        return any(not unit.mobile for unit in GroundUnitType.for_dcs_type(dcs_type))
+    except Exception:  # pragma: no cover - unregistered/duck-typed test units
+        return False
+
+
 def _mobile_group_names(tgo: Any) -> list[str]:
     """The TGO's groups that contain at least one *alive vehicle* -- the drivable metal.
     A statics-only group (or a fully dead one) has nothing to route and is skipped, and
@@ -140,10 +165,7 @@ def _mobile_group_names(tgo: Any) -> list[str]:
         ]
         if not alive_vehicles:
             continue
-        if any(
-            getattr(getattr(u, "type", None), "id", None) in IMMOBILE_UNIT_IDS
-            for u in alive_vehicles
-        ):
+        if any(_is_immobile(getattr(u, "type", None)) for u in alive_vehicles):
             continue
         names.append(name)
     return names

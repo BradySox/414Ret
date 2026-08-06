@@ -1,4 +1,6 @@
 class: Missile
-price: 0
+# §49: an SS-1C battery is 3 of these -- a 1960s liquid-fuel theatre rocket,
+# so priced with the heavy MLRS it plays like (Uragan 40) rather than free.
+price: 40
 variants:
   SSM SS-1C Scud-B: null

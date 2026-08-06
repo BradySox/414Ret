@@ -1,4 +1,5 @@
 class: AntiShipMissile
-price: 0
+# Bastion-P / P-800 Oniks: 300 km supersonic, the premium coastal battery.
+price: 75
 variants:
   "[CH] Bastion-P LBASM TEL": null

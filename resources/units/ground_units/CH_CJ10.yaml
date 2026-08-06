@@ -1,4 +1,13 @@
 class: Missile
-price: 0
+# A 1500 km GLCM -- theatre-strategic reach, priced with the Iskander-K.
+price: 75
+# §49: DCS will not drive this TEL. Across two flown Marianas 2027 missions
+# (Tacviews -190738 and -203549) all NINE launchers of all THREE PLARF sites
+# moved 0.00 km, while the drivable vehicles sharing those groups (§85 support,
+# PGZ-09/PGL-625/LD-3000 SHORAD) jittered 0.05-0.31 km -- the signature of a
+# group pinned by an undrivable member rather than one that was never routed.
+# NOTE CH_Shahed136 is deliberately NOT flagged: its never-fired sites drive
+# fine, and it only pins AFTER firing.
+mobile: false
 variants:
   "[CH] CJ-10 GLCM": null

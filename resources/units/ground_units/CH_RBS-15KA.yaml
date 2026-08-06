@@ -1,5 +1,6 @@
 class: AntiShipMissile
-price: 0
+# Modern 200 km coastal AShM.
+price: 55
 variants:
   AShM RBS 15KA: null
   "[CH] RBS 15KA LBASM": null

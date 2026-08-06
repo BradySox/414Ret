@@ -208,6 +208,44 @@ attack can never ripple across the map — pinned by a three-group A→B→C tes
 Also pinned: an enemy formation is never freed by our own attack (coalition check), and
 `formationReleaseKm: 0` restores targeted-group-only release.
 
+**Re-fly #2 (`Tacview-20260805-203549`) — the release fires; the shooting is another
+matter.** The log shows both lines in the same second (`… under attack` / `… in the
+attacked formation`). The full chronology, re-verified against the raw ACMI (3,509
+frames, zero backward time jumps):
+
+| t | event |
+|---|---|
+| 872 s | red's own CJ-10s launch — the mission's first weapons, land attack |
+| **2146.8 s** | first AGM-84D leaves the rail, 105+ km out |
+| **2154.9 s** | escort's first HHQ-16FE — **at a target it cannot reach** |
+| 2158–2214 s | 4 more HHQ-16FE, same story |
+| **2638.9 s** | the LHA opens up with its AK-630s (1,273 rounds) |
+| **2644.2 s** | first Harpoon arrives |
+| 2645–2693 s | escort terminal defence: 5 × HHQ-10 + 194 CIWS |
+| **2687 s** | the LHA sinks |
+
+**What is proven:** the escort was weapons-free and firing **eight minutes before any
+missile reached the fleet** (first shot 2154.9, earliest arrival 2644.2), so it cannot
+have been reacting to a hit — the release-on-attack fired on the *launch*, exactly as
+designed, and in the previous fly that same escort sat silent through the whole attack.
+
+**What is NOT proven — and the honest read:** those five early HHQ-16FE shots were
+wasted. No enemy aircraft came within **106.3 km** of that escort all mission and the
+HHQ-16FE tops out well short of that, so the AI reflex-fired at an unreachable target.
+The only effective defence was the terminal HHQ-10/CIWS layer, and it did not stop the
+strike: all 16 Harpoons reached terminal at 0.2–2.5 km, none intercepted en route.
+Sixteen AShM against two escorts is a genuine saturation strike, so a lost amphib is a
+fair outcome — but "the escorts defended their flagship" would overstate it. **Open
+follow-up, not a §81 defect:** a released ship burning long-range SAMs on targets outside
+their envelope and only defending properly at 3 km is DCS naval AI behaviour; if it
+matters, it is its own investigation.
+
+**What that fly did NOT exercise: the magazines.** It carried leftover diagnostic options
+`releaseMinS/MaxS = 3600`, so no group was ever released on schedule inside a 48-minute
+mission and **no ship fired a single anti-ship missile**. N2 is still unflown; re-fly with
+the defaults (120/900). A separate smaller mission the same evening (5 naval groups,
+120s–900s) did log a scheduled `released weapons-free`, so the stagger timer itself runs.
+
 ### The emitter bug (fixed 2026-08-05)
 
 `LuaData.serialize` ignores a node's `add_key_value` entries whenever the node also

@@ -298,6 +298,30 @@ identical hole naval groups had until `generate_navy` was routed through
 `get_unit_group_for_task` (2026-08-03). Fixed the same way; upstream-carve
 candidate, and independent of this feature.
 
+## The radar was removed — 2026-08-05
+
+The 2026-08-04 pass added an ARM-flagged acquisition radar to every jamming site so
+SEAD could prosecute it. The DM reversed that: *"why are we generating two radars
+anyways. The EW jammers do not need to be targetable by harms."*
+
+Correct, and it is the realistic answer. A GPS jammer transmits in **L-band**; no
+RWR covers it and no anti-radiation seeker homes on it. DCS agrees — the stock
+unit declares `GT_t.ws = 0` with no `GT.WS`, `GT.Sensors` or
+`searchRadarFrequencies`. Making it HARM-able was the *unrealistic* option, taken
+to solve a findability problem that recon already solves.
+
+The site is now a **strike target**: found by recon, killed with bombs, kept from
+being a free kill by its point defence.
+
+Two costs went with it:
+
+* the second radar in every site (and the §60 doubling it dragged in), and
+* the radar in the faction roster, which — being a `SearchRadar` class — leaked
+  into unrelated SAM sites in roughly one game in five. **Only the jammer is
+  granted now**, and `ElectronicWarfare` is referenced by no layout, so it can
+  never be faction-filled anywhere. The trade-off recorded in the access-trap
+  section above is therefore gone entirely, not merely accepted.
+
 ## What the player does about it
 
 1. **Change delivery method** — laser and TV weapons are unaffected. This is the

@@ -16,6 +16,15 @@ performance: 1
 recommended_start_date: 2026-02-24
 version: "10.8"
 settings:
+  # §86 GPS jamming: red EW companies deny satellite guidance within 15 nm of two sites
+  # (see ground_forces). A JDAM/JSOW/JASSM aimed at anything inside a bubble lands off the
+  # aimpoint -- standing off does not help, because the weapon flies through the bubble
+  # whatever range it was released from. Change delivery (laser/TV are untouched) or kill the
+  # jammer, which restores accuracy at once. Runs via the 'GPS jamming' LUA plugin, preseeded
+  # below -- the setting does NOTHING without it.
+  gps_jamming: true
+  plugins:
+    gpsjamming: true            # §86 runtime -- the setting does nothing without it
   ukrainemilitaryassetspack: true
   russianmilitaryassetspack: true
   squadron_start_full: true
@@ -127,3 +136,19 @@ supply_routes:
       - [-23170, 260506]
       - [-30005, 271606]
       - [-40918, 279256]
+
+# --- §86 GPS jamming: two jamming sites, pinned onto existing EWR markers.
+#     A standalone `GPS Jamming Site` deliberately, NOT a jamming-equipped SAM battery: it adds
+#     no SAM coverage, so it changes this campaign's air-defence balance as little as a jamming
+#     site can. The marker still generates a radar site (the ST-68U emits, so it stays on RWR
+#     and HARM-able and still feeds the IADS) -- it just also denies GPS within 15 nm.
+#     Two sites, the most widely separated free RED-owned EWR markers, so the bubbles cannot
+#     overlap (effects do not stack, so overlap would buy redundancy rather than depth).
+#     RED-owned matters: the override gate checks the units against the OWNING control
+#     point's faction, so a marker that binds to a blue CP is silently discarded and an
+#     ordinary EWR generates there instead.
+#     Russian GPS jamming is a signature of this war -- the one campaign where a
+#     player will find it least surprising.
+ground_forces:
+  Ground-56: GPS Jamming Site (Red)
+  Ground-57: GPS Jamming Site (Red)

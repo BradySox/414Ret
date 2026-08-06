@@ -6,12 +6,10 @@
 # (`GPS Jamming Site`), so it touches nothing else in the theater and no
 # campaign sees one unless it asks for it.
 #
-# What it fields: the jammer(s) that deny GPS, an ARM-able acquisition radar so
-# the site paints RWRs and takes HARMs (a GPS jammer is L-band and invisible to
-# both on its own -- see the layout for the measured detail), and point defence.
-#
-# Killing the jammer trucks stops the jamming; killing the radars blinds the site
-# without stopping it. Both are worth a bomb, for different reasons.
+# What it fields: the jammer(s) that deny GPS, plus point defence so killing them
+# is not free. NO radar -- a real GPS jammer is L-band, invisible to RWR and
+# un-homeable by a HARM, so this is a STRIKE target found by recon, not a SEAD
+# target (DM call 2026-08-05).
 #
 # EVERY unit listed here must be reachable by the faction that uses it: the
 # override gate is `all(u in faction.accessible_units for u in fg.units)`, so ONE
@@ -23,6 +21,5 @@ tasks:
   - EarlyWarningRadar
 units:
   - EW Radio Jammer (Blue)
-  - SAM NASAMS SR MPQ64F1
 layouts:
   - GPS Jamming Site

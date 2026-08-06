@@ -8354,17 +8354,23 @@ sites or on two bubbles that overlap. Overlap is called out specifically because
 stack** — a weapon faces only the single strongest bubble covering it (the §77 non-stacking rule)
 — so a second overlapping site adds no decision for the player and killing one restores nothing.
 
-**Being on RWR and being HARM-able are two different DCS attributes, and no one unit has both**,
-which is why a site fields a radar as well as the jammer. `GT.WS.radar_type` is what puts a unit
-on the RWR; `RADAR_BAND1/2_FOR_ARM` is what an anti-radiation seeker homes on, and **the EWRs do
-not carry it** (verified: `EWR_FPS-117` declares only `"EWR"`, and of the units in DCS's
-TechWeaponPack carrying the ARM bands, not one is an EWR). The stock jammer carries *neither* —
-its DB entry declares `GT_t.ws = 0` with no `GT.WS`, no `GT.Sensors`, no `searchRadarFrequencies`
-— which is faithful (a real GPS jammer is L-band) and unplayable, since SEAD could never
-prosecute it. The standalone site therefore fields an ARM-flagged acquisition radar, **ST-68U
-"Tin Shield"** (red) / **NASAMS MPQ-64F1** (blue), at `unit_count: [2]` because the ST-68U is a
-track-radar class and the standing §60 redundancy contract applies. An attached section needs no
-radar of its own — the SAM battery around it already emits.
+**It carries no radar, and is a STRIKE target rather than a SEAD target** (DM call 2026-08-05).
+An earlier cut paired the jammer with an ARM-flagged acquisition radar so a HARM could home on
+the site. That is now dropped, and dropping it is the *realistic* answer: a real GPS jammer
+transmits in **L-band**, which no RWR covers and no anti-radiation seeker homes on, so making it
+HARM-able was the unrealistic option. The stock jammer's own DB entry agrees — it declares
+`GT_t.ws = 0` with no `GT.WS`, no `GT.Sensors`, no `searchRadarFrequencies`, i.e. DCS models it
+as emitting nothing an aircraft can see.
+
+So the site is found by **recon** (the §3 fog surfaces it as a contact; the kneeboard briefs the
+area once scouted) and killed with **bombs**. Its point defence is what stops that being free —
+an optional SHORAD/AAA slot filled from the owning faction, so a faction with no SHORAD (China
+2027) fields an undefended site.
+
+Dropping the radar removed two costs as well as the unrealism: a second radar in every site, and
+a radar in the faction roster — where, being a `SearchRadar` class, it leaked into unrelated SAM
+sites in roughly one game in five. **Only the jammer is granted now**, and its
+`ElectronicWarfare` class is referenced by no layout, so it can never be faction-filled anywhere.
 
 **Task = EarlyWarningRadar**, because `IadsRole.for_task` maps it to `EWR`, the one air-defence
 role MANTIS never holds dark under EMCON. A site tasked MERAD/LORAD/SHORAD would be held dark
@@ -8380,6 +8386,15 @@ site a `random_group_for_task` candidate**, which had unpinned EWR markers rolli
 and the campaign generating a different shape every time (measured: 2-to-4 sites across runs when
 only 2 were pinned). Grant access through `air_defense_units` instead: the units become reachable,
 the preset is not a random candidate, and the laydown is exactly what the campaign pins.
+
+**Fielded in four modern campaigns** (2026-08-05), each with two sites on well-separated
+RED-owned markers: **Baltic Fury** (2027), **Marianas 2027** (China), **Slava Ukraini** (2026 —
+the war where GPS jamming is least surprising) and **Into the Hornets Nest** (2022). The era
+filter is the jammer's own 2010 introduction, which excludes the Cold War and Desert Storm
+laydowns outright. **A pin must bind to a control point owned by the side that fields the
+jammer** — the override gate checks the preset against the *owning* CP's faction, so a red
+preset on a blue-CP marker is silently discarded (caught when three campaigns each generated one
+of their two pinned sites); a test now enforces it.
 
 **Preseeded in Operation Baltic Fury** (2027) on two dedicated markers added by
 `tools/build_baltic_fury_miz.py --gps-jamming` — `GPSJAM-1` on the Copenhagen approach (~5 km

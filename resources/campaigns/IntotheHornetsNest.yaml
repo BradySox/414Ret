@@ -15,6 +15,15 @@ recommended_enemy_money: 300
 recommended_player_income_multiplier: 0.7
 recommended_enemy_income_multiplier: 0.7
 settings:
+  # §86 GPS jamming: red EW companies deny satellite guidance within 15 nm of two sites
+  # (see ground_forces). A JDAM/JSOW/JASSM aimed at anything inside a bubble lands off the
+  # aimpoint -- standing off does not help, because the weapon flies through the bubble
+  # whatever range it was released from. Change delivery (laser/TV are untouched) or kill the
+  # jammer, which restores accuracy at once. Runs via the 'GPS jamming' LUA plugin, preseeded
+  # below -- the setting does NOTHING without it.
+  gps_jamming: true
+  plugins:
+    gpsjamming: true            # §86 runtime -- the setting does nothing without it
   max_frontline_width: 30
   squadron_start_full: true
   enable_squadron_aircraft_limits: true
@@ -452,7 +461,20 @@ squadrons:
       size: 4
 # QABR AS SITT
 #  29:
+# --- §86 GPS jamming: two jamming sites, pinned onto existing EWR markers.
+#     A standalone `GPS Jamming Site` deliberately, NOT a jamming-equipped SAM battery: it adds
+#     no SAM coverage, so it changes this campaign's air-defence balance as little as a jamming
+#     site can. The marker still generates a radar site (the ST-68U emits, so it stays on RWR
+#     and HARM-able and still feeds the IADS) -- it just also denies GPS within 15 nm.
+#     Two sites, the most widely separated free RED-owned EWR markers, so the bubbles cannot
+#     overlap (effects do not stack, so overlap would buy redundancy rather than depth).
+#     RED-owned matters: the override gate checks the units against the OWNING control
+#     point's faction, so a marker that binds to a blue CP is silently discarded and an
+#     ordinary EWR generates there instead.
+#     A modern Russian peer laydown; the EW company sits with the SAM belt.
 ground_forces:
+  B-EWR-1: GPS Jamming Site (Red)
+  A-EWR-2: GPS Jamming Site (Red)
 # REDFOR DEFENSE AL-DUMAYR AIRBASE AREA (North)
   A-LRSAM-1: SA-20/S-300PMU-1    # options: SA-10B/S-300PS, SA-12/S-300V
   A-LRPNTDEF-1: SA-15 SHORAD

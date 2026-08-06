@@ -24,6 +24,16 @@
 -- OR winchester. An attacked winchester group may overshoot its magazine defending itself; the
 -- overshoot is still counted and debited (the persisted stock clamps at zero).
 --
+-- ...AND ITS FORMATION WITH IT (the re-fly, same day): releasing only the TARGETED group is not
+-- enough, because a Retribution carrier/LHA objective is TWO DCS groups -- the flagship and its
+-- escort screen -- and the area-defence SAMs are on the ESCORTS. Attacked alone, the Type 071
+-- fired its AK-630 CIWS (all the AAW it has) and died while the HHQ-16 escorts 1.91 km away sat
+-- holding, never having been shot at themselves. So an attack also frees every managed friendly
+-- group within `formationReleaseKm`. The measured geometry makes the radius unambiguous: a
+-- screen rides ~2 km off its flagship, the next task force was 59 km away. ONE HOP, never a
+-- cascade -- a released neighbour does not release ITS neighbours, so an attack cannot ripple
+-- across the map.
+--
 -- N2 -- THE MAGAZINE. Each group's emitted `remaining` is this mission's hard anti-ship
 -- expenditure cap. Every S_EVENT_SHOT whose weapon type matches the anti-ship pattern list
 -- decrements it; at zero the group drops back to ReturnFire -- WINCHESTER, out of the anti-ship
@@ -58,6 +68,9 @@ local ROE_RETURN_FIRE = 3
 local RELEASE_MIN = 120 -- s after mission start: the weapons-release window opens
 local RELEASE_MAX = 900 -- s after mission start: the weapons-release window closes
 local ANNOUNCE = true -- cue the owning coalition when a group goes winchester
+-- Attacking one group frees its formation: a screen rides ~2 km off its flagship (measured),
+-- the next task force was 59 km away. 0 disables (only the targeted group releases).
+local FORMATION_KM = 15
 local PATTERNS = "HARPOON,RGM_84,AGM_84,EXOCET,MM_38,MM_40,YJ,C_802,C_602,"
     .. "P_500,P_700,P_270,P_1000,KH_35,3M24,3M54,SS_N,NSM,RBS15,OTOMAT"
 
@@ -71,6 +84,7 @@ if dcsRetribution.plugins and dcsRetribution.plugins.navalmagazines then
     if o.announceWinchester ~= nil then
         ANNOUNCE = o.announceWinchester
     end
+    FORMATION_KM = tonumber(o.formationReleaseKm) or FORMATION_KM
     if type(o.ashmWeaponPatterns) == "string" and o.ashmWeaponPatterns ~= "" then
         PATTERNS = o.ashmWeaponPatterns
     end
@@ -175,15 +189,72 @@ end
 -- Release-on-attack: the hold shapes who STARTS the war, never who may defend (see the header --
 -- a ReturnFire group is proven defenseless). Fires for held AND winchester groups; a dry group
 -- released this way may overshoot its magazine defending itself, which stays counted.
-local function releaseUnderAttack(groupName)
+-- Returns true when this call is what freed the group (never cascades on its own).
+local function freeGroup(groupName, reason)
     if underAttack[groupName] then
-        return
+        return false
     end
     underAttack[groupName] = true
     released[groupName] = true
     setRoe(groupName, ROE_WEAPON_FREE)
     env.info(string.format(
-        "NAVALMAGAZINES|: %s under attack -- released weapons-free", groupName))
+        "NAVALMAGAZINES|: %s %s -- released weapons-free", groupName, reason))
+    return true
+end
+
+-- A managed group's position (its first alive unit), or nil if it is gone.
+local function groupPoint(groupName)
+    local ok, point = pcall(function()
+        local grp = Group.getByName(groupName)
+        if not (grp and grp:isExist()) then
+            return nil
+        end
+        for _, unit in ipairs(grp:getUnits() or {}) do
+            if unit and unit:isExist() then
+                return unit:getPoint()
+            end
+        end
+        return nil
+    end)
+    if ok then
+        return point
+    end
+    return nil
+end
+
+-- The escort screen fights for its flagship: free every managed friendly group within
+-- FORMATION_KM of the attacked one. ONE HOP -- these are freed via freeGroup, which does not
+-- call back into here, so an attack can never ripple across the map.
+local function releaseFormationAround(groupName)
+    if FORMATION_KM <= 0 then
+        return
+    end
+    local origin = groupPoint(groupName)
+    if not origin then
+        return
+    end
+    local limit = FORMATION_KM * 1000
+    for _, other in ipairs(groupOrder) do
+        if other ~= groupName
+            and not underAttack[other]
+            and groupSide[other] == groupSide[groupName]
+        then
+            local point = groupPoint(other)
+            if point then
+                local dx = point.x - origin.x
+                local dz = point.z - origin.z
+                if math.sqrt(dx * dx + dz * dz) <= limit then
+                    freeGroup(other, "in the attacked formation")
+                end
+            end
+        end
+    end
+end
+
+local function releaseUnderAttack(groupName)
+    if freeGroup(groupName, "under attack") then
+        releaseFormationAround(groupName)
+    end
 end
 
 -- Spread the releases evenly across the window rather than rolling each independently, so a

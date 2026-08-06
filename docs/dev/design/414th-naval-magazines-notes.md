@@ -172,6 +172,42 @@ who *starts* the war, never who may defend:
   count. The stub `WeaponFake` gained `getTarget()` (set via `fireShot`'s optional
   `target` group).
 
+### The re-fly: "CIWS fired but no SAMs" — release the FORMATION, not the group
+
+The first re-fly on the fixed build (2026-08-05, `Tacview-20260805-200950`) proved the
+plumbing — `stagger true … metered true` at load, and
+`0057 | SUGARGLIDER (LHA) under attack -- released weapons-free` in the log — and the
+released LHA did fight: **AK-630 CIWS at t=2644.6**, its first and only shots, dying at
+t=2668. But still no SAMs, because **releasing the targeted group is not enough**:
+
+A Retribution carrier/LHA objective is **two DCS groups** — the flagship
+(`0057 | SUGARGLIDER (LHA)`) and its escort screen (`0058 | SUGARGLIDER (Escort)`) — and
+**the area-defence SAMs are on the escorts**. The 16 AGM-84D were aimed at the Type 071,
+whose entire AAW fit is the CIWS it fired; the HHQ-16 escorts **1.91 km away** were never
+targeted, so nothing released them and they watched their flagship die.
+
+So an attack now frees every managed friendly group within `formationReleaseKm`
+(**default 15 km**). The flown geometry makes that radius unambiguous — measured at the
+moment of the attack:
+
+| Group | Distance from the attacked LHA |
+|---|---|
+| `0058 \| SUGARGLIDER (Escort)` | **1.91 km** |
+| `0051 \| OWL (Naval Group)` | 59.02 km |
+| `0008 \| PUMA (Naval Group)` | 68.50 km |
+| `0053 \| BEAVER (Carrier)` | 94.81 km |
+
+A screen rides ~2 km off its flagship; the next task force is 59 km away. 15 km sits in
+the middle of a 57 km gap, so the rule cannot leak into an uninvolved task force.
+
+**One hop, never a cascade.** A neighbour freed by the formation rule does not free *its*
+neighbours (`freeGroup` never calls back into `releaseFormationAround`), so a single
+attack can never ripple across the map — pinned by a three-group A→B→C test where C is
+20 km from the attacked A but 10 km from the freed B.
+
+Also pinned: an enemy formation is never freed by our own attack (coalition check), and
+`formationReleaseKm: 0` restores targeted-group-only release.
+
 ### The emitter bug (fixed 2026-08-05)
 
 `LuaData.serialize` ignores a node's `add_key_value` entries whenever the node also

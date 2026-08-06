@@ -29,12 +29,16 @@ ROE_WEAPON_FREE = 0
 ROE_RETURN_FIRE = 3
 
 
-def _ship_group(name: str, side: int) -> dict[str, Any]:
+def _ship_group(
+    name: str, side: int, *, x: float = 0.0, z: float = 0.0
+) -> dict[str, Any]:
     return {
         "name": name,
         "side": side,
         "category": 3,  # SHIP
-        "units": [{"name": name + "-1", "type": "USS_Arleigh_Burke_IIa"}],
+        "units": [
+            {"name": name + "-1", "type": "USS_Arleigh_Burke_IIa", "x": x, "z": z}
+        ],
     }
 
 
@@ -265,6 +269,125 @@ def test_an_enemy_shot_at_a_held_group_releases_it_immediately() -> None:
     h.assert_no_lua_errors()
     freed = [r for r in _roe(h) if r["value"] == ROE_WEAPON_FREE]
     assert len(freed) == 1
+
+
+def test_an_attack_frees_the_escort_screen_but_not_the_next_task_force() -> None:
+    """The flown geometry: a screen rides 1.91 km off its flagship and the next
+    task force was 59 km away. Attacking the flagship must free the escorts —
+    they carry the area-defence SAMs — and nobody else."""
+    h = DcsPluginHarness()
+    h.add_group(_ship_group("0057 | LHA", int(h.side.BLUE), x=0, z=0))
+    h.add_group(_ship_group("0058 | Escort", int(h.side.BLUE), x=1910, z=0))
+    h.add_group(_ship_group("0051 | Far Group", int(h.side.BLUE), x=59_020, z=0))
+    h.add_group(_ship_group("0099 | Raider", int(h.side.RED), x=200_000, z=0))
+    _load(
+        h,
+        _config(
+            [
+                {"group": "0057 | LHA", "coalition": "blue", "remaining": "8"},
+                {"group": "0058 | Escort", "coalition": "blue", "remaining": "8"},
+                {"group": "0051 | Far Group", "coalition": "blue", "remaining": "8"},
+            ],
+            options={"releaseMinS": 3000, "releaseMaxS": 3000},
+        ),
+    )
+    h.advance_to(100)
+    h.fire_shot(
+        {
+            "initiator": "0099 | Raider",
+            "weapon": {"typeName": "AGM_84D_Harpoon"},
+            "target": "0057 | LHA",
+        }
+    )
+    h.assert_no_lua_errors()
+    freed = {r["group"] for r in _roe(h) if r["value"] == ROE_WEAPON_FREE}
+    assert freed == {"0057 | LHA", "0058 | Escort"}
+
+
+def test_the_formation_release_is_one_hop_never_a_cascade() -> None:
+    """A neighbour freed by the formation rule does not free ITS neighbours, so
+    an attack cannot ripple across the whole fleet."""
+    h = DcsPluginHarness()
+    h.add_group(_ship_group("A | Hit", int(h.side.BLUE), x=0, z=0))
+    h.add_group(_ship_group("B | Near", int(h.side.BLUE), x=10_000, z=0))
+    h.add_group(_ship_group("C | Beyond", int(h.side.BLUE), x=20_000, z=0))
+    h.add_group(_ship_group("R | Raider", int(h.side.RED), x=200_000, z=0))
+    _load(
+        h,
+        _config(
+            [
+                {"group": "A | Hit", "coalition": "blue", "remaining": "8"},
+                {"group": "B | Near", "coalition": "blue", "remaining": "8"},
+                {"group": "C | Beyond", "coalition": "blue", "remaining": "8"},
+            ],
+            options={"releaseMinS": 3000, "releaseMaxS": 3000},
+        ),
+    )
+    # C is 20 km from A (outside the 15 km radius) but only 10 km from B.
+    h.fire_shot(
+        {
+            "initiator": "R | Raider",
+            "weapon": {"typeName": "YJ-83"},
+            "target": "A | Hit",
+        }
+    )
+    h.assert_no_lua_errors()
+    freed = {r["group"] for r in _roe(h) if r["value"] == ROE_WEAPON_FREE}
+    assert freed == {"A | Hit", "B | Near"}
+
+
+def test_an_enemy_formation_is_never_freed_by_our_own_attack() -> None:
+    h = DcsPluginHarness()
+    h.add_group(_ship_group("0057 | LHA", int(h.side.BLUE), x=0, z=0))
+    h.add_group(_ship_group("0090 | Shadow", int(h.side.RED), x=2_000, z=0))
+    h.add_group(_ship_group("0099 | Raider", int(h.side.RED), x=200_000, z=0))
+    _load(
+        h,
+        _config(
+            [
+                {"group": "0057 | LHA", "coalition": "blue", "remaining": "8"},
+                {"group": "0090 | Shadow", "coalition": "red", "remaining": "8"},
+            ],
+            options={"releaseMinS": 3000, "releaseMaxS": 3000},
+        ),
+    )
+    h.fire_shot(
+        {
+            "initiator": "0099 | Raider",
+            "weapon": {"typeName": "YJ-83"},
+            "target": "0057 | LHA",
+        }
+    )
+    h.assert_no_lua_errors()
+    freed = {r["group"] for r in _roe(h) if r["value"] == ROE_WEAPON_FREE}
+    assert freed == {"0057 | LHA"}
+
+
+def test_formation_release_can_be_switched_off() -> None:
+    h = DcsPluginHarness()
+    h.add_group(_ship_group("0057 | LHA", int(h.side.BLUE), x=0, z=0))
+    h.add_group(_ship_group("0058 | Escort", int(h.side.BLUE), x=1910, z=0))
+    h.add_group(_ship_group("0099 | Raider", int(h.side.RED), x=200_000, z=0))
+    _load(
+        h,
+        _config(
+            [
+                {"group": "0057 | LHA", "coalition": "blue", "remaining": "8"},
+                {"group": "0058 | Escort", "coalition": "blue", "remaining": "8"},
+            ],
+            options={"releaseMinS": 3000, "releaseMaxS": 3000, "formationReleaseKm": 0},
+        ),
+    )
+    h.fire_shot(
+        {
+            "initiator": "0099 | Raider",
+            "weapon": {"typeName": "YJ-83"},
+            "target": "0057 | LHA",
+        }
+    )
+    h.assert_no_lua_errors()
+    freed = {r["group"] for r in _roe(h) if r["value"] == ROE_WEAPON_FREE}
+    assert freed == {"0057 | LHA"}
 
 
 def test_a_friendly_shot_never_releases_a_held_group() -> None:

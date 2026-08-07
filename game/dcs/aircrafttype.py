@@ -403,10 +403,34 @@ class AircraftType(UnitType[Type[FlyingType]]):
 
         The model scales burn to the airframe's internal fuel by an assumed still-air
         cruise endurance (NM on a full internal load), bucketed helicopter /
-        heavy-transport / combat. The combat bucket is calibrated against the measured
-        references (F/A-18C ~22 ppm, F-16C ~12 ppm) and the heavy bucket against the
-        C-130J (~16 ppm); climb/combat are multiples of cruise. These are planning
-        approximations, not measurements -- a real ``fuel:`` block always wins.
+        heavy-transport / combat; climb/combat are multiples of cruise. These are
+        planning approximations, not measurements -- a real ``fuel:`` block always wins.
+
+        **On the combat bucket's 700 NM, and why it is not the best-fitting number.**
+        The error here is asymmetric. Over-estimating burn draws a pessimistic bingo
+        ladder and frags a tanker that may not be needed -- annoying, safe.
+        Under-estimating draws an optimistic one and frags nothing -- the jet lands dry.
+        So the constant is chosen to stay on the conservative side, not to minimise
+        average error.
+
+        It was originally 520, matching the thirstiest reference then available (the
+        F/A-18C, which implies 489 NM), so every unmeasured airframe was treated as a
+        Hornet. That is safe but coarse: against the nine independent measured
+        references now in the tree it overshot cruise burn by up to **140%** (the F-14
+        and F-15C, which are far more efficient per pound than a Hornet).
+
+        700 NM is the *median* implied endurance across those nine references
+        (spread 489-1246 NM). It roughly halves the worst overshoot to ~78% while
+        leaving 7 of 9 references on the conservative side. Fitting the centre instead
+        (~875 NM) would cut worst error to ~42% but flip 6 of 9 to optimistic, which is
+        the wrong direction for a planning aid -- do not "improve" it that way without a
+        deliberate call. Capacity is a weak predictor and a single constant cannot do
+        much better; ``max_range`` was tested as an alternative input and is worse
+        (it is an authored tasking radius, not a physical one). The real fix is measured
+        data -- see ``docs/modding/fuel-consumption-measurement.md``.
+
+        The helicopter and heavy buckets are independent and untouched by the above; the
+        heavy bucket remains calibrated against the C-130J (~16 ppm).
         """
         fuel_lbs = self.max_fuel * KG_TO_LBS
         if fuel_lbs <= 0:
@@ -430,7 +454,9 @@ class AircraftType(UnitType[Type[FlyingType]]):
             )
         else:  # combat jets / attack / warbirds
             cruise_nm, climb_x, combat_x, taxi_frac, reserve_frac = (
-                520.0,
+                # Median implied endurance across the 9 measured references, chosen to
+                # stay conservative rather than to fit best -- see the docstring.
+                700.0,
                 2.0,
                 1.6,
                 0.015,

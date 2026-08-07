@@ -436,6 +436,48 @@ In-game pass: checklist **G31**.
   2026-06-27). The command-post intel fog (`scar_command_post_intel`) survived and lives with
   the recon-fog layer, not here.
 - **No new AI choreography.** See freeze, above.
+- **No fork-authored survivor homing beacon** (call 2026-08-07). It was specced and the spec was
+  dropped the same day, because the feature already exists in the tree — see below.
+
+## Survivor homing beacon — do not build one
+
+MOOSE's `Ops.CSAR` class, already bundled in `resources/plugins/base/Moose.lua`, implements the
+survivor radio beacon:
+
+- `CSAR:_AddBeaconToGroup` (`Moose.lua:79751`) keys it with `trigger.action.radioTransmission`
+  (`:79772`) — a world position, not a controller command, so it never touches the discrete
+  command queue that caused the 2026-06-25 King `ActivateBeacon` CTD.
+- Band is **LF/MF, 200–999 kHz** in 10 kHz steps against a navaid skip list
+  (`UTILS.GenerateVHFrequencies`, `Moose.lua:2727`). That is inside both flyable rescue helos'
+  real ADF sets — UH-1H ARN-83 (190–1750 kHz) and Mi-8 ARK-9 (150–1290 kHz).
+- AM, 500 W default, stopped via `stopRadioTransmission` once the pilot resolves.
+
+Upstream PR [dcs-retribution#929](https://github.com/dcs-retribution/dcs-retribution/pull/929)
+(Drexyl, 2026-08-07) wires it up. Take that path rather than authoring one here.
+
+The **2026-06-25 King ADF decision still stands** and is unaffected: MOOSE's beacon is
+fixed-point, which is correct for a survivor and was the wrong model for an orbiting King.
+
+The one idea from the dropped spec worth keeping if the feature is ever extended: **a finite
+battery.** MOOSE's beacon runs until the pilot resolves, with no expiry, so a survivor is
+homeable indefinitely. Capping it would create real time pressure. Nothing else from that spec
+survives.
+
+## Upstream #929 — the parallel CSAR implementation
+
+Flagged here so a future reader does not re-derive it. Not a convergence plan; that call has not
+been made.
+
+- #929 is a full campaign-persistent CSAR: downed pilots as theater-map objects with client
+  layers, roster slot-holding, water rescues, hover extraction, autoplanner rescue packages.
+- It overlaps most of §21 — persistent survivors, MIA, cabin-derived helo qualification, MAYDAY,
+  F10 menu, smoke. It has no equivalent of our capture race → POW, the Sandy/SCAR escort, the
+  King with LARS, or the rescue surge.
+- **Two hard collisions to resolve at whichever sync brings it in.** `FlightWaypointType`: it
+  claims 36 (`INGRESS_CSAR`) and 37 (`CSAR_PICKUP`); we hold 36 (`INGRESS_RECON`, TARPS) and 37
+  (`SEAD_LOITER`). Both of ours are persisted in saves, so taking its numbering needs a
+  migration. It also adds `FlightType.CSAR = "CSAR"` alongside our `COMBAT_SAR` / `SCAR`.
+- Standing direction on conflicts with it: **err toward upstream's shape, not ours.**
 
 ## Checklist map (docs/dev/414th-ingame-pass-checklist.md)
 

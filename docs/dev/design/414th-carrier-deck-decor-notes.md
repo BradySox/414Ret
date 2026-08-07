@@ -82,10 +82,14 @@ handled by **envelope exclusion**, not per-spot clearance: everything shipped li
 one of two zones where a parking spot cannot be:
 
 - **LSO platform sponson** (x −134..−126, y −25..−18) — off the deck surface.
-- **Island street** (x −68..−40, y +12.5..+24.5) — between the LA foul line and the
-  island; flanked by the six-pack row (y=+34), the corral (fwd of the island face,
-  x>−38) and the junkyard (x<−72). The SC manual's spot diagrams place nothing there,
-  no spawn was ever observed there, and OCN parks gear there in 13 flyable missions.
+- **Island street** (x −63.9..−31.4, y +11.9..+24.7 — the current placements after the
+  2026-07-27 re-reposition below; this bullet read x −68..−40 until 2026-08-07 and was
+  stale by the `CORRAL_SHIFT` retune) — between the LA foul line and the island; flanked
+  by the six-pack row (y=+34), the corral (fwd of the island face, x>−38) and the
+  junkyard (x<−72). No spawn was ever observed there, and OCN parks gear there in 13
+  flyable missions. ⚠️ **The third leg of that argument — "the SC manual's spot diagrams
+  place nothing there" — does not survive reading the diagrams.** See *The 11-vs-16 spot
+  gap* below.
 
 `KNOWN_PARKING_SPOTS` + `MIN_SPOT_CLEARANCE_M` (9 m: folded-Hornet half-span 4.7 m +
 placement jitter <2 m + margin) live in `game/data/carrier_deck_decor.py` and the guard
@@ -427,6 +431,61 @@ widened to `(−65, −30, 10, 25)` and the envelope-bounds guard relaxed to mat
 y = +34 six-pack spots and the aft junkyard/El-3 spots (x < −98). Guard tests
 (`test_carrier_deck_decor.py`, 12) green. Needs an in-game eyeball to confirm the
 blue-spot placement (B25).
+
+## The 11-vs-16 spot gap (2026-08-07, from the Supercarrier guide's own diagrams)
+
+The `references/manuals/` pass put the **DCS Supercarrier Operations Guide** on disk and
+indexed it. Reading the two things in it that bear on this feature changes what the
+parking-safety argument above actually proves.
+
+**What the guide says in prose** (p100–101) — most of it already matches this note: 16
+parking spots + 1 per catapult; spots 1–4 deactivate on MP unpause; the F-14 blocks
+adjacent spots; parking is assigned in the order aircraft are added to the carrier. Two
+things here were **not** recorded before:
+
+- Deck control routes a landing aircraft only to a spot it can reach, and treats **static
+  objects as taxi-route obstructions**. If a mission leaves no reachable spot, the landed
+  aircraft is **removed from the simulation** — a harsher failure than this note's "a
+  static ON a spot blocks it (the allocator skips it — capacity loss, no explosion)".
+- ED's own advice is to keep an unobstructed lane to **elevators 1 and 2**, forward of the
+  island: aircraft routed there are struck below and keep the deck clear.
+
+**What the diagrams say** is the part that matters, and it was invisible until now because
+pages 104–106 are **images** — `pdftotext` returns only "Slide 1 / Slide 2 / Slide 3", so
+every earlier reading of this manual missed them. They are titled **Static Object Safe
+Zones**, drawn on CVN-71, in two columns (Launch Ops / Recovery Ops) at **4, 8 and 16
+aircraft**. Two consequences:
+
+- **The launch-vs-recovery split this feature already ships is ED's own model.** The
+  LAUNCH-PHASE tier standing in the recovery corridor and being struck below before
+  recovery is exactly the difference between ED's two columns. Nothing to change.
+- **The safe zone shrinks as the deck fills, and §72 does not model that.** The placements
+  are fixed; there is no aircraft-count input. A set that is safe on a light deck is not
+  automatically safe on a full one.
+
+**The gap, quantified.** `KNOWN_PARKING_SPOTS` holds **11** entries; ED documents **16**.
+On the starboard side the table runs out at `x = −35.5` (aft end of the six-pack row) and
+does not resume until `x = −98.7` (El-3 shoulder) — **63.2 m of deck with no entry** — and
+**52 of the 67** street-gear placements sit inside it. The guard-tested clearance is real
+but proves less than it reads: all six variants' minimum (12.7–14.7 m) is measured to the
+same spot, `(−35.5, 34.0)`, the *edge* of the gap. Nothing inside the gap is tested,
+because nothing inside it is in the table. The guide's parking diagram (p100) places
+**spots 5 and 6** in that region — forward of the island on the starboard deck edge, aft of
+the 1–4 row, with spot 5 drawn E-2-sized.
+
+**What was deliberately not done.** Registering the safe-zone slides to ship-frame metres
+was attempted and **the result was discarded**: the deck aspect derived from the image came
+out 22 % wider than a Nimitz, and the two drawings of the same hull disagreed by 23 px,
+because aircraft icons are drawn overlapping the deck edge. So this note does **not** claim
+the street is inside or outside the green. Repeated deck-geography guesses have failed on
+this feature before (see the corral reposition's method note); the honest answer is that
+spots 5 and 6 need **measuring**, by the same Tacview t=0 method that produced the 11
+entries we have.
+
+**Consequence:** LOCAL card 2 — count the jets a full cold deck actually parks, decorations
+on vs off. That is the parking-capacity half of B25's criterion, which B25's 2026-08-06
+closure did not exercise (it closed on the appearance symptoms). Until it runs, treat the
+island street as **flown-clean but not capacity-proven**.
 
 ## In-game pass
 

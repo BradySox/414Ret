@@ -14,13 +14,13 @@ price: 17
 role: Interceptor
 max_range: 350
 fuel:
-  # Parking 44 to RWY 06L at Anderson AFB.
+  # NOT MEASURED for this airframe. These are the F-16C's values, copied verbatim.
+  # The Viper's test-condition comments came with them and are removed here rather than
+  # left describing a sortie never flown in a Tornado. Treat as a placeholder; re-measure
+  # per docs/modding/fuel-consumption-measurement.md.
   taxi: 200
-  # AB takeoff to 350/0.75, reduce to MIL and maintain 350/0.75 to 25k ft.
   climb_ppm: 28.33
-  # 0.85 mach for 100NM.
   cruise_ppm: 12
-  # MIL for 100NM. Occasional AB use.
   combat_ppm: 26
   min_safe: 1000
 variants:

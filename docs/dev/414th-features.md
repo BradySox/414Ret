@@ -942,6 +942,25 @@ weakness worth a future pass: it scales off internal capacity alone, so big-tank
 hardest — the Su-27 estimate lands at 39.9 ppm, outside the 10-35 band the fork's own test calls
 reasonable.
 
+*Not every "measured" block is measured (audit, 2026-08-07).* The blocks carry test-condition
+comments — the taxi route, the climb profile, the cruise mach and leg length — precisely so a number
+is reproducible. Auditing them turned up **seven airframes wearing another jet's numbers with the
+donor's comments attached**: the six `VSN_F35*` files carry the F/A-18C's values (`170 / 44.25 /
+22.1 / 27.5 / 2000`) and `Tornado_ADV` carries the F-16C's (`200 / 28.33 / 12 / 26 / 1000`), each
+including a `# Parking A1 to RWY 32 at Akrotiri` / `# Parking 44 to RWY 06L at Anderson AFB` line
+describing a sortie never flown in that aircraft. **This is inherited, not fork-authored** — upstream
+`dcs-retribution/dcs-retribution` `dev` carries the identical blocks and comments, and DCS Liberation
+has no fuel block for either file. The **values are left alone** (they are the only figures anyone
+has, and reverting them to the capacity estimate would be worse); only the comments were rewritten to
+say `NOT MEASURED for this airframe`, name the donor, and point at the measurement procedure. Carve
+candidate for upstream once the PR freeze lifts.
+
+Deliberately **not** touched by that audit: same-family reuse, which is defensible and partly
+Liberation's own choice. `FA-18E`/`FA-18F`/`FA-18ET`/`FA-18FT`/`F_A-18C`/`EA-18G` share the Hornet
+block (Liberation itself ships the Super Hornet and Growler that way), and the `F-16D_*`/`F-16I`
+marks share the F-16C block. The F-35 and the Tornado are different airframes entirely, which is why
+they are the clear-cut cases.
+
 **Compact 3-4 page kneeboard deck — RETIRED (2026-07-05, the back-to-basics rework).** The compact
 folding machinery (`compact_kneeboard`, `_compact_kneeboard_pages`, the `CombatIntelPage`/
 `CommsCoordPage`/`FlexReferencePage` composites, `_draw_section_if_fits`, the adaptive flex page and

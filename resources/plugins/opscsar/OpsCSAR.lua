@@ -180,6 +180,13 @@ local function opscsar_main()
             return nil
         end
         local my = CSAR:New(side_const, template, "CSAR")
+        -- 414th: MOOSE hardcodes radioSound = "beacon.ogg" (Moose.lua:78495) and
+        -- transmits "l10n/DEFAULT/"..radioSound. That file ships with NOTHING -- it is
+        -- not in this tree and no plugin packs it -- so stock Ops.CSAR keys a
+        -- filename the mission does not contain and the survivor beacon is silent.
+        -- Point it at the tone this plugin actually ships (see plugin.json's
+        -- otherResourceFiles, which is what puts it in l10n/DEFAULT/).
+        my.radioSound = "csar-beacon.wav"
         my.enableForAI = cfg.rescueAI == "true"
         -- Survivors wait for the cabin door before boarding or getting out. Only
         -- affects crewed rescues; the AI paths don't go through Ops.CSAR at all.

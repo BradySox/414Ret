@@ -2366,7 +2366,11 @@ Persisted saves migrate through `_LEGACY_FLIGHT_TYPE_VALUES`: `"Combat SAR"` →
 - **The C-130J "King".** Upstream derives CSAR capability from the airframe and restricts it to
   helicopters, because the DCS AI `Land` task is helicopter-only and a fixed-wing rescuer just
   orbits the survivor. An explicit per-aircraft `CSAR:` task entry overrides that derivation, and
-  `C-130J-30.yaml` carries `CSAR: 60` deliberately. **Accepted limit: an AI-crewed King will not
+  `C-130J-30.yaml` carries `CSAR: 5` deliberately — **the lowest CSAR number in the
+  fleet**, so the auto-planner always reaches for a helo first and never frags a King for a
+  rescue no AI can finish. Upstream derives CSAR from the airframe, so 27 airframes are
+  capable and the floor is the Mi-24V at 10, not the fork's own eight yamls.
+  `tests/test_csar_king_priority.py` pins it against the live fleet. **Accepted limit: an AI-crewed King will not
   complete a pickup.** The King is player-flown, as the on-scene commander it always was.
 - **The briefed survivor beacon** — see below.
 - All eight former Combat SAR carriers keep their authored priorities, converted

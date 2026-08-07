@@ -322,7 +322,7 @@ def test_advance_turn_decrements_without_expiry() -> None:
         # DCS AI Land task is helicopter-only, so upstream's DERIVATION excludes
         # them and they would just orbit the pilot.
         #
-        # 414th: the C-130J-30 nonetheless carries an explicit `CSAR: 60` entry in
+        # 414th: the C-130J-30 nonetheless carries an explicit `CSAR: 5` entry in
         # its yaml (squadron call 2026-08-07 -- the "King" on-scene commander), and
         # an explicit per-aircraft task ALWAYS wins over the derivation. So it is
         # CSAR-capable here by deliberate override, not by derivation. The limit
@@ -1483,7 +1483,7 @@ def test_generate_csar_data_serializes_and_evaluates() -> None:
     # Hercules never appears...
     assert "CH-47D" in rescue_ids
     assert "Hercules" not in rescue_ids
-    # ...but the C-130J-30 does, because the 414th gives it an explicit `CSAR: 60`
+    # ...but the C-130J-30 does, because the 414th gives it an explicit `CSAR: 5`
     # yaml entry for the player-flown "King" role, and an explicit task beats the
     # derivation. MOOSE ships no capacity for it either, so it MUST be whitelisted
     # or a King could not board a survivor at all.

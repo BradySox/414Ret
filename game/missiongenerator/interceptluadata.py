@@ -12,11 +12,6 @@ if TYPE_CHECKING:
     from game.theater import ConflictTheater
 
 
-#: Fallback backstop-EWR DCS type per coalition. These are stock EWR units that
-#: ship with the base game; the Lua skips a base's backstop if the type is not
-#: present in the running DCS build (see intercept-config.lua).
-DEFAULT_BACKSTOP_EWR_TYPE = {"BLUE": "FPS-117", "RED": "55G6 EWR"}
-
 #: GCI-ambush scramble radius cap (Vietnam W5). An ambush-doctrine side scrambles
 #: LATE -- the raid is already deep when the MiGs launch, so the intercept happens
 #: near the strike package's target instead of duelling the sweep at the border.
@@ -201,11 +196,6 @@ class InterceptEntry:
     engagement_range_nm: int
     gci_max_radius_nm: int
     comms_enabled: bool
-    #: DCS country id, used by the Lua to spawn the per-base backstop EWR in the
-    #: correct coalition.
-    country_id: int
-    #: DCS unit type for the per-base backstop EWR.
-    backstop_ewr_type: str
     #: GCI-ambush posture (Vietnam W5): the Lua leashes this side's defenders
     #: (small disengage radius + high fuel threshold = hit-and-run). Defaulted so
     #: pre-W5 callers/tests are unaffected.
@@ -246,8 +236,6 @@ def populate_intercept_lua(
         record.add_key_value("engagementRangeNm", str(entry.engagement_range_nm))
         record.add_key_value("gciMaxRadiusNm", str(entry.gci_max_radius_nm))
         record.add_key_value("commsEnabled", "true" if entry.comms_enabled else "false")
-        record.add_key_value("countryId", str(entry.country_id))
-        record.add_key_value("backstopEwrType", entry.backstop_ewr_type)
         record.add_key_value("ambushPosture", "true" if entry.ambush else "false")
         record.add_key_value("disengageRadiusNm", str(entry.disengage_radius_nm))
 

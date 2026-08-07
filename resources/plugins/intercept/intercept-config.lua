@@ -9,11 +9,21 @@
 -- matched almost nothing, because DCS EWR group names are suffix-form
 -- ("1L13 EWR", "55G6 EWR").
 --
--- Detection has two sources: the IADS EWR/SAM-as-EWR network (primary, wide
--- area) and a hidden/invisible/immortal backstop EWR at each alert base
--- (guaranteed fallback — catches anything that slips through or survives after
--- the EWR network is destroyed). The backstop always spawns; it is independent
--- of GciRadius.
+-- Detection source: the IADS EWR/SAM-as-EWR network published in
+-- dcsRetribution.IADS (the same source MANTIS uses). A base only scrambles QRA
+-- against raids its radar network actually sees; if a coalition's EWR/SAM-as-EWR
+-- network is wiped out, its QRA loses GCI detection (by design — we no longer
+-- spawn a per-base backstop EWR).
+--
+-- The backstop is GONE and must not be restored (2026-08-06, flown Red Tide at
+-- Sperenberg; upstream PR #782 removed it for the same reason). It was a real
+-- vehicle spawned with mist.dynAdd at the airbase reference point + 300 m NE.
+-- DCS has no non-colliding ground unit: mist's `hidden` only suppresses the F10
+-- map symbol and SetCommandInvisible only blinds the AI's *sensors*, so the
+-- model and its collision box stayed on the ramp. A 55G6 EWR mast is enormous,
+-- 300 m NE of a reference point lands squarely in the taxiway/apron network on
+-- a real field, and AI taxi routing has no way around it. Any "guaranteed
+-- detection" scheme that puts an object on an operating airfield has this bug.
 --
 -- GciRadius (groundControlledInterceptionMaxRadius, default 100 NM) caps how
 -- far from a base a detected raid can trigger a scramble. The dispatcher only
@@ -47,17 +57,9 @@
 -- control point; a front-line CP's circle is grown to reach a little past its own
 -- FLOT). No zones emitted => SetBorderZone is skipped => legacy behaviour.
 --
--- The backstop EWR DCS type is supplied per record by the mission generator
--- (rec.backstopEwrType) rather than hardcoded here. If the type is unknown to
--- the running DCS build, mist.dynAdd silently spawns nothing; we therefore
--- verify each backstop group exists before trusting it as a detection source
--- and fall back to the EWR network for that base otherwise.
---
--- Build timing: backstop EWRs are spawned with mist.dynAdd up front, but the
--- detection SET_GROUP (and the dispatcher) are assembled BUILD_DELAY seconds
--- later. mist.dynAdd registers a group via a birth event on the next frame, so
--- a SET_GROUP:FilterStart() built synchronously would not yet see the backstop.
--- The short delay lets the groups register first.
+-- Build timing: the detection SET_GROUP and the dispatcher are assembled
+-- BUILD_DELAY seconds in, to give the mission's own groups a frame to register
+-- before SET_GROUP:FilterStart() scans them.
 --
 -- AI_A2A_DISPATCHER:New() calls self:__Start(5) internally — no explicit
 -- dispatcher:Start() call is needed or valid (no such method exists).
@@ -133,7 +135,7 @@ local intercept_registry = {}
 -- for the numerics and a string compare ("false") for the boolean.
 local NM = 1852  -- metres per nautical mile
 local DETECTION_GROUPING_M = 30000  -- contact-clustering radius for DETECTION_AREAS
-local BUILD_DELAY = 5  -- seconds; let mist.dynAdd backstops register before SET_GROUP
+local BUILD_DELAY = 5  -- seconds; let the mission's groups register before SET_GROUP
 
 -- QRA scramble spawn profile (414th tuning, 2026-06-21).
 --   Speed: Moose's air-spawn (SpawnAtAirbase, Takeoff.Air) sets position + altitude
@@ -264,46 +266,6 @@ local function ewr_group_names(coalition_name)
     return names
 end
 
--- Make the backstop EWR invisible to enemy AI and immortal so the backstop
--- cannot be shot out. Deferred a few seconds so Moose has registered the
--- freshly spawned group.
-local function protect_group(group_name)
-    mist.scheduleFunction(function()
-        local grp = GROUP:FindByName(group_name)
-        if grp then
-            grp:SetCommandInvisible(true)
-            grp:SetCommandImmortal(true)
-        end
-    end, {}, timer.getTime() + 5)
-end
-
--- Attempts to spawn a hidden backstop EWR. Returns true when a spawn was issued
--- (a valid type and country were supplied); the caller still verifies the group
--- actually exists before relying on it, since mist.dynAdd drops unknown types.
-local function spawn_backstop_ewr(group_name, vec2, ewr_type, country_id)
-    if not ewr_type or ewr_type == "" or not country_id then
-        return false
-    end
-    mist.dynAdd({
-        countryId = country_id,
-        category = "vehicle",
-        groupName = group_name,
-        hidden = true,
-        units = {
-            {
-                type = ewr_type,
-                x = vec2.x,
-                y = vec2.y,
-                heading = 0,
-                skill = "Excellent",
-                name = group_name .. " radar",
-            },
-        },
-    })
-    protect_group(group_name)
-    return true
-end
-
 -- ---------------------------------------------------------------------------
 -- Task-type reaction filter (upstream PR #782)
 -- QRA only scrambles against air-to-ground raids. The enemy flight's Retribution
@@ -380,43 +342,9 @@ local function build_dispatcher(coalition_name, records)
     -- Lua half is the hit-and-run leash below (disengage radius + fuel threshold).
     local ambush_posture = records[1].ambushPosture == "true"
 
-    -- Always spawn a hidden backstop EWR at each defended base so there is a
-    -- guaranteed detection source even when the IADS network is destroyed.
-    -- This is independent of GciRadius — the backstop ensures detection, while
-    -- GciRadius (set below) controls how far out a raid triggers a scramble.
-    local backstop_names = {}
-    do
-        local seen_bases = {}
-        for _, rec in ipairs(records) do
-            local base_name = rec.airbaseName
-            if not seen_bases[base_name] then
-                seen_bases[base_name] = true
-                local airbase = AIRBASE:FindByName(base_name)
-                if airbase then
-                    local vec2 = airbase:GetVec2()
-                    -- Offset 300 m NE of the airbase centre so the invisible backstop
-                    -- unit does not land on the runway and block ground traffic.
-                    local ewr_vec2 = { x = vec2.x + 300, y = vec2.y + 300 }
-                    local ewr_name = "QRA_Backstop_" .. coalition_name .. "_" .. base_name
-                    if spawn_backstop_ewr(ewr_name, ewr_vec2, rec.backstopEwrType, tonumber(rec.countryId)) then
-                        backstop_names[#backstop_names + 1] = ewr_name
-                    end
-                end
-            end
-        end
-    end
-
-    -- Assemble the dispatcher once the backstop groups have registered.
+    -- Assemble the dispatcher once the mission's groups have registered.
     mist.scheduleFunction(function()
         local detection_prefixes = ewr_group_names(coalition_name)
-        for _, ewr_name in ipairs(backstop_names) do
-            if GROUP:FindByName(ewr_name) then
-                detection_prefixes[#detection_prefixes + 1] = ewr_name
-            else
-                env.info("DCSRetribution|Intercept: backstop EWR '"..ewr_name
-                         .."' did not spawn (unknown type?); base falls back to EWR network.")
-            end
-        end
 
         if #detection_prefixes == 0 then
             env.info("DCSRetribution|Intercept: no detection sources for "
@@ -427,10 +355,9 @@ local function build_dispatcher(coalition_name, records)
         -- Moose SET_GROUP:FilterPrefixes matches names with Lua-pattern semantics
         -- (string.find, only "-" pre-escaped). Retribution IADS group names contain
         -- "(" / ")" (e.g. "0041 | LION (EWR)", "0114 | LORIKEET (S-300)"), which
-        -- would be read as pattern captures and never match, leaving the wide-area
-        -- EWR half of detection empty (only the paren-free QRA_Backstop_* names
-        -- ever matched). Escape the full merged list — backstop names included —
-        -- so each prefix matches its literal group name.
+        -- would be read as pattern captures and never match, leaving the detection
+        -- set empty (no QRA scramble ever). Escape the magic chars so each prefix
+        -- matches its literal group name.
         local detection_patterns = {}
         for i, name in ipairs(detection_prefixes) do
             detection_patterns[i] = lua_pattern_escape(name)

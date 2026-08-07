@@ -131,11 +131,16 @@ squadrons:
 supply_routes:
   # #50 blue rear corridor (batch 1)
   # Anapa-Vityazevo -> Novorossiysk  (the A290 through Raevskaya and the Verkhnebakansky pass)
+  # Both ends sit ~2 km down the corridor rather than on the fields themselves: an
+  # airfield control point's position IS the DCS airport reference point, i.e. the
+  # runway, and a convoy spawns at its route's first waypoint. Authored on the
+  # reference points, this route parked eight T-80UDs across Anapa's runway 22.
+  # Each end still binds to its own field (nearest control point).
   - waypoints:
-      - [-5412, 243129]
+      - [-6841, 244528]
       - [-23170, 260506]
       - [-30005, 271606]
-      - [-40918, 279256]
+      - [-39281, 278108]
 
 # --- §86 GPS jamming: two jamming sites, pinned onto existing EWR markers.
 #     A standalone `GPS Jamming Site` deliberately, NOT a jamming-equipped SAM battery: it adds

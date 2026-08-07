@@ -212,12 +212,41 @@ Four upstream fixes the fork's QRA had drifted behind, ported with the fork coup
   Retribution IADS group name carries parens (`"0041 | LION (EWR)"`) that read as pattern
   captures — so the wide-area EWR half of QRA detection matched **zero** groups and the
   dispatchers were detecting on the paren-free `QRA_Backstop_*` base EWRs **only**.
-  `intercept-config.lua` now escapes the FULL merged `detection_prefixes` list (backstop
-  names too) with the same `gsub` the fork already proved in `mantis-config.lua`'s
-  `escape_prefix` (everything except `-`, which Moose's own gsub handles). This expands
-  real detection from base-local backstops to the whole IADS EWR network — fold verifying
-  it into the A5 forward-defense fly. Pinned in `tests/lua/test_intercept_filter.py` (the
-  plugin's chunk-return test hook + a recording MOOSE fake).
+  `intercept-config.lua` now escapes the `detection_prefixes` list with the same `gsub` the
+  fork already proved in `mantis-config.lua`'s `escape_prefix` (everything except `-`, which
+  Moose's own gsub handles). This expanded real detection from base-local backstops to the
+  whole IADS EWR network — fold verifying it into the A5 forward-defense fly. Pinned in
+  `tests/lua/test_intercept_filter.py` (the plugin's chunk-return test hook + a recording
+  MOOSE fake). (The backstops themselves are gone as of 2026-08-06 — see below — so the
+  escape is now the *only* thing standing between the dispatcher and an empty detection set.)
+- **The per-base backstop EWR is removed** (2026-08-06, flown Red Tide at Sperenberg: *"the
+  QRA invisible EWR is offset from the runway and causing collision issues on the taxiways"*).
+  The fork spawned a "hidden/invisible/immortal" EWR at every alert base with `mist.dynAdd`,
+  at the **airbase reference point + 300 m NE**, so QRA had a guaranteed detection source even
+  with the IADS network dead. The premise is unachievable: **DCS has no non-colliding ground
+  unit.** mist's `hidden` only suppresses the F10 map symbol, and `SetCommandInvisible` only
+  blinds the AI's *sensors* — the model and its collision box remain. A `55G6 EWR` is a large
+  lattice mast, and 300 m NE of a reference point lands squarely in the taxiway/apron network
+  of a real field, where AI taxi routing has no way around it. **Upstream PR #782 deleted the
+  same mechanism for the same reason** — its header reads *"we no longer spawn a per-base
+  backstop EWR, which DCS placed on runways/taxiways at the airbase reference point and broke
+  AI taxi routing"* — so the fork adopts upstream's shape rather than inventing a third
+  placement rule (any scheme that puts an object on an operating airfield has this bug; moving
+  it far enough away to be safe is just the IADS network with extra steps).
+  Detection is now the IADS `Ewr`/`SamAsEwr` network alone. `ewr_group_names` was already
+  present and already the primary source, so the change is a **pure subtraction**: the
+  `spawn_backstop_ewr` + `protect_group` helpers, the per-base spawn loop, and the merge of
+  `backstop_names` into `detection_prefixes` are gone, along with `DEFAULT_BACKSTOP_EWR_TYPE`,
+  `InterceptEntry.backstop_ewr_type`, `InterceptEntry.country_id` and the `backstopEwrType` /
+  `countryId` emits (upstream emits neither — both existed solely to feed the backstop).
+  **The by-design consequence, accepted upstream and here: a coalition whose EWR/SAM-as-EWR
+  network is wiped out loses GCI detection and stops scrambling** — no radar, no GCI. With no
+  detection source the plugin logs and builds no dispatcher rather than erroring. Runtime +
+  generation only, so **existing saves are fixed by the next regeneration** — no new game.
+  Tests: `tests/lua/test_intercept_filter.py` gained a `mist.dynAdd` recorder asserting the
+  plugin spawns **nothing** and a wiped-out-network case asserting it builds no dispatcher and
+  raises no error; `tests/missiongenerator/test_interceptluadata.py` pins that neither
+  `backstopEwrType` nor `countryId` is ever emitted again.
 - **React-task filter** (upstream `5e565bb5` + `f0bd1b63`): the dispatcher no longer
   scrambles against ANY airborne enemy — each per-coalition dispatcher's
   `EvaluateGCI`/`EvaluateENGAGE` is wrapped to skip a detection cluster with no
@@ -1648,9 +1677,11 @@ behavior, so it's an upstream-PR candidate. Tests: `tests/test_dead_planning.py`
   departing convoy on the runway. Confirmed in the flown miz: `Convoy 001` (3 vehicles) at
   0.3 m from the Bremen reference and `Convoy 002` at 0.4 m from Nordholz. The de-stack
   mechanism that would otherwise have saved it — miz-authored cp-convoy spawn markers
-  (`M1043_HMMWV_Armament` groups → `MizCampaignLoader._construct_cp_spawnpoints`) — is
-  authored by **0 of 72** campaign mizzes, so `_find_closest_cp_spawn` returns nothing and
-  every unit piles onto waypoint 0. `ConvoyGenerator.spawn_position` now walks the spawn out
+  (`M1043_HMMWV_Armament` groups → `MizCampaignLoader._construct_cp_spawnpoints`) — was not
+  authored anywhere near Bremen or Nordholz, so `_find_closest_cp_spawn` returned nothing and
+  every unit piled onto waypoint 0. (**The "0 of 72 campaigns" claim originally written here
+  was wrong** — 26 campaigns author them; see the 2026-08-06 entry below, where that error is
+  what let the bug survive its own fix.) `ConvoyGenerator.spawn_position` now walks the spawn out
   along the **authored corridor** (never off it) to the first point ≥
   `AIRFIELD_SPAWN_CLEARANCE_M` (1500 m — clears a runway half-length plus aprons while keeping
   the convoy at the base, still BAI-targetable and inside its defensive umbrella) that is also
@@ -1666,6 +1697,48 @@ behavior, so it's an upstream-PR candidate. Tests: `tests/test_dead_planning.py`
   Szczecin references — is fixed in the miz and CI-locked in `tests/fourteenth/test_baltic_fury.py`
   (design note `414th-baltic-fury-campaign-notes.md`). Tests
   `tests/missiongenerator/test_convoy_spawn_clearance.py`.
+- **The runway guard's two escape hatches (2026-08-06, the flown Caucasus - Slava Ukraini report
+  "tanks drove on the runway and broke the AI taking off").** Eight T-80UDs (`Convoy 001`) spawned
+  with their lead vehicle **on Anapa-Vityazevo's airport reference point**, strung 214 m across
+  runway 22, while eight AI flights (~24 aircraft, all `TakeOffParkingHot`) taxied out. The
+  2026-08-02 guard above was present in the running build and **never executed**, because
+  `generate_convoy` reads `position = convoy.route_start if spawns_tuple else spawn_position(...)`
+  — an authored spawn chain is respected wholesale — and this route had one. Three defects, all
+  needed:
+  1. **`_find_closest_cp_spawn` had no distance bound.** It returned the nearest
+     `M1043 HMMWV Armament` marker *anywhere on the map*. Slava Ukraini authors 6, all serving
+     other routes; the nearest to Anapa (`Ground-42`, **9.4 km** away) belongs to the Anapa→Maykop
+     front route heading the opposite way. `_interpolate_points` builds its chain **starting at
+     the route's endpoint** and interpolating toward the marker at 100 ft separation, so it
+     produced **441 points running from the runway** — and the miz confirms the mechanism exactly:
+     unit spacing 30.49 m (= 100 ft) on the precise bearing to `Ground-42`. Measured fork-wide:
+     **388 route endpoints claim a marker, 308 of them within 2 km (legitimate), but 66 from
+     markers 10–447 km away** (Red Tide two at ~171 km, Desert Storm one at 447 km; Novorossiysk's
+     reverse leg drew a **1677-point** chain off the same 185 km marker). New
+     `MizCampaignLoader.MAX_CP_CONVOY_SPAWN_DISTANCE_M` (**5 km** — comfortably covers a large
+     airbase complex, and the measured legit population clusters far below it) drops the claims
+     388 → 322 with a worst remainder of 4 954 m. A dropped chain is not a loss: the convoy falls
+     back to an ordinary group spawn, which the clearance guard then protects.
+  2. **A chain built from the endpoint begins on the runway whenever the route does**, however
+     well the marker was placed. The decision is extracted to `ConvoyGenerator.spawn_plan` →
+     `SpawnPlan(position, spawns, cleared)`, which **discards the chain and clears the field**
+     when the spawn had to be walked out (logged as a warning naming the convoy and field). A
+     *fouled* approach — no clear ground inside the walk budget — keeps the chain instead, since
+     discarding it there would leave the convoy on the runway **and** stacked on one point.
+  3. **`wpts.extend(route)` included `route[0]`.** Even a convoy whose spawn was walked clear had
+     the authored point as its first commanded waypoint, so it drove straight back onto the runway
+     — visible in the flown miz as group waypoint 1 sitting 0.4 m from the reference. The authored
+     start is now skipped when the spawn was cleared (`route[1:]`); an un-cleared convoy keeps the
+     full route byte-identically.
+  Campaign-data half: Slava Ukraini's §50 batch-1 blue rear corridor authored **both** endpoints
+  on airport reference points (`[-5412, 243129]` is Anapa's, `[-40918, 279256]` is Novorossiysk's),
+  so both fields were exposed. Both moved ~2 km down the same corridor; headless-verified that each
+  end still binds its own control point, sits on land, and now carries no spawn chain (441 → 0,
+  1677 → 0) while the legitimate Anapa→Maykop chain (136 points) is preserved. Generation-time, so
+  **existing saves fix themselves on the next regeneration** — no new game. Upstream-shared (the
+  cp-convoy spawn-route feature is upstream's); carve candidate. Tests
+  `tests/campaignloader/test_cp_convoy_spawn_distance.py` (6) +
+  `tests/missiongenerator/test_convoy_spawn_clearance.py` (4 new).
 
 ---
 

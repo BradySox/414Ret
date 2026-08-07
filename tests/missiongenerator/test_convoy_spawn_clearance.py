@@ -35,6 +35,7 @@ class FakeControlPoint:
     name: str
     dcs_airport: Optional[FakeAirport]
     route: Sequence[Point]
+    convoy_spawns: dict[object, tuple[Point, ...]] = field(default_factory=dict)
 
     def convoy_route_to(self, destination: object) -> Sequence[Point]:
         return self.route
@@ -135,3 +136,72 @@ def test_the_walk_is_bounded() -> None:
     spawned = generator(FakeTheater(water)).spawn_position(FakeConvoy(origin))  # type: ignore[arg-type]
 
     assert spawned == AIRFIELD
+
+
+# --- The authored spawn chain must not defeat the clearance guard -------------
+#
+# The chain is interpolated *from the route's endpoint*, so a route authored on
+# the airfield reference point produces a chain whose lead vehicle stands on the
+# runway. Observed on Caucasus - Slava Ukraini: eight T-80UDs strung across
+# Anapa's runway 22 while eight AI flights taxied for takeoff.
+
+
+@dataclass
+class FakeConvoyWithSpawns(FakeConvoy):
+    spawns: Sequence[Point] = field(default_factory=tuple)
+
+    def __post_init__(self) -> None:
+        self.origin.convoy_spawns = {self.destination: tuple(self.spawns)}
+
+
+def chain_from(start: Point, count: int = 8) -> list[Point]:
+    """An authored chain marching east from ``start`` at 100 ft separation."""
+    return [point(start.x + i * 30.48, start.y) for i in range(count)]
+
+
+def test_a_chain_beginning_on_the_runway_is_discarded() -> None:
+    origin = FakeControlPoint("Anapa", FakeAirport(AIRFIELD), straight_route(AIRFIELD))
+    convoy = FakeConvoyWithSpawns(origin, spawns=chain_from(AIRFIELD))
+
+    plan = generator().spawn_plan(convoy)  # type: ignore[arg-type]
+
+    assert plan.spawns is None
+    assert plan.cleared
+    assert plan.position.distance_to_point(AIRFIELD) >= AIRFIELD_SPAWN_CLEARANCE_M
+
+
+def test_a_chain_clear_of_the_runway_is_honored_wholesale() -> None:
+    start = point(5_000, 0)
+    origin = FakeControlPoint("Fulda", FakeAirport(AIRFIELD), straight_route(start))
+    chain = chain_from(start)
+    convoy = FakeConvoyWithSpawns(origin, spawns=chain)
+
+    plan = generator().spawn_plan(convoy)  # type: ignore[arg-type]
+
+    assert plan.spawns == tuple(chain)
+    assert not plan.cleared
+    assert plan.position == start
+
+
+def test_a_fouled_approach_keeps_the_chain_rather_than_losing_both() -> None:
+    # No clear ground exists, so the spawn cannot be walked out. Discarding the
+    # author's chain as well would leave the convoy on the runway *and* stacked.
+    water = [point(x, 0) for x in range(0, int(MAX_SPAWN_WALK_M) + 500, 200)]
+    origin = FakeControlPoint(
+        "Nordholz", FakeAirport(AIRFIELD), straight_route(AIRFIELD)
+    )
+    chain = chain_from(AIRFIELD)
+    convoy = FakeConvoyWithSpawns(origin, spawns=chain)
+
+    plan = generator(FakeTheater(water)).spawn_plan(convoy)  # type: ignore[arg-type]
+
+    assert plan.spawns == tuple(chain)
+    assert not plan.cleared
+
+
+def test_no_chain_reports_whether_the_spawn_was_cleared() -> None:
+    origin = FakeControlPoint("Anapa", FakeAirport(AIRFIELD), straight_route(AIRFIELD))
+    plan = generator().spawn_plan(FakeConvoy(origin))  # type: ignore[arg-type]
+
+    assert plan.spawns is None
+    assert plan.cleared

@@ -57,6 +57,22 @@ class MizCampaignLoader:
     SHIPPING_LANE_UNIT_TYPE = HandyWind.id
     CP_CONVOY_SPAWN_TYPE = Armor.M1043_HMMWV_Armament.id
 
+    #: How close a convoy spawn marker must be to a supply route's endpoint before
+    #: it is treated as that endpoint's authored spawn chain.
+    #:
+    #: A marker is authored *at* the control point whose convoys it lays out, so a
+    #: legitimate one sits on the field: measured across the 26 campaigns that use
+    #: them, 308 of 388 endpoints have their marker within 2 km. Without a bound,
+    #: :meth:`_find_closest_cp_spawn` returns the nearest marker *anywhere on the
+    #: map* -- 60-odd endpoints were being handed a chain interpolated from their
+    #: own position toward a marker 10-447 km away, which both strung the convoy
+    #: off in the wrong direction and suppressed the runway-clearance guard in
+    #: :class:`~game.missiongenerator.convoygenerator.ConvoyGenerator` (an authored
+    #: chain is respected wholesale). 5 km comfortably covers a large airbase
+    #: complex; beyond it the convoy falls back to an ordinary group spawn, which
+    #: the clearance guard then protects.
+    MAX_CP_CONVOY_SPAWN_DISTANCE_M = 5000.0
+
     FOB_UNIT_TYPE = Unarmed.SKP_11.id
     FARP_HELIPADS_TYPE = ["Invisible FARP", "SINGLE_HELIPAD", "FARP"]
     INVISIBLE_FOB_UNIT_TYPE = Unarmed.M_818.id
@@ -493,6 +509,15 @@ class MizCampaignLoader:
             dist = start.distance_to_point(closest.position)
             if start.distance_to_point(spawn.position) < dist:
                 closest = spawn
+        if (
+            closest is not None
+            and start.distance_to_point(closest.position)
+            > self.MAX_CP_CONVOY_SPAWN_DISTANCE_M
+        ):
+            # A marker this far away belongs to some other control point's route.
+            # Claiming it would lay the convoy out toward it -- see
+            # MAX_CP_CONVOY_SPAWN_DISTANCE_M.
+            return None
         return closest
 
     @staticmethod

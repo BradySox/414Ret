@@ -13,7 +13,7 @@ Every push to `main` runs `414th-latest.yml`: lint and tests gate the build, PyI
 packages the app on Windows, and the workflow **upserts a rolling pre-release tagged
 `latest`**. The permanent download URL the squadron bookmarks:
 
-**https://github.com/bradyccox/414Ret/releases/tag/latest**
+**https://github.com/BradySox/414Ret/releases/tag/latest**
 
 There is nothing to do to "make" this release — merging to `main` is the release. Rules
 (pinned in `CLAUDE.md`):
@@ -59,6 +59,6 @@ To release a pinned version of the fork, follow upstream's steps:
 6. Verify the release. The GitHub action publishes the release automatically (non-draft)
    as soon as the tag is pushed, with the description pre-filled from the changelog —
    there is no manual "promote to release" step. Just confirm it appears correctly in
-   [Releases](https://github.com/bradyccox/414Ret/releases).
+   [Releases](https://github.com/BradySox/414Ret/releases).
 7. Announce the release. (**414th:** the squadron's channels; upstream announces in
    their Discord #releases.)

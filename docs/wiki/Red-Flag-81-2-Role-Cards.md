@@ -115,8 +115,8 @@ JOB: Film the array. The recon fog is real — an unphotographed SA-2 site is a
 
 LOADOUT: cameras. UNARMED — speed and altitude are the defense.
 GAME PLAN
-  • Fly the fragged run; film via the F10 TARS menu on the pass (player-crewed),
-    or let the AI bird overfly — a surviving AI run confirms its target.
+  • Fly the fragged run — overflying the target confirms it, no menu needed.
+    An AI bird that survives its run confirms its target the same way.
   • Priorities: the SA-2/SA-3 sites on this week's corridors, the armor arrays,
     then BDA on everything the wing claims killed.
   • Fast, high, one pass, unpredictable. A shot-down recon bird confirms NOTHING.

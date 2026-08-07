@@ -29,7 +29,7 @@ mandatory core every mission loads.
 ### The late-init pass: load-after-config plugins
 
 Most plugins are ordinary work-order plugins. But a couple of the fork's features —
-**TIC** and **TARS** — must load their main script **after** every plugin's
+**TIC** and **MooseAtis** — must load their main script **after** every plugin's
 configuration has been injected, because their init reads `dcsRetribution.plugins.<name>`
 (and MOOSE) the moment it loads. The normal work-order pass loads a plugin's scripts before
 its own config, so it can't express that ordering.
@@ -87,7 +87,7 @@ ELINT tracks as sliders.
 | `base` | Mandatory core scripts, the MIST→MOOSE shim, and `Moose.lua`. |
 | `c130j` | Turns the C-130J into an EC-130H/RC-130H EW + ISR/ELINT platform (`FlightType.JAMMING`). Replaces the retired generic `ewrj` jammer. |
 | `tic` | Troops In Contact — prolonged, formation-aware frontline firefights with ambient suppressive fire. (Late-init plugin.) |
-| `tars` | TARS recon engine — films TARPS passes and feeds confirmed BDA back to the campaign. (Late-init plugin.) |
+| `recon` | Recon engine — banks what a recon flight overflies as confirmed BDA. Covers player and AI flights with one rule. |
 | `combatsar` | The combat-SAR package runtime: rescue helo (Jolly Green) + HC-130 "King" (TACAN/LARS) + the MOOSE `CSAR`/`AICSAR` engines, the enemy snatch-party **capture race**, and rescue scoring. |
 | `intercept` | Per-squadron QRA intercept reserve feeding the MOOSE `AI_A2A_DISPATCHER`. |
 | `mantisiads` | The IADS engine — MOOSE **MANTIS**. The sole IADS engine; Skynet was removed (see [IADS Engine: MANTIS](IADS-Engine-MANTIS)). |

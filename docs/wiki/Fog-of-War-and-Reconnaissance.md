@@ -3,8 +3,8 @@
 In 414Ret your intelligence picture is deliberately incomplete. The enemy laydown is not
 handed to you fully revealed at the start of a turn, and post-strike battle-damage
 assessment (BDA) lags until something actually goes and looks. This page explains the recon
-model, the tools that fill in the picture (TARPS photo recon and the TARS film-and-debrief
-engine), the "approximate target area" precision mode, the hiding of mobile SAMs from the
+model, the tools that fill in the picture (TARPS photo recon and the recon engine behind it),
+the "approximate target area" precision mode, the hiding of mobile SAMs from the
 datalink, and the overview toggle that reveals ground truth when you want to plan or just
 check the real picture.
 
@@ -24,11 +24,11 @@ Two rules drive the player-facing picture:
 
 The same enemy SAM site, before and after it is scouted — the recon intel-fog in one picture:
 
-![The target intel dialog for an unscouted enemy SAM site: known live units, detection range, and threat range all read "Unknown (not scouted)", and the units list reads "Not yet scouted — composition unknown"](https://raw.githubusercontent.com/bradyccox/414Ret/main/docs/wiki/img/fog-intel-not-scouted.png)
+![The target intel dialog for an unscouted enemy SAM site: known live units, detection range, and threat range all read "Unknown (not scouted)", and the units list reads "Not yet scouted — composition unknown"](https://raw.githubusercontent.com/BradySox/414Ret/main/docs/wiki/img/fog-intel-not-scouted.png)
 
 *Before — an enemy medium-range SAM as it first appears: you know it exists, its type band, and which missions are valid against it, but live units, detection range, and threat range all read **"Unknown (not scouted)."***
 
-![The same site after a recon pass: known live units 9/9, detection range 54 NM, threat range 27 NM, and the full unit list resolved to SA-11 Buk "Gadfly" launchers, command, search radar, and support vehicles](https://raw.githubusercontent.com/bradyccox/414Ret/main/docs/wiki/img/fog-intel-scouted.png)
+![The same site after a recon pass: known live units 9/9, detection range 54 NM, threat range 27 NM, and the full unit list resolved to SA-11 Buk "Gadfly" launchers, command, search radar, and support vehicles](https://raw.githubusercontent.com/BradySox/414Ret/main/docs/wiki/img/fog-intel-scouted.png)
 
 *After — once scouted (or struck/TARPS'd), the same dialog resolves to truth: 9/9 live, 54 NM detection, 27 NM threat, and the actual SA-11 Buk composition you now have to plan SEAD/DEAD against.*
 
@@ -58,10 +58,10 @@ auto-planner can also append a TARPS sortie to Strike/DEAD packages automaticall
 (`auto_add_tarps_recon`, default ON), so BDA mostly takes care of itself on packages you already
 fly.
 
-TARPS and its **TARS** film-and-debrief engine have their own page:
+TARPS has its own page:
 
 > **→ [TARPS Reconnaissance](TARPS-Reconnaissance)** for the aircraft and pod, how to fly the
-> pass, the auto-planned follow-up, and how TARS turns photos into confirmed BDA.
+> pass, what shapes the take, and the auto-planned follow-up.
 
 ## Approximate target area — making you find it
 
@@ -108,9 +108,9 @@ layer choice the panel deliberately does **not** remember between sessions.
 | Setting | Default | Effect |
 |---|---|---|
 | `recon_intel_fog` | ON | Master switch for recon intel-fog + BDA damage lag |
-| `auto_add_tarps_recon` | — | Auto-append a TARPS sortie to Strike/DEAD packages when a TARPS squadron is available |
+| `auto_add_tarps_recon` | — | Auto-append a recon sortie to Strike / DEAD / Armed Recon packages when a TARPS squadron is available |
 | Target location precision | EXACT / APPROXIMATE | Offsets steerpoints, hides marks/coords, consolidates DEAD bullseye kneeboards |
-| TARS plugin | ON | In-mission film/overfly/debrief engine that confirms BDA |
+| `recon` plugin | ON | Banks what a recon flight overflies as confirmed BDA |
 | Reveal fog of war (map toggle) | OFF, never saved | Short-circuits all fog to ground truth |
 
 ## Limitations and caveats

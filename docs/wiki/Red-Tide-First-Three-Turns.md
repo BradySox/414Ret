@@ -213,4 +213,4 @@ freely editable; the ORBAT and phase logic are from the campaign files.*
 
 ---
 
-*This page is the online copy of [`docs/campaigns/red-tide-first-three-turns.md`](https://github.com/bradyccox/414Ret/blob/main/docs/campaigns/red-tide-first-three-turns.md) in the repo. Edit that file; the wiki is mirrored from `docs/wiki/` on merge to `main`.*
+*This page is the online copy of [`docs/campaigns/red-tide-first-three-turns.md`](https://github.com/BradySox/414Ret/blob/main/docs/campaigns/red-tide-first-three-turns.md) in the repo. Edit that file; the wiki is mirrored from `docs/wiki/` on merge to `main`.*

@@ -78,13 +78,13 @@ in this file, and add it to a custom file. Your mod might have added new weapons
 they'll be found in `weapons.py`, and you have to fetch them as well.
 
 Example extensions in this fork's
-[`pydcs_extensions/`](https://github.com/bradyccox/414Ret/tree/main/pydcs_extensions)
+[`pydcs_extensions/`](https://github.com/BradySox/414Ret/tree/main/pydcs_extensions)
 folder:
 
 * The popular A-4E-C mod:
-  [`pydcs_extensions/a4ec/a4ec.py`](https://github.com/bradyccox/414Ret/blob/main/pydcs_extensions/a4ec/a4ec.py)
+  [`pydcs_extensions/a4ec/a4ec.py`](https://github.com/BradySox/414Ret/blob/main/pydcs_extensions/a4ec/a4ec.py)
 * A CurrentHill assets pack:
-  [`pydcs_extensions/usamilitaryassetspack/`](https://github.com/bradyccox/414Ret/tree/main/pydcs_extensions/usamilitaryassetspack)
+  [`pydcs_extensions/usamilitaryassetspack/`](https://github.com/BradySox/414Ret/tree/main/pydcs_extensions/usamilitaryassetspack)
 
 These files contain a lot of metadata we need to be able to generate missions, such as
 possible liveries, possible payloads for each pylon, specific weapon ids, and so on.

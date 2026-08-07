@@ -28,7 +28,8 @@ SCAR is one element of a three-part package, modelled on real combat-SAR doctrin
 | **Jolly Green** | The rescue / pickup — flies in, lands, boards the survivor, delivers them home | Rescue helo (CH-47…) |
 | **Sandy** ×2–4 | **RESCAP escort** — protect the survivor, kill the threats around them, walk Jolly in | A-10C / AH-64D (`FlightType.SCAR`) |
 
-The standing package is **1 King + 1 Jolly Green + 2–4 Sandy**. The King and Jolly Green are the
+The full package is **1 King + 1 Jolly Green + 2–4 Sandy**, planned by you off the FLOT. The
+King and Jolly Green are the
 [Combat SAR](Combat-SAR) flight types; **Sandy is `FlightType.SCAR`**. See
 [Combat SAR](Combat-SAR) for the rescue mechanics, the King's beacon/LARS, and the rescue scoring
 that spares the aviator at debrief.

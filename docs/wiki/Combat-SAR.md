@@ -34,11 +34,9 @@ Combat SAR is flown as a three-part package, modeled on real combat-SAR doctrine
 | **Sandy** ×2–4 | **A-10C / AH-64D** | RESCAP escort (`FlightType.SCAR`): protect the survivor, suppress the threats around them, walk Jolly in. See [SCAR](SCAR). |
 
 The rescuer holds **near the FLOT**, not at AWACS depth — its racetrack sits just outside FLOT
-SHORAD/MANPAD reach (a short ~15 NM threat buffer) on a tight helo-sized orbit, so a slow helo is
-actually within reach of an ejection instead of 80 NM back. (Earlier builds parked it at the
-tanker/AWACS standoff; that was fixed so the rescue can reach a deep ejection in time.) Its loiter
-altitude is clamped to the campaign's helicopter combat altitude automatically — you do not tune
-it.
+SHORAD/MANPAD reach (about a 15 NM buffer) on a tight helo-sized orbit, so a slow helo is
+actually within reach of an ejection instead of 80 NM back. Its loiter altitude is clamped to the
+campaign's helicopter combat altitude automatically; you do not tune it.
 
 An AI **CH-47D** is the fallback rescuer (no weapon stations). The King is *overhead presence and
 command*, **not** a tanker — the C-130 cannot act as a DCS aerial-refueling tanker, and the
@@ -49,7 +47,7 @@ refueling system.
 
 ## How a rescue works, step by step
 
-![The rescue-helo Combat SAR kneeboard page: ROLE, HOW IT WORKS, PICKUP, and a KING BEACON block telling the crew to home on the HC-130 King's TACAN to find the rescue area](https://raw.githubusercontent.com/bradyccox/414Ret/main/docs/wiki/img/kneeboard-combat-sar.png)
+![The rescue-helo Combat SAR kneeboard page: ROLE, HOW IT WORKS, PICKUP, and a KING BEACON block telling the crew to home on the HC-130 King's TACAN to find the rescue area](https://raw.githubusercontent.com/BradySox/414Ret/main/docs/wiki/img/kneeboard-combat-sar.png)
 
 *The rescue helo's kneeboard page: how the pickup works and the **King beacon** block — home on the HC-130 "King" TACAN to find the survivor's area.*
 
@@ -104,9 +102,10 @@ airfield**. The capture is the campaign consequence for losing the rescue fight:
   the squadron).
 - A POW left too long is on a **4-turn clock** — abandon them past it and the aviator is
   **killed for good**.
+- **Winning the war brings every held POW home.** Losing it writes them off.
 
-(The earlier dedicated "CSAR raid" mission against the holding field was shelved in the
-2026-07-03 rescope — win the fight at the survivor, or win the field back.)
+There is no rescue mission against the holding field. Win the fight at the survivor, or win the
+field back.
 
 ## Rescue scoring — the payoff
 
@@ -118,41 +117,43 @@ The point of a rescue is to save the pilot, so the loop closes inside the campai
 - At debrief, each credited pilot's loss is resolved so the **airframe is still attrited but the
   aviator survives** — the kill on that pilot is skipped.
 
-Two properties make this safe:
-
-- **You have to actually bring them home.** A rescue helo shot down with survivors aboard never
-  reaches the delivery, so those pilots are never credited.
-- **Fail-safe.** If nothing is rescued, the result is identical to today's behavior — the pilot
-  dies. An empty rescue list is exactly the pre-scoring outcome.
+**You have to actually bring them home.** A rescue helo shot down with survivors aboard never
+reaches the delivery, so those pilots are never credited.
 
 See [Squadrons and Pilots](Squadrons-and-Pilots) for why keeping an experienced aviator matters
 over a campaign.
 
 ---
 
-## AI standing alert (default ON)
+## Two ways rescue happens
 
-Rescue is a normal, standing task: the **`auto_combat_sar`** setting (HQ automation page,
-**default ON** since the 2026-07-03 rescope — existing campaigns keep their saved choice; turn
-it OFF to only fly rescues manually). With it on:
+**You plan it.** Build the package off the FLOT yourself — a King, one or more helos, and Sandy
+escorts. Any seat can be human or AI-crewed.
 
-- the planner auto-plans the package per turn for blue — **King + Jolly Green + 1 Sandy** — so the
-  escorted alert is up before the first losses; and
-- the rescue helo **air-starts on station** near the FLOT (a slow helo spooling up from a rear
-  field never reaches a deep ejection in time); and
-- the AI rescue is dispatched by the plugin's own **survivor ledger** — it prefers to
-  **commandeer the on-station rescue helo** (never a player's) and only clones a fresh helo from
-  the alert's home FARP when every planned helo is dead or busy. A player crewing a rescue helo
-  always takes precedence — the AI never competes with the player-flown path.
+**Or the AI launches on demand.** With **`auto_combat_sar`** on (**default ON**) and no
+rescue-capable player flight fragged, a helo launches when a pilot actually goes down. There is no
+standing orbit — the earlier auto-fragged racetrack was retired because the orbiting helo never
+reliably flew the pickup. The runtime sources the helo in preference order:
 
-Airframe scarcity self-limits the alert: no rescue helo available, no orbit planned. Combat SAR is
-**blue-only** — the engine is built for blue, so a red Combat SAR would just fly an inert orbit
-and is never auto-tasked.
+1. A **real untasked rescue helo already parked cold on the ramp** — started in place and flown
+   into the pickup. It is a tracked airframe, so losing it is a real loss.
+2. A **cold late-activation clone** when the ramp is bare (fully-tasked wing, or performance
+   toggles). The clone is untracked.
 
-> **Update (2026-06-30, survivor-ledger rework):** the old v1 limitations are fixed — player
-> and AI rescues are judged by the same ledger, an AI auto-rescue **does** credit the
-> spare-pilot scoring by the pilot's real identity (verified in-game, checklist G11), and one
-> ledger owns every ejection so nothing is double-handled.
+Only a **rescue-capable** player flight suppresses the AI launch — that means a CSAR *helo*. A
+bare Sandy or King can't pick anyone up, so fragging one of those **draws** the AI helo and
+escorts it instead.
+
+**A downed pilot triggers a recovery surge.** The next turn opens with a coordinated package
+already airborne at the evader's position — Jolly, optionally a second Jolly, King, Sandys and
+fighter cover — because a helo spooling up at a rear field never arrives in time. Once per downed
+pilot; if the surge fails, the normal paths carry on. Gated by `combat_sar_surge` (default ON).
+
+Airframe scarcity self-limits the whole thing: no helo available, no launch. Combat SAR is
+**blue-only** — the engine is built for blue and a red Combat SAR is never auto-tasked.
+
+Player and AI rescues are judged by the same survivor ledger, so an AI rescue credits the
+spare-pilot scoring by the pilot's real identity and nothing is double-handled.
 
 ---
 
@@ -160,8 +161,10 @@ and is never auto-tasked.
 
 | Setting / option | Default | Effect |
 |---|---|---|
-| `FlightType.COMBAT_SAR` | player-selectable | Plan a rescuer (CH-47) or King (C-130) orbit by hand |
-| `auto_combat_sar` | OFF | AI standing alert: auto-plans a Combat SAR orbit per turn and makes AI ejections rescuable |
+| `FlightType.COMBAT_SAR` | player-selectable | Plan a rescue helo or King (C-130) off the FLOT by hand |
+| `auto_combat_sar` | ON | Launches an AI rescue helo on demand when a pilot goes down and no player helo is fragged |
+| `combat_sar_surge` | ON | Next turn opens with a rescue package already airborne at the evader's position |
+| `combat_sar_persistent_pilots` | ON | An un-rescued, un-captured pilot goes MIA and keeps evading into later missions |
 | King beacon | TACAN-only | Air-tracking TACAN the helo homes on; F10 LARS reports survivor positions |
 | `loadDistance` / `rescueHoverHeight` / `autosmoke` / `messageTime` | 75 m / 20 m / off / 15 s | CSAR pickup feel (plugin options) |
 

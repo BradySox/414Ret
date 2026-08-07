@@ -395,8 +395,9 @@ planning is aimed at the sites that actually warrant a deliberate package. See
 - **TOT meaning:** Start of the on-station / photo-run window (patrol-start).
 - **Player technique:** Overfly the assigned sites — what the aircraft photographs is carried
   back as confirmed intel, lifting the recon fog on composition, strength, and damage state.
-- **AI limitations:** Driven at runtime by the TARS film-and-debrief engine; the value is in
-  flying the pass yourself. See [Fog-of-War-and-Reconnaissance](Fog-of-War-and-Reconnaissance).
+- **AI limitations:** The recon engine banks the take on overfly for player and AI alike, but a
+  high fast pass and heavy cloud both cut what it resolves. See
+  [Fog-of-War-and-Reconnaissance](Fog-of-War-and-Reconnaissance).
 
 #### JAMMING (Electronic warfare & ISR)
 

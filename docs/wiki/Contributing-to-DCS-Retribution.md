@@ -13,7 +13,7 @@ There are multiple simple ways to contribute to the project indirectly.
 * Open an issue on the GitHub repo when you find one. Before opening a bug, please search
   existing issues first (you may need to clear the default "open" filter to find
   already-closed or resolved reports). **414th:** fork problems go to the
-  [414Ret issue tracker](https://github.com/bradyccox/414Ret/issues); if the bug
+  [414Ret issue tracker](https://github.com/BradySox/414Ret/issues); if the bug
   reproduces on stock Retribution, report it
   [upstream](https://github.com/dcs-retribution/dcs-retribution/issues) as well.
 * You can also report bugs on the DCS Retribution Discord server (on the #bugs channel).
@@ -27,7 +27,7 @@ You don't need to be a programmer to contribute content. You can create new camp
 (see the [Custom Campaigns](Custom-Campaigns) guide) or improve existing ones, then
 submit them — upstream on the "campaigns" channel on Discord or as a Pull Request;
 **414th:** as a PR to the fork, or file the
-[Campaign Update issue template](https://github.com/bradyccox/414Ret/issues/new?template=campaign_update.md)
+[Campaign Update issue template](https://github.com/BradySox/414Ret/issues/new?template=campaign_update.md)
 with the updated files attached. Volunteering to maintain an existing campaign is also
 very welcome — see [Campaign maintenance](Campaign-maintenance).
 
@@ -44,14 +44,14 @@ Request workflow.
 The fork runs a two-repo flow:
 
 1. **Fork work** lands as a PR to
-   [`bradyccox/414Ret`](https://github.com/bradyccox/414Ret) `main` — squadron features,
+   [`BradySox/414Ret`](https://github.com/BradySox/414Ret) `main` — squadron features,
    campaign work, fixes. Every merge to `main` ships automatically as the rolling
    `latest` build (see [Release process](Release-process)).
 2. **Upstream carves**: everything is upstreamable ("clean and correct" is the bar —
    there is no permanent fork-only category). Generic fixes and features get carved into
-   focused PRs against `dcs-retribution/dev` via the `bradyccox/dcs-retribution` PR
+   focused PRs against `dcs-retribution/dev` via the `BradySox/dcs-retribution` PR
    fork. The queue and readiness marks live in
-   [`docs/dev/414th-upstreaming-inventory.md`](https://github.com/bradyccox/414Ret/blob/main/docs/dev/414th-upstreaming-inventory.md),
+   [`docs/dev/414th-upstreaming-inventory.md`](https://github.com/BradySox/414Ret/blob/main/docs/dev/414th-upstreaming-inventory.md),
    and the live upstream-PR ledger in `CLAUDE.md`.
 
 Contributing upstream first and letting the fork pull the change back on the next sync is

@@ -29,8 +29,8 @@ OP / TURN / DATE: Red Flag 81-2 · Turn 1 · 26 JAN 1981
 MISSION #: 001      MC: BUICK LEAD (ex.)
 
 1. SITUATION
-   The meters: WILL 100 · RESOLVE 100 (ex.) · Phase: WEEK ONE — Box 12nm +
-     Tonopah ring 8nm; deep classes locked (cover page).
+   Progress: victory checklist untouched (ex.) · Week: WEEK ONE — Box 12nm +
+     Tonopah ring 8nm; deep targets off limits this week.
    Enemy: SAM rings reported Tolicha Peak + the mock-airfield complexes (unmapped);
      KS-19/ZSU flak belts on the corridors; aggressor F-5Es at TTR on GCI alert;
      armor on the FEBA.
@@ -79,7 +79,7 @@ OP / TURN / DATE: Red Flag 81-2 · Turn 2 · 26 JAN 1981 (+1)
 MISSION #: 002      MC: BUICK LEAD (ex.)
 
 1. SITUATION
-   The meters: WILL [___] · RESOLVE [___] · Phase: WEEK ONE.
+   Progress: [victory checklist off the map ribbon] · Week: WEEK ONE.
    Enemy: Tolicha SA-2 + the south SA-6 PLOTTED (Turn 1 film); SA-6/SA-8 ring at
      the main mock airfield; convoy traffic on the Beatty corridor.
    Friendly: FEBA stable; film library building.
@@ -127,7 +127,7 @@ OP / TURN / DATE: Red Flag 81-2 · Turn 3 · 26 JAN 1981 (+2)
 MISSION #: 003      MC: CADILLAC LEAD (ex.)
 
 1. SITUATION
-   The meters: WILL [___] · RESOLVE [___] · Phase: WEEK ONE (Week Two ~turn 6 —
+   Progress: [victory checklist off the map ribbon] · Week: WEEK ONE (Week Two ~turn 6 —
      sooner if Will is bleeding).
    Enemy: the two Kawich Valley armor arrays filmed; the TTR-approach SA-6 still
      up; aggressors 0-for-[N] or [N]-for-us — read the SITREP honestly.
@@ -173,9 +173,9 @@ Range, Air Assault captures up the corridor, and the endgame — break the aggre
 (red air below 35 %) or take the range complex, before your own attrition writes the detachment
 off. The Box never opens; it never will.
 
-> Re-plan every turn off the **live map, the SITREP, and the meters**. The loop: film → open the
-> corridor → kill the ground → manage the arc → mass when it counts. **The aggressors are the
-> test; the meters are the score.**
+> Re-plan every turn off the **live map, the SITREP, and the victory checklist**. The loop: film →
+> open the corridor → kill the ground → manage the arc → mass when it counts. **The aggressors are
+> the test; the assessment is the score.**
 
 ---
 

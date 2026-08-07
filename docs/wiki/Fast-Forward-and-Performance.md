@@ -95,7 +95,7 @@ client. So the levers, in order of payoff:
 | Moving ground units | Mission Generation → Performance | Last resort: Off | The FLOT stands and fights in place — kills the battle's movement, keeps the shooting |
 
 **Not worth disabling:** the feature plugins that sound heavy mostly aren't. Combat SAR, comms
-jamming, the briefing cards, minefields, mobile-missile scoot, convoy ambushes and TARS are
+jamming, the briefing cards, minefields, mobile-missile scoot and recon are
 event-driven and near-idle until their moment comes — turning them off buys nothing measurable.
 The battlefield's *density* and the *effects* are the cost, not the feature scripts.
 

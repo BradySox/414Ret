@@ -840,6 +840,63 @@ local unitPayloads = {
 				[1] = 10,
 			},
 		},
+		-- Verbatim splice of the module's built-in "TARPS01: (0/2/2)" fit
+		-- (E:\DCS World\CoreMods\aircraft\F14\UnitPayloads\F-14BU.lua), re-titled
+		-- so the planner's exact-name lookup finds it. Stores and stations are
+		-- Heatblur's, not ours -- do not "improve" them by hand.
+		[12] = {
+			["displayName"] = "Retribution TARPS",
+			["name"] = "Retribution TARPS",
+			["pylons"] = {
+				[1] = {
+					["CLSID"] = "{LAU-138 wtip - AIM-9M}",
+					["num"] = 10,
+					["settings"] = {
+						["NFP_PRESID"] = "MDRN_M_A_AIM9",
+						["NFP_VIS_DrawArgNo_57"] = 0.1,
+					},
+				},
+				[2] = {
+					["CLSID"] = "{SHOULDER AIM-7P}",
+					["num"] = 9,
+				},
+				[3] = {
+					["CLSID"] = "{F14-300gal}",
+					["num"] = 8,
+				},
+				[4] = {
+					["CLSID"] = "{F14-300gal}",
+					["num"] = 3,
+				},
+				[5] = {
+					["CLSID"] = "{SHOULDER AIM-7P}",
+					["num"] = 2,
+				},
+				[6] = {
+					["CLSID"] = "{LAU-138 wtip - AIM-9M}",
+					["num"] = 1,
+					["settings"] = {
+						["NFP_PRESID"] = "MDRN_M_A_AIM9",
+						["NFP_VIS_DrawArgNo_57"] = 0.1,
+					},
+				},
+				[7] = {
+					["CLSID"] = "{F14-TARPS}",
+					["num"] = 6,
+				},
+				[8] = {
+					["CLSID"] = "<CLEAN>",
+					["num"] = 5,
+				},
+				[9] = {
+					["CLSID"] = "{F14-ECA}",
+					["num"] = 4,
+				},
+			},
+			["tasks"] = {
+				[1] = 10,
+			},
+		},
 	},
 	["unitType"] = "F-14BU",
 }

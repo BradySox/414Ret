@@ -250,18 +250,6 @@ class WeaponGroup:
     #: Target-based overrides for weapon settings
     target_overrides: list[Dict[str, Any]] = field(init=False, default_factory=list)
 
-    #: The resources/weapons subdirectory this group was loaded from
-    #: ("a2a-missiles", "bombs", "pods", "rockets", "standoff"), or None for a
-    #: synthesized group (the clean pylon, unknown clsids) or one restored from a
-    #: save written before this field existed -- read it with getattr.
-    #:
-    #: `WeaponType` cannot serve as a family: it distinguishes pods and jammers,
-    #: but a Sidewinder and a JDAM are both UNKNOWN. Several fallbacks also cross
-    #: families on purpose (AGM-84A -> GBU-24: "no Harpoon, put a bomb on it"),
-    #: so anything walking the fallback chain for a reason OTHER than date
-    #: gating needs a way to stay inside one family.
-    category: Optional[str] = field(init=False, default=None, compare=False)
-
     _by_name: ClassVar[dict[str, WeaponGroup]] = {}
     _loaded: ClassVar[bool] = False
 
@@ -329,7 +317,6 @@ class WeaponGroup:
 
             target_overrides = data.get("target_overrides", {})
             object.__setattr__(group, "target_overrides", target_overrides)
-            object.__setattr__(group, "category", group_file_path.parent.name)
 
             for clsid in data["clsids"]:
                 weapon = Weapon(clsid, group)

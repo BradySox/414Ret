@@ -680,15 +680,15 @@ FEATURES: tuple[Feature, ...] = (
         settings_fields=("sp_pilot_mode",),
     ),
     Feature(
+        # REMOVED 2026-08-06 after one flown look (WATCH item 1): the DM disliked
+        # it and called a full rip. The module, both FlightMembers hooks, all four
+        # settings, the 36 tests and WeaponGroup.category are gone; only this
+        # tombstone remains so §84 stays a resolvable section number. Do not
+        # restore -- see checklist B42 for the three guards a rebuild would owe.
         "stock_attrition",
         "Old-stock loadout attrition",
         84,
-        settings_fields=(
-            "stock_attrition",
-            "stock_attrition_start",
-            "stock_attrition_per_turn",
-            "stock_attrition_max",
-        ),
+        retired=True,
     ),
     Feature(
         # §85 SAM battery support section -- the refuelling section and 5I57A

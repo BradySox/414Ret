@@ -3681,107 +3681,29 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     `tests/fourteenth/test_pre_turn_briefing.py` (16); features doc §83, design note
     `docs/dev/design/414th-single-player-loop-notes.md`, checklist B41 — **`qt_ui` is not CI
     type-checked and the dialog cannot be driven headlessly, so it needs an in-app pass.**
-84. **Old-stock loadout attrition** — squadrons burn the good stock first, so the tail of a
-    campaign is flown on what is left in the bunker. Every flight of the same airframe and
-    task used to carry a **byte-identical** loadout: `Loadout.default_for` resolves by NAME
-    and returns the **first** payload that validates, with zero randomness anywhere in the
-    path, so six BARCAP flights put up six identical magazines of the newest missile the
-    date allows. `degrade_loadout_for_stock` (`game/fourteenth/stock_attrition.py`) rolls a
-    depth **per weapon station** and walks that station down **the fallback ladder the
-    weapon data already declares** — so "old stock" needs no new data: AIM-120C → AIM-120B →
-    **AIM-7MH** is the ladder, and a deep roll is what breaks out the Sparrows.
-    **Per STATION, not per flight, and that is the whole point** (DM call 2026-08-03 —
-    "what I'm looking for is mixing and matching on the same flight"): one roll for the
-    whole aircraft only ages the magazine *uniformly*, turning 4× AIM-120C into
-    4× AIM-120B — four identical rounds either way. Rolling each station means a Hornet
-    that wants four long-range missiles comes out with **a couple of AMRAAMs and a couple
-    of Sparrows on the same jet**, which is what loading out of a picked-over bunker looks
-    like. **It is not an A2A feature** — the hook is task-agnostic and so is the data, so
-    BAI/Strike get the generational bomb ladder for free
-    (`GBU-31(V)3/B` 2001 → `GBU-24` 1986 → `GBU-10` 1976 → `Mk 84` 1955 — JDAM to LGB to
-    dumb bomb; `GBU-38` → `GBU-12` → `Mk 82`; `CBU-97` → `CBU-87`), and **68 % of all
-    non-protected weapon groups have usable depth** (a2a-missiles 80 %, bombs 79 %,
-    standoff — A2G + anti-ship — 58 %). Hooked at the
-    only two planning sites (`FlightMembers.from_roster` / `resize`), where the result is
-    stored on the members and pickled, so **the roll is stable across re-generation** with no
-    seeding needed; growing a flight clones what it already carries, so the mixture is the
-    flight's, not per jet (jet-to-jet variation would need per-member loadouts). **Pressure
-    scales with the campaign clock** —
-    `stock_attrition_start` at turn 1, `+stock_attrition_per_turn` each turn, capped at
-    `stock_attrition_max` (**20** / 4 / 50 %) — and **depth is geometric in that pressure**, so
-    one rung is common, three is rare, and both get likelier as the war drags. The 20 %
-    baseline is deliberate: a 0 % start (the first cut's default) leaves turn 1 uniformly
-    best-equipped, which is exactly the case the feature exists to fix. **Three
-    guards, one of them load-bearing:** `WeaponType` **cannot** express a weapon family (a
-    Sidewinder and a JDAM are both `UNKNOWN`), and several fallbacks cross families *on
-    purpose* — `AN/ASQ-228 ATFLIR → AIM-120C`, `AN/ALQ-131 ECM → 2xAIM-120C`,
-    `AGM-84A → GBU-24` — which are a sane last resort for **date gating** but absurd as
-    attrition (they would hang a missile on the targeting-pod station). So `WeaponGroup`
-    gained a **`category`** (the `resources/weapons` subdirectory it loaded from,
-    `object.__setattr__` like `target_overrides`, `getattr`-guarded for old saves) and the
-    walk stops at a category boundary; equipment types (`TGP`/`JAMMER`/`OFFENSIVE_JAMMER`/
-    `DECOY`) are never touched at all; and a **player-customised loadout is left exactly as
-    built**. **The STORE-family guard is the third** (`store_family`, added 2026-08-04 off a
-    flown Marianas miz): a mod that models its own pylons namespaces every store it ships
-    (`{SUPERHORNET_PYLON_10_AM_1X_AIM-120C}`) **and inherits the stock entries into the same
-    pydcs pylon table**, so a stock store passes `can_equip` on the mod jet without being
-    mountable on the mod's geometry — DCS drops it and **the pylon spawns EMPTY** (the §71
-    `(XW)`-without-injection failure mode). Observed: a CJS F/A-18E's station-8 AMRAAM aged to
-    `{LAU-115 - AIM-7H}`, a **stock Hornet rack**, because `AIM-7MH` registers four clsids and
-    **none is Super-Hornet-native** — unlike AIM-120C/B/9X, which carry 22/24/62 mod stores and
-    substituted mod-natively all along. A substitution that would leave the store family is now
-    **refused outright** rather than downgraded further (a flight keeping its modern missile
-    beats one carrying an invisible older one); measured **0** family-leaving substitutions
-    across every Super Hornet station × store × depth. Note this is a *registration* gap in
-    `AIM-7MH.yaml` as much as a walk bug — registering the mod's Sparrows would let that rung
-    be used mod-natively. **The same class of defect was ALREADY in the authored fits and was
-    fixed the same day** (the reported symptom — "the Super Hornets are generating with empty
-    inside pylons where fuel tanks would normally be"): **34 stock stores across the FA-18E/F
-    `Retribution …` fits** were re-pointed at the mod's own equivalents — `{AGM_84D}` →
-    `{SUPERHORNET_PYLON_03/09_MB_SM_1X_AGM-84D}`, `{AN_ASQ_228}` →
-    `{SUPERHORNET_PYLON_05_TP_ASQ228}`, `LAU_117_AGM_65F` →
-    `{SUPERHORNET_PYLON_02/10_OB_MV_1X_AGM-65F}`, `{BRU_42A_x3_ADM_141A}` →
-    `{SUPERHORNET_PYLON_03/09_IB_TD_3X_BRU_ADM-141A}`, and the stock Litening
-    `{A111396E-…}` on the **centre-line** (ME column 6 — the visible one, in the DEAD and
-    OCA/Aircraft fits) → `{SUPERHORNET_PYLON_06_CN_TP_AAQ28}`. The mod's **12 TALD stores were
-    registered** into `ADM-141A.yaml` so the re-point does not recreate the #771
-    ungated-store hole. Verified 0 non-mod-native / 0 non-pylon-legal stores remaining and all
-    14 E/F tasks still resolving; guards in
-    `tests/fourteenth/test_super_hornet_payloads.py`. **ME column gotcha worth knowing:** the
-    CJS row is `INT | 11 | 10 | 9 | 8|7 | 6 | 5|4 | 3 | 2 | 1` — ten columns for eleven
-    pylons, so `8|7` and `5|4` are **merged, either/or** slots (the inboard tank *or* the cheek
-    AMRAAM, never both). That is why the BARCAP fit (`PYLON_04`/`PYLON_08`) and the SEAD fit
-    (`PYLON_05`/`PYLON_07`) look contradictory and are in fact both correct. Separately and
-    **not** a bug: the E's `Retribution BARCAP`/`Escort` fits author **no station 5**, so their
-    centre-line is deliberately bare (two inboard tanks + internal aux). **The year guard is the second load-bearing one** (added on review before merge,
-    after the first cut shipped without it): `fallback` answers "what do I use *instead* when
-    this is unavailable", which is a **date-gating** answer and is **not monotonic in year** —
-    **18 same-category fallbacks in the shipped data point at a NEWER weapon**, so an
-    unguarded walk hands a flight *better* stores the longer the war runs. `2xAIM-120B`
-    (1994) → `AIM-120C` (2018) is the trap the first cut mistook for a free win (the yaml's
-    own `# If we've run out of doubles, start over with the singles` — right for date gating,
-    wrong here **twice**: it halves the magazine *and* upgrades the missile), and
-    `AGM-65E` (1985) → `AGM-65G` (1989) → `AGM-65F` (1991) is the proof that **date gating
-    cannot save us** — all three are legal in Desert Storm (1991), so nothing downstream
-    clamps the upgrade. `_older_group` now takes a rung only when it is **provably older**
-    (an undated rung is unprovable, so the walk stops), measured to leave **0 upgrade paths**
-    across all 306 groups × depths 0–3 while the headline
-    `AIM-120C → AIM-120B → AIM-7MH → AIM-7M` Sparrow break-out is untouched. Date gating
-    still runs afterwards, so a substitution can never be newer than the campaign allows —
-    but that is a *ceiling*, not the ordering guarantee. A newer rung is also **hopped, not
-    treated as the end of the ladder**, which is what recovers the rung actually wanted
-    (`2xAIM-120B` → ~~AIM-120C~~ → **AIM-120B**, the single rail of the same generation:
-    fewer missiles, not newer ones; `AGM-65E` → **AGM-65B**) — worth +15 groups of usable
-    depth, 191 → 206, spread across a2a **and** standoff **and** bombs. Gated
-    `stock_attrition` (414th Features → Auto-planner behaviour, default **ON** — DM call
-    2026-08-03, "it's the behaviour I asked for"; OFF returns the original loadout object
-    untouched and is byte-identical). Tests
-    `tests/fourteenth/test_stock_attrition.py` (36 — a repo-wide never-an-upgrade invariant
-    over every group, the JDAM→LGB→dumb-bomb ladder, and four that drive the real F/A-18C
-    `Retribution BARCAP` fit on real pydcs pylon tables to prove one jet ends up mixed, that
-    twelve flights are not identical, and that the shipped fit is never mutated in place);
-    features doc §84, checklist B42 — needs
-    an in-game pass.
+84. **Old-stock loadout attrition** — **REMOVED 2026-08-06.** Squadrons burned the good
+    stock first, so every station rolled its own depth down the fallback ladder the weapon
+    data already declares and a jet came out carrying a couple of AMRAAMs and a couple of
+    Sparrows. Flown once (WATCH item 1) and **ripped the same day** on the DM's verdict
+    — *"I've seen and disliked, revert or rework"* → full rip; the objection was **turn 1
+    already downgraded**. **That objection had no third setting left to try**: the feature
+    shipped twice, first with a 0 % turn-1 chance (fully-supplied opening, mixing only as
+    the war wore on — the shape now asked for) and then deliberately re-aimed to 20 % per
+    **station** on the DM's own ask at the time (*"mixing and matching on the same
+    flight"*), precisely because the 0 % version left turn 1 uniform. Gone:
+    `game/fourteenth/stock_attrition.py`, the two `FlightMembers` hooks, all four settings,
+    the 36 tests, and `WeaponGroup.category` (added by this feature, read by nothing else).
+    Save-safe — removed setting keys land as dead `__dict__` entries (the §20/§55
+    precedent). **Do not restore.** If it is ever rebuilt, checklist B42 records the three
+    guards that were expensive to get right and must come back with it: **never-an-upgrade**
+    (`fallback` is a *date-gating* answer and is NOT monotonic in year — 18 shipped
+    same-category fallbacks point at a **newer** weapon, so an unguarded walk hands out
+    better stores the longer the war runs), **category** (`WeaponType` cannot express a
+    weapon family — a Sidewinder and a JDAM are both `UNKNOWN`, and `ATFLIR → AIM-120C` is
+    a real fallback, so without it the walk hangs a missile on the targeting-pod station),
+    and **store family** (a mod that models its own pylons inherits the stock entries into
+    the same pydcs table, so a stock store passes `can_equip` on a mod jet without being
+    mountable and the pylon spawns **empty**).
 85. **SAM battery support section (refuellers + power)** — a real S-300 site carries a
     **refuelling section** and the **5I57A diesel power stations** that run the battery;
     Retribution generated the radars, the C2 and the launchers and no support at all (DM

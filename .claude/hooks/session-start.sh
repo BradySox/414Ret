@@ -78,17 +78,87 @@ echo "Source: docs/dev/414th-ingame-pass-checklist.md"
 # a one-line edit to WATCH.md and never a hook change. Item headings are the
 # only `### ` lines in that file (the parking lot is a table, its sections are
 # `## `), so this stays correct as the list churns.
+#
+# Each item prints as TWO lines: the heading (what to look for) and its
+# `**Try:**` paragraph (how to make it happen). Printing the heading alone was
+# not enough -- 2026-08-06 an item came back unanswered purely because its
+# heading named two row IDs and no observable, and the pass/fail detail that
+# would have explained it sits in the body this hook never printed. The Try
+# paragraph may wrap across source lines; it is joined back into one line and
+# ends at the first blank line. An item with no Try line still prints its
+# heading, so a half-written item degrades instead of vanishing.
+# Shared by both cards (WATCH + LOCAL) so their formats can never drift apart.
+card_items() {
+  awk '
+    function flush(   t) {
+      if (heading == "") return
+      print "  " heading
+      if (try_text != "") {
+        t = try_text
+        gsub(/^ +| +$/, "", t)
+        print "      Try: " t
+      }
+      heading = ""; try_text = ""; in_try = 0
+    }
+    /^### / {
+      flush()
+      heading = substr($0, 5)
+      gsub(/`|\*\*/, "", heading)
+      next
+    }
+    heading == "" { next }
+    in_try && /^[[:space:]]*$/ { in_try = 0; next }
+    /^\*\*Try:\*\*/ {
+      in_try = 1
+      try_text = substr($0, 10)
+      gsub(/`|\*\*/, "", try_text)
+      next
+    }
+    in_try {
+      line = $0
+      gsub(/`|\*\*/, "", line)
+      gsub(/^ +/, "", line)
+      try_text = try_text " " line
+      next
+    }
+    END { flush() }
+  ' "$1" || true
+}
+
 watch="${CLAUDE_PROJECT_DIR:-.}/docs/dev/flycards/WATCH.md"
 if [ -f "$watch" ]; then
-  items="$(grep -E '^### ' "$watch" | sed -e 's/^### //' -e 's/`//g' || true)"
+  items="$(card_items "$watch")"
   if [ -n "$items" ]; then
     echo
     echo "=== WATCH — look for these on the next fly ==="
-    printf '%s\n' "$items" | sed 's/^/  /'
-    echo "Source: docs/dev/flycards/WATCH.md (pass/fail detail per item)"
+    printf '%s
+' "$items"
+    echo "Source: docs/dev/flycards/WATCH.md (full pass/fail detail per item)"
+  fi
+fi
+
+# --- LOCAL card -------------------------------------------------------------
+# The sibling of WATCH: rows needing a CONTRIVED condition (a toggle, a specific
+# campaign, or something made to happen on purpose), run against the local fly
+# every 2-3 days. Split out 2026-08-07 because G29 sat PARTIAL for four weeks and
+# then failed to close on the WATCH list too -- it needs a pilot to eject on
+# purpose, which the WATCH rules explicitly exclude, so it had been parked on the
+# one surface that structurally could not close it. Same parser, same format.
+local_card="${CLAUDE_PROJECT_DIR:-.}/docs/dev/flycards/LOCAL.md"
+if [ -f "$local_card" ]; then
+  items="$(card_items "$local_card")"
+  if [ -n "$items" ]; then
+    echo
+    echo "=== LOCAL card — needs setting up on purpose (every 2-3 days) ==="
+    printf '%s
+' "$items"
+    echo "Source: docs/dev/flycards/LOCAL.md (full pass/fail detail per item)"
   fi
 fi
 
 echo "[Claude: present this board to the user near the top of your first reply."
-echo " Re-surface the WATCH list whenever the user is about to fly, generate a"
-echo " turn, or otherwise test — link docs/dev/flycards/WATCH.md.]"
+echo " Re-surface BOTH cards whenever the user is about to fly, generate a turn,"
+echo " or otherwise test — link docs/dev/flycards/WATCH.md (zero setup, look for"
+echo " it in whatever you were flying anyway) and docs/dev/flycards/LOCAL.md"
+echo " (needs arranging on purpose). Keep them distinct: offering a LOCAL row as"
+echo " if it were opportunistic is what left G29 unclosed for four weeks.]"

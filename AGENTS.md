@@ -509,8 +509,11 @@ file. This guide is the map; those are the territory.
     (upstream wiki rewrite), `414th-scenery-import-notes.md` (scenery strike targets),
     `turnless.md` (turnless-campaign exploration),
     `414th-verification-cadence-notes.md` (**the fly-card throttle** — PROPOSED 2026-08-06,
-    nothing built. Out of a methods audit: the in-game-pass backlog has no governor (127
-    outstanding vs 114 verified, untested rows back to 2026-07-01). **Capping the build rate
+    nothing built. Out of a methods audit: the in-game-pass backlog has no governor (**71
+    outstanding vs 82 verified**, untested rows back to 2026-07-01 — counts are
+    heading-scoped/first-marker-wins per `.claude/hooks/session-start.sh`; a naive whole-file
+    grep reads 127/114 because the checklist quotes markers in prose constantly, a trap the
+    hook's own header documents). **Capping the build rate
     is rejected** — the data says this is a *scheduling* problem, not a build-rate one:
     verification is bimodal, **46 rows in the 6 sessions around the scheduled Red Tide M1 vs
     17 across all of July with nothing scheduled, then 20 in the one day the Aug-1 card
@@ -537,9 +540,9 @@ file. This guide is the map; those are the territory.
     surfaces the repo already maintains: three lines in the **session-start hook** (watch list
     · event card + local queue · unassigned + aged-out) and a **CI test** on the
     features.py-registry precedent. **The backlog is tractable, not permanent** — ≈15–25
-    rows/week at the flown card yields (June 10–13, Aug 5 twenty) ⇒ **6–10 weeks** for the 116
+    rows/week at the flown card yields (June 9–12, Aug 5 twenty) ⇒ **3–5 weeks** for the 67
     untested+partial, minus a tail whose conditions never arise. Explicitly does NOT fix: the
-    11 REGRESSED rows (bugs, not unverified) or silent no-ops. **2 open calls** (seeding
+    4 REGRESSED rows (bugs, not unverified) or silent no-ops. **2 open calls** (seeding
     grouping; whether `SHIPPED UNVERIFIED (accepted)` should exist at all). Build order starts
     with `WATCH.md` — one short file, no decision needed, pays out on the next flight),
     `414th-wing-growth-notes.md` (**The Wing Grows** — scheduled squadron arrivals, split out
@@ -4027,9 +4030,16 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     being a hull whose spawn the landmap does not classify as sea (the safe degrade firing).
     NEW mission only — regeneration picks it up, no new game and no save migration. Tests
     `tests/missiongenerator/test_naval_station_keeping.py` (11); features doc §87, checklist
-    B46 — needs an in-game pass (whether DCS loops a *naval* group on `SwitchWaypoint` is the
-    one genuine unknown; the fallback needs no task at all — author enough waypoints to
-    outlast the mission — and that a mixed-hull §80 group sails the circuit in formation).
+    **B48** (◐ PARTIAL — *the row was created 2026-08-06; §87 shipped without one and this
+    pointer read `B46`, which is the §28 settings-surface row, with its only evidence buried
+    inside B38's prose*). **Flown 2026-08-05 (Marianas):** groups sail **12–24 km on station**
+    vs 0.1 km parked pre-§87, with inter-hull spacing constant to 2 d.p. — so DCS accepts the
+    route, ships get under way, and a §80 mixed-hull group holds formation doing it. **Still
+    owed, and it is the load-bearing half:** the guarantee is a ~1.6 NM ceiling on
+    **displacement from the anchor**, but what was measured is **path length travelled** —
+    different quantities, and a group sailing 24 km in a straight line off station reads
+    identically. The `SwitchWaypoint` **loop** is also only inferred (48 min at 10 kt ≈ 0.8–1.6
+    laps of a 3×1 NM track). Both need a ≥90 min mission measuring position-vs-anchor.
 
 ---
 

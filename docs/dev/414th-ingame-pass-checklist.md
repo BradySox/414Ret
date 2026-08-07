@@ -543,6 +543,10 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
 - **Fail signature:** a green-bodied bomb on any of those jets (either the store has no visual section, or a key-only settings block isn't enough for that store — remove it, or fall back to a full ME-written block for that one store); a bomb that hangs correctly but **fails to detonate or arms wrong** (unexpected, since no fuze key is written — but if it happens, delete the added `settings` block, which restores the pre-2026-08-02 state exactly); a weirdly-deformed or half-drawn store (draw arg 57 means something else on that model — the AIM-9 seeker case, which is why the pass is gated to bomb CLSIDs only); or the setting silently ignored after a DCS/CJS update (re-check the store's declaration for `Get_Combined_` vs `Get_Fuze_`).
 
 ### B38 — Mixed-hull ship groups · §80 · ☑ VERIFIED (2026-08-05, flown Marianas 2027, Tacviews `Tacview-20260805-190738` + `-203549`, session `pr-merge-code-audit-7e8b4c`: **20 of 26 naval groups generated MIXED** — e.g. `WEEVIL (Escort)` = PERRY ×2 + TICONDEROG + Arleigh Burke IIa, `GROUPER (Escort)` = CH_Type054B ×2 + Type052D + Type_054A, `WORM (Escort)` = CH_Arleigh_Burke_IIA + PERRY + Burke ×2 — while every carrier/LHA group stayed **uniform**, which is the designed single-unit flagship slot, and **no patrol boat, submarine or second carrier leaked into a surface screen** (the family restriction held). **The DCS-only unknown is ANSWERED: a mixed-class group sails as one formation.** The widest gap between any two hulls of the same group was measured at t=300/1500/2800 s and is **constant to 2 decimal places** across the whole 48-min mission — 1.80–2.16 km for the §87 racetrack groups, 2.89–2.90 km for 2-ship escorts, 16.96–17.00 km for the 4-ship carrier screens (their authored ring geometry) — so no drift, no bunching, no stragglers, and every unit of each group logged an identical path length. Mixed hulls at mixed top speeds held station exactly as uniform ones did.) (was ☐ UNTESTED, built 2026-08-02 off the "ship preset layouts are very basic — stop them generating as all one single hull type" ask. A layout slot picked ONE unit type and stamped it into every position, so a carrier screen was four identical Burkes whatever the faction's roster held. The per-slot type dealing, the family restriction (a boat never pairs with a cruiser, two carriers never share a slot), the `MAX_MIXED_UNIT_TYPES` cap, the single-hull degrade and the naval-only gating are unit-tested in `tests/armedforces/test_naval_hull_mixing.py` (9 cases), and generation was headless-verified end to end on Tanker War 1988 / Pacific Repartee / Velvet Thunder. What no test can model is how DCS sails the resulting group.)
+- **§87 evidence note:** the station-keeping numbers quoted above (the 1.80–2.16 km §87 racetrack
+  spacing, the identical per-unit path lengths) are **B38's** measurements of *formation keeping*.
+  They are cited by **B48** but do not close it — B48's own contract is displacement from the
+  campaign anchor, which this session did not measure. Keep the two rows distinct.
 - **What CI cannot exercise:** whether a **single DCS group containing several ship classes** behaves — formation keeping and turn behaviour at mixed top speeds (a Perry is a knot slower than a Burke), station-keeping on the layout's positions with different hull lengths, and whether the group's waypoint/speed handling still works when the group leader is now a different class than before. Also unmodelled: the visual read of the screen from the cockpit, and the mixed group's threat behaviour (each hull brings its own SAM fit, which is the point).
 - **Setup:** any campaign with a carrier and a navy fielding more than one hull of a class — Tanker War 1988 (US CVN + Iranian navy) or Pacific Repartee (PLAN Type 052B/052C/054A) are the fastest. Start a **NEW game** (this is generation-time; existing saves keep their already-generated groups), then look at the carrier screen and any "Naval Group"/"Naval Two Ship" objective on the map and in the mission. Fly (or fast-forward) a turn and watch a group under way.
 - **Pass:** the carrier screen is a **mix** of hulls (e.g. Burkes + a Perry + a Ticonderoga) rather than four of one; the group sails as one formation at the slowest hull's speed without collisions, bunching or stragglers; the flagship of a carrier objective is still the carrier; and no group mixes a patrol boat or submarine into a surface combatant screen.
@@ -3342,7 +3346,7 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
 ### T5 — Marianas "Second Island Chain (2027)" campaign plays · Marianas 2027 campaign · ☐ UNTESTED (built 2026-08-02 — the fork's modern-day China campaign, forked from Fuzzle's Pacific Repartee laydown after a headless audit found that one loads clean but cannot be modernized in place (red airframes are hardcoded, so a `China 2020` swap upgrades ground/naval and leaves **J-7B** flying; no red AEW&C; 165 red vs 62 blue because six carrier blocks omitted `size:`; no `missile` TGO anywhere; zero feature preseeds). Guam is inverted to BLUE (Andersen's 194-slot ramp is the only one on the map that bases a heavy wing), two dormant NEUTRAL airfields are activated, and three PLARF sites are authored. Headless-verified end-to-end (18 CPs — BLUE 5 / RED 13 — 110 TGOs / 572 units, all 38 squadrons resolve, 164 blue vs 98 red airframes, the 3 missile TGOs binding Rota/Tinian/Saipan); CI-locked in `tests/fourteenth/test_marianas_2027.py` (23 tests incl. the parking-fit, tanker-boom/drogue-compatibility, ground_forces pin-band-match, no-blue-behind-the-chain, explicit-`size:` and mod-free-carrier-squadron invariants); design note `414th-marianas-2027-campaign-notes.md`. Miz is GENERATED by `tools/build_marianas_2027_miz.py` — never hand-edit it. NEW game required.)
 - **First flown evidence 2026-08-05** (Tacviews `Tacview-20260805-184424` / `-190738` / `-200950` / `-203549`, session `pr-merge-code-audit-7e8b4c`) — the campaign loads and fights, and four things were learned:
   - **§49 shoot-and-scoot does NOT work here** — see the S2 hardware caveat: all 9 `CH_CJ10` launchers sat at 0.00 km, so the authored "hunt the launchers" signature mechanic is not in play. The three PLARF sites are stationary targets until the hardware changes.
-  - **§80 mixed hulls verified** (see B38) and **§87 station-keeping verified** on this laydown: pre-§87 generation had every authored naval group parked at 0.1 km; post-§87 the same groups sail 12–24 km on station with formation spacing unchanged.
+  - **§80 mixed hulls verified** (see B38); **§87 station-keeping partially verified** (see **B48**) on this laydown: pre-§87 generation had every authored naval group parked at 0.1 km; post-§87 the same groups sail 12–24 km on station with formation spacing unchanged. *That measures distance travelled, not displacement from the campaign anchor, which is §87's actual contract — B48 stays PARTIAL until a ≥90 min mission measures position-vs-anchor.*
   - **A blue anti-ship package flew with no escort, CAP, tanker or AEW&C airborne and lost 4 of 8 F/A-18F** to red QRA (Su-30s from Rota, JF-17s from Tinian — §1 working). Worth a look at how that package was planned.
   - **Red's planned air force never launched**: 15 airframes (J-11A ×6, H-6J ×6, **KJ-2000 ×2**) spawned `uncontrolled` on the Saipan ramp and only QRA scrambles flew, so red fought with zero AEW&C airborne and no standing BARCAP — undercutting the GCI posture the campaign is built around.
 - **What CI cannot exercise:** whether the §49 scoot actually works on islands this small; whether the DF-21D/CJ-10 kit renders and fires from a `missile` TGO here at all; whether Andersen's heavy squadrons fit their stands *dimensionally* (the parking-fit test counts slots, not the slot_version-2 dimensions the DS91 audit needed); whether the AI flies Air Assault captures across 90–200 km of open water; and the frame rate with three PLAN carrier groups up.
@@ -3595,3 +3599,72 @@ and confirm the launchers now **cost money** (Scud-B 40, Iskander-M 70, CJ-10 75
   anchor must not have shifted (guarded by a test, but the map is the proof).
 - A missile site the AI can no longer afford to rebuild, or an economy visibly distorted by the new
   prices (they are ~135 for a full SCUD battery against ~230 for an S-300 site).
+
+### B48 — Naval station-keeping racetracks · §87 · ◐ PARTIAL (2026-08-05, flown Marianas 2027, Tacviews `Tacview-20260805-190738` / `-203549`, session `pr-merge-code-audit-7e8b4c`)
+
+> **Row created 2026-08-06.** §87 landed 2026-08-05 (PR #780) and shipped **without a row of its
+> own** — `CLAUDE.md` pointed it at **B46**, which is the §28 settings-surface row, and its only
+> recorded evidence sat inside **B38**'s prose. The pointer is corrected to B48. This is exactly the
+> drift the proposed features↔checklist CI test would catch
+> (`docs/dev/design/414th-verification-cadence-notes.md`, Part 2).
+
+**What the flown evidence DOES establish.** Pre-§87 generation had every authored naval group parked
+at **0.1 km**; post-§87 the same groups **sail 12–24 km** over a 48-min mission, and the widest gap
+between any two hulls of a group — measured at t=300/1500/2800 s — is **constant to two decimal
+places** (1.80–2.16 km for the §87 racetrack groups), with every unit of each group logging an
+identical path length. So: DCS accepts the authored route, naval groups actually get under way on it,
+and a §80 mixed-hull group holds formation while doing so. Generation-side coverage is separate and
+already measured — marianas_2027 11/11 · pacific_repartee 21/21 · tanker_war_1988 2/2 ·
+1968_Yankee_Station 2/3 groups put on station, the one miss being the designed safe degrade.
+
+**Why this is PARTIAL and not VERIFIED — the load-bearing contract is the one thing not measured.**
+§87's guarantee is a hard **~1.6 NM (≈3 km) ceiling on displacement from the campaign anchor**: the
+racetrack is centred *on* the marker precisely so the group's mean position stays there, keeping the
+map, the drawn threat rings and the turn model honest. What was measured is **path length travelled**
+and **inter-hull spacing** — different quantities. A group sailing 24 km in a straight line off
+station would produce identical numbers. Nothing yet confirms the ships stayed near their markers.
+
+**Second unproven leg: the `SwitchWaypoint` loop.** At the design's 10 kt on a 3 × 1 NM track a lap is
+~8 NM ≈ 15 km, and 48 min of steaming is ≈ 14.8 km — so the observed 12–24 km is **0.8–1.6 laps**. The
+upper end must have come round; the lower end may never have reached waypoint 0 again. Whether DCS
+*restarts* a naval group's circuit is the row's stated DCS-only unknown and it remains inferred, not
+observed.
+
+**Setup:** any naval campaign (Marianas 2027, Tanker War 1988, Pacific Repartee), a mission of **≥90
+min** so at least two laps are possible, Tacview on. No setting — §87 is always-on generation
+behaviour, the §80 precedent.
+
+**Pass criterion:**
+1. **Displacement, not distance.** Pick 3–4 naval groups; note each group's anchor from the campaign
+   map, then measure its position in the Tacview at ~4 points across the mission. Every sample is
+   within **~3 km** of the anchor.
+2. **The circuit repeats.** A group's track is a closed oval walked more than once, not a one-way
+   transit that straightens out and continues.
+3. **Nobody beaches.** No group runs aground or ends up in shallows — the per-leg 1 NM landmap
+   sampling is what should have prevented it.
+
+**Fail signatures to watch for:**
+- **A group steadily walking away from its anchor** — the loop is not firing, so it flies the route
+  once and then holds the last heading. This is the primary failure mode and the reason the row
+  exists; the documented fallback if DCS won't loop is to author enough waypoints to outlast the
+  mission.
+- **A group still parked at ~0.1 km.** The feature no-op'd. Every §87 failure path degrades to
+  stationary **silently** — no landmap, no clear orientation among the 12 candidate bearings, or a
+  spawn the landmap won't confirm as open water. A harbour-authored marker legitimately produces
+  this, so check the campaign's other groups before calling it a bug.
+- **A hull aground, or a group threading a strait it clearly shouldn't fit through.**
+- **Threat rings visibly not over the ships** — the map draws the ring at the marker, so a group far
+  off station makes the whole displayed threat picture wrong. This is the consequence that makes
+  criterion 1 matter rather than being pedantry.
+- **§63 / §81 interaction:** a cruise-missile `FireAtPoint` or a naval-magazine ROE change that
+  **wipes** the route instead of popping back to it. §87 deliberately uses ME waypoints + a
+  `SwitchWaypoint` action rather than a scripted `mist.goRoute` (a `setTask`) specifically so a
+  pushed fire task pops back — the §49 fire-then-scoot clobber, avoided by construction. If a ship
+  fires a §63 raid or hits winchester under §81 and then goes dead in the water, that assumption is
+  wrong and both features are implicated.
+
+**What CI cannot exercise:** everything above. The generation side (orientation choice, land
+sampling, the anchor-centred geometry, the safe degrades) is covered by
+`tests/missiongenerator/test_naval_station_keeping.py` (11 cases) and the envelope is guard-tested
+against ship threat rings — but whether DCS's naval AI *loops* a group on `SwitchWaypoint`, and how
+far it actually wanders doing it, only a mission shows.

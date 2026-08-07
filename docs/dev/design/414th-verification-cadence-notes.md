@@ -2,8 +2,8 @@
 
 > **STATUS: PROPOSED 2026-08-06. Nothing built.** This note came out of a methods audit of
 > the fork (methods, not bugs) whose headline finding was that the in-game-pass backlog has
-> no governor: **127 outstanding rows** (87 untested / 29 partial / 11 regressed) against
-> **114 verified**, with untested rows dating to 2026-07-01 and nothing in the process
+> no governor: **71 outstanding rows** (45 untested / 22 partial / 4 regressed) against
+> **82 verified**, with untested rows dating to 2026-07-01 and nothing in the process
 > limiting new feature starts as a function of unflown ones.
 >
 > The obvious throttle — cap the build rate — is **rejected below**, because the data says
@@ -29,13 +29,22 @@ Verification here is **bimodal**, and the split is not random:
 
 | Period | What existed to fly against | Rows verified |
 |---|---|---|
-| **2026-06-24 → 06-30** | Red Tide **M1** — a real scheduled event | **46** across 6 sessions (10 / 10 / 10 / 13 / 2 / 1) |
-| **2026-07-01 → 07-31** | Nothing scheduled. The Aug-1 card was *written* 07-15 and never run | **17** across 7 sessions (1–5 each) |
+| **2026-06-24 → 06-30** | Red Tide **M1** — a real scheduled event | **42** across 6 sessions (9 / 9 / 10 / 12 / 2) |
+| **2026-07-01 → 07-31** | Nothing scheduled. The Aug-1 card was *written* 07-15 and never run | **16** across 7 sessions (1–5 each) |
 | **2026-08-05** | The Aug-1 card finally got run, partially, alongside a DM review pass | **20 in one day** |
 
-Five sessions account for **63 of the 114 verified rows**. Of the 13 rows on the Aug-1 card,
+Five sessions account for **60 of the 82 verified rows**. Of the 13 rows on the Aug-1 card,
 four flipped VERIFIED on 08-05 (**B14, B12, B13, A6**) — five days late and roughly a third
 executed, and it was still the single largest verification event in the repo's history.
+
+> **Counting note — read before quoting any figure from this checklist.** Every number here is
+> **heading-scoped, first-marker-wins**, i.e. `.claude/hooks/session-start.sh`'s method. A naive
+> whole-file `grep` inflates badly, because the checklist's own conventions quote status markers
+> constantly in prose (*"was ☐ UNTESTED, built …"*, *"was ✗ REGRESSED"*) — it reported
+> 127 outstanding / 114 verified / 11 regressed against the true 71 / 82 / 4, and the first draft
+> of this note shipped those inflated figures. The hook's header comment documents this trap
+> explicitly and predates the mistake. **Use the hook, or scope to `^### ` and take the first
+> marker.** The bimodal finding below was re-derived correctly and is unaffected.
 
 **Batch verification happens when, and only when, a scheduled fly exists to batch against.**
 July's trickle is not fatigue or lack of discipline; it is the no-open-card state. A session
@@ -178,13 +187,13 @@ Aug 5: 20):
 | Local card, ×2–3/week | 4–8 rows each |
 | Watch list, continuous | 1–2 rows/week |
 
-**≈15–25 rows/week if the cadence is actually run**, against 116 untested+partial rows. That
-is roughly **6–10 weeks**, not a permanent condition.
+**≈15–25 rows/week if the cadence is actually run**, against 67 untested+partial rows. That
+is roughly **3–5 weeks**, not a permanent condition.
 
 Two honest deductions. **Not every row is reachable** — many need a specific campaign
 (Marianas, DS91, Inherent Resolve, the COIN pair), so campaign-grouping is load-bearing rather
 than cosmetic, and a row whose campaign is not in rotation will not close no matter how many
-cards run. And **the 11 REGRESSED rows are not in this number at all** — they are bugs with
+cards run. And **the 4 REGRESSED rows are not in this number at all** — they are bugs with
 reproduced fail signatures and belong in the ordinary work queue.
 
 Expect a **tail that does not close**: rows needing conditions that genuinely never arise.
@@ -204,7 +213,7 @@ nothing to extend:
 
 ```
 === 414th in-game-pass checklist ===
-verified 114 | untested 87 | partial 29 | regressed 11 | closed 12
+verified 82 | untested 45 | partial 22 | regressed 4 | closed 12
 
 WATCH (fly anything): B15 modex · A5 rear-field launch · G29 MIA appears
 EVENT CARD 2026-08-14 (Red Tide): 9 rows    LOCAL QUEUE: 14 rows
@@ -267,7 +276,7 @@ valuable content in the checklist and the reason its findings are trustworthy.
 Stated plainly, because a process change that oversells itself is worse than none:
 
 - **It does not create cockpit time.** It multiplies the yield of the time that exists.
-- **It does nothing for the 11 REGRESSED rows.** Those are concrete bugs with reproduced fail
+- **It does nothing for the 4 REGRESSED rows.** Those are concrete bugs with reproduced fail
   signatures, not unverified features; they belong in the ordinary work queue, not a card.
 - **It does not fix silent no-ops.** A feature with four silent early-returns (§21's recovery
   surge, G31) is unfalsifiable on a card too. That is a separate finding from the same audit —
@@ -291,7 +300,7 @@ Stated plainly, because a process change that oversells itself is worse than non
 3. ~~**Does the private-session card survive as a separate class?**~~ ✅ **Yes, answered by
    call 1** — the §4/§5 distinction maps exactly onto the event/local split, and a third class
    (the watch list) fell out that neither the debt register nor the first draft had.
-4. **Seeding — the live question.** The 78 unassigned rows now need routing to **three**
+4. **Seeding — the live question.** The 71 outstanding rows now need routing to **three**
    destinations before any card is built. Within the event and local piles, group by
    **campaign** (what one Red Tide evening burns down vs. one Marianas evening) or by
    **subsystem** (all the naval rows together)? Campaign-grouping is what the Aug-1 card did
@@ -313,7 +322,7 @@ Stated plainly, because a process change that oversells itself is worse than non
    regardless; this costs a glance and starts converting flights that currently verify nothing.
    Everything else can wait behind it.
 2. `docs/dev/flycards/` + the first **event card** (dated off the next MP event) and the
-   **local queue**, seeded by routing the 78 unassigned rows across the three types — which
+   **local queue**, seeded by routing the 71 outstanding rows across the three types — which
    answers call 4 by doing it.
 3. The `· card:` token + the checklist legend entry for `SHIPPED UNVERIFIED (accepted)`.
 4. The session-start hook's three lines (Parts 1 + 3 enforcement).

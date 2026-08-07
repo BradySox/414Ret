@@ -13,6 +13,13 @@
 > **Open calls for the DM are in the last section.** Part 1 is the only part that cannot be
 > automated; if it does not get a date, the rest degrades into a better-labelled backlog and
 > should not be built.
+>
+> **CALL 1 RESOLVED 2026-08-06 (DM): "once a week for multiplayer events but I fly daily, we
+> could really test every 2nd or third day locally."** This substantially revised the design.
+> The note originally assumed cockpit time was the scarce, non-substitutable resource — it is
+> not. There are **three** real cadences, not one, and the design now matches them (Part 1
+> below). It also makes the backlog **tractable rather than permanent**: see "How long this
+> actually takes".
 
 ---
 
@@ -62,20 +69,41 @@ the next card and what is on it."*
 
 ## The design
 
-### Part 1 — the card is always open
+### Part 1 — three cadences, three card types
 
-There is **always exactly one open fly card**, and it has a **date**. It lives as its own
-artifact under `docs/dev/flycards/` (`M3.md`, `M4.md`, …) rather than as a section inside a
-register that ages out — that packaging is precisely why the last one evaporated.
+The first draft of this note had **one** open card. That was wrong, and the DM's answer to
+call 1 is why: there are three distinct rhythms here, they have different setup costs, and
+they suit different kinds of row. Forcing them through one artifact would push contrived-
+condition rows onto a squadron event (where they do not belong) and leave the daily flying —
+by far the largest untapped resource — with nothing assigned to it at all.
 
-A card carries what §4 already carries: the target campaign + turn, the settings/preseeds it
-needs, the rows assigned, how each is exercised, what to watch for, and — importantly — the
-rows deliberately **not** on it with the reason. Closed cards stay in the folder as the
-verification record.
+| Cadence | Card | Setup cost | What belongs on it |
+|---|---|---|---|
+| **Daily** (flying anyway) | **Watch list** — 3–5 items, no card, no mission built | Zero | **Opportunistic rows**: things you would notice *if told to look*. Board numbers, a rear field launching to answer a front raid, an MIA appearing on the roster. |
+| **Every 2–3 days** (local / solo) | **Local card** — the debt register's §5 pattern | Low; a scratch save is fine | **Contrived conditions** no squadron event should host: test toggles, deliberate setups, single-player arbiters, re-flies with specific plugin options. |
+| **Weekly** (MP event) | **Event card** — the §4 pattern | High; needs pilots and a real campaign | Rows that **ride an event organically** plus the few worth assigning a pilot to deliberately. |
 
-When a card is flown it closes and the next opens. New features queue into the open one.
+**Only the event card needs a date** — it already has one, because the event does. The local
+card is a rolling queue that gets drawn from whenever an evening happens; the watch list is
+standing. That removes the design's single biggest fragility: it no longer depends on the DM
+committing to dates he does not already have.
 
-This is the lever. Everything below exists to keep it from lapsing again.
+Cards live as their own artifacts under `docs/dev/flycards/` (`E-2026-08-14.md`,
+`L-004.md`, `WATCH.md`) rather than as sections inside a register framed as disposable — that
+packaging is precisely why the last one evaporated. A card carries what §4 already carries:
+target campaign + turn, the settings/preseeds it needs, the rows assigned, how each is
+exercised, what to watch for, and the rows deliberately **not** on it with the reason. Closed
+cards stay in the folder as the verification record.
+
+**The watch list is the new idea and the cheapest win.** It is a standing 3–5 items, revised
+whenever it empties, and it costs a glance. The Aug-1 card marked A5 and G29 *"Opportunistic"*
+and then had nowhere to put them — so they sat, and both are still PARTIAL five weeks later.
+A daily flight that already happened is the perfect vehicle for exactly that class of row, and
+it currently verifies nothing because nothing has ever been assigned to it. Keep it short on
+purpose: a watch list of twenty items is a watch list of zero.
+
+**Row → card is a routing decision, made once, at merge.** The three types are what the
+`· card:` token names.
 
 ### Part 2 — the admission rule (the actual throttle)
 
@@ -107,8 +135,14 @@ The session-start hook reads the **first** status marker on a heading line, so a
 
 ### Part 3 — aging forces a disposition
 
-A row that goes **unassigned across 3 closed cards** forces a choice. There is no fourth
-option and no "later":
+A row that goes **unassigned for 3 weeks** forces a choice. There is no fourth option and no
+"later".
+
+*(Originally "3 closed cards". Recalibrated after call 1: with three cadences running, three
+cards can close inside a single week, which would force dispositions faster than anyone would
+act on them — and a threshold people snooze is worse than none. **3 weeks ≈ 3 event cycles**
+is calendar-based, unambiguous across card types, and matches the rhythm the DM actually
+described.)*
 
 | Disposition | Meaning |
 |---|---|
@@ -128,6 +162,35 @@ nobody ever intends to fly. Making the second case *sayable* is most of the clea
 
 ---
 
+## How long this actually takes
+
+Worth stating, because the whole tone of the backlog changes once call 1 is answered. The
+note was written assuming cockpit time was scarce. It is not — the DM flies **daily**, with
+~2–3 usable local test slots a week and a weekly MP event. That is capacity the fork has never
+pointed at the checklist.
+
+Against the flown evidence for what a card yields (June's scheduled sessions: 10–13 rows;
+Aug 5: 20):
+
+| Cadence | Realistic yield |
+|---|---|
+| Event card, ×1/week | 8–13 rows |
+| Local card, ×2–3/week | 4–8 rows each |
+| Watch list, continuous | 1–2 rows/week |
+
+**≈15–25 rows/week if the cadence is actually run**, against 116 untested+partial rows. That
+is roughly **6–10 weeks**, not a permanent condition.
+
+Two honest deductions. **Not every row is reachable** — many need a specific campaign
+(Marianas, DS91, Inherent Resolve, the COIN pair), so campaign-grouping is load-bearing rather
+than cosmetic, and a row whose campaign is not in rotation will not close no matter how many
+cards run. And **the 11 REGRESSED rows are not in this number at all** — they are bugs with
+reproduced fail signatures and belong in the ordinary work queue.
+
+Expect a **tail that does not close**: rows needing conditions that genuinely never arise.
+That tail is what `SHIPPED UNVERIFIED (accepted)` and deletion exist for, and it is the real
+argument for having those states.
+
 ## Enforcement
 
 Discipline alone will not hold this. The evidence is in the tree: *"one PR = one
@@ -143,13 +206,15 @@ nothing to extend:
 === 414th in-game-pass checklist ===
 verified 114 | untested 87 | partial 29 | regressed 11 | closed 12
 
-OPEN CARD: M3 — Red Tide, target 2026-08-14 — 9 rows assigned
-UNASSIGNED: 78 rows
-⚠ AGED OUT (3+ cards, need a disposition): B6 · B8 · C8 · G30 · S4
+WATCH (fly anything): B15 modex · A5 rear-field launch · G29 MIA appears
+EVENT CARD 2026-08-14 (Red Tide): 9 rows    LOCAL QUEUE: 14 rows
+UNASSIGNED: 78    ⚠ AGED 3wk, need a disposition: B6 · B8 · C8 · G30 · S4
 ```
 
-Three lines. The aged-out list is the whole enforcement mechanism for Part 3 — it makes the
-question unavoidable without anyone having to remember to ask it.
+Three lines, and the first one is the highest-value: **the watch list is in front of the DM
+before every daily flight**, which is the entire mechanism for capturing opportunistic rows.
+The aged-out list is the whole enforcement mechanism for Part 3 — it makes the question
+unavoidable without anyone having to remember to ask it.
 
 **2. A CI test**, following the existing feature-registry precedent (a test already fails CI
 when the registry, feature list, catalog and checklist drift apart):
@@ -214,35 +279,47 @@ Stated plainly, because a process change that oversells itself is worse than non
 
 ## Open calls (DM)
 
-1. **Cadence.** What is a realistic interval for an open card — every squadron event, monthly,
-   or "whenever the next event is scheduled, whatever that turns out to be"? The design does
-   not need a fixed period, only that the open card always carries **a date**. If the honest
-   answer is "I can't commit to dates," say so — the right build then is Part 3 alone
-   (aging + accept/delete), and Parts 1–2 should not be built.
-2. **Aging threshold.** 3 closed cards is a guess. Could be 2, could be calendar-based
-   (6 weeks). Wants a number you would actually act on rather than snooze.
-3. **Seeding.** Card M3 has to be built from the current 78 unassigned rows. Group it by
-   **campaign** (what one Red Tide evening burns down vs. one Marianas evening), or by
+1. ~~**Cadence.**~~ ✅ **RESOLVED 2026-08-06** — weekly MP event · daily solo flying · local
+   testing every 2nd–3rd day. Drove the three-cadence rework of Part 1, the recalibrated aging
+   threshold, and the "How long this actually takes" section. **The design's stated kill
+   condition — "if cards don't get dates, build Part 3 alone" — no longer applies**: only the
+   event card needs a date and it inherits one from the event.
+2. ~~**Aging threshold.**~~ ✅ **Recalibrated to 3 weeks** (calendar, ≈3 event cycles) as a
+   direct consequence of call 1 — with three cadences running, the original "3 closed cards"
+   could elapse inside a week. Still wants a sanity check that 3 weeks is a number you would
+   act on rather than snooze.
+3. ~~**Does the private-session card survive as a separate class?**~~ ✅ **Yes, answered by
+   call 1** — the §4/§5 distinction maps exactly onto the event/local split, and a third class
+   (the watch list) fell out that neither the debt register nor the first draft had.
+4. **Seeding — the live question.** The 78 unassigned rows now need routing to **three**
+   destinations before any card is built. Within the event and local piles, group by
+   **campaign** (what one Red Tide evening burns down vs. one Marianas evening) or by
    **subsystem** (all the naval rows together)? Campaign-grouping is what the Aug-1 card did
-   and what actually flew.
-4. **Does the private-session card survive as a separate class?** §5 of the debt register
-   distinguishes rows needing contrived conditions from rows that ride an event organically.
-   That distinction earned its keep — worth keeping as a card *type*, or fold both into one
-   card with a column?
-5. **Is `SHIPPED UNVERIFIED (accepted)` acceptable at all?** It is a new status marker, and it
-   means deliberately shipping something nobody watched. The alternative for a row nobody will
-   ever fly is deletion. Some features are genuinely worth having unverified; the question is
-   whether you want that sayable in the tracker or would rather the pressure stay on.
+   and what actually flew — but with 2–3 local cards a week, subsystem-grouping becomes
+   affordable in a way it was not when there was one card a month.
+5. **Is `SHIPPED UNVERIFIED (accepted)` acceptable at all?** Still open, and call 1 cuts both
+   ways. Higher capacity means fewer rows genuinely need it — but "How long this actually
+   takes" also makes the **tail** explicit: rows whose conditions never arise will not close
+   at any cadence. The alternative for those is deletion. The question is whether you want
+   "shipped, nobody watched, accepted" sayable in the tracker, or would rather the pressure
+   stay on and force delete-or-fly.
 
 ---
 
 ## Build order, if it goes ahead
 
-1. `docs/dev/flycards/` + card M3 seeded from the unassigned rows (answers call 3 by doing it).
-2. The `· card:MN` token + the checklist legend entry for `SHIPPED UNVERIFIED (accepted)`.
-3. The session-start hook's three lines (Part 1 + Part 3 enforcement).
-4. The CI test (Part 2 enforcement).
+1. **`WATCH.md` first — it is the cheapest thing here and the only one that pays out
+   tomorrow.** 3–5 opportunistic rows, no mission built, no setup. The DM is flying daily
+   regardless; this costs a glance and starts converting flights that currently verify nothing.
+   Everything else can wait behind it.
+2. `docs/dev/flycards/` + the first **event card** (dated off the next MP event) and the
+   **local queue**, seeded by routing the 78 unassigned rows across the three types — which
+   answers call 4 by doing it.
+3. The `· card:` token + the checklist legend entry for `SHIPPED UNVERIFIED (accepted)`.
+4. The session-start hook's three lines (Parts 1 + 3 enforcement).
+5. The CI test (Part 2 enforcement).
 
-Steps 2–4 are small and mechanical. Step 1 is the one that carries the actual design decision,
-and it is worth doing first precisely because seeing what one evening would really burn down
-is the cheapest way to find out whether any of this is worth having.
+Steps 3–5 are small and mechanical. Step 1 is deliberately first: it is a single short file,
+it needs no decision from anyone, and it tests the whole premise — if a standing watch list
+does not convert daily flights into closed rows within a week or two, the rest of this design
+is unlikely to be worth building either.

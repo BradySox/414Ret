@@ -517,19 +517,31 @@ file. This guide is the map; those are the territory.
     finally ran**, so a card-driven session adjudicates 10–20 rows and an opportunistic one
     adjudicates 1–2. The mechanism already exists — the debt register's §3 pre-flight desk
     pass / §4 fly card / §5 private-session card — but was built as a **one-off inside a
-    document framed as disposable**, so nothing owns "what is the next card". Proposal: (1)
-    **always exactly one open card, with a date**, as its own artifact under
-    `docs/dev/flycards/`; (2) the admission rule — **a feature does not ship default-ON or
-    preseeded until it is on a card** (default-OFF *and* unpreseeded stays unrestricted, so
-    it gates the risk without gating the building); (3) a row unassigned across 3 closed
-    cards forces **schedule / accept-unverified / delete** — generalizing the pass-or-delete
-    move the fork already makes ad hoc, with `SHIPPED UNVERIFIED (accepted)` as the new
-    sayable state that stops the backlog being a guilt pile. Enforced on the two surfaces the
-    repo already maintains: three lines in the **session-start hook** (open card · unassigned
-    count · aged-out list) and a **CI test** on the features.py-registry precedent. Explicitly
-    does NOT fix: cockpit time, the 11 REGRESSED rows (bugs, not unverified), or silent
-    no-ops. **5 open DM calls**, the load-bearing one being cadence — Part 1 cannot be
-    automated, and if cards don't get dates the right build is Part 3 alone),
+    document framed as disposable**, so nothing owns "what is the next card". **Cadence call
+    RESOLVED 2026-08-06 (DM: "once a week for multiplayer events but I fly daily, we could
+    really test every 2nd or third day locally") — which substantially revised the design and
+    removed its stated kill condition.** The note had assumed cockpit time was the scarce
+    resource; it is not, so there are **three cadences, three card types**: a standing
+    **watch list** (3–5 opportunistic rows, no setup — the daily fly is the largest untapped
+    resource and currently verifies nothing because nothing is assigned to it; the Aug-1 card
+    marked A5/G29 "Opportunistic" and had nowhere to put them, and both are still PARTIAL), a
+    rolling **local card** every 2–3 days for contrived conditions (the §5 pattern), and a
+    dated **event card** weekly (the §4 pattern) — **only the event card needs a date, and it
+    inherits one from the event.** Rest of the proposal: the admission rule — **a feature does
+    not ship default-ON or preseeded until it is on a card** (default-OFF *and* unpreseeded
+    stays unrestricted, so it gates the risk without gating the building) — and a row
+    unassigned **3 weeks** (recalibrated from "3 closed cards", which with three cadences can
+    elapse in a week) forces **schedule / accept-unverified / delete**, generalizing the
+    pass-or-delete move the fork already makes ad hoc, with `SHIPPED UNVERIFIED (accepted)` as
+    the new sayable state that stops the backlog being a guilt pile. Enforced on the two
+    surfaces the repo already maintains: three lines in the **session-start hook** (watch list
+    · event card + local queue · unassigned + aged-out) and a **CI test** on the
+    features.py-registry precedent. **The backlog is tractable, not permanent** — ≈15–25
+    rows/week at the flown card yields (June 10–13, Aug 5 twenty) ⇒ **6–10 weeks** for the 116
+    untested+partial, minus a tail whose conditions never arise. Explicitly does NOT fix: the
+    11 REGRESSED rows (bugs, not unverified) or silent no-ops. **2 open calls** (seeding
+    grouping; whether `SHIPPED UNVERIFIED (accepted)` should exist at all). Build order starts
+    with `WATCH.md` — one short file, no decision needed, pays out on the next flight),
     `414th-wing-growth-notes.md` (**The Wing Grows** — scheduled squadron arrivals, split out
     of the SP-loop note's §S3 reason 5b at the DM's request because it is a real feature, not
     a read-out: a campaign-authored `available_from_turn:` (+ optional `arrival_note:`) on a

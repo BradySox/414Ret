@@ -13,7 +13,7 @@ retune ``DECK_OFFSET``) never duplicates and **never touches your ME drawings**:
 the mission's drawings layer, so the shipping-lane polygon (and everything else) survives.
 
 Placement: DCS renders a ground unit on an oil-platform deck when its coordinates fall on the
-platform (verified against the paid campaigns -- e.g. FA-18C Operation Cerberus North mounts a
+platform (verified against installed paid campaigns -- one FA-18C campaign mounts a
 Silkworm + infantry on a gas platform). A small on-deck offset is used. **The on-deck render is an
 in-game pass item** (it can't be flown headless); if a battery ends up in the water, nudge
 ``DECK_OFFSET`` and re-run.

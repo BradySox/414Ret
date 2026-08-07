@@ -576,6 +576,25 @@ aircraft. Do NOT "resync" this block from upstream until they fix it.
     > ❓ **Need your call:** <the question>
   - Do NOT build a custom widget/visualization (`mcp__visualize`, an Artifact) to ask a question —
     `AskUserQuestion` is the one decision surface.
+- **Never name a paid campaign anywhere in the repo (STANDARD, 2026-08-07 user call).**
+  Third-party DCS campaigns are commercial products. The fork studies them and extracts
+  factual data from them (deck-static coordinates, kneeboard page formats, ATC command
+  vocabularies), and that is fine — but their **names** do not appear in our code, comments,
+  commit messages, PR titles/bodies, docs or wiki pages.
+  - **Use stable letters**: `campaign A`, `campaign B`, … Letters are consistent across docs —
+    A and B are the two the carrier deck-decor note uses — so a set stays traceable to a
+    specific source mission (`campaign A mission 3`) and rules like "never mix sets across
+    missions within a zone" stay checkable. Add the airframe when it aids reading
+    (`a paid FA-18C campaign`). Publishers get the same treatment.
+  - **Install paths are generic** — `<DCS>\Mods\campaigns\<campaign A>`, never the real folder.
+  - **This applies to commit messages and PR metadata, not just files.** They are as public as
+    the code; a rewrite + force-push on an unmerged branch is the fix.
+  - **Three things are NOT covered.** Real-world squadron names and nicknames (VFA-83
+    "Rampagers" is a real squadron the campaign is named *after*, not the reverse); real-world
+    operation names (Inherent Resolve); and the fork's own campaign names, even where one
+    collides with a paid product (our `red_flag_81_2`).
+  - **Check with the installed list, not from memory** — `ls "<DCS>\Mods\campaigns\"` is the
+    authoritative set of names to avoid.
 - **Supply lines follow the driveable corridor (STANDARD, 2026-07-03).** Every authored
   `supply_routes:` / shipping-lane drawing must trace the corridor you would actually *drive*
   between the two points — the road, the river valley, the pass — never a straight line across a

@@ -937,10 +937,40 @@ against their cruise values so the data cannot silently regress; the same file's
 re-pointed from the A-10C (which now *has* a block) to the MiG-29A.
 
 The remaining ~217 airframes still fall back to the estimate. The measurement procedure for closing
-that gap is already in the tree at `docs/modding/fuel-consumption-measurement.md`. Known estimator
-weakness worth a future pass: it scales off internal capacity alone, so big-tank jets overshoot
-hardest — the Su-27 estimate lands at 39.9 ppm, outside the 10-35 band the fork's own test calls
-reasonable.
+that gap is already in the tree at `docs/modding/fuel-consumption-measurement.md`.
+
+*Combat-bucket constant retuned 520 → 700 NM (2026-08-07).* Adopting the twelve blocks took the
+calibration set from **two** references (F/A-18C, F-16C) to **nine independent** ones, which made it
+worth re-deriving the constant. An earlier draft of this section called the resulting overshoot a
+"weakness"; that was wrong and is corrected here. **The overshoot was the deliberate price of a
+conservative calibration**: 520 sat just above the thirstiest reference (the Hornet, implying 489 NM),
+so the model treated every unmeasured airframe as a Hornet and almost never under-estimated.
+
+The error is asymmetric, and that governs the choice. Over-estimating burn draws a pessimistic bingo
+ladder and frags a tanker that may not be needed — annoying, safe. Under-estimating draws an
+optimistic one and frags nothing — the jet lands dry. So the constant is picked to stay conservative,
+**not** to minimise average error:
+
+| Constant | Worst error | Optimistic (unsafe) references |
+|---|---|---|
+| 520 (was) | +140% (F-14) | 1 of 9 |
+| **700 (now)** | **+78%** | **2 of 9** |
+| 875 (best fit) | +42% | 6 of 9 — rejected |
+
+700 is the *median* implied endurance across the nine references (spread 489–1246 NM). It roughly
+halves the worst overshoot while keeping 7 of 9 on the conservative side. Two invariants in
+`tests/dcs/test_estimated_fuel_consumption.py` lock that posture — no reference may be more than 35%
+optimistic, and at least 7 of 9 must stay conservative — and both were verified to **fail** at 875
+before being committed, so a future "improvement" toward best-fit trips CI rather than silently
+flipping the safety bias.
+
+Two things were tested and rejected on the way, recorded so they are not re-tried: a **linear fit**
+(`ppm = 7.53 + 0.000512 × fuel_lb`) scores only 41% worst error against the constant's 42%, so it buys
+nothing for the added complexity; and **`max_range` as the input** is worse still (77%) because the
+yaml field is an authored *tasking* radius, not a physical one — the AV-8B is capped at 100 NM and the
+A-10C at 150 NM by doctrine, not fuel. Capacity is a weak predictor and no single constant will fix
+that; the real answer is measured data. The helicopter and heavy buckets are independent and were not
+touched — the C-130J "King" still estimates ~16 ppm.
 
 *Not every "measured" block is measured (audit, 2026-08-07).* The blocks carry test-condition
 comments — the taxi route, the climb profile, the cruise mach and leg length — precisely so a number

@@ -97,6 +97,67 @@ ADOPTED_CRUISE_PPM = {
 }
 
 
+#: The nine *independent* measured references the combat bucket is calibrated against:
+#: one representative per measured sortie. Within-family duplicates (the other F-16D
+#: marks, the Super Hornet marks, the extra A-10/F-14 marks) re-use one measurement and
+#: would weight that sortie N times; the VSN F-35s and Tornado ADV are donor-copied
+#: values and are not observations at all.
+CALIBRATION_REFERENCES = [
+    ("CF-188 Hornet", 22.1),
+    ("F-16CM Fighting Falcon (Block 50)", 12.0),
+    ("A-4E Skyhawk", 7.7),
+    ("AV-8B Harrier II Night Attack", 11.0),
+    ("F-4E-45MC Phantom II", 17.0),
+    ("F-100D", 9.0),
+    ("A-10C Thunderbolt II (Suite 3)", 12.0),
+    ("F-15C Eagle", 11.0),
+    ("F-14B Tomcat", 13.0),
+]
+
+#: Worst tolerated *optimistic* error. Under-estimating burn is the dangerous direction:
+#: the ladder promises range the jet does not have and no tanker gets fragged.
+MAX_OPTIMISTIC_ERROR_PCT = 35.0
+
+#: The bucket must stay conservative for the clear majority of references.
+MIN_CONSERVATIVE_REFERENCES = 7
+
+
+def _estimate_error_pct(name: str, measured_cruise: float) -> float:
+    """Signed error of the estimate against measured truth; negative = optimistic."""
+    est = AircraftType.named(name).estimated_fuel_consumption
+    assert est is not None
+    return (est.cruise - measured_cruise) / measured_cruise * 100
+
+
+@pytest.mark.parametrize(("name", "cruise"), CALIBRATION_REFERENCES)
+def test_estimate_never_badly_optimistic(name: str, cruise: float) -> None:
+    """The estimate may be wrong, but it must not promise range the jet lacks.
+
+    This is the guard on the combat bucket's cruise constant. Fitting the centre of the
+    reference set (~875 NM) scores a lower average error and would fail here, because it
+    under-estimates the Hornet by 44%. That trade is deliberate -- see the
+    `estimated_fuel_consumption` docstring before changing the constant.
+    """
+    error = _estimate_error_pct(name, cruise)
+    assert error > -MAX_OPTIMISTIC_ERROR_PCT, (
+        f"{name}: estimate is {-error:.0f}% optimistic against measured data, over the "
+        f"{MAX_OPTIMISTIC_ERROR_PCT:.0f}% limit -- the ladder would promise range the "
+        f"jet does not have"
+    )
+
+
+def test_estimate_stays_conservative_for_most_references() -> None:
+    conservative = [
+        name
+        for name, cruise in CALIBRATION_REFERENCES
+        if _estimate_error_pct(name, cruise) >= 0
+    ]
+    assert len(conservative) >= MIN_CONSERVATIVE_REFERENCES, (
+        f"only {len(conservative)}/{len(CALIBRATION_REFERENCES)} references are "
+        f"over-estimated; the bucket has flipped to the optimistic side"
+    )
+
+
 @pytest.mark.parametrize(("name", "cruise"), sorted(ADOPTED_CRUISE_PPM.items()))
 def test_adopted_fuel_data_is_present_and_measured(name: str, cruise: float) -> None:
     aircraft = AircraftType.named(name)

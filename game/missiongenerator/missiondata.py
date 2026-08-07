@@ -7,6 +7,7 @@ from typing import Optional, TYPE_CHECKING
 from dcs.flyingunit import FlyingUnit
 from dcs.unitgroup import ShipGroup
 
+from game.data.carrier_deck_decor import DeckStatic
 from game.dcs.aircrafttype import AircraftType
 from game.dcs.groundunittype import GroundUnitType
 from game.missiongenerator.aircraft.flightdata import FlightData
@@ -148,6 +149,10 @@ class DeckDecorInfo:
     blue: bool
     brc_degrees: float
     clear_names: list[str]
+    #: Recovery-phase placements the plugin SPAWNS on the same trigger. These
+    #: are deliberately absent from the mission file — the bow stays a launch
+    #: deck until launches are over.
+    recovery_specs: list[DeckStatic] = field(default_factory=list)
 
 
 @dataclass

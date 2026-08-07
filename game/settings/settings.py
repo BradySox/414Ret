@@ -535,6 +535,7 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                     "supercarrier_deck_crew",
                     "carrier_deck_decorations",
                     "carrier_deck_decorations_aircraft",
+                    "carrier_deck_decorations_recovery",
                 ],
             ),
             (
@@ -774,6 +775,7 @@ FEATURE_GATE_FIELDS: dict[str, list[str]] = {
     "Carrier": [
         "carrier_deck_decorations",  # §72
         "carrier_deck_decorations_aircraft",  # §72
+        "carrier_deck_decorations_recovery",  # §72
     ],
     "Host & event tools": [
         "host_red_scramble",  # §61
@@ -2494,9 +2496,9 @@ class Settings:
             "Dress each Nimitz-class carrier deck with static deck equipment "
             "and crew linked to the moving ship: tow tractors, a P-25 crash "
             "truck, a forklift and deck hands along the island, plus the LSO "
-            "platform crew aft. Layouts are curated from the Operation "
-            "Cerberus North 2 campaign and keep every parking spawn spot and "
-            "all four catapults usable; the arrangement rotates each turn."
+            "platform crew aft. Layouts are curated from installed DCS "
+            "campaigns and keep every parking spawn spot and all four "
+            "catapults usable; the arrangement rotates each turn."
         ),
     )
     carrier_deck_decorations_aircraft: bool = boolean_option(
@@ -2507,7 +2509,7 @@ class Settings:
         default=False,
         detail=(
             "Extra dressing that stands ONLY during the launch cycle, as "
-            "OCN 2 spots it: an E-2C on the stern round-down plus gear and "
+            "campaign A spots it: an E-2C on the stern round-down plus gear and "
             "hands on the port junk row by the LSO platform. The "
             "deck-dressing runtime strikes it all below before recovery "
             "(ahead of the Airboss recovery window, on a fallback timer, or "
@@ -2516,6 +2518,23 @@ class Settings:
             "static ever stands on a parking spot -- aircraft spawning into "
             "deck statics is a real DCS failure mode this feature learned "
             "the hard way."
+        ),
+    )
+    carrier_deck_decorations_recovery: bool = boolean_option(
+        "Carrier recovery-cycle deck dressing (spawned for recovery)",
+        MISSION_GENERATOR_PAGE,
+        GAMEPLAY_SECTION,
+        enabled_when="carrier_deck_decorations",
+        default=False,
+        detail=(
+            "The mirror of the launch-cycle dressing: gear and hands ranged "
+            "forward onto the bow, which is how a real deck is re-spotted once "
+            "the landing area has to be clear. Nothing stands there at mission "
+            "start -- the deck-dressing runtime spawns it at the same moment "
+            "it strikes the launch-cycle set below. EXPERIMENTAL: the bow "
+            "parking spots have not been measured yet, so this tier can only "
+            "be checked against the 11 spots that have been. Leave it off if "
+            "you fly full 16-aircraft decks."
         ),
     )
     generate_portable_tacans: bool = boolean_option(

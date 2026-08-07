@@ -83,7 +83,7 @@ pass checklist `§N` is unregistered, or this table drifts.
 | §69 | Cross-package SEAD-before-strike coordination | — | `sead_strike_coordination` |
 | §70 | COMINT collection (blue-side communications intelligence) | `rednet` | `comint_collection`, `red_comms_net`, `red_net_max_stations` |
 | §71 | Expanded F-4E Weapons Pack (AGM-78/-88 Weasel fits) | — | — |
-| §72 | Carrier deck decorations (OCN 2 deck dressing) | `deckdecor` | `carrier_deck_decorations`, `carrier_deck_decorations_aircraft` |
+| §72 | Carrier deck decorations (campaign A deck dressing) | `deckdecor` | `carrier_deck_decorations`, `carrier_deck_decorations_aircraft`, `carrier_deck_decorations_recovery` |
 | §73 | Per-airframe default loadout for a task | — | — |
 | §74 | Native DTC data pre-population (F/A-18C + F-16C) | — | `dtc_data_cartridges` |
 | §75 | Custom victory conditions | — | `alternate_victory_domination`, `alternate_victory_attrition` |

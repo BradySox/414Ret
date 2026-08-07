@@ -6619,26 +6619,31 @@ the mod-off stripped-stores signature).
 
 ---
 
-## §72 — Carrier deck decorations (OCN 2 deck dressing)
+## §72 — Carrier deck decorations (campaign A deck dressing)
 
 **What it is.** Every Nimitz-family carrier (free Stennis + supercarrier CVN-71/72/73/75)
 gets its deck dressed with ship-linked static deck equipment and crew — tow tractors
 (AS32-31A/-32A), a P-25 crash truck, a CV-59 Hyster forklift, deck hands, and an
 AS32-36A crane in the **island street** (the clear staging strip alongside the island),
 plus the four-figure LSO team on the port-aft platform — so the boat reads like a working
-flight deck instead of an empty parking lot. The placements are **Sedlo authoring**:
-extracted from the 13 missions of the OCN 2 (Operation Cerberus North 2) campaign
-(`E:\DCS World\Mods\campaigns\FA-18C Operation Cerberus North 2`, the user's install),
-which dresses the Truman's deck in every mission. OCN's raw offsets put the cluster on
+flight deck instead of an empty parking lot. The placements are **the campaign author authoring**:
+extracted from the 13 missions of campaign A
+(`<DCS>\Mods\campaigns\<campaign A>`, the user's install),
+which dresses the Truman's deck in every mission. campaign A's raw offsets put the cluster on
 the angled-deck **foul-line strip** (rejected 2026-07-21); that fix shoved the cluster
 +30 m **forward** into the corral, but the forward corral overshot — the flown feedback
 (2026-07-27) was "generating in the **red** instead of the **blue**", i.e. pull it back
-aft and tuck it outboard against the island. `CORRAL_SHIFT` now lands the OCN arrangement
+aft and tuck it outboard against the island. `CORRAL_SHIFT` now lands the campaign A arrangement
 in the island street (~10 m aft of raw / ~5 m outboard of the old corral, preserving the
 relative layout, clear of every spot by ≥12 m — the min is 12.7 m at the six-pack row).
-The arrangement rotates between six curated variants (mission 3 / 6 / 9 / 10 / 11 / 12
-sets, incl. the M6/M9 crane) deterministically on (carrier, turn) — crc32 seeding, the
-§70 pattern — so re-generating a turn is stable but consecutive turns vary. User request
+The arrangement rotates between **ten** curated variants (missions 1 / 2 / 3 / 4 / 5 / 6 /
+9 / 10 / 11 / 12, incl. the M6/M9 crane) deterministically on (carrier, turn) — crc32
+seeding, the §70 pattern — so re-generating a turn is stable but consecutive turns vary.
+The campaign A mining was **completed 2026-08-07**: all 13 missions re-extracted with a lupa
+parser validated against the shipped literals first (12/12 offsets and angles reproduce
+mission 3 exactly), 238 ship-linked statics catalogued. Missions 7 and 8 clear the guard
+but were left unmined at 4 and 2 in-envelope items — too thin to read as a dressed deck,
+now a five-item curation floor with a test behind it. User request
 2026-07-18 ("apply them to ALL retribution carriers for flavor — BUT we need all of
 the parking spots still usable").
 
@@ -6647,16 +6652,36 @@ one.** The SC manual claims a blocked parking location is skipped (capacity loss
 **flown evidence says worse**: for late-activated groups (Retribution's dominant §64
 spawn path) DCS does NOT skip — it spawns the aircraft INTO the static (the CVN-73
 A-6-in-the-Seahawks clip, 2026-07-18). So the curation is an evidence-driven filter,
-not a copy, and "on a spot" is a hard never. Two envelopes are provably parking-free
+not a copy, and "on a spot" is a hard never.
+
+**The recovery-phase tier (2026-08-07, default OFF, `carrier_deck_decorations_recovery`).**
+The mirror of the launch-phase set, and the first §72 dressing that is *spawned* rather than
+placed. A real deck is re-spotted for recovery — landing area cleared, gear ranged forward
+onto the bow — which is what the DCS Supercarrier guide's "Static Object Safe Zones" slides
+encode: its Recovery column marks the bow and cat tracks safe while the angled deck must stay
+clear, and its Launch column marks the opposite. §72 had already shipped that split without
+knowing ED had drawn it. These placements are deliberately **absent from the `.miz`** — the
+bow stays a launch deck until launches are over — and the `deckdecor` plugin spawns them on
+the same trigger that strikes the launch set below, via MOOSE `SPAWNSTATIC:InitLinkToUnit`
+(the only runtime path that writes the three-level linked static; a plain
+`coalition.addStaticObject` would leave the gear behind as the boat steams on). This broke the plugin's
+despawn-only invariant, **deliberately and on an explicit call** — the carrier case is the one
+place the rule cannot hold, since gear ranged forward for recovery must not be on the bow
+during the launch cycle and so cannot be generated into the miz. The exception is scoped, not
+widened: one one-shot spawn per boat, on the same trigger as the strike-below, `pcall`-wrapped,
+skipped entirely when MOOSE is absent, and the despawn half runs regardless. Data is **nine rotating variants** drawn from two installed campaigns (source campaigns are called campaign A and campaign B rather than named — they are paid third-party products and the fork does not name them in its own docs). **Static aircraft are permitted in this tier only** (explicit call, 2026-08-07): the clipping that banned them was a placement problem, not an aircraft problem, and this tier only stands once launches are over — the permanent layout is still aircraft-free, and both halves are pinned by a test. `FOOTPRINT_EXTRA_M` gained six aircraft entries at roughly half each published fuselage length, and footprint-aware clearance then rejected 15 candidate placements outright. A second guard checks the footprint *edge* against the street box, since box disjointness only compares centres and a parked Tomcat reaches ~9.5 m aft of its own. **It is default-OFF because it is the least-evidenced tier in the
+feature**: `KNOWN_PARKING_SPOTS` holds 11 of the guide's 16 spots and the five it lacks are
+the bow-edge spots nearest this zone, so "clears every known spot" is not "clears every spot"
+here. Promoting it needs the bow spots measured (B49). Two envelopes are provably parking-free
 and every permanent placement lives inside them:
 
 - **LSO platform sponson** (x −134..−126, y −25..−18): off the deck surface; aircraft
-  physically cannot park there. OCN puts the LSO crew there in all 13 missions at
+  physically cannot park there. campaign A puts the LSO crew there in all 13 missions at
   byte-identical offsets.
 - **Island street** (envelope x −65..−30, y +10..+25): the strip between the landing-area
   foul line and the island, flanked by the six-pack row (y = +34) forward-inboard and the
   aft junkyard/El-3 spots (x < −98). The SC manual's 16-spot layout places no spot there,
-  none was ever observed there, and OCN dresses it in all 13 missions of a flyable
+  none was ever observed there, and campaign A dresses it in all 13 missions of a flyable
   campaign.
 
 The keep-out evidence: parking spawn spots measured from **Tacview recordings of flown
@@ -6669,14 +6694,14 @@ six-pack skip), and the bow-port helo spot (+58.5, −31.4) where the §21 rescu
 parks. `KNOWN_PARKING_SPOTS` + a 9 m clearance floor are embedded in the data module
 and a guard test enforces them against every table entry, so a future layout edit
 cannot silently eat a spot. **Not in the default layout:** the fantail/bow static
-aircraft (E-2C, S-3B, SH-60B — they sit on real parking real estate; Sedlo could
+aircraft (E-2C, S-3B, SH-60B — they sit on real parking real estate; the campaign author could
 afford the spots, we can't), the junkyard cranes (AS32-36A, unproven zone), and the
 port-quarter one-offs. Cats are also untouched — the user allowed blocking one, but a
 static on a cat is a player-taxi collision hazard while the AI clips through it anyway
 (no functional block), so nothing is gained.
 
 **No permanent static aircraft — the late-activation falsification (flown
-2026-07-18).** The tier briefly shipped OCN's starboard-aft look as *permanent*
+2026-07-18).** The tier briefly shipped campaign A's starboard-aft look as *permanent*
 statics (a folded-Seahawk pair on the junkyard spots + an E-2C/S-3B accent on the
 El-3 shoulder) under the SC manual's "a blocked parking location is skipped" claim —
 and the first flown mission **falsified that claim for Retribution's dominant spawn
@@ -6684,14 +6709,14 @@ path**: on a CVN-73 with 30 TOT-delayed (§64 late-activated) deck starts, DCS
 spawned an A-6E pair **straight into the Seahawk statics**. Late activations do not
 skip statics-obstructed spots. The permanent aircraft class was removed the same
 day; their positions are kept as **learned spot anchors** in `KNOWN_PARKING_SPOTS`
-(the junkyard pair ≈ spots 7/8 + the El-3 shoulder — OCN parks aircraft exactly on
+(the junkyard pair ≈ spots 7/8 + the El-3 shoulder — campaign A parks aircraft exactly on
 them, which is how the lesson was bought), and a guard test asserts the permanent
 layout never contains a Planes/Helicopters category static. The parked-aircraft
 look comes from Retribution's own real deck population — which the flown decks show
 is already rich.
 
 **The launch-phase corridor + the dynamic respot (the `deckdecor` plugin, same day).**
-The tier's first cut shipped OCN M8's round-down Hawkeye (−152.1, +5.4) statically and
+The tier's first cut shipped campaign A M8's round-down Hawkeye (−152.1, +5.4) statically and
 the user's screenshot caught it within the hour ("how can planes land with the E2
 there?"): it cleared every parking spot but stands 5.6 m tall and 17.6 m long
 essentially at the ramp crossing (the static E-2C renders **folded** — user-corrected
@@ -6757,7 +6782,7 @@ format, none fully covered by stock pydcs: `linkUnit` (carrier unit id) on the s
 group's first route point, `linkOffset = true` at group level (pydcs-native), and
 `offsets = {x, y, angle}` on the unit. `game/missiongenerator/carrierdeckdecor.py`
 subclasses `Static`/`StaticPoint` to add the missing two and builds one single-static
-group per decoration (the OCN convention); DCS re-derives linked positions from the
+group per decoration (the campaign A convention); DCS re-derives linked positions from the
 offsets every frame, so the statics ride the steaming boat. World x/y are still
 computed properly (ship position + rotated offset off the §65 BRC) so the miz reads
 sanely in the ME. Hooked in `GenericCarrierGenerator.generate()`'s flagship block

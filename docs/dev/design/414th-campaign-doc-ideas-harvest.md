@@ -1,5 +1,11 @@
 # 414th — DCS Campaign Documentation: Ideas Harvest
 
+> **Naming.** The surveyed campaigns are paid third-party products and are referred to by
+> letter, not by name (repo rule: do not name paid campaigns). Letters are stable across the
+> fork's docs — **campaign A** and **campaign B** are the same two the carrier deck-decor
+> note uses. The observations below are about documentation *style*, which stands without the
+> product names.
+
 A study of the **professional, commercially-shipped DCS campaigns** installed locally
 (`E:\DCS World\Mods\campaigns\`), mined for design patterns the 414th's Retribution fork
 can steal. This is **inspiration / pattern notes** — not content to copy. It feeds the
@@ -7,9 +13,9 @@ kneeboard work (features §4 / §22, checklist **H3/H4**), the intel/recon-fog l
 the Mission Impact debrief (§4), and the IADS/EW runtime (§2 + MANTIS).
 
 > Source corpus: **23 installed campaigns, 511 PDFs, ~5,498 pages.** This pass read deeply
-> across **11 priority campaigns** (the ones the squadron flies: F-4E Red Flag 81-2,
-> F-16C Arctic Thunder / FIWOS / LOWOS / Gamblers, FA-18C Cerberus North 1&2 /
-> Raven One 1&2 / Rampagers, F-4 MIG Killers).
+> across **11 priority campaigns** (the ones the squadron flies: an F-4E campaign,
+> four F-16C campaigns, three FA-18C campaigns
+> and an F-4 campaign).
 
 ---
 
@@ -42,9 +48,9 @@ The campaign `Doc/` PDFs split into two kinds:
 
 Two visual idioms over one shared structure:
 
-- **Handwritten-on-paper** (Ground Pounder Sims — FIWOS/LOWOS): warm, "filled in by the
+- **Handwritten-on-paper** (one publisher's two F-16C Syria campaigns, C and D): warm, "filled in by the
   aviator," graph-paper/manila stock. Immersive.
-- **Printed grid** (Rampagers, F-4E Red Flag 81-2): clean boxed tables, **color-coded radio
+- **Printed grid** (campaign H, an F-4E campaign): clean boxed tables, **color-coded radio
   presets** (BLUE 1 / PURPLE 1 / GREY 9 matching DCS preset colors).
 
 The 414th generator currently leans printed-clean (§22 light-heading restyle). Both idioms are
@@ -78,7 +84,7 @@ imagery** (§3). This is the most actionable H3/H4 lift: add card *types*, not j
 
 ## 2. Intel assessment → an auto-generated **threat dossier** kneeboard/PDF
 
-The Ground Pounder **"Intelligence Assessment"** (FIWOS 75 pp, LOWOS 76 pp, Cerberus North 2
+The that publisher **"Intelligence Assessment"** (campaign C 75 pp, campaign D 76 pp, campaign A
 59 pp) is the standout artifact. Structure:
 
 - **"TOP SECRET" red banner** on every page; typewriter/monospace body for the classified feel.
@@ -95,9 +101,9 @@ The Ground Pounder **"Intelligence Assessment"** (FIWOS 75 pp, LOWOS 76 pp, Cerb
   This personalization is most of the immersion.
 
 **Two production templates seen, same content model:**
-- **Typewriter dossier** (FIWOS == LOWOS — *identical* doc: TOP SECRET banner, prose + maps +
+- **Typewriter dossier** (campaign C == campaign D — *identical* doc: TOP SECRET banner, prose + maps +
   data tables + handwritten margin notes). Warm, hand-built feel.
-- **Printed data-card** (Cerberus North 2 — the cleaner evolution): sectioned with header bars
+- **Printed data-card** (campaign A — the cleaner evolution): sectioned with header bars
   (`FACTIONS - OVERVIEW`, `THREAT ANALYSIS`), faction prose pages, an `AREAS OF CONTROL` legend
   map, and — critically — **one structured "threat card" per system**: a photo + a stat block
   (`GUIDANCE / ACQUISITION RANGE / ENGAGEMENT RANGE / MAX CEILING / WARHEAD / FUZING`) + a green
@@ -106,7 +112,7 @@ The Ground Pounder **"Intelligence Assessment"** (FIWOS 75 pp, LOWOS 76 pp, Cerb
   the ideal auto-generation target.
 
 **Steal:** Retribution *generates* the red OOB, so it can emit a themed, per-campaign
-**threat dossier** — one **Cerberus-North-2-style threat card** per present SAM/EW/aircraft type
+**threat dossier** — one **campaign-A-style threat card** per present SAM/EW/aircraft type
 (stat block + HAD badge + defeat note), a faction-control map, and an editable flavor intro. It
 dovetails with **recon fog (§3)** (only *known* systems appear; unknown ones redacted = a natural
 in-fiction reason for fog) and the **overview reveal toggle** (un-redacts everything). v1 = one
@@ -136,18 +142,18 @@ generated "Intel Brief" kneeboard page (known threats + MEZ + HAD); v2 = the ful
 > genuinely MP-safe reframing exists. The portable, MP-safe steals are the **kneeboard/intel
 > artifacts** (§1, §2) and the **failsafe-trigger discipline**.
 
-- **"Weasel System"** (FIWOS/LOWOS) — a custom AI air-defense layer that *wakes SAMs as you
+- **"Weasel System"** (campaign C/campaign D) — a custom AI air-defense layer that *wakes SAMs as you
   approach*, *controls SAM radar emissions*, and *approximates EW jamming effects*. This is the
   same problem space the 414th already solved with the **MANTIS IADS engine** + **C-130J EW**
   (§2). Validation that the approach is right; also a reminder that "scripted story × dynamic
   AI air-defense = emergent replayability" is the selling point to lean on in player docs.
-- **"Gauntlet Ops"** (FIWOS; also Cerberus North, Dominant Fury) — at mission start the player
+- **"Gauntlet Ops"** (campaign C; also campaign A, campaign B) — at mission start the player
   can override the scripted mission and instead get a **random target (with photo + coords)** and
   **a budget of points to spend via the F10 menu on support** (KC-135, Wild-Weasel HARM shooter,
   EW Growler, CAP), free loadout choice, then "go kill it and RTB." A roguelite single-mission
   mode. **Maps cleanly onto Retribution's purchase economy + drop-spawn (§20)** — a "quick strike"
   / practice generator picking a random known TGO and letting the player buy a support package.
-- **Mission scoring model** (LOWOS scoring guide) — `50 pts on start + ~10–15 ATC + ~35 performance
+- **Mission scoring model** (campaign D's scoring guide) — `50 pts on start + ~10–15 ATC + ~35 performance
   = 100`, with: **weighted per-objective points**, **negative ROE penalties** (airspace
   violation, no-fire-zone hit, unauthorized HARM), **airmanship bonuses** (correct IP/attack
   heading, "stayed low," ATC procedure), **protect-the-friendly objectives** ("Canine 4-4 saved",
@@ -179,12 +185,12 @@ openable). Across all 11 priority campaigns:
   hash). So the *implementation* of the Weasel System / ATC / scoring is **not** human-readable.
   (Confirmed: 0 inline `a_do_script`/triggers in any sampled mission.)
 - **The content design IS fully readable** via `l10n/DEFAULT/dictionary` (33K–231K each;
-  LOWOS M1 = **3,914 string entries**) plus the embedded **kneeboard JPGs** (14–69 per mission,
+  campaign D M1 = **3,914 string entries**) plus the embedded **kneeboard JPGs** (14–69 per mission,
   higher-fidelity than the PDFs) and the **`.ogg` voice inventory** (the comms cast).
 - Read it with Python `zipfile` → `dictionary`, regex `\["key"\] = "value"`; render JPGs/PNGs
   straight from the zip.
 
-What the LOWOS M1 dictionary reveals (player-facing design, even with logic locked):
+What the campaign D M1 dictionary reveals (player-facing design, even with logic locked):
 
 - **F10-menu-driven ATC**: menu items `Request taxi / Engine Start / Takeoff / Landing`,
   `Declare emergency`, `Immortal On`, "Press space to request clearance to attack" — with real
@@ -209,26 +215,26 @@ scripted comms and Mission-Impact messages on.
 **Cross-campaign sweep (one mission each, all 11)** — the F10-menu taxonomy is remarkably
 consistent and worth mirroring; developer styles differ:
 
-- **Ground Pounder** (FIWOS/LOWOS/Cerberus North 1&2): the full set — `Request Taxi / Engine
+- **That publisher** (campaigns C, D and A plus its predecessor): the full set — `Request Taxi / Engine
   Start / Takeoff / Landing`, `Declare Emergency`, `Abort Mission`, `Immortal On`, "Press space
-  to request clearance to attack." Cerberus North 2 even adds **`Disable Custom ATC`** (opt out of
+  to request clearance to attack." Campaign A even adds **`Disable Custom ATC`** (opt out of
   the ATC scoring layer) and **`Declare emergency and rig barricade`** (carrier barricade). Live
   wingman threat-callouts ("BUG: Pop up threat! AAA west of waypoint 5…").
-- **Reflected** (Red Flag 81-2 / MIG Killers): training-range idiom — `Skip mission`,
+- **Another publisher** (two period campaigns): training-range idiom — `Skip mission`,
   spacebar-progression ("PRESS SPACEBAR TO CONTACT NELLIS APPROACH… WHEN YOU REACH POINT RAMM"),
   RIO/instructor banter (`[JESTER] Well done, great flying, man!`), big `***MISSION COMPLETE***`
   cards.
-- **Arctic Thunder**: `Press SPACEBAR to insert the DTC`, `…when you're fenced in`,
+- **Campaign E**: `Press SPACEBAR to insert the DTC`, `…when you're fenced in`,
   `…to call WINCHESTER` — checklist/state-gated prompts.
-- **Gamblers / SEAD**: JTAC-style **effects feedback** ("good effects on Aim Point One",
+- **Campaign F / SEAD**: JTAC-style **effects feedback** ("good effects on Aim Point One",
   "negative effects on Aim Point One", "Good job on that Abrams") — a model for BDA call wording.
 - ROE escalation hard-fails recur ("You got too close to the Russian FOB. Mission failed").
 
 ## 4. Narrative / immersion craft (cheap, high-impact)
 
 - **Personalized framing** — docs addressed to the player's character by a named CO; squadron
-  **character bios** (Arctic Thunder devotes pages to personalities); **voice-acting credits**.
-- **"Grounded but fictional" disclaimer** — every Ground Pounder/Sandman campaign opens with the
+  **character bios** (campaign E devotes pages to personalities); **voice-acting credits**.
+- **"Grounded but fictional" disclaimer** — several publishers' campaigns opens with the
   same legal/immersion note. Worth mirroring in 414th campaign intros.
 - **SPINS as living, kneeboard-embedded rules** — Special Instructions aren't flavor; score and
   safety depend on them, and they ride in every mission's kneeboard.

@@ -739,8 +739,8 @@ measured, not guessed** — on a real recon page it is 1212 KB → 206 KB with a
 difference and no visible ringing even on the title bar's white-on-black text; q92 costs ~40%
 more bytes for no visible gain at kneeboard size. A fully-crewed mission drops **22.4 MB → 9.0
 MB (60%) with no page removed**. DCS has taken JPEG kneeboards all along — a scan of 2,945
-shipped campaign missions found **7,971 `.jpg` pages vs 2,542 `.png`** (Raven One ships
-`.jpeg`), so this is the format the rest of the ecosystem already uses.
+shipped campaign missions found **7,971 `.jpg` pages vs 2,542 `.png`** (at least one
+paid FA-18C campaign ships `.jpeg`), so this is the format the rest of the ecosystem already uses.
 
 Byte-identical no-op when `generate_target_recon_kneeboard` is off (its default) — no recon
 pages, no JPEG pages. Tests: `game/missiongenerator/tests/test_kneeboard_image_format.py`
@@ -5579,8 +5579,8 @@ there are 0 `outPicture*` calls in MOOSE or any 414th plugin, vs 31 `outTextForG
 *per-pilot styled image card* is impossible in multiplayer — the info (callsign/task/field) differs
 per flight, and only the text functions can address one flight. The pro campaigns get the image look
 only because they are hand-built **single-flight** missions, where `outPicture`-to-all is that one
-pilot's card (and even Rampagers' nice PNGs are *briefing-screen* images; its in-game title is plain
-`outText`). Retribution missions are multi-flight, so the per-pilot card stays text.
+pilot's card (and even the best paid-campaign PNGs are *briefing-screen* images; their in-game
+title is plain `outText`). Retribution missions are multi-flight, so the per-pilot card stays text.
 
 **The Python/Lua split.** The emitter `game/missiongenerator/briefingluadata.py`
 (`populate_briefing_lua`, wired into `luagenerator.py`'s `generate_plugin_data` next to the other
@@ -6184,7 +6184,7 @@ data — and the generator fed it whatever fell out of the allocators: the boat 
 `0796 | CVN-71 Theodore Roosevelt` (the theater-unit id prefix leaking onto the Callsign
 line), TACAN channel **1X** with a `random.choice` ident that re-rolled every mission, ICLS
 channel 1, Link 4 parked on a random inter-flight UHF like 255.0, and a fresh random ATC
-frequency every single turn. The pro campaigns the 414th catalogs (Raven One's HOMEPLATE
+frequency every single turn. The pro campaigns the 414th catalogs (a paid FA-18C campaign's HOMEPLATE
 "Mother" card is the model) treat the boat's numbers as its identity: stable, hull-flavored,
 memorable.
 

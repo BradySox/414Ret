@@ -436,6 +436,12 @@ In-game pass: checklist **G31**.
   2026-06-27). The command-post intel fog (`scar_command_post_intel`) survived and lives with
   the recon-fog layer, not here.
 - **No new AI choreography.** See freeze, above.
+- **No survivor homing beacon** — yet. The King ADF was dropped 2026-06-25 because MOOSE's
+  beacon path is fixed-point and the King orbits. The *survivor* does not move, so that reason
+  never applied to them, and §70 COMINT has since proved a looped `radioTransmission` is
+  direction-findable. Specced as a proposal in
+  [`414th-csar-survivor-beacon-notes.md`](414th-csar-survivor-beacon-notes.md); **not built**.
+  Fold that file in here when it lands.
 
 ## Checklist map (docs/dev/414th-ingame-pass-checklist.md)
 

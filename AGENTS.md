@@ -97,7 +97,9 @@ Read before touching a campaign's `.yaml`, `.miz` or build tool.
   `414th-iads-c2-consequences-notes.md`
 - **Recon** — `414th-tars-recon-notes.md`
 - **CSAR** — `414th-csar-notes.md` (**the one CSAR doc**; supersedes the eight earlier
-  SCAR/CSAR notes, each bannered), `414th-scar-rescue-rework-notes.md`
+  SCAR/CSAR notes, each bannered), `414th-scar-rescue-rework-notes.md`,
+  `414th-csar-survivor-beacon-notes.md` (**proposal, NOT built** — the survivor ADF beacon;
+  fold into the CSAR doc when it lands)
 - **COIN** — `414th-coin-insurgent-replenishment-notes.md`, `-reinfiltration-notes.md`
 - **Naval** — `414th-cruise-missile-raids-notes.md`, `414th-naval-magazines-notes.md`,
   `414th-carrier-deck-decor-notes.md`

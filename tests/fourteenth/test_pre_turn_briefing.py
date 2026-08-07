@@ -99,7 +99,6 @@ RED = FakePlayer(False)
 class FakeSettings:
     def __init__(self, **kwargs: Any) -> None:
         self.c2_decapitation_effects = kwargs.get("c2_decapitation_effects", False)
-        self.combat_sar_persistent_pilots = True
 
 
 class FakeCoalition:
@@ -120,7 +119,6 @@ class FakeGame:
         self.settings = FakeSettings(**kwargs)
         self.blue = FakeCoalition(BLUE)
         self.red = FakeCoalition(RED)
-        self.downed_pilots: List[Any] = []
         self.last_sitrep: Any = None
 
     def point_in_world(self, x: float, y: float) -> FakePoint:
@@ -152,7 +150,7 @@ def test_items_are_ordered_most_pressing_first() -> None:
         turn=3,
         items=[
             BriefingItem("arrival", "later", BACKGROUND),
-            BriefingItem("rescue", "now", URGENT),
+            BriefingItem("consequence", "now", URGENT),
             BriefingItem("objective", "soon", NOTABLE),
         ],
     )
@@ -163,9 +161,9 @@ def test_items_are_ordered_most_pressing_first() -> None:
 def test_by_kind_filters() -> None:
     briefing = PreTurnBriefing(
         turn=1,
-        items=[BriefingItem("rescue", "a"), BriefingItem("arrival", "b")],
+        items=[BriefingItem("open_loop", "a"), BriefingItem("arrival", "b")],
     )
-    assert [i.text for i in briefing.by_kind("rescue")] == ["a"]
+    assert [i.text for i in briefing.by_kind("open_loop")] == ["a"]
 
 
 # --------------------------------------------------------------- open loops
@@ -226,64 +224,6 @@ def test_a_located_mobile_missile_site_is_an_open_loop() -> None:
     assert "scoot" in item.text
 
 
-# ------------------------------------------------------------------- rescue
-
-
-class FakeSitrep:
-    def __init__(self, pows_held: Optional[List[str]] = None) -> None:
-        self.pows_held = pows_held or []
-
-
-def test_a_held_pow_is_a_standing_debt() -> None:
-    game = FakeGame()
-    game.last_sitrep = FakeSitrep(["Capt Mitchell — held at Mozdok (2 turns left)"])
-
-    (item,) = build_pre_turn_briefing(game).by_kind("rescue")  # type: ignore[arg-type]
-
-    assert "Capt Mitchell" in item.text
-    assert "retake the field" in item.text
-    assert item.urgency == NOTABLE
-
-
-def test_an_evader_is_reported_with_the_capture_odds() -> None:
-    """The whole point: capture_chance is already computed every turn and was
-    never shown. A named person plus a number is the strongest hook available."""
-    from game.fourteenth.downed_pilots import DownedPilot
-
-    red_cp = FakeControlPoint("Haina", RED)
-    blue_cp = FakeControlPoint("Fulda", BLUE, x=74080.0)  # 40 NM => the deep band
-    game = FakeGame(turn=6, control_points=[red_cp, blue_cp])
-    game.downed_pilots = [
-        DownedPilot(
-            unit_name="Voodoo11", x=0.0, y=0.0, aircraft="F-16CM", turn_downed=4
-        )
-    ]
-
-    (item,) = build_pre_turn_briefing(game).by_kind("rescue")  # type: ignore[arg-type]
-
-    assert item.urgency == URGENT
-    assert "evading" in item.text
-    assert "2 turns down" in item.text
-    assert "40 NM" in item.text
-    # capture_chance saturates at MAX_CAPTURE_CHANCE for a 40 NM evader.
-    assert "90% chance he is taken" in item.text
-
-
-def test_the_evader_outranks_everything_else() -> None:
-    """A named person on a clock beats a statistic, always."""
-    from game.fourteenth.downed_pilots import DownedPilot
-
-    red_cp = FakeControlPoint("Haina", RED)
-    red_cp.ground_objects = [FakeTgo(red_cp, category="missile", known=True)]
-    blue_cp = FakeControlPoint("Fulda", BLUE, x=18520.0)
-    game = FakeGame(turn=5, control_points=[red_cp, blue_cp])
-    game.downed_pilots = [DownedPilot(unit_name="Voodoo11", x=0.0, y=0.0)]
-
-    briefing = build_pre_turn_briefing(game)  # type: ignore[arg-type]
-
-    assert briefing.ordered()[0].kind == "rescue"
-
-
 # ----------------------------------------------------------------- arrivals
 
 
@@ -340,13 +280,17 @@ def test_an_intact_enemy_network_says_nothing(
 
 def test_sections_are_capped() -> None:
     """A long war must not produce an unreadable wall."""
-    from game.fourteenth.downed_pilots import DownedPilot
+    from game.fourteenth.wing_growth import PendingSquadron
 
-    red_cp = FakeControlPoint("Haina", RED)
-    blue_cp = FakeControlPoint("Fulda", BLUE, x=18520.0)
-    game = FakeGame(turn=9, control_points=[red_cp, blue_cp])
-    game.downed_pilots = [
-        DownedPilot(unit_name=f"Voodoo{i}", x=0.0, y=0.0) for i in range(10)
+    class Sq:
+        def __init__(self, name: str) -> None:
+            self.name = name
+            self.aircraft = "F/A-18C"
+
+    game = FakeGame(turn=1)
+    game.blue.air_wing.pending_arrivals = [
+        PendingSquadron(turn=3 + i, squadron=Sq(f"VFA-{i}"))  # type: ignore[arg-type]
+        for i in range(10)
     ]
 
-    assert len(build_pre_turn_briefing(game).by_kind("rescue")) <= 4  # type: ignore[arg-type]
+    assert len(build_pre_turn_briefing(game).by_kind("arrival")) <= 4  # type: ignore[arg-type]

@@ -18,7 +18,6 @@ import {
 import FlightPlansLayer from "../flightplanslayer";
 import FrontLinesLayer from "../frontlineslayer";
 import Iadsnetworklayer from "../iadsnetworklayer";
-import DownedPilotsLayer from "../downedpilots";
 import MinefieldsLayer from "../minefields";
 import NavMeshLayer from "../navmesh/NavMeshLayer";
 import SupplyRoutesLayer from "../supplyrouteslayer";
@@ -44,7 +43,6 @@ type LayerId =
   | "combat"
   | "supplyRoutes"
   | "minefields"
-  | "downedPilots"
   | "frontLines"
   | "factories"
   | "ships"
@@ -108,7 +106,6 @@ const OVERLAYS: Record<LayerId, { label: string; node: ReactNode }> = {
   minefields: { label: "Minefields", node: <MinefieldsLayer /> },
   // §21 downed aviators (BLUE-only): MIA evaders + POWs. Empty when nobody is
   // down, so the layer is a no-op on a quiet campaign even while toggled on.
-  downedPilots: { label: "Downed pilots", node: <DownedPilotsLayer /> },
   frontLines: { label: "Front lines", node: <FrontLinesLayer /> },
   factories: { label: "Factories", node: <TgosLayer categories={["factory"]} /> },
   ships: { label: "Ships", node: <TgosLayer categories={["ship"]} /> },
@@ -245,7 +242,6 @@ const GROUPS: GroupDef[] = [
       { id: "controlPoints" },
       { id: "aircraft" },
       { id: "combat" },
-      { id: "downedPilots" },
       { id: "frontLines" },
       { id: "factories" },
       { id: "ships" },
@@ -344,7 +340,6 @@ const DEFAULT_ON: LayerId[] = [
   "otherGround",
   "supplyRoutes",
   "minefields",
-  "downedPilots",
   "frontLines",
   "enemySamThreat",
   "emitterHighlight",

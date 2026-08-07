@@ -2,9 +2,9 @@
 
 The Vietnam Ops suite (docs/dev/design/414th-vietnam-ops-notes.md) adds opt-in
 period mechanics that run inside the generated .miz via the ``vietnamops`` plugin.
-Following the MANTIS/Combat-SAR pattern, Python emits a data table and the Lua side
-executes the behavior. Each sub-feature is emitted **only when its Settings toggle is
-on**, so the plugin gates purely on data presence (an absent node = feature off).
+Following the MANTIS pattern, Python emits a data table and the Lua side executes the
+behavior. Each sub-feature is emitted **only when its Settings toggle is on**, so the
+plugin gates purely on data presence (an absent node = feature off).
 
 Features so far:
 
@@ -374,7 +374,7 @@ def _populate_super_gaggle(vietnam: "LuaItem", game: "Game") -> None:
     # BLUE coalition in this .miz -- the faction country always is -- because
     # coalition.addGroup puts the units on whatever coalition owns the country: the
     # plugin's old hardcoded USA fallback spawned NEUTRAL units for any faction
-    # whose country differs (the combatsar `enemyCountry` precedent).
+    # whose country differs.
     gaggle.add_item("countryId").set_value(str(game.blue.faction.country.id))
     outpost_item = gaggle.add_item("outpost")
     outpost_item.add_key_value("name", commitment.outpost_name)

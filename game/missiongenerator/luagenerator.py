@@ -4,7 +4,7 @@ import logging
 import os
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional, Type
+from typing import TYPE_CHECKING, Optional
 
 from dcs import Mission
 from dcs.action import DoScript, DoScriptFile
@@ -33,7 +33,7 @@ from .interceptluadata import (
     populate_intercept_lua,
 )
 from .cruisemissileluadata import populate_cruise_missiles_lua
-from .missiondata import CombatSarTemplates, MissionData
+from .missiondata import MissionData
 from .gpsjammingluadata import populate_gps_jamming_lua
 from .growlerluadata import populate_growler_lua
 from .mobilemissileluadata import populate_mobile_missiles_lua
@@ -42,12 +42,7 @@ from .redscrambleluadata import populate_red_scramble_lua
 from .vietnamopsluadata import populate_vietnam_ops_lua
 
 if TYPE_CHECKING:
-    from dcs.unittype import VehicleType
-
     from game import Game
-    from game.coalition import Coalition
-    from game.factions.faction import Faction
-    from .aircraft.flightdata import FlightData
 
 
 class LuaGenerator:
@@ -402,10 +397,8 @@ class LuaGenerator:
                 "engagementRangeMeters", str(escort.engagement_range_meters)
             )
 
-        self._generate_combat_sar(lua_data)
-
         # C-130J EW de-confliction: hand the c130j plugin the group names of C-130J-30
-        # flights in a non-EW role (SOF insert / Combat SAR King) so it skips just those,
+        # flights in a non-EW role (airlift / paradrop) so it skips just those,
         # instead of the whole mission losing EW when one is present (which also stripped a
         # co-present JAMMING C-130J-30). Always emitted; empty list = exclude nothing.
         lua_data.add_item("EwExcludedGroups").set_data_array(
@@ -508,221 +501,6 @@ class LuaGenerator:
         self.mission.triggerrules.triggers.append(trigger)
 
         self._inject_atis_lua()
-
-    def _generate_combat_sar(self, lua_data: LuaData) -> None:
-        """Emit dcsRetribution.CombatSAR + the downed-pilot template group.
-
-        Combat SAR (FlightType.COMBAT_SAR) is executed at runtime by the survivor-
-        ledger plugin (resources/plugins/combatsar). Python's job is to (1) tell the
-        Lua bridge which generated groups are the player's rescue helos / "King"
-        C-130s (with their nav beacons), (2) drop one late-activation infantry group
-        that the runtime clones at each crash site as the downed pilot, (3) hand
-        over the cold rescue-helo template + an ``autoSpawn`` flag so the runtime
-        clones an on-demand AI rescue when a pilot goes down and no player CSAR
-        package is fragged (§21 rework -- replaces the retired standing orbit), and
-        (4) hand back the persistent-evader ledger (``game.downed_pilots``) so a
-        pilot still MIA from an earlier mission re-spawns at his last position.
-
-        BLUE ONLY (squadron call 2026-07-01): the plugin's survivor ledger is
-        coalition-generic and would run red the day a ``red`` node is emitted, but
-        we deliberately never emit it -- red flies no CSAR, red ejections register
-        no survivor, and no BLUE snatch party spawns to race a red pilot (that
-        traffic was pure noise). Red flights are ignored here even if a save
-        somehow still carries them.
-        """
-        blue_rescue: list[FlightData] = []
-        blue_kings: list[FlightData] = []
-        blue_sandys: list[FlightData] = []
-        for flight in self.mission_data.flights:
-            if not flight.friendly.is_blue:
-                continue
-            if flight.flight_type is FlightType.SCAR:
-                blue_sandys.append(flight)
-                continue
-            if flight.flight_type is not FlightType.COMBAT_SAR:
-                continue
-            bucket = blue_rescue if flight.aircraft_type.helicopter else blue_kings
-            bucket.append(flight)
-
-        # With the standing orbit removed (§21 rework, 2026-07-06), a CSAR/SCAR
-        # flight here is PLAYER-planned or the auto-fragged pilot-recovery surge
-        # (csar_surge.py). Only a RESCUE-CAPABLE flight -- a
-        # CSAR helo -- suppresses the AI on-demand spawn ("we've got it covered,
-        # don't spawn more"); a bare Sandy or King can't pick anyone up, so it
-        # draws the AI helo and escorts/tracks it instead (squadron call
-        # 2026-07-15, narrowing the original any-CSAR/SCAR-flight gate after the
-        # flown Red Tide M1: one player Sandy escort with no helo behind it had
-        # silently disabled ALL rescue for the mission). With no player rescue
-        # helo the runtime clones the cold rescue template on demand. BLUE only.
-        player_rescue_helo = bool(blue_rescue)
-        templates = self.mission_data.combat_sar_templates
-        auto_spawn = (
-            self.game.settings.auto_combat_sar
-            and not player_rescue_helo
-            and templates is not None
-        )
-        # The node is ALWAYS emitted (2026-07-10 squadron call), even with no rescue
-        # capability at all: the survivor ledger + the enemy snatch race run off the
-        # downed pilot, not off a helo -- a pilot nobody can come for is MORE
-        # capturable, not immune (the old early-return here silently killed the
-        # capture race, the POW/comms-jam chain, and the persistent-evader ledger
-        # whenever auto-CSAR was off and no rescue helo was fragged).
-        template = self._generate_combat_sar_pilot_template(self.game.blue)
-        if template is None:
-            return
-        self._emit_combat_sar_side(
-            lua_data.add_item("CombatSAR"),
-            template,
-            blue_rescue,
-            blue_kings,
-            blue_sandys,
-            self.game.blue,
-            auto_spawn,
-            templates if auto_spawn else None,
-        )
-
-    def _emit_combat_sar_side(
-        self,
-        node: LuaItem,
-        template_name: str,
-        rescue_flights: list["FlightData"],
-        kings: list["FlightData"],
-        sandys: list["FlightData"],
-        coalition: "Coalition",
-        auto_spawn: bool,
-        templates: Optional["CombatSarTemplates"],
-    ) -> None:
-        """Populate the (blue) Combat SAR node. Scalars are emitted as single-value
-        child items so the LuaData serializer keeps them alongside the nested
-        kings/sandys lists.
-
-        ``auto_spawn`` (no player CSAR package) hands the runtime the cold rescue
-        template to clone on demand; otherwise the player's own package flies the
-        rescue and no AI clone is armed.
-        """
-        node.add_item("pilotTemplate").set_value(template_name)
-        node.add_item("autoSpawn").set_value("true" if auto_spawn else "false")
-        # [TEST] thumb-on-the-scale flags (both default OFF): let the plugin rig the
-        # capture/pickup so a test reliably fires the POW -> comms-jam chain or the
-        # rescue loop without fighting the RNG. Emitted only when set, so the node is
-        # unchanged for normal play. See settings.combat_sar_test_* + the plugin.
-        if self.game.settings.combat_sar_test_force_capture:
-            node.add_item("testForceCapture").set_value("true")
-        if self.game.settings.combat_sar_test_easy_rescue:
-            node.add_item("testEasyRescue").set_value("true")
-        # The enemy snatch party must spawn on the OPPOSING coalition. Emit that side's
-        # faction country (always registered on the enemy coalition in this .miz) so the
-        # plugin spawns it on the right side -- the old hardcoded CJTF_* constant is not
-        # registered when the factions use real/CH nations (e.g. Vietnam), which put the
-        # snatch party on the wrong coalition.
-        node.add_item("enemyCountry").set_value(
-            str(coalition.opponent.faction.country.id)
-        )
-        node.add_item("rescueHelos").set_data_array(
-            [flight.group_name for flight in rescue_flights]
-        )
-
-        # Persistent evaders (2026-07-10): pilots downed on an earlier mission and
-        # still MIA (game.downed_pilots) re-spawn at their last known position --
-        # fresh red smoke, a fresh snatch race, and the normal rescue paths. The
-        # ledger only fills while combat_sar_persistent_pilots is on, but an
-        # existing entry is always emitted (an evader is never stranded by a
-        # mid-campaign toggle). getattr: pre-feature saves lack the field.
-        downed = list(getattr(self.game, "downed_pilots", None) or [])
-        if downed:
-            evaders = node.add_item("persistentSurvivors")
-            for dp in downed:
-                item = evaders.add_item()
-                item.add_key_value("name", dp.unit_name)
-                item.add_key_value("x", str(dp.x))
-                item.add_key_value("y", str(dp.y))
-
-        # On-demand AI rescue sources, preference order: a real parked ramp helo
-        # (tracked) then the cold clone template (fallback). Delivered to the field
-        # (nearest resolvable for a FARP). Only emitted with no player package -- a
-        # fragged package flies its own rescue.
-        if auto_spawn and templates is not None:
-            if templates.parked_helos:
-                node.add_item("parkedHelos").set_data_array(templates.parked_helos)
-            if templates.helo_group is not None:
-                node.add_item("heloTemplate").set_value(templates.helo_group)
-            node.add_item("farp").set_value(templates.delivery_field)
-
-        # Each King (C-130) lights the TACAN the rescue helo homes on.
-        kings_item = node.add_item("kings")
-        for king in kings:
-            item = kings_item.add_item()
-            item.add_key_value("group", king.group_name)
-            beacon = king.combat_sar_king
-            if beacon is not None:
-                item.add_key_value("callsign", beacon.callsign)
-                # callsign + TACAN are the King beacon: air-tracking, so it follows
-                # the orbit, and every rescue helo we use can home on it.
-                if beacon.tacan is not None:
-                    item.add_key_value("tacanChannel", str(beacon.tacan.number))
-                    item.add_key_value("tacanBand", beacon.tacan.band.value)
-
-        # Sandy (FlightType.SCAR) rescue-escort flights: the runtime re-tasks an
-        # AI-crewed Sandy off its planned racetrack to hold near a live ejection
-        # (dynamic AI retasking -- player Sandys stay on voice/SRS coordination).
-        node.add_item("sandys").set_data_array([flight.group_name for flight in sandys])
-
-    #: A survivor stand-in must read as a PERSON on the ground. The INFANTRY unit
-    #: class also carries crew-served weapons (mortars, tripod guns) -- on OIR the
-    #: first INFANTRY-class pick was the 2B11, so every downed pilot rendered as a
-    #: mortar tube (caught in the 2026-07-06 flown-session Tacview). Only ids that
-    #: name a human qualify; anything else falls through to the vanilla soldier.
-    _SURVIVOR_ID_WORDS = ("soldier", "infantry", "paratrooper", "insurgent")
-
-    @classmethod
-    def survivor_unit_type(cls, faction: "Faction") -> Type["VehicleType"]:
-        """The unit the Combat SAR runtime clones as a downed pilot on the ground."""
-        for infantry in faction.infantry_with_class(UnitClass.INFANTRY):
-            ident = infantry.dcs_unit_type.id.lower()
-            if any(word in ident for word in cls._SURVIVOR_ID_WORDS):
-                return infantry.dcs_unit_type
-        # Vanilla fallback so the template exists (and looks human) even for a
-        # faction with no rifle infantry.
-        from dcs.vehicles import Infantry
-
-        return Infantry.Soldier_M4
-
-    def _generate_combat_sar_pilot_template(
-        self, coalition: "Coalition"
-    ) -> Optional[str]:
-        """Add a hidden, late-activation infantry group the runtime clones as the
-        downed pilot for this coalition. Returns its group name, or None if the side
-        holds no base. Blue and red get distinct group names so both can coexist."""
-        faction = coalition.faction
-        dcs_unit_type = self.survivor_unit_type(faction)
-
-        anchor = next(
-            (
-                cp
-                for cp in self.game.theater.controlpoints
-                if cp.captured is coalition.player
-            ),
-            None,
-        )
-        if anchor is None:
-            return None
-
-        country = self.mission.country(faction.country.name)
-        group_name = (
-            "Combat SAR Downed Pilot"
-            if coalition.player.is_blue
-            else "Combat SAR Downed Pilot RED"
-        )
-        group = self.mission.vehicle_group(
-            country,
-            group_name,
-            dcs_unit_type,
-            position=anchor.position,
-            group_size=1,
-        )
-        group.late_activation = True
-        group.hidden_on_mfd = True
-        return group_name
 
     def _serialize_atis_lua(self) -> str:
         """Return a Lua assignment for dcsRetribution.Atis, or '' when empty.
@@ -870,18 +648,16 @@ class LuaGenerator:
 
         The EW plugin (C-130J Mission Systems) attaches to every C-130J-30 by airframe
         alone (its eligibility check is purely ``getTypeName() == "C-130J-30"``), so it
-        would bolt the EW/ISR menu and behavior onto any other C-130J-30 role. The
-        **Combat SAR "King"** orbit must fly clean (a C-130J-30 now that the stock
-        C-130 was retired), and so must a **TRANSPORT** airlifter or an
-        **AIR_ASSAULT** paradrop bird (both fly the CTLD troop/cargo menus, not
-        the EW station). Rather than skip the whole EW plugin for the mission --
-        which also stripped EW from a legitimate **JAMMING** C-130J-30 flying
-        alongside -- we hand the plugin a per-group deny-list (emitted as
-        ``dcsRetribution.EwExcludedGroups``) so it skips only these aircraft and
-        still claims the EW jet. Both coalitions; empty when none apply.
+        would bolt the EW/ISR menu and behavior onto any other C-130J-30 role. A
+        **TRANSPORT** airlifter and an **AIR_ASSAULT** paradrop bird must fly clean
+        (both fly the CTLD troop/cargo menus, not the EW station). Rather than skip
+        the whole EW plugin for the mission -- which also stripped EW from a
+        legitimate **JAMMING** C-130J-30 flying alongside -- we hand the plugin a
+        per-group deny-list (emitted as ``dcsRetribution.EwExcludedGroups``) so it
+        skips only these aircraft and still claims the EW jet. Both coalitions;
+        empty when none apply.
         """
         non_ew = (
-            FlightType.COMBAT_SAR,
             FlightType.TRANSPORT,
             FlightType.AIR_ASSAULT,
         )
@@ -903,7 +679,7 @@ class LuaGenerator:
         # invariant) -- guards against DCS dropping individual mission-start
         # DoScriptFile triggers. Runs before the late-init pass.
         self.flush_deferred_plugin_scripts()
-        # Second pass: late-init scripts (TIC/TARS/SCAR) that must load AFTER
+        # Second pass: late-init scripts (TIC/TARS) that must load AFTER
         # every plugin's config table exists. Ordering within this pass follows
         # plugins.json; the features share no Lua globals so relative order is
         # immaterial. Replaces the old hand-injected _inject_*_script tail.

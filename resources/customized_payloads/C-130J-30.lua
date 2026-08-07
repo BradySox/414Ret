@@ -7,7 +7,7 @@ local unitPayloads = {
 			-- tanks are a removable module pylon, not model-default, so a King with
 			-- no payload spawns clean. This payload mounts the two external wing
 			-- tanks so the King looks (and ranges) right. See checklist G13.
-			["name"] = "Retribution Combat SAR",
+			["name"] = "Retribution CSAR",
 			["pylons"] = {
 				[1] = {
 					["CLSID"] = "{C130J_Ext_Tank_L}",

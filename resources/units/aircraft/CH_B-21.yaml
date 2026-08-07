@@ -23,7 +23,6 @@ tasks:
   Strike: 760
 secondary_tasks:
   - Armed Recon
-  - SCAR
 
 # Air-to-air refueling method (receiver).
 air_refuel_type: boom

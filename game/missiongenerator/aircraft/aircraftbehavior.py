@@ -78,8 +78,6 @@ class AircraftBehavior:
             self.configure_cas(group, flight)
         elif self.task == FlightType.ARMED_RECON:
             self.configure_armed_recon(group, flight)
-        elif self.task == FlightType.SCAR:
-            self.configure_scar(group, flight)
         elif self.task == FlightType.DEAD:
             self.configure_dead(group, flight)
         elif self.task in [FlightType.SEAD, FlightType.SEAD_SWEEP]:
@@ -105,10 +103,6 @@ class AircraftBehavior:
         elif self.task in [
             FlightType.TRANSPORT,
             FlightType.AIR_ASSAULT,
-            # Combat SAR flies a FLOT orbit (AEWC-style plan) but the airframe is a
-            # CH-47/C-130 rescue craft: transport behavior (defensive, evade, NOT
-            # immortal — a rescue helo is meant to be at risk) is the right fit.
-            FlightType.COMBAT_SAR,
         ]:
             self.configure_transport(group, flight)
         elif self.task == FlightType.FERRY:
@@ -241,21 +235,6 @@ class AircraftBehavior:
         )
 
     def configure_armed_recon(self, group: FlyingGroup[Any], flight: Flight) -> None:
-        self.configure_task(flight, group, CAS, [AFAC, AntishipStrike])
-        self.configure_behavior(
-            flight,
-            group,
-            react_on_threat=OptReactOnThreat.Values.EvadeFire,
-            roe=OptROE.Values.OpenFire,
-            rtb_winchester=OptRTBOnOutOfAmmo.Values.All,
-            restrict_jettison=True,
-        )
-
-    def configure_scar(self, group: FlyingGroup[Any], flight: Flight) -> None:
-        # SCAR hunts and prosecutes ground targets in a defined area, so it uses
-        # the same CAS DCS task family as Armed Recon. Discrimination (find the
-        # right HVT among clutter) is a live-player skill; the AI just engages
-        # what it can via the CAS task. Winchester on all stores like Armed Recon.
         self.configure_task(flight, group, CAS, [AFAC, AntishipStrike])
         self.configure_behavior(
             flight,

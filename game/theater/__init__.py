@@ -7,6 +7,5 @@ from .missiontarget import (
     ForwardBarcapZone,
     HomeBaseDefenseZone,
     MissionTarget,
-    PilotRecoveryZone,
 )
 from .theatergroundobject import SamGroundObject

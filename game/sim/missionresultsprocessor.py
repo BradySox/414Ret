@@ -38,10 +38,6 @@ class MissionResultsProcessor:
         with logged_duration("Committing mission results"):
             with logged_duration("commit_air_losses"):
                 self.commit_air_losses(debriefing)
-            with logged_duration("record_pow_captures"):
-                self.record_pow_captures(debriefing)
-            with logged_duration("record_downed_pilots"):
-                self.record_downed_pilots(debriefing)
             with logged_duration("commit_intercept_losses"):
                 self.commit_intercept_losses(debriefing)
             with logged_duration("commit_pilot_experience"):
@@ -142,190 +138,17 @@ class MissionResultsProcessor:
             debriefing,
             self.game.turn,
             self.game.current_day,
-            pows_held=self._pow_sitrep_lines(),
-            pilots_mia=self._mia_sitrep_lines(),
+            # TODO(reconcile): re-point at PR929's MIA channel.
+            pilots_mia=[],
             red_c2_status=c2_status_line(self.game, Player.RED),
             victory_lines=victory_sitrep_lines(self.game),
         )
 
-    def _pow_sitrep_lines(self) -> list[str]:
-        """One player-facing line per BLUE aviator currently held POW.
-
-        Named by pilot, located at the holding enemy field, with the release
-        clock (a turn countdown until the hold expires) spelled out.
-        """
-        lines: list[str] = []
-        for entry in self.game.blue.pending_pow_recoveries:
-            name = entry.pilot.name if entry.pilot is not None else "Downed aviator"
-            where = "an unknown location"
-            if entry.holding_cp_id is not None:
-                try:
-                    cp = self.game.theater.find_control_point_by_id(entry.holding_cp_id)
-                    where = cp.name
-                except KeyError:
-                    pass
-            turns = max(entry.turns_remaining, 0)
-            clock = f"{turns} turn{'s' if turns != 1 else ''} left"
-            lines.append(f"{name} — held at {where} ({clock})")
-        return lines
-
-    def _mia_sitrep_lines(self) -> list[str]:
-        """One player-facing line per BLUE aviator still down and evading (the
-        persistent-evader ledger): named, located by the nearest control point,
-        with the time down spelled out."""
-        from game.fourteenth.downed_pilots import mia_sitrep_lines
-
-        return mia_sitrep_lines(self.game)
-
-    @staticmethod
-    def _combat_sar_rescued_unit_ids(debriefing: Debriefing) -> set[int]:
-        """Identity set of the FlyingUnit losses whose pilot Combat SAR delivered
-        home this mission.
-
-        ``combat_sar_rescues`` carries the ejected aircraft's original DCS unit
-        name, which is the same name the loss was mapped from, so resolving it
-        through the unit map yields the very FlyingUnit in ``air_losses``. Matching
-        on object identity keeps this robust even if a name somehow recurs.
-        """
-        rescued: set[int] = set()
-        for unit_name in debriefing.state_data.combat_sar_rescues:
-            flying = debriefing.unit_map.flight(unit_name)
-            if flying is not None:
-                rescued.add(id(flying))
-        return rescued
-
-    @staticmethod
-    def _combat_sar_captured_unit_ids(debriefing: Debriefing) -> set[int]:
-        """Identity set of the FlyingUnit losses whose pilot the enemy CAPTURED
-        (the Combat SAR snatch party reached them before rescue).
-
-        Like the rescue set, each capture carries the ejected aircraft's original
-        DCS unit name, so it resolves through the unit map to the FlyingUnit in
-        ``air_losses``. A captured pilot is held as a POW, not killed.
-        """
-        captured: set[int] = set()
-        for unit_name, _x, _y, _color in (
-            getattr(debriefing.state_data, "combat_sar_captures", []) or []
-        ):
-            flying = debriefing.unit_map.flight(unit_name)
-            if flying is not None:
-                captured.add(id(flying))
-        return captured
-
-    def _combat_sar_mia_unit_ids(self, debriefing: Debriefing) -> set[int]:
-        """Identity set of the FlyingUnit losses whose pilot was still EVADING at
-        mission end (neither rescued nor captured -- the plugin's unresolved
-        ledger). With persistence on, the kill is spared and the aviator goes MIA
-        (``record_downed_pilots``); with it off this is empty and the pilot dies
-        at debrief exactly as before the feature.
-        """
-        from game.fourteenth.downed_pilots import persistence_enabled
-
-        if not persistence_enabled(self.game):
-            return set()
-        mia: set[int] = set()
-        for unit_name, _x, _y in (
-            getattr(debriefing.state_data, "combat_sar_survivors", []) or []
-        ):
-            flying = debriefing.unit_map.flight(unit_name)
-            if flying is not None:
-                mia.add(id(flying))
-        return mia
-
-    def record_downed_pilots(self, debriefing: Debriefing) -> None:
-        # Persistent evaders (§21, 2026-07-10): retire ledger entries rescued or
-        # captured this mission, then record each still-unresolved survivor as MIA
-        # (gated by combat_sar_persistent_pilots -- off, the pilot died in
-        # commit_air_losses exactly as pre-feature). Runs after record_pow_captures
-        # so a captured evader's pilot was resolved from the ledger first.
-        from game.fourteenth.downed_pilots import record_downed_pilots
-
-        record_downed_pilots(self.game, debriefing)
-
-    def record_pow_captures(self, debriefing: Debriefing) -> None:
-        """Hold each captured pilot as a POW.
-
-        ``commit_air_losses`` already spared the kill (a POW is not KIA); here we
-        hold the aviator -- a ``PendingPowRecovery`` on the SURVIVOR's coalition
-        (the side that lost them) carrying the airframe unit name and the capture
-        position, with the holding enemy airfield resolved immediately. The POW
-        is freed if the holding field falls, killed when the hold clock expires
-        (``Coalition.end_turn`` -> ``surviving_pows``). The shelved recovery raid
-        offered no other path (CSAR rescope 2026-07-03). Fail-safe: an empty
-        capture list (the normal case) is a no-op.
-        """
-        from game.fourteenth.downed_pilots import pilot_from_ledger
-        from game.pow_recovery import PendingPowRecovery, resolve_holding_airfield
-
-        rescued = self._combat_sar_rescued_unit_ids(debriefing)
-        for unit_name, x, y, color in (
-            getattr(debriefing.state_data, "combat_sar_captures", []) or []
-        ):
-            flying = debriefing.unit_map.flight(unit_name)
-            if flying is not None and id(flying) in rescued:
-                # Defensive: a pilot recorded as both rescued and captured is
-                # treated as rescued (the rescue already spared them).
-                continue
-            pilot = flying.pilot if flying is not None else None
-            if pilot is None:
-                # A persistent evader captured on a LATER mission: the airframe
-                # died on an earlier turn, so this mission's unit map doesn't know
-                # it -- the downed-pilot ledger still does.
-                pilot = pilot_from_ledger(self.game, unit_name)
-            coalition = self.game.red if color == "red" else self.game.blue
-            if pilot is not None:
-                # Flip the aviator to POW so the squadron stops scheduling them
-                # while captive (active_pilots excludes POWs) -- they were still
-                # Active after the mission otherwise, and could fly next turn.
-                pilot.capture()
-            entry = PendingPowRecovery(
-                airframe_unit_name=unit_name,
-                x=x,
-                y=y,
-                pilot=pilot,
-                captured_turn=self.game.turn,
-            )
-            resolve_holding_airfield(self.game, coalition, entry)
-            coalition.pending_pow_recoveries.append(entry)
-
     def commit_air_losses(self, debriefing: Debriefing) -> None:
-        # A Combat SAR pickup loses the airframe but saves the aviator; an enemy
-        # capture loses the airframe but holds the aviator as a POW; a pilot still
-        # EVADING at mission end goes MIA (persistent evader) instead of dying.
-        # Either way the loss is still attrited below, only the pilot is spared the
-        # kill (a POW is recoverable -- record_pow_captures hangs the recovery; an
-        # MIA aviator is recorded by record_downed_pilots right after this).
-        rescued_unit_ids = self._combat_sar_rescued_unit_ids(debriefing)
-        captured_unit_ids = self._combat_sar_captured_unit_ids(debriefing)
-        mia_unit_ids = self._combat_sar_mia_unit_ids(debriefing)
         for loss in debriefing.air_losses.losses:
-            rescued = id(loss) in rescued_unit_ids
-            captured = (id(loss) in captured_unit_ids) and not rescued
-            mia = (id(loss) in mia_unit_ids) and not rescued and not captured
-            if rescued and loss.pilot is not None:
-                logging.info(
-                    f"Combat SAR recovered the pilot of {loss.flight.unit_type} "
-                    f"from {loss.flight.squadron}; airframe lost, aviator saved."
-                )
-            elif captured and loss.pilot is not None:
-                logging.info(
-                    f"Enemy captured the pilot of {loss.flight.unit_type} from "
-                    f"{loss.flight.squadron}; airframe lost, aviator held as POW."
-                )
-            elif mia and loss.pilot is not None:
-                logging.info(
-                    f"Pilot of {loss.flight.unit_type} from {loss.flight.squadron} "
-                    "is down and evading; airframe lost, aviator MIA."
-                )
-            if (
-                loss.pilot is not None
-                and not rescued
-                and not captured
-                and not mia
-                and (
-                    not loss.pilot.player
-                    or not self.game.settings.invulnerable_player_pilots
-                )
+            if loss.pilot is not None and (
+                not loss.pilot.player
+                or not self.game.settings.invulnerable_player_pilots
             ):
                 loss.pilot.kill()
             squadron = loss.flight.squadron

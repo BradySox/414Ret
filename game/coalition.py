@@ -210,7 +210,6 @@ class Coalition:
         # is handled correctly.
         self.transfers.perform_transfers()
 
-
     def preinit_turn_0(self, squadrons_start_full: bool) -> None:
         """Runs final Coalition initialization.
 

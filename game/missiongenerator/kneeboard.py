@@ -57,7 +57,7 @@ from game.theater.controlpoint import Airfield, ControlPoint
 from game.theater.theatergroundobject import EwrGroundObject, SamGroundObject
 from game.utils import Distance, Speed, UnitSystem, inches_hg, meters, mps, pounds
 from game.weather.weather import Weather
-from .aircraft.flightdata import CombatSarKingBeacon, FlightData
+from .aircraft.flightdata import FlightData
 from .briefinggenerator import CommInfo, JtacInfo, MissionInfoGenerator
 from .commsjamluadata import JAM_BACKUP_COMM_NAME
 from .kneeboard_page import KneeboardPage, save_kneeboard_image
@@ -1793,204 +1793,6 @@ class StrikeTaskPage(KneeboardPage):
         )
 
 
-class CombatSarTaskPage(KneeboardPage):
-    """Player briefing for a Combat SAR (pilot-rescue) flight.
-
-    Role-aware: the CH-47 does the pickup, the C-130 flies the HC-130 "King"
-    overhead-command orbit. Runtime is the MOOSE CSAR engine (combatsar plugin),
-    which drives the F10 "CSAR" menu and the on-screen ranges in-game, so this
-    page is guidance rather than exact tunable values.
-    """
-
-    def __init__(
-        self,
-        flight: FlightData,
-        king_beacons: List[CombatSarKingBeacon],
-        dark_kneeboard: bool,
-    ) -> None:
-        self.flight = flight
-        # Every blue King's beacon in the mission, so the rescue helo knows what to
-        # tune to home on the on-scene-command orbit.
-        self.king_beacons = king_beacons
-        self.dark_kneeboard = dark_kneeboard
-
-    @property
-    def _is_pickup_helo(self) -> bool:
-        return self.flight.aircraft_type.helicopter
-
-    @staticmethod
-    def _tacan_str(beacon: CombatSarKingBeacon) -> str:
-        return str(beacon.tacan) if beacon.tacan is not None else "--"
-
-    def write(self, path: Path) -> None:
-        writer = KneeboardPageWriter(dark_theme=self.dark_kneeboard)
-        self.render_into(writer)
-        writer.write(path)
-
-    def render_into(self, writer: KneeboardPageWriter) -> None:
-        custom = f' ("{self.flight.custom_name}")' if self.flight.custom_name else ""
-        writer.title(f"{self.flight.callsign} Combat SAR{custom}")
-
-        # Larger body/heading type than the page defaults: this briefing is a few
-        # short paragraphs, so we scale up and space the sections out (an
-        # underline rule under each heading, blank space between) to fill the
-        # page without the heavy boxed-panel look.
-        heading_font = ImageFont.truetype(
-            "courbd.ttf", 24, layout_engine=ImageFont.Layout.BASIC
-        )
-        body_font = ImageFont.truetype(
-            "courbd.ttf", 20, layout_engine=ImageFont.Layout.BASIC
-        )
-
-        # Collect (heading, body-lines) sections, then space them down the page.
-        sections: List[Tuple[str, List[str]]] = []
-
-        if self._is_pickup_helo:
-            sections.append(
-                ("ROLE", ["Rescue helo — you make the pickup at the survivor."])
-            )
-        else:
-            sections.append(
-                ("ROLE", ['HC-130 "King" — on-scene command, overhead presence.'])
-            )
-
-        sections.append(
-            (
-                "HOW IT WORKS",
-                [
-                    "- Orbit near the front. When a friendly pilot ejects in the "
-                    "area, a downed pilot spawns with a radio beacon.",
-                    '- Use the F10 radio menu -> "CSAR" for the active rescue list, '
-                    "the bearing/range to the survivor, and to request smoke / "
-                    "flare / beacon.",
-                ],
-            )
-        )
-
-        if self._is_pickup_helo:
-            sections.append(
-                (
-                    "PICKUP",
-                    [
-                        "- Fly to the survivor's beacon. Come to a low, slow hover "
-                        "directly over them (or land alongside) and hold until they "
-                        "board.",
-                        "- Keep cargo doors open if your module models them.",
-                        "- Deliver the survivor to ANY friendly airfield or FARP to "
-                        "score the save.",
-                    ],
-                )
-            )
-            kings_with_tacan = [b for b in self.king_beacons if b.tacan is not None]
-            if kings_with_tacan:
-                lines = ["Home on the HC-130 King (TACAN) to find the rescue area:"]
-                lines += [
-                    f"    {b.callsign}    TACAN {self._tacan_str(b)}"
-                    for b in kings_with_tacan
-                ]
-                sections.append(("KING BEACON", lines))
-        else:
-            sections.append(
-                (
-                    "ON-SCENE COMMAND",
-                    [
-                        "- Hold your overhead orbit as on-scene commander. Do NOT "
-                        "land at the crash site.",
-                        "- The rescue helo makes the pickup; you provide presence "
-                        "and coordination.",
-                    ],
-                )
-            )
-            beacon = self.flight.combat_sar_king
-            if beacon is not None and beacon.tacan is not None:
-                sections.append(
-                    (
-                        "YOUR BEACON",
-                        [
-                            f"Radiating TACAN {beacon.tacan} ({beacon.callsign}) for "
-                            "the rescue helo to home on.",
-                            "F10 -> Combat SAR -> LARS lists active survivors "
-                            "(position, bearing/range) for you to relay.",
-                        ],
-                    )
-                )
-
-        def render(w: KneeboardPageWriter, section_gap: int) -> None:
-            w.vspace(8)
-            for i, (heading, body) in enumerate(sections):
-                w.text(heading, font=heading_font)
-                w.rule()
-                for line in body:
-                    w.text(line, font=body_font, wrap=True)
-                if i < len(sections) - 1:
-                    w.vspace(section_gap)
-
-        # Probe the natural height with no extra spacing, then distribute the
-        # leftover vertical space as even gaps between sections so the page
-        # breathes top-to-bottom — capped so a short brief doesn't leave yawning
-        # gaps between two-line sections.
-        probe = KneeboardPageWriter(dark_theme=self.dark_kneeboard)
-        probe.title(f"{self.flight.callsign} Combat SAR{custom}")
-        render(probe, 0)
-        leftover = (writer.image_size[1] - writer.page_margin) - probe.y
-        section_gap = int(max(16, min(80, leftover // max(1, len(sections) - 1))))
-
-        render(writer, section_gap)
-
-
-class ScarTaskPage(KneeboardPage):
-    """Player briefing for a SCAR ("Sandy") rescue-escort flight.
-
-    Sandy is the RESCAP escort in the Combat SAR package: hold near the FLOT with
-    the King and Jolly Green, protect the downed pilot, suppress the threats around
-    them, and walk the rescue helo in. The King (C-130 on-scene commander) runs the
-    rescue and talks Sandy on; this page is role guidance, not exact values.
-    """
-
-    def __init__(self, flight: FlightData, dark_kneeboard: bool) -> None:
-        self.flight = flight
-        self.dark_kneeboard = dark_kneeboard
-
-    def write(self, path: Path) -> None:
-        writer = KneeboardPageWriter(dark_theme=self.dark_kneeboard)
-        self.render_into(writer)
-        writer.write(path)
-
-    def render_into(self, writer: KneeboardPageWriter) -> None:
-        custom = f' ("{self.flight.custom_name}")' if self.flight.custom_name else ""
-        writer.title(f"{self.flight.callsign} SCAR{custom}")
-
-        writer.heading("ROLE — SANDY (RESCAP escort)")
-        writer.text(
-            "You are SANDY: the rescue escort in the Combat SAR package. Hold near "
-            "the FLOT with the KING (C-130 on-scene commander) and JOLLY GREEN (the "
-            "rescue helo). Bring the downed pilot home alive — protect the survivor, "
-            "suppress the threats around them, and walk Jolly Green in.",
-            wrap=True,
-        )
-
-        writer.heading("WHEN A PILOT GOES DOWN")
-        writer.text(
-            "- Work for the KING — he runs the rescue and talks you onto the survivor "
-            "and the threats (voice/SRS; smoke and marks back him up).\n"
-            "- Kill the air defences and troops near the survivor so JOLLY GREEN can "
-            "get in and out. Keep the rescue helo alive — it is the mission.\n"
-            "- The enemy may push a party to capture the downed pilot. If they do, "
-            "destroy it before it reaches the survivor.",
-            wrap=True,
-        )
-
-        writer.heading("COORDINATION")
-        writer.text(
-            "- KING (C-130): on-scene commander — check in, take his talk-on, hold "
-            "where he tells you.\n"
-            "- JOLLY GREEN (helo): the pickup — escort it in, suppress on ingress, "
-            "cover the hover.\n"
-            "- Get the pilot to a friendly field and the aviator is spared at debrief.",
-            wrap=True,
-        )
-
-
 def build_airfield_directory_rows(
     game: "Game",
     flight: "FlightData",
@@ -2997,18 +2799,6 @@ class KneeboardGenerator(MissionInfoGenerator):
             )
         elif flight.flight_type is FlightType.STRIKE:
             return StrikeTaskPage(flight, self.dark_kneeboard)
-        elif flight.flight_type is FlightType.COMBAT_SAR:
-            king_beacons: List[CombatSarKingBeacon] = []
-            for f in self.flights:
-                if (
-                    f.flight_type is FlightType.COMBAT_SAR
-                    and f.friendly.is_blue
-                    and f.combat_sar_king is not None
-                ):
-                    king_beacons.append(f.combat_sar_king)
-            return CombatSarTaskPage(flight, king_beacons, self.dark_kneeboard)
-        elif flight.flight_type is FlightType.SCAR:
-            return ScarTaskPage(flight, self.dark_kneeboard)
         return None
 
     def generate_flight_kneeboard(
@@ -3219,10 +3009,7 @@ class KneeboardGenerator(MissionInfoGenerator):
         if loadout:
             lines.append(f"LOADOUT  {loadout}")
 
-        # SAR assets on this mission (King / Jolly / Sandy) + the if-down drill.
-        # The drill matches the campaign's real CSAR model (§21): evasion depth
-        # decides capture, an unrecovered evader persists at his last position,
-        # and the rescue package homes on it -- not generic survival advice.
+        # Rescue assets on this mission + the if-down drill.
         sar_bits = " · ".join(
             f"{role} {airframe}" for role, airframe in self._brief_sar(flight)
         )
@@ -3320,33 +3107,13 @@ class KneeboardGenerator(MissionInfoGenerator):
             return ""
 
     def _brief_sar(self, flight: FlightData) -> List[Tuple[str, str]]:
-        """King / Jolly / Sandy rescue assets from the side's Combat SAR + SCAR flights.
+        """Rescue assets on this side of the mission, as (role, aircraft type).
 
-        The role IS the callsign (the SAR package flies as King / Jolly / Sandy), so the
-        value is the **aircraft type** -- what to look for -- not a redundant callsign.
+        The value is the aircraft type -- what to look for -- not a callsign.
         """
-        king: Optional[str] = None
-        jolly: Optional[str] = None
-        sandy: Optional[str] = None
-        for other in self.flights:
-            if other.friendly is not flight.friendly:
-                continue
-            airframe = other.aircraft_type.variant_id
-            if other.flight_type is FlightType.COMBAT_SAR:
-                if other.combat_sar_king is not None:
-                    king = airframe
-                elif jolly is None:
-                    jolly = airframe
-            elif other.flight_type is FlightType.SCAR and sandy is None:
-                sandy = airframe
-        sar: List[Tuple[str, str]] = []
-        if king:
-            sar.append(("King", king))
-        if jolly:
-            sar.append(("Jolly", jolly))
-        if sandy:
-            sar.append(("Sandy", sandy))
-        return sar
+        # TODO(reconcile): re-point at FlightType.CSAR once PR929 lands. Until then
+        # there is no rescue flight type, so the SAR line carries the drill alone.
+        return []
 
     def _to_kneeboard_time(
         self, time: Optional[datetime.datetime], utc: bool

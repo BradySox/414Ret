@@ -32,9 +32,20 @@ tasks:
   Air Assault: 40
   Transport: 140
   Jamming: 140
-  # Combat SAR "King" role (on-scene command + TACAN beacon + LARS). This is the
-  # only C-130 now (the stock AI model was retired), so it is the King. The EW/ISR
-  # (Jamming) plugin claims every C-130J-30 by airframe, so the generator adds a
-  # King/SOF C-130J to the per-group EW deny-list (_ew_excluded_c130j_groups ->
-  # dcsRetribution.EwExcludedGroups; see luagenerator) so only that aircraft is skipped.
-  Combat SAR: 60
+  # The "King" CSAR role, kept as a deliberate 414th override (2026-08-07 squadron call).
+  #
+  # Upstream derives CSAR capability from the airframe and restricts it to HELICOPTERS with a
+  # positive cabin size, on the grounds that the DCS AI `Land` task is helicopter-only, so a
+  # fixed-wing rescuer just orbits the survivor forever. An explicit `CSAR:` entry always wins
+  # over that derivation (game/dcs/aircrafttype.py, get_task_priorities), which is the supported
+  # lever and is what this line is.
+  #
+  # KNOWN LIMIT, accepted: an AI-crewed King will NOT complete a pickup for the reason above.
+  # The King is flown by a player, as the on-scene commander it always was. Do not "fix" this by
+  # relaxing upstream's helicopter rule -- fix it here, on this aircraft, or not at all.
+  #
+  # This is the only C-130 now (the stock AI model was retired). The EW/ISR (Jamming) plugin
+  # claims every C-130J-30 by airframe, so the generator adds a King/SOF C-130J to the per-group
+  # EW deny-list (_ew_excluded_c130j_groups -> dcsRetribution.EwExcludedGroups; see luagenerator)
+  # so only that aircraft is skipped.
+  CSAR: 60

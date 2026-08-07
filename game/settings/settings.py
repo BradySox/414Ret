@@ -548,7 +548,6 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                 "Comms war",
                 [
                     "enemy_comms_jamming",
-                    "comms_jam_requires_capture",
                     "red_comms_net",
                     "red_net_max_stations",
                     "gps_jamming_default_reach_nm",
@@ -706,7 +705,7 @@ FEATURE_GATE_FIELDS: dict[str, list[str]] = {
         "recon_intel_fog",  # §3
         "concealed_enemy_forces",  # §3
         "decoy_zones",  # §79
-        "scar_command_post_intel",  # §15
+        "scar_command_post_intel",  # §3 (re-homed from the retired §15 row)
         "comint_collection",  # §70
         "red_comms_net",  # §70
     ],
@@ -719,7 +718,6 @@ FEATURE_GATE_FIELDS: dict[str, list[str]] = {
     ],
     "Electronic & command warfare": [
         "enemy_comms_jamming",  # §51
-        "comms_jam_requires_capture",  # §51
         "c2_decapitation_effects",  # §52
         "gps_jamming",  # §85
     ],
@@ -3166,24 +3164,6 @@ class Settings:
             "strike target) silences it for good. Audio pressure only -- no "
             "force-model change. Runs via the 'Comms jamming' LUA plugin -- keep "
             "that plugin enabled or this setting does nothing."
-        ),
-    )
-    comms_jam_requires_capture: bool = boolean_option(
-        "Comms jamming needs captured aircrew (the intel gate)",
-        enabled_when="enemy_comms_jamming",
-        page=MISSION_GENERATION_PAGE,
-        section=GENERAL_SECTION,
-        default=True,
-        detail=(
-            "The enemy can only jam channels it knows -- and it learns them from "
-            "a captured pilot's comms plan. With this on (the default), comms "
-            "jamming stays silent until the Combat SAR capture race is lost: a "
-            "pilot captured mid-mission compromises the net within minutes, and "
-            "a POW held from an earlier turn means the channels are compromised "
-            "from mission start until they are freed or written off (the comms "
-            "plan is then rotated). Rescuing your people keeps the net clean. "
-            "Turn this off for ambient jamming whenever an enemy C2 node is "
-            "alive. No effect unless 'Enemy comms jamming' is on."
         ),
     )
     red_comms_net: bool = boolean_option(

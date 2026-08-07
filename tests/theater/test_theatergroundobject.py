@@ -132,9 +132,6 @@ def test_mission_types_enemy(monkeypatch: pytest.MonkeyPatch) -> None:
     assert FlightType.ESCORT_JAMMER in mission_types
     assert FlightType.SEAD_SWEEP in mission_types
     assert FlightType.ARMED_RECON in mission_types
-    # SCAR is the "Sandy" rescue-escort now, scoped to the FLOT -- generic ground
-    # targets (an ammo dump here) no longer expose it (rescue rework).
-    assert FlightType.SCAR not in mission_types
     assert FlightType.SWEEP in mission_types
     assert FlightType.JAMMING in mission_types
     assert FlightType.TARPS not in mission_types  # ammo does not warrant recon
@@ -157,7 +154,6 @@ def test_mission_types_enemy(monkeypatch: pytest.MonkeyPatch) -> None:
     assert FlightType.ESCORT_JAMMER in mission_types
     assert FlightType.SEAD_SWEEP in mission_types
     assert FlightType.ARMED_RECON in mission_types
-    assert FlightType.SCAR not in mission_types
     assert FlightType.SWEEP in mission_types
     assert FlightType.JAMMING in mission_types
     assert FlightType.TARPS not in mission_types  # ammo does not warrant recon
@@ -187,7 +183,6 @@ def test_mission_types_enemy(monkeypatch: pytest.MonkeyPatch) -> None:
         assert FlightType.ESCORT_JAMMER in mission_types
         assert FlightType.SEAD_SWEEP in mission_types
         assert FlightType.ARMED_RECON in mission_types
-        assert FlightType.SCAR not in mission_types
         assert FlightType.SWEEP in mission_types
         assert FlightType.JAMMING in mission_types
         assert FlightType.TARPS not in mission_types
@@ -211,7 +206,6 @@ def test_mission_types_enemy(monkeypatch: pytest.MonkeyPatch) -> None:
     assert FlightType.ESCORT_JAMMER in mission_types
     assert FlightType.SEAD_SWEEP in mission_types
     assert FlightType.ARMED_RECON in mission_types
-    assert FlightType.SCAR not in mission_types
     assert FlightType.SWEEP in mission_types
     assert FlightType.JAMMING in mission_types
 
@@ -232,7 +226,6 @@ def test_mission_types_enemy(monkeypatch: pytest.MonkeyPatch) -> None:
     assert FlightType.ESCORT_JAMMER in mission_types
     assert FlightType.SEAD_SWEEP in mission_types
     assert FlightType.ARMED_RECON in mission_types
-    assert FlightType.SCAR not in mission_types
     assert FlightType.SWEEP in mission_types
     assert FlightType.JAMMING in mission_types
 
@@ -256,7 +249,6 @@ def test_mission_types_enemy(monkeypatch: pytest.MonkeyPatch) -> None:
         assert FlightType.ESCORT_JAMMER in mission_types
         assert FlightType.SEAD_SWEEP in mission_types
         assert FlightType.ARMED_RECON in mission_types
-        assert FlightType.SCAR not in mission_types
         assert FlightType.SWEEP in mission_types
         assert FlightType.JAMMING in mission_types
         assert FlightType.TARPS not in mission_types
@@ -278,7 +270,6 @@ def test_mission_types_enemy(monkeypatch: pytest.MonkeyPatch) -> None:
     assert FlightType.ESCORT_JAMMER in mission_types
     assert FlightType.SEAD_SWEEP in mission_types
     assert FlightType.ARMED_RECON in mission_types
-    assert FlightType.SCAR not in mission_types
     assert FlightType.SWEEP in mission_types
     assert FlightType.JAMMING in mission_types
     assert FlightType.TARPS not in mission_types

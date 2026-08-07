@@ -17,7 +17,7 @@ from __future__ import annotations
 from qt_ui.theme.tokens import RETRIBUTION_DARK, SCALE, Palette, Scale
 
 # Task chips, grouped so the categories stay decodable at a glance. Every member
-# of FlightType is covered: the old sheet styled only 10 of 27, so the rest drew
+# of FlightType is covered: the old sheet styled only 10 of them, so the rest drew
 # as plain text with no chip at all.
 _A2A = ("BARCAP", "TARCAP", "SWEEP", "ESCORT")
 _INTERCEPT = ("INTERCEPTION",)
@@ -29,14 +29,12 @@ _A2G = (
     "OCA_RUNWAY",
     "OCA_AIRCRAFT",
     "ARMED_RECON",
-    "SCAR",
 )
 _DEAD = ("DEAD", "SEAD_SWEEP")
 _SEAD = ("SEAD", "SEAD_ESCORT")
 _EW = ("JAMMING", "ESCORT_JAMMER")
 _RECON = ("TARPS",)
 _SUPPORT = ("AEWC", "REFUELING", "TRANSPORT", "FERRY", "RECOVERY", "AIR_ASSAULT")
-_RESCUE = ("COMBAT_SAR",)
 
 _TASK_GROUPS = (
     (_A2A, "#4A5BA8"),
@@ -47,7 +45,6 @@ _TASK_GROUPS = (
     (_EW, "#35707D"),
     (_RECON, "#4E7A5E"),
     (_SUPPORT, "#46545F"),
-    (_RESCUE, "#B5652E"),
 )
 
 
@@ -440,10 +437,10 @@ QTextBrowser[style="info-desc"] {{
     padding: {s.space_1}px {s.space_3}px;
 }}
 
-/* An urgent line -- something on a clock the player should act on this turn
-   (§83's evading aviators). Amber is the fork's established "pay attention"
-   colour on the map and the kneeboard; the chrome accent is deliberately not
-   amber, so this never competes with it. */
+/* An urgent line -- something the player should act on this turn (§83's
+   pre-turn briefing marks its top-urgency items with it). Amber is the fork's
+   established "pay attention" colour on the map and the kneeboard; the chrome
+   accent is deliberately not amber, so this never competes with it. */
 QLabel[style="warning"] {{
     color: {p.warning};
     font-weight: 600;

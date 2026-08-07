@@ -115,56 +115,9 @@ def test_stock_c130_migrates_to_the_player_module(tmp_path: Path) -> None:
 
 
 @pytest.mark.parametrize(
-    ("variant_id", "capable"),
-    [
-        # The player-flyable rescuer (door-gunner Chinook) and King (C-130J-30),
-        ("CH-47F Block I", True),
-        ("C-130J-30", True),
-        # ...plus the AI CH-47D fallback the Chinook keeps (the stock C-130 King is
-        # retired -- its migration to the J-30 is covered separately above),
-        ("CH-47D", True),
-        # ...but never a fighter.
-        ("F-15C Eagle", False),
-    ],
-)
-def test_combat_sar_eligibility(variant_id: str, capable: bool, tmp_path: Path) -> None:
-    # Combat SAR (the standing pilot-rescue orbit) is flown by the CH-47 (pickup)
-    # and the C-130 (HC-130 "King" orbit); fighters never get the lane.
-    aircraft = _aircraft(tmp_path, variant_id)
-    assert aircraft.capable_of(FlightType.COMBAT_SAR) is capable
-
-
-@pytest.mark.parametrize(
-    ("variant_id", "scar_capable"),
-    [
-        # SCAR is the airborne-FAC role (loiter over a kill box, find/ID the real
-        # target, control the attack), so only aircraft DCS lets fly the AFAC task
-        # get the lane. Strategic bombers carry a CAS priority -- they drop on
-        # *called* coordinates -- but lack AFAC, so they must NOT be SCAR-fragged
-        # (a B-1 can't hunt a kill box). See AircraftType.__post_init__.
-        ("A-10C Thunderbolt II (Suite 7)", True),
-        ("F-16CM Fighting Falcon (Block 50)", True),
-        ("F/A-18C Hornet (Lot 20)", True),
-        ("F-15E Strike Eagle", True),
-        ("B-1B Lancer", False),
-        ("B-52H Stratofortress", False),
-    ],
-)
-def test_scar_excludes_strategic_bombers(
-    variant_id: str, scar_capable: bool, tmp_path: Path
-) -> None:
-    aircraft = _aircraft(tmp_path, variant_id)
-    assert aircraft.capable_of(FlightType.SCAR) is scar_capable
-    # Excluding SCAR is not excluding CAS -- the bombers still drop on called
-    # coordinates; they just don't run the find-and-control hunt.
-    assert aircraft.capable_of(FlightType.CAS)
-
-
-@pytest.mark.parametrize(
     ("variant_id", "armed_recon_capable"),
     [
-        # Armed Recon is the roam-and-self-acquire (find-then-attack) role -- the same
-        # self-acquisition the SCAR exclusion keeps strategic bombers out of. A bomber
+        # Armed Recon is the roam-and-self-acquire (find-then-attack) role. A bomber
         # holds a CAS/BAI priority only for dropping on *called* coordinates, so it must
         # not inherit Armed Recon: neither auto-assigned nor manually selectable. Attack
         # jets keep it (derived from CAS/BAI). See AircraftType.__post_init__.

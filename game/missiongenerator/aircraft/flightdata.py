@@ -16,7 +16,6 @@ if TYPE_CHECKING:
     from game.ato import FlightWaypoint, Package
     from game.dcs.aircrafttype import AircraftType
     from game.radio.radios import RadioFrequency
-    from game.radio.tacan import TacanChannel
     from game.runways import RunwayData
     from game.theater.player import Player
     from game.utils import Speed
@@ -26,23 +25,6 @@ if TYPE_CHECKING:
 class ChannelAssignment:
     radio_id: int
     channel: int
-
-
-@dataclass(frozen=True)
-class CombatSarKingBeacon:
-    """The homing beacon for a C-130 "King" Combat SAR flight.
-
-    The King orbits as the on-scene-command anchor and lights a TACAN the rescue
-    helo homes on. TACAN is air-tracking, so it follows the moving orbit (the
-    combatsar plugin calls MOOSE ActivateTACAN), and every DCS rescue helo we use
-    has a TACAN receiver -- it is the single homing solution. (An ADF radio beacon
-    was considered and dropped: MOOSE's RadioBeacon is fixed-point and the King is a
-    mover, so TACAN does the job without a position-refresh loop.)
-    """
-
-    callsign: str
-    #: The King beacon (air-tracking TACAN); None if the channel pool was dry.
-    tacan: Optional[TacanChannel]
 
 
 @dataclass
@@ -57,8 +39,7 @@ class FlightData:
     aircraft_type: AircraftType
 
     #: The DCS group name of the flight's group. Used by plugins that need to
-    #: bind runtime behavior to a specific generated group (e.g. the Combat SAR
-    #: rescue set).
+    #: bind runtime behavior to a specific generated group.
     group_name: str
 
     squadron: Squadron
@@ -110,9 +91,6 @@ class FlightData:
     frequency_to_channel_map: dict[RadioFrequency, list[ChannelAssignment]] = field(
         init=False, default_factory=dict
     )
-
-    #: Nav beacons when this is a C-130 "King" Combat SAR flight; None otherwise.
-    combat_sar_king: Optional[CombatSarKingBeacon] = None
 
     #: Planned on-station speed when this flight flies a racetrack (BARCAP,
     #: TARCAP, AEW&C, tanker...); None for point-to-point plans. The kneeboard

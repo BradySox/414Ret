@@ -31,7 +31,7 @@ from game.squadrons import Pilot
 from .aircraftbehavior import AircraftBehavior
 from .aircraftpainter import AircraftPainter
 from .bingoestimator import BingoEstimator
-from .flightdata import CombatSarKingBeacon, FlightData
+from .flightdata import FlightData
 from .waypoints import WaypointGenerator
 from ...ato.flightmember import FlightMember
 from ...ato.flightplans.aewc import AewcFlightPlan
@@ -78,33 +78,8 @@ class FlightGroupConfigurator:
         self.dynamic_runways = dynamic_runways
         self.use_client = use_client
 
-    def register_combat_sar_king(self) -> Optional[CombatSarKingBeacon]:
-        """Allocate the homing beacon for a C-130 "King" Combat SAR flight.
-
-        Only the fixed-wing King carries a beacon; the CH-47 is the rescuer and
-        homes on it. TACAN is the King beacon (air-tracking, follows the orbit, and
-        every rescue helo we use has a receiver) and is best-effort (None if the
-        channel pool is dry). Returns None for any other flight.
-        """
-        if self.flight.flight_type is not FlightType.COMBAT_SAR:
-            return None
-        if self.flight.unit_type.helicopter:
-            return None
-
-        tacan = None
-        try:
-            tacan = self.tacan_registry.alloc_for_band(TacanBand.Y, TacanUsage.AirToAir)
-        except OutOfTacanChannelsError:
-            tacan = None
-
-        return CombatSarKingBeacon(
-            callsign=callsign_for_support_unit(self.group),
-            tacan=tacan,
-        )
-
     def configure(self) -> FlightData:
         flight_channel = self.setup_radios()
-        combat_sar_king = self.register_combat_sar_king()
         AircraftBehavior(self.flight.flight_type, self.mission_data).apply_to(
             self.flight, self.group
         )
@@ -184,7 +159,6 @@ class FlightGroupConfigurator:
             squadron=self.flight.squadron,
             flight_type=self.flight.flight_type,
             group_name=self.group.name,
-            combat_sar_king=combat_sar_king,
             units=self.group.units,
             size=len(self.group.units),
             friendly=self.flight.departure.captured,

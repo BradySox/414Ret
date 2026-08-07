@@ -60,7 +60,14 @@ FEATURES: tuple[Feature, ...] = (
         "tarps_recon_fog",
         "TARPS recon + BDA fog-of-war",
         3,
-        settings_fields=("recon_intel_fog", "concealed_enemy_forces"),
+        settings_fields=(
+            "recon_intel_fog",
+            "concealed_enemy_forces",
+            # Re-homed here 2026-08-07: this gate gutters through
+            # TheaterGroundObject.hidden_on_player_map, a recon-fog leaf. It used to
+            # hang off the §15 Sandy row, which went with the CSAR strip.
+            "scar_command_post_intel",
+        ),
     ),
     Feature("ui_transparency", "UI transparency", 4),
     Feature("target_location_precision", "Player target location precision", 5),
@@ -78,13 +85,6 @@ FEATURES: tuple[Feature, ...] = (
     Feature("recon_engine", "Recon engine (TARPS + drone BDA)", 12, plugin_id="recon"),
     Feature("flight_control_atc", "Flight Control ATC", 13, retired=True),
     Feature("plugin_options_ui", "Plugin Options UI", 14),
-    Feature(
-        "scar_rescue",
-        'SCAR — RESCAP "Sandy" rescue escort',
-        15,
-        plugin_id="combatsar",
-        settings_fields=("scar_command_post_intel",),
-    ),
     Feature("settings_qol_audit", "Settings QOL audit", 16),
     Feature(
         "planner_unpredictability",
@@ -102,17 +102,6 @@ FEATURES: tuple[Feature, ...] = (
         "Drop-spawn: map right-click unit placement",
         20,
         retired=True,
-    ),
-    Feature(
-        "combat_sar",
-        "Combat SAR",
-        21,
-        plugin_id="combatsar",
-        settings_fields=(
-            "auto_combat_sar",
-            "combat_sar_persistent_pilots",
-            "combat_sar_surge",
-        ),
     ),
     Feature(
         "kneeboard_custom_import", "Kneeboard space-utilisation + custom import", 22
@@ -294,7 +283,7 @@ FEATURES: tuple[Feature, ...] = (
         "Enemy comms jamming (IADS comms nodes)",
         51,
         plugin_id="commsjam",
-        settings_fields=("enemy_comms_jamming", "comms_jam_requires_capture"),
+        settings_fields=("enemy_comms_jamming",),
     ),
     Feature(
         # Pure turn-model (no plugin): couples a side's command-network health to

@@ -139,7 +139,6 @@ class StateData:
     #: plugin is disabled.
     tars_recon_captures: List[str]
 
-
     #: ``(id, x, z, radius_m, charges)`` per air-dropped minefield the §57 plugin managed
     #: this mission -- persisted fields (by their Python id) + newly-laid fields (id 0), each
     #: with its remaining charges. ``reconcile_minefields`` carries the undisturbed fields

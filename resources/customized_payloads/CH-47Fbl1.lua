@@ -18,7 +18,7 @@ local unitPayloads = {
 			},
 		},
 		[2] = {
-			["name"] = "Retribution Combat SAR",
+			["name"] = "Retribution CSAR",
 			["pylons"] = {
 				[1] = {
 					["CLSID"] = "{CH47_STBD_M60D}",

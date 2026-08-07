@@ -101,16 +101,6 @@ class PackageBuilder:
             )
         elif (
             squadron.location.required_aircraft_start_type is None
-            and flight.flight_type is FlightType.COMBAT_SAR
-        ):
-            # A 24/7 pilot-rescue standing alert has to be on station before the
-            # first losses -- a slow helo spooling up at a rear field and transiting
-            # in never makes it in time (the 75 NM-from-the-downed-pilot case).
-            # Air-start the AI alert so it holds its forward orbit from t=0; a
-            # player-flown Combat SAR keeps the client default handled above.
-            flight.start_type = StartType.IN_FLIGHT
-        elif (
-            squadron.location.required_aircraft_start_type is None
             and squadron.coalition.game.settings.opfor_air_start
             and squadron.coalition.player.is_red
         ):

@@ -343,10 +343,6 @@ class MissionGenerator:
 
         BaseDamageGenerator(self.mission, self.game).generate()
         aircraft_generator.spawn_unused_aircraft()
-        # Must run AFTER spawn_unused_aircraft: the preferred, tracked
-        # parked-rescue-helo pool is populated there. Templating first would
-        # snapshot an always-empty pool and force the untracked clone fallback.
-        aircraft_generator.spawn_combat_sar_templates()
 
         self.mission_data.flights = aircraft_generator.flights
 

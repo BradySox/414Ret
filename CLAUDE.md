@@ -256,12 +256,10 @@ linked design note.
 10. **CurrentHill Iran assets pack** — Shahed-136, IRGCN FAC, `[CH] Iran 2020` faction.
 12. **Recon engine** — the `recon` plugin: one capture rule for player and AI, shaped by sensor, altitude and cloud.
 14. **Plugin Options UI** — `descriptionInUI` field plus label and default polish.
-15. **SCAR — RESCAP "Sandy"** — the rescue escort of the Combat SAR package, with runtime divert to a live ejection.
 16. **Settings QOL audit** — dead-field cleanup and the `AiRadioBehavior` enum consolidation.
 17. **Auto-planner target unpredictability** — opt-in per-side reordering of opportunistic offensive targets only.
 18. **Fog-of-war overview toggle** — transient reveal, never persisted, and fenced out of generated missions.
 19. **Unified map layers panel** — one grouped control with preset views; air-defence rows filter the master.
-21. **Combat SAR** — rescue helo + King + Sandy, on-demand AI launch, the capture race, POWs, persistent MIA evaders, and the next-turn recovery surge.
 22. **Kneeboard space-utilisation + custom import** — per-campaign imported kneeboard images.
 23. **Per-squadron DCS country** — nation-specific voiceovers and pilot names, pinnable per squadron.
 24. **Date-gated aircraft properties** — era-gated payload-editor options under `restrict_props_by_date`.
@@ -328,6 +326,8 @@ Kept numbered so old notes and saves stay readable. Details and rationale in the
 | 11 | Native DCS DTC cartridge export (v1) | Retired 2026-06-26 — superseded by §74 |
 | 13 | Flight Control ATC | Retired 2026-06-26 |
 | 20 | Drop-spawn map unit placement | Removed 2026-08-02 |
+| 15 | SCAR — RESCAP "Sandy" rescue escort | Removed 2026-08-07 — see §21 |
+| 21 | Combat SAR (fork implementation) | Removed 2026-08-07 — replaced by upstream dcs-retribution#929 |
 | 25 | Compact 3–4 page kneeboard deck | Retired 2026-07-05 |
 | 30 | Dedicated kneeboard cover page | Retired 2026-07-13 — new info folds into a stock page |
 | 31 | One-page Brief Sheet | Retired 2026-07-13 — BLUF and code words survived |

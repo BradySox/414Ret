@@ -190,6 +190,7 @@ class Package(RadioFrequencyContainer):
             FlightType.DEAD,
             FlightType.TRANSPORT,
             FlightType.AIR_ASSAULT,
+            FlightType.CSAR,
             FlightType.ARMED_RECON,
             FlightType.TARPS,
             FlightType.SEAD,

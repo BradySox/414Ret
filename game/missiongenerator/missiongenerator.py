@@ -36,6 +36,7 @@ from .commsjamluadata import JAM_BACKUP_COMM_NAME, plan_comms_jam
 from .rednetluadata import plan_red_net
 from .convoyambushgenerator import ConvoyAmbushGenerator
 from .convoygenerator import ConvoyGenerator
+from .csargenerator import CsarGenerator
 from .drawingsgenerator import DrawingsGenerator
 from .dtc import DtcGenerator
 from .environmentgenerator import EnvironmentGenerator
@@ -145,6 +146,12 @@ class MissionGenerator:
         # rather than the first player flight with a TGP.
         logging.info("MIZ generation: ground conflicts")
         self.generate_ground_conflicts()
+        # Must run before the air units: a CSAR flight's pickup waypoint carries an
+        # Embarking task that references the downed pilot's group id, so the pilot
+        # groups have to exist before flight waypoints are built.
+        logging.info("MIZ generation: downed pilots")
+        CsarGenerator(self.mission, self.game, self.mission_data).generate()
+
         logging.info("MIZ generation: air units")
         self.generate_air_units(tgo_generator)
 

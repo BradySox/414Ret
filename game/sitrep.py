@@ -52,11 +52,10 @@ class Sitrep:
     captured: List[str]  # control points the player took this turn
     lost: List[str]  # control points the player lost this turn
     pilots_recovered: int  # Combat SAR deliveries home
-    #: One line per BLUE aviator down and still EVADING (the §21 persistent-evader
-    #: ledger, 2026-07-10), e.g. "Capt Mitchell — evading near Fulda (2 turns
-    #: down)". Deep evaders get found by the turn capture roll -- this line is the
-    #: standing prompt to fly the rescue. Absent on pre-feature pickled sitreps
-    #: (read via getattr).
+    #: One line per BLUE aviator down and awaiting rescue (upstream #929's CSAR
+    #: e.g. "Capt Mitchell — down near Fulda (2 turns left)". A survivor nobody
+    #: reaches in time goes MIA for good, so this line is the standing prompt to
+    #: fly the rescue. Absent on pre-feature pickled sitreps (read via getattr).
     pilots_mia: List[str] = field(default_factory=list)
     #: §52 Feature A: the enemy command-network status ("1/3 command posts
     #: operational") when it is degraded and the feature is on -- the legibility

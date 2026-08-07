@@ -151,6 +151,19 @@ class DeckDecorInfo:
 
 
 @dataclass
+class CsarPilotGroupInfo:
+    """A downed pilot placed in the mission as a real ground group."""
+
+    group_name: str
+    #: The survivor's own unit. OpsCSAR.lua asks DCS's unit registry about this
+    #: name to decide whether they are still in the world -- a group's cached unit
+    #: handles can outlive the units themselves.
+    unit_name: str
+    group_id: int
+    blue: bool
+
+
+@dataclass
 class MissionData:
     awacs: list[AwacsInfo] = field(default_factory=list)
     runways: list[RunwayData] = field(default_factory=list)
@@ -196,3 +209,10 @@ class MissionData:
     # task (the 2026-07-16 flown fire-vs-scoot clobber: 12 of 13 batteries
     # silently lost their fire missions to the first relocation).
     missile_fire_missions: dict[str, int] = field(default_factory=dict)
+    #: Late-activated infantry template group names Ops.CSAR is constructed with,
+    #: keyed by coalition ("blue"/"red"). Empty when CSAR is disabled.
+    csar_pilot_templates: dict[str, str] = field(default_factory=dict)
+    #: The actual downed-pilot groups placed in the mission, keyed by the
+    #: DownedPilot's id (as a string). Used to wire the rescue helicopter's
+    #: Embarking task to the right pilot, and to hand the group to Ops.CSAR.
+    csar_pilot_groups: dict[str, CsarPilotGroupInfo] = field(default_factory=dict)

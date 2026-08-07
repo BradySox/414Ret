@@ -85,6 +85,12 @@ FEATURES: tuple[Feature, ...] = (
     Feature("recon_engine", "Recon engine (TARPS + drone BDA)", 12, plugin_id="recon"),
     Feature("flight_control_atc", "Flight Control ATC", 13, retired=True),
     Feature("plugin_options_ui", "Plugin Options UI", 14),
+    Feature(
+        "scar_rescue",
+        'SCAR — RESCAP "Sandy" rescue escort',
+        15,
+        retired=True,
+    ),
     Feature("settings_qol_audit", "Settings QOL audit", 16),
     Feature(
         "planner_unpredictability",
@@ -101,6 +107,12 @@ FEATURES: tuple[Feature, ...] = (
         "drop_spawn_placement",
         "Drop-spawn: map right-click unit placement",
         20,
+        retired=True,
+    ),
+    Feature(
+        "combat_sar",
+        "Combat SAR (fork implementation)",
+        21,
         retired=True,
     ),
     Feature(

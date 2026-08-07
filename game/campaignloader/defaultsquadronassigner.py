@@ -85,6 +85,11 @@ class DefaultSquadronAssigner:
                 squadron.set_auto_assignable_mission_types(
                     squadron_config.auto_assignable
                 )
+                # Campaign configs predate CSAR and never list it, so opt capable
+                # squadrons in by default. The player can still turn it off in the
+                # Air Wing configuration dialog. Done before the wing-growth branch
+                # below so a scheduled arrival is opted in the same way.
+                squadron.enable_csar_if_capable()
                 # "The Wing Grows" (414th): a scheduled squadron is built here
                 # exactly like any other -- same preset selection, country pin,
                 # callsign overrides and def claiming -- but parked in the

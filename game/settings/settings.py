@@ -2,7 +2,7 @@ from collections.abc import Iterable, Iterator
 from dataclasses import MISSING, Field, dataclass, field, fields
 from datetime import timedelta
 from enum import Enum, unique
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, TYPE_CHECKING
 
 from dcs.forcedoptions import ForcedOptions
 
@@ -15,6 +15,9 @@ from .optiondescription import OptionDescription, SETTING_DESCRIPTION_KEY
 from .skilloption import skill_option
 from ..ato.starttype import StartType
 from ..ground_forces.combat_stance import CombatStance
+
+if TYPE_CHECKING:
+    from ..ato.flighttype import FlightType
 
 Views = ForcedOptions.Views
 
@@ -249,6 +252,18 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                 ],
             ),
             (
+                "Combat search & rescue",
+                [
+                    "csar_enabled",
+                    "csar_enabled_red",
+                    "csar_ejection_chance",
+                    "csar_survival_turns",
+                    "csar_survival_turns_hostile",
+                    "csar_ai_recovery_turns",
+                    "csar_player_recovery_turns",
+                ],
+            ),
+            (
                 "Attrition & replacements",
                 [
                     "ai_pilot_levelling",
@@ -329,6 +344,7 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                     "heli_combat_alt_agl",
                     "heli_cruise_alt_agl",
                     "min_plane_altitude_offset",
+                    "max_csar_flights",
                     "max_plane_altitude_offset",
                     "min_patrol_altitude",
                 ],
@@ -470,6 +486,10 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                     "default_start_type_client",
                     "opfor_air_start",
                     "support_air_start",
+                    "csar_start_type",
+                    "csar_hover_extraction",
+                    "csar_rescue_ai_pilots",
+                    "csar_require_open_doors",
                 ],
             ),
             (
@@ -1499,6 +1519,18 @@ class Settings:
             "turn scatter off - both 0 for none."
         ),
     )
+    max_csar_flights: int = bounded_int_option(
+        "Maximum CSAR flights planned per side each turn",
+        page=CAMPAIGN_DOCTRINE_PAGE,
+        section=GENERAL_SECTION,
+        default=2,
+        min=0,
+        max=10,
+        detail=(
+            "Maximum number of CSAR rescue packages the auto-planner will commit to in a "
+            "turn, for each coalition."
+        ),
+    )
     max_plane_altitude_offset: int = bounded_int_option(
         "Altitude scatter - highest (x1000 ft)",
         page=CAMPAIGN_DOCTRINE_PAGE,
@@ -2053,6 +2085,83 @@ class Settings:
         default=False,
         detail=(
             "If set, squadrons will not be able to buy more aircraft than the configured maximum."
+        ),
+    )
+    # Combat Search and Rescue
+    csar_enabled: bool = boolean_option(
+        "Enable CSAR for the player coalition",
+        CAMPAIGN_MANAGEMENT_PAGE,
+        PILOTS_AND_SQUADRONS_SECTION,
+        default=True,
+        detail="Enable CSAR rescue flights for OWNFOR (BLUE) Coalition.",
+    )
+    csar_enabled_red: bool = boolean_option(
+        "Enable CSAR for the enemy coalition",
+        CAMPAIGN_MANAGEMENT_PAGE,
+        PILOTS_AND_SQUADRONS_SECTION,
+        default=True,
+        detail="Enable CSAR rescue flights for OPFOR (RED) Coalition.",
+    )
+    csar_ejection_chance: int = bounded_int_option(
+        "CSAR pilot survival chance (%)",
+        CAMPAIGN_MANAGEMENT_PAGE,
+        PILOTS_AND_SQUADRONS_SECTION,
+        default=40,
+        min=0,
+        max=100,
+        detail=(
+            "Chance of pilot survival and becoming a downed pilot for aircraft losses "
+            "where DCS did not report an ejection (AI kills and all losses on skipped/simulated turns)."
+            "Real in-mission ejections always produce a downed pilot."
+        ),
+    )
+    csar_survival_turns: int = bounded_int_option(
+        "Turns a downed pilot survives",
+        CAMPAIGN_MANAGEMENT_PAGE,
+        PILOTS_AND_SQUADRONS_SECTION,
+        default=3,
+        min=1,
+        max=10,
+        detail=(
+            "Number of turns a downed pilot in friendly rear territory waits for "
+            "rescue before going missing in action."
+        ),
+    )
+    csar_survival_turns_hostile: int = bounded_int_option(
+        "Turns a downed pilot survives near the front",
+        CAMPAIGN_MANAGEMENT_PAGE,
+        PILOTS_AND_SQUADRONS_SECTION,
+        default=2,
+        min=1,
+        max=10,
+        detail=(
+            "Number of turns a downed pilot in hostile territory or close to a front "
+            "line, where enemy ground forces are more likely to capture them waits for "
+            "rescue before going missing in action."
+        ),
+    )
+    csar_ai_recovery_turns: int = bounded_int_option(
+        "Turns a rescued AI pilot recovers",
+        CAMPAIGN_MANAGEMENT_PAGE,
+        PILOTS_AND_SQUADRONS_SECTION,
+        default=2,
+        min=0,
+        max=10,
+        detail=(
+            "Number of turns a rescued AI pilot is unavailable (recovering) before "
+            "returning to active duty."
+        ),
+    )
+    csar_player_recovery_turns: int = bounded_int_option(
+        "Turns a rescued player pilot recovers",
+        CAMPAIGN_MANAGEMENT_PAGE,
+        PILOTS_AND_SQUADRONS_SECTION,
+        default=1,
+        min=0,
+        max=10,
+        detail=(
+            "Number of turns a rescued human pilot is unavailable (recovering) before "
+            "returning to active duty."
         ),
     )
 
@@ -2610,6 +2719,50 @@ class Settings:
             "from mission start instead of spending the first several minutes taxiing "
             "and climbing. Applies to both coalitions' AI support flights; "
             "player-crewed flights keep the player start type."
+        ),
+    )
+    csar_start_type: StartType = choices_option(
+        "Default start type for CSAR flights",
+        page=MISSION_GENERATOR_PAGE,
+        section=GAMEPLAY_SECTION,
+        choices={v.value: v for v in StartType},
+        default=StartType.WARM,
+        detail=(
+            "Start type for combat search and rescue flights, overriding the AI "
+            "and player defaults above."
+        ),
+    )
+    csar_hover_extraction: bool = boolean_option(
+        "CSAR hover extraction",
+        MISSION_GENERATOR_PAGE,
+        GAMEPLAY_SECTION,
+        default=True,
+        detail=(
+            "Controls how an AI rescue helicopter recovers a downed pilot.\n\n"
+            "Unchecked: the helicopter lands and the pilot walks aboard.\n\n"
+            "Checked (default): the helicopter holds a low hover over the pickup and the "
+            "pilot is extracted by script, as though hoisted."
+        ),
+    )
+    csar_rescue_ai_pilots: bool = boolean_option(
+        "CSAR rescues AI-controlled downed pilots",
+        MISSION_GENERATOR_PAGE,
+        GAMEPLAY_SECTION,
+        default=True,
+        detail=(
+            "If set, Ops.CSAR will register AI downed pilots in the mission for "
+            "player flights, not only player-flown ejections."
+        ),
+    )
+    csar_require_open_doors: bool = boolean_option(
+        "Require cabin door open",
+        MISSION_GENERATOR_PAGE,
+        GAMEPLAY_SECTION,
+        default=False,
+        detail=(
+            "If set, a survivor will not climb aboard a player's helicopter until "
+            "its cabin door is open, and will not get out again until it is opened."
+            "Player Flights Only"
         ),
     )
     default_player_laser_code: DefaultPlayerLaserCode = choices_option(
@@ -3554,6 +3707,30 @@ class Settings:
     # Settings so new campaigns are never re-migrated; only legacy saves that lack
     # the marker get the one-time flip.
     applied_recon_plugins_default: bool = True
+
+    def start_type_for(self, flight_type: "FlightType", has_players: bool) -> StartType:
+        """The start type a newly planned flight of this kind should default to.
+
+        The single source of this decision. It is applied from the auto-planner
+        (PackageBuilder.plan_flight) and from both places the UI recomputes a
+        default (QFlightCreator and QFlightStartType), so a task with its own
+        start type behaves the same however the flight came to exist.
+
+        Callers must still let a base that dictates its own start type win --
+        carriers and off-map spawns -- via
+        ControlPoint.required_aircraft_start_type.
+        """
+        from ..ato.flighttype import FlightType
+
+        if flight_type is FlightType.CSAR:
+            # A downed pilot is on a timer, so the rescue is usually worth
+            # launching sooner than the rest of the ATO. Overrides both defaults
+            # below, players included: the setting exists precisely so CSAR does
+            # not have to inherit them.
+            return self.csar_start_type
+        if has_players:
+            return self.default_start_type_client
+        return self.default_start_type
 
     @staticmethod
     def plugin_settings_key(identifier: str) -> str:

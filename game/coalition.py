@@ -28,6 +28,7 @@ if TYPE_CHECKING:
     from .game import Game
     from .lasercodes import LaserCodeRegistry
     from .sim import GameUpdateEvents
+    from .squadrons.downedpilot import DownedPilot
 
 
 class Coalition:
@@ -45,16 +46,15 @@ class Coalition:
         self.air_wing = AirWing(player, game, self.faction)
         self.armed_forces = ArmedForces(self.faction)
         self.transfers = PendingTransfers(game, player)
+        #: Pilots shot down/ejected and awaiting CSAR rescue on the map. Persisted
+        #: with the save so CSAR is a campaign-persistent mission type.
+        self.downed_pilots: list[DownedPilot] = []
         # SCAR campaign engine: True once this coalition captured an enemy
         # commander, which permanently reveals the enemy's command posts (gated by
         # the scar_command_post_intel setting). The capture economy that SET this
         # was removed 2026-07-01; the flag is kept (persisted) so old saves keep
         # their reveal, and the command-post fog still reads it.
         self.captured_commander = False
-        # Pilots captured by the Combat SAR enemy snatch party (the capture
-        # race), held as POWs at an enemy field for a few turns: freed if the
-        # field falls, killed when the clock expires, draining will meanwhile.
-        # Persisted; aged each turn.
         # Money the automated HQ spent per category last turn (front_line,
         # runways, buildings, ground_objects, aircraft). Surfaced in the
         # Finances dialog so the player sees where their income went.
@@ -148,6 +148,10 @@ class Coalition:
             else:
                 state["player"] = Player.RED
 
+        # CSAR postdates the oldest saves.
+        if "downed_pilots" not in state:
+            state["downed_pilots"] = []
+
         # Migration: older saves predate the SCAR commander-capture flag.
         state.setdefault("captured_commander", False)
         # Migration: the SOF capture economy was removed 2026-07-01. Old saves may
@@ -196,6 +200,11 @@ class Coalition:
         For more information on turn finalization in general, see the documentation for
         `Game.finish_turn`.
         """
+        # Age downed pilots (sending expired ones MIA) before the air wing's own
+        # turn end, which advances recovering pilots and replenishes losses.
+        from game.squadrons.csarservice import CsarService
+
+        CsarService(self.game).advance_turn_for(self)
         self.air_wing.end_turn()
         self.budget += Income(self.game, self.player).total
 

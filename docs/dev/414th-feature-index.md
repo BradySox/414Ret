@@ -14,7 +14,7 @@ pass checklist `§N` is unregistered, or this table drifts.
 | --- | --- | --- | --- |
 | §1 | QRA intercept reserve | `intercept` | — |
 | §2 | JAMMING flight type | `c130j` | — |
-| §3 | TARPS recon + BDA fog-of-war | — | `recon_intel_fog`, `concealed_enemy_forces` |
+| §3 | TARPS recon + BDA fog-of-war | — | `recon_intel_fog`, `concealed_enemy_forces`, `scar_command_post_intel` |
 | §4 | UI transparency | — | — |
 | §5 | Player target location precision | — | — |
 | §6 | Air-defense planning rework | — | — |
@@ -26,13 +26,13 @@ pass checklist `§N` is unregistered, or this table drifts.
 | §12 | Recon engine (TARPS + drone BDA) | `recon` | — |
 | §13 | Flight Control ATC _(retired)_ | — | — |
 | §14 | Plugin Options UI | — | — |
-| §15 | SCAR — RESCAP "Sandy" rescue escort | `combatsar` | `scar_command_post_intel` |
+| §15 | SCAR — RESCAP "Sandy" rescue escort _(retired)_ | — | — |
 | §16 | Settings QOL audit | — | — |
 | §17 | Auto-planner target unpredictability | — | `ownfor_planner_unpredictability`, `opfor_planner_unpredictability` |
 | §18 | Fog-of-war overview toggle | — | — |
 | §19 | Unified map layers panel | — | — |
 | §20 | Drop-spawn: map right-click unit placement _(retired)_ | — | — |
-| §21 | Combat SAR | `combatsar` | `auto_combat_sar`, `combat_sar_persistent_pilots`, `combat_sar_surge` |
+| §21 | Combat SAR (fork implementation) _(retired)_ | — | — |
 | §22 | Kneeboard space-utilisation + custom import | — | — |
 | §23 | Per-squadron DCS country | — | — |
 | §24 | Date-gated aircraft properties | — | `restrict_props_by_date` |
@@ -62,7 +62,7 @@ pass checklist `§N` is unregistered, or this table drifts.
 | §48 | Commitment ceiling (will-coupled war budget) _(retired)_ | — | — |
 | §49 | Mobile missile relocation (the SCUD hunt) | `mobilemissiles` | `mobile_missile_relocation`, `coastal_missile_relocation` |
 | §50 | Convoy ambush (a chance, never telegraphed) + ambient supply convoys | — | `convoy_ambush`, `ambient_supply_convoys` |
-| §51 | Enemy comms jamming (IADS comms nodes) | `commsjam` | `enemy_comms_jamming`, `comms_jam_requires_capture` |
+| §51 | Enemy comms jamming (IADS comms nodes) | `commsjam` | `enemy_comms_jamming` |
 | §52 | Command-center decapitation degrades enemy planning | — | `c2_decapitation_effects` |
 | §53 | War economy _(retired)_ | — | — |
 | §54 | Munitions availability _(retired)_ | — | — |

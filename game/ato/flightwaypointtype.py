@@ -57,3 +57,11 @@ class FlightWaypointType(IntEnum):
         36  # Ingress photo-recon overflight (TARPS) - carries no attack tasks
     )
     SEAD_LOITER = 37  # AI plain-SEAD standoff loiter anchor (carries a bounded orbit)
+    # Upstream dcs-retribution#929 numbers these 36/37. Renumbered here because 36/37
+    # are already persisted in this fork's saves and the docstring above makes value
+    # stability the rule; #929 is unmerged, so its values have no saves to preserve.
+    # A collision would NOT be caught by persistency.py's unknown-value shim -- it
+    # degrades unknown values to NAV, but a colliding value is a valid one and would
+    # silently load a recon waypoint as a CSAR ingress.
+    INGRESS_CSAR = 38  # Ingress to a CSAR pickup
+    CSAR_PICKUP = 39  # Downed-pilot pickup point for CSAR

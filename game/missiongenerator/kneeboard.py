@@ -58,6 +58,7 @@ from game.theater.theatergroundobject import EwrGroundObject, SamGroundObject
 from game.utils import Distance, Speed, UnitSystem, inches_hg, meters, mps, pounds
 from game.weather.weather import Weather
 from .aircraft.flightdata import FlightData
+from .csarbeacon import sar_beacon_brief
 from .briefinggenerator import CommInfo, JtacInfo, MissionInfoGenerator
 from .commsjamluadata import JAM_BACKUP_COMM_NAME
 from .kneeboard_page import KneeboardPage, save_kneeboard_image
@@ -3010,17 +3011,20 @@ class KneeboardGenerator(MissionInfoGenerator):
             lines.append(f"LOADOUT  {loadout}")
 
         # Rescue assets on this mission + the if-down drill.
+        # The survivor beacon channel leads, because it is the one thing the crew
+        # must dial in BEFORE they need it: an ejected pilot's radio keys this
+        # frequency automatically, and every rescue airframe homes it on ADF
+        # (C-130J ADF-462, UH-1H ARN-83, Mi-8 ARK-9). See csarbeacon.py.
         sar_bits = " · ".join(
-            f"{role} {airframe}" for role, airframe in self._brief_sar(flight)
+            [sar_beacon_brief()]
+            + [f"{role} {airframe}" for role, airframe in self._brief_sar(flight)]
         )
         if_down = (
-            "If down: beacon on, squawk 7700, voice on GUARD — evade toward "
-            "friendly lines (capture risk climbs with depth); rescue tracks "
-            "your last known position"
+            "If down: your beacon keys automatically — squawk 7700, voice on "
+            "GUARD, stay put and stay hidden. Rescue homes the beacon; you go "
+            "MIA if nobody reaches you in time"
         )
-        lines.append(
-            f"SAR      {sar_bits} — {if_down}" if sar_bits else f"SAR      {if_down}"
-        )
+        lines.append(f"SAR      {sar_bits} — {if_down}")
 
         return lines
 
@@ -3111,9 +3115,16 @@ class KneeboardGenerator(MissionInfoGenerator):
 
         The value is the aircraft type -- what to look for -- not a callsign.
         """
-        # TODO(reconcile): re-point at FlightType.CSAR once PR929 lands. Until then
-        # there is no rescue flight type, so the SAR line carries the drill alone.
-        return []
+        rescue: List[str] = []
+        for other in self.flights:
+            if other.friendly is not flight.friendly:
+                continue
+            if other.flight_type is not FlightType.CSAR:
+                continue
+            airframe = other.aircraft_type.variant_id
+            if airframe not in rescue:
+                rescue.append(airframe)
+        return [("Rescue", airframe) for airframe in rescue]
 
     def _to_kneeboard_time(
         self, time: Optional[datetime.datetime], utc: bool

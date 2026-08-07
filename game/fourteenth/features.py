@@ -542,20 +542,27 @@ FEATURES: tuple[Feature, ...] = (
     Feature(
         # §72 deck dressing (game/data/carrier_deck_decor.py +
         # game/missiongenerator/carrierdeckdecor.py): ship-linked static deck
-        # gear + LSO crew from the OCN 2 campaign replayed onto Nimitz-family
+        # gear + LSO crew from campaign A replayed onto Nimitz-family
         # carriers, curated so every parking spawn spot, catapult and the
-        # landing area stay usable; six street variants rotate per turn. The
-        # default-OFF second toggle adds the LAUNCH-PHASE corridor set
-        # (round-down E-2C + the port junk row), which the deckdecor plugin
-        # strikes below before recovery. No permanent static aircraft --
-        # late activations spawn INTO statics on spots (flown 2026-07-18).
+        # landing area stay usable; ten street variants rotate per turn (the
+        # campaign A mining was completed 2026-08-07). The default-OFF second toggle
+        # adds the LAUNCH-PHASE corridor set (round-down E-2C), which the
+        # deckdecor plugin strikes below before recovery. The default-OFF third
+        # toggle is its mirror: a RECOVERY-PHASE forward-deck set the plugin
+        # SPAWNS on the same trigger (MOOSE SPAWNSTATIC, linked to the hull),
+        # so the bow is dressed only once launches are over. That tier is the
+        # least-evidenced in the feature -- KNOWN_PARKING_SPOTS holds 11 of the
+        # Supercarrier guide's 16 spots and the missing five are the bow-edge
+        # ones nearest it. No permanent static aircraft -- late activations
+        # spawn INTO statics on spots (flown 2026-07-18).
         "carrier_deck_decorations",
-        "Carrier deck decorations (OCN 2 deck dressing)",
+        "Carrier deck decorations (campaign A deck dressing)",
         72,
         plugin_id="deckdecor",
         settings_fields=(
             "carrier_deck_decorations",
             "carrier_deck_decorations_aircraft",
+            "carrier_deck_decorations_recovery",
         ),
     ),
     Feature(

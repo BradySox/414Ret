@@ -1,7 +1,7 @@
 ---------------------------------------------------------------------------------------------------
 -- Carrier deck dressing -- the dynamic respot (feature 72's runtime half).
 --
--- The aircraft tier may place deck statics that stand INSIDE the recovery corridor -- OCN's
+-- The aircraft tier may place deck statics that stand INSIDE the recovery corridor -- campaign A's
 -- round-down E-2C -- because they only exist while the deck is a launch deck. Statics cannot
 -- drive (no AI controller), so "moving" one means striking it below: this script despawns each
 -- boat's launch-phase statics (StaticObject:destroy, silent -- the elevator ride, narratively)
@@ -23,9 +23,19 @@
 -- (the boat steams into wind on that course all mission), so no runtime orientation API is
 -- needed: the astern bearing is BRC + 180.
 --
--- Despawn ONLY -- no spawns, no gameplay-model change, nothing persisted; a dead/absent static
--- name is skipped silently (culled, or already destroyed). pcall-guarded tick so a hiccup never
--- takes the mission down. Definition order matters (Lua 5.1): helpers precede use.
+-- Despawn, plus ONE sanctioned spawn. This script was despawn-only by design until 2026-08-07;
+-- the recovery-phase tier broke that deliberately, on an explicit call, because the carrier
+-- case is the one place the rule cannot hold: gear ranged forward for recovery must NOT be on
+-- the bow during the launch cycle, so it cannot be generated into the miz, and a static that
+-- rides a steaming hull cannot be faked any other way. The exception is scoped -- one one-shot
+-- spawn per boat, on the same trigger as the strike-below, pcall-guarded, skipped entirely
+-- when MOOSE is absent -- and the despawn half runs regardless. Do not widen it: a second
+-- spawn caller would make this a spawner, which is a different kind of script with a different
+-- failure surface.
+--
+-- No gameplay-model change, nothing persisted; a dead/absent static name is skipped silently
+-- (culled, or already destroyed). pcall-guarded tick so a hiccup never takes the mission down.
+-- Definition order matters (Lua 5.1): helpers precede use.
 ---------------------------------------------------------------------------------------------------
 
 if not (dcsRetribution and dcsRetribution.deckDecor and dcsRetribution.deckDecor.boats) then
@@ -107,10 +117,32 @@ local boats = {}
 for i = 1, #boatsData do
     local b = boatsData[i]
     local brc = tonumber(b.brc) or 0
+    -- Recovery-phase placements arrive as emitted strings (the Lua bridge
+    -- writes every scalar as one); normalise once here so the spawn path can
+    -- do arithmetic. A malformed row is dropped, not defaulted to 0/0 -- that
+    -- would put deck gear on the ship's own origin.
+    local recoverySpawns = {}
+    for j = 1, #(b.recoverySpawns or {}) do
+        local r = b.recoverySpawns[j]
+        local rx, ry, ra = tonumber(r.x), tonumber(r.y), tonumber(r.angle)
+        if rx and ry and ra and r.type and r.category then
+            table.insert(recoverySpawns, {
+                type = tostring(r.type),
+                category = tostring(r.category),
+                shape = r.shape and tostring(r.shape) or nil,
+                x = rx,
+                y = ry,
+                angle = ra,
+            })
+        end
+    end
     table.insert(boats, {
         group = tostring(b.group or ""),
         unit = tostring(b.unit or ""),
         side = tonumber(b.side) or 2,
+        brc = brc,
+        recoverySpawns = recoverySpawns,
+        spawnedRecovery = false,
         -- Unit astern vector in map coords (x = north, z = east): the reciprocal
         -- of the BRC the boat steams all mission.
         sternX = -math.cos(math.rad(brc)),
@@ -156,6 +188,60 @@ local function boatUnit(boat)
     return nil
 end
 
+-- Recovery-phase respot: the mirror of striking the launch set below. These
+-- placements are deliberately absent from the mission file -- the bow has to
+-- be a launch deck until launches are over -- so they are SPAWNED here, on the
+-- same trigger, linked to the moving hull.
+--
+-- MOOSE's SPAWNSTATIC is the only path that writes the three-level linked
+-- static (linkUnit + linkOffset + offsets{x,y,angle}) at runtime; a plain
+-- coalition.addStaticObject would drop the gear at a world point and the boat
+-- would steam out from under it. Absent MOOSE, this no-ops and the strike-below
+-- half still runs -- the recovery tier is cosmetic and must never be able to
+-- take the rest of the script down with it.
+local function spawnRecovery(boat)
+    if boat.spawnedRecovery or not boat.recoverySpawns or #boat.recoverySpawns == 0 then
+        return 0
+    end
+    boat.spawnedRecovery = true
+    if not (SPAWNSTATIC and UNIT and COORDINATE) then
+        log(boat.unit .. ": MOOSE absent, recovery-phase dressing skipped")
+        return 0
+    end
+    local dcsUnit = boatUnit(boat)
+    local mooseUnit = UNIT:FindByName(boat.unit)
+    if not (dcsUnit and mooseUnit) then
+        return 0
+    end
+    local countryId = dcsUnit:getCountry()
+    local p = dcsUnit:getPoint()
+    local n = 0
+    for i = 1, #boat.recoverySpawns do
+        local it = boat.recoverySpawns[i]
+        local ok = pcall(function()
+            local sp = SPAWNSTATIC:NewFromType(it.type, it.category, countryId)
+            if it.shape then
+                sp:InitShape(it.shape)
+            end
+            -- Offsets are the ship-frame placement; DCS re-derives the world
+            -- position every frame, so the coordinate below is only a t=0
+            -- fallback. Heading likewise: BRC is the course the boat steams
+            -- all mission, so BRC + the authored facing reads correctly.
+            sp:InitLinkToUnit(mooseUnit, it.x, it.y, it.angle)
+            sp:SpawnFromCoordinate(
+                COORDINATE:New(p.x, p.y, p.z),
+                (boat.brc + it.angle) % 360,
+                boat.unit .. " recovery decor " .. string.format("%02d", i)
+            )
+        end)
+        if ok then
+            n = n + 1
+        end
+    end
+    log(boat.unit .. ": spawned " .. n .. " recovery-phase static(s) forward")
+    return n
+end
+
 local function clearBoat(boat, why)
     boat.cleared = true
     local n = 0
@@ -166,6 +252,7 @@ local function clearBoat(boat, why)
             n = n + 1
         end
     end
+    spawnRecovery(boat)
     log(boat.unit .. ": struck " .. n .. " launch-phase static(s) below (" .. why .. ")")
     if SHOW_CUE and n > 0 then
         trigger.action.outTextForCoalition(

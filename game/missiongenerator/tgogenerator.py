@@ -1073,22 +1073,24 @@ class GenericCarrierGenerator(GroundObjectGenerator):
                 )
                 if self.game.settings.carrier_deck_decorations:
                     deck_brc = brc or Heading.from_degrees(0)
-                    clear_names = generate_carrier_deck_decorations(
+                    decor = generate_carrier_deck_decorations(
                         self.m,
                         self.country,
                         ship_group,
                         deck_brc,
                         self.game.turn,
                         self.game.settings.carrier_deck_decorations_aircraft,
+                        self.game.settings.carrier_deck_decorations_recovery,
                     )
-                    if clear_names:
+                    if decor.clear_names or decor.recovery_specs:
                         self.mission_data.deck_decor.append(
                             DeckDecorInfo(
                                 ship_group_name=str(ship_group.name),
                                 carrier_unit_name=str(ship_group.units[0].name),
                                 blue=self.control_point.captured.is_blue,
                                 brc_degrees=deck_brc.degrees,
-                                clear_names=clear_names,
+                                clear_names=decor.clear_names,
+                                recovery_specs=decor.recovery_specs,
                             )
                         )
 

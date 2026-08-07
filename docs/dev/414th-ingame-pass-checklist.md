@@ -53,6 +53,31 @@ so the two docs don't drift.
 
 ---
 
+> **CSAR rows (added 2026-08-07).** The fork's own §21/§15 CSAR was deleted and upstream
+> dcs-retribution#929 adopted in its place (merged as 414Ret#805). The rows below are that
+> feature's ENTIRE in-game coverage — it has ~139 passing unit tests and **zero flown
+> observation**. The old §21 rows (G8–G13, G20–G23, G28, G29, G31, H3) were voided with the
+> code they described.
+>
+> **Two shipped defects were already found and fixed while writing these rows** — both by
+> reading, neither by flying, and both now guarded by tests: the survivor beacon transmitted
+> `l10n/DEFAULT/beacon.ogg`, a file that **exists nowhere in the tree** and that nothing packed
+> into the .miz (`tests/test_plugin_resource_files.py`); and the CSAR pickup waypoint briefed a
+> 100 ft hover against MOOSE's 20 m winch ceiling, so a player flying the waypoint exactly could
+> never hoist (`tests/missiongenerator/test_csar_hover_altitude.py`). Assume more of this class
+> is present. A row that fails is doing its job.
+>
+> **Setup facts that apply to every row below.** `csar_ejection_chance` defaults to **40**, so
+> most losses produce NO survivor — expect to lose 2–3 aircraft before one appears, and do not
+> read "nothing happened" as a failure until you have. Set it to 100 while testing.
+> `csar_hover_extraction` defaults **ON**, so the *landing* pickup path is NOT what ships by
+> default — turn it off to exercise that half. **Dynamic-slot aircraft are untracked and their
+> pilots can never go MIA**, so always eject from an ordinary ATO jet. The `opscsar` plugin is
+> `defaultValue: true` with `skipUI: true`, so no campaign preseed is needed — but a stored
+> `plugin.opscsar = false` in a personal settings blob would kill it with no UI to reveal it.
+
+---
+
 ## A. Air-to-air / QRA
 
 ### A1 — QRA air-spawn profile · §1 · ☑ VERIFIED (2026-06-24, Tacview)
@@ -597,6 +622,26 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
 - **Fail signature:** the badge invisible or illegible in one of the themes (hardcoded colour vs the theme's background — swap it for a token); the advanced link showing "Show 0 advanced options"; a section left visibly empty instead of hiding when filtered out; a feature's knobs **not** greying when its gate is toggled from the Features page (the `SettingsDependencyHub` broadcast regressed — check the control is in `dependency_masters()`); an option appearing on two pages or vanishing entirely (the `_LAYOUT_SPEC` lift dropped it — `test_every_field_survives_the_features_page_move` should have caught this, so suspect a field added since); or the New Game wizard failing to badge anything (the wizard calls `record_campaign_preseeds` — a campaign with no `settings:` block correctly badges nothing).
 
 ---
+
+### B49 — A CSAR package actually reaches the ATO after a real ejection · CSAR · ☐ UNTESTED (adopted 2026-08-07; the target finder, the per-side cap, the reachability skip and the package build are unit-tested in `tests/test_csar.py`. Whether the commander frags one in a real campaign turn is app-level)
+- **What CI cannot exercise:** the end-to-end planning arc — a survivor exists at turn start, the commander notices, and a CSAR package appears in the ATO with a sane airframe, route and TOT. **This is the cheapest possible check on the whole adoption** and should be the first thing anyone does.
+- **Setup:** eject from an ordinary ATO jet, end the mission, pass the turn, open the ATO. **~20 min, no flying.**
+- **Pass:** a CSAR package exists, tasked at the survivor, crewed by a helo, with a route that reaches it and returns; `max_csar_flights` (2) is respected with several survivors down.
+- **Fail signature:** no package at all with a survivor clearly on the map — walk the gates in order rather than guessing: is `csar_enabled` on for that side, does the wing field a CSAR-capable helo squadron, is the survivor reachable at all. The old §21 surge row (G31) went four weeks unfalsifiable precisely because it had five silent early-returns and nobody knew which had fired; if this row fails, **say which gate**, and if the code cannot tell you, that is itself the finding.
+
+### B50 — The auto-planner never picks the King for a rescue · CSAR · ☐ UNTESTED (`tests/test_csar_king_priority.py` pins the C-130J at the lowest CSAR priority in the live fleet — 27 airframes qualify and the floor is the Mi-24V at 10, so the King sits at 5. Whether the planner honours that in a real ATO is app-level)
+- **What it is:** upstream restricts CSAR to helicopters because the DCS AI `Land` task is helicopter-only — an AI fixed-wing rescuer just orbits the survivor. The fork overrides that for the C-130J so the King can be **player-flown**, and pins it at priority 5 so the planner always reaches for a helo first.
+- **What CI cannot exercise:** the actual pick, in a wing that fields both a King and rescue helos.
+- **Setup:** a campaign whose wing has both a C-130J-30 squadron and at least one rescue-helo squadron. Create a survivor, pass the turn, read the ATO. ~20 min, no flying.
+- **Pass:** the CSAR package is crewed by a helo. The King is never auto-fragged for CSAR while any helo is available.
+- **Fail signature:** an AI King fragged for the rescue — it will fly to the survivor, orbit, and never pick anyone up, so the rescue silently fails and the pilot goes MIA. If this happens, the priority is being ignored rather than misread, because the test proves the number is right.
+
+### B51 — The rescue package is not planned into threat it cannot survive · CSAR · ☐ UNTESTED (the SAM-avoidance gate is unit-tested; whether the resulting route is actually survivable is a flown judgement)
+- **What CI cannot exercise:** a helo at 130 kt routed near a live SAM or across a contested front dies before it arrives, and the campaign quietly loses both the survivor and the rescue crew. Upstream claims it will not send helos into a live SAM ring; nobody has watched it choose.
+- **Setup:** create a survivor **behind the lines**, inside or near a live red SAM ring. Pass the turn and read the planned route on the map; then fly or spectate the package. ~45 min.
+- **Pass:** either no package is planned (correctly refusing an unreachable pilot), or the route avoids the threat rings and the helo survives to the survivor.
+- **Fail signature:** a package routed straight through a MERAD/LORAD ring; a helo shot down en route, which per the cascade below manufactures **more** survivors than it rescues.
+
 
 ## C. Support flights
 
@@ -1962,6 +2007,44 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
 
 ---
 
+### G33 — Survivor ADF beacon: the pinned 260 kHz drives a real needle · CSAR (upstream #929 + 414th pin) · ☐ UNTESTED (adopted 2026-08-07. `tests/missiongenerator/test_csarbeacon.py` pins 260 kHz to MOOSE's 10 kHz grid, inside its 200–999 kHz band, clear of every navaid `UTILS.GenerateVHFrequencies` skips, and receivable by all three ADF sets; `tests/test_plugin_resource_files.py` proves the tone ships. Whether DCS produces a carrier a needle can home is cockpit-only)
+- **What it is:** MOOSE `Ops.CSAR` beacons each survivor with a looped `trigger.action.radioTransmission` in the NDB band. Stock MOOSE draws a **random** channel per survivor, which cannot be briefed because the kneeboard renders before the mission runs — so the fork pins one channel for the whole mission (`game/missiongenerator/csarbeacon.py` → `luagenerator` emits `beaconHz` → `OpsCSAR.lua` substitutes it for the random draw) and the kneeboard SAR line carries it.
+- **What CI cannot exercise:** whether a real ADF needle in a real cockpit swings to the survivor. The fork asserted this from the DCS C-130J manual and the MOOSE source, never from a flight. **This was already broken once:** MOOSE hardcodes `radioSound = "beacon.ogg"` and no such file exists in this repo, so before 2026-08-07 the beacon keyed a filename the mission did not contain. The plugin now ships `csar-beacon.wav` and overrides `radioSound`; this row confirms that fix actually reaches the cockpit.
+- **Setup:** any campaign, `csar_enabled` ON, `csar_ejection_chance` 100. Eject from an ordinary ATO jet over land, end the mission, pass the turn (~15 min). Next mission, slot a **UH-1H** (ARN-83) or **Mi-8MT** (ARK-9), read the beacon channel off the kneeboard SAR line, set the ADF to it in ADF/COMP mode with the audio up, and fly toward the survivor from ~20 NM. ~25 min total.
+- **Pass:** the needle swings to the survivor's bearing from at least 15 NM and tracks the cut as you turn; the swept beacon tone is audible on ADF audio; `dcs.log` carries `Added Radio Beacon 260000 Hertz`; the kneeboard number and the tuned number are the same.
+- **Fail signature:** **the `Added Radio Beacon 260000 Hertz` line is present but the needle is dead and there is no tone** — the audio file is not reaching `l10n/DEFAULT/`; check the generated .miz actually contains `csar-beacon.wav` and that `otherResourceFiles` survived in `resources/plugins/opscsar/plugin.json`. **No `Added Radio Beacon` line at all** — the pin never arrived; check `beaconHz` in the emitted `dcsRetribution.CSAR` table, since `OpsCSAR.lua`'s `tonumber(cfg.beaconHz) or 0` silently reverts to MOOSE's random pool. **A channel that is not 260** — the fallback fired, so every survivor is on a different random channel and the kneeboard is lying. **No `=== CSAR starting` banner** — the plugin never loaded.
+
+### G34 — AI landing pickup: touchdown, embark, and the rescue reported back · CSAR · ☐ UNTESTED (adopted 2026-08-07; the Python halves — the embark task, the pickup waypoint, the landing-zone clear-of-survivor and clear-of-water placement, the rescue crediting and the two-turn recovery — are unit-tested across `tests/test_csar.py`. The DCS side has no harness coverage at all: there is no `tests/lua/test_opscsar_runtime.py`)
+- **What CI cannot exercise:** the native-embark chain runs entirely inside DCS and fires no event. The survivor carries `EmbarkToTransport` in a 300 m zone; the rescue flight's pickup waypoint carries `Embarking`; DCS walks the survivor aboard and deletes the group silently. `OpsCSAR.lua` *infers* the pickup from a landing with a nil `place` plus 20 s on the ground. Whether the AI sets down inside the zone, holds it long enough, and whether the survivor walks at all are DCS behaviours.
+- **Setup:** **`csar_hover_extraction` OFF** — this is not the shipped default, and without turning it off you are testing G35 instead. `csar_ejection_chance` 100. Eject over friendly-side ground near the front, end the mission, pass the turn. Next turn the planner frags a CSAR helo; fly any slot in the package or start-and-quit and read the log. ~45 min.
+- **Pass:** `dcs.log` carries, in order, `has landed to collect <uuid>`, then `lifted from the pickup after Ns` with N ≥ 20, then `Pilot <uuid> embarked on <helo>`. Blue smoke is visible at the survivor while the helo is in the zone. After the turn passes the pilot is in the roster **Recovering**, not MIA.
+- **Fail signature:** `still reports as present 420s after <helo> reached the embark zone` — the helo arrived but the embark never fired; the touchdown fell outside the 300 m `EMBARK_ZONE_RADIUS`, or the `Embarking`/`EmbarkToTransport` pair did not pair. **No `has landed to collect` line despite a helo visibly on the ground** — the `S_EVENT_LAND` carried a non-nil `place`, i.e. DCS classed the LZ as an airfield/FARP. **`too brief to have loaded anyone`** — the AI is not holding the LZ; the `Embarking` task's hold is the real fault, not the 20 s constant. In all three the pilot goes MIA despite a helo having reached him.
+
+### G35 — AI hover hoist completes and releases the flight, including over water · CSAR · ☐ UNTESTED (adopted 2026-08-07 — **this is the shipped default**, `csar_hover_extraction` defaults ON. The hover geometry and the water branch are unit-tested in `tests/test_csar.py`; a DCS AI helo holding a zero-speed circle is not modellable headless)
+- **What CI cannot exercise:** under hover extraction there is no native mechanic — the plugin runs the whole pickup. It pushes a DCS Orbit/Circle at speed 0 and `surface + hover_altitude`, destroys the survivor after 30 s, then pops the task so the flight resumes its route. Whether a DCS AI helo holds a zero-speed circle at all, holds it stably for 30 s, and resumes cleanly on `popTask` is DCS-only. Over water the reference surface is the sea, not the seabed — a wrong reference puts the helo underwater or hundreds of feet high.
+- **Setup:** defaults (hover ON), `csar_ejection_chance` 100. Run it **twice**: once with the survivor on land, once ditched over open water ≥ 5 NM offshore. ~40 min for both.
+- **Pass:** `dcs.log` shows the hover start, the hoist 30 s later, and the flight resuming its route to a friendly field; the helo visibly holds a stable hover over the survivor at roughly the briefed height; over water the helo hovers just above the surface, not at altitude and not in it.
+- **Fail signature:** the helo arrives and **orbits forever without hoisting** — the hover task was rejected or the 30 s timer never armed; the flight never RTBs and the mission ends with the survivor still down. The helo **hovers at a wildly wrong height over water** — the surface reference resolved to the seabed. The helo hoists but then **flies its original route as if nothing happened**, never delivering — `popTask` restored the wrong task. A hung hover also burns the airframe: it will run itself out of fuel.
+
+### G36 — Player rescue end to end: F10 menu, the hoist at the briefed height, delivery, roster · CSAR · ☐ UNTESTED (adopted 2026-08-07; **this is the only path a human actually flies**, and it is gated by MOOSE's own winch logic rather than the fork's script. `tests/missiongenerator/test_csar_hover_altitude.py` guards the altitude contract)
+- **What CI cannot exercise:** the whole player experience — the F10 menu appearing on the right group, "List Active CSAR" (this adoption's LARS) reading correctly, the winch actually starting, the survivor riding home, and the rescue crediting when you land.
+- **Setup:** with a survivor down, slot a CSAR-capable helo yourself. Read the SAR line, tune the beacon, fly to the survivor, **hover at the briefed altitude the pickup waypoint gives you**, hold it, then fly home and land at a friendly field. ~50 min.
+- **Pass:** the F10 "CSAR" menu is present with List Active CSAR / Check Onboard / Request Signal Flare / Request Smoke / Request IR Strobe; the list names the live survivor with a plausible bearing and range; hovering at the briefed height starts the winch within ~10 s and the survivor boards; Check Onboard confirms him; landing at a friendly field credits the rescue and the roster shows him Recovering next turn.
+- **Fail signature:** **you hover exactly as briefed and the winch never starts.** This was a real shipped defect — the waypoint briefed 100 ft against MOOSE's 20 m ceiling, so a crew flying the mission correctly could not hoist, with no cockpit message at all. It is fixed (50 ft), but the failure mode is silent, so if the winch does not start, **descend and see if it starts lower** before concluding anything else: that immediately distinguishes an altitude-contract regression from a genuine plugin fault. Other shapes: no F10 menu at all (the client group never registered — MOOSE registers on the group's first unit, so check you are in the lead slot); the survivor boards but landing credits nothing (the delivery detection missed the field).
+
+### G37 — Multiplayer: a non-lead client can run the rescue · CSAR · ☐ UNTESTED (**nobody has looked at this at all** — the adoption's 139 tests are all single-player-shaped, and this is a squadron fork whose events are crewed by several humans)
+- **What CI cannot exercise:** MOOSE registers the CSAR F10 menu against a group's **first alive unit**. In a multi-crew squadron event the rescue helo may be flown by a client who is not that unit, and a second client may join a slot mid-mission. Whether the menu appears for them, whether the survivor boards *their* aircraft, and whether the rescue credits to the campaign are all untested and all plausible failure points.
+- **Setup:** a two-client MP session on a generated mission with a live survivor. Client A takes the helo's lead slot, client B a second seat or a second helo. Have **B** attempt the rescue. Also have a client join the helo slot *after* mission start and check the menu appears for them. ~40 min plus a second person.
+- **Pass:** both clients see the CSAR F10 menu; the survivor boards whichever aircraft actually performed the pickup; the rescue credits once, to the campaign, regardless of who flew it; a late-joining client gets the menu.
+- **Fail signature:** the menu is missing for the non-lead client (the group-first-unit registration); the survivor boards but the rescue never credits (the delivery detection keyed on the wrong unit); the rescue credits **twice**; a late joiner never gets the menu even after respawning.
+
+### G38 — `csar_rescue_ai_pilots` ON spawns a survivor for every AI ejection · CSAR · ☐ UNTESTED (default ON. The Python side only creates a `DownedPilot` for tracked airframes, but MOOSE's own ejection handler is a separate path with its own spawning)
+- **What CI cannot exercise:** with `csar_rescue_ai_pilots` ON, MOOSE's ejection handler runs for **every** AI ejection on both sides, not just the ones the campaign tracks. On a busy mission that is potentially dozens of survivor groups, each with a beacon and a MAYDAY, none of which the campaign knows about. This is exactly the "never spawn phantom units" line the fork holds elsewhere, and nothing has counted them.
+- **Setup:** a mission with a heavy air battle (a large BARCAP engagement or a Vietnam-style furball). Fly or spectate to the end, then count survivor groups in Tacview and grep `dcs.log` for the registration lines. ~30 min.
+- **Pass:** the survivor count is bounded and matches what the campaign tracked; performance is unaffected; no runaway MAYDAY spam on the radio.
+- **Fail signature:** dozens of survivor groups and a wall of MAYDAY calls; a measurable framerate drop late in a heavy mission (the §L TIC lesson — too many ground units); survivors on the map the campaign has no record of, which then vanish at turn end with no explanation.
+
+
 ## H. Kneeboards
 
 ### H1 — Folded-list overflow pagination · §4 · ☑ VERIFIED (2026-06-25)
@@ -2151,6 +2234,13 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
   The current deck shape is checked under **H12**.
 
 ---
+
+### H14 — The kneeboard SAR line is accurate, and the rescue crew gets a usable card · CSAR · ☐ UNTESTED (the beacon number is unit-tested and the SAR line renders; the page fit and the rescue crew's own card are visual)
+- **What CI cannot exercise:** whether the SAR line fits its page on a busy theatre, whether the briefed beacon channel matches what the survivor actually transmits, and what the **CSAR crew's own** kneeboard says — every other kneeboard row is about what the *other* flights are told.
+- **Setup:** generate a mission on a busy campaign with a live survivor and a CSAR package. Read the SAR line on an ordinary striker's card, then read the CSAR flight's own card. ~10 min, no flying.
+- **Pass:** the SAR line fits without overflow and names a beacon channel that matches the one the survivor keys; the CSAR crew's card carries the pickup point and the beacon.
+- **Fail signature:** the SAR line overflows or truncates on a busy page; the briefed channel does not match the transmitted one (the pin fell back to MOOSE's random draw — see G33); the CSAR crew's card carries no beacon at all. **Also worth knowing:** the SAR line is printed on **every** flight's card including dynamic-slot aircraft, whose pilots can never go MIA and can never have a beacon — so a dynamic-slot pilot is briefed a rescue that structurally cannot come. That is a real mismatch, not a rendering bug, and if it bothers the squadron the fix is in the card, not the plugin.
+
 
 ## I. Mission generation
 
@@ -3069,6 +3159,13 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
 
 ---
 
+### O2 — Downed-pilot map overlays: both coalitions, the fog, and the countdown · CSAR · ☐ UNTESTED (adopted 2026-08-07. Upstream ships blue and red overlays; the fork wired them into its own §19 grouped layers panel rather than upstream's inline list, so the integration seam is fork-specific and unflown)
+- **What CI cannot exercise:** whether the markers render at all through the fork's §19 panel, whether the blue and red rows toggle independently, whether the countdown in the tooltip is actionable, and — the interesting one — whether an **enemy** downed pilot is visible to the player at all. The fork runs a viewer-aware fog layer (§3) that hides enemy assets; upstream's CSAR predates any knowledge of it, so a red survivor may simply bypass the fog and hand the player free intel about where enemy aircraft went down.
+- **Setup:** a campaign with survivors on **both** sides (`csar_enabled_red` defaults ON). Open the map, find the layers panel, toggle both downed-pilot rows, hover a marker. ~20 min, no flying.
+- **Pass:** blue survivors render and toggle; red survivors render and toggle independently; the tooltip countdown matches the SITREP and the actual expiry turn; the rows survive a layer-preset switch.
+- **Fail signature:** no markers at all despite survivors existing (the overlay is orphaned — it was, before 2026-08-07, because taking the fork's side of the map conflict left upstream's layer unrendered); the red row missing; the countdown off by one against the SITREP, which makes every rescue-planning decision wrong; enemy survivors visible with fog on, which is a **fog leak** and needs a call on whether it is wanted.
+
+
 ## Q. Planner / payload UI
 
 ### Q2 — Default loadout for an airframe+task, and the payload-tab cleanup · §73 · ☑ VERIFIED (2026-08-05, user app pass `pr-merge-code-audit-7e8b4c` — "Q1 and Q2 are good") (was ☐ UNTESTED, built 2026-07-19; name resolution + the file writer/remover are fully unit-tested, the buttons and the read-the-screen changes are Qt UI)
@@ -3455,6 +3552,20 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
 - **Fail signature:** **a launcher scooting into the sea** (the §49 4 km scoot radius is not landmap-checked, and Rota/Tinian are small — this is the highest-value observation on the row); a `missile` TGO spawning empty or with Soviet Scuds (China pack not applied); a heavy squadron spawning inside another aircraft at Andersen (dimensional parking fit, not slot count); Air Assault packages never planned across water; red flying a J-7B (a faction/campaign regression the yaml test should have caught first); the Super Hornet squadrons spawning empty or substituting (CJS pack not installed/ticked) while the legacy F/A-18C squadron still fields normally.
 - **Known and deliberate:** the northern islands (Anatahan, Pagan, Agrihan, Uracus) are `is_in_sea` in the Marianas landmap — a pre-existing terrain-data property inherited from Repartee, which is why no missile site is authored north of Saipan. North West Field stays NEUTRAL (zero runways). Red fields no ambient convoys because no two red bases share an island.
 - **Added 2026-08-03 — the auto-planner fix rides this row.** The first flown turn came out **100% defensive** (33 packages, 28 BARCAP, zero strike/SEAD/DEAD/anti-ship) because BARCAP demand — doubled per fleet CP, and this laydown has four — consumed all 66 fighters, so every offensive package scrubbed for want of its escort; plus the stock 150 NM range gate put the northern half of red out of reach in a 421 NM theatre. Fixed by `MODERN_DOCTRINE.strike_escort_reserve` 0 → 8 (**fork-wide**) plus campaign preseeds `max_mission_range_planes: 400` and `desired_barcap_mission_duration: 60`. Headless-verified BLUE 2 → **25 offensive flights** (74 → 143 aircraft tasked, BARCAP 22 → 14). **Pass:** the turn-1 ATO contains real strike/SEAD/DEAD/anti-ship packages against the PLAN groups and island SAMs, escorted, with CAP still covering both carriers and Andersen. **Fail signature:** an all-BARCAP ATO again (the preseeds did not land — check Settings shows 400 NM and a 60-minute BARCAP station), or the opposite, CAP so thin that red's Badgers reach the boat unopposed. **Watch fork-wide:** the doctrine change touches *every* modern campaign — Baltic Fury and Inherent Resolve should show slightly fewer BARCAP flights and more escorted strikes; Red Tide is Cold War doctrine and must be unchanged.
+
+### T6 — The survival clock leaves exactly one flyable rescue window · CSAR · ☐ UNTESTED (the clock arithmetic is unit-tested; whether the window is long enough to actually fly a rescue is the design question, and only a played campaign answers it)
+- **What it is:** a survivor lasts `csar_survival_turns` (3), or `csar_survival_turns_hostile` (2) behind the lines, then goes MIA for good.
+- **What CI cannot exercise:** whether 2 turns is a real chance or a formality. The old §21 model died on exactly this: a flown session found "after 1.4 h the rescue helos are just getting to the pilots" — a 130 kt helo cannot cross a theatre inside one mission. If the clock expires before any helo can plausibly arrive, the whole feature is decorative and the number needs changing, not the code.
+- **Setup:** create a survivor deep behind the lines. Pass turns and watch the countdown on the map tooltip and the SITREP. Track whether a rescue package is planned, whether it launches, and whether it arrives before the clock runs out. ~60 min across several turns.
+- **Pass:** a hostile-territory survivor is rescuable at least once with a genuine chance of success — a package is planned on the turn after the ejection and reaches him inside the window.
+- **Fail signature:** the clock expires before any package can physically arrive at typical theatre distances (the number is wrong — raise `csar_survival_turns_hostile`, do not patch code); or the countdown shown to the player is off by one against the actual expiry, which makes every planning decision wrong.
+
+### T7 — The rescue cascade: a failed rescue makes more survivors than it saves · CSAR · ☐ UNTESTED (nobody has modelled this; it is an emergent property of the feature, not a coded behaviour)
+- **What CI cannot exercise:** a rescue helo shot down near the front produces **its own** downed pilots, which the planner then tries to rescue, which sends more helos. On paper that is a runaway. Whether it actually spirals — or self-limits on `max_csar_flights` (2) and the survival clock — can only be seen in a played campaign.
+- **Setup:** a campaign with an active, contested front and CSAR on for both sides. Play 4–6 turns without micromanaging rescues. Track the downed-pilot count per turn. ~45 min on top of normal play.
+- **Pass:** the survivor population stays bounded across turns; losing a rescue does not visibly compound; the helo squadrons are not drained by rescue attrition.
+- **Fail signature:** a rising survivor count turn on turn; a rescue-helo squadron ground down to nothing by CSAR losses; the ATO increasingly dominated by rescue packages. If this shows up, the lever is `max_csar_flights` and the reachability gate, not the feature.
+
 
 ## U. Upstream-sync runtime adoptions
 

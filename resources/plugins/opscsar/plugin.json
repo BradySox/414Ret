@@ -10,5 +10,8 @@
             "mnemonic": "opscsar"
         }
     ],
-    "configurationWorkOrders": []
+    "configurationWorkOrders": [],
+    "otherResourceFiles": [
+        "csar-beacon.wav"
+    ]
 }

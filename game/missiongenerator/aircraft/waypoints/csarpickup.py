@@ -26,7 +26,18 @@ HOVER_DURATION_SECONDS = 30
 #: height OpsCSAR.lua adds to the terrain elevation when it pushes the hover. The
 #: script has to do the second part because the DCS Orbit task takes an MSL
 #: altitude and Retribution has no terrain elevation at mission-generation time.
-HOVER_ALTITUDE = feet(100)
+#:
+#: MUST STAY BELOW MOOSE's WINCH CEILING. A PLAYER hoist is gated by MOOSE, not by
+#: this plugin: ``CSAR:_CheckOnboard`` only starts the winch while the helo is within
+#: ``rescuehoverheight`` of the survivor, which defaults to **20 m**
+#: (``Moose.lua`` ``self.rescuehoverheight=20``, tested at ``if _height<=...``).
+#: This was `feet(100)` (30.5 m) on adoption, so the mission briefed a hover the
+#: winch would refuse: a crew flying the waypoint exactly sat 10 m too high and the
+#: hoist never fired, with no message explaining why. 50 ft keeps a clear margin
+#: under the ceiling and is a realistic hoist height besides.
+#: ``tests/missiongenerator/test_csar_hover_altitude.py`` reads the ceiling out of
+#: Moose.lua rather than copying it, so a MOOSE update that lowers it fails CI.
+HOVER_ALTITUDE = feet(50)
 
 
 class CsarPickupBuilder(PydcsWaypointBuilder):

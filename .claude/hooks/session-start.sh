@@ -71,4 +71,24 @@ else
 fi
 echo
 echo "Source: docs/dev/414th-ingame-pass-checklist.md"
-echo "[Claude: present this board to the user near the top of your first reply.]"
+
+# --- WATCH list -------------------------------------------------------------
+# The standing daily-fly list: rows that close from ORDINARY flying if someone
+# is looking. Parsed from the file rather than hardcoded so rotating an item is
+# a one-line edit to WATCH.md and never a hook change. Item headings are the
+# only `### ` lines in that file (the parking lot is a table, its sections are
+# `## `), so this stays correct as the list churns.
+watch="${CLAUDE_PROJECT_DIR:-.}/docs/dev/flycards/WATCH.md"
+if [ -f "$watch" ]; then
+  items="$(grep -E '^### ' "$watch" | sed -e 's/^### //' -e 's/`//g' || true)"
+  if [ -n "$items" ]; then
+    echo
+    echo "=== WATCH — look for these on the next fly ==="
+    printf '%s\n' "$items" | sed 's/^/  /'
+    echo "Source: docs/dev/flycards/WATCH.md (pass/fail detail per item)"
+  fi
+fi
+
+echo "[Claude: present this board to the user near the top of your first reply."
+echo " Re-surface the WATCH list whenever the user is about to fly, generate a"
+echo " turn, or otherwise test — link docs/dev/flycards/WATCH.md.]"

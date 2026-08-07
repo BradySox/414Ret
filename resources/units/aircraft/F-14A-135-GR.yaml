@@ -45,6 +45,12 @@ default_overrides:
 #   TacanBand: 0
 #   TacanChannel: 0
 #   UseLAU138: true
+fuel:
+  taxi: 250
+  climb_ppm: 35
+  cruise_ppm: 13
+  combat_ppm: 16
+  min_safe: 2000
 tasks:
   BAI: 645
   BARCAP: 575

@@ -358,6 +358,44 @@ and the Skynet IADS engine (MANTIS is the sole engine).
 - The 414th's primary "all features" working branch in the dev checkout is
   `414th-all-features`; `main` here = that + the Iran pack + a Black/mypy lint pass.
 
+### DCS Liberation — the grandparent project, still alive (WATCH, established 2026-08-07)
+
+Retribution forked from `dcs-liberation/dcs_liberation`, and **Liberation did not stop** — it is
+actively developed on branch `develop` (792 stars; **15.0.0 released 2026-06-19**, 14.1.0 in
+February, commits landing weekly). Do **not** treat it as an archive of pre-fork history. It is a
+second upstream: a parallel evolution of the same codebase, with no shared PR flow and no
+obligation in either direction. We take from it; we do not carve to it (upstreaming means
+`dcs-retribution/dcs-retribution` — see `main-retribution-means-upstream`).
+
+**The watch:** skim Liberation's release notes when a new version drops (`gh api
+repos/dcs-liberation/dcs_liberation/releases`). Their notes are terse and tagged by area
+(`[Engine]` / `[Campaign]` / `[Data]` / `[UI]`), so a pass costs minutes. Look for **`[Data]`
+first** — data lands cleanly in the fork with no code change and no freeze implications, whereas
+their engine/UI work usually collides with fork features that already solve the same problem.
+
+Adopted so far:
+
+| Date | Taken | Notes |
+|---|---|---|
+| 2026-08-07 | 12 hand-measured aircraft `fuel:` blocks (their 14.1.0 + earlier) | Coverage 22 → 40 aircraft types. Checklist **S7**; features doc §46. |
+
+Checked and **already covered** — do not re-investigate without new evidence: carrier/LHA
+auto-targeting, front-line spawn exclusion zones, weapons-by-date gating, turn-less mode. Their
+auto-purchase model is **behind** ours (they document a fixed 30-unit front-line threshold; we have
+`frontline_reserves_factor` / `reserves_procurement_target`). Genuinely open, not yet pursued:
+campaign-designer control of on-road vs off-road front-line travel (15.0.0 — set on the supply
+route's M-113 waypoints; we hardcode `PointAction.OnRoad` in `convoygenerator.py` +
+`flotgenerator.py`), which would fit the driveable-corridor standard.
+
+**Their docs are worth reading too.** Liberation publishes a Sphinx site at
+https://dcs-liberation.readthedocs.io — and its **source is in our tree**, inherited through the
+fork (`docs/*.rst`, `docs/conf.py`, `.readthedocs.yaml`). Nothing builds it here and it is stale
+(`docs/index.rst` still titles the site "DCS Liberation"; `docs/game/index.rst` is an empty
+toctree), but the content is live: `docs/modding/layouts.rst` is the authoritative writeup of the
+layout system (`layout.miz` + `layout.yaml`, one group per unit type, the `layouts.p` pickle and
+*Developer Tools → Import Layouts*), and `docs/modding/fuel-consumption-measurement.md` is the
+procedure for measuring the ~217 airframes that still have no `fuel:` block.
+
 ### Upstream PR ledger (**refreshed 2026-07-20** — 50 PRs: 20 open / 8 merged / 22 closed. **Late 2026-07-20: the squadron-country surfacing carved as draft #896** — the Discord thread (Starfire's yaml `country:` ask + Toad's under-livery dropdown) answered the same day it ran; the fork's I6 pass flew clean that night ("896 is flown and good") but the draft is **HELD through the PR freeze below** (DM call — #896 was opened the same day the freeze was learned, so it stays a quiet draft until the freeze lifts; un-draft on a fresh explicit call then). **The 2026-07-20 QOL carve wave** (the DM's "ship the objective improvements back" call) opened six more drafts in one session: Dog Ear SHORAD #887, F-14A-Early payload #889, squadron-config guard #890, blue-block markers #891 (the upstream sweep found **465** dropped markers across 9 campaigns — Normandy's authored blue defenses dominate, flagged as a maintainer judgment call in the PR), the #791 refresh #892, and §60 radar redundancy #893 (stacked on #892, rationale attached). **#891 self-closed on review the same day**: Starfire13's density reaction ("352 EWRs in Normandy. Good lord…") plus the real ask — **CJTF block-convention consistency** ("for some objects you can only use one, yet for others both are acceptable"); the fork answered the ask same day (the loader's last single-block classes now chain both blocks — 3 shipped red-block factories resurrected, `test_miz_marker_binding.py`) but the **re-carve was DROPPED 2026-08-05** — the Custom-campaigns wiki's block spec table and upstream's loader already agree on all 19 classes, so there is no bug to carve (inventory item 17). Also learned in that session: **#791 closed with zero comments** (never reviewed — hence the refresh) and **#851 closed on a real objection** (juanjux: HDS Ultimate Compilation is NOT backward-compatible with Auranis HighDigitSAMs 2.1.0, which he runs — the S-300 renames collide; a re-carve must first answer which successor mod upstream standardizes on). **Held re-carve draft prepared 2026-07-20** — [docs/dev/414th-hds-recarve-draft.md](docs/dev/414th-hds-recarve-draft.md) (leads with UC-as-successor + migration note, offers the dual-toggle fallback; gated on the PR freeze lifting AND a fresh post-mod-update export). **Three fork PRs merged upstream 2026-07-19** (#805/#843/#854) and geofffranks' #859 (the §56 motorpool source) landed the same day — all four reconciled back into the fork in the `sync/upstream-dev-2026-07-19` merge. Same day, Wave 3 opened: the Splash Damage defaults PR #880 pushed (item 21, the first last-mile carve), the VWV v3.2.0 update #881 pushed (item 22), the §76 paradrop carve #884 opened (un-drafted late that evening + Starfire13 pinged for review), the **infrastructure pair #882 (Lua plugin harness) + #883 (MIST 51-symbol shim, stacked on #882)** opened as drafts, #828 was rebased — briefly un-drafted, then deliberately re-drafted minutes later (21:36→21:40Z per the PR timeline), so it sits as a draft with the un-draft call open — and the night closed with **two more last-mile carves: the §75 victory-conditions core as draft #885 and the Iran-pack re-carve (the #784 redo) as draft #886**. Still re-verify with `gh` before acting; this goes stale fast.
 
 **Sync 2026-07-26 — upstream dev @ `e9b2387e`** (merge base moved `acf02b75` → `e9b2387e`; fork PR

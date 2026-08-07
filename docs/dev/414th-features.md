@@ -908,6 +908,59 @@ the flight planner's tanker tasking (`formationattack`) and the in-flight fuel s
 using measured data only and gain no new blast radius. A real `fuel:` block always wins. Covered by
 `tests/dcs/test_estimated_fuel_consumption.py`.
 
+*Measured `fuel:` data adopted from DCS Liberation (2026-08-07).* Liberation — which Retribution
+forked from, and which is **still actively developed** (see *Repo & Branch Layout* in `CLAUDE.md`) —
+ships hand-measured blocks for twelve airframes the fork had none for. All twelve were adopted
+verbatim, provenance comments included: **A-10A, A-10C, A-10C_2, A-4E-C, AV8BNA, F-100D,
+F-14A-95-GR, F-14A-135-GR, F-14A-135-GR-Early, F-14B, F-15C, F-4E-45MC**. Measured-data coverage
+went **22 → 40 aircraft types** (the twelve files fan out to 16 variants; the rest is inheritance).
+The estimate these replace overshot the measured cruise burn badly on exactly the airframes the
+squadron flies most:
+
+| Airframe | Estimated cruise | Measured | Error |
+|---|---|---|---|
+| F-14A / F-14B | 31.2 ppm | 13 | +140% |
+| F-15C | 25.9 ppm | 11 | +135% |
+| A-10A / A-10C | 21.3 ppm | 12 | +78% |
+| A-4E-C | 10.5 ppm | 7.7 | +36% |
+| AV-8B | 14.9 ppm | 11 | +35% |
+
+Two consequences, and the second is the one to watch. The kneeboard bingo ladder for those jets was
+reading ~2.4× pessimistic and is now right. But adopting a real block also promotes them out of the
+kneeboard-only fallback and onto measured `unit_type.fuel_consumption`, which **does** drive tanker
+tasking (`formationattack`) and the in-flight fuel sim (`inflight.py`) — the intended design ("a real
+`fuel:` block always wins"), but a genuine behavior expansion for twelve airframes at once. Tracked
+as an in-game-pass row. The F-4E block is the best-sourced of the set — Dash-1 Supplemental Data and
+the Heatblur manual's mission-planning section, with drag index and gross weights in the comments,
+rather than a stopwatch run. `tests/dcs/test_estimated_fuel_consumption.py` pins all 16 variants
+against their cruise values so the data cannot silently regress; the same file's fallback test was
+re-pointed from the A-10C (which now *has* a block) to the MiG-29A.
+
+The remaining ~217 airframes still fall back to the estimate. The measurement procedure for closing
+that gap is already in the tree at `docs/modding/fuel-consumption-measurement.md`. Known estimator
+weakness worth a future pass: it scales off internal capacity alone, so big-tank jets overshoot
+hardest — the Su-27 estimate lands at 39.9 ppm, outside the 10-35 band the fork's own test calls
+reasonable.
+
+*Not every "measured" block is measured (audit, 2026-08-07).* The blocks carry test-condition
+comments — the taxi route, the climb profile, the cruise mach and leg length — precisely so a number
+is reproducible. Auditing them turned up **seven airframes wearing another jet's numbers with the
+donor's comments attached**: the six `VSN_F35*` files carry the F/A-18C's values (`170 / 44.25 /
+22.1 / 27.5 / 2000`) and `Tornado_ADV` carries the F-16C's (`200 / 28.33 / 12 / 26 / 1000`), each
+including a `# Parking A1 to RWY 32 at Akrotiri` / `# Parking 44 to RWY 06L at Anderson AFB` line
+describing a sortie never flown in that aircraft. **This is inherited, not fork-authored** — upstream
+`dcs-retribution/dcs-retribution` `dev` carries the identical blocks and comments, and DCS Liberation
+has no fuel block for either file. The **values are left alone** (they are the only figures anyone
+has, and reverting them to the capacity estimate would be worse); only the comments were rewritten to
+say `NOT MEASURED for this airframe`, name the donor, and point at the measurement procedure. Carve
+candidate for upstream once the PR freeze lifts.
+
+Deliberately **not** touched by that audit: same-family reuse, which is defensible and partly
+Liberation's own choice. `FA-18E`/`FA-18F`/`FA-18ET`/`FA-18FT`/`F_A-18C`/`EA-18G` share the Hornet
+block (Liberation itself ships the Super Hornet and Growler that way), and the `F-16D_*`/`F-16I`
+marks share the F-16C block. The F-35 and the Tornado are different airframes entirely, which is why
+they are the clear-cut cases.
+
 **Compact 3-4 page kneeboard deck — RETIRED (2026-07-05, the back-to-basics rework).** The compact
 folding machinery (`compact_kneeboard`, `_compact_kneeboard_pages`, the `CombatIntelPage`/
 `CommsCoordPage`/`FlexReferencePage` composites, `_draw_section_if_fits`, the adaptive flex page and

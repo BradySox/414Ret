@@ -12,7 +12,7 @@ from typing import Any, ClassVar, Dict, Iterator, Optional, TYPE_CHECKING, Type
 import yaml
 from dcs.helicopters import helicopter_map
 from dcs.planes import plane_map
-from dcs.task import AFAC, AWACS, Reconnaissance, Refueling, Transport
+from dcs.task import AWACS, Reconnaissance, Refueling, Transport
 from dcs.unitpropertydescription import UnitPropertyDescription
 from dcs.unittype import FlyingType
 from dcs.weapons_data import weapon_ids
@@ -335,33 +335,17 @@ class AircraftType(UnitType[Type[FlyingType]]):
                 enrich[FlightType.SEAD_SWEEP] = value
 
         # Strategic bombers (B-1/B-52/Tu-160/...) hold a CAS/BAI priority only for
-        # dropping on *called* coordinates (see the SCAR note below). They must not
-        # inherit the roam-and-self-acquire Armed Recon role -- neither auto-assigned
-        # nor manually selectable -- so skip the CAS->Armed Recon derivation for them
-        # (and strip any value get_task_priorities() already derived, below). They never
-        # author Armed Recon in `tasks:`, so dropping it is safe. Mirrors the SCAR guard.
+        # dropping on *called* coordinates. They must not inherit the
+        # roam-and-self-acquire Armed Recon role -- neither auto-assigned nor manually
+        # selectable -- so skip the CAS->Armed Recon derivation for them (and strip any
+        # value get_task_priorities() already derived, below). They never author Armed
+        # Recon in `tasks:`, so dropping it is safe.
         is_heavy_bomber = self.dcs_unit_type.id in HEAVY_BOMBER_DCS_IDS
         if FlightType.ARMED_RECON not in self.task_priorities and not is_heavy_bomber:
             if (value := self.task_priorities.get(FlightType.CAS)) or (
                 value := self.task_priorities.get(FlightType.BAI)
             ):
                 enrich[FlightType.ARMED_RECON] = value
-
-        # SCAR is the "Sandy" RESCAP escort in the Combat SAR rescue package: a
-        # CAS-capable attack platform that protects the downed pilot, suppresses the
-        # threats around them, and walks the rescue helo (Jolly Green) in. Priority
-        # and loadout are inherited from the CAS family. Fixed-wing must carry the
-        # DCS AFAC task -- this excludes strategic bombers (B-1/B-52/Tu-160), which
-        # hold a CAS priority only for dropping on *called* coordinates. Attack
-        # HELICOPTERS (AH-64, Ka-50, ...) qualify via their CAS capability; transport
-        # helos (CH-47 = the rescue craft itself) have no CAS and are excluded.
-        if FlightType.SCAR not in self.task_priorities:
-            if value := self.task_priorities.get(FlightType.CAS):
-                fixed_wing_afac = (
-                    not self.helicopter and AFAC in self.dcs_unit_type.tasks
-                )
-                if fixed_wing_afac or self.helicopter:
-                    enrich[FlightType.SCAR] = value
 
         if FlightType.RECOVERY not in self.task_priorities:
             if (
@@ -749,7 +733,8 @@ class AircraftType(UnitType[Type[FlyingType]]):
         if prop_overrides is not None:
             cls._set_props_overrides(prop_overrides, aircraft)
 
-        task_priorities = cls.get_task_priorities(data)
+        cabin_size = data.get("cabin_size", 10 if aircraft.helicopter else 0)
+        task_priorities = cls.get_task_priorities(data, aircraft, cabin_size)
         secondary_tasks = frozenset(
             FlightType(t) for t in data.get("secondary_tasks", [])
         )
@@ -789,7 +774,7 @@ class AircraftType(UnitType[Type[FlyingType]]):
             kneeboard_units=units,
             utc_kneeboard=data.get("utc_kneeboard", False),
             unit_class=unit_class,
-            cabin_size=data.get("cabin_size", 10 if aircraft.helicopter else 0),
+            cabin_size=cabin_size,
             can_carry_crates=data.get("can_carry_crates", aircraft.helicopter),
             task_priorities=task_priorities,
             secondary_tasks=secondary_tasks,
@@ -811,7 +796,12 @@ class AircraftType(UnitType[Type[FlyingType]]):
         )
 
     @classmethod
-    def get_task_priorities(cls, data: dict[str, Any]) -> dict[FlightType, int]:
+    def get_task_priorities(
+        cls,
+        data: dict[str, Any],
+        aircraft: Optional[Type[FlyingType]] = None,
+        cabin_size: int = 0,
+    ) -> dict[FlightType, int]:
         task_priorities: dict[FlightType, int] = {}
         for task_name, priority in data.get("tasks", {}).items():
             task_priorities[FlightType(task_name)] = priority
@@ -829,6 +819,25 @@ class AircraftType(UnitType[Type[FlyingType]]):
                 task_priorities[FlightType.ARMED_RECON] = task_priorities[
                     FlightType.BAI
                 ]
+        # Derive CSAR capability. Helicopters only: a CSAR aircraft has to actually
+        # set down at an unprepared pickup site, and fixed-wing transports (the
+        # C-130/Hercules mod included) cannot -- the DCS AI Land task is
+        # helicopter-only, so they just orbit the pilot indefinitely. A positive
+        # cabin size is also required, which skips zero-cabin attack/scout helos
+        # like the OH-58D. An explicit per-aircraft `CSAR:` task entry always wins
+        # over this derivation.
+        if FlightType.CSAR not in task_priorities and cabin_size > 0:
+            if aircraft is not None and aircraft.helicopter:
+                if FlightType.AIR_ASSAULT in task_priorities:
+                    task_priorities[FlightType.CSAR] = task_priorities[
+                        FlightType.AIR_ASSAULT
+                    ]
+                elif FlightType.TRANSPORT in task_priorities:
+                    task_priorities[FlightType.CSAR] = task_priorities[
+                        FlightType.TRANSPORT
+                    ]
+                else:
+                    task_priorities[FlightType.CSAR] = 50
         return task_priorities
 
     @staticmethod

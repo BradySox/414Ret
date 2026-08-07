@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import unique, Enum
+from typing import Any
 
 from faker import Faker
 
@@ -16,19 +17,12 @@ class PilotStatus(Enum):
     Active = "Active"
     OnLeave = "On leave"
     Dead = "Dead"
-    #: Captured by an enemy snatch party after ejecting (the §15/§21 Combat SAR
-    #: capture race). Held alive as a POW (``PendingPowRecovery`` on the losing
-    #: coalition): repatriated if the holding field is retaken or the war is won,
-    #: written off (killed) if the hold clock runs out or the war is lost. A POW
-    #: is NOT Active, so the squadron never schedules them while captive.
-    POW = "POW"
-    #: Downed behind the lines and still EVADING at mission end (the §21
-    #: persistent-evader ledger, ``game.downed_pilots``, 2026-07-10): they respawn
-    #: at their last known position next mission and either get rescued
-    #: (-> Active), get captured in-mission or by the depth-weighted turn roll
-    #: (-> POW), or walk home off friendly ground (-> Active). Deliberately no
-    #: death clock. MIA is NOT Active, so the squadron never schedules them.
-    MIA = "MIA"
+    #: Ejected/shot down and awaiting CSAR rescue on the map.
+    Downed = "Downed"
+    #: Rescued by CSAR but temporarily unavailable while recovering.
+    Recovering = "Recovering"
+    #: A downed pilot who was never rescued in time.
+    MissingInAction = "Missing in action"
 
 
 @dataclass
@@ -37,42 +31,35 @@ class Pilot:
     player: bool = field(default=False)
     status: PilotStatus = field(default=PilotStatus.Active)
     record: PilotRecord = field(default_factory=PilotRecord)
+    #: Number of turns until a Recovering pilot returns to Active. Only meaningful
+    #: while status is Recovering.
+    turns_until_available: int = field(default=0)
+
+    def __setstate__(self, state: dict[str, Any]) -> None:
+        # Older saves predate CSAR and won't have this field.
+        if "turns_until_available" not in state:
+            state["turns_until_available"] = 0
+        self.__dict__.update(state)
 
     @property
     def alive(self) -> bool:
-        return self.status is not PilotStatus.Dead
+        return self.status not in (PilotStatus.Dead, PilotStatus.MissingInAction)
 
     @property
     def on_leave(self) -> bool:
         return self.status is PilotStatus.OnLeave
 
     @property
-    def captured(self) -> bool:
-        return self.status is PilotStatus.POW
+    def downed(self) -> bool:
+        return self.status is PilotStatus.Downed
 
     @property
-    def missing(self) -> bool:
-        return self.status is PilotStatus.MIA
+    def recovering(self) -> bool:
+        return self.status is PilotStatus.Recovering
 
-    def capture(self) -> None:
-        """Take this pilot prisoner (Active/MIA -> POW). Idempotent for a pilot
-        already held; a dead pilot cannot be captured."""
-        if self.status is PilotStatus.Dead:
-            return
-        self.status = PilotStatus.POW
-
-    def go_missing(self) -> None:
-        """Mark this pilot down behind the lines, still evading (Active -> MIA).
-        A dead pilot cannot go missing; a POW stays a POW."""
-        if self.status in (PilotStatus.Dead, PilotStatus.POW):
-            return
-        self.status = PilotStatus.MIA
-
-    def repatriate(self) -> None:
-        """Return a POW or a recovered evader to the active roster. No-op
-        otherwise."""
-        if self.status in (PilotStatus.POW, PilotStatus.MIA):
-            self.status = PilotStatus.Active
+    @property
+    def missing_in_action(self) -> bool:
+        return self.status is PilotStatus.MissingInAction
 
     def send_on_leave(self) -> None:
         if self.status is not PilotStatus.Active:
@@ -86,6 +73,40 @@ class Pilot:
 
     def kill(self) -> None:
         self.status = PilotStatus.Dead
+
+    def go_down(self) -> None:
+        """Marks the pilot as shot down and awaiting CSAR rescue."""
+        self.status = PilotStatus.Downed
+
+    def go_mia(self) -> None:
+        """Marks a downed pilot as missing in action (rescue never came)."""
+        if self.status is not PilotStatus.Downed:
+            raise RuntimeError("Only downed pilots may go missing in action")
+        self.status = PilotStatus.MissingInAction
+
+    def begin_recovery(self, turns: int) -> None:
+        """Marks a rescued pilot as recovering for the given number of turns.
+
+        A value of zero (or less) returns the pilot to active duty immediately.
+        """
+        if turns <= 0:
+            self.status = PilotStatus.Active
+            self.turns_until_available = 0
+            return
+        self.status = PilotStatus.Recovering
+        self.turns_until_available = turns
+
+    def advance_recovery(self) -> None:
+        """Advances a recovering pilot's countdown by one turn.
+
+        Returns the pilot to active duty once the countdown reaches zero.
+        """
+        if self.status is not PilotStatus.Recovering:
+            return
+        self.turns_until_available -= 1
+        if self.turns_until_available <= 0:
+            self.turns_until_available = 0
+            self.status = PilotStatus.Active
 
     @classmethod
     def random(cls, faker: Faker) -> Pilot:

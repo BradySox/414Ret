@@ -994,7 +994,13 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
   resources/plugins/base/mist_4_5_126.lua` + re-pointing `base/plugin.json`'s `"mist"`
   work-order back at it.
 
-### G8 — Combat SAR pilot rescue (`combatsar` / MOOSE CSAR) · Combat SAR Phase 2 · ☑ VERIFIED (2026-06-28, audience in-game pass — user: "pilot rescue attempted looks good")
+### G8 — Combat SAR pilot rescue (`combatsar` / MOOSE CSAR) · ✗ **VOID (2026-08-07)** — the fork's §21 Combat SAR / §15 SCAR were removed and replaced by upstream dcs-retribution#929. Nothing this row describes still exists; there is nothing to fly. Upstream's CSAR needs its own rows. Kept for history.
+
+<details><summary>historical record</summary>
+
+ · Combat SAR Phase 2 · ☑ VERIFIED (2026-06-28, audience in-game pass — user: "pilot rescue attempted looks good")
+
+</details>
 - **In-game (2026-06-28, audience pass — user verdict "looks good"):** a Combat SAR pilot rescue was flown/attempted and behaved correctly — the SAR ran as designed with no Lua error. As with J1/J2 this is the user's eyes-on "looks good," not a deeply-isolated audit of the pickup→deliver→`combat_sar_rescues`-increment loop (that precise count is the G11 scoring row). Don't re-mark UNTESTED without flying it.
 - **Live-log confirmation (2026-06-27, GermanyCW Fulda/Haina, `dcs.log`):** the plugin armed
   clean — `CSAR (Blue) | Started (1.0.34)` then `DCSRetribution|Combat SAR plugin - CSAR started
@@ -1019,7 +1025,13 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
   set mis-bound); or double event-handling with the SOF CSAR. If the helo can't deliver anywhere,
   check `allowFARPRescue` / that a friendly airfield is in range.
 
-### G9 — Combat SAR AI on-demand rescue (`auto_combat_sar`) · §21 · ◐ PARTIAL (2026-07-17 flown PG "Scenic Route Merged", Tacview `Tacview-20260717-172716`, session `dcs-mission-test-040ece`: **both spawn paths fired live** — the fly-critical parked-first path WORKED (3 of the 4 Khasab ramp UH-60As started in place ~7 min after the first ejections and flew 95–113 km toward the correct survivors; the closest ended the mission 3.0 km from its survivor) and the clone fallback spawned for the later survivors ("CombatSAR Rescue 6", a real flying UH-1H). **Zero pickups completed** — not a code failure but geometry: survivors 115–140 km (land, deep Iran) and ~370 km (the fleet survivors vs the clone's rear-field spawn) from the rescue sources, so a 130 kt helo arrives as the mission ends ("after 1.4 h the rescue helos are just getting to the pilots" — the finding that drove the §21 pilot-recovery surge, G31). **Open items:** "CombatSAR Rescue 8" spawned and was removed within 1 s (a failed clone spawn — one lost rescue); NO enemy snatch party spawned all mission despite 3 land survivors (3× ~50% rolls all missing is possible but unlucky — watch it next fly; the 3 sea survivors can't draw one by construction); and the actual OPSTRANSPORT pickup+delivery loop is still unexercised because nothing ever got close enough. REWORKED 2026-07-06 — the standing orbit is retired; `auto_combat_sar` spawns an on-demand rescue **parked-first / clone-fallback** when a pilot goes down and no player CSAR package is up. The gate + parked/clone emit are unit-tested (`tests/missiongenerator/test_combat_sar_sandy_luadata.py` + `test_combat_sar_templates.py`). The old orbit's 2026-06-28 "good" verdict below is moot — NEW model)
+### G9 — Combat SAR AI on-demand rescue (`auto_combat_sar`) · ✗ **VOID (2026-08-07)** — the fork's §21 Combat SAR / §15 SCAR were removed and replaced by upstream dcs-retribution#929. Nothing this row describes still exists; there is nothing to fly. Upstream's CSAR needs its own rows. Kept for history.
+
+<details><summary>historical record</summary>
+
+ · §21 · ◐ PARTIAL (2026-07-17 flown PG "Scenic Route Merged", Tacview `Tacview-20260717-172716`, session `dcs-mission-test-040ece`: **both spawn paths fired live** — the fly-critical parked-first path WORKED (3 of the 4 Khasab ramp UH-60As started in place ~7 min after the first ejections and flew 95–113 km toward the correct survivors; the closest ended the mission 3.0 km from its survivor) and the clone fallback spawned for the later survivors ("CombatSAR Rescue 6", a real flying UH-1H). **Zero pickups completed** — not a code failure but geometry: survivors 115–140 km (land, deep Iran) and ~370 km (the fleet survivors vs the clone's rear-field spawn) from the rescue sources, so a 130 kt helo arrives as the mission ends ("after 1.4 h the rescue helos are just getting to the pilots" — the finding that drove the §21 pilot-recovery surge, G31). **Open items:** "CombatSAR Rescue 8" spawned and was removed within 1 s (a failed clone spawn — one lost rescue); NO enemy snatch party spawned all mission despite 3 land survivors (3× ~50% rolls all missing is possible but unlucky — watch it next fly; the 3 sea survivors can't draw one by construction); and the actual OPSTRANSPORT pickup+delivery loop is still unexercised because nothing ever got close enough. REWORKED 2026-07-06 — the standing orbit is retired; `auto_combat_sar` spawns an on-demand rescue **parked-first / clone-fallback** when a pilot goes down and no player CSAR package is up. The gate + parked/clone emit are unit-tested (`tests/missiongenerator/test_combat_sar_sandy_luadata.py` + `test_combat_sar_templates.py`). The old orbit's 2026-06-28 "good" verdict below is moot — NEW model)
+
+</details>
 - **What changed (2026-07-06 on-demand rework, §21):** the auto-fragged orbit (`PlanCombatSar`) is deleted; when a pilot goes down with no player CSAR/SCAR package fragged, the combatsar runtime rescues from, in order, **(1) a real rescue helo parked cold on the ramp** (`parkedHelos` — `commandeerParkedHelo` + `StartUncontrolled`; a *tracked* `UnitMap` airframe, loss recorded) or **(2) a cold clone template** (`heloTemplate`) when the ramp is bare. Both fly the OPSTRANSPORT pickup — a *parked* start replaces the retired commandeer of an *airborne* helo. **Pass:** with `auto_combat_sar` ON and NO CSAR package fragged, eject near the front → `dcs.log` cue "a rescue helo is launching from the ramp" (or "an AI rescue helo has launched" for a clone) + an OPSTRANSPORT to a friendly field + a delivered survivor spared at debrief; a killed parked rescue helo is a **recorded** loss; with a player CSAR package fragged, NO auto spawn (`autoSpawn=false`). **Fail:** the parked helo is commandeered but never starts/moves (the `StartUncontrolled` path — the fly-critical unknown; if so, make the clone primary), never reaches the survivor, or a spawn happens despite a fragged player package (the gate broke). The historical orbit-era notes below are retained for context only.
 - **Gate NARROWED (2026-07-15, squadron call — the resolved "AI-rescue off" investigation):** the flown
   M1 log's `AI-rescue off` was this row's suppression gate firing on a **bare player Sandy** (`0 King(s),
@@ -1103,7 +1115,13 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
   AI pilot tracking). The **AI-ON** path (helo spawns from FARP, flies the rescue) still needs its
   own run with the setting on.
 
-### G10 — Combat SAR King TACAN beacon + LARS · Combat SAR Phase 4 · ◐ PARTIAL (2026-07-02 flown Trail 2 session `wonderful-chatterjee`: the 2026-06-30 activation fix WORKED — `dcs.log` shows the mission-start miss falling back cleanly ("not found/alive at mission-start; will retry") and then "activated … via birth (TACAN 37Y, LARS menu attached)" when the player boarded the King C-130; zero combatsar errors. Still owed = a wingman actually tuning 37Y to confirm the beacon radiates + an in-mission LARS menu use)
+### G10 — Combat SAR King TACAN beacon + LARS · ✗ **VOID (2026-08-07)** — the fork's §21 Combat SAR / §15 SCAR were removed and replaced by upstream dcs-retribution#929. Nothing this row describes still exists; there is nothing to fly. Upstream's CSAR needs its own rows. Kept for history.
+
+<details><summary>historical record</summary>
+
+ · Combat SAR Phase 4 · ◐ PARTIAL (2026-07-02 flown Trail 2 session `wonderful-chatterjee`: the 2026-06-30 activation fix WORKED — `dcs.log` shows the mission-start miss falling back cleanly ("not found/alive at mission-start; will retry") and then "activated … via birth (TACAN 37Y, LARS menu attached)" when the player boarded the King C-130; zero combatsar errors. Still owed = a wingman actually tuning 37Y to confirm the beacon radiates + an in-mission LARS menu use)
+
+</details>
 - **2026-07-06 (Inherent Resolve session `jovial-gates-574c9c`): the OTHER activation path re-verified** —
   an AI-flown King alive at t=0 activated directly via mission-start ("Combat SAR King - activated
   'Front line Balad Airbase/Tikrit Combat SAR|2|21|C-130J-30|' via mission-start (TACAN 37Y, LARS menu
@@ -1174,7 +1192,13 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
   Re-test on a build containing #196: the player King's LARS menu appears (immediately or within ~1 s) and
   the new `... LARS menu attached` line shows in the log.
 
-### G11 — Combat SAR rescue scoring (pilot spared at debrief) · Combat SAR Phase 4 · ☑ VERIFIED (2026-06-30, `414TH.retribution` save + `state.json` — user confirmed "rescue worked")
+### G11 — Combat SAR rescue scoring (pilot spared at debrief) · ✗ **VOID (2026-08-07)** — the fork's §21 Combat SAR / §15 SCAR were removed and replaced by upstream dcs-retribution#929. Nothing this row describes still exists; there is nothing to fly. Upstream's CSAR needs its own rows. Kept for history.
+
+<details><summary>historical record</summary>
+
+ · Combat SAR Phase 4 · ☑ VERIFIED (2026-06-30, `414TH.retribution` save + `state.json` — user confirmed "rescue worked")
+
+</details>
 - **Verified (2026-06-30, headless save load — `414TH.retribution`, turn 5):** `game.last_sitrep`
   reads `Sitrep(turn=4, ..., pilots_recovered=3)` — the SITREP the debrief itself computed from
   `commit_air_losses`, matching `state.json.combat_sar_rescues`'s 3 entries exactly and the debriefing
@@ -1221,7 +1245,13 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
   (features doc §15). The scoring layer had been headless-adjudicated 2026-06-26 but the path was
   unreachable in a normal campaign since the armor-hunt plugin was removed (#266). Do not re-fly.
 
-### G13 — Combat SAR airframes: armed Chinook + flyable King · Combat SAR · ☑ VERIFIED (2026-06-28, audience in-game pass — King wing-tank render OK; EW/ISR-clean + door guns previously confirmed)
+### G13 — Combat SAR airframes: armed Chinook + flyable King · ✗ **VOID (2026-08-07)** — the fork's §21 Combat SAR / §15 SCAR were removed and replaced by upstream dcs-retribution#929. Nothing this row describes still exists; there is nothing to fly. Upstream's CSAR needs its own rows. Kept for history.
+
+<details><summary>historical record</summary>
+
+ · Combat SAR · ☑ VERIFIED (2026-06-28, audience in-game pass — King wing-tank render OK; EW/ISR-clean + door guns previously confirmed)
+
+</details>
 - **Cockpit-confirmed (2026-06-27, user in-game pass — session `suspicious-goldberg`/`1ca51fbf`):**
   the C-130J-30 King flies **clean of the EW/ISR menu** ("Kings no EW ISR") — the `EwExcludedGroups`
   per-group deny-list works in-cockpit. Combined with the **CH-47 door M60D guns confirmed 2026-06-25**
@@ -1502,7 +1532,13 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
   bombing tasks; the AI flies an aborting attack pattern and never crosses the target; or the
   overflight produces no BDA confirmation.
 
-### G20 — Combat SAR enemy snatch party (correct coalition + dispersed teams) · §15 · ☑ VERIFIED (2026-06-30, `dcs.log`/`state.json`/Tacview — "Vietnam v2.miz" session)
+### G20 — Combat SAR enemy snatch party (correct coalition + dispersed teams) · ✗ **VOID (2026-08-07)** — the fork's §21 Combat SAR / §15 SCAR were removed and replaced by upstream dcs-retribution#929. Nothing this row describes still exists; there is nothing to fly. Upstream's CSAR needs its own rows. Kept for history.
+
+<details><summary>historical record</summary>
+
+ · §15 · ☑ VERIFIED (2026-06-30, `dcs.log`/`state.json`/Tacview — "Vietnam v2.miz" session)
+
+</details>
 - **Verified (2026-06-30, flown session — `Vietnam v2.miz` / `dcs.log` / `state.json` /
   `Tacview-20260630-171831-DCS-Host-Vietnam v2.zip.acmi`):** `state.json.combat_sar_captures` recorded
   a genuine **BLUE** aircrew captured (`Front line Kutaisi/Senaki-Kolkhi CAS|2|27|A-1H Skyraider|
@@ -1548,7 +1584,13 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
   capture never fires because `advanceCapture` lost track of the multi-group party (all teams reported
   dead while alive).
 
-### G20b — Combat SAR snatch-party safety cap + ledger dead-reference cleanup · §15 · ☐ UNTESTED (fix 2026-07-09, root-caused from a user `dcs.log` hang)
+### G20b — Combat SAR snatch-party safety cap + ledger dead-reference cleanup · ✗ **VOID (2026-08-07)** — the fork's §21 Combat SAR / §15 SCAR were removed and replaced by upstream dcs-retribution#929. Nothing this row describes still exists; there is nothing to fly. Upstream's CSAR needs its own rows. Kept for history.
+
+<details><summary>historical record</summary>
+
+ · §15 · ☐ UNTESTED (fix 2026-07-09, root-caused from a user `dcs.log` hang)
+
+</details>
 - **Root cause:** a heavy Red Tide (Germany Cold War) mission **hung** ~13 min in — the log stopped
   mid-flood of MOOSE `UNIT.GetVec3` / `GROUP.GetCoordinate` errors with **no crash dump** (a
   scripting/sim-thread hang, not a CTD; the 20-core/130 GB rig was never the limit). The capture race
@@ -1569,7 +1611,13 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
   object), or the mission still hangs with the capture race on (another unbounded spawn/scheduler —
   count dynamic units in `dcs.log`).
 
-### G21 — Combat SAR AI rescue commandeers an on-station helo (no duplicate spawn) · §21 · ✗ SUPERSEDED by the 2026-07-06 on-demand rework — the commandeer path (and the standing orbit it commandeered from) is RETIRED. The bug this row tracked (a commandeered airborne helo RTBs instead of rescuing) is designed out: the runtime now clones a cold template *into* the mission (the path that always worked). Re-verify as G9. Kept for history.
+### G21 — Combat SAR AI rescue commandeers an on-station helo (no duplicate spawn) · ✗ **VOID (2026-08-07)** — the fork's §21 Combat SAR / §15 SCAR were removed and replaced by upstream dcs-retribution#929. Nothing this row describes still exists; there is nothing to fly. Upstream's CSAR needs its own rows. Kept for history.
+
+<details><summary>historical record</summary>
+
+ · §21 · ✗ SUPERSEDED by the 2026-07-06 on-demand rework — the commandeer path (and the standing orbit it commandeered from) is RETIRED. The bug this row tracked (a commandeered airborne helo RTBs instead of rescuing) is designed out: the runtime now clones a cold template *into* the mission (the path that always worked). Re-verify as G9. Kept for history.
+
+</details>
 - **2026-07-06 flown Inherent Resolve session (`jovial-gates-574c9c`, dcs.log + Tacview trace):** two
   ejections (CROW Su-25 t≈1096, JELLYFISH M-2000C t≈3009), zero `combatsar:` errors. **The preference
   finally showed itself:** ejection #1 produced **no clone** (the planned
@@ -1665,7 +1713,13 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
   Lua syntax gate green. **Needs a re-fly** to confirm the 11714 error is gone from `dcs.log` and every
   errored survivor now gets rescued (was 9 errored attempts / 3 completed).
 
-### G22 — Captured-pilot POW recovery raid: planning crash + map marker · §15 · ✗ RETIRED (2026-07-03 CSAR rescope — the POW recovery raid is SHELVED: the `CSAR` raid flight type, the `CapturedPilotGroundObject` map objective, and `commit_pow_recoveries` are removed, so there is no raid to plan and nothing to re-fly. The held-POW model — freed by field capture, killed on the 4-turn clock, draining will — stays and is CI-tested in `tests/test_pow_recovery.py`. See `414th-csar-notes.md`.)
+### G22 — Captured-pilot POW recovery raid: planning crash + map marker · ✗ **VOID (2026-08-07)** — the fork's §21 Combat SAR / §15 SCAR were removed and replaced by upstream dcs-retribution#929. Nothing this row describes still exists; there is nothing to fly. Upstream's CSAR needs its own rows. Kept for history.
+
+<details><summary>historical record</summary>
+
+ · §15 · ✗ RETIRED (2026-07-03 CSAR rescope — the POW recovery raid is SHELVED: the `CSAR` raid flight type, the `CapturedPilotGroundObject` map objective, and `commit_pow_recoveries` are removed, so there is no raid to plan and nothing to re-fly. The held-POW model — freed by field capture, killed on the 4-turn clock, draining will — stays and is CI-tested in `tests/test_pow_recovery.py`. See `414th-csar-notes.md`.)
+
+</details>
 - **Bug (user report, 2026-06-30 — screenshot of "An unexpected error occurred"):** planning a
   recovery flight against a captured-pilot POW objective (F10 "save pilot at airbase") crashed with
   `AssertionError` in `AirAssaultFlightPlan.Builder.layout()` (`assert self.package.waypoints is not
@@ -1703,7 +1757,13 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
 - **Fail signature:** the `AssertionError` recurs; the flight plans with no real ingress (routes
   straight through threat zones with no IP); the marker still overlaps the airfield icon.
 
-### G23 — Sandy AI dynamic retasking toward a live ejection · §15 · ✗ REGRESSED → rework applied 2026-07-02 (root-caused; needs a re-fly). **FROZEN, pass-or-delete (2026-07-03 CSAR rescope):** this re-fly is the divert's last chance — pass and it stays as-is (frozen, no further iteration); fail and the divert is deleted rather than reworked a third time (a player Sandy is untouched either way). **NOTE (2026-07-06 on-demand rework):** with the standing orbit retired, this divert now only applies to an **AI-crewed Sandy inside a PLAYER-fragged package** (there is no AI-spawned Sandy in v1 — that's the §21 v2). So it's only exercisable when the player frags a package with an AI Sandy seat. **SCOPE CLARIFIED (2026-07-15, squadron call): this is a SINGLE-PLAYER feature** — the AI-crewed-Sandy-in-a-player-package configuration is exactly how a solo player runs CSAR (they fly one seat, the AI flies the Sandy); the 414th's own events are MP DM-style (the user builds, the squadron crews the seats), so an MP event was never this row's natural arbiter. The pass-or-delete rule stands, but the arbiter is an **SP re-fly** whenever one happens — do NOT delete it for lack of MP-event exercise.
+### G23 — Sandy AI dynamic retasking toward a live ejection · ✗ **VOID (2026-08-07)** — the fork's §21 Combat SAR / §15 SCAR were removed and replaced by upstream dcs-retribution#929. Nothing this row describes still exists; there is nothing to fly. Upstream's CSAR needs its own rows. Kept for history.
+
+<details><summary>historical record</summary>
+
+ · §15 · ✗ REGRESSED → rework applied 2026-07-02 (root-caused; needs a re-fly). **FROZEN, pass-or-delete (2026-07-03 CSAR rescope):** this re-fly is the divert's last chance — pass and it stays as-is (frozen, no further iteration); fail and the divert is deleted rather than reworked a third time (a player Sandy is untouched either way). **NOTE (2026-07-06 on-demand rework):** with the standing orbit retired, this divert now only applies to an **AI-crewed Sandy inside a PLAYER-fragged package** (there is no AI-spawned Sandy in v1 — that's the §21 v2). So it's only exercisable when the player frags a package with an AI Sandy seat. **SCOPE CLARIFIED (2026-07-15, squadron call): this is a SINGLE-PLAYER feature** — the AI-crewed-Sandy-in-a-player-package configuration is exactly how a solo player runs CSAR (they fly one seat, the AI flies the Sandy); the 414th's own events are MP DM-style (the user builds, the squadron crews the seats), so an MP event was never this row's natural arbiter. The pass-or-delete rule stands, but the arbiter is an **SP re-fly** whenever one happens — do NOT delete it for lack of MP-event exercise.
+
+</details>
 - **Fail signature reproduced (2026-07-02 flown Trail 2 session `wonderful-chatterjee`, user-confirmed):**
   an F-4E ejection at t=1118 registered a survivor (2 snatch parties spawned 2 s later ~11 km from
   Gudauta), the **"SANDY … is diverting to hold over the downed pilot" message fired** (user saw it),
@@ -1822,13 +1882,25 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
 - **Pass:** a JTAC appears on the kneeboard with a callsign, UHF freq and laser code, orbiting near the FLOT; it lases front-line targets for your CAS run; it is invisible + immortal (that is the intended stock behavior here, unlike the COIN drone); exactly **one** JTAC per front line and no packaged drone JTAC alongside it.
 - **Fail signature:** no JTAC at all (the restore didn't fire — check `has_jtac` on the blue faction, and that `coin_packaged_jtac_drone` is OFF); the FAC spawns somewhere other than the front-line center (the `frontline_position` call drifted); a crash on generation naming/livery/callsign (the restored block's `AircraftPainterJtac` / `callsign_dict` asserts); **two JTACs** (the COIN drone also emitted — the mutual exclusion broke).
 
-### G28 — POW mechanics: captured pilot benched, held, surfaced, brought home · §21 · ☐ UNTESTED (built 2026-07-06; the POW status transitions, the 4-turn hold clock, invulnerable-player-respecting write-off, Homecoming, SITREP lines, and the §51 compromise expiry are unit-tested in `tests/test_pow_recovery.py` + `tests/squadrons/test_squadron_pilots.py` + `tests/test_sitrep.py` + `tests/missiongenerator/test_commsjamluadata.py` — the multi-turn campaign feel + the roster/SITREP read need a played campaign. The will-coupled indefinite hold was REMOVED 2026-07-21 — the hold is now always the 4-turn clock.)
+### G28 — POW mechanics: captured pilot benched, held, surfaced, brought home · ✗ **VOID (2026-08-07)** — the fork's §21 Combat SAR / §15 SCAR were removed and replaced by upstream dcs-retribution#929. Nothing this row describes still exists; there is nothing to fly. Upstream's CSAR needs its own rows. Kept for history.
+
+<details><summary>historical record</summary>
+
+ · §21 · ☐ UNTESTED (built 2026-07-06; the POW status transitions, the 4-turn hold clock, invulnerable-player-respecting write-off, Homecoming, SITREP lines, and the §51 compromise expiry are unit-tested in `tests/test_pow_recovery.py` + `tests/squadrons/test_squadron_pilots.py` + `tests/test_sitrep.py` + `tests/missiongenerator/test_commsjamluadata.py` — the multi-turn campaign feel + the roster/SITREP read need a played campaign. The will-coupled indefinite hold was REMOVED 2026-07-21 — the hold is now always the 4-turn clock.)
+
+</details>
 - **What CI cannot exercise:** whether a captured pilot genuinely disappears from the schedulable roster next turn and reads as "POW" in the squadron dialog; whether the SITREP band names the POW + holding field + clock each turn; whether recapturing the holding field returns the pilot; whether a win brings held POWs home (Homecoming) and a loss writes them off; and whether an invulnerable-player POW is returned rather than killed at clock expiry.
 - **Setup:** lose the Combat SAR race (eject + get captured) on any campaign (the 4-turn hold clock is now universal). Note the pilot name. Advance turns watching the squadron roster + the next mission's kneeboard SITREP band; recapture the holding field in one run and ride the clock/war-end in another. **Fast test (thumb on the scale):** tick `[TEST] Combat SAR: force every downed pilot to be captured` (Campaign Management → HQ Automation) so you don't have to lose the race by chance — any ejection near the front becomes a POW in seconds.
 - **Pass:** the captured pilot shows **POW** in the squadron dialog and is never fragged while captive; the SITREP band carries a "POW: <name> — held at <field> (N turns left / held)" line each turn; recapturing the holding field returns the pilot to Active (and clears the line); the pilot is written off at the 4-turn clock (or, with invulnerable player pilots on, a *player* POW returns instead of dying); a **win repatriates every held POW** (Homecoming) while a loss writes them off; §51 jamming from a held POW stops after ~4 turns even if the POW is still held.
 - **Fail signature:** the captured pilot flies again next turn (status not flipped / `active_pilots` still includes POWs); no POW line in the SITREP (the `pows_held` wiring); recapturing the field doesn't free them (`repatriate` / holding-cp match); a player POW killed at clock expiry despite invulnerable-player-pilots (the `_write_off` gate); no Homecoming on a won campaign (the `process_win_loss` hook); §51 jams forever off a held POW (the `COMMS_COMPROMISE_TURNS` window / `captured_turn` stamp).
 
-### G29 — Persistent evaders + the always-run snatch race · §21 · ◐ PARTIAL — **SCHEDULED** (**call made 2026-08-07**, on the DM's instruction to resolve this row after it aged out unassigned. Verdict: **schedule it**, not accept-unverified and not delete — the opposite call to its long-time twin A5, for two reasons. **(1) The untested half is the campaign-visible half.** The Lua half is already proven live (the no-asset path armed instead of bailing and `combat_sar_survivors` was written); what has never been seen is the Python turn-boundary arc — MIA flip → SITREP band / squadron roster / orange map marker → next-mission evader respawn at the last known position. That is a chain of *player-facing* consequences, so failure is silent and expensive: a downed pilot simply dies and the whole §21 rescue economy quietly does nothing. Accepting that unverified buys nothing. **(2) It is not actually opportunistic, and treating it as such is why it sat here for four weeks.** It has a cheap deterministic forcing move — in an ordinary ATO jet (**never** a dynamic slot, which by design can never go MIA), eject deep over enemy ground, end the mission with no rescue, pass the turn. **~10 minutes.** That is a *contrived condition*, which per the WATCH rules disqualifies it from the standing watch list and belongs on a local card — so it spent four weeks parked on the one surface that structurally could not close it. **Scheduled on [`docs/dev/flycards/LOCAL.md`](flycards/LOCAL.md)**, the first local card, which the session-start hook now prints) (was ◐ PARTIAL — 2026-07-11 flown Red Tide M1 `csar-snatch-toggle-question-dfdb7a`: the always-run half is proven live — the no-asset path armed instead of bailing (`Combat SAR - blue has no rescue asset this mission; capture race only` → `survivor ledger started (1 coalition(s), 0 King(s), 1 Sandy(s), capture on, AI-rescue off)`; the old "skipping" line is gone) and `combat_sar_survivors` WAS written (1 unresolved entry at exit; ~20 other ejections were resolved in-mission as their pilot units despawned). **Caveat found:** the one surviving entry was a **DCS dynamic-slot** jet — a player self-spawned a MiG-29A at blue Frankfurt (`dynamic_slots` was ON at generation; DCS names these `<Airbase>_<type>_<n>`) and ramp-ejected to leave (Tacview shows no shoot-down, the jet removed 723 m from its spawn AT the field). `record_downed_pilots` discards it correctly (`unit_map.flight() is None` → "not an airframe this campaign tracks"), so no phantom MIA — but note a dynamic-slot pilot can never go MIA/POW by design. The MIA flip → SITREP/roster → next-mission evader respawn arc still needs a real tracked-airframe shoot-down. Built 2026-07-10, squadron call; the always-emit node, the no-rescue-capability ledger start, the eject → `combat_sar_survivors` sync → snatch spawn, the evader respawn, the MIA record/retire, the depth-weighted turn roll, and the SITREP/roster surfaces are unit-tested in `tests/lua/test_combatsar_ledger.py` + `tests/fourteenth/test_downed_pilots.py` + `tests/test_combat_sar_scoring.py` + `tests/missiongenerator/test_combat_sar_sandy_luadata.py` — the in-DCS snatch spawn without any rescue asset, the evader respawn feel, and the multi-turn evade/capture arc need a fly)
+### G29 — Persistent evaders + the always-run snatch race · ✗ **VOID (2026-08-07)** — the fork's §21 Combat SAR / §15 SCAR were removed and replaced by upstream dcs-retribution#929. Nothing this row describes still exists; there is nothing to fly. Upstream's CSAR needs its own rows. Kept for history.
+
+<details><summary>historical record</summary>
+
+ · §21 · ◐ PARTIAL — **SCHEDULED** (**call made 2026-08-07**, on the DM's instruction to resolve this row after it aged out unassigned. Verdict: **schedule it**, not accept-unverified and not delete — the opposite call to its long-time twin A5, for two reasons. **(1) The untested half is the campaign-visible half.** The Lua half is already proven live (the no-asset path armed instead of bailing and `combat_sar_survivors` was written); what has never been seen is the Python turn-boundary arc — MIA flip → SITREP band / squadron roster / orange map marker → next-mission evader respawn at the last known position. That is a chain of *player-facing* consequences, so failure is silent and expensive: a downed pilot simply dies and the whole §21 rescue economy quietly does nothing. Accepting that unverified buys nothing. **(2) It is not actually opportunistic, and treating it as such is why it sat here for four weeks.** It has a cheap deterministic forcing move — in an ordinary ATO jet (**never** a dynamic slot, which by design can never go MIA), eject deep over enemy ground, end the mission with no rescue, pass the turn. **~10 minutes.** That is a *contrived condition*, which per the WATCH rules disqualifies it from the standing watch list and belongs on a local card — so it spent four weeks parked on the one surface that structurally could not close it. **Scheduled on [`docs/dev/flycards/LOCAL.md`](flycards/LOCAL.md)**, the first local card, which the session-start hook now prints) (was ◐ PARTIAL — 2026-07-11 flown Red Tide M1 `csar-snatch-toggle-question-dfdb7a`: the always-run half is proven live — the no-asset path armed instead of bailing (`Combat SAR - blue has no rescue asset this mission; capture race only` → `survivor ledger started (1 coalition(s), 0 King(s), 1 Sandy(s), capture on, AI-rescue off)`; the old "skipping" line is gone) and `combat_sar_survivors` WAS written (1 unresolved entry at exit; ~20 other ejections were resolved in-mission as their pilot units despawned). **Caveat found:** the one surviving entry was a **DCS dynamic-slot** jet — a player self-spawned a MiG-29A at blue Frankfurt (`dynamic_slots` was ON at generation; DCS names these `<Airbase>_<type>_<n>`) and ramp-ejected to leave (Tacview shows no shoot-down, the jet removed 723 m from its spawn AT the field). `record_downed_pilots` discards it correctly (`unit_map.flight() is None` → "not an airframe this campaign tracks"), so no phantom MIA — but note a dynamic-slot pilot can never go MIA/POW by design. The MIA flip → SITREP/roster → next-mission evader respawn arc still needs a real tracked-airframe shoot-down. Built 2026-07-10, squadron call; the always-emit node, the no-rescue-capability ledger start, the eject → `combat_sar_survivors` sync → snatch spawn, the evader respawn, the MIA record/retire, the depth-weighted turn roll, and the SITREP/roster surfaces are unit-tested in `tests/lua/test_combatsar_ledger.py` + `tests/fourteenth/test_downed_pilots.py` + `tests/test_combat_sar_scoring.py` + `tests/missiongenerator/test_combat_sar_sandy_luadata.py` — the in-DCS snatch spawn without any rescue asset, the evader respawn feel, and the multi-turn evade/capture arc need a fly)
+
+</details>
 - **2026-07-17 night fly (fresh Scenic Route Merged turn 1, Tacview `Tacview-20260717-214932`,
   session `tacview-test-analysis-5bb161`): the at-scale live run — MIA banking + ledger hygiene
   VERIFIED, and a NEW finding: the snatch race resolves by infantry ballistics, never by the
@@ -1868,7 +1940,13 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
 - **Pass:** the arm line shows a plausible PD count; the PD is silent on ingress (no SA-15 RWR nails before any shot); on the HARM launch the PD wakes (RWR lights up) and engages the missile — a HARM intercepted mid-flight is the marquee proof; after ~10 min without triggers the PD goes quiet again; a killed PD unit shows in the debrief like any other loss.
 - **Fail signature:** `SHORAD link armed: 0` on a PD-rich campaign (the PD arrays stopped being emitted, or the prefix escaping broke — same class as the G6 zero-resolve bug); the PD radiates/engages strikers all mission with the link ON (autoshorad overwrite — the MOOSE Start() ordering broke); the PD never wakes on a HARM shot (SHORAD's shot watch not seeing the launch — check DefendHarms and the weapon name patterns); a SAM's OWN radar staying dark after its PD woke is fine (separate systems), but the PD staying asleep while its SAM dies to the HARM is the feature failing at its one job.
 
-### G31 — Pilot recovery surge (next-turn "drop everything" rescue package) · §21 · ✗ REGRESSED (2026-08-05, user report `units-runway-generation-bf755e` — "G31 is non existant as far as I can tell": no recovery package has ever been observed in the ATO. **Investigate in gate order — `plan_pilot_recovery_surge` has FIVE independent early-returns and four of them are silent**, so "nothing appeared" does not yet distinguish a bug from a correctly-unmet precondition: (1) BLUE only; (2) `combat_sar_surge` ON — note it is `enabled_when=combat_sar_persistent_pilots`, so if that master is off the surge can never fire and the greyed child is easy to miss; (3) **an un-surged evader must already exist**, i.e. a pilot has to have gone MIA on a PREVIOUS turn and been banked into `game.downed_pilots` — a campaign where nobody has been shot down and left un-rescued produces no surge and that is correct behaviour, which is the single most likely explanation and should be ruled out FIRST; (4) no rescue package already planned; (5) the wing must field a rescue-capable HELO squadron — this one at least logs `Pilot recovery surge: no rescue-helo squadron available`. **Cheapest discriminator:** confirm a real MIA entry exists (SITREP band "MIA: … evading near …", the orange downed-pilot marker on the map, or the squadron roster) BEFORE the turn you expect the surge; if an evader is banked, the gate is on and nothing frags, that is a genuine bug. Worth adding an explicit log line to gates 1–4 either way, since four silent returns is why this row is unfalsifiable today) (was ☐ UNTESTED, built 2026-07-17 off the flown Scenic Route Merged finding "after 1.4 h the rescue helos are just getting to the pilots" — same-mission rescue can't beat helo transit time, so the NEXT turn opens with the recovery op already airborne. `plan_pilot_recovery_surge` (`game/fourteenth/csar_surge.py`, hooked in `Coalition.plan_missions` BEFORE the commander) frags one coordinated package at a `PilotRecoveryZone` centred on the MIA evaders: required Jolly rescue helo + optional second Jolly / King C-130 / 2-ship Sandy SCAR / A2A escort, ASAP TOT, `ignore_range` — and the existing `PackageBuilder` rule air-starts AI COMBAT_SAR flights, so the op is on station at mission start. **Gate:** once per downed pilot (`DownedPilot.surge_turn` stamp); gated `combat_sar_surge` (default ON, requires `combat_sar_persistent_pilots`). Guards/gate/composition unit-tested in `tests/fourteenth/test_csar_surge.py`; the fulfiller build, the air-start position, and the runtime pickup are DCS-only.)
+### G31 — Pilot recovery surge (next-turn "drop everything" rescue package) · ✗ **VOID (2026-08-07)** — the fork's §21 Combat SAR / §15 SCAR were removed and replaced by upstream dcs-retribution#929. Nothing this row describes still exists; there is nothing to fly. Upstream's CSAR needs its own rows. Kept for history.
+
+<details><summary>historical record</summary>
+
+ · §21 · ✗ REGRESSED (2026-08-05, user report `units-runway-generation-bf755e` — "G31 is non existant as far as I can tell": no recovery package has ever been observed in the ATO. **Investigate in gate order — `plan_pilot_recovery_surge` has FIVE independent early-returns and four of them are silent**, so "nothing appeared" does not yet distinguish a bug from a correctly-unmet precondition: (1) BLUE only; (2) `combat_sar_surge` ON — note it is `enabled_when=combat_sar_persistent_pilots`, so if that master is off the surge can never fire and the greyed child is easy to miss; (3) **an un-surged evader must already exist**, i.e. a pilot has to have gone MIA on a PREVIOUS turn and been banked into `game.downed_pilots` — a campaign where nobody has been shot down and left un-rescued produces no surge and that is correct behaviour, which is the single most likely explanation and should be ruled out FIRST; (4) no rescue package already planned; (5) the wing must field a rescue-capable HELO squadron — this one at least logs `Pilot recovery surge: no rescue-helo squadron available`. **Cheapest discriminator:** confirm a real MIA entry exists (SITREP band "MIA: … evading near …", the orange downed-pilot marker on the map, or the squadron roster) BEFORE the turn you expect the surge; if an evader is banked, the gate is on and nothing frags, that is a genuine bug. Worth adding an explicit log line to gates 1–4 either way, since four silent returns is why this row is unfalsifiable today) (was ☐ UNTESTED, built 2026-07-17 off the flown Scenic Route Merged finding "after 1.4 h the rescue helos are just getting to the pilots" — same-mission rescue can't beat helo transit time, so the NEXT turn opens with the recovery op already airborne. `plan_pilot_recovery_surge` (`game/fourteenth/csar_surge.py`, hooked in `Coalition.plan_missions` BEFORE the commander) frags one coordinated package at a `PilotRecoveryZone` centred on the MIA evaders: required Jolly rescue helo + optional second Jolly / King C-130 / 2-ship Sandy SCAR / A2A escort, ASAP TOT, `ignore_range` — and the existing `PackageBuilder` rule air-starts AI COMBAT_SAR flights, so the op is on station at mission start. **Gate:** once per downed pilot (`DownedPilot.surge_turn` stamp); gated `combat_sar_surge` (default ON, requires `combat_sar_persistent_pilots`). Guards/gate/composition unit-tested in `tests/fourteenth/test_csar_surge.py`; the fulfiller build, the air-start position, and the runtime pickup are DCS-only.)
+
+</details>
 - **What CI cannot exercise:** whether the air-started Jolly actually spawns near its recovery hold (not at the departure field), whether the combatsar ledger dispatches the PACKAGE helo onto the re-spawned evader (`persistentSurvivors`) promptly, whether the pickup + delivery complete inside a normal mission, and whether the surge package suppresses the on-demand clone (`autoSpawn=false` when the surge helo is fragged).
 - **READY-MADE TEST STATE (2026-07-17 night fly, session `tacview-test-analysis-5bb161`):** the
   fresh Scenic Route Merged turn-1 mission ended with **8 MIA evaders banked** in state.json —
@@ -1945,7 +2023,13 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
   KING BEACON TACAN that doesn't match what the King actually radiates in-game, text running off the
   page edge, or no Combat SAR page at all (`generate_task_page` branch).
 
-### H3 — SCAR task kneeboard (Phase 4) · §15 / PR #189 · ☑ VERIFIED (2026-06-26, user in-game pass)
+### H3 — SCAR task kneeboard (Phase 4) · ✗ **VOID (2026-08-07)** — the fork's §21 Combat SAR / §15 SCAR were removed and replaced by upstream dcs-retribution#929. Nothing this row describes still exists; there is nothing to fly. Upstream's CSAR needs its own rows. Kept for history.
+
+<details><summary>historical record</summary>
+
+ · §15 / PR #189 · ☑ VERIFIED (2026-06-26, user in-game pass)
+
+</details>
 - **Headless adjudication (2026-06-26):** the flight↔tasking matching that drives the
   TARGET SIGNATURE is verified by `tests/missiongenerator/test_kneeboard_task_pages.py`
   (passing): `_scar_tasking_for` links a SCAR flight to its tasking by package-target

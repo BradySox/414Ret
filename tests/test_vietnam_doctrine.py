@@ -94,7 +94,7 @@ def test_display_name_overrides_iconic_taskings() -> None:
     assert VIETNAM_DOCTRINE.display_name_for(FlightType.BARCAP) == "MiGCAP"
     assert VIETNAM_DOCTRINE.display_name_for(FlightType.STRIKE) == "Alpha Strike"
     assert VIETNAM_DOCTRINE.display_name_for(FlightType.SEAD) == "Iron Hand"
-    assert VIETNAM_DOCTRINE.display_name_for(FlightType.SCAR) == "Sandy"
+    assert VIETNAM_DOCTRINE.display_name_for(FlightType.TARPS) == "Photo Recon"
 
 
 def test_unmapped_tasking_falls_back_to_enum_value() -> None:

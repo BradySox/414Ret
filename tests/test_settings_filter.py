@@ -110,8 +110,6 @@ def test_numeric_knobs_are_advanced_and_choices_are_not() -> None:
                     assert advanced == (
                         name
                         in {
-                            "combat_sar_test_force_capture",
-                            "combat_sar_test_easy_rescue",
                             "switch_baro_fix",
                             "ground_start_scenery_remove_triggers",
                         }

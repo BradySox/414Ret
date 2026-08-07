@@ -73,12 +73,9 @@ class RaceTrackBuilder(PydcsWaypointBuilder):
     ) -> Optional[EngageTargets]:
         """The patrol's engage task by flight type, or None for a pure orbit.
 
-        CAP (BARCAP/TARCAP) engages air. The 414th Sandy RESCAP escort (SCAR)
-        engages GROUND threats near the FLOT / a downed pilot instead of just
-        orbiting -- an AI SCAR patrol otherwise got no engage task and sat idle
-        in-game (2026-06-27). Both use the flight plan's engagement_distance as the
-        bubble; rescue craft (Combat SAR helo/King), AEW&C and tankers keep a pure
-        orbit (return None).
+        CAP (BARCAP/TARCAP) engages air, using the flight plan's
+        engagement_distance as the bubble; AEW&C and tankers keep a pure orbit
+        (return None).
         """
         distance = int(flight_plan.engagement_distance.meters)
         if self.flight.flight_type in {FlightType.BARCAP, FlightType.TARCAP}:
@@ -88,15 +85,6 @@ class RaceTrackBuilder(PydcsWaypointBuilder):
                     Targets.All.Air,
                     Targets.All.Missile.AntishipMissiles,
                     Targets.All.Missile.CruiseMissiles,
-                ],
-            )
-        if self.flight.flight_type is FlightType.SCAR:
-            return EngageTargets(
-                max_distance=distance,
-                targets=[
-                    Targets.All.GroundUnits.GroundVehicles,
-                    Targets.All.GroundUnits.AirDefence.AAA,
-                    Targets.All.GroundUnits.Infantry,
                 ],
             )
         return None

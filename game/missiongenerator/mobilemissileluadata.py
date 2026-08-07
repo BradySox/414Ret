@@ -9,7 +9,7 @@ shoot-and-scoot wander around that position at runtime (alarm-green -- they relo
 they don't stop to fight), so the launcher is never quite where the last recon photo
 froze it.
 
-**Movement only**, the Combat-SAR / COIN mover pattern: kills record natively (the
+**Movement only**, the COIN mover pattern: kills record natively (the
 routed DCS group is the same one the force model owns), the site never migrates beyond
 the plugin's scoot radius of its campaign position (threat rings and the turn-boundary
 model stay honest), and a dead site simply stops being routed. The radar SAM network is

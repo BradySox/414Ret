@@ -283,7 +283,6 @@ _OFFENSIVE_TASKS = {
     FlightType.OCA_RUNWAY,
     FlightType.OCA_AIRCRAFT,
     FlightType.AIR_ASSAULT,
-    FlightType.SCAR,
 }
 
 # Fighter airframes that make a red squadron an interceptor (not a helo/transport).

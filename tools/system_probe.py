@@ -201,7 +201,6 @@ def _sample(game: Any) -> dict[str, Any]:
         "caches": _safe(lambda: _cache_census(game), {}),
         "red_cells": _safe(lambda: _red_cell_census(game)),
         "hvt_status": _safe(lambda: active_hvt_status(game)),
-        "downed_pilots": len(getattr(game, "downed_pilots", []) or []),
         "pows": _safe(lambda: len(game.blue.pending_pow_recoveries), 0),
         "convoys": {"blue": convoys_blue, "red": convoys_red},
         "ambush_pairs": _safe(

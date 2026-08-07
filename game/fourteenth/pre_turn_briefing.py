@@ -3,10 +3,10 @@
 Single-player campaigns die at a reproducible place: the player accepts the
 mission results and never plays turn 2. One reason is that **the fork already
 computes almost every reason to keep flying and points them the wrong way in
-time.** ``Sitrep`` (§29) carries named aviators on capture clocks, proof that
-bombing the enemy HQ degraded its planning, and live victory progress -- and
-renders all of it on the *next* mission's kneeboard, i.e. only after the player
-has already committed to the turn it was supposed to motivate.
+time.** ``Sitrep`` (§29) carries proof that bombing the enemy HQ degraded its
+planning, and live victory progress -- and renders all of it on the *next*
+mission's kneeboard, i.e. only after the player has already committed to the
+turn it was supposed to motivate.
 
 This module is the read-out pointed the right way. It answers **"why fly
 tonight"** from state ``finish_turn`` has already produced, and it is
@@ -14,18 +14,13 @@ deliberately a *pure view*: it computes nothing the campaign does not already
 know, mutates nothing, and has zero planner coupling (the §3 viewer discipline
 -- everything here is BLUE's own picture, and the AI never reads it).
 
-Two things it adds that no existing surface does:
+The one thing it adds that no existing surface does is **anticipation**: §82's
+scheduled arrivals are pulled forward as "what is coming", because the jet you
+cannot fly yet is the advert.
 
-* **The capture clock as a number.** ``downed_pilots.capture_chance`` already
-  scales an evader's per-turn capture odds from 10% near the front to 90% deep
-  behind it -- the whole "don't fly deep" incentive -- and nothing ever showed
-  the player that number. "Every turn you skip is a roll" only lands when the
-  roll is stated.
-* **Anticipation.** §82's scheduled arrivals are pulled forward as "what is
-  coming", because the jet you cannot fly yet is the advert.
-
-Ordering is by urgency, and urgency is deliberate: a named person on a clock
-outranks a statistic. See ``docs/dev/design/414th-single-player-loop-notes.md``.
+Ordering is by urgency, and urgency is deliberate: a consequence the player
+personally caused outranks a background statistic. See
+``docs/dev/design/414th-single-player-loop-notes.md``.
 """
 
 from __future__ import annotations
@@ -51,8 +46,8 @@ MAX_PER_SECTION = 4
 class BriefingItem:
     """One reason to fly this turn."""
 
-    #: Stable slug for the UI to group/style on: "rescue", "consequence",
-    #: "objective", "arrival", "open_loop".
+    #: Stable slug for the UI to group/style on: "consequence", "objective",
+    #: "arrival", "open_loop".
     kind: str
     text: str
     urgency: int = BACKGROUND
@@ -89,7 +84,6 @@ def build_pre_turn_briefing(game: "Game") -> PreTurnBriefing:
     turn over."""
     items: List[BriefingItem] = []
     for section in (
-        _rescue_items,
         _consequence_items,
         _objective_items,
         _arrival_items,
@@ -102,58 +96,7 @@ def build_pre_turn_briefing(game: "Game") -> PreTurnBriefing:
     return PreTurnBriefing(turn=game.turn, items=items)
 
 
-# --------------------------------------------------------------- 1. the rescue
-
-
-def _rescue_items(game: "Game") -> List[BriefingItem]:
-    """A named person on a clock you caused -- the strongest hook the fork owns.
-
-    The SITREP already lists evaders and POWs. What it never showed is the
-    *odds*: the capture roll is re-run every turn the player does not go, and it
-    climbs with how deep the pilot went down.
-    """
-    from game.fourteenth.downed_pilots import (
-        _depth_nm,
-        _ledger,
-        _nearest_control_point,
-        _pilot_label,
-        capture_chance,
-    )
-
-    items: List[BriefingItem] = []
-    for downed in _ledger(game):
-        position = game.point_in_world(downed.x, downed.y)
-        depth = _depth_nm(game, position)
-        chance = capture_chance(depth)
-        nearest = _nearest_control_point(game, position)
-        where = f" near {nearest.name}" if nearest is not None else ""
-        turns = max(game.turn - downed.turn_downed, 0)
-        down_for = f"{turns} turn{'s' if turns != 1 else ''} down" if turns else "down"
-        items.append(
-            BriefingItem(
-                kind="rescue",
-                text=(
-                    f"{_pilot_label(downed)} is evading{where} — {depth:.0f} NM "
-                    f"deep, {down_for}. {chance * 100:.0f}% chance he is taken "
-                    f"this turn if nobody comes."
-                ),
-                urgency=URGENT,
-            )
-        )
-
-    for pow_line in _pow_lines(game):
-        items.append(BriefingItem(kind="rescue", text=pow_line, urgency=NOTABLE))
-    return items
-
-
-def _pow_lines(game: "Game") -> List[str]:
-    """Held aviators, phrased as the standing debt they are."""
-    sitrep = getattr(game, "last_sitrep", None)
-    held = list(getattr(sitrep, "pows_held", None) or []) if sitrep else []
-    return [f"POW: {line} — retake the field and he comes home." for line in held]
-
-
-# ---------------------------------------------------------- 2. the consequence
+# ---------------------------------------------------------- 1. the consequence
 
 
 def _consequence_items(game: "Game") -> List[BriefingItem]:
@@ -180,7 +123,7 @@ def _consequence_items(game: "Game") -> List[BriefingItem]:
     ]
 
 
-# ------------------------------------------------------------ 3. the objective
+# ------------------------------------------------------------ 2. the objective
 
 
 def _objective_items(game: "Game") -> List[BriefingItem]:
@@ -193,7 +136,7 @@ def _objective_items(game: "Game") -> List[BriefingItem]:
     ]
 
 
-# ------------------------------------------------------------- 4. anticipation
+# ------------------------------------------------------------- 3. anticipation
 
 
 def _arrival_items(game: "Game") -> List[BriefingItem]:
@@ -210,7 +153,7 @@ def _arrival_items(game: "Game") -> List[BriefingItem]:
     ]
 
 
-# --------------------------------------------------------------- 5. open loops
+# --------------------------------------------------------------- 4. open loops
 
 
 def _open_loop_items(game: "Game") -> List[BriefingItem]:

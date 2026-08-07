@@ -26,19 +26,17 @@ def _debrief(
     blue: Any,
     red: Any,
     captures: Iterable[Any] = (),
-    rescues: Iterable[str] = (),
 ) -> Debriefing:
     return cast(
         Debriefing,
         SimpleNamespace(
             loss_counts=lambda p: blue if p == Player.BLUE else red,
             base_captures=list(captures),
-            state_data=SimpleNamespace(combat_sar_rescues=list(rescues)),
         ),
     )
 
 
-def test_from_debriefing_splits_sides_captures_and_rescues() -> None:
+def test_from_debriefing_splits_sides_and_captures() -> None:
     debrief = _debrief(
         blue=_loss(2, 5, 1),
         red=_loss(4, 11, 2),
@@ -46,7 +44,6 @@ def test_from_debriefing_splits_sides_captures_and_rescues() -> None:
             _capture("Al Dhafra", Player.BLUE),
             _capture("FOB Reaper", Player.RED),
         ],
-        rescues=["unit-1", "unit-2"],
     )
     sitrep = Sitrep.from_debriefing(debrief, turn=7, day=date(1988, 6, 6))
     assert sitrep.turn == 7
@@ -54,7 +51,6 @@ def test_from_debriefing_splits_sides_captures_and_rescues() -> None:
     assert sitrep.enemy == SideLosses(4, 11, 2)
     assert sitrep.captured == ["Al Dhafra"]  # BLUE took it
     assert sitrep.lost == ["FOB Reaper"]  # RED took it from the player
-    assert sitrep.pilots_recovered == 2
     assert not sitrep.is_empty
 
 
@@ -99,26 +95,10 @@ def test_kneeboard_lines_formatting_and_plurals() -> None:
     assert not any(line.startswith("Lost:") for line in lines)
 
 
-def test_kneeboard_lines_render_held_pows() -> None:
-    sitrep = Sitrep(
-        turn=7,
-        day=date(1968, 6, 6),
-        friendly=SideLosses(1, 0, 0),
-        enemy=SideLosses(0, 0, 0),
-        captured=[],
-        lost=[],
-        pilots_recovered=0,
-        pows_held=["Capt Mitchell — held at Mozdok (held)"],
-    )
-    lines = sitrep.kneeboard_lines()
-    assert "POW: Capt Mitchell — held at Mozdok (held)" in lines
-    assert not sitrep.is_empty  # a held POW is news even with no losses
-
-
 def test_sitrep_page_renders_standalone(tmp_path: Path) -> None:
-    """The SITREP renders on its own kneeboard page (§29): a busy turn's
-    POW/MIA list clipped at the Mission Info page edge (flown 2026-07-19), so
-    the news moved to a dedicated page with room for the full list."""
+    """The SITREP renders on its own kneeboard page (§29): a busy turn's news
+    list clipped at the Mission Info page edge (flown 2026-07-19), so it moved
+    to a dedicated page with room for the full list."""
     from game.missiongenerator.kneeboard import SitrepPage
 
     sitrep = Sitrep(
@@ -126,32 +106,14 @@ def test_sitrep_page_renders_standalone(tmp_path: Path) -> None:
         day=date(1991, 1, 17),
         friendly=SideLosses(10, 1, 0),
         enemy=SideLosses(21, 5, 18),
-        captured=[],
-        lost=[],
+        captured=["Al-Taquddum Airport"],
+        lost=["H-2 Airbase"],
         pilots_recovered=0,
-        pows_held=["Bertrand Lambert — held at Al-Taquddum Airport (held)"],
-        pilots_mia=[
-            "Corey Johnson — evading near H-2 Airbase (downed this turn)",
-            "Garry Stevens — evading near Al-Asad Airbase (downed this turn)",
-        ],
+        arrivals=["VF-154 (F-14A) arrived at Nordholz"],
     )
     page = tmp_path / "sitrep.png"
     SitrepPage(sitrep, dark_kneeboard=False).write(page)
     assert page.exists() and page.stat().st_size > 0
-
-
-def test_a_held_pow_alone_is_not_a_quiet_turn() -> None:
-    sitrep = Sitrep(
-        turn=2,
-        day=date(1968, 1, 1),
-        friendly=SideLosses(0, 0, 0),
-        enemy=SideLosses(0, 0, 0),
-        captured=[],
-        lost=[],
-        pilots_recovered=0,
-        pows_held=["A — held at B (2 turns left)"],
-    )
-    assert not sitrep.is_empty
 
 
 def test_c2_status_renders_but_rides_along_with_real_news() -> None:

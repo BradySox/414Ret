@@ -7,16 +7,15 @@ logger:info("Check that json.lua is loaded : json = "..tostring(json))
 crash_events = {} -- killed aircraft will be added via S_EVENT_CRASH event
 dead_events = {} -- killed units will be added via S_EVENT_DEAD event
 unit_lost_events = {} -- killed units will be added via S_EVENT_UNIT_LOST
-kill_events = {} -- killed units will be added via S_EVENT_KILL 
+kill_events = {} -- killed units will be added via S_EVENT_KILL
 base_capture_events = {}
 destroyed_objects_positions = {} -- will be added via S_EVENT_DEAD event
 tars_recon_captures = {} -- TARS recon plugin appends {unit=, life=, type=} per photographed enemy unit
-combat_sar_rescues = {} -- Combat SAR plugin appends the original aircraft unit name of each pilot delivered home (the rescued pilot survives the campaign turn)
-combat_sar_captures = {} -- Combat SAR plugin appends {unit=<original airframe unit name>, x=, y=} per downed pilot CAPTURED by an enemy snatch party before rescue (held as a recoverable POW)
-combat_sar_survivors = {} -- Combat SAR plugin mirrors {unit=, x=, y=} per downed pilot still UN-resolved (down/boarding); at mission end these go MIA and persist to the next mission (persistent evaders, 2026-07-10)
 minefields_state = {} -- §57 minefields plugin appends/updates {id=, x=, z=, radius=, charges=} per field it managed this mission (persisted + newly laid); Python reconciles at debrief to carry undisturbed fields across turns
 cruise_missiles_state = {} -- §63 cruisemissiles plugin appends/updates {group=, fired=} per ship group that launched cruise missiles this mission; Python debits the persisted campaign magazine at debrief
 naval_magazines_state = {} -- §81 navalmagazines plugin appends/updates {group=, fired=} per naval group that fired ANTI-SHIP missiles this mission (a disjoint weapon set from cruise_missiles_state); Python debits the persisted campaign magazine at debrief
+ejection_events = {} -- {unit=<aircraft unit name>, x=, z=} added via S_EVENT_EJECTION
+csar_rescued = {} -- UUID strings of downed pilots rescued by Ops.CSAR (see OpsCSAR.lua)
 mission_ended = false
 dirty_state = false -- Track if state has changed and needs writing
 
@@ -69,12 +68,11 @@ function write_state()
         ["destroyed_objects_positions"] = destroyed_objects_positions,
         ["intercept_survivors"] = intercept_survivors or {},
         ["tars_recon_captures"] = tars_recon_captures or {},
-        ["combat_sar_rescues"] = combat_sar_rescues or {},
-        ["combat_sar_captures"] = combat_sar_captures or {},
-        ["combat_sar_survivors"] = combat_sar_survivors or {},
         ["minefields_state"] = minefields_state or {},
         ["cruise_missiles_state"] = cruise_missiles_state or {},
         ["naval_magazines_state"] = naval_magazines_state or {},
+        ["ejection_events"] = ejection_events,
+        ["csar_rescued"] = csar_rescued,
     }
     local ok, write_error = pcall(function()
         fp:write(json:encode(game_state))
@@ -262,6 +260,40 @@ local function onEvent(event)
                 destroyed_objects_positions[#destroyed_objects_positions + 1] = destruction
             end
             dirty_state = true
+        end
+    end
+
+    -- Ejection: record the aircraft unit name and its position so Retribution can
+    -- place a downed pilot for CSAR. The landing-after-ejection event refines the
+    -- position to where the pilot's parachute actually touched down.
+    if event.id == world.event.S_EVENT_EJECTION and event.initiator and event.initiator.getName then
+        local ok, name = pcall(function() return event.initiator:getName() end)
+        if ok and name then
+            local ejection = { unit = name }
+            local posOk, position = pcall(function() return event.initiator:getPosition() end)
+            if posOk and position and position.p then
+                ejection.x = position.p.x
+                ejection.z = position.p.z
+            end
+            ejection_events[#ejection_events + 1] = ejection
+            dirty_state = true
+        end
+    end
+
+    if event.id == world.event.S_EVENT_LANDING_AFTER_EJECTION and event.initiator then
+        local posOk, position = pcall(function() return event.initiator:getPoint() end)
+        if posOk and position then
+            -- Refine the most recent ejection that has no landing position yet.
+            for i = #ejection_events, 1, -1 do
+                local ej = ejection_events[i]
+                if not ej.landed then
+                    ej.x = position.x
+                    ej.z = position.z
+                    ej.landed = true
+                    dirty_state = true
+                    break
+                end
+            end
         end
     end
 

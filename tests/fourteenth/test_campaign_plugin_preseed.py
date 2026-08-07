@@ -64,18 +64,6 @@ def test_red_tide_preseeds_the_redscramble_plugin_for_the_host_menu() -> None:
     assert settings["plugins"]["redscramble.hostPlayers"] == "Flash"
 
 
-def test_red_tide_preseeds_the_combatsar_plugin_for_the_jam_intel_gate() -> None:
-    settings = _campaign_settings()
-    # §51 rides the DEFAULT intel gate (comms_jam_requires_capture, default ON), which
-    # arms only off a captured aircrew -- and combat_sar_captures has exactly one writer
-    # in the tree: the combatsar plugin. Disabled, it injects nothing, the Lua global
-    # stays {}, the jam loop's type check still passes, and red never jams: silent, no
-    # error. The pin also protects all rescue and the POW->will feed.
-    assert settings["enemy_comms_jamming"] is True
-    assert "comms_jam_requires_capture" not in settings  # rides the default-ON gate
-    assert settings["plugins"]["combatsar"] is True
-
-
 def test_red_tide_preseeds_the_mantisiads_plugin_for_advanced_iads() -> None:
     # advanced_iads is a campaign-level key, NOT a setting -- so it is read from the
     # document root while the plugin pin lives under settings.plugins.

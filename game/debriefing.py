@@ -25,8 +25,10 @@ from game.missiongenerator.interceptattrition import (
 from game.theater import Airfield, ControlPoint, Player
 
 if TYPE_CHECKING:
+    from dcs.mapping import Point
     from game import Game
     from game.ato.flight import Flight
+    from game.squadrons.downedpilot import DownedPilot
     from game.sim.simulationresults import SimulationResults
     from game.unitmap import (
         AirliftUnits,
@@ -111,6 +113,17 @@ class SideLossCounts:
     scenery: int
     bases_lost: int
     runways_destroyed: int
+    pilots_rescued: int
+
+
+@dataclass(frozen=True)
+class RescuedPilot:
+    """A downed pilot recovered by CSAR during this mission."""
+
+    name: str
+    aircraft: str
+    squadron: str
+    player: Player
 
 
 @dataclass(frozen=True)
@@ -139,30 +152,6 @@ class StateData:
     #: plugin is disabled.
     tars_recon_captures: List[str]
 
-    #: Original aircraft unit names of pilots delivered home by Combat SAR this
-    #: mission (the ``combatsar`` plugin appends one per rescued pilot). Each name
-    #: is the ejected aircraft DCS reports in its kill/crash events, so the loss is
-    #: scored normally but ``commit_air_losses`` spares the pilot -- the aviator
-    #: returns to the squadron though the airframe is still lost. Empty when Combat
-    #: SAR is off or no one was rescued.
-    combat_sar_rescues: List[str]
-
-    #: ``(airframe_unit_name, x, y, coalition)`` per pilot CAPTURED by an enemy snatch
-    #: party before rescue this mission (the ``combatsar`` enemy-capture race appends
-    #: ``{unit, x, y, coalition}`` per capture; ``coalition`` is the survivor's side).
-    #: ``commit_air_losses`` spares the kill (the pilot is a POW, not KIA) and
-    #: ``record_pow_captures`` holds them as a recoverable ``PendingPowRecovery`` on
-    #: that coalition. Empty when the capture race is off or no one was captured.
-    combat_sar_captures: list[tuple[str, float, float, str]]
-
-    #: ``(airframe_unit_name, x, y)`` per downed pilot still UN-resolved at mission
-    #: end (down or mid-boarding -- the ``combatsar`` plugin mirrors its live ledger
-    #: into ``combat_sar_survivors``). With ``combat_sar_persistent_pilots`` on,
-    #: ``commit_air_losses`` spares the kill and ``record_downed_pilots`` marks the
-    #: aviator MIA on ``game.downed_pilots`` (they re-spawn next mission and roll
-    #: the depth-weighted turn capture). Empty on pre-feature state files.
-    combat_sar_survivors: list[tuple[str, float, float]]
-
     #: ``(id, x, z, radius_m, charges)`` per air-dropped minefield the §57 plugin managed
     #: this mission -- persisted fields (by their Python id) + newly-laid fields (id 0), each
     #: with its remaining charges. ``reconcile_minefields`` carries the undisturbed fields
@@ -185,6 +174,13 @@ class StateData:
     #: ``cruise_missiles_state``'s land-attack families, so a shot is never
     #: charged to both. Empty on pre-feature state files / when the feature is off.
     naval_magazines_state: list[tuple[str, int]]
+
+    #: Maps an aircraft unit name to the (x, z) DCS-world position where its pilot
+    #: came down, for pilots that ejected during the mission.
+    ejections: Dict[str, tuple[float, float]]
+
+    #: UUID strings of downed pilots confirmed rescued in-mission by Ops.CSAR.
+    rescued_pilot_ids: List[str]
 
     @classmethod
     def from_json(cls, data: Dict[str, Any], unit_map: UnitMap) -> StateData:
@@ -249,77 +245,6 @@ class StateData:
 
         tars_recon_captures = parse_tars_captures(data.get("tars_recon_captures", []))
 
-        def parse_combat_sar_rescues(raw: Any) -> List[str]:
-            # The combatsar bridge appends bare aircraft unit-name strings (or the
-            # Lua JSON encoder yields [] when none). Keep only non-empty strings.
-            if not isinstance(raw, list):
-                return []
-            return [str(name) for name in raw if isinstance(name, str) and name]
-
-        combat_sar_rescues = parse_combat_sar_rescues(
-            data.get("combat_sar_rescues", [])
-        )
-
-        def parse_combat_sar_captures(
-            raw: Any,
-        ) -> list[tuple[str, float, float, str]]:
-            # The combatsar capture race appends {unit=<airframe name>, x=, y=,
-            # coalition=<survivor's side>} per captured pilot (or the Lua JSON encoder
-            # yields [] when none). Pull (unit, x, y, coalition) defensively, skipping
-            # malformed / unnamed / coordless entries. coalition is the SURVIVOR's side
-            # (the side that owns the POW recovery); it defaults to "blue" so pre-rework
-            # records (which omitted it) keep the old blue-only behaviour.
-            if not isinstance(raw, list):
-                return []
-            captures: list[tuple[str, float, float, str]] = []
-            for entry in raw:
-                if not isinstance(entry, dict):
-                    continue
-                unit = entry.get("unit")
-                x = entry.get("x")
-                y = entry.get("y")
-                coalition = entry.get("coalition")
-                color = coalition if coalition in ("blue", "red") else "blue"
-                if (
-                    isinstance(unit, str)
-                    and unit
-                    and isinstance(x, (int, float))
-                    and isinstance(y, (int, float))
-                ):
-                    captures.append((str(unit), float(x), float(y), color))
-            return captures
-
-        combat_sar_captures = parse_combat_sar_captures(
-            data.get("combat_sar_captures", [])
-        )
-
-        def parse_combat_sar_survivors(raw: Any) -> list[tuple[str, float, float]]:
-            # The combatsar ledger mirror carries {unit=<airframe name>, x=, y=,
-            # coalition=} per still-unresolved survivor (or the Lua JSON encoder
-            # yields [] when none, and pre-feature state files omit the key). Pull
-            # (unit, x, y) defensively, skipping malformed entries.
-            if not isinstance(raw, list):
-                return []
-            survivors: list[tuple[str, float, float]] = []
-            for entry in raw:
-                if not isinstance(entry, dict):
-                    continue
-                unit = entry.get("unit")
-                x = entry.get("x")
-                y = entry.get("y")
-                if (
-                    isinstance(unit, str)
-                    and unit
-                    and isinstance(x, (int, float))
-                    and isinstance(y, (int, float))
-                ):
-                    survivors.append((str(unit), float(x), float(y)))
-            return survivors
-
-        combat_sar_survivors = parse_combat_sar_survivors(
-            data.get("combat_sar_survivors", [])
-        )
-
         def parse_minefields_state(
             raw: Any,
         ) -> list[tuple[int, float, float, float, int]]:
@@ -374,6 +299,14 @@ class StateData:
             data.get("naval_magazines_state", [])
         )
 
+        ejections: Dict[str, tuple[float, float]] = {}
+        for event in data.get("ejection_events", []):
+            try:
+                unit = str(event["unit"])
+                ejections[unit] = (float(event["x"]), float(event["z"]))
+            except (KeyError, TypeError, ValueError):
+                logging.warning("Ignoring malformed ejection event: %s", event)
+
         return cls(
             mission_ended=data.get("mission_ended", False),
             killed_aircraft=killed_aircraft,
@@ -382,12 +315,11 @@ class StateData:
             base_capture_events=data.get("base_capture_events", []),
             intercept_survivors=intercept_survivors,
             tars_recon_captures=tars_recon_captures,
-            combat_sar_rescues=combat_sar_rescues,
-            combat_sar_captures=combat_sar_captures,
-            combat_sar_survivors=combat_sar_survivors,
             minefields_state=minefields_state,
             cruise_missiles_state=cruise_missiles_state,
             naval_magazines_state=naval_magazines_state,
+            ejections=ejections,
+            rescued_pilot_ids=[str(x) for x in data.get("csar_rescued", [])],
         )
 
 
@@ -405,6 +337,79 @@ class Debriefing:
         self.air_losses = self.dead_aircraft()
         self.ground_losses = self.dead_ground_units()
         self.base_captures = self.base_capture_events()
+        self.ejected_pilot_positions = self._ejected_pilot_positions()
+        #: Downed pilots recovered this mission, keyed by their DownedPilot id so
+        #: repeated state.json polls (and the AI-flight fallback added later by
+        #: MissionResultsProcessor) can't double-count the same rescue.
+        self.rescued_pilots: Dict[UUID, RescuedPilot] = {}
+        self._collect_reported_rescues()
+
+    def _collect_reported_rescues(self) -> None:
+        """Records rescues confirmed in-mission and reported via state.json."""
+        reported = self.state_data.rescued_pilot_ids
+        if not reported:
+            return
+        for uuid_str in reported:
+            try:
+                downed = self.game.db.downed_pilots.get(UUID(uuid_str))
+            except ValueError:
+                logging.warning(
+                    "Mission reported a rescued pilot id that isn't a UUID: %r. "
+                    "The rescue will not be credited.",
+                    uuid_str,
+                )
+                continue
+            except KeyError:
+                # Expected once the results have been committed, since committing
+                # a rescue removes the pilot from the database. Anything else
+                # means the mission and the campaign disagree about who was down,
+                # which would silently lose a rescue, so say so.
+                logging.info(
+                    "Mission reported rescued pilot %s, who is not (or no longer) "
+                    "a tracked downed pilot. Not credited.",
+                    uuid_str,
+                )
+                continue
+            self.record_rescue(downed)
+        logging.info(
+            "Mission reported %d rescued pilot(s); %d credited.",
+            len(reported),
+            len(self.rescued_pilots),
+        )
+
+    def record_rescue(self, downed: DownedPilot) -> None:
+        """Records a downed pilot as rescued for reporting purposes.
+
+        Idempotent: the same pilot may be reported by both the in-mission
+        Ops.CSAR result and the AI-flight fallback in the results processor.
+        """
+        self.rescued_pilots[downed.id] = RescuedPilot(
+            name=downed.pilot.name,
+            aircraft=downed.aircraft_name,
+            squadron=str(downed.squadron),
+            player=downed.player,
+        )
+
+    def rescued_pilots_for(self, player: Player) -> list[RescuedPilot]:
+        return [p for p in self.rescued_pilots.values() if p.player == player]
+
+    def _ejected_pilot_positions(self) -> Dict[int, "Point"]:
+        """Maps ``id(pilot)`` to the world position where they came down.
+
+        Resolved from the ejection unit names in the same way :meth:`dead_aircraft`
+        resolves killed aircraft, so the loss-processing code can look up an
+        ejection by the pilot object it already has in hand.
+        """
+        from dcs.mapping import Point
+
+        positions: Dict[int, Point] = {}
+        terrain = self.game.theater.terrain
+        for unit_name, (x, z) in self.state_data.ejections.items():
+            flying_unit = self.unit_map.flight(unit_name)
+            if flying_unit is None or flying_unit.pilot is None:
+                continue
+            positions[id(flying_unit.pilot)] = Point(x, z, terrain)
+        return positions
 
     def merge_simulation_results(self, results: SimulationResults) -> None:
         for air_loss in results.air_losses:
@@ -604,6 +609,7 @@ class Debriefing:
                 if capture.captured_by_player == player.opponent
             ),
             runways_destroyed=len(airfields),
+            pilots_rescued=len(self.rescued_pilots_for(player)),
         )
 
     def dead_aircraft(self) -> AirLosses:

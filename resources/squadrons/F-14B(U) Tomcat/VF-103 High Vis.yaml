@@ -12,10 +12,9 @@ mission_types:
   - CAS
   - DEAD
   - Escort
-  - Intercept
   - OCA/Aircraft
   - OCA/Runway
-  - SEAD
   - Strike
   - Fighter sweep
   - TARCAP
+  - TARPS

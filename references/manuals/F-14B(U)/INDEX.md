@@ -7,6 +7,12 @@ Chuck's Guide cover the airframe.
 This folder holds the module's bundled campaign and squadron briefing packs. They are
 short, self-contained documents; read them whole rather than by page range.
 
+Extract one as text (the Read tool cannot open PDFs here — see [README.md](README.md)):
+
+```bash
+pdftotext "references/manuals/F-14B(U)/Gulf Guardian Briefing/Gulf Guardian READ ME FIRST.pdf" -
+```
+
 ## Gulf Guardian Briefing/
 
 | File | Pages |

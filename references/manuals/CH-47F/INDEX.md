@@ -1,7 +1,17 @@
 # CH-47F — manual page index
 
-Page numbers are **1-based physical PDF pages**, for use with the Read
-tool's `pages` parameter. They do not match the printed page numbers.
+Page numbers are **1-based physical PDF pages**. They may not match the
+printed page numbers.
+
+Extract a section as text:
+
+```bash
+pdftotext -f 63 -l 73 "references/manuals/CH-47F/<file>.pdf" -
+```
+
+The Read tool renders PDF pages as images via `pdftoppm`, which is often not
+installed; `pdftotext` is, and text is cheaper. If Read does work, the same
+numbers go in its `pages` parameter.
 
 PDFs live in this folder and are gitignored. See [README.md](README.md).
 

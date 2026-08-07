@@ -1,32 +1,44 @@
 ---
 name: dcs-aircraft-manuals
-description: Locate and read the official DCS aircraft module manuals held locally for 11 airframes (AH-64D, C-130J, CH-47F, F-4E, F-14, F-14B(U), F-15C, F-15E, F-16C, FA-18C, UH-1H), including both Chuck's Guides. Use when a question needs the manual's own words about an aircraft's systems, cockpit controls, avionics pages, HOTAS, radar or sensor modes, weapon employment procedure, startup or emergency procedure, or performance limits — and when authoring briefing packs, kneeboard pages, role cards or campaign documents that describe how a jet is actually flown. Read the module INDEX.md and Read a targeted page range; never sweep a whole PDF.
+description: Locate and read the official DCS manuals held locally for 11 aircraft modules (AH-64D, C-130J, CH-47F, F-4E, F-14, F-14B(U), F-15C, F-15E, F-16C, FA-18C, UH-1H) plus the Supercarrier Operations Guide, including both Chuck's Guides. Use when a question needs the manual's own words about an aircraft's systems, cockpit controls, avionics pages, HOTAS, radar or sensor modes, weapon employment, startup or emergency procedure, or performance limits — or about carrier operations: Case I/II/III departure and recovery, the marshal stack, the groove, LSO and IFLOLS, catapult and launch-bar procedure, deck handling and deck crew. Also use when authoring briefing packs, kneeboard pages, role cards or campaign documents that describe how a jet is actually flown or how the boat is actually worked. Read the INDEX.md, then extract only that page range.
 ---
 
-# DCS aircraft manuals
+# DCS manuals
 
-Vendor PDFs for 11 modules, copied from the local DCS install. 7,239 pages. Each module
-folder carries an `INDEX.md` mapping sections to physical page ranges so a lookup is a
-targeted read, not a sweep.
+Vendor PDFs for 11 aircraft modules plus the Supercarrier, copied from the local DCS
+install. 7,349 pages. Each folder carries an `INDEX.md` mapping sections to physical page
+ranges so a lookup is a targeted extract, not a sweep.
 
 Root: `references/manuals/`
 
 ## The one rule
 
-**Read `INDEX.md` first. Then Read only the pages it points at.**
+**Read `INDEX.md` first. Then extract only the pages it points at.**
 
-The Read tool caps at 20 PDF pages per call and these files run to 1,129 pages. Opening one
-without the index burns the context window and usually misses the section anyway.
+These files run to 1,129 pages. Opening one without the index burns the context window and
+usually misses the section anyway.
 
 ```
 1. Read references/manuals/<MODULE>/INDEX.md
 2. Find the section; note its page range
-3. Read the PDF with pages: "312-330"
+3. Extract that range as text
 ```
 
-Page numbers in every `INDEX.md` are **1-based physical PDF pages**, already correct for the
-Read tool's `pages` parameter. They do not match the manual's printed page numbers — do not
-add or subtract an offset.
+**Extract with `pdftotext`, not the Read tool.** The Read tool renders PDF pages as images
+via `pdftoppm`, which is not installed on the 414th's machine — it fails with
+"pdftoppm is not installed". `pdftotext` is present and text is cheaper anyway:
+
+```bash
+pdftotext -f 63 -l 73 "references/manuals/Supercarrier/DCS Supercarrier Operations Guide EN.pdf" -
+```
+
+`-f` is the first page, `-l` the last, and the trailing `-` writes to stdout. Reach for the
+Read tool only when you actually need to *see* a diagram or cockpit illustration, and expect
+it to fail unless poppler has since been installed.
+
+Page numbers in every `INDEX.md` are **1-based physical PDF pages**. They may not match the
+manual's printed page numbers — do not add or subtract an offset. (In the Supercarrier guide
+the two happen to align exactly; in most of the others they do not.)
 
 ## What is where
 
@@ -43,9 +55,17 @@ add or subtract an offset.
 | F-16C Viper | `F-16C/` | Early Access Guide EN | 704 |
 | F/A-18C Hornet | `FA-18C/` | Early Access Guide EN | 424 |
 | UH-1H Huey | `UH-1H/` | Flight Manual EN · QuickStart · KeyCommands · Multi-Crew | 204 · 52 · 11 · 10 |
+| Supercarrier | `Supercarrier/` | Operations Guide EN | 110 |
 
 The **F-14B(U)** has no manual of its own — its folder holds the Gulf Guardian and CVW-17
 briefing packs. For B(U) systems questions use the `F-14/` manual.
+
+The **Supercarrier** guide is not an airframe manual — it is the boat. It covers Case I/II/III
+departure and recovery, the marshal stack, catapult and launch-bar procedure, deck crew
+signals, the LSO station and IFLOLS, and the Mission Editor's carrier features. It is the
+right source for carrier-ops procedure in briefings and kneeboards, and useful background for
+the fork's carrier work (deck spawn policy, carrier comms curation, deck decorations).
+Its source folder is `Mods/tech/Supercarrier/Doc`, not `Mods/aircraft/`.
 
 ## What these are NOT the source of truth for
 
@@ -80,6 +100,11 @@ briefing and kneeboard material needs.
 - **Two manuals have no bookmarks** (UH-1H Flight Manual, Be Afraid of the Dark). Their
   indexes were built by matching the printed table of contents against body text, verified
   page-by-page.
+- **The Supercarrier PDF has a malformed xref and an incremental update.** Some readers
+  report it as 243 pages. It is **110** — its own `/Count`, the raw page-object count, its
+  printed pagination, and `pdftotext` all agree, and the last page is numbered 110. Ignore a
+  243 anywhere.
+- **`MISSION EDITOR FEATURS`** on Supercarrier p94 is ED's typo, not a bad page reference.
 
 ## Regenerating an index
 

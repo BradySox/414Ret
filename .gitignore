@@ -40,3 +40,13 @@ _scenerytools/
 # commented out), so "Restore original" wrote a DESANITIZED file back to DCS.
 # Untracked so each install captures its own faithful stock backup.
 resources/scripts/MissionScripting.original.lua
+
+# Aircraft module manuals copied out of the DCS install (E:\DCS World\Mods\aircraft\*\Doc).
+# ~820 MB of vendor PDFs — local reference only, never source. The README and the per-module
+# INDEX.md page maps are tracked so lookups keep working on a checkout without the PDFs;
+# the PDFs themselves are not.
+/references/manuals/*
+!/references/manuals/README.md
+!/references/manuals/*/
+/references/manuals/*/*
+!/references/manuals/*/INDEX.md

@@ -375,4 +375,4 @@ Step out in ten. Good hunting.
 
 ---
 
-*This page is the online copy of [`docs/campaigns/red-tide-intel-assessment.md`](https://github.com/bradyccox/414Ret/blob/main/docs/campaigns/red-tide-intel-assessment.md) in the repo. Edit that file; the wiki is mirrored from `docs/wiki/` on merge to `main`.*
+*This page is the online copy of [`docs/campaigns/red-tide-intel-assessment.md`](https://github.com/BradySox/414Ret/blob/main/docs/campaigns/red-tide-intel-assessment.md) in the repo. Edit that file; the wiki is mirrored from `docs/wiki/` on merge to `main`.*

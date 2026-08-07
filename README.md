@@ -1,371 +1,254 @@
-# 414Ret - 414th Joint Fighter Group's DCS Retribution Fork
+# 414Ret — 414th Joint Fighter Group's DCS Retribution Fork
 
-This repository is the **414th Joint Fighter Group's customized build of
-[DCS Retribution](https://github.com/dcs-retribution/dcs-retribution)** - a turn-based
-dynamic campaign generator for [DCS World](https://www.digitalcombatsimulator.com/en/products/world/).
+A squadron-focused build of [DCS Retribution](https://github.com/dcs-retribution/dcs-retribution),
+the turn-based dynamic campaign generator for
+[DCS World](https://www.digitalcombatsimulator.com/en/products/world/).
 
-It is a squadron-focused build of upstream Retribution (`dev` branch), combining the
-414th's campaign, mission, and quality-of-life work with selected newer upstream fixes
-and backports. The unmodified upstream project README is preserved as
+Based on upstream `dev` at `dce851ea`, plus the 414th's feature set and selected later
+upstream fixes. The unmodified upstream README is kept as
 [`README.upstream.md`](README.upstream.md).
 
-> **For AI assistants / other Claude sessions:** read [`CLAUDE.md`](CLAUDE.md) first.
-> It is the engineering handoff doc - architecture, where each feature lives, the
-> branch layout, and what is still in flight.
+> **AI assistants:** read [`CLAUDE.md`](CLAUDE.md) first — architecture, feature locations,
+> branch layout.
+
+---
+
+## Download
+
+Pre-built `.exe` releases are published automatically on every push to `main`. No GitHub
+account needed.
+
+**[Download latest build](https://github.com/BradySox/414Ret/releases/tag/latest)**
+
+1. Download `414th-retribution-latest.zip`.
+2. Extract anywhere.
+3. Run `retribution_main.exe`.
+4. Point it at your DCS World install on first launch.
+
+`latest` is a rolling pre-release tracking current `main`. Versioned releases (`v1.x.x`) are
+pinned campaign builds.
 
 ---
 
 ## What's different from upstream
 
-414Ret isn't a reskin or an aircraft pack. It changes how a Retribution campaign is
-planned, understood, and flown by a multiplayer squadron. It starts from upstream `dev`
-at `dce851ea`, then adds the 414th feature set and selected later upstream fixes.
-
-Highlights below. **Many of these are opt-in** — the full feature list, with each toggle,
-its default, and known limitations, is in
+Most of this is opt-in. Full list with toggles, defaults and known limitations:
 [`docs/dev/414th-features.md`](docs/dev/414th-features.md).
 
-### Intelligence is incomplete — and recon has a purpose
+### Recon and intelligence
 
-Upstream hands you a map that already knows everything. Here you have to go look.
+- Enemy site composition, strength, damage and threat rings stay hidden until you scout or
+  attack the site.
+- Unscouted mobile forces draw a dashed circle offset from their true position instead of an
+  exact marker. Fixed infrastructure stays exact.
+- Optional decoy zones plant fake contacts indistinguishable from real ones. Scouting one
+  burns it away; new ones appear each turn.
+- Mobile missile launchers relocate mid-mission, within a few km of their campaign position.
+  The radar SAM network does not move.
+- TARPS is a player task (F-14, RF-101B, RA-5C). Photographs become confirmed intelligence.
+- Also: approximate target-area mode, mobile SAMs hidden from player datalink, a fog reveal
+  toggle, DCS-accurate terrain charts as base map.
 
-- **You know a site is there, not what's in it.** Composition, strength, damage and threat
-  rings stay unknown until you scout or attack it.
-- **Unscouted field forces have no exact position** — a mobile SAM shows as a dashed amber
-  *suspected activity* circle offset from the truth, until recon or an attack pins it down.
-  Fixed infrastructure stays exact. The Weasel hunt becomes a real hunt.
-- **Some of those circles are lies** — with the opt-in *decoy zones* enabled, the enemy plants
-  fake contacts that look exactly like a real hidden force. You can't tell a feint from the
-  genuine article without flying recon on it; scout a decoy and it burns away as empty, and
-  fresh ones take their place each turn.
-- **Mobile missiles shoot and scoot**, relocating mid-mission — so the launcher is never
-  where the last photo froze it. They stay within a few km of their campaign position, and
-  the radar SAM network never moves.
-- **TARPS is a real player task**, flown by F-14s and the period photo birds (RF-101B,
-  RA-5C). What you photograph becomes confirmed intelligence.
-- Plus: **Approximate target area** mode, mobile SAMs kept off player datalinks, a
-  *Reveal fog of war* toggle for when you need ground truth, and a DCS-accurate terrain
-  chart as the base map.
+### Combat SAR and squadron missions
 
-### Missions are built for squadron play
+- Rescuing an ejected aviator spares the pilot; the airframe is still lost. The AI plans the
+  package (King + helo + Sandy) by default and humans can fly any seat. AI ejections count.
+- Captured pilots become POWs and leave the roster. Retaking the holding field returns them,
+  as does winning the war. The hold runs on a turn clock.
+- A pilot neither rescued nor captured goes MIA and keeps evading, still rescuable next
+  mission. Capture odds rise with distance behind the lines.
+- Downed aviators appear on the campaign map — MIA evaders at their last known position,
+  POWs at the holding field.
+- The turn after an ejection opens with a rescue package already airborne at the evader's
+  position. One surge per downed pilot.
+- SCAR flies the RESCAP "Sandy" role in that package.
+- JAMMING turns the C-130J into an EC-130H/RC-130H-style EW and ISR platform.
+- Escort jamming is flown by the EA-18G Growler and EA-6B Prowler only (both require their
+  mods). The jammer spoofs radar missiles fired at anything under its bubble and pulses
+  tracking SAMs to weapons-hold; effect strengthens with proximity. AI flies it automatically;
+  players get an F10 menu. A per-side cap limits how many fly per turn.
+- Fixed-wing transports fly Air Assault as a paradrop. Players run in below 3,000 ft AGL and
+  use the CTLD *Unload / Extract Troops* call; AI releases automatically over the drop zone.
+  Helicopter assaults are unchanged.
+- Every generated mission is archived to a dated copy in a folder DCS's mission browser lists.
 
-- **Combat SAR makes a downed pilot worth flying for.** Recover an ejected aviator and the
-  campaign **spares the pilot** — you still lose the jet. The AI plans the package (King +
-  helo + Sandy) by default, any human can fly any seat, and AI ejections count too. Lose the
-  race and the enemy's **snatch party** takes them: a **POW** leaves your roster while
-  held. Retake the field in time and they're back — a few turns on the hold clock, and a won
-  war brings every held POW home. A pilot neither rescued nor captured goes **MIA and keeps evading**, still
-  rescuable next mission — but deep behind the lines they're almost certainly caught. Think
-  twice before pressing deep with no rescue plan. **Every downed aviator shows on the
-  campaign map**: an MIA evader as a rescue-orange marker at their last known position, a
-  POW as a gray marker at the holding field — so you plan the rescue from the map, not
-  from a kneeboard note.
-- **A downed pilot triggers a recovery surge.** The very next turn opens with a coordinated
-  "drop everything" rescue package **already airborne at the evader's position** — rescue
-  helo, King, Sandys, fighter cover — because a helo spooling up at a rear field never gets
-  there in time. One surge per downed pilot; if it fails, the normal rescue paths carry on.
-- **SCAR is the RESCAP "Sandy"** of that package — hold near the FLOT with the King and the
-  rescue helo, suppress the threats, walk the helo in.
-- **JAMMING** turns the C-130J into an EC-130H/RC-130H-style EW and ISR platform.
-- **Escort jamming (Growler / Prowler).** A dedicated jammer flies an **escort jamming** role —
-  it rides your strike package through the SAM belt, spoofs radar missiles fired at anyone
-  under its bubble, and forces a tracking SAM onto brief weapons-hold pulses; closer means
-  stronger, real penetration-escort physics. Only the two dedicated ALQ-99 jammers do it —
-  the **EA-18G Growler** and the **EA-6B Prowler** (enable those mods) — no Harriers, Hornets,
-  or other podded jets. AI Growlers *and* Prowlers jam automatically; fly one yourself and you
-  get the F10 jamming menu. A per-side cap keeps a strike-heavy turn from putting too many up.
-- **The C-130J drops paratroopers.** Air Assault is no longer helo-only: a troop transport
-  flies the same tasking as an airborne drop. Fly it yourself — spawn with the stick already
-  loaded, run in below 3,000 ft AGL, and the CTLD *Unload / Extract Troops* call **jumps
-  them** (they land behind you after a real descent and march on the objective) — or give
-  the flight to the AI, which releases automatically over the drop zone. Landed, the same
-  menu still unloads normally; helicopters keep their landing/fast-rope assault untouched.
-- **Every generated mission is archived** — a named, dated copy lands in a folder DCS's own
-  browser lists, so last week's turn re-opens straight from the game.
+### Air war planning
 
-### The air war behaves like a campaign, not a queue of isolated sorties
-
-- **QRA intercept reserve** holds fighters for base defense — and you can **man part of it**,
-  scrambling from cold alert when the *"raid inbound"* call comes.
-- **The jet starts with the mission already in it.** Every player Hornet and Viper carries a
-  native DCS **data cartridge** that auto-loads at spawn — comm presets *named* to match the
-  kneeboard (MAGIC, ARCO, your flight), the route with push times, the boat's TACAN/ICLS/ACLS
-  pre-tuned, and the SA/HSD picture: FLOT, no-strike zones, friendly CAP and tanker/AWACS
-  orbits, and the enemy SAM rings your recon has actually confirmed. Nothing to load, nothing
-  to type — and in multiplayer it arrives with the mission download. Planners keep control:
-  the flight editor's **DTC tab** turns the cartridge (or any single section of it) on or off
-  per flight, so a pilot who wants their own presets keeps them.
-  The **CJS Super Hornets** (F/A-18E/F and EA-18G) get one too — comms, route and recovery
-  aids — since the mod ships its own cartridge support; their cartridge carries no SA picture,
-  because the mod's cartridge format has no place to put one.
-- **Support orbits are painted on the F10 map** — a cyan racetrack and label for every tanker
-  and AWACS, so you can find your gas in flight, cartridge or not.
-- **Fuel first: tanks are fitted for the sortie, then the tanker passes are decided.** A jet
-  short of gas gets drop tanks; the tanker decision counts the fuel in them, so jets stop
+- QRA intercept reserve holds fighters for base defence. Part of it can be player-manned as
+  cold alert.
+- Native DCS data cartridges auto-load in Hornets, Vipers and CJS Super Hornets: comm presets
+  matching the kneeboard, route with push times, boat TACAN/ICLS/ACLS, and the SA/HSD picture
+  (FLOT, no-strike zones, friendly orbits, recon-confirmed SAM rings). A per-flight DTC tab
+  controls the cartridge or any single section of it. Super Hornets carry no SA picture — the
+  mod's cartridge format has no field for one.
+- Tanker and AWACS orbits are drawn on the F10 map with callsign, frequency and TACAN.
+- Drop tanks are fitted for the sortie before tanker passes are decided, so jets stop
   double-tanking sorties their real load covers. The Payload tab shows burn, passes and RTB
-  margin live as you edit.
-- **One HARM no longer kills a SAM site** — batteries field two guidance radars, spaced so
-  one missile can't take both, so real SEAD takes a follow-up shot. Applies to new campaigns.
-- **One continuous clock.** Time marches a few hours per turn and weather **evolves** from
-  the turn before — fronts roll in and clear over several turns, instead of a thunderstorm
-  one sortie and clear skies the next. (With day-and-night missions; a day-only campaign
-  keeps the old rotation.)
-- **The planner reads that weather.** In rain or storms the automatic photo-recon add-ons
-  stay home (cameras photograph cloud deck), and a thunderstorm pushes low-level CAS and
-  BAI to the back of the plan so the all-weather strikes claim the jets first.
-- **SEAD opens the window, then the strikes push.** Strike packages headed into a defended
-  area are timed just behind the SEAD servicing that SAM — several packages massing behind
-  one suppressor — instead of wandering in half an hour early. Fly the SEAD yourself and
-  the AI push forms up behind *you*.
-- Plus: threat-weighted BARCAP waves, front-anchored support orbits, weighted (not
-  coin-flip) off-mission combat, and per-side auto-planner unpredictability.
+  margin live.
+- SAM batteries field two guidance radars, spaced so one missile cannot take both. New
+  campaigns only.
+- One continuous clock: time advances a few hours per turn and weather evolves from the
+  previous turn instead of re-rolling. Requires day-and-night missions.
+- The planner reads that weather — rain and storms ground automatic photo-recon and push
+  low-level CAS and BAI behind all-weather strikes.
+- Strike packages headed into a defended area are timed just behind the SEAD servicing that
+  SAM. Fly the SEAD yourself and the AI push forms behind you.
+- Also: threat-weighted BARCAP waves, front-anchored support orbits, weighted off-mission
+  combat resolution, per-side planner unpredictability.
 
-### The generated mission feels occupied
+### Battlefield and world
 
-- **Troops In Contact** produces prolonged, formation-aware frontline firefights instead of
-  vanilla ground AI erasing the battle in a minute.
-- **The roads have traffic — and your convoys can be ambushed.** On any map with roads
-  between same-side bases, real supply columns run both networks; sometimes hidden ambush
-  teams dig in along a friendly route. Nothing is telegraphed — the first sign is the TROOPS
-  IN CONTACT call.
-- **The sea lanes have traffic too — running the coastal gauntlet.** A shipment between two
-  friendly ports with no road sails as a **convoy of cargo ships** (not one lone hull), each
-  carrying its share, so sinking some ships denies only their share of the reinforcement.
-  And coastal anti-ship batteries (Silkworm and the like) now fire on any enemy ship in
-  range — a convoy that passes an enemy coast has to be escorted or the batteries
-  suppressed, the Tanker War in miniature.
-- **Ship groups are task groups, not four copies of one hull.** A carrier screen generates as
-  a mix of whatever surface combatants the navy fields — Burkes, a Perry, a Ticonderoga —
-  instead of four identical destroyers, and the same goes for every naval objective on the
-  map. The mix stays sensible: a patrol boat never joins a cruiser's screen, submarines pair
-  with submarines, and a navy that only fields one hull of a class still gets a coherent
-  group. (New games only — the composition is decided when the campaign is generated.)
-- **A missile battery looks like a battery.** A SCUD or Iskander site used to be three
-  launchers and a jeep; it now generates with its support park — a pair of cargo trucks, a
-  transporter/loader, a fuel bowser and (where the faction has one) a command-and-staff
-  vehicle, in that nation's own kit. It reads as a real emplacement from the air, which
-  matters when the launchers are hiding under a suspected-activity circle and shoot-and-scoot
-  between your recon passes. Launchers also **cost money** now — a theatre ballistic missile
-  was free to buy and free to repair. (New games only.)
-- **Nation-specific voiceovers and pilot names per squadron** — a Greek squadron hears Greek
-  and fills with Greek names, instead of one shared faction voice. The nation is yours to set:
-  a **Country selector** in the Air Wing Configuration dialog (under Livery), and campaigns can
-  pin `country:` per squadron so a coalition wing's units stop rolling random nations.
-- **The carrier reads like a real boat** — TACAN matching the hull with a boat ident
-  (Roosevelt 71X TRO, Stennis 74X STN), stable channels, the ship's real name. Learn Mother's
-  card once; it holds all campaign (if a map's own beacon owns the hull channel, the boat
-  takes the nearest free one). **Navy jets wear real squadron modexes** to match — each
-  squadron gets its own block and numbers its jets in sequence. **And the deck is alive** —
-  tow tractors, a crash truck, deck hands along the island and the LSO team on the platform
-  (deck dressing from the Operation Cerberus North 2 campaign, rotating each turn), placed
-  so every parking spot and catapult stays usable. An optional extra dresses the recovery
-  corridor during the launch cycle — an alert E-2 on the stern round-down, gear and hands
-  by the LSO platform — and the deck crew strikes it all below before recovery, so the
-  wires are always clear when you come home.
-- Plus: mixed frontline combat clusters, civilian traffic, and the 414th-tuned Splash Damage 3.
+- Troops In Contact produces prolonged, formation-aware frontline firefights.
+- Supply columns run both sides' road networks. Friendly routes sometimes hide ambush teams;
+  nothing is telegraphed before the TROOPS IN CONTACT call.
+- Sea shipments sail as convoys of cargo ships, each carrying a share, so sinking some denies
+  only their share. Coastal anti-ship batteries fire on enemy shipping in range.
+- Ship groups generate as mixed task groups rather than copies of one hull. Patrol boats never
+  join a cruiser screen; a navy with one hull of a class still gets a coherent group. New games
+  only.
+- Missile batteries generate with a support park — cargo trucks, transporter/loader, fuel
+  bowser, and a command vehicle where the faction has one — in that nation's kit. Launchers
+  now have a purchase and repair cost. New games only.
+- Squadrons spawn under their own DCS country, giving nation-specific voiceovers and pilot
+  names. A country selector sits in the Air Wing Configuration dialog; campaigns can pin
+  `country:` per squadron.
+- Carrier comms match the hull: TACAN and ident (Roosevelt 71X TRO, Stennis 74X STN), stable
+  channels, the ship's real name. If a map beacon owns the hull channel the boat takes the
+  nearest free one. Navy jets wear sequential per-squadron modexes.
+- Carrier decks carry dressing — tractors, crash truck, deck crew, LSO team — placed clear of
+  every parking spot and catapult. An optional launch-corridor set is struck below before
+  recovery.
+- Also: mixed frontline combat clusters, civilian traffic, 414th-tuned Splash Damage 3.
 
-### Planning and debriefing expose the information crews need
+### Kneeboards and debrief
 
-- **The kneeboard is the classic deck**, with the 414th's additions folded into it rather than
-  bolted on. **Mission Info opens on a BLUF**: task, target, TOT, code words, a compact air +
-  SAM threat picture, your loadout in one line, and the SAR if-down drill. The **fuel ladder
-  rides in the flight plan**, with the RTB margin called out — and it charges the whole
-  sortie, including the on-station orbit: a CAP's racetrack row shows the patrol speed to
-  fly, and an endurance call-out says how long the gas actually holds the station ("On
-  station 45 min planned; fuel supports ~50 min before bingo").
-- **A "last turn" SITREP** — both sides' losses (the enemy's as *claimed*), bases taken or
-  lost, pilots recovered.
-- **A Threat Intel Brief** page is the enemy air-defense dossier: one card per system with
-  guidance, ceiling, MEZ, HARM code and a how-to-defeat note. It respects recon fog —
-  unidentified sites show only their threat tier until you fly the overflight.
-- **Mission code words** (Red Flag style), visible to planners *before* generation and on your
-  kneeboard in the cockpit.
-- **Set a loadout once and every future flight gets it.** Build the fit you want in the
-  payload editor and hit **Set as default for &lt;task&gt;** — from then on every flight of that
-  airframe planned for that task is generated carrying it, in this campaign and the next,
-  until you clear it. The same box already remembers your fuel and cockpit settings per
+- The kneeboard is the stock deck with 414th content folded into it. Mission Info opens on a
+  BLUF: task, target, TOT, code words, compact air and SAM threat picture, loadout summary,
+  SAR drill.
+- The fuel ladder rides in the flight plan with RTB margin called out. It charges the whole
+  sortie including on-station orbit, so a CAP row shows patrol speed and an endurance line
+  ("On station 45 min planned; fuel supports ~50 min before bingo").
+- A SITREP page reports last turn: both sides' losses (the enemy's as claimed), base changes,
+  pilots recovered.
+- A Threat Intel Brief gives one card per enemy air-defence system — guidance, ceiling, MEZ,
+  HARM code, defeat note. It respects recon fog: unidentified sites show only a threat tier.
+- Mission code words are visible to planners before generation and on the kneeboard in the
+  cockpit.
+- **Set as default for &lt;task&gt;** in the payload editor pins a loadout for that airframe and
+  task across campaigns until cleared. Fuel and cockpit settings are already remembered per
   airframe.
-- Plus: target intel panels, impact-first debriefs, custom kneeboard import, and era-gated
-  cockpit options (no JHMCS in 1968).
+- Also: target intel panels, impact-first debriefs, custom kneeboard import, era-gated cockpit
+  options.
 
-### Systems that make the war strategic
+### Campaign systems
 
-- **Single-player express lane.** If you play solo, the campaign can stop asking you to be
-  the commander. Turn on **SP Pilot Mode** and the debrief gains an *Accept results & fly
-  next* button: it processes the turn and hands you a board instead of the map. You pick
-  **an aircraft first** — anything your wing can put up, not just the types the AI
-  commander happened to task — and then a sortie in that jet, taking one seat with AI
-  wingmen exactly like flying in a squadron night. The **job** comes from the war: escort
-  one night, strike the next, jamming after that, depending on what the package needs.
-  Above the board is a short brief on why *this* turn matters — the pilot still evading
-  behind the lines and the odds he is captured before you reach him, the enemy command
-  network you have been dismantling, how close the campaign is to its victory conditions,
-  and which squadron arrives next. The ordinary map and mission planner are untouched;
-  this is a shortcut, not a replacement.
+- **SP Pilot Mode.** The debrief gains an *Accept results & fly next* button that processes the
+  turn and opens a sortie board instead of the map. Pick an aircraft from anything the wing can
+  put up, then a sortie in it — one seat, AI wingmen. The role comes from what the package
+  needs. A pre-turn brief covers evading pilots and their capture odds, enemy C2 damage,
+  victory progress and the next squadron arrival. The map and mission planner are untouched.
+- **Scheduled squadron arrivals.** Campaigns can add *new airframes* on announced turns, so the
+  wing you start with is not the wing you end with. Schedules follow air-campaign order:
+  air superiority, SEAD/DEAD and enablers first, deep strike once the SAM belt is coming down.
+  Operation Baltic Fury and Red Tide ship with schedules.
+- **Command-post strikes matter.** Destroying enemy command posts degrades its target selection
+  and thins its offensive tempo. Reactive defence is unaffected.
+- **COMINT collection.** A collection sortie that makes it home (C-130J jamming orbit or any
+  drone) buys next turn's take: an intercepted enemy tasking and one suspected-activity circle
+  fixed to an exact position. The same nodes are the ones you'd bomb to wreck their planning.
+- **Enemy radio net.** Command posts transmit coded morse in periodic windows on fixed UHF
+  frequencies, held clear of every briefed channel. How many stations are up at once is a
+  setting. Phantom, Tomcat, Hornet and Tiger needles can home on an open window. Killing the
+  node silences it permanently. Insurgent cells transmit too — the kneeboard briefs a frequency
+  and an area, and the dashed map circle is the search box.
+- **Enemy procurement** favours its better hardware rather than rolling the catalogue. Optional
+  SAM site repair regenerates a couple of units per turn unless pressured; command posts stay
+  dead.
+- **Victory conditions.** Campaigns can author them: hold objective bases, destroy named
+  high-value targets, kill every command post, grind enemy air below a threshold, or deny all
+  operating airfields. Any campaign can enable a domination or attrition ending from settings.
+  The map ribbon shows a live checklist. The capture-everything ending always remains.
+- **Cruise missile raids.** Mark a target and call the strike; the nearest warship ripples a
+  salvo. Magazines are finite and never rearm. A launch alerts defending SAMs around the
+  aimpoint.
+- **Naval magazines.** Warships can be released to weapons-free a group at a time instead of
+  all at once, and anti-ship missiles fired are gone for the rest of the war. A dry ship still
+  defends itself.
+- **GPS jamming.** A JDAM, JSOW, JASSM or SLAM-ER released inside an enemy jamming bubble flies
+  its normal profile and lands off the aimpoint — further off the deeper inside you released.
+  Laser and TV weapons are unaffected; killing the jammer restores accuracy immediately. A
+  scouted jamming area is briefed on the kneeboard, an unscouted one is not.
+- Also: strikeable motor pool depots, enemy comms jamming learned from a captured pilot,
+  air-droppable minefields, a host F10 menu to scramble bandits.
 
-- **The wing grows.** Campaigns can schedule reinforcements to arrive on turns you know
-  about in advance — *"Finnish Hornets turn 3, Swedish Gripens turn 5, the Bone turn 9."*
-  Not more of what you already fly: **new airframes**, so what you can take off in changes
-  as the war goes on. It also fixes something structural about turn 1 — it used to be the
-  best mission in the campaign by construction (full wing, full ramp, nothing lost), which
-  made every later turn a slightly worse copy. Now the wing you start with is not the wing
-  you end with. The schedules follow the shape of a real air campaign: you get the
-  door-kickers first — air superiority, SEAD/DEAD, the tankers and AWACS that make them
-  work — and the deep-strike aircraft show up once the SAM belt is actually coming down, so
-  a bomber arriving feels earned rather than handed to you. **Operation Baltic Fury** and
-  **Red Tide** ship with schedules, and they are deliberately different: Baltic Fury is a
-  counter-offensive that opens by kicking the door in, while Red Tide is a defensive fight
-  for the Fulda Gap that never withholds the CAS holding the line.
+---
 
-- **Bombing the enemy HQ matters** — knock out its command posts and its planner gets
-  measurably sloppier at picking targets **and its offensive tempo thins** (a decapitated
-  HQ frags fewer strike packages — never zero). Its reactive defenses never suffer.
-- **Listen before you bomb.** With **COMINT collection** on, that same enemy C2 net is also
-  your intel source: a collection sortie (the C-130J jamming orbit or any drone) that makes it home buys next
-  turn's full take — an intercepted enemy tasking (what's coming, roughly when) and one
-  "suspected activity" circle fixed to an exact position. Killing their command posts still
-  wrecks their planning — but it also puts out your wiretap. Bomb it or tap it.
-- **And the enemy net is really on the air.** Turn on the **enemy radio net** and a handful
-  of their command posts transmit coded morse traffic in periodic windows on fixed UHF
-  frequencies — held clear of every channel your comms plan uses (nothing ever keys up on
-  or beside a briefed channel), so you only hear it by hunting the dial. How many stations
-  are up at once is a setting: a few by default, so catching one on the air is an event
-  rather than background noise. Phantom, Tomcat, Hornet and
-  Tiger needles can home on an open transmission window; kill the node and its net goes
-  silent for good. Hidden insurgent cells carry radios too: your kneeboard briefs a
-  "suspected clandestine net" with a frequency and an area, the dashed circle on the map is
-  the search box, and a needle cut caught during one of its short transmission windows is
-  what turns the circle into a fix.
-- **The enemy economy spends smarter.** Its buys favor its better hardware, not a coin flip
-  over the catalog. Turn on **SAM site repair** and the belt regenerates a couple of units a
-  turn unless you keep pressure on it — a rolled-back IADS stops being a one-way ratchet
-  (command posts stay dead).
-- **Wars can end without conquering every base.** A campaign can author real **victory
-  conditions** — hold the objective bases, destroy the named high-value targets, knock out
-  every enemy command post, grind the enemy air force below a threshold, or deny them any
-  operating airfield — and any campaign can turn on a **domination** ("hold 80% of the
-  bases") or **attrition** ("enemy air below 25% of start") ending from settings, so a
-  limited war ends when its objective is met instead of demanding total conquest. A green
-  VICTORY chip on the map ribbon shows the live checklist ("Enemy air force below 10% of
-  start (now 62%)"); defeat conditions ("lose Kutaisi and the war is lost") show
-  as risks. Authors can combine conditions into custom endings ("hold Sukhumi *and* Gudauta",
-  "enemy air below 10% of start"). The classic
-  capture-everything ending always remains.
-- **Warships fire real cruise missile raids** — mark a target, call the strike, and the nearest
-  ship ripples a salvo. Magazines are finite and never rearm, so a salvo spent on a truck park
-  is one you don't have for the command bunker. A launch puts the defender's SAMs around the
-  aimpoint on alert, so point defense gets its shot.
-- **Fleets can run out of missiles** — a modern anti-ship missile out-ranges the whole map, so
-  two fleets used to empty their tubes at each other in the first five minutes of every mission,
-  reloading for free the next turn. Now warships can be released to weapons-free a group at a
-  time instead of all at once, and every anti-ship missile fired is gone for the rest of the war.
-  A ship that runs dry still defends itself — it just has nothing left to open with, and the war
-  goes on for another eighteen turns.
-- **GPS jamming** — enemy jamming sites deny satellite guidance over an area around themselves.
-  A JDAM, JSOW, JASSM or SLAM-ER released inside the bubble flies its whole normal profile and
-  then lands well off the aimpoint — the further inside you released, the further off it goes —
-  so the target survives and the pass has to be flown again. Laser and TV weapons are unaffected,
-  so the answer is to change how you deliver, stand off outside the bubble, or find and kill the
-  jammer, which puts your accuracy back the moment it dies. A jamming area you've actually
-  scouted is briefed on the kneeboard; one you haven't, isn't — the first sign of that one is a
-  bomb that goes long.
-- Plus: strikeable **motor pool** depots, **enemy comms jamming** learned off a captured pilot,
-  air-droppable **minefields**, and a **host F10 menu** to scramble bandits at a quiet event.
+## Campaigns
 
-### Campaigns and content
+| Campaign | Map | Setting |
+|---|---|---|
+| Red Tide | Germany | 1988 NATO counteroffensive through the Fulda Gap |
+| 1968 Yankee Station | Caucasus | Vietnam air war, coastal ladder from Hanoi to the DMZ |
+| Operation Enduring Resolve | Afghanistan | Living counterinsurgency |
+| Red Flag 81-2 | Nevada | The exercise, played as the war it rehearses |
+| Operation Inherent Resolve | Iraq | Battle of Mosul, 2016–17 |
+| The Tanker War | Persian Gulf | 1987–88 Gulf shipping war to Praying Mantis |
+| Umm al-Ma'arik | Iraq | Desert Storm 1991, fought from the H-3 strips inward |
+| Second Island Chain | Marianas | 2027 China fight up the chain from Guam |
 
-- **Germany — Red Tide** — a *Red Storm Rising* 1988 NATO counteroffensive built for the 414th.
-  The Pact overran the Fulda Gap, took Hamburg and seized Copenhagen; the thrust has culminated
-  and the 414th spearheads the push back. Every squadron is a named historical unit in matching
-  livery. Fulda is a forward helo FARP in the Gap — and lives like one, under artillery fire.
-- **1968 Yankee Station** — the whole in-country air war on a **coastal ladder**: Hanoi inland
-  behind its SA-2 ring, route packages laddering south to a DMZ front, carriers on a proper
-  Yankee Station, the Air Force crossing from the "Thailand" fields. The **Ho Chi Minh Trail is
-  a real, cuttable supply web**.
-- **Afghanistan — Operation Enduring Resolve** — the first *living* counterinsurgency (a fork
-  of Starfire's *Operation Shattered Dagger*). Strongholds **regenerate**, throttled by hidden
-  ammo caches you must find and strike; infiltrators creep toward your ungarrisoned bases to
-  take them. Body count alone wins nothing — patience and the caches you deny decide the war.
-- **Nevada — Red Flag 81-2** — the ultimate war game, played as the war it rehearses: Aggressor
-  F-5Es, the Constant Peg MiGs out of Tonopah, an emulator SAM array, KS-19 flak belts. The
-  **Groom Lake box never opens**.
-- **Iraq — Operation Inherent Resolve** — the second living COIN campaign: the Battle of Mosul,
-  2016–17. The insurgency holds Mosul, Erbil and Kirkuk and lives on ten furnished FOBs along
-  Highway 1 and the Nineveh ring; you grind north from Balad on one front against IEDs, HVT
+- **Red Tide** — the Pact overran the Fulda Gap, took Hamburg and seized Copenhagen; the thrust
+  has culminated. Every squadron is a named historical unit in matching livery. Fulda is a
+  forward helo FARP under artillery fire.
+- **1968 Yankee Station** — Hanoi inland behind its SA-2 ring, route packages laddering south to
+  a DMZ front, carriers on Yankee Station, the Air Force crossing from the Thailand fields. The
+  Ho Chi Minh Trail is a real, cuttable supply web.
+- **Operation Enduring Resolve** — a fork of Starfire's *Operation Shattered Dagger*. Strongholds
+  regenerate, throttled by hidden ammo caches you have to find and strike. Infiltrators creep
+  toward ungarrisoned bases to take them. Body count alone wins nothing.
+- **Red Flag 81-2** — Aggressor F-5Es, the Constant Peg MiGs out of Tonopah, an emulator SAM
+  array, KS-19 flak belts. The Groom Lake box never opens.
+- **Operation Inherent Resolve** — the insurgency holds Mosul, Erbil and Kirkuk plus ten
+  furnished FOBs along Highway 1 and the Nineveh ring. Grind north from Balad against IEDs, HVT
   convoys and a 14-route supply web, under a permanent Mosul positive-control box. Predators
   and Reapers fly persistent ISR that banks real BDA.
-- **Persian Gulf — The Tanker War (1988)** — the 1987–88 war on Gulf shipping, building to an
-  Operation Praying Mantis climax in the Strait of Hormuz. The 1988 carrier air wing (F-14A,
-  A-6E, A-7E) against Iranian naval and coastal power; the currency is **ships, not territory**
-  — Silkworm batteries fire from the coast, and AAA
-  gun forts stand on the oil platforms. The one DCS matchup where the Tomcat flies both sides.
-- **Iraq — Umm al-Ma'arik (Desert Storm 1991)** — the air war against "the most well defended
-  city in the world," fought the way it really was fought: **from outside**. Blue holds only
-  the three H-3 desert strips seized on the border in the war's opening hours — the tanker
-  bridge and AWACS fly from the Saudi rear — and climbs the pipeline-road ladder: **H-2, then
-  Qadessiya (Al-Asad), where the Foxbats live**, then the Habbaniyah line toward Baghdad. The
-  French-built **KARI** network ties the SA-2/SA-3 rings back through sector operations
-  centers to one destroyable ADOC — decapitate it and the net goes autonomous; leave it and
-  it repairs. Night-one start (17 Jan 1991, 0300), a Great Scud Hunt in the western baskets
-  against launchers that relocate between recon passes, real-highway convoy interdiction from
-  Baghdad to Mosul, and a GCI-alert Iraqi Air Force on hot-pad QRA. Every squadron is its real 1991 unit — VF-103 Sluggers
-  Bombcats, the 58th TFS Gorillas, Task Force Normandy's Apaches, and the Qadessiya
-  Foxbat squadron that drew first blood on night one.
-- **Marianas — Second Island Chain (2027)** — the modern-day China fight, on the one DCS map
-  that needs no fiction to host it: Guam *is* the Second Island Chain, and Andersen AFB is the
-  target set the PLA Rocket Force was built around. A Taiwan crisis went kinetic; the opening
-  salvo cratered Guam's ramps while amphibious groups took Rota, Tinian and Saipan. Guam held —
-  now hold the ramp you have left and fight north up the chain to the Marine detachment still
-  cut off on Farallon de Pajaros. A **modern PLA air-defence belt** — an S-300PMU-2 on Tinian and an HQ-22 on Rota anchoring HQ-7 and HQ-17A point defence — and **road-mobile PLARF launchers** shoot and scoot between recon
-  passes, so a site is never quite where the last photo froze it; three PLAN carrier groups and
-  a Badger regiment contest the sea, both fleets trading **cruise missiles from finite magazines
-  that never rearm**, and sea shipments run a coastal-battery gauntlet. The boat flies a modern
-  air wing — Super Hornets, a **Growler** electronic-attack det jamming ahead of the strike
-  packages, and an organic Super Hornet tanker — with a legacy Hornet squadron kept aboard so
-  nobody is locked out of a carrier jet. Guam runs both a boom and a drogue tanker, because
-  the bombers and the jets off the boat do not refuel the same way. The islands aren't
-  connected — no ground front ever forms, so **islands change hands by air assault**, by
-  helicopter off the LHA or by C-130J paradrop.
-- **The Vietnam campaign layer changes *how* the enemy fights.** When Hanoi answers the
-  campaign clock — surging the Ho Chi Minh Trail or opening a Tet-style ground push on a
-  scheduled window — the enemy's tempo shifts against you. And its MiGs fly a period **GCI
-  ambush**: scramble late, one close slashing pass, and run for home rather than a stand-up
-  BVR duel.
-- Plus: **CurrentHill Iran** assets, **High Digit SAMs** (Ultimate Compilation — S-400, SAMP/T,
-  Pantsir-SM, period EWRs), the optional **Expanded F-4E Weapons Pack** (check it on the Mods
-  page to arm the Heatblur Phantom for real Weasel SEAD — AGM-78 Standard ARMs by default,
-  a 4× HARM fit one click away; without the mod the jet falls back to its stock Shrike fits
-  automatically), a **rebuilt settings screen** with
-  one-click difficulty presets, and an eight-mechanic **Vietnam
-  Ops** page (Arc Light, flak gauntlet, naval gunfire, trail convoys, airbase harassment, the
-  Super Gaggle, FAC(A) marking, snake and nape).
+- **The Tanker War** — the 1988 carrier air wing (F-14A, A-6E, A-7E) against Iranian naval and
+  coastal power. The currency is ships, not territory: Silkworm batteries fire from the coast
+  and AAA gun forts stand on the oil platforms. The one DCS matchup where the Tomcat flies both
+  sides.
+- **Umm al-Ma'arik** — blue holds only the three H-3 desert strips seized on the border, with
+  the tanker bridge and AWACS flying from the Saudi rear, and climbs the pipeline-road ladder:
+  H-2, then Qadessiya (Al-Asad) where the Foxbats live, then the Habbaniyah line toward
+  Baghdad. The French-built KARI network ties the SA-2/SA-3 rings back through sector operations
+  centres to one destroyable ADOC — decapitate it and the net goes autonomous, leave it and it
+  repairs. Night-one start (17 Jan 1991, 0300), a Scud hunt in the western baskets, real-highway
+  convoy interdiction, and a GCI-alert Iraqi Air Force on hot-pad QRA. Every squadron is its
+  real 1991 unit.
+- **Second Island Chain** — a Taiwan crisis went kinetic; the opening salvo cratered Guam's ramps
+  while amphibious groups took Rota, Tinian and Saipan. Hold the remaining ramp and fight north.
+  A modern PLA air-defence belt (S-300PMU-2 on Tinian, HQ-22 on Rota, HQ-7 and HQ-17A point
+  defence), road-mobile PLARF launchers that shoot and scoot, three PLAN carrier groups and a
+  Badger regiment. Both fleets trade cruise missiles from finite magazines. The islands aren't
+  connected, so no ground front forms — islands change hands by air assault, helicopter off the
+  LHA or C-130J paradrop.
 
-Most campaign-facing systems have their own setting or plugin toggle, and existing campaigns
-keep whatever they were saved with.
+The Vietnam campaign layer also changes how the enemy fights: Hanoi answers the campaign clock
+by surging the Trail or opening a Tet-style ground push on a scheduled window, and its MiGs fly
+a period GCI ambush — scramble late, one slashing pass, run for home.
+
+**Mod content:** CurrentHill Iran assets, High Digit SAMs (Ultimate Compilation — S-400, SAMP/T,
+Pantsir-SM, period EWRs), and the optional Expanded F-4E Weapons Pack (check it on the Mods page
+to arm the Heatblur Phantom for Weasel SEAD; without the mod the jet falls back to stock Shrike
+fits). Plus a rebuilt settings screen with difficulty presets and an eight-mechanic Vietnam Ops
+page (Arc Light, flak gauntlet, naval gunfire, trail convoys, airbase harassment, Super Gaggle,
+FAC(A) marking, snake and nape).
+
+Existing campaigns keep whatever settings they were saved with.
 
 ---
 
-## Download / Latest build
+## Running from source
 
-Pre-built `.exe` releases are published automatically every time `main` is updated.
-No GitHub account needed — just grab the zip and run.
-
-**[Download latest build](https://github.com/bradyccox/414Ret/releases/tag/latest)**
-
-1. Download `414th-retribution-latest.zip` from the link above.
-2. Extract anywhere.
-3. Run `retribution_main.exe`.
-4. Point it at your DCS World install on first launch.
-
-> The `latest` release is a rolling pre-release that always reflects the current `main`
-> branch. For pinned campaign builds, use versioned releases (tagged `v1.x.x`) if
-> available.
-
----
-
-## Running it (from source)
-
-Same as upstream Retribution. Quick start (Windows, PowerShell):
+Same as upstream. Windows, PowerShell:
 
 ```powershell
 .\scripts\bootstrap-env.ps1
@@ -373,58 +256,52 @@ Same as upstream Retribution. Quick start (Windows, PowerShell):
 .\venv\Scripts\python.exe -m qt_ui.main
 ```
 
-You need a working DCS World install and the MOOSE-dependent features assume the
-bundled mission plugins under `resources/plugins/` are present. See
-[`README.upstream.md`](README.upstream.md) for the full upstream setup, dependencies,
-and wiki links.
+You need a working DCS World install. MOOSE-dependent features assume the bundled plugins under
+`resources/plugins/` are present. Full upstream setup and dependencies:
+[`README.upstream.md`](README.upstream.md).
 
-### Windows environment sanity
+### Environment health
 
-This repo is sensitive to Python drift on Windows. If `.venv` was created from a Python
-install that later moved, was removed, or lost execute permissions, all repo-local
-commands will start failing in the same confusing way for humans and assistants.
-
-Use these two scripts from the repo root:
+This repo is sensitive to Python drift on Windows. If `.venv` was created from a Python install
+that later moved or was removed, every repo-local command fails the same confusing way.
 
 ```powershell
 .\scripts\bootstrap-env.ps1  # find Python 3.11, recreate .venv, install requirements
-.\scripts\check-env.ps1      # verify Python, venv, and Git LFS auth health
+.\scripts\check-env.ps1      # verify Python, venv, and Git LFS auth
 ```
 
-`check-env.ps1` also warns when Git LFS is unauthenticated, which is a common cause of
-GitHub push/upload failures for repos with LFS-tracked content.
+`check-env.ps1` also warns on unauthenticated Git LFS, a common cause of push failures.
 
-### Dev checks (must pass before pushing)
+### Checks before pushing
 
 ```powershell
 .venv\Scripts\python.exe -m black --check .      # formatting
-.venv\Scripts\python.exe -m mypy game tests       # type checking (CI only checks game + tests)
-.venv\Scripts\python.exe -m pytest tests -q       # unit tests
+.venv\Scripts\python.exe -m mypy game tests      # type checking
+.venv\Scripts\python.exe -m pytest tests -q      # unit tests
 ```
 
 ---
 
 ## Relationship to the 414th workspace
 
-The 414th also maintains a separate **mission-building workspace** (campaign plans,
-`.miz` files, and any Mission-Editor-loaded scripts not yet integrated here, such as
-the standalone MANTIS IADS). That workspace is private.
+The 414th maintains a separate, private mission-building workspace (campaign plans, `.miz`
+files, and Mission-Editor scripts not yet integrated here).
 
-Features that started as standalone ME scripts and are now fully integrated into this
-repo (do not use the standalone versions):
-- **C-130J EW/ISR** → `resources/plugins/c130j/` (`FlightType.JAMMING`)
-  - Supersedes the retired generic `ewrj` / "EW Jammer Script"; do not use that
-    standalone script for F-16/A-10 pod jamming.
+These started as standalone ME scripts and are now integrated — do not use the standalone
+versions:
+
+- **C-130J EW/ISR** → `resources/plugins/c130j/` (`FlightType.JAMMING`). Supersedes the retired
+  generic `ewrj` / "EW Jammer Script".
 - **QRA / AI_A2A_DISPATCHER** → `resources/plugins/intercept/` (per-squadron `intercept_reserve`)
-- **TARS recon** → `resources/plugins/tars/` (runtime engine for `FlightType.TARPS`)
+- **Recon** → `resources/plugins/recon/` (runtime engine for `FlightType.TARPS`)
 
-This repo is the **engine-level** side: capabilities planned and spawned automatically
-by the campaign generator rather than hand-placed in the Mission Editor.
+This repo is the engine-level side: capabilities planned and spawned by the campaign generator
+rather than hand-placed in the Mission Editor.
 
 ---
 
-## License & credit
+## License
 
-DCS Retribution is licensed under the LGPL (see [`LICENSE`](LICENSE)). All upstream
-authorship and the project's history are preserved. The 414th additions are provided
-under the same terms. Upstream project: <https://github.com/dcs-retribution/dcs-retribution>.
+DCS Retribution is LGPL (see [`LICENSE`](LICENSE)). Upstream authorship and history are
+preserved; 414th additions are under the same terms.
+Upstream: <https://github.com/dcs-retribution/dcs-retribution>.

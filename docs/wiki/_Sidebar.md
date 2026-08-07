@@ -65,7 +65,7 @@
 - [Custom Campaigns](Custom-Campaigns)
 - [Motorpools](Motorpools)
 - [Custom Factions](Custom-Factions)
-- [Layouts](https://github.com/bradyccox/414Ret/blob/main/docs/modding/layouts.rst)
+- [Layouts](https://github.com/BradySox/414Ret/blob/main/docs/modding/layouts.rst)
 - [Lua Plugins](Lua-Plugins)
 - [Custom Loadouts](Custom-Loadouts)
 - [Modded aircraft/unit support](Modded-Unit-Support)

@@ -268,7 +268,7 @@ red's reaction will reshuffle priorities, but this is the spine.
 A repeatable Saturday flow. The **mission commander (MC)** owns the plan; everyone else fills it.
 
 **Before op night (MC, in the Retribution tool):**
-1. Sync the save, read the **SITREP** on last turn's debrief / kneeboard cover page (losses,
+1. Sync the save, read the **SITREP** on last turn's debrief or its own kneeboard page (losses,
    captures, rescues) and the current FLOT.
 2. Pick **this turn's objective** off the phase plan (§5). One main effort, maybe one supporting.
 3. Lay the **packages** (§8): main-effort strike/OCA/DEAD + escort + SEAD + tanker + AWACS, plus a
@@ -569,11 +569,11 @@ OPEN SAR / POW (4-turn clock): _________________________________________
 *Companion docs: in-fiction lore & spoken brief →
 [red-tide-intel-assessment.md](Red-Tide-Intel-Assessment); picture brief & maps →
 [red-tide-visual-briefing.md](Red-Tide-Visual-Briefing). Build/edit notes for the campaign
-itself → [../dev/design/414th-red-tide-campaign-notes.md](https://github.com/bradyccox/414Ret/blob/main/docs/dev/design/414th-red-tide-campaign-notes.md).
+itself → [../dev/design/414th-red-tide-campaign-notes.md](https://github.com/BradySox/414Ret/blob/main/docs/dev/design/414th-red-tide-campaign-notes.md).
 All regiments, callsigns, personalities, and the "ZAPAD" operation name are fiction in the* Red Storm
 Rising *tradition and freely editable.*
 
 
 ---
 
-*This page is the online copy of [`docs/campaigns/red-tide-campaign-handbook.md`](https://github.com/bradyccox/414Ret/blob/main/docs/campaigns/red-tide-campaign-handbook.md) in the repo. Edit that file; the wiki is mirrored from `docs/wiki/` on merge to `main`.*
+*This page is the online copy of [`docs/campaigns/red-tide-campaign-handbook.md`](https://github.com/BradySox/414Ret/blob/main/docs/campaigns/red-tide-campaign-handbook.md) in the repo. Edit that file; the wiki is mirrored from `docs/wiki/` on merge to `main`.*

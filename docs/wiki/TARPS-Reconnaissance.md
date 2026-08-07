@@ -1,145 +1,114 @@
 # TARPS Reconnaissance
 
-In this fork, reconnaissance is a real job with a real payoff. Enemy sites can be on your map
-without their composition, strength, or damage state being known, and a struck target keeps
-showing alive until someone confirms the kill (see
-[Fog of War and Reconnaissance](Fog-of-War-and-Reconnaissance)). **TARPS** is the player task
-that resolves that uncertainty: an F-14 flies a photo-recon pass and what it photographs comes
-back into the campaign as **confirmed intelligence**.
+Enemy sites can sit on your map without their composition, strength or damage state being known,
+and a struck target keeps showing alive until someone confirms the kill (see
+[Fog of War and Reconnaissance](Fog-of-War-and-Reconnaissance)). **TARPS** is the player task that
+resolves that: fly a photo-recon pass over the site and what you overfly comes back as confirmed
+intelligence.
 
-TARPS stands for the **Tactical Airborne Reconnaissance Pod System** — the real F-14 recon pod.
-Here it is a dedicated flight type (`FlightType.TARPS`) backed by the **TARS** (Tactical Air
-Recon System) runtime engine, which films what the jet overflies and feeds the results into the
-campaign's battle-damage picture at debrief. The flight type is **airframe-agnostic**: the F-14 is
-the modern carrier of the role, but any aircraft tagged with the `TARPS` task can fly it — see
-[Vietnam-era recon birds](#vietnam-era-recon-birds) below.
-
-> **In-game-pass status:** TARS is **default ON** and code-complete, but the Lua can't run in CI
-> so it still warrants a cockpit pass — confirm the F10 film menu unlocks with the shipped F-14
-> TARPS payload, overfly a struck enemy site, land, and check the BDA map confirms exactly the
-> photographed units.
+TARPS is the **Tactical Airborne Reconnaissance Pod System**, the real F-14 recon pod. Here it is
+a flight type (`FlightType.TARPS`) driven by the `recon` plugin. The flight type is
+**airframe-agnostic** — the F-14 is the modern carrier of the role, but any aircraft tagged with
+the `TARPS` task can fly it.
 
 ---
 
 ## Why fly it
 
-Two fog rules in the campaign make recon worth the sortie:
+Two fog rules make recon worth the sortie:
 
-- **Battle-damage lag.** When you strike an enemy site, your map keeps showing those units alive
-  until a recon pass confirms the kill. Without confirmation you are guessing whether the SAM
-  you bombed is actually dead.
-- **Recon intel-fog.** A newly-seen enemy site appears as a targetable marker — position,
-  category, allegiance — but its unit types, counts, and threat/detection rings stay hidden until
-  it is attacked, scouted, or has a unit destroyed.
+- **Battle-damage lag.** After you strike a site your map keeps showing those units alive until a
+  recon pass confirms the kill. Without it you are guessing whether the SAM you bombed died.
+- **Recon intel-fog.** A newly-seen site appears as a marker — position, category, allegiance —
+  but its unit types, counts and threat rings stay hidden until it is attacked, scouted, or has a
+  unit destroyed.
 
-A TARPS overflight is the clean way to lift both: photograph a site you just hit to confirm the
-BDA, or photograph a freshly-discovered site to learn what is actually there before you commit a
-strike package to it.
+Overfly a site you just hit to confirm the BDA, or a freshly-discovered one to learn what is
+there before committing a strike package.
 
-![An in-cockpit Threat Intel Brief kneeboard page listing enemy air defenses as "Unidentified AAA / LORAD / MERAD / SHORAD", each line tagged "fly TARPS recon to ID"](https://raw.githubusercontent.com/bradyccox/414Ret/main/docs/wiki/img/kneeboard-recon-fog.jpg)
+![An in-cockpit Threat Intel Brief kneeboard page listing enemy air defenses as "Unidentified AAA / LORAD / MERAD / SHORAD", each line tagged "fly TARPS recon to ID"](https://raw.githubusercontent.com/BradySox/414Ret/main/docs/wiki/img/kneeboard-recon-fog.jpg)
 
-*Recon intel-fog in the cockpit: enemy air defenses show as **Unidentified** with a "fly TARPS recon to ID" prompt — composition stays hidden until a recon pass lifts the fog.*
+*Enemy air defences show as **Unidentified** with a "fly TARPS recon to ID" prompt until a pass
+lifts the fog.*
 
-The AI planner and threat math always use full ground truth, so flying (or skipping) TARPS never
-disadvantages the auto-planner — the fog is a **player-facing** information layer only.
+The AI planner and threat math always use ground truth, so flying or skipping TARPS never
+disadvantages the auto-planner. The fog is a player-facing layer only.
 
 ---
 
-## The aircraft and pod
+## Flying a pass
 
-All F-14 variants carry the `{F14-TARPS}` pod on station 6, fitted by the **Retribution TARPS**
-payload. That payload pairs the pod with a per-variant self-defense fit (a mix of AIM-54/AIM-7
-and AIM-9 wingtips depending on the variant) so the recon bird can defend itself but is not a
-striker.
+1. **Get tasked.** Build a `FlightType.TARPS` package by hand, or let the auto-planner append one
+   (below).
+2. **Overfly the target.** The target waypoint is a flyover, not an attack run. There is no menu
+   and no film limit — crossing the site is what captures the take.
+3. **Come home for the read-out.** The capture happens on the overfly, but the confirmation
+   message is held until you land. The intelligence is already banked; landing is when you're
+   told what you got.
 
-The TARPS jet is **weaponless against the ground by design**. Its flight plan uses a recon
-ingress, not a strike ingress, so the AI doesn't get bombing tasks dumped on it — without that,
-the AI would fly an aborting attack pattern and never cleanly cross the target. The target
-waypoint is a **flyover**, so the jet actually overflies the site instead of turning back at the
-ingress point.
+A flight that is shot down or aborts before the pass confirms nothing.
 
-> If you ever see the F10 film menu fail to unlock, it is almost always a stale weapon CLSID in
-> the loadout — DCS rejects the whole payload and silently drops the pod with it. See
-> [Custom Loadouts](Custom-Loadouts) for the CLSID-currency gotcha.
+### What shapes the take
+
+- **Sensor.** A TARPS tasking reads a wider area than a drone's ball.
+- **Altitude.** Full radius up to 20,000 ft, degrading to about 40% by 40,000 ft. A high, fast
+  pass resolves less.
+- **Weather.** Cloud cover from the campaign's own weather cuts what the cameras see. In rain or
+  storms the auto-planner stops appending recon flights entirely.
+
+**Drones are always filming.** Any drone banks what it overflies regardless of its tasking — solo
+recon, JTAC overwatch on a strike, or CAS. A manned jet only films when actually tasked TARPS.
+
+---
+
+## The aircraft
+
+All F-14 variants carry the `{F14-TARPS}` pod on station 6 via the **Retribution TARPS** payload,
+paired with a self-defence fit so the recon bird can protect itself without being a striker. The
+flight plan uses a recon ingress, not a strike ingress, so the AI doesn't get bombing tasks dumped
+on it and turn back at the ingress point.
 
 ### Vietnam-era recon birds
 
-The TARPS role is not F-14-only. The two dedicated Vietnam-era tactical photo-recon aircraft fly
-it as their **primary** job:
+Two dedicated period photo-recon aircraft fly TARPS as their **primary** job:
 
 | Aircraft | Service | Notes |
 |---|---|---|
-| **RF-101B Voodoo** | USAF, land-based | Supersonic low-level photo recon; the classic Vietnam "Voodoo" run |
+| **RF-101B Voodoo** | USAF, land-based | Supersonic low-level photo recon |
 | **RA-5C Vigilante** | US Navy, carrier-based | Carrier recon over Yankee Station |
 
-These are unarmed camera ships with **built-in cameras** rather than the F-14's external
-`{F14-TARPS}` pod, so their TARPS loadout is a clean, weaponless fit (the **Retribution TARPS**
-payload — no external stores). They still keep a low-priority **Armed Recon** fallback so a
-squadron is never stranded with nothing to do, but TARPS is what they are for. The **1968 Yankee
-Station** campaign fields both (RF-101B at Da Nang, RA-5C on the carriers), tasked TARPS by default.
-
-The runtime is identical to the F-14's: overfly the target, recover the aircraft, and the
-photographed sites are confirmed at debrief.
+Both are unarmed camera ships with built-in cameras rather than an external pod, so their TARPS
+loadout is a clean weaponless fit. They keep a low-priority Armed Recon fallback so a squadron is
+never stranded. **1968 Yankee Station** fields both — RF-101B at Da Nang, RA-5C on the carriers.
 
 ---
 
-## Flying a TARPS pass
+## Auto-planned recon
 
-1. **Get tasked.** Either build a `FlightType.TARPS` package by hand, or let the auto-planner
-   append one (below). The flight plan is a single overflight waypoint set roughly **5 minutes
-   behind the strikers** so the photos catch the post-strike state.
-2. **Overfly the target.** Cross the site at the planned waypoint — the pass is a flyover, not an
-   attack run. TARS films ground and naval objects in the camera footprint (air contacts are not
-   filmed).
-3. **Land at a friendly base.** TARS processes the film during the **landing debrief** — you have
-   to **recover the jet** for the intelligence to count. A photographed site whose jet never
-   lands is not confirmed.
-4. **Read the result.** Each photographed unit is resolved back to its site, and that site's
-   confirmed battle-damage snaps to truth: the map now shows what is really alive or dead there.
+With **`auto_add_tarps_recon`** on (default), the planner appends a single TARPS sortie to
+**Strike**, **DEAD** and **Armed Recon** packages against high-value targets.
 
-The discipline is simple: **photograph it, then bring the film home.**
+- Behind a Strike or DEAD shooter it arrives **2 minutes later** for a post-strike BDA look.
+- On an Armed Recon package it flies **with** the shooters — a find-and-overwatch pass, not a
+  post-strike one.
+- It needs a TARPS-capable squadron in range. If none is free the recon flight is skipped; the
+  strike is never scrubbed for it.
+- On a drone-fielding faction the recon bird *is* the drone, so Predators and Reapers ride along
+  and bank BDA on everything they pass.
+- The tag-along never paces the package — a slow drone riding a fast strike keeps its own
+  schedule instead of dragging the formation down to its speed.
 
----
-
-## Auto-planned TARPS follow-up
-
-The auto-planner can append a single TARPS sortie to **Strike** and **DEAD** packages against
-high-value targets (air defenses, factories, command posts, bridges), controlled by the
-**`auto_add_tarps_recon`** setting (Campaign Doctrine, **default ON**):
-
-- The recon bird overflies the target about 5 minutes behind the strikers for a post-strike BDA
-  pass.
-- It requires a **TARPS-capable squadron in range**. If none is available the recon flight is
-  simply skipped — the strike is never scrubbed for lack of a recon escort.
-
-This is what makes BDA mostly take care of itself on packages you would fly anyway: hit the SAM,
-and the trailing F-14 confirms whether it actually died.
+This makes BDA largely take care of itself on packages you'd fly anyway.
 
 ---
 
-## The TARS engine (under the hood)
-
-TARS is MOOSE's **Ops.TARS** module, vendored into the plugin set and driven by a 414th init
-script. A few facts worth knowing:
-
-- **It feeds confirmed BDA, not just "a flight overflew the target."** When TARS processes a
-  captured object at the landing debrief, the bridge records that unit and its life value, and
-  the campaign confirms battle damage for **exactly the units photographed**.
-- **It runs in addition to** the legacy geometric overflight reveal, so turning the plugin off
-  changes nothing about how TARPS behaves — the engine is purely additive.
-- **It is filtered for a Retribution theater.** Two stock TARS defaults are overridden: the
-  USA/USSR name filter (which Retribution unit names never match) is disabled, and the ammo
-  whitelist is opened up (default) so the shipped F-14 TARPS payload doesn't get refused and lock
-  the film menu.
-- **Scoring/markers are coalition-local**, and there is an optional SRS readout.
-
-## Settings reference
+## Settings
 
 | Setting | Default | Effect |
 |---|---|---|
-| `auto_add_tarps_recon` | ON | Auto-planner appends a TARPS recon flight to Strike/DEAD packages against high-value targets, ~5 min behind the strikers |
-| `recon_intel_fog` | ON | The intel-fog that TARPS lifts: enemy site composition hidden until scouted (see [Fog of War and Reconnaissance](Fog-of-War-and-Reconnaissance)) |
-| TARS plugin | ON | The film-and-debrief engine that turns photos into confirmed BDA; off = plain geometric overflight reveal |
+| `auto_add_tarps_recon` | ON | Planner appends a recon flight to Strike / DEAD / Armed Recon packages |
+| `recon_intel_fog` | ON | The fog TARPS lifts — site composition hidden until scouted |
+| `recon` plugin | ON | The runtime that banks an overflight as confirmed BDA |
 
 ## See also
 

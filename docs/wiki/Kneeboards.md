@@ -47,7 +47,7 @@ bingo"), because the planned dwell is doctrine and the gas is the real answer.
 Reference steerpoints (divert, bullseye) print no Time/GSPD — a chained ETA past the landing point
 is noise, not information.
 
-![The Mission Info kneeboard page: a BLUF block listing task, code words, jam-backup channel, air and SAM threats, loadout and the SAR drill, above the airfield table and a flight plan whose right-hand column shows planned fuel at each steerpoint](https://raw.githubusercontent.com/bradyccox/414Ret/main/docs/wiki/img/kneeboard-mission-info-bluf.png)
+![The Mission Info kneeboard page: a BLUF block listing task, code words, jam-backup channel, air and SAM threats, loadout and the SAR drill, above the airfield table and a flight plan whose right-hand column shows planned fuel at each steerpoint](https://raw.githubusercontent.com/BradySox/414Ret/main/docs/wiki/img/kneeboard-mission-info-bluf.png)
 
 *A real generated Mission Info page (Baltic Fury, an F/A-18F on OCA/Runway). The BLUF answers the
 brief before the flight plan starts; the plan's right-hand **Fuel** column and the **RTB margin**
@@ -63,7 +63,7 @@ flying with you — which is why it reads **`Flight`** rather than a callsign, a
 different channel (COMM1) from the rest of the package (COMM2). Give the flight a **custom name**
 in the ATO and that name replaces `Flight` here.
 
-![The Support Info kneeboard page: the package's flights with callsigns, tasks, types and radio channels, a colour-keyed code-words block, then AEW&C and tanker tables with frequencies, TACAN and time on station](https://raw.githubusercontent.com/bradyccox/414Ret/main/docs/wiki/img/kneeboard-support-info.png)
+![The Support Info kneeboard page: the package's flights with callsigns, tasks, types and radio channels, a colour-keyed code-words block, then AEW&C and tanker tables with frequencies, TACAN and time on station](https://raw.githubusercontent.com/BradySox/414Ret/main/docs/wiki/img/kneeboard-support-info.png)
 
 *The same flight's Support Info page. Every other flight in the package with its channel, the
 code words colour-keyed (blue push, green success, red abort — "(you)" marks your own call), then

@@ -64,7 +64,7 @@ come preinstalled.
 Squadron members with repository access clone the fork directly:
 
 ```
-git clone https://github.com/bradyccox/414Ret.git
+git clone https://github.com/BradySox/414Ret.git
 ```
 
 Outside contributors: fork the repository through the GitHub UI first (the upstream
@@ -109,7 +109,7 @@ platform.
 
 **414th:** the DM's dev checkout names the environment `.venv` rather than `venv` (the
 validation commands in
-[`docs/dev/CLAUDE-ci.md`](https://github.com/bradyccox/414Ret/blob/main/docs/dev/CLAUDE-ci.md)
+[`docs/dev/CLAUDE-ci.md`](https://github.com/BradySox/414Ret/blob/main/docs/dev/CLAUDE-ci.md)
 are written against `.venv`). Either name works — adjust paths to whichever your checkout
 uses.
 
@@ -213,7 +213,7 @@ create WIP commits, but it is run as part of the PR and build checks, so it's be
 before uploading a PR.
 
 **414th: the full CI gate.** Every push to `main` runs (always-current list in
-[`docs/dev/CLAUDE-ci.md`](https://github.com/bradyccox/414Ret/blob/main/docs/dev/CLAUDE-ci.md)):
+[`docs/dev/CLAUDE-ci.md`](https://github.com/BradySox/414Ret/blob/main/docs/dev/CLAUDE-ci.md)):
 
 1. **Black over the whole tree** (`black --check .`) — a formatting miss anywhere fails
    CI, including `qt_ui` and `tests`; mypy stays scoped to `game` + `tests` as upstream
@@ -249,7 +249,7 @@ dies at runtime, not in CI.
 ## Pull requests
 
 Please make a new branch and make your pull requests to the integration branch —
-**414th:** branch from `main`, PR to `bradyccox/414Ret` `main`. (Upstream: branch from
+**414th:** branch from `main`, PR to `BradySox/414Ret` `main`. (Upstream: branch from
 `dev`, PR to `dcs-retribution/dev`.)
 
 We can only merge/revert whole PRs, which means you should try and keep the size of each
@@ -276,9 +276,9 @@ the project in the section for the upcoming release.
   `changelog.md` current as well when a change is destined for upstream.
 * **Everything is upstreamable** (2026-07-19 policy): "clean and correct" is the bar —
   there is no permanent fork-only category. Generic fixes get carved into focused PRs
-  against `dcs-retribution/dev` via the `bradyccox/dcs-retribution` PR fork. Check the
+  against `dcs-retribution/dev` via the `BradySox/dcs-retribution` PR fork. Check the
   upstream-PR ledger in `CLAUDE.md` and
-  [`docs/dev/414th-upstreaming-inventory.md`](https://github.com/bradyccox/414Ret/blob/main/docs/dev/414th-upstreaming-inventory.md)
+  [`docs/dev/414th-upstreaming-inventory.md`](https://github.com/BradySox/414Ret/blob/main/docs/dev/414th-upstreaming-inventory.md)
   first — including the "crowded zones" list of upstream areas with active third-party
   PRs that we do not carve into without coordinating.
 

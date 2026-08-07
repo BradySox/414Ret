@@ -280,8 +280,8 @@ MISSION #: [____]      MC: [callsign]
 
 1. SITUATION
    Last turn (SITREP): [losses / captures / rescues / front movement]
-   The meters: WILL [___] · RESOLVE [___] · Phase: [Week One / Force on Force /
-     Surge Week] — ROE: [the Box + anything else off the cover page]
+   Progress: [victory checklist off the map ribbon] · Week: [Week One /
+     Force on Force / Surge Week] — ROE: [the Box + this week's standing rules]
    Enemy: [aggressor activity / SA-2 sites alive on this corridor / convoy traffic]
    Friendly: [adjacent packages, the FEBA, harassment on Mercury/Creech?]
    Weather / light: DAY. [ceiling / vis / wind]
@@ -353,9 +353,9 @@ MISSION #: [____]      MC: [callsign]
 **The golden rules (they're why Red Flag exists):**
 - **Know the array before you fly it** — TARPS film turns "somewhere out there" into a plotted site.
 - **Vary everything, one pass, keep your speed.** The aggressors and the gunners both learn you fast.
-- **The meters are the score.** A jet lost to a dumb re-attack, a pilot captured, a Box violation —
-  the assessment sees all of it. Fly like the 414th CTS is watching, because — in the fiction and
-  in fact — it is.
+- **The assessment is the score.** A jet lost to a dumb re-attack, a pilot captured, a Box
+  violation — it all lands in the debrief and the victory checklist. Fly like the 414th CTS is
+  watching, because in the fiction and in fact it is.
 
 ---
 

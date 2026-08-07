@@ -16,7 +16,7 @@ they should be fixed before a pinned release.
 Upstream's shipped campaigns live in
 [dcs-retribution/resources/campaigns/](https://github.com/dcs-retribution/dcs-retribution/tree/dev/resources/campaigns);
 the fork's in
-[`resources/campaigns/`](https://github.com/bradyccox/414Ret/tree/main/resources/campaigns).
+[`resources/campaigns/`](https://github.com/BradySox/414Ret/tree/main/resources/campaigns).
 
 **414th:** every campaign the fork *authored* (Red Tide, Enduring Resolve, Inherent
 Resolve, 1968 Yankee Station, Velvet Thunder, Red Flag 81-2, the Tanker War, Desert
@@ -47,7 +47,7 @@ learn, the
 [GitHub docs](https://docs.github.com/en/desktop/contributing-and-collaborating-using-github-desktop/working-with-your-remote-repository-on-github-or-github-enterprise/creating-an-issue-or-pull-request)
 can help. If you don't know how to use GitHub and _don't_ want to learn, that's okay too
 — file the
-[Campaign Update template](https://github.com/bradyccox/414Ret/issues/new?template=campaign_update.md)
+[Campaign Update template](https://github.com/BradySox/414Ret/issues/new?template=campaign_update.md)
 with the updated files attached. It won't be handled as quickly as a PR, but it will be
 handled.
 
@@ -87,10 +87,10 @@ the per-campaign design notes.
 
 * [Custom Campaigns](Custom-Campaigns) — how to author and structure a campaign,
   including the campaign YAML format
-* [`resources/campaigns/`](https://github.com/bradyccox/414Ret/tree/main/resources/campaigns)
+* [`resources/campaigns/`](https://github.com/BradySox/414Ret/tree/main/resources/campaigns)
   — the shipped campaign files you'll be editing
-* [Issue tracker](https://github.com/bradyccox/414Ret/issues) — report or track campaign
+* [Issue tracker](https://github.com/BradySox/414Ret/issues) — report or track campaign
   breakage
-* [`game/version.py`](https://github.com/bradyccox/414Ret/blob/main/game/version.py) —
+* [`game/version.py`](https://github.com/BradySox/414Ret/blob/main/game/version.py) —
   the `CAMPAIGN_FORMAT_VERSION` constant; check this when a campaign needs migrating to a
   newer save/campaign format

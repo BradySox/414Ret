@@ -30,7 +30,7 @@ P2 | Many modules don't complete these tasks. Completing these tasks is required
   2. Send PR to pydcs (the [dcs-retribution/pydcs](https://github.com/dcs-retribution/pydcs) fork)
   3. Update Retribution to the latest DCS
 - [ ] P0: Add unit data to `resources/units/aircraft`. See
-  [the F-16C data](https://github.com/bradyccox/414Ret/blob/main/resources/units/aircraft/F-16C_50.yaml)
+  [the F-16C data](https://github.com/BradySox/414Ret/blob/main/resources/units/aircraft/F-16C_50.yaml)
   for a complete example.
   - [ ] P0: Price. Compare to similar aircraft to determine what the price should be.
   - [ ] P0: Variants. These are the names that will be used in the UI. At least one is
@@ -42,10 +42,10 @@ P2 | Many modules don't complete these tasks. Completing these tasks is required
   - [ ] P1: Information sections (`description`, `introduced`, `manufacturer`, `origin`,
     and `role`).
   - [ ] P1: Radio configuration. See
-    [radios.py](https://github.com/bradyccox/414Ret/blob/main/game/radio/radios.py) for
+    [radios.py](https://github.com/BradySox/414Ret/blob/main/game/radio/radios.py) for
     a list of known radio types. Add new radios to that list if necessary. Necessary for
     default channel assignments and non-conflicting intra-flight frequency assignments.
-  - [ ] P2: [Fuel consumption data](https://github.com/bradyccox/414Ret/blob/main/docs/modding/fuel-consumption-measurement.md).
+  - [ ] P2: [Fuel consumption data](https://github.com/BradySox/414Ret/blob/main/docs/modding/fuel-consumption-measurement.md).
     Without this the kneeboard will not show minimum required fuel for each waypoint,
     and bingo/joker estimates may be extremely inaccurate. (**414th:** treat as P1 —
     see below.)
@@ -55,7 +55,7 @@ P2 | Many modules don't complete these tasks. Completing these tasks is required
   prefers aircraft with the larger weight for a given task (e.g. an F-22 outranks an
   F-16 outranks a FW-190 for a fighter task). Omitting a task means the aircraft cannot
   fly it. Valid task-name strings are the `FlightType` values in
-  [flighttype.py](https://github.com/bradyccox/414Ret/blob/main/game/ato/flighttype.py)
+  [flighttype.py](https://github.com/BradySox/414Ret/blob/main/game/ato/flighttype.py)
   — the ones commonly weighted per aircraft are: `Anti-ship`, `BAI`, `BARCAP`, `CAS`,
   `DEAD`, `Escort`, `Fighter sweep`, `Intercept`, `OCA/Aircraft`, `OCA/Runway`, `SEAD`,
   `SEAD Escort`, `Strike`, `TARCAP` (plus support tasks like `AEW&C`, `Refueling`,
@@ -83,7 +83,7 @@ from a flown failure:
   traced to one). Load a campaign fielding the aircraft headlessly and count the
   squadrons before shipping.
 - [ ] P1: **Task priorities per the rebalance rubric.** Don't guess weights — follow
-  [`docs/dev/design/414th-aircraft-task-rebalance-rubric.md`](https://github.com/bradyccox/414Ret/blob/main/docs/dev/design/414th-aircraft-task-rebalance-rubric.md).
+  [`docs/dev/design/414th-aircraft-task-rebalance-rubric.md`](https://github.com/BradySox/414Ret/blob/main/docs/dev/design/414th-aircraft-task-rebalance-rubric.md).
   Watch task *aliases* too: an `air-to-ground` secondary includes DEAD/SEAD, which has
   fragged the wrong airframes at SAM rings (the Bombcat lesson).
 - [ ] P1: **Recon and special classes.** Recon-capable airframes get a `TARPS` task

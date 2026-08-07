@@ -23,7 +23,7 @@ The Warsaw Pact opened the war and overran **Hamburg** and **Copenhagen** (the �
 Soviet thrust has **culminated**, and the **414th JFG** — boxed into the south-west — now leads the
 NATO counteroffensive (blue axes) to roll the front east and take it all back.
 
-![Red Tide theater map](https://raw.githubusercontent.com/bradyccox/414Ret/main/docs/campaigns/img/red_tide_theater_map.png)
+![Red Tide theater map](https://raw.githubusercontent.com/BradySox/414Ret/main/docs/campaigns/img/red_tide_theater_map.png)
 
 **Read it at a glance:** NATO holds the SW corner (Ramstein · Spangdahlem · Hahn · Frankfurt). Red
 owns the centre, east, and the whole north — **Hamburg** captured, **Copenhagen** a Soviet
@@ -43,7 +43,7 @@ The IADS is the center of gravity. You fly the deck–35k band, so you can't cli
 **S-300 / S-200 are established and on**, and reach down to you inside their rings. **Route around
 the fixed rings or commit dedicated SEAD; catch the mobile Buk / SA-6 / SHORAD in transit.**
 
-![Red Tide SAM engagement ranges](https://raw.githubusercontent.com/bradyccox/414Ret/main/docs/campaigns/img/red_tide_sam_threat.png)
+![Red Tide SAM engagement ranges](https://raw.githubusercontent.com/BradySox/414Ret/main/docs/campaigns/img/red_tide_sam_threat.png)
 
 ---
 
@@ -118,4 +118,4 @@ GermanyCW airfield coordinates and the campaign's order of battle.*
 
 ---
 
-*This page is the online copy of [`docs/campaigns/red-tide-visual-briefing.md`](https://github.com/bradyccox/414Ret/blob/main/docs/campaigns/red-tide-visual-briefing.md) in the repo. Edit that file; the wiki is mirrored from `docs/wiki/` on merge to `main`.*
+*This page is the online copy of [`docs/campaigns/red-tide-visual-briefing.md`](https://github.com/BradySox/414Ret/blob/main/docs/campaigns/red-tide-visual-briefing.md) in the repo. Edit that file; the wiki is mirrored from `docs/wiki/` on merge to `main`.*

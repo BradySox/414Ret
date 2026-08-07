@@ -148,7 +148,7 @@ week loses this campaign exactly the way ten sloppy missions lost crews over Han
 
 ```
 ==============  RED FLAG 81-2 — THREAT CARD  ==============
-THE AGGRESSORS ARE BETTER THAN YOU. THE ARRAY IS REAL. THE METERS ARE THE SCORE.
+THE AGGRESSORS ARE BETTER THAN YOU. THE ARRAY IS REAL. THE ASSESSMENT IS THE SCORE.
 
 THE AMBUSH (F-5E / MiG-21 / MiG-17, GCI-vectored)
   • They scramble LATE and merge CLOSE to your target — expect the slash at the IP.

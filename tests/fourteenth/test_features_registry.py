@@ -39,13 +39,24 @@ def _registry_sections() -> set[int]:
 
 
 def _features_at_a_glance_sections() -> set[int]:
-    """Section numbers of the CLAUDE.md 'Features at a Glance' numbered list."""
+    """Section numbers in the CLAUDE.md 'Features at a Glance' section.
+
+    Live features are a numbered list (``12. **Recon engine** — ...``); retired and
+    removed ones are a table (``| 40 | Campaign phases | Removed ... |``) so a dead
+    feature does not sit inline between two live ones. Both count as listed — the
+    invariant is that the registry and this section cover the same set, not how the
+    section renders them.
+    """
     text = CLAUDE_MD.read_text(encoding="utf-8")
     start = text.index("## Features at a Glance")
     rest = text[start + len("## Features at a Glance") :]
-    end = re.search(r"\n## |\n---", rest)
+    end = re.search(r"\n## ", rest)
     section_text = rest[: end.start()] if end else rest
-    return {int(m.group(1)) for m in re.finditer(r"^(\d+)\. \*\*", section_text, re.M)}
+    live = {int(m.group(1)) for m in re.finditer(r"^(\d+)\. \*\*", section_text, re.M)}
+    retired = {
+        int(m.group(1)) for m in re.finditer(r"^\| (\d+) \|", section_text, re.M)
+    }
+    return live | retired
 
 
 def _checklist_sections() -> set[int]:
@@ -123,20 +134,46 @@ def test_checklist_sections_are_registered() -> None:
 
 def test_features_doc_pointers_resolve() -> None:
     # Every "features doc §N" pointer in CLAUDE.md must resolve to a real section
-    # heading in 414th-features.md. This closes the blind spot that let §35 (Convoy
-    # interdiction) ship registered + listed + checklist-referenced but with NO
-    # engineering section written (found in the 2026-07-01 docs-vs-code audit): the
-    # other registry/list/checklist tests validate the pointer *triangle* but never
-    # that the destination section actually exists. Some features intentionally point
-    # at a shared section (e.g. the kneeboard features → §4, the map-layers feature →
-    # §18); those still resolve because the target heading exists, so this stays green
-    # for the deliberate redirects and only fails on a genuinely missing section.
+    # heading in 414th-features.md.
     pointers = _claude_features_doc_pointers()
     headings = _features_doc_section_headings()
     missing = sorted(pointers - headings)
     assert not missing, (
         "CLAUDE.md 'features doc §N' pointer(s) with no matching section heading in "
         f"docs/dev/414th-features.md: {missing}"
+    )
+
+
+# Features whose engineering detail deliberately lives under a differently-numbered
+# heading in 414th-features.md, rather than one of their own. Keep this small: a new
+# entry here should be a conscious "this shares a section", not a missing write-up.
+SHARED_FEATURE_SECTIONS = {
+    19: 18,  # unified map layers panel — features.md numbers it 18
+    22: 4,  # kneeboard space-utilisation — folded into the kneeboard section
+    25: 4,  # compact deck (retired) — same
+}
+
+
+def test_every_listed_feature_has_a_features_doc_section() -> None:
+    # This closes the blind spot that let §35 (Convoy interdiction) ship registered +
+    # listed + checklist-referenced but with NO engineering section written (found in
+    # the 2026-07-01 docs-vs-code audit).
+    #
+    # It used to check only the "features doc §N" pointers CLAUDE.md happened to carry,
+    # which covered a minority of features and went fully vacuous when the 2026-08-07
+    # rewrite turned the feature list into a plain index. Checking the listed set
+    # directly covers all of them and cannot be silently emptied.
+    headings = _features_doc_section_headings()
+    listed = _features_at_a_glance_sections()
+    missing = sorted(
+        n
+        for n in listed
+        if n not in headings and SHARED_FEATURE_SECTIONS.get(n) not in headings
+    )
+    assert not missing, (
+        "feature(s) in the CLAUDE.md list with no section in "
+        f"docs/dev/414th-features.md: {missing} — write the section, or add a "
+        "SHARED_FEATURE_SECTIONS entry if it deliberately shares one"
     )
 
 

@@ -12,7 +12,6 @@ from .armedrecon import ArmedReconFlightPlan
 from .bai import BaiFlightPlan
 from .barcap import BarCapFlightPlan
 from .cas import CasFlightPlan
-from .combatsar import CombatSarFlightPlan
 from .dead import DeadFlightPlan
 from .escort import EscortFlightPlan
 from .ferry import FerryFlightPlan
@@ -21,7 +20,6 @@ from .ocaaircraft import OcaAircraftFlightPlan
 from .ocarunway import OcaRunwayFlightPlan
 from .packagerefueling import PackageRefuelingFlightPlan
 from .planningerror import PlanningError
-from .scar import ScarFlightPlan
 from .sead import SeadFlightPlan
 from .seadsweep import SeadSweepFlightPlan
 from .shiprecoverytanker import RecoveryTankerFlightPlan
@@ -71,16 +69,7 @@ class FlightPlanBuilderTypes:
             FlightType.FERRY: FerryFlightPlan.builder_type(),
             FlightType.AIR_ASSAULT: AirAssaultFlightPlan.builder_type(),
             # Combat SAR = a standing pilot-rescue hold for a rescue helo. It uses
-            # a dedicated forward-hold plan (FLOT-anchored, short threat buffer,
-            # helo-sized racetrack) rather than the AEW&C standoff, so the CH-47
-            # holds near the front where it can reach an ejection instead of
-            # loitering at AWACS depth. The MOOSE CSAR runtime does the reactive
-            # pickup, not the plan.
-            FlightType.COMBAT_SAR: CombatSarFlightPlan.builder_type(),
             FlightType.ARMED_RECON: ArmedReconFlightPlan.builder_type(),
-            # SCAR = area find-and-prosecute of one moving HVT; v1 reuses the
-            # Armed Recon area/ingress machinery (see ScarFlightPlan).
-            FlightType.SCAR: ScarFlightPlan.builder_type(),
             FlightType.RECOVERY: RecoveryTankerFlightPlan.builder_type(),
             # TARPS = strike-style target overflight, but +2 min behind the package
             # TOT for a post-strike BDA / recon pass (see TarpsFlightPlan).

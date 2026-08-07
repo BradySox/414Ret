@@ -44,7 +44,6 @@ _CATEGORY_BY_TASK: Dict[FlightType, PushCategory] = {
     FlightType.OCA_AIRCRAFT: PushCategory.OCA,
     FlightType.CAS: PushCategory.CAS,
     FlightType.BAI: PushCategory.CAS,
-    FlightType.SCAR: PushCategory.CAS,
     FlightType.ARMED_RECON: PushCategory.CAS,
     FlightType.ANTISHIP: PushCategory.ANTISHIP,
     FlightType.TARCAP: PushCategory.CAP,

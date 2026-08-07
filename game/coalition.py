@@ -14,7 +14,6 @@ from game.navmesh import NavMesh
 from game.orderedset import OrderedSet
 from game.procurement import AircraftProcurementRequest, ProcurementAi
 from game.profiling import MultiEventTracer, logged_duration
-from game.pow_recovery import PendingPowRecovery, surviving_pows
 from game.squadrons import AirWing
 from game.theater.bullseye import Bullseye
 from game.theater.player import Player
@@ -56,7 +55,6 @@ class Coalition:
         # race), held as POWs at an enemy field for a few turns: freed if the
         # field falls, killed when the clock expires, draining will meanwhile.
         # Persisted; aged each turn.
-        self.pending_pow_recoveries: list[PendingPowRecovery] = []
         # Money the automated HQ spent per category last turn (front_line,
         # runways, buildings, ground_objects, aircraft). Surfaced in the
         # Finances dialog so the player sees where their income went.
@@ -156,8 +154,6 @@ class Coalition:
         # carry a pending-rescue list (of tombstone PendingSofRescue objects, kept
         # unpicklable-safe in game.scar_rescue); drop it -- nothing reads it.
         state.pop("pending_csars", None)
-        # Migration: older saves predate the captured-pilot POW recovery list.
-        state.setdefault("pending_pow_recoveries", [])
         # Migration: older saves predate the per-turn HQ expense breakdown.
         state.setdefault("last_turn_expenses", {})
 
@@ -214,13 +210,6 @@ class Coalition:
         # is handled correctly.
         self.transfers.perform_transfers()
 
-        # Advance the captured-pilot POW clock: free those whose holding airfield
-        # we recaptured, kill those held past the hold window, keep the rest.
-        # Ungated: the list is only ever non-empty when the Combat SAR capture
-        # race produced a capture, so this is a no-op otherwise.
-        self.pending_pow_recoveries = surviving_pows(
-            self.game, self.player, self.pending_pow_recoveries
-        )
 
     def preinit_turn_0(self, squadrons_start_full: bool) -> None:
         """Runs final Coalition initialization.
@@ -294,15 +283,6 @@ class Coalition:
                     from game.fourteenth.convoy_mining import plan_convoy_mining
 
                     plan_convoy_mining(self, now, tracer)
-                # 414th pilot recovery surge (§21): when a pilot went MIA last
-                # mission, frag ONE coordinated recovery package (Jolly + King +
-                # Sandy + escort) at the evader's position -- before the commander,
-                # so the surge claims its aircraft first ("drop everything").
-                # Once per downed pilot; no-op with no un-surged evader.
-                with tracer.trace(f"{color} pilot recovery surge"):
-                    from game.fourteenth.csar_surge import plan_pilot_recovery_surge
-
-                    plan_pilot_recovery_surge(self, now, tracer)
                 with tracer.trace(f"{color} mission identification"):
                     TheaterCommander(self.game, self.player).plan_missions(now, tracer)
                 with tracer.trace(f"{color} carrier buddy-tanker routing"):

@@ -268,14 +268,6 @@ settings:
     vietnamops: true
     commsjam: true
     mobilemissiles: true
-    # §51's intel gate (comms_jam_requires_capture, default ON) arms only off a captured
-    # aircrew, and combat_sar_captures has exactly ONE writer in the tree: the combatsar
-    # plugin. Disabled, it injects nothing, the global stays {} , the jam loop's type check
-    # still passes, and red simply never jams -- silent, no error. Pinning it also protects
-    # all rescue and the POW->will feed. Every other plugin pinned here also defaults true,
-    # so pinning a default-ON plugin IS this campaign's convention; combatsar was the one
-    # load-bearing omission.
-    combatsar: true
     # advanced_iads (line 33) is this laydown's centerpiece, and mantisiads owns its entire
     # runtime -- MANTIS ships inside the bundled MOOSE, so this plugin is the only consumer
     # of the emitted IADS table. Off, the IADS command unit is skipped at generation AND the

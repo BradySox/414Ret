@@ -55,7 +55,6 @@ from .weather.conditions import Conditions
 if TYPE_CHECKING:
     from .ato.airtaaskingorder import AirTaskingOrder
     from .factions.faction import Faction
-    from .fourteenth.downed_pilots import DownedPilot
     from .fourteenth.minefields import Minefield
     from .fourteenth.super_gaggle import SuperGaggleCommitment
     from .fourteenth.victory import VictoryBaseline
@@ -152,11 +151,6 @@ class Game:
         # convoy}]}), seeded at finish_turn, read by the emitter + the escort auto-frag.
         # Plain primitives; populated lazily by game.fourteenth.convoy_ambush when on.
         self.convoy_ambush_state: dict[str, Any] = {}
-        # Persistent downed pilots (§21, 2026-07-10): blue aviators still EVADING at
-        # mission end (MIA -- neither rescued nor captured). Each re-spawns at its
-        # position next mission and rolls the depth-weighted capture at every turn
-        # boundary. See game/fourteenth/downed_pilots.py.
-        self.downed_pilots: list["DownedPilot"] = []
         # §57 air-droppable minefields: fields left undisturbed at mission end, carried
         # across turns and re-emitted into the next mission for the plugin to re-arm.
         # Populated lazily by game.fourteenth.minefields when air_droppable_minefields is on.
@@ -250,7 +244,6 @@ class Game:
         state.setdefault("red_tempo_announced_window", None)
         state.setdefault("coin_state", {})
         state.setdefault("convoy_ambush_state", {})
-        state.setdefault("downed_pilots", [])
         state.setdefault("minefields", [])
         state.setdefault("cruise_missile_magazines", {})
         state.setdefault("naval_magazines", {})
@@ -467,15 +460,6 @@ class Game:
 
         for control_point in self.theater.controlpoints:
             control_point.process_turn(self)
-
-        # Persistent downed pilots (§21, 2026-07-10): an evader on friendly ground
-        # walks home; one behind the lines rolls the depth-weighted capture (deep =
-        # almost certainly found -- the don't-fly-deep incentive). The roll IS the
-        # clock (no expiry); a capture joins the normal held-POW model. Runs after
-        # the coalition end_turns so a fresh POW's hold clock starts next turn.
-        from game.fourteenth.downed_pilots import resolve_downed_pilots
-
-        resolve_downed_pilots(self)
 
         # Vietnam Ops convoy interdiction (§35): ensure the opfor has a *real*, tracked
         # convoy flowing on the trail corridor to interdict (replacing the old phantom
@@ -796,13 +780,6 @@ class Game:
 
         purge_legacy_sof_state(self)
 
-        # Sweep any stale captured-pilot POW objectives a pre-rescope save still
-        # carries (the POW recovery raid was shelved 2026-07-03; the objectives
-        # were dynamic and are no longer rebuilt). No-op on current campaigns.
-        from game.pow_recovery import purge_pow_objectives
-
-        purge_pow_objectives(self)
-
         # W6 red tempo: during an authored ground-offensive pulse raise Hanoi's
         # front stances (after the coalitions plan, so it has the final say;
         # before GroundPlanner reads cp.stances) + apply any resolve regen.
@@ -1098,14 +1075,6 @@ class Game:
         return self.__culling_zones
 
     def process_win_loss(self, turn_state: TurnState) -> None:
-        # Settle any held blue POWs against the outcome: a win brings them home
-        # (the Homecoming), a loss writes them off. Blue-only -- red flies no CSAR,
-        # so red never holds blue-captured aviators (§15 squadron call). No-op when
-        # none are held, so this is safe on every campaign.
-        from game.pow_recovery import resolve_pows_at_game_end
-
-        if turn_state in (TurnState.WIN, TurnState.LOSS):
-            resolve_pows_at_game_end(self, self.blue, won=turn_state is TurnState.WIN)
         if turn_state is TurnState.WIN:
             self.message(
                 "Congratulations, you are victorious! Start a new campaign to continue."

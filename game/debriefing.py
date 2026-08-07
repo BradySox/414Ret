@@ -139,29 +139,6 @@ class StateData:
     #: plugin is disabled.
     tars_recon_captures: List[str]
 
-    #: Original aircraft unit names of pilots delivered home by Combat SAR this
-    #: mission (the ``combatsar`` plugin appends one per rescued pilot). Each name
-    #: is the ejected aircraft DCS reports in its kill/crash events, so the loss is
-    #: scored normally but ``commit_air_losses`` spares the pilot -- the aviator
-    #: returns to the squadron though the airframe is still lost. Empty when Combat
-    #: SAR is off or no one was rescued.
-    combat_sar_rescues: List[str]
-
-    #: ``(airframe_unit_name, x, y, coalition)`` per pilot CAPTURED by an enemy snatch
-    #: party before rescue this mission (the ``combatsar`` enemy-capture race appends
-    #: ``{unit, x, y, coalition}`` per capture; ``coalition`` is the survivor's side).
-    #: ``commit_air_losses`` spares the kill (the pilot is a POW, not KIA) and
-    #: ``record_pow_captures`` holds them as a recoverable ``PendingPowRecovery`` on
-    #: that coalition. Empty when the capture race is off or no one was captured.
-    combat_sar_captures: list[tuple[str, float, float, str]]
-
-    #: ``(airframe_unit_name, x, y)`` per downed pilot still UN-resolved at mission
-    #: end (down or mid-boarding -- the ``combatsar`` plugin mirrors its live ledger
-    #: into ``combat_sar_survivors``). With ``combat_sar_persistent_pilots`` on,
-    #: ``commit_air_losses`` spares the kill and ``record_downed_pilots`` marks the
-    #: aviator MIA on ``game.downed_pilots`` (they re-spawn next mission and roll
-    #: the depth-weighted turn capture). Empty on pre-feature state files.
-    combat_sar_survivors: list[tuple[str, float, float]]
 
     #: ``(id, x, z, radius_m, charges)`` per air-dropped minefield the §57 plugin managed
     #: this mission -- persisted fields (by their Python id) + newly-laid fields (id 0), each
@@ -249,77 +226,6 @@ class StateData:
 
         tars_recon_captures = parse_tars_captures(data.get("tars_recon_captures", []))
 
-        def parse_combat_sar_rescues(raw: Any) -> List[str]:
-            # The combatsar bridge appends bare aircraft unit-name strings (or the
-            # Lua JSON encoder yields [] when none). Keep only non-empty strings.
-            if not isinstance(raw, list):
-                return []
-            return [str(name) for name in raw if isinstance(name, str) and name]
-
-        combat_sar_rescues = parse_combat_sar_rescues(
-            data.get("combat_sar_rescues", [])
-        )
-
-        def parse_combat_sar_captures(
-            raw: Any,
-        ) -> list[tuple[str, float, float, str]]:
-            # The combatsar capture race appends {unit=<airframe name>, x=, y=,
-            # coalition=<survivor's side>} per captured pilot (or the Lua JSON encoder
-            # yields [] when none). Pull (unit, x, y, coalition) defensively, skipping
-            # malformed / unnamed / coordless entries. coalition is the SURVIVOR's side
-            # (the side that owns the POW recovery); it defaults to "blue" so pre-rework
-            # records (which omitted it) keep the old blue-only behaviour.
-            if not isinstance(raw, list):
-                return []
-            captures: list[tuple[str, float, float, str]] = []
-            for entry in raw:
-                if not isinstance(entry, dict):
-                    continue
-                unit = entry.get("unit")
-                x = entry.get("x")
-                y = entry.get("y")
-                coalition = entry.get("coalition")
-                color = coalition if coalition in ("blue", "red") else "blue"
-                if (
-                    isinstance(unit, str)
-                    and unit
-                    and isinstance(x, (int, float))
-                    and isinstance(y, (int, float))
-                ):
-                    captures.append((str(unit), float(x), float(y), color))
-            return captures
-
-        combat_sar_captures = parse_combat_sar_captures(
-            data.get("combat_sar_captures", [])
-        )
-
-        def parse_combat_sar_survivors(raw: Any) -> list[tuple[str, float, float]]:
-            # The combatsar ledger mirror carries {unit=<airframe name>, x=, y=,
-            # coalition=} per still-unresolved survivor (or the Lua JSON encoder
-            # yields [] when none, and pre-feature state files omit the key). Pull
-            # (unit, x, y) defensively, skipping malformed entries.
-            if not isinstance(raw, list):
-                return []
-            survivors: list[tuple[str, float, float]] = []
-            for entry in raw:
-                if not isinstance(entry, dict):
-                    continue
-                unit = entry.get("unit")
-                x = entry.get("x")
-                y = entry.get("y")
-                if (
-                    isinstance(unit, str)
-                    and unit
-                    and isinstance(x, (int, float))
-                    and isinstance(y, (int, float))
-                ):
-                    survivors.append((str(unit), float(x), float(y)))
-            return survivors
-
-        combat_sar_survivors = parse_combat_sar_survivors(
-            data.get("combat_sar_survivors", [])
-        )
-
         def parse_minefields_state(
             raw: Any,
         ) -> list[tuple[int, float, float, float, int]]:
@@ -382,9 +288,6 @@ class StateData:
             base_capture_events=data.get("base_capture_events", []),
             intercept_survivors=intercept_survivors,
             tars_recon_captures=tars_recon_captures,
-            combat_sar_rescues=combat_sar_rescues,
-            combat_sar_captures=combat_sar_captures,
-            combat_sar_survivors=combat_sar_survivors,
             minefields_state=minefields_state,
             cruise_missiles_state=cruise_missiles_state,
             naval_magazines_state=naval_magazines_state,

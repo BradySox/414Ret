@@ -160,7 +160,6 @@ CAMPAIGN_MANAGEMENT_PAGE = "Campaign Management"
 GENERAL_SECTION = "General"
 PILOTS_AND_SQUADRONS_SECTION = "Pilots and Squadrons"
 HQ_AUTOMATION_SECTION = "HQ Automation"
-COMBAT_SAR_SECTION = "Combat search & rescue"
 FLIGHT_PLANNER_AUTOMATION = "Flight Planner Automation"
 
 CAMPAIGN_DOCTRINE_PAGE = "Campaign Doctrine"
@@ -417,16 +416,6 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                     "auto_ato_player_missions_asap",
                     "automate_front_line_stance",
                     "default_front_line_stance",
-                ],
-            ),
-            (
-                "Combat search & rescue",
-                [
-                    "auto_combat_sar",
-                    "combat_sar_persistent_pilots",
-                    "combat_sar_surge",
-                    "combat_sar_test_force_capture",
-                    "combat_sar_test_easy_rescue",
                 ],
             ),
             (
@@ -721,11 +710,6 @@ FEATURE_GATE_FIELDS: dict[str, list[str]] = {
         "comint_collection",  # §70
         "red_comms_net",  # §70
     ],
-    "Combat search & rescue": [
-        "auto_combat_sar",  # §21
-        "combat_sar_persistent_pilots",  # §21
-        "combat_sar_surge",  # §21
-    ],
     "Battlefield life": [
         "ambient_supply_convoys",  # §50
         "convoy_ambush",  # §50
@@ -872,8 +856,6 @@ _ALWAYS_BASIC_FIELDS: frozenset[str] = frozenset(
 #: in front of every player. These are debugging and test aids, not gameplay.
 _ADVANCED_NON_NUMERIC_FIELDS: frozenset[str] = frozenset(
     {
-        "combat_sar_test_force_capture",
-        "combat_sar_test_easy_rescue",
         "switch_baro_fix",
         "ground_start_scenery_remove_triggers",
     }
@@ -2144,38 +2126,6 @@ class Settings:
         HQ_AUTOMATION_SECTION,
         default=True,
     )
-    auto_combat_sar: bool = boolean_option(
-        "Automatic Combat SAR (pilot-rescue) standing alert",
-        CAMPAIGN_MANAGEMENT_PAGE,
-        COMBAT_SAR_SECTION,
-        default=True,
-        detail=(
-            "Auto-plan a Combat SAR package (King + rescue helo + Sandy) near each "
-            "active front so a downed pilot can be rescued even with no player CSAR "
-            "flown -- rescue is a normal, standing task. Requires a rescue-helo-"
-            "capable squadron; a human can always fly the rescue instead. Turn OFF "
-            "to only fly rescues manually. (Default ON since the 2026-07-03 CSAR "
-            "rescope; existing campaigns keep their saved choice.)"
-        ),
-    )
-    combat_sar_persistent_pilots: bool = boolean_option(
-        "Downed pilots persist until rescued or captured (MIA)",
-        CAMPAIGN_MANAGEMENT_PAGE,
-        COMBAT_SAR_SECTION,
-        default=True,
-        detail=(
-            "A pilot who ejects and is neither rescued nor captured by mission end "
-            "goes MIA instead of dying: they re-spawn at their last known position "
-            "next mission (fresh red smoke, a fresh enemy snatch race, rescuable by "
-            "a player package or the automatic rescue), and at every turn boundary "
-            "an evader on friendly ground walks home while one behind the lines "
-            "rolls a DEPTH-weighted capture -- near the front they usually keep "
-            "evading; deep behind the lines enemy search parties almost certainly "
-            "find them (-> POW, which can compromise your comms). There is no "
-            "death clock; the depth roll is the clock. Turn OFF to return to the "
-            "old behaviour (an un-rescued pilot is lost at debrief)."
-        ),
-    )
     sp_pilot_mode: bool = boolean_option(
         "SP Pilot Mode (fly the next turn without planning it)",
         CAMPAIGN_MANAGEMENT_PAGE,
@@ -2194,53 +2144,6 @@ class Settings:
             "damage you caused, victory progress, and scheduled squadron arrivals. "
             "The normal map/ATO planning path is untouched -- this is an express "
             "lane, not a replacement."
-        ),
-    )
-    combat_sar_surge: bool = boolean_option(
-        "Pilot recovery surge (next-turn coordinated rescue)",
-        CAMPAIGN_MANAGEMENT_PAGE,
-        COMBAT_SAR_SECTION,
-        default=True,
-        enabled_when="combat_sar_persistent_pilots",
-        detail=(
-            "The turn after a pilot goes MIA, open the mission with a coordinated "
-            "recovery package already airborne at the evader's last known position: "
-            "rescue helo(s), a C-130 'King' on-scene commander, a 'Sandy' escort, "
-            "and a fighter escort when threatened -- planned ahead of everything "
-            "else, so the rescue force is on station at mission start instead of "
-            "transiting for an hour. Fires ONCE per downed pilot (a failed surge "
-            "falls back to the normal rescue paths), so it is an event, not an "
-            "every-mission fixture. Requires persistent downed pilots (MIA)."
-        ),
-    )
-    combat_sar_test_force_capture: bool = boolean_option(
-        "[TEST] Combat SAR: force every downed pilot to be captured",
-        CAMPAIGN_MANAGEMENT_PAGE,
-        COMBAT_SAR_SECTION,
-        default=False,
-        detail=(
-            "Testing aid (thumb on the scale, default OFF). Rigs the Combat SAR "
-            "capture race so every ejection is seized fast: the enemy snatch party "
-            "spawns 100% of the time, right on top of the survivor, and captures "
-            "within a few seconds -- so you can reliably exercise the POW path and "
-            "the capture-gated enemy comms jamming without fighting the RNG (fly, "
-            "get a blue pilot down near the front, advance the turn). Overrides the "
-            "Combat SAR plugin's capture options. If '[TEST] ... trivially easy' is "
-            "also on, capture wins. Leave OFF for normal play."
-        ),
-    )
-    combat_sar_test_easy_rescue: bool = boolean_option(
-        "[TEST] Combat SAR: make pilot pickup trivially easy",
-        CAMPAIGN_MANAGEMENT_PAGE,
-        COMBAT_SAR_SECTION,
-        default=False,
-        detail=(
-            "Testing aid (thumb on the scale, default OFF). Disables the enemy "
-            "capture race and widens the pickup tolerances (range/height/speed/"
-            "delivery) so a rough landing near the red smoke boards the survivor -- "
-            "so you can reliably exercise the King TACAN beacon, the Sandy divert, "
-            "and the rescue/delivery loop. Overrides the Combat SAR plugin's pickup "
-            "+ capture options. Leave OFF for normal play."
         ),
     )
     automate_front_line_stance: bool = boolean_option(

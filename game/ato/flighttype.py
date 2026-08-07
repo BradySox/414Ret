@@ -69,8 +69,6 @@ class FlightType(Enum):
     ARMED_RECON = "Armed Recon"
     RECOVERY = "Recovery"
     TARPS = "TARPS"  # Player-flown F-14 photo recon — overflies target +2 min behind strikers
-    SCAR = "SCAR"  # Rescue-escort "Sandy" in the Combat SAR package: A-10/Apache that protects the downed pilot, suppresses threats, and walks Jolly Green in. Repurposed from the retired strike-coord/armor-hunt task (see 414th-csar-notes.md).
-    COMBAT_SAR = "Combat SAR"  # Standing pilot-rescue orbit near the FLOT (CH-47 pickup + C-130 "King"); rescues downed pilots via the combatsar survivor ledger. Support orbit, modeled on RECOVERY/AEWC.
 
     @classmethod
     def _missing_(cls, value: object) -> FlightType | None:
@@ -121,7 +119,6 @@ class FlightType(Enum):
             FlightType.AIR_ASSAULT,
             FlightType.SEAD_SWEEP,
             FlightType.ARMED_RECON,
-            FlightType.SCAR,
         }
 
     @property
@@ -145,7 +142,6 @@ class FlightType(Enum):
             FlightType.ARMED_RECON,
             FlightType.AIR_ASSAULT,
             FlightType.TARPS,
-            FlightType.SCAR,
         }
 
     @property
@@ -187,12 +183,9 @@ class FlightType(Enum):
             FlightType.JAMMING: AirEntity.ELECTRONIC_COMBAT_JAMMER,
             FlightType.ESCORT_JAMMER: AirEntity.ELECTRONIC_COMBAT_JAMMER,
             FlightType.TARPS: AirEntity.RECONNAISSANCE,
-            FlightType.SCAR: AirEntity.ATTACK_STRIKE,
             FlightType.TARCAP: AirEntity.FIGHTER,
             FlightType.TRANSPORT: AirEntity.UTILITY,
             FlightType.AIR_ASSAULT: AirEntity.ROTARY_WING,
-            # Combat SAR is a standing pilot-rescue orbit.
-            FlightType.COMBAT_SAR: AirEntity.COMBAT_SEARCH_AND_RESCUE,
         }.get(self, AirEntity.UNSPECIFIED)
 
 

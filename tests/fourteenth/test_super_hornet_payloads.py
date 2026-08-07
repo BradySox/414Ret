@@ -210,7 +210,7 @@ class TestTheAuthoredFitsUseTheModsOwnStores:
         ``introduction_year=None``, which ``Weapon.available_on`` reads as
         "available in every era with no fallback" -- the hole #771 closed for the
         modern AMRAAMs. Fuel tanks and the JSOW rack are pre-existing exceptions
-        (era-agnostic hardware, and §84 skips them since they carry no category).
+        (era-agnostic hardware).
         """
         from game.data.weapons import Weapon, WeaponGroup
 

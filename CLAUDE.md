@@ -508,6 +508,28 @@ file. This guide is the map; those are the territory.
   - Drafts / not-yet-landed (design only): `414th-mission-planning-wiki-rework.md`
     (upstream wiki rewrite), `414th-scenery-import-notes.md` (scenery strike targets),
     `turnless.md` (turnless-campaign exploration),
+    `414th-verification-cadence-notes.md` (**the fly-card throttle** — PROPOSED 2026-08-06,
+    nothing built. Out of a methods audit: the in-game-pass backlog has no governor (127
+    outstanding vs 114 verified, untested rows back to 2026-07-01). **Capping the build rate
+    is rejected** — the data says this is a *scheduling* problem, not a build-rate one:
+    verification is bimodal, **46 rows in the 6 sessions around the scheduled Red Tide M1 vs
+    17 across all of July with nothing scheduled, then 20 in the one day the Aug-1 card
+    finally ran**, so a card-driven session adjudicates 10–20 rows and an opportunistic one
+    adjudicates 1–2. The mechanism already exists — the debt register's §3 pre-flight desk
+    pass / §4 fly card / §5 private-session card — but was built as a **one-off inside a
+    document framed as disposable**, so nothing owns "what is the next card". Proposal: (1)
+    **always exactly one open card, with a date**, as its own artifact under
+    `docs/dev/flycards/`; (2) the admission rule — **a feature does not ship default-ON or
+    preseeded until it is on a card** (default-OFF *and* unpreseeded stays unrestricted, so
+    it gates the risk without gating the building); (3) a row unassigned across 3 closed
+    cards forces **schedule / accept-unverified / delete** — generalizing the pass-or-delete
+    move the fork already makes ad hoc, with `SHIPPED UNVERIFIED (accepted)` as the new
+    sayable state that stops the backlog being a guilt pile. Enforced on the two surfaces the
+    repo already maintains: three lines in the **session-start hook** (open card · unassigned
+    count · aged-out list) and a **CI test** on the features.py-registry precedent. Explicitly
+    does NOT fix: cockpit time, the 11 REGRESSED rows (bugs, not unverified), or silent
+    no-ops. **5 open DM calls**, the load-bearing one being cadence — Part 1 cannot be
+    automated, and if cards don't get dates the right build is Part 3 alone),
     `414th-wing-growth-notes.md` (**The Wing Grows** — scheduled squadron arrivals, split out
     of the SP-loop note's §S3 reason 5b at the DM's request because it is a real feature, not
     a read-out: a campaign-authored `available_from_turn:` (+ optional `arrival_note:`) on a

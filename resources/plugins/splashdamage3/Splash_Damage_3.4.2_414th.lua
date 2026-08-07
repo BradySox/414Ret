@@ -97,6 +97,7 @@ splash_damage_options = {
 
     ---------------------------------------------------------------------- Basic Splash Settings -------------------------------------------------------------
     ["static_damage_boost"] = 1, --apply extra damage to Unit.Category.STRUCTUREs with wave explosions
+    ["oca_aircraft_damage_boost"] = 3000, --apply extra damage to PARKED Unit.Category.AIRPLANEs/HELICOPTERs with wave explosions, so OCA/Aircraft strikes are viable
     ["wave_explosions"] = true, --secondary explosions on top of game objects, radiating outward from the impact point and scaled based on size of object and distance from weapon impact point
     ["larger_explosions"] = true, --secondary explosions on top of weapon impact points, dictated by the values in the explTable
     ["damage_model"] = true, --allow blast wave to affect ground unit movement and weapons
@@ -6994,6 +6995,21 @@ function blastWave(_point, _radius, weapon, power, isShapedCharge)
                     local explosion_size = damage_for_surface
                     if obj:getDesc().category == Unit.Category.STRUCTURE then
                         explosion_size = intensity * splash_damage_options.static_damage_boost
+                    end
+                    -- Deal extra damage to parked airplanes and helicopters to make OCA/Aircraft missions viable.
+                    -- NOTE: the AGL is computed inline on purpose. Retribution's own copy of this block calls a
+                    -- getAGL() helper that is defined nowhere (not in the script, Moose, or the MIST shim), so
+                    -- copying it verbatim would raise "attempt to call a nil value" for every damaged object.
+                    local obj_category = obj:getDesc().category
+                    if obj_category == Unit.Category.AIRPLANE or obj_category == Unit.Category.HELICOPTER then
+                        local parked = true
+                        if obj.inAir and obj:inAir() then
+                            local obj_point = obj:getPoint()
+                            parked = (obj_point.y - land.getHeight({x = obj_point.x, y = obj_point.z})) < 50
+                        end
+                        if parked then
+                            explosion_size = intensity * splash_damage_options.oca_aircraft_damage_boost
+                        end
                     end
                     if explosion_size > power then explosion_size = power end
                     local triggerExplosion = false

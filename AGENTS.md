@@ -4055,7 +4055,7 @@ Carved out of this work, against `dcs-retribution/dcs-retribution` (all authored
   - [#874](https://github.com/dcs-retribution/dcs-retribution/pull/874) curated carrier comms (**draft**) — §65 verbatim (per-hull boat cards feeding the DCS-rendered CV Operations Data page: hull-number TACAN + boat ident with `alloc_near` nearest-neighbor degrade, hull-keyed ICLS via a shared `IclsAllocator`, 336-band Link 4, stable persisted ATC, flagship named by hull name). NO fork couplings; the port adds only the Pretense allocator-type adaptation (behavior untouched). On dev @ `ef576acc`; pytest/Black/mypy green — opened 2026-07-16. Fork side = [414Ret#611](https://github.com/bradyccox/414Ret/pull/611). See upstreaming-inventory item 19.
   - [#873](https://github.com/dcs-retribution/dcs-retribution/pull/873) culling: keep scenery-objective kill tracking in culled regions (**draft**) — opened 2026-07-16; `MERGEABLE`. (Added by the 2026-07-16 live refresh; it had never been recorded here. Fork-side context not yet written up.)
   - [#872](https://github.com/dcs-retribution/dcs-retribution/pull/872) ship-launched cruise missile strikes — generic core of fork [414Ret#599](https://github.com/bradyccox/414Ret/pull/599) (Tomahawk/Kalibr shore attack: F10 call-for-fire with marker-text salvo sizing, optional auto raids, persisted no-rearm magazine via the `cruise_missiles_state` debrief channel). **Ready for review 2026-07-19**: the branch carries the review-feedback stagger + un-cull + carrier-escort commits, a current-dev merge, and the flown **defender launch wake** ported from the fork (alarm-RED near the aimpoint for the missile flight window; Skynet-adapted comments) — un-drafted after the DM's local 10/10 fly. See upstreaming-inventory item 18.
-  - [#880](https://github.com/dcs-retribution/dcs-retribution/pull/880) Splash Damage coherent field-tuned defaults (inventory item 21, opened 2026-07-19) — fixes upstream's broken percent plumbing (the "(%)" rocket spinner applied raw ×130; overall_scaling 3 = 3% with a second ÷100 in the bomblet path; test mode shipped enabled) and sets the 414th's flown values (60%/80%/static 1/radius 100%/wave ×2, big-iron explTable trims, shaped_charge flags on the 4 HEAT/AP rockets) in upstream's own plugin.json→sd3-config architecture. Plugin stays default-OFF upstream.
+  - [#880](https://github.com/dcs-retribution/dcs-retribution/pull/880) Splash Damage coherent field-tuned defaults — **CLOSED 2026-08-06, DM call: "it's a preference we use, not everyone else."** The tuning is a 414th taste call, not a defect owed upstream, so it stays fork-side permanently (a named exception to the everything-upstreamable policy; see the pinned block). Two real bugs surfaced in the closing audit and are **not** carried by anything now: upstream's `sd3-config` assigns `cluster_bomblet_reduction_modifier` while the script reads `cluster_bomblet_reductionmodifier` (the bomblet-reduction toggle is inert — fixed on the closed branch, so it needs re-carving if it is ever wanted), and upstream's parked-aircraft OCA block calls **`getAGL()`, which is defined nowhere in their tree** (nil-call for every damaged object, inside the `world.searchObjects` callback) — the fork's restored copy computes AGL inline instead. Original scope, for the record: it fixed upstream's broken percent plumbing (the "(%)" rocket spinner applied raw ×130; overall_scaling 3 = 3% with a second ÷100 in the bomblet path; test mode shipped enabled) and sets the 414th's flown values (60%/80%/static 1/radius 100%/wave ×2, big-iron explTable trims, shaped_charge flags on the 4 HEAT/AP rockets) in upstream's own plugin.json→sd3-config architecture. Plugin stays default-OFF upstream.
   - [#828](https://github.com/dcs-retribution/dcs-retribution/pull/828) recon fog-of-war (§3) — the flagship carve. **Rebased 2026-07-19**: squashed to one commit on dev @ `acf02b75`, re-validated (upstream pytest 451 passed; the new ship-movement test double gained the `game.settings` chain `known_for` reads), `MERGEABLE`. Briefly un-drafted, then **deliberately re-drafted the same evening** (21:36→21:40Z per the PR timeline) — currently a **draft**; un-draft when ready.
   - [#806](https://github.com/dcs-retribution/dcs-retribution/pull/806) configurable cruise/patrol altitude.
   - [#794](https://github.com/dcs-retribution/dcs-retribution/pull/794) hide mobile SAM in combined groups (§7).
@@ -4114,10 +4114,29 @@ buddy-tuned Splash Damage build (`overall_scaling=0.6`, `rocket_multiplier=0.8`,
 `static_damage_boost=1`, shaped-charge rocket flags, `game_messages=true`). Do NOT overwrite
 it from upstream. Settings are LOCKED by design: `plugin.json` has no `specificOptions` and
 `sd3-config.lua` was removed. Don't reintroduce the config layer. (The *values* are an
-upstream candidate — inventory item 21, 2026-07-19 policy: upstream's stock defaults damage
-buildings ~a mile out, so ship ours back as their new defaults with the rationale. That PR
-edits upstream's own config; this pinned file and its locked packaging stay fork-side either
-way.)
+upstream candidate — inventory item 21. **That carve is OVER: PR #880 was CLOSED 2026-08-06
+on the DM's call — "it's a preference we use, not everyone else."** The tuning is a 414th
+preference, not a bug fix owed upstream, so it lives here permanently. This is a deliberate,
+named exception to the everything-upstreamable policy; do not re-carve it without a fresh
+call. The two genuine *bugs* found alongside it — see below — are a different matter.)
+**Audited against upstream's `Splash_Damage_3.4.2_Standard_Retribution.lua` + the wiki's
+Plugin-Options page 2026-08-06** — all 33 exposed options agree with our locked values (the
+percent options map through upstream `sd3-config`'s `/100`: `overall_scaling` 60→0.6, rocket
+80→0.8, dynamic blast 100→1), and the value drift is the documented tuning. Two
+upstream-authored blocks are absent from our copy, both **deliberately dropped** by the
+bake-in commit `6f3fc284b` (2026-06-11), which names them: **`shipRadarDamageEnable`**
+(HARM → ship radar), which stays out — it works by `obj:enableEmission(false)`, the call the
+C-130 constraint records as a crash cause — and **`oca_aircraft_damage_boost`** (3000×,
+parked aircraft, "so OCA/Aircraft missions are viable"), **RESTORED 2026-08-06 on the DM's
+call**. The two were one contiguous region of the same function, so the OCA half reads as
+collateral to the crash-risk removal; restoring it costs OCA/Aircraft strikes nothing and
+buys back the kill probability upstream added it for.
+⚠️ **Upstream's own copy of the OCA block is broken and ours is not a verbatim copy**: it
+calls `getAGL(obj)`, a helper defined **nowhere** — not in the script, `Moose.lua`, or the
+MIST shim (grep the tree: zero definitions) — so it raises "attempt to call a nil value" for
+every object past `cascade_damage_threshold`, inside the `world.searchObjects` `ifFound`
+callback. The fork's port computes AGL inline (`getPoint().y - land.getHeight`) and only for
+aircraft. Do NOT "resync" this block from upstream until they fix it.
 
 ---
 

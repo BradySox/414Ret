@@ -53,34 +53,42 @@ Do **not** use MOOSE `BEACON` or the raw `ActivateBeacon` controller command. Th
 This also means the beacon works for a survivor whose group failed to spawn, since the ledger
 already carries `entry.coord` independently of the group (`combatsar-config.lua:745-763`).
 
-## Band plan
+## Band plan — one carrier, VHF-FM
 
-What the actual Combat SAR fleet can direction-find, from the audit at
-`414th-comint-notes.md:167-176`:
-
-| Airframe | Role | UHF DF | VHF-FM homing | LF/MF ADF |
-|---|---|---|---|---|
-| UH-1H | rescue helo (flyable) | no | ARC-131, 30–76 MHz | ARN-83, 190–1750 kHz |
-| Mi-8MT | rescue helo (flyable) | no | R-828 | ARK-9, 150–1290 kHz |
-| CH-47D / CH-47Fbl1 | rescue helo | postdates the audit — verify | postdates the audit | postdates the audit |
-| CH-53E, UH-60A/L | rescue helo | AI-only, no cockpit — irrelevant | — | — |
-| F/A-18C, F-14, F-4E, F-5E | Sandy (§15) | yes (audited) | — | varies |
-| C-130J-30 | King | not audited | — | — |
+**Decision (2026-08-07): VHF-FM only.** One carrier, 30.000–59.975 MHz, the overlap of UH-1H
+ARC-131 (30–76 MHz) and Mi-8 R-828. No UHF carrier.
 
 Combat SAR-capable airframes are the eight yamls carrying the task: `C-130J-30`, `CH-47D`,
-`CH-47Fbl1`, `CH-53E`, `Mi-8MT`, `UH-1H`, `UH-60A`, `UH-60L`.
+`CH-47Fbl1`, `CH-53E`, `Mi-8MT`, `UH-1H`, `UH-60A`, `UH-60L`. The Sandy is the `SCAR` task,
+defined in code as the A-10 / Apache rescue escort (`game/ato/flight.py:69`,
+`game/ato/flighttype.py:72`).
 
-The finding that drives the design: **neither flyable rescue helo direction-finds UHF, and the
-Sandy fast jets do.** One band cannot serve both. So key two carriers:
+What that fleet can do with an FM carrier, from the DF audit at `414th-comint-notes.md:167-176`:
 
-- **UHF AM — primary.** Serves the Sandy, whose whole job under §15 is to find the survivor and
-  shepherd the rescue. This is the proven path; §70 flies it today.
-- **VHF-FM — secondary, for the helo.** UH-1H ARC-131 and Mi-8 R-828 overlap at
-  **30.000–59.975 MHz**. Unproven through `radioTransmission` — this is the in-game-pass risk.
+| Airframe | Role | FM homing | Gets |
+|---|---|---|---|
+| UH-1H | rescue helo (flyable) | ARC-131, 30–76 MHz | needle |
+| Mi-8MT | rescue helo (flyable) | R-828 | needle |
+| CH-47D / CH-47Fbl1 | rescue helo (flyable) | postdates the audit — **verify** | unknown |
+| CH-53E, UH-60A/L | rescue helo | AI-only, no cockpit | nothing — irrelevant |
+| A-10C / AH-64D | Sandy (§15) | not in the audited DF set | audio only |
+| C-130J-30 | King | not audited | audio only |
 
-**LF/MF is not proposed.** It is the band an ADF set is actually built for, but it is also the
-least likely to work through `radioTransmission`, and FM homing already covers both flyable
-helos. Hold it as the fallback if FM fails the pass.
+**Tuning is not homing, and the spec should not pretend otherwise.** Most of the fleet can
+*receive* 30–60 MHz. Under the fork's own audit exactly three DCS airframes *home* it — UH-1H,
+Mi-8, OH-58D. So the honest contract is: **the two flyable rescue helos get a needle to the
+survivor; everyone else in the package gets an audible carrier and no bearing.**
+
+Those are the aircraft that matter, and the reasons to accept the trade:
+
+- The helo is the one that lands and picks the survivor up.
+- The Sandy already gets the survivor's position through LARS and the F10 mark.
+- One carrier drops the two-carrier bookkeeping and the second frequency allocation.
+- It also drops any shared-band contention with the §70 red net, which lives on UHF.
+
+**LF/MF is the fallback, and it is now the only fallback.** With no UHF carrier, if FM homing
+fails the in-game pass the feature has nothing left to fall back to in code. Expose the band as
+the `beaconBand` option below so the fallback is a config change and a re-fly, not a rewrite.
 
 ## Battery life
 
@@ -92,16 +100,20 @@ The beacon is finite. This is the design element that makes the feature more tha
   (`rednet-config.lua:141-177`). In fiction the survivor is conserving the battery and not
   holding the transmit key down in hostile territory. In engine it is the machinery that already
   exists.
-- Total **battery life is capped** (proposed default 45 minutes of mission time). When it expires
-  the beacon goes silent permanently. The survivor is still rescuable — smoke, LARS, an F10 mark —
-  just no longer homeable.
+- Total **battery life is capped** (proposed default 45 minutes). When it expires the beacon goes
+  silent permanently. The survivor is still rescuable — smoke, LARS, an F10 mark — just no longer
+  homeable.
+- **The battery drains on transmit time, not wall clock.** This matters because of the
+  one-survivor-at-a-time rule below: a queued survivor who never holds the net would otherwise
+  burn their whole battery in silence and be un-homeable the moment they get it. Count only the
+  seconds actually radiated.
 - The beacon stops immediately when the survivor resolves, at all three existing ledger
-  transitions: `creditRescue` (`:431`), `recordCapture` (`:454`), and the killed-on-the-ground
-  reap in `tick` (`:1057`).
+  transitions: `creditRescue` (`combatsar-config.lua:428`), `recordCapture` (`:443`), and the
+  killed-on-the-ground reap in `tick` (`:1057`).
 - A persistent evader re-spawning from `persistentSurvivors` (`:881-910`) gets a **fresh
   battery** — they have been hiding with the radio off.
 
-## One carrier at a time
+## One survivor on the air at a time
 
 Real survival radios all sit on the same guard channel, and the fork already has a rule about
 not filling a band with carriers (`rednetluadata.py:90-92`: "the band is shared").
@@ -121,15 +133,17 @@ not filling a band with carriers (`rednetluadata.py:90-92`: "the band is shared"
 Reuse the discipline in `game/missiongenerator/rednetluadata.py:202-264`, with one inversion.
 
 - Allocate from the mission `RadioRegistry` and reserve the 100 kHz guard band around the
-  assignment (`NET_GUARD_HZ`, `NET_GRID_HZ`), so nothing allocated later parks a briefed channel
-  a detent away from the beacon.
-- **Never 243.0.** `rednetluadata.py:76-78` already skips Guard's whole-MHz slot; the same
-  exclusion applies here, and more strongly — a continuous carrier on the emergency channel is
-  the one thing not to ship.
+  assignment (`NET_GUARD_HZ`, `NET_GRID_HZ` — both band-agnostic; the 25 kHz grid is the FM
+  tuning grid too), so nothing allocated later parks a briefed channel a detent away from the
+  beacon.
+- **The band constants do not carry over.** `UHF_NET_FIRST_SLOT_MHZ` / `UHF_NET_LAST_SLOT_MHZ`
+  (225–399) and the `GUARD_SLOT_MHZ` 243.0 exclusion are UHF-specific and are **not** reused —
+  there is no emergency channel inside 30.000–59.975. Allocate against the FM band bounds
+  instead, and keep clear of any FM channel the mission's own ground/FAC plan has taken.
 - The inversion: unlike the red net, this frequency **is briefed**. It goes on the CSAR
   kneeboard card and in the flight briefing, because the rescue package needs to tune it
   deliberately.
-- Two allocations per mission (one UHF, one FM), made once, not per survivor.
+- **One allocation per mission**, made once, not per survivor.
 
 ## Files touched
 
@@ -146,7 +160,7 @@ Reuse the discipline in `game/missiongenerator/rednetluadata.py:202-264`, with o
 
 ## Options
 
-Plugin options, in the units the squadron flies (`combatsar-config.lua:47-49`):
+Plugin options, in the units the squadron flies (`combatsar-config.lua:45-49`):
 
 | Option | Default | What |
 |---|---|---|
@@ -154,8 +168,8 @@ Plugin options, in the units the squadron flies (`combatsar-config.lua:47-49`):
 | `beaconBatteryMin` | 45 | minutes of battery before the beacon dies for good |
 | `beaconWindowSec` | 60 | transmission length per window |
 | `beaconGapSec` | 120 | mean silence between windows, jittered |
-| `beaconPowerW` | 1000 | range, **not** loudness — a handheld survival radio, so well below the red net's 10000 |
-| `beaconFm` | on | also key the VHF-FM carrier for the helo |
+| `beaconPowerW` | 1000 | range, **not** loudness — a handheld survival radio, so well below the red net's 10000 (`rednet-config.lua:51`) |
+| `beaconBand` | `fm` | `fm` \| `lfmf` — the fallback lever if FM homing fails the in-game pass |
 
 `beaconPowerW` carries the standing constraint in its label, the way `rednet/plugin.json` does:
 `powerW` is range, not loudness (§51, §70).
@@ -179,22 +193,30 @@ Headless, in the normal pytest run:
   `test_combatsar_ledger.py` is the model): beacon starts after grace; battery expiry silences it
   permanently; each of the three resolve transitions stops it; exactly one survivor on the air at
   a time; the King F10 command hands the net over.
-- **Python**: frequency allocation lands in band, the guard band is reserved, 243.0 is never
-  chosen, the kneeboard line renders.
+- **Python**: the allocation lands inside 30.000–59.975, the 100 kHz guard band is reserved
+  against every already-allocated mission frequency, exactly one allocation is made per mission
+  regardless of survivor count, and the kneeboard line renders.
 
 In-game pass rows, for `414th-ingame-pass-checklist.md` when the feature lands:
 
-- Sandy fast jet DFs the UHF carrier to overhead the survivor. Fail signature: needle inert or
-  parked at a fixed bearing.
-- UH-1H and Mi-8MT home the FM carrier. **This is the risk row** — if `radioTransmission` does
-  not drive an FM homing needle, fall back to LF/MF and re-fly.
+- **UH-1H and Mi-8MT home the FM carrier. This is the gate row, not a risk row** — with UHF
+  dropped there is no second carrier behind it. Fail signature: needle inert or parked at a fixed
+  bearing. On failure, flip `beaconBand` to `lfmf` and re-fly.
+- CH-47D / CH-47Fbl1 FM homing — **unverified in the audit**, and both carry the Combat SAR task.
+  Confirm in the same pass; a silent no-needle on two of the eight carriers is the quiet failure.
 - Beacon audibly dies at battery expiry and never returns.
 
 ## Open calls
 
 1. Battery life — 45 minutes is a guess. It should be short enough to create pressure and long
-   enough that a helo launched on the AI dispatch delay can still get there.
+   enough that a helo launched on the AI dispatch delay can still get there. Now measured in
+   transmit seconds, so 45 minutes of battery against a 60 s / 120 s duty cycle is roughly a
+   2¼-hour wall-clock life — probably too long. Either shorten the battery or lengthen the gap.
 2. Whether the beacon should be **on by default** for new campaigns, or opt-in like the §15
    command-post intel was at first.
 3. Whether a persistent evader really gets a full fresh battery every mission, or a reduced one
    that runs the survivor down over successive turns.
+4. Whether the Sandy is worth serving at all. Under the audit the A-10 / Apache have no DF in any
+   band, so no single-carrier choice reaches them; they work off LARS and the F10 mark as they do
+   today. Adding a second UHF carrier for a Hornet or Tomcat flying an off-doctrine Sandy is
+   possible but was rejected here as bookkeeping for an edge case.

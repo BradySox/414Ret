@@ -51,11 +51,13 @@ def test_helicopter_uses_the_low_endurance_helo_bucket() -> None:
 
 
 def test_fighter_estimate_is_in_a_reasonable_band() -> None:
-    # No measured A-10C block, so it should fall back to the combat bucket.
-    a10 = AircraftType.named("A-10C Thunderbolt II (Suite 7)")
-    assert a10.fuel_consumption is None
-    assert not a10._is_heavy_airframe
-    est = a10.estimated_fuel_consumption
+    # No measured Fulcrum block, so it should fall back to the combat bucket. (The
+    # A-10C used to stand here; it gained a measured block when the DCS Liberation
+    # fuel data was adopted, which is exactly the case this test must *not* use.)
+    fulcrum = AircraftType.named("MiG-29A Fulcrum-A")
+    assert fulcrum.fuel_consumption is None
+    assert not fulcrum._is_heavy_airframe
+    est = fulcrum.estimated_fuel_consumption
     assert est is not None
     # Calibrated against the measured references (Hornet ~22, Viper ~12 ppm).
     assert 10 < est.cruise < 35
@@ -67,3 +69,43 @@ def test_measured_block_is_unaffected_by_the_estimate() -> None:
     hornet = AircraftType.named("F/A-18C Hornet (Lot 20)")
     assert hornet.fuel_consumption is not None
     assert hornet.fuel_consumption.cruise == 22.1  # the hand-measured number stands
+
+
+#: Cruise ppm for the airframes whose measured ``fuel:`` blocks were adopted from DCS
+#: Liberation. Before adoption these fell back to the capacity-derived estimate, which
+#: overshot the measured burn by +35% (A-4E) to +140% (F-14) and so drew a needlessly
+#: pessimistic kneeboard bingo ladder.
+#: Every variant is listed, so the block reaching the variants (F-15J, the Phantom
+#: export marks, ...) is pinned too and not just the base airframe.
+ADOPTED_CRUISE_PPM = {
+    "A-10A Thunderbolt II": 12,
+    "A-10C Thunderbolt II (Suite 3)": 12,
+    "A-10C Thunderbolt II (Suite 7)": 12,
+    "A-4E Skyhawk": 7.7,
+    "AV-8B Harrier II Night Attack": 11,
+    "F-100D": 9,
+    "F-100D Super Sabre": 9,
+    "F-14A Tomcat (Block 95-GR Export)": 13,
+    "F-14A Tomcat (Block 135-GR Early)": 13,
+    "F-14A Tomcat (Block 135-GR Late)": 13,
+    "F-14B Tomcat": 13,
+    "F-15C Eagle": 11,
+    "F-15J Eagle": 11,
+    "F-4E-45MC Phantom II": 17,
+    "F-4EJ Phantom II": 17,
+    "Phantom FGR.2": 17,
+}
+
+
+@pytest.mark.parametrize(("name", "cruise"), sorted(ADOPTED_CRUISE_PPM.items()))
+def test_adopted_fuel_data_is_present_and_measured(name: str, cruise: float) -> None:
+    aircraft = AircraftType.named(name)
+    measured = aircraft.fuel_consumption
+    # A real ``fuel:`` block must win over the estimate -- losing it here would silently
+    # drop these airframes back onto the capacity-derived approximation.
+    assert measured is not None, f"{name} lost its measured fuel: block"
+    assert measured.cruise == cruise
+    assert measured.climb > measured.cruise
+    assert measured.combat > measured.cruise
+    assert measured.taxi > 0
+    assert measured.min_safe > 0

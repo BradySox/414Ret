@@ -129,6 +129,12 @@ Kept for reading old notes and saves; **do not author against them**.
 ### Other
 
 - [README.upstream.md](README.upstream.md) — unmodified upstream README (setup, dependencies).
+- [references/manuals/](references/manuals/) — the official DCS manuals for 11 aircraft
+  modules, copied from the local install. The PDFs are gitignored (819 MB); the per-module
+  `INDEX.md` page maps are tracked. **Read the module's `INDEX.md` first, then read the PDF
+  with a `pages` range** — these run to 1,129 pages. Use them for procedure, systems behavior
+  and cockpit description; **not** for loadouts (payload Lua), weapon dates (CLSID tables) or
+  unit stats (pydcs export). The `dcs-aircraft-manuals` skill wraps this.
 - [docs/wiki/](docs/wiki/) — the player and contributor wiki, mirrored to the GitHub wiki by
   `wiki-sync.yml` on every push to `main`. **Edit pages here, never in the wiki UI.** Also
   carries the adopted upstream dev-process standards, each with **414th:** delta notes.

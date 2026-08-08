@@ -26,6 +26,25 @@ if TYPE_CHECKING:
     from game.coalition import Coalition
 
 
+#: Escort taskings a package may lose without being scrubbed, under a doctrine that
+#: flies unescorted (``plan_strikes_without_full_escort`` -- Vietnam and COIN). Every
+#: task ``propose_common_escorts`` and ``PlanCas`` propose as an escort must appear
+#: here: a tasking missing from this set turns "no escort was free" into "scrub the
+#: whole package", which is exactly the deadlock the doctrine flag exists to prevent.
+#: ESCORT_JAMMER was the one that got left out when §77 added it (COIN allows the
+#: tasking and flies unescorted, so a Growler that could not be filled killed the
+#: strike outright).
+PRUNABLE_ESCORTS: frozenset[FlightType] = frozenset(
+    {
+        FlightType.ESCORT,
+        FlightType.SEAD_ESCORT,
+        FlightType.SEAD_SWEEP,
+        FlightType.TARCAP,
+        FlightType.ESCORT_JAMMER,
+    }
+)
+
+
 class PackageFulfiller:
     """Responsible for package aircraft allocation and flight plan layout."""
 
@@ -406,12 +425,7 @@ class PackageFulfiller:
         # escort must not deadlock the strike. When only the *escorts* are missing
         # (the main flights planned), prune them and fly the package unescorted.
         if missing_types:
-            escort_only = builder.package.flights and missing_types <= {
-                FlightType.ESCORT,
-                FlightType.SEAD_ESCORT,
-                FlightType.SEAD_SWEEP,
-                FlightType.TARCAP,
-            }
+            escort_only = builder.package.flights and missing_types <= PRUNABLE_ESCORTS
             if self.coalition.doctrine.plan_strikes_without_full_escort and escort_only:
                 missing_types.clear()
             else:

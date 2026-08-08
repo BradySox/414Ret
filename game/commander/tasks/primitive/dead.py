@@ -57,5 +57,12 @@ class PlanDead(PackagePlanningTask[IadsGroundObject]):
             self.propose_flight(FlightType.SEAD, 2, EscortType.Sead)
         else:
             self.propose_flight(FlightType.SEAD_ESCORT, 2, EscortType.Sead)
+        # §77 escort jamming, on the same radar-SAM trigger as the SEAD support.
+        # DEAD is the tasking the jammer was built for -- its effect rises as the
+        # jammer closes on a live SAM, and this package flies straight at one.
+        # It was the one propose_flights that never asked (DEAD does not use
+        # propose_common_escorts), so before this the only jammers a turn produced
+        # rode helo packages that could not use them.
+        self.propose_flight(FlightType.ESCORT_JAMMER, 2, EscortType.Jammer)
         if self.target.control_point.coalition.game.settings.autoplan_tankers_for_dead:
             self.propose_flight(FlightType.REFUELING, 1, EscortType.Refuel)

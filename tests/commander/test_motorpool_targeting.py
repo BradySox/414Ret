@@ -133,7 +133,9 @@ def test_motorpool_bai_proposes_bai_plus_escorts() -> None:
     assert FlightType.STRIKE not in flight_tasks
     assert FlightType.SEAD_ESCORT in flight_tasks
     assert FlightType.ESCORT in flight_tasks
-    assert FlightType.SEAD_SWEEP in flight_tasks
+    assert FlightType.ESCORT_JAMMER in flight_tasks
+    # One SEAD flavour: the escort that rides the package, not the sweep as well.
+    assert FlightType.SEAD_SWEEP not in flight_tasks
 
 
 def test_motorpool_strike_proposes_strike_plus_escorts() -> None:

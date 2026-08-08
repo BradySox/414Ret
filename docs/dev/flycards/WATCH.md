@@ -38,8 +38,9 @@ Design rationale + the three-cadence model: `docs/dev/design/414th-verification-
 
 *(2026-08-06, second pass same day: the DM dropped four of the five replacements on
 review — see **Dropped** below for why each went. Deliberately **not** refilled to five; the
-cap is a ceiling, not a quota, and a one-item list that gets looked at beats five that do not.
-Pull from the parking lot when there is appetite.)*
+cap is a ceiling, not a quota, and a short list that gets looked at beats five that do not.
+Pull from the parking lot when there is appetite. **Item 2 added 2026-08-08** — not pulled from
+the parking lot, but a fresh defect fixed that day whose only remaining question is in-sim.)*
 
 ### 1 · The JTAC over the front line actually lases — `G32`
 
@@ -55,6 +56,23 @@ the spot, not the aircraft — it orbits ~5,000 ft and lases on **code 1113**. *
   on 2026-08-05** (the packaged-drone JTAC and both its settings were ripped out). This is
   now the *only* JTAC model in the fork and **it has never been flown in that state** —
   freshest change on the board with zero eyes on it.
+
+### 2 · Civil airliners cross the map high instead of falling out of the sky — `I2`
+
+**Try:** pick any civil contact on the F10 map (`AEROFLOT 412`, `INTERFLUG 208` — the operator
+name is the label) and watch its altitude for a minute or two. **~2 min.**
+
+- **Pass:** it holds its flight level (FL200–FL310) and tracks straight across the map.
+- **Fail:** it descends steeply from the moment it appears; it never climbs above low level at
+  all; or civil wrecks turn up on the map with nobody having shot at anything.
+- **Why it's here:** two defects fixed 2026-08-08, both invisible to the app. Air-start speeds
+  were written at **a third** of the planned figure (pydcs takes km/h, the planner passed m/s),
+  so ~70% of fixed-wing traffic spawned below stall at cruise altitude and fell. And a transit
+  departing from a field had **no waypoint between takeoff and landing**, so it never climbed
+  to its assigned level. Both are pinned by tests, but **only DCS can show whether it flies**.
+  Second question on the same look: **is there enough of it?** The old "judge density on this
+  build" call was made against traffic that was falling down, so that judgement is owed again
+  before anyone builds a concurrency scheduler.
 
 ---
 

@@ -17,10 +17,14 @@ pin exactly those:
 from __future__ import annotations
 
 import random
+from typing import Any
 
+import dcs
+import pytest
 from dcs.helicopters import Mi_8MT, UH_1H
 from dcs.mapping import Point
 from dcs.planes import An_26B, C_130, IL_76MD, Yak_40
+from dcs.terrain import Caucasus
 
 from game.missiongenerator.civilianfleet import (
     CIVIL_TRAFFIC_NONE,
@@ -29,13 +33,23 @@ from game.missiongenerator.civilianfleet import (
     region_for,
 )
 from game.missiongenerator.civiliantraffic import (
+    AIR_START_FRAC_RANGE,
     AIR_START_MIN_ALT_M,
+    CRUISE_EXIT_FRAC,
     HELO_MAXDIST_M,
     KEEPOUT_M,
     MIN_TRANSIT_M,
+    NAVAL_SPEED_MS,
+    NAVAL_TYPES,
+    CivilianRoute,
+    CivilianTrafficGenerator,
+    NavalCivilianTrafficGenerator,
+    NavalRoute,
     _Field,
     admit_field,
     airway_pairs,
+    along,
+    cruise_fracs,
     density,
     plan_airways,
     plan_local_rotary,
@@ -271,3 +285,174 @@ def test_every_regional_airframe_has_a_cruise_profile() -> None:
     for name, region in REGIONS.items():
         for aircraft in region.fleet + region.helos:
             assert aircraft in CRUISE_PROFILE, f"{name}: {aircraft.id} has no profile"
+
+
+# --- speeds reach DCS in the unit pydcs actually takes -------------------------
+#
+# The reported defect: air-started transits spawned stalled at cruise altitude, the
+# same failure the QRA scramble hit when Moose air-spawned its jets at ~0 kt. Cause
+# here was units, not a missing value -- every pydcs speed argument is km/h and
+# divides by 3.6 internally, so passing the planner's m/s wrote a third of it
+# (An-26 65 kt at FL200, IL-76 108 kt at FL310, Yak-40 81 kt at FL260).
+#
+# These pin the number that lands in the .miz, through the real spawn call. A test
+# of the conversion alone would not have caught it: the conversion was never wrong,
+# the call site was.
+
+
+def _caucasus() -> tuple[Any, Any, tuple[_Field, ...]]:
+    """A real pydcs mission plus three real Caucasus airfields to route between."""
+    mission = dcs.mission.Mission(terrain=Caucasus())
+    country = mission.country("Russia")
+    fields = tuple(
+        _Field(name=name, point=mission.terrain.airports[name].position)
+        for name in list(mission.terrain.airports)[:3]
+    )
+    return mission, country, fields
+
+
+def _route(chain: tuple[_Field, ...], aircraft: Any, **overrides: Any) -> CivilianRoute:
+    altitude_m, speed_ms, radio_alt = CRUISE_PROFILE[aircraft]
+    kwargs: dict[str, Any] = dict(
+        aircraft_type=aircraft,
+        chain=chain,
+        air_start=False,
+        air_start_point=None,
+        altitude_m=altitude_m,
+        speed_ms=speed_ms,
+        radio_alt=radio_alt,
+        start_time_s=0,
+        is_helo=aircraft.helicopter,
+        callsign="AEROFLOT 412",
+    )
+    kwargs.update(overrides)
+    return CivilianRoute(**kwargs)
+
+
+def test_air_started_transit_spawns_at_its_cruise_speed() -> None:
+    """The stall. DCS takes the air-start velocity from the UNIT record, so this is
+    the value that decides whether an IL-76 at FL310 flies or falls."""
+    mission, country, fields = _caucasus()
+    chain = fields[:2]
+    route = _route(chain, IL_76MD, air_start=True, air_start_point=chain[0].point)
+
+    generator = CivilianTrafficGenerator(mission, None)  # type: ignore[arg-type]
+    assert generator._spawn(country, 0, route) is True
+
+    group = country.plane_group[-1]
+    assert group.units[0].speed == pytest.approx(route.speed_ms)
+    assert group.points[0].speed == pytest.approx(route.speed_ms)
+
+
+def test_intermediate_waypoints_carry_the_cruise_speed() -> None:
+    """The rotary layer is the only one with intermediate legs (an airway has none),
+    and it went through the same unconverted argument."""
+    mission, country, fields = _caucasus()
+    route = _route(fields, Mi_8MT)
+    assert len(route.chain) == 3, "need a middle field to produce an intermediate leg"
+
+    generator = CivilianTrafficGenerator(mission, None)  # type: ignore[arg-type]
+    assert generator._spawn(country, 0, route) is True
+
+    group = country.helicopter_group[-1]
+    # points[0] is the runway start, points[1] the one intermediate field.
+    assert group.points[1].speed == pytest.approx(route.speed_ms)
+    assert group.points[1].alt_type == "RADIO"
+
+
+def test_ambient_boats_make_way_at_their_hull_speed() -> None:
+    """Not a stall -- a boat cannot fall out of the sky -- but the same defect: the
+    hulls crawled at ~0.4 m/s against a table that says 1.5."""
+    mission = dcs.mission.Mission(terrain=Caucasus())
+    country = mission.country("Russia")
+    route = NavalRoute(
+        ship_type=NAVAL_TYPES[0],
+        chain=(Point(0.0, 0.0, mission.terrain), Point(1_000.0, 0.0, mission.terrain)),
+    )
+
+    generator = NavalCivilianTrafficGenerator(mission, None)  # type: ignore[arg-type]
+    assert generator._spawn(country, 0, route) is True
+
+    group = country.ship_group[-1]
+    assert group.points[-1].speed == pytest.approx(NAVAL_SPEED_MS)
+
+
+def test_no_air_start_profile_is_near_stall() -> None:
+    """The data table is the other way back to the same symptom: an air-start-eligible
+    entry that is too slow for its flight level reproduces the defect with no code
+    change at all. 100 m/s (~194 kt) is a sanity floor, not a computed stall speed --
+    the slowest airframe that air-starts today is the An-26 at 120."""
+    for aircraft, (altitude_m, speed_ms, radio_alt) in CRUISE_PROFILE.items():
+        if altitude_m < AIR_START_MIN_ALT_M or radio_alt:
+            continue  # ground-started; DCS flies its own takeoff
+        assert speed_ms >= 100, f"{aircraft.id} air-starts at {speed_ms} m/s"
+
+
+# --- a transit is anchored at its flight level --------------------------------
+#
+# The other half of the same defect. "Airways, not milk runs" removed the
+# intermediate legs and nothing replaced them, so a two-field route's chain[1:-1]
+# is empty: a ground start was written as takeoff -> land_at with no waypoint
+# carrying the cruise altitude at all, and never climbed to its assigned level.
+
+
+def test_a_ground_started_transit_climbs_to_its_flight_level() -> None:
+    mission, country, fields = _caucasus()
+    route = _route(fields[:2], An_26B)
+    assert route.air_start is False
+
+    generator = CivilianTrafficGenerator(mission, None)  # type: ignore[arg-type]
+    assert generator._spawn(country, 0, route) is True
+
+    group = country.plane_group[-1]
+    # takeoff, top of climb, top of descent, land.
+    assert len(group.points) == 4
+    for waypoint in group.points[1:3]:
+        assert waypoint.alt == route.altitude_m
+        assert waypoint.speed == pytest.approx(route.speed_ms)
+    assert group.points[-1].type == "Land"
+
+
+def test_an_air_started_transit_holds_its_level_before_descending() -> None:
+    """It spawns at cruise, so it needs the top of descent and nothing else --
+    otherwise the only waypoint after the spawn is the landing."""
+    mission, country, fields = _caucasus()
+    chain = fields[:2]
+    route = _route(
+        chain,
+        IL_76MD,
+        air_start=True,
+        air_start_point=along(chain[0].point, chain[1].point, 0.5),
+    )
+
+    generator = CivilianTrafficGenerator(mission, None)  # type: ignore[arg-type]
+    assert generator._spawn(country, 0, route) is True
+
+    group = country.plane_group[-1]
+    assert len(group.points) == 3  # spawn, top of descent, land
+    assert group.points[1].alt == route.altitude_m
+    assert group.points[-1].type == "Land"
+
+
+def test_the_cruise_points_run_forward_along_the_airway() -> None:
+    a, b = Point(0.0, 0.0, _T), Point(100.0, 0.0, _T)  # type: ignore[arg-type]
+    for air_start in (True, False):
+        xs = [along(a, b, frac).x for frac in cruise_fracs(air_start)]
+        assert xs == sorted(xs)
+        assert all(0.0 < x < 100.0 for x in xs)
+
+
+def test_an_air_start_never_drops_in_past_its_own_descent_point() -> None:
+    """An air start that spawned beyond CRUISE_EXIT_FRAC would be told to fly
+    backwards up its own airway to reach the top of descent."""
+    assert AIR_START_FRAC_RANGE[0] < AIR_START_FRAC_RANGE[1] < CRUISE_EXIT_FRAC
+
+
+def test_the_rotary_layer_still_routes_through_its_real_fields() -> None:
+    """Deliberately untouched: a local hop has real intermediate fields, and
+    replacing them with a synthesised climb/descent pair would straighten the very
+    meander that makes rotary traffic read as local work."""
+    mission, _, fields = _caucasus()
+    generator = CivilianTrafficGenerator(mission, None)  # type: ignore[arg-type]
+    route = _route(fields, Mi_8MT)
+    assert generator.cruise_points(route) == [fields[1].point]

@@ -7392,6 +7392,39 @@ winchester-RTB** — empty rails stay with the package; the jamming is the paylo
 orders preference (Growler 800 > Prowler 790). Loadout resolves "Retribution Escort Jammer"
 first, falling back to the SEAD Escort fit. Blue-only.
 
+**Which packages get one (reworked 2026-08-07; checklist B52).** Dumping a live save's ATO
+showed the distribution inverted: blue fragged two Escort Jammer flights and **both rode CH-47F
+air assaults** (Growlers from a base 89 nm away, joining ~15 min behind the helos at 21,000 ft,
+splitting for home on the second of the drop), while all seven DEAD packages — the tasking that
+exists to penetrate a live radar-SAM ring — flew with none. Four fixes:
+
+- **`PlanAirAssault` opts out** (`propose_common_escorts(jammer=False)`). Its
+  `preconditions_met` already requires a target area clear of radar-SAM threat, so an assault
+  never penetrates a ring, and §77's effect only pays off as the jammer closes on a live SAM.
+- **`PlanDead` opts in.** It does not use `propose_common_escorts`, so it was the one
+  `propose_flights` that never asked. Proposed on the same `EscortType.Jammer` trigger, after
+  its existing one-of-SEAD/SEAD_ESCORT choice.
+- **The formation-escort guard covers it.** `Squadron.can_auto_assign_mission` restricts a
+  helo-led package's escorts to helo or LHA-capable airframes; it read a hand-written
+  `[ESCORT, SEAD_ESCORT]` list, so `ESCORT_JAMMER` slipped through. It now reads
+  `task.is_escort_type`, which is exactly the three tasks that fly `EscortFlightPlan`, so the
+  rule is self-maintaining. Both dedicated jammers are carrier-capable but **not** LHA-capable,
+  so no helo-led package — CSAR included — can pull one. `SEAD_SWEEP`/`TARCAP` fly independent
+  routes and timing and stay unguarded on purpose.
+- **`PRUNABLE_ESCORTS`.** `ESCORT_JAMMER` was missing from the set of escorts a package may lose
+  without being scrubbed, so under COIN and Vietnam doctrine — which allow the tasking *and* set
+  `plan_strikes_without_full_escort` — an unavailable Growler killed the strike outright. The set
+  is now named in `packagefulfiller.py` with a test that derives the invariant from what the
+  planner actually proposes.
+
+Same pass: **`propose_common_escorts` asks for one SEAD flavour, not two.** `SEAD_ESCORT` and
+`SEAD_SWEEP` fire on the same `EscortType.Sead` trigger, so a threatened package drew both — four
+jets on one threat, on top of the A2A escort and the jammer, which put six escort aircraft around
+a two-ship Chinook insert. `SEAD_ESCORT` is kept because it is the one that actually escorts
+(`EscortFlightPlan`, on the package's join→split). This generalises the trim `PlanDead` already
+carried for itself. `PlanCas` still proposes the sweep directly, where an independent path ahead
+of the package is the point.
+
 **Runtime (`growler` plugin + `growlerluadata.py`).** The emitter lists each ESCORT_JAMMER
 flight (group name, side, player flag) and the package group names it protects
 (`dcsRetribution.growler`; no jammer → no node → no-op). It is **airframe-agnostic** — an AI

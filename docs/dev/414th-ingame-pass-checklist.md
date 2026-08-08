@@ -3802,6 +3802,47 @@ and confirm the launchers now **cost money** (Scud-B 40, Iskander-M 70, CJ-10 75
 - A missile site the AI can no longer afford to rebuild, or an economy visibly distorted by the new
   prices (they are ~135 for a full SCUD battery against ~230 for an S-300 site).
 
+### B52 — Escort-jammer distribution + the one-SEAD-flavour escort set · §77 · ☐ UNTESTED (built 2026-08-07)
+
+> **Where the jammers actually go.** B31 covers whether the §77 runtime works; this row covers
+> whether the auto-planner puts one on the right package. Found by dumping a live save's ATO
+> (Afghanistan, turn 1, `brady.retribution`): blue fragged exactly two Escort Jammer flights and
+> **both went to CH-47F air assaults** — the Growlers launched from Kabul, 89 nm from the assault
+> base, joined ~15 min behind the helos at 21,000 ft, and split for home on the same second as
+> the drop. Meanwhile all seven DEAD packages, the tasking whose whole point is penetrating a
+> live radar-SAM ring, flew with none, because `PlanDead` does not use `propose_common_escorts`
+> and never proposed one. Four changes: `PlanAirAssault` opts out (`propose_common_escorts(jammer=False)`);
+> `PlanDead` opts in; the formation-escort guard in `Squadron.can_auto_assign_mission` now reads
+> `task.is_escort_type` so `ESCORT_JAMMER` inherits the helo/LHA rule that already covered
+> `ESCORT`/`SEAD_ESCORT` (a Growler is carrier-capable but **not** LHA-capable, so no helo-led
+> package — CSAR included — can pull one); and `propose_common_escorts` asks for **one** SEAD
+> flavour (`SEAD_ESCORT`, the one that rides the package's join→split) instead of also asking for
+> `SEAD_SWEEP`, generalising the trim `PlanDead` already had. A fifth, separate bug fixed
+> alongside: `ESCORT_JAMMER` was missing from the escort set a package may lose without being
+> scrubbed (now `PRUNABLE_ESCORTS`), so under COIN/Vietnam doctrine — which allow the tasking
+> **and** fly unescorted — an unavailable Growler killed the whole strike. All five are pinned in
+> `tests/fourteenth/test_escort_jammer.py` (28), `tests/test_dead_planning.py`,
+> `tests/commander/test_motorpool_targeting.py`. What CI cannot judge is the resulting ATO shape.
+
+Play a turn on a Growler- or Prowler-fielding wing against a campaign with several radar SAMs
+(Marianas 2027 or Red Tide), then read the ATO before flying anything.
+
+- **Pass:** Escort Jammer flights sit on DEAD/strike packages that route into a SAM ring. No air
+  assault, CSAR or other helo-led package has one. No package carries both a SEAD Escort and a
+  SEAD Sweep. Front-line CAS still gets its SEAD Sweep (`PlanCas` proposes that one directly).
+  Package sizes look proportionate — no six escort aircraft around a two-ship helo insert.
+- **Fail signatures:**
+  1. **A helo package still has a jammer.** The guard did not take — check the airframe is not
+     LHA-capable (an AV-8B legitimately still escorts helo packages; that is the guard working).
+  2. **DEAD packages still have none while the wing has spare Growlers.** Either
+     `max_escort_jammers` (Air Doctrine, default 4) is already spent by earlier packages, or the
+     route was not judged radar-SAM-threatened — the proposal is still threat-gated.
+  3. **Fewer packages get planned than before.** The one-SEAD-flavour trim frees jets; if the
+     count went *down*, look for a package scrubbing on a missing escort.
+  4. **SEAD support feels thin against a dense IADS.** Halving the SEAD flavours is the trade this
+     row is for — if one SEAD Escort per package is not enough cover, that is the finding, and the
+     answer is to reinstate the sweep for specific callers rather than for all of them.
+
 ### B49 — Carrier recovery-phase deck dressing · §72 · ☐ UNTESTED (built 2026-08-07, default OFF)
 
 > **The first §72 dressing that is SPAWNED rather than placed**, and the first thing the

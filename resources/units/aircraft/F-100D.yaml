@@ -20,6 +20,12 @@ radios:
 variants:
   F-100D: {}
   F-100D Super Sabre: {}
+fuel:
+  taxi: 200
+  climb_ppm: 19
+  cruise_ppm: 9
+  combat_ppm: 10
+  min_safe: 2000
 tasks:
   BAI: 360
   BARCAP: 280

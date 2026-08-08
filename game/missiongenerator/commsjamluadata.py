@@ -19,18 +19,8 @@ came out of, so it is unused by anything). The backup is surfaced on the
 kneeboard comms ladder so comms discipline -- push to the backup, kill the node
 -- is a play, not a mystery.
 
-**The intel gate** (``comms_jam_requires_capture``, default ON): red can only
-jam channels it *knows*, and it learns them from a **captured aircrew's comms
-plan** -- the §15/§21 Combat SAR enemy-capture race. In this mode the plugin
-stays dormant until either a POW is held whose comms plan is still exploitable
-(captured within ``COMMS_COMPROMISE_TURNS``) or a pilot is captured live
-mid-mission (``combat_sar_captures``), at which point the jamming starts after a
-short exploitation delay. Save the pilot and the net stays clean -- another
-reason Combat SAR matters, and a periodic lesson in rotating compromised
-channels. The compromise is time-boxed independently of the POW hold, so an
-indefinitely-held POW (a will campaign, §48) does not jam the net forever: the
-squadron rotates its comms plan after a few turns. Turning the gate off restores
-the ambient "jam whenever a C2 node lives" behavior.
+Jamming is ambient: whenever an enemy C2 node is alive and blue has briefed
+channels, the node jams. Killing the node is the counter.
 
 Audio pressure ONLY, the §36/§49 discipline: no force-model change, no kills
 owned by Lua. Killing the node is an ordinary strike on an ordinary IADS TGO
@@ -61,8 +51,8 @@ if TYPE_CHECKING:
 JAMMER_CATEGORIES = ("comms", "commandcenter")
 
 #: Frequencies that must never be jammed even if they somehow end up briefed as
-#: an intra-flight channel: UHF/VHF GUARD (Combat SAR and emergencies live
-#: there). The registry reserves both, so this is a defensive double-guard.
+#: an intra-flight channel: UHF/VHF GUARD (emergencies live there). The registry
+#: reserves both, so this is a defensive double-guard.
 GUARD_MHZ = (243.0, 121.5)
 
 #: Hard cap on the emitted jam list. The plugin duty-cycles a small subset per
@@ -75,13 +65,6 @@ MAX_JAMMED_FREQUENCIES = 10
 #: keeps this channel out of the package table), so the label can't drift between
 #: them and silently resurrect the phantom-flight row.
 JAM_BACKUP_COMM_NAME = "JAM BACKUP"
-
-#: How many turns a captured comms plan stays exploitable. A POW held past this
-#: no longer compromises the net from mission start -- the squadron has rotated
-#: its comms plan (the "rotate compromised channels" lesson made literal), even
-#: though the POW itself may be held indefinitely on a will campaign. Keeps the
-#: §51 comms compromise time-boxed rather than riding the POW hold forever.
-COMMS_COMPROMISE_TURNS = 4
 
 
 @dataclass
@@ -107,14 +90,6 @@ class CommsJamInfo:
     #: The one frequency guaranteed un-jammed (freshly allocated, so no flight
     #: uses it either). None only if the registry is exhausted.
     backup: Optional[RadioFrequency]
-    #: Intel-driven mode (``comms_jam_requires_capture``): red only jams once it
-    #: holds a captured aircrew's comms plan. False = jam whenever a node lives.
-    capture_only: bool = False
-    #: With ``capture_only``, whether the channels are compromised from mission
-    #: start: a POW is currently held (``pending_pow_recoveries``), so red took
-    #: the comms plan on an earlier turn and it hasn't been rotated out yet.
-    #: Otherwise the plugin stays dormant until an in-mission capture.
-    active_from_start: bool = True
 
 
 def plan_comms_jam(
@@ -142,35 +117,7 @@ def plan_comms_jam(
         logging.warning(
             "Comms jam: could not allocate an un-jammed JAM BACKUP frequency"
         )
-    capture_only = bool(getattr(game.settings, "comms_jam_requires_capture", True))
-    # A POW captured RECENTLY means red is still exploiting the comms plan it took
-    # off them: the channels are compromised from mission start. The compromise is
-    # time-boxed to COMMS_COMPROMISE_TURNS -- freeing the POW ends it (they leave
-    # pending_pow_recoveries), and so does the squadron rotating its comms plan
-    # after a few turns, so an indefinitely-held POW (a will campaign) does not
-    # jam the net forever. Old saves' entries carry no captured_turn -> treated as
-    # still-fresh (compromised) rather than silently clean.
-    pow_compromised = _has_recent_pow(game)
-    return CommsJamInfo(
-        jammers,
-        frequencies,
-        backup,
-        capture_only=capture_only,
-        active_from_start=(not capture_only) or pow_compromised,
-    )
-
-
-def _has_recent_pow(game: "Game") -> bool:
-    """True if BLUE holds a POW captured within COMMS_COMPROMISE_TURNS -- the comms
-    plan is still exploitable."""
-    turn = getattr(game, "turn", 0)
-    for entry in getattr(game.blue, "pending_pow_recoveries", []):
-        captured_turn = getattr(entry, "captured_turn", None)
-        if captured_turn is None:
-            return True  # pre-migration entry: assume still compromised
-        if turn - captured_turn < COMMS_COMPROMISE_TURNS:
-            return True
-    return False
+    return CommsJamInfo(jammers, frequencies, backup)
 
 
 def populate_comms_jam_lua(
@@ -204,10 +151,6 @@ def populate_comms_jam_lua(
         # Nested single-value items, not add_key_value: the LuaData serializer
         # drops scalar key-values on an object that also carries nested items.
         node.add_item("backupMhz").set_value(str(info.backup.mhz))
-    node.add_item("captureOnly").set_value("true" if info.capture_only else "false")
-    node.add_item("activeFromStart").set_value(
-        "true" if info.active_from_start else "false"
-    )
 
 
 def _enemy_jammer_nodes(game: "Game") -> list[CommsJamJammer]:

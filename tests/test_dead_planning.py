@@ -102,10 +102,13 @@ def test_dead_with_live_radar_sam_uses_dedicated_sead_not_sweep() -> None:
     task = PlanDead(_target(has_live_radar_sam=True))  # type: ignore[arg-type]
     task.propose_flights()
 
+    # One SEAD flavour (the dedicated shooter, against a live radar SAM), plus the
+    # A2A escort and the §77 jammer -- never the sweep as well.
     assert [flight.task for flight in task.flights] == [
         FlightType.DEAD,
         FlightType.ESCORT,
         FlightType.SEAD,
+        FlightType.ESCORT_JAMMER,
     ]
 
 
@@ -117,6 +120,7 @@ def test_dead_without_live_radar_sam_uses_sead_escort_not_sweep() -> None:
         FlightType.DEAD,
         FlightType.ESCORT,
         FlightType.SEAD_ESCORT,
+        FlightType.ESCORT_JAMMER,
     ]
 
 

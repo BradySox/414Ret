@@ -23,4 +23,12 @@ class PlanAirAssault(PackagePlanningTask[ControlPoint]):
 
     def propose_flights(self) -> None:
         self.propose_flight(FlightType.AIR_ASSAULT, self.get_flight_size())
-        self.propose_common_escorts()
+        # No escort jammer (§77). preconditions_met already requires the objective
+        # to be clear of radar-SAM threat rings, so the assault never penetrates
+        # one -- and §77's model only pays off as the jammer closes on a live SAM.
+        # A jammer fragged here also spent a scarce airframe and the per-side cap
+        # on a package that could not use it: on Afghanistan turn 1 both of blue's
+        # Growler sections went to CH-47 assaults, joining ~15 min behind the
+        # helos at 21,000 ft and splitting for home on the same second as the
+        # drop, while seven DEAD packages flew into live rings with none.
+        self.propose_common_escorts(jammer=False)

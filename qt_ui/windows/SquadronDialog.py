@@ -32,6 +32,7 @@ from game.server import EventStream
 from game.sim import GameUpdateEvents
 from game.squadrons import Pilot, Squadron
 from game.squadrons.intercept_reserve import max_intercept_reserve
+from game.squadrons.pilot import PilotStatus
 from game.theater import ConflictTheater, ControlPoint, ParkingType
 from qt_ui.delegates import TwoColumnRowDelegate
 from qt_ui.errorreporter import report_errors
@@ -64,13 +65,9 @@ class PilotDelegate(TwoColumnRowDelegate):
             skill = self.squadron_model.squadron.pilot_skill(pilot)
             return f"{who} - Level: {skill.value}"
         elif (row, column) == (1, 1):
-            # Dead pilots have their own list and living pilots are active by
-            # default, so only the "on leave", captured (POW), and evading (MIA)
-            # states are worth surfacing here -- both POW and MIA are alive but
-            # off the roster until recovered.
-            if pilot.on_leave or pilot.captured or pilot.missing:
-                return pilot.status.value
-            return ""
+            # Dead pilots have their own list and active pilots need no label, so
+            # surface any other state (on leave, downed awaiting CSAR, recovering).
+            return pilot.status.value if pilot.status is not PilotStatus.Active else ""
         return ""
 
 
@@ -704,6 +701,12 @@ class SquadronDialog(QDialog):
         if self.check_disabled_button_states(self.toggle_leave_button, index):
             return
         pilot = self.squadron_model.pilot_at_index(index)
+        # Leave only applies to active/on-leave pilots. Downed, recovering and MIA
+        # pilots cannot be toggled, so disable the button and label their state.
+        if pilot.status not in (PilotStatus.Active, PilotStatus.OnLeave):
+            self.toggle_leave_button.setEnabled(False)
+            self.toggle_leave_button.setText(pilot.status.value)
+            return
         self.toggle_leave_button.setEnabled(
             not pilot.on_leave or self.squadron_model.squadron.has_unfilled_pilot_slots
         )

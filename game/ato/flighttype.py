@@ -69,8 +69,7 @@ class FlightType(Enum):
     ARMED_RECON = "Armed Recon"
     RECOVERY = "Recovery"
     TARPS = "TARPS"  # Player-flown F-14 photo recon — overflies target +2 min behind strikers
-    SCAR = "SCAR"  # Rescue-escort "Sandy" in the Combat SAR package: A-10/Apache that protects the downed pilot, suppresses threats, and walks Jolly Green in. Repurposed from the retired strike-coord/armor-hunt task (see 414th-csar-notes.md).
-    COMBAT_SAR = "Combat SAR"  # Standing pilot-rescue orbit near the FLOT (CH-47 pickup + C-130 "King"); rescues downed pilots via the combatsar survivor ledger. Support orbit, modeled on RECOVERY/AEWC.
+    CSAR = "CSAR"  # Pilot rescue (upstream dcs-retribution#929).
 
     @classmethod
     def _missing_(cls, value: object) -> FlightType | None:
@@ -121,7 +120,6 @@ class FlightType(Enum):
             FlightType.AIR_ASSAULT,
             FlightType.SEAD_SWEEP,
             FlightType.ARMED_RECON,
-            FlightType.SCAR,
         }
 
     @property
@@ -145,7 +143,6 @@ class FlightType(Enum):
             FlightType.ARMED_RECON,
             FlightType.AIR_ASSAULT,
             FlightType.TARPS,
-            FlightType.SCAR,
         }
 
     @property
@@ -171,6 +168,7 @@ class FlightType(Enum):
             FlightType.BAI: AirEntity.ATTACK_STRIKE,
             FlightType.BARCAP: AirEntity.FIGHTER,
             FlightType.CAS: AirEntity.ATTACK_STRIKE,
+            FlightType.CSAR: AirEntity.COMBAT_SEARCH_AND_RESCUE,
             FlightType.DEAD: AirEntity.ATTACK_STRIKE,
             FlightType.ESCORT: AirEntity.ESCORT,
             FlightType.FERRY: AirEntity.UNSPECIFIED,
@@ -187,12 +185,9 @@ class FlightType(Enum):
             FlightType.JAMMING: AirEntity.ELECTRONIC_COMBAT_JAMMER,
             FlightType.ESCORT_JAMMER: AirEntity.ELECTRONIC_COMBAT_JAMMER,
             FlightType.TARPS: AirEntity.RECONNAISSANCE,
-            FlightType.SCAR: AirEntity.ATTACK_STRIKE,
             FlightType.TARCAP: AirEntity.FIGHTER,
             FlightType.TRANSPORT: AirEntity.UTILITY,
             FlightType.AIR_ASSAULT: AirEntity.ROTARY_WING,
-            # Combat SAR is a standing pilot-rescue orbit.
-            FlightType.COMBAT_SAR: AirEntity.COMBAT_SEARCH_AND_RESCUE,
         }.get(self, AirEntity.UNSPECIFIED)
 
 
@@ -213,8 +208,16 @@ _LEGACY_FLIGHT_TYPE_VALUES: dict[str, FlightType] = {
     # commander-capture loop is dead code removed 2026-07-01; a persisted SOF
     # flight degrades to the closest surviving C-130 task.
     "SOF Insert": FlightType.TRANSPORT,
-    # The shelved POW recovery raid (CSAR rescope 2026-07-03: capture is a held
-    # POW resolved by field capture or the abandon clock; no raid). A persisted
-    # raid flight degrades to the closest surviving helo-lift task.
-    "CSAR": FlightType.TRANSPORT,
+    # The fork's own Combat SAR (§21) and its "Sandy" rescue escort (§15), both
+    # removed 2026-08-07 when the fork adopted upstream #929's CSAR wholesale.
+    # A persisted rescue flight becomes the upstream rescue; a persisted Sandy
+    # degrades to the CAS it always flew.
+    #
+    # NOTE: the old shelved-POW-raid entry ("CSAR" -> TRANSPORT) was DELETED here,
+    # not kept. FlightType.CSAR is now a live member, so FlightType("CSAR") resolves
+    # directly and _missing_ is never consulted -- the entry was dead, and a
+    # pre-2026-07-03 save's raid flight now loads as a rescue instead. Accepted:
+    # both are helo-lift-shaped and that save predates three flight-type reworks.
+    "Combat SAR": FlightType.CSAR,
+    "SCAR": FlightType.CAS,
 }

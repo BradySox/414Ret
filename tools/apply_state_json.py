@@ -426,18 +426,6 @@ class StateTranslator:
                     self.report.numeric_events += 1
                     translated.append(event)
             out[key] = translated
-        out["combat_sar_rescues"] = [
-            self._translate_name(n) if isinstance(n, str) else n
-            for n in data.get("combat_sar_rescues", [])
-        ]
-        for key in ("combat_sar_captures", "combat_sar_survivors"):
-            entries = []
-            for entry in data.get(key, []):
-                if isinstance(entry, dict) and isinstance(entry.get("unit"), str):
-                    entry = dict(entry)
-                    entry["unit"] = self._translate_name(entry["unit"])
-                entries.append(entry)
-            out[key] = entries
         return out
 
     def _resolve_names(self, names: list[str]) -> None:
@@ -465,8 +453,8 @@ class StateTranslator:
     def _translate_name(self, name: str) -> str:
         if name in self._memo:
             return self._memo[name]
-        # Names outside the killed-unit arrays (combat SAR entries) resolve
-        # against the memo built by _resolve_names; anything new passes through.
+        # Every killed-unit name is pre-resolved by _resolve_names; a name that
+        # was never seen by that pass passes through (guarded against collision).
         self.report.passthrough.append(name)
         result = self._guard(name)
         self._memo[name] = result

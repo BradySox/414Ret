@@ -4,7 +4,7 @@ The COIN layer (``game/fourteenth/coin*.py``) is a turn-boundary force-model sys
 spawns / ages / despawns recon-fogged red TGOs and adjudicates their consequences (an
 IED's fuse, an HVT's strike window) at ``finish_turn``. This emitter adds the things
 the force model cannot express -- **in-mission movement and ambient pressure** --
-following the Vietnam-Ops / Combat-SAR pattern: Python emits which spawned groups should
+following the Vietnam-Ops pattern: Python emits which spawned groups should
 move (and which friendly bases sit inside the insurgency's mortar reach), and the
 ``coin`` plugin drives it all at runtime.
 

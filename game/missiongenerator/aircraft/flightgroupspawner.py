@@ -112,9 +112,9 @@ class FlightGroupSpawner:
         finally:
             # Pull the role callsign back out of the shared country pool now that
             # pydcs has stamped it onto THIS group. Left in, next_callsign_category()
-            # would randomly hand King/Jolly/Sandy/Toxic to unrelated auto-named
-            # flights of the same country/category (the reported "applied to all
-            # aircraft" bug).
+            # would randomly hand the role callsign to unrelated auto-named flights
+            # of the same country/category (the reported "applied to all aircraft"
+            # bug).
             self._deregister_custom_callsign()
         self.flight.group_id = grp.id
         return grp
@@ -123,8 +123,8 @@ class FlightGroupSpawner:
         """Register a non-stock callsign into the spawn country's pool before pydcs
         assigns it -- pydcs ValueErrors on a callsign not in that pool (dcs
         ``mission._assign_callsign``). Covers both the 414th role callsigns
-        (King/Jolly/Sandy/Toxic) and a squadron's custom event callsign (e.g.
-        "Voodoo"); a stock pool callsign is already present, so this no-ops for it.
+        (``Toxic``) and a squadron's custom event callsign (e.g. "Voodoo"); a
+        stock pool callsign is already present, so this no-ops for it.
         Records that WE injected the name so :meth:`_deregister_custom_callsign`
         only ever pulls back a name we added, never a stock one. Idempotent; a
         no-op for a category with no callsign pool."""
@@ -209,32 +209,6 @@ class FlightGroupSpawner:
         for point in group.points:
             point.speed = QRA_AIRSTART_SPEED_MS
         group.late_activation = True
-        return group
-
-    def create_combat_sar_template(self, group_name: str) -> Optional[FlyingGroup[Any]]:
-        """A cold late-activation template the combatsar runtime clones on demand.
-
-        Like ``create_intercept_template`` but works for a rescue helo at a FARP/FOB
-        (not just an airfield): places the group at the squadron's field the same way
-        ``create_idle_aircraft`` does, then marks it late-activation so the template
-        itself never launches -- only the runtime's SPAWN clones fly (§21).
-        """
-        cp = self.flight.squadron.location
-        group: Optional[FlyingGroup[Any]] = None
-        # The rescue helo carries the "Jolly" role callsign (and its squadron may
-        # carry a custom one); register it around the spawn so pydcs can resolve it.
-        self._register_custom_callsign()
-        try:
-            if self.flight.is_helo or (self.flight.is_lha and isinstance(cp, Fob)):
-                group = self._generate_at_cp_helipad(name=group_name, cp=cp)
-            elif isinstance(cp, Fob):
-                group = self._generate_at_cp_ground_spawn(name=group_name, cp=cp)
-            elif isinstance(cp, Airfield):
-                group = self._generate_at_airfield(name=group_name, airfield=cp)
-        finally:
-            self._deregister_custom_callsign()
-        if group is not None:
-            group.late_activation = True
         return group
 
     @property

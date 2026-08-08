@@ -45,6 +45,34 @@ eject deep over enemy ground, end the mission with no rescue, then pass the turn
   belonged to a **DCS dynamic-slot** jet, which `record_downed_pilots` correctly discards. If
   you eject from a dynamic slot this test proves nothing and looks like a failure.
 
+### 2 · A full deck still parks 16 jets with the decorations on — `B25` follow-on
+
+**Try:** load a Nimitz-hull campaign (Stennis / CVN-71 / 72 / 73 / 75), frag a **cold** carrier
+mission with at least 16 deck starts, and count the jets that actually make it onto the deck.
+Then flip `carrier_deck_decorations` **off**, regenerate the same turn, and count again.
+**~15 min**, most of it generation.
+
+- **Pass:** both runs park the same number. The Supercarrier guide documents **16 parking
+  spots + 4 catapults**, so a healthy deck fills 16.
+- **Fail:** the decorations-on run parks fewer, or a jet reports *"your flight is delayed to
+  start"* while the control run does not. Either means a street static is standing on a spawn
+  spot.
+- **Why it's here:** `KNOWN_PARKING_SPOTS` holds **11** spots. ED documents **16**. On the
+  starboard side our table runs out at `x = −35.5` (aft end of the six-pack row) and does not
+  resume until `x = −98.7` (El-3 shoulder) — a **63.2 m stretch with no entry** — and **52 of
+  the 67** street-gear placements sit inside it. Every variant's guard-tested clearance
+  (12.7–14.7 m) is measured to `(−35.5, 34.0)`, the *edge* of that gap; nothing inside it is
+  tested, because nothing inside it is in the table. The manual's parking diagram puts
+  **spots 5 and 6** in that region — forward of the island on the starboard deck edge, with
+  spot 5 drawn E-2-sized.
+- **Why B25 does not already cover it:** B25 closed 2026-08-06 on the DM's "Passing" verdict,
+  which answered the *appearance* symptoms — gear on the deck, nothing floating, nothing out of
+  place. The parking-capacity half of its criterion was never run. This card is that half and
+  only that half; it does not reopen B25.
+- **One trap:** a blocked spot is **silent**. §72's own history is that late-activated groups
+  spawn *into* statics rather than skipping them, so the failure can look like a normal deck
+  rather than an error. Count, do not eyeball.
+
 ---
 
 ## Done

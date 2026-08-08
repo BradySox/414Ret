@@ -9,7 +9,6 @@
     "airboss",
     "intercept",
     "recon",
-    "combatsar",
     "vietnamops",
     "coin",
     "growler",
@@ -27,5 +26,6 @@
     "bigeye",
     "MooseSoundhandler",
     "MooseMarkerOps",
-    "MooseAtis"
+    "MooseAtis",
+    "opscsar"
 ]

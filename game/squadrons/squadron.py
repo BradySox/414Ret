@@ -107,6 +107,13 @@ class Squadron:
     #: Flight.__init__) instead of a random DCS-pool callsign.
     callsign: Optional[str] = None
 
+    #: True once this squadron has been considered for CSAR auto-assignment. Lets
+    #: the migrator opt existing squadrons in exactly once, so a player who turns
+    #: CSAR back off doesn't have it re-enabled on the next load.
+    csar_auto_assign_seeded: bool = field(
+        init=False, hash=False, compare=False, default=False
+    )
+
     def __setstate__(self, state: dict[str, Any]) -> None:
         if "id" not in state:
             state["id"] = uuid4()
@@ -128,6 +135,9 @@ class Squadron:
             state["qra_player_manned"] = 0
         if "qra_player_ai_wingman" not in state:
             state["qra_player_ai_wingman"] = False
+        if "csar_auto_assign_seeded" not in state:
+            # Pre-CSAR save: let the migrator opt this squadron in once.
+            state["csar_auto_assign_seeded"] = False
         self.__dict__.update(state)
 
     def __str__(self) -> str:
@@ -204,6 +214,20 @@ class Squadron:
         self.auto_assignable_mission_types = {
             t for t in mission_types if self.capable_of(t)
         }
+
+    def enable_csar_if_capable(self) -> None:
+        """Seeds CSAR into the auto-assignable set for CSAR-capable squadrons.
+
+        Campaign squadron configs (and existing saves) predate CSAR and never list
+        it as a secondary task, so without this no squadron would ever auto-plan a
+        rescue. This is deliberately *not* folded into
+        ``set_auto_assignable_mission_types``, which the Air Wing configuration
+        dialog uses to apply the player's explicit choices -- forcing CSAR there
+        would make it impossible to turn off. Called once at squadron creation and
+        once per squadron by the save migrator instead.
+        """
+        if self.capable_of(FlightType.CSAR):
+            self.auto_assignable_mission_types.add(FlightType.CSAR)
 
     def claim_new_pilot_if_allowed(self) -> Optional[Pilot]:
         if self.pilot_limits_enabled:
@@ -312,8 +336,15 @@ class Squadron:
     def end_turn(self) -> None:
         if self.destination is not None:
             self.relocate_to(self.destination)
+        # Advance recovering pilots *before* replenishment so a returning pilot
+        # reclaims their slot rather than having it filled by a fresh recruit.
+        self._process_pilot_recovery()
         self.replenish_lost_pilots()
         self.deliver_orders()
+
+    def _process_pilot_recovery(self) -> None:
+        for pilot in self.recovering_pilots:
+            pilot.advance_recovery()
 
     def replenish_lost_pilots(self) -> None:
         if self.pilot_limits_enabled and self.replenish_count > 0:
@@ -402,15 +433,31 @@ class Squadron:
 
     @property
     def living_pilots(self) -> list[Pilot]:
-        return self._pilots_without_status(PilotStatus.Dead)
+        return [p for p in self.current_roster if p.alive]
 
     @property
     def dead_pilots(self) -> list[Pilot]:
         return self._pilots_with_status(PilotStatus.Dead)
 
     @property
+    def missing_pilots(self) -> list[Pilot]:
+        return self._pilots_with_status(PilotStatus.MissingInAction)
+
+    @property
+    def downed_pilots(self) -> list[Pilot]:
+        return self._pilots_with_status(PilotStatus.Downed)
+
+    @property
+    def recovering_pilots(self) -> list[Pilot]:
+        return self._pilots_with_status(PilotStatus.Recovering)
+
+    @property
     def _number_of_unfilled_pilot_slots(self) -> int:
-        return self.pilot_limit - len(self.active_pilots)
+        # Downed and recovering pilots still hold their roster slot: a downed
+        # pilot may be rescued and a recovering one will return, so we must not
+        # recruit a fresh pilot into a slot that is about to be reclaimed.
+        reserved = len(self.downed_pilots) + len(self.recovering_pilots)
+        return self.pilot_limit - len(self.active_pilots) - reserved
 
     @property
     def number_of_available_pilots(self) -> int:
@@ -462,7 +509,15 @@ class Squadron:
         if this_turn and not self.can_fulfill_flight(size):
             return False
 
-        if task in [FlightType.ESCORT, FlightType.SEAD_ESCORT]:
+        # The formation escorts -- ESCORT, SEAD_ESCORT and ESCORT_JAMMER, i.e. exactly
+        # the tasks that fly EscortFlightPlan and ride the package join->split. A plain
+        # fast jet cannot hold formation on a helo package, so a helo-led one takes only
+        # helos and the LHA-capable jets. Read off is_escort_type rather than a literal
+        # list so the next escort task added inherits the rule: ESCORT_JAMMER (§77) was
+        # missed by the old hand-written list, which is how a Growler 89 nm away ended
+        # up escorting a pair of Chinooks. Independent-path escorts (SEAD_SWEEP, TARCAP)
+        # fly their own route and their own timing, so they are deliberately unguarded.
+        if task.is_escort_type:
             if heli and not self.aircraft.helicopter and not self.aircraft.lha_capable:
                 return False
             if not heli and self.aircraft.helicopter:

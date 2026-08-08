@@ -47,6 +47,33 @@ class NewGameWizard(QtWidgets.QWizard):
 
         self.setWindowTitle("New Game")
         self.generatedGame = None
+        self._centered = False
+
+    def showEvent(self, event: QtGui.QShowEvent) -> None:
+        super().showEvent(event)
+        # Center on first show only: the wizard grows and shrinks as you page
+        # through it, and re-centering on every show would yank a window the user
+        # had dragged somewhere they wanted it.
+        if not self._centered:
+            self._centered = True
+            self._center_on_screen()
+
+    def _center_on_screen(self) -> None:
+        """Put the wizard in the middle of the screen the app is already on.
+
+        Qt otherwise leaves placement to the window manager, which parks the
+        wizard wherever it likes. Centering on the *parent's* screen rather than
+        the primary one keeps it on the same monitor as the main window.
+        """
+        parent = self.parentWidget()
+        screen = parent.screen() if parent is not None else self.screen()
+        if screen is None:
+            return
+        # availableGeometry excludes the taskbar, so a tall wizard is not pushed
+        # under it.
+        frame = self.frameGeometry()
+        frame.moveCenter(screen.availableGeometry().center())
+        self.move(frame.topLeft())
 
     def accept(self):
         logging.info("New Game Wizard accept")

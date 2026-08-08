@@ -22,12 +22,16 @@ from game.data.carrier_deck_decor import (
     KNOWN_PARKING_SPOTS,
     LANDING_AREA_KEEP_OUT,
     LSO_PLATFORM_CREW,
+    FORWARD_DECK_ENVELOPE,
+    FOOTPRINT_EXTRA_M,
     LSO_PLATFORM_ENVELOPE,
+    RECOVERY_DECK_VARIANTS,
     ROUND_DOWN_VARIANTS,
     STATIC_META,
     STREET_VARIANTS,
     deck_layout_for,
     launch_phase_dressing_for,
+    recovery_dressing_for,
     required_spot_clearance_m,
 )
 from game.missiongenerator.carrierdeckdecor import generate_carrier_deck_decorations
@@ -55,6 +59,17 @@ def everything() -> Iterator[tuple[str, DeckStatic]]:
 
 def in_box(x: float, y: float, box: tuple[float, float, float, float]) -> bool:
     return box[0] <= x <= box[1] and box[2] <= y <= box[3]
+
+
+def test_every_street_variant_carries_enough_gear() -> None:
+    """A street set thinner than five items reads as a bare deck, not a dressed one.
+
+    This is the curation floor applied when the campaign A mining was completed
+    (2026-08-07): missions 1/2/4/5 cleared it and shipped, missions 7 (4 items
+    inside the envelope) and 8 (2) did not and were deliberately left unmined.
+    """
+    for i, variant in enumerate(STREET_VARIANTS):
+        assert len(variant) >= 5, f"street variant {i} has only {len(variant)} items"
 
 
 def test_permanent_gear_is_inside_a_safe_envelope() -> None:
@@ -184,9 +199,10 @@ def test_linked_static_serialization() -> None:
     )
     carrier = ship_group.units[0]
 
-    clear_names = generate_carrier_deck_decorations(
+    decor = generate_carrier_deck_decorations(
         mission, country, ship_group, heading, 3, include_aircraft=True
     )
+    clear_names = decor.clear_names
 
     layout = deck_layout_for(CVN_71.id, "CSG 1", 3) + launch_phase_dressing_for(
         CVN_71.id, "CSG 1", 3, True
@@ -226,3 +242,168 @@ def test_linked_static_serialization() -> None:
             math.radians((80 + item.angle_deg) % 360), abs=1e-6
         )
     assert len(names) == len(statics), "deck decor group names must be unique"
+
+
+def recovery_phase() -> Iterator[tuple[str, DeckStatic]]:
+    for i, variant in enumerate(RECOVERY_DECK_VARIANTS):
+        for item in variant:
+            yield f"recovery variant {i}", item
+
+
+def test_recovery_tier_stays_inside_the_forward_deck_box() -> None:
+    """The recovery tier lives on the bow and the forward mid-deck strip.
+
+    It must never reach the angled deck, the waist or the port side, so the
+    box is entirely to starboard.
+    """
+    assert FORWARD_DECK_ENVELOPE[2] > 0.0, "box must be entirely to starboard"
+    for source, item in recovery_phase():
+        assert in_box(item.x, item.y, FORWARD_DECK_ENVELOPE), f"{source}: {item}"
+
+
+def test_recovery_and_street_zones_never_overlap() -> None:
+    """The two boxes must be disjoint, and no recovery item may land in the
+    street box.
+
+    The permanent street gear stands there for the whole mission, so recovery
+    gear spawned on top of it would interpenetrate -- statics have no collision
+    resolution. This is what excluded the campaign A mission 7/12/13 forward clusters,
+    which are otherwise perfectly good sets: they sit inside the street box.
+    """
+    fx0, fx1, fy0, fy1 = FORWARD_DECK_ENVELOPE
+    sx0, sx1, sy0, sy1 = ISLAND_STREET_ENVELOPE
+    overlap_x = fx0 <= sx1 and sx0 <= fx1
+    overlap_y = fy0 <= sy1 and sy0 <= fy1
+    assert not (overlap_x and overlap_y), "forward-deck and street boxes overlap"
+    for source, item in recovery_phase():
+        assert not in_box(
+            item.x, item.y, ISLAND_STREET_ENVELOPE
+        ), f"{source}: {item} would spawn on the permanent street gear"
+
+
+def test_recovery_aircraft_footprints_clear_the_street_gear() -> None:
+    """Box disjointness is not enough once the tier carries aircraft.
+
+    The envelope guards check item CENTRES. A parked Tomcat is ~19 m long, so
+    its footprint reaches far aft of its centre — far enough to matter, since
+    the permanent street gear stands there for the whole mission and statics
+    have no collision resolution. This checks the footprint edge, not the
+    centre.
+    """
+    street_forward_edge = ISLAND_STREET_ENVELOPE[1]
+    for source, item in recovery_phase():
+        extra = FOOTPRINT_EXTRA_M.get(item.type, 0.0)
+        aft_edge = item.x - extra
+        assert aft_edge > street_forward_edge, (
+            f"{source}: {item.type} at x={item.x} reaches x={aft_edge:.1f}, "
+            f"into the street box (forward edge {street_forward_edge})"
+        )
+
+
+def test_recovery_tier_may_carry_aircraft_but_permanent_gear_may_not() -> None:
+    """The split that keeps the 2026-07-18 lesson intact.
+
+    Static aircraft ARE allowed in the recovery tier (explicit call,
+    2026-08-07: the clipping that banned them was a placement problem, not an
+    aircraft problem, and this tier only stands once launches are over). They
+    remain banned from the permanent layout, which is up the whole mission
+    while every spawn path runs.
+    """
+    recovery_types = {item.type for _, item in recovery_phase()}
+    assert any(
+        STATIC_META[t][0] in ("Planes", "Helicopters") for t in recovery_types
+    ), "recovery tier is allowed aircraft; if none remain, drop this test"
+    for hull in (Stennis.id, CVN_71.id):
+        for turn in range(12):
+            for item in deck_layout_for(hull, "CSG 1", turn):
+                assert STATIC_META[item.type][0] not in ("Planes", "Helicopters")
+
+
+def test_recovery_tier_has_more_than_one_variant() -> None:
+    """The recovery deck rotates like the street does.
+
+    Shipped 2026-08-07 with a single campaign A mission 4 set, which meant every
+    recovery on every carrier looked identical. Four sets now rotate on the
+    same (carrier, turn) seed as the street.
+    """
+    assert len(RECOVERY_DECK_VARIANTS) >= 4
+    seen = {
+        tuple(recovery_dressing_for(CVN_71.id, "CSG 1", turn, True))
+        for turn in range(12)
+    }
+    assert len(seen) == len(RECOVERY_DECK_VARIANTS), "not every variant is reachable"
+
+
+def test_recovery_tier_clears_every_known_spot() -> None:
+    """Every known spot, with the same margin the permanent gear keeps.
+
+    NOTE this proves less than it reads: KNOWN_PARKING_SPOTS holds 11 of the
+    Supercarrier guide's 16 spots, and the five it lacks include the bow-edge
+    spots nearest this tier. That is why the tier is default-OFF. See the
+    design note's "The 11-vs-16 spot gap".
+    """
+    for source, item in recovery_phase():
+        need = required_spot_clearance_m(item.type)
+        for sx, sy in KNOWN_PARKING_SPOTS:
+            d = math.hypot(item.x - sx, item.y - sy)
+            assert d >= need, f"{source}: {item.type} {d:.1f} m from ({sx}, {sy})"
+
+
+def test_recovery_tier_never_touches_the_landing_area() -> None:
+    """Recovery dressing exists FOR the recovery -- it cannot be in the way."""
+    for source, item in recovery_phase():
+        assert not in_box(
+            item.x, item.y, LANDING_AREA_KEEP_OUT
+        ), f"{source}: {item} stands in the recovery corridor"
+
+
+def test_recovery_tier_has_static_meta() -> None:
+    for source, item in recovery_phase():
+        assert item.type in STATIC_META, f"{source}: {item.type} missing STATIC_META"
+
+
+def test_recovery_tier_is_gated_and_rotates() -> None:
+    assert recovery_dressing_for(CVN_71.id, "CSG 1", 3, False) == []
+    assert recovery_dressing_for("Stennis-not-a-hull", "CSG 1", 3, True) == []
+    picked = recovery_dressing_for(CVN_71.id, "CSG 1", 3, True)
+    assert picked and picked in RECOVERY_DECK_VARIANTS
+    # Deterministic across regeneration of the same turn.
+    assert picked == recovery_dressing_for(CVN_71.id, "CSG 1", 3, True)
+
+
+def test_recovery_tier_is_never_written_into_the_mission() -> None:
+    """The whole point: the bow stays a launch deck until the plugin says so.
+
+    A recovery placement that reached the .miz would stand there from mission
+    start, which is exactly the spawn-clip failure this feature has already
+    paid for twice.
+    """
+    mission = Mission()
+    mission.coalition["blue"].add_country(USA())
+    country = mission.country(USA.name)
+    heading = Heading.from_degrees(80)
+    ship_group = mission.ship_group(
+        country, "CSG 1", CVN_71, Point(-350000, 250000, mission.terrain), heading=80
+    )
+
+    decor = generate_carrier_deck_decorations(
+        mission,
+        country,
+        ship_group,
+        heading,
+        3,
+        include_aircraft=False,
+        include_recovery=True,
+    )
+
+    assert decor.recovery_specs, "recovery tier should have been picked"
+    permanent = deck_layout_for(CVN_71.id, "CSG 1", 3)
+    statics = list(country.static_group)
+    assert len(statics) == len(permanent), "only the permanent set may be generated"
+    for spec in decor.recovery_specs:
+        for group in statics:
+            unit = group.units[0]
+            offsets = getattr(unit, "deck_offsets", None)
+            assert offsets is None or (
+                abs(offsets[0] - spec.x) > 0.01 or abs(offsets[1] - spec.y) > 0.01
+            ), f"recovery placement {spec} leaked into the mission"

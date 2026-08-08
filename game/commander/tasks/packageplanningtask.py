@@ -158,14 +158,25 @@ class PackagePlanningTask(TheaterCommanderTask, Generic[MissionTargetT]):
             )
         return self.package is not None
 
-    def propose_common_escorts(self) -> None:
+    def propose_common_escorts(self, jammer: bool = True) -> None:
+        # One SEAD flavour, not two. SEAD_ESCORT and SEAD_SWEEP are proposed on the
+        # same EscortType.Sead trigger, so a threatened package used to draw both --
+        # four jets against one threat, on top of the A2A escort and the jammer. That
+        # is the "overstuffed" problem PlanDead already solved for itself ("DEAD
+        # packages felt overstuffed when they requested all three SEAD flavors at
+        # once"); this generalises the fix to every other caller. SEAD_ESCORT is the
+        # one kept because it is the one that actually escorts: it flies
+        # EscortFlightPlan on the package's join->split, where SEAD_SWEEP flies its
+        # own route and its own timing. Callers that specifically want the sweep ahead
+        # of the package still propose it directly (PlanCas).
         self.propose_flight(FlightType.SEAD_ESCORT, 2, EscortType.Sead)
         self.propose_flight(FlightType.ESCORT, 2, EscortType.AirToAir)
-        self.propose_flight(FlightType.SEAD_SWEEP, 2, EscortType.Sead)
         # Growler escort jamming: added on the same radar-SAM trigger as the
         # SEAD escorts, pruned silently when no capable squadron (EA-18G only)
-        # is in the wing.
-        self.propose_flight(FlightType.ESCORT_JAMMER, 2, EscortType.Jammer)
+        # is in the wing. `jammer=False` for packages that never penetrate a
+        # radar-SAM ring -- see PlanAirAssault.
+        if jammer:
+            self.propose_flight(FlightType.ESCORT_JAMMER, 2, EscortType.Jammer)
 
     def iter_iads_ranges(
         self, state: TheaterState, range_type: RangeType

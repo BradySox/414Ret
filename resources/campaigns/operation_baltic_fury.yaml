@@ -192,9 +192,6 @@ settings:
     commsjam: true
     redscramble: true
     vietnamops: true
-    # §51's intel gate arms only off a captured aircrew; combat_sar_captures' only writer is the
-    # combatsar plugin, so pin it on (also protects all over-water rescue + the POW->will feed).
-    combatsar: true
     aisleep: true                    # §59 ground-AI sleep runtime (perf)
     gpsjamming: true                 # §86 GPS jamming runtime -- the setting does NOTHING without it
     # §61 host-menu gate: only DCS names containing "Flash" see the HOST: Red Scramble menu.

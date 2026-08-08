@@ -52,16 +52,10 @@ class Sitrep:
     captured: List[str]  # control points the player took this turn
     lost: List[str]  # control points the player lost this turn
     pilots_recovered: int  # Combat SAR deliveries home
-    #: One line per BLUE aviator held POW, e.g. "Capt Mitchell — held at Mozdok
-    #: (2 turns left)" or "… (held)" on an indefinite-hold will campaign. The one
-    #: player-facing surface for the "recapture the field / rescue matters" levers.
-    #: Absent on pre-POW-visibility pickled sitreps (read via getattr).
-    pows_held: List[str] = field(default_factory=list)
-    #: One line per BLUE aviator down and still EVADING (the §21 persistent-evader
-    #: ledger, 2026-07-10), e.g. "Capt Mitchell — evading near Fulda (2 turns
-    #: down)". Deep evaders get found by the turn capture roll -- this line is the
-    #: standing prompt to fly the rescue. Absent on pre-feature pickled sitreps
-    #: (read via getattr).
+    #: One line per BLUE aviator down and awaiting rescue (upstream #929's CSAR
+    #: e.g. "Capt Mitchell — down near Fulda (2 turns left)". A survivor nobody
+    #: reaches in time goes MIA for good, so this line is the standing prompt to
+    #: fly the rescue. Absent on pre-feature pickled sitreps (read via getattr).
     pilots_mia: List[str] = field(default_factory=list)
     #: §52 Feature A: the enemy command-network status ("1/3 command posts
     #: operational") when it is degraded and the feature is on -- the legibility
@@ -92,7 +86,6 @@ class Sitrep:
             or self.captured
             or self.lost
             or self.pilots_recovered
-            or getattr(self, "pows_held", None)
             or getattr(self, "pilots_mia", None)
             # An arrival IS news -- unlike the C2/victory lines it is a discrete
             # event, and "the Prowlers arrived" is exactly the thing a quiet
@@ -115,7 +108,6 @@ class Sitrep:
         debriefing: Debriefing,
         turn: int,
         day: date,
-        pows_held: Optional[List[str]] = None,
         pilots_mia: Optional[List[str]] = None,
         red_c2_status: Optional[str] = None,
         victory_lines: Optional[List[str]] = None,
@@ -144,8 +136,8 @@ class Sitrep:
             enemy=SideLosses(red.aircraft, red.front_line, red.ground_objects),
             captured=captured,
             lost=lost,
-            pilots_recovered=len(debriefing.state_data.combat_sar_rescues),
-            pows_held=list(pows_held or []),
+            # TODO(reconcile): re-point at PR929's rescued_pilot_ids channel.
+            pilots_recovered=0,
             pilots_mia=list(pilots_mia or []),
             red_c2_status=red_c2_status,
             victory_lines=list(victory_lines or []),
@@ -164,9 +156,6 @@ class Sitrep:
         if self.pilots_recovered:
             plural = "s" if self.pilots_recovered != 1 else ""
             lines.append(f"Recovered {self.pilots_recovered} downed pilot{plural}")
-        # POWs held (getattr: pre-POW-visibility pickled sitreps lack the field).
-        for pow_line in getattr(self, "pows_held", None) or []:
-            lines.append(f"POW: {pow_line}")
         # Evaders still down (getattr: pre-feature pickled sitreps lack the field).
         for mia_line in getattr(self, "pilots_mia", None) or []:
             lines.append(f"MIA: {mia_line}")

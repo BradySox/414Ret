@@ -26,6 +26,7 @@ from game.theater import (
     MissionTarget,
     Player,
 )
+from game.squadrons.downedpilot import DownedPilot
 from game.theater.theatergroundobject import (
     BuildingGroundObject,
     IadsGroundObject,
@@ -116,10 +117,12 @@ class TheaterState(WorldState["TheaterState"]):
     aewc_targets: list[MissionTarget]
     refueling_targets: list[RefuelingTarget]
     recovery_targets: dict[ControlPoint, int]
-    # 414th Combat SAR standing alert: front-line orbits the auto-planner may task a
-    # pilot-rescue flight on (gated by Settings.auto_combat_sar). Empty when the
-    # setting is off so no CSAR is ever auto-planned.
-    combat_sar_targets: list[MissionTarget]
+    csar_targets: list[DownedPilot]
+    #: Rescue packages committed so far this turn, capped by
+    #: Settings.max_csar_flights. Counted rather than pre-trimming csar_targets so
+    #: a pilot the planner *couldn't* reach (no aircraft, or a live SAM ring) does
+    #: not consume one of the slots.
+    csar_flights_planned: int
     enemy_air_defenses: list[IadsGroundObject]
     threatening_air_defenses: list[Union[IadsGroundObject, NavalGroundObject]]
     detecting_air_defenses: list[Union[IadsGroundObject, NavalGroundObject]]
@@ -227,7 +230,8 @@ class TheaterState(WorldState["TheaterState"]):
             aewc_targets=list(self.aewc_targets),
             refueling_targets=list(self.refueling_targets),
             recovery_targets=dict(self.recovery_targets),
-            combat_sar_targets=list(self.combat_sar_targets),
+            csar_targets=list(self.csar_targets),
+            csar_flights_planned=self.csar_flights_planned,
             enemy_air_defenses=list(self.enemy_air_defenses),
             enemy_convoys=list(self.enemy_convoys),
             enemy_shipping=list(self.enemy_shipping),
@@ -300,14 +304,6 @@ class TheaterState(WorldState["TheaterState"]):
         ]
 
         aewc_targets = _aewc_targets(finder)
-
-        # 414th Combat SAR is no longer an auto-fragged standing orbit (2026-07-06
-        # rework -- the orbiting helo never reliably flew the pickup, checklist
-        # G21). ``auto_combat_sar`` now drives an on-demand AI rescue the combatsar
-        # runtime spawns when a pilot goes down and no player package is up; the
-        # player plans their own CSAR package off the FLOT. Nothing is planned here,
-        # so this stays empty (the field is kept for TheaterState shape stability).
-        combat_sar_targets: list[MissionTarget] = []
 
         enemy_air_defenses = list(finder.enemy_air_defenses())
         enemy_ships = list(finder.enemy_ships())
@@ -394,7 +390,10 @@ class TheaterState(WorldState["TheaterState"]):
                 coalition, finder.closest_friendly_control_point()
             ),
             recovery_targets={cp: 0 for cp in finder.friendly_naval_control_points()},
-            combat_sar_targets=combat_sar_targets,
+            csar_targets=list(finder.downed_pilots()),
+            csar_flights_planned=0,
+            # 414th: hoisted to a local above (reused for the threat-zone math),
+            # so reuse the list instead of re-walking the finder.
             enemy_air_defenses=enemy_air_defenses,
             threatening_air_defenses=[],
             detecting_air_defenses=[],

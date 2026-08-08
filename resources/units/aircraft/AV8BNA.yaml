@@ -53,6 +53,12 @@ radios:
 #   LaserCode100: 6
 #   MountNVG: false
 #   RocketBurst: 1
+fuel:
+  taxi: 100
+  climb_ppm: 20
+  cruise_ppm: 11
+  combat_ppm: 14
+  min_safe: 2000
 tasks:
   Anti-ship: 60
   BAI: 745

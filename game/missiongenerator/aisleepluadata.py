@@ -21,7 +21,7 @@ Safety is decided HERE, in Python, as a positive list -- the plugin never guesse
 * ``concealed`` / ``map_hidden`` TGOs are skipped -- that set is exactly the COIN /
   convoy-ambush scripted movers (cells, HVT convoys, VBIEDs, ambush teams), whose
   routes a sleeping controller would silently kill.
-* FLOT units, convoys and Combat-SAR spawns are not TGOs, so the TGO walk can never
+* FLOT units and convoys are not TGOs, so the TGO walk can never
   touch them.
 
 An armor garrison may carry embedded SHORAD/MANPAD escorts, so the plugin

@@ -5,6 +5,7 @@ from fastapi.responses import JSONResponse
 from . import (
     controlpoints,
     debuggeometries,
+    downedpilots,
     eventstream,
     flights,
     fogofwar,
@@ -34,6 +35,7 @@ async def _key_error_as_404(request: Request, exc: KeyError) -> JSONResponse:
 
 app.include_router(controlpoints.router)
 app.include_router(debuggeometries.router)
+app.include_router(downedpilots.router)
 app.include_router(eventstream.router)
 app.include_router(flights.router)
 app.include_router(fogofwar.router)

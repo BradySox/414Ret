@@ -414,7 +414,7 @@ campaign miz is marker-based, so **infantry can't be placed** (no infantry marke
 accurate gun-fort kit (Sassan/Sirri had ZU-23); the 7 shore Silkworms carry the anti-ship hunt.
 **On-deck render is the one in-game unknown** (blind to headless): if a battery lands in the water,
 nudge `DECK_OFFSET` in the tool or place them by eye in the ME. (Technique confirmed against paid
-campaigns — Cerberus North mounts a Silkworm+infantry on a gas platform; see
+campaigns — one FA-18C campaign mounts a Silkworm+infantry on a gas platform; see
 [[units-on-oil-platforms]].)
 
 **Remaining for the campaign:** the in-game pass (checklist row T2) and will-weight/ROE-corridor

@@ -1,1 +1,1 @@
-export { default } from "./DownedPilotsLayer";
+export { default } from "./DownedPilot";

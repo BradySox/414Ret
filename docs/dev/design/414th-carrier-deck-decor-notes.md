@@ -1,18 +1,18 @@
-# Carrier Deck Decorations (§72) — OCN 2 deck dressing, parking-safe
+# Carrier Deck Decorations (§72) — campaign A deck dressing, parking-safe
 
 **Status: LANDED 2026-07-18.** User request: "Take a look at the deck layouts and
-decorations in [the 13 OCN 2 missions]. I wanna apply them to ALL retribution carriers
+decorations in [the 13 campaign A missions]. I wanna apply them to ALL retribution carriers
 for flavor. BUT we need all of the parking spots still usable. If you want to block a
 catapult that is fine."
 
 This note records where the data came from, what the parking evidence is, and why
-specific OCN decorations were dropped — so a future edit argues with the evidence, not
+specific campaign A decorations were dropped — so a future edit argues with the evidence, not
 with vibes.
 
-## Source: what OCN 2 actually does
+## Source: what campaign A actually does
 
-All 13 missions of Sedlo's OCN 2 (`E:\DCS World\Mods\campaigns\FA-18C Operation
-Cerberus North 2\OCN 2 Mission N FINAL.miz`) dress the CVN-75 Truman with 12–27
+All 13 missions of campaign A (a paid FA-18C campaign in the DM's
+`<DCS>\Mods\campaigns\` folder) dress the CVN-75 Truman with 12–27
 **ship-linked statics**. In the miz format a linked static splits across three levels
 (this is the part stock pydcs doesn't model):
 
@@ -35,7 +35,7 @@ Ship frame: x along the keel (fwd +), y athwartships (stbd +), angle relative to
 heading. DCS re-derives world position from the offsets every frame — the statics ride
 the steaming boat.
 
-**OCN's vocabulary** (type → what it is → where it lives):
+**campaign A's vocabulary** (type → what it is → where it lives):
 
 | type | what | where | missions |
 |---|---|---|---|
@@ -51,7 +51,7 @@ Module ownership: the AS32 gear + carrier personnel are `CoreMods/tech/USS_Nimit
 the Hyster is `CoreMods/aircraft/F14` — CoreMods ship with **every** DCS install, which
 is exactly why a Hornet-only campaign could use them. No ownership gate needed.
 
-Deck-flavor OCN also gets from **uncontrolled parked AI aircraft** ("Deck Hornets",
+Deck-flavor campaign A also gets from **uncontrolled parked AI aircraft** ("Deck Hornets",
 "S3 Placeholder" — real aircraft groups, engines off) is *not* reproduced here:
 Retribution's own deck population (client flights, the §21 rescue helo, BARCAP
 cold-starts) fills that niche with real, tracked airframes.
@@ -82,21 +82,25 @@ handled by **envelope exclusion**, not per-spot clearance: everything shipped li
 one of two zones where a parking spot cannot be:
 
 - **LSO platform sponson** (x −134..−126, y −25..−18) — off the deck surface.
-- **Island street** (x −68..−40, y +12.5..+24.5) — between the LA foul line and the
-  island; flanked by the six-pack row (y=+34), the corral (fwd of the island face,
-  x>−38) and the junkyard (x<−72). The SC manual's spot diagrams place nothing there,
-  no spawn was ever observed there, and OCN parks gear there in 13 flyable missions.
+- **Island street** (x −63.9..−31.4, y +11.9..+24.7 — the current placements after the
+  2026-07-27 re-reposition below; this bullet read x −68..−40 until 2026-08-07 and was
+  stale by the `CORRAL_SHIFT` retune) — between the LA foul line and the island; flanked
+  by the six-pack row (y=+34), the corral (fwd of the island face, x>−38) and the
+  junkyard (x<−72). No spawn was ever observed there, and campaign A parks gear there in 13
+  flyable missions. ⚠️ **The third leg of that argument — "the SC manual's spot diagrams
+  place nothing there" — does not survive reading the diagrams.** See *The 11-vs-16 spot
+  gap* below.
 
 `KNOWN_PARKING_SPOTS` + `MIN_SPOT_CLEARANCE_M` (9 m: folded-Hornet half-span 4.7 m +
 placement jitter <2 m + margin) live in `game/data/carrier_deck_decor.py` and the guard
 test re-checks every table entry — min actual clearance in the shipped tables is
 13.8 m.
 
-**Dropped from OCN, and why:**
+**Dropped from campaign A, and why:**
 
 - Fantail/bow **static aircraft** (E-2C at x−152/−109, S-3B, SH-60Bs at x−122..−134):
-  they sit on real parking real estate. Sedlo could afford to spend spots (blocked
-  spots shift spawns, and OCN never needs more than ~10); our constraint is *every*
+  they sit on real parking real estate. the campaign author could afford to spend spots (blocked
+  spots shift spawns, and campaign A never needs more than ~10); our constraint is *every*
   spot usable.
 - **AS32-36A cranes** (x −69..−92, y +21..+35): the junkyard / El 3 zone — unproven,
   possibly spots 7/8.
@@ -113,7 +117,7 @@ test re-checks every table entry — min actual clearance in the shipped tables 
 to the envelope), rotated per (carrier group name, turn) crc32 — deterministic across
 regeneration (§70 pattern), varying across turns.
 `game/missiongenerator/carrierdeckdecor.py`: `DeckDecorStatic`/`DeckDecorPoint` pydcs
-subclasses adding `offsets`/`linkUnit`, one single-static group per decoration (OCN
+subclasses adding `offsets`/`linkUnit`, one single-static group per decoration (campaign A
 convention), world position = ship + rotated offset off the §65 BRC. Hooked in
 `GenericCarrierGenerator.generate()`'s flagship block; gated
 `carrier_deck_decorations` (Mission Generation → Carrier, default ON); hull gate
@@ -138,14 +142,14 @@ mission.
   own spawns demonstrably use) and out of the default layout.
 
   **The round-down E-2C lesson (2026-07-18, user screenshot):** the tier's first cut
-  also shipped OCN M8's E-2C at (−152.1, +5.4) — it passed the parking guard (clears
+  also shipped campaign A M8's E-2C at (−152.1, +5.4) — it passed the parking guard (clears
   every spot) but the user's first in-game look asked the right question: "how can
   planes land with the E2 there?" It stands 5.6 m tall and 17.6 m long essentially at
   the ramp crossing, where every recovering aircraft passes a few metres above the
   deck. (Correction, same day: the static E-2C renders **folded** — the user's closer
   screenshot disproved my wings-spread read; the ramp argument stands on height +
   length, but the footprint math shrank, which is what re-opened the port-quarter
-  E-2 question below.) Sedlo can stage-manage recoveries in a scripted mission; a
+  E-2 question below.) the campaign author can stage-manage recoveries in a scripted mission; a
   dynamic campaign recovers jets every mission. Cut, and codified as
   `LANDING_AREA_KEEP_OUT` (a stern-threshold + wires box, x −170..−120 / y −15..+12):
   **permanent** placements must clear spots AND the recovery corridor — the parking
@@ -185,10 +189,11 @@ back, as a distinct class:
     (the E-2's absence hinders nothing); clearing late is the failure mode, so the
     bias is early.
   One-shot per boat, a `DECKDECOR|:` log line + an optional "deck respotted for
-  recovery" coalition message. Despawn ONLY — no runtime spawns (a runtime-spawned
-  ship-LINKED static is an unverified DCS behavior; the day someone wants the E-2 to
-  visibly reappear at a bow spot, MOOSE `SPAWNSTATIC:InitLinkToUnit` is the path to
-  evaluate, in-game first).
+  recovery" coalition message. Despawn only **until 2026-08-07** — the recovery-phase tier below added
+  the one sanctioned spawn, by exactly the route this paragraph predicted (MOOSE
+  `SPAWNSTATIC:InitLinkToUnit`). Its caveat still stands and is now the open item: a
+  runtime-spawned ship-LINKED static is **unverified DCS behavior**, so it needs the
+  in-game look first (B49).
 
 ### The Airboss tie-in (2026-07-18, "should our work tie into MOOSE airboss?")
 
@@ -220,7 +225,7 @@ model). Bonus attribution fix from this look: the measured bow-port helo spot
 
 ## The late-activation falsification (2026-07-18, the flown CVN-73 mission)
 
-The deck-fill round briefly shipped OCN's starboard-aft look as PERMANENT statics
+The deck-fill round briefly shipped campaign A's starboard-aft look as PERMANENT statics
 (the Seahawk pair on the junkyard spots + an E-2C/S-3B accent on the El-3 shoulder),
 priced as "~3 unmeasured aft spots" under the SC manual's claim that a blocked
 parking location is skipped. **The first flown mission falsified the claim**: a
@@ -238,7 +243,7 @@ Consequences, same day:
   jets).
 - **Their positions became evidence**: the junkyard pair (−134.3/−122.6, +27/+28.2 ≈
   spots 7/8) and the El-3 shoulder (−98.7, +29.9) joined `KNOWN_PARKING_SPOTS` as
-  clip-learned anchors — OCN parks aircraft exactly on them, which is how the lesson
+  clip-learned anchors — campaign A parks aircraft exactly on them, which is how the lesson
   was bought.
 - **"On a spot" is a hard never for every class**, launch-phase included (spawns run
   while corridor dressing stands). The stern round-down E-2 survived the same
@@ -254,14 +259,14 @@ the corral (the clear lane forward of the island) and X'd the gear cluster,
 which had spawned on the **angled-deck foul-line strip** alongside/aft of the
 island — "they should have been in the circle not the X".
 
-Root cause: the street gear used OCN's verbatim offsets (x −40..−74, y +12..+26),
+Root cause: the street gear used campaign A's verbatim offsets (x −40..−74, y +12..+26),
 which place the cluster alongside the island. Cross-referenced against the real
 deck geometry (island base x −40..−80 y +20..+55 from `USS_CVN_71.lua`; landing
 touchdown x −104 y −33 port; six-pack spots y +34): those offsets sit in the
 narrow starboard strip between the island and the foul line — reading as "on the
-landing markings." OCN's own **corral** gear (forward of the island) was sparse
+landing markings." campaign A's own **corral** gear (forward of the island) was sparse
 crew only, so rather than lose the rich tractor/crash-truck/forklift/crane
-cluster, the whole OCN arrangement is **translated forward** into the corral by
+cluster, the whole campaign A arrangement is **translated forward** into the corral by
 `CORRAL_SHIFT = (+30, −6)` (preserves the relative layout). Result: gear at
 x −11..−43, y +7..+20 — forward of the island, starboard of the angled deck,
 inboard of the six-pack, **≥7 m clear of every known spot** (guard-tested across
@@ -376,7 +381,7 @@ late-activation falsification above; the street/launch-phase halves stand.
 
 With the respot mechanism in hand the user asked for a re-mine: "we could fill the
 round down within reason if we figure out reliably getting the landing area cleaned
-up when needed." Curation v2 reclassified every dropped OCN placement with per-type
+up when needed." Curation v2 reclassified every dropped campaign A placement with per-type
 **footprint-aware** spot clearances (`required = 9 m + FOOTPRINT_EXTRA_M[type]`; the
 folded E-2 carries 8 m extra off its 17.6 m length, the S-3B keeps a spread-margin
 10.5 m — its fold state is unverified — the Seahawk 6.5 m). Results, all verbatim
@@ -394,7 +399,7 @@ per-mission placements:
 - **Launch-phase: two corridor sub-zones**, likewise independent: the round-down
   E-2C (M8 −152.1 / M1 −138.0) + the **port junk row** between the LSO platform and
   the wires (M4's 5-piece set — P-25, three deck hands, the fifth LSO figure — or
-  M5's tractor+hand pair). OCN shipped the port row as PERMANENT statics in flyable
+  M5's tractor+hand pair). campaign A shipped the port row as PERMANENT statics in flyable
   missions, but it sits where a plausible aft continuation of the patio spot row
   would be — launch-phase classification spends that real estate only while the deck
   is a launch deck, and the pre-recovery clear also de-clutters the LSO's line of
@@ -418,7 +423,7 @@ the blue." The `+30 m` forward shift had pushed the cluster too far toward the b
 
 Fix: pull the cluster back into the **island street** — aft toward the island and
 outboard against it, off the foul-line strip (outboard = away from the port angled
-deck). `CORRAL_SHIFT` retuned `(+30, −6) → (+9, −1)`: ~10 m aft of the raw OCN
+deck). `CORRAL_SHIFT` retuned `(+30, −6) → (+9, −1)`: ~10 m aft of the raw campaign A
 offsets / ~5 m outboard of the old forward corral, preserving the relative layout.
 Result: shifted cluster at x −63.9..−31.4, y +12..+24.7. `ISLAND_STREET_ENVELOPE`
 widened to `(−65, −30, 10, 25)` and the envelope-bounds guard relaxed to match
@@ -428,7 +433,223 @@ y = +34 six-pack spots and the aft junkyard/El-3 spots (x < −98). Guard tests
 (`test_carrier_deck_decor.py`, 12) green. Needs an in-game eyeball to confirm the
 blue-spot placement (B25).
 
+## The 11-vs-16 spot gap (2026-08-07, from the Supercarrier guide's own diagrams)
+
+The `references/manuals/` pass put the **DCS Supercarrier Operations Guide** on disk and
+indexed it. Reading the two things in it that bear on this feature changes what the
+parking-safety argument above actually proves.
+
+**What the guide says in prose** (p100–101) — most of it already matches this note: 16
+parking spots + 1 per catapult; spots 1–4 deactivate on MP unpause; the F-14 blocks
+adjacent spots; parking is assigned in the order aircraft are added to the carrier. Two
+things here were **not** recorded before:
+
+- Deck control routes a landing aircraft only to a spot it can reach, and treats **static
+  objects as taxi-route obstructions**. If a mission leaves no reachable spot, the landed
+  aircraft is **removed from the simulation** — a harsher failure than this note's "a
+  static ON a spot blocks it (the allocator skips it — capacity loss, no explosion)".
+- ED's own advice is to keep an unobstructed lane to **elevators 1 and 2**, forward of the
+  island: aircraft routed there are struck below and keep the deck clear.
+
+**What the diagrams say** is the part that matters, and it was invisible until now because
+pages 104–106 are **images** — `pdftotext` returns only "Slide 1 / Slide 2 / Slide 3", so
+every earlier reading of this manual missed them. They are titled **Static Object Safe
+Zones**, drawn on CVN-71, in two columns (Launch Ops / Recovery Ops) at **4, 8 and 16
+aircraft**. Two consequences:
+
+- **The launch-vs-recovery split this feature already ships is ED's own model.** The
+  LAUNCH-PHASE tier standing in the recovery corridor and being struck below before
+  recovery is exactly the difference between ED's two columns. Nothing to change.
+- **The safe zone shrinks as the deck fills, and §72 does not model that.** The placements
+  are fixed; there is no aircraft-count input. A set that is safe on a light deck is not
+  automatically safe on a full one.
+
+**The gap, quantified.** `KNOWN_PARKING_SPOTS` holds **11** entries; ED documents **16**.
+On the starboard side the table runs out at `x = −35.5` (aft end of the six-pack row) and
+does not resume until `x = −98.7` (El-3 shoulder) — **63.2 m of deck with no entry** — and
+**52 of the 67** street-gear placements sit inside it. The guard-tested clearance is real
+but proves less than it reads: all six variants' minimum (12.7–14.7 m) is measured to the
+same spot, `(−35.5, 34.0)`, the *edge* of the gap. Nothing inside the gap is tested,
+because nothing inside it is in the table. The guide's parking diagram (p100) places
+**spots 5 and 6** in that region — forward of the island on the starboard deck edge, aft of
+the 1–4 row, with spot 5 drawn E-2-sized.
+
+**What was deliberately not done.** Registering the safe-zone slides to ship-frame metres
+was attempted and **the result was discarded**: the deck aspect derived from the image came
+out 22 % wider than a Nimitz, and the two drawings of the same hull disagreed by 23 px,
+because aircraft icons are drawn overlapping the deck edge. So this note does **not** claim
+the street is inside or outside the green. Repeated deck-geography guesses have failed on
+this feature before (see the corral reposition's method note); the honest answer is that
+spots 5 and 6 need **measuring**, by the same Tacview t=0 method that produced the 11
+entries we have.
+
+**Consequence:** LOCAL card 2 — count the jets a full cold deck actually parks, decorations
+on vs off. That is the parking-capacity half of B25's criterion, which B25's 2026-08-06
+closure did not exercise (it closed on the appearance symptoms). Until it runs, treat the
+island street as **flown-clean but not capacity-proven**.
+
+## Completing the campaign A mining (2026-08-07)
+
+The original extraction mined **7** of the 13 campaign A missions for street sets (3, 6, 9, 10,
+11, 12/13). All 13 were re-extracted with a lupa parser over each `.miz`'s `mission` table,
+validated against the shipped literals first: **12/12 offsets and 12/12 angles reproduce
+mission 3's `_CAMPAIGN_A_STREET_VARIANTS[0]` exactly**, so the extractor is reading what the
+original pass read.
+
+238 ship-linked statics across the 13 missions. What the six unmined missions hold, after
+`CORRAL_SHIFT` and the envelope filter:
+
+| mission | items in envelope | min spot clearance | shipped |
+|---|---|---|---|
+| 1 | 8 | 14.7 m | yes |
+| 2 | 8 | 16.2 m | yes |
+| 4 | 5 | 12.2 m | yes |
+| 5 | 7 | 17.8 m | yes |
+| 7 | 4 | 15.1 m | **no** |
+| 8 | 2 | 15.6 m | **no** |
+
+Missions 7 and 8 clear the guard but are too thin: a 2-item "street" reads as a bare deck.
+The **five-item curation floor** is now a test
+(`test_every_street_variant_carries_enough_gear`). `STREET_VARIANTS` goes **6 -> 10**, and
+the rotation test already asserts every variant is reachable, so the four new sets rotate
+with the rest.
+
+**No new launch-phase data exists, and that is a finding rather than an omission.** Only
+**two** campaign A static aircraft stand inside `LANDING_AREA_KEEP_OUT` and both already ship as
+`ROUND_DOWN_VARIANTS` (the mission 8 and mission 1 E-2Cs, 28.0 m and 22.2 m clear). Every
+other campaign A static aircraft -- 10 SH-60Bs, 2 more E-2Cs, the S-3B -- sits **0.0-8.2 m from a
+known parking spot**:
+
+| | |
+|---|---|
+| m6 SH-60B (-134.29, 27.02) | **0.0 m** |
+| m6 SH-60B (-122.57, 28.24) | **0.1 m** |
+| m5 S-3B (-98.65, 29.93) | **0.1 m** |
+| m2 E-2C (-97.78, 28.80) | 1.4 m |
+
+Those are not near-misses. The first three are the junkyard and El-3 shoulder spots
+*themselves* -- the entries `KNOWN_PARKING_SPOTS` learned from the 2026-07-18 flown
+falsification, derived from where campaign A parks its Seahawks. Mining them back in would
+re-create the exact defect that pass removed. The round-down pool is therefore **closed at
+two** unless positions are authored rather than extracted.
+
+## The recovery-phase tier (2026-08-07, built default-OFF)
+
+The mirror of the launch-phase tier, and the first §72 dressing that is **spawned rather
+than placed**. A real deck is re-spotted for recovery -- landing area cleared, gear ranged
+forward onto the bow -- which is exactly what the Supercarrier guide's safe-zone slides
+encode: its Recovery column marks the bow and catapult tracks safe while the angled deck
+must stay clear, and its Launch column marks the opposite. §72 already shipped that split
+without knowing ED had drawn it.
+
+**Mechanism.** The placements are deliberately absent from the `.miz` -- the bow has to be
+a launch deck until launches are over. The `deckdecor` plugin spawns them on the SAME
+trigger that strikes the launch set below (astern cone or fallback timer, whichever fires
+first), via **MOOSE `SPAWNSTATIC:InitLinkToUnit`**, which is the only runtime path that
+writes the three-level linked static (`linkUnit` + `linkOffset` + `offsets{x,y,angle}`).
+A plain `coalition.addStaticObject` would drop the gear at a world point and the boat would
+steam out from under it.
+
+**The despawn-only invariant was broken deliberately, on an explicit call (2026-08-07).**
+The plugin's header promised "Despawn ONLY -- no spawns" from the day it was written; the
+carrier case is the one place that rule cannot hold, because gear ranged forward for
+recovery must NOT be on the bow during the launch cycle -- so it cannot be generated into
+the miz -- and a static that rides a steaming hull cannot be faked any other way. The
+exception is deliberately **scoped, not widened**: one one-shot spawn per boat, on the same
+trigger as the strike-below, `pcall`-wrapped, skipped entirely when MOOSE is absent, and the
+despawn half runs regardless. A second spawn caller would make this a spawner, which is a
+different kind of script with a different failure surface; do not add one without a fresh
+call. The plugin's own header predicted this exact route before it was taken.
+
+**Data: four variants, rotating on the same (carrier, turn) seed as the street.** It shipped
+on 2026-08-07 with a single set, which meant every recovery on every carrier looked identical
+-- corrected the same day. The four come from a wider re-read of the campaign A extract: the original
+pass only looked at x > 0 (the bow proper) and found one usable set, but the tier's real zone
+is the bow **plus the forward mid-deck strip**, and campaign A dresses that in most missions.
+
+| variant | source | items | min known-spot clearance |
+|---|---|---|---|
+| bow set -- the full forward respot | mission 4 | 9 | 9.8 m |
+| forward mid-deck cluster | mission 8 | 4 | 9.6 m |
+| forward mid-deck cluster | mission 3 | 3 | 19.9 m |
+| forward mid-deck cluster | mission 5 | 3 | 17.4 m |
+
+Three otherwise-good sets were **excluded, and the reason is now a guard**: campaign A missions 7, 12
+and 13 put their forward cluster inside `ISLAND_STREET_ENVELOPE`, where the permanent street
+gear stands all mission. Spawning recovery gear on top of it would interpenetrate -- statics
+have no collision resolution -- so `test_recovery_and_street_zones_never_overlap` asserts the
+two boxes are disjoint and that no recovery item lands in the street box. Mission 2's forward
+pair (2 items) was also dropped, too thin to read as a set.
+
+`FORWARD_DECK_ENVELOPE` is sized to the shipped campaign A extent plus slack, **not** to a deck edge
+read off the safe-zone slides: the slides could not be registered to ship-frame metres, so no
+bound in this feature is taken from them.
+
+**⚠️ This is the least-evidenced tier in §72 and it is default-OFF for that reason.** It
+clears every entry in `KNOWN_PARKING_SPOTS` -- but that table holds 11 of the guide's 16
+spots, and the five it lacks are the bow-edge spots (11/12/13) nearest this zone. "Clears
+every known spot" is not "clears every spot" here, and this tier is the one place in §72
+where that distinction could bite. Promoting it to default-ON requires MEASURING the bow
+spots by the Tacview t=0 method that produced the 11 entries we have. Until then the honest
+description is: authored from real campaign A offsets, guarded against everything we know, and
+unflown.
+
+Guards: `test_recovery_tier_stays_inside_the_forward_deck_box`,
+`_clears_every_known_spot`, `_never_touches_the_landing_area`, `_has_static_meta`,
+`_is_gated_and_rotates`, and `_is_never_written_into_the_mission` -- the last one being the
+invariant that matters most, since a recovery placement that reached the `.miz` would stand
+on the bow from mission start and re-create the spawn-clip this feature has already paid
+for twice.
+
+## Campaign B, and static aircraft in the recovery tier (2026-08-07)
+
+A second installed campaign (18 missions, all dressing a CVN-73) was extracted with the same
+validated parser. 191 ship-linked statics.
+
+**The headline: campaign B dresses its deck almost entirely with static AIRCRAFT** -- 56
+Hornets, 12 Tomcats, plus an A-6E, S-3Bs, a UH-60A and E-2Cs. Strip those under §72's
+no-permanent-static-aircraft rule and the campaign yields almost nothing: 7 usable recovery
+items and 5 street items, none of the street sets above 2 items.
+
+**That rule was relaxed for the recovery tier only, on an explicit call.** The reasoning: the
+clipping that produced the ban was a *placement* problem, not an aircraft problem, and the
+recovery tier only stands once launches are over. The split is now:
+
+- **PERMANENT layout: still no static aircraft, unchanged.** It is up for the whole mission
+  while every spawn path runs, which is the condition that produced the 2026-07-18 clip.
+- **RECOVERY tier: aircraft allowed**, because it appears after the launch cycle and because a
+  deck respotted for recovery with jets ranged forward is the point of the tier.
+
+Both halves are pinned by `test_recovery_tier_may_carry_aircraft_but_permanent_gear_may_not`.
+
+**What the relaxation cost, and what pays for it.** Aircraft are far bigger than deck gear, so
+`FOOTPRINT_EXTRA_M` gained six entries at roughly half each type's published fuselage length
+(Hornet 8.5, Tomcat 9.5, A-6E 8.5, S-3B 8.0, UH-60A 8.0 -- the E-2C's 8.0 stays the only one
+confirmed against the in-game render, so the rest are rounded up and only ever make the guard
+stricter). Footprint-aware clearance then **rejected 15 of campaign B's forward placements**
+outright -- the filter is doing real work, not rubber-stamping.
+
+A second guard came out of this: box disjointness checks item *centres*, and a parked Tomcat
+reaches ~9.5 m aft of its centre. `test_recovery_aircraft_footprints_clear_the_street_gear`
+checks the footprint *edge* against the street box instead; the worst case currently clears by
+11.8 m.
+
+Five variants shipped (6/5/3/3/3 items), taking the recovery pool to **nine**.
+
+## Naming
+
+Source campaigns are referred to as **campaign A** and **campaign B** rather than by name
+(2026-08-07 call). They are paid third-party DCS campaigns; the placements here are extracted
+coordinate data, and the fork does not name the products in its own docs or code. Sets are
+still traceable to a specific source mission (`campaign A mission 3`), so the "never mix sets
+across missions within a zone" rule stays checkable.
+
 ## In-game pass
+
+Checklist **B49** covers the recovery tier (spawned dressing appears forward when the
+launch set is struck below, rides the steaming deck, and a full cold deck still parks
+16 with the tier on). LOCAL card 2 covers the capacity question for the permanent
+street.
 
 Checklist **B25**: statics ride the steaming deck (no floaters left in the wake), a
 max-density cold spawn still fills every spot vs a decorations-off control, AI

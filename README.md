@@ -51,22 +51,29 @@ Most of this is opt-in. Full list with toggles, defaults and known limitations:
 
 ### Combat SAR and squadron missions
 
-- Rescuing an ejected aviator spares the pilot; the airframe is still lost. The AI plans the
-  package (King + helo + Sandy) by default and humans can fly any seat. AI ejections count.
-- Captured pilots become POWs and leave the roster. Retaking the holding field returns them,
-  as does winning the war. The hold runs on a turn clock.
-- A pilot neither rescued nor captured goes MIA and keeps evading, still rescuable next
-  mission. Capture odds rise with distance behind the lines.
-- Downed aviators appear on the campaign map — MIA evaders at their last known position,
-  POWs at the holding field.
-- The turn after an ejection opens with a rescue package already airborne at the evader's
-  position. One surge per downed pilot.
-- SCAR flies the RESCAP "Sandy" role in that package.
+- An ejected pilot becomes a survivor on the campaign map and stays there across turns. Rescue
+  them and they recover for a few turns, then return to duty. Nobody reaches them in time and
+  they go missing in action. AI ejections count.
+- CSAR is a normal auto-planned mission type for both sides. Any helicopter with a cabin
+  qualifies, and a human can fly the rescue in any CSAR-capable helo.
+- The survivor keys an **ADF homing beacon on 260 kHz**, briefed on your kneeboard. Tune it
+  before you launch — the C-130J, UH-1H and Mi-8 all home it directly.
+- The C-130J flies the "King" on-scene commander role. It is player-flown: DCS only lets
+  helicopters land at an unprepared pickup site, so an AI King will not complete a pickup.
+- Two pickup styles: land and let the survivor walk aboard, or hoist them on a hover. A pilot
+  down in the water is always hoisted.
+- Survivors pop smoke for AI rescue flights. Human crews get the F10 menu — list active
+  survivors, request smoke, flare or IR strobe — and choose when to expose the position.
 - JAMMING turns the C-130J into an EC-130H/RC-130H-style EW and ISR platform.
 - Escort jamming is flown by the EA-18G Growler and EA-6B Prowler only (both require their
   mods). The jammer spoofs radar missiles fired at anything under its bubble and pulses
   tracking SAMs to weapons-hold; effect strengthens with proximity. AI flies it automatically;
   players get an F10 menu. A per-side cap limits how many fly per turn.
+- The auto-planner puts jammers on the packages that fly into a SAM ring — DEAD and strike.
+  Helicopter packages (air assault, CSAR) do not get one; neither do their fast-jet formation
+  escorts, which now follow the same helo/LHA rule the A2A and SEAD escorts already used.
+- A threatened package is escorted by one SEAD flavour, not two. It draws a SEAD Escort that
+  rides with it; front-line CAS still gets a SEAD Sweep running ahead.
 - Fixed-wing transports fly Air Assault as a paradrop. Players run in below 3,000 ft AGL and
   use the CTLD *Unload / Extract Troops* call; AI releases automatically over the drop zone.
   Helicopter assaults are unchanged.

@@ -132,6 +132,14 @@ Kept for reading old notes and saves; **do not author against them**.
 ### Other
 
 - [README.upstream.md](README.upstream.md) — unmodified upstream README (setup, dependencies).
+- [references/manuals/](references/manuals/) — the official DCS manuals for 11 aircraft
+  modules plus the Supercarrier Operations Guide, copied from the local install. The PDFs are
+  gitignored (843 MB); the per-folder `INDEX.md` page maps are tracked. **Read the folder's
+  `INDEX.md` first, then extract only that range with `pdftotext -f N -l M <pdf> -`** — these
+  run to 1,129 pages, and the Read tool cannot open them here (it renders via `pdftoppm`,
+  which is not installed). Use them for procedure, systems behavior, cockpit description and
+  carrier ops; **not** for loadouts (payload Lua), weapon dates (CLSID tables) or unit stats
+  (pydcs export). The `dcs-aircraft-manuals` skill wraps this.
 - [docs/wiki/](docs/wiki/) — the player and contributor wiki, mirrored to the GitHub wiki by
   `wiki-sync.yml` on every push to `main`. **Edit pages here, never in the wiki UI.** Also
   carries the adopted upstream dev-process standards, each with **414th:** delta notes.
@@ -259,12 +267,10 @@ linked design note.
 10. **CurrentHill Iran assets pack** — Shahed-136, IRGCN FAC, `[CH] Iran 2020` faction.
 12. **Recon engine** — the `recon` plugin: one capture rule for player and AI, shaped by sensor, altitude and cloud.
 14. **Plugin Options UI** — `descriptionInUI` field plus label and default polish.
-15. **SCAR — RESCAP "Sandy"** — the rescue escort of the Combat SAR package, with runtime divert to a live ejection.
 16. **Settings QOL audit** — dead-field cleanup and the `AiRadioBehavior` enum consolidation.
 17. **Auto-planner target unpredictability** — opt-in per-side reordering of opportunistic offensive targets only.
 18. **Fog-of-war overview toggle** — transient reveal, never persisted, and fenced out of generated missions.
 19. **Unified map layers panel** — one grouped control with preset views; air-defence rows filter the master.
-21. **Combat SAR** — rescue helo + King + Sandy, on-demand AI launch, the capture race, POWs, persistent MIA evaders, and the next-turn recovery surge.
 22. **Kneeboard space-utilisation + custom import** — per-campaign imported kneeboard images.
 23. **Per-squadron DCS country** — nation-specific voiceovers and pilot names, pinnable per squadron.
 24. **Date-gated aircraft properties** — era-gated payload-editor options under `restrict_props_by_date`.
@@ -331,6 +337,8 @@ Kept numbered so old notes and saves stay readable. Details and rationale in the
 | 11 | Native DCS DTC cartridge export (v1) | Retired 2026-06-26 — superseded by §74 |
 | 13 | Flight Control ATC | Retired 2026-06-26 |
 | 20 | Drop-spawn map unit placement | Removed 2026-08-02 |
+| 15 | SCAR — RESCAP "Sandy" rescue escort | Removed 2026-08-07 — see §21 |
+| 21 | Combat SAR (fork implementation) | Removed 2026-08-07 — replaced by upstream dcs-retribution#929 |
 | 25 | Compact 3–4 page kneeboard deck | Retired 2026-07-05 |
 | 30 | Dedicated kneeboard cover page | Retired 2026-07-13 — new info folds into a stock page |
 | 31 | One-page Brief Sheet | Retired 2026-07-13 — BLUF and code words survived |
@@ -352,6 +360,44 @@ and the Skynet IADS engine (MANTIS is the sole engine).
   `bradyccox/dcs-retribution`.
 - The 414th's primary "all features" working branch in the dev checkout is
   `414th-all-features`; `main` here = that + the Iran pack + a Black/mypy lint pass.
+
+### DCS Liberation — the grandparent project, still alive (WATCH, established 2026-08-07)
+
+Retribution forked from `dcs-liberation/dcs_liberation`, and **Liberation did not stop** — it is
+actively developed on branch `develop` (792 stars; **15.0.0 released 2026-06-19**, 14.1.0 in
+February, commits landing weekly). Do **not** treat it as an archive of pre-fork history. It is a
+second upstream: a parallel evolution of the same codebase, with no shared PR flow and no
+obligation in either direction. We take from it; we do not carve to it (upstreaming means
+`dcs-retribution/dcs-retribution` — see `main-retribution-means-upstream`).
+
+**The watch:** skim Liberation's release notes when a new version drops (`gh api
+repos/dcs-liberation/dcs_liberation/releases`). Their notes are terse and tagged by area
+(`[Engine]` / `[Campaign]` / `[Data]` / `[UI]`), so a pass costs minutes. Look for **`[Data]`
+first** — data lands cleanly in the fork with no code change and no freeze implications, whereas
+their engine/UI work usually collides with fork features that already solve the same problem.
+
+Adopted so far:
+
+| Date | Taken | Notes |
+|---|---|---|
+| 2026-08-07 | 12 hand-measured aircraft `fuel:` blocks (their 14.1.0 + earlier) | Coverage 22 → 40 aircraft types. Checklist **S7**; features doc §46. |
+
+Checked and **already covered** — do not re-investigate without new evidence: carrier/LHA
+auto-targeting, front-line spawn exclusion zones, weapons-by-date gating, turn-less mode. Their
+auto-purchase model is **behind** ours (they document a fixed 30-unit front-line threshold; we have
+`frontline_reserves_factor` / `reserves_procurement_target`). Genuinely open, not yet pursued:
+campaign-designer control of on-road vs off-road front-line travel (15.0.0 — set on the supply
+route's M-113 waypoints; we hardcode `PointAction.OnRoad` in `convoygenerator.py` +
+`flotgenerator.py`), which would fit the driveable-corridor standard.
+
+**Their docs are worth reading too.** Liberation publishes a Sphinx site at
+https://dcs-liberation.readthedocs.io — and its **source is in our tree**, inherited through the
+fork (`docs/*.rst`, `docs/conf.py`, `.readthedocs.yaml`). Nothing builds it here and it is stale
+(`docs/index.rst` still titles the site "DCS Liberation"; `docs/game/index.rst` is an empty
+toctree), but the content is live: `docs/modding/layouts.rst` is the authoritative writeup of the
+layout system (`layout.miz` + `layout.yaml`, one group per unit type, the `layouts.p` pickle and
+*Developer Tools → Import Layouts*), and `docs/modding/fuel-consumption-measurement.md` is the
+procedure for measuring the ~217 airframes that still have no `fuel:` block.
 
 ### Upstream PR ledger (**refreshed 2026-07-20** — 50 PRs: 20 open / 8 merged / 22 closed. **Late 2026-07-20: the squadron-country surfacing carved as draft #896** — the Discord thread (Starfire's yaml `country:` ask + Toad's under-livery dropdown) answered the same day it ran; the fork's I6 pass flew clean that night ("896 is flown and good") but the draft is **HELD through the PR freeze below** (DM call — #896 was opened the same day the freeze was learned, so it stays a quiet draft until the freeze lifts; un-draft on a fresh explicit call then). **The 2026-07-20 QOL carve wave** (the DM's "ship the objective improvements back" call) opened six more drafts in one session: Dog Ear SHORAD #887, F-14A-Early payload #889, squadron-config guard #890, blue-block markers #891 (the upstream sweep found **465** dropped markers across 9 campaigns — Normandy's authored blue defenses dominate, flagged as a maintainer judgment call in the PR), the #791 refresh #892, and §60 radar redundancy #893 (stacked on #892, rationale attached). **#891 self-closed on review the same day**: Starfire13's density reaction ("352 EWRs in Normandy. Good lord…") plus the real ask — **CJTF block-convention consistency** ("for some objects you can only use one, yet for others both are acceptable"); the fork answered the ask same day (the loader's last single-block classes now chain both blocks — 3 shipped red-block factories resurrected, `test_miz_marker_binding.py`) but the **re-carve was DROPPED 2026-08-05** — the Custom-campaigns wiki's block spec table and upstream's loader already agree on all 19 classes, so there is no bug to carve (inventory item 17). Also learned in that session: **#791 closed with zero comments** (never reviewed — hence the refresh) and **#851 closed on a real objection** (juanjux: HDS Ultimate Compilation is NOT backward-compatible with Auranis HighDigitSAMs 2.1.0, which he runs — the S-300 renames collide; a re-carve must first answer which successor mod upstream standardizes on). **Held re-carve draft prepared 2026-07-20** — [docs/dev/414th-hds-recarve-draft.md](docs/dev/414th-hds-recarve-draft.md) (leads with UC-as-successor + migration note, offers the dual-toggle fallback; gated on the PR freeze lifting AND a fresh post-mod-update export). **Three fork PRs merged upstream 2026-07-19** (#805/#843/#854) and geofffranks' #859 (the §56 motorpool source) landed the same day — all four reconciled back into the fork in the `sync/upstream-dev-2026-07-19` merge. Same day, Wave 3 opened: the Splash Damage defaults PR #880 pushed (item 21, the first last-mile carve), the VWV v3.2.0 update #881 pushed (item 22), the §76 paradrop carve #884 opened (un-drafted late that evening + Starfire13 pinged for review), the **infrastructure pair #882 (Lua plugin harness) + #883 (MIST 51-symbol shim, stacked on #882)** opened as drafts, #828 was rebased — briefly un-drafted, then deliberately re-drafted minutes later (21:36→21:40Z per the PR timeline), so it sits as a draft with the un-draft call open — and the night closed with **two more last-mile carves: the §75 victory-conditions core as draft #885 and the Iran-pack re-carve (the #784 redo) as draft #886**. Still re-verify with `gh` before acting; this goes stale fast.
 
@@ -533,6 +579,25 @@ aircraft. Do NOT "resync" this block from upstream until they fix it.
     > ❓ **Need your call:** <the question>
   - Do NOT build a custom widget/visualization (`mcp__visualize`, an Artifact) to ask a question —
     `AskUserQuestion` is the one decision surface.
+- **Never name a paid campaign anywhere in the repo (STANDARD, 2026-08-07 user call).**
+  Third-party DCS campaigns are commercial products. The fork studies them and extracts
+  factual data from them (deck-static coordinates, kneeboard page formats, ATC command
+  vocabularies), and that is fine — but their **names** do not appear in our code, comments,
+  commit messages, PR titles/bodies, docs or wiki pages.
+  - **Use stable letters**: `campaign A`, `campaign B`, … Letters are consistent across docs —
+    A and B are the two the carrier deck-decor note uses — so a set stays traceable to a
+    specific source mission (`campaign A mission 3`) and rules like "never mix sets across
+    missions within a zone" stay checkable. Add the airframe when it aids reading
+    (`a paid FA-18C campaign`). Publishers get the same treatment.
+  - **Install paths are generic** — `<DCS>\Mods\campaigns\<campaign A>`, never the real folder.
+  - **This applies to commit messages and PR metadata, not just files.** They are as public as
+    the code; a rewrite + force-push on an unmerged branch is the fix.
+  - **Three things are NOT covered.** Real-world squadron names and nicknames (VFA-83
+    "Rampagers" is a real squadron the campaign is named *after*, not the reverse); real-world
+    operation names (Inherent Resolve); and the fork's own campaign names, even where one
+    collides with a paid product (our `red_flag_81_2`).
+  - **Check with the installed list, not from memory** — `ls "<DCS>\Mods\campaigns\"` is the
+    authoritative set of names to avoid.
 - **Supply lines follow the driveable corridor (STANDARD, 2026-07-03).** Every authored
   `supply_routes:` / shipping-lane drawing must trace the corridor you would actually *drive*
   between the two points — the road, the river valley, the pass — never a straight line across a

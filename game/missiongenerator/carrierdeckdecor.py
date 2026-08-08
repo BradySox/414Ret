@@ -20,7 +20,7 @@ from __future__ import annotations
 
 import logging
 from math import cos, radians, sin
-from typing import Any, Dict, Optional
+from typing import Any, Dict, NamedTuple, Optional
 
 from dcs import Mission, Point
 from dcs.country import Country
@@ -30,10 +30,25 @@ from dcs.unitgroup import ShipGroup, StaticGroup
 
 from game.data.carrier_deck_decor import (
     STATIC_META,
+    DeckStatic,
     deck_layout_for,
     launch_phase_dressing_for,
+    recovery_dressing_for,
 )
 from game.utils import Heading
+
+
+class DeckDecorResult(NamedTuple):
+    """What the deck dressing hands back to the mission data.
+
+    ``clear_names`` are static unit names already IN the mission that the
+    plugin strikes below before recovery. ``recovery_specs`` are placements
+    that are deliberately NOT in the mission -- the plugin spawns them at the
+    same moment, linked to the moving boat.
+    """
+
+    clear_names: list[str]
+    recovery_specs: list[DeckStatic]
 
 
 class DeckDecorStatic(Static):
@@ -75,18 +90,26 @@ def generate_carrier_deck_decorations(
     heading: Heading,
     turn: int,
     include_aircraft: bool = False,
-) -> list[str]:
+    include_recovery: bool = False,
+) -> DeckDecorResult:
     """Dress the flagship's deck.
 
-    Returns the static unit names of the LAUNCH-PHASE placements (empty when
-    none) -- the ``deckdecor`` plugin strikes those below before recovery.
+    Returns the LAUNCH-PHASE static unit names (the ``deckdecor`` plugin
+    strikes those below before recovery) and the RECOVERY-PHASE specs (the
+    plugin spawns those at the same moment). Both are empty on a non-Nimitz
+    hull or with the tiers off.
     """
     carrier = ship_group.units[0]
     layout = deck_layout_for(carrier.type, ship_group.name, turn)
     if not layout:
-        return []
+        return DeckDecorResult([], [])
     launch_phase = launch_phase_dressing_for(
         carrier.type, ship_group.name, turn, include_aircraft
+    )
+    # Deliberately NOT placed into the mission: the bow must be a launch deck
+    # until the plugin says otherwise.
+    recovery_specs = recovery_dressing_for(
+        carrier.type, ship_group.name, turn, include_recovery
     )
 
     h = radians(heading.degrees)
@@ -124,6 +147,7 @@ def generate_carrier_deck_decorations(
 
     logging.debug(
         f"Placed {len(layout) + len(launch_phase)} deck decorations on "
-        f"{ship_group.name} ({carrier.type}), {len(clear_names)} launch-phase"
+        f"{ship_group.name} ({carrier.type}), {len(clear_names)} launch-phase, "
+        f"{len(recovery_specs)} recovery-phase deferred to the plugin"
     )
-    return clear_names
+    return DeckDecorResult(clear_names, recovery_specs)

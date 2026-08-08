@@ -19,6 +19,7 @@ from game.commander.tasks.compound.interdictreinforcements import (
 )
 from game.commander.tasks.compound.protectairspace import ProtectAirSpace
 from game.commander.tasks.compound.recoverysupport import RecoverySupport
+from game.commander.tasks.compound.rescuedownedpilots import RescueDownedPilots
 from game.commander.tasks.compound.theatersupport import TheaterSupport
 from game.commander.theaterstate import TheaterState
 from game.htn import CompoundTask, Method, Task
@@ -33,6 +34,8 @@ class PlanNextAction(CompoundTask[TheaterState]):
         # campaign phase (the §17 boundary: reactive defense stays deterministic).
         yield [TheaterSupport()]
         yield [ProtectAirSpace()]
+        # A downed pilot expires on a timer, so plan rescues early.
+        yield [RescueDownedPilots()]
         yield [DefendBases()]
         # The offensive middle is emitted in stock priority order (§67 weather may
         # demote low-level visual-attack methods to the tail; see _offensive_order).

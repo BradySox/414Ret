@@ -2,7 +2,7 @@ from collections.abc import Iterable, Iterator
 from dataclasses import MISSING, Field, dataclass, field, fields
 from datetime import timedelta
 from enum import Enum, unique
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, TYPE_CHECKING
 
 from dcs.forcedoptions import ForcedOptions
 
@@ -15,6 +15,9 @@ from .optiondescription import OptionDescription, SETTING_DESCRIPTION_KEY
 from .skilloption import skill_option
 from ..ato.starttype import StartType
 from ..ground_forces.combat_stance import CombatStance
+
+if TYPE_CHECKING:
+    from ..ato.flighttype import FlightType
 
 Views = ForcedOptions.Views
 
@@ -160,7 +163,6 @@ CAMPAIGN_MANAGEMENT_PAGE = "Campaign Management"
 GENERAL_SECTION = "General"
 PILOTS_AND_SQUADRONS_SECTION = "Pilots and Squadrons"
 HQ_AUTOMATION_SECTION = "HQ Automation"
-COMBAT_SAR_SECTION = "Combat search & rescue"
 FLIGHT_PLANNER_AUTOMATION = "Flight Planner Automation"
 
 CAMPAIGN_DOCTRINE_PAGE = "Campaign Doctrine"
@@ -250,6 +252,18 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                 ],
             ),
             (
+                "Combat search & rescue",
+                [
+                    "csar_enabled",
+                    "csar_enabled_red",
+                    "csar_ejection_chance",
+                    "csar_survival_turns",
+                    "csar_survival_turns_hostile",
+                    "csar_ai_recovery_turns",
+                    "csar_player_recovery_turns",
+                ],
+            ),
+            (
                 "Attrition & replacements",
                 [
                     "ai_pilot_levelling",
@@ -330,6 +344,7 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                     "heli_combat_alt_agl",
                     "heli_cruise_alt_agl",
                     "min_plane_altitude_offset",
+                    "max_csar_flights",
                     "max_plane_altitude_offset",
                     "min_patrol_altitude",
                 ],
@@ -420,16 +435,6 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                 ],
             ),
             (
-                "Combat search & rescue",
-                [
-                    "auto_combat_sar",
-                    "combat_sar_persistent_pilots",
-                    "combat_sar_surge",
-                    "combat_sar_test_force_capture",
-                    "combat_sar_test_easy_rescue",
-                ],
-            ),
-            (
                 "Commander economy",
                 [
                     "adaptive_procurement",
@@ -481,6 +486,10 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                     "default_start_type_client",
                     "opfor_air_start",
                     "support_air_start",
+                    "csar_start_type",
+                    "csar_hover_extraction",
+                    "csar_rescue_ai_pilots",
+                    "csar_require_open_doors",
                 ],
             ),
             (
@@ -526,6 +535,7 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                     "supercarrier_deck_crew",
                     "carrier_deck_decorations",
                     "carrier_deck_decorations_aircraft",
+                    "carrier_deck_decorations_recovery",
                 ],
             ),
             (
@@ -559,7 +569,6 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                 "Comms war",
                 [
                     "enemy_comms_jamming",
-                    "comms_jam_requires_capture",
                     "red_comms_net",
                     "red_net_max_stations",
                     "gps_jamming_default_reach_nm",
@@ -717,14 +726,9 @@ FEATURE_GATE_FIELDS: dict[str, list[str]] = {
         "recon_intel_fog",  # §3
         "concealed_enemy_forces",  # §3
         "decoy_zones",  # §79
-        "scar_command_post_intel",  # §15
+        "scar_command_post_intel",  # §3 (re-homed from the retired §15 row)
         "comint_collection",  # §70
         "red_comms_net",  # §70
-    ],
-    "Combat search & rescue": [
-        "auto_combat_sar",  # §21
-        "combat_sar_persistent_pilots",  # §21
-        "combat_sar_surge",  # §21
     ],
     "Battlefield life": [
         "ambient_supply_convoys",  # §50
@@ -735,7 +739,6 @@ FEATURE_GATE_FIELDS: dict[str, list[str]] = {
     ],
     "Electronic & command warfare": [
         "enemy_comms_jamming",  # §51
-        "comms_jam_requires_capture",  # §51
         "c2_decapitation_effects",  # §52
         "gps_jamming",  # §85
     ],
@@ -772,6 +775,7 @@ FEATURE_GATE_FIELDS: dict[str, list[str]] = {
     "Carrier": [
         "carrier_deck_decorations",  # §72
         "carrier_deck_decorations_aircraft",  # §72
+        "carrier_deck_decorations_recovery",  # §72
     ],
     "Host & event tools": [
         "host_red_scramble",  # §61
@@ -872,8 +876,6 @@ _ALWAYS_BASIC_FIELDS: frozenset[str] = frozenset(
 #: in front of every player. These are debugging and test aids, not gameplay.
 _ADVANCED_NON_NUMERIC_FIELDS: frozenset[str] = frozenset(
     {
-        "combat_sar_test_force_capture",
-        "combat_sar_test_easy_rescue",
         "switch_baro_fix",
         "ground_start_scenery_remove_triggers",
     }
@@ -1519,6 +1521,18 @@ class Settings:
             "turn scatter off - both 0 for none."
         ),
     )
+    max_csar_flights: int = bounded_int_option(
+        "Maximum CSAR flights planned per side each turn",
+        page=CAMPAIGN_DOCTRINE_PAGE,
+        section=GENERAL_SECTION,
+        default=2,
+        min=0,
+        max=10,
+        detail=(
+            "Maximum number of CSAR rescue packages the auto-planner will commit to in a "
+            "turn, for each coalition."
+        ),
+    )
     max_plane_altitude_offset: int = bounded_int_option(
         "Altitude scatter - highest (x1000 ft)",
         page=CAMPAIGN_DOCTRINE_PAGE,
@@ -2075,6 +2089,83 @@ class Settings:
             "If set, squadrons will not be able to buy more aircraft than the configured maximum."
         ),
     )
+    # Combat Search and Rescue
+    csar_enabled: bool = boolean_option(
+        "Enable CSAR for the player coalition",
+        CAMPAIGN_MANAGEMENT_PAGE,
+        PILOTS_AND_SQUADRONS_SECTION,
+        default=True,
+        detail="Enable CSAR rescue flights for OWNFOR (BLUE) Coalition.",
+    )
+    csar_enabled_red: bool = boolean_option(
+        "Enable CSAR for the enemy coalition",
+        CAMPAIGN_MANAGEMENT_PAGE,
+        PILOTS_AND_SQUADRONS_SECTION,
+        default=True,
+        detail="Enable CSAR rescue flights for OPFOR (RED) Coalition.",
+    )
+    csar_ejection_chance: int = bounded_int_option(
+        "CSAR pilot survival chance (%)",
+        CAMPAIGN_MANAGEMENT_PAGE,
+        PILOTS_AND_SQUADRONS_SECTION,
+        default=40,
+        min=0,
+        max=100,
+        detail=(
+            "Chance of pilot survival and becoming a downed pilot for aircraft losses "
+            "where DCS did not report an ejection (AI kills and all losses on skipped/simulated turns)."
+            "Real in-mission ejections always produce a downed pilot."
+        ),
+    )
+    csar_survival_turns: int = bounded_int_option(
+        "Turns a downed pilot survives",
+        CAMPAIGN_MANAGEMENT_PAGE,
+        PILOTS_AND_SQUADRONS_SECTION,
+        default=3,
+        min=1,
+        max=10,
+        detail=(
+            "Number of turns a downed pilot in friendly rear territory waits for "
+            "rescue before going missing in action."
+        ),
+    )
+    csar_survival_turns_hostile: int = bounded_int_option(
+        "Turns a downed pilot survives near the front",
+        CAMPAIGN_MANAGEMENT_PAGE,
+        PILOTS_AND_SQUADRONS_SECTION,
+        default=2,
+        min=1,
+        max=10,
+        detail=(
+            "Number of turns a downed pilot in hostile territory or close to a front "
+            "line, where enemy ground forces are more likely to capture them waits for "
+            "rescue before going missing in action."
+        ),
+    )
+    csar_ai_recovery_turns: int = bounded_int_option(
+        "Turns a rescued AI pilot recovers",
+        CAMPAIGN_MANAGEMENT_PAGE,
+        PILOTS_AND_SQUADRONS_SECTION,
+        default=2,
+        min=0,
+        max=10,
+        detail=(
+            "Number of turns a rescued AI pilot is unavailable (recovering) before "
+            "returning to active duty."
+        ),
+    )
+    csar_player_recovery_turns: int = bounded_int_option(
+        "Turns a rescued player pilot recovers",
+        CAMPAIGN_MANAGEMENT_PAGE,
+        PILOTS_AND_SQUADRONS_SECTION,
+        default=1,
+        min=0,
+        max=10,
+        detail=(
+            "Number of turns a rescued human pilot is unavailable (recovering) before "
+            "returning to active duty."
+        ),
+    )
 
     # Campaign phases (W3, docs/dev/design/414th-campaign-phases-notes.md). Tier-0
     # inference is the DECIDED default for every campaign; this is the kill switch.
@@ -2144,38 +2235,6 @@ class Settings:
         HQ_AUTOMATION_SECTION,
         default=True,
     )
-    auto_combat_sar: bool = boolean_option(
-        "Automatic Combat SAR (pilot-rescue) standing alert",
-        CAMPAIGN_MANAGEMENT_PAGE,
-        COMBAT_SAR_SECTION,
-        default=True,
-        detail=(
-            "Auto-plan a Combat SAR package (King + rescue helo + Sandy) near each "
-            "active front so a downed pilot can be rescued even with no player CSAR "
-            "flown -- rescue is a normal, standing task. Requires a rescue-helo-"
-            "capable squadron; a human can always fly the rescue instead. Turn OFF "
-            "to only fly rescues manually. (Default ON since the 2026-07-03 CSAR "
-            "rescope; existing campaigns keep their saved choice.)"
-        ),
-    )
-    combat_sar_persistent_pilots: bool = boolean_option(
-        "Downed pilots persist until rescued or captured (MIA)",
-        CAMPAIGN_MANAGEMENT_PAGE,
-        COMBAT_SAR_SECTION,
-        default=True,
-        detail=(
-            "A pilot who ejects and is neither rescued nor captured by mission end "
-            "goes MIA instead of dying: they re-spawn at their last known position "
-            "next mission (fresh red smoke, a fresh enemy snatch race, rescuable by "
-            "a player package or the automatic rescue), and at every turn boundary "
-            "an evader on friendly ground walks home while one behind the lines "
-            "rolls a DEPTH-weighted capture -- near the front they usually keep "
-            "evading; deep behind the lines enemy search parties almost certainly "
-            "find them (-> POW, which can compromise your comms). There is no "
-            "death clock; the depth roll is the clock. Turn OFF to return to the "
-            "old behaviour (an un-rescued pilot is lost at debrief)."
-        ),
-    )
     sp_pilot_mode: bool = boolean_option(
         "SP Pilot Mode (fly the next turn without planning it)",
         CAMPAIGN_MANAGEMENT_PAGE,
@@ -2194,53 +2253,6 @@ class Settings:
             "damage you caused, victory progress, and scheduled squadron arrivals. "
             "The normal map/ATO planning path is untouched -- this is an express "
             "lane, not a replacement."
-        ),
-    )
-    combat_sar_surge: bool = boolean_option(
-        "Pilot recovery surge (next-turn coordinated rescue)",
-        CAMPAIGN_MANAGEMENT_PAGE,
-        COMBAT_SAR_SECTION,
-        default=True,
-        enabled_when="combat_sar_persistent_pilots",
-        detail=(
-            "The turn after a pilot goes MIA, open the mission with a coordinated "
-            "recovery package already airborne at the evader's last known position: "
-            "rescue helo(s), a C-130 'King' on-scene commander, a 'Sandy' escort, "
-            "and a fighter escort when threatened -- planned ahead of everything "
-            "else, so the rescue force is on station at mission start instead of "
-            "transiting for an hour. Fires ONCE per downed pilot (a failed surge "
-            "falls back to the normal rescue paths), so it is an event, not an "
-            "every-mission fixture. Requires persistent downed pilots (MIA)."
-        ),
-    )
-    combat_sar_test_force_capture: bool = boolean_option(
-        "[TEST] Combat SAR: force every downed pilot to be captured",
-        CAMPAIGN_MANAGEMENT_PAGE,
-        COMBAT_SAR_SECTION,
-        default=False,
-        detail=(
-            "Testing aid (thumb on the scale, default OFF). Rigs the Combat SAR "
-            "capture race so every ejection is seized fast: the enemy snatch party "
-            "spawns 100% of the time, right on top of the survivor, and captures "
-            "within a few seconds -- so you can reliably exercise the POW path and "
-            "the capture-gated enemy comms jamming without fighting the RNG (fly, "
-            "get a blue pilot down near the front, advance the turn). Overrides the "
-            "Combat SAR plugin's capture options. If '[TEST] ... trivially easy' is "
-            "also on, capture wins. Leave OFF for normal play."
-        ),
-    )
-    combat_sar_test_easy_rescue: bool = boolean_option(
-        "[TEST] Combat SAR: make pilot pickup trivially easy",
-        CAMPAIGN_MANAGEMENT_PAGE,
-        COMBAT_SAR_SECTION,
-        default=False,
-        detail=(
-            "Testing aid (thumb on the scale, default OFF). Disables the enemy "
-            "capture race and widens the pickup tolerances (range/height/speed/"
-            "delivery) so a rough landing near the red smoke boards the survivor -- "
-            "so you can reliably exercise the King TACAN beacon, the Sandy divert, "
-            "and the rescue/delivery loop. Overrides the Combat SAR plugin's pickup "
-            "+ capture options. Leave OFF for normal play."
         ),
     )
     automate_front_line_stance: bool = boolean_option(
@@ -2484,9 +2496,9 @@ class Settings:
             "Dress each Nimitz-class carrier deck with static deck equipment "
             "and crew linked to the moving ship: tow tractors, a P-25 crash "
             "truck, a forklift and deck hands along the island, plus the LSO "
-            "platform crew aft. Layouts are curated from the Operation "
-            "Cerberus North 2 campaign and keep every parking spawn spot and "
-            "all four catapults usable; the arrangement rotates each turn."
+            "platform crew aft. Layouts are curated from installed DCS "
+            "campaigns and keep every parking spawn spot and all four "
+            "catapults usable; the arrangement rotates each turn."
         ),
     )
     carrier_deck_decorations_aircraft: bool = boolean_option(
@@ -2497,7 +2509,7 @@ class Settings:
         default=False,
         detail=(
             "Extra dressing that stands ONLY during the launch cycle, as "
-            "OCN 2 spots it: an E-2C on the stern round-down plus gear and "
+            "campaign A spots it: an E-2C on the stern round-down plus gear and "
             "hands on the port junk row by the LSO platform. The "
             "deck-dressing runtime strikes it all below before recovery "
             "(ahead of the Airboss recovery window, on a fallback timer, or "
@@ -2506,6 +2518,23 @@ class Settings:
             "static ever stands on a parking spot -- aircraft spawning into "
             "deck statics is a real DCS failure mode this feature learned "
             "the hard way."
+        ),
+    )
+    carrier_deck_decorations_recovery: bool = boolean_option(
+        "Carrier recovery-cycle deck dressing (spawned for recovery)",
+        MISSION_GENERATOR_PAGE,
+        GAMEPLAY_SECTION,
+        enabled_when="carrier_deck_decorations",
+        default=False,
+        detail=(
+            "The mirror of the launch-cycle dressing: gear and hands ranged "
+            "forward onto the bow, which is how a real deck is re-spotted once "
+            "the landing area has to be clear. Nothing stands there at mission "
+            "start -- the deck-dressing runtime spawns it at the same moment "
+            "it strikes the launch-cycle set below. EXPERIMENTAL: the bow "
+            "parking spots have not been measured yet, so this tier can only "
+            "be checked against the 11 spots that have been. Leave it off if "
+            "you fly full 16-aircraft decks."
         ),
     )
     generate_portable_tacans: bool = boolean_option(
@@ -2709,6 +2738,50 @@ class Settings:
             "from mission start instead of spending the first several minutes taxiing "
             "and climbing. Applies to both coalitions' AI support flights; "
             "player-crewed flights keep the player start type."
+        ),
+    )
+    csar_start_type: StartType = choices_option(
+        "Default start type for CSAR flights",
+        page=MISSION_GENERATOR_PAGE,
+        section=GAMEPLAY_SECTION,
+        choices={v.value: v for v in StartType},
+        default=StartType.WARM,
+        detail=(
+            "Start type for combat search and rescue flights, overriding the AI "
+            "and player defaults above."
+        ),
+    )
+    csar_hover_extraction: bool = boolean_option(
+        "CSAR hover extraction",
+        MISSION_GENERATOR_PAGE,
+        GAMEPLAY_SECTION,
+        default=True,
+        detail=(
+            "Controls how an AI rescue helicopter recovers a downed pilot.\n\n"
+            "Unchecked: the helicopter lands and the pilot walks aboard.\n\n"
+            "Checked (default): the helicopter holds a low hover over the pickup and the "
+            "pilot is extracted by script, as though hoisted."
+        ),
+    )
+    csar_rescue_ai_pilots: bool = boolean_option(
+        "CSAR rescues AI-controlled downed pilots",
+        MISSION_GENERATOR_PAGE,
+        GAMEPLAY_SECTION,
+        default=True,
+        detail=(
+            "If set, Ops.CSAR will register AI downed pilots in the mission for "
+            "player flights, not only player-flown ejections."
+        ),
+    )
+    csar_require_open_doors: bool = boolean_option(
+        "Require cabin door open",
+        MISSION_GENERATOR_PAGE,
+        GAMEPLAY_SECTION,
+        default=False,
+        detail=(
+            "If set, a survivor will not climb aboard a player's helicopter until "
+            "its cabin door is open, and will not get out again until it is opened."
+            "Player Flights Only"
         ),
     )
     default_player_laser_code: DefaultPlayerLaserCode = choices_option(
@@ -3265,24 +3338,6 @@ class Settings:
             "that plugin enabled or this setting does nothing."
         ),
     )
-    comms_jam_requires_capture: bool = boolean_option(
-        "Comms jamming needs captured aircrew (the intel gate)",
-        enabled_when="enemy_comms_jamming",
-        page=MISSION_GENERATION_PAGE,
-        section=GENERAL_SECTION,
-        default=True,
-        detail=(
-            "The enemy can only jam channels it knows -- and it learns them from "
-            "a captured pilot's comms plan. With this on (the default), comms "
-            "jamming stays silent until the Combat SAR capture race is lost: a "
-            "pilot captured mid-mission compromises the net within minutes, and "
-            "a POW held from an earlier turn means the channels are compromised "
-            "from mission start until they are freed or written off (the comms "
-            "plan is then rotated). Rescuing your people keeps the net clean. "
-            "Turn this off for ambient jamming whenever an enemy C2 node is "
-            "alive. No effect unless 'Enemy comms jamming' is on."
-        ),
-    )
     red_comms_net: bool = boolean_option(
         "Enemy radio net (audible + DF-able)",
         page=MISSION_GENERATION_PAGE,
@@ -3671,6 +3726,30 @@ class Settings:
     # Settings so new campaigns are never re-migrated; only legacy saves that lack
     # the marker get the one-time flip.
     applied_recon_plugins_default: bool = True
+
+    def start_type_for(self, flight_type: "FlightType", has_players: bool) -> StartType:
+        """The start type a newly planned flight of this kind should default to.
+
+        The single source of this decision. It is applied from the auto-planner
+        (PackageBuilder.plan_flight) and from both places the UI recomputes a
+        default (QFlightCreator and QFlightStartType), so a task with its own
+        start type behaves the same however the flight came to exist.
+
+        Callers must still let a base that dictates its own start type win --
+        carriers and off-map spawns -- via
+        ControlPoint.required_aircraft_start_type.
+        """
+        from ..ato.flighttype import FlightType
+
+        if flight_type is FlightType.CSAR:
+            # A downed pilot is on a timer, so the rescue is usually worth
+            # launching sooner than the rest of the ATO. Overrides both defaults
+            # below, players included: the setting exists precisely so CSAR does
+            # not have to inherit them.
+            return self.csar_start_type
+        if has_players:
+            return self.default_start_type_client
+        return self.default_start_type
 
     @staticmethod
     def plugin_settings_key(identifier: str) -> str:

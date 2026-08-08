@@ -66,22 +66,15 @@ def roll_plane_altitude_offset(low: int, high: int) -> int:
 # callsign pool before spawning (pydcs ValueErrors on an unknown callsign). The AI
 # cannot voice them (no audio for unknown names), but every display reads the role.
 _ROLE_CALLSIGN_BY_TYPE: dict[FlightType, str] = {
-    FlightType.SCAR: "Sandy",  # RESCAP escort (A-10 / Apache)
     FlightType.JAMMING: "Toxic",  # EC-130H/RC-130H EW C-130
 }
 
 #: Every fixed role callsign, for the spawner's "is this a custom callsign?" guard.
-ROLE_CALLSIGNS: frozenset[str] = frozenset({"King", "Jolly", "Sandy", "Toxic"})
+ROLE_CALLSIGNS: frozenset[str] = frozenset({"Toxic"})
 
 
 def role_callsign(flight_type: FlightType, is_helicopter: bool) -> Optional[str]:
-    """The fixed role callsign for a 414th rescue/EW role, or None if there isn't one.
-
-    Combat SAR splits by airframe: the C-130 on-scene commander is "King", the
-    rescue helo is "Jolly".
-    """
-    if flight_type is FlightType.COMBAT_SAR:
-        return "Jolly" if is_helicopter else "King"
+    """The fixed role callsign for a 414th EW role, or None if there isn't one."""
     return _ROLE_CALLSIGN_BY_TYPE.get(flight_type)
 
 

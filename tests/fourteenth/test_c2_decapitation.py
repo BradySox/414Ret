@@ -184,7 +184,14 @@ def test_throttle_closes_the_offensive_middle_at_the_cap() -> None:
     names = _method_names(state)
     assert "AttackBuildings" not in names
     assert "CaptureBases" not in names
-    assert names[:3] == ["TheaterSupport", "ProtectAirSpace", "DefendBases"]
+    # RescueDownedPilots joined the reactive lead block with upstream #929. A
+    # rescue is not an offensive package, so the throttle must not eat it.
+    assert names[:4] == [
+        "TheaterSupport",
+        "ProtectAirSpace",
+        "RescueDownedPilots",
+        "DefendBases",
+    ]
     assert names[-1] == "RecoverySupport"
 
 

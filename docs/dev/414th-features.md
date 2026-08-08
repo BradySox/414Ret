@@ -739,8 +739,8 @@ measured, not guessed** — on a real recon page it is 1212 KB → 206 KB with a
 difference and no visible ringing even on the title bar's white-on-black text; q92 costs ~40%
 more bytes for no visible gain at kneeboard size. A fully-crewed mission drops **22.4 MB → 9.0
 MB (60%) with no page removed**. DCS has taken JPEG kneeboards all along — a scan of 2,945
-shipped campaign missions found **7,971 `.jpg` pages vs 2,542 `.png`** (Raven One ships
-`.jpeg`), so this is the format the rest of the ecosystem already uses.
+shipped campaign missions found **7,971 `.jpg` pages vs 2,542 `.png`** (at least one
+paid FA-18C campaign ships `.jpeg`), so this is the format the rest of the ecosystem already uses.
 
 Byte-identical no-op when `generate_target_recon_kneeboard` is off (its default) — no recon
 pages, no JPEG pages. Tests: `game/missiongenerator/tests/test_kneeboard_image_format.py`
@@ -907,6 +907,89 @@ estimated_fuel_consumption` and thread the chosen one through `FlightPlan.fuel_c
 the flight planner's tanker tasking (`formationattack`) and the in-flight fuel sim (`inflight.py`) keep
 using measured data only and gain no new blast radius. A real `fuel:` block always wins. Covered by
 `tests/dcs/test_estimated_fuel_consumption.py`.
+
+*Measured `fuel:` data adopted from DCS Liberation (2026-08-07).* Liberation — which Retribution
+forked from, and which is **still actively developed** (see *Repo & Branch Layout* in `CLAUDE.md`) —
+ships hand-measured blocks for twelve airframes the fork had none for. All twelve were adopted
+verbatim, provenance comments included: **A-10A, A-10C, A-10C_2, A-4E-C, AV8BNA, F-100D,
+F-14A-95-GR, F-14A-135-GR, F-14A-135-GR-Early, F-14B, F-15C, F-4E-45MC**. Measured-data coverage
+went **22 → 40 aircraft types** (the twelve files fan out to 16 variants; the rest is inheritance).
+The estimate these replace overshot the measured cruise burn badly on exactly the airframes the
+squadron flies most:
+
+| Airframe | Estimated cruise | Measured | Error |
+|---|---|---|---|
+| F-14A / F-14B | 31.2 ppm | 13 | +140% |
+| F-15C | 25.9 ppm | 11 | +135% |
+| A-10A / A-10C | 21.3 ppm | 12 | +78% |
+| A-4E-C | 10.5 ppm | 7.7 | +36% |
+| AV-8B | 14.9 ppm | 11 | +35% |
+
+Two consequences, and the second is the one to watch. The kneeboard bingo ladder for those jets was
+reading ~2.4× pessimistic and is now right. But adopting a real block also promotes them out of the
+kneeboard-only fallback and onto measured `unit_type.fuel_consumption`, which **does** drive tanker
+tasking (`formationattack`) and the in-flight fuel sim (`inflight.py`) — the intended design ("a real
+`fuel:` block always wins"), but a genuine behavior expansion for twelve airframes at once. Tracked
+as an in-game-pass row. The F-4E block is the best-sourced of the set — Dash-1 Supplemental Data and
+the Heatblur manual's mission-planning section, with drag index and gross weights in the comments,
+rather than a stopwatch run. `tests/dcs/test_estimated_fuel_consumption.py` pins all 16 variants
+against their cruise values so the data cannot silently regress; the same file's fallback test was
+re-pointed from the A-10C (which now *has* a block) to the MiG-29A.
+
+The remaining ~217 airframes still fall back to the estimate. The measurement procedure for closing
+that gap is already in the tree at `docs/modding/fuel-consumption-measurement.md`.
+
+*Combat-bucket constant retuned 520 → 700 NM (2026-08-07).* Adopting the twelve blocks took the
+calibration set from **two** references (F/A-18C, F-16C) to **nine independent** ones, which made it
+worth re-deriving the constant. An earlier draft of this section called the resulting overshoot a
+"weakness"; that was wrong and is corrected here. **The overshoot was the deliberate price of a
+conservative calibration**: 520 sat just above the thirstiest reference (the Hornet, implying 489 NM),
+so the model treated every unmeasured airframe as a Hornet and almost never under-estimated.
+
+The error is asymmetric, and that governs the choice. Over-estimating burn draws a pessimistic bingo
+ladder and frags a tanker that may not be needed — annoying, safe. Under-estimating draws an
+optimistic one and frags nothing — the jet lands dry. So the constant is picked to stay conservative,
+**not** to minimise average error:
+
+| Constant | Worst error | Optimistic (unsafe) references |
+|---|---|---|
+| 520 (was) | +140% (F-14) | 1 of 9 |
+| **700 (now)** | **+78%** | **2 of 9** |
+| 875 (best fit) | +42% | 6 of 9 — rejected |
+
+700 is the *median* implied endurance across the nine references (spread 489–1246 NM). It roughly
+halves the worst overshoot while keeping 7 of 9 on the conservative side. Two invariants in
+`tests/dcs/test_estimated_fuel_consumption.py` lock that posture — no reference may be more than 35%
+optimistic, and at least 7 of 9 must stay conservative — and both were verified to **fail** at 875
+before being committed, so a future "improvement" toward best-fit trips CI rather than silently
+flipping the safety bias.
+
+Two things were tested and rejected on the way, recorded so they are not re-tried: a **linear fit**
+(`ppm = 7.53 + 0.000512 × fuel_lb`) scores only 41% worst error against the constant's 42%, so it buys
+nothing for the added complexity; and **`max_range` as the input** is worse still (77%) because the
+yaml field is an authored *tasking* radius, not a physical one — the AV-8B is capped at 100 NM and the
+A-10C at 150 NM by doctrine, not fuel. Capacity is a weak predictor and no single constant will fix
+that; the real answer is measured data. The helicopter and heavy buckets are independent and were not
+touched — the C-130J "King" still estimates ~16 ppm.
+
+*Not every "measured" block is measured (audit, 2026-08-07).* The blocks carry test-condition
+comments — the taxi route, the climb profile, the cruise mach and leg length — precisely so a number
+is reproducible. Auditing them turned up **seven airframes wearing another jet's numbers with the
+donor's comments attached**: the six `VSN_F35*` files carry the F/A-18C's values (`170 / 44.25 /
+22.1 / 27.5 / 2000`) and `Tornado_ADV` carries the F-16C's (`200 / 28.33 / 12 / 26 / 1000`), each
+including a `# Parking A1 to RWY 32 at Akrotiri` / `# Parking 44 to RWY 06L at Anderson AFB` line
+describing a sortie never flown in that aircraft. **This is inherited, not fork-authored** — upstream
+`dcs-retribution/dcs-retribution` `dev` carries the identical blocks and comments, and DCS Liberation
+has no fuel block for either file. The **values are left alone** (they are the only figures anyone
+has, and reverting them to the capacity estimate would be worse); only the comments were rewritten to
+say `NOT MEASURED for this airframe`, name the donor, and point at the measurement procedure. Carve
+candidate for upstream once the PR freeze lifts.
+
+Deliberately **not** touched by that audit: same-family reuse, which is defensible and partly
+Liberation's own choice. `FA-18E`/`FA-18F`/`FA-18ET`/`FA-18FT`/`F_A-18C`/`EA-18G` share the Hornet
+block (Liberation itself ships the Super Hornet and Growler that way), and the `F-16D_*`/`F-16I`
+marks share the F-16C block. The F-35 and the Tornado are different airframes entirely, which is why
+they are the clear-cut cases.
 
 **Compact 3-4 page kneeboard deck — RETIRED (2026-07-05, the back-to-basics rework).** The compact
 folding machinery (`compact_kneeboard`, `_compact_kneeboard_pages`, the `CombatIntelPage`/
@@ -2341,239 +2424,66 @@ out: `game/theater/unitplacement.py`, `QPlaceUnitGroupDialog`, the
 
 ---
 
-## §21 — Combat SAR — pilot rescue (flight type + `combatsar` plugin, scoring ON)
+## §21 — Combat SAR — pilot rescue
 
-**Status:** Built + rescue scoring verified (G8/G9/G11/G13); G10 partial. **Default ON since the
-2026-07-03 CSAR rescope** (`auto_combat_sar` default True for new campaigns; existing saves keep
-their stored choice) — rescue is a normal, standing task per the locked vision. Python plans +
-scores; the plugin's **survivor ledger** (Lua) executes. Design source of truth:
-[`docs/dev/design/414th-csar-notes.md`](design/414th-csar-notes.md).
+**REMOVED (2026-08-07).** Replaced wholesale by upstream
+[dcs-retribution#929](https://github.com/dcs-retribution/dcs-retribution/pull/929) (Drexyl), which
+landed a parallel CSAR implementation the same week. Squadron call: adopt upstream's, err toward
+its shape on every conflict, and do not carry two rescue systems.
 
-**Testing aids (2026-07-09):** the enemy snatch-party spawn default dropped **2 NM → 0.75 NM** so a
-capture can actually complete in a mission window (the old 2 NM was an ~11-min march ⇒ captures
-~never fired). Plus two **default-OFF** test toggles (Campaign Management → HQ Automation) that emit
-scalar flags on `dcsRetribution.CombatSAR` for the plugin to honor: `combat_sar_test_force_capture`
-(every ejection → a fast guaranteed **capture → POW**, unlocking the §51 capture-gated comms jam —
-the reliable way to exercise **G28 + S4**) and `combat_sar_test_easy_rescue` (capture off + forgiving
-pickup/delivery — exercises **G10 King / G23 Sandy / the pickup loop**). Leave OFF for normal play.
+Deleted with it: the `combatsar` plugin, `CombatSarFlightPlan`, `ScarFlightPlan`,
+`FlightType.COMBAT_SAR`, `FlightType.SCAR` (§15), `game/pow_recovery.py`,
+`game/fourteenth/downed_pilots.py`, `game/fourteenth/csar_surge.py`, `PilotStatus.POW` / `.MIA`,
+the fork's downed-pilot server model and client map layer, the kneeboard CombatSar/Scar task pages,
+and the `comms_jam_requires_capture` intel gate (§51 keeps jamming; it is now unconditional).
 
-**Persistent evaders + the always-run snatch (2026-07-10, squadron call).** A flown jamming test
-(auto-CSAR off + a Sandy-only package) found the plugin bailing whenever **no rescue asset**
-existed — which silently killed the snatch race, the capture → POW → §51 comms-jam chain, and even
-the emitted `testForceCapture`. Reframed around the pilot: **(1) the ledger always runs** — the
-emitter always emits the blue node (the player-package/auto-spawn early-return is gone) and the
-plugin's `addConfig` no longer bails without rescue capability (`canRescue` only shapes the MAYDAY:
-"no rescue assets available. Protect the survivor!"); **(2) un-resolved survivors persist** — the
-plugin mirrors its live ledger into the new state global `combat_sar_survivors`; at commit,
-`record_downed_pilots` (`game/fourteenth/downed_pilots.py`) flips the aviator to the new
-**`PilotStatus.MIA`** (off the schedule; kill spared in `commit_air_losses`) and banks them on
-`game.downed_pilots`; next mission the emitter hands the ledger back (`persistentSurvivors`) and
-the plugin re-spawns each evader at his last position — fresh red smoke, an "EVADER" cue, a fresh
-50 % snatch race, the normal rescue paths. Surfaced on the SITREP band ("MIA: Capt Mitchell —
-evading near Haina (2 turns down)") + the squadron roster, **and on the campaign map
-(2026-07-18, the UI-representation audit's top finding)**: `DownedPilotJs` on `GameJs`
-(`game/server/game/models.py`) emits every MIA evader at his last known position
-(rescue-orange marker) and every POW at the holding field (gray dashed marker, the SITREP
-clock in the tooltip), drawn by `client/src/components/downedpilots/` — a default-ON
-"Downed pilots" layer in the §18 panel with legend rows; empty when nobody is down. The
-between-turns host plans the rescue from the map instead of a kneeboard note (tests
-`tests/server/test_downed_pilots_model.py`); **(3) the depth-weighted turn roll**
-(`resolve_downed_pilots` from `finish_turn`) — an evader on friendly ground **walks home**;
-behind the lines the capture odds scale with depth (10 % within 5 NM of the front → 90 % at
-40 NM+; front-less laydowns measure to the nearest friendly CP), and a hit is the normal POW
-consequence (ledger pilot-fallback in `record_pow_captures`). **No death clock** (squadron call)
-— the roll is the clock, and *don't fly deep* is the incentive. Gated
-`combat_sar_persistent_pilots` (default ON; gates only the *creation* of MIA entries — an
-existing evader is always emitted/resolved so a mid-campaign toggle never strands one). Tests:
-`tests/fourteenth/test_downed_pilots.py`, `tests/lua/test_combatsar_ledger.py` (the real plugin
-under a MOOSE-stub sandbox), `tests/test_combat_sar_scoring.py`,
-`tests/missiongenerator/test_combat_sar_sandy_luadata.py`. Checklist **G29**.
+**The whole POW model went with it.** Upstream has no capture — a pilot who is not rescued goes
+MIA. So the held-POW clock, the Homecoming at game end, the SITREP POW band and the §51
+"captured aircrew compromises your comms" coupling are all gone.
 
-The bespoke pilot-rescue flight task. A **CH-47** orbits near the FLOT as the rescuer; a
-**C-130** flies the overhead **HC-130 "King"** on-scene-command orbit. When a pilot (human or
-AI) ejects in the area, the ledger spawns the downed pilot with red smoke and a friendly helo —
-player-flown or AI — flies in, lands, and delivers them to any friendly field/FARP; the campaign
-**spares that aviator** at debrief (the airframe is still lost; the experienced pilot returns to
-the squadron).
+Persisted saves migrate through `_LEGACY_FLIGHT_TYPE_VALUES`: `"Combat SAR"` → `FlightType.CSAR`,
+`"SCAR"` → `FlightType.CAS`.
 
-### Architecture (Python plans + scores, Lua executes)
+**What the fork kept on top of upstream's base**
 
-- **`FlightType.COMBAT_SAR`** — player-selectable for the **CH-47 / UH-60A/L / UH-1H / CH-53E /
-  Mi-8** rescue helos and the C-130 (King), so a faction without a Chinook still fields CSAR (the
-  engine is airframe-agnostic; the task is granted per `resources/units/aircraft/*.yaml`). The
-  **AI standing alert air-starts on station** (`packagebuilder` sets `StartType.IN_FLIGHT` for the
-  non-client Combat SAR alert) so it is overhead *before* the first losses instead of spooling up at
-  a rear field and transiting in — a slow helo from depth never reaches a deep ejection in time. A
-  player-flown Combat SAR keeps the normal client start. It
-  flies a **dedicated forward-hold plan** (`game/ato/flightplans/combatsar.py`,
-  `CombatSarFlightPlan`): front-anchored like AEW&C, but with a **short threat buffer**
-  (`COMBAT_SAR_THREAT_BUFFER`, 15 NM — just clear of FLOT SHORAD/MANPAD reach) and a
-  **helo-sized racetrack** (`COMBAT_SAR_RACETRACK_HALF_DISTANCE`, 5 NM), so the rescue helo
-  holds *near the front* where it can actually reach an ejection — **not** at the 80 NM AWACS
-  standoff. `CombatSarFlightPlan` subclasses `AewcFlightPlan` (and its `Builder` subclasses the
-  AEW&C `Builder`) purely to keep the existing support-flight integration that keys off
-  `isinstance(.., AewcFlightPlan)` (AWACS-info registration) — only the
-  geometry differs. Helos clamp to a helo-appropriate AGL via the shared `get_altitude` path.
-  (Earlier builds reused the AEW&C builder outright, which parked the CH-47 at AWACS depth — a
-  G9 in-game finding, fixed 2026-06-25.)
-- **On-demand AI rescue (2026-07-06 rework — replaced the standing orbit).** The auto-fragged
-  COMBAT_SAR orbit (`PlanCombatSar` / `PlanCombatSarSupport`) is **removed** — the orbiting helo
-  never reliably flew the pickup (the runtime commandeered an airborne, already-routed group, which
-  RTB'd instead of rescuing; checklist G21, a flown finding). Now `Settings.auto_combat_sar` (HQ
-  automation, **default ON**) drives an **on-demand spawn**, sourced parked-first / clone-fallback
-  **only when no player CSAR/SCAR package is fragged**:
-  1. **A real rescue helo parked cold on the ramp** — Retribution already spawns each squadron's
-     untasked airframes (`_spawn_unused_for` → `create_idle_aircraft`, uncontrolled + **in the
-     `UnitMap`**); `spawn_combat_sar_templates` collects the BLUE CSAR-capable ones
-     (`mission_data.parked_rescue_helos`, emitted as `parkedHelos`). The plugin's
-     `commandeerParkedHelo` picks the nearest, `StartUncontrolled`-launches it, and OPSTRANSPORTs the
-     pickup — a **tracked** airframe (its loss is recorded). This is the user's "use the C-130s/A-10s
-     already on the ramp" insight applied to the helo.
-  2. **A cold late-activation clone template** (the QRA `spawn_intercept_templates` pattern), emitted
-     as `heloTemplate` + `farp`, as the **fallback** when the ramp is bare (`perf_disable_untasked_
-     blufor_aircraft` / fully-tasked wing). SPAWN-cloned; the clone is untracked.
+- **The C-130J "King".** Upstream derives CSAR capability from the airframe and restricts it to
+  helicopters, because the DCS AI `Land` task is helicopter-only and a fixed-wing rescuer just
+  orbits the survivor. An explicit per-aircraft `CSAR:` task entry overrides that derivation, and
+  `C-130J-30.yaml` carries `CSAR: 5` deliberately — **the lowest CSAR number in the
+  fleet**, so the auto-planner always reaches for a helo first and never frags a King for a
+  rescue no AI can finish. Upstream derives CSAR from the airframe, so 27 airframes are
+  capable and the floor is the Mi-24V at 10, not the fork's own eight yamls.
+  `tests/test_csar_king_priority.py` pins it against the live fleet. **Accepted limit: an AI-crewed King will not
+  complete a pickup.** The King is player-flown, as the on-scene commander it always was.
+- **The briefed survivor beacon** — see below.
+- All eight former Combat SAR carriers keep their authored priorities, converted
+  `Combat SAR: N` → `CSAR: N` rather than deleted, since upstream's derivation would have
+  flattened them to the Air Assault value or 50.
 
-  Both go straight into the OPSTRANSPORT pickup (the clone-into-mission path that works); a *parked*
-  start is the fix for the retired commandeer of an *airborne* helo. A player-fragged **rescue
-  helo** ⟹ `autoSpawn=false`, no AI spawn (the player's helo + ledger handle it) — **narrowed
-  2026-07-15** from the original any-CSAR/SCAR-flight gate after the flown Red Tide M1 showed one
-  bare player Sandy escort (no helo behind it) silently disabling ALL rescue; a bare Sandy/King now
-  **draws** the AI helo and escorts/tracks it. The helo needs no loadout (it does
-  OPSTRANSPORT); on-demand **Sandy** (needs an armed payload — parked untasked + cold-template
-  airframes are both `maintask=None`/clean-wing) + **King** (needs the TACAN-beacon setup) launches +
-  multi-survivor chaining are the §21 **v2**. **The AI rescue runs in the plugin's own survivor ledger, not
-  MOOSE `AICSAR`/`CSAR`** (the 2026-06-26 playtest confirmed MOOSE CSAR's `enableForAI` only
-  *tracks* AI ejections and never flies a helo — "Jolly Green flew a racetrack and did nothing").
-  `combatsar-config.lua` registers every AI/player ejection through an **ejection bridge**
-  (`world.addEventHandler` on `S_EVENT_EJECTION`, pcall-guarded, one survivor per airframe) — so a
-  shoot-down dispatches immediately rather than waiting on the unreliable
-  `S_EVENT_LANDING_AFTER_EJECTION` (the G9 fix). After `AI_DISPATCH_DELAY` grace (lets a player or
-  on-station crew react), `dispatchAIRescue` flies a helo via MOOSE `OPSTRANSPORT` to board the
-  ledger's survivor as cargo and deliver it to the FARP, **crediting the real unit** on unload
-  (`OnAfterUnloaded` → `combat_sar_rescues`; no anonymous clone — identity lives in the ledger
-  entry, so AI rescues score the spare-pilot credit too).
-- **Delivery-field resolution (2026-07-03, flown Yankee Station).** The delivery airbase is resolved
-  from `cfg.farp` via MOOSE `AIRBASE:FindByName`; Python passes the King's departure *control-point
-  display name* (`rescue_flights[0].departure.airfield_name`), which matches a real airfield's DCS
-  name but **not** a generated FARP — whose DCS object is `"<CP> FARP 0"`
-  (`tgogenerator.create_helipad`). So a **FARP-based King** (the Vietnam FOB case) logged
-  `combatsar: AI dispatch - FARP '<CP>' not found` on every ejection and delivered nothing. Fixed:
-  `dispatchAIRescue` now falls back to `nearestFriendlyAirbaseObject(entry.side, survivorCoord)` —
-  the closest field MOOSE *can* resolve — whenever the configured name misses; airbase-based Kings
-  keep their exact departure field, only the previously-dead FARP path changes. Matches the "deliver
-  to ANY friendly field" contract. Needs a re-fly to confirm delivery completes (G21/G23).
-- **Commandeer-first dispatch (2026-06-29, G21 fix).** `dispatchAIRescue` used to **always** clone a
-  fresh helo (`SPAWN:NewWithAlias("CombatSAR Rescue N", …)`) from the FARP, so every AI ejection
-  piled a new helo on top of the rescue flight already orbiting the FLOT (Tacview-confirmed: 8+
-  `CombatSAR Rescue N` clones spawned co-located with the idle `Front line … Combat SAR` helos).
-  It now **commandeers the nearest alive, idle, AI-crewed rescue helo** already in the mission
-  (`commandeerRescueHelo` over `cfg.rescueHelos`, wrapped in a `FLIGHTGROUP` + `AddOpsTransport`),
-  marks it busy, and frees it again on delivery so it can serve the next ejection; it only falls
-  back to cloning from `heloTemplate` when every planned rescue helo is dead or already committed.
-  Player-crewed helos are skipped (`groupHasPlayer`), so it never competes with a human's CSAR. The
-  live-group `FLIGHTGROUP` takeover of an orbiting AI flight is ◐ **PARTIAL** as of a 2026-06-30 flown
-  session (checklist G21): the clone-fallback path is confirmed correct, but the row's own anticipated
-  fail signature (`combatsar: AI dispatch error` — a Moose `_RegisterGroupTemplate` "table index is
-  nil" on a nil `unitId`) also reproduced 9× in that session's `dcs.log`, `pcall`-guarded so it didn't
-  block the 3 rescues that completed. **The earlier G9 eject-dispatch re-fly PASSED 2026-06-28 (audience pass, user "good").**
-- **"Table index is nil" dispatch error root-caused + fixed (2026-07-01, G21).** The rescue helos are
-  player-flyable (Client skill), and MOOSE's `DATABASE:_RegisterGroupTemplate` does
-  `Templates.ClientsByID[unit.unitId] = unit` for every Client/Player-skill unit — which throws when a
-  client slot's template carries a **nil `unitId`** (a `.miz`-generation quirk). The crash is on the
-  **clone** path (`SPAWN(heloTemplate):Spawn()` re-registers the template); the commandeer path uses
-  `_RegisterDynamicGroup`, which never touches that line. Three fixes: (1) an init sweep
-  (`sanitizeClientTemplates`) backfills a synthetic collision-safe `unitId` on any nil-`unitId` client
-  template so registration never indexes a nil — the root cause; (2) `dispatchAIRescue` now returns
-  success and the caller retries a *failed* dispatch up to 3× with backoff instead of latching
-  `e.dispatched` before the attempt (which abandoned the survivor on the first error); (3) the
-  `busyHelos` mark moved to the success path so a mid-dispatch error can't strand a commandeered helo
-  as permanently busy. Needs a re-fly to confirm (checklist G21).
-  **v1 limitation (still open):** a player ejecting from a fixed-wing with no human helo up can be
-  double-handled (cosmetic double-spawn).
-- **King beacon = TACAN only.** Each King lights an **air-tracking TACAN** (follows the
-  moving orbit; every rescue helo we use has a receiver) — the single homing solution.
-  An ADF radio beacon was **considered and dropped** (MOOSE's `RadioBeacon` is fixed-point
-  and the King is a mover, so it would need a position-refresh loop for no gain over the
-  TACAN). The King also carries an F10 **Combat SAR → LARS** button that reads MOOSE CSAR's
-  live downed-pilot table and reports each active survivor (position + bearing/range from
-  the King) for the crew to relay.
-  - **AI-only beacon activation (crash guard).** The scripted `ActivateTACAN` is pushed
-    **only** to a live, AI-controlled King (`unit:IsAlive() and unit:GetPlayerName() == nil`
-    in `combatsar-config.lua` `activateKing()`). A **player-occupied** King has no AI
-    controller, so the `ActivateBeacon` command has *"no executor"* (logged as an
-    `AI::Controller exception`) and — because an air-tracking beacon is re-evaluated every
-    sim tick against the host unit — was the suspected trigger for an in-game `ACCESS_VIOLATION`
-    CTD in DCS's discrete-command executor (`wSimCalendar::DoActionsUntil`). When a human flies
-    the King, the crew **sets TACAN in-cockpit**; the LARS F10 menu still attaches either way.
-    The Lua attaches King activation on mission-start live groups, group birth, and player-enter
-    so client-slot Kings get the F10 menu after the pilot joins.
-    (2026-06-25 in-game pass: C-130 King flown by the player → "No executor for command
-    ActivateBeacon" + CTD; guard added.)
-- **Airframes (player-flyable + armed).** The rescuer is the **CH-47Fbl1** (the playable ED
-  Chinook, `Combat SAR: 85` in its yaml) with a **`Retribution Combat SAR` payload that mounts
-  the port + starboard door M60D guns** (`{CH47_PORT_M60D}`/`{CH47_STBD_M60D}`,
-  `resources/customized_payloads/CH-47Fbl1.lua`) for self-protection on the way in; the AI
-  **CH-47D** stays a `Combat SAR` fallback (no weapon stations). The King is the
-  **C-130J-30** — the player-flyable Airplane Simulation Company module, now the **only** C-130
-  in the fork (the stock AI C-130 was retired; see "C-130 consolidation" below). Its external
-  underwing tanks are a **removable module pylon, not model-default**, so the King gets its own
-  **`Retribution Combat SAR` payload** mounting both wing tanks (`{C130J_Ext_Tank_L}` Pylon 1 +
-  `{C130J_Ext_Tank_R}` Pylon 2, `resources/customized_payloads/C-130J-30.lua`) — without it the
-  King spawned clean / tankless (a G13 in-game finding, fixed 2026-06-25). (Loadout names resolve
-  `Retribution Combat SAR` → `Liberation Combat SAR` → empty; an airframe with no Combat SAR
-  payload just flies clean.)
-  Because the EW (`c130j`) plugin claims every C-130J-30 by airframe, the generator emits a
-  per-group deny-list (`_ew_excluded_c130j_groups` → `dcsRetribution.EwExcludedGroups`) of the
-  Combat SAR King C-130J-30 group names so the King flies clean while a co-present JAMMING C-130J
-  keeps its EW systems (see §15 EW de-conflict).
+**Survivor ADF beacon (fork addition, `game/missiongenerator/csarbeacon.py`)**
 
-### Rescue scoring (the gameplay-loop payoff)
+MOOSE `Ops.CSAR` already beacons every survivor — a looped `trigger.action.radioTransmission`
+from their position (`Moose.lua` `CSAR:_AddBeaconToGroup`), in the NDB band. Stock behaviour picks
+a **random** channel per survivor, which cannot be briefed: the kneeboard renders before the
+mission runs. So Python pins one channel for the whole mission, `OpsCSAR.lua` uses it in place of
+the random draw, and it prints on the kneeboard SAR line.
 
-The whole point of a rescue is to save the pilot, so the loop closes in the campaign model:
+- **260 kHz.** Inside MOOSE's own 200–999 kHz band on its 10 kHz grid, and clear of every entry on
+  that allocator's 59-entry navaid skip list. **310 and 320 kHz are both skip-listed** — the
+  obvious round numbers would have parked the briefed beacon on a real theater navaid.
+- Receivable by the whole rescue fleet: C-130J 2× ADF-462 (NDB), UH-1H ARN-83 (190–1750 kHz),
+  Mi-8MT ARK-9 (150–1290 kHz).
+- `tests/missiongenerator/test_csarbeacon.py` parses the skip list out of `Moose.lua` rather than
+  copying it, so a Moose update that adds a conflicting navaid fails CI instead of colliding.
 
-- **Lua** (`combatsar-config.lua`): FSM hooks `OnAfterBoarded` capture each onboard pilot's
-  **original ejected aircraft unit name** (MOOSE CSAR keeps it on the downed-pilot track and
-  carries it into `inTransitGroups`); `OnAfterRescued` — fired only on a successful **delivery
-  to a friendly field** — appends those names to the shared `combat_sar_rescues` global and
-  marks `dirty_state` so `dcs_retribution.lua` writes them into `state.json`. A helo shot down
-  with pilots aboard never reaches `Rescued`, so those pilots are (correctly) never credited.
-- **Python**: `StateData.combat_sar_rescues` parses the list (`debriefing.py`);
-  `MissionResultsProcessor.commit_air_losses` resolves each name through the unit map to its
-  loss and **skips `loss.pilot.kill()`** for it — the airframe is still attrited, the aviator
-  survives. **Fail-safe:** an empty/absent list is exactly today's behaviour (pilot dies).
+**There is no TACAN relay, and there cannot be one.** An earlier design had the King re-transmit
+the survivor's position as an air-to-air TACAN for the helos. It fails twice: the C-130J's
+AN/ARN-153 is receive-only against ground stations (DCS C-130J manual p150; the CNI-MU `TR-REC`
+control is the DME interrogation, not a beacon), and neither flyable rescue helo carries TACAN at
+all. Since all three airframes hear the NDB band, the relay was never needed.
 
-### Files
-
-| Layer | File |
-|---|---|
-| Flight type | `game/ato/flighttype.py` — `COMBAT_SAR` |
-| Airframes | rescuer **CH-47Fbl1** (+ AI `CH-47D` fallback) plus utility-helo rescuers **UH-60A/L, UH-1H, CH-53E, Mi-8** (so non-Chinook factions still field CSAR), and King **C-130J-30** (the only C-130) carry `Combat SAR` in `resources/units/aircraft/*.yaml`; door-gun loadout in `resources/customized_payloads/CH-47Fbl1.lua` (`Retribution Combat SAR`). EW de-conflict: `luagenerator._ew_excluded_c130j_groups` (per-group deny-list) |
-| Flight plan | `game/ato/flightplans/combatsar.py` (forward FLOT hold) — a **player-planned** COMBAT_SAR flight only; the auto-fragged orbit is retired. A **pilot-recovery-surge** package's plan anchors on its `PilotRecoveryZone` target instead of the front (same builder — the hold lands 10 NM friendly-side of the *evader*) |
-| Planning | **Player-plannable** off the FLOT (`game/theater/frontline.py` `mission_types` → COMBAT_SAR/SCAR). The standing-orbit auto-frag (`PlanCombatSar`/`PlanCombatSarSupport`/`combat_sar_targets`) was **deleted** in the 2026-07-06 on-demand rework |
-| Pilot recovery surge | `game/fourteenth/csar_surge.py` (`plan_pilot_recovery_surge`, hooked in `Coalition.plan_missions` BEFORE the commander — "drop everything"): the turn after a pilot goes MIA, ONE coordinated package is fragged at a `PilotRecoveryZone` (`game/theater/missiontarget.py`) centred on the evaders — required Jolly (1-ship, `preferred_type` the biggest CSAR helo squadron) + optional second Jolly (2+ evaders) / King C-130 / 2-ship Sandy (SCAR) / A2A escort — via the engine's own `PackageFulfiller` (ASAP, `ignore_range=True`, `purchase_multiplier=0`). AI COMBAT_SAR flights **air-start** (the existing `PackageBuilder` rule), so the op opens the mission on station; the package helo suppresses the on-demand clone as usual. **Gate (2026-07-17 squadron call, off the flown "1.4 h transit" Scenic Route Merged finding):** once per downed pilot — `DownedPilot.surge_turn` is stamped when the op plans (same-turn re-plans re-plan it; a later turn never re-surges; a failed plan doesn't stamp, so a helo bought later still surges). Gated `combat_sar_surge` (default ON, `enabled_when=combat_sar_persistent_pilots`; the CSAR settings live in the new Campaign Management → "Combat search & rescue" section). Tests `tests/fourteenth/test_csar_surge.py`; checklist G31 |
-| On-demand rescue | **Parked-first, clone-fallback.** `aircraftgenerator.py` — `_spawn_unused_for` collects BLUE CSAR-capable **parked untasked helos** (`mission_data.parked_rescue_helos`, real + in the `UnitMap` → tracked); `spawn_combat_sar_templates` folds them into `CombatSarTemplates` alongside a cold clone template (`create_combat_sar_template` in `flightgroupspawner.py`, the fallback). Plugin `commandeerParkedHelo` + `StartUncontrolled` launches a parked helo; falls back to SPAWN-cloning `heloTemplate`. Tests: `tests/missiongenerator/test_combat_sar_templates.py` |
-| Setting | `game/settings/settings.py` — `auto_combat_sar` (now drives the on-demand spawn, not an orbit) + `combat_sar_persistent_pilots` (MIA persistence, default ON) |
-| Persistent evaders | `game/fourteenth/downed_pilots.py` (`DownedPilot` ledger + `record_downed_pilots` + the depth-weighted `resolve_downed_pilots` + SITREP lines), `game/squadrons/pilot.py` (`PilotStatus.MIA`), `game/game.py` (`downed_pilots` + the `finish_turn` hook), `game/sitrep.py` (`pilots_mia`); plugin `syncSurvivorState` + `persistentSurvivors` respawn. Tests: `tests/fourteenth/test_downed_pilots.py`, `tests/lua/test_combatsar_ledger.py` |
-| King beacon | `game/missiongenerator/aircraft/flightdata.py` (`CombatSarKingBeacon`, TACAN-only), `flightgroupconfigurator.py` (`register_combat_sar_king`) |
-| Emit data | `game/missiongenerator/luagenerator.py` — `_generate_combat_sar` (rescueHelos / kings / pilotTemplate / **`autoSpawn`** + **`parkedHelos`** (preferred) + `heloTemplate`/`farp` (fallback) when auto-spawning). The pilot template uses `survivor_unit_type` — the first faction INFANTRY-class unit whose id names a *person* (soldier/infantry/paratrooper/insurgent), vanilla `Soldier M4` fallback — because the INFANTRY class also carries crew-served weapons and OIR's first pick was the 2B11, rendering every downed pilot as a mortar tube (2026-07-06 flown finding). Tests: `tests/missiongenerator/test_combat_sar_sandy_luadata.py` (gating + parked/clone emit + survivor) |
-| Kneeboard | `game/missiongenerator/kneeboard.py` — `CombatSarTaskPage` |
-| Scoring (Lua) | `resources/plugins/base/dcs_retribution.lua` (`combat_sar_rescues`/`combat_sar_captures`/`combat_sar_survivors` globals + `write_state`), `resources/plugins/combatsar/combatsar-config.lua` (CSAR bridge + `OnAfterBoarded`/`OnAfterRescued`) |
-| Scoring (Py) | `game/debriefing.py` (`StateData.combat_sar_rescues`/`_captures`/`_survivors`), `game/sim/missionresultsprocessor.py` (`commit_air_losses` spares rescued/captured/MIA pilots) |
-| Tests | `tests/test_combat_sar_scoring.py` |
-
-### Gotchas
-
-- **The SOF-recovery CASEVAC channel is gone** (removed 2026-07-01 with the dormant capture
-  economy, §15): the ledger tracks ejected pilots only; there is no `sofTeams` emission,
-  `SOFRESCUE` routing, or `combat_sar_sof_recoveries` global any more.
-- **No double ejection-handling.** The survivor ledger is the only ejection listener (CTLD's
-  handler is commented out, `CTLD.lua:8254`). The F10 "CSAR" menu shows on any
-  helo player, but pickups are gated to the Combat SAR rescue set.
-- **Blue-only.** The CSAR engine is built for `"blue"`; a red COMBAT_SAR would just fly an
-  inert orbit, so red is never auto-tasked.
-- **King ≠ tanker.** The C-130 cannot be a DCS aerial-refueling tanker, and the CH-47 couldn't
-  take its fuel anyway — the King is overhead presence / on-scene command, never wired to the
-  refueling system.
+**LARS** is upstream's F10 **"List Active CSAR"** (`Moose.lua:79680`), alongside Check Onboard,
+Request Signal Flare, Request Smoke and Request IR Strobe.
 
 ---
 
@@ -5699,8 +5609,8 @@ there are 0 `outPicture*` calls in MOOSE or any 414th plugin, vs 31 `outTextForG
 *per-pilot styled image card* is impossible in multiplayer — the info (callsign/task/field) differs
 per flight, and only the text functions can address one flight. The pro campaigns get the image look
 only because they are hand-built **single-flight** missions, where `outPicture`-to-all is that one
-pilot's card (and even Rampagers' nice PNGs are *briefing-screen* images; its in-game title is plain
-`outText`). Retribution missions are multi-flight, so the per-pilot card stays text.
+pilot's card (and even the best paid-campaign PNGs are *briefing-screen* images; their in-game
+title is plain `outText`). Retribution missions are multi-flight, so the per-pilot card stays text.
 
 **The Python/Lua split.** The emitter `game/missiongenerator/briefingluadata.py`
 (`populate_briefing_lua`, wired into `luagenerator.py`'s `generate_plugin_data` next to the other
@@ -6304,7 +6214,7 @@ data — and the generator fed it whatever fell out of the allocators: the boat 
 `0796 | CVN-71 Theodore Roosevelt` (the theater-unit id prefix leaking onto the Callsign
 line), TACAN channel **1X** with a `random.choice` ident that re-rolled every mission, ICLS
 channel 1, Link 4 parked on a random inter-flight UHF like 255.0, and a fresh random ATC
-frequency every single turn. The pro campaigns the 414th catalogs (Raven One's HOMEPLATE
+frequency every single turn. The pro campaigns the 414th catalogs (a paid FA-18C campaign's HOMEPLATE
 "Mother" card is the model) treat the boat's numbers as its identity: stable, hull-flavored,
 memorable.
 
@@ -6792,26 +6702,31 @@ the mod-off stripped-stores signature).
 
 ---
 
-## §72 — Carrier deck decorations (OCN 2 deck dressing)
+## §72 — Carrier deck decorations (campaign A deck dressing)
 
 **What it is.** Every Nimitz-family carrier (free Stennis + supercarrier CVN-71/72/73/75)
 gets its deck dressed with ship-linked static deck equipment and crew — tow tractors
 (AS32-31A/-32A), a P-25 crash truck, a CV-59 Hyster forklift, deck hands, and an
 AS32-36A crane in the **island street** (the clear staging strip alongside the island),
 plus the four-figure LSO team on the port-aft platform — so the boat reads like a working
-flight deck instead of an empty parking lot. The placements are **Sedlo authoring**:
-extracted from the 13 missions of the OCN 2 (Operation Cerberus North 2) campaign
-(`E:\DCS World\Mods\campaigns\FA-18C Operation Cerberus North 2`, the user's install),
-which dresses the Truman's deck in every mission. OCN's raw offsets put the cluster on
+flight deck instead of an empty parking lot. The placements are **the campaign author authoring**:
+extracted from the 13 missions of campaign A
+(`<DCS>\Mods\campaigns\<campaign A>`, the user's install),
+which dresses the Truman's deck in every mission. campaign A's raw offsets put the cluster on
 the angled-deck **foul-line strip** (rejected 2026-07-21); that fix shoved the cluster
 +30 m **forward** into the corral, but the forward corral overshot — the flown feedback
 (2026-07-27) was "generating in the **red** instead of the **blue**", i.e. pull it back
-aft and tuck it outboard against the island. `CORRAL_SHIFT` now lands the OCN arrangement
+aft and tuck it outboard against the island. `CORRAL_SHIFT` now lands the campaign A arrangement
 in the island street (~10 m aft of raw / ~5 m outboard of the old corral, preserving the
 relative layout, clear of every spot by ≥12 m — the min is 12.7 m at the six-pack row).
-The arrangement rotates between six curated variants (mission 3 / 6 / 9 / 10 / 11 / 12
-sets, incl. the M6/M9 crane) deterministically on (carrier, turn) — crc32 seeding, the
-§70 pattern — so re-generating a turn is stable but consecutive turns vary. User request
+The arrangement rotates between **ten** curated variants (missions 1 / 2 / 3 / 4 / 5 / 6 /
+9 / 10 / 11 / 12, incl. the M6/M9 crane) deterministically on (carrier, turn) — crc32
+seeding, the §70 pattern — so re-generating a turn is stable but consecutive turns vary.
+The campaign A mining was **completed 2026-08-07**: all 13 missions re-extracted with a lupa
+parser validated against the shipped literals first (12/12 offsets and angles reproduce
+mission 3 exactly), 238 ship-linked statics catalogued. Missions 7 and 8 clear the guard
+but were left unmined at 4 and 2 in-envelope items — too thin to read as a dressed deck,
+now a five-item curation floor with a test behind it. User request
 2026-07-18 ("apply them to ALL retribution carriers for flavor — BUT we need all of
 the parking spots still usable").
 
@@ -6820,16 +6735,36 @@ one.** The SC manual claims a blocked parking location is skipped (capacity loss
 **flown evidence says worse**: for late-activated groups (Retribution's dominant §64
 spawn path) DCS does NOT skip — it spawns the aircraft INTO the static (the CVN-73
 A-6-in-the-Seahawks clip, 2026-07-18). So the curation is an evidence-driven filter,
-not a copy, and "on a spot" is a hard never. Two envelopes are provably parking-free
+not a copy, and "on a spot" is a hard never.
+
+**The recovery-phase tier (2026-08-07, default OFF, `carrier_deck_decorations_recovery`).**
+The mirror of the launch-phase set, and the first §72 dressing that is *spawned* rather than
+placed. A real deck is re-spotted for recovery — landing area cleared, gear ranged forward
+onto the bow — which is what the DCS Supercarrier guide's "Static Object Safe Zones" slides
+encode: its Recovery column marks the bow and cat tracks safe while the angled deck must stay
+clear, and its Launch column marks the opposite. §72 had already shipped that split without
+knowing ED had drawn it. These placements are deliberately **absent from the `.miz`** — the
+bow stays a launch deck until launches are over — and the `deckdecor` plugin spawns them on
+the same trigger that strikes the launch set below, via MOOSE `SPAWNSTATIC:InitLinkToUnit`
+(the only runtime path that writes the three-level linked static; a plain
+`coalition.addStaticObject` would leave the gear behind as the boat steams on). This broke the plugin's
+despawn-only invariant, **deliberately and on an explicit call** — the carrier case is the one
+place the rule cannot hold, since gear ranged forward for recovery must not be on the bow
+during the launch cycle and so cannot be generated into the miz. The exception is scoped, not
+widened: one one-shot spawn per boat, on the same trigger as the strike-below, `pcall`-wrapped,
+skipped entirely when MOOSE is absent, and the despawn half runs regardless. Data is **nine rotating variants** drawn from two installed campaigns (source campaigns are called campaign A and campaign B rather than named — they are paid third-party products and the fork does not name them in its own docs). **Static aircraft are permitted in this tier only** (explicit call, 2026-08-07): the clipping that banned them was a placement problem, not an aircraft problem, and this tier only stands once launches are over — the permanent layout is still aircraft-free, and both halves are pinned by a test. `FOOTPRINT_EXTRA_M` gained six aircraft entries at roughly half each published fuselage length, and footprint-aware clearance then rejected 15 candidate placements outright. A second guard checks the footprint *edge* against the street box, since box disjointness only compares centres and a parked Tomcat reaches ~9.5 m aft of its own. **It is default-OFF because it is the least-evidenced tier in the
+feature**: `KNOWN_PARKING_SPOTS` holds 11 of the guide's 16 spots and the five it lacks are
+the bow-edge spots nearest this zone, so "clears every known spot" is not "clears every spot"
+here. Promoting it needs the bow spots measured (B49). Two envelopes are provably parking-free
 and every permanent placement lives inside them:
 
 - **LSO platform sponson** (x −134..−126, y −25..−18): off the deck surface; aircraft
-  physically cannot park there. OCN puts the LSO crew there in all 13 missions at
+  physically cannot park there. campaign A puts the LSO crew there in all 13 missions at
   byte-identical offsets.
 - **Island street** (envelope x −65..−30, y +10..+25): the strip between the landing-area
   foul line and the island, flanked by the six-pack row (y = +34) forward-inboard and the
   aft junkyard/El-3 spots (x < −98). The SC manual's 16-spot layout places no spot there,
-  none was ever observed there, and OCN dresses it in all 13 missions of a flyable
+  none was ever observed there, and campaign A dresses it in all 13 missions of a flyable
   campaign.
 
 The keep-out evidence: parking spawn spots measured from **Tacview recordings of flown
@@ -6842,14 +6777,14 @@ six-pack skip), and the bow-port helo spot (+58.5, −31.4) where the §21 rescu
 parks. `KNOWN_PARKING_SPOTS` + a 9 m clearance floor are embedded in the data module
 and a guard test enforces them against every table entry, so a future layout edit
 cannot silently eat a spot. **Not in the default layout:** the fantail/bow static
-aircraft (E-2C, S-3B, SH-60B — they sit on real parking real estate; Sedlo could
+aircraft (E-2C, S-3B, SH-60B — they sit on real parking real estate; the campaign author could
 afford the spots, we can't), the junkyard cranes (AS32-36A, unproven zone), and the
 port-quarter one-offs. Cats are also untouched — the user allowed blocking one, but a
 static on a cat is a player-taxi collision hazard while the AI clips through it anyway
 (no functional block), so nothing is gained.
 
 **No permanent static aircraft — the late-activation falsification (flown
-2026-07-18).** The tier briefly shipped OCN's starboard-aft look as *permanent*
+2026-07-18).** The tier briefly shipped campaign A's starboard-aft look as *permanent*
 statics (a folded-Seahawk pair on the junkyard spots + an E-2C/S-3B accent on the
 El-3 shoulder) under the SC manual's "a blocked parking location is skipped" claim —
 and the first flown mission **falsified that claim for Retribution's dominant spawn
@@ -6857,14 +6792,14 @@ path**: on a CVN-73 with 30 TOT-delayed (§64 late-activated) deck starts, DCS
 spawned an A-6E pair **straight into the Seahawk statics**. Late activations do not
 skip statics-obstructed spots. The permanent aircraft class was removed the same
 day; their positions are kept as **learned spot anchors** in `KNOWN_PARKING_SPOTS`
-(the junkyard pair ≈ spots 7/8 + the El-3 shoulder — OCN parks aircraft exactly on
+(the junkyard pair ≈ spots 7/8 + the El-3 shoulder — campaign A parks aircraft exactly on
 them, which is how the lesson was bought), and a guard test asserts the permanent
 layout never contains a Planes/Helicopters category static. The parked-aircraft
 look comes from Retribution's own real deck population — which the flown decks show
 is already rich.
 
 **The launch-phase corridor + the dynamic respot (the `deckdecor` plugin, same day).**
-The tier's first cut shipped OCN M8's round-down Hawkeye (−152.1, +5.4) statically and
+The tier's first cut shipped campaign A M8's round-down Hawkeye (−152.1, +5.4) statically and
 the user's screenshot caught it within the hour ("how can planes land with the E2
 there?"): it cleared every parking spot but stands 5.6 m tall and 17.6 m long
 essentially at the ramp crossing (the static E-2C renders **folded** — user-corrected
@@ -6930,7 +6865,7 @@ format, none fully covered by stock pydcs: `linkUnit` (carrier unit id) on the s
 group's first route point, `linkOffset = true` at group level (pydcs-native), and
 `offsets = {x, y, angle}` on the unit. `game/missiongenerator/carrierdeckdecor.py`
 subclasses `Static`/`StaticPoint` to add the missing two and builds one single-static
-group per decoration (the OCN convention); DCS re-derives linked positions from the
+group per decoration (the campaign A convention); DCS re-derives linked positions from the
 offsets every frame, so the statics ride the steaming boat. World x/y are still
 computed properly (ship position + rotated offset off the §65 BRC) so the miz reads
 sanely in the ME. Hooked in `GenericCarrierGenerator.generate()`'s flagship block
@@ -7456,6 +7391,39 @@ JOIN (its SEAD Escort loadout ARMs are package self-defense), and deliberately s
 winchester-RTB** — empty rails stay with the package; the jamming is the payload. Task priority
 orders preference (Growler 800 > Prowler 790). Loadout resolves "Retribution Escort Jammer"
 first, falling back to the SEAD Escort fit. Blue-only.
+
+**Which packages get one (reworked 2026-08-07; checklist B52).** Dumping a live save's ATO
+showed the distribution inverted: blue fragged two Escort Jammer flights and **both rode CH-47F
+air assaults** (Growlers from a base 89 nm away, joining ~15 min behind the helos at 21,000 ft,
+splitting for home on the second of the drop), while all seven DEAD packages — the tasking that
+exists to penetrate a live radar-SAM ring — flew with none. Four fixes:
+
+- **`PlanAirAssault` opts out** (`propose_common_escorts(jammer=False)`). Its
+  `preconditions_met` already requires a target area clear of radar-SAM threat, so an assault
+  never penetrates a ring, and §77's effect only pays off as the jammer closes on a live SAM.
+- **`PlanDead` opts in.** It does not use `propose_common_escorts`, so it was the one
+  `propose_flights` that never asked. Proposed on the same `EscortType.Jammer` trigger, after
+  its existing one-of-SEAD/SEAD_ESCORT choice.
+- **The formation-escort guard covers it.** `Squadron.can_auto_assign_mission` restricts a
+  helo-led package's escorts to helo or LHA-capable airframes; it read a hand-written
+  `[ESCORT, SEAD_ESCORT]` list, so `ESCORT_JAMMER` slipped through. It now reads
+  `task.is_escort_type`, which is exactly the three tasks that fly `EscortFlightPlan`, so the
+  rule is self-maintaining. Both dedicated jammers are carrier-capable but **not** LHA-capable,
+  so no helo-led package — CSAR included — can pull one. `SEAD_SWEEP`/`TARCAP` fly independent
+  routes and timing and stay unguarded on purpose.
+- **`PRUNABLE_ESCORTS`.** `ESCORT_JAMMER` was missing from the set of escorts a package may lose
+  without being scrubbed, so under COIN and Vietnam doctrine — which allow the tasking *and* set
+  `plan_strikes_without_full_escort` — an unavailable Growler killed the strike outright. The set
+  is now named in `packagefulfiller.py` with a test that derives the invariant from what the
+  planner actually proposes.
+
+Same pass: **`propose_common_escorts` asks for one SEAD flavour, not two.** `SEAD_ESCORT` and
+`SEAD_SWEEP` fire on the same `EscortType.Sead` trigger, so a threatened package drew both — four
+jets on one threat, on top of the A2A escort and the jammer, which put six escort aircraft around
+a two-ship Chinook insert. `SEAD_ESCORT` is kept because it is the one that actually escorts
+(`EscortFlightPlan`, on the package's join→split). This generalises the trim `PlanDead` already
+carried for itself. `PlanCas` still proposes the sweep directly, where an independent path ahead
+of the package is the point.
 
 **Runtime (`growler` plugin + `growlerluadata.py`).** The emitter lists each ESCORT_JAMMER
 flight (group name, side, player flag) and the package group names it protects

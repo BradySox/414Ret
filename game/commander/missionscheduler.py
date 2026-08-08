@@ -218,12 +218,6 @@ class MissionScheduler:
                 if departure_time is None:
                     continue
                 previous_aewc_end_time[package.target] = departure_time
-            elif package.primary_task is FlightType.SCAR:
-                # A Sandy rescue escort needs to be on station early, not spread
-                # across the whole turn (the else branch), which can push the TOT
-                # 30-45 min out. Task it as early as the flight can physically
-                # reach the area.
-                package.time_over_target = tot
             else:
                 # But other packages should be spread out a bit. Note that take
                 # times are delayed, but all aircraft will become active at
@@ -341,12 +335,12 @@ class MissionScheduler:
         Every package's earliest fixed-wing landing per fleet CP becomes an
         entry; only "spread" packages (the generic else-branch above) may be
         delayed -- CAP waves (coverage schedule wins), AEW&C (handoff-chained),
-        SCAR (on station ASAP), ASAP taskings, and any package with a player
-        flight are FIXED: they claim their recovery slot as-is and the movable
-        AI packages space around them. Delaying a package's TOT delays its
-        whole plan, so the derived landing time moves with it.
+        ASAP taskings, and any package with a player flight are FIXED: they
+        claim their recovery slot as-is and the movable AI packages space around
+        them. Delaying a package's TOT delays its whole plan, so the derived
+        landing time moves with it.
         """
-        immovable_types = {FlightType.AEWC, FlightType.SCAR}
+        immovable_types = {FlightType.AEWC}
         entries: list[tuple[int, dict[ControlPoint, datetime], bool]] = []
         packages: list[Package] = []
         for package in self.coalition.ato.packages:

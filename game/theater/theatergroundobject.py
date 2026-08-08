@@ -982,53 +982,6 @@ class DownedSofGroundObject(TheaterGroundObject):
         return iter(())
 
 
-class CapturedPilotGroundObject(TheaterGroundObject):
-    """SAVE-COMPAT TOMBSTONE for the shelved POW recovery raid.
-
-    The raid surface (this dynamic map objective + the ``CSAR`` raid flight type)
-    was shelved in the 2026-07-03 CSAR rescope: a captured pilot is still held as
-    a ``PendingPowRecovery`` (freed if the holding field falls, killed when the
-    abandon clock expires, draining political will meanwhile), but no recovery
-    raid is offered. The class remains only so pre-rescope saves unpickle;
-    ``purge_pow_objectives`` (game/pow_recovery.py) sweeps any pickled leftovers
-    out of the theater at turn initialization. Never created anew.
-    """
-
-    def __init__(
-        self,
-        name: str,
-        location: PresetLocation,
-        control_point: ControlPoint,
-        airframe_unit_name: str = "",
-    ) -> None:
-        super().__init__(
-            name=name,
-            category="captured_pilot",
-            location=location,
-            control_point=control_point,
-            sea_object=False,
-            task=None,
-        )
-        # The captured aviator's airframe DCS unit name (kept for unpickling).
-        self.airframe_unit_name = airframe_unit_name
-
-    @property
-    def symbol_set_and_entity(self) -> tuple[SymbolSet, Entity]:
-        return SymbolSet.LAND_UNIT, LandUnitEntity.UNSPECIFIED
-
-    @property
-    def capturable(self) -> bool:
-        return False
-
-    @property
-    def purchasable(self) -> bool:
-        return False
-
-    def mission_types(self, for_player: Player) -> Iterator[FlightType]:
-        # Tombstone: the recovery raid is shelved -- no tasking either side.
-        return iter(())
-
-
 class MotorpoolGroundObject(TheaterGroundObject):
     """A control point's not-deployed reserve armor, rendered as a stationary,
     strikeable vehicle park. Its .groups are populated ephemerally each mission

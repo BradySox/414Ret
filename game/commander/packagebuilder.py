@@ -89,43 +89,44 @@ class PackageBuilder:
                 squadron.coalition.game.settings,
                 self.laser_code_registry,
             )
-        # If this is a client flight, set the start_type again to match the configured default
+        # Now the roster exists, re-derive the start type: a client flight follows
+        # the player default, and some tasks (CSAR) have one of their own.
         # https://github.com/dcs-liberation/dcs_liberation/issues/1567
-        if (
-            squadron.location.required_aircraft_start_type is None
-            and flight.roster is not None
-            and flight.roster.player_count > 0
-        ):
-            flight.start_type = (
-                squadron.coalition.game.settings.default_start_type_client
+        # A base that dictates its own start type (carriers, off-map spawns) wins.
+        if squadron.location.required_aircraft_start_type is None:
+            settings = squadron.coalition.game.settings
+            has_players = flight.roster is not None and flight.roster.player_count > 0
+            flight.start_type = settings.start_type_for(
+                plan.task, has_players=has_players
             )
-        elif (
-            squadron.location.required_aircraft_start_type is None
-            and flight.flight_type is FlightType.COMBAT_SAR
-        ):
-            # A 24/7 pilot-rescue standing alert has to be on station before the
-            # first losses -- a slow helo spooling up at a rear field and transiting
-            # in never makes it in time (the 75 NM-from-the-downed-pilot case).
-            # Air-start the AI alert so it holds its forward orbit from t=0; a
-            # player-flown Combat SAR keeps the client default handled above.
-            flight.start_type = StartType.IN_FLIGHT
-        elif (
-            squadron.location.required_aircraft_start_type is None
-            and squadron.coalition.game.settings.opfor_air_start
-            and squadron.coalition.player.is_red
-        ):
-            # OPFOR-air-start: the enemy holds the air from t=0 instead of being
-            # caught spooling up on the ramp. Applies to every AI red flight.
-            flight.start_type = StartType.IN_FLIGHT
-        elif (
-            squadron.location.required_aircraft_start_type is None
-            and squadron.coalition.game.settings.support_air_start
-            and flight.flight_type
-            in (FlightType.AEWC, FlightType.REFUELING, FlightType.RECOVERY)
-        ):
-            # Air-start AWACS/tankers so they hold station from mission start rather
-            # than burning the first several minutes taxiing and climbing out.
-            flight.start_type = StartType.IN_FLIGHT
+            # The 414th air-start overrides sit UNDER that call, not beside it.
+            # Before upstream #929 they were `elif` arms behind the client-flight
+            # branch, so they only ever applied to AI flights and a player-crewed
+            # flight always kept its configured start type. Keeping them as sibling
+            # elifs after #929 made both unreachable (their guard re-tested the `if`
+            # above), silently killing two shipped features.
+            #
+            # CSAR is excluded deliberately: #929 gives it a dedicated
+            # `csar_start_type` that is documented to override the AI and player
+            # defaults, so a blanket air-start must not stomp it.
+            if (
+                not has_players
+                and plan.task is not FlightType.CSAR
+                and settings.opfor_air_start
+                and squadron.coalition.player.is_red
+            ):
+                # OPFOR-air-start: the enemy holds the air from t=0 instead of being
+                # caught spooling up on the ramp. Applies to every AI red flight.
+                flight.start_type = StartType.IN_FLIGHT
+            elif (
+                not has_players
+                and settings.support_air_start
+                and flight.flight_type
+                in (FlightType.AEWC, FlightType.REFUELING, FlightType.RECOVERY)
+            ):
+                # Air-start AWACS/tankers so they hold station from mission start
+                # rather than burning the first minutes taxiing and climbing out.
+                flight.start_type = StartType.IN_FLIGHT
         self.package.add_flight(flight)
         return True
 

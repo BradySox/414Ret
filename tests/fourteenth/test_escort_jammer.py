@@ -178,6 +178,176 @@ def test_escort_jammer_cap_zero_disables_auto_planning() -> None:
     assert not PackageFulfiller.can_plan_escort(stub, EscortType.Jammer)  # type: ignore[arg-type]
 
 
+def _proposed_tasks(task: object) -> list[FlightType]:
+    return [f.task for f in task.flights]  # type: ignore[attr-defined]
+
+
+def test_air_assault_does_not_propose_an_escort_jammer() -> None:
+    """An air assault never penetrates a radar-SAM ring (PlanAirAssault's
+    preconditions require a cleared objective), so it keeps the SEAD/A2A escorts
+    but not the jammer -- which would otherwise burn a scarce Growler and a slot
+    of the per-side cap that a DEAD package could use."""
+    from game.commander.tasks.primitive.airassault import PlanAirAssault
+
+    # get_flight_size() rolls the package size off the flight-size weights.
+    settings = SimpleNamespace(
+        fpa_2ship_weight=1, fpa_3ship_weight=0, fpa_4ship_weight=0
+    )
+    target = SimpleNamespace(
+        coalition=SimpleNamespace(game=SimpleNamespace(settings=settings))
+    )
+    task = PlanAirAssault(target=target)  # type: ignore[arg-type]
+    task.propose_flights()
+
+    tasks = _proposed_tasks(task)
+    assert FlightType.AIR_ASSAULT == tasks[0]
+    assert FlightType.ESCORT_JAMMER not in tasks
+    # The rest of the common escort set is untouched.
+    for expected in (FlightType.SEAD_ESCORT, FlightType.ESCORT):
+        assert expected in tasks
+
+
+def test_common_escorts_still_propose_the_jammer_by_default() -> None:
+    """Only the air assault opts out; every other propose_common_escorts caller
+    (strike, BAI, OCA, armed recon, motorpool, CSAR) still asks for one."""
+    from game.commander.tasks.primitive.strike import PlanStrike
+
+    task = PlanStrike(target=SimpleNamespace())  # type: ignore[arg-type]
+    task.propose_common_escorts()
+    assert FlightType.ESCORT_JAMMER in _proposed_tasks(task)
+
+
+def test_every_proposed_escort_is_prunable() -> None:
+    """A doctrine that flies unescorted (COIN/Vietnam) must be able to drop ANY
+    escort tasking it proposes. A task the planner proposes as an escort but that
+    is absent from PRUNABLE_ESCORTS turns "no escort was free" into "scrub the
+    whole package" -- the exact deadlock the doctrine flag exists to prevent.
+    §77's ESCORT_JAMMER was that hole: COIN allows the tasking and flies
+    unescorted, so an unavailable Growler killed the strike outright."""
+    from game.commander.packagefulfiller import PRUNABLE_ESCORTS
+    from game.commander.tasks.primitive.cas import PlanCas
+    from game.commander.tasks.primitive.strike import PlanStrike
+
+    proposed: set[FlightType] = set()
+
+    strike = PlanStrike(target=SimpleNamespace())  # type: ignore[arg-type]
+    strike.propose_common_escorts()
+    proposed.update(f.task for f in strike.flights)
+
+    cas = PlanCas(target=SimpleNamespace())  # type: ignore[arg-type]
+    cas.propose_flight(FlightType.TARCAP, 2, EscortType.AirToAir)
+    cas.propose_flight(FlightType.SEAD_SWEEP, 2)
+    proposed.update(f.task for f in cas.flights)
+
+    assert FlightType.ESCORT_JAMMER in proposed
+    assert (
+        proposed <= PRUNABLE_ESCORTS
+    ), f"escort taskings that would scrub their package: {proposed - PRUNABLE_ESCORTS}"
+
+
+def test_dead_proposes_an_escort_jammer() -> None:
+    """DEAD is the tasking §77 was built for -- the jammer's effect rises as it
+    closes on a live SAM, and a DEAD package flies straight at one. PlanDead does
+    not use propose_common_escorts, so it was the one propose_flights that never
+    asked: before this, the only jammers a turn produced rode helo packages."""
+    from game.commander.tasks.primitive.dead import PlanDead
+
+    for live_radar in (True, False):
+        target = SimpleNamespace(
+            alive_unit_count=lambda: 4,
+            has_live_radar_sam=live_radar,
+            control_point=SimpleNamespace(
+                coalition=SimpleNamespace(
+                    game=SimpleNamespace(
+                        settings=SimpleNamespace(autoplan_tankers_for_dead=False)
+                    )
+                )
+            ),
+        )
+        task = PlanDead(target=target)  # type: ignore[arg-type]
+        task.propose_flights()
+        tasks = _proposed_tasks(task)
+        assert tasks[0] is FlightType.DEAD
+        assert FlightType.ESCORT_JAMMER in tasks
+        # The one-SEAD-flavour rule PlanDead already had is untouched.
+        assert (FlightType.SEAD in tasks) is live_radar
+        assert (FlightType.SEAD_ESCORT in tasks) is not live_radar
+
+
+def test_common_escorts_ask_for_one_sead_flavour() -> None:
+    """SEAD_ESCORT and SEAD_SWEEP fire on the same EscortType.Sead trigger, so
+    proposing both put four jets on one threat. Keep the one that actually
+    escorts (EscortFlightPlan, on the package's join->split); PlanCas still asks
+    for the sweep directly where an independent path ahead is the point."""
+    from game.commander.tasks.primitive.strike import PlanStrike
+
+    task = PlanStrike(target=SimpleNamespace())  # type: ignore[arg-type]
+    task.propose_common_escorts()
+    tasks = _proposed_tasks(task)
+    assert FlightType.SEAD_ESCORT in tasks
+    assert FlightType.SEAD_SWEEP not in tasks
+    assert [t for t in tasks].count(FlightType.SEAD_ESCORT) == 1
+
+
+@pytest.mark.parametrize("variant", _DEDICATED_JAMMERS)
+def test_helo_package_takes_no_jet_escort_jammer(variant: str) -> None:
+    """The formation-escort guard (Squadron.can_auto_assign_mission) limits a
+    helo-led package to helo or LHA-capable escorts, because a plain fast jet
+    cannot hold formation on it. ESCORT_JAMMER flies the same EscortFlightPlan
+    but was missing from the old hand-written list, so a carrier-but-not-LHA
+    Growler could be fragged onto a CH-47 assault from 89 nm away."""
+    from game.squadrons.squadron import Squadron
+
+    jammer = AircraftType.named(variant)
+    assert jammer.capable_of(FlightType.ESCORT_JAMMER)
+    # The premise: both dedicated jammers are carrier-capable but not LHA-capable,
+    # so the guard's helo/LHA test is what excludes them.
+    assert not jammer.helicopter
+    assert not jammer.lha_capable
+
+    squadron = SimpleNamespace(
+        location=SimpleNamespace(cptype=SimpleNamespace(name="AIRBASE")),
+        aircraft=jammer,
+        can_auto_assign=lambda task: True,
+    )
+
+    def assign(task: FlightType, heli: bool) -> bool:
+        return Squadron.can_auto_assign_mission(
+            squadron,  # type: ignore[arg-type]
+            SimpleNamespace(),  # type: ignore[arg-type]
+            task,
+            size=2,
+            heli=heli,
+            this_turn=False,
+            ignore_range=True,
+        )
+
+    # A helo-led package takes none of the three formation escorts from a jet...
+    for task in (
+        FlightType.ESCORT_JAMMER,
+        FlightType.ESCORT,
+        FlightType.SEAD_ESCORT,
+    ):
+        assert not assign(task, heli=True), task
+        # ...but a jet-led one still does.
+        assert assign(task, heli=False), task
+
+    # The independent-path escorts fly their own route and timing, so they stay
+    # unguarded on purpose -- a jet may sweep ahead of a helo package.
+    for task in (FlightType.SEAD_SWEEP, FlightType.TARCAP):
+        assert not task.is_escort_type
+        assert assign(task, heli=True), task
+
+
+def test_coin_doctrine_flies_unescorted_and_allows_the_jammer() -> None:
+    """The pairing that made the hole live: COIN both allows ESCORT_JAMMER (no
+    tasking whitelist) and flies unescorted, so it reaches the prune branch."""
+    from game.data.doctrine import COIN_DOCTRINE
+
+    assert COIN_DOCTRINE.plan_strikes_without_full_escort
+    assert COIN_DOCTRINE.allows(FlightType.ESCORT_JAMMER)
+
+
 def test_radar_sam_threat_requests_the_jammer_escort() -> None:
     """check_needed_escorts marks Jammer alongside Sead on a radar-SAM route."""
     flight = SimpleNamespace(

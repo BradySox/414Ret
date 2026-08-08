@@ -509,7 +509,15 @@ class Squadron:
         if this_turn and not self.can_fulfill_flight(size):
             return False
 
-        if task in [FlightType.ESCORT, FlightType.SEAD_ESCORT]:
+        # The formation escorts -- ESCORT, SEAD_ESCORT and ESCORT_JAMMER, i.e. exactly
+        # the tasks that fly EscortFlightPlan and ride the package join->split. A plain
+        # fast jet cannot hold formation on a helo package, so a helo-led one takes only
+        # helos and the LHA-capable jets. Read off is_escort_type rather than a literal
+        # list so the next escort task added inherits the rule: ESCORT_JAMMER (§77) was
+        # missed by the old hand-written list, which is how a Growler 89 nm away ended
+        # up escorting a pair of Chinooks. Independent-path escorts (SEAD_SWEEP, TARCAP)
+        # fly their own route and their own timing, so they are deliberately unguarded.
+        if task.is_escort_type:
             if heli and not self.aircraft.helicopter and not self.aircraft.lha_capable:
                 return False
             if not heli and self.aircraft.helicopter:

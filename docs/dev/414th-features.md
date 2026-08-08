@@ -687,13 +687,41 @@ Changing a flight's cruise altitude used to mean editing every waypoint's `Alt (
 cell one at a time, and that cell's spin box stepped by the `QDoubleSpinBox` default of
 **1 ft** — useless arrows. Two fixes: (1) an `Altitude` block at the top of the
 Waypoints tab's action column — a 1000-ft-step spin box + **Apply to all** that writes one
-MSL altitude onto every *en-route* waypoint at once (`on_apply_bulk_altitude()`;
-`BULK_ALTITUDE_SKIP_TYPES` + the `RADIO` check exempt takeoff/landing/descent/AGL/Bullseye,
-so only cruise/patrol/ingress legs move; the spinner seeds from the highest planned
-en-route altitude). (2) the per-waypoint `Alt (ft)` cell editor now steps by 1000 ft and
-drops decimals. Per-waypoint editing is untouched, so a low-level ingress leg can still be
-hand-tuned after a bulk set. UI-only; no save-format or planner change. Upstreamed as
+altitude onto every flown waypoint at once (`on_apply_bulk_altitude()`). (2) the
+per-waypoint `Alt (ft)` cell editor now steps by 1000 ft and drops decimals. Per-waypoint
+editing is untouched, so a low-level ingress leg can still be hand-tuned after a bulk set.
+UI-only; no save-format or planner change. Upstreamed as
 [dcs-retribution#805](https://github.com/dcs-retribution/dcs-retribution/pull/805).
+
+**Which waypoints the bulk set moves** — reworked 2026-08-08 on upstream review of
+[#920](https://github.com/dcs-retribution/dcs-retribution/pull/920), which reported that
+the CAS FLOT boundaries never moved. The original filter was a skip-list of 13 waypoint
+types plus `alt_type != "RADIO"`, and that last rule was the defect: `waypointbuilder.cas()`
+hardcodes `RADIO` at any altitude, so the FLOT legs were always skipped — and since the
+planner marks **everything at or below `AGL_TRANSITION_ALT` (5,000 ft) RADIO, plus every
+helicopter leg**, `Apply to all` did nothing at all on a helo or a Vietnam low-level plan.
+The replacement (`bulk_editable()`) reads the waypoint's own planned altitude, which is the
+reviewer's suggested shape:
+
+- **Planned on the deck → stays on the deck.** Takeoff, landing, cargo stop, bullseye, an
+  on-map divert field and all three `TARGET_*` types are planner-seeded at 0 ft, so they
+  need no entry in any list.
+- **Planned at an altitude → moves.** Including the CAS FLOT legs, every AGL leg, and the
+  refuel / recovery-tanker legs (which is what #920's proposed opt-in checkbox existed to
+  arrange, so the checkbox was dropped).
+- `BULK_ALTITUDE_SKIP_TYPES` survives with **three** entries — `PICKUP_ZONE`,
+  `DROPOFF_ZONE`, `CSAR_PICKUP` — the ground points that carry a *non-zero* planned
+  altitude (the helo approach into an LZ). A type only needs naming there if its planned
+  altitude is non-zero.
+- **`alt_type` is normalised on write** (`bulk_alt_type()`), following waypointbuilder's own
+  rule: AGL at or below 5,000 ft and on helicopters, MSL above. Required, not cosmetic — the
+  `Alt Type` column is read-only (`QFlightWaypointList.py`), so leaving a route half AGL and
+  half MSL puts the flight at two real altitudes with no way for the player to reconcile it.
+- The spin box floors at **1,000 ft** (`BULK_ALTITUDE_FLOOR_FT`); 0 ft was reachable and
+  dropped the whole route to sea level. A helo's sub-1,000 ft cruise is set per-waypoint.
+
+Pinned in `tests/test_bulk_waypoint_altitude.py` (the two filter helpers are module-level
+functions so the rule is testable without building the widget).
 
 **Kneeboard consolidation + overflow pagination** (`game/missiongenerator/kneeboard.py`,
 `kneeboard_page.py`): kneeboards are built once per `.miz` by `KneeboardGenerator.generate()`,

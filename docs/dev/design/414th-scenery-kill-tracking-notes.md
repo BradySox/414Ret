@@ -260,7 +260,8 @@ the map shows it dead. That is why §88 ships default OFF with checklist row **B
 **The deeper tension, stated once so it is not rediscovered:** an object with no physical body
 probably cannot be killed, and an object that can be killed renders as a visible thing standing on
 the map building. There is no invisible-and-killable static. Any proxy design pays one of those two
-costs. §8's position matcher pays neither, which is why it is still the better idea.
+costs. §8's position matcher would pay neither — but §8 also shows it has no input today, so it is
+not the ready-made alternative it looks like.
 
 ### 5.3 Volume
 
@@ -391,46 +392,114 @@ setup and fail signatures; this is why each one is on the list.
    - Both present → `c_dead_zone` resolves by `OBJECT ID`, the shrink is harmless, close mode 3.
    - Only `Tank Factory` → the shrink is a real bug; fix is one line (keep the authored radius).
 
-**Also check `destroyed_objects_positions`** in the same `state.json`, for entries at the bombed
-buildings' coordinates. That is the one dependency of §8's position matcher, which is cheaper than
-this feature and needs no units at all. If it is populated, build the matcher next.
+**Do not re-run the `destroyed_objects_positions` check.** §8 settled it from two archived flown
+saves: scenery `S_EVENT_DEAD` fires, and the position record still never happens for buildings. The
+matcher has no input, and no sortie changes that.
 
 ---
 
-## 8. The alternative worth considering first: position matching
+## 8. Position matching — measured, and it does not work today
 
-The fork's Lua **already records the world position of every destroyed object**.
-`dcs_retribution.lua:247-266` writes `{x, y, z, type, orientation}` into
-`destroyed_objects_positions` for every `S_EVENT_DEAD` that is not a crash model.
+**This section was rewritten 2026-08-08 after the claims in it were checked against flown saves.
+The original version was wrong in a way that would have wasted the work. It is reconstructed at
+§8.4 so the mistake is not repeated.**
 
-That data reaches Python as `StateData.destroyed_statics` (`debriefing.py:381`) and is currently
-used for **one** thing: persisting carcasses so wrecks re-render next mission
-(`missionresultsprocessor.py:634` `record_carcasses`). It is never used for kill attribution.
+### 8.1 What the data says
 
-A matcher that says *"a destroyed object within N metres of this `SceneryUnit`'s zone centre means
-this target died"* would be:
+Two archived flown Red Tide saves, in `Saved Games\DCS\Retribution\Saves\Claude needs these\`:
 
-- immune to map-object-ID churn (failure mode 1),
-- immune to zone geometry and the 16 ft shrink (mode 3),
-- immune to culling, since it needs no generated trigger (mode 4),
-- zero new units, zero F10 clutter, no false-positive-from-splash problem,
-- ~30 lines in `debriefing.py`, plus a distance threshold to tune.
+| | M2 (2026-08-01) | M1 (2026-07-11) |
+|---|---:|---:|
+| `dead_events` entries | 4,809 | 3,419 |
+| of those, numeric map-object ids | 4,743 | 3,346 |
+| `destroyed_objects_positions` entries | 83 | 93 |
+| **buildings among those positions** | **0** | **0** |
 
-Its one dependency is that `S_EVENT_DEAD` fires for scenery objects — which test 2 in §7 settles,
-and which ED has broken before.
+`red_tide.miz` authors an `OBJECT ID` property on all **341** white zones. Cross-matching those
+against M2's `dead_events` gives **11 exact hits** — `Haina IADS CmdCenter Bldg`, `Power Hub 20-23`,
+`Rail Platform 29-34`. So:
 
-**Still worth building, and it is not either/or.** The proxy shipped first because §5.4 answered its
-one open question with hard evidence, and because it works whether or not scenery `S_EVENT_DEAD`
-fires. The matcher is cheaper and has no false-positive-from-splash problem, but it has a dependency
-the proxy does not: §7's `destroyed_objects_positions` check.
+- **Scenery `S_EVENT_DEAD` fires.** The handler runs, `getName()` returns the map-object id, and
+  `dcs_retribution.lua:248` records it. This needs no flight to establish; it is in the saves.
+- **The position record never happens for those objects.** All 83 M2 position entries are vehicles
+  and statics.
+- **The existing trigger caught all 11 as well** — every one of those zone *names* is also in
+  `dead_events`, written by `generate_on_dead_trigger_rule`'s `DoScript`. Both signals fired for
+  every scenery target killed in the only flown sample that contains any.
 
-All three signals — trigger, proxy, matcher — converge on the same `kill()` call and
-`clean_unit_list` dedups, so shipping two is strictly better than shipping one. Order of work after
-B53:
+### 8.2 Why the position record is missing
 
-- §7 q2 shows false positives → the proxy is wrong as built; the matcher becomes the primary path.
-- `destroyed_objects_positions` is populated → build the matcher regardless. ~30 lines.
-- §7 q4 fails → the one-line radius fix, independent of both.
+`dcs_retribution.lua:245-264`. The name is appended at **:248**, *before* the position block. Then
+four gates stand between the event and the append at :261:
+
+1. `event.initiator.getName` must exist (:245),
+2. the name must not be a player despawn (:247),
+3. `destruction.type ~= nil` (:257),
+4. the two crash-model string tests (:258-259).
+
+Gate 3 is the one that bites: `getTypeName()` returns nil for map buildings. The evidence is that
+**map objects with a type name do pass** — `CONCERTINA_WIRE_CRUSH` produced 28 position records in
+M2 and 20 in M1, and one entry typed `Haina` came through in M1. So `getPosition`, `getTypeName` and
+`mist.getHeading` all work on map objects generally; the buildings are filtered, not crashing.
+
+Not fully conclusive. The three calls at :249-255 are unguarded, and `mist.getHeading`
+(`mist_moose_shim.lua:163-175`) returns nil on a falsy position with no pcall
+(`mist_moose_shim.lua:755-763`), so a raise would also produce this signature — and would skip
+`dirty_state` at :262 as well.
+
+### 8.3 What that means for the matcher
+
+**The matcher has no input.** It cannot be built today at any line count, because the table it reads
+contains no buildings.
+
+Three further problems the original section did not raise, all still live if the input is ever fixed:
+
+- **Coordinate frame.** pydcs `Point` is 2-D `(x, y)`. DCS `getPosition().p` is 3-D with `y` as
+  altitude MSL. The mapping is Lua `x` → `Point.x`, Lua `z` → `Point.y`, Lua `y` discarded. Three
+  shipped sites already do this (`game.py`, `debriefing.py`, `missiongenerator.py`). Writing
+  `Point(entry["x"], entry["y"])` type-checks, compares northing against altitude, silently never
+  matches, and looks exactly like "the event doesn't fire".
+- **Credit-all-within-N over-credits.** An objective's scenery zones sit metres apart by
+  construction, so a radius rule marks neighbours dead too and `is_dead` trips early. Nearest-wins,
+  or point-in-polygon using the predicate already in `game/scenery_group.py`, avoids it.
+- **`LiveUnitIndex.occupied()` (`game/spatialindex.py`) returns a bool**, not a nearest neighbour.
+  Reusable only if you iterate zones and query, not the other way round.
+
+Two of the four advantages originally claimed do not hold either. Culling immunity is already closed
+fork-side (`tgogenerator.py:404-421`). "No false-positive-from-splash problem" is not supported — a
+distance threshold *is* the splash problem in different coordinates.
+
+### 8.4 The claim that was wrong, kept on the record
+
+> "`destroyed_objects_positions` already records the world position of every destroyed object […]
+> Its one dependency is that scenery `S_EVENT_DEAD` still fires, which B53's flight settles in the
+> same sortie."
+
+Both halves fail. "Every destroyed object" is false — four gates, and empirically zero buildings
+across two flown missions. The stated dependency was already answered before the sentence was
+written, and it was never the actual dependency: the event firing is necessary, not sufficient.
+
+The decision rule that followed it — *"`destroyed_objects_positions` is populated → build the
+matcher regardless"* — was the dangerous part. That table **is** populated. With vehicles. A
+superficial check of the file passes the test and gives the wrong answer.
+
+Only one thing is consumed only by `record_carcasses`, and that part was right:
+`StateData.destroyed_statics` (`debriefing.py:142`, parsed at `:314`) reaches exactly one consumer,
+`missionresultsprocessor.py:556`.
+
+### 8.5 If a second signal is still wanted, this is the order
+
+1. **Harden the Lua block.** pcall :249-255, record the destruction when `getTypeName()` is nil, and
+   stamp `destruction.id = name`. Small, testable in the existing `tests/lua/` harness, and worth
+   doing on its own merits because it also protects `dirty_state` at :262. It is the prerequisite
+   for anything downstream, and it produces the data that would settle this properly.
+2. **Then prefer an id-keyed match over a position match.** The 11 M2 hits prove the key is already
+   authored on every white zone (`OBJECT ID`) and already arrives in `dead_events`. Matching ids is
+   exact and needs no distance threshold at all — a few lines in `unitmap.py`. It inherits failure
+   mode 1 (ED churns object ids across map updates), so it is *not* the map-update-immune story
+   position matching was sold as. It is simply correct when the ids agree.
+3. **Weigh it honestly against doing nothing.** In the only flown sample that contains scenery
+   kills, the existing trigger caught 11 of 11. A third path would have added zero.
 
 ---
 
@@ -447,19 +516,19 @@ B53:
 | " | 798-851 | `generate_scenery_kill_proxy` — the §88 proxy + the unit rationale |
 | " | 841-852 | `generate_iads_command_unit` — the M4 stand-in |
 | `game/settings/settings.py` | — | `scenery_kill_proxies` (Features page → Strike accounting) |
-| `tests/missiongenerator/test_scenery_kill_proxy.py` | — | the §88 pins (7) |
+| `tests/missiongenerator/test_scenery_kill_proxy.py` | — | the §88 pins (6) |
 | `game/unitmap.py` | 162-173 | `add_theater_unit_mapping` (keyed on DCS unit name) |
 | " | 238-245 | `add_scenery` (keyed on trigger-zone name) |
 | `game/theater/iadsnetwork/iadsnetwork.py` | 46-66 | `dcs_name_for_group` |
 | `game/theater/iadsnetwork/iadsrole.py` | 73-99 | `for_category`, `participate` |
 | `game/missiongenerator/luagenerator.py` | 285 | emits `dcsGroupName` |
 | `game/debriefing.py` | 191-206 | `clean_unit_list` (dedup, int→str for map objects) |
-| " | 381 | `destroyed_statics` parse |
+| " | 142, 314 | `destroyed_statics` field + parse |
 | " | 626-706 | loss attribution; `untracked` bucket |
 | `game/sim/missionresultsprocessor.py` | 471-481 | `commit_ground_losses` |
-| " | 634-636 | `record_carcasses` |
+| " | 555-556 | `record_carcasses` — the only consumer |
 | `game/game.py` | 570-614 | un-cull zone list |
 | " | 700-745 | `position_culled`, `iads_considerate_culling` |
-| `resources/plugins/base/dcs_retribution.lua` | 247-266 | `S_EVENT_DEAD` → `dead_events` + positions |
+| `resources/plugins/base/dcs_retribution.lua` | 245-264 | `S_EVENT_DEAD` → `dead_events` + positions (§8: buildings are filtered out at :257) |
 | `resources/plugins/mantisiads/mantis-config.lua` | 252-365 | C2 watcher, `node_dead` |
 | `tools/check_scenery_targets.py` | — | authoring validator |

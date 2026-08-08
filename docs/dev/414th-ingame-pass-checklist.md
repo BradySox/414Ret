@@ -3916,10 +3916,15 @@ decorations toggle on) on a Nimitz-hull campaign, then fly or watch one recovery
   - **New Game or generation crashes with "Duplicate TGO unit".** The name-collision guard
     against `generate_iads_command_unit` broke — check the `" proxy"` suffix.
   - **Markers visible on the F10 map.** `hidden=True` was dropped or DCS ignores it for statics.
-- **The other half of the same flight:** while you are there, check `state.json` for entries in
-  `destroyed_objects_positions` at the bombed buildings' coordinates. That settles whether
-  scenery `S_EVENT_DEAD` still fires, which decides whether the position matcher (§88 "Deferred",
-  notes doc §8) is viable — the cheaper option that needs no extra units at all.
+- **Do not spend the flight on `destroyed_objects_positions`.** That question was settled from two
+  archived flown Red Tide saves (notes doc §8): scenery `S_EVENT_DEAD` fires — 11 authored
+  `OBJECT ID`s land in M2's `dead_events` — but zero buildings reach the position table, because
+  `getTypeName()` is nil for them and the Lua drops the record. No sortie changes that. This row is
+  only about the proxy.
+- **Worth knowing before you weigh the result:** in that same M2 sample the existing
+  `MapObjectIsDead` trigger caught all 11 scenery kills. So on a campaign where the stock path
+  already works, §88 adds nothing. Its value is on the campaigns and maps where the trigger misses,
+  which is what the Discord report was about — pick one of those to fly if you can.
 
 ### B48 — Naval station-keeping racetracks · §87 · ◐ PARTIAL (2026-08-05, flown Marianas 2027, Tacviews `Tacview-20260805-190738` / `-203549`, session `pr-merge-code-audit-7e8b4c`)
 

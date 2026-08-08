@@ -8718,12 +8718,18 @@ enough" as a possible **B53 finding**, not a design input. Volume is the reason 
 
 ### Deferred
 
-- **The position matcher — the better idea, and the one to build next.**
-  `destroyed_objects_positions` already records the world position of every destroyed object in
-  `dcs_retribution.lua` and is consumed only by `record_carcasses`. A distance matcher would need
-  no new units at all, so it pays neither of the proxy's structural costs (invisible-but-unkillable
-  vs killable-but-visible). It depends on scenery `S_EVENT_DEAD` firing, which the same in-game
-  pass settles.
+- **Harden the Lua destruction record — the prerequisite for anything else.** Measured against two
+  archived flown Red Tide saves (notes doc §8): scenery `S_EVENT_DEAD` **does** fire — 11 authored
+  `OBJECT ID`s appear in M2's `dead_events` — but **zero** buildings reach
+  `destroyed_objects_positions` across 83 + 93 records, because `getTypeName()` returns nil for them
+  and `dcs_retribution.lua:257` drops the entry. Recording it anyway, stamping the object id, and
+  pcall-ing the three unguarded calls at :249-255 is small, harness-testable, and also protects
+  `dirty_state` at :262.
+- **Then an id-keyed match, not a position match.** With the id stamped, matching it against the
+  zone's authored `OBJECT ID` is exact and needs no distance threshold. It inherits failure mode 1
+  (ED churns object ids across map updates), so it is not map-update-immune. Weigh it honestly: in
+  the only flown sample containing scenery kills, the existing trigger caught 11 of 11, so a third
+  path would have added zero.
 - **Merging the proxy with the IADS stand-in.** One static named `unit.unit_name` would satisfy
   MANTIS's `StaticObject.getByName(node .. " object")` lookup *and* track the kill, and would fix
   the notes doc §3.4 quirk where splash takes a C2 node offline. Not done here: it changes a flown

@@ -8626,6 +8626,106 @@ Files: `game/missiongenerator/tgogenerator.py` (`hold_station`, `_station_racetr
 Tests: `tests/missiongenerator/test_naval_station_keeping.py` (11). Checklist: **B46**.
 
 
+## §88 — Scenery strike-target kill proxies
+
+Read [414th-scenery-kill-tracking-notes.md](design/414th-scenery-kill-tracking-notes.md) first.
+It carries the full mechanism, the four failure modes, the campaign audit, and the alternatives
+this feature was chosen over.
+
+### The problem
+
+Retribution has two kill-tracking paths for strike targets and only one is reliable.
+
+| Target kind | Tracked by | Reliable |
+|---|---|---|
+| Spawned building statics | `S_EVENT_DEAD` matched on a DCS unit name Retribution minted | Yes |
+| Map scenery (real terrain buildings) | a `MapObjectIsDead` trigger per white zone | No |
+
+The second is evaluated by the sim against the terrain. It fails when a map update moved the
+object off its authored zone, when the object is not destructible, and when ED regresses
+scenery `S_EVENT_DEAD` outright — which they did in 2.9.7.58923. Both kinds coexist in most
+campaigns, which is why the reported symptom is "some strike targets register and some do not".
+
+### What this adds
+
+One `Fortification.Landmine` static per live `SceneryUnit`, at the zone position, hidden on the
+F10 map, registered in the unit map via `add_theater_unit_mapping`. Its death is name-matched at
+debrief exactly like a spawned building static.
+
+- The `MapObjectIsDead` trigger is **not** removed. The two signals are a union and
+  `clean_unit_list` dedups, so the proxy only adds kills that would otherwise be lost.
+- Dead scenery units get no proxy. A proxy spawned dead can never fire an event.
+- Proxies follow the scenery path's culling exemption. Culling them would reintroduce failure
+  mode 4 from the notes doc.
+- The IADS `Soldier_M4` stand-in is untouched. It is not registered in the unit map and does not
+  become a kill tracker; merging the two objects is deferred (below).
+
+### Why Landmine
+
+The unit choice was the open question in the notes doc. It is answered by evidence, not by
+picking from the unit list: **a shipped commercial campaign uses `Landmine` statics for exactly
+this job**. A paid FA-18C Syria campaign (campaign F) places them on the target buildings of a
+precision strike, named per aimpoint, and reads their deaths by name. Six of 23 installed
+campaigns place `Landmine` statics; three use them as named target proxies.
+
+What makes it the right unit:
+
+- Vanilla DCS, `dcs.statics.Fortification.Landmine`, no mod dependency.
+- Tiny, and no weapon, radar or crew, so it cannot participate in the mission it measures.
+- Scored as a small structure in DCS's own `scoredata.lua` (CP 0.4).
+
+`Soldier_M4`, the obvious alternative because the IADS path already spawns one, is disqualified:
+infantry hit points mean a stray burst or submunition credits an untouched building.
+
+### The trade-off, stated plainly
+
+The proxy dies independently of the building it stands for. Today's failure is a **false
+negative** — you flattened it and the campaign never heard. This trades that for a possible
+**false positive** — splash from a near miss kills the marker and credits a building that is
+still standing, which then renders intact next mission while the map shows it dead.
+
+That is why `scenery_kill_proxies` is **default OFF**. It ships behind a toggle with a checklist
+row, not as new default behaviour.
+
+### One proxy or a lattice — unresolved
+
+The source campaigns use two placement patterns, and the split is informative:
+
+| Pattern | Where they use it |
+|---|---|
+| One proxy per aimpoint | when the pilot is assigned that exact point |
+| A lattice of 5–12 inside a 9–16 m box | when the impact point is not known in advance |
+
+The observed lattices: 6 in an 11 × 10 m box, 7 in a 16 × 16 m box, and — in another campaign —
+12 in a ~15 m box, twice. Retribution is in the second case: the player picks their own aimpoint
+anywhere on the building. That is circumstantial evidence a single centre-of-zone proxy
+under-detects.
+
+This ships with **one** proxy per white zone anyway, for two reasons. The landmine's actual
+blast durability is unmeasured, so a lattice would be guessing at a multiplier; and the volume
+is already the feature's main cost — `red_tide` has 340 white zones, so ×6 would be ~2,000 extra
+statics per generated mission. Settle durability in the air (checklist row) before adding any.
+
+### Deferred
+
+- **The position matcher.** `destroyed_objects_positions` already records the world position of
+  every destroyed object in `dcs_retribution.lua` and is consumed only by `record_carcasses`.
+  A distance matcher would need no new units at all. It depends on scenery `S_EVENT_DEAD`
+  firing, which the same in-game pass settles.
+- **Merging the proxy with the IADS stand-in.** One landmine named `unit.unit_name` would
+  satisfy MANTIS's `StaticObject.getByName(node .. " object")` lookup *and* track the kill, and
+  would fix the notes doc §3.4 quirk where splash takes a C2 node offline. Not done here: it
+  changes a flown feature's behaviour, and this change is already the first unflown half.
+
+**NEW mission only**: generation-time, so existing saves pick it up on the next regeneration
+with no new game and no save migration.
+
+Files: `game/missiongenerator/tgogenerator.py` (`generate_scenery_kill_proxy`, and the gate in
+`generate`), `game/settings/settings.py` (`scenery_kill_proxies`).
+Tests: `tests/missiongenerator/test_scenery_kill_proxy.py` (6) plus the culling exemption in
+`tests/test_culling.py`. Checklist: **B53**.
+
+
 ## Unit-coverage sweep — 2026-08-04
 
 The §85 investigation raised an obvious follow-up from the DM: *"scrub my local install of all

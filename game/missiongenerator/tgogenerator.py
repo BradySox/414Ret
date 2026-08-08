@@ -419,6 +419,8 @@ class GroundObjectGenerator:
                     if isinstance(unit, SceneryUnit):
                         # Special handling for scenery objects: never culled.
                         self.add_trigger_zone_for_scenery(unit)
+                        if self.game.settings.scenery_kill_proxies:
+                            self.generate_scenery_kill_proxy(unit)
                         if (
                             self.game.settings.plugin_option("mantisiads")
                             and isinstance(group, IadsGroundGroup)
@@ -792,6 +794,49 @@ class GroundObjectGenerator:
         )
         t.actions.append(DoScript(script_string))
         self.m.triggerrules.triggers.append(t)
+
+    def generate_scenery_kill_proxy(self, unit: SceneryUnit) -> None:
+        """Spawn a registered stand-in so a scenery kill records at debrief.
+
+        Map buildings are tracked by the MapObjectIsDead trigger rule that
+        add_trigger_zone_for_scenery attaches. The sim evaluates that condition
+        against the terrain, and it does not always fire -- the object can have
+        moved off its authored zone in a map update, it can be non-destructible,
+        or ED can regress scenery S_EVENT_DEAD outright (they did in 2.9.7).
+        When it misses, the player flattens a building and the campaign never
+        hears about it.
+
+        This static is a real unit Retribution named itself, so its death is
+        name-matched at debrief exactly like a spawned building static -- the
+        path that cannot break (see the notes doc). Both signals converge on the
+        same TheaterUnit.kill() and clean_unit_list dedups, so the proxy only
+        ever adds kills that would otherwise be lost; it never takes one away.
+
+        Landmine is the stand-in a shipped campaign uses for this exact job.
+        It is vanilla, tiny, and carries no weapon, radar or crew of its own, so
+        it cannot participate in the mission it is measuring. Hidden on the F10
+        map: it is bookkeeping, and the scenery objective already draws its own
+        zone there.
+
+        The known trade-off is a false positive -- the proxy can die to splash
+        from a near miss and credit a building that is still standing. That is
+        why the setting is off by default. See
+        docs/dev/design/414th-scenery-kill-tracking-notes.md.
+        """
+        if not unit.alive:
+            # A proxy spawned dead can never contribute a kill event, and the
+            # destruction trigger rule already renders the rubble. Skipping keeps
+            # a worn-down campaign from carrying a proxy per dead building.
+            return
+        proxy = self.m.static_group(
+            country=self.country,
+            name=f"{unit.unit_name} proxy",
+            _type=Fortification.Landmine,
+            position=unit.position,
+            heading=unit.position.heading.degrees,
+            hidden=True,
+        )
+        self._register_theater_unit(unit, proxy.units[0])
 
     def generate_iads_command_unit(self, unit: SceneryUnit) -> None:
         # Creates a static Infantry Unit next to a scenery object. This is needed

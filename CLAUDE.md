@@ -103,8 +103,8 @@ Read before touching a campaign's `.yaml`, `.miz` or build tool.
   `414th-carrier-deck-decor-notes.md`
 - **Ground / frontline** — `414th-tic-dynamic-fronts-notes.md`
 - **Strike targets / BDA** — `414th-scenery-kill-tracking-notes.md` (why some scenery strike
-  targets never register as killed; the M4 IADS stand-in; the proxy-unit and position-matching
-  options)
+  targets never register as killed; the M4 IADS stand-in; the §88 Landmine proxy that shipped and
+  the position matcher still deferred)
 - **Planning / doctrine** — `414th-airwar-planner-consolidation-notes.md`,
   `414th-aircraft-task-rebalance-rubric.md`, `414th-victory-conditions-notes.md`,
   `414th-wing-growth-notes.md`, `414th-single-player-loop-notes.md`
@@ -327,6 +327,7 @@ linked design note.
 85. **SAM/missile battery support sections** — refuellers, power and transload in the faction's own kit.
 86. **GPS jamming** — satellite-guided weapons released inside the bubble land long.
 87. **Naval station-keeping racetracks** — anchored ovals so ships hold station under way.
+88. **Scenery strike-target kill proxies** — a registered marker on every map building, so the kill records when the terrain trigger misses.
 
 ### Retired, removed or shelved — do not restore
 

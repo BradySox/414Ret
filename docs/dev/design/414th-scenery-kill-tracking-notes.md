@@ -1,11 +1,16 @@
-# Scenery strike-target kill tracking — how it works, why it fails, and the proxy-unit option
+# Scenery strike-target kill tracking — how it works, why it fails, and the proxy unit
 
-**Status:** investigation note, 2026-08-08. No code changed. Written to answer the Discord question
-"why do some strike targets register as killed and some do not", and to scope the follow-on ask:
-reuse the IADS infantry stand-in as a general kill tracker for every strike target.
+**Status:** investigation note + the feature it produced (§88), 2026-08-08. Written to answer the
+Discord question "why do some strike targets register as killed and some do not", and to scope the
+follow-on ask: reuse the IADS infantry stand-in as a general kill tracker for every strike target.
 
-Read this before touching `add_trigger_zone_for_scenery`, `generate_iads_command_unit`, or the
-MANTIS C2 watcher.
+**What shipped:** `scenery_kill_proxies`, default OFF — one `Fortification.Landmine` static per live
+`SceneryUnit`, registered in the unit map, union with the existing trigger. §5 is the design, §5.4
+is the field evidence that settled the unit choice, §7 is what the in-game pass has to answer
+(checklist **B53**).
+
+Read this before touching `add_trigger_zone_for_scenery`, `generate_scenery_kill_proxy`,
+`generate_iads_command_unit`, or the MANTIS C2 watcher.
 
 ---
 
@@ -20,8 +25,12 @@ There are **two** kill-tracking mechanisms for strike targets, and only one of t
 
 Both kinds coexist in most campaigns. That alone produces "some track, some don't".
 
-The M4 infantryman is **not** part of either path. It is the MANTIS/Skynet in-mission liveness
-probe for C2 nodes. Details in §3.
+**§88 adds a third row**, off by default: a registered `Landmine` static per scenery unit, tracked
+by the reliable mechanism in row 1. It is a *union* with row 2, not a replacement — both signals
+converge on the same `kill()` and `clean_unit_list` dedups.
+
+The M4 infantryman is **not** part of any of these paths. It is the MANTIS/Skynet in-mission
+liveness probe for C2 nodes, and §88 deliberately left it alone. Details in §3.
 
 ---
 
@@ -175,34 +184,30 @@ keeping in mind before betting a design on that event.
 
 ---
 
-## 5. The ask: use a proxy unit to track every strike target
+## 5. The proxy unit — the ask, and what shipped
 
 The idea is sound in principle — the statics path (§2.1) is 100% reliable precisely because it
 tracks a unit Retribution spawned and named. Extending that to scenery targets means giving every
 `SceneryUnit` a real, registered proxy.
 
-### 5.1 What the change looks like
+**This is now built** (§88, `scenery_kill_proxies`, default OFF). §5.1–5.3 below are the design as
+scoped; §5.4 is the field evidence that answered §5.2's open question and decided the unit.
 
-Two edits, both small.
+### 5.1 What the change is
 
-**A. Spawn and register the proxy** — in `tgogenerator.py`, alongside `add_trigger_zone_for_scenery`:
+`generate_scenery_kill_proxy` in `tgogenerator.py`, called from `generate()` in the `SceneryUnit`
+branch alongside `add_trigger_zone_for_scenery`, gated on `scenery_kill_proxies`:
 
 ```python
-def generate_scenery_proxy(self, unit: SceneryUnit) -> None:
-    """A real, registered static standing in for a map building.
-
-    S_EVENT_DEAD on this unit is name-matched at debrief exactly like a spawned
-    building static, so the kill records even when MapObjectIsDead never fires.
-    """
-    proxy = self.m.static_group(
-        country=self.country,
-        name=f"{unit.unit_name} proxy",
-        _type=<see 5.2>,
-        position=unit.position,
-        heading=unit.position.heading.degrees,
-        dead=not unit.alive,
-    )
-    self.unit_map.add_theater_unit_mapping(unit, proxy.units[0])
+proxy = self.m.static_group(
+    country=self.country,
+    name=f"{unit.unit_name} proxy",
+    _type=Fortification.Landmine,
+    position=unit.position,
+    heading=unit.position.heading.degrees,
+    hidden=True,
+)
+self._register_theater_unit(unit, proxy.units[0])
 ```
 
 `add_theater_unit_mapping` takes a `TheaterUnit`, and `SceneryUnit` **is** one, so
@@ -210,14 +215,23 @@ def generate_scenery_proxy(self, unit: SceneryUnit) -> None:
 further changes. The existing `MapObjectIsDead` trigger stays — the two signals are a union, and
 `clean_unit_list` (`debriefing.py:191`) already dedups.
 
-**B. Keep it out of the IADS path's way.** `generate_iads_command_unit` already spawns a static
-named `unit.unit_name` for C2 scenery. Use a distinct name (`" proxy"` above) or the `unitmap`
-duplicate guard will raise. Better: for IADS nodes, register the **existing** soldier instead of
-adding a second object — one line, and it makes C2 nodes campaign-trackable for free.
+Four decisions worth recording, because each is a place a later edit could silently break it:
 
-### 5.2 The hard part: what unit to use
+- **The `" proxy"` suffix is load-bearing.** `generate_iads_command_unit` already spawns a static
+  named `unit.unit_name` for C2 scenery; pydcs names a static group's unit `"<group name> object"`,
+  so without the suffix the `unitmap` duplicate guard raises on every IADS scenery node. Pinned by
+  a test.
+- **Dead scenery units get no proxy.** A proxy spawned dead can never fire an event, and the
+  destruction trigger rule already renders the rubble.
+- **`hidden=True`.** It is bookkeeping, and the objective already draws its own F10 zone.
+- **The IADS soldier is left alone.** The tempting one-liner — register the existing soldier so C2
+  nodes become campaign-trackable for free — is *not* taken: §3.4's infantry hit points make it a
+  false-positive generator. Merging the two objects into one landmine would fix both, and is listed
+  as deferred work rather than done here, because it changes a flown feature.
 
-This is the whole design risk. The proxy dies independently of the building it represents.
+### 5.2 What unit to use — settled by §5.4
+
+This was the whole design risk, and it was open when this note was first written:
 
 | Choice | Problem |
 |---|---|
@@ -225,18 +239,69 @@ This is the whole design risk. The proxy dies independently of the building it r
 | A matching building static | Renders a second building inside the real one. Ugly, and DCS statics have their own HP unrelated to the map object's. |
 | A small durable static | Best compromise, but "durable" is not tunable per map object — Retribution has no idea how tough the real building is. |
 
-There is no unit type that matches an arbitrary map building's durability. **Every proxy design
-trades a false negative (today) for a false positive.** A false positive is arguably worse: the
+**Answered by §5.4: `Fortification.Landmine`.** Not picked from the unit list — it is what a shipped
+commercial campaign uses for this exact job, in three of the 23 installed campaigns. Vanilla, tiny,
+no weapon or radar or crew of its own, scored as a small structure in DCS's `scoredata.lua`
+(CP 0.4).
+
+What is **not** settled is the trade-off itself. No unit type matches an arbitrary map building's
+durability, so **every proxy design trades a false negative (today) for a false positive** — the
 campaign credits a strike that did not happen, and the building renders intact next mission while
-the map shows it dead.
+the map shows it dead. That is why §88 ships default OFF with checklist row **B53**.
 
 ### 5.3 Volume
 
-Proxies would be per **white zone**, not per objective. From §6: `red_tide` 340, Canary Islands 169,
+Proxies are per **white zone**, not per objective. From §6: `red_tide` 340, Canary Islands 169,
 `red_flag_81_2` 139, `exercise_quasar` 129, `operation_peace_spring` 128. A few hundred extra
-statics per generated mission on the big campaigns. Tolerable for DCS, but it is real F10 clutter
-and it fights the reason culling exists. Proxies must follow the fork's culling exemption
-(`tgogenerator.py:404-412`) or they reintroduce failure mode 4.
+statics per generated mission on the big campaigns. Tolerable for DCS, but it fights the reason
+culling exists. Proxies follow the fork's culling exemption (`tgogenerator.py:404-412`) — culling
+them would reintroduce failure mode 4. They spawn `hidden=True`, so they add nothing to the F10 map;
+the scenery objective already draws its own zone there.
+
+The number matters more than it looks, because of §5.4's lattice finding: any multiplier applies to
+these counts. 340 × 6 is ~2,000 extra statics on `red_tide` alone.
+
+### 5.4 Field evidence — a shipped campaign does exactly this
+
+Source: **campaign F**, a paid FA-18C Syria campaign in the DM's install, mission 11. Its target
+points are `Landmine` statics, and the DM's screenshot of one is what prompted this section.
+
+**What the miz contains.**
+
+- The object is `["type"] = "Landmine"`, `["shape_name"] = "landmine"`, category `Fortifications`,
+  spawned on the **red** (target-owning) side, one per aimpoint, named `TGT POINT 1/2/3`.
+- The miz has **`["trig"] = {}`, `["trigrules"] = {}`, `["goals"] = {}`** — no ME triggers, no
+  trigger zones, no goals at all. Mission logic lives in the encrypted campaign pak, which resolves
+  these statics **by name**.
+- Nothing else in the miz references them: not by `unitId`, not by `groupId`. Name is the entire
+  contract.
+
+That is §2.1's mechanism, chosen deliberately by someone shipping a commercial product, for the
+same reason: a name the author minted is the only handle that cannot be broken by the terrain.
+
+**How widely.** Scanning all 23 installed campaigns for `Landmine` statics: **6 place them, 3 use
+them as named target proxies.** (A fourth, unrelated use also turns up — four per mission named
+"Smoke Tower", effect anchors. The landmine is the general-purpose invisible-ish static.)
+
+**Placement — one per aimpoint, or a lattice.** This is the finding with design consequences.
+
+| Pattern | Where it is used | Observed |
+|---|---|---|
+| One proxy per aimpoint | the pilot is assigned that exact point | 3 singles on one building, 46–118 m apart, one per wingman |
+| A lattice inside a small box | the impact point is not known in advance | 6 in 11 × 10 m; 7 in 16 × 16 m; and in another campaign 12 in ~15 m, twice; 5 in ~9 m |
+
+The mission's own briefing confirms the split: each wingman is assigned a numbered target point on
+the primary building ("the centre of the southeast tower") and gets a single marker, while the
+secondary facilities — where the pilot picks their own aimpoint — get lattices.
+
+**What that implies for us.** Retribution is the second case: the player picks their own aimpoint
+anywhere on the building. The lattices are circumstantial evidence that **one marker at the zone
+centre may under-detect** — that a `Landmine` does not reliably die to a hit metres away.
+
+§88 ships **one** proxy per white zone anyway. The landmine's actual blast durability is unmeasured
+(it is not in any plain-text DCS DB), so a lattice would be guessing at a multiplier, and §5.3's
+volume is already the feature's main cost. **B53 measures durability in the air; the lattice is the
+fix if and only if the single marker survives a hit that kills the building.**
 
 ---
 
@@ -272,22 +337,30 @@ Everything else is 100% quad-authored, including `red_tide` (340), `operation_pe
 
 ---
 
-## 7. What to test before writing any code
+## 7. What the in-game pass has to answer
 
-Three tests, in order. Each is a single mission.
+Four questions, one mission, `scenery_kill_proxies` ON. Checklist row **B53** carries the full
+setup and fail signatures; this is why each one is on the list.
 
-1. **Settle failure mode 3.** Generate `syria_full_map`. Bomb the `Powerplant` objective (circular,
-   69.3 m authored → 4.87 m regenerated) and the `Tank Factory` objective in the same sortie. Check
-   `state.json` for both zone names in `dead_events`.
+1. **Does the proxy track?** Frag one strike against a scenery objective and one against a
+   spawned-building objective as a control. The scenery kill must survive the turn and still be
+   dead next mission, and `state.json` must carry `"<id> | <zone> proxy object"` in `dead_events`.
+2. **The false positive.** The one thing that can disqualify the feature. If a building you did not
+   hit reads destroyed, note the miss distance — that number decides between shipping it, shipping
+   it with a tougher unit, or dropping it for §8.
+3. **One marker or a lattice (§5.4).** If you flatten the building and it still does not record,
+   the marker survived the hit and the answer is the 5–12 pattern the source campaigns use, not a
+   different unit type.
+4. **Settle failure mode 3, since you are there.** Generate `syria_full_map` and bomb the
+   `Powerplant` objective (circular, 69.3 m authored → 4.87 m regenerated) and the `Tank Factory`
+   objective in the same sortie. Check `state.json` for both **zone** names in `dead_events` —
+   these are the trigger's own records, separate from the proxy's.
    - Both present → `c_dead_zone` resolves by `OBJECT ID`, the shrink is harmless, close mode 3.
    - Only `Tank Factory` → the shrink is a real bug; fix is one line (keep the authored radius).
-2. **Confirm the scenery `S_EVENT_DEAD` signal.** In the same run, check
-   `destroyed_objects_positions` in `state.json` for entries at the bombed buildings' coordinates.
-   If they are there, §8's position matcher is viable; if not, ED's 2.9.7 regression is still in
-   force and the proxy approach is the only option.
-3. **Proxy durability sanity check.** Before committing to a unit type, place a candidate static
-   next to a map building in the ME and strafe past it. If the proxy dies and the building does not,
-   that type is disqualified.
+
+**Also check `destroyed_objects_positions`** in the same `state.json`, for entries at the bombed
+buildings' coordinates. That is the one dependency of §8's position matcher, which is cheaper than
+this feature and needs no units at all. If it is populated, build the matcher next.
 
 ---
 
@@ -313,17 +386,18 @@ this target died"* would be:
 Its one dependency is that `S_EVENT_DEAD` fires for scenery objects — which test 2 in §7 settles,
 and which ED has broken before.
 
-**Recommendation:** run §7 tests 1 and 2 first. They cost one mission and they decide between three
-very different amounts of work:
+**Still worth building, and it is not either/or.** The proxy shipped first because §5.4 answered its
+one open question with hard evidence, and because it works whether or not scenery `S_EVENT_DEAD`
+fires. The matcher is cheaper and has no false-positive-from-splash problem, but it has a dependency
+the proxy does not: §7's `destroyed_objects_positions` check.
 
-- test 1 fails → one-line radius fix, probably solves most of it.
-- test 2 passes → build the position matcher (§8). Cheapest robust option.
-- test 2 fails → the proxy unit (§5) is the only reliable path, and §5.2's durability trade-off has
-  to be accepted deliberately.
+All three signals — trigger, proxy, matcher — converge on the same `kill()` call and
+`clean_unit_list` dedups, so shipping two is strictly better than shipping one. Order of work after
+B53:
 
-The proxy and the position matcher are not mutually exclusive with the existing trigger. All three
-signals converge on the same `kill()` call and `clean_unit_list` dedups, so shipping two is
-strictly better than shipping one.
+- §7 q2 shows false positives → the proxy is wrong as built; the matcher becomes the primary path.
+- `destroyed_objects_positions` is populated → build the matcher regardless. ~30 lines.
+- §7 q4 fails → the one-line radius fix, independent of both.
 
 ---
 
@@ -334,10 +408,13 @@ strictly better than shipping one.
 | `game/scenery_group.py` | 41 | blue/white zone pairing, category validation |
 | `game/theater/start_generator.py` | 669-706 | `SceneryUnit` creation from zones |
 | `game/theater/theatergroup.py` | 202-224 | `SceneryUnit`; `unit_name` = `"<id> | <name>"` |
-| `game/missiongenerator/tgogenerator.py` | 404-431 | `generate()`; fork's culling exemption |
-| " | 656-665 | `create_static_group` + unit-map registration |
-| " | 737-794 | scenery zone + `MapObjectIsDead` / destruction rules |
-| " | 796-807 | `generate_iads_command_unit` — the M4 stand-in |
+| `game/missiongenerator/tgogenerator.py` | 404-433 | `generate()`; fork's culling exemption; the §88 gate |
+| " | 658-667 | `create_static_group` + unit-map registration |
+| " | 739-796 | scenery zone + `MapObjectIsDead` / destruction rules |
+| " | 798-839 | `generate_scenery_kill_proxy` — the §88 Landmine proxy |
+| " | 841-852 | `generate_iads_command_unit` — the M4 stand-in |
+| `game/settings/settings.py` | — | `scenery_kill_proxies` (Features page → Strike accounting) |
+| `tests/missiongenerator/test_scenery_kill_proxy.py` | — | the §88 pins (7) |
 | `game/unitmap.py` | 162-173 | `add_theater_unit_mapping` (keyed on DCS unit name) |
 | " | 238-245 | `add_scenery` (keyed on trigger-zone name) |
 | `game/theater/iadsnetwork/iadsnetwork.py` | 46-66 | `dcs_name_for_group` |

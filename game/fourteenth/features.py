@@ -740,6 +740,15 @@ FEATURES: tuple[Feature, ...] = (
         "Naval station-keeping racetracks",
         87,
     ),
+    Feature(
+        # A registered Landmine static on every map-building strike target, so the
+        # kill records by name when the terrain-evaluated MapObjectIsDead trigger
+        # misses. Union with the existing trigger; never subtracts a kill.
+        "scenery_kill_proxies",
+        "Scenery strike-target kill proxies",
+        88,
+        settings_fields=("scenery_kill_proxies",),
+    ),
     # Always-on engine plugins — major 414th machinery documented in design notes
     # rather than a numbered "Features at a Glance" entry.
     Feature("mantis_iads", "MANTIS IADS engine", plugin_id="mantisiads"),

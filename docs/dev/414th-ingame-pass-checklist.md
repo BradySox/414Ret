@@ -3870,6 +3870,50 @@ decorations toggle on) on a Nimitz-hull campaign, then fly or watch one recovery
   full cold spawn and **measure the bow spots**, closing the 11-vs-16 gap. That is the gate on
   ever promoting this tier to default-ON.
 
+### B53 — Scenery strike-target kill proxies · §88 · ☐ UNTESTED (built 2026-08-08, default OFF)
+
+> **This row is the gate on the whole feature, not a polish check.** §88 trades today's false
+> negative (you flattened a map building and the campaign never heard) for a possible false
+> positive (splash from a near miss kills the marker and credits a building still standing).
+> Nothing offscreen can measure which way that lands — it depends on the `Landmine` static's
+> blast durability, which is unmeasured. The unit-map registration, the name-collision guard
+> against the IADS stand-in, the dead-unit skip and the setting gate are pinned in
+> `tests/missiongenerator/test_scenery_kill_proxy.py` (6); the culling exemption in
+> `tests/test_culling.py`.
+
+- **What CI cannot exercise:** whether the marker dies when the building dies, whether it
+  survives when the building survives, and whether one marker at the zone centre is enough. The
+  source campaigns scatter 5–12 markers in a 9–16 m box when the impact point is not known in
+  advance, which is Retribution's case — see §88 "One proxy or a lattice".
+- **Setup:** tick **Kill-tracking markers on map-building strike targets** (Settings → 414th
+  Features → Strike accounting). Generate a campaign with scenery strike targets — `syria_full_map`
+  is the cheapest, and its `Powerplant` objective is the circular-zone case the notes doc wants
+  settled anyway. Frag one strike against a scenery objective and one against a spawned-building
+  objective in the same sortie, as a control.
+- **Pass, all four:**
+  1. The scenery target's kill is recorded — it shows destroyed on the map after the turn ends,
+     and stays destroyed on the next mission.
+  2. `state.json` carries the proxy's DCS unit name (`"<id> | <zone> proxy object"`) in
+     `dead_events`.
+  3. Nothing that worked before stops working: the spawned-building control still records, and
+     any scenery target whose `MapObjectIsDead` trigger fires still records.
+  4. No visible clutter — the markers are hidden on the F10 map and are not visible from
+     pattern altitude.
+- **Fail signatures, and what each means:**
+  - **A building you did NOT hit reads destroyed.** The false positive. Note the miss distance
+    if you can — that number is the input to whether the feature ships at all, or ships with a
+    tougher unit.
+  - **You flattened the building and it still did not record.** The marker survived the hit.
+    That is the lattice case: one centre-of-zone marker is not enough, and the fix is the
+    5–12 pattern the source campaigns use, not a different unit.
+  - **New Game or generation crashes with "Duplicate TGO unit".** The name-collision guard
+    against `generate_iads_command_unit` broke — check the `" proxy"` suffix.
+  - **Markers visible on the F10 map.** `hidden=True` was dropped or DCS ignores it for statics.
+- **The other half of the same flight:** while you are there, check `state.json` for entries in
+  `destroyed_objects_positions` at the bombed buildings' coordinates. That settles whether
+  scenery `S_EVENT_DEAD` still fires, which decides whether the position matcher (§88 "Deferred",
+  notes doc §8) is viable — the cheaper option that needs no extra units at all.
+
 ### B48 — Naval station-keeping racetracks · §87 · ◐ PARTIAL (2026-08-05, flown Marianas 2027, Tacviews `Tacview-20260805-190738` / `-203549`, session `pr-merge-code-audit-7e8b4c`)
 
 > **Row created 2026-08-06.** §87 landed 2026-08-05 (PR #780) and shipped **without a row of its

@@ -185,6 +185,12 @@ Most of this is opt-in. Full list with toggles, defaults and known limitations:
   its normal profile and lands off the aimpoint — further off the deeper inside you released.
   Laser and TV weapons are unaffected; killing the jammer restores accuracy immediately. A
   scouted jamming area is briefed on the kneeboard, an unscouted one is not.
+- **Kill tracking for map-building targets** (off by default). Strike targets that are real
+  terrain buildings are tracked by a DCS trigger the sim checks against the map, and it does not
+  always fire — so a building you flattened can be standing again next turn. Turning this on puts
+  a hidden marker object on each one and records the kill when the marker dies. The two signals
+  are combined, so nothing that works today stops working. It is off until it has been flown: a
+  near miss can kill the marker and credit a building you did not destroy.
 - Also: strikeable motor pool depots, enemy comms jamming learned from a captured pilot,
   air-droppable minefields, a host F10 menu to scramble bandits.
 

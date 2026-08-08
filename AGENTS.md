@@ -102,6 +102,9 @@ Read before touching a campaign's `.yaml`, `.miz` or build tool.
 - **Naval** — `414th-cruise-missile-raids-notes.md`, `414th-naval-magazines-notes.md`,
   `414th-carrier-deck-decor-notes.md`
 - **Ground / frontline** — `414th-tic-dynamic-fronts-notes.md`
+- **Strike targets / BDA** — `414th-scenery-kill-tracking-notes.md` (why some scenery strike
+  targets never register as killed; the M4 IADS stand-in; the proxy-unit and position-matching
+  options)
 - **Planning / doctrine** — `414th-airwar-planner-consolidation-notes.md`,
   `414th-aircraft-task-rebalance-rubric.md`, `414th-victory-conditions-notes.md`,
   `414th-wing-growth-notes.md`, `414th-single-player-loop-notes.md`

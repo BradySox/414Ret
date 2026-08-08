@@ -173,14 +173,43 @@ Ranked by how likely they are to explain the Discord reports.
    `OBJECT ID` properties. Syria's `power_plant_01` is authored at **69.3 m** and regenerates at
    4.87 m. Whether this matters depends on whether DCS's `c_dead_zone` resolves by geometry or by
    the zone's `OBJECT ID` property — **unresolved, see §7 for the test**.
-4. **Culling deletes the tracking trigger — upstream only.** Upstream's `generate()` opens with
-   `if self.culled: return` **before** the scenery block, so a culled objective gets no zone and no
-   trigger, while the map building stays bombable. The fork fixed this (`tgogenerator.py:404-412`);
-   upstream [PR #873](https://github.com/dcs-retribution/dcs-retribution/pull/873) is still an open
-   draft. **Narrow in practice:** the un-cull list (`game.py:570-614`) includes every non-BARCAP
-   package target at a 100 km radius, so a target you were fragged against is always un-culled.
-   This only bites opportunity kills and deep-rear targets, and only with `perf_culling` on
-   (default `False` on both sides).
+4. **Culling deletes the tracking trigger — upstream only, and NOT a defect. Settled 2026-08-08:
+   upstream is right and this row is listed here only so it is not re-raised.** Upstream's
+   `generate()` opens with `if self.culled: return` **before** the scenery block, so a culled
+   objective gets no zone and no trigger while the map building stays bombable, and the kill is
+   never recorded. The fork exempts the scenery apparatus from culling
+   (`tgogenerator.py:404-421`); the carve of that exemption,
+   [PR #873](https://github.com/dcs-retribution/dcs-retribution/pull/873), was **self-closed
+   2026-07-21**.
+
+   Two maintainer objections, and both hold:
+
+   - **Starfire13, in review on the PR itself:** "any map object strike target in a culled region
+     that is the mission objective of a package is not actually culled." Confirmed from the code.
+     `compute_unculled_zones` (`game.py:875-955`) adds **every non-BARCAP package target** as a
+     culling zone, and `position_culled` (`game.py:1048-1059`) spares anything within
+     `perf_culling_distance` — **100 km** by default. A target you were fragged against, and every
+     air defence within 100 km of it, is always generated.
+   - **The primary dev, 2026-08-08:** *"if you cull the map you shouldn't be able to strike a
+     strike target in a culled area. That culled area probably had air defenses to protect the
+     strike target and you technically cheated by culling and then striking the culled area."*
+
+   The second follows from the first. Since a fragged target is never culled, the **only** scenery
+   this code path can reach is more than 100 km from every package target, every front line and
+   every carrier — a deep-rear opportunity kill against a building whose defences were deleted for
+   frame rate. Recording that kill pays out on the exploit. Dropping it does not. Upstream's
+   behaviour is correct, however it was arrived at.
+
+   **The fork keeps its exemption** (call 2026-08-08) — `perf_culling` is default `False` on both
+   sides, so it almost never fires, and consistency between what the player sees collapse and what
+   the campaign records is worth more to a squadron campaign than closing an exploit nobody is
+   running. Do not re-carve it.
+
+   **One separable half, not an exploit and still unfixed upstream:** the same early return also
+   skips `generate_destruction_trigger_rule`, so scenery destroyed in an *earlier* turn renders
+   **intact** in any culled region. The player sees a building they legitimately flattened standing
+   again, and bombing it now does nothing at all. That is a straight defect and independent of the
+   kill-credit argument. Not raised while the upstream PR freeze is on.
 
 Also relevant, and outside our control: ED broke `S_EVENT_DEAD` for scenery objects in
 **2.9.7.58923** (map buildings assigned as zones stopped being detected when destroyed). Worth
@@ -278,9 +307,10 @@ not the ready-made alternative it looks like.
 Proxies are per **white zone**, not per objective. From §6: `red_tide` 340, Canary Islands 169,
 `red_flag_81_2` 139, `exercise_quasar` 129, `operation_peace_spring` 128. A few hundred extra
 statics per generated mission on the big campaigns. Tolerable for DCS, but it fights the reason
-culling exists. Proxies follow the fork's culling exemption (`tgogenerator.py:404-412`) — culling
-them would reintroduce failure mode 4. They spawn `hidden=True`, so they add nothing to the F10 map;
-the scenery objective already draws its own zone there.
+culling exists. **Proxies would have to be culled, not exempted** — §4 mode 4 settled that a kill in
+a culled region should not be credited at all, and a proxy standing in a region whose air defences
+were deleted for frame rate is the exploit in object form. They would spawn `hidden=True`, so they
+add nothing to the F10 map; the scenery objective already draws its own zone there.
 
 The number matters more than it looks, because of §5.4's lattice finding: any multiplier applies to
 these counts. 340 × 6 is ~2,000 extra statics on `red_tide` alone.
@@ -469,9 +499,11 @@ Three further problems the original section did not raise, all still live if the
 - **`LiveUnitIndex.occupied()` (`game/spatialindex.py`) returns a bool**, not a nearest neighbour.
   Reusable only if you iterate zones and query, not the other way round.
 
-Two of the four advantages originally claimed do not hold either. Culling immunity is already closed
-fork-side (`tgogenerator.py:404-421`). "No false-positive-from-splash problem" is not supported — a
-distance threshold *is* the splash problem in different coordinates.
+Two of the four advantages originally claimed do not hold either. **Culling immunity is not an
+advantage at all** — §4 mode 4 settled that a kill in a culled region should not be credited, so a
+matcher that works through culling is crediting the exploit, and it would need a `position_culled`
+guard of its own. "No false-positive-from-splash problem" is not supported — a distance threshold
+*is* the splash problem in different coordinates.
 
 ### 8.4 The claim that was wrong, kept on the record
 

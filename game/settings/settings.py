@@ -730,9 +730,6 @@ FEATURE_GATE_FIELDS: dict[str, list[str]] = {
         "comint_collection",  # §70
         "red_comms_net",  # §70
     ],
-    "Strike accounting": [
-        "scenery_kill_proxies",  # §88
-    ],
     "Battlefield life": [
         "ambient_supply_convoys",  # §50
         "convoy_ambush",  # §50
@@ -2892,23 +2889,6 @@ class Settings:
         detail=(
             "The number of observer slots to generate for each side. "
             'Use this to allow spectators when disabling "Allow external views".'
-        ),
-    )
-    scenery_kill_proxies: bool = boolean_option(
-        "Kill-tracking markers on map-building strike targets",
-        page=MISSION_GENERATOR_PAGE,
-        section=GAMEPLAY_SECTION,
-        default=False,
-        detail=(
-            "Strike targets that are real map buildings are tracked by a DCS "
-            "trigger the sim checks against the terrain, and it does not always "
-            "fire -- so a building you flattened can be standing again next turn. "
-            "This puts a small marker object on each one and records the kill when "
-            "that marker dies, the same way spawned buildings are already tracked. "
-            "The two signals are combined, so nothing that works today stops "
-            "working. Trade-off: a near miss can kill the marker, crediting a "
-            "building you did not actually destroy. Off by default until it has "
-            "been flown."
         ),
     )
     ground_start_ai_planes: bool = boolean_option(

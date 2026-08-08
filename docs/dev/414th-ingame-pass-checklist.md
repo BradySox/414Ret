@@ -3870,62 +3870,6 @@ decorations toggle on) on a Nimitz-hull campaign, then fly or watch one recovery
   full cold spawn and **measure the bow spots**, closing the 11-vs-16 gap. That is the gate on
   ever promoting this tier to default-ON.
 
-### B53 — Scenery strike-target kill proxies · §88 · ☐ UNTESTED (built 2026-08-08, default OFF)
-
-> **This row is the gate on the whole feature, not a polish check.** §88 trades today's false
-> negative (you flattened a map building and the campaign never heard) for a possible false
-> positive (splash from a near miss kills the marker and credits a building still standing).
-> Nothing offscreen can measure which way that lands — it depends on the proxy static's blast
-> durability relative to the building it stands for, which is unmeasured and was chosen by
-> judgement. **First question of the flight is whether the marker dies at all.** The unit-map registration, the name-collision guard
-> against the IADS stand-in, the dead-unit skip and the setting gate are pinned in
-> `tests/missiongenerator/test_scenery_kill_proxy.py` (6); the culling exemption in
-> `tests/test_culling.py`.
-
-- **What CI cannot exercise:** whether the marker dies when the building dies, whether it
-  survives when the building survives, and whether one marker at the zone centre is enough. The
-  source campaigns scatter 5–12 markers in a 9–16 m box when the impact point is not known in
-  advance, which is Retribution's case — but those markers are positions, not durability tests,
-  so treat that as a hypothesis to check, not a known. See §88 "One proxy or a lattice".
-- **Setup:** tick **Kill-tracking markers on map-building strike targets** (Settings → 414th
-  Features → Strike accounting). Generate a campaign with scenery strike targets — `syria_full_map`
-  is the cheapest, and its `Powerplant` objective is the circular-zone case the notes doc wants
-  settled anyway. Frag one strike against a scenery objective and one against a spawned-building
-  objective in the same sortie, as a control.
-- **Pass, all four:**
-  1. The scenery target's kill is recorded — it shows destroyed on the map after the turn ends,
-     and stays destroyed on the next mission.
-  2. `state.json` carries the proxy's DCS unit name (`"<id> | <zone> proxy object"`) in
-     `dead_events`.
-  3. Nothing that worked before stops working: the spawned-building control still records, and
-     any scenery target whose `MapObjectIsDead` trigger fires still records.
-  4. No visible clutter — the markers are hidden on the F10 map and are not visible from
-     pattern altitude.
-- **Fail signatures, and what each means:**
-  - **Nothing ever records, on any target, however hard you hit it.** The marker cannot be
-    killed. That kills the whole approach, not the unit choice — go build the position matcher
-    instead. This is the **first** thing to rule out: the originally-chosen unit (`Landmine`) was
-    dropped pre-flight on exactly this risk, and `Electric_power_box` is a judgement call, not a
-    measurement.
-  - **A building you did NOT hit reads destroyed.** The false positive. Note the miss distance
-    if you can — that number is the input to whether the feature ships at all, or ships with a
-    tougher unit.
-  - **You flattened the building and it still did not record, but other targets do record.** The
-    marker survives hits that kill the building. Then it is the lattice case: one centre-of-zone
-    marker is not enough, and the 5–12 pattern the source campaigns use is the shape to try.
-  - **New Game or generation crashes with "Duplicate TGO unit".** The name-collision guard
-    against `generate_iads_command_unit` broke — check the `" proxy"` suffix.
-  - **Markers visible on the F10 map.** `hidden=True` was dropped or DCS ignores it for statics.
-- **Do not spend the flight on `destroyed_objects_positions`.** That question was settled from two
-  archived flown Red Tide saves (notes doc §8): scenery `S_EVENT_DEAD` fires — 11 authored
-  `OBJECT ID`s land in M2's `dead_events` — but zero buildings reach the position table, because
-  `getTypeName()` is nil for them and the Lua drops the record. No sortie changes that. This row is
-  only about the proxy.
-- **Worth knowing before you weigh the result:** in that same M2 sample the existing
-  `MapObjectIsDead` trigger caught all 11 scenery kills. So on a campaign where the stock path
-  already works, §88 adds nothing. Its value is on the campaigns and maps where the trigger misses,
-  which is what the Discord report was about — pick one of those to fly if you can.
-
 ### B48 — Naval station-keeping racetracks · §87 · ◐ PARTIAL (2026-08-05, flown Marianas 2027, Tacviews `Tacview-20260805-190738` / `-203549`, session `pr-merge-code-audit-7e8b4c`)
 
 > **Row created 2026-08-06.** §87 landed 2026-08-05 (PR #780) and shipped **without a row of its

@@ -1,20 +1,20 @@
 # Scenery strike-target kill tracking — how it works, why it fails, and the proxy unit
 
-**Status:** investigation note + the feature it produced (§88), 2026-08-08. Written to answer the
-Discord question "why do some strike targets register as killed and some do not", and to scope the
+**Status:** investigation note, 2026-08-08. **No code changed.** Written to answer the Discord
+question "why do some strike targets register as killed and some do not", and to scope the
 follow-on ask: reuse the IADS infantry stand-in as a general kill tracker for every strike target.
 
-**What shipped:** `scenery_kill_proxies`, default OFF — one `Fortification.Electric_power_box`
-static per live `SceneryUnit`, registered in the unit map, union with the existing trigger. §5 is
-the design; **§5.4 is the field evidence, including the reading of it that was wrong** (`Landmine`
-is a decal, not a kill tracker); §7 is what the in-game pass has to answer (checklist **B53**).
+**The conclusion, up front: the reported failure was never reproduced.** In the only flown sample
+that contains scenery kills, the stock `MapObjectIsDead` trigger caught **11 of 11** (§8.1). A proxy
+feature was designed, built and **reverted** on that basis — §5 keeps the design and the reasons. The
+position matcher was measured and **has no input today** — §8.
 
-**The unit is a judgement call, not a measurement.** Nothing in this note establishes that any
-static dies when the map building under it dies. B53 is the gate, and its first question is whether
-the marker dies at all.
+What this note is worth keeping for: the mechanism end to end (§2), what the M4 infantryman actually
+is (§3), the four failure modes (§4), the 73-campaign audit (§6), and two measurements taken from
+archived flown saves that cost nothing to have made (§8.1).
 
-Read this before touching `add_trigger_zone_for_scenery`, `generate_scenery_kill_proxy`,
-`generate_iads_command_unit`, or the MANTIS C2 watcher.
+Read this before touching `add_trigger_zone_for_scenery`, `generate_iads_command_unit`, the MANTIS
+C2 watcher, or before proposing a proxy unit — §5.2 and §5.4 will save you the round trip.
 
 ---
 
@@ -29,12 +29,12 @@ There are **two** kill-tracking mechanisms for strike targets, and only one of t
 
 Both kinds coexist in most campaigns. That alone produces "some track, some don't".
 
-**§88 adds a third row**, off by default: a registered small static per scenery unit, tracked
-by the reliable mechanism in row 1. It is a *union* with row 2, not a replacement — both signals
-converge on the same `kill()` and `clean_unit_list` dedups.
+A third row — a registered static per scenery unit, tracked by the reliable mechanism in row 1 —
+was built and reverted. It works in principle and the design is preserved in §5, but no observed
+failure justified it: see §8.1.
 
-The M4 infantryman is **not** part of any of these paths. It is the MANTIS/Skynet in-mission
-liveness probe for C2 nodes, and §88 deliberately left it alone. Details in §3.
+The M4 infantryman is **not** part of either path. It is the MANTIS/Skynet in-mission liveness probe
+for C2 nodes. Details in §3.
 
 ---
 
@@ -188,25 +188,34 @@ keeping in mind before betting a design on that event.
 
 ---
 
-## 5. The proxy unit — the ask, and what shipped
+## 5. The proxy unit — designed, built, reverted
 
 The idea is sound in principle — the statics path (§2.1) is 100% reliable precisely because it
 tracks a unit Retribution spawned and named. Extending that to scenery targets means giving every
 `SceneryUnit` a real, registered proxy.
 
-**This is now built** (§88, `scenery_kill_proxies`, default OFF). §5.1–5.3 below are the design as
-scoped; §5.4 is the field evidence that answered §5.2's open question and decided the unit.
+**It was built as §88 (`scenery_kill_proxies`, default OFF) and reverted the same day.** Not because
+the design is wrong. Because no observed failure justified it: the reported symptom was never
+reproduced, and in the only flown sample containing scenery kills the stock trigger caught 11 of 11
+(§8.1). Shipping unvalidated machinery — a settings field, a registry entry, a checklist row, and a
+marker unit chosen by judgement — for a failure that cannot be demonstrated was the wrong trade.
 
-### 5.1 What the change is
+§5.1–5.3 are the design as scoped, kept so a future attempt starts from here. §5.4 is the field
+evidence, including the reading of it that was wrong.
 
-`generate_scenery_kill_proxy` in `tgogenerator.py`, called from `generate()` in the `SceneryUnit`
-branch alongside `add_trigger_zone_for_scenery`, gated on `scenery_kill_proxies`:
+**The entry condition for picking this up again is a reproduction**: a save, a log, or a mission
+where a scenery strike target demonstrably failed to register.
+
+### 5.1 What the change was
+
+A `generate_scenery_kill_proxy` on `GroundObjectGenerator`, called from `generate()` in the
+`SceneryUnit` branch alongside `add_trigger_zone_for_scenery`, behind a setting:
 
 ```python
 proxy = self.m.static_group(
     country=self.country,
     name=f"{unit.unit_name} proxy",
-    _type=Fortification.Landmine,
+    _type=<see 5.2>,
     position=unit.position,
     heading=unit.position.heading.degrees,
     hidden=True,
@@ -248,14 +257,15 @@ first like it settled the question — those campaigns place `Landmine` statics 
 but `Landmine` is the one static of pydcs's 230 `Fortification`s whose model is a flat **decal**, and
 what those campaigns are doing with it is marking positions. Details in §5.4.
 
-**What §88 ships: `Fortification.Electric_power_box`, and it is a judgement call.** Small enough not
-to read as a second building, plausible beside any structure the game calls a scenery objective,
-physical, and carrying no weapon, radar or crew. Nothing measured it. Say so when citing this.
+**The build settled on `Fortification.Electric_power_box`, and it was a judgement call.** Small
+enough not to read as a second building, plausible beside any structure the game calls a scenery
+objective, physical, and carrying no weapon, radar or crew. **Nothing measured it.** That is a
+reason to distrust it, not a recommendation — if you rebuild this, treat the unit as unresolved.
 
-The trade-off is unchanged and unresolved. No unit type matches an arbitrary map building's
+The trade-off is unresolved in both directions. No unit type matches an arbitrary map building's
 durability, so **every proxy design trades a false negative (today) for a false positive** — the
 campaign credits a strike that did not happen, and the building renders intact next mission while
-the map shows it dead. That is why §88 ships default OFF with checklist row **B53**.
+the map shows it dead. Too tough or unkillable and the whole thing is a silent no-op instead.
 
 **The deeper tension, stated once so it is not rediscovered:** an object with no physical body
 probably cannot be killed, and an object that can be killed renders as a visible thing standing on
@@ -331,11 +341,10 @@ the primary building ("the centre of the southeast tower") and gets a single mar
 secondary facilities — where the pilot picks their own aimpoint — get lattices.
 
 **What survives for us.** Only the placement observation, and only weakly: Retribution is the second
-case, so if a single centre-of-zone proxy turns out to under-detect, a small lattice is the shape to
-try. That is a **B53 finding, not a design input** — it was never evidence about durability, because
-these markers are not durability tests.
-
-§88 ships **one** proxy per white zone. §5.3's volume is the reason not to guess a multiplier.
+case, so if a single centre-of-zone proxy ever turns out to under-detect, a small lattice is the
+shape to try. It was never evidence about durability — these markers are not durability tests.
+§5.3's volume is the reason not to guess a multiplier: 340 white zones on `red_tide` times six is
+~2,000 extra statics per generated mission.
 
 ---
 
@@ -371,30 +380,25 @@ Everything else is 100% quad-authored, including `red_tide` (340), `operation_pe
 
 ---
 
-## 7. What the in-game pass has to answer
+## 7. What is actually still open
 
-Four questions, one mission, `scenery_kill_proxies` ON. Checklist row **B53** carries the full
-setup and fail signatures; this is why each one is on the list.
+Nothing is pending an in-game pass — there is no feature built to fly. Two questions remain, neither
+urgent.
 
-1. **Does the proxy track?** Frag one strike against a scenery objective and one against a
-   spawned-building objective as a control. The scenery kill must survive the turn and still be
-   dead next mission, and `state.json` must carry `"<id> | <zone> proxy object"` in `dead_events`.
-2. **The false positive.** The one thing that can disqualify the feature. If a building you did not
-   hit reads destroyed, note the miss distance — that number decides between shipping it, shipping
-   it with a tougher unit, or dropping it for §8.
-3. **One marker or a lattice (§5.4).** If you flatten the building and it still does not record,
-   the marker survived the hit and the answer is the 5–12 pattern the source campaigns use, not a
-   different unit type.
-4. **Settle failure mode 3, since you are there.** Generate `syria_full_map` and bomb the
-   `Powerplant` objective (circular, 69.3 m authored → 4.87 m regenerated) and the `Tank Factory`
-   objective in the same sortie. Check `state.json` for both **zone** names in `dead_events` —
-   these are the trigger's own records, separate from the proxy's.
+1. **A reproduction of the reported failure.** This is the gate on doing any of the work in §5 or
+   §8.5. What is needed is one save, log or mission where a scenery strike target demonstrably did
+   not register. Without it every fix here is speculative. Red Tide will not produce one — its stock
+   path works (§8.1).
+2. **Failure mode 3, the circular-zone shrink.** Cheap, and independent of everything else. Generate
+   `syria_full_map` and bomb the `Powerplant` objective (circular, 69.3 m authored → 4.87 m
+   regenerated) and the `Tank Factory` objective in the same sortie. Check `state.json` for both
+   zone names in `dead_events`.
    - Both present → `c_dead_zone` resolves by `OBJECT ID`, the shrink is harmless, close mode 3.
    - Only `Tank Factory` → the shrink is a real bug; fix is one line (keep the authored radius).
 
 **Do not re-run the `destroyed_objects_positions` check.** §8 settled it from two archived flown
-saves: scenery `S_EVENT_DEAD` fires, and the position record still never happens for buildings. The
-matcher has no input, and no sortie changes that.
+saves: scenery `S_EVENT_DEAD` fires, and the position record still never happens for buildings. No
+sortie changes that.
 
 ---
 
@@ -510,13 +514,10 @@ Only one thing is consumed only by `record_carcasses`, and that part was right:
 | `game/scenery_group.py` | 41 | blue/white zone pairing, category validation |
 | `game/theater/start_generator.py` | 669-706 | `SceneryUnit` creation from zones |
 | `game/theater/theatergroup.py` | 202-224 | `SceneryUnit`; `unit_name` = `"<id> | <name>"` |
-| `game/missiongenerator/tgogenerator.py` | 404-433 | `generate()`; fork's culling exemption; the §88 gate |
-| " | 658-667 | `create_static_group` + unit-map registration |
-| " | 739-796 | scenery zone + `MapObjectIsDead` / destruction rules |
-| " | 798-851 | `generate_scenery_kill_proxy` — the §88 proxy + the unit rationale |
-| " | 841-852 | `generate_iads_command_unit` — the M4 stand-in |
-| `game/settings/settings.py` | — | `scenery_kill_proxies` (Features page → Strike accounting) |
-| `tests/missiongenerator/test_scenery_kill_proxy.py` | — | the §88 pins (6) |
+| `game/missiongenerator/tgogenerator.py` | 404-431 | `generate()`; fork's culling exemption |
+| " | 656-665 | `create_static_group` + unit-map registration |
+| " | 737-794 | scenery zone + `MapObjectIsDead` / destruction rules |
+| " | 796-807 | `generate_iads_command_unit` — the M4 stand-in |
 | `game/unitmap.py` | 162-173 | `add_theater_unit_mapping` (keyed on DCS unit name) |
 | " | 238-245 | `add_scenery` (keyed on trigger-zone name) |
 | `game/theater/iadsnetwork/iadsnetwork.py` | 46-66 | `dcs_name_for_group` |

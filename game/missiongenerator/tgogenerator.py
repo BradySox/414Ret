@@ -812,15 +812,28 @@ class GroundObjectGenerator:
         same TheaterUnit.kill() and clean_unit_list dedups, so the proxy only
         ever adds kills that would otherwise be lost; it never takes one away.
 
-        Landmine is the stand-in a shipped campaign uses for this exact job.
-        It is vanilla, tiny, and carries no weapon, radar or crew of its own, so
-        it cannot participate in the mission it is measuring. Hidden on the F10
-        map: it is bookkeeping, and the scenery objective already draws its own
-        zone there.
+        Electric_power_box is a JUDGEMENT CALL, not a measured one, and the
+        notes doc says so plainly. What ruled out the alternatives:
 
-        The known trade-off is a false positive -- the proxy can die to splash
-        from a near miss and credit a building that is still standing. That is
-        why the setting is off by default. See
+        * Soldier_M4 (what the IADS stand-in uses) has infantry hit points --
+          a stray burst or a submunition would credit an untouched building.
+        * Landmine, which shipped campaigns place at target aimpoints, is the
+          ONE static of pydcs's 230 Fortifications whose model is a flat DECAL
+          (`voronka.edm`, "crater", 1.5 kB, no collision mesh, no damage LOD).
+          Those campaigns use it as a named position marker, not a kill
+          tracker. An object with no body probably cannot be killed, which
+          would make this whole feature a silent no-op.
+
+        A power box is small enough not to read as a second building, plausible
+        beside any structure the game calls a scenery objective, physical, and
+        carries no weapon, radar or crew, so it cannot participate in the
+        mission it is measuring. Hidden on the F10 map: it is bookkeeping, and
+        the scenery objective already draws its own zone there.
+
+        Two unmeasured risks, both owned by checklist B53: the proxy may die to
+        splash from a near miss and credit a building still standing, and it may
+        be tougher or more fragile than the building it stands for. That is why
+        the setting is off by default. See
         docs/dev/design/414th-scenery-kill-tracking-notes.md.
         """
         if not unit.alive:
@@ -831,7 +844,7 @@ class GroundObjectGenerator:
         proxy = self.m.static_group(
             country=self.country,
             name=f"{unit.unit_name} proxy",
-            _type=Fortification.Landmine,
+            _type=Fortification.Electric_power_box,
             position=unit.position,
             heading=unit.position.heading.degrees,
             hidden=True,

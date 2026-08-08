@@ -4,10 +4,14 @@
 Discord question "why do some strike targets register as killed and some do not", and to scope the
 follow-on ask: reuse the IADS infantry stand-in as a general kill tracker for every strike target.
 
-**What shipped:** `scenery_kill_proxies`, default OFF — one `Fortification.Landmine` static per live
-`SceneryUnit`, registered in the unit map, union with the existing trigger. §5 is the design, §5.4
-is the field evidence that settled the unit choice, §7 is what the in-game pass has to answer
-(checklist **B53**).
+**What shipped:** `scenery_kill_proxies`, default OFF — one `Fortification.Electric_power_box`
+static per live `SceneryUnit`, registered in the unit map, union with the existing trigger. §5 is
+the design; **§5.4 is the field evidence, including the reading of it that was wrong** (`Landmine`
+is a decal, not a kill tracker); §7 is what the in-game pass has to answer (checklist **B53**).
+
+**The unit is a judgement call, not a measurement.** Nothing in this note establishes that any
+static dies when the map building under it dies. B53 is the gate, and its first question is whether
+the marker dies at all.
 
 Read this before touching `add_trigger_zone_for_scenery`, `generate_scenery_kill_proxy`,
 `generate_iads_command_unit`, or the MANTIS C2 watcher.
@@ -25,7 +29,7 @@ There are **two** kill-tracking mechanisms for strike targets, and only one of t
 
 Both kinds coexist in most campaigns. That alone produces "some track, some don't".
 
-**§88 adds a third row**, off by default: a registered `Landmine` static per scenery unit, tracked
+**§88 adds a third row**, off by default: a registered small static per scenery unit, tracked
 by the reliable mechanism in row 1. It is a *union* with row 2, not a replacement — both signals
 converge on the same `kill()` and `clean_unit_list` dedups.
 
@@ -239,15 +243,24 @@ This was the whole design risk, and it was open when this note was first written
 | A matching building static | Renders a second building inside the real one. Ugly, and DCS statics have their own HP unrelated to the map object's. |
 | A small durable static | Best compromise, but "durable" is not tunable per map object — Retribution has no idea how tough the real building is. |
 
-**Answered by §5.4: `Fortification.Landmine`.** Not picked from the unit list — it is what a shipped
-commercial campaign uses for this exact job, in three of the 23 installed campaigns. Vanilla, tiny,
-no weapon or radar or crew of its own, scored as a small structure in DCS's `scoredata.lua`
-(CP 0.4).
+**§5.4 did not answer it. It ruled one candidate out.** The shipped-campaign evidence looked at
+first like it settled the question — those campaigns place `Landmine` statics on target buildings —
+but `Landmine` is the one static of pydcs's 230 `Fortification`s whose model is a flat **decal**, and
+what those campaigns are doing with it is marking positions. Details in §5.4.
 
-What is **not** settled is the trade-off itself. No unit type matches an arbitrary map building's
+**What §88 ships: `Fortification.Electric_power_box`, and it is a judgement call.** Small enough not
+to read as a second building, plausible beside any structure the game calls a scenery objective,
+physical, and carrying no weapon, radar or crew. Nothing measured it. Say so when citing this.
+
+The trade-off is unchanged and unresolved. No unit type matches an arbitrary map building's
 durability, so **every proxy design trades a false negative (today) for a false positive** — the
 campaign credits a strike that did not happen, and the building renders intact next mission while
 the map shows it dead. That is why §88 ships default OFF with checklist row **B53**.
+
+**The deeper tension, stated once so it is not rediscovered:** an object with no physical body
+probably cannot be killed, and an object that can be killed renders as a visible thing standing on
+the map building. There is no invisible-and-killable static. Any proxy design pays one of those two
+costs. §8's position matcher pays neither, which is why it is still the better idea.
 
 ### 5.3 Volume
 
@@ -261,10 +274,14 @@ the scenery objective already draws its own zone there.
 The number matters more than it looks, because of §5.4's lattice finding: any multiplier applies to
 these counts. 340 × 6 is ~2,000 extra statics on `red_tide` alone.
 
-### 5.4 Field evidence — a shipped campaign does exactly this
+### 5.4 Field evidence — what the shipped campaigns are actually doing
+
+**Read this before proposing `Landmine` for anything. It is a decal.**
 
 Source: **campaign F**, a paid FA-18C Syria campaign in the DM's install, mission 11. Its target
-points are `Landmine` statics, and the DM's screenshot of one is what prompted this section.
+points are `Landmine` statics, and a screenshot of one is what prompted this section. The first
+reading of that evidence was "a shipped campaign uses `Landmine` as a kill-tracking proxy, so the
+unit question is settled." **That reading was wrong**, and the correction is the useful part.
 
 **What the miz contains.**
 
@@ -276,32 +293,48 @@ points are `Landmine` statics, and the DM's screenshot of one is what prompted t
 - Nothing else in the miz references them: not by `unitId`, not by `groupId`. Name is the entire
   contract.
 
-That is §2.1's mechanism, chosen deliberately by someone shipping a commercial product, for the
-same reason: a name the author minted is the only handle that cannot be broken by the terrain.
+**The model is a flat crater decal.** `Bazar/World/Shapes/landmine.lods` points at `voronka.edm`
+(Russian *voronka* = crater): **1,547 bytes**, one render node, material `Voronka_10x10`, flagged
+`DECAL` with blending and depth bias. No collision mesh, no damage LOD, no destroyed state. Of the
+**230** `Fortification` statics pydcs exposes, checked model by model, **`Landmine` is the only
+one carrying the `DECAL` flag.** It is a texture stamped on the ground.
 
-**How widely.** Scanning all 23 installed campaigns for `Landmine` statics: **6 place them, 3 use
-them as named target proxies.** (A fourth, unrelated use also turns up — four per mission named
-"Smoke Tower", effect anchors. The landmine is the general-purpose invisible-ish static.)
+**So the campaigns are marking positions, not tracking kills.** Everything fits that reading:
 
-**Placement — one per aimpoint, or a lattice.** This is the finding with design consequences.
+- Four statics named **"Smoke Tower"** appear in *every* mission of two campaigns. Unambiguously
+  effect anchors — a named coordinate a script reads with `getByName(...):getPoint()`.
+- The clusters below read as an impact-check or aimpoint grid over a footprint, which is a
+  *position* use.
+- The briefing tells each wingman to "acquire your assigned target point", and the crater art is
+  a reasonable thing to have at an aimpoint.
+
+The kill-tracking inference came from the names plus two dictionary strings (`TGT DEAD!!`,
+`Target Golf was not destroyed.`). Suggestive; not proof. **`Landmine` is the community's standard
+named position marker, and it is unsafe to assume it can be destroyed at all.**
+
+**How widely.** Scanning all 23 installed campaigns for `Landmine` statics: **6 place them.**
+Names seen: `TGT POINT 1-3`, `Golf 1 A-F`, `Golf 2 A-G`, `GOLF 3/4`, `Player Target`, `Target-1/2`,
+`GAUNTLET TARGET 13A-E`, `Shaft 1/2`, `TGT 1`, `Bunker Landmine`, `LFF East 1/2`, `Smoke Tower`,
+`GH Mine`.
+
+**Placement — one per aimpoint, or a lattice.** Still worth recording, because it tells us how these
+authors think about a target's extent:
 
 | Pattern | Where it is used | Observed |
 |---|---|---|
-| One proxy per aimpoint | the pilot is assigned that exact point | 3 singles on one building, 46–118 m apart, one per wingman |
+| One marker per aimpoint | the pilot is assigned that exact point | 3 singles on one building, 46–118 m apart, one per wingman |
 | A lattice inside a small box | the impact point is not known in advance | 6 in 11 × 10 m; 7 in 16 × 16 m; and in another campaign 12 in ~15 m, twice; 5 in ~9 m |
 
 The mission's own briefing confirms the split: each wingman is assigned a numbered target point on
 the primary building ("the centre of the southeast tower") and gets a single marker, while the
 secondary facilities — where the pilot picks their own aimpoint — get lattices.
 
-**What that implies for us.** Retribution is the second case: the player picks their own aimpoint
-anywhere on the building. The lattices are circumstantial evidence that **one marker at the zone
-centre may under-detect** — that a `Landmine` does not reliably die to a hit metres away.
+**What survives for us.** Only the placement observation, and only weakly: Retribution is the second
+case, so if a single centre-of-zone proxy turns out to under-detect, a small lattice is the shape to
+try. That is a **B53 finding, not a design input** — it was never evidence about durability, because
+these markers are not durability tests.
 
-§88 ships **one** proxy per white zone anyway. The landmine's actual blast durability is unmeasured
-(it is not in any plain-text DCS DB), so a lattice would be guessing at a multiplier, and §5.3's
-volume is already the feature's main cost. **B53 measures durability in the air; the lattice is the
-fix if and only if the single marker survives a hit that kills the building.**
+§88 ships **one** proxy per white zone. §5.3's volume is the reason not to guess a multiplier.
 
 ---
 
@@ -411,7 +444,7 @@ B53:
 | `game/missiongenerator/tgogenerator.py` | 404-433 | `generate()`; fork's culling exemption; the §88 gate |
 | " | 658-667 | `create_static_group` + unit-map registration |
 | " | 739-796 | scenery zone + `MapObjectIsDead` / destruction rules |
-| " | 798-839 | `generate_scenery_kill_proxy` — the §88 Landmine proxy |
+| " | 798-851 | `generate_scenery_kill_proxy` — the §88 proxy + the unit rationale |
 | " | 841-852 | `generate_iads_command_unit` — the M4 stand-in |
 | `game/settings/settings.py` | — | `scenery_kill_proxies` (Features page → Strike accounting) |
 | `tests/missiongenerator/test_scenery_kill_proxy.py` | — | the §88 pins (7) |

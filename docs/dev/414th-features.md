@@ -8648,9 +8648,9 @@ campaigns, which is why the reported symptom is "some strike targets register an
 
 ### What this adds
 
-One `Fortification.Landmine` static per live `SceneryUnit`, at the zone position, hidden on the
-F10 map, registered in the unit map via `add_theater_unit_mapping`. Its death is name-matched at
-debrief exactly like a spawned building static.
+One `Fortification.Electric_power_box` static per live `SceneryUnit`, at the zone position, hidden
+on the F10 map, registered in the unit map via `add_theater_unit_mapping`. Its death is
+name-matched at debrief exactly like a spawned building static.
 
 - The `MapObjectIsDead` trigger is **not** removed. The two signals are a union and
   `clean_unit_list` dedups, so the proxy only adds kills that would otherwise be lost.
@@ -8660,62 +8660,74 @@ debrief exactly like a spawned building static.
 - The IADS `Soldier_M4` stand-in is untouched. It is not registered in the unit map and does not
   become a kill tracker; merging the two objects is deferred (below).
 
-### Why Landmine
+### The unit — a judgement call, and the candidate that got ruled out
 
-The unit choice was the open question in the notes doc. It is answered by evidence, not by
-picking from the unit list: **a shipped commercial campaign uses `Landmine` statics for exactly
-this job**. A paid FA-18C Syria campaign (campaign F) places them on the target buildings of a
-precision strike, named per aimpoint, and reads their deaths by name. Six of 23 installed
-campaigns place `Landmine` statics; three use them as named target proxies.
+**Nothing measured this.** Say so when citing it. `Electric_power_box` is small enough not to read
+as a second building, plausible beside any structure the game calls a scenery objective, physical,
+vanilla, and carries no weapon, radar or crew, so it cannot participate in the mission it measures.
+That is the whole case for it.
 
-What makes it the right unit:
+Two candidates were ruled out, and the second one matters because it looked like the answer:
 
-- Vanilla DCS, `dcs.statics.Fortification.Landmine`, no mod dependency.
-- Tiny, and no weapon, radar or crew, so it cannot participate in the mission it measures.
-- Scored as a small structure in DCS's own `scoredata.lua` (CP 0.4).
+- **`Soldier_M4`**, the obvious pick because the IADS path already spawns one, has infantry hit
+  points — a stray burst or a submunition credits an untouched building.
+- **`Landmine`**, which shipped campaigns place at target aimpoints. Checked model by model against
+  the DCS install: of pydcs's **230** `Fortification` statics, `Landmine` is **the only one whose
+  model is a flat `DECAL`** — `voronka.edm` ("crater"), 1,547 bytes, one render node, no collision
+  mesh, no damage LOD. Those campaigns use it as a **named position marker**, not a kill tracker;
+  the same campaigns place four per mission named "Smoke Tower". An object with no body probably
+  cannot be killed, which would make this feature a silent no-op. Full working in the notes doc
+  §5.4, including the first, wrong reading of that evidence.
 
-`Soldier_M4`, the obvious alternative because the IADS path already spawns one, is disqualified:
-infantry hit points mean a stray burst or submunition credits an untouched building.
+**The tension there is structural, not a search failure.** An object with no physical body probably
+cannot be killed; an object that can be killed renders as a visible thing standing on the map
+building. There is no invisible-and-killable static. Every proxy design pays one of those costs —
+which is the strongest argument for the position matcher below.
 
-### The trade-off, stated plainly
+### The trade-offs, stated plainly
 
-The proxy dies independently of the building it stands for. Today's failure is a **false
-negative** — you flattened it and the campaign never heard. This trades that for a possible
-**false positive** — splash from a near miss kills the marker and credits a building that is
-still standing, which then renders intact next mission while the map shows it dead.
+The proxy lives and dies independently of the building it stands for, in both directions:
 
-That is why `scenery_kill_proxies` is **default OFF**. It ships behind a toggle with a checklist
-row, not as new default behaviour.
+- **Too fragile** → a **false positive**. Splash from a near miss kills the marker and credits a
+  building that is still standing, which then renders intact next mission while the map shows it
+  dead. Today's failure is the opposite — a false negative, you flattened it and the campaign
+  never heard.
+- **Too tough, or unkillable** → the feature is a **no-op** that adds a static per scenery target
+  for nothing.
 
-### One proxy or a lattice — unresolved
+Neither is measured. That is why `scenery_kill_proxies` is **default OFF**: it ships behind a
+toggle with checklist row **B53**, not as new default behaviour.
 
-The source campaigns use two placement patterns, and the split is informative:
+### One proxy or a lattice — open, and not answered by the campaigns
+
+The source campaigns use two placement patterns:
 
 | Pattern | Where they use it |
 |---|---|
-| One proxy per aimpoint | when the pilot is assigned that exact point |
+| One marker per aimpoint | when the pilot is assigned that exact point |
 | A lattice of 5–12 inside a 9–16 m box | when the impact point is not known in advance |
 
-The observed lattices: 6 in an 11 × 10 m box, 7 in a 16 × 16 m box, and — in another campaign —
-12 in a ~15 m box, twice. Retribution is in the second case: the player picks their own aimpoint
-anywhere on the building. That is circumstantial evidence a single centre-of-zone proxy
-under-detects.
+Observed lattices: 6 in an 11 × 10 m box, 7 in a 16 × 16 m box, and — in another campaign — 12 in
+a ~15 m box, twice. Retribution is in the second case: the player picks their own aimpoint anywhere
+on the building.
 
-This ships with **one** proxy per white zone anyway, for two reasons. The landmine's actual
-blast durability is unmeasured, so a lattice would be guessing at a multiplier; and the volume
-is already the feature's main cost — `red_tide` has 340 white zones, so ×6 would be ~2,000 extra
-statics per generated mission. Settle durability in the air (checklist row) before adding any.
+**This is weaker evidence than it first appears.** Those markers are positions, not durability
+tests, so the lattices say nothing about whether a proxy survives a hit. Treat "one marker is not
+enough" as a possible **B53 finding**, not a design input. Volume is the reason not to pre-empt it:
+`red_tide` has 340 white zones, so ×6 would be ~2,000 extra statics per generated mission.
 
 ### Deferred
 
-- **The position matcher.** `destroyed_objects_positions` already records the world position of
-  every destroyed object in `dcs_retribution.lua` and is consumed only by `record_carcasses`.
-  A distance matcher would need no new units at all. It depends on scenery `S_EVENT_DEAD`
-  firing, which the same in-game pass settles.
-- **Merging the proxy with the IADS stand-in.** One landmine named `unit.unit_name` would
-  satisfy MANTIS's `StaticObject.getByName(node .. " object")` lookup *and* track the kill, and
-  would fix the notes doc §3.4 quirk where splash takes a C2 node offline. Not done here: it
-  changes a flown feature's behaviour, and this change is already the first unflown half.
+- **The position matcher — the better idea, and the one to build next.**
+  `destroyed_objects_positions` already records the world position of every destroyed object in
+  `dcs_retribution.lua` and is consumed only by `record_carcasses`. A distance matcher would need
+  no new units at all, so it pays neither of the proxy's structural costs (invisible-but-unkillable
+  vs killable-but-visible). It depends on scenery `S_EVENT_DEAD` firing, which the same in-game
+  pass settles.
+- **Merging the proxy with the IADS stand-in.** One static named `unit.unit_name` would satisfy
+  MANTIS's `StaticObject.getByName(node .. " object")` lookup *and* track the kill, and would fix
+  the notes doc §3.4 quirk where splash takes a C2 node offline. Not done here: it changes a flown
+  feature's behaviour, and this change is already the first unflown half.
 
 **NEW mission only**: generation-time, so existing saves pick it up on the next regeneration
 with no new game and no save migration.

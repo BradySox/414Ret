@@ -3875,8 +3875,9 @@ decorations toggle on) on a Nimitz-hull campaign, then fly or watch one recovery
 > **This row is the gate on the whole feature, not a polish check.** §88 trades today's false
 > negative (you flattened a map building and the campaign never heard) for a possible false
 > positive (splash from a near miss kills the marker and credits a building still standing).
-> Nothing offscreen can measure which way that lands — it depends on the `Landmine` static's
-> blast durability, which is unmeasured. The unit-map registration, the name-collision guard
+> Nothing offscreen can measure which way that lands — it depends on the proxy static's blast
+> durability relative to the building it stands for, which is unmeasured and was chosen by
+> judgement. **First question of the flight is whether the marker dies at all.** The unit-map registration, the name-collision guard
 > against the IADS stand-in, the dead-unit skip and the setting gate are pinned in
 > `tests/missiongenerator/test_scenery_kill_proxy.py` (6); the culling exemption in
 > `tests/test_culling.py`.
@@ -3884,7 +3885,8 @@ decorations toggle on) on a Nimitz-hull campaign, then fly or watch one recovery
 - **What CI cannot exercise:** whether the marker dies when the building dies, whether it
   survives when the building survives, and whether one marker at the zone centre is enough. The
   source campaigns scatter 5–12 markers in a 9–16 m box when the impact point is not known in
-  advance, which is Retribution's case — see §88 "One proxy or a lattice".
+  advance, which is Retribution's case — but those markers are positions, not durability tests,
+  so treat that as a hypothesis to check, not a known. See §88 "One proxy or a lattice".
 - **Setup:** tick **Kill-tracking markers on map-building strike targets** (Settings → 414th
   Features → Strike accounting). Generate a campaign with scenery strike targets — `syria_full_map`
   is the cheapest, and its `Powerplant` objective is the circular-zone case the notes doc wants
@@ -3900,12 +3902,17 @@ decorations toggle on) on a Nimitz-hull campaign, then fly or watch one recovery
   4. No visible clutter — the markers are hidden on the F10 map and are not visible from
      pattern altitude.
 - **Fail signatures, and what each means:**
+  - **Nothing ever records, on any target, however hard you hit it.** The marker cannot be
+    killed. That kills the whole approach, not the unit choice — go build the position matcher
+    instead. This is the **first** thing to rule out: the originally-chosen unit (`Landmine`) was
+    dropped pre-flight on exactly this risk, and `Electric_power_box` is a judgement call, not a
+    measurement.
   - **A building you did NOT hit reads destroyed.** The false positive. Note the miss distance
     if you can — that number is the input to whether the feature ships at all, or ships with a
     tougher unit.
-  - **You flattened the building and it still did not record.** The marker survived the hit.
-    That is the lattice case: one centre-of-zone marker is not enough, and the fix is the
-    5–12 pattern the source campaigns use, not a different unit.
+  - **You flattened the building and it still did not record, but other targets do record.** The
+    marker survives hits that kill the building. Then it is the lattice case: one centre-of-zone
+    marker is not enough, and the 5–12 pattern the source campaigns use is the shape to try.
   - **New Game or generation crashes with "Duplicate TGO unit".** The name-collision guard
     against `generate_iads_command_unit` broke — check the `" proxy"` suffix.
   - **Markers visible on the F10 map.** `hidden=True` was dropped or DCS ignores it for statics.

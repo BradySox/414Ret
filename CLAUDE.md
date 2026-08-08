@@ -103,7 +103,7 @@ Read before touching a campaign's `.yaml`, `.miz` or build tool.
   `414th-carrier-deck-decor-notes.md`
 - **Ground / frontline** — `414th-tic-dynamic-fronts-notes.md`
 - **Strike targets / BDA** — `414th-scenery-kill-tracking-notes.md` (why some scenery strike
-  targets never register as killed; the M4 IADS stand-in; the §88 Landmine proxy that shipped and
+  targets never register as killed; the M4 IADS stand-in; the §88 kill proxy that shipped and
   the position matcher still deferred)
 - **Planning / doctrine** — `414th-airwar-planner-consolidation-notes.md`,
   `414th-aircraft-task-rebalance-rubric.md`, `414th-victory-conditions-notes.md`,

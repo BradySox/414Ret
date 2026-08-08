@@ -43,8 +43,9 @@ def _scenery_unit(*, alive: bool = True, unit_id: int = 123) -> SceneryUnit:
     unit.id = unit_id
     unit.name = "Power Plant"
     unit.alive = alive
-    # is_static reads .type before the SceneryUnit isinstance check.
-    unit.type = Fortification.Landmine
+    # is_static reads .type before the SceneryUnit isinstance check. Any
+    # StaticType does; this is not the proxy's type.
+    unit.type = Fortification.Workshop_A
     unit.position = SimpleNamespace(  # type: ignore[assignment]
         x=1000.0, y=2000.0, heading=Heading.from_degrees(45)
     )
@@ -70,14 +71,14 @@ def _spawned_kwargs(gen: Any) -> dict[str, Any]:
     return gen.m.static_group.call_args.kwargs
 
 
-def test_proxy_is_a_hidden_landmine_at_the_scenery_position() -> None:
+def test_proxy_is_a_hidden_power_box_at_the_scenery_position() -> None:
     gen = _generator()
     unit = _scenery_unit()
 
     gen.generate_scenery_kill_proxy(unit)
 
     kwargs = _spawned_kwargs(gen)
-    assert kwargs["_type"] is Fortification.Landmine
+    assert kwargs["_type"] is Fortification.Electric_power_box
     assert kwargs["position"] is unit.position
     assert kwargs["heading"] == 45
     # Bookkeeping, not scenery: the objective already draws its own F10 zone.

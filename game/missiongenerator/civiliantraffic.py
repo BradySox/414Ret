@@ -41,6 +41,28 @@ used as a fallback when too few neutral ones exist to draw a transit.
 
 Traffic remains invisible to AI (never targeted, never affects combat) with
 weapon-hold ROE, under the neutral coalition.
+
+**Speeds go to pydcs in km/h** (2026-08-08). Every pydcs speed argument --
+``flight_group_inflight``, ``FlyingGroup.add_waypoint``, ``ShipGroup.add_waypoint`` --
+is km/h and divides by 3.6 internally to get the m/s DCS stores. This module planned
+in m/s and passed the raw number, so a third of the intended speed was written: the
+air-started fleet spawned at 65-110 kt at FL200-FL310 and fell out of the sky, the
+same failure the QRA scramble hit when Moose air-spawned its jets at ~0 kt
+(``resources/plugins/intercept/intercept-config.lua``, SCRAMBLE_SPEED_KT). The
+``CRUISE_PROFILE`` table stays in m/s -- it is the honest unit for a cruise level --
+and every pydcs call converts with ``mps(...).kph``, which is what the rest of the
+generator already does (``knots(12).kph``, ``speed.kph``).
+
+**A transit is anchored at its flight level** (2026-08-08, found while fixing the
+above). "Airways, not milk runs" removed the intermediate legs, and nothing replaced
+them: a two-field route's ``chain[1:-1]`` is empty, so a ground start was written as
+takeoff -> ``land_at`` with no waypoint carrying the cruise altitude at all. DCS flew
+the shallow V that implies and the aircraft never climbed to its assigned level --
+which defeats the point of choosing per-region flight levels for the ~30% of
+fixed-wing traffic that departs from a field. Two-field routes now get synthesised
+top-of-climb / top-of-descent waypoints (``CRUISE_ENTRY_FRAC`` / ``CRUISE_EXIT_FRAC``);
+air starts are already at cruise and take only the descent point. The rotary layer is
+unchanged -- it routes through real fields and always had waypoints.
 """
 
 from __future__ import annotations
@@ -64,6 +86,8 @@ from pydcs_extensions.vietnamwarvessels.vietnamwarvessels import (
     vwv_sampan_open,
     vwv_sampan_open_box,
 )
+
+from game.utils import mps
 
 from .civilianfleet import CRUISE_PROFILE, CivilRegion, region_for
 
@@ -89,6 +113,21 @@ STAGGER_WINDOW_S = 6_600  # 110 min
 AIR_START_FRACTION = 0.7
 #: Only types cruising at/above this MSL altitude may air-start.
 AIR_START_MIN_ALT_M = 3_000
+#: Where along the transit an air start drops in, so a fleet is spread down the airway
+#: instead of stacked over one field. Must stay below ``CRUISE_EXIT_FRAC``.
+AIR_START_FRAC_RANGE = (0.15, 0.85)
+#: Where a transit reaches and leaves its cruise level. A two-field airway carries no
+#: intermediate field by design, so without these it has NO waypoint between the
+#: takeoff and the landing: a ground-started civilian flew a shallow
+#: takeoff-to-touchdown V and never reached its assigned flight level at all. These
+#: anchor the level explicitly -- top of climb, then top of descent.
+#:
+#: The entry fraction sets where DCS *wants* the aircraft level, not the climb
+#: gradient it can manage: an An-26 needs ~90 km to make FL200 and will simply keep
+#: climbing toward the next waypoint, which is at the same altitude. Air starts are
+#: already at cruise and take only the exit point.
+CRUISE_ENTRY_FRAC = 0.25
+CRUISE_EXIT_FRAC = 0.9
 
 FLEET_DENSITY = (1, 3)  # per fixed-wing type, scaled by pool size
 HELO_DENSITY = (1, 2)
@@ -128,6 +167,24 @@ def _dist2(a: Point, b: Point) -> float:
     dx = a.x - b.x
     dy = a.y - b.y
     return dx * dx + dy * dy
+
+
+def along(a: Point, b: Point, frac: float) -> Point:
+    """The point ``frac`` of the way from ``a`` to ``b``."""
+    return Point(a.x + (b.x - a.x) * frac, a.y + (b.y - a.y) * frac, a._terrain)
+
+
+def cruise_fracs(air_start: bool) -> tuple[float, ...]:
+    """Where along a two-field transit the cruise-level waypoints go.
+
+    A ground start needs both: climb to level, hold it, then descend for the landing.
+    An air start spawns at cruise already, so it only needs the top of descent --
+    which is why ``AIR_START_FRAC_RANGE`` must stay below ``CRUISE_EXIT_FRAC``, or the
+    aircraft would be told to fly backwards up its own airway.
+    """
+    if air_start:
+        return (CRUISE_EXIT_FRAC,)
+    return (CRUISE_ENTRY_FRAC, CRUISE_EXIT_FRAC)
 
 
 def _in_combat_zone(point: Point, fronts: Sequence[Point]) -> bool:
@@ -237,12 +294,8 @@ def plan_airways(
             if air:
                 # Somewhere along the transit, so a fleet is spread down the airway
                 # instead of stacked over one field.
-                frac = rng.uniform(0.15, 0.85)
-                a, b = start.point, end.point
-                air_point = Point(
-                    a.x + (b.x - a.x) * frac,
-                    a.y + (b.y - a.y) * frac,
-                    a._terrain,
+                air_point = along(
+                    start.point, end.point, rng.uniform(*AIR_START_FRAC_RANGE)
                 )
             else:
                 start_time = rng.randint(0, STAGGER_WINDOW_S)
@@ -429,6 +482,23 @@ class CivilianTrafficGenerator:
             len(pool),
         )
 
+    def cruise_points(self, route: CivilianRoute) -> list[Point]:
+        """The waypoints that hold a route at its cruise level, between the start and
+        the ``land_at``.
+
+        The rotary layer routes through real intermediate fields, so those are the
+        points. An airway has none by design -- two endpoints and the straight line
+        between them -- which left a ground-started transit with no waypoint at all
+        between takeoff and landing, so it flew a shallow V and never reached its
+        flight level. Those get a synthesised top-of-climb / top-of-descent pair
+        instead.
+        """
+        if len(route.chain) > 2:
+            return [field.point for field in route.chain[1:-1]]
+
+        start, end = route.chain[0].point, route.chain[-1].point
+        return [along(start, end, frac) for frac in cruise_fracs(route.air_start)]
+
     def _spawn(self, country: "Country", idx: int, route: CivilianRoute) -> bool:
         # The callsign IS the identity a player sees on the F10 map; the index keeps
         # group names unique when two flights draw the same operator and number.
@@ -436,13 +506,16 @@ class CivilianTrafficGenerator:
         try:
             if route.air_start:
                 assert route.air_start_point is not None
+                # km/h: pydcs writes speed/3.6 onto both the spawned unit records
+                # (the actual air-start velocity) and the first waypoint. Passing
+                # m/s here spawned the transit at a third of cruise -- a stall.
                 group = self.mission.flight_group_inflight(
                     country=country,
                     name=name,
                     aircraft_type=route.aircraft_type,
                     position=route.air_start_point,
                     altitude=route.altitude_m,
-                    speed=route.speed_ms,
+                    speed=mps(route.speed_ms).kph,
                     group_size=1,
                 )
             else:
@@ -458,11 +531,10 @@ class CivilianTrafficGenerator:
                     group_size=1,
                 )
 
-            # Intermediate legs (the final field is handled by land_at). An airway has
-            # none -- that is the point.
-            for field in route.chain[1:-1]:
+            # Everything between the start and land_at, at the route's cruise level.
+            for point in self.cruise_points(route):
                 waypoint = group.add_waypoint(
-                    field.point, route.altitude_m, route.speed_ms
+                    point, route.altitude_m, mps(route.speed_ms).kph
                 )
                 if route.radio_alt:
                     waypoint.alt_type = "RADIO"
@@ -583,7 +655,8 @@ class NavalCivilianTrafficGenerator:
                 group_size=1,
             )
             for point in route.chain[1:]:
-                group.add_waypoint(point, NAVAL_SPEED_MS)
+                # km/h, as above -- the raw m/s value crawled the hulls at ~0.8 kt.
+                group.add_waypoint(point, mps(NAVAL_SPEED_MS).kph)
 
             group.points[0].tasks.append(OptROE(OptROE.Values.WeaponHold))
             group.points[0].tasks.append(SetInvisibleCommand(True))

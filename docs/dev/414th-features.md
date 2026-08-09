@@ -1442,9 +1442,34 @@ Also fixed in passing: the stale `FormationAttackLayout.refuel_pre` comment ("at
 set" — `BOTH` tasking sets pre- *and* post-vul points).
 
 Tests: `tests/ato/flightplans/test_refuel_timing.py` (dwell on the refuel edge, per-size service
-time, push time with/without a pre-vul stop, tanker window post-vul-only vs early-open). Needs an
-in-game sanity pass only in the sense that AI tanking pace varies; the schedule now budgets the
-same time the tanker always reserved.
+time, push time with/without a pre-vul stop, tanker window post-vul-only vs early-open).
+
+#### The dwell is charged to player flights only (2026-08-09)
+
+**Symptom (player report).** An AI strike the player was escorting ran ahead of the kneeboard
+timetable — it reached the target before the escort, which was timed against the same package ToT.
+
+**Root cause — AI never spends the boom time the dwell budgets.** Two independent mechanisms, both
+in the generated `.miz`:
+
+- `RefuelPointBuilder` stops the Refueling task as soon as every jet is at 50% fuel
+  (`stop_if_lua_predicate(0.5)`). At a pre-vul stop that is already true on arrival, so the task
+  ends the moment it starts and the flight flies through.
+- `ai_unlimited_fuel` (on by default) writes `SetUnlimitedFuel(True)` at waypoint 0 and only
+  `SetUnlimitedFuel(False)` at the JOIN, so AI fuel is pinned across the refuel leg regardless.
+
+`push_time` still released the flight from its hold `refuel_service_time` early to pay for the
+stop, and nothing consumed the difference. Measured on one package: strike (2× F-15E, tanker)
+9.02 min early at the join, TARPS (1× F-14, tanker) 5.00 min, escort (2× F-14, no tanker) 0.00 —
+the error is `4 × size + 1` exactly, and the flight without a refuel waypoint is the control.
+
+**Fix.** `FlightPlan.refuel_duration` returns zero when `flight.client_count` is zero, so an AI
+receiver's takeoff time, hold push and chained ETAs all stop carrying a dwell it never flies.
+The package tanker still reserves service time per receiver
+(`PackageRefuelingFlightPlan.patrol_duration`) — overlapping the tanker is harmless, and it keeps
+gas on station for an AI flight that does come up thirsty.
+
+In-game pass: checklist **B53**.
 
 ### Tanker tasking falls back to the fuel estimate (2026-07-08)
 

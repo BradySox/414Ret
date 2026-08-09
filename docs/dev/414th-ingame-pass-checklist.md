@@ -3997,3 +3997,45 @@ sampling, the anchor-centred geometry, the safe degrades) is covered by
 `tests/missiongenerator/test_naval_station_keeping.py` (11 cases) and the envelope is guard-tested
 against ship threat rings — but whether DCS's naval AI *loops* a group on `SwitchWaypoint`, and how
 far it actually wanders doing it, only a mission shows.
+
+### B53 — AI flights no longer push early for a tanker stop they never fly · §46 · ☐ UNTESTED (built 2026-08-09)
+
+> **The nine minutes nobody spends.** Found from a player report — the escorted strike was ahead
+> of the kneeboard timetable — and confirmed against the generated `.miz` before any code was
+> touched. The 2026-07-01 receiver-dwell budget (§46, PR #399) charges
+> `refuel_service_time(size)` = `4 × size + 1` minutes to the leg leaving a `REFUEL` waypoint, and
+> `FormationFlightPlan.push_time` releases the flight from its hold that much earlier so it can
+> tank and still make the join. Humans spend it. **AI never does:** `RefuelPointBuilder` stops the
+> Refueling task the moment every jet is at 50% fuel — already true on arrival at a pre-vul stop —
+> and `ai_unlimited_fuel` (on by default, and switched off only at the JOIN) pins AI fuel across
+> that leg regardless. So the hold released the AI early and nothing consumed the difference.
+> Measured on one WILDCAT package: strike (2× F-15E, tanker) **9.02 min early** at the join, TARPS
+> (1× F-14, tanker) **5.00 min**, escort (2× F-14, **no** tanker) **0.00** — the error equals
+> `4 × size + 1` exactly, and the flight without a refuel waypoint is the control. Fix:
+> `FlightPlan.refuel_duration` returns zero for a flight with no clients, so an AI receiver's
+> takeoff, hold push and chained ETAs all stop carrying the phantom dwell. The package tanker
+> still reserves service time per receiver (`PackageRefuelingFlightPlan.patrol_duration`) —
+> overlapping is harmless and keeps gas on station. Pinned in
+> `tests/ato/flightplans/test_refuel_timing.py` (the AI dwell exemption and the AI push time, each
+> against its player counterpart).
+
+Plan a package where the strike takes a pre-vul tanker and a player flies the escort — the
+kneeboard's Refuel→Join leg shows a GSPD far below cruise (~180–280 kt) when a stop is budgeted.
+Fly it and tank as briefed.
+
+- **Pass:** the AI strike reaches the join and the IP at the times printed on your kneeboard, and
+  its weapons go down inside your TOT window rather than minutes before you arrive. A package mate
+  with no refuel waypoint is unchanged.
+- **Fail signatures:**
+  1. **The strike is still early by `4 × size + 1` minutes.** The dwell is still being charged —
+     check `client_count` on that flight (a flight with a human in it *should* still be charged).
+  2. **The strike is now LATE.** The dwell was load-bearing for something else on that route; look
+     at `_travel_time_to_waypoint` and the takeoff time, which both shift with this property.
+  3. **The AI arrives at the tanker before it is on station.** `patrol_start_time` reads the
+     receiver's `chained_tot_for_waypoint(refuel_pre)`, which now falls ~9 min later for AI — the
+     window should have moved with it.
+  4. **A player flight is early too.** Different bug: the human skipped or short-cycled the boom.
+     Expected behaviour, not a planner fault.
+
+**What CI cannot exercise:** whether DCS's AI actually flies the leg at the planned speed. The
+budget arithmetic is unit-tested; the arrival time is a mission.

@@ -253,7 +253,22 @@ class FlightPlan(ABC, Generic[LayoutT]):
         The same per-receiver service time the package tanker budgets into its own
         on-station duration, so the receiver's schedule and the tanker's window
         agree.
+
+        Only a flight with a human in it spends this. An AI flight flies through its
+        REFUEL waypoint without taking gas: ``RefuelPointBuilder`` stops the Refueling
+        task as soon as every jet is at 50% fuel -- already true on arrival at a
+        pre-vul stop -- and ``ai_unlimited_fuel`` (on by default, and switched off only
+        at the JOIN) pins AI fuel across that leg anyway. Charging AI a dwell it never
+        spends made ``FormationFlightPlan.push_time`` release it from the hold exactly
+        ``refuel_service_time`` early, so an AI flight reached the join, the IP and the
+        target that far ahead of a player escort timed against the same package ToT.
+
+        The package tanker still reserves service time for AI receivers
+        (``PackageRefuelingFlightPlan.patrol_duration``) -- overlapping the tanker is
+        harmless, and it keeps gas on station for an AI flight that does come up thirsty.
         """
+        if not self.flight.client_count:
+            return timedelta()
         return refuel_service_time(self.flight.roster.max_size)
 
     def total_time_between_waypoints(

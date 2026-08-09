@@ -34,11 +34,6 @@ from game.utils import Distance, Heading, meters, nautical_miles, feet
 
 AGL_TRANSITION_ALT = 5000
 
-# A loitering SEAD flight holds at `factor` x the target's threat range. The factor is
-# floored here so a misconfigured 0 can never collapse the standoff to zero and park the
-# orbit on top of the SAM.
-MIN_SEAD_STANDOFF_FACTOR = 0.1
-
 if TYPE_CHECKING:
     from game.transfers import MultiGroupTransport
     from game.ato.flight import Flight
@@ -634,26 +629,20 @@ class WaypointBuilder:
         )
 
     def sead_search(self, target: MissionTarget) -> FlightWaypoint:
-        hold = self._sead_search_point(
-            target, factor=self.settings.sead_loiter_standoff_factor
-        )
+        hold = self._sead_search_point(target)
         baro: AltitudeReference = "BARO"
         return FlightWaypoint(
             "SEAD Search",
-            FlightWaypointType.SEAD_LOITER,
+            FlightWaypointType.NAV,
             hold,
             self.get_combat_altitude,
             "RADIO" if self.get_combat_altitude.feet <= AGL_TRANSITION_ALT else baro,
-            description="Loiter here and engage radars as they come up",
-            pretty_name="SEAD Loiter",
+            description="Anchor and search from this point",
+            pretty_name="SEAD Search",
         )
 
     def sead_sweep(self, target: MissionTarget) -> FlightWaypoint:
-        # ARM shooters can hold tighter (0.8x); everyone else stands further off (1.1x).
-        factor = (
-            0.8 if self.flight.any_member_has_weapon_of_type(WeaponType.ARM) else 1.1
-        )
-        hold = self._sead_search_point(target, factor=factor)
+        hold = self._sead_search_point(target)
         baro: AltitudeReference = "BARO"
         return FlightWaypoint(
             "SEAD Sweep",
@@ -673,29 +662,27 @@ class WaypointBuilder:
         capped = min(distance, target.distance_to_point(ingress) * 0.95)
         return target.point_from_heading(hdg, capped)
 
-    @staticmethod
-    def _sead_standoff_distance(factor: float, max_threat_range: float) -> float:
-        """Standoff distance in metres a loitering SEAD flight holds from the SAM:
-        `factor` x the strongest threat range. The factor is floored at
-        MIN_SEAD_STANDOFF_FACTOR so a misconfigured 0 can never collapse the standoff to
-        zero and park the orbit on top of the target."""
-        return max(MIN_SEAD_STANDOFF_FACTOR, factor) * max_threat_range
-
-    def _sead_search_point(self, target: MissionTarget, factor: float) -> Point:
+    def _sead_search_point(self, target: MissionTarget) -> Point:
         """Offset anchor for AI SEAD flights so they do not fly all the way to the SAM.
-        `factor` is the threat-range multiple supplied by the caller (the configured
-        standoff for the loiter, the weapon-based heuristic for the sweep). Targets with
-        no known threat range fall back to the flat sead_threat_buffer_min_distance."""
+
+        ARM shooters can hold tighter (0.8x the strongest threat range); everyone else
+        stands further off (1.1x). Targets with no known threat range fall back to the
+        flat sead_threat_buffer_min_distance."""
         assert self.flight.package.waypoints
         ingress = self.flight.package.waypoints.ingress
         threat_range = nautical_miles(
             self.settings.sead_threat_buffer_min_distance
         ).meters
         if target.strike_targets:
+            factor = (
+                0.8
+                if self.flight.any_member_has_weapon_of_type(WeaponType.ARM)
+                else 1.1
+            )
             # threat_range is viewer-aware (method) on this fork; AI planning uses
             # ground truth (viewer=None).
             max_threat = max(x.threat_range() for x in target.strike_targets).meters
-            threat_range = self._sead_standoff_distance(factor, max_threat)
+            threat_range = factor * max_threat
         return self._offset_toward(target.position, ingress, threat_range)
 
     def escort_hold(self, start: Point) -> FlightWaypoint:

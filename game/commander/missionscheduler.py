@@ -168,9 +168,7 @@ class MissionScheduler:
             if package.primary_task is FlightType.RECOVERY:
                 continue
             tot = TotEstimator(package).earliest_tot(now)
-            if package.auto_asap:
-                package.set_tot_asap(now)
-            elif package.primary_task in dca_types:
+            if package.primary_task in dca_types:
                 if isinstance(package.target, NavalControlPoint):
                     # Carriers stack several simultaneous BARCAPs rather than
                     # overlapping waves; keep the legacy queueing for them.
@@ -211,6 +209,8 @@ class MissionScheduler:
                         # Can't arrive before the flight can physically get there.
                         package.time_over_target = max(tot, desired)
                     previous_cap_start_time[package.target] = package.time_over_target
+            elif package.auto_asap:
+                package.set_tot_asap(now)
             elif package.primary_task is FlightType.AEWC:
                 last = previous_aewc_end_time[package.target]
                 package.time_over_target = tot if tot > last else last

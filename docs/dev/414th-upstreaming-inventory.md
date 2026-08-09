@@ -134,7 +134,7 @@ change per PR, upstream gates validated per PR, crowded zones respected. Gaps + 
 - **Note:** confirm whether the prepared-geometry dependency is satisfied in a
   clean upstream checkout (Shapely version) before submitting.
 
-### 2. DEAD reachability gate on follow-on strikes — 🟢 READY
+### 2. DEAD reachability gate on follow-on strikes — ⚫ WITHDRAWN (reverted fork-side 2026-08-09)
 - **What:** a follow-on strike behind a SAM belt is deferred until the belt is
   actually down, instead of trusting an optimistic DEAD clear. The DEAD itself is
   still tasked (with SEAD escort).
@@ -142,7 +142,10 @@ change per PR, upstream gates validated per PR, crowded zones respected. Gaps + 
   concept — a correctness fix to the stock planner.
 - **Files:** `dead_can_reach` geometry + `apply_effects` routing in
   `game/commander/.../theatercommander.py`.
-- **Tests:** `tests/test_dead_planning.py`.
+- **Tests:** `tests/test_dead_planning.py` (deleted with the feature).
+- **⚫ WITHDRAWN 2026-08-09:** the planner re-convergence deleted this fork-side, so
+  there is nothing left to carve. Rebuild from git history first if it is ever re-wanted;
+  the collision note below still applies to whoever does.
 - **In-game pass:** B2 ☑ VERIFIED 2026-06-24 — blue defers deep strikes until the
   belt is down. Cleared to carve.
 - **⚠️ Collision (2026-06-27):** prokop7's **#674 (SEAD/DEAD revamp)** and geofffranks'

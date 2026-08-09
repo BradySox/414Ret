@@ -766,6 +766,15 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
   `resources/units/aircraft/*.yaml`. KC-10 boom-vs-drogue and any exotic/mod airframe
   are the likeliest mis-tags to review first.
 
+- **Per-method theater-tanker fragging REVERTED 2026-08-09 (planner re-convergence,
+  work order B).** `seed_refueling_targets` / `RefuelingTarget` / `ProposedFlight.
+  refuel_method` are deleted; the HTN seeds one unconstrained theater tanker at the
+  closest friendly CP again, so the mixed-fleet gap this row's fix closed is back. The
+  **matching machinery this row actually verifies is untouched** — `can_refuel_from`,
+  the tanker/receiver boom-probe tags, and `PackageBuilder._required_refuel_methods`
+  for same-package buddy tankers all still work as verified. The row stays ☑ VERIFIED
+  for that scope.
+
 ### C6 — Fuel-driven pre/post-vul tanking · ☑ VERIFIED (2026-06-25)
 - **Verified (2026-06-25, in-game):** short sorties launched with no tanker; deep sorties got
   a refuel waypoint on the correct side and reached the tanker with fuel to spare; kneeboard
@@ -795,28 +804,13 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
   `_refuel_tasking` in `game/ato/flightplans/formationattack.py` if the pre/post/none
   split looks off.
 
-### C7 — Theater tanker placed on receiver demand · ☑ VERIFIED (2026-06-25)
-- **Verified (2026-06-25, in-game):** the shared theater tanker orbited near the receiver
-  cluster (not the rear CP) and receivers reached it and took fuel; orbit stayed clear of
-  enemy threat zones. None of the fail signatures (rear-CP parking, wrong method gate, orbit
-  in a threat ring, buddy tanker moved) occurred.
-- **Setup:** A campaign with a **shared theater tanker** (a dedicated REFUELING
-  package, not a same-package buddy tanker) and several offensive packages whose
-  flights actually take gas (have `REFUEL` waypoints) clustered in one area. Boom +
-  drogue mix is the stress case. Auto-plan a turn.
-- **Pass:** The theater tanker orbits **near the strongest cluster of compatible
-  receivers** (boom tanker → boom receivers, etc.), not back at the closest friendly
-  CP, and receivers reach it and take fuel. A boom-only tanker is **not** dragged
-  toward a probe-heavy cluster. With no compatible demand the tanker keeps the legacy
-  front-anchored orbit. The orbit stays clear of enemy threat zones.
-- **Fail signature:** Tanker still parked at the rear CP far from any receiver; OR a
-  boom tanker pulled to probe-only demand (method gate wrong); OR the orbit lands
-  inside an enemy threat ring (clearance nudge wrong); OR a same-package buddy tanker
-  moved (should be untouched). Check `reposition_theater_tankers` /
-  `best_tanker_service_point` in `game/commander/tankerdemand.py` and the override in
-  `game/ato/flightplans/theaterrefueling.py`.
-- **Note:** receiver `REFUEL`-waypoint *retargeting* onto the moved tanker is a
-  deferred follow-up; this row covers orbit placement only.
+### C7 — Theater tanker placed on receiver demand · ☒ CLOSED (reverted 2026-08-09)
+
+- **Closed by the planner re-convergence (work order B).** The post-planning reposition
+  pass `game/commander/tankerdemand.py` is deleted, so there is nothing left to fly. A
+  theater tanker keeps the orbit its flight plan gives it.
+- Was ☑ VERIFIED 2026-06-25; the finding is preserved in git history if the pass is ever
+  rebuilt.
 
 ### C8 — AI helicopter terrain clearance (cruise AGL + terrain anchors + AGL air starts) · §8 · ☐ UNTESTED (built 2026-07-12 from the flown Red Tide M1 CFIT pattern; the cruise-setting return, the ≤5 NM leg subdivision with speed-locked RADIO "TERRAIN" points, the racetrack/BARO/short-leg/human exclusions, and the unit-record alt_type stamp in both air-start paths are unit-tested in `tests/ato/flightplans/test_helo_cruise_altitude.py` + `tests/missiongenerator/test_helo_terrain_anchors.py` + `tests/missiongenerator/test_airstart_unit_alt_type.py` — whether the DCS helo AI actually clears the ridges on the anchored profile is DCS-only. **First fail signature already caught + fixed 2026-07-12, same day:** the first generated Red Tide M2 hit the DCS mission-start rejection "waypoints ... has both unlocked speed and time and not surrounded by waypoints with locked time" on all three subdivided-RTB helo flights — the anchors inserted both-unlocked; they now insert speed-locked with the existing conflict resolver unlocking any anchor bracketed by TOT locks, and a full-route lock-flag sweep of a regenerated M2 shows 0 violations)
 - **What CI cannot exercise:** whether an AI Mi-8/Mi-24 flying the anchored route actually clears the Harz/Sauerland ridge lines (DCS's RADIO-altitude interpolation between the 5 NM anchors), whether the extra Turning Points upset formation/escort behavior or ETA timing, and whether an air-started helo now spawns at a sane height over high-terrain FARPs.
@@ -3618,7 +3612,7 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
 - **Pass:** the three PLARF sites relocate **and stay on their island**; their launchers are China-pack DF-21D/CJ-10/YJ-12B rather than Soviet substitutes; §3 draws them as suspected-activity circles until reconned; Andersen's B-1B/KC-135/E-3A all spawn on real stands without clipping; an Air Assault package reaches and takes Rota; the §63 magazine debits and does not rearm; **Tinian fields an S-300PMU-2 and Rota an HQ-22** (the two pinned batteries) with no SA-2/SA-6/HQ-2 anywhere; the map reads as one south→north axis with nothing blue north of Guam; **every PLAN task group is screened by Type 055/052D** (250 km HHQ-9) rather than 4-8 km missile boats and corvettes; the carrier's EA-18G det and F/A-18E tanker spawn, and the Growler is auto-fragged into the §77 Escort Jammer slot ahead of a strike package.
 - **Fail signature:** **a launcher scooting into the sea** (the §49 4 km scoot radius is not landmap-checked, and Rota/Tinian are small — this is the highest-value observation on the row); a `missile` TGO spawning empty or with Soviet Scuds (China pack not applied); a heavy squadron spawning inside another aircraft at Andersen (dimensional parking fit, not slot count); Air Assault packages never planned across water; red flying a J-7B (a faction/campaign regression the yaml test should have caught first); the Super Hornet squadrons spawning empty or substituting (CJS pack not installed/ticked) while the legacy F/A-18C squadron still fields normally.
 - **Known and deliberate:** the northern islands (Anatahan, Pagan, Agrihan, Uracus) are `is_in_sea` in the Marianas landmap — a pre-existing terrain-data property inherited from Repartee, which is why no missile site is authored north of Saipan. North West Field stays NEUTRAL (zero runways). Red fields no ambient convoys because no two red bases share an island.
-- **Added 2026-08-03 — the auto-planner fix rides this row.** The first flown turn came out **100% defensive** (33 packages, 28 BARCAP, zero strike/SEAD/DEAD/anti-ship) because BARCAP demand — doubled per fleet CP, and this laydown has four — consumed all 66 fighters, so every offensive package scrubbed for want of its escort; plus the stock 150 NM range gate put the northern half of red out of reach in a 421 NM theatre. Fixed by `MODERN_DOCTRINE.strike_escort_reserve` 0 → 8 (**fork-wide**) plus campaign preseeds `max_mission_range_planes: 400` and `desired_barcap_mission_duration: 60`. Headless-verified BLUE 2 → **25 offensive flights** (74 → 143 aircraft tasked, BARCAP 22 → 14). **Pass:** the turn-1 ATO contains real strike/SEAD/DEAD/anti-ship packages against the PLAN groups and island SAMs, escorted, with CAP still covering both carriers and Andersen. **Fail signature:** an all-BARCAP ATO again (the preseeds did not land — check Settings shows 400 NM and a 60-minute BARCAP station), or the opposite, CAP so thin that red's Badgers reach the boat unopposed. **Watch fork-wide:** the doctrine change touches *every* modern campaign — Baltic Fury and Inherent Resolve should show slightly fewer BARCAP flights and more escorted strikes; Red Tide is Cold War doctrine and must be unchanged.
+- **Added 2026-08-03 — the auto-planner fix rides this row.** The first flown turn came out **100% defensive** (33 packages, 28 BARCAP, zero strike/SEAD/DEAD/anti-ship) because BARCAP demand — doubled per fleet CP, and this laydown has four — consumed all 66 fighters, so every offensive package scrubbed for want of its escort; plus the stock 150 NM range gate put the northern half of red out of reach in a 421 NM theatre. Was fixed by `MODERN_DOCTRINE.strike_escort_reserve` 0 → 8 (**fork-wide**) plus campaign preseeds `max_mission_range_planes: 400` and `desired_barcap_mission_duration: 60`. Headless-verified BLUE 2 → **25 offensive flights** (74 → 143 aircraft tasked, BARCAP 22 → 14). **Pass:** the turn-1 ATO contains real strike/SEAD/DEAD/anti-ship packages against the PLAN groups and island SAMs, escorted, with CAP still covering both carriers and Andersen. **Fail signature:** an all-BARCAP ATO again (the preseeds did not land — check Settings shows 400 NM and a 60-minute BARCAP station), or the opposite, CAP so thin that red's Badgers reach the boat unopposed. **Watch fork-wide:** the doctrine change touches *every* modern campaign — Baltic Fury and Inherent Resolve should show slightly fewer BARCAP flights and more escorted strikes; Red Tide is Cold War doctrine and must be unchanged. **⚠ The doctrine half was REVERTED 2026-08-09** by the planner re-convergence (work order B): `MODERN_DOCTRINE.strike_escort_reserve` is back to 0 fork-wide, so this row's all-BARCAP fail signature is live again on Marianas until the campaign preseeds the 414th planner suite or a per-campaign doctrine fork restores the reserve. The two campaign preseeds (`max_mission_range_planes: 400`, `desired_barcap_mission_duration: 60`) are untouched. Vietnam keeps its reserve of 4.
 
 ### T6 — The survival clock leaves exactly one flyable rescue window · CSAR · ☐ UNTESTED (the clock arithmetic is unit-tested; whether the window is long enough to actually fly a rescue is the design question, and only a played campaign answers it)
 - **What it is:** a survivor lasts `csar_survival_turns` (3), or `csar_survival_turns_hostile` (2) behind the lines, then goes MIA for good.

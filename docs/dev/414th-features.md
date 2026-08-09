@@ -1442,9 +1442,34 @@ Also fixed in passing: the stale `FormationAttackLayout.refuel_pre` comment ("at
 set" — `BOTH` tasking sets pre- *and* post-vul points).
 
 Tests: `tests/ato/flightplans/test_refuel_timing.py` (dwell on the refuel edge, per-size service
-time, push time with/without a pre-vul stop, tanker window post-vul-only vs early-open). Needs an
-in-game sanity pass only in the sense that AI tanking pace varies; the schedule now budgets the
-same time the tanker always reserved.
+time, push time with/without a pre-vul stop, tanker window post-vul-only vs early-open).
+
+#### The dwell is charged to player flights only (2026-08-09)
+
+**Symptom (player report).** An AI strike the player was escorting ran ahead of the kneeboard
+timetable — it reached the target before the escort, which was timed against the same package ToT.
+
+**Root cause — AI never spends the boom time the dwell budgets.** Two independent mechanisms, both
+in the generated `.miz`:
+
+- `RefuelPointBuilder` stops the Refueling task as soon as every jet is at 50% fuel
+  (`stop_if_lua_predicate(0.5)`). At a pre-vul stop that is already true on arrival, so the task
+  ends the moment it starts and the flight flies through.
+- `ai_unlimited_fuel` (on by default) writes `SetUnlimitedFuel(True)` at waypoint 0 and only
+  `SetUnlimitedFuel(False)` at the JOIN, so AI fuel is pinned across the refuel leg regardless.
+
+`push_time` still released the flight from its hold `refuel_service_time` early to pay for the
+stop, and nothing consumed the difference. Measured on one package: strike (2× F-15E, tanker)
+9.02 min early at the join, TARPS (1× F-14, tanker) 5.00 min, escort (2× F-14, no tanker) 0.00 —
+the error is `4 × size + 1` exactly, and the flight without a refuel waypoint is the control.
+
+**Fix.** `FlightPlan.refuel_duration` returns zero when `flight.client_count` is zero, so an AI
+receiver's takeoff time, hold push and chained ETAs all stop carrying a dwell it never flies.
+The package tanker still reserves service time per receiver
+(`PackageRefuelingFlightPlan.patrol_duration`) — overlapping the tanker is harmless, and it keeps
+gas on station for an AI flight that does come up thirsty.
+
+In-game pass: checklist **B53**.
 
 ### Tanker tasking falls back to the fuel estimate (2026-07-08)
 
@@ -4565,7 +4590,8 @@ default when the name gives no number).
 
 ### Gating
 
-`auto_range_fuel_tanks` — Mission Generation → Loadouts, **default ON** (inert on short routes). It now
+`auto_range_fuel_tanks` — Mission Generation → Loadouts, **default OFF since the 2026-08-09
+re-convergence** (the planner-suite preset turns it on; inert on short routes). It now
 gates both the generation-time top-up and the plan-time tier 1, and is the master for
 `fuel_tanks_over_jammers` — Mission Generation → Loadouts, **default ON**, the tier-2 kill switch. The
 tank-aware *decision* (counting bags already on the jet) is unconditional — it just reads the loadout the
@@ -4701,8 +4727,9 @@ clock reads the same date and simply begins marching forward from there. No jump
 
 ### Gating
 
-`continuous_campaign_clock` — Campaign Management → **Campaign clock & weather**, **default ON**. Turning it
-off restores the stock per-turn rotation + memoryless weather exactly. Requires day-and-night missions (above).
+`continuous_campaign_clock` — Campaign Management → **Campaign clock & weather**, **default OFF
+since the 2026-08-09 re-convergence** (the planner-suite preset turns it on). Off = the stock
+per-turn rotation + memoryless weather exactly. Requires day-and-night missions (above).
 
 ### Files & tests
 
@@ -6408,7 +6435,8 @@ is the same sky):
 demoting night CAS would wrongly ground an A-10C II alongside an A-1. Night awareness is
 blocked on that data existing, not forgotten.
 
-Gated by `weather_aware_planning` (Air Doctrine → Auto-planner behavior, default **ON** —
+Gated by `weather_aware_planning` (Air Doctrine → Auto-planner behavior, default **OFF since
+the 2026-08-09 re-convergence**, the planner-suite preset turns it on —
 clear skies are a byte-identical no-op, so the toggle only matters while the weather is
 actually bad; every read is getattr-guarded so headless fakes and old saves degrade to
 "clear"). Tests: `tests/fourteenth/test_weather_planning.py` (classifiers, gates, the
@@ -6445,7 +6473,8 @@ adds two couplings:
    keeping variety (a weighting, not a max).
 
 Gating: the weighted-choice under `adaptive_procurement` (Campaign Management → Commander
-economy, default **ON**); the site repair under `auto_repair_air_defenses` (same section, default **OFF** —
+economy, default **OFF since the 2026-08-09 re-convergence** — the planner-suite preset turns
+it on); the site repair under `auto_repair_air_defenses` (same section, default **OFF** —
 it materially changes campaign difficulty: the SAM belt regenerates unless the player keeps
 pressure on it). Not preseeded anywhere (Red Tide is feature-locked). Tests:
 `tests/fourteenth/test_adaptive_procurement.py` (the repair's gate/cap/priority/budget-skip/category-exclusions/wreck-cleanup, the weighted-choice gate). Checklist B20 — needs an in-game pass (red visibly rebuilds a
@@ -6480,7 +6509,8 @@ strikes push behind** (providers are read-only). The carrier stagger runs after 
 ever delays, so it can push a strike deeper into — never ahead of — its window;
 best-effort by design. Symmetric (each coalition's scheduler coordinates its own ATO).
 
-Gated by `sead_strike_coordination` (Air Doctrine → Auto-planner behavior, default **ON**).
+Gated by `sead_strike_coordination` (Air Doctrine → Auto-planner behavior, default **OFF since
+the 2026-08-09 re-convergence**; the planner-suite preset turns it on).
 Tests: `tests/test_sead_strike_coordination.py` (the pure window math end-to-end + the
 wiring: ring matching, latest-provider windows, player/ASAP immunity, provider
 read-only, massing, the gate, a dead SAM's zero ring). Checklist B21 — needs an in-game
@@ -7560,7 +7590,8 @@ airborne. Two design choices keep that from flatlining the war:
 
 Ship count *within* a flight is already effect-neutral (the plugin emits one bubble per group,
 from the lead — a 4-ship jams exactly like a 2-ship), so the only count lever is a per-side
-**`max_escort_jammers`** cap (Air Doctrine, default 4, 0 disables auto-planned jammers) enforced
+**`max_escort_jammers`** cap (Air Doctrine, default **0 since the 2026-08-09 re-convergence** —
+no auto-planned jammers; the planner-suite preset sets 4) enforced
 in `PackageFulfiller.can_plan_escort` by counting the ATO's ESCORT_JAMMER flights — an
 airframe-economy bound, since the effects are already self-limiting. Plugin option `recoverySec`.
 

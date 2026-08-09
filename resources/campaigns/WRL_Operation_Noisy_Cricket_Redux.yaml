@@ -201,7 +201,9 @@ squadrons:
     - primary: BARCAP
       secondary: air-to-air
       aircraft:
-        - F-14A Tomcat (Block 135-GR Late)
+        # Iran 2015 rosters only the Export block (see scenic_route.yaml -- same
+        # upstream #830 fix, same whole-file CRLF merge loss).
+        - F-14A Tomcat (Block 95-GR Export)
       size: 10
 advanced_iads: true
 iads_config:

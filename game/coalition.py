@@ -151,6 +151,24 @@ class Coalition:
         # CSAR postdates the oldest saves.
         if "downed_pilots" not in state:
             state["downed_pilots"] = []
+        else:
+            # Migration: the fork's §21 DownedPilot (game.fourteenth.downed_pilots)
+            # was replaced wholesale by upstream #929's, so every entry in a
+            # pre-2026-08-07 save unpickles as the inert placeholder
+            # (persistency._handle_misc). Drop those -- the two shapes share no
+            # fields, and Game._rebuild_downed_pilot_index dereferences .id on
+            # every member.
+            from game.squadrons.downedpilot import DownedPilot
+
+            state["downed_pilots"] = [
+                pilot
+                for pilot in state["downed_pilots"]
+                if isinstance(pilot, DownedPilot)
+            ]
+        # Migration: the §21 held-POW model went with upstream #929's CSAR
+        # (2026-08-07). Drop the pending-recovery list -- nothing reads it, and its
+        # members are tombstone placeholders.
+        state.pop("pending_pow_recoveries", None)
 
         # Migration: older saves predate the SCAR commander-capture flag.
         state.setdefault("captured_commander", False)

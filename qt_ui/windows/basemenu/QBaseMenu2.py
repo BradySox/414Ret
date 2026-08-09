@@ -193,7 +193,7 @@ class QBaseMenu2(QDialog):
         if self.cp.is_fleet:
             for go in self.cp.ground_objects:
                 if go.is_naval_control_point:
-                    if go.alive_unit_count > 0:
+                    if go.alive_unit_count() > 0:
                         for u in go.units:
                             u.kill(events)
                     else:

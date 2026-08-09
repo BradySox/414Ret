@@ -1,10 +1,13 @@
 """Tests for the tanker-stop time budget.
 
-A flight that visits a tanker spends real time cycling the boom, so the plan
-must budget it: the receiver's schedule dwells at the REFUEL waypoint (shifting
-takeoff and the hold push earlier), and the package tanker's on-station window
-opens early enough to serve a pre-vul receiver while still covering the
+A player flight that visits a tanker spends real time cycling the boom, so the
+plan must budget it: the receiver's schedule dwells at the REFUEL waypoint
+(shifting takeoff and the hold push earlier), and the package tanker's on-station
+window opens early enough to serve a pre-vul receiver while still covering the
 post-vul service.
+
+An AI flight is charged nothing, because it takes no gas -- see
+``FlightPlan.refuel_duration``. The tanker still reserves the service time.
 """
 
 from datetime import datetime, timedelta
@@ -35,9 +38,10 @@ def _wp(name: str, kind: FlightWaypointType = FlightWaypointType.NAV) -> FlightW
     return FlightWaypoint(name, kind, _POINT)
 
 
-def _flight(size: int = 2) -> SimpleNamespace:
+def _flight(size: int = 2, clients: int = 0) -> SimpleNamespace:
     return SimpleNamespace(
-        roster=SimpleNamespace(max_size=size),
+        roster=SimpleNamespace(max_size=size, player_count=clients),
+        client_count=clients,
         unit_type=SimpleNamespace(max_speed=kph(900), patrol_altitude=None),
         is_helo=False,
         package=SimpleNamespace(formation_speed=lambda is_helo: None),
@@ -53,12 +57,24 @@ class _BarePlan(FlightPlan[Layout]):
 
 
 def test_refuel_waypoint_adds_service_time_to_the_leg() -> None:
-    plan = _BarePlan(_flight(size=2), SimpleNamespace())  # type: ignore[arg-type]
+    plan = _BarePlan(_flight(size=2, clients=1), SimpleNamespace())  # type: ignore[arg-type]
     refuel = _wp("refuel", FlightWaypointType.REFUEL)
     join = _wp("join", FlightWaypointType.JOIN)
     assert plan.total_time_between_waypoints(refuel, join) == refuel_service_time(2)
     # A plain nav edge gets no dwell.
     assert plan.total_time_between_waypoints(join, refuel) == timedelta()
+
+
+def test_ai_flight_is_charged_no_dwell_at_the_tanker() -> None:
+    """An AI flight flies through its REFUEL waypoint without taking gas.
+
+    Budgeting a dwell it never spends put the whole downstream schedule early. See
+    ``FlightPlan.refuel_duration``.
+    """
+    plan = _BarePlan(_flight(size=2, clients=0), SimpleNamespace())  # type: ignore[arg-type]
+    refuel = _wp("refuel", FlightWaypointType.REFUEL)
+    join = _wp("join", FlightWaypointType.JOIN)
+    assert plan.total_time_between_waypoints(refuel, join) == timedelta()
 
 
 def test_refuel_duration_scales_with_flight_size() -> None:
@@ -102,13 +118,25 @@ def _formation_layout(refuel_pre: FlightWaypoint | None) -> FormationAttackLayou
 
 def test_push_time_includes_the_pre_vul_tanker_stop() -> None:
     refuel_pre = _wp("refuel", FlightWaypointType.REFUEL)
-    plan = _Formation(_flight(size=2), _formation_layout(refuel_pre))  # type: ignore[arg-type]
+    plan = _Formation(_flight(size=2, clients=1), _formation_layout(refuel_pre))  # type: ignore[arg-type]
     # All travel is zero, so pushing early exactly covers the boom time.
     assert plan.push_time == T0 - refuel_service_time(2)
 
 
+def test_ai_push_time_ignores_the_pre_vul_tanker_stop() -> None:
+    """The hold must not release an AI flight early for gas it never takes.
+
+    This is the whole point of the AI dwell exemption: pushing early and then not
+    tanking is what put an AI strike at the join, the IP and the target
+    ``refuel_service_time`` ahead of its player escort.
+    """
+    refuel_pre = _wp("refuel", FlightWaypointType.REFUEL)
+    plan = _Formation(_flight(size=2, clients=0), _formation_layout(refuel_pre))  # type: ignore[arg-type]
+    assert plan.push_time == T0
+
+
 def test_push_time_without_a_tanker_is_unchanged() -> None:
-    plan = _Formation(_flight(size=2), _formation_layout(None))  # type: ignore[arg-type]
+    plan = _Formation(_flight(size=2, clients=1), _formation_layout(None))  # type: ignore[arg-type]
     assert plan.push_time == T0
 
 

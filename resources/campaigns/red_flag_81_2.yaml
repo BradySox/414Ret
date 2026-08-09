@@ -50,6 +50,12 @@ victory:
       lose_cps: [Nellis]
 
 settings:
+  # The Vietnam mechanics below are only half of each gate: their runtime lives in the
+  # `vietnamops` Lua plugin, and a host whose saved plugin defaults have it unticked
+  # loses all of them with no log line (the §36 lesson). The plugin ships
+  # defaultValue: true, but a campaign preseed is what overrides a saved default.
+  plugins:
+    vietnamops: true
   # Vietnam mechanics preseed (era pre-seed, per the design note
   # docs/dev/design/414th-red-flag-81-campaign-notes.md section 6). Red Flag IS the
   # institutionalized Vietnam feedback loop, so the whole stack applies -- except

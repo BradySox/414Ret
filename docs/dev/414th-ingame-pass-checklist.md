@@ -3346,7 +3346,7 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
   Loadouts).
 
 ### S2 — Mobile missile sites relocate (the SCUD hunt) · §49 · ☑ VERIFIED (2026-07-17 night fly: stagger + immobile-exclusion + give-up all proven live, FPS storm gone; one noted collateral — slow-recovering fired SCUDs can be given up before they finish packing)
-- **Hardware caveat found 2026-08-05 (flown Marianas 2027, Tacviews `Tacview-20260805-190738` + `-203549`): the CurrentHill `CH_CJ10` launcher does not drive, so a site built on it never scoots.** All **nine** launchers across all **three** PLARF sites moved **0.00 km** in both missions — not one metre — while the drivable vehicles sharing those groups (the §85 bowsers ATZ-5/TZ-22/GAZ-66 and the PGZ-09/PGL-625/LD-3000 SHORAD) jittered only 0.05–0.31 km, the signature of a group **pinned by an undrivable member** rather than one that was never routed. `mobile_missile_relocation` + the `mobilemissiles` plugin were both preseeded and `CH_CJ10` was not excluded, so the plugin was pushing routes the whole time. The sites fired 25+ CJ-10s and then sat for the remaining ~25 minutes, i.e. the same post-fire pin already recorded for `CH_Shahed136` — but this hardware fires early every mission, so "pinned after firing" and "never scoots" are the same thing in play. **Fixed by adding `CH_CJ10` to `IMMOBILE_UNIT_IDS`** so the site is never emitted (no futile pushes, no ground-AI churn); `CH_Shahed136` is deliberately NOT excluded because its never-fired sites do drive. **Consequence for T5: Marianas' authored "hunt the launchers" mechanic does not exist** — those three sites are stationary targets, and making them scoot needs launcher hardware DCS will drive.
+- **Hardware caveat found 2026-08-05 (flown Marianas 2027, Tacviews `Tacview-20260805-190738` + `-203549`): the CurrentHill `CH_CJ10` launcher does not drive, so a site built on it never scoots.** All **nine** launchers across all **three** PLARF sites moved **0.00 km** in both missions — not one metre — while the drivable vehicles sharing those groups (the §85 bowsers ATZ-5/TZ-22/GAZ-66 and the PGZ-09/PGL-625/LD-3000 SHORAD) jittered only 0.05–0.31 km, the signature of a group **pinned by an undrivable member** rather than one that was never routed. `mobile_missile_relocation` was preseeded, the `mobilemissiles` plugin was running, and `CH_CJ10` was not excluded, so the plugin was pushing routes the whole time — the 0.05–0.31 km jitter on the drivable group members is the direct evidence of that, so the verdict stands. (Correction, 2026-08-08: the plugin was on via its shipped `defaultValue: true`, **not** via a campaign preseed. Marianas' `plugins:` map sat at the yaml document root, where the loader never reads it, until the whole-repo health audit moved it under `settings:`. A host who had unticked the plugin would have flown this with no relocation at all.) The sites fired 25+ CJ-10s and then sat for the remaining ~25 minutes, i.e. the same post-fire pin already recorded for `CH_Shahed136` — but this hardware fires early every mission, so "pinned after firing" and "never scoots" are the same thing in play. **Fixed by adding `CH_CJ10` to `IMMOBILE_UNIT_IDS`** so the site is never emitted (no futile pushes, no ground-AI churn); `CH_Shahed136` is deliberately NOT excluded because its never-fired sites do drive. **Consequence for T5: Marianas' authored "hunt the launchers" mechanic does not exist** — those three sites are stationary targets, and making them scoot needs launcher hardware DCS will drive.
 - **Which launchers drive is now answerable from `dcs.log` alone (2026-08-06).** The verdict moved into the unit definitions as `mobile: false` (`hy_launcher`, `Silkworm_SR`, `CH_CJ10`, each with its flown evidence in a comment) and the plugin's give-up line now **names the unit types**: `MOBILEMISSILES|: giving up on <group> [CH_CJ10, CH_SX2190] (no movement across 2 route pushes)`. `v1_launcher` joined them 2026-08-06 **without** a Tacview — a 1944 launch ramp is a poured emplacement of the `hy_launcher` shape, and `class: Missile` + the setting defaulting ON made it a latent ANTIFREEZE for the first WWII campaign to author a missile marker (none does today, so nothing to re-fly). **Still unestablished either way: `CHAP_9K720_HE`, `CHAP_9K720_Cluster`, `CH_IskanderK`, `CH_DF21D`, `CH_YJ12B`** — Baltic Fury's Iskander battery is the cheapest test (one site, preseeded). Note it is tested as **`CHAP_9K720_*`**, not `CH_IskanderM`: that yaml is a tombstone that no longer registers (ED integrated the system into base DCS under the `CHAP_` ids), so a `dcs.log` line will never name it. **Fly criterion:** on any campaign with a mod launcher, grep `dcs.log` for `MOBILEMISSILES|: giving up` and record the bracketed types; a type that appears across two missions goes in its yaml as `mobile: false` (a data edit, no code change), a type that never appears drives fine. A group carrying a §85-style support park now also disambiguates the two failure modes by itself: support trucks jittering 0.05–0.31 km while the launchers read 0.00 km is the pinned-by-an-undrivable-member signature.
 - **2026-07-17 night fly (fresh Scenic Route Merged turn 1 on the #631/#632 build, Tacview
   `Tacview-20260717-214932`, session `tacview-test-analysis-5bb161`): all three FPS fixes
@@ -3997,3 +3997,70 @@ sampling, the anchor-centred geometry, the safe degrades) is covered by
 `tests/missiongenerator/test_naval_station_keeping.py` (11 cases) and the envelope is guard-tested
 against ship threat rings — but whether DCS's naval AI *loops* a group on `SwitchWaypoint`, and how
 far it actually wanders doing it, only a mission shows.
+
+### B53 — AI flights no longer push early for a tanker stop they never fly · §46 · ☐ UNTESTED (built 2026-08-09)
+
+> **The nine minutes nobody spends.** Found from a player report — the escorted strike was ahead
+> of the kneeboard timetable — and confirmed against the generated `.miz` before any code was
+> touched. The 2026-07-01 receiver-dwell budget (§46, PR #399) charges
+> `refuel_service_time(size)` = `4 × size + 1` minutes to the leg leaving a `REFUEL` waypoint, and
+> `FormationFlightPlan.push_time` releases the flight from its hold that much earlier so it can
+> tank and still make the join. Humans spend it. **AI never does:** `RefuelPointBuilder` stops the
+> Refueling task the moment every jet is at 50% fuel — already true on arrival at a pre-vul stop —
+> and `ai_unlimited_fuel` (on by default, and switched off only at the JOIN) pins AI fuel across
+> that leg regardless. So the hold released the AI early and nothing consumed the difference.
+> Measured on one WILDCAT package: strike (2× F-15E, tanker) **9.02 min early** at the join, TARPS
+> (1× F-14, tanker) **5.00 min**, escort (2× F-14, **no** tanker) **0.00** — the error equals
+> `4 × size + 1` exactly, and the flight without a refuel waypoint is the control. Fix:
+> `FlightPlan.refuel_duration` returns zero for a flight with no clients, so an AI receiver's
+> takeoff, hold push and chained ETAs all stop carrying the phantom dwell. The package tanker
+> still reserves service time per receiver (`PackageRefuelingFlightPlan.patrol_duration`) —
+> overlapping is harmless and keeps gas on station. Pinned in
+> `tests/ato/flightplans/test_refuel_timing.py` (the AI dwell exemption and the AI push time, each
+> against its player counterpart).
+
+Plan a package where the strike takes a pre-vul tanker and a player flies the escort — the
+kneeboard's Refuel→Join leg shows a GSPD far below cruise (~180–280 kt) when a stop is budgeted.
+Fly it and tank as briefed.
+
+- **Pass:** the AI strike reaches the join and the IP at the times printed on your kneeboard, and
+  its weapons go down inside your TOT window rather than minutes before you arrive. A package mate
+  with no refuel waypoint is unchanged.
+- **Fail signatures:**
+  1. **The strike is still early by `4 × size + 1` minutes.** The dwell is still being charged —
+     check `client_count` on that flight (a flight with a human in it *should* still be charged).
+  2. **The strike is now LATE.** The dwell was load-bearing for something else on that route; look
+     at `_travel_time_to_waypoint` and the takeoff time, which both shift with this property.
+  3. **The AI arrives at the tanker before it is on station.** `patrol_start_time` reads the
+     receiver's `chained_tot_for_waypoint(refuel_pre)`, which now falls ~9 min later for AI — the
+     window should have moved with it.
+  4. **A player flight is early too.** Different bug: the human skipped or short-cycled the boom.
+     Expected behaviour, not a planner fault.
+
+**What CI cannot exercise:** whether DCS's AI actually flies the leg at the planned speed. The
+budget arithmetic is unit-tested; the arrival time is a mission.
+
+### B54 — Planner behavior bar switches the suite in the settings UI · re-convergence · ☐ UNTESTED (built 2026-08-09, app pass not flight)
+
+> First slice of the 2026-08-09 re-convergence decision (see the divergence audit's DECIDED
+> block): the eight planner gates ship at stock/upstream values, and a **Planner behavior** bar
+> atop the Campaign Doctrine settings page applies "Stock (upstream)" / "414th suite" in one
+> click (`game/settings/plannersuite.py`; bar in `qt_ui/windows/settings/QSettingsWindow.py`,
+> which CI does not type-check). Apply/detect and the stock-defaults contract are pinned in
+> `tests/settings/test_plannersuite.py`; the Qt wiring is not.
+
+App pass, no flight needed: open Settings → Campaign Doctrine in a game.
+
+- **Pass:** the bar shows "Current: Stock (upstream)" on a fresh game; clicking "414th suite"
+  updates the eight controls below (overlap 15, jammers 4, the six checkboxes on) and the label
+  reads "Current: 414th suite"; clicking "Stock (upstream)" restores them; hand-changing one
+  control flips the label to "Current: Custom".
+- **Fail signatures:**
+  1. **The bar is missing** — the `CAMPAIGN_DOCTRINE_PAGE` attach branch never matched the page
+     name.
+  2. **Clicking a button changes the label but not the controls below** —
+     `update_from_settings` is not refreshing the auto-generated page.
+  3. **A fresh game shows "Custom"** — a Settings default drifted from
+     `PLANNER_SUITE_VALUES`' stock column (the `test_fresh_settings_are_stock` guard should
+     have caught it first).
+

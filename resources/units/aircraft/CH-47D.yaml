@@ -9,6 +9,6 @@ default_livery: standard
 variants:
   CH-47D: null
 tasks:
-  Air Assault: 90
+  Air Assault: 120
   CSAR: 85
   Transport: 70

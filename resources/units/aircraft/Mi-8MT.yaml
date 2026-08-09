@@ -27,7 +27,7 @@ radios:
     intra_flight_radio_index: 1
     inter_flight_radio_index: 1
 tasks:
-  Air Assault: 40
+  Air Assault: 95
   CSAR: 35
   BAI: 385
   CAS: 385

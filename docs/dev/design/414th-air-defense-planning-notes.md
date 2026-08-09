@@ -1,5 +1,34 @@
 # 414th Air Defense Planning Notes
 
+> **STATUS 2026-08-09 — the geometry and volume half of this note is HISTORICAL.**
+>
+> Work order D of the planner re-convergence decision
+> ([`414th-autoplanner-upstream-divergence-audit.md`](414th-autoplanner-upstream-divergence-audit.md),
+> DECIDED block) reverted §6's planning geometry to upstream. The DM's call: default
+> planner behavior returns to upstream, deliberate or not. Reverted outright, not
+> re-gated.
+>
+> **No longer live — do not author against these sections:** threat-weighted BARCAP
+> volume (`air_threat_score`, `normalized_air_threat`, `FRONT_LINE_AIR_THREAT`,
+> `BARCAP_THREAT_CEILING`) · the BARCAP orbit forward-bias
+> (`BARCAP_THREAT_FORWARD_BIAS`) · the forward defensive CAP line and the
+> never-abandon-a-front-anchor rule · the red forward-middle BARCAP layer
+> (`forward_cap_front_anchor`, `ForwardBarcapZone`) · front-anchored support orbits
+> and the AI depth factor (`support_orbit_anchor`, `AI_SUPPORT_DEPTH_FACTOR`) · the
+> `air_engagement` escort-reach zone · the FLOT navmesh hazard capsule.
+>
+> **Still live:** overlapping/jittered BARCAP waves (`barcap_overlap_time`, byte-parity
+> with upstream at 0) · `cap_orbit_distance_band` (an upstream bug fix) · the
+> strike-escort reserve trim, Vietnam-only · QRA (§1), which is a separate feature and
+> untouched.
+>
+> BARCAP volume is now upstream's flat `2 * rounds` for a fleet CP and `rounds`
+> otherwise; orbit placement is upstream's push toward the nearest enemy airfield;
+> support orbits anchor on the package target and step off the nearest threat boundary.
+> The rationale below is kept because it records *why* each divergence existed and what
+> it was measured to fix — useful if any of it is ever revisited, and the source for the
+> post-freeze upstream carves. It is not a description of current behavior.
+
 ## BARCAP vs SCRAMBLE Doctrine
 
 In this note, "SCRAMBLE" is doctrinal shorthand for reactive interceptor behavior; the

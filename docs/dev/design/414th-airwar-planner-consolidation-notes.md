@@ -1,6 +1,27 @@
 # 414th Air-War Planner Consolidation — design notes
 
-**Status:** Track 1 LANDED (slices 1–2); consolidation intentionally stopped there · **Date:** 2026-06-25
+> **SUPERSEDED 2026-08-09 — the product of this consolidation has been DELETED.**
+>
+> This note's deliverable was `AirspaceGeometry`
+> (`game/ato/flightplans/airspacegeometry.py`), a facade over the §6 placement helpers.
+> Work order D of the planner re-convergence
+> ([`414th-autoplanner-upstream-divergence-audit.md`](414th-autoplanner-upstream-divergence-audit.md),
+> DECIDED block) reverted §6's geometry to upstream, which removed every one of the
+> helpers the facade wrapped. `airspacegeometry.py` and `supportorbit.py` are both
+> deleted; `standoff_anchor`, `forward_middle_anchor` and `barcap_rounds` no longer
+> exist.
+>
+> One piece survived the deletion: `trim_rounds_for_escort_reserve`, which was a
+> staticmethod on `AirspaceGeometry` and is now a module-level function in
+> `game/commander/theaterstate.py`, next to its only caller. It lost its
+> `threat_scores` parameter with the threat field.
+>
+> Do not author against this note. It is kept for the reasoning it records — in
+> particular why the DEAD reachability gate and the theater-tanker demand pass were
+> examined and deliberately *not* folded in (both are still live and still standalone,
+> which is why neither was affected by the revert).
+
+**Status:** SUPERSEDED (see banner) · Track 1 LANDED (slices 1–2); consolidation intentionally stopped there · **Date:** 2026-06-25
 **Related:** [`414th-air-defense-planning-notes.md`](414th-air-defense-planning-notes.md),
 [`414th-moose-ops-opportunity-map.md`](414th-moose-ops-opportunity-map.md),
 [`414th-moose-longview.md`](414th-moose-longview.md), CLAUDE.md §6 (air-defense rework),

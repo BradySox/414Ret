@@ -100,8 +100,8 @@ Most of this is opt-in. Full list with toggles, defaults and known limitations:
   low-level CAS and BAI behind all-weather strikes.
 - Strike packages headed into a defended area are timed just behind the SEAD servicing that
   SAM. Fly the SEAD yourself and the AI push forms behind you.
-- Also: threat-weighted BARCAP waves, front-anchored support orbits, weighted off-mission
-  combat resolution, per-side planner unpredictability.
+- Also: overlapping jittered BARCAP waves, weighted off-mission combat resolution, per-side
+  planner unpredictability.
 
 ### Battlefield and world
 

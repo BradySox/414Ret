@@ -6,11 +6,10 @@ import math
 from collections.abc import Iterable, Iterator
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional, TYPE_CHECKING, Union, Dict
+from typing import Optional, TYPE_CHECKING, TypeVar, Union, Dict
 
 from shapely.geometry import LineString, Point as ShapelyPoint
 
-from game.ato.flightplans.airspacegeometry import AirspaceGeometry
 from game.commander.battlepositions import BattlePositions
 from game.commander.objectivefinder import ObjectiveFinder
 from game.db import GameDb
@@ -21,7 +20,6 @@ from game.settings import Settings
 from game.theater import (
     ConflictTheater,
     ControlPoint,
-    ForwardBarcapZone,
     FrontLine,
     MissionTarget,
     Player,
@@ -103,14 +101,71 @@ def seed_refueling_targets(
     return [RefuelingTarget(location, method) for method in servable]
 
 
+#: Key type of the BARCAP round counts trimmed by
+#: :func:`trim_rounds_for_escort_reserve` (a control point in practice; the
+#: function itself is key-agnostic).
+_RoundsKeyT = TypeVar("_RoundsKeyT")
+
+
+def trim_rounds_for_escort_reserve(
+    rounds: dict[_RoundsKeyT, int],
+    available_fighters: int,
+    reserve: int,
+    jets_per_round: int = 2,
+) -> dict[_RoundsKeyT, int]:
+    """Free ~``reserve`` fighters from BARCAP volume when the pool is short.
+
+    The ``Doctrine.strike_escort_reserve`` lever: the HTN plans BARCAP before
+    any strike, so on fighter-poor eras (Vietnam) every airframe is committed
+    by the time ``always_escort_strikes`` requests escorts, and they all prune
+    -- B-52s fly naked through Linebacker. This trims BARCAP *demand* instead:
+    drop one round at a time until the remaining demand fits under
+    ``available - reserve``. Coverage thins to one round per location first; if
+    even those floors are unaffordable, whole locations are abandoned (MiGCAP
+    where it matters -- the era answer), but the first location always keeps a
+    round.
+
+    Locations are trimmed in the planner's own iteration order. An earlier
+    revision ranked them by an air-threat score, but that threat field was part
+    of the §6 air-defense rework and went away with it; the reserve guarantee
+    (how many jets are freed) is unaffected -- only which location thins first.
+
+    No-ops when the pool comfortably covers demand plus the reserve, and when
+    the doctrine sets no reserve at all, so every non-Vietnam campaign keeps its
+    full BARCAP volume. Pure and key-agnostic.
+    """
+    trimmed = dict(rounds)
+    if reserve <= 0 or not trimmed:
+        return trimmed
+    demand = jets_per_round * sum(trimmed.values())
+    if available_fighters >= demand + reserve:
+        return trimmed
+    # BARCAP planning consumes airframes until DEMAND or SUPPLY runs out, so
+    # freeing jets means cutting demand BELOW supply-minus-reserve -- not
+    # merely trimming `reserve`-worth of rounds off an oversubscribed total.
+    affordable_rounds = max(0, available_fighters - reserve) // jets_per_round
+    rounds_to_free = sum(trimmed.values()) - affordable_rounds
+    protected = next(iter(trimmed))
+    while rounds_to_free > 0:
+        # Phase 1: thin everything to a one-round floor.
+        candidates = [key for key, count in trimmed.items() if count > 1]
+        if not candidates:
+            # Phase 2: floors are still unaffordable -- abandon whole
+            # locations, never the protected one.
+            candidates = [
+                key for key, count in trimmed.items() if count > 0 and key != protected
+            ]
+            if not candidates:
+                break
+        trimmed[candidates[-1]] -= 1
+        rounds_to_free -= 1
+    return trimmed
+
+
 @dataclass
 class TheaterState(WorldState["TheaterState"]):
     context: PersistentContext
     barcaps_needed: dict[ControlPoint, int]
-    # Added forward-middle BARCAP screens (414th red forward-BARCAP layer). Keyed by
-    # a synthetic ForwardBarcapZone target; separate from barcaps_needed so the rear
-    # BARCAP is untouched. Empty except for red active fronts on large maps.
-    forward_barcaps_needed: dict[ForwardBarcapZone, int]
     active_front_lines: list[FrontLine]
     front_line_stances: dict[FrontLine, Optional[CombatStance]]
     vulnerable_front_lines: list[FrontLine]
@@ -223,7 +278,6 @@ class TheaterState(WorldState["TheaterState"]):
         return TheaterState(
             context=self.context,
             barcaps_needed=dict(self.barcaps_needed),
-            forward_barcaps_needed=dict(self.forward_barcaps_needed),
             active_front_lines=list(self.active_front_lines),
             front_line_stances=dict(self.front_line_stances),
             vulnerable_front_lines=list(self.vulnerable_front_lines),
@@ -316,32 +370,21 @@ class TheaterState(WorldState["TheaterState"]):
             nautical_miles(game.settings.max_threat_range),
         )
 
-        vulnerable_cps = list(finder.vulnerable_control_points())
-        barcap_threat_scores = {
-            cp: finder.air_threat_score(cp) for cp in vulnerable_cps
-        }
-        max_barcap_threat = max(barcap_threat_scores.values(), default=0.0)
-
         barcaps_needed = {
-            cp: AirspaceGeometry.barcap_rounds(
-                barcap_rounds,
-                barcap_threat_scores[cp],
-                max_barcap_threat,
-                cp.is_fleet,
-            )
-            for cp in vulnerable_cps
+            cp: 2 * barcap_rounds if cp.is_fleet else barcap_rounds
+            for cp in finder.vulnerable_control_points()
         }
         # Strike-escort reserve (Doctrine.strike_escort_reserve): on fighter-poor
         # eras the HTN spends every fighter on BARCAP before any strike proposes
         # its escort, so always_escort_strikes prunes to nothing. Trim BARCAP
-        # demand (least-threatened CPs first, never below one round) so ~reserve
+        # demand (never below one round at the first location) so ~reserve
         # airframes stay untasked for the escorts planned later this same run.
+        # Zero for every doctrine except Vietnam, so this is a no-op elsewhere.
         escort_reserve = coalition.doctrine.strike_escort_reserve
         if escort_reserve > 0:
             available_fighters = coalition.air_wing.untasked_fighters()
-            barcaps_needed = AirspaceGeometry.trim_rounds_for_escort_reserve(
+            barcaps_needed = trim_rounds_for_escort_reserve(
                 barcaps_needed,
-                barcap_threat_scores,
                 available_fighters,
                 escort_reserve,
                 # Worst-case BARCAP flight size (the fpa weights roll 2-4 ships):
@@ -350,38 +393,9 @@ class TheaterState(WorldState["TheaterState"]):
                 jets_per_round=4,
             )
 
-        # 414th red forward-BARCAP layer: on large maps, add ONE forward-middle
-        # BARCAP screen per red CP that anchors an active front, in addition to the
-        # rear BARCAP above. "Large" = the rear CP sits farther from the FLOT than the
-        # rear BARCAP's own reach (cap_max_distance_from_cp), so small maps -- where the
-        # rear orbit already covers the front -- are unaffected. Red (AI) side only.
-        forward_barcaps_needed: dict[ForwardBarcapZone, int] = {}
-        if not player.is_blue:
-            doctrine = coalition.doctrine
-            standoff = doctrine.cap_engagement_range + nautical_miles(5)
-            geometry = AirspaceGeometry(
-                game.theater, player, coalition.opponent.threat_zone
-            )
-            for front in finder.front_lines():
-                friendly_cp = front.red_cp
-                if (
-                    friendly_cp.position.distance_to_point(front.position)
-                    <= doctrine.cap_max_distance_from_cp.meters
-                ):
-                    continue
-                anchor = geometry.forward_middle_anchor(friendly_cp, standoff)
-                if anchor is None:
-                    continue
-                center, heading = anchor
-                zone = ForwardBarcapZone(
-                    f"Forward BARCAP {friendly_cp.name}", center, coalition, heading
-                )
-                forward_barcaps_needed[zone] = 1
-
         return TheaterState(
             context=context,
             barcaps_needed=barcaps_needed,
-            forward_barcaps_needed=forward_barcaps_needed,
             active_front_lines=list(finder.front_lines()),
             front_line_stances={f: None for f in finder.front_lines()},
             vulnerable_front_lines=list(finder.front_lines()),

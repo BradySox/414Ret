@@ -357,7 +357,7 @@ def test_radar_sam_threat_requests_the_jammer_escort() -> None:
         package=SimpleNamespace(flights=[flight], primary_flight=None)
     )
     threat_zones = SimpleNamespace(
-        waypoints_threatened_by_aircraft_engagement=lambda waypoints: False,
+        waypoints_threatened_by_aircraft=lambda waypoints: False,
         waypoints_threatened_by_radar_sam=lambda waypoints: True,
     )
     stub = SimpleNamespace(

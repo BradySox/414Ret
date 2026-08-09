@@ -6,10 +6,15 @@
 
 414Ret reworks how a Retribution campaign plans its air war so it behaves like a campaign
 rather than a queue of isolated sorties. The auto-planner holds interceptors in reserve, lays
-overlapping and threat-weighted fighter coverage, anchors its support orbits on the front,
-refuses to send bombers through a live SAM belt, and keeps mobile short-range defences off
-your datalink so you plan SEAD against the sites that matter. This page explains each piece and
-how it changes what you see when you build packages.
+overlapping fighter coverage, refuses to send bombers through a live SAM belt, and keeps mobile
+short-range defences off your datalink so you plan SEAD against the sites that matter. This
+page explains each piece and how it changes what you see when you build packages.
+
+> **Changed 2026-08-09.** The fork's air-defence *planning geometry* — where CAP, AWACS and
+> tankers sit, and how many CAP waves each base gets — was returned to stock Retribution
+> behaviour. Threat-weighted coverage, the forward CAP line, the red forward-middle layer and
+> front-anchored support orbits are all gone. The sections below describe what the planner does
+> now.
 
 For the per-task fragging detail (SEAD vs DEAD, BARCAP timing, escorts), see
 [Mission-planning](Mission-planning). Reactive defense — everything on this page — is
@@ -35,45 +40,28 @@ The reserve is edited in the air-wing / squadron dialogs; see
 [Air-Wing-Configuration](Air-Wing-Configuration). The old ramp-scramble system is retired — QRA
 is the only live reactive-A2A path.
 
-## Reworked BARCAP coverage
-
-Defensive fighter coverage was reworked so contested sectors get more and the whole line gets
-useful forward coverage, while quiet flanks keep baseline behaviour:
+## BARCAP coverage
 
 - **Overlapping, jittered waves.** Land-CP BARCAP is scheduled as overlapping waves with a
   jittered first wave, instead of front-loaded back-to-back waves that all arrive at mission
   start (which let attackers simply wait the CAP out). The `barcap_overlap_time` doctrine
-  setting controls the overlap; `0` reproduces the legacy schedule.
-- **Forward CAP line.** Coverage now also defends any friendly CP that anchors an **active front
-  line**, so raids inbound to rear income points are screened — not just bases close to an enemy
-  airfield.
-- **Threat-weighted volume and placement.** How many BARCAP waves a defended CP receives, and
-  how far forward the orbit sits, both scale with the **air** threat to that CP (proximity and
-  number of A2A-capable enemy aircraft within range, plus a floor for active fronts). This is
-  **additive only** — a contested sector earns up to roughly double the waves and a forward
-  orbit; a zero-threat CP gets exactly the legacy coverage. Coverage never regresses below the
-  baseline.
-- **Red forward-middle BARCAP layer (large maps).** On a big map, a red front CP whose nearest
-  blue field is off-axis would otherwise fling its screen far from the FLOT. 414Ret adds **one
-  extra** BARCAP, placed roughly halfway from the rear CP to the FLOT and parallel to the front,
-  **in addition to** the unchanged rear/base BARCAP. It is map-scaled (only fires when the rear
-  orbit can't already cover the front), front-relative (no hardcoded distances), and red-side
-  only.
+  setting controls the overlap; `0` reproduces the stock schedule.
+- **Flat volume.** Every defended base gets the same number of waves; a fleet objective gets
+  double. Coverage does not scale with how contested a sector is.
+- **Which bases are defended** is stock Retribution's rule: a base is defended when an enemy
+  airfield sits within the campaign's airbase threat range. A base is not defended merely
+  because it anchors the front, and the AI's aggressiveness setting can leave any base —
+  including a front anchor — uncovered on a given turn.
+- **Strike-escort reserve.** On fighter-poor eras the planner gives up CAP waves so a few
+  airframes stay free for the strike escorts planned later in the same run. Only the Vietnam
+  doctrine uses this; every other campaign keeps its full CAP volume.
 
-The result: when you fly into a hot sector, expect layered, overlapping red CAP that commits
-on you sooner; quiet flanks stay thin.
+## Support orbits
 
-## Front-anchored support orbits
+AWACS and tanker racetracks anchor on the objective they support and stand off from the nearest
+enemy threat by the configured buffer (`aewc_threat_buffer_min_distance`,
+`tanker_threat_buffer_min_distance`, both Campaign Doctrine settings).
 
-AWACS and tanker racetracks are anchored on the **active front line** and stand off into
-friendly airspace, rather than being computed from a single control point's bearing (which
-swung off-axis as the front moved, and could pin a tanker onto its own home runway).
-
-- Support orbits centre on the FLOT nearest the supported area, then push back into friendly
-  airspace along the stable enemy→friendly axis until they clear the enemy threat zone by the
-  configured buffer.
-- The **player** coalition holds forward (closer behind the FLOT, for coverage); the **AI**
-  coalition holds deeper, so red tankers and AWACS don't loiter near the front.
 - **You can find them from the cockpit.** Every blue tanker and AEW&C orbit is painted onto the
   generated mission's **F10 map** as a cyan dashed racetrack with a label — callsign, type,
   radio frequency, TACAN — so "where's my gas?" is answered by the F10 map, no DTC and no
@@ -85,8 +73,8 @@ swung off-axis as the front moved, and could pin a tanker onto its own home runw
 A shared theatre tanker is repositioned **after** the ATO is built, onto the count-weighted
 centre of the flights that actually need fuel (honouring boom vs probe compatibility), instead
 of orbiting wherever the planning anchor happened to land. Same-package buddy tankers are not
-moved; if there is no compatible demand the tanker keeps its front anchor. So the tanker tends
-to sit where your thirsty flights converge.
+moved; if there is no compatible demand the tanker keeps its original anchor. So the tanker
+tends to sit where your thirsty flights converge.
 
 <a name="long-range-carrier-ops"></a>
 ## Long-range carrier ops

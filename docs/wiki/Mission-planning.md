@@ -151,7 +151,7 @@ Combat SAR, and JAMMING — appear in their families with a link to their dedica
   inside the engagement zone and recover the CAP.
 - **AI limitations:** Waypoints can look offset from the objective, but coverage is by
   engagement zone — verify with "Display Selected BARCAP Commit Range". 414Ret schedules
-  BARCAP as overlapping, jittered, threat-weighted waves; see
+  BARCAP as overlapping, jittered waves; see
   [Air-Defense-and-the-Air-War](Air-Defense-and-the-Air-War).
 
 #### TARCAP (Target-area CAP)

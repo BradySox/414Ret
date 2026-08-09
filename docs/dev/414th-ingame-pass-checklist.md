@@ -248,59 +248,11 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
 - **Fail signature:** Blue sends the follow-on strike into a live belt because
   it trusted an optimistic DEAD clear.
 
-### B3 — Threat-weighted BARCAP orbit placement · §6 · ☑ VERIFIED (2026-06-25)
-- **Verified (2026-06-25, in-game):** the contested-vs-quiet-flank forward-placement
-  comparison the 2026-06-24 partial was waiting on now confirmed — the contested sector's
-  BARCAP sat further forward while staying clear of enemy SAM rings. Fail signature (orbit
-  pushed into a ring / quiet-flank drift) did not occur.
-- **Partial (2026-06-24, GermanyCW Red Tide turn 1, `test.retribution`):** the
-  SAM-clearance half is confirmed — both BARCAP racetracks' endpoints test
-  `threatened_by_red=False` (orbit never inside a red threat zone), and the two
-  waves are offset 10.1 km mid-to-mid with different racetrack lengths (43.7 vs
-  23.5 km) — the overlapping/jittered-waves design. **Not** confirmed: the
-  contested-vs-quiet-flank *forward-placement* comparison — this campaign has a
-  single front sector (both BARCAPs at Fulda), so there's no quiet-flank orbit to
-  compare against. Needs a multi-sector campaign.
-- **Setup:** A campaign with a clearly contested sector (CP near a fighter-heavy
-  enemy airfield and/or anchoring a front) **and** a quiet flank CP.
-- **Pass:** The contested sector's BARCAP racetrack sits noticeably **further
-  forward** (toward the enemy) than the quiet flank's, while still staying clear of
-  enemy SAM rings (orbit never inside a threat zone).
-- **Fail signature:** Forward orbit pushed *into* a SAM ring (no-fly clamp not
-  respected), or quiet-flank orbit placement drifted from the legacy spread.
+### B3 — Threat-weighted BARCAP orbit placement · §6 · ✖ REMOVED (2026-08-09) — the threat-weighted volume and orbit forward-bias were reverted to upstream (planner re-convergence work order D); no pass owed. (Was ☑ VERIFIED 2026-06-25 before removal.)
 
-### B4 — TARCAP planned on CAS / A2A escort on forward packages · §6 · ☑ VERIFIED (2026-06-24, Tacview)
-- **Verified (2026-06-24, GermanyCW Red Tide turn 1, Tacview):** the CAS package
-  `Front line Fulda/Haina CAS` (AH-64D) spawned **with a TARCAP** (`Front line
-  Fulda/Haina TARCAP`, F-15C) plus a SEAD Sweep, and every forward DEAD/BAI/SEAD
-  package (BABOON, COW, GERBIL, PERCH, TRIGGERFISH) carried its A2A Escort + SEAD
-  Escort. Fail signature did not occur.
-- **Setup:** A campaign with an active land front and an enemy airbase within
-  fighter range (≈90 NM) of the FLOT; let the AI auto-plan a turn.
-- **Pass:** CAS packages over the front spawn **with a TARCAP** flight, and forward
-  DEAD/BAI get their A2A `ESCORT`. (Deep packages keeping their escort = no regression.)
-- **Fail signature:** CAS packages still spawn with no TARCAP, or forward packages
-  fly unescorted, because the escort-need check is reading the clamped orbit zone
-  instead of the new `air_engagement` reach.
+### B4 — TARCAP planned on CAS / A2A escort on forward packages · §6 · ✖ REMOVED (2026-08-09) — the `air_engagement` escort-reach zone was deleted with the §6 revert, so escort need is back on upstream's clamped orbit zone; no pass owed. (Was ☑ VERIFIED 2026-06-24 before removal.) **Note for whoever next reads this:** the failure this row proved fixed — CAS spawning with no TARCAP, forward DEAD/BAI flying unescorted — is upstream behavior again by design. It is a known upstream defect queued as a post-freeze carve, not a regression to re-diagnose.
 
-### B5 — Red forward-middle BARCAP layer (large maps) · §6 · ☑ VERIFIED (2026-06-25)
-- **Verified (2026-06-25, in-game):** on a large map red planned its rear BARCAP **plus** the
-  extra forward layer ~halfway to the FLOT, clear of blue threat zones, with the rear BARCAP/QRA
-  untouched. None of the fail signatures (missing forward layer, orbit inside a blue ring,
-  rear BARCAP moved, layer on a small map) occurred.
-- **Setup:** A **large** map (e.g. GermanyCW Red Tide) with a red CP anchoring an
-  active front whose distance to the FLOT exceeds the rear BARCAP reach
-  (`cap_max_distance_from_cp`). Let the AI auto-plan red's turn.
-- **Pass:** Red plans its normal rear BARCAP **and** one extra forward BARCAP sitting
-  ~halfway between the rear CP and the FLOT — a visible fighter screen between blue
-  packages and the IADS — and that forward orbit stays clear of blue threat zones (no
-  endpoint inside a blue SAM ring). On a **small** map no extra layer appears.
-- **Fail signature:** No forward layer on a large red front (trigger/threshold off, or
-  `forward_cap_front_anchor` returned `None`); OR the forward orbit sits inside a blue
-  threat zone (standoff math wrong); OR the **rear** BARCAP moved/disappeared, or QRA
-  changed (should be untouched); OR a forward layer appears on a small map.
-  Check `TheaterState.from_game` (`forward_barcaps_needed`) and
-  `game/ato/flightplans/supportorbit.py` `forward_cap_front_anchor` if seen.
+### B5 — Red forward-middle BARCAP layer (large maps) · §6 · ✖ REMOVED (2026-08-09) — the forward-middle BARCAP layer was deleted with the §6 revert; no pass owed. (Was ☑ VERIFIED 2026-06-25 before removal.)
 
 ### B6 — Command-center decapitation degrades enemy planning · §52 · ☐ UNTESTED (built 2026-07-06, **A2 package throttle added 2026-07-17**; the health fraction, the linear unpredictability bonus, the off/intact/C2-less no-ops, the shuffler coupling, the SITREP line, and the A2 cap math + HTN-root gating are unit-tested in `tests/fourteenth/test_c2_decapitation.py` + `tests/test_planner_unpredictability.py` + `tests/test_sitrep.py` — whether red's *played* target selection visibly loosens and its offensive tempo visibly thins after its HQs are bombed needs a multi-turn campaign)
 - **What CI cannot exercise:** whether a red side that has lost its command centers actually plans a visibly different/less-repetitive set of opportunistic offensive targets turn-over-turn (the shuffle is proven; the *felt* effect on a real ATO is not), whether its offensive package count visibly thins after heavy decapitation (the A2 throttle: red's ATO should carry fewer strike/BAI/OCA packages but keep planning BARCAP/defense and never drop to zero offense), and whether the SITREP band reads the enemy C2 status correctly across turns.
@@ -835,7 +787,15 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
 - **Fail signature:** the diamond still floats (the client zeroing didn't fire — check `client_count > 0` at generation, i.e. that the flight really is player-crewed and not a dynamic slot); the kneeboard and the cockpit **disagree** on the altitude (the two consumers drifted apart); or — the one that would matter — an **AI** CAS flight descending toward the ground over the FLOT (the predicate leaking to AI; would mean `client_count` is non-zero for an AI flight, or the layout got the split baked in after all).
 - **Note:** a dynamic-slot pilot isn't a player-crewed ATO flight, so their jet won't get the grounded steerpoint — same limitation as the §58 briefing card.
 
-### C11 — Front-less AEW&C stations forward · §8-adjacent (support orbits) · ☑ VERIFIED (2026-07-17 night fly — all three halves confirmed in the air; one follow-up observation on the support-escort attrition inside the west S-200 MEZ)
+### C11 — Front-less AEW&C stations forward · §8-adjacent (support orbits) · ☑ VERIFIED (2026-07-17 night fly — all three halves confirmed in the air; one follow-up observation on the support-escort attrition inside the west S-200 MEZ) · ⚠ PARTLY SUPERSEDED (2026-08-09)
+- **2026-08-09 — the placement half of this row no longer describes the code.** The §6
+  revert (planner re-convergence work order D) deleted `support_orbit_anchor`, so orbits
+  no longer face the nearest enemy CP or stand a buffer behind their anchor; they use
+  upstream's target anchor + nearest-threat-boundary stepping again. The
+  "parked between two enemy fields" failure this row proved fixed is therefore possible
+  again. **The two squadron/target halves are KEPT and still live** (U13's front-less
+  target pick, U14's basing-aware squadron preference, both in `game/commander/`), so
+  the E-3-flies-the-land-station / E-2-stays-with-the-boat result stands.
 - **2026-07-17 night fly (fresh Scenic Route Merged turn 1, Tacview `Tacview-20260717-214932`,
   session `tacview-test-analysis-5bb161`): every coded half worked.** Squadron preference: the
   **E-3A flew the Khasab land station from Al Dhafra** and the **E-2C stayed 26 NM off the CVN**
@@ -2704,7 +2664,7 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
   fires far inland (range gate wrong); auto bombardment never fires or fires every tick (cadence wrong);
   `TaskFireAtPoint`/`getMarkPanels`/`missionCommands` Lua error in `dcs.log`; an escort wandering off station.
 
-### L4 — Vietnam compressed-theater support-orbit standoff · PR #314 · ☑ VERIFIED (2026-07-01, user map read — working as designed; tuning question open)
+### L4 — Vietnam compressed-theater support-orbit standoff · PR #314 · ✖ SUPERSEDED (2026-08-09) — the front-anchored standoff this row measured was reverted to upstream's target-anchor placement (planner re-convergence work order D). The campaign's buffer preseeds still apply, but they now step off the nearest threat boundary rather than setting a depth behind the FLOT, so the "~40–50 miles behind the front" figure below no longer predicts where the orbit lands. Re-read on a live Vietnam turn if the standoff matters. (Was ☑ VERIFIED 2026-07-01 before the revert.)
 - **Verified (2026-07-01, user in-app map read):** the AEW&C/tanker orbit reads "fine" on the planner map —
   sits ~**40–50 miles** (≈65–80 km) behind the front, matching the headless calc (83/74 km at the 25/20 NM
   buffer) and clear of the map edge. The fail signature (orbit ~150 km back / flung to the edge) did not

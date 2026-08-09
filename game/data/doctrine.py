@@ -319,14 +319,18 @@ MODERN_DOCTRINE = Doctrine(
     # fighter-poor-era problem (Vietnam sets 4). It is not -- it is a RATIO problem, and
     # a modern theater hits it whenever exposed objectives outnumber the fighter pool.
     # Measured on Marianas 2027 (Guam vs the PLA, 7 defended objectives of which FOUR
-    # are fleet CPs -- and `AirspaceGeometry.barcap_rounds` doubles rounds for a fleet):
-    # BARCAP demand came to 22 flights = 44 of the wing's 66 fighters, so every strike,
-    # SEAD, DEAD and anti-ship package that proposed an escort found the pool empty and
-    # scrubbed (modern doctrine also has plan_strikes_without_full_escort=False). The
-    # ATO was 100% defensive: 26 packages, 22 of them BARCAP, 2 offensive flights.
-    # With this reserve, `trim_rounds_for_escort_reserve` gives up BARCAP rounds at the
-    # least-threatened bases (never below one round each) and the same wing plans 14
-    # BARCAP + 25 offensive flights. 8 airframes = four 2-ship escorts held back.
+    # are fleet CPs, and a fleet CP gets double BARCAP rounds): BARCAP demand came to
+    # 22 flights = 44 of the wing's 66 fighters, so every strike, SEAD, DEAD and
+    # anti-ship package that proposed an escort found the pool empty and scrubbed
+    # (modern doctrine also has plan_strikes_without_full_escort=False). The ATO was
+    # 100% defensive: 26 packages, 22 of them BARCAP, 2 offensive flights.
+    # With this reserve, `trim_rounds_for_escort_reserve` gives up BARCAP rounds
+    # (never below one round at the first base) and the same wing plans 14 BARCAP +
+    # 25 offensive flights. 8 airframes = four 2-ship escorts held back.
+    # NOTE: the measurement above was taken when BARCAP volume was threat-weighted;
+    # that weighting was reverted to upstream's flat allocation with the §6 revert,
+    # so the exact 22/2 split no longer reproduces. The ratio problem it describes
+    # does.
     strike_escort_reserve=8,
 )
 

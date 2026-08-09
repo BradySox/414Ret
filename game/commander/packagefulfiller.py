@@ -235,7 +235,7 @@ class PackageFulfiller:
     def check_needed_escorts(self, builder: PackageBuilder) -> Dict[EscortType, bool]:
         threats = defaultdict(bool)
         for flight in builder.package.flights:
-            if self.threat_zones.waypoints_threatened_by_aircraft_engagement(
+            if self.threat_zones.waypoints_threatened_by_aircraft(
                 list(flight.flight_plan.escorted_waypoints())
             ):
                 threats[EscortType.AirToAir] = True

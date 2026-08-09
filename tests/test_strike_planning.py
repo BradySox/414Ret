@@ -82,7 +82,7 @@ def test_always_escort_strikes_forces_a2a_escort() -> None:
     from game.commander.packagefulfiller import PackageFulfiller
 
     no_threat = SimpleNamespace(
-        waypoints_threatened_by_aircraft_engagement=lambda wps: False,
+        waypoints_threatened_by_aircraft=lambda wps: False,
         waypoints_threatened_by_radar_sam=lambda wps: False,
     )
     strike = SimpleNamespace(

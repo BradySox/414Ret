@@ -127,8 +127,14 @@ def test_runtime_plugins_are_preseeded() -> None:
     # A saved plugin default of "off" silently kills the runtime half of a feature
     # even with its setting on (the §36 lesson), so every plugin the settings above
     # depend on is preseeded.
-    plugins = _campaign()["plugins"]
+    campaign = _campaign()
+    # The map has to be nested under `settings:` to reach Campaign.settings at all.
+    # It sat at the document root from 2026-06 until 2026-08-08, where the loader
+    # never looked -- so assert the location, not just the values.
+    assert "plugins" not in campaign, "a root-level `plugins:` block is discarded"
+    plugins = campaign["settings"]["plugins"]
     for plugin in (
+        "gpsjamming",
         "mobilemissiles",
         "cruisemissiles",
         "aisleep",

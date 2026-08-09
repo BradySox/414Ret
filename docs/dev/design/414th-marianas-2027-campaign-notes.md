@@ -458,6 +458,18 @@ hard requirement — without it the PLA kit degrades to Soviet legacy hardware),
 `usamilitaryassetspack`, and the CJS pair `fa_18efg` + `fa18ef_tanker`. Every runtime plugin
 the settings depend on is preseeded too (the §36 saved-defaults-off lesson).
 
+**That plugin preseed did not actually load until 2026-08-08.** The `plugins:` map for
+`mobilemissiles` / `cruisemissiles` / `aisleep` / `rednet` sat at the document root, and
+`Campaign` reads only `data["settings"]` — so it parsed as valid YAML and was discarded, with
+no error and no log line. Only `gpsjamming`, which was already nested, ever reached the game.
+The four ran anyway on any host with untouched settings (all four plugins ship
+`defaultValue: true`); a host who had ever unticked one lost that feature silently, which is
+exactly the §36 trap this block exists to close. Found by the 2026-08-08 whole-repo health
+audit, fixed by nesting the map under `settings:`, and now locked by
+`test_no_campaign_puts_its_plugins_block_at_the_document_root` plus the registry-driven
+`test_every_plugin_backed_setting_preseeds_its_plugin`, which sweeps every campaign rather
+than this one.
+
 **Red fields no ambient convoys, by geography** — no two red bases share an island, so there
 is no red→red road. This is the same deliberate no-op as the nine campaigns the §50 batch-2
 pass could not serve.

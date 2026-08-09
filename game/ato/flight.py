@@ -263,8 +263,34 @@ class Flight(
             used = 0
         return used + 1
 
+    def _ensure_flight_plan_builder(self) -> None:
+        """Replaces a placeholder builder left behind by a removed flight plan.
+
+        A save written while a since-removed flight plan shipped (the fork's §21
+        Combat SAR and §15 SCAR, both dropped 2026-08-07 for upstream #929) pickled
+        that module's ``Builder`` onto ``_flight_plan_builder``. The unpickler
+        degrades the missing class to an inert placeholder
+        (``persistency._handle_misc``) so the save still loads; rebuild the real
+        builder from the flight type, which ``_LEGACY_FLIGHT_TYPE_VALUES`` has
+        already migrated to a live member ("Combat SAR" -> CSAR, "SCAR" -> CAS).
+
+        Done lazily rather than in ``__setstate__``: the builder factory reads
+        ``package.target``, and the Package/Flight reference cycle means the package
+        is not guaranteed to be fully reconstructed while the flight's state is
+        being restored.
+        """
+        from game.persistency import DummyObject
+
+        if not isinstance(self._flight_plan_builder, DummyObject):
+            return
+
+        from .flightplans.flightplanbuildertypes import FlightPlanBuilderTypes
+
+        self._flight_plan_builder = FlightPlanBuilderTypes.for_flight(self)(self)
+
     @property
     def flight_plan(self) -> FlightPlan[Any]:
+        self._ensure_flight_plan_builder()
         return self._flight_plan_builder.get_or_build()
 
     def degrade_to_custom_flight_plan(self) -> None:
@@ -497,6 +523,7 @@ class Flight(
     def recreate_flight_plan(self, dump_debug_info: bool = False) -> None:
         self.manually_timed = False
         self.manual_takeoff_time = None
+        self._ensure_flight_plan_builder()
         self._flight_plan_builder.regenerate(dump_debug_info)
 
     def refuel_waypoint_position(self, default: Point) -> Point:

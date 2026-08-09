@@ -91,9 +91,13 @@ squadrons:
         - A-50
       size: 1
     - primary: BARCAP
-      secondary: any
+      secondary: air-to-air
       aircraft:
-        - F-14A Tomcat (Block 135-GR Late)
+        # Iran 2015 rosters only the Export block; the 135-GR Late belongs to Iran
+        # 1988. Upstream #830 fixed both halves of this, but a whole-file CRLF merge
+        # conflict took the campaign half while keeping the iran_2015.json half, so
+        # the pin silently failed and the det refilled from the generic pool.
+        - F-14A Tomcat (Block 95-GR Export)
     - primary: Strike
       secondary: air-to-ground
       aircraft:

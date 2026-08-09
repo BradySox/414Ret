@@ -240,3 +240,85 @@ def test_civilian_traffic_gate_defaults_on_and_gates_generate() -> None:
     )
     gen.generate()
     assert calls == []  # early-returned before touching the mission
+
+
+# --- The registry-driven sweep -------------------------------------------------
+#
+# The Red Tide assertions above are hand-written per feature, so a NEW campaign that
+# forgets the same wiring is not covered by any of them. These two walk every campaign
+# instead, and derive "which setting needs which plugin" from the feature registry, so
+# a feature added to game/fourteenth/features.py is covered the day it lands.
+#
+# Both existed as audit findings before they were tests: marianas_2027 put its
+# `plugins:` map at the document root where the loader never looks, and six campaigns
+# had no map at all (2026-08-08 whole-repo health audit, findings 4 and 5).
+
+
+def _campaign_paths() -> list[Path]:
+    paths = sorted(Path("resources/campaigns").glob("*.yaml"))
+    assert paths, "no campaign yamls found -- wrong working directory?"
+    return paths
+
+
+def _plugin_backed_settings() -> dict[str, str]:
+    """Maps a ``Settings`` field name to the plugin id that runs it."""
+    from game.fourteenth.features import FEATURES
+
+    mapping: dict[str, str] = {}
+    for feature in FEATURES:
+        if feature.retired or feature.plugin_id is None:
+            continue
+        for field in feature.settings_fields:
+            mapping[field] = feature.plugin_id
+    assert mapping, "registry exposes no plugin-backed settings fields"
+    return mapping
+
+
+def test_no_campaign_puts_its_plugins_block_at_the_document_root() -> None:
+    """``plugins:`` must be nested under ``settings:``.
+
+    ``Campaign`` reads only ``data["settings"]``, so a top-level ``plugins:`` block is
+    valid YAML that is parsed and then silently discarded -- no error, no log line, and
+    the feature it was meant to arm just never runs.
+    """
+    offenders = []
+    for path in _campaign_paths():
+        data = yaml.safe_load(path.read_text(encoding="utf-8"))
+        if isinstance(data, dict) and "plugins" in data:
+            offenders.append(path.name)
+    assert not offenders, (
+        "these campaigns carry a root-level `plugins:` block, which the loader "
+        f"discards -- nest it under `settings:`: {offenders}"
+    )
+
+
+def test_every_plugin_backed_setting_preseeds_its_plugin() -> None:
+    """The §36 two-gate rule, swept over every campaign.
+
+    A setting turned on in a campaign yaml is only half the gate: the runtime lives in
+    a Lua plugin, and the host's *saved* plugin defaults layer UNDER campaign preseeds.
+    So a host who once unticked the plugin loses the feature with no log line unless the
+    campaign pins the plugin too.
+
+    Only an explicit ``True`` counts as turning a feature on -- several registry fields
+    are numeric tuning knobs (reach, station counts) whose presence does not by itself
+    mean the feature is enabled.
+    """
+    field_to_plugin = _plugin_backed_settings()
+    gaps: list[str] = []
+    for path in _campaign_paths():
+        data = yaml.safe_load(path.read_text(encoding="utf-8"))
+        if not isinstance(data, dict):
+            continue
+        settings = data.get("settings") or {}
+        if not isinstance(settings, dict):
+            continue
+        preseeded = settings.get("plugins") or {}
+        for field, plugin in sorted(field_to_plugin.items()):
+            if settings.get(field) is not True:
+                continue
+            if preseeded.get(plugin) is not True:
+                gaps.append(f"{path.name}: {field} needs plugins.{plugin}")
+    assert (
+        not gaps
+    ), "campaign settings whose plugin runtime is not preseeded:\n" + "\n".join(gaps)

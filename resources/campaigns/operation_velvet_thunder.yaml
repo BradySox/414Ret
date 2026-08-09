@@ -21,6 +21,12 @@ performance: 1
 recommended_start_date: 1970-11-29
 version: "10.8"
 settings:
+  # The Vietnam Ops settings below are only half of each gate: their runtime lives in
+  # the `vietnamops` Lua plugin, and a host whose saved plugin defaults have it
+  # unticked loses all of them with no log line (the §36 lesson). The plugin ships
+  # defaultValue: true, but a campaign preseed is what overrides a saved default.
+  plugins:
+    vietnamops: true
   # Vietnam Ops period mechanics (era pre-seed). Jungle COIN -> no naval gunfire.
   # Convoy interdiction hunts the enemy supply trail; airbase harassment presses the
   # forward COIN strips; the Super Gaggle resupplies the cut-off checkpoints.

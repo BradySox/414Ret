@@ -23,7 +23,11 @@ groups:
       unit_count:
         - 2
       unit_types:
-        - CH_SkySabreLN
+        # The pydcs CLASS is named CH_SkySabreLN, but layouts resolve by unit ID and
+        # that id is CH_SkySabre. Naming the class here resolved to None, the entry was
+        # dropped silently, and the slot fell through to the Launcher class fallback --
+        # so the battery fielded whatever launcher the faction had, not the CAMM one.
+        - CH_SkySabre
       unit_classes:
         - Launcher
     - name: Logistics

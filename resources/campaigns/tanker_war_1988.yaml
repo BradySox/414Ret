@@ -23,6 +23,13 @@ recommended_player_income_multiplier: 1.0
 recommended_enemy_income_multiplier: 0.6
 version: "10.8"
 settings:
+  # The shoot-and-scoot settings below are only half of each gate: the relocation
+  # runtime lives in the `mobilemissiles` Lua plugin, and a host whose saved plugin
+  # defaults have it unticked gets stationary launchers with no log line (the §36
+  # lesson). The plugin ships defaultValue: true, but a campaign preseed is what
+  # overrides a saved default.
+  plugins:
+    mobilemissiles: true
   uh_60l: false
   # The strike arm stays the free Heatblur A-6E Intruder (not the A-6A/A-7E mods).
   # The one mod: VAQ-135's EA-6B Prowler EW det (AI-only VSN mod) -- preseed on so

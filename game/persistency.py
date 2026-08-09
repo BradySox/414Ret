@@ -389,6 +389,29 @@ class MigrationUnpickler(pickle.Unpickler):
         # every aircraft, so its unpickle now raises ModuleNotFoundError. Degrade the
         # enum to the inert placeholder -- nothing reads escort_jammer_tier anymore,
         # so the orphaned attribute is never touched.
+        # The §21 Combat SAR / §15 SCAR replacement (2026-08-07, #805) and the §20
+        # drop-spawn removal (2026-08-02, #750) deleted four more modules whose
+        # instances reach a save. Each needs a matching __setstate__ that drops or
+        # rebuilds the orphan, because a bare placeholder here only turns a load
+        # FAILURE into a crash at first use:
+        #   * game.pow_recovery -- PendingPowRecovery on
+        #     Coalition.pending_pow_recoveries; Coalition.__setstate__ pops the list.
+        #   * game.fourteenth.downed_pilots -- the fork's DownedPilot on
+        #     Coalition.downed_pilots. The class MOVED to game/squadrons/downedpilot.py,
+        #     but upstream #929's replacement is a different shape (SidcDescribable +
+        #     MissionTarget, UUID id, turns_remaining), so it is degraded rather than
+        #     remapped and Coalition.__setstate__ filters the placeholders out --
+        #     Game._rebuild_downed_pilot_index dereferences .id on every member.
+        #   * game.ato.flightplans.combatsar / .scar -- the Builder pickled onto
+        #     Flight._flight_plan_builder. Flight rebuilds it from the migrated flight
+        #     type (see Flight._ensure_flight_plan_builder); "Combat SAR" and "SCAR"
+        #     already remap via _LEGACY_FLIGHT_TYPE_VALUES.
+        #   * game.theater.unitplacement -- PendingUnitPlacement on
+        #     Game.pending_unit_placements; Game.__setstate__ pops the list.
+        # Modules deleted in the same commits that define only functions
+        # (game.fourteenth.csar_surge, game.fourteenth.stock_attrition) can never
+        # appear in a pickle and are deliberately NOT listed -- a tombstone for them
+        # would document a migration that cannot happen.
         if module in (
             "game.fourteenth.phases",
             "game.fourteenth.red_intent",
@@ -398,6 +421,11 @@ class MigrationUnpickler(pickle.Unpickler):
             "game.fourteenth.static_front",
             "game.fourteenth.war_economy",
             "game.data.escort_jamming",
+            "game.pow_recovery",
+            "game.fourteenth.downed_pilots",
+            "game.ato.flightplans.combatsar",
+            "game.ato.flightplans.scar",
+            "game.theater.unitplacement",
         ):
             return DummyObject
 

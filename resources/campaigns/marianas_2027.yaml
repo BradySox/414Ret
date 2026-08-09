@@ -22,8 +22,20 @@ settings:
   # jammer, which restores accuracy at once. Runs via the 'GPS jamming' LUA plugin, preseeded
   # below -- the setting does NOTHING without it.
   gps_jamming: true
+  # Saved plugin defaults layer UNDER campaign preseeds, so a host whose defaults have
+  # these unticked would otherwise silently lose the runtime half of each feature
+  # (the §36 lesson). Preseed every plugin the settings in this block depend on.
+  #
+  # This map MUST stay nested under `settings:`. Campaign reads only
+  # data["settings"] (game/campaignloader/campaign.py), so a top-level `plugins:`
+  # block parses as valid YAML and is then silently discarded -- which is exactly
+  # what happened to four of these five from 2026-06 until 2026-08-08.
   plugins:
     gpsjamming: true            # §86 runtime -- the setting does nothing without it
+    mobilemissiles: true        # §49 shoot-and-scoot theatre-missile sites
+    cruisemissiles: true        # §63 ship-launched raids + the call-for-fire menu
+    aisleep: true               # §59 rear ground-AI sleep
+    rednet: true                # §70 audible red UHF net
   # Every squadron fields its full authored strength on turn 1. This is a come-as-you-
   # are fight -- the war opened with a missile salvo on Guam, nobody spins up a training
   # pipeline first -- and with no land front the player cannot trade time for mass.
@@ -111,15 +123,6 @@ settings:
   #    it is what decides how much of red you can reach once they are free.) Same
   #    campaign-preseed precedent as Enduring Resolve's 800 km carrier stand-off.
   max_mission_range_planes: 400
-
-plugins:
-  # Saved plugin defaults layer UNDER campaign preseeds, so a host whose defaults have
-  # these unticked would otherwise silently lose the runtime half of each feature
-  # (the §36 lesson). Preseed every plugin the settings above depend on.
-  mobilemissiles: true
-  cruisemissiles: true
-  aisleep: true
-  rednet: true
 
 # Red SAM placement. The enemy is the fork faction "China 2027" (= China 2020 with the
 # obsolete HQ-2 retired and the S-300PMU-1/PMU-2 added), so nothing era-wrong can roll

@@ -252,6 +252,10 @@ class Game:
         # their interim per-save state so it doesn't linger as dead attributes.
         state.pop("will_history", None)
         state.pop("will_ledger", None)
+        # Drop-spawn (§20) was removed 2026-08-02 with game.theater.unitplacement;
+        # a save with a queued placement carries a list of tombstone
+        # PendingUnitPlacement placeholders. Nothing processes them anymore.
+        state.pop("pending_unit_placements", None)
         self.__dict__.update(state)
         # Heal carcass lists bloated by old saves. Guarded like laser_code_registry
         # below: __destroyed_units postdates the oldest saves, so a pre-2020 save

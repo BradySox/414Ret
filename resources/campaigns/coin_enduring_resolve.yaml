@@ -60,6 +60,12 @@ victory:
       lose_cps: [Camp Bastion]
 
 settings:
+  # FOB standoff fire (vietnam_airbase_harassment, below) runs on the `vietnamops`
+  # Lua plugin, and a host whose saved plugin defaults have it unticked loses it with
+  # no log line (the §36 lesson). The plugin ships defaultValue: true, but a campaign
+  # preseed is what overrides a saved default.
+  plugins:
+    vietnamops: true
   squadron_start_full: true
   # The COIN stack (feature docs: 414th-coin-insurgent-replenishment-notes.md):
   # cache-throttled cell regeneration + the ratline + FOB standoff fire + the

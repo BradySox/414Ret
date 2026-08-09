@@ -75,6 +75,12 @@ victory:
       lose_cps: [FOB Khe Sanh]
 
 settings:
+  # The Vietnam Ops settings below are only half of each gate: their runtime lives in
+  # the `vietnamops` Lua plugin, and a host whose saved plugin defaults have it
+  # unticked loses all of them with no log line (the §36 lesson). The plugin ships
+  # defaultValue: true, but a campaign preseed is what overrides a saved default.
+  plugins:
+    vietnamops: true
   # Vietnam Ops period mechanics (era pre-seed). Coastal carrier war -> naval gunfire on.
   # Convoy interdiction models the Ho Chi Minh Trail from the Laotian-panhandle FOBs
   # (Mu Gia / Ban Karai / Tchepone); airbase harassment presses the forward strips

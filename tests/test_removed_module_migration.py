@@ -16,10 +16,23 @@ A save written while §77 shipped tiers (#714 .. #734) therefore pickled an
 ``EscortJammerTier`` onto its aircraft (the flown ``Red Tide 7-27 M1`` save was one), and
 its unpickle now hits this deleted module.
 
+Four more modules joined them and were missed at removal time, so **every** save written
+before 2026-08-07 that recorded a downed blue pilot refused to load outright:
+
+* ``game.pow_recovery`` (``PendingPowRecovery``) and ``game.fourteenth.downed_pilots``
+  (the fork's §21 ``DownedPilot``) went with upstream #929's CSAR adoption (#805). The
+  ``DownedPilot`` name survives at ``game/squadrons/downedpilot.py``, but upstream's class
+  shares no fields with the fork's, so it is degraded rather than remapped.
+* ``game.ato.flightplans.combatsar`` / ``.scar`` went in the same commit. Their ``Builder``
+  is pickled onto ``Flight._flight_plan_builder``.
+* ``game.theater.unitplacement`` (``PendingUnitPlacement``) went with drop-spawn (§20, #750).
+
 Unpickling any of these instances would raise ``ModuleNotFoundError``. The
 ``MigrationUnpickler`` degrades them to an inert ``DummyObject`` placeholder so the save
-still loads; the game/theater/AircraftType ``__setstate__`` (or the simple fact that no
-live code reads ``escort_jammer_tier`` anymore) means the placeholders are never read.
+still loads. A placeholder alone only converts a load failure into a crash at first use,
+so each one has a matching ``__setstate__`` that drops it (``Coalition`` for the pilot and
+POW lists, ``Game`` for the placement queue) or rebuilds it (``Flight`` for the builder) --
+those are pinned below too.
 """
 
 from __future__ import annotations
@@ -27,7 +40,12 @@ from __future__ import annotations
 import io
 import pickle
 from dataclasses import dataclass
+from typing import Any
+from unittest import mock
 
+from game.ato.flight import Flight
+from game.coalition import Coalition
+from game.game import Game
 from game.persistency import DummyObject, MigrationUnpickler
 
 _REMOVED_MODULES = (
@@ -39,6 +57,11 @@ _REMOVED_MODULES = (
     "game.fourteenth.static_front",
     "game.fourteenth.war_economy",
     "game.data.escort_jamming",
+    "game.pow_recovery",
+    "game.fourteenth.downed_pilots",
+    "game.ato.flightplans.combatsar",
+    "game.ato.flightplans.scar",
+    "game.theater.unitplacement",
 )
 
 
@@ -104,3 +127,77 @@ def test_pre_removal_save_object_unpickles_without_crashing() -> None:
     loaded = MigrationUnpickler(io.BytesIO(rewritten)).load()
     assert isinstance(loaded, DummyObject)
     assert loaded.__dict__.get("turn") == 9
+
+
+def test_coalition_drops_the_removed_csar_and_pow_lists() -> None:
+    # The fork's §21 DownedPilot and upstream #929's share a name and nothing else,
+    # so a pre-2026-08-07 entry arrives as a placeholder. It must be dropped, not
+    # kept: Game._rebuild_downed_pilot_index dereferences .id on every member.
+    from game.squadrons.downedpilot import DownedPilot
+
+    survivor = DownedPilot.__new__(DownedPilot)
+    stale = DummyObject.__new__(DummyObject)
+    stale.__setstate__({"unit_name": "Enfield11", "x": 1.0, "y": 2.0})
+
+    coalition = Coalition.__new__(Coalition)
+    coalition.__setstate__(
+        {
+            "downed_pilots": [stale, survivor],
+            "pending_pow_recoveries": [DummyObject.__new__(DummyObject)],
+        }
+    )
+
+    assert len(coalition.downed_pilots) == 1
+    assert coalition.downed_pilots[0] is survivor
+    # The held-POW model went with #929; its list must not linger as a dead attribute.
+    assert not hasattr(coalition, "pending_pow_recoveries")
+
+
+def test_game_drops_the_removed_drop_spawn_queue() -> None:
+    game = Game.__new__(Game)
+    state: dict[str, Any] = {
+        "pending_unit_placements": [DummyObject.__new__(DummyObject)],
+        # Present so __setstate__ takes the "already allocated" branch instead of
+        # walking a theater this bare instance does not have.
+        "laser_code_registry": object(),
+    }
+    with mock.patch.object(Game, "on_load"):
+        game.__setstate__(state)
+
+    assert not hasattr(game, "pending_unit_placements")
+
+
+def test_flight_rebuilds_a_placeholder_flight_plan_builder() -> None:
+    # A save with a Combat SAR or SCAR flight pickled that module's Builder. The
+    # flight type is already remapped by _LEGACY_FLIGHT_TYPE_VALUES, so the builder
+    # is rebuilt from it rather than left as a placeholder that would AttributeError
+    # on the first flight_plan access.
+    flight = Flight.__new__(Flight)
+    placeholder = DummyObject()
+    flight._flight_plan_builder = placeholder  # type: ignore[assignment]
+
+    rebuilt = object()
+    builder_type = mock.Mock(return_value=rebuilt)
+    with mock.patch(
+        "game.ato.flightplans.flightplanbuildertypes.FlightPlanBuilderTypes.for_flight",
+        return_value=builder_type,
+    ) as for_flight:
+        flight._ensure_flight_plan_builder()
+
+    for_flight.assert_called_once_with(flight)
+    builder_type.assert_called_once_with(flight)
+    assert flight._flight_plan_builder is rebuilt
+
+
+def test_flight_leaves_a_live_flight_plan_builder_alone() -> None:
+    flight = Flight.__new__(Flight)
+    live = object()
+    flight._flight_plan_builder = live  # type: ignore[assignment]
+
+    with mock.patch(
+        "game.ato.flightplans.flightplanbuildertypes.FlightPlanBuilderTypes.for_flight"
+    ) as for_flight:
+        flight._ensure_flight_plan_builder()
+
+    for_flight.assert_not_called()
+    assert flight._flight_plan_builder is live

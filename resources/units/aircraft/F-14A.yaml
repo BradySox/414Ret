@@ -26,10 +26,10 @@ default_livery: vf-142 `ghost riders`
 variants:
   F-14A Tomcat (AI): {}
 tasks:
-  BARCAP: 645
-  Escort: 605
-  Fighter sweep: 615
-  TARCAP: 630
+  BARCAP: 520
+  Escort: 520
+  Fighter sweep: 520
+  TARCAP: 520
   TARPS: 700
 
 # Air-to-air refueling method (receiver).

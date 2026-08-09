@@ -52,16 +52,16 @@ fuel:
   combat_ppm: 16
   min_safe: 2000
 tasks:
-  BAI: 655
-  BARCAP: 585
-  CAS: 655
-  DEAD: 390
-  Escort: 504
-  Fighter sweep: 565
-  OCA/Aircraft: 690
-  OCA/Runway: 605
-  Strike: 610
-  TARCAP: 524
+  BAI: 640
+  BARCAP: 530
+  CAS: 640
+  DEAD: 250
+  Escort: 530
+  Fighter sweep: 530
+  OCA/Aircraft: 640
+  OCA/Runway: 560
+  Strike: 560
+  TARCAP: 530
   TARPS: 700
 
 # Air-to-air refueling method (receiver).

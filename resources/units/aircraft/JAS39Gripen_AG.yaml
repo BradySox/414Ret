@@ -16,14 +16,14 @@ radios:
   inter_flight: R&S Series 6000
 tasks:
   Anti-ship: 140
-  BAI: 775
-  CAS: 775
-  DEAD: 305
-  OCA/Aircraft: 685
-  OCA/Runway: 545
+  BAI: 710
+  CAS: 710
+  DEAD: 230
+  OCA/Aircraft: 710
+  OCA/Runway: 540
   SEAD: 80
   SEAD Escort: 80
-  Strike: 565
+  Strike: 540
 
 # Air-to-air refueling method (receiver).
 air_refuel_type: probe

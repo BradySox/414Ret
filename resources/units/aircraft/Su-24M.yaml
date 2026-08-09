@@ -19,14 +19,14 @@ variants:
     introduced: 1988
 tasks:
   Anti-ship: 130
-  BAI: 705
-  CAS: 705
+  BAI: 610
+  CAS: 610
   DEAD: 330
-  OCA/Aircraft: 620
+  OCA/Aircraft: 610
   OCA/Runway: 510
   SEAD: 50
   SEAD Escort: 50
-  Strike: 535
+  Strike: 510
 
 # Air-to-air refueling method (receiver).
 air_refuel_type: probe

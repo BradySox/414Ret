@@ -35,7 +35,7 @@ radios:
     intra_flight_radio_index: 1
     inter_flight_radio_index: 2
 tasks:
-  BAI: 695
-  CAS: 695
+  BAI: 510
+  CAS: 510
   Escort: 100
-  OCA/Aircraft: 610
+  OCA/Aircraft: 510

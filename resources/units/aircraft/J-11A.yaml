@@ -13,10 +13,10 @@ variants:
   J-11A Flanker-L: {}
 kneeboard_units: "metric"
 tasks:
-  BARCAP: 685
-  Escort: 582
-  Fighter sweep: 655
-  TARCAP: 670
+  BARCAP: 500
+  Escort: 500
+  Fighter sweep: 500
+  TARCAP: 500
 
 # Air-to-air refueling method (receiver).
 air_refuel_type: probe

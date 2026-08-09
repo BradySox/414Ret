@@ -108,7 +108,10 @@ Read before touching a campaign's `.yaml`, `.miz` or build tool.
   reproduced — read §8.1 before building anything here**)
 - **Planning / doctrine** — `414th-airwar-planner-consolidation-notes.md`,
   `414th-aircraft-task-rebalance-rubric.md`, `414th-victory-conditions-notes.md`,
-  `414th-wing-growth-notes.md`, `414th-single-player-loop-notes.md`
+  `414th-wing-growth-notes.md`, `414th-single-player-loop-notes.md`,
+  `414th-autoplanner-upstream-divergence-audit.md` (**the full fork-vs-upstream planner
+  diff**, 2026-08-09: every divergence classified by gate and default; read before
+  reverting or carving planner behavior)
 - **Cockpit / data** — `414th-dtc-cartridge-notes.md`, `414th-weapon-dates-proposal.md`,
   `414th-loadout-integrity-audit-notes.md`
 - **Framework / tooling** — `414th-framework-consolidation-notes.md`,

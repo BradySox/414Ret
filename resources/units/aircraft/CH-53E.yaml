@@ -8,6 +8,6 @@ price: 6
 variants:
   CH-53E: null
 tasks:
-  Air Assault: 100
+  Air Assault: 125
   CSAR: 90
   Transport: 80

@@ -51,7 +51,8 @@ squadrons:
     - primary: BAI
       secondary: air-to-ground
       aircraft:
-        - A-6E Intruder
+        # Was A-6E Intruder, not rostered by USA 2005 -- see IntotheHornetsNest.yaml.
+        - F/A-18C Hornet (Lot 20)
       size: 12
     - primary: AEW&C
       aircraft:

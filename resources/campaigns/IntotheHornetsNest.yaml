@@ -202,7 +202,11 @@ squadrons:
     - primary: Strike
       secondary: any
       aircraft:
-        - A-6E Intruder
+        # Was A-6E Intruder, which USA 2005 does not roster (the Intruder left USN
+        # service in 1997), so the pin resolved to None and the det silently refilled
+        # from the generic pool. Upstream pinned the S-3B here, but the Viking is
+        # sea-control-only in this fork (#655) and has no Strike capability at all.
+        - F/A-18C Hornet (Lot 20)
       size: 4
   LHA-1 Tarawa:
     - primary: BAI

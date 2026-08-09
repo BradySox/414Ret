@@ -99,7 +99,29 @@ Exempts AI from the U27 dwell. Upstream has no dwell, so #820 moves AI timing *t
 2. U39: restore 1.1× for non-ARM SEAD, or document 0.8× as intended.
 3. U24 (−3 min SEAD) and U12 (all-ASAP AWACS): document or revert.
 
-## Levers, if pulling back
+## DECIDED 2026-08-09 — re-converge to upstream (DM call)
+
+The DM's call, same day as the audit: **default planner behavior returns to upstream.**
+"I do not care that it was deliberate then." Scope:
+
+- **Defaults flip to upstream parity** (every default-ON gate ships OFF); one "414th
+  planner suite" preset re-enables the kept features per campaign.
+- **Keep only three groups** (argued and accepted): the 8 failure fixes, the feature
+  plumbing (flight-type lanes, CSAR #929, §50 hide, Intercept retirement/QRA), and the
+  3 data wrong-role fixes (bombers off Armed Recon, S-3B sea control, payload casing).
+- **Everything else in §Ungated reverts to upstream behavior** — including the §6
+  geometry/volume suite and §46 fuel-driven tanking, both **reverted outright** (not
+  re-gated); rebuildable from git history if ever re-wanted.
+- **The 212-file weight rebalance reverts to upstream numbers** except the kept
+  wrong-role fixes and the fork-only task lanes; Intercept stays retired.
+- **#820 sequencing:** stays valid and mergeable until the §46 revert deletes the
+  receiver dwell entirely; then it closes as superseded.
+
+Work orders: **A** defaults flip + preset · **B** small ungated commander reverts ·
+**C** §46 revert · **D** §6 geometry revert · **E** data-layer weight restore.
+Each lands as its own PR with its fork-behavior tests removed or retargeted.
+
+## Levers, if pulling back (superseded by the decision above; kept for the record)
 
 1. "Stock planner" settings preset (the §28 preset machinery exists): flips the whole default-ON table above in one click. Can't touch the ungated items.
 2. Revert MODERN `strike_escort_reserve` 8→0 — the highest-leverage ungated item, pure data.

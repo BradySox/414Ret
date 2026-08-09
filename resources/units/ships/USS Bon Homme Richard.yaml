@@ -1,4 +1,5 @@
 class: AircraftCarrier
+landing_deck_angle: 9.0
 price: 300
 variants:
   "[VWV] CVA-31 Bon Homme Richard": null

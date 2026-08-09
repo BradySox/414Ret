@@ -1,6 +1,10 @@
 class: AircraftCarrier
+landing_deck_angle: 9.0
 price: 0
 variants:
-  ARA Vienticinco de Mayo: {}
-  ARA Veinticinco de Mayo: {}
-  HMAS Melbourne: {}
+  ARA Vienticinco de Mayo:
+    landing_deck_angle: 8.0
+  ARA Veinticinco de Mayo:
+    landing_deck_angle: 8.0
+  HMAS Melbourne:
+    landing_deck_angle: 5.5

@@ -1,4 +1,5 @@
 class: AircraftCarrier
+landing_deck_angle: 7.95
 price: 0
 variants:
   CV 1143.5 Admiral Kuznetsov: null

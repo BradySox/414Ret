@@ -1,4 +1,5 @@
 class: AircraftCarrier
+landing_deck_angle: 9.0
 price: 0
 variants:
   CVN-74 John C. Stennis: null

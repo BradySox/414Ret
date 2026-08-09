@@ -4064,3 +4064,32 @@ App pass, no flight needed: open Settings → Campaign Doctrine in a game.
      `PLANNER_SUITE_VALUES`' stock column (the `test_fresh_settings_are_stock` guard should
      have caught it first).
 
+### B55 — Carrier steams for wind down the angled deck · §88 · ☐ UNTESTED (adopted 2026-08-09 from geofffranks' `12d71346`, upstream issue dcs-retribution#865)
+
+> The boat used to point its bow straight into the wind, leaving a permanent ~9° crosswind
+> across the landing area, and wrote a **negative** carrier speed above 25 kt of ambient wind.
+> `solve_carrier_cruise` now picks heading + speed for ~25 kt down the angled deck with zero
+> crosswind, per-hull from `landing_deck_angle` in the ship yamls. The three solver modes, the
+> yaml parsing guards, the per-hull angles, and the generator's use of the result are pinned in
+> `tests/flightplan/test_carriercruisesolver.py`, `tests/dcs/test_shipunittype.py` and
+> `tests/missiongenerator/test_ship_sail_waypoint.py`. What CI cannot exercise is whether a
+> Case I recovery actually flies better behind it.
+
+Needs a flight: generate a NEW mission with a carrier and a steady wind of ~10–20 kt, then fly a
+Case I recovery.
+
+- **Pass:** the ship's heading is ~9–15° off the wind reciprocal (not equal to it); on the ball,
+  the relative wind is straight down the angled deck with no drift to fight; BRC on the kneeboard
+  and the CV Operations Data page matches the ship's actual heading.
+- **Fail signatures:**
+  1. **Crosswind is worse, not better** — the deck-angle sign is inverted for that hull (the
+     landing area is offset to port on every hull we ship, so the value should be positive).
+  2. **The carrier sits dead in the water** — ambient wind exceeded 25 kt and the solver hit
+     `HIGH_WIND_SPEED_CLAMP`. Wind over deck is still satisfied; note the wind speed and whether
+     a motionless boat is acceptable.
+  3. **BRC on the kneeboard disagrees with the ship** — `add_runway_data` is getting a stale
+     heading rather than the solver's.
+  4. **The carrier is on land or never moves at all** — the 5-attempt sea probe rejected every
+     candidate point and `steam_into_wind` returned None (pre-existing behavior, but the new
+     heading changes which points get probed).
+

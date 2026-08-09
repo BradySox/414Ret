@@ -125,6 +125,9 @@ Most of this is opt-in. Full list with toggles, defaults and known limitations:
 - Carrier decks carry dressing — tractors, crash truck, deck crew, LSO team — placed clear of
   every parking spot and catapult. An optional launch-corridor set is struck below before
   recovery.
+- Carriers steam for wind down the **angled** deck, not the bow, using each hull's own deck
+  angle (9° Nimitz, 10.5° Forrestal, 7.95° Kuznetsov). BRC sits up to 15° off the wind
+  reciprocal — that is the ship's real heading. New missions only.
 - Also: mixed frontline combat clusters, civilian traffic, 414th-tuned Splash Damage 3.
 
 ### Kneeboards and debrief

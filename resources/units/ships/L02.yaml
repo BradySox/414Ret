@@ -1,4 +1,5 @@
 class: HelicopterCarrier
+landing_deck_angle: 0.0
 price: 0
 variants:
   L02 Canberra: null

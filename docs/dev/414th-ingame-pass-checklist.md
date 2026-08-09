@@ -3275,6 +3275,18 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
   creation (the apply path must be a silent no-op on any error — it is wrapped, so a stack trace means the
   guard was bypassed); RED flights changing (the `coalition.player.is_blue` gate failed).
 
+### Q3 — Bulk waypoint altitude moves every flown leg · §4 (flight altitude editing) · ☐ UNTESTED (built 2026-08-08 on upstream review of dcs-retribution#920, which reported that "Apply to all" left the CAS FLOT boundaries alone. The filter rule — deck stays, altitude moves — and the AGL/MSL normalisation are unit-tested in `tests/test_bulk_waypoint_altitude.py`; what is left is an **app pass**, not a flight, because the change is entirely in the Edit Flight dialog)
+- **Pass:** open Edit Flight → Waypoints on a **CAS** flight, set 20,000 ft, *Apply to all*. FLOT start
+  and FLOT end move with the rest of the route and their Alt Type column reads **MSL**. Repeat on a
+  **helicopter** flight and on a Vietnam **low-level** CAS/BAI flight, where the button previously did
+  nothing at all: every leg moves, and at or below 5,000 ft the column stays **AGL**. On any flight with a
+  tanker leg, the refuel waypoint moves too. On any flight, takeoff, landing, target and bullseye rows stay
+  at 0. On an air-assault or CSAR helo, the pickup/dropoff/CSAR rows keep their approach altitude.
+- **Fail signature:** the FLOT rows still read the old altitude (the filter did not take); a route that comes
+  out half AGL and half MSL (normalisation skipped a leg — the Alt Type column is read-only, so this is
+  unrecoverable in-app and the flight is at two real altitudes); an LZ row jumping to cruise (a landing zone
+  fell out of `BULK_ALTITUDE_SKIP_TYPES`); the spin box accepting 0 ft; a target row leaving 0 ft.
+
 ## R. Mission map / F10 drawings
 
 ### R1 — Support-package F10 orbit markers render + labelled · §45 · ☑ VERIFIED (2026-07-04, user pass — "looks great" on COIN; NOT COIN-only — `generate_support_orbits` is called unconditionally in `DrawingsGenerator.generate`, gated only on blue REFUELING/AEWC flights existing, so every campaign with a blue tanker/AWACS gets the markers) (was ☐ UNTESTED, built 2026-07-03; the emitter — racetrack-end pick, blue/support filter, group-name label match, oblong/circle draw — is locked in `tests/missiongenerator/test_support_orbit_drawings.py` and a real `.miz` `drawings.dict()` serialize probe passed; the on-map render needs an in-cockpit eyeball)

@@ -24,10 +24,10 @@ radios:
   intra_flight: F-22A VHF
   inter_flight: F-22A VHF
 tasks:
-  BARCAP: 725
-  Escort: 680
-  Fighter sweep: 695
-  TARCAP: 710
+  BARCAP: 550
+  Escort: 550
+  Fighter sweep: 550
+  TARCAP: 550
 
 # Air-to-air refueling method (receiver).
 air_refuel_type: boom

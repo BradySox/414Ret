@@ -17,11 +17,11 @@ max_range: 2000
 variants:
   B-1B Lancer: {}
 tasks:
-  BAI: 478
-  CAS: 575
-  OCA/Aircraft: 600
-  OCA/Runway: 705
-  Strike: 725
+  BAI: 670
+  CAS: 670
+  OCA/Aircraft: 670
+  OCA/Runway: 670
+  Strike: 700
 
 # Air-to-air refueling method (receiver).
 air_refuel_type: boom

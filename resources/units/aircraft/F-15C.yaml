@@ -19,10 +19,10 @@ fuel:
   combat_ppm: 13
   min_safe: 2000
 tasks:
-  BARCAP: 655
-  Escort: 557
-  Fighter sweep: 625
-  TARCAP: 640
+  BARCAP: 540
+  Escort: 540
+  Fighter sweep: 540
+  TARCAP: 540
 
 # Air-to-air refueling method (receiver).
 air_refuel_type: boom

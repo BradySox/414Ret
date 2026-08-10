@@ -32,10 +32,10 @@ fuel:
   combat_ppm: 14
   min_safe: 2000
 tasks:
-  BAI: 825
-  CAS: 825
-  OCA/Aircraft: 735
-  OCA/Runway: 480
+  BAI: 820
+  CAS: 820
+  OCA/Aircraft: 820
+  OCA/Runway: 380
 secondary_tasks:
   - DEAD
 

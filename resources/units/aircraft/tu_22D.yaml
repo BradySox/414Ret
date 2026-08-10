@@ -13,13 +13,13 @@ variants:
 # default_overrides:
 #   Belly_Bay_Door: false
 tasks:
-  Anti-ship: 485
-  BAI: 405
-  CAS: 400
+  Anti-ship: 100
+  BAI: 350
+  CAS: 350
   DEAD: 150
-  OCA/Aircraft: 415
-  OCA/Runway: 525
-  Strike: 545
+  OCA/Aircraft: 350
+  OCA/Runway: 600
+  Strike: 600
 secondary_tasks:
   - DEAD
   - Armed Recon

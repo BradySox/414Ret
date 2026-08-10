@@ -11,16 +11,16 @@ role: Fighter
 variants:
   "[CH] JAS 39C Gripen": {}
 tasks:
-  BAI: 550
-  DEAD: 790
-  CAS: 550
-  BARCAP: 385
-  Escort: 370
-  Fighter sweep: 370
-  OCA/Aircraft: 575
-  OCA/Runway: 470
-  Strike: 480
-  TARCAP: 385
+  BAI: 750
+  DEAD: 750
+  CAS: 750
+  BARCAP: 430
+  Escort: 430
+  Fighter sweep: 430
+  OCA/Aircraft: 750
+  OCA/Runway: 610
+  Strike: 610
+  TARCAP: 430
 
 # Air-to-air refueling method (receiver).
 air_refuel_type: probe

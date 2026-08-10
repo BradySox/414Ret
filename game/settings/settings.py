@@ -1015,7 +1015,9 @@ class Settings:
         "BARCAP wave overlap",
         page=CAMPAIGN_DOCTRINE_PAGE,
         section=GENERAL_SECTION,
-        default=timedelta(minutes=15),
+        # Stock default (2026-08-09 re-convergence): upstream schedules
+        # back-to-back waves. The 414th planner suite preset sets 15.
+        default=timedelta(minutes=0),
         min=0,
         max=60,
         detail="How long consecutive BARCAP waves overlap on-station. Higher values"
@@ -1201,7 +1203,9 @@ class Settings:
         "Auto-planner adds a recon flight to Strike/DEAD/Armed Recon packages",
         page=CAMPAIGN_DOCTRINE_PAGE,
         section=GENERAL_SECTION,
-        default=True,
+        # Stock default (2026-08-09 re-convergence): upstream plans no add-on
+        # recon. The 414th planner suite preset turns this on.
+        default=False,
         invert=False,
         detail=(
             "If checked, the auto-planner appends a single photo-recon flight "
@@ -1407,7 +1411,9 @@ class Settings:
         "Auto-planner reads the weather",
         page=CAMPAIGN_DOCTRINE_PAGE,
         section=GENERAL_SECTION,
-        default=True,
+        # Stock default (2026-08-09 re-convergence): upstream ignores weather.
+        # The 414th planner suite preset turns this on.
+        default=False,
         detail=(
             "The theater commander accounts for the sky when planning (both "
             "sides). In rain or thunderstorms the automatic photo-recon add-on "
@@ -1422,7 +1428,9 @@ class Settings:
         "Strikes push behind their SEAD window",
         page=CAMPAIGN_DOCTRINE_PAGE,
         section=GENERAL_SECTION,
-        default=True,
+        # Stock default (2026-08-09 re-convergence): upstream times packages
+        # independently. The 414th planner suite preset turns this on.
+        default=False,
         detail=(
             "Packages used to be timed independently, so a strike could arrive "
             "at a defended target half an hour before the SEAD package tasked "
@@ -1439,7 +1447,9 @@ class Settings:
         "Max escort jammers airborne per side",
         page=CAMPAIGN_DOCTRINE_PAGE,
         section=GENERAL_SECTION,
-        default=4,
+        # Stock default (2026-08-09 re-convergence): upstream plans no escort
+        # jammers. The 414th planner suite preset sets 4.
+        default=0,
         min=0,
         max=12,
         detail=(
@@ -1955,7 +1965,10 @@ class Settings:
         "Add fuel tanks when the route needs the range",
         page=MISSION_GENERATION_PAGE,
         section="Loadouts",
-        default=True,
+        # Stock default (2026-08-09 re-convergence): upstream fits no tanks.
+        # The 414th planner suite preset turns this on. The whole §46 layer is
+        # slated for outright revert (work order C); this flip is the interim.
+        default=False,
         detail=(
             "Fuel-first planning: once a package is built, drop tanks are fitted to "
             "a flight's EMPTY tank-capable stations when the sortie needs more fuel "
@@ -2152,7 +2165,10 @@ class Settings:
             "time settings opt out of the natural cycle and fall back to the "
             "per-turn rotation). Turn off for the stock per-turn behaviour."
         ),
-        default=True,
+        # Stock default (2026-08-09 re-convergence): upstream rotates time of
+        # day per turn with memoryless weather. The 414th planner suite preset
+        # turns this on.
+        default=False,
     )
 
     # HQ Automation
@@ -2325,7 +2341,9 @@ class Settings:
         "AI procurement reads the strategic picture",
         CAMPAIGN_MANAGEMENT_PAGE,
         HQ_AUTOMATION_SECTION,
-        default=True,
+        # Stock default (2026-08-09 re-convergence): upstream buys uniformly at
+        # random. The 414th planner suite preset turns this on.
+        default=False,
         detail=(
             "The AI commander's auto-spend follows its side's strategic read "
             "instead of a fixed split: a surging enemy shifts budget toward the "

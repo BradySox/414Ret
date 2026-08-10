@@ -37,13 +37,16 @@ from game.settings import (
     BooleanOption,
     BoundedFloatOption,
     BoundedIntOption,
+    CAMPAIGN_DOCTRINE_PAGE,
     ChoicesOption,
     DIFFICULTY_REALISM_PAGE,
     DifficultyPreset,
     MinutesOption,
     OptionDescription,
     Settings,
+    apply_planner_suite,
     apply_preset,
+    detect_planner_suite,
     detect_preset,
 )
 from game.settings.ISettingsContainer import SettingsContainer
@@ -709,6 +712,59 @@ class DifficultyPresetBar(QGroupBox):
         )
 
 
+class PlannerSuiteBar(QGroupBox):
+    """The one-click 414th planner-suite switch atop the Campaign Doctrine page.
+
+    Since the 2026-08-09 re-convergence decision the settings DEFAULTS are the
+    stock (upstream) planner behavior; this bar opts a campaign back into the
+    414th planner features, or resets them to stock, in one click (see
+    game/settings/plannersuite.py for the exact fields).
+    """
+
+    def __init__(
+        self,
+        settings: Settings,
+        on_apply: Callable[[bool], None],
+    ) -> None:
+        super().__init__("Planner behavior")
+        self._on_apply = on_apply
+
+        outer = QVBoxLayout()
+        self.setLayout(outer)
+
+        intro = QLabel(
+            "One click sets the 414th planner gates together: stock plans like "
+            "upstream DCS Retribution; the 414th suite turns on overlapping "
+            "BARCAP waves, SEAD-window strike timing, auto recon flights, "
+            "weather-aware planning, escort jammers, adaptive procurement, "
+            "route fuel tanks, and the continuous clock. Each can still be "
+            "fine-tuned below."
+        )
+        intro.setWordWrap(True)
+        outer.addWidget(intro)
+
+        row = QHBoxLayout()
+        for label, suite_on in (("Stock (upstream)", False), ("414th suite", True)):
+            button = QPushButton(label)
+            button.clicked.connect(lambda _checked=False, s=suite_on: self._on_apply(s))
+            row.addWidget(button)
+        outer.addLayout(row)
+
+        self.current_label = QLabel()
+        outer.addWidget(self.current_label)
+        self.refresh(settings)
+
+    def refresh(self, settings: Settings) -> None:
+        state = detect_planner_suite(settings)
+        if state is None:
+            text = "Current: Custom"
+        elif state:
+            text = "Current: 414th suite"
+        else:
+            text = "Current: Stock (upstream)"
+        self.current_label.setText(text)
+
+
 class QSettingsWindow(QDialog):
     def __init__(self, game: Game):
         super().__init__()
@@ -789,6 +845,7 @@ class QSettingsWidget(QtWidgets.QWizardPage, SettingsContainer):
 
         self.updating_ui = False
         self.difficulty_preset_bar: Optional[DifficultyPresetBar] = None
+        self.planner_suite_bar: Optional[PlannerSuiteBar] = None
 
         self.initUi()
 
@@ -824,6 +881,17 @@ class QSettingsWidget(QtWidgets.QWizardPage, SettingsContainer):
                     self.settings, self.apply_difficulty_preset
                 )
                 container_layout.addWidget(self.difficulty_preset_bar)
+                container_layout.addWidget(page)
+                scroll.setWidget(container)
+            elif name == CAMPAIGN_DOCTRINE_PAGE:
+                # Prepend the stock-vs-414th planner suite switch.
+                container = QWidget()
+                container_layout = QVBoxLayout(container)
+                container_layout.setContentsMargins(0, 0, 0, 0)
+                self.planner_suite_bar = PlannerSuiteBar(
+                    self.settings, self.apply_planner_suite_choice
+                )
+                container_layout.addWidget(self.planner_suite_bar)
                 container_layout.addWidget(page)
                 scroll.setWidget(container)
             else:
@@ -1019,6 +1087,11 @@ class QSettingsWidget(QtWidgets.QWizardPage, SettingsContainer):
         self.update_from_settings()
         self.applySettings()
 
+    def apply_planner_suite_choice(self, suite_on: bool) -> None:
+        apply_planner_suite(self.settings, suite_on)
+        self.update_from_settings()
+        self.applySettings()
+
     def update_from_settings(self) -> None:
         self.updating_ui = True
         for p in self.pages.values():
@@ -1048,6 +1121,8 @@ class QSettingsWidget(QtWidgets.QWizardPage, SettingsContainer):
 
         if self.difficulty_preset_bar is not None:
             self.difficulty_preset_bar.refresh(self.settings)
+        if self.planner_suite_bar is not None:
+            self.planner_suite_bar.refresh(self.settings)
 
         # Values just changed, so "only changed" and the campaign badges can both
         # have gone stale -- re-run the filter over the refreshed controls. Guarded

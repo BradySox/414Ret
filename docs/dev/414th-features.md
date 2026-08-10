@@ -4471,7 +4471,8 @@ default when the name gives no number).
 
 ### Gating
 
-`auto_range_fuel_tanks` — Mission Generation → Loadouts, **default ON** (inert on short routes). It now
+`auto_range_fuel_tanks` — Mission Generation → Loadouts, **default OFF since the 2026-08-09
+re-convergence** (the planner-suite preset turns it on; inert on short routes). It now
 gates both the generation-time top-up and the plan-time tier 1, and is the master for
 `fuel_tanks_over_jammers` — Mission Generation → Loadouts, **default ON**, the tier-2 kill switch. The
 tank-aware *decision* (counting bags already on the jet) is unconditional — it just reads the loadout the
@@ -4607,8 +4608,9 @@ clock reads the same date and simply begins marching forward from there. No jump
 
 ### Gating
 
-`continuous_campaign_clock` — Campaign Management → **Campaign clock & weather**, **default ON**. Turning it
-off restores the stock per-turn rotation + memoryless weather exactly. Requires day-and-night missions (above).
+`continuous_campaign_clock` — Campaign Management → **Campaign clock & weather**, **default OFF
+since the 2026-08-09 re-convergence** (the planner-suite preset turns it on). Off = the stock
+per-turn rotation + memoryless weather exactly. Requires day-and-night missions (above).
 
 ### Files & tests
 
@@ -6314,7 +6316,8 @@ is the same sky):
 demoting night CAS would wrongly ground an A-10C II alongside an A-1. Night awareness is
 blocked on that data existing, not forgotten.
 
-Gated by `weather_aware_planning` (Air Doctrine → Auto-planner behavior, default **ON** —
+Gated by `weather_aware_planning` (Air Doctrine → Auto-planner behavior, default **OFF since
+the 2026-08-09 re-convergence**, the planner-suite preset turns it on —
 clear skies are a byte-identical no-op, so the toggle only matters while the weather is
 actually bad; every read is getattr-guarded so headless fakes and old saves degrade to
 "clear"). Tests: `tests/fourteenth/test_weather_planning.py` (classifiers, gates, the
@@ -6351,7 +6354,8 @@ adds two couplings:
    keeping variety (a weighting, not a max).
 
 Gating: the weighted-choice under `adaptive_procurement` (Campaign Management → Commander
-economy, default **ON**); the site repair under `auto_repair_air_defenses` (same section, default **OFF** —
+economy, default **OFF since the 2026-08-09 re-convergence** — the planner-suite preset turns
+it on); the site repair under `auto_repair_air_defenses` (same section, default **OFF** —
 it materially changes campaign difficulty: the SAM belt regenerates unless the player keeps
 pressure on it). Not preseeded anywhere (Red Tide is feature-locked). Tests:
 `tests/fourteenth/test_adaptive_procurement.py` (the repair's gate/cap/priority/budget-skip/category-exclusions/wreck-cleanup, the weighted-choice gate). Checklist B20 — needs an in-game pass (red visibly rebuilds a
@@ -6386,7 +6390,8 @@ strikes push behind** (providers are read-only). The carrier stagger runs after 
 ever delays, so it can push a strike deeper into — never ahead of — its window;
 best-effort by design. Symmetric (each coalition's scheduler coordinates its own ATO).
 
-Gated by `sead_strike_coordination` (Air Doctrine → Auto-planner behavior, default **ON**).
+Gated by `sead_strike_coordination` (Air Doctrine → Auto-planner behavior, default **OFF since
+the 2026-08-09 re-convergence**; the planner-suite preset turns it on).
 Tests: `tests/test_sead_strike_coordination.py` (the pure window math end-to-end + the
 wiring: ring matching, latest-provider windows, player/ASAP immunity, provider
 read-only, massing, the gate, a dead SAM's zero ring). Checklist B21 — needs an in-game
@@ -7229,12 +7234,55 @@ implementation detail — becomes a **real AI run-in at 1,000 ft AGL**
 Hercules branch used), so the AI actually overflies the target zone the
 `LogisticsGenerator` already creates (2,500 m wpZone). `tot_waypoint` for
 fixed-wing was already `targets[0]` (written for the Herc, never removed).
-**`C-130J-30.yaml` gets `Air Assault: 40`** — below the assault helos' 50, so a
-helo squadron in range still wins the tasking and the C-130 takes the long-reach
-and no-helo cases. Campaign C-130J squadrons are near-universally
+Campaign C-130J squadrons are near-universally
 `primary: Transport, secondary: any`, so on a NEW game the auto-planner can (and
 will) frag C-130 airborne assaults where they out-range the helos; def-generated
 squadrons auto-assign everything the airframe is capable of, same effect.
+
+### The Air Assault priority ladder
+
+`AircraftType.priority_list_for_task` sorts the `Air Assault:` numbers descending,
+and both `airwing.best_squadrons_for` and `squadrondefgenerator.generate_for_task`
+pick from the top of that list — so these values decide which airframe actually
+flies an assault, and which one a def-generated squadron gets built around. They
+are **not** cosmetic.
+
+They were reranked wholesale (2026-08-09) because the flat list had drifted into
+real errors: the `sh2f` naval ASW Seasprite was tied with the CH-53E at 100, the
+`SH-60B` (also ASW) outranked the assault UH-60A, the **Mi-8MT — the Soviet
+assault helicopter, fielded by more red factions than any other rotary type —
+sat at 40**, below a light observation helo, and the Mi-26 sat at 30 with a
+24-troop cabin.
+
+| Tier | Band | Members |
+|---|---|---|
+| Heavy-lift rotary | 110–135 | CH-47Fbl1 130 · CH-53E 125 · CH-47D 120 · Mi-26 115 |
+| Medium assault rotary | 80–105 | vwv_ch46d_late 100 · vwv_ch46d 98 · Mi-8MT 95 · UH-60L 92 · UH-60A 88 · UH-1H 85 |
+| Light / naval rotary | 50–75 | uh2c 70 · uh2b 68 · uh2a 66 · sh2f 62 · HKP15B 60 · SH-60B 58 · OH-6A 55 |
+| Fixed-wing tactical | 28–48 | C-130J-30 42 · An-26B 34 · C-47 30 |
+| Fixed-wing strategic | 18–26 | C-17A 22 · IL-76MD 20 |
+| Gunship with troop seats | 8–15 | Mi-24P 12 · Mi-24V 10 |
+
+The rules the bands encode:
+
+- **Rotary transports beat fixed-wing ones.** A helicopter puts troops on the
+  objective and can extract them; a paradrop is the long-reach / no-helo answer.
+  Range is enforced separately in `can_auto_assign_mission`, so a transport still
+  wins the tasking when no helo can reach.
+- **Gunships sit at the very bottom**, below the fixed-wing transports — six jump
+  seats on an airframe that is a gunship first, and every faction fielding Hinds
+  also fields Mi-8s.
+- **Within a tier**, lift capacity orders the airframes and the player-flyable one
+  beats the AI-only ones.
+
+Where a faction fields only one Air Assault-capable type the absolute number is
+moot — it is the only option, so it gets the tasking regardless.
+
+**Fork vs upstream:** the fork has no `Hercules.yaml` (Anubis mod purged) and no
+`C-130.yaml` (consolidated onto the C-130J-30 in `d8d58be2c`), so those two rungs
+exist only in the upstream carve, at **Hercules 45** (down from upstream's 990,
+which put a C-130 above every assault helicopter and contradicted this ladder) and
+**C-130 38**.
 
 **Runtime** (`resources/plugins/ctld/ctld-config.lua` — the Retribution-owned
 config layer; CTLD.lua itself is untouched): the emitter marks each transport
@@ -7276,15 +7324,41 @@ plugin to **TRANSPORT and AIR_ASSAULT** C-130J-30s alongside the Combat SAR
 King — a paradrop bird (or a cargo airlifter, a pre-existing gap) flies the
 CTLD menus, not the EW station; a co-present JAMMING C-130J keeps its systems.
 
-**Deliberately not in v1:** other fixed-wing haulers (An-26B, Il-76 — adding
-`cabin_size` + the task to their yamls is all it takes, but it also changes
-their TRANSPORT behavior, so it's a separate call), chute visuals (vanilla DCS
-has no spawnable parachutist object; the descent delay is the model), vehicle
-paradrop (LAPES), and wind drift.
+**The rest of the hauler fleet landed 2026-08-09** (the v1 note deferred An-26B
+and Il-76 as "a separate call" — this is that call). `C-47`, `An-26B`, `IL-76MD`
+and `C-17A` all had the same defect: a `Transport:` task and no `cabin_size`, so
+they defaulted to a zero cabin and the Builder gate rejected them. All four get
+`cabin_size: 24` — CTLD's largest loadable group is `Retribution Troops (24)`, so
+a smaller cabin silently caps the airframe at the 12-troop group, and all of them
+carried far more in service (C-47 28, An-26 ~40, C-17 102, Il-76MD 126).
+
+The reach is mostly red: **50 red factions field the Il-76MD**, the VDV's own jump
+platform, and before this they had no fixed-wing airborne option at all. The C-47
+gives the 1944 factions airborne assault for the first time — they field no
+helicopters, so it is their only Air Assault platform.
+
+**Deliberately excluded, and pinned by a test so it is not "fixed" later:** the
+An-30M (glazed-nose aerial survey variant of the An-24), the C-2A Greyhound
+(carrier onboard delivery) and the Yak-40 (light airliner). Each declares a
+`Transport:` task, so each reads like an oversight; none carried paratroops.
+Also skipped: the A400M and V-22 (fielded by no faction) and the C-5
+(strategic-only in practice).
+
+**Still not done:** chute visuals (vanilla DCS has no spawnable parachutist
+object; the descent delay is the model), vehicle paradrop (LAPES), and wind drift.
+
+**Side effect worth knowing:** `LogisticsGenerator` runs for TRANSPORT flights as
+well as AIR_ASSAULT, so a positive `cabin_size` also flips these airframes to
+`troops=true` in the CTLD transport table — they become troop-capable CTLD
+transports on Transport missions, not only on assaults.
 
 Files: `game/ato/flightplans/airassault.py`, `game/missiongenerator/luagenerator.py`,
-`resources/units/aircraft/C-130J-30.yaml`, `resources/plugins/ctld/ctld-config.lua`.
-Tests: `tests/ato/flightplans/test_airassault.py` (gate + both layout shapes),
+`resources/plugins/ctld/ctld-config.lua`, and the aircraft yamls
+(`C-130J-30`, `C-47`, `An-26B`, `IL-76MD`, `C-17A` for the cabins, plus the 20
+rotary/fixed yamls the ladder rerank touched).
+Tests: `tests/ato/flightplans/test_airassault.py` (gate + both layout shapes, the
+tier-band ladder incl. a guard that every Air Assault-capable airframe is ranked,
+and the non-troop-transport exclusions),
 `tests/lua/test_ctld_paradrop.py` (9 runtime cases: config arming, preload retry,
 player drop timing/projection, jump ceiling, ground/helo fall-through, AI one-shot
 zone release, AI-helo never dropped, JTAC stick), extended
@@ -7396,7 +7470,8 @@ airborne. Two design choices keep that from flatlining the war:
 
 Ship count *within* a flight is already effect-neutral (the plugin emits one bubble per group,
 from the lead — a 4-ship jams exactly like a 2-ship), so the only count lever is a per-side
-**`max_escort_jammers`** cap (Air Doctrine, default 4, 0 disables auto-planned jammers) enforced
+**`max_escort_jammers`** cap (Air Doctrine, default **0 since the 2026-08-09 re-convergence** —
+no auto-planned jammers; the planner-suite preset sets 4) enforced
 in `PackageFulfiller.can_plan_escort` by counting the ATO's ESCORT_JAMMER flights — an
 airframe-economy bound, since the effects are already self-limiting. Plugin option `recoverySec`.
 

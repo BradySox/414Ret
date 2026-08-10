@@ -21,15 +21,15 @@ radios:
     intra_flight_radio_index: 2
     inter_flight_radio_index: 1
 tasks:
-  BAI: 485
-  BARCAP: 460
-  CAS: 485
-  Escort: 440
-  Fighter sweep: 440
-  OCA/Aircraft: 520
-  OCA/Runway: 460
-  Strike: 465
-  TARCAP: 395
+  BAI: 310
+  BARCAP: 300
+  CAS: 310
+  Escort: 300
+  Fighter sweep: 300
+  OCA/Aircraft: 310
+  OCA/Runway: 280
+  Strike: 280
+  TARCAP: 300
 
 # Air-to-air refueling method (receiver).
 air_refuel_type: probe

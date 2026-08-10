@@ -363,8 +363,6 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                 [
                     "sead_sweep_engagement_range_distance",
                     "sead_threat_buffer_min_distance",
-                    "sead_loiter_standoff_factor",
-                    "sead_loiter_max_window_seconds",
                 ],
             ),
             (
@@ -606,13 +604,6 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                     "host_red_scramble",
                 ],
             ),
-            (
-                "Loadouts",
-                [
-                    "auto_range_fuel_tanks",
-                    "fuel_tanks_over_jammers",
-                ],
-            ),
         ],
     ),
     (
@@ -758,8 +749,6 @@ FEATURE_GATE_FIELDS: dict[str, list[str]] = {
         "sead_strike_coordination",  # §69
         "adaptive_procurement",  # §68
         "auto_repair_air_defenses",  # §68
-        "auto_range_fuel_tanks",  # §46
-        "fuel_tanks_over_jammers",  # §46
     ],
     "Single-player flow": [
         "sp_pilot_mode",  # §83
@@ -1644,36 +1633,6 @@ class Settings:
             "How close to known threats will the SEAD Escort / SEAD Sweep engagement zone extend."
         ),
     )
-    sead_loiter_standoff_factor: float = bounded_float_option(
-        "SEAD loiter standoff factor (× threat range)",
-        page=CAMPAIGN_DOCTRINE_PAGE,
-        section=DOCTRINE_DISTANCES_SECTION,
-        default=0.8,
-        min=0.1,
-        max=2,
-        divisor=10,
-        detail=(
-            "How far a loitering SEAD flight holds from its target, as a multiple of the "
-            "target's threat range. 0.8 keeps it close (inside the engagement ring); raise "
-            "toward/above 1.0 for a safer standoff if SEAD takes losses loitering. Only "
-            "applies to targets with known threat-range data; others fall back to the flat "
-            "sead_threat_buffer_min_distance."
-        ),
-    )
-    sead_loiter_max_window_seconds: int = bounded_int_option(
-        "SEAD loiter backstop window (seconds)",
-        page=CAMPAIGN_DOCTRINE_PAGE,
-        section=DOCTRINE_DISTANCES_SECTION,
-        default=1200,
-        min=0,
-        max=3600,
-        detail=(
-            "Fallback on-station time for a SEAD loiter when its package has no other "
-            "flights to pace against. Normally the loiter holds until the last package "
-            "member leaves the target area, then RTBs (or earlier when it runs out of "
-            "ARMs); this value only applies to lone SEAD packages."
-        ),
-    )
     tarcap_threat_buffer_min_distance: int = bounded_int_option(
         "TARCAP threat buffer distance (NM)",
         page=CAMPAIGN_DOCTRINE_PAGE,
@@ -1993,46 +1952,6 @@ class Settings:
             "different clouds. 'None' uses the stock DCS presets."
         ),
     )
-    auto_range_fuel_tanks: bool = boolean_option(
-        "Add fuel tanks when the route needs the range",
-        page=MISSION_GENERATION_PAGE,
-        section="Loadouts",
-        # Stock default (2026-08-09 re-convergence): upstream fits no tanks.
-        # The 414th planner suite preset turns this on. The whole §46 layer is
-        # slated for outright revert (work order C); this flip is the interim.
-        default=False,
-        detail=(
-            "Fuel-first planning: once a package is built, drop tanks are fitted to "
-            "a flight's EMPTY tank-capable stations when the sortie needs more fuel "
-            "than internal (plus any tanks already on the loadout) can cover, BEFORE "
-            "the pre/post-vul tanker decision -- which also counts the fuel in the "
-            "bags, so a jet carrying tanks stops being sent to the tanker twice when "
-            "one pass (or none) covers it. Far-AO campaigns (e.g. the COIN carrier "
-            "~800 km off the beach) fly with enough gas; inert on short routes. This "
-            "toggle on its own never removes a store (a TGP, ECM pod, or ordnance is "
-            "never swapped out; see the jammer-pod trade below). Player-customised "
-            "loadouts are left untouched."
-        ),
-    )
-    fuel_tanks_over_jammers: bool = boolean_option(
-        "Trade jammer pods for fuel tanks when it saves a tanker pass",
-        page=MISSION_GENERATION_PAGE,
-        section="Loadouts",
-        default=True,
-        enabled_when="auto_range_fuel_tanks",
-        detail=(
-            "When filling empty stations still leaves a sortie needing more tanker "
-            "passes, a self-protection JAMMER pod on a tank-capable station gives up "
-            "its seat to a drop tank -- but only when the extra bag strictly reduces "
-            "the pass count (pre+post-vul refueling becomes one pass, or one pass "
-            "becomes none), or when no tanker exists at all and the bags are the only "
-            "gas there is. The motivating case: a SEAD Viper with two wing bags and a "
-            "centerline ALQ-184 planned through two refuel passes -- three bags and "
-            "one pass beat the pod. Only jammer pods are ever traded (never a TGP, "
-            "decoy, or ordnance); player-customised loadouts are left untouched."
-        ),
-    )
-
     # Pilots and Squadrons
     ai_pilot_levelling: bool = boolean_option(
         "Allow AI pilot leveling",
@@ -3969,6 +3888,11 @@ class Settings:
             # Replaced by the CloudPresetPack choice, so several community cloud
             # mods are selectable (value already migrated above).
             "use_bandit_clouds",
+            # Feature §46 (route-aware fuel-tank planning) was reverted to upstream
+            # behavior in the 2026-08-09 auto-planner re-convergence. Nothing fits
+            # tanks at plan or generation time any more, so both gates are dead.
+            "auto_range_fuel_tanks",
+            "fuel_tanks_over_jammers",
         ):
             migrated.pop(obsolete_key, None)
 

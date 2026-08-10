@@ -45,7 +45,6 @@ if TYPE_CHECKING:
 VISUAL_ATTACK_METHODS: tuple[str, ...] = (
     "InterdictReinforcements",
     "AttackBattlePositions",
-    "PlanFrontLineCas",
 )
 
 

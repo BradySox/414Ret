@@ -116,23 +116,28 @@ def test_the_tomcat_is_never_tasked_as_a_weasel(unit_data: None) -> None:
             ), f"{variant.variant_id} is tasked {offenders} with no ARM"
 
 
-def test_the_upgraded_tomcat_outranks_the_b_it_upgrades(unit_data: None) -> None:
-    """The B(U) is the later, more capable jet -- its combat weights must reflect that.
+def test_the_upgraded_tomcat_keeps_the_family_shape(unit_data: None) -> None:
+    """The B(U) carries the F-14B's weights plus the family's fork lanes.
 
-    Guards against a future upstream sync restoring the stock table, where every
-    air-to-air task sat at a flat 530 and the B(U) *lost* BARCAP to the older F-14B
-    (585) while beating it at Escort.
+    The 2026-08-09 planner re-convergence restored upstream magnitudes, and
+    upstream ships the B(U)'s task table as a byte-copy of the F-14B's. What must
+    survive is the *shape*: the same task set as the B (so no SEAD -- see
+    test_the_tomcat_is_never_tasked_as_a_weasel), TARPS on both, equal weights
+    task-for-task, and a declared refuelling method (absent, it reads as
+    "compatible with any tanker", boom included).
     """
     b = AircraftType.named("F-14B Tomcat")
     bu = AircraftType.named("F-14B(U) Tomcat")
     assert bu.air_refuel_type is not None, "B(U) must declare a refuelling method"
     assert bu.air_refuel_type == b.air_refuel_type
-    shared = set(b.task_priorities) & set(bu.task_priorities) - {FlightType.TARPS}
-    assert shared, "expected the two Tomcats to share combat tasks"
-    for task in shared:
-        assert bu.task_priorities[task] > b.task_priorities[task], (
-            f"F-14B(U) should outrank the F-14B at {task.value} "
-            f"({bu.task_priorities[task]} vs {b.task_priorities[task]})"
+    assert FlightType.TARPS in bu.task_priorities, "B(U) lost the TARPS lane"
+    assert set(bu.task_priorities) == set(
+        b.task_priorities
+    ), "the B(U) task set drifted from the F-14B's"
+    for task, priority in b.task_priorities.items():
+        assert bu.task_priorities[task] == priority, (
+            f"F-14B(U) diverged from the F-14B at {task.value} "
+            f"({bu.task_priorities[task]} vs {priority})"
         )
 
 

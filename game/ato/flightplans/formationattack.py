@@ -10,10 +10,9 @@ from typing import TYPE_CHECKING, TypeVar
 from dcs import Point
 
 from game.flightplan import HoldZoneGeometry
-from game.fourteenth.range_fuel import flight_external_fuel_lbs, plan_sortie_fuel
 from game.theater import MissionTarget, TheaterGroundObject
 from game.theater.theatergroup import SceneryUnit
-from game.utils import nautical_miles, Speed, feet, KG_TO_LBS
+from game.utils import nautical_miles, Speed, feet
 from .flightplan import FlightPlan
 from .formation import FormationFlightPlan, FormationLayout
 from .ibuilder import IBuilder
@@ -22,7 +21,6 @@ from .waypointbuilder import StrikeTarget, WaypointBuilder
 from .. import FlightType
 from ..flightwaypoint import FlightWaypoint
 from ..flightwaypointtype import FlightWaypointType
-from ..refueltasking import RefuelTasking, decide_refuel_tasking, sortie_fuel_split
 
 if TYPE_CHECKING:
     from ..flight import Flight
@@ -145,25 +143,12 @@ class FormationAttackLayout(FormationLayout):
     targets: list[FlightWaypoint]
     initial: Optional[FlightWaypoint] = None
     lineup: Optional[FlightWaypoint] = None
-    #: Pre-vul (ingress-side) refuel point, used when fuel calculations say the flight
-    #: can't fight through the vul on internal fuel. The egress-side ``refuel`` field
-    #: (inherited) is the post-vul point. Either or both may be set (BOTH tanks pre-
-    #: and post-vul); see _refuel_tasking.
-    refuel_pre: Optional[FlightWaypoint] = None
-
-    def delete_waypoint(self, waypoint: FlightWaypoint) -> bool:
-        if waypoint == self.refuel_pre:
-            self.refuel_pre = None
-            return True
-        return super().delete_waypoint(waypoint)
 
     def iter_waypoints(self) -> Iterator[FlightWaypoint]:
         yield self.departure
         if self.hold:
             yield self.hold
         yield from self.nav_to
-        if self.refuel_pre is not None:
-            yield self.refuel_pre
         yield self.join
         if self.lineup:
             yield self.lineup
@@ -227,73 +212,17 @@ class FormationAttackBuilder(IBuilder[FlightPlanT, LayoutT], ABC):
         ingress_egress_altitude = builder.get_combat_altitude
         use_agl_ingress_egress = is_helo
 
-        departure = builder.takeoff(self.flight.departure)
-        # Base navs with no tanker detour: used both to estimate the sortie fuel burn
-        # and as the default routing when no tanker is needed.
-        nav_to = builder.nav_path(
-            hold.position if hold else self.flight.departure.position,
-            join.position,
-            ingress_egress_altitude,
-            use_agl_ingress_egress,
-        )
-        nav_from = builder.nav_path(
-            split.position,
-            self.flight.arrival.position,
-            ingress_egress_altitude,
-            use_agl_ingress_egress,
-        )
-        arrival = builder.land(self.flight.arrival)
-
-        # Only flights that fuel calculations say can't make the sortie unrefueled get
-        # a tanker, sorted to pre-vul (top off on ingress) or post-vul (tank on egress).
-        # The decision walks the real route below at the actual per-leg fuel rates.
-        combat_speed = {join, split} | set(target_waypoints)
-        route: list[FlightWaypoint] = [departure]
-        if hold is not None:
-            route.append(hold)
-        route.extend(nav_to)
-        route.append(join)
-        if lineup is not None:
-            route.append(lineup)
-        route.append(ingress)
-        if initial is not None:
-            route.append(initial)
-        route.extend(target_waypoints)
-        route.append(split)
-        route.extend(nav_from)
-        route.append(arrival)
-
-        tasking = self._refuel_tasking(route, combat_speed, split)
-        refuel_pre = None
-        refuel = None
-        # Separate ifs (not elif): BOTH tanks pre- and post-vul.
-        if tasking.refuels_pre_vul:
-            refuel_pre = builder.refuel(
-                self.flight.refuel_waypoint_position(self.package.waypoints.refuel)
-            )
-            # Reroute the ingress nav through the tanker (which sits on the home-to-join
-            # leg, so this is a detour rather than a backtrack), then on to the join.
-            nav_to = builder.nav_path(
-                hold.position if hold else self.flight.departure.position,
-                refuel_pre.position,
-                ingress_egress_altitude,
-                use_agl_ingress_egress,
-            )
-        if tasking.refuels_post_vul:
-            refuel = builder.refuel(
-                self.flight.refuel_waypoint_position(self.package.waypoints.refuel)
-            )
-            nav_from = builder.nav_path(
-                refuel.position,
-                self.flight.arrival.position,
-                ingress_egress_altitude,
-                use_agl_ingress_egress,
-            )
+        refuel = self._build_refuel(builder)
 
         return FormationAttackLayout(
-            departure=departure,
+            departure=builder.takeoff(self.flight.departure),
             hold=hold,
-            nav_to=nav_to,
+            nav_to=builder.nav_path(
+                hold.position if hold else self.flight.departure.position,
+                join.position,
+                ingress_egress_altitude,
+                use_agl_ingress_egress,
+            ),
             join=join,
             lineup=lineup,
             ingress=ingress,
@@ -301,13 +230,28 @@ class FormationAttackBuilder(IBuilder[FlightPlanT, LayoutT], ABC):
             targets=target_waypoints,
             split=split,
             refuel=refuel,
-            refuel_pre=refuel_pre,
-            nav_from=nav_from,
-            arrival=arrival,
+            nav_from=builder.nav_path(
+                refuel.position if refuel else split.position,
+                self.flight.arrival.position,
+                ingress_egress_altitude,
+                use_agl_ingress_egress,
+            ),
+            arrival=builder.land(self.flight.arrival),
             divert=builder.divert(self.flight.divert),
             bullseye=builder.bullseye(),
             custom_waypoints=list(),
         )
+
+    def _build_refuel(self, builder: WaypointBuilder) -> Optional[FlightWaypoint]:
+        refuel: Optional[FlightWaypoint] = None
+        can_plan = self.flight.coalition.air_wing.can_auto_plan(FlightType.REFUELING)
+        if not self.flight.is_helo and can_plan and self.package.waypoints:
+            # refuel_waypoint_position honors the §44 long-range-carrier override;
+            # without one it returns the package refuel point (the stock behavior).
+            refuel = builder.refuel(
+                self.flight.refuel_waypoint_position(self.package.waypoints.refuel)
+            )
+        return refuel
 
     def _target_waypoints(
         self, builder: WaypointBuilder, targets: list[StrikeTarget] | None
@@ -324,74 +268,6 @@ class FormationAttackBuilder(IBuilder[FlightPlanT, LayoutT], ABC):
         return [
             self.target_area_waypoint(self.flight, self.flight.package.target, builder)
         ]
-
-    def _refuel_tasking(
-        self,
-        route: list[FlightWaypoint],
-        combat_speed_waypoints: set[FlightWaypoint],
-        split: FlightWaypoint,
-    ) -> RefuelTasking:
-        """Decide whether this flight needs a tanker and, if so, pre- or post-vul.
-
-        Walks the actual sortie route with the real per-leg fuel rates (climb off the
-        takeoff, combat into the formation waypoints, cruise elsewhere) to estimate the
-        burn to the end of the vul and home, then compares it against usable fuel.
-        Returns NONE when no tanker can be planned, the flight is a helo, fuel data is
-        missing, or fuel covers the sortie.
-
-        Fuel-first (414th, §46): before deciding, ``plan_sortie_fuel`` gives the
-        flight the sortie's tanks (filling empty tank-capable stations, then trading
-        jammer pods for bags when the extra tank saves a tanker pass), and the
-        decision counts the external fuel the jet actually carries -- internal-only
-        math sent a two-bag jet to the tanker before AND after the vul when its real
-        load needed a single pass.
-
-        Falls back to the synthesised ``estimated_fuel_consumption`` for airframes with
-        no hand-measured ``fuel:`` block (many mod jets, e.g. the F-4E) so a sortie the
-        kneeboard fuel ladder flags as short of home actually gets a tanker. The
-        estimate already drives that ladder / the bingo display; using the same source
-        here keeps the tanker decision consistent with the deficit we show the player,
-        instead of silently refusing a tanker the theater can crew.
-        """
-        fuel = (
-            self.flight.unit_type.fuel_consumption
-            or self.flight.unit_type.estimated_fuel_consumption
-        )
-        if fuel is None or self.flight.is_helo:
-            return RefuelTasking.NONE
-
-        fuel_to_end_of_vul, fuel_vul_to_home = sortie_fuel_split(
-            route, fuel, combat_speed_waypoints, split
-        )
-        tanker_available = self.flight.coalition.air_wing.can_auto_plan(
-            FlightType.REFUELING
-        )
-        # The tank pass runs even when no tanker exists -- the bags are then the
-        # only gas there is -- so it must precede the tanker-availability return.
-        plan_sortie_fuel(
-            self.flight,
-            fuel,
-            fuel_to_end_of_vul,
-            fuel_vul_to_home,
-            tanker_available,
-            self.flight.coalition.game.settings,
-        )
-        if not tanker_available:
-            return RefuelTasking.NONE
-
-        # A tanker top-off refills the externals too, so both the starting load and
-        # the post-refuel load count the bags.
-        full_fuel = self.flight.unit_type.max_fuel * KG_TO_LBS + (
-            flight_external_fuel_lbs(self.flight)
-        )
-        usable_fuel = full_fuel - fuel.taxi
-        return decide_refuel_tasking(
-            usable_fuel,
-            fuel_to_end_of_vul,
-            fuel_vul_to_home,
-            fuel.min_safe,
-            full_fuel,
-        )
 
     @property
     def primary_flight_is_air_assault(self) -> bool:

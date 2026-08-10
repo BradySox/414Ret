@@ -27,7 +27,7 @@ variants:
   Mi-24V Hind-E: {}
 tasks:
   Air Assault: 10
-  BAI: 590
-  CAS: 590
+  BAI: 400
+  CAS: 400
   Escort: 100
-  OCA/Aircraft: 515
+  OCA/Aircraft: 400

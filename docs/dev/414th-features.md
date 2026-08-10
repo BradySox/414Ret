@@ -367,10 +367,11 @@ scrubs the package) and gated by the same `auto_add_tarps_recon` setting. Becaus
 bird is whatever is `TARPS`-capable in the faction, on a **UAV-fielding faction (OIR:
 Predator/Reaper carry `TARPS`) this frags a drone into every armed recon package** — and
 the `airecon` plugin banks that AI drone overflight as confirmed BDA, so the drone is what
-localizes the swept area's concealed contacts (§3 concealment loop). Alongside, the Armed
-Recon primary is a fixed **4-ship** (`PlanArmedRecon.ARMED_RECON_FLIGHT_SIZE`) and the
-existing threat-gated SEAD escort (`propose_common_escorts`, 2-ship) resolves to the Viper
-on OIR/Red Tide — so a full armed recon package reads **1 drone + 2 SEAD Vipers + 4 recon**
+localizes the swept area's concealed contacts (§3 concealment loop). Alongside, the
+threat-gated SEAD escort (`propose_common_escorts`, 2-ship) resolves to the Viper
+on OIR/Red Tide — so a full armed recon package reads **1 drone + 2 SEAD Vipers + the
+sweep**. The Armed Recon primary itself was a fixed 4-ship until the 2026-08-09 planner
+re-convergence reverted it to the stock 2–4 `get_flight_size()` roll
 (`game/commander/packagefulfiller.py`, `game/ato/flightplans/tarps.py`,
 `game/commander/tasks/primitive/armedrecon.py`; tests `tests/test_armed_recon_planning.py`;
 checklist G25 — the in-mission composition needs a fly).
@@ -1347,69 +1348,15 @@ the front. Tests: `tests/test_support_orbit.py` (`test_carrier_target_holds_on_t
 
 ### Theater tanker placement from receiver demand (2026-06-25)
 
-**Symptom.** A shared theater tanker is planned at `closest_friendly_control_point()` then
-front-anchored (above), but receiver `REFUEL` waypoints are generated independently
-(`RefuelZoneGeometry`), so the tanker could orbit 50–80+ NM from the flights that actually
-need it.
-
-**Fix — a post-planning reposition pass** (`game/commander/tankerdemand.py`). The tanker task
-runs first in the HTN (before offensive packages) and `PackagePlanningTask.execute()` only adds
-packages to `coalition.ato` *after* the search, so the demand isn't visible during planning.
-Rather than reorder the HTN (which would change budget order for every campaign), a pass runs
-**after** `TheaterCommander.plan_missions` has built the full ATO:
-- `theater_refuel_demand(coalition)` collects one weighted `RefuelDemand` per non-tanker flight
-  that has a `REFUEL` waypoint (method = the flight's `air_refuel_type`, weight = aircraft
-  count). Flights whose own package carries a buddy tanker are excluded (served in-package).
-- `best_tanker_service_point()` returns the count-weighted centroid of the strongest cluster of
-  **compatible** demand (boom/probe honored, untagged permissive — mirrors `can_refuel_from`),
-  or `None`. Greedy single-link clustering, 60 NM default radius.
-- For each shared theater tanker (a `REFUELING` flight whose package `primary_task` is
-  `REFUELING`), the pass sets `Flight.refueling_service_point` and calls
-  `recreate_flight_plan()`. `TheaterRefuelingFlightPlan` centers the orbit on that point
-  (nudged clear of enemy threat zones) instead of the front anchor; the override is read via
-  `getattr` so old saves / un-repositioned tankers keep the legacy anchor with **no migration**.
-- No compatible demand → tanker untouched (legacy front anchor). Same-package buddy tankers are
-  never moved.
-
-Tests: `tests/test_tanker_demand.py` (scoring + ATO extraction). **In-game pass ☑ VERIFIED 2026-06-25** (C7).
-**Deferred follow-up:** retargeting compatible receiver `REFUEL` waypoints onto the moved tanker
-(the plan's conditional "when the detour is reasonable" half) — the tanker already sits at the
-centroid of those points, so this is a refinement, not essential. First half of the Codex tanker
-PLAN; the red forward-BARCAP companion shipped separately (§6).
+> **REVERTED 2026-08-09 (planner re-convergence, work order B).** The post-planning reposition pass (`game/commander/tankerdemand.py`) and the `Flight.refueling_service_point` it fed are gone; a theater tanker keeps the orbit its flight plan gives it.
+> The code is deleted; rebuild it from git history if it is ever wanted again. See
+> [the divergence audit](design/414th-autoplanner-upstream-divergence-audit.md).
 
 ### Per-method theater-tanker fragging (2026-06-26)
 
-**Symptom (headless adjudication of the flown GermanyCW save).** The HTN seeded exactly one
-theater-refueling target (`TheaterState.from_game` → `closest_friendly_control_point()`), so at
-most **one** theater tanker was ever auto-planned. For a *dedicated* tanker package,
-`PackageBuilder._required_refuel_methods` sees no in-package receivers (the real receivers live in
-other packages), so the single tanker was selected **unconstrained** → priority-first = the boom
-KC-135. A coalition fielding both boom and probe receivers (e.g. BLUE: F-15/F-16 boom **and**
-F-14/F-18/Mirage/Tornado probe, with both a KC-135 and a KC-135 MPRS in the wing) got gas for only
-one method; the other method's receivers flew unsupported even though the matching tanker sat idle
-in inventory. The C5 compatibility machinery was correct — what was missing was multi-method
-fragging.
-
-**Fix — seed one theater tanker per servable receiver method.**
-`game/commander/theaterstate.py::seed_refueling_targets(coalition, location)` scans the air wing
-once and returns one `RefuelingTarget(location, method)` per **distinct boom/probe method our
-receivers need *and* we can crew a tanker for**. The method rides through the plumbing:
-`RefuelingTarget` → `PlanRefueling.method` → `ProposedFlight.refuel_method` →
-`PackageBuilder._required_refuel_methods` (an explicit `refuel_method` now takes precedence over the
-in-package inference, which still serves same-package buddy tankers). Each target is planned in its
-own pass of the `plan_missions` `while` loop (its `apply_effects` removes it) — identical to how
-multiple AEW&C / Combat SAR front targets already plan — and `reposition_theater_tankers` then
-parks each tanker on the strongest cluster of demand for *its own* method.
-- **Never plans fewer tankers than before:** an untagged receiver fleet, a permissive
-  (method-less) tanker, or a needed method with no matching tanker all fall back to a single
-  unconstrained target (the legacy behavior).
-- `TheaterState` is transient (rebuilt each turn, never pickled), so the `list[MissionTarget]` →
-  `list[RefuelingTarget]` field change needs **no save migration**.
-
-Tests: `tests/test_refueling_targets.py` (mixed fleet → one tanker per method; boom-only/untagged/
-permissive/no-matching-tanker fallbacks). **In-game pass ☑ VERIFIED 2026-06-26 (C5)** — planner/data
-+ live-save confirmed (matching, per-method fragging, demand placement); the in-sim residual
-(receivers physically plugging in) was not eyeballed.
+> **REVERTED 2026-08-09 (planner re-convergence, work order B).** `TheaterState.from_game` seeds a single unconstrained theater tanker at the closest friendly control point again. The boom/probe data model (`AircraftType.tanker_refuel_types`, `can_refuel_from`) stays — the package-tanker accounting fix still uses it — but the planner no longer frags one tanker per receiver method.
+> The code is deleted; rebuild it from git history if it is ever wanted again. See
+> [the divergence audit](design/414th-autoplanner-upstream-divergence-audit.md).
 
 ### Refuel stops budgeted into flight-plan timing (2026-07-01)
 
@@ -1509,81 +1456,15 @@ in-game pass (the F-4E OCA case now shows a pre/post-strike tanker + a non-negat
 
 ### CAS decoupled from the ground-stance decision (2026-06-28)
 
-**Symptom (headless adjudication of a Caucasus Vietnam save).** A side **winning** the ground war
-got **zero** CAS. CAS was only reachable as the *last* alternative inside
-`CaptureBase → DestroyEnemyGroundUnits` — behind the `BreakthroughAttack` / `EliminationAttack` /
-`AggressiveAttack` ground-stance tasks (`game/commander/tasks/primitive/*.py`). Those win whenever a
-side has a front-line force advantage (Aggressive ≥ 0.8, Elimination ≥ 1.5, Breakthrough ≥ 2.0), and a
-winning `BreakthroughAttack` *removes the front from `active_front_lines` outright* — so `CaptureBase`
-never re-runs and CAS is never even evaluated for that front. On the worked save (blue 87 vs red
-15/123/15) the two fronts blue dominated set an aggressive stance and got no CAS; only the one front
-where blue was outnumbered reached `PlanCas`.
-
-**Fix — a dedicated CAS task, decoupled from the stance machinery.** New compound task
-`PlanFrontLineCas` (`game/commander/tasks/compound/frontlinecas.py`) yields one `[PlanCas(front)]` per
-**still-vulnerable** front, wired into `PlanNextAction` (`nextaction.py`) **after** `CaptureBases`. The
-ground-stance logic is untouched — an aggressive stance and a CAS package now coexist on the same
-front. Ordering and idempotency fall out of the existing model:
-- `PlanCas.apply_effects` removes the front from `vulnerable_front_lines`, so a contested front already
-  CAS'd by the original capture path (its higher-priority slot) is skipped — **nothing is
-  double-planned**.
-- Running *after* `CaptureBases` means the more urgent **losing** fronts keep first claim on the
-  limited CAS/escort jets; the dominant fronts CAS in the lower slot the capture path left empty.
-- `vulnerable_front_lines` is rebuilt each turn from the active fronts and only consumed by `PlanCas`,
-  so it is exactly "fronts not yet CAS'd" — no new state, **no save migration**.
-
-**Verified** by recomputing the worked save against the real remaining inventory: all three fronts now
-fulfil a CAS package (CAS + SEAD_SWEEP + a TARCAP escort), where before only the outnumbered front was
-even *reached*. (Co-requisite: the carrier's air group must be visible to the planner — see the VWV
-Enterprise `runway_is_operational` fix — or the contested-front TARCAP escort can't be sourced.)
-Tests: `tests/commander/test_frontlinecas.py`. **Lua-free; in-game pass pending.**
+> **REVERTED 2026-08-09 (planner re-convergence, work order B).** `PlanFrontLineCas` is deleted from the HTN root. CAS is reachable only through `CaptureBase → DestroyEnemyGroundUnits` again, so a side winning the ground war plans no CAS — upstream's behaviour.
+> The code is deleted; rebuild it from git history if it is ever wanted again. See
+> [the divergence audit](design/414th-autoplanner-upstream-divergence-audit.md).
 
 ### DEAD reachability gate — no more bombers tasked into a live belt (2026-06-22)
 
-**Symptom (Red Tide AI test):** blue B-1/B-52/F-15E strikes were tasked ~30 km behind the
-FLOT, *inside* an un-suppressed S-200/SA-3/SA-8 belt, then turned around by threat-reaction
-ROE before employing (zero A-G dropped). Root cause was **not** loadouts (that was a
-separate fix) — it was the planner's optimism.
-
-**Mechanism.** The HTN re-plans within a turn against a mutating `TheaterState`
-(`theatercommander.py`). A strike on a SAM-covered target is correctly deferred by
-`PackagePlanningTask.target_area_preconditions_met` (gates on the **target point** only),
-which records the SAM in `threatening_air_defenses`. `DegradeIads` then plans a DEAD against
-it, and `PlanDead.apply_effects` called `state.eliminate_air_defense(target)` — removing the
-SAM from `enemy_air_defenses` **as if already destroyed**. The loop re-plans, the threat gate
-now passes, and the bomber is tasked through a corridor that is clear only on paper. In-sim
-that DEAD launched from ~200 km away, can't penetrate the belt to reach the deep SAM, the SAM
-lives, and the strikers fly into it. (Settings modulate, not cause: default
-`autoplanner_aggressiveness` is 20; the trigger is simply *blue having DEAD squadrons* that
-form a package the fulfiller can't range past the belt.)
-
-**Fix — reachability gate on the optimistic clear** (`game/commander/tasks/primitive/dead.py`,
-`game/commander/theaterstate.py`, `game/threatzones.py`):
-- `PlanDead.apply_effects` now only calls `eliminate_air_defense` when
-  `TheaterState.dead_can_reach(target, dead_flights)` is true — i.e. the DEAD's **actual
-  routed flight plan** reaches the SAM without its waypoints crossing **another** live
-  radar-SAM ring (`route.distance(center) < radius`, the target's own ring excluded).
-- Reachability is judged against `initial_radar_sam_rings` — an **immutable turn-start
-  (ground-truth) snapshot** built once in `from_game` via the new
-  `ThreatZones.radar_sam_rings()` (same `radar_only` range / >3 NM floor / `max_threat_range`
-  cap as `for_threats`, but kept per-site so a target can be excluded). Using the live list
-  would re-introduce the bug one layer deeper, since earlier optimistic clears would make a
-  shielded SAM look reachable.
-- Unreachable SAMs are recorded in a new persistent `unreachable_air_defenses` set (shared by
-  reference through `clone`, like the threat lists). `PlanDead.preconditions_met` early-returns
-  on members so we don't re-build/re-task an un-rangeable DEAD every loop; the SAM stays in
-  `enemy_air_defenses`, so the dependent strike stays **deferred until real BDA confirms the
-  kill on a later turn** (correct layer-by-layer IADS rollback).
-- **No regression for reachable SAMs:** a close SAM whose DEAD route is clear is still cleared
-  same-turn, preserving today's legit same-turn SEAD-escort-then-strike behavior.
-
-The DEAD itself is still tasked (blue still tries to peel the belt, with its SEAD escort) — we
-only changed whether the *follow-on strike* trusts the kill. This is upstream-core HTN
-behavior, so it's an upstream-PR candidate. Tests: `tests/test_dead_planning.py`
-(`dead_can_reach` geometry + `apply_effects` routing). **Lua-free; in-game pass ☑ VERIFIED
-2026-06-24 (B2) — blue defers deep strikes until the belt is actually down.**
-
----
+> **REVERTED 2026-08-09 (planner re-convergence, work order B).** `TheaterState.dead_can_reach`, `unreachable_air_defenses`, `initial_radar_sam_rings` and `ThreatZones.radar_sam_rings` are deleted. `PlanDead.apply_effects` optimistically clears its target again, so dependent strikes are no longer deferred behind a live belt.
+> The code is deleted; rebuild it from git history if it is ever wanted again. See
+> [the divergence audit](design/414th-autoplanner-upstream-divergence-audit.md).
 
 ## 7. Auto-hide mobile SAMs on MFD
 
@@ -4418,9 +4299,9 @@ and that carries a `REFUEL` waypoint, pins that flight's refuel point onto the A
 flight plan. Since the A-6 sits on the launch/recovery route, the Hornets now tank from the boat's own held
 tanker on ingress top-off and egress recovery.
 
-This mirrors `reposition_theater_tankers` (§tanker demand) but in the other direction: the buddy A-6 is pinned
-to the strike package and can't move, so instead of moving the tanker to the receivers, the pass moves the
-receivers to the tanker.
+The buddy A-6 is pinned to the strike package and can't move, so the pass moves the receivers to the tanker.
+(The mirror-image pass that moved a *theater* tanker to its receivers was reverted on 2026-08-09 — see
+§tanker demand.)
 
 - **The override** — `Flight.refuel_point_override` (a `Point`, default `None`, `getattr`-guarded for old
   saves) set by the pass. The three refuel-waypoint builders (`formationattack.py`, `tarcap.py`, `escort.py`)
@@ -4508,7 +4389,40 @@ toggle (default on) is a possible follow-up if the racetrack clutter is unwanted
   doesn't match its `TankerInfo`/`AwacsInfo`, the orbit + callsign still draw but the freq/TACAN line is
   dropped rather than wrong.
 
-## §46 — Route-aware fuel-tank planning (fuel-first)
+## §46 — Route-aware fuel-tank planning (fuel-first) — REVERTED 2026-08-09
+
+> **REVERTED to upstream behavior on 2026-08-09**, as work order C of the auto-planner
+> re-convergence (`docs/dev/design/414th-autoplanner-upstream-divergence-audit.md`, DECIDED block).
+> The DM's call was that §46 reverts **outright**, not re-gated. Everything from here to
+> "The racetrack burn" describes how the feature worked and is kept for history only —
+> **do not author against it.** Rebuildable from git history if it is ever wanted back.
+>
+> **What upstream does now:** every non-helo flight in a formation-attack package gets a
+> REFUEL waypoint whenever the wing can plan `REFUELING` (`_build_refuel`), on the egress
+> leg only. There is no fuel math in the decision, no pre-vul refuel, no tank fitting at
+> plan or generation time, and no dwell charged at the tanker.
+>
+> **What was deleted:** `game/ato/refueltasking.py` · `_refuel_tasking` and the `refuel_pre`
+> layout slot · `FlightPlan.refuel_duration` and its charge in `total_time_between_waypoints`
+> · `plan_sortie_fuel` / `add_range_fuel_tanks` / `top_up_for_route` and the tank-fitting
+> helpers · the `auto_range_fuel_tanks` and `fuel_tanks_over_jammers` settings (pruned from
+> old saves by `_migrate_legacy_settings`) · `FormationFlightPlan.push_time`'s route walk
+> (back to the straight hold→join line) · the package tanker's early window opening.
+>
+> **What survives, and why:**
+> - **The racetrack burn** (last subsection below) — U25/U34, kept failure fixes. A patrol's
+>   on-station time and lap burn are still charged; that was a modeling hole, not §46.
+> - **External-fuel accounting** — `game/fourteenth/range_fuel.py` keeps `is_fuel_tank`,
+>   `tank_capacity_lbs`, `external_fuel_lbs`, `flight_external_fuel_lbs`. They only *report*
+>   the tanks a loadout already carries, for the kneeboard fuel ladder and the Payload-tab
+>   readout (`game/fourteenth/fuel_brief.py`). Nothing fits stores any more.
+> - **The `estimated_fuel_consumption` fallback** and the hand-measured `fuel:` data blocks.
+> - **`Flight.refuel_point_override`** — §44 long-range-carrier plumbing. `_build_refuel`
+>   still routes through `refuel_waypoint_position`, so §44 keeps working.
+>
+> **PR #820 sequencing:** #820 (exempt AI from the receiver dwell) was already **merged**
+> before this revert landed, so it could not be closed as superseded — this change deletes
+> the dwell it fixed. Nothing is owed on it.
 
 Long-AO campaigns strand flights the auto-planner frags with too little fuel for the leg. The original
 motivating case was the COIN **Enduring Resolve** carrier ~800 km off the Helmand AO (a Hornet on internal
@@ -4623,7 +4537,13 @@ flight actually carries. No campaign preseed is needed.
 - **Estimate, not a measurement.** The synthesised fuel model is a planning approximation; the trigger is
   intentionally generous so it errs toward carrying a tank rather than launching short.
 
-### The racetrack burn (2026-07-19 — "19 GSPD is impossible" / "should be on station until bingo")
+### The racetrack burn (2026-07-19) — KEPT through the §46 revert
+
+> Audit items U25/U34, kept as failure fixes when the rest of §46 reverted on 2026-08-09.
+> The patrol dwell and its lap burn were missing from the schedule and the fuel model
+> everywhere, which is a modeling hole independent of fuel-driven tanker tasking.
+
+Original note — "19 GSPD is impossible" / "should be on station until bingo":
 
 A flown BARCAP kneeboard showed the racetrack-end row at **19 kt GSPD** and an RTB margin of **+8,488 lb** —
 both artifacts of the same modeling hole. A patrol plan's `patrol_start -> patrol_end` leg carries the
@@ -4639,9 +4559,9 @@ the kneeboard's derived GSPD divided the track length by the whole dwell.
   flown Hornet case re-runs honestly as ~8,000 lb on station and an RTB margin of **~+830 lb**: the 45-minute
   doctrine dwell was already near the fuel limit — the ladder was just lying about it. Applies to every
   patrolling family (BARCAP/TARCAP at their patrol speeds, CAS at combat rate over its track, AEW&C/tanker
-  orbits). Formation-attack holds are deliberately untouched: `sortie_fuel_split` (the §46 tanker decision)
-  keeps its own straight-leg walk, and charging hold dwell in one but not the other would split the ladder
-  from the decision it must agree with.
+  orbits). Formation-attack holds are deliberately untouched. (Originally that was so the ladder and the §46
+  tanker decision walked the route the same way; since the §46 revert there is no fuel-driven tanker decision
+  left to agree with, and the hold dwell stays uncharged simply because nothing has asked for it.)
 - **The racetrack-end GSPD cell shows the patrol speed.** `FlightData.patrol_speed` (from
   `flight_plan.patrol_speed` when `is_patrol`) rides to the kneeboard; the `PATROL`-type row prints it (the
   Hornet reads 481) instead of distance-over-dwell, and dashes when no patrol speed exists (custom plans).
@@ -6421,7 +6341,7 @@ is the same sky):
    never touched.
 2. **Storms demote low-level visual attack.** In a `Thunderstorm`,
    `demote_weather_hostile_methods` moves the offensive HTN methods that live at low level
-   under the weather — `PlanFrontLineCas`, `AttackBattlePositions`,
+   under the weather — `AttackBattlePositions` and
    `InterdictReinforcements` (the `VISUAL_ATTACK_METHODS` tuple, name-coupled to
    `PlanNextAction._OFFENSIVE_FACTORIES` and lock-tested) — to the tail of the offensive
    order, AFTER the §40 phase / §55 posture emphasis is applied
@@ -7353,12 +7273,55 @@ implementation detail — becomes a **real AI run-in at 1,000 ft AGL**
 Hercules branch used), so the AI actually overflies the target zone the
 `LogisticsGenerator` already creates (2,500 m wpZone). `tot_waypoint` for
 fixed-wing was already `targets[0]` (written for the Herc, never removed).
-**`C-130J-30.yaml` gets `Air Assault: 40`** — below the assault helos' 50, so a
-helo squadron in range still wins the tasking and the C-130 takes the long-reach
-and no-helo cases. Campaign C-130J squadrons are near-universally
+Campaign C-130J squadrons are near-universally
 `primary: Transport, secondary: any`, so on a NEW game the auto-planner can (and
 will) frag C-130 airborne assaults where they out-range the helos; def-generated
 squadrons auto-assign everything the airframe is capable of, same effect.
+
+### The Air Assault priority ladder
+
+`AircraftType.priority_list_for_task` sorts the `Air Assault:` numbers descending,
+and both `airwing.best_squadrons_for` and `squadrondefgenerator.generate_for_task`
+pick from the top of that list — so these values decide which airframe actually
+flies an assault, and which one a def-generated squadron gets built around. They
+are **not** cosmetic.
+
+They were reranked wholesale (2026-08-09) because the flat list had drifted into
+real errors: the `sh2f` naval ASW Seasprite was tied with the CH-53E at 100, the
+`SH-60B` (also ASW) outranked the assault UH-60A, the **Mi-8MT — the Soviet
+assault helicopter, fielded by more red factions than any other rotary type —
+sat at 40**, below a light observation helo, and the Mi-26 sat at 30 with a
+24-troop cabin.
+
+| Tier | Band | Members |
+|---|---|---|
+| Heavy-lift rotary | 110–135 | CH-47Fbl1 130 · CH-53E 125 · CH-47D 120 · Mi-26 115 |
+| Medium assault rotary | 80–105 | vwv_ch46d_late 100 · vwv_ch46d 98 · Mi-8MT 95 · UH-60L 92 · UH-60A 88 · UH-1H 85 |
+| Light / naval rotary | 50–75 | uh2c 70 · uh2b 68 · uh2a 66 · sh2f 62 · HKP15B 60 · SH-60B 58 · OH-6A 55 |
+| Fixed-wing tactical | 28–48 | C-130J-30 42 · An-26B 34 · C-47 30 |
+| Fixed-wing strategic | 18–26 | C-17A 22 · IL-76MD 20 |
+| Gunship with troop seats | 8–15 | Mi-24P 12 · Mi-24V 10 |
+
+The rules the bands encode:
+
+- **Rotary transports beat fixed-wing ones.** A helicopter puts troops on the
+  objective and can extract them; a paradrop is the long-reach / no-helo answer.
+  Range is enforced separately in `can_auto_assign_mission`, so a transport still
+  wins the tasking when no helo can reach.
+- **Gunships sit at the very bottom**, below the fixed-wing transports — six jump
+  seats on an airframe that is a gunship first, and every faction fielding Hinds
+  also fields Mi-8s.
+- **Within a tier**, lift capacity orders the airframes and the player-flyable one
+  beats the AI-only ones.
+
+Where a faction fields only one Air Assault-capable type the absolute number is
+moot — it is the only option, so it gets the tasking regardless.
+
+**Fork vs upstream:** the fork has no `Hercules.yaml` (Anubis mod purged) and no
+`C-130.yaml` (consolidated onto the C-130J-30 in `d8d58be2c`), so those two rungs
+exist only in the upstream carve, at **Hercules 45** (down from upstream's 990,
+which put a C-130 above every assault helicopter and contradicted this ladder) and
+**C-130 38**.
 
 **Runtime** (`resources/plugins/ctld/ctld-config.lua` — the Retribution-owned
 config layer; CTLD.lua itself is untouched): the emitter marks each transport
@@ -7400,15 +7363,41 @@ plugin to **TRANSPORT and AIR_ASSAULT** C-130J-30s alongside the Combat SAR
 King — a paradrop bird (or a cargo airlifter, a pre-existing gap) flies the
 CTLD menus, not the EW station; a co-present JAMMING C-130J keeps its systems.
 
-**Deliberately not in v1:** other fixed-wing haulers (An-26B, Il-76 — adding
-`cabin_size` + the task to their yamls is all it takes, but it also changes
-their TRANSPORT behavior, so it's a separate call), chute visuals (vanilla DCS
-has no spawnable parachutist object; the descent delay is the model), vehicle
-paradrop (LAPES), and wind drift.
+**The rest of the hauler fleet landed 2026-08-09** (the v1 note deferred An-26B
+and Il-76 as "a separate call" — this is that call). `C-47`, `An-26B`, `IL-76MD`
+and `C-17A` all had the same defect: a `Transport:` task and no `cabin_size`, so
+they defaulted to a zero cabin and the Builder gate rejected them. All four get
+`cabin_size: 24` — CTLD's largest loadable group is `Retribution Troops (24)`, so
+a smaller cabin silently caps the airframe at the 12-troop group, and all of them
+carried far more in service (C-47 28, An-26 ~40, C-17 102, Il-76MD 126).
+
+The reach is mostly red: **50 red factions field the Il-76MD**, the VDV's own jump
+platform, and before this they had no fixed-wing airborne option at all. The C-47
+gives the 1944 factions airborne assault for the first time — they field no
+helicopters, so it is their only Air Assault platform.
+
+**Deliberately excluded, and pinned by a test so it is not "fixed" later:** the
+An-30M (glazed-nose aerial survey variant of the An-24), the C-2A Greyhound
+(carrier onboard delivery) and the Yak-40 (light airliner). Each declares a
+`Transport:` task, so each reads like an oversight; none carried paratroops.
+Also skipped: the A400M and V-22 (fielded by no faction) and the C-5
+(strategic-only in practice).
+
+**Still not done:** chute visuals (vanilla DCS has no spawnable parachutist
+object; the descent delay is the model), vehicle paradrop (LAPES), and wind drift.
+
+**Side effect worth knowing:** `LogisticsGenerator` runs for TRANSPORT flights as
+well as AIR_ASSAULT, so a positive `cabin_size` also flips these airframes to
+`troops=true` in the CTLD transport table — they become troop-capable CTLD
+transports on Transport missions, not only on assaults.
 
 Files: `game/ato/flightplans/airassault.py`, `game/missiongenerator/luagenerator.py`,
-`resources/units/aircraft/C-130J-30.yaml`, `resources/plugins/ctld/ctld-config.lua`.
-Tests: `tests/ato/flightplans/test_airassault.py` (gate + both layout shapes),
+`resources/plugins/ctld/ctld-config.lua`, and the aircraft yamls
+(`C-130J-30`, `C-47`, `An-26B`, `IL-76MD`, `C-17A` for the cabins, plus the 20
+rotary/fixed yamls the ladder rerank touched).
+Tests: `tests/ato/flightplans/test_airassault.py` (gate + both layout shapes, the
+tier-band ladder incl. a guard that every Air Assault-capable airframe is ranked,
+and the non-troop-transport exclusions),
 `tests/lua/test_ctld_paradrop.py` (9 runtime cases: config arming, preload retry,
 player drop timing/projection, jump ceiling, ground/helo fall-through, AI one-shot
 zone release, AI-helo never dropped, JTAC stick), extended
@@ -7475,13 +7464,12 @@ exists to penetrate a live radar-SAM ring — flew with none. Four fixes:
   is now named in `packagefulfiller.py` with a test that derives the invariant from what the
   planner actually proposes.
 
-Same pass: **`propose_common_escorts` asks for one SEAD flavour, not two.** `SEAD_ESCORT` and
-`SEAD_SWEEP` fire on the same `EscortType.Sead` trigger, so a threatened package drew both — four
-jets on one threat, on top of the A2A escort and the jammer, which put six escort aircraft around
-a two-ship Chinook insert. `SEAD_ESCORT` is kept because it is the one that actually escorts
-(`EscortFlightPlan`, on the package's join→split). This generalises the trim `PlanDead` already
-carried for itself. `PlanCas` still proposes the sweep directly, where an independent path ahead
-of the package is the point.
+A trim shipped in the same pass — `propose_common_escorts` proposing one SEAD flavour instead
+of two, and `PlanDead` composing its own escorts rather than calling it — was **reverted on
+2026-08-09** by the planner re-convergence. Both are back to upstream: the common escorts are
+`SEAD_ESCORT` + `SEAD_SWEEP` + `ESCORT` (with the jammer appended on the same radar-SAM
+trigger), and `PlanDead` calls `propose_common_escorts` plus a dedicated `SEAD` flight when the
+target still has a live track radar.
 
 **Runtime (`growler` plugin + `growlerluadata.py`).** The emitter lists each ESCORT_JAMMER
 flight (group name, side, player flag) and the package group names it protects

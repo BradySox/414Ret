@@ -36,8 +36,8 @@ variants:
 #    intra_flight_radio_index: 2
 #    inter_flight_radio_index: 1
 tasks:
-  BARCAP: 645
-  Escort: 580
+  BARCAP: 500
+  Escort: 500
 
 # Air-to-air refueling method (receiver).
 air_refuel_type: probe

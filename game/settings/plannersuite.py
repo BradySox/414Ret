@@ -13,7 +13,9 @@ if TYPE_CHECKING:
 # preset is the one-click opt back into the 414th planner features per campaign.
 #
 # CSAR is deliberately absent: it is upstream dcs-retribution#929's own design
-# and ships with #929's defaults either way.
+# and ships with #929's defaults either way. Route-aware fuel tanks (§46) left
+# the suite when work order C reverted the feature outright -- there is no gate
+# to flip any more.
 #
 # field -> (stock value, suite value)
 PLANNER_SUITE_VALUES: dict[str, tuple[Any, Any]] = {
@@ -23,7 +25,6 @@ PLANNER_SUITE_VALUES: dict[str, tuple[Any, Any]] = {
     "weather_aware_planning": (False, True),
     "max_escort_jammers": (0, 4),
     "adaptive_procurement": (False, True),
-    "auto_range_fuel_tanks": (False, True),
     "continuous_campaign_clock": (False, True),
 }
 

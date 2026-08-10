@@ -14,7 +14,7 @@ gunfighter: true
 variants:
   Mirage IIIB/C: {}
 tasks:
-  BARCAP: 485
-  Escort: 425
-  Fighter sweep: 425
-  TARCAP: 460
+  BARCAP: 210
+  Escort: 210
+  Fighter sweep: 210
+  TARCAP: 210

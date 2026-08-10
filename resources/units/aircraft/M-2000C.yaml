@@ -38,15 +38,15 @@ radios:
 #   RocketBurst: 6
 #   WpBullseye: 0
 tasks:
-  BAI: 255
-  BARCAP: 630
-  CAS: 245
-  Escort: 565
-  Fighter sweep: 565
-  OCA/Aircraft: 295
-  OCA/Runway: 235
-  Strike: 245
-  TARCAP: 605
+  BAI: 350
+  BARCAP: 230
+  CAS: 350
+  Escort: 230
+  Fighter sweep: 230
+  OCA/Aircraft: 350
+  OCA/Runway: 320
+  Strike: 320
+  TARCAP: 230
 secondary_tasks:
   - Armed Recon
   - BAI

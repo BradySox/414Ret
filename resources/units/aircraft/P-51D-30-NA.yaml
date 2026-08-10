@@ -33,12 +33,12 @@ radios:
 kneeboard_units: "imperial"
 tasks:
   BAI: 110
-  BARCAP: 240
+  BARCAP: 110
   CAS: 110
   DEAD: 80
-  Escort: 220
-  Fighter sweep: 225
+  Escort: 110
+  Fighter sweep: 110
   OCA/Aircraft: 110
   OCA/Runway: 70
   Strike: 70
-  TARCAP: 235
+  TARCAP: 110

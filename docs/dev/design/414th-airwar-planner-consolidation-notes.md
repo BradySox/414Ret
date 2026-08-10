@@ -7,6 +7,14 @@
 §17 (auto-planner unpredictability). Wiki face:
 [`docs/wiki/Air-Defense-and-the-Air-War.md`](../../wiki/Air-Defense-and-the-Air-War.md).
 
+> **Partly overtaken by the 2026-08-09 planner re-convergence.** Two of the systems this
+> note inventories are now DELETED: the theater-tanker-on-demand pass
+> (`game/commander/tankerdemand.py`) and the DEAD reachability gate
+> (`TheaterState.dead_can_reach` / `unreachable_air_defenses`). Read the tables below as a
+> record of what the planner looked like in June 2026, not as a map of the current tree.
+> The consolidation *conclusion* (stop at Track 1) is unaffected. See
+> [the divergence audit](414th-autoplanner-upstream-divergence-audit.md).
+
 ## The question
 
 The air-war page now lists ~12 interlocking systems (QRA, reworked BARCAP volume/placement,

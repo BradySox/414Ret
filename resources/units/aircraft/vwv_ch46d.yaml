@@ -11,5 +11,5 @@ max_range: 300    # combat range [nmi]
 variants:
   CH-46D Sea Knight: {}
 tasks:
-  Air Assault: 60
+  Air Assault: 98
   Transport: 40

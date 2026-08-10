@@ -14,13 +14,15 @@ variants:
   EA-6B Prowler: {}
 tasks:
   Escort Jammer: 790
-  SEAD: 620
-  # SEAD Escort deliberately below the strike-fighters (F/A-18C 470, F-16C 475),
+  SEAD: 460
+  # SEAD Escort deliberately below the strike-fighters (F/A-18C and F-16C 450),
   # so in a package's escort fill (SEAD Escort resolves before Escort Jammer) a
   # Hornet/Viper takes SEAD Escort and this dedicated jammer is freed for the
   # Escort Jammer slot (790) -- "prefer them as jammers" (user call 2026-07-21).
-  # Still above the weak podded SEAD jets, so a lone Prowler will fly SEAD Escort
-  # when nothing better is available; SEAD (620) as a package lead is untouched.
+  # Kept through the 2026-08-09 re-convergence as wiring of the Escort Jammer
+  # lane (upstream's 460 would out-rank the strike fighters again). Still above
+  # the weak podded SEAD jets, so a lone Prowler will fly SEAD Escort when
+  # nothing better is available; SEAD (460) as a package lead is upstream's number.
   SEAD Escort: 400
 
 # Air-to-air refueling method (receiver).

@@ -136,15 +136,12 @@ class PackageBuilder:
         """Refueling methods a tanker must provide for this package.
 
         Only relevant when planning a tanker (REFUELING). Returns None for every other
-        task. A theater tanker carries an explicit ``plan.refuel_method`` (the planner
-        frags one tanker per receiver method), which takes precedence. Otherwise -- a
-        same-package buddy tanker -- the methods are inferred from the package's
-        already-planned receivers; untagged receivers leave selection unconstrained.
+        task. For a same-package buddy tanker the methods are inferred from the
+        package's already-planned receivers; untagged receivers leave selection
+        unconstrained.
         """
         if plan.task is not FlightType.REFUELING:
             return None
-        if plan.refuel_method is not None:
-            return frozenset({plan.refuel_method})
         methods: set[AirRefuelType] = set()
         for flight in self.package.flights:
             if flight.flight_type is FlightType.REFUELING:

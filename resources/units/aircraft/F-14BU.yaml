@@ -45,22 +45,23 @@ default_overrides:
 #   TacanBand: 0
 #   TacanChannel: 0
 #   UseLAU138: true
-# Rebalanced onto the F-14 family shape (rubric: gen4 x multirole, +10 intra-family
-# ordering bump over the F-14B -- the B(U) is the later, more capable upgrade).
-# No SEAD/SEAD Sweep: the Tomcat carries no anti-radiation missile, so a Weasel
-# tasking would launch it with decoys and bombs (the F-14B/A-135-GR omit it too).
-# The "Retribution SEAD" TALD fit stays in the payload file for manual use.
+# Weights match the F-14B (upstream ships the B(U) as a byte-copy of that block;
+# magnitudes restored by the 2026-08-09 planner re-convergence). The family shape
+# survives: TARPS added, and no SEAD/SEAD Sweep -- the Tomcat carries no
+# anti-radiation missile, so a Weasel tasking would launch it with decoys and
+# bombs (the F-14B/A-135-GR omit it too). The "Retribution SEAD" TALD fit stays
+# in the payload file for manual use.
 tasks:
-  BAI: 665
-  BARCAP: 595
-  CAS: 665
-  DEAD: 400
-  Escort: 514
-  Fighter sweep: 575
-  OCA/Aircraft: 700
-  OCA/Runway: 615
-  Strike: 620
-  TARCAP: 534
+  BAI: 640
+  BARCAP: 530
+  CAS: 640
+  DEAD: 250
+  Escort: 530
+  Fighter sweep: 530
+  OCA/Aircraft: 640
+  OCA/Runway: 560
+  Strike: 560
+  TARCAP: 530
   TARPS: 700
 
 # Air-to-air refueling method (receiver).

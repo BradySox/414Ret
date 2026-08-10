@@ -258,10 +258,15 @@ FEATURES: tuple[Feature, ...] = (
         45,
     ),
     Feature(
+        # Reverted 2026-08-09 with the auto-planner re-convergence to upstream:
+        # tanker tasking is upstream's again (every non-helo flight tanks when the
+        # wing can plan REFUELING) and nothing fits tanks at plan or generation
+        # time. Both gates were deleted; the external-fuel accounting helpers that
+        # survived in game/fourteenth/range_fuel.py only feed fuel readouts.
         "auto_range_fuel_tanks",
         "Route-aware fuel-tank planning (fuel-first)",
         46,
-        settings_fields=("auto_range_fuel_tanks", "fuel_tanks_over_jammers"),
+        retired=True,
     ),
     Feature(
         "continuous_campaign_clock",

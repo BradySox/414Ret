@@ -61,15 +61,15 @@ def test_vietnam_masses_a_deck_load_of_surge_sections() -> None:
     assert _strike_sections(VIETNAM_DOCTRINE) == [False, True, True, True]
 
 
-def test_no_solo_strike_sections() -> None:
-    # The minimum fighting element is a 2-ship section: a 1-unit target must not
-    # produce a single A-4 flying the strike alone (playtest catch), under any
-    # doctrine.
+def test_section_size_follows_the_target_unit_count() -> None:
+    # Stock sizing: one striker per two target units, capped at 4. The fork briefly
+    # floored this at a 2-ship section; the planner re-convergence removed the floor,
+    # so a 1-unit target is a single-ship strike again under every doctrine.
     for doctrine in (MODERN_DOCTRINE, COLDWAR_DOCTRINE, VIETNAM_DOCTRINE):
         task = PlanStrike(_target(doctrine, units=1))  # type: ignore[arg-type]
         task.propose_flights()
         sizes = [f.num_aircraft for f in task.flights if f.task is FlightType.STRIKE]
-        assert sizes and all(size >= 2 for size in sizes)
+        assert sizes and all(size == 1 for size in sizes)
 
 
 def test_always_escort_strikes_forces_a2a_escort() -> None:
@@ -82,7 +82,7 @@ def test_always_escort_strikes_forces_a2a_escort() -> None:
     from game.commander.packagefulfiller import PackageFulfiller
 
     no_threat = SimpleNamespace(
-        waypoints_threatened_by_aircraft_engagement=lambda wps: False,
+        waypoints_threatened_by_aircraft=lambda wps: False,
         waypoints_threatened_by_radar_sam=lambda wps: False,
     )
     strike = SimpleNamespace(

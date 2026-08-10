@@ -14,7 +14,6 @@ from game.ato import Flight, FlightType
 from game.ato.flightplans.shiprecoverytanker import RecoveryTankerFlightPlan
 from game.callsigns import callsign_for_support_unit
 from game.data.weapons import Pylon, Weapon
-from game.fourteenth.range_fuel import add_range_fuel_tanks
 from game.lasercodes.lasercode import LaserCode
 from game.missiongenerator.logisticsgenerator import LogisticsGenerator
 from game.missiongenerator.missiondata import MissionData, AwacsInfo, TankerInfo
@@ -436,8 +435,6 @@ class FlightGroupConfigurator:
                 self.flight.squadron.coalition.faction,
                 target,
             )
-
-        loadout = add_range_fuel_tanks(self.flight, loadout, self.game.settings)
 
         for pylon_number, weapon in loadout.pylons.items():
             if weapon is None:

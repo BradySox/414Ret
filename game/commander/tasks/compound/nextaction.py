@@ -13,7 +13,6 @@ from game.commander.tasks.compound.attackships import AttackShips
 from game.commander.tasks.compound.capturebases import CaptureBases
 from game.commander.tasks.compound.defendbases import DefendBases
 from game.commander.tasks.compound.degradeiads import DegradeIads
-from game.commander.tasks.compound.frontlinecas import PlanFrontLineCas
 from game.commander.tasks.compound.interdictreinforcements import (
     InterdictReinforcements,
 )
@@ -57,11 +56,6 @@ class PlanNextAction(CompoundTask[TheaterState]):
         "InterdictReinforcements": lambda self: InterdictReinforcements(),
         "AttackBattlePositions": lambda self: AttackBattlePositions(),
         "CaptureBases": lambda self: CaptureBases(),
-        # CAS decoupled from the capture/ground-stance decision: plan CAS on any
-        # front still contested after CaptureBases (incl. fronts where we're
-        # winning the ground war and only set an aggressive stance). Runs after
-        # CaptureBases so losing fronts keep first claim on the CAS/escort jets.
-        "PlanFrontLineCas": lambda self: PlanFrontLineCas(),
         "AttackAirInfrastructure": lambda self: AttackAirInfrastructure(
             self.aircraft_cold_start
         ),
@@ -72,10 +66,10 @@ class PlanNextAction(CompoundTask[TheaterState]):
     }
 
     # The package types the §52 A2 throttle counts against the C2-health cap.
-    # Deliberately only the unambiguous offensive taskings: CAS is excluded
-    # (planned defensively by PlanFrontLineCas), and SEAD/DEAD are excluded so a
-    # threat-reactive IADS response is never starved by the throttle (the §17
-    # boundary errs conservative in both directions).
+    # Deliberately only the unambiguous offensive taskings: CAS is excluded (it is
+    # planned off the ground war, not the offensive tempo), and SEAD/DEAD are
+    # excluded so a threat-reactive IADS response is never starved by the throttle
+    # (the §17 boundary errs conservative in both directions).
     _OFFENSIVE_PACKAGE_TYPES: ClassVar[frozenset[FlightType]] = frozenset(
         {
             FlightType.STRIKE,

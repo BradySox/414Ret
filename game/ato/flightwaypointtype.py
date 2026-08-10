@@ -56,7 +56,10 @@ class FlightWaypointType(IntEnum):
     INGRESS_RECON = (
         36  # Ingress photo-recon overflight (TARPS) - carries no attack tasks
     )
-    SEAD_LOITER = 37  # AI plain-SEAD standoff loiter anchor (carries a bounded orbit)
+    # 37 was SEAD_LOITER, the AI plain-SEAD standoff loiter anchor, retired by the
+    # planner re-convergence. The value is NOT reused: a save carrying it loads
+    # through persistency.py's unknown-value shim as NAV, which is what the SEAD
+    # search waypoint is again.
     # Upstream dcs-retribution#929 numbers these 36/37. Renumbered here because 36/37
     # are already persisted in this fork's saves and the docstring above makes value
     # stability the rule; #929 is unmerged, so its values have no saves to preserve.

@@ -1,9 +1,10 @@
-"""Armed Recon package composition (414th call): a 4-ship sweep + an auto-added
-recon drone + the (threat-gated) SEAD escort.
+"""Armed Recon package composition: the stock sweep + an auto-added recon drone +
+the (threat-gated) SEAD escort.
 
 Three layers are pinned here:
-- ``PlanArmedRecon.propose_flights`` proposes a fixed 4-ship ARMED_RECON primary
-  plus the common escorts (SEAD/A2A, pruned later if unthreatened).
+- ``PlanArmedRecon.propose_flights`` proposes an ARMED_RECON primary sized by the
+  stock 2-4 flight-size roll, plus the common escorts (SEAD/A2A, pruned later if
+  unthreatened).
 - ``PackageFulfiller._maybe_plan_tarps_recon`` frags an optional recon flight into
   an ARMED_RECON package (as it already does for Strike/DEAD). On a drone-fielding
   faction the auto-assignable TARPS squadron is the drone, so this is the "1 drone
@@ -36,13 +37,22 @@ from game.utils import Distance, meters, nautical_miles
 from game.weather.weather import Thunderstorm
 
 
-def test_armed_recon_proposes_a_four_ship_sweep_plus_escorts() -> None:
-    task = PlanArmedRecon(cast(Any, SimpleNamespace(name="Some CP")))
+def test_armed_recon_proposes_a_rolled_sweep_plus_escorts() -> None:
+    # The sweep is sized by the stock 2-4 flight-size roll (fpa_*ship_weight). The
+    # fork briefly fixed it at 4; the planner re-convergence put the roll back.
+    settings = SimpleNamespace(
+        fpa_2ship_weight=1, fpa_3ship_weight=0, fpa_4ship_weight=0
+    )
+    target = SimpleNamespace(
+        name="Some CP",
+        coalition=SimpleNamespace(game=SimpleNamespace(settings=settings)),
+    )
+    task = PlanArmedRecon(cast(Any, target))
     task.propose_flights()
 
     recon = [f for f in task.flights if f.task is FlightType.ARMED_RECON]
     assert len(recon) == 1
-    assert recon[0].num_aircraft == 4  # fixed 4-ship, not the 2-4 flight-size roll
+    assert recon[0].num_aircraft == 2  # the weights above force the 2-ship roll
 
     # The common escorts ride along (SEAD escort + A2A), pruned downstream when the
     # route is unthreatened -- on the OIR/Red Tide factions the SEAD escort resolves

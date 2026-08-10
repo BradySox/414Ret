@@ -59,7 +59,6 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
 from game.ato.starttype import StartType
-from game.commander.tankerdemand import reposition_theater_tankers
 from game.commander.tasks.compound.nextaction import PlanNextAction
 from game.commander.tasks.theatercommandertask import TheaterCommanderTask
 from game.commander.theaterstate import TheaterState
@@ -99,11 +98,7 @@ class TheaterCommander(Planner[TheaterState, TheaterCommanderTask]):
             result = self.plan(state)
             if result is None:
                 # Planned all viable tasks this turn.
-                break
+                return
             for task in result.tasks:
                 task.execute(self.game.coalition_for(self.player))
             state = result.end_state
-
-        # The ATO is now complete, so shared theater tankers can be repositioned onto
-        # the actual receiver demand they were planned blind to (414th).
-        reposition_theater_tankers(self.game.coalition_for(self.player))

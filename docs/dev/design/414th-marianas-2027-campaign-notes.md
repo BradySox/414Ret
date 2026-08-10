@@ -517,6 +517,17 @@ Measured on a freshly generated game, BLUE: **26 pkg / 22 BARCAP / 2 offensive /
 → 27 pkg / 14 BARCAP / 25 offensive / 143 aircraft.** RED (also modern doctrine) gains
 symmetrically, 0 → 2 offensive.
 
+> **⚠ The doctrine lever was REVERTED 2026-08-09** by the planner re-convergence (work order
+> B): `MODERN_DOCTRINE.strike_escort_reserve` is back to **0** fork-wide. The mechanism it
+> drove — `AirspaceGeometry.trim_rounds_for_escort_reserve` and the
+> `PackageFulfiller.escort_reserve_withholds` fence — is intact and still fires for any
+> doctrine that sets a reserve (Vietnam, 4); only the modern *value* went back to upstream.
+> **So the all-BARCAP ATO measured above is Marianas' expected turn-1 shape again.** The two
+> campaign `settings:` preseeds below still apply. If Marianas wants the old behaviour back,
+> the in-scope options are preseeding the 414th planner-suite settings or forking a
+> campaign-scoped doctrine with the reserve set — not re-raising the fork-wide default,
+> which needs a fresh DM call.
+
 **Found on the way, and load-bearing:** the CJS Super Hornet payload files index their pylon
 tables with named constants (`[WTL] = ...`), which pydcs cannot parse. The raise truncated
 the payload scan *before* `resources/customized_payloads`, so the fork's own authored fits

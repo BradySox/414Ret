@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import timedelta
 from typing import Type
 
 from game.theater import TheaterGroundObject
@@ -16,7 +16,6 @@ from .tacticaloverlay import (
     orbit_radius,
 )
 from .uizonedisplay import UiZone, UiZoneDisplay
-from ..flighttype import FlightType
 from ..flightwaypoint import FlightWaypoint
 from ..flightwaypointtype import FlightWaypointType
 from ...settings.settings import TargetIntelPrecision
@@ -28,43 +27,13 @@ from ...utils import nautical_miles
 SEAD_ENGAGEMENT_RANGE = nautical_miles(20)
 
 
-def _loiter_end_time(
-    tot: datetime, mate_departures: list[datetime], fallback_window: int
-) -> datetime:
-    """Absolute mission time a SEAD loiter should break off.
-
-    `mate_departures` is the `mission_departure_time` of every non-SEAD package-mate
-    (the time it leaves the target area). The loiter holds until the last of them is
-    gone. With no gating mates we fall back to `tot + fallback_window`. Floored at `tot`
-    so a package whose mates all depart before the SEAD arrives never yields a stop time
-    before arrival. No upper cap: the package schedule, native winchester, and native
-    bingo-fuel RTB are the natural bounds.
-    """
-    if not mate_departures:
-        return tot + timedelta(seconds=fallback_window)
-    return max(tot, *mate_departures)
-
-
 class SeadFlightPlan(FormationAttackFlightPlan, UiZoneDisplay, TacticalOverlayDisplay):
     @staticmethod
     def builder_type() -> Type[Builder]:
         return Builder
 
     def default_tot_offset(self) -> timedelta:
-        return -timedelta(minutes=3)
-
-    @property
-    def loiter_end_time(self) -> datetime:
-        """When the SEAD loiter breaks off: the latest a non-SEAD package-mate leaves
-        the target area. SEAD mates are excluded so a loiter never gates on itself or a
-        sibling SEAD loiter."""
-        mate_departures = [
-            flight.flight_plan.mission_departure_time
-            for flight in self.package.flights
-            if flight.flight_type is not FlightType.SEAD
-        ]
-        fallback = self.flight.coalition.game.settings.sead_loiter_max_window_seconds
-        return _loiter_end_time(self.tot, mate_departures, fallback)
+        return -timedelta(minutes=1)
 
     def ui_zone(self) -> UiZone:
         # Centre the HARM-reach bubble on the loiter anchor (where the flight orbits and

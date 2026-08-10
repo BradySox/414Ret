@@ -13,12 +13,12 @@ max_range: 2000
 variants:
   B-52H Stratofortress: {}
 tasks:
-  Anti-ship: 482
-  BAI: 442
-  CAS: 535
-  OCA/Runway: 655
-  OCA/Aircraft: 555
-  Strike: 670
+  Anti-ship: 100
+  BAI: 660
+  CAS: 660
+  OCA/Runway: 660
+  OCA/Aircraft: 660
+  Strike: 690
 
 # Air-to-air refueling method (receiver).
 air_refuel_type: boom

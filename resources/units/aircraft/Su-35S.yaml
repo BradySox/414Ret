@@ -24,11 +24,11 @@ radios:
   intra_flight: R-800
   inter_flight: R-800
 tasks:
-  BARCAP: 685
-  Escort: 660
-  Fighter sweep: 700
-  SEAD Escort: 540
-  TARCAP: 685
+  BARCAP: 700
+  Escort: 700
+  Fighter sweep: 800
+  SEAD Escort: 550
+  TARCAP: 700
 secondary_tasks:
   - DEAD
 

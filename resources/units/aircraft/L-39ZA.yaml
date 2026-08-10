@@ -20,11 +20,11 @@ kneeboard_units: "metric"
 #   NetCrewControlPriority: 1
 #   SoloFlight: false
 tasks:
-  BAI: 315
+  BAI: 220
   BARCAP: 120
-  CAS: 315
+  CAS: 220
   Fighter sweep: 120
-  OCA/Aircraft: 315
-  OCA/Runway: 245
-  Strike: 260
+  OCA/Aircraft: 220
+  OCA/Runway: 160
+  Strike: 160
   TARCAP: 120

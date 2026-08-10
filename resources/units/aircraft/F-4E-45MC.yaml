@@ -60,15 +60,15 @@ fuel:
   min_safe: 2000
 tasks:
   Anti-ship: 110
-  BAI: 590
-  BARCAP: 430
-  CAS: 590
-  DEAD: 375
-  Escort: 420
-  Fighter sweep: 420
-  OCA/Aircraft: 595
-  OCA/Runway: 475
+  BAI: 570
+  BARCAP: 410
+  CAS: 570
+  DEAD: 400
+  Escort: 410
+  Fighter sweep: 410
+  OCA/Aircraft: 570
+  OCA/Runway: 330
   SEAD: 120
   SEAD Escort: 120
-  Strike: 515
-  TARCAP: 430
+  Strike: 400
+  TARCAP: 410

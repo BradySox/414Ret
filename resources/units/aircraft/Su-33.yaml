@@ -32,15 +32,15 @@ variants:
   Su-33 Flanker-D: {}
 kneeboard_units: "metric"
 tasks:
-  BAI: 645
-  BARCAP: 590
-  CAS: 645
-  Escort: 496
-  Fighter sweep: 503
-  OCA/Aircraft: 680
-  OCA/Runway: 575
-  Strike: 580
-  TARCAP: 517
+  BAI: 590
+  BARCAP: 510
+  CAS: 590
+  Escort: 510
+  Fighter sweep: 510
+  OCA/Aircraft: 590
+  OCA/Runway: 460
+  Strike: 460
+  TARCAP: 510
 
 # Air-to-air refueling method (receiver).
 air_refuel_type: probe

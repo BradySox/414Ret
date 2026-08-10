@@ -4057,3 +4057,28 @@ Fly it and tank as briefed.
 
 **What CI cannot exercise:** whether DCS's AI actually flies the leg at the planned speed. The
 budget arithmetic is unit-tested; the arrival time is a mission.
+
+### B54 — Planner behavior bar switches the suite in the settings UI · re-convergence · ☐ UNTESTED (built 2026-08-09, app pass not flight)
+
+> First slice of the 2026-08-09 re-convergence decision (see the divergence audit's DECIDED
+> block): the eight planner gates ship at stock/upstream values, and a **Planner behavior** bar
+> atop the Campaign Doctrine settings page applies "Stock (upstream)" / "414th suite" in one
+> click (`game/settings/plannersuite.py`; bar in `qt_ui/windows/settings/QSettingsWindow.py`,
+> which CI does not type-check). Apply/detect and the stock-defaults contract are pinned in
+> `tests/settings/test_plannersuite.py`; the Qt wiring is not.
+
+App pass, no flight needed: open Settings → Campaign Doctrine in a game.
+
+- **Pass:** the bar shows "Current: Stock (upstream)" on a fresh game; clicking "414th suite"
+  updates the eight controls below (overlap 15, jammers 4, the six checkboxes on) and the label
+  reads "Current: 414th suite"; clicking "Stock (upstream)" restores them; hand-changing one
+  control flips the label to "Current: Custom".
+- **Fail signatures:**
+  1. **The bar is missing** — the `CAMPAIGN_DOCTRINE_PAGE` attach branch never matched the page
+     name.
+  2. **Clicking a button changes the label but not the controls below** —
+     `update_from_settings` is not refreshing the auto-generated page.
+  3. **A fresh game shows "Custom"** — a Settings default drifted from
+     `PLANNER_SUITE_VALUES`' stock column (the `test_fresh_settings_are_stock` guard should
+     have caught it first).
+

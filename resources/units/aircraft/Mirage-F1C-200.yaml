@@ -12,10 +12,10 @@ max_range: 200
 variants:
   Mirage-F1C-200: {}
 tasks:
-  BARCAP: 415
-  Escort: 380
-  Fighter sweep: 390
-  TARCAP: 400
+  BARCAP: 260
+  Escort: 260
+  Fighter sweep: 260
+  TARCAP: 260
 
 # Air-to-air refueling method (receiver).
 air_refuel_type: probe

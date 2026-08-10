@@ -26,9 +26,9 @@ fuel:
   combat_ppm: 14
   min_safe: 2000
 tasks:
-  BAI: 700
-  CAS: 700
-  OCA/Aircraft: 625
+  BAI: 680
+  CAS: 680
+  OCA/Aircraft: 680
 secondary_tasks:
   - DEAD
 

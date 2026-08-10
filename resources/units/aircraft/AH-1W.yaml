@@ -20,7 +20,7 @@ variants:
   AH-1J SeaCobra: {}
   AH-1W SuperCobra: {}
 tasks:
-  BAI: 655
-  CAS: 655
+  BAI: 480
+  CAS: 480
   Escort: 100
-  OCA/Aircraft: 575
+  OCA/Aircraft: 480

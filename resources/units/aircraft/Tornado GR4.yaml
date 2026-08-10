@@ -13,11 +13,11 @@ role: Strike Fighter
 variants:
   Tornado GR4: {}
 tasks:
-  Anti-ship: 305
-  DEAD: 410
+  Anti-ship: 190
+  DEAD: 280
   SEAD: 130
   SEAD Escort: 140
-  Strike: 595
+  Strike: 420
 
 # Honest strike radius (the unset default is 150 NM, which grounded any Tornado
 # based more than one map-corner from its target -- e.g. an off-map rear base).

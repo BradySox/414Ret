@@ -16,11 +16,11 @@ variants:
 tasks:
   Anti-ship: 150
   BAI: 140
-  BARCAP: 305
+  BARCAP: 250
   CAS: 140
   DEAD: 140
   Escort: 150
-  Fighter sweep: 280
+  Fighter sweep: 200
   OCA/Aircraft: 140
   Strike: 50
-  TARCAP: 305
+  TARCAP: 250

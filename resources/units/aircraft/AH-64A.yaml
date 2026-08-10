@@ -21,7 +21,7 @@ role: Attack
 variants:
   AH-64A Apache: {}
 tasks:
-  BAI: 660
-  CAS: 660
+  BAI: 490
+  CAS: 490
   Escort: 80
-  OCA/Aircraft: 575
+  OCA/Aircraft: 490

@@ -1,7 +1,22 @@
 # 414th aircraft task-priority rebalance rubric
 
-Status: **DRAFT for review** (2026-06-15). Nothing is applied to the YAMLs until this
-rubric is signed off.
+Status: **MAGNITUDES SUPERSEDED** (2026-08-09). The planner re-convergence decision
+(see the DECIDED block in `414th-autoplanner-upstream-divergence-audit.md`, work
+order E) restored upstream's task-weight numbers across the rebalanced yamls via
+`tools/restore_upstream_task_weights.py`. What survives from this rubric's passes:
+
+- Task-set *shapes*: fork deletions stay deleted (Intercept everywhere, the F-14s'
+  SEAD, the A-10Cs' Strike, bomber DEAD trims, the recon birds' attack tasks).
+- `secondary_tasks:` blocks and the heavy-bomber ARMED_RECON code suppression.
+- The fork task lanes (TARPS, Jamming, Escort Jammer, CSAR) and the EA-18G/EA-6B
+  `SEAD Escort: 400` demotion that wires the Escort Jammer lane.
+- The S-3B sea-control / A-6E two-variant restructure and its roster wiring.
+- The C-130J-30 task set.
+
+The tier/archetype model below is kept for the record; do not re-apply it without a
+fresh DM call.
+
+Previous status: DRAFT for review (2026-06-15), then applied in the passes below.
 
 ## Why this exists
 

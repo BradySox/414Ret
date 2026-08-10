@@ -3,12 +3,11 @@ from __future__ import annotations
 import itertools
 import math
 import operator
-import random
 from collections.abc import Iterable, Iterator
+from random import randint
 from typing import TYPE_CHECKING, TypeVar
 
 from game.ato.closestairfields import ClosestAirfields, ObjectiveDistanceCache
-from game.ato.flighttype import FlightType
 from game.theater import (
     Airfield,
     ControlPoint,
@@ -36,13 +35,6 @@ if TYPE_CHECKING:
     from game.transfers import CargoShip, Convoy
 
 MissionTargetType = TypeVar("MissionTargetType", bound=MissionTarget)
-
-# Implicit air-threat a control point carries simply by anchoring an active front
-# line, expressed in the same "proximity-weighted fighter count" units as the
-# airbase contributions in air_threat_score. Calibrated so a front-line sector
-# with no nearby enemy airbase lands mid-range and earns roughly half the
-# threat-weighted BARCAP bonus; tune if fronts feel over/under-defended.
-FRONT_LINE_AIR_THREAT = 4.0
 
 
 class ObjectiveFinder:
@@ -195,16 +187,11 @@ class ObjectiveFinder:
         yield from self.game.theater.conflicts()
 
     def vulnerable_control_points(self) -> Iterator[ControlPoint]:
-        """Iterates over friendly CPs that should be defended with BARCAP.
+        """Iterates over friendly CPs that are vulnerable to enemy CPs.
 
-        A control point is defended if it either has an enemy CP within
-        ``airbase_threat_range`` (proximity to an enemy airfield) *or* it anchors
-        an active front line. The latter establishes a forward defensive CAP line
-        along the edge of friendly territory so coverage reaches raids inbound to
-        rear income points, not just bases that happen to sit near an enemy
-        airfield.
+        Vulnerability is defined as any enemy CP within threat range of the
+        CP.
         """
-        aggressiveness = self.game.settings.opfor_autoplanner_aggressiveness
         for cp in self.friendly_control_points():
             if isinstance(cp, OffMapSpawn):
                 # Off-map spawn locations don't need protection.
@@ -212,35 +199,16 @@ class ObjectiveFinder:
             if isinstance(cp, NavalControlPoint):
                 yield cp  # always consider CVN/LHA as vulnerable
                 continue
-            airbase_threat_range = self.game.settings.airbase_threat_range
-            # OPFOR aggressiveness is the ratio of threat that OPFOR ignores
-            # (0 = consider all threats / defend everything, 100 = ignore all
-            # threats / commit fully offensive), matching the label and
-            # PackagePlanningTask._get_weighted_threat_range. So a higher value
-            # makes OPFOR *more* likely to abandon a base/front for offense.
-            #
-            # A CP that anchors an active front is NEVER abandoned. Aggressiveness
-            # means "strip the rear to push forward"; stripping the *front* to push
-            # forward is incoherent, and it used to leave the FLOT completely
-            # uncovered -- on a single-front theater the roll deleted the only CAP
-            # over the front (Red Tide: Haina, the sole front anchor, abandoned on
-            # ~1 turn in 5, and it is the theater's most threat-weighted orbit).
-            # Rear CPs still roll, so the lever keeps its intended meaning.
-            plan_offensively = (
-                self.is_player.is_red
-                and not cp.has_active_frontline
-                and self._offensive_roll(cp) <= aggressiveness
-            )
-            if plan_offensively:
-                # Treat the airfield threat range as zero so this CP isn't
-                # considered vulnerable; OPFOR commits its fighters offensively
-                # instead of defending here.
-                airbase_threat_range = 0
-            if cp.has_active_frontline:
-                # Forward defensive CAP line: this CP borders enemy territory.
-                yield cp
-                continue
             airfields_in_proximity = self.closest_airfields_to(cp)
+            airbase_threat_range = self.game.settings.airbase_threat_range
+            if (
+                self.is_player.is_red
+                and randint(1, 100)
+                < self.game.settings.opfor_autoplanner_aggressiveness
+            ):
+                # Chance that the airfield threat range will be evaluated as zero,
+                # causing the OPFOR autoplanner to plan offensively
+                airbase_threat_range = 0
             airfields_in_threat_range = (
                 airfields_in_proximity.operational_airfields_within(
                     nautical_miles(airbase_threat_range)
@@ -249,86 +217,6 @@ class ObjectiveFinder:
             for airfield in airfields_in_threat_range:
                 if not airfield.is_friendly(self.is_player):
                     yield cp
-                    break
-
-    def _offensive_roll(self, cp: ControlPoint) -> int:
-        """A 1-100 OPFOR offensive-posture roll, stable per (turn, control point).
-
-        Seeding the roll per turn and control point keeps a CP's defend/abandon
-        decision consistent across every planning pass within a turn -- the
-        planner re-evaluates ``vulnerable_control_points`` repeatedly, and an
-        unseeded re-roll made red's posture flicker (a base defended one pass,
-        abandoned the next) and incoherent across neighbouring CPs on the same
-        front. It still varies turn to turn because the turn is in the seed.
-        """
-        return random.Random(f"barcap_offensive:{self.game.turn}:{cp.name}").randint(
-            1, 100
-        )
-
-    def air_threat_score(self, cp: ControlPoint) -> float:
-        """A rough measure of the enemy air threat to a friendly control point.
-
-        Sums over enemy operational airfields within ``airbase_threat_range``,
-        each contribution weighted by proximity (closer = higher) times the
-        number of *air-to-air-capable* aircraft present (more fighters = higher).
-        A control point that anchors an active front line also gets a fixed floor
-        (``FRONT_LINE_AIR_THREAT``) because a contested front is dangerous
-        airspace in its own right -- otherwise a front-line sector with no nearby
-        enemy airbase would score 0 and never earn extra BARCAP waves, leaving the
-        forward-CAP-line and threat-weighting features decoupled. Used to scale
-        how many BARCAP waves a defended CP receives so contested sectors get more
-        coverage than quiet flanks.
-
-        Only A2A-tasked types are counted (not bombers/tankers/transports), so a
-        base packed with non-fighters doesn't read as a huge air threat and steal
-        waves from a sector actually facing fighters.
-        """
-        threat_range = nautical_miles(self.game.settings.airbase_threat_range)
-        if threat_range.meters <= 0:
-            return 0.0
-        parking_type = ParkingType(fixed_wing=True, fixed_wing_stol=True)
-        score = FRONT_LINE_AIR_THREAT if cp.has_active_frontline else 0.0
-        for airfield in self.closest_airfields_to(cp).operational_airfields_within(
-            threat_range
-        ):
-            if airfield.is_friendly(self.is_player):
-                continue
-            distance = meters(airfield.distance_to(cp))
-            proximity = max(0.0, 1.0 - distance.meters / threat_range.meters)
-            present = airfield.allocated_aircraft(parking_type).present
-            fighters = sum(
-                count
-                for aircraft_type, count in present.items()
-                if aircraft_type.capable_of(FlightType.BARCAP)
-                or aircraft_type.capable_of(FlightType.TARCAP)
-            )
-            score += proximity * fighters
-        return score
-
-    def normalized_air_threat(self, cp: ControlPoint) -> float:
-        """``air_threat_score(cp)`` relative to the theater's hottest friendly
-        sector, clamped to ``[0, 1]``.
-
-        Where the volume path normalizes against the *random*
-        ``vulnerable_control_points()`` set (it only ever needs the max of that
-        set), this normalizes against every friendly control point so it is
-        deterministic and safe to call from flight-plan building:
-        ``air_threat_score`` itself rolls no dice and the friendly-CP set is
-        fixed within a turn, so the same orbit factor comes out no matter how
-        many times the builder re-runs. Returns ``0.0`` when no friendly sector
-        faces any measurable air threat, which keeps quiet-theater BARCAP
-        placement byte-for-byte identical to the legacy uniform spread.
-        """
-        score = self.air_threat_score(cp)
-        if score <= 0.0:
-            return 0.0
-        max_score = max(
-            (self.air_threat_score(c) for c in self.friendly_control_points()),
-            default=0.0,
-        )
-        if max_score <= 0.0:
-            return 0.0
-        return min(1.0, score / max_score)
 
     def oca_targets(self, min_aircraft: int) -> Iterator[ControlPoint]:
         parking_type = ParkingType()

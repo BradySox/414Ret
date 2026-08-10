@@ -264,7 +264,7 @@ linked design note.
 3. **TARPS recon + BDA fog-of-war** — viewer-aware fog (damage lag + intel fog) plus concealed field forces drawn as offset "suspected activity" circles.
 4. **UI transparency** — target intel panel, mission-impact debrief, package context bar.
 5. **Player target location precision** — `Approximate` mode offsets steerpoints and hides exact coords.
-6. **Air-defense planning rework** — overlapping jittered BARCAP waves, forward CAP line, threat-weighted volume, front anchors never abandoned.
+6. **Air-defense planning rework** — overlapping jittered BARCAP waves. **The geometry/volume half was REVERTED to upstream 2026-08-09** (re-convergence work order D): no forward CAP line, no threat-weighted volume or orbit bias, no front-anchor guarantee, no forward-middle layer, no front-anchored support orbits, no FLOT navmesh hazard. Kept: the overlap waves, the `cap_orbit_distance_band` fix, the Vietnam-only escort-reserve trim.
 7. **Auto-hide mobile SAMs on MFD** — SHORAD/AAA/MANPAD off datalink; MERAD/LORAD stay visible for SEAD.
 8. **Robustness / crash fixes** — helo CFIT, carrier-recovery stagger, convoy runway spawns, support-flight radio collisions, locked speed/time route rejection.
 9. **TIC — Troops In Contact** — scripted frontline firefights with per-stance movement and ambient fire.

@@ -236,7 +236,7 @@ class PackageFulfiller:
         threats = defaultdict(bool)
         for flight in builder.package.flights:
             if self.threat_zones.waypoints_threatened_by_aircraft(
-                flight.flight_plan.escorted_waypoints()
+                list(flight.flight_plan.escorted_waypoints())
             ):
                 threats[EscortType.AirToAir] = True
             if self.threat_zones.waypoints_threatened_by_radar_sam(

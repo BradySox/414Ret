@@ -1100,7 +1100,38 @@ controls four behaviors together when set to Approximate:
 
 ---
 
-## 6. Air-defense planning rework
+## 6. Air-defense planning rework — GEOMETRY REVERTED TO UPSTREAM (2026-08-09)
+
+> **Status.** The planning *geometry and volume* half of §6 was reverted to upstream
+> behavior on 2026-08-09 as work order D of the planner re-convergence decision
+> (`docs/dev/design/414th-autoplanner-upstream-divergence-audit.md`, DECIDED block).
+> The DM's call was that default planner behavior returns to upstream regardless of
+> how deliberate each divergence was. Reverted outright, not re-gated — recover from
+> git history if any of it is ever wanted again.
+>
+> **Removed:** front-anchored support-orbit placement and the AI depth asymmetry
+> (U29) · AWACS/tanker lateral orbit spreads (U30) · the red forward-middle BARCAP
+> layer (U17) · the front-anchor defense guarantee and the seeded per-CP
+> aggressiveness roll (U1) · threat-weighted BARCAP volume and orbit forward-bias
+> (U2, U37) · the FLOT navmesh hazard capsule and the `air_engagement` escort zone
+> (U42, taking the U10 escort-reach gate with it).
+>
+> Deleted with them: `game/ato/flightplans/supportorbit.py`,
+> `game/ato/flightplans/airspacegeometry.py`,
+> `game/commander/tasks/primitive/forwardbarcap.py`, `ForwardBarcapZone`,
+> `ObjectiveFinder.air_threat_score` / `normalized_air_threat` /
+> `FRONT_LINE_AIR_THREAT` / `_offensive_roll`, `ThreatZones.air_engagement` /
+> `aircraft_engagement_range` / `_front_line_threat_zone` /
+> `FRONT_LINE_THREAT_BUFFER`.
+>
+> **Kept** (each independent of the reverted geometry): the overlapping CAP waves
+> below (byte-parity with upstream at `barcap_overlap_time == 0`) · the
+> `cap_orbit_distance_band` band-collapse fix (U36, a genuine upstream bug) · the
+> strike-escort reserve trim, now doctrine-gated and Vietnam-only · the
+> viewer-aware fog threading in `threatzones.py` (§3 plumbing) · `HomeBaseDefenseZone`
+> (§1 player QRA) · the front-line spawn-stacking fix.
+
+What remains of §6:
 
 Design notes: `docs/dev/design/414th-air-defense-planning-notes.md` (read this for intent).
 - Overlapping CAP waves + jitter: `game/commander/missionscheduler.py` (uses
@@ -1110,75 +1141,25 @@ Design notes: `docs/dev/design/414th-air-defense-planning-notes.md` (read this f
   capped at `min(barcap_overlap_time, 5 min)`, so CAP no longer deterministically
   arrives at mission start (which let attackers wait it out). With
   `barcap_overlap_time == 0` this reproduces the old back-to-back schedule exactly.
-- Forward CAP line: `game/commander/objectivefinder.py` `vulnerable_control_points()`
-  (checks `cp.has_active_frontline`; also fixes an inverted aggressiveness comparison).
-  **A front anchor is never abandoned** (2026-07-09): `_offensive_roll` still lets OPFOR
-  abandon a *rear* CP to free its fighters for offense, but a CP holding the FLOT is exempt
-  — stripping the front in order to push forward is incoherent, and on a single-front
-  theater the roll deleted the *only* CAP over the front. On Red Tide, Haina is the sole
-  front anchor, carries the theater's highest threat-weighted round count (2 vs the rear
-  fields' 1), and was abandoned on ~1 turn in 5 (turns 2, 8 and 9 of the first ten), leaving
-  red's entire BARCAP layer 126–188 NM behind the FLOT around Berlin. Tests:
-  `tests/test_objectivefinder_barcap.py`.
-- Threat-weighted BARCAP volume (the `barcap-threat-weighting` branch's headline):
-  contested sectors get more BARCAP waves, **additive only** so coverage never regresses
-  (an earlier up-and-down rework collapsed quiet bases to one wave and was reverted —
-  `c8b1b8c32`). `ObjectiveFinder.air_threat_score(cp)` scores enemy air threat = sum over
-  operational enemy airfields within `airbase_threat_range` of `proximity * present
-  **A2A-capable** aircraft` (BARCAP/TARCAP-capable types only, so a base of
-  bombers/tankers/transports doesn't read as an air threat), **plus a
-  `FRONT_LINE_AIR_THREAT` floor** for any CP anchoring an active front line so
-  front-line-only sectors earn extra waves instead of scoring 0 (see Fixes below).
-  `theaterstate.py` `threat_weighted_barcap_rounds()` = `baseline +
-  round((score/max_score) * baseline * (BARCAP_THREAT_CEILING-1))`, ceiling 2x; a
-  zero-threat CP gets exactly the legacy duration-derived `barcap_rounds`, fleet keeps its
-  2x. `TheaterState.from_game` wires it into `barcaps_needed`. Threat-weighted *orbit
-  placement* (the companion increment) is now also live: `ObjectiveFinder`
-  `normalized_air_threat(cp)` gives a deterministic 0..1 factor (normalized against
-  `friendly_control_points()`, not the random vulnerable set) and `CapBuilder`
-  `cap_racetrack_for_objective` raises the forward-distance floor by
-  `factor * BARCAP_THREAT_FORWARD_BIAS` (0.75) so contested sectors orbit further forward;
-  factor 0 reproduces the legacy uniform spread and TARCAPs are untouched. Design notes:
-  `docs/dev/design/414th-air-defense-planning-notes.md`. Tests:
-  `tests/test_barcap_threat_weighting.py`.
-- **Red forward-middle BARCAP layer** (large maps): the rear BARCAP heads its orbit
-  from the CP toward the *nearest enemy airfield*, so on a big map a red front CP whose
-  nearest blue field is off-axis gets a screen flung far from the FLOT (observed 144–187 NM
-  off the Fulda/Haina front). This adds **one extra** BARCAP per red CP anchoring an active
-  front — placed **forward-middle** (≈ halfway rear-CP→FLOT, clear of blue threats by
-  `cap_engagement_range + 5 NM`), parallel to the FLOT — **in addition to** the unchanged
-  rear/base BARCAP. Map-scaled: only fires when the rear CP sits farther from the FLOT than
-  the rear BARCAP's own reach (`cap_max_distance_from_cp`), so small maps are unaffected;
-  front-relative geometry, no hardcoded distances. Red (AI) side only; QRA/intercept reserve
-  untouched. Wired as an **added** layer via a new package target type (so no save
-  migration): `ForwardBarcapZone` (`game/theater/missiontarget.py`) carries the
-  forward-middle center + enemy-facing heading computed in `TheaterState.from_game`
-  (transient `forward_barcaps_needed`); `forward_cap_front_anchor`
-  (`game/ato/flightplans/supportorbit.py`) is the geometry; `PlanForwardBarcap` +
-  `ProtectAirSpace` plan it; `CapBuilder.cap_racetrack_for_objective` lays the zone
-  racetrack and leaves every other target on the legacy path. Tests:
-  `tests/test_forward_barcap.py`. **In-game pass ☑ VERIFIED 2026-06-25** (checklist B5). The
-  theater-tanker-demand companion from the same plan is **not** in this change.
-- A2A escort-need uses fighter **engagement reach**, not BARCAP **orbit** reach
-  (`game/threatzones.py` `air_engagement` zone + `aircraft_engagement_range`;
-  `PackageFulfiller.check_needed_escorts` now calls
-  `waypoints_threatened_by_aircraft_engagement`). `barcap_threat_range` clamps the
-  `airbases` orbit zone to ~45% of the way to friendly territory (keeps enemy CAP
-  non-offensive for the navmesh + BARCAP placement). The CAS patrol sits on the FLOT
-  (~50%), so its escorted waypoints fell in the gap, the A2A escort was pruned every
-  time, and — since CAS is the **only** proposer of `FlightType.TARCAP` (`cas.py:35`,
-  no standalone `PlanTarcap` task) — TARCAP was never planned at all. Forward DEAD/BAI
-  near the front lost their `ESCORT` the same way. The new `air_engagement` zone
-  (uncapped `cap_max_distance_from_cp + cap_engagement_range`) is a strict superset of
-  `airbases`, so escorts are only *added*, never lost; the clamped zone still drives
-  the navmesh, IP/hold/join geometry, BARCAP placement (incl. §6 orbit forward-bias),
-  and the map overlay. `ThreatZones` is recomputed each load (excluded from pickling),
-  so no save migration. `can_plan_escort(AirToAir)` was also corrected to gate on
-  `ESCORT` **or** `TARCAP` (CAS's A2A escort is TARCAP, not ESCORT) instead of `ESCORT`
-  alone. Tests: `tests/test_aircraft_engagement_escort_zone.py`.
-  In-game pass ☑ VERIFIED 2026-06-24 (B4, Tacview) — CAS (`Front line Fulda/Haina
-  CAS`) spawned with a TARCAP + SEAD Sweep, and forward DEAD/BAI/SEAD packages all
-  carried A2A + SEAD escorts.
+- BARCAP volume is upstream's flat allocation: `2 * barcap_rounds` for a fleet CP,
+  `barcap_rounds` otherwise, over `ObjectiveFinder.vulnerable_control_points()`
+  (upstream's airfield-proximity rule with its unseeded per-call aggressiveness roll).
+- Strike-escort reserve trim (`trim_rounds_for_escort_reserve`,
+  `game/commander/theaterstate.py`): when `Doctrine.strike_escort_reserve > 0` the
+  planner gives up BARCAP rounds so ~reserve airframes stay untasked for the strike
+  escorts planned later in the same run. Only Vietnam sets a non-zero reserve (4), so
+  this is a no-op everywhere else. The companion fence is
+  `PackageFulfiller.escort_reserve_withholds`. Trim order is the planner's own CP
+  order — it used to rank by air threat, but that field went with the revert; the
+  number of jets freed is unchanged. Tests:
+  `tests/commander/test_escort_reserve_trim.py`, `tests/commander/test_escort_reserve_fence.py`.
+- CAP orbit band (`cap_orbit_distance_band`, `game/ato/flightplans/capbuilder.py`):
+  when the defended point sits inside the enemy threat zone the old
+  `min(cap_*, distance_to_no_fly)` drove both band bounds onto a sub-minimum (often
+  negative) value, placing the racetrack *behind* the defended point and killing all
+  placement jitter. Falls back to the full doctrine band instead. This is an upstream
+  bug and is queued as a post-freeze carve. Tests:
+  `tests/ato/flightplans/test_cap_orbit_distance_band.py`.
 - Engagement-range bumps: `game/settings/settings.py` (`cas_engagement_range_distance`
   10->15 nm, `armed_recon_engagement_range_distance` 5->10 nm).
 - Cruise/patrol altitude doctrine (Campaign Doctrine page, all default to **no behavior
@@ -1201,18 +1182,10 @@ Design notes: `docs/dev/design/414th-air-defense-planning-notes.md` (read this f
     widened bands like `max = 5` (a flat `-2` default would have re-enabled or reshaped
     those). Fields render on the Campaign Doctrine page (no UI wiring). Tests:
     `tests/test_flight_altitude_settings.py`. Mirrored on upstream PR #806.
-- Route around the front line: `game/threatzones.py` adds the **active front** as a
-  navmesh routing hazard. `ThreatZones._front_line_threat_zone(left, right)` buffers a
-  capsule along each active FrontLine — built from the **land-clipped FLOT endpoints**
-  (`FrontLineConflictDescription.frontline_bounds`, the same geometry the FLOT generator
-  uses), `FRONT_LINE_THREAT_BUFFER` = 10 NM — and folds it into `self.all` **only** — the geometry the navmesh + generic
-  `threatened()`/path checks use. The SAM (`air_defenses`) and CAP (`airbases`) views stay
-  clean, so air-defense/barcap planning is untouched. The navmesh penalizes 3x rather than
-  forbids, so transiting flights cross the FLOT perpendicularly at the least-bad point
-  instead of loitering; CAS/BAI target the front and reach it on the un-routed ingress leg,
-  so they're unaffected. Added to every faction's projected threat (each coalition's
-  navmesh is built from its opponent's zone), so both sides avoid it. Tests:
-  `tests/test_front_line_threat_zone.py`.
+- ~~Route around the front line~~ — **REMOVED 2026-08-09** (U42, see the status banner
+  above). The active front is no longer a navmesh routing hazard; `ThreatZones.all` is
+  upstream's `airbases ∪ air_defenses` again, and transit routing no longer knows the
+  FLOT is there.
 - Front-line units no longer stack: `game/missiongenerator/flotgenerator.py`
   `get_valid_position_for_group()` steps perpendicular from the (valid) front toward the
   requested depth instead of snapping laterally via `find_ground_position()` — the old
@@ -1256,7 +1229,20 @@ Tests: `tests/test_objectivefinder_barcap.py`, `tests/test_barcap_threat_weighti
 `barcap_rounds` when `barcap_overlap_time` ≥ mission duration, one-sided lateral spread,
 250 m magic step) are deferred.
 
-### Front-anchored support-orbit placement (AEW&C + tanker) (2026-06-22)
+### Front-anchored support-orbit placement (AEW&C + tanker) (2026-06-22) — REMOVED 2026-08-09
+
+> **Removed** by work order D of the planner re-convergence (U29/U30). `aewc.py` and
+> `theaterrefueling.py` are back on upstream's geometry: anchor on the package target,
+> step off the nearest threat boundary by the configured buffer, no front anchoring, no
+> player-forward / AI-deep depth asymmetry, no lateral spread between multiple orbits.
+> `supportorbit.py` is deleted. The failure modes recorded below are upstream's again —
+> they are real, and the tests that pinned them are gone, so treat this section as the
+> record of what upstream's placement does wrong rather than as current behavior.
+>
+> Two things did NOT come back: the theater-tanker demand reposition
+> (`game/commander/tankerdemand.py`, still overrides the anchor — see the next section)
+> and the U13/U14 AEW&C target/squadron picks in `game/commander/`, which are kept
+> failure fixes and independent of the orbit math.
 
 **Symptom (fresh Red Tide save, AI-generated turn):** the AI's AWACS and tanker racetracks
 were placed nonsensically. Red AWACS targeting a far-north CP (Kastrup) was generated

@@ -1,6 +1,6 @@
 """The strike-escort reserve *fence* (Doctrine.strike_escort_reserve, half 2).
 
-The BARCAP trim (tests/test_barcap_threat_weighting.py) frees ~reserve fighters
+The BARCAP trim (tests/commander/test_escort_reserve_trim.py) frees ~reserve fighters
 from BARCAP volume; this fence stops every non-STRIKE package planned before the
 strikes from spending them on its own A2A escort. Only a STRIKE-led package may
 dip the live untasked-fighter pool below the reserve.

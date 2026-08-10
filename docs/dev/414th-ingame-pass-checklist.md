@@ -3267,7 +3267,13 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
   failed — freq/TACAN come from there, not `FlightData`); a red tanker marked (the `friendly.is_blue` gate).
   Knobs: `SUPPORT_ORBIT_LINE`/`SUPPORT_ORBIT_RADIUS_M`/`SUPPORT_LABEL_*` (drawingsgenerator.py).
 
-### S1 — Route-aware fuel-tank planning (fuel-first) · §46 · ◐ PARTIAL (original gen-time top-up ☑ VERIFIED 2026-07-04, user pass — "S1 good I think", tentative; the **2026-07-12 fuel-first rework** — tank-aware tanker decision + the plan-time jammer-pod trade — is ☐ UNTESTED and needs its own pass)
+### S1 — Route-aware fuel-tank planning (fuel-first) · §46 · ✅ CLOSED (feature reverted 2026-08-09) (was ◐ PARTIAL (original gen-time top-up ☑ VERIFIED 2026-07-04, user pass — "S1 good I think", tentative; the **2026-07-12 fuel-first rework** — tank-aware tanker decision + the plan-time jammer-pod trade — is ☐ UNTESTED and needs its own pass))
+> ⛔ **CLOSED 2026-08-09 — the feature was reverted, so there is nothing left to fly.**
+> §46 reverted outright to upstream behavior as work order C of the auto-planner
+> re-convergence (`docs/dev/design/414th-autoplanner-upstream-divergence-audit.md`, DECIDED
+> block). Tanker tasking is upstream's again and no code fits tanks. The text below is the
+> record of what was built and what was adjudicated; **do not open a pass against it.**
+
 - **Headless adjudication (original top-up):** `top_up_for_route` fills an empty tank station on a far route,
   is a no-op on a short route / empty / custom loadout / setting-off, and **never removes or replaces an
   existing store** (asserted on the Hornet pylon tables). A before/after script showed the COIN Hornet Strike
@@ -3505,7 +3511,13 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
 - **Pass:** blue AND red convoys appear on their own roads most turns (counts varying, occasionally two columns sharing a road, occasionally a quiet side); columns drive rear→front; red's columns can be right-clicked/fragged as ordinary Armed Recon/BAI targets and their kills count at debrief; a side with no same-side road (e.g. an island map) simply shows none, with no errors.
 - **Fail signature:** no convoys ever on a campaign listed in `ROAD_BEARING_CAMPAIGNS` (corridor enumeration or the setting gate broken); the exact same number of convoys on the exact same roads every turn (the RNG not driving); convoys stacking unboundedly (existing convoys not counted toward the target); columns driving front→rear (orientation inverted); convoy units appearing from nowhere at debrief or kills not recorded (a phantom-spawn regression — every column must be a real `coalition.transfers` transfer).
 
-### S6 — Tanker fragged for a no-`fuel:`-block airframe on a long sortie · §46 · ☐ UNTESTED (built 2026-07-08 from a player F-4E report — a −4259 lb OCA/Runway RTB margin with no tanker; `_refuel_tasking` now falls back to `estimated_fuel_consumption`; the fallback / measured-wins / no-tanker-squadron / helo / no-fuel-data gates are locked in `tests/ato/flightplans/test_refuel_tasking_estimate_fallback.py`, but whether the tanker + rendezvous actually close the RTB margin in-mission needs a flight)
+### S6 — Tanker fragged for a no-`fuel:`-block airframe on a long sortie · §46 · ✅ CLOSED (feature reverted 2026-08-09) (was ☐ UNTESTED (built 2026-07-08 from a player F-4E report — a −4259 lb OCA/Runway RTB margin with no tanker; `_refuel_tasking` now falls back to `estimated_fuel_consumption`; the fallback / measured-wins / no-tanker-squadron / helo / no-fuel-data gates are locked in `tests/ato/flightplans/test_refuel_tasking_estimate_fallback.py`, but whether the tanker + rendezvous actually close the RTB margin in-mission needs a flight))
+> ⛔ **CLOSED 2026-08-09 — the feature was reverted, so there is nothing left to fly.**
+> §46 reverted outright to upstream behavior as work order C of the auto-planner
+> re-convergence (`docs/dev/design/414th-autoplanner-upstream-divergence-audit.md`, DECIDED
+> block). Tanker tasking is upstream's again and no code fits tanks. The text below is the
+> record of what was built and what was adjudicated; **do not open a pass against it.**
+
 - **What CI cannot exercise:** whether the fragged pre/post-vul tanker + the AI rendezvous actually get the F-4E home (the planning is unit-tested; the flying isn't), and whether the estimate's threshold reads right across mod airframes (too eager → tankers on hops that internal + drop tanks already cover; too shy → still short).
 - **Setup:** a campaign with an F-4E-45MC squadron **and** a tanker in the wing (e.g. **Germany — Red Tide**, KC-135MPRS), `auto_ato_behavior_tankers` ON. Auto-plan a long-legged OCA/Runway or Strike for the F-4E against a deep target; open the flight's kneeboard flight-plan page.
 - **Pass:** the F-4E package now carries a **REFUEL** waypoint (pre- or post-strike) routed to a tanker, and the RTB-margin line reads **+N lb** (or at least far less negative) instead of the old bare −4259 lb "tank or divert". A short-hop F-4E is unchanged (no spurious tanker). A campaign with **no** tanker still shows the −N lb warning (correct — nothing to frag).
@@ -3958,7 +3970,13 @@ sampling, the anchor-centred geometry, the safe degrades) is covered by
 against ship threat rings — but whether DCS's naval AI *loops* a group on `SwitchWaypoint`, and how
 far it actually wanders doing it, only a mission shows.
 
-### B53 — AI flights no longer push early for a tanker stop they never fly · §46 · ☐ UNTESTED (built 2026-08-09)
+### B53 — AI flights no longer push early for a tanker stop they never fly · §46 · ✅ CLOSED (the dwell it fixed was deleted 2026-08-09) (was ☐ UNTESTED, built 2026-08-09)
+> ⛔ **CLOSED 2026-08-09 — the feature was reverted, so there is nothing left to fly.**
+> §46 reverted outright to upstream behavior as work order C of the auto-planner
+> re-convergence (`docs/dev/design/414th-autoplanner-upstream-divergence-audit.md`, DECIDED
+> block). Tanker tasking is upstream's again and no code fits tanks. The text below is the
+> record of what was built and what was adjudicated; **do not open a pass against it.**
+
 
 > **The nine minutes nobody spends.** Found from a player report — the escorted strike was ahead
 > of the kneeboard timetable — and confirmed against the generated `.miz` before any code was
@@ -3999,3 +4017,28 @@ Fly it and tank as briefed.
 
 **What CI cannot exercise:** whether DCS's AI actually flies the leg at the planned speed. The
 budget arithmetic is unit-tested; the arrival time is a mission.
+
+### B54 — Planner behavior bar switches the suite in the settings UI · re-convergence · ☐ UNTESTED (built 2026-08-09, app pass not flight)
+
+> First slice of the 2026-08-09 re-convergence decision (see the divergence audit's DECIDED
+> block): the eight planner gates ship at stock/upstream values, and a **Planner behavior** bar
+> atop the Campaign Doctrine settings page applies "Stock (upstream)" / "414th suite" in one
+> click (`game/settings/plannersuite.py`; bar in `qt_ui/windows/settings/QSettingsWindow.py`,
+> which CI does not type-check). Apply/detect and the stock-defaults contract are pinned in
+> `tests/settings/test_plannersuite.py`; the Qt wiring is not.
+
+App pass, no flight needed: open Settings → Campaign Doctrine in a game.
+
+- **Pass:** the bar shows "Current: Stock (upstream)" on a fresh game; clicking "414th suite"
+  updates the eight controls below (overlap 15, jammers 4, the six checkboxes on) and the label
+  reads "Current: 414th suite"; clicking "Stock (upstream)" restores them; hand-changing one
+  control flips the label to "Current: Custom".
+- **Fail signatures:**
+  1. **The bar is missing** — the `CAMPAIGN_DOCTRINE_PAGE` attach branch never matched the page
+     name.
+  2. **Clicking a button changes the label but not the controls below** —
+     `update_from_settings` is not refreshing the auto-generated page.
+  3. **A fresh game shows "Custom"** — a Settings default drifted from
+     `PLANNER_SUITE_VALUES`' stock column (the `test_fresh_settings_are_stock` guard should
+     have caught it first).
+

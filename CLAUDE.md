@@ -108,7 +108,10 @@ Read before touching a campaign's `.yaml`, `.miz` or build tool.
   reproduced — read §8.1 before building anything here**)
 - **Planning / doctrine** — `414th-airwar-planner-consolidation-notes.md`,
   `414th-aircraft-task-rebalance-rubric.md`, `414th-victory-conditions-notes.md`,
-  `414th-wing-growth-notes.md`, `414th-single-player-loop-notes.md`
+  `414th-wing-growth-notes.md`, `414th-single-player-loop-notes.md`,
+  `414th-autoplanner-upstream-divergence-audit.md` (**the full fork-vs-upstream planner
+  diff**, 2026-08-09: every divergence classified by gate and default; read before
+  reverting or carving planner behavior)
 - **Cockpit / data** — `414th-dtc-cartridge-notes.md`, `414th-weapon-dates-proposal.md`,
   `414th-loadout-integrity-audit-notes.md`
 - **Framework / tooling** — `414th-framework-consolidation-notes.md`,
@@ -292,7 +295,6 @@ linked design note.
 43. **Per-aircraft flight defaults** — saved fuel and cockpit properties per airframe.
 44. **Long-range carrier ops** — a deterministic package off a standoff boat, routed to its own tanker.
 45. **Support-package F10 orbit markers** — tanker and AEW&C racetracks drawn with callsign, freq, TACAN.
-46. **Route-aware fuel-tank planning** — tanks fitted to the sortie before tanker passes are decided, with a live payload-tab readout.
 47. **Continuous campaign clock & weather** — one marched clock with weather evolving from the previous turn.
 49. **Mobile missile relocation** — shoot-and-scoot theater missile sites; fire first, then scoot.
 50. **Convoy ambush + ambient supply convoys** — untelegraphed ambush teams on friendly roads, authored as native DCS triggers.
@@ -344,6 +346,7 @@ Kept numbered so old notes and saves stay readable. Details and rationale in the
 | 30 | Dedicated kneeboard cover page | Retired 2026-07-13 — new info folds into a stock page |
 | 31 | One-page Brief Sheet | Retired 2026-07-13 — BLUF and code words survived |
 | 40 | Campaign phases, ROE zones, target release | Removed 2026-07-21 |
+| 46 | Route-aware fuel-tank planning (fuel-first) | **Reverted 2026-08-09** — planner re-convergence work order C; tanker tasking is upstream's again and nothing fits tanks. The external-fuel *accounting* helpers survive for the fuel readouts |
 | 48 | Commitment ceiling and the political-will economy | Removed 2026-07-21 |
 | 53 | War economy | Removed 2026-07-21 |
 | 54 | Munitions availability | Removed 2026-07-21 |

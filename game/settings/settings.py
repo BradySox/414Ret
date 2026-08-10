@@ -606,13 +606,6 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                     "host_red_scramble",
                 ],
             ),
-            (
-                "Loadouts",
-                [
-                    "auto_range_fuel_tanks",
-                    "fuel_tanks_over_jammers",
-                ],
-            ),
         ],
     ),
     (
@@ -758,8 +751,6 @@ FEATURE_GATE_FIELDS: dict[str, list[str]] = {
         "sead_strike_coordination",  # §69
         "adaptive_procurement",  # §68
         "auto_repair_air_defenses",  # §68
-        "auto_range_fuel_tanks",  # §46
-        "fuel_tanks_over_jammers",  # §46
     ],
     "Single-player flow": [
         "sp_pilot_mode",  # §83
@@ -1017,7 +1008,9 @@ class Settings:
         "BARCAP wave overlap",
         page=CAMPAIGN_DOCTRINE_PAGE,
         section=GENERAL_SECTION,
-        default=timedelta(minutes=15),
+        # Stock default (2026-08-09 re-convergence): upstream schedules
+        # back-to-back waves. The 414th planner suite preset sets 15.
+        default=timedelta(minutes=0),
         min=0,
         max=60,
         detail="How long consecutive BARCAP waves overlap on-station. Higher values"
@@ -1203,7 +1196,9 @@ class Settings:
         "Auto-planner adds a recon flight to Strike/DEAD/Armed Recon packages",
         page=CAMPAIGN_DOCTRINE_PAGE,
         section=GENERAL_SECTION,
-        default=True,
+        # Stock default (2026-08-09 re-convergence): upstream plans no add-on
+        # recon. The 414th planner suite preset turns this on.
+        default=False,
         invert=False,
         detail=(
             "If checked, the auto-planner appends a single photo-recon flight "
@@ -1409,7 +1404,9 @@ class Settings:
         "Auto-planner reads the weather",
         page=CAMPAIGN_DOCTRINE_PAGE,
         section=GENERAL_SECTION,
-        default=True,
+        # Stock default (2026-08-09 re-convergence): upstream ignores weather.
+        # The 414th planner suite preset turns this on.
+        default=False,
         detail=(
             "The theater commander accounts for the sky when planning (both "
             "sides). In rain or thunderstorms the automatic photo-recon add-on "
@@ -1424,7 +1421,9 @@ class Settings:
         "Strikes push behind their SEAD window",
         page=CAMPAIGN_DOCTRINE_PAGE,
         section=GENERAL_SECTION,
-        default=True,
+        # Stock default (2026-08-09 re-convergence): upstream times packages
+        # independently. The 414th planner suite preset turns this on.
+        default=False,
         detail=(
             "Packages used to be timed independently, so a strike could arrive "
             "at a defended target half an hour before the SEAD package tasked "
@@ -1441,7 +1440,9 @@ class Settings:
         "Max escort jammers airborne per side",
         page=CAMPAIGN_DOCTRINE_PAGE,
         section=GENERAL_SECTION,
-        default=4,
+        # Stock default (2026-08-09 re-convergence): upstream plans no escort
+        # jammers. The 414th planner suite preset sets 4.
+        default=0,
         min=0,
         max=12,
         detail=(
@@ -1983,43 +1984,6 @@ class Settings:
             "different clouds. 'None' uses the stock DCS presets."
         ),
     )
-    auto_range_fuel_tanks: bool = boolean_option(
-        "Add fuel tanks when the route needs the range",
-        page=MISSION_GENERATION_PAGE,
-        section="Loadouts",
-        default=True,
-        detail=(
-            "Fuel-first planning: once a package is built, drop tanks are fitted to "
-            "a flight's EMPTY tank-capable stations when the sortie needs more fuel "
-            "than internal (plus any tanks already on the loadout) can cover, BEFORE "
-            "the pre/post-vul tanker decision -- which also counts the fuel in the "
-            "bags, so a jet carrying tanks stops being sent to the tanker twice when "
-            "one pass (or none) covers it. Far-AO campaigns (e.g. the COIN carrier "
-            "~800 km off the beach) fly with enough gas; inert on short routes. This "
-            "toggle on its own never removes a store (a TGP, ECM pod, or ordnance is "
-            "never swapped out; see the jammer-pod trade below). Player-customised "
-            "loadouts are left untouched."
-        ),
-    )
-    fuel_tanks_over_jammers: bool = boolean_option(
-        "Trade jammer pods for fuel tanks when it saves a tanker pass",
-        page=MISSION_GENERATION_PAGE,
-        section="Loadouts",
-        default=True,
-        enabled_when="auto_range_fuel_tanks",
-        detail=(
-            "When filling empty stations still leaves a sortie needing more tanker "
-            "passes, a self-protection JAMMER pod on a tank-capable station gives up "
-            "its seat to a drop tank -- but only when the extra bag strictly reduces "
-            "the pass count (pre+post-vul refueling becomes one pass, or one pass "
-            "becomes none), or when no tanker exists at all and the bags are the only "
-            "gas there is. The motivating case: a SEAD Viper with two wing bags and a "
-            "centerline ALQ-184 planned through two refuel passes -- three bags and "
-            "one pass beat the pod. Only jammer pods are ever traded (never a TGP, "
-            "decoy, or ordnance); player-customised loadouts are left untouched."
-        ),
-    )
-
     # Pilots and Squadrons
     ai_pilot_levelling: bool = boolean_option(
         "Allow AI pilot leveling",
@@ -2184,7 +2148,10 @@ class Settings:
             "time settings opt out of the natural cycle and fall back to the "
             "per-turn rotation). Turn off for the stock per-turn behaviour."
         ),
-        default=True,
+        # Stock default (2026-08-09 re-convergence): upstream rotates time of
+        # day per turn with memoryless weather. The 414th planner suite preset
+        # turns this on.
+        default=False,
     )
 
     # HQ Automation
@@ -2357,7 +2324,9 @@ class Settings:
         "AI procurement reads the strategic picture",
         CAMPAIGN_MANAGEMENT_PAGE,
         HQ_AUTOMATION_SECTION,
-        default=True,
+        # Stock default (2026-08-09 re-convergence): upstream buys uniformly at
+        # random. The 414th planner suite preset turns this on.
+        default=False,
         detail=(
             "The AI commander's auto-spend follows its side's strategic read "
             "instead of a fixed split: a surging enemy shifts budget toward the "
@@ -3951,6 +3920,11 @@ class Settings:
             # Replaced by the CloudPresetPack choice, so several community cloud
             # mods are selectable (value already migrated above).
             "use_bandit_clouds",
+            # Feature §46 (route-aware fuel-tank planning) was reverted to upstream
+            # behavior in the 2026-08-09 auto-planner re-convergence. Nothing fits
+            # tanks at plan or generation time any more, so both gates are dead.
+            "auto_range_fuel_tanks",
+            "fuel_tanks_over_jammers",
         ):
             migrated.pop(obsolete_key, None)
 

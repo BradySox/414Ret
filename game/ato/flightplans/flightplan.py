@@ -19,7 +19,6 @@ from game.typeguard import self_type_guard
 from game.utils import Distance, Speed, meters
 from .planningerror import PlanningError
 from ..flightwaypointtype import FlightWaypointType
-from ..refueltasking import refuel_service_time
 from ..starttype import StartType
 from ..traveltime import GroundSpeed
 
@@ -246,31 +245,6 @@ class FlightPlan(ABC, Generic[LayoutT]):
         # model.
         return timedelta(seconds=math.floor(total.total_seconds()))
 
-    @property
-    def refuel_duration(self) -> timedelta:
-        """Time budgeted at a tanker for the whole flight to top off.
-
-        The same per-receiver service time the package tanker budgets into its own
-        on-station duration, so the receiver's schedule and the tanker's window
-        agree.
-
-        Only a flight with a human in it spends this. An AI flight flies through its
-        REFUEL waypoint without taking gas: ``RefuelPointBuilder`` stops the Refueling
-        task as soon as every jet is at 50% fuel -- already true on arrival at a
-        pre-vul stop -- and ``ai_unlimited_fuel`` (on by default, and switched off only
-        at the JOIN) pins AI fuel across that leg anyway. Charging AI a dwell it never
-        spends made ``FormationFlightPlan.push_time`` release it from the hold exactly
-        ``refuel_service_time`` early, so an AI flight reached the join, the IP and the
-        target that far ahead of a player escort timed against the same package ToT.
-
-        The package tanker still reserves service time for AI receivers
-        (``PackageRefuelingFlightPlan.patrol_duration``) -- overlapping the tanker is
-        harmless, and it keeps gas on station for an AI flight that does come up thirsty.
-        """
-        if not self.flight.client_count:
-            return timedelta()
-        return refuel_service_time(self.flight.roster.max_size)
-
     def total_time_between_waypoints(
         self, a: FlightWaypoint, b: FlightWaypoint
     ) -> timedelta:
@@ -279,13 +253,7 @@ class FlightPlan(ABC, Generic[LayoutT]):
         The total time between waypoints differs from the travel time in that it may
         include additional time for actions such as loitering.
         """
-        total = self.travel_time_between_waypoints(a, b)
-        if a.waypoint_type is FlightWaypointType.REFUEL:
-            # Departing a tanker: the flight first spends its time on the boom, so
-            # everything before the refuel point shifts earlier (takeoff included)
-            # and everything after keeps its time.
-            total += self.refuel_duration
-        return total
+        return self.travel_time_between_waypoints(a, b)
 
     def travel_time_between_waypoints(
         self, a: FlightWaypoint, b: FlightWaypoint

@@ -16,7 +16,7 @@ gunfighter: true
 variants:
   F-104S Starfighter: {}
 tasks:
-  BARCAP: 400
-  Escort: 325
-  Fighter sweep: 360
-  TARCAP: 390
+  BARCAP: 250
+  Escort: 150
+  Fighter sweep: 200
+  TARCAP: 250

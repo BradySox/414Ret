@@ -29,7 +29,7 @@ tasks:
   # over the target zone. Priority sits below the assault helos (50) so a helo
   # squadron in range still wins the tasking; the C-130 takes the long-reach and
   # no-helo cases.
-  Air Assault: 40
+  Air Assault: 42
   Transport: 140
   Jamming: 140
   # The "King" CSAR role, kept as a deliberate 414th override (2026-08-07 squadron call).

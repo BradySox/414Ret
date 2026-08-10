@@ -20,10 +20,10 @@ default_livery: af standard
 variants:
   MiG-31 Foxhound: {}
 tasks:
-  BARCAP: 605
-  Escort: 375
-  Fighter sweep: 540
-  TARCAP: 585
+  BARCAP: 400
+  Escort: 400
+  Fighter sweep: 400
+  TARCAP: 400
 
 # Air-to-air refueling method (receiver).
 air_refuel_type: probe

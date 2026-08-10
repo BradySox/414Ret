@@ -19,18 +19,18 @@ variants:
     role: Multirole Fighter
 tasks:
   Anti-ship: 90
-  BAI: 630
-  BARCAP: 575
-  CAS: 630
-  DEAD: 415
-  Escort: 485
-  Fighter sweep: 492
-  OCA/Aircraft: 665
-  OCA/Runway: 565
+  BAI: 560
+  BARCAP: 490
+  CAS: 560
+  DEAD: 300
+  Escort: 490
+  Fighter sweep: 490
+  OCA/Aircraft: 560
+  OCA/Runway: 450
   SEAD: 20
   SEAD Escort: 20
-  Strike: 575
-  TARCAP: 505
+  Strike: 450
+  TARCAP: 490
 
 # Air-to-air refueling method (receiver).
 air_refuel_type: probe

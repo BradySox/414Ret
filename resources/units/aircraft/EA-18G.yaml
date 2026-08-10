@@ -37,14 +37,16 @@ utc_kneeboard: true
 #   InnerBoard: 0
 #   OuterBoard: 0
 tasks:
-  DEAD: 680
-  SEAD: 730
-  # SEAD Escort below the strike-fighters (F/A-18C 470, F-16C 475) so a Hornet/
+  DEAD: 500
+  SEAD: 600
+  # SEAD Escort below the strike-fighters (F/A-18C and F-16C 450) so a Hornet/
   # Viper wins the SEAD Escort slot and the Growler is freed for the Escort Jammer
   # slot (800) -- "prefer dedicated jammers as jammers" (user call 2026-07-21).
-  # SEAD (730) / DEAD (680) as a package lead are untouched.
+  # Kept through the 2026-08-09 re-convergence as wiring of the Escort Jammer
+  # lane (upstream's 550 would out-rank the strike fighters again). SEAD (600) /
+  # DEAD (500) as a package lead are upstream's numbers.
   SEAD Escort: 400
-  SEAD Sweep: 680
+  SEAD Sweep: 500
   # Growler-only escort jamming (user call 2026-07-21): the ONLY airframe that
   # declares this task -- the FA-18E/F must never gain it. High priority so a
   # wing that fields Growlers always fills the jamming escort with them.

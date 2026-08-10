@@ -29,7 +29,7 @@ radios:
 tasks:
   Air Assault: 95
   CSAR: 35
-  BAI: 385
-  CAS: 385
-  OCA/Aircraft: 385
+  BAI: 390
+  CAS: 390
+  OCA/Aircraft: 390
   Transport: 10

@@ -6,15 +6,15 @@ variants:
   F-16A MLU: null
 tasks:
   Anti-ship: 150
-  BARCAP: 535
-  CAS: 525
-  DEAD: 365
-  Escort: 510
-  Fighter sweep: 510
-  OCA/Aircraft: 655
-  OCA/Runway: 537
-  Strike: 605
-  TARCAP: 535
+  BARCAP: 420
+  CAS: 340
+  DEAD: 210
+  Escort: 420
+  Fighter sweep: 420
+  OCA/Aircraft: 570
+  OCA/Runway: 570
+  Strike: 570
+  TARCAP: 420
   SEAD: 150
 
 # Air-to-air refueling method (receiver).

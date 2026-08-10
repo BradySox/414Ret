@@ -8659,6 +8659,76 @@ Files: `game/missiongenerator/tgogenerator.py` (`hold_station`, `_station_racetr
 Tests: `tests/missiongenerator/test_naval_station_keeping.py` (11). Checklist: **B46**.
 
 
+## §88 — Angled-deck carrier recovery heading
+
+Adopted from geofffranks' `12d71346` (his fork, 2026-07-29), answering upstream issue
+[dcs-retribution#865](https://github.com/dcs-retribution/dcs-retribution/issues/865). Not
+merged upstream at adoption time — see the drift note at the end.
+
+### What was wrong
+
+`GenericCarrierGenerator.steam_into_wind` did two things, both slightly wrong:
+
+1. **Pointed the bow straight into the wind.** Every real carrier lands aircraft on an angled
+   deck offset to port — 9° on a Nimitz, 10.5° on a Forrestal or an SCB-125 Essex, 7.95° on
+   Kuznetsov. Bow-into-wind therefore puts the relative wind ~9° off the landing centreline, so
+   the recovery the boat is steaming for has a permanent crosswind component it does not need.
+2. **Could order a negative speed.** `carrier_speed = knots(25) - mps(wind.speed)` had no floor.
+   Above 25 kt of ambient wind it wrote a negative speed into the group's route.
+
+### The fix
+
+`game/flightplan/carriercruisesolver.py` — `solve_carrier_cruise(wind_direction, wind_speed,
+deck_angle)` returns a heading and speed putting ~25 kt **down the angled deck** with zero
+crosswind. Three modes, all reachable and all tested:
+
+| mode | when | behavior |
+| --- | --- | --- |
+| `EXACT` | normal wind | solves heading + speed for 25 kt on the deck axis, zero crosswind |
+| `WEAK_WIND_APPROXIMATION` | ambient wind below `25 · sin(deck angle)` (~3.9 kt at 9°) | the crosswind term is unsolvable; falls back to bow-into-wind and accepts the residual |
+| `HIGH_WIND_SPEED_CLAMP` | ambient wind alone exceeds 25 kt | speed clamped to 0, deck aligned with the ambient wind |
+
+The deck angle is data, not code: `landing_deck_angle` in `resources/units/ships/*.yaml`,
+top-level per class with per-variant overrides (`ara_vdm.yaml` carries 8.0 for both *Veinticinco
+de Mayo* spellings and 5.5 for *HMAS Melbourne*). Loader parsing rejects non-numeric values,
+booleans and anything outside ±90°. Every hull the fork classes `AircraftCarrier` or
+`HelicopterCarrier` now declares one; helicopter decks and straight decks are 0.0, which
+reproduces the old behavior exactly.
+
+Positive means the landing area is offset **to port**, which is every hull in the game. A
+negative value is accepted and mirrors correctly, but nothing ships one.
+
+### Consequences worth knowing
+
+- **BRC moves.** The heading fed to `add_runway_data`, the kneeboard and the CV Operations Data
+  page (§65) is now the solver's, up to ~15° off pure into-wind. That is the ship's actual
+  heading, so the number is still correct — it just no longer equals wind-reciprocal.
+- **The `HIGH_WIND_SPEED_CLAMP` boat sits still.** In >25 kt ambient wind the carrier makes zero
+  way. Wind over deck is satisfied, but a real boat would still be making turns. Watch this in a
+  storm turn.
+- **NEW mission only** — generation-time, no setting, no save migration.
+
+Files: `game/flightplan/carriercruisesolver.py`, `game/dcs/shipunittype.py`,
+`game/missiongenerator/tgogenerator.py` (`steam_into_wind` + its call site), 22 hull yamls under
+`resources/units/ships/`.
+Tests: `tests/flightplan/test_carriercruisesolver.py` (10),
+`tests/dcs/test_shipunittype.py` (24), `tests/missiongenerator/test_ship_sail_waypoint.py` (+5).
+Checklist: **B55**.
+
+### Fork deltas vs the source commit
+
+- **Pretense is removed here**, so `game/pretense/pretensetgogenerator.py` and the
+  shared-`steam_into_wind` test are not carried.
+- Our generator class is `GenericCarrierGenerator`, not upstream's `CarrierGenerator`; the tests
+  target ours.
+- **Four hulls the source commit missed** are covered here: `VINSON.yaml` (CVN-70, 9.0),
+  `Essex.yaml` (USS Bennington CV-20, classed `HelicopterCarrier` → 0.0), `[VWV]IX514.yaml`
+  (0.0), and the `CV_1143_5` variant override was left off as a no-op duplicate of its
+  top-level value.
+- **Drift watch:** this is unmerged contributor work with no upstream PR open. If upstream lands
+  a different shape for #865, reconcile to theirs.
+
+
 ## Unit-coverage sweep — 2026-08-04
 
 The §85 investigation raised an obvious follow-up from the DM: *"scrub my local install of all

@@ -745,6 +745,20 @@ FEATURES: tuple[Feature, ...] = (
         "Naval station-keeping racetracks",
         87,
     ),
+    Feature(
+        # §88 angled-deck recovery heading: steam_into_wind pointed the bow
+        # straight into the wind, which puts the relative wind ~9 degrees off the
+        # angled landing area on every real carrier, and computed carrier speed as
+        # knots(25) - windspeed with no floor (negative above 25 kt of wind).
+        # game/flightplan/carriercruisesolver.py solves heading + speed for ~25 kt
+        # down the ANGLED deck with near-zero crosswind, and each carrier hull
+        # carries its own landing_deck_angle in resources/units/ships. Adopted from
+        # geofffranks' 12d71346 (upstream issue dcs-retribution#865).
+        # Pure generation behavior -- no setting, no plugin, no save change.
+        "carrier_angled_deck_recovery",
+        "Angled-deck carrier recovery heading",
+        88,
+    ),
     # Always-on engine plugins — major 414th machinery documented in design notes
     # rather than a numbered "Features at a Glance" entry.
     Feature("mantis_iads", "MANTIS IADS engine", plugin_id="mantisiads"),

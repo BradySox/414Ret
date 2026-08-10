@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
@@ -14,6 +15,8 @@ from game.dcs.unittype import UnitType
 
 @dataclass(frozen=True)
 class ShipUnitType(UnitType[Type[ShipType]]):
+    landing_deck_angle: float
+
     _by_name: ClassVar[dict[str, ShipUnitType]] = {}
     _by_unit_type: ClassVar[dict[type[ShipType], list[ShipUnitType]]] = defaultdict(
         list
@@ -74,6 +77,19 @@ class ShipUnitType(UnitType[Type[ShipType]]):
         class_name = data.get("class")
         unit_class = UnitClass(class_name)
 
+        raw_deck_angle = data.get("landing_deck_angle", 0.0)
+        if isinstance(raw_deck_angle, bool):
+            raise ValueError("landing_deck_angle must be a numeric angle")
+        try:
+            landing_deck_angle = float(raw_deck_angle)
+        except (TypeError, ValueError) as error:
+            raise ValueError("landing_deck_angle must be a numeric angle") from error
+        if (
+            not math.isfinite(landing_deck_angle)
+            or not -90.0 <= landing_deck_angle <= 90.0
+        ):
+            raise ValueError("landing_deck_angle must be between -90 and 90 degrees")
+
         display_name = data.get("display_name", variant_id)
         return ShipUnitType(
             dcs_unit_type=ship,
@@ -86,6 +102,7 @@ class ShipUnitType(UnitType[Type[ShipType]]):
             ),
             year_introduced=introduction,
             country_of_origin=data.get("origin", "No data."),
+            landing_deck_angle=landing_deck_angle,
             manufacturer=data.get("manufacturer", "No data."),
             role=data.get("role", "No data."),
             price=data["price"],

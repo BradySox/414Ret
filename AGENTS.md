@@ -330,6 +330,7 @@ linked design note.
 85. **SAM/missile battery support sections** — refuellers, power and transload in the faction's own kit.
 86. **GPS jamming** — satellite-guided weapons released inside the bubble land long.
 87. **Naval station-keeping racetracks** — anchored ovals so ships hold station under way.
+88. **Angled-deck carrier recovery heading** — the boat steams for 25 kt down the angled deck, not the bow.
 
 ### Retired, removed or shelved — do not restore
 

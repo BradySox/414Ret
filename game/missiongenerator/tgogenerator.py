@@ -97,6 +97,7 @@ from game.theater.theatergroundobject import (
     MotorpoolGroundObject,
 )
 from game.theater.theatergroup import SceneryUnit, IadsGroundGroup
+from game.flightplan.carriercruisesolver import solve_carrier_cruise
 from game.unitmap import UnitMap
 from game.utils import Heading, feet, knots, mps, nautical_miles, pairwise
 
@@ -1036,7 +1037,8 @@ class GenericCarrierGenerator(GroundObjectGenerator):
             # There are multiple unsimulated hours between turns, so we can
             # count those as the time the carrier uses to move and the mission
             # time as the recovery window.
-            brc = self.steam_into_wind(ship_group)
+            deck_angle = getattr(ship_units[0].unit_type, "landing_deck_angle", 0.0)
+            brc = self.steam_into_wind(ship_group, deck_angle=deck_angle)
 
             # Set Carrier Specific Options
             if is_flagship_group:
@@ -1220,11 +1222,19 @@ class GenericCarrierGenerator(GroundObjectGenerator):
         self.control_point.icls_channel = icls
         return icls
 
-    def steam_into_wind(self, group: ShipGroup) -> Optional[Heading]:
+    def steam_into_wind(
+        self, group: ShipGroup, deck_angle: float = 0.0
+    ) -> Optional[Heading]:
         wind = self.game.conditions.weather.wind.at_0m
-        brc = Heading.from_degrees(wind.direction).opposite
-        # Aim for 25kts over the deck.
-        carrier_speed = knots(25) - mps(wind.speed)
+        # Aim for 25kts over the *angled* deck with near-zero crosswind, rather
+        # than 25kts straight down the centreline.
+        result = solve_carrier_cruise(
+            wind.direction,
+            mps(wind.speed).knots,
+            deck_angle,
+        )
+        brc = Heading.from_degrees(result.heading)
+        carrier_speed = knots(max(0.0, result.carrier_speed))
         for attempt in range(5):
             point = group.points[0].position.point_from_heading(
                 brc.degrees, 100000 - attempt * 20000

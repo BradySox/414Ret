@@ -1,4 +1,5 @@
 class: AircraftCarrier
+landing_deck_angle: 10.5
 price: 0
 variants:
   CV-59 Forrestal: null

@@ -1,9 +1,9 @@
 """Tests for RefuelingFlightPlan.patrol_speed.
 
 Tankers don't carry an explicit racetrack speed in their data files, so the
-fallback path is what every planned tanker actually uses. It should estimate the
-speed from the airframe at the same altitude the orbit is planned at, rather than
-returning a flat constant.
+fallback path is what every planned tanker actually uses. It is upstream's flat
+400 kt (~280 KIAS at 21,000 ft); the fork's altitude-derived estimate was reverted
+2026-08-09 with the auto-planner re-convergence.
 """
 
 from datetime import datetime
@@ -68,20 +68,18 @@ def test_explicit_patrol_speed_is_used_without_estimating() -> None:
     assert seen == []
 
 
-def test_falls_back_to_estimate_at_the_planned_orbit_altitude() -> None:
-    altitude = feet(13000)
-    estimated = knots(318)
+def test_falls_back_to_a_flat_400_knots() -> None:
     seen: list[object] = []
 
     def estimate(alt: object) -> object:
         seen.append(alt)
-        return estimated
+        return knots(318)
 
     unit_type = SimpleNamespace(
         patrol_speed=None,
-        preferred_patrol_altitude=altitude,
+        preferred_patrol_altitude=feet(13000),
         preferred_patrol_speed=estimate,
     )
-    assert _plan(unit_type).patrol_speed is estimated
-    # The estimate is taken at the same altitude the racetrack is planned at.
-    assert seen == [altitude]
+    assert _plan(unit_type).patrol_speed == knots(400)
+    # The airframe's own estimate is not consulted.
+    assert seen == []

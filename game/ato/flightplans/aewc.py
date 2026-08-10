@@ -3,12 +3,10 @@ from __future__ import annotations
 from datetime import timedelta
 from typing import Type
 
-from game.ato.flightplans.airspacegeometry import AirspaceGeometry
 from game.ato.flightplans.ibuilder import IBuilder
 from game.ato.flightplans.patrolling import PatrollingFlightPlan, PatrollingLayout
 from game.ato.flightplans.waypointbuilder import WaypointBuilder
-from game.ato.flighttype import FlightType
-from game.utils import Distance, Speed, knots, meters, nautical_miles
+from game.utils import Distance, Heading, Speed, knots, meters, nautical_miles
 
 
 class AewcFlightPlan(PatrollingFlightPlan[PatrollingLayout]):
@@ -36,56 +34,38 @@ class AewcFlightPlan(PatrollingFlightPlan[PatrollingLayout]):
 
 class Builder(IBuilder[AewcFlightPlan, PatrollingLayout]):
     def layout(self) -> PatrollingLayout:
-        racetrack_half_distance = nautical_miles(30)
+        racetrack_half_distance = nautical_miles(30).meters
 
+        location = self.package.target
+
+        closest_boundary = self.threat_zones.closest_boundary(location.position)
+        heading_to_threat_boundary = Heading.from_degrees(
+            location.position.heading_between_point(closest_boundary)
+        )
+        distance_to_threat = meters(
+            location.position.distance_to_point(closest_boundary)
+        )
+        orbit_heading = heading_to_threat_boundary
+
+        # Station 80nm outside the threat zone.
         threat_buffer = nautical_miles(
             self.coalition.game.settings.aewc_threat_buffer_min_distance
         )
-
-        # Anchor on the front line and stand off into friendly airspace, centered
-        # on the fighting and parallel to the FLOT -- except a carrier-tasked AWACS,
-        # which anchors on its carrier (covers the fleet). See supportorbit for why
-        # this replaced the old per-CP anchoring (which flung AI AWACS off-axis).
-        base_center, orbit_heading = AirspaceGeometry(
-            self.theater, self.coalition.player, self.threat_zones
-        ).standoff_anchor(self.package.target, threat_buffer)
-
-        # When multiple AWACS share the same anchor (same supported target) spread
-        # their orbits laterally so each covers a different section rather than
-        # stacking; orbits are spaced one full racetrack width (2 * half_distance)
-        # apart, centered on the natural orbit point. Scoping to same-target peers
-        # keeps a carrier E-2 from being shoved off its boat by an off-axis land
-        # AWACS now that the two no longer share a front anchor.
-        peers = sorted(
-            [
-                f
-                for p in self.coalition.ato.packages
-                for f in p.flights
-                if f.flight_type is FlightType.AEWC and p.target is self.package.target
-            ],
-            key=lambda f: str(f.id),
-        )
-        n = len(peers)
-        try:
-            idx = next(i for i, f in enumerate(peers) if f is self.flight)
-        except StopIteration:
-            idx = 0
-
-        lateral_m = (idx - (n - 1) / 2) * (racetrack_half_distance * 2).meters
-        if lateral_m >= 0:
-            racetrack_center = base_center.point_from_heading(
-                orbit_heading.right.degrees, lateral_m
-            )
+        if self.threat_zones.threatened(location.position):
+            orbit_distance = distance_to_threat + threat_buffer
         else:
-            racetrack_center = base_center.point_from_heading(
-                orbit_heading.left.degrees, -lateral_m
-            )
+            orbit_distance = distance_to_threat - threat_buffer
+
+        racetrack_center = location.position.point_from_heading(
+            orbit_heading.degrees, orbit_distance.meters
+        )
 
         racetrack_start = racetrack_center.point_from_heading(
-            orbit_heading.right.degrees, racetrack_half_distance.meters
+            orbit_heading.right.degrees, racetrack_half_distance
         )
+
         racetrack_end = racetrack_center.point_from_heading(
-            orbit_heading.left.degrees, racetrack_half_distance.meters
+            orbit_heading.left.degrees, racetrack_half_distance
         )
 
         builder = WaypointBuilder(self.flight)

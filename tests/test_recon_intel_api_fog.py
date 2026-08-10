@@ -28,7 +28,6 @@ def test_enemy_threat_zones_exclude_unknown_air_defenses(
         doctrine: Any,
         barcap_locations: Any,
         air_defenses: Any,
-        front_line_zones: Any = (),
         viewer: Player | None = None,
     ) -> Any:
         assert list(air_defenses) == [known]

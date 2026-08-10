@@ -72,8 +72,6 @@ Most of this is opt-in. Full list with toggles, defaults and known limitations:
 - The auto-planner puts jammers on the packages that fly into a SAM ring — DEAD and strike.
   Helicopter packages (air assault, CSAR) do not get one; neither do their fast-jet formation
   escorts, which now follow the same helo/LHA rule the A2A and SEAD escorts already used.
-- A threatened package is escorted by one SEAD flavour, not two. It draws a SEAD Escort that
-  rides with it; front-line CAS still gets a SEAD Sweep running ahead.
 - Fixed-wing transports fly Air Assault as a paradrop. Players run in below 3,000 ft AGL and
   use the CTLD *Unload / Extract Troops* call; AI releases automatically over the drop zone.
   Helicopter assaults are unchanged.

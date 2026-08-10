@@ -3,7 +3,7 @@ from enum import Enum, auto
 from typing import Optional
 
 from game.ato.flighttype import FlightType
-from game.dcs.aircrafttype import AircraftType, AirRefuelType
+from game.dcs.aircrafttype import AircraftType
 from game.theater import MissionTarget
 
 
@@ -38,11 +38,6 @@ class ProposedFlight:
     escort_type: Optional[EscortType] = field(default=None)
 
     preferred_type: Optional[AircraftType] = field(default=None)
-
-    #: For a REFUELING flight, the boom/probe method the tanker must provide. Lets the
-    #: planner frag one theater tanker per receiver method (so a mixed boom+probe fleet
-    #: gets a tanker for each). None leaves tanker selection unconstrained.
-    refuel_method: Optional[AirRefuelType] = field(default=None)
 
     #: A surge flight: planned when a squadron has the jets, dropped silently when
     #: not -- it never scrubs the package and never places a purchase order. Used by

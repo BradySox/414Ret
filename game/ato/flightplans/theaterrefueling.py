@@ -43,29 +43,6 @@ class Builder(IBuilder[TheaterRefuelingFlightPlan, PatrollingLayout]):
             orbit_heading.degrees, orbit_distance.meters
         )
 
-        # 414th demand-based placement: the post-planning reposition pass
-        # (game/commander/tankerdemand.py) may set a service point on the flight at
-        # the strongest compatible receiver-demand cluster. When present it overrides
-        # the anchor above, nudged back out of an enemy threat zone if it landed
-        # inside one (head for the nearest boundary -- the way out -- then add the
-        # buffer). getattr with a default keeps old saves / un-repositioned tankers
-        # on the target anchor with no migration.
-        service_point = getattr(self.flight, "refueling_service_point", None)
-        if service_point is not None:
-            racetrack_center = service_point
-            if self.threat_zones.threatened(racetrack_center):
-                boundary = self.threat_zones.closest_boundary(racetrack_center)
-                away = Heading.from_degrees(
-                    racetrack_center.heading_between_point(boundary)
-                )
-                clearance = (
-                    self.threat_zones.distance_to_threat(racetrack_center)
-                    + threat_buffer
-                )
-                racetrack_center = racetrack_center.point_from_heading(
-                    away.degrees, clearance.meters
-                )
-
         racetrack_start = racetrack_center.point_from_heading(
             orbit_heading.right.degrees, racetrack_half_distance
         )

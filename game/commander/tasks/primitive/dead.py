@@ -12,11 +12,6 @@ from game.theater.theatergroundobject import IadsGroundObject
 @dataclass
 class PlanDead(PackagePlanningTask[IadsGroundObject]):
     def preconditions_met(self, state: TheaterState) -> bool:
-        # Already found to be shielded behind a belt no DEAD can reach this turn.
-        # Don't keep building (and reserving aircraft for) a package that can't
-        # accomplish anything -- wait until the belt is actually cleared.
-        if self.target in state.unreachable_air_defenses:
-            return False
         if (
             self.target not in state.threatening_air_defenses
             and self.target not in state.detecting_air_defenses
@@ -27,42 +22,30 @@ class PlanDead(PackagePlanningTask[IadsGroundObject]):
         return super().preconditions_met(state)
 
     def apply_effects(self, state: TheaterState) -> None:
-        # Only treat the SAM as destroyed (clearing the threat gate for strikes
-        # that depend on it) if the DEAD can actually reach it. A SAM shielded
-        # behind another live radar SAM would turn the DEAD around before it
-        # employs, so clearing it here is what tasks strikers into a live belt.
-        # Leave it threatening and record it so dependent strikes stay deferred
-        # until real BDA confirms the kill on a later turn.
-        dead_flights = (
-            [f for f in self.package.flights if f.flight_type is FlightType.DEAD]
-            if self.package
-            else []
-        )
-        if state.dead_can_reach(self.target, dead_flights):
-            state.eliminate_air_defense(self.target)
-        else:
-            state.unreachable_air_defenses.add(self.target)
+        state.eliminate_air_defense(self.target)
         super().apply_effects(state)
 
     def propose_flights(self) -> None:
         tgt_count = self.target.alive_unit_count()
         self.propose_flight(FlightType.DEAD, min(4, (tgt_count // 2) + 1))
 
-        # DEAD packages felt overstuffed when they requested all three SEAD flavors
-        # at once. Keep the air-to-air escort, then choose one SEAD support style:
-        # a dedicated SEAD flight for live radar SAMs, otherwise a SEAD escort that
-        # can accompany the strikers if the route is threatened.
-        self.propose_flight(FlightType.ESCORT, 2, EscortType.AirToAir)
+        # Only include SEAD against SAMs that still have emitters. No need to
+        # suppress an EWR, and SEAD isn't useful against a SAM that no longer has a
+        # working track radar.
+        #
+        # For SAMs without track radars and EWRs, we still want a SEAD escort if
+        # needed.
+        #
+        # Note that there is a quirk here: we should potentially be included a SEAD
+        # escort *and* SEAD when the target is a radar SAM but the flight path is
+        # also threatened by SAMs. We don't want to include a SEAD escort if the
+        # package is *only* threatened by the target though. Could be improved, but
+        # needs a decent refactor to the escort planning to do so.
+        # §77 escort jamming rides along on the common escorts' radar-SAM trigger --
+        # DEAD is the tasking the jammer was built for, and this package flies
+        # straight at a live SAM.
+        self.propose_common_escorts()
         if self.target.has_live_radar_sam:
             self.propose_flight(FlightType.SEAD, 2, EscortType.Sead)
-        else:
-            self.propose_flight(FlightType.SEAD_ESCORT, 2, EscortType.Sead)
-        # §77 escort jamming, on the same radar-SAM trigger as the SEAD support.
-        # DEAD is the tasking the jammer was built for -- its effect rises as the
-        # jammer closes on a live SAM, and this package flies straight at one.
-        # It was the one propose_flights that never asked (DEAD does not use
-        # propose_common_escorts), so before this the only jammers a turn produced
-        # rode helo packages that could not use them.
-        self.propose_flight(FlightType.ESCORT_JAMMER, 2, EscortType.Jammer)
         if self.target.control_point.coalition.game.settings.autoplan_tankers_for_dead:
             self.propose_flight(FlightType.REFUELING, 1, EscortType.Refuel)

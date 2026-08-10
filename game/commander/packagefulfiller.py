@@ -282,11 +282,7 @@ class PackageFulfiller:
 
     def can_plan_escort(self, type: EscortType) -> bool:
         if type == EscortType.AirToAir:
-            # An AirToAir escort is proposed as ESCORT for most packages but as
-            # TARCAP for CAS (cas.py), so gate on either rather than ESCORT alone.
-            for task in [FlightType.ESCORT, FlightType.TARCAP]:
-                if self.air_wing_can_plan(task):
-                    return True
+            return self.air_wing_can_plan(FlightType.ESCORT)
         elif type == EscortType.Sead:
             for task in [
                 FlightType.SEAD,

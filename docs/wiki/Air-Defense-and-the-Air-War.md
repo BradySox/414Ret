@@ -68,14 +68,6 @@ enemy threat by the configured buffer (`aewc_threat_buffer_min_distance`,
   briefing screenshot needed. See
   [Map Layers and Interface](Map-Layers-and-Interface#what-the-dcs-f10-map-shows).
 
-### Theater tanker placed on receiver demand
-
-A shared theatre tanker is repositioned **after** the ATO is built, onto the count-weighted
-centre of the flights that actually need fuel (honouring boom vs probe compatibility), instead
-of orbiting wherever the planning anchor happened to land. Same-package buddy tankers are not
-moved; if there is no compatible demand the tanker keeps its original anchor. So the tanker
-tends to sit where your thirsty flights converge.
-
 <a name="long-range-carrier-ops"></a>
 ## Long-range carrier ops
 

@@ -247,9 +247,8 @@ def test_every_proposed_escort_is_prunable() -> None:
 
 def test_dead_proposes_an_escort_jammer() -> None:
     """DEAD is the tasking §77 was built for -- the jammer's effect rises as it
-    closes on a live SAM, and a DEAD package flies straight at one. PlanDead does
-    not use propose_common_escorts, so it was the one propose_flights that never
-    asked: before this, the only jammers a turn produced rode helo packages."""
+    closes on a live SAM, and a DEAD package flies straight at one. It rides in on
+    the common escorts, so a DEAD package always asks for one."""
     from game.commander.tasks.primitive.dead import PlanDead
 
     for live_radar in (True, False):
@@ -269,24 +268,27 @@ def test_dead_proposes_an_escort_jammer() -> None:
         tasks = _proposed_tasks(task)
         assert tasks[0] is FlightType.DEAD
         assert FlightType.ESCORT_JAMMER in tasks
-        # The one-SEAD-flavour rule PlanDead already had is untouched.
+        # Stock DEAD composition: the common escorts always, plus a dedicated SEAD
+        # flight only when the target still has a live track radar to suppress.
+        assert FlightType.SEAD_ESCORT in tasks
         assert (FlightType.SEAD in tasks) is live_radar
-        assert (FlightType.SEAD_ESCORT in tasks) is not live_radar
 
 
-def test_common_escorts_ask_for_one_sead_flavour() -> None:
-    """SEAD_ESCORT and SEAD_SWEEP fire on the same EscortType.Sead trigger, so
-    proposing both put four jets on one threat. Keep the one that actually
-    escorts (EscortFlightPlan, on the package's join->split); PlanCas still asks
-    for the sweep directly where an independent path ahead is the point."""
+def test_common_escorts_carry_the_jammer_alongside_both_sead_flavours() -> None:
+    """The common escorts are upstream's SEAD escort + sweep + A2A, with §77's
+    jammer appended on the same radar-SAM trigger. Each is pruned downstream when
+    unthreatened or unflyable, so proposing all four costs nothing when they are
+    not warranted."""
     from game.commander.tasks.primitive.strike import PlanStrike
 
     task = PlanStrike(target=SimpleNamespace())  # type: ignore[arg-type]
     task.propose_common_escorts()
     tasks = _proposed_tasks(task)
     assert FlightType.SEAD_ESCORT in tasks
-    assert FlightType.SEAD_SWEEP not in tasks
-    assert [t for t in tasks].count(FlightType.SEAD_ESCORT) == 1
+    assert FlightType.SEAD_SWEEP in tasks
+    assert FlightType.ESCORT in tasks
+    assert FlightType.ESCORT_JAMMER in tasks
+    assert tasks.count(FlightType.SEAD_ESCORT) == 1
 
 
 @pytest.mark.parametrize("variant", _DEDICATED_JAMMERS)

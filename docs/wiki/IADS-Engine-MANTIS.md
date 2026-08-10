@@ -98,6 +98,23 @@ then on. You do not need to do anything.
 |---|---|---|
 | (engine selection) | — | **None.** MANTIS is the only engine; there is nothing to choose. |
 | `advanced_iads` (campaign) | per campaign | Enables the comms/power/command-center degradation graph layered over MANTIS |
+| Point-defense shoot-and-scoot | Off | A SAM's escort displaces up to ~1.3 NM after it wakes for a HARM shot, is fired on, or stands down |
+
+### Point-defense shoot-and-scoot
+
+Off by default. It requires **SEAD-triggered point defense**, which is on.
+
+With it on, the mission generator places hidden destination zones around every point-defense
+group, and MOOSE drives the group to one of them after it has been woken or shot at. A Tor or
+Tunguska that gave away its position defending a SAM is not still sitting there afterwards.
+
+**Turning it on requires generating a new mission.** The zones are written at generation time, so
+flipping the option against an existing `.miz` does nothing — the log says
+`point-defense scoot is ON but the mission contains no 'RetributionScoot' zones`. Generate the
+turn again and it arms.
+
+Two smaller knobs sit under it: how many destinations each site gets (4) and how far a group may
+displace (1.3 NM). The engine ignores anything beyond 3 km, so the maximum is capped there.
 
 ## See also
 

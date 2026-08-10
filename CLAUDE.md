@@ -331,6 +331,7 @@ linked design note.
 86. **GPS jamming** — satellite-guided weapons released inside the bubble land long.
 87. **Naval station-keeping racetracks** — anchored ovals so ships hold station under way.
 88. **Angled-deck carrier recovery heading** — the boat steams for 25 kt down the angled deck, not the bow.
+89. **Point-defense shoot-and-scoot** — generated displacement zones so a woken SAM escort does not stay parked where it was found.
 
 ### Retired, removed or shelved — do not restore
 

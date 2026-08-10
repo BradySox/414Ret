@@ -759,6 +759,20 @@ FEATURES: tuple[Feature, ...] = (
         "Angled-deck carrier recovery heading",
         88,
     ),
+    Feature(
+        # §89 point-defense shoot-and-scoot: MOOSE SHORAD can displace a woken
+        # point defense to a nearby trigger zone, but nothing in DCS creates the
+        # zones -- a hand-built mission authors them one by one, which is why the
+        # fork's MANTIS bridge carried "AddScootZones needs Python-generated
+        # zones" as a deferred item. game/missiongenerator/iadsscootzonegenerator.py
+        # rings each PD group in the SHORAD set with hidden trigger zones on
+        # driveable land; the bridge builds a SET_ZONE from the shared prefix.
+        # Default OFF -- it makes ground groups drive, which needs an in-game pass.
+        "iads_pd_scoot",
+        "Point-defense shoot-and-scoot",
+        89,
+        plugin_id="mantisiads",
+    ),
     # Always-on engine plugins — major 414th machinery documented in design notes
     # rather than a numbered "Features at a Glance" entry.
     Feature("mantis_iads", "MANTIS IADS engine", plugin_id="mantisiads"),

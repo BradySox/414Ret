@@ -14,6 +14,12 @@ Skynet?" and grew into a MIST → MOOSE consolidation program.
 > wakes it). See migration note §12 + checklist **G30**. Still deferred: proactive scoot zones,
 > per-unit tuning.
 
+> **2026-08-10 addendum:** **proactive scoot zones landed** as §89. The blocker was never the
+> MOOSE call — it was that `AddScootZones` needs trigger zones nothing in DCS creates.
+> `game/missiongenerator/iadsscootzonegenerator.py` emits them per point-defense group and the
+> bridge builds the `SET_ZONE` from a shared prefix. Default OFF (it makes ground groups drive);
+> checklist **G39**. Still deferred: per-unit tuning, `SetAdvancedMode`.
+
 ## ✅ Merged to `main` this session (PRs #141–#144)
 
 - **#141** — MANTIS vs Skynet parity matrix + migration plan (engine-level scope).
@@ -104,8 +110,8 @@ a missing symbol crashes a consumer at runtime. Until the swap, `mist_4_5_126.lu
 
 ## Deferred MANTIS enhancements (gated, safe to build after G6 validates the base)
 
-Proactive SHORAD scoot-zones (needs Python zone-gen) and `SetAdvancedMode` (needs HQ/command-center
-group wiring). Both noted in the migration doc; neither blocks G6.
+`SetAdvancedMode` (needs HQ/command-center group wiring), noted in the migration doc; does not
+block G6. Proactive SHORAD scoot-zones **shipped 2026-08-10** as §89 — see the addendum above.
 
 ## State of play in one line
 

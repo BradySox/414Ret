@@ -79,6 +79,25 @@
             "defaultValue": 13.5
         },
         {
+            "nameInUI": "Point-defense shoot-and-scoot: PD groups displace to generated nearby positions when they wake, are shot at, or stand down (requires SEAD-triggered point defense)",
+            "mnemonic": "shoradScoot",
+            "defaultValue": false
+        },
+        {
+            "nameInUI": "Displacement positions generated per point-defense site",
+            "mnemonic": "scootZones",
+            "defaultValue": 4,
+            "minimumValue": 1,
+            "maximumValue": 12
+        },
+        {
+            "nameInUI": "Maximum point-defense displacement distance (NM)",
+            "mnemonic": "scootRadiusNm",
+            "defaultValue": 1.3,
+            "minimumValue": 0.2,
+            "maximumValue": 1.6
+        },
+        {
             "nameInUI": "Advanced C2: degrade SAMs when their comms/power/command centers die",
             "mnemonic": "enableC2Degradation",
             "defaultValue": true

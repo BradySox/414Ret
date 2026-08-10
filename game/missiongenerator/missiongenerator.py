@@ -43,6 +43,7 @@ from .environmentgenerator import EnvironmentGenerator
 from .flotgenerator import FlotGenerator
 from .forcedoptionsgenerator import ForcedOptionsGenerator
 from .frontlineconflictdescription import FrontLineConflictDescription
+from .iadsscootzonegenerator import IadsScootZoneGenerator
 from .kneeboard import KneeboardGenerator
 from .luagenerator import LuaGenerator
 from .missiondata import MissionData
@@ -170,6 +171,11 @@ class MissionGenerator:
         logging.info("MIZ generation: scripts, triggers, visuals, and drawings")
         RebellionGenerator(self.mission, self.game).generate()
         TriggerGenerator(self.mission, self.game).generate()
+        # MANTIS point-defense displacement zones. Must run before the Lua pass
+        # only in spirit -- the bridge reads them from the live mission, not from
+        # the data table -- but keeping it with the other trigger work means one
+        # place owns everything that writes mission.triggers.
+        IadsScootZoneGenerator(self.mission, self.game).generate()
         ForcedOptionsGenerator(self.mission, self.game).generate()
         VisualsGenerator(self.mission, self.game).generate()
         self.generate_atis()

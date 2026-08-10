@@ -291,10 +291,13 @@ Most Skynet options map directly. Changes:
 4. **Tuning + shoot-and-scoot — ✅ CODE LANDED (2026-06-24, partial), ☐ in-game pass pending:**
    `mantisiads` exposes SAM engagement range, detection interval, EWR grouping, max-active-SAMs per
    category, and **EWR auto-relocate** (survivability), all applied before `Start()`. Reactive SAM
-   shoot-and-scoot is **automatic** via MANTIS' integrated SEAD evasion (no config). **Deferred:**
-   proactive SHORAD scoot-zones (`AddScootZones`) — needs Python zone generation per mobile SAM; and
-   `SetAdvancedMode` — moved to phase 5 because it requires an HQ and otherwise spams every player.
-   Validated under the same checklist **G6** pass.
+   shoot-and-scoot is **automatic** via MANTIS' integrated SEAD evasion (no config). Proactive
+   SHORAD scoot-zones (`AddScootZones`) **landed 2026-08-10** as §89 — the zone generation this
+   note anticipated is `game/missiongenerator/iadsscootzonegenerator.py`, keyed off the
+   point-defense groups in the SHORAD set rather than the `actMobile*` distances sketched in §7
+   (those describe the SAM's own reactive relocation, which MANTIS already handles). Default OFF,
+   checklist **G39**. **Still deferred:** `SetAdvancedMode` — moved to phase 5 because it requires
+   an HQ and otherwise spams every player. Validated under the same checklist **G6** pass.
 5. **C2 layer (§5) — comms/power/command-center degradation — ✅ CODE LANDED (2026-06-24), ☐ in-game
    pass pending:** implemented in `mantis-config.lua` as an event-driven watcher over the existing
    per-SAM `ConnectionNode`/`PowerSource` arrays + the coalition `CommandCenter` list (a native

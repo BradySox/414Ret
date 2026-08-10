@@ -100,5 +100,6 @@ pass checklist `§N` is unregistered, or this table drifts.
 | §86 | GPS jamming (satellite-guided weapons go long) | `gpsjamming` | `gps_jamming`, `gps_jamming_default_reach_nm`, `gps_jamming_miss_radius_m` |
 | §87 | Naval station-keeping racetracks | — | — |
 | §88 | Angled-deck carrier recovery heading | — | — |
+| §89 | Point-defense shoot-and-scoot | `mantisiads` | — |
 | — | MANTIS IADS engine | `mantisiads` | — |
 | — | Splash Damage (414th tuned) | `splashdamage3` | — |

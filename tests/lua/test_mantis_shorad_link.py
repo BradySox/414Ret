@@ -11,10 +11,16 @@ bridge-side plumbing the lua-lint syntax gate cannot:
   ``"... (PD)"`` name never matches its own group);
 * ``mantis.autoshorad`` goes false before Start so MANTIS' own auto-SHORAD
   cannot overwrite the linked object (the MOOSE ``onafterStart`` ordering);
-* no PD groups / ``shoradLink=false`` leave MANTIS' defaults untouched.
+* no PD groups / ``shoradLink=false`` leave MANTIS' defaults untouched;
+* §89 point-defense scoot: ``AddScootZones`` runs BEFORE Start (MANTIS only
+  propagates ``SkateZones`` onto an already-linked SHORAD in ``onafterStart``),
+  the displacement window written onto the SHORAD object matches the ring the
+  generator emits, and a miz with no generated zones is skipped rather than
+  armed with an empty set.
 
-What the fake cannot model: SHORAD's real sleep/wake AI, HARM shot events and
-the intercept itself — that is the in-game pass (checklist G30).
+What the fake cannot model: SHORAD's real sleep/wake AI, HARM shot events, the
+intercept itself, and whether a displaced group actually drives anywhere — that
+is the in-game pass (checklists G30 and G39).
 """
 
 from __future__ import annotations
@@ -30,7 +36,27 @@ PLUGIN = "resources/plugins/mantisiads/mantis-config.lua"
 # A recording fake of the two MOOSE classes the bridge touches. MANTIS:New
 # returns an object that records tuning calls; SHORAD:New records its args.
 MOOSE_FAKE = """
-MantisTest = { mantis = {}, shorad = {}, addshorad = {} }
+MantisTest = { mantis = {}, shorad = {}, addshorad = {}, scoot = {},
+               -- how many generated "RetributionScoot-N" zones the miz holds;
+               -- tests set this before loading the plugin
+               zone_count = 0 }
+
+-- Minimal SET_ZONE: the bridge only builds one, filters by prefix and counts it.
+SET_ZONE = {}
+function SET_ZONE:New()
+    local obj = { prefixes = {}, started = false }
+    function obj:FilterPrefixes(p)
+        table.insert(self.prefixes, p)
+        return self
+    end
+    function obj:FilterStart()
+        self.started = true
+        return self
+    end
+    function obj:Count() return MantisTest.zone_count end
+    MantisTest.zoneset = obj
+    return obj
+end
 
 MANTIS = {
     SamType = { LONG = "LONG", MEDIUM = "MEDIUM", SHORT = "SHORT", POINT = "POINT" },
@@ -59,8 +85,26 @@ function MANTIS:New(name, samprefixes, ewrprefixes, hq, coa, dynamic, awacs, emo
         self.autoshorad_at_start = self.autoshorad
     end
     function obj:AddShorad(shorad, time)
+        self.linked_shorad = shorad
         table.insert(MantisTest.addshorad,
             { mantis = self.name, shorad = shorad.name, time = time })
+    end
+    function obj:AddScootZones(zoneset, number, random, formation)
+        table.insert(MantisTest.scoot, {
+            mantis = self.name,
+            zoneset_started = zoneset.started,
+            zoneset_prefix = zoneset.prefixes[1],
+            number = number,
+            random = random,
+            formation = formation,
+            -- MANTIS propagates SkateZones onto self.Shorad in onafterStart, so
+            -- both of these must already be true when AddScootZones is called
+            before_start = self.started ~= true,
+            shorad_linked = self.linked_shorad ~= nil,
+            -- the window the SHORAD object carries at this point
+            minscootdist = self.linked_shorad and self.linked_shorad.minscootdist,
+            maxscootdist = self.linked_shorad and self.linked_shorad.maxscootdist,
+        })
     end
     table.insert(MantisTest.mantis, obj)
     return obj
@@ -82,11 +126,17 @@ def _load(
     harness: DcsPluginHarness,
     iads: dict[str, Any],
     plugin_options: dict[str, Any] | None = None,
+    generated_zones: int = 0,
 ) -> None:
     harness.set_retribution_config(plugin_options={"mantisiads": plugin_options or {}})
     harness.lua.globals().dcsRetribution.IADS = harness.to_lua(iads)
     harness.lua.execute(MOOSE_FAKE)
+    harness.lua.globals().MantisTest.zone_count = generated_zones
     harness.load_plugin_script(PLUGIN)
+
+
+def _scoot_calls(harness: DcsPluginHarness) -> list[dict[str, Any]]:
+    return list(harness.to_python(harness.lua.globals().MantisTest.scoot))
 
 
 def _mantis_objects(harness: DcsPluginHarness) -> list[dict[str, Any]]:
@@ -230,3 +280,148 @@ def test_wake_options_thread_through() -> None:
     assert red["act_distance"] == pytest.approx(8.1 * 1852)
     test = harness.lua.globals().MantisTest
     assert harness.to_python(test.addshorad)[0]["time"] == 300
+
+
+# --------------------------------------------------------------------------
+# §89 point-defense shoot-and-scoot
+# --------------------------------------------------------------------------
+
+
+def test_scoot_is_off_by_default() -> None:
+    """A mover has to be opted into, like autoRelocateEwr."""
+    harness = DcsPluginHarness()
+    _load(harness, RED_IADS_WITH_PD, generated_zones=12)
+    harness.assert_no_lua_errors()
+    assert _scoot_calls(harness) == []
+
+
+def test_scoot_arms_from_the_generated_zone_prefix() -> None:
+    harness = DcsPluginHarness()
+    _load(
+        harness,
+        RED_IADS_WITH_PD,
+        plugin_options={"shoradScoot": True},
+        generated_zones=12,
+    )
+    harness.assert_no_lua_errors()
+
+    calls = _scoot_calls(harness)
+    assert len(calls) == 1
+    call = calls[0]
+    # The prefix is the only thing tying the bridge to the generator's zones.
+    # It must match SCOOT_ZONE_PREFIX in iadsscootzonegenerator.py.
+    assert call["zoneset_prefix"] == "RetributionScoot"
+    assert call["zoneset_started"] is True, "SET_ZONE needs FilterStart to populate"
+    assert call["number"] == 4
+    assert call["random"] is True
+    assert call["formation"] == "Cone"
+
+
+def test_scoot_is_armed_before_start_on_a_linked_shorad() -> None:
+    """The MOOSE ordering rule.
+
+    MANTIS copies SkateZones onto ``self.Shorad`` inside ``onafterStart`` and
+    only when a SHORAD is already linked. Arming after Start, or before
+    AddShorad, silently produces a MANTIS that thinks it can scoot and a SHORAD
+    that never got the zones.
+    """
+    harness = DcsPluginHarness()
+    _load(
+        harness,
+        RED_IADS_WITH_PD,
+        plugin_options={"shoradScoot": True},
+        generated_zones=12,
+    )
+    harness.assert_no_lua_errors()
+    call = _scoot_calls(harness)[0]
+    assert call["before_start"] is True
+    assert call["shorad_linked"] is True
+
+
+def test_scoot_window_matches_the_generated_ring() -> None:
+    """The contract with SHORAD:onafterShootAndScoot and with the generator.
+
+    The generator rings each site between 35% and 100% of scootRadiusNm. The
+    bridge must write that same window onto the SHORAD object, or MOOSE filters
+    out zones it was just handed.
+    """
+    harness = DcsPluginHarness()
+    _load(
+        harness,
+        RED_IADS_WITH_PD,
+        plugin_options={"shoradScoot": True, "scootRadiusNm": 1.3},
+        generated_zones=12,
+    )
+    harness.assert_no_lua_errors()
+    call = _scoot_calls(harness)[0]
+    assert call["maxscootdist"] == pytest.approx(1.3 * 1852)
+    assert call["minscootdist"] == pytest.approx(1.3 * 1852 * 0.35)
+    assert call["minscootdist"] < call["maxscootdist"]
+
+
+def test_scoot_radius_is_clamped_to_moose_limits() -> None:
+    """MOOSE clamps nothing itself; over 3 km or under its 100 m floor breaks it."""
+    harness = DcsPluginHarness()
+    _load(
+        harness,
+        RED_IADS_WITH_PD,
+        plugin_options={"shoradScoot": True, "scootRadiusNm": 99},
+        generated_zones=12,
+    )
+    harness.assert_no_lua_errors()
+    assert _scoot_calls(harness)[0]["maxscootdist"] == 3000
+
+    harness = DcsPluginHarness()
+    _load(
+        harness,
+        RED_IADS_WITH_PD,
+        plugin_options={"shoradScoot": True, "scootRadiusNm": 0.001},
+        generated_zones=12,
+    )
+    harness.assert_no_lua_errors()
+    call = _scoot_calls(harness)[0]
+    assert call["maxscootdist"] == 200
+    assert call["minscootdist"] == 100, "never below MOOSE's own minscootdist"
+    assert call["minscootdist"] < call["maxscootdist"], "the window must not invert"
+
+
+def test_scoot_skips_a_mission_generated_without_zones() -> None:
+    """Toggling the option on an existing miz is not enough -- regenerate.
+
+    Arming with an empty SET_ZONE would leave shootandscoot true with nowhere
+    to go, which reads as "armed" in the log and does nothing in the mission.
+    """
+    harness = DcsPluginHarness()
+    _load(
+        harness,
+        RED_IADS_WITH_PD,
+        plugin_options={"shoradScoot": True},
+        generated_zones=0,
+    )
+    harness.assert_no_lua_errors()
+    assert _scoot_calls(harness) == []
+
+
+def test_scoot_needs_the_shorad_link() -> None:
+    """No SHORAD object means nothing to displace."""
+    harness = DcsPluginHarness()
+    _load(
+        harness,
+        RED_IADS_WITH_PD,
+        plugin_options={"shoradScoot": True, "shoradLink": False},
+        generated_zones=12,
+    )
+    harness.assert_no_lua_errors()
+    assert _scoot_calls(harness) == []
+
+
+def test_scoot_zone_count_option_threads_through() -> None:
+    harness = DcsPluginHarness()
+    _load(
+        harness,
+        RED_IADS_WITH_PD,
+        plugin_options={"shoradScoot": True, "scootZones": 7},
+        generated_zones=21,
+    )
+    harness.assert_no_lua_errors()
+    assert _scoot_calls(harness)[0]["number"] == 7

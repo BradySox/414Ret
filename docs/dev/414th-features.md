@@ -8729,6 +8729,82 @@ Checklist: **B55**.
   a different shape for #865, reconcile to theirs.
 
 
+## §89 — Point-defense shoot-and-scoot
+
+**Needs an in-game pass** (checklist **G39**).
+
+Closes the deferred item the MANTIS bridge has carried since the migration: *"AddScootZones,
+needs Python-generated zones."*
+
+### The gap
+
+MOOSE's SHORAD class can displace a point-defense group. `SHORAD:onafterShootAndScoot` fires
+when a PD group wakes, is shot at, or stands back down, and routes it to a random point inside
+a nearby trigger zone. MANTIS exposes it as `AddScootZones(ZoneSet, Number, Random, Formation)`.
+
+Nothing in DCS creates those zones. A hand-built mission authors them in the editor, one at a
+time, near every site that should be able to move — which is why this sat deferred: the bridge
+had the call available and nothing to pass it.
+
+Retribution generates its missions, so it can emit them.
+
+### What it does
+
+`game/missiongenerator/iadsscootzonegenerator.py` rings every point-defense group in the SHORAD
+set with hidden trigger zones named `RetributionScoot-N`, placed on driveable land. The bridge
+builds a `SET_ZONE` from that prefix and hands it to `AddScootZones` before `Start()`.
+
+Result: a Tor or Tunguska that wakes for a HARM shot and survives does not still sit on the same
+spot afterwards. Combined with §60 (two guidance radars per site) and G30 (the PD sleeps until
+a HARM is fired), a site that has been located once is not automatically re-attackable from the
+same intel next turn.
+
+### Two contracts that have to stay in step
+
+Both are silent when broken — nothing crashes, point defenses just never move.
+
+1. **The distance window.** `onafterShootAndScoot` only considers zones between `minscootdist`
+   and `maxscootdist` of the group's *current* position (MOOSE defaults 100 m / 3000 m). A zone
+   outside that band is never selected. The generator's ring radii and the values the bridge
+   writes onto the SHORAD object both derive from `scootRadiusNm`, clamped to 200 m–3 km at both
+   ends, with the inner bound at 35 % of the outer in both places.
+2. **Which groups are in the set.** The bridge's `collect_pd` only scans the `Sam` and
+   `SamAsEwr` node lists, so a point defense hanging off any other node role is not in the SHORAD
+   set. The generator mirrors that exactly, including the dedupe for a PD shared by several SAMs.
+
+Placement is seeded from the group name, so regenerating a turn puts the zones back in the same
+places.
+
+### Settings
+
+Three plugin options under **MANTIS IADS**, all new:
+
+| Option | Default | Notes |
+| --- | --- | --- |
+| `shoradScoot` | **OFF** | Requires `shoradLink` — scooting rides on the SHORAD object that builds |
+| `scootZones` | 4 | Zones generated per site; also MANTIS' `SkateNumber` |
+| `scootRadiusNm` | 1.3 | Outer displacement radius; MOOSE caps at 3 km |
+
+Default OFF deliberately. It makes ground groups drive, which is the one class of behavior a
+headless harness cannot vet — the same reason `autoRelocateEwr` ships off. Turning it on
+requires a **new mission generation**, not just a runtime toggle: with the option off at
+generation time the miz contains no zones, and the bridge logs a warning and skips.
+
+Files: `game/missiongenerator/iadsscootzonegenerator.py`,
+`game/missiongenerator/missiongenerator.py` (call site),
+`resources/plugins/mantisiads/mantis-config.lua`, `resources/plugins/mantisiads/plugin.json`.
+Tests: `tests/missiongenerator/test_iads_scoot_zones.py` (19).
+Checklist: **G39**.
+
+### Provenance
+
+The mechanism was found in [BradySox/Lekas-Foothold](https://github.com/BradySox/Lekas-Foothold),
+which authors 134 `Scoot-N` zones by hand on Persian Gulf (91 on Caucasus, 86 on Sinai) and
+wires them with `SET_ZONE:New():FilterPrefixes("Scoot")` + `AddScootZones(set, 3, true, "Cone")`.
+No code was taken — that repository ships no licence — only the confirmation that the MOOSE path
+works and the shape of the call.
+
+
 ## Unit-coverage sweep — 2026-08-04
 
 The §85 investigation raised an obvious follow-up from the DM: *"scrub my local install of all

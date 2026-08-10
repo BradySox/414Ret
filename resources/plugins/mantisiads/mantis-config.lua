@@ -20,9 +20,12 @@
 -- MANTIS:AddShorad -- the PD sits dark until a HARM/Maverick launch (SHORAD's
 -- own S_EVENT_SHOT watch) or a MANTIS SEAD suppression wakes it, then it
 -- engages the incoming shot while the big radar hides, and goes back to sleep
--- after the wake window. Still deferred: PROACTIVE SHORAD shoot-and-scoot
--- between zones (AddScootZones, needs Python-generated zones -- note reactive
--- SAM scoot is already automatic via MANTIS' integrated SEAD), per-unit tuning.
+-- after the wake window -- AND, when shoradScoot is on, displaces afterwards to
+-- one of the hidden "RetributionScoot-N" trigger zones the mission generator
+-- rings each PD site with (game/missiongenerator/iadsscootzonegenerator.py),
+-- so a site that has been located once is not still parked there next turn.
+-- Note reactive SAM scoot (the big radars) is separate and already automatic
+-- via MANTIS' integrated SEAD. Still deferred: per-unit tuning.
 -- see docs/dev/design/414th-mantis-migration-notes.md
 -------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -76,6 +79,13 @@ if dcsRetribution and dcsRetribution.IADS and MANTIS then
     local shoradTime = 600
     local shoradRadiusNm = 10.8 -- SHORAD defense radius (MOOSE default 20 km)
     local shoradActDistanceNm = 13.5 -- MANTIS suppression-wake reach (25 km)
+    -- Point-defense shoot-and-scoot. OFF by default: it makes PD groups drive,
+    -- and a mover is the one thing a headless test cannot vet (see the in-game
+    -- pass checklist). The zones it drives to are generated per PD site by
+    -- iadsscootzonegenerator.py; with none in the miz this stays inert.
+    local shoradScoot = false
+    local scootZones = 4 -- generated per site; also MANTIS' SkateNumber
+    local scootRadiusNm = 1.3 -- outer displacement radius (MOOSE caps at 3 km)
     local enableC2Degradation = true
     local commsLossGoesDark = false
     local c2PollInterval = 20
@@ -99,6 +109,9 @@ if dcsRetribution and dcsRetribution.IADS and MANTIS then
         if opts.shoradTime ~= nil then shoradTime = opts.shoradTime end
         if opts.shoradRadiusNm ~= nil then shoradRadiusNm = opts.shoradRadiusNm end
         if opts.shoradActDistanceNm ~= nil then shoradActDistanceNm = opts.shoradActDistanceNm end
+        if opts.shoradScoot ~= nil then shoradScoot = opts.shoradScoot end
+        if opts.scootZones ~= nil then scootZones = opts.scootZones end
+        if opts.scootRadiusNm ~= nil then scootRadiusNm = opts.scootRadiusNm end
         if opts.enableC2Degradation ~= nil then enableC2Degradation = opts.enableC2Degradation end
         if opts.commsLossGoesDark ~= nil then commsLossGoesDark = opts.commsLossGoesDark end
         if opts.c2PollInterval ~= nil then c2PollInterval = opts.c2PollInterval end
@@ -109,6 +122,14 @@ if dcsRetribution and dcsRetribution.IADS and MANTIS then
     -- A prefix that no generated group name starts with, used so that an empty
     -- SAM or EWR set never collapses MANTIS' FilterPrefixes into a match-all.
     local NO_MATCH = "__RetributionMantisNoMatch__"
+
+    -- Name prefix of the point-defense displacement zones emitted by
+    -- game/missiongenerator/iadsscootzonegenerator.py. Kept free of Lua pattern
+    -- metacharacters: SET_ZONE:FilterPrefixes matches with the same unescaped
+    -- string.find as MANTIS' group filter (see escape_prefix below), so a name
+    -- with magic characters would silently match nothing. Change this in both
+    -- places or not at all.
+    local SCOOT_ZONE_PREFIX = "RetributionScoot"
 
     -- MANTIS' SET_GROUP:FilterPrefixes matches each "prefix" with string.find
     -- WITHOUT the plain flag (Moose.lua ~13321) -- i.e. it treats the prefix as a
@@ -447,10 +468,10 @@ if dcsRetribution and dcsRetribution.IADS and MANTIS then
             mantis:SetAutoRelocate(false, true)
         end
         -- NB: reactive SAM shoot-and-scoot is automatic via MANTIS' integrated SEAD
-        -- evasion (drivable SAMs go dark and relocate when an ARM is inbound).
-        -- Proactive SHORAD scoot between zones (AddScootZones) needs Python-generated
-        -- zones and is deferred. Advanced mode (SetAdvancedMode) is deferred to the
-        -- C2 phase: it requires an HQ/command center and otherwise nags every player.
+        -- evasion (drivable SAMs go dark and relocate when an ARM is inbound). The
+        -- PD layer's own displacement is wired below, after the SHORAD object exists.
+        -- Advanced mode (SetAdvancedMode) is deferred to the C2 phase: it requires
+        -- an HQ/command center and otherwise nags every player.
 
         -- SEAD-triggered point defense (2026-07-12, checklist G30). Wrap the
         -- coalition's PD group names in a MOOSE SHORAD object and link it via
@@ -492,6 +513,51 @@ if dcsRetribution and dcsRetribution.IADS and MANTIS then
                     .. "or SEAD suppression",
                 name, #pd_names, shoradTime
             ))
+
+            -- Point-defense displacement. SHORAD:onafterShootAndScoot fires when a
+            -- PD group wakes, is shot at, or stands down; it picks up to SkateNumber
+            -- zones lying between minscootdist and maxscootdist of the group's
+            -- CURRENT position and routes the group to a random point in one of
+            -- them. Three ordering/consistency rules, none of them optional:
+            --   (1) AddScootZones must run BEFORE Start() -- MANTIS propagates
+            --       SkateZones onto self.Shorad in onafterStart, and only when
+            --       self.Shorad already exists (AddShorad above satisfies that).
+            --   (2) The distance window here must match the ring the generator
+            --       actually emitted, or MANTIS holds zones it can never select.
+            --       Both derive from scootRadiusNm; the inner bound mirrors the
+            --       generator's INNER_RADIUS_FRACTION.
+            --   (3) MOOSE clamps nothing: a radius over its own 3 km default
+            --       maxscootdist, or under its 100 m minscootdist, would still be
+            --       written -- and a radius below the floor inverts the window so
+            --       no zone is ever selectable. Clamp to the same 200 m..3 km the
+            --       generator clamps to (MOOSE_MIN_SCOOT_DISTANCE * 2 .. 3000 m).
+            -- A miz generated with the option off contains no such zones, so the
+            -- set is empty and we skip -- never hand MANTIS an empty SET_ZONE,
+            -- which would leave shootandscoot true with nowhere to go.
+            if shoradScoot then
+                local scootRadius = math.min(
+                    math.max((tonumber(scootRadiusNm) or 1.3) * 1852, 200), 3000)
+                local scootSet = SET_ZONE:New():FilterPrefixes(SCOOT_ZONE_PREFIX):FilterStart()
+                local zoneCount = scootSet:Count()
+                if zoneCount > 0 then
+                    shorad.minscootdist = math.max(scootRadius * 0.35, 100)
+                    shorad.maxscootdist = scootRadius
+                    mantis:AddScootZones(scootSet, tonumber(scootZones) or 4, true, "Cone")
+                    env.info(string.format(
+                        "DCSRetribution|MANTIS-IADS plugin - %s point-defense scoot "
+                            .. "armed: %d displacement zone(s), %.0f-%.0f m legs",
+                        name, zoneCount, shorad.minscootdist, shorad.maxscootdist
+                    ))
+                else
+                    env.warning(string.format(
+                        "DCSRetribution|MANTIS-IADS plugin - %s point-defense scoot is "
+                            .. "ON but the mission contains no '%s' zones; point "
+                            .. "defenses will not displace. Regenerate the mission with "
+                            .. "the option enabled.",
+                        name, SCOOT_ZONE_PREFIX
+                    ))
+                end
+            end
         end
 
         if debug then

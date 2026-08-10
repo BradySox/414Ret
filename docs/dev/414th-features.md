@@ -4389,7 +4389,40 @@ toggle (default on) is a possible follow-up if the racetrack clutter is unwanted
   doesn't match its `TankerInfo`/`AwacsInfo`, the orbit + callsign still draw but the freq/TACAN line is
   dropped rather than wrong.
 
-## §46 — Route-aware fuel-tank planning (fuel-first)
+## §46 — Route-aware fuel-tank planning (fuel-first) — REVERTED 2026-08-09
+
+> **REVERTED to upstream behavior on 2026-08-09**, as work order C of the auto-planner
+> re-convergence (`docs/dev/design/414th-autoplanner-upstream-divergence-audit.md`, DECIDED block).
+> The DM's call was that §46 reverts **outright**, not re-gated. Everything from here to
+> "The racetrack burn" describes how the feature worked and is kept for history only —
+> **do not author against it.** Rebuildable from git history if it is ever wanted back.
+>
+> **What upstream does now:** every non-helo flight in a formation-attack package gets a
+> REFUEL waypoint whenever the wing can plan `REFUELING` (`_build_refuel`), on the egress
+> leg only. There is no fuel math in the decision, no pre-vul refuel, no tank fitting at
+> plan or generation time, and no dwell charged at the tanker.
+>
+> **What was deleted:** `game/ato/refueltasking.py` · `_refuel_tasking` and the `refuel_pre`
+> layout slot · `FlightPlan.refuel_duration` and its charge in `total_time_between_waypoints`
+> · `plan_sortie_fuel` / `add_range_fuel_tanks` / `top_up_for_route` and the tank-fitting
+> helpers · the `auto_range_fuel_tanks` and `fuel_tanks_over_jammers` settings (pruned from
+> old saves by `_migrate_legacy_settings`) · `FormationFlightPlan.push_time`'s route walk
+> (back to the straight hold→join line) · the package tanker's early window opening.
+>
+> **What survives, and why:**
+> - **The racetrack burn** (last subsection below) — U25/U34, kept failure fixes. A patrol's
+>   on-station time and lap burn are still charged; that was a modeling hole, not §46.
+> - **External-fuel accounting** — `game/fourteenth/range_fuel.py` keeps `is_fuel_tank`,
+>   `tank_capacity_lbs`, `external_fuel_lbs`, `flight_external_fuel_lbs`. They only *report*
+>   the tanks a loadout already carries, for the kneeboard fuel ladder and the Payload-tab
+>   readout (`game/fourteenth/fuel_brief.py`). Nothing fits stores any more.
+> - **The `estimated_fuel_consumption` fallback** and the hand-measured `fuel:` data blocks.
+> - **`Flight.refuel_point_override`** — §44 long-range-carrier plumbing. `_build_refuel`
+>   still routes through `refuel_waypoint_position`, so §44 keeps working.
+>
+> **PR #820 sequencing:** #820 (exempt AI from the receiver dwell) was already **merged**
+> before this revert landed, so it could not be closed as superseded — this change deletes
+> the dwell it fixed. Nothing is owed on it.
 
 Long-AO campaigns strand flights the auto-planner frags with too little fuel for the leg. The original
 motivating case was the COIN **Enduring Resolve** carrier ~800 km off the Helmand AO (a Hornet on internal
@@ -4504,7 +4537,13 @@ flight actually carries. No campaign preseed is needed.
 - **Estimate, not a measurement.** The synthesised fuel model is a planning approximation; the trigger is
   intentionally generous so it errs toward carrying a tank rather than launching short.
 
-### The racetrack burn (2026-07-19 — "19 GSPD is impossible" / "should be on station until bingo")
+### The racetrack burn (2026-07-19) — KEPT through the §46 revert
+
+> Audit items U25/U34, kept as failure fixes when the rest of §46 reverted on 2026-08-09.
+> The patrol dwell and its lap burn were missing from the schedule and the fuel model
+> everywhere, which is a modeling hole independent of fuel-driven tanker tasking.
+
+Original note — "19 GSPD is impossible" / "should be on station until bingo":
 
 A flown BARCAP kneeboard showed the racetrack-end row at **19 kt GSPD** and an RTB margin of **+8,488 lb** —
 both artifacts of the same modeling hole. A patrol plan's `patrol_start -> patrol_end` leg carries the
@@ -4520,9 +4559,9 @@ the kneeboard's derived GSPD divided the track length by the whole dwell.
   flown Hornet case re-runs honestly as ~8,000 lb on station and an RTB margin of **~+830 lb**: the 45-minute
   doctrine dwell was already near the fuel limit — the ladder was just lying about it. Applies to every
   patrolling family (BARCAP/TARCAP at their patrol speeds, CAS at combat rate over its track, AEW&C/tanker
-  orbits). Formation-attack holds are deliberately untouched: `sortie_fuel_split` (the §46 tanker decision)
-  keeps its own straight-leg walk, and charging hold dwell in one but not the other would split the ladder
-  from the decision it must agree with.
+  orbits). Formation-attack holds are deliberately untouched. (Originally that was so the ladder and the §46
+  tanker decision walked the route the same way; since the §46 revert there is no fuel-driven tanker decision
+  left to agree with, and the hold dwell stays uncharged simply because nothing has asked for it.)
 - **The racetrack-end GSPD cell shows the patrol speed.** `FlightData.patrol_speed` (from
   `flight_plan.patrol_speed` when `is_patrol`) rides to the kneeboard; the `PATROL`-type row prints it (the
   Hornet reads 481) instead of distance-over-dwell, and dashes when no patrol speed exists (custom plans).

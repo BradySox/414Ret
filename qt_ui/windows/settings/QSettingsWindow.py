@@ -737,8 +737,7 @@ class PlannerSuiteBar(QGroupBox):
             "upstream DCS Retribution; the 414th suite turns on overlapping "
             "BARCAP waves, SEAD-window strike timing, auto recon flights, "
             "weather-aware planning, escort jammers, adaptive procurement, "
-            "route fuel tanks, and the continuous clock. Each can still be "
-            "fine-tuned below."
+            "and the continuous clock. Each can still be fine-tuned below."
         )
         intro.setWordWrap(True)
         outer.addWidget(intro)

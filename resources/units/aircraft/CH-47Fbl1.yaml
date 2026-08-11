@@ -35,6 +35,6 @@ radios:
     intra_flight_radio_index: 1
     inter_flight_radio_index: 2
 tasks:
-  Air Assault: 130
+  Air Assault: 120
   CSAR: 85
   Transport: 110

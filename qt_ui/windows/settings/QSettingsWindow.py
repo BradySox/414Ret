@@ -273,6 +273,14 @@ class AutoSettingsLayout(QGridLayout):
 
         self.init_ui()
 
+        # A section whose every option is a tuning knob has nothing to collapse
+        # to: folding it leaves a bare title. Those sections start expanded, so
+        # e.g. "Flight-planner automation" (three ship-size weights and a
+        # distance factor, all ints) shows its knobs instead of reading as an
+        # empty box. The disclosure still collapses it by hand.
+        if self.descriptions and len(self.advanced_names) == len(self.descriptions):
+            self.show_advanced = True
+
     def init_ui(self):
         for row, (name, description) in enumerate(
             Settings.fields(self.page, self.section)
@@ -570,7 +578,13 @@ class AutoSettingsGroup(QGroupBox):
         self.apply_filter()
 
     def apply_filter(self) -> int:
-        """Re-run the filter over this section. Returns how many rows are shown."""
+        """Re-run the filter over this section. Returns how many rows it offers.
+
+        "Offers" counts the rows behind the disclosure too. Counting only the
+        *shown* rows hid the entire group box -- disclosure included -- whenever
+        a section had no basic options left to show, which made every
+        all-advanced section unreachable outside the search bar.
+        """
         shown, hidden_advanced = self.grid.apply_filter()
         has_advanced = bool(self.grid.advanced_names)
         # Hide the disclosure while searching: search already reaches advanced
@@ -593,8 +607,9 @@ class AutoSettingsGroup(QGroupBox):
         # widget into its own top-level window, which is what made the settings
         # dialog flash a bare window per section as it opened. The page re-runs
         # the filter once its layout has adopted us.
-        self.setVisible(bool(shown) and self.parentWidget() is not None)
-        return shown
+        offered = shown + hidden_advanced
+        self.setVisible(bool(offered) and self.parentWidget() is not None)
+        return offered
 
     def update_from_settings(self) -> None:
         self.grid.update_from_settings()

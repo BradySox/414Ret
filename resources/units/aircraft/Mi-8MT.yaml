@@ -27,7 +27,7 @@ radios:
     intra_flight_radio_index: 1
     inter_flight_radio_index: 1
 tasks:
-  Air Assault: 95
+  Air Assault: 60 # red's assault helo; was 40, below the scout helos
   CSAR: 35
   BAI: 390
   CAS: 390

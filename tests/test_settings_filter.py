@@ -227,6 +227,57 @@ def _find_section_with_advanced(settings: Settings) -> tuple[str, str]:
     raise AssertionError("no mixed basic/advanced section to test")
 
 
+def _all_advanced_sections(settings: Settings) -> list[tuple[str, str]]:
+    found = []
+    for page in settings.pages():
+        for section in settings.sections(page):
+            fields = list(settings.fields(page, section))
+            if fields and all(Settings.is_advanced(n, d) for n, d in fields):
+                found.append((page, section))
+    return found
+
+
+def test_all_advanced_sections_show_their_knobs(qt_app: object) -> None:
+    """A section of nothing but tuning knobs must not render as an empty box.
+
+    "Numeric knobs are advanced" left 13 sections -- 47 options, including every
+    Air Doctrine range/altitude knob and the 2/3/4-ship flight-size weights --
+    with zero *shown* rows, and the group hid itself whenever its shown count was
+    zero. That took the disclosure down with it, so the only way to reach any of
+    them was to already know the name and type it into the search bar.
+    """
+    settings = Settings()
+    sections = _all_advanced_sections(settings)
+    assert sections, "fixture found no all-advanced section"
+
+    for page, section in sections:
+        group, _filter = _group(qt_app, settings, page, section)
+        assert group.isVisible(), f"{page}/{section} renders nothing"
+        for name in group.grid.descriptions:
+            assert group.grid.labels_map[
+                name
+            ].isVisible(), f"{page}/{section}: {name} is not reachable"
+
+
+def test_collapsing_an_all_advanced_section_leaves_it_reachable(
+    qt_app: object,
+) -> None:
+    """Collapsing one by hand must leave the disclosure, not a vanished section."""
+    settings = Settings()
+    page, section = _all_advanced_sections(settings)[0]
+    group, _filter = _group(qt_app, settings, page, section)
+
+    group._toggle_advanced()
+    assert group.isVisible()
+    assert group.disclosure.isVisible()
+    assert "Show" in group.disclosure.text()
+
+    group._toggle_advanced()
+    assert all(
+        group.grid.labels_map[name].isVisible() for name in group.grid.descriptions
+    )
+
+
 def test_advanced_rows_are_hidden_until_disclosed(qt_app: object) -> None:
     settings = Settings()
     page, section = _find_section_with_advanced(settings)

@@ -5,7 +5,7 @@ import logging
 import textwrap
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Optional, TYPE_CHECKING, Any
+from typing import List, Optional, TYPE_CHECKING, Any, Tuple, Union
 
 from game.settings import Settings
 
@@ -56,12 +56,80 @@ class PluginSettings:
         self.settings.set_plugin_option(self.identifier, value)
 
 
+#: A plugin option's dependency on a sibling option in the same plugin:
+#: ``(fully_qualified_master_identifier, value_that_enables_this_option)``.
+#: The options page greys this option's label and control out whenever the
+#: master's value doesn't match. Mirrors ``Settings.enabled_when`` (see
+#: game/settings/optiondescription.py), which does the same job for the
+#: Settings dataclass fields.
+PluginOptionEnabledWhen = Tuple[str, Any]
+
+
+class PluginOptionDependencyError(Exception):
+    """A plugin declared ``enabledWhen`` against an option that does not exist.
+
+    Raised at load time rather than ignored: a typo'd mnemonic would otherwise
+    make the dependent option grey out forever (the master never matches), which
+    reads exactly like a broken feature and is invisible in review.
+    """
+
+
+def normalize_plugin_enabled_when(
+    plugin_id: str, value: Optional[Union[str, List[Any]]]
+) -> Optional[PluginOptionEnabledWhen]:
+    """Normalize a plugin.json ``enabledWhen`` to a qualified (master, expected) pair.
+
+    Accepts ``"mnemonic"`` (shorthand for "enabled when that option is truthy")
+    or ``["mnemonic", value]`` for an explicit match. The mnemonic is a sibling
+    within the SAME plugin -- cross-plugin dependencies are deliberately not
+    supported, because a plugin's options are only meaningful when that plugin is
+    ticked, and the master plugin toggle already gates the whole box.
+    """
+    if value is None:
+        return None
+    if isinstance(value, str):
+        return (f"{plugin_id}.{value}", True)
+    master, expected = value
+    return (f"{plugin_id}.{master}", expected)
+
+
+def plugin_option_is_enabled(option: "LuaPluginOption", settings: Settings) -> bool:
+    """Whether an option's control should be live, given the current settings.
+
+    Pure so the rule is testable without Qt: the options page calls this and only
+    passes the answer to ``setEnabled``. An option with no declared dependency is
+    always live. A master missing from the stored settings -- a save written
+    before that option existed -- leaves the dependant live rather than greying
+    it on absent data, which is the same direction ``Settings.__setstate__``
+    takes for a new field.
+    """
+    if option.enabled_when is None:
+        return True
+    master, expected = option.enabled_when
+    try:
+        return bool(settings.plugin_option(master) == expected)
+    except KeyError:
+        return True
+
+
 class LuaPluginOption(PluginSettings):
     def __init__(
-        self, identifier: str, name: str, min: Any, max: Any, value: Any
+        self,
+        identifier: str,
+        name: str,
+        min: Any,
+        max: Any,
+        value: Any,
+        enabled_when: Optional[PluginOptionEnabledWhen] = None,
     ) -> None:
         super().__init__(identifier, value)
         self.name = name
+        #: Optional dependency on a sibling option; see PluginOptionEnabledWhen.
+        #: UI-only. A greyed option still carries its stored value into the Lua
+        #: data table exactly as before -- the plugin scripts already guard on
+        #: their own master option, and making the greying change what is emitted
+        #: would silently rewrite behaviour on a purely cosmetic change.
+        self.enabled_when = enabled_when
         if type(value) == int or type(value) == float:
             self.min, self.max = min, max
         else:
@@ -94,8 +162,32 @@ class LuaPluginDefinition:
                     min=option.get("minimumValue", 0),
                     max=option.get("maximumValue", 10000),
                     value=option.get("defaultValue"),
+                    enabled_when=normalize_plugin_enabled_when(
+                        name, option.get("enabledWhen")
+                    ),
                 )
             )
+
+        # Resolve every declared dependency against the options actually present.
+        # A typo'd mnemonic would otherwise leave the dependent option greyed for
+        # good -- the master identifier never resolves, so it never matches -- and
+        # that is indistinguishable from a broken feature at a glance.
+        declared = {option.identifier for option in options}
+        for option in options:
+            if option.enabled_when is None:
+                continue
+            master = option.enabled_when[0]
+            if master not in declared:
+                raise PluginOptionDependencyError(
+                    f"{path}: option '{option.identifier}' declares enabledWhen "
+                    f"'{master}', which is not an option of this plugin. Valid "
+                    f"mnemonics: {sorted(o.identifier for o in options)}"
+                )
+            if master == option.identifier:
+                raise PluginOptionDependencyError(
+                    f"{path}: option '{option.identifier}' declares enabledWhen "
+                    "on itself."
+                )
 
         work_orders = []
         for work_order in data.get("scriptsWorkOrders"):

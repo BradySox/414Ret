@@ -1981,6 +1981,64 @@ A polish pass over the **LUA Plugins Options** page so every plugin explains its
 - Note: `AGENTS.md` is a byte-identical mirror of `CLAUDE.md` (the authoritative source);
   resync it after editing CLAUDE.md.
 
+### Option dependencies — `enabledWhen` (2026-08-11)
+
+`Settings` fields have had `enabled_when` for a while (27 uses; a child greys out when its
+master is off, live across pages via `SettingsDependencyHub`). The 207 options that plugins
+expose had no equivalent, which is the same trap in a different box: a spinbox that reads
+as live while the script consuming it never runs. §60's own `shoradTime` /
+`shoradRadiusNm` / `shoradActDistanceNm` are the example — all three are dead when
+`shoradLink` is off, and nothing said so.
+
+- **`enabledWhen` on a `specificOptions` entry**, either `"mnemonic"` (enabled when that
+  option is truthy) or `["mnemonic", value]` for an explicit match. Mirrors the Settings
+  shorthand. Parsed by `normalize_plugin_enabled_when` into a plugin-qualified
+  `(master_identifier, expected)` pair on `LuaPluginOption.enabled_when`.
+- **Siblings only, one level.** The master must be an option of the same plugin — a
+  plugin's options are only meaningful when that plugin is ticked, and the plugin toggle
+  already gates the whole box. A test also pins that no master is itself a dependant:
+  chains would render fine (every row refreshes from stored values) but signal that the
+  plugin's options want restructuring, and nothing in the tree needs one.
+- **Unknown or self-referential masters raise `PluginOptionDependencyError` at load.**
+  A typo'd mnemonic would otherwise grey its option out forever — the master never
+  resolves, so it never matches — which is indistinguishable from a broken feature.
+- **Greying is presentation only.** A greyed option keeps its stored value and still goes
+  into the mission's Lua data table exactly as before. The plugin scripts already guard on
+  their own master option; making the UI change what is emitted would rewrite behaviour on
+  a cosmetic change.
+- **The rule is a pure function** — `plugin_option_is_enabled(option, settings)` — so it is
+  tested without standing up Qt. `PluginOptionsBox` only passes its answer to `setEnabled`,
+  greying the label as well as the control. A master's own control refreshes the box after
+  its value is stored (slots fire in connection order, so the refresh is connected second).
+  A master missing from an old save leaves the dependant live rather than greying on absent
+  data.
+
+**The 13 dependencies declared, each verified against the plugin's own Lua** — this is the
+part that rots, so it was checked line by line rather than inferred from names:
+
+| Plugin | Dependants | Master | Why it is inert |
+|---|---|---|---|
+| `mantisiads` | `shoradTime`, `shoradRadiusNm`, `shoradActDistanceNm` | `shoradLink` | all three are read inside `if shoradLink and SHORAD and #pd_names > 0` |
+| `mantisiads` | `commsLossGoesDark`, `c2PollInterval` | `enableC2Degradation` | both are only reached through `setup_c2`, called under that gate |
+| `ctld` | `jtacsmoke`, `fc3LaserCode` | `autolase` | not even read unless `autolase` is true |
+| `cruisemissiles` | `defenderWakeRadiusNm`, `defenderWakeExtraS` | `defenderWake` | used only past `if not DEFENDER_WAKE then return` |
+| `airboss` | `useUH60mod`, `rescueDuration`, `rescueZoneRadius` | `enableRescueHelo` | used only inside `AddRescueHelo` (lines 67–204) |
+| `vietnamops` | `ngfsAutoIntervalS` | `ngfsAuto` | only scheduled under `if AUTO then` |
+
+**Three candidates were checked and rejected**, which is why the list is 13 and not more:
+
+- `airboss.rescueHeloDistance` *looks* like a rescue-helo knob and is not — it feeds
+  `SetCarrierControlledArea` in `SetupAirboss`, which runs whether or not the rescue helo
+  is enabled. Greying it would have hidden a live setting.
+- `bigeye.defaultEnableReportPreference` is a per-player *default* that players toggle in
+  the radio menu; the report-frequency options still apply once reports are on.
+- `gpsjamming.missPower` / `missPowerScalePct` are a fallback and a scale that coexist,
+  not a master and a dependant.
+
+Files: `game/plugins/luaplugin.py`, `qt_ui/windows/settings/plugins.py`, and the 5
+`plugin.json` files above. Tests: `tests/test_plugin_option_dependencies.py` (45).
+No runtime change, no save migration, no new setting.
+
 ---
 
 ## 15. SCAR — RESCAP "Sandy" rescue escort (rescue rework)

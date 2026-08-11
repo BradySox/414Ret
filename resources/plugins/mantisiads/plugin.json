@@ -66,17 +66,20 @@
         {
             "nameInUI": "Point-defense wake duration after a trigger (s)",
             "mnemonic": "shoradTime",
-            "defaultValue": 600
+            "defaultValue": 600,
+            "enabledWhen": "shoradLink"
         },
         {
             "nameInUI": "Point-defense defense radius around the guarded SAMs (NM)",
             "mnemonic": "shoradRadiusNm",
-            "defaultValue": 10.8
+            "defaultValue": 10.8,
+            "enabledWhen": "shoradLink"
         },
         {
             "nameInUI": "SEAD-suppression wake reach (PD wakes when a SAM within this range is suppressed, NM)",
             "mnemonic": "shoradActDistanceNm",
-            "defaultValue": 13.5
+            "defaultValue": 13.5,
+            "enabledWhen": "shoradLink"
         },
         {
             "nameInUI": "Advanced C2: degrade SAMs when their comms/power/command centers die",
@@ -86,12 +89,14 @@
         {
             "nameInUI": "On comms loss, take the SAM fully dark (off) instead of autonomous",
             "mnemonic": "commsLossGoesDark",
-            "defaultValue": false
+            "defaultValue": false,
+            "enabledWhen": "enableC2Degradation"
         },
         {
             "nameInUI": "C2 degradation poll interval (s)",
             "mnemonic": "c2PollInterval",
-            "defaultValue": 20
+            "defaultValue": 20,
+            "enabledWhen": "enableC2Degradation"
         },
         {
             "nameInUI": "Generate debug information for RED IADS",

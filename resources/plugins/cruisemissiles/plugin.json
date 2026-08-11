@@ -41,12 +41,14 @@
         {
             "nameInUI": "Defender wake radius around the impact point (NM)",
             "mnemonic": "defenderWakeRadiusNm",
-            "defaultValue": 8
+            "defaultValue": 8,
+            "enabledWhen": "defenderWake"
         },
         {
             "nameInUI": "Defender wake held past estimated missile arrival (s)",
             "mnemonic": "defenderWakeExtraS",
-            "defaultValue": 300
+            "defaultValue": 300,
+            "enabledWhen": "defenderWake"
         }
     ],
     "scriptsWorkOrders": [],

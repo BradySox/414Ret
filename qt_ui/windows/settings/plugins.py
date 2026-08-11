@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
 )
 
 from game.plugins import LuaPlugin, LuaPluginManager
+from game.plugins.luaplugin import plugin_option_is_enabled
 from game.settings import Settings
 from game.settings.ISettingsContainer import SettingsContainer
 
@@ -71,6 +72,10 @@ class PluginOptionsBox(QGroupBox):
         self.setLayout(layout)
 
         self.widgets: Dict[str, QWidget] = {}
+        #: identifier -> its label, so a dependency greys the whole row and not
+        #: just the control (a lit label beside a dead spinbox reads as a bug).
+        self.labels: Dict[str, QLabel] = {}
+        self.plugin = plugin
 
         row = 0
         if plugin.description:
@@ -89,6 +94,7 @@ class PluginOptionsBox(QGroupBox):
             label = QLabel(option.name)
             label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
             layout.addWidget(label, row, 0)
+            self.labels[option.identifier] = label
 
             val = option.get_value
             # Pick the widget from the option's *declared default* type, not the
@@ -103,6 +109,10 @@ class PluginOptionsBox(QGroupBox):
                 checkbox = QCheckBox()
                 checkbox.setChecked(val)
                 checkbox.toggled.connect(option.set_value)
+                # A master's own control must refresh the box AFTER the new value
+                # is stored, so connect the refresh second -- Qt fires slots in
+                # connection order, and refreshing first would read the old value.
+                checkbox.toggled.connect(lambda _: self.refresh_enabled_states())
                 layout.addWidget(checkbox, row, 1)
                 self.widgets[option.identifier] = checkbox
             elif type(default) == float or type(default) == int:
@@ -119,10 +129,32 @@ class PluginOptionsBox(QGroupBox):
                 # whole options page.
                 spinbox.setValue(float(val) if type(default) == float else int(val))
                 spinbox.valueChanged.connect(option.set_value)
+                spinbox.valueChanged.connect(lambda _: self.refresh_enabled_states())
                 layout.addWidget(spinbox, row, 1)
                 self.widgets[option.identifier] = spinbox
 
             row += 1
+
+        self.refresh_enabled_states()
+
+    def refresh_enabled_states(self) -> None:
+        """Grey out every option whose master option doesn't match.
+
+        Greying is presentation only: the stored value is untouched and still
+        goes into the mission's Lua data table. The plugin scripts already guard
+        on their own master option, so this tells the reader what is inert
+        instead of changing what runs.
+        """
+        for option in self.plugin.options:
+            if option.enabled_when is None:
+                continue
+            enabled = plugin_option_is_enabled(option, self.plugin.settings)
+            widget = self.widgets.get(option.identifier)
+            if widget is not None:
+                widget.setEnabled(enabled)
+            label = self.labels.get(option.identifier)
+            if label is not None:
+                label.setEnabled(enabled)
 
     def update_from_settings(self, settings: Settings) -> None:
         for identifier in self.widgets:
@@ -134,6 +166,7 @@ class PluginOptionsBox(QGroupBox):
                 w.setValue(float(value))
             elif isinstance(w, QSpinBox):
                 w.setValue(int(value))
+        self.refresh_enabled_states()
 
 
 class PluginOptionsPage(QWidget):

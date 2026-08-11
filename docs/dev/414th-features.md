@@ -7452,18 +7452,61 @@ well as AIR_ASSAULT, so a positive `cabin_size` also flips these airframes to
 `troops=true` in the CTLD transport table — they become troop-capable CTLD
 transports on Transport missions, not only on assaults.
 
+### The AI leg, flown 2026-08-11 — and the three defects it exposed
+
+**Both legs are verified** (checklist **B30**). The AI drop releases over the target
+zone, the stick lands in the right place, and DCS fired its own base-captured event at
+FOB Nawa with a blue `Soldier M4 GRG` as initiator — the dropped troops genuinely took
+the objective.
+
+Getting there needed in-plugin diagnostics, because every gate in `check_paradrop_ai`
+failed **silently**: nothing distinguished "no troops aboard" from "the loop never
+armed". Each gate now names itself once per unit with a 60 s throttle, and the AI plan
+(or `AI plan EMPTY`) is logged at config time. That is what made one flight sufficient.
+
+Three defects the flight exposed, all fixed:
+
+- **The diagnostic throttle compared whole messages**, but the `inbound` line carries a
+  live distance, so no two ever matched and every poll logged — thousands of lines a
+  mission under time acceleration. Throttles on a reason key now.
+- **`ctld.checkAIStatus` re-loads any empty AI transport standing in a pickup zone every
+  2 s.** A C-130 that has already dropped is empty and often parked in one, so it
+  reloaded forever and announced each one coalition-wide. `loadTroopsFromZone` is wrapped
+  to refuse for AI paradrop types — one drop per sortie, no field reload.
+- **Fixed-wing assaults fragged two-ship** when one aircraft paradrops the whole stick.
+  Clamped to single-ship in `assault_flight_size` once the squadron is known; helicopters
+  keep multi-ship because their lift is per airframe.
+
+**Objective range is capped** at `AIR_ASSAULT_MAX_REACH` (100 NM), measured to the
+nearest friendly control point. Fixed-wing eligibility let a C-130 volunteer for
+objectives across the theatre — an Afghanistan turn-2 ATO fragged Bagram→Kandahar at
+269 NM, 177 NM behind the nearest friendly base. Helicopters could never reach that far,
+so the unbounded list only became a problem under §76.
+
+**Still open:** the capture did not commit to the campaign. `state.json` carried
+`…||2||FOB Nawa` and replaying it through `Debriefing.base_capture_events()` returns the
+correct event, but the live `commit_captures` ran empty — apparently against a stale
+debriefing from a hung session.
+
+**Neutral bases capture without a fight — known, and deliberately left alone
+(2026-08-11 user call).** A red base already blocks capture until all red ground leaves
+the 3,000 m zone (Kandahar carries 13 live units inside it). A neutral base does not: its
+defenders spawn on the NEUTRAL coalition, while the trigger computes its losing coalition
+as RED and only ever tests red and blue — so neutral defenders neither block nor satisfy
+anything, and one blue ground unit flips the base (FOB Zeebrugge has 5 such defenders).
+FOB Nawa had none, so its capture on landing was legitimate. The fix would be an
+`AllOfCoalitionOutsideZone("neutral", …)` condition on the neutral-CP triggers; it was
+considered and dropped. **Do not re-propose without a fresh call.**
+
 Files: `game/ato/flightplans/airassault.py`, `game/missiongenerator/luagenerator.py`,
+`game/commander/packagebuilder.py`, `game/commander/objectivefinder.py`,
 `resources/plugins/ctld/ctld-config.lua`, and the aircraft yamls
-(`C-130J-30`, `C-47`, `An-26B`, `IL-76MD`, `C-17A` for the cabins, plus the 20
-rotary/fixed yamls the ladder rerank touched).
-Tests: `tests/ato/flightplans/test_airassault.py` (gate + both layout shapes, the
-tier-band ladder incl. a guard that every Air Assault-capable airframe is ranked,
-and the non-troop-transport exclusions),
-`tests/lua/test_ctld_paradrop.py` (9 runtime cases: config arming, preload retry,
-player drop timing/projection, jump ceiling, ground/helo fall-through, AI one-shot
-zone release, AI-helo never dropped, JTAC stick), extended
-`tests/missiongenerator/test_ew_deconfliction.py`. Checklist **B30** — needs an
-in-game pass (the AI run-in profile and troops-march-to-CP capture are DCS-only).
+(`C-130J-30`, `C-47`, `An-26B`, `IL-76MD`, `C-17A`).
+Tests: `tests/ato/flightplans/test_airassault.py` (gate + both layout shapes, cabins,
+non-troop-transport exclusions), `tests/commander/test_air_assault_reach.py` (the range
+cap), `tests/commander/test_packagebuilder.py` (`assault_flight_size`),
+`tests/lua/test_ctld_paradrop.py` (9 runtime cases), extended
+`tests/missiongenerator/test_ew_deconfliction.py`.
 
 ## §77 — Escort jamming (Growler / Prowler, for all campaigns)
 

@@ -11,5 +11,5 @@ max_range: 300    # combat range [nmi]
 variants:
   UH-2C Seasprite: {}
 tasks:
-  Air Assault: 70
+  Air Assault: 60
   Transport: 40

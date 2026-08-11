@@ -561,6 +561,13 @@ aircraft. Do NOT "resync" this block from upstream until they fix it.
   deliberate exclusion, an upstream bug being worked around. Never narrate the next line.
   - **Cap a block at ~3 lines.** Longer rationale belongs in the feature's
     `docs/dev/design/` note; the comment becomes one line pointing at it.
+  - **A plugin or module file header may run to ~15 lines** — it is the entry point for a
+    reader who has no other. Shape: one line of purpose, the `docs/` pointer, then the
+    constraints a reader could undo by accident, one line each. Everything else goes in the
+    note. Reference: `resources/plugins/intercept/intercept-config.lua` (104 → 16 lines).
+  - **A pointer must resolve.** Confirm the file exists before committing the reference — a
+    dead `docs/dev/...` pointer is worse than none, and one shipped in the first draft of
+    this very sweep.
   - **Data files carry values, not essays.** A unit yaml gets the number and nothing else —
     the reasoning lives in the design note. The `Air Assault:` priorities are the reference
     case: a tier scheme with per-file justifications was written and stripped the same day.

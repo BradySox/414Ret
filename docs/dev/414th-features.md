@@ -55,6 +55,24 @@ is legacy only and should not be extended.
   high-elevation fields. Both are tunable; in-game pass ☑ VERIFIED 2026-06-24 (A1,
   Tacview) — scrambled MiG-29As air-spawned at ~750 m AGL / 240–510 kt and climbed
   under control, no stall or ground-clawing dive.
+- **Takeoff method — in-air, and the three that failed (all validated in-DCS).** Every
+  ground spawn dies on a saturated ramp; the blocker is ground movement, not the takeoff
+  method. Do **not** call `SetSquadronVisible` — it puts Moose in its `ParkDefender`
+  branch, which hardcodes `SPAWN.Takeoff.Cold` and ignores `SetDefaultTakeoff*`, and it
+  also clamps `ResourceCount` to free parking spots and forces `Grouping=1` (losing both
+  the reserve and 2-ship flights). Non-visible `ParkingHot` scrambled warm but never
+  taxied out of congested ramps (Tiyas, packed with OCA + ~30 rotary BARCAP) while the
+  same code launched fine from uncluttered H3. `SetDefaultTakeoffFromRunway` had the same
+  split — fine at H3, dumped into hangars at Tiyas. In-air is the only method that
+  escapes the ground.
+- **The Moose air-spawn monkeypatch, and when to drop it.** In-air spawn was blocked by a
+  Moose bug: `BASE:CreateEventTakeoff` is mis-scheduled, so `self` arrives as a plain
+  table, `self:F()` crashes and defenders never activate. `intercept-config.lua`
+  monkeypatches `BASE.CreateEventTakeoff` rather than editing the vendored `Moose.lua`.
+  Filed upstream as **MOOSE PR #2595** (`Core/Spawn.lua`: pass the args as varargs, not a
+  single table). **Delete the monkeypatch once that lands in the vendored `Moose.lua`.**
+- `SetSquadronGci` speed arguments are **km/h**, not m/s — Moose's `WaypointAir` divides
+  by 3.6. 900/1200 km/h ≈ 485/648 kt.
 - Lua/config path: `game/missiongenerator/interceptluadata.py` populates
   `dcsRetribution.Intercept`, and `resources/plugins/intercept/intercept-config.lua`
   instantiates Moose `AI_A2A_DISPATCHER` behavior from that table.

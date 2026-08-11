@@ -1,107 +1,20 @@
 -- Intercept (QRA) — drives AI_A2A_DISPATCHER per coalition from
--- dcsRetribution.Intercept. Aircraft are placed as late-activated template
--- groups by the mission generator; ParkDefender spawns parked instances and
--- recycles them on RTB, consuming a resource permanently on a kill.
+-- dcsRetribution.Intercept. Rationale, the flown-test history and the tuning
+-- record are in docs/dev/414th-features.md §1. The load-bearing parts:
 --
--- Detection (dr-ktw0): the dispatcher's DETECTION_AREAS is fed from the real
--- EWR/SAM-as-EWR group names published in dcsRetribution.IADS for the
--- coalition (the same source Skynet uses). The previous FilterPrefixes("EWR")
--- matched almost nothing, because DCS EWR group names are suffix-form
--- ("1L13 EWR", "55G6 EWR").
---
--- Detection source: the IADS EWR/SAM-as-EWR network published in
--- dcsRetribution.IADS (the same source MANTIS uses). A base only scrambles QRA
--- against raids its radar network actually sees; if a coalition's EWR/SAM-as-EWR
--- network is wiped out, its QRA loses GCI detection (by design — we no longer
--- spawn a per-base backstop EWR).
---
--- The backstop is GONE and must not be restored (2026-08-06, flown Red Tide at
--- Sperenberg; upstream PR #782 removed it for the same reason). It was a real
--- vehicle spawned with mist.dynAdd at the airbase reference point + 300 m NE.
--- DCS has no non-colliding ground unit: mist's `hidden` only suppresses the F10
--- map symbol and SetCommandInvisible only blinds the AI's *sensors*, so the
--- model and its collision box stayed on the ramp. A 55G6 EWR mast is enormous,
--- 300 m NE of a reference point lands squarely in the taxiway/apron network on
--- a real field, and AI taxi routing has no way around it. Any "guaranteed
--- detection" scheme that puts an object on an operating airfield has this bug.
---
--- GciRadius (groundControlledInterceptionMaxRadius, default 100 NM) caps how
--- far from a base a detected raid can trigger a scramble. The dispatcher only
--- scrambles GCI once AirbaseDistance <= GciRadius. The IADS network provides
--- the real detection range; GciRadius just prevents scrambling against very
--- distant threats heading elsewhere.
---
--- FORWARD DEFENSE (414th, qra_forward_defense). GciRadius alone cannot express
--- "rear bases answer raids at the front, but the front base does not chase deep
--- into enemy territory": it is one radius measured from EVERY base, so widening
--- it to bring rear fields forward simultaneously lets the forward field chase
--- just as far the other way. The two are separated by giving the dispatcher a
--- BORDER ZONE:
---
---   * SetBorderZone(zones) -> Detection:SetAcceptZones(zones). Moose drops any
---     detected object outside every accept zone, so the dispatcher cannot see --
---     cannot scramble against, cannot keep engaging -- a target beyond the
---     defended airspace. This decides WHERE a side may fight (geography).
---   * SetGciRadius decides HOW FAR a base will launch to get there (reach). It is
---     safe to open up once geography is bounded.
---   * SetDisengageRadius must open with it: Moose aborts a defender once
---     DistanceFromHomeBase > DisengageRadius (default 300 km ~= 162 NM), so a base
---     at the far edge of its reach would otherwise launch and turn around.
---
--- Widening the reach does NOT mass-launch every base. Moose's GCI loop keeps the
--- squadron with the shortest intercept distance among those inside GciRadius, and
--- only reaches back to a farther one once the closer squadron's alert is spent --
--- an echelon: the front field answers, the rear fields backfill.
---
--- The zones are emitted per coalition by the mission generator (one circle per
--- control point; a front-line CP's circle is grown to reach a little past its own
--- FLOT). No zones emitted => SetBorderZone is skipped => legacy behaviour.
---
--- Build timing: the detection SET_GROUP and the dispatcher are assembled
--- BUILD_DELAY seconds in, to give the mission's own groups a frame to register
--- before SET_GROUP:FilterStart() scans them.
---
--- AI_A2A_DISPATCHER:New() calls self:__Start(5) internally — no explicit
--- dispatcher:Start() call is needed or valid (no such method exists).
---
--- Spawn path: NON-VISIBLE / fresh-spawn-on-scramble. We deliberately do NOT
--- call SetSquadronVisible. That keeps Moose's AI_A2A_DISPATCHER:ResourceActivate
--- in its else branch, which spawns a fresh group at scramble time honoring the
--- configured takeoff method (SetDefaultTakeoffInAir below).
---
--- Takeoff method history (all validated in-DCS):
---   1. Visible/ParkDefender pre-park: ParkDefender hardcodes SPAWN.Takeoff.Cold
---      (ignores SetDefaultTakeoff*), so F-16s sat cold and never completed the
---      cold-start→taxi sequence. SetSquadronVisible also clamps ResourceCount to
---      free parking spots and forces Grouping=1. Abandoned.
---   2. Non-visible ParkingHot (warm): F-16s DID scramble warm but still never
---      taxied out of congested ramps (e.g. Tiyas, packed with OCA + ~30 rotary
---      BARCAP — confirmed in-DCS), while
---      the identical code launched fine from uncluttered bases like H3. Ground
---      movement, not takeoff method, was the blocker.
---   3. Runway: SetDefaultTakeoffFromRunway spawned fine at uncluttered H3 (jets on
---      the runway, immediate takeoff) but at saturated Tiyas Moose could not place
---      them on the runway and dumped them into hangars, where they sat. Every
---      ground spawn (cold/hot/runway) fails on a fully-packed ramp.
---   4. In-air (current): the only method that escapes the congested ground. It was
---      blocked by a Moose bug (air-spawn's BASE:CreateEventTakeoff is mis-scheduled
---      → self is a plain table → self:F() crash → defenders never activate). The
---      BASE.CreateEventTakeoff monkeypatch above repairs that without touching the
---      vendored Moose.lua, so in-air now works. Upstream fix filed as MOOSE PR
---      #2595 (Core/Spawn.lua: pass the args as varargs, not a single table);
---      drop the monkeypatch once that lands in the vendored Moose.lua.
---
--- The non-visible path keeps full reserve and real 2-ship grouping (the visible
--- path lost both).
---
--- SPAWN PROFILE (2026-06-21): the in-air spawn previously inherited the parking
--- template's ~0 kt speed and a global 2,000 m MSL altitude, so jets spawned stalled
--- and high and dove ~4,600 ft recovering (near-crash at Vaziani, Tacview 2026-06-20).
--- Each squadron now air-spawns at a forced scramble speed (InitSpeedKnots) and a
--- terrain-relative low altitude (field elevation + AGL). See SCRAMBLE_* below.
---
--- SetSquadronGci speed args are in km/h (WaypointAir divides by 3.6 to get m/s).
--- 900/1200 km/h ≈ 485/648 kt — reasonable for jet interceptors.
+--  * Never restore the per-base backstop EWR. DCS has no non-colliding ground
+--    unit, so the mast blocked AI taxi routing (flown Red Tide 2026-08-06;
+--    upstream #782 removed it for the same reason). Detection is the IADS
+--    network alone; a side with no EWR losing GCI is by design.
+--  * Never call SetSquadronVisible. It forces Moose's ParkDefender branch
+--    (hardcoded Cold takeoff) and clamps the reserve to parking spots. Every
+--    ground spawn fails on a saturated ramp -- in-air is the only method left.
+--  * The BASE.CreateEventTakeoff monkeypatch below works around MOOSE #2595.
+--    Delete it once that lands in the vendored Moose.lua.
+--  * SetSquadronGci speeds are km/h, not m/s.
+--  * SetBorderZone bounds WHERE a side may fight; GciRadius bounds how far it
+--    launches to get there. Open DisengageRadius with GciRadius or a distant
+--    base launches and turns straight around.
 
 env.info("DCSRetribution|Intercept: configuring QRA dispatchers")
 

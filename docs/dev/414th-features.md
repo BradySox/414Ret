@@ -2883,6 +2883,21 @@ active for the same reason.
 
 Result: **144 basic / 71 advanced**, and Air Doctrine reads **48 → 9** options by default.
 
+**The all-advanced-section hole (fixed 2026-08-10).** `AutoSettingsGroup.apply_filter()` hid the
+whole group box when its *shown* row count was zero — which is every section where the mechanical
+rule marks every field advanced. The disclosure lives inside that box, so it went down with it and
+there was no link left to click. **13 sections / 47 options were unreachable outside the search
+bar**: all seven Air Doctrine knob groups (CAP & support timing, Auto-planner behavior, Altitudes,
+Engagement ranges, SEAD standoff, Support-orbit standoff, Mission range limits), Campaign
+Management's Campaign features / Victory conditions / Commander economy / **Flight-planner
+automation** (the 2/3/4-ship weights), and Mission Generation's Comms war / Naval strike. Nothing
+was lost from the model — `Settings.fields()` returned them all along and the planner kept reading
+them; they just never rendered. Two changes: visibility now counts the rows a section *offers*
+(shown + folded), so a collapsed section keeps its disclosure, and a section whose every field is
+advanced **starts expanded** — folding it would leave a bare title, so there is nothing to gain.
+Mixed sections are unchanged. Pinned by `test_all_advanced_sections_show_their_knobs` and
+`test_collapsing_an_all_advanced_section_leaves_it_reachable`.
+
 **The defect this surfaced.** `enabled_when` greying was wired *per section*, which worked only
 because a master and its dependants happened to be declared together. Moving the gates broke
 the live re-enable — `motorpool_enabled` is now on Features while `motorpool_spawn_cap` stayed
@@ -2891,7 +2906,7 @@ control that is somebody's master (`dependency_masters()`, computed once from th
 metadata) broadcasts to all of them. Greying is now correct across page and section boundaries,
 which it never actually was — the old code just never had a cross-section pair to get wrong.
 
-Tests: `tests/test_settings_filter.py` (17, driving the real Qt widgets under the offscreen
+Tests: `tests/test_settings_filter.py` (19, driving the real Qt widgets under the offscreen
 platform) and the rewritten cross-page case in `tests/test_settings_dependencies.py`.
 `qt_ui` is not CI type-checked, so this needs an in-app eyeball — checklist **B39**.
 

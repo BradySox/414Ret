@@ -1,40 +1,20 @@
 ---------------------------------------------------------------------------------------------------
--- Red comms net runtime (§70 COMINT, phases C1+C2): the enemy net, audible on the dial.
+-- Red comms net runtime (§70 COMINT, C1+C2): the enemy net, audible on the dial.
+-- Design is in docs/dev/design/414th-comint-notes.md.
 --
--- Each emitted enemy net station transmits PERIODIC coded CW traffic on its own fixed UHF AM
--- frequency via trigger.action.radioTransmission from the node's map position: real
--- power/distance falloff, audible on any cockpit radio tuned there (and to SRS users, whose
--- radios tune off the cockpit). The transmission is looped only while a window is open --
--- windows recur on a jittered cadence with silence between, so the net reads as traffic
--- patterns, not a beacon wall, and a DF needle (F-4E / F-14 ARC-182 DF / F/A-18C UFC ADF / F-5E)
--- only points while they are on the air.
+-- Stations key coded CW on their own UHF AM frequency via trigger.action.radioTransmission
+-- from the node's map position, looped only while a window is open, so a DF needle points
+-- only while they are on the air. Reads dcsRetribution.redNet
+-- (game/missiongenerator/rednetluadata.py); inert when absent.
 --
--- Two schedules (C2): a fixed C2 node (comms mast / command center) keys the normal traffic
--- cadence (windowSec/gapSec); a CLANDESTINE station (a concealed insurgent cell / IED team /
--- HVT convoy, or an authored concealed comms site) keys short windows with long silence
--- (clandestineWindowSec/clandestineGapSec) -- catch the window and DF it, or wait out the next.
+-- The load-bearing parts:
 --
--- The frequencies are allocated in Python (game/missiongenerator/rednetluadata.py) at x.500 MHz,
--- and every candidate must clear a 100 kHz guard band around EVERY frequency the mission's
--- RadioRegistry has allocated (the whole guard band is then reserved), so a net never keys up on
--- or one detent beside a briefed channel. Only a handful of stations are emitted at all -- the
--- Python side caps them (red_net_max_stations) so a theater-wide C2 net plus every insurgent cell
--- can't fill the UHF band with carriers. Nothing here targets blue radios; hearing the enemy
--- requires deliberately tuning off-plan.
---
--- Audio + DF geometry ONLY -- the plugin owns no kills and changes no gameplay model. Killing the
--- node is an ordinary strike on an ordinary IADS TGO (recorded natively); this script merely takes
--- the net off the air once the node is positively dead (the MANTIS C2 node_dead convention: a
--- placed static that existed and no longer :isExist(), or a name recorded in the global
--- dead_events ledger -- a culled or never-spawned node reads ALIVE, which is correct: it can't be
--- killed this mission).
---
--- Per-node window loops are STAGGERED across the first gap (the §49 same-frame lesson) so route
--- pushes/transmission starts never land together.
---
--- Reads dcsRetribution.redNet, emitted by game/missiongenerator/rednetluadata.py; inert when that
--- node is absent. pcall-guarded throughout so a hiccup never takes the mission down.
--- Definition order matters (Lua 5.1): helpers precede use.
+--  * Frequencies are Python-allocated at x.500 MHz and must clear a 100 kHz guard band
+--    around every RadioRegistry allocation, so a net never keys on or one detent beside a
+--    briefed channel. Station count is capped so the net cannot fill the UHF band.
+--  * Audio and DF geometry only -- no kills, no gameplay model. A node goes off the air on
+--    the MANTIS node_dead convention; a culled node correctly reads ALIVE.
+--  * Window loops are staggered across the first gap (the §49 same-frame lesson).
 ---------------------------------------------------------------------------------------------------
 
 if not (dcsRetribution and dcsRetribution.redNet) then

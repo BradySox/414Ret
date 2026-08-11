@@ -1,29 +1,20 @@
 ---------------------------------------------------------------------------------------------------
--- Mission-start briefing popup.
+-- Mission-start briefing popup (§58). Design is in docs/dev/414th-features.md §58.
 --
--- When a pilot slots into an aircraft, show them a short on-screen card -- campaign, mission,
--- date, time, callsign, aircraft, task, departure field -- the way the professional DCS campaigns
--- greet you at mission start. A SECOND card (the startup/taxi instruction, e.g. "Contact ground @
--- 249.50 when ready to taxi") is flashed right after the first and held the same duration. Reads
--- dcsRetribution.briefing (emitted by game/missiongenerator/briefingluadata.py: a shared header +
--- one record per player-crewed flight, keyed by DCS group name); inert when that node is absent.
+-- Per-pilot slot-in card plus a taxi-instruction card. Reads dcsRetribution.briefing
+-- (game/missiongenerator/briefingluadata.py); inert when absent. Display only --
+-- no gameplay model, no spawns, nothing persisted.
 --
--- Two paths cover every way a pilot reaches a seat: an S_EVENT_BIRTH handler (fires whenever a
--- pilot enters a slot -- mission start in SP, and any slot-in / rejoin on a server) plus a one-shot
--- mission-start sweep after a short grace, in case the player's birth fired before this script
--- registered its handler. A small per-unit debounce keeps the two from double-showing the same
--- slotting while still letting a genuine re-slot re-show.
+-- The load-bearing parts:
 --
--- Display ONLY: no gameplay-model change, no spawns, nothing persisted. pcall-guarded throughout so
--- a hiccup never takes the mission down. Definition order matters (Lua 5.1): helpers precede use.
---
--- Paused-dedicated-server note (the flown Red Tide M1 finding, 2026-07-11): while a server sits
--- PAUSED, timer.getTime() is frozen, so every pre-start slot-in schedules its card for the same
--- sim instant and they all fire ~START_DELAY s after UNPAUSE -- minutes after each pilot actually
--- sat down. That is the intended contract (the sandbox has no wall clock; nothing can fire during
--- a pause), and it is per-group text so each pilot still sees only their own card -- but it makes
--- the BEEP the attention cue that matters, and the beep was silently dead: an in-miz sound plays
--- ONLY with its "l10n/DEFAULT/" archive path, and the bare basename failed without an error.
+--  * An in-miz sound plays ONLY with its full "l10n/DEFAULT/" archive path. The
+--    bare basename fails silently, which is how the beep was dead for a release.
+--  * Two entry paths (S_EVENT_BIRTH plus a one-shot start sweep) because a birth
+--    can fire before this script registers its handler; the per-unit debounce is
+--    what stops them double-showing.
+--  * On a PAUSED server timer.getTime() is frozen, so every pre-start slot-in
+--    fires together after unpause. That is the contract -- the sandbox has no wall
+--    clock -- and it is why the beep, not the timing, is the attention cue.
 ---------------------------------------------------------------------------------------------------
 
 if not (dcsRetribution and dcsRetribution.briefing) then

@@ -1,36 +1,18 @@
 -------------------------------------------------------------------------------------------------------------------------------------------------------------
--- Recon -> BDA capture for DCS Retribution
+-- Recon -> BDA capture (§12). ONE mechanism for player and AI both; the MOOSE
+-- Ops.TARS split was cut 2026-08-05. Design is in docs/dev/414th-features.md §12.
 --
--- ONE mechanism for both crews. This replaces the previous split where a player's recon
--- ran through MOOSE Ops.TARS (an F10 "film" menu) and AI recon ran through a geometric
--- overflight check -- two unrelated implementations answering one question, which could
--- not agree by construction. The MOOSE path was cut on 2026-08-05: all it contributed was
--- a unit NAME scraped off a Snapshot object whose schema was never confirmed, so if the
--- field name was wrong the player path recorded nothing, silently, forever.
+-- Reads dcsRetribution.Recon (game/missiongenerator/reconluadata.py) and writes the
+-- shared tars_recon_captures ledger the debrief already parses.
 --
--- The generator emits dcsRetribution.Recon = { cloudFactor = "0.85", flights = { ... } }
--- with one record per BLUE recon-capable flight (player AND AI) + its target. Each flight
--- is watched; when it closes within TRIGGER_RANGE of the target, the enemy (RED) ground
--- and ship units within the effective sensor radius are written into the shared
--- tars_recon_captures ledger -- the same table + schema ({unit, life, type}) the debrief
--- already parses (game/debriefing.py parse_tars_captures -> tars_reconned_tgos), so
--- nothing downstream changes.
+-- The load-bearing parts:
 --
--- The effective radius is the flight's own sensor radius degraded by ALTITUDE (a high
--- fast pass resolves less than a proper recon profile) and by the campaign's CLOUD COVER
--- (the fork models weather in §47/§67 and recon previously ignored it entirely).
---
--- TIMING, and why the two halves differ:
---   * the CAPTURE happens on overfly. Missions routinely end before flights land -- the
---     player quits after their own sortie -- so gating the take on touchdown would
---     silently destroy most recon.
---   * the CUE fires on LANDING (DM call): you do not get your BDA read-out while still
---     over the target, you get it when the take has been brought home and processed. A
---     cue is cosmetic, so a flight that never lands simply never announces; its capture
---     still counts.
---
--- A recon flight shot down or aborting before the target confirms nothing (one-shot per
--- flight). Vanilla DCS + pcall-guarded throughout.
+--  * CAPTURE on overfly, CUE on landing. Missions routinely end before flights land,
+--    so gating the take on touchdown would silently destroy most recon. The cue is
+--    cosmetic -- a flight that never lands still counts its capture.
+--  * The sensor radius is degraded by altitude and by campaign cloud cover, so a high
+--    fast pass resolves less than a real recon profile.
+--  * One-shot per flight: shot down or aborting before the target confirms nothing.
 -------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 env.info("DCSRetribution|Recon plugin - configuration")

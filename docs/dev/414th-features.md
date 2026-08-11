@@ -55,6 +55,24 @@ is legacy only and should not be extended.
   high-elevation fields. Both are tunable; in-game pass ☑ VERIFIED 2026-06-24 (A1,
   Tacview) — scrambled MiG-29As air-spawned at ~750 m AGL / 240–510 kt and climbed
   under control, no stall or ground-clawing dive.
+- **Takeoff method — in-air, and the three that failed (all validated in-DCS).** Every
+  ground spawn dies on a saturated ramp; the blocker is ground movement, not the takeoff
+  method. Do **not** call `SetSquadronVisible` — it puts Moose in its `ParkDefender`
+  branch, which hardcodes `SPAWN.Takeoff.Cold` and ignores `SetDefaultTakeoff*`, and it
+  also clamps `ResourceCount` to free parking spots and forces `Grouping=1` (losing both
+  the reserve and 2-ship flights). Non-visible `ParkingHot` scrambled warm but never
+  taxied out of congested ramps (Tiyas, packed with OCA + ~30 rotary BARCAP) while the
+  same code launched fine from uncluttered H3. `SetDefaultTakeoffFromRunway` had the same
+  split — fine at H3, dumped into hangars at Tiyas. In-air is the only method that
+  escapes the ground.
+- **The Moose air-spawn monkeypatch, and when to drop it.** In-air spawn was blocked by a
+  Moose bug: `BASE:CreateEventTakeoff` is mis-scheduled, so `self` arrives as a plain
+  table, `self:F()` crashes and defenders never activate. `intercept-config.lua`
+  monkeypatches `BASE.CreateEventTakeoff` rather than editing the vendored `Moose.lua`.
+  Filed upstream as **MOOSE PR #2595** (`Core/Spawn.lua`: pass the args as varargs, not a
+  single table). **Delete the monkeypatch once that lands in the vendored `Moose.lua`.**
+- `SetSquadronGci` speed arguments are **km/h**, not m/s — Moose's `WaypointAir` divides
+  by 3.6. 900/1200 km/h ≈ 485/648 kt.
 - Lua/config path: `game/missiongenerator/interceptluadata.py` populates
   `dcsRetribution.Intercept`, and `resources/plugins/intercept/intercept-config.lua`
   instantiates Moose `AI_A2A_DISPATCHER` behavior from that table.
@@ -1904,42 +1922,56 @@ which shares nothing with this retired implementation.
 
 ---
 
-## 12. TARS recon engine (plugin, default ON)
+## 12. Recon → BDA engine (`recon` plugin, default ON)
 
-Design notes: `docs/dev/design/414th-tars-recon-notes.md` (read before touching).
-MOOSE **Ops.TARS** v2.3.2 becomes the runtime engine for `FlightType.TARPS`: F10 "film"
-menu, overfly detection, coalition F10 markers, scoring, and a landing debrief that
-feeds the BDA fog-of-war the exact enemy units a surviving recon pass photographed.
+**The MOOSE Ops.TARS engine this section used to describe was CUT on 2026-08-05
+(`7eb247659`); `resources/plugins/tars/` no longer exists.** The old design note
+`docs/dev/design/414th-tars-recon-notes.md` documents that removed implementation —
+historical only, do not author against it.
 
-- Plugin: `resources/plugins/tars/` (`TARS.lua` vendored verbatim from MOOSE develop —
-  NOT in the bundled Moose.lua, but API-compatible with it; `tars_414_init.lua`;
-  `plugin.json`, default ON; options: scoring, scoreValue, filmLimit, restrictToNamed,
-  enforceLoadout, srs, srsPort). Option defaults (playtest-aligned 2026-06-17):
-  `scoring` OFF, `restrictToNamed` ON, `srs` ON, `filmLimit` 25, `scoreValue` 100;
-  `enforceLoadout` stays OFF on purpose (ON falls back to the stock `allowedAmmo`
-  whitelist + a best-effort AAM list and can leave the F10 film menu locked — see the
-  loadout-whitelist note below).
-- Injection: NOT a work order. `_inject_tars_script()` in
-  `game/missiongenerator/luagenerator.py` mirrors the TIC pattern — appended after
-  `inject_plugins()` so `dcsRetribution.plugins.tars` exists, then DoScriptFile
-  `TARS.lua` + `tars_414_init.lua`. TARS.lua only defines the class; `tars_414_init.lua`
-  owns `TARS:New()`.
-- TWO theater-correct overrides are load-bearing (`tars_414_init.lua`):
-  `targetNameFilter.enabled=false` (stock USA/USSR keywords hide all Retribution
-  targets) and the `allowedAmmo` loadout whitelist (stock list excludes AIM-7/AIM-54, so
-  the shipped F-14 TARPS payload — carrying `{SHOULDER AIM-7MH}` — would fail ground
-  validation and the F10 menu would never unlock). With `enforceLoadout` OFF (default) we
-  make the whitelist accept anything via an `__index` metatable returning true — no
-  guessing at DCS `weapon.desc.displayName` strings, no payload nerf.
-- BDA bridge: `OnAfterDataProcessing` override appends `{unit,life,type}` to the global
-  `tars_recon_captures` and sets `dirty_state=true`; `dcs_retribution.lua` `write_state()`
-  serializes it; `game/debriefing.py` `StateData.parse_tars_captures()` parses it;
-  `game/sim/missionresultsprocessor.py` `tars_reconned_tgos()` resolves names via
+**One mechanism for both crews.** The previous split ran a player's recon through
+MOOSE Ops.TARS (an F10 "film" menu) and AI recon through a geometric overflight
+check — two unrelated implementations answering one question, which could not agree
+by construction. The MOOSE path contributed only a unit name scraped off a Snapshot
+object whose schema was never confirmed, so a wrong field name meant the player path
+recorded nothing, silently and forever.
+
+- Plugin: `resources/plugins/recon/` (`recon-config.lua`, `plugin.json`). Emitter:
+  `game/missiongenerator/reconluadata.py` emits
+  `dcsRetribution.Recon = { cloudFactor, flights = [...] }`, one record per BLUE
+  recon-capable flight — **player and AI alike** — plus its target.
+- **Capture**: when a watched flight closes within `TRIGGER_RANGE` (default 5 NM,
+  `triggerRangeNm`) of its target, every RED ground and ship unit inside the
+  effective sensor radius is written to the shared `tars_recon_captures` ledger —
+  the same table and `{unit, life, type}` schema `game/debriefing.py`
+  `parse_tars_captures` → `tars_reconned_tgos` already parses, so nothing downstream
+  changed.
+- **Effective radius** = the flight's own sensor radius, degraded by **altitude**
+  (full radius at or below `OPTIMAL_ALT`, falling to `MIN_ALT_FACTOR` by
+  `CEILING_ALT` — a high fast pass resolves less than a real recon profile) and by
+  the campaign's **cloud cover** (`cloudFactor`; recon previously ignored the §47/§67
+  weather model entirely).
+- **Timing, and why the halves differ**: the *capture* fires on overfly, because
+  missions routinely end before flights land (a player quits after their own sortie)
+  and gating the take on touchdown would silently destroy most recon. The *cue*
+  fires on landing (DM call) — you get the read-out when the take is home. The cue is
+  cosmetic, so a flight that never lands simply never announces; its capture still
+  counts.
+- One-shot per flight: shot down or aborting before the target confirms nothing.
+  Vanilla DCS, pcall-guarded throughout.
+- Tests: `tests/test_tarps_recon.py`, `tests/test_tars_bda_bridge.py` (the BDA bridge
+  name predates the engine swap; the ledger contract is unchanged).
+
+- BDA bridge (unchanged across the engine swap): the capture appends
+  `{unit, life, type}` to the global `tars_recon_captures` and sets `dirty_state=true`;
+  `dcs_retribution.lua` `write_state()` serializes it; `game/debriefing.py`
+  `StateData.parse_tars_captures()` parses it; `game/sim/missionresultsprocessor.py`
+  `tars_reconned_tgos()` resolves names via
   `unit_map.theater_units(...).theater_unit.ground_object` and `update_confirmed_bda()`
-  syncs those TGOs. Additive — empty/no-op when the plugin is OFF. Snapshot schema
-  (`snap.name/life/type/coa`) is documented in TARS.lua and logged once in-game.
-- Tests: `tests/test_tars_bda_bridge.py`. Default ON; Lua in-game pass ☑ VERIFIED
-  2026-06-24 (G2 — TARPS captures feed Retribution BDA).
+  syncs those TGOs. Additive — empty/no-op when the plugin is OFF.
+- Lua in-game pass ☑ VERIFIED 2026-06-24 (G2 — recon captures feed Retribution BDA)
+  under the old engine; the 2026-08-05 rewrite (G2 re-fly) carried the same ledger
+  contract.
 
 ---
 
@@ -7467,6 +7499,24 @@ JOIN (its SEAD Escort loadout ARMs are package self-defense), and deliberately s
 winchester-RTB** — empty rails stay with the package; the jamming is the payload. Task priority
 orders preference (Growler 800 > Prowler 790). Loadout resolves "Retribution Escort Jammer"
 first, falling back to the SEAD Escort fit. Blue-only.
+
+**Runtime effects (`resources/plugins/growler/growler-config.lua`) — ROE only.** Radar
+emissions are never toggled; `enableEmission` crashed DCS in the C-130 line, and MANTIS owns
+alarm/EMCON state.
+
+- **Defensive bubble.** A radar-guided missile closing on the jammer or any protected package
+  member rolls once per second against a **distance-banded spoof chance centred on the
+  jammer** — closer to the jammer is *harder* for the missile to survive. A spoofed missile is
+  destroyed silently, and a **minimum-travel guard** prevents the "explodes on launch" artefact
+  at the launcher.
+- **Offensive pulse.** A radar SAM group inside jamming range that threatens the protected
+  flights is forced to ROE `WEAPON_HOLD` for a short pulse, then restored to `OPEN_FIRE`.
+- **Escort geometry, and the constraint.** Effectiveness **rises as the jammer closes** —
+  penetration-escort physics, deliberately the inverse of the C-130's standoff burn-through
+  model. Never unify the two.
+- The policy is airframe-agnostic (no EA-18G-specific path). AI jammers run automatically after
+  a startup grace; a player-flown one gets an F10 menu instead. A dead or landed jammer projects
+  nothing.
 
 **Which packages get one (reworked 2026-08-07; checklist B52).** Dumping a live save's ATO
 showed the distribution inverted: blue fragged two Escort Jammer flights and **both rode CH-47F

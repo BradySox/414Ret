@@ -1,31 +1,14 @@
--- Escort jamming (EA-18G Growler / EA-6B Prowler) -- runtime for the
--- ESCORT_JAMMER role.
+-- Escort jamming runtime (§77, EA-18G / EA-6B). Design and the effect model are
+-- in docs/dev/414th-features.md §77.
 --
--- Descends from the Timberwolf/Matador EW script family (the same lineage as the
--- C-130 Mission Systems script and upstream's player-only ewrj plugin), reshaped
--- into an AI auto-policy: the "AI can't use it" folklore was a wiring gap -- the
--- effect model is geometry + dice and needs no AI intelligence, only a decision
--- layer, which this file is. The policy is airframe-agnostic: it drives whatever
--- ESCORT_JAMMER group the emitter names (an AI Growler and an AI Prowler are
--- handled identically -- there is no EA-18G-specific code path).
+-- The load-bearing parts:
 --
--- Effects (ROE ONLY -- radar emissions are NEVER toggled; enableEmission crashed
--- DCS in the C-130 line and MANTIS owns alarm/EMCON state):
---  * Defensive bubble: a radar-guided missile closing on the Growler or any
---    protected package member rolls per second against a distance-banded spoof
---    chance centred on the Growler -- closer to the jammer is harder to survive
---    as a missile. A spoofed missile is destroyed silently (no explosion at the
---    launcher; a minimum-travel guard prevents "explodes on launch").
---  * Offensive pulse: a radar SAM group inside jamming range whose position
---    threatens the protected flights can be forced onto ROE WEAPON_HOLD for a
---    short pulse, then restored to OPEN_FIRE. Escort geometry: effectiveness
---    RISES as the Growler closes (penetration escort physics -- deliberately the
---    opposite of the C-130's standoff burn-through model; do not unify them).
---
--- AI Growlers jam automatically after a startup grace. A player-flown Growler
--- gets an F10 group menu (jamming ON/OFF/status) instead of the auto-policy.
--- A dead/landed Growler projects nothing. The plugin owns no kills beyond the
--- spoofed weapon; SAM kills, Growler losses etc. record natively.
+--  * ROE only. Radar emissions are NEVER toggled -- enableEmission crashed DCS in
+--    the C-130 line, and MANTIS owns alarm/EMCON state.
+--  * Effectiveness RISES as the jammer closes (penetration escort). The C-130's
+--    standoff burn-through weakens with range. Never unify the two.
+--  * Airframe-agnostic: no EA-18G-specific path. Whatever group the emitter names
+--    is driven identically.
 
 local function growlerLog(msg)
     env.info("GROWLER|: " .. tostring(msg))

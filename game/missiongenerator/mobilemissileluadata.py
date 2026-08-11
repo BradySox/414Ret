@@ -41,37 +41,16 @@ MOBILE_MISSILE_CATEGORY = "missile"
 #: something that moves.
 COASTAL_DEFENSE_CATEGORY = "coastal"
 
-#: DCS unit types that physically cannot drive. The vanilla Silkworm battery
-#: (HY-2 launcher + its search radar) is a fixed emplacement -- routing it
-#: produces no movement, only a per-frame "has request to level but
-#: 'GT.maxDeviationRoll' are not set!" ground-AI storm (~15k log events in the
-#: first scoot-tick minute of the 2026-07-17 Scenic Route fly, ANTIFREEZE for
-#: the whole mission). A group containing any of these is never emitted;
-#: mod coastal sites with genuinely mobile launchers still scoot.
+#: DCS unit types that physically cannot drive; a group containing one is never
+#: emitted. Routing a fixed emplacement produces no movement, only a per-frame
+#: ground-AI storm that ANTIFREEZEs the whole mission. Per-entry flown evidence is
+#: in docs/dev/414th-features.md §49.
 #:
-#: ``CH_CJ10`` joined on the 2026-08-05 Marianas evidence: across two flown
-#: missions all NINE launchers of all THREE PLARF sites moved **0.00 km** --
-#: while the drivable vehicles sharing those groups (the §85 bowsers, the
-#: PGZ-09/PGL-625/LD-3000 SHORAD) only jittered 0.05-0.31 km, which is the
-#: signature of a group pinned by an undrivable member rather than one that was
-#: never routed. The sites fired 25+ CJ-10s and then sat for the remaining ~25
-#: minutes, so it reads as the same post-fire pin already recorded for the
-#: CH_Shahed136 -- but on this hardware the site fires early every mission, so
-#: "pinned after firing" and "never scoots" are the same thing in play.
-#: ``CH_Shahed136`` is deliberately NOT listed: its never-fired sites drive
-#: fine, so excluding it would kill a scoot that does work before the salvo.
+#: ``CH_Shahed136`` is deliberately NOT listed -- its never-fired sites drive fine,
+#: so excluding it would kill a scoot that does work before the salvo.
 #:
-#: ``v1_launcher`` is the one entry NOT recovered from a Tacview, and it does not
-#: need to be: a 1944 V-1 ramp is a poured emplacement, the same shape as the
-#: Silkworm above, and ``class: Missile`` puts it in this emitter's category while
-#: ``mobile_missile_relocation`` defaults ON. No shipped campaign generates one
-#: (germany_1944 is its only faction and neither of its campaigns authors a missile
-#: marker), so this closes the trap before a WWII laydown inherits the ANTIFREEZE.
-#:
-#: The verdicts now live in the units' own definitions as ``mobile: false``
-#: (``GroundUnitType.mobile``), where the flown evidence sits next to the unit;
-#: this set is the fallback for a DCS type with no registered yaml, and a test
-#: keeps the two in lockstep.
+#: The verdicts live in the units' own ``mobile: false``; this set is the fallback
+#: for a DCS type with no registered yaml, and a test keeps the two in lockstep.
 IMMOBILE_UNIT_IDS = frozenset({"hy_launcher", "Silkworm_SR", "CH_CJ10", "v1_launcher"})
 
 

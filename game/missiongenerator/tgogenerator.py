@@ -337,34 +337,15 @@ def farp_truck_types_for_country(
     return tanker_type, ammo_truck_type, power_truck_type
 
 
-#: Naval station-keeping racetrack. A ship group with no campaign destination used to
-#: generate with a zero-waypoint route: it sat motionless on its campaign marker for the
-#: whole mission, so last turn's recon photo (or a pre-planned coordinate) was always
-#: still good and every hull was a stationary target. These give it an anchor-centred
-#: racetrack to hold station on -- a warship on a barrier patrol, not one transiting
-#: away.
+#: Naval station-keeping racetrack (§87). Sizing rationale, with the measured
+#: threat-ring error table, is in docs/dev/414th-features.md §87.
 #:
-#: The anchor sits at the CENTRE of the oval rather than on its edge, which is what
-#: makes this station-keeping rather than wandering: the group's mean position stays
-#: its campaign position, and worst-case displacement is only half the diagonal, so
-#: the campaign map, the drawn threat rings and the turn-boundary model all stay
-#: honest however long the mission runs.
-#:
-#: The SIZE is set by the smallest thing it must not invalidate -- a ship's own THREAT
-#: RING, which the map draws at the marker. Half the diagonal here is ~1.6 NM (about
-#: 3,200 yd): 18% of the shortest-legged escort's 16 km air-defence radius, 7% of a
-#: Type 054A's 45 km and 3% of a Burke's 100 km, so every ring that matters for
-#: mission planning stays substantially true. An 8 x 2 NM oval was rejected on exactly
-#: that measurement -- its 4.1 NM displacement was several times a Molniya's *entire*
-#: 2 km engagement radius, which would leave a short-legged hull sitting wholly
-#: outside its own drawn ring. It also matches real practice, where a screen station
-#: is quoted in thousands of yards from the guide: WWII carrier doctrine's "Circle
-#: Six" and "Circle Nine" are 6,000 and 9,000 yd for the WHOLE screen, not for one
-#: ship's wander.
-#:
-#: Collision between groups is deliberately NOT the governing constraint: the closest
-#: two naval groups in any shipped campaign are 17 NM apart, so tracks stay disjoint
-#: by a wide margin at any size considered.
+#: The anchor is the oval's CENTRE, not a point on it -- that is what makes this
+#: station-keeping rather than wandering, and it caps displacement at half the
+#: diagonal so the map, the threat rings and the turn-boundary model stay honest.
+#: The size is set by the smallest thing it must not invalidate: a short-legged
+#: hull's own threat ring. Do not enlarge it on feel -- an 8 x 2 NM oval was
+#: rejected for putting a Molniya wholly outside its own drawn ring.
 STATION_LEG = nautical_miles(3)
 STATION_WIDTH = nautical_miles(1)
 #: Economical loiter, not a transit: a ~48 min lap, so a hull is visibly under way all

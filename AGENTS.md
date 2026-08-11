@@ -556,6 +556,26 @@ aircraft. Do NOT "resync" this block from upstream until they fix it.
     upstream wiki pages keep upstream's wording, with fork deltas in **414th:** notes.
   - **A doc that describes a removed feature is worse than a wordy one.** When a feature is cut,
     grep the README and `docs/wiki/` for it in the same change.
+- **Code comments record why, never what (STANDARD, 2026-08-11 user call).** A comment earns
+  its place by saying something the code cannot: a constraint learned from a flown test, a
+  deliberate exclusion, an upstream bug being worked around. Never narrate the next line.
+  - **Cap a block at ~3 lines.** Longer rationale belongs in the feature's
+    `docs/dev/design/` note; the comment becomes one line pointing at it.
+  - **A plugin or module file header may run to ~15 lines** — it is the entry point for a
+    reader who has no other. Shape: one line of purpose, the `docs/` pointer, then the
+    constraints a reader could undo by accident, one line each. Everything else goes in the
+    note. Reference: `resources/plugins/intercept/intercept-config.lua` (104 → 16 lines).
+  - **A pointer must resolve.** Confirm the file exists before committing the reference — a
+    dead `docs/dev/...` pointer is worse than none, and one shipped in the first draft of
+    this very sweep.
+  - **Data files carry values, not essays.** A unit yaml gets the number and nothing else —
+    the reasoning lives in the design note. The `Air Assault:` priorities are the reference
+    case: a tier scheme with per-file justifications was written and stripped the same day.
+  - **Compress a constraint comment, never delete it.** The hard-constraints list above exists
+    because those cost missions to learn, and most of them live in comments. Wordiness is a
+    smaller failure than re-opening a settled question.
+  - Measured 2026-08-11: the fork ran **8.3%** comment density against upstream's **4.8%**, and
+    2.5× its rate of multi-line blocks. Re-measure before claiming a cleanup worked.
 - **ADHD-friendly agent output (STANDARD, 2026-07-20).** The reader has ADHD; every agent
   reply is shaped so an ADHD brain can act on it. The rules live in the vendored
   [`i-have-adhd`](https://github.com/ayghri/i-have-adhd) skill

@@ -1,29 +1,20 @@
 -------------------------------------------------------------------------------------------------------------------------------------------------------------
--- MANTIS IADS configuration bridge for DCS Retribution
+-- MANTIS IADS configuration bridge. Design is in
+-- docs/dev/design/414th-mantis-iads-HANDOFF.md (start there), with the migration
+-- record in 414th-mantis-migration-notes.md.
 --
--- Builds a MOOSE MANTIS air-defense network per coalition from the
--- dcsRetribution.IADS data table emitted by the mission generator. MANTIS ships
--- inside the bundled MOOSE (base plugin's Moose.lua), so this plugin only
--- supplies configuration -- there is no separate script to load.
+-- Builds a MOOSE MANTIS network per coalition from dcsRetribution.IADS. MANTIS
+-- ships inside the bundled Moose.lua, so this plugin is configuration only.
 --
--- MANTIS is the SOLE IADS engine (Skynet removed): there is no engine selector
--- (the old Settings.iads_engine / dcsRetribution.IADS.engine gate and the
--- skynetiads-config.lua bridge are gone), so this always runs when there is IADS
--- data and the bundled MOOSE MANTIS class is present -- see the gate at line ~23.
+-- The load-bearing parts:
 --
--- Implemented: core networking (SAM/EWR detection coordination + emissions
--- control), the Phase-5 C2 layer (command-center / comms / power degradation,
--- below -- in-game-verified, checklist G6), AND the SEAD-triggered point-defense
--- link (2026-07-12, checklist G30): each coalition's co-located PD groups (the
--- "... (PD)" Tor/Tunguska/Avenger escorts, emitted per-SAM as the IADS table's
--- PD connection arrays) are wrapped in a MOOSE SHORAD object and linked via
--- MANTIS:AddShorad -- the PD sits dark until a HARM/Maverick launch (SHORAD's
--- own S_EVENT_SHOT watch) or a MANTIS SEAD suppression wakes it, then it
--- engages the incoming shot while the big radar hides, and goes back to sleep
--- after the wake window. Still deferred: PROACTIVE SHORAD shoot-and-scoot
--- between zones (AddScootZones, needs Python-generated zones -- note reactive
--- SAM scoot is already automatic via MANTIS' integrated SEAD), per-unit tuning.
--- see docs/dev/design/414th-mantis-migration-notes.md
+--  * MANTIS is the SOLE IADS engine -- Skynet is gone, and so is the selector.
+--    This runs whenever there is IADS data and the MANTIS class is present.
+--  * Point-defense groups are linked via MANTIS:AddShorad and sit dark until a
+--    HARM/Maverick launch or a SEAD suppression wakes them, so the big radar can
+--    hide while the PD answers the shot.
+--  * Deferred: proactive SHORAD scoot (AddScootZones needs Python-generated
+--    zones). Reactive SAM scoot is already automatic via MANTIS' own SEAD.
 -------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 env.info("DCSRetribution|MANTIS-IADS plugin - configuration")

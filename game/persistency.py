@@ -371,47 +371,17 @@ class MigrationUnpickler(pickle.Unpickler):
         if name in ["CaletaTortel", "Caleta_Tortel_Airport"]:
             return dcs.terrain.Airport  # use base-class if airport was removed
 
-        # Feature removals (2026-07-21, the ROE/§40/§55 drop): the modules were
-        # deleted, so a pre-removal save's pickled PhaseBaseline / RedIntentBaseline /
-        # RedIntentSample / RedPosture / FrontPosture / DrawnZone would raise
-        # ModuleNotFoundError here. Degrade them to an inert placeholder so the save
-        # still loads -- the game/theater __setstate__ no longer restores those
-        # attributes, so the orphaned placeholders are never read.
-        # The will/war economies (§48/§53/§54) were removed too: a save with a
-        # pickled will_ledger (WillLedgerEntry) or any of these deleted modules'
-        # classes would raise ModuleNotFoundError here. The game/coalition
-        # __setstate__ no longer restores those attributes, so the placeholders
-        # are never read.
-        # §77 graduated escort jamming (#734, 2026-07-29): the tier system was
-        # removed -- game.data.escort_jamming (EscortJammerTier/TierEffect) deleted,
-        # and the escort_jammer_tier field dropped from AircraftType. A save written
-        # while §77 shipped tiers (#714 .. #734) pickled an EscortJammerTier onto
-        # every aircraft, so its unpickle now raises ModuleNotFoundError. Degrade the
-        # enum to the inert placeholder -- nothing reads escort_jammer_tier anymore,
-        # so the orphaned attribute is never touched.
-        # The §21 Combat SAR / §15 SCAR replacement (2026-08-07, #805) and the §20
-        # drop-spawn removal (2026-08-02, #750) deleted four more modules whose
-        # instances reach a save. Each needs a matching __setstate__ that drops or
-        # rebuilds the orphan, because a bare placeholder here only turns a load
-        # FAILURE into a crash at first use:
-        #   * game.pow_recovery -- PendingPowRecovery on
-        #     Coalition.pending_pow_recoveries; Coalition.__setstate__ pops the list.
-        #   * game.fourteenth.downed_pilots -- the fork's DownedPilot on
-        #     Coalition.downed_pilots. The class MOVED to game/squadrons/downedpilot.py,
-        #     but upstream #929's replacement is a different shape (SidcDescribable +
-        #     MissionTarget, UUID id, turns_remaining), so it is degraded rather than
-        #     remapped and Coalition.__setstate__ filters the placeholders out --
-        #     Game._rebuild_downed_pilot_index dereferences .id on every member.
-        #   * game.ato.flightplans.combatsar / .scar -- the Builder pickled onto
-        #     Flight._flight_plan_builder. Flight rebuilds it from the migrated flight
-        #     type (see Flight._ensure_flight_plan_builder); "Combat SAR" and "SCAR"
-        #     already remap via _LEGACY_FLIGHT_TYPE_VALUES.
-        #   * game.theater.unitplacement -- PendingUnitPlacement on
-        #     Game.pending_unit_placements; Game.__setstate__ pops the list.
-        # Modules deleted in the same commits that define only functions
-        # (game.fourteenth.csar_surge, game.fourteenth.stock_attrition) can never
-        # appear in a pickle and are deliberately NOT listed -- a tombstone for them
-        # would document a migration that cannot happen.
+        # Tombstones for modules deleted since a save could have pickled them; the
+        # removals themselves are documented in docs/dev/414th-features.md.
+        #
+        # A placeholder here only stops the LOAD failing. A class whose instances are
+        # actually reachable ALSO needs a __setstate__ that drops or rebuilds the
+        # orphan, or the crash just moves to first use (Coalition, Game, Flight).
+        # game.fourteenth.downed_pilots is degraded rather than remapped: the class
+        # moved, but upstream #929's replacement is a different shape, so
+        # Coalition.__setstate__ filters the placeholders out instead.
+        # Modules defining only functions can never appear in a pickle and are
+        # deliberately absent -- a tombstone would document an impossible migration.
         if module in (
             "game.fourteenth.phases",
             "game.fourteenth.red_intent",

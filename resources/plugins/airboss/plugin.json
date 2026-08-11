@@ -33,21 +33,24 @@
         {
             "nameInUI": "Use UH-60L mod for rescue helo",
             "mnemonic": "useUH60mod",
-            "defaultValue": false
+            "defaultValue": false,
+            "enabledWhen": "enableRescueHelo"
         },
         {
             "nameInUI": "Rescue duration (minutes)",
             "mnemonic": "rescueDuration",
             "minimumValue": 1,
             "maximumValue": 30,
-            "defaultValue": 3
+            "defaultValue": 3,
+            "enabledWhen": "enableRescueHelo"
         },
         {
             "nameInUI": "Rescue zone radius (NM)",
             "mnemonic": "rescueZoneRadius",
             "minimumValue": 5,
             "maximumValue": 120,
-            "defaultValue": 15
+            "defaultValue": 15,
+            "enabledWhen": "enableRescueHelo"
         },
         {
             "nameInUI": "Recovery window start time (minutes)",

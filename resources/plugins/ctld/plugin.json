@@ -36,12 +36,14 @@
         {
             "nameInUI": "JTAC marks targets with smoke",
             "mnemonic": "jtacsmoke",
-            "defaultValue": true
+            "defaultValue": true,
+            "enabledWhen": "autolase"
         },
         {
             "nameInUI": "JTAC uses FC3 laser code (1113)",
             "mnemonic": "fc3LaserCode",
-            "defaultValue": false
+            "defaultValue": false,
+            "enabledWhen": "autolase"
         },
         {
             "nameInUI": "Generate CTLD debug information",

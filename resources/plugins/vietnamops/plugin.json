@@ -73,7 +73,8 @@
         {
             "nameInUI": "Naval gunfire: seconds between automatic fire missions",
             "mnemonic": "ngfsAutoIntervalS",
-            "defaultValue": 90
+            "defaultValue": 90,
+            "enabledWhen": "ngfsAuto"
         },
         {
             "nameInUI": "Airbase harassment: seconds between events per field (randomized)",

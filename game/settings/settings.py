@@ -684,32 +684,14 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
     ),
 ]
 
-# ---------------------------------------------------------------------------
-# The 414th Features page.
+# The 414th Features page (§28). The split is the mental model: this page answers
+# "what is running", the topical pages answer "how it behaves", so a feature's
+# on/off switch lives here and its tuning knobs stay beside what they tune.
 #
-# The fork layers ~80 features on upstream, and the habit of shipping each one
-# behind its own gate had scattered those gates through the doctrine / campaign /
-# mission pages, where they sat indistinguishable from ordinary choices: nothing
-# told you that "Convoy ambush" is a whole subsystem while the spinner under it
-# is one of its knobs. Worse, every new feature landed on whichever topical page
-# looked closest, so those pages grew without bound.
-#
-# The gates now live on one page, and the split is a deliberate mental model:
-#
-#     the Features page answers "what is running"
-#     the topical pages answer  "how it behaves"
-#
-# So a feature's on/off switch moves here; its tuning knobs stay next to the
-# subject they tune. `FEATURE_GATE_FIELDS` is the boolean-gate set from the
-# feature registry (game/fourteenth/features.py) -- it is a literal here rather
-# than an import because game/__init__ already pulls in this module, so importing
-# the registry would be circular. `tests/fourteenth/test_features_registry.py`
-# fails CI if the two fall out of step, which is the same registry-plus-test
-# discipline the feature index already uses.
-#
-# Deliberately NOT moved: the Vietnam Ops page's own gates. That page is already
-# exactly a scoped features page, and emptying it to re-list the same eight
-# toggles here would be churn without a reader benefit.
+# FEATURE_GATE_FIELDS is a literal rather than an import of the feature registry
+# because game/__init__ already pulls in this module -- importing the registry
+# would be circular. tests/fourteenth/test_features_registry.py fails CI if the
+# two fall out of step.
 FEATURES_PAGE = "414th Features"
 
 FEATURE_GATE_FIELDS: dict[str, list[str]] = {

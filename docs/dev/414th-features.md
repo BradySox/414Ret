@@ -7442,6 +7442,24 @@ winchester-RTB** — empty rails stay with the package; the jamming is the paylo
 orders preference (Growler 800 > Prowler 790). Loadout resolves "Retribution Escort Jammer"
 first, falling back to the SEAD Escort fit. Blue-only.
 
+**Runtime effects (`resources/plugins/growler/growler-config.lua`) — ROE only.** Radar
+emissions are never toggled; `enableEmission` crashed DCS in the C-130 line, and MANTIS owns
+alarm/EMCON state.
+
+- **Defensive bubble.** A radar-guided missile closing on the jammer or any protected package
+  member rolls once per second against a **distance-banded spoof chance centred on the
+  jammer** — closer to the jammer is *harder* for the missile to survive. A spoofed missile is
+  destroyed silently, and a **minimum-travel guard** prevents the "explodes on launch" artefact
+  at the launcher.
+- **Offensive pulse.** A radar SAM group inside jamming range that threatens the protected
+  flights is forced to ROE `WEAPON_HOLD` for a short pulse, then restored to `OPEN_FIRE`.
+- **Escort geometry, and the constraint.** Effectiveness **rises as the jammer closes** —
+  penetration-escort physics, deliberately the inverse of the C-130's standoff burn-through
+  model. Never unify the two.
+- The policy is airframe-agnostic (no EA-18G-specific path). AI jammers run automatically after
+  a startup grace; a player-flown one gets an F10 menu instead. A dead or landed jammer projects
+  nothing.
+
 **Which packages get one (reworked 2026-08-07; checklist B52).** Dumping a live save's ATO
 showed the distribution inverted: blue fragged two Escort Jammer flights and **both rode CH-47F
 air assaults** (Growlers from a base 89 nm away, joining ~15 min behind the helos at 21,000 ft,

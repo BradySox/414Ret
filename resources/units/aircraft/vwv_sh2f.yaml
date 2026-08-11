@@ -28,5 +28,5 @@ variants:
   SH-2F Seasprite: {}
 tasks:    # defined in flighttype.py
   Anti-ship: 300
-  Air Assault: 62
+  Air Assault: 100
   Transport: 100

@@ -7279,50 +7279,20 @@ Campaign C-130J squadrons are near-universally
 will) frag C-130 airborne assaults where they out-range the helos; def-generated
 squadrons auto-assign everything the airframe is capable of, same effect.
 
-### The Air Assault priority ladder
+### Air Assault priorities
 
-`AircraftType.priority_list_for_task` sorts the `Air Assault:` numbers descending,
-and both `airwing.best_squadrons_for` and `squadrondefgenerator.generate_for_task`
-pick from the top of that list — so these values decide which airframe actually
-flies an assault, and which one a def-generated squadron gets built around. They
-are **not** cosmetic.
+`priority_list_for_task` sorts these descending and the planner picks from the
+top, so they decide which airframe flies an assault. Fixed-wing transports sit
+below the assault helos (C-130J-30 40, An-26B 25, C-47 20, C-17A and IL-76MD 15);
+range is checked separately, so a transport still wins when no helo can reach.
 
-They were reranked wholesale (2026-08-09) because the flat list had drifted into
-real errors: the `sh2f` naval ASW Seasprite was tied with the CH-53E at 100, the
-`SH-60B` (also ASW) outranked the assault UH-60A, the **Mi-8MT — the Soviet
-assault helicopter, fielded by more red factions than any other rotary type —
-sat at 40**, below a light observation helo, and the Mi-26 sat at 30 with a
-24-troop cabin.
+**One rotary value changed, 2026-08-09: `Mi-8MT` 40 → 60**, matching the UH-60A.
+It is red's assault helicopter but ranked below the scout helos, so red assaults
+went to whatever else was in range.
 
-| Tier | Band | Members |
-|---|---|---|
-| Heavy-lift rotary | 110–135 | CH-47Fbl1 130 · CH-53E 125 · CH-47D 120 · Mi-26 115 |
-| Medium assault rotary | 80–105 | vwv_ch46d_late 100 · vwv_ch46d 98 · Mi-8MT 95 · UH-60L 92 · UH-60A 88 · UH-1H 85 |
-| Light / naval rotary | 50–75 | uh2c 70 · uh2b 68 · uh2a 66 · sh2f 62 · HKP15B 60 · SH-60B 58 · OH-6A 55 |
-| Fixed-wing tactical | 28–48 | C-130J-30 42 · An-26B 34 · C-47 30 |
-| Fixed-wing strategic | 18–26 | C-17A 22 · IL-76MD 20 |
-| Gunship with troop seats | 8–15 | Mi-24P 12 · Mi-24V 10 |
-
-The rules the bands encode:
-
-- **Rotary transports beat fixed-wing ones.** A helicopter puts troops on the
-  objective and can extract them; a paradrop is the long-reach / no-helo answer.
-  Range is enforced separately in `can_auto_assign_mission`, so a transport still
-  wins the tasking when no helo can reach.
-- **Gunships sit at the very bottom**, below the fixed-wing transports — six jump
-  seats on an airframe that is a gunship first, and every faction fielding Hinds
-  also fields Mi-8s.
-- **Within a tier**, lift capacity orders the airframes and the player-flyable one
-  beats the AI-only ones.
-
-Where a faction fields only one Air Assault-capable type the absolute number is
-moot — it is the only option, so it gets the tasking regardless.
-
-**Fork vs upstream:** the fork has no `Hercules.yaml` (Anubis mod purged) and no
-`C-130.yaml` (consolidated onto the C-130J-30 in `d8d58be2c`), so those two rungs
-exist only in the upstream carve, at **Hercules 45** (down from upstream's 990,
-which put a C-130 above every assault helicopter and contradicted this ladder) and
-**C-130 38**.
+A full re-tiering of every rotary type was built and reverted the same day (user
+call — overthinking). **Do not rebuild it.** The rest of the ladder is a balance
+question, not a defect; if a value looks wrong, change that one value.
 
 **Runtime** (`resources/plugins/ctld/ctld-config.lua` — the Retribution-owned
 config layer; CTLD.lua itself is untouched): the emitter marks each transport

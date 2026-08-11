@@ -318,11 +318,8 @@ if dcsRetribution then
             --- when it crosses its own air-assault target zone (one drop per
             --- sortie -- fixed-wing has no pickup zone to reload from). Players
             --- are never auto-dropped; they jump via the F10 unload.
-            --- Diagnostics. An AI transport that overflies its zone without
-            --- dropping leaves no trace otherwise: every gate below fails
-            --- silently and the loop just polls on. Log the first refusal per
-            --- unit, then re-log at most once a minute with the live distance,
-            --- so one flight is enough to say which gate is the blocker.
+            --- Every gate below fails silently, so log the first refusal per
+            --- unit and re-log at most once a minute.
             local _paradrop_diag = {} -- pilot -> { last = modelTime, why = string }
             local PARADROP_DIAG_REPEAT_S = 60
 
@@ -390,8 +387,6 @@ if dcsRetribution then
                 end
                 timer.scheduleFunction(check_paradrop_ai, nil, timer.getTime() + PARADROP_AI_POLL_S)
             else
-                -- No entry means the release loop never runs, so an AI transport
-                -- would overfly its zone and keep its troops. Say so out loud.
                 env.info("DCSRetribution|CTLD paradrop - AI plan EMPTY, no automatic release this mission")
             end
 

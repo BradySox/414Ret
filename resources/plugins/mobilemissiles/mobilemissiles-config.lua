@@ -1,38 +1,23 @@
 ---------------------------------------------------------------------------------------------------
--- Mobile missile relocation runtime (the SCUD hunt).
+-- Mobile missile relocation runtime (§49, the SCUD hunt). Design and the flown
+-- findings are in docs/dev/414th-features.md §49.
 --
--- Each emitted theater-missile site's vehicle group(s) drive shoot-and-scoot: on a cadence, they
--- relocate to a fresh random point within the scoot radius of the site's campaign-map position, so
--- the launcher is never quite where the last recon photo froze it. Alarm-green + weapons hold while
--- moving -- they relocate, they don't stop to fight.
+-- Theater-missile sites shoot-and-scoot to a fresh point inside the scoot radius,
+-- alarm-green and weapons-hold while moving. Movement only -- kills record natively,
+-- the site never leaves the radius, a dead site stops being routed. Reads
+-- dcsRetribution.mobileMissiles; inert when absent.
 --
--- Movement ONLY. Kills record natively (the routed DCS group is the force model's own), the site
--- never migrates beyond the scoot radius (threat rings and the turn-boundary model stay honest),
--- and a dead site just stops being routed. Reads dcsRetribution.mobileMissiles, emitted by
--- game/missiongenerator/mobilemissileluadata.py; inert when that node is absent. pcall-guarded
--- throughout so a hiccup never takes the mission down. Definition order matters (Lua 5.1):
--- helpers precede use.
+-- The load-bearing parts:
 --
--- FIRE FIRST, THEN SCOOT: a group carrying a scripted fire mission (the missile-site
--- Hold -> FireAtPoint task, forwarded per-site as `fireHolds`) is held still until its launch
--- window (+ a margin) has passed -- mist.goRoute pushes the route with Controller:setTask, which
--- REPLACES the pending fire mission (the 2026-07-16 flown clobber: 12 of 13 batteries silently
--- lost their fire missions to the first relocation). Once the window is over, the spent fire
--- task is cleared with resetTask before routing (a fired launcher otherwise pins on the dead
--- task and never moves -- the BAT battery, same test).
---
--- The generator now also gives the FireAtPoint its own stop condition (hold deadline +
--- MISSILE_FIRE_WINDOW_S = 240 s in tgogenerator.py), because a dry, never-ending fire task
--- left the launchers pinned in their deployed state and resetTask alone recovered only 2 of
--- 9 fired batteries (2026-07-17 Scenic Route fly). fireMarginS MUST stay above that 240 s
--- window so the first route push arrives after the task has ended on its own; the resetTask
--- here stays as a belt-and-braces for pre-window missions.
---
--- GIVE-UP: a group whose consecutive route pushes produce essentially no movement is
--- dropped from the loop (2026-07-17 Scenic Route Merged fly: all 8 fired CH_Shahed136 sites
--- stayed pinned post-salvo -- a mod launcher state DCS will not drive out of, while the
--- never-fired ones drove fine -- and each drew 6 more futile pushes/hour). Two dry
--- pushes and the group is left alone; real movement resets the count.
+--  * FIRE FIRST, THEN SCOOT. mist.goRoute routes via Controller:setTask, which
+--    REPLACES a pending fire mission -- 12 of 13 batteries silently lost theirs to
+--    the first relocation (2026-07-16). Groups with a fire window are held until it
+--    passes, then resetTask clears the spent task or a fired launcher pins forever.
+--  * fireMarginS MUST stay above MISSILE_FIRE_WINDOW_S (240 s, set in tgogenerator),
+--    so the first route push lands after the fire task has ended on its own.
+--  * Two dry pushes and a group is dropped from the loop. Some mod launchers enter a
+--    post-salvo state DCS will not drive out of, and each one drew 6 futile
+--    pushes/hour.
 ---------------------------------------------------------------------------------------------------
 
 if not (dcsRetribution and dcsRetribution.mobileMissiles and mist) then

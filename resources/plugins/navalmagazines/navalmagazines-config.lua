@@ -1,54 +1,24 @@
 ---------------------------------------------------------------------------------------------------
--- Cross-turn naval magazines runtime (§81).
+-- Cross-turn naval magazines runtime (§81). Design and the flown-test record are
+-- in docs/dev/design/414th-naval-magazines-notes.md.
 --
 -- Reads dcsRetribution.navalMagazines (game/missiongenerator/navalmagazineluadata.py):
 --   stagger   = true|false   -- N1: ships generated ReturnFire, release them on a stagger
 --   metered   = true|false   -- N2: enforce the campaign anti-ship magazine
 --   magazines = { { group=, coalition=, remaining= }, ... }
 --
--- Why this exists: a DCS ship is weapons-free with a RED alarm state from t=0 (ship weapons are
--- OPTION-driven -- there is no task to withhold them), and a modern anti-ship missile out-ranges
--- the whole theatre, so "in range" is true immediately and an entire fleet ripples its tubes in
--- the opening minute. Worse, a mission is a fresh spawn: without bookkeeping the fleet reloads
--- for free every single turn.
+-- The load-bearing parts:
 --
--- N1 -- STAGGERED RELEASE. The generator spawns ships ReturnFire (never WeaponHold), and each
--- group is released to weapons-free at its own moment inside [releaseMinS, releaseMaxS], so the
--- exchange develops across the mission instead of detonating at once.
---
--- RELEASE-ON-ATTACK (2026-08-05 flown finding, the B39 first fly): a DCS naval group on
--- ReturnFire mounts NO missile defense at all -- an LHA died to 13 Harpoons with its HHQ-16
--- escorts silent alongside, and a held fleet fired zero shots in 110 minutes. So the hold
--- shapes who STARTS the war, never who may defend: the first ENEMY weapon aimed at (SHOT
--- target) or landing on (HIT) a managed group releases it to weapons-free immediately -- held
--- OR winchester. An attacked winchester group may overshoot its magazine defending itself; the
--- overshoot is still counted and debited (the persisted stock clamps at zero).
---
--- ...AND ITS FORMATION WITH IT (the re-fly, same day): releasing only the TARGETED group is not
--- enough, because a Retribution carrier/LHA objective is TWO DCS groups -- the flagship and its
--- escort screen -- and the area-defence SAMs are on the ESCORTS. Attacked alone, the Type 071
--- fired its AK-630 CIWS (all the AAW it has) and died while the HHQ-16 escorts 1.91 km away sat
--- holding, never having been shot at themselves. So an attack also frees every managed friendly
--- group within `formationReleaseKm`. The measured geometry makes the radius unambiguous: a
--- screen rides ~2 km off its flagship, the next task force was 59 km away. ONE HOP, never a
--- cascade -- a released neighbour does not release ITS neighbours, so an attack cannot ripple
--- across the map.
---
--- N2 -- THE MAGAZINE. Each group's emitted `remaining` is this mission's hard anti-ship
--- expenditure cap. Every S_EVENT_SHOT whose weapon type matches the anti-ship pattern list
--- decrements it; at zero the group drops back to ReturnFire -- WINCHESTER, out of the anti-ship
--- fight until the campaign says otherwise (and, per the flown finding above, passive UNTIL
--- attacked -- release-on-attack is what lets a spent ship still fight back). There is no rearm:
--- expenditure mirrors into the naval_magazines_state debrief channel and Python debits the
--- persisted magazine at the turn boundary. A mission that fires nothing debits nothing.
---
--- The land-attack cruise missiles §63 meters (Tomahawk, the 3M14 Kalibr) are deliberately absent
--- from the pattern list, so the two magazines meter disjoint weapon sets and can never both
--- charge the same shot. Never add a land-attack family here.
---
--- The plugin owns no kills and no spawns: it only sets ROE and counts real weapon releases.
--- Inert when the node is absent. pcall-guarded throughout; definition order matters (Lua 5.1):
--- helpers precede use.
+--  * Never add a land-attack weapon family to the anti-ship pattern list. §63 and
+--    §81 stay correct only because their weapon sets are disjoint.
+--  * Release-on-attack is not optional. A DCS group on ReturnFire mounts no
+--    missile defense whatsoever (flown 2026-08-05), so a held or winchester group
+--    is a defenceless one. The hold shapes who starts the fight, never who defends.
+--  * An attack frees the formation too -- the area-defence SAMs sit on the escorts,
+--    not the flagship. ONE HOP only: a freed neighbour frees nobody, so an attack
+--    cannot ripple across the map.
+--  * No rearm. Expenditure mirrors to the naval_magazines_state debrief channel and
+--    Python debits the persisted stock at the turn boundary.
 ---------------------------------------------------------------------------------------------------
 
 if not (dcsRetribution and dcsRetribution.navalMagazines) then

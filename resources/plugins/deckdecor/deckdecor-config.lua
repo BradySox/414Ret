@@ -1,41 +1,23 @@
 ---------------------------------------------------------------------------------------------------
--- Carrier deck dressing -- the dynamic respot (feature 72's runtime half).
+-- Carrier deck dressing -- §72's runtime half. Design and the flown findings are in
+-- docs/dev/design/414th-carrier-deck-decor-notes.md.
 --
--- The aircraft tier may place deck statics that stand INSIDE the recovery corridor -- campaign A's
--- round-down E-2C -- because they only exist while the deck is a launch deck. Statics cannot
--- drive (no AI controller), so "moving" one means striking it below: this script despawns each
--- boat's launch-phase statics (StaticObject:destroy, silent -- the elevator ride, narratively)
--- when EITHER fires first:
---   * the astern cone: any friendly fixed-wing aircraft airborne low astern of the boat
---     (CASE I initial runs up the wake at ~800 ft from ~3 NM; CASE III straight-in from
---     further out -- both enter the cone long before the groove), or
---   * the fallback timer -- launches are long over, clear the deck regardless, so a hazard
---     never waits on detection.
+-- Statics cannot drive, so clearing the recovery corridor means striking them below
+-- (StaticObject:destroy). Fires on whichever comes first: a friendly fixed-wing in
+-- the astern cone, or a fallback timer so a hazard never waits on detection.
 --
--- The cone counts ONLY genuine run-ins: closing speed is SHIP-RELATIVE, nothing within the
--- deck footprint can trip, and any unit recently seen on/over this deck (the outbound
--- roster) is its own launch traffic, not a recovery -- see the gate comments below for the
--- two flown falsifications (2026-07-18) that forced each rule.
+-- Reads dcsRetribution.deckDecor (game/missiongenerator/deckdecorluadata.py); inert
+-- when absent. BRC is generation-time, so astern is BRC + 180 with no runtime
+-- orientation API.
 --
--- Reads dcsRetribution.deckDecor (emitted by game/missiongenerator/deckdecorluadata.py: one
--- record per boat -- ship group name, flagship unit name, side, generation-time BRC, and the
--- static unit names to clear); inert when that node is absent. The BRC comes from generation
--- (the boat steams into wind on that course all mission), so no runtime orientation API is
--- needed: the astern bearing is BRC + 180.
+-- The load-bearing parts:
 --
--- Despawn, plus ONE sanctioned spawn. This script was despawn-only by design until 2026-08-07;
--- the recovery-phase tier broke that deliberately, on an explicit call, because the carrier
--- case is the one place the rule cannot hold: gear ranged forward for recovery must NOT be on
--- the bow during the launch cycle, so it cannot be generated into the miz, and a static that
--- rides a steaming hull cannot be faked any other way. The exception is scoped -- one one-shot
--- spawn per boat, on the same trigger as the strike-below, pcall-guarded, skipped entirely
--- when MOOSE is absent -- and the despawn half runs regardless. Do not widen it: a second
--- spawn caller would make this a spawner, which is a different kind of script with a different
--- failure surface.
---
--- No gameplay-model change, nothing persisted; a dead/absent static name is skipped silently
--- (culled, or already destroyed). pcall-guarded tick so a hiccup never takes the mission down.
--- Definition order matters (Lua 5.1): helpers precede use.
+--  * The cone's three gates each exist because a flown test falsified the naive
+--    version (2026-07-18) -- see the gate comments at the call site before relaxing
+--    any of them.
+--  * ONE sanctioned spawn, for the recovery-phase tier only, because gear ranged
+--    forward cannot be generated into the miz. Do not widen it: a second spawn
+--    caller makes this a spawner, with a different failure surface.
 ---------------------------------------------------------------------------------------------------
 
 if not (dcsRetribution and dcsRetribution.deckDecor and dcsRetribution.deckDecor.boats) then

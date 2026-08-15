@@ -8955,12 +8955,41 @@ Same gate; two pieces:
    briefing renders "The air war so far today" above the situation section. Empty — section
    suppressed — with the gate off or at an H-hour launch, so turn 0 briefings are unchanged.
 
+### P4 — the voice net (2026-08-15)
+
+Sub-gate `living_battlespace_voice_net` (default OFF, under the master gate). The transport
+decision — design-note open call 5, answered with spike evidence: **generation-time
+pre-render, native playback**, chosen over the SRS-runtime TTS ecosystem for the SP-first
+footprint (zero player installs; the clips are in the miz, so MP clients hear them too). The
+SRS/MSRS path stays recorded as the dynamic upgrade. Spike numbers: Windows SAPI headless,
+~150 ms per call, 8 kHz/8-bit mono ≈ 35 KB per call (~1.5 MB per mission) — and the 8 kHz
+band limit reads as a radio with no effects chain.
+
+1. **Schedule** — `game/missiongenerator/battlespacenetluadata.py::build_net_schedule`
+   (pure): one voice per blue AI package from its generated `FlightData` — launch check-in
+   (`departure_delay` > 2 min), push at TOT−5 min (strike families), on-station at TOT+30 s
+   (racetrack families), RTB at `mission_departure_time`. All calls on the **first blue AWACS
+   frequency** — the one channel the kneeboard already briefs — with the AWACS's own hail
+   name. The player's package is never voiced over. Rate discipline: 20 s minimum gap, 48
+   calls per mission cap. No blue AWACS → the net is silent (logged).
+2. **Synthesis + embedding** — `plan_battlespace_net`: Windows SAPI via one PowerShell
+   process over a JSON manifest; non-Windows or any failure drops the whole net with a
+   warning (never a half-voiced mission). Clips embed via `map_resource.add_resource_file`
+   and the schedule carries `l10n/DEFAULT/…` paths (the §58 lesson).
+3. **Plugin** — `resources/plugins/battlespacenet/`: schedules each call and keys
+   `trigger.action.radioTransmission` **positionally from the live transmitting group**
+   (the §70 delivery contract); a dead or despawned transmitter is silence, never a fallback
+   point. One-shot clips, AM, `powerW` plugin option (range only); `showSubtitles` option
+   mirrors calls as blue text. Harness-covered (`tests/lua/test_battlespacenet_runtime.py`).
+
 ### Needs an in-game pass
 
 Checklist **B56** (P1: the launch-flow wiring lives in `qt_ui`, not CI-typechecked, and the
 mid-cycle feel at spawn is what CI cannot exercise), **B57** (P2: residue on the ramp,
-clean-wing returners, no parking exhaustion), and **B58** (P3: a wave launches after player
-egress; the briefing narrates the pre-roll; parking survives the longer occupation).
+clean-wing returners, no parking exhaustion), **B58** (P3: a wave launches after player
+egress; the briefing narrates the pre-roll; parking survives the longer occupation), and
+**B59** (P4: calls audible on the briefed AWACS channel at plausible times; SAPI voice
+quality verdict; no spam).
 
 ### Deferred
 

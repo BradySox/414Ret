@@ -760,14 +760,16 @@ FEATURES: tuple[Feature, ...] = (
         88,
     ),
     Feature(
-        # P1 of the living-battlespace direction: the phase-aware pre-roll.
-        # docs/dev/design/414th-living-battlespace-notes.md.
+        # The living-battlespace direction, P1-P4: pre-roll, residue, waves,
+        # voice net. docs/dev/design/414th-living-battlespace-notes.md.
         "living_battlespace",
         "Living battlespace pre-roll",
         89,
+        plugin_id="battlespacenet",
         settings_fields=(
             "living_battlespace_preroll",
             "living_battlespace_preroll_cap",
+            "living_battlespace_voice_net",
         ),
     ),
     # Always-on engine plugins — major 414th machinery documented in design notes

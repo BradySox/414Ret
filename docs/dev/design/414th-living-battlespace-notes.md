@@ -1,14 +1,16 @@
 # 414th Living Battlespace — the turn as a slice of a continuous air war
 
-**Status: P1 + P2 + P3 LANDED 2026-08-15** (feature §89, checklist rows B56 + B57 + B58,
-features doc §89). P1: player pinning + the phase curve + the auto pre-roll at launch. P2:
-recovery residue at the arrival field, expended stores on egress-phase strike flights,
-burned-down fuel for AI spawned en route. P3: the follow-on tail (the TOT spread extends past
-the desired mission length by the phase-aware pre-roll minutes, knob-free) and the
-"air war so far today" briefing block. Recorded deviations: carrier ramp residue deferred
-(§64/§72 interplay); the stores strip is **clean-wing-plus-pods** rather than "keep A2A and
-tanks" (no A2A/tank weapon taxonomy — open call 9). **P4 (voice net) and P5 (reactive red)
-remain design only.** This note records the problem, the measured evidence, the scoping
+**Status: P1–P4 LANDED 2026-08-15** (feature §89, checklist rows B56–B59, features doc §89).
+P1: player pinning + the phase curve + the auto pre-roll at launch. P2: recovery residue,
+expended stores on egress-phase strikers, burned-down AI fuel. P3: the follow-on tail
+(knob-free, symmetric with the pre-roll) and the "air war so far today" briefing block. P4:
+the voice net — **open call 5 answered**: generation-time SAPI pre-render with native
+playback (zero player footprint; spike-measured ~150 ms and ~35 KB per 8 kHz call), the
+SRS/MSRS runtime ecosystem recorded as the dynamic alternative; calls transmit positionally
+from real flights on the blue AWACS frequency via the `battlespacenet` plugin. Recorded
+deviations: carrier ramp residue deferred (§64/§72 interplay); the stores strip is
+**clean-wing-plus-pods** rather than "keep A2A and tanks" (open call 9). **P5 (reactive red)
+remains design only.** This note records the problem, the measured evidence, the scoping
 decisions, and the phased plan.
 
 **Related:** [`414th-single-player-loop-notes.md`](414th-single-player-loop-notes.md)
@@ -250,7 +252,7 @@ become checklist rows when the slice lands, not before.
 | P1 | **LANDED 2026-08-15** (§89, row B56) — player pinning + auto pre-roll in the launch flow + phase curve knob; the W1 spread half deferred to P3 | M | Pass: at spawn, multiple flights are airborne mid-route and at least one recovers within ~20 min; player startup matches the briefed window. Fail: flights teleported to waypoint 1, briefed-vs-DCS clock mismatch, mass parking-overflow air-promotes (F7). |
 | P2 | **LANDED 2026-08-15** (§89, row B57) — W2 residue at the arrival field (carriers deferred) + W3 stores strip (v1 clean-wing-plus-pods, open call 9) + AI mid-air fuel | S/M | Pass: a completed flight's jets sit parked at their field; an egress-phase striker spawns without A2G stores. Fail: "returners" with full racks; duplicate airframes. |
 | P3 | **LANDED 2026-08-15** (§89, row B58) — W1b follow-on tail (spread window += pre-roll minutes, knob-free) + W5 briefing block | S/M | Pass: at least one package launches after the player's egress; the briefing narrates the pre-roll. Fail: waves never activate (silent-gate class) or eat all parking. |
-| P4 | Voice net: transport spike, then schedule emitter + plugin | spike S, build M/L | Pass: calls audible on briefed frequencies matching real ATO events, rate-limited. Fail: silence (transport absent) or spam. |
+| P4 | **LANDED 2026-08-15** (§89, row B59) — spike answered open call 5 (generation-time SAPI pre-render; SRS/MSRS recorded as the runtime alternative); schedule emitter + `battlespacenet` plugin, AWACS-frequency delivery | spike S, build M/L | Pass: calls audible on briefed frequencies matching real ATO events, rate-limited. Fail: silence (transport absent) or spam. |
 | P5 | Reactive red v1 | M | Pass: striking a listed objective produces the recce sortie from real reserve stock. Fail: any spawn outside the positive list. |
 
 ## 10. Open calls
@@ -260,7 +262,11 @@ become checklist rows when the slice lands, not before.
 3. Whether pre-roll attrition needs a soft cap independent of pre-roll length.
 4. Follow-on wave budget (count/perf cap), and verification that long activation delays
    survive generation.
-5. Voice transport pick and its SP footprint (the P4a spike's exit question).
+5. ~~Voice transport pick and its SP footprint~~ — **ANSWERED 2026-08-15 by the P4a spike:**
+   generation-time Windows SAPI pre-render with native playback (zero installs, ~150 ms and
+   ~35 KB per 8 kHz call, the band limit doubling as the radio effect). The SRS/MSRS runtime
+   TTS ecosystem stays the recorded alternative if dynamic in-mission calls or better voices
+   are ever wanted (its cost: SRS running beside DCS).
 6. Reactive red's second event.
 7. Briefed-time presentation: does the kneeboard lead with "the war began 40 minutes
    ago" (W5's framing)?

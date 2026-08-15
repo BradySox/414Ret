@@ -109,8 +109,8 @@ Read before touching a campaign's `.yaml`, `.miz` or build tool.
 - **Planning / doctrine** — `414th-airwar-planner-consolidation-notes.md`,
   `414th-aircraft-task-rebalance-rubric.md`, `414th-victory-conditions-notes.md`,
   `414th-wing-growth-notes.md`, `414th-single-player-loop-notes.md`,
-  `414th-living-battlespace-notes.md` (pre-roll, residue and follow-on waves landed
-  2026-08-15 as §89 P1–P3; voice net and reactive red still design),
+  `414th-living-battlespace-notes.md` (pre-roll, residue, follow-on waves and the voice net
+  landed 2026-08-15 as §89 P1–P4; reactive red still design),
   `414th-autoplanner-upstream-divergence-audit.md` (**the full fork-vs-upstream planner
   diff**, 2026-08-09: every divergence classified by gate and default; read before
   reverting or carving planner behavior)
@@ -333,7 +333,7 @@ linked design note.
 86. **GPS jamming** — satellite-guided weapons released inside the bubble land long.
 87. **Naval station-keeping racetracks** — anchored ovals so ships hold station under way.
 88. **Angled-deck carrier recovery heading** — the boat steams for 25 kt down the angled deck, not the bow.
-89. **Living battlespace pre-roll** — phase-aware mid-cycle mission starts: earlier packages are already airborne or parked back home when you walk out, follow-on waves launch behind you, and the briefing carries the day's running score.
+89. **Living battlespace pre-roll** — phase-aware mid-cycle mission starts: earlier packages are already airborne or parked back home when you walk out, follow-on waves launch behind you, the briefing carries the day's running score, and an optional voice net speaks the ATO's calls on the AWACS frequency.
 
 ### Retired, removed or shelved — do not restore
 

@@ -770,6 +770,7 @@ FEATURES: tuple[Feature, ...] = (
             "living_battlespace_preroll",
             "living_battlespace_preroll_cap",
             "living_battlespace_voice_net",
+            "living_battlespace_reactive_red",
         ),
     ),
     # Always-on engine plugins — major 414th machinery documented in design notes

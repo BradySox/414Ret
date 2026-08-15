@@ -321,6 +321,14 @@ class Coalition:
                     MissionScheduler(
                         self, self.game.settings.desired_player_mission_duration
                     ).schedule_missions(now)
+                # §89 P5: red reaction-alert flights, parked past the mission
+                # until the reactivered plugin launches one over a struck
+                # objective. After scheduling so the spread never touches them;
+                # no-op unless both living-battlespace gates are on (red only).
+                with tracer.trace(f"{color} battlespace reaction alert"):
+                    from game.fourteenth.living_battlespace import plan_red_reactions
+
+                    plan_red_reactions(self, now)
                 if self.player.is_blue:
                     with tracer.trace(f"{color} player QRA alert"):
                         self._plan_player_qra(now)

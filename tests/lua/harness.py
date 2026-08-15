@@ -105,6 +105,10 @@ class DcsPluginHarness:
         """Fire an S_EVENT_BIRTH for a group's first unit (a pilot slotting in)."""
         self.harness.fireBirth(group_name)
 
+    def fire_dead(self, unit_name: str) -> None:
+        """S_EVENT_DEAD for a registered unit, initiator = the real UnitFake."""
+        self.harness.fireDead(unit_name)
+
     def fire_hit(self, group_name: str) -> None:
         """Fire an S_EVENT_HIT on a group's first unit (the victim)."""
         self.harness.fireHit(group_name)

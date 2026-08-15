@@ -1,17 +1,22 @@
 # 414th Living Battlespace — the turn as a slice of a continuous air war
 
-**Status: P1–P4 LANDED 2026-08-15** (feature §89, checklist rows B56–B59, features doc §89).
+**Status: ALL FIVE SLICES LANDED 2026-08-15** (feature §89, checklist rows B56–B60,
+features doc §89). The note's build program is complete; what remains is the in-game pass
+ladder (B56–B60) and the open calls below.
 P1: player pinning + the phase curve + the auto pre-roll at launch. P2: recovery residue,
 expended stores on egress-phase strikers, burned-down AI fuel. P3: the follow-on tail
 (knob-free, symmetric with the pre-roll) and the "air war so far today" briefing block. P4:
 the voice net — **open call 5 answered**: generation-time SAPI pre-render with native
 playback (zero player footprint; spike-measured ~150 ms and ~35 KB per 8 kHz call), the
 SRS/MSRS runtime ecosystem recorded as the dynamic alternative; calls transmit positionally
-from real flights on the blue AWACS frequency via the `battlespacenet` plugin. Recorded
+from real flights on the blue AWACS frequency via the `battlespacenet` plugin. P5: reactive
+red — up to two REAL claimed alert flights parked past the mission (deliberately not the §61
+untracked-freebie path), launched one-per-struck-objective by the `reactivered` plugin under
+positive-list discipline, flying a defensive orbit over the struck point. Recorded
 deviations: carrier ramp residue deferred (§64/§72 interplay); the stores strip is
-**clean-wing-plus-pods** rather than "keep A2A and tanks" (open call 9). **P5 (reactive red)
-remains design only.** This note records the problem, the measured evidence, the scoping
-decisions, and the phased plan.
+**clean-wing-plus-pods** rather than "keep A2A and tanks" (open call 9); reactive red's
+second event (CAP backfill surge) stays open call 6. This note records the problem, the
+measured evidence, the scoping decisions, and the phased plan.
 
 **Related:** [`414th-single-player-loop-notes.md`](414th-single-player-loop-notes.md)
 (§83 SP Pilot Mode — the delivery surface this pairs with) ·
@@ -253,7 +258,7 @@ become checklist rows when the slice lands, not before.
 | P2 | **LANDED 2026-08-15** (§89, row B57) — W2 residue at the arrival field (carriers deferred) + W3 stores strip (v1 clean-wing-plus-pods, open call 9) + AI mid-air fuel | S/M | Pass: a completed flight's jets sit parked at their field; an egress-phase striker spawns without A2G stores. Fail: "returners" with full racks; duplicate airframes. |
 | P3 | **LANDED 2026-08-15** (§89, row B58) — W1b follow-on tail (spread window += pre-roll minutes, knob-free) + W5 briefing block | S/M | Pass: at least one package launches after the player's egress; the briefing narrates the pre-roll. Fail: waves never activate (silent-gate class) or eat all parking. |
 | P4 | **LANDED 2026-08-15** (§89, row B59) — spike answered open call 5 (generation-time SAPI pre-render; SRS/MSRS recorded as the runtime alternative); schedule emitter + `battlespacenet` plugin, AWACS-frequency delivery | spike S, build M/L | Pass: calls audible on briefed frequencies matching real ATO events, rate-limited. Fail: silence (transport absent) or spam. |
-| P5 | Reactive red v1 | M | Pass: striking a listed objective produces the recce sortie from real reserve stock. Fail: any spawn outside the positive list. |
+| P5 | **LANDED 2026-08-15** (§89, row B60) — real claimed alert flights (not the §61 freebie path), one defensive orbit per struck listed objective, pool-capped | M | Pass: striking a listed objective produces the reaction sortie from real reserve stock. Fail: any spawn outside the positive list. |
 
 ## 10. Open calls
 

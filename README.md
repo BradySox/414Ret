@@ -161,6 +161,9 @@ Most of this is opt-in. Full list with toggles, defaults and known limitations:
   outbound, on station or recovering when you spawn. The first turn keeps its H-hour launch;
   later turns start deeper in (up to a configurable ceiling, 40 minutes by default). Pre-roll
   combat resolves with the same odds as other off-screen fights, so its losses are real.
+  Flights already home park their jets on the ramp at their recovery field, strikers spawned
+  past their target come home with empty racks, and aircraft spawned en route carry
+  burned-down fuel instead of full tanks.
 - **Scheduled squadron arrivals.** Campaigns can add *new airframes* on announced turns, so the
   wing you start with is not the wing you end with. Schedules follow air-campaign order:
   air superiority, SEAD/DEAD and enablers first, deep strike once the SAM belt is coming down.

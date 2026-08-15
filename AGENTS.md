@@ -109,8 +109,8 @@ Read before touching a campaign's `.yaml`, `.miz` or build tool.
 - **Planning / doctrine** — `414th-airwar-planner-consolidation-notes.md`,
   `414th-aircraft-task-rebalance-rubric.md`, `414th-victory-conditions-notes.md`,
   `414th-wing-growth-notes.md`, `414th-single-player-loop-notes.md`,
-  `414th-living-battlespace-notes.md` (the pre-roll landed 2026-08-15 as §89 P1; follow-on
-  waves, voice net and reactive red still design),
+  `414th-living-battlespace-notes.md` (the pre-roll + recovery residue landed 2026-08-15 as
+  §89 P1+P2; follow-on waves, voice net and reactive red still design),
   `414th-autoplanner-upstream-divergence-audit.md` (**the full fork-vs-upstream planner
   diff**, 2026-08-09: every divergence classified by gate and default; read before
   reverting or carving planner behavior)

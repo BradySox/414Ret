@@ -8914,16 +8914,41 @@ page under Single-player flow.
 pinning (delta math, earliest-flight selection, AI/later-start/empty-package no-ops, gate-off
 and turn-0 no-ops), and the launch trigger. The registry lock covers the §89 entry.
 
+### P2 — recovery residue + expended stores (2026-08-15)
+
+Same gate; three pieces, all no-ops with it off:
+
+1. **Recovery residue** — `AircraftGenerator._spawn_completed_residue`: a flight in
+   `Completed` at generation (its whole cycle predates the player's startup) parks its jets
+   uncontrolled at its **arrival** field via `FlightGroupSpawner.create_completed_aircraft`
+   (the `create_idle_aircraft` shape re-pointed at `flight.arrival`), painted, modexed, and
+   **registered in the unit map** so a ramp kill records against the real airframes. Declines
+   with a log line when the arrival has no parking. **Carrier arrivals are deferred** — deck
+   residue interacts with the §64 spawn policy and §72 deck dressing; read those first.
+2. **Expended stores** — `FlightGroupConfigurator.setup_payload` skips non-pod pylons when
+   `stores_expended` says the flight is a strike-family task (`STRIKE/BAI/SEAD/DEAD/OCA_*/
+   ANTISHIP` — loiter-shaped A2G like CAS is deliberately excluded, its "target" waypoint is a
+   patrol anchor) in an in-flight state past its `tot_waypoint`. **v1 deviation, recorded:**
+   the design note said "keep A2A and tanks," but the tree has no A2A/tank weapon taxonomy
+   (`WeaponType` is ARM/LGB/pods/UNKNOWN), so v1 strips to a **clean wing plus pods**
+   (TGP/jammer/decoy survive). Enriching `resources/weapons` `type:` with AAM/TANK is the
+   refinement path — design-note open call 9.
+3. **Mid-air AI fuel** — `setup_fuel` wrote the state's burned-down fuel estimate only for
+   player units; AI units spawned en route kept full planned fuel. With the gate on, AI units
+   in in-flight states get the same clamped estimate (`use_estimated_fuel_for_ai`).
+
 ### Needs an in-game pass
 
-Checklist **B56**. The launch-flow wiring lives in `qt_ui` (not CI-typechecked), and the
-mid-cycle feel at spawn is exactly what CI cannot exercise.
+Checklist **B56** (P1: the launch-flow wiring lives in `qt_ui`, not CI-typechecked, and the
+mid-cycle feel at spawn is what CI cannot exercise) and **B57** (P2: residue on the ramp,
+clean-wing returners, no parking exhaustion).
 
 ### Deferred
 
 The note's W1 "spread" half — widening the AI TOT distribution itself — deliberately did NOT
 land in P1. The natural launch spread already gives the pre-roll a war to march through; the
-widening belongs with P3's follow-on waves, where the window actually grows.
+widening belongs with P3's follow-on waves, where the window actually grows. Carrier ramp
+residue and the AAM/TANK weapon-taxonomy enrichment are P2's two recorded deferrals.
 
 
 ## Unit-coverage sweep — 2026-08-04

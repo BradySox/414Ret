@@ -14,6 +14,11 @@ from game.ato import Flight, FlightType
 from game.ato.flightplans.shiprecoverytanker import RecoveryTankerFlightPlan
 from game.callsigns import callsign_for_support_unit
 from game.data.weapons import Pylon, Weapon
+from game.fourteenth.living_battlespace import (
+    stores_expended,
+    use_estimated_fuel_for_ai,
+    weapon_survives_expenditure,
+)
 from game.lasercodes.lasercode import LaserCode
 from game.missiongenerator.logisticsgenerator import LogisticsGenerator
 from game.missiongenerator.missiondata import MissionData, AwacsInfo, TankerInfo
@@ -436,8 +441,13 @@ class FlightGroupConfigurator:
                 target,
             )
 
+        # §89 P2: a strike-family flight spawned past its target has delivered
+        # its ordnance -- only pod-class stores survive. No-op with the gate off.
+        expended = stores_expended(self.flight)
         for pylon_number, weapon in loadout.pylons.items():
             if weapon is None:
+                continue
+            if expended and not weapon_survives_expenditure(weapon):
                 continue
             pylon = Pylon.for_aircraft(self.flight.unit_type, pylon_number)
             settings = self._merge_laser_code(
@@ -476,8 +486,12 @@ class FlightGroupConfigurator:
                 "starting fuel to 100kg."
             )
             fuel = 100
+        # §89 P2: mid-cycle AI spawns burn fuel too. Upstream wrote the
+        # estimate only for player units, leaving AI packages spawned en route
+        # with full tanks. Gate off keeps upstream behavior.
+        ai_fuel = fuel if use_estimated_fuel_for_ai(self.flight) else self.flight.fuel
         for unit, pilot in zip(self.group.units, self.flight.roster.iter_pilots()):
             if pilot is not None and pilot.player:
                 unit.fuel = fuel
             else:
-                unit.fuel = self.flight.fuel
+                unit.fuel = ai_fuel

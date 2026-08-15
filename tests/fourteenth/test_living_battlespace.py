@@ -1,13 +1,20 @@
-"""§89 living battlespace P1: phase curve, player pinning, launch-flow trigger."""
+"""§89 living battlespace: P1 (curve, pinning, launch trigger) and P2
+(expended stores, mid-air AI fuel, recovery residue gating)."""
 
 from __future__ import annotations
 
 from datetime import datetime, timedelta
 
+from game.ato.flighttype import FlightType
+from game.data.weapons import WeaponType
 from game.fourteenth.living_battlespace import (
     auto_preroll_stop_needed,
     pin_player_packages,
     preroll_minutes,
+    recovery_residue_enabled,
+    stores_expended,
+    use_estimated_fuel_for_ai,
+    weapon_survives_expenditure,
 )
 from game.settings import Settings
 
@@ -133,3 +140,105 @@ def test_auto_preroll_stop_needed() -> None:
     assert not auto_preroll_stop_needed(FakeGame(_settings(), turn=0))  # type: ignore[arg-type]
     assert not auto_preroll_stop_needed(FakeGame(_settings(), turn=3, clients=False))  # type: ignore[arg-type]
     assert auto_preroll_stop_needed(FakeGame(_settings(), turn=3))  # type: ignore[arg-type]
+
+
+# --- P2: expended stores, mid-air AI fuel, recovery residue ---
+
+
+class FakeCoalitionRef:
+    def __init__(self, game: FakeGame) -> None:
+        self.game = game
+
+
+class FakeInFlightState:
+    in_flight = True
+
+    def __init__(self, passed: bool) -> None:
+        self._passed = passed
+
+    def has_passed_waypoint(self, waypoint: object) -> bool:
+        return self._passed
+
+
+class FakeGroundState:
+    in_flight = False
+
+
+class FakeTotPlan:
+    tot_waypoint = "TARGET"
+
+
+class FakeNoTotPlan:
+    @property
+    def tot_waypoint(self) -> object:
+        raise AttributeError("no target waypoint on this plan")
+
+
+class FakeStoresFlight:
+    def __init__(
+        self,
+        settings: Settings,
+        task: FlightType,
+        state: object,
+        plan: object | None = None,
+    ) -> None:
+        self.coalition = FakeCoalitionRef(FakeGame(settings, turn=3))
+        self.flight_type = task
+        self.state = state
+        self.flight_plan = FakeTotPlan() if plan is None else plan
+
+
+class FakeWeaponGroup:
+    def __init__(self, wtype: WeaponType) -> None:
+        self.type = wtype
+
+
+class FakeWeapon:
+    def __init__(self, wtype: WeaponType) -> None:
+        self.weapon_group = FakeWeaponGroup(wtype)
+
+
+def test_stores_expended_past_target_strike() -> None:
+    flight = FakeStoresFlight(_settings(), FlightType.STRIKE, FakeInFlightState(True))
+    assert stores_expended(flight)  # type: ignore[arg-type]
+
+
+def test_stores_expended_declines() -> None:
+    on = _settings()
+    cases = [
+        FakeStoresFlight(
+            _settings(on=False), FlightType.STRIKE, FakeInFlightState(True)
+        ),
+        FakeStoresFlight(on, FlightType.BARCAP, FakeInFlightState(True)),
+        FakeStoresFlight(on, FlightType.CAS, FakeInFlightState(True)),
+        FakeStoresFlight(on, FlightType.STRIKE, FakeGroundState()),
+        FakeStoresFlight(on, FlightType.STRIKE, FakeInFlightState(False)),
+        FakeStoresFlight(
+            on, FlightType.STRIKE, FakeInFlightState(True), FakeNoTotPlan()
+        ),
+    ]
+    for flight in cases:
+        assert not stores_expended(flight)  # type: ignore[arg-type]
+
+
+def test_weapon_survives_expenditure_pods_only() -> None:
+    for kept in (WeaponType.TGP, WeaponType.JAMMER, WeaponType.DECOY):
+        assert weapon_survives_expenditure(FakeWeapon(kept))  # type: ignore[arg-type]
+    for dropped in (WeaponType.ARM, WeaponType.LGB, WeaponType.UNKNOWN):
+        assert not weapon_survives_expenditure(FakeWeapon(dropped))  # type: ignore[arg-type]
+
+
+def test_use_estimated_fuel_for_ai() -> None:
+    airborne = FakeStoresFlight(_settings(), FlightType.STRIKE, FakeInFlightState(True))
+    grounded = FakeStoresFlight(_settings(), FlightType.STRIKE, FakeGroundState())
+    gated = FakeStoresFlight(
+        _settings(on=False), FlightType.STRIKE, FakeInFlightState(True)
+    )
+    assert use_estimated_fuel_for_ai(airborne)  # type: ignore[arg-type]
+    assert not use_estimated_fuel_for_ai(grounded)  # type: ignore[arg-type]
+    assert not use_estimated_fuel_for_ai(gated)  # type: ignore[arg-type]
+
+
+def test_recovery_residue_enabled_follows_the_gate() -> None:
+    assert recovery_residue_enabled(_settings())
+    assert not recovery_residue_enabled(_settings(on=False))

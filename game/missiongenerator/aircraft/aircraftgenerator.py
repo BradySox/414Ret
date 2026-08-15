@@ -24,6 +24,7 @@ from game.ato.flightstate import Completed, WaitingForStart
 from game.ato.flighttype import FlightType
 from game.ato.package import Package
 from game.ato.starttype import StartType
+from game.fourteenth.living_battlespace import recovery_residue_enabled
 from game.missiongenerator.countryassigner import CountryAssigner
 from game.missiongenerator.interceptluadata import (
     InterceptEntry,
@@ -48,6 +49,7 @@ from game.theater.controlpoint import (
     Airfield,
     ControlPoint,
     Fob,
+    NavalControlPoint,
 )
 from game.unitmap import UnitMap
 from .aircraftpainter import AircraftPainter
@@ -174,6 +176,10 @@ class AircraftGenerator:
                     )
                     self.unit_map.add_aircraft(group, flight)
                     spawned_flights.append(flight)
+                elif flight.alive and recovery_residue_enabled(self.game.settings):
+                    # §89 P2: a flight already home leaves its jets parked on
+                    # the ramp instead of vanishing from the world.
+                    self._spawn_completed_residue(flight)
             if (
                 package.primary_flight is not None
                 and package.primary_flight.flight_plan.is_formation(
@@ -512,6 +518,40 @@ class AircraftGenerator:
                 AircraftPainter(flight, group).apply_livery()
                 self.modex_allocator.assign(squadron, group, country)
                 self.unit_map.add_aircraft(group, flight)
+
+    def _spawn_completed_residue(self, flight: Flight) -> None:
+        """Park a Completed flight's jets at its arrival field (§89 P2).
+
+        Registered in the unit map so a ramp kill records against the real
+        airframes. Declines with a log line, never silently, when the arrival
+        cannot host them.
+        """
+        cp = flight.arrival
+        if isinstance(cp, NavalControlPoint):
+            # Carrier decks carry the §64 spawn policy and §72 deck dressing;
+            # parked residue there is deferred until those interplays are read.
+            logging.info(f"No carrier ramp residue for returned flight {flight}")
+            return
+        country = self.country_assigner.for_squadron(flight.squadron)
+        try:
+            group = FlightGroupSpawner(
+                flight,
+                country,
+                self.mission,
+                self.helipads,
+                self.ground_spawns_roadbase,
+                self.ground_spawns_large,
+                self.ground_spawns,
+                self.mission_data,
+            ).create_completed_aircraft()
+        except NoParkingSlotError:
+            group = None
+        if group is None:
+            logging.info(f"No parking for returned flight {flight} at {cp}")
+            return
+        AircraftPainter(flight, group).apply_livery()
+        self.modex_allocator.assign(flight.squadron, group, country)
+        self.unit_map.add_aircraft(group, flight)
 
     def create_and_configure_flight(
         self, flight: Flight, country: Country, dynamic_runways: Dict[str, RunwayData]

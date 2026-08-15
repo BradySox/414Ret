@@ -1,11 +1,14 @@
 # 414th Living Battlespace — the turn as a slice of a continuous air war
 
-**Status: P1 LANDED 2026-08-15** (feature §89, checklist row B56, features doc §89): player
-pinning + the phase curve + the auto pre-roll at launch. W1's "spread" half — widening the AI
-TOT distribution itself — deliberately did not land with P1; the natural ~90-minute launch
-spread already feeds the pre-roll, and the widening belongs with P3's follow-on waves.
-**P2–P5 remain design only.** This note records the problem, the measured evidence, the
-scoping decisions, and the phased plan.
+**Status: P1 + P2 LANDED 2026-08-15** (feature §89, checklist rows B56 + B57, features doc
+§89). P1: player pinning + the phase curve + the auto pre-roll at launch. P2: recovery
+residue at the arrival field, expended stores on egress-phase strike flights, and burned-down
+fuel for AI spawned en route. Two recorded P2 deviations: carrier ramp residue is deferred
+(§64/§72 interplay), and the stores strip is **clean-wing-plus-pods** rather than the
+designed "keep A2A and tanks" — the tree has no A2A/tank weapon taxonomy (open call 9).
+W1's "spread" half deliberately waits for P3's follow-on waves. **P3–P5 remain design only.**
+This note records the problem, the measured evidence, the scoping decisions, and the phased
+plan.
 
 **Related:** [`414th-single-player-loop-notes.md`](414th-single-player-loop-notes.md)
 (§83 SP Pilot Mode — the delivery surface this pairs with) ·
@@ -244,7 +247,7 @@ become checklist rows when the slice lands, not before.
 | Slice | Content | Size | Proposed pass criterion / fail signature |
 |---|---|---|---|
 | P1 | **LANDED 2026-08-15** (§89, row B56) — player pinning + auto pre-roll in the launch flow + phase curve knob; the W1 spread half deferred to P3 | M | Pass: at spawn, multiple flights are airborne mid-route and at least one recovers within ~20 min; player startup matches the briefed window. Fail: flights teleported to waypoint 1, briefed-vs-DCS clock mismatch, mass parking-overflow air-promotes (F7). |
-| P2 | W2 recovery residue + W3 stores/fuel mutation | S/M | Pass: a completed flight's jets sit parked at their field; an egress-phase striker spawns without A2G stores. Fail: "returners" with full racks; duplicate airframes. |
+| P2 | **LANDED 2026-08-15** (§89, row B57) — W2 residue at the arrival field (carriers deferred) + W3 stores strip (v1 clean-wing-plus-pods, open call 9) + AI mid-air fuel | S/M | Pass: a completed flight's jets sit parked at their field; an egress-phase striker spawns without A2G stores. Fail: "returners" with full racks; duplicate airframes. |
 | P3 | W1b follow-on waves + W5 briefing block | S/M | Pass: at least one package launches after the player's egress; the briefing narrates the pre-roll. Fail: waves never activate (silent-gate class) or eat all parking. |
 | P4 | Voice net: transport spike, then schedule emitter + plugin | spike S, build M/L | Pass: calls audible on briefed frequencies matching real ATO events, rate-limited. Fail: silence (transport absent) or spam. |
 | P5 | Reactive red v1 | M | Pass: striking a listed objective produces the recce sortie from real reserve stock. Fail: any spawn outside the positive list. |
@@ -261,6 +264,10 @@ become checklist rows when the slice lands, not before.
 7. Briefed-time presentation: does the kneeboard lead with "the war began 40 minutes
    ago" (W5's framing)?
 8. MP entry criteria, after SP verification.
+9. The stores strip's weapon taxonomy: v1 strips returning strikers to a clean wing plus
+   pods because `WeaponType` carries no A2A/TANK members. Enriching `resources/weapons`
+   `type:` (an AAM/TANK tagging sweep, ~50–100 yamls) would restore the designed
+   "keep A2A and tanks" — decide whether the sweep is worth it or clean-wing stands.
 
 ## 11. Test plan (when it builds)
 

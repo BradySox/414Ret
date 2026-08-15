@@ -13,9 +13,14 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING
 
+from game.ato.flighttype import FlightType
+from game.data.weapons import WeaponType
+
 if TYPE_CHECKING:
     from game import Game
+    from game.ato.flight import Flight
     from game.coalition import Coalition
+    from game.data.weapons import Weapon
     from game.settings import Settings
 
 #: Phase curve: minutes of war before the player's startup, by turn number. The
@@ -62,6 +67,83 @@ def pin_player_packages(coalition: Coalition, now: datetime) -> None:
         delta = desired - min(starts)
         if delta > timedelta():
             package.time_over_target += delta
+
+
+#: Task families whose ordnance is spent at the target waypoint. Loiter-shaped
+#: air-to-ground (CAS, Armed Recon, SEAD Sweep) is deliberately absent -- their
+#: "target" waypoint is a patrol anchor, so passing it says nothing about racks.
+_EXPENDED_TASKS = frozenset(
+    {
+        FlightType.STRIKE,
+        FlightType.BAI,
+        FlightType.SEAD,
+        FlightType.DEAD,
+        FlightType.OCA_RUNWAY,
+        FlightType.OCA_AIRCRAFT,
+        FlightType.ANTISHIP,
+    }
+)
+
+#: Pod-class weapon types that survive the expended strip: sensors and jammers
+#: come home. AAMs and tanks also strip in v1 -- the tree has no A2A/tank
+#: weapon taxonomy to keep them by (WeaponType is ARM/LGB/pods/UNKNOWN), so a
+#: returning striker flies a clean wing. Enriching resources/weapons `type:`
+#: with AAM/TANK is the refinement path (design note, P2 status).
+_KEPT_WEAPON_TYPES = frozenset(
+    {
+        WeaponType.TGP,
+        WeaponType.JAMMER,
+        WeaponType.OFFENSIVE_JAMMER,
+        WeaponType.DECOY,
+    }
+)
+
+
+def stores_expended(flight: Flight) -> bool:
+    """Whether this flight spawns with its A2G ordnance already delivered.
+
+    True only mid-cycle: gate on, a strike-family task, an in-flight state
+    past the flight plan's target waypoint. Duck-typed on the state (the
+    fake-flight tests and non-InFlight states decline via the attributes).
+    """
+    settings = flight.coalition.game.settings
+    if not getattr(settings, "living_battlespace_preroll", False):
+        return False
+    if flight.flight_type not in _EXPENDED_TASKS:
+        return False
+    state = flight.state
+    if not getattr(state, "in_flight", False):
+        return False
+    has_passed = getattr(state, "has_passed_waypoint", None)
+    if has_passed is None:
+        return False
+    try:
+        tot_waypoint = flight.flight_plan.tot_waypoint
+    except (AttributeError, NotImplementedError):
+        return False
+    return bool(has_passed(tot_waypoint))
+
+
+def weapon_survives_expenditure(weapon: Weapon) -> bool:
+    return weapon.weapon_group.type in _KEPT_WEAPON_TYPES
+
+
+def use_estimated_fuel_for_ai(flight: Flight) -> bool:
+    """AI units spawned in flight carry burned-down fuel (§89 P2).
+
+    Upstream writes the state's fuel estimate only for player units; a
+    mid-cycle world spawns whole AI packages en route, and full tanks on an
+    egressing flight read wrong. Gate off keeps upstream behavior.
+    """
+    settings = flight.coalition.game.settings
+    if not getattr(settings, "living_battlespace_preroll", False):
+        return False
+    return bool(getattr(flight.state, "in_flight", False))
+
+
+def recovery_residue_enabled(settings: Settings) -> bool:
+    """Whether Completed flights leave parked jets at their arrival (§89 P2)."""
+    return bool(getattr(settings, "living_battlespace_preroll", False))
 
 
 def auto_preroll_stop_needed(game: Game) -> bool:

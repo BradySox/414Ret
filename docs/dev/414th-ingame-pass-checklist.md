@@ -4097,3 +4097,31 @@ version), take off normally.
   5. **Turn 0 differs at all from gate-off** — the curve's zero is not gating; the expectation
      is byte-identical.
 
+### B57 — Living battlespace P2: ramp residue + clean-wing returners · §89 · ☐ UNTESTED (built 2026-08-15)
+
+> With the same `living_battlespace_preroll` gate on, three P2 behaviors join the pre-roll:
+> flights whose whole cycle predates your startup park their jets uncontrolled at their
+> arrival field (registered in the unit map, so strafing them records real losses);
+> strike-family flights spawned past their target fly a **clean wing plus pods** (v1 strips
+> AAMs and tanks too — no weapon taxonomy to keep them by, recorded deviation); and AI units
+> spawned en route carry burned-down fuel instead of full tanks. The gating, strip rule and
+> fuel rule are pinned in `tests/fourteenth/test_living_battlespace.py`.
+
+Needs a flight: same setup as B56 (gate on, turn 3+), plus a look at the F10 map and a ramp.
+
+- **Pass:** at least one returned flight's jets sit parked at a friendly field they weren't
+  parked at in a gate-off generation; an egressing strike-family AI flight shows no bombs or
+  missiles on racks (pods may remain); no flood of "No parking for returned flight" log lines.
+- **Fail signatures:**
+  1. **A returner with full racks** — the strip's task/waypoint condition missed it (check
+     `stores_expended`'s task set vs the flight's actual type).
+  2. **Duplicate airframes** — the same flight appears both airborne and parked (the
+     Completed-vs-InFlight branch split broke; a flight must take exactly one path).
+  3. **Parking exhaustion pattern** — residue crowding out tasked flights' slots at a small
+     field (residue spawns after tasked flights by construction; if tasked flights lose slots
+     anyway, the generation order changed).
+  4. **Residue on a carrier deck** — the naval guard leaked (§64/§72 interplay is deferred by
+     design).
+  5. **A mid-route AI flight with full fuel** — `use_estimated_fuel_for_ai` isn't reaching
+     `setup_fuel` (check the state's `in_flight` property for that flight class).
+

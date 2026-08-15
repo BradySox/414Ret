@@ -16,6 +16,7 @@ from game.ato.flighttype import FlightType
 from game.ato.flightstate import Uninitialized
 from game.ato.package import Package
 from game.ato.traveltime import TotEstimator
+from game.fourteenth.living_battlespace import auto_preroll_stop_needed
 from game.profiling import logged_duration
 from game.settings.settings import FastForwardStopCondition
 from game.utils import meters
@@ -384,6 +385,20 @@ class QTopPanel(QFrame):
         ]:
             with logged_duration("Simulating to first contact"):
                 self.sim_controller.run_to_first_contact()
+        elif auto_preroll_stop_needed(self.game):
+            # §89 living battlespace: a DISABLED/MANUAL stop condition would
+            # skip the march to the player's pinned startup and spawn the whole
+            # pre-roll's worth of war on the ramp. Borrow PLAYER_STARTUP for
+            # this launch only.
+            stop_condition = self.game.settings.fast_forward_stop_condition
+            self.game.settings.fast_forward_stop_condition = (
+                FastForwardStopCondition.PLAYER_STARTUP
+            )
+            try:
+                with logged_duration("Simulating living-battlespace pre-roll"):
+                    self.sim_controller.run_to_first_contact()
+            finally:
+                self.game.settings.fast_forward_stop_condition = stop_condition
         self.sim_controller.generate_miz(
             persistency.mission_path_for("retribution_nextturn.miz")
         )

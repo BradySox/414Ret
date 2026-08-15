@@ -8865,6 +8865,67 @@ Checklist: **B55**.
   a different shape for #865, reconcile to theirs.
 
 
+## §89 — Living battlespace pre-roll (P1)
+
+Design: [414th-living-battlespace-notes.md](design/414th-living-battlespace-notes.md). P1 of the
+living-battlespace direction: phase-aware mid-cycle mission starts. The later slices (recovery
+residue, stores expenditure, follow-on waves, voice net, reactive red) are P2–P5 in the note.
+
+### Mechanism
+
+The turn's ATO already launches across ~90 minutes (measured: 18 of 35 Baltic Fury turn-0
+flights take off inside the first 20); the player just launches at the front of it. P1 seats
+the player later and marches the existing simulation to their startup:
+
+1. **Player pinning** — `game/fourteenth/living_battlespace.py::pin_player_packages`, called
+   from `MissionScheduler.schedule_missions` after the base TOT pass and **before** the §69
+   SEAD windows and the §8 carrier-recovery stagger, so both see the pinned TOTs. Each player
+   package is delayed until its earliest `flight_plan.startup_time()` sits `preroll_minutes`
+   past mission start. Delay-only: a package already starting later keeps its schedule, and
+   hand-planned packages are untouched (the pass only runs during auto-planning).
+2. **Phase curve** — `preroll_minutes(settings, turn)`: turn 0 → 0 (the H-hour launch is a
+   feature), turns 1–2 → 15 min, turn 3+ → `living_battlespace_preroll_cap` (default 40).
+   Strawman numbers — open call 1 in the note.
+3. **Auto pre-roll at launch** — `QTopPanel.launch_mission`: when the gate is on, the turn has
+   a pre-roll, and the user's fast-forward stop condition is DISABLED/MANUAL (which would skip
+   the march entirely), the existing `run_to_first_contact` runs under a temporary
+   `PLAYER_STARTUP` stop condition before generation. Users already running FIRST_CONTACT or a
+   PLAYER_* condition keep their own behavior.
+4. **Results** — pre-roll outcomes, including losses (measured ~5 of 35 flights per 40 min on
+   Baltic Fury), merge at debrief through the existing `merge_simulation_results` path.
+
+Settings: `living_battlespace_preroll` (gate, default OFF) + `living_battlespace_preroll_cap`
+(5–90, default 40), Campaign Management → Campaign features, mirrored on the 414th Features
+page under Single-player flow.
+
+### Interplay
+
+- **§69 / §8 ordering** — pinning runs first, so a player SEAD's coverage window moves with the
+  player and AI recoveries stagger around the pinned slot. Both later passes already treat
+  player packages as immovable.
+- **`auto_ato_player_missions_asap`** — pinning runs after the ASAP placement and overrides it
+  whenever the pre-roll is longer; the delay-only math keeps the two composable.
+- **MP** — every client spawns mid-cycle (stated in the setting detail). SP-first by decision;
+  MP entry criteria are open call 8 in the note.
+
+### Tests
+
+`tests/fourteenth/test_living_battlespace.py`: the curve (gate off, values, cap bounding), the
+pinning (delta math, earliest-flight selection, AI/later-start/empty-package no-ops, gate-off
+and turn-0 no-ops), and the launch trigger. The registry lock covers the §89 entry.
+
+### Needs an in-game pass
+
+Checklist **B56**. The launch-flow wiring lives in `qt_ui` (not CI-typechecked), and the
+mid-cycle feel at spawn is exactly what CI cannot exercise.
+
+### Deferred
+
+The note's W1 "spread" half — widening the AI TOT distribution itself — deliberately did NOT
+land in P1. The natural launch spread already gives the pre-roll a war to march through; the
+widening belongs with P3's follow-on waves, where the window actually grows.
+
+
 ## Unit-coverage sweep — 2026-08-04
 
 The §85 investigation raised an obvious follow-up from the DM: *"scrub my local install of all

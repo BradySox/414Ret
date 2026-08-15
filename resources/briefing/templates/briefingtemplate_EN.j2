@@ -3,6 +3,15 @@ DCS Retribution Turn {{ game.turn }}
 ====================
 Most briefing information, including communications and flight plan information, can be found on your kneeboard.
 
+{% if preroll_report %}
+The air war so far today:
+====================
+You are stepping into a day already in motion. At briefing time:
+{%+ for line in preroll_report %}
+{{ line }}
+{% endfor %}
+
+{% endif %}
 Current situation:
 ====================
 {% if not frontlines  %}

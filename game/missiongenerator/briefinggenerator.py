@@ -17,6 +17,7 @@ from game.fourteenth.cruise_raids import (
     LacmShip,
     player_briefing_info,
 )
+from game.fourteenth.living_battlespace import preroll_brief_lines
 from game.ground_forces.combat_stance import CombatStance
 from game.radio.radios import RadioFrequency
 from game.runways import RunwayData
@@ -192,6 +193,9 @@ class BriefingGenerator(MissionInfoGenerator):
         self._generate_cruise_missile_info()
         self.generate_allied_flights_by_departure()
         self.owned_airbases = self._collect_owned_airbases()
+        # §89 P3: the air war's state at generation -- empty (section
+        # suppressed) with the gate off or at an H-hour launch.
+        self.preroll_report = preroll_brief_lines(self.game)
         self.mission.set_description_text(self.template.render(vars(self)))
         self.mission.add_picture_blue(
             os.path.abspath("./resources/ui/splash_screen.png")

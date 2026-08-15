@@ -8,7 +8,10 @@ from typing import Iterator, Optional, TYPE_CHECKING
 
 from game.ato.flighttype import FlightType
 from game.ato.traveltime import TotEstimator
-from game.fourteenth.living_battlespace import pin_player_packages
+from game.fourteenth.living_battlespace import (
+    followon_window_minutes,
+    pin_player_packages,
+)
 from game.theater import MissionTarget, NavalControlPoint
 
 if TYPE_CHECKING:
@@ -159,10 +162,16 @@ class MissionScheduler:
         max_carrier_simultaneous_barcaps = settings.max_carrier_simultaneous_barcaps
         carrier_barcaps: dict[MissionTarget, int] = defaultdict(int)
 
+        # §89 P3: the cycle's tail extends by the same phase-aware pre-roll the
+        # player is seated into, so follow-on packages launch as/after the
+        # player recovers instead of the sky dying behind them. Zero with the
+        # gate off -- the spread is upstream's.
+        latest_s = int(self.desired_mission_length.total_seconds())
+        latest_s += 60 * followon_window_minutes(self.coalition)
         start_time = start_time_generator(
             count=len(non_dca_packages),
             earliest=5 * 60,
-            latest=int(self.desired_mission_length.total_seconds()),
+            latest=latest_s,
             margin=5 * 60,
         )
         for package in self.coalition.ato.packages:

@@ -199,3 +199,24 @@ def test_carrier_barcaps_stack_up_to_the_configured_limit(
     )
     assert tots[:max_simultaneous] == [NOW] * max_simultaneous
     assert tots[max_simultaneous] == NOW + DURATION
+
+
+def test_living_battlespace_widens_the_spread_window() -> None:
+    # §89 P3: with the gate on, the generic spread's window gains the
+    # phase-aware follow-on tail, so some packages' TOTs land past the desired
+    # mission length (the waves that launch as/after the player recovers).
+    # 12 packages over 120+40 min put the last spread slot at ~147 min; the
+    # ±5 min jitter cannot pull it back under 125.
+    target = _LandTarget()
+    packages = [_FakePackage(target, task=FlightType.STRIKE) for _ in range(12)]
+    for package in packages:
+        package.has_players = False  # type: ignore[attr-defined]
+    settings = _FakeSettings(timedelta())
+    settings.living_battlespace_preroll = True  # type: ignore[attr-defined]
+    settings.living_battlespace_preroll_cap = 40  # type: ignore[attr-defined]
+    coalition = _FakeCoalition(packages, settings)
+    coalition.game.turn = 3  # type: ignore[attr-defined]
+    ms.MissionScheduler(coalition, timedelta(minutes=120)).schedule_missions(NOW)  # type: ignore[arg-type]
+    tots = [p.time_over_target for p in packages]
+    assert all(t is not None for t in tots)
+    assert max(t for t in tots if t is not None) > NOW + timedelta(minutes=125)

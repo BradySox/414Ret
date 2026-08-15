@@ -166,6 +166,12 @@ Most of this is opt-in. Full list with toggles, defaults and known limitations:
   burned-down fuel instead of full tanks. The cycle also has a tail: packages keep launching
   as and after you recover, and the mission briefing opens with the air war's running score —
   flights airborne, recovered and lost on both sides before you ever started engines.
+- **Living battlespace voice net.** Optional second layer: the tasking order becomes real
+  radio traffic. Launch check-ins, pushes, on-station and RTB calls are synthesized when the
+  mission generates (Windows text-to-speech, embedded in the mission — nothing to install,
+  works in multiplayer) and transmitted from each actual flight on the briefed AWACS
+  frequency. Tune the channel and the war is audible; a flight that died never makes its
+  call.
 - **Scheduled squadron arrivals.** Campaigns can add *new airframes* on announced turns, so the
   wing you start with is not the wing you end with. Schedules follow air-campaign order:
   air superiority, SEAD/DEAD and enablers first, deep strike once the SAM belt is coming down.

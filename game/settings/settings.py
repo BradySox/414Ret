@@ -398,6 +398,7 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                     "sp_pilot_mode",
                     "living_battlespace_preroll",
                     "living_battlespace_preroll_cap",
+                    "living_battlespace_voice_net",
                 ],
             ),
             (
@@ -736,10 +737,11 @@ FEATURE_GATE_FIELDS: dict[str, list[str]] = {
     ],
     "Single-player flow": [
         "sp_pilot_mode",  # §83
-        # §89's gate only -- the pre-roll ceiling is an int knob, and the
-        # Features page contract is boolean gates (test_settings_filter); the
-        # cap stays in Campaign Management -> Campaign features.
+        # §89's boolean gates only -- the pre-roll ceiling is an int knob, and
+        # the Features page contract is boolean gates (test_settings_filter);
+        # the cap stays in Campaign Management -> Campaign features.
         "living_battlespace_preroll",  # §89
+        "living_battlespace_voice_net",  # §89 P4
     ],
     "Campaign clock & era": [
         "continuous_campaign_clock",  # §47
@@ -2208,6 +2210,24 @@ class Settings:
             "Deepest into the cycle a mission may start once the campaign is "
             "past its opening turns. Longer pre-rolls mean a more developed war "
             "at spawn and more of the turn resolved without you."
+        ),
+    )
+    living_battlespace_voice_net: bool = boolean_option(
+        "Living battlespace: voice net (AI radio calls on the AWACS frequency)",
+        CAMPAIGN_MANAGEMENT_PAGE,
+        "Campaign features",
+        default=False,
+        enabled_when="living_battlespace_preroll",
+        detail=(
+            "Turns the planned air-tasking order into short synthesized radio "
+            "calls -- launch check-ins, pushes, on-station and RTB calls -- "
+            "transmitted from each real flight on the mission's AWACS frequency, "
+            "so tuning the briefed channel is enough to hear the war. Voices are "
+            "generated at mission time on your machine (Windows text-to-speech; "
+            "on other platforms the net stays silent) and embedded in the "
+            "mission, so nothing extra runs beside DCS and it works in "
+            "multiplayer too. A dead transmitter goes silent. Rate-limited by "
+            "design; subtitles are available as a battlespacenet plugin option."
         ),
     )
     automate_front_line_stance: bool = boolean_option(

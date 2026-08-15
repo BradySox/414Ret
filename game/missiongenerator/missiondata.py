@@ -13,6 +13,7 @@ from game.dcs.groundunittype import GroundUnitType
 from game.missiongenerator.aircraft.flightdata import FlightData
 from game.missiongenerator.commsjamluadata import CommsJamInfo
 from game.missiongenerator.interceptluadata import InterceptEntry, PlayerAlertEntry
+from game.missiongenerator.battlespacenetluadata import BattlespaceNetInfo
 from game.missiongenerator.rednetluadata import RedNetInfo
 from game.missiongenerator.redscrambleluadata import RedScrambleTemplate
 from game.runways import RunwayData
@@ -198,6 +199,10 @@ class MissionData:
     # frequency, computed once (with the RadioRegistry reservation) before the
     # Lua pass. None when red_comms_net is off or no enemy C2 node is alive.
     red_net: Optional[RedNetInfo] = None
+    # The blue voice-net plan (§89 P4): the ATO-derived call schedule with its
+    # synthesized clips already embedded. None when either §89 gate is off, no
+    # blue AWACS flies, or synthesis is unavailable (non-Windows generation).
+    battlespace_net: Optional[BattlespaceNetInfo] = None
     # Carriers with launch-phase deck dressing to strike below before recovery
     # (§72, the deckdecor plugin). Empty unless the aircraft tier placed
     # launch-phase statics this mission.

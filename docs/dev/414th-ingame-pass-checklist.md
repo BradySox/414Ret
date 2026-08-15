@@ -4066,3 +4066,34 @@ Case I recovery.
      candidate point and `steam_into_wind` returned None (pre-existing behavior, but the new
      heading changes which points get probed).
 
+### B56 — Living battlespace pre-roll: mid-cycle mission start · §89 · ☐ UNTESTED (built 2026-08-15)
+
+> With `living_battlespace_preroll` on, player packages are seated a phase-aware distance into
+> the turn's cycle (0 min on the first turn, 15 on the next two, then the cap, default 40) and
+> the launch flow marches the existing mission sim to the player's startup before generating.
+> The curve, the pinning math and the launch trigger are pinned in
+> `tests/fourteenth/test_living_battlespace.py`, and the design note's headless probe generated
+> a correct mid-cycle miz from this same machinery. What CI cannot exercise: the Qt launch
+> wiring (`qt_ui` is not type-checked) and the feel of the world at spawn.
+
+Needs a flight: enable the gate on any campaign, reach turn 3+ (or fly turn 1 for the 15-minute
+version), take off normally.
+
+- **Pass:** at spawn, multiple AI flights are already airborne mid-route (F10 map), at least
+  one flight recovers at a friendly field within ~20 minutes, your own startup happens at the
+  briefed time with full ground ops, and the DCS mission clock reads mission start plus the
+  pre-roll.
+- **Fail signatures:**
+  1. **The whole war is on the ramp with you** — the pre-roll never ran (the launch-flow
+     branch didn't fire; check the stop-condition borrow in `QTopPanel.launch_mission`).
+  2. **You spawn mid-air or past your startup** — the PLAYER_STARTUP halt fired late
+     (`AtDeparture.should_halt_sim` ordering).
+  3. **Repeated "No room on runway or parking slots" air-promotes** — mid-cycle generation
+     overflowing parking (probe finding F7; once is the known fallback, a pattern is a bug).
+  4. **Flights you expected are missing** — they completed or died during the pre-roll; check
+     the debrief carries their results. Pre-roll losses are real by design (measured ~5 of 35
+     flights per 40 min); if that rate reads as carnage in play, the combat policy is open
+     calls 2–3 in the design note.
+  5. **Turn 0 differs at all from gate-off** — the curve's zero is not gating; the expectation
+     is byte-identical.
+

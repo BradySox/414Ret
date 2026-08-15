@@ -759,6 +759,17 @@ FEATURES: tuple[Feature, ...] = (
         "Angled-deck carrier recovery heading",
         88,
     ),
+    Feature(
+        # P1 of the living-battlespace direction: the phase-aware pre-roll.
+        # docs/dev/design/414th-living-battlespace-notes.md.
+        "living_battlespace",
+        "Living battlespace pre-roll",
+        89,
+        settings_fields=(
+            "living_battlespace_preroll",
+            "living_battlespace_preroll_cap",
+        ),
+    ),
     # Always-on engine plugins — major 414th machinery documented in design notes
     # rather than a numbered "Features at a Glance" entry.
     Feature("mantis_iads", "MANTIS IADS engine", plugin_id="mantisiads"),

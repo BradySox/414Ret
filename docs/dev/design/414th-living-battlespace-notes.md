@@ -1,8 +1,11 @@
 # 414th Living Battlespace — the turn as a slice of a continuous air war
 
-**Status: DESIGN (2026-08-15). Nothing is landed** — no code, no setting, no plugin, no
-checklist rows. This note records the problem, the measured evidence, the scoping
-decisions, and the phased plan.
+**Status: P1 LANDED 2026-08-15** (feature §89, checklist row B56, features doc §89): player
+pinning + the phase curve + the auto pre-roll at launch. W1's "spread" half — widening the AI
+TOT distribution itself — deliberately did not land with P1; the natural ~90-minute launch
+spread already feeds the pre-roll, and the widening belongs with P3's follow-on waves.
+**P2–P5 remain design only.** This note records the problem, the measured evidence, the
+scoping decisions, and the phased plan.
 
 **Related:** [`414th-single-player-loop-notes.md`](414th-single-player-loop-notes.md)
 (§83 SP Pilot Mode — the delivery surface this pairs with) ·
@@ -240,7 +243,7 @@ become checklist rows when the slice lands, not before.
 
 | Slice | Content | Size | Proposed pass criterion / fail signature |
 |---|---|---|---|
-| P1 | Pre-roll spine: W1 spread + player pinning + auto pre-roll in the SP launch flow + phase curve knob | M | Pass: at spawn, multiple flights are airborne mid-route and at least one recovers within ~20 min; player startup matches the briefed window. Fail: flights teleported to waypoint 1, briefed-vs-DCS clock mismatch, mass parking-overflow air-promotes (F7). |
+| P1 | **LANDED 2026-08-15** (§89, row B56) — player pinning + auto pre-roll in the launch flow + phase curve knob; the W1 spread half deferred to P3 | M | Pass: at spawn, multiple flights are airborne mid-route and at least one recovers within ~20 min; player startup matches the briefed window. Fail: flights teleported to waypoint 1, briefed-vs-DCS clock mismatch, mass parking-overflow air-promotes (F7). |
 | P2 | W2 recovery residue + W3 stores/fuel mutation | S/M | Pass: a completed flight's jets sit parked at their field; an egress-phase striker spawns without A2G stores. Fail: "returners" with full racks; duplicate airframes. |
 | P3 | W1b follow-on waves + W5 briefing block | S/M | Pass: at least one package launches after the player's egress; the briefing narrates the pre-roll. Fail: waves never activate (silent-gate class) or eat all parking. |
 | P4 | Voice net: transport spike, then schedule emitter + plugin | spike S, build M/L | Pass: calls audible on briefed frequencies matching real ATO events, rate-limited. Fail: silence (transport absent) or spam. |

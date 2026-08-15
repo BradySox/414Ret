@@ -396,6 +396,8 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                     "motorpool_enabled",
                     "motorpool_spawn_cap",
                     "sp_pilot_mode",
+                    "living_battlespace_preroll",
+                    "living_battlespace_preroll_cap",
                 ],
             ),
             (
@@ -734,6 +736,10 @@ FEATURE_GATE_FIELDS: dict[str, list[str]] = {
     ],
     "Single-player flow": [
         "sp_pilot_mode",  # §83
+        # §89's gate only -- the pre-roll ceiling is an int knob, and the
+        # Features page contract is boolean gates (test_settings_filter); the
+        # cap stays in Campaign Management -> Campaign features.
+        "living_battlespace_preroll",  # §89
     ],
     "Campaign clock & era": [
         "continuous_campaign_clock",  # §47
@@ -2170,6 +2176,38 @@ class Settings:
             "damage you caused, victory progress, and scheduled squadron arrivals. "
             "The normal map/ATO planning path is untouched -- this is an express "
             "lane, not a replacement."
+        ),
+    )
+    living_battlespace_preroll: bool = boolean_option(
+        "Living battlespace: start missions mid-cycle (pre-roll)",
+        CAMPAIGN_MANAGEMENT_PAGE,
+        "Campaign features",
+        default=False,
+        detail=(
+            "Seats your package a phase-aware distance into the turn's air-tasking "
+            "cycle and simulates the war up to your engine start before the mission "
+            "generates. You spawn with earlier packages already airborne -- "
+            "outbound, on station, or recovering -- instead of the whole war "
+            "starting on the ramp with you. The first turn keeps its H-hour "
+            "launch, the next two start 15 minutes into the cycle, and later turns "
+            "start at the ceiling below. Combat during the pre-roll resolves with "
+            "the same odds as other off-screen fights, so pre-roll losses are "
+            "real. Built for single-player; in multiplayer every client spawns "
+            "mid-cycle."
+        ),
+    )
+    living_battlespace_preroll_cap: int = bounded_int_option(
+        "Living battlespace: pre-roll ceiling (minutes)",
+        CAMPAIGN_MANAGEMENT_PAGE,
+        "Campaign features",
+        default=40,
+        min=5,
+        max=90,
+        enabled_when="living_battlespace_preroll",
+        detail=(
+            "Deepest into the cycle a mission may start once the campaign is "
+            "past its opening turns. Longer pre-rolls mean a more developed war "
+            "at spawn and more of the turn resolved without you."
         ),
     )
     automate_front_line_stance: bool = boolean_option(

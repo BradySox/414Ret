@@ -9,7 +9,9 @@ from game.ato.flighttype import FlightType
 from game.data.weapons import WeaponType
 from game.fourteenth.living_battlespace import (
     auto_preroll_stop_needed,
+    followon_window_minutes,
     pin_player_packages,
+    preroll_brief_lines,
     preroll_minutes,
     recovery_residue_enabled,
     stores_expended,
@@ -242,3 +244,70 @@ def test_use_estimated_fuel_for_ai() -> None:
 def test_recovery_residue_enabled_follows_the_gate() -> None:
     assert recovery_residue_enabled(_settings())
     assert not recovery_residue_enabled(_settings(on=False))
+
+
+# --- P3: follow-on window and the pre-roll briefing block ---
+
+
+def test_followon_window_matches_the_preroll_curve() -> None:
+    assert followon_window_minutes(FakeCoalition(FakeGame(_settings(on=False), 3), [])) == 0  # type: ignore[arg-type]
+    assert followon_window_minutes(FakeCoalition(FakeGame(_settings(), 0), [])) == 0  # type: ignore[arg-type]
+    assert followon_window_minutes(FakeCoalition(FakeGame(_settings(), 3), [])) == 40  # type: ignore[arg-type]
+
+
+class FakeBriefFlight:
+    def __init__(self, state: object) -> None:
+        self.state = state
+
+
+class FakeBriefPackage:
+    def __init__(self, states: list[object]) -> None:
+        self.flights = [FakeBriefFlight(s) for s in states]
+
+
+class FakeSide:
+    def __init__(self, packages: list[FakeBriefPackage]) -> None:
+        self.ato = FakeAto(packages)  # type: ignore[arg-type]
+
+
+class Completed:
+    """Named to match the real state class -- the brief matches by name."""
+
+    in_flight = False
+
+
+class Killed:
+    """Named to match the real state class -- the brief matches by name."""
+
+    in_flight = False
+
+
+class FakeBriefGame:
+    def __init__(
+        self, settings: Settings, blue: list[object], red: list[object]
+    ) -> None:
+        self.settings = settings
+        self.blue = FakeSide([FakeBriefPackage(blue)])
+        self.red = FakeSide([FakeBriefPackage(red)])
+
+
+def test_preroll_brief_lines_gate_off_and_quiet_world() -> None:
+    quiet = [FakeGroundState(), FakeGroundState()]
+    assert preroll_brief_lines(FakeBriefGame(_settings(on=False), quiet, quiet)) == []  # type: ignore[arg-type]
+    assert preroll_brief_lines(FakeBriefGame(_settings(), quiet, quiet)) == []  # type: ignore[arg-type]
+
+
+def test_preroll_brief_lines_counts_by_state() -> None:
+    blue = [
+        FakeInFlightState(True),
+        FakeInFlightState(False),
+        Completed(),
+        Killed(),
+        FakeGroundState(),
+    ]
+    red = [FakeInFlightState(True)]
+    lines = preroll_brief_lines(FakeBriefGame(_settings(), blue, red))  # type: ignore[arg-type]
+    assert lines == [
+        "Friendly: airborne 2, recovered 1, lost 1.",
+        "Enemy: airborne 1, recovered 0, lost 0 (assessed).",
+    ]

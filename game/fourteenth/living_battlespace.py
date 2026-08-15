@@ -146,6 +146,51 @@ def recovery_residue_enabled(settings: Settings) -> bool:
     return bool(getattr(settings, "living_battlespace_preroll", False))
 
 
+def followon_window_minutes(coalition: Coalition) -> int:
+    """Minutes the AI TOT spread extends past the desired mission length (§89 P3).
+
+    Symmetric with the pre-roll: the same phase-aware minutes the player is
+    seated INTO the cycle are appended to its tail, so follow-on packages
+    launch as/after the player recovers. Duck-typed gate first -- the
+    scheduler tests drive this with fake games.
+    """
+    settings = coalition.game.settings
+    if not getattr(settings, "living_battlespace_preroll", False):
+        return 0
+    return preroll_minutes(settings, coalition.game.turn)
+
+
+def preroll_brief_lines(game: Game) -> list[str]:
+    """Briefing lines for the air war's state at generation time (§89 P3).
+
+    Empty with the gate off, and empty when nothing has moved yet (an H-hour
+    launch), which suppresses the briefing section entirely. State matching is
+    by class name so briefing generation never imports the state classes and
+    the fake-flight tests stay cheap.
+    """
+    if not getattr(game.settings, "living_battlespace_preroll", False):
+        return []
+    lines: list[str] = []
+    for coalition, label in ((game.blue, "Friendly"), (game.red, "Enemy")):
+        airborne = recovered = lost = 0
+        for package in coalition.ato.packages:
+            for flight in package.flights:
+                state = flight.state
+                if getattr(state, "in_flight", False):
+                    airborne += 1
+                elif type(state).__name__ == "Completed":
+                    recovered += 1
+                elif type(state).__name__ == "Killed":
+                    lost += 1
+        if airborne or recovered or lost:
+            suffix = "" if label == "Friendly" else " (assessed)"
+            lines.append(
+                f"{label}: airborne {airborne}, recovered {recovered}, "
+                f"lost {lost}{suffix}."
+            )
+    return lines
+
+
 def auto_preroll_stop_needed(game: Game) -> bool:
     """Whether the launch flow should force a PLAYER_STARTUP fast-forward.
 

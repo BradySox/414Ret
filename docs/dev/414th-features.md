@@ -8937,11 +8937,30 @@ Same gate; three pieces, all no-ops with it off:
    player units; AI units spawned en route kept full planned fuel. With the gate on, AI units
    in in-flight states get the same clamped estimate (`use_estimated_fuel_for_ai`).
 
+### P3 — follow-on waves + the pre-roll briefing block (2026-08-15)
+
+Same gate; two pieces:
+
+1. **Follow-on waves** — the scheduler's generic TOT spread window gains a tail:
+   `latest += followon_window_minutes(coalition)`, which equals the phase-aware pre-roll
+   minutes (knob-free, symmetric — the same distance the player is seated INTO the cycle is
+   appended to its end). Some AI packages' TOTs now land past the desired mission length, so
+   launches continue as/after the player recovers, both sides. The existing delay machinery
+   carries them: non-COLD starts late-activate on a `TimeAfter` trigger, COLD AI spawns
+   uncontrolled at t=0 and gets a start push — no delay cap exists (open call 4 verified by
+   reading `set_activation_time`/`set_startup_time`). **Known trade:** COLD waves occupy
+   parking from mission start for longer than before — the B58 watch item.
+2. **The briefing block** — `preroll_brief_lines(game)` counts each side's flights by state
+   at generation (airborne / recovered / lost, enemy marked "assessed") and the mission
+   briefing renders "The air war so far today" above the situation section. Empty — section
+   suppressed — with the gate off or at an H-hour launch, so turn 0 briefings are unchanged.
+
 ### Needs an in-game pass
 
 Checklist **B56** (P1: the launch-flow wiring lives in `qt_ui`, not CI-typechecked, and the
-mid-cycle feel at spawn is what CI cannot exercise) and **B57** (P2: residue on the ramp,
-clean-wing returners, no parking exhaustion).
+mid-cycle feel at spawn is what CI cannot exercise), **B57** (P2: residue on the ramp,
+clean-wing returners, no parking exhaustion), and **B58** (P3: a wave launches after player
+egress; the briefing narrates the pre-roll; parking survives the longer occupation).
 
 ### Deferred
 

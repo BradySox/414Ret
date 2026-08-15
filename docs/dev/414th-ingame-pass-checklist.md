@@ -4125,3 +4125,32 @@ Needs a flight: same setup as B56 (gate on, turn 3+), plus a look at the F10 map
   5. **A mid-route AI flight with full fuel** — `use_estimated_fuel_for_ai` isn't reaching
      `setup_fuel` (check the state's `in_flight` property for that flight class).
 
+### B58 — Living battlespace P3: follow-on waves + pre-roll briefing · §89 · ☐ UNTESTED (built 2026-08-15)
+
+> With the gate on, the AI TOT spread extends past the desired mission length by the same
+> phase-aware minutes as the pre-roll, so packages keep launching as/after the player
+> recovers (both sides). The mission briefing gains "The air war so far today" — per-side
+> airborne/recovered/lost counts at generation time. The widened window is pinned in
+> `tests/test_missionscheduler.py::test_living_battlespace_widens_the_spread_window`; the
+> briefing builder in `tests/fourteenth/test_living_battlespace.py`. What CI cannot see:
+> whether the waves actually activate and launch in DCS, and parking behavior over the
+> longer occupation (COLD waves sit uncontrolled on the ramp from t=0 until their push).
+
+Needs a flight: gate on, turn 3+, fly a full sortie and stay on the ramp a few minutes after
+shutdown (or watch the F10 map / Tacview tail).
+
+- **Pass:** at least one AI package starts up and launches after your recovery; the DCS
+  briefing screen shows the air-war block with plausible counts; fields still have parking
+  for every tasked flight.
+- **Fail signatures:**
+  1. **The sky still dies behind you** — waves never activate (the silent-gate class: check
+     the miz for `FlightLateActivationTrigger`/`FlightStartTrigger` entries with times past
+     your egress; if present in the miz but nothing launches, the trigger conditions are the
+     suspect — e.g. the hostile-airbase guard).
+  2. **Parking exhaustion** — "No room on runway or parking slots" warnings clustering at
+     one field, or tasked flights air-promoted because waves ate their slots.
+  3. **The briefing block appears on turn 0 or with the gate off** — the empty-suppression
+     broke.
+  4. **Counts read absurd** (more airborne than the ATO has flights) — the state census is
+     double-counting (a state class rename would do it; the census matches by name).
+

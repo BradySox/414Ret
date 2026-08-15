@@ -33,6 +33,7 @@ from .atisgenerator import AtisGenerator
 from .briefinggenerator import BriefingGenerator, MissionInfoGenerator
 from .cargoshipgenerator import CargoShipGenerator
 from .battlespacenetluadata import plan_battlespace_net
+from .reactiveredluadata import plan_reactive_red
 from .commsjamluadata import JAM_BACKUP_COMM_NAME, plan_comms_jam
 from .rednetluadata import plan_red_net
 from .convoyambushgenerator import ConvoyAmbushGenerator
@@ -174,6 +175,10 @@ class MissionGenerator:
         self.mission_data.battlespace_net = plan_battlespace_net(
             self.game, self.mission, self.mission_data, self.time
         )
+
+        # Reactive red (§89 P5): the positive list (blue-targeted red
+        # objectives) + the fragged reaction-alert groups, before the Lua pass.
+        self.mission_data.reactive_red = plan_reactive_red(self.game, self.mission_data)
 
         logging.info("MIZ generation: scripts, triggers, visuals, and drawings")
         RebellionGenerator(self.mission, self.game).generate()

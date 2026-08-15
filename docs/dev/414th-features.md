@@ -8982,14 +8982,38 @@ band limit reads as a radio with no effects chain.
    point. One-shot clips, AM, `powerW` plugin option (range only); `showSubtitles` option
    mirrors calls as blue text. Harness-covered (`tests/lua/test_battlespacenet_runtime.py`).
 
+### P5 — reactive red (2026-08-15)
+
+Sub-gate `living_battlespace_reactive_red` (default OFF, under the master gate). The war
+reacts to being hit, inside red's settled defensive fighter posture and the all-real rule:
+
+1. **Real alert flights** — `plan_red_reactions` (`game/fourteenth/living_battlespace.py`,
+   hooked in `coalition.plan_missions` after the scheduler): up to 2 red 2-ship home-defense
+   BARCAPs fragged from real untasked inventory (normal claiming, normal debrief), TOT parked
+   8 h past the mission so the plugin's early `activate()` is the only way they fly. The §61
+   red-scramble "untracked freebie" exemption is deliberately NOT used — these jets are
+   claimed, tracked, and their losses count.
+2. **The positive list** — `game/missiongenerator/reactiveredluadata.py`: watched objectives
+   are ONLY red ground objects that are actual targets of blue's ATO this turn (name,
+   position, alive unit names); reaction groups are ONLY the fragged alert flights (matched
+   by the `Reaction Alert` package-name prefix). Either half empty → nothing emitted.
+3. **The plugin** — `resources/plugins/reactivered/`: an `S_EVENT_DEAD` watcher; a listed
+   unit's death launches ONE listed flight after a tasking delay (default 7 min), and the
+   defensive patrol orbit over the struck objective is pushed only once the flight is
+   airborne (the §61 mid-taxi wedge lesson). One reaction per objective; the fragged pool is
+   the hard cap; every skip and the exhaustion are logged. Harness-covered
+   (`tests/lua/test_reactivered_runtime.py`; the stubs gained `Group:activate()` and
+   `fireDead` for it).
+
 ### Needs an in-game pass
 
 Checklist **B56** (P1: the launch-flow wiring lives in `qt_ui`, not CI-typechecked, and the
 mid-cycle feel at spawn is what CI cannot exercise), **B57** (P2: residue on the ramp,
 clean-wing returners, no parking exhaustion), **B58** (P3: a wave launches after player
-egress; the briefing narrates the pre-roll; parking survives the longer occupation), and
-**B59** (P4: calls audible on the briefed AWACS channel at plausible times; SAPI voice
-quality verdict; no spam).
+egress; the briefing narrates the pre-roll; parking survives the longer occupation), **B59**
+(P4: calls audible on the briefed AWACS channel at plausible times; SAPI voice quality
+verdict; no spam), and **B60** (P5: a struck objective produces one visible red patrol over
+it; nothing outside the positive list ever launches).
 
 ### Deferred
 

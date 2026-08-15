@@ -1,0 +1,27 @@
+{
+    "nameInUI": "Living battlespace reactive red (§89 P5)",
+    "descriptionInUI": "Runtime for the red reaction alert. Inert unless the mission generator emits dcsRetribution.reactiveRed (both 'Living battlespace' gates on, at least one red objective actually targeted by blue's ATO, and at least one reaction-alert flight fragged from real red inventory). When a listed objective loses a unit, ONE listed alert flight starts up after a tasking delay and flies a defensive patrol orbit over the struck objective -- red visibly reacting to being hit, inside its existing defensive fighter posture. The plugin's only powers are Group.activate() on a planner-listed group and an orbit task over a planner-listed objective: no spawns, no kills owned by Lua, and the pool of fragged flights is the hard cap. One reaction per objective; exhaustion and every skip are logged.",
+    "defaultValue": true,
+    "specificOptions": [
+        {
+            "nameInUI": "Tasking delay: seconds between the strike and the alert launch",
+            "mnemonic": "reactionDelaySec",
+            "defaultValue": 420,
+            "maximumValue": 3600
+        },
+        {
+            "nameInUI": "Reaction patrol altitude (m MSL)",
+            "mnemonic": "orbitAltM",
+            "defaultValue": 5500,
+            "maximumValue": 12000
+        }
+    ],
+    "scriptsWorkOrders": [],
+    "configurationWorkOrders": [
+        {
+            "file": "reactivered-config.lua",
+            "mnemonic": "reactivered-config"
+        }
+    ],
+    "otherResourceFiles": []
+}

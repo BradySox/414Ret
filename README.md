@@ -172,6 +172,11 @@ Most of this is opt-in. Full list with toggles, defaults and known limitations:
   works in multiplayer) and transmitted from each actual flight on the briefed AWACS
   frequency. Tune the channel and the war is audible; a flight that died never makes its
   call.
+- **Living battlespace reactive red.** Optional third layer: the enemy visibly reacts to
+  being hit. Real red alert fighters — claimed from real inventory, their losses counted —
+  sit on the ramp; when an objective your side is tasked against loses a unit, one pair
+  starts up a few minutes later and flies a defensive patrol over the struck point. Strictly
+  defensive, strictly capped by the alert pool.
 - **Scheduled squadron arrivals.** Campaigns can add *new airframes* on announced turns, so the
   wing you start with is not the wing you end with. Schedules follow air-campaign order:
   air superiority, SEAD/DEAD and enablers first, deep strike once the SAM belt is coming down.

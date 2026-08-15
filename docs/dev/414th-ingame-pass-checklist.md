@@ -4181,3 +4181,34 @@ a full sortie.
      SRS/MSRS runtime path (design-note open call 5's recorded alternative), not more SAPI
      tuning.
 
+### B60 — Living battlespace P5: reactive red · §89 · ☐ UNTESTED (built 2026-08-15)
+
+> With `living_battlespace_reactive_red` on (under the master gate), up to two REAL red
+> alert flights (claimed inventory, tracked, losses count — deliberately not the §61
+> untracked-freebie path) sit parked past the mission. When a red objective that blue's ATO
+> actually targets loses a unit, one alert flight starts up after a ~7-minute tasking delay
+> and flies a defensive patrol orbit over the struck objective. Positive-list discipline
+> both ways; the fragged pool is the hard cap. The launch chain, one-shot latch, cap,
+> airborne-gated orbit push and no-op are pinned in `tests/lua/test_reactivered_runtime.py`;
+> the planner/emitter halves in `tests/fourteenth/test_living_battlespace.py`.
+
+Needs a flight: both gates on, turn 3+, strike a red objective your ATO is tasked against,
+stay in the area ~10 minutes.
+
+- **Pass:** dcs.log shows `REACTRED|: armed`, then `<objective> struck; alert launch in N s`
+  after your hits; ~7 min later a red pair starts up at its field and establishes an orbit
+  over the struck objective (F10/Tacview); striking a second listed objective after the pool
+  is spent logs exhaustion and launches nothing.
+- **Fail signatures:**
+  1. **No reaction ever** — `armed` absent (emitter gates/no watched objective: was your
+     target actually a red TGO on the blue ATO?) vs `armed` present but no launch (the
+     death-event name match — unit names vs the emitted list).
+  2. **A reaction from an unlisted group, or over an unlisted point** — the positive list
+     leaked (this is the §59-class safety invariant; treat as a stop-ship).
+  3. **The alert flight launches at mission start** — its parked TOT/late-activation broke
+     (check the 8 h TOT and the activation trigger time in the miz).
+  4. **A wedged takeoff** — the orbit push hit a taxiing flight (the airborne poll gate
+     broke; the §61 lesson).
+  5. **Red flying offensive taskings from this path** — impossible by construction (the
+     task is a home-area orbit), but if seen, stop and re-read the posture boundary.
+

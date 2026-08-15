@@ -399,6 +399,7 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                     "living_battlespace_preroll",
                     "living_battlespace_preroll_cap",
                     "living_battlespace_voice_net",
+                    "living_battlespace_reactive_red",
                 ],
             ),
             (
@@ -742,6 +743,7 @@ FEATURE_GATE_FIELDS: dict[str, list[str]] = {
         # the cap stays in Campaign Management -> Campaign features.
         "living_battlespace_preroll",  # §89
         "living_battlespace_voice_net",  # §89 P4
+        "living_battlespace_reactive_red",  # §89 P5
     ],
     "Campaign clock & era": [
         "continuous_campaign_clock",  # §47
@@ -2228,6 +2230,24 @@ class Settings:
             "mission, so nothing extra runs beside DCS and it works in "
             "multiplayer too. A dead transmitter goes silent. Rate-limited by "
             "design; subtitles are available as a battlespacenet plugin option."
+        ),
+    )
+    living_battlespace_reactive_red: bool = boolean_option(
+        "Living battlespace: reactive red (alert flight over a struck objective)",
+        CAMPAIGN_MANAGEMENT_PAGE,
+        "Campaign features",
+        default=False,
+        enabled_when="living_battlespace_preroll",
+        detail=(
+            "The enemy reacts to being hit: up to two real red alert flights are "
+            "fragged each turn from real inventory and held on the ramp. When a "
+            "red objective that blue's tasking order actually targets loses a "
+            "unit, one alert flight starts up after a short tasking delay and "
+            "flies a defensive patrol over the struck objective. Strictly "
+            "defensive -- a CAP over red's own ground, inside red's existing "
+            "fighter posture -- and strictly real: the jets are claimed, "
+            "tracked airframes whose losses count. The reaction pool is the "
+            "cap; when it is spent, nothing else launches."
         ),
     )
     automate_front_line_stance: bool = boolean_option(

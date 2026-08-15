@@ -30,8 +30,9 @@ local Harness = {
         menus = {}, -- { side, path }
         firedTasks = {}, -- { group, x, y, radius, rounds, t }
         aiOnOff = {}, -- { group, on, t } from Controller:setOnOff
-        controllerTasks = {}, -- { group, taskId, targetGroupId, t } from Controller:setTask
+        controllerTasks = {}, -- { group, taskId, targetGroupId, x, y, t } from Controller:setTask
         controllerResets = {}, -- { group, t } from Controller:resetTask
+        activations = {}, -- group names from Group:activate (late-activation launches)
         options = {}, -- { group, option, value, t } from Controller:setOption
         weaponDestroys = {}, -- { name, t } from Weapon:destroy (growler spoof)
         spawns = {}, -- { template, alias, base, takeoff, altitude, grouping, speedKt, t }
@@ -217,10 +218,13 @@ function ControllerFake:setOnOff(on)
 end
 
 function ControllerFake:setTask(task)
+    local point = task and task.params and task.params.point
     table.insert(Harness.records.controllerTasks, {
         group = self.group:getName(),
         taskId = task and task.id,
         targetGroupId = task and task.params and task.params.groupId,
+        x = point and point.x,
+        y = point and point.y,
         t = Harness.now,
     })
 end
@@ -275,6 +279,13 @@ end
 
 function GroupFake:getCoalition()
     return self.side
+end
+
+-- Late-activation launch (the §89 P5 reactivered lever): recorded, and the
+-- group reads as existing from then on.
+function GroupFake:activate()
+    self.exists = true
+    table.insert(Harness.records.activations, self.name)
 end
 
 Group.getByName = function(name)
@@ -559,6 +570,16 @@ function Harness.fireHit(groupName)
     Harness.fireEvent({
         id = world.event.S_EVENT_HIT,
         target = g and g:getUnit(1) or nil,
+    })
+end
+
+-- Fire an S_EVENT_DEAD for a registered unit (by UNIT name). The initiator is
+-- the real UnitFake, matching DCS's dead-event shape, so handlers that pcall
+-- initiator:getName() see the true name.
+function Harness.fireDead(unitName)
+    Harness.fireEvent({
+        id = world.event.S_EVENT_DEAD,
+        initiator = Harness.unitsByName[unitName],
     })
 end
 

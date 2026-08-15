@@ -10,6 +10,7 @@ Design: docs/dev/design/414th-living-battlespace-notes.md (P1).
 
 from __future__ import annotations
 
+import logging
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING
 
@@ -189,6 +190,84 @@ def preroll_brief_lines(game: Game) -> list[str]:
                 f"lost {lost}{suffix}."
             )
     return lines
+
+
+#: §89 P5: the reaction-alert package name prefix -- the emitter finds the
+#: generated reaction groups by it, so the two sides never carry a shared id.
+REACTION_PACKAGE_PREFIX = "Reaction Alert"
+
+#: How many red reaction flights are fragged per turn. The pool is the cap:
+#: the plugin can only ever launch what the planner really claimed.
+REACTION_FLIGHTS_CAP = 2
+
+
+def plan_red_reactions(coalition: Coalition, now: datetime) -> None:
+    """Frag the red reaction-alert flights into the red ATO (§89 P5).
+
+    Real flights from real inventory (normal claiming, normal debrief): each
+    is a 2-ship home-defense BARCAP whose TOT is parked hours past the mission,
+    so it only ever flies when the ``reactivered`` plugin activates it early
+    over a struck objective. Runs AFTER MissionScheduler so the spread never
+    touches them, and only for the red coalition -- the reaction stays inside
+    red's settled defensive fighter posture (a defensive CAP over its own
+    struck objective, never an offensive tasking).
+    """
+    from game.ato.flight import Flight
+    from game.ato.package import Package
+    from game.ato.starttype import StartType
+    from game.theater import Airfield, HomeBaseDefenseZone
+
+    settings = coalition.game.settings
+    if not getattr(settings, "living_battlespace_preroll", False):
+        return
+    if not getattr(settings, "living_battlespace_reactive_red", False):
+        return
+    if not coalition.player.is_red:
+        return
+    made = 0
+    for squadron in coalition.air_wing.iter_squadrons():
+        if made >= REACTION_FLIGHTS_CAP:
+            break
+        if not isinstance(squadron.location, Airfield):
+            continue
+        if not squadron.capable_of(FlightType.BARCAP):
+            continue
+        if squadron.untasked_aircraft < 2:
+            continue
+        base = squadron.location
+        target = HomeBaseDefenseZone(
+            f"{REACTION_PACKAGE_PREFIX} {base.name}", base.position, coalition
+        )
+        package = Package(
+            target,
+            coalition.game.db.flights,
+            auto_asap=False,
+            custom_name=f"{REACTION_PACKAGE_PREFIX} ({squadron})",
+        )
+        try:
+            flight = Flight(
+                package,
+                squadron,
+                2,
+                FlightType.BARCAP,
+                StartType.COLD,
+                divert=None,
+            )
+        except Exception:
+            logging.info(
+                "BSNET reactions: could not claim a reaction flight from %s", squadron
+            )
+            continue
+        package.add_flight(flight)
+        flight.recreate_flight_plan()
+        # Parked far past the mission: WaitingForStart with an hours-long delay
+        # generates a late-activation group whose own trigger never matters --
+        # the plugin's early activate() is the only way it flies.
+        package.time_over_target = now + timedelta(hours=8)
+        coalition.ato.add_package(package)
+        made += 1
+    if made:
+        logging.info("BSNET reactions: fragged %d red reaction alert flights", made)
 
 
 def auto_preroll_stop_needed(game: Game) -> bool:

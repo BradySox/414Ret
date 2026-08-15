@@ -32,6 +32,7 @@ from .coinluadata import populate_coin_lua
 from .deckdecorluadata import populate_deck_decor_lua
 from .commsjamluadata import populate_comms_jam_lua
 from .battlespacenetluadata import populate_battlespace_net_lua
+from .reactiveredluadata import populate_reactive_red_lua
 from .rednetluadata import populate_red_net_lua
 from .minefieldluadata import populate_minefields_lua
 from .interceptluadata import (
@@ -489,6 +490,12 @@ class LuaGenerator:
         # AWACS + synthesized clips embedded); the battlespacenet plugin transmits
         # each call from its real group on the AWACS frequency. Audio only.
         populate_battlespace_net_lua(lua_data, self.mission_data)
+
+        # Reactive red (§89 P5) -- emits dcsRetribution.reactiveRed only when the
+        # plan exists (both gates + a watched objective + a fragged reaction
+        # flight); the reactivered plugin may only activate the listed groups
+        # over the listed objectives. No spawns, no kills owned by Lua.
+        populate_reactive_red_lua(lua_data, self.mission_data)
 
         # Mission-start briefing popup (§58) -- emits dcsRetribution.briefing only when
         # mission_briefing_popup is on and the mission has a player-crewed flight; the

@@ -332,6 +332,7 @@ def _voice_settings(master: bool = True, voice: bool = True) -> Settings:
 class FakeSidePlayer:
     def __init__(self, is_blue: bool) -> None:
         self.is_blue = is_blue
+        self.is_red = not is_blue
 
 
 class FakeFreq:
@@ -481,3 +482,153 @@ def test_plan_drops_the_net_when_synthesis_fails() -> None:
         synthesize=lambda calls, out_dir: False,
     )
     assert info is None
+
+
+# --- P5: reactive red ---
+
+from game.fourteenth.living_battlespace import (  # noqa: E402
+    REACTION_PACKAGE_PREFIX,
+    plan_red_reactions,
+)
+from game.missiongenerator.reactiveredluadata import plan_reactive_red  # noqa: E402
+
+
+def _reactive_settings(master: bool = True, reactive: bool = True) -> Settings:
+    settings = _settings(on=master)
+    settings.living_battlespace_reactive_red = reactive
+    return settings
+
+
+class FakeAirWing:
+    def iter_squadrons(self) -> list[object]:
+        return []
+
+
+class FakeReactionCoalition:
+    def __init__(self, settings: Settings, is_red: bool = True) -> None:
+        self.game = FakeGame(settings, turn=3)
+        self.player = FakeSidePlayer(is_blue=not is_red)
+        self.air_wing = FakeAirWing()
+        self.ato = FakeAto([])
+
+
+def test_plan_red_reactions_gates() -> None:
+    for coalition in (
+        FakeReactionCoalition(_reactive_settings(master=False)),
+        FakeReactionCoalition(_reactive_settings(reactive=False)),
+        FakeReactionCoalition(_reactive_settings(), is_red=False),
+        FakeReactionCoalition(_reactive_settings()),  # red, on, but no squadrons
+    ):
+        plan_red_reactions(coalition, NOW)  # type: ignore[arg-type]
+        assert coalition.ato.packages == []
+
+
+class FakeCaptured:
+    def __init__(self, is_red: bool) -> None:
+        self.is_red = is_red
+
+
+class FakeCp:
+    def __init__(self, is_red: bool) -> None:
+        self.captured = FakeCaptured(is_red)
+
+
+class FakeTgoUnit:
+    def __init__(self, name: str, alive: bool = True) -> None:
+        self.unit_name = name
+        self.alive = alive
+
+
+class FakeTgoGroup:
+    def __init__(self, units: list[FakeTgoUnit]) -> None:
+        self.units = units
+
+
+class FakePos:
+    def __init__(self, x: float, y: float) -> None:
+        self.x = x
+        self.y = y
+
+
+class FakeTgoTarget:
+    def __init__(self, name: str, is_red: bool, units: list[FakeTgoUnit]) -> None:
+        self.name = name
+        self.control_point = FakeCp(is_red)
+        self.position = FakePos(100.0, 200.0)
+        self.groups = [FakeTgoGroup(units)]
+
+
+class FakeBluePackage:
+    def __init__(self, target: object) -> None:
+        self.target = target
+
+
+class FakeBlueAto:
+    def __init__(self, packages: list[FakeBluePackage]) -> None:
+        self.packages = packages
+
+
+class FakeBlueSide:
+    def __init__(self, packages: list[FakeBluePackage]) -> None:
+        self.ato = FakeBlueAto(packages)
+
+
+class FakeReactiveGame:
+    def __init__(self, settings: Settings, packages: list[FakeBluePackage]) -> None:
+        self.settings = settings
+        self.blue = FakeBlueSide(packages)
+
+
+class FakeReactionFlightData:
+    def __init__(self, is_red: bool, custom_name: str, group_name: str) -> None:
+        self.friendly = FakeSidePlayer(is_blue=not is_red)
+        self.custom_name = custom_name
+        self.group_name = group_name
+
+
+class FakeReactiveMissionData:
+    def __init__(self, flights: list[FakeReactionFlightData]) -> None:
+        self.packages = {index: [f] for index, f in enumerate(flights)}
+
+
+def test_plan_reactive_red_positive_list() -> None:
+    red_tgo = FakeTgoTarget("Haina SAM", True, [FakeTgoUnit("0044 | LN")])
+    blue_tgo = FakeTgoTarget("Own depot", False, [FakeTgoUnit("0001 | X")])
+    dead_tgo = FakeTgoTarget("Rubble", True, [FakeTgoUnit("0002 | Y", alive=False)])
+    game = FakeReactiveGame(
+        _reactive_settings(),
+        [FakeBluePackage(t) for t in (red_tgo, blue_tgo, dead_tgo, red_tgo)],
+    )
+    data = FakeReactiveMissionData(
+        [
+            FakeReactionFlightData(True, f"{REACTION_PACKAGE_PREFIX} (IAP)", "R2"),
+            FakeReactionFlightData(True, f"{REACTION_PACKAGE_PREFIX} (GIAP)", "R1"),
+            FakeReactionFlightData(True, "Strike package", "S1"),
+            FakeReactionFlightData(False, f"{REACTION_PACKAGE_PREFIX} (blue)", "B1"),
+        ]
+    )
+    info = plan_reactive_red(game, data)  # type: ignore[arg-type]
+    assert info is not None
+    # Only the red TGO with alive units, once (deduped).
+    assert [w.name for w in info.watched] == ["Haina SAM"]
+    assert info.watched[0].unit_names == ["0044 | LN"]
+    # Only red reaction packages, sorted.
+    assert info.reaction_groups == ["R1", "R2"]
+
+
+def test_plan_reactive_red_needs_both_halves() -> None:
+    red_tgo = FakeTgoTarget("Haina SAM", True, [FakeTgoUnit("0044 | LN")])
+    game = FakeReactiveGame(_reactive_settings(), [FakeBluePackage(red_tgo)])
+    no_flights = FakeReactiveMissionData([])
+    assert plan_reactive_red(game, no_flights) is None  # type: ignore[arg-type]
+
+    flights = FakeReactiveMissionData(
+        [FakeReactionFlightData(True, f"{REACTION_PACKAGE_PREFIX} (IAP)", "R1")]
+    )
+    no_targets = FakeReactiveGame(_reactive_settings(), [])
+    assert plan_reactive_red(no_targets, flights) is None  # type: ignore[arg-type]
+
+    gated = FakeReactiveGame(
+        _reactive_settings(reactive=False), [FakeBluePackage(red_tgo)]
+    )
+    assert plan_reactive_red(gated, flights) is None  # type: ignore[arg-type]

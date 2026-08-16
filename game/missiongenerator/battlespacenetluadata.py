@@ -138,8 +138,16 @@ def build_net_schedule(
         logging.info("BSNET: no blue AWACS in the mission; voice net stays silent")
         return []
 
+    # Group off mission_data.FLIGHTS, never .packages: generate_flights clears
+    # .packages at the top of each per-coalition call, so only the last ATO
+    # (red) survives it -- the flat flights list is the collection that carries
+    # both sides (the 2026-08-15 turn-3 smoke-generation finding).
+    grouped: dict[int, list[Any]] = {}
+    for flight_data in getattr(mission_data, "flights", []):
+        grouped.setdefault(id(flight_data.package), []).append(flight_data)
+
     calls: list[NetCall] = []
-    for flights in mission_data.packages.values():
+    for flights in grouped.values():
         blue = [
             f for f in flights if getattr(f, "friendly", None) and f.friendly.is_blue
         ]

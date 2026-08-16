@@ -379,7 +379,9 @@ class FakeNetMissionData:
         self, flights: list[FakeNetFlightData], awacs: list[FakeAwacs]
     ) -> None:
         self.awacs = awacs
-        self.packages = {index: [f] for index, f in enumerate(flights)}
+        # The emitters read the flat flights list (never .packages, which
+        # generate_flights clears per coalition).
+        self.flights = flights
 
 
 def test_phoneticize() -> None:
@@ -579,16 +581,25 @@ class FakeReactiveGame:
         self.blue = FakeBlueSide(packages)
 
 
+class FakeReactionPackageRef:
+    def __init__(self, custom_name: str) -> None:
+        self.custom_name = custom_name
+
+
 class FakeReactionFlightData:
     def __init__(self, is_red: bool, custom_name: str, group_name: str) -> None:
         self.friendly = FakeSidePlayer(is_blue=not is_red)
-        self.custom_name = custom_name
+        # The marker lives on the PACKAGE (FlightData.custom_name is the
+        # flight's own and is None for these flights) -- model the real shape.
+        self.custom_name = None
+        self.package = FakeReactionPackageRef(custom_name)
         self.group_name = group_name
 
 
 class FakeReactiveMissionData:
     def __init__(self, flights: list[FakeReactionFlightData]) -> None:
-        self.packages = {index: [f] for index, f in enumerate(flights)}
+        # The flat flights list, matching the real collection the emitter reads.
+        self.flights = flights
 
 
 def test_plan_reactive_red_positive_list() -> None:

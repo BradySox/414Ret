@@ -740,28 +740,21 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
 - **Fail signature:** every group releasing in the same second (the even spread regressed, or `releaseMaxS` ≤ `releaseMinS`); ships that **never** open fire at all (the release ROE option isn't reaching the naval controller — try the literal `ROE_ID`/`ROE_WEAPON_FREE` values, or DCS wants `AI.Option.Naval` specifically); **a winchester or pre-release ship sitting passive while aircraft attack it** (the load-bearing unknown resolved badly — the honest options are to accept it or to abandon N1's hold, since per-weapon ROE does not exist); magazines never depleting despite launches (the fired weapon's `typeName` doesn't match `ASHM_WEAPON_PATTERNS` — read the real name out of `dcs.log`/Tacview and extend the pattern list, but **never** with a land-attack family); a magazine that debits *twice* per shot or moves at generation time (the §63 double-count or the regeneration-safety rule broke); or §63 cruise-missile raids suddenly costing anti-ship stock (a land-attack family leaked into the pattern list).
 
 
-### B63 — A destroyed strike target is recorded in the campaign · §8 · ✗ REGRESSED
+### B63 — A destroyed strike target is recorded in the campaign · §8 · ☐ UNTESTED
 
-**History:** opened 2026-08-16 from the user's flown report ("Bombs hit and destroyed the target but it was not tracked in retribution"), session `c86c58dd`. The scenery-kill design note records this class of failure as **never reproduced** (`414th-scenery-kill-tracking-notes.md` §8.1) — it now has an instance.
+**History:** opened 2026-08-16 from the user's flown report ("Bombs hit and destroyed the target but it was not tracked in retribution"), session `c86c58dd`. **Root cause found and fixed the same day — it was never the scenery-tracking path.** The player aborted a ~100-second run of the turn-2 mission; DCS wrote `state.json` with `mission_ended`, `PollDebriefingFileThread` consumed it, logged "Mission end detected; stopping poll" at 14:05:24 and broke out permanently (its only staleness guard is an mtime newer than the `.miz`, which an aborted run of that same `.miz` satisfies). The real 49-minute sortie followed; at 14:58:41 the turn committed that two-minute snapshot. Three Tuapse dock buildings (`TARANTULA`) were destroyed and recorded by zone name in the final `state.json`, and stood untouched in the save. Rebuilding a `Debriefing` from that same file credits all three and committing it flips them dead — which is what proves the snapshot, not the matching, was at fault. Fixed in `game/finaldebriefing.py` (the commit re-reads `state.json`); `tests/test_final_debriefing.py`; forensics in `414th-scenery-kill-tracking-notes.md` §0.
 
-**The evidence.** `retribution.log` from the flown turn logs the untracked-death path firing by name:
+Needs a flight to confirm the fix end to end. The cheap version deliberately reproduces the trap:
 
-```
-4 untracked ground unit deaths had no effect (untracked infantry or map/scenery
-objects). First few: 91950419, 75915635, 75916593, 75875360
-```
+1. Generate a turn with a strike on a **map-scenery** target (a port, factory or terminal drawn as white zones — not a spawned static).
+2. **Launch the mission, quit to the menu after ~1 minute, then relaunch and fly it properly.** That is the exact condition that broke it.
+3. Destroy the target late in the sortie, land, accept the results.
 
-Those DCS object ids died in the mission and matched nothing in the unit map, so they moved no campaign state. The turn's `state.json` carried 217 `dead_events` / 236 `kill_events` and 28 `destroyed_objects_positions`, while the resulting save shows only 12 dead TGO units — the bulk are legitimately front-line and infantry deaths, but the four named ids are the reported case.
-
-**What is NOT yet established** — do not build a fix on this row until it is:
-1. **Which objects those four ids were.** They appear in neither `debrief.log`'s `graveyard` (which carries type/coalition/position but no id) nor the supplied `state.json` (that file is the *other* turn's). The turn's own `state.json` was not captured.
-2. **Whether the user's specific bombed target was among them**, or whether it was tracked normally and the four are unrelated infantry.
-
-**Next capture (cheap, do it on any flight):** after landing, before passing the turn, copy `<Saved Games>/DCS/state.json` alongside `retribution.log`. With both, the ids resolve directly and this row either becomes a real defect with a named object class or closes as untracked infantry.
-
-- **Pass:** a strike target the player destroys is marked dead in the campaign, and `retribution.log` reports no untracked deaths for objects belonging to a tracked TGO.
-- **Fail signature:** the untracked-death line names ids that resolve to units of a real objective (a genuine tracking hole); or the target renders intact on the next turn's map despite a confirmed kill.
-
+- **Pass:** the target reads destroyed on the next turn's map, and `retribution.log` carries the new warning `state.json on disk carries N recorded events but the last polled debriefing had only M — committing the fresh read`.
+- **Fail signatures:**
+  1. **Target still standing** — the fresh read did not happen or was rejected; check whether the log instead says the fresh read had *fewer* events (the shrink guard fired, meaning `state.json` was mid-write or already replaced).
+  2. **No warning line at all and the target IS recorded** — fine, that is the ordinary case where the watcher never stopped early.
+  3. **Results double-counted** (a kill charged twice) — the fresh read and the polled snapshot both committed; stop and re-read `_process_turn`.
 
 ### B40 — The Wing Grows: scheduled squadron arrivals · §82 · ☐ UNTESTED
 

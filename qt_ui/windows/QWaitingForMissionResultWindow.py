@@ -25,6 +25,7 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 from game import Game
 from game.ato.flightstate import Uninitialized
 from game.debriefing import Debriefing
+from game.finaldebriefing import final_debriefing
 from game.theater import Player
 from game.profiling import logged_duration
 from game.server import EventStream
@@ -259,14 +260,34 @@ class QWaitingForMissionResultWindow(QDialog):
         QApplication.processEvents()
         try:
             with logged_duration("Turn processing"):
-                self.sim_controller.process_results(self.debriefing)
+                debriefing = self._debriefing_to_commit()
+                if debriefing is None:
+                    logging.error("No mission results to commit; turn not processed.")
+                    return False
+                self.debriefing = debriefing
+                self.sim_controller.process_results(debriefing)
                 self.game.pass_turn()
 
-                GameUpdateSignal.get_instance().sendDebriefing(self.debriefing)
+                GameUpdateSignal.get_instance().sendDebriefing(debriefing)
                 GameUpdateSignal.get_instance().updateGame(self.game)
         finally:
             progress.close()
         return True
+
+    def _debriefing_to_commit(self) -> Optional[Debriefing]:
+        """Re-read state.json now rather than trusting the watcher's snapshot.
+
+        The poll thread stops at the first state.json carrying ``mission_ended``,
+        which can be a stale file from the previous mission -- see
+        game/finaldebriefing.py for the flown case where that silently dropped a
+        whole sortie's strike kills.
+        """
+        return final_debriefing(
+            getattr(self, "debriefing", None),
+            lambda: self.sim_controller.debrief_current_state(
+                Path("state.json"), force_end=True
+            ),
+        )
 
     def closeEvent(self, evt):
         super(QWaitingForMissionResultWindow, self).closeEvent(evt)

@@ -190,9 +190,16 @@ class StateData:
             #   is dropped on them when they've already dead.
             # - Normalise dead map objects (which are ints) to strings. The unit map
             #   only stores strings
+            # - Dropping empty names. DCS reports some deaths with no usable
+            #   identifier (4 of them in the flown 2026-08-16 state.json); an
+            #   empty string can never match a unit and only inflates the
+            #   untracked-deaths count that a reader uses to judge whether
+            #   something real went unrecorded.
             units = set()
             for unit in unit_list:
-                units.add(str(unit))
+                name = str(unit).strip()
+                if name:
+                    units.add(name)
             return list(units)
 
         def parse_intercept_survivors(raw: Any) -> dict[str, int]:

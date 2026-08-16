@@ -82,7 +82,6 @@ Read before touching a campaign's `.yaml`, `.miz` or build tool.
 | Iraq — Umm al-Ma'arik (Desert Storm) | `414th-desert-storm-campaign-notes.md` |
 | Iraq — Operation Inherent Resolve | `414th-inherent-resolve-campaign-notes.md` |
 | Afghanistan — Enduring Resolve (COIN) | `414th-coin-HANDOFF.md` — **start here for COIN** |
-| Persian Gulf — The Tanker War 1988 | `414th-tanker-war-campaign-notes.md` |
 | Nevada — Red Flag 81-2 | `414th-red-flag-81-campaign-notes.md` |
 | Vietnam set | `414th-vietnam-retribution-HANDOFF.md`, `-notes.md`, `-ops-notes.md`, `-red-tempo-notes.md`, `-airbase-harassment-notes.md` |
 | Iraq map 2.9.28 content | `414th-iraq-map-2928-notes.md` — authoring plan, not yet built |
@@ -327,7 +326,6 @@ linked design note.
 79. **Decoy suspected-activity zones** — unitless fake contacts, human-only by construction.
 80. **Mixed-hull ship groups** — task groups instead of copies of one hull, family-bounded.
 81. **Cross-turn naval magazines** — staggered weapons-free release and finite anti-ship stock, released on attack.
-82. **The Wing Grows** — announced mid-campaign squadron arrivals, SEAD before strike.
 83. **SP Pilot Mode** — accept-and-fly-next, an aircraft-first sortie board, and a pre-turn reasons-to-continue brief.
 85. **SAM/missile battery support sections** — refuellers, power and transload in the faction's own kit.
 86. **GPS jamming** — satellite-guided weapons released inside the bubble land long.
@@ -356,6 +354,7 @@ Kept numbered so old notes and saves stay readable. Details and rationale in the
 | 54 | Munitions availability | Removed 2026-07-21 |
 | 55 | Red Intent adaptive posture | Removed 2026-07-21 |
 | 57 | Air-droppable minefields | **Shelved** 2026-07-30 — inert, code retained, resumable |
+| 82 | The Wing Grows (scheduled squadron arrivals) | Removed 2026-08-16 — "doesn't add much except in very specific campaigns" |
 | 84 | Old-stock loadout attrition | Removed 2026-08-06 |
 
 Also removed: the blank-start campaign maker (2026-08-02), the SOF capture economy (2026-07-01),

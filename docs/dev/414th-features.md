@@ -8071,155 +8071,22 @@ hidden, like every other magazine readout.
 
 **Checklist B39** — needs an in-game pass.
 
-## §82 — The Wing Grows (scheduled squadron arrivals)
+## §82 — The Wing Grows — REMOVED 2026-08-16
 
-Single-player campaigns die after turn 1, and one of the reasons is structural:
-**turn 1 is the best mission by construction.** The wing is at maximum strength, the
-ramp is full, nothing is damaged and no pilot is missing — so every later turn is a
-degraded copy of the first. Nothing in a campaign ever gets *better*.
+Scheduled mid-campaign squadron arrivals (`available_from_turn:` in a campaign's
+squadron config, held out of the air wing until an announced turn, then joined and
+announced on the SITREP).
 
-This inverts that. A campaign can hold a squadron back and have it join the air wing on
-an announced later turn:
+**Removed on the DM's call** — "it doesn't add much except in very specific
+campaigns." The whole feature is gone: `game/fourteenth/wing_growth.py`, the
+`available_from_turn:` / `arrival_note:` config fields, the `AirWing.pending_arrivals`
+list, the `Sitrep.arrivals` band, the pre-turn briefing's anticipation section, the
+feature-registry entry, both test files, and the authored schedules in Baltic Fury (5)
+and Red Tide (3). A save written while the feature existed loads clean — `__setstate__`
+drops the stale `pending_arrivals` key.
 
-```yaml
-squadrons:
-  Nordholz:
-    - primary: DEAD
-      aircraft: ["[CH] JAS 39C Gripen"]
-      country: Sweden
-      available_from_turn: 5
-      arrival_note: "Sweden joins the coalition — Ronneby/Kallinge"
-```
-
-`available_from_turn` unset (or `0`) is the stock behaviour — present from turn 0 — so a
-campaign that authors nothing is byte-identical. The turn is compared against the raw
-`Game.turn`, the same number the §58 briefing card and the kneeboard print, so "turn 5"
-in the yaml is the "turn 5" the player reads in the cockpit. `arrival_note` is optional
-flavour carried into the announcement.
-
-### Why this feature and not another anticipation read-out
-
-The motivating observation is that the DM's own stated reason for flying is **variety**
-("I like to fly a lot of different aircraft"). Scheduling variety's *arrival* converts
-that motivator into the campaign's forward hook: you play to turn 6 because that is when
-you get to fly the Prowler. It is the one item in the §SP "reasons to continue" taxonomy
-that is not simply a read-out of state the fork already computes.
-
-Premise check, because half of it was already true: **aircraft replenishment into an
-existing squadron exists** (`Squadron.pending_deliveries`, procurement) but it is a
-one-turn buffer that only ever delivers *more of what you already fly*.
-**Mid-campaign arrival of a new squadron or airframe type did not exist at all** — the
-campaign's `squadrons:` block is consumed once at turn 0 and the wing is fixed from
-there. So this is new machinery, not a missing announcement.
-
-### Why it is small
-
-`ControlPoint.squadrons` is a **derived property**: it iterates
-`coalition.air_wing.iter_squadrons()` and filters on `squadron.location`. There is no
-base→squadron list to maintain, so the moment a squadron joins the air wing it appears
-at its base, `AirWing.best_squadrons_for` (which walks `control_point.squadrons`) can
-see it, and it is plannable. **The planner needs no change at all** — the commander
-simply gains a squadron it did not have last turn.
-
-Everything that walks the wing per turn — `AirWing.reset()`, `populate_for_turn_0()`,
-`end_turn()` — also iterates `iter_squadrons()`, so a pending squadron is untouched by
-per-turn processing for free. It is not *hidden*; it is genuinely not in the wing yet.
-
-### Shape
-
-* `SquadronConfig` gains `available_from_turn` + `arrival_note`
-  (`game/campaignloader/campaignairwingconfig.py`). A malformed value **raises**, so New
-  Game aborts loudly rather than silently handing the player a wing that never grows.
-* `DefaultSquadronAssigner.assign()` builds the squadron **exactly as today** — same
-  preset selection, §23 country pin, callsign/nickname overrides, def claiming — and
-  parks it in `AirWing.pending_arrivals` instead of calling `add_squadron`. One
-  construction path, and a schedule that cannot fail later because a preset became
-  unavailable.
-* `promote_due_arrivals` (`game/fourteenth/wing_growth.py`) runs from
-  `Game.initialize_turn` **before** the coalitions initialize, so an arriving squadron is
-  populated and plannable on its own arrival turn. Promoted squadrons leave the pending
-  list, which makes it naturally idempotent under the re-init cases (base capture, TGO
-  buy/sell) that call `initialize_turn` more than once per turn.
-* An arrival populates with the same `squadrons_start_full` rule the rest of the wing
-  used, now recorded on the `AirWing` rather than re-derived.
-* `upcoming_arrivals` exposes the still-to-come schedule for surfacing *ahead* of the
-  turn — the motivational half, since the jet you cannot fly yet is the advert.
-
-### Announcement
-
-`Sitrep.arrivals` (§29). The sitrep for the turn just played is recorded during results
-commit, moments before `pass_turn` reaches turn initialization, and it renders on the
-**upcoming** mission's kneeboard — which is exactly where "the F-14 det arrived" belongs.
-One new field therefore buys the kneeboard band, the web LAST TURN panel and the Qt
-debrief at once. Unlike the §52 C2 and §75 victory lines, an arrival **counts as news**,
-so it surfaces on an otherwise quiet turn.
-
-Red schedules work (the code is symmetric) but are **never announced** — the enemy order
-of battle is not the player's to read.
-
-### The authored schedules, and why they differ
-
-The ordering principle is **SEAD/DEAD before strike**: turn 1 is the door-kickers (air
-superiority, SEAD/DEAD, and the enablers that make them work), and the later arrivals are
-the exploiters (strike, deep interdiction, heavy bombers). That makes the arrivals feel
-*earned* — the B-1B is the consequence of the player having spent turns killing SAMs —
-and it is also the safe way to defer, because the early campaign genuinely cannot use
-deep strike before the belt is down.
-
-**The arc depends on whether the campaign opens offensively or defensively**, which is
-why the two shipped schedules are different shapes:
-
-| Campaign | Opens | Arc | Schedule |
-|---|---|---|---|
-| Operation Baltic Fury | offensively | kick the door → rollback → strike | T3 Finnish F/A-18C (BARCAP) · T5 Swedish Gripen (DEAD) · T7 F-15E + F/A-18F (Strike) · T9 B-1B |
-| Red Tide | defensively | hold → stabilise → counter-attack | T4 Mirage F1EE (Escort) · T6 F-15E (BAI) · T8 B-52H (Strike) |
-
-Baltic Fury's coalition beats come from the real NATO accession timeline (Finland April
-2023, then Sweden March 2024) — and the accession order and the doctrinal order agree,
-since Finland's Hornets are defensive counter-air and Sweden's Gripens are the DEAD
-rollback. Turns 1–4 are deliberately Growler-thin against the 11-site S-400/S-300 belt:
-that is the pressure the arrival relieves, not a gap. Blue otherwise flies **zero**
-BARCAP squadrons against red's six, so the Finnish arrival closes a real hole, and the
-F/A-18C being a full-fidelity module makes it a **flyable** new seat rather than an AI
-reinforcement.
-
-Red Tide is the other shape. The Fulda Gap has no door to kick on turn 1, so **CAS is
-never deferred** — the A-10s and the whole Fulda rotary hub are load-bearing from the
-first mission — and what arrives later is the counter-offensive capability. Its feature
-lock (2026-07-17) was **lifted 2026-08-03** by DM call, so the schedule needs no override.
-
-Both schedules are CI-locked in `tests/fourteenth/test_wing_growth_campaigns.py`, which
-pins the *rules* and not only the turn numbers: enablers are never deferred, an
-air-superiority squadron is always on the ramp from turn 1, Baltic Fury's DEAD arrival
-precedes its strike arrivals, and Red Tide never defers CAS.
-
-### Save compatibility
-
-`AirWing.pending_arrivals` and `squadrons_started_full` are new persisted state with
-`__setstate__` defaults, so a pre-feature save loads with an empty schedule. **A campaign
-edit needs a NEW game** — the schedule is consumed at turn 0.
-
-### Deliberately deferred
-
-* **Under-strength arrivals.** `populate_for_turn_0` clamps to the base's unclaimed
-  parking, so a det arriving at a base that filled up since turn 0 silently comes in
-  short. Announcing the shortfall is owed.
-* **A lost or enemy-held arrival base.** Currently the arrival still joins; holding it
-  until the base is retaken (and saying so) is the better behaviour and would turn a
-  retake into a reward.
-* **`available_until_turn` departures** — the use-it-or-lose-it inverse, and the same
-  machinery.
-* **Ahead-of-time surfacing.** `upcoming_arrivals` exists but nothing renders it yet; it
-  is waiting on the §SP Pilot Mode board and pre-turn card.
-
-Files: `game/fourteenth/wing_growth.py`, `game/campaignloader/campaignairwingconfig.py`,
-`game/campaignloader/defaultsquadronassigner.py`, `game/squadrons/airwing.py`,
-`game/game.py`, `game/sitrep.py`, `resources/campaigns/operation_baltic_fury.yaml`,
-`resources/campaigns/red_tide.yaml`. Tests:
-`tests/fourteenth/test_wing_growth.py` (22) +
-`tests/fourteenth/test_wing_growth_campaigns.py` (20). Design note:
-`docs/dev/design/414th-wing-growth-notes.md`. Checklist: **B40**.
-
+Design note `414th-wing-growth-notes.md` is kept for the reasoning; do not author
+against it.
 
 ## §83 — SP Pilot Mode (the pre-turn card + the aircraft-first sortie board)
 
@@ -8279,7 +8146,6 @@ Five sections, ordered by urgency, because a named person on a clock outranks a 
 | Rescue | §21 downed-pilot ledger + POWs | **The capture odds as a number.** `capture_chance` already scales an evader's per-turn capture risk 10% → 90% with depth, and nothing ever showed it. "Every turn you skip is a roll" only lands when the roll is stated |
 | Consequence | §52 `c2_status_line` | Attributed: *their planning is worse because of you* |
 | Objective | §75 `victory_sitrep_lines` | The visible finish line, before the turn |
-| Anticipation | §82 `upcoming_arrivals` | The jet you cannot fly yet is the advert |
 | Open loops | §3 concealment + §49 missile sites | Unidentified contacts (real or §79 decoy — only a sortie tells you which) and located launchers that scoot between missions |
 
 It is a **pure view**: it computes nothing new, mutates nothing, and has zero planner

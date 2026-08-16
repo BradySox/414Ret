@@ -685,12 +685,22 @@ FEATURES: tuple[Feature, ...] = (
         plugin_id="navalmagazines",
         settings_fields=("naval_weapon_release_stagger", "naval_magazines"),
     ),
-    Feature("wing_growth", "The Wing Grows", 82),
     Feature(
         "sp_pilot_mode",
         "SP Pilot Mode",
         83,
         settings_fields=("sp_pilot_mode",),
+    ),
+    Feature(
+        # REMOVED 2026-08-16 on the DM's call -- "doesn't add much except in very
+        # specific campaigns." The module, the `available_from_turn:`/`arrival_note:`
+        # config fields, AirWing.pending_arrivals, the Sitrep arrivals band, the
+        # briefing's anticipation section, both test files and the 8 authored
+        # schedules are gone; only this tombstone keeps §82 resolvable.
+        "wing_growth",
+        "The Wing Grows",
+        82,
+        retired=True,
     ),
     Feature(
         # REMOVED 2026-08-06 after one flown look (WATCH item 1): the DM disliked

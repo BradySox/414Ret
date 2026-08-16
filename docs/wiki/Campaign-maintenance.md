@@ -19,8 +19,7 @@ the fork's in
 [`resources/campaigns/`](https://github.com/BradySox/414Ret/tree/main/resources/campaigns).
 
 **414th:** every campaign the fork *authored* (Red Tide, Enduring Resolve, Inherent
-Resolve, 1968 Yankee Station, Velvet Thunder, Red Flag 81-2, the Tanker War, Desert
-Storm, …) is squadron-owned by definition: each has a design note under
+Resolve, 1968 Yankee Station, Velvet Thunder, Red Flag 81-2, Desert Storm, …) is squadron-owned by definition: each has a design note under
 `docs/dev/design/` and a CI lock under `tests/` that fails when its laydown drifts.
 Campaigns inherited from upstream follow the upstream rule below.
 

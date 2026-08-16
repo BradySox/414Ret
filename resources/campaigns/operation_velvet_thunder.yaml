@@ -19,7 +19,7 @@ description:
 miz: operation_velvet_thunder.miz
 performance: 1
 recommended_start_date: 1970-11-29
-version: "10.8"
+version: "10.9"
 settings:
   # The Vietnam Ops settings below are only half of each gate: their runtime lives in
   # the `vietnamops` Lua plugin, and a host whose saved plugin defaults have it

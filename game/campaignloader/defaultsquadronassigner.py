@@ -90,24 +90,6 @@ class DefaultSquadronAssigner:
                 # Air Wing configuration dialog. Done before the wing-growth branch
                 # below so a scheduled arrival is opted in the same way.
                 squadron.enable_csar_if_capable()
-                # "The Wing Grows" (414th): a scheduled squadron is built here
-                # exactly like any other -- same preset selection, country pin,
-                # callsign overrides and def claiming -- but parked in the
-                # pending list instead of joining the wing, until
-                # Game.initialize_turn reaches its turn. Unset (the normal case)
-                # joins immediately, so behavior is unchanged.
-                arrival_turn = squadron_config.available_from_turn
-                if arrival_turn:
-                    from game.fourteenth.wing_growth import PendingSquadron
-
-                    self.air_wing.pending_arrivals.append(
-                        PendingSquadron(
-                            turn=arrival_turn,
-                            squadron=squadron,
-                            note=squadron_config.arrival_note,
-                        )
-                    )
-                    continue
                 self.air_wing.add_squadron(squadron)
 
     def find_squadron_for(

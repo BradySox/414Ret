@@ -618,31 +618,23 @@ class AircraftBehavior:
                 if task.name and task in flight.unit_type.dcs_unit_type.tasks:
                     group.task = task.name
                     return
+        # No preferred or fallback match. Upstream raised here for AI flights
+        # (clients already degraded to task_default), but the raise fires at
+        # generation time and costs the whole mission for one flight — and
+        # upstream data ships claims pydcs can't express (the Tu-160's DEAD and
+        # BAI, the Gazelles' CSAR, four Fighter-sweep claimants: 21 pairs
+        # fleet-wide, locked by tests/test_aircraft_task_generation.py). The
+        # group task is only the AI's coarse role; the waypoint tasks carry the
+        # real mission, so degrade the role and fly it.
         task_default = flight.unit_type.dcs_unit_type.task_default
-        if task_default and task_default.name and preferred_task == Nothing:
+        if task_default and task_default.name:
             group.task = task_default.name
-            logging.warning(
-                f"{ac_type} is not capable of 'Nothing', using default task '{group.task}'"
-            )
-            return
-        if flight.roster.members and flight.roster.members[0].is_player:
-            group.task = (
-                flight.unit_type.dcs_unit_type.task_default.name
-                if flight.unit_type.dcs_unit_type.task_default
-                and flight.unit_type.dcs_unit_type.task_default.name
-                else group.task  # even if this is incompatible, if it's a client we don't really care...
-            )
-            logging.warning(
-                f"Client override: {ac_type} is not capable of '{preferred_task}', using default task '{group.task}'"
-            )
-            return
-
         fallback_part = (
             f" nor any of the following fall-back tasks: {[task.name for task in fallback_tasks]}"
             if fallback_tasks
             else ""
         )
-        raise RuntimeError(
-            f"{ac_type} is neither capable of {preferred_task.name}"
-            f"{fallback_part}. Can't generate {flight.flight_type} flight."
+        logging.warning(
+            f"{ac_type} is neither capable of {preferred_task.name}{fallback_part}. "
+            f"Flying the {flight.flight_type} tasking with group role '{group.task}'."
         )

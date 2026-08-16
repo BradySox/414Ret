@@ -1760,6 +1760,25 @@ in-game pass (the F-4E OCA case now shows a pre/post-strike tanker + a non-negat
   cp-convoy spawn-route feature is upstream's); carve candidate. Tests
   `tests/campaignloader/test_cp_convoy_spawn_distance.py` (6) +
   `tests/missiongenerator/test_convoy_spawn_clearance.py` (4 new).
+- **Task-claim generation crash — group-role degrade instead of raise (fixed 2026-08-16).**
+  `AircraftBehavior.configure_task` raised `RuntimeError` at generation time when an AI
+  flight's tasking mapped to a pydcs task the airframe doesn't export — killing the whole
+  mission for one flight. The data ships such claims: a fleet audit found **21 (airframe,
+  task) pairs** across 13 airframes, all upstream or mod-registration data the fork
+  deliberately mirrors (Tu-160 `DEAD`/`BAI` → pydcs has only Pinpoint Strike, re-added by
+  upstream #451 and restored by re-convergence E; SA 342/Gazelle `CSAR` → no Transport;
+  A-4E/J-7B/L-39ZA/MiG-21bis `Fighter sweep`; F4U-1D/F9F/MiG-21MF `OCA/Runway`; OH-6A's
+  whole ground-attack set; Su-24MR `BARCAP`; F-8E(FN) `Strike`/`Armed Recon`). Reproduced
+  live: Mozdok-to-Maykop's auto-planned blue ATO handed a Tu-160 squadron DEAD and every
+  generation crashed. Fix: the terminal raise becomes the same `task_default` degrade the
+  method already granted client flights — the group task is only the AI's coarse role and
+  the waypoint tasks carry the real mission, so the flight generates with a logged warning
+  (Tu-160 DEAD flies as role "Pinpoint Strike", which is what a cruise-missile bomber
+  servicing a SAM site is). Upstream's curated preferred/fallback chains are untouched.
+  Upstream-shared defect; carve candidate post-freeze. Lock test
+  `tests/test_aircraft_task_generation.py` walks every claimed pair (2,176) through the
+  real `configure_task` and pins the Tu-160 degrade; its `TASK_MAPPING` mirrors
+  `apply_to`'s dispatch — update both together.
 
 ---
 

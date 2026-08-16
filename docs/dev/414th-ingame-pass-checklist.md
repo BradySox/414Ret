@@ -23,7 +23,7 @@ so the two docs don't drift.
 
 ## Outstanding rows at a glance
 
-76 rows need a live pass. Full detail is under each `###` heading below —
+77 rows need a live pass. Full detail is under each `###` heading below —
 search the row id. `☐` untested · `◐` flown but not under the conditions that
 stress it · `✗` fail signature reproduced in-game.
 
@@ -105,6 +105,7 @@ stress it · `✗` fail signature reproduced in-game.
 | B57 | Living battlespace P2: ramp residue + clean-wing returners | §89 | ☐ |
 | B59 | Living battlespace P4: the voice net | §89 | ◐ |
 | B60 | Living battlespace P5: reactive red | §89 | ☐ |
+| B61 | Task-role degrade: mismatched-role AI flights still fly their mission | §8 | ☐ |
 
 ---
 
@@ -4747,7 +4748,9 @@ stay in the area ~10 minutes.
   5. **Red flying offensive taskings from this path** — impossible by construction (the
      task is a home-area orbit), but if seen, stop and re-read the posture boundary.
 
-### B61 — Task-role degrade: mismatched-role AI flights still fly their mission · §8 · ☐ UNTESTED (built 2026-08-16, session c86c58dd)
+### B61 — Task-role degrade: mismatched-role AI flights still fly their mission · §8 · ☐ UNTESTED
+
+**History:** built 2026-08-16, session `c86c58dd`.
 
 > `configure_task` no longer raises when an AI flight's tasking maps to a pydcs task the
 > airframe doesn't export — it degrades the DCS group *role* to the airframe's

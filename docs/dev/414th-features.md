@@ -1779,6 +1779,24 @@ in-game pass (the F-4E OCA case now shows a pre/post-strike tanker + a non-negat
   `tests/test_aircraft_task_generation.py` walks every claimed pair (2,176) through the
   real `configure_task` and pins the Tu-160 degrade; its `TASK_MAPPING` mirrors
   `apply_to`'s dispatch — update both together.
+- **Destroyed strike targets never reaching the campaign — the results commit used a stale
+  snapshot (fixed 2026-08-16).** The long-standing "I bombed it and it did not register"
+  complaint. `PollDebriefingFileThread` breaks out of its loop the first time it reads a
+  `state.json` carrying `mission_ended`, and its only staleness guard is an mtime newer than
+  the current `.miz` — which an **aborted run of that same mission** satisfies. The results
+  window then committed `self.debriefing`, whatever the watcher last delivered. Flown
+  2026-08-16: the player aborted a ~100-second run, the watcher consumed that file and stopped
+  at 14:05:24, the real 49-minute sortie followed, and at 14:58:41 the turn committed the
+  two-minute snapshot. Three Tuapse dock buildings (`TARANTULA`) were destroyed, recorded by
+  zone name in the final `state.json`, and still standing in the save. **Not a scenery-tracking
+  defect** — rebuilding a `Debriefing` from that same file credits all three and committing it
+  flips them dead, which is what proves the snapshot was the culprit. Fix:
+  `game/finaldebriefing.py` re-reads `state.json` at commit time and uses it when it carries
+  more recorded events, keeping the polled one if the fresh read is shorter (partial write, or
+  a file already replaced). Map-independent. Also drops empty names in `clean_unit_list` (the
+  flown file had 4), which only inflated the untracked count. Full forensics in
+  `docs/dev/design/414th-scenery-kill-tracking-notes.md` §0. Tests
+  `tests/test_final_debriefing.py`. Upstream-shared; carve candidate post-freeze.
 - **The Lua bridge dropped every scalar on a mixed item (fixed 2026-08-16).**
   `LuaData.serialize` branched either/or: `if self.objects:` emitted only the nested
   tables, `else:` only the key/values. An item holding **both** — the shape you get

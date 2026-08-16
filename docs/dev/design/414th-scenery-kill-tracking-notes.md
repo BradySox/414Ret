@@ -18,6 +18,53 @@ C2 watcher, or before proposing a proxy unit — §5.2 and §5.4 will save you t
 
 ---
 
+## 0. RESOLVED 2026-08-16 — it was never the scenery path
+
+**Read this before anything below.** The long-standing complaint that a destroyed strike target
+does not register was reproduced, traced and fixed on 2026-08-16 (session `c86c58dd`). **The cause
+is not in this subsystem.** Nothing in §§1–9 was wrong; the kills never reached any of it.
+
+What actually happened, from the flown files:
+
+1. The player launched the turn-2 mission, then **aborted it after ~100 seconds** and returned to
+   the menu. DCS wrote `state.json` with `mission_ended: true`.
+2. `PollDebriefingFileThread` read that file, logged **"Mission end detected; stopping poll"** at
+   14:05:24, and **broke out of its loop permanently**. Its only staleness guard is an mtime newer
+   than the current `.miz` — which an aborted run of that same `.miz` satisfies.
+3. The player relaunched and flew the real 49-minute sortie, destroying three of the four Tuapse
+   dock buildings (`TARANTULA`, a `ware` BuildingGroundObject at Maykop-Khanskaya). DCS recorded
+   all three by zone name in `state.json`, along with their `_CRUSH` destroyed-shape models.
+4. At 14:58:41 the player accepted the results. `_process_turn` committed `self.debriefing` — the
+   **two-minute snapshot from the aborted run**. The 53 minutes in between, including the strike,
+   were never read.
+
+Proof it is not the scenery path: rebuilding a `Debriefing` from that same final `state.json`
+against a generated unit map credits all three buildings, and committing it flips them dead.
+Measured, not argued — the reproduction is `tests/test_final_debriefing.py` plus the scripted
+end-to-end run recorded in that session.
+
+**The fix** is `game/finaldebriefing.py`: the results commit re-reads `state.json` from disk and
+uses it whenever it carries more recorded events than the polled snapshot, keeping the polled one
+if the fresh read is shorter (a partial write, or a file already replaced by the next mission).
+Map-independent by construction — nothing in it touches terrain, campaign or target type.
+
+Two smaller things found in passing and fixed:
+
+- `clean_unit_list` now drops empty names. The flown `state.json` carried **4** of them; they can
+  never match anything and only inflated the untracked-deaths count that a reader uses to judge
+  whether something real went unrecorded.
+- `1835 | Airport Military Terminal object` in `dead_events` is **not** a scenery building. It is
+  the MANTIS command stand-in — the M4 infantryman of §3 — spawned by `generate_iads_command_unit`
+  and never registered in the unit map, so its death is always untracked. Left as-is deliberately:
+  it is a liveness probe, not an objective, and crediting its death to the building would mark a
+  standing building destroyed. Recorded here so the next reader does not re-chase it.
+
+What is still **not** established: which DCS map-object ids the four numeric untracked deaths in
+the *aborted* run's `state.json` belonged to. That file was overwritten and the ids cannot be
+resolved. It does not block anything — those deaths belong to a run that was thrown away.
+
+---
+
 ## 1. The short version
 
 There are **two** kill-tracking mechanisms for strike targets, and only one of them is reliable.

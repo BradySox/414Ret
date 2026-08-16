@@ -177,7 +177,7 @@ def sortie_options(game: "Game", aircraft: "AircraftType") -> List[SortieOption]
                 SortieOption(
                     rung=1,
                     task=str(flight.flight_type),
-                    target=str(package.target),
+                    target=_target_name(package.target),
                     squadron=flight.squadron,
                     flight=flight,
                     package_summary=_package_summary(package),
@@ -187,6 +187,19 @@ def sortie_options(game: "Game", aircraft: "AircraftType") -> List[SortieOption]
 
     options.extend(_join_options(game, squadrons))
     return options
+
+
+def _target_name(target: object) -> str:
+    """Every package target is a MissionTarget and carries `.name`.
+
+    `str(target)` is not that name: the classes without a `__str__` fall back to
+    `__repr__`, and the board printed `DownedPilot(pilot=Pilot(name=...))` and
+    `<FrontLine object at 0x...>` at the player (flown 2026-08-16).
+    """
+    name = getattr(target, "name", None)
+    if isinstance(name, str) and name:
+        return name
+    return str(target)
 
 
 def _has_open_seat(flight: "Flight") -> bool:
@@ -226,7 +239,7 @@ def _join_options(game: "Game", squadrons: List["Squadron"]) -> List[SortieOptio
                 SortieOption(
                     rung=2,
                     task=role,
-                    target=str(package.target),
+                    target=_target_name(package.target),
                     squadron=ready[0],
                     package_summary=_package_summary(package),
                     tot=_tot_text(package),

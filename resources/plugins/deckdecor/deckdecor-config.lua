@@ -303,8 +303,14 @@ local function tick()
             else
                 local bu = boatUnit(boat)
                 if bu == nil then
-                    -- Boat gone (sunk/despawned): nothing left to protect.
+                    -- Boat gone (sunk/despawned): nothing left to protect. Say
+                    -- so -- this exit stopped the watch silently for a month
+                    -- when an emitter bug shipped an empty group name, and a
+                    -- deck that never respots looks identical to a disabled
+                    -- feature (flown 2026-08-16).
                     boat.cleared = true
+                    log("no unit for group '" .. boat.group ..
+                        "'; stopping the watch for this boat")
                 else
                     local bp = bu:getPoint()
                     local bv = bu:getVelocity()

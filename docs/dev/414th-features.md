@@ -1760,6 +1760,29 @@ in-game pass (the F-4E OCA case now shows a pre/post-strike tanker + a non-negat
   cp-convoy spawn-route feature is upstream's); carve candidate. Tests
   `tests/campaignloader/test_cp_convoy_spawn_distance.py` (6) +
   `tests/missiongenerator/test_convoy_spawn_clearance.py` (4 new).
+- **The Lua bridge dropped every scalar on a mixed item (fixed 2026-08-16).**
+  `LuaData.serialize` branched either/or: `if self.objects:` emitted only the nested
+  tables, `else:` only the key/values. An item holding **both** — the shape you get
+  from `add_key_value(...)` followed by `add_item(...)` — silently lost all its
+  scalars. Two emitters build that shape, and both were broken in every generated
+  mission:
+  - **§72 deck decor.** A carrier that received recovery-phase dressing emitted
+    `{recoverySpawns = {...}}` and nothing else — no `group`, `unit`, `side`, `brc`
+    or `clearNames`. The plugin armed ("1 boat(s), clear by 1500s"), called
+    `Group.getByName("")`, hit the *boat gone* exit, set `cleared = true` and
+    stopped. Silently: that exit had no log. Flown 2026-08-16 — a 103-minute
+    Caucasus turn-1 sortie where the deck never respotted for recovery and the
+    fallback timer, 25 minutes in, never fired. The exit now logs, because a deck
+    that never respots is indistinguishable from a disabled feature.
+  - **§89 reactive red.** `groups` (the reaction-flight pool) sits on the same item
+    as the `objectives` table, so the pool was dropped from every mission — the
+    plugin could arm on a watched objective and still have nothing to launch. The
+    third emitter defect in this family after PR #842's two; unlike those, this one
+    was in the shared serializer rather than the caller.
+  Fix is in `LuaData.serialize` (scalars first, then nested), so it covers both and
+  any future mixed item. Tests `tests/missiongenerator/test_luadata.py`, including
+  the unmixed shapes to pin that the common path is untouched. Upstream-shared
+  (`luagenerator.py` is upstream's); carve candidate post-freeze.
 
 ---
 

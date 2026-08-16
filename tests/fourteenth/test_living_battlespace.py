@@ -1,19 +1,27 @@
 """§89 living battlespace: P1 (curve, pinning, launch trigger) and P2
-(expended stores, mid-air AI fuel, recovery residue gating)."""
+(expended stores, mid-air AI fuel, recovery residue gating + the removal-site
+residue ledger)."""
 
 from __future__ import annotations
 
+from collections.abc import Iterator
 from datetime import datetime, timedelta
+
+import pytest
 
 from game.ato.flighttype import FlightType
 from game.data.weapons import WeaponType
 from game.fourteenth.living_battlespace import (
     auto_preroll_stop_needed,
+    clear_completed_residue,
     followon_window_minutes,
+    idle_spawn_count,
     pin_player_packages,
     preroll_brief_lines,
     preroll_minutes,
+    record_completed_residue,
     recovery_residue_enabled,
+    residue_flights_for,
     stores_expended,
     use_estimated_fuel_for_ai,
     weapon_survives_expenditure,
@@ -246,6 +254,189 @@ def test_recovery_residue_enabled_follows_the_gate() -> None:
     assert not recovery_residue_enabled(_settings(on=False))
 
 
+# --- P2: the completed-residue ledger (row B57) ---
+#
+# The earlier fakes never modeled the sim's removal loop, which pulls every
+# Completed flight out of its package at the tick boundary -- so the ATO walk
+# at generation is structurally blind to them. These fakes model that removal.
+
+
+class FakeResidueRoster:
+    def __init__(self, size: int) -> None:
+        self.max_size = size
+        self.cleared = False
+
+    def clear(self) -> None:
+        self.cleared = True
+
+
+class FakeResidueAto:
+    def __init__(self) -> None:
+        self.packages: list[FakeResiduePackage] = []
+
+    def remove_package(self, package: FakeResiduePackage) -> None:
+        self.packages.remove(package)
+
+
+class FakeResidueCoalition:
+    def __init__(self, settings: Settings) -> None:
+        self.game = FakeGame(settings, turn=3)
+        self.ato = FakeResidueAto()
+
+
+class FakeResidueSquadron:
+    """Arrival follows a live relocation order, like the real Squadron."""
+
+    def __init__(self, coalition: FakeResidueCoalition, home: str) -> None:
+        self.coalition = coalition
+        self.location = home
+        self.destination: str | None = None
+
+    @property
+    def arrival(self) -> str:
+        return self.location if self.destination is None else self.destination
+
+
+class FakeResiduePackage:
+    """Models Package.remove_flight: the walk goes blind, the roster clears."""
+
+    def __init__(self) -> None:
+        self.flights: list[FakeResidueFlight] = []
+
+    def remove_flight(self, flight: FakeResidueFlight) -> None:
+        self.flights.remove(flight)
+        flight.roster.clear()
+
+
+class FakeResidueFlight:
+    def __init__(
+        self, squadron: FakeResidueSquadron, package: FakeResiduePackage | None = None
+    ) -> None:
+        self.squadron = squadron
+        self.coalition = squadron.coalition
+        self.roster = FakeResidueRoster(2)
+        self.alive = True
+        if package is None:
+            package = FakeResiduePackage()
+            squadron.coalition.ato.packages.append(package)
+        self.package = package
+        package.flights.append(self)
+
+    @property
+    def arrival(self) -> str:
+        return self.squadron.arrival
+
+
+def _complete_and_remove(flight: FakeResidueFlight) -> None:
+    """The sim's removal-loop shape (aircraftsimulation.on_game_tick): record,
+    dismantle, drop the package when it empties."""
+    record_completed_residue(flight)  # type: ignore[arg-type]
+    flight.package.remove_flight(flight)
+    if not flight.package.flights:
+        flight.squadron.coalition.ato.remove_package(flight.package)
+
+
+@pytest.fixture(autouse=True)
+def _clean_residue_ledger() -> Iterator[None]:
+    clear_completed_residue()
+    yield
+    clear_completed_residue()
+
+
+def test_residue_ledger_carries_a_removed_solo_package_flight() -> None:
+    settings = _settings()
+    coalition = FakeResidueCoalition(settings)
+    flight = FakeResidueFlight(FakeResidueSquadron(coalition, "Ramstein"))
+    _complete_and_remove(flight)
+    # The ATO walk is blind (the package is gone) and the flight is
+    # dismantled; only the ledger can still park its jets.
+    assert coalition.ato.packages == []
+    assert flight.roster.cleared
+    assert residue_flights_for(coalition.ato, settings) == [(flight, "Ramstein")]  # type: ignore[arg-type]
+
+
+def test_residue_ledger_and_the_walk_stay_disjoint_with_a_sibling() -> None:
+    settings = _settings()
+    coalition = FakeResidueCoalition(settings)
+    squadron = FakeResidueSquadron(coalition, "Ramstein")
+    first = FakeResidueFlight(squadron)
+    sibling = FakeResidueFlight(squadron, package=first.package)
+    _complete_and_remove(first)
+    # The sibling keeps the package walkable; the completed flight exists only
+    # in the ledger -- one render path each, never both.
+    assert first.package.flights == [sibling]
+    assert coalition.ato.packages == [first.package]
+    assert residue_flights_for(coalition.ato, settings) == [(first, "Ramstein")]  # type: ignore[arg-type]
+
+
+def test_residue_ledger_gate_off_records_nothing() -> None:
+    coalition = FakeResidueCoalition(_settings(on=False))
+    flight = FakeResidueFlight(FakeResidueSquadron(coalition, "Ramstein"))
+    _complete_and_remove(flight)
+    assert residue_flights_for(coalition.ato, _settings()) == []  # type: ignore[arg-type]
+
+
+def test_residue_ledger_gate_off_reads_nothing() -> None:
+    settings = _settings()
+    coalition = FakeResidueCoalition(settings)
+    flight = FakeResidueFlight(FakeResidueSquadron(coalition, "Ramstein"))
+    _complete_and_remove(flight)
+    assert residue_flights_for(coalition.ato, _settings(on=False)) == []  # type: ignore[arg-type]
+
+
+def test_residue_ledger_filters_by_coalition_ato() -> None:
+    settings = _settings()
+    own = FakeResidueCoalition(settings)
+    other = FakeResidueCoalition(settings)
+    flight = FakeResidueFlight(FakeResidueSquadron(own, "Ramstein"))
+    _complete_and_remove(flight)
+    assert residue_flights_for(other.ato, settings) == []  # type: ignore[arg-type]
+
+
+def test_residue_ledger_freezes_arrival_at_completion() -> None:
+    settings = _settings()
+    coalition = FakeResidueCoalition(settings)
+    squadron = FakeResidueSquadron(coalition, "Ramstein")
+    flight = FakeResidueFlight(squadron)
+    _complete_and_remove(flight)
+    # A relocation order placed while the sim is paused moves the live
+    # arrival; jets that already landed must not teleport with it.
+    squadron.destination = "Spangdahlem"
+    assert flight.arrival == "Spangdahlem"
+    assert residue_flights_for(coalition.ato, settings) == [(flight, "Ramstein")]  # type: ignore[arg-type]
+
+
+def test_residue_ledger_skips_a_dead_flight() -> None:
+    settings = _settings()
+    coalition = FakeResidueCoalition(settings)
+    flight = FakeResidueFlight(FakeResidueSquadron(coalition, "Ramstein"))
+    _complete_and_remove(flight)
+    flight.alive = False
+    assert residue_flights_for(coalition.ato, settings) == []  # type: ignore[arg-type]
+
+
+def test_idle_spawn_count_debits_parked_residue() -> None:
+    """The removal returns a completed flight's airframes to the untasked
+    pool, so residue and idle filler would otherwise render the SAME jets
+    twice (row B57 fail signature 2)."""
+    assert idle_spawn_count(4, 2) == 2
+    # No residue: the untasked pool spawns in full, as before the ledger.
+    assert idle_spawn_count(4, 0) == 4
+    # A squadron whose whole pool is residue spawns no filler, and an
+    # over-count (parking declines, re-generation) never goes negative.
+    assert idle_spawn_count(2, 2) == 0
+    assert idle_spawn_count(2, 9) == 0
+
+
+def test_residue_ledger_clears_for_a_new_sim_cycle() -> None:
+    settings = _settings()
+    coalition = FakeResidueCoalition(settings)
+    flight = FakeResidueFlight(FakeResidueSquadron(coalition, "Ramstein"))
+    _complete_and_remove(flight)
+    clear_completed_residue()
+    assert residue_flights_for(coalition.ato, settings) == []  # type: ignore[arg-type]
+
+
 # --- P3: follow-on window and the pre-roll briefing block ---
 
 
@@ -311,6 +502,19 @@ def test_preroll_brief_lines_counts_by_state() -> None:
         "Friendly: airborne 2, recovered 1, lost 1.",
         "Enemy: airborne 1, recovered 0, lost 0 (assessed).",
     ]
+
+
+def test_preroll_brief_lines_recovered_includes_the_ledger() -> None:
+    # A flight the sim already removed is invisible to the ATO walk; the
+    # recovered count must still see it through the residue ledger.
+    settings = _settings()
+    game = FakeBriefGame(settings, [], [])
+    coalition = FakeResidueCoalition(settings)
+    game.blue = coalition  # type: ignore[assignment]
+    flight = FakeResidueFlight(FakeResidueSquadron(coalition, "Ramstein"))
+    _complete_and_remove(flight)
+    lines = preroll_brief_lines(game)  # type: ignore[arg-type]
+    assert lines == ["Friendly: airborne 0, recovered 1, lost 0."]
 
 
 # --- P4: the voice-net schedule ---

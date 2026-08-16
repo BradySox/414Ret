@@ -192,18 +192,21 @@ class FlightGroupSpawner:
             group.uncontrolled = True
         return group
 
-    def create_completed_aircraft(self) -> Optional[FlyingGroup[Any]]:
+    def create_completed_aircraft(
+        self, arrival: Optional[ControlPoint] = None
+    ) -> Optional[FlyingGroup[Any]]:
         """Parked ramp residue for a flight that already recovered (§89 P2).
 
         create_idle_aircraft's shape, but parked at the flight's ARRIVAL field
         rather than the squadron's home -- a diverted flight parks where it
         landed. Uncontrolled, so the jets sit on the ramp as the returned
-        airframes they are.
+        airframes they are. Ledger flights pass the arrival frozen at
+        completion; ``None`` reads the flight's live arrival.
         """
         self._register_custom_callsign()
         try:
             group = None
-            cp = self.flight.arrival
+            cp = arrival if arrival is not None else self.flight.arrival
             if self.flight.is_helo or self.flight.is_lha and isinstance(cp, Fob):
                 group = self._generate_at_cp_helipad(
                     name=namegen.next_aircraft_name(self.country, self.flight),

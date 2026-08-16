@@ -269,8 +269,6 @@ squadrons:
       aircraft_type: F/A-18F Super Hornet
       callsign: Hammer
       size: 10
-      available_from_turn: 7
-      arrival_note: "CVW-3 strike detachment surges aboard"
     - primary: SEAD Escort
       secondary: any
       aircraft:
@@ -312,8 +310,6 @@ squadrons:
       aircraft_type: F-15E Strike Eagle (Suite 4+)
       callsign: Chaos
       size: 12
-      available_from_turn: 7
-      arrival_note: "Strike Eagles forward-deploy to Nordholz"
     # The Swedish detachment. F 17 (Blekinge Wing, Ronneby/Kallinge) is the Baltic-facing
     # Gripen wing, forward-deployed to Nordholz for the counter-offensive. It is here for a
     # capability reason as well as a thematic one: blue's ONLY other dedicated SEAD/DEAD unit
@@ -336,8 +332,6 @@ squadrons:
       country: Sweden
       callsign: Viggen
       size: 8
-      available_from_turn: 5
-      arrival_note: "Sweden joins the coalition — Ronneby/Kallinge"
   # Bremen (5) — rear heavies + eyes.
   5:
     - primary: AEW&C
@@ -365,8 +359,6 @@ squadrons:
       aircraft_type: B-1B Lancer
       callsign: Bone
       size: 4
-      available_from_turn: 9
-      arrival_note: "34th BS deploys from Ellsworth"
   # Hamburg (17) — forward CAS / rotary hub, holding the Lübeck neck.
   17:
     # The Finnish detachment. Finland joined NATO in April 2023 -- before Sweden -- and its
@@ -390,8 +382,6 @@ squadrons:
       country: Finland
       callsign: Sisu
       size: 8
-      available_from_turn: 3
-      arrival_note: "Finland joins the coalition — Karjalan Lennosto"
     - primary: CAS
       secondary: air-to-ground
       aircraft:

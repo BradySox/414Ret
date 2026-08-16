@@ -104,12 +104,6 @@ class FakeSettings:
 class FakeCoalition:
     def __init__(self, player: FakePlayer) -> None:
         self.player = player
-        self.air_wing = FakeAirWing()
-
-
-class FakeAirWing:
-    def __init__(self) -> None:
-        self.pending_arrivals: List[Any] = []
 
 
 class FakeGame:
@@ -149,9 +143,9 @@ def test_items_are_ordered_most_pressing_first() -> None:
     briefing = PreTurnBriefing(
         turn=3,
         items=[
-            BriefingItem("arrival", "later", BACKGROUND),
             BriefingItem("consequence", "now", URGENT),
             BriefingItem("objective", "soon", NOTABLE),
+            BriefingItem("open_loop", "later", BACKGROUND),
         ],
     )
     assert [i.text for i in briefing.ordered()] == ["now", "soon", "later"]
@@ -161,7 +155,7 @@ def test_items_are_ordered_most_pressing_first() -> None:
 def test_by_kind_filters() -> None:
     briefing = PreTurnBriefing(
         turn=1,
-        items=[BriefingItem("open_loop", "a"), BriefingItem("arrival", "b")],
+        items=[BriefingItem("open_loop", "a"), BriefingItem("objective", "b")],
     )
     assert [i.text for i in briefing.by_kind("open_loop")] == ["a"]
 
@@ -224,27 +218,6 @@ def test_a_located_mobile_missile_site_is_an_open_loop() -> None:
     assert "scoot" in item.text
 
 
-# ----------------------------------------------------------------- arrivals
-
-
-def test_upcoming_arrivals_are_the_anticipation_band() -> None:
-    from game.fourteenth.wing_growth import PendingSquadron
-
-    class Sq:
-        name = "HavLLv 31"
-        aircraft = "F/A-18C"
-
-    game = FakeGame(turn=1)
-    game.blue.air_wing.pending_arrivals = [
-        PendingSquadron(turn=3, squadron=Sq())  # type: ignore[arg-type]
-    ]
-
-    (item,) = build_pre_turn_briefing(game).by_kind("arrival")  # type: ignore[arg-type]
-
-    assert "HavLLv 31" in item.text and "arrives turn 3" in item.text
-    assert item.urgency == BACKGROUND
-
-
 # --------------------------------------------------------------- consequence
 
 
@@ -278,19 +251,14 @@ def test_an_intact_enemy_network_says_nothing(
     assert build_pre_turn_briefing(FakeGame()).by_kind("consequence") == []  # type: ignore[arg-type]
 
 
-def test_sections_are_capped() -> None:
+def test_sections_are_capped(monkeypatch: pytest.MonkeyPatch) -> None:
     """A long war must not produce an unreadable wall."""
-    from game.fourteenth.wing_growth import PendingSquadron
+    import game.fourteenth.victory as victory
 
-    class Sq:
-        def __init__(self, name: str) -> None:
-            self.name = name
-            self.aircraft = "F/A-18C"
+    monkeypatch.setattr(
+        victory,
+        "victory_sitrep_lines",
+        lambda g, limit=None: [f"Victory: objective {i}" for i in range(10)],
+    )
 
-    game = FakeGame(turn=1)
-    game.blue.air_wing.pending_arrivals = [
-        PendingSquadron(turn=3 + i, squadron=Sq(f"VFA-{i}"))  # type: ignore[arg-type]
-        for i in range(10)
-    ]
-
-    assert len(build_pre_turn_briefing(game).by_kind("arrival")) <= 4  # type: ignore[arg-type]
+    assert len(build_pre_turn_briefing(FakeGame()).by_kind("objective")) <= 4  # type: ignore[arg-type]

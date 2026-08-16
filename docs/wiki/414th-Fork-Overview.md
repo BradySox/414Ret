@@ -151,10 +151,10 @@ Full detail: [Air Defense and the Air War](Air-Defense-and-the-Air-War).
 
 ## Content and tools
 
-- **Nine built campaigns**: Red Tide (Germany 1988), 1968 Yankee Station (Vietnam), Operation
+- **Eight built campaigns**: Red Tide (Germany 1988), 1968 Yankee Station (Vietnam), Operation
   Enduring Resolve (Afghanistan COIN), Red Flag 81-2 (Nevada 1981), Operation Inherent Resolve
-  (Iraq 2016), The Tanker War (Persian Gulf 1988), Umm al-Ma'arik (Desert Storm 1991), Second
-  Island Chain (Marianas 2027) and Operation Baltic Fury. Briefing packs for several are in the
+  (Iraq 2016), Umm al-Ma'arik (Desert Storm 1991), Second Island Chain (Marianas 2027) and
+  Operation Baltic Fury. Briefing packs for several are in the
   Campaigns section of [Home](Home).
 - **Mod integration**: CurrentHill Iran (Shahed-136, IRGCN FAC, `[CH] Iran 2020` faction), High
   Digit SAMs Ultimate Compilation, and the optional Expanded F-4E Weapons Pack. All behind

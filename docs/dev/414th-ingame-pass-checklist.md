@@ -23,7 +23,7 @@ so the two docs don't drift.
 
 ## Outstanding rows at a glance
 
-77 rows need a live pass. Full detail is under each `###` heading below —
+75 rows need a live pass. Full detail is under each `###` heading below —
 search the row id. `☐` untested · `◐` flown but not under the conditions that
 stress it · `✗` fail signature reproduced in-game.
 
@@ -45,7 +45,6 @@ stress it · `✗` fail signature reproduced in-game.
 | B35 | Air-defense class rows are filters of the "Air defences" master | §19 | ☐ |
 | B39 | Cross-turn naval magazines | §81 | ✗ |
 | B63 | A destroyed strike target is recorded in the campaign | §8 | ✗ |
-| B40 | The Wing Grows: scheduled squadron arrivals | §82 | ☐ |
 | B50 | The auto-planner never picks the King for a rescue | CSAR | ☐ |
 | B51 | The rescue package is not planned into threat it cannot survive | CSAR | ☐ |
 | C9 | Carrier-recovery stagger (same-boat package landings spaced) | §8 | ◐ |
@@ -88,7 +87,6 @@ stress it · `✗` fail signature reproduced in-game.
 | S6 | Tanker fragged for a no-`fuel:`-block airframe on a long sortie | §46 | ☐ |
 | S7 | Measured fuel data adopted from DCS Liberation drives tanker + bingo for 12 airframes | §46 | ☐ |
 | T1 | Continuous clock marches + weather evolves across turns | §47 | ☐ |
-| T2 | Persian Gulf "The Tanker War (1988)" campaign plays | Tanker War campaign | ☐ |
 | T3 | Iraq "Umm al-Ma'arik (Desert Storm 1991)" campaign plays | Desert Storm campaign | ☐ |
 | T4 | DCS 2.9.28 Iraq map pass: dam destructibility + the ED airfield fixes | Desert Storm / Inherent Resolve | ☐ |
 | T5 | Marianas "Second Island Chain (2027)" campaign plays | Marianas 2027 campaign | ☐ |
@@ -756,15 +754,9 @@ Needs a flight to confirm the fix end to end. The cheap version deliberately rep
   2. **No warning line at all and the target IS recorded** — fine, that is the ordinary case where the watcher never stopped early.
   3. **Results double-counted** (a kill charged twice) — the fresh read and the polled snapshot both committed; stop and re-read `_process_turn`.
 
-### B40 — The Wing Grows: scheduled squadron arrivals · §82 · ☐ UNTESTED
+### B40 — The Wing Grows: scheduled squadron arrivals · ⊘ RETIRED
 
-**History:** built 2026-08-03 — a campaign holds a squadron out of the air wing until an announced turn (`available_from_turn:`), then joins + populates it. The engine half is unit-tested end to end in `tests/fourteenth/test_wing_growth.py` (hold-back before the turn, join-and-populate on the turn, the `squadrons_start_full` rule, late arrivals, idempotency across the re-init cases, red arrivals joining silently, the no-schedule no-op, a failing arrival dropped not retried, and the `Sitrep` surfacing) and the two authored schedules are CI-locked by rule in `tests/fourteenth/test_wing_growth_campaigns.py`. What CI cannot exercise is whether the arrival is *playable*: that the arriving squadron actually parks and generates at its base, that the auto-planner frags it on its arrival turn, and that the opening turns are still winnable with the withheld capability.
-
-- **Setup:** NEW game on **Operation Baltic Fury** (its schedule is the offensive arc: T3 Finnish F/A-18C BARCAP, T5 Swedish Gripen DEAD, T7 F-15E + F/A-18F Strike, T9 B-1B). A schedule is consumed at turn 0, so an existing save will not show it.
-- **Pass criterion:** turn 1 shows **no** Finnish Hornets, Gripens, Strike Eagles, Strike Rhinos or B-1B in the ATO or the Air Wing dialog. Pass turns; on **turn 3** the Finnish Hornet squadron appears at Hamburg with pilots and airframes, the SITREP band reads `ARRIVED: HavLLv 31 (F/A-18C …) arrived at …`, and the auto-planner frags it that same turn. Generate and fly: the Hornets spawn on the Hamburg ramp without a parking error. Repeat the check at **turn 5** for the Gripens.
-- **Fail signature:** an arrival that never appears (check the log for `Wing growth: … joined …`); an arrival that appears but is never tasked (the planner cannot see it — would mean `ControlPoint.squadrons` is not resolving it); an arrival that generates **fewer airframes than its `size:`** (the parking clamp biting silently — the known deferred gap, worth recording the number); a duplicate announcement or a squadron joining twice after a base capture on the arrival turn (the idempotency guard failing in the real re-init path); or turns 1–4 proving unwinnable without BARCAP + Gripen DEAD against the S-400/S-300 belt, which is a **balance** finding on the authored schedule rather than a bug in the feature.
-- **Also worth a look:** **Red Tide** carries the defensive arc (T4 Mirage F1EE, T6 F-15E BAI, T8 B-52H) and is the campaign where deferring the wrong thing would be most obvious — confirm the A-10s and the whole Fulda rotary hub are present from turn 1.
-
+**History:** retired 2026-08-16 — §82 was removed on the DM's call ("it doesn't add much except in very specific campaigns"), so the scenario this row tracked no longer runs. It was never flown. See `414th-features.md` §82 for what was removed.
 
 ### B41 — SP Pilot Mode: the pre-turn card + the aircraft-first board · §83 · ☑ VERIFIED
 
@@ -4015,13 +4007,9 @@ Needs a flight to confirm the fix end to end. The cheap version deliberately rep
   weather still flickers with no correlation (the `previous=` bias not being passed from `Conditions.advance`).
   Knobs: `MIN/MAX_TURN_ADVANCE_HOURS`, `_WEATHER_PERSISTENCE_KERNEL` (`game/weather/conditions.py`).
 
-### T2 — Persian Gulf "The Tanker War (1988)" campaign plays · Tanker War campaign · ☐ UNTESTED
+### T2 — Persian Gulf "The Tanker War (1988)" campaign plays · ⊘ RETIRED
 
-**History:** built 2026-07-07, Phases 1–3 headless-verified; the laydown — PG theater, US Navy 1985 vs Iran 1988 at a 1988 start, the will profile + authored phase arc parse, the naval preseeds (`vietnam_political_will`, `campaign_phases`, `mobile_missile_relocation`, `coastal_missile_relocation`) — is CI-locked in `tests/fourteenth/test_tanker_war.py`; row added 2026-07-18 — the maintenance sweep found the campaign shipped with no checklist row, the design note's "docs registration" leftover
-- **What CI cannot exercise:** the played campaign — the 1988 CVW off the boat, the ships-not-territory will economy moving from sunk hulls, the shipping-lane ROE corridor gating targets, the coastal Silkworm batteries' fire missions on the period laydown, and above all the **oil-platform AAA gun forts rendering ON the rig decks** (the design note's flagged riskiest render — units placed on platform decks ride the alt-unset rule).
-- **Setup:** New Game → "Persian Gulf — The Tanker War (1988)" (US Navy 1985 vs Iran 1988). Generate turn 1; fly or spectate the Strait box (Abu Musa / Qeshm / Bandar Abbas / the oil platforms).
-- **Pass:** generates + loads clean; platform AAA stands on the rig decks (not in the sea / floating); the will meters read the naval framing and move when a hull sinks; the phase arc + shipping-lane corridor render on the ribbon/map; the shore Silkworm sites fire their held missions inside the fire window (note: vanilla Silkworm hardware is immobile by design — the emitter never routes it, so fire-without-scoot is CORRECT there, not the (§49) pinned-battery fail signature).
-- **Fail signature:** platform guns spawned in the water at the rig position (deck placement broke — nudge `DECK_OFFSET` in `tools/build_tanker_war_miz.py` or hand-place in the ME); a dead will meter when a ship dies (the campaign `will:` block parse degraded silently — it falls back to Vietnam framing); the corridor missing from the map (phase parse degraded); a red S-300 appearing (a long-range band marker escaped the period re-factioning — `iran_1988` fields no long SAM).
+**History:** retired 2026-08-16 — the campaign was deleted on the DM's call ("Scrap T2"), so the scenario this row tracked no longer exists. It was never flown past the headless Phase 1–3 verification. The design note `414th-tanker-war-campaign-notes.md` is kept as a record; do not author against it.
 
 ### T3 — Iraq "Umm al-Ma'arik (Desert Storm 1991)" campaign plays · Desert Storm campaign · ☐ UNTESTED
 

@@ -33,16 +33,6 @@ class SquadronConfig:
     #: A pinned country prefers same-nation presets and stamps generated defs.
     country: Optional[str]
 
-    #: "The Wing Grows": the turn this squadron joins the air wing. None (or 0)
-    #: means present from the start, which is the stock behavior. A later turn
-    #: holds the squadron out of the wing -- built at turn 0 exactly as usual,
-    #: but parked in AirWing.pending_arrivals -- until Game.initialize_turn
-    #: reaches that turn. See game/fourteenth/wing_growth.py.
-    available_from_turn: Optional[int] = None
-
-    #: Optional flavour for the arrival announcement ("VF-154 det, CONUS").
-    arrival_note: Optional[str] = None
-
     @property
     def auto_assignable(self) -> set[FlightType]:
         # TARPS and Escort Jammer are support/escort roles that no campaign config
@@ -86,30 +76,7 @@ class SquadronConfig:
             data.get("aircraft_type", None),
             data.get("callsign", None),
             data.get("country", None),
-            cls.parse_available_from_turn(data.get("available_from_turn", None)),
-            data.get("arrival_note", None),
         )
-
-    @staticmethod
-    def parse_available_from_turn(raw: Any) -> Optional[int]:
-        """Validate a scheduled-arrival turn.
-
-        A bad value is a campaign authoring error, so raise and abort New Game
-        loudly rather than silently ignoring the schedule and handing the player
-        a wing that quietly does not grow.
-        """
-        if raw is None:
-            return None
-        if isinstance(raw, bool) or not isinstance(raw, int):
-            raise ValueError(
-                f"Squadron config available_from_turn must be an integer turn "
-                f"number, got {raw!r}."
-            )
-        if raw < 0:
-            raise ValueError(
-                f"Squadron config available_from_turn must not be negative, got {raw}."
-            )
-        return raw
 
     @staticmethod
     def expand_secondary_alias(alias: str) -> list[FlightType]:

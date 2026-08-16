@@ -6,7 +6,7 @@ closest-CP so a laydown edit can silently re-pair them, the KARI IADS is authore
 .miz statics, and DCS parking is dimension-resolved so an over-wide airframe at a
 small-stand field silently fails to ground-spawn -- so the shipped campaign + the
 faction adds it depends on are asserted here. Sibling of
-tests/fourteenth/test_tanker_war.py.
+tests/fourteenth/test_inherent_resolve.py.
 
 Laydown v2 (the western desert war): BLUE holds only the seized H-3 complex + the
 off-map Saudi rear (the Iraq map has no 60x60 heavy stands west of Baghdad, so the

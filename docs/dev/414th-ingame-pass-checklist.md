@@ -4037,7 +4037,7 @@ App pass, no flight needed: open Settings → Campaign Doctrine in a game.
      `PLANNER_SUITE_VALUES`' stock column (the `test_fresh_settings_are_stock` guard should
      have caught it first).
 
-### B55 — Carrier steams for wind down the angled deck · §88 · ☐ UNTESTED (adopted 2026-08-09 from geofffranks' `12d71346`, upstream issue dcs-retribution#865. **Desk finding 2026-08-16** (Baltic Fury spectator generation, session `c86c58dd`): the authored PORPOISE carrier leg was **166.0° at 16.4 kt** under save wind `direction=11, 4.73 m/s`, but `solve_carrier_cruise(11, 4.73, 9.0)` returns **135.1° at 22.0 kt** — and no from/to or deck-sign input combination reproduces 166/16.4 (135/315/247/67, all 22.0 kt). Something between the solver and the written route changes the answer — candidates to rule out in `steam_into_wind`: the 5-attempt sea-probe fallback rewriting the heading (this is the Baltic; 135° from the boat's position may probe into Danish land), a different wind source at generation, or a speed clamp. The flown track held 154°→196.6° around the authored line (DCS's own steering). Investigate the caller before judging the solver — and before the Case-I fly clause is attempted, or the on-the-ball check will measure the wrong thing)
+### B55 — Carrier steams for wind down the angled deck · §88 · ☐ UNTESTED (adopted 2026-08-09 from geofffranks' `12d71346`, upstream issue dcs-retribution#865. **Desk finding 2026-08-16** (Baltic Fury spectator generation, session `c86c58dd`): the authored PORPOISE carrier leg was **166.0° at 16.4 kt** under save wind `direction=11, 4.73 m/s`, but `solve_carrier_cruise(11, 4.73, 9.0)` returns **135.1° at 22.0 kt** with no input combination reproducing 166/16.4. **RESOLVED 2026-08-16** (session `bd15b892`, desk — miz + solver cross-check): the 166/16.4 discrepancy was in the repro call's units, not the pipeline — `steam_into_wind` feeds the solver **knots** (`mps(wind.speed).knots`; 4.7257 m/s = 9.19 kt, matching the solver's 25 kt target units), and `solve_carrier_cruise(11, 9.186, 9.0)` = 165.8°/16.38 kt, rounded to **166** by integer `Heading.from_degrees` — byte-for-byte the authored leg (confirmed from the miz: `0077 | PORPOISE (Carrier)` 166.0°/16.4 kt/100.0 km). All three suspects acquitted: the sea probe only shortens the leg (100→20 km, never a new heading; the 100.0 km leg proves attempt 0 passed), the miz weather block carries the save's at_0m verbatim, and `max(0.0, ·)` never engaged. The escort leg (`0078 | PORPOISE (Escort)` 191.0°/15.8 kt) is the **same solver at deck 0** — escorts have no `landing_deck_angle` — i.e. plain bow-into-wind, confirming at_0m follows DCS blows-to (the `atis.py` empirically-verified convention). **The investigation then found the real §88 defect: the solver's deck-angle sign was inverted** — it solved to the starboard mirror (`wind_from − offset`), putting the felt wind at `BRC + deck` instead of down the port landing area at `BRC − deck`: felt wind from 175 vs the 157 landing area = **+7.7 kt crosswind, double the ~3.9 kt bow-into-wind residual the feature was adopted to remove**. Fixed same day (`wind_from + offset`, both EXACT and the high-wind clamp), pinned by a 60-case apparent-wind invariant test + the Baltic regression numbers; this save's wind now authors **216°/16.4 kt** (felt wind from 207 = exactly down the landing area, 0.0 kt crosswind). Features doc §88 "The B55 desk finding" has the full mechanism. The fly clause below is still owed — on the ball is the one thing the desk cannot measure)
 
 > The boat used to point its bow straight into the wind, leaving a permanent ~9° crosswind
 > across the landing area, and wrote a **negative** carrier speed above 25 kt of ambient wind.
@@ -4051,20 +4051,25 @@ App pass, no flight needed: open Settings → Campaign Doctrine in a game.
 Needs a flight: generate a NEW mission with a carrier and a steady wind of ~10–20 kt, then fly a
 Case I recovery.
 
-- **Pass:** the ship's heading is ~9–15° off the wind reciprocal (not equal to it); on the ball,
-  the relative wind is straight down the angled deck with no drift to fight; BRC on the kneeboard
-  and the CV Operations Data page matches the ship's actual heading.
+- **Pass:** the ship's heading sits **clockwise** of the wind reciprocal by `asin(25·sin(deck) /
+  wind_kt)` — ~25° at 9 kt of wind, ~9° at 25 kt (never counterclockwise: that is the pre-fix
+  mirror); on the ball, the relative wind is straight down the angled deck with no drift to
+  fight; BRC on the kneeboard and the CV Operations Data page matches the ship's actual heading.
 - **Fail signatures:**
-  1. **Crosswind is worse, not better** — the deck-angle sign is inverted for that hull (the
-     landing area is offset to port on every hull we ship, so the value should be positive).
+  1. **Crosswind is worse, not better** — the felt wind sits `2·deck` off the landing area: the
+     sign inversion is back (solver-side now pinned by
+     `test_apparent_wind_runs_down_the_port_angled_deck`; if the test is green, suspect a
+     negative `landing_deck_angle` in that hull's yaml — every shipping hull is port-offset, so
+     the value should be positive).
   2. **The carrier sits dead in the water** — ambient wind exceeded 25 kt and the solver hit
      `HIGH_WIND_SPEED_CLAMP`. Wind over deck is still satisfied; note the wind speed and whether
      a motionless boat is acceptable.
   3. **BRC on the kneeboard disagrees with the ship** — `add_runway_data` is getting a stale
      heading rather than the solver's.
   4. **The carrier is on land or never moves at all** — the 5-attempt sea probe rejected every
-     candidate point and `steam_into_wind` returned None (pre-existing behavior, but the new
-     heading changes which points get probed).
+     candidate point and `steam_into_wind` returned None (pre-existing behavior, and the
+     2026-08-16 sign fix moves the probed bearing by ~2× the solver offset — 166 → 216 on the
+     Baltic save — so coastlines that cleared before may not clear now).
 
 ### B56 — Living battlespace pre-roll: mid-cycle mission start · §89 · ◐ PARTIAL (2026-08-16, spectator Game Master watch, Baltic Fury turn 3, Tacview `Tacview-20260816-104955`, session `c86c58dd`; 3 of 4 pass clauses verified — **38 aircraft airborne at spawn** both sides (CAPs mid-station at 31k ft, escorts mid-route, the pre-roll-launched strike already enroute at 21k ft), war clock read 00:40 (the ACMI ReferenceTime), first recovery T+22.6m, zero parking-overflow symptoms in dcs.log. Outstanding: the SEATED clause — player startup at the briefed time with full ground ops after the auto pre-roll (the qt_ui launch wiring) — needs the flown sortie from the app) (was ☐ UNTESTED, built 2026-08-15)
 

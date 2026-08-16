@@ -8834,6 +8834,32 @@ reproduces the old behavior exactly.
 Positive means the landing area is offset **to port**, which is every hull in the game. A
 negative value is accepted and mirrors correctly, but nothing ships one.
 
+### The B55 desk finding (2026-08-16): the deck-angle sign was inverted
+
+The adopted solver put the solved heading on the **counterclockwise** side of the wind
+reciprocal (`wind_from - asin(25·sin(deck) / wind)`). That is the geometry for a
+starboard-offset landing area: the apparent wind ended up aligned with `heading + deck` — the
+mirror of the deck every hull actually has — leaving a crosswind of `25·sin(2·deck)` across the
+real landing area (~7.7 kt at 9°), **double** the bow-into-wind residual (~3.9 kt) the feature
+was adopted to remove. Both `EXACT` and `HIGH_WIND_SPEED_CLAMP` carried the sign; fixed
+2026-08-16 to `wind_from + offset` / `wind_from + deck`.
+
+Measured on the Baltic Fury turn-3 generation that surfaced it (wind blowing toward 011 at
+9.19 kt, Stennis deck 9.0): pre-fix the solver authored BRC 166 (felt wind from 175, 18° off
+the 157 landing area, +7.7 kt crosswind); post-fix it authors BRC 216 (felt wind from 207 =
+exactly down the landing area, 0.0 kt). The investigation also confirmed the pipeline is
+otherwise faithful: the authored route IS the raw solver output — `steam_into_wind` converts
+the save's m/s wind to knots (the solver works in the units of its 25 kt target),
+`Heading.from_degrees` rounds to whole degrees (165.8 → 166), the sea probe only ever shortens
+the leg (100 → 20 km, never a new heading), and escorts have no `landing_deck_angle`, so their
+group solves at deck 0 — plain bow-into-wind, diverging from the carrier's course by the
+offset (25° in that save).
+
+The apparent-wind alignment is now pinned as an invariant
+(`test_apparent_wind_runs_down_the_port_angled_deck`, 60 parametrized cases: apparent wind
+from `heading - deck`, 25 kt, in every EXACT solve) plus the Baltic numbers as a regression
+case, so a future sign flip cannot pass CI.
+
 ### Consequences worth knowing
 
 - **BRC moves.** The heading fed to `add_runway_data`, the kneeboard and the CV Operations Data
@@ -8847,8 +8873,9 @@ negative value is accepted and mirrors correctly, but nothing ships one.
 Files: `game/flightplan/carriercruisesolver.py`, `game/dcs/shipunittype.py`,
 `game/missiongenerator/tgogenerator.py` (`steam_into_wind` + its call site), 22 hull yamls under
 `resources/units/ships/`.
-Tests: `tests/flightplan/test_carriercruisesolver.py` (10),
-`tests/dcs/test_shipunittype.py` (24), `tests/missiongenerator/test_ship_sail_waypoint.py` (+5).
+Tests: `tests/flightplan/test_carriercruisesolver.py` (71, incl. the 60-case apparent-wind
+invariant), `tests/dcs/test_shipunittype.py` (24),
+`tests/missiongenerator/test_ship_sail_waypoint.py` (+5).
 Checklist: **B55**.
 
 ### Fork deltas vs the source commit
@@ -8861,6 +8888,10 @@ Checklist: **B55**.
   `Essex.yaml` (USS Bennington CV-20, classed `HelicopterCarrier` → 0.0), `[VWV]IX514.yaml`
   (0.0), and the `CV_1143_5` variant override was left off as a no-op duplicate of its
   top-level value.
+- **The deck-angle sign is fixed here and not in the source commit** (see the B55 desk finding
+  above): `12d71346` solves to the starboard mirror. If upstream lands a shape for #865, check
+  its sign against the apparent-wind invariant test before reconciling — and the finding is
+  worth carrying to upstream once the PR freeze lifts.
 - **Drift watch:** this is unmerged contributor work with no upstream PR open. If upstream lands
   a different shape for #865, reconcile to theirs.
 

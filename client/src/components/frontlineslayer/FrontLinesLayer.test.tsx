@@ -5,6 +5,9 @@ import { PropsWithChildren } from "react";
 const mockPolyline = jest.fn();
 const mockLayerGroup = jest.fn();
 const mockPane = jest.fn();
+// A mocked module replaces the WHOLE module, so anything the component tree
+// imports must be stubbed here or it arrives undefined and React throws
+// "Element type is invalid".
 jest.mock("react-leaflet", () => ({
   Pane: (props: PropsWithChildren<any>) => {
     mockPane(props);
@@ -20,11 +23,6 @@ jest.mock("react-leaflet", () => ({
   // FrontLine's interactive hit-line renders a <Tooltip> child (right-click hint);
   // stub it so the mocked react-leaflet module still resolves the import.
   Tooltip: () => null,
-  // The fronts render inside a dedicated z-450 <Pane> so their contextmenu stays
-  // reachable under the flight-plan hit overlay (upstream #921). A mocked module
-  // replaces the WHOLE module, so anything the component imports must be stubbed
-  // here or it arrives undefined and React throws "Element type is invalid".
-  Pane: (props: PropsWithChildren<any>) => <>{props.children}</>,
 }));
 
 // The waypoints in test data below should all use `should_make: false`. Markers

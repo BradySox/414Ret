@@ -4097,15 +4097,16 @@ version), take off normally.
   5. **Turn 0 differs at all from gate-off** — the curve's zero is not gating; the expectation
      is byte-identical.
 
-### B57 — Living battlespace P2: ramp residue + clean-wing returners · §89 · ☐ UNTESTED (built 2026-08-15; **2026-08-16 watch: the condition never arose** — a 40-minute pre-roll completed nobody's full cycle (zero `Completed` flights at generation, matching the cut's state census), so no residue existed to observe; the one all-watch parked jet was an idle-ramp single, not residue. Adjudicate on a later-turn or longer-pre-roll mission where a pre-roll flight actually finishes, or after a flown full sortie)
+### B57 — Living battlespace P2: ramp residue + clean-wing returners · §89 · ☐ UNTESTED (built 2026-08-15; **2026-08-16 watch: the condition never arose** — a 40-minute pre-roll completed nobody's full cycle, and the one all-watch parked jet was an idle-ramp single, not residue. **2026-08-16 desk check (session `adoring-jepsen-b63803`): the starvation was structural, not a short pre-roll.** The sim's removal loop (`aircraftsimulation.py`) pulls every `Completed` flight out of its package at the tick boundary, so generation's ATO walk could only ever see a completion inside the final, halt-interrupted tick — on the Baltic Fury turn-3 save, 40/75/88/150-minute simulation marches all yielded zero ATO `Completed` flights at generation while the ATO census shrank 38→18; solo-flight packages (most CAPs) could never render. **Fixed same session: the removal site now records (flight, arrival-frozen-at-completion) into a transient residue ledger** (`record_completed_residue` in `game/fourteenth/living_battlespace.py`; cleared at `begin_simulation`, never pickled) **and `generate_flights` parks ledger flights after the tasked walk**; the P3 briefing's `recovered` count reads the ledger too (it had the same blindness — B58's watch showed `recovered 0` for this reason). Ledger/walk disjointness, gate-off no-op both ways, the arrival freeze, the coalition filter and the brief count are pinned in `tests/fourteenth/test_living_battlespace.py`. Re-test: any turn-3+ pre-roll long enough that the briefing block reports `recovered ≥ 1`, or a flown full sortie)
 
 > With the same `living_battlespace_preroll` gate on, three P2 behaviors join the pre-roll:
 > flights whose whole cycle predates your startup park their jets uncontrolled at their
-> arrival field (registered in the unit map, so strafing them records real losses);
-> strike-family flights spawned past their target fly a **clean wing plus pods** (v1 strips
-> AAMs and tanks too — no weapon taxonomy to keep them by, recorded deviation); and AI units
-> spawned en route carry burned-down fuel instead of full tanks. The gating, strip rule and
-> fuel rule are pinned in `tests/fourteenth/test_living_battlespace.py`.
+> arrival field (registered in the unit map, so strafing them records real losses) — carried
+> from the sim to generation by the residue ledger, since completed flights leave the ATO
+> mid-march; strike-family flights spawned past their target fly a **clean wing plus pods**
+> (v1 strips AAMs and tanks too — no weapon taxonomy to keep them by, recorded deviation);
+> and AI units spawned en route carry burned-down fuel instead of full tanks. The gating,
+> strip rule, fuel rule and ledger are pinned in `tests/fourteenth/test_living_battlespace.py`.
 
 Needs a flight: same setup as B56 (gate on, turn 3+), plus a look at the F10 map and a ramp.
 
@@ -4116,7 +4117,12 @@ Needs a flight: same setup as B56 (gate on, turn 3+), plus a look at the F10 map
   1. **A returner with full racks** — the strip's task/waypoint condition missed it (check
      `stores_expended`'s task set vs the flight's actual type).
   2. **Duplicate airframes** — the same flight appears both airborne and parked (the
-     Completed-vs-InFlight branch split broke; a flight must take exactly one path).
+     Completed-vs-InFlight branch split broke, or a flight got into both the ledger and the
+     ATO walk; recorded-means-removed is the invariant, a flight takes exactly one path).
+     The other shape of this: **a squadron shows more parked jets than it owns**, because
+     the removal returned the airframes to the untasked pool and the idle-filler spawn
+     rendered them a second time — check `idle_spawn_count` is debiting
+     `AircraftGenerator.residue_airframes` (this failed on the first cut of the ledger).
   3. **Parking exhaustion pattern** — residue crowding out tasked flights' slots at a small
      field (residue spawns after tasked flights by construction; if tasked flights lose slots
      anyway, the generation order changed).
@@ -4124,8 +4130,14 @@ Needs a flight: same setup as B56 (gate on, turn 3+), plus a look at the F10 map
      design).
   5. **A mid-route AI flight with full fuel** — `use_estimated_fuel_for_ai` isn't reaching
      `setup_fuel` (check the state's `in_flight` property for that flight class).
+  6. **Briefing says `recovered ≥ 1` but no residue anywhere** — the ledger seam broke
+     (record at the sim's removal site → `residue_flights_for` at generation; both gate on
+     `living_battlespace_preroll`, and the ledger clears at `begin_simulation`).
+  7. **Residue at the wrong field after a mid-pause relocation order** — the arrival freeze
+     broke (the ledger records the arrival at completion time precisely so an order placed
+     while the sim is paused cannot teleport already-landed jets).
 
-### B58 — Living battlespace P3: follow-on waves + pre-roll briefing · §89 · ☑ VERIFIED (2026-08-16, spectator watch, Tacview `Tacview-20260816-104955`, session `c86c58dd` — the briefing block rendered with plausible counts ("Friendly: airborne 4, recovered 0, lost 3 / Enemy: airborne 8, lost 3 (assessed)", carried in the ACMI's own Comments field); waves activated AND flew at T+10.6m (carrier escorts), T+21.1m (a red Tu-95 3-ship) and T+32m (Hinds); activity continuous through the 96-minute watch; no parking exhaustion (0 overflow lines in dcs.log). The deep tail past a player egress follows from the same timers) (was ☐ UNTESTED, built 2026-08-15)
+### B58 — Living battlespace P3: follow-on waves + pre-roll briefing · §89 · ☑ VERIFIED (2026-08-16, spectator watch, Tacview `Tacview-20260816-104955`, session `c86c58dd` — the briefing block rendered with plausible counts ("Friendly: airborne 4, recovered 0, lost 3 / Enemy: airborne 8, lost 3 (assessed)", carried in the ACMI's own Comments field); waves activated AND flew at T+10.6m (carrier escorts), T+21.1m (a red Tu-95 3-ship) and T+32m (Hinds); activity continuous through the 96-minute watch; no parking exhaustion (0 overflow lines in dcs.log). The deep tail past a player egress follows from the same timers) (was ☐ UNTESTED, built 2026-08-15) (**2026-08-16 addendum, session `adoring-jepsen-b63803`:** that watch's `recovered 0` was the B57 structural starvation, not a real count — completed flights leave the ATO mid-march, so the walk-only count read 0 no matter what finished; the count now also reads the residue ledger, test-pinned. The rendering verification stands; the recovered figure re-checks itself on the next B57 pass)
 
 > With the gate on, the AI TOT spread extends past the desired mission length by the same
 > phase-aware minutes as the pre-roll, so packages keep launching as/after the player

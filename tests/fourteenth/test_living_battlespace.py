@@ -581,10 +581,18 @@ class FakeReactiveGame:
         self.blue = FakeBlueSide(packages)
 
 
+class FakeReactionPackageRef:
+    def __init__(self, custom_name: str) -> None:
+        self.custom_name = custom_name
+
+
 class FakeReactionFlightData:
     def __init__(self, is_red: bool, custom_name: str, group_name: str) -> None:
         self.friendly = FakeSidePlayer(is_blue=not is_red)
-        self.custom_name = custom_name
+        # The marker lives on the PACKAGE (FlightData.custom_name is the
+        # flight's own and is None for these flights) -- model the real shape.
+        self.custom_name = None
+        self.package = FakeReactionPackageRef(custom_name)
         self.group_name = group_name
 
 

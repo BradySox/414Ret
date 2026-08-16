@@ -118,7 +118,11 @@ def _reaction_groups(mission_data: MissionData) -> list[str]:
         side = getattr(flight_data, "friendly", None)
         if side is None or not getattr(side, "is_red", False):
             continue
-        custom = getattr(flight_data, "custom_name", None) or ""
+        # The marker lives on the PACKAGE. FlightData.custom_name is the
+        # flight's own (always None for these flights) -- matching it left
+        # reactive red silently empty (the 2026-08-15 spectator-cut finding).
+        package = getattr(flight_data, "package", None)
+        custom = getattr(package, "custom_name", None) or ""
         if not str(custom).startswith(REACTION_PACKAGE_PREFIX):
             continue
         out.append(flight_data.group_name)

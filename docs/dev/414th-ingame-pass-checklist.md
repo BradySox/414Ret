@@ -4229,3 +4229,34 @@ stay in the area ~10 minutes.
   5. **Red flying offensive taskings from this path** — impossible by construction (the
      task is a home-area orbit), but if seen, stop and re-read the posture boundary.
 
+### B61 — Task-role degrade: mismatched-role AI flights still fly their mission · §8 · ☐ UNTESTED (built 2026-08-16, session c86c58dd)
+
+> `configure_task` no longer raises when an AI flight's tasking maps to a pydcs task the
+> airframe doesn't export — it degrades the DCS group *role* to the airframe's
+> `task_default` and generates (a Tu-160 DEAD flies as role "Pinpoint Strike"). The
+> fleet audit found 21 such (airframe, task) pairs across 13 airframes, all upstream or
+> mod-registration data; before the fix any one of them auto-planned killed the whole
+> mission generation (reproduced on Mozdok-to-Maykop: blue's auto-ATO handed a Tu-160
+> squadron DEAD). The degrade + Tu-160 pin are locked by
+> `tests/test_aircraft_task_generation.py`; what CI can't see is whether DCS's AI
+> executes the waypoint attack normally under the mismatched role.
+
+Needs a watch (no flight): any mission where a degraded flight generates — the Mozdok
+light rig injects a Tu-160 DEAD pair ("Iron Hand") deliberately. Watch it run its target
+leg in Tacview/F10.
+
+- **Pass:** the degraded flight taxis, cruises its route, and executes its attack tasking
+  at the target waypoint (weapons employed or an attack profile flown against the
+  objective); dcs.log/generation log shows the "Flying the … tasking with group role"
+  warning, no generation error.
+- **Fail signatures:**
+  1. **Generation still crashes** — a task claim outside the mapped set (extend the lock
+     test's `TASK_MAPPING`).
+  2. **The flight spawns but never attacks** — orbits or overflies the target with weapons
+     retained: DCS's role gating is stronger than assumed for that role pair; record which
+     (role, tasking) pair failed and consider a curated fallback for it in
+     `configure_task` instead of `task_default`.
+  3. **The flight attacks the wrong class of target** (e.g. a Reconnaissance-role OH-6
+     strafing armor it was never tasked against) — role-default AI behavior leaking past
+     the waypoint tasking.
+

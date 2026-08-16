@@ -107,17 +107,21 @@ def _alive_unit_names(tgo: Any) -> list[str]:
 
 
 def _reaction_groups(mission_data: MissionData) -> list[str]:
-    """The generated reaction-alert groups, found by their package name."""
+    """The generated reaction-alert groups, found by their package name.
+
+    Reads mission_data.FLIGHTS, never .packages: generate_flights clears
+    .packages per coalition, so only the last ATO survives it (the 2026-08-15
+    turn-3 smoke-generation finding).
+    """
     out: list[str] = []
-    for flights in mission_data.packages.values():
-        for flight_data in flights:
-            side = getattr(flight_data, "friendly", None)
-            if side is None or not getattr(side, "is_red", False):
-                continue
-            custom = getattr(flight_data, "custom_name", None) or ""
-            if not str(custom).startswith(REACTION_PACKAGE_PREFIX):
-                continue
-            out.append(flight_data.group_name)
+    for flight_data in getattr(mission_data, "flights", []):
+        side = getattr(flight_data, "friendly", None)
+        if side is None or not getattr(side, "is_red", False):
+            continue
+        custom = getattr(flight_data, "custom_name", None) or ""
+        if not str(custom).startswith(REACTION_PACKAGE_PREFIX):
+            continue
+        out.append(flight_data.group_name)
     return sorted(out)
 
 

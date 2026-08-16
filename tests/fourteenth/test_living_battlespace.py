@@ -379,7 +379,9 @@ class FakeNetMissionData:
         self, flights: list[FakeNetFlightData], awacs: list[FakeAwacs]
     ) -> None:
         self.awacs = awacs
-        self.packages = {index: [f] for index, f in enumerate(flights)}
+        # The emitters read the flat flights list (never .packages, which
+        # generate_flights clears per coalition).
+        self.flights = flights
 
 
 def test_phoneticize() -> None:
@@ -588,7 +590,8 @@ class FakeReactionFlightData:
 
 class FakeReactiveMissionData:
     def __init__(self, flights: list[FakeReactionFlightData]) -> None:
-        self.packages = {index: [f] for index, f in enumerate(flights)}
+        # The flat flights list, matching the real collection the emitter reads.
+        self.flights = flights
 
 
 def test_plan_reactive_red_positive_list() -> None:

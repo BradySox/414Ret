@@ -267,11 +267,11 @@ class MissionGenerator:
             # reserve; every terrain ships some (1 on Marianas, 80 on Germany CW).
             if (beacon_frequency := beacon.frequency) is not None:
                 unique_map_frequencies.add(beacon_frequency)
-            if beacon.is_tacan:
-                if beacon.channel is None:
+            if beacon.occupies_tacan_channel:
+                if (channel := beacon.tacan_channel) is None:
                     logging.warning(f"TACAN beacon has no channel: {beacon.callsign}")
                 else:
-                    self.tacan_registry.mark_unavailable(beacon.tacan_channel)
+                    self.tacan_registry.mark_unavailable(channel)
         for cp in self.game.theater.controlpoints:
             if isinstance(cp, TacanContainer) and cp.tacan is not None:
                 self.tacan_registry.mark_unavailable(cp.tacan)

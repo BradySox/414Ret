@@ -1760,6 +1760,29 @@ in-game pass (the F-4E OCA case now shows a pre/post-strike tanker + a non-negat
   cp-convoy spawn-route feature is upstream's); carve candidate. Tests
   `tests/campaignloader/test_cp_convoy_spawn_distance.py` (6) +
   `tests/missiongenerator/test_convoy_spawn_clearance.py` (4 new).
+- **The Lua bridge dropped every scalar on a mixed item (fixed 2026-08-16).**
+  `LuaData.serialize` branched either/or: `if self.objects:` emitted only the nested
+  tables, `else:` only the key/values. An item holding **both** — the shape you get
+  from `add_key_value(...)` followed by `add_item(...)` — silently lost all its
+  scalars. Two emitters build that shape, and both were broken in every generated
+  mission:
+  - **§72 deck decor.** A carrier that received recovery-phase dressing emitted
+    `{recoverySpawns = {...}}` and nothing else — no `group`, `unit`, `side`, `brc`
+    or `clearNames`. The plugin armed ("1 boat(s), clear by 1500s"), called
+    `Group.getByName("")`, hit the *boat gone* exit, set `cleared = true` and
+    stopped. Silently: that exit had no log. Flown 2026-08-16 — a 103-minute
+    Caucasus turn-1 sortie where the deck never respotted for recovery and the
+    fallback timer, 25 minutes in, never fired. The exit now logs, because a deck
+    that never respots is indistinguishable from a disabled feature.
+  - **§89 reactive red.** `groups` (the reaction-flight pool) sits on the same item
+    as the `objectives` table, so the pool was dropped from every mission — the
+    plugin could arm on a watched objective and still have nothing to launch. The
+    third emitter defect in this family after PR #842's two; unlike those, this one
+    was in the shared serializer rather than the caller.
+  Fix is in `LuaData.serialize` (scalars first, then nested), so it covers both and
+  any future mixed item. Tests `tests/missiongenerator/test_luadata.py`, including
+  the unmixed shapes to pin that the common path is untouched. Upstream-shared
+  (`luagenerator.py` is upstream's); carve candidate post-freeze.
 
 ---
 
@@ -8949,12 +8972,35 @@ and turn-0 no-ops), and the launch trigger. The registry lock covers the §89 en
 
 Same gate; three pieces, all no-ops with it off:
 
-1. **Recovery residue** — `AircraftGenerator._spawn_completed_residue`: a flight in
-   `Completed` at generation (its whole cycle predates the player's startup) parks its jets
-   uncontrolled at its **arrival** field via `FlightGroupSpawner.create_completed_aircraft`
-   (the `create_idle_aircraft` shape re-pointed at `flight.arrival`), painted, modexed, and
-   **registered in the unit map** so a ramp kill records against the real airframes. Declines
-   with a log line when the arrival has no parking. **Carrier arrivals are deferred** — deck
+1. **Recovery residue** — `AircraftGenerator._spawn_completed_residue`: a flight whose whole
+   cycle predates the player's startup parks its jets uncontrolled at its **arrival** field
+   via `FlightGroupSpawner.create_completed_aircraft` (the `create_idle_aircraft` shape
+   re-pointed at the arrival), painted, modexed, and **registered in the unit map** so a ramp
+   kill records against the real airframes. Declines with a log line when the arrival has no
+   parking. **The residue ledger (2026-08-16, row B57):** the sim's removal loop
+   (`aircraftsimulation.on_game_tick`) pulls every `Completed` flight out of its package at
+   the tick boundary, so generation's ATO walk only ever sees a completion from the final,
+   halt-interrupted tick — the original ATO-walk-only render was structurally starved (desk
+   check: zero `Completed` at generation across 40–150-minute marches; solo-flight packages,
+   most CAPs, could never render). The removal site now calls `record_completed_residue`
+   (`game/fourteenth/living_battlespace.py`), which freezes (flight, arrival) — frozen
+   because `Squadron.arrival` follows a live relocation order, and an order placed while the
+   sim is paused must not teleport already-landed jets — and `generate_flights` parks
+   ledger flights via `residue_flights_for(ato, settings)` after the tasked walk, before the
+   QRA/idle spawns, so parking priority is unchanged. The ledger is transient process state
+   on the `fogofwar.py` pattern: cleared at `begin_simulation`, never pickled.
+   Recorded-means-removed keeps ledger and walk disjoint (no duplicate airframes), and the
+   generation-time synthetic `Completed` flights (idle ramp, QRA and red-scramble templates)
+   never pass the removal site, so they stay out by construction. Airframe accounting nets
+   correct: removal returned the airframes to squadron inventory, and a ramp kill debits
+   `owned_aircraft` at debrief like any other loss. **The idle-filler debit is the second
+   half of that return, and is load-bearing:** because removal put the airframes back in
+   `untasked_aircraft`, `spawn_unused_aircraft` would render the very same jets a second time
+   as idle ramp filler. `_spawn_completed_residue` returns what actually parked,
+   `generate_flights` tallies it per squadron id into `AircraftGenerator.residue_airframes`,
+   and `_spawn_unused_for` spawns `idle_spawn_count(untasked, parked)` instead of the raw
+   pool. Only ledger flights are tallied — an ATO-walk residue flight still holds its
+   inventory claim, so debiting for it would under-spawn filler. **Carrier arrivals are deferred** — deck
    residue interacts with the §64 spawn policy and §72 deck dressing; read those first.
 2. **Expended stores** — `FlightGroupConfigurator.setup_payload` skips non-pod pylons when
    `stores_expended` says the flight is a strike-family task (`STRIKE/BAI/SEAD/DEAD/OCA_*/
@@ -8985,6 +9031,9 @@ Same gate; two pieces:
    at generation (airborne / recovered / lost, enemy marked "assessed") and the mission
    briefing renders "The air war so far today" above the situation section. Empty — section
    suppressed — with the gate off or at an H-hour launch, so turn 0 briefings are unchanged.
+   The `recovered` count reads the P2 residue ledger in addition to the ATO walk (2026-08-16)
+   — completed flights leave the ATO mid-march, so the walk-only count sat at 0 forever
+   (B58's spectator watch showed exactly that).
 
 ### P4 — the voice net (2026-08-15)
 

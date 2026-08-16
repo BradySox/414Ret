@@ -8,6 +8,10 @@ from datetime import datetime, timedelta
 from typing_extensions import TYPE_CHECKING
 
 from game.ato.flightstate import Uninitialized, Completed, InCombat
+from game.fourteenth.living_battlespace import (
+    clear_completed_residue,
+    record_completed_residue,
+)
 from game.settings.settings import FastForwardStopCondition, CombatResolutionMethod
 from .combat import CombatInitiator, FrozenCombat
 from .simulationresults import SimulationResults
@@ -25,6 +29,7 @@ class AircraftSimulation:
         self.results = SimulationResults()
 
     def begin_simulation(self) -> None:
+        clear_completed_residue()
         self.reset()
         self.set_initial_flight_states()
 
@@ -95,6 +100,11 @@ class AircraftSimulation:
         # iterating skips the element after each removal.
         completed = [f for f in self.iter_flights() if isinstance(f.state, Completed)]
         for flight in completed:
+            # §89 P2: generation can no longer see this flight through the ATO,
+            # so the residue ledger is how its jets still park at the arrival
+            # field (row B57). Record before remove_flight dismantles the
+            # roster and returns the airframes.
+            record_completed_residue(flight)
             flight.package.remove_flight(flight)
             if len(flight.package.flights) == 0:
                 flight.squadron.coalition.ato.remove_package(flight.package)

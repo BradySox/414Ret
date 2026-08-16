@@ -906,6 +906,12 @@ class LuaData(LuaItem):
                 return item
         return self.add_item(item_name)
 
+    def _serialized_scalars(self) -> list[str]:
+        """This item's own key/values, as table entries."""
+        if isinstance(self.value, LuaValue):
+            return [self.value.serialize()]
+        return [v.serialize() for v in self.value]
+
     def serialize(self, level: int = 0) -> str:
         """serialize the LuaData to a string"""
         serialized_data: list[str] = []
@@ -920,8 +926,15 @@ class LuaData(LuaItem):
             # Only used for initialization of the object in lua
             serialized_name += self.base_name + " = "
         if self.objects:
-            # nested objects
-            serialized_objects = [o.serialize(level + 1) for o in self.objects]
+            # Nested objects AND this item's own scalars. Emitting only the
+            # nested half silently dropped every add_key_value/add_data_array on
+            # a mixed item -- flown 2026-08-16: the deckdecor boat record kept
+            # its recoverySpawns but lost group/unit/side/brc/clearNames, so the
+            # plugin looked up Group.getByName("") and took its "boat gone" exit
+            # without ever clearing the deck. Same shape hid the reactive-red
+            # group pool. Locked by tests/missiongenerator/test_luadata.py.
+            entries = self._serialized_scalars()
+            entries += [o.serialize(level + 1) for o in self.objects]
             if self.name:
                 if self.name is not self.base_name:
                     serialized_name += self.name + " = "
@@ -930,7 +943,7 @@ class LuaData(LuaItem):
                 + "{"
                 + linebreak
                 + tab
-                + ("," + linebreak + tab).join(serialized_objects)
+                + ("," + linebreak + tab).join(entries)
                 + linebreak
                 + tab_end
                 + "}"

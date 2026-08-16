@@ -356,3 +356,39 @@ def test_airframe_option_reports_no_bases_without_squadrons() -> None:
     assert option.bases == []
     assert option.ready_airframes == 0
     assert not option.has_spare_airframes
+
+
+def test_the_board_names_targets_that_have_no_str() -> None:
+    """Flown 2026-08-16: the board printed
+    `DownedPilot(pilot=Pilot(name='Jerome Snyder', ...))` and
+    `<game.theater.frontline.FrontLine object at 0x...>` at the player. Every
+    package target is a MissionTarget and carries `.name`; `str()` is not that
+    name -- a dataclass target falls through to its generated `__repr__` and a
+    plain class to the default one."""
+
+    class DataclassLikeTarget:
+        """A target whose repr is the dataclass repr (DownedPilot's shape)."""
+
+        name = "Downed pilot: Jerome Snyder (F/A-18C Hornet)"
+
+        def __repr__(self) -> str:
+            return "DownedPilot(pilot=Pilot(name='Jerome Snyder', player=False))"
+
+    class ReprOnlyTarget:
+        """A target with no __str__ at all (FrontLine's shape)."""
+
+        name = "Front line Sukhumi-Babushara/Maykop-Khanskaya"
+
+    squadron = FakeSquadron("414th Voodoo", "F-16CM")
+    for target in (DataclassLikeTarget(), ReprOnlyTarget()):
+        flight = FakeFlight(squadron, "CSAR")
+        package = FakePackage(target, [flight])  # type: ignore[arg-type]
+        game = FakeGame(squadrons=[squadron], packages=[package])
+
+        options = sortie_options(game, "F-16CM")  # type: ignore[arg-type]
+
+        assert options, "the seatable flight should be offered"
+        described = options[0].description
+        assert target.name in described
+        assert "object at 0x" not in described
+        assert "pilot=Pilot(" not in described

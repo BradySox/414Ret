@@ -19,10 +19,12 @@ from game.data.weapons import WeaponType
 
 if TYPE_CHECKING:
     from game import Game
+    from game.ato.airtaaskingorder import AirTaskingOrder
     from game.ato.flight import Flight
     from game.coalition import Coalition
     from game.data.weapons import Weapon
     from game.settings import Settings
+    from game.theater import ControlPoint
 
 #: Phase curve: minutes of war before the player's startup, by turn number. The
 #: first flyable turn keeps its H-hour launch; every turn past the table runs
@@ -147,6 +149,60 @@ def recovery_residue_enabled(settings: Settings) -> bool:
     return bool(getattr(settings, "living_battlespace_preroll", False))
 
 
+# §89 P2 residue ledger: the sim removes a Completed flight from the ATO at the
+# tick boundary (aircraftsimulation's removal loop), so generation's ATO walk
+# only ever saw final-tick completions -- solo-flight packages (most CAPs)
+# never rendered (row B57). The removal site records here; generation reads the
+# ledger in addition to the walk. Transient process state on the fogofwar.py
+# pattern: cleared at begin_simulation, never pickled.
+_completed_residue: list[tuple[Flight, ControlPoint]] = []
+
+
+def clear_completed_residue() -> None:
+    """Reset the ledger. Called unconditionally at sim start so a new march,
+    game, or gate flip never inherits another cycle's flights."""
+    _completed_residue.clear()
+
+
+def record_completed_residue(flight: Flight) -> None:
+    """Record a flight the sim is about to remove from the ATO (§89 P2).
+
+    Call from the removal site only -- that keeps the ledger and the ATO walk
+    disjoint (recorded means removed), and keeps the generation-time synthetic
+    Completed flights (idle ramp, QRA and red-scramble templates) out by
+    construction. The arrival is frozen now because ``Squadron.arrival``
+    follows a live relocation order: an order placed while the sim is paused
+    must not retroactively move jets that already landed.
+    """
+    settings = flight.coalition.game.settings
+    if not getattr(settings, "living_battlespace_preroll", False):
+        return
+    _completed_residue.append((flight, flight.arrival))
+
+
+def idle_spawn_count(untasked_aircraft: int, residue_parked: int) -> int:
+    """Idle ramp filler left to spawn after this squadron's residue (§89 P2).
+
+    Removing a completed flight returns its airframes to the untasked pool,
+    so residue jets are ALSO counted as untasked -- spawning the full pool
+    would render the same airframes twice (row B57 fail signature 2).
+    """
+    return max(0, untasked_aircraft - residue_parked)
+
+
+def residue_flights_for(
+    ato: AirTaskingOrder, settings: Settings
+) -> list[tuple[Flight, ControlPoint]]:
+    """Ledger entries that should park at this ATO's coalition side."""
+    if not recovery_residue_enabled(settings):
+        return []
+    return [
+        (flight, arrival)
+        for flight, arrival in _completed_residue
+        if flight.squadron.coalition.ato is ato and flight.alive
+    ]
+
+
 def followon_window_minutes(coalition: Coalition) -> int:
     """Minutes the AI TOT spread extends past the desired mission length (§89 P3).
 
@@ -167,7 +223,9 @@ def preroll_brief_lines(game: Game) -> list[str]:
     Empty with the gate off, and empty when nothing has moved yet (an H-hour
     launch), which suppresses the briefing section entirely. State matching is
     by class name so briefing generation never imports the state classes and
-    the fake-flight tests stay cheap.
+    the fake-flight tests stay cheap. Recovered flights mostly left the ATO at
+    the tick boundary (the removal loop), so that count reads the residue
+    ledger too -- the walk alone reported 0 forever (row B57).
     """
     if not getattr(game.settings, "living_battlespace_preroll", False):
         return []
@@ -183,6 +241,9 @@ def preroll_brief_lines(game: Game) -> list[str]:
                     recovered += 1
                 elif type(state).__name__ == "Killed":
                     lost += 1
+        recovered += sum(
+            1 for f, _ in _completed_residue if f.squadron.coalition is coalition
+        )
         if airborne or recovered or lost:
             suffix = "" if label == "Friendly" else " (assessed)"
             lines.append(

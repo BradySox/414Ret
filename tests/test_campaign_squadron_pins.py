@@ -173,16 +173,3 @@ def test_the_a6e_tanker_pins_are_left_alone() -> None:
         assert "A-6E Tanker" in _pinned_aircraft(campaign), campaign
         rostered = {str(a) for a in _load_faction(faction_file).all_aircrafts}
         assert "A-6E Tanker" in rostered, faction_file
-
-
-def test_iran_1988_keeps_the_late_block_tomcat() -> None:
-    """The 135-GR Late is correct for 1988 -- do not sweep the rename fork-wide.
-
-    ``tanker_war_1988.yaml`` pins it against Iran 1988, which rosters it. Only the two
-    *Iran 2015* campaigns were wrong.
-    """
-    assert "F-14A Tomcat (Block 135-GR Late)" in _pinned_aircraft(
-        "tanker_war_1988.yaml"
-    )
-    rostered = {str(a) for a in _load_faction("iran_1988.json").all_aircrafts}
-    assert "F-14A Tomcat (Block 135-GR Late)" in rostered

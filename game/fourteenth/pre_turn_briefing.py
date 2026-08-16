@@ -86,7 +86,6 @@ def build_pre_turn_briefing(game: "Game") -> PreTurnBriefing:
     for section in (
         _consequence_items,
         _objective_items,
-        _arrival_items,
         _open_loop_items,
     ):
         try:
@@ -137,20 +136,6 @@ def _objective_items(game: "Game") -> List[BriefingItem]:
 
 
 # ------------------------------------------------------------- 3. anticipation
-
-
-def _arrival_items(game: "Game") -> List[BriefingItem]:
-    """§82 scheduled arrivals, pulled *forward*.
-
-    The jet you cannot fly yet is the advert -- but only while it is still
-    coming, so an arrival that has already landed says nothing here.
-    """
-    from game.fourteenth.wing_growth import upcoming_arrivals
-
-    return [
-        BriefingItem(kind="arrival", text=line, urgency=BACKGROUND)
-        for line in upcoming_arrivals(game)
-    ]
 
 
 # --------------------------------------------------------------- 4. open loops

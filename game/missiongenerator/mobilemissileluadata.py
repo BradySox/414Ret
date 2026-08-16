@@ -37,7 +37,7 @@ MOBILE_MISSILE_CATEGORY = "missile"
 #: Coastal anti-ship sites (e.g. Silkworm batteries) -- opted in per-campaign by the
 #: ``coastal_missile_relocation`` setting (default off). Excluded by default because a
 #: shore battery's geometry is usually authored against the water it covers; a naval
-#: campaign (the Tanker War) turns it on so the coastal-missile hunt is a hunt for
+#: naval campaign can turn it on so the coastal-missile hunt is a hunt for
 #: something that moves.
 COASTAL_DEFENSE_CATEGORY = "coastal"
 

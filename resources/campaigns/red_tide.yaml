@@ -309,8 +309,6 @@ squadrons:
         - 20th Bomb Squadron
       aircraft_type: B-52H Stratofortress
       size: 4
-      available_from_turn: 8
-      arrival_note: "SAC deploys the 20th BS to Ramstein"
     - primary: AEW&C
       aircraft:
         - NATO E-3A Component
@@ -381,8 +379,6 @@ squadrons:
       aircraft_type: F-15E Strike Eagle (Suite 4+)
       callsign: Phantom
       size: 12
-      available_from_turn: 6
-      arrival_note: "Strike Eagle wing arrives at Frankfurt"
     # §82 The Wing Grows — stabilise. A coalition reinforcement beat that adds
     # escort depth as the counter-air fight over the Gap grinds on.
     - primary: Escort
@@ -392,8 +388,6 @@ squadrons:
       aircraft_type: Mirage-F1EE
       callsign: Dagger
       size: 6
-      available_from_turn: 4
-      arrival_note: "Ala 14 deploys north — Spanish contribution"
     - primary: Transport
       secondary: any
       aircraft:

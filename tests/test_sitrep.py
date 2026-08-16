@@ -109,7 +109,6 @@ def test_sitrep_page_renders_standalone(tmp_path: Path) -> None:
         captured=["Al-Taquddum Airport"],
         lost=["H-2 Airbase"],
         pilots_recovered=0,
-        arrivals=["VF-154 (F-14A) arrived at Nordholz"],
     )
     page = tmp_path / "sitrep.png"
     SitrepPage(sitrep, dark_kneeboard=False).write(page)

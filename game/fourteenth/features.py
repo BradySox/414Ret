@@ -685,7 +685,6 @@ FEATURES: tuple[Feature, ...] = (
         plugin_id="navalmagazines",
         settings_fields=("naval_weapon_release_stagger", "naval_magazines"),
     ),
-    Feature("wing_growth", "The Wing Grows", 82),
     Feature(
         "sp_pilot_mode",
         "SP Pilot Mode",

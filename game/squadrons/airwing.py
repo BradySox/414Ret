@@ -13,7 +13,6 @@ from ..theater import ControlPoint, MissionTarget
 from ..utils import Distance
 
 if TYPE_CHECKING:
-    from game.fourteenth.wing_growth import PendingSquadron
     from game.game import Game
     from game.theater.player import Player
     from ..ato.flighttype import FlightType
@@ -27,10 +26,6 @@ class AirWing:
         self.squadron_defs = SquadronDefLoader(game, faction).load()
         self.squadron_def_generator = SquadronDefGenerator(faction)
         self.settings = game.settings
-        #: "The Wing Grows" (414th): squadrons built at turn 0 but scheduled to
-        #: join the wing on a later turn. Empty unless a campaign authors
-        #: `available_from_turn:`. See game/fourteenth/wing_growth.py.
-        self.pending_arrivals: list[PendingSquadron] = []
         #: Whether populate_for_turn_0 filled this wing's squadrons. Recorded so
         #: a scheduled arrival populates by the same rule as the rest of the
         #: wing instead of inventing its own.
@@ -46,8 +41,10 @@ class AirWing:
             else:
                 state["player"] = Player.RED
 
-        # Pre-wing-growth saves carry neither field.
-        state.setdefault("pending_arrivals", [])
+        # Saves written before this field existed, and saves from when the
+        # removed "Wing Grows" feature parked squadrons in `pending_arrivals`
+        # (dropped 2026-08-16) -- that key is simply ignored now.
+        state.pop("pending_arrivals", None)
         state.setdefault("squadrons_started_full", False)
 
         self.__dict__.update(state)

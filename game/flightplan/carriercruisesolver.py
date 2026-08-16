@@ -4,6 +4,13 @@ Headings use the repository convention: 0 degrees is north and headings increase
 clockwise.  Wind direction follows DCS convention and is the direction the wind
 blows toward.  The returned apparent-wind components are expressed as the
 wind-from vector (carrier velocity minus ambient wind), down the angled deck.
+
+Positive deck_angle means the landing area is offset to port (every hull that
+ships one), so the solved heading sits clockwise of the wind reciprocal: the
+ambient wind arrives over the port bow and the apparent wind runs down the
+angled deck.  Solving to the counterclockwise side mirrors the deck to
+starboard and doubles the felt crosswind instead of cancelling it — the B55
+desk finding (see docs/dev/414th-features.md §88).
 """
 
 from __future__ import annotations
@@ -76,7 +83,7 @@ def solve_carrier_cruise(
     along_speed_squared = wind * wind - cross_term * cross_term
     solved_speed = target * math.cos(angle) - math.sqrt(max(0.0, along_speed_squared))
     if solved_speed < 0.0:
-        heading = _normalize_heading(wind_direction + 180.0 - deck_angle)
+        heading = _normalize_heading(wind_direction + 180.0 + deck_angle)
         return CarrierCruiseResult(
             heading,
             0.0,
@@ -87,7 +94,7 @@ def solve_carrier_cruise(
         )
 
     offset = math.degrees(math.asin(max(-1.0, min(1.0, cross_term / wind))))
-    heading = _normalize_heading(wind_direction + 180.0 - offset)
+    heading = _normalize_heading(wind_direction + 180.0 + offset)
     return CarrierCruiseResult(
         heading,
         solved_speed,

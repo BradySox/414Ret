@@ -337,7 +337,7 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
 - **Pass:** ~5 s after slot-in (not instantly) the briefing card appears for ~12 s (campaign name, `Mission N` matching the kneeboard's turn number, date + time, your callsign / aircraft / task / departure field) with a **short beep**; ~12 s later the taxi card flashes with your callsign + `Contact ground @ 249.50` (and its own beep); each shows once (no double-print), and a re-slot after the debounce re-shows them. (The beep is `briefing-beep.wav`, played by `outSoundForGroup` — if it's silent, the sound resource didn't resolve by basename; try the `l10n/DEFAULT/` path.)
 - **Fail signature:** no card appears (the node wasn't emitted, or the birth handler + sweep both missed the slotting); the card double-prints on a single slot-in (the debounce broke); the taxi card never follows (the scheduleFunction broke) or shows the wrong freq; the mission number is turn+1 again (mismatches the kneeboard); an AI-only flight's pilot slot shows a card for a flight that isn't theirs (the group match broke).
 
-### B11 — Ground AI sleep: distant garrisons stop thinking, wake on approach · §59 · ☐ UNTESTED (built 2026-07-12 off the MP-performance complaint; the emitter's positive list (garrisons in; air defense / missiles / ships / buildings / the concealed scripted movers / dead groups out; gated off) is unit-tested in `tests/missiongenerator/test_aisleepluadata.py`, and the runtime (sleep after grace, wake on approach, parked aircraft never wakes, hysteresis never flaps, a hit wakes a sleeper immediately, dead groups stop the poll, no node = no-op) is harness-tested in `tests/lua/test_aisleep_runtime.py`. The harness models no DCS AI, so what sleep actually buys — and that it's invisible — is DCS-only.)
+### B11 — Ground AI sleep: distant garrisons stop thinking, wake on approach · §59 · ☐ UNTESTED (built 2026-07-12 off the MP-performance complaint; the emitter's positive list (garrisons in; air defense / missiles / ships / buildings / the concealed scripted movers / dead groups out; gated off) is unit-tested in `tests/missiongenerator/test_aisleepluadata.py`, and the runtime (sleep after grace, wake on approach, parked aircraft never wakes, hysteresis never flaps, a hit wakes a sleeper immediately, dead groups stop the poll, no node = no-op) is harness-tested in `tests/lua/test_aisleep_runtime.py`. The harness models no DCS AI, so what sleep actually buys — and that it's invisible — is DCS-only. **First live arming evidence 2026-08-16** (Baltic Fury turn-3 spectator watch, session `c86c58dd`): dcs.log `AISLEEP|: managing 9 garrison group(s), wake radius 15 NM, poll 30s` — the emitter→plugin chain runs on a real modern campaign; the wake-on-approach and no-regression clauses remain the DCS-only part.)
 - **What CI cannot exercise:** whether `Controller:setOnOff(false)` measurably reduces server load on a dense mission (the whole point), whether a slept group is visually indistinguishable (renders, killable, death recorded at debrief), whether the wake on approach is seamless (a garrison's embedded SHORAD is live before you're inside its envelope), and that MANTIS SAMs, TIC formations, convoys, SCUDs and the COIN/ambush movers are visibly untouched.
 - **Setup:** enable **"Distant ground AI sleeps until aircraft approach"** (Mission Generation → Performance; default off) on a dense campaign (Red Tide — not preseeded, feature-locked). Check the log for `AISLEEP|: managing N garrison group(s)`. Fly toward a rear enemy base garrison, kill a slept unit, watch the debrief; compare server frame/CPU on a heavy turn against the same turn with the setting off.
 - **Pass:** the arm line lists a plausible garrison count (not 0, not the whole world); a rear garrison behaves normally when you arrive (embedded SHORAD engages inside its envelope); a unit killed while slept records at debrief like any other; SAM/EWR sites, the FLOT firefight, convoys and every scripted mover behave exactly as with the setting off; a heavy mission runs measurably smoother server-side.
@@ -3896,7 +3896,7 @@ decorations toggle on) on a Nimitz-hull campaign, then fly or watch one recovery
   full cold spawn and **measure the bow spots**, closing the 11-vs-16 gap. That is the gate on
   ever promoting this tier to default-ON.
 
-### B48 — Naval station-keeping racetracks · §87 · ◐ PARTIAL (2026-08-05, flown Marianas 2027, Tacviews `Tacview-20260805-190738` / `-203549`, session `pr-merge-code-audit-7e8b4c`)
+### B48 — Naval station-keeping racetracks · §87 · ◐ PARTIAL (2026-08-05, flown Marianas 2027, Tacviews `Tacview-20260805-190738` / `-203549`, session `pr-merge-code-audit-7e8b4c`. **Strengthened 2026-08-16** (Baltic Fury spectator watch, `Tacview-20260816-104955`, session `c86c58dd`): all five red naval groups held anchored loops over 95 min — 21–28 km sailed, net drift only 2.6–4.0 km, 7–10 kt, headings cycling — station-keeping exactly as designed on every non-carrier group observed. **New watch question from the same track:** the blue carrier's ESCORT group sailed its own dead-straight authored leg (191°, 45.8 km flown) while the carrier sailed a different one (authored 166°) — whether the screen stays with its boat over a full mission is a §87/§44/§88 interplay item, not yet a verdict)
 
 > **Row created 2026-08-06.** §87 landed 2026-08-05 (PR #780) and shipped **without a row of its
 > own** — `CLAUDE.md` pointed it at **B46**, which is the §28 settings-surface row, and its only
@@ -4037,7 +4037,7 @@ App pass, no flight needed: open Settings → Campaign Doctrine in a game.
      `PLANNER_SUITE_VALUES`' stock column (the `test_fresh_settings_are_stock` guard should
      have caught it first).
 
-### B55 — Carrier steams for wind down the angled deck · §88 · ☐ UNTESTED (adopted 2026-08-09 from geofffranks' `12d71346`, upstream issue dcs-retribution#865)
+### B55 — Carrier steams for wind down the angled deck · §88 · ☐ UNTESTED (adopted 2026-08-09 from geofffranks' `12d71346`, upstream issue dcs-retribution#865. **Desk finding 2026-08-16** (Baltic Fury spectator generation, session `c86c58dd`): the authored PORPOISE carrier leg was **166.0° at 16.4 kt** under save wind `direction=11, 4.73 m/s`, but `solve_carrier_cruise(11, 4.73, 9.0)` returns **135.1° at 22.0 kt** — and no from/to or deck-sign input combination reproduces 166/16.4 (135/315/247/67, all 22.0 kt). Something between the solver and the written route changes the answer — candidates to rule out in `steam_into_wind`: the 5-attempt sea-probe fallback rewriting the heading (this is the Baltic; 135° from the boat's position may probe into Danish land), a different wind source at generation, or a speed clamp. The flown track held 154°→196.6° around the authored line (DCS's own steering). Investigate the caller before judging the solver — and before the Case-I fly clause is attempted, or the on-the-ball check will measure the wrong thing)
 
 > The boat used to point its bow straight into the wind, leaving a permanent ~9° crosswind
 > across the landing area, and wrote a **negative** carrier speed above 25 kt of ambient wind.
@@ -4066,7 +4066,7 @@ Case I recovery.
      candidate point and `steam_into_wind` returned None (pre-existing behavior, but the new
      heading changes which points get probed).
 
-### B56 — Living battlespace pre-roll: mid-cycle mission start · §89 · ☐ UNTESTED (built 2026-08-15)
+### B56 — Living battlespace pre-roll: mid-cycle mission start · §89 · ◐ PARTIAL (2026-08-16, spectator Game Master watch, Baltic Fury turn 3, Tacview `Tacview-20260816-104955`, session `c86c58dd`; 3 of 4 pass clauses verified — **38 aircraft airborne at spawn** both sides (CAPs mid-station at 31k ft, escorts mid-route, the pre-roll-launched strike already enroute at 21k ft), war clock read 00:40 (the ACMI ReferenceTime), first recovery T+22.6m, zero parking-overflow symptoms in dcs.log. Outstanding: the SEATED clause — player startup at the briefed time with full ground ops after the auto pre-roll (the qt_ui launch wiring) — needs the flown sortie from the app) (was ☐ UNTESTED, built 2026-08-15)
 
 > With `living_battlespace_preroll` on, player packages are seated a phase-aware distance into
 > the turn's cycle (0 min on the first turn, 15 on the next two, then the cap, default 40) and
@@ -4097,7 +4097,7 @@ version), take off normally.
   5. **Turn 0 differs at all from gate-off** — the curve's zero is not gating; the expectation
      is byte-identical.
 
-### B57 — Living battlespace P2: ramp residue + clean-wing returners · §89 · ☐ UNTESTED (built 2026-08-15)
+### B57 — Living battlespace P2: ramp residue + clean-wing returners · §89 · ☐ UNTESTED (built 2026-08-15; **2026-08-16 watch: the condition never arose** — a 40-minute pre-roll completed nobody's full cycle (zero `Completed` flights at generation, matching the cut's state census), so no residue existed to observe; the one all-watch parked jet was an idle-ramp single, not residue. Adjudicate on a later-turn or longer-pre-roll mission where a pre-roll flight actually finishes, or after a flown full sortie)
 
 > With the same `living_battlespace_preroll` gate on, three P2 behaviors join the pre-roll:
 > flights whose whole cycle predates your startup park their jets uncontrolled at their
@@ -4125,7 +4125,7 @@ Needs a flight: same setup as B56 (gate on, turn 3+), plus a look at the F10 map
   5. **A mid-route AI flight with full fuel** — `use_estimated_fuel_for_ai` isn't reaching
      `setup_fuel` (check the state's `in_flight` property for that flight class).
 
-### B58 — Living battlespace P3: follow-on waves + pre-roll briefing · §89 · ☐ UNTESTED (built 2026-08-15)
+### B58 — Living battlespace P3: follow-on waves + pre-roll briefing · §89 · ☑ VERIFIED (2026-08-16, spectator watch, Tacview `Tacview-20260816-104955`, session `c86c58dd` — the briefing block rendered with plausible counts ("Friendly: airborne 4, recovered 0, lost 3 / Enemy: airborne 8, lost 3 (assessed)", carried in the ACMI's own Comments field); waves activated AND flew at T+10.6m (carrier escorts), T+21.1m (a red Tu-95 3-ship) and T+32m (Hinds); activity continuous through the 96-minute watch; no parking exhaustion (0 overflow lines in dcs.log). The deep tail past a player egress follows from the same timers) (was ☐ UNTESTED, built 2026-08-15)
 
 > With the gate on, the AI TOT spread extends past the desired mission length by the same
 > phase-aware minutes as the pre-roll, so packages keep launching as/after the player
@@ -4154,7 +4154,7 @@ shutdown (or watch the F10 map / Tacview tail).
   4. **Counts read absurd** (more airborne than the ATO has flights) — the state census is
      double-counting (a state class rename would do it; the census matches by name).
 
-### B59 — Living battlespace P4: the voice net · §89 · ☐ UNTESTED (built 2026-08-15)
+### B59 — Living battlespace P4: the voice net · §89 · ◐ PARTIAL (2026-08-16 watch, session `c86c58dd`: `BSNET|: armed 7 scheduled calls` in a live mission, and the **dead-transmitter rule is flown-proven** — the QUAGGA strike pair died at their TOT to the site's point defense and their later call logged `off net (gone); call skipped` instead of transmitting. Outstanding: audibility + SAPI voice-quality verdict (the Game Master slot has no radio, and the flown cut predated the subtitles option), on a seated sortie. **Refinement noted:** a check-in can race its flight's late activation — schedule check-ins off takeoff time plus a margin, not departure_delay+60) (was ☐ UNTESTED, built 2026-08-15)
 
 > With `living_battlespace_voice_net` on (under the master gate), the generated ATO's own
 > timeline becomes short synthesized radio calls — launch check-ins, pushes, on-station and
@@ -4181,7 +4181,7 @@ a full sortie.
      SRS/MSRS runtime path (design-note open call 5's recorded alternative), not more SAPI
      tuning.
 
-### B60 — Living battlespace P5: reactive red · §89 · ☐ UNTESTED (built 2026-08-15)
+### B60 — Living battlespace P5: reactive red · §89 · ☐ UNTESTED (built 2026-08-15; **2026-08-16 watch: double no-test** — the flown miz predated the package-custom-name fix (#842), so the plugin logged `nothing emitted; plugin idle`; AND the watched objective took zero losses anyway (the 2-ship F-14 strike was killed at its TOT by the site's HQ-7 + Shilka point defense, site untouched), so even the fixed plugin would not have triggered. Both emitter fixes are merged and verified emitted in the current cut. Next attempt: watch a softer objective (ammo/factory, not a PD-heavy SAM) or send a properly escorted/SEAD-supported strike so a watched unit actually dies)
 
 > With `living_battlespace_reactive_red` on (under the master gate), up to two REAL red
 > alert flights (claimed inventory, tracked, losses count — deliberately not the §61

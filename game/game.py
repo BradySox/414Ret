@@ -770,22 +770,6 @@ class Game:
 
         snapshot_campaign_start_anchors(self)
 
-        # "The Wing Grows" (414th): bring any squadron scheduled for this turn
-        # into its air wing BEFORE the coalitions plan, so an arriving squadron
-        # is plannable on its own arrival turn. Idempotent under the re-init
-        # cases (promoted squadrons leave the pending list). No-op unless a
-        # campaign authored `available_from_turn:`.
-        from game.fourteenth.wing_growth import promote_due_arrivals
-
-        arrival_lines = promote_due_arrivals(self)
-        # Announce on the SITREP the player is about to read. The sitrep for the
-        # turn just played was recorded during results commit, moments before
-        # pass_turn brought us here, and it renders on the upcoming mission's
-        # kneeboard -- which is exactly where "the F-14 det arrived" belongs.
-        # No sitrep (turn 0, a skipped turn) simply means no announcement.
-        if arrival_lines and self.last_sitrep is not None:
-            self.last_sitrep.arrivals.extend(arrival_lines)
-
         # Plan Coalition specific turn
         if for_blue:
             self.blue.initialize_turn(self.turn == 0 and squadrons_start_full)

@@ -8,7 +8,7 @@ reset to NEUTRAL stops being a control point at all (``Airport.is_neutral()``
 returns False for NEUTRAL, so ``MizCampaignLoader.control_points`` skips it) -- so
 the shipped definition is asserted here rather than trusted.
 
-Sibling of tests/fourteenth/test_inherent_resolve.py and test_tanker_war.py.
+Sibling of tests/fourteenth/test_inherent_resolve.py.
 """
 
 import re

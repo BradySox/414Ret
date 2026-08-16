@@ -93,7 +93,7 @@ pass checklist `§N` is unregistered, or this table drifts.
 | §79 | Decoy suspected-activity zones | — | `decoy_zones`, `decoy_zone_count` |
 | §80 | Mixed-hull ship groups | — | — |
 | §81 | Cross-turn naval magazines | `navalmagazines` | `naval_weapon_release_stagger`, `naval_magazines` |
-| §82 | The Wing Grows | — | — |
+| §82 | The Wing Grows _(retired)_ | — | — |
 | §83 | SP Pilot Mode | — | `sp_pilot_mode` |
 | §84 | Old-stock loadout attrition _(retired)_ | — | — |
 | §85 | SAM battery support section (refuellers + power) | — | — |

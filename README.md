@@ -222,7 +222,6 @@ Most of this is opt-in. Full list with toggles, defaults and known limitations:
 | Operation Enduring Resolve | Afghanistan | Living counterinsurgency |
 | Red Flag 81-2 | Nevada | The exercise, played as the war it rehearses |
 | Operation Inherent Resolve | Iraq | Battle of Mosul, 2016–17 |
-| The Tanker War | Persian Gulf | 1987–88 Gulf shipping war to Praying Mantis |
 | Umm al-Ma'arik | Iraq | Desert Storm 1991, fought from the H-3 strips inward |
 | Second Island Chain | Marianas | 2027 China fight up the chain from Guam |
 
@@ -241,10 +240,6 @@ Most of this is opt-in. Full list with toggles, defaults and known limitations:
   furnished FOBs along Highway 1 and the Nineveh ring. Grind north from Balad against IEDs, HVT
   convoys and a 14-route supply web, under a permanent Mosul positive-control box. Predators
   and Reapers fly persistent ISR that banks real BDA.
-- **The Tanker War** — the 1988 carrier air wing (F-14A, A-6E, A-7E) against Iranian naval and
-  coastal power. The currency is ships, not territory: Silkworm batteries fire from the coast
-  and AAA gun forts stand on the oil platforms. The one DCS matchup where the Tomcat flies both
-  sides.
 - **Umm al-Ma'arik** — blue holds only the three H-3 desert strips seized on the border, with
   the tanker bridge and AWACS flying from the Saudi rear, and climbs the pipeline-road ladder:
   H-2, then Qadessiya (Al-Asad) where the Foxbats live, then the Habbaniyah line toward

@@ -14,7 +14,7 @@ description:
 miz: slava_ukraini.miz
 performance: 1
 recommended_start_date: 2026-02-24
-version: "10.8"
+version: "10.9"
 settings:
   # §86 GPS jamming: red EW companies deny satellite guidance within 15 nm of two sites
   # (see ground_forces). A JDAM/JSOW/JASSM aimed at anything inside a bubble lands off the
@@ -31,25 +31,24 @@ settings:
 squadrons:
   #Anapa-Vityazevo
   12:
-    - primary: SEAD
+    - primary: BAI
       secondary: any
       aircraft:
         - "[CH] MiG-29MU2"
-        - "MiG-29S Fulcrum-C"
         - MIG-29-FULCRUM
       size: 12
     - primary: Escort
       secondary: any
       aircraft:
         - "[CH] Su-27P1M"
-        - "Su-27 Flanker-B"
+        - Su-27 Flanker-B
       size: 12
     - primary: DEAD
       secondary: air-to-ground
       aircraft:
         - "[CH] Su-24MU"
-        - "Su-24M Fencer-D"
-      size: 12
+        - Su-24M Fencer-D
+      size: 12     
     - primary: Air Assault
       secondary: any
       aircraft:
@@ -84,11 +83,6 @@ squadrons:
       aircraft:
         - Su-25T Frogfoot
       size: 12
-    - primary: Escort
-      secondary: air-to-air
-      aircraft:
-        - Su-27 Flanker-B
-      size: 12
     - primary: BAI
       secondary: any
       aircraft:
@@ -106,10 +100,10 @@ squadrons:
       aircraft:
         - IL-78M
       size: 2
-    - primary: BARCAP
+    - primary: Escort
       secondary: air-to-air
       aircraft:
-        - MiG-29S Fulcrum-C
+        - Su-27 Flanker-B
       size: 12
     - primary: DEAD
       secondary: air-to-ground
@@ -127,6 +121,12 @@ squadrons:
       aircraft:
         - Tu-95MS Bear-H
       size: 12
+    - primary: BARCAP
+      secondary: any
+      aircraft:
+        - MIG-29-FULCRUM
+      size: 12
+
 
 supply_routes:
   # #50 blue rear corridor (batch 1)

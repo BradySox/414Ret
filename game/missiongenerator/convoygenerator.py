@@ -66,9 +66,10 @@ class ConvoyGenerator:
     def generate(self) -> None:
         # Reset the count to make generation deterministic.
         if not self.game.settings.perf_disable_convoys:
+            used: set[str] = set()
             for coalition in self.game.coalitions:
                 for convoy in coalition.transfers.convoys:
-                    self.generate_convoy(convoy)
+                    self.generate_convoy(convoy, used)
 
     def spawn_position(self, convoy: Convoy) -> Point:
         """Where the convoy's lead vehicle parks at mission start.
@@ -140,14 +141,28 @@ class ConvoyGenerator:
             return SpawnPlan(convoy.route_start, spawns, False)
         return SpawnPlan(position, None, cleared)
 
-    def generate_convoy(self, convoy: Convoy) -> VehicleGroup:
+    def generate_convoy(
+        self, convoy: Convoy, used: Optional[set[str]] = None
+    ) -> VehicleGroup:
         plan = self.spawn_plan(convoy)
         position = plan.position
         spawns_tuple = plan.spawns
         cleared = plan.cleared
 
+        # A campaign saved before the name counters stopped resetting per mission
+        # already holds duplicate convoy names; their units then collide in the unit
+        # map and generation dies, stranding the save. Suffix the later one so an
+        # affected campaign still launches.
+        name = convoy.name
+        if used is not None:
+            suffix = 2
+            while name in used:
+                name = f"{convoy.name} ({suffix})"
+                suffix += 1
+            used.add(name)
+
         group = self._create_mixed_unit_group(
-            convoy.name,
+            name,
             position,
             convoy.units,
             convoy.player_owned,

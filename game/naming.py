@@ -469,11 +469,14 @@ class NameGenerator:
 
     @classmethod
     def reset_numbers(cls) -> None:
+        # Convoys and cargo ships are campaign objects, not per-mission ones: they
+        # live across turns while they travel and their name is their identity.
+        # Resetting those two counters minted a fresh "Convoy 001" for a name a
+        # convoy still in transit held, and generation died on "Duplicate convoy
+        # unit" (upstream dcs-retribution#928).
         cls.number = 0
         cls.infantry_number = 0
         cls.aircraft_number = 0
-        cls.convoy_number = 0
-        cls.cargo_ship_number = 0
         cls.jtac_number = 0
 
     @classmethod

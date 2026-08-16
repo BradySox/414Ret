@@ -4066,7 +4066,7 @@ Case I recovery.
      candidate point and `steam_into_wind` returned None (pre-existing behavior, but the new
      heading changes which points get probed).
 
-### B56 — Living battlespace pre-roll: mid-cycle mission start · §89 · ☐ UNTESTED (built 2026-08-15)
+### B56 — Living battlespace pre-roll: mid-cycle mission start · §89 · ◐ PARTIAL (2026-08-16, spectator Game Master watch, Baltic Fury turn 3, Tacview `Tacview-20260816-104955`, session `c86c58dd`; 3 of 4 pass clauses verified — **38 aircraft airborne at spawn** both sides (CAPs mid-station at 31k ft, escorts mid-route, the pre-roll-launched strike already enroute at 21k ft), war clock read 00:40 (the ACMI ReferenceTime), first recovery T+22.6m, zero parking-overflow symptoms in dcs.log. Outstanding: the SEATED clause — player startup at the briefed time with full ground ops after the auto pre-roll (the qt_ui launch wiring) — needs the flown sortie from the app) (was ☐ UNTESTED, built 2026-08-15)
 
 > With `living_battlespace_preroll` on, player packages are seated a phase-aware distance into
 > the turn's cycle (0 min on the first turn, 15 on the next two, then the cap, default 40) and
@@ -4097,7 +4097,7 @@ version), take off normally.
   5. **Turn 0 differs at all from gate-off** — the curve's zero is not gating; the expectation
      is byte-identical.
 
-### B57 — Living battlespace P2: ramp residue + clean-wing returners · §89 · ☐ UNTESTED (built 2026-08-15)
+### B57 — Living battlespace P2: ramp residue + clean-wing returners · §89 · ☐ UNTESTED (built 2026-08-15; **2026-08-16 watch: the condition never arose** — a 40-minute pre-roll completed nobody's full cycle (zero `Completed` flights at generation, matching the cut's state census), so no residue existed to observe; the one all-watch parked jet was an idle-ramp single, not residue. Adjudicate on a later-turn or longer-pre-roll mission where a pre-roll flight actually finishes, or after a flown full sortie)
 
 > With the same `living_battlespace_preroll` gate on, three P2 behaviors join the pre-roll:
 > flights whose whole cycle predates your startup park their jets uncontrolled at their
@@ -4125,7 +4125,7 @@ Needs a flight: same setup as B56 (gate on, turn 3+), plus a look at the F10 map
   5. **A mid-route AI flight with full fuel** — `use_estimated_fuel_for_ai` isn't reaching
      `setup_fuel` (check the state's `in_flight` property for that flight class).
 
-### B58 — Living battlespace P3: follow-on waves + pre-roll briefing · §89 · ☐ UNTESTED (built 2026-08-15)
+### B58 — Living battlespace P3: follow-on waves + pre-roll briefing · §89 · ☑ VERIFIED (2026-08-16, spectator watch, Tacview `Tacview-20260816-104955`, session `c86c58dd` — the briefing block rendered with plausible counts ("Friendly: airborne 4, recovered 0, lost 3 / Enemy: airborne 8, lost 3 (assessed)", carried in the ACMI's own Comments field); waves activated AND flew at T+10.6m (carrier escorts), T+21.1m (a red Tu-95 3-ship) and T+32m (Hinds); activity continuous through the 96-minute watch; no parking exhaustion (0 overflow lines in dcs.log). The deep tail past a player egress follows from the same timers) (was ☐ UNTESTED, built 2026-08-15)
 
 > With the gate on, the AI TOT spread extends past the desired mission length by the same
 > phase-aware minutes as the pre-roll, so packages keep launching as/after the player
@@ -4154,7 +4154,7 @@ shutdown (or watch the F10 map / Tacview tail).
   4. **Counts read absurd** (more airborne than the ATO has flights) — the state census is
      double-counting (a state class rename would do it; the census matches by name).
 
-### B59 — Living battlespace P4: the voice net · §89 · ☐ UNTESTED (built 2026-08-15)
+### B59 — Living battlespace P4: the voice net · §89 · ◐ PARTIAL (2026-08-16 watch, session `c86c58dd`: `BSNET|: armed 7 scheduled calls` in a live mission, and the **dead-transmitter rule is flown-proven** — the QUAGGA strike pair died at their TOT to the site's point defense and their later call logged `off net (gone); call skipped` instead of transmitting. Outstanding: audibility + SAPI voice-quality verdict (the Game Master slot has no radio, and the flown cut predated the subtitles option), on a seated sortie. **Refinement noted:** a check-in can race its flight's late activation — schedule check-ins off takeoff time plus a margin, not departure_delay+60) (was ☐ UNTESTED, built 2026-08-15)
 
 > With `living_battlespace_voice_net` on (under the master gate), the generated ATO's own
 > timeline becomes short synthesized radio calls — launch check-ins, pushes, on-station and
@@ -4181,7 +4181,7 @@ a full sortie.
      SRS/MSRS runtime path (design-note open call 5's recorded alternative), not more SAPI
      tuning.
 
-### B60 — Living battlespace P5: reactive red · §89 · ☐ UNTESTED (built 2026-08-15)
+### B60 — Living battlespace P5: reactive red · §89 · ☐ UNTESTED (built 2026-08-15; **2026-08-16 watch: double no-test** — the flown miz predated the package-custom-name fix (#842), so the plugin logged `nothing emitted; plugin idle`; AND the watched objective took zero losses anyway (the 2-ship F-14 strike was killed at its TOT by the site's HQ-7 + Shilka point defense, site untouched), so even the fixed plugin would not have triggered. Both emitter fixes are merged and verified emitted in the current cut. Next attempt: watch a softer objective (ammo/factory, not a PD-heavy SAM) or send a properly escorted/SEAD-supported strike so a watched unit actually dies)
 
 > With `living_battlespace_reactive_red` on (under the master gate), up to two REAL red
 > alert flights (claimed inventory, tracked, losses count — deliberately not the §61

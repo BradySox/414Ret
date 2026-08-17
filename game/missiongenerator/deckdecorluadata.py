@@ -19,6 +19,7 @@ no-ops.
 
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING
 
 from game.data.carrier_deck_decor import STATIC_META
@@ -28,6 +29,49 @@ if TYPE_CHECKING:
 
     from .luagenerator import LuaData
     from .missiondata import MissionData
+
+
+#: Margin (s) after the last flight leaves a deck before that deck may respot
+#: for recovery. Covers the difference between the planned departure delay and
+#: the actual takeoff roll, which is minutes for a cold start.
+LAUNCH_CYCLE_MARGIN_S = 600
+
+
+def launch_cycle_ends_at(mission_data: "MissionData", carrier_unit_name: str) -> int:
+    """Seconds after mission start when this deck is done launching.
+
+    A deck cannot respot for recovery while it is still a launch deck, and the
+    plan already knows when the last jet leaves it. Flown 2026-08-16: the
+    recovery set spawned at t+79 s of a 2,233 s mission -- 375 s before the
+    player's own takeoff roll -- putting three static Hornets in his taxi lane,
+    one of them 8.66 m off his track. The astern cone had tripped on something
+    that could not be identified from the recording, so this bounds what a
+    spurious trip can do rather than relying on finding every trip source.
+
+    Matched on ``RunwayData.airfield_name``, which for a carrier is the control
+    point's name and equals the flagship unit's name -- the same string
+    ``DeckDecorInfo.carrier_unit_name`` carries. Zero when nothing launches from
+    this deck, leaving the existing deadline and cone in sole charge (the
+    pre-2026-08-16 behaviour).
+    """
+    latest = 0
+    launching = 0
+    for flight in getattr(mission_data, "flights", None) or []:
+        departure = getattr(flight, "departure", None)
+        if getattr(departure, "airfield_name", None) != carrier_unit_name:
+            continue
+        launching += 1
+        delay = getattr(flight, "departure_delay", None)
+        seconds = int(delay.total_seconds()) if delay is not None else 0
+        latest = max(latest, seconds)
+    if not launching:
+        logging.info(
+            "DECKDECOR: nothing launches from %s; the recovery respot is left to "
+            "the cone and the fallback deadline.",
+            carrier_unit_name,
+        )
+        return 0
+    return latest + LAUNCH_CYCLE_MARGIN_S
 
 
 def populate_deck_decor_lua(
@@ -45,6 +89,10 @@ def populate_deck_decor_lua(
         rec.add_key_value("unit", info.carrier_unit_name)
         # DCS coalition side id: 1 red, 2 blue.
         rec.add_key_value("side", "2" if info.blue else "1")
+        rec.add_key_value(
+            "earliestClearS",
+            str(launch_cycle_ends_at(mission_data, info.carrier_unit_name)),
+        )
         rec.add_key_value("brc", f"{info.brc_degrees:.1f}")
         rec.add_data_array("clearNames", info.clear_names)
         # Recovery-phase spawns: absent from the mission by design, so the

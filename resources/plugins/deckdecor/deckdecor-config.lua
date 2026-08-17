@@ -123,6 +123,15 @@ for i = 1, #boatsData do
         unit = tostring(b.unit or ""),
         side = tonumber(b.side) or 2,
         brc = brc,
+        -- No respot while this deck is still launching. The generator knows the
+        -- last departure off this boat (deckdecorluadata.launch_cycle_ends_at);
+        -- 0 means nothing launches here, so the cone and the deadline stay in
+        -- sole charge. Flown 2026-08-16: the recovery set spawned at t+79 s,
+        -- 375 s before the player's takeoff roll, putting three static Hornets
+        -- in his taxi lane -- one 8.66 m off his track. The cone had tripped on
+        -- something not identifiable from the recording, so this bounds what a
+        -- spurious trip can do instead of relying on finding every trip source.
+        earliestClearS = tonumber(b.earliestClearS) or 0,
         recoverySpawns = recoverySpawns,
         spawnedRecovery = false,
         -- Unit astern vector in map coords (x = north, z = east): the reciprocal
@@ -297,7 +306,17 @@ local function tick()
     local pending = 0
     for i = 1, #boats do
         local boat = boats[i]
-        if not boat.cleared then
+        -- A launching deck is never a recovery deck. Holds BOTH the cone and
+        -- the deadline: the deadline is the airboss recovery window, and a
+        -- window that opens mid-launch is itself the thing being guarded
+        -- against.
+        local launching = timer.getTime() < boat.earliestClearS
+        if launching and not boat.loggedHold then
+            boat.loggedHold = true
+            log(boat.unit .. ": still launching, respot held until " ..
+                string.format("%.0f", boat.earliestClearS) .. "s")
+        end
+        if not boat.cleared and not launching then
             if timer.getTime() >= CLEAR_DEADLINE_S then
                 clearBoat(boat, DEADLINE_WHY)
             else

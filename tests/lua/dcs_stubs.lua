@@ -191,6 +191,12 @@ function UnitFake:inAir()
     return self.airborne == true
 end
 
+-- Internal fuel fraction, 0-1. Defaults full so a spec that does not care about
+-- fuel still reads as a plausible aircraft.
+function UnitFake:getFuel()
+    return self.fuel or 1.0
+end
+
 function UnitFake:getCoalition()
     return self.side
 end
@@ -323,6 +329,7 @@ function Harness.addGroup(spec)
             attributes = u.attributes,
             velocity = u.velocity,
             playerName = u.playerName,
+            fuel = u.fuel,
             side = spec.side,
             group = grp,
         }, UnitFake)

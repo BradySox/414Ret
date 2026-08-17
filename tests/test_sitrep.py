@@ -26,12 +26,14 @@ def _debrief(
     blue: Any,
     red: Any,
     captures: Iterable[Any] = (),
+    sortie_records: Iterable[Any] = (),
 ) -> Debriefing:
     return cast(
         Debriefing,
         SimpleNamespace(
             loss_counts=lambda p: blue if p == Player.BLUE else red,
             base_captures=list(captures),
+            state_data=SimpleNamespace(sortie_records=tuple(sortie_records)),
         ),
     )
 

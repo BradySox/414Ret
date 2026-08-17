@@ -73,6 +73,7 @@ function write_state()
         ["naval_magazines_state"] = naval_magazines_state or {},
         ["ejection_events"] = ejection_events,
         ["csar_rescued"] = csar_rescued,
+        ["sortie_records"] = sortie_records or {},
     }
     local ok, write_error = pcall(function()
         fp:write(json:encode(game_state))
@@ -214,6 +215,17 @@ local function onEvent(event)
     if event.id == world.event.S_EVENT_EJECTION and event.initiator
        and event.initiator.getName then
         ejected_units[event.initiator.getName(event.initiator)] = true
+        pcall(sortie_recorder_on_ejection, event.initiator)
+    end
+
+    -- Sortie records (seam 1). Wrapped in pcall throughout: a recorder fault
+    -- must never take down the loss reporting this handler exists for.
+    if event.id == world.event.S_EVENT_SHOT and event.initiator then
+        pcall(sortie_recorder_on_shot, event.initiator)
+    end
+
+    if event.id == world.event.S_EVENT_HIT and event.initiator then
+        pcall(sortie_recorder_on_hit, event.initiator)
     end
 
     if event.id == world.event.S_EVENT_PLAYER_LEAVE_UNIT and event.initiator
@@ -311,6 +323,12 @@ mist.addEventHandler(onEvent)
 
 dirty_state = true
 write_state_error_handling()
+
+-- Seam 1: start sampling flight tracks. Guarded so a missing recorder (an older
+-- plugin set, or a load-order change) leaves the rest of this script running.
+if sortie_recorder_start then
+    pcall(sortie_recorder_start)
+end
 
 -- Escort leash
 -- Escorts are kept within their engagement range relative to the escorted group.

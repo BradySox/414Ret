@@ -69,6 +69,7 @@ feature — each carries the design rationale, the flown-test findings, and the 
 | [414th-feature-debt-register.md](docs/dev/414th-feature-debt-register.md) | The verification plan and debt triage. Archive once the Aug-1 wave is processed. |
 | [414th-upstreaming-inventory.md](docs/dev/414th-upstreaming-inventory.md) | The upstreaming queue, priority-ordered, with readiness marks. |
 | [414th-community-contribution-roadmap.md](docs/dev/414th-community-contribution-roadmap.md) | The long view: community-value × carve-difficulty across every feature. |
+| [414th-retribution-long-view.md](docs/dev/design/414th-retribution-long-view.md) | Structural read of the engine (2026-08-17): what Retribution is, measured, and the six seams that follow. **Seams 1 (mission→campaign reporting), 2 (the intel model) and 4 (the front line) are accepted work**; 3 and 5 are analysis only. |
 
 ### Campaign notes — `docs/dev/design/`
 

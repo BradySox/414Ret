@@ -20,6 +20,8 @@ from game.missiongenerator.redscrambleluadata import RedScrambleTemplate
 from game.runways import RunwayData
 
 if TYPE_CHECKING:
+    from dcs import Point
+
     from game.radio.radios import RadioFrequency
     from game.radio.tacan import TacanChannel
     from game.theater.player import Player
@@ -59,6 +61,12 @@ class TankerInfo(GroupInfo):
     start_time: datetime
     end_time: datetime
     aircraft_type: AircraftType
+    # Where this tanker actually orbits, so a receiver's REFUEL waypoint can be
+    # resolved against it instead of against the planner's geometric guess.
+    # A recovery tanker is excluded from that: it works the boat's pattern.
+    orbit_start: Optional[Point] = None
+    orbit_end: Optional[Point] = None
+    recovery: bool = False
 
 
 @dataclass

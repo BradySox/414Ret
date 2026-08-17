@@ -42,9 +42,10 @@ stress it · `✗` fail signature reproduced in-game.
 | B31 | Escort jamming (Growler / Prowler + growler plugin) | §77 | ◐ |
 | B32 | Sea-supply convoys + coastal anti-ship engagement | §78 | ☐ |
 | B33 | Decoy suspected-activity zones | §79 | ☐ |
-| B35 | Air-defense class rows are filters of the "Air defences" master | §19 | ☐ |
+| B35 | Air-defense class rows are filters of the "Air defences" master | §19 | ☑ |
 | B39 | Cross-turn naval magazines | §81 | ✗ |
 | B63 | A destroyed strike target is recorded in the campaign | §8 | ✗ |
+| B64 | The datalink era gate: the SA page populates when it should | datalink | ☑ |
 | B50 | The auto-planner never picks the King for a rescue | CSAR | ☐ |
 | B51 | The rescue package is not planned into threat it cannot survive | CSAR | ☐ |
 | C9 | Carrier-recovery stagger (same-boat package landings spaced) | §8 | ◐ |
@@ -60,7 +61,7 @@ stress it · `✗` fail signature reproduced in-game.
 | G37 | Multiplayer: a non-lead client can run the rescue | CSAR | ☐ |
 | G38 | `csar_rescue_ai_pilots` ON spawns a survivor for every AI ejection | CSAR | ☐ |
 | H14 | The kneeboard SAR line is accurate, and the rescue crew gets a usable card | CSAR | ☐ |
-| I2 | Civilian background air traffic (region fleets + airways) |  | ◐ |
+| I2 | Civilian background air traffic (region fleets + airways) |  | ☑ |
 | H10 | Shared-airframe kneeboard index | §27 | ☐ |
 | H11 | Estimated fuel figures for dataless airframes | §4 | ✗ |
 | K2 | Campaign SITREP band on its own kneeboard page | §29 | ☐ |
@@ -533,6 +534,7 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
 **History:** built 2026-07-16 off the user finding "AI taxi into me on the supercarrier / get stuck between me and the catapult"; the placement/hold split — AI always ≥1s late-activated, player flights taking the 1s placement activation under LAST_RESORT and keeping the six-pack under SIXPACK_FIRST, the delayed-client uncontrolled+StartCommand path, the WARM/RUNWAY/airfield no-ops, and the boolean→enum save migration — is unit-tested in `tests/missiongenerator/test_carrier_deck_policy.py` + `tests/settings/test_carrier_deck_policy.py`. How DCS actually places and taxis the deck is DCS-only.
 
 **2026-08-16 flights (session `c86c58dd`, two Caucasus turns; Tacview + dcs.log + state.json + the flown save) — PARTIAL.** Turn 2 recovered **7 aircraft onto CVN-71** (4 F-14B(U), 3 F/A-18C; final positions 20–77 m from the boat), so deck spawning did not wedge the recovery cycle and nothing was stuck. Turn 1 ended with every flight still airborne at 104 minutes, so it says nothing either way. Not observed: the six-pack last-resort path specifically, or MP slot timing.
+**2026-08-16 5th test — a jet that never taxied, and it is the port quarter.** The DM reported "Enfield 2-2 never taxied". In the recording, `CVN-71 Theodore Roosevelt Escort|2|4` spawned as a pair at t+803: Pilot #1 on the six-pack row at ship-frame (−13.0, +33.8) taxied 237 m and launched; **Pilot #2 at (−85.4, −33.4) — the port-quarter spot — moved 10.8 m in the following 20.6 minutes and never left**. It was not alone there: `Kutaisi Escort|2|2` Pilot #2 had spawned 11 m away at t+297 and took until t+1445 (19 minutes) to get off the deck. Every flight spawned at or before t+803 launched *except* that one; every flight spawned at t+1447 or later (the whole PUFFERFISH package, 11 jets) was still parked when the recording ended 590 s later, which is inside a normal Hornet cold-start and so proves nothing. **Read:** the port-quarter row looks like a queue that can dead-end, not a §72 decoration collision — the port junk row was removed 2026-07-21 and nothing §72 places is on that side. Worth a deliberate look on the next carrier fly: park two AI pairs onto the port quarter and watch whether the second ever moves.
 - **What CI cannot exercise:** the two deliberate unknowns — (1) whether DCS genuinely overflows delayed spawns *into* the six-pack once the other deck spots are full (the literal "last resort" semantics; the 1-second trick is only proven to move spawns *off* it), and (2) deck crowding/behavior with several client flights parked uncontrolled from mission start (the reason upstream late-activated carrier flights). Plus the core payoff: does an AI flight still jam against the player now that the player is parked clear of the cat 1/2 taxi lane.
 - **Thinned-deck data point (2026-07-17 night fly, fresh turn 1 post-#633 deck cut, session
   `tacview-test-analysis-5bb161`):** big improvement — every planned carrier package launched
@@ -691,7 +693,9 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
 - **Pass:** the group renders without clipping the campaign list (§28's screen-fit work applies); each filter narrows the list and each sort reorders it; combining filters ANDs them and none resets another; the Vietnam card's era filter survives touching the other controls; and the campaign that starts is always the highlighted one.
 - **Fail signature:** the wizard starts the wrong campaign (the `selectedCampaign` field removal mis-wired — this silently falls back to `campaigns[0]`); changing the "show incompatible" checkbox resetting the version/map/era criteria (something bypassed `on_filter_changed`); the Vietnam card listing non-Vietnam campaigns after touching a dropdown (the era criterion isn't surviving `set_filters`); an empty list selecting nothing and the page erroring (upstream guards the first-row selection on `rowCount() > 0` — a regression here would throw).
 
-### B35 — Air-defense class rows are filters of the "Air defences" master · §19 · ☐ UNTESTED
+### B35 — Air-defense class rows are filters of the "Air defences" master · §19 · ☑ VERIFIED
+
+**2026-08-17 — VERIFIED on the DM's call ("B35 good").** WATCH item 2, pulled from the parking lot the same day and closed on the first look. The panel render, the class-row greying and the stored-state migration are the parts CI cannot reach, and they behave.
 
 **History:** built 2026-07-29 off a flown report that read as a §3 fog bug — "with reveal fog of war on, SAM sites are showing nothing at the actual location, and the only way you can see it on the map is by hovering on the circle". Root cause was NOT fog: the campaign save carried `airDefenses: false` with all four class rows false, and those five were the only layers drawing an air-defense marker, so 54 AD sites and 25 §3 concealed circles went undrawn while *Enemy SAM threat range* — a separate layer over the same TGO slice — kept drawing the rings. Recon fog + the reveal overview were both verified CORRECT headlessly on the reported save. The filter semantics are unit-tested in `client/src/components/tgoslayer/TgosLayer.test.tsx` (5 cases: all-classes, narrowed, task-less exclusion, category enforcement, exclude flag) and the client passed tsc + the full jest suite locally — but the panel render, the greying, and the stored-state migration are app-only. **Needs the CI client rebuild.**
 - **What CI cannot exercise:** that the four class rows visibly grey out and refuse clicks while "Air defences" is unchecked; that a stored layer blob which ticked a class row with the master off comes back with the master ON (`normalizeAirDefenseFilters`) rather than an empty map; and that no site ever draws two stacked markers.
@@ -754,6 +758,20 @@ Needs a flight to confirm the fix end to end. The cheap version deliberately rep
   2. **No warning line at all and the target IS recorded** — fine, that is the ordinary case where the watcher never stopped early.
   3. **Results double-counted** (a kill charged twice) — the fresh read and the polled snapshot both committed; stop and re-read `_process_turn`.
 
+### B64 — The datalink era gate: the SA page populates when it should · datalink · ☑ VERIFIED
+
+**2026-08-17 — VERIFIED on the DM's call ("B64 is good"), opened and closed the same day.** This also closes the manual step the feature shipped owing: the policy is now set to Era-correct in the save and in the settings baseline, so new campaigns no longer inherit the migrated `Never`. The terminal comes up.
+
+**History:** opened 2026-08-17 alongside the feature (#858). Built from a flown finding: a generated Caucasus mission carried the DCS `EPLRS` task on **1 of 23** blue plane groups against **16 of 18** in a hand-built modern mission on the same install, because the old single boolean sat off in the saved-settings baseline. The rule (`game/datalinkera.py`), the 14 authored `datalink_introduced:` dates and the `True→ALWAYS / False→NEVER` migration are unit-tested in `tests/test_datalink_era.py`. Whether the terminal actually comes up in the cockpit is DCS-only. Design note `414th-datalink-era-notes.md`.
+
+- **What it is:** DCS reuses the EPLRS name generically — the task on a group is what makes that group take part in datalink at all (Link 16 on a Hornet or Viper, SADL on an A-10C). pydcs gives every capable airframe the task at group creation and Retribution's `configure_behavior` clears it; `configure_eplrs` is the only thing that puts it back. So the policy decides whether we **restore** a capability the sim already granted, and `NEVER` actively strips it.
+- **⚠ Setup, and it is the whole point:** the old boolean migrates to **Never**, so an existing save and the settings baseline both read as off. Set **Settings → Mission Generator → Gameplay → Datalink → Era-correct** in the current save **and** again with no campaign loaded, or every new campaign inherits the off state and this row reads as failing when the feature is fine.
+- **Pass:** on a 2000s-or-later campaign the SA page shows friendly PPLI and surveillance tracks — your flight, the AWACS, the tanker. On a 1991-or-earlier campaign it is empty, and that is the feature working, not a fault.
+- **Fail signatures:**
+  1. **Empty SA page on a modern campaign** — check the policy actually saved before suspecting the gate; an unmigrated `Never` is indistinguishable from the bug this replaced. Then grep `dcs.log` for the group's `EPLRS` task.
+  2. **A Desert Storm Hornet with a live SA page** — the date table is not being consulted, or the policy is on `Always`.
+  3. **An airframe you expected to be gated behaving as though it has no date** — absent reads as permissive by design; check whether that airframe is one of the 14 authored ones before treating it as a bug.
+
 ### B40 — The Wing Grows: scheduled squadron arrivals · ⊘ RETIRED
 
 **History:** retired 2026-08-16 — §82 was removed on the DM's call ("it doesn't add much except in very specific campaigns"), so the scenario this row tracked no longer runs. It was never flown. See `414th-features.md` §82 for what was removed.
@@ -790,12 +808,12 @@ Needs a flight to confirm the fix end to end. The cheap version deliberately rep
 
 ### B50 — The auto-planner never picks the King for a rescue · CSAR · ☐ UNTESTED
 
-**History:** `tests/test_csar_king_priority.py` pins the C-130J at the lowest CSAR priority in the live fleet — 27 airframes qualify and the floor is the Mi-24V at 10, so the King sits at 5. Whether the planner honours that in a real ATO is app-level
+**History:** **FAILED IN THE FIELD 2026-08-16 (5th test), and worse than this row predicted.** The planner fragged the King and `CsarFlightPlan` refused to build for a fixed-wing flight; the `PlanningError` came out through `pass_turn` into the UI, so the campaign could not be advanced at all. Priority was never the guarantee — `best_squadrons_for` sorts the candidates but returns whatever it finds, so the King wins by default whenever it is the only CSAR squadron in range, however low its number. Fixed 2026-08-17 by `FlightType.requires_helicopter`, checked in `Squadron.can_auto_assign_mission` (auto-planning only), plus a `PlanningError` catch in `plan_mission` so an unbuildable flight plan scrubs one package instead of the turn. Re-test owed.
 - **What it is:** upstream restricts CSAR to helicopters because the DCS AI `Land` task is helicopter-only — an AI fixed-wing rescuer just orbits the survivor. The fork overrides that for the C-130J so the King can be **player-flown**, and pins it at priority 5 so the planner always reaches for a helo first.
 - **What CI cannot exercise:** the actual pick, in a wing that fields both a King and rescue helos.
-- **Setup:** a campaign whose wing has both a C-130J-30 squadron and at least one rescue-helo squadron. Create a survivor, pass the turn, read the ATO. ~20 min, no flying.
-- **Pass:** the CSAR package is crewed by a helo. The King is never auto-fragged for CSAR while any helo is available.
-- **Fail signature:** an AI King fragged for the rescue — it will fly to the survivor, orbit, and never pick anyone up, so the rescue silently fails and the pilot goes MIA. If this happens, the priority is being ignored rather than misread, because the test proves the number is right.
+- **Setup:** a campaign whose wing has both a C-130J-30 squadron and at least one rescue-helo squadron. Create a survivor, pass the turn, read the ATO. ~20 min, no flying. **Also run the harder case: a survivor in range of the King's base but out of range of every helo** — that is the shape that crashed, and the correct outcome is now no CSAR package at all.
+- **Pass:** the CSAR package is crewed by a helo, or is absent. The King is never auto-fragged for CSAR. The turn passes.
+- **Fail signature:** an AI King fragged for the rescue — it will fly to the survivor, orbit, and never pick anyone up, so the rescue silently fails and the pilot goes MIA. Or the turn refuses to pass with `PlanningError: CSAR is only usable by helicopters`, which means the capability gate is not being consulted.
 
 ### B51 — The rescue package is not planned into threat it cannot survive · CSAR · ☐ UNTESTED
 
@@ -2560,7 +2578,27 @@ Needs a flight to confirm the fix end to end. The cheap version deliberately rep
   missing from the saved mission (canonical-instance discipline broken — a duplicate `Country`
   instance was passed at spawn vs. registered on the coalition).
 
-### I2 — Civilian background air traffic (region fleets + airways) · ◐ PARTIAL
+### I2 — Civilian background air traffic (region fleets + airways) · ☑ VERIFIED
+
+**2026-08-17 — CLOSED FROM TACVIEW, no flight required.** The DM asked whether the re-look could
+be settled from a recording instead of the cockpit. It can, across all six recordings on disk —
+**52 fixed-wing civil tracks**:
+- **They reach their assigned level.** Peak altitude is FL200, FL259 or FL308 — exactly the three
+  authored cruise levels, nothing between them and nothing lower. 31 of 52 spend ≥40 % of the
+  track at or above FL180; several are level for 100 % of it.
+- **The climb case works**, so the missing waypoint-between-takeoff-and-landing fix took: tracks
+  starting at FL0–1 reach FL200–259.
+- **Nothing falls.** 40 of 52 have a descent moment steeper than 6,000 fpm, which reads alarming
+  until you check the speed at that moment: every one is **295–406 kt ground speed**, a powered
+  arrival. The actual 2026-08-08 defect — a spawn below stall — is under 100 kt and decaying.
+  Every track survives to the end of its recording and there are **no civil wrecks** in any of
+  the six.
+- **Thread, not a defect:** `ARKTIKA 134` (An-30M) shows 78 kt ground speed in one 10-second
+  window while level at FL200, against 222–303 kt for every other An-26/An-30 sample. One window
+  proves nothing; if a slow civil contact ever appears on the F10 map, start here.
+- **Density is still a taste call and still does not need a flight.** The count is **16 civil
+  aircraft per mission** (12 fixed-wing + 4 rotary) on Caucasus. The 2026-08-05 rebuild left this
+  open deliberately; the number is now available to judge it without flying.
 
 **History:** re-look owed on the 2026-08-08 speed fix — see the bullet at the end of this row; was ☑ VERIFIED 2026-08-06, WATCH item 2, DM verdict "looks good" — the first eyes on the rebuild: traffic reads region-plausible and civil, no fail signature. Note the rebuild's own honest caveat still stands — the third complaint, "too little / it disappears", was deliberately NOT separately fixed, so if density still feels thin that is a *separate* judgement to make on this build, not a regression of this row) (was ☐ UNTESTED, **REBUILT 2026-08-05** `units-runway-generation-bf755e`. Opened as "I think RAT is the real answer" and closed the other way: RAT was never cut on taste — `civiliantraffic.py`'s header records that it CRASHED the sim (`woCharacterHuman` / GermanyCW-FARP, from RAT resolving an unresolvable heliport id, which is why the rotary layer had to be disabled outright; respawn churn was a second crash path) — and it fixes neither real issue. Pressed on the symptom the DM named those as **civil identity** and **airways vs milk runs**; RAT addresses neither, and its one differentiator (ATC / living airfield) was explicitly not among the complaints. **(1) Civil identity is now a data table** (`game/missiongenerator/civilianfleet.py`): fleet, operator names and cruise levels per region. The old roster was applied GLOBALLY, so Antonovs and Hips flew over Nevada and the Marianas — the Soviet set was never wrong, it was wrong *everywhere else*. **Found in passing and worse: the WWII maps had modern civil traffic on them** — Normandy and The Channel now field nothing at all, which is the honest answer for a 1944 combat theatre. Groups are named `AEROFLOT 412`, not `CIV_An-26B_3`, since that name is what the F10 map shows. **(2) Airways, not milk runs**: a fixed-wing route is one long transit at a real flight level (FL200–FL310), not five short rear-area legs; the meander existed only to keep aircraft airborne without a respawn loop. Helicopters deliberately stay on short local hops — a helo does not fly an airway. The endpoint pool widened (neutral fields preferred, any field as fallback) because for an overflight the endpoints are only direction anchors. **PASS:** fly any mission and confirm the traffic (a) is region-plausible — no Antonovs over Nevada, nothing at all over Normandy — (b) reads as civil on the F10 map by operator name, and (c) crosses the map high and straight rather than pottering at low level between rear fields. **FAIL signatures:** an empty sky on a mapped theatre (check the `Civilian traffic: N flights (N airway, N rotary) from an N-field pool` log line); traffic at the old flat ~16,000 ft; a civil flight inside the front keep-out; or any civil aircraft appearing over a WWII map. **The third complaint — "too little / it disappears" — was NOT separately fixed and that is deliberate**: low traffic pottering between rear fields is invisible to a player at altitude, so the felt sparsity is expected to be substantially a visibility problem that high straight transits fix on their own. Judge density on this build before adding a concurrency scheduler. Tests `tests/test_civilian_traffic.py` (22), incl. a guard that every `REGIONS` key is a real `Terrain.name` — the campaign yamls carry DISPLAY names ("Persian Gulf", "Sinai", "The Channel") while the table is keyed on `Terrain.name` ("PersianGulf", "SinaiMap", "TheChannel"), and a typo'd key fails SILENTLY into the Soviet fallback. All 13 shipped theatres verified to resolve MAPPED) (was ✗ REGRESSED / ☑ VERIFIED 2026-06-26
 
@@ -4352,6 +4390,8 @@ Play a turn on a Growler- or Prowler-fielding wing against a campaign with sever
 **History:** built 2026-08-07, default OFF
 
 **2026-08-16 flights (session `c86c58dd`, two Caucasus turns; Tacview + dcs.log + state.json + the flown save) — REGRESSED; root cause found and fixed.** The plugin armed on every carrier session (`DECKDECOR|: armed -- 1 boat(s), clear by 1500s (airboss recovery window)`) and **never cleared** — across five sessions including a 103-minute one that passed the 25-minute deadline four times over. The cause was not in this feature: `LuaData.serialize` dropped every scalar on an item that also held a nested table, so the emitted boat record was `{recoverySpawns = {...}}` with **no `group`, `unit`, `side`, `brc` or `clearNames`** (read out of the flown `retribution_nextturn.miz`). The plugin then looked up `Group.getByName("")`, took its *boat gone* exit, set `cleared = true` and stopped — silently, at T+60 s. Fixed in the serializer (414Ret#847) plus a log on that exit. **Re-fly owed:** the deck must visibly respot before the recovery window. One correction to the night's read: the inferred causation ("caused no jets to recover") is NOT supported — the second flight recovered 7 aircraft onto CVN-71 under the same bug, so the dressing does not block AI recovery; the first flight simply ended with everyone still airborne.
+
+**2026-08-17 follow-up — three more changes to exercise on the same re-fly.** (1) The launch-cycle floor from 2026-08-16 read the *latest* departure off the deck, and `departure_delay` is the whole wait until a flight's scheduled start: one late package held CVN-71 to `respot held until 11388s` in a 19-minute mission, so the deck never respotted. It now holds only for the **current** cycle (departures unbroken by a gap longer than the 10-minute margin). Watch for a `launch cycle` line in `dcs.log` naming a plausible hold — hundreds of seconds, not thousands. (2) The astern cone fired once with **nothing in the cone** (a faithful replay of the plugin's own logic over the whole recording never trips) and the trip source is still unknown; every trip poll now logs the unit, range, off-stern angle, altitude and closing rate. If the deck respots early, that line is the evidence — capture it. (3) `KNOWN_PARKING_SPOTS` went 11 → 16 from measured Tacview data, which caught the recovery tier placing a tow tractor 5.8 m from a real spawn point; the tier is now filtered against the table (9 authored sets → 7 shipped). Watch for a thinner-looking bow set — that is expected, not a bug.
 
 > **The first §72 dressing that is SPAWNED rather than placed**, and the first thing the
 > `deckdecor` plugin has ever created — its header promised "Despawn ONLY" until this landed.

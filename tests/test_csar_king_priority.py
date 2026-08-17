@@ -65,3 +65,51 @@ def test_the_king_never_outranks_a_rescue_helo() -> None:
         "AI can complete (the DCS Land task is helicopter-only) and the pickup silently "
         "never happens. Lower the King, or raise the helo."
     )
+
+
+# --------------------------------------------- the hard exclusion (flown 2026-08-16)
+
+
+def test_a_fixed_wing_squadron_is_never_auto_assignable_for_csar() -> None:
+    """Priority alone was never enough, and the 5th test proved it.
+
+    ``best_squadrons_for`` sorts CSAR-capable squadrons by priority but returns
+    whatever it finds, so when the King's C-130J is the only CSAR squadron in
+    range it wins by default however low its number is. The planner fragged one,
+    ``CsarFlightPlan`` refused to build for a fixed-wing flight, and the
+    PlanningError came out through ``pass_turn`` -- the campaign could not be
+    advanced at all.
+
+    Auto-planning only. A player may still frag a King by hand, which is the
+    whole point of the yaml override the tests above pin.
+    """
+    from types import SimpleNamespace
+
+    from game.squadrons.squadron import Squadron
+
+    def can_assign(is_helicopter: bool) -> bool:
+        squadron = Squadron.__new__(Squadron)
+        squadron.location = SimpleNamespace(  # type: ignore[assignment]
+            cptype=SimpleNamespace(name="AIRBASE")
+        )
+        squadron.aircraft = SimpleNamespace(helicopter=is_helicopter)  # type: ignore[assignment]
+        squadron.can_auto_assign = lambda task: True  # type: ignore[method-assign]
+        squadron.can_fulfill_flight = lambda count: True  # type: ignore[method-assign]
+        return squadron.can_auto_assign_mission(
+            SimpleNamespace(),  # type: ignore[arg-type]
+            FlightType.CSAR,
+            2,
+            heli=False,
+            this_turn=True,
+            ignore_range=True,
+        )
+
+    assert not can_assign(is_helicopter=False), "a fixed-wing CSAR flight cannot fly"
+    assert can_assign(is_helicopter=True), "the gate must not exclude rescue helos"
+
+
+def test_only_csar_carries_the_helicopter_requirement() -> None:
+    """A blanket rule here would quietly ground every fixed-wing task, so the
+    predicate is pinned to the one flight plan that actually refuses to build."""
+    requiring = [task for task in FlightType if task.requires_helicopter]
+    assert requiring == [FlightType.CSAR]

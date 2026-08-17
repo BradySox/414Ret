@@ -51,6 +51,7 @@ same frame as the DCS mission format's linked-static ``offsets`` table.
 
 from __future__ import annotations
 
+import math
 from typing import NamedTuple
 from zlib import crc32
 
@@ -121,7 +122,20 @@ KNOWN_PARKING_SPOTS: tuple[tuple[float, float], ...] = (
     (-134.3, 27.0),  # junkyard spot (~spot 7; campaign A parks a Seahawk here)
     (-122.6, 28.2),  # junkyard spot (~spot 8; campaign A parks a Seahawk here)
     (-98.7, 29.9),  # El-3 shoulder spot (campaign A parks an S-3/E-2 here)
+    # MEASURED 2026-08-17 from five CVN-71 recordings by the same t=0 method,
+    # closing the two holes the 2026-08-07 audit named: the row was known only
+    # aft of x=+1.0, and nothing at all was known between x=-35.5 and x=-98.7.
+    # Cluster centres over 6-9 sightings each, across 4-5 independent missions,
+    # with F-14/Hornet/EA-18G all parking to the same centres.
+    (35.6, 36.7),  # six-pack row, forward pair (n=6, 5 missions)
+    (23.4, 35.5),  # six-pack row, forward pair (n=6, 4 missions)
+    (-89.8, 26.4),  # starboard mid-deck, aft end of the old blind band (n=9, 5)
+    (-76.3, 26.4),  # starboard mid-deck, same row forward (n=1 -- see below)
+    (-74.6, -38.4),  # port quarter, forward of -84.5 (n=2; continues the 12 m pitch)
 )
+# The two thin entries above (n=1 and n=2) are deliberately kept. This table is
+# a KEEP-OUT set: an extra entry can only reject a decoration, never place one,
+# so a single real sighting is worth more than the certainty it lacks.
 
 # Minimum centre distance a SMALL static (deck gear / a crew figure) must keep
 # from every measured spot: a folded Hornet half-span (~4.7 m) at the spot +
@@ -377,17 +391,16 @@ ROUND_DOWN_VARIANTS: list[list[DeckStatic]] = [
 # by then, so the bow is free.
 #
 # ⚠️ THIS IS THE LEAST-EVIDENCED TIER IN §72, AND IT IS DEFAULT-OFF FOR THAT
-# REASON. The placements are verbatim campaign A mission 4 authoring and they clear
-# every entry in KNOWN_PARKING_SPOTS by >= 9.8 m -- but that table holds 11 of
-# the guide's 16 spots, and the five it lacks include the bow-edge spots
-# (11/12/13) that sit closest to this zone. "Clears every known spot" is not
-# "clears every spot" here. Two of mission 4's own forward items were dropped
-# for failing even the known-spot check (4.6 m and 7.7 m).
+# REASON. The placements are verbatim campaign A / campaign B authoring.
 #
-# Before this tier is promoted to default-ON, the bow spots need MEASURING by
-# the Tacview t=0 method that produced the 11 entries we have. See the design
-# note's "The 11-vs-16 spot gap" and LOCAL card 2.
-RECOVERY_DECK_VARIANTS: list[list[DeckStatic]] = [
+# The 2026-08-17 measurement pass confirmed the warning this comment used to
+# carry: the spots it lacked DID include the ones nearest this zone, and the
+# forward six-pack pair now in KNOWN_PARKING_SPOTS lands inside five of these
+# authored sets. Rather than nudge coordinates by eye -- the method that has
+# failed this feature before -- the clearance rule is applied to the authored
+# data below, once, so a future measured spot prunes whatever it invalidates
+# with no further authoring. See the design note's "The 11-vs-16 spot gap".
+_AUTHORED_RECOVERY_VARIANTS: list[list[DeckStatic]] = [
     # campaign A mission 4 bow set -- the full forward respot
     # 9 items; min known-spot clearance 9.8 m
     [
@@ -463,6 +476,29 @@ RECOVERY_DECK_VARIANTS: list[list[DeckStatic]] = [
         DeckStatic("FA-18C_hornet", 20.96, 31.09, 268.3),
         DeckStatic("FA-18C_hornet", 3.61, 13.18, 2.3),
     ],
+]
+
+
+def clears_known_spots(item: DeckStatic) -> bool:
+    """Whether this placement keeps its required distance from every known spot."""
+    need = required_spot_clearance_m(item.type)
+    return all(
+        math.hypot(item.x - sx, item.y - sy) >= need for sx, sy in KNOWN_PARKING_SPOTS
+    )
+
+
+#: The minimum a spawned set may shrink to and still read as a re-spotted deck
+#: rather than a stray tractor. Below it the set is dropped, which is the honest
+#: outcome: an empty deck is correct, a two-item one looks like a bug.
+MIN_RECOVERY_SET_ITEMS = 3
+
+RECOVERY_DECK_VARIANTS: list[list[DeckStatic]] = [
+    kept
+    for kept in (
+        [it for it in variant if clears_known_spots(it)]
+        for variant in _AUTHORED_RECOVERY_VARIANTS
+    )
+    if len(kept) >= MIN_RECOVERY_SET_ITEMS
 ]
 
 # The forward-deck box the recovery tier must stay inside (x_min, x_max, y_min,

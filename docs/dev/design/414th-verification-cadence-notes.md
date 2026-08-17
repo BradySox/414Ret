@@ -332,3 +332,40 @@ Steps 3–5 are small and mechanical. Step 1 is deliberately first: it is a sing
 it needs no decision from anyone, and it tests the whole premise — if a standing watch list
 does not convert daily flights into closed rows within a week or two, the rest of this design
 is unlikely to be worth building either.
+
+---
+
+## Writing a WATCH item (moved off the card 2026-08-17)
+
+These rules used to sit at the top of `WATCH.md`. They are instructions for whoever *maintains*
+the card, not for the person about to fly, and 33 lines of them stood between the DM and the
+two-item list underneath. The card now opens on the list.
+
+- **The heading IS the item.** The session-start hook prints *only* the `### ` line and the
+  `**Try:**` paragraph — never the rest of the body. So the heading has to state, in plain
+  words, the thing you would see out the window or on screen. A row ID, a section number or a
+  meta-label is not a description: "The opportunistic pair — `A5` (§1) · `G29` (§21)" told the
+  reader nothing and came back marked "?" for exactly that reason (2026-08-06). Nobody looks up
+  a feature number to find out what they are supposed to be looking at. Keep the short row tag
+  at the end so a result files to the right checklist row; drop the `§N`.
+- **A `**Try:**` line is for COCKPIT work only** (DM call, 2026-08-06: *"drop the Try line from
+  anything not in the cockpit — stuff we can figure out in the UI shouldn't need it"*). It
+  earns that space only when the check needs you **in DCS**: an in-jet procedure, a laser code,
+  a thing to watch in the sim, a way to force an otherwise opportunistic event. If the item
+  resolves in the Retribution UI — frag a flight, generate a turn, open a panel, read a
+  kneeboard — it gets a plain `**Where:**` line instead, which the hook does not print.
+  Explaining ordinary app usage to the person who built the app is noise. Wrap a Try across
+  source lines freely; the hook joins it and ends it at the first blank line.
+- **Five items, hard cap.** A watch list of twenty is a watch list of zero. The cap is a
+  ceiling, not a quota — a short list that gets looked at beats five that do not.
+- **No setup.** Anything needing a test toggle, a specific campaign or a contrived condition
+  belongs on `LOCAL.md`.
+- **Seeing it once is enough**, and the result goes in the checklist row the same session with
+  the date.
+- **Cross it off the moment it closes.** `G32` was recorded VERIFIED in the checklist on
+  2026-08-16 and still occupied slot 1 the next day, so the hook kept asking the DM for a
+  result that already existed. The archive exists so crossing off costs nothing.
+- **Not every item needs a flight.** `I2` was closed on 2026-08-17 out of Tacview recordings
+  already on disk — 52 civil tracks, cruise levels and descent-rate-versus-groundspeed — after
+  sitting on the card as an in-sim question. Before adding an item, ask whether an existing
+  recording already answers it.

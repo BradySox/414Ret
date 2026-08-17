@@ -656,3 +656,74 @@ max-density cold spawn still fills every spot vs a decorations-off control, AI
 recovery taxi behaves around the street gear, variant rotates next turn, and the
 street gear now sits in the island street (the 2026-07-27 blue spot), not the
 forward corral.
+
+## The 11-vs-16 spot gap: measured (2026-08-17)
+
+The two holes the 2026-08-07 audit named are closed with data, not with a guess.
+
+**Method.** Same as the original eleven: every aircraft within 200 m of a CVN-71 at the
+frame it first appears, transformed into the ship frame (`forward = dN·cos h + dE·sin h`,
+`starboard = −dN·sin h + dE·cos h`), clustered at 8 m. Five recordings, 2026-08-16.
+
+| new entry | sightings | missions | what it is |
+|---|---|---|---|
+| (+35.6, +36.7) | 6 | 5 | six-pack row, forward pair |
+| (+23.4, +35.5) | 6 | 4 | six-pack row, forward pair |
+| (−89.8, +26.4) | 9 | 5 | starboard mid-deck, aft end of the blind band |
+| (−76.3, +26.4) | 1 | 1 | same row, forward |
+| (−74.6, −38.4) | 2 | 1 | port quarter, forward of −84.5 on the row's 12 m pitch |
+
+F-14B, F-14B(U), FA-18C and EA-18G all park to the same cluster centres, so these are
+spots rather than airframe artefacts. The known (−35.5, +34.0) row entry drew **no**
+sightings across the five missions — it stays as the extrapolation it always was.
+
+**The two thin rows are deliberately kept.** This table is a keep-out set: an extra entry
+can only reject a decoration, never place one, so a single real sighting is worth more
+than the certainty it lacks.
+
+**What it caught immediately.** The recovery tier put an `AS32-31A` **5.8 m** from
+(+35.6, +36.7), against the feature's own 9.0 m floor — the hazard the old table was blind
+to, and exactly the failure class the 2026-07-18 fly taught. Five sets were affected.
+
+**The fix is a filter, not an edit.** `RECOVERY_DECK_VARIANTS` is now
+`_AUTHORED_RECOVERY_VARIANTS` passed through `clears_known_spots`, with sets falling below
+`MIN_RECOVERY_SET_ITEMS` (3) dropped whole — 9 authored sets become 7 shipped. Nudging
+coordinates by eye is the method that has failed this feature before (see the corral
+reposition's method note); a filter means the next measured spot prunes what it invalidates
+with no authoring at all. The launch-phase street sets were already clear of all sixteen.
+
+**Still not claimed:** that these ARE the guide's spots 5/6/11/12/13. The safe-zone slides
+could not be registered to ship-frame metres (§"What was deliberately not done"), so this
+note says what was measured and nothing more. The count reaching 16 is a corroboration, not
+the evidence.
+
+## The astern cone fired with nothing in it (2026-08-16, unresolved)
+
+A faithful replay of `approachDetected` over the whole 4th-test recording **never trips**,
+at any poll from t+60 to t+390. The only objects ever inside the 4.5 nm cone were:
+
+- the boat's own four parked Hornets, 35–112 m out — inside `DECK_STAMP_M` (400 m), so
+  roster-stamped and never trip sources;
+- the rescue helo — a rotorcraft, which `coalition.getGroups(side, Group.Category.AIRPLANE)`
+  cannot return, and 155–180° off the stern in any case (ahead of the beam);
+- `0913 | CG Ticonderoga` at 3.7 km, 129° off the stern.
+
+Ruled out alongside: the emitted BRC (138.0) matches the recorded ship heading exactly, and
+every emitted plugin option was at its default (`coneHalfDeg 50`, `coneClosingKts 30`,
+`coneDistNm 4.5`, `coneAltFt 1000`, `pollS 10`, `graceS 60`).
+
+So the plugin cleared the deck for "recovery traffic astern" with no traffic astern, and the
+recording cannot say why. The plugin now logs the tripping unit's name, range, off-stern
+angle, altitude and closing rate on **every** trip poll — not only the pair that clears —
+plus the pcall error if the check itself throws. The next occurrence identifies itself in one
+line. Until then the launch-cycle floor (below) bounds what a spurious trip can do.
+
+## The launch-cycle floor held the deck for three hours (2026-08-17)
+
+The 2026-08-16 floor read the **latest** departure off the deck. `departure_delay` is the
+whole wait until a flight's scheduled start, so one late package off CVN-71 produced
+`still launching, respot held until 11388s` in a 19-minute mission — the deck never
+respotted at all. `launch_cycle_ends_at` now returns the *current* cycle: the run of
+departures from the first, broken by an idle gap longer than `LAUNCH_CYCLE_MARGIN_S`. That
+constant serves as both the post-launch margin and the cycle-ending gap; a second constant
+would only let the two drift.

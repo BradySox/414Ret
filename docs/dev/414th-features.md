@@ -1819,10 +1819,31 @@ in-game pass (the F-4E OCA case now shows a pre/post-strike tanker + a non-negat
   exist in the .miz) rather than the planner's ownership question. Absent tanker data
   (lightweight test doubles) reads as "yes" so nothing is dropped on a guess, and the side
   test compares `Player.is_blue` rather than the enum, which is always truthy — a bare
-  truthiness test would have made the gate a silent no-op. **Not fixed:** the refuel
-  waypoint's *position* is still computed without reference to the tanker's orbit (the two
-  functions never consult each other), which is why the surviving ones sit where they do.
+  truthiness test would have made the gate a silent no-op.
   Tests `tests/missiongenerator/test_refuel_waypoint_gate.py`.
+- **The refuel waypoint pointed at a place no tanker was (fixed 2026-08-17).** The
+  follow-on to the gate above, and the reason the surviving waypoints sat where they did.
+  The planner puts the refuel point at 75 % of the home-to-join leg (`RefuelZoneGeometry`)
+  and the tanker stations `tanker_threat_buffer_min_distance` outside its own target's
+  threat ring (`TheaterRefuelingFlightPlan`) — two rules with no term in common, so the
+  waypoint and the tanker were independent by construction.
+  `game/missiongenerator/refuelrendezvous.py` now resolves the waypoint against the
+  tankers in the generated .miz: nearest point on the nearest **suitable** orbit, or the
+  waypoint is dropped. Suitable excludes the other coalition, a receiver the tanker cannot
+  service (`can_refuel_from` — a probe-only jet and nothing but a boom tanker up is the
+  same as no tanker), and **recovery tankers**, which work the boat's pattern rather than
+  passing traffic. Subsumes the 2026-08-16 gate. Three details that make it safe: the
+  orbit is a 40 nm racetrack so the resolution is nearest-point-on-leg, clamped to the
+  ends (its centre is 20 nm out on its own); a package tanker already orbits the package
+  refuel point, so resolution there is a no-op and idempotent across re-generation; and a
+  tanker registered without orbit data leaves the planned point alone rather than reading
+  as "none flying". `TankerInfo` gained `orbit_start`/`orbit_end`/`recovery`, filled where
+  the flight-plan class is known. Support packages already generate first
+  (`_prioritized_packages` sorts them last, and the loop walks it reversed), so every
+  tanker is registered before any receiver's waypoints are built. Also fixes a defect the
+  2026-08-16 gate introduced: a dropped REFUEL stayed on the **kneeboard** list, so the
+  card numbered a steerpoint the jet did not have and every later row was off by one
+  against the cockpit — and the fuel ladder still credited a top-off that could not happen.
 - **The carrier respotted for recovery mid-launch (fixed 2026-08-16).** §72's recovery
   tier fired at **t+79 s** of a 2,233 s mission — **375 s before the player's own takeoff
   roll** — spawning three static Hornets into his taxi lane, one **8.66 m** off his
@@ -1836,14 +1857,64 @@ in-game pass (the F-4E OCA case now shows a pre/post-strike tanker + a non-negat
   (`launch_cycle_ends_at`, + a 10-minute margin for the cold-start roll) and the plugin
   refuses to respot before it — holding **both** the cone and the deadline, since an
   airboss window that opens mid-launch is itself the thing being guarded against. A deck
-  that launches nothing emits 0 and keeps the old behaviour exactly. **Not fixed, and
-  recorded rather than guessed at:** the trip source, and the six-pack placement hole —
-  recovery variant B-1's deck crew land **1.31–3.19 m** from a parking spot against the
-  feature's own 9.0 m rule, because `KNOWN_PARKING_SPOTS` models the row only from
-  x = +1.0 aft while it demonstrably continues forward at 11.75 m pitch (the guard test's
-  own docstring already says it "proves less than it reads"). The E-2C the DM suspected
-  is innocent: 138–152 m astern on the round-down, struck below correctly both flights.
-  Tests in `tests/missiongenerator/test_carrier_deck_decor.py`.
+  that launches nothing emits 0 and keeps the old behaviour exactly. The E-2C the DM
+  suspected is innocent: 138–152 m astern on the round-down, struck below correctly both
+  flights. Tests in `tests/missiongenerator/test_carrier_deck_decor.py`.
+- **The launch-cycle hold outlasted the mission (fixed 2026-08-17).** The mirror of the
+  bug above, introduced by its fix. `departure_delay` is the whole wait until a flight's
+  scheduled start, so one late package off CVN-71 held the respot to **t+11,388 s of a
+  19-minute mission** — the deck never respotted at all (flown 2026-08-16, 5th test:
+  `still launching, respot held until 11388s`). `launch_cycle_ends_at` now returns the
+  **current** cycle: the run of departures from the first, broken by an idle gap longer
+  than `LAUNCH_CYCLE_MARGIN_S`. One constant serves as both the post-launch margin and the
+  cycle-ending gap, since both are "this deck is done" in seconds. It also logs the flight
+  count and the resulting hold, so a long hold is visible instead of silent.
+- **The astern cone fired with nothing in it, and now says what tripped it
+  (instrumented 2026-08-17).** A faithful replay of `approachDetected` over the whole 4th-
+  test recording **never trips**, at any poll from t+60 to t+390: the only objects ever
+  inside the 4.5 nm cone were four deck Hornets inside the 400 m stamp bubble, the boat's
+  own rescue helo (a rotorcraft the `Group.Category.AIRPLANE` scan cannot see, and 155–180°
+  off the stern — ahead of the beam), and a Ticonderoga 129° off the stern at 3.7 km. The
+  emitted BRC (138.0) matches the recorded ship heading exactly and every plugin option
+  was at its default, so the geometry and the thresholds are not the explanation either.
+  The trip source is therefore **still unknown**, and the plugin now logs the tripping
+  unit's name, range, off-stern angle, altitude and closing rate on **every** trip poll —
+  not only the one that clears — plus the pcall error if the check throws. An
+  unattributable clear cost a Tacview forensics session; a named one costs a log line.
+  The §72 launch-cycle floor above bounds the damage meanwhile.
+- **The deck-spot table was blind where the decorations stand (fixed 2026-08-17).**
+  `KNOWN_PARKING_SPOTS` held 11 of the Supercarrier guide's 16, and the 2026-08-07 audit
+  named the two holes: nothing forward of x = +1.0, and a 63 m starboard band between
+  x = −35.5 and x = −98.7 holding 52 of the 67 street-gear placements. Both are now
+  **measured**, by the t=0 ship-frame method that produced the original 11, over five
+  CVN-71 recordings: the six-pack row continues forward to **(+35.6, +36.7)** and
+  **(+23.4, +35.5)** (6 sightings each, 4–5 independent missions, F-14/Hornet/EA-18G all
+  parking to the same centres), the starboard mid-deck band holds **(−89.8, +26.4)** (9
+  sightings, 5 missions) and **(−76.3, +26.4)**, and the port quarter continues forward to
+  **(−74.6, −38.4)** on the row's own 12 m pitch. 11 → 16 entries. The new data
+  immediately caught a live hazard the old table could not see: the recovery tier put a
+  tow tractor **5.8 m** from a real spawn point. Rather than nudge coordinates by eye —
+  the method that has failed this feature before — `RECOVERY_DECK_VARIANTS` is now the
+  authored data filtered through `clears_known_spots`, dropping sets that fall below
+  `MIN_RECOVERY_SET_ITEMS` (9 authored sets → 7 shipped), so a future measured spot prunes
+  whatever it invalidates with no further authoring. The launch-phase street sets were
+  already clear of all 16.
+- **A CSAR flight the AI cannot fly took the whole turn down (fixed 2026-08-17).**
+  `PlanningError: CSAR is only usable by helicopters` came out of
+  `packagefulfiller.plan_mission` → `pass_turn` → the UI: the campaign could not be
+  advanced at all (flown 2026-08-16, 5th test). The C-130J declares `CSAR` so the King can
+  be **flown by a player** as the on-scene commander it always was, and
+  `tests/test_csar_king_priority.py` already pinned it to the lowest CSAR number in the
+  fleet — but priority only orders the candidates. `best_squadrons_for` returns whatever it
+  finds, so when the King's squadron is the only CSAR squadron in range it wins by default
+  however low its number is, and `CsarFlightPlan` then refuses to build (the DCS AI `Land`
+  task is helicopter-only). Two fixes, at different levels. `FlightType.requires_helicopter`
+  makes it a capability fact, checked in `Squadron.can_auto_assign_mission` — auto-planning
+  only, so a player may still frag a King by hand, which is the point of the yaml override.
+  And `plan_mission` now catches `PlanningError` around `recreate_flight_plan`, releases the
+  planned aircraft and scrubs that one mission: an unbuildable flight plan is one lost
+  package, not a lost campaign. This is checklist row **B50** failing in the worst
+  available way.
 - **Hold points placed across the map (fixed 2026-08-16).** A SEAD Sweep held **205.7 nm**
   from its own runway to attack a target **23.6 nm** away — 596 nm of routing, still
   outbound when the mission ended (flown, session `c86c58dd`; group 442 of the 4th-test

@@ -33,20 +33,30 @@ if TYPE_CHECKING:
 
 #: Margin (s) after the last flight leaves a deck before that deck may respot
 #: for recovery. Covers the difference between the planned departure delay and
-#: the actual takeoff roll, which is minutes for a cold start.
+#: the actual takeoff roll, which is minutes for a cold start. Doubles as the
+#: idle gap that ends a launch cycle -- both are "this deck is done" in seconds,
+#: and inventing a second constant would only let the two drift.
 LAUNCH_CYCLE_MARGIN_S = 600
 
 
 def launch_cycle_ends_at(mission_data: "MissionData", carrier_unit_name: str) -> int:
-    """Seconds after mission start when this deck is done launching.
+    """Seconds after mission start when this deck's CURRENT launch cycle ends.
 
     A deck cannot respot for recovery while it is still a launch deck, and the
-    plan already knows when the last jet leaves it. Flown 2026-08-16: the
-    recovery set spawned at t+79 s of a 2,233 s mission -- 375 s before the
-    player's own takeoff roll -- putting three static Hornets in his taxi lane,
-    one of them 8.66 m off his track. The astern cone had tripped on something
-    that could not be identified from the recording, so this bounds what a
-    spurious trip can do rather than relying on finding every trip source.
+    plan already knows when each jet leaves it. Flown 2026-08-16: the recovery
+    set spawned at t+79 s of a 2,233 s mission -- 375 s before the player's own
+    takeoff roll -- putting three static Hornets in his taxi lane, one of them
+    8.66 m off his track. The astern cone had tripped on something that could not
+    be identified from the recording, so this bounds what a spurious trip can do
+    rather than relying on finding every trip source.
+
+    The cycle is the run of departures from the first, broken by an idle gap
+    longer than ``LAUNCH_CYCLE_MARGIN_S``. It is NOT the last departure in the
+    ATO: ``departure_delay`` is the whole wait until a flight's scheduled start,
+    which for a late package is hours. Flown 2026-08-16 (5th test): a single such
+    flight held CVN-71 to t+11,388 s of a 19-minute mission, so the deck never
+    respotted at all -- the previous "latest departure" reading traded one
+    failure for its mirror image.
 
     Matched on ``RunwayData.airfield_name``, which for a carrier is the control
     point's name and equals the flagship unit's name -- the same string
@@ -54,24 +64,38 @@ def launch_cycle_ends_at(mission_data: "MissionData", carrier_unit_name: str) ->
     this deck, leaving the existing deadline and cone in sole charge (the
     pre-2026-08-16 behaviour).
     """
-    latest = 0
-    launching = 0
+    delays: list[int] = []
     for flight in getattr(mission_data, "flights", None) or []:
         departure = getattr(flight, "departure", None)
         if getattr(departure, "airfield_name", None) != carrier_unit_name:
             continue
-        launching += 1
         delay = getattr(flight, "departure_delay", None)
-        seconds = int(delay.total_seconds()) if delay is not None else 0
-        latest = max(latest, seconds)
-    if not launching:
+        delays.append(int(delay.total_seconds()) if delay is not None else 0)
+    if not delays:
         logging.info(
             "DECKDECOR: nothing launches from %s; the recovery respot is left to "
             "the cone and the fallback deadline.",
             carrier_unit_name,
         )
         return 0
-    return latest + LAUNCH_CYCLE_MARGIN_S
+
+    delays.sort()
+    cycle_end = delays[0]
+    in_cycle = 1
+    for delay in delays[1:]:
+        if delay - cycle_end > LAUNCH_CYCLE_MARGIN_S:
+            break
+        cycle_end = delay
+        in_cycle += 1
+    logging.info(
+        "DECKDECOR: %s launches %d flight(s), %d in the current cycle; respot held "
+        "until t+%ds.",
+        carrier_unit_name,
+        len(delays),
+        in_cycle,
+        cycle_end + LAUNCH_CYCLE_MARGIN_S,
+    )
+    return cycle_end + LAUNCH_CYCLE_MARGIN_S
 
 
 def populate_deck_decor_lua(

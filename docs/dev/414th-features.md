@@ -1779,6 +1779,33 @@ in-game pass (the F-4E OCA case now shows a pre/post-strike tanker + a non-negat
   `tests/test_aircraft_task_generation.py` walks every claimed pair (2,176) through the
   real `configure_task` and pins the Tu-160 degrade; its `TASK_MAPPING` mirrors
   `apply_to`'s dispatch — update both together.
+- **Datalink era gating — the EPLRS boolean became a policy (2026-08-16).** DCS reuses
+  the EPLRS name for the generic group *datalink-enable* task: Link 16 on a Hornet or
+  Viper, SADL on an A-10C. Without it the terminal never comes up and the SA page reads
+  empty — not as an error, which is what made it expensive to find. **pydcs already adds
+  the task** (`dcs/mission.py:736`); `configure_behavior` clears WP0's task list, and
+  `configure_eplrs` is the only thing that restores it. So the switch does not *add*
+  datalink, it restores what the generator just deleted — which is why hand-built ME
+  missions have it and generated ones did not. Flown 2026-08-16: **1 of 23** blue plane
+  groups carried the task against **16 of 18** in a hand-built modern mission on the same
+  install, with `eplrs_enabled = False` inherited from the saved-settings `Default.zip`.
+  One boolean cannot serve a fork shipping 1981→2027: on gives Desert Storm Hornets Link
+  16 a decade early, off costs the modern campaigns their datalink. Replaced by
+  `DatalinkPolicy` (`ERA_CORRECT` default / `ALWAYS` / `NEVER`) reading a per-airframe
+  `datalink_introduced:` in the unit files — the same shape as §24's `date_gated_properties`.
+  pydcs's own `eplrs` flag cannot answer the era question: it means only "DCS lets you tick
+  the box" and is true for 87 airframes including the B-47, the Tu-16 and the OV-10A. 14
+  airframes authored (the ones the fork's era-split campaigns field); **absent reads as
+  permissive**, so an un-authored airframe behaves exactly as before and the data set
+  extends one row at a time. Ground units are unaffected by `ERA_CORRECT` — their own
+  introduction dates already decide whether they exist. Saves migrate to the explicit
+  choice (`True→ALWAYS`, `False→NEVER`), never silently to `ERA_CORRECT`, mirroring §64's
+  six-pack boolean. **Ruled out on the way:** the DTC cartridge (DCS's own
+  `FA-18C_hornet_DTC.lua` has no datalink field at all, and a missing top-level block is
+  legal — the reference cartridge itself omits `GPS_WYPT` and `HARM` and flies fine), the
+  Link-16 STNs, and the OVGME mods. Note the working reference's AWACS carry **no STN** and
+  its Hornets **zero donors** — the one datalink-named field separating the two files was
+  EPLRS. Design note `414th-datalink-era-notes.md`; tests `tests/test_datalink_era.py`.
 - **Refuel waypoints on flights with no tanker to meet (fixed 2026-08-16).** The planner
   emits a REFUEL waypoint whenever the coalition owns a tanker-capable squadron
   *anywhere in theater* — deliberately, since gating it on fuel need is exactly what the

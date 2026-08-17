@@ -80,3 +80,7 @@ has_built_in_ecm: true
 
 # Air-to-air refueling method (receiver).
 air_refuel_type: probe
+
+# Era gate for the DCS EPLRS (datalink) task. Sourcing and the permissive-when-absent
+# rule: docs/dev/design/414th-datalink-era-notes.md
+datalink_introduced: 2002

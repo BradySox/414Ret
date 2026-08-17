@@ -16,3 +16,7 @@ variants:
   E-2D Advanced Hawkeye: {}
 tasks:
   AEW&C: 20
+
+# Era gate for the DCS EPLRS (datalink) task. Sourcing and the permissive-when-absent
+# rule: docs/dev/design/414th-datalink-era-notes.md
+datalink_introduced: 1994

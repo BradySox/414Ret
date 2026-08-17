@@ -11,6 +11,7 @@ from .settings import (
     AutoAtoBehavior,
     CAMPAIGN_DOCTRINE_PAGE,
     CarrierDeckPolicy,
+    DatalinkPolicy,
     DIFFICULTY_REALISM_PAGE,
     IadsEngine,
     NightMissions,

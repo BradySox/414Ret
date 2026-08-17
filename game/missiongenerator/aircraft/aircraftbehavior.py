@@ -40,6 +40,7 @@ from dcs.task import (
 from dcs.unitgroup import FlyingGroup, ShipGroup
 
 from game.ato import Flight, FlightType, Package
+from game.datalinkera import datalink_available
 from game.ato.flightplans.aewc import AewcFlightPlan
 from game.ato.flightplans.formationattack import FormationAttackLayout
 from game.ato.flightplans.packagerefueling import PackageRefuelingFlightPlan
@@ -202,8 +203,13 @@ class AircraftBehavior:
 
     @staticmethod
     def configure_eplrs(group: FlyingGroup[Any], flight: Flight) -> None:
-        eplrs_enabled = flight.coalition.game.settings.eplrs_enabled
-        if eplrs_enabled and flight.unit_type.eplrs_capable:
+        if not flight.unit_type.eplrs_capable:
+            return
+        if datalink_available(
+            flight.coalition.game.settings.datalink_policy,
+            flight.unit_type.datalink_introduced,
+            flight.coalition.game.date.year,
+        ):
             group.points[0].tasks.append(EPLRS(group.id))
 
     def configure_cap(self, group: FlyingGroup[Any], flight: Flight) -> None:

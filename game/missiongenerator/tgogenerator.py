@@ -68,6 +68,7 @@ from game.data.units import MOBILE_AIR_DEFENSE_UNIT_CLASSES
 from game.missiongenerator.carrierdeckdecor import generate_carrier_deck_decorations
 from game.missiongenerator.missiondata import CarrierInfo, DeckDecorInfo, MissionData
 from game.point_with_heading import PointWithHeading
+from game.settings import DatalinkPolicy
 from game.radio.RadioFrequencyContainer import RadioFrequencyContainer
 from game.radio.radios import RadioFrequency, RadioRegistry
 from game.radio.tacan import (
@@ -647,8 +648,13 @@ class GroundObjectGenerator:
         self._register_theater_unit(unit, static_group.units[0])
 
     def enable_eplrs(self, group: VehicleGroup, unit_type: Type[VehicleType]) -> None:
-        eplrs_enabled = self.game.settings.eplrs_enabled
-        if eplrs_enabled and unit_type.eplrs:
+        # Ground units carry no `datalink_introduced` -- whether a vehicle exists
+        # at all in a given year is already settled by its own introduction date
+        # in the unit files, so ERA_CORRECT has nothing further to decide here
+        # and behaves as ALWAYS. Only the explicit NEVER turns them off.
+        if self.game.settings.datalink_policy is DatalinkPolicy.NEVER:
+            return
+        if unit_type.eplrs:
             group.points[0].tasks.append(EPLRS(group.id))
 
     def enable_ewr(self, group: VehicleGroup) -> None:

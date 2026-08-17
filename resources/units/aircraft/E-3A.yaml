@@ -8,3 +8,7 @@ variants:
   E-3A: null
 tasks:
   AEW&C: 30
+
+# Era gate for the DCS EPLRS (datalink) task. Sourcing and the permissive-when-absent
+# rule: docs/dev/design/414th-datalink-era-notes.md
+datalink_introduced: 1988

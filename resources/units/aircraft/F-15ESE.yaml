@@ -53,3 +53,7 @@ laser_codes:
 
 # Air-to-air refueling method (receiver).
 air_refuel_type: boom
+
+# Era gate for the DCS EPLRS (datalink) task. Sourcing and the permissive-when-absent
+# rule: docs/dev/design/414th-datalink-era-notes.md
+datalink_introduced: 2004

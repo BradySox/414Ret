@@ -37,3 +37,7 @@ air_refuel_type: boom
 # radius exceeds the Eagle's. 450 keeps it in step with the rest of the fleet's
 # (deliberately conservative) values: F-15C 400, F-16C 350.
 max_range: 450
+
+# Era gate for the DCS EPLRS (datalink) task. Sourcing and the permissive-when-absent
+# rule: docs/dev/design/414th-datalink-era-notes.md
+datalink_introduced: 2005

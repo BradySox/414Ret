@@ -89,8 +89,20 @@ class WaypointGenerator:
         mission_start_time = self.set_takeoff_time(waypoints[0])
 
         filtered_points: list[FlightWaypoint] = []
+        no_tanker_flying = not self._friendly_tanker_is_flying()
         for point in self.flight.points:
             if point.only_for_player and not self.flight.client_count:
+                continue
+            if point.waypoint_type is FlightWaypointType.REFUEL and no_tanker_flying:
+                # The plan asks for a refuel waypoint whenever the coalition owns
+                # a tanker-capable squadron ANYWHERE in theater -- deliberately,
+                # since gating it on fuel need is what the reverted §46 did. But
+                # when no tanker is actually flying this mission there is nothing
+                # to rendezvous with, and the waypoint is a detour to an empty
+                # piece of sky. Flown 2026-08-16: 10 of 40 flights carried one,
+                # including a 14 nm carrier escort with its refuel point 3.7 nm
+                # from the boat. Dropping it here (generation, not planning)
+                # leaves the plan and §46's decision untouched.
                 continue
             if isinstance(self.flight.state, InFlight):
                 if self.flight.flight_type in [
@@ -305,6 +317,28 @@ class WaypointGenerator:
                 anchor.properties = PointProperties()
                 points.insert(i + n, anchor)
             i += segments
+
+    def _friendly_tanker_is_flying(self) -> bool:
+        """Whether a tanker on this flight's side is actually in the mission.
+
+        ``mission_data.tankers`` is the generated truth -- the tankers that exist
+        in the .miz -- rather than the planner's "does this coalition own a
+        tanker squadron", which is what puts a refuel waypoint on a 14 nm
+        carrier escort. Absent tanker data (lightweight test doubles) reads as
+        "yes" so nothing is dropped on a guess.
+        """
+        tankers = getattr(self.mission_data, "tankers", None)
+        if tankers is None:
+            return True
+        # `blue` is a Player enum, so it is ALWAYS truthy -- compare `.is_blue`,
+        # never the object. A bare truthiness test here would match every tanker
+        # and quietly turn this gate into a no-op.
+        ours = self.flight.blue.is_blue
+        for tanker in tankers:
+            side = getattr(tanker, "blue", None)
+            if side is None or bool(getattr(side, "is_blue", side)) == ours:
+                return True
+        return False
 
     def builder_for_waypoint(self, waypoint: FlightWaypoint) -> PydcsWaypointBuilder:
         builders = {

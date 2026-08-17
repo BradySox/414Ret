@@ -1779,6 +1779,23 @@ in-game pass (the F-4E OCA case now shows a pre/post-strike tanker + a non-negat
   `tests/test_aircraft_task_generation.py` walks every claimed pair (2,176) through the
   real `configure_task` and pins the Tu-160 degrade; its `TASK_MAPPING` mirrors
   `apply_to`'s dispatch — update both together.
+- **Refuel waypoints on flights with no tanker to meet (fixed 2026-08-16).** The planner
+  emits a REFUEL waypoint whenever the coalition owns a tanker-capable squadron
+  *anywhere in theater* — deliberately, since gating it on fuel need is exactly what the
+  reverted §46 did, so that gate is left alone. But when no tanker is actually flying the
+  mission, the waypoint is a detour to an empty piece of sky. Flown 2026-08-16: **10 of
+  40** flights carried one, including a `LHA-1 Tarawa Escort` with a **14 nm** total route
+  and its refuel point 3.7 nm from the boat, and a `CVN-75 Escort` at 19 nm with one at
+  7.5 nm. `WaypointGenerator` now drops the waypoint at **generation** when
+  `mission_data.tankers` holds no tanker on that flight's side — so the plan, and §46's
+  decision, are untouched. `mission_data.tankers` is the generated truth (the tankers that
+  exist in the .miz) rather than the planner's ownership question. Absent tanker data
+  (lightweight test doubles) reads as "yes" so nothing is dropped on a guess, and the side
+  test compares `Player.is_blue` rather than the enum, which is always truthy — a bare
+  truthiness test would have made the gate a silent no-op. **Not fixed:** the refuel
+  waypoint's *position* is still computed without reference to the tanker's orbit (the two
+  functions never consult each other), which is why the surviving ones sit where they do.
+  Tests `tests/missiongenerator/test_refuel_waypoint_gate.py`.
 - **The carrier respotted for recovery mid-launch (fixed 2026-08-16).** §72's recovery
   tier fired at **t+79 s** of a 2,233 s mission — **375 s before the player's own takeoff
   roll** — spawning three static Hornets into his taxi lane, one **8.66 m** off his

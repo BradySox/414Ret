@@ -100,6 +100,28 @@ class AiRadioBehavior(Enum):
 
 
 @unique
+class DatalinkPolicy(Enum):
+    """Who gets the DCS ``EPLRS`` task -- the group's datalink-enable switch.
+
+    DCS reused the EPLRS name generically: the task is what makes a group take
+    part in datalink at all, whether that is Link 16 on a Hornet, SADL on an
+    A-10C, or a ground unit's own net. Without it the jet's terminal never comes
+    up, which reads in the cockpit as an empty SA page.
+
+    The old boolean could not be right for a fork that ships both 1988 and 2027
+    campaigns: on gave Desert Storm Hornets Link 16 a decade early, off cost the
+    modern campaigns their datalink entirely (flown 2026-08-16 -- 1 of 23 blue
+    plane groups carried the task, against 16 of 18 in a hand-built modern
+    mission). ERA_CORRECT reads each airframe's ``datalink_introduced`` year, the
+    same way the payload-editor properties are gated (§24).
+    """
+
+    ERA_CORRECT = "Era-correct (recommended)"
+    ALWAYS = "Always on"
+    NEVER = "Never"
+
+
+@unique
 class CarrierDeckPolicy(Enum):
     """How the carrier six-pack (the first-filled deck spots) is used.
 
@@ -141,6 +163,7 @@ SERIALIZABLE_ENUM_TYPES = (
     TargetIntelPrecision,
     AiRadioBehavior,
     CarrierDeckPolicy,
+    DatalinkPolicy,
     DefaultPlayerLaserCode,
     IadsEngine,
     CombatStance,
@@ -514,7 +537,7 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                 [
                     "generate_portable_tacans",
                     "generate_marks",
-                    "eplrs_enabled",
+                    "datalink_policy",
                     "default_player_laser_code",
                     "switch_baro_fix",
                     "ai_radio_behavior",
@@ -2566,11 +2589,21 @@ class Settings:
             "target coordinates from strike/SEAD kneeboards."
         ),
     )
-    eplrs_enabled: bool = boolean_option(
-        "Enable EPLRS",
-        MISSION_GENERATOR_PAGE,
-        GAMEPLAY_SECTION,
-        default=True,
+    datalink_policy: DatalinkPolicy = choices_option(
+        "Datalink (EPLRS task)",
+        page=MISSION_GENERATOR_PAGE,
+        section=GAMEPLAY_SECTION,
+        choices={policy.value: policy for policy in DatalinkPolicy},
+        default=DatalinkPolicy.ERA_CORRECT,
+        detail=(
+            "DCS calls the group datalink switch EPLRS whatever the aircraft "
+            "actually carries -- Link 16 on a Hornet or Viper, SADL on an A-10C. "
+            "Without it the jet's terminal never comes up and the SA page stays "
+            "empty. Era-correct gives it only to airframes whose datalink existed "
+            "by the campaign date; Always on is the old behaviour and is "
+            "anachronistic in a Cold War or Gulf War campaign; Never disables "
+            "datalink for everyone."
+        ),
     )
     generate_dark_kneeboard: bool = boolean_option(
         "Generate dark kneeboard",
@@ -3854,6 +3887,19 @@ class Settings:
                 or migrated.get("ground_start_ground_power_trucks_roadbase", True)
             )
 
+        # The EPLRS boolean became the DatalinkPolicy enum. The save's explicit
+        # choice is preserved rather than silently promoted to ERA_CORRECT: a
+        # campaign that deliberately turned datalink off must stay off, and one
+        # that had it on must not lose it mid-campaign because an airframe's
+        # `datalink_introduced` postdates the campaign. ERA_CORRECT is the
+        # default for NEW games only. The old key is dropped in the sweep below.
+        if "datalink_policy" not in migrated and "eplrs_enabled" in migrated:
+            migrated["datalink_policy"] = (
+                DatalinkPolicy.ALWAYS
+                if migrated["eplrs_enabled"]
+                else DatalinkPolicy.NEVER
+            )
+
         # The carrier six-pack boolean became the CarrierDeckPolicy enum (§64).
         # ON exempted player flights from the off-six-pack placement delay (so
         # they filled the six-pack); OFF already behaved like the last-resort
@@ -3945,6 +3991,9 @@ class Settings:
             # Consolidated into the CarrierDeckPolicy enum (value already
             # migrated above).
             "player_flights_sixpack",
+            # Replaced by the DatalinkPolicy choice so a 1988 campaign and a 2027
+            # one can both be right (value already migrated above).
+            "eplrs_enabled",
             # Replaced by the CloudPresetPack choice, so several community cloud
             # mods are selectable (value already migrated above).
             "use_bandit_clouds",

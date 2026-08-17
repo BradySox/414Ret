@@ -39,3 +39,7 @@ tasks:
   CAS: 510
   Escort: 100
   OCA/Aircraft: 510
+
+# Era gate for the DCS EPLRS (datalink) task. Sourcing and the permissive-when-absent
+# rule: docs/dev/design/414th-datalink-era-notes.md
+datalink_introduced: 2003

@@ -78,3 +78,7 @@ air_refuel_type: probe
 date_gated_properties:
   HelmetMountedDevice:
     JHMCS: 2003
+
+# Era gate for the DCS EPLRS (datalink) task. Sourcing and the permissive-when-absent
+# rule: docs/dev/design/414th-datalink-era-notes.md
+datalink_introduced: 2002

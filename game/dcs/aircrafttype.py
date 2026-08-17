@@ -312,6 +312,15 @@ class AircraftType(UnitType[Type[FlyingType]]):
     #: that declare no block.
     property_date_gate: PropertyDateGate = PropertyDateGate()
 
+    #: Year this airframe's tactical datalink entered service, from the data file's
+    #: ``datalink_introduced``. ``None`` (the default, and the case for most
+    #: airframes) means "no date known", which the era gate treats permissively --
+    #: exactly the pre-2026-08-16 behaviour. pydcs's own ``eplrs`` flag says only
+    #: that DCS lets you tick the box, and it is true for the B-47 and the OV-10A,
+    #: so it cannot answer the era question on its own. See
+    #: docs/dev/design/414th-datalink-era-notes.md.
+    datalink_introduced: Optional[int] = None
+
     _by_name: ClassVar[dict[str, AircraftType]] = {}
     _by_unit_type: ClassVar[dict[type[FlyingType], list[AircraftType]]] = defaultdict(
         list
@@ -819,7 +828,27 @@ class AircraftType(UnitType[Type[FlyingType]]):
             property_date_gate=PropertyDateGate.from_data(
                 data.get("date_gated_properties")
             ),
+            datalink_introduced=cls._parse_datalink_introduced(data),
         )
+
+    @staticmethod
+    def _parse_datalink_introduced(data: dict[str, Any]) -> Optional[int]:
+        """The ``datalink_introduced`` year, or None when the file omits it.
+
+        A malformed value is dropped with a warning rather than raising: a typo
+        in one unit file must not take the whole game down, and None simply
+        means the era gate does not restrict this airframe.
+        """
+        raw = data.get("datalink_introduced")
+        if raw is None:
+            return None
+        try:
+            return int(raw)
+        except (TypeError, ValueError):
+            logging.warning(
+                "Ignoring non-integer datalink_introduced %r in aircraft data", raw
+            )
+            return None
 
     @classmethod
     def get_task_priorities(

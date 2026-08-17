@@ -30,6 +30,18 @@ class Base:
             total += unit_type.price * count
         return total
 
+    @property
+    def front_line_weight(self) -> float:
+        """Organisation x materiel: what this base can actually put on the line.
+
+        `strength` alone is a 0-1 morale scalar, so two bases at full strength
+        weigh the same whether one holds five vehicles or five hundred. Price is
+        the planner's own capability rating for a ground unit, making price x
+        count the ground analogue of the air-to-air weighting in
+        `game/sim/combat/capability.py`.
+        """
+        return self.strength * self.total_armor_value
+
     def total_units_of_type(self, unit_type: GroundUnitType) -> int:
         return sum([c for t, c in self.armor.items() if t == unit_type])
 

@@ -1800,6 +1800,7 @@ in-game pass (the F-4E OCA case now shows a pre/post-strike tanker + a non-negat
   own docstring already says it "proves less than it reads"). The E-2C the DM suspected
   is innocent: 138–152 m astern on the round-down, struck below correctly both flights.
   Tests in `tests/missiongenerator/test_carrier_deck_decor.py`.
+- **Hold points placed across the map (fixed 2026-08-16).** A SEAD Sweep held **205.7 nm**
   from its own runway to attack a target **23.6 nm** away — 596 nm of routing, still
   outbound when the mission ended (flown, session `c86c58dd`; group 442 of the 4th-test
   miz). Two independent faults, both in upstream-identical planner files.

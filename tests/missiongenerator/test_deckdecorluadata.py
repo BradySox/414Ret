@@ -62,6 +62,9 @@ def test_emits_one_record_per_boat() -> None:
         "group": "CSG 1",
         "unit": "CVN-71 Theodore Roosevelt",
         "side": "2",
+        # Nothing launches from this fake's deck, so the launch-cycle hold is
+        # inert and the cone plus the fallback deadline stay in sole charge.
+        "earliestClearS": "0",
         "brc": "87.3",
         "clearNames": ["CSG 1 deck decor 17 object"],
     }

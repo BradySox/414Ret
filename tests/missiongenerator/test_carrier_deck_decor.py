@@ -407,3 +407,58 @@ def test_recovery_tier_is_never_written_into_the_mission() -> None:
             assert offsets is None or (
                 abs(offsets[0] - spec.x) > 0.01 or abs(offsets[1] - spec.y) > 0.01
             ), f"recovery placement {spec} leaked into the mission"
+
+
+# ------------------------------------------ launch-cycle gate (flown 2026-08-16)
+
+
+def test_the_respot_waits_for_the_last_launch_off_that_deck() -> None:
+    """Flown: the recovery set spawned at t+79 s of a 2233 s mission -- 375 s
+    before the player's own takeoff roll -- putting three static Hornets in his
+    taxi lane, one 8.66 m off his track. The plan already knows when the deck
+    stops launching."""
+    from datetime import timedelta
+    from types import SimpleNamespace
+
+    from game.missiongenerator.deckdecorluadata import (
+        LAUNCH_CYCLE_MARGIN_S,
+        launch_cycle_ends_at,
+    )
+
+    def flight(airfield: str, delay_s: int) -> object:
+        return SimpleNamespace(
+            departure=SimpleNamespace(airfield_name=airfield),
+            departure_delay=timedelta(seconds=delay_s),
+        )
+
+    mission_data = SimpleNamespace(
+        flights=[
+            flight("CVN-75 Harry S. Truman", 120),
+            flight("CVN-75 Harry S. Truman", 455),  # the player's launch
+            flight("Kutaisi", 3000),  # another base entirely
+        ]
+    )
+
+    ends = launch_cycle_ends_at(mission_data, "CVN-75 Harry S. Truman")  # type: ignore[arg-type]
+
+    assert ends == 455 + LAUNCH_CYCLE_MARGIN_S
+    assert ends > 79, "the flown spurious clear must now be held"
+
+
+def test_a_deck_that_launches_nothing_keeps_the_old_behaviour() -> None:
+    """No launches means no launch cycle to protect: the cone and the fallback
+    deadline stay in sole charge, exactly as before."""
+    from types import SimpleNamespace
+
+    from game.missiongenerator.deckdecorluadata import launch_cycle_ends_at
+
+    mission_data = SimpleNamespace(
+        flights=[
+            SimpleNamespace(
+                departure=SimpleNamespace(airfield_name="Kutaisi"),
+                departure_delay=None,
+            )
+        ]
+    )
+
+    assert launch_cycle_ends_at(mission_data, "CVN-75 Harry S. Truman") == 0  # type: ignore[arg-type]

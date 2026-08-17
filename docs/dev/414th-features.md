@@ -1796,6 +1796,27 @@ in-game pass (the F-4E OCA case now shows a pre/post-strike tanker + a non-negat
   waypoint's *position* is still computed without reference to the tanker's orbit (the two
   functions never consult each other), which is why the surviving ones sit where they do.
   Tests `tests/missiongenerator/test_refuel_waypoint_gate.py`.
+- **The carrier respotted for recovery mid-launch (fixed 2026-08-16).** §72's recovery
+  tier fired at **t+79 s** of a 2,233 s mission — **375 s before the player's own takeoff
+  roll** — spawning three static Hornets into his taxi lane, one **8.66 m** off his
+  track (flown, session `c86c58dd`, CVN-75). The astern cone had tripped on something
+  **not identifiable from the recording**: at both qualifying polls the only blue
+  fixed-wing inside the cone radius were the boat's own four parked Hornets, all inside
+  `DECK_STAMP_M`, and the one aircraft in the whole 37-minute recording that satisfies
+  every gate appears 170 s *later* for a 2.9 s window. Rather than guess at the trip
+  source, the fix bounds what a spurious trip can do: the emitter now computes
+  `earliestClearS` per boat from the last departure off that deck
+  (`launch_cycle_ends_at`, + a 10-minute margin for the cold-start roll) and the plugin
+  refuses to respot before it — holding **both** the cone and the deadline, since an
+  airboss window that opens mid-launch is itself the thing being guarded against. A deck
+  that launches nothing emits 0 and keeps the old behaviour exactly. **Not fixed, and
+  recorded rather than guessed at:** the trip source, and the six-pack placement hole —
+  recovery variant B-1's deck crew land **1.31–3.19 m** from a parking spot against the
+  feature's own 9.0 m rule, because `KNOWN_PARKING_SPOTS` models the row only from
+  x = +1.0 aft while it demonstrably continues forward at 11.75 m pitch (the guard test's
+  own docstring already says it "proves less than it reads"). The E-2C the DM suspected
+  is innocent: 138–152 m astern on the round-down, struck below correctly both flights.
+  Tests in `tests/missiongenerator/test_carrier_deck_decor.py`.
 - **Hold points placed across the map (fixed 2026-08-16).** A SEAD Sweep held **205.7 nm**
   from its own runway to attack a target **23.6 nm** away — 596 nm of routing, still
   outbound when the mission ended (flown, session `c86c58dd`; group 442 of the 4th-test

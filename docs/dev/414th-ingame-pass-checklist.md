@@ -42,9 +42,10 @@ stress it · `✗` fail signature reproduced in-game.
 | B31 | Escort jamming (Growler / Prowler + growler plugin) | §77 | ◐ |
 | B32 | Sea-supply convoys + coastal anti-ship engagement | §78 | ☐ |
 | B33 | Decoy suspected-activity zones | §79 | ☐ |
-| B35 | Air-defense class rows are filters of the "Air defences" master | §19 | ☐ |
+| B35 | Air-defense class rows are filters of the "Air defences" master | §19 | ☑ |
 | B39 | Cross-turn naval magazines | §81 | ✗ |
 | B63 | A destroyed strike target is recorded in the campaign | §8 | ✗ |
+| B64 | The datalink era gate: the SA page populates when it should | datalink | ☑ |
 | B50 | The auto-planner never picks the King for a rescue | CSAR | ☐ |
 | B51 | The rescue package is not planned into threat it cannot survive | CSAR | ☐ |
 | C9 | Carrier-recovery stagger (same-boat package landings spaced) | §8 | ◐ |
@@ -60,7 +61,7 @@ stress it · `✗` fail signature reproduced in-game.
 | G37 | Multiplayer: a non-lead client can run the rescue | CSAR | ☐ |
 | G38 | `csar_rescue_ai_pilots` ON spawns a survivor for every AI ejection | CSAR | ☐ |
 | H14 | The kneeboard SAR line is accurate, and the rescue crew gets a usable card | CSAR | ☐ |
-| I2 | Civilian background air traffic (region fleets + airways) |  | ◐ |
+| I2 | Civilian background air traffic (region fleets + airways) |  | ☑ |
 | H10 | Shared-airframe kneeboard index | §27 | ☐ |
 | H11 | Estimated fuel figures for dataless airframes | §4 | ✗ |
 | K2 | Campaign SITREP band on its own kneeboard page | §29 | ☐ |
@@ -692,7 +693,9 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
 - **Pass:** the group renders without clipping the campaign list (§28's screen-fit work applies); each filter narrows the list and each sort reorders it; combining filters ANDs them and none resets another; the Vietnam card's era filter survives touching the other controls; and the campaign that starts is always the highlighted one.
 - **Fail signature:** the wizard starts the wrong campaign (the `selectedCampaign` field removal mis-wired — this silently falls back to `campaigns[0]`); changing the "show incompatible" checkbox resetting the version/map/era criteria (something bypassed `on_filter_changed`); the Vietnam card listing non-Vietnam campaigns after touching a dropdown (the era criterion isn't surviving `set_filters`); an empty list selecting nothing and the page erroring (upstream guards the first-row selection on `rowCount() > 0` — a regression here would throw).
 
-### B35 — Air-defense class rows are filters of the "Air defences" master · §19 · ☐ UNTESTED
+### B35 — Air-defense class rows are filters of the "Air defences" master · §19 · ☑ VERIFIED
+
+**2026-08-17 — VERIFIED on the DM's call ("B35 good").** WATCH item 2, pulled from the parking lot the same day and closed on the first look. The panel render, the class-row greying and the stored-state migration are the parts CI cannot reach, and they behave.
 
 **History:** built 2026-07-29 off a flown report that read as a §3 fog bug — "with reveal fog of war on, SAM sites are showing nothing at the actual location, and the only way you can see it on the map is by hovering on the circle". Root cause was NOT fog: the campaign save carried `airDefenses: false` with all four class rows false, and those five were the only layers drawing an air-defense marker, so 54 AD sites and 25 §3 concealed circles went undrawn while *Enemy SAM threat range* — a separate layer over the same TGO slice — kept drawing the rings. Recon fog + the reveal overview were both verified CORRECT headlessly on the reported save. The filter semantics are unit-tested in `client/src/components/tgoslayer/TgosLayer.test.tsx` (5 cases: all-classes, narrowed, task-less exclusion, category enforcement, exclude flag) and the client passed tsc + the full jest suite locally — but the panel render, the greying, and the stored-state migration are app-only. **Needs the CI client rebuild.**
 - **What CI cannot exercise:** that the four class rows visibly grey out and refuse clicks while "Air defences" is unchecked; that a stored layer blob which ticked a class row with the master off comes back with the master ON (`normalizeAirDefenseFilters`) rather than an empty map; and that no site ever draws two stacked markers.
@@ -754,6 +757,20 @@ Needs a flight to confirm the fix end to end. The cheap version deliberately rep
   1. **Target still standing** — the fresh read did not happen or was rejected; check whether the log instead says the fresh read had *fewer* events (the shrink guard fired, meaning `state.json` was mid-write or already replaced).
   2. **No warning line at all and the target IS recorded** — fine, that is the ordinary case where the watcher never stopped early.
   3. **Results double-counted** (a kill charged twice) — the fresh read and the polled snapshot both committed; stop and re-read `_process_turn`.
+
+### B64 — The datalink era gate: the SA page populates when it should · datalink · ☑ VERIFIED
+
+**2026-08-17 — VERIFIED on the DM's call ("B64 is good"), opened and closed the same day.** This also closes the manual step the feature shipped owing: the policy is now set to Era-correct in the save and in the settings baseline, so new campaigns no longer inherit the migrated `Never`. The terminal comes up.
+
+**History:** opened 2026-08-17 alongside the feature (#858). Built from a flown finding: a generated Caucasus mission carried the DCS `EPLRS` task on **1 of 23** blue plane groups against **16 of 18** in a hand-built modern mission on the same install, because the old single boolean sat off in the saved-settings baseline. The rule (`game/datalinkera.py`), the 14 authored `datalink_introduced:` dates and the `True→ALWAYS / False→NEVER` migration are unit-tested in `tests/test_datalink_era.py`. Whether the terminal actually comes up in the cockpit is DCS-only. Design note `414th-datalink-era-notes.md`.
+
+- **What it is:** DCS reuses the EPLRS name generically — the task on a group is what makes that group take part in datalink at all (Link 16 on a Hornet or Viper, SADL on an A-10C). pydcs gives every capable airframe the task at group creation and Retribution's `configure_behavior` clears it; `configure_eplrs` is the only thing that puts it back. So the policy decides whether we **restore** a capability the sim already granted, and `NEVER` actively strips it.
+- **⚠ Setup, and it is the whole point:** the old boolean migrates to **Never**, so an existing save and the settings baseline both read as off. Set **Settings → Mission Generator → Gameplay → Datalink → Era-correct** in the current save **and** again with no campaign loaded, or every new campaign inherits the off state and this row reads as failing when the feature is fine.
+- **Pass:** on a 2000s-or-later campaign the SA page shows friendly PPLI and surveillance tracks — your flight, the AWACS, the tanker. On a 1991-or-earlier campaign it is empty, and that is the feature working, not a fault.
+- **Fail signatures:**
+  1. **Empty SA page on a modern campaign** — check the policy actually saved before suspecting the gate; an unmigrated `Never` is indistinguishable from the bug this replaced. Then grep `dcs.log` for the group's `EPLRS` task.
+  2. **A Desert Storm Hornet with a live SA page** — the date table is not being consulted, or the policy is on `Always`.
+  3. **An airframe you expected to be gated behaving as though it has no date** — absent reads as permissive by design; check whether that airframe is one of the 14 authored ones before treating it as a bug.
 
 ### B40 — The Wing Grows: scheduled squadron arrivals · ⊘ RETIRED
 
@@ -2561,7 +2578,27 @@ Needs a flight to confirm the fix end to end. The cheap version deliberately rep
   missing from the saved mission (canonical-instance discipline broken — a duplicate `Country`
   instance was passed at spawn vs. registered on the coalition).
 
-### I2 — Civilian background air traffic (region fleets + airways) · ◐ PARTIAL
+### I2 — Civilian background air traffic (region fleets + airways) · ☑ VERIFIED
+
+**2026-08-17 — CLOSED FROM TACVIEW, no flight required.** The DM asked whether the re-look could
+be settled from a recording instead of the cockpit. It can, across all six recordings on disk —
+**52 fixed-wing civil tracks**:
+- **They reach their assigned level.** Peak altitude is FL200, FL259 or FL308 — exactly the three
+  authored cruise levels, nothing between them and nothing lower. 31 of 52 spend ≥40 % of the
+  track at or above FL180; several are level for 100 % of it.
+- **The climb case works**, so the missing waypoint-between-takeoff-and-landing fix took: tracks
+  starting at FL0–1 reach FL200–259.
+- **Nothing falls.** 40 of 52 have a descent moment steeper than 6,000 fpm, which reads alarming
+  until you check the speed at that moment: every one is **295–406 kt ground speed**, a powered
+  arrival. The actual 2026-08-08 defect — a spawn below stall — is under 100 kt and decaying.
+  Every track survives to the end of its recording and there are **no civil wrecks** in any of
+  the six.
+- **Thread, not a defect:** `ARKTIKA 134` (An-30M) shows 78 kt ground speed in one 10-second
+  window while level at FL200, against 222–303 kt for every other An-26/An-30 sample. One window
+  proves nothing; if a slow civil contact ever appears on the F10 map, start here.
+- **Density is still a taste call and still does not need a flight.** The count is **16 civil
+  aircraft per mission** (12 fixed-wing + 4 rotary) on Caucasus. The 2026-08-05 rebuild left this
+  open deliberately; the number is now available to judge it without flying.
 
 **History:** re-look owed on the 2026-08-08 speed fix — see the bullet at the end of this row; was ☑ VERIFIED 2026-08-06, WATCH item 2, DM verdict "looks good" — the first eyes on the rebuild: traffic reads region-plausible and civil, no fail signature. Note the rebuild's own honest caveat still stands — the third complaint, "too little / it disappears", was deliberately NOT separately fixed, so if density still feels thin that is a *separate* judgement to make on this build, not a regression of this row) (was ☐ UNTESTED, **REBUILT 2026-08-05** `units-runway-generation-bf755e`. Opened as "I think RAT is the real answer" and closed the other way: RAT was never cut on taste — `civiliantraffic.py`'s header records that it CRASHED the sim (`woCharacterHuman` / GermanyCW-FARP, from RAT resolving an unresolvable heliport id, which is why the rotary layer had to be disabled outright; respawn churn was a second crash path) — and it fixes neither real issue. Pressed on the symptom the DM named those as **civil identity** and **airways vs milk runs**; RAT addresses neither, and its one differentiator (ATC / living airfield) was explicitly not among the complaints. **(1) Civil identity is now a data table** (`game/missiongenerator/civilianfleet.py`): fleet, operator names and cruise levels per region. The old roster was applied GLOBALLY, so Antonovs and Hips flew over Nevada and the Marianas — the Soviet set was never wrong, it was wrong *everywhere else*. **Found in passing and worse: the WWII maps had modern civil traffic on them** — Normandy and The Channel now field nothing at all, which is the honest answer for a 1944 combat theatre. Groups are named `AEROFLOT 412`, not `CIV_An-26B_3`, since that name is what the F10 map shows. **(2) Airways, not milk runs**: a fixed-wing route is one long transit at a real flight level (FL200–FL310), not five short rear-area legs; the meander existed only to keep aircraft airborne without a respawn loop. Helicopters deliberately stay on short local hops — a helo does not fly an airway. The endpoint pool widened (neutral fields preferred, any field as fallback) because for an overflight the endpoints are only direction anchors. **PASS:** fly any mission and confirm the traffic (a) is region-plausible — no Antonovs over Nevada, nothing at all over Normandy — (b) reads as civil on the F10 map by operator name, and (c) crosses the map high and straight rather than pottering at low level between rear fields. **FAIL signatures:** an empty sky on a mapped theatre (check the `Civilian traffic: N flights (N airway, N rotary) from an N-field pool` log line); traffic at the old flat ~16,000 ft; a civil flight inside the front keep-out; or any civil aircraft appearing over a WWII map. **The third complaint — "too little / it disappears" — was NOT separately fixed and that is deliberate**: low traffic pottering between rear fields is invisible to a player at altitude, so the felt sparsity is expected to be substantially a visibility problem that high straight transits fix on their own. Judge density on this build before adding a concurrency scheduler. Tests `tests/test_civilian_traffic.py` (22), incl. a guard that every `REGIONS` key is a real `Terrain.name` — the campaign yamls carry DISPLAY names ("Persian Gulf", "Sinai", "The Channel") while the table is keyed on `Terrain.name` ("PersianGulf", "SinaiMap", "TheChannel"), and a typo'd key fails SILENTLY into the Soviet fallback. All 13 shipped theatres verified to resolve MAPPED) (was ✗ REGRESSED / ☑ VERIFIED 2026-06-26
 

@@ -1,10 +1,10 @@
-"""The in-app fuel-plan readout (414th feature §46, UI surfacing).
+"""The in-app fuel-plan readout, for the Edit-flight Payload tab.
 
-The fuel-first planner (:mod:`game.fourteenth.range_fuel`) fits tanks and decides
-tanker passes at plan time, and the kneeboard fuel ladder shows the result -- but
-only at mission generation. This module computes the same numbers on demand for
-the planning UI, so the Edit-flight Payload tab can show *why* the jet carries
-the bags it does and whether the sortie gets home.
+Nothing here decides anything. §46's fuel-first planner -- which fitted tanks and
+tasked tankers from route fuel -- was REVERTED 2026-08-09; tanker tasking is
+upstream's again and nothing fits tanks. Its external-fuel accounting helpers
+survive, and this module uses them to *report* the sortie's fuel picture: what
+the jet carries, what the plan burns, and whether it gets home.
 
 One fuel model everywhere: the walk uses the flight plan's own
 ``fuel_consumption_between_points`` (real per-leg climb/combat/cruise rates, the
@@ -46,6 +46,10 @@ class FuelBrief:
     refuel_passes: int
     #: Fuel over (or short of) the reserve at landing, tanker top-offs applied.
     margin_lbs: float
+    #: The same figure with NO tanker top-off -- what the jet gets home on if it
+    #: never plugs in. This is the honest headline: a refuel waypoint means a
+    #: tanker is planned, not that the gas was taken.
+    dry_margin_lbs: float
     #: True when the numbers come from the synthesised fuel model rather than
     #: hand-measured data (the same fallback the kneeboard ladder uses).
     estimated: bool
@@ -56,7 +60,12 @@ class FuelBrief:
 
     @property
     def is_short(self) -> bool:
-        return self.margin_lbs < 0
+        return self.dry_margin_lbs < 0 and self.margin_lbs < 0
+
+    @property
+    def needs_the_tanker(self) -> bool:
+        """True when the sortie only closes because of a planned top-off."""
+        return self.dry_margin_lbs < 0 <= self.margin_lbs
 
 
 def _loadout_for_brief(flight: Flight) -> Optional[Loadout]:
@@ -107,6 +116,10 @@ def fuel_brief_for(
 
     full = internal + external
     remaining = full - consumption.taxi
+    # The same walk with no top-offs applied. Tracked alongside rather than
+    # derived afterwards, because the burn up to each REFUEL waypoint is exactly
+    # what a top-off hides.
+    dry = remaining
     burn = consumption.taxi
     passes = 0
     previous = None
@@ -117,6 +130,7 @@ def fuel_brief_for(
             )
             if leg is not None:
                 remaining -= leg
+                dry -= leg
                 burn += leg
         if waypoint.waypoint_type is FlightWaypointType.REFUEL:
             passes += 1
@@ -133,6 +147,7 @@ def fuel_brief_for(
         reserve_lbs=consumption.min_safe,
         refuel_passes=passes,
         margin_lbs=remaining - consumption.min_safe,
+        dry_margin_lbs=dry - consumption.min_safe,
         estimated=measured is None,
     )
 
@@ -147,20 +162,26 @@ def fuel_brief_text(brief: Optional[FuelBrief]) -> str:
         if brief.tank_count
         else ""
     )
-    if brief.refuel_passes:
-        passes = (
-            f"{brief.refuel_passes} tanker pass"
-            f"{'es' if brief.refuel_passes != 1 else ''}"
-        )
-    else:
-        passes = "no tanker"
-    sign = "+" if brief.margin_lbs >= 0 else "-"
+    # Lead with the unrefuelled margin. A refuel waypoint means a tanker is
+    # planned, never that the gas was taken, so the with-tanker figure is only
+    # worth printing when the sortie actually depends on it.
+    sign = "+" if brief.dry_margin_lbs >= 0 else "-"
     estimated = " (estimated)" if brief.estimated else ""
     text = (
         f"Fuel plan{estimated}: burns ~{brief.burn_lbs:,.0f} lb · carries "
         f"{brief.carried_lbs:,.0f} lb ({brief.internal_lbs:,.0f} internal{bags}) · "
-        f"{passes} · RTB margin {sign}{abs(brief.margin_lbs):,.0f} lb"
+        f"RTB margin {sign}{abs(brief.dry_margin_lbs):,.0f} lb unrefuelled"
     )
-    if brief.is_short:
+    if brief.refuel_passes:
+        text += (
+            f" · {brief.refuel_passes} tanker pass"
+            f"{'es' if brief.refuel_passes != 1 else ''} planned"
+        )
+    if brief.needs_the_tanker:
+        text += (
+            f" — this sortie does NOT get home without the tanker "
+            f"(+{brief.margin_lbs:,.0f} lb with it)."
+        )
+    elif brief.is_short:
         text += " — short of getting home as planned; tank, divert, or lighten."
     return text

@@ -10,6 +10,7 @@ from .capbuilder import CapBuilder
 from .patrolling import PatrollingFlightPlan, PatrollingLayout
 from .tacticaloverlay import TacticalOverlay, TacticalOverlayDisplay, cap_overlay
 from .waypointbuilder import WaypointBuilder
+from game.ato.tankeravailability import serviceable_tanker_planned
 
 if TYPE_CHECKING:
     from ..flightwaypoint import FlightWaypoint
@@ -109,7 +110,11 @@ class Builder(CapBuilder[TarCapFlightPlan, TarCapLayout]):
         refuel = None
         nav_from_origin = orbit1p
 
-        if self.package.waypoints is not None:
+        # TARCAP's refuel is doctrinal -- top off coming off station, not a
+        # fuel-driven decision -- but it still needs a tanker to exist.
+        if self.package.waypoints is not None and serviceable_tanker_planned(
+            self.flight
+        ):
             refuel = builder.refuel(
                 self.flight.refuel_waypoint_position(self.package.waypoints.refuel)
             )

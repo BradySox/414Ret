@@ -1821,6 +1821,37 @@ in-game pass (the F-4E OCA case now shows a pre/post-strike tanker + a non-negat
   test compares `Player.is_blue` rather than the enum, which is always truthy — a bare
   truthiness test would have made the gate a silent no-op.
   Tests `tests/missiongenerator/test_refuel_waypoint_gate.py`.
+- **The refuel waypoint was planned whether or not a tanker was flying, and the fuel readout
+  believed it (fixed 2026-08-17).** Reported off the Payload tab: a Hornet burning 8,111 lb of
+  the 15,225 it carried read *"1 tanker pass · RTB margin +11,680 lb"*. Two separate faults
+  behind one line, and **neither was a tanker being tasked** — `PlanRefueling` walks theater
+  refueling stations under `TheaterSupport` and never looks at a strike flight's fuel, so no
+  flight causes a tanker to exist.
+  1. **The waypoint's gate asked the wrong question.** `_build_refuel` required only
+     `air_wing.can_auto_plan(FlightType.REFUELING)` — *does this coalition own a tanker
+     squadron*, a question about the air wing rather than about this turn. `game/ato/
+     tankeravailability.py::serviceable_tanker_planned` now additionally requires a tanker in
+     the ATO this flight can actually use, which is the same question the generated mission
+     already asks (`refuelrendezvous.py`). Safe at plan time because `TheaterSupport` is the
+     **first** method `PlanNextAction` yields, so tankers are in the ATO before any offensive
+     package is planned; and it reads `flight_type`/`unit_type` only, never another flight's
+     `flight_plan`, which would risk recursion. `FlightType.RECOVERY` is its own flight type,
+     so recovery tankers are excluded by construction rather than by a check. Applied to
+     TARCAP too, whose refuel is doctrinal (top off coming off station) but still needs a
+     tanker to exist.
+  2. **The readout credited a top-off as fact.** The walk restores to a full load at each
+     REFUEL waypoint, so the reported margin included fuel the sortie only gets if it actually
+     plugs in: 15,225 − 8,111 − 2,000 `min_safe` = **+5,114 lb** unrefuelled against the
+     **+11,680** shown, a 6,566 lb overstatement. `FuelBrief` now carries `dry_margin_lbs`
+     alongside, the text **leads with the unrefuelled figure**, and the with-tanker number is
+     printed only when the sortie genuinely depends on it ("does NOT get home without the
+     tanker"). The module docstring also still described §46 fitting tanks and tasking tankers
+     — reverted 2026-08-09 — and now says what it actually does.
+  **Deliberately NOT done: gating the waypoint on fuel need.** That is what §46 decided, and
+  re-opening it would re-open the planner divergence the 2026-08-09 re-convergence closed. A
+  flight that carries plenty and crosses a real tanker still gets a waypoint; what it no longer
+  gets is a phantom one, or a margin that counts gas it never takes. Tests
+  `tests/ato/test_tanker_availability.py`, `tests/fourteenth/test_fuel_brief.py`.
 - **The refuel waypoint pointed at a place no tanker was (fixed 2026-08-17).** The
   follow-on to the gate above, and the reason the surviving waypoints sat where they did.
   The planner puts the refuel point at 75 % of the home-to-join leg (`RefuelZoneGeometry`)

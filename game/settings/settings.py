@@ -427,6 +427,7 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                     "assault_costs_the_attacker",
                     "scale_aware_front_line",
                     "terrain_weighted_front_line",
+                    "front_line_salients",
                 ],
             ),
             (
@@ -2331,6 +2332,20 @@ class Settings:
             "so fronts stall at passes and river crossings and run in the open. "
             "With this off the front slides at the same rate everywhere, "
             "regardless of what it is crossing."
+        ),
+    )
+    front_line_salients: bool = boolean_option(
+        "Front lines bulge instead of running straight",
+        CAMPAIGN_MANAGEMENT_PAGE,
+        "Campaign features",
+        default=True,
+        detail=(
+            "The front is a bowed line rather than a straight one. Sectors "
+            "facing open ground sit further forward than sectors backed against "
+            "terrain vehicles cannot cross, so the line shows salients where "
+            "the going is good. Ground forces are placed along the bulge and "
+            "the F10 map draws it. The two ends still anchor between their "
+            "control points, and the front as a whole does not move."
         ),
     )
     automate_front_line_stance: bool = boolean_option(

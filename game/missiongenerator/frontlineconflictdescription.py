@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 from functools import cached_property
 from typing import Optional, Tuple
@@ -13,11 +14,27 @@ from game.theater.conflicttheater import ConflictTheater, FrontLine
 from game.theater.controlpoint import ControlPoint
 from game.utils import Heading, dcs_to_shapely_point
 
+#: Rung E: how far a sector may bulge ahead of or behind the front's own line,
+#: in metres. Big enough to read as a salient on the F10 map, small enough that
+#: the two ends still anchor on the control points they run between.
+MAX_SALIENT_DEPTH = 4000.0
+
+#: How far ahead of each sector to look for room to advance into.
+_SALIENT_PROBE = 8000.0
+
+#: Lateral samples across the front. Odd, so one lands on the centre.
+_SALIENT_SAMPLES = 7
+
 
 @dataclass(frozen=True)
 class FrontLineBounds:
     left_position: Point
     right_position: Point
+    #: Rung E: how far each lateral sample sits ahead of (positive) or behind
+    #: (negative) the straight chord, left to right. Empty means a straight
+    #: front. Both ends are always 0.0, so `left_position`/`right_position` and
+    #: every consumer reading only those are unaffected.
+    sector_depths: tuple[float, ...] = ()
 
     @cached_property
     def length(self) -> int:
@@ -33,6 +50,54 @@ class FrontLineBounds:
             int(self.left_position.heading_between_point(self.right_position))
         )
 
+    @cached_property
+    def advance_heading(self) -> Heading:
+        """Blue's forward direction, perpendicular to the front."""
+        return self.heading_from_left_to_right.right
+
+    def depth_at(self, offset: float) -> float:
+        """Bulge at `offset` metres from the left end, interpolated."""
+        if len(self.sector_depths) < 2 or self.length <= 0:
+            return 0.0
+        fraction = min(max(offset / self.length, 0.0), 1.0)
+        scaled = fraction * (len(self.sector_depths) - 1)
+        index = int(scaled)
+        if index >= len(self.sector_depths) - 1:
+            return self.sector_depths[-1]
+        low = self.sector_depths[index]
+        high = self.sector_depths[index + 1]
+        return low + (high - low) * (scaled - index)
+
+    def point_at(self, offset: float) -> Point:
+        """The front's actual trace at `offset` metres from the left end.
+
+        With no sector depths this is the straight chord, which is what every
+        consumer got before rung E.
+        """
+        on_chord = self.left_position.point_from_heading(
+            self.heading_from_left_to_right.degrees, offset
+        )
+        depth = self.depth_at(offset)
+        if not depth:
+            return on_chord
+        return on_chord.point_from_heading(self.advance_heading.degrees, depth)
+
+    @cached_property
+    def polyline(self) -> tuple[Point, ...]:
+        """The front as a bowed line, left to right."""
+        if len(self.sector_depths) < 2:
+            return (self.left_position, self.right_position)
+        steps = len(self.sector_depths) - 1
+        points = [
+            self.point_at(self.length * index / steps) for index in range(steps + 1)
+        ]
+        # Pin the ends exactly. `point_at` walks the chord with trig, which
+        # drifts a fraction of a micron, and consumers compare these against
+        # `left_position` / `right_position`.
+        points[0] = self.left_position
+        points[-1] = self.right_position
+        return tuple(points)
+
 
 class FrontLineConflictDescription:
     def __init__(
@@ -42,12 +107,16 @@ class FrontLineConflictDescription:
         position: Point,
         heading: Optional[Heading] = None,
         size: Optional[int] = None,
+        bounds: Optional[FrontLineBounds] = None,
     ):
         self.front_line = front_line
         self.theater = theater
         self.position = position
         self.heading = heading
         self.size = size
+        #: Present for ground conflicts only. Carries the rung E sector depths so
+        #: the FLOT can be placed along the bowed front instead of the chord.
+        self.bounds = bounds
 
     @property
     def blue_cp(self) -> ControlPoint:
@@ -93,7 +162,48 @@ class FrontLineConflictDescription:
             right_heading,
             theater,
         )
-        return FrontLineBounds(left_position, right_position)
+        bounds = FrontLineBounds(left_position, right_position)
+        if not settings.front_line_salients:
+            return bounds
+        return FrontLineBounds(
+            left_position,
+            right_position,
+            cls.sector_depths(bounds, theater),
+        )
+
+    @classmethod
+    def sector_depths(
+        cls, bounds: FrontLineBounds, theater: ConflictTheater
+    ) -> tuple[float, ...]:
+        """How far each sector of the front bulges, from the room ahead of it.
+
+        Sectors facing open ground push forward; sectors facing ground the
+        vehicles cannot cross sit back. Depths are centred on their own mean so
+        the front as a whole does not move, and tapered to zero at both ends so
+        the line still anchors between its two control points.
+        """
+        if theater.landmap is None or bounds.length <= 0:
+            return ()
+        rooms = []
+        for index in range(_SALIENT_SAMPLES):
+            fraction = index / (_SALIENT_SAMPLES - 1)
+            on_chord = bounds.left_position.point_from_heading(
+                bounds.heading_from_left_to_right.degrees, bounds.length * fraction
+            )
+            ahead = cls.extend_ground_position(
+                on_chord, int(_SALIENT_PROBE), bounds.advance_heading, theater
+            )
+            rooms.append(on_chord.distance_to_point(ahead))
+        mean_room = sum(rooms) / len(rooms)
+        depths = []
+        for index, room in enumerate(rooms):
+            fraction = index / (_SALIENT_SAMPLES - 1)
+            taper = math.sin(math.pi * fraction)
+            depth = (room - mean_room) * 0.5 * taper
+            depths.append(
+                max(-MAX_SALIENT_DEPTH, min(MAX_SALIENT_DEPTH, round(depth, 3)))
+            )
+        return tuple(depths)
 
     @classmethod
     def frontline_cas_conflict(
@@ -109,6 +219,7 @@ class FrontLineConflictDescription:
             position=bounds.left_position,
             heading=bounds.heading_from_left_to_right,
             size=bounds.length,
+            bounds=bounds,
         )
         return conflict
 

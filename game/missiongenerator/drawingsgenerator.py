@@ -118,12 +118,13 @@ class DrawingsGenerator:
                 front_line, self.game.theater
             )
 
-            end_point = bounds.left_position.point_from_heading(
-                bounds.heading_from_left_to_right.degrees, bounds.length
-            )
-            shape = self.player_layer.add_line_segment(
-                bounds.left_position,
-                end_point - bounds.left_position,
+            # Rung E: draw the bowed trace, so a salient is visible on the F10
+            # map rather than hidden behind a straight line. `polyline` is the
+            # two endpoints when the front has no sector depths.
+            trace = bounds.polyline
+            shape = self.player_layer.add_line_segments(
+                trace[0],
+                [point - trace[0] for point in trace],
                 line_thickness=16,
                 color=FRONTLINE_COLORS,
                 line_style=LineStyle.Triangle,

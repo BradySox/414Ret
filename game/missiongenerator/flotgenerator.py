@@ -1191,9 +1191,15 @@ class FlotGenerator:
         # point lies on the front-line trace, so it is valid land. (The fork's
         # perpendicular-step anti-stacking below is preserved on top.)
         clamped = max(0, min(int(along_offset), self.conflict.size))
-        shifted = self.conflict.position.point_from_heading(
-            self.conflict.heading.degrees, clamped
-        )
+        if self.conflict.bounds is not None:
+            # Rung E: follow the bowed front, so a sector facing open ground sits
+            # further forward than one backed against terrain it cannot cross.
+            # With no sector depths this returns the same point as the chord.
+            shifted = self.conflict.bounds.point_at(clamped)
+        else:
+            shifted = self.conflict.position.point_from_heading(
+                self.conflict.heading.degrees, clamped
+            )
         if not theater.is_on_land(shifted):
             # Degenerate front (e.g. air-only campaign with an arbitrary route).
             # Fall back to the lateral search rather than risk an off-map spawn.

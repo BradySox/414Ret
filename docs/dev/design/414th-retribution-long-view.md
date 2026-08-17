@@ -3,16 +3,23 @@
 **Written 2026-08-17.** A plain read of how the engine actually works, and the six weak spots
 that follow from it.
 
-**Three of them are now accepted work, not just analysis:**
-
 | Seam | Short version | Status |
 |---|---|---|
-| **1 — what the mission tells the campaign** | When you land, the campaign only learns who died | **ACCEPTED — shore this up** |
-| **2 — how the game tracks what you know** | Built five separate times, five separate ways | **ACCEPTED — needs work** |
-| **4 — the front line** | One number divided by another | **ACCEPTED — needs work** |
-| 3 — the map graph | Roads route traffic but can't be cut | Analysis only |
+| **1 — what the mission tells the campaign** | When you land, the campaign only learns who died | **BUILT 2026-08-17** — features doc §91, pass row B70 |
+| **2 — how the game tracks what you know** | Built five separate times, five separate ways | **ACCEPTED — not started** |
+| 3 — the map graph | Roads route traffic but can't be cut | Analysis only — but see seam 4 rung A |
+| **4 — the front line** | One number divided by another | **BUILT 2026-08-17** — all five rungs; features doc §90, pass rows B65–B69 |
 | 5 — time between turns | A turn is a jump, not a sample | Analysis only |
 | 6 — the squadron layer | Already scoped in its own note, not built | See that note |
+
+**What the build changed about this note.** Two claims below were wrong and are corrected in
+place: `Base.strength` is a float in `[0.0, 1.0]`, not a unit count (§5), and the §26
+capability weighting in `game/sim/combat/capability.py` is **air-to-air only** — it weights
+flights, not ground units, so rung C could not reuse it and uses `total_armor_value` instead.
+
+Seam 4 rung A also turned out to be seam 3's edit at one-tenth the size, as predicted: the
+supply gate is the first thing in the codebase that makes cutting a route cost something.
+Seam 3 proper — per-link capacity and damage state — is still unbuilt.
 
 **Re-measure before quoting any number here.** Everything below was measured on 2026-08-17 and
 will drift. The `file:line` references are how you check.
@@ -229,8 +236,13 @@ it. Fronts then sit still until pushed, and give when they break — which is wh
 supposed to do. Contained to one function.
 
 **C. Make strength know about scale.** Weight it by the ground force actually present instead of
-a 0-to-1 fraction. §26's auto-resolution already works out combat power *in the same file* — the
-front line just never asks it. Reuse, not new code.
+a 0-to-1 fraction.
+
+> **Corrected during the build.** This originally claimed §26's auto-resolution already works
+> out combat power in the same file. It does not — `game/sim/combat/capability.py` weights
+> *flights* for air-to-air resolution and knows nothing about ground units. The ground
+> analogue that does exist is `Base.total_armor_value` (price × count), which is what shipped
+> as `Base.front_line_weight`.
 
 **D. Weight the route by terrain.** A per-segment multiplier. The geometry already exists — our
 supply-line standard has us drawing routes along real driveable corridors, so the segments

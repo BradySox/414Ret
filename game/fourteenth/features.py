@@ -783,6 +783,35 @@ FEATURES: tuple[Feature, ...] = (
             "living_battlespace_reactive_red",
         ),
     ),
+    Feature(
+        # Seam 4 of the long-view note, rungs A-E. Five changes to how the ground
+        # war moves: reinforcement gated on the supply route's kind, an assault
+        # cost so taking ground is dearer than holding it, front placement that
+        # counts the forces present, terrain that slows the advance, and a front
+        # that bulges instead of running straight.
+        # docs/dev/design/414th-retribution-long-view.md.
+        "front_line_ladder",
+        "Front-line model: supply, assault cost, force weight, terrain, salients",
+        90,
+        settings_fields=(
+            "supply_gated_reinforcement",
+            "assault_costs_the_attacker",
+            "scale_aware_front_line",
+            "terrain_weighted_front_line",
+            "front_line_salients",
+        ),
+    ),
+    Feature(
+        # Seam 1: one per-flight record of what the mission actually did, so the
+        # campaign learns more than which units died. The general channel the
+        # seven bespoke state.json extras should collapse into. Always on -- it
+        # is the debrief schema, not an option.
+        # docs/dev/design/414th-retribution-long-view.md.
+        "sortie_records",
+        "Per-flight sortie records",
+        91,
+        plugin_id="base",
+    ),
     # Always-on engine plugins — major 414th machinery documented in design notes
     # rather than a numbered "Features at a Glance" entry.
     Feature("mantis_iads", "MANTIS IADS engine", plugin_id="mantisiads"),

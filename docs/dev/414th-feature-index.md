@@ -101,5 +101,7 @@ pass checklist `§N` is unregistered, or this table drifts.
 | §87 | Naval station-keeping racetracks | — | — |
 | §88 | Angled-deck carrier recovery heading | — | — |
 | §89 | Living battlespace pre-roll | `battlespacenet` | `living_battlespace_preroll`, `living_battlespace_preroll_cap`, `living_battlespace_voice_net`, `living_battlespace_reactive_red` |
+| §90 | Front-line model: supply, assault cost, force weight, terrain, salients | — | `supply_gated_reinforcement`, `assault_costs_the_attacker`, `scale_aware_front_line`, `terrain_weighted_front_line`, `front_line_salients` |
+| §91 | Per-flight sortie records | `base` | — |
 | — | MANTIS IADS engine | `mantisiads` | — |
 | — | Splash Damage (414th tuned) | `splashdamage3` | — |

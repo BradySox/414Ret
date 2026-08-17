@@ -773,6 +773,13 @@ FEATURE_GATE_FIELDS: dict[str, list[str]] = {
         "living_battlespace_voice_net",  # §89 P4
         "living_battlespace_reactive_red",  # §89 P5
     ],
+    "Ground war": [
+        "supply_gated_reinforcement",  # §90 rung A
+        "assault_costs_the_attacker",  # §90 rung B
+        "scale_aware_front_line",  # §90 rung C
+        "terrain_weighted_front_line",  # §90 rung D
+        "front_line_salients",  # §90 rung E
+    ],
     "Campaign clock & era": [
         "continuous_campaign_clock",  # §47
         "restrict_props_by_date",  # §24

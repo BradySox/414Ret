@@ -333,6 +333,8 @@ linked design note.
 87. **Naval station-keeping racetracks** — anchored ovals so ships hold station under way.
 88. **Angled-deck carrier recovery heading** — the boat steams for 25 kt down the angled deck, not the bow.
 89. **Living battlespace** — phase-aware mid-cycle mission starts: earlier packages are already airborne or parked back home when you walk out, follow-on waves launch behind you, the briefing carries the day's running score, an optional voice net speaks the ATO's calls on the AWACS frequency, and real red alert fighters fly a defensive patrol over a struck objective.
+90. **Front-line model** — reinforcement follows the supply lines, attacking costs more than defending, the line's position counts the forces actually present, terrain slows the advance, and the front bulges instead of running straight.
+91. **Per-flight sortie records** — the mission reports back what each flight did: track, time airborne, fuel, shots and hits, not just which units died.
 
 ### Retired, removed or shelved — do not restore
 

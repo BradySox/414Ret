@@ -337,16 +337,61 @@ def test_recovery_tier_has_more_than_one_variant() -> None:
 def test_recovery_tier_clears_every_known_spot() -> None:
     """Every known spot, with the same margin the permanent gear keeps.
 
-    NOTE this proves less than it reads: KNOWN_PARKING_SPOTS holds 11 of the
-    Supercarrier guide's 16 spots, and the five it lacks include the bow-edge
-    spots nearest this tier. That is why the tier is default-OFF. See the
-    design note's "The 11-vs-16 spot gap".
+    Holds by construction since 2026-08-17 -- RECOVERY_DECK_VARIANTS is the
+    authored data filtered through ``clears_known_spots`` -- so this now guards
+    the filter rather than the coordinates.
     """
     for source, item in recovery_phase():
         need = required_spot_clearance_m(item.type)
         for sx, sy in KNOWN_PARKING_SPOTS:
             d = math.hypot(item.x - sx, item.y - sy)
             assert d >= need, f"{source}: {item.type} {d:.1f} m from ({sx}, {sy})"
+
+
+def test_the_measured_forward_row_is_in_the_spot_table() -> None:
+    """Measured 2026-08-17 from five CVN-71 recordings, 6 sightings each: the
+    six-pack row continues forward of x=+1.0, where the table used to stop.
+    Deleting these re-opens the hole that put a tow tractor 5.8 m from a spawn
+    point in the recovery tier."""
+    for spot in ((35.6, 36.7), (23.4, 35.5)):
+        assert spot in KNOWN_PARKING_SPOTS, f"{spot} lost from the measured set"
+
+
+def test_the_measured_mid_deck_row_is_in_the_spot_table() -> None:
+    """The other half of the same pass: the 63 m starboard band between the
+    six-pack row and the El-3 shoulder had NO entry at all, and 52 of the 67
+    street-gear placements sit inside it."""
+    for spot in ((-89.8, 26.4), (-76.3, 26.4), (-74.6, -38.4)):
+        assert spot in KNOWN_PARKING_SPOTS, f"{spot} lost from the measured set"
+
+
+def test_the_spot_filter_actually_removes_authored_placements() -> None:
+    """The filter is load-bearing, not decoration: the authored sets DO place
+    gear on measured spots, and a filter that silently passed everything would
+    read identically at the call site."""
+    from game.data.carrier_deck_decor import (
+        _AUTHORED_RECOVERY_VARIANTS,
+        clears_known_spots,
+    )
+
+    authored = sum(len(v) for v in _AUTHORED_RECOVERY_VARIANTS)
+    shipped = sum(len(v) for v in RECOVERY_DECK_VARIANTS)
+    assert shipped < authored, "nothing was filtered -- the rule is not applied"
+    assert any(
+        not clears_known_spots(item)
+        for variant in _AUTHORED_RECOVERY_VARIANTS
+        for item in variant
+    )
+
+
+def test_no_shipped_recovery_set_is_too_thin_to_read_as_a_respot() -> None:
+    """A set filtered down to one tractor looks like a bug, not a re-spotted
+    deck, so it is dropped whole instead."""
+    from game.data.carrier_deck_decor import MIN_RECOVERY_SET_ITEMS
+
+    assert RECOVERY_DECK_VARIANTS, "every recovery set was filtered away"
+    for variant in RECOVERY_DECK_VARIANTS:
+        assert len(variant) >= MIN_RECOVERY_SET_ITEMS
 
 
 def test_recovery_tier_never_touches_the_landing_area() -> None:
@@ -443,6 +488,60 @@ def test_the_respot_waits_for_the_last_launch_off_that_deck() -> None:
 
     assert ends == 455 + LAUNCH_CYCLE_MARGIN_S
     assert ends > 79, "the flown spurious clear must now be held"
+
+
+def test_a_much_later_package_is_a_different_cycle_and_does_not_hold_the_deck() -> None:
+    """Flown 2026-08-16 (5th test): one late flight off CVN-71 held the respot to
+    t+11,388 s of a 19-minute mission, so the deck never respotted at all.
+    ``departure_delay`` is the whole wait until a flight's scheduled start, which
+    for a late package is hours -- a cycle the mission never reaches."""
+    from datetime import timedelta
+    from types import SimpleNamespace
+
+    from game.missiongenerator.deckdecorluadata import (
+        LAUNCH_CYCLE_MARGIN_S,
+        launch_cycle_ends_at,
+    )
+
+    def flight(delay_s: int) -> object:
+        return SimpleNamespace(
+            departure=SimpleNamespace(airfield_name="CVN-71 Theodore Roosevelt"),
+            departure_delay=timedelta(seconds=delay_s),
+        )
+
+    mission_data = SimpleNamespace(flights=[flight(0), flight(300), flight(10788)])
+
+    ends = launch_cycle_ends_at(mission_data, "CVN-71 Theodore Roosevelt")  # type: ignore[arg-type]
+
+    assert ends == 300 + LAUNCH_CYCLE_MARGIN_S
+    assert ends < 1500, "the respot must still happen inside the airboss window"
+
+
+def test_a_cycle_is_unbroken_across_gaps_shorter_than_the_margin() -> None:
+    """A deck launching steadily is still launching: only an idle gap longer than
+    the margin ends the cycle, so a staggered go is held to its own last jet."""
+    from datetime import timedelta
+    from types import SimpleNamespace
+
+    from game.missiongenerator.deckdecorluadata import (
+        LAUNCH_CYCLE_MARGIN_S,
+        launch_cycle_ends_at,
+    )
+
+    def flight(delay_s: int) -> object:
+        return SimpleNamespace(
+            departure=SimpleNamespace(airfield_name="CVN-71 Theodore Roosevelt"),
+            departure_delay=timedelta(seconds=delay_s),
+        )
+
+    # Emitted out of order on purpose: the flights list follows package order.
+    mission_data = SimpleNamespace(
+        flights=[flight(900), flight(0), flight(1400), flight(450)]
+    )
+
+    ends = launch_cycle_ends_at(mission_data, "CVN-71 Theodore Roosevelt")  # type: ignore[arg-type]
+
+    assert ends == 1400 + LAUNCH_CYCLE_MARGIN_S
 
 
 def test_a_deck_that_launches_nothing_keeps_the_old_behaviour() -> None:

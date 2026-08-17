@@ -131,6 +131,18 @@ class FlightType(Enum):
         }
 
     @property
+    def requires_helicopter(self) -> bool:
+        """Tasks whose flight plan a fixed-wing aircraft cannot fly at all.
+
+        CSAR lands at an unprepared site and the DCS AI ``Land`` task is
+        helicopter-only, so ``CsarFlightPlan`` refuses to build for a fixed-wing
+        flight. Without this the auto-planner picks the C-130J -- which offers
+        CSAR for the player-flown King role -- and the PlanningError takes the
+        whole turn down with it (flown 2026-08-16, 5th test).
+        """
+        return self is FlightType.CSAR
+
+    @property
     def is_primary_package_task(self) -> bool:
         return self in {
             FlightType.STRIKE,

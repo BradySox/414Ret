@@ -255,14 +255,24 @@ local function clearBoat(boat, why)
 end
 
 local function approachDetected(boat, bp, bv, now)
-    -- True only for traffic that LOOKS like a recovery: low, astern, CLOSING
-    -- on the boat in the boat's own frame, and not something this deck just
-    -- launched (the outbound roster). The caller additionally debounces over
-    -- CONE_POLLS consecutive polls so a transient closing moment never clears
-    -- the deck. Keeps walking after a trip so every deck unit still gets its
-    -- roster stamp for this poll.
+    -- Returns the tripping unit's signature, or nil. Trips only for traffic
+    -- that LOOKS like a recovery: low, astern, CLOSING on the boat in the
+    -- boat's own frame, and not something this deck just launched (the
+    -- outbound roster). The caller additionally debounces over CONE_POLLS
+    -- consecutive polls so a transient closing moment never clears the deck.
+    -- Keeps walking after a trip so every deck unit still gets its roster
+    -- stamp for this poll.
+    --
+    -- The signature is returned rather than a bare boolean because the cone
+    -- fired once with nothing in it (flown 2026-08-16): a faithful replay of
+    -- this function over the whole Tacview never trips, and the only objects
+    -- ever inside CONE_DIST_M were four deck Hornets inside the stamp bubble,
+    -- the boat's own rescue helo (a rotorcraft this scan cannot see, and ahead
+    -- of the beam anyway) and a cruiser 129 degrees off the stern. An
+    -- unattributable clear costs a Tacview forensics session; a named one
+    -- costs a log line.
     local roster = boat.outboundRoster
-    local tripped = false
+    local tripped = nil
     local groups = coalition.getGroups(boat.side, Group.Category.AIRPLANE)
     for i = 1, #groups do
         local units = groups[i]:getUnits()
@@ -277,7 +287,7 @@ local function approachDetected(boat, bp, bv, now)
                     -- On or over the deck (parked, taxiing, cat stroke,
                     -- bolter): this boat's own traffic, never a trip source.
                     roster[u:getName()] = now
-                elseif not tripped and u:inAir() and dist < CONE_DIST_M then
+                elseif tripped == nil and u:inAir() and dist < CONE_DIST_M then
                     local stamped = roster[u:getName()]
                     if
                         (stamped == nil or now - stamped > OUTBOUND_SUPPRESS_S)
@@ -291,7 +301,14 @@ local function approachDetected(boat, bp, bv, now)
                                 + ((v.z or 0) - (bv.z or 0)) * dz
                             ) / dist
                             if closing > CONE_CLOSING_MS then
-                                tripped = true
+                                tripped = string.format(
+                                    "%s at %.2f NM, %.0f deg off stern, %.0f ft, closing %.0f kt",
+                                    tostring(u:getName()),
+                                    dist / 1852.0,
+                                    math.deg(math.acos(math.max(-1, math.min(1, cosang)))),
+                                    (p.y - bp.y) / 0.3048,
+                                    closing / 0.51444
+                                )
                             end
                         end
                     end
@@ -335,10 +352,18 @@ local function tick()
                     local bv = bu:getVelocity()
                     local ok, tripped =
                         pcall(approachDetected, boat, bp, bv, timer.getTime())
+                    if not ok then
+                        log(boat.unit .. ": cone check errored -- " .. tostring(tripped))
+                    end
                     if ok and tripped then
                         boat.approachPolls = (boat.approachPolls or 0) + 1
+                        -- Every trip poll, not just the one that clears: a
+                        -- single spurious trip is the early warning for the
+                        -- pair that respots the deck.
+                        log(boat.unit .. ": cone trip " .. boat.approachPolls ..
+                            "/" .. CONE_POLLS .. " -- " .. tripped)
                         if boat.approachPolls >= CONE_POLLS then
-                            clearBoat(boat, "recovery traffic astern")
+                            clearBoat(boat, "recovery traffic astern: " .. tripped)
                         end
                     else
                         boat.approachPolls = 0

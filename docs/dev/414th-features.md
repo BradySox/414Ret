@@ -1779,6 +1779,46 @@ in-game pass (the F-4E OCA case now shows a pre/post-strike tanker + a non-negat
   `tests/test_aircraft_task_generation.py` walks every claimed pair (2,176) through the
   real `configure_task` and pins the Tu-160 degrade; its `TASK_MAPPING` mirrors
   `apply_to`'s dispatch — update both together.
+- **The carrier respotted for recovery mid-launch (fixed 2026-08-16).** §72's recovery
+  tier fired at **t+79 s** of a 2,233 s mission — **375 s before the player's own takeoff
+  roll** — spawning three static Hornets into his taxi lane, one **8.66 m** off his
+  track (flown, session `c86c58dd`, CVN-75). The astern cone had tripped on something
+  **not identifiable from the recording**: at both qualifying polls the only blue
+  fixed-wing inside the cone radius were the boat's own four parked Hornets, all inside
+  `DECK_STAMP_M`, and the one aircraft in the whole 37-minute recording that satisfies
+  every gate appears 170 s *later* for a 2.9 s window. Rather than guess at the trip
+  source, the fix bounds what a spurious trip can do: the emitter now computes
+  `earliestClearS` per boat from the last departure off that deck
+  (`launch_cycle_ends_at`, + a 10-minute margin for the cold-start roll) and the plugin
+  refuses to respot before it — holding **both** the cone and the deadline, since an
+  airboss window that opens mid-launch is itself the thing being guarded against. A deck
+  that launches nothing emits 0 and keeps the old behaviour exactly. **Not fixed, and
+  recorded rather than guessed at:** the trip source, and the six-pack placement hole —
+  recovery variant B-1's deck crew land **1.31–3.19 m** from a parking spot against the
+  feature's own 9.0 m rule, because `KNOWN_PARKING_SPOTS` models the row only from
+  x = +1.0 aft while it demonstrably continues forward at 11.75 m pitch (the guard test's
+  own docstring already says it "proves less than it reads"). The E-2C the DM suspected
+  is innocent: 138–152 m astern on the round-down, struck below correctly both flights.
+  Tests in `tests/missiongenerator/test_carrier_deck_decor.py`.
+  from its own runway to attack a target **23.6 nm** away — 596 nm of routing, still
+  outbound when the mission ended (flown, session `c86c58dd`; group 442 of the 4th-test
+  miz). Two independent faults, both in upstream-identical planner files.
+  `JoinZoneGeometry.find_best_join_point()` falls back to `join = self.ip` **exactly**
+  when it finds no usable geometry, so the IP-to-join separation was just the 500 ft
+  `FormationAttackFlightPlan` perturbation (measured on that flight: 0.81 nm) — and
+  `HoldZoneGeometry` aimed its 40° wedge down that heading, i.e. down `random.randint`.
+  `find_best_hold_point()` then answers "nearest point of a zone" with **no bound**, so a
+  wedge aimed anywhere strands the hold anywhere. Fix: `wedge_heading()` takes the stable
+  `target → join` axis below a 1 nm separation — the same form `JoinZoneGeometry` already
+  uses for its own wedge, so the two agree rather than this inventing a rule — and
+  `_bounded()` keeps the hold within the doctrine hold distance (or home-to-join,
+  whichever is larger), falling back to the point the preferred branch would have picked.
+  Verified against the flown coordinates: **205.7 nm → 25.0 nm**, exactly the doctrine
+  hold distance, with non-degenerate geometry unchanged. Intermittent by nature (1 of 40
+  flights; the same squadron flew a sane 125 nm route the turn before), which is how it
+  survived. Tests `tests/flightplan/test_holdzonegeometry.py` (7) — three fail without the
+  fix. **Fork divergence:** both files are byte-identical to upstream, so this diverges the
+  planner while the carve is frozen; carve candidate the moment it lifts.
 - **Destroyed strike targets never reaching the campaign — the results commit used a stale
   snapshot (fixed 2026-08-16).** The long-standing "I bombed it and it did not register"
   complaint. `PollDebriefingFileThread` breaks out of its loop the first time it reads a

@@ -42,10 +42,10 @@ stress it · `✗` fail signature reproduced in-game.
 | B31 | Escort jamming (Growler / Prowler + growler plugin) | §77 | ◐ |
 | B32 | Sea-supply convoys + coastal anti-ship engagement | §78 | ☐ |
 | B33 | Decoy suspected-activity zones | §79 | ☐ |
-| B35 | Air-defense class rows are filters of the "Air defences" master | §19 | ☐ |
+| B35 | Air-defense class rows are filters of the "Air defences" master | §19 | ☑ |
 | B39 | Cross-turn naval magazines | §81 | ✗ |
 | B63 | A destroyed strike target is recorded in the campaign | §8 | ✗ |
-| B64 | The datalink era gate: the SA page populates when it should | datalink | ☐ |
+| B64 | The datalink era gate: the SA page populates when it should | datalink | ☑ |
 | B50 | The auto-planner never picks the King for a rescue | CSAR | ☐ |
 | B51 | The rescue package is not planned into threat it cannot survive | CSAR | ☐ |
 | C9 | Carrier-recovery stagger (same-boat package landings spaced) | §8 | ◐ |
@@ -693,7 +693,9 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
 - **Pass:** the group renders without clipping the campaign list (§28's screen-fit work applies); each filter narrows the list and each sort reorders it; combining filters ANDs them and none resets another; the Vietnam card's era filter survives touching the other controls; and the campaign that starts is always the highlighted one.
 - **Fail signature:** the wizard starts the wrong campaign (the `selectedCampaign` field removal mis-wired — this silently falls back to `campaigns[0]`); changing the "show incompatible" checkbox resetting the version/map/era criteria (something bypassed `on_filter_changed`); the Vietnam card listing non-Vietnam campaigns after touching a dropdown (the era criterion isn't surviving `set_filters`); an empty list selecting nothing and the page erroring (upstream guards the first-row selection on `rowCount() > 0` — a regression here would throw).
 
-### B35 — Air-defense class rows are filters of the "Air defences" master · §19 · ☐ UNTESTED
+### B35 — Air-defense class rows are filters of the "Air defences" master · §19 · ☑ VERIFIED
+
+**2026-08-17 — VERIFIED on the DM's call ("B35 good").** WATCH item 2, pulled from the parking lot the same day and closed on the first look. The panel render, the class-row greying and the stored-state migration are the parts CI cannot reach, and they behave.
 
 **History:** built 2026-07-29 off a flown report that read as a §3 fog bug — "with reveal fog of war on, SAM sites are showing nothing at the actual location, and the only way you can see it on the map is by hovering on the circle". Root cause was NOT fog: the campaign save carried `airDefenses: false` with all four class rows false, and those five were the only layers drawing an air-defense marker, so 54 AD sites and 25 §3 concealed circles went undrawn while *Enemy SAM threat range* — a separate layer over the same TGO slice — kept drawing the rings. Recon fog + the reveal overview were both verified CORRECT headlessly on the reported save. The filter semantics are unit-tested in `client/src/components/tgoslayer/TgosLayer.test.tsx` (5 cases: all-classes, narrowed, task-less exclusion, category enforcement, exclude flag) and the client passed tsc + the full jest suite locally — but the panel render, the greying, and the stored-state migration are app-only. **Needs the CI client rebuild.**
 - **What CI cannot exercise:** that the four class rows visibly grey out and refuse clicks while "Air defences" is unchecked; that a stored layer blob which ticked a class row with the master off comes back with the master ON (`normalizeAirDefenseFilters`) rather than an empty map; and that no site ever draws two stacked markers.
@@ -756,7 +758,9 @@ Needs a flight to confirm the fix end to end. The cheap version deliberately rep
   2. **No warning line at all and the target IS recorded** — fine, that is the ordinary case where the watcher never stopped early.
   3. **Results double-counted** (a kill charged twice) — the fresh read and the polled snapshot both committed; stop and re-read `_process_turn`.
 
-### B64 — The datalink era gate: the SA page populates when it should · datalink · ☐ UNTESTED
+### B64 — The datalink era gate: the SA page populates when it should · datalink · ☑ VERIFIED
+
+**2026-08-17 — VERIFIED on the DM's call ("B64 is good"), opened and closed the same day.** This also closes the manual step the feature shipped owing: the policy is now set to Era-correct in the save and in the settings baseline, so new campaigns no longer inherit the migrated `Never`. The terminal comes up.
 
 **History:** opened 2026-08-17 alongside the feature (#858). Built from a flown finding: a generated Caucasus mission carried the DCS `EPLRS` task on **1 of 23** blue plane groups against **16 of 18** in a hand-built modern mission on the same install, because the old single boolean sat off in the saved-settings baseline. The rule (`game/datalinkera.py`), the 14 authored `datalink_introduced:` dates and the `True→ALWAYS / False→NEVER` migration are unit-tested in `tests/test_datalink_era.py`. Whether the terminal actually comes up in the cockpit is DCS-only. Design note `414th-datalink-era-notes.md`.
 

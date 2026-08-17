@@ -11,30 +11,40 @@ next from the parking lot.
 
 ## The list
 
-### 1 · Your SA page has other people on it — `B64`
+*(All four previous items closed 2026-08-17 — `G32`, `I2`, `B64`, `B35`. Refilled from the
+outstanding rows, choosing the ones that resolve on a glance at something you were looking at
+anyway. Swap any of them out; nothing here is precious.)*
 
-**Try:** set Settings → Mission Generator → Gameplay → **Datalink** to **Era-correct**, in the
-current save **and** again with no campaign loaded so the settings baseline takes it. Then fly a
-modern campaign and look at the SA page. **~5 min.**
+### 1 · Jets are parked on the ramp that already flew today — `B57`
 
-- **Pass:** on a 2000s-or-later campaign you see friendly PPLI and surveillance tracks — the
-  flight, the AWACS, the tanker. On a 1991-or-earlier campaign the page is empty and that is
-  correct.
-- **Fail:** the SA page is empty on a modern campaign. Check `dcs.log` for the group's `EPLRS`
-  task, and check the policy actually saved — the old `false` migrates to **Never**, so this
-  reads identical to the bug it replaced.
-- **Why it's here:** the boolean became a per-airframe era gate on 2026-08-17 (#858) and 14
-  airframes carry dates. The mechanism is tested; whether the terminal comes up is DCS-only.
-  **Your saved baseline carried the old off value**, so this is the first thing that will bite.
+**Where:** the ramp at mission start, before you go anywhere. **~1 min.**
 
-### 2 · Air-defence master off greys out its four class rows — `B35`
+- **Pass:** aircraft whose sorties finished before your start time are sitting on their home
+  ramp, and they are **clean** — pylons empty, no stores hung on a jet that already dropped.
+- **Fail:** an empty ramp when the briefing says packages already flew; or parked jets still
+  carrying a full load.
+- **Why it's here:** §89's residue tier decides what the field looks like when you walk out, and
+  a wrong answer is visible in one glance and invisible to every test.
 
-**Where:** the custom map layers panel, no flight involved. **~10 s.**
+### 2 · The boat is steaming down the angled deck, not the bow — `B55`
 
-- **Pass:** unticking the air-defences master clears every AD icon from the map **and** the four
-  class rows below it grey out, because they are filters of the master rather than peers of it.
-- **Fail:** icons stay; or the class rows stay live and can be ticked while the master is off.
-- **Why it's here:** pulled from the parking lot 2026-08-17 when slots 1 and 2 closed.
+**Where:** F10 map or the deck itself, any carrier mission. **~1 min.**
+
+- **Pass:** the carrier's course is offset ~9–10° from the wind line, so the wind comes straight
+  down the **angled** deck rather than over the bow.
+- **Fail:** the boat steams directly into wind (bow-aligned), which puts the relative wind across
+  the landing area.
+- **Why it's here:** §88 changed the recovery heading and nothing has looked at the boat since.
+
+### 3 · The kneeboard fuel ladder is not blank — `H11`
+
+**Where:** the kneeboard flight-plan page, any airframe without measured fuel data. **~30 s.**
+
+- **Pass:** every waypoint row shows a minimum-fuel and planned-fuel figure, including on
+  airframes with no hand-measured consumption block.
+- **Fail:** blank or zero fuel columns — the capacity-derived estimate is not filling in.
+- **Why it's here:** this row is marked **REGRESSED**, so it is known broken rather than unknown.
+  Confirming it either way costs one page turn.
 
 ---
 
@@ -43,6 +53,8 @@ modern campaign and look at the SA page. **~5 min.**
 | Row | Watch for | Note |
 |---|---|---|
 | — | Loadouts are **identical** again across flights of one airframe + task | Confirms the §84 rip landed in the build you actually run. Low priority: the removal is test-covered |
+| `B23` | The red C2 net is audible on the radio and can be DF'd | PARTIAL — you would hear it on an ordinary sortie |
+| `B48` | Ships hold station instead of drifting off it | PARTIAL — an F10 glance at any naval group |
 
 Closed and dropped items, with the reasoning: [`ARCHIVE.md`](ARCHIVE.md).
 Contrived-condition tests live on [`LOCAL.md`](LOCAL.md).

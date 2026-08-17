@@ -12,6 +12,8 @@ The live card stays short. This is where its history lives.
 
 | Closed | Item | Row(s) | Verdict |
 |---|---|---|---|
+| 2026-08-17 | Your SA page has other people on it | `B64` | ☑ **VERIFIED** — "B64 is good". Opened and closed the same day. Also closes the manual step #858 shipped owing: the policy is set to Era-correct in the save **and** the settings baseline, so new campaigns no longer inherit the migrated `Never`. |
+| 2026-08-17 | Air-defence master off greys out its four class rows | `B35` | ☑ **VERIFIED** — "B35 good". Pulled from the parking lot that morning, closed on the first look. The panel render, the class-row greying and the stored-state migration are the parts CI cannot reach. |
 | 2026-08-17 | Civil airliners cross the map high instead of falling out of the sky | `I2` | ☑ **VERIFIED from Tacview** — no flight needed, see below. |
 | 2026-08-16 | The JTAC over the front line actually lases | `G32` | ☑ **VERIFIED** — "G32 is good". Closes the only JTAC model in the fork, flown for the first time since the 2026-08-05 strip. Recorded in the checklist on 2026-08-16; the card slot was not cleared until 2026-08-17, which is the failure the "cross it off" rule exists to prevent. |
 | 2026-08-06 | Loadouts are mixed, not identical | `B42` (§84) | **Disliked → feature ripped.** "I've seen and disliked, revert or rework" → full rip; the objection was *turn 1 already downgraded*. §84 is removed, not re-tuned — see B42 for why there was no third setting to try. |

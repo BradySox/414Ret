@@ -506,6 +506,11 @@ class Squadron:
             return False
         if not self.can_auto_assign(task):
             return False
+        if task.requires_helicopter and not self.aircraft.helicopter:
+            # The C-130J offers CSAR for the player-flown King role; the AI
+            # cannot fly the plan at all. Auto-planning only -- the player may
+            # still frag one by hand.
+            return False
         if this_turn and not self.can_fulfill_flight(size):
             return False
 

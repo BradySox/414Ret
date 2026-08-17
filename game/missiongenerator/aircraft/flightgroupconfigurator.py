@@ -12,6 +12,7 @@ from dcs.unitgroup import FlyingGroup
 
 from game.ato import Flight, FlightType
 from game.ato.flightplans.shiprecoverytanker import RecoveryTankerFlightPlan
+from game.ato.flightwaypointtype import FlightWaypointType
 from game.callsigns import callsign_for_support_unit
 from game.data.weapons import Pylon, Weapon
 from game.fourteenth.living_battlespace import (
@@ -116,7 +117,7 @@ class FlightGroupConfigurator:
                 ).generate_logistics()
             )
 
-        mission_start_time, waypoints = WaypointGenerator(
+        waypoint_generator = WaypointGenerator(
             self.flight,
             self.group,
             self.mission,
@@ -124,7 +125,8 @@ class FlightGroupConfigurator:
             self.game.settings,
             self.mission_data,
             self.use_client,
-        ).create_waypoints()
+        )
+        mission_start_time, waypoints = waypoint_generator.create_waypoints()
 
         # Special handling for landing waypoints when:
         # 1. It's an AI-only flight
@@ -142,11 +144,22 @@ class FlightGroupConfigurator:
         divert_position: Point | None = None
         if self.flight.divert is not None:
             divert_position = self.flight.divert.position
+        # A REFUEL waypoint counts as a fuel source, so a dropped one has to leave
+        # this list too or bingo comes out optimistic against a tanker that is not
+        # there. Not the kneeboard list, which is sliced for in-flight starts.
+        bingo_waypoints = [
+            waypoint
+            for waypoint in self.flight.flight_plan.waypoints
+            if not (
+                waypoint_generator.refuel_dropped
+                and waypoint.waypoint_type is FlightWaypointType.REFUEL
+            )
+        ]
         bingo_estimator = BingoEstimator(
             self.flight.unit_type.fuel_consumption,
             self.flight.arrival.position,
             divert_position,
-            self.flight.flight_plan.waypoints,
+            bingo_waypoints,
         )
 
         # Racetrack plans carry their on-station speed to the kneeboard: the
@@ -320,6 +333,9 @@ class FlightGroupConfigurator:
                     tacan = random.choice(list(self.tacan_registry.allocated_channels))
             else:
                 tacan = self.flight.tacan
+            layout = self.flight.flight_plan.layout
+            orbit_start = getattr(layout, "patrol_start", None)
+            orbit_end = getattr(layout, "patrol_end", None)
             self.mission_data.tankers.append(
                 TankerInfo(
                     group_name=str(self.group.name),
@@ -331,6 +347,11 @@ class FlightGroupConfigurator:
                     end_time=self.flight.flight_plan.patrol_end_time,
                     blue=self.flight.departure.captured,
                     aircraft_type=self.flight.unit_type,
+                    orbit_start=orbit_start.position if orbit_start else None,
+                    orbit_end=orbit_end.position if orbit_end else None,
+                    recovery=isinstance(
+                        self.flight.flight_plan, RecoveryTankerFlightPlan
+                    ),
                 )
             )
 

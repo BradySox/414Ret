@@ -7,6 +7,7 @@ from typing import Dict, Iterable, Optional, Set, TYPE_CHECKING
 
 from game.ato.airtaaskingorder import AirTaskingOrder
 from game.ato.closestairfields import ObjectiveDistanceCache
+from game.ato.flightplans.planningerror import PlanningError
 from game.ato.flighttype import FlightType
 from game.ato.package import Package
 from game.commander.missionproposals import EscortType, ProposedFlight, ProposedMission
@@ -398,7 +399,22 @@ class PackageFulfiller:
         # contribute to this.
         for flight in builder.package.flights:
             with tracer.trace("Flight plan population"):
-                flight.recreate_flight_plan()
+                try:
+                    flight.recreate_flight_plan()
+                except PlanningError as ex:
+                    # A flight plan that cannot be built is one unplannable
+                    # mission, not a lost turn. Before this, a CSAR flight the
+                    # planner had filled with a fixed-wing airframe raised out
+                    # of here, through pass_turn, into the UI -- the campaign
+                    # could not be advanced at all (flown 2026-08-16, 5th test).
+                    logging.warning(
+                        "Scrubbing %s at %s: %s",
+                        flight.flight_type,
+                        mission.location.name,
+                        ex,
+                    )
+                    builder.release_planned_aircraft()
+                    return None
 
         needed_escorts = self.check_needed_escorts(builder)
         for escort in escorts:

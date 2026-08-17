@@ -4,9 +4,9 @@ import math
 import random
 from collections.abc import Iterator
 from datetime import datetime, timedelta
-from typing import Any
+from typing import Any, Optional
 
-from dcs import Mission
+from dcs import Mission, Point
 from dcs.action import AITaskPush, ActivateGroup
 from dcs.condition import CoalitionHasAirdrome, TimeAfter
 from dcs.planes import AJS37
@@ -22,6 +22,7 @@ from game.ato.starttype import StartType
 from game.fourteenth.range_fuel import flight_external_fuel_lbs
 from game.missiongenerator.aircraft.waypoints.cargostop import CargoStopBuilder
 from game.missiongenerator.missiondata import MissionData
+from game.missiongenerator.refuelrendezvous import refuel_rendezvous
 from game.settings import CarrierDeckPolicy, Settings
 from game.utils import KG_TO_LBS, feet, nautical_miles, pairwise
 from .airassaultingress import AirAssaultIngressBuilder
@@ -80,6 +81,10 @@ class WaypointGenerator:
         # slots. A single-player mission spawns its lone player flight at the
         # planned start time regardless of never_delay_player_flights.
         self.multiplayer = multiplayer
+        #: Set by create_waypoints when no tanker can service this flight. The
+        #: caller needs it too: a REFUEL waypoint is a fuel source to the bingo
+        #: estimator, so a dropped one must leave that list as well.
+        self.refuel_dropped = False
 
     def create_waypoints(self) -> tuple[timedelta, list[FlightWaypoint]]:
         for waypoint in self.flight.points:
@@ -88,21 +93,35 @@ class WaypointGenerator:
         waypoints = self.flight.flight_plan.waypoints
         mission_start_time = self.set_takeoff_time(waypoints[0])
 
+        # The plan asks for a refuel waypoint whenever the coalition owns a
+        # tanker-capable squadron ANYWHERE in theater -- deliberately, since
+        # gating it on fuel need is what the reverted §46 did -- and puts it at a
+        # point derived from the route alone, never from a tanker. Resolve it
+        # here (generation, not planning) so §46's decision stays untouched:
+        # onto a real orbit when one can serve this flight, gone when none can.
+        drop_refuel = False
+        for point in self.flight.points:
+            if point.waypoint_type is not FlightWaypointType.REFUEL:
+                continue
+            rendezvous = self.resolve_refuel_position(point.position)
+            if rendezvous is None:
+                drop_refuel = self.refuel_dropped = True
+            else:
+                # The layout owns this waypoint and both lists here iterate it,
+                # so the cockpit, the kneeboard and the map move together.
+                point.position = rendezvous
+        if drop_refuel:
+            # Also drop it from the kneeboard list, or the card numbers a
+            # steerpoint the jet does not have and every later row is off by one.
+            waypoints = [
+                w for w in waypoints if w.waypoint_type is not FlightWaypointType.REFUEL
+            ]
+
         filtered_points: list[FlightWaypoint] = []
-        no_tanker_flying = not self._friendly_tanker_is_flying()
         for point in self.flight.points:
             if point.only_for_player and not self.flight.client_count:
                 continue
-            if point.waypoint_type is FlightWaypointType.REFUEL and no_tanker_flying:
-                # The plan asks for a refuel waypoint whenever the coalition owns
-                # a tanker-capable squadron ANYWHERE in theater -- deliberately,
-                # since gating it on fuel need is what the reverted §46 did. But
-                # when no tanker is actually flying this mission there is nothing
-                # to rendezvous with, and the waypoint is a detour to an empty
-                # piece of sky. Flown 2026-08-16: 10 of 40 flights carried one,
-                # including a 14 nm carrier escort with its refuel point 3.7 nm
-                # from the boat. Dropping it here (generation, not planning)
-                # leaves the plan and §46's decision untouched.
+            if point.waypoint_type is FlightWaypointType.REFUEL and drop_refuel:
                 continue
             if isinstance(self.flight.state, InFlight):
                 if self.flight.flight_type in [
@@ -318,27 +337,24 @@ class WaypointGenerator:
                 points.insert(i + n, anchor)
             i += segments
 
-    def _friendly_tanker_is_flying(self) -> bool:
-        """Whether a tanker on this flight's side is actually in the mission.
+    def resolve_refuel_position(self, planned: Point) -> Optional[Point]:
+        """Where the REFUEL waypoint belongs, or None to drop it entirely.
 
         ``mission_data.tankers`` is the generated truth -- the tankers that exist
-        in the .miz -- rather than the planner's "does this coalition own a
-        tanker squadron", which is what puts a refuel waypoint on a 14 nm
-        carrier escort. Absent tanker data (lightweight test doubles) reads as
-        "yes" so nothing is dropped on a guess.
+        in the .miz, and where they orbit -- rather than the planner's "does this
+        coalition own a tanker squadron", which is what puts a refuel waypoint on
+        a 14 nm carrier escort. Absent tanker data (lightweight test doubles)
+        leaves the planned point alone so nothing moves or drops on a guess.
         """
         tankers = getattr(self.mission_data, "tankers", None)
         if tankers is None:
-            return True
-        # `blue` is a Player enum, so it is ALWAYS truthy -- compare `.is_blue`,
-        # never the object. A bare truthiness test here would match every tanker
-        # and quietly turn this gate into a no-op.
-        ours = self.flight.blue.is_blue
-        for tanker in tankers:
-            side = getattr(tanker, "blue", None)
-            if side is None or bool(getattr(side, "is_blue", side)) == ours:
-                return True
-        return False
+            return planned
+        # `blue` is a Player enum, so it is ALWAYS truthy -- pass `.is_blue`,
+        # never the object. A bare truthiness test would match every tanker and
+        # quietly turn this into a no-op.
+        return refuel_rendezvous(
+            self.flight.unit_type, self.flight.blue.is_blue, planned, tankers
+        )
 
     def builder_for_waypoint(self, waypoint: FlightWaypoint) -> PydcsWaypointBuilder:
         builders = {

@@ -1779,6 +1779,26 @@ in-game pass (the F-4E OCA case now shows a pre/post-strike tanker + a non-negat
   `tests/test_aircraft_task_generation.py` walks every claimed pair (2,176) through the
   real `configure_task` and pins the Tu-160 degrade; its `TASK_MAPPING` mirrors
   `apply_to`'s dispatch — update both together.
+- **Hold points placed across the map (fixed 2026-08-16).** A SEAD Sweep held **205.7 nm**
+  from its own runway to attack a target **23.6 nm** away — 596 nm of routing, still
+  outbound when the mission ended (flown, session `c86c58dd`; group 442 of the 4th-test
+  miz). Two independent faults, both in upstream-identical planner files.
+  `JoinZoneGeometry.find_best_join_point()` falls back to `join = self.ip` **exactly**
+  when it finds no usable geometry, so the IP-to-join separation was just the 500 ft
+  `FormationAttackFlightPlan` perturbation (measured on that flight: 0.81 nm) — and
+  `HoldZoneGeometry` aimed its 40° wedge down that heading, i.e. down `random.randint`.
+  `find_best_hold_point()` then answers "nearest point of a zone" with **no bound**, so a
+  wedge aimed anywhere strands the hold anywhere. Fix: `wedge_heading()` takes the stable
+  `target → join` axis below a 1 nm separation — the same form `JoinZoneGeometry` already
+  uses for its own wedge, so the two agree rather than this inventing a rule — and
+  `_bounded()` keeps the hold within the doctrine hold distance (or home-to-join,
+  whichever is larger), falling back to the point the preferred branch would have picked.
+  Verified against the flown coordinates: **205.7 nm → 25.0 nm**, exactly the doctrine
+  hold distance, with non-degenerate geometry unchanged. Intermittent by nature (1 of 40
+  flights; the same squadron flew a sane 125 nm route the turn before), which is how it
+  survived. Tests `tests/flightplan/test_holdzonegeometry.py` (7) — three fail without the
+  fix. **Fork divergence:** both files are byte-identical to upstream, so this diverges the
+  planner while the carve is frozen; carve candidate the moment it lifts.
 - **Destroyed strike targets never reaching the campaign — the results commit used a stale
   snapshot (fixed 2026-08-16).** The long-standing "I bombed it and it did not register"
   complaint. `PollDebriefingFileThread` breaks out of its loop the first time it reads a

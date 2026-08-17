@@ -21,6 +21,7 @@ from .waypointbuilder import StrikeTarget, WaypointBuilder
 from .. import FlightType
 from ..flightwaypoint import FlightWaypoint
 from ..flightwaypointtype import FlightWaypointType
+from ..tankeravailability import serviceable_tanker_planned
 
 if TYPE_CHECKING:
     from ..flight import Flight
@@ -244,7 +245,14 @@ class FormationAttackBuilder(IBuilder[FlightPlanT, LayoutT], ABC):
 
     def _build_refuel(self, builder: WaypointBuilder) -> Optional[FlightWaypoint]:
         refuel: Optional[FlightWaypoint] = None
-        can_plan = self.flight.coalition.air_wing.can_auto_plan(FlightType.REFUELING)
+        # Owning a tanker squadron is not the same as having a tanker up this
+        # turn, and the old test asked the first question. A waypoint with no
+        # tanker behind it is a detour, and the fuel readout credits a top-off
+        # from it that never happens. Still NOT a fuel-need test -- see
+        # game/ato/tankeravailability.py.
+        can_plan = self.flight.coalition.air_wing.can_auto_plan(
+            FlightType.REFUELING
+        ) and serviceable_tanker_planned(self.flight)
         if not self.flight.is_helo and can_plan and self.package.waypoints:
             # refuel_waypoint_position honors the §44 long-range-carrier override;
             # without one it returns the package refuel point (the stock behavior).

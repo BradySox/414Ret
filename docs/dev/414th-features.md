@@ -2321,6 +2321,20 @@ recon-plugins-default migration now flips only TARS. Do **not** restore the plug
 
 ## 14. Plugin Options UI — section descriptions + label/default pass
 
+- **String options were uneditable (fixed 2026-08-18).** The settings page picks its widget
+  from the option's declared default type and handled `bool` and `int`/`float` only, so a
+  string option rendered its label beside an empty cell. All seven the fork ships were
+  affected: the taxi-card ground frequency (`briefing`), four comma-separated weapon-pattern
+  lists (`minefields`, `navalmagazines`, `vietnamops` ×2), the FAC(A) aircraft type
+  (`vietnamops`) and the red-scramble spawn mode (`redscramble`). A new optional `choices`
+  list on the option renders a `QComboBox`; without it a string option gets a `QLineEdit`,
+  which is the right answer for a pattern list that has no enumerable values. A default
+  outside its own `choices` is rejected at load — the dropdown would otherwise open on a
+  value it cannot offer and lose it the moment the user touches the control. `redscramble`'s
+  `takeoff` is the first to declare a set (`air` / `hot` / `runway`, which is exactly what
+  `redscramble-config.lua` branches on). Checklist B80; tests
+  `game/plugins/tests/test_string_options.py`.
+
 A polish pass over the **LUA Plugins Options** page so every plugin explains itself.
 - New `descriptionInUI` field on `plugin.json` (optional, top-level). Parsed in
   `game/plugins/luaplugin.py` (`LuaPluginDefinition.description` +

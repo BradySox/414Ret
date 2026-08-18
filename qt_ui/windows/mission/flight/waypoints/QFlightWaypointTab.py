@@ -26,7 +26,7 @@ from game.ato.flightwaypointtype import FlightWaypointType
 from game.utils import Distance, feet
 from game.ato.loadouts import Loadout
 from game.ato.package import Package
-from game.theater import Player
+from game.theater import OffMapSpawn, Player
 from qt_ui.windows.mission.flight.waypoints.QFlightWaypointList import (
     QFlightWaypointList,
 )
@@ -45,15 +45,18 @@ BULK_ALTITUDE_FLOOR_FT = 1000
 #: altitude, so raising them with the rest of the route leaves the aircraft over its
 #: landing zone at cruise with nothing to unload onto.
 #:
-#: Every *other* ground point -- takeoff, landing, cargo stop, bullseye, an on-map
-#: divert field, and all three target types -- is planner-seeded at 0 ft, so
-#: bulk_editable()'s deck rule already leaves it alone. A type only needs naming here
-#: when its planned altitude is non-zero.
+#: Takeoff and landing are named for a different reason: they carry the field's own
+#: elevation AMSL, so at any airfield above sea level the deck rule below reads them as
+#: a height to fly and moves them. Divert is handled in bulk_editable() because only
+#: half of them are ground points. Cargo stop, bullseye and all three target types are
+#: still planner-seeded at 0 ft and the deck rule already leaves them alone.
 BULK_ALTITUDE_SKIP_TYPES = frozenset(
     {
         FlightWaypointType.PICKUP_ZONE,
         FlightWaypointType.DROPOFF_ZONE,
         FlightWaypointType.CSAR_PICKUP,
+        FlightWaypointType.TAKEOFF,
+        FlightWaypointType.LANDING_POINT,
     }
 )
 
@@ -74,6 +77,11 @@ def bulk_editable(waypoint: FlightWaypoint) -> bool:
     """
     if waypoint.waypoint_type in BULK_ALTITUDE_SKIP_TYPES:
         return False
+    if waypoint.waypoint_type is FlightWaypointType.DIVERT:
+        # An on-map divert is a field, planned at its own elevation; an off-map one is
+        # an exit vector planned at cruise, and moving it with the route is the point.
+        # Altitude no longer separates them -- a field above sea level is non-zero too.
+        return isinstance(waypoint.control_point, OffMapSpawn)
     return waypoint.alt.feet > 0
 
 

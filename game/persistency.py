@@ -40,6 +40,32 @@ class DummyObject:
             self.__dict__.update(state)
 
 
+# Modules deleted since a save could have pickled them. Pickle resolves a class
+# in find_class BEFORE __setstate__ runs, so an owner that already drops the
+# orphan key still cannot load without an entry here -- that pairing is exactly
+# what the §82 wing_growth removal missed.
+#
+# Deliberately an allowlist, not a blanket ModuleNotFoundError catch: a genuinely
+# missing module (bad install, a typo in a refactor) must still fail loudly
+# rather than silently degrade a save.
+REMOVED_MODULES = (
+    "game.fourteenth.phases",
+    "game.fourteenth.red_intent",
+    "game.fourteenth.zone_drawings",
+    "game.fourteenth.political_will",
+    "game.fourteenth.commitment_ceiling",
+    "game.fourteenth.static_front",
+    "game.fourteenth.war_economy",
+    "game.fourteenth.wing_growth",
+    "game.data.escort_jamming",
+    "game.pow_recovery",
+    "game.fourteenth.downed_pilots",
+    "game.ato.flightplans.combatsar",
+    "game.ato.flightplans.scar",
+    "game.theater.unitplacement",
+)
+
+
 class MigrationUnpickler(pickle.Unpickler):
     """Custom unpickler to migrate campaign save-files for when components have been moved"""
 
@@ -382,21 +408,7 @@ class MigrationUnpickler(pickle.Unpickler):
         # Coalition.__setstate__ filters the placeholders out instead.
         # Modules defining only functions can never appear in a pickle and are
         # deliberately absent -- a tombstone would document an impossible migration.
-        if module in (
-            "game.fourteenth.phases",
-            "game.fourteenth.red_intent",
-            "game.fourteenth.zone_drawings",
-            "game.fourteenth.political_will",
-            "game.fourteenth.commitment_ceiling",
-            "game.fourteenth.static_front",
-            "game.fourteenth.war_economy",
-            "game.data.escort_jamming",
-            "game.pow_recovery",
-            "game.fourteenth.downed_pilots",
-            "game.ato.flightplans.combatsar",
-            "game.ato.flightplans.scar",
-            "game.theater.unitplacement",
-        ):
+        if module in REMOVED_MODULES:
             return DummyObject
 
         return None

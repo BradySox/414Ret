@@ -8316,8 +8316,18 @@ campaigns." The whole feature is gone: `game/fourteenth/wing_growth.py`, the
 `available_from_turn:` / `arrival_note:` config fields, the `AirWing.pending_arrivals`
 list, the `Sitrep.arrivals` band, the pre-turn briefing's anticipation section, the
 feature-registry entry, both test files, and the authored schedules in Baltic Fury (5)
-and Red Tide (3). A save written while the feature existed loads clean — `__setstate__`
-drops the stale `pending_arrivals` key.
+and Red Tide (3).
+
+**Save compatibility was half-done, and broke every pre-removal save until 2026-08-17.**
+`AirWing.__setstate__` did drop the stale `pending_arrivals` key — but pickle resolves a
+class in `find_class` *before* `__setstate__` runs, so the load died at
+`ModuleNotFoundError: game.fourteenth.wing_growth` and never reached the pop. The
+tombstone in `persistency.REMOVED_MODULES` was missing. Found by trying to load a Baltic
+Fury save for an unrelated measurement; fixed, and the whole tombstone mechanism is now
+locked by `tests/test_removed_module_tombstones.py`.
+
+**Removing a module takes both halves.** The owner drops the orphan key *and* the module
+gets a `REMOVED_MODULES` entry. Either one alone leaves saves unloadable.
 
 Design note `414th-wing-growth-notes.md` is kept for the reasoning; do not author
 against it.

@@ -121,6 +121,31 @@ Work orders: **A** defaults flip + preset · **B** small ungated commander rever
 **C** §46 revert · **D** §6 geometry revert · **E** data-layer weight restore.
 Each lands as its own PR with its fork-behavior tests removed or retargeted.
 
+### 2026-08-17 — U5/U6 return, gated (fresh DM call)
+
+Work order B reverted the one-SEAD-flavour trim (U5/U6) two days after it was built.
+A live save re-opened it: a Sinai turn-1 ATO put three suppression flights around two
+Harriers attacking a vehicle group and left the EWR DEAD package with none, and the
+wing's whole EA-18G squadron was spent that way. The DM re-authorised it the same day
+the save was read.
+
+It returns **under the contract, not around it**: new suite gate
+`single_sead_escort_flavour`, stock default OFF, so an ungated game still plans
+upstream's stacking. The trim also moved from `propose_common_escorts` to
+`PackageFulfiller.sead_flavour_satisfied`, which catches `PlanDead`'s extra `SEAD`
+flight that the old proposer-side version could not. Fighter escorts are untouched --
+`PlanAntiShip` doubles them on purpose.
+
+Landing alongside it, **ungated because they are upstream bugs, not fork behavior**:
+the missing `escort_type` on `PlanCas`/`PlanAewc`/`PlanRefueling` (an untagged
+proposal is fulfilled as a primary flight, so it is never threat-gated, never
+prunable, and scrubs its package when unfillable), `ObjectiveFinder.aewc_land_anchor`
+(a 1.1 NM safer rear field cost the only E-3A a 245 NM transit -- the third AEW&C
+failure fix, joining U13/U14), and the naval BARCAP handover, which never subtracted
+`barcap_overlap_time` the way the land branch does and is a no-op at the stock value
+of 0. Heavy bombers also lose the `CAS` lane, extending the kept Armed Recon
+wrong-role fix. See in-game-pass rows B52 and B71.
+
 ## Levers, if pulling back (superseded by the decision above; kept for the record)
 
 1. "Stock planner" settings preset (the §28 preset machinery exists): flips the whole default-ON table above in one click. Can't touch the ungated items.

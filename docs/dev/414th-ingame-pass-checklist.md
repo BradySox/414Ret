@@ -113,6 +113,7 @@ stress it · `✗` fail signature reproduced in-game.
 | B68 | Terrain slows the front line | §90 rung D | ☐ |
 | B69 | The front bulges instead of running straight | §90 rung E | ☐ |
 | B70 | Sortie records reach the campaign | §91 | ☐ |
+| B71 | The ATO stops spending its escorts on the wrong packages | planner shape | ☐ |
 
 ---
 
@@ -4354,7 +4355,12 @@ and confirm the launchers now **cost money** (Scud-B 40, Iskander-M 70, CJ-10 75
 
 ### B52 — Escort-jammer distribution + the one-SEAD-flavour escort set · §77 · ☐ UNTESTED
 
-**History:** built 2026-08-07
+**History:** built 2026-08-07; the one-SEAD-flavour half **reverted 2026-08-09** by planner
+re-convergence work order B (`c5e7a4f48`, which restored upstream's `SEAD_SWEEP` proposal),
+rebuilt 2026-08-17 behind `single_sead_escort_flavour`. The jammer-distribution half was
+never reverted. Read B71 with this row: the rebuild moved the trim from the proposer to
+the fulfiller, so it now also catches `PlanDead`'s extra `SEAD` flight, and the ungated
+default is upstream's stacking.
 
 > **Where the jammers actually go.** B31 covers whether the §77 runtime works; this row covers
 > whether the auto-planner puts one on the right package. Found by dumping a live save's ATO
@@ -4948,6 +4954,7 @@ actually are.
 
 ---
 
+
 ### B70 — Sortie records reach the campaign · §91 · ☐ UNTESTED
 
 **History:** built 2026-08-17, session `629c250f`.
@@ -4975,3 +4982,50 @@ Fly any mission with several AI packages up, then read the next turn's SITREP.
   4. **Counts are wildly wrong** — shots counted per unit rather than per flight, or hits
      attributed to the wrong group. Only the group lead is sampled; shots and hits come from
      the event initiator's group.
+
+### B71 — The ATO stops spending its escorts on the wrong packages · planner shape · ☐ UNTESTED
+
+**History:** built 2026-08-17, from a live save (`brady.retribution`, Sinai turn 1, Blufor
+Current vs Redfor China 2020) whose ATO the DM flagged as badly shaped.
+
+> Four planner defects found by dumping that ATO, all in upstream code. **(1)** `PlanCas`
+> proposed `SEAD_SWEEP` with no `escort_type`, and `PlanAewc`/`PlanRefueling` proposed
+> `ESCORT` the same way. An untagged proposal is fulfilled as a *primary* flight: never
+> threat-gated, never prunable, and an unfillable one scrubs the whole package — so every
+> CAS package mandatorily consumed a Growler flight, and a tanker with no free fighter
+> would have taken the tanker down with it. All twelve of the wing's EA-18Gs were spent
+> this way while the one DEAD package, against an EWR, flew with no support at all.
+> **(2)** No package-level cap on suppression flavours — see B52. **(3)** The land AEW&C
+> anchor was picked purely on distance-from-threat, choosing a field 1.1 NM safer than the
+> one the wing's single E-3A actually flew from and sending it 245 NM to orbit beside a
+> third field; `ObjectiveFinder.aewc_land_anchor` now prefers an unthreatened field that
+> hosts an AEW&C squadron, falling back to the stock pick. **(4)** Naval BARCAP rounds
+> chained on raw station-departure while land rounds subtract `barcap_overlap_time`, so
+> carrier and LHA CAP had a hole between every round (measured 60 min against 45 on land,
+> both coalitions). Separately, heavy bombers lost the `CAS` lane — a B-52 fragged onto a
+> front line is a danger-close carpet — extending the existing Armed Recon exclusion;
+> `BAI` and the §32 Arc Light carpet (a Strike target) are untouched.
+>
+> Measured on that save, re-planning the same turn before and after: blue flew one more
+> package with six fewer aircraft and **two more shooters**, the E-3A's transit fell from
+> 245.2 NM to 31.3 NM, packages carrying more than one suppression flight went 5 → 0, and
+> the Growler moved onto the DEAD package. Pinned in `tests/commander/test_single_sead_flavour.py`,
+> `tests/test_aewc_targets.py`, `tests/test_missionscheduler.py`, `tests/test_aircraft_tasking_roles.py`.
+
+Only (2) is gated (`single_sead_escort_flavour`, planner suite, default OFF); (4) is a
+no-op at the stock `barcap_overlap_time` of 0. The rest are unconditional bug fixes. Play a
+turn on a wing with a small dedicated-jammer squadron and read the ATO before flying.
+
+- **Pass:** No AEW&C or tanker package carries an escort unless the route is genuinely
+  threatened. The AWACS orbits near the field it launched from. DEAD packages against live
+  radar SAMs get the suppression flight before a vehicle-group BAI does. Carrier CAP rounds
+  overlap rather than leaving a gap. No heavy bomber appears on a front line.
+- **Fail signatures:**
+  1. **Fewer packages planned than before.** Making an escort prunable should free jets, not
+     cost packages — if the count drops, a package is scrubbing on a missing *primary*.
+  2. **No AWACS at all.** The escort is now threat-gated; if the AEW&C package itself
+     vanished, the cause is upstream of this change.
+  3. **The AWACS still transits the theater.** Its home field is threatened, so the helper
+     fell through to the stock rear pick. Working as written; note the campaign.
+  4. **SEAD cover feels thin.** Same trade as B52 — the answer is to reinstate the sweep for
+     specific callers, not to ungate the trim.

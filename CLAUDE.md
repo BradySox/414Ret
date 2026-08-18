@@ -95,7 +95,9 @@ Read before touching a campaign's `.yaml`, `.miz` or build tool.
 - **EW / ISR / comms** — `414th-c130-ew-isr-notes.md`, `414th-comms-jam-notes.md`,
   `414th-comint-notes.md`, `414th-gps-jamming-notes.md`,
   `414th-iads-c2-consequences-notes.md`
-- **Recon** — `414th-tars-recon-notes.md`
+- **Recon** — `414th-tars-recon-notes.md`, `414th-recon-role-scoping-notes.md`
+  (**scoping only, nothing built** — what job recon gets now that engaging a site is the
+  only reveal; also records the command-post hole the rework opened)
 - **CSAR** — `414th-csar-notes.md` (**the one CSAR doc**; supersedes the eight earlier
   SCAR/CSAR notes, each bannered), `414th-scar-rescue-rework-notes.md`
 - **COIN** — `414th-coin-insurgent-replenishment-notes.md`, `-reinfiltration-notes.md`

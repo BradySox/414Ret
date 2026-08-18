@@ -5100,8 +5100,11 @@ FAC type) and `redscramble` (spawn mode).
 > `tests/lua/test_mantis_sead_scoot_radius.py`.
 
 > **What test 8 measured, for calibration.** The BUK-M3 site took its first HARM at
-> 15:01:16 and started moving at 15:02:01 — a 45 s reaction, matching MOOSE's Average-skill
-> 40–60 s delay. It moved 233–518 m, and fired **11 missiles before the scoot and 25 after**.
+> 15:01:16; the first unit had moved 25 m by 15:02:01. That 44 s is not the reaction time —
+> it includes DCS route acceptance and the ~5 s of driving 25 m takes at MOOSE's 20 km/h, so
+> the switch-off was a few seconds earlier. The site is **High** skill, whose MOOSE reaction
+> band is **20–40 s** (`SEAD.TargetSkill`), and the measurement sits at the top of it. It
+> moved 233–518 m, and fired **11 missiles before the scoot and 25 after**.
 > The stock 300 m is not costing a site its engagement, so raise this only for a campaign
 > that wants the site genuinely hard to re-find.
 

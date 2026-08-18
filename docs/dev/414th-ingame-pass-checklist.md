@@ -5003,6 +5003,18 @@ Fly any mission with several AI packages up, then read the next turn's SITREP.
 > existing record keeps counting either side of a kill. Add a fifth fail signature: **ground
 > units or blank keys in the sortie list.**
 
+> **Test 8 (2026-08-18) second read — the SITREP claimed a 359% hit rate.** The line read
+> `93 sorties, 119.2 hours airborne, 106 shots for 381 hits`. Both counts were individually
+> right and not comparable: DCS raises one `S_EVENT_SHOT` per weapon released but one
+> `S_EVENT_HIT` per **impacting object**, and a cluster weapon's submunitions are different
+> objects from the one that left the rail — two CBU-105 releases scored 68 hits on one
+> Su-24MU. Only 1 record of 114 had hits with no shots, so this was never the
+> guns-raise-no-shot-event problem it looks like. A hit is now counted only against a weapon
+> the recorder saw fired, and only on that weapon's first impact, so `hits <= shots` always
+> and the line is a real hit rate. Gun hits are no longer counted at all — there is no shot
+> event to rate them against. Sixth fail signature: **hits exceeding shots, or a strike
+> sortie reporting zero hits where it clearly destroyed something.**
+
 ### B78 — The escorts let go of a package the player is leading · planner shape · ☐ UNTESTED
 
 **History:** built 2026-08-18, from test 7 (Sinai turn 1, `retribution_nextturn.miz` +

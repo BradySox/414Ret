@@ -9817,3 +9817,20 @@ so a jet whose `getDesc` fails after it dies keeps counting on the record the sa
 made. Pinned by `test_a_ground_unit_that_shoots_never_becomes_a_flight` and
 `test_an_unnamed_initiator_never_becomes_a_flight`; the Lua harness gained `Unit.Category`
 and `UnitFake:getDesc`.
+
+### Shots and hits are commensurable (2026-08-18)
+
+The SITREP renders the day's flying as `"N shots for M hits"`, which only reads as a hit rate
+if M cannot exceed N. Test 8 reported **106 shots for 381 hits**. DCS raises one
+`S_EVENT_SHOT` per weapon released and one `S_EVENT_HIT` per *impacting object*, and a
+cluster weapon's submunitions are different objects from the one that was shot, so two
+CBU-105 releases scored 68 hits.
+
+`S_EVENT_SHOT` now records the weapon's key (`Weapon:getName()`, falling back to `id_`);
+`S_EVENT_HIT` counts only when the impacting weapon matches one the recorder saw fired, and
+clears it so only the first impact counts. Pending keys are pruned on the 30 s sweep at a
+900 s TTL so a weapon that misses cannot be consumed by an unrelated later hit.
+
+Deliberate consequence: **gun hits are no longer counted**, because DCS raises no shot event
+for them and there is nothing to rate them against. An uncountable shot must not become a
+free hit.

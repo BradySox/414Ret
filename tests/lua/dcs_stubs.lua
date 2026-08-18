@@ -498,6 +498,13 @@ function WeaponFake:isExist()
     return self.exists ~= false
 end
 
+-- Weapon:getName() returns the object's runtime id in DCS, which is how a hit is
+-- matched back to the shot that released it. Distinct per weapon, so a spec that
+-- fires twice gets two keys.
+function WeaponFake:getName()
+    return self.name or tostring(self.id_ or "weapon")
+end
+
 function WeaponFake:getTypeName()
     return self.typeName or "FAKE_WPN"
 end
@@ -550,6 +557,8 @@ end
 
 function Harness.makeWeapon(spec)
     return setmetatable({
+        -- Distinct per weapon: a hit is matched back to its shot by this key.
+        name = spec.name,
         typeName = spec.typeName,
         x = spec.x,
         z = spec.z,

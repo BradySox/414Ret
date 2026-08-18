@@ -21,6 +21,7 @@ anywhere in the theater layer without risk of an import cycle.
 from __future__ import annotations
 
 from contextlib import contextmanager
+from enum import Enum, auto
 from typing import Iterator, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -28,6 +29,23 @@ if TYPE_CHECKING:
     from game.theater.theatergroundobject import TheaterGroundObject
 
 _revealed: bool = False
+
+
+class Visibility(Enum):
+    """What a viewer can make of a site.
+
+    Three states rather than two independent booleans, because the booleans
+    could contradict each other: a `map_hidden` site that a strike had marked
+    discovered read hidden AND known at once. A site you cannot see cannot also
+    be a site whose composition you know, and this makes that unrepresentable.
+    """
+
+    #: Not on the viewer's map at all -- no marker, not plannable or strikable.
+    HIDDEN = auto()
+    #: A marker the viewer can see, whose composition they do not know.
+    UNKNOWN = auto()
+    #: Fully known.
+    KNOWN = auto()
 
 
 def fog_revealed() -> bool:

@@ -25,7 +25,7 @@ so the two docs don't drift.
 
 ## Outstanding rows at a glance
 
-75 rows need a live pass. Full detail is under each `###` heading below —
+76 rows need a live pass. Full detail is under each `###` heading below —
 search the row id. `☐` untested · `◐` flown but not under the conditions that
 stress it · `✗` fail signature reproduced in-game.
 
@@ -113,6 +113,7 @@ stress it · `✗` fail signature reproduced in-game.
 | B68 | Terrain slows the front line | §90 rung D | ☐ |
 | B69 | The front bulges instead of running straight | §90 rung E | ☐ |
 | B70 | Sortie records reach the campaign | §91 | ☐ |
+| B75 | A mixed boom/probe wing gets a tanker of each | U15 reinstated | ☐ |
 
 ---
 
@@ -4975,3 +4976,12 @@ Fly any mission with several AI packages up, then read the next turn's SITREP.
   4. **Counts are wildly wrong** — shots counted per unit rather than per flight, or hits
      attributed to the wrong group. Only the group lead is sampled; shots and hits come from
      the event initiator's group.
+
+### B75 — A mixed boom/probe wing gets a tanker of each · U15 reinstated · ☐ UNTESTED
+
+**History:** built 2026-06-26, reverted 2026-08-09 with the rest of work order B, reinstated 2026-08-17 on a fresh call in a different shape. Never flown in either shape.
+- **What it is:** the coalition's squadrons are counted by refuelling method; one theater tanker is proposed per method. The first is unconstrained (so nothing regresses when the data is missing), the rest are optional and constrained. Extra tankers step 15 NM further back from the threat so they do not share a racetrack.
+- **What CI cannot exercise:** whether the second tanker ends up somewhere a receiver can actually reach, and whether two orbits 15 NM apart read as separated in the cockpit and on the F10 map. The tests prove the proposals and the slot arithmetic, nothing about the geometry being flyable.
+- **Setup:** a campaign whose blue wing flies **both** boom and probe receivers and owns a tanker for each — a mixed USAF/USN wing is the natural case (Vipers and Eagles on the boom, Hornets and Tomcats on the drogue). Pass a turn, read the ATO, then look at the two orbits on the map. ~20 min, no flying needed for the first read. **Also run the negative case:** a wing with probe receivers but only a boom tanker. ~30 min total.
+- **Pass:** two `Refueling` flights in the one support package, one serving each method, on visibly separate racetracks both outside the threat rings. In the negative case, still exactly one tanker and the package intact.
+- **Fail signature:** two tankers of the *same* method, which means the unconstrained first flight and the constrained second one picked the same squadron — the constraint is not reaching `best_squadron_for`. Or two tankers stacked on one racetrack, which means the orbit slot is not being applied. Or the package gone entirely in the negative case, which means the extra flight is not actually optional.

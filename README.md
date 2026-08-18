@@ -86,6 +86,8 @@ Most of this is opt-in. Full list with toggles, defaults and known limitations:
   (FLOT, no-strike zones, friendly orbits, recon-confirmed SAM rings). A per-flight DTC tab
   controls the cartridge or any single section of it. Super Hornets carry no SA picture — the
   mod's cartridge format has no field for one.
+- A wing flying both boom and probe receivers gets a theater tanker of each, on separate
+  orbits. A wing that only needs one method still gets one tanker.
 - Tanker and AWACS orbits are drawn on the F10 map with callsign, frequency and TACAN.
 - Drop tanks are fitted for the sortie before tanker passes are decided, so jets stop
   double-tanking sorties their real load covers. The Payload tab shows burn, passes and RTB

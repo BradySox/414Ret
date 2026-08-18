@@ -362,9 +362,8 @@ def known_enemy_threat_sites(game: Game, viewer: Player) -> list[ThreatSite]:
     first.
 
     The filter mirrors the map: ``known_for(viewer)`` gates intel fog (an
-    unscouted concealed site never leaks an exact ring), ``map_hidden`` (§50
-    ambush teams) is never emitted, and ``max_threat_range(viewer)`` respects
-    BDA damage lag.
+    un-engaged site never leaks a ring) and ``map_hidden`` (§50 ambush teams) is
+    never emitted.
     """
     sites = []
     for cp in game.theater.controlpoints:
@@ -377,7 +376,7 @@ def known_enemy_threat_sites(game: Game, viewer: Player) -> list[ThreatSite]:
                 continue
             if not tgo.known_for(viewer):
                 continue
-            threat_range = tgo.max_threat_range(viewer)
+            threat_range = tgo.max_threat_range()
             if not threat_range or threat_range.meters <= 0:
                 continue
             unit_names = []

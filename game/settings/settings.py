@@ -267,9 +267,6 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                     "restrict_props_by_date",
                     "target_intel_precision",
                     "recon_intel_fog",
-                    "concealed_enemy_forces",
-                    "decoy_zones",
-                    "decoy_zone_count",
                     "scar_command_post_intel",
                     "ai_unlimited_fuel",
                 ],
@@ -734,8 +731,6 @@ FEATURES_PAGE = "414th Features"
 FEATURE_GATE_FIELDS: dict[str, list[str]] = {
     "Recon, concealment & intel": [
         "recon_intel_fog",  # §3
-        "concealed_enemy_forces",  # §3
-        "decoy_zones",  # §79
         "scar_command_post_intel",  # §3 (re-homed from the retired §15 row)
         "comint_collection",  # §70
         "red_comms_net",  # §70
@@ -1243,72 +1238,21 @@ class Settings:
         ),
     )
     recon_intel_fog: bool = boolean_option(
-        "Recon intel fog (hide enemy site composition until scouted)",
+        "Recon intel fog (hide enemy site composition until engaged)",
         page=CAMPAIGN_DOCTRINE_PAGE,
         section=GENERAL_SECTION,
         default=True,
         invert=False,
         detail=(
             "When enabled, enemy ground sites appear on the map as targets you can "
-            "plan against, but what is actually there — unit types, counts, damage "
-            "state, and threat/detection rings — stays hidden until the site is "
-            "attacked, scouted by recon/TARPS, or has a unit destroyed. The AI "
-            "planner and threat math always use full truth, so auto-planning is "
-            "unaffected. Existing campaigns keep everything revealed; the fog "
-            "applies to new campaigns."
-        ),
-    )
-    concealed_enemy_forces: bool = boolean_option(
-        "Concealed enemy field forces (uncertainty areas until scouted)",
-        enabled_when="recon_intel_fog",
-        page=CAMPAIGN_DOCTRINE_PAGE,
-        section=GENERAL_SECTION,
-        default=True,
-        invert=False,
-        detail=(
-            "When enabled (and recon intel fog is on), un-scouted enemy FIELD "
-            "forces — mobile SAM sites (medium/short-range and AAA), deployed "
-            "vehicle groups, and missile sites — do not show an exact map marker "
-            "at all: the map draws a dashed 'suspected activity' circle offset "
-            "from the true position until recon (TARPS) or an attack localizes "
-            "the site. Fixed infrastructure stays exact: airfields, buildings, "
-            "long-range strategic SAMs, EWRs (they emit), and ships. The AI "
-            "planner and threat math always use full truth. The circle is "
-            "clickable like a marker, so you can still plan recon or a strike "
-            "against the suspected area."
-        ),
-    )
-    decoy_zones: bool = boolean_option(
-        "Decoy suspected-activity zones (fake contacts to bait recon)",
-        enabled_when="concealed_enemy_forces",
-        page=CAMPAIGN_DOCTRINE_PAGE,
-        section=GENERAL_SECTION,
-        default=False,
-        invert=False,
-        detail=(
-            "The enemy plants fake 'suspected activity' circles that look exactly "
-            "like a real concealed force — you cannot tell a genuine hidden contact "
-            "from a feint without flying recon on it. TARPS (or an attack) over a "
-            "decoy reports 'no activity' and clears it; a fresh feint takes its "
-            "place each turn, so you cannot just memorize which are fake. The "
-            "deception targets your planning only — the AI uses full truth and is "
-            "never fooled, and never wastes a strike on an empty zone. Needs "
-            "concealed enemy forces on (otherwise real sites show exact markers and "
-            "any circle would obviously be a decoy)."
-        ),
-    )
-    decoy_zone_count: int = bounded_int_option(
-        "Number of decoy zones standing at once",
-        enabled_when="decoy_zones",
-        page=CAMPAIGN_DOCTRINE_PAGE,
-        section=GENERAL_SECTION,
-        default=4,
-        min=1,
-        max=12,
-        detail=(
-            "How many decoy circles the enemy keeps up at a time; the per-turn "
-            "refresh tops the count back up as you burn them. A campaign can "
-            "override this (and hint placement) with a top-level decoy_zones: block."
+            "plan against, but what is actually there — unit types, counts, and "
+            "threat/detection rings — stays hidden until you engage the site: put "
+            "ordnance on it, or send any ground-attack sortie that reaches it. "
+            "Recon overflight does not reveal. Once a site is engaged you see it "
+            "in full and permanently, damage included — there is no separate BDA "
+            "confirmation step. The AI planner and threat math always use full "
+            "truth, so auto-planning is unaffected. Existing campaigns keep "
+            "everything revealed; the fog applies to new campaigns."
         ),
     )
     # NB: the field NAME keeps its historical "scar_" prefix (renaming it would

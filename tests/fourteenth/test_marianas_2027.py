@@ -109,10 +109,9 @@ def test_the_carrier_keeps_a_mod_free_hornet_squadron() -> None:
 
 def test_naval_and_missile_features_are_preseeded() -> None:
     settings = _campaign()["settings"]
-    # The PLARF hunt is the campaign's signature: scooting launchers you can only
-    # find by flying recon at them.
+    # The PLARF hunt is the campaign's signature: launchers that scoot during the
+    # mission, so a pass never leaves them where it found them.
     assert settings["mobile_missile_relocation"] is True
-    assert settings["concealed_enemy_forces"] is True
     # The missile exchange at sea, and island logistics under coastal fire.
     for key in (
         "cruise_missile_strikes",

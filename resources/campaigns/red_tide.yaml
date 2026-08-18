@@ -245,9 +245,8 @@ settings:
   c2_decapitation_effects: true
   # §49 mobile-missile relocation (the SCUD hunt) -- red fields two SS-1C Scud-B batteries in
   # the rear (near Wittstock and forward off Haina). With this on they shoot-and-scoot during
-  # the mission, and with concealed_enemy_forces (default ON) they show only as a dashed
-  # "suspected activity" circle until a recon bird finds them -- so the launcher is never quite
-  # where the last photo froze it. Default ON; runtime lives in the mobilemissiles plugin
+  # the mission, so the launcher is never quite where the last pass left it. Default ON;
+  # runtime lives in the mobilemissiles plugin
   # (preseeded below, same saved-default-off reasoning as the others).
   mobile_missile_relocation: true
   # §61 host red-interceptor scramble -- the game master's "give the boys something to

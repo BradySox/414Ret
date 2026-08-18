@@ -25,9 +25,10 @@ cache throttle to the 0.25 floor, profile + arc resolution on the real campaign;
 1407 tests green). **Fly checklist P1**: new campaign *"Afghanistan - Operation
 Enduring Resolve (COIN)"*, 5+ turns. The experiment that proves the loop:
 
-1. Strike one stronghold's **cells** without touching its caches → recon it 2 turns
-   later → the cells are back (and the map lied to you until the recon — that's
-   `alive_at_last_recon` working, not a bug).
+1. Strike one stronghold's **cells** without touching its caches → come back 2 turns
+   later → the cells are back. (The "the map lied to you until the recon" half of this
+   went with the BDA damage lag, removed 2026-08-18; the replenishment itself is
+   unchanged.)
 2. Kill both its **caches** → the same stronghold stops refilling (floor trickle).
 3. Watch the will message: mandate vs momentum, cache kills as labeled
    "ammo caches xN destroyed" movers. The **will ledger** (meter hover / SITREP

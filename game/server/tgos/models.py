@@ -17,26 +17,17 @@ if TYPE_CHECKING:
     from game import Game
     from game.theater import TheaterGroundObject
 
-# Concealment: an un-reconned hidden TGO is shown as an "in here somewhere" circle,
-# centred on a point jittered off the true position. Two ways in: the COIN spawns
-# (roadside IED/VBIED, HVT convoy, dispersed/re-infiltration cells) carry an
-# intrinsic `concealed` flag, and — with the `concealed_enemy_forces` setting on —
-# enemy FIELD forces qualify by kind (mobile SAMs, deployed vehicle groups, missile
-# sites; fixed infrastructure / LORAD / EWRs / ships stay exact). The jitter is
-# seeded from the TGO id so it is stable across refreshes/reloads (a wandering
-# circle would let the player triangulate), and bounded so the true position always
-# sits inside the circle. The exact coordinates never reach the client while
-# concealed.
+# Concealment: an un-engaged COIN spawn (roadside IED/VBIED, HVT convoy,
+# dispersed/re-infiltration cells) is shown as an "in here somewhere" circle
+# centred on a point jittered off the true position — localizing it is the point
+# of those features. The jitter is seeded from the TGO id so it is stable across
+# refreshes/reloads (a wandering circle would let the player triangulate), and
+# bounded so the true position always sits inside the circle. The exact
+# coordinates never reach the client while concealed. Ordinary enemy sites are
+# NOT concealed: they draw an exact marker and only their composition is fogged.
 CONCEALED_RADIUS_M = 4000.0
-#: Deployed vehicle groups get a tighter circle than a SAM/missile site — they are
-#: smaller and there are many of them, so this keeps base clusters readable.
-FIELD_FORCE_RADIUS_M = 3000.0
 _CONCEALED_MIN_OFFSET = 0.15  # fraction of the radius
 _CONCEALED_MAX_OFFSET = 0.60
-
-#: SAM tasks that conceal: the mobile/relocatable belt. LORAD (fixed strategic
-#: S-200/S-300 sites) and EWRs (they emit — passively geolocatable) stay exact.
-_CONCEALABLE_SAM_TASKS = frozenset({GroupTask.MERAD, GroupTask.SHORAD, GroupTask.AAA})
 
 #: Road-pinned concealment (a TGO carrying `concealed_route` — the roadside IEDs):
 #: the suspected-activity centre slides FAR along the route polyline (never off it)
@@ -131,18 +122,15 @@ def _route_jitter(tgo: TheaterGroundObject) -> Optional[tuple[float, float]]:
 
 
 def _concealed_radius(tgo: TheaterGroundObject) -> Optional[float]:
-    """The uncertainty radius for this TGO, or None if it shows an exact marker."""
+    """The uncertainty radius for this TGO, or None if it shows an exact marker.
+
+    Only the COIN spawns conceal now. The category-based rule that hid every
+    un-engaged mobile SAM / vehicle group / missile site behind a circle was
+    removed 2026-08-18 with the rest of the scout-to-reveal model: an ordinary
+    enemy site draws an exact marker from turn one and only its composition is
+    fogged.
+    """
     if getattr(tgo, "concealed", False):
-        # COIN hidden objects: intrinsic, independent of the setting.
-        return CONCEALED_RADIUS_M
-    settings = tgo.control_point.coalition.game.settings
-    if not getattr(settings, "concealed_enemy_forces", False):
-        return None
-    if tgo.category == "armor":
-        return FIELD_FORCE_RADIUS_M
-    if tgo.category == "missile":
-        return CONCEALED_RADIUS_M
-    if tgo.category == "aa" and tgo.task in _CONCEALABLE_SAM_TASKS:
         return CONCEALED_RADIUS_M
     return None
 
@@ -251,19 +239,16 @@ class TgoJs(BaseModel):
         detection_ranges: list[float]
         units: list[str]
         if tgo.known_for(Player.BLUE):
-            threat_ranges = [
-                group.max_threat_range(Player.BLUE).meters for group in tgo.groups
-            ]
+            threat_ranges = [group.max_threat_range().meters for group in tgo.groups]
             detection_ranges = [
-                group.max_detection_range(Player.BLUE).meters for group in tgo.groups
+                group.max_detection_range().meters for group in tgo.groups
             ]
-            units = [unit.display_name_for(Player.BLUE) for unit in tgo.units]
-            dead = tgo.is_dead(Player.BLUE)
+            units = [unit.display_name for unit in tgo.units]
+            dead = tgo.is_dead()
         else:
             # Recon intel-fog: the site stays on the map and remains targetable
             # (position, category, allegiance), but its actual composition and
-            # threat/detection rings are hidden until it is attacked, scouted, or
-            # has a unit destroyed.
+            # threat/detection rings are hidden until the player engages it.
             threat_ranges = []
             detection_ranges = []
             units = []

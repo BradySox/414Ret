@@ -24,8 +24,8 @@ def set_reveal(revealed: bool) -> None:
     Runtime-only view state; never persisted. After flipping this the client
     re-pulls full game state, so the map redraws with (or without) the fogged
     enemy composition, threat/detection rings, and hidden command posts. The
-    flag short-circuits the three fog leaves (``alive_for`` / ``known_for`` /
-    ``hidden_on_player_map``) to ground truth for any viewer; AI/planner/threat
-    math pass ``viewer=None`` and are unaffected.
+    flag short-circuits both fog leaves (``known_for`` / ``hidden_on_player_map``)
+    to ground truth for any viewer; AI/planner/threat math pass ``viewer=None``
+    and are unaffected.
     """
     set_fog_revealed(revealed)

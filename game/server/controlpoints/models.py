@@ -65,18 +65,18 @@ class ControlPointJs(BaseModel):
             if not tgo.is_control_point:
                 continue
             # Recon intel-fog applies here exactly as it does to standalone
-            # TGOs (TgoJs.for_tgo): an un-scouted enemy carrier group keeps its
-            # composition, BDA state and threat rings hidden. Friendly groups
-            # (and scouted enemy ones) list every unit with viewer-aware
-            # " [DEAD]" tags, matching ordinary naval groups.
+            # TGOs (TgoJs.for_tgo): an un-engaged enemy carrier group keeps its
+            # composition and threat rings hidden. Friendly groups (and engaged
+            # enemy ones) list every unit with its " [DEAD]" tag, matching
+            # ordinary naval groups.
             if not tgo.known_for(Player.BLUE):
                 continue
-            units.extend(unit.display_name_for(Player.BLUE) for unit in tgo.units)
+            units.extend(unit.display_name for unit in tgo.units)
             for group in tgo.groups:
-                threat = group.max_threat_range(Player.BLUE).meters
+                threat = group.max_threat_range().meters
                 if threat:
                     threat_ranges.append(threat)
-                detection = group.max_detection_range(Player.BLUE).meters
+                detection = group.max_detection_range().meters
                 if detection:
                     detection_ranges.append(detection)
 

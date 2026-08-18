@@ -152,8 +152,8 @@ settings:
   # sloppier. Reactive defense untouched. This laydown ships a real per-base C2 network to key on.
   c2_decapitation_effects: true
   # §49 mobile-missile relocation: a coastal SS-26 Iskander battery in the red rear (in the
-  # .miz) shoots-and-scoots during the mission; with concealed_enemy_forces (default ON) it
-  # shows only as a dashed "suspected activity" circle until a recon bird finds it.
+  # .miz) shoots-and-scoots during the mission, so the launcher is never quite where the
+  # last pass left it.
   mobile_missile_relocation: true
   # §50 convoy escort/ambush: NATO supply convoys run the rear roads to the front; concealed
   # recon-team ambushes dig in along the route. Fly CAS/BAI escort or the column is ground down.

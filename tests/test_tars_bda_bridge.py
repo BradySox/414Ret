@@ -1,10 +1,9 @@
-"""TARS recon -> BDA fog-of-war bridge (Python side).
+"""TARS recon capture parsing (Python side).
 
 The Lua plugin appends photographed enemy unit names into the state file global
-``tars_recon_captures``; ``StateData`` parses them and
-``MissionResultsProcessor.tars_reconned_tgos`` resolves them to the TGOs whose
-confirmed status should be snapped to truth. These cover both halves without a
-running DCS mission.
+``tars_recon_captures`` and ``StateData`` parses them. The captures no longer
+drive the recon fog -- engaging a site is the only reveal (2026-08-18) -- so
+this covers the parse contract only.
 """
 
 from __future__ import annotations
@@ -13,7 +12,6 @@ from types import SimpleNamespace
 from typing import Any, cast
 
 from game.debriefing import StateData
-from game.sim.missionresultsprocessor import MissionResultsProcessor
 
 
 def _no_flight_unit_map() -> Any:
@@ -51,33 +49,3 @@ def test_parse_accepts_empty_list_and_bare_strings() -> None:
     # "Tank A" kept; the dict without a usable "unit", the empty name, and the
     # stray int are all dropped.
     assert state.tars_recon_captures == ["Tank A"]
-
-
-def test_tars_reconned_tgos_resolves_captures_to_tgos() -> None:
-    tgo_a = object()
-    tgo_b = object()
-
-    def theater_units(name: str) -> Any:
-        mapping = {
-            "unit_a": SimpleNamespace(
-                theater_unit=SimpleNamespace(ground_object=tgo_a)
-            ),
-            "unit_b": SimpleNamespace(
-                theater_unit=SimpleNamespace(ground_object=tgo_b)
-            ),
-        }
-        return mapping.get(name)
-
-    debriefing = cast(
-        Any,
-        SimpleNamespace(
-            state_data=SimpleNamespace(
-                tars_recon_captures=["unit_a", "unit_b", "never_mapped"]
-            ),
-            unit_map=SimpleNamespace(theater_units=theater_units),
-        ),
-    )
-
-    reconned = MissionResultsProcessor.tars_reconned_tgos(debriefing)
-    # Both mapped captures resolve to their TGO; the unmapped name is ignored.
-    assert reconned == {tgo_a, tgo_b}

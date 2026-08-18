@@ -28,7 +28,6 @@ Upstream shows you the enemy laydown. The fork fogs it.
 - Optional **Approximate target area** mode removes perfect coordinates and offsets steerpoints,
   so visual acquisition and talk-ons matter. Mobile short-range defences are kept off player
   datalinks; larger SAM sites stay visible for deliberate SEAD/DEAD.
-- Optional **decoy zones** plant fake contacts indistinguishable from real ones.
 - **Reveal fog of war (overview)** in the map layers panel shows ground truth. It is a view
   toggle only — never saved, never changes the campaign, and never leaks into a generated
   mission.

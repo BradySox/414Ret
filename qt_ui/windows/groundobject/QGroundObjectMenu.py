@@ -142,19 +142,16 @@ class QGroundObjectMenu(QDialog):
         self.intelLayout = QGridLayout()
         i = 0
         if not self.ground_object.known_for(self.viewer):
-            # Recon intel-fog: composition stays hidden until the site is attacked,
-            # scouted, or has a unit destroyed.
+            # Recon intel-fog: composition stays hidden until the site is engaged.
             self.intelLayout.addWidget(
-                QLabel("<i>Not yet scouted — composition unknown.</i>"), 0, 0
+                QLabel("<i>Not yet engaged — composition unknown.</i>"), 0, 0
             )
             i = 1
         else:
             for g in self.ground_object.groups:
                 for unit in g.units:
                     self.intelLayout.addWidget(
-                        QLabel(
-                            f"<b>Unit {str(unit.display_name_for(self.viewer))}</b>"
-                        ),
+                        QLabel(f"<b>Unit {str(unit.display_name)}</b>"),
                         i,
                         0,
                     )
@@ -191,15 +188,14 @@ class QGroundObjectMenu(QDialog):
         j = 0
         total_income = 0
         received_income = 0
-        scouted = self.ground_object.known_for(self.viewer)
-        if not scouted:
-            # Recon intel-fog: hide the building composition until the site is
-            # attacked, scouted, or has a unit destroyed.
+        engaged = self.ground_object.known_for(self.viewer)
+        if not engaged:
+            # Recon intel-fog: hide the building composition until the site is engaged.
             self.buildingsLayout.addWidget(
-                QLabel("<i>Not yet scouted — composition unknown.</i>"), 0, 0
+                QLabel("<i>Not yet engaged — composition unknown.</i>"), 0, 0
             )
         for static in self.ground_object.statics:
-            if scouted and static not in FORTIFICATION_BUILDINGS:
+            if engaged and static not in FORTIFICATION_BUILDINGS:
                 self.buildingsLayout.addWidget(
                     QBuildingInfo(static, self.ground_object, self.viewer),
                     j / 3,
@@ -326,12 +322,12 @@ class QGroundObjectMenu(QDialog):
             if value not in mission_types:
                 mission_types.append(value)
 
-        scouted = self.ground_object.known_for(self.viewer)
-        detection = self.ground_object.max_detection_range(self.viewer)
-        threat = self.ground_object.max_threat_range(self.viewer)
-        known_alive = self.ground_object.alive_unit_count(self.viewer)
+        engaged = self.ground_object.known_for(self.viewer)
+        detection = self.ground_object.max_detection_range()
+        threat = self.ground_object.max_threat_range()
+        known_alive = self.ground_object.alive_unit_count()
         total_units = self.ground_object.unit_count
-        destroyed_known = len(self.ground_object.dead_units(self.viewer))
+        destroyed_known = len(self.ground_object.dead_units())
         allegiance = (
             "Friendly"
             if self.ground_object.is_friendly(self.viewer)
@@ -349,7 +345,7 @@ class QGroundObjectMenu(QDialog):
         band = self.ground_object.air_defense_band
         if band:
             # Range band comes from the site's designated role, not its live units,
-            # so we surface the threat tier even before the site is scouted.
+            # so we surface the threat tier even before the site is engaged.
             type_label = f"{type_label} ({band})"
 
         rows = [
@@ -365,17 +361,17 @@ class QGroundObjectMenu(QDialog):
             ),
             (
                 "Known live units",
-                f"{known_alive}/{total_units}" if scouted else "Unknown (not scouted)",
+                f"{known_alive}/{total_units}" if engaged else "Unknown (not engaged)",
             ),
             (
                 "Known destroyed units",
-                str(destroyed_known) if scouted else "Unknown (not scouted)",
+                str(destroyed_known) if engaged else "Unknown (not engaged)",
             ),
             (
                 "Detection range",
                 (
-                    "Unknown (not scouted)"
-                    if not scouted
+                    "Unknown (not engaged)"
+                    if not engaged
                     else (
                         f"{Distance.from_meters(detection.meters).nautical_miles:.0f} NM"
                         if detection.meters > 0
@@ -386,8 +382,8 @@ class QGroundObjectMenu(QDialog):
             (
                 "Threat range",
                 (
-                    "Unknown (not scouted)"
-                    if not scouted
+                    "Unknown (not engaged)"
+                    if not engaged
                     else (
                         f"{Distance.from_meters(threat.meters).nautical_miles:.0f} NM"
                         if threat.meters > 0

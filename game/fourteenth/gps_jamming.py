@@ -14,7 +14,7 @@ This module owns the *campaign* half:
 * which ground units jam (any unit whose definition carries a ``gps_jamming``
   block -- see :class:`game.dcs.groundunittype.GpsJammingProperties`),
 * where the live sites are and how far each reaches, and
-* what the player is briefed about them (recon-fogged: an un-scouted jammer is
+* what the player is briefed about them (recon-fogged: an un-engaged jammer is
   not on the kneeboard, so finding it is worth a recon sortie).
 
 The runtime half is ``resources/plugins/gpsjamming``; the bridge between them is
@@ -126,7 +126,7 @@ def gps_jammer_sites(game: "Game") -> list[GpsJammerSite]:
     """Every live GPS-jamming site in the theater, both coalitions.
 
     Ground truth (``viewer=None``) -- this feeds the runtime, which must behave
-    the same whether or not the player has scouted the site. The *briefing* is
+    the same whether or not the player has engaged the site. The *briefing* is
     fogged separately (:func:`briefed_jammer_areas`).
     """
     if not gps_jamming_enabled(game):
@@ -145,7 +145,7 @@ def gps_jammer_sites(game: "Game") -> list[GpsJammerSite]:
 def briefed_jammer_areas(game: "Game", viewer: Any) -> list[GpsJammerSite]:
     """The enemy jamming areas ``viewer`` has actually found, for the kneeboard.
 
-    Recon-fogged through the standard ``known_for`` leaf (§3), so an un-scouted
+    Recon-fogged through the standard ``known_for`` leaf (§3), so an un-engaged
     jammer is *not* briefed -- the first sign of it is a pass that goes long, and
     identifying it is worth a TARPS sortie. Friendly jammers are omitted: they do
     not threaten the viewer's own weapons.

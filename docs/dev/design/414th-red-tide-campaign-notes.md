@@ -768,9 +768,8 @@ edit); guard `tests/fourteenth/test_campaign_plugin_preseed.py`.
    vehicle markers** to the CJTF Red country block (a forward battery off **Haina**, a
    rear/mid one near **Wittstock**), so `MizCampaignLoader.missile_sites` builds two
    `MissileSiteGroundObject`s (`category == "missile"`). With §49 on they shoot-and-scoot
-   within the 4 km scoot radius each ~8 min, and with `concealed_enemy_forces` (default ON)
-   they surface only as a dashed "suspected activity" circle until a recon bird finds them —
-   the launcher is never quite where the last photo froze it. `mobile_missile_relocation:
+   within the 4 km scoot radius each ~8 min, so the launcher is never quite where the last
+   pass left it. `mobile_missile_relocation:
    true` and the **`mobilemissiles` plugin** are both preseeded (same saved-default-off
    reasoning as the vietnamops/convoyambush/commsjam plugins).
 

@@ -26,9 +26,9 @@ around each FOB, so `regenerate_insurgent_cells` gained a second channel: **revi
 the stronghold's own dead, whitelist-eligible TGO cell units** toward the
 eligible-alive count at anchor (`tgo_cap`), same budget/carry/cache throttle, armor
 channel first. Revival is conservation by construction (only what the campaign
-authored can return), and `alive_at_last_recon` is never touched — the player's last
-recon picture stands until re-flown ("we cleared that position last week; it's
-shooting again").
+authored can return). The BDA damage lag that used to sit behind this — "we cleared
+that position last week; it's shooting again" — was removed 2026-08-18; a revived cell
+now reads as alive immediately on an engaged site.
 
 ---
 

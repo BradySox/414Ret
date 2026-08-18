@@ -31,14 +31,14 @@ interface TgoProps {
   tgo: TgoModel;
 }
 
-/* Concealment: an un-reconned hidden enemy object — a COIN insurgent spawn
-   (IED/VBIED, HVT convoy, cells) or, with concealed_enemy_forces on, any enemy
-   field force (mobile SAM, deployed vehicle group, missile site) — renders as an
-   "in here somewhere" uncertainty circle instead of an exact marker. The centre
-   the server sends is already jittered off the true position (which never reaches
-   the client while concealed). Same click/right-click contract as a marker so the
-   player can frag recon (TARPS) or a strike onto the suspected area; once
-   discovered the TGO snaps to its normal exact symbol. */
+/* Concealment: an un-engaged COIN insurgent spawn (IED/VBIED, HVT convoy,
+   cells) renders as an "in here somewhere" uncertainty circle instead of an
+   exact marker. The centre the server sends is already jittered off the true
+   position (which never reaches the client while concealed). Same
+   click/right-click contract as a marker so the player can frag a strike onto
+   the suspected area; once engaged the TGO snaps to its normal exact symbol.
+   Ordinary enemy sites are never concealed — they draw an exact marker and only
+   their composition is fogged. */
 function ConcealedTgo(props: TgoProps) {
   const [openNewPackageDialog] = useOpenNewTgoPackageDialogMutation();
   const [openInfoDialog] = useOpenTgoInfoDialogMutation();

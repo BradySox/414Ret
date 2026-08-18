@@ -21,12 +21,10 @@ def _distance(m: float) -> Any:
 
 
 def _ship_tgo(*, known: bool) -> Any:
-    unit = SimpleNamespace(
-        display_name_for=lambda viewer=None: f"ship [{'seen' if viewer else 'truth'}]"
-    )
+    unit = SimpleNamespace(display_name="ship")
     group = SimpleNamespace(
-        max_threat_range=lambda viewer=None: _distance(100.0),
-        max_detection_range=lambda viewer=None: _distance(200.0),
+        max_threat_range=lambda: _distance(100.0),
+        max_detection_range=lambda: _distance(200.0),
     )
     return SimpleNamespace(
         is_control_point=True,
@@ -57,8 +55,8 @@ def test_unscouted_enemy_carrier_group_is_fogged() -> None:
     assert js.detection_ranges == []
 
 
-def test_scouted_enemy_carrier_group_lists_viewer_aware_units() -> None:
+def test_scouted_enemy_carrier_group_lists_its_units() -> None:
     js = ControlPointJs.for_control_point(_cp(_ship_tgo(known=True)))
-    assert js.units == ["ship [seen]"]  # display_name_for(Player.BLUE), not truth
+    assert js.units == ["ship"]
     assert js.threat_ranges == [100.0]
     assert js.detection_ranges == [200.0]

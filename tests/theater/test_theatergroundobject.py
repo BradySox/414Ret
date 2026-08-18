@@ -276,7 +276,7 @@ def test_mission_types_enemy(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def _vehicle_group_tgo(monkeypatch: pytest.MonkeyPatch) -> VehicleGroupGroundObject:
-    # standard_identity + sidc_status_for read control_point.captured (needs a live
+    # standard_identity + sidc_status read control_point.captured (needs a live
     # coalition, awkward to build here). Patch both — neither the identity digit nor
     # the status digit is what these SIDC tests assert on (symbol set / entity only).
     monkeypatch.setattr(
@@ -286,8 +286,8 @@ def _vehicle_group_tgo(monkeypatch: pytest.MonkeyPatch) -> VehicleGroupGroundObj
     )
     monkeypatch.setattr(
         TheaterGroundObject,
-        "sidc_status_for",
-        lambda self, viewer=None: Status.PRESENT,
+        "sidc_status",
+        property(lambda self: Status.PRESENT),
     )
     dummy_location = PresetLocation(
         name="dummy_location", position=Point(0, 0, None), heading=Heading(0)  # type: ignore

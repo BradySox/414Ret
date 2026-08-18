@@ -68,10 +68,9 @@ settings:
   f22_raptor: true
 
   # -- The PLARF hunt (§49). Three road-mobile theatre-missile sites on Rota, Tinian
-  # and Saipan shoot and scoot between recon passes, so a launcher is never quite
-  # where the last photo froze it. The concealment layer is what makes that a hunt.
+  # and Saipan shoot and scoot during the mission, so a launcher is never quite
+  # where the last photo froze it.
   mobile_missile_relocation: true
-  concealed_enemy_forces: true
 
   # -- The missile exchange at sea (§63). Both fleets carry real, finite magazines;
   # sinking a shooter ends its raids, and nothing rearms.

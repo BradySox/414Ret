@@ -367,7 +367,62 @@ saves drop the field via `_migrate_legacy_settings`. See
 
 ---
 
-## 3. TARPS photo-reconnaissance + BDA fog-of-war
+## 3. Recon intel fog (was: TARPS photo-reconnaissance + BDA fog-of-war)
+
+### The 2026-08-18 rework — engagement reveals, and reveals completely
+
+**Read this before anything below it.** Most of this section documents the model that
+was replaced; it is kept for reading old notes and saves. The rules that hold now:
+
+| | Before | Now |
+|---|---|---|
+| What lifts a site's fog | struck, overflown by an offensive sortie, **or scouted by recon/TARPS** | struck, or overflown by any ground-attack sortie. **Recon does not reveal.** |
+| After the fog lifts | composition known, but damage still lagged behind a recon pass (`alive_at_last_recon`) | total ground truth, permanently — damage included |
+| Un-engaged field forces | dashed "suspected activity" circle offset from the true position | exact marker; only composition is fogged |
+| Decoy circles (§79) | optional fake contacts | removed |
+
+The DM's call, verbatim: *"Hidden until scouted is wrong, it should be hidden until
+struck, then you should be omniscient like it was before we touched any fog of war
+setting."*
+
+What went, concretely:
+
+- **The BDA damage lag.** `TheaterUnit.alive_at_last_recon`, `sync_confirmed_status`
+  (unit/group/TGO), `alive_for()`, and `MissionResultsProcessor.update_confirmed_bda`
+  are all deleted. Every accessor that only took a `viewer` to serve that lag lost the
+  parameter: `alive_units`, `alive_unit_count`, `is_dead`, `dead_units`,
+  `display_name`/`short_name` (the `_for` twins are gone), `threat_range`,
+  `detection_range`, `max_threat_range`, `max_detection_range`, `sidc_status`. The
+  `has_factory_for` / `ammo_depot_count_for` / `active_ammo_depots_count_for` twins on
+  `ControlPoint` went with them — they were identical to the truth versions.
+- **The category concealment.** `concealed_enemy_forces` and the `_concealed_radius`
+  category branch (armor / missile / mobile-SAM) in `game/server/tgos/models.py`.
+  `FIELD_FORCE_RADIUS_M` and `_CONCEALABLE_SAM_TASKS` went with it.
+- **Recon as a reveal key.** `reconned_tgos_this_turn`, `_reconned_tgos_from_ato` and
+  `tars_reconned_tgos` in `missionresultsprocessor.py`. The `tars_recon_captures`
+  debrief channel and the `recon` plugin still parse and run; nothing consumes the
+  result (see §12).
+
+What stayed viewer-aware: `visibility_for` / `known_for` / `hidden_on_player_map`
+(composition fog + the `scar_command_post_intel` command-post hiding + §50's
+`map_hidden` ambush teams), `standard_identity_for` (COIN's suspect-until-engaged
+symbol), and the fog-overview reveal toggle (§18), which now short-circuits two leaves
+instead of three. COIN's intrinsic `concealed` flag is untouched — localizing an IED or
+an HVT convoy is the point of those features and has nothing to do with §3.
+
+Because `attacked_tgos_this_turn` is now the *only* non-kill reveal, its flight-type set
+was widened from `{STRIKE, DEAD, SEAD, ANTISHIP}` to every ground-attack task
+(`+ SEAD_SWEEP, SEAD_ESCORT, BAI, CAS, ARMED_RECON`). A task missing from that set would
+be a site the player could never learn about short of destroying it.
+
+Tests: `tests/test_recon_reveal_rule.py` (the reveal rule + the no-lag guarantee),
+`tests/test_recon_intel_fog.py` (the `known_for` gate), `tests/fourteenth/test_coin_concealment.py`
+(now a regression guard that no *category* earns a circle).
+
+**Checklist:** G24 and B33 are closed by removal; **G2** and **G25** need re-scoping
+against the new rule before they are flown.
+
+### The original implementation (historical from here down)
 
 `FlightType.TARPS` adds player-flown F-14 recon. All F-14 variants carry the
 `{F14-TARPS}` pod on station 6 (editor-verified). The auto-planner appends a single
@@ -2251,6 +2306,14 @@ which shares nothing with this retired implementation.
 ---
 
 ## 12. Recon → BDA engine (`recon` plugin, default ON)
+
+**⚠️ INERT since the 2026-08-18 recon rework (§3).** The plugin still loads, still
+scores captures by sensor/altitude/cloud, and still appends them to
+`tars_recon_captures`, which `StateData` still parses — but **nothing consumes the
+result**. Engaging a site is the only reveal now, so a recon overflight changes no
+campaign state. Left in place rather than deleted: removing `FlightType.TARPS` and its
+flight plan is a separate call. Until that call is made, treat this section as
+describing machinery that runs and reports nothing.
 
 **The MOOSE Ops.TARS engine this section used to describe was CUT on 2026-08-05
 (`7eb247659`); `resources/plugins/tars/` no longer exists.** The old design note
@@ -8128,92 +8191,23 @@ on/off/non-coastal). **Checklist B32** — needs an in-game pass: whether a DCS 
 weapons-free actually tracks and hits a moving 12-kt cargo ship is the DCS-only unknown,
 plus watching a convoy run the gauntlet with proportional debrief losses.
 
-## §79 — Decoy suspected-activity zones
+## §79 — Decoy suspected-activity zones — REMOVED (2026-08-18)
 
-§3 gave the human planner a **map that lies by omission** — an unscouted enemy field force
-shows as a dashed amber "suspected activity" uncertainty circle rather than an exact marker,
-so the Weasel/strike planner has to fly recon to know what a circle really holds. §79 makes
-the map lie **actively**: it plants *fake* contacts that render as the exact same circle, so
-the planner can no longer trust that a circle means a real force is there. Pure turn-model —
-no plugin, no Lua, no `.miz` change.
+Removed with the recon rework below (see §3, "The 2026-08-18 rework"). Decoys only
+worked because *real* field forces were also drawn as suspected-activity circles, so
+a fake circle was indistinguishable from a genuine one. Real forces now draw exact
+markers from turn one, which would make every lone circle obviously a decoy.
 
-### The unitless concealed TGO (and why the AI is immune for free)
+Deleted: `game/fourteenth/decoy_zones.py`, the `finish_turn` hook in `game/game.py`,
+the `decoy_zones` / `decoy_zone_count` settings, `TheaterGroundObject.is_decoy` (shed
+from old saves in `__setstate__`), and `tests/fourteenth/test_decoy_zones.py`.
+Checklist row **B33** is closed unflown.
 
-A decoy is a **`VehicleGroupGroundObject` with zero units**, concealed like any hidden force,
-carrying a new `TheaterGroundObject.is_decoy` flag (`__setstate__`-defaulted to `False` so old
-saves load clean). It reuses the whole §3 concealment path — the server model jitters the
-centre, the client draws the identical dashed circle with its click/right-click frag contract
-— so on the human map it is **pixel-identical to a real hidden contact**.
-
-The key property is that the deception targets **only the human**:
-
-- The **AI planner enumerates targets on ground truth** (`is_dead()` / alive-unit counts,
-  `viewer=None`, never the fog leaves). A decoy has zero alive units, so it reads as already
-  dead and the planner **skips it automatically** — it is never fragged, never escorted, never
-  costed. No special-case code was needed to shield the AI; the AI-immunity falls out of the
-  unitless design **for free**, and it is the right behaviour: a real strike is never wasted on
-  an empty zone.
-- Because nothing spawns in the `.miz` for a decoy (no units), there is no runtime object to
-  desync, no loss to reconcile, and no phantom-spawn concern — it exists only as a map circle
-  fed from the campaign state.
-
-### Resolving a decoy — burn on recon
-
-Flying recon **onto** a decoy — a TARPS overfly or an attack that would normally discover a
-hidden force — resolves it as empty: the player gets a "no enemy activity … it was a decoy"
-message and the circle is **burned** (the decoy TGO is removed from the theater). A decoy that
-is never scouted simply persists as a standing circle the planner has to keep accounting for.
-
-### The "both" model — authored budget + per-turn refresh
-
-Placement is seeded two ways, which stack:
-
-- **Authored budget** — the `decoy_zone_count` setting, or a top-level campaign `decoy_zones:`
-  YAML block (`budget:` + optional `near_cps:` placement hints, sibling of `will:`/`victory:`),
-  sets how many decoys are live.
-- **Per-turn refresh** — `advance_decoy_zones` (in `game/fourteenth/decoy_zones.py`, hooked in
-  `game/game.py` `finish_turn` right after the COIN `advance_*` calls) **burns the reconned
-  ones and tops the live count back up to budget**, so a player who has methodically scouted and
-  burned a few circles finds fresh ones next turn — the map can't be memorized into a lookup
-  table of "these three are always fake."
-
-Placement puts each decoy a few km off a **front-adjacent red control point** (or the authored
-`near_cps`), on land (terrain-valid), under a `MAX_DECOY_BUDGET` (12) sanity cap so a mis-authored
-budget can't flood the map.
-
-### Gating
-
-Gated `decoy_zones` (Difficulty & Realism, default **OFF**), with
-`enabled_when=concealed_enemy_forces` — a decoy is only convincing when *real* forces are
-**also** drawn as suspected circles; with §3 concealment off, every force is an exact marker and
-any lone circle would obviously be a decoy, so the setting is meaningless and is greyed out.
-**Not preseeded in any campaign** — it is an opt-in difficulty layer.
-
-### Shipped alongside — the suspected-circle restyle
-
-The §40/§53–§55 ROE/economy deletions freed the dashed-red colour (dashed red was the removed
-ROE off-limits zone). The lone "suspected activity" ring now draws an **amber dash over a
-dark-red casing** with a centered **"?" glyph** (clusters keep the stroke-less density cloud and
-get no glyph), via a new **per-signature `casingColor` channel** in `mapColors.ts` (the
-`suspectedCasing` token) honored by `CasedShapes.tsx` + `MapLegend.tsx`, and the "?" drawn by
-`Tgo.tsx` on lone circles. Decoys inherit this rendering unchanged, so a feint remains
-indistinguishable from a genuine hidden contact.
-
-### Files & tests
-
-- `game/fourteenth/decoy_zones.py` — the module (placement, refresh, burn, `advance_decoy_zones`).
-- `game/theater/theatergroundobject.py` — the `is_decoy` flag + `__setstate__` default.
-- `game/game.py` — the `finish_turn` hook.
-- `game/settings/settings.py` — `decoy_zones` + `decoy_zone_count`.
-- `game/fourteenth/features.py` — registered §79.
-- Client restyle: `client/src/theme/mapColors.ts` (the `suspectedCasing` token + `casingColor`
-  channel), `client/src/components/map/CasedShapes.tsx`,
-  `client/src/components/legend/MapLegend.tsx`, `client/src/components/tgos/Tgo.tsx` (the glyph).
-- Tests: `tests/fourteenth/test_decoy_zones.py` (13).
-
-**Checklist B33** — needs an in-game pass: a suspected circle you TARPS/strike reports "no
-activity — decoy" and disappears, fresh ones appear next turn, and the AI never frags a strike
-at an empty zone.
+**The suspected-circle restyle SURVIVES** — the amber dash over a dark-red casing, the
+centred "?" glyph, the `suspectedCasing` token and the `casingColor` channel in
+`mapColors.ts`/`CasedShapes.tsx`/`MapLegend.tsx`/`Tgo.tsx`. The COIN spawns (roadside
+IED/VBIED, HVT convoy, dispersed cells) still conceal on their own intrinsic flag and
+still render through it. Do not strip that rendering.
 
 ## §80 — Mixed-hull ship groups
 

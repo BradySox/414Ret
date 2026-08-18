@@ -13,14 +13,12 @@ from game.dcs.groundunittype import GroundUnitType
 from game.dcs.shipunittype import ShipUnitType
 from game.dcs.unittype import UnitType
 from game.point_with_heading import PointWithHeading
-from game.theater.fogofwar import viewer_sees_truth
 from game.theater.iadsnetwork.iadsrole import IadsRole
 from game.utils import Heading, Distance, meters
 
 if TYPE_CHECKING:
     from game.layout.layout import LayoutUnit
     from game.sim import GameUpdateEvents
-    from game.theater import Player
     from game.theater.theatergroundobject import TheaterGroundObject
 
 FIXED_POS_ARG = "--fix-pos"
@@ -47,13 +45,12 @@ class TheaterUnit:
     fixed_hdg: bool = False
     # State of the unit, dead or alive
     alive: bool = True
-    # Last status confirmed to the player by recon/BDA. Defaults to truth so old saves
-    # and newly generated campaigns start fully in sync.
-    alive_at_last_recon: bool = True
 
     def __setstate__(self, state: dict[str, Any]) -> None:
-        if "alive_at_last_recon" not in state:
-            state["alive_at_last_recon"] = state.get("alive", True)
+        # The BDA damage lag was removed 2026-08-18 (a struck site is known in
+        # full, immediately). Shed the confirmed-status field so a save made
+        # under it does not carry a dead attribute forward.
+        state.pop("alive_at_last_recon", None)
         self.__dict__.update(state)
 
     @staticmethod
@@ -112,41 +109,20 @@ class TheaterUnit:
             iads = self.ground_object.control_point.coalition.game.theater.iads_network
             iads.update_tgo(self.ground_object, events)
 
-    def sync_confirmed_status(self) -> None:
-        self.alive_at_last_recon = self.alive
-
-    def alive_for(self, viewer: Optional[Player] = None) -> bool:
-        """Aliveness from a viewer's perspective.
-
-        ``viewer=None`` is the omniscient/ground-truth view used by the AI
-        commander, planner, and threat math. A friendly viewer also sees truth;
-        an enemy viewer sees only what recon has confirmed (post-strike BDA lag).
-        The ``fog_revealed()`` overview forces ground truth for any viewer.
-        """
-        if viewer_sees_truth(viewer, self.ground_object):
-            return self.alive
-        return self.alive_at_last_recon
-
     @property
     def unit_name(self) -> str:
         return f"{str(self.id).zfill(4)} | {self.name}"
 
-    def display_name_for(self, viewer: Optional[Player] = None) -> str:
-        dead_label = " [DEAD]" if not self.alive_for(viewer) else ""
+    @property
+    def display_name(self) -> str:
+        dead_label = " [DEAD]" if not self.alive else ""
         unit_label = self.unit_type or self.type.name or self.name
         return f"{str(self.id).zfill(4)} | {unit_label}{dead_label}"
 
     @property
-    def display_name(self) -> str:
-        return self.display_name_for(None)
-
-    def short_name_for(self, viewer: Optional[Player] = None) -> str:
-        dead_label = " [DEAD]" if not self.alive_for(viewer) else ""
-        return f"<b>{self.type.id[0:18]}</b> {dead_label}"
-
-    @property
     def short_name(self) -> str:
-        return self.short_name_for(None)
+        dead_label = " [DEAD]" if not self.alive else ""
+        return f"<b>{self.type.id[0:18]}</b> {dead_label}"
 
     @property
     def is_static(self) -> bool:
@@ -176,15 +152,15 @@ class TheaterUnit:
         # Only let units with UnitType be repairable as we just have prices for them
         return self.unit_type is not None
 
-    def detection_range(self, viewer: Optional[Player] = None) -> Distance:
+    def detection_range(self) -> Distance:
         unit_range = getattr(self.type, "detection_range", None)
-        if unit_range is None or not self.alive_for(viewer):
+        if unit_range is None or not self.alive:
             return meters(0)
         return meters(unit_range)
 
-    def threat_range(self, viewer: Optional[Player] = None) -> Distance:
+    def threat_range(self) -> Distance:
         unit_range = getattr(self.type, "threat_range", None)
-        if unit_range is None or not self.alive_for(viewer):
+        if unit_range is None or not self.alive:
             return meters(0)
         return meters(unit_range)
 
@@ -205,14 +181,15 @@ class SceneryUnit(TheaterUnit):
     # Scenery Objects are identified by a special trigger zone
     zone: TriggerZone
 
-    # Only the viewer-aware bodies are overridden; the truth `display_name` /
-    # `short_name` properties inherited from TheaterUnit delegate to these.
-    def display_name_for(self, viewer: Optional[Player] = None) -> str:
-        dead_label = " [DEAD]" if not self.alive_for(viewer) else ""
+    # Scenery names its own units, so both labels are overridden.
+    @property
+    def display_name(self) -> str:
+        dead_label = " [DEAD]" if not self.alive else ""
         return f"{str(self.id).zfill(4)} | {self.name}{dead_label}"
 
-    def short_name_for(self, viewer: Optional[Player] = None) -> str:
-        dead_label = " [DEAD]" if not self.alive_for(viewer) else ""
+    @property
+    def short_name(self) -> str:
+        dead_label = " [DEAD]" if not self.alive else ""
         return f"<b>{self.name[0:18]}</b> {dead_label}"
 
     @property
@@ -262,23 +239,17 @@ class TheaterGroup:
     def unit_count(self) -> int:
         return len(self.units)
 
-    def alive_units(self, viewer: Optional[Player] = None) -> int:
-        return sum(unit.alive_for(viewer) for unit in self.units)
+    def alive_units(self) -> int:
+        return sum(unit.alive for unit in self.units)
 
-    def max_detection_range(self, viewer: Optional[Player] = None) -> Distance:
-        """Maximum detection range of the group, from a viewer's perspective.
-
-        ``viewer=None`` is ground truth; an enemy viewer sees confirmed state.
-        """
-        ranges = (u.detection_range(viewer) for u in self.units if u.is_anti_air)
+    def max_detection_range(self) -> Distance:
+        """Maximum detection range of the group."""
+        ranges = (u.detection_range() for u in self.units if u.is_anti_air)
         return max(ranges, default=meters(0))
 
-    def max_threat_range(
-        self, viewer: Optional[Player] = None, radar_only: bool = False
-    ) -> Distance:
+    def max_threat_range(self, radar_only: bool = False) -> Distance:
         """Calculate the maximum threat range of the TheaterGroup.
         This also checks for Launcher and Tracker Pairs and if they are functioning or not. Allows to also use only radar emitting units for the calculation with the parameter.
-        ``viewer=None`` is ground truth; an enemy viewer sees confirmed state.
         """
         max_non_radar = meters(0)
         max_telar_range = meters(0)
@@ -286,19 +257,19 @@ class TheaterGroup:
         live_trs = set()
         launchers: dict[Type[VehicleType], Distance] = {}
         for unit in self.units:
-            if not unit.alive_for(viewer) or not unit.is_anti_air:
+            if not unit.alive or not unit.is_anti_air:
                 continue
             if unit.type in TRACK_RADARS:
                 live_trs.add(unit.type)
             elif unit.type in TELARS:
-                max_telar_range = max(max_telar_range, unit.threat_range(viewer))
+                max_telar_range = max(max_telar_range, unit.threat_range())
             elif (
                 issubclass(unit.type, VehicleType)
                 and unit.type in LAUNCHER_TRACKER_PAIRS
             ):
-                launchers[unit.type] = unit.threat_range(viewer)
+                launchers[unit.type] = unit.threat_range()
             else:
-                max_non_radar = max(max_non_radar, unit.threat_range(viewer))
+                max_non_radar = max(max_non_radar, unit.threat_range())
         for launcher, threat_range in launchers.items():
             for tr in LAUNCHER_TRACKER_PAIRS[launcher]:
                 if tr in live_trs:

@@ -143,11 +143,11 @@ The "five costumes" claim above was written by reading and is wrong. Measured:
 | Claimed a costume | Actually |
 |---|---|
 | recon fog (§3) | A rule — `known_for` |
-| BDA damage lag | A rule — `alive_for` |
+| BDA damage lag | **Removed 2026-08-18.** Was a rule — `alive_for` |
 | SCAR command posts (§15) | A rule — `hidden_on_player_map` |
 | COMINT (§70) | **Not a rule.** It *writes* `discovered_by_player` (`comint.py:249`) — a producer feeding `known_for` |
-| recon capture (§12) | **Not a rule.** Same one-line write (`missionresultsprocessor.py:467`) |
-| decoy zones (§79) | **Not in this layer.** Separate fake objects (`decoy_zones.py`) |
+| recon capture (§12) | **Removed 2026-08-18** — recon no longer writes `discovered_by_player` |
+| decoy zones (§79) | **Removed 2026-08-18** |
 | C-130 ISR (§2) | **Not in this layer.** In-mission Lua |
 
 Counted across `theatergroundobject.py`, `theatergroup.py`, `controlpoint.py` and `fogofwar.py`:

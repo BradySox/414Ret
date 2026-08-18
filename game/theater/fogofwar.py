@@ -21,7 +21,11 @@ anywhere in the theater layer without risk of an import cycle.
 from __future__ import annotations
 
 from contextlib import contextmanager
-from typing import Iterator
+from typing import Iterator, Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from game.theater.player import Player
+    from game.theater.theatergroundobject import TheaterGroundObject
 
 _revealed: bool = False
 
@@ -35,6 +39,21 @@ def set_fog_revealed(value: bool) -> None:
     """Enable/disable the overview. Runtime-only; never written to a save."""
     global _revealed
     _revealed = bool(value)
+
+
+def viewer_sees_truth(viewer: Optional["Player"], owner: "TheaterGroundObject") -> bool:
+    """Whether `viewer` is entitled to ground truth about `owner`.
+
+    The clause every fog rule opens with, written once. `viewer=None` is the
+    omniscient view the AI, planner and threat math use; the overview forces
+    truth for anyone; and a side always sees its own.
+
+    Short-circuits deliberately -- `is_friendly` needs a real viewer, so it must
+    not be evaluated when there is none.
+    """
+    if viewer is None or fog_revealed():
+        return True
+    return owner.is_friendly(viewer)
 
 
 @contextmanager

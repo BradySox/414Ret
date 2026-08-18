@@ -54,6 +54,10 @@ Most of this is opt-in. Full list with toggles, defaults and known limitations:
 - An ejected pilot becomes a survivor on the campaign map and stays there across turns. Rescue
   them and they recover for a few turns, then return to duty. Nobody reaches them in time and
   they go missing in action. AI ejections count.
+- Coming down beside a base settles it without a rescue: inside friendly lines the pilot walks
+  back, inside enemy lines they are captured and held at that base. Take the base back and they
+  come home.
+- Several survivors close together are collected on one lift rather than one flight each.
 - CSAR is a normal auto-planned mission type for both sides. Any helicopter with a cabin
   qualifies, and a human can fly the rescue in any CSAR-capable helo.
 - The survivor keys an **ADF homing beacon on 260 kHz**, briefed on your kneeboard. Tune it

@@ -2,8 +2,73 @@
 
 > Test paths shown ~~struck through~~ were deleted along with the feature they covered. They are left visible because the citation is part of the record; do not go looking for the file. Audited 2026-08-17.
 
-**Status: AUTHORITATIVE.** This supersedes the eight earlier CSAR/SCAR design notes (each now
-carries a banner pointing here). Read this before touching anything rescue-related.
+**Status: AUTHORITATIVE for the vision. STALE for the architecture.** This supersedes the eight
+earlier CSAR/SCAR design notes (each now carries a banner pointing here). Read this before
+touching anything rescue-related.
+
+> ⚠️ **The architecture sections below describe the fork's own §21/§15 CSAR, which was DELETED
+> 2026-08-07.** `COMBAT_SAR`, `SCAR`, `combatsar-config.lua`, `game/pow_recovery.py` and the
+> snatch party are all gone. What ships now is upstream dcs-retribution#929, adopted in
+> 414Ret#805. The vision sections still hold — #929 was taken *because* it serves them. Treat
+> everything from "What ships (the architecture that survived)" down as historical until it is
+> rewritten. The live description of what runs is
+> [What runs now — upstream #929](#what-runs-now--upstream-929) below.
+
+## What runs now — upstream #929
+
+**#929 is an OPEN upstream PR, not merged.** As of 2026-08-17 it has 34 commits, zero submitted
+reviews, and `mergeable_state=blocked`. One comment (juanjux, 2026-08-10) says it is too big to
+review and he will test it in his own fork. It answers upstream issue #104, which is one of the
+six things still open on the v1.6 milestone.
+
+So the fork is running an unreviewed upstream branch as its rescue system. That is a deliberate
+call — the alternative was keeping a §21 the squadron had already rejected — but it means **#929
+changing is a normal event, not an exception**, and every phase it gains has to be re-adopted by
+hand. Track it: `gh api repos/dcs-retribution/dcs-retribution/pulls/929/commits`.
+
+Adoption log:
+
+| Date | Upstream state | What we took |
+|---|---|---|
+| 2026-08-07 | head `9f7d5edc` | The whole feature (414Ret#805). Two defects found by reading and fixed on the way in: the survivor beacon named a file that exists nowhere in the tree, and the pickup waypoint briefed a hover above MOOSE's winch ceiling. |
+| 2026-08-17 | commit `82b3ab10` | Phase 5, in full. See below. |
+
+### Phase 5 (upstream `82b3ab10`, adopted 2026-08-17)
+
++680/−35 across 11 files, all of them files we already carried. Five behaviours:
+
+- **Cluster pickups.** Survivors within `csar_cluster_radius` (default 1000 m) come out on one
+  lift instead of one flight each. The planner takes the whole cluster off the board,
+  `EmbarkToTransport`'s zone stretches to the furthest member, and OpsCSAR.lua rebuilds the
+  cluster at runtime rather than trusting an injected list — so a mate already killed or
+  collected does not get credited.
+- **Control-point radius.** A pilot who comes down within `csar_control_point_radius` (default
+  15 nm) of a base generates no rescue at all: friendly ground means they walk back and go into
+  recovery, enemy ground means they are captured.
+- **Prisoners are freed by capturing the base holding them.** `Pilot.held_at` persists the
+  captor's control point; retaking it releases the pilot into recovery.
+- **`csar_single_flight`** plans one helicopter instead of a pair.
+- **`csar_player_hover_height` / `csar_player_hover_distance`** feed Ops.CSAR's
+  `rescuehoverheight` / `rescuehoverdistance`.
+
+**One fork adaptation was required, and it is the reason to read this section before touching the
+hover.** Our 2026-08-07 fix pinned the briefed hover at 50 ft against MOOSE's hardcoded 20 m
+winch ceiling, guarded by a test that parsed that 20 out of `Moose.lua`. Phase 5 makes the ceiling
+a **setting** spanning 5–100 m, so a fixed briefed altitude is only safe at the default and the
+original defect reopens at the bottom of the range — with the guard test still passing, because it
+was watching the wrong number. `briefed_hover_altitude()` now clamps to
+`HOVER_CEILING_FRACTION` (0.8) of the setting, and both callers — the waypoint and the Lua
+config — go through it. At the 20 m default the clamp does not bind, so the flown value is still
+50 ft and nothing changes for anyone who leaves the setting alone.
+
+`Moose.lua` is still parsed by the guard test, for the two things the setting cannot tell us: that
+`rescuehoverheight` still exists under that name (OpsCSAR.lua assigns to it, and a rename would
+fail silently), and that MOOSE's own default has not drifted away from the setting's.
+
+The Lua hunks did **not** apply — `OpsCSAR.lua` carries the 414th beacon-channel pin — and were
+hand-ported. Upstream's cluster-credit loop went onto the takeoff path only; the fork's two extra
+`"embarked on"` sites detect each survivor vanishing individually and already credit mates on
+their own.
 
 ## The point (the user's vision, locked 2026-06-27)
 

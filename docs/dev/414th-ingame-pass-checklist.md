@@ -25,7 +25,7 @@ so the two docs don't drift.
 
 ## Outstanding rows at a glance
 
-76 rows need a live pass. Full detail is under each `###` heading below —
+81 rows need a live pass. Full detail is under each `###` heading below —
 search the row id. `☐` untested · `◐` flown but not under the conditions that
 stress it · `✗` fail signature reproduced in-game.
 
@@ -62,6 +62,10 @@ stress it · `✗` fail signature reproduced in-game.
 | G36 | Player rescue end to end: F10 menu, the hoist at the briefed height, delivery, roster | CSAR | ☐ |
 | G37 | Multiplayer: a non-lead client can run the rescue | CSAR | ☐ |
 | G38 | `csar_rescue_ai_pilots` ON spawns a survivor for every AI ejection | CSAR | ☐ |
+| B71 | Several survivors come out on one lift | CSAR (#929 Phase 5) | ☐ |
+| B72 | A pilot down beside a base is resolved without a rescue flight | CSAR (#929 Phase 5) | ☐ |
+| B73 | Taking a base frees the prisoners held there | CSAR (#929 Phase 5) | ☐ |
+| B74 | The briefed hover follows the player hover-height setting | CSAR (#929 Phase 5) | ☐ |
 | H14 | The kneeboard SAR line is accurate, and the rescue crew gets a usable card | CSAR | ☐ |
 | I2 | Civilian background air traffic (region fleets + airways) |  | ☑ |
 | H10 | Shared-airframe kneeboard index | §27 | ☐ |
@@ -4976,6 +4980,41 @@ Fly any mission with several AI packages up, then read the next turn's SITREP.
   4. **Counts are wildly wrong** — shots counted per unit rather than per flight, or hits
      attributed to the wrong group. Only the group lead is sampled; shots and hits come from
      the event initiator's group.
+
+### B71 — Several survivors come out on one lift · CSAR (#929 Phase 5) · ☐ UNTESTED
+
+**History:** adopted 2026-08-17 from upstream `82b3ab10`. Never flown.
+- **What it is:** survivors within `csar_cluster_radius` (default 1000 m) are collected by one rescue flight instead of one flight each. The planner takes the whole cluster off the board when it frags the package, the survivors' embark zone stretches to reach the furthest member, and OpsCSAR.lua rebuilds the cluster at runtime so a mate who was already killed or collected is not credited.
+- **What CI cannot exercise:** whether the other survivors actually *walk* to the landing zone. The stretched `EmbarkToTransport` radius is the only thing making them move, and DCS infantry pathing over 1 km of broken ground is not something a unit test can speak to. The hoist half has the opposite risk: it credits the whole cluster on one winch cycle regardless of where they are standing.
+- **Setup:** set `csar_ejection_chance` to 100. Get two or three aircraft killed within ~500 m of each other behind the lines — a flight caught by the same SAM is the natural way. Pass the turn and confirm **one** CSAR package is fragged, not three. Fly or watch the pickup. Run it twice: once with `csar_hover_extraction` OFF (landing) and once ON (hoist). ~40 min.
+- **Pass:** one package. On landing, every survivor in the cluster boards and all of them are credited at the debrief. On the hoist, all of them are credited and their groups are removed from the map.
+- **Fail signature:** a package per survivor, which means the planner is not clustering. Or one pilot recovered and the rest still standing on the map at mission end — the embark radius did not stretch, or they could not path to the LZ. Or the reverse on the hoist: pilots credited as rescued while their groups are still visibly on the ground 900 m away, which is the cluster being trusted rather than checked.
+
+### B72 — A pilot down beside a base is resolved without a rescue flight · CSAR (#929 Phase 5) · ☐ UNTESTED
+
+**History:** adopted 2026-08-17 from upstream `82b3ab10`. Never flown.
+- **What it is:** a pilot who comes down within `csar_control_point_radius` (default **15 nm**) of any control point never becomes a rescue target. Inside a friendly one they walk back and go straight into recovery; inside an enemy one they are captured and held at that base.
+- **What CI cannot exercise:** whether 15 nm is the right number on a real map. This is the setting most likely to be wrong by feel rather than by logic — on a dense map with closely spaced fields, a 15 nm circle around every control point can cover most of the theater and quietly delete CSAR from the campaign.
+- **Setup:** set `csar_ejection_chance` to 100. Eject **twice**: once ~10 nm from a friendly field, once ~10 nm from an enemy one. Pass the turn and read the messages and the roster. Then count how much of your campaign map falls inside 15 nm of *something* — if it is most of it, lower the setting and say so here. ~25 min, no flying needed.
+- **Pass:** the friendly-side pilot is in recovery with no CSAR package fragged. The enemy-side pilot is MIA and held at the enemy base. Neither appears on the map as a rescue target.
+- **Fail signature:** a rescue package fragged for a pilot sitting 8 nm from his own runway. Or the opposite and worse: no CSAR packages appear anywhere all campaign, because every ejection is inside somebody's 15 nm circle.
+
+### B73 — Taking a base frees the prisoners held there · CSAR (#929 Phase 5) · ☐ UNTESTED
+
+**History:** adopted 2026-08-17 from upstream `82b3ab10`. Never flown.
+- **What it is:** a captured pilot is held at a specific control point (`Pilot.held_at`, persisted). Capturing that base releases them into recovery and back to their squadron. Losing a base does not free anyone, and a base taken by the side already holding the prisoners changes nothing.
+- **What CI cannot exercise:** the interaction with a real base capture in a real campaign, across a save/load. `held_at` is a new persisted field on `Pilot`; old saves default it to `None`, which means pilots captured before this change stay missing forever with no base to take. That is correct but worth seeing.
+- **Setup:** get a pilot captured (B72's enemy-side case is the fastest route — eject near an enemy field). Note which base holds them. Save, reload, and confirm they are still held there. Then take that base. ~45 min, mostly the ground campaign.
+- **Pass:** the "Prisoner of war freed" message names the pilot and the base, and they return to their squadron after the recovery turns.
+- **Fail signature:** the base changes hands and nothing happens — check `held_at` survived the save. Or prisoners freed by the *wrong* capture, e.g. losing a base releasing the enemy's prisoners held in it.
+
+### B74 — The briefed hover follows the player hover-height setting · CSAR (#929 Phase 5) · ☐ UNTESTED
+
+**History:** this is the second time this exact defect has been in front of us. On adoption (2026-08-07) the pickup waypoint briefed 100 ft against MOOSE's 20 m winch ceiling, so a crew flying the waypoint exactly could never hoist and DCS said nothing. Fixed by pinning 50 ft. Phase 5 then turned that ceiling into a setting spanning 5–100 m, which reopens the same gap at the bottom of the range — the guard test would have kept passing, because it was watching MOOSE's constant rather than the setting. `briefed_hover_altitude()` now clamps to 80 % of the setting.
+- **What CI cannot exercise:** that the winch actually fires. The test proves the numbers are ordered correctly; only a hoist in the cockpit proves MOOSE agrees.
+- **Setup:** three runs, `csar_hover_extraction` ON, flying the rescue yourself. Leave `csar_player_hover_height` at 20 and hoist. Set it to 5 and hoist. Set it to 100 and hoist. Fly the briefed waypoint altitude each time, do not eyeball it. ~30 min.
+- **Pass:** the winch runs at all three settings when the helicopter is at the briefed altitude.
+- **Fail signature:** the hoist never starts and no message explains why — the same silent failure as the original defect. Note which setting it failed at: a failure only at 5 m means the 80 % clamp is not margin enough at the bottom; a failure at 100 m means something else caps the hover.
 
 ### B75 — A mixed boom/probe wing gets a tanker of each · U15 reinstated · ☐ UNTESTED
 

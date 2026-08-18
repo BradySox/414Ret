@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from typing import Any, cast
 
-from game.theater.fogofwar import set_fog_revealed, viewer_sees_truth
+from game.theater.fogofwar import Visibility, set_fog_revealed, viewer_sees_truth
 from game.theater.player import Player
 
 
@@ -102,29 +102,73 @@ def _enemy_site(*, map_hidden: bool, discovered: bool) -> Any:
     return site
 
 
-def test_map_hidden_site_can_read_hidden_and_known_at_once() -> None:
-    """Documented oddity, deliberately left alone.
+def test_a_hidden_site_is_no_longer_also_known() -> None:
+    """The contradiction this model was built to remove.
 
-    `hidden_on_player_map` short-circuits on `map_hidden`; `known_for` never
-    consults it. So a §50 ambush team that a strike marked `discovered_by_player`
-    reads hidden AND known simultaneously -- the site is invisible on the map
-    while the composition layer believes the player knows what is there.
+    Before the three-state merge, `hidden_on_player_map` short-circuited on
+    `map_hidden` while `known_for` never consulted it -- so a §50 ambush team
+    that a strike had marked `discovered_by_player` read hidden AND known at
+    once: invisible on the map, while the composition layer believed the player
+    knew what was there.
 
-    Merging the two booleans into one three-state (HIDDEN / UNKNOWN / KNOWN)
-    would make this unrepresentable, and is the natural next step. It is a
-    BEHAVIOUR CHANGE in a load-bearing fog layer, so it is not being smuggled
-    into a de-duplication. This test exists so the oddity is visible and any
-    change to it is deliberate; update it together with that decision.
+    This is the one deliberate BEHAVIOUR CHANGE of the merge. `known_for` on a
+    `map_hidden` site now returns False for an enemy viewer whatever else is
+    true of it. A site you cannot see cannot be a site whose composition you
+    know.
     """
     site = _enemy_site(map_hidden=True, discovered=True)
 
+    assert site.visibility_for(Player.BLUE) is Visibility.HIDDEN
     assert site.hidden_on_player_map(Player.BLUE) is True
-    assert site.known_for(Player.BLUE) is True  # <- the contradiction
+    assert site.known_for(Player.BLUE) is False
 
 
-def test_an_ordinary_undiscovered_site_is_visible_but_unknown() -> None:
-    """The normal case, for contrast: a marker you can see but not read."""
+def test_an_ordinary_undiscovered_site_is_a_marker_you_cannot_read() -> None:
     site = _enemy_site(map_hidden=False, discovered=False)
 
+    assert site.visibility_for(Player.BLUE) is Visibility.UNKNOWN
     assert site.hidden_on_player_map(Player.BLUE) is False
     assert site.known_for(Player.BLUE) is False
+
+
+def test_a_scouted_site_is_known() -> None:
+    site = _enemy_site(map_hidden=False, discovered=True)
+
+    assert site.visibility_for(Player.BLUE) is Visibility.KNOWN
+    assert site.hidden_on_player_map(Player.BLUE) is False
+    assert site.known_for(Player.BLUE) is True
+
+
+def test_the_owner_sees_its_own_site_whatever_the_flags() -> None:
+    site = _enemy_site(map_hidden=True, discovered=False)
+
+    assert site.visibility_for(Player.RED) is Visibility.KNOWN
+
+
+def test_the_omniscient_view_is_never_fogged() -> None:
+    """AI, planner and threat math must see every site, including ambushes."""
+    site = _enemy_site(map_hidden=True, discovered=False)
+
+    assert site.visibility_for(None) is Visibility.KNOWN
+    assert site.hidden_on_player_map(None) is False
+    assert site.known_for(None) is True
+
+
+def test_hidden_and_known_can_no_longer_both_be_true() -> None:
+    """The invariant the three-state buys, over every combination."""
+    for map_hidden in (True, False):
+        for discovered in (True, False):
+            site = _enemy_site(map_hidden=map_hidden, discovered=discovered)
+            hidden = site.hidden_on_player_map(Player.BLUE)
+            known = site.known_for(Player.BLUE)
+            assert not (hidden and known), (map_hidden, discovered)
+
+
+def test_the_two_booleans_partition_the_three_states() -> None:
+    """Every state maps to exactly one pair, so nothing is unreachable."""
+    seen = set()
+    for map_hidden in (True, False):
+        for discovered in (True, False):
+            site = _enemy_site(map_hidden=map_hidden, discovered=discovered)
+            seen.add(site.visibility_for(Player.BLUE))
+    assert seen == {Visibility.HIDDEN, Visibility.UNKNOWN, Visibility.KNOWN}

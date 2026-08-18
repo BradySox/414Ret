@@ -156,9 +156,15 @@ class PackageBuilder:
         task. For a same-package buddy tanker the methods are inferred from the
         package's already-planned receivers; untagged receivers leave selection
         unconstrained.
+
+        A theater tanker has no receivers to infer from -- it serves the whole
+        coalition -- so PlanRefueling states the method it is covering outright, and
+        that wins.
         """
         if plan.task is not FlightType.REFUELING:
             return None
+        if plan.refuel_methods:
+            return plan.refuel_methods
         methods: set[AirRefuelType] = set()
         for flight in self.package.flights:
             if flight.flight_type is FlightType.REFUELING:

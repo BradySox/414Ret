@@ -1358,11 +1358,38 @@ the front. Tests: `tests/test_support_orbit.py` (`test_carrier_target_holds_on_t
 > The code is deleted; rebuild it from git history if it is ever wanted again. See
 > [the divergence audit](design/414th-autoplanner-upstream-divergence-audit.md).
 
-### Per-method theater-tanker fragging (2026-06-26)
+### Per-method theater-tanker fragging (2026-06-26, reverted 2026-08-09, REINSTATED 2026-08-17)
 
-> **REVERTED 2026-08-09 (planner re-convergence, work order B).** `TheaterState.from_game` seeds a single unconstrained theater tanker at the closest friendly control point again. The boom/probe data model (`AircraftType.tanker_refuel_types`, `can_refuel_from`) stays — the package-tanker accounting fix still uses it — but the planner no longer frags one tanker per receiver method.
-> The code is deleted; rebuild it from git history if it is ever wanted again. See
-> [the divergence audit](design/414th-autoplanner-upstream-divergence-audit.md).
+> **REINSTATED 2026-08-17 on a fresh DM call**, reversing work order B's revert of U15 for
+> this item only. The rest of the 2026-08-09 re-convergence stands. Recorded in the
+> [divergence audit](design/414th-autoplanner-upstream-divergence-audit.md)'s DECIDED block.
+
+Boom and probe are physically incompatible, so a wing flying both needs a theater tanker of
+each. Retribution planned exactly one, ever — which is upstream issue
+[#243](https://github.com/dcs-retribution/dcs-retribution/issues/243), open since 2024. The
+recovery-tanker half was fixed upstream in 2025; the theater half was not.
+
+**This is not the 2026-06-26 code rebuilt from history.** That version seeded several entries
+into `TheaterState.refueling_targets`, producing one package per method. This one keeps the
+single target and states the constraint at the proposal instead:
+
+- `ProposedFlight.refuel_methods` carries an explicit tanker constraint, and
+  `PackageBuilder._required_refuel_methods` prefers it over the set derived from the package's
+  own receivers. A theater tanker has no receivers to infer from, so it has to say.
+- `PlanRefueling` counts the refuel methods the coalition's squadrons actually take, ordered by
+  how many take each, and proposes one tanker per method.
+- **The first tanker stays unconstrained**, so a coalition whose aircraft declare no refuelling
+  method plans exactly what it planned before. Every further tanker is `optional`, so a wing
+  flying probe receivers without owning a drogue tanker still gets the boom tanker it can field
+  rather than losing the package. Never fewer than before, by construction.
+- `theaterrefueling.py` steps each further tanker `TANKER_ORBIT_SPACING` (15 NM) back from the
+  threat. Without it both tankers get the same racetrack at the same altitude.
+
+Tests: `tests/commander/test_theater_tanker_methods.py` (10). In-game row **B76**.
+
+One defect found writing it: the orbit slot used `list.index`, which matches the first flight
+that compares *equal* rather than the flight itself. Two tankers would have shared a slot the
+moment `Flight` gained an `__eq__`. It compares by identity now.
 
 ### Refuel stops budgeted into flight-plan timing (2026-07-01)
 

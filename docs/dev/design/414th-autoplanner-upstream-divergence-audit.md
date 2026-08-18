@@ -146,6 +146,20 @@ failure fix, joining U13/U14), and the naval BARCAP handover, which never subtra
 of 0. Heavy bombers also lose the `CAS` lane, extending the kept Armed Recon
 wrong-role fix. See in-game-pass rows B52 and B75.
 
+### Amendment 2026-08-17 — U15 reinstated, ungated
+
+**U15 (one theater tanker per boom/probe method needed) is back on by default.** Fresh DM call,
+reversing work order B's revert of that one item. Nothing else in the decision above changes.
+
+It came back up because upstream issue #243 asks for exactly this and has been open since 2024;
+the fork was carrying the gap deliberately, not by inheritance, which was not obvious from the
+code. Re-implemented in a different shape — the constraint is stated on `ProposedFlight` rather
+than seeded as extra `refueling_targets` — so it is one package with two tankers, not two
+packages. Details in the features doc.
+
+The rest of the ungated reverts stay reverted. This amendment is the authority for U15 only; do
+not read it as re-opening §6 or §46.
+
 ## Levers, if pulling back (superseded by the decision above; kept for the record)
 
 1. "Stock planner" settings preset (the §28 preset machinery exists): flips the whole default-ON table above in one click. Can't touch the ungated items.

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Type
 
+from game.ato.flighttype import FlightType
 from game.utils import Heading, meters, nautical_miles
 from .ibuilder import IBuilder
 from .patrolling import PatrollingLayout
@@ -15,7 +16,29 @@ class TheaterRefuelingFlightPlan(RefuelingFlightPlan):
         return Builder
 
 
+#: How far apart consecutive theater tankers sit, measured back from the threat.
+#:
+#: A coalition flying both boom and probe receivers gets one tanker of each, and
+#: without this they would be handed the same racetrack -- two orbits in the same
+#: airspace at the same altitude.
+TANKER_ORBIT_SPACING = nautical_miles(15)
+
+
 class Builder(IBuilder[TheaterRefuelingFlightPlan, PatrollingLayout]):
+    def _orbit_index(self) -> int:
+        """This tanker's place in its package, so several do not stack up.
+
+        Identity, not equality: ``list.index`` would match the first flight that
+        merely compares equal, which is how two tankers end up sharing a slot.
+        """
+        index = 0
+        for flight in self.package.flights:
+            if flight is self.flight:
+                return index
+            if flight.flight_type is FlightType.REFUELING:
+                index += 1
+        return 0
+
     def layout(self) -> PatrollingLayout:
         racetrack_half_distance = nautical_miles(20).meters
 
@@ -38,6 +61,11 @@ class Builder(IBuilder[TheaterRefuelingFlightPlan, PatrollingLayout]):
             orbit_distance = distance_to_threat + threat_buffer
         else:
             orbit_distance = distance_to_threat - threat_buffer
+
+        # Each further tanker sits another step back from the threat. Backwards
+        # rather than forwards so an extra tanker can never be pushed into the
+        # threat zone the buffer above just cleared.
+        orbit_distance -= TANKER_ORBIT_SPACING * self._orbit_index()
 
         racetrack_center = location.position.point_from_heading(
             orbit_heading.degrees, orbit_distance.meters

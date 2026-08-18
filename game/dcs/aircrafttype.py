@@ -369,6 +369,12 @@ class AircraftType(UnitType[Type[FlyingType]]):
             # Armed Recon from the bomber's CAS/BAI priority; strip it so a strategic
             # bomber carries no Armed Recon capability at all.
             self.task_priorities.pop(FlightType.ARMED_RECON, None)
+            # Same reasoning one step further: CAS is troops-in-contact at the FLOT,
+            # which is not a called-coordinate drop. A B-52 fragged onto a front line
+            # is a danger-close carpet (brady.retribution, 2026-08-17). BAI -- the
+            # interdiction lane behind the lines -- is untouched, and so is the §32
+            # Arc Light carpet, which rides a Strike target.
+            self.task_priorities.pop(FlightType.CAS, None)
 
     def __eq__(self, other: object) -> bool:
         return isinstance(other, AircraftType) and self.variant_id == other.variant_id

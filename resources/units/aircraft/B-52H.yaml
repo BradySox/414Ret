@@ -15,7 +15,6 @@ variants:
 tasks:
   Anti-ship: 100
   BAI: 660
-  CAS: 660
   OCA/Runway: 660
   OCA/Aircraft: 660
   Strike: 690

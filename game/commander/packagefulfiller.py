@@ -63,6 +63,7 @@ class PackageFulfiller:
         self.default_start_type = settings.default_start_type
         self.auto_add_tarps_recon = settings.auto_add_tarps_recon
         self.max_escort_jammers = settings.max_escort_jammers
+        self.single_sead_escort_flavour = settings.single_sead_escort_flavour
 
     @property
     def is_player(self) -> bool:
@@ -281,6 +282,25 @@ class PackageFulfiller:
             return False
         return self.air_wing.untasked_fighters() - escort.num_aircraft < reserve
 
+    def sead_flavour_satisfied(
+        self, escort: ProposedFlight, sead_planned: bool
+    ) -> bool:
+        """True when the package already has its one suppression flight.
+
+        SEAD_ESCORT, SEAD_SWEEP and PlanDead's SEAD all share EscortType.Sead and
+        one radar-SAM trigger sets the flag for every one of them, so a package
+        could pull three suppression flights while the DEAD package that needed
+        them flew naked (brady.retribution, 2026-08-17). The first flavour
+        proposed wins. A2A is untouched: PlanAntiShip doubles it deliberately to
+        saturate a ship's air defences. Off by default -- see the 2026-08-09
+        re-convergence contract in game/settings/plannersuite.py.
+        """
+        return (
+            self.single_sead_escort_flavour
+            and escort.escort_type is EscortType.Sead
+            and sead_planned
+        )
+
     def can_plan_escort(self, type: EscortType) -> bool:
         if type == EscortType.AirToAir:
             return self.air_wing_can_plan(FlightType.ESCORT)
@@ -417,19 +437,29 @@ class PackageFulfiller:
                     return None
 
         needed_escorts = self.check_needed_escorts(builder)
+        # See sead_flavour_satisfied: one suppression flight per package.
+        sead_planned = False
         for escort in escorts:
             # This list was generated from the not None set, so this should be
             # impossible.
             assert escort.escort_type is not None
             if self.escort_reserve_withholds(builder, escort):
                 continue
+            if self.sead_flavour_satisfied(escort, sead_planned):
+                continue
             if needed_escorts[escort.escort_type] and self.can_plan_escort(
                 escort.escort_type
             ):
+                planned_before = len(builder.package.flights)
                 with tracer.trace("Flight planning"):
                     self.plan_flight(
                         mission, escort, builder, missing_types, purchase_multiplier
                     )
+                if (
+                    escort.escort_type is EscortType.Sead
+                    and len(builder.package.flights) > planned_before
+                ):
+                    sead_planned = True
 
         # Check again for unavailable aircraft. If the escort was required and
         # none were found, scrub the mission -- UNLESS the doctrine flies unescorted

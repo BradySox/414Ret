@@ -6,10 +6,10 @@ that follow from it.
 | Seam | Short version | Status |
 |---|---|---|
 | **1 — what the mission tells the campaign** | When you land, the campaign only learns who died | **BUILT 2026-08-17** — features doc §91, pass row B70 |
-| **2 — how the game tracks what you know** | Built five separate times, five separate ways | **ACCEPTED — not started** |
+| **2 — how the game tracks what you know** | Three rules, not five; 18 methods thread `viewer` to reach them | **ACCEPTED** — scope cut to a tidy-up by the 08-17 audit |
 | 3 — the map graph | Roads route traffic but can't be cut | Analysis only — but see seam 4 rung A |
 | **4 — the front line** | One number divided by another | **BUILT 2026-08-17** — all five rungs; features doc §90, pass rows B65–B69 |
-| **5 — time between turns** | A turn is a jump, not a sample | **ACCEPTED — not started** |
+| **5 — time between turns** | 39 things happen between turns; the SITREP reports 7 | **ACCEPTED** — reframed as a *reporting* gap by the 08-17 audit |
 | 6 — the squadron layer | Already scoped in its own note, not built | See that note |
 | 7 — the enemy | Red is amnesiac, and nothing it decides is visible | **DROPPED 2026-08-17** — two framings, two Phase 0 kills, one shared cause; see §8 |
 
@@ -29,6 +29,12 @@ Seam 3 proper — per-link capacity and damage state — is still unbuilt.
 
 **Re-measure before quoting any number here.** Everything below was measured on 2026-08-17 and
 will drift. The `file:line` references are how you check.
+
+**Three seams have now been audited against the code rather than read, and all three premises were
+overstated.** Seam 7 died outright (two framings, §8). Seam 2 is three rules, not five (§3). Seam 5
+had the gap backwards — the between-turn time is simulated, just not reported (§6). The pattern is
+worth knowing before trusting seam 3's description at face value: this note's structural claims were
+written by reading the code, and measuring keeps deflating them.
 
 ---
 
@@ -130,27 +136,39 @@ solve it once and properly.
 
 We have built "the player doesn't know this yet" five separate times, five separate ways.
 
-### The five
+### AUDITED 2026-08-17 — it is three, not five
 
-recon fog (§3) · recon capture (§12) · COMINT (§70) · C-130 ISR (§2) · decoy zones (§79) —
-plus BDA damage lag.
+The "five costumes" claim above was written by reading and is wrong. Measured:
 
-All of them are the same idea underneath: **everything the player sees came from somewhere, at
-some time, and might be wrong.** Source, age, confidence.
+| Claimed a costume | Actually |
+|---|---|
+| recon fog (§3) | A rule — `known_for` |
+| BDA damage lag | A rule — `alive_for` |
+| SCAR command posts (§15) | A rule — `hidden_on_player_map` |
+| COMINT (§70) | **Not a rule.** It *writes* `discovered_by_player` (`comint.py:249`) — a producer feeding `known_for` |
+| recon capture (§12) | **Not a rule.** Same one-line write (`missionresultsprocessor.py:467`) |
+| decoy zones (§79) | **Not in this layer.** Separate fake objects (`decoy_zones.py`) |
+| C-130 ISR (§2) | **Not in this layer.** In-mission Lua |
 
-### The evidence
+Counted across `theatergroundobject.py`, `theatergroup.py`, `controlpoint.py` and `fogofwar.py`:
+**21 methods take `viewer`. Exactly 3 decide anything. The other 18 forward it and nothing else.**
 
-There are three separate yes/no switches — `alive_for`, `known_for`, `hidden_on_player_map` —
-each with its own rule about who's looking. The overview toggle has to reach in and override all
-three by hand (`game/theater/fogofwar.py`). Every new intel feature adds a fourth, a fifth.
+**The evidence cuts against the seam's own argument.** COMINT is the newest intel feature and it
+cost *one line* against the existing model; recon capture is the same. So "every new one pays full
+price" is not supported — the producers already share a path through `discovered_by_player`.
 
-No design note in `docs/dev/design/` describes the shared idea. Nobody has claimed this.
+### What is actually there
 
-### Why it's worth the effort
+Two things, both smaller than the section above claims:
 
-The viewer-aware layer is the most original thing this fork has built compared to upstream. It's
-also the only original thing that's unfinished — the shared part that would make the *next*
-intel feature cheap doesn't exist, so every one of them pays full price.
+1. The 3 rules duplicate an identical three-clause guard — `viewer is None` / `fog_revealed()` /
+   friendly → truth — with divergent tails.
+2. 18 methods hand-thread `viewer` purely to reach those 3 rules. That is the layer's real
+   carrying cost, and it is boilerplate rather than divergent logic.
+
+With the standing rule capping the payoff at "fewer switches than we started with", the ceiling is
+removing two switches and de-duplicating one guard. **A tidy-up, not an enabling abstraction.**
+Accepted on that basis, with no larger claim attached.
 
 ### The catch
 
@@ -270,17 +288,39 @@ already saved. Anything further up the ladder has to prove it keeps both.
 
 ## 6. Seam 5 — time between turns · **ACCEPTED**
 
-**The problem in one line:** a turn is a jump, not a sample of an ongoing war.
+**The problem in one line, as first written:** a turn is a jump, not a sample of an ongoing war.
 
-The continuous clock (§47) and the living-battlespace pre-roll (§89) are steps one and two.
-§89 already proved the idea reads well in the cockpit — earlier packages already airborne,
-follow-on waves launching behind you.
+### AUDITED 2026-08-17 — that is wrong, and the real gap is the opposite
 
-What's left is the same idea at campaign scale: red doing things between turns that you can
-*see* evidence of, and your sortie being one of several that turn rather than being the turn.
+A great deal already happens at a turn boundary. Counted from `Game.finish_turn` and
+`Game.initialize_turn`: **39 distinct operations.** Trail and ambient convoys spawn and move,
+ambushes seed, insurgent cells regenerate and re-infiltrate, IEDs and HVTs and dispersed cells
+advance, decoy zones shift, ships relocate and re-parent, supply status is recomputed, strength
+recovers, weather evolves, front lines move, COMINT reveals land, red tempo applies, and the
+ground war is re-planned.
 
-**Low code risk, high testing cost** — this can only be judged by flying, and §89's own five
-slices already owe five passes.
+The engine is not skipping the time between turns. It is simulating it and **not telling anyone**:
+
+| | |
+|---|---|
+| Between-turn operations | **39** |
+| Lines the SITREP can emit | **7** |
+| Sampled systems with zero player-facing hooks | **5 of 8** — trail convoys, ambient convoys, ambushes, ship movement, and more |
+
+**So seam 5 is a reporting gap, not a simulation gap** — the same class as seam 1, pointed the
+other way. Seam 1 asked what the mission tells the campaign; this asks what the campaign tells the
+player.
+
+That reframing is *additive*: it surfaces behaviour that already exists, on the §29 SITREP surface
+that already exists, with no refactor of load-bearing state. §89 proved the in-cockpit version of
+"the war ran without you" reads well, and seam 1 extended the SITREP successfully.
+
+### Phase 0, owed before building
+
+Not everything invisible deserves a line, and a report nobody reads is worse than silence. The
+disconfirming question: **which of the silent systems actually change state the player would act
+on?** If ambient convoys and ship drift are inconsequential, reporting them is noise and the seam
+shrinks to whatever survives.
 
 ---
 

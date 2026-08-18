@@ -63,7 +63,7 @@ stress it · `✗` fail signature reproduced in-game.
 | H14 | The kneeboard SAR line is accurate, and the rescue crew gets a usable card | CSAR | ☐ |
 | I2 | Civilian background air traffic (region fleets + airways) |  | ☑ |
 | H10 | Shared-airframe kneeboard index | §27 | ☐ |
-| H11 | Estimated fuel figures for dataless airframes | §4 | ✗ |
+| H11 | Estimated fuel figures for dataless airframes | §4 | ☑ |
 | K2 | Campaign SITREP band on its own kneeboard page | §29 | ☐ |
 | L5 | New-Game "Vietnam" card | Vietnam mode P2 shell | ◐ |
 | L6 | Convoy interdiction (Steel Tiger) | §35 | ◐ |
@@ -99,9 +99,9 @@ stress it · `✗` fail signature reproduced in-game.
 | B48 | Naval station-keeping racetracks | §87 | ◐ |
 | B53 | AI flights no longer push early for a tanker stop they never fly | §46 | ☐ |
 | B54 | Planner behavior bar switches the suite in the settings UI | re-convergence | ☐ |
-| B55 | Carrier steams for wind down the angled deck | §88 | ☐ |
+| B55 | Carrier steams for wind down the angled deck | §88 | ☑ |
 | B56 | Living battlespace pre-roll: mid-cycle mission start | §89 | ◐ |
-| B57 | Living battlespace P2: ramp residue + clean-wing returners | §89 | ☐ |
+| B57 | Living battlespace P2: ramp residue + clean-wing returners | §89 | ☑ |
 | B59 | Living battlespace P4: the voice net | §89 | ◐ |
 | B60 | Living battlespace P5: reactive red | §89 | ☐ |
 | B61 | Task-role degrade: mismatched-role AI flights still fly their mission | §8 | ☐ |
@@ -2780,7 +2780,9 @@ be settled from a recording instead of the cockpit. It can, across all six recor
 - **Fail signature:** no index when 2+ share a type; wrong start pages; an index wrongly added for a
   lone flight; flights out of the listed order.
 
-### H11 — Estimated fuel figures for dataless airframes · §4 · ✗ REGRESSED
+### H11 — Estimated fuel figures for dataless airframes · §4 · ☑ VERIFIED
+
+**2026-08-17 — VERIFIED on the DM's call**, clearing the REGRESSED mark. Supporting evidence from the same day's rendered kneeboard: the flight-plan table carried a Fuel column populated at every waypoint plus a Bingo/Joker block (8,800 / 9,800 lb). That page was an F/A-18C, which HAS measured data, so it corroborates the ladder rendering rather than the dataless fallback this row is named for.
 
 **History:** 2026-08-05, user report `units-runway-generation-bf755e` — "H11 is generating too much fuel for aircraft in cases": the ESTIMATE over-reads, so the kneeboard `Fuel` column and the derived RTB margin flatter the jet — the dangerous direction, since an over-generous estimate tells a pilot they can make it home when they cannot, and the same numbers feed the §46 tanker decision, so an inflated figure can also suppress a tanker pass the sortie actually needed. **Needs the specific airframes** — the estimate only applies to types with no `fuel:` block in their yaml, so the fix is either a better model or real per-airframe data for the offenders, and which it is depends on whether the over-read is uniform or type-specific. `tests/dcs/test_estimated_fuel_consumption.py` sanity-bands the estimate but the band is evidently too loose to catch this) (was ☐ UNTESTED, estimate sanity-banded in `tests/dcs/test_estimated_fuel_consumption.py`, 2026-06-27; the surface moved 2026-07-05 — the figures now render in the flight plan's `Fuel` column on Mission Info, not a Fuel Ladder page
 - **Deferred (2026-06-28, user: "update after kneeboard update"):** revisit once the pending kneeboard changes land — re-check the C-130J King / helo Fuel Ladder against the current deck so the estimate is validated against the updated kneeboard rather than the old one.
@@ -4571,7 +4573,11 @@ App pass, no flight needed: open Settings → Campaign Doctrine in a game.
      `PLANNER_SUITE_VALUES`' stock column (the `test_fresh_settings_are_stock` guard should
      have caught it first).
 
-### B55 — Carrier steams for wind down the angled deck · §88 · ☐ UNTESTED
+### B55 — Carrier steams for wind down the angled deck · §88 · ☑ VERIFIED
+
+**2026-08-17 — VERIFIED, computed from the flown `.miz` rather than eyeballed.** CVN-72 steams BRC **249** at 17.7 kt; the mission wind is from **220 at 8 kt** (the kneeboard's own weather line agrees). Vector sum of ship and air motion gives **25.0 kt of relative wind arriving from 240.1°** — **8.9° off the port bow**, straight down a ~9° angled deck, and 25 kt is exactly what §88 targets. The emitted `deckDecor.brc` field carries the same 249, so the plugin and the ship agree. Cross-check: LHA-1 Tarawa steams **220**, i.e. bow-straight into wind, which is correct for a deck with no angle — so the offset is being applied per hull rather than globally.
+
+⚠ **Recorded a day late.** The computation was done and reported on 2026-08-17 and never written into this row, so the fly card kept asking for a result that already existed. Same failure as G32. See the cadence note's authoring rules.
 
 **History:** adopted 2026-08-09 from geofffranks' `12d71346`, upstream issue dcs-retribution#865. **Desk finding 2026-08-16** (Baltic Fury spectator generation, session `c86c58dd`): the authored PORPOISE carrier leg was **166.0° at 16.4 kt** under save wind `direction=11, 4.73 m/s`, but `solve_carrier_cruise(11, 4.73, 9.0)` returns **135.1° at 22.0 kt** with no input combination reproducing 166/16.4. **RESOLVED 2026-08-16** (session `bd15b892`, desk — miz + solver cross-check): the 166/16.4 discrepancy was in the repro call's units, not the pipeline — `steam_into_wind` feeds the solver **knots** (`mps(wind.speed).knots`; 4.7257 m/s = 9.19 kt, matching the solver's 25 kt target units), and `solve_carrier_cruise(11, 9.186, 9.0)` = 165.8°/16.38 kt, rounded to **166** by integer `Heading.from_degrees` — byte-for-byte the authored leg (confirmed from the miz: `0077 | PORPOISE (Carrier)` 166.0°/16.4 kt/100.0 km). All three suspects acquitted: the sea probe only shortens the leg (100→20 km, never a new heading; the 100.0 km leg proves attempt 0 passed), the miz weather block carries the save's at_0m verbatim, and `max(0.0, ·)` never engaged. The escort leg (`0078 | PORPOISE (Escort)` 191.0°/15.8 kt) is the **same solver at deck 0** — escorts have no `landing_deck_angle` — i.e. plain bow-into-wind, confirming at_0m follows DCS blows-to (the `atis.py` empirically-verified convention). **The investigation then found the real §88 defect: the solver's deck-angle sign was inverted** — it solved to the starboard mirror (`wind_from − offset`), putting the felt wind at `BRC + deck` instead of down the port landing area at `BRC − deck`: felt wind from 175 vs the 157 landing area = **+7.7 kt crosswind, double the ~3.9 kt bow-into-wind residual the feature was adopted to remove**. Fixed same day (`wind_from + offset`, both EXACT and the high-wind clamp), pinned by a 60-case apparent-wind invariant test + the Baltic regression numbers; this save's wind now authors **216°/16.4 kt** (felt wind from 207 = exactly down the landing area, 0.0 kt crosswind). Features doc §88 "The B55 desk finding" has the full mechanism. The fly clause below is still owed — on the ball is the one thing the desk cannot measure
 
@@ -4640,7 +4646,9 @@ version), take off normally.
   5. **Turn 0 differs at all from gate-off** — the curve's zero is not gating; the expectation
      is byte-identical.
 
-### B57 — Living battlespace P2: ramp residue + clean-wing returners · §89 · ☐ UNTESTED
+### B57 — Living battlespace P2: ramp residue + clean-wing returners · §89 · ☑ VERIFIED
+
+**2026-08-17 — VERIFIED on the DM's call.** Note for anyone re-reading this: the 2026-08-17 Syria mission (`Test 6`) is NOT evidence either way — its `.miz` contains no parked residue at all (every blue group carries a flown route), so nothing on that mission could have shown this working or broken.
 
 **History:** — **was ✗ REGRESSED; the structural gap is FIXED 2026-08-16 (session `adoring-jepsen-b63803`), awaiting a flight.** The gap, found by the dedicated 2026-08-16 desk check (session `c86c58dd`): **the residue path was starved by construction.** `AircraftSimulation` removes a package from the ATO when it completes (`game/sim/aircraftsimulation.py` → `ato.remove_package`), and `_spawn_completed_residue` iterated the ATO's packages at generation — so a completed flight only rendered as ramp residue in the narrow window where its package still held an uncompleted sibling. The common case (a solo-flight CAP package finishing its cycle) left the ATO entirely and never reached the generator: marches of 40/75/88/150 minutes all produced **zero** ATO `Completed` flights at generation (the ATO census visibly shrank 38 → 18 across the 150-minute march). The earlier "condition never arose" reading was this same gap seen from the other side. The unit tests faked the generator's input and could not see the sim's removal — the third fake-blind §89 finding of that day. **The fix** took the ledger option: the removal site records (flight, arrival-frozen-at-completion) into a transient ledger (`record_completed_residue` in `game/fourteenth/living_battlespace.py`; cleared at `begin_simulation`, never pickled, `fogofwar.py` pattern) and `generate_flights` parks ledger flights after the tasked walk. Recorded-means-removed keeps ledger and ATO walk disjoint, and the generation-time synthetic `Completed` flights (idle ramp, QRA, red-scramble) never pass the removal site, so the "excluding the idle synthetics" caveat is now structural rather than a counting rule. The arrival is frozen because `Squadron.arrival` follows a live relocation order. **A second defect surfaced while testing the fix:** removal returns the airframes to `untasked_aircraft`, so `spawn_unused_aircraft` rendered the same jets again as idle filler — `_spawn_unused_for` now debits `idle_spawn_count(untasked, parked)`. The P3 briefing's `recovered` count reads the ledger too (same blindness — it is why B58's watch showed `recovered 0`). New tests model the removal the old fakes were blind to: ledger/walk disjointness, gate-off both ways, the arrival freeze, coalition filtering, the brief count and the idle debit. Re-test: any turn-3+ pre-roll long enough that the briefing block reports `recovered ≥ 1`, or a flown full sortie. Clean-wing returners (the W3 half) was never affected — it reads in-flight states — but stays unobserved pending a run where an egressing striker is inspectable
 

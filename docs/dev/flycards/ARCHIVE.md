@@ -12,6 +12,9 @@ The live card stays short. This is where its history lives.
 
 | Closed | Item | Row(s) | Verdict |
 |---|---|---|---|
+| 2026-08-17 | The boat is steaming down the angled deck, not the bow | `B55` | ☑ **VERIFIED, computed from the flown `.miz`.** CVN-72 on BRC 249 at 17.7 kt against a wind from 220 at 8 kt gives 25.0 kt of relative wind 8.9° off the port bow — down a ~9° angled deck, and 25 kt is exactly the §88 target. LHA-1 steams 220, bow-into-wind, correct for a deck with no angle. **Recorded a day late**, which is why the card kept asking. |
+| 2026-08-17 | Jets are parked on the ramp that already flew today | `B57` | ☑ **VERIFIED** on the DM's call. |
+| 2026-08-17 | The kneeboard fuel ladder is not blank | `H11` | ☑ **VERIFIED** on the DM's call, clearing a REGRESSED mark. |
 | 2026-08-17 | Your SA page has other people on it | `B64` | ☑ **VERIFIED** — "B64 is good". Opened and closed the same day. Also closes the manual step #858 shipped owing: the policy is set to Era-correct in the save **and** the settings baseline, so new campaigns no longer inherit the migrated `Never`. |
 | 2026-08-17 | Air-defence master off greys out its four class rows | `B35` | ☑ **VERIFIED** — "B35 good". Pulled from the parking lot that morning, closed on the first look. The panel render, the class-row greying and the stored-state migration are the parts CI cannot reach. |
 | 2026-08-17 | Civil airliners cross the map high instead of falling out of the sky | `I2` | ☑ **VERIFIED from Tacview** — no flight needed, see below. |

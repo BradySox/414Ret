@@ -73,7 +73,12 @@ function write_state()
         ["naval_magazines_state"] = naval_magazines_state or {},
         ["ejection_events"] = ejection_events,
         ["csar_rescued"] = csar_rescued,
-        ["sortie_records"] = sortie_records or {},
+        -- Tracks ride only on the final write: this file is rewritten every 15 s
+        -- and a 60v60 track set is ~1 MB to encode. See sortie_recorder.lua.
+        ["sortie_records"] = (sortie_recorder_payload
+            and sortie_recorder_payload(mission_ended))
+            or sortie_records
+            or {},
     }
     local ok, write_error = pcall(function()
         fp:write(json:encode(game_state))

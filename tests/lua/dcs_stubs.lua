@@ -271,8 +271,17 @@ function GroupFake:getID()
     return self.id
 end
 
+-- DCS returns only the LIVING units, so a fixed index is not a fixed aircraft:
+-- units[1] becomes a different jet once the lead dies. Modelling that is what
+-- catches "sample the lead" bugs (the sortie recorder had one).
 function GroupFake:getUnits()
-    return self.units
+    local alive = {}
+    for _, unit in ipairs(self.units) do
+        if unit:isExist() then
+            table.insert(alive, unit)
+        end
+    end
+    return alive
 end
 
 function GroupFake:getUnit(i)

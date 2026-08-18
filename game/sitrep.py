@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from datetime import date
 from typing import List, Optional, Sequence, TYPE_CHECKING, cast
 
-from game.sortierecord import SortieRecord
+from game.sortierecord import SortieRecord, sorties_flown
 from game.theater.player import Player
 
 if TYPE_CHECKING:
@@ -180,13 +180,17 @@ def sortie_summary(records: Sequence[SortieRecord]) -> Optional[str]:
     Deliberately aggregate. A per-flight read-off belongs on a page of its own;
     this is the band that rides along with the loss counts.
     """
-    if not records:
+    airborne = [record for record in records if record.track]
+    if not airborne:
         return None
-    hours = sum(record.duration for record in records) / 3600.0
+    # Hours come only from records that were position-sampled, matching the
+    # sortie count. Weapons come from every record: an AI wingman fires without
+    # ever being sampled, and its shots are still the flight's.
+    hours = sum(record.duration for record in airborne) / 3600.0
     shots = sum(record.shots for record in records)
     hits = sum(record.hits for record in records)
-    sorties = "s" if len(records) != 1 else ""
-    line = f"{len(records)} sortie{sorties}, {hours:.1f} hours airborne"
+    sorties = "s" if len(airborne) != 1 else ""
+    line = f"{len(airborne)} sortie{sorties}, {hours:.1f} hours airborne"
     if shots:
         fired = "s" if shots != 1 else ""
         struck = "s" if hits != 1 else ""

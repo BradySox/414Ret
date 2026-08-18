@@ -1,38 +1,83 @@
--- Records what each flight actually did, into state.json's sortie_records.
+-- Records what each aircraft actually did, into state.json's sortie_records.
 -- See docs/dev/design/414th-retribution-long-view.md seam 1.
 --
 -- Vanilla DCS only. Tacview is a paid third-party program, so nothing here may
 -- depend on it or its .acmi export.
 --
 -- Constraints learned the hard way:
---  * Sampling is throttled and aircraft-only. A dense mission already runs out
---    of frames on ground-unit count; a per-tick sweep of every group would make
---    that worse for data nobody watches live.
---  * The track is capped per flight. An unbounded table on a three-hour mission
---    grows the state file without bound, and state.json is rewritten every 15 s.
+--  * Records are keyed by UNIT, never by group. group:getUnits() returns only
+--    the living units, so a fixed index is not a fixed aircraft -- keying by
+--    group and sampling units[1] teleported the track onto a wingman the moment
+--    the lead died, and counted the jump as distance flown.
+--  * Every human-crewed slot is sampled; AI groups only sample one anchor jet.
+--    Four humans in one group do not fly the same track. Sixty AI in formation
+--    do, so paying per-unit for them buys nothing.
+--  * The track is emitted ONLY in the final write. state.json is rewritten every
+--    15 s -- 480 times over a two-hour mission -- and a 60v60 track set is ~1 MB,
+--    so including it in every write means half a gigabyte of json:encode on the
+--    sim thread of a mission that already has no frames spare.
 --  * Every entry point is wrapped by the caller in pcall. A recorder fault must
 --    never take down the loss reporting that shares this file.
 
 SORTIE_RECORD_VERSION = 1
 
--- Seconds between position samples. 30 s gives a readable track shape over a
--- typical sortie without making the state file large.
+-- Seconds between position samples.
 local SAMPLE_INTERVAL_S = 30
 
--- Most samples kept per flight. At 30 s that is two hours airborne; beyond it
--- the oldest samples are dropped so the newest picture is always present.
-local MAX_SAMPLES = 240
+-- Most samples kept per aircraft: four hours at the interval above. Long enough
+-- that an AWACS or tanker orbiting the whole mission keeps its start. Costs only
+-- an in-memory table, because the track is not in the periodic writes.
+local MAX_SAMPLES = 480
 
 sortie_records = { version = SORTIE_RECORD_VERSION, flights = {} }
 
-local function record_for(group_name)
-    local record = sortie_records.flights[group_name]
+-- unit name -> true for the one AI jet per group whose position is sampled.
+local anchors = {}
+
+local function safe(unit, method)
+    if not unit then
+        return nil
+    end
+    local ok, value = pcall(function()
+        return unit[method](unit)
+    end)
+    if not ok then
+        return nil
+    end
+    return value
+end
+
+-- Resolve a unit's group without assuming the unit is still alive: getGroup()
+-- returns nil for a destroyed unit, and the shot/hit handlers can fire either
+-- side of a kill.
+local function group_name_of(unit)
+    local group = safe(unit, "getGroup")
+    if not group then
+        return nil
+    end
+    local ok, name = pcall(function()
+        return group:getName()
+    end)
+    if not ok then
+        return nil
+    end
+    return name
+end
+
+local function record_for(unit)
+    local unit_name = safe(unit, "getName")
+    if not unit_name then
+        return nil
+    end
+    local record = sortie_records.flights[unit_name]
     if record then
         return record
     end
     record = {
-        type = "",
-        coalition = 0,
+        group = group_name_of(unit) or unit_name,
+        type = safe(unit, "getTypeName") or "",
+        coalition = safe(unit, "getCoalition") or 0,
+        player = safe(unit, "getPlayerName") ~= nil,
         first_seen = -1,
         last_seen = -1,
         track = {},
@@ -40,68 +85,26 @@ local function record_for(group_name)
         hits = 0,
         ejected = false,
     }
-    sortie_records.flights[group_name] = record
+    sortie_records.flights[unit_name] = record
     return record
 end
 
--- Resolve the group name for a unit without assuming the unit is still alive:
--- Unit.getGroup() returns nil for a destroyed unit, and the shot/hit handlers
--- can fire either side of a kill.
-local function group_name_of(unit)
-    if not unit then
-        return nil
-    end
-    local ok, group = pcall(function()
-        return unit:getGroup()
-    end)
-    if not ok or not group then
-        return nil
-    end
-    local named_ok, name = pcall(function()
-        return group:getName()
-    end)
-    if not named_ok or not name then
-        return nil
-    end
-    return name
-end
-
 local function sample_unit(unit, now)
-    local name = group_name_of(unit)
-    if not name then
+    local point = safe(unit, "getPoint")
+    if not point then
         return
     end
-    local ok, point = pcall(function()
-        return unit:getPoint()
-    end)
-    if not ok or not point then
+    local record = record_for(unit)
+    if not record then
         return
     end
-
-    local record = record_for(name)
     if record.first_seen < 0 then
         record.first_seen = now
-        local typed_ok, type_name = pcall(function()
-            return unit:getTypeName()
-        end)
-        if typed_ok and type_name then
-            record.type = type_name
-        end
-        local coa_ok, coa = pcall(function()
-            return unit:getCoalition()
-        end)
-        if coa_ok and coa then
-            record.coalition = coa
-        end
     end
     record.last_seen = now
-
-    local fuel = 0
-    local fuel_ok, fuel_value = pcall(function()
-        return unit:getFuel()
-    end)
-    if fuel_ok and fuel_value then
-        fuel = fuel_value
+    -- Re-read each sweep: a slot can be taken by a human mid-mission.
+    if safe(unit, "getPlayerName") ~= nil then
+        record.player = true
     end
 
     table.insert(record.track, {
@@ -109,11 +112,32 @@ local function sample_unit(unit, now)
         x = point.x,
         z = point.z,
         alt = point.y,
-        fuel = fuel,
+        fuel = safe(unit, "getFuel") or 0,
     })
     if #record.track > MAX_SAMPLES then
         table.remove(record.track, 1)
     end
+end
+
+-- Whether this unit's position is worth sampling. Humans always; for AI, the
+-- first jet of the group still alive, held until it dies rather than read off a
+-- fixed index.
+local function should_sample(unit, group_has_anchor)
+    if safe(unit, "getPlayerName") ~= nil then
+        return true
+    end
+    local unit_name = safe(unit, "getName")
+    if not unit_name then
+        return false
+    end
+    if anchors[unit_name] then
+        return true
+    end
+    if group_has_anchor then
+        return false
+    end
+    anchors[unit_name] = true
+    return true
 end
 
 -- One sweep over both coalitions' airborne groups.
@@ -130,13 +154,19 @@ function sortie_recorder_sample()
                         return group:getUnits()
                     end)
                     if units_ok and units then
-                        -- The lead is enough: a flight's members fly the same
-                        -- track, and sampling all of them multiplies the state
-                        -- file by the group size for no extra information. The
-                        -- group category above already guarantees an aircraft.
-                        local lead = units[1]
-                        if lead then
-                            sample_unit(lead, now)
+                        -- The group category above already guarantees aircraft.
+                        local group_has_anchor = false
+                        for _, unit in pairs(units) do
+                            local unit_name = safe(unit, "getName")
+                            if unit_name and anchors[unit_name] then
+                                group_has_anchor = true
+                            end
+                        end
+                        for _, unit in pairs(units) do
+                            if should_sample(unit, group_has_anchor) then
+                                sample_unit(unit, now)
+                                group_has_anchor = true
+                            end
                         end
                     end
                 end
@@ -146,28 +176,53 @@ function sortie_recorder_sample()
     dirty_state = true
 end
 
-function sortie_recorder_on_shot(initiator)
-    local name = group_name_of(initiator)
-    if name then
-        record_for(name).shots = record_for(name).shots + 1
+local function count_on(initiator, field)
+    local record = record_for(initiator)
+    if record then
+        record[field] = record[field] + 1
         dirty_state = true
     end
+end
+
+function sortie_recorder_on_shot(initiator)
+    count_on(initiator, "shots")
 end
 
 function sortie_recorder_on_hit(initiator)
-    local name = group_name_of(initiator)
-    if name then
-        record_for(name).hits = record_for(name).hits + 1
+    count_on(initiator, "hits")
+end
+
+function sortie_recorder_on_ejection(initiator)
+    local record = record_for(initiator)
+    if record then
+        record.ejected = true
         dirty_state = true
     end
 end
 
-function sortie_recorder_on_ejection(initiator)
-    local name = group_name_of(initiator)
-    if name then
-        record_for(name).ejected = true
-        dirty_state = true
+-- What write_state encodes. The track rides only on the final write; see the
+-- header. A crash mid-mission therefore costs the track but keeps the counters,
+-- which is what every write carried before this feature existed.
+function sortie_recorder_payload(include_track)
+    if include_track then
+        return sortie_records
     end
+    local light = { version = SORTIE_RECORD_VERSION, flights = {} }
+    for unit_name, record in pairs(sortie_records.flights) do
+        light.flights[unit_name] = {
+            group = record.group,
+            type = record.type,
+            coalition = record.coalition,
+            player = record.player,
+            first_seen = record.first_seen,
+            last_seen = record.last_seen,
+            track = {},
+            shots = record.shots,
+            hits = record.hits,
+            ejected = record.ejected,
+        }
+    end
+    return light
 end
 
 function sortie_recorder_start()

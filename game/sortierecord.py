@@ -22,7 +22,7 @@ from __future__ import annotations
 import logging
 import math
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Sequence
 
 #: Bumped only when an existing field changes meaning. Adding a field does not
 #: need a bump -- readers ignore what they do not know.
@@ -46,8 +46,17 @@ class TrackSample:
 
 @dataclass(frozen=True)
 class SortieRecord:
-    """What one flight group did over the course of the mission."""
+    """What one aircraft did over the course of the mission.
 
+    Per aircraft, not per flight. Four humans in one group do not fly the same
+    track, and `group:getUnits()` returns only the living units, so there is no
+    stable "the lead" to record against. AI groups still produce one record --
+    the recorder samples a single anchor jet for them.
+    """
+
+    #: DCS unit name. Unique; this is the record's key.
+    unit: str
+    #: DCS group name. Several records can share one.
     group: str
     unit_type: str
     #: DCS coalition id: 1 red, 2 blue.
@@ -58,6 +67,8 @@ class SortieRecord:
     shots: int
     hits: int
     ejected: bool
+    #: True if a human occupied the slot at any point in the mission.
+    player: bool = False
 
     @property
     def duration(self) -> float:
@@ -111,7 +122,8 @@ def _record_from(name: str, raw: Any) -> SortieRecord | None:
                 track.append(sample)
     try:
         return SortieRecord(
-            group=name,
+            unit=name,
+            group=str(raw.get("group", name)),
             unit_type=str(raw.get("type", "")),
             coalition=int(raw.get("coalition", 0)),
             first_seen=float(raw.get("first_seen", 0.0)),
@@ -120,6 +132,7 @@ def _record_from(name: str, raw: Any) -> SortieRecord | None:
             shots=int(raw.get("shots", 0)),
             hits=int(raw.get("hits", 0)),
             ejected=bool(raw.get("ejected", False)),
+            player=bool(raw.get("player", False)),
         )
     except (TypeError, ValueError):
         return None
@@ -151,5 +164,15 @@ def parse_sortie_records(raw: Any) -> tuple[SortieRecord, ...]:
         record = _record_from(str(name), entry)
         if record is not None:
             records.append(record)
-    records.sort(key=lambda record: (record.first_seen, record.group))
+    records.sort(key=lambda record: (record.first_seen, record.unit))
     return tuple(records)
+
+
+def sorties_flown(records: Sequence[SortieRecord]) -> int:
+    """How many aircraft actually got airborne.
+
+    A record with no track is a counters-only entry -- a wingman that fired but
+    was never position-sampled, which is every AI jet except its group's anchor.
+    Counting those as sorties would inflate the figure by the group size.
+    """
+    return sum(1 for record in records if record.track)

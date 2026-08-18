@@ -9576,10 +9576,10 @@ double-count guard. **Seven holes in one wall is a missing schema, not seven fea
 
 ### What it is
 
-`resources/plugins/base/sortie_recorder.lua` samples airborne flights every 30 s and counts shots,
-hits and ejections from the shared event handler. Per flight: track (time, position, altitude, fuel),
-first and last seen, shots, hits, ejected. `game/sortierecord.py` parses it and derives duration,
-distance flown, fuel at end and peak altitude.
+`resources/plugins/base/sortie_recorder.lua` samples airborne aircraft every 30 s and counts shots,
+hits and ejections from the shared event handler. Per aircraft: track (time, position, altitude,
+fuel), first and last seen, shots, hits, ejected, and whether a human ever occupied the slot.
+`game/sortierecord.py` parses it and derives duration, distance flown, fuel at end and peak altitude.
 
 Loads before `dcs_retribution.lua` in `resources/plugins/base/plugin.json`.
 
@@ -9588,10 +9588,24 @@ Loads before `dcs_retribution.lua` in `resources/plugins/base/plugin.json`.
 - **Vanilla DCS only. Never Tacview.** It is a paid third-party program; a feature built on its
   `.acmi` export would silently do nothing for most players. Tacview stays useful for checking that
   what the recorder reports is true, and for hand measurement (`game/data/carrier_deck_decor.py:42`).
-- **Only the group lead is sampled.** Members fly the same track; sampling all of them multiplies the
-  state file by the group size for no extra information.
-- **The track is capped at 240 samples** (two hours at 30 s). `state.json` is rewritten every 15 s, so
-  an uncapped table costs disk and encode time on every write.
+- **Records are keyed by unit, never by group.** `group:getUnits()` returns only the *living* units,
+  so a fixed index is not a fixed aircraft. The first version keyed by group and sampled `units[1]`:
+  when the lead died the track teleported onto a wingman and `distance_flown` counted the jump. The
+  harness stub now models the same filtering, so the regression is caught headlessly.
+- **Every human-crewed slot is sampled; an AI group samples one anchor jet**, held until it dies
+  rather than read off an index. Four humans in one group do not fly the same track; sixty AI in
+  formation do, so paying per-unit for them buys nothing.
+- **The track rides only on the final write.** `state.json` is rewritten every 15 s — 480 times over
+  a two-hour mission — and a 60-group track set is ~1 MB at 70 bytes per sample. Including it in
+  every write puts half a gigabyte of `json:encode` on the sim thread of a mission that already has
+  no frames spare. `sortie_recorder_payload(include_track)` builds a counters-only table for the
+  periodic writes. A crash therefore costs the track but keeps everything the writes carried before
+  this feature existed.
+- **The track holds 480 samples** — four hours at 30 s, so a tanker or AWACS orbiting a long mission
+  keeps its start. Only an in-memory Lua table, because of the constraint above.
+- **A record with an empty track is counters-only** — a wingman that fired but was never
+  position-sampled. `sorties_flown()` excludes them, or the sortie count inflates by the group size;
+  their weapons still count toward the flight.
 - **Every entry point is called through `pcall`** from the event handler that also does loss
   reporting. A recorder fault must never cost a mission its results.
 - Parsing degrades rather than fails: missing channel, an empty Lua table serialised as `[]`, a newer
@@ -9604,8 +9618,9 @@ The first thing the campaign has ever said about a mission that is not a casualt
 
 ### Tests
 
-`tests/test_sortie_records.py` (16) · `tests/lua/test_sortie_recorder_runtime.py` (10). The harness
-gained `UnitFake:getFuel` and `addGroup` now carries the spec's `fuel` field.
+`tests/test_sortie_records.py` (20) · `tests/lua/test_sortie_recorder_runtime.py` (16). The harness
+gained `UnitFake:getFuel`, `addGroup` carries the spec's `fuel` field, and `GroupFake:getUnits` now
+filters on `isExist()` to match DCS.
 
 ### Deferred
 

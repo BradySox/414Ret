@@ -1,5 +1,7 @@
 # CSAR — the one document (vision, shipped architecture, and the 2026-07-03 rescope)
 
+> Test paths shown ~~struck through~~ were deleted along with the feature they covered. They are left visible because the citation is part of the record; do not go looking for the file. Audited 2026-08-17.
+
 **Status: AUTHORITATIVE.** This supersedes the eight earlier CSAR/SCAR design notes (each now
 carries a banner pointing here). Read this before touching anything rescue-related.
 
@@ -73,7 +75,7 @@ Files: `game/squadrons/pilot.py` (the POW status/`capture`/`repatriate`), `game/
 `game/sim/missionresultsprocessor.py` (capture flips status + stamps turn; the SITREP POW
 lines), `game/game.py` (`process_win_loss` Homecoming), `game/sitrep.py` (`pows_held`),
 `qt_ui/windows/SquadronDialog.py` (roster status), `game/missiongenerator/commsjamluadata.py`
-(the compromise expiry). Tests: `tests/test_pow_recovery.py`,
+(the compromise expiry). Tests: ~~`tests/test_pow_recovery.py`~~,
 `tests/squadrons/test_squadron_pilots.py`, `tests/test_sitrep.py`,
 `tests/missiongenerator/test_commsjamluadata.py`. In-game pass: checklist G28. **Not shipped**
 (unchanged from the rescope): the POW recovery raid stays shelved, red-side POWs stay out.
@@ -165,7 +167,7 @@ The fix (in `combatsar-config.lua`, no Python/emit change):
 
 This is still the commandeer-an-airborne-helo path the earlier note flagged as risky (G21) — but
 via `FLIGHTGROUP:AddOpsTransport` (the proven AICSAR routing), **not** the retired `SetTask`
-commandeer that RTB'd. Harness-locked in `tests/lua/test_combatsar_ai_rescue_dispatch.py` (the
+commandeer that RTB'd. Harness-locked in ~~`tests/lua/test_combatsar_ai_rescue_dispatch.py`~~ (the
 AI-crewed helo IS commandeered, a player-crewed one is NOT). **The actual OPSTRANSPORT flying +
 delivery still ride an in-game re-fly** (checklist G9/G23).
 
@@ -183,8 +185,8 @@ Files: `game/commander/tasks/compound/theatersupport.py` (orbit removed),
 `game/missiongenerator/luagenerator.py` (`autoSpawn` gate + `parkedHelos`/template emit),
 `resources/plugins/combatsar/combatsar-config.lua` (`autoSpawn` rename, the empty-`rescueHelos`
 guard fix, `commandeerParkedHelo` + `StartUncontrolled`). Tests:
-`tests/missiongenerator/test_combat_sar_sandy_luadata.py` (the gating + parked/clone emit),
-`tests/missiongenerator/test_combat_sar_templates.py` (the template-spawn guards). In-game pass:
+~~`tests/missiongenerator/test_combat_sar_sandy_luadata.py`~~ (the gating + parked/clone emit),
+~~`tests/missiongenerator/test_combat_sar_templates.py`~~ (the template-spawn guards). In-game pass:
 checklist G9 (the on-demand rescue actually flying + delivering). NEW game required (the orbit
 task is gone + the parked pool / cold template is generated at start).
 
@@ -216,7 +218,7 @@ and the single-threaded sim bogged until it locked. Two fixes:
    group polled every 5 s.
 
 `firstAliveCoord` also backs `findBoardingHelo`'s survivor read. Behavioral test:
-`tests/lua/test_combatsar_capture_cap.py` runs the **real** plugin under Lua 5.1 with a cranked
+~~`tests/lua/test_combatsar_capture_cap.py`~~ runs the **real** plugin under Lua 5.1 with a cranked
 config and asserts the clamp fires with the right numbers (combatsar is MOOSE-heavy and not in
 the `DcsPluginHarness`, but the cap runs at file scope before any MOOSE wiring, so a tiny sandbox
 drives it end to end). No `.miz` / save / New-Game requirement — it's a plugin-runtime fix that
@@ -284,7 +286,7 @@ window). Fixes:
     the reliable way to exercise **G10 King + G23 Sandy + the rescue/delivery loop**.
 
   Both are test aids, not gameplay — leave OFF for normal play. Emitter test:
-  `tests/missiongenerator/test_combat_sar_sandy_luadata.py`.
+  ~~`tests/missiongenerator/test_combat_sar_sandy_luadata.py`~~.
 
 ## Non-combatant capture race (2026-07-17 night-fly fix)
 
@@ -374,10 +376,10 @@ Files: `resources/plugins/combatsar/combatsar-config.lua` (always-run + `syncSur
 `game/debriefing.py` (`combat_sar_survivors` parse), `game/sim/missionresultsprocessor.py`
 (MIA sparing + the ledger pilot-fallback in `record_pow_captures` + `record_downed_pilots` +
 SITREP), `game/sitrep.py` (`pilots_mia`), `game/game.py` (state + the finish_turn hook),
-`game/settings/settings.py`. Tests: `tests/fourteenth/test_downed_pilots.py`,
-`tests/lua/test_combatsar_ledger.py` (the real plugin under a MOOSE-stub sandbox: no-rescue
-config runs, eject → sync → snatch, evader respawn), `tests/test_combat_sar_scoring.py`,
-`tests/missiongenerator/test_combat_sar_sandy_luadata.py`. In-game pass: checklist **G29**.
+`game/settings/settings.py`. Tests: ~~`tests/fourteenth/test_downed_pilots.py`~~,
+~~`tests/lua/test_combatsar_ledger.py`~~ (the real plugin under a MOOSE-stub sandbox: no-rescue
+config runs, eject → sync → snatch, evader respawn), ~~`tests/test_combat_sar_scoring.py`~~,
+~~`tests/missiongenerator/test_combat_sar_sandy_luadata.py`~~. In-game pass: checklist **G29**.
 No NEW game required (plugin/emitter/turn-model only; old saves get `downed_pilots` on load).
 
 ## Pilot recovery surge (2026-07-17 squadron call — "drop everything")
@@ -422,7 +424,7 @@ back to the normal paths — player package, auto-CSAR, the walk-home/capture ro
 Setting: `combat_sar_surge` (default ON, `enabled_when=combat_sar_persistent_pilots` — no
 ledger, no evaders, nothing to surge for). The five CSAR settings moved to their own
 Campaign Management → **"Combat search & rescue"** section (the HQ-automation section had
-hit the 13-field grab-bag cap). Tests: `tests/fourteenth/test_csar_surge.py` (guards,
+hit the 13-field grab-bag cap). Tests: ~~`tests/fourteenth/test_csar_surge.py`~~ (guards,
 gate/stamp semantics incl. pre-field saves, package composition, zone centroid).
 In-game pass: checklist **G31**.
 

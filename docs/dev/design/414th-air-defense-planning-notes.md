@@ -1,5 +1,7 @@
 # 414th Air Defense Planning Notes
 
+> Test paths shown ~~struck through~~ were deleted along with the feature they covered. They are left visible because the citation is part of the record; do not go looking for the file. Audited 2026-08-17.
+
 > **STATUS 2026-08-09 — the geometry and volume half of this note is HISTORICAL.**
 >
 > Work order D of the planner re-convergence decision
@@ -147,7 +149,7 @@ collapsed non-peak bases to a single wave (it was reverted; see commit `c8b1b8c3
 - **Wiring.** `TheaterState.from_game` builds `barcap_threat_scores` over
   `vulnerable_control_points()`, takes the max, and feeds each CP through
   `threat_weighted_barcap_rounds` into `barcaps_needed`.
-- Tests: `tests/test_barcap_threat_weighting.py` (additive-only invariants, zero-threat
+- Tests: ~~`tests/test_barcap_threat_weighting.py`~~ (additive-only invariants, zero-threat
   legacy fallback, fleet multiplier, ceiling).
 
 ## Threat-weighted BARCAP orbit placement (live)
@@ -171,7 +173,7 @@ so it can commit on inbound raids sooner; a quiet flank keeps the legacy uniform
   pushing toward it never sends the orbit into a SAM ring.
 - **Scope.** Placement bias only nudges the orbit *distance* from the defended CP along the
   existing CP→nearest-enemy-airfield heading. It does not change track length, altitude, or
-  the heading itself. Tests: `tests/test_barcap_threat_weighting.py`
+  the heading itself. Tests: ~~`tests/test_barcap_threat_weighting.py`~~
   (`normalized_air_threat` 0/1/mid, enemy-CP exclusion, quiet-theater fallback).
 
 ## A2A escort-need: engagement reach vs orbit reach (live)
@@ -199,7 +201,7 @@ so it can commit on inbound raids sooner; a quiet flank keeps the legacy uniform
   each load, never pickled). Broader-than-CAS by design: every forward package that proposes
   an `EscortType.AirToAir` (CAS→TARCAP, strike/DEAD/anti-ship/AEWC/refueling→ESCORT) now reads
   the front-line band as A2A-threatened.
-- Tests: `tests/test_aircraft_engagement_escort_zone.py` (uncapped-sum range, FLOT-gap
+- Tests: ~~`tests/test_aircraft_engagement_escort_zone.py`~~ (uncapped-sum range, FLOT-gap
   waypoint needs escort via engagement but not orbit zone, superset invariant, out-of-reach
   negative, empty-default fallback).
 
@@ -276,6 +278,6 @@ no such packages.
 
 **Flow.** `TheaterState.from_game` builds the transient `forward_barcaps_needed` (zone ->
 1) for qualifying red front CPs; `ProtectAirSpace` yields `PlanForwardBarcap`; the rest is
-the normal package-planning path. Tests: `tests/test_forward_barcap.py` (the geometry
+the normal package-planning path. Tests: ~~`tests/test_forward_barcap.py`~~ (the geometry
 helper). In-game pass: checklist B5. The theater-tanker-demand companion from the same
 PLAN.md is a separate change and is **not** included here.

@@ -1,5 +1,7 @@
 # 414th Upstreaming Inventory
 
+> Test paths shown ~~struck through~~ were deleted along with the feature they covered. They are left visible because the citation is part of the record; do not go looking for the file. Audited 2026-08-17.
+
 Every generic fix the 414th carries that **isn't** upstreamed is a guaranteed
 merge conflict on every `dcs-retribution/dcs-retribution` `dev` pull, forever.
 The cure is to carve the non-fork-specific fixes out into PRs against the 414th's
@@ -142,7 +144,7 @@ change per PR, upstream gates validated per PR, crowded zones respected. Gaps + 
   concept — a correctness fix to the stock planner.
 - **Files:** `dead_can_reach` geometry + `apply_effects` routing in
   `game/commander/.../theatercommander.py`.
-- **Tests:** `tests/test_dead_planning.py` (deleted with the feature).
+- **Tests:** ~~`tests/test_dead_planning.py`~~ (deleted with the feature).
 - **⚫ WITHDRAWN 2026-08-09:** the planner re-convergence deleted this fork-side, so
   there is nothing left to carve. Rebuild from git history first if it is ever re-wanted;
   the collision note below still applies to whoever does.
@@ -159,7 +161,7 @@ change per PR, upstream gates validated per PR, crowded zones respected. Gaps + 
 - **Why upstream cares:** upstream-core flight-plan code; the off-axis red AWACS
   fling is a stock bug.
 - **Files:** `game/ato/flightplans/supportorbit.py`.
-- **Tests:** `tests/test_support_orbit.py`.
+- **Tests:** ~~`tests/test_support_orbit.py`~~.
 - **In-game pass:** C1 + C2 ☑ VERIFIED 2026-06-24. Cleared to carve.
 - **⚠️ Note (2026-06-27):** the related lateral-deconfliction carve was opened as **PR #790
   and then self-withdrawn** — so support-orbit work is **not** upstream. The depth/front-anchor
@@ -249,7 +251,7 @@ change per PR, upstream gates validated per PR, crowded zones respected. Gaps + 
   by the bundled MOOSE `CSAR` engine, an `auto_combat_sar` AI standing alert, the King TACAN
   beacon + LARS, the kneeboard card, and the **rescue-scoring loop** (a delivered pilot is
   spared at debrief; the airframe is still lost). Test-covered in Python
-  (`tests/test_combat_sar_scoring.py`).
+  (~~`tests/test_combat_sar_scoring.py`~~).
 - **Why it's a candidate:** a whole new playable rescue loop with broad community value, and
   almost entirely generic (vanilla CH-47/C-130, bundled MOOSE — no HighDigitSAM/mod deps).
 - **🟠 CARE — the Lua + glue:** the engine config lives in `resources/plugins/combatsar/` and
@@ -312,7 +314,7 @@ change per PR, upstream gates validated per PR, crowded zones respected. Gaps + 
   `game/debriefing.py` + `game/sim/missionresultsprocessor.py` +
   `resources/plugins/base/dcs_retribution.lua` (the debrief channel),
   `game/settings/settings.py` (`cruise_missile_strikes` + `cruise_missile_auto_raids`).
-- **Tests:** `tests/test_cruisemissiles.py`,
+- **Tests:** ~~`tests/test_cruisemissiles.py`~~,
   `tests/missiongenerator/test_cruisemissileluadata.py`.
 - **Status:** opened 2026-07-15 as **draft [PR #872](https://github.com/dcs-retribution/dcs-retribution/pull/872)**
   (19 files, +1364, two commits: core + UI surfacing). Rebased onto dev @

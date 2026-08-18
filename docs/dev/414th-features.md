@@ -1,5 +1,7 @@
 # 414th features — deep dive
 
+> Test paths shown ~~struck through~~ were deleted along with the feature they covered. They are left visible because the citation is part of the record; do not go looking for the file. Audited 2026-08-17.
+
 The per-feature engineering internals for the 414th's additions on top of upstream
 DCS Retribution. [`CLAUDE.md`](../../CLAUDE.md) is the clean map and points here; this
 file is the deep version for the next coding session — file paths, hard-won gotchas,
@@ -452,8 +454,8 @@ their Insurgency layout entries), `game/fourteenth/jtac_drone.py` (`ensure_jtac_
 — the auto-fielded rear ISR drone squadron that existed only to guarantee the packaged JTAC a
 drone), `AircraftGenerator._maybe_configure_jtac` with `_JTAC_PACKAGE_PRIMARIES`, the
 `Coalition.configure_default_air_wing` hook, the `coin_packaged_jtac_drone: true` preseeds in
-both COIN campaigns, and `tests/fourteenth/test_jtac_drone.py` +
-`tests/missiongenerator/test_drone_jtac.py`.
+both COIN campaigns, and ~~`tests/fourteenth/test_jtac_drone.py`~~ +
+~~`tests/missiongenerator/test_drone_jtac.py`~~.
 
 Removed settings are **save-safe**: `Settings.deserialize_state_dict` looks each stored key up
 against a fresh `Settings()` and passes unknown values straight through, so an old save's two
@@ -2349,7 +2351,20 @@ No runtime change, no save migration, no new setting.
 
 ---
 
-## 15. SCAR — RESCAP "Sandy" rescue escort (rescue rework)
+## §15 — SCAR — RESCAP "Sandy" rescue escort — REMOVED (2026-08-07)
+
+**REMOVED (2026-08-07), together with §21.** The fork's whole rescue stack was replaced by
+upstream [dcs-retribution#929](https://github.com/dcs-retribution/dcs-retribution/pull/929);
+the squadron call was to adopt upstream's shape and not carry two rescue systems. Nothing
+below is in the build. Kept because the CSAR rows, saves and design notes still reference it,
+and because the reasoning behind the rework is the record.
+
+**Audited 2026-08-17:** this section had kept its original "Rework complete" banner and read as
+a live feature for ten days after the removal — the only section in this file that did. Every
+test path cited below was deleted with the feature.
+
+<details>
+<summary>The 2026-06-27 rework, as it stood before removal</summary>
 
 > **Rework complete (2026-06-27) + CSAR rescope (2026-07-03).** SCAR was repurposed from an
 > armor-hunt task into the **RESCAP "Sandy"** rescue escort of the **Combat SAR package** (King +
@@ -2545,6 +2560,9 @@ Two fixes so the SOF C-130 airdrop actually generates as a flyable ground sortie
 
 ---
 
+
+</details>
+
 ## 16. Settings semantic cleanup and audit
 
 The core settings model and every active plugin definition received a consumer-level
@@ -2698,7 +2716,7 @@ dark-themed control: `client/src/components/maplayers/MapLayersControl.tsx` (+ `
 
 ---
 
-## §20 — Drop-spawn: Map Right-Click Unit Placement
+## §20 — Drop-spawn: Map Right-Click Unit Placement — REMOVED (2026-08-02)
 
 **REMOVED (2026-08-02).** The map right-click unit-placement cheat is fully ripped
 out: `game/theater/unitplacement.py`, `QPlaceUnitGroupDialog`, the
@@ -2710,7 +2728,7 @@ out: `game/theater/unitplacement.py`, `QPlaceUnitGroupDialog`, the
 
 ---
 
-## §21 — Combat SAR — pilot rescue
+## §21 — Combat SAR — pilot rescue — REMOVED (2026-08-07)
 
 **REMOVED (2026-08-07).** Replaced wholesale by upstream
 [dcs-retribution#929](https://github.com/dcs-retribution/dcs-retribution/pull/929) (Drexyl), which
@@ -5845,7 +5863,7 @@ should now also confirm the garage lands on its authored marker.
 
 ---
 
-## §57 — Air-droppable minefields (convoy interdiction)
+## §57 — Air-droppable minefields (convoy interdiction) — SHELVED (2026-07-30)
 
 **⛔ SHELVED 2026-07-30** — dropped from active use by user call, not deleted. Every gate
 (`air_droppable_minefields`, `auto_plan_minefields`, the `minefields` plugin) defaults OFF and

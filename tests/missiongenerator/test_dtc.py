@@ -188,7 +188,30 @@ def _sam_cp(*, known: bool = True, hidden: bool = False) -> Any:
         position=Pt(120000, -30000),
         groups=[SimpleNamespace(units=[SimpleNamespace(type="SA-2 launcher")])],
     )
-    return SimpleNamespace(captured=SimpleNamespace(is_red=True), ground_objects=[tgo])
+    return SimpleNamespace(
+        captured=SimpleNamespace(is_red=True),
+        ground_objects=[tgo],
+        runway_is_operational=lambda: True,
+    )
+
+
+def _airbase_cp(
+    name: str,
+    x: float,
+    y: float,
+    *,
+    elevation_m: float = 0.0,
+    red: bool = False,
+    operational: bool = True,
+) -> Any:
+    return SimpleNamespace(
+        name=name,
+        position=Pt(x, y),
+        field_elevation=SimpleNamespace(meters=elevation_m),
+        captured=SimpleNamespace(is_red=red),
+        runway_is_operational=lambda: operational,
+        ground_objects=[],
+    )
 
 
 def test_channel_names_pass_the_dtc_filter() -> None:
@@ -365,6 +388,7 @@ def test_viper_cartridge_shape() -> None:
     assert nav_pts[0]["TOS"] == 7 * 3600 + 30 * 60
     assert nav_pts[0]["isTOSEnabled"] is True
     assert nav_pts[2]["R1"] is False
+    assert [p["type"] for p in nav_pts] == ["TGT", "STPT", "STPT", "STPT"]
 
     threat = data["MPD"]["THREAT_PTS"]
     assert len(threat) == 1
@@ -375,6 +399,145 @@ def test_viper_cartridge_shape() -> None:
     comm1 = data["COMM"]["COMM1"]
     assert comm1["Channel_2"] == {"freq": 251.0, "modulation": 1}
     assert "name" not in comm1["Channel_1"]
+
+
+def test_viper_marks_the_target_and_the_run_in() -> None:
+    """The HSD draws STPT as a circle, IP as a square and TGT as a triangle
+    (EA guide p202), so the ingress and the target read at a glance."""
+    flight, mission_data, game = _hornet_fixture()
+    flight.aircraft_type = SimpleNamespace(dcs_unit_type=SimpleNamespace(id="F-16C_50"))
+    flight.waypoints = [
+        _waypoint("TAKEOFF", FlightWaypointType.TAKEOFF, 0, 0, 0, None),
+        _waypoint("IP", FlightWaypointType.INGRESS_STRIKE, 100, 100, 3000, None),
+        _waypoint(
+            "TARGET",
+            FlightWaypointType.TARGET_POINT,
+            200,
+            200,
+            0,
+            None,
+            targets=[object()],
+        ),
+        _waypoint("EGRESS", FlightWaypointType.NAV, 300, 300, 3000, None),
+        _waypoint("LANDING", FlightWaypointType.LANDING_POINT, 0, 0, 0, None),
+    ]
+    data = json.loads(build_viper_cartridge(flight, mission_data, game, "V").to_json())[
+        "data"
+    ]
+    route = data["MPD"]["NAV_PTS"][:4]
+    assert [p["type"] for p in route] == ["IP", "TGT", "STPT", "STPT"]
+    # The id prefix stays STPT whatever the sub-type is (the editor's own rule).
+    assert [p["id"] for p in route] == ["STPT1", "STPT2", "STPT3", "STPT4"]
+
+
+def test_viper_route_stops_at_the_auto_sequencing_limit() -> None:
+    """The jet auto-sequences only from STPT 1-20 (EA guide p223); a longer
+    route would silently stop advancing itself past 20, and the support anchors
+    must still land in the 21-25 tail rather than being dropped."""
+    flight, mission_data, game = _hornet_fixture()
+    flight.aircraft_type = SimpleNamespace(dcs_unit_type=SimpleNamespace(id="F-16C_50"))
+    flight.waypoints = [
+        _waypoint("TAKEOFF", FlightWaypointType.TAKEOFF, 0, 0, 0, None)
+    ] + [
+        _waypoint(f"NAV{i}", FlightWaypointType.NAV, i * 100, i * 100, 3000, None)
+        for i in range(1, 25)
+    ]
+    data = json.loads(build_viper_cartridge(flight, mission_data, game, "V").to_json())[
+        "data"
+    ]
+    nav_pts = data["MPD"]["NAV_PTS"]
+    assert [p["note"] for p in nav_pts[:20]] == [f"NAV{i}" for i in range(1, 21)]
+    assert [p["note"] for p in nav_pts[20:]] == ["TKR ARCO", "CAP COLT"]
+    assert nav_pts[-1]["number"] == 22
+
+
+def test_viper_geo_lines_stay_inside_their_partition(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """GEO_LINES owns steerpoints 31-55 and the editor refuses a 26th point; a
+    fuller line source than today's 2-point fronts would otherwise run ids into
+    the pre-planned-threat partition at 56."""
+    flight, mission_data, game = _hornet_fixture()
+    flight.aircraft_type = SimpleNamespace(dcs_unit_type=SimpleNamespace(id="F-16C_50"))
+    segments = [
+        (f"Front {n}", [(float(n * 1000 + i), float(i)) for i in range(8)])
+        for n in range(4)
+    ]
+    monkeypatch.setattr(
+        "game.missiongenerator.dtc.viper.flot_segments", lambda g: segments
+    )
+    data = json.loads(build_viper_cartridge(flight, mission_data, game, "V").to_json())[
+        "data"
+    ]
+    geo = data["MPD"]["GEO_LINES"]
+    assert len(geo) == 25
+    assert geo[-1]["id"] == "GEO_LINES55"
+
+
+def _viper_with_fields(fields: list[Any], divert: Optional[str] = None) -> Any:
+    flight, mission_data, game = _hornet_fixture()
+    flight.aircraft_type = SimpleNamespace(dcs_unit_type=SimpleNamespace(id="F-16C_50"))
+    game.theater.controlpoints = fields
+    if divert is not None:
+        flight.divert = _runway(divert)
+    return flight, mission_data, game
+
+
+def test_viper_destinations_lead_with_the_divert() -> None:
+    """DEST owns steerpoints 81-99 (EA guide p203). The briefed divert leads;
+    the rest sort by distance from the target so the nearest alternates are the
+    ones that fit."""
+    flight, mission_data, game = _viper_with_fields(
+        [
+            _airbase_cp("Vaziani", 200000, 200000),
+            _airbase_cp("Kobuleti", 61000, 81000, elevation_m=17.0),
+            _airbase_cp("Krasnodar", 400000, 400000, red=True),
+            _airbase_cp("Senaki", 65000, 85000, operational=False),
+            _airbase_cp("Batumi", 70000, 90000),
+        ],
+        divert="Vaziani",
+    )
+    data = json.loads(build_viper_cartridge(flight, mission_data, game, "V").to_json())[
+        "data"
+    ]
+    dest = data["MPD"]["DEST"]
+    # Red-held and unusable fields drop out; the divert leads, then by range
+    # from the target at (60000, 80000).
+    assert [d["note"] for d in dest] == ["Vaziani", "Kobuleti", "Batumi"]
+    assert [d["id"] for d in dest] == ["DEST81", "DEST82", "DEST83"]
+    assert [d["text"] for d in dest] == ["VAZ", "KOB", "BAT"]
+    assert dest[1]["alt"] == pytest.approx(17.0)
+    assert dest[0]["number"] == 1
+
+
+def test_viper_destination_labels_stay_three_characters() -> None:
+    """The HSD shows three alphanumerics, so a collision has to fit in three."""
+    flight, mission_data, game = _viper_with_fields(
+        [
+            _airbase_cp("Kutaisi", 61000, 81000),
+            _airbase_cp("Kut-Al Field", 62000, 82000),
+            _airbase_cp("CVN-71 Theodore Roosevelt", 63000, 83000),
+        ]
+    )
+    data = json.loads(build_viper_cartridge(flight, mission_data, game, "V").to_json())[
+        "data"
+    ]
+    labels = [d["text"] for d in data["MPD"]["DEST"]]
+    assert labels == ["KUT", "KU2", "CVN"]
+    assert all(len(label) <= 3 for label in labels)
+
+
+def test_viper_destinations_stop_at_the_partition_end() -> None:
+    """Steerpoints 81-99 is 19 slots, and the editor refuses a 20th."""
+    flight, mission_data, game = _viper_with_fields(
+        [_airbase_cp(f"Field{n:02d}", 60000 + n * 1000, 80000) for n in range(25)]
+    )
+    data = json.loads(build_viper_cartridge(flight, mission_data, game, "V").to_json())[
+        "data"
+    ]
+    dest = data["MPD"]["DEST"]
+    assert len(dest) == 19
+    assert dest[-1]["id"] == "DEST99"
 
 
 def test_cartridges_ground_marked_waypoints_like_the_miz() -> None:
@@ -552,6 +715,7 @@ def test_all_sections_off_builds_no_cartridge(
         flot_and_zones=False,
         friendly_orbits=False,
         threat_rings=False,
+        destinations=False,
     )
     generator = _generator(_game(), [_flight(dtc_options=bare)])
     generator.generate()
@@ -587,7 +751,7 @@ def test_hornet_sections_are_omitted_when_off() -> None:
 def test_viper_sections_are_omitted_when_off() -> None:
     flight, mission_data, game = _hornet_fixture()
     flight.aircraft_type = SimpleNamespace(dcs_unit_type=SimpleNamespace(id="F-16C_50"))
-    flight.dtc_options = DtcOptions(comms=False, route=False)
+    flight.dtc_options = DtcOptions(comms=False, route=False, destinations=False)
     cartridge = build_viper_cartridge(flight, mission_data, game, "Anchors Only")
     data = json.loads(cartridge.to_json())["data"]
     assert "COMM" not in data
@@ -601,6 +765,7 @@ def test_viper_sections_are_omitted_when_off() -> None:
         flot_and_zones=False,
         friendly_orbits=False,
         threat_rings=True,
+        destinations=False,
     )
     cartridge = build_viper_cartridge(flight, mission_data, game, "Threats Only")
     data = json.loads(cartridge.to_json())["data"]

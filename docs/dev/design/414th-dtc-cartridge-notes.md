@@ -100,6 +100,9 @@ point), 15 THREAT_PTS, 20+20 COMM channels.
   consecutive numbers in one set connect as a polyline.
 - **Viper THREAT_PTS**: `{number, id "THREAT_PTS<55+n>", x, y, threatName
   ("Custom"), radius (m), alt, elev, text, ring true, def_num 1}`.
+- **Viper DEST**: `{number, id "DEST<80+n>", x, y, alt (m MSL, the field
+  elevation), text (<=3 alphanumerics, the HSD label), note}` — editor cap 19,
+  so ids run DEST81..DEST99.
 
 ## Design decisions
 
@@ -122,7 +125,8 @@ point), 15 THREAT_PTS, 20+20 COMM channels.
   40 exact rings into a cartridge on an unscouted turn — the same latent leak
   existed for the threat-intel kneeboard). Any future generation-time consumer
   of fog-gated intel is covered by that wrapper; never read the fog leaves for
-  a shared artifact outside it.
+  a shared artifact outside it. That is data discipline, not what the pilot
+  sees — the Hornet draws MERAD rings natively; see the manual cross-check.
 - **The Hornet SA budget is priority-then-completeness**: support orbits →
   one racetrack per station (`dedupe_stations`) → leftover §6 wave tracks fill
   the remaining slots up to the hard nine. Never leave slots empty while real
@@ -149,7 +153,8 @@ point), 15 THREAT_PTS, 20+20 COMM channels.
 - **TCN stations list deferred**: needs TACAN channel→paired-frequency data; the
   boat already auto-tunes via NAV_SETTINGS, which is the payoff.
 - **Hornet ALR-67 CMDS/RWR + Viper CMDS/ELINT deferred**: the jets' own defaults
-  are sane; a curated per-era program table is v2 material.
+  are sane. A curated program table no longer needs hand-authoring — ED ships
+  one (see the manual cross-check).
 
 ## pydcs seams (fork-side until upstream lands)
 
@@ -177,6 +182,128 @@ The clean first-class version (unit attrs + `load_from_dict` round-trip + a
 - CH-47F / MiG-29 builders when a campaign fields them blue-client.
 - v2 candidates: TCN stations, ALR-67/CMDS program tables, corridors for transit
   lanes, MEZ from the §40 restricted circles.
+
+---
+
+## Cross-check against the ED flight manuals (2026-08-18)
+
+Sources: the F-16C and FA-18C Early Access Guides in `references/manuals/`, read
+against the live descriptors in `E:\DCS World\CoreMods\aircraft\*\DTC`. Page
+numbers are physical PDF pages.
+
+### The Hornet draws enemy SAM rings without the cartridge
+
+FA-18C guide p205: an air defence unit "placed in the mission, and not to be
+hidden" appears on the SA page at its true position, ringed at its engagement
+range. No detection required; the cartridge is not involved.
+`Game._reveal_merad_groups` forces `hide_on_mfd = False` on every MERAD, so
+those rings are always on for a Hornet client.
+
+What this means for §74: the `MEZ_THRTS` fog gating is right as data discipline
+but does not control what the pilot sees. An unscouted MERAD site is on the SA
+page anyway. §74's rings add the SHORAD/LORAD picture the jet omits, plus a
+redundant copy of the MERAD ones. Do not cite §74 as what keeps unscouted sites
+off the display — §7's `hide_on_mfd` is, and it exempts MERAD on purpose.
+
+### Viper: auto-sequencing stops at STPT 20
+
+F-16C guide p223: with sequencing set to AUTO, "automatic sequencing will only
+be performed from steerpoints 1-20". The nav partition itself runs to 25.
+`MAX_ROUTE_STEERPOINTS = 20` now caps the flown route; support anchors fill
+21-25. A longer route loses its tail rather than shipping steerpoints the jet
+will not advance to.
+
+### Viper: the MPD upload can write CMDS
+
+F-16C guide p126, on the MPD partition: "The CMDS MODE knob must be set to the
+STBY position on the CMDS control panel prior to uploading the MPD file
+partition to prevent erroneous data entry into the CMDS settings." The
+descriptor confirms `data.MPD.CMDS` is a real section.
+
+§74 emits steerpoints, which live in MPD, and `AutoLoad = true` fires with no
+pilot action — nothing can set STBY first. We emit no CMDS content, so there
+may be nothing to write, but that is an assumption. The DTE format's advisory
+messages are the observable. Checklist **B28** carries the check.
+
+### Viper: partition boundaries, confirmed exactly
+
+| Partition | Steerpoints | §74 |
+| --- | --- | --- |
+| Navigation | 1–25 | `STPT<n>`; route capped at 20, anchors 21–25 |
+| Ownship markpoints | 26–30 | not emitted |
+| Geographic lines | 31–55 | `GEO_LINES{30+n}`, capped at 25 |
+| Pre-planned threats | 56–70 | `THREAT_PTS{55+n}`, capped at 15 |
+| Destinations | 81–99 | not emitted |
+| Datalink markpoints | 500+ | not emitted |
+
+The id arithmetic already matched. The missing piece was a **total** GEO_LINES
+cap: 4 sets × 8 points allowed 32, whose ids reach `GEO_LINES62` — inside the
+threat partition. `flot_segments` yields 2 points per front, so 8 was the real
+maximum and nothing shipped wrong; the guard protects the corridor work in Open
+items. The editor's own refusal is `#data.MPD.GEO_LINES > 24`.
+
+### Viper: steerpoints have sub-types
+
+F-16C guide p202: a navigation steerpoint draws as a circle, an IP as a square,
+a target as a triangle. `NAV_PTS_Types` accepts `STPT` / `IP` / `TGT` and keeps
+the `STPT<n>` id prefix regardless of sub-type. §74 emitted `STPT` for
+everything; it now marks target waypoints `TGT` and ingress waypoints `IP`. The
+old "the Viper marks targets via the route, not a point flag" comment was wrong.
+
+### Confirmed correct — no change
+
+- **STPT numbering.** F-16C guide p224: ME waypoint 0 is the group's initial
+  position, and each waypoint after it becomes STPT 1, 2, 3 in Nav Route 1. The
+  flown 2026-07-19 off-by-one fix puts the cartridge on the jet's own native
+  numbering, so a failed AutoLoad degrades to the same numbers, not different
+  ones.
+- **Ground-marked steerpoint altitude.** p224 advises ground level for any
+  steerpoint used to mark a location or cue sensors. `client_altitude` already
+  returns 0 AGL for `GROUND_MARKED_WAYPOINTS`.
+
+### New v2 material
+
+- **`MPD.DEST` (steerpoints 81–99) — BUILT 2026-08-18.** Friendly recovery
+  fields as Destination steerpoints: red-held and non-operational fields drop
+  out, the briefed divert leads, and the rest sort by distance from the target
+  so the nearest alternates take the 19 slots. Labels are three uppercase
+  alphanumerics with a collision suffix that stays inside three. Own section
+  switch (`destinations`) on the Edit Flight DTC tab, default on. Viper only —
+  the Hornet descriptor has no equivalent section.
+- **`MPD.CMDS` — INVESTIGATED, NOT BUILT (2026-08-18).** See the decision below.
+- **`MPD.VIPVRP`** exists; nothing in the planner produces VIP/VRP offsets.
+- The Hornet's `DTC/` folder now carries `DL/` and `IFF/` directories, but
+  `MAIN_panels` is still the same eight and `data` has no key for either.
+  Dormant, not usable. Re-check after a DCS patch.
+
+---
+### Decision: no CMDS section (2026-08-18)
+
+`CMDS_defs.lua` looked like a shipped threat->countermeasure-program table worth
+mining. It is not usable as one, on three counts:
+
+1. **It is a defaults file, not intelligence.** The `CMDSPrograms.Air/Ground/
+   Naval/Other` tables are what every Viper already has. Emitting them
+   reproduces the jet's own state. Making them campaign-aware means inventing
+   program and threshold values, which is the unsourced-number failure mode.
+2. **Emitting it clobbers the pilot.** `CMDSProgramSettings` carries the burst
+   and salvo counts for MAN1-6 / AUTO1-3. An AutoLoaded cartridge would write
+   them over anything the pilot hand-set — exactly what the "an off section is
+   omitted, never emitted empty" rule above exists to prevent for comms.
+3. **The two sources disagree on the shape.** The live descriptor declares
+   `data.MPD.CMDS`; ED's own three shipped example cartridges
+   (`F-16C/DTC/defaults/test*.json`) are CMDS-only with the section at
+   **`data.CMDS`**, carrying `CMDSBingoSettings` + a `MAN1`-only
+   `CMDSProgramSettings` and no threat table at all. §74's method is to mine a
+   shape from a working artifact and cross-check it against the editor; here the
+   two disagree, so there is no confirmed shape to emit.
+
+On top of all three, the guide's STBY warning (above) makes an AutoLoaded CMDS
+write the one thing already flagged as risky and unverified in the cockpit.
+
+If CMDS is wanted later, the honest first step is a flown check of what an
+AutoLoaded MPD partition already does to the CMDS page — checklist **B28** — not
+more mining.
 
 ---
 

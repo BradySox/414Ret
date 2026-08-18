@@ -365,6 +365,16 @@ two-item list underneath. The card now opens on the list.
 - **Cross it off the moment it closes.** `G32` was recorded VERIFIED in the checklist on
   2026-08-16 and still occupied slot 1 the next day, so the hook kept asking the DM for a
   result that already existed. The archive exists so crossing off costs nothing.
+- **A verdict reached in conversation is not recorded until it is in the row.** This is the
+  same failure as above wearing a different hat, and it has now happened twice. `B55` was
+  *computed* from a flown `.miz` on 2026-08-17, reported to the DM in full, and never written
+  down — so it went onto the card as an open item hours after it was settled, and the DM had
+  to say "this watch card is wrong". If you work out a verdict, write the row in the same
+  reply, before you move on. Analysis that lives only in chat scrollback is analysis nobody
+  can find next week.
+- **Check the row before you add an item.** Refilling the card from the outstanding list means
+  trusting the checklist; if the checklist is stale the card inherits the staleness. Cheap
+  guard: `grep "^| <ROW> " docs/dev/414th-ingame-pass-checklist.md` before promoting anything.
 - **Not every item needs a flight.** `I2` was closed on 2026-08-17 out of Tacview recordings
   already on disk — 52 civil tracks, cruise levels and descent-rate-versus-groundspeed — after
   sitting on the card as an in-sim question. Before adding an item, ask whether an existing

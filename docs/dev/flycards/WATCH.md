@@ -11,50 +11,45 @@ next from the parking lot.
 
 ## The list
 
-*(All four previous items closed 2026-08-17 — `G32`, `I2`, `B64`, `B35`. Refilled from the
-outstanding rows, choosing the ones that resolve on a glance at something you were looking at
-anyway. Swap any of them out; nothing here is precious.)*
+*(All three previous items were already closed when the card was still asking for them —
+see [`ARCHIVE.md`](ARCHIVE.md). Refilled 2026-08-17 from the parking lot and the outstanding
+rows.)*
 
-### 1 · Jets are parked on the ramp that already flew today — `B57`
+### 1 · The enemy C2 net is audible on the radio — `B23`
 
-**Where:** the ramp at mission start, before you go anywhere. **~1 min.**
+**Try:** tune the red UHF net while you are anywhere near a live enemy command post and listen
+for CW/voice traffic; it is DF-able, so a bearing swing as you fly past is the confirmation.
+**~5 min.**
 
-- **Pass:** aircraft whose sorties finished before your start time are sitting on their home
-  ramp, and they are **clean** — pylons empty, no stores hung on a jet that already dropped.
-- **Fail:** an empty ramp when the briefing says packages already flew; or parked jets still
-  carrying a full load.
-- **Why it's here:** §89's residue tier decides what the field looks like when you walk out, and
-  a wrong answer is visible in one glance and invisible to every test.
+- **Pass:** you hear the net, and the signal strength tracks your distance to the C2 site.
+- **Fail:** silence with a live command post in range; or audio that does not change with range.
+- **Why it's here:** §70's audible half has sat PARTIAL, and it needs ears rather than a test.
 
-### 2 · The boat is steaming down the angled deck, not the bow — `B55`
+### 2 · Ships hold station instead of sliding off it — `B48`
 
-**Where:** F10 map or the deck itself, any carrier mission. **~1 min.**
+**Where:** the F10 map, any naval group, twice ten minutes apart. **~1 min.**
 
-- **Pass:** the carrier's course is offset ~9–10° from the wind line, so the wind comes straight
-  down the **angled** deck rather than over the bow.
-- **Fail:** the boat steams directly into wind (bow-aligned), which puts the relative wind across
-  the landing area.
-- **Why it's here:** §88 changed the recovery heading and nothing has looked at the boat since.
+- **Pass:** each group is still on its assigned station, walking a racetrack rather than
+  drifting downrange.
+- **Fail:** a group well off station, or stopped dead.
+- **Why it's here:** §87 anchors the ovals; whether they hold over a long mission is a look.
 
-### 3 · The kneeboard fuel ladder is not blank — `H11`
+### 3 · The ATO talks on the AWACS frequency — `B59`
 
-**Where:** the kneeboard flight-plan page, any airframe without measured fuel data. **~30 s.**
+**Try:** monitor the AEW&C frequency during the mission. **~2 min of listening.**
 
-- **Pass:** every waypoint row shows a minimum-fuel and planned-fuel figure, including on
-  airframes with no hand-measured consumption block.
-- **Fail:** blank or zero fuel columns — the capacity-derived estimate is not filling in.
-- **Why it's here:** this row is marked **REGRESSED**, so it is known broken rather than unknown.
-  Confirming it either way costs one page turn.
-
----
+- **Pass:** you hear the day's calls — pushes, checks, splashes — spoken on the net.
+- **Fail:** the frequency is dead all mission.
+- **Why it's here:** the 2026-08-17 mission armed **48 scheduled calls** and nothing in the log
+  says whether any of them played. Only ears can close it.
 
 ## Parking lot (pull one when a slot frees)
 
 | Row | Watch for | Note |
 |---|---|---|
 | — | Loadouts are **identical** again across flights of one airframe + task | Confirms the §84 rip landed in the build you actually run. Low priority: the removal is test-covered |
-| `B23` | The red C2 net is audible on the radio and can be DF'd | PARTIAL — you would hear it on an ordinary sortie |
-| `B48` | Ships hold station instead of drifting off it | PARTIAL — an F10 glance at any naval group |
+| `Q3` | "Apply to all" moves every flown leg's altitude, including AGL ones | App-side, ~30 s in the flight editor |
+| `B60` | Red alert fighters appear over an objective you just struck | §89 P5. Armed on 10–11 objectives on 2026-08-17 and never triggered — needs something struck |
 
 Closed and dropped items, with the reasoning: [`ARCHIVE.md`](ARCHIVE.md).
 Contrived-condition tests live on [`LOCAL.md`](LOCAL.md).

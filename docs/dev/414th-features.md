@@ -1821,6 +1821,35 @@ in-game pass (the F-4E OCA case now shows a pre/post-strike tanker + a non-negat
   test compares `Player.is_blue` rather than the enum, which is always truthy — a bare
   truthiness test would have made the gate a silent no-op.
   Tests `tests/missiongenerator/test_refuel_waypoint_gate.py`.
+- **Kneeboard: the package table named the reader "Flight", and the targets map was unreadable
+  (fixed 2026-08-17).** Four defects, all found by rendering the pages out of a flown Syria
+  `.miz` rather than by flying it — the kneeboard is a PNG we generate, so what renders here is
+  exactly what DCS shows, and **none of these needs an in-game pass**.
+  1. **The reader's own row said `Flight`.** Every other row of the Support Info package table
+     is a callsign (Enfield 8, Ford 7, Lobo 3, Python 5) and the page header already said
+     "Colt 9", but `SupportPage.__init__` fell back to the literal string. Now the callsign,
+     with `
+(custom name)` appended exactly as the other rows do.
+  2. **Labels printed on top of each other.** The placement loop stepped a colliding label
+     *downward only* and gave up at the bottom edge **while still overlapping** — then drew it
+     anyway, destroying both its own text and the one underneath. Flown: `DRAGONFLY` over
+     `CRANE`, `King Abdullah II` over `Muwaffaq Salti`, both near the bottom of the map.
+     Placement now tries right then left, and within each side steps down then **up**; if
+     nothing is free the label is dropped rather than overprinted, because an overprint costs
+     two labels instead of one.
+  3. **Markers were drawn through labels.** Occupancy tracked labels but not the dots, so a
+     package marker printed through the middle of `DOLPHIN`. Markers now go down in a pass of
+     their own and seed the occupancy set before any text is placed.
+  4. **A target that is also a control point was named twice** (`H3 Southwest`, once orange and
+     once red). The base pass now skips a name the target pass already drew.
+  Plus the map fills the page. It was sized to the area-of-interest aspect and centred, which
+  letterboxed a wide, short theater into a middle band with ~390 px of dead page above and
+  below. It now uses the full rectangle and lets `aspect_correct` grow the **world** extent
+  instead — the padding lands on the non-binding axis, so the scale is unchanged and the area
+  of interest occupies exactly the pixels it did before, with terrain where the blank was. The
+  old comment was guarding against *shrinking* the map to fit both axes, which is a different
+  operation. Tests `tests/missiongenerator/test_kneeboard_packages_map.py` (assert the rendered
+  text calls, not internals) + `tests/test_airfield_directory_page.py`.
 - **The refuel waypoint was planned whether or not a tanker was flying, and the fuel readout
   believed it (fixed 2026-08-17).** Reported off the Payload tab: a Hornet burning 8,111 lb of
   the 15,225 it carried read *"1 tanker pass · RTB margin +11,680 lb"*. Two separate faults

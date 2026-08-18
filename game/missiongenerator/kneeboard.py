@@ -1234,7 +1234,13 @@ class SupportPage(KneeboardPage):
         self.dark_kneeboard = dark_kneeboard
         self.airfield_rows = airfield_rows or []
         self.code_words = code_words
-        flight_name = self.flight.custom_name if self.flight.custom_name else "Flight"
+        # Every other row in this table is a callsign, so this one is too. It
+        # used to fall back to the literal "Flight", which read as a placeholder
+        # on the one row the reader is looking for (flown 2026-08-17: the page
+        # header said "Colt 9" and the table said "Flight").
+        flight_name = str(self.flight.callsign)
+        if self.flight.custom_name:
+            flight_name = f"{flight_name}\n({self.flight.custom_name})"
         self.comms.append(CommInfo(flight_name, self.flight.intra_flight_channel))
 
     #: Folded "Airfield Directory" table presentation, shared by the inline
@@ -2487,22 +2493,19 @@ class PackagesMapPage(KneeboardPage):
             terrain=self.terrain,
         )
 
-        # Size the rendered map to the area-of-operations aspect rather than
-        # stretching it to fill the near-square page. A wide, short theater
-        # (carriers far offshore + inland targets) would otherwise be aspect-
-        # padded with ~half a page of empty sea above and below, squashing the
-        # actual front into the middle. Fit to the binding axis, then centre the
-        # strip so it reads as a deliberate map rather than a cut-off frame.
+        # Fill the page, and let aspect_correct grow the WORLD extent to match
+        # rather than letterboxing the image. This costs the area of interest
+        # nothing: the padding lands on the non-binding axis, so the scale set
+        # by the binding axis is unchanged and the AO occupies exactly the
+        # pixels it would have anyway -- the space that used to be blank page
+        # now shows the terrain around it. The earlier letterbox was guarding
+        # against SHRINKING the map to fit both axes, which is a different
+        # thing and is not what this does. Flown 2026-08-17: a Syria page put
+        # the whole theater in a middle band with ~390 px of dead page above
+        # and below it.
         # Page-x (width) <- DCS y (east); page-y (height) <- DCS x (north).
-        content_ew = max(extent.span_y_m, 1.0)
-        content_ns = max(extent.span_x_m, 1.0)
-        map_w = avail_w
-        map_h = round(map_w * content_ns / content_ew)
-        if map_h > avail_h:
-            map_h = avail_h
-            map_w = round(map_h * content_ew / content_ns)
-        off_x = margin + (avail_w - map_w) // 2
-        off_y = top + (avail_h - map_h) // 2
+        map_w, map_h = avail_w, avail_h
+        off_x, off_y = margin, top
 
         extent = aspect_correct(extent, map_w, map_h)
         writer.image.paste(
@@ -2517,6 +2520,20 @@ class PackagesMapPage(KneeboardPage):
             return off_x + px, off_y + py
 
         draw = writer.draw
+        # Occupied boxes. Seeded with the MARKERS themselves, not just with
+        # labels: markers are drawn in a pass of their own before any text, and
+        # a label placed on a dot is as unreadable as one placed on a label
+        # (flown 2026-08-17: a package dot printed through the middle of
+        # "DOLPHIN").
+        placed: List[Tuple[float, float, float, float]] = []
+
+        def overlaps(box: Tuple[float, float, float, float]) -> bool:
+            ax0, ay0, ax1, ay1 = box
+            return any(
+                ax0 < bx1 and bx0 < ax1 and ay0 < by1 and by0 < ay1
+                for bx0, by0, bx1, by1 in placed
+            )
+
         base_labels: List[Tuple[str, int, int, Tuple[int, int, int]]] = []
         for x, y, side, kind, name in self.control_points:
             px, py = to_px(x, y)
@@ -2543,33 +2560,61 @@ class PackagesMapPage(KneeboardPage):
                 )
             else:
                 draw.ellipse([px - 3, py - 3, px + 3, py + 3], fill=color)
+                placed.append((px - 4, py - 4, px + 4, py + 4))
                 continue
+            placed.append((px - 6, py - 6, px + 6, py + 6))
             base_labels.append((name, px, py, color))
-
-        placed: List[Tuple[float, float, float, float]] = []
-
-        def overlaps(box: Tuple[float, float, float, float]) -> bool:
-            ax0, ay0, ax1, ay1 = box
-            return any(
-                ax0 < bx1 and bx0 < ax1 and ay0 < by1 and by0 < ay1
-                for bx0, by0, bx1, by1 in placed
-            )
 
         label_h = 15
         right_edge = off_x + map_w
         bottom_edge = off_y + map_h - label_h
+
+        def free_slot(px: int, py: int, tw: float) -> Optional[Tuple[float, float]]:
+            """First non-overlapping label position for a marker, or None.
+
+            Tries right of the marker then left, and within each side steps DOWN
+            then UP. The old rule only stepped down and gave up at the bottom
+            edge -- while still overlapping -- so it drew the label anyway and
+            destroyed the one underneath as well as itself. Flown 2026-08-17:
+            "DRAGONFLY"/"CRANE" and "King Abdullah II"/"Muwaffaq Salti" both
+            printed on top of each other into unreadable mush, both near the
+            bottom of the map.
+            """
+            for lx in (px + 8, px - 8 - tw):
+                if lx < off_x or lx + tw > right_edge:
+                    continue
+                for step in (label_h, -label_h):
+                    ly = py - 7
+                    while off_y <= ly <= bottom_edge:
+                        if not overlaps((lx, ly, lx + tw, ly + label_h)):
+                            return lx, ly
+                        ly += step
+            return None
+
+        #: Target names already drawn. A package target that IS a control point
+        #: appears in both lists, and the base pass would then print the same
+        #: name a second time a few pixels away (flown: "H3 Southwest" twice).
+        labelled: set[str] = set()
+
+        target_labels: List[Tuple[str, int, int]] = []
         for name, x, y in self.targets:
             px, py = to_px(x, y)
             draw.ellipse(
                 [px - 5, py - 5, px + 5, py + 5], fill=self.TARGET, outline=(0, 0, 0)
             )
+            placed.append((px - 7, py - 7, px + 7, py + 7))
+            target_labels.append((name, px, py))
+
+        for name, px, py in target_labels:
             tw = label_font.getlength(name)
-            lx = px - 8 - tw if px + 8 + tw > right_edge else px + 8
-            ly = py - 7
-            # Stack overlapping labels downward so clustered targets stay legible.
-            while overlaps((lx, ly, lx + tw, ly + label_h)) and ly < bottom_edge:
-                ly += label_h
+            slot = free_slot(px, py, tw)
+            if slot is None:
+                # Nowhere legible left. The marker still shows the target; an
+                # overprinted name would cost this label AND its neighbour.
+                continue
+            lx, ly = slot
             placed.append((lx, ly, lx + tw, ly + label_h))
+            labelled.add(name)
             # White plate behind the label so it reads against the map.
             draw.rectangle(
                 (lx - 1, ly, lx + tw + 1, ly + label_h), fill=(255, 255, 255)
@@ -2582,11 +2627,13 @@ class PackagesMapPage(KneeboardPage):
             "courbd.ttf", 12, layout_engine=ImageFont.Layout.BASIC
         )
         for name, px, py, color in base_labels:
+            if name in labelled:
+                continue
             tw = base_font.getlength(name)
-            lx = px - 8 - tw if px + 8 + tw > right_edge else px + 8
-            ly = py - 6
-            while overlaps((lx, ly, lx + tw, ly + label_h)) and ly < bottom_edge:
-                ly += label_h
+            slot = free_slot(px, py, tw)
+            if slot is None:
+                continue
+            lx, ly = slot
             placed.append((lx, ly, lx + tw, ly + label_h))
             draw.text(
                 (lx, ly),

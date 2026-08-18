@@ -108,7 +108,7 @@ stress it · `✗` fail signature reproduced in-game.
 | B55 | Carrier steams for wind down the angled deck | §88 | ☑ |
 | B56 | Living battlespace pre-roll: mid-cycle mission start | §89 | ◐ |
 | B57 | Living battlespace P2: ramp residue + clean-wing returners | §89 | ☑ |
-| B59 | Living battlespace P4: the voice net | §89 | ◐ |
+| B59 | Living battlespace P4: the voice net | §89 | ⊘ |
 | B60 | Living battlespace P5: reactive red | §89 | ☐ |
 | B61 | Task-role degrade: mismatched-role AI flights still fly their mission | §8 | ☐ |
 | B65 | Reinforcement follows the supply lines | §90 rung A | ☐ |
@@ -4737,34 +4737,9 @@ shutdown (or watch the F10 map / Tacview tail).
   4. **Counts read absurd** (more airborne than the ATO has flights) — the state census is
      double-counting (a state class rename would do it; the census matches by name).
 
-### B59 — Living battlespace P4: the voice net · §89 · ◐ PARTIAL
+### B59 — Living battlespace P4: the voice net · §89 · ⊘ RETIRED
 
-**History:** 2026-08-16 watch, session `c86c58dd`: `BSNET|: armed 7 scheduled calls` in a live mission, and the **dead-transmitter rule is flown-proven** — the QUAGGA strike pair died at their TOT to the site's point defense and their later call logged `off net (gone); call skipped` instead of transmitting. Outstanding: audibility + SAPI voice-quality verdict (the Game Master slot has no radio, and the flown cut predated the subtitles option), on a seated sortie. **Refinement noted:** a check-in can race its flight's late activation — schedule check-ins off takeoff time plus a margin, not departure_delay+60) (was ☐ UNTESTED, built 2026-08-15
-
-> With `living_battlespace_voice_net` on (under the master gate), the generated ATO's own
-> timeline becomes short synthesized radio calls — launch check-ins, pushes, on-station and
-> RTB — voiced at generation time (Windows SAPI, 8 kHz mono, ~35 KB/call) and transmitted
-> positionally from each real flight on the first blue AWACS frequency. Dead transmitter =
-> silence. The schedule builder, gates, rate limit, and the plugin's delivery contract are
-> pinned (`tests/fourteenth/test_living_battlespace.py`, `tests/lua/test_battlespacenet_runtime.py`).
-> What CI cannot judge: audibility, voice quality, and whether the net *feels* right.
-
-Needs a flight: both gates on, turn 3+, tune the briefed AWACS frequency and listen through
-a full sortie.
-
-- **Pass:** calls arrive on the AWACS channel at plausible moments matching visible events
-  (a wave launches → its check-in; a package's TOT approaches → its push); no two calls
-  stomp each other; the SAPI voice is intelligible; mission file grew by ~1–2 MB, not more.
-- **Fail signatures:**
-  1. **Total silence** — check dcs.log for `BSNET|: no calls emitted` (emitter gates/AWACS)
-     vs `BSNET|: armed N` with no audio (transmission path — freq mismatch or clip format).
-  2. **Calls from nowhere / after death** — a transmitter that is visibly dead keeps
-     calling (the live-unit guard broke).
-  3. **Wall of sound** — rate limit not holding (check MIN_CALL_GAP_S / MAX_CALLS).
-  4. **The player's own package voiced over them** — the client-package skip broke.
-  5. **Voice quality verdict "unusable"** — record it here; the fallback direction is the
-     SRS/MSRS runtime path (design-note open call 5's recorded alternative), not more SAPI
-     tuning.
+**Retired 2026-08-18** — the feature was removed on the DM's call ("the AI already uses the radio"), so there is nothing left to fly. It never got an in-game pass; it armed 48 scheduled calls on the 2026-08-17 Syria mission and whether any of them played was never established. See `414th-features.md` §89 P4.
 
 ### B60 — Living battlespace P5: reactive red · §89 · ☐ UNTESTED
 

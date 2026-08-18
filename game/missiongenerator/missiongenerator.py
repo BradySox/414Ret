@@ -32,7 +32,6 @@ from game.unitmap import UnitMap
 from .atisgenerator import AtisGenerator
 from .briefinggenerator import BriefingGenerator, MissionInfoGenerator
 from .cargoshipgenerator import CargoShipGenerator
-from .battlespacenetluadata import plan_battlespace_net
 from .reactiveredluadata import plan_reactive_red
 from .commsjamluadata import JAM_BACKUP_COMM_NAME, plan_comms_jam
 from .rednetluadata import plan_red_net
@@ -168,13 +167,6 @@ class MissionGenerator:
         # net frequency (reserved in the registry, off the blue comms plan by
         # construction) before the Lua pass emits it.
         self.mission_data.red_net = plan_red_net(self.game, self.radio_registry)
-
-        # Blue voice net (§89 P4): schedule + synthesize + embed the ATO's own
-        # radio calls. Runs after air generation (group names, AWACS freq) and
-        # before the Lua pass emits the schedule.
-        self.mission_data.battlespace_net = plan_battlespace_net(
-            self.game, self.mission, self.mission_data, self.time
-        )
 
         # Reactive red (§89 P5): the positive list (blue-targeted red
         # objectives) + the fragged reaction-alert groups, before the Lua pass.

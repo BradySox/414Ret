@@ -34,15 +34,6 @@ for CW/voice traffic; it is DF-able, so a bearing swing as you fly past is the c
 - **Fail:** a group well off station, or stopped dead.
 - **Why it's here:** §87 anchors the ovals; whether they hold over a long mission is a look.
 
-### 3 · The ATO talks on the AWACS frequency — `B59`
-
-**Try:** monitor the AEW&C frequency during the mission. **~2 min of listening.**
-
-- **Pass:** you hear the day's calls — pushes, checks, splashes — spoken on the net.
-- **Fail:** the frequency is dead all mission.
-- **Why it's here:** the 2026-08-17 mission armed **48 scheduled calls** and nothing in the log
-  says whether any of them played. Only ears can close it.
-
 ## Parking lot (pull one when a slot frees)
 
 | Row | Watch for | Note |

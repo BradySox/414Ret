@@ -22,7 +22,7 @@ from game.sidc import (
     SymbolIdentificationCode,
 )
 from game.theater.presetlocation import PresetLocation
-from .fogofwar import fog_revealed
+from .fogofwar import viewer_sees_truth
 from .missiontarget import MissionTarget
 from .player import Player
 from ..data.groups import GroupTask
@@ -226,7 +226,7 @@ class TheaterGroundObject(MissionTarget, SidcDescribable, ABC):
         switched off via the ``recon_intel_fog`` campaign setting, and the
         ``fog_revealed()`` overview forces full knowledge for any viewer.
         """
-        if viewer is None or fog_revealed() or self.is_friendly(viewer):
+        if viewer_sees_truth(viewer, self):
             return True
         settings = self.control_point.coalition.game.settings
         # SCAR campaign engine: an enemy command post is known only once revealed
@@ -255,7 +255,7 @@ class TheaterGroundObject(MissionTarget, SidcDescribable, ABC):
         unconditionally for an enemy viewer — no reveal key, no uncertainty
         circle; its existence is an in-mission discovery only.
         """
-        if viewer is None or fog_revealed() or self.is_friendly(viewer):
+        if viewer_sees_truth(viewer, self):
             return False
         if self.map_hidden:
             return True

@@ -2081,6 +2081,13 @@ in-game pass (the F-4E OCA case now shows a pre/post-strike tanker + a non-negat
   post-freeze. Known gap: QRA intercept and red-scramble groups spawn outside
   `WaypointGenerator` and still read 0; they never reach a kneeboard. Checklist B79; tests
   `tests/missiongenerator/aircraft/test_pydcswaypointbuilder.py`.
+  **Knock-on, fixed the same day:** `bulk_editable` (the "Apply to all" altitude setter)
+  decides what to move by asking whether a waypoint was planned above the deck, and its
+  comment recorded takeoff/landing/divert as 0-seeded. Moving them off 0 made the setter
+  eligible to overwrite a field elevation with the cruise altitude. Takeoff and landing are
+  now in `BULK_ALTITUDE_SKIP_TYPES`; divert is separated by whether its control point is an
+  `OffMapSpawn`, since an off-map divert is an exit vector that *should* move and altitude
+  no longer distinguishes the two.
 
 ---
 

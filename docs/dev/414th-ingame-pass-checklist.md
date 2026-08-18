@@ -5039,6 +5039,17 @@ Fly any sortie off a field that is not at sea level and read the waypoint list.
   3. **A QRA intercept or red scramble jet still reads 0.** Known and not fixed — those
      groups are spawned outside `WaypointGenerator` and never reach a kneeboard.
 
+> **Follow-on found the same day, before any flight.** Moving these off 0 broke the bulk
+> altitude setter. `bulk_editable` decides what "Apply to all" moves by asking whether the
+> waypoint was planned above the deck, and its own comment recorded the assumption that
+> takeoff, landing and divert are "planner-seeded at 0 ft". They are not any more, so at any
+> field above sea level the setter would have overwritten the field elevation with the cruise
+> altitude — corrupting exactly the steerpoint this row exists to fix. Takeoff and landing are
+> now named in `BULK_ALTITUDE_SKIP_TYPES`; divert is conditional, because an *off-map* divert
+> is an exit vector planned at cruise and moving it is the point, so it is separated by its
+> control point rather than by altitude. Pinned in `tests/test_bulk_waypoint_altitude.py`.
+> Read this row with **Q3**.
+
 ### B71 — Several survivors come out on one lift · CSAR (#929 Phase 5) · ☐ UNTESTED
 
 **History:** adopted 2026-08-17 from upstream `82b3ab10`. Never flown.

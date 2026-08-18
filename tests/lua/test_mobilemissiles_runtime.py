@@ -120,13 +120,13 @@ def test_no_node_is_a_clean_noop() -> None:
     h.assert_no_lua_errors()
 
 
-def test_fire_mission_group_holds_then_scoots_with_a_task_reset() -> None:
+def test_fire_mission_group_holds_then_scoots() -> None:
     # Fire first, THEN scoot: a group with a forwarded fire-mission hold must not
     # be routed while its launch window (+ margin) is open -- the route push would
     # setTask-replace the pending Hold -> FireAtPoint (the 2026-07-16 flown
     # clobber: 12 of 13 batteries silently lost their fire missions to the first
-    # relocation). Once the window passes it scoots, clearing the spent fire task
-    # first (a fired launcher otherwise pins on the dead task and never moves).
+    # relocation). Once the window passes it scoots -- and it is routed exactly
+    # like any other group, with NO resetTask first. See the sibling test below.
     h = _harness_with_mist()
     h.add_group(_ground_group("SHAHED-BAT"))
     h.add_group(_ground_group("SCUD-FREE"))
@@ -163,18 +163,31 @@ def test_fire_mission_group_holds_then_scoots_with_a_task_reset() -> None:
     h.advance_to(66)
     assert {r["group"] for r in _routes(h)} == {"SCUD-FREE"}
 
-    # Third tick (t=125) is past the window: the battery scoots too, and the
-    # spent fire task was cleared before the route push.
+    # Third tick (t=125) is past the window: the battery scoots too.
     h.advance_to(126)
     assert "SHAHED-BAT" in {r["group"] for r in _routes(h)}
-    resets = h.records("controllerResets")
-    assert {r["group"] for r in resets} == {"SHAHED-BAT"}
+    assert h.records("controllerResets") == [], (
+        "a released fire-mission group must be routed like any other -- see "
+        "test_no_group_is_ever_reset_before_its_route_push"
+    )
     h.assert_no_lua_errors()
 
 
-def test_group_without_fire_mission_never_gets_a_task_reset() -> None:
-    # A plain scooting group (no fire mission) must be routed WITHOUT resetTask --
-    # there is nothing to clear, and a reset would wipe whatever the group is doing.
+def test_no_group_is_ever_reset_before_its_route_push() -> None:
+    # THE 2026-08-17 FLOWN BUG. driveTo used to call Controller:resetTask() for a
+    # group whose fire window had passed, then push the route in the same frame.
+    # mist.goRoute already routes via setTask, which REPLACES the task queue, so
+    # the reset bought nothing -- and issuing both in one frame let the reset land
+    # last and wipe the route it was supposed to enable.
+    #
+    # Evidence, one mission, three sites: CICHLID had no fire mission, took no
+    # reset, and moved 3.5 km. OSTRICH and BUFFALO both held a fire mission, both
+    # took the reset, and both moved under 21 m -- OSTRICH until the plugin gave
+    # up on it. Two of the three were the same Scud battery, so composition is not
+    # the discriminator; the reset is.
+    #
+    # NOTE this harness cannot reproduce the race -- it records setTask/resetTask
+    # without modelling DCS's ordering. It pins the decision, not the mechanism.
     h = _harness_with_mist()
     h.add_group(_ground_group("SCUD-A"))
     h.lua.globals().dcsRetribution = h.to_lua(

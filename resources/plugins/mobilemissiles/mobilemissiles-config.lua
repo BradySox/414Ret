@@ -12,7 +12,14 @@
 --  * FIRE FIRST, THEN SCOOT. mist.goRoute routes via Controller:setTask, which
 --    REPLACES a pending fire mission -- 12 of 13 batteries silently lost theirs to
 --    the first relocation (2026-07-16). Groups with a fire window are held until it
---    passes, then resetTask clears the spent task or a fired launcher pins forever.
+--    passes.
+--  * NEVER resetTask before the route push. It was added to clear the spent fire
+--    task and did the opposite: setTask already replaces the queue, so the reset
+--    was redundant, and issuing both in one frame let the reset land last and wipe
+--    the route. Flown 2026-08-17: of three sites in one mission, the only one that
+--    moved (3.5 km) was the one with no fire mission and therefore no reset; both
+--    held-then-released sites got the reset and moved under 21 m. Unit type is not
+--    the discriminator -- two of the three were the same Scud battery.
 --  * fireMarginS MUST stay above MISSILE_FIRE_WINDOW_S (240 s, set in tgogenerator),
 --    so the first route push lands after the fire task has ended on its own.
 --  * Two dry pushes and a group is dropped from the loop. Some mod launchers enter a
@@ -78,19 +85,14 @@ end
 
 -- Hold fire + alarm-green so the site relocates instead of stopping to fight, then route it
 -- off-road to (x, y). x = north, y = east (the emitter's pydcs frame; mist.ground.buildWP maps it
--- straight onto the DCS ground waypoint). clearTask: the group carried a fire mission whose
--- window has passed -- clear the spent FireAtPoint first, or the controller stays pinned on the
--- dead task and ignores the route (the fired-battery-never-moves half of the clobber).
-local function driveTo(group, x, y, speedKmph, clearTask)
+-- straight onto the DCS ground waypoint). No resetTask here, deliberately -- see the header.
+local function driveTo(group, x, y, speedKmph)
     if not (group and group:isExist()) then
         return false
     end
     pcall(function()
         local con = group:getController()
         if con then
-            if clearTask and con.resetTask then
-                con:resetTask()
-            end
             con:setOption(
                 AI.Option.Ground.id.ALARM_STATE,
                 AI.Option.Ground.val.ALARM_STATE.GREEN
@@ -195,7 +197,7 @@ local function startSite(site, startDelay)
                 end
                 if not (rec and rec.stuck) then
                     local dest = mist.getRandPointInCircle({ x = cx, y = cy }, RADIUS)
-                    driveTo(g, dest.x, dest.y, SPEED, hold ~= nil)
+                    driveTo(g, dest.x, dest.y, SPEED)
                     if here then
                         pushes[name] = {
                             x = here.x or 0,

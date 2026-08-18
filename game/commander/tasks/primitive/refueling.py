@@ -4,6 +4,7 @@ from collections import Counter
 from dataclasses import dataclass, field
 
 from game.ato.flighttype import FlightType
+from game.commander.missionproposals import EscortType
 from game.commander.tasks.packageplanningtask import PackagePlanningTask
 from game.commander.theaterstate import TheaterState
 from game.dcs.aircrafttype import AirRefuelType
@@ -62,4 +63,6 @@ class PlanRefueling(PackagePlanningTask[MissionTarget]):
                 optional=True,
                 refuel_methods=frozenset({method}),
             )
-        self.propose_flight(FlightType.ESCORT, 2)
+        # See PlanAewc: untagged, this is a primary flight whose shortage scrubs
+        # the tanker package outright.
+        self.propose_flight(FlightType.ESCORT, 2, EscortType.AirToAir)

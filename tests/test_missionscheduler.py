@@ -16,6 +16,8 @@ from game.ato.flighttype import FlightType
 
 NOW = datetime(2020, 1, 1, 0, 0, 0)
 DURATION = timedelta(minutes=60)
+#: barcap_overlap_time used by the carrier-BARCAP fixture below.
+OVERLAP = timedelta(minutes=15)
 
 
 class _FakeFlightPlan:
@@ -176,9 +178,7 @@ def _schedule_carrier_barcaps(
     monkeypatch.setattr(ms, "NavalControlPoint", _NavalTarget)
     target = _NavalTarget()
     packages = [_FakePackage(target) for _ in range(rounds)]
-    settings = _FakeSettings(
-        timedelta(minutes=15), max_carrier_simultaneous_barcaps=max_simultaneous
-    )
+    settings = _FakeSettings(OVERLAP, max_carrier_simultaneous_barcaps=max_simultaneous)
     coalition = _FakeCoalition(packages, settings)
     ms.MissionScheduler(coalition, timedelta(minutes=120)).schedule_missions(NOW)  # type: ignore[arg-type]
     tots = [p.time_over_target for p in packages]
@@ -191,14 +191,14 @@ def test_carrier_barcaps_stack_up_to_the_configured_limit(
     max_simultaneous: int, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     # Carriers stack up to `max_carrier_simultaneous_barcaps` waves on-station at the
-    # same TOT, then queue the next batch to launch after the prior one recovers (one
-    # mission duration later). With the stubbed earliest_tot == NOW, the first batch
-    # all share NOW and the wave after the limit is pushed out by DURATION.
+    # same TOT, then queue the next batch behind them. The handover is pulled
+    # `barcap_overlap_time` earlier, as on land: chaining raw station-departure left
+    # a coverage hole between every naval round.
     tots = _schedule_carrier_barcaps(
         max_simultaneous, max_simultaneous + 1, monkeypatch
     )
     assert tots[:max_simultaneous] == [NOW] * max_simultaneous
-    assert tots[max_simultaneous] == NOW + DURATION
+    assert tots[max_simultaneous] == NOW + DURATION - OVERLAP
 
 
 def test_living_battlespace_widens_the_spread_window() -> None:

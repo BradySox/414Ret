@@ -137,3 +137,26 @@ def test_armed_recon_excludes_strategic_bombers(
     # Removing the self-hunt lane leaves the bomber's called-coordinate lanes intact.
     if not armed_recon_capable:
         assert aircraft.capable_of(FlightType.STRIKE)
+
+
+@pytest.mark.parametrize(
+    ("variant_id", "cas_capable"),
+    [
+        # CAS is troops-in-contact at the FLOT, not a called-coordinate drop, so a
+        # strategic bomber must not be fragged onto a front line (the flown Sinai
+        # plan put 2x B-52H on one). BAI -- interdiction behind the lines -- stays.
+        ("A-10C Thunderbolt II (Suite 7)", True),
+        ("AV-8B Harrier II Night Attack", True),
+        ("B-1B Lancer", False),
+        ("B-52H Stratofortress", False),
+        ("Tu-160 Blackjack", False),
+    ],
+)
+def test_cas_excludes_strategic_bombers(
+    variant_id: str, cas_capable: bool, tmp_path: Path
+) -> None:
+    aircraft = _aircraft(tmp_path, variant_id)
+    assert aircraft.capable_of(FlightType.CAS) is cas_capable
+    if not cas_capable:
+        # The called-coordinate lanes survive the exclusion.
+        assert aircraft.capable_of(FlightType.STRIKE)

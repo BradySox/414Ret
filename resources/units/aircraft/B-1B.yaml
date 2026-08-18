@@ -18,7 +18,6 @@ variants:
   B-1B Lancer: {}
 tasks:
   BAI: 670
-  CAS: 670
   OCA/Aircraft: 670
   OCA/Runway: 670
   Strike: 700

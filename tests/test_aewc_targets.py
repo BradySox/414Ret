@@ -19,12 +19,22 @@ def _cp(name: str, carrier: bool = False) -> Any:
     return SimpleNamespace(name=name, is_carrier=carrier)
 
 
-def _finder(*, fronts: list[Any], cps: list[Any], farthest: Any, closest: Any) -> Any:
+def _finder(
+    *,
+    fronts: list[Any],
+    cps: list[Any],
+    farthest: Any,
+    closest: Any,
+    anchor: Any = None,
+) -> Any:
     return SimpleNamespace(
         friendly_control_points=lambda: iter(cps),
         front_lines=lambda: iter(fronts),
         farthest_friendly_control_point=lambda: farthest,
         closest_friendly_control_point=lambda: closest,
+        # ObjectiveFinder.aewc_land_anchor: the rear pick, biased toward a field
+        # that actually hosts an AWACS. Defaults to the stock rear pick here.
+        aewc_land_anchor=lambda: farthest if anchor is None else anchor,
     )
 
 
@@ -34,6 +44,20 @@ def test_fronted_theater_keeps_the_rear_anchor() -> None:
         fronts=[object()], cps=[boat, rear, forward], farthest=rear, closest=forward
     )
     assert _aewc_targets(finder) == [boat, rear]
+
+
+def test_fronted_theater_takes_the_awacs_hosting_field() -> None:
+    # The anchor the orbit is built around follows the AWACS: a rear field 1.1 NM
+    # safer is not worth a 245 NM transit for the wing's only E-3.
+    boat, rear, host = _cp("CVN", carrier=True), _cp("Rear"), _cp("AwacsHome")
+    finder = _finder(
+        fronts=[object()],
+        cps=[boat, rear, host],
+        farthest=rear,
+        closest=host,
+        anchor=host,
+    )
+    assert _aewc_targets(finder) == [boat, host]
 
 
 def test_frontless_theater_anchors_on_the_forward_field() -> None:

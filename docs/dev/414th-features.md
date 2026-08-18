@@ -1385,7 +1385,7 @@ single target and states the constraint at the proposal instead:
 - `theaterrefueling.py` steps each further tanker `TANKER_ORBIT_SPACING` (15 NM) back from the
   threat. Without it both tankers get the same racetrack at the same altitude.
 
-Tests: `tests/commander/test_theater_tanker_methods.py` (10). In-game row **B75**.
+Tests: `tests/commander/test_theater_tanker_methods.py` (10). In-game row **B76**.
 
 One defect found writing it: the orbit slot used `list.index`, which matches the first flight
 that compares *equal* rather than the flight itself. Two tankers would have shared a slot the

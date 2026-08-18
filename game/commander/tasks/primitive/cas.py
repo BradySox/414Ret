@@ -33,4 +33,7 @@ class PlanCas(PackagePlanningTask[FrontLine]):
         size = self.get_flight_size()
         self.propose_flight(FlightType.CAS, size)
         self.propose_flight(FlightType.TARCAP, 2, EscortType.AirToAir)
-        self.propose_flight(FlightType.SEAD_SWEEP, 2)
+        # Without an escort_type this is fulfilled as a *primary* flight: never
+        # threat-tested, never prunable, and a package scrub when no sweeper is
+        # free -- which drained the wing's Growlers onto every CAS package.
+        self.propose_flight(FlightType.SEAD_SWEEP, 2, EscortType.Sead)

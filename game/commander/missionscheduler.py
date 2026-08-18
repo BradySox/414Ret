@@ -193,7 +193,15 @@ class MissionScheduler:
                         continue
                     count = carrier_barcaps[package.target]
                     if count >= max_carrier_simultaneous_barcaps - 1:
-                        previous_cap_end_time[package.target] = departure_time
+                        # Hand the next wave over `barcap_overlap` early, as the
+                        # land branch below does. Chaining raw station-departure
+                        # left a hole between every naval round (measured: carrier
+                        # CAP 60 min apart against 45 for airfields, both sides,
+                        # brady.retribution 2026-08-17).
+                        handover = departure_time - barcap_overlap
+                        previous_cap_end_time[package.target] = max(
+                            handover, package.time_over_target
+                        )
                         carrier_barcaps[package.target] = 0
                     else:
                         carrier_barcaps[package.target] += 1

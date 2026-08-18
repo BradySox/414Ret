@@ -88,7 +88,7 @@ pass checklist `§N` is unregistered, or this table drifts.
 | §74 | Native DTC data pre-population (F/A-18C + F-16C) | — | `dtc_data_cartridges` |
 | §75 | Custom victory conditions | — | `alternate_victory_domination`, `alternate_victory_attrition` |
 | §76 | CTLD paratroopers (fixed-wing air assault) | `ctld` | — |
-| §77 | Escort jamming (Growler / Prowler) | `growler` | `max_escort_jammers` |
+| §77 | Escort jamming (Growler / Prowler) | `growler` | `max_escort_jammers`, `single_sead_escort_flavour` |
 | §78 | Sea-supply convoys + coastal anti-ship engagement | — | `cargo_ship_convoys`, `cargo_ship_convoy_max`, `coastal_batteries_engage_ships` |
 | §79 | Decoy suspected-activity zones | — | `decoy_zones`, `decoy_zone_count` |
 | §80 | Mixed-hull ship groups | — | — |

@@ -344,6 +344,7 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                     "c2_decapitation_effects",
                     "weather_aware_planning",
                     "sead_strike_coordination",
+                    "single_sead_escort_flavour",
                     "max_escort_jammers",
                 ],
             ),
@@ -761,6 +762,7 @@ FEATURE_GATE_FIELDS: dict[str, list[str]] = {
     "Auto-planner behaviour": [
         "weather_aware_planning",  # §67
         "sead_strike_coordination",  # §69
+        "single_sead_escort_flavour",  # §77
         "adaptive_procurement",  # §68
         "auto_repair_air_defenses",  # §68
     ],
@@ -1442,6 +1444,27 @@ class Settings:
             "nothing, and player-planned flights are never touched."
         ),
     )
+    single_sead_escort_flavour: bool = boolean_option(
+        "One SEAD flavour per package",
+        page=CAMPAIGN_DOCTRINE_PAGE,
+        section=GENERAL_SECTION,
+        # Stock default (2026-08-09 re-convergence): upstream sets the SEAD and
+        # jammer flags off one radar-SAM trigger, so a package can pull SEAD
+        # Escort, SEAD Sweep and (on DEAD) a SEAD flight at once. The 414th
+        # planner suite preset turns this on.
+        default=False,
+        detail=(
+            "SEAD Escort, SEAD Sweep and the DEAD package's own SEAD flight all "
+            "answer the same radar-SAM trigger, so one package could pull three "
+            "suppression flights while the package that actually needed them flew "
+            "with none -- a flown Sinai plan put three Growler flights around two "
+            "Harriers attacking a vehicle group and left the EWR strike unescorted. "
+            "With this on a package takes the first suppression flavour proposed "
+            "and no more. Fighter escorts are unaffected: an anti-ship package "
+            "still doubles them deliberately to saturate a ship's air defences."
+        ),
+    )
+
     sead_strike_coordination: bool = boolean_option(
         "Strikes push behind their SEAD window",
         page=CAMPAIGN_DOCTRINE_PAGE,

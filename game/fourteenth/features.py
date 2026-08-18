@@ -633,7 +633,9 @@ FEATURES: tuple[Feature, ...] = (
         "Escort jamming (Growler / Prowler)",
         77,
         plugin_id="growler",
-        settings_fields=("max_escort_jammers",),
+        # single_sead_escort_flavour caps a package at one suppression flight so
+        # the jammer's SEAD siblings stop crowding it out (in-game rows B52/B71).
+        settings_fields=("max_escort_jammers", "single_sead_escort_flavour"),
     ),
     Feature(
         # §78 sea-supply convoys + coastal anti-ship engagement: a pure-engine feature

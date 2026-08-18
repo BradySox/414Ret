@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from game.ato.flighttype import FlightType
+from game.commander.missionproposals import EscortType
 from game.commander.tasks.packageplanningtask import PackagePlanningTask
 from game.commander.theaterstate import TheaterState
 from game.theater import MissionTarget
@@ -26,4 +27,6 @@ class PlanRefueling(PackagePlanningTask[MissionTarget]):
 
     def propose_flights(self) -> None:
         self.propose_flight(FlightType.REFUELING, 1)
-        self.propose_flight(FlightType.ESCORT, 2)
+        # See PlanAewc: untagged, this is a primary flight whose shortage scrubs
+        # the tanker package outright.
+        self.propose_flight(FlightType.ESCORT, 2, EscortType.AirToAir)

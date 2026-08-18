@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from typing import Optional, TYPE_CHECKING
 
 from game.ato.flighttype import FlightType
+from game.commander.missionproposals import EscortType
 from game.commander.tasks.packageplanningtask import PackagePlanningTask
 from game.commander.theaterstate import TheaterState
 from game.theater import MissionTarget
@@ -41,7 +42,10 @@ class PlanAewc(PackagePlanningTask[MissionTarget]):
         self.propose_flight(
             FlightType.AEWC, 1, preferred_type=self._preferred_aewc_type()
         )
-        self.propose_flight(FlightType.ESCORT, 2)
+        # An escort with no escort_type is a primary flight: planned even with no
+        # air threat, and an unfillable one scrubs the whole AEW&C package -- no
+        # AWACS that turn. Tagged so it is threat-gated and prunable instead.
+        self.propose_flight(FlightType.ESCORT, 2, EscortType.AirToAir)
 
     def _preferred_aewc_type(self) -> Optional["AircraftType"]:
         """Basing-aware AEW&C squadron preference.

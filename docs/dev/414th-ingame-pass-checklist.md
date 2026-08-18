@@ -116,7 +116,7 @@ stress it · `✗` fail signature reproduced in-game.
 | B66 | Attacking costs more than defending | §90 rung B | ☐ |
 | B67 | The front line counts the forces present | §90 rung C | ☐ |
 | B68 | Terrain slows the front line | §90 rung D | ☐ |
-| B69 | The front bulges instead of running straight | §90 rung E | ☐ |
+| B69 | The front bulges instead of running straight | §90 rung E | ☑ |
 | B70 | Sortie records reach the campaign | §91 | ☐ |
 | B75 | The ATO stops spending its escorts on the wrong packages | planner shape | ☐ |
 | B76 | A mixed boom/probe wing gets a tanker of each | U15 reinstated | ☐ |
@@ -4917,7 +4917,7 @@ passes or the Kola fjords.
 
 ---
 
-### B69 — The front bulges instead of running straight · §90 rung E · ☐ UNTESTED
+### B69 — The front bulges instead of running straight · §90 rung E · ☑ VERIFIED
 
 **History:** built 2026-08-17, session `629c250f`.
 
@@ -4944,6 +4944,28 @@ actually are.
 ---
 
 
+
+> **VERIFIED 2026-08-18** from test 8 (Caucasus, `retribution_nextturn.miz`), measured off
+> the generated mission rather than by eye. The drawn front line is a **7-point polyline**
+> bowing **1.64 km off a 27.3 km chord** (6.0%); signed profile in km is
+> `0.0, -0.82, -1.42, -1.64, +0.49, -0.09, 0.0`, i.e. an S-bend, not a smooth arc. FLOT
+> ground units follow it: median **2.98 km from the drawn line against 3.90 km from the
+> straight chord**.
+>
+> **Read the unit measurement per group kind or it inverts.** Across all 127 front-line
+> units the numbers say the opposite (3.08 km from the drawn line, 2.80 km from the chord)
+> because 107 of them are §9 TIC units, which are placed in depth on both sides and are not
+> meant to sit on the line at all. Only the 13 `unit|` FLOT groups are what this row is
+> about. Anyone re-measuring this must split by group-name prefix first.
+>
+> Caveats kept deliberately: 13 FLOT units is a small sample, and the residual ~3 km is the
+> intended lateral spread, not error.
+>
+> Same mission, **B67 is consistent but NOT proven**: the front-line centre sits 108.9 km
+> from Anapa-Vityazevo and 107.6 km from Maykop-Khanskaya — the 50% midpoint — with 62 blue
+> against 65 red ground units committed. An even fight at the midpoint is the designed null
+> result, so nothing is misbehaving, but an even fight cannot demonstrate the armour
+> weighting. That row needs a lopsided pair.
 ### B70 — Sortie records reach the campaign · §91 · ☐ UNTESTED
 
 **History:** built 2026-08-17, session `629c250f`.

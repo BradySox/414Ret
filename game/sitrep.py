@@ -74,6 +74,12 @@ class Sitrep:
     #: is not a casualty count. Empty when the recorder produced nothing.
     #: Rides along with real news. Absent on pre-feature pickled sitreps.
     sortie_line: Optional[str] = None
+    #: Seam 5: bases the enemy has cut off or reduced to air resupply (§90
+    #: rung A). The tier decides whether a base rebuilds at all, and it had no
+    #: surface anywhere -- a player whose base stopped recovering had no way to
+    #: find out why. Empty when everything is supplied, so a healthy theatre
+    #: stays quiet. Absent on pre-feature pickled sitreps.
+    supply_lines: List[str] = field(default_factory=list)
 
     @property
     def is_empty(self) -> bool:
@@ -107,6 +113,7 @@ class Sitrep:
         pilots_mia: Optional[List[str]] = None,
         red_c2_status: Optional[str] = None,
         victory_lines: Optional[List[str]] = None,
+        supply_lines: Optional[List[str]] = None,
     ) -> "Sitrep":
         blue = debriefing.loss_counts(Player.BLUE)
         red = debriefing.loss_counts(Player.RED)
@@ -140,6 +147,7 @@ class Sitrep:
             sortie_line=sortie_summary(
                 getattr(debriefing.state_data, "sortie_records", ())
             ),
+            supply_lines=list(supply_lines or []),
         )
 
     def kneeboard_lines(self) -> List[str]:
@@ -167,6 +175,9 @@ class Sitrep:
         # capped by the recorder; rides along with real news.
         for victory_line in getattr(self, "victory_lines", None) or []:
             lines.append(victory_line)
+        # Seam 5: bases the enemy has cut off (getattr for old pickled sitreps).
+        for supply_line in getattr(self, "supply_lines", None) or []:
+            lines.append(supply_line)
         # Seam 1: what the flying amounted to (getattr for old pickled sitreps).
         sortie_line = getattr(self, "sortie_line", None)
         if sortie_line:

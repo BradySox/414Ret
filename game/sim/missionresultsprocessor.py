@@ -152,6 +152,7 @@ class MissionResultsProcessor:
         # §75: the alternate-ending progress digest -- empty (and hidden) unless
         # the campaign authors a `victory:` block or a knob is on.
         from game.fourteenth.victory import victory_sitrep_lines
+        from game.fourteenth.supply_report import supply_sitrep_lines
 
         self.game.last_sitrep = Sitrep.from_debriefing(
             debriefing,
@@ -160,6 +161,7 @@ class MissionResultsProcessor:
             pilots_mia=self._downed_pilot_sitrep_lines(),
             red_c2_status=c2_status_line(self.game, Player.RED),
             victory_lines=victory_sitrep_lines(self.game),
+            supply_lines=supply_sitrep_lines(self.game),
         )
 
     def _downed_pilot_sitrep_lines(self) -> list[str]:

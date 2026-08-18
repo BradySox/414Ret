@@ -407,6 +407,13 @@ class FlightPlan(ABC, Generic[LayoutT]):
     def estimate_startup(self) -> timedelta:
         if self.flight.start_type is StartType.COLD:
             if self.flight.client_count:
+                # Per-airframe where somebody has sourced a number; the campaign-wide
+                # allowance everywhere else. A Viper on a stored-heading alignment is
+                # ready in a fraction of the time a Strike Eagle needs, and one
+                # setting cannot be right for both.
+                airframe = self.flight.unit_type.startup_minutes
+                if airframe is not None:
+                    return timedelta(minutes=airframe)
                 return timedelta(
                     minutes=self.flight.coalition.game.settings.player_startup_time
                 )

@@ -92,6 +92,9 @@ Most of this is opt-in. Full list with toggles, defaults and known limitations:
   mod's cartridge format has no field for one.
 - A wing flying both boom and probe receivers gets a theater tanker of each, on separate
   orbits. A wing that only needs one method still gets one tanker.
+- Cold-start allowances follow the airframe where the time is known — a Viper aligns on a
+  stored heading in seconds, a Phantom waits on its gyros. Everything else uses the
+  campaign-wide setting.
 - Tanker and AWACS orbits are drawn on the F10 map with callsign, frequency and TACAN.
 - Drop tanks are fitted for the sortie before tanker passes are decided, so jets stop
   double-tanking sorties their real load covers. The Payload tab shows burn, passes and RTB

@@ -25,7 +25,7 @@ so the two docs don't drift.
 
 ## Outstanding rows at a glance
 
-82 rows need a live pass. Full detail is under each `###` heading below —
+83 rows need a live pass. Full detail is under each `###` heading below —
 search the row id. `☐` untested · `◐` flown but not under the conditions that
 stress it · `✗` fail signature reproduced in-game.
 
@@ -119,6 +119,7 @@ stress it · `✗` fail signature reproduced in-game.
 | B70 | Sortie records reach the campaign | §91 | ☐ |
 | B75 | The ATO stops spending its escorts on the wrong packages | planner shape | ☐ |
 | B76 | A mixed boom/probe wing gets a tanker of each | U15 reinstated | ☐ |
+| B77 | A player's ramp allowance matches the airframe | #214 startup times | ☐ |
 
 ---
 
@@ -5078,3 +5079,12 @@ turn on a wing with a small dedicated-jammer squadron and read the ATO before fl
 - **Setup:** a campaign whose blue wing flies **both** boom and probe receivers and owns a tanker for each — a mixed USAF/USN wing is the natural case (Vipers and Eagles on the boom, Hornets and Tomcats on the drogue). Pass a turn, read the ATO, then look at the two orbits on the map. ~20 min, no flying needed for the first read. **Also run the negative case:** a wing with probe receivers but only a boom tanker. ~30 min total.
 - **Pass:** two `Refueling` flights in the one support package, one serving each method, on visibly separate racetracks both outside the threat rings. In the negative case, still exactly one tanker and the package intact.
 - **Fail signature:** two tankers of the *same* method, which means the unconstrained first flight and the constrained second one picked the same squadron — the constraint is not reaching `best_squadron_for`. Or two tankers stacked on one racetrack, which means the orbit slot is not being applied. Or the package gone entirely in the negative case, which means the extra flight is not actually optional.
+
+### B77 — A player's ramp allowance matches the airframe · #214 startup times · ☐ UNTESTED
+
+**History:** built 2026-08-17 against upstream issue #214, open since 2023. Never flown.
+- **What it is:** `startup_minutes:` on an aircraft yaml overrides the campaign-wide `player_startup_time` for player cold starts. Four airframes carry a sourced value — F-16C 4, F-15E/F-15ESE 3, F-4E 9 — every other airframe falls back to the 10-minute setting, and AI flights keep their flat 2 minutes. Derivations are in `docs/dev/design/414th-startup-times-notes.md`.
+- **What CI cannot exercise:** whether the shorter allowance leaves a human enough time. The tests prove the number reaches the schedule; they say nothing about whether you can actually get a Viper started, aligned and to the hold-short inside 4 minutes.
+- **Setup:** frag a player cold-start F-16C and a player cold-start F-4E in the same turn. Read each package's takeoff time against its TOT, then actually fly both starts with a stopwatch — **stored heading**, which is what the numbers assume. ~40 min for both. Also confirm an airframe with no value (a Hornet) is unchanged at 10 minutes.
+- **Pass:** you make the briefed taxi time on a normal unhurried start in all three. The Phantom's 9 minutes should feel close but sufficient — its gyros alone eat most of it.
+- **Fail signature:** you are still in the chocks when the package is due to taxi, which means the number is too tight and the note's inferred ~2-minute systems window is wrong. Record the stopwatch figure — a measurement replaces the arithmetic outright. The opposite signature also matters: arriving at the hold-short with minutes to spare means the value is generous and the whole exercise bought nothing.

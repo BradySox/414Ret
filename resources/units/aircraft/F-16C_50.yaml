@@ -26,6 +26,7 @@ manufacturer: General Dynamics
 origin: USA
 price: 22
 role: Multirole Fighter
+startup_minutes: 4
 max_range: 350
 fuel:
   # Parking 44 to RWY 06L at Anderson AFB.

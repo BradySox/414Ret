@@ -8,6 +8,7 @@ manufacturer: McDonnell Douglas
 origin: USA
 price: 24
 role: Multirole Strike Fighter
+startup_minutes: 3
 max_range: 300
 use_f15e_waypoint_names: true
 variants:

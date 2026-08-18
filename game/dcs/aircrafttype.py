@@ -247,6 +247,12 @@ class AircraftType(UnitType[Type[FlyingType]]):
     patrol_altitude: Optional[Distance]
     patrol_speed: Optional[Speed]
 
+    #: Minutes a player needs on the ramp before taxi, if this airframe differs from
+    #: the campaign-wide ``player_startup_time``. Taxi is NOT included -- that is
+    #: ``estimate_ground_ops``, which varies by field, not by airframe.
+    #: See docs/dev/design/414th-startup-times-notes.md for where a value comes from.
+    startup_minutes: Optional[int]
+
     cruise_altitude: Optional[Distance]
     combat_altitude: Optional[Distance]
 
@@ -804,6 +810,7 @@ class AircraftType(UnitType[Type[FlyingType]]):
             max_group_size=data.get("max_group_size", aircraft.group_size_max),
             patrol_altitude=patrol_config.altitude,
             patrol_speed=patrol_config.speed,
+            startup_minutes=data.get("startup_minutes"),
             cruise_altitude=altitudes_config.cruise,
             combat_altitude=altitudes_config.combat,
             max_mission_range=mission_range,

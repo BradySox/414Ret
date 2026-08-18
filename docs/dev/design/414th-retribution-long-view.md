@@ -11,7 +11,7 @@ that follow from it.
 | **4 — the front line** | One number divided by another | **BUILT 2026-08-17** — all five rungs; features doc §90, pass rows B65–B69 |
 | **5 — time between turns** | A turn is a jump, not a sample | **ACCEPTED — not started** |
 | 6 — the squadron layer | Already scoped in its own note, not built | See that note |
-| **7 — the enemy** | Red is amnesiac, and nothing it decides is visible | **ACCEPTED — not started** |
+| 7 — the enemy | Red is amnesiac, and nothing it decides is visible | **Axis framing KILLED by Phase 0, 2026-08-17.** Needs re-scoping; see §8 |
 
 **Seam 7 was missed in the first pass, and that was the note's biggest failure.** §1 measured
 13 lines of mission builder per line of campaign brain, and observed that red is blue's planner
@@ -294,7 +294,7 @@ Listed here only so the set is complete. That note's decisions stand; nothing he
 
 ---
 
-## 8. Seam 7 — the enemy · **ACCEPTED**
+## 8. Seam 7 — the enemy · **RE-SCOPING** (axis framing killed by Phase 0)
 
 ### The problem in one line
 
@@ -348,6 +348,48 @@ red committing to something across turns and the player discovering it by flying
 the smallest version is a persisted red intent that survives `from_game` and biases target selection,
 with **no** new surface at all — you learn red is pushing the northern axis because that is where its
 packages keep coming from.
+
+### Phase 0 RESULT, 2026-08-17 — the axis framing is dead
+
+**Phase 0 ran and stopped the feature.** That is the outcome it existed to produce, and the card
+below is kept unedited as the record of what was predicted.
+
+Measured on the DM's own save — **Syria, Desert Trident, turn 4**, one of Starfire's campaigns
+(the standard for judging engine behaviour; fork-authored campaigns are tuned to fork features and
+are not representative):
+
+| | |
+|---|---|
+| Contested fronts | **0** |
+| Red offensive packages | 10 |
+| Axes targeted | **2** — Ben Gurion 9, Tel Nof 1 |
+| Target mix | 7 vehicle groups, 2 buildings, 1 SAM |
+
+Baltic Fury, for contrast: 1 contested front, 3 axes, and a distribution frozen across turns.
+
+**The precondition cannot be met on representative campaigns, and that is not a sampling problem.**
+The standard campaigns do not give red several axes to choose between. Ninety per cent of red's
+offensive effort sits on one base because that is where the targets are, not because red decided
+anything.
+
+So the question the card asks is wrong. Red is not failing to commit to an axis; **there is
+effectively one axis.** "Continuity of intent across axes" is a feature with no room to exist, and
+no threshold tuning rescues it.
+
+**What this does NOT establish.** It does not say red is fine. It says the *axis* dimension is
+empty. If red should vary at all, the candidate dimensions left are what it goes after (it opened
+against vehicle groups, not the SAM belt), how hard it presses, and whether it reacts to being
+hurt. None of those is scoped here, and none should be started without its own Phase 0.
+
+**Two caveats on the numbers.** The Baltic Fury turn loop used `pass_turn(no_action=True)`, so
+nothing changed between turns — those figures show red is *deterministic*, not that it persists.
+And the Desert Trident figure is one turn's planned ATO, not a time series. Neither weakens the
+verdict, because the verdict rests on the precondition, not on the latency.
+
+The instrument is `tools/measure_red_axis_persistence.py`; it is kept, since any successor question
+needs the same axis mapping.
+
+---
 
 ### The fly card, pre-registered 2026-08-17
 

@@ -13,6 +13,10 @@
             "mnemonic": "json"
         },
         {
+            "file": "sortie_recorder.lua",
+            "mnemonic": "sortie_recorder"
+        },
+        {
             "file": "dcs_retribution.lua",
             "mnemonic": "retribution"
         },

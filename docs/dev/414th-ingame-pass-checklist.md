@@ -105,6 +105,12 @@ stress it · `✗` fail signature reproduced in-game.
 | B59 | Living battlespace P4: the voice net | §89 | ◐ |
 | B60 | Living battlespace P5: reactive red | §89 | ☐ |
 | B61 | Task-role degrade: mismatched-role AI flights still fly their mission | §8 | ☐ |
+| B65 | Reinforcement follows the supply lines | §90 rung A | ☐ |
+| B66 | Attacking costs more than defending | §90 rung B | ☐ |
+| B67 | The front line counts the forces present | §90 rung C | ☐ |
+| B68 | Terrain slows the front line | §90 rung D | ☐ |
+| B69 | The front bulges instead of running straight | §90 rung E | ☐ |
+| B70 | Sortie records reach the campaign | §91 | ☐ |
 
 ---
 
@@ -4802,3 +4808,160 @@ leg in Tacview/F10.
      strafing armor it was never tasked against) — role-default AI behavior leaking past
      the waypoint tasking.
 
+
+### B65 — Reinforcement follows the supply lines · §90 rung A · ☐ UNTESTED
+
+**History:** built 2026-08-17, session `629c250f`.
+
+> The per-turn base strength top-up used to apply unconditionally. It now scales by the
+> kind of route back to a rear area: road or shipping recovers in full, airfield-only at a
+> quarter, cut off at nothing. `tests/theater/test_supply_status.py` locks the tiering, the
+> airlift-backfill trap and the no-rear-area guard. What CI cannot see is whether a real
+> campaign's topology actually produces the three tiers, or whether every base always reads
+> SUPPLIED because a road route survives everywhere in practice.
+
+Needs a campaign, not a flight. Any front-line campaign with a capturable CP between a
+front base and the rear — Red Tide's Fulda corridor is the reference.
+
+- **Pass:** cut the road (let red take the intervening CP), pass a turn, and the isolated
+  base's strength does not climb. Retake it and recovery resumes at full rate. The
+  front-line position responds over two or three turns.
+- **Fail signatures:**
+  1. **Nothing ever changes** — every base reads SUPPLIED because the transit network keeps
+     a road link the capture should have removed. Check `Coalition.end_turn` ran before the
+     gate; log `supply_statuses()` for the coalition.
+  2. **Everything reads ISOLATED** — the no-rear-area guard is not firing, or
+     `has_active_frontline` is true for bases that should be rear. Campaigns with a small
+     CP count are the risk case.
+  3. **Blue never recovers at all and stalls out** — 0.25 for the airlift tier is too harsh
+     for a campaign that genuinely depends on air resupply. Tune the multiplier, do not
+     disable the gate.
+
+---
+
+### B66 — Attacking costs more than defending · §90 rung B · ☐ UNTESTED
+
+**History:** built 2026-08-17, session `629c250f`.
+
+> The battle result was a straight swap. An attacking winner now banks 60% of what the
+> loser gives up; a defending winner banks the lot. `tests/sim/test_assault_cost.py` locks
+> the arithmetic and the stance set. What CI cannot see is whether the resulting fronts
+> feel like fronts.
+
+Needs three or four turns of a ground campaign with the stance left on aggressive.
+
+- **Pass:** a front pushed on repeatedly moves, but each push costs the attacker ground it
+  cannot immediately re-spend. A front left defensive holds. Over several turns the line
+  does not slide back and forth across the same ground.
+- **Fail signatures:**
+  1. **Fronts stop moving entirely** — 0.4 is too steep; attacks never accumulate. Lower
+     `ASSAULT_COST_FRACTION`.
+  2. **No visible difference from before** — check the stance actually reaching
+     `apply_battle_result`; a campaign with `automate_front_line_stance` on may never pick
+     an offensive stance.
+  3. **Red gains ground it should not** — the red-side branch reads
+     `enemy_cp.stances.get(cp.id)`, which defaults to DEFENSIVE. If red's stances are
+     unpopulated, red is never charged the assault cost and blue always is.
+
+---
+
+### B67 — The front line counts the forces present · §90 rung C · ☐ UNTESTED
+
+**History:** built 2026-08-17, session `629c250f`.
+
+> Front position multiplies morale by `total_armor_value` instead of using morale alone.
+> Two full-strength bases no longer meet in the middle when one is far better equipped.
+> Locked by `tests/theater/test_front_line_weight.py`, including the air-only fallback.
+
+An app check, not a flight. Load a campaign, compare the front-line position on the map
+against each side's ground inventory.
+
+- **Pass:** the line sits toward the weaker side where one CP holds materially more armour;
+  campaigns where both sides are evenly equipped look unchanged from before.
+- **Fail signatures:**
+  1. **The front starts somewhere unexpected on turn 0** — a campaign author placed the
+     front by tuning strength, and the armour weighting now overrides that intent. Note
+     which campaign; it may need its inventory rebalanced or the setting off for it.
+  2. **An air-only campaign pins the front to blue's doorstep** — the both-sides-zero
+     fallback is not firing.
+
+---
+
+### B68 — Terrain slows the front line · §90 rung D · ☐ UNTESTED
+
+**History:** built 2026-08-17, session `629c250f`.
+
+> Front-line route segments crossing ground vehicles cannot occupy cost up to four times as
+> much advantage per metre. An even fight still sits at the midpoint whatever the terrain.
+> Locked by `tests/theater/test_front_line_terrain.py`.
+
+An app check across several turns, on a map with real chokepoints — Caucasus mountain
+passes or the Kola fjords.
+
+- **Pass:** an advance visibly slows crossing a pass and speeds up in open ground; a front
+  that starts at the midpoint stays there while the fight is even.
+- **Fail signatures:**
+  1. **The front start moved on an existing campaign** — the midpoint pinning is broken.
+     This is the regression the design specifically guards against; compare turn-0 positions
+     against a save from before.
+  2. **Every segment reads difficulty 1.0** — the landmap is missing, or the route runs
+     entirely inside the inclusion zone so the probe never finds bad going. Check on a map
+     with water crossings.
+  3. **A front sticks and never moves again** — 4.0 is too steep for a route that is mostly
+     impassable. Lower `MAX_TERRAIN_DIFFICULTY`.
+
+---
+
+### B69 — The front bulges instead of running straight · §90 rung E · ☐ UNTESTED
+
+**History:** built 2026-08-17, session `629c250f`.
+
+> The FLOT is a bowed polyline with seven lateral samples, ground groups placed along it and
+> the F10 map drawing it. Locked by `tests/missiongenerator/test_front_line_salients.py`.
+
+Generate any front-line mission and look at the F10 map, then at where the ground units
+actually are.
+
+- **Pass:** the drawn front line has a visible bend, ground units sit on the bend rather
+  than on a straight chord, and CAS runs still find them.
+- **Fail signatures:**
+  1. **Units spawn off the playable area or stacked** — the bowed point escaped the
+     inclusion zone and the perpendicular-step fallback did not recover it. This is the
+     highest-risk failure; note the campaign and the lateral offset.
+  2. **The line is drawn bowed but the units are on the chord** — `conflict.bounds` is None
+     on the path that placed them.
+  3. **CAS flights orbit off the end of the front** — the CAS patrol legs read
+     `left_position`/`right_position`, which should be untouched; if they moved, the
+     endpoint pinning in `polyline` regressed.
+  4. **The bulge is invisible** — every sector found the same room ahead. Expected on flat
+     open maps; not a failure unless it is also absent on broken terrain.
+
+---
+
+### B70 — Sortie records reach the campaign · §91 · ☐ UNTESTED
+
+**History:** built 2026-08-17, session `629c250f`.
+
+> The base plugin samples every airborne flight every 30 s and counts shots, hits and
+> ejections; the campaign SITREP reports the day's flying. Locked headlessly by
+> `tests/lua/test_sortie_recorder_runtime.py` and `tests/test_sortie_records.py`, which
+> model no DCS AI, physics or frame budget.
+
+Fly any mission with several AI packages up, then read the next turn's SITREP.
+
+- **Pass:** the SITREP carries a sortie line whose numbers are plausible — sortie count
+  matches the packages that flew, hours are in the right order of magnitude, shots and hits
+  are non-zero on a mission where something was fired.
+- **Fail signatures:**
+  1. **No sortie line at all** — the recorder never started. Check `dcs.log` for a Lua error
+     at load; check `sortie_recorder.lua` is in the base plugin's work order ahead of
+     `dcs_retribution.lua`.
+  2. **Frame-rate drop on a dense mission** — the 30 s sweep is too expensive at this group
+     count. Measure before and after with the recorder disabled; raise
+     `SAMPLE_INTERVAL_S` rather than removing the feature. Dense TIC campaigns are the risk
+     case (see the GLSCO framerate finding).
+  3. **`state.json` grows very large** — the 240-sample cap is not holding, or a long mission
+     has far more flights than expected. Check the file size after a three-hour mission.
+  4. **Counts are wildly wrong** — shots counted per unit rather than per flight, or hits
+     attributed to the wrong group. Only the group lead is sampled; shots and hits come from
+     the event initiator's group.

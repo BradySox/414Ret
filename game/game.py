@@ -43,6 +43,7 @@ from .data.groups import GroupTask
 from .spatialindex import LiveUnitIndex
 from .theater import ConflictTheater, Player
 from .theater.bullseye import Bullseye
+from .theater.supply import RECOVERY_MULTIPLIER, SupplyStatus, supply_statuses
 from .theater.theatergroundobject import (
     EwrGroundObject,
     SamGroundObject,
@@ -61,6 +62,7 @@ if TYPE_CHECKING:
     from .navmesh import NavMesh
     from .sim import GameUpdateEvents
     from .squadrons import AirWing
+    from .theater.controlpoint import ControlPoint
     from .threatzones import ThreatZones
 
 COMMISION_UNIT_VARIETY = 4
@@ -87,7 +89,9 @@ PLAYER_BASEATTACK_THRESHOLD = 0.4
 # amount of strength player bases recover for the turn
 PLAYER_BASE_STRENGTH_RECOVERY = 0.2
 
-# amount of strength enemy bases recover for the turn
+# Defined by upstream but never referenced: red bases have never recovered
+# strength. Left as-is deliberately -- wiring it up is a balance change, not a
+# supply rule, and the rung A gate can only ever reduce blue's free drift.
 ENEMY_BASE_STRENGTH_RECOVERY = 0.05
 
 # cost of AWACS for single operation
@@ -566,11 +570,19 @@ class Game:
         move_and_reparent_ships(self.theater.controlpoints)
 
         if not skipped:
-            for cp in self.theater.player_points():
+            player_points = self.theater.player_points()
+            # Rung A: reinforcement follows the roads. A base the enemy has cut
+            # off rebuilds slowly or not at all instead of healing on a timer.
+            statuses: dict[ControlPoint, SupplyStatus] = {}
+            if self.settings.supply_gated_reinforcement:
+                statuses = supply_statuses(player_points, self.blue.transit_network)
+            for cp in player_points:
                 for front_line in cp.front_lines.values():
                     front_line.update_position()
                     events.update_front_line(front_line)
-                cp.base.affect_strength(+PLAYER_BASE_STRENGTH_RECOVERY)
+                status = statuses.get(cp)
+                multiplier = 1.0 if status is None else RECOVERY_MULTIPLIER[status]
+                cp.base.affect_strength(+PLAYER_BASE_STRENGTH_RECOVERY * multiplier)
 
         # After the first mission, reveal surviving MERAD groups. They start hidden
         # so players don't know enemy SA-6/11/17 positions before flying; the first

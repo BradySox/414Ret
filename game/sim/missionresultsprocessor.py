@@ -33,6 +33,17 @@ MINOR_DEFEAT_INFLUENCE = 0.1
 DEFEAT_INFLUENCE = 0.3
 STRONG_DEFEAT_INFLUENCE = 0.5
 
+#: Rung B: the share of a won assault the attacker spends taking the ground. The
+#: loser still yields the full delta -- only the winner's bank is discounted, and
+#: only when it was the side pushing forward. See the long-view note, seam 4.
+ASSAULT_COST_FRACTION = 0.4
+
+OFFENSIVE_STANCES = (
+    CombatStance.AGGRESSIVE,
+    CombatStance.ELIMINATION,
+    CombatStance.BREAKTHROUGH,
+)
+
 
 class MissionResultsProcessor:
     def __init__(self, game: Game) -> None:
@@ -669,23 +680,52 @@ class MissionResultsProcessor:
                 else:
                     if player_won:
                         print(status_msg)
-                        won = delta
-                        cp.base.affect_strength(won)
-                        enemy_cp.base.affect_strength(-won)
+                        self.apply_battle_result(
+                            winner=cp,
+                            loser=enemy_cp,
+                            delta=delta,
+                            winner_attacked=player_aggresive,
+                        )
                         self.game.message(
                             "Frontline Report",
                             f"Our ground forces from {cp.name} are making progress toward {enemy_cp.name}. {status_msg}",
                         )
                     else:
                         print(status_msg)
-                        won = delta
-                        enemy_cp.base.affect_strength(won)
-                        cp.base.affect_strength(-won)
+                        self.apply_battle_result(
+                            winner=enemy_cp,
+                            loser=cp,
+                            delta=delta,
+                            winner_attacked=enemy_cp.stances.get(
+                                cp.id, CombatStance.DEFENSIVE
+                            )
+                            in OFFENSIVE_STANCES,
+                        )
                         self.game.message(
                             "Frontline Report",
                             f"Our ground forces from {cp.name} are losing ground against the enemy forces from "
                             f"{enemy_cp.name}. {status_msg}",
                         )
+
+    def apply_battle_result(
+        self,
+        winner: ControlPoint,
+        loser: ControlPoint,
+        delta: float,
+        winner_attacked: bool,
+    ) -> None:
+        """Move ground between two control points after a front-line battle.
+
+        Rung B: the loser always yields the full delta, but a winner that was
+        pushing forward banks less than it took -- the assault costs it. A
+        defender that holds pays nothing, so ground is dearer to take than to
+        keep. With the setting off this is the original straight swap.
+        """
+        loser.base.affect_strength(-delta)
+        if winner_attacked and self.game.settings.assault_costs_the_attacker:
+            winner.base.affect_strength(delta * (1.0 - ASSAULT_COST_FRACTION))
+        else:
+            winner.base.affect_strength(delta)
 
     def redeploy_units(self, cp: ControlPoint) -> None:
         """ "

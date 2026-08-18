@@ -183,6 +183,16 @@ Most of this is opt-in. Full list with toggles, defaults and known limitations:
   Operation Baltic Fury and Red Tide ship with schedules.
 - **Command-post strikes matter.** Destroying enemy command posts degrades its target selection
   and thins its offensive tempo. Reactive defence is unaffected.
+- **The front line behaves like a front line.** Five changes, each its own setting. Bases only
+  rebuild their strength if supply can still reach them — a road or sea route back recovers in
+  full, air resupply alone at a quarter, cut off at nothing. Winning a battle on the offensive
+  costs you part of the ground you took; winning dug in costs nothing. Where the line sits
+  accounts for how much armour each side actually has there, not just an abstract strength
+  figure. Bad going slows an advance, so fronts stall at passes and run in the open. And the
+  line bows instead of running straight, showing salients where the ground is good.
+- **Missions report back.** Every flight's track, time airborne, fuel, shots and hits come home
+  with the results, not just which aircraft died. The campaign summary says what the day's
+  flying actually amounted to. No third-party software required.
 - **COMINT collection.** A collection sortie that makes it home (C-130J jamming orbit or any
   drone) buys next turn's take: an intercepted enemy tasking and one suspected-activity circle
   fixed to an exact position. The same nodes are the ones you'd bomb to wreck their planning.

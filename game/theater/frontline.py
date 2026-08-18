@@ -7,6 +7,7 @@ from typing import Any, Iterator, List, TYPE_CHECKING, Tuple
 
 from dcs.mapping import Point
 
+from .landmap import poly_contains
 from .missiontarget import MissionTarget
 from .player import Player
 from ..lasercodes.lasercode import LaserCode
@@ -18,6 +19,17 @@ if TYPE_CHECKING:
 
 
 FRONTLINE_MIN_CP_DISTANCE = 5000
+
+#: Rung D: how much dearer the worst going is than open country. Advancing a
+#: kilometre through terrain ground forces cannot occupy costs this multiple of
+#: the weight advantage that a kilometre of open ground costs, so fronts stall
+#: at chokepoints instead of sliding at a uniform rate.
+MAX_TERRAIN_DIFFICULTY = 4.0
+
+#: Samples per segment when measuring the going. Segments are a handful per front
+#: line and this runs once per front line, so the cost is trivial; more samples
+#: buy precision nobody can see on the map.
+_TERRAIN_SAMPLES = 8
 
 
 @dataclass
@@ -182,20 +194,131 @@ class FrontLine(MissionTarget):
             f"Could not find front line point {distance} from {self.blue_cp}"
         )
 
+    def _segment_difficulties(self) -> List[float]:
+        """Going multiplier per segment, 1.0 for open country.
+
+        Cached on the instance rather than stored on FrontLineSegment: pickled
+        saves restore segments without any new field, so a stored attribute
+        would raise on every pre-feature save. `getattr` re-derives instead.
+        """
+        cached = getattr(self, "_difficulties", None)
+        if cached is not None and len(cached) == len(self.segments):
+            return cached
+        difficulties = self._measure_segment_difficulties()
+        self._difficulties = difficulties
+        return difficulties
+
+    def _measure_segment_difficulties(self) -> List[float]:
+        if not self.coalition.game.settings.terrain_weighted_front_line:
+            return [1.0] * len(self.segments)
+        landmap = self.coalition.game.theater.landmap
+        if landmap is None:
+            return [1.0] * len(self.segments)
+        passable = landmap.inclusion_zone_only
+        difficulties = []
+        for segment in self.segments:
+            blocked = 0
+            for step in range(_TERRAIN_SAMPLES):
+                # Sample segment interiors: the endpoints are control points and
+                # front-line joints, which are passable by construction.
+                fraction = (step + 0.5) / _TERRAIN_SAMPLES
+                x = (
+                    segment.point_a.x
+                    + (segment.point_b.x - segment.point_a.x) * fraction
+                )
+                y = (
+                    segment.point_a.y
+                    + (segment.point_b.y - segment.point_a.y) * fraction
+                )
+                if not poly_contains(x, y, passable):
+                    blocked += 1
+            share = blocked / _TERRAIN_SAMPLES
+            difficulties.append(1.0 + (MAX_TERRAIN_DIFFICULTY - 1.0) * share)
+        return difficulties
+
+    def _cumulative_effort(self, distance: float) -> float:
+        """Effort spent advancing from blue's end to `distance` along the route."""
+        difficulties = self._segment_difficulties()
+        spent = 0.0
+        travelled = 0.0
+        for segment, difficulty in zip(self.segments, difficulties):
+            if travelled + segment.length >= distance:
+                return spent + (distance - travelled) * difficulty
+            spent += segment.length * difficulty
+            travelled += segment.length
+        return spent
+
+    def _distance_for_effort(self, effort: float) -> float:
+        """Inverse of `_cumulative_effort`."""
+        difficulties = self._segment_difficulties()
+        spent = 0.0
+        travelled = 0.0
+        for segment, difficulty in zip(self.segments, difficulties):
+            segment_effort = segment.length * difficulty
+            if spent + segment_effort >= effort:
+                return travelled + (effort - spent) / difficulty
+            spent += segment_effort
+            travelled += segment.length
+        return self.route_length
+
+    def _distance_for_effort_share(self, share: float) -> float:
+        """Map blue's share of the fight to a distance in metres.
+
+        An even fight sits at the midpoint whatever the terrain -- moving the
+        neutral point would silently shift where every campaign's front starts.
+        The terrain weights the *travel* away from it: ground that vehicles
+        cannot cross soaks up advantage, so pushing through a pass costs several
+        times what the same distance of open country costs.
+
+        With every segment at difficulty 1.0 this reduces exactly to
+        `share * route_length`, which is upstream's placement.
+        """
+        midpoint = self.route_length / 2
+        effort_at_midpoint = self._cumulative_effort(midpoint)
+        total_effort = self._cumulative_effort(self.route_length)
+        if total_effort <= 0:
+            return 0.0
+        if share >= 0.5:
+            beyond = total_effort - effort_at_midpoint
+            target = effort_at_midpoint + (share - 0.5) / 0.5 * beyond
+        else:
+            target = effort_at_midpoint * (share / 0.5)
+        return self._distance_for_effort(target)
+
+    def _weight_of(self, control_point: ControlPoint) -> float:
+        """How much this side counts for when the front is placed.
+
+        Rung C: with the setting on, morale is multiplied by the materiel
+        actually present, so a full-strength base holding five vehicles no
+        longer weighs the same as one holding five hundred. With it off this is
+        the bare morale scalar and the placement is upstream's.
+        """
+        if self.coalition.game.settings.scale_aware_front_line:
+            return control_point.base.front_line_weight
+        return control_point.base.strength
+
     @property
     def _blue_route_progress(self) -> float:
         """
         The distance from point "a" where the conflict should occur
         according to the current strength of each control point
         """
-        total_strength = self.blue_cp.base.strength + self.red_cp.base.strength
-        if self.blue_cp.base.strength == 0:
+        blue_weight = self._weight_of(self.blue_cp)
+        red_weight = self._weight_of(self.red_cp)
+        if blue_weight <= 0 and red_weight <= 0:
+            # Neither side weighs anything -- an air-only campaign, or armour
+            # not bought yet. Fall back to morale rather than pinning the front
+            # to blue's doorstep, which is what the blue-first branch below
+            # would otherwise do.
+            blue_weight = self.blue_cp.base.strength
+            red_weight = self.red_cp.base.strength
+        if blue_weight == 0:
             distance = 0.0
-        elif self.red_cp.base.strength == 0:
+        elif red_weight == 0:
             distance = self.route_length
         else:
-            strength_pct = self.blue_cp.base.strength / total_strength
-            distance = strength_pct * self.route_length
+            share = blue_weight / (blue_weight + red_weight)
+            distance = self._distance_for_effort_share(share)
         return self._adjust_for_min_dist(distance)
 
     def _adjust_for_min_dist(self, distance: float) -> float:

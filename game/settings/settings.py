@@ -423,6 +423,11 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                     "living_battlespace_preroll_cap",
                     "living_battlespace_voice_net",
                     "living_battlespace_reactive_red",
+                    "supply_gated_reinforcement",
+                    "assault_costs_the_attacker",
+                    "scale_aware_front_line",
+                    "terrain_weighted_front_line",
+                    "front_line_salients",
                 ],
             ),
             (
@@ -767,6 +772,13 @@ FEATURE_GATE_FIELDS: dict[str, list[str]] = {
         "living_battlespace_preroll",  # §89
         "living_battlespace_voice_net",  # §89 P4
         "living_battlespace_reactive_red",  # §89 P5
+    ],
+    "Ground war": [
+        "supply_gated_reinforcement",  # §90 rung A
+        "assault_costs_the_attacker",  # §90 rung B
+        "scale_aware_front_line",  # §90 rung C
+        "terrain_weighted_front_line",  # §90 rung D
+        "front_line_salients",  # §90 rung E
     ],
     "Campaign clock & era": [
         "continuous_campaign_clock",  # §47
@@ -2271,6 +2283,76 @@ class Settings:
             "fighter posture -- and strictly real: the jets are claimed, "
             "tracked airframes whose losses count. The reaction pool is the "
             "cap; when it is spent, nothing else launches."
+        ),
+    )
+    supply_gated_reinforcement: bool = boolean_option(
+        "Reinforcement follows the supply lines",
+        CAMPAIGN_MANAGEMENT_PAGE,
+        "Campaign features",
+        default=True,
+        detail=(
+            "Your bases only rebuild their ground strength if supply can still "
+            "reach them. A base with a road or sea route back to a rear area "
+            "recovers in full. A base that can only be reached by air recovers "
+            "at a quarter rate. A base the enemy has cut off entirely recovers "
+            "nothing until the route is reopened. With this off, every base "
+            "recovers the same amount every turn regardless of the situation."
+        ),
+    )
+    assault_costs_the_attacker: bool = boolean_option(
+        "Attacking costs more than defending",
+        CAMPAIGN_MANAGEMENT_PAGE,
+        "Campaign features",
+        default=True,
+        detail=(
+            "Winning a front-line battle while on the offensive costs you part "
+            "of the ground you just took -- the assault is paid for. Winning "
+            "while dug in costs nothing. The losing side gives up the same "
+            "amount either way. Fronts hold until they are pushed and give when "
+            "they break, instead of sliding back and forth for free. With this "
+            "off, the winner gains exactly what the loser loses."
+        ),
+    )
+    scale_aware_front_line: bool = boolean_option(
+        "Front line position counts the forces present",
+        CAMPAIGN_MANAGEMENT_PAGE,
+        "Campaign features",
+        default=True,
+        detail=(
+            "Where the front line sits accounts for how much armour each side "
+            "actually has there, not just how well each side is holding up. "
+            "Two bases both at full strength no longer meet in the middle when "
+            "one of them is far better equipped. With this off, only the "
+            "abstract strength figure decides, and a base with five vehicles "
+            "counts the same as one with five hundred."
+        ),
+    )
+    terrain_weighted_front_line: bool = boolean_option(
+        "Terrain slows the front line down",
+        CAMPAIGN_MANAGEMENT_PAGE,
+        "Campaign features",
+        default=True,
+        detail=(
+            "Ground is harder to take where the going is bad. Pushing the front "
+            "through terrain your vehicles cannot drive over costs several "
+            "times the advantage that the same distance of open country costs, "
+            "so fronts stall at passes and river crossings and run in the open. "
+            "With this off the front slides at the same rate everywhere, "
+            "regardless of what it is crossing."
+        ),
+    )
+    front_line_salients: bool = boolean_option(
+        "Front lines bulge instead of running straight",
+        CAMPAIGN_MANAGEMENT_PAGE,
+        "Campaign features",
+        default=True,
+        detail=(
+            "The front is a bowed line rather than a straight one. Sectors "
+            "facing open ground sit further forward than sectors backed against "
+            "terrain vehicles cannot cross, so the line shows salients where "
+            "the going is good. Ground forces are placed along the bulge and "
+            "the F10 map draws it. The two ends still anchor between their "
+            "control points, and the front as a whole does not move."
         ),
     )
     automate_front_line_stance: bool = boolean_option(

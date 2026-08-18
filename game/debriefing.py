@@ -22,6 +22,7 @@ from game.missiongenerator.interceptattrition import (
     fielded_qra_by_squadron,
     reconcile_intercept_losses,
 )
+from game.sortierecord import SortieRecord, parse_sortie_records
 from game.theater import Airfield, ControlPoint, Player
 
 if TYPE_CHECKING:
@@ -182,6 +183,12 @@ class StateData:
     #: UUID strings of downed pilots confirmed rescued in-mission by Ops.CSAR.
     rescued_pilot_ids: List[str]
 
+    #: What each flight actually did -- track, time airborne, fuel, shots, hits.
+    #: The general channel the seven bespoke ones above should collapse into; see
+    #: `game/sortierecord.py` and the long-view note, seam 1. Empty when the
+    #: recorder is off or the save predates it.
+    sortie_records: tuple[SortieRecord, ...] = ()
+
     @classmethod
     def from_json(cls, data: Dict[str, Any], unit_map: UnitMap) -> StateData:
         def clean_unit_list(unit_list: List[Any]) -> List[str]:
@@ -327,6 +334,7 @@ class StateData:
             naval_magazines_state=naval_magazines_state,
             ejections=ejections,
             rescued_pilot_ids=[str(x) for x in data.get("csar_rescued", [])],
+            sortie_records=parse_sortie_records(data.get("sortie_records")),
         )
 
 

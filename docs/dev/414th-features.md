@@ -9485,3 +9485,177 @@ code fix. Resolved (with the user) as a follow-up:
 - **§15 combatsar Sandy divert (G23) → kept frozen, awaiting the re-fly.** The 2026-07-02 route-push
   rework is the correct MOOSE transit-then-orbit pattern and reads sound; "pass-or-delete" is decided
   by an in-game re-fly, not a code review. Kept as-is (no change) — the checklist re-fly is the arbiter.
+
+---
+
+## §90 — Front-line model: supply, assault cost, force weight, terrain, salients
+
+**Design note:** [414th-retribution-long-view.md](design/414th-retribution-long-view.md) seam 4.
+
+Five changes to how the ground war moves, landed together 2026-08-17. Each has its own setting,
+each defaults on, and with all five off the behaviour is upstream's exactly.
+
+### What was wrong
+
+- `game/theater/frontline.py:191` placed the front at `blue.strength / (blue + red) x route_length`,
+  where `Base.strength` is a float in `[0.0, 1.0]` — a morale scalar, not a count. Two bases at full
+  strength met in the middle whether one held five vehicles or five hundred.
+- `game/game.py:573` applied `+0.2` strength to every blue base every turn, unconditionally. Ground
+  taken drained back on a timer regardless of whether anything could reach the base.
+- `game/sim/missionresultsprocessor.py:673-683` was a straight swap: winner up, loser down, same
+  number. Attacking and defending cost the same.
+- The FLOT was a straight chord with every ground group placed on it. A front had no shape.
+
+`ENEMY_BASE_STRENGTH_RECOVERY = 0.05` at `game/game.py:91` is defined and **never referenced** — red
+bases have never recovered strength. Left alone deliberately: wiring it up is a balance change, not a
+supply rule, and rung A can only ever reduce blue's free drift.
+
+### Rung A — reinforcement follows the supply lines
+
+`game/theater/supply.py`. Recovery now depends on the **kind** of route back to a rear area:
+
+| Tier | Route | Recovery |
+|---|---|---|
+| `SUPPLIED` | Road or shipping | Full |
+| `AIRLIFTED` | Airfield-to-airfield only | A quarter |
+| `ISOLATED` | None | Nothing |
+
+**Gotcha that shapes the whole design:** `TransitNetworkBuilder` links every friendly airfield to
+every other one as a last resort (`transitnetwork.py:186-195`), so a gate built on
+`has_path_between` would read true almost everywhere and the feature would do nothing.
+
+A coalition with **no rear area anywhere** reads `SUPPLIED`, not `ISOLATED` — small campaigns where
+every base is in contact have nothing to model, and starving the whole side would be a balance change
+wearing a supply rule's clothes. `supply_statuses()` computes that once per coalition, so an encircled
+pocket is still correctly `ISOLATED` when a rear exists elsewhere.
+
+The transit network is refreshed at `game.py:481` (`Coalition.end_turn`) before the gate reads it at
+575, so it sees post-capture topology.
+
+### Rung B — attacking costs more than defending
+
+`MissionResultsProcessor.apply_battle_result`. The loser always yields the full delta. A winner that
+was **pushing forward** (`OFFENSIVE_STANCES`: aggressive, elimination, breakthrough) banks only
+`1 - ASSAULT_COST_FRACTION` of it; a winner that held banks the lot. Stances already modulated the
+delta upstream of this — the change is in how it is *applied*.
+
+### Rung C — the front counts the forces present
+
+`Base.front_line_weight` = `strength x total_armor_value`. Price is the planner's own capability
+rating for a ground unit, making price x count the ground analogue of the air-to-air weighting in
+`game/sim/combat/capability.py`. **That module is A2A only** — it weights flights, not ground units;
+do not expect to reuse it directly.
+
+Falls back to morale alone when neither side has armour, so air-only campaigns are unaffected. No save
+migration: it is computed from state that was already persisted.
+
+### Rung D — terrain slows the advance
+
+Each `FrontLineSegment` gets a going multiplier, 1.0 for open country up to `MAX_TERRAIN_DIFFICULTY`
+(4.0) for ground vehicles cannot occupy, sampled 8 times per segment against
+`landmap.inclusion_zone_only`.
+
+**An even fight still sits at the midpoint whatever the terrain.** `_distance_for_effort_share` pins
+`share == 0.5` to `route_length / 2` and weights only the travel away from it. An earlier version
+mapped share directly to cumulative effort, which moved the neutral point and would have silently
+shifted where every campaign's front starts.
+
+Difficulties are cached on the instance via `getattr`, not stored on `FrontLineSegment`: pickled saves
+restore segments without any new field, so a stored attribute would raise on every pre-feature save.
+
+### Rung E — the front bulges
+
+`FrontLineBounds` gains `sector_depths` (7 lateral samples), `point_at()`, `depth_at()` and
+`polyline()`. Depths come from the room ahead of each sector, centred on their own mean so the front
+as a whole does not move, and tapered to zero at both ends so the line still anchors between its two
+control points.
+
+Two consumers opted in: `flotgenerator` places ground groups along the bowed trace, and
+`drawingsgenerator` draws the polyline so a salient is visible on the F10 map. The other four
+consumers of `frontline_bounds` — CAS patrol legs, the DTC cartridge, and two kneeboard pages — read
+only `left_position`, `right_position` and `length`, which are untouched. `polyline` pins its ends to
+those exact points rather than the trig-walked approximations, which drift sub-micron.
+
+### Tests
+
+`tests/theater/test_supply_status.py` (13) · `tests/sim/test_assault_cost.py` (7) ·
+`tests/theater/test_front_line_weight.py` (11) · `tests/theater/test_front_line_terrain.py` (10) ·
+`tests/missiongenerator/test_front_line_salients.py` (10).
+
+### Deferred
+
+- The `AIRLIFTED` multiplier (0.25) and `ASSAULT_COST_FRACTION` (0.4) are first guesses. Tune after a
+  flown campaign, not before.
+- Rung D reads passability only. Slope is the obvious second signal and there is no elevation source
+  in the engine today.
+- Sector depths are terrain-derived, so a salient sits in the same place every turn. Driving them
+  from where forces actually are would need per-sector state that does not exist.
+
+---
+
+## §91 — Per-flight sortie records
+
+**Design note:** [414th-retribution-long-view.md](design/414th-retribution-long-view.md) seam 1.
+
+### What was wrong
+
+`StateData` (`game/debriefing.py:129`) was a loss ledger. Everything else about a two-hour mission was
+discarded, and every feature that needed more cut its own channel through `state.json` — seven of
+them: recon captures, minefields, cruise magazines, naval magazines, QRA survivors, ejections,
+rescues. Each carries its own Lua writer, reconcile function, pre-feature-save clause and
+double-count guard. **Seven holes in one wall is a missing schema, not seven features.**
+
+### What it is
+
+`resources/plugins/base/sortie_recorder.lua` samples airborne aircraft every 30 s and counts shots,
+hits and ejections from the shared event handler. Per aircraft: track (time, position, altitude,
+fuel), first and last seen, shots, hits, ejected, and whether a human ever occupied the slot.
+`game/sortierecord.py` parses it and derives duration, distance flown, fuel at end and peak altitude.
+
+Loads before `dcs_retribution.lua` in `resources/plugins/base/plugin.json`.
+
+### Hard constraints
+
+- **Vanilla DCS only. Never Tacview.** It is a paid third-party program; a feature built on its
+  `.acmi` export would silently do nothing for most players. Tacview stays useful for checking that
+  what the recorder reports is true, and for hand measurement (`game/data/carrier_deck_decor.py:42`).
+- **Records are keyed by unit, never by group.** `group:getUnits()` returns only the *living* units,
+  so a fixed index is not a fixed aircraft. The first version keyed by group and sampled `units[1]`:
+  when the lead died the track teleported onto a wingman and `distance_flown` counted the jump. The
+  harness stub now models the same filtering, so the regression is caught headlessly.
+- **Every human-crewed slot is sampled; an AI group samples one anchor jet**, held until it dies
+  rather than read off an index. Four humans in one group do not fly the same track; sixty AI in
+  formation do, so paying per-unit for them buys nothing.
+- **The track rides only on the final write.** `state.json` is rewritten every 15 s — 480 times over
+  a two-hour mission — and a 60-group track set is ~1 MB at 70 bytes per sample. Including it in
+  every write puts half a gigabyte of `json:encode` on the sim thread of a mission that already has
+  no frames spare. `sortie_recorder_payload(include_track)` builds a counters-only table for the
+  periodic writes. A crash therefore costs the track but keeps everything the writes carried before
+  this feature existed.
+- **The track holds 480 samples** — four hours at 30 s, so a tanker or AWACS orbiting a long mission
+  keeps its start. Only an in-memory Lua table, because of the constraint above.
+- **A record with an empty track is counters-only** — a wingman that fired but was never
+  position-sampled. `sorties_flown()` excludes them, or the sortie count inflates by the group size;
+  their weapons still count toward the flight.
+- **Every entry point is called through `pcall`** from the event handler that also does loss
+  reporting. A recorder fault must never cost a mission its results.
+- Parsing degrades rather than fails: missing channel, an empty Lua table serialised as `[]`, a newer
+  `version`, a malformed flight, a malformed track sample — all yield "no data" or skip the bad entry.
+
+### First consumer
+
+The campaign SITREP gains a sortie line: *"14 sorties, 22.5 hours airborne, 31 shots for 12 hits"*.
+The first thing the campaign has ever said about a mission that is not a casualty count.
+
+### Tests
+
+`tests/test_sortie_records.py` (20) · `tests/lua/test_sortie_recorder_runtime.py` (16). The harness
+gained `UnitFake:getFuel`, `addGroup` carries the spec's `fuel` field, and `GroupFake:getUnits` now
+filters on `isExist()` to match DCS.
+
+### Deferred
+
+- **The seven existing channels are not collapsed yet.** This adds the general schema; migrating
+  recon captures, magazines and the rest onto it is the follow-on that pays the debt back.
+- No consumer reads the track itself yet. Route-quality feedback to the planner is the obvious next
+  one, and it is why the track is recorded rather than just the totals.

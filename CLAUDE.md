@@ -69,6 +69,7 @@ feature — each carries the design rationale, the flown-test findings, and the 
 | [414th-feature-debt-register.md](docs/dev/414th-feature-debt-register.md) | The verification plan and debt triage. Archive once the Aug-1 wave is processed. |
 | [414th-upstreaming-inventory.md](docs/dev/414th-upstreaming-inventory.md) | The upstreaming queue, priority-ordered, with readiness marks. |
 | [414th-community-contribution-roadmap.md](docs/dev/414th-community-contribution-roadmap.md) | The long view: community-value × carve-difficulty across every feature. |
+| [414th-retribution-long-view.md](docs/dev/design/414th-retribution-long-view.md) | Structural read of the engine (2026-08-17): what Retribution is, measured, and the six seams that follow. **Seams 1 (mission→campaign reporting), 2 (the intel model) and 4 (the front line) are accepted work**; 3 and 5 are analysis only. |
 
 ### Campaign notes — `docs/dev/design/`
 
@@ -332,6 +333,8 @@ linked design note.
 87. **Naval station-keeping racetracks** — anchored ovals so ships hold station under way.
 88. **Angled-deck carrier recovery heading** — the boat steams for 25 kt down the angled deck, not the bow.
 89. **Living battlespace** — phase-aware mid-cycle mission starts: earlier packages are already airborne or parked back home when you walk out, follow-on waves launch behind you, the briefing carries the day's running score, an optional voice net speaks the ATO's calls on the AWACS frequency, and real red alert fighters fly a defensive patrol over a struck objective.
+90. **Front-line model** — reinforcement follows the supply lines, attacking costs more than defending, the line's position counts the forces actually present, terrain slows the advance, and the front bulges instead of running straight.
+91. **Per-flight sortie records** — the mission reports back what each flight did: track, time airborne, fuel, shots and hits, not just which units died.
 
 ### Retired, removed or shelved — do not restore
 

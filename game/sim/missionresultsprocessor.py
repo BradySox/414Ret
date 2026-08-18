@@ -14,6 +14,7 @@ from game.missiongenerator.interceptattrition import (
     fielded_qra_by_squadron,
     reconcile_intercept_losses,
 )
+from game.missiongenerator.reconluadata import TARPS_POD_RADIUS_NM
 from game.profiling import logged_duration
 from game.sitrep import Sitrep
 from game.squadrons.csarservice import CsarService
@@ -21,6 +22,7 @@ from game.squadrons.downedpilot import DownedPilot
 from game.squadrons.squadron import Squadron
 from game.theater.theatergroundobject import TheaterGroundObject
 from game.theater import ControlPoint, Player
+from game.utils import nautical_miles
 from .gameupdateevents import GameUpdateEvents
 from ..ato.airtaaskingorder import AirTaskingOrder
 
@@ -73,6 +75,8 @@ class MissionResultsProcessor:
                 self.commit_airlift_losses(debriefing)
             with logged_duration("commit_ground_losses"):
                 self.commit_ground_losses(debriefing, events)
+            with logged_duration("reveal_scouted_command_posts"):
+                self.reveal_scouted_command_posts(debriefing, events)
             with logged_duration("commit_damaged_runways"):
                 self.commit_damaged_runways(debriefing)
             # Score the front line before capturing bases: casualty_count
@@ -439,6 +443,56 @@ class MissionResultsProcessor:
             if not tgo.discovered_by_player:
                 tgo.discovered_by_player = True
                 events.update_tgo(tgo)
+
+    def reveal_scouted_command_posts(
+        self, debriefing: Debriefing, events: GameUpdateEvents
+    ) -> None:
+        """Recon's one job: find what is not on the map at all.
+
+        Engaging a site reveals it in full, and an un-engaged ordinary site already
+        carries a marker, so recon reveals neither -- that would be the
+        scout-to-reveal rule the 2026-08-18 rework removed. Enemy **command posts**
+        are the exception: ``scar_command_post_intel`` hides them outright, and you
+        cannot frag a package at a target with no marker. Without this, only the
+        auto-planner (which enumerates on ground truth) could ever find one, so a
+        hand-planner could never map the command network.
+
+        Deliberately NOT extended to §50's ``map_hidden`` ambush teams: their whole
+        point is that the first sign of them is the in-mission TROOPS IN CONTACT
+        call.
+        """
+        radius = nautical_miles(TARPS_POD_RADIUS_NM).meters
+        for package in self.game.blue.ato.packages:
+            target = package.target
+            if not any(
+                flight.flight_type is FlightType.TARPS
+                and debriefing.air_losses.surviving_flight_members(flight) > 0
+                for flight in package.flights
+            ):
+                continue
+            for tgo in self.hidden_command_posts():
+                if tgo.position.distance_to_point(target.position) > radius:
+                    continue
+                tgo.discovered_by_player = True
+                events.update_tgo(tgo)
+                self.game.message(
+                    "RECON: enemy command post located",
+                    f"Photo interpretation has fixed {tgo.name} "
+                    f"({tgo.control_point.name} area). Marked on the map.",
+                )
+
+    def hidden_command_posts(self) -> list[TheaterGroundObject]:
+        """Enemy command posts still hidden from the player's map."""
+        hidden = []
+        for control_point in self.game.theater.controlpoints:
+            for tgo in control_point.connected_objectives:
+                if tgo.category != "commandcenter":
+                    continue
+                if tgo.is_friendly(Player.BLUE) or getattr(tgo, "map_hidden", False):
+                    continue
+                if tgo.hidden_on_player_map(Player.BLUE):
+                    hidden.append(tgo)
+        return hidden
 
     def attacked_tgos_this_turn(
         self, debriefing: Debriefing

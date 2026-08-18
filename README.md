@@ -44,13 +44,14 @@ Most of this is opt-in. Full list with toggles, defaults and known limitations:
   overflight does not reveal.
 - Once engaged, a site is known completely and permanently, damage included. There is no
   separate BDA pass to confirm what you killed.
-- Enemy command posts are hidden outright until found, so the command network has to be
-  mapped.
+- Enemy command posts are hidden outright — no marker, nothing to plan against. Flying TARPS
+  recon over the area is the only way to find one, so the command network has to be mapped
+  before it can be struck.
 - Insurgent contacts — roadside IEDs, HVT convoys, dispersed cells — are the exception: they
   show as a dashed "somewhere in here" circle until you localize them.
 - Mobile missile launchers relocate mid-mission, within a few km of their campaign position.
   The radar SAM network does not move.
-- TARPS is a player task (F-14, RF-101B, RA-5C).
+- TARPS is a player task (F-14, RF-101B, RA-5C), flown to locate command posts.
 - Also: approximate target-area mode, mobile SAMs hidden from player datalink, a fog reveal
   toggle, DCS-accurate terrain charts as base map.
 

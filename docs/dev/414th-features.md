@@ -376,7 +376,7 @@ was replaced; it is kept for reading old notes and saves. The rules that hold no
 
 | | Before | Now |
 |---|---|---|
-| What lifts a site's fog | struck, overflown by an offensive sortie, **or scouted by recon/TARPS** | struck, or overflown by any ground-attack sortie. **Recon does not reveal.** |
+| What lifts a site's fog | struck, overflown by an offensive sortie, **or scouted by recon/TARPS** | struck, or overflown by any ground-attack sortie. Recon reveals **only** hidden command posts. |
 | After the fog lifts | composition known, but damage still lagged behind a recon pass (`alive_at_last_recon`) | total ground truth, permanently — damage included |
 | Un-engaged field forces | dashed "suspected activity" circle offset from the true position | exact marker; only composition is fogged |
 | Decoy circles (§79) | optional fake contacts | removed |
@@ -410,17 +410,45 @@ symbol), and the fog-overview reveal toggle (§18), which now short-circuits two
 instead of three. COIN's intrinsic `concealed` flag is untouched — localizing an IED or
 an HVT convoy is the point of those features and has nothing to do with §3.
 
-Because `attacked_tgos_this_turn` is now the *only* non-kill reveal, its flight-type set
-was widened from `{STRIKE, DEAD, SEAD, ANTISHIP}` to every ground-attack task
-(`+ SEAD_SWEEP, SEAD_ESCORT, BAI, CAS, ARMED_RECON`). A task missing from that set would
+Because `attacked_tgos_this_turn` is now the *only* non-kill reveal for an ordinary site,
+its flight-type set was widened from `{STRIKE, DEAD, SEAD, ANTISHIP}` to every ground-attack
+task (`+ SEAD_SWEEP, SEAD_ESCORT, BAI, CAS, ARMED_RECON`). A task missing from that set would
 be a site the player could never learn about short of destroying it.
 
-Tests: `tests/test_recon_reveal_rule.py` (the reveal rule + the no-lag guarantee),
+#### Recon's one remaining job: the command posts
+
+`reveal_scouted_command_posts` (same file) is the single exception, and it exists because the
+rework opened a hole. Enemy command posts are hidden from the map **outright**
+(`hidden_on_player_map`, gated `scar_command_post_intel`), and `_command_post_revealed()` keys
+on `captured_commander or discovered_by_player`. Both had become dead ends for a hand-planner:
+`captured_commander` is **never set True anywhere in the tree** (the capture mechanic went
+2026-07-01, only the flag survived), and `discovered_by_player` now needs engagement — which
+you cannot frag at a target with no marker. The only surviving path was the auto-planner,
+which enumerates strike targets on ground truth (`ObjectiveFinder.strike_targets`,
+`viewer=None`) and will happily frag at a post the player cannot see. So delegating planning
+found them and planning by hand never did.
+
+The rule: a surviving `FlightType.TARPS` flight reveals any hidden enemy command post within
+`TARPS_POD_RADIUS_NM` (3 NM, reused from `reconluadata` rather than a fresh number) of its
+package target, with a campaign message. This cannot become scout-to-reveal by construction —
+it only reaches sites that are not on the map at all, and every ordinary site already carries
+a marker.
+
+**§50's `map_hidden` ambush teams are explicitly excluded**: the first sign of them is meant
+to be the in-mission TROOPS IN CONTACT call.
+
+Note this is **planner-side geometry, not the `recon` plugin** — §12's runtime is still inert
+(see below). The design alternatives that were weighed and not taken are in
+[414th-recon-role-scoping-notes.md](design/414th-recon-role-scoping-notes.md).
+
+Tests: `tests/test_recon_reveal_rule.py` (the reveal rule, the no-lag guarantee, and the
+command-post reveal),
 `tests/test_recon_intel_fog.py` (the `known_for` gate), `tests/fourteenth/test_coin_concealment.py`
 (now a regression guard that no *category* earns a circle).
 
-**Checklist:** G24 and B33 are closed by removal; **G2** and **G25** need re-scoping
-against the new rule before they are flown.
+**Checklist:** G24 and B33 are closed by removal; **G39** covers the new reveal rule and
+**G40** the command-post find; **G25** needs re-scoping against the new rule before it is
+flown.
 
 ### The original implementation (historical from here down)
 
@@ -2310,10 +2338,13 @@ which shares nothing with this retired implementation.
 **⚠️ INERT since the 2026-08-18 recon rework (§3).** The plugin still loads, still
 scores captures by sensor/altitude/cloud, and still appends them to
 `tars_recon_captures`, which `StateData` still parses — but **nothing consumes the
-result**. Engaging a site is the only reveal now, so a recon overflight changes no
-campaign state. Left in place rather than deleted: removing `FlightType.TARPS` and its
-flight plan is a separate call. Until that call is made, treat this section as
-describing machinery that runs and reports nothing.
+result**. `FlightType.TARPS` itself does have a job again — it finds hidden command posts
+— but that reveal is **planner-side geometry** in `missionresultsprocessor`, not this
+plugin: it keys on the flight's package target and survival, never on what the aircraft
+actually photographed. So the plugin's in-mission scoring runs and reports nothing.
+Left in place rather than deleted. Wiring the command-post find to real captures would
+need the Lua to scan statics (`captureAt` covers ground groups and ships only) — a command
+post generates as statics, so it is invisible to the current capture loop.
 
 **The MOOSE Ops.TARS engine this section used to describe was CUT on 2026-08-05
 (`7eb247659`); `resources/plugins/tars/` no longer exists.** The old design note

@@ -53,6 +53,7 @@ stress it · `✗` fail signature reproduced in-game.
 | G2 | Recon BDA bridge (one plugin, player + AI) | §12 | ✅ |
 | G19 | TARPS on Vietnam-era recon birds (RF-101B / RA-5C) | §3 | ◐ |
 | G39 | Engaging a site reveals it completely; recon does not | §3 | ☐ |
+| G40 | TARPS recon finds a hidden enemy command post | §3 | ☐ |
 | G25 | Armed Recon package: recon drone + SEAD Viper escort + 4-ship sweep | §3 | ◐ |
 | G30 | MANTIS SHORAD link: the point defense ambushes the HARM shot | MANTIS migration | ☐ |
 | G33 | Survivor ADF beacon: the pinned 260 kHz drives a real needle | CSAR (upstream #929 + 414th pin) | ☐ |
@@ -2175,6 +2176,33 @@ cycle and whether the fog still reads as fog when every site carries an exact ma
   a dashed uncertainty circle other than a COIN IED/HVT/cell (the category concealment is
   back); a fresh campaign where nothing is ever knowable because no ground-attack task in
   the package set reaches `attacked_tgos_this_turn`.
+
+### G40 — TARPS recon finds a hidden enemy command post · §3 · ☐ UNTESTED
+
+**History:** built 2026-08-18 alongside the recon rework, to close the hole it opened —
+a hidden command post has no marker, so engagement (the only other reveal) cannot reach
+it, and the auto-planner was the sole remaining path. The geometry, the radius, the
+TARPS-only gate and the §50 exclusion are unit-tested in
+`tests/test_recon_reveal_rule.py`; what no test covers is whether 3 NM off the package
+target is actually enough reach in a real laydown, and whether the message lands.
+- **What CI cannot exercise:** whether a command post is close enough to a plannable
+  target for a recon package to reach it on a real map (the whole feature is dead if
+  command posts habitually sit further than 3 NM from anything you can frag at), the
+  campaign message firing at debrief, and the site drawing correctly once revealed.
+- **Setup:** a NEW campaign with `recon_intel_fog` and **Hidden enemy command posts**
+  both on (defaults). Confirm no enemy command posts are on the map. Frag a TARPS
+  package at an enemy base you believe holds one — pick the target closest to where the
+  HQ should be — and fly or fast-forward the turn.
+- **Pass:** at debrief a "RECON: enemy command post located" message names the site, and
+  the command post appears on the map with exact coordinates and is plannable. Nothing
+  else about the reconned area changes: un-engaged sites there keep their composition
+  fog.
+- **Fail signature:** no message and no reveal after a recon pass that clearly overflew
+  the base (the 3 NM radius is too tight for real layouts — the lever is
+  `TARPS_POD_RADIUS_NM`, but widening it is a design call, not a tuning one); a command
+  post revealed by a *non*-recon sortie (the TARPS-only gate broke); an ordinary site
+  revealed by the recon pass (scout-to-reveal is back — this is the serious one); a §50
+  convoy-ambush team appearing on the map (the `map_hidden` exclusion broke).
 
 ### G25 — Armed Recon package: recon drone + SEAD Viper escort + 4-ship sweep · §3 · ◐ PARTIAL
 

@@ -41,8 +41,9 @@ Either of these, flown by your side:
 
 A flight that is shot down before it gets there reveals nothing.
 
-**Recon does not reveal.** Flying TARPS over a site tells you nothing you did not already know.
-That is deliberate: the fog is meant to be lifted by attacking, not by scouting.
+**Recon does not reveal an ordinary site.** Flying TARPS over one tells you nothing you did
+not already know. The fog is meant to be lifted by attacking, not by scouting. Recon has
+exactly one job, below.
 
 Discovery is permanent and total. Once a site is engaged there is no second confirmation step —
 you see its damage the moment the strike lands, and it stays known for the rest of the campaign,
@@ -52,13 +53,20 @@ The master switch is **`recon_intel_fog`** (Campaign Doctrine page, **default ON
 and nothing is ever hidden. Saves made before the feature existed load fully revealed, so the
 fog is felt on new campaigns.
 
-## Hidden command posts
+## Hidden command posts — and the one thing recon is for
 
 A separate gate, the **"Hidden enemy command posts"** setting (**default ON** for new campaigns),
-hides enemy **command posts** entirely — no marker, not plannable, not strikable — until you
-discover them. Mapping the enemy command network is its own task. Once discovered, a command post
-shows fully, with exact coordinates. Toggle it off under Difficulty & Realism → Realism &
-restrictions.
+hides enemy **command posts** entirely — no marker, not plannable, not strikable.
+
+That makes them the one target engagement cannot reach: you cannot put ordnance on something you
+cannot see. So **flying TARPS recon is how you find them**. A recon flight that comes home
+reveals any hidden command post within about 3 NM of the area it was sent to photograph, and you
+get a "RECON: enemy command post located" message. Once found, a command post shows fully, with
+exact coordinates, and can be planned against like anything else.
+
+Mapping the enemy command network is therefore its own campaign task, and recon is the tool for
+it. Toggle the setting off under Difficulty & Realism → Realism & restrictions to make command
+posts plainly visible instead.
 
 ## Uncertainty circles
 
@@ -114,15 +122,15 @@ layer choice the panel deliberately does **not** remember between sessions.
 | Setting | Default | Effect |
 |---|---|---|
 | `recon_intel_fog` | ON | Master switch. Hides an un-engaged site's composition and rings |
-| Hidden enemy command posts | ON | Hides enemy command posts from the map entirely until discovered |
+| Hidden enemy command posts | ON | Hides enemy command posts from the map entirely until a recon pass finds them |
 | Target location precision | EXACT / APPROXIMATE | Offsets steerpoints, hides marks/coords, consolidates DEAD bullseye kneeboards |
 | Reveal fog of war (map toggle) | OFF, never saved | Short-circuits all fog to ground truth |
 
 ## Caveats
 
 - Fog is BLUE-only on purpose; red always plays against the truth.
-- TARPS is still a flyable task, but it banks no intelligence — see
-  [TARPS Reconnaissance](TARPS-Reconnaissance).
+- TARPS finds command posts and nothing else. It does not lift an ordinary site's composition
+  fog — see [TARPS Reconnaissance](TARPS-Reconnaissance).
 - The satellite-imagery recon **kneeboard** pages ship default-off. The marker/tile misalignment
   that kept them gated was fixed 2026-07-18; the toggle stays off until the fix gets an in-game
   pass. Turn on `Generate target recon kneeboard pages` to try them.

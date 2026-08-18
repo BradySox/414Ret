@@ -1,13 +1,10 @@
 # TARPS Reconnaissance
 
-> **TARPS currently banks no intelligence.** As of the 2026-08-18 recon rework, a site's fog is
-> lifted by engaging it — ordnance on it, or a ground-attack sortie that reaches it — and a recon
-> overflight reveals nothing. See
+> **What TARPS is for: finding enemy command posts.** Ordinary enemy sites are already on your
+> map, and their composition is revealed by engaging them, not by scouting — so a recon pass over
+> one tells you nothing. Command posts are the exception: they are hidden outright, so there is
+> nothing to put ordnance on until recon finds them. See
 > [Fog of War and Reconnaissance](Fog-of-War-and-Reconnaissance).
->
-> The flight type, the aircraft, the pod fits and the runtime all still work: you can task a
-> TARPS pass, fly it, and the plugin still records what you photographed. Nothing in the campaign
-> reads that record. Whether TARPS keeps a mechanical job is an open question.
 
 TARPS is the **Tactical Airborne Reconnaissance Pod System**, the real F-14 recon pod. Here it is
 a flight type (`FlightType.TARPS`) driven by the `recon` plugin. The flight type is
@@ -22,10 +19,12 @@ the `TARPS` task can fly it.
    (below).
 2. **Overfly the target.** The target waypoint is a flyover, not an attack run. There is no menu
    and no film limit — crossing the site is what captures the take.
-3. **Come home for the read-out.** The capture happens on the overfly; the confirmation message
-   is held until you land.
+3. **Come home for the read-out.** A flight that is shot down or aborts before the pass finds
+   nothing.
 
-A flight that is shot down or aborts before the pass records nothing.
+Any hidden command post within about 3 NM of the area you were sent to photograph is revealed at
+debrief, with a "RECON: enemy command post located" message. Nothing else about the area changes
+— an un-engaged site's composition stays fogged whether you photographed it or not.
 
 ### What shapes the take
 

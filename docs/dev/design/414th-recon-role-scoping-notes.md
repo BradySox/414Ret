@@ -1,8 +1,9 @@
-# 414th — what recon does now (scoping, not built)
+# 414th — what recon does now that engaging is the only reveal
 
-Status: **scoping only.** Nothing here is implemented. Written 2026-08-18, immediately after
-the §3 recon rework (see [414th-features.md §3](../414th-features.md)) left `FlightType.TARPS`
-and the `recon` plugin mechanically inert.
+Status: **candidate A is BUILT** (2026-08-18, same day — see
+[414th-features.md §3](../414th-features.md), "Recon's one remaining job"). B and C remain
+scoping only. Written immediately after the §3 recon rework left `FlightType.TARPS` and the
+`recon` plugin mechanically inert.
 
 ## The constraint any new job must satisfy
 
@@ -15,9 +16,12 @@ Engaging a site reveals it **completely and permanently**. So recon cannot:
 Whatever recon does, it has to answer a question that engaging the site does not already
 answer, about something engagement cannot settle.
 
-## Candidate A — recon finds what is hidden outright
+## Candidate A — recon finds what is hidden outright — **BUILT 2026-08-18**
 
-**This closes a hole the rework opened, and is the strongest candidate.**
+**This closed a hole the rework opened.** Implemented as
+`MissionResultsProcessor.reveal_scouted_command_posts`: a surviving TARPS flight reveals any
+hidden enemy command post within `TARPS_POD_RADIUS_NM` (3 NM) of its package target. Checklist
+row **G40**. The analysis that led there is kept below.
 
 Enemy **command posts** are hidden from the player's map entirely — no marker, not
 right-clickable, not plannable (`hidden_on_player_map`, gated `scar_command_post_intel`,
@@ -86,9 +90,9 @@ conflict with the reveal rule because it never writes campaign state.
 
 ## Recommendation
 
-**A first, on its own.** It is small, it fixes a live hole rather than inventing a mechanic,
-and it gives recon a job that is impossible to confuse with scout-to-reveal: it only reaches
-sites that are not on the map at all.
+**A first, on its own** — done. It was small, it fixed a live hole rather than inventing a
+mechanic, and it gives recon a job that is impossible to confuse with scout-to-reveal: it only
+reaches sites that are not on the map at all.
 
 B and C are both defensible follow-ons. C composes with A cleanly; B is the largest and the
 one most likely to feel like a lag to a player even though it technically is not.

@@ -195,8 +195,10 @@ threat/detection rings (`recon_intel_fog`); `hidden_on_player_map` fully hides e
 posts (`scar_command_post_intel`) and §50's ambush teams. Nothing else is viewer-aware except
 `standard_identity_for` (COIN's suspect-until-engaged symbol).
 **A site is revealed by engaging it — ordnance on it, or any ground-attack sortie that reaches
-it — and is then known completely and permanently, damage included.** Recon/TARPS does NOT
-reveal, and there is no BDA damage lag: `alive_at_last_recon` / `sync_confirmed_status` /
+it — and is then known completely and permanently, damage included.** Recon/TARPS reveals
+nothing except a hidden command post within 3 NM of its target (`reveal_scouted_command_posts`
+— the one thing engagement cannot reach, because a hidden post has no marker to frag at).
+There is no BDA damage lag: `alive_at_last_recon` / `sync_confirmed_status` /
 `alive_for` were deleted 2026-08-18 and `alive`/`is_dead`/`dead_units`/`max_threat_range`/… are
 plain truth. Do **not** reintroduce a viewer parameter on those, and do **not** reintroduce the
 old `_for_player`/`_for` method twins — that collapse is finished.
@@ -272,7 +274,7 @@ linked design note.
 
 1. **QRA intercept reserve** — per-squadron alert reserve feeding the Moose `AI_A2A_DISPATCHER`, with player-manned cold alert, a scramble cue, and forward-defense border zones.
 2. **JAMMING flight type** — the C-130J as an EC-130H/RC-130H EW + ISR platform (`c130j` plugin).
-3. **Recon intel fog** — an enemy site's composition stays hidden until you engage it (ordnance on it, or any ground-attack sortie that reaches it); once engaged it is known completely and permanently. Recon does not reveal, and there is no BDA damage lag.
+3. **Recon intel fog** — an enemy site's composition stays hidden until you engage it (ordnance on it, or any ground-attack sortie that reaches it); once engaged it is known completely and permanently. There is no BDA damage lag. Recon's only job is finding the enemy command posts, which are hidden from the map outright and so cannot be engaged at all.
 4. **UI transparency** — target intel panel, mission-impact debrief, package context bar.
 5. **Player target location precision** — `Approximate` mode offsets steerpoints and hides exact coords.
 6. **Air-defense planning rework** — overlapping jittered BARCAP waves. **The geometry/volume half was REVERTED to upstream 2026-08-09** (re-convergence work order D): no forward CAP line, no threat-weighted volume or orbit bias, no front-anchor guarantee, no forward-middle layer, no front-anchored support orbits, no FLOT navmesh hazard. Kept: the overlap waves, the `cap_orbit_distance_band` fix, the Vietnam-only escort-reserve trim.

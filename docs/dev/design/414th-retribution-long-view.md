@@ -1,6 +1,6 @@
 # Retribution — the long view
 
-**Written 2026-08-17.** A plain read of how the engine actually works, and the six weak spots
+**Written 2026-08-17.** A plain read of how the engine actually works, and the seven weak spots
 that follow from it.
 
 | Seam | Short version | Status |
@@ -9,8 +9,14 @@ that follow from it.
 | **2 — how the game tracks what you know** | Built five separate times, five separate ways | **ACCEPTED — not started** |
 | 3 — the map graph | Roads route traffic but can't be cut | Analysis only — but see seam 4 rung A |
 | **4 — the front line** | One number divided by another | **BUILT 2026-08-17** — all five rungs; features doc §90, pass rows B65–B69 |
-| 5 — time between turns | A turn is a jump, not a sample | Analysis only |
+| **5 — time between turns** | A turn is a jump, not a sample | **ACCEPTED — not started** |
 | 6 — the squadron layer | Already scoped in its own note, not built | See that note |
+| **7 — the enemy** | Red is amnesiac, and nothing it decides is visible | **ACCEPTED — not started** |
+
+**Seam 7 was missed in the first pass, and that was the note's biggest failure.** §1 measured
+13 lines of mission builder per line of campaign brain, and observed that red is blue's planner
+instantiated twice — then never turned either fact into a seam. Numbering stays stable, so it is
+seam 7 despite arguably being the most important. See §8.
 
 **What the build changed about this note.** Two claims below were wrong and are corrected in
 place: `Base.strength` is a float in `[0.0, 1.0]`, not a unit count (§5), and the §26
@@ -55,7 +61,7 @@ work on the builder pays less than it looks, and work on everything else pays mo
 
 ---
 
-## 2. Seam 1 — what the mission tells the campaign · **ACCEPTED**
+## 2. Seam 1 — what the mission tells the campaign · **BUILT**
 
 ### The problem in one line
 
@@ -194,7 +200,7 @@ by flying, not by tests. It would need its own run of fly-cards on top of the ba
 
 ---
 
-## 5. Seam 4 — the front line · **ACCEPTED**
+## 5. Seam 4 — the front line · **BUILT**
 
 ### The problem in one line
 
@@ -262,7 +268,7 @@ already saved. Anything further up the ladder has to prove it keeps both.
 
 ---
 
-## 6. Seam 5 — time between turns · analysis only
+## 6. Seam 5 — time between turns · **ACCEPTED**
 
 **The problem in one line:** a turn is a jump, not a sample of an ongoing war.
 
@@ -288,27 +294,96 @@ Listed here only so the set is complete. That note's decisions stand; nothing he
 
 ---
 
-## 8. The thing that binds before any of this
+## 8. Seam 7 — the enemy · **ACCEPTED**
 
-89 features. **86 verified · 49 untested · 23 partial · 3 regressed** — 75 rows outstanding
-against 86 closed (`docs/dev/414th-ingame-pass-checklist.md`).
+### The problem in one line
 
-**Being worked in the background** by a separate agent as of 2026-08-17.
+Red is not a bad opponent. Red is an **amnesiac** one, and nothing it decides is ever visible.
 
-The constraint moved from "can we build it" to "can we prove it works" a while ago. Two
-consequences for the accepted seams:
+### What red actually is
 
-1. **Seams 1 and 2 pay twice** — they retire existing one-offs, so they cut code *and* cut rows
-   that would otherwise each need their own pass.
-2. **Seam 4's rungs A and B change balance everywhere**, so each needs a fly-card written
-   *before* the change, not after.
+- **The same planner as blue.** `TheaterCommander(self.game, self.player)` (`game/coalition.py:313`)
+  — one class, instantiated twice, differing only in inputs. That is worth *keeping*: it guarantees
+  red plays by the rules you play by. The seam is not "give red its own planner."
+- **It can see you.** `TheaterState` carries `enemy_air_defenses`, `enemy_convoys`, `enemy_shipping`,
+  `enemy_ships`, `enemy_battle_positions`, `enemy_barcaps` (`theaterstate.py:131-141`). Red has a
+  decent current-frame picture. It is not blind.
+- **It cannot remember.** `TheaterState.from_game(...)` (`theaterstate.py:229`) rebuilds the whole
+  state from the current game every turn, and `TheaterCommander` stores nothing but `game` and
+  `player`. So red cannot commit to an axis, cannot notice you have hit the same target three turns
+  running, cannot follow through on anything it started.
+- **It weighs 2,453 lines** against the mission builder's 32,739. That ratio is not damning by
+  itself — the builder *should* be big — but it says where the investment went.
 
-The exception is **seam 4 rung A**: one line, and it can be judged on a single turn's front-line
-movement instead of a series.
+### Why this was left out of the first pass, and why that was wrong
+
+Two defensible reasons and one bad one. Defensible: §55 Red Intent was removed on 2026-07-21 and
+the features doc says "do not restore", so re-opening it needs a reason. Defensible: "smarter AI"
+is the classic unbounded project. The bad one: the observation was made in §1 and simply never
+carried into a seam. That is how a measurement becomes decoration.
+
+### What §55 actually teaches, which is not what it looks like
+
+§55 was removed as "the symmetric teardown of the §40 removal" — part of one deliberate purge of
+abstract campaign-layer machinery, alongside campaign phases, the war economy, munitions
+availability and the commitment ceiling. It is worth being precise about what §55 had:
+
+- It **had** memory: a rolling trend and graduated per-front postures.
+- It **had** legibility: ribbon and SITREP posture surfaces.
+- It was removed anyway.
+
+So the lesson is not "memory bad" or "surface it and it will land". It is that **§55's output was a
+word on a ribbon rather than something you met in the air.** `CONSOLIDATE`/`ATTRITION`/`SURGE` told
+you a label had changed; it did not put anything different in front of your aircraft.
+
+**The test any proposal here has to pass:** the player must be able to infer red's intent from what
+they fly against, without reading a label. If the only way to know red changed its mind is a
+caption, it is §55 again.
+
+### Where the thin end is
+
+Red already reacts within a turn (§89 reactive red: a struck objective gets a defensive patrol) and
+that is the shape that works — a decision you meet in the air. The unbuilt thing is **continuity**:
+red committing to something across turns and the player discovering it by flying into it. Concretely,
+the smallest version is a persisted red intent that survives `from_game` and biases target selection,
+with **no** new surface at all — you learn red is pushing the northern axis because that is where its
+packages keep coming from.
+
+### The catch
+
+- **This is the seam most likely to reproduce a removed feature.** Anything proposed here must be
+  checked against `414th-red-intent-notes.md` and state plainly how it differs.
+- Red and blue sharing a planner is a fairness property. A change that only red gets needs to be a
+  change blue does not *need* (continuity of intent), not a change blue is denied (better tactics).
+- Verification is the hard part. "Red felt like it had a plan" is not a fail signature. Any fly card
+  here needs an observable: which axis its packages came from, over how many turns.
 
 ---
 
-## 9. What this note is not saying
+## 9. The thing that binds before any of this
+
+91 features. The pass checklist was already carrying roughly 75 outstanding rows against 86
+closed when this note was written, and seams 1 and 4 added six more (B65-B70). Re-read
+`docs/dev/414th-ingame-pass-checklist.md` for the live count rather than trusting this line.
+
+**Being worked in the background** by a separate agent as of 2026-08-17.
+
+The constraint moved from "can we build it" to "can we prove it works" a while ago. Three
+consequences for the seams still open:
+
+1. **Seam 2 pays twice** — it retires existing one-offs, so it cuts code *and* cuts rows that
+   would otherwise each need their own pass. Seam 1 had the same property and did not collect on
+   it: the seven bespoke channels are still there, and folding them onto the new schema is where
+   that saving actually lands.
+2. **Seam 5 costs verification and almost nothing else.** It is low code risk and can only be
+   judged by flying, which is exactly the budget already under strain.
+3. **Seam 7 is the hardest thing here to verify**, because "red felt like it had a plan" is not a
+   fail signature. Any card needs an observable: which axis its packages came from, over how many
+   turns. Write that card before writing the feature.
+
+---
+
+## 10. What this note is not saying
 
 - **Not "stop building features."** The mission builder is good. The content features work.
 - **Not "rewrite the engine."** Every seam is reachable step by step from where we already are.
@@ -320,3 +395,8 @@ movement instead of a series.
   never broken. §5 lists what it can't express — not bugs.
 - **Not an argument for any third-party dependency.** Nothing here needs software outside DCS.
   Our rule against mod dependencies for core behaviour applies the same way to analysis tools.
+- **Not a case for restoring §55.** Seam 7 argues red needs *continuity*, and that whatever it
+  decides has to be met in the air rather than read off a caption. §55's posture classifier and
+  its ribbon are exactly the shape that was already tried and dropped.
+- **Not a claim that 2,453 lines is too few.** A small campaign brain is not automatically a bad
+  one. The ratio says where the investment went; it does not say the number should be bigger.

@@ -69,7 +69,7 @@ feature — each carries the design rationale, the flown-test findings, and the 
 | [414th-feature-debt-register.md](docs/dev/414th-feature-debt-register.md) | The verification plan and debt triage. Archive once the Aug-1 wave is processed. |
 | [414th-upstreaming-inventory.md](docs/dev/414th-upstreaming-inventory.md) | The upstreaming queue, priority-ordered, with readiness marks. |
 | [414th-community-contribution-roadmap.md](docs/dev/414th-community-contribution-roadmap.md) | The long view: community-value × carve-difficulty across every feature. |
-| [414th-retribution-long-view.md](docs/dev/design/414th-retribution-long-view.md) | Structural read of the engine (2026-08-17): what Retribution is, measured, and the six seams that follow. **Seams 1 (mission→campaign reporting), 2 (the intel model) and 4 (the front line) are accepted work**; 3 and 5 are analysis only. |
+| [414th-retribution-long-view.md](docs/dev/design/414th-retribution-long-view.md) | Structural read of the engine (2026-08-17): what Retribution is, measured, and the seven seams that follow. **1 (mission→campaign reporting) and 4 (the front line) are BUILT** as §91 and §90; **2 (the intel model), 5 (time between turns) and 7 (the enemy) are accepted, not started**; 3 is analysis only; 6 is scoped in its own note. Seam 7 is where "why don't we improve red" lives — read it before proposing anything there, because §55 already tried the obvious shape. |
 
 ### Campaign notes — `docs/dev/design/`
 

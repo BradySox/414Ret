@@ -772,16 +772,16 @@ FEATURES: tuple[Feature, ...] = (
         88,
     ),
     Feature(
-        # The living-battlespace direction, P1-P4: pre-roll, residue, waves,
-        # voice net. docs/dev/design/414th-living-battlespace-notes.md.
+        # The living-battlespace direction: pre-roll, residue, follow-on waves
+        # and reactive red. P4 (the synthesized voice net) was REMOVED 2026-08-18
+        # -- the DCS AI already talks on the radio.
+        # docs/dev/design/414th-living-battlespace-notes.md.
         "living_battlespace",
         "Living battlespace pre-roll",
         89,
-        plugin_id="battlespacenet",
         settings_fields=(
             "living_battlespace_preroll",
             "living_battlespace_preroll_cap",
-            "living_battlespace_voice_net",
             "living_battlespace_reactive_red",
         ),
     ),

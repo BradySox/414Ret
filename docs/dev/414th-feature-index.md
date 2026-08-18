@@ -100,7 +100,7 @@ pass checklist `§N` is unregistered, or this table drifts.
 | §86 | GPS jamming (satellite-guided weapons go long) | `gpsjamming` | `gps_jamming`, `gps_jamming_default_reach_nm`, `gps_jamming_miss_radius_m` |
 | §87 | Naval station-keeping racetracks | — | — |
 | §88 | Angled-deck carrier recovery heading | — | — |
-| §89 | Living battlespace pre-roll | `battlespacenet` | `living_battlespace_preroll`, `living_battlespace_preroll_cap`, `living_battlespace_voice_net`, `living_battlespace_reactive_red` |
+| §89 | Living battlespace pre-roll | — | `living_battlespace_preroll`, `living_battlespace_preroll_cap`, `living_battlespace_reactive_red` |
 | §90 | Front-line model: supply, assault cost, force weight, terrain, salients | — | `supply_gated_reinforcement`, `assault_costs_the_attacker`, `scale_aware_front_line`, `terrain_weighted_front_line`, `front_line_salients` |
 | §91 | Per-flight sortie records | `base` | — |
 | — | MANTIS IADS engine | `mantisiads` | — |

@@ -192,7 +192,16 @@ Perf note: a pre-rolled T=0 has *fewer* live units than today's (some flights ar
 dead); follow-on waves add parked units awaiting activation. Net near-neutral, with the
 wave count as the cap knob.
 
-## 6. The voice net (adopt, don't build)
+## 6. The voice net (adopt, don't build) — BUILT, THEN REMOVED (2026-08-18)
+
+> **⛔ The voice net is gone.** Built as P4 on 2026-08-15 and removed on 2026-08-18 on the
+> DM's call — *"the AI already uses the radio"*. DCS's own AI already transmits on the
+> briefed channel, so a synthesized net layered on top read as duplication rather than
+> atmosphere, and it never earned its in-game pass. Everything below is the reasoning
+> that led to building it, kept because open call 5 (the transport decision) is still
+> the record of why generation-time pre-render beat the SRS-runtime ecosystem — reach
+> for it if a future feature needs synthesized audio. Do NOT author against it as a
+> live feature. §89's other phases are unaffected.
 
 What "audible net" must mean, stated honestly: DCS AI does not talk to itself, so there
 is no traffic to overhear by frequency-sharing. The only organic gain is the **tower

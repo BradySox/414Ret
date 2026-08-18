@@ -31,7 +31,6 @@ from .briefingluadata import populate_briefing_lua
 from .coinluadata import populate_coin_lua
 from .deckdecorluadata import populate_deck_decor_lua
 from .commsjamluadata import populate_comms_jam_lua
-from .battlespacenetluadata import populate_battlespace_net_lua
 from .reactiveredluadata import populate_reactive_red_lua
 from .rednetluadata import populate_red_net_lua
 from .minefieldluadata import populate_minefields_lua
@@ -484,12 +483,6 @@ class LuaGenerator:
         # node); the rednet plugin transmits the periodic CW traffic (audio + DF
         # geometry only, kills record natively on the ordinary C2 TGO).
         populate_red_net_lua(lua_data, self.mission_data)
-
-        # Blue voice net (§89 P4) -- emits dcsRetribution.battlespaceNet only when
-        # the plan computed before this pass exists (both §89 gates on + a blue
-        # AWACS + synthesized clips embedded); the battlespacenet plugin transmits
-        # each call from its real group on the AWACS frequency. Audio only.
-        populate_battlespace_net_lua(lua_data, self.mission_data)
 
         # Reactive red (§89 P5) -- emits dcsRetribution.reactiveRed only when the
         # plan exists (both gates + a watched objective + a fragged reaction

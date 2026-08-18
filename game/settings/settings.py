@@ -425,7 +425,6 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                     "sp_pilot_mode",
                     "living_battlespace_preroll",
                     "living_battlespace_preroll_cap",
-                    "living_battlespace_voice_net",
                     "living_battlespace_reactive_red",
                     "supply_gated_reinforcement",
                     "assault_costs_the_attacker",
@@ -777,7 +776,6 @@ FEATURE_GATE_FIELDS: dict[str, list[str]] = {
         # the Features page contract is boolean gates (test_settings_filter);
         # the cap stays in Campaign Management -> Campaign features.
         "living_battlespace_preroll",  # §89
-        "living_battlespace_voice_net",  # §89 P4
         "living_battlespace_reactive_red",  # §89 P5
     ],
     "Ground war": [
@@ -2305,24 +2303,6 @@ class Settings:
             "Deepest into the cycle a mission may start once the campaign is "
             "past its opening turns. Longer pre-rolls mean a more developed war "
             "at spawn and more of the turn resolved without you."
-        ),
-    )
-    living_battlespace_voice_net: bool = boolean_option(
-        "Living battlespace: voice net (AI radio calls on the AWACS frequency)",
-        CAMPAIGN_MANAGEMENT_PAGE,
-        "Campaign features",
-        default=False,
-        enabled_when="living_battlespace_preroll",
-        detail=(
-            "Turns the planned air-tasking order into short synthesized radio "
-            "calls -- launch check-ins, pushes, on-station and RTB calls -- "
-            "transmitted from each real flight on the mission's AWACS frequency, "
-            "so tuning the briefed channel is enough to hear the war. Voices are "
-            "generated at mission time on your machine (Windows text-to-speech; "
-            "on other platforms the net stays silent) and embedded in the "
-            "mission, so nothing extra runs beside DCS and it works in "
-            "multiplayer too. A dead transmitter goes silent. Rate-limited by "
-            "design; subtitles are available as a battlespacenet plugin option."
         ),
     )
     living_battlespace_reactive_red: bool = boolean_option(
@@ -4178,6 +4158,9 @@ class Settings:
             # tanks at plan or generation time any more, so both gates are dead.
             "auto_range_fuel_tanks",
             "fuel_tanks_over_jammers",
+            # §89 P4, the synthesized blue voice net, REMOVED 2026-08-18: the DCS
+            # AI already talks on the radio, so the net was duplicating it.
+            "living_battlespace_voice_net",
         ):
             migrated.pop(obsolete_key, None)
 

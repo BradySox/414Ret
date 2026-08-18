@@ -11,7 +11,7 @@ that follow from it.
 | **4 — the front line** | One number divided by another | **BUILT 2026-08-17** — all five rungs; features doc §90, pass rows B65–B69 |
 | **5 — time between turns** | A turn is a jump, not a sample | **ACCEPTED — not started** |
 | 6 — the squadron layer | Already scoped in its own note, not built | See that note |
-| 7 — the enemy | Red is amnesiac, and nothing it decides is visible | **Axis framing KILLED by Phase 0, 2026-08-17.** Needs re-scoping; see §8 |
+| 7 — the enemy | Red is amnesiac, and nothing it decides is visible | **DROPPED 2026-08-17** — two framings, two Phase 0 kills, one shared cause; see §8 |
 
 **Seam 7 was missed in the first pass, and that was the note's biggest failure.** §1 measured
 13 lines of mission builder per line of campaign brain, and observed that red is blue's planner
@@ -294,7 +294,7 @@ Listed here only so the set is complete. That note's decisions stand; nothing he
 
 ---
 
-## 8. Seam 7 — the enemy · **RE-SCOPING** (axis framing killed by Phase 0)
+## 8. Seam 7 — the enemy · **DROPPED** (both framings killed by Phase 0)
 
 ### The problem in one line
 
@@ -348,6 +348,44 @@ red committing to something across turns and the player discovering it by flying
 the smallest version is a persisted red intent that survives `from_game` and biases target selection,
 with **no** new surface at all — you learn red is pushing the northern axis because that is where its
 packages keep coming from.
+
+### SEAM 7 IS DROPPED, 2026-08-17
+
+Two framings, two Phase 0 measurements, two disconfirmations, **one shared cause**. Dropped rather
+than re-scoped a third time — chasing a feature past its own evidence is the failure the
+pre-registration discipline exists to prevent.
+
+**Framing 1 — red commits to an axis.** Killed: there is effectively one axis. Detail below.
+
+**Framing 2 — red defends where the player keeps flying.** Killed the same day, before anything was
+written, by measuring its premise on the same save (Syria, Desert Trident, turn 4):
+
+| | |
+|---|---|
+| Blue attacks | King Abdullah II 7, Muwaffaq Salti 5, H3 Southwest 1 |
+| Red CAPs | King Abdullah II 2, Muwaffaq Salti 2 |
+| Capped but **not** attacked | **none** |
+| Attacked but not capped | H3 Southwest — 1 of 13 blue packages |
+
+Red already defends exactly where blue attacks, wasting no CAP at all. The feature would have
+produced the behaviour that already exists.
+
+**The shared cause, which is the finding worth keeping.** Red's choices and the player's choices are
+both functions of the same static map structure: blue attacks the forward objectives because that is
+where the targets are, and red defends them because that is where the threat is. Red therefore
+*looks* responsive with no memory whatsoever, and memory has nothing to add. The original diagnosis —
+"red is amnesiac, therefore bad" — does not follow, because amnesia costs nothing wherever the
+structural answer and the responsive answer coincide.
+
+The one measured gap is thin and not worth a feature: red's CAP weighting is flat (2/2) where blue's
+effort is 58/42. With four CAP packages in the theatre there is no resolution for that to be
+perceptible.
+
+**What would reopen this.** Not another dimension picked off the planner. A flown observation of
+something red actually does that reads wrong in the air. That is evidence this analysis cannot
+produce, and every attempt to derive it from the planner has now failed twice.
+
+---
 
 ### Phase 0 RESULT, 2026-08-17 — the axis framing is dead
 

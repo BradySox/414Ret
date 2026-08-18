@@ -124,6 +124,7 @@ stress it · `✗` fail signature reproduced in-game.
 | B78 | The escorts let go of a package the player is leading | planner shape | ☐ |
 | B79 | Ground-level waypoints read the field's elevation | §8 | ☐ |
 | B80 | String plugin options can actually be edited | §14 | ☐ |
+| B81 | SEAD-evasion scoot distance is a campaign setting | MANTIS | ☐ |
 
 ---
 
@@ -5085,6 +5086,40 @@ FAC type) and `redscramble` (spawn mode).
      `PluginSettings`, not at this branch.
   4. **New Game aborts on a plugin load error.** The new guard fires when a shipped
      `defaultValue` is outside its `choices`. That is the guard working — fix the json.
+
+### B81 — SEAD-evasion scoot distance is a campaign setting · MANTIS · ☐ UNTESTED
+
+**History:** built 2026-08-18, off the test 8 measurements.
+
+> When a HARM is inbound, MOOSE puts the SAM alarm-green and drives it. The distance was
+> hardcoded at 100–300 m inside `SEAD:onafterManageEvasion` with no setter, so a campaign
+> could not ask for real dispersal. `seadScootRadiusM` (100–1000 m, default **300** = MOOSE's
+> own value) now overrides it. The bridge wraps the shared `CONTROLLABLE` method and rewrites
+> the radius only for the SEAD signature; MANTIS' own HQ/EWR relocation and the other
+> Diamond caller are matched out and left alone, pinned by
+> `tests/lua/test_mantis_sead_scoot_radius.py`.
+
+> **What test 8 measured, for calibration.** The BUK-M3 site took its first HARM at
+> 15:01:16 and started moving at 15:02:01 — a 45 s reaction, matching MOOSE's Average-skill
+> 40–60 s delay. It moved 233–518 m, and fired **11 missiles before the scoot and 25 after**.
+> The stock 300 m is not costing a site its engagement, so raise this only for a campaign
+> that wants the site genuinely hard to re-find.
+
+Set it on a campaign with a radar SAM the AI will actually HARM, then watch one site.
+
+- **Pass:** the site drives visibly further than the stock ~300 m, and still comes back up
+  and engages afterwards.
+- **Fail signatures:**
+  1. **The site is still shooting while strung out mid-drive.** The suppression window and
+     the drive are decoupled — alarm goes red when the window ends whether or not the move
+     finished. At MOOSE's 20 km/h, 300 m takes ~55 s against a window of roughly 1.5–2 min,
+     so anything much above ~600 m will still be moving when it goes weapons-free. This is
+     the reason for the 1000 m cap, not a bug.
+  2. **EWRs or the HQ start wandering further too.** The signature match caught the wrong
+     caller — the tests cover this, so suspect a MOOSE version bump.
+  3. **Nothing changes at all.** MOOSE changed the hardcoded 300, so the match no longer
+     fires. `dcs.log` carries a `SEAD scoot radius` line the first time it rewrites; no line
+     means it never matched. Degrading to stock is deliberate.
 
 ### B71 — Several survivors come out on one lift · CSAR (#929 Phase 5) · ☐ UNTESTED
 

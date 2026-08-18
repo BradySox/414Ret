@@ -8,6 +8,7 @@ from random import randint
 from typing import TYPE_CHECKING, TypeVar
 
 from game.ato.closestairfields import ClosestAirfields, ObjectiveDistanceCache
+from game.ato.flighttype import FlightType
 from game.theater import (
     Airfield,
     ControlPoint,
@@ -283,6 +284,37 @@ class ObjectiveFinder:
         if farthest is None:
             raise RuntimeError("Found no friendly control points. You probably lost.")
         return farthest
+
+    def aewc_land_anchor(self) -> ControlPoint:
+        """The rear-safe land AEW&C anchor, biased to a field that hosts an AWACS.
+
+        The orbit is laid out relative to this CP, so a pick made purely on
+        distance-from-threat can strand the wing's only AWACS across the theater:
+        the flown Sinai plan took a rear field 1.1 NM safer than the one the single
+        E-3A actually flew from, and sent it 245 NM to orbit beside a third field
+        (brady.retribution, 2026-08-17). Falls back to the stock rear pick when no
+        unthreatened friendly field hosts an AEW&C squadron, so an all-carrier wing
+        still anchors somewhere sane.
+        """
+        threat_zones = self.game.threat_zone_for(self.is_player.opponent)
+        best: ControlPoint | None = None
+        best_distance = meters(0)
+        for cp in self.friendly_control_points():
+            if isinstance(cp, OffMapSpawn) or cp.is_carrier:
+                continue
+            if threat_zones.threatened(cp.position):
+                continue
+            if not any(
+                squadron.capable_of(FlightType.AEWC) and squadron.untasked_aircraft > 0
+                for squadron in cp.squadrons
+            ):
+                continue
+            distance = threat_zones.distance_to_threat(cp.position)
+            if best is None or distance > best_distance:
+                best, best_distance = cp, distance
+        if best is not None:
+            return best
+        return self.farthest_friendly_control_point()
 
     def closest_friendly_control_point(self) -> ControlPoint:
         """Finds the friendly control point that is closest to any threats."""

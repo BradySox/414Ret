@@ -347,7 +347,7 @@ def _aewc_targets(finder: ObjectiveFinder) -> list[MissionTarget]:
         cp for cp in finder.friendly_control_points() if cp.is_carrier
     ]
     if any(True for _ in finder.front_lines()):
-        targets.append(finder.farthest_friendly_control_point())
+        targets.append(finder.aewc_land_anchor())
     else:
         targets.append(finder.closest_friendly_control_point())
     return targets

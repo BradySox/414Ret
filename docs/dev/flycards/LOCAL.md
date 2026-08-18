@@ -18,6 +18,10 @@ three-cadence model in
 [`414th-verification-cadence-notes.md`](../design/414th-verification-cadence-notes.md)
 predicted exactly this gap and named this card as the fix; it just had not been built.
 
+**One-off session plans live beside this file, not on it.**
+[`SPECTATOR-89.md`](SPECTATOR-89.md) closes the five §89 rows (`B56`–`B60`) from a slot you
+never take off in — every observable there belongs to the AI. Delete it when they close.
+
 Conventions follow WATCH.md, and the session-start hook parses both files identically:
 the `### ` heading states the observable in plain words, and a `**Try:**` line under it says
 how to arrange the condition. Keep it short — a card nobody finishes is a card nobody reads.

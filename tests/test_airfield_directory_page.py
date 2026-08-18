@@ -110,3 +110,47 @@ def test_support_page_spills_long_airfield_directory_to_continuation(
         out = tmp_path / f"page{idx:02}.png"
         concrete_page.write(out)
         assert Image.open(out).size == (960, 1080)
+
+
+# ------------------------------ the flight's own row (flown 2026-08-17)
+
+
+def test_the_flights_own_package_row_shows_its_callsign() -> None:
+    """Every other row in that table is a callsign.
+
+    Flown: the Support Info page was headed "Colt 9" and the package table
+    listed the reader's own flight as the literal word "Flight", alongside
+    Enfield 8 / Ford 7 / Lobo 3 / Python 5. It read as a placeholder on the one
+    row the reader is looking for.
+    """
+    flight = _support_flight()
+    page = SupportPage(
+        flight,
+        package_flights=[],
+        comms=[],
+        awacs=[],
+        tankers=[],
+        jtacs=[],
+        start_time=MagicMock(),
+        dark_kneeboard=False,
+    )
+    names = [comm.name for comm in page.comms]
+    assert names == ["Enfield 1-1"], names
+    assert "Flight" not in names
+
+
+def test_a_custom_named_flight_keeps_both() -> None:
+    """The other rows render `callsign\n(custom name)`; this one matches."""
+    flight = _support_flight()
+    flight.custom_name = "Sandy"
+    page = SupportPage(
+        flight,
+        package_flights=[],
+        comms=[],
+        awacs=[],
+        tankers=[],
+        jtacs=[],
+        start_time=MagicMock(),
+        dark_kneeboard=False,
+    )
+    assert page.comms[0].name == "Enfield 1-1\n(Sandy)"

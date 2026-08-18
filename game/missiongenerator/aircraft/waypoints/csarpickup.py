@@ -9,7 +9,8 @@ from dcs.task import (
 )
 
 from game.squadrons.downedpilot import DownedPilot
-from game.utils import feet
+from game.settings import Settings
+from game.utils import Distance, feet, meters
 from .pydcswaypointbuilder import PydcsWaypointBuilder
 
 #: How long the rescue helicopter holds at the pickup waiting for the pilot.
@@ -27,17 +28,34 @@ HOVER_DURATION_SECONDS = 30
 #: script has to do the second part because the DCS Orbit task takes an MSL
 #: altitude and Retribution has no terrain elevation at mission-generation time.
 #:
-#: MUST STAY BELOW MOOSE's WINCH CEILING. A PLAYER hoist is gated by MOOSE, not by
-#: this plugin: ``CSAR:_CheckOnboard`` only starts the winch while the helo is within
-#: ``rescuehoverheight`` of the survivor, which defaults to **20 m**
-#: (``Moose.lua`` ``self.rescuehoverheight=20``, tested at ``if _height<=...``).
-#: This was `feet(100)` (30.5 m) on adoption, so the mission briefed a hover the
-#: winch would refuse: a crew flying the waypoint exactly sat 10 m too high and the
-#: hoist never fired, with no message explaining why. 50 ft keeps a clear margin
-#: under the ceiling and is a realistic hoist height besides.
-#: ``tests/missiongenerator/test_csar_hover_altitude.py`` reads the ceiling out of
-#: Moose.lua rather than copying it, so a MOOSE update that lowers it fails CI.
+#: MUST STAY BELOW THE PLAYER WINCH CEILING, which is why nothing reads this
+#: constant directly -- use :func:`briefed_hover_altitude`. A player hoist is gated
+#: by MOOSE, not by this plugin: ``CSAR:_CheckOnboard`` only starts the winch while
+#: the helo is within ``rescuehoverheight`` of the survivor. This was `feet(100)`
+#: (30.5 m) on adoption against MOOSE's 20 m default, so the mission briefed a hover
+#: the winch would refuse: a crew flying the waypoint exactly sat 10 m too high and
+#: the hoist never fired, with no message explaining why.
 HOVER_ALTITUDE = feet(50)
+
+#: How much of the winch ceiling the briefed hover may use.
+#:
+#: The ceiling stopped being a constant when upstream exposed it as
+#: ``csar_player_hover_height`` (5-100 m), so a fixed 50 ft is only safe at the
+#: default. Clamping to a fraction keeps the margin proportional: a crew flying the
+#: waypoint exactly is inside the winch envelope at every setting, and at the 20 m
+#: default the clamp does not bind, so the briefed hover is still 50 ft.
+HOVER_CEILING_FRACTION = 0.8
+
+
+def briefed_hover_altitude(settings: Settings) -> Distance:
+    """The hover height briefed on the pickup waypoint and given to OpsCSAR.lua.
+
+    Both callers use this so the waypoint and the script holding the flight over it
+    agree, and so neither can drift above the winch ceiling the player is judged
+    against.
+    """
+    ceiling = meters(settings.csar_player_hover_height)
+    return min(HOVER_ALTITUDE, ceiling * HOVER_CEILING_FRACTION)
 
 
 class CsarPickupBuilder(PydcsWaypointBuilder):
@@ -102,7 +120,8 @@ class CsarPickupBuilder(PydcsWaypointBuilder):
 
     def _build_hover_hold(self, waypoint: MovingPoint, target: DownedPilot) -> None:
         """Hands the flight to OpsCSAR.lua, which holds it in a hover."""
-        waypoint.alt = int(HOVER_ALTITUDE.meters)
+        settings = self.flight.coalition.game.settings
+        waypoint.alt = int(briefed_hover_altitude(settings).meters)
         waypoint.alt_type = "RADIO"
         # We have just overwritten what the base builder decided, so re-apply the
         # AMSL switch (the switch_baro_fix setting). It matters most exactly where
@@ -110,7 +129,7 @@ class CsarPickupBuilder(PydcsWaypointBuilder):
         # the water -- because DCS measures AGL from the sea *bottom*, which would
         # put a 100ft hold well under water. The number is unchanged either way:
         # at sea, AMSL and height above the surface are the same thing.
-        if self.flight.is_helo and self.flight.coalition.game.settings.switch_baro_fix:
+        if self.flight.is_helo and settings.switch_baro_fix:
             self.switch_to_baro_if_in_sea(waypoint)
         # Nothing in the .miz can hold the AI here: the DCS Orbit task's altitude is
         # MSL, and we have no terrain elevation to convert our AGL hold to, so the

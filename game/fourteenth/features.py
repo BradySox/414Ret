@@ -634,7 +634,7 @@ FEATURES: tuple[Feature, ...] = (
         77,
         plugin_id="growler",
         # single_sead_escort_flavour caps a package at one suppression flight so
-        # the jammer's SEAD siblings stop crowding it out (in-game rows B52/B71).
+        # the jammer's SEAD siblings stop crowding it out (in-game rows B52/B75).
         settings_fields=("max_escort_jammers", "single_sead_escort_flavour"),
     ),
     Feature(

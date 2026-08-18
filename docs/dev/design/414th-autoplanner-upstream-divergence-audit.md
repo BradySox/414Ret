@@ -144,7 +144,7 @@ prunable, and scrubs its package when unfillable), `ObjectiveFinder.aewc_land_an
 failure fix, joining U13/U14), and the naval BARCAP handover, which never subtracted
 `barcap_overlap_time` the way the land branch does and is a no-op at the stock value
 of 0. Heavy bombers also lose the `CAS` lane, extending the kept Armed Recon
-wrong-role fix. See in-game-pass rows B52 and B71.
+wrong-role fix. See in-game-pass rows B52 and B75.
 
 ## Levers, if pulling back (superseded by the decision above; kept for the record)
 

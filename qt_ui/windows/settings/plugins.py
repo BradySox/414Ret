@@ -3,9 +3,11 @@ from typing import Dict, List
 from PySide6.QtCore import Qt, QLocale
 from PySide6.QtWidgets import (
     QCheckBox,
+    QComboBox,
     QGridLayout,
     QGroupBox,
     QLabel,
+    QLineEdit,
     QVBoxLayout,
     QWidget,
     QDoubleSpinBox,
@@ -132,6 +134,27 @@ class PluginOptionsBox(QGroupBox):
                 spinbox.valueChanged.connect(lambda _: self.refresh_enabled_states())
                 layout.addWidget(spinbox, row, 1)
                 self.widgets[option.identifier] = spinbox
+            else:
+                # A string option. Without this branch the loop added the label and
+                # then no widget at all, so all seven the fork ships (frequencies,
+                # weapon-pattern lists, the FAC type, the scramble spawn mode) sat in
+                # the page next to an empty cell and could not be edited.
+                if option.choices:
+                    combo = QComboBox()
+                    combo.addItems(option.choices)
+                    combo.setCurrentText(str(val))
+                    combo.currentTextChanged.connect(option.set_value)
+                    combo.currentTextChanged.connect(
+                        lambda _: self.refresh_enabled_states()
+                    )
+                    layout.addWidget(combo, row, 1)
+                    self.widgets[option.identifier] = combo
+                else:
+                    line = QLineEdit(str(val))
+                    line.textChanged.connect(option.set_value)
+                    line.textChanged.connect(lambda _: self.refresh_enabled_states())
+                    layout.addWidget(line, row, 1)
+                    self.widgets[option.identifier] = line
 
             row += 1
 

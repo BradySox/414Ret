@@ -123,6 +123,7 @@ stress it · `✗` fail signature reproduced in-game.
 | B77 | A player's ramp allowance matches the airframe | #214 startup times | ☐ |
 | B78 | The escorts let go of a package the player is leading | planner shape | ☐ |
 | B79 | Ground-level waypoints read the field's elevation | §8 | ☐ |
+| B80 | String plugin options can actually be edited | §14 | ☐ |
 
 ---
 
@@ -5054,6 +5055,36 @@ Fly any sortie off a field that is not at sea level and read the waypoint list.
 > is an exit vector planned at cruise and moving it is the point, so it is separated by its
 > control point rather than by altitude. Pinned in `tests/test_bulk_waypoint_altitude.py`.
 > Read this row with **Q3**.
+
+### B80 — String plugin options can actually be edited · §14 · ☐ UNTESTED
+
+**History:** built 2026-08-18. An app check, not a flight.
+
+> The plugin settings page chose its widget from the option's declared default type and
+> handled bool and int/float only, so all seven string options the fork ships rendered a
+> label beside an empty cell — visible in the page, and impossible to change. A `choices`
+> list now renders a dropdown; without one the option gets a free-text field, which is what
+> a comma-separated weapon-pattern list needs. A shipped default outside its own `choices`
+> is rejected at load, and a tree sweep pins that no plugin can ship a bad pair.
+
+Open **Settings → Plugins** and find the five plugins with string options: `briefing`
+(ground frequency), `minefields`, `navalmagazines`, `vietnamops` (two pattern lists plus the
+FAC type) and `redscramble` (spawn mode).
+
+- **Pass:** every string option has a control beside its label. `redscramble`'s spawn mode is
+  a dropdown offering exactly air / hot / runway; the rest are text fields carrying their
+  current value. An edit survives closing and reopening the dialog, and reaches the generated
+  mission's Lua config table.
+- **Fail signatures:**
+  1. **Still an empty cell.** The option's `defaultValue` is not a string in `plugin.json` —
+     check the type, not the widget.
+  2. **The dropdown is empty or missing a mode.** `choices` did not parse; the option falls
+     back to free text, so the value is still reachable.
+  3. **An edit does not reach the mission.** The widget writes through `option.set_value`
+     like every other control; if only string options fail to persist, look at
+     `PluginSettings`, not at this branch.
+  4. **New Game aborts on a plugin load error.** The new guard fires when a shipped
+     `defaultValue` is outside its `choices`. That is the guard working — fix the json.
 
 ### B71 — Several survivors come out on one lift · CSAR (#929 Phase 5) · ☐ UNTESTED
 

@@ -11,6 +11,7 @@
         {
             "nameInUI": "Spawn mode: air (overhead, instant), hot (ramp) or runway",
             "mnemonic": "takeoff",
+            "choices": ["air", "hot", "runway"],
             "defaultValue": "air"
         },
         {

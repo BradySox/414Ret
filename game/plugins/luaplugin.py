@@ -121,9 +121,14 @@ class LuaPluginOption(PluginSettings):
         max: Any,
         value: Any,
         enabled_when: Optional[PluginOptionEnabledWhen] = None,
+        choices: Optional[List[str]] = None,
     ) -> None:
         super().__init__(identifier, value)
         self.name = name
+        #: Allowed values for a string option, rendered as a dropdown. Without it a
+        #: string option gets a free-text field, which is the right answer for the
+        #: comma-separated pattern lists but not for a closed set.
+        self.choices = choices
         #: Optional dependency on a sibling option; see PluginOptionEnabledWhen.
         #: UI-only. A greyed option still carries its stored value into the Lua
         #: data table exactly as before -- the plugin scripts already guard on
@@ -165,8 +170,19 @@ class LuaPluginDefinition:
                     enabled_when=normalize_plugin_enabled_when(
                         name, option.get("enabledWhen")
                     ),
+                    choices=option.get("choices"),
                 )
             )
+
+        # A default outside its own choices can never be selected back once the user
+        # changes it, so reject it at load rather than leaving a dead value in the UI.
+        for loaded in options:
+            if loaded.choices and loaded.value not in loaded.choices:
+                raise PluginOptionDependencyError(
+                    f"{path}: option '{loaded.identifier}' has defaultValue "
+                    f"{loaded.value!r}, which is not one of its choices "
+                    f"{loaded.choices}."
+                )
 
         # Resolve every declared dependency against the options actually present.
         # A typo'd mnemonic would otherwise leave the dependent option greyed for

@@ -346,7 +346,7 @@ Kept numbered so old notes and saves stay readable. Details and rationale in the
 | 13 | Flight Control ATC | Retired 2026-06-26 |
 | 20 | Drop-spawn map unit placement | Removed 2026-08-02 |
 | 15 | SCAR — RESCAP "Sandy" rescue escort | Removed 2026-08-07 — see §21 |
-| 21 | Combat SAR (fork implementation) | Removed 2026-08-07 — replaced by upstream dcs-retribution#929 |
+| 21 | Combat SAR (fork implementation) | Removed 2026-08-07 — replaced by upstream dcs-retribution#929, which is **an OPEN PR, not merged** (zero reviews as of 2026-08-17). We re-adopt its phases by hand; Phase 5 landed 2026-08-17. See the adoption log in `414th-csar-notes.md` before touching the hover height |
 | 25 | Compact 3–4 page kneeboard deck | Retired 2026-07-05 |
 | 30 | Dedicated kneeboard cover page | Retired 2026-07-13 — new info folds into a stock page |
 | 31 | One-page Brief Sheet | Retired 2026-07-13 — BLUF and code words survived |

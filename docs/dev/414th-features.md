@@ -5159,8 +5159,9 @@ beat the 120 s grace fired — then sat pinned on the spent task, ignoring every
 the generator records each fire-tasked group's hold deadline on
 `MissionData.missile_fire_missions`; the emitter forwards them per-site as the parallel arrays
 `fireHoldGroups`/`fireHoldS`; the plugin holds such a group still until its window + `fireMarginS`
-(default 300 s) has passed, then routes it with a `Controller:resetTask()` first (clearing the spent
-fire task that pinned it). Groups without a fire mission scoot exactly as before.
+(default 300 s) has passed, then routes it. (It originally called `Controller:resetTask()` first, to
+clear the spent fire task; that was **removed 2026-08-18** — see "The reset was the thing stopping
+them" below.) Groups without a fire mission scoot exactly as before.
 
 **The fire task must end itself (2026-07-17, the flown turn-2 re-fly).** The re-fly proved the fire
 half — 9/10 fire-tasked batteries launched full volleys 12–15 s after their forwarded deadlines (18
@@ -5174,9 +5175,32 @@ combat exposure ruled out in the Tacview). The generator therefore wraps the fir
 volleys complete within ~40 s of the deadline), so the task ends through DCS's normal completion
 path and the group is ordinarily idle before the plugin's 300 s margin routes it. The
 window-inside-margin coupling is pinned by `test_fire_window_stays_inside_the_plugin_scoot_margin`;
-the plugin's `resetTask` stays as belt-and-braces for pre-window missions. If the re-fly shows the
+the plugin's `resetTask` stayed as belt-and-braces for pre-window missions — until 2026-08-18, when
+it turned out to be the defect itself. If the re-fly shows the
 stop condition also fails to stow dry launchers, the next lever is an explicit `rounds=` expend
 count on the task.
+
+**The reset was the thing stopping them (2026-08-17 flown, fixed 2026-08-18).** One mission, three
+sites, and the correlation is exact:
+
+| site | fire mission | moved |
+|---|---|---|
+| CICHLID | none | **3,542–3,840 m** |
+| OSTRICH | hold 1735 s | 0–21 m, then the give-up detector dropped it |
+| BUFFALO | hold 2748 s | 0–17 m |
+
+Composition is not the discriminator — CICHLID and OSTRICH are both Scud batteries, BUFFALO is an
+SA-8. Ground-AI sleep (§59) is not either: its emitted list excludes missile sites entirely, checked
+in the flown `.miz`. The only thing separating the site that drove from the two that did not is
+whether `driveTo` was called with `clearTask`, i.e. whether it issued `Controller:resetTask()`
+before the route push.
+
+`mist.goRoute` routes via `setTask`, which **replaces** the task queue — this section's own text
+says so — so the reset was redundant to begin with. Issuing both in the same frame let the reset
+land last and wipe the route it was meant to enable, which is also the honest reading of the
+2026-07-17 result where it "un-pins only sometimes (2/9)". Removed: `driveTo` no longer takes
+`clearTask` and never resets. The give-up detector stays as the backstop — if some launcher state
+really does pin a group, two dry pushes drop it and the log names the unit types.
 
 **The FPS storm (2026-07-17, the first flown test on the fixed build).** A fresh 39-site game hit
 single-digit FPS with DCS's `ANTIFREEZE` sim-overload protection firing continuously from the
@@ -5238,7 +5262,7 @@ same philosophy, different object class).
 | Runtime | `resources/plugins/mobilemissiles/` (`plugin.json` + `mobilemissiles-config.lua`) |
 | Setting | `game/settings/settings.py` (`mobile_missile_relocation`, Mission Generation → World & systems, default **ON** — the toggle is the kill switch) |
 | Coastal opt-in | `coastal_missile_relocation` (Mission Generation → Battlefield life, default **OFF**) — adds `category == "coastal"` (Silkworm) sites to the scoot; the naval-campaign lever, preseeded ON in the Tanker War (§Persian Gulf — The Tanker War) |
-| Tests | `tests/missiongenerator/test_mobilemissileluadata.py` (emit shape, category/dead/static gates, setting gate, fire-hold forwarding); `tests/lua/test_mobilemissiles_runtime.py` (grace, per-group scoot around the anchor, destroyed-site stop, no-node no-op, fire-then-scoot hold + resetTask) |
+| Tests | `tests/missiongenerator/test_mobilemissileluadata.py` (emit shape, category/dead/static gates, setting gate, fire-hold forwarding); `tests/lua/test_mobilemissiles_runtime.py` (grace, per-group scoot around the anchor, destroyed-site stop, no-node no-op, fire-then-scoot hold, and that no group is ever reset before its route push) |
 
 ### Gotchas / deferred
 

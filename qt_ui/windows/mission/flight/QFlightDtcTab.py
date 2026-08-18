@@ -56,6 +56,12 @@ _SECTIONS = (
         "Threat rings for enemy air-defense sites your recon has confirmed "
         "(the campaign map's exact sites only -- suspected sites never leak).",
     ),
+    (
+        "Friendly recovery fields",
+        "destinations",
+        "Friendly airfields and boats as Destination steerpoints, the briefed "
+        "divert first. Viper only; the Hornet carries no equivalent section.",
+    ),
 )
 
 

@@ -37,6 +37,9 @@ class DtcOptions:
     friendly_orbits: bool = True
     #: Known enemy SAM threat rings (recon-fogged).
     threat_rings: bool = True
+    #: Friendly recovery fields as Destination steerpoints (Viper only -- the
+    #: Hornet descriptor has no equivalent section).
+    destinations: bool = True
 
     def resolve_enabled(self, campaign_default: bool) -> bool:
         """The effective on/off for this flight."""
@@ -55,5 +58,6 @@ class DtcOptions:
                 self.flot_and_zones,
                 self.friendly_orbits,
                 self.threat_rings,
+                self.destinations,
             )
         )

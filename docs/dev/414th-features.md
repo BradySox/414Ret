@@ -7528,9 +7528,32 @@ package-mates share the comm plan and SA picture):
   pre-existing threat-intel kneeboard, which had the same latent leak — sees the
   real fog whatever the display toggle says, and the toggle itself is restored
   after generation (`tests/test_fog_reveal_generation_leak.py`).
+  **This is data discipline, not what the pilot sees.** The FA-18C EA guide (p205)
+  is explicit that any air defence unit "placed in the mission, and not to be
+  hidden" is drawn on the SA page at its true position with an engagement ring, no
+  detection required, cartridge uninvolved — and `Game._reveal_merad_groups` forces
+  `hide_on_mfd = False` on every MERAD. So an unscouted MERAD site is on a Hornet's
+  SA page regardless. What keeps sites off that display is §7's `hide_on_mfd`, which
+  exempts MERAD deliberately. §74's rings add the SHORAD/LORAD picture the jet omits.
 
 **Editor-mined limits honored:** 59 Hornet waypoints / 25 Viper steerpoints, 9 CAP
-points, 3+3 FAOR/FLOT lines × 7 points, 40 MEZ / 15 THREAT_PTS, 4 GEO line sets.
+points, 3+3 FAOR/FLOT lines × 7 points, 40 MEZ / 15 THREAT_PTS, 25 GEO line points
+across 4 sets. Two further limits came from the F-16C EA guide (2026-08-18): the
+Viper auto-sequences only from **STPT 1-20** (p223), so the flown route caps at 20
+and the support anchors take 21-25; and GEO_LINES owns steerpoints **31-55** with
+pre-planned threats at 56-70 (p202), so the point total is capped at 25 rather than
+the 32 a fuller line source would have produced. Viper steerpoints also now carry
+their HSD sub-type -- **TGT** (triangle) on target waypoints, **IP** (square) on
+ingress, `STPT` (circle) elsewhere. **`MPD.DEST` landed the same day**: friendly
+recovery fields as Destination steerpoints 81-99 (cap 19), red-held and
+non-operational fields filtered out, the briefed divert leading and the rest by
+range from the target, labelled with three uppercase alphanumerics. Its own
+`destinations` section switch, default on, Viper-only. **`MPD.CMDS` was
+investigated and declined** — `CMDS_defs.lua` is a defaults file rather than
+intelligence, emitting `CMDSProgramSettings` would overwrite a pilot's hand-set
+burst/salvo counts, and the live descriptor (`data.MPD.CMDS`) disagrees with
+ED's own shipped example cartridges (`data.CMDS`), so there is no confirmed
+shape to emit. Rationale in the design note.
 Comm names pre-clamped to the ME's 5-uppercase-alphanumeric filter. **The Hornet's
 nine CAP_PTS slots are spent priority-then-completeness** (two flown 2026-07-19
 findings): the §6 BARCAP wave relief flies each station as several jittered

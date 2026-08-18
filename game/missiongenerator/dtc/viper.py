@@ -8,11 +8,14 @@ Sections emitted (schema mined from ``CoreMods/aircraft/F-16C/DTC``):
   keeps route timing on the point, unlike the Hornet's separate route table),
   named via the ``note`` field; the flight route first, then tanker / AEW&C /
   CAP anchors as extra steerpoints (the SA-page ask, Viper-style -- the jet
-  has no orbit element). The ME's DTC editor caps the list at 25.
+  has no orbit element). The editor caps the list at 25 and the jet
+  auto-sequences only 1-20, so the route takes 1-20 and anchors 21-25.
 * ``MPD.GEO_LINES`` -- the active front lines (FLOT) as up to 4 line sets on
-  the HSD.
+  the HSD, capped at the partition's 25 points.
 * ``MPD.THREAT_PTS`` -- viewer-fogged enemy SAM rings ("Custom" type, radius
   in meters, <= 15).
+* ``MPD.DEST`` -- friendly recovery fields as Destination steerpoints 81-99,
+  labelled with the HSD's 3-character Destination text.
 """
 
 from __future__ import annotations
@@ -36,15 +39,24 @@ from game.missiongenerator.dtc.common import (
 
 if TYPE_CHECKING:
     from game import Game
+    from game.ato.flightwaypoint import FlightWaypoint
     from game.missiongenerator.aircraft.flightdata import FlightData
     from game.missiongenerator.missiondata import MissionData
 
 VIPER_UNIT_TYPE = "F-16C_50"
 
 MAX_STEERPOINTS = 25
+#: The jet auto-sequences only from STPT 1-20 (EA guide p223), so the flown
+#: route stops there and the support anchors take 21-25.
+MAX_ROUTE_STEERPOINTS = 20
 MAX_GEO_LINE_SETS = 4
 MAX_GEO_POINTS_PER_SET = 8
+#: GEO_LINES owns steerpoints 31-55 (editor cap 25); a 26th point would land in
+#: the pre-planned-threat partition at 56.
+MAX_GEO_POINTS = 25
 MAX_THREAT_POINTS = 15
+#: DEST owns steerpoints 81-99, and the editor refuses a 20th.
+MAX_DESTINATIONS = 19
 
 #: Stock preset frequencies (MHz), from the module's COMM defaults.
 _COM1_DEFAULT_FREQS = [
@@ -100,13 +112,12 @@ def _steerpoint(
     speed_kmh: float,
     tos: int,
     tos_enabled: bool,
-    target: bool,
+    point_type: str,
 ) -> dict[str, Any]:
-    del target  # the Viper marks targets via the route, not a point flag
     return {
         "number": number,
         "id": f"STPT{number}",
-        "type": "STPT",
+        "type": point_type,
         "note": name,
         "x": x,
         "y": y,
@@ -144,6 +155,68 @@ def _steerpoint(
     }
 
 
+def _steerpoint_type(waypoint: FlightWaypoint) -> str:
+    """STPT / IP / TGT -- the three HSD symbols (circle, square, triangle)."""
+    if is_target_waypoint(waypoint):
+        return "TGT"
+    if "INGRESS" in waypoint.waypoint_type.name:
+        return "IP"
+    return "STPT"
+
+
+def _dest_label(name: str, taken: set[str]) -> str:
+    """The HSD draws a Destination as up to 3 alphanumerics (EA guide p203)."""
+    base = "".join(c for c in name.upper() if c.isalnum())[:3] or "DST"
+    label, suffix = base, 2
+    while label in taken and suffix < 100:
+        tail = str(suffix)
+        label = f"{base[: 3 - len(tail)]}{tail}"
+        suffix += 1
+    taken.add(label)
+    return label
+
+
+def _dest_reference(flight: FlightData) -> Any:
+    """Sort destinations by distance from the target, else the last waypoint."""
+    for waypoint in flight.waypoints:
+        if is_target_waypoint(waypoint):
+            return waypoint.position
+    return flight.waypoints[-1].position if flight.waypoints else None
+
+
+def _build_dest(flight: FlightData, game: Game) -> list[dict[str, Any]]:
+    """Friendly recovery fields as Destination steerpoints.
+
+    The briefed divert leads the list; the rest sort by distance from the
+    target, so the nearest alternates are the ones that fit the 19 slots.
+    """
+    reference = _dest_reference(flight)
+    divert_name = flight.divert.airfield_name if flight.divert else None
+    fields = []
+    for cp in game.theater.controlpoints:
+        if cp.captured.is_red or not cp.runway_is_operational():
+            continue
+        distance = (
+            cp.position.distance_to_point(reference) if reference is not None else 0.0
+        )
+        fields.append((cp.name != divert_name, distance, cp))
+    fields.sort(key=lambda entry: (entry[0], entry[1]))
+
+    taken: set[str] = set()
+    return [
+        {
+            "number": index,
+            "id": f"DEST{80 + index}",
+            "x": cp.position.x,
+            "y": cp.position.y,
+            "alt": cp.field_elevation.meters,
+            "text": _dest_label(cp.name, taken),
+            "note": cp.name,
+        }
+        for index, (_, _, cp) in enumerate(fields[:MAX_DESTINATIONS], start=1)
+    ]
+
+
 def _anchor_name(track: SupportTrack) -> str:
     return f"{track.kind} {track.callsign}".strip()
 
@@ -159,8 +232,8 @@ def _build_nav_pts(
     # Hornet off-by-one applied here identically).
     waypoints = flight.waypoints[1:] if options.route else []
     for waypoint in waypoints:
-        if len(points) >= MAX_STEERPOINTS:
-            return points
+        if len(points) >= MAX_ROUTE_STEERPOINTS:
+            break
         number = len(points) + 1
         on_route = is_route_waypoint(waypoint)
         alt_m, altitude_type = client_altitude(waypoint)
@@ -176,7 +249,7 @@ def _build_nav_pts(
                 leg_speed_kmh(prev_route_wp if on_route else None, waypoint),
                 seconds_of_day(game, waypoint.tot),
                 waypoint.tot is not None,
-                is_target_waypoint(waypoint),
+                _steerpoint_type(waypoint),
             )
         )
         if on_route:
@@ -201,7 +274,7 @@ def _build_nav_pts(
                     463.0,
                     0,
                     False,
-                    False,
+                    "STPT",
                 )
             )
     return points
@@ -215,6 +288,8 @@ def _build_geo_lines(game: Game) -> list[dict[str, Any]]:
     for set_index, (name, points) in enumerate(line_sets[:MAX_GEO_LINE_SETS]):
         flags = {f"L{i}": i == set_index + 1 for i in range(1, 5)}
         for x, y in points[:MAX_GEO_POINTS_PER_SET]:
+            if len(geo_points) >= MAX_GEO_POINTS:
+                return geo_points
             number = len(geo_points) + 1
             entry: dict[str, Any] = {
                 "number": number,
@@ -270,6 +345,7 @@ def build_viper_cartridge(
         or options.friendly_orbits
         or options.flot_and_zones
         or options.threat_rings
+        or options.destinations
     ):
         data["MPD"] = {
             "terrain": terrain,
@@ -281,6 +357,8 @@ def build_viper_cartridge(
             "THREAT_PTS": (
                 _build_threat_pts(flight, game) if options.threat_rings else []
             ),
+            "mirror_DEST": False,
+            "DEST": _build_dest(flight, game) if options.destinations else [],
         }
     return DtcCartridge(
         name=name, unit_type=VIPER_UNIT_TYPE, terrain=terrain, data=data

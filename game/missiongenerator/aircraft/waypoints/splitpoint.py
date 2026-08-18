@@ -9,6 +9,7 @@ from dcs.task import (
 
 from game.ato import FlightType
 from game.utils import knots
+from ._helper import create_player_split_release_trigger
 from .pydcswaypointbuilder import PydcsWaypointBuilder
 
 
@@ -42,6 +43,22 @@ class SplitPointBuilder(PydcsWaypointBuilder):
                 f'trigger.action.setUserFlag("split-{id(self.package)}", true)'
             )
             waypoint.tasks.append(script)
+            if self.flight.client_count > 0:
+                # A client-occupied group never runs its route tasks, so the
+                # script above is dead weight when the human leads the package.
+                # See create_player_split_release_trigger.
+                tot = self.waypoint.tot
+                create_player_split_release_trigger(
+                    self.group,
+                    self.package,
+                    self.mission,
+                    self.waypoint.position,
+                    (
+                        int((tot - self.now).total_seconds())
+                        if tot is not None
+                        else None
+                    ),
+                )
 
         elif self.flight.flight_type in [
             FlightType.SEAD_SWEEP,

@@ -120,6 +120,8 @@ stress it · `✗` fail signature reproduced in-game.
 | B75 | The ATO stops spending its escorts on the wrong packages | planner shape | ☐ |
 | B76 | A mixed boom/probe wing gets a tanker of each | U15 reinstated | ☐ |
 | B77 | A player's ramp allowance matches the airframe | #214 startup times | ☐ |
+| B78 | The escorts let go of a package the player is leading | planner shape | ☐ |
+| B79 | Ground-level waypoints read the field's elevation | §8 | ☐ |
 
 ---
 
@@ -4988,6 +4990,79 @@ Fly any mission with several AI packages up, then read the next turn's SITREP.
   4. **Counts are wildly wrong** — shots counted per unit rather than per flight, or hits
      attributed to the wrong group. Only the group lead is sampled; shots and hits come from
      the event initiator's group.
+
+> **Test 7 (2026-08-17) partial read.** The records reached `state.json` and the counters
+> were sane, but `flights` also carried every AAA piece and Avenger that shot at the
+> package, plus one entry keyed `""` whose type was `weapons.shells.Rh202_20_HE` — the
+> shot/hit handlers recorded whatever DCS named as the initiator. `record_for` now creates
+> a record only for a named unit whose `getDesc().category` is AIRPLANE or HELICOPTER; an
+> existing record keeps counting either side of a kill. Add a fifth fail signature: **ground
+> units or blank keys in the sortie list.**
+
+### B78 — The escorts let go of a package the player is leading · planner shape · ☐ UNTESTED
+
+**History:** built 2026-08-18, from test 7 (Sinai turn 1, `retribution_nextturn.miz` +
+its Tacview and `state.json`).
+
+> Escort release is a user flag, and the only thing that raised it was a `RunScript` on the
+> package primary flight's SPLIT waypoint. DCS does not run route tasks for a
+> client-occupied group, so when the human leads the package the flag never rose, the
+> escorts' `Escort` ControlledTask never stopped, and they formated on the player past his
+> split. Measured on that mission: both EA-18Gs were briefed to recover on CVN-71 and
+> instead followed the player's F-16 to Ramon Airbase (final §91 track points 80301/328863
+> and 80237/328483 against the boat's landing waypoint). The mission-level backstop only
+> fires if the primary flight *dies*, and its `AITaskPush` list omitted `ESCORT_JAMMER`
+> entirely. Fix: a hidden 15 km trigger zone on the primary's SPLIT point plus a
+> planned-split + 15 min time backstop raises the same flag from a mission trigger, which
+> runs whoever is in the cockpit; the push list is now `is_escort_type`. Pinned in
+> `tests/missiongenerator/aircraft/test_split_release.py`; verified in a regenerated `.miz`
+> as `c_part_of_group_in_zone(273, 69) or c_time_after(5670)` → `a_set_flag("split-...")`.
+
+Lead a package that has an escort or escort jammer on it and fly the whole profile home.
+
+- **Pass:** at the split point the escorts break off and route to their own recovery field.
+- **Fail signatures:**
+  1. **They still follow you home.** The zone was missed and the backstop had not elapsed —
+     check the `.miz` for a `SplitRelease<n>` trigger at all; a package whose primary is AI
+     deliberately gets none.
+  2. **They leave over the target.** The zone radius is catching the ingress rather than the
+     egress. That means SPLIT and a target point are within 15 km on that plan, not that the
+     radius is wrong in general.
+  3. **They leave far too early on a slow sortie.** The time backstop fired. It is 15 min
+     past the *planned* split, so a very long delay on station will trip it.
+  4. **The escort jammer keeps a SAM in weapons-hold long after the strike.** §77 pulses only
+     while the jammer is within 40 NM — an unreleased escort parks it there. Read with B31.
+
+### B79 — Ground-level waypoints read the field's elevation · §8 · ☐ UNTESTED
+
+**History:** built 2026-08-18, from test 7. Upstream-inherited, not a fork regression:
+`WaypointBuilder.land()` is byte-identical to `upstream/dev`.
+
+> Every takeoff, landing and divert waypoint was written at 0 — RADIO for landing and divert,
+> BARO for takeoff, where 0 is sea level. 105 of the flown mission's 192 air waypoints sat at
+> 0. The number reaches the cockpit through the kneeboard card and the DTC steerpoint, so a
+> field like Ramon Airbase (619 m) read as below the jet's own nav solution. They now carry
+> the OSM/DEM field elevation from `resources/airport_imagery/<terrain>.json` (the table the
+> ATIS already uses for QFE) as BARO. Carriers, FARPs and FOBs stay at 0 MSL by decision —
+> a deck is within ~20 m of sea level and there is no elevation record for the rest.
+> Repaired at generation time as well as plan time, because the flight-plan layout is pickled
+> into the save and a campaign in progress would otherwise keep the old 0 forever.
+> Verified by regenerating a live Sinai save: Ovda 437 m, Ramon Airbase 619 m, Melez 306 m,
+> Wadi Abu Rish 300 m, Wadi al Jandali 228 m, Ramon International 69 m, carrier 0.
+
+Fly any sortie off a field that is not at sea level and read the waypoint list.
+
+- **Pass:** the takeoff and landing steerpoints show the field's real elevation in the jet,
+  on the kneeboard and in the ME. The target waypoint still reads 0 AGL — that one is
+  deliberate, it is what lets a player slave a pod to the mark.
+- **Fail signatures:**
+  1. **Still 0 at a field above sea level.** No entry for that airport in the terrain's
+     imagery JSON. GermanyCW is the weakest coverage (135 of 227).
+  2. **The AI will not land.** The landing waypoint moved from 0 RADIO to field-elevation
+     BARO; the airdrome id is unchanged, so this should not happen, but it is the thing to
+     watch on the first pass.
+  3. **A QRA intercept or red scramble jet still reads 0.** Known and not fixed — those
+     groups are spawned outside `WaypointGenerator` and never reach a kneeboard.
 
 ### B71 — Several survivors come out on one lift · CSAR (#929 Phase 5) · ☐ UNTESTED
 

@@ -241,6 +241,44 @@ def test_shots_and_hits_are_counted_against_the_firing_aircraft() -> None:
     assert "Springfield 1-1-1" not in flights
 
 
+def test_a_ground_unit_that_shoots_never_becomes_a_flight() -> None:
+    # Test 7 (2026-08-17): every AAA piece and Avenger that fired at the package
+    # landed in `flights`, because the shot handler took whatever DCS named as
+    # the initiator. §91 is a record of FLIGHTS.
+    harness = DcsPluginHarness()
+    _load(harness)
+    harness.add_group(
+        {
+            "name": "0006 | GORILLA (AAA)",
+            "side": 1,
+            "category": 2,
+            "units": [_unit("0046 | ZSU-57-2", type="ZSU_57_2")],
+        }
+    )
+
+    harness.lua.eval("sortie_recorder_on_shot")(
+        harness.lua.eval('Unit.getByName("0046 | ZSU-57-2")')
+    )
+    harness.assert_no_lua_errors()
+
+    assert "0046 | ZSU-57-2" not in _records(harness)
+
+
+def test_an_unnamed_initiator_never_becomes_a_flight() -> None:
+    # A shell reaches the hit handler as the initiator and its getName is "",
+    # so every cannon round in the mission collided into one "" record.
+    harness = DcsPluginHarness()
+    _load(harness)
+    harness.add_group(
+        _flight("Shells", 1, [_unit("", type="weapons.shells.Rh202_20_HE")])
+    )
+
+    harness.lua.eval("sortie_recorder_on_hit")(harness.lua.eval('Unit.getByName("")'))
+    harness.assert_no_lua_errors()
+
+    assert "" not in _records(harness)
+
+
 def test_an_ejection_is_recorded_on_the_aircraft() -> None:
     harness = DcsPluginHarness()
     _load(harness)

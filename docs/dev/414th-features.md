@@ -2065,6 +2065,22 @@ in-game pass (the F-4E OCA case now shows a pre/post-strike tanker + a non-negat
   any future mixed item. Tests `tests/missiongenerator/test_luadata.py`, including
   the unmixed shapes to pin that the common path is untouched. Upstream-shared
   (`luagenerator.py` is upstream's); carve candidate post-freeze.
+- **Ground-level waypoints written at sea level (test 7, fixed 2026-08-18).** Takeoff,
+  landing and divert waypoints all carried altitude 0 — 105 of one flown mission's 192 air
+  waypoints. The number is not cosmetic: it reaches the cockpit through the kneeboard card
+  and the DTC steerpoint, so Ramon Airbase (619 m) read as below the jet's own nav solution.
+  `ControlPoint.field_elevation` now returns the OSM/DEM field elevation from
+  `resources/airport_imagery/<terrain>.json` — the same table the ATIS uses for QFE — and
+  `WaypointBuilder.takeoff/land/divert` write it as BARO. Carriers, FARPs and FOBs stay at
+  0 MSL: a deck is within ~20 m of sea level and there is no record for the rest. The target
+  waypoint keeps its deliberate 0 AGL/RADIO, which is what lets a player slave a pod to the
+  mark. Repaired at generation time too (`WaypointGenerator.repair_ground_level_altitudes`,
+  `set_ground_start_altitude`) because the flight-plan layout is pickled into the save, so a
+  campaign in progress would otherwise keep the old 0 forever. Upstream-inherited —
+  `WaypointBuilder.land()` was byte-identical to `upstream/dev` — so it is a carve candidate
+  post-freeze. Known gap: QRA intercept and red-scramble groups spawn outside
+  `WaypointGenerator` and still read 0; they never reach a kneeboard. Checklist B79; tests
+  `tests/missiongenerator/aircraft/test_pydcswaypointbuilder.py`.
 
 ---
 
@@ -7988,6 +8004,23 @@ and the non-stacking spoof bubble against a live SAM ring (driven by both an AI 
 Prowler), whether the AI escort geometry holds the jammer close enough to matter, and that a mass
 of jammers leaves the IADS firing in windows rather than dead.
 
+**Test 7 (2026-08-17) — the runtime works; read it with B78.** The DM reported the target
+SA-6 as "non-aggressive". It was not a MANTIS or ROE fault: MANTIS resolved 17/17 red SAM
+groups with no name-match failures, and the site was already losing radars before anything
+was inside its ring. Measured from the ACMI plus the §91 tracks — the package held
+5,700–6,100 m and stayed beyond 27 km until t≈1215; the first Straight Flush died at t=1164;
+the §77 weapons-hold pulses on that site ran t≈1273 to t≈1580 (18 pulses, both packages'
+jammers); the second Straight Flush died at t=1402. Zero red SAM launches of any type appear
+in the whole recording. The site never had a live track radar, a target in the ring and free
+ROE at the same moment.
+
+The pulses lasting that long is the part that was wrong, and it was not a §77 defect: the
+escort release never fired (B78), so both Growlers loitered inside the 40 NM
+`maxRangeNm` for about five minutes longer than the plan called for. `recoverySec` did its
+job — the observed cadence was one 20 s hold every ~50 s, not a permanent muzzle — but an
+unreleased escort keeps re-arming it. When judging whether §77 is too strong, check first
+whether the jammer was still on task.
+
 ## §78 — Sea-supply convoys + coastal anti-ship engagement
 
 Retribution already models **sea supply routes** — a `CargoShip` transport sails a
@@ -9743,3 +9776,22 @@ filters on `isExist()` to match DCS.
   recon captures, magazines and the rest onto it is the follow-on that pays the debt back.
 - No consumer reads the track itself yet. Route-quality feedback to the planner is the obvious next
   one, and it is why the track is recorded rather than just the totals.
+
+### Test 7 (2026-08-17) — first flown read, one fix
+
+The records reached `state.json` and the counters were sane: 165 entries, 80-point tracks,
+per-unit shots and hits, and the player's own flight correctly flagged. Two things did not
+belong in `flights`:
+
+- Every AAA piece and Avenger that shot at the package, because `sortie_recorder_on_shot`
+  and `_on_hit` recorded whatever DCS named as the initiator. §91 is a record of *flights*.
+- One entry keyed `""` whose type was `weapons.shells.Rh202_20_HE` — a shell reaches the hit
+  handler as an initiator and its `getName` is the empty string, so every cannon round in
+  the mission collided into a single record.
+
+`record_for` now rejects a blank name and, when creating, requires
+`getDesc().category` to be AIRPLANE or HELICOPTER. The category check runs only on creation,
+so a jet whose `getDesc` fails after it dies keeps counting on the record the sampler already
+made. Pinned by `test_a_ground_unit_that_shoots_never_becomes_a_flight` and
+`test_an_unnamed_initiator_never_becomes_a_flight`; the Lua harness gained `Unit.Category`
+and `UnitFake:getDesc`.

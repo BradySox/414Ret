@@ -163,8 +163,8 @@ class WaypointBuilder:
             "TAKEOFF",
             FlightWaypointType.TAKEOFF,
             position,
-            meters(0),
-            alt_type="RADIO",
+            departure.field_elevation,
+            alt_type="BARO",
             description="Takeoff",
             pretty_name="Takeoff",
         )
@@ -186,12 +186,15 @@ class WaypointBuilder:
                 pretty_name="Exit theater",
             )
 
+        # Field elevation AMSL, not 0 AGL: the number reaches the cockpit through
+        # the kneeboard card and the DTC steerpoint, where "0" reads as sea level
+        # and puts the arrival field below the jet's own nav solution.
         return FlightWaypoint(
             "LANDING",
             FlightWaypointType.LANDING_POINT,
             position,
-            meters(0),
-            alt_type="RADIO",
+            arrival.field_elevation,
+            alt_type="BARO",
             description="Land",
             pretty_name="Land",
             control_point=arrival,
@@ -212,8 +215,9 @@ class WaypointBuilder:
             altitude = self.get_cruise_altitude
             altitude_type = "RADIO" if self.is_helo else altitude_type
         else:
-            altitude = meters(0)
-            altitude_type = "RADIO"
+            # Same reasoning as land(): the divert field's real elevation.
+            altitude = divert.field_elevation
+            altitude_type = "BARO"
 
         return FlightWaypoint(
             "DIVERT",

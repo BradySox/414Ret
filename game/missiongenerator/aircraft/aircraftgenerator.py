@@ -202,10 +202,11 @@ class AircraftGenerator:
                 splittrigger.add_condition(FlagIsFalse(flag=f"split-{id(package)}"))
                 splittrigger.add_condition(GroupDead(package.primary_flight.group_id))
                 for flight in package.flights:
-                    if flight.flight_type in [
-                        FlightType.ESCORT,
-                        FlightType.SEAD_ESCORT,
-                    ]:
+                    # is_escort_type, not upstream's ESCORT/SEAD_ESCORT pair:
+                    # ESCORT_JAMMER is a fork flight type that flies the same
+                    # escort profile (joinpoint/splitpoint already treat it as
+                    # one) and was silently missing its release push.
+                    if flight.flight_type.is_escort_type:
                         splittrigger.add_action(AITaskPush(flight.group_id, 1))
                 if len(splittrigger.actions) > 0:
                     self.mission.triggerrules.triggers.append(splittrigger)

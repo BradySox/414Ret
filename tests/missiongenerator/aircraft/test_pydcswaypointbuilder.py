@@ -7,6 +7,7 @@ from dcs.terrain import Caucasus
 from game.ato.flightplans.waypointbuilder import WaypointBuilder
 from game.ato.flightwaypoint import FlightWaypoint
 from game.ato.flightwaypointtype import FlightWaypointType
+from game.utils import meters
 from game.missiongenerator.aircraft.waypoints.pydcswaypointbuilder import (
     PydcsWaypointBuilder,
 )
@@ -150,9 +151,47 @@ def test_divert_and_bullseye_waypoints_are_player_only() -> None:
     # waypointbuilder.py, near the strike-area / target builders.)
     builder = WaypointBuilder.__new__(WaypointBuilder)
     builder._bullseye = SimpleNamespace(position=Point(0, 0, Caucasus()))  # type: ignore[assignment]
-    divert_point = SimpleNamespace(position=Point(1, 1, Caucasus()))
+    divert_point = SimpleNamespace(
+        position=Point(1, 1, Caucasus()), field_elevation=meters(0)
+    )
 
     assert builder.bullseye().only_for_player is True
     divert = builder.divert(divert_point)  # type: ignore[arg-type]
     assert divert is not None
     assert divert.only_for_player is True
+
+
+def test_ground_start_and_recovery_waypoints_carry_field_elevation() -> None:
+    # Test 7 (2026-08-17): every takeoff, landing and divert waypoint in the .miz
+    # read 0 -- sea level in the ME, on the kneeboard card and in the DTC
+    # steerpoint, which puts a field above sea level below the jet's own nav
+    # solution. RADIO 0 is kept only for the target waypoint, where it is what
+    # lets a player slave a pod to the mark.
+    builder = WaypointBuilder.__new__(WaypointBuilder)
+    field = SimpleNamespace(
+        position=Point(1, 1, Caucasus()), field_elevation=meters(742)
+    )
+
+    takeoff = builder.takeoff(field)  # type: ignore[arg-type]
+    assert takeoff.alt == meters(742)
+    assert takeoff.alt_type == "BARO"
+
+    landing = builder.land(field)  # type: ignore[arg-type]
+    assert landing.alt == meters(742)
+    assert landing.alt_type == "BARO"
+
+    divert = builder.divert(field)  # type: ignore[arg-type]
+    assert divert is not None
+    assert divert.alt == meters(742)
+    assert divert.alt_type == "BARO"
+
+
+def test_a_carrier_recovery_stays_at_sea_level() -> None:
+    # ControlPoint.field_elevation defaults to 0 for anything without an airfield
+    # record, so a boat reads 0 ft MSL rather than 0 ft AGL over the water.
+    builder = WaypointBuilder.__new__(WaypointBuilder)
+    boat = SimpleNamespace(position=Point(2, 2, Caucasus()), field_elevation=meters(0))
+
+    landing = builder.land(boat)  # type: ignore[arg-type]
+    assert landing.alt == meters(0)
+    assert landing.alt_type == "BARO"

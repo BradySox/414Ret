@@ -92,6 +92,8 @@ class WaypointGenerator:
 
         waypoints = self.flight.flight_plan.waypoints
         mission_start_time = self.set_takeoff_time(waypoints[0])
+        self.set_ground_start_altitude()
+        self.repair_ground_level_altitudes()
 
         # The plan asks for a refuel waypoint whenever the coalition owns a
         # tanker-capable squadron ANYWHERE in theater -- deliberately, since
@@ -199,6 +201,46 @@ class WaypointGenerator:
         if isinstance(self.flight.state, InFlight):
             kneeboard_waypoints = waypoints[self.flight.state.waypoint_index :]
         return mission_start_time, kneeboard_waypoints
+
+    def set_ground_start_altitude(self) -> None:
+        """Put the takeoff waypoint at the departure field's real elevation.
+
+        pydcs copies the parked unit's altitude (0) onto the waypoint it builds
+        for us, so every ground start read as sea level in the ME, on the
+        kneeboard card and in the DTC steerpoint. Only the waypoint moves --
+        the unit is deliberately left alone so the spawn itself is unchanged.
+        """
+        if not self.group.points:
+            return
+        point = self.group.points[0]
+        if not str(point.type).startswith("TakeOff"):
+            return
+        elevation = self.flight.departure.field_elevation
+        if elevation.meters <= 0:
+            return
+        point.alt = round(elevation.meters)
+        point.alt_type = "BARO"
+
+    def repair_ground_level_altitudes(self) -> None:
+        """Put the recovery waypoints at their field's real elevation.
+
+        The flight-plan layout is pickled into the save, so a campaign already
+        in progress would otherwise keep the sea-level 0 these waypoints were
+        planned with. Mutating the layout point (as the refuel rendezvous above
+        does) keeps the cockpit, the kneeboard and the map on one number.
+        """
+        for point in self.flight.points:
+            if point.waypoint_type is FlightWaypointType.TAKEOFF:
+                point.alt = self.flight.departure.field_elevation
+                point.alt_type = "BARO"
+            elif point.waypoint_type in (
+                FlightWaypointType.LANDING_POINT,
+                FlightWaypointType.DIVERT,
+            ):
+                if point.control_point is None:
+                    continue
+                point.alt = point.control_point.field_elevation
+                point.alt_type = "BARO"
 
     def ensure_in_flight_route_has_locked_time(self) -> None:
         if not self.flight.state.in_flight:

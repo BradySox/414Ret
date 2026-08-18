@@ -64,14 +64,35 @@ local function group_name_of(unit)
     return name
 end
 
+-- Fall back to the documented numeric values so a sandbox without the Unit
+-- table cannot take the whole recorder down at file scope.
+local CAT_AIRPLANE = (Unit and Unit.Category and Unit.Category.AIRPLANE) or 0
+local CAT_HELICOPTER = (Unit and Unit.Category and Unit.Category.HELICOPTER) or 1
+
+local function is_aircraft(unit)
+    local desc = safe(unit, "getDesc")
+    if type(desc) ~= "table" then
+        return false
+    end
+    return desc.category == CAT_AIRPLANE or desc.category == CAT_HELICOPTER
+end
+
 local function record_for(unit)
     local unit_name = safe(unit, "getName")
-    if not unit_name then
+    -- A shell or bomb reaches the hit handler as the initiator and its getName
+    -- is "", which collided every cannon round in the mission into one record.
+    if not unit_name or unit_name == "" then
         return nil
     end
     local record = sortie_records.flights[unit_name]
     if record then
         return record
+    end
+    -- Only aircraft belong in a per-FLIGHT record; the AAA and armour that shot
+    -- at the package are initiators too. Checked only when creating, so a jet
+    -- whose getDesc fails after it dies keeps counting on its existing record.
+    if not is_aircraft(unit) then
+        return nil
     end
     record = {
         group = group_name_of(unit) or unit_name,

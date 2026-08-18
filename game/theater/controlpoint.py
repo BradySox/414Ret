@@ -1132,6 +1132,16 @@ class ControlPoint(MissionTarget, SidcDescribable, ABC):
         return None
 
     @property
+    def field_elevation(self) -> Distance:
+        """Elevation AMSL of the surface aircraft take off from and land on.
+
+        Sea level is the honest default: a carrier deck is within ~20 m of it,
+        and a FOB or off-map spawn has no airfield record to look up. Only
+        Airfield overrides this.
+        """
+        return meters(0)
+
+    @property
     def parking_slots(self) -> Iterator[ParkingSlot]:
         yield from []
 
@@ -1472,6 +1482,18 @@ class Airfield(ControlPoint, CTLD, TacanContainer):
     @property
     def airdrome_id_for_landing(self) -> Optional[int]:
         return self.airport.id
+
+    @property
+    def field_elevation(self) -> Distance:
+        # Local import: the elevation table lives inside the mission generator's
+        # kneeboard_recon package, and importing it at module scope would drag
+        # that whole package into game.theater at import time.
+        from game.missiongenerator.kneeboard_recon.airport_imagery import (
+            field_elevation_for_airport,
+        )
+
+        elevation = field_elevation_for_airport(self.theater.terrain, self.airport)
+        return meters(elevation) if elevation is not None else meters(0)
 
     @property
     def parking_slots(self) -> Iterator[ParkingSlot]:

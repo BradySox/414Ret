@@ -1,8 +1,12 @@
+from typing import Any, Optional
+
 from dcs import Mission
 from dcs.action import SetFlag
-from dcs.condition import TimeAfter
+from dcs.condition import Or, PartOfGroupInZone, TimeAfter
+from dcs.mapping import Point
 from dcs.task import ControlledTask
 from dcs.triggers import TriggerOnce, Event
+from dcs.unitgroup import FlyingGroup
 
 from game.ato import Package
 
@@ -23,3 +27,52 @@ def create_stop_orbit_trigger(
         stop_trigger.add_condition(stop_condition)
         stop_trigger.add_action(stop_action)
         mission.triggerrules.triggers.append(stop_trigger)
+
+
+# The escorted flight is never exactly on its SPLIT point when the escort should
+# let go, and a human cuts corners an AI would fly; 8 NM is wide enough to catch a
+# sloppy egress without releasing over the target.
+SPLIT_RELEASE_ZONE_RADIUS_M = 15000
+# Backstop for a player who never flies through the zone at all (diverts, parks,
+# goes home a different way). Long enough that it does not steal an escort from a
+# player who is merely slow.
+SPLIT_RELEASE_BACKSTOP_S = 900
+
+
+def create_player_split_release_trigger(
+    group: FlyingGroup[Any],
+    package: Package,
+    mission: Mission,
+    position: Point,
+    planned_split_elapsed: Optional[int],
+) -> None:
+    """Release a package's escorts when a PLAYER-flown primary flight splits.
+
+    DCS never runs a client-occupied group's route tasks, so the ``setUserFlag``
+    script that SplitPointBuilder puts on the primary flight's SPLIT waypoint
+    never fires when the human is flying that flight: the escorts stay on their
+    Escort ControlledTask and follow the player home instead of recovering at
+    their own base (test 7, 2026-08-17 -- both Growlers landed at the player's
+    field, not the boat). Mission triggers run whoever is in the cockpit, so
+    mirror the flag here.
+    """
+    comment = f"SplitRelease{id(package)}"
+    if any(x.comment == comment for x in mission.triggerrules.triggers):
+        return
+
+    zone = mission.triggers.add_triggerzone(
+        position,
+        radius=SPLIT_RELEASE_ZONE_RADIUS_M,
+        hidden=True,
+        name=f"Split release {id(package)}",
+    )
+
+    trigger = TriggerOnce(Event.NoEvent, comment)
+    trigger.add_condition(PartOfGroupInZone(group.id, zone.id))
+    if planned_split_elapsed is not None:
+        trigger.add_condition(Or())
+        trigger.add_condition(
+            TimeAfter(planned_split_elapsed + SPLIT_RELEASE_BACKSTOP_S)
+        )
+    trigger.add_action(SetFlag(f"split-{id(package)}"))
+    mission.triggerrules.triggers.append(trigger)

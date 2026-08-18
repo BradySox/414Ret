@@ -183,6 +183,16 @@ function UnitFake:getTypeName()
     return self.typeName or "FAKE"
 end
 
+-- desc.category is how a consumer separates an aircraft from the AAA that shot
+-- at it. Follows the owning group unless the unit spec overrides it.
+function UnitFake:getDesc()
+    return {
+        category = self.category
+            or (self.group and self.group.category)
+            or Unit.Category.AIRPLANE,
+    }
+end
+
 function UnitFake:hasAttribute(attr)
     return (self.attributes or {})[attr] == true
 end
@@ -310,6 +320,10 @@ end
 -- Unit.getByName: the per-unit lookup the gpsjamming plugin uses so a jammer's
 -- liveness is its own, not its group's.
 Unit = Unit or {}
+-- Real DCS exposes Unit.Category next to Group.Category; the two agree on the
+-- AIRPLANE/HELICOPTER values a consumer uses to tell aircraft from everything else.
+Unit.Category = Unit.Category
+    or { AIRPLANE = 0, HELICOPTER = 1, GROUND_UNIT = 2, SHIP = 3, STRUCTURE = 4 }
 Unit.getByName = function(name)
     return Harness.unitsByName[name]
 end
@@ -339,6 +353,7 @@ function Harness.addGroup(spec)
             velocity = u.velocity,
             playerName = u.playerName,
             fuel = u.fuel,
+            category = u.category,
             side = spec.side,
             group = grp,
         }, UnitFake)

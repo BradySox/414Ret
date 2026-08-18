@@ -1,5 +1,7 @@
 # 414th — "Vietnam Retribution" mode — design notes
 
+> Test paths shown ~~struck through~~ were deleted along with the feature they covered. They are left visible because the citation is part of the record; do not go looking for the file. Audited 2026-08-17.
+
 > **Campaign-set consolidation (2026-07-03):** the three standalone Caucasus Vietnam
 > campaigns (`1968_Yankee_Station`, `khe_sanh_niagara`, `steel_tiger`) were merged into the
 > one **`1968_Yankee_Station`** — the Steel Tiger trail-interdiction OOB tilt and the Khe
@@ -68,7 +70,7 @@ P2 (shell/preset) + P3 (behaviour taskings) outstanding.
   flight list (`AirWingDialog`), flight task label (`QFlightTypeTaskInfo`), plan label
   (`QFlightWaypointTab`), the squadron auto-assign rows/checkboxes (`AirWingConfigurationDialog`,
   `SquadronDialog`), and the squadron-selector tooltip. Tests:
-  `tests/test_vietnam_doctrine.py` (the two properties), `tests/missiongenerator/test_brief_sheet.py`
+  `tests/test_vietnam_doctrine.py` (the two properties), ~~`tests/missiongenerator/test_brief_sheet.py`~~
   (the `_brief_mission` label). **Deferred (graceful canonical fallback):** the "Add new Squadron" task
   picker only — a not-yet-attached new squadron has no coalition, so `PrimaryTaskSelector` is built with no
   doctrine and falls back to `FlightType.value` (`primarytaskselector.py`). (The old note also listed a

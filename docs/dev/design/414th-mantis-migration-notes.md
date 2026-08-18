@@ -1,5 +1,7 @@
 # MANTIS Migration — Design Notes
 
+> Test paths shown ~~struck through~~ were deleted along with the feature they covered. They are left visible because the citation is part of the record; do not go looking for the file. Audited 2026-08-17.
+
 **Status:** in progress — spikes + Python seams + **phases 3–5 Lua bridge landed (gated, inert):
 core networking, tuning, and the comms/power/command-center C2 layer** (2026-06-24). The full engine
 is now built and feature-complete-on-paper; **everything is blocked on the in-game pass (checklist
@@ -257,7 +259,7 @@ Most Skynet options map directly. Changes:
   otherwise switch a *running* pre-field campaign to MANTIS, so an **explicit pin** was added —
   `if "iads_engine" not in state: self.iads_engine = SKYNET` — keeping existing campaigns on the
   engine they started with. Saves that already carry an explicit engine choice are untouched.
-  Covered by `tests/settings/test_iads_engine_setting.py` (default-MANTIS, pre-field-pin, and
+  Covered by ~~`tests/settings/test_iads_engine_setting.py`~~ (default-MANTIS, pre-field-pin, and
   explicit-choice-preserved cases).
 - Keep both plugins shippable until the MANTIS path passes its in-game passes (basic + advanced).
 
@@ -390,7 +392,7 @@ to reason about (simpler + more flexible).
 - the `iads_engine` **setting** + its UI row + the `__setstate__` Skynet-pin (`settings.py`);
 - the engine **marker/selection**: `luagenerator` now emits `engine="mantis"` unconditionally and
   `mantis-config.lua` dropped its `if engine ~= "mantis" then return` skip-guard (the bridge always runs);
-- the dead `IadsNetwork.skynet_nodes` alias and `tests/settings/test_iads_engine_setting.py`.
+- the dead `IadsNetwork.skynet_nodes` alias and ~~`tests/settings/test_iads_engine_setting.py`~~.
 
 **Re-pointed:** the two `plugin_option("skynetiads")` gates (strike-target suppression on IADS
 buildings in `objectivefinder`; the IADS command-unit generation in `tgogenerator`) now read

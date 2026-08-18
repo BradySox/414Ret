@@ -225,12 +225,15 @@ local function onEvent(event)
 
     -- Sortie records (seam 1). Wrapped in pcall throughout: a recorder fault
     -- must never take down the loss reporting this handler exists for.
+    -- The weapon rides along so the recorder can match an impact back to the shot
+    -- that released it; without it a cluster weapon's submunitions each counted as
+    -- a hit and the day's total exceeded the shots fired.
     if event.id == world.event.S_EVENT_SHOT and event.initiator then
-        pcall(sortie_recorder_on_shot, event.initiator)
+        pcall(sortie_recorder_on_shot, event.initiator, event.weapon)
     end
 
     if event.id == world.event.S_EVENT_HIT and event.initiator then
-        pcall(sortie_recorder_on_hit, event.initiator)
+        pcall(sortie_recorder_on_hit, event.initiator, event.weapon)
     end
 
     if event.id == world.event.S_EVENT_PLAYER_LEAVE_UNIT and event.initiator

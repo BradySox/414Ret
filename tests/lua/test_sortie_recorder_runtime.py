@@ -49,6 +49,16 @@ def _ai_pair(name: str, side: int = 2) -> dict[str, Any]:
     return _flight(name, side, [_unit(f"{name}-1"), _unit(f"{name}-2")])
 
 
+def _weapon(harness: DcsPluginHarness, name: str) -> Any:
+    """A weapon the recorder can key on, so a hit matches back to its shot.
+
+    Only getName is exercised -- that is the whole contract the recorder needs.
+    """
+    return harness.lua.eval(
+        "function(n) return { getName = function(self) return n end } end"
+    )(name)
+
+
 def _load(harness: DcsPluginHarness) -> None:
     harness.load_plugin_script(PLUGIN)
     harness.assert_no_lua_errors()
@@ -225,9 +235,11 @@ def test_shots_and_hits_are_counted_against_the_firing_aircraft() -> None:
     on_shot = harness.lua.eval("sortie_recorder_on_shot")
     on_hit = harness.lua.eval("sortie_recorder_on_hit")
     wingman = harness.lua.eval('Unit.getByName("Enfield 1-1-2")')
-    on_shot(wingman)
-    on_shot(wingman)
-    on_hit(wingman)
+    first = _weapon(harness, "AIM-120C #1")
+    second = _weapon(harness, "AIM-120C #2")
+    on_shot(wingman, first)
+    on_shot(wingman, second)
+    on_hit(wingman, first)
     harness.assert_no_lua_errors()
 
     flights = _records(harness)
@@ -277,6 +289,69 @@ def test_an_unnamed_initiator_never_becomes_a_flight() -> None:
     harness.assert_no_lua_errors()
 
     assert "" not in _records(harness)
+
+
+def test_a_submunition_impact_is_not_a_hit() -> None:
+    # The test 8 defect: DCS raises one SHOT for the weapon released and one HIT per
+    # IMPACTING object, and a cluster weapon's bomblets are different objects. Two
+    # CBU-105 releases scored 68 "hits" and the SITREP read 106 shots for 381.
+    harness = DcsPluginHarness()
+    _load(harness)
+    harness.add_group(_ai_pair("Enfield 1-1"))
+    lead = harness.lua.eval('Unit.getByName("Enfield 1-1-1")')
+
+    harness.lua.eval("sortie_recorder_on_shot")(lead, _weapon(harness, "CBU-105"))
+    for i in range(10):
+        harness.lua.eval("sortie_recorder_on_hit")(
+            lead, _weapon(harness, f"BLU-108 #{i}")
+        )
+    harness.assert_no_lua_errors()
+
+    record = _records(harness)["Enfield 1-1-1"]
+    assert record["shots"] == 1
+    assert record["hits"] == 0
+
+
+def test_only_the_first_impact_of_a_weapon_counts() -> None:
+    harness = DcsPluginHarness()
+    _load(harness)
+    harness.add_group(_ai_pair("Enfield 1-1"))
+    lead = harness.lua.eval('Unit.getByName("Enfield 1-1-1")')
+    bomb = _weapon(harness, "Mk-84")
+
+    harness.lua.eval("sortie_recorder_on_shot")(lead, bomb)
+    harness.lua.eval("sortie_recorder_on_hit")(lead, bomb)
+    harness.lua.eval("sortie_recorder_on_hit")(lead, bomb)
+    harness.assert_no_lua_errors()
+
+    record = _records(harness)["Enfield 1-1-1"]
+    assert record["shots"] == 1
+    assert record["hits"] == 1
+
+
+def test_hits_never_exceed_shots() -> None:
+    # The invariant the SITREP line depends on -- it renders as "N shots for M hits",
+    # which only reads as a hit rate if M cannot exceed N.
+    harness = DcsPluginHarness()
+    _load(harness)
+    harness.add_group(_ai_pair("Enfield 1-1"))
+    lead = harness.lua.eval('Unit.getByName("Enfield 1-1-1")')
+
+    shot, hit = (
+        harness.lua.eval("sortie_recorder_on_shot"),
+        harness.lua.eval("sortie_recorder_on_hit"),
+    )
+    rocket = _weapon(harness, "S-8 pod")
+    shot(lead, rocket)
+    for _ in range(30):
+        hit(lead, rocket)
+    hit(lead, None)  # a gun round: no shot event exists for it
+    hit(lead, _weapon(harness, "stray"))  # a weapon fired before the recorder started
+    harness.assert_no_lua_errors()
+
+    record = _records(harness)["Enfield 1-1-1"]
+    assert record["hits"] <= record["shots"]
+    assert (record["shots"], record["hits"]) == (1, 1)
 
 
 def test_an_ejection_is_recorded_on_the_aircraft() -> None:

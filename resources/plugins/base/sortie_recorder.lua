@@ -140,6 +140,43 @@ local function sample_unit(unit, now)
     end
 end
 
+-- Shot-to-first-impact matching. DCS raises one S_EVENT_SHOT per weapon released
+-- but one S_EVENT_HIT per IMPACTING object, and a cluster weapon's submunitions are
+-- different objects from the one that left the rail -- so two CBU-105 releases
+-- scored 68 "hits" and the SITREP read 106 shots for 381 hits (test 8, 2026-08-18).
+-- A hit is now counted only against a weapon we saw fired, and only the first time
+-- that weapon strikes, which makes shots and hits commensurable.
+local pending_shots = {} -- [weapon key] = fired-at time
+local PENDING_TTL_S = 900
+
+-- DCS Weapon:getName() returns the object's runtime id; id_ is the raw field MOOSE
+-- reads. A weapon we cannot key (a gun round raises no shot at all) is not counted
+-- rather than guessed at -- an uncountable shot must not become a free hit.
+local function weapon_key(weapon)
+    if not weapon then
+        return nil
+    end
+    local name = safe(weapon, "getName")
+    if name and name ~= "" then
+        return tostring(name)
+    end
+    local ok, raw_id = pcall(function()
+        return weapon.id_
+    end)
+    if ok and raw_id then
+        return tostring(raw_id)
+    end
+    return nil
+end
+
+local function prune_pending(now)
+    for key, fired_at in pairs(pending_shots) do
+        if now - fired_at > PENDING_TTL_S then
+            pending_shots[key] = nil
+        end
+    end
+end
+
 -- Whether this unit's position is worth sampling. Humans always; for AI, the
 -- first jet of the group still alive, held until it dies rather than read off a
 -- fixed index.
@@ -164,6 +201,7 @@ end
 -- One sweep over both coalitions' airborne groups.
 function sortie_recorder_sample()
     local now = timer.getTime()
+    prune_pending(now)
     for _, side in pairs({ coalition.side.RED, coalition.side.BLUE }) do
         for _, category in pairs({ Group.Category.AIRPLANE, Group.Category.HELICOPTER }) do
             local ok, groups = pcall(function()
@@ -205,11 +243,22 @@ local function count_on(initiator, field)
     end
 end
 
-function sortie_recorder_on_shot(initiator)
+function sortie_recorder_on_shot(initiator, weapon)
     count_on(initiator, "shots")
+    local key = weapon_key(weapon)
+    if key then
+        pending_shots[key] = timer.getTime()
+    end
 end
 
-function sortie_recorder_on_hit(initiator)
+function sortie_recorder_on_hit(initiator, weapon)
+    local key = weapon_key(weapon)
+    if not key or not pending_shots[key] then
+        -- A submunition, a gun round, or a weapon released before the recorder
+        -- started. Counting these is what made hits exceed shots.
+        return
+    end
+    pending_shots[key] = nil -- first impact only
     count_on(initiator, "hits")
 end
 

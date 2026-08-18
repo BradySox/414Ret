@@ -39,6 +39,12 @@ if dcsRetribution and dcsRetribution.IADS and MANTIS then
     -- only works if every AWACS is folded into its coalition's EWR set -- see
     -- add_awacs below, and do not regress it to a live-group lookup.
     local useEmOnOff = false
+    -- MOOSE hardcodes the SEAD-evasion relocation at 100-300 m inside
+    -- SEAD:onafterManageEvasion. 300 = leave MOOSE alone. Raising it trades
+    -- concealment for readiness: the site goes weapons-free when the suppression
+    -- window ends whether or not the drive finished, and at MOOSE's 20 km/h a 300 m
+    -- move takes ~55 s against a window of roughly 1.5-2 min (test 8, 2026-08-18).
+    local seadScootRadiusM = 300
     local samRange = 95
     -- 15s (was 30) so the IADS cues/hands off briskly -- a 30s poll let targets
     -- slip through a SAM's (now range-correct) ring before it reacted.
@@ -78,6 +84,7 @@ if dcsRetribution and dcsRetribution.IADS and MANTIS then
         if opts.createRedIADS ~= nil then createRedIADS = opts.createRedIADS end
         if opts.createBlueIADS ~= nil then createBlueIADS = opts.createBlueIADS end
         if opts.useEmOnOff ~= nil then useEmOnOff = opts.useEmOnOff end
+        if opts.seadScootRadiusM ~= nil then seadScootRadiusM = tonumber(opts.seadScootRadiusM) or seadScootRadiusM end
         if opts.samRange ~= nil then samRange = opts.samRange end
         if opts.detectInterval ~= nil then detectInterval = opts.detectInterval end
         if opts.ewrGroupingNm ~= nil then ewrGrouping = (tonumber(opts.ewrGroupingNm) or 2.7) * 1852 end
@@ -95,6 +102,35 @@ if dcsRetribution and dcsRetribution.IADS and MANTIS then
         if opts.c2PollInterval ~= nil then c2PollInterval = opts.c2PollInterval end
         if opts.debugRED ~= nil then debugRED = opts.debugRED end
         if opts.debugBLUE ~= nil then debugBLUE = opts.debugBLUE end
+    end
+
+    -- SEAD-evasion scoot distance. MOOSE hardcodes the relocation inside
+    -- SEAD:onafterManageEvasion as RelocateGroundRandomInRadius(20,300,...), so there
+    -- is no setter to call; we wrap the shared CONTROLLABLE method and substitute the
+    -- radius for that ONE call. Its argument signature is unique among MOOSE's four
+    -- callers -- the other Diamond caller uses radius 100 at speed 7, and MANTIS' own
+    -- HQ/EWR relocation uses 500 on-road with no formation -- so matching on
+    -- radius+formation+onland cannot catch them. Left uninstalled at the default, and
+    -- if MOOSE ever changes the constant the match simply stops firing and stock
+    -- behaviour returns; it cannot error.
+    if seadScootRadiusM ~= 300 and CONTROLLABLE and CONTROLLABLE.RelocateGroundRandomInRadius then
+        local stock_relocate = CONTROLLABLE.RelocateGroundRandomInRadius
+        local announced = false
+        CONTROLLABLE.RelocateGroundRandomInRadius = function(
+            self_, speed, radius, onroad, shortcut, formation, onland
+        )
+            if radius == 300 and formation == "Diamond" and onland == true then
+                if not announced then
+                    announced = true
+                    env.info(string.format(
+                        "DCSRetribution|MANTIS-IADS plugin - SEAD scoot radius %d m (MOOSE default 300)",
+                        seadScootRadiusM
+                    ))
+                end
+                radius = seadScootRadiusM
+            end
+            return stock_relocate(self_, speed, radius, onroad, shortcut, formation, onland)
+        end
     end
 
     -- A prefix that no generated group name starts with, used so that an empty

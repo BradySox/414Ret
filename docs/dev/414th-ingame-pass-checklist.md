@@ -116,7 +116,7 @@ stress it · `✗` fail signature reproduced in-game.
 | B66 | Attacking costs more than defending | §90 rung B | ☐ |
 | B67 | The front line counts the forces present | §90 rung C | ☐ |
 | B68 | Terrain slows the front line | §90 rung D | ☐ |
-| B69 | The front bulges instead of running straight | §90 rung E | ☐ |
+| B69 | The front bulges instead of running straight | §90 rung E | ☑ |
 | B70 | Sortie records reach the campaign | §91 | ☐ |
 | B75 | The ATO stops spending its escorts on the wrong packages | planner shape | ☐ |
 | B76 | A mixed boom/probe wing gets a tanker of each | U15 reinstated | ☐ |
@@ -124,6 +124,7 @@ stress it · `✗` fail signature reproduced in-game.
 | B78 | The escorts let go of a package the player is leading | planner shape | ☐ |
 | B79 | Ground-level waypoints read the field's elevation | §8 | ☐ |
 | B80 | String plugin options can actually be edited | §14 | ☐ |
+| B81 | SEAD-evasion scoot distance is a campaign setting | MANTIS | ☐ |
 
 ---
 
@@ -4956,7 +4957,7 @@ passes or the Kola fjords.
 
 ---
 
-### B69 — The front bulges instead of running straight · §90 rung E · ☐ UNTESTED
+### B69 — The front bulges instead of running straight · §90 rung E · ☑ VERIFIED
 
 **History:** built 2026-08-17, session `629c250f`.
 
@@ -4983,6 +4984,28 @@ actually are.
 ---
 
 
+
+> **VERIFIED 2026-08-18** from test 8 (Caucasus, `retribution_nextturn.miz`), measured off
+> the generated mission rather than by eye. The drawn front line is a **7-point polyline**
+> bowing **1.64 km off a 27.3 km chord** (6.0%); signed profile in km is
+> `0.0, -0.82, -1.42, -1.64, +0.49, -0.09, 0.0`, i.e. an S-bend, not a smooth arc. FLOT
+> ground units follow it: median **2.98 km from the drawn line against 3.90 km from the
+> straight chord**.
+>
+> **Read the unit measurement per group kind or it inverts.** Across all 127 front-line
+> units the numbers say the opposite (3.08 km from the drawn line, 2.80 km from the chord)
+> because 107 of them are §9 TIC units, which are placed in depth on both sides and are not
+> meant to sit on the line at all. Only the 13 `unit|` FLOT groups are what this row is
+> about. Anyone re-measuring this must split by group-name prefix first.
+>
+> Caveats kept deliberately: 13 FLOT units is a small sample, and the residual ~3 km is the
+> intended lateral spread, not error.
+>
+> Same mission, **B67 is consistent but NOT proven**: the front-line centre sits 108.9 km
+> from Anapa-Vityazevo and 107.6 km from Maykop-Khanskaya — the 50% midpoint — with 62 blue
+> against 65 red ground units committed. An even fight at the midpoint is the designed null
+> result, so nothing is misbehaving, but an even fight cannot demonstrate the armour
+> weighting. That row needs a lopsided pair.
 ### B70 — Sortie records reach the campaign · §91 · ☐ UNTESTED
 
 **History:** built 2026-08-17, session `629c250f`.
@@ -5018,6 +5041,18 @@ Fly any mission with several AI packages up, then read the next turn's SITREP.
 > a record only for a named unit whose `getDesc().category` is AIRPLANE or HELICOPTER; an
 > existing record keeps counting either side of a kill. Add a fifth fail signature: **ground
 > units or blank keys in the sortie list.**
+
+> **Test 8 (2026-08-18) second read — the SITREP claimed a 359% hit rate.** The line read
+> `93 sorties, 119.2 hours airborne, 106 shots for 381 hits`. Both counts were individually
+> right and not comparable: DCS raises one `S_EVENT_SHOT` per weapon released but one
+> `S_EVENT_HIT` per **impacting object**, and a cluster weapon's submunitions are different
+> objects from the one that left the rail — two CBU-105 releases scored 68 hits on one
+> Su-24MU. Only 1 record of 114 had hits with no shots, so this was never the
+> guns-raise-no-shot-event problem it looks like. A hit is now counted only against a weapon
+> the recorder saw fired, and only on that weapon's first impact, so `hits <= shots` always
+> and the line is a real hit rate. Gun hits are no longer counted at all — there is no shot
+> event to rate them against. Sixth fail signature: **hits exceeding shots, or a strike
+> sortie reporting zero hits where it clearly destroyed something.**
 
 ### B78 — The escorts let go of a package the player is leading · planner shape · ☐ UNTESTED
 
@@ -5124,6 +5159,43 @@ FAC type) and `redscramble` (spawn mode).
      `PluginSettings`, not at this branch.
   4. **New Game aborts on a plugin load error.** The new guard fires when a shipped
      `defaultValue` is outside its `choices`. That is the guard working — fix the json.
+
+### B81 — SEAD-evasion scoot distance is a campaign setting · MANTIS · ☐ UNTESTED
+
+**History:** built 2026-08-18, off the test 8 measurements.
+
+> When a HARM is inbound, MOOSE puts the SAM alarm-green and drives it. The distance was
+> hardcoded at 100–300 m inside `SEAD:onafterManageEvasion` with no setter, so a campaign
+> could not ask for real dispersal. `seadScootRadiusM` (100–1000 m, default **300** = MOOSE's
+> own value) now overrides it. The bridge wraps the shared `CONTROLLABLE` method and rewrites
+> the radius only for the SEAD signature; MANTIS' own HQ/EWR relocation and the other
+> Diamond caller are matched out and left alone, pinned by
+> `tests/lua/test_mantis_sead_scoot_radius.py`.
+
+> **What test 8 measured, for calibration.** The BUK-M3 site took its first HARM at
+> 15:01:16; the first unit had moved 25 m by 15:02:01. That 44 s is not the reaction time —
+> it includes DCS route acceptance and the ~5 s of driving 25 m takes at MOOSE's 20 km/h, so
+> the switch-off was a few seconds earlier. The site is **High** skill, whose MOOSE reaction
+> band is **20–40 s** (`SEAD.TargetSkill`), and the measurement sits at the top of it. It
+> moved 233–518 m, and fired **11 missiles before the scoot and 25 after**.
+> The stock 300 m is not costing a site its engagement, so raise this only for a campaign
+> that wants the site genuinely hard to re-find.
+
+Set it on a campaign with a radar SAM the AI will actually HARM, then watch one site.
+
+- **Pass:** the site drives visibly further than the stock ~300 m, and still comes back up
+  and engages afterwards.
+- **Fail signatures:**
+  1. **The site is still shooting while strung out mid-drive.** The suppression window and
+     the drive are decoupled — alarm goes red when the window ends whether or not the move
+     finished. At MOOSE's 20 km/h, 300 m takes ~55 s against a window of roughly 1.5–2 min,
+     so anything much above ~600 m will still be moving when it goes weapons-free. This is
+     the reason for the 1000 m cap, not a bug.
+  2. **EWRs or the HQ start wandering further too.** The signature match caught the wrong
+     caller — the tests cover this, so suspect a MOOSE version bump.
+  3. **Nothing changes at all.** MOOSE changed the hardcoded 300, so the match no longer
+     fires. `dcs.log` carries a `SEAD scoot radius` line the first time it rewrites; no line
+     means it never matched. Degrading to stock is deliberate.
 
 ### B71 — Several survivors come out on one lift · CSAR (#929 Phase 5) · ☐ UNTESTED
 

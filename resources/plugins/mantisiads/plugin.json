@@ -19,6 +19,13 @@
             "defaultValue": false
         },
         {
+          "nameInUI": "SEAD evasion: how far a suppressed SAM relocates (m)",
+          "mnemonic": "seadScootRadiusM",
+          "minimumValue": 100,
+          "maximumValue": 1000,
+          "defaultValue": 300
+        },
+        {
             "nameInUI": "SAM engagement range (% of max interceptor range)",
             "mnemonic": "samRange",
             "defaultValue": 95

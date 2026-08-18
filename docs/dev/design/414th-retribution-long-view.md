@@ -349,6 +349,129 @@ the smallest version is a persisted red intent that survives `from_game` and bia
 with **no** new surface at all — you learn red is pushing the northern axis because that is where its
 packages keep coming from.
 
+### The fly card, pre-registered 2026-08-17
+
+**Written before the feature exists, and not to be edited once Phase 0 has run.** The value of a
+pre-registered test is entirely in being fixed in advance; a threshold revised after seeing the
+result is not a test. If it turns out to be the wrong test, replace it with a dated successor and
+say why — do not quietly retune it.
+
+#### The claim being tested
+
+Red commits to an axis across turns, and the player can tell which one by flying, without reading
+a label.
+
+#### The two ways this test can lie
+
+1. **Pattern-matching.** Fly three missions after any change and you will find a story in it. A
+   human reading intent into noise is the default outcome, not the exception.
+2. **The baseline already concentrates.** `ObjectiveFinder.prioritized_points()` produces a
+   similar ordering turn to turn when the map has not changed, so red may *already* hit the same
+   axis repeatedly with no memory at all. "Red concentrated on one axis" therefore proves nothing
+   on its own.
+
+Both are handled by measuring the baseline first and by testing **persistence under pressure**
+rather than concentration.
+
+#### The discriminating manoeuvre
+
+Concentration cannot separate commitment from stable priorities. Persistence after the player
+changes the situation can:
+
+> Reinforce the axis red is pushing until it is no longer the locally attractive target, then
+> count how many turns red keeps coming anyway.
+
+Current red rebuilds `TheaterState` from scratch every turn, so it should re-evaluate and switch at
+the next re-plan. A red that commits should keep pushing for a while, then reconsider.
+
+#### Definitions, fixed now
+
+- **Red offensive package** — a package in `game.red.ato.packages` whose primary task is
+  air-to-ground (`FlightType.is_air_to_ground`). Defensive tasks are excluded.
+- **Axis** — the *blue* control point a package's target belongs to. Front-line targets map through
+  the pair's blue CP; ground objects through their own control point. (There is no single
+  `MissionTarget.control_point`; the mapping is per target type and must be written once, in the
+  measurement script, not improvised per run.)
+- **Primary axis of turn T** — the axis receiving the most red offensive packages that turn. A tie
+  is recorded as a tie, never broken arbitrarily.
+- **Switch latency L** — turns elapsed between the intervention and the first turn whose primary
+  axis differs from the pre-intervention primary axis.
+
+#### Phase 0 — baseline, before any code is written
+
+Headless. No flying.
+
+1. Pick a campaign with **at least three contested axes**. Record which.
+2. Load a save. For 6 turns: `initialize_turn(events, for_red=True, for_blue=False)`, then record
+   every red offensive package and its axis.
+3. Compute the primary axis per turn, and the concentration on it.
+4. At turn 3, apply the intervention: reinforce the current primary axis until it is clearly the
+   least attractive target. Continue to turn 6. Record **L_baseline**.
+
+**Predicted in advance: `L_baseline <= 1`.** Red re-plans from scratch, so it should switch almost
+immediately.
+
+**If `L_baseline >= 2`, this whole test is invalid** — it would mean current red already persists,
+and the feature would have nothing to demonstrate. Stop and redesign the test rather than
+proceeding.
+
+**If concentration is already ~1.0 at baseline**, the campaign has effectively one axis and is
+unsuitable. Pick another.
+
+#### Phase 1 — after the feature
+
+Same campaign, same save, same 6 turns, same intervention at turn 3, same script.
+
+| Outcome | Verdict |
+|---|---|
+| `L <= 1` | **FAIL — does nothing.** Indistinguishable from baseline. |
+| `2 <= L <= 4` | **PASS.** Red commits, then reconsiders. |
+| `L >= 6`, or never switches | **FAIL — stubborn, and worse than baseline.** A red that cannot be pulled off an axis can be farmed: park your defence and fly everywhere else unopposed. |
+
+The upper bound is not optional. A feature that only ever increases persistence has not been tested
+until someone has checked it can still let go.
+
+#### The legibility half — the only part that needs flying
+
+This is the test §55 failed, and no amount of headless data substitutes for it.
+
+After each of 6 flown missions, **before looking at any data or the F10 map**, write down which
+axis you think red is pushing. Then compare against the computed primary axis.
+
+- **Pass:** correct on 4 of 6 or better.
+- **Fail:** 3 or fewer. Red may well be committing — but if it cannot be read from the cockpit it is
+  a caption, which is exactly what was removed.
+
+Guesses must be written before checking. A guess recalled afterwards is not evidence.
+
+#### Fail signatures to watch for beyond the metric
+
+1. **Red commits to an axis it cannot supply** — it keeps attacking through a corridor whose supply
+   the player cut (§90 rung A). Commitment must not survive the ground truth that makes it pointless.
+2. **Red stops defending elsewhere** to sustain the axis, leaving objectives entirely unopposed.
+   Continuity of *offensive* intent must not drain the defensive posture.
+3. **Blue's planner drifts too.** Red and blue share `TheaterCommander`; any change must be gated so
+   blue's behaviour is byte-identical. Diff a blue ATO before and after on the same save.
+4. **The save grows a field that cannot be loaded by an older build** — persisted intent is new
+   state, and every other persisted addition in this engine went through `__setstate__` tolerance.
+
+#### Cost
+
+Phase 0 and Phase 1 are minutes each: 12 headless re-plans and a script. The legibility half is 6
+flown missions and is the real expense — it should ride on a campaign already being played rather
+than being run as a dedicated exercise.
+
+**Run Phase 0 now, not later.** It needs no feature and it is the only part that can still
+invalidate the design: if current red already persists, the premise is wrong and nothing should be
+built.
+
+#### Where this card lives when the feature lands
+
+Here, until then. On landing it becomes a row in `docs/dev/414th-ingame-pass-checklist.md` with the
+Phase 1 thresholds as its pass criterion and the list above as its fail signatures, and the
+measurement script goes in `tools/`. It does **not** belong on the opportunistic WATCH card — it
+needs a campaign arranged on purpose.
+
 ### The catch
 
 - **This is the seam most likely to reproduce a removed feature.** Anything proposed here must be

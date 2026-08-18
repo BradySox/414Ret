@@ -27,12 +27,20 @@ class ControlPointJs(BaseModel):
     units: list[str]
     threat_ranges: list[float]
     detection_ranges: list[float]
+    # §90 rung A: SUPPLIED / AIRLIFTED / ISOLATED, or None when the gate is off
+    # or this is not our base. Whether a base can still be reinforced decides
+    # whether it recovers strength at all, and it had no surface anywhere --
+    # a player whose base stopped rebuilding had no way to find out why.
+    supply_status: str | None
 
     class Config:
         title = "ControlPoint"
 
     @staticmethod
-    def for_control_point(control_point: ControlPoint) -> ControlPointJs:
+    def for_control_point(
+        control_point: ControlPoint,
+        supply: dict[ControlPoint, str] | None = None,
+    ) -> ControlPointJs:
         destination = None
         if control_point.target_position is not None:
             destination = control_point.target_position.latlng()
@@ -85,13 +93,38 @@ class ControlPointJs(BaseModel):
             units=units,
             threat_ranges=threat_ranges,
             detection_ranges=detection_ranges,
+            # Only look up when there is something to look up: the lookup
+            # hashes the control point, and callers that pass no supply map
+            # must not be made to require a hashable one.
+            supply_status=supply.get(control_point) if supply else None,
         )
 
     @staticmethod
     def all_in_game(game: Game) -> list[ControlPointJs]:
+        supply = _blue_supply_statuses(game)
         return [
-            ControlPointJs.for_control_point(cp) for cp in game.theater.controlpoints
+            ControlPointJs.for_control_point(cp, supply)
+            for cp in game.theater.controlpoints
         ]
+
+
+def _blue_supply_statuses(game: Game) -> dict[ControlPoint, str]:
+    """Supply tier per blue control point, or empty when the gate is off.
+
+    Blue only: how well the enemy can reinforce is not something planning should
+    hand the player. Computed once per request rather than per control point --
+    the tiering walks the transit network, so doing it per base would re-walk it
+    once for every base on every poll of /game.
+    """
+    if not game.settings.supply_gated_reinforcement:
+        return {}
+    from game.theater.supply import supply_statuses
+
+    points = game.theater.player_points()
+    return {
+        cp: status.name
+        for cp, status in supply_statuses(points, game.blue.transit_network).items()
+    }
 
 
 def _comms_summary(cp: ControlPoint) -> tuple[str | None, str | None]:

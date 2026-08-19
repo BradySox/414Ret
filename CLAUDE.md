@@ -123,6 +123,10 @@ Read before touching a campaign's `.yaml`, `.miz` or build tool.
 - **Framework / tooling** — `414th-framework-consolidation-notes.md`,
   `414th-mist-moose-shim-notes.md` (**the shim that retired MIST**),
   `414th-moose-ops-opportunity-map.md`, `414th-lua-plugin-harness-notes.md`
+- **Structure / debt** — `414th-turn-phase-registry-notes.md` (**scoping only** — the four
+  hand-wired turn sequences, their unenforced ordering constraints, and the registry the
+  plugin late-init pass already sets a precedent for), `414th-doc-mass-notes.md`
+  (**scoping only** — 447k words of docs, what is safe to cut, and what must never be)
 - **Process** — `414th-verification-cadence-notes.md` (the fly-card throttle, proposed),
   `414th-dcs-olympus-notes.md`, `414th-ui-redesign-directions.md` (+ `-mockups.html`)
 

@@ -135,7 +135,9 @@ Read before touching a campaign's `.yaml`, `.miz` or build tool.
   sections still needing sub-headings, and **how to replace a section without destroying its
   neighbours** — the first attempt silently deleted four live sections.
 - **Process** — `414th-verification-cadence-notes.md` (the fly-card throttle, proposed),
-  `414th-dcs-olympus-notes.md`, `414th-ui-redesign-directions.md` (+ `-mockups.html`)
+  `414th-dcs-olympus-notes.md`, `414th-ui-redesign-directions.md` (+ `-mockups.html`),
+  `414th-juanjux-fork-watch-notes.md` (**the second fork we watch** — his adoption ledger,
+  what is already ours, and the OPFOR-AI precedent for seam 7)
 
 ### Superseded, draft or historical
 
@@ -437,6 +439,30 @@ toctree), but the content is live: `docs/modding/layouts.rst` is the authoritati
 layout system (`layout.miz` + `layout.yaml`, one group per unit type, the `layouts.p` pickle and
 *Developer Tools → Import Layouts*), and `docs/modding/fuel-consumption-measurement.md` is the
 procedure for measuring the ~217 airframes that still have no `fuel:` block.
+
+### juanjux's fork — a second high-signal source (WATCH, established 2026-08-19)
+
+`juanjux/dcs-retribution` is upstream's most prolific non-maintainer contributor's personal
+fork: **64 PRs to upstream (28 merged)**, **100 of his own internal PRs**, and **954 commits /
+300 files ahead of upstream `dev`** — the same scale as ours, on a different philosophy. He is
+also the reviewer whose objection closed our #851.
+
+**The watch:** skim his fork's PR list; read the `[FIX]` ones first, since those land in our
+tree unchanged while his feature PRs usually collide with something we solved differently.
+
+```
+gh pr list --repo juanjux/dcs-retribution --state all --limit 40 --json number,title,state,createdAt
+```
+
+**Verify every claim against our own files before acting** — of the five defects reviewed on
+2026-08-19, four were live here and one was not, and the one that was not reads identical at a
+glance. The four were fixed the same day (hold-release clamp, two front-line hold causes, and
+the IADS C2 graph). Open candidates, the OPFOR-AI precedent for seam 7, and the full ledger are
+in [414th-juanjux-fork-watch-notes.md](docs/dev/design/414th-juanjux-fork-watch-notes.md).
+
+**He reverted one of ours and was right**: his #40 backed out the support-orbit port because
+the FLOT anchoring sent AWACS and tankers over enemy ship groups. We reverted the same geometry
+independently on 2026-08-09. Two forks, same verdict, different evidence — do not re-litigate.
 
 ### Upstream PR ledger (**refreshed 2026-08-16 — read the 08-16 note directly below first; the 07-20 narrative that follows it is kept for history but its open/closed counts are wrong.** Was: refreshed 2026-07-20 — 50 PRs: 20 open / 8 merged / 22 closed. **Late 2026-07-20: the squadron-country surfacing carved as draft #896** — the Discord thread (Starfire's yaml `country:` ask + Toad's under-livery dropdown) answered the same day it ran; the fork's I6 pass flew clean that night ("896 is flown and good") but the draft is **HELD through the PR freeze below** (DM call — #896 was opened the same day the freeze was learned, so it stays a quiet draft until the freeze lifts; un-draft on a fresh explicit call then). **The 2026-07-20 QOL carve wave** (the DM's "ship the objective improvements back" call) opened six more drafts in one session: Dog Ear SHORAD #887, F-14A-Early payload #889, squadron-config guard #890, blue-block markers #891 (the upstream sweep found **465** dropped markers across 9 campaigns — Normandy's authored blue defenses dominate, flagged as a maintainer judgment call in the PR), the #791 refresh #892, and §60 radar redundancy #893 (stacked on #892, rationale attached). **#891 self-closed on review the same day**: Starfire13's density reaction ("352 EWRs in Normandy. Good lord…") plus the real ask — **CJTF block-convention consistency** ("for some objects you can only use one, yet for others both are acceptable"); the fork answered the ask same day (the loader's last single-block classes now chain both blocks — 3 shipped red-block factories resurrected, `test_miz_marker_binding.py`) but the **re-carve was DROPPED 2026-08-05** — the Custom-campaigns wiki's block spec table and upstream's loader already agree on all 19 classes, so there is no bug to carve (inventory item 17). Also learned in that session: **#791 closed with zero comments** (never reviewed — hence the refresh) and **#851 closed on a real objection** (juanjux: HDS Ultimate Compilation is NOT backward-compatible with Auranis HighDigitSAMs 2.1.0, which he runs — the S-300 renames collide; a re-carve must first answer which successor mod upstream standardizes on). **Held re-carve draft prepared 2026-07-20** — [docs/dev/414th-hds-recarve-draft.md](docs/dev/414th-hds-recarve-draft.md) (leads with UC-as-successor + migration note, offers the dual-toggle fallback; gated on the PR freeze lifting AND a fresh post-mod-update export). **Three fork PRs merged upstream 2026-07-19** (#805/#843/#854) and geofffranks' #859 (the §56 motorpool source) landed the same day — all four reconciled back into the fork in the `sync/upstream-dev-2026-07-19` merge. Same day, Wave 3 opened: the Splash Damage defaults PR #880 pushed (item 21, the first last-mile carve), the VWV v3.2.0 update #881 pushed (item 22), the §76 paradrop carve #884 opened (un-drafted late that evening + Starfire13 pinged for review), the **infrastructure pair #882 (Lua plugin harness) + #883 (MIST 51-symbol shim, stacked on #882)** opened as drafts, #828 was rebased — briefly un-drafted, then deliberately re-drafted minutes later (21:36→21:40Z per the PR timeline), so it sits as a draft with the un-draft call open — and the night closed with **two more last-mile carves: the §75 victory-conditions core as draft #885 and the Iran-pack re-carve (the #784 redo) as draft #886**. Still re-verify with `gh` before acting; this goes stale fast.
 

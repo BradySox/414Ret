@@ -325,7 +325,18 @@ if dcsRetribution and dcsRetribution.IADS and MANTIS then
         local function bare_name(node_name)
             return node_name:match("|%s*(.+)$") or node_name
         end
+        -- Nodes the campaign already knows are destroyed (killed on an earlier turn).
+        -- Neither test below can see those: a scenery node has no static to look up,
+        -- and dead_events only records this mission's kills.
+        local dead_c2 = {}
+        if coalition_iads.DeadC2 then
+            for _, dn in pairs(coalition_iads.DeadC2) do dead_c2[dn] = true end
+        end
+
         local function node_dead(node_name)
+            if dead_c2[node_name] then
+                return true -- destroyed before this mission started
+            end
             local so = StaticObject.getByName(node_name .. " object")
             if so ~= nil and not so:isExist() then
                 return true -- a real static that existed and is now destroyed

@@ -546,7 +546,11 @@ class FlotGenerator:
         )
         rp = dcs_group.add_waypoint(reform_point)
         hold = ControlledTask(Hold())
-        hold.stop_after_duration(hold_duration.seconds)
+        # total_seconds(), not .seconds: a negative timedelta normalises to a negative
+        # day plus a positive remainder, so a -60s hold became 86340s -- the group sat
+        # out the whole mission. Hold is a running task, so neither red alert nor a
+        # manual attack order dislodges it. (juanjux/dcs-retribution#79.)
+        hold.stop_after_duration(max(0, int(hold_duration.total_seconds())))
         rp.add_task(hold)
 
     def _plan_artillery_action(
@@ -632,7 +636,11 @@ class FlotGenerator:
         Returns True if tasking was added, returns False if the stance was not a combat stance.
         """
         duration = timedelta()
-        if stance in [CombatStance.DEFENSIVE, CombatStance.AGGRESSIVE]:
+        if stance == CombatStance.AGGRESSIVE:
+            # Stepping off under air cover is an attacker's concern. Holding a
+            # DEFENSIVE group until the enemy's CAS TOT -- half an hour is ordinary --
+            # meant it stood still and did not return fire until then.
+            # (juanjux/dcs-retribution#79.)
             duration = self._earliest_tot_on_flot(to_cp.coalition.player.opponent)
         self._set_reform_waypoint(dcs_group, forward_heading, duration)
         if stance == CombatStance.AGGRESSIVE:
@@ -722,7 +730,11 @@ class FlotGenerator:
         Returns True if tasking was added, returns False if the stance was not a combat stance.
         """
         duration = timedelta()
-        if stance in [CombatStance.DEFENSIVE, CombatStance.AGGRESSIVE]:
+        if stance == CombatStance.AGGRESSIVE:
+            # Stepping off under air cover is an attacker's concern. Holding a
+            # DEFENSIVE group until the enemy's CAS TOT -- half an hour is ordinary --
+            # meant it stood still and did not return fire until then.
+            # (juanjux/dcs-retribution#79.)
             duration = self._earliest_tot_on_flot(to_cp.coalition.player.opponent)
         self._set_reform_waypoint(dcs_group, forward_heading, duration)
         if stance in [
@@ -765,7 +777,11 @@ class FlotGenerator:
         must NOT double-add them or attach a morale trigger here).
         """
         duration = timedelta()
-        if stance in [CombatStance.DEFENSIVE, CombatStance.AGGRESSIVE]:
+        if stance == CombatStance.AGGRESSIVE:
+            # Stepping off under air cover is an attacker's concern. Holding a
+            # DEFENSIVE group until the enemy's CAS TOT -- half an hour is ordinary --
+            # meant it stood still and did not return fire until then.
+            # (juanjux/dcs-retribution#79.)
             duration = self._earliest_tot_on_flot(to_cp.coalition.player.opponent)
         self._set_reform_waypoint(dcs_group, forward_heading, duration)
 

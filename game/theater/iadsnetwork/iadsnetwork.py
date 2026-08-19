@@ -138,25 +138,68 @@ class IadsNetwork:
                 # Skip culled ground objects
                 continue
 
+            # A destroyed C2 node must STAY in the exported graph. The runtime reads
+            # each SAM's comms/power dependency (and the coalition's command-centre
+            # list) from what is emitted here, so dropping a dead node dropped the
+            # dependency with it: the SAMs behind a bombed power station came back
+            # fully operational on the next turn, and killing every command centre
+            # handed the coalition perfect command instead of decapitating it. A dead
+            # SAM/EWR node is still dropped -- that one must not be built at all.
             all_dead = not any([x.alive for x in node.group.units])
-            if all_dead:
+            if all_dead and not node.group.iads_role.is_c2:
                 continue
 
             # IadsNode.from_group(node.group) may raise an exception
             #  (originating from IadsNode.dcs_name_for_group)
             # but if it does, we want to know because it's supposed to be impossible afaict
-            iads_node = IadsNode.from_group(node.group)
+            try:
+                iads_node = IadsNode.from_group(node.group)
+            except IadsNetworkException:
+                # Only reachable for an all-dead non-static C2 group, which has no
+                # name left to reference. Nothing downstream can watch it.
+                continue
             for connection in node.connections.values():
-                if not any([x.alive for x in connection.units]):
+                if (
+                    not any([x.alive for x in connection.units])
+                    and not connection.iads_role.is_c2
+                ):
                     continue
                 if connection.ground_object.is_friendly(
                     iads_node.player
                 ) and not game.iads_considerate_culling(connection.ground_object):
+                    try:
+                        connection_name = IadsNode.dcs_name_for_group(connection)
+                    except IadsNetworkException:
+                        continue
                     iads_node.connections[connection.iads_role.skynet_value].append(
-                        IadsNode.dcs_name_for_group(connection)
+                        connection_name
                     )
             nodes.append(iads_node)
         return nodes
+
+    def dead_c2_names(self, game: Game) -> dict[Player, list[str]]:
+        """Names of the C2 nodes that are already destroyed, per owning player.
+
+        The runtime cannot work this out for itself for every node: a placed static
+        spawns dead and answers ``isExist() == false``, but many C2 nodes are
+        destructible *scenery*, which ``StaticObject.getByName`` never finds and which
+        only appears in this mission's ``dead_events``. A node killed on an earlier
+        turn is in neither, so the campaign has to say so explicitly.
+        """
+        dead: dict[Player, list[str]] = defaultdict(list)
+        for node in self.nodes:
+            if not node.group.iads_role.is_c2:
+                continue
+            if any(x.alive for x in node.group.units):
+                continue
+            if game.iads_considerate_culling(node.group.ground_object):
+                continue
+            try:
+                name = IadsNode.dcs_name_for_group(node.group)
+            except IadsNetworkException:
+                continue
+            dead[node.group.ground_object.coalition.player].append(name)
+        return dead
 
     def _update_iads_comms_and_power(
         self, tgo: TheaterGroundObject, events: GameUpdateEvents

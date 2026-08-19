@@ -19,6 +19,9 @@
 --    cannot ripple across the map.
 --  * No rearm. Expenditure mirrors to the naval_magazines_state debrief channel and
 --    Python debits the persisted stock at the turn boundary.
+--  * The salvo cap is a PER-MISSION limit, the magazine a per-CAMPAIGN one. Without
+--    it a Slava empties all 16 P-500 tubes in 36 s the moment it is released (flown
+--    2026-08-19), because the campaign stock is far deeper than the ready loadout.
 ---------------------------------------------------------------------------------------------------
 
 if not (dcsRetribution and dcsRetribution.navalMagazines) then
@@ -41,6 +44,10 @@ local ANNOUNCE = true -- cue the owning coalition when a group goes winchester
 -- Attacking one group frees its formation: a screen rides ~2 km off its flagship (measured),
 -- the next task force was 59 km away. 0 disables (only the targeted group releases).
 local FORMATION_KM = 15
+-- Anti-ship missiles one group may fire in a single mission. The magazine bounds the
+-- war; this bounds the day, so a fleet fights a running battle instead of alpha-striking
+-- its whole ready loadout in the first minute it is weapons-free. 0 disables.
+local SALVO_CAP = 6
 local PATTERNS = "HARPOON,RGM_84,AGM_84,EXOCET,MM_38,MM_40,YJ,C_802,C_602,"
     .. "P_500,P_700,P_270,P_1000,KH_35,3M24,3M54,SS_N,NSM,RBS15,OTOMAT"
 
@@ -55,6 +62,10 @@ if dcsRetribution.plugins and dcsRetribution.plugins.navalmagazines then
         ANNOUNCE = o.announceWinchester
     end
     FORMATION_KM = tonumber(o.formationReleaseKm) or FORMATION_KM
+    SALVO_CAP = tonumber(o.salvoPerMission) or SALVO_CAP
+    if SALVO_CAP < 0 then
+        SALVO_CAP = 0
+    end
     if type(o.ashmWeaponPatterns) == "string" and o.ashmWeaponPatterns ~= "" then
         PATTERNS = o.ashmWeaponPatterns
     end
@@ -75,6 +86,8 @@ local groupOrder = {} -- ordered group names, for the release stagger
 local fired = {} -- group name -> its naval_magazines_state entry
 local released = {} -- group name -> true once weapons-free (stagger or attack)
 local underAttack = {} -- group name -> true once the enemy has fired at it
+local salvoFired = {} -- group name -> anti-ship missiles fired THIS mission
+local salvoDone = {} -- group name -> true once it has spent its per-mission salvo
 
 local function sideOf(name)
     if name == "red" then
@@ -237,22 +250,27 @@ local function releaseTime(index, total)
     return RELEASE_MIN + (RELEASE_MAX - RELEASE_MIN) * (index - 1) / (total - 1)
 end
 
--- N2: charge a shot against the shooter's magazine, and hold a spent group at ReturnFire.
+-- Count one real anti-ship release: against the per-mission salvo (both tiers) and,
+-- with N2 on, against the campaign magazine. A group that reaches either limit is held
+-- at ReturnFire -- unless the enemy is shooting at it, in which case it keeps its
+-- weapons-free and the overshoot is still counted (the flown ReturnFire finding).
 local function chargeShot(groupName)
-    local left = remaining[groupName]
-    if left == nil then
-        return
+    if remaining[groupName] == nil then
+        return -- not a managed group
     end
-    recordFired(groupName, 1)
-    left = left - 1
-    if left < 0 then
-        left = 0
+    local salvo = (salvoFired[groupName] or 0) + 1
+    salvoFired[groupName] = salvo
+    local dry = false
+    if METERED then
+        recordFired(groupName, 1)
+        local left = remaining[groupName] - 1
+        if left < 0 then
+            left = 0
+        end
+        remaining[groupName] = left
+        dry = left <= 0
     end
-    remaining[groupName] = left
-    if left <= 0 then
-        -- A group already under attack keeps weapons-free: dropping it back would
-        -- re-defang a ship the enemy is actively shooting at (the flown ReturnFire
-        -- finding). Its overshoot stays counted above.
+    if dry then
         if not underAttack[groupName] then
             setRoe(groupName, ROE_RETURN_FIRE)
         end
@@ -262,6 +280,18 @@ local function chargeShot(groupName)
                 "WINCHESTER -- %s has expended its anti-ship missiles. No rearm this war.",
                 groupName))
         end
+        return
+    end
+    -- Salvo spent: quiet for the rest of the day, still loaded for the war. Log only --
+    -- a group falling silent mid-mission is routine, unlike going winchester for good.
+    if SALVO_CAP > 0 and not salvoDone[groupName] and salvo >= SALVO_CAP then
+        salvoDone[groupName] = true
+        if not underAttack[groupName] then
+            setRoe(groupName, ROE_RETURN_FIRE)
+        end
+        env.info(string.format(
+            "NAVALMAGAZINES|: %s salvo complete (%d this mission) -- holding", groupName,
+            salvo))
     end
 end
 
@@ -304,8 +334,8 @@ function handler:onEvent(event)
             if not weapon then
                 return
             end
-            -- N2: charge a real anti-ship release against the shooter's magazine.
-            if METERED and initiator and isAntiShipWeapon(weapon:getTypeName()) then
+            -- Charge a real anti-ship release against the shooter's salvo and magazine.
+            if initiator and isAntiShipWeapon(weapon:getTypeName()) then
                 local grp = initiator:getGroup()
                 if grp then
                     chargeShot(grp:getName())
@@ -362,8 +392,10 @@ local ok, err = pcall(function()
         end
     end
     env.info(string.format(
-        "NAVALMAGAZINES|: armed -- %d naval group(s), stagger %s (%ds-%ds), metered %s",
-        #groupOrder, tostring(STAGGER), RELEASE_MIN, RELEASE_MAX, tostring(METERED)))
+        "NAVALMAGAZINES|: armed -- %d naval group(s), stagger %s (%ds-%ds), metered %s, "
+        .. "salvo cap %s",
+        #groupOrder, tostring(STAGGER), RELEASE_MIN, RELEASE_MAX, tostring(METERED),
+        SALVO_CAP > 0 and tostring(SALVO_CAP) or "off"))
 end)
 if not ok then
     env.error("NAVALMAGAZINES|: setup error: " .. tostring(err))

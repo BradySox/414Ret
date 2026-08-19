@@ -9,6 +9,11 @@ that starts dry is never released, land-attack weapons are ignored so §63's
 magazine is never double-charged, and a mission with no navalMagazines node is a
 clean no-op.
 
+The per-mission salvo cap (the 2026-08-19 flown finding -- a Slava emptied all 16
+P-500 tubes in 36 s because the campaign stock is far deeper than the ready
+loadout): a group falls silent after its salvo, the cap holds under either tier,
+0 disables it, and an attacked group fires straight through it.
+
 Release-on-attack (the 2026-08-05 flown finding — a DCS group on ReturnFire
 mounts no missile defense at all): the first ENEMY weapon aimed at (SHOT target)
 or landing on (HIT) a managed group frees it to weapons-free immediately — held
@@ -516,3 +521,93 @@ def test_custom_weapon_patterns_are_honored() -> None:
     )
     h.assert_no_lua_errors()
     assert _state(h) == [{"group": "0001 | Burke", "fired": 1}]
+
+
+def test_a_group_stops_after_its_per_mission_salvo() -> None:
+    """The magazine bounds the war, the salvo bounds the day: a deep-stocked ship
+    fires its allowance and holds, rather than emptying every tube in one mission."""
+    h = DcsPluginHarness()
+    h.add_group(_ship_group("0001 | Slava", int(h.side.RED)))
+    _load(
+        h,
+        _config(
+            [{"group": "0001 | Slava", "coalition": "red", "remaining": "44"}],
+            stagger=False,
+            options={"salvoPerMission": 3},
+        ),
+    )
+    for _ in range(3):
+        h.fire_shot({"initiator": "0001 | Slava", "weapon": {"typeName": "P_500"}})
+    h.assert_no_lua_errors()
+    held = [r for r in _roe(h) if r["value"] == ROE_RETURN_FIRE]
+    assert [r["group"] for r in held] == ["0001 | Slava"]
+    # Held, not winchester: 41 rounds of campaign stock survive to the next turn.
+    assert _state(h) == [{"group": "0001 | Slava", "fired": 3}]
+    assert not any("WINCHESTER" in str(t.get("text", "")) for t in h.records("texts"))
+
+
+def test_the_salvo_cap_can_be_switched_off() -> None:
+    h = DcsPluginHarness()
+    h.add_group(_ship_group("0001 | Slava", int(h.side.RED)))
+    _load(
+        h,
+        _config(
+            [{"group": "0001 | Slava", "coalition": "red", "remaining": "44"}],
+            stagger=False,
+            options={"salvoPerMission": 0},
+        ),
+    )
+    for _ in range(6):
+        h.fire_shot({"initiator": "0001 | Slava", "weapon": {"typeName": "P_500"}})
+    h.assert_no_lua_errors()
+    assert [r for r in _roe(h) if r["value"] == ROE_RETURN_FIRE] == []
+    assert _state(h) == [{"group": "0001 | Slava", "fired": 6}]
+
+
+def test_the_salvo_cap_applies_with_metering_off() -> None:
+    """N1 alone still throttles the salvo -- the cap is a release rule, not a
+    magazine one, so nothing is charged to the debrief channel."""
+    h = DcsPluginHarness()
+    h.add_group(_ship_group("0001 | Slava", int(h.side.RED)))
+    _load(
+        h,
+        _config(
+            [{"group": "0001 | Slava", "coalition": "red", "remaining": "44"}],
+            stagger=False,
+            metered=False,
+            options={"salvoPerMission": 2},
+        ),
+    )
+    for _ in range(2):
+        h.fire_shot({"initiator": "0001 | Slava", "weapon": {"typeName": "P_500"}})
+    h.assert_no_lua_errors()
+    assert [r["value"] for r in _roe(h)] == [ROE_RETURN_FIRE]
+    assert _state(h) == []
+
+
+def test_an_attacked_group_fires_through_its_salvo_cap() -> None:
+    """Same rule as winchester: the cap decides who keeps shooting first, never who
+    may defend. A ship the enemy is shooting at is never re-defanged."""
+    h = DcsPluginHarness()
+    h.add_group(_ship_group("0001 | Slava", int(h.side.RED)))
+    h.add_group(_ship_group("0099 | Raider", int(h.side.BLUE)))
+    _load(
+        h,
+        _config(
+            [{"group": "0001 | Slava", "coalition": "red", "remaining": "44"}],
+            stagger=False,
+            options={"salvoPerMission": 2},
+        ),
+    )
+    h.fire_shot(
+        {
+            "initiator": "0099 | Raider",
+            "weapon": {"typeName": "AGM_84D"},
+            "target": "0001 | Slava",
+        }
+    )
+    for _ in range(3):
+        h.fire_shot({"initiator": "0001 | Slava", "weapon": {"typeName": "P_500"}})
+    h.assert_no_lua_errors()
+    assert [r for r in _roe(h) if r["value"] == ROE_RETURN_FIRE] == []
+    assert _state(h) == [{"group": "0001 | Slava", "fired": 3}]

@@ -233,8 +233,9 @@ Most of this is opt-in. Full list with toggles, defaults and known limitations:
   salvo. Magazines are finite and never rearm. A launch alerts defending SAMs around the
   aimpoint.
 - **Naval magazines.** Warships can be released to weapons-free a group at a time instead of
-  all at once, and anti-ship missiles fired are gone for the rest of the war. A dry ship still
-  defends itself.
+  all at once, and anti-ship missiles fired are gone for the rest of the war. A ship group also
+  stops after a set number of anti-ship missiles per mission, so a fleet fights a running battle
+  instead of emptying every tube in the opening minutes. A dry ship still defends itself.
 - **GPS jamming.** A JDAM, JSOW, JASSM or SLAM-ER released inside an enemy jamming bubble flies
   its normal profile and lands off the aimpoint — further off the deeper inside you released.
   Laser and TV weapons are unaffected; killing the jammer restores accuracy immediately. A

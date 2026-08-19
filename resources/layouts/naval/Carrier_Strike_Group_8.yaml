@@ -9,14 +9,17 @@ groups:
         - 1
       unit_types:
         - Stennis
+  # Cruiser-led screen: the Ticonderoga is the CSG's area-air-defence ship, and a
+  # modern anti-ship salvo is survived by SM-2 magazine depth, not by hull count.
+  # Explicit unit_types, so the naval mixing rule leaves this screen alone.
   - Escort:
     - name: Carrier Strike Group 8 1
       unit_count:
-        - 4
+        - 3
       unit_types:
-        - USS_Arleigh_Burke_IIa
+        - TICONDEROG
     - name: Carrier Strike Group 8 2
       unit_count:
         - 1
       unit_types:
-        - TICONDEROG
+        - USS_Arleigh_Burke_IIa

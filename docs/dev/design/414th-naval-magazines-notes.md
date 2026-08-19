@@ -1,8 +1,9 @@
 # Cross-turn naval magazines (§81) — design notes
 
-**Status:** N1 + N2 **LANDED 2026-08-03**. N3 (replenishment) and N4 (unit-card
-readout) deferred. In-game pass owed — checklist **B39**, and its first item is the
-load-bearing unknown below.
+**Status:** N1 + N2 **LANDED 2026-08-03**; the per-mission salvo cap (N5) 2026-08-19.
+N3 (replenishment) and N4 (unit-card readout) deferred. First end-to-end flight
+2026-08-19 (Vectron's Claw) — metering and debit confirmed against Tacview, and it is
+what produced N5. Checklist **B39**.
 
 Driven by the flown Marianas 2027 Tacview (374 weapon launches, essentially all
 inside the first five minutes) and the DM's read: *"in real life they would not dump
@@ -81,6 +82,44 @@ over the group's alive hulls, emitted as this mission's hard cap, decremented by
 A spent group drops to `ReturnFire` — winchester, not disarmed.
 
 ---
+
+### N5 — the per-mission salvo cap (plugin option `salvoPerMission`, default 6)
+
+Built 2026-08-19 off the first flight that actually exercised N1 + N2 end to end
+(Caucasus — Vectron's Claw turn 1, `Tacview-20260819-180629`). The two shipped tiers
+worked exactly as specified and the fleet still emptied itself:
+
+| Group | Emitted `remaining` | Fired | How |
+|---|---|---|---|
+| `0001 \| DRAGONFLY (Naval Group)` (Slava-led) | 44 | **16** | all 16 P-500 between t=274.2 and t=310.2 — **36 seconds** |
+| `0079 \| CARACAL (Carrier)` (Kuznetsov) | 8 | **8** | 8 P-700 over t=390–598, ~28 s apart, then WINCHESTER |
+| `0080 \| CARACAL (Escort)` | 32 | 0 | released, never in range |
+
+`state.json` reported 16 and 8, matching the Tacview shot-for-shot, so the metering and
+the debit are sound. The gap is that **the campaign stock is far deeper than the ready
+loadout**: a Slava carries 16 P-500 tubes and a 44-round pool, so the magazine cap never
+bit and the stagger only decided *when* the ripple started. Cross-turn scarcity was
+being enforced; per-mission scarcity was not.
+
+So the plugin now also counts a **per-mission salvo** per group and drops a group that
+spends it back to `ReturnFire`. **The magazine bounds the war, the salvo bounds the
+day.**
+
+- **A plugin option, not a Settings field.** It is runtime tuning of the same kind as
+  `releaseMinS`/`releaseMaxS`, it needs no campaign preseed, and `initialize_plugin_option`
+  carries a new option's default into saves written before it existed — so a campaign
+  already in progress picks the throttle up on its next generation.
+- **Applies under either tier.** The salvo counter is independent of `metered`, so N1
+  alone still throttles. Nothing is written to `naval_magazines_state` when `metered` is
+  off, so the debrief channel's meaning is unchanged.
+- **Never disarms a ship under attack** — same rule as winchester, for the same flown
+  reason: a group the enemy is shooting at keeps its weapons-free and its overshoot is
+  still counted.
+- **Log only, no coalition message.** Falling silent for the rest of a mission is a
+  routine tactical event; going winchester for the rest of the war is not.
+- `0` restores the old behaviour (magazine-only).
+
+Not N3 or N4: those names stay with the deferred replenishment and unit-card items below.
 
 ## Decisions taken during the build
 

@@ -12,10 +12,11 @@ already carries everything below.
 | LHA Tarawa + USS Arleigh Burke IIa | B48 |
 | **3 × `Scud_B`** | S2 |
 
-**B39 is dropped from this sweep.** It needs an anti-ship *engagement*, and no Starfire campaign
-has a red navy — all fifteen with a Nimitz hull are blue-navy-only. It stays regressed until
-either a campaign with an opposing fleet is used or hulls are added, and neither is worth doing
-to close one row.
+**B39 is dropped from this sweep — but it is no longer blocked.** It needs an anti-ship
+*engagement*, which `operation_desert_trident` cannot stage. The claim that no Starfire campaign
+has a red navy was **wrong**: `operation_vectrons_claw` (Caucasus, USA 2005 vs Russia 2010) fields
+a Kuznetsov, a Slava and two escort groups against a CVN-71 CSG. It was flown 2026-08-19 and B39
+is now ◐ PARTIAL — fly **that** campaign for B39, not this one.
 
 Also ruled out, so nobody retries them: **Marianas 2027** cannot test S2 (its PLARF launchers are
 `CH_CJ10`, listed in §49's `IMMOBILE_UNIT_IDS` and deliberately never routed), and **Red Tide**

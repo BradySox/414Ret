@@ -7978,6 +7978,15 @@ byte-identical).
 
 - **Carrier Group / LHA Group** — the screen accepts every surface combatant
   (`Destroyer, Cruiser, Frigate`), so a US CSG generates Burkes + Perrys + a Ticonderoga.
+- **Carrier Strike Group 8** — the named US layout, and the one place the screen is
+  *authored* rather than rolled: **3 × Ticonderoga + 1 × Arleigh Burke** (2026-08-19, DM
+  call). The Ticonderoga is the CSG's area-air-defence ship, and what a modern anti-ship
+  salvo is survived by is SM-2 magazine depth, not hull count. Both slots name explicit
+  `unit_types`, so `dcs_unit_types_for_group` returns a single-hull pool and the mixing
+  rule leaves the screen alone — the composition is deterministic. It reaches only
+  factions fielding all three hulls (the US moderns); every other navy is untouched,
+  which matters because "3 cruisers" written generically would hand a Kuznetsov three
+  Slavas and 48 more anti-ship rounds (§81).
 - **Carrier / LHA Group with Frigate escort** — kept as the deliberate **light screen**
   (frigate-led, `Frigate, Destroyer`, no cruiser) rather than a redundant copy that would
   regenerate the uniform-frigate look for single-frigate navies.
@@ -8064,6 +8073,28 @@ Expenditure mirrors into the new `naval_magazines_state` Lua→Python channel (t
 `f.state` pattern, `dirty_state`-flagged) and `reconcile_naval_magazines` debits at the turn
 boundary. **Generation never debits**, so re-generating a mission is free (the §54 lesson).
 There is no rearm.
+
+### The per-mission salvo cap (`salvoPerMission` plugin option, default 6)
+
+The first flight that exercised both tiers end to end (Vectron's Claw turn 1,
+2026-08-19) showed the metering was exact — `state.json` reported 16 and 8, matching the
+Tacview shot for shot — and that the fleet still emptied itself: a Slava-led group put
+**all 16 P-500 into the air in 36 seconds** against a 44-round campaign pool. The
+magazine cap never bit, because **the campaign stock is deeper than the ready loadout**,
+and the stagger only decides when the ripple starts.
+
+So the plugin also counts a per-mission salvo per group and drops a group that spends it
+back to `ReturnFire`. **The magazine bounds the war; the salvo bounds the day.** It
+applies under either tier (the counter does not depend on `metered`, and nothing extra
+reaches the debrief channel when metering is off), never disarms a group the enemy is
+shooting at — same rule and same flown reason as winchester, overshoot still counted —
+and logs rather than announces, because falling silent for one mission is routine where
+going winchester for the war is not. `0` restores magazine-only behaviour.
+
+A plugin option rather than a `Settings` field: it is runtime tuning like
+`releaseMinS`/`releaseMaxS`, needs no campaign preseed, and `initialize_plugin_option`
+carries a new option's default into saves written before it existed, so a campaign
+already under way picks it up on its next generation.
 
 ### No double-count with §63, by construction
 

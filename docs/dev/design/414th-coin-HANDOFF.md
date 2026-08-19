@@ -167,7 +167,7 @@ Enduring Resolve (COIN)"*, 5+ turns. The experiment that proves the loop:
   - **Suspect until reconned.** A viewer-aware `TheaterGroundObject.standard_identity_for(viewer)`
     (the fog-layer sibling of `sidc_status_for`) renders an insurgent contact carrying an
     override that the human hasn't discovered as **SUSPECT** (yellow), flipping to **HOSTILE**
-    once TARPS/strike confirms it. Rides `known_for` (so the recon-fog setting + reveal-overview
+    once engaging it confirms it. Rides `known_for` (so the recon-fog setting + reveal-overview
     toggle both collapse it to confirmed), gated on `coin_insurgency` so no other campaign's map
     changes, and ground truth (`viewer=None`: AI/planner) is never fogged.
   Guarded by `tests/theater/test_theatergroundobject.py` (the real `sidc_for` serialization
@@ -188,7 +188,7 @@ Enduring Resolve (COIN)"*, 5+ turns. The experiment that proves the loop:
   `uncertainty_radius_m` (4 km), and the client (`client/src/components/tgos/Tgo.tsx`)
   draws a dashed red circle with the same click/right-click contract as a marker (so TARPS/
   CAS can be fragged onto the suspected area). The true coordinates never reach the client
-  while concealed; discovery (TARPS/attack, fog off, reveal-overview) snaps it to the exact
+  while concealed; discovery (engaging it, fog off, reveal-overview) snaps it to the exact
   symbol. Known leak, accepted: planning a package against the concealed TGO puts its
   *steerpoint* at the true position (that IS the localization mission; §5 Approximate mode
   obscures player steerpoints when on). Tests `tests/fourteenth/test_coin_concealment.py`;

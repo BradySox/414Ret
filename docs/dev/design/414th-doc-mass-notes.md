@@ -66,8 +66,46 @@ Best done by whoever next edits that feature — they already have the section l
 on section length is worth adding once they are done, and not before: it would block every PR on
 day one.
 
-## The separate problem
+## The per-change doc tax — audited 2026-08-19
 
-One feature change touched **16 doc files against 40 code files** (the §3 rework, 2026-08-18).
-That comes from 84 design notes plus README plus CLAUDE.md plus AGENTS.md plus the wiki all
-restating the same feature. Not addressed here, not scoped.
+The §3 rework touched **16 doc files against 40 code files**. The 16 broke down as: 6
+legitimate faces for different audiences (README, CLAUDE.md, features.md, the checklist, two
+wiki pages), 1 generated file, 1 pure duplicate, and **8 unrelated notes that merely mentioned
+the feature**.
+
+The real number is worse than 16. **`§3` is mentioned in 50 doc files.** The rework updated 16
+of them, and nothing said which of the other 34 mattered.
+
+**Eight live claims went stale and survived the pass**, found by grepping for the phrases the
+rework falsified:
+
+- `414th-features.md` — the Threat Intel Brief still said a card's ring and HARM code were
+  "withheld until a TARPS overflight reveals it"; §28's `enabledWhen` list still carried
+  `concealed_enemy_forces`; §49's rationale still leaned on the concealment layer for the SCUD
+  hunt; §70's COMINT eligibility still counted the category-concealed field forces.
+- `docs/dev/CLAUDE-architecture.md` — still described `alive_for` as handling the BDA damage lag.
+- `414th-coin-HANDOFF.md` — still said TARPS confirms a suspect contact.
+- **`docs/wiki/Home.md` and `The-Retribution-UI.md`** — both published to the GitHub wiki, both
+  still advertising the BDA lag.
+
+All eight are fixed. The point is that finding them took a targeted grep for *known-false
+phrases*, which only works if you already know what you broke.
+
+**The one mechanical fix taken:** `AGENTS.md` is a byte-identical copy of `CLAUDE.md` below
+line 1 — 12,213 words, synced by hand on **385 commits**, with nothing checking it.
+`tests/test_agent_guide_mirror.py` now asserts it, and asserts the `@`-imported files stay
+shared rather than copied. The ritual remains; forgetting it no longer can.
+
+**What is not fixed, and is the actual tax:** there is no way to ask "what documents claim
+something about §3". Grep finds mentions, not claims, and a mention is not a defect. Options,
+none taken:
+
+1. A per-feature doc manifest in the feature registry, checked in CI — precise, and another
+   thing to maintain.
+2. Fewer faces. The 84 design notes are where most of the 50 mentions live, and many are
+   historical notes that would be better bannered than kept current.
+3. Accept it, and make the grep a ritual: when a feature's *rule* changes, grep the docs for
+   the phrases the change falsifies. That is what caught these eight.
+
+Option 3 is what actually happened and it worked. It is worth writing into the doc-sync
+checklist in CLAUDE.md before anything more elaborate is built.

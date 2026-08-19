@@ -34,6 +34,12 @@ Never derive the state of the codebase from memory; always read the current file
 4. `CLAUDE.md` / `docs/dev/CLAUDE-architecture.md` — if the tech stack, architecture patterns, or feature list changed
 5. `AGENTS.md` — sync to mirror `CLAUDE.md` (see Conventions)
 6. `docs/dev/414th-ingame-pass-checklist.md` — add a row for any feature with runtime behavior that CI can't exercise
+7. **If a feature's RULE changed (not just its internals): grep the docs for the phrases the
+   change falsified.** Steps 1-6 cover the feature's own faces; they do not cover the other
+   notes that merely mention it. `§3` is named in **50 doc files** — the 2026-08-18 rework
+   updated 16 and left **8 stale claims**, two of them on the published wiki. Grep for the old
+   rule in its own words ("until scouted", "BDA lag", the removed setting name), not for the
+   `§N`. Audited in `docs/dev/design/414th-doc-mass-notes.md`.
 
 A push that moves code past its docs is a broken push.
 

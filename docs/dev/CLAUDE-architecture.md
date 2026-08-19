@@ -28,12 +28,12 @@ Only the **config** loads defer (`config_work_orders`, `defer=True`); each plugi
 still injected inline first, and main-script (`scriptsWorkOrders`) loads are unchanged, so the
 load-order invariant (options → config) holds.
 
-**Viewer-aware visibility layer (recon fog).** One layer drives two player-facing fog rules.
-AI planning and threat math always use ground truth (`viewer=None`); only the human (BLUE)
-map/UI are fogged. `TheaterUnit.alive_for(viewer)` handles BDA damage lag;
-`TheaterGroundObject.known_for(viewer)` handles recon intel-fog; `hidden_on_player_map(viewer)`
-fully hides enemy command posts for the SCAR commander-capture feature (gated by
-`scar_command_post_intel`, now default ON for new campaigns; §15). Every
+**Viewer-aware visibility layer (recon fog).** AI planning and threat math always use ground
+truth (`viewer=None`); only the human (BLUE) map/UI are fogged. `visibility_for(viewer)` is the
+one question, with two leaves: `known_for` gates composition and threat rings until the site is
+engaged, and `hidden_on_player_map` fully hides enemy command posts (gated by
+`scar_command_post_intel`, default ON) and §50's ambush teams. There is **no BDA damage lag** —
+`alive_for`/`alive_at_last_recon` were deleted 2026-08-18. Every
 accessor takes `viewer: Optional[Player] = None` defaulting to truth; consumers gate at the edge.
 Do **not** reintroduce the old `_for_player`/`_for` method twins — that collapse is finished.
 A runtime **overview toggle** (`game/theater/fogofwar.py`, transient/never-pickled) short-circuits

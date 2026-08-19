@@ -121,11 +121,22 @@ def test_already_planned_guard() -> None:
     assert co._already_planned_from(coal_planned, boat) is True
 
 
-def _tgo(*, x: float, category: str = "ammo", alive: bool = True) -> Any:
+def _tgo(
+    *,
+    x: float,
+    category: str = "ammo",
+    alive: bool = True,
+    unseen: bool = False,
+) -> Any:
+    """*unseen* = blue cannot see it on the map at all (a command post behind the
+    §3 fog, or a §50 ambush team)."""
     return SimpleNamespace(
         position=SimpleNamespace(x=x, y=0.0),
         category=category,
         units=[SimpleNamespace(alive=alive)],
+        map_hidden=False,
+        is_control_point=False,
+        hidden_on_player_map=lambda viewer=None: unseen,
     )
 
 
@@ -237,3 +248,22 @@ def test_route_carrier_flights_to_buddy_tanker() -> None:
     assert strike.refuel_point_override is None
     assert land_bai.refuel_point_override is None
     assert land_bai.recreated == 0
+
+
+def test_carrier_strike_never_names_a_target_blue_cannot_see() -> None:
+    """The boat picks from ground truth, so without the fog gate it would frag the
+    package at a hidden command post -- naming it in the ATO, and revealing it on
+    the strike, for a find the player was meant to earn with recon (§3/G40)."""
+    boat = _carrier()
+    boat.position = SimpleNamespace(x=0.0, distance_to_point=lambda p: abs(p.x))
+    hidden_hq = _tgo(x=10.0, category="commandcenter", unseen=True)
+    visible_cache = _tgo(x=200.0)
+    red_cp = SimpleNamespace(
+        captured=SimpleNamespace(is_red=True),
+        ground_objects=[hidden_hq, visible_cache],
+    )
+    game = SimpleNamespace(theater=SimpleNamespace(controlpoints=[red_cp]))
+
+    target = co._nearest_legal_strike_target(game, boat)  # type: ignore[arg-type]
+    # The HQ is 20x nearer, so anything but the cache means the gate did not fire.
+    assert target is visible_cache

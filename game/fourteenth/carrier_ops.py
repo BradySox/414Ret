@@ -34,6 +34,8 @@ from typing import TYPE_CHECKING, Optional
 
 from game.ato.flighttype import FlightType
 from game.commander.missionproposals import ProposedFlight, ProposedMission
+from game.theater import Player
+from game.theater.fogofwar import hidden_from
 
 if TYPE_CHECKING:
     from datetime import datetime
@@ -273,8 +275,11 @@ def _nearest_legal_strike_target(
                 continue
             # A map_hidden TGO (a §50 convoy-ambush team) must never be planned
             # against -- naming it in the ATO would reveal it (the same skip
-            # BattlePositions applies).
-            if getattr(tgo, "map_hidden", False):
+            # BattlePositions applies). Nor may the package name a site the human
+            # cannot see at all: a hidden command post is found by flying recon at
+            # it (§3/G40), not by the boat picking it out of ground truth. This
+            # planner is BLUE-only, so the viewer is never in question.
+            if getattr(tgo, "map_hidden", False) or hidden_from(Player.BLUE, tgo):
                 continue
             dist = carrier.position.distance_to_point(tgo.position)
             if getattr(tgo, "category", None) == "ammo":

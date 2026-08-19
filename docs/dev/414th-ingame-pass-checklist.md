@@ -102,7 +102,7 @@ stress it · `✗` fail signature reproduced in-game.
 | U1 | Water/land relocate scripts run on the MIST shim | base plugin | ☐ |
 | B45 | GPS jamming (satellite-guided weapons go long) | §86 | ☐ |
 | B52 | Escort-jammer distribution + the one-SEAD-flavour escort set | §77 | ☐ |
-| B49 | Carrier recovery-phase deck dressing | §72 | ✗ |
+| B49 | Carrier recovery-phase deck dressing | §72 | ◐ |
 | B48 | Naval station-keeping racetracks | §87 | ◐ |
 | B53 | AI flights no longer push early for a tanker stop they never fly | §46 | ☐ |
 | B54 | Planner behavior bar switches the suite in the settings UI | re-convergence | ☐ |
@@ -551,6 +551,13 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
 - **Fail signature:** cue fires but no missile leaves the rail (the ship AI rejected the scripted FireAtPoint or the hull carries no cruise missiles — check the hull against the encyclopedia, drop it from `LACM_SHIP_DCS_IDS` if the fit is wrong); guns fire instead of missiles (weaponType flag ignored — re-check 2097152 reached the task table); the full VLS ripples ignoring `expendQty` (quantity not honored — cap the magazine emit as the only guard and note it); magazine never decrements across turns (`cruise_missiles_state` missing from the state json — the §57 dirty_state path); a raid fragged inside a ROE zone on a Vietnam/COIN campaign (the §40 gate didn't hold); missiles vanish into a ridge every time at max range (shorten `MAX_RAID_RANGE_M`).
 
 ### B17 — Carrier deck spawn policy (six-pack last resort + MP slot timing) · §64 · ◐ PARTIAL
+
+> **Test 9 flown 2026-08-18** (Syria `operation_desert_trident`, `Tacview-20260818-214946` + `dcs.log` + `state.json` + the generated `.miz`) — **the six-pack was never needed on a genuinely full deck.** Read off
+> the generated `.miz`: **24 deck spawns on CVN-72** (8 BARCAP + 16 SWIFT BAI) plus 8 on
+> LHA-1 Tarawa, **all 32 `TakeOffParkingHot`**, with `carrier_deck_decorations` on. The DM's
+> read: *"All aircraft on the carrier launched without issue on a full deck / 6 pack was never
+> used."* That is the last-resort path staying unused at a deck load well past the 16 spots ED
+> documents.
 
 **History:** built 2026-07-16 off the user finding "AI taxi into me on the supercarrier / get stuck between me and the catapult"; the placement/hold split — AI always ≥1s late-activated, player flights taking the 1s placement activation under LAST_RESORT and keeping the six-pack under SIXPACK_FIRST, the delayed-client uncontrolled+StartCommand path, the WARM/RUNWAY/airfield no-ops, and the boolean→enum save migration — is unit-tested in `tests/missiongenerator/test_carrier_deck_policy.py` + `tests/settings/test_carrier_deck_policy.py`. How DCS actually places and taxis the deck is DCS-only.
 
@@ -1047,6 +1054,10 @@ Needs a flight to confirm the fix end to end. The cheap version deliberately rep
 
 **Setup card:** [flycards/REGRESSED-SWEEP.md](flycards/REGRESSED-SWEEP.md) — one Starfire campaign (`operation_desert_trident`) clears this alongside B49, C9 and B48.
 
+> **Test 9 flown 2026-08-18** (Syria `operation_desert_trident`, `Tacview-20260818-214946` + `dcs.log` + `state.json` + the generated `.miz`) — **not adjudicated.** The carrier flew and the deck-dressing sequence
+> ran, but recovery timings were not pulled from this recording. No claim either way; the row
+> is unchanged.
+
 **History:** **assessed a one-off and taken OFF the WATCH list 2026-08-06, DM call** — "I think a one off issue, unless you see otherwise lets drop it". Evidence checked before agreeing: **exactly one** carrier-recovery midair on record, ever — the 2026-07-16 Scenic Route turn 3 below — with no other collision report anywhere in this checklist, and the fix is live (`MissionScheduler._deconflict_carrier_recoveries`, called at line ~244) and test-covered. The part that is deterministic and headless-testable — ≥5 min TOT spacing, fixed player/CAP/ASAP entries — is exactly the part the tests pin. **The honest caveat, recorded so this is not mistaken for a pass: the one-off is the BUG, not the FIX.** The stagger shipped the same day the midair was found and **has never been observed working in DCS**; the row therefore stays ☐ UNTESTED rather than being closed. What makes dropping it acceptable is that a recurrence **self-reports** — two AI aircraft colliding at the boat shows up as unexplained AI losses in the debrief without anyone watching for it. **If that ever appears, widen `CARRIER_RECOVERY_INTERVAL`** and put this back on the list) (built 2026-07-16 from the flown Scenic Route turn-3 midair — an OX S-3B and a CATERPILLAR Hornet from two different packages converged co-altitude at ~1,000 ft in the DCS overhead and collided 2.7 NM from CVN-71; the slotting math, the fixed-entry behavior for player/CAP/AEW&C/SCAR/ASAP packages, the recovery-tanker-ETA re-collection ordering, and the helo/shore exclusions are unit-tested in `tests/test_carrier_recovery_stagger.py` + `tests/test_missionscheduler.py` — whether 5-minute arrival spacing actually keeps DCS's pattern AI from converging is DCS-only
 
 **2026-08-16 flights (session `c86c58dd`, two Caucasus turns; Tacview + dcs.log + state.json + the flown save) — PARTIAL, consistent with the feature.** Turn 2's recovery onto CVN-71 arrived in two groups rather than one clump: 2 aircraft down at **T+47.4 m**, 5 more at **T+49.2 m**. That is spacing rather than a pile-up, but a single 2-minute gap on one boat is weak evidence for a stagger mechanism, and this row was already assessed a one-off and taken off the WATCH list. Recorded so the observation is not lost, not to claim the mechanism.
@@ -1157,8 +1168,6 @@ overflight — player or AI — changes no campaign state and there is no BDA fo
 to lift. The `recon` plugin still runs and still writes `tars_recon_captures`; nothing
 consumes it. Whether to delete `FlightType.TARPS` and the plugin is an open call, not a
 flight test. The pass description below is kept for reading old sessions.
-
-
 
 **History:** **REBUILT 2026-08-05** `units-runway-generation-bf755e`, from the DM's "the system as a whole needs a fresh look". The old split — MOOSE `Ops.TARS` event callbacks for the player, a geometric overflight check for the AI — was two unrelated implementations of one question that could not agree by construction, which is why "is TARS broken" was unanswerable. **MOOSE `Ops.TARS` is cut.** All it contributed was a unit NAME scraped off a `Snapshot` whose schema was never confirmed (`snap.name or snap.unitName or snap.UnitName`, under a comment saying the one-time dump existed so the schema "can be confirmed in-game") — if all three guesses were wrong the player path recorded nothing, silently, forever, while the AI path kept working. **PASS:** fly a player TARPS sortie over a fogged enemy site, land, and confirm (a) the "RECON: … confirmed BDA on N target(s)" cue appears **only after touchdown**, not over the target, and (b) the site is un-fogged at debrief; repeat with an AI-flown recon flight and confirm identical behaviour. Then fly one pass HIGH (≥40,000 ft) and one at a normal recon altitude over comparable sites and confirm the high pass banks fewer targets. **FAIL signatures:** the cue firing over the target (the landing gate broke); a player sortie confirming nothing while an AI one works, or vice versa (the two paths have diverged again — the exact defect the rebuild removes); nothing ever confirming (check the `DCSRetribution|Recon armed for N recon flight(s)` line at load); or altitude/cloud making no difference at all. NOTE the deliberate asymmetry — the CAPTURE happens on overfly and is **not** gated on landing, because missions routinely end before flights land; only the cue waits. Emitter + runtime are covered by `game/missiongenerator/tests/test_reconluadata.py` (16) and `tests/lua/test_recon_runtime.py` (13), which pin the landing-held cue, the capture surviving a flight that never lands, and both degradation curves) (was ✗ REGRESSED 2026-08-05 — "G2 needs reworking"; was ☑ VERIFIED 2026-06-24 as the MOOSE TARS bridge
 - **Setup:** Fly an F-14 TARPS recon pass over enemy targets.
@@ -3863,7 +3872,25 @@ be settled from a recording instead of the cockpit. It can, across all six recor
 
 **Setup card:** [flycards/REGRESSED-SWEEP.md](flycards/REGRESSED-SWEEP.md) — one Starfire campaign (`operation_desert_trident`) clears this alongside B49, C9 and B48.
 
-**Setup card:** [flycards/REGRESSED-SWEEP.md](flycards/REGRESSED-SWEEP.md) — clears all three regressed rows in two missions.
+
+> **Test 9 flown 2026-08-18** (Syria `operation_desert_trident`, `Tacview-20260818-214946` + `dcs.log` + `state.json` + the generated `.miz`) — **the 2026-08-18 fix works; a site that FIRES still does not move.**
+> Three sites, and the discriminator is the fire mission, exactly as in test 6:
+>
+> | Site | Fire mission | Fired | Moved |
+> |---|---|---|---|
+> | CANARY | none | no | **2,796 m** — the feature working |
+> | OKAPI | hold 483 s | **3 Scuds at t=496–500** | **~250 m**, then `giving up on` |
+> | ECHIDNA | hold ~3,300 s | no | 0 m — never released in a ~20 min mission |
+>
+> So #886 (dropping the `Controller:resetTask()`) is a real improvement — test 6's fired sites
+> managed under 21 m, OKAPI now manages 250 m — but it is not the whole cause. 250 m across two
+> pushes is under `MIN_PROGRESS_M = 100` per push measured on `group:getUnit(1)`, so the plugin
+> declares it dry and gives up. **The next lever is the one this row already named: post-salvo
+> launcher state.** ECHIDNA is not evidence either way — its fire hold outlasted the mission.
+>
+> Incidental, not the cause: the towed AAA in these groups (`KS-19`, `S-60_Type59_Artillery`)
+> never moves at all while the rest of the group drives off, and neither carries a `mobile:`
+> flag. It does not block the group — CANARY drove 2.8 km with a KS-19 sitting still.
 
 **2026-08-17 flown (Test 6) — REGRESSED for any site that fires, fixed 2026-08-18.** One mission, three sites: CICHLID had no fire mission and moved **3.5 km**; OSTRICH (hold 1735 s) and BUFFALO (hold 2748 s) both moved **under 21 m**, and the plugin eventually gave up on OSTRICH. Composition is not the discriminator (CICHLID and OSTRICH are both Scud batteries) and §59 sleep is not either (its emitted list excludes missile sites). The discriminator is `Controller:resetTask()`, which `driveTo` issued in the same frame as the route push and which landed last, wiping the route. Removed — `mist.goRoute` already routes via `setTask`, which replaces the queue. **Re-fly owed:** a site that fires must then move.
 - **Pass:** every site with a forwarded fire mission launches on schedule AND relocates afterwards; the log shows no `giving up on` line for a battery that fired.
@@ -4475,7 +4502,22 @@ Play a turn on a Growler- or Prowler-fielding wing against a campaign with sever
      row is for — if one SEAD Escort per package is not enough cover, that is the finding, and the
      answer is to reinstate the sweep for specific callers rather than for all of them.
 
-### B49 — Carrier recovery-phase deck dressing · §72 · ✗ REGRESSED
+### B49 — Carrier recovery-phase deck dressing · §72 · ◐ PARTIAL
+
+> **Test 9 flown 2026-08-18** (Syria `operation_desert_trident`, `Tacview-20260818-214946` + `dcs.log` + `state.json` + the generated `.miz`) — **the regression is fixed**, upgraded ✗ → ◐. The plugin ran its whole
+> sequence on CVN-72, including the step that silently never happened before:
+>
+> ```
+> armed -- 1 boat(s), clear by 1500s (airboss recovery window), cone 4.5 NM/1000 ft astern
+> CVN-72 Abraham Lincoln: still launching, respot held until 610s
+> CVN-72 Abraham Lincoln: spawned 3 recovery-phase static(s) forward
+> CVN-72 Abraham Lincoln: struck 1 launch-phase static(s) below (airboss recovery window)
+> ```
+>
+> 3 statics forward is inside the card's 3–9, and the respot correctly waited for the deck to
+> finish launching rather than firing at a fixed time. **Not yet closed:** nobody watched
+> whether the gear *rides the deck* as the boat steams, which is fail signature 2, and no jet
+> was seen spawning into it (signature 3). Those need eyes on the deck, not a log.
 
 **Setup card:** [flycards/REGRESSED-SWEEP.md](flycards/REGRESSED-SWEEP.md) — one Starfire campaign (`operation_desert_trident`) clears this alongside B49, C9 and B48.
 
@@ -4513,6 +4555,14 @@ decorations toggle on) on a Nimitz-hull campaign, then fly or watch one recovery
 ### B48 — Naval station-keeping racetracks · §87 · ◐ PARTIAL
 
 **Setup card:** [flycards/REGRESSED-SWEEP.md](flycards/REGRESSED-SWEEP.md) — one Starfire campaign (`operation_desert_trident`) clears this alongside B49, C9 and B48.
+
+> **Test 9 flown 2026-08-18** (Syria `operation_desert_trident`, `Tacview-20260818-214946` + `dcs.log` + `state.json` + the generated `.miz`) — **holds up, third campaign.** Measured off the ACMI, the two
+> well-sampled escorts kept station: PERRY sailed **22.9 km for 2.8 km of net drift** (1,478
+> frames) and an Arleigh Burke **9.9 km for 2.5 km** (601 frames) — the same shape as the
+> 2026-08-16 Baltic Fury numbers. CVN-72's 11.4 km drift is expected and not a failure:
+> carriers steam for wind under §88 and are excluded by design. The remaining hulls logged
+> 6–44 frames, where sailed distance equals net drift exactly — that is sparse Tacview
+> sampling, not a track, and is not evidence either way.
 
 **History:** 2026-08-05, flown Marianas 2027, Tacviews `Tacview-20260805-190738` / `-203549`, session `pr-merge-code-audit-7e8b4c`. **Strengthened 2026-08-16** (Baltic Fury spectator watch, `Tacview-20260816-104955`, session `c86c58dd`): all five red naval groups held anchored loops over 95 min — 21–28 km sailed, net drift only 2.6–4.0 km, 7–10 kt, headings cycling — station-keeping exactly as designed on every non-carrier group observed. **New watch question from the same track:** the blue carrier's ESCORT group sailed its own dead-straight authored leg (191°, 45.8 km flown) while the carrier sailed a different one (authored 166°) — whether the screen stays with its boat over a full mission is a §87/§44/§88 interplay item, not yet a verdict
 

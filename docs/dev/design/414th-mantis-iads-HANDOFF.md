@@ -73,6 +73,35 @@ right after `Start()` as the EMCON ground truth (**0 SAM = still broken**). **Re
 log line (should equal the SAM count) and confirm in-cockpit that SA-2/3/6 track radars stay dark until
 you're in range.
 
+## 🔴 CRITICAL FIX 2026-08-19 — the C2 layer worked for exactly one mission
+
+The mirror of the 06-26 bug: that one had the C2 layer working while the core was dead; this one
+had the core working while the C2 layer quietly stopped after the turn a node died.
+
+`setup_c2` builds `comms_deps` / `power_deps` from each SAM's emitted `ConnectionNode` /
+`PowerSource` arrays and `cc_names` from the coalition's `CommandCenter` list. Those come from
+`IadsNetwork.iads_nodes`, which **dropped any node or connection whose units were all dead**. So on
+the turn a comms mast or power station is destroyed the watcher fires correctly, and on every turn
+after it the dependency is simply absent from the graph:
+
+- A bombed power station's SAMs come back **fully operational** next mission.
+- Lose every command centre and `#cc_names == 0`, which trips `setup_c2`'s empty-graph early return —
+  so instead of decapitating the network, the coalition gets **perfect command back**.
+
+§52 (command-centre decapitation) only ever covered the *planner* side of the same idea, so the
+campaign kept reporting degraded enemy C2 while the runtime had already undone it.
+
+**Fix:** `iads_nodes` keeps dead **C2** nodes and edges in the exported graph (`IadsRole.is_c2`);
+dead SAM/EWR nodes are still dropped, since one of those must not be built at all. `node_dead()`
+could not be relied on to spot them by itself — its two tests are a placed static that no longer
+`isExist()`s and a name in this mission's `dead_events`, and many C2 nodes are destructible scenery
+with no static to look up — so `luagenerator` also emits a per-coalition **`DeadC2`** array of nodes
+the campaign already knows are destroyed, and `node_dead()` consults it first.
+
+Found by juanjux/dcs-retribution#97 against Skynet; see
+[414th-juanjux-fork-watch-notes.md](414th-juanjux-fork-watch-notes.md). Tests
+`tests/theater/test_iads_engine_abstraction.py`. **Needs an in-game pass** — checklist row G41.
+
 ## ⭐ THE next step — MANTIS is the default; CTLD is now the gate
 
 With G6 passed, **MANTIS is now the default IADS engine for new campaigns** (flipped 2026-06-24;

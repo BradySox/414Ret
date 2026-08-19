@@ -104,3 +104,85 @@ def test_iads_node_dcs_name_uses_unit_name_for_ewr() -> None:
         units=[SimpleNamespace(alive=True, unit_type=None, unit_name="ewr-unit-1")],
     )
     assert IadsNode.dcs_name_for_group(group) == "ewr-unit-1"
+
+
+# --- A destroyed C2 node must survive in the exported graph -------------------
+# The runtime reads each SAM's comms/power dependency, and the coalition's
+# command-centre list, from what iads_nodes() emits. Dropping a dead node dropped
+# the dependency with it, so the degradation lasted exactly one mission: from the
+# next turn the SAMs behind a bombed power station came back fully operational,
+# and killing every command centre restored perfect command instead of removing
+# it. Found in juanjux/dcs-retribution#97 against Skynet; the same hole was live
+# here against MANTIS.
+
+
+def _c2_group(
+    iads_role: IadsRole, *, name: str, alive: bool, player: Player = Player.BLUE
+) -> Any:
+    ground_object = SimpleNamespace(
+        coalition=SimpleNamespace(player=player),
+        is_friendly=lambda other, _p=player: other is _p,
+    )
+    return SimpleNamespace(
+        iads_role=iads_role,
+        group_name=name,
+        units=[
+            SimpleNamespace(alive=alive, unit_type=None, unit_name=name, is_static=True)
+        ],
+        ground_object=ground_object,
+    )
+
+
+def _network(*nodes: Any) -> Any:
+    from game.theater.iadsnetwork.iadsnetwork import IadsNetwork
+
+    network = IadsNetwork(True, [])
+    network.nodes = list(nodes)
+    return network
+
+
+def _node(group: Any, connections: list[Any] | None = None) -> Any:
+    return SimpleNamespace(
+        group=group,
+        connections={i: c for i, c in enumerate(connections or [])},
+    )
+
+
+_GAME = SimpleNamespace(iads_considerate_culling=lambda tgo: False)
+
+
+def test_dead_power_source_stays_a_connection_of_its_sam() -> None:
+    sam = _c2_group(IadsRole.SAM, name="SAM-1", alive=True)
+    power = _c2_group(IadsRole.POWER_SOURCE, name="power-1", alive=False)
+    nodes = _network(_node(sam, [power])).iads_nodes(_GAME)
+    assert len(nodes) == 1
+    assert nodes[0].connections["PowerSource"] == ["power-1"]
+
+
+def test_dead_point_defence_is_still_dropped_from_its_sam() -> None:
+    # Only C2 edges are kept: a dead PD group is not a dependency, it is a corpse.
+    sam = _c2_group(IadsRole.SAM, name="SAM-1", alive=True)
+    pd = _c2_group(IadsRole.POINT_DEFENSE, name="pd-1", alive=False)
+    nodes = _network(_node(sam, [pd])).iads_nodes(_GAME)
+    assert nodes[0].connections["PD"] == []
+
+
+def test_dead_command_center_is_still_exported() -> None:
+    cc = _c2_group(IadsRole.COMMAND_CENTER, name="cc-1", alive=False)
+    nodes = _network(_node(cc)).iads_nodes(_GAME)
+    assert [n.dcs_name for n in nodes] == ["cc-1"]
+
+
+def test_dead_sam_node_is_dropped() -> None:
+    sam = _c2_group(IadsRole.SAM, name="SAM-1", alive=False)
+    assert _network(_node(sam)).iads_nodes(_GAME) == []
+
+
+def test_dead_c2_names_lists_only_destroyed_c2_nodes() -> None:
+    network = _network(
+        _node(_c2_group(IadsRole.POWER_SOURCE, name="power-dead", alive=False)),
+        _node(_c2_group(IadsRole.POWER_SOURCE, name="power-alive", alive=True)),
+        _node(_c2_group(IadsRole.COMMAND_CENTER, name="cc-dead", alive=False)),
+        _node(_c2_group(IadsRole.SAM, name="SAM-dead", alive=False)),
+    )
+    assert network.dead_c2_names(_GAME) == {Player.BLUE: ["power-dead", "cc-dead"]}

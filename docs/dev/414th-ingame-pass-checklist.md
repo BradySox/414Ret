@@ -54,6 +54,9 @@ stress it · `✗` fail signature reproduced in-game.
 | G19 | TARPS on Vietnam-era recon birds (RF-101B / RA-5C) | §3 | ◐ |
 | G39 | Engaging a site reveals it completely; recon does not | §3 | ☐ |
 | G40 | TARPS recon finds a hidden enemy command post | §3 | ☐ |
+| G41 | A bombed power station keeps its SAMs down on the NEXT turn | MANTIS C2 | ☐ |
+| B84 | Front-line groups move and return fire instead of holding | §8 | ☐ |
+| B85 | A flight with an unreachable TOT flies instead of orbiting | §8 | ☐ |
 | G25 | Armed Recon package: recon drone + SEAD Viper escort + 4-ship sweep | §3 | ◐ |
 | G30 | MANTIS SHORAD link: the point defense ambushes the HARM shot | MANTIS migration | ☐ |
 | G33 | Survivor ADF beacon: the pinned 260 kHz drives a real needle | CSAR (upstream #929 + 414th pin) | ☐ |
@@ -5305,6 +5308,71 @@ Play a turn on a **front-less** campaign whose AWACS is not at the field nearest
   2. **The AWACS orbits far behind the fight.** The forward pick found only a rear hosting
      field. Working as written; note the campaign, because it is the trade above biting.
   3. **A fronted campaign changes.** It should not — only the front-less branch moved.
+
+### G41 — A bombed power station keeps its SAMs down on the NEXT turn · MANTIS C2 · ☐ UNTESTED
+
+**History:** built 2026-08-19. The C2 layer worked for exactly one mission and nobody
+noticed, because the mission it worked on is the one you fly right after the strike.
+
+> `IadsNetwork.iads_nodes` dropped any node or connection whose units were all dead, so from
+> the turn *after* a comms mast or power station died the dependency was absent from the
+> exported graph and `setup_c2` had nothing to watch. The SAMs behind it came back fully
+> operational. Worse for command centres: kill them all and `#cc_names == 0` trips the
+> empty-graph early return, so the coalition gets perfect command back instead of being
+> decapitated — while §52 kept reporting degraded enemy C2 on the campaign side.
+
+- **What CI cannot exercise:** whether MANTIS actually re-applies the degradation on a later
+  turn. The graph contents and the `DeadC2` list are unit-tested; the runtime behaviour is not.
+- **Setup:** an `advanced_iads` campaign (Red Tide is the reference). Find a red power station
+  feeding several SAM sites — the IADS link layer draws it. Strike it, finish the mission, pass
+  the turn, then fly **the next** turn against the same SAMs.
+- **Pass:** on the following mission the dependent SAMs are still offline. `dcs.log` carries
+  `MANTIS C2 - power '<name>' lost; N SAM(s) offline` on that turn too, not only the turn of
+  the strike.
+- **Fail signatures:**
+  1. **The log line appears on the strike turn and never again**, and the SAMs engage normally
+     next mission — the graph is dropping the node again.
+  2. **No log line at all on either turn** — check the node is a real IADS `PowerSource` and
+     the campaign is on advanced IADS; this is the pre-existing C2 wiring, not the fix.
+  3. **A scenery C2 node never reads dead.** The `DeadC2` array is the path for those (a
+     scenery object has no static to look up); check it is present in the generated
+     `dcsRetribution.IADS.RED` table.
+  4. **Every SAM in the coalition goes autonomous at mission start.** The decapitation branch
+     fired when it should not — the command-centre list is being mis-read as all-dead.
+
+### B84 — Front-line groups move and return fire instead of holding · §8 · ☐ UNTESTED
+
+**History:** built 2026-08-19 from juanjux/dcs-retribution#79, verified live in our tree
+before fixing. Two causes: a negative hold normalising to 23h59m, and defenders being held
+until the *enemy's* CAS TOT.
+
+- **What CI cannot exercise:** whether the groups actually manoeuvre and shoot in DCS. The
+  emitted hold duration is unit-tested; the behaviour is not.
+- **Setup:** any campaign with an active front. Fly or fast-forward a turn and watch a
+  front-line sector, ideally one where the enemy has a CAS package fragged (that is the case
+  that used to freeze the defenders).
+- **Pass:** front-line groups reform, advance per their stance, and return fire when engaged.
+  A defending group that is shot at shoots back promptly.
+- **Fail signatures:**
+  1. **Groups sit on their spawn all mission.** Check the generated `.miz` for a `Hold` task
+     with a large `stopCondition.duration` — 86340 is the old bug's signature.
+  2. **Defenders idle while attackers move.** The stance gate regressed.
+  3. **Attackers step off before their own CAS arrives.** The `AGGRESSIVE` wait was removed
+     too — that one is intended behaviour, not a bug.
+
+### B85 — A flight with an unreachable TOT flies instead of orbiting · §8 · ☐ UNTESTED
+
+**History:** built 2026-08-19 from juanjux/dcs-retribution#100. His repro was a DEAD package
+given a TOT 5 minutes out from a base 29 minutes away; the mission shipped
+`stopCondition.time = -865` on four aircraft that then achieved nothing.
+
+- **What CI cannot exercise:** that DCS releases the hold. The clamp is unit-tested; the
+  in-game release is not.
+- **Setup:** frag a package at a target far enough away that its TOT cannot be made — the
+  planner warns about past start times when you have it. Fly the turn.
+- **Pass:** the flight leaves its hold and flies the mission. It will be late; that is expected.
+- **Fail signature:** the flight orbits the hold point for the whole mission. Check the
+  generated `.miz` for any negative `stopCondition.time` — there should be none.
 
 ### B71 — Several survivors come out on one lift · CSAR (#929 Phase 5) · ☐ UNTESTED
 

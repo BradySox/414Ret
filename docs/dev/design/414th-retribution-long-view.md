@@ -425,6 +425,29 @@ perceptible.
 something red actually does that reads wrong in the air. That is evidence this analysis cannot
 produce, and every attempt to derive it from the planner has now failed twice.
 
+### Framing 3, 2026-08-19 — the LLM commander. Also no headroom; still dropped.
+
+A third framing arrived from outside: juanjux's fork puts an **LLM in the commander's seat for
+red** (`game/agent/`, HTN kept as fallback). It is not another dimension picked off the planner —
+it replaces the decision-maker — so the verdict above does not carry automatically and it got its
+own Phase 0.
+
+It found nothing wrong with the plan the HTN produces. On Vectron's Claw (Starfire), two saves,
+eight headless red-only re-plans: **0 of 48 red offensive packages target anything inside blue's
+radar-SAM threat**, suppression is proportionate to need, and the task mix — CAS on the front,
+armed recon, two capture assaults, anti-ship, a strike — has no identified defect.
+
+Weaker evidence than the two kills above, and the note says so: this **fails to find** a defect
+rather than measuring a premise false, and it was exploratory rather than pre-registered. What it
+establishes is that the case for framing 3 does not exist yet — "the HTN walks a fixed priority
+list" is true and is juanjux's stated reason, but it has now three times failed to produce an
+observable defect.
+
+Full Phase 0, the two constraints framing 3 must clear (the third-party-dependency rule in §10,
+and red/blue planner fairness), and a **pre-registered card** for anyone who wants to push it
+further: [414th-red-brain-phase0-notes.md](414th-red-brain-phase0-notes.md). Instrument:
+`tools/measure_red_planner_headroom.py`.
+
 ---
 
 ### Phase 0 RESULT, 2026-08-17 — the axis framing is dead

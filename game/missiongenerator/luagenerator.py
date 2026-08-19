@@ -295,6 +295,16 @@ class LuaGenerator:
             for role, connections in node.connections.items():
                 iads_element.add_data_array(role, connections)
 
+        # C2 nodes killed on an earlier turn. The runtime's own death test only sees
+        # this mission (a dead-spawned static, or a name in dead_events), and many C2
+        # nodes are scenery it cannot look up at all, so the campaign names them here.
+        for player, dead_names in self.game.theater.iads_network.dead_c2_names(
+            self.game
+        ).items():
+            iads_object.get_or_create_item(
+                "BLUE" if player.is_blue else "RED"
+            ).add_data_array("DeadC2", dead_names)
+
         # An AWACS is the network's only other always-on wide-area sensor; fold it
         # into the detector tally (the MANTIS bridge folds it into the EWR set).
         for awacs in self.mission_data.awacs:

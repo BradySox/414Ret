@@ -54,6 +54,13 @@ Then flip `carrier_deck_decorations` **off**, regenerate the same turn, and coun
 
 - **Pass:** both runs park the same number. The Supercarrier guide documents **16 parking
   spots + 4 catapults**, so a healthy deck fills 16.
+
+> **Test 9 (2026-08-18) — strong partial, the control run is still owed.** A Syria turn parked
+> **24 jets on CVN-72** (8 BARCAP + 16 BAI, all `TakeOffParkingHot`) plus 8 on LHA-1, with
+> `carrier_deck_decorations` **on**, and every one launched — the six-pack last-resort path was
+> never used. That is well past the 16 spots this card worries about, so "the decorations-on run
+> parks fewer" is hard to sustain. What is still missing is the **decorations-off control run on
+> the same turn**, which is the actual comparison. Row stays open for that.
 - **Fail:** the decorations-on run parks fewer, or a jet reports *"your flight is delayed to
   start"* while the control run does not. Either means a street static is standing on a spawn
   spot.

@@ -23,7 +23,17 @@ class HoldPointBuilder(PydcsWaypointBuilder):
         )
         push_time = self.flight.flight_plan.push_time
         self.waypoint.departure_time = push_time
+        # A TOT the flight cannot physically reach puts push_time before the mission
+        # starts (plans are built backwards from the TOT). DCS never fires a trigger
+        # scheduled for a negative time, so an unclamped value holds the flight for
+        # the whole mission instead of releasing it. (juanjux/dcs-retribution#100.)
         elapsed = int((push_time - self.now).total_seconds()) - 60
+        if elapsed < 0:
+            logging.warning(
+                f"{self.flight} cannot reach its TOT: hold release computed at "
+                f"{elapsed}s. Clamping to 0 so the flight pushes immediately."
+            )
+            elapsed = 0
         self.add_stopping_orbit(
             waypoint,
             speed_kph=speed.kph,

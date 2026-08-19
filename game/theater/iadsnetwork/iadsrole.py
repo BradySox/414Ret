@@ -102,3 +102,13 @@ class IadsRole(Enum):
             IadsRole.POWER_SOURCE,
             IadsRole.CONNECTION_NODE,
         ]
+
+    @property
+    def is_c2(self) -> bool:
+        """Roles whose loss degrades the SAMs behind them rather than being one.
+
+        A C2 node stays in the exported graph after it dies -- the runtime reads the
+        dependency from there, so dropping a destroyed node silently restores what it
+        was suppressing. See ``IadsNetwork.iads_nodes``.
+        """
+        return self.is_comms_or_power or self == IadsRole.COMMAND_CENTER

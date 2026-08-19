@@ -1622,6 +1622,27 @@ defect that reached a build, most of them found by flying.
 
 ### Flight plans and routing
 
+- **A hold was never told to release when the TOT was unreachable (2026-08-19).** Flight
+  plans are built backwards from the TOT, so a TOT the flight cannot physically make puts
+  `push_time` before mission start. `HoldPointBuilder` passed that straight through as the
+  orbit's stop-after-time and as the backing `TimeAfter` trigger, and **DCS never fires a
+  trigger scheduled for a negative time** — so the flight orbited its hold for the entire
+  mission. Clamped to 0 and logged; the flight still cannot make that TOT, it just flies the
+  mission instead of sitting out of it. Tests
+  `tests/missiongenerator/test_holdpoint_release.py`. Found by juanjux/dcs-retribution#100.
+- **Front-line groups were held in place and never fought (2026-08-19).** Two independent
+  causes in `FlotGenerator`, both upstream-shared. (1) `_set_reform_waypoint` fed
+  `timedelta.seconds` to `stop_after_duration`: a negative delta normalises to a negative day
+  plus a positive remainder, so a CAS package whose TOT landed before mission start turned a
+  `-60s` hold into **86340 s — 23h59m**. Now `total_seconds()`, clamped at zero. (2) The
+  hold-until-`_earliest_tot_on_flot` gate applied to `DEFENSIVE` as well as `AGGRESSIVE`, so a
+  defender stood still and did not return fire until the *enemy's* CAS arrived — half an hour
+  is an ordinary value. Only `AGGRESSIVE` waits now. Worth knowing for anyone debugging this
+  in the ME: `Hold` is a **running task**, so neither red alert nor a manual attack order
+  dislodges a group stuck this way. Tests
+  `tests/missiongenerator/test_flotgenerator_hold.py`. Found by juanjux/dcs-retribution#79;
+  his third cause (`perf_red_alert_state` leaving the FLOT on GREEN) does not apply here —
+  the fork removed that toggle in #231 and non-IADS groups fall to DCS **AUTO**.
 - Flight-combat-exit `IndexError`: `game/ato/flightstate/inflight.py` guards in
   `__init__` and `next_waypoint_state()`.
 - **"Mission cannot be saved due to errors" — locked speed on the second of two adjacent
@@ -5531,6 +5552,17 @@ The effect lands on the *enemy's* next turn, so the player is told the strike wo
 
 ### Gotchas / deferred
 
+- **The runtime half was silently dead until 2026-08-19, and §52 was masking it.** MANTIS's
+  C2 layer degrades SAMs whose comms/power node dies and decapitates a coalition that loses
+  every command centre — but `IadsNetwork.iads_nodes` dropped any node or connection whose
+  units were all dead, so from the *next* turn the dependency was simply absent from the
+  exported graph and the runtime had nothing to watch. A bombed power station's SAMs came
+  back fully operational, and killing every command centre restored perfect command instead
+  of removing it. Dead C2 nodes and edges now stay in the graph, and a per-coalition
+  `DeadC2` array names what the runtime cannot see for itself (a scenery node has no static
+  to look up, and `dead_events` only records the current mission). Found by
+  juanjux/dcs-retribution#97 against Skynet; see
+  [414th-juanjux-fork-watch-notes.md](design/414th-juanjux-fork-watch-notes.md).
 - **Pure turn-model.** No `.miz`, no Lua, no DCS integration — zero runtime risk. It reuses the §17
   shuffler wholesale, so at full C2 health (or feature off) the planner is byte-identical to today and all
   existing determinism tests hold.

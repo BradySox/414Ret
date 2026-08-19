@@ -48,6 +48,7 @@ def _ship_tgo(owner_cp: Any, group_name: str, type_id: str, pos: _Pos) -> Any:
         units=units,
         is_control_point=False,
         map_hidden=False,
+        hidden_on_player_map=lambda viewer=None: False,
     )
 
 
@@ -61,6 +62,7 @@ def _target_tgo(name: str, category: str, pos: _Pos) -> Any:
         units=units,
         is_control_point=False,
         map_hidden=False,
+        hidden_on_player_map=lambda viewer=None: False,
     )
 
 

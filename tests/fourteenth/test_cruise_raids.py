@@ -58,12 +58,21 @@ def _ship_tgo(
         units=units,
         is_control_point=False,
         map_hidden=False,
+        hidden_on_player_map=lambda viewer=None: False,
     )
 
 
 def _target_tgo(
-    name: str, category: str, pos: _Pos, *, alive: bool = True, hidden: bool = False
+    name: str,
+    category: str,
+    pos: _Pos,
+    *,
+    alive: bool = True,
+    hidden: bool = False,
+    unseen: bool = False,
 ) -> Any:
+    """*hidden* is §50's map_hidden; *unseen* is "blue cannot see it at all" (a
+    command post behind the §3 fog). The real accessor answers True for both."""
     units = [SimpleNamespace(alive=alive, type=SimpleNamespace(id="Generator"))]
     return SimpleNamespace(
         category=category,
@@ -73,6 +82,7 @@ def _target_tgo(
         units=units,
         is_control_point=False,
         map_hidden=hidden,
+        hidden_on_player_map=lambda viewer=None: hidden or unseen,
     )
 
 
@@ -114,6 +124,7 @@ def _carrier_tgo(
         units=units,
         is_control_point=True,
         map_hidden=False,
+        hidden_on_player_map=lambda viewer=None: False,
     )
 
 
@@ -464,3 +475,83 @@ def test_raid_targets_and_shooters_get_culling_exclusions() -> None:
     captured.clear()
     Game.compute_unculled_zones(cast(Any, game), cast(Any, events))
     assert captured[0] == []
+
+
+def test_blue_raids_never_name_a_target_blue_cannot_see() -> None:
+    """A hidden command post is meant to be found by flying recon at it (§3/G40).
+    `commandcenter` is priority 0 here, so without the fog gate the first raid of
+    the campaign picks the HQ the player never located -- and the strike then
+    reveals it permanently, for free."""
+    blue_cp, _ = _blue_burke()
+    red_cp = _cp(Player.RED)
+    red_cp.ground_objects.append(
+        _target_tgo("Cache", "ammo", _Pos(10_000.0, 0.0)),
+    )
+    red_cp.ground_objects.append(
+        _target_tgo("Division HQ", "commandcenter", _Pos(20_000.0, 0.0), unseen=True)
+    )
+    game = _game([blue_cp, red_cp])
+
+    raids = plan_cruise_raids(cast(Any, game))
+    assert len(raids) == 1
+    # The HQ outranks the cache on both priority and distance, so picking the
+    # cache is only possible if the HQ was filtered out.
+    assert raids[0].target_name == "Cache"
+
+
+def test_blue_raids_do_name_a_command_post_blue_has_found() -> None:
+    blue_cp, _ = _blue_burke()
+    red_cp = _cp(Player.RED)
+    red_cp.ground_objects.append(_target_tgo("Cache", "ammo", _Pos(10_000.0, 0.0)))
+    red_cp.ground_objects.append(
+        _target_tgo("Division HQ", "commandcenter", _Pos(20_000.0, 0.0))
+    )
+    game = _game([blue_cp, red_cp])
+
+    assert plan_cruise_raids(cast(Any, game))[0].target_name == "Division HQ"
+
+
+def test_red_raids_are_not_fogged() -> None:
+    """Red plays against the truth; the fog is a blue-facing rule only. A blue
+    TGO's hidden_on_player_map is False anyway (a side always sees its own), so
+    this pins that the gate never accidentally muzzles red."""
+    red_cp = _cp(Player.RED)
+    red_cp.ground_objects.append(
+        _ship_tgo("Karakurt", red_cp, _Pos(0.0, 0.0), [_unit(KARAKURT)], "Red Corvette")
+    )
+    blue_cp = _cp(Player.BLUE)
+    blue_cp.ground_objects.append(
+        _target_tgo("Wing HQ", "commandcenter", _Pos(50_000.0, 0.0))
+    )
+    game = _game([red_cp, blue_cp])
+
+    raids = plan_cruise_raids(cast(Any, game))
+    assert [(r.coalition, r.target_name) for r in raids] == [("red", "Wing HQ")]
+
+
+def test_the_reveal_overview_does_not_change_what_blue_shoots() -> None:
+    """The overview is a display toggle. A host who ticks it and then passes the
+    turn must get the same raid as one who did not, or the campaign forks on a
+    view setting."""
+    from game.theater.fogofwar import set_fog_revealed
+
+    def _plan() -> Any:
+        blue_cp, _ = _blue_burke()
+        red_cp = _cp(Player.RED)
+        red_cp.ground_objects.append(_target_tgo("Cache", "ammo", _Pos(10_000.0, 0.0)))
+        red_cp.ground_objects.append(
+            _target_tgo(
+                "Division HQ", "commandcenter", _Pos(20_000.0, 0.0), unseen=True
+            )
+        )
+        return plan_cruise_raids(cast(Any, _game([blue_cp, red_cp])))
+
+    fogged = _plan()
+    set_fog_revealed(True)
+    try:
+        revealed = _plan()
+    finally:
+        set_fog_revealed(False)
+
+    assert [r.target_name for r in fogged] == [r.target_name for r in revealed]
+    assert fogged[0].target_name == "Cache"

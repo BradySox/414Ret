@@ -207,6 +207,13 @@ There is no BDA damage lag: `alive_at_last_recon` / `sync_confirmed_status` /
 `alive_for` were deleted 2026-08-18 and `alive`/`is_dead`/`dead_units`/`max_threat_range`/… are
 plain truth. Do **not** reintroduce a viewer parameter on those, and do **not** reintroduce the
 old `_for_player`/`_for` method twins — that collapse is finished.
+**Anything that picks targets FOR blue automatically must gate on the fog** — auto raids
+(§63), the carrier strike (§44), any future fire mission. Use
+`fogofwar.hidden_from(Player.BLUE, tgo)`, never a bare `hidden_on_player_map`: it wraps
+`fog_intact()`, so a host who ticked the reveal overview before passing the turn cannot get
+a different target than one who did not. Naming a site the player cannot see hands them a
+find they were meant to earn, and the strike that follows makes it permanent. Red is never
+fogged. Keep the §50 `map_hidden` skip separate — it applies to both sides.
 A runtime **overview toggle** (`game/theater/fogofwar.py`, transient/never-pickled)
 short-circuits both fog leaves to ground truth for any viewer, so the *whole* render path +
 intel dialogs un-fog with **no** server-model changes. It is a checkbox in the custom map

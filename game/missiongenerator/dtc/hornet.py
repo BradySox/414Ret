@@ -151,6 +151,7 @@ def _build_wypt(
     nav_pts: list[dict[str, Any]] = []
     route_one: dict[str, Any] = {}
     home_wypt = 1
+    aa_wypt: Optional[int] = None
     route_order = 0
     prev_route_wp = None
     # The kneeboard numbers the flight plan from 0 (row 0 = takeoff/spawn).
@@ -193,8 +194,10 @@ def _build_wypt(
         nav_pts.append(entry)
         if "LANDING" in waypoint.waypoint_type.name:
             home_wypt = number
+        elif waypoint.waypoint_type.name == "BULLSEYE":
+            aa_wypt = number
     if options.nav_aids:
-        nav_settings = _build_nav_settings(flight, carrier, home_wypt)
+        nav_settings = _build_nav_settings(flight, carrier, home_wypt, aa_wypt)
     else:
         nav_settings = _nav_settings_defaults(home_wypt)
     return {
@@ -220,8 +223,18 @@ def _find_carrier(
 
 
 def _build_nav_settings(
-    flight: FlightData, carrier: Optional[CarrierInfo], home_wypt: int
+    flight: FlightData,
+    carrier: Optional[CarrierInfo],
+    home_wypt: int,
+    aa_wypt: Optional[int] = None,
 ) -> dict[str, Any]:
+    """Recovery aids plus the A/A (bullseye) waypoint designation.
+
+    The A/A waypoint has to BE a waypoint in the database (EA guide p158), and
+    designating it is otherwise three cockpit presses the pilot makes every
+    sortie. We point it at the bullseye we already emit rather than the jet's
+    stock slot 59, which our routes never reach.
+    """
     tacan = carrier.tacan if carrier is not None else flight.arrival.tacan
     icls = carrier.icls_channel if carrier is not None else flight.arrival.icls
     acls_freq = (
@@ -252,7 +265,10 @@ def _build_nav_settings(
             "Frequency": acls_freq if acls_freq is not None else 225.0,
             "OnOff": acls_freq is not None,
         },
-        "AA_Waypoint": {"AA_WP_Number": 59, "AA_WP_Enabled": False},
+        "AA_Waypoint": {
+            "AA_WP_Number": aa_wypt if aa_wypt is not None else 59,
+            "AA_WP_Enabled": aa_wypt is not None,
+        },
         "Home_Waypoint": {"FPAS_HOME_WP": home_wypt},
         "Altitude_Warning": {"Warn_Alt_Rdr": 500, "Warn_Alt_Baro": 2000},
     }

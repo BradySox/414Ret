@@ -7553,7 +7553,14 @@ investigated and declined** — `CMDS_defs.lua` is a defaults file rather than
 intelligence, emitting `CMDSProgramSettings` would overwrite a pilot's hand-set
 burst/salvo counts, and the live descriptor (`data.MPD.CMDS`) disagrees with
 ED's own shipped example cartridges (`data.CMDS`), so there is no confirmed
-shape to emit. Rationale in the design note.
+shape to emit. Rationale in the design note. **Hornet, same day:** the A/A
+(bullseye) waypoint is now designated from the cartridge. It has to BE a waypoint
+in the database (FA-18C guide p158) and §74 hardcoded the jet's stock slot 59
+switched off, which our routes never reach; it now points at the bullseye §74
+already emits and enables it, saving three cockpit presses a sortie. No bullseye
+in the plan leaves the stock 59/off. The Hornet guide has **no DTC chapter** —
+zero hits for FLOT, FAOR, corridor, MEZ, CAP point or DTC across 424 pages — so
+the descriptor stays the only source for the SA sections.
 Comm names pre-clamped to the ME's 5-uppercase-alphanumeric filter. **The Hornet's
 nine CAP_PTS slots are spent priority-then-completeness** (two flown 2026-07-19
 findings): the §6 BARCAP wave relief flies each station as several jittered

@@ -36,8 +36,9 @@ _SECTIONS = (
         "Recovery aids (TACAN / ICLS / ACLS, home waypoint)",
         "nav_aids",
         "Pre-tunes the recovery TACAN -- the boat's full card on a carrier "
-        "flight -- and sets the FPAS home waypoint. Hornet only; the Viper "
-        "carries no equivalent cartridge section.",
+        "flight -- sets the FPAS home waypoint, and designates the bullseye as "
+        "the air-to-air waypoint. Hornet only; the Viper carries no equivalent "
+        "cartridge section.",
     ),
     (
         "Front line (FLOT)",

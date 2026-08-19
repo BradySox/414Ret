@@ -87,8 +87,9 @@ Most of this is opt-in. Full list with toggles, defaults and known limitations:
   cold alert.
 - Native DCS data cartridges auto-load in Hornets, Vipers and CJS Super Hornets: comm presets
   matching the kneeboard, route with push times, boat TACAN/ICLS/ACLS, and the SA/HSD picture
-  (FLOT, no-strike zones, friendly orbits, recon-confirmed SAM rings). Vipers also get the
-  friendly recovery fields as Destination steerpoints, the briefed divert first. A per-flight
+  (FLOT, no-strike zones, friendly orbits, recon-confirmed SAM rings). Hornets get the
+  bullseye designated as the air-to-air waypoint; Vipers get the friendly recovery fields as
+  Destination steerpoints, the briefed divert first. A per-flight
   DTC tab controls the cartridge or any single section of it. Super Hornets carry no SA
   picture — the mod's cartridge format has no field for one.
 - A wing flying both boom and probe receivers gets a theater tanker of each, on separate

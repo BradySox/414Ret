@@ -131,7 +131,9 @@ planner side of the same idea.
 
 shapely `contains_xy` · escort-leash `mist.DBs.groupsById` · LGB fuze (#919) ·
 Super Hornet JSOW station-2 clsid (#918) · convoy name collision (#928, ported as
-414Ret#852) · weapon clsid groups (#922) · cloud preset packs (ours as #773).
+414Ret#852) · weapon clsid groups (#922) · cloud preset packs (ours as #773) · **ATMOS-X live
+METAR weather** (his #927; ours as 414Ret#902, landed 2026-08-19 — the cloud-preset half was
+already #773, this is the observation half).
 
 ### Open candidates, not taken
 
@@ -140,7 +142,6 @@ Super Hornet JSOW station-2 clsid (#918) · convoy name collision (#928, ported 
 | PySide6 6.4.2 → 6.8.3 (his #52) | On 6.4.x QtWebEngine composites the map through native desktop-GL, whose context cleanup deadlocks when a fullscreen GPU application — DCS — takes the GPU. 6.8 composites via D3D11. This is the "Retribution goes Not Responding" freeze. A dependency bump needs a real app run, not a test pass. |
 | Base capture zone radius (his #89) | Ours is `TRIGGER_RADIUS_CAPTURE = 3000`. He tested in-game that DCS ground AI engages T-72, BMP-2 and even an unarmed truck, but **never a ZU-23 emplacement** — so one surviving AD emplacement inside 3 km blocks a capture forever and dropped troops cannot clear it. He made it a setting, default 1000 m. |
 | IADS rebuild economy (his #97) | Comms/power/command buildings generate no income, so they have no repair price and stay rubble for the rest of the campaign. He priced them flat: 15M power, 10M command centre, 5M comms tower. Turns striking the network into an attrition loop. Sits beside §52. |
-| ATMOS-X live METAR weather (his #927) | We took the cloud-preset-pack half as #773. The METAR half replaces generated weather with a real observation, with a switch for whether it brings its date along. Fits §47. |
 | Weapon `range:` drives the stand-off ingress point | A package carrying a weapon whose range exceeds the doctrine ingress distance starts its run at that range instead of being dragged in. We have no equivalent. |
 
 ## Running the watch

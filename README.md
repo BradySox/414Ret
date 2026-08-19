@@ -113,6 +113,9 @@ Most of this is opt-in. Full list with toggles, defaults and known limitations:
   previous turn instead of re-rolling. Requires day-and-night missions.
 - The planner reads that weather — rain and storms ground automatic photo-recon and push
   low-level CAS and BAI behind all-weather strikes.
+- Optionally fly the real sky: with the ATMOS-X cloud pack and its CLI installed, the turn's
+  weather is a live METAR observation instead of a generated one. The campaign keeps its own
+  date and time. Falls back to generated weather if the observation cannot be fetched.
 - Strike packages headed into a defended area are timed just behind the SEAD servicing that
   SAM. Fly the SEAD yourself and the AI push forms behind you.
 - Also: overlapping jittered BARCAP waves, weighted off-mission combat resolution, per-side

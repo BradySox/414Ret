@@ -298,7 +298,7 @@ class Game:
 
     def advance_conditions(self) -> Conditions:
         """March the continuous campaign clock forward from this turn (§47)."""
-        return Conditions.advance(self.conditions, self.theater)
+        return Conditions.advance(self.conditions, self.theater, self.settings)
 
     @property
     def continuous_clock_active(self) -> bool:

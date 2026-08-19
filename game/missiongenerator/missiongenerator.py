@@ -39,6 +39,7 @@ from .convoyambushgenerator import ConvoyAmbushGenerator
 from .convoygenerator import ConvoyGenerator
 from .csargenerator import CsarGenerator
 from .drawingsgenerator import DrawingsGenerator
+from game.weather.atmosxliveweather import LiveWeather, apply_weather
 from .dtc import DtcGenerator
 from .environmentgenerator import EnvironmentGenerator
 from .flotgenerator import FlotGenerator
@@ -118,6 +119,11 @@ class MissionGenerator:
         EnvironmentGenerator(
             self.mission, self.game.conditions, self.time, auto_fog
         ).generate()
+        # The observation is already this turn's weather; this writes the parts of it
+        # the game's weather model has nowhere to keep (visibility distance, dust).
+        weather = self.game.conditions.weather
+        if isinstance(weather, LiveWeather):
+            apply_weather(self.mission.weather, weather.vdata)
 
         logging.info("MIZ generation: ground objects")
         tgo_generator = TgoGenerator(

@@ -449,7 +449,17 @@ procedure for measuring the ~217 airframes that still have no `fuel:` block.
 - **"Alpha build" means the CI `Build` workflow's latest run on `dev`, not a GitHub Release/tag.** Upstream publishes no alpha/beta releases or tags — `/releases` and `/tags` only ever show stable `v1.x.y`. The actual per-commit build (what the `#dev-builds` Discord bot posts as "Build #NNNN available!") is `actions/workflows/build.yml` filtered to `branch:dev`; its top row's commit SHA is upstream's current tip. Check that, not the releases page, when asked "what's the latest alpha." **As of 2026-08-19: build #3186 (commit `59719b2`, 2026-08-18) = the #928 convoy-counter fix, already ported fork-side via [414Ret#852](https://github.com/BradySox/414Ret/pull/852)** — so the fork was caught up as of the latest alpha build. Re-check the workflow's top `dev` row each time; PR-branch builds (e.g. `joruaz:MapTypes`) show above it in the unfiltered list and are not `dev`.
 - **Sync landed:** upstream dev @ `df9dbf39` merged in fork PR [414Ret#851](https://github.com/BradySox/414Ret/pull/851) (8 commits — the #931 TACAN/beacon conflict fix, UH-60L 2.1.5, the `CH_B-21.lua` payload rename, campaign data).
 - **Adopted from an open upstream PR:** #928's convoy name-collision fix, ported in fork PR [414Ret#852](https://github.com/BradySox/414Ret/pull/852). We were carrying the bug — `reset_numbers()` reset the convoy counters, so a long campaign eventually died on "Duplicate convoy unit" with no way out of the save.
-- **Watch, not yet adopted:** #926 (motorpool display/targeting follow-up, §56) · #930 (QComboBox plugin options, extends our merged #841) · #916 (bases-captured in the mission summary) · #934/#936 (map option persistence + new basemaps — collides with §19 and §42) · #927 (cloud preset packs). #938 (CH Ukraine id renames) and #939 (P-14 into the SA-5 group) are already done fork-side; upstream is converging on us there.
+- **Watch, not yet adopted:** #926 (motorpool display/targeting follow-up, §56) · #930 (QComboBox plugin options, extends our merged #841) · #916 (bases-captured in the mission summary) · #934/#936 (map option persistence + new basemaps — collides with §19 and §42). #938 (CH Ukraine id renames) and #939 (P-14 into the SA-5 group) are already done fork-side; upstream is converging on us there.
+- **Adopted in full from an open upstream PR: #927** (cloud presets). Both commits are in:
+  the selectable pack half landed 2026-08-03 (fork #773), the ATMOS-X live-weather half
+  2026-08-19. **Drift-watch when #927 merges** — the fork's port is not byte-identical, and
+  the divergences are deliberate: our migration rides `_migrate_legacy_settings`, the enum is
+  registered in `SERIALIZABLE_ENUM_TYPES`, and the ATMOS-X options are gated with the fork's
+  existing `enabled_when` (greys out, live across pages) rather than upstream's parallel
+  `visible_when` (hides). The live-weather half also needed three fork couplings upstream has
+  no reason to carry — §47's weather ladder, `Conditions.advance`, and §67's planner all had
+  to learn what a `LiveWeather` is. See
+  [414th-atmosx-live-weather-notes.md](docs/dev/design/414th-atmosx-live-weather-notes.md).
 
 **Sync 2026-07-26 — upstream dev @ `e9b2387e`** (merge base moved `acf02b75` → `e9b2387e`; fork PR
 [414Ret#726](https://github.com/BradySox/414Ret/pull/726)). Upstream shipped 12 commits over the

@@ -49,7 +49,7 @@ fire. The in-miz + `AutoLoad` shape is what fixed both.
 
 | Thing | Value |
 | --- | --- |
-| ETA / TOS | **absolute seconds since midnight** of the mission day (mission `start_time` 25200 = 07:00 ↔ first ETA 26353 = 07:19:13) |
+| ETA / TOS | seconds since **Zulu** midnight of the mission day — NOT the local mission clock. See the ETA correction below; the original reading of this row was wrong and shipped wrong for a year. |
 | Altitudes | meters (4572.000000018288 = exactly 15,000 ft) |
 | Speeds | **km/h** (the ME's unknown-leg default is 463.0 = 250 kt) |
 | Coordinates | mission-internal terrain XY (x = north, y = east) |
@@ -250,6 +250,61 @@ the `STPT<n>` id prefix regardless of sub-type. §74 emitted `STPT` for
 everything; it now marks target waypoints `TGT` and ingress waypoints `IP`. The
 old "the Viper marks targets via the route, not a point flag" comment was wrong.
 
+### ETA / TOS were local; the cartridge clock is Zulu (2026-08-19)
+
+**The bug §74 shipped with, reported from the cockpit and confirmed three ways.**
+
+The ME's own DTC manager states the base outright
+(`MissionEditor/modules/me_managerDTC.lua`):
+
+```lua
+function getTime()
+    return Mission.mission.start_time - (Terrain.GetTerrainConfig('SummerTimeDelta') * 3600)
+end
+```
+
+Mission time is theater-local; the cartridge's clock is that minus the map's
+UTC offset. Both jets agree:
+
+- **Hornet** — "Based on a Time on Target, or TOT, using **Zulu time**" and
+  "enter the hour:minute:second for the TOT based on Zulu time" (guide p123).
+- **Viper** — the CRUS TOS page shows the desired TOS beside **System Time**
+  (p107), and System Time "displays the internal system time in a 24-hour time
+  format based on **Zulu time (UTC)**" (p103, p115). The required-ground-speed
+  readout is TOS minus System Time, so TOS is Zulu.
+
+`seconds_of_day` emitted raw local seconds-of-day, so **every ETA and TOS in
+every cartridge was out by the map's offset** — 4 hours on Caucasus, Syria +3,
+Marianas +10, Nevada −8. It now converts through `game.theater.timezone`, whose
+per-theater values mirror DCS's `SummerTimeDelta`.
+
+The base stays the mission day's Zulu midnight rather than the wall clock's, so
+a sortie crossing 00:00Z hands the jet increasing times. The editor's TOS field
+carries a days component for exactly that case.
+
+**Why the original reading looked confirmed.** The evidence was a hand-built
+mission where a human typed 07:19:13 into the ME's ETA boxes for an 07:00 local
+start. That confirms the *encoding* (seconds since midnight) and says nothing
+about the reference — the human typed local into a field the jet reads as Zulu,
+which is the same mistake in a different chair.
+
+### The Viper kneeboard now reads Zulu too (2026-08-19)
+
+Fixing the cartridge exposed a second half of the same problem. The Hornet
+family's kneeboards already printed Zulu (`utc_kneeboard: true` on the FA-18C/E/F
+and EA-18G yamls), so those cards and the corrected cartridge agree. The **Viper
+had no flag**, so its card printed local while its avionics ran Zulu — card and
+DED an offset apart.
+
+`F-16C_50.yaml` now sets `utc_kneeboard: true`, sourced to the guide's System
+Time definition (p103). No code changed; the flag already drives every kneeboard
+time through the same conversion.
+
+**Unresolved and deliberately untouched:** kneeboard times carry **no Z suffix**
+on any airframe, so a Zulu card and a local card look identical. That predates
+this work and applies to the whole deck. And the other client airframes were not
+audited — each needs its own manual check before its flag is touched.
+
 ### The Hornet half: the guide has no DTC chapter
 
 Term census over all 424 pages: **FLOT, FAOR, corridor, MEZ, CAP point and DTC
@@ -423,5 +478,19 @@ Unlike the rest of §74, this targets a **mod** descriptor. Two consequences:
    emits `"TCN": []`. But it is the same staleness that broke the mod's *cockpit*
    scripts and crashed the SA page (2026-08-02); treat mod-vs-current-DCS drift as
    the default assumption, not the exception.
+
+**Re-mined at CJS v2.4 (2026-08-19), per the drift instruction above.**
+Unchanged: `MAIN_panels` is still the same five (`pWYPT`, `pRTE_SEQ`, `pTACAN`,
+`pCOMM`, `pALR67`) and `data` still has no `SA` and no `GPS_WYPT`, so
+`with_sa=False` holds and the `pSA` tripwire has not fired. The stale
+`TACAN_defs.lua` `dofile` is still there and still harmless (lazy, and we emit
+`"TCN": []`).
+
+**There is no Super Hornet manual to cross-check against.** No vendor PDF ships
+in `references/manuals/`, and the mod's own `Doc/` folder is empty. The
+applicable manual is the **FA-18C guide**, because the descriptor `dofile`s ED's
+`WYPT/NAV_SETTINGS.lua`, `COMM/*`, `ALR67/*` and `TCN/TACAN.lua` — so both
+cockpit corrections (the Zulu clock and the designated A/A waypoint) reach the
+E/F/G unchanged, locked by a test.
 
 In-game pass: checklist **B28**, CJS bullet.

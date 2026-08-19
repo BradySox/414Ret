@@ -7262,7 +7262,17 @@ switched off, which our routes never reach; it now points at the bullseye §74
 already emits and enables it, saving three cockpit presses a sortie. No bullseye
 in the plan leaves the stock 59/off. The Hornet guide has **no DTC chapter** —
 zero hits for FLOT, FAOR, corridor, MEZ, CAP point or DTC across 424 pages — so
-the descriptor stays the only source for the SA sections.
+the descriptor stays the only source for the SA sections. **ETA/TOS were wrong
+in every cartridge until 2026-08-19:** the ME's own DTC manager bases cartridge
+times on `mission.start_time - SummerTimeDelta*3600`, and both jets read them
+against a Zulu clock (Hornet TOT p123; Viper System Time p103 beside the CRUS
+TOS page p107), but `seconds_of_day` emitted raw local seconds — so every push
+time was out by the map's UTC offset, 4 h on Caucasus and 8 h on Nevada. Now
+converted through `game.theater.timezone`, based on the mission day's Zulu
+midnight so a sortie across 00:00Z still climbs. The kneeboard half was fixed
+with it: the Hornet family already printed Zulu, and `F-16C_50.yaml` gained
+`utc_kneeboard: true` so a Viper's card and its DED agree. Kneeboard times still
+carry no Z suffix on any airframe — pre-existing, deck-wide, untouched.
 Comm names pre-clamped to the ME's 5-uppercase-alphanumeric filter. **The Hornet's
 nine CAP_PTS slots are spent priority-then-completeness** (two flown 2026-07-19
 findings): the §6 BARCAP wave relief flies each station as several jittered

@@ -98,3 +98,7 @@ date_gated_properties:
 # Era gate for the DCS EPLRS (datalink) task. Sourcing and the permissive-when-absent
 # rule: docs/dev/design/414th-datalink-era-notes.md
 datalink_introduced: 2003
+# The avionics run Zulu: System Time on the DED/HUD is "based on Zulu time
+# (UTC)" (EA guide p103), and the CRUS TOS page compares desired TOS against
+# it. A local kneeboard put the card and the DED an offset apart.
+utc_kneeboard: true

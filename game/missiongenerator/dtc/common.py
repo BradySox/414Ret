@@ -14,7 +14,7 @@ from __future__ import annotations
 import math
 import re
 from dataclasses import dataclass
-from datetime import datetime, time as time_of_day
+from datetime import datetime, timezone as tz
 from typing import TYPE_CHECKING, Optional
 
 from dcs import Point
@@ -75,16 +75,28 @@ def short_callsign(callsign: str) -> str:
 
 
 def seconds_of_day(game: Game, when: Optional[datetime]) -> int:
-    """Absolute seconds since midnight of the mission day (the DTC ETA base).
+    """Seconds since Zulu midnight of the mission day -- the cartridge's clock.
 
-    The mission's ``start_time`` is seconds-since-midnight; waypoint ETAs in a
-    cartridge use the same clock (confirmed against a working mission: start
-    25200 = 07:00, first steerpoint ETA 26353 = 07:19:13).
+    DCS mission time is theater-local, but cartridge times are Zulu. The ME's
+    own DTC manager bases them on ``mission.start_time - SummerTimeDelta*3600``
+    (``me_managerDTC.lua``), and both jets read them against a Zulu system
+    clock: the Hornet's TOT is entered in Zulu (FA-18C guide p123) and the
+    Viper's CRUS TOS page sits beside a System Time that is "based on Zulu time
+    (UTC)" (F-16C guide p103, p107). Emitting local put every ETA out by the
+    map's UTC offset -- +4 h on Caucasus, -8 h on Nevada.
+
+    The base stays the mission day's midnight rather than the wall clock's, so
+    ETAs across a Zulu midnight keep increasing (the editor's TOS field carries
+    a days component for exactly that).
     """
     if when is None:
         return 0
-    midnight = datetime.combine(game.conditions.start_time.date(), time_of_day())
-    return max(0, int((when - midnight).total_seconds()))
+    start_zulu = game.conditions.start_time.replace(
+        tzinfo=game.theater.timezone
+    ).astimezone(tz.utc)
+    midnight = start_zulu.replace(hour=0, minute=0, second=0, microsecond=0)
+    when_zulu = when.replace(tzinfo=game.theater.timezone).astimezone(tz.utc)
+    return max(0, int((when_zulu - midnight).total_seconds()))
 
 
 def leg_speed_kmh(prev: Optional[FlightWaypoint], current: FlightWaypoint) -> float:

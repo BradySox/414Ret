@@ -123,6 +123,11 @@ Read before touching a campaign's `.yaml`, `.miz` or build tool.
 - **Framework / tooling** — `414th-framework-consolidation-notes.md`,
   `414th-mist-moose-shim-notes.md` (**the shim that retired MIST**),
   `414th-moose-ops-opportunity-map.md`, `414th-lua-plugin-harness-notes.md`
+- **Structure / debt** — `414th-doc-mass-notes.md` — the 2026-08-19 trim of
+  `414th-features.md` (104.3k → 95.8k words, all 91 sections and every §N anchor intact):
+  what was cut, the constraints extracted out of removed features before cutting, the six
+  sections still needing sub-headings, and **how to replace a section without destroying its
+  neighbours** — the first attempt silently deleted four live sections.
 - **Process** — `414th-verification-cadence-notes.md` (the fly-card throttle, proposed),
   `414th-dcs-olympus-notes.md`, `414th-ui-redesign-directions.md` (+ `-mockups.html`)
 

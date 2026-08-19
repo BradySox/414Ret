@@ -104,15 +104,19 @@ Most of this is opt-in. Full list with toggles, defaults and known limitations:
   stored heading in seconds, a Phantom waits on its gyros. Everything else uses the
   campaign-wide setting.
 - Tanker and AWACS orbits are drawn on the F10 map with callsign, frequency and TACAN.
-- Drop tanks are fitted for the sortie before tanker passes are decided, so jets stop
-  double-tanking sorties their real load covers. The Payload tab shows burn, passes and RTB
-  margin live.
+- The Payload tab shows the sortie's fuel plan live: planned burn, what the jet carries
+  internally and in tanks, the RTB margin with no tanker, and how many tanker passes the
+  route has. It flags a sortie that only gets home on a top-off, so you can add a bag or
+  trim the route before you fly it.
 - SAM batteries field two guidance radars, spaced so one missile cannot take both. New
   campaigns only.
 - One continuous clock: time advances a few hours per turn and weather evolves from the
   previous turn instead of re-rolling. Requires day-and-night missions.
 - The planner reads that weather — rain and storms ground automatic photo-recon and push
   low-level CAS and BAI behind all-weather strikes.
+- Optionally fly the real sky: with the ATMOS-X cloud pack and its CLI installed, the turn's
+  weather is a live METAR observation instead of a generated one. The campaign keeps its own
+  date and time. Falls back to generated weather if the observation cannot be fetched.
 - Strike packages headed into a defended area are timed just behind the SEAD servicing that
   SAM. Fly the SEAD yourself and the AI push forms behind you.
 - Also: overlapping jittered BARCAP waves, weighted off-mission combat resolution, per-side

@@ -3,7 +3,7 @@ import logging
 import zipfile
 from dataclasses import dataclass
 from functools import lru_cache
-from typing import Callable, Optional, Dict
+from typing import Any, Callable, Optional, Dict
 
 from PySide6 import QtWidgets
 from PySide6.QtCore import QItemSelectionModel, QPoint, QSize, Qt
@@ -44,6 +44,7 @@ from game.settings import (
     MinutesOption,
     OptionDescription,
     Settings,
+    TextOption,
     apply_planner_suite,
     apply_preset,
     detect_planner_suite,
@@ -257,7 +258,7 @@ class AutoSettingsLayout(QGridLayout):
         # For the dependency-greying (enabled_when): the label per field, and each
         # child field's (master, enabled_value) spec.
         self.labels_map: Dict[str, QLabel] = {}
-        self.enabled_specs: Dict[str, tuple[str, bool]] = {}
+        self.enabled_specs: Dict[str, tuple[str, Any]] = {}
         #: Every field in this section, in row order, plus its descriptor -- the
         #: filter and the advanced disclosure both walk this.
         self.descriptions: Dict[str, OptionDescription] = {}
@@ -299,6 +300,8 @@ class AutoSettingsLayout(QGridLayout):
                 self.add_spinner_for(row, name, description)
             elif isinstance(description, MinutesOption):
                 self.add_duration_controls_for(row, name, description)
+            elif isinstance(description, TextOption):
+                self.add_line_edit_for(row, name, description)
             else:
                 raise TypeError(f"Unhandled option type: {description}")
         self._wire_dependency_greying()
@@ -400,7 +403,14 @@ class AutoSettingsLayout(QGridLayout):
 
     def refresh_enabled_states(self) -> None:
         for name, (master, expected) in self.enabled_specs.items():
-            enabled = bool(self.sc.settings.__dict__.get(master, False)) == expected
+            actual = self.sc.settings.__dict__.get(master)
+            if isinstance(expected, bool):
+                # The original shorthand: any truthy master value satisfies it.
+                enabled = bool(actual) == expected
+            else:
+                # An enum member (a knob that only applies to one choice of a
+                # dropdown) is matched on identity of value, not truthiness.
+                enabled = actual == expected
             control = self.settings_map.get(name)
             if control is not None:
                 self._set_control_enabled(control, enabled)
@@ -462,6 +472,19 @@ class AutoSettingsLayout(QGridLayout):
         combobox.currentIndexChanged.connect(on_changed)
         self.addWidget(combobox, row, 1, Qt.AlignmentFlag.AlignRight)
         self.settings_map[name] = combobox
+
+    def add_line_edit_for(self, row: int, name: str, description: TextOption) -> None:
+        edit = QLineEdit(self.sc.settings.__dict__[name])
+        if description.placeholder is not None:
+            edit.setPlaceholderText(description.placeholder)
+
+        def on_changed(value: str) -> None:
+            self.sc.settings.__dict__[name] = value.strip()
+
+        edit.textChanged.connect(on_changed)
+        edit.setMinimumWidth(260)
+        self.addWidget(edit, row, 1, Qt.AlignmentFlag.AlignRight)
+        self.settings_map[name] = edit
 
     def add_float_spin_slider_for(
         self, row: int, name: str, description: BoundedFloatOption
@@ -532,6 +555,8 @@ class AutoSettingsLayout(QGridLayout):
                 widget.setValue(value)
             elif isinstance(widget, TimeInputs):
                 widget.spinner.setValue(value.seconds // 60)
+            elif isinstance(widget, QLineEdit):
+                widget.setText(value)
             # The campaign badge belongs to the campaign, not the value, and the
             # wizard swaps campaigns under a built dialog -- so re-render it here.
             label = self.labels_map.get(name)

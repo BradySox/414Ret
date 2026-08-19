@@ -57,14 +57,31 @@ def _weather(game: "Game") -> object:
     return getattr(conditions, "weather", None)
 
 
+def _archetype_id(game: "Game") -> str:
+    """The sky's archetype id, for weather that is not one of the generated classes.
+
+    A real observation (ATMOS-X live weather, upstream #927) is a ``LiveWeather``,
+    not a ``Raining``/``Thunderstorm``, so an isinstance read alone would call a
+    live thunderstorm clear and fly the recon into it. Every ``Weather`` carries
+    an archetype; an unreadable one degrades to clear like the rest of this module.
+    """
+    archetype = getattr(_weather(game), "archetype", None)
+    ident = getattr(archetype, "id", None)
+    return ident if isinstance(ident, str) else ""
+
+
 def poor_visibility_weather(game: "Game") -> bool:
     """True in rain or thunderstorm -- the camera-blind sky."""
-    return isinstance(_weather(game), (Raining, Thunderstorm))
+    if isinstance(_weather(game), (Raining, Thunderstorm)):
+        return True
+    return _archetype_id(game) in ("raining", "thunderstorm")
 
 
 def storm(game: "Game") -> bool:
     """True in a thunderstorm -- the sky that grounds low-level visual attack."""
-    return isinstance(_weather(game), Thunderstorm)
+    if isinstance(_weather(game), Thunderstorm):
+        return True
+    return _archetype_id(game) == "thunderstorm"
 
 
 def recon_suppressed(game: "Game") -> bool:

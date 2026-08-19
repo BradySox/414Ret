@@ -448,7 +448,17 @@ procedure for measuring the ~217 airframes that still have no `fuel:` block.
 - **Freeze indicators unchanged as of 2026-08-16:** newest published release is still v1.5.0 (2026-04-13) and `test/1.6`'s tip has not moved since 2026-07-25, while `dev` merged through 08-15. Still only the DM lifts it.
 - **Sync landed:** upstream dev @ `df9dbf39` merged in fork PR [414Ret#851](https://github.com/BradySox/414Ret/pull/851) (8 commits — the #931 TACAN/beacon conflict fix, UH-60L 2.1.5, the `CH_B-21.lua` payload rename, campaign data).
 - **Adopted from an open upstream PR:** #928's convoy name-collision fix, ported in fork PR [414Ret#852](https://github.com/BradySox/414Ret/pull/852). We were carrying the bug — `reset_numbers()` reset the convoy counters, so a long campaign eventually died on "Duplicate convoy unit" with no way out of the save.
-- **Watch, not yet adopted:** #926 (motorpool display/targeting follow-up, §56) · #930 (QComboBox plugin options, extends our merged #841) · #916 (bases-captured in the mission summary) · #934/#936 (map option persistence + new basemaps — collides with §19 and §42) · #927 (cloud preset packs). #938 (CH Ukraine id renames) and #939 (P-14 into the SA-5 group) are already done fork-side; upstream is converging on us there.
+- **Watch, not yet adopted:** #926 (motorpool display/targeting follow-up, §56) · #930 (QComboBox plugin options, extends our merged #841) · #916 (bases-captured in the mission summary) · #934/#936 (map option persistence + new basemaps — collides with §19 and §42). #938 (CH Ukraine id renames) and #939 (P-14 into the SA-5 group) are already done fork-side; upstream is converging on us there.
+- **Adopted in full from an open upstream PR: #927** (cloud presets). Both commits are in:
+  the selectable pack half landed 2026-08-03 (fork #773), the ATMOS-X live-weather half
+  2026-08-19. **Drift-watch when #927 merges** — the fork's port is not byte-identical, and
+  the divergences are deliberate: our migration rides `_migrate_legacy_settings`, the enum is
+  registered in `SERIALIZABLE_ENUM_TYPES`, and the ATMOS-X options are gated with the fork's
+  existing `enabled_when` (greys out, live across pages) rather than upstream's parallel
+  `visible_when` (hides). The live-weather half also needed three fork couplings upstream has
+  no reason to carry — §47's weather ladder, `Conditions.advance`, and §67's planner all had
+  to learn what a `LiveWeather` is. See
+  [414th-atmosx-live-weather-notes.md](docs/dev/design/414th-atmosx-live-weather-notes.md).
 
 **Sync 2026-07-26 — upstream dev @ `e9b2387e`** (merge base moved `acf02b75` → `e9b2387e`; fork PR
 [414Ret#726](https://github.com/BradySox/414Ret/pull/726)). Upstream shipped 12 commits over the

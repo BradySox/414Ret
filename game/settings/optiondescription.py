@@ -1,11 +1,14 @@
 from dataclasses import dataclass, field
-from typing import Optional, Tuple, Union
+from typing import Any, Optional, Tuple, Union
 
 SETTING_DESCRIPTION_KEY = "DCS_LIBERATION_SETTING_DESCRIPTION_KEY"
 
 #: A dependency: (master_field_name, value_that_enables_this_option). The settings
-#: dialog greys this option out whenever ``settings.<master_field> != value``.
-EnabledWhen = Tuple[str, bool]
+#: dialog greys this option out whenever ``settings.<master_field> != value``. The
+#: value is usually a bool, but an enum member works too -- a knob that only means
+#: something for one choice of a dropdown (ATMOS-X live weather under the cloud-preset
+#: pack) is the same dependency as one gated on a checkbox.
+EnabledWhen = Tuple[str, Any]
 
 
 def normalize_enabled_when(
@@ -19,7 +22,9 @@ def normalize_enabled_when(
     if isinstance(value, str):
         return (value, True)
     master, expected = value
-    return (str(master), bool(expected))
+    # Deliberately not coerced: a bool stays a bool (the old shorthand), an enum
+    # member stays itself, so the dialog can compare against either.
+    return (str(master), expected)
 
 
 @dataclass(frozen=True)

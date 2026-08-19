@@ -10,6 +10,7 @@ from game.settings import Settings, NightMissions
 from game.theater import ConflictTheater, SeasonalConditions
 from game.theater.seasonalconditions import determine_season
 from game.timeofday import TimeOfDay
+from game.weather.atmosxliveweather import live_weather_for
 from game.weather.weather import Weather, Thunderstorm, Raining, Cloudy, ClearSkies
 
 # Continuous campaign clock (feature §47): how many hours the mission clock
@@ -61,10 +62,17 @@ class Conditions:
                 theater, day, time_of_day, settings.night_day_missions
             )
 
+        # A real observation, when the player asked for one and it could be fetched.
+        # It has to be decided here rather than at mission generation: the kneeboards,
+        # the active runway and the carrier's course into wind all read this weather.
+        weather = live_weather_for(theater, settings) or cls.generate_weather(
+            theater.seasonal_conditions, day, time_of_day
+        )
+
         return cls(
             time_of_day=time_of_day,
             start_time=_start_time,
-            weather=cls.generate_weather(theater.seasonal_conditions, day, time_of_day),
+            weather=weather,
         )
 
     @classmethod
@@ -72,6 +80,7 @@ class Conditions:
         cls,
         previous: Conditions,
         theater: ConflictTheater,
+        settings: Settings | None = None,
     ) -> Conditions:
         """March a continuous campaign clock forward from the previous turn.
 
@@ -81,21 +90,31 @@ class Conditions:
         previous turn's state, so the campaign reads as one continuous timeline
         (feature §47). Time of day is derived from the marched clock; the date
         rolls over naturally at midnight.
+
+        ``settings`` is optional only so a caller with no settings to hand (the
+        clock tests) still gets a marched clock; without it there is no live
+        weather to ask for.
         """
         interval = datetime.timedelta(
             hours=random.randint(MIN_TURN_ADVANCE_HOURS, MAX_TURN_ADVANCE_HOURS)
         )
         start_time = previous.start_time + interval
         time_of_day = theater.daytime_map.best_guess_time_of_day_at(start_time.time())
+        # A real observation is this turn's sky whether the clock marched or not --
+        # hooking only `generate` would leave live weather working on turn 1 and
+        # never again, since every later turn comes through here.
+        weather = (
+            live_weather_for(theater, settings) if settings is not None else None
+        ) or cls.generate_weather(
+            theater.seasonal_conditions,
+            start_time.date(),
+            time_of_day,
+            previous=previous.weather,
+        )
         return cls(
             time_of_day=time_of_day,
             start_time=start_time,
-            weather=cls.generate_weather(
-                theater.seasonal_conditions,
-                start_time.date(),
-                time_of_day,
-                previous=previous.weather,
-            ),
+            weather=weather,
         )
 
     @classmethod
@@ -177,9 +196,29 @@ class Conditions:
         else:
             # Continuous campaign weather (feature §47): evolve from the previous
             # turn so systems move through gradually.
-            weather_type = cls._evolve_weather_type(chances, type(previous))
+            weather_type = cls._evolve_weather_type(chances, cls._ladder_type(previous))
         logging.debug("Weather: Type {}".format(weather_type))
         return weather_type(seasonal_conditions, day, time_of_day)
+
+    @staticmethod
+    def _ladder_type(previous: Weather) -> WeatherClass:
+        """The ladder rung a previous turn's weather sits on.
+
+        Normally just its class. A real observation (ATMOS-X live weather) is a
+        ``LiveWeather``, which is on no rung of its own -- taking its class would
+        raise from the `next()` below. It reports the archetype it actually
+        observed, so the next turn evolves from the sky that was flown.
+        """
+        previous_type = type(previous)
+        if previous_type in _WEATHER_LADDER:
+            return previous_type  # type: ignore[return-value]
+        by_archetype: dict[str, WeatherClass] = {
+            "clear": ClearSkies,
+            "cloudy": Cloudy,
+            "raining": Raining,
+            "thunderstorm": Thunderstorm,
+        }
+        return by_archetype.get(previous.archetype.id, ClearSkies)
 
     @staticmethod
     def _evolve_weather_type(

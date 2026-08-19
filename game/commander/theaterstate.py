@@ -341,7 +341,9 @@ def _aewc_targets(finder: ObjectiveFinder) -> list[MissionTarget]:
     red A-50 orbited its rearmost home base 424 NM from the enemy fleet
     (2026-07-17 Scenic Route Merged; third campaign showing it). On a
     front-less theater the anchor is instead the friendly CP NEAREST the
-    enemy: where the fight actually is.
+    enemy: where the fight actually is -- but still one that HOSTS an AWACS, or
+    the aircraft flies the theater to reach its own orbit (test 9: Ben Gurion
+    picked, the only land E-3A at Akrotiri 164 NM away).
     """
     targets: list[MissionTarget] = [
         cp for cp in finder.friendly_control_points() if cp.is_carrier
@@ -349,5 +351,5 @@ def _aewc_targets(finder: ObjectiveFinder) -> list[MissionTarget]:
     if any(True for _ in finder.front_lines()):
         targets.append(finder.aewc_land_anchor())
     else:
-        targets.append(finder.closest_friendly_control_point())
+        targets.append(finder.forward_aewc_land_anchor())
     return targets

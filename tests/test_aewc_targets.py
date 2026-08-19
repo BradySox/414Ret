@@ -26,6 +26,7 @@ def _finder(
     farthest: Any,
     closest: Any,
     anchor: Any = None,
+    forward_anchor: Any = None,
 ) -> Any:
     return SimpleNamespace(
         friendly_control_points=lambda: iter(cps),
@@ -35,6 +36,11 @@ def _finder(
         # ObjectiveFinder.aewc_land_anchor: the rear pick, biased toward a field
         # that actually hosts an AWACS. Defaults to the stock rear pick here.
         aewc_land_anchor=lambda: farthest if anchor is None else anchor,
+        # ObjectiveFinder.forward_aewc_land_anchor: the front-less pick, biased the
+        # same way. Defaults to the stock closest pick here.
+        forward_aewc_land_anchor=(
+            lambda: closest if forward_anchor is None else forward_anchor
+        ),
     )
 
 
@@ -66,6 +72,22 @@ def test_frontless_theater_anchors_on_the_forward_field() -> None:
         fronts=[], cps=[boat, rear, forward], farthest=rear, closest=forward
     )
     assert _aewc_targets(finder) == [boat, forward]
+
+
+def test_frontless_theater_takes_the_awacs_hosting_field() -> None:
+    # Test 9 (2026-08-18): a front-less Syria turn anchored on Ben Gurion, the CP
+    # nearest the enemy, which hosts no AWACS -- while the wing's only land E-3A
+    # sat at Akrotiri and flew 182 NM each way to reach its own orbit. The forward
+    # pick is now basing-aware like the rear one.
+    boat, forward, host = _cp("CVN", carrier=True), _cp("Forward"), _cp("AwacsHome")
+    finder = _finder(
+        fronts=[],
+        cps=[boat, forward, host],
+        farthest=host,
+        closest=forward,
+        forward_anchor=host,
+    )
+    assert _aewc_targets(finder) == [boat, host]
 
 
 # ---- PlanAewc basing-aware squadron preference --------------------------------
@@ -141,3 +163,78 @@ def test_no_matching_basing_falls_back_to_generic_ranking() -> None:
     dhafra = SimpleNamespace(is_carrier=False, is_fleet=False, position=_XY(-9_000, 0))
     squadrons = [_aewc_sqn("E-2C", boat), _aewc_sqn("E-3A", dhafra, untasked=0)]
     assert _plan_aewc(land_target, squadrons)._preferred_aewc_type() is None
+
+
+# ---- ObjectiveFinder._aewc_hosting_anchor -------------------------------------
+#
+# Where the direction actually lives. Both anchors share one walk over the
+# unthreatened land CPs that host a usable AWACS; the rear pick takes the one
+# farthest from threats, the forward pick the one nearest.
+
+
+def _host_cp(name: str, threat_distance: float, hosts_awacs: bool = True) -> Any:
+    from game.ato.flighttype import FlightType
+
+    squadrons = (
+        [
+            SimpleNamespace(
+                capable_of=lambda task: task is FlightType.AEWC, untasked_aircraft=2
+            )
+        ]
+        if hosts_awacs
+        else []
+    )
+    return SimpleNamespace(
+        name=name,
+        is_carrier=False,
+        squadrons=squadrons,
+        position=SimpleNamespace(name=name, threat_distance=threat_distance),
+    )
+
+
+def _objective_finder(
+    cps: list[Any], *, threatened: frozenset[str] = frozenset()
+) -> Any:
+    from game.commander.objectivefinder import ObjectiveFinder
+    from game.theater import Player
+    from game.utils import meters
+
+    finder = ObjectiveFinder.__new__(ObjectiveFinder)
+    finder.is_player = Player.BLUE
+    zones = SimpleNamespace(
+        threatened=lambda pos: pos.name in threatened,
+        distance_to_threat=lambda pos: meters(pos.threat_distance),
+    )
+    finder.game = SimpleNamespace(threat_zone_for=lambda _: zones)  # type: ignore[assignment]
+    finder.friendly_control_points = lambda: iter(cps)  # type: ignore[method-assign]
+    return finder
+
+
+def test_the_rear_anchor_takes_the_farthest_hosting_field() -> None:
+    near, far = _host_cp("Near", 10_000), _host_cp("Far", 300_000)
+    assert _objective_finder([near, far])._aewc_hosting_anchor(forward=False) is far
+
+
+def test_the_forward_anchor_takes_the_nearest_hosting_field() -> None:
+    near, far = _host_cp("Near", 10_000), _host_cp("Far", 300_000)
+    assert _objective_finder([near, far])._aewc_hosting_anchor(forward=True) is near
+
+
+def test_a_field_with_no_awacs_is_never_the_anchor() -> None:
+    # The test 9 defect: Ben Gurion was nearest the enemy and hosted nothing.
+    bare, host = _host_cp("Bare", 10_000, hosts_awacs=False), _host_cp("Host", 300_000)
+    finder = _objective_finder([bare, host])
+    assert finder._aewc_hosting_anchor(forward=True) is host
+
+
+def test_a_threatened_field_is_never_the_anchor() -> None:
+    exposed, safe = _host_cp("Exposed", 5_000), _host_cp("Safe", 50_000)
+    finder = _objective_finder([exposed, safe], threatened=frozenset({"Exposed"}))
+    assert finder._aewc_hosting_anchor(forward=True) is safe
+
+
+def test_no_hosting_field_returns_none_so_each_caller_falls_back() -> None:
+    bare = _host_cp("Bare", 10_000, hosts_awacs=False)
+    finder = _objective_finder([bare])
+    assert finder._aewc_hosting_anchor(forward=True) is None
+    assert finder._aewc_hosting_anchor(forward=False) is None

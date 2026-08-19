@@ -285,16 +285,15 @@ class ObjectiveFinder:
             raise RuntimeError("Found no friendly control points. You probably lost.")
         return farthest
 
-    def aewc_land_anchor(self) -> ControlPoint:
-        """The rear-safe land AEW&C anchor, biased to a field that hosts an AWACS.
+    def _aewc_hosting_anchor(self, *, forward: bool) -> ControlPoint | None:
+        """The unthreatened land CP hosting a usable AWACS, rear-most or forward-most.
 
-        The orbit is laid out relative to this CP, so a pick made purely on
-        distance-from-threat can strand the wing's only AWACS across the theater:
-        the flown Sinai plan took a rear field 1.1 NM safer than the one the single
-        E-3A actually flew from, and sent it 245 NM to orbit beside a third field
-        (brady.retribution, 2026-08-17). Falls back to the stock rear pick when no
-        unthreatened friendly field hosts an AEW&C squadron, so an all-carrier wing
-        still anchors somewhere sane.
+        Shared by both AEW&C anchors. The orbit is laid out relative to whatever
+        this returns, and the squadron that flies it is chosen separately, so an
+        anchor picked without asking where the wing's AWACS actually live sends the
+        aircraft across the theater to orbit beside a field it did not come from.
+        None when no unthreatened field hosts one -- each caller then falls back to
+        its own stock pick, so an all-carrier wing still anchors somewhere sane.
         """
         threat_zones = self.game.threat_zone_for(self.is_player.opponent)
         best: ControlPoint | None = None
@@ -310,11 +309,39 @@ class ObjectiveFinder:
             ):
                 continue
             distance = threat_zones.distance_to_threat(cp.position)
-            if best is None or distance > best_distance:
+            closer = distance < best_distance if forward else distance > best_distance
+            if best is None or closer:
                 best, best_distance = cp, distance
-        if best is not None:
-            return best
-        return self.farthest_friendly_control_point()
+        return best
+
+    def aewc_land_anchor(self) -> ControlPoint:
+        """The rear-safe land AEW&C anchor, biased to a field that hosts an AWACS.
+
+        The orbit is laid out relative to this CP, so a pick made purely on
+        distance-from-threat can strand the wing's only AWACS across the theater:
+        the flown Sinai plan took a rear field 1.1 NM safer than the one the single
+        E-3A actually flew from, and sent it 245 NM to orbit beside a third field
+        (brady.retribution, 2026-08-17). Falls back to the stock rear pick when no
+        unthreatened friendly field hosts an AEW&C squadron, so an all-carrier wing
+        still anchors somewhere sane.
+        """
+        return self._aewc_hosting_anchor(forward=False) or (
+            self.farthest_friendly_control_point()
+        )
+
+    def forward_aewc_land_anchor(self) -> ControlPoint:
+        """The front-less land AEW&C anchor: the most forward field hosting an AWACS.
+
+        With no front line the orbit holds at its target, so the rear pick parks the
+        AWACS out of the war and the stock answer is instead the CP nearest the
+        enemy. That pick asked nothing about basing: on a front-less Syria turn it
+        took Ben Gurion, which hosts no AWACS, while the wing's only land E-3A sat
+        at Akrotiri **164 NM away** and flew that each way to reach the orbit
+        (test 9, 2026-08-18). Same rule as the rear anchor, forward instead of back.
+        """
+        return self._aewc_hosting_anchor(forward=True) or (
+            self.closest_friendly_control_point()
+        )
 
     def closest_friendly_control_point(self) -> ControlPoint:
         """Finds the friendly control point that is closest to any threats."""

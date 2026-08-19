@@ -1169,8 +1169,6 @@ to lift. The `recon` plugin still runs and still writes `tars_recon_captures`; n
 consumes it. Whether to delete `FlightType.TARPS` and the plugin is an open call, not a
 flight test. The pass description below is kept for reading old sessions.
 
-
-
 **History:** **REBUILT 2026-08-05** `units-runway-generation-bf755e`, from the DM's "the system as a whole needs a fresh look". The old split — MOOSE `Ops.TARS` event callbacks for the player, a geometric overflight check for the AI — was two unrelated implementations of one question that could not agree by construction, which is why "is TARS broken" was unanswerable. **MOOSE `Ops.TARS` is cut.** All it contributed was a unit NAME scraped off a `Snapshot` whose schema was never confirmed (`snap.name or snap.unitName or snap.UnitName`, under a comment saying the one-time dump existed so the schema "can be confirmed in-game") — if all three guesses were wrong the player path recorded nothing, silently, forever, while the AI path kept working. **PASS:** fly a player TARPS sortie over a fogged enemy site, land, and confirm (a) the "RECON: … confirmed BDA on N target(s)" cue appears **only after touchdown**, not over the target, and (b) the site is un-fogged at debrief; repeat with an AI-flown recon flight and confirm identical behaviour. Then fly one pass HIGH (≥40,000 ft) and one at a normal recon altitude over comparable sites and confirm the high pass banks fewer targets. **FAIL signatures:** the cue firing over the target (the landing gate broke); a player sortie confirming nothing while an AI one works, or vice versa (the two paths have diverged again — the exact defect the rebuild removes); nothing ever confirming (check the `DCSRetribution|Recon armed for N recon flight(s)` line at load); or altitude/cloud making no difference at all. NOTE the deliberate asymmetry — the CAPTURE happens on overfly and is **not** gated on landing, because missions routinely end before flights land; only the cue waits. Emitter + runtime are covered by `game/missiongenerator/tests/test_reconluadata.py` (16) and `tests/lua/test_recon_runtime.py` (13), which pin the landing-held cue, the capture surviving a flight that never lands, and both degradation curves) (was ✗ REGRESSED 2026-08-05 — "G2 needs reworking"; was ☑ VERIFIED 2026-06-24 as the MOOSE TARS bridge
 - **Setup:** Fly an F-14 TARPS recon pass over enemy targets.
 - **Pass:** Captured-target snapshots feed back into Retribution's BDA
@@ -3874,7 +3872,6 @@ be settled from a recording instead of the cockpit. It can, across all six recor
 
 **Setup card:** [flycards/REGRESSED-SWEEP.md](flycards/REGRESSED-SWEEP.md) — one Starfire campaign (`operation_desert_trident`) clears this alongside B49, C9 and B48.
 
-**Setup card:** [flycards/REGRESSED-SWEEP.md](flycards/REGRESSED-SWEEP.md) — clears all three regressed rows in two missions.
 
 > **Test 9 flown 2026-08-18** (Syria `operation_desert_trident`, `Tacview-20260818-214946` + `dcs.log` + `state.json` + the generated `.miz`) — **the 2026-08-18 fix works; a site that FIRES still does not move.**
 > Three sites, and the discriminator is the fire mission, exactly as in test 6:

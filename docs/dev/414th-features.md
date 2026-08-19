@@ -759,6 +759,8 @@ viewers through ~15 call sites:
 Several player-facing dialogs were reworked to surface planner reasoning instead of
 just raw data.
 
+### Map and dialog panels
+
 **Target Intel panel** (`qt_ui/windows/groundobject/QGroundObjectMenu.py`):
 Every ground-object dialog now opens with a read-only `Target Intel` group showing
 target type, allegiance, mission types valid against it, known live/destroyed unit
@@ -784,6 +786,8 @@ and distance to target.
 loaded `missing.png` (which contains the literal text "Missing Recon Picture").
 Cards now skip the image widget when no real icon exists and show a compact
 name + value layout instead.
+
+### Flight altitude editing
 
 **Flight altitude editing** (`qt_ui/windows/mission/flight/waypoints/QFlightWaypointTab.py`,
 `QFlightWaypointList.py`):
@@ -826,6 +830,8 @@ reviewer's suggested shape:
 
 Pinned in `tests/test_bulk_waypoint_altitude.py` (the two filter helpers are module-level
 functions so the rule is testable without building the widget).
+
+### Kneeboards
 
 **Kneeboard consolidation + overflow pagination** (`game/missiongenerator/kneeboard.py`,
 `kneeboard_page.py`): kneeboards are built once per `.miz` by `KneeboardGenerator.generate()`,
@@ -1601,40 +1607,13 @@ in-game pass (the F-4E OCA case now shows a pre/post-strike tanker + a non-negat
 
 ## 8. Robustness / crash fixes
 
+Grouped by subsystem 2026-08-19; the entries themselves are unchanged. Each is a
+defect that reached a build, most of them found by flying.
+
+### Flight plans and routing
+
 - Flight-combat-exit `IndexError`: `game/ato/flightstate/inflight.py` guards in
   `__init__` and `next_waypoint_state()`.
-- **AI helicopter terrain CFIT (the flown Red Tide M1 Harz/Sauerland pattern, fixed
-  2026-07-12).** Three compounding upstream-shared defects put AI helos on collision
-  courses with high terrain (two Mi-8s dead within 46 s of unpause, a Mi-24 escort into
-  the Sauerland — while the flat-ground H FRG 12 pair flew the identical plan cleanly):
-  (1) `WaypointBuilder.get_cruise_altitude` short-circuited every helo altitude to the
-  *combat* AGL setting (`heli_combat_alt_agl`, 100 ft in the flown save), so all transit
-  waypoints (JOIN/HOLD/REFUEL/NAV) were planned at treetop height — now returns the
-  dedicated `heli_cruise_alt_agl` (500 ft default; the pattern ferry/rtb already used);
-  (2) a RADIO (AGL) waypoint anchors the commanded altitude to terrain only AT the
-  waypoint and DCS interpolates straight between waypoints, so 40–110 km low legs were
-  commanded through ridge lines — `WaypointGenerator._insert_helo_terrain_anchors()` now
-  subdivides every long RADIO leg of an AI helo route with **speed-locked** "TERRAIN"
-  Turning Points every ≤5 NM (`MAX_HELO_ANCHOR_SPACING`), giving piecewise
-  terrain-following without Python needing elevation data (none exists at generation);
-  racetrack orbit legs and human-crewed flights are never touched. **Lock-flag fix
-  2026-07-12 (the first generated Red Tide M2 tripped it):** the anchors originally
-  inserted with BOTH speed and ETA unlocked, which DCS rejects at mission start on any
-  leg not bracketed by TOT-locked waypoints ("has both unlocked speed and time and not
-  surrounded by waypoints with locked time" on every subdivided helo RTB leg — AH-64D
-  CAS + both Mi-24P BAI/Escort flights); they now insert speed-locked (the state DCS
-  accepts everywhere else) and `_resolve_locked_speed_time_conflicts`, which runs right
-  after in `build()`, unlocks any anchor that lands between TOT-locked waypoints (the
-  inverse rejection). Verified by a full-route lock-flag sweep of a regenerated M2 miz
-  (0 violations; the errored miz showed exactly the three flagged flights); (3) both air-start
-  spawner paths set only `points[0].alt_type = "RADIO"` while pydcs leaves every
-  *unit's* `alt_type` at "BARO" — and DCS places an in-air spawn from the unit record,
-  so a 500 m-AGL intent spawned as 500 m MSL (below the ~600 m Harz FARP terrain); the
-  spawner now mirrors the point's altitude reference onto every unit. Tests:
-  `tests/ato/flightplans/test_helo_cruise_altitude.py`,
-  `tests/missiongenerator/test_helo_terrain_anchors.py`,
-  `tests/missiongenerator/test_airstart_unit_alt_type.py`. All three are upstream-shared
-  (carve candidates). Checklist **C8** — needs an in-game pass.
 - **"Mission cannot be saved due to errors" — locked speed on the second of two adjacent
   TOTs (the recurring generated-mission rejection, fixed 2026-08-03).** DCS refused to load
   a generated Marianas turn-2 miz with *"All waypoints (2-2) have locked speed and
@@ -1662,51 +1641,13 @@ in-game pass (the F-4E OCA case now shows a pre/post-strike tanker + a non-negat
   `tests/missiongenerator/aircraft/test_waypointgenerator.py`. Upstream-shared (carve
   candidate) — no setting, no save change, existing saves fix themselves on the next
   generation.
-- AWACS orbit stacking + direction: `game/ato/flightplans/aewc.py`.
-- Tanker orbit placement/deconfliction: `game/ato/flightplans/theaterrefueling.py`.
-- **Support flights sharing one radio channel (the flown "I can't talk to the A-6 tanker",
-  fixed 2026-08-02).** A player-flown carrier strike could not raise its own buddy tanker on
-  any channel, while the theater KC-135 answered normally. Root cause is in
-  `FlightGroupConfigurator.setup_radios` (`game/missiongenerator/aircraft/flightgroupconfigurator.py`):
-  an AEWC/REFUELING/RECOVERY flight inherits its **package** frequency. That is correct while
-  each support flight is the only one in its package (the theater tanker and AEW&C packages each
-  get their own), but **§44 long-range carrier ops deliberately puts a buddy tanker *and* an E-2
-  in as primary flights of the same package** (`game/fourteenth/carrier_ops.py`) — so both took
-  the one package channel. The flown miz had `Milestone 8` (A-6E) and `Wizard 7` (E-2C) both on
-  **396.0 AM**; DCS builds the comms menu per frequency, so only the AEW&C answered and the
-  tanker was unreachable from the cockpit (the §74 DTC cartridge corroborated it — COMM2
-  channels 3/4/5 all resolved to 396.0 and all took the AEW&C's name). `setup_radios` now routes
-  the inherited channel through `dedicated_support_frequency`, which allocates a fresh UHF when
-  another tanker/AEW&C flight already holds it (`support_frequencies` reads the
-  `MissionData.tankers`/`awacs` registrations, so the check covers both classes and both
-  coalitions). The **first** support flight in a package still keeps the package frequency, so no
-  channel is wasted in the common single-support case, and an **explicitly assigned**
-  `Flight.frequency` is honored as-is — only the inherited package channel is replaced.
-  Generation-time ⇒ **existing saves fix themselves on the next regeneration, no NEW game.**
-  Tests: `tests/missiongenerator/aircraft/test_flightgroupconfigurator.py`. Upstream-shared
-  (carve candidate — `setup_radios` is upstream code; only the §44 package shape that exposes it
-  is fork-side).
-- **Carrier-recovery stagger (the flown Scenic Route midair, fixed 2026-07-16).** Two AI
-  packages (an OX S-3B and a CATERPILLAR Hornet) recovering to CVN-71 in the same window
-  converged co-altitude at ~1,000 ft and collided 2.7 NM from the boat — blue's only losses
-  of the mission. Root cause is structural: Retribution authors **no approach leg at all**
-  (the last waypoint is a nav point at cruise altitude, then a `Land` task ON the boat), so
-  DCS's own carrier-pattern AI flies the whole descent and two flights sent into the same
-  window inevitably converge in the DCS overhead; the per-flight `plane_altitude_offset`
-  scatter never touches the pattern, and no recovery-time deconfliction existed. Arrival
-  TIME is therefore the only lever: `MissionScheduler._deconflict_carrier_recoveries`
-  (`game/commander/missionscheduler.py`, run after TOT assignment and BEFORE the
-  recovery-tanker ETA collection, so tankers time against the staggered landings) spaces
-  each boat's package landings ≥ `CARRIER_RECOVERY_INTERVAL` (5 min) apart by delaying
-  TOTs. Only "spread" AI packages are movable; CAP waves (coverage schedule wins), AEW&C
-  (handoff-chained), SCAR (on-station ASAP), ASAP taskings, and **any package with a player
-  flight** are FIXED entries — they claim their slot as-is and the movable packages space
-  around them, so a human's recovery is never rescheduled but AI traffic clears their
-  window. The slotting core is the pure `staggered_recovery_deltas` (single sorted pass;
-  delaying never breaks an earlier bound). Always-on — no setting, no plugin, no save
-  change (the §62 modex precedent). Helo and shore recoveries are ignored. Tests:
-  `tests/test_carrier_recovery_stagger.py`. Upstream-shared (carve candidate). Checklist
-  **C9** — needs an in-game pass.
+- Spurious "past start times" warning for player CAP: a BARCAP/TARCAP is meant to be
+  on-station at mission start, so a cold-start spin-up legitimately begins before mission
+  start — and the scheduler reserves only the 2-min AI startup while a player-flown flight
+  gets the larger `player_startup_time` allowance, so a player-occupied cold-start CAP tripped
+  the warning every turn. `QTopPanel.negative_start_packages` now checks **takeoff** time (not
+  startup) for DCA patrols, so a genuine "can't even take off in time" misplan still warns but
+  the normal cold-start CAP does not. Tests: `tests/test_negative_start_packages.py`.
 - **Player CAS steerpoints floating at the combat altitude (user-reported, fixed 2026-07-16).**
   A flown Hornet CAS deck read **22000** on both FLOT waypoints — "target waypoints generate in
   the air and are unable to be found". The CAS FLOT boundaries are planned at
@@ -1751,6 +1692,268 @@ in-game pass (the F-4E OCA case now shows a pre/post-strike tanker + a non-negat
   original fix. Planned altitudes are untouched: the AI escort still transits at its track
   altitude, and the pure-AI route is byte-identical. Extra coverage in
   `tests/missiongenerator/test_dtc.py` (`test_cartridges_ground_marked_waypoints_like_the_miz`).
+- **Hold points placed across the map (fixed 2026-08-16).** A SEAD Sweep held **205.7 nm**
+  from its own runway to attack a target **23.6 nm** away — 596 nm of routing, still
+  outbound when the mission ended (flown, session `c86c58dd`; group 442 of the 4th-test
+  miz). Two independent faults, both in upstream-identical planner files.
+  `JoinZoneGeometry.find_best_join_point()` falls back to `join = self.ip` **exactly**
+  when it finds no usable geometry, so the IP-to-join separation was just the 500 ft
+  `FormationAttackFlightPlan` perturbation (measured on that flight: 0.81 nm) — and
+  `HoldZoneGeometry` aimed its 40° wedge down that heading, i.e. down `random.randint`.
+  `find_best_hold_point()` then answers "nearest point of a zone" with **no bound**, so a
+  wedge aimed anywhere strands the hold anywhere. Fix: `wedge_heading()` takes the stable
+  `target → join` axis below a 1 nm separation — the same form `JoinZoneGeometry` already
+  uses for its own wedge, so the two agree rather than this inventing a rule — and
+  `_bounded()` keeps the hold within the doctrine hold distance (or home-to-join,
+  whichever is larger), falling back to the point the preferred branch would have picked.
+  Verified against the flown coordinates: **205.7 nm → 25.0 nm**, exactly the doctrine
+  hold distance, with non-degenerate geometry unchanged. Intermittent by nature (1 of 40
+  flights; the same squadron flew a sane 125 nm route the turn before), which is how it
+  survived. Tests `tests/flightplan/test_holdzonegeometry.py` (7) — three fail without the
+  fix. **Fork divergence:** both files are byte-identical to upstream, so this diverges the
+  planner while the carve is frozen; carve candidate the moment it lifts.
+- **Ground-level waypoints written at sea level (test 7, fixed 2026-08-18).** Takeoff,
+  landing and divert waypoints all carried altitude 0 — 105 of one flown mission's 192 air
+  waypoints. The number is not cosmetic: it reaches the cockpit through the kneeboard card
+  and the DTC steerpoint, so Ramon Airbase (619 m) read as below the jet's own nav solution.
+  `ControlPoint.field_elevation` now returns the OSM/DEM field elevation from
+  `resources/airport_imagery/<terrain>.json` — the same table the ATIS uses for QFE — and
+  `WaypointBuilder.takeoff/land/divert` write it as BARO. Carriers, FARPs and FOBs stay at
+  0 MSL: a deck is within ~20 m of sea level and there is no record for the rest. The target
+  waypoint keeps its deliberate 0 AGL/RADIO, which is what lets a player slave a pod to the
+  mark. Repaired at generation time too (`WaypointGenerator.repair_ground_level_altitudes`,
+  `set_ground_start_altitude`) because the flight-plan layout is pickled into the save, so a
+  campaign in progress would otherwise keep the old 0 forever. Upstream-inherited —
+  `WaypointBuilder.land()` was byte-identical to `upstream/dev` — so it is a carve candidate
+  post-freeze. Known gap: QRA intercept and red-scramble groups spawn outside
+  `WaypointGenerator` and still read 0; they never reach a kneeboard. Checklist B79; tests
+  `tests/missiongenerator/aircraft/test_pydcswaypointbuilder.py`.
+  **Knock-on, fixed the same day:** `bulk_editable` (the "Apply to all" altitude setter)
+  decides what to move by asking whether a waypoint was planned above the deck, and its
+  comment recorded takeoff/landing/divert as 0-seeded. Moving them off 0 made the setter
+  eligible to overwrite a field elevation with the cruise altitude. Takeoff and landing are
+  now in `BULK_ALTITUDE_SKIP_TYPES`; divert is separated by whether its control point is an
+  `OffMapSpawn`, since an off-map divert is an exit vector that *should* move and altitude
+  no longer distinguishes the two.
+
+---
+
+
+### Refuelling
+
+- **Refuel waypoints on flights with no tanker to meet (fixed 2026-08-16).** The planner
+  emits a REFUEL waypoint whenever the coalition owns a tanker-capable squadron
+  *anywhere in theater* — deliberately, since gating it on fuel need is exactly what the
+  reverted §46 did, so that gate is left alone. But when no tanker is actually flying the
+  mission, the waypoint is a detour to an empty piece of sky. Flown 2026-08-16: **10 of
+  40** flights carried one, including a `LHA-1 Tarawa Escort` with a **14 nm** total route
+  and its refuel point 3.7 nm from the boat, and a `CVN-75 Escort` at 19 nm with one at
+  7.5 nm. `WaypointGenerator` now drops the waypoint at **generation** when
+  `mission_data.tankers` holds no tanker on that flight's side — so the plan, and §46's
+  decision, are untouched. `mission_data.tankers` is the generated truth (the tankers that
+  exist in the .miz) rather than the planner's ownership question. Absent tanker data
+  (lightweight test doubles) reads as "yes" so nothing is dropped on a guess, and the side
+  test compares `Player.is_blue` rather than the enum, which is always truthy — a bare
+  truthiness test would have made the gate a silent no-op.
+  Tests `tests/missiongenerator/test_refuel_waypoint_gate.py`.
+- **The refuel waypoint was planned whether or not a tanker was flying, and the fuel readout
+  believed it (fixed 2026-08-17).** Reported off the Payload tab: a Hornet burning 8,111 lb of
+  the 15,225 it carried read *"1 tanker pass · RTB margin +11,680 lb"*. Two separate faults
+  behind one line, and **neither was a tanker being tasked** — `PlanRefueling` walks theater
+  refueling stations under `TheaterSupport` and never looks at a strike flight's fuel, so no
+  flight causes a tanker to exist.
+  1. **The waypoint's gate asked the wrong question.** `_build_refuel` required only
+     `air_wing.can_auto_plan(FlightType.REFUELING)` — *does this coalition own a tanker
+     squadron*, a question about the air wing rather than about this turn. `game/ato/
+     tankeravailability.py::serviceable_tanker_planned` now additionally requires a tanker in
+     the ATO this flight can actually use, which is the same question the generated mission
+     already asks (`refuelrendezvous.py`). Safe at plan time because `TheaterSupport` is the
+     **first** method `PlanNextAction` yields, so tankers are in the ATO before any offensive
+     package is planned; and it reads `flight_type`/`unit_type` only, never another flight's
+     `flight_plan`, which would risk recursion. `FlightType.RECOVERY` is its own flight type,
+     so recovery tankers are excluded by construction rather than by a check. Applied to
+     TARCAP too, whose refuel is doctrinal (top off coming off station) but still needs a
+     tanker to exist.
+  2. **The readout credited a top-off as fact.** The walk restores to a full load at each
+     REFUEL waypoint, so the reported margin included fuel the sortie only gets if it actually
+     plugs in: 15,225 − 8,111 − 2,000 `min_safe` = **+5,114 lb** unrefuelled against the
+     **+11,680** shown, a 6,566 lb overstatement. `FuelBrief` now carries `dry_margin_lbs`
+     alongside, the text **leads with the unrefuelled figure**, and the with-tanker number is
+     printed only when the sortie genuinely depends on it ("does NOT get home without the
+     tanker"). The module docstring also still described §46 fitting tanks and tasking tankers
+     — reverted 2026-08-09 — and now says what it actually does.
+  **Deliberately NOT done: gating the waypoint on fuel need.** That is what §46 decided, and
+  re-opening it would re-open the planner divergence the 2026-08-09 re-convergence closed. A
+  flight that carries plenty and crosses a real tanker still gets a waypoint; what it no longer
+  gets is a phantom one, or a margin that counts gas it never takes. Tests
+  `tests/ato/test_tanker_availability.py`, `tests/fourteenth/test_fuel_brief.py`.
+- **The refuel waypoint pointed at a place no tanker was (fixed 2026-08-17).** The
+  follow-on to the gate above, and the reason the surviving waypoints sat where they did.
+  The planner puts the refuel point at 75 % of the home-to-join leg (`RefuelZoneGeometry`)
+  and the tanker stations `tanker_threat_buffer_min_distance` outside its own target's
+  threat ring (`TheaterRefuelingFlightPlan`) — two rules with no term in common, so the
+  waypoint and the tanker were independent by construction.
+  `game/missiongenerator/refuelrendezvous.py` now resolves the waypoint against the
+  tankers in the generated .miz: nearest point on the nearest **suitable** orbit, or the
+  waypoint is dropped. Suitable excludes the other coalition, a receiver the tanker cannot
+  service (`can_refuel_from` — a probe-only jet and nothing but a boom tanker up is the
+  same as no tanker), and **recovery tankers**, which work the boat's pattern rather than
+  passing traffic. Subsumes the 2026-08-16 gate. Three details that make it safe: the
+  orbit is a 40 nm racetrack so the resolution is nearest-point-on-leg, clamped to the
+  ends (its centre is 20 nm out on its own); a package tanker already orbits the package
+  refuel point, so resolution there is a no-op and idempotent across re-generation; and a
+  tanker registered without orbit data leaves the planned point alone rather than reading
+  as "none flying". `TankerInfo` gained `orbit_start`/`orbit_end`/`recovery`, filled where
+  the flight-plan class is known. Support packages already generate first
+  (`_prioritized_packages` sorts them last, and the loop walks it reversed), so every
+  tanker is registered before any receiver's waypoints are built. Also fixes a defect the
+  2026-08-16 gate introduced: a dropped REFUEL stayed on the **kneeboard** list, so the
+  card numbered a steerpoint the jet did not have and every later row was off by one
+  against the cockpit — and the fuel ladder still credited a top-off that could not happen.
+
+### Support orbits and radios
+
+- AWACS orbit stacking + direction: `game/ato/flightplans/aewc.py`.
+- Tanker orbit placement/deconfliction: `game/ato/flightplans/theaterrefueling.py`.
+- **Support flights sharing one radio channel (the flown "I can't talk to the A-6 tanker",
+  fixed 2026-08-02).** A player-flown carrier strike could not raise its own buddy tanker on
+  any channel, while the theater KC-135 answered normally. Root cause is in
+  `FlightGroupConfigurator.setup_radios` (`game/missiongenerator/aircraft/flightgroupconfigurator.py`):
+  an AEWC/REFUELING/RECOVERY flight inherits its **package** frequency. That is correct while
+  each support flight is the only one in its package (the theater tanker and AEW&C packages each
+  get their own), but **§44 long-range carrier ops deliberately puts a buddy tanker *and* an E-2
+  in as primary flights of the same package** (`game/fourteenth/carrier_ops.py`) — so both took
+  the one package channel. The flown miz had `Milestone 8` (A-6E) and `Wizard 7` (E-2C) both on
+  **396.0 AM**; DCS builds the comms menu per frequency, so only the AEW&C answered and the
+  tanker was unreachable from the cockpit (the §74 DTC cartridge corroborated it — COMM2
+  channels 3/4/5 all resolved to 396.0 and all took the AEW&C's name). `setup_radios` now routes
+  the inherited channel through `dedicated_support_frequency`, which allocates a fresh UHF when
+  another tanker/AEW&C flight already holds it (`support_frequencies` reads the
+  `MissionData.tankers`/`awacs` registrations, so the check covers both classes and both
+  coalitions). The **first** support flight in a package still keeps the package frequency, so no
+  channel is wasted in the common single-support case, and an **explicitly assigned**
+  `Flight.frequency` is honored as-is — only the inherited package channel is replaced.
+  Generation-time ⇒ **existing saves fix themselves on the next regeneration, no NEW game.**
+  Tests: `tests/missiongenerator/aircraft/test_flightgroupconfigurator.py`. Upstream-shared
+  (carve candidate — `setup_radios` is upstream code; only the §44 package shape that exposes it
+  is fork-side).
+
+### Carrier deck and recovery
+
+- **Carrier-recovery stagger (the flown Scenic Route midair, fixed 2026-07-16).** Two AI
+  packages (an OX S-3B and a CATERPILLAR Hornet) recovering to CVN-71 in the same window
+  converged co-altitude at ~1,000 ft and collided 2.7 NM from the boat — blue's only losses
+  of the mission. Root cause is structural: Retribution authors **no approach leg at all**
+  (the last waypoint is a nav point at cruise altitude, then a `Land` task ON the boat), so
+  DCS's own carrier-pattern AI flies the whole descent and two flights sent into the same
+  window inevitably converge in the DCS overhead; the per-flight `plane_altitude_offset`
+  scatter never touches the pattern, and no recovery-time deconfliction existed. Arrival
+  TIME is therefore the only lever: `MissionScheduler._deconflict_carrier_recoveries`
+  (`game/commander/missionscheduler.py`, run after TOT assignment and BEFORE the
+  recovery-tanker ETA collection, so tankers time against the staggered landings) spaces
+  each boat's package landings ≥ `CARRIER_RECOVERY_INTERVAL` (5 min) apart by delaying
+  TOTs. Only "spread" AI packages are movable; CAP waves (coverage schedule wins), AEW&C
+  (handoff-chained), SCAR (on-station ASAP), ASAP taskings, and **any package with a player
+  flight** are FIXED entries — they claim their slot as-is and the movable packages space
+  around them, so a human's recovery is never rescheduled but AI traffic clears their
+  window. The slotting core is the pure `staggered_recovery_deltas` (single sorted pass;
+  delaying never breaks an earlier bound). Always-on — no setting, no plugin, no save
+  change (the §62 modex precedent). Helo and shore recoveries are ignored. Tests:
+  `tests/test_carrier_recovery_stagger.py`. Upstream-shared (carve candidate). Checklist
+  **C9** — needs an in-game pass.
+- **The carrier respotted for recovery mid-launch (fixed 2026-08-16).** §72's recovery
+  tier fired at **t+79 s** of a 2,233 s mission — **375 s before the player's own takeoff
+  roll** — spawning three static Hornets into his taxi lane, one **8.66 m** off his
+  track (flown, session `c86c58dd`, CVN-75). The astern cone had tripped on something
+  **not identifiable from the recording**: at both qualifying polls the only blue
+  fixed-wing inside the cone radius were the boat's own four parked Hornets, all inside
+  `DECK_STAMP_M`, and the one aircraft in the whole 37-minute recording that satisfies
+  every gate appears 170 s *later* for a 2.9 s window. Rather than guess at the trip
+  source, the fix bounds what a spurious trip can do: the emitter now computes
+  `earliestClearS` per boat from the last departure off that deck
+  (`launch_cycle_ends_at`, + a 10-minute margin for the cold-start roll) and the plugin
+  refuses to respot before it — holding **both** the cone and the deadline, since an
+  airboss window that opens mid-launch is itself the thing being guarded against. A deck
+  that launches nothing emits 0 and keeps the old behaviour exactly. The E-2C the DM
+  suspected is innocent: 138–152 m astern on the round-down, struck below correctly both
+  flights. Tests in `tests/missiongenerator/test_carrier_deck_decor.py`.
+- **The launch-cycle hold outlasted the mission (fixed 2026-08-17).** The mirror of the
+  bug above, introduced by its fix. `departure_delay` is the whole wait until a flight's
+  scheduled start, so one late package off CVN-71 held the respot to **t+11,388 s of a
+  19-minute mission** — the deck never respotted at all (flown 2026-08-16, 5th test:
+  `still launching, respot held until 11388s`). `launch_cycle_ends_at` now returns the
+  **current** cycle: the run of departures from the first, broken by an idle gap longer
+  than `LAUNCH_CYCLE_MARGIN_S`. One constant serves as both the post-launch margin and the
+  cycle-ending gap, since both are "this deck is done" in seconds. It also logs the flight
+  count and the resulting hold, so a long hold is visible instead of silent.
+- **The astern cone fired with nothing in it, and now says what tripped it
+  (instrumented 2026-08-17).** A faithful replay of `approachDetected` over the whole 4th-
+  test recording **never trips**, at any poll from t+60 to t+390: the only objects ever
+  inside the 4.5 nm cone were four deck Hornets inside the 400 m stamp bubble, the boat's
+  own rescue helo (a rotorcraft the `Group.Category.AIRPLANE` scan cannot see, and 155–180°
+  off the stern — ahead of the beam), and a Ticonderoga 129° off the stern at 3.7 km. The
+  emitted BRC (138.0) matches the recorded ship heading exactly and every plugin option
+  was at its default, so the geometry and the thresholds are not the explanation either.
+  The trip source is therefore **still unknown**, and the plugin now logs the tripping
+  unit's name, range, off-stern angle, altitude and closing rate on **every** trip poll —
+  not only the one that clears — plus the pcall error if the check throws. An
+  unattributable clear cost a Tacview forensics session; a named one costs a log line.
+  The §72 launch-cycle floor above bounds the damage meanwhile.
+- **The deck-spot table was blind where the decorations stand (fixed 2026-08-17).**
+  `KNOWN_PARKING_SPOTS` held 11 of the Supercarrier guide's 16, and the 2026-08-07 audit
+  named the two holes: nothing forward of x = +1.0, and a 63 m starboard band between
+  x = −35.5 and x = −98.7 holding 52 of the 67 street-gear placements. Both are now
+  **measured**, by the t=0 ship-frame method that produced the original 11, over five
+  CVN-71 recordings: the six-pack row continues forward to **(+35.6, +36.7)** and
+  **(+23.4, +35.5)** (6 sightings each, 4–5 independent missions, F-14/Hornet/EA-18G all
+  parking to the same centres), the starboard mid-deck band holds **(−89.8, +26.4)** (9
+  sightings, 5 missions) and **(−76.3, +26.4)**, and the port quarter continues forward to
+  **(−74.6, −38.4)** on the row's own 12 m pitch. 11 → 16 entries. The new data
+  immediately caught a live hazard the old table could not see: the recovery tier put a
+  tow tractor **5.8 m** from a real spawn point. Rather than nudge coordinates by eye —
+  the method that has failed this feature before — `RECOVERY_DECK_VARIANTS` is now the
+  authored data filtered through `clears_known_spots`, dropping sets that fall below
+  `MIN_RECOVERY_SET_ITEMS` (9 authored sets → 7 shipped), so a future measured spot prunes
+  whatever it invalidates with no further authoring. The launch-phase street sets were
+  already clear of all 16.
+
+### Helicopters
+
+- **AI helicopter terrain CFIT (the flown Red Tide M1 Harz/Sauerland pattern, fixed
+  2026-07-12).** Three compounding upstream-shared defects put AI helos on collision
+  courses with high terrain (two Mi-8s dead within 46 s of unpause, a Mi-24 escort into
+  the Sauerland — while the flat-ground H FRG 12 pair flew the identical plan cleanly):
+  (1) `WaypointBuilder.get_cruise_altitude` short-circuited every helo altitude to the
+  *combat* AGL setting (`heli_combat_alt_agl`, 100 ft in the flown save), so all transit
+  waypoints (JOIN/HOLD/REFUEL/NAV) were planned at treetop height — now returns the
+  dedicated `heli_cruise_alt_agl` (500 ft default; the pattern ferry/rtb already used);
+  (2) a RADIO (AGL) waypoint anchors the commanded altitude to terrain only AT the
+  waypoint and DCS interpolates straight between waypoints, so 40–110 km low legs were
+  commanded through ridge lines — `WaypointGenerator._insert_helo_terrain_anchors()` now
+  subdivides every long RADIO leg of an AI helo route with **speed-locked** "TERRAIN"
+  Turning Points every ≤5 NM (`MAX_HELO_ANCHOR_SPACING`), giving piecewise
+  terrain-following without Python needing elevation data (none exists at generation);
+  racetrack orbit legs and human-crewed flights are never touched. **Lock-flag fix
+  2026-07-12 (the first generated Red Tide M2 tripped it):** the anchors originally
+  inserted with BOTH speed and ETA unlocked, which DCS rejects at mission start on any
+  leg not bracketed by TOT-locked waypoints ("has both unlocked speed and time and not
+  surrounded by waypoints with locked time" on every subdivided helo RTB leg — AH-64D
+  CAS + both Mi-24P BAI/Escort flights); they now insert speed-locked (the state DCS
+  accepts everywhere else) and `_resolve_locked_speed_time_conflicts`, which runs right
+  after in `build()`, unlocks any anchor that lands between TOT-locked waypoints (the
+  inverse rejection). Verified by a full-route lock-flag sweep of a regenerated M2 miz
+  (0 violations; the errored miz showed exactly the three flagged flights); (3) both air-start
+  spawner paths set only `points[0].alt_type = "RADIO"` while pydcs leaves every
+  *unit's* `alt_type` at "BARO" — and DCS places an in-air spawn from the unit record,
+  so a 500 m-AGL intent spawned as 500 m MSL (below the ~600 m Harz FARP terrain); the
+  spawner now mirrors the point's altitude reference onto every unit. Tests:
+  `tests/ato/flightplans/test_helo_cruise_altitude.py`,
+  `tests/missiongenerator/test_helo_terrain_anchors.py`,
+  `tests/missiongenerator/test_airstart_unit_alt_type.py`. All three are upstream-shared
+  (carve candidates). Checklist **C8** — needs an in-game pass.
+
+### Loadouts and module data
+
 - Malformed mod payload Lua (CJS Super Hornet v2.4 uses local-var table indices that the
   pydcs Lua parser rejects with `ValueError`): patched loader in `qt_ui/main.py`
   (`_patch_pydcs_payload_loader()`), plus the offending files are skipped with a warning.
@@ -1770,37 +1973,36 @@ in-game pass (the F-4E OCA case now shows a pre/post-strike tanker + a non-negat
   **Tornado IDS STRIKE** preset from TGP-less LGBs to iron Mk-82. Methodology + remaining
   residuals (mod-weapon stragglers, low-impact early-date noise):
   `docs/dev/design/414th-loadout-integrity-audit-notes.md`.
-- Spurious "past start times" warning for player CAP: a BARCAP/TARCAP is meant to be
-  on-station at mission start, so a cold-start spin-up legitimately begins before mission
-  start — and the scheduler reserves only the 2-min AI startup while a player-flown flight
-  gets the larger `player_startup_time` allowance, so a player-occupied cold-start CAP tripped
-  the warning every turn. `QTopPanel.negative_start_packages` now checks **takeoff** time (not
-  startup) for DCA patrols, so a genuine "can't even take off in time" misplan still warns but
-  the normal cold-start CAP does not. Tests: `tests/test_negative_start_packages.py`.
-- Player-despawn counted as a combat loss (2026-06-20): a player dropping to spectator — or
-  the mission ending with players still airborne — makes DCS fire `S_EVENT_CRASH`/`DEAD` for
-  that jet, which `dcs_retribution.lua` recorded into `crash_events`/`dead_events`, so
-  `debriefing.py` attrited the airframe + pilot even though they survived (GERBIL F-14s logged
-  lost while alive at mission end; confirmed in Tacview, none in `destroyed_objects_positions`).
-  The plugin now marks a unit on `S_EVENT_PLAYER_LEAVE_UNIT` and suppresses the crash/dead/lost
-  that follows within `PLAYER_LEAVE_GRACE_S` (`is_player_despawn`). A real shootdown fires the
-  loss event **before** the player leaves the seat, and **ejections are excluded** (an ejection
-  is a real loss), so both still count. This is upstream loss-accounting (good upstream-PR
-  candidate). Tests: `tests/test_debriefing.py::test_lua_suppresses_player_despawn_loss_events`.
-  **Residual to watch in-game:** if the engine tears the mission down without per-player
-  `PLAYER_LEAVE_UNIT` events, those despawn-crashes aren't caught — land/despawn before ending
-  remains the belt-and-suspenders.
-- New Game crash on an authored-but-empty `aircraft:` key (2026-07-01): a campaign-YAML
-  squadron whose `aircraft:` key exists but has no entries parses as `None`, and
-  `DefaultSquadronAssigner.find_squadron_for` iterated it —
-  `TypeError: 'NoneType' object is not iterable` at game generation. *Northern Guardian* and
-  *WRL Noisy Cricket (Redux)* both ship such squadrons, so New Game on either crashed (found
-  by the campaign-phases `--engine --all` batch, which exercises the real generation pipeline
-  for every campaign). `SquadronConfig.from_data` now treats it as `[]` — the existing "any
-  aircraft compatible with the primary task" fallback — in
-  `game/campaignloader/campaignairwingconfig.py`. Generic upstream-code fix on upstream
-  campaigns (upstream-PR candidate). Test:
-  `tests/test_campaignairwingconfig_empty.py::test_authored_empty_aircraft_key_reads_as_any`.
+- **Datalink era gating — the EPLRS boolean became a policy (2026-08-16).** DCS reuses
+  the EPLRS name for the generic group *datalink-enable* task: Link 16 on a Hornet or
+  Viper, SADL on an A-10C. Without it the terminal never comes up and the SA page reads
+  empty — not as an error, which is what made it expensive to find. **pydcs already adds
+  the task** (`dcs/mission.py:736`); `configure_behavior` clears WP0's task list, and
+  `configure_eplrs` is the only thing that restores it. So the switch does not *add*
+  datalink, it restores what the generator just deleted — which is why hand-built ME
+  missions have it and generated ones did not. Flown 2026-08-16: **1 of 23** blue plane
+  groups carried the task against **16 of 18** in a hand-built modern mission on the same
+  install, with `eplrs_enabled = False` inherited from the saved-settings `Default.zip`.
+  One boolean cannot serve a fork shipping 1981→2027: on gives Desert Storm Hornets Link
+  16 a decade early, off costs the modern campaigns their datalink. Replaced by
+  `DatalinkPolicy` (`ERA_CORRECT` default / `ALWAYS` / `NEVER`) reading a per-airframe
+  `datalink_introduced:` in the unit files — the same shape as §24's `date_gated_properties`.
+  pydcs's own `eplrs` flag cannot answer the era question: it means only "DCS lets you tick
+  the box" and is true for 87 airframes including the B-47, the Tu-16 and the OV-10A. 14
+  airframes authored (the ones the fork's era-split campaigns field); **absent reads as
+  permissive**, so an un-authored airframe behaves exactly as before and the data set
+  extends one row at a time. Ground units are unaffected by `ERA_CORRECT` — their own
+  introduction dates already decide whether they exist. Saves migrate to the explicit
+  choice (`True→ALWAYS`, `False→NEVER`), never silently to `ERA_CORRECT`, mirroring §64's
+  six-pack boolean. **Ruled out on the way:** the DTC cartridge (DCS's own
+  `FA-18C_hornet_DTC.lua` has no datalink field at all, and a missing top-level block is
+  legal — the reference cartridge itself omits `GPS_WYPT` and `HARM` and flies fine), the
+  Link-16 STNs, and the OVGME mods. Note the working reference's AWACS carry **no STN** and
+  its Hornets **zero donors** — the one datalink-named field separating the two files was
+  EPLRS. Design note `414th-datalink-era-notes.md`; tests `tests/test_datalink_era.py`.
+
+### Ground movement
+
 - **Supply convoys spawning on the runway (2026-08-02, the flown Baltic Fury report "why are
   units generating on the runway").** A convoy's spawn is `Convoy.route_start` — literally
   `convoy_routes[destination][0]`, the first waypoint of the authored supply route. An
@@ -1872,6 +2074,33 @@ in-game pass (the F-4E OCA case now shows a pre/post-strike tanker + a non-negat
   cp-convoy spawn-route feature is upstream's); carve candidate. Tests
   `tests/campaignloader/test_cp_convoy_spawn_distance.py` (6) +
   `tests/missiongenerator/test_convoy_spawn_clearance.py` (4 new).
+
+### Campaign and save robustness
+
+- New Game crash on an authored-but-empty `aircraft:` key (2026-07-01): a campaign-YAML
+  squadron whose `aircraft:` key exists but has no entries parses as `None`, and
+  `DefaultSquadronAssigner.find_squadron_for` iterated it —
+  `TypeError: 'NoneType' object is not iterable` at game generation. *Northern Guardian* and
+  *WRL Noisy Cricket (Redux)* both ship such squadrons, so New Game on either crashed (found
+  by the campaign-phases `--engine --all` batch, which exercises the real generation pipeline
+  for every campaign). `SquadronConfig.from_data` now treats it as `[]` — the existing "any
+  aircraft compatible with the primary task" fallback — in
+  `game/campaignloader/campaignairwingconfig.py`. Generic upstream-code fix on upstream
+  campaigns (upstream-PR candidate). Test:
+  `tests/test_campaignairwingconfig_empty.py::test_authored_empty_aircraft_key_reads_as_any`.
+- Player-despawn counted as a combat loss (2026-06-20): a player dropping to spectator — or
+  the mission ending with players still airborne — makes DCS fire `S_EVENT_CRASH`/`DEAD` for
+  that jet, which `dcs_retribution.lua` recorded into `crash_events`/`dead_events`, so
+  `debriefing.py` attrited the airframe + pilot even though they survived (GERBIL F-14s logged
+  lost while alive at mission end; confirmed in Tacview, none in `destroyed_objects_positions`).
+  The plugin now marks a unit on `S_EVENT_PLAYER_LEAVE_UNIT` and suppresses the crash/dead/lost
+  that follows within `PLAYER_LEAVE_GRACE_S` (`is_player_despawn`). A real shootdown fires the
+  loss event **before** the player leaves the seat, and **ejections are excluded** (an ejection
+  is a real loss), so both still count. This is upstream loss-accounting (good upstream-PR
+  candidate). Tests: `tests/test_debriefing.py::test_lua_suppresses_player_despawn_loss_events`.
+  **Residual to watch in-game:** if the engine tears the mission down without per-player
+  `PLAYER_LEAVE_UNIT` events, those despawn-crashes aren't caught — land/despawn before ending
+  remains the belt-and-suspenders.
 - **Task-claim generation crash — group-role degrade instead of raise (fixed 2026-08-16).**
   `AircraftBehavior.configure_task` raised `RuntimeError` at generation time when an AI
   flight's tasking mapped to a pydcs task the airframe doesn't export — killing the whole
@@ -1891,186 +2120,6 @@ in-game pass (the F-4E OCA case now shows a pre/post-strike tanker + a non-negat
   `tests/test_aircraft_task_generation.py` walks every claimed pair (2,176) through the
   real `configure_task` and pins the Tu-160 degrade; its `TASK_MAPPING` mirrors
   `apply_to`'s dispatch — update both together.
-- **Datalink era gating — the EPLRS boolean became a policy (2026-08-16).** DCS reuses
-  the EPLRS name for the generic group *datalink-enable* task: Link 16 on a Hornet or
-  Viper, SADL on an A-10C. Without it the terminal never comes up and the SA page reads
-  empty — not as an error, which is what made it expensive to find. **pydcs already adds
-  the task** (`dcs/mission.py:736`); `configure_behavior` clears WP0's task list, and
-  `configure_eplrs` is the only thing that restores it. So the switch does not *add*
-  datalink, it restores what the generator just deleted — which is why hand-built ME
-  missions have it and generated ones did not. Flown 2026-08-16: **1 of 23** blue plane
-  groups carried the task against **16 of 18** in a hand-built modern mission on the same
-  install, with `eplrs_enabled = False` inherited from the saved-settings `Default.zip`.
-  One boolean cannot serve a fork shipping 1981→2027: on gives Desert Storm Hornets Link
-  16 a decade early, off costs the modern campaigns their datalink. Replaced by
-  `DatalinkPolicy` (`ERA_CORRECT` default / `ALWAYS` / `NEVER`) reading a per-airframe
-  `datalink_introduced:` in the unit files — the same shape as §24's `date_gated_properties`.
-  pydcs's own `eplrs` flag cannot answer the era question: it means only "DCS lets you tick
-  the box" and is true for 87 airframes including the B-47, the Tu-16 and the OV-10A. 14
-  airframes authored (the ones the fork's era-split campaigns field); **absent reads as
-  permissive**, so an un-authored airframe behaves exactly as before and the data set
-  extends one row at a time. Ground units are unaffected by `ERA_CORRECT` — their own
-  introduction dates already decide whether they exist. Saves migrate to the explicit
-  choice (`True→ALWAYS`, `False→NEVER`), never silently to `ERA_CORRECT`, mirroring §64's
-  six-pack boolean. **Ruled out on the way:** the DTC cartridge (DCS's own
-  `FA-18C_hornet_DTC.lua` has no datalink field at all, and a missing top-level block is
-  legal — the reference cartridge itself omits `GPS_WYPT` and `HARM` and flies fine), the
-  Link-16 STNs, and the OVGME mods. Note the working reference's AWACS carry **no STN** and
-  its Hornets **zero donors** — the one datalink-named field separating the two files was
-  EPLRS. Design note `414th-datalink-era-notes.md`; tests `tests/test_datalink_era.py`.
-- **Refuel waypoints on flights with no tanker to meet (fixed 2026-08-16).** The planner
-  emits a REFUEL waypoint whenever the coalition owns a tanker-capable squadron
-  *anywhere in theater* — deliberately, since gating it on fuel need is exactly what the
-  reverted §46 did, so that gate is left alone. But when no tanker is actually flying the
-  mission, the waypoint is a detour to an empty piece of sky. Flown 2026-08-16: **10 of
-  40** flights carried one, including a `LHA-1 Tarawa Escort` with a **14 nm** total route
-  and its refuel point 3.7 nm from the boat, and a `CVN-75 Escort` at 19 nm with one at
-  7.5 nm. `WaypointGenerator` now drops the waypoint at **generation** when
-  `mission_data.tankers` holds no tanker on that flight's side — so the plan, and §46's
-  decision, are untouched. `mission_data.tankers` is the generated truth (the tankers that
-  exist in the .miz) rather than the planner's ownership question. Absent tanker data
-  (lightweight test doubles) reads as "yes" so nothing is dropped on a guess, and the side
-  test compares `Player.is_blue` rather than the enum, which is always truthy — a bare
-  truthiness test would have made the gate a silent no-op.
-  Tests `tests/missiongenerator/test_refuel_waypoint_gate.py`.
-- **Kneeboard: the package table named the reader "Flight", and the targets map was unreadable
-  (fixed 2026-08-17).** Four defects, all found by rendering the pages out of a flown Syria
-  `.miz` rather than by flying it — the kneeboard is a PNG we generate, so what renders here is
-  exactly what DCS shows, and **none of these needs an in-game pass**.
-  1. **The reader's own row said `Flight`.** Every other row of the Support Info package table
-     is a callsign (Enfield 8, Ford 7, Lobo 3, Python 5) and the page header already said
-     "Colt 9", but `SupportPage.__init__` fell back to the literal string. Now the callsign,
-     with `
-(custom name)` appended exactly as the other rows do.
-  2. **Labels printed on top of each other.** The placement loop stepped a colliding label
-     *downward only* and gave up at the bottom edge **while still overlapping** — then drew it
-     anyway, destroying both its own text and the one underneath. Flown: `DRAGONFLY` over
-     `CRANE`, `King Abdullah II` over `Muwaffaq Salti`, both near the bottom of the map.
-     Placement now tries right then left, and within each side steps down then **up**; if
-     nothing is free the label is dropped rather than overprinted, because an overprint costs
-     two labels instead of one.
-  3. **Markers were drawn through labels.** Occupancy tracked labels but not the dots, so a
-     package marker printed through the middle of `DOLPHIN`. Markers now go down in a pass of
-     their own and seed the occupancy set before any text is placed.
-  4. **A target that is also a control point was named twice** (`H3 Southwest`, once orange and
-     once red). The base pass now skips a name the target pass already drew.
-  Plus the map fills the page. It was sized to the area-of-interest aspect and centred, which
-  letterboxed a wide, short theater into a middle band with ~390 px of dead page above and
-  below. It now uses the full rectangle and lets `aspect_correct` grow the **world** extent
-  instead — the padding lands on the non-binding axis, so the scale is unchanged and the area
-  of interest occupies exactly the pixels it did before, with terrain where the blank was. The
-  old comment was guarding against *shrinking* the map to fit both axes, which is a different
-  operation. Tests `tests/missiongenerator/test_kneeboard_packages_map.py` (assert the rendered
-  text calls, not internals) + `tests/test_airfield_directory_page.py`.
-- **The refuel waypoint was planned whether or not a tanker was flying, and the fuel readout
-  believed it (fixed 2026-08-17).** Reported off the Payload tab: a Hornet burning 8,111 lb of
-  the 15,225 it carried read *"1 tanker pass · RTB margin +11,680 lb"*. Two separate faults
-  behind one line, and **neither was a tanker being tasked** — `PlanRefueling` walks theater
-  refueling stations under `TheaterSupport` and never looks at a strike flight's fuel, so no
-  flight causes a tanker to exist.
-  1. **The waypoint's gate asked the wrong question.** `_build_refuel` required only
-     `air_wing.can_auto_plan(FlightType.REFUELING)` — *does this coalition own a tanker
-     squadron*, a question about the air wing rather than about this turn. `game/ato/
-     tankeravailability.py::serviceable_tanker_planned` now additionally requires a tanker in
-     the ATO this flight can actually use, which is the same question the generated mission
-     already asks (`refuelrendezvous.py`). Safe at plan time because `TheaterSupport` is the
-     **first** method `PlanNextAction` yields, so tankers are in the ATO before any offensive
-     package is planned; and it reads `flight_type`/`unit_type` only, never another flight's
-     `flight_plan`, which would risk recursion. `FlightType.RECOVERY` is its own flight type,
-     so recovery tankers are excluded by construction rather than by a check. Applied to
-     TARCAP too, whose refuel is doctrinal (top off coming off station) but still needs a
-     tanker to exist.
-  2. **The readout credited a top-off as fact.** The walk restores to a full load at each
-     REFUEL waypoint, so the reported margin included fuel the sortie only gets if it actually
-     plugs in: 15,225 − 8,111 − 2,000 `min_safe` = **+5,114 lb** unrefuelled against the
-     **+11,680** shown, a 6,566 lb overstatement. `FuelBrief` now carries `dry_margin_lbs`
-     alongside, the text **leads with the unrefuelled figure**, and the with-tanker number is
-     printed only when the sortie genuinely depends on it ("does NOT get home without the
-     tanker"). The module docstring also still described §46 fitting tanks and tasking tankers
-     — reverted 2026-08-09 — and now says what it actually does.
-  **Deliberately NOT done: gating the waypoint on fuel need.** That is what §46 decided, and
-  re-opening it would re-open the planner divergence the 2026-08-09 re-convergence closed. A
-  flight that carries plenty and crosses a real tanker still gets a waypoint; what it no longer
-  gets is a phantom one, or a margin that counts gas it never takes. Tests
-  `tests/ato/test_tanker_availability.py`, `tests/fourteenth/test_fuel_brief.py`.
-- **The refuel waypoint pointed at a place no tanker was (fixed 2026-08-17).** The
-  follow-on to the gate above, and the reason the surviving waypoints sat where they did.
-  The planner puts the refuel point at 75 % of the home-to-join leg (`RefuelZoneGeometry`)
-  and the tanker stations `tanker_threat_buffer_min_distance` outside its own target's
-  threat ring (`TheaterRefuelingFlightPlan`) — two rules with no term in common, so the
-  waypoint and the tanker were independent by construction.
-  `game/missiongenerator/refuelrendezvous.py` now resolves the waypoint against the
-  tankers in the generated .miz: nearest point on the nearest **suitable** orbit, or the
-  waypoint is dropped. Suitable excludes the other coalition, a receiver the tanker cannot
-  service (`can_refuel_from` — a probe-only jet and nothing but a boom tanker up is the
-  same as no tanker), and **recovery tankers**, which work the boat's pattern rather than
-  passing traffic. Subsumes the 2026-08-16 gate. Three details that make it safe: the
-  orbit is a 40 nm racetrack so the resolution is nearest-point-on-leg, clamped to the
-  ends (its centre is 20 nm out on its own); a package tanker already orbits the package
-  refuel point, so resolution there is a no-op and idempotent across re-generation; and a
-  tanker registered without orbit data leaves the planned point alone rather than reading
-  as "none flying". `TankerInfo` gained `orbit_start`/`orbit_end`/`recovery`, filled where
-  the flight-plan class is known. Support packages already generate first
-  (`_prioritized_packages` sorts them last, and the loop walks it reversed), so every
-  tanker is registered before any receiver's waypoints are built. Also fixes a defect the
-  2026-08-16 gate introduced: a dropped REFUEL stayed on the **kneeboard** list, so the
-  card numbered a steerpoint the jet did not have and every later row was off by one
-  against the cockpit — and the fuel ladder still credited a top-off that could not happen.
-- **The carrier respotted for recovery mid-launch (fixed 2026-08-16).** §72's recovery
-  tier fired at **t+79 s** of a 2,233 s mission — **375 s before the player's own takeoff
-  roll** — spawning three static Hornets into his taxi lane, one **8.66 m** off his
-  track (flown, session `c86c58dd`, CVN-75). The astern cone had tripped on something
-  **not identifiable from the recording**: at both qualifying polls the only blue
-  fixed-wing inside the cone radius were the boat's own four parked Hornets, all inside
-  `DECK_STAMP_M`, and the one aircraft in the whole 37-minute recording that satisfies
-  every gate appears 170 s *later* for a 2.9 s window. Rather than guess at the trip
-  source, the fix bounds what a spurious trip can do: the emitter now computes
-  `earliestClearS` per boat from the last departure off that deck
-  (`launch_cycle_ends_at`, + a 10-minute margin for the cold-start roll) and the plugin
-  refuses to respot before it — holding **both** the cone and the deadline, since an
-  airboss window that opens mid-launch is itself the thing being guarded against. A deck
-  that launches nothing emits 0 and keeps the old behaviour exactly. The E-2C the DM
-  suspected is innocent: 138–152 m astern on the round-down, struck below correctly both
-  flights. Tests in `tests/missiongenerator/test_carrier_deck_decor.py`.
-- **The launch-cycle hold outlasted the mission (fixed 2026-08-17).** The mirror of the
-  bug above, introduced by its fix. `departure_delay` is the whole wait until a flight's
-  scheduled start, so one late package off CVN-71 held the respot to **t+11,388 s of a
-  19-minute mission** — the deck never respotted at all (flown 2026-08-16, 5th test:
-  `still launching, respot held until 11388s`). `launch_cycle_ends_at` now returns the
-  **current** cycle: the run of departures from the first, broken by an idle gap longer
-  than `LAUNCH_CYCLE_MARGIN_S`. One constant serves as both the post-launch margin and the
-  cycle-ending gap, since both are "this deck is done" in seconds. It also logs the flight
-  count and the resulting hold, so a long hold is visible instead of silent.
-- **The astern cone fired with nothing in it, and now says what tripped it
-  (instrumented 2026-08-17).** A faithful replay of `approachDetected` over the whole 4th-
-  test recording **never trips**, at any poll from t+60 to t+390: the only objects ever
-  inside the 4.5 nm cone were four deck Hornets inside the 400 m stamp bubble, the boat's
-  own rescue helo (a rotorcraft the `Group.Category.AIRPLANE` scan cannot see, and 155–180°
-  off the stern — ahead of the beam), and a Ticonderoga 129° off the stern at 3.7 km. The
-  emitted BRC (138.0) matches the recorded ship heading exactly and every plugin option
-  was at its default, so the geometry and the thresholds are not the explanation either.
-  The trip source is therefore **still unknown**, and the plugin now logs the tripping
-  unit's name, range, off-stern angle, altitude and closing rate on **every** trip poll —
-  not only the one that clears — plus the pcall error if the check throws. An
-  unattributable clear cost a Tacview forensics session; a named one costs a log line.
-  The §72 launch-cycle floor above bounds the damage meanwhile.
-- **The deck-spot table was blind where the decorations stand (fixed 2026-08-17).**
-  `KNOWN_PARKING_SPOTS` held 11 of the Supercarrier guide's 16, and the 2026-08-07 audit
-  named the two holes: nothing forward of x = +1.0, and a 63 m starboard band between
-  x = −35.5 and x = −98.7 holding 52 of the 67 street-gear placements. Both are now
-  **measured**, by the t=0 ship-frame method that produced the original 11, over five
-  CVN-71 recordings: the six-pack row continues forward to **(+35.6, +36.7)** and
-  **(+23.4, +35.5)** (6 sightings each, 4–5 independent missions, F-14/Hornet/EA-18G all
-  parking to the same centres), the starboard mid-deck band holds **(−89.8, +26.4)** (9
-  sightings, 5 missions) and **(−76.3, +26.4)**, and the port quarter continues forward to
-  **(−74.6, −38.4)** on the row's own 12 m pitch. 11 → 16 entries. The new data
-  immediately caught a live hazard the old table could not see: the recovery tier put a
-  tow tractor **5.8 m** from a real spawn point. Rather than nudge coordinates by eye —
-  the method that has failed this feature before — `RECOVERY_DECK_VARIANTS` is now the
-  authored data filtered through `clears_known_spots`, dropping sets that fall below
-  `MIN_RECOVERY_SET_ITEMS` (9 authored sets → 7 shipped), so a future measured spot prunes
-  whatever it invalidates with no further authoring. The launch-phase street sets were
-  already clear of all 16.
 - **A CSAR flight the AI cannot fly took the whole turn down (fixed 2026-08-17).**
   `PlanningError: CSAR is only usable by helicopters` came out of
   `packagefulfiller.plan_mission` → `pass_turn` → the UI: the campaign could not be
@@ -2087,26 +2136,9 @@ in-game pass (the F-4E OCA case now shows a pre/post-strike tanker + a non-negat
   planned aircraft and scrubs that one mission: an unbuildable flight plan is one lost
   package, not a lost campaign. This is checklist row **B50** failing in the worst
   available way.
-- **Hold points placed across the map (fixed 2026-08-16).** A SEAD Sweep held **205.7 nm**
-  from its own runway to attack a target **23.6 nm** away — 596 nm of routing, still
-  outbound when the mission ended (flown, session `c86c58dd`; group 442 of the 4th-test
-  miz). Two independent faults, both in upstream-identical planner files.
-  `JoinZoneGeometry.find_best_join_point()` falls back to `join = self.ip` **exactly**
-  when it finds no usable geometry, so the IP-to-join separation was just the 500 ft
-  `FormationAttackFlightPlan` perturbation (measured on that flight: 0.81 nm) — and
-  `HoldZoneGeometry` aimed its 40° wedge down that heading, i.e. down `random.randint`.
-  `find_best_hold_point()` then answers "nearest point of a zone" with **no bound**, so a
-  wedge aimed anywhere strands the hold anywhere. Fix: `wedge_heading()` takes the stable
-  `target → join` axis below a 1 nm separation — the same form `JoinZoneGeometry` already
-  uses for its own wedge, so the two agree rather than this inventing a rule — and
-  `_bounded()` keeps the hold within the doctrine hold distance (or home-to-join,
-  whichever is larger), falling back to the point the preferred branch would have picked.
-  Verified against the flown coordinates: **205.7 nm → 25.0 nm**, exactly the doctrine
-  hold distance, with non-degenerate geometry unchanged. Intermittent by nature (1 of 40
-  flights; the same squadron flew a sane 125 nm route the turn before), which is how it
-  survived. Tests `tests/flightplan/test_holdzonegeometry.py` (7) — three fail without the
-  fix. **Fork divergence:** both files are byte-identical to upstream, so this diverges the
-  planner while the carve is frozen; carve candidate the moment it lifts.
+
+### Debrief and reporting
+
 - **Destroyed strike targets never reaching the campaign — the results commit used a stale
   snapshot (fixed 2026-08-16).** The long-standing "I bombed it and it did not register"
   complaint. `PollDebriefingFileThread` breaks out of its loop the first time it reads a
@@ -2148,31 +2180,35 @@ in-game pass (the F-4E OCA case now shows a pre/post-strike tanker + a non-negat
   any future mixed item. Tests `tests/missiongenerator/test_luadata.py`, including
   the unmixed shapes to pin that the common path is untouched. Upstream-shared
   (`luagenerator.py` is upstream's); carve candidate post-freeze.
-- **Ground-level waypoints written at sea level (test 7, fixed 2026-08-18).** Takeoff,
-  landing and divert waypoints all carried altitude 0 — 105 of one flown mission's 192 air
-  waypoints. The number is not cosmetic: it reaches the cockpit through the kneeboard card
-  and the DTC steerpoint, so Ramon Airbase (619 m) read as below the jet's own nav solution.
-  `ControlPoint.field_elevation` now returns the OSM/DEM field elevation from
-  `resources/airport_imagery/<terrain>.json` — the same table the ATIS uses for QFE — and
-  `WaypointBuilder.takeoff/land/divert` write it as BARO. Carriers, FARPs and FOBs stay at
-  0 MSL: a deck is within ~20 m of sea level and there is no record for the rest. The target
-  waypoint keeps its deliberate 0 AGL/RADIO, which is what lets a player slave a pod to the
-  mark. Repaired at generation time too (`WaypointGenerator.repair_ground_level_altitudes`,
-  `set_ground_start_altitude`) because the flight-plan layout is pickled into the save, so a
-  campaign in progress would otherwise keep the old 0 forever. Upstream-inherited —
-  `WaypointBuilder.land()` was byte-identical to `upstream/dev` — so it is a carve candidate
-  post-freeze. Known gap: QRA intercept and red-scramble groups spawn outside
-  `WaypointGenerator` and still read 0; they never reach a kneeboard. Checklist B79; tests
-  `tests/missiongenerator/aircraft/test_pydcswaypointbuilder.py`.
-  **Knock-on, fixed the same day:** `bulk_editable` (the "Apply to all" altitude setter)
-  decides what to move by asking whether a waypoint was planned above the deck, and its
-  comment recorded takeoff/landing/divert as 0-seeded. Moving them off 0 made the setter
-  eligible to overwrite a field elevation with the cruise altitude. Takeoff and landing are
-  now in `BULK_ALTITUDE_SKIP_TYPES`; divert is separated by whether its control point is an
-  `OffMapSpawn`, since an off-map divert is an exit vector that *should* move and altitude
-  no longer distinguishes the two.
-
----
+- **Kneeboard: the package table named the reader "Flight", and the targets map was unreadable
+  (fixed 2026-08-17).** Four defects, all found by rendering the pages out of a flown Syria
+  `.miz` rather than by flying it — the kneeboard is a PNG we generate, so what renders here is
+  exactly what DCS shows, and **none of these needs an in-game pass**.
+  1. **The reader's own row said `Flight`.** Every other row of the Support Info package table
+     is a callsign (Enfield 8, Ford 7, Lobo 3, Python 5) and the page header already said
+     "Colt 9", but `SupportPage.__init__` fell back to the literal string. Now the callsign,
+     with `
+(custom name)` appended exactly as the other rows do.
+  2. **Labels printed on top of each other.** The placement loop stepped a colliding label
+     *downward only* and gave up at the bottom edge **while still overlapping** — then drew it
+     anyway, destroying both its own text and the one underneath. Flown: `DRAGONFLY` over
+     `CRANE`, `King Abdullah II` over `Muwaffaq Salti`, both near the bottom of the map.
+     Placement now tries right then left, and within each side steps down then **up**; if
+     nothing is free the label is dropped rather than overprinted, because an overprint costs
+     two labels instead of one.
+  3. **Markers were drawn through labels.** Occupancy tracked labels but not the dots, so a
+     package marker printed through the middle of `DOLPHIN`. Markers now go down in a pass of
+     their own and seed the occupancy set before any text is placed.
+  4. **A target that is also a control point was named twice** (`H3 Southwest`, once orange and
+     once red). The base pass now skips a name the target pass already drew.
+  Plus the map fills the page. It was sized to the area-of-interest aspect and centred, which
+  letterboxed a wide, short theater into a middle band with ~390 px of dead page above and
+  below. It now uses the full rectangle and lets `aspect_correct` grow the **world** extent
+  instead — the padding lands on the non-binding axis, so the scale is unchanged and the area
+  of interest occupies exactly the pixels it did before, with terrain where the blank was. The
+  old comment was guarding against *shrinking* the map to fit both axes, which is a different
+  operation. Tests `tests/missiongenerator/test_kneeboard_packages_map.py` (assert the rendered
+  text calls, not internals) + `tests/test_airfield_directory_page.py`.
 
 ## 9. TIC — Troops In Contact frontline battle sim (plugin, default ON)
 

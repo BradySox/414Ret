@@ -36,6 +36,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Iterator, Optional
 
+from game.theater import Player
+from game.theater.fogofwar import hidden_from
 from game.utils import nautical_miles
 
 if TYPE_CHECKING:
@@ -322,7 +324,10 @@ def _plan_side_raid(game: "Game", side: str) -> Optional[CruiseRaid]:
 
 
 def _enemy_raid_targets(game: "Game", side: str) -> Iterator["TheaterGroundObject"]:
-    """Alive, raid-legal enemy ground objects for *side*'s raid this turn."""
+    """Alive, raid-legal enemy ground objects for *side*'s raid this turn.
+
+    Blue's list is fogged: a site blue cannot see is not a target blue can shoot.
+    """
     for cp in game.theater.controlpoints:
         owner = cp.captured
         enemy_of_side = owner.is_red if side == "blue" else owner.is_blue
@@ -335,7 +340,15 @@ def _enemy_raid_targets(game: "Game", side: str) -> Iterator["TheaterGroundObjec
                 continue
             # A map_hidden TGO (a §50 ambush team) must never be planned against —
             # naming it would reveal it (the same skip the carrier strike applies).
+            # Checked for both sides: the flag is set on friendly-road teams too.
             if getattr(tgo, "map_hidden", False):
+                continue
+            # Blue's own missiles must not service a target blue cannot see. A
+            # hidden command post is meant to be found by flying recon at it
+            # (§3/G40), and `commandcenter` is priority 0 here — without this gate
+            # the first raid of the campaign finds the HQ the player never located,
+            # and the strike then reveals it permanently. Red is never fogged.
+            if side == "blue" and hidden_from(Player.BLUE, tgo):
                 continue
             if not any(unit.alive for unit in tgo.units):
                 continue

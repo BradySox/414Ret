@@ -52,6 +52,33 @@ that the first sign of them is the in-mission TROOPS IN CONTACT call.
 geometric proximity check in `missionresultsprocessor` plus a gate so it only applies to
 `hidden_on_player_map` sites.
 
+## The remaining leak: the auto-planner (OPEN, undecided)
+
+Three blue-side systems pick targets automatically off ground truth and could therefore
+name a command post the player cannot see. Two are now gated (2026-08-18):
+
+| Picker | Status |
+|---|---|
+| §63 auto cruise raids (`_enemy_raid_targets`) | **Gated.** Was the worst: `commandcenter` is priority 0, so the first raid of a campaign went straight at the un-found HQ |
+| §44 long-range carrier strike (`_nearest_legal_strike_target`) | **Gated** |
+| Upstream auto-planner (`ObjectiveFinder.strike_targets`) | **Not gated** |
+
+The third is a real decision, not an oversight. `strike_targets` enumerates every enemy
+`BuildingGroundObject` on ground truth, and a command post is one — so a player who
+delegates planning still gets HQs fragged for free, and G40 only bites for a hand-planner.
+
+Both readings are defensible:
+
+- **Gate it.** The fog should mean the same thing however the player plans. Otherwise
+  "auto-plan the turn" is a cheat code for the command network.
+- **Leave it.** The auto-planner is the player's staff, and upstream's whole model is that
+  the planner uses truth while the *map* is fogged. Gating it is a fork divergence in
+  upstream code, and it makes auto-planned campaigns strictly worse at a job they used to
+  do.
+
+Not decided. Do not gate it without an explicit call — it changes what the auto-planner
+does for every campaign, not just the fogged ones.
+
 ## Candidate B — recon tracks what moves
 
 Fleet control points genuinely relocate between turns: `ControlPoint.process_turn` sets

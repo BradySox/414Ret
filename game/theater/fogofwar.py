@@ -91,3 +91,20 @@ def fog_intact() -> Iterator[None]:
         yield
     finally:
         _revealed = previous
+
+
+def hidden_from(viewer: "Player", owner: "TheaterGroundObject") -> bool:
+    """Whether `viewer` cannot see `owner` on the map at all, overview ignored.
+
+    The gate for anything that picks targets FOR a side automatically -- auto
+    raids, the carrier strike, any future fire mission. Naming a site the player
+    cannot see hands them a find they were meant to earn, and the reveal that
+    follows the strike makes it permanent.
+
+    `fog_intact()` because the overview is a *display* toggle: a host who ticks
+    "reveal fog of war" and then passes the turn must get the same targets as one
+    who did not. `viewer` is a parameter rather than a default so this module
+    keeps its no-project-imports promise.
+    """
+    with fog_intact():
+        return owner.hidden_on_player_map(viewer)

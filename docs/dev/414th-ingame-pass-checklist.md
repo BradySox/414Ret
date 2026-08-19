@@ -2204,7 +2204,11 @@ target is actually enough reach in a real laydown, and whether the message lands
   `TARPS_POD_RADIUS_NM`, but widening it is a design call, not a tuning one); a command
   post revealed by a *non*-recon sortie (the TARPS-only gate broke); an ordinary site
   revealed by the recon pass (scout-to-reveal is back — this is the serious one); a §50
-  convoy-ambush team appearing on the map (the `map_hidden` exclusion broke).
+  convoy-ambush team appearing on the map (the `map_hidden` exclusion broke); **a command
+  post that turns up already destroyed, or revealed without a recon pass** — blue's auto
+  raids (§63) and carrier strike (§44) are fog-gated as of 2026-08-18, so either the gate
+  regressed or the auto-planner reached it (see the scoping note; the planner path is a
+  known, unfixed leak).
 
 ### G25 — Armed Recon package: recon drone + SEAD Viper escort + 4-ship sweep · §3 · ◐ PARTIAL
 

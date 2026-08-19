@@ -4777,6 +4777,12 @@ fuel + properties **per airframe**, so every new flight of that type starts pre-
 
 ## §44 — Long-range carrier ops
 
+> **Fog gate (2026-08-18):** `_nearest_legal_strike_target` picks from ground truth, so
+> it could frag the package at a hidden command post — naming it in the ATO and revealing
+> it on the strike. It now skips `hidden_from(Player.BLUE, tgo)` alongside the existing
+> `map_hidden` skip. This planner is BLUE-only by construction, so the viewer is never in
+> question. Same change as §63; see there for why `fog_intact()` is part of it.
+
 A deterministic carrier strike package for campaigns that park the carrier far beyond the auto-planner's
 reach. **Operation Enduring Resolve (COIN)** stands the boat ~800 km off the Helmand AO — the real OEF
 Arabian-Sea carrier cycle — and the stock planner never anticipated that standoff.
@@ -6555,6 +6561,26 @@ task carrying the cruise-missile weapon flag (`2097152`, the ME "fire Tomahawks 
 point" mechanism), but nothing in Retribution ever tasked them: ships were ANTISHIP
 targets, carrier decks, and the §34 gun line, never shooters inland. §63 gives the
 campaign real cruise missile raids, both directions.
+
+### Blue's raids are fogged (2026-08-18)
+
+`_enemy_raid_targets` picks from ground truth, and `commandcenter` is
+`_TARGET_CATEGORY_PRIORITY` **0** — so before this gate the first blue raid of a
+campaign went straight at a command post the player could not see, and the strike then
+revealed it permanently. That is the exact find §3/G40 makes recon earn.
+
+Blue's target list now skips anything `hidden_from(Player.BLUE, tgo)` returns True for
+(`game/theater/fogofwar.py` — `hidden_on_player_map` wrapped in `fog_intact()`). Red is
+never fogged. The `map_hidden` skip stays separate and applies to **both** sides, because
+§50 sets that flag on friendly-road teams too and a blue-owned team is not
+`hidden_on_player_map` to blue.
+
+`fog_intact()` matters here: the reveal overview is a display toggle, and without it a
+host who ticked "reveal fog of war" before passing the turn would get a *different raid
+target* than one who did not. Pinned by
+`tests/fourteenth/test_cruise_raids.py::test_the_reveal_overview_does_not_change_what_blue_shoots`.
+
+The same gate is applied to §44's carrier strike, which had the same shape.
 
 **The force-model contract first**: the missiles are real DCS weapons fired by a real,
 tracked ship TGO. Kills record natively through the ordinary death events (no

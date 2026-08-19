@@ -125,6 +125,7 @@ stress it · `✗` fail signature reproduced in-game.
 | B79 | Ground-level waypoints read the field's elevation | §8 | ☐ |
 | B80 | String plugin options can actually be edited | §14 | ☐ |
 | B81 | SEAD-evasion scoot distance is a campaign setting | MANTIS | ☐ |
+| B82 | The AWACS orbits at a field it can actually fly from | planner shape | ☐ |
 
 ---
 
@@ -5204,6 +5205,39 @@ Set it on a campaign with a radar SAM the AI will actually HARM, then watch one 
   3. **Nothing changes at all.** MOOSE changed the hardcoded 300, so the match no longer
      fires. `dcs.log` carries a `SEAD scoot radius` line the first time it rewrites; no line
      means it never matched. Degrading to stock is deliberate.
+
+### B82 — The AWACS orbits at a field it can actually fly from · planner shape · ☐ UNTESTED
+
+**History:** built 2026-08-19 from test 9 (Syria, `operation_desert_trident`, save
+`test.retribution`).
+
+> #879 made the land AEW&C anchor prefer a field that hosts an AWACS, but only on the
+> **fronted** branch. A theater with **no front line** takes the other branch —
+> `closest_friendly_control_point()`, the CP nearest the enemy — which asked nothing about
+> basing. Reproduced off the save: blue had **0 front lines**, the anchor took **Ben Gurion**
+> (hosts no AWACS), and the wing's only land AEW&C squadron was an **E-3A at Akrotiri
+> 182 NM away**, which flew that each way to reach its own orbit. Both anchors now share
+> `ObjectiveFinder._aewc_hosting_anchor(forward=...)`: same walk over unthreatened land CPs
+> hosting a usable AWACS, rear-most with a front, forward-most without. Measured on that save,
+> the E-3A's transit goes **182.2 NM → 0.0 NM**. Falls back to the stock pick when nothing
+> hosts one, so an all-carrier wing is unchanged.
+
+> **The trade, stated rather than hidden.** The orbit moves back to the field the aircraft
+> flies from, so its coverage centre moves back too — here from Ben Gurion to Cyprus. What is
+> bought is on-station time; what is given up is forward radar reach. If a campaign wants the
+> orbit forward of its AWACS base, this is the knob that made that impossible and the row to
+> reopen.
+
+Play a turn on a **front-less** campaign whose AWACS is not at the field nearest the enemy.
+
+- **Pass:** the AEW&C package launches and orbits at or near the field it took off from; the
+  transit is short.
+- **Fail signatures:**
+  1. **A long transit again.** The anchor fell back to the stock pick — check whether any
+     unthreatened field hosts an AEW&C squadron with untasked aircraft.
+  2. **The AWACS orbits far behind the fight.** The forward pick found only a rear hosting
+     field. Working as written; note the campaign, because it is the trade above biting.
+  3. **A fronted campaign changes.** It should not — only the front-less branch moved.
 
 ### B71 — Several survivors come out on one lift · CSAR (#929 Phase 5) · ☐ UNTESTED
 

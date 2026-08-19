@@ -2547,215 +2547,19 @@ No runtime change, no save migration, no new setting.
 
 ## §15 — SCAR — RESCAP "Sandy" rescue escort — REMOVED (2026-08-07)
 
-**REMOVED (2026-08-07), together with §21.** The fork's whole rescue stack was replaced by
-upstream [dcs-retribution#929](https://github.com/dcs-retribution/dcs-retribution/pull/929);
-the squadron call was to adopt upstream's shape and not carry two rescue systems. Nothing
-below is in the build. Kept because the CSAR rows, saves and design notes still reference it,
-and because the reasoning behind the rework is the record.
+Removed together with §21. The fork's whole rescue stack was replaced by upstream
+[dcs-retribution#929](https://github.com/dcs-retribution/dcs-retribution/pull/929) — the call
+was to adopt upstream's shape rather than carry two rescue systems. The `scar` plugin,
+`scarluadata.py`, `PlanScarHunts`/`PlanScar`, the `scar_autoplan*` settings and both test
+suites are gone.
 
-**Audited 2026-08-17:** this section had kept its original "Rework complete" banner and read as
-a live feature for ten days after the removal — the only section in this file that did. Every
-test path cited below was deleted with the feature.
+`FlightType.SCAR` survives as a player-selectable air-to-ground primary. What went is the
+Sandy rescue-escort role, and before it the armor-hunt scenario it replaced.
 
-<details>
-<summary>The 2026-06-27 rework, as it stood before removal</summary>
-
-> **Rework complete (2026-06-27) + CSAR rescope (2026-07-03).** SCAR was repurposed from an
-> armor-hunt task into the **RESCAP "Sandy"** rescue escort of the **Combat SAR package** (King +
-> Jolly Green + Sandy). The old moving-HVT armor-hunt scenario *and* its auto-planner were
-> **deleted** (detailed below). The 2026-07-03 rescope then **shelved the POW recovery raid**
-> (capture is a campaign consequence, not a plannable mission — the held-POW model below stays)
-> and **froze the AI-drama layer** (the Sandy auto-divert gets its one owed G23 re-fly,
-> pass-or-delete; no further AI-choreography iteration). Design source of truth:
-> `docs/dev/design/414th-csar-notes.md` (supersedes the eight earlier CSAR/SCAR notes).
->
-> **Dormant SOF capture economy REMOVED (2026-07-01).** The unreachable remnant of the old loop —
-> `FlightType.SOF` (the C-130 insert), the commander-capture reveal/refund + mis-ID penalty
-> (`commit_scar_results`/`commit_sof_*`, the `scar_misid_penalty` setting), the stranded-team
-> objectives (`game/scar_objectives.py`, `Coalition.pending_csars`), and the plugin's
-> `sofTeams`/`SOFRESCUE` CASEVAC channel — is deleted. Nothing had triggered it since the armor-hunt
-> plugin was removed. Save-compat tombstones: `PendingSofRescue` + `purge_legacy_sof_state` in
-> `game/scar_rescue.py`, the no-tasking `DownedSofGroundObject` class, the `"SOF Insert"` →
-> `TRANSPORT` legacy flight-type remap, and `Coalition.__setstate__` dropping `pending_csars`.
-> Still live: the command-post fog (`scar_command_post_intel`), the persisted `captured_commander`
-> reveal an old save may carry, and the whole POW loop below.
-
-**The shipped feature.** `FlightType.SCAR` is the **Sandy** rescue-escort role in the Combat SAR
-package — it no longer hunts armor. The retired armor-hunt scenario (the moving-HVT "find the real
-one among look-alike decoys" chase) and its opt-in auto-planner were **removed on 2026-06-27**:
-`game/missiongenerator/scarluadata.py`, the `scar` Lua plugin (`resources/plugins/scar/`, dropped
-from `plugins.json`), `game/plugins/scar.py` + its `manager.py` registration, `PlanScarHunts` /
-`PlanScar`, the `scar_autoplan*` settings, the `mission_data.scar_taskings` plumbing, and the
-`test_scar_bridge.py` / `test_scar_autoplan.py` suites are all gone. (The "SOF Team" unit YAML
-variants that once stood in for the POW body are kept as save-compat tombstones only — the POW
-map objective that consumed them was shelved with the recovery raid, 2026-07-03.)
-
-**Planner side (Python, CI-tested).** `FlightType.SCAR` (`game/ato/flighttype.py`) stays an
-air-to-ground primary, eligible on the **A-10C / AH-64D** rescue-escort airframes. It is
-**player-selectable**, and the AI fields it through the Combat SAR standing alert: `PlanCombatSar`
-(`game/commander/tasks/primitive/combatsar.py`) proposes the package = **1 King (C-130) + 1 Jolly
-Green (rescue helo) + 1 Sandy (SCAR)** when `auto_combat_sar` is on (`combat_sar_targets` is empty
-otherwise, so the default-off path is a pure no-op). A free Sandy degrades gracefully — if no
-A-10/Apache is available the fulfiller simply skips it. **BAI is untouched**; deleting the SCAR
-auto-planner that used to *steal* enemy battle positions hands them all back to BAI.
-
-**The enemy capture race (runtime — `combatsar` plugin).** On a downed-pilot spawn the `combatsar`
-plugin rolls a chance to spawn an enemy **snatch party** that walks at the survivor (red smoke + a
-MAYDAY cue); the King smokes/marks/calls it so Sandy engages. **BLUE survivors only** (squadron
-call 2026-07-01: red flies NO CSAR — `combat_sar_targets` seeding is blue-gated in
-`theaterstate.py` and `_generate_combat_sar` never emits the `CombatSAR.red` Lua node, so a red
-ejection registers no survivor and no BLUE snatch party ever spawns to race it; the plugin's
-coalition-generic red path stays dormant capability). The party is now **several small,
-dispersed teams** (default 3) ringed around the survivor on different bearings and converging
-independently — the same total infantry split into fire teams rather than one long marching column,
-which reads as a single target. The party spawns on the **enemy coalition**: Python emits the
-opposing side's faction country (`enemyCountry`, always registered on the enemy coalition in the
-`.miz`) and the plugin spawns the teams under it; the old hardcoded `CJTF_RED`/`CJTF_BLUE` constant
-is only a fallback (those countries aren't registered when the factions use real/CH nations — e.g.
-Vietnam — which previously put the snatch party on the wrong side). Kill the party to save the
-pilot; let any team dwell on the survivor un-rescued and the pilot is **CAPTURED** — appended to the
-`combat_sar_captures` state global (location + airframe unit name), parsed back by
-`Debriefing.parse_combat_sar_captures`. Seven plugin tunables
-(`captureEnabled` / `Chance` / `SpawnDistance` / `Range` / `Dwell` / `PartySize` / `Teams`).
-
-**Non-combatant discipline (2026-07-17 night-fly fix).** The first at-scale live run (fresh
-Scenic Route Merged turn 1: 10 survivors, 12 snatch parties) produced **zero captures** —
-DCS infantry ballistics resolved every race before the capture dwell could. The faction's
-survivor stand-in was a Soldier **M249**, which outguns AK teams at range (three parties
-wiped mid-march while the survivor stood), and the teams that did close **shot the survivor
-dead** (the `dead`-state reap fired, correctly, instead of `recordCapture`). The race is
-meant to be decided by the capture clock and by *airpower against the party*, never by small
-arms — so `setNonCombatant` (in the plugin) now sets **ROE weapons-hold + alarm-state green
-on both the survivor group and every snatch team at spawn** (the survivor via the MOOSE
-spawn's REAL group name — `NewWithAlias` appends `#001`, so `Group.getByName(alias)` would
-silently miss). Enemy *garrison* units near the ejection point can still kill an evader —
-ejecting over the target complex stays lethal. Pinned in
-`tests/lua/test_combatsar_ledger.py::test_survivor_and_snatch_teams_spawn_weapons_hold`.
-
-**Safety cap + dead-reference cleanup (2026-07-09).** The snatch party is REAL infantry on
-DCS's single scripting/sim thread, so `capturePartySize` / `captureTeams` are **hard-clamped at
-load** (≤ `MAX_PARTY_SIZE` 12 infantry across ≤ `MAX_TEAMS` 4 teams, `env.warning` once when a
-value is reined in). A cranked or stale-saved override can no longer pile enough units on to
-freeze the mission — the motivating incident (2026-07-08) was a saved 40-strong / 4-team value
-that spawned **80 soldiers across two ejections** on a heavy Red Tide (Germany Cold War) map and
-hung the sim (the log stopped mid-`GetVec3`/`GetCoordinate` flood with **no crash dump** — the
-signature of a scripting/sim-thread hang, not a CTD). Separately, the survivor ledger now **drops
-dead references** so an attrited rescue stops generating MOOSE error traffic: `advanceCapture`
-prunes killed teams out of `entry.party` each cycle (bounding the per-poll work as the party
-dies) and reads every position through `firstAliveCoord` (a first-living-unit helper that never
-calls `GetCoordinate` on a dead DCS object — a group that reports alive while its lead unit is
-gone otherwise spammed the log every poll), and the main `tick` **reaps a downed pilot killed on
-the ground** by finally assigning the designed-but-unused `dead` state (a pilot killed while
-`down` used to linger in the ledger forever, polled every 5 s). The cap is exercised end-to-end
-against the real plugin under Lua 5.1 in `tests/lua/test_combatsar_capture_cap.py` (combatsar is
-MOOSE-heavy and not in the `DcsPluginHarness`, but the cap runs at file scope before any MOOSE
-wiring, so a tiny sandbox drives it). The plugin.json labels now state both caps.
-
-**Capture → held POW (Python; the raid is SHELVED, 2026-07-03; the model reworked 2026-07-06).**
-`record_pow_captures` (`game/sim/missionresultsprocessor.py`) turns each capture into a
-`PendingPowRecovery` (`game/pow_recovery.py`) on the survivor's coalition (persisted,
-save-migrated), resolving the **holding enemy airfield at capture time**
-(`resolve_holding_airfield`) and stamping the `captured_turn`. `commit_air_losses` spares a
-captured pilot the KIA, and the capture now flips the aviator to **`PilotStatus.POW`**
-(`pilot.capture()`) so the squadron stops scheduling them while captive (they leave
-`active_pilots`). The POW resolves by: `surviving_pows` (from `Coalition.end_turn`) **frees**
-(`repatriate()` → Active) a POW whose holding field is recaptured; otherwise the hold is
-**always a 4-turn countdown clock** (since the 2026-07-21 will-economy removal there is no longer an
-indefinite will-coupled hold). The **Homecoming** (`resolve_pows_at_game_end`,
-from `process_win_loss`) repatriates all held blue POWs on a **win** and writes them
-off on a **loss**. Every write-off routes through `_write_off`, which **respects
-`invulnerable_player_pilots`** (a player POW is repatriated, not killed). A held POW is surfaced
-on the **SITREP band** (`Sitrep.pows_held` — name @ holding field + clock/"held") and the
-**squadron roster status** (`SquadronDialog`). The §51 comms compromise it triggers is time-boxed
-to `COMMS_COMPROMISE_TURNS` off `captured_turn`, so a held POW doesn't jam forever. The dedicated
-recovery *raid* — the `CSAR` flight type + the dynamic `CapturedPilotGroundObject` map objective
-+ `commit_pow_recoveries` — was **shelved in the 2026-07-03 rescope** (`game/pow_objectives.py`
-deleted; the TGO class remains a save-compat tombstone; `purge_pow_objectives` sweeps
-pre-rescope saves at turn init; a persisted `"CSAR"` flight degrades to TRANSPORT via
-`_LEGACY_FLIGHT_TYPE_VALUES`). v1 fidelity gap unchanged: a held pilot isn't pulled from the
-active roster.
-
-**The Sandy kneeboard** is `ScarTaskPage` (`game/missiongenerator/kneeboard.py`) — role guidance
-for holding with the King/Jolly, suppressing the threats around the survivor, and walking the
-rescue helo in.
-
-**Settings / state.** `scar_command_post_intel` (Campaign Doctrine; gates the command-post fog)
-and `auto_combat_sar` (the AI standing alert). State globals: `combat_sar_captures`
-(captures) and `combat_sar_rescues` (pilot-spared credit). **Tests:**
-`tests/test_scar_command_post_fog.py` (the command-post intel fog),
-`tests/test_scar_rescue.py` (the SOF save-compat tombstones + purge), plus the Combat SAR / POW
-coverage in `tests/test_missionresultsprocessor.py`. The capture race +
-King cueing + POW recovery **need an in-game pass** (checklist G8–G14).
-
-**Sandy AI dynamic retasking (runtime — `combatsar` plugin, added 2026-07-01).** `ScarFlightPlan`/
-`Builder` (`game/ato/flightplans/scar.py`) still plans Sandy's racetrack once at generation, centred
-on the King's hold (or the FLOT centre with no King) — that part is unchanged. What was missing: the
-box never moved to follow wherever a pilot actually ejected later in the mission (a 2026-06-30
-in-game report — "Sandy's did nothing but fly their orbit path" — and the code's own comment flagging
-this as "a combatsar runtime follow-up for the AI"). The runtime now closes that gap for **AI-crewed**
-Sandys (player Sandys are untouched — voice/SRS coordination stays the intended path): `luagenerator.py`
-buckets `FlightType.SCAR` flights per coalition into `dcsRetribution.CombatSAR(.red).sandys` (group
-names only, alongside the existing `kings`/`rescueHelos`); `combatsar-config.lua` builds a
-`sandyByName` map and, on every tick a survivor is `"down"`, `dispatchSandy` finds the nearest alive,
-idle, **non-player** Sandy within `sandyMaxRangeNm` (default 30 NM) and **pushes a route** to the
-survivor — a transit waypoint from the Sandy's current position to a hold waypoint over the survivor
-(450 m above ground) carrying `TaskOrbitCircleAtVec2` (the hold anchor) plus an
-`EnRouteTaskEngageTargetsInZone` waypoint task (actively hunts `"Ground Units"` within
-`sandyEngageRadiusNm`, default 3 NM, around the survivor). **Reworked 2026-07-02** from the original
-`SetTask(TaskCombo{engage, orbit})` after the Trail 2 flown session reproduced the fail signature
-(divert message, no movement): `EngageTargetsInZone` is an *en-route* task, which the DCS controller
-silently rejects inside a main-task ComboTask — en-route tasks only execute from a waypoint task
-list, and the transit leg physically flies the Sandy there (the stock MOOSE transit-then-orbit
-pattern). `configure_scar`'s weapons-free ROE (unchanged) does the actual engaging once
-retasked. Commits at most one Sandy per survivor (`busySandy`), retries every `POLL` (5s) until one
-frees up, and releases it once the survivor is rescued/captured/dead — the release routes the Sandy
-back to the station it was diverted from (`entry.sandyReturn`) and holds it there, since the divert
-replaced the group's planned route and a bare `ClearTasks()` would leave it flying a straight line.
-Two plugin options: `sandyMaxRangeNm`, `sandyEngageRadiusNm`
-(imperial-unit options since 2026-07-01; the whole Combat SAR option set is now ft / NM / kts —
-`pickupRangeFt`/`pickupAGLFt`/`pickupSpeedKts`/`homeRangeNm`/`captureSpawnDistanceNm`/`captureRangeFt`
-— converted to metric at read time in the Lua, defaults equivalent to the old metric values).
-Python bucketing/emission is unit-tested
-(`tests/missiongenerator/test_combat_sar_sandy_luadata.py`); the routed-divert Lua needs a re-fly
-(checklist G23 — the pre-rework dispatch was flown 2026-07-02 and confirmed not to move the flight).
-**Freeze policy (2026-07-03 rescope):** G23's re-fly is pass-or-delete — if the route-push rework
-flies, the divert stays as-is, frozen; if it fails again the divert is removed rather than reworked
-a third time. Either way, no further AI-rescue choreography is added.
-
-### SOF insert generation fixes (2026-06-22)
-
-> **Historical.** The SOF insert itself was removed with the dormant capture economy (2026-07-01,
-> §15). The two fixes below outlived it in generalized form: the runway fallback applies to any
-> non-helo flight, and the EW deny-list still covers the Combat SAR King (`FlightType.SOF` is
-> simply no longer in the non-EW set).
-
-Two fixes so the SOF C-130 airdrop actually generates as a flyable ground sortie:
-
-- **Forced air spawn → runway fallback** (`game/missiongenerator/aircraft/flightgroupspawner.py`,
-  `generate_flight_at_departure`). On `NoParkingSlotError` Retribution force-converted a planned
-  ground start to `IN_FLIGHT`; the SOF C-130 (a large aircraft that often finds no large parking
-  slot) air-spawned despite a ground start being selected. The "try a runway start before the air
-  start" retry was previously gated to `FlightType.JAMMING` only — now it applies to **any
-  non-helo flight** with a cold/warm start at an airfield (runway starts need no parking slot).
-  Helos (helipads/ground spawns) are unaffected.
-- **EW plugin de-conflict** (`game/missiongenerator/luagenerator.py`,
-  `_ew_excluded_c130j_groups` + the `c130j` plugin's `isEligible`). The C-130J Mission Systems
-  (EW/ISR) plugin attaches to **every** `C-130J-30` by airframe alone
-  (`eligibleTypeNames = {["C-130J-30"]=true}` in `c130j_mission_systems.lua`), so it would bolt
-  the EW menu/behavior onto a SOF insert or Combat SAR King flown by the same airframe. The
-  generator emits a **per-group deny-list** — `dcsRetribution.EwExcludedGroups`, the group names of
-  C-130J-30 flights in a non-EW role (`FlightType.SOF`/`COMBAT_SAR`, both coalitions) — and the
-  plugin's `isEligible` skips exactly those groups (by `getGroup():getName()`). This **replaced the
-  old mission-wide plugin skip** (`_non_ew_c130j_present`), which also stripped EW from a co-present
-  **JAMMING** C-130J-30; an EW jet and a SOF/King C-130J can now fly the same mission. The old
-  whole-plugin skip was verified in-game 2026-06-23 ("the EW is gone" on the SOF C-130); the
-  per-group version needs a fresh pass (checklist **J3**), as does the runway-fallback half.
-  Upstream-PR candidate (fork-specific to the `c130j` plugin).
-
----
-
-
-</details>
+Two things outlived the feature: the command-post intel fog still rides the
+`scar_command_post_intel` setting (re-homed to §3 — the field keeps its `scar_` prefix so old
+saves resolve), and the blue-only survivor rule is **dead**. `414th-csar-notes.md` is the one
+CSAR document and supersedes everything this section used to say.
 
 ## 16. Settings semantic cleanup and audit
 
@@ -2924,66 +2728,11 @@ out: `game/theater/unitplacement.py`, `QPlaceUnitGroupDialog`, the
 
 ## §21 — Combat SAR — pilot rescue — REMOVED (2026-08-07)
 
-**REMOVED (2026-08-07).** Replaced wholesale by upstream
-[dcs-retribution#929](https://github.com/dcs-retribution/dcs-retribution/pull/929) (Drexyl), which
-landed a parallel CSAR implementation the same week. Squadron call: adopt upstream's, err toward
-its shape on every conflict, and do not carry two rescue systems.
-
-Deleted with it: the `combatsar` plugin, `CombatSarFlightPlan`, `ScarFlightPlan`,
-`FlightType.COMBAT_SAR`, `FlightType.SCAR` (§15), `game/pow_recovery.py`,
-`game/fourteenth/downed_pilots.py`, `game/fourteenth/csar_surge.py`, `PilotStatus.POW` / `.MIA`,
-the fork's downed-pilot server model and client map layer, the kneeboard CombatSar/Scar task pages,
-and the `comms_jam_requires_capture` intel gate (§51 keeps jamming; it is now unconditional).
-
-**The whole POW model went with it.** Upstream has no capture — a pilot who is not rescued goes
-MIA. So the held-POW clock, the Homecoming at game end, the SITREP POW band and the §51
-"captured aircrew compromises your comms" coupling are all gone.
-
-Persisted saves migrate through `_LEGACY_FLIGHT_TYPE_VALUES`: `"Combat SAR"` → `FlightType.CSAR`,
-`"SCAR"` → `FlightType.CAS`.
-
-**What the fork kept on top of upstream's base**
-
-- **The C-130J "King".** Upstream derives CSAR capability from the airframe and restricts it to
-  helicopters, because the DCS AI `Land` task is helicopter-only and a fixed-wing rescuer just
-  orbits the survivor. An explicit per-aircraft `CSAR:` task entry overrides that derivation, and
-  `C-130J-30.yaml` carries `CSAR: 5` deliberately — **the lowest CSAR number in the
-  fleet**, so the auto-planner always reaches for a helo first and never frags a King for a
-  rescue no AI can finish. Upstream derives CSAR from the airframe, so 27 airframes are
-  capable and the floor is the Mi-24V at 10, not the fork's own eight yamls.
-  `tests/test_csar_king_priority.py` pins it against the live fleet. **Accepted limit: an AI-crewed King will not
-  complete a pickup.** The King is player-flown, as the on-scene commander it always was.
-- **The briefed survivor beacon** — see below.
-- All eight former Combat SAR carriers keep their authored priorities, converted
-  `Combat SAR: N` → `CSAR: N` rather than deleted, since upstream's derivation would have
-  flattened them to the Air Assault value or 50.
-
-**Survivor ADF beacon (fork addition, `game/missiongenerator/csarbeacon.py`)**
-
-MOOSE `Ops.CSAR` already beacons every survivor — a looped `trigger.action.radioTransmission`
-from their position (`Moose.lua` `CSAR:_AddBeaconToGroup`), in the NDB band. Stock behaviour picks
-a **random** channel per survivor, which cannot be briefed: the kneeboard renders before the
-mission runs. So Python pins one channel for the whole mission, `OpsCSAR.lua` uses it in place of
-the random draw, and it prints on the kneeboard SAR line.
-
-- **260 kHz.** Inside MOOSE's own 200–999 kHz band on its 10 kHz grid, and clear of every entry on
-  that allocator's 59-entry navaid skip list. **310 and 320 kHz are both skip-listed** — the
-  obvious round numbers would have parked the briefed beacon on a real theater navaid.
-- Receivable by the whole rescue fleet: C-130J 2× ADF-462 (NDB), UH-1H ARN-83 (190–1750 kHz),
-  Mi-8MT ARK-9 (150–1290 kHz).
-- `tests/missiongenerator/test_csarbeacon.py` parses the skip list out of `Moose.lua` rather than
-  copying it, so a Moose update that adds a conflicting navaid fails CI instead of colliding.
-
-**There is no TACAN relay, and there cannot be one.** An earlier design had the King re-transmit
-the survivor's position as an air-to-air TACAN for the helos. It fails twice: the C-130J's
-AN/ARN-153 is receive-only against ground stations (DCS C-130J manual p150; the CNI-MU `TR-REC`
-control is the DME interrogation, not a beacon), and neither flyable rescue helo carries TACAN at
-all. Since all three airframes hear the NDB band, the relay was never needed.
-
-**LARS** is upstream's F10 **"List Active CSAR"** (`Moose.lua:79680`), alongside Check Onboard,
-Request Signal Flare, Request Smoke and Request IR Strobe.
-
----
+Removed with §15 and replaced by upstream
+[dcs-retribution#929](https://github.com/dcs-retribution/dcs-retribution/pull/929), which is
+an **open PR, not merged** — the fork re-adopts its phases by hand (Phase 5 landed
+2026-08-17). Read the adoption log in `414th-csar-notes.md` before touching anything here,
+especially the hover height.
 
 ## §23 — Per-squadron DCS country (nation-specific voiceovers)
 
@@ -4969,7 +4718,6 @@ toggle (default on) is a possible follow-up if the racetrack clutter is unwanted
   dropped rather than wrong.
 
 ## §46 — Route-aware fuel-tank planning (fuel-first) — REVERTED 2026-08-09
-
 > **REVERTED to upstream behavior on 2026-08-09**, as work order C of the auto-planner
 > re-convergence (`docs/dev/design/414th-autoplanner-upstream-divergence-audit.md`, DECIDED block).
 > The DM's call was that §46 reverts **outright**, not re-gated. Everything from here to
@@ -5002,119 +4750,6 @@ toggle (default on) is a possible follow-up if the racetrack clutter is unwanted
 > **PR #820 sequencing:** #820 (exempt AI from the receiver dwell) was already **merged**
 > before this revert landed, so it could not be closed as superseded — this change deletes
 > the dwell it fixed. Nothing is owed on it.
-
-Long-AO campaigns strand flights the auto-planner frags with too little fuel for the leg. The original
-motivating case was the COIN **Enduring Resolve** carrier ~800 km off the Helmand AO (a Hornet on internal
-fuel plus its two stock wing tanks can't make the round trip); the **2026-07-12 fuel-first rework** was
-motivated by a flown observation from the other end of the problem: a SEAD Viper carrying two wing bags and a
-centerline ALQ-184 was planned through **pre- AND post-vul refueling**, because the pre/post-vul tanker
-decision ran on *internal fuel only* — the bags it already carried were invisible, and nothing could ever
-give it the third bag (the centerline was occupied and the top-up never touches an occupied station).
-
-The rework makes fuel a **first-class planning input**: build the package normally, then — once the sortie
-route is known — figure out how much fuel the sortie needs, fit the tanks for it, and only then decide the
-tanker passes. "If the plane can't make it to the objective it doesn't matter how many missiles they carry."
-
-### The two halves
-
-**Plan-time fuel-first pass** — `plan_sortie_fuel` (`game/fourteenth/range_fuel.py`), called from
-`FormationAttackBuilder._refuel_tasking` (so every formation-attack-family plan: Strike/SEAD/DEAD/BAI/OCA/
-anti-ship/escort/sweep) after the sortie's base route is walked for its fuel split but **before**
-`decide_refuel_tasking` runs:
-
-1. **Tier 1 — fill empty stations** (gated `auto_range_fuel_tanks`): while the sortie's burn (takeoff →
-   vul-end → home + reserve, from `sortie_fuel_split`'s per-leg climb/combat/cruise rates) exceeds internal +
-   carried external fuel, fill empty tank-capable stations — a tank matching one already on the jet, else the
-   largest compatible. The original §46 behavior, moved ahead of the tanker decision so the decision sees it.
-2. **Tier 2 — the jammer-pod trade** (gated `fuel_tanks_over_jammers`, `enabled_when=auto_range_fuel_tanks`):
-   if the flight still needs tanker passes, a **`WeaponType.JAMMER`-typed** store on a tank-capable station
-   gives its seat to a tank — but **only when the extra bag strictly reduces the tanker-pass count**
-   (BOTH → one pass, or one pass → NONE; computed by re-running `decide_refuel_tasking` with the candidate
-   fuel). With **no tanker in theater** the pass-count gate is moot — the bags are the only gas there is — so
-   the trade happens on a plain shortfall. The Viper case: ALQ-184 off, 300 gal centerline bag on, one pass.
-
-The pass **mutates the members' persisted loadouts in place** — deliberately, so the payload editor, the
-kneeboard loadout column, the fuel ladder, the tanker decision, and the generated `.miz` all agree on what
-the jet carries. Shared member `Loadout` objects are mutated once and stay shared (the `id()`-seen set);
-`is_custom` loadouts are never touched; the pass is idempotent across plan rebuilds (the tanks are already
-there, the fuel now suffices). It runs for both coalitions (the settings are global) and skips helos (the
-tasking path already excludes them; the generation-time hook still covers their empties).
-
-**The decision counts the bags** — `_refuel_tasking` now computes `full_fuel = internal + external` (a DCS
-top-off refills the externals too) and `usable_fuel = full_fuel − taxi` from the **driest member's** loadout
-(`flight_external_fuel_lbs` takes the min across members), so a jet carrying tanks stops being sent to the
-tanker twice when one pass — or none — covers the sortie. The kneeboard **fuel ladder** starts from
-internal + external for the same reason (`_estimate_planned_fuel_for` in `waypointgenerator.py`), or the
-flight plan's RTB margin would call a three-bag jet "short of home" on a sortie its real load covers.
-
-**Generation-time top-up** — `add_range_fuel_tanks` in `FlightGroupConfigurator.setup_payload` stays as the
-safety net for everything planned outside the formation-attack family (ferries, CAPs, transports,
-pre-feature saves). Its original contract is unchanged: fills **empty** stations only, never removes or
-replaces a store, returns a new `Loadout` and never mutates the persisted one.
-
-**The in-app fuel-plan readout** (added same day) — the numbers were invisible in the planning UI (only the
-kneeboard showed them, at generation). `game/fourteenth/fuel_brief.py` (`FuelBrief`/`fuel_brief_for`/
-`fuel_brief_text`) recomputes the same picture on demand — same per-leg walk via the flight plan's own
-`fuel_consumption_between_points`, tanker top-off at each REFUEL waypoint, walk ends at the landing point so
-the trailing divert/bullseye reference waypoints don't burn phantom fuel, external fuel from the loadout
-being shown (defaults to the driest member, matching the tanker decision) — and the Edit-flight **Payload
-tab** renders it as a live one-liner under the fuel slider: `Fuel plan: burns ~14,900 lb · carries 15,200 lb
-(10,800 internal + 2 tanks 4,400) · 1 tanker pass · RTB margin +300 lb`, amber + a "short of getting home —
-tank, divert, or lighten" tail when the margin goes negative, "(estimated)" when the synthesised fuel model
-is the source. It refreshes on the fuel slider, loadout dropdown, custom toggle, member switch, and **every
-pylon edit** (new `QPylonEditor.pylon_changed` signal), plus on tab `showEvent` (waypoint edits happen on
-other tabs) — so a player who strips the planner's bags watches the margin go negative in place.
-
-### Why the trade is JAMMER-only
-
-The old blocker stands for everything else: **weapon type can't tell a self-defense missile from primary
-ordnance** — an AIM-9X, a GBU-31, and an AGM-65 all resolve to `WeaponType.UNKNOWN`, so a generic "swap a
-low-value store" step would risk stripping a TGP or a bomb. But the self-protection jammer pod *is* reliably
-typed (`type: JAMMER` in `resources/weapons/pods/*.yaml` — ALQ-131/184, Barax, SPS-141, Sky Shadow, L005,
-L175V, MPS-410, RKL609…), and it is exactly the store whose seat is worth a bag when the bag decides whether
-the jet gets there at all. `OFFENSIVE_JAMMER` (EW mission stores) and `DECOY` (TALDs — SEAD tactics
-ordnance) stay protected, as does everything UNKNOWN.
-
-**Tank detection** has no `WeaponType` to lean on, so `is_fuel_tank` matches the DCS display name with a
-narrow regex (`fuel tank`, `drop tank`, `external tank`, `gal`/`gallon`, `liter fuel`, `kg fuel`, `PTB-`, …)
-that deliberately excludes a "Color Oil Tank" or a fuel-air bomb, and skips the `(Empty)` ferry shells.
-`tank_capacity_lbs` parses the number + unit from the name (gallons ×6.7, liters ×1.75, kg ×2.205; a 2000-lb
-default when the name gives no number).
-
-### Gating
-
-`auto_range_fuel_tanks` — Mission Generation → Loadouts, **default OFF since the 2026-08-09
-re-convergence** (the planner-suite preset turns it on; inert on short routes). It now
-gates both the generation-time top-up and the plan-time tier 1, and is the master for
-`fuel_tanks_over_jammers` — Mission Generation → Loadouts, **default ON**, the tier-2 kill switch. The
-tank-aware *decision* (counting bags already on the jet) is unconditional — it just reads the loadout the
-flight actually carries. No campaign preseed is needed.
-
-### Files & tests
-
-| Area | Path |
-|---|---|
-| Core | `game/fourteenth/range_fuel.py` (`plan_sortie_fuel`, `_plan_loadout_fuel`, `flight_external_fuel_lbs`, `external_fuel_lbs`, `add_range_fuel_tanks`, `top_up_for_route`, `is_fuel_tank`, `tank_capacity_lbs`) |
-| Tanker decision | `game/ato/flightplans/formationattack.py` (`_refuel_tasking` — runs the pass, counts external fuel) |
-| Fuel ladder | `game/missiongenerator/aircraft/waypoints/waypointgenerator.py` (`_estimate_planned_fuel_for`) |
-| Generation hook | `game/missiongenerator/aircraft/flightgroupconfigurator.py` (`setup_payload`) |
-| UI readout | `game/fourteenth/fuel_brief.py` (`FuelBrief`, `fuel_brief_for`, `fuel_brief_text`) · `qt_ui/windows/mission/flight/payload/QFlightPayloadTab.py` (`refresh_fuel_brief`) · `qt_ui/windows/mission/flight/payload/QPylonEditor.py` (`pylon_changed`) |
-| Settings | `game/settings/settings.py` (`auto_range_fuel_tanks`, `fuel_tanks_over_jammers`) |
-| Tests | `tests/fourteenth/test_range_fuel.py` (the jammer trade on the real F-16C pylon tables: saves-a-pass / no-benefit / already-covered / disabled / no-tanker / idempotence / shared-vs-custom members; the gen-time never-removes contract on the real F/A-18C) · `tests/ato/flightplans/test_fuel_first_tanking.py` (the Viper case end-to-end through `_refuel_tasking`: BOTH → POST_VUL with the pod traded; bags counted; toggle off keeps the pod) · `tests/fourteenth/test_fuel_brief.py` (the readout walk: burn/reserve/margin, REFUEL top-off + pass count, stops at landing, tanks counted, driest-member default, estimate flag, text rendering) · `tests/ato/flightplans/test_refuel_tasking_estimate_fallback.py` · `tests/missiongenerator/test_fuel_ladder.py` |
-
-### Gotchas / deferred (checklist S1 — needs an in-game pass)
-
-- **The plan-time pass persists its edits.** Unlike the generation-time top-up, the fitted tanks land on the
-  member loadouts and show in the payload editor (under the original preset name). A player who strips them
-  by hand leaves the already-decided refuel plan slightly optimistic until the plan is rebuilt — the same
-  staleness class as any loadout edit after planning; the generation-time top-up still refills empties.
-- **Drag is not modeled.** The per-NM burn rates are per-airframe constants, so a three-bag jet burns the
-  same as a clean one in the math (true before the rework too). The trigger errs toward carrying a tank.
-- **TARCAP's refuel waypoint is untouched** — it is doctrinal (top off coming off station), not fuel-driven,
-  and the CAP families don't run the formation-attack tasking. Their empties are still topped up at
-  generation.
-- **Estimate, not a measurement.** The synthesised fuel model is a planning approximation; the trigger is
-  intentionally generous so it errs toward carrying a tank rather than launching short.
 
 ### The racetrack burn (2026-07-19) — KEPT through the §46 revert
 
@@ -5905,36 +5540,18 @@ The effect lands on the *enemy's* next turn, so the player is told the strike wo
 
 ## §53 — War economy — REMOVED (2026-07-21)
 
-**REMOVED 2026-07-21 (the campaign-economies drop).** The per-base materiel supply economy
-(`game/fourteenth/war_economy.py`, deleted) is gone: the produce → transport → consume loop, the
-`supply_effectiveness` **bite** on strength recovery / deployable cap / ground-combat, the
-`fuel_readiness` air-grounding (P3), the `coalition_supply_health` / `supply_factor` reads, the SITREP
-front-supply band (P4a), and the base-card + client **Supply status** map overlay (P4b) are all
-removed. Do not restore. Design note
-[`414th-war-economy-notes.md`](design/414th-war-economy-notes.md) is kept as historical record only.
-
----
+Removed with §48 and §54 in the economy drop. Do not restore. See
+`414th-war-economy-notes.md` (historical).
 
 ## §54 — Munitions availability — REMOVED (2026-07-21)
 
-**REMOVED 2026-07-21 (the campaign-economies drop, with the §53 war economy).** The scarce-munitions
-stock economy is gone: the curated `_SCARCE_MUNITIONS` taxonomy (M0), the per-base `Base.munitions`
-stock + debit/rearm (M1), the `Loadout.degrade_for_stock` loadout gate (M2), the payload-editor
-grey-out, and the base-card munitions readout (M3). Do not restore.
-
----
+Removed with the war economy (§53). Do not restore.
 
 ## §55 — Red Intent — adaptive enemy posture — REMOVED (2026-07-21)
 
-**REMOVED 2026-07-21 (the ROE-mechanic drop, the symmetric teardown of the §40 removal).** The RED
-posture classifier (`game/fourteenth/red_intent.py`: `CONSOLIDATE`/`ATTRITION`/`SURGE`, its rolling
-trend memory, graduated intensity and per-front postures), its four planner seams (offensive emphasis,
-unpredictability, aggressiveness, ground husbanding), and its ribbon + SITREP posture surfaces are all
-gone. The shared unpredictability + `_offensive_order` seams it stacked on stay for §52/§68. Do not
-restore. Design note [`414th-red-intent-notes.md`](design/414th-red-intent-notes.md) is kept as
-historical record only.
-
----
+Removed. **Read this before proposing anything that makes red "smarter"**: §55 already tried
+the obvious shape and it did not survive contact. Seam 7 of
+`414th-retribution-long-view.md` is where that conversation belongs.
 
 ## §56 — Strikeable motorpool depots
 
@@ -6083,88 +5700,17 @@ should now also confirm the garage lands on its authored marker.
 
 ## §57 — Air-droppable minefields (convoy interdiction) — SHELVED (2026-07-30)
 
-**⛔ SHELVED 2026-07-30** — dropped from active use by user call, not deleted. Every gate
-(`air_droppable_minefields`, `auto_plan_minefields`, the `minefields` plugin) defaults OFF and
-Red Tide's preseed was removed, so the feature is inert everywhere. All code/tests/Lua/client
-below remain in the tree unchanged; to resume, re-preseed a campaign (see CLAUDE.md §57) or flip
-the settings by hand. The rest of this section still describes the live implementation as-is.
+**Shelved, not removed — the code is retained and resumable.** The `minefields` plugin, the
+`air_droppable_minefields` / `auto_plan_minefields` settings and `game/fourteenth/minefields.py`
+are all still in the tree and inert.
 
-DCS has no mine object, so the 414th **fakes** area mining. A blue jet air-drops a **CBU-99**
-cluster dispenser (carried only by the **"Aerial Minefield"** loadout) and the impact area
-becomes a **scripted proximity minefield** that detonates on any enemy (RED) ground unit — a
-supply convoy — that drives across it. Design note:
-[`docs/dev/design/414th-minefields-notes.md`](design/414th-minefields-notes.md). Blue-only v1.
-Delivered in phases; §57 covers P1 (same-turn) + P2 (persistence). P3 (auto-plannable frag) is
-still to come.
+DCS has no air-droppable mine, so CBU-99 releases over a road were faked into a mined zone that
+damaged convoys entering it. That works, and the reason it stopped is that the fake is visible:
+the cluster munition detonates normally and the mining is a separate scripted effect keyed off
+the release point, so what the player sees and what the campaign records are two different
+events.
 
-**The core insight — almost no Python at runtime.** A minefield is a scripted zone (periodic
-scan for enemy ground within a radius → `trigger.action.explosion` at the tripping unit), so
-same-turn mining is pure Lua and the explosion kills *real, tracked* convoy units — the loss is
-recorded natively at debrief (units that never arrive), no phantom spawns (the §35/§50/§49
-discipline). Persistence is a thin turn-boundary reconciliation, not a physical-object model, so
-the heavy half of the §56 motorpool recipe (per-mine statics, a generator/populator, a `UnitMap`
-bucket) is skipped entirely.
-
-**Phase 1 — same-turn mining (the `minefields` plugin).** `resources/plugins/minefields/`
-(`minefields-config.lua` + `plugin.json`, registered in `plugins.json`, `defaultValue` false =
-opt-in) watches `S_EVENT_SHOT`; a blue CBU-99 drop is tracked to its ground impact (a structural
-clone of the snake-and-nape `land.getIP` tracker) and lays a proximity field there — radius,
-charges, trip-chance (density), explosion power, scan interval, detonation cooldown, and startup
-grace all plugin options. Each crossing RED ground unit trips at most one mine (one explosion,
-one charge), a field clears when its charges are spent, and every active field carries a live F10
-map mark for the **friendly** coalition only. The dispenser is made **exclusive** by freeing
-CBU-99 from the one stock loadout that used it (A-7E CAS → Rockeye); the "Aerial Minefield"
-loadout (named outside the guarded `Retribution <X>` namespace — there is no Minefield
-`FlightType`, mining reuses BAI) is on the **A-7E, F/A-18C Hornet, and AV-8B Harrier**, every
-dispenser pylon verified pydcs-legal. (The A-6E Intruder cannot mount CBU-99 in this pydcs, and
-the F-14 has no ground-attack preset in-fork.) The Lua harness gained a `WeaponFake` +
-`fire_shot` (the snake-nape SHOT path had none); tests `tests/lua/test_minefields_runtime.py`.
-
-**Phase 2 — cross-turn persistence.** A field left undisturbed at mission end is carried across
-the turn. The plugin mirrors the current state of every field it managed — persisted fields (by
-their Python `id`) and newly-laid ones (`id` 0), each with remaining `charges` — into the new
-`minefields_state` **named-global channel** (declared in `dcs_retribution.lua`, added to the
-serialized `game_state`; `dirty_state` flagged so `write_state` flushes). `game/debriefing.py`
-parses it into `StateData.minefields_state`; `MissionResultsProcessor.commit_minefields` →
-`game/fourteenth/minefields.py` `reconcile_minefields` folds it into `game.minefields` (a persisted
-`list[Minefield]`, `__setstate__`-defaulted): a known field takes the plugin's authoritative charge
-count (removed once exhausted), a surviving newly-laid field is promoted to a fresh-id record, and a
-field the plugin did **not** report is left untouched (a field nobody drove over does not decay).
-The emitter `game/missiongenerator/minefieldluadata.py` (`populate_minefields_lua`, wired in
-`luagenerator.py`) re-emits the live survivors as `dcsRetribution.minefields.fields` so the plugin
-re-arms each next mission, exactly where it was. Coordinates round-trip as `x` = north (`Point.x`) /
-`z` = east (`Point.y`) — the DCS `getPoint` frame the plugin works in. Gated by the
-`air_droppable_minefields` setting (Mission Generation → Battlefield life, default **OFF**);
-the runtime plugin is separately gated by its Plugin Options toggle, so the same-turn tactical
-mining still works with just the plugin on and this setting off. Tests
-`tests/fourteenth/test_minefields.py` + `tests/missiongenerator/test_minefieldluadata.py` +
-the Phase-2 cases in `tests/lua/test_minefields_runtime.py`.
-
-**Phase 3 — auto-plannable toggle (LANDED).** With `auto_plan_minefields` on (Mission Generation →
-Battlefield life, `enabled_when="air_droppable_minefields"`, default OFF, preseeded ON in Red Tide),
-`game/fourteenth/convoy_mining.py` `plan_convoy_mining` (hooked in `Coalition.plan_missions` before
-the commander, the §44 carrier pattern) frags one BAI sortie a turn **at an enemy convoy**, flown by
-a blue squadron that can fly BAI *and* carries the `"Aerial Minefield"` preset (A-7E/Hornet/Harrier),
-with that dispenser loadout **forced by name** onto the flight's members so the CBU-99 is dropped —
-the drop lays the field on the convoy's road (the plugin), and following traffic hits it. Honors the
-premise that only an air-drop lays a mine; the AI (or the player, if they fly the fragged sortie)
-just flies one. Tests `tests/fourteenth/test_convoy_mining.py`.
-
-**Web overlay (LANDED).** `MinefieldJs` on `GameJs` (`game/server/game/models.py`) emits each live
-BLUE field's position/radius/charges, empty unless `air_droppable_minefields` is on (the
-supply-nodes/restricted-zones pattern; BLUE-only — the enemy never sees where you mined). The client
-`minefieldSlice` + `MinefieldsLayer` draws a gold dashed marker per live field (with its mine count +
-radius in a tooltip) in the map-layers panel (a **"Minefields"** toggle in the Friendly group,
-default on). Generated-TS hand-added (`Minefield` type + `GameJs.minefields`, since codegen can't run
-locally); validated with `tsc --noEmit` + the client jest suite (12 suites / 36 tests) via the
-scratchpad-copy + `node_modules`-junction workaround (jest can't run under a `.claude` worktree path).
-The `.miz` F10/ME drawing is **intentionally skipped**: the plugin's *live* runtime F10 marks track
-fields as they deplete/clear during the mission, which a static generated drawing can't. Tests
-`tests/server/test_minefields.py`. **All that remains is the in-game pass** (checklist B9): the
-`CBU_99` runtime type string, the convoy kill, the undisturbed-field re-lay across a turn, and the
-auto-planned drop. Needs the CI client rebuild for the overlay to appear.
-
----
+An in-game pass is still owed if it is ever resumed. See `414th-minefields-notes.md`.
 
 ## §58 — Mission-start briefing popup
 
@@ -8637,61 +8183,16 @@ Files: `game/fourteenth/sp_pilot_mode.py`, `game/fourteenth/pre_turn_briefing.py
 
 ## §84 — Old-stock loadout attrition — REMOVED (2026-08-06)
 
-**REMOVED 2026-08-06, one day after the flown look that was its whole point.** Squadrons burned
-the good stock first: each weapon **station** rolled its own depth and walked that far down the
-fallback ladder the weapon data already declares, so a Hornet wanting four long-range missiles
-came out with a couple of AMRAAMs and a couple of Sparrows, and bomb-carrying flights got the
-generational JDAM → LGB → dumb-bomb ladder for free. `game/fourteenth/stock_attrition.py`, the
-two `FlightMembers` hooks (`from_roster` / `resize`), all four settings (`stock_attrition`,
-`_start`, `_per_turn`, `_max`), the 36 tests, and `WeaponGroup.category` — the family guard,
-added by this feature and read by nothing else — are all gone. Only the `retired=True` registry
-tombstone remains, so §84 stays a resolvable section number. **Do not restore.**
+Removed one day after the flown look that was its whole point. Squadrons burned the good stock
+first: each weapon **station** rolled its own depth and walked that far down the fallback ladder
+the weapon data already declares, so a Hornet wanting four long-range missiles came out with a
+couple of AMRAAMs and a couple of Sparrows. `game/fourteenth/stock_attrition.py`, the two
+`FlightMembers` hooks, all four settings and the tests are gone.
 
-**Why it went, and why re-tuning was not on the table.** It reached the WATCH list as item 1
-(2026-08-06) and got its first eyes; the DM's verdict was *"I've seen and disliked, revert or
-rework"*, resolved to a **full rip**, with the specific objection **turn 1 already downgraded**.
-That objection had no third configuration left to try, because the feature had already shipped
-both:
-
-| Cut | `stock_attrition_start` | Roll | Outcome |
-|---|---|---|---|
-| First | **0 %** | per **flight** | Turn 1 fully supplied, mixing only later. Judged to be doing nothing — its own measurement, *"turns 1 and 5 all six flights identical"*, was read as the symptom. |
-| Second (shipped) | **20 %** | per **station** | Mixed from turn 1, on the DM's explicit ask (*"what I'm looking for is mixing and matching on the same flight"*). This is the one flown and rejected. |
-
-Turning the knob back to 0 % restores the version whose stated defect is exactly the property
-now being asked for, so the two ends of the range are one rejected and one already dismissed.
-Rip was the honest call rather than a third pass at the same dial.
-
-**Save compatibility.** The four removed setting keys land as dead `__dict__` entries via
-`deserialize_state_dict` (the §20/§55 precedent), and a `WeaponGroup` unpickled from a save
-written while the field existed simply carries an inert `category` attribute. No migration, no
-NEW game.
-
-**If this is ever rebuilt, three guards were expensive to get right and must come back with
-it.** They are the reason this record is longer than a one-line tombstone:
-
-1. **Never-an-upgrade.** `fallback` answers *"what do I use instead when this is unavailable"* —
-   a **date-gating** answer, and it is **not monotonic in year**. **18 same-category fallbacks in
-   the shipped data point at a newer weapon** (`2xAIM-120B` 1994 → `AIM-120C` 2018;
-   `AGM-65E` 1985 → `AGM-65G` 1989 → `AGM-65F` 1991), so an unguarded walk hands a flight
-   *better* stores the longer the war runs. **Date gating cannot save you** — all three Mavericks
-   are legal in Desert Storm, so it is a ceiling, not an ordering. The fix was to take a rung only
-   when *provably* older, and to **hop** a newer rung rather than ending the ladder (which is what
-   recovers `2xAIM-120B` → `AIM-120B`: fewer missiles, not newer ones).
-2. **Category.** `WeaponType` cannot express a weapon family — a Sidewinder and a JDAM are both
-   `UNKNOWN` — and several shipped fallbacks cross families on purpose
-   (`AN/ASQ-228 ATFLIR → AIM-120C`, `AN/ALQ-131 ECM → 2xAIM-120C`, `AGM-84A → GBU-24`). Sane as a
-   date-gating last resort, absurd as attrition: without the guard the walk hangs a missile on the
-   targeting-pod station.
-3. **Store family.** A mod that models its own pylons namespaces every store it ships **and
-   inherits the stock entries into the same pydcs pylon table**, so a stock store passes
-   `can_equip` on the mod jet without being mountable on the mod's geometry — DCS drops it and the
-   **pylon spawns empty**. Caught on a flown Marianas miz when a CJS F/A-18E's station-8 AMRAAM
-   aged to a stock Hornet rack.
-
-Checklist: **B42** (⊘ RETIRED).
-
----
+**Why it went, and the reason not to rebuild it:** the ladder it walked is the same data the
+loadout system uses to pick a fit in the first place, so the result read as the planner being
+wrong rather than the stockroom being empty. A depth model needs its own inventory, not a
+re-read of the fallback chain.
 
 ## §85 — SAM battery support section (refuellers + power)
 
@@ -9425,298 +8926,62 @@ residue and the AAM/TANK weapon-taxonomy enrichment are P2's two recorded deferr
 
 ## Unit-coverage sweep — 2026-08-04
 
-The §85 investigation raised an obvious follow-up from the DM: *"scrub my local install of all
-units we can use. There is SO many support vehicles we are not utilizing."* He was right, and the
-gap was measurable.
-
-**The tool.** `tools/audit_unit_coverage.py` diffs what the engine can place against what the fork
-has registered. It is a *coverage* report (does a yaml exist at all), the complement of
-`tools/verify_mod_export.py`, which checks that a registered unit's *values* still match the live
-install. Run it after any DCS or mod-pack update:
+`tools/audit_unit_coverage.py` diffs what the engine can place against what the fork has
+registered — a *coverage* report (does a yaml exist), complementing `tools/verify_mod_export.py`
+(do a registered unit's *values* still match the install). Run it after any DCS or mod-pack
+update:
 
 ```
 python tools/audit_unit_coverage.py --csv coverage.csv
 ```
 
-The list is pydcs's `vehicle_map`/`ship_map` **with `pydcs_extensions` loaded** (importing `game`
-is what pulls them in), so every mod pack the fork registers is included — the 2026-08-04 run
-confirmed all eight CH packs, HDS, VWV, Massun92 and ColdWar are covered. A mod installed with *no*
-`pydcs_extensions` entry is invisible to this tool; that is a different gap whose fix is an
-extension module, not a unit yaml.
+Baseline was 130 of 834 placeable units with no yaml; the sweep registered 35 and left 95, the
+remainder deliberate (rolling stock, civilian cars, scenery props). `GPS_Spoofer_Blue`/`Red` are
+registered but **unverified** — DCS calls them a "Radio jammer" and nothing confirms the
+behaviour.
 
-**Baseline: 130 of 834 placeable units had no yaml.** The worst categories were exactly the ones
-the DM named — EW/jamming/comms at **29 %** usable, power at 67 %, support trucks at 68 %,
-command & control at 80 %.
+**Three traps closed, each now impossible to repeat silently:**
 
-**Registered in this sweep (35 units), registration-only.** A unit still reaches a mission only
-through a faction roster or a preset group, so **none of this changes generation on its own** —
-`Faction.accessible_units` is built from the faction's own lists plus its preset groups, and a unit
-in neither is unreachable. Wiring each category into layouts/factions is a deliberate later pass.
+1. `ControlPoint.runway_is_operational()` whitelists carrier hulls by type, and **a carrier
+   missing from it reads as SUNK** the moment a campaign bases on it. CVN-70 was absent.
+2. **pydcs saves miz countries sorted by name**, and the layout loader anchors a layout's
+   template origin on the first unit of the first matched group, iterating vehicle groups before
+   statics within a country. A vehicle group added under the statics' country (or any country
+   sorting before it) steals the origin and shifts every authored building cluster on every
+   campaign. Support groups therefore live under a country that sorts after.
+3. Layout `unit_types` entries name unit **ids**, not pydcs classes — a class name resolves to
+   None, the group empties, and the site raises `LayoutException` with no other signal.
 
-| Group | Units | Class chosen |
-|---|---|---|
-| Electronic warfare | 34Ya6E Gazetchik-E decoy, 2× "Radio jammer" (`GPS_Spoofer_Blue`/`Red`) | new `UnitClass.ELECTRONIC_WARFARE` |
-| Command & control | GCI station (KRU), Ural-375 PBU, ZIL-131 KUNG, SKP-11 mobile ATC, Predator GCS, Predator Trojan Spirit, fire-control bunker, AN/FPS-117 ECS | `CommandPost` |
-| Power | APA-5D (Ural-4320), APA-80 (ZIL-131) | `Power` |
-| SAM components | RD-75 Amazonka | `SpecializedRadar` |
-| Support / airfield | S-75 ZIL transloader, KrAZ-6322, MAZ-6303, ZIL-135, ZIL-4331, GD-20 lift truck, 4 crash tenders, civil ATZ-5 | `Logistics` |
-| Ships | 4 VWV destroyers (Radford, Everett F. Larson, Maddox TI, Epperson), Solon Turman, USNS Card, CVN-70 Carl Vinson, Tango SSK, Zvezdny, SS Atlantic Conveyor | real hull classes |
+**A deliberate semantics change shipped with it.** §51's comms-jam emitter transmits from every
+alive unit of a node and §70 counts a source alive while any unit lives, so killing the tower no
+longer silences the site — the surviving van keeps transmitting. §52 counts a command center
+alive while any unit lives, so full decapitation now requires killing the C2 vehicles, raising
+the strike weight for a §52/§63 C2 kill. Layout comments and tests both state this.
 
-**Class choices are load-bearing, and the constraint is which classes a layout selects by.** A
-`unit_classes:` slot pulls from the faction's accessible units, so registering under a
-layout-referenced class *can* change generation. `Power` and the new `ElectronicWarfare` are
-referenced by **no** layout, so they are inert by construction. `CommandPost` is referenced, but
-every CP slot in the shipped layouts is `optional: true, fill: false` — and `ForceGroup.from_layout`
-skips an `optional and not fill` slot outright while `initialize_for_faction` only fills when
-`fill` is set — so a C2 truck cannot displace a proper SAM command post. `Logistics` *is* filled
-from the faction, which is the intended path: these trucks are meant to reach generic SAM logistics
-slots and supply convoys once a faction rosters them.
-
-**One landmine closed on the way.** `ControlPoint.runway_is_operational()` whitelists carrier hulls
-by type, and a carrier missing from it is treated as **sunk** the moment a campaign bases on it.
-CVN-70 was not in the list, so registering it would have shipped a trap for whoever first authored
-a Vinson CP. Added.
-
-**After the sweep: 95 unregistered**, and the remainder is deliberate — railway rolling stock,
-buses and civilian cars, VAP scenery props (bamboo houses, ammo boxes, barrels), the drivable M92
-ramp tugs, ME payload placeholders (`PL-5EII Loadout` et al.), and smoke/field-hide pseudo-units.
-Refuellers, command & control, power and radar/sensor are all at **100 %**.
-
-**Unverified, flagged deliberately:** DCS calls `GPS_Spoofer_Blue`/`Red` a *"Radio jammer"* and
-gives them a 50 km detection range, but their actual in-sim effect is unconfirmed. The name may be
-aspirational. Confirm in a test mission before building anything (§51 comms jamming or §70 COMINT)
-on top of them — the unit yamls say so too. **The GPS spoofer pair is deliberately excluded from
-the wiring pass below** (DM call, 2026-08-04 — another agent owns their wiring; registration-only
-here).
-
-**The wiring pass (same day, DM call — "start by editing the stuff we touch most often").** The
-registration batch was deliberately inert; this makes the most-played generation paths field the
-kit. Three edits, most-touched first:
-
-1. **The dedicated legacy Soviet SAM layouts** — SA-2 Battery ×4, SA-3 Site ×2, SA-5 Legacy ×4,
-   SA-6 Reinforced ×2 (Red Tide's front belt, the Vietnam set, Desert Storm's KARI crust, the COIN
-   SA-6s) — get the **1960s refuellers (ATZ-5 / ATZ-60 / TZ-22)** appended to their existing
-   Logistics `unit_types` whitelist. These layouts whitelist by type, so faction rosters can't
-   reach them; the trio is 1965–67, era-safe for every campaign that can field these SAMs (which is
-   also why ATZ-10/ATMZ-5 stay out of the *shared* layouts — no ground-unit date gating exists to
-   stop a 1968 site rolling 1980 kit). **One slot rolls ONE type**, so a legacy site now fields
-   trucks *or* a bowser — the trucks-AND-fuel-AND-power spread stays an S-300 signature (separate
-   slots, §85); giving the legacy sites the same would mean template surgery across six shared
-   `.miz` files, deferred.
-2. **The two C2-less generic-layout Soviet presets** — SA-2_ZSU and HQ-2 — carry the **ZIL-131
-   KUNG**, which fills the generic launcher layouts' dormant `fill: false` Command Post slot (only
-   preset-carried CommandPost units render there; SA-11/SA-17/Hawk already field their real C2).
-   Yankee Station's PRC HQ-2 ring is the first customer. **No Logistics units were added to
-   generic-layout presets, on purpose**: the Logistics slot there is `fill: true`, and a preset
-   Logistics unit makes `has_unit_for_layout_group` skip the faction fill — i.e. it would
-   *displace* the faction's own trucks rather than join them. Faction rosters serve that slot.
-3. **Era-correct refuellers on the active campaigns' factions** (`logistics_units`, 10 files) —
-   Red Tide red gets all five Soviet bowsers (≤1980), RT blue / DS91 NATO / OEF / OIR / USA 2020
-   get the M978 (1985), Vietnam 1970 the 60s trio, Iraq 1991 the full Soviet set, and **the two
-   COIN insurgent factions get the civilian-liveried ATZ-5** (`ural_atz5_civil`) — a fuel bowser
-   on the ratline. Roster membership is what reaches **supply convoys** (§50 ambient / §35 trail),
-   **FLOT LOGI groups**, and **every generic-layout Logistics slot** via faction fill. This
-   honours the DM's §85 convoy call ("refuellers in convoys — yes, realistic").
-
-**Headless-verified on Red Tide**: all 10 factions resolve their additions (the loader silently
-drops unknown unit strings — now test-guarded), and a fresh game generated **11 of 17 legacy SAM
-sites with a refuelling section** (16 bowsers) plus 3 blue M978s, on top of §85's S-300
-fuel/power. NEW game required (generation-time). Tests extended in
-`tests/armedforces/test_sam_support_vehicles.py` (82 — whitelist presence without truck
-displacement, faction resolution, the KUNG-reaches-the-CP-slot proof). Checklist: **B44**.
-
-**EWR-site support sections (same day, the follow-on portion).** The generic EWR site was a
-single radar unit — no C2 shelter, no power, no trucks — and EWRs are the MANTIS backbone on
-every campaign. `Early-Warning_Radar.miz` gained three appended groups (C2 ×1 / Power ×2 /
-Logistics ×2 positions, ≥25 m dispersed, template origin unmoved) and the layout three
-**optional** slots. The C2 and Power slots are explicit **`unit_types` whitelists, not
-`unit_classes`** — a class-based C2 slot would pull every CommandPost unit the faction can
-reach (a Patriot ECS or a Buk CC parked at an EWR site); the whitelist (ZIL-131 KUNG /
-Ural-375 PBU / FPS-117 ECS; `generator_5i57`) plus faction-access gating keeps the kit
-**nation-correct by construction**, and a faction with none renders a bare radar exactly as
-before (optional → silently skipped; `usable_by_faction` unaffected, WW2 factions untouched).
-The Logistics slot selects by class, so it deals the faction's own trucks/bowsers — right
-nation for free. Access: **`air_defense_units`** membership (KUNG + 5I57 for the Soviet-pattern
-actives — Red Tide red, Vietnam 1970, Iraq 1991; the **FPS-117 ECS shelter** for the FPS-117
-owners — RT blue, DS91 NATO, USA 2020), deliberately NOT `logistics_units`: ground procurement
-buys from there and the planner cannot deploy CommandPost/Power classes, so they would be
-dead-weight purchases. One intended spillover: preset-granted access counts too, so any faction
-fielding a Soviet SAM preset (China 2010 via HQ-2/SA-10) gets the Soviet kit at its EWRs — all
-of it zero-detection/zero-threat, so the site's MANTIS contribution is unchanged.
-**Headless-verified: all 6 Red Tide EWR sites** render radar + KUNG + 1–2 power stations +
-trucks/bowsers. Tests extended (91 in `test_sam_support_vehicles.py` — slot presence +
-positions, the whitelist-not-class guard, six nation-correctness cases both ways, the
-no-kit-faction bare-radar case).
-
-**Economy building furnishing (same day, the "Ammo, Factory, anything" pass).** The audit's next
-target was the objective buildings themselves: **the fuel farm was 8 static tanks and not one
-bowser**; the ammo depot, factory and warehouse were equally lifeless static dioramas. Each of the
-four now carries **one optional Logistics vehicle group** (2 positions in `buildings.miz`, clear
-of the building footprints) dealt from the faction's own `Logistics` roster — nation-correct with
-zero per-faction wiring, and with the registered refuellers in those rosters a fuel farm can now
-roll an ATZ-10 at the loading rack. A faction with no Logistics unit renders the bare statics
-exactly as before. **Scope rule discovered in verification:** the furnishing reaches
-**layout-generated** objectives only — a campaign's hand-authored named targets (Desert Storm's
-"Saad 16 Research Complex" / "Baba Gurgur Fuel Depot" CENTAF set, Red Tide's authored factories)
-are built straight from the campaign miz and never touch the layouts, so **authored content stays
-exactly as its author placed it**, which is correct, not a gap.
-
-**Two template landmines found doing it (both now impossible to repeat silently):**
-
-1. **pydcs saves miz countries SORTED BY NAME, and the layout loader anchors each layout's
-   template origin on the first unit of the first matched group — iterating vehicle groups before
-   statics within a country.** A vehicle group added under the statics' own country (or any
-   country sorting before it) steals the origin, and every authored building cluster on every
-   campaign shifts by the vehicle's offset. The support groups therefore live under
-   **blue/USAF Aggressors** — the only blue country sorting after "USA", where the statics live —
-   and `test_economy_building_origin_still_anchors_on_the_building` pins the origin at (0,0).
-2. **pydcs seeds every unused country into the NEUTRALS coalition, and the loader only scans
-   red+blue** — the first attempt put the groups under a neutrals-resident country and they
-   loaded as nothing, with no error. The country must be popped from neutrals into blue first.
-
-The dead-slot guard is now **repo-wide** (all five layout families, 90 templates, with the
-loader's real matching semantics — a slot is alive if its own name *or* one of its `statics`
-entries exists as a red/blue miz group), so both this bug class and the neutrals variant fail CI
-loudly. The "DEAD" flags an earlier naive scan raised against the building layouts were false
-alarms — they load through their statics lists.
-
-**C2 compound furnishing (same day, DM call — the §51/§52 semantics change accepted).** The comms
-station (a bare TV tower) and the command center (one building) now render as compounds: comms
-gets a **comms van** (KUNG/PBU whitelist) + 1–2 **5I57 generators** + trucks; the command center
-gets a **C2 shelter section** (the **GCI Station (KRU)** for 1980s+ Soviet factions — era-gated,
-Vietnam 1970 rolls the PBU instead — plus KUNG/PBU) + generators + trucks. Access rides the same
-`air_defense_units` gating (the three Soviet actives gained the PBU, RT/Iraq the GCI station);
-western factions render the bare buildings (no western C2 van is registered).
-**The semantics change, explicit and on purpose:** §51's comms-jam emitter transmits from **every
-alive unit** of a node and §70 counts a source alive while any unit lives — so killing the tower
-alone no longer silences the site; the surviving van keeps transmitting until the compound dies
-(thematically right — the van IS a transmitter). §52 counts a command center **alive while any
-unit lives** — full decapitation now requires killing the C2 vehicles too, raising the strike
-weight for a §52/§63 C2 kill accordingly. The layout comments and the tests both state this.
-**Scope rule again:** layout-generated C2 only — **Desert Storm's KARI network is the showcase
-(all 13 comms relays + all 4 command centers furnished, GCI stations at the centers)**; Red
-Tide's scenery-authored 9-node network stays exactly as authored. Power *plants* deliberately
-stay bare (they ARE the power category — a generator beside a power station is noise).
-
-**The "do them all" closure (same day — every deferred item except the GPS spoofers).**
-
-1. **The legacy truck-AND-fuel spread.** The three shared launcher templates
-   (`6_Launcher_Circle` / `6_Launcher_Semicircle` / `8_Launcher_Circle`) gained a "Fuel" group,
-   and the pass-1 fuel trio moved OUT of the 12 dedicated layouts' Logistics whitelists into a
-   dedicated `Fuel` slot (`fill: false`, preset-carried). The distinction is load-bearing: a
-   bowser in a Logistics whitelist satisfies `has_unit_for_layout_group` and **displaces the
-   faction truck fill** — which is exactly the trucks-OR-fuel roll this replaces. Every legacy
-   and generic Soviet family preset (SA-2 ×2, SA-3, SA-5 ×2, SA-6, HQ-2, SA-11, SA-17) now
-   carries era-correct trucks + bowsers (60s trio for the 60s systems, +KamAZ/ATMZ-5/ATZ-10 for
-   the 80s Buks), Hawk carries the M818 + M978. **Headless: 46/46 Desert Storm legacy SAM sites
-   field trucks AND fuel.** The four generic launcher layouts gained the same fill:false Fuel
-   slot (full bowser whitelist, preset-gated).
-2. **HQ-22's support section** — DM call: *"China totally has refuelers or can use Soviet
-   stuff."* The HQ-22 battery (which shares the S-300 template, so §85's support groups were
-   already positioned) declares the Logistics/Fuel/Power slots, its preset carries trucks + the
-   Soviet bowsers + the 5I57, and `china_2027` rosters the five bowsers for convoys.
-   Headless-verified on Marianas: Tinian's HQ-22 renders SX2190 + Urals + TZ-22 bowsers + 5I57.
-3. **Western C2 kit** — the registered US units close the "no western van" gap: the comms C2
-   whitelist gains the **Trojan Spirit** sat-comms terminal, the command-center whitelist the
-   **fire-control bunker** and **Predator GCS**; access era-gated (`usa_2020`/OEF/OIR get the
-   Predator vans, the Cold-War-era blufor/NATO-DS only the bunker — a 1995+ van must never
-   reach a 1988 faction, test-pinned).
-4. **The Gazetchik-E decoy** — confirmed an **HDS mod unit** (`pydcs_extensions/highdigitsams`),
-   so it rides **only the already-HDS-gated modern presets** (SA-20/SA-20B/SA-21/SA-23/SA-23B) —
-   a vanilla game can never see it, and Red Tide's single-radar preset stays decoy-free (era).
-   New `S-300 Site Decoy` slot + template group. Whether the DCS unit genuinely seduces ARMs is
-   an explicit in-game-pass question on B44.
-5. **The textbook configuration is THE configuration** (DM call: *"the old ones before we
-   started can be trashed"*): the S-300-family support slots stopped rolling 1–2 — every
-   S-300/HQ-22 site now renders **2 trucks + 2 bowsers + 2 power stations deterministically**,
-   pinned by `test_textbook_configuration_is_the_only_configuration`.
-
-**Still deferred, now for concrete reasons only:** the GPS spoofers (another agent owns them)
-and 2_Launcher/Patriot-template fuel (point-defence pairs don't warrant it; the Patriot already
-has its EPP + HEMTT).
-
+**Scope rule:** layout-generated objectives only. Hand-authored named targets are never
+furnished — Desert Storm's KARI network is the showcase; Red Tide's scenery-authored 9-node
+network stays as authored. Power plants stay bare on purpose.
 
 ## Code audit fixes — 2026-07-07
 
-A full read-only audit of the 414th surface (campaign layer, mission-generator emitters,
-Lua runtimes, server/API + fog, save-compat, planner/sim) produced this batch of
-correctness fixes. Each brings the code to what its feature section already documents;
-none change a feature's intended shape.
+A read-only audit of the 414th surface produced a batch of correctness fixes, each bringing code
+to what its feature section already documented. The fixes are in git; three **design decisions**
+came out of it and are the part worth keeping:
 
-- **§ COIN `_despawn` (`game/fourteenth/coin.py`)** — `events.delete_tgo` takes a `UUID`,
-  not the TGO object; passing the object poisoned `GameUpdateEventsJs` serialization and
-  dropped the whole `/eventstream` turn-end batch on any turn that despawned a COIN
-  IED/HVT/dispersed cell or a §50 convoy-ambush team (default ON). Fixed to `tgo.id`.
-- **§34 `faction_color` (`game/theater/theatergroundobject.py`)** — `control_point.captured`
-  is the `Player` enum (always truthy), so `"BLUE" if captured else "RED"` labeled every
-  TGO BLUE; the naval-gunfire emitter put red gun ships on the blue side. Now reads
+- **§50 ambient convoys skim, they do not commission.** `ensure_ambient_convoys` was
+  `commission_units`-ing free, un-budgeted units into both sides' rear bases every turn on every
+  campaign — roughly 48 net-new free ground units a turn, permanently reinforcing front-ward
+  bases. Free seeding is right for the §35 Vietnam trail (red-only, gated, its documented
+  character) and wrong to generalise: the ask was traffic, not reinforcement. Ambient columns now
+  relocate units that already exist, so a rear base too thin to skim yields no column. §35 is
+  untouched.
+- **§37 Super Gaggle is losses-only.** Delivery credit fired whenever a committed helo was absent
+  from the debrief kill list — but "absent" is "survived and delivered" *or* "never spawned",
+  indistinguishable without a runtime signal the plugin does not emit. The credit was dropped;
+  real delivery credit waits on a real signal.
+- **A recurring bug class, worth knowing:** `control_point.captured` is the `Player` enum and is
+  **always truthy**, so `"BLUE" if captured else "RED"` labels everything BLUE. Read
   `captured.is_blue`.
-- **§21 Combat SAR templates (`game/missiongenerator/missiongenerator.py`)** —
-  `spawn_combat_sar_templates()` ran *before* `spawn_unused_aircraft()` populated
-  `parked_rescue_helos`, so the preferred tracked parked-helo source was always empty and
-  the runtime always fell back to the untracked clone. Reordered.
-- **§40 ROE gate + escalation tax — REMOVED 2026-07-21** (the ROE-mechanic drop). Historical: the
-  authored `airfield` target lock once lacked an ownership check, scrubbing BLUE from planning its
-  own BARCAP/AEW&C/tankers during a restricted phase (fixed by exempting friendly-owned targets);
-  both the ROE gate and the escalation tax are gone with §40.
-- **§1 COIN anchors (`game/fourteenth/coin.py`, `game/game.py`)** — the "turn 0" anchor
-  snapshot never ran at turn 0 (`finish_turn` increments the turn before its hooks), so the
-  caps were baselined *after* mission 1's losses. `snapshot_campaign_start_anchors` runs
-  from `initialize_turn` at turn 0. Transient COIN spawns are tagged `coin_spawned` so they
-  no longer count toward / get revived by the C1 anchor machinery; a stronghold capture is
-  no longer double-charged as an HVT kill; a matured dispersed cell no longer revives a
-  cache at a now-BLUE base; the reinfiltration flip re-validates the conservation bound and
-  player-field exclusion at flip time and skips `OffMapSpawn` targets; and mid-campaign
-  toggle-off of the COIN/ambush layers now sweeps their hidden TGOs instead of stranding
-  them. The carrier strike picker skips `map_hidden` teams.
-- **§36 airbase harassment (`game/missiongenerator/vietnamopsluadata.py`)** — nothing in
-  the engine constructs `ControlPointType.FARP` (FARPs load as FOB-type CPs with helipads),
-  so the documented airfield/FARP siege never shelled a FARP. Eligibility now goes through
-  `_harassable_cp` (airfields always; FOB-type CPs with helipads).
-- **§3 / server fog (`game/server/`)** — enemy carrier/LHA groups (CP-attached TGOs) shipped
-  ground-truth composition/BDA/rings with no `known_for` gate; the concealment jitter was
-  seeded from the public TGO id alone (recomputable client-side — now id XOR a per-campaign
-  server-held `concealment_salt`); `DefendingSam` combat events broadcast exact positions of
-  concealed SAMs engaging AI-only flights; unknown-id route lookups 500'd instead of 404'd
-  (a `KeyError` handler now maps them); and the fog-overview reveal is reset on save load /
-  new-campaign start.
-- **Persistence (`game/data/weapons.py`, `game/fourteenth/flight_defaults.py`)** — an unknown
-  weapon clsid left an empty `Weapon` object (deferred `AttributeError`) and an unknown weapon
-  group name hard-aborted the whole load; both now keep the pickled state (FlightType-style
-  tolerance). The flight-defaults write is now guarded (a locked store no longer throws
-  through the Qt click handler).
-- **Lua runtimes** — the Sandy divert/release orbits passed terrain+alt to
-  `TaskOrbitCircleAtVec2` (which adds terrain again → 2× height over high ground); the
-  coin/mobilemissiles mover ticks and the Arc Light watcher leaked/polled forever; a dead
-  FAC left its F10 mark; and the mist shim's `getHeadingPoints(north=true)` would throw
-  while `scheduleFunction` swallowed consumer errors silently.
-- **§20 drop-spawn (`game/theater/unitplacement.py`)** — a Deploy-Next-Turn placement charged
-  at queue time is now refunded when it can't be materialised (CP lost / terrain changed).
-
-### Deferred design calls — resolved 2026-07-07
-
-The audit deliberately left three items untouched because they needed a *design* decision, not a
-code fix. Resolved (with the user) as a follow-up:
-
-- **§50 ambient-convoy free seeding → skim-only.** `ensure_ambient_convoys` was calling the §35
-  `_seed_trail_source`, `commission_units`-ing free (un-budgeted) units into **both** sides' rear
-  bases every turn on **every** campaign — a firehose of ~48 net-new free ground units/turn
-  game-wide, permanently reinforcing front-ward bases. That external-supply free-seed is right for
-  the §35 Vietnam trail (red-only, Vietnam-gated, its documented character) but wrong to generalize:
-  the squadron asked for *traffic*, not free reinforcement. Ambient columns now **skim only** —
-  relocate units that already exist (`_skim_units`), never commission free ones — so a rear base too
-  thin to skim yields no column that turn. §35 is untouched.
-- **§37 Super Gaggle "never-spawned delivery credit" → losses-only.** `reconcile_super_gaggle`
-  credited a garrison strength boost whenever a committed helo was *absent* from the debrief kill
-  list — but "absent" is "survived and delivered" OR "never spawned" (mission ended before the launch
-  delay), indistinguishable without a runtime "delivered" signal the plugin does not emit. Dropped the
-  `DELIVERY_STRENGTH_BONUS` credit (and `_credit_delivery`); the gaggle is now losses-only. Real
-  delivery credit is deferred behind a real signal (Lua/debrief-schema change this module avoids).
-- **§15 combatsar Sandy divert (G23) → kept frozen, awaiting the re-fly.** The 2026-07-02 route-push
-  rework is the correct MOOSE transit-then-orbit pattern and reads sound; "pass-or-delete" is decided
-  by an in-game re-fly, not a code review. Kept as-is (no change) — the checklist re-fly is the arbiter.
-
----
 
 ## §90 — Front-line model: supply, assault cost, force weight, terrain, salients
 

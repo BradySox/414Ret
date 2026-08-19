@@ -130,6 +130,7 @@ stress it · `✗` fail signature reproduced in-game.
 | B81 | SEAD-evasion scoot distance is a campaign setting | MANTIS | ☐ |
 | B82 | The AWACS orbits at a field it can actually fly from | planner shape | ☐ |
 | B83 | ATMOS-X live weather: the turn flies a real observation | ATMOS-X live weather | ☐ |
+| B86 | Retribution survives DCS taking over the GPU (Qt 6.8) | app / Qt | ☐ |
 
 ---
 
@@ -5486,6 +5487,36 @@ turn on a wing with a small dedicated-jammer squadron and read the ATO before fl
 - **Setup:** frag a player cold-start F-16C and a player cold-start F-4E in the same turn. Read each package's takeoff time against its TOT, then actually fly both starts with a stopwatch — **stored heading**, which is what the numbers assume. ~40 min for both. Also confirm an airframe with no value (a Hornet) is unchanged at 10 minutes.
 - **Pass:** you make the briefed taxi time on a normal unhurried start in all three. The Phantom's 9 minutes should feel close but sufficient — its gyros alone eat most of it.
 - **Fail signature:** you are still in the chocks when the package is due to taxi, which means the number is too tight and the note's inferred ~2-minute systems window is wrong. Record the stopwatch figure — a measurement replaces the arithmetic outright. The opposite signature also matters: arriving at the hold-short with minutes to spare means the value is generous and the whole exercise bought nothing.
+
+### B86 — Retribution survives DCS taking over the GPU (Qt 6.8) · app / Qt · ☐ UNTESTED
+
+**History:** PySide6/Qt bumped 6.4.2 to 6.8.3 on 2026-08-19. Diagnosis and the in-game NVIDIA
+verification are juanjux's (his fork's #52); the pin bump is the whole change.
+
+> On 6.4.x QtWebEngine composites the embedded map through the **native desktop-OpenGL** driver,
+> whose context cleanup can deadlock (`nvoglv64.dll!DrvValidateVersion` /
+> `WaitForSingleObjectEx` during `NtUserDestroyWindow`) while a fullscreen GPU application holds
+> the card. 6.8 composites via **Direct3D 11**, so that context is never created. `QT_OPENGL=angle`
+> never helped because ANGLE was removed in Qt6.
+
+- **What CI cannot exercise:** any of it. CI never launches the window, never renders the map, and
+  never has a GPU under contention. Static checking got as far as it can — all 132 dotted Qt call
+  paths the app uses resolve identically on 6.4.2 and 6.8.3, and no application code changed.
+- **Setup:** open Retribution on a loaded campaign, leave the map visible, then launch DCS and let
+  it go fullscreen. Alt-tab back. Then, separately, open a settings dialog over the map and move it.
+- **Pass:** Retribution stays responsive through both. The map still renders and pans, and the
+  campaign is still usable after DCS exits.
+- **Fail signatures:**
+  1. **The window goes "Not Responding" when DCS takes the GPU.** The bump did not help on this
+     hardware; capture which GPU and driver, because the deadlock is driver-specific.
+  2. **The map is blank or renders in software** (visibly slow panning). 6.8 fell back off D3D11 —
+     a different problem from the one being fixed, and worse.
+  3. **The app will not start after a rebuild.** pyinstaller 6.19 / hooks-contrib 2026.0 are
+     already pinned and are the versions reported to bundle 6.8 correctly, so look at the build log
+     rather than the pins.
+  4. **Any widget renders wrong** — spacing, delegates, the two-column rows. No Qt API our code
+     touches changed, so this would be a styling or metrics difference, not a break.
+- **Rollback:** revert the four pins in `requirements.txt` and rebuild. Nothing else moved.
 
 ### B83 — ATMOS-X live weather: the turn flies a real observation · ATMOS-X live weather · ☐ UNTESTED
 

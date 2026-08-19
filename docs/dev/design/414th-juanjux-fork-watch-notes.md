@@ -127,6 +127,22 @@ planner side of the same idea.
 | #80 — scenery deaths poison the state encoder | `death_time`/`took_off` are his own tables. Our event records are arrays (`t[#t+1] = name`), so a numeric name is a value, never a key, and no 71M-hole array is built. |
 | #94 — SA-10B/S-300PS never spawn | Specific to Auranis HDS 2.1.0, which dropped the S-300PS family. We are on Ultimate Compilation. |
 
+### Adopted here
+
+**PySide6/Qt 6.4.2 → 6.8.3** (his #52), taken 2026-08-19 as 414Ret#905. Four pins, no application
+code. On 6.4.x QtWebEngine composites the map through the native desktop-OpenGL driver, whose
+context cleanup deadlocks while a fullscreen GPU application — DCS — holds the card; 6.8
+composites via D3D11 so that context is never created. Still needs an app pass on non-NVIDIA
+hardware (checklist **B86**), because the deadlock is driver-specific and he verified NVIDIA only.
+
+**Two things the bump taught that are worth keeping.** All 132 dotted Qt call paths the app makes
+resolve identically on 6.4.2 and 6.8.3 — the code already uses fully-scoped Qt6 enum names, which
+is why nothing moved. But **a local mypy run cannot check a dependency bump**: the local venv still
+had 6.4.2 installed, so mypy read the old stubs and CI found two type errors a clean install
+reproduces immediately. `QWidget.layout()` is now typed `QLayout | None` (more accurate), and
+`QObject.findChildren` is now `Iterable[PlaceHolderType]` — an unbindable type variable, so a
+**worse** stub than 6.4's, needing the element type at the call site.
+
 ### Already ours, no action
 
 shapely `contains_xy` · escort-leash `mist.DBs.groupsById` · LGB fuze (#919) ·
@@ -139,7 +155,6 @@ already #773, this is the observation half).
 
 | Candidate | Note |
 |---|---|
-| PySide6 6.4.2 → 6.8.3 (his #52) | On 6.4.x QtWebEngine composites the map through native desktop-GL, whose context cleanup deadlocks when a fullscreen GPU application — DCS — takes the GPU. 6.8 composites via D3D11. This is the "Retribution goes Not Responding" freeze. A dependency bump needs a real app run, not a test pass. |
 | Base capture zone radius (his #89) | Ours is `TRIGGER_RADIUS_CAPTURE = 3000`. He tested in-game that DCS ground AI engages T-72, BMP-2 and even an unarmed truck, but **never a ZU-23 emplacement** — so one surviving AD emplacement inside 3 km blocks a capture forever and dropped troops cannot clear it. He made it a setting, default 1000 m. |
 | IADS rebuild economy (his #97) | Comms/power/command buildings generate no income, so they have no repair price and stay rubble for the rest of the campaign. He priced them flat: 15M power, 10M command centre, 5M comms tower. Turns striking the network into an attrition loop. Sits beside §52. |
 | Weapon `range:` drives the stand-off ingress point | A package carrying a weapon whose range exceeds the doctrine ingress distance starts its run at that range instead of being dragged in. We have no equivalent. |

@@ -18,6 +18,7 @@ import os
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 from types import SimpleNamespace
+from typing import cast
 
 import pytest
 from PySide6.QtGui import QPixmap
@@ -61,7 +62,10 @@ def test_buy_menu_opens_with_no_force_group(qapp: QApplication) -> None:
         game=None,  # type: ignore[arg-type]
         current_group_value=0,
     )
-    labels = [label.text() for label in dialog.findChildren(QLabel)]
+    # PySide6 6.8's findChildren stub returns Iterable[PlaceHolderType], an
+    # unbindable type variable, so the element type has to be supplied here.
+    found = cast("list[QLabel]", list(dialog.findChildren(QLabel)))
+    labels = [label.text() for label in found]
     assert any("cannot field" in text for text in labels)
     # No buy UI was built.
     assert not hasattr(dialog, "template_layout")

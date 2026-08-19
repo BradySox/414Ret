@@ -55,8 +55,8 @@ stress it · `✗` fail signature reproduced in-game.
 | G39 | Engaging a site reveals it completely; recon does not | §3 | ☐ |
 | G40 | TARPS recon finds a hidden enemy command post | §3 | ☐ |
 | G41 | A bombed power station keeps its SAMs down on the NEXT turn | MANTIS C2 | ☐ |
-| B83 | Front-line groups move and return fire instead of holding | §8 | ☐ |
-| B84 | A flight with an unreachable TOT flies instead of orbiting | §8 | ☐ |
+| B84 | Front-line groups move and return fire instead of holding | §8 | ☐ |
+| B85 | A flight with an unreachable TOT flies instead of orbiting | §8 | ☐ |
 | G25 | Armed Recon package: recon drone + SEAD Viper escort + 4-ship sweep | §3 | ◐ |
 | G30 | MANTIS SHORAD link: the point defense ambushes the HARM shot | MANTIS migration | ☐ |
 | G33 | Survivor ADF beacon: the pinned 260 kHz drives a real needle | CSAR (upstream #929 + 414th pin) | ☐ |
@@ -5339,7 +5339,7 @@ noticed, because the mission it worked on is the one you fly right after the str
   4. **Every SAM in the coalition goes autonomous at mission start.** The decapitation branch
      fired when it should not — the command-centre list is being mis-read as all-dead.
 
-### B83 — Front-line groups move and return fire instead of holding · §8 · ☐ UNTESTED
+### B84 — Front-line groups move and return fire instead of holding · §8 · ☐ UNTESTED
 
 **History:** built 2026-08-19 from juanjux/dcs-retribution#79, verified live in our tree
 before fixing. Two causes: a negative hold normalising to 23h59m, and defenders being held
@@ -5359,7 +5359,7 @@ until the *enemy's* CAS TOT.
   3. **Attackers step off before their own CAS arrives.** The `AGGRESSIVE` wait was removed
      too — that one is intended behaviour, not a bug.
 
-### B84 — A flight with an unreachable TOT flies instead of orbiting · §8 · ☐ UNTESTED
+### B85 — A flight with an unreachable TOT flies instead of orbiting · §8 · ☐ UNTESTED
 
 **History:** built 2026-08-19 from juanjux/dcs-retribution#100. His repro was a DEAD package
 given a TOT 5 minutes out from a base 29 minutes away; the mission shipped

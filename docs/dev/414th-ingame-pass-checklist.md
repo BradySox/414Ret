@@ -87,12 +87,12 @@ stress it · `✗` fail signature reproduced in-game.
 | P8 | COIN in-mission liveliness: cell movers + insurgent indirect fire on the FOBs | COIN | ☐ |
 | O2 | Downed-pilot map overlays: both coalitions, the fog, and the countdown | CSAR | ☐ |
 | Q3 | Bulk waypoint altitude moves every flown leg | §4 (flight altitude editing) | ☐ |
-| S1 | Route-aware fuel-tank planning (fuel-first) | §46 | ◐ |
+| S1 | Route-aware fuel-tank planning (fuel-first) | §46 | ⊘ |
 | S2 | Mobile missile sites relocate (the SCUD hunt) | §49 | ✗ |
 | S3 | Friendly convoy ambush (a chance, never telegraphed) | §50 | ◐ |
 | S4 | Enemy comms jamming: capture the intel, then the C2 belt steps on the radios | §51 | ◐ |
 | S5 | Ambient supply convoys: both sides' roads have randomized traffic | §50 | ◐ |
-| S6 | Tanker fragged for a no-`fuel:`-block airframe on a long sortie | §46 | ☐ |
+| S6 | Tanker fragged for a no-`fuel:`-block airframe on a long sortie | §46 | ⊘ |
 | S7 | Measured fuel data adopted from DCS Liberation drives tanker + bingo for 12 airframes | §46 | ☐ |
 | T1 | Continuous clock marches + weather evolves across turns | §47 | ☐ |
 | T3 | Iraq "Umm al-Ma'arik (Desert Storm 1991)" campaign plays | Desert Storm campaign | ☐ |
@@ -104,7 +104,7 @@ stress it · `✗` fail signature reproduced in-game.
 | B52 | Escort-jammer distribution + the one-SEAD-flavour escort set | §77 | ☐ |
 | B49 | Carrier recovery-phase deck dressing | §72 | ◐ |
 | B48 | Naval station-keeping racetracks | §87 | ◐ |
-| B53 | AI flights no longer push early for a tanker stop they never fly | §46 | ☐ |
+| B53 | AI flights no longer push early for a tanker stop they never fly | §46 | ⊘ |
 | B54 | Planner behavior bar switches the suite in the settings UI | re-convergence | ☐ |
 | B55 | Carrier steams for wind down the angled deck | §88 | ☑ |
 | B56 | Living battlespace pre-roll: mid-cycle mission start | §89 | ◐ |

@@ -1628,8 +1628,8 @@ class SeadTaskPage(KneeboardPage):
             writer.heading(f"{task} target area — {cue}")
             band = target.air_defense_band or "Air-defense site"
             writer.text(
-                f"{band}. Composition not yet identified — fly TARPS recon (or "
-                "strike/scout the site) to reveal the emitters and their HARM codes.",
+                f"{band}. Composition not yet identified — engage the site to "
+                "reveal the emitters and their HARM codes.",
                 font=body_font,
                 wrap=True,
             )
@@ -2022,13 +2022,13 @@ def build_threat_intel_cards(
         if name is None:
             name = band or "AD site"
         site = known.setdefault(name, _KnownAccum(short))
-        if tgo.is_dead(player):
+        if tgo.is_dead():
             site.dead += 1
         else:
             site.live += 1
         site.cues.append(cue)
-        site.mez_m = max(site.mez_m, tgo.max_threat_range(player).meters)
-        site.det_m = max(site.det_m, tgo.max_detection_range(player).meters)
+        site.mez_m = max(site.mez_m, tgo.max_threat_range().meters)
+        site.det_m = max(site.det_m, tgo.max_detection_range().meters)
         if site.harm is None:
             code = _threat_harm_code(tgo)
             site.harm = str(code) if code is not None else None
@@ -2123,7 +2123,7 @@ class ThreatIntelBriefPage(KneeboardPage):
         if self.unidentified:
             # No total count: how many unidentified (often mobile) sites are in
             # theatre is intel we wouldn't realistically have (design §3).
-            intro += " Unidentified contacts remain — fly TARPS recon to ID."
+            intro += " Unidentified contacts remain — engage them to ID."
         return intro
 
     def _heading_font(self) -> ImageFont.FreeTypeFont:

@@ -17,7 +17,7 @@ class QBuildingInfo(QGroupBox):
         self.init_ui()
 
     def init_ui(self):
-        visible_alive = self.building.alive_for(self.viewer)
+        visible_alive = self.building.alive
         icon_path = os.path.join(
             "./resources/ui/units/buildings/" + self.building.icon + ".png"
         )
@@ -35,7 +35,7 @@ class QBuildingInfo(QGroupBox):
             header.setPixmap(QPixmap(icon_path))
             layout.addWidget(header)
 
-        name_label = QLabel(self.building.short_name_for(self.viewer))
+        name_label = QLabel(self.building.short_name)
         name_label.setProperty("style", "small")
         name_label.setWordWrap(True)
         layout.addWidget(name_label)

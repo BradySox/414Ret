@@ -430,7 +430,7 @@ class QBaseMenu2(QDialog):
         ground_spawn_parking = self.cp.total_aircraft_parking(parking_type_stol)
         helipads = self.cp.total_aircraft_parking(parking_type_rotary_wing)
         ground_unit_limit = self.cp.front_line_capacity_with(
-            self.cp.active_ammo_depots_count_for(self.viewer)
+            self.cp.active_ammo_depots_count
         )
         deployable_unit_info = ""
 
@@ -514,14 +514,10 @@ class QBaseMenu2(QDialog):
         status_lines = [
             "<b>Status</b>",
             f"{i1}{self.cp.runway_status}",
-            f"{i1}Ammo depots: {self.cp.active_ammo_depots_count_for(self.viewer)}/"
+            f"{i1}Ammo depots: {self.cp.active_ammo_depots_count}/"
             f"{self.cp.total_ammo_depots_count}",
             f"{i1}"
-            + (
-                "Factory can produce units"
-                if self.cp.has_factory_for(self.viewer)
-                else "No factory"
-            ),
+            + ("Factory can produce units" if self.cp.has_factory else "No factory"),
         ]
 
         self.intel_summary.setText("<br>".join(air_lines + ground_lines + status_lines))

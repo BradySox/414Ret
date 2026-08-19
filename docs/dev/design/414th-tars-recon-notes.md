@@ -4,10 +4,13 @@
 > The MOOSE Ops.TARS engine described here was cut in `7eb247659` and
 > `resources/plugins/tars/` no longer exists. The shipping recon engine is the
 > `recon` plugin — one mechanism for player and AI — documented in
-> [414th-features.md §12](../414th-features.md). The BDA bridge and the
-> `tars_recon_captures` ledger contract survived the swap unchanged; everything
-> else on this page (the vendoring, the init file, the loadout whitelist, the
-> option defaults) describes removed code.
+> [414th-features.md §12](../414th-features.md). The `tars_recon_captures` ledger
+> contract survived the swap unchanged; everything else on this page (the vendoring,
+> the init file, the loadout whitelist, the option defaults) describes removed code.
+>
+> **The BDA bridge this page exists to describe was itself REMOVED 2026-08-18.**
+> Engaging a site is the only reveal now and there is no BDA damage lag, so nothing
+> consumes a recon capture. See [414th-features.md §3](../414th-features.md).
 
 Goal: make MOOSE **Ops.TARS** (Tactical Air Recon System, v2.3.2) the runtime engine
 for the existing `FlightType.TARPS` recon flights, and feed its landing-debrief results

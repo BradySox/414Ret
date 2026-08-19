@@ -163,29 +163,15 @@ def _concealed_population(game: "Game", tgo: Any) -> bool:
     """Is this TGO part of the dashed-circle population the reveal snaps?
 
     Mirrors the server model's concealment predicate
-    (``game/server/tgos/models.py``): flag-concealed (the COIN spawns,
-    intrinsic) or a §3 concealable field force (armor/missile/mobile-SAM
-    categories, gated by ``concealed_enemy_forces``). ``map_hidden`` TGOs (the
-    §50 ambush teams) are NEVER eligible -- nothing telegraphs them.
+    (``game/server/tgos/models.py``): the flag-concealed COIN spawns. The §3
+    field-force circles were removed 2026-08-18, so an ordinary site already
+    carries an exact marker and there is nothing for the reveal to snap.
+    ``map_hidden`` TGOs (the §50 ambush teams) are NEVER eligible -- nothing
+    telegraphs them.
     """
     if getattr(tgo, "map_hidden", False):
         return False
-    if getattr(tgo, "concealed", False):
-        return True
-    if not getattr(game.settings, "concealed_enemy_forces", False):
-        return False
-    category = getattr(tgo, "category", None)
-    if category in ("armor", "missile"):
-        return True
-    if category == "aa":
-        from game.data.groups import GroupTask
-
-        return getattr(tgo, "task", None) in (
-            GroupTask.MERAD,
-            GroupTask.SHORAD,
-            GroupTask.AAA,
-        )
-    return False
+    return bool(getattr(tgo, "concealed", False))
 
 
 def _known_to_blue(tgo: Any) -> bool:
@@ -228,7 +214,7 @@ def apply_comint_reveal(game: "Game", events: "GameUpdateEvents") -> None:
     """Turn-init hook: at Tier 2, snap ONE concealed enemy site to exact.
 
     Reuses the shipped discovery path (``discovered_by_player`` -> ``known_for``
-    -- the same flip a TARPS overflight earns), so the dashed circle becomes the
+    -- the same flip engaging the site earns), so the dashed circle becomes the
     real symbol on the map. Idempotent under initialize_turn's re-init cases via
     a per-turn stamp: without it, a re-init after a cheat would find the first
     pick already discovered and snap a second site.

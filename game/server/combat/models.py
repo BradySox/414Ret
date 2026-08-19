@@ -38,9 +38,8 @@ class FrozenCombatJs(BaseModel):
                 footprint=None,
             )
         if isinstance(combat, DefendingSam):
-            # Recon fog: an un-scouted (or concealed) SAM engaging an AI-only
-            # flight must not broadcast its exact position to the map -- the
-            # TGO layer is still showing only its uncertainty circle. A combat
+            # Recon fog: an un-engaged (or concealed) SAM engaging an AI-only
+            # flight must not broadcast its composition to the map. A combat
             # involving the player's own flight shows every engaging site
             # (they'd have it on RWR).
             from game.theater import Player

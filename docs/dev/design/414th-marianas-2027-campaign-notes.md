@@ -150,10 +150,12 @@ also adds one medium-range SAM marker there, or the red field nearest Guam would
 
 Three `MissilesSS.Scud_B` markers in the red block — the loader's missile-site convention —
 on **Rota, Tinian and Saipan**. The red faction's own roster fills them (China 2020 declares
-DF-21D, CJ-10 and YJ-12B), §49 `mobile_missile_relocation` makes them shoot and scoot between
-recon passes, and §3 `concealed_enemy_forces` means an un-scouted site draws a dashed
-"suspected activity" circle rather than an exact marker. Together that is an actual hunt: the
-launcher is never quite where the last photo froze it.
+DF-21D, CJ-10 and YJ-12B) and §49 `mobile_missile_relocation` makes them shoot and scoot
+during the mission, so the launcher is never quite where the last pass left it.
+
+> The concealment half of this design is **gone** (2026-08-18): §3 no longer hides
+> un-engaged field forces behind a "suspected activity" circle, so a PLARF site carries an
+> exact marker from turn one and only its composition is fogged until engaged.
 
 > ⚠️ **FLOWN 2026-08-05: the scoot half of this does NOT happen.** Across two missions
 > (Tacviews `Tacview-20260805-190738` + `-203549`) **all nine `CH_CJ10` launchers of all three
@@ -163,8 +165,7 @@ launcher is never quite where the last photo froze it.
 > preseeded and routes being pushed the whole time. `CH_CJ10` is now in §49's
 > `IMMOBILE_UNIT_IDS`, so the sites are no longer routed at all (no futile pushes, no ground-AI
 > churn) — which makes the behaviour honest rather than fixing it. **As authored, the three
-> PLARF sites are stationary targets**: §3 concealment still hides them until scouted, but once
-> photographed the coordinate stays good. Restoring the hunt needs launcher hardware DCS will
+> PLARF sites are stationary targets** whose coordinate stays good once known. Restoring the hunt needs launcher hardware DCS will
 > actually drive; the roster's DF-21D and YJ-12B are the obvious candidates to test next, since
 > nothing yet establishes whether they drive any better than the CJ-10.
 
@@ -439,7 +440,7 @@ identity and it is kept.
 
 Preseeded feature set, and why each earns its place:
 
-- **§49 `mobile_missile_relocation` + §3 `concealed_enemy_forces`** — the PLARF hunt above.
+- **§49 `mobile_missile_relocation`** — the PLARF sites above.
 - **§63 `cruise_missile_strikes` + auto raids** — both fleets carry real, finite, no-rearm
   magazines. Sinking a shooter ends its raids. This is the feature the campaign was waiting for.
 - **§78 `cargo_ship_convoys` + `coastal_batteries_engage_ships`** — island logistics sail as

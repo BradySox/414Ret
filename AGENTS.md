@@ -95,7 +95,9 @@ Read before touching a campaign's `.yaml`, `.miz` or build tool.
 - **EW / ISR / comms** — `414th-c130-ew-isr-notes.md`, `414th-comms-jam-notes.md`,
   `414th-comint-notes.md`, `414th-gps-jamming-notes.md`,
   `414th-iads-c2-consequences-notes.md`
-- **Recon** — `414th-tars-recon-notes.md`
+- **Recon** — `414th-tars-recon-notes.md`, `414th-recon-role-scoping-notes.md`
+  (**scoping only, nothing built** — what job recon gets now that engaging a site is the
+  only reveal; also records the command-post hole the rework opened)
 - **CSAR** — `414th-csar-notes.md` (**the one CSAR doc**; supersedes the eight earlier
   SCAR/CSAR notes, each bannered), `414th-scar-rescue-rework-notes.md`
 - **COIN** — `414th-coin-insurgent-replenishment-notes.md`, `-reinfiltration-notes.md`
@@ -185,20 +187,27 @@ missing/renamed init file is now caught by a test (`game/plugins/tests/test_late
 instead of the feature silently never starting. (Replaces the old hand-injected
 `_inject_*_script()` "scramble pattern".)
 
-**Viewer-aware visibility layer (recon fog).** One layer drives two player-facing fog rules.
-AI planning and threat math always use ground truth (`viewer=None`); only the human (BLUE)
-map/UI are fogged. `TheaterUnit.alive_for(viewer)` handles BDA damage lag;
-`TheaterGroundObject.known_for(viewer)` handles recon intel-fog; `hidden_on_player_map(viewer)`
-fully hides enemy command posts for the SCAR commander-capture feature (gated by
-`scar_command_post_intel`, now default ON for new campaigns; §15). Every
-accessor takes `viewer: Optional[Player] = None` defaulting to truth; consumers gate at the edge.
-Do **not** reintroduce the old `_for_player`/`_for` method twins — that collapse is finished.
-A runtime **overview toggle** (`game/theater/fogofwar.py`, transient/never-pickled) short-circuits
-those three fog leaves (`alive_for`, `known_for`, `hidden_on_player_map`) to ground truth for any
-viewer, so the *whole* render path + intel dialogs un-fog with **no** server-model changes. It is
-a checkbox in the custom map layers panel (`MapLayersControl`, §18), driven by a state
-`useEffect` (not a Leaflet add/remove layer — unmount doesn't reliably fire `remove`) that
-`PUT`s `/fog-of-war/reveal` then re-pulls `/game`.
+**Viewer-aware visibility layer (recon fog).** AI planning and threat math always use ground
+truth (`viewer=None`); only the human (BLUE) map/UI are fogged. **One question, asked in one
+place**: `TheaterGroundObject.visibility_for(viewer)` returns HIDDEN / UNKNOWN / KNOWN, and
+`known_for` + `hidden_on_player_map` are its two leaves. `known_for` gates composition and
+threat/detection rings (`recon_intel_fog`); `hidden_on_player_map` fully hides enemy command
+posts (`scar_command_post_intel`) and §50's ambush teams. Nothing else is viewer-aware except
+`standard_identity_for` (COIN's suspect-until-engaged symbol).
+**A site is revealed by engaging it — ordnance on it, or any ground-attack sortie that reaches
+it — and is then known completely and permanently, damage included.** Recon/TARPS reveals
+nothing except a hidden command post within 3 NM of its target (`reveal_scouted_command_posts`
+— the one thing engagement cannot reach, because a hidden post has no marker to frag at).
+There is no BDA damage lag: `alive_at_last_recon` / `sync_confirmed_status` /
+`alive_for` were deleted 2026-08-18 and `alive`/`is_dead`/`dead_units`/`max_threat_range`/… are
+plain truth. Do **not** reintroduce a viewer parameter on those, and do **not** reintroduce the
+old `_for_player`/`_for` method twins — that collapse is finished.
+A runtime **overview toggle** (`game/theater/fogofwar.py`, transient/never-pickled)
+short-circuits both fog leaves to ground truth for any viewer, so the *whole* render path +
+intel dialogs un-fog with **no** server-model changes. It is a checkbox in the custom map
+layers panel (`MapLayersControl`, §18), driven by a state `useEffect` (not a Leaflet
+add/remove layer — unmount doesn't reliably fire `remove`) that `PUT`s `/fog-of-war/reveal`
+then re-pulls `/game`.
 (`game/theater/theatergroup.py`, `theatergroundobject.py`; see features doc §3.)
 
 **Save migration.** Removed/renamed enum *values* migrate in **one place**:
@@ -265,7 +274,7 @@ linked design note.
 
 1. **QRA intercept reserve** — per-squadron alert reserve feeding the Moose `AI_A2A_DISPATCHER`, with player-manned cold alert, a scramble cue, and forward-defense border zones.
 2. **JAMMING flight type** — the C-130J as an EC-130H/RC-130H EW + ISR platform (`c130j` plugin).
-3. **TARPS recon + BDA fog-of-war** — viewer-aware fog (damage lag + intel fog) plus concealed field forces drawn as offset "suspected activity" circles.
+3. **Recon intel fog** — an enemy site's composition stays hidden until you engage it (ordnance on it, or any ground-attack sortie that reaches it); once engaged it is known completely and permanently. There is no BDA damage lag. Recon's only job is finding the enemy command posts, which are hidden from the map outright and so cannot be engaged at all.
 4. **UI transparency** — target intel panel, mission-impact debrief, package context bar.
 5. **Player target location precision** — `Approximate` mode offsets steerpoints and hides exact coords.
 6. **Air-defense planning rework** — overlapping jittered BARCAP waves. **The geometry/volume half was REVERTED to upstream 2026-08-09** (re-convergence work order D): no forward CAP line, no threat-weighted volume or orbit bias, no front-anchor guarantee, no forward-middle layer, no front-anchored support orbits, no FLOT navmesh hazard. Kept: the overlap waves, the `cap_orbit_distance_band` fix, the Vietnam-only escort-reserve trim.
@@ -326,7 +335,6 @@ linked design note.
 76. **CTLD paratroopers** — fixed-wing Air Assault by paradrop, player and AI.
 77. **Escort jamming** — EA-18G and EA-6B only; non-stacking spoof bubbles and SAM weapons-hold pulses.
 78. **Sea-supply convoys + coastal anti-ship** — proportional convoy losses and batteries that actually engage.
-79. **Decoy suspected-activity zones** — unitless fake contacts, human-only by construction.
 80. **Mixed-hull ship groups** — task groups instead of copies of one hull, family-bounded.
 81. **Cross-turn naval magazines** — staggered weapons-free release and finite anti-ship stock, released on attack.
 83. **SP Pilot Mode** — accept-and-fly-next, an aircraft-first sortie board, and a pre-turn reasons-to-continue brief.
@@ -359,6 +367,7 @@ Kept numbered so old notes and saves stay readable. Details and rationale in the
 | 54 | Munitions availability | Removed 2026-07-21 |
 | 55 | Red Intent adaptive posture | Removed 2026-07-21 |
 | 57 | Air-droppable minefields | **Shelved** 2026-07-30 — inert, code retained, resumable |
+| 79 | Decoy suspected-activity zones | Removed 2026-08-18 — real forces no longer hide behind circles, so a lone circle would obviously be fake |
 | 82 | The Wing Grows (scheduled squadron arrivals) | Removed 2026-08-16 — "doesn't add much except in very specific campaigns" |
 | 84 | Old-stock loadout attrition | Removed 2026-08-06 |
 

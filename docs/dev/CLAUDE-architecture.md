@@ -68,8 +68,9 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
    `AI_A2A_DISPATCHER`. Base-defense posture by default. (Old ramp-scramble is retired.)
 2. **JAMMING flight type** — C-130J as EC-130H/RC-130H EW+ISR platform (`c130j` plugin);
    the old generic `ewrj` fighter-pod jammer is retired and must not be restored.
-3. **TARPS recon + BDA fog-of-war** — player F-14 photo recon; viewer-aware fog (damage lag +
-   recon intel-fog) makes recon worth flying.
+3. **Recon intel fog** — an enemy site's composition is hidden until you engage it (ordnance,
+   or any ground-attack sortie that reaches it); then it is known completely and permanently.
+   Recon does not reveal, and there is no BDA damage lag.
 4. **UI transparency** — Target Intel panel, Mission Impact debrief summary, package context
    bar, flight-creation context, building-card cleanup.
 5. **Player target location precision** — `Approximate` mode offsets steerpoints + hides exact

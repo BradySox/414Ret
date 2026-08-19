@@ -184,7 +184,7 @@ def _sam_cp(*, known: bool = True, hidden: bool = False) -> Any:
         category="aa",
         map_hidden=hidden,
         known_for=lambda viewer: known,
-        max_threat_range=lambda viewer: SimpleNamespace(meters=43000.0),
+        max_threat_range=lambda: SimpleNamespace(meters=43000.0),
         position=Pt(120000, -30000),
         groups=[SimpleNamespace(units=[SimpleNamespace(type="SA-2 launcher")])],
     )

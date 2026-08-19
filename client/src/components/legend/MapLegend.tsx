@@ -77,7 +77,7 @@ const ROWS: Row[] = [
   {
     color: mapColors.suspected,
     signature: mapStrokes.suspectedArea,
-    label: "Suspected area — scout it",
+    label: "Suspected area — localize it",
   },
   {
     color: mapColors.pilotMia,

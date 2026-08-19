@@ -17,8 +17,7 @@ insurgent-held control point regenerates a small number of garrison units:
   insurgent force lives in the vehicle-group TGOs around each FOB). Both are free
   and budget-less and die through the normal loss path. No phantom spawns (the
   §35/§37 lesson); revival is conservation by construction (only what the campaign
-  authored can come back), and ``alive_at_last_recon`` is never touched, so the
-  player's last recon picture stands until re-flown.
+  authored can come back).
 * **Anchored cap** -- each CP only refills *toward its garrison size when first seen
   insurgent-held* (turn 0 for a preseeded campaign; anchored to the first-seen
   state). The insurgency refills, it never grows.
@@ -276,11 +275,7 @@ def symbol_insurgent_garrisons(game: "Game", events: Any = None) -> None:
 
 
 def _revive(unit: Any, game: "Game", events: Any) -> None:
-    """The inverse of TheaterUnit.kill, minus the recon ledger.
-
-    ``alive_at_last_recon`` is deliberately untouched: the player's last confirmed
-    picture stands until a new recon pass -- the COIN fog behaviour for free.
-    """
+    """The inverse of TheaterUnit.kill."""
     unit.alive = True
     tgo = getattr(unit, "ground_object", None)
     if tgo is None:

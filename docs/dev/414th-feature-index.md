@@ -14,7 +14,7 @@ pass checklist `§N` is unregistered, or this table drifts.
 | --- | --- | --- | --- |
 | §1 | QRA intercept reserve | `intercept` | — |
 | §2 | JAMMING flight type | `c130j` | — |
-| §3 | TARPS recon + BDA fog-of-war | — | `recon_intel_fog`, `concealed_enemy_forces`, `scar_command_post_intel` |
+| §3 | TARPS recon + BDA fog-of-war | — | `recon_intel_fog`, `scar_command_post_intel` |
 | §4 | UI transparency | — | — |
 | §5 | Player target location precision | — | — |
 | §6 | Air-defense planning rework | — | — |
@@ -90,7 +90,7 @@ pass checklist `§N` is unregistered, or this table drifts.
 | §76 | CTLD paratroopers (fixed-wing air assault) | `ctld` | — |
 | §77 | Escort jamming (Growler / Prowler) | `growler` | `max_escort_jammers`, `single_sead_escort_flavour` |
 | §78 | Sea-supply convoys + coastal anti-ship engagement | — | `cargo_ship_convoys`, `cargo_ship_convoy_max`, `coastal_batteries_engage_ships` |
-| §79 | Decoy suspected-activity zones | — | `decoy_zones`, `decoy_zone_count` |
+| §79 | Decoy suspected-activity zones _(retired)_ | — | — |
 | §80 | Mixed-hull ship groups | — | — |
 | §81 | Cross-turn naval magazines | `navalmagazines` | `naval_weapon_release_stagger`, `naval_magazines` |
 | §82 | The Wing Grows _(retired)_ | — | — |

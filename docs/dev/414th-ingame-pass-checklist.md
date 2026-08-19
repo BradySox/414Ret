@@ -43,7 +43,6 @@ stress it · `✗` fail signature reproduced in-game.
 | B29 | Custom victory conditions (VICTORY chip + alternate endings) | §75 | ◐ |
 | B31 | Escort jamming (Growler / Prowler + growler plugin) | §77 | ◐ |
 | B32 | Sea-supply convoys + coastal anti-ship engagement | §78 | ☐ |
-| B33 | Decoy suspected-activity zones | §79 | ☐ |
 | B35 | Air-defense class rows are filters of the "Air defences" master | §19 | ☑ |
 | B39 | Cross-turn naval magazines | §81 | ✗ |
 | B63 | A destroyed strike target is recorded in the campaign | §8 | ✗ |
@@ -51,9 +50,10 @@ stress it · `✗` fail signature reproduced in-game.
 | B50 | The auto-planner never picks the King for a rescue | CSAR | ☐ |
 | B51 | The rescue package is not planned into threat it cannot survive | CSAR | ☐ |
 | C9 | Carrier-recovery stagger (same-boat package landings spaced) | §8 | ◐ |
-| G2 | Recon BDA bridge (one plugin, player + AI) | §12 | ☐ |
+| G2 | Recon BDA bridge (one plugin, player + AI) | §12 | ✅ |
 | G19 | TARPS on Vietnam-era recon birds (RF-101B / RA-5C) | §3 | ◐ |
-| G24 | Concealed enemy field forces: uncertainty circles until scouted | §3 | ☐ |
+| G39 | Engaging a site reveals it completely; recon does not | §3 | ☐ |
+| G40 | TARPS recon finds a hidden enemy command post | §3 | ☐ |
 | G25 | Armed Recon package: recon drone + SEAD Viper escort + 4-ship sweep | §3 | ◐ |
 | G30 | MANTIS SHORAD link: the point defense ambushes the HARM shot | MANTIS migration | ☐ |
 | G33 | Survivor ADF beacon: the pinned 260 kHz drives a real needle | CSAR (upstream #929 + 414th pin) | ☐ |
@@ -698,13 +698,11 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
 - **Pass:** the shipment spawns as **several** cargo ships (not one) sailing the lane in formation; a coastal battery on the enemy shore engages them as they pass within range; and if some ships are sunk, the debrief records **only those hulls'** share of the reinforcement lost (the rest arrive at the destination CP), not the whole transfer.
 - **Fail signature:** still a single cargo ship despite `cargo_ship_convoys` on (the manifest path didn't take — check the shipment actually travels by sea, not road); the coastal battery sits idle as the convoy passes in range (weapons-free/alarm not applied, or the lane is out of the battery's reach — geometry, not code); sinking one ship of a convoy wipes the whole reinforcement (proportional commit regressed) or sinking every ship still delivers units (kill mapping missed a hull); ships spawning on land / stuck at the lane origin (waypoint[0] not in water — an authoring issue, not §77).
 
-### B33 — Decoy suspected-activity zones · §79 · ☐ UNTESTED
+### B33 — Decoy suspected-activity zones · §79 · ✅ CLOSED (feature removed 2026-08-18) (was ☐ UNTESTED
 
-**History:** built 2026-07-21 off the "fake contacts the planner can't tell from real ones" ask; the unitless-concealed-TGO placement, the per-turn burn+refresh loop, the `MAX_DECOY_BUDGET` cap, the `enabled_when=concealed_enemy_forces` gate, and that a zero-unit TGO reads as dead to the ground-truth target enumerator are unit-tested in `tests/fourteenth/test_decoy_zones.py` (13 cases). What no test can model is the DCS/app experience: the recon-resolve message + circle removal in a real mission, and confirming the AI never fragging a strike at an empty zone across several turns.
-- **What CI cannot exercise:** the human map rendering a decoy circle identically to a real suspected contact (client not CI-type-checked — needs the CI client rebuild), the TARPS/attack overfly firing the "no enemy activity … it was a decoy" resolve + burning the circle in-game, the per-turn refresh visibly replacing burned decoys with fresh ones, and that the AI planner leaves the empty zones alone over a multi-turn game.
-- **Setup:** a campaign with §3 concealment on (`concealed_enemy_forces`, the default) and at least one front-adjacent red control point. Enable Difficulty & Realism → `decoy_zones` and set `decoy_zone_count` to a few (or author a `decoy_zones:` block). Generate, and note the suspected-activity circles near the front — some are real forces, some decoys, and they must look identical on the map. Fly TARPS or an attack onto one; play/skip a turn to watch the refresh.
-- **Pass:** decoy circles are indistinguishable from real suspected contacts (amber dash / dark-red casing / "?" glyph on lone circles); reconning a decoy reports "no enemy activity … it was a decoy" and removes the circle; next turn the burned decoys are replaced so the live count is topped back to budget; and across several turns the AI never plans a strike/DEAD package against a decoy zone (they carry zero units, so the planner should skip them).
-- **Fail signature:** a decoy circle looking different from a real one (the shared §3 render regressed — a decoy is not inheriting concealment); an AI package fragged at a decoy zone (the unitless TGO is somehow reaching the target enumerator alive); the recon overfly not resolving the decoy or the circle persisting after (the burn path broke); no fresh decoys after a burn (the `advance_decoy_zones` refresh isn't topping back to budget, or the `finish_turn` hook order regressed); the setting live/greyed wrong when `concealed_enemy_forces` is off (the `enabled_when` dependency broke); more than `MAX_DECOY_BUDGET` (12) circles despite a larger authored budget (the cap regressed).
+The recon rework removed §79 outright. Decoys only worked because real field forces were
+also drawn as suspected-activity circles; real forces now draw exact markers, so a lone
+circle would obviously be fake. Nothing to fly. See features doc §79 and §3.
 
 ### B34 — Campaign filter & sort in the New Game wizard · §28 · ☑ VERIFIED
 
@@ -1141,7 +1139,15 @@ Needs a flight to confirm the fix end to end. The cheap version deliberately rep
 
 ## G. Plugin runtime (Lua, not CI-runnable)
 
-### G2 — Recon BDA bridge (one plugin, player + AI) · §12 · ☐ UNTESTED
+### G2 — Recon BDA bridge (one plugin, player + AI) · §12 · ✅ CLOSED (bridge removed 2026-08-18) (was ☐ UNTESTED
+
+**Closed by the recon rework:** engaging a site is the only reveal now, so a recon
+overflight — player or AI — changes no campaign state and there is no BDA fog left for it
+to lift. The `recon` plugin still runs and still writes `tars_recon_captures`; nothing
+consumes it. Whether to delete `FlightType.TARPS` and the plugin is an open call, not a
+flight test. The pass description below is kept for reading old sessions.
+
+
 
 **History:** **REBUILT 2026-08-05** `units-runway-generation-bf755e`, from the DM's "the system as a whole needs a fresh look". The old split — MOOSE `Ops.TARS` event callbacks for the player, a geometric overflight check for the AI — was two unrelated implementations of one question that could not agree by construction, which is why "is TARS broken" was unanswerable. **MOOSE `Ops.TARS` is cut.** All it contributed was a unit NAME scraped off a `Snapshot` whose schema was never confirmed (`snap.name or snap.unitName or snap.UnitName`, under a comment saying the one-time dump existed so the schema "can be confirmed in-game") — if all three guesses were wrong the player path recorded nothing, silently, forever, while the AI path kept working. **PASS:** fly a player TARPS sortie over a fogged enemy site, land, and confirm (a) the "RECON: … confirmed BDA on N target(s)" cue appears **only after touchdown**, not over the target, and (b) the site is un-fogged at debrief; repeat with an AI-flown recon flight and confirm identical behaviour. Then fly one pass HIGH (≥40,000 ft) and one at a normal recon altitude over comparable sites and confirm the high pass banks fewer targets. **FAIL signatures:** the cue firing over the target (the landing gate broke); a player sortie confirming nothing while an AI one works, or vice versa (the two paths have diverged again — the exact defect the rebuild removes); nothing ever confirming (check the `DCSRetribution|Recon armed for N recon flight(s)` line at load); or altitude/cloud making no difference at all. NOTE the deliberate asymmetry — the CAPTURE happens on overfly and is **not** gated on landing, because missions routinely end before flights land; only the cue waits. Emitter + runtime are covered by `game/missiongenerator/tests/test_reconluadata.py` (16) and `tests/lua/test_recon_runtime.py` (13), which pin the landing-held cue, the capture surviving a flight that never lands, and both degradation curves) (was ✗ REGRESSED 2026-08-05 — "G2 needs reworking"; was ☑ VERIFIED 2026-06-24 as the MOOSE TARS bridge
 - **Setup:** Fly an F-14 TARPS recon pass over enemy targets.
@@ -1772,6 +1778,11 @@ Needs a flight to confirm the fix end to end. The cheap version deliberately rep
 
 ### G19 — TARPS on Vietnam-era recon birds (RF-101B / RA-5C) · §3 · ◐ PARTIAL
 
+**⚠️ Re-scope needed (2026-08-18):** TARPS no longer reveals anything (see §3's rework and
+G2). This row is now only about the airframes being *taskable* and flying a sane recon
+profile — drop any pass criterion about intelligence being banked.
+
+
 **History:** capture-side gap ROOT-CAUSED + fixed 2026-07-01 via the `airecon` plugin; the airecon runtime itself VERIFIED 2026-07-06 on the drone path — the Vietnam-bird re-fly is what's left
 - **airecon runtime VERIFIED in a flown session (2026-07-06, Inherent Resolve, session `jovial-gates-574c9c`):**
   `dcs.log` shows "AI Recon armed for 3 AI recon flight(s)" at config and then
@@ -2141,31 +2152,59 @@ Needs a flight to confirm the fix end to end. The cheap version deliberately rep
   (`combatsar-config.lua` around `dispatchSandy`/`findFreeSandy`/`releaseSandy`).
 - **Re-fly 2026-07-30 (flown PG/Vietnam "Recovery: Jason Rogers" package; Tacview `Tacview-20260730-182637`) — INCONCLUSIVE + weapons-free added:** the player fragged a full package (CH-47D rescue helo + AH-1W Sandy + C-130 King, flew the King). Both AH-1W Sandys **oscillated in a racetrack 13–31 km from the survivor and never held over it** (the same "never leaves the racetrack" fail signature as 2026-07-02, so the route-push rework's first actual re-fly did **not** visibly work). BUT the flight is **confounded**: the survivor was a persistent evader and **no snatch party spawned** near it (one ~50% roll missed), so there was nothing at the survivor to fight — "flew straight and level without fighting back" is partly expected here. A clean adjudication needs a re-fly WITH a snatch party (set `combat_sar_test_force_capture` to guarantee one). **Additive fix (not a routing rework — respects pass-or-delete):** a diverted Sandy is now set **WEAPON_FREE** (`setAirWeaponsFree`, Air ROE) so it actually engages the snatch party / threats — SCAR generates with ROE Open Fire (engage *designated* only), which would not return fire at an attacker outside its zone. **Next re-fly:** force-capture ON, watch whether the Sandy (a) leaves its racetrack and holds over the survivor (the still-unconfirmed routing — pass-or-delete) and (b) engages the snatch party once holding (the weapons-free add). See `414th-csar-notes.md` "Packaged AI-helo auto-pickup + weapons-free Sandy".
 
-### G24 — Concealed enemy field forces: uncertainty circles until scouted · §3 · ☐ UNTESTED
+### G39 — Engaging a site reveals it completely; recon does not · §3 · ☐ UNTESTED
 
-**History:** built 2026-07-05; the qualifier + jitter determinism/bounds are unit-tested — the map read + the play feel need an in-app pass + the CI client rebuild
-- **Road-pinned IED variant (2026-07-05, user call — "we know what highway it's on but not which street"):** a roadside IED/VBIED's circle no longer jitters radially (which could park it out in the fields off the road) — the centre slides **far ALONG its supply road** (5–25 km on the polyline, deterministic, clamped to the road; `TheaterGroundObject.concealed_route`, set at plant). Deliberately, the device may sit **outside** the drawn circle — the highway itself is the search domain. **Pass (adds to the P4 sweep):** an IED circle sits ON the road, well away from the device; sweeping/TARPS-ing along that road finds it. **Fail:** an IED circle centred off-road in open ground (route not stored / slide broken), or the circle on a *different* road than the intel message names.
-- **Blank-map regression FIXED same day (2026-07-05, user report on the `iraq.retribution` save):** with fog on, the whole map (bar the base layer) failed to draw; fog-reveal drew fine. Root cause: the jitter rebuilt the offset point via `pos.__class__(x, y, terrain)`, but a real TGO's position is a **`PresetLocation`** (`(name, position, heading)` constructor), so every concealed TGO raised and one exception 500'd the whole `/game` payload (reveal bypassed the jitter via `known_for`, which is why fog-off worked). Fix: build a plain `dcs.mapping.Point`; a regression test pins the real `PresetLocation` type; headless-verified on the user's save (97/97 TGOs serialize, 60 circles).
-- **What it is:** with `concealed_enemy_forces` on (default ON, new campaigns), an **un-scouted** enemy
-  field force — a mobile SAM site (MERAD/SHORAD/AAA), a deployed vehicle group, a missile site — shows
-  as a dashed **amber** **"suspected enemy activity" circle** (4 km; 3 km for vehicle groups — amber
-  since the §28 UI audit; a dashed **red** circle now exclusively means an ROE off-limits zone) whose centre is
-  **jittered off the true position** (deterministic per TGO — it must not wander between refreshes)
-  instead of an exact marker. Fixed infrastructure stays exact: LORAD strategic sites, EWRs, buildings,
-  ships, airfields, user-placed TGOs. The COIN insurgent spawns conceal intrinsically regardless of the
-  setting (the P3 concealment bullet).
-- **Setup:** NEW campaign (any theater — e.g. Red Tide), `recon_intel_fog` + `concealed_enemy_forces`
-  on. Look at the turn-0 map, then fly/plan TARPS over a circled area and re-check.
-- **Pass:** enemy MERAD/SHORAD/AAA sites, armor groups, and missile sites appear only as circles (no
-  diamond at the true spot); LORAD/EWR/buildings/ships keep exact markers; the object is NOT at the
-  circle centre; circles hold position across refreshes and turns; right-clicking a circle opens the
-  package dialog (recon plannable); a TARPS pass / strike snaps the site to its exact symbol; the
-  fog-overview reveal shows everything exact; turning the setting off restores all exact markers.
-- **Fail signature:** a circle centred dead-on the site (jitter broken); marker AND circle both drawn;
-  circles jumping between refreshes (seed broken); LORAD/EWR/buildings circled (qualifier too broad);
-  a discovered/killed site still circled (`known_for` not consulted); the map unreadable around big
-  bases (too many overlapping circles — the tuning lever is `FIELD_FORCE_RADIUS_M`/`CONCEALED_RADIUS_M`
-  in `game/server/tgos/models.py`).
+**History:** replaces G24 (concealed field forces), closed by removal 2026-08-18. The
+reveal rule and the no-lag guarantee are unit-tested (`tests/test_recon_reveal_rule.py`,
+`tests/test_recon_intel_fog.py`); what no test covers is the map read across a real turn
+cycle and whether the fog still reads as fog when every site carries an exact marker.
+- **What CI cannot exercise:** the client map actually redrawing a site from "unknown" to
+  its full symbol + rings at debrief (client is not CI-type-checked), whether an
+  un-engaged theater feels informative or blank, and whether losing recon as a reveal
+  makes any campaign unplayable (nothing to fly against because nothing is known).
+- **Setup:** a NEW campaign with `recon_intel_fog` on (default). On turn 0, note that
+  every enemy site has an exact marker with no composition, no rings and no unit list.
+  Frag a Strike or DEAD package at one site and a TARPS/recon flight at a *different*
+  one. Fly or fast-forward the turn.
+- **Pass:** the struck site comes back fully known — unit types, counts, threat and
+  detection rings — **and** its damage is correct immediately, with no second recon pass
+  needed. The recon-only site is still unknown. A site an offensive package reached but
+  scored no kills on is also revealed. Known sites stay known across turn boundaries and
+  a save/load.
+- **Fail signature:** a struck site still showing "?" composition at debrief (the reveal
+  path broke); a struck site revealed but reading undamaged, or damage appearing only
+  after a later flight (a BDA lag has come back — `alive_at_last_recon` was reintroduced);
+  the recon-only site revealing (recon is back in the reveal set); any enemy site drawing
+  a dashed uncertainty circle other than a COIN IED/HVT/cell (the category concealment is
+  back); a fresh campaign where nothing is ever knowable because no ground-attack task in
+  the package set reaches `attacked_tgos_this_turn`.
+
+### G40 — TARPS recon finds a hidden enemy command post · §3 · ☐ UNTESTED
+
+**History:** built 2026-08-18 alongside the recon rework, to close the hole it opened —
+a hidden command post has no marker, so engagement (the only other reveal) cannot reach
+it, and the auto-planner was the sole remaining path. The geometry, the radius, the
+TARPS-only gate and the §50 exclusion are unit-tested in
+`tests/test_recon_reveal_rule.py`; what no test covers is whether 3 NM off the package
+target is actually enough reach in a real laydown, and whether the message lands.
+- **What CI cannot exercise:** whether a command post is close enough to a plannable
+  target for a recon package to reach it on a real map (the whole feature is dead if
+  command posts habitually sit further than 3 NM from anything you can frag at), the
+  campaign message firing at debrief, and the site drawing correctly once revealed.
+- **Setup:** a NEW campaign with `recon_intel_fog` and **Hidden enemy command posts**
+  both on (defaults). Confirm no enemy command posts are on the map. Frag a TARPS
+  package at an enemy base you believe holds one — pick the target closest to where the
+  HQ should be — and fly or fast-forward the turn.
+- **Pass:** at debrief a "RECON: enemy command post located" message names the site, and
+  the command post appears on the map with exact coordinates and is plannable. Nothing
+  else about the reconned area changes: un-engaged sites there keep their composition
+  fog.
+- **Fail signature:** no message and no reveal after a recon pass that clearly overflew
+  the base (the 3 NM radius is too tight for real layouts — the lever is
+  `TARPS_POD_RADIUS_NM`, but widening it is a design call, not a tuning one); a command
+  post revealed by a *non*-recon sortie (the TARPS-only gate broke); an ordinary site
+  revealed by the recon pass (scout-to-reveal is back — this is the serious one); a §50
+  convoy-ambush team appearing on the map (the `map_hidden` exclusion broke).
 
 ### G25 — Armed Recon package: recon drone + SEAD Viper escort + 4-ship sweep · §3 · ◐ PARTIAL
 

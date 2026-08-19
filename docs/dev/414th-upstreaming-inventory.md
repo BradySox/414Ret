@@ -234,7 +234,8 @@ change per PR, upstream gates validated per PR, crowded zones respected. Gaps + 
   hidden until the site is attacked/scouted/destroyed) plus the transient
   "Reveal fog of war" overview toggle. Carved as a **2-PR stack**: PR #1 = the fog
   mechanic alone (aircraft-agnostic, reveal-on-engage), PR #2 = the TARPS recon
-  platform + the `alive_for`/`alive_at_last_recon` BDA damage-lag it activates.
+  platform. (The `alive_for`/`alive_at_last_recon` BDA damage-lag it used to activate was
+  removed fork-side 2026-08-18 — re-scope this item before carving it.)
 - **Why re-scoped:** this was previously parked under ⛔ as "fork feature." It is
   upstreamable once split from the SCAR command-post gate and the F-14 TARPS specifics;
   PR #1 is genuinely generic. Tyler/Brady call.

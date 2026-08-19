@@ -157,13 +157,6 @@ class TheaterGroundObject(MissionTarget, SidcDescribable, ABC):
         # count toward -- nor are revived by -- the C1 anchor machinery. A
         # reinfiltration flip clears it when the cell becomes real militia.
         self.coin_spawned: bool = False
-        # Decoy suspected-activity zone (§79): a fake, unitless concealed contact
-        # that renders as the same "in here somewhere" circle as a real hidden
-        # force, to make the human planner burn recon confirming it. Because it
-        # has zero alive units the AI planner (ground-truth is_dead) skips it for
-        # free; recon discovery burns it (game/fourteenth/decoy_zones.py). Set
-        # only by that layer; a real force is never a decoy.
-        self.is_decoy: bool = False
 
     def __getstate__(self) -> dict[str, Any]:
         state = self.__dict__.copy()
@@ -188,8 +181,8 @@ class TheaterGroundObject(MissionTarget, SidcDescribable, ABC):
         state.setdefault("map_hidden", False)
         # Old saves predate the COIN transient-spawn marker — not a spawn.
         state.setdefault("coin_spawned", False)
-        # Old saves predate decoy zones — a real site is never a decoy.
-        state.setdefault("is_decoy", False)
+        # Decoy zones were removed 2026-08-18; shed the marker from older saves.
+        state.pop("is_decoy", None)
         self.__dict__.update(state)
         # Save migration: heal AAA sites that were generated with a stray search
         # radar (the old `fill: true` radar slot). Newly generated campaigns no
@@ -261,10 +254,14 @@ class TheaterGroundObject(MissionTarget, SidcDescribable, ABC):
 
     @property
     def sidc_status(self) -> Status:
-        # SidcDescribable requires this as a property (the base `sidc` builder
-        # reads it). It is the ground-truth status; the viewer-aware map symbol
-        # uses sidc_status_for(viewer).
-        return self.sidc_status_for(None)
+        if self.control_point.captured.is_neutral:
+            return Status.PRESENT
+        if self.is_dead():
+            return Status.PRESENT_DESTROYED
+        elif self.dead_units():
+            return Status.PRESENT_DAMAGED
+        else:
+            return Status.PRESENT
 
     @property
     def standard_identity(self) -> StandardIdentity:
@@ -275,8 +272,8 @@ class TheaterGroundObject(MissionTarget, SidcDescribable, ABC):
         else:
             return StandardIdentity.HOSTILE_FAKER
 
-    def is_dead(self, viewer: Optional[Player] = None) -> bool:
-        return self.alive_unit_count(viewer) == 0
+    def is_dead(self) -> bool:
+        return self.alive_unit_count() == 0
 
     @property
     def units(self) -> Iterator[TheaterUnit]:
@@ -292,12 +289,9 @@ class TheaterGroundObject(MissionTarget, SidcDescribable, ABC):
                 if unit.is_static:
                     yield unit
 
-    def dead_units(self, viewer: Optional[Player] = None) -> list[TheaterUnit]:
-        """All units at this location that are dead from the viewer's perspective.
-
-        ``viewer=None`` is ground truth; an enemy viewer sees confirmed kills.
-        """
-        return [unit for unit in self.units if not unit.alive_for(viewer)]
+    def dead_units(self) -> list[TheaterUnit]:
+        """All units at this location that are dead."""
+        return [unit for unit in self.units if not unit.alive]
 
     @property
     def group_name(self) -> str:
@@ -383,8 +377,8 @@ class TheaterGroundObject(MissionTarget, SidcDescribable, ABC):
     def unit_count(self) -> int:
         return sum(g.unit_count for g in self.groups)
 
-    def alive_unit_count(self, viewer: Optional[Player] = None) -> int:
-        return sum(g.alive_units(viewer) for g in self.groups)
+    def alive_unit_count(self) -> int:
+        return sum(g.alive_units() for g in self.groups)
 
     @property
     def has_aa(self) -> bool:
@@ -396,25 +390,13 @@ class TheaterGroundObject(MissionTarget, SidcDescribable, ABC):
         """Returns True if the ground object contains a unit with working radar SAM."""
         return any(g.max_threat_range(radar_only=True) for g in self.groups)
 
-    def max_detection_range(self, viewer: Optional[Player] = None) -> Distance:
-        """Maximum detection range of the ground object (viewer=None is truth)."""
-        return max(
-            (g.max_detection_range(viewer) for g in self.groups), default=meters(0)
-        )
+    def max_detection_range(self) -> Distance:
+        """Maximum detection range of the ground object."""
+        return max((g.max_detection_range() for g in self.groups), default=meters(0))
 
-    def max_threat_range(self, viewer: Optional[Player] = None) -> Distance:
-        """Maximum threat range of the ground object (viewer=None is truth)."""
-        return max((g.max_threat_range(viewer) for g in self.groups), default=meters(0))
-
-    def sidc_status_for(self, viewer: Optional[Player] = None) -> Status:
-        if self.control_point.captured.is_neutral:
-            return Status.PRESENT
-        if self.is_dead(viewer):
-            return Status.PRESENT_DESTROYED
-        elif self.dead_units(viewer):
-            return Status.PRESENT_DAMAGED
-        else:
-            return Status.PRESENT
+    def max_threat_range(self) -> Distance:
+        """Maximum threat range of the ground object."""
+        return max((g.max_threat_range() for g in self.groups), default=meters(0))
 
     def standard_identity_for(
         self, viewer: Optional[Player] = None
@@ -451,13 +433,9 @@ class TheaterGroundObject(MissionTarget, SidcDescribable, ABC):
         return SymbolIdentificationCode(
             standard_identity=self.standard_identity_for(viewer),
             symbol_set=symbol_set,
-            status=self.sidc_status_for(viewer),
+            status=self.sidc_status,
             entity=entity,
         )
-
-    def sync_confirmed_status(self) -> None:
-        for unit in self.units:
-            unit.sync_confirmed_status()
 
     def threat_poly(self) -> ThreatPoly | None:
         if self._threat_poly is None:
@@ -849,15 +827,12 @@ class SamGroundObject(IadsGroundObject):
 
     @property
     def sidc_status(self) -> Status:
-        return self.sidc_status_for(None)
-
-    def sidc_status_for(self, viewer: Optional[Player] = None) -> Status:
         if self.control_point.captured.is_neutral:
             return Status.PRESENT
-        if self.is_dead(viewer):
+        if self.is_dead():
             return Status.PRESENT_DESTROYED
-        elif self.dead_units(viewer):
-            if self.max_threat_range(viewer) > meters(0):
+        elif self.dead_units():
+            if self.max_threat_range() > meters(0):
                 return Status.PRESENT
             else:
                 return Status.PRESENT_DAMAGED

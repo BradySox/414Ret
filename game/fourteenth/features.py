@@ -62,7 +62,6 @@ FEATURES: tuple[Feature, ...] = (
         3,
         settings_fields=(
             "recon_intel_fog",
-            "concealed_enemy_forces",
             # Re-homed here 2026-08-07: this gate gutters through
             # TheaterGroundObject.hidden_on_player_map, a recon-fog leaf. It used to
             # hang off the §15 Sandy row, which went with the CSAR strip.
@@ -653,15 +652,13 @@ FEATURES: tuple[Feature, ...] = (
         ),
     ),
     Feature(
-        # §79 decoy suspected-activity zones: fake, unitless concealed TGOs that
-        # render as the §3 uncertainty circle so the human planner must burn recon
-        # to tell a feint from a real hidden force; the AI (ground-truth is_dead)
-        # skips them for free. Authored budget + per-turn refresh + burn-on-recon,
-        # all in game/fourteenth/decoy_zones.py (finish_turn). No plugin, no Lua.
+        # Removed 2026-08-18 with the scout-to-reveal recon model: decoys only
+        # worked because real field forces also hid behind circles, and they no
+        # longer do.
         "decoy_zones",
         "Decoy suspected-activity zones",
         79,
-        settings_fields=("decoy_zones", "decoy_zone_count"),
+        retired=True,
     ),
     Feature(
         # A layout slot generated one type of unit repeated N times, so every ship

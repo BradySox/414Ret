@@ -256,7 +256,7 @@ class ThreatZones:
             for group in tgo.groups:
                 # cap threat-range, otherwise it can cause issues wrt NavMesh calculations
                 threat_range = min(
-                    group.max_threat_range(viewer),
+                    group.max_threat_range(),
                     nautical_miles(settings.max_threat_range),
                 )
                 # Any system with a shorter range than this is not worth
@@ -265,7 +265,7 @@ class ThreatZones:
                     point = ShapelyPoint(tgo.position.x, tgo.position.y)
                     threat_zone = point.buffer(threat_range.meters)
                     air_defense_threats.append(threat_zone)
-                radar_threat_range = group.max_threat_range(viewer, radar_only=True)
+                radar_threat_range = group.max_threat_range(radar_only=True)
                 if radar_threat_range > nautical_miles(3):
                     point = ShapelyPoint(tgo.position.x, tgo.position.y)
                     threat_zone = point.buffer(radar_threat_range.meters)

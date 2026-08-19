@@ -136,7 +136,7 @@ not build something.
 Compliance cost is one token in the checklist row heading:
 
 ```
-### B33 — Decoy suspected-activity zones · §79 · ☐ UNTESTED · card:M3
+### B33 — Decoy suspected-activity zones · §79 · ✅ CLOSED (feature removed 2026-08-18) · card:M3
 ```
 
 The session-start hook reads the **first** status marker on a heading line, so a trailing

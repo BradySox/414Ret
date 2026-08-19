@@ -285,17 +285,20 @@ def test_ewr_card_reports_detection_range_and_defeat_note() -> None:
     assert "blind" in card.defeat.lower()
 
 
-def test_intro_calls_for_recon_but_withholds_the_unidentified_count() -> None:
+def test_intro_flags_unidentified_sites_but_withholds_the_count() -> None:
     flight = _flight()
     with_unknowns = ThreatIntelBriefPage(flight, [], 3, False)
     intro = with_unknowns._intro()
-    assert "fly TARPS recon to ID" in intro
+    # Engaging a site is the reveal, not recon (2026-08-18) -- the cue must not
+    # send the player to fly TARPS for intel it no longer produces.
+    assert "engage them to ID" in intro
+    assert "TARPS" not in intro
     # The number of unidentified (often mobile) sites is intel we wouldn't have.
     assert "3 site" not in intro
     assert "Unidentified contacts remain" in intro
 
     none_unknown = ThreatIntelBriefPage(flight, [], 0, False)
-    assert "TARPS" not in none_unknown._intro()
+    assert "Unidentified contacts remain" not in none_unknown._intro()
 
 
 def test_unidentified_card_shows_bearings_without_a_count() -> None:

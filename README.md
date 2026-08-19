@@ -37,15 +37,21 @@ Most of this is opt-in. Full list with toggles, defaults and known limitations:
 
 ### Recon and intelligence
 
-- Enemy site composition, strength, damage and threat rings stay hidden until you scout or
-  attack the site.
-- Unscouted mobile forces draw a dashed circle offset from their true position instead of an
-  exact marker. Fixed infrastructure stays exact.
-- Optional decoy zones plant fake contacts indistinguishable from real ones. Scouting one
-  burns it away; new ones appear each turn.
+- Every enemy site is on your map from turn one, at its real position. What is actually
+  parked there — unit types, counts, threat and detection rings — stays hidden until you
+  engage it.
+- Engaging means ordnance on the site, or any ground-attack sortie that reaches it. Recon
+  overflight does not reveal.
+- Once engaged, a site is known completely and permanently, damage included. There is no
+  separate BDA pass to confirm what you killed.
+- Enemy command posts are hidden outright — no marker, nothing to plan against. Flying TARPS
+  recon over the area is the only way to find one, so the command network has to be mapped
+  before it can be struck.
+- Insurgent contacts — roadside IEDs, HVT convoys, dispersed cells — are the exception: they
+  show as a dashed "somewhere in here" circle until you localize them.
 - Mobile missile launchers relocate mid-mission, within a few km of their campaign position.
   The radar SAM network does not move.
-- TARPS is a player task (F-14, RF-101B, RA-5C). Photographs become confirmed intelligence.
+- TARPS is a player task (F-14, RF-101B, RA-5C), flown to locate command posts.
 - Also: approximate target-area mode, mobile SAMs hidden from player datalink, a fog reveal
   toggle, DCS-accurate terrain charts as base map.
 
@@ -149,7 +155,7 @@ Most of this is opt-in. Full list with toggles, defaults and known limitations:
 - A SITREP page reports last turn: both sides' losses (the enemy's as claimed), base changes,
   pilots recovered.
 - A Threat Intel Brief gives one card per enemy air-defence system — guidance, ceiling, MEZ,
-  HARM code, defeat note. It respects recon fog: unidentified sites show only a threat tier.
+  HARM code, defeat note. It respects recon fog: un-engaged sites show only a threat tier.
 - Mission code words are visible to planners before generation and on the kneeboard in the
   cockpit.
 - **Set as default for &lt;task&gt;** in the payload editor pins a loadout for that airframe and
@@ -258,8 +264,7 @@ Most of this is opt-in. Full list with toggles, defaults and known limitations:
   array, KS-19 flak belts. The Groom Lake box never opens.
 - **Operation Inherent Resolve** — the insurgency holds Mosul, Erbil and Kirkuk plus ten
   furnished FOBs along Highway 1 and the Nineveh ring. Grind north from Balad against IEDs, HVT
-  convoys and a 14-route supply web, under a permanent Mosul positive-control box. Predators
-  and Reapers fly persistent ISR that banks real BDA.
+  convoys and a 14-route supply web, under a permanent Mosul positive-control box.
 - **Umm al-Ma'arik** — blue holds only the three H-3 desert strips seized on the border, with
   the tanker bridge and AWACS flying from the Saudi rear, and climbs the pipeline-road ladder:
   H-2, then Qadessiya (Al-Asad) where the Foxbats live, then the Habbaniyah line toward

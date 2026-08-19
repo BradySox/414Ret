@@ -156,7 +156,7 @@ def _open_loop_items(game: "Game") -> List[BriefingItem]:
     for tgo in game.theater.ground_objects:
         if tgo.control_point.captured == viewer:
             continue
-        if tgo.is_dead(viewer):
+        if tgo.is_dead():
             continue
         if getattr(tgo, "map_hidden", False):
             continue

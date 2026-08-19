@@ -1,9 +1,9 @@
 """Recon intel-fog: enemy site composition/rings hidden until discovered.
 
 Covers the discovery gate (``known_for``), the omniscient/setting escape hatches,
-and the save-migration default. The end-to-end reveal trigger (a strike flips a
-site to discovered) is asserted in ``test_bda_tarps_reveal.py`` where the
-mission-results fixtures already live.
+and the save-migration default. What actually trips the gate -- a strike or an
+offensive overflight, never recon -- is asserted in ``test_recon_reveal_rule.py``
+where the mission-results fixtures already live.
 """
 
 from __future__ import annotations
@@ -62,7 +62,8 @@ def test_enemy_site_unknown_until_discovered() -> None:
     assert tgo.known_for(Player.BLUE) is False
     # ...but the omniscient view (AI planner / threat math) always sees truth.
     assert tgo.known_for(None) is True
-    # Once discovered (attacked/scouted/destroyed), it is known and stays known.
+    # Once engaged (struck, or overflown by a ground-attack sortie), it is known
+    # and stays known.
     tgo.discovered_by_player = True
     assert tgo.known_for(Player.BLUE) is True
 

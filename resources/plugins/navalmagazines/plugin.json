@@ -1,6 +1,6 @@
 {
     "nameInUI": "Naval magazines & weapons release",
-    "descriptionInUI": "Runtime for the fleet's finite anti-ship missiles. Inert unless the mission generator emits dcsRetribution.navalMagazines (the 'Stagger naval weapons release' or 'Cross-turn naval magazines' setting is on and a naval group exists). With the stagger on, warships spawn on ReturnFire and are released to weapons-free one group at a time across a window, so a modern fleet -- whose missiles out-range the whole theatre -- develops the exchange instead of emptying its tubes in the opening minute; a held group -- and its escort screen, since a carrier/LHA objective is two DCS groups and the area-defence SAMs ride the escorts -- is released to weapons-free the instant the enemy fires at it (a ship on ReturnFire will not defend itself, flown finding), so the hold decides who starts the war, never who may defend. With magazines on, every anti-ship missile actually fired is counted against that group's campaign stock, a group that runs dry drops back to ReturnFire until attacked (winchester -- an attacked spent ship defends itself and may overshoot its stock), and the expenditure is reported so the turn boundary can debit the persisted magazine -- there is no rearm. The land-attack weapons the cruise-missile plugin meters are excluded, so the two magazines never charge the same shot. Sets ROE and counts real weapon releases only: no spawns, no kills.",
+    "descriptionInUI": "Runtime for the fleet's finite anti-ship missiles. Inert unless the mission generator emits dcsRetribution.navalMagazines (the 'Stagger naval weapons release' or 'Cross-turn naval magazines' setting is on and a naval group exists). With the stagger on, warships spawn on ReturnFire and are released to weapons-free one group at a time across a window, so a modern fleet -- whose missiles out-range the whole theatre -- develops the exchange instead of emptying its tubes in the opening minute; a held group -- and its escort screen, since a carrier/LHA objective is two DCS groups and the area-defence SAMs ride the escorts -- is released to weapons-free the instant the enemy fires at it (a ship on ReturnFire will not defend itself, flown finding), so the hold decides who starts the war, never who may defend. A ship group also stops after its per-mission salvo -- the magazine bounds the war, the salvo bounds the day, so a fleet whose campaign stock is far deeper than its ready loadout fights a running battle instead of emptying every tube in one mission; it still defends itself if attacked. With magazines on, every anti-ship missile actually fired is counted against that group's campaign stock, a group that runs dry drops back to ReturnFire until attacked (winchester -- an attacked spent ship defends itself and may overshoot its stock), and the expenditure is reported so the turn boundary can debit the persisted magazine -- there is no rearm. The land-attack weapons the cruise-missile plugin meters are excluded, so the two magazines never charge the same shot. Sets ROE and counts real weapon releases only: no spawns, no kills.",
     "defaultValue": true,
     "specificOptions": [
         {
@@ -22,6 +22,13 @@
             "nameInUI": "Attacking a ship group also frees friendly groups within (km) -- its escort screen (0 = only the targeted group)",
             "mnemonic": "formationReleaseKm",
             "defaultValue": 15
+        },
+        {
+            "nameInUI": "Anti-ship missiles one ship group may fire per mission (0 = unlimited)",
+            "mnemonic": "salvoPerMission",
+            "defaultValue": 6,
+            "minimumValue": 0,
+            "maximumValue": 64
         },
         {
             "nameInUI": "Anti-ship weapon name patterns (comma separated, matched inside the DCS weapon type name)",

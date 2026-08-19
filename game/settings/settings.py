@@ -13,6 +13,7 @@ from .choicesoption import choices_option
 from .minutesoption import MinutesOption, minutes_option
 from .optiondescription import OptionDescription, SETTING_DESCRIPTION_KEY
 from .skilloption import skill_option
+from .textoption import text_option
 from ..ato.starttype import StartType
 from ..ground_forces.combat_stance import CombatStance
 
@@ -491,7 +492,6 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                 [
                     "squadron_random_chance",
                     "apply_target_overrides_to_loadouts",
-                    "cloud_preset_pack",
                 ],
             ),
         ],
@@ -568,6 +568,15 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                     "carrier_deck_decorations",
                     "carrier_deck_decorations_aircraft",
                     "carrier_deck_decorations_recovery",
+                ],
+            ),
+            (
+                "Weather",
+                [
+                    "cloud_preset_pack",
+                    "atmosx_live_weather",
+                    "atmosx_cli_path",
+                    "atmosx_metar_station",
                 ],
             ),
             (
@@ -1948,6 +1957,48 @@ class Settings:
             "be active at a time, since the packs reuse the same preset keys for "
             "different clouds. 'None' uses the stock DCS presets."
         ),
+    )
+    atmosx_live_weather: bool = boolean_option(
+        "Use ATMOS-X live weather",
+        page=CAMPAIGN_MANAGEMENT_PAGE,
+        section=GENERAL_SECTION,
+        default=False,
+        detail=(
+            "Replace the generated weather with a real METAR observation, fetched by "
+            "the ATMOS-X CLI for a station on this terrain. The mission keeps its own "
+            "date and time and takes only the sky. If the observation cannot be "
+            "fetched -- no ATMOS-X, no network, nothing reported for that station -- "
+            "the turn keeps the weather Retribution generated and says so in the log."
+        ),
+        enabled_when=("cloud_preset_pack", CloudPresetPack.ATMOSX),
+    )
+    atmosx_cli_path: str = text_option(
+        "ATMOS-X CLI path",
+        page=CAMPAIGN_MANAGEMENT_PAGE,
+        section=GENERAL_SECTION,
+        default="",
+        placeholder="Detected automatically",
+        detail=(
+            "Full path to atmosx-cli.exe. Leave blank to find it from the ATMOS-X "
+            "installation registered with Windows; set it only if ATMOS-X was not "
+            "installed by its installer or lives somewhere unusual."
+        ),
+        enabled_when=("cloud_preset_pack", CloudPresetPack.ATMOSX),
+        advanced=True,
+    )
+    atmosx_metar_station: str = text_option(
+        "ATMOS-X METAR station (ICAO)",
+        page=CAMPAIGN_MANAGEMENT_PAGE,
+        section=GENERAL_SECTION,
+        default="",
+        placeholder="Nearest to your base",
+        detail=(
+            "Which station to read the weather from, e.g. LCLK. Leave blank and the "
+            "station is chosen from the airfields ATMOS-X knows on this terrain: the "
+            "one you are flying from if it reports, otherwise the closest that does."
+        ),
+        enabled_when=("cloud_preset_pack", CloudPresetPack.ATMOSX),
+        advanced=True,
     )
     # Pilots and Squadrons
     ai_pilot_levelling: bool = boolean_option(

@@ -90,9 +90,10 @@ from a flown failure:
   weight. A drone must also be added to `UAV_DCS_IDS` in `game/data/units.py` (a drone
   is always filming — it banks BDA on whatever it overflies); a heavy bomber to
   `HEAVY_BOMBER_DCS_IDS` (Arc Light eligibility + low-level exemptions).
-- [ ] P1: **Fuel consumption data** (upstream's P2 above): the fork's route-aware
-  fuel-tank planning and the kneeboard fuel ladder read it, so it is effectively P1
-  here.
+- [ ] P1: **Fuel consumption data** (upstream's P2 above): tanker tasking, the in-flight
+  fuel sim, the kneeboard fuel ladder and the Payload tab's fuel-plan line all read it, so
+  it is effectively P1 here. Without a `fuel:` block the two readouts fall back to a
+  synthesised estimate; tanker tasking and the fuel sim get nothing.
 - [ ] P1: **`date_gated_properties`** for era-defining cockpit properties (JHMCS-class
   helmet sights): the gate block lives in the aircraft's own yaml so a period campaign
   clamps them automatically.

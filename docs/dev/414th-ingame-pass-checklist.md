@@ -25,7 +25,7 @@ so the two docs don't drift.
 
 ## Outstanding rows at a glance
 
-83 rows need a live pass. Full detail is under each `###` heading below —
+84 rows need a live pass. Full detail is under each `###` heading below —
 search the row id. `☐` untested · `◐` flown but not under the conditions that
 stress it · `✗` fail signature reproduced in-game.
 
@@ -90,12 +90,12 @@ stress it · `✗` fail signature reproduced in-game.
 | P8 | COIN in-mission liveliness: cell movers + insurgent indirect fire on the FOBs | COIN | ☐ |
 | O2 | Downed-pilot map overlays: both coalitions, the fog, and the countdown | CSAR | ☐ |
 | Q3 | Bulk waypoint altitude moves every flown leg | §4 (flight altitude editing) | ☐ |
-| S1 | Route-aware fuel-tank planning (fuel-first) | §46 | ◐ |
+| S1 | Route-aware fuel-tank planning (fuel-first) | §46 | ⊘ |
 | S2 | Mobile missile sites relocate (the SCUD hunt) | §49 | ✗ |
 | S3 | Friendly convoy ambush (a chance, never telegraphed) | §50 | ◐ |
 | S4 | Enemy comms jamming: capture the intel, then the C2 belt steps on the radios | §51 | ◐ |
 | S5 | Ambient supply convoys: both sides' roads have randomized traffic | §50 | ◐ |
-| S6 | Tanker fragged for a no-`fuel:`-block airframe on a long sortie | §46 | ☐ |
+| S6 | Tanker fragged for a no-`fuel:`-block airframe on a long sortie | §46 | ⊘ |
 | S7 | Measured fuel data adopted from DCS Liberation drives tanker + bingo for 12 airframes | §46 | ☐ |
 | T1 | Continuous clock marches + weather evolves across turns | §47 | ☐ |
 | T3 | Iraq "Umm al-Ma'arik (Desert Storm 1991)" campaign plays | Desert Storm campaign | ☐ |
@@ -107,7 +107,7 @@ stress it · `✗` fail signature reproduced in-game.
 | B52 | Escort-jammer distribution + the one-SEAD-flavour escort set | §77 | ☐ |
 | B49 | Carrier recovery-phase deck dressing | §72 | ◐ |
 | B48 | Naval station-keeping racetracks | §87 | ◐ |
-| B53 | AI flights no longer push early for a tanker stop they never fly | §46 | ☐ |
+| B53 | AI flights no longer push early for a tanker stop they never fly | §46 | ⊘ |
 | B54 | Planner behavior bar switches the suite in the settings UI | re-convergence | ☐ |
 | B55 | Carrier steams for wind down the angled deck | §88 | ☑ |
 | B56 | Living battlespace pre-roll: mid-cycle mission start | §89 | ◐ |
@@ -129,6 +129,7 @@ stress it · `✗` fail signature reproduced in-game.
 | B80 | String plugin options can actually be edited | §14 | ☐ |
 | B81 | SEAD-evasion scoot distance is a campaign setting | MANTIS | ☐ |
 | B82 | The AWACS orbits at a field it can actually fly from | planner shape | ☐ |
+| B83 | ATMOS-X live weather: the turn flies a real observation | ATMOS-X live weather | ☐ |
 
 ---
 
@@ -5471,3 +5472,38 @@ turn on a wing with a small dedicated-jammer squadron and read the ATO before fl
 - **Setup:** frag a player cold-start F-16C and a player cold-start F-4E in the same turn. Read each package's takeoff time against its TOT, then actually fly both starts with a stopwatch — **stored heading**, which is what the numbers assume. ~40 min for both. Also confirm an airframe with no value (a Hornet) is unchanged at 10 minutes.
 - **Pass:** you make the briefed taxi time on a normal unhurried start in all three. The Phantom's 9 minutes should feel close but sufficient — its gyros alone eat most of it.
 - **Fail signature:** you are still in the chocks when the package is due to taxi, which means the number is too tight and the note's inferred ~2-minute systems window is wrong. Record the stopwatch figure — a measurement replaces the arithmetic outright. The opposite signature also matters: arriving at the hold-short with minutes to spare means the value is generous and the whole exercise bought nothing.
+
+### B83 — ATMOS-X live weather: the turn flies a real observation · ATMOS-X live weather · ☐ UNTESTED
+
+**History:** built 2026-08-19, adopting upstream #927's second commit. Never flown. Design
+note: [414th-atmosx-live-weather-notes.md](design/414th-atmosx-live-weather-notes.md).
+- **What it is:** with the ATMOS-X cloud pack selected, the turn's weather is a real METAR
+  observation fetched through the ATMOS-X CLI instead of a generated one. The mission keeps its
+  own date and time and takes only the sky.
+- **What CI cannot exercise:** the CLI is a third-party executable that talks to the network.
+  Every test stops at its edge — reading what it writes, picking the station, copying the
+  result onto a mission. Nothing has ever run it.
+- **Setup:** ATMOS-X installed (it is, under Program Files, with `dcs_icao.csv` beside
+  `atmosx-cli.exe`) **and activated in DCS** — run `atmosx-cli activate` first. As of
+  2026-08-19 it is installed but **not activated**, and the CLI does not fail on that: it
+  warns on its own stdout, which Retribution only logs on failure, then serves real METAR
+  numbers with no ATMOS-X clouds. That is the likeliest cause of a "the weather is right but
+  the sky is stock" reading. **Mission Generation → Weather**:
+  pack = **ATMOS-X**, tick **Use ATMOS-X live weather**, leave both text boxes blank. Any
+  terrain ATMOS-X covers — Syria is the densest. Generate two turns in a row. ~20 min, most of
+  it generation.
+- **Pass:** the **turn display's weather**, the **kneeboard QNH and surface wind**, and what
+  you see out of the canopy all agree with the real METAR for the station the log names — and
+  with each other. The mission's date and time are the campaign's, not today's. **Turn 2 is a
+  fresh observation, not a generated sky.**
+- **Fail signatures, in the order worth checking:** log says `keeping the generated weather`
+  (the CLI was not found or the station reported nothing — the reason is on that line; this is
+  the designed fallback, not a defect on its own) · real on turn 1 and generated from turn 2 on
+  (the `Conditions.advance` hook did not take — test-pinned, so in game it means settings are
+  not reaching `advance`) · the turn *after* a live-weather turn fails to generate (the §47
+  weather ladder rejected a `LiveWeather` — also test-pinned) · kneeboard QNH disagrees with
+  the turn display (the observation reached the `.miz` but not the game model) · mission save
+  fails on a cloud base error (the base clamp did not fire for that preset).
+- **Worth noting while you are there** (not pass/fail): which station it picked. The fallback
+  is nearest-that-reports, which on a big map can be far off — a Syria turn from a Lebanese
+  field taking Larnaca is expected, taking something in Turkey is worth recording.

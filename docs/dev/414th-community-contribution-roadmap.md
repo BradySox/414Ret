@@ -168,7 +168,7 @@ since the last revision (§29–§73):
 | §43 per-aircraft flight defaults | High | none | 🟢 (Q1 pass owed) |
 | §44 long-range carrier ops | Medium | campaign preseeds | 🟡 P2 |
 | §45 F10 support-orbit markers | High | none | 🟡 R1 |
-| §46 route-aware fuel planning + fuel brief | **Very high** | none | 🟡 S1 |
+| Fuel brief readout + kneeboard fuel ladder — §46's planner half was reverted 2026-08-09, do not carve it | High | none | 🟡 S7 |
 | §47 continuous clock & weather | High | none | 🟡 T1 |
 | §52 C2 decapitation → planner degradation | High | none | 🟡 B6 |
 | §60 SAM radar redundancy | Medium — **balance opinion, needs the realism-notes rationale attached** | none | 🔴 pushed as #893, closed 2026-08-02 mid-review — needs the re-open decision above |

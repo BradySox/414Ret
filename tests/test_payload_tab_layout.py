@@ -118,7 +118,9 @@ def _loadout_editor(aircraft: AircraftType) -> Any:
     # Size hints are stale until the layout has run; the dialog gets this for
     # free on show, a bare widget in a test does not.
     editor.ensurePolished()
-    editor.layout().activate()
+    layout = editor.layout()
+    assert layout is not None
+    layout.activate()
     return editor
 
 

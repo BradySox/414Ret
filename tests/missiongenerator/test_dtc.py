@@ -12,7 +12,7 @@ from __future__ import annotations
 import json
 import math
 import zipfile
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, Optional
@@ -172,6 +172,7 @@ def _game(*, dtc_on: bool = True, controlpoints: Optional[list[Any]] = None) -> 
         conditions=SimpleNamespace(start_time=datetime(1988, 7, 15, 7, 0)),
         theater=SimpleNamespace(
             terrain=SimpleNamespace(name="Caucasus"),
+            timezone=timezone(timedelta(hours=4)),
             conflicts=lambda: [],
             controlpoints=controlpoints or [],
         ),
@@ -220,10 +221,29 @@ def test_channel_names_pass_the_dtc_filter() -> None:
     assert sanitize_short_name("Arco") == "ARCO"
 
 
-def test_eta_is_seconds_since_midnight() -> None:
+def test_eta_is_seconds_since_zulu_midnight() -> None:
+    """Cartridge times are Zulu, not the local mission clock: the ME's own DTC
+    manager subtracts the terrain's SummerTimeDelta, and both jets read TOT/TOS
+    against a Zulu system clock. Caucasus is UTC+4, so 07:19:13 local is
+    03:19:13Z."""
     game = _game()
-    assert seconds_of_day(game, datetime(1988, 7, 15, 7, 19, 13)) == 26353
+    assert (
+        seconds_of_day(game, datetime(1988, 7, 15, 7, 19, 13))
+        == 3 * 3600 + 19 * 60 + 13
+    )
     assert seconds_of_day(game, None) == 0
+
+
+def test_eta_keeps_climbing_across_zulu_midnight() -> None:
+    """The base is the mission day's Zulu midnight, not the wall clock's, so a
+    sortie that crosses 00:00Z still hands the jet increasing times."""
+    game = _game()
+    game.conditions.start_time = datetime(1988, 7, 15, 22, 0)  # 18:00Z
+    before = seconds_of_day(game, datetime(1988, 7, 15, 23, 30))  # 19:30Z
+    after = seconds_of_day(game, datetime(1988, 7, 16, 5, 30))  # 01:30Z next day
+    assert before == 19 * 3600 + 30 * 60
+    assert after == 25 * 3600 + 30 * 60
+    assert after > before
 
 
 def test_threat_sites_respect_recon_fog() -> None:
@@ -322,7 +342,7 @@ def test_hornet_cartridge_shape() -> None:
     # Route sequence: ETA absolute seconds, target flagged, routes 2/3 empty.
     route = data["WYPT"]["NAV_ROUTE"]
     assert route[1] == [] and route[2] == []
-    assert route[0]["STPT1"]["ETA"] == 7 * 3600 + 30 * 60
+    assert route[0]["STPT1"]["ETA"] == 3 * 3600 + 30 * 60  # 07:30 local, UTC+4
     assert route[0]["STPT1"]["TGT"] is True
     assert route[0]["STPT2"]["TGT"] is False
 
@@ -420,7 +440,7 @@ def test_viper_cartridge_shape() -> None:
         "TKR ARCO",
         "CAP COLT",
     ]
-    assert nav_pts[0]["TOS"] == 7 * 3600 + 30 * 60
+    assert nav_pts[0]["TOS"] == 3 * 3600 + 30 * 60  # 07:30 local, UTC+4
     assert nav_pts[0]["isTOSEnabled"] is True
     assert nav_pts[2]["R1"] is False
     assert [p["type"] for p in nav_pts] == ["TGT", "STPT", "STPT", "STPT"]
@@ -985,6 +1005,25 @@ def _super_hornet_fixture(dcs_id: str = "FA-18F") -> tuple[Any, Any, Any]:
     flight, mission_data, game = _hornet_fixture()
     flight.aircraft_type = SimpleNamespace(dcs_unit_type=SimpleNamespace(id=dcs_id))
     return flight, mission_data, game
+
+
+def test_super_hornet_inherits_the_hornet_cockpit_fixes() -> None:
+    """The mod ships no manual of its own and no DTC code of its own -- its
+    descriptor dofiles ED's FA-18C NAV_SETTINGS -- so the Zulu clock and the
+    designated A/A waypoint have to reach the E/F/G unchanged."""
+    flight, mission_data, game = _super_hornet_fixture()
+    flight.waypoints = list(flight.waypoints) + [
+        _waypoint("BULLSEYE", FlightWaypointType.BULLSEYE, 5000, 5000, 0, None)
+    ]
+    cartridge = build_super_hornet_cartridge(flight, mission_data, game, "SH")
+    assert cartridge is not None
+    wypt = json.loads(cartridge.to_json())["data"]["WYPT"]
+    bulls = wypt["NAV_PTS"][-1]["wypt_num"]
+    assert wypt["NAV_SETTINGS"]["AA_Waypoint"] == {
+        "AA_WP_Number": bulls,
+        "AA_WP_Enabled": True,
+    }
+    assert wypt["NAV_ROUTE"][0]["STPT1"]["ETA"] == 3 * 3600 + 30 * 60
 
 
 def test_super_hornet_cartridge_shape() -> None:

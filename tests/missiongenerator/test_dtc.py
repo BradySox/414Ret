@@ -370,6 +370,41 @@ def test_hornet_cartridge_shape() -> None:
     assert data["SA"]["Default_FLOT_Line"] == 1
 
 
+def test_hornet_designates_the_bullseye_as_the_aa_waypoint() -> None:
+    """The A/A waypoint has to BE a waypoint in the database (EA guide p158),
+    and the jet's stock slot 59 is past anything our routes emit."""
+    flight, mission_data, game = _hornet_fixture()
+    flight.waypoints = list(flight.waypoints) + [
+        _waypoint("BULLSEYE", FlightWaypointType.BULLSEYE, 5000, 5000, 0, None)
+    ]
+    data = json.loads(
+        build_hornet_cartridge(flight, mission_data, game, "H").to_json()
+    )["data"]
+    nav_pts = data["WYPT"]["NAV_PTS"]
+    assert nav_pts[-1]["text_note"] == "BULLSEYE"
+    bulls = nav_pts[-1]["wypt_num"]
+    assert data["WYPT"]["NAV_SETTINGS"]["AA_Waypoint"] == {
+        "AA_WP_Number": bulls,
+        "AA_WP_Enabled": True,
+    }
+    # A reference point, never a flown leg.
+    assert nav_pts[-1]["R1"] is False
+    assert f"STPT{bulls}" not in data["WYPT"]["NAV_ROUTE"][0]
+
+
+def test_hornet_aa_waypoint_stays_off_without_a_bullseye() -> None:
+    """No bullseye in the plan means nothing to designate; leave the jet's own
+    slot 59 selected and switched off rather than pointing at empty space."""
+    flight, mission_data, game = _hornet_fixture()
+    data = json.loads(
+        build_hornet_cartridge(flight, mission_data, game, "H").to_json()
+    )["data"]
+    assert data["WYPT"]["NAV_SETTINGS"]["AA_Waypoint"] == {
+        "AA_WP_Number": 59,
+        "AA_WP_Enabled": False,
+    }
+
+
 def test_viper_cartridge_shape() -> None:
     flight, mission_data, game = _hornet_fixture()
     flight.aircraft_type = SimpleNamespace(dcs_unit_type=SimpleNamespace(id="F-16C_50"))

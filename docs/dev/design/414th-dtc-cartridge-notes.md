@@ -77,7 +77,7 @@ point), 15 THREAT_PTS, 20+20 COMM channels.
 - **Viper NAV_PTS**: route timing inline on the point (`TOS`, `isTOSEnabled`,
   `speed`, `FIX_Time`, `routeAltitude`); the name rides `note`; OAP_1/OAP_2
   boilerplate.
-- **NAV_SETTINGS** (Hornet): `TACAN {Mode (1=T/R, 2=REC, 3=A/A), Channel,
+- **NAV_SETTINGS** (Hornet): `TACAN {Mode (1=T/R, 2=RCV, 3=A/A), Channel,
   ChannelMode (1=X, 2=Y), OnOff}`, `ICLS {Channel 1–20, OnOff}`, `ACLS
   {Frequency 225–399.975, OnOff}`, `AA_Waypoint`, `Home_Waypoint {FPAS_HOME_WP}`,
   `Altitude_Warning {Warn_Alt_Rdr, Warn_Alt_Baro}` (feet).
@@ -249,6 +249,41 @@ a target as a triangle. `NAV_PTS_Types` accepts `STPT` / `IP` / `TGT` and keeps
 the `STPT<n>` id prefix regardless of sub-type. §74 emitted `STPT` for
 everything; it now marks target waypoints `TGT` and ingress waypoints `IP`. The
 old "the Viper marks targets via the route, not a point flag" comment was wrong.
+
+### The Hornet half: the guide has no DTC chapter
+
+Term census over all 424 pages: **FLOT, FAOR, corridor, MEZ, CAP point and DTC
+all return zero hits.** Unlike the Viper, whose guide documents the DTE format on
+p126-127, the Hornet guide never mentions the cartridge. It cannot validate the
+SA half of the Hornet cartridge at all — the descriptor is the only source there.
+What it does validate is the cockpit behaviour behind each section.
+
+**One change came out of it.** p158: "The A/A waypoint must coincide with a
+waypoint within the waypoint database", and designating it costs the pilot three
+presses (HSI -> DATA -> A/A WP) every sortie. §74 hardcoded
+`AA_WP_Number: 59, AA_WP_Enabled: False` — the jet's stock bullseye slot, which
+our routes never reach, switched off. It now points at the bullseye we already
+emit (the kneeboard's `REFERENCE_WAYPOINT_TYPES` puts divert and bullseye after
+landing, so both faces agree on its number) and enables it. No bullseye in the
+plan leaves the stock 59/off rather than designating empty space. Descriptor
+range is 1-59 (`NAV_SETTINGS_defs.lua`), so any emitted number is legal.
+
+**Confirmed against the guide and `NAV_SETTINGS_defs.lua`, no change:** the 59
+waypoint cap (`WAYPOINT_MAX`) · three route sequences (p119, "The F/A-18C can
+store three sequences") · the TGT flag living on the route entry rather than the
+point (p119, WPDSG) · ICLS 1-20, ACLS 225.000-399.975, TACAN 1-126 X/Y · the
+500/2000 ft altitude warnings inside the 5000/25000 ft caps · 20 comm presets per
+radio plus G/M/C/S (p153-155).
+
+**Two things worth knowing, neither actionable:** comm channel **C (cue) is
+marked "(N/I)"** in the guide — we emit it mirroring the module defaults, and it
+will never do anything. And **ACLS is documented in the Supercarrier guide, not
+the Hornet guide**, which is why a search of the airframe manual comes back
+empty.
+
+**Checked, already covered:** the yardstick section (p138) warns off TACAN
+channels 68 and 69 for datalink conflict. `UNAVAILABLE[TacanUsage.AirToAir]`
+already excludes 64-99 on both bands.
 
 ### Confirmed correct — no change
 

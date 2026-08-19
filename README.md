@@ -104,9 +104,10 @@ Most of this is opt-in. Full list with toggles, defaults and known limitations:
   stored heading in seconds, a Phantom waits on its gyros. Everything else uses the
   campaign-wide setting.
 - Tanker and AWACS orbits are drawn on the F10 map with callsign, frequency and TACAN.
-- Drop tanks are fitted for the sortie before tanker passes are decided, so jets stop
-  double-tanking sorties their real load covers. The Payload tab shows burn, passes and RTB
-  margin live.
+- The Payload tab shows the sortie's fuel plan live: planned burn, what the jet carries
+  internally and in tanks, the RTB margin with no tanker, and how many tanker passes the
+  route has. It flags a sortie that only gets home on a top-off, so you can add a bag or
+  trim the route before you fly it.
 - SAM batteries field two guidance radars, spaced so one missile cannot take both. New
   campaigns only.
 - One continuous clock: time advances a few hours per turn and weather evolves from the

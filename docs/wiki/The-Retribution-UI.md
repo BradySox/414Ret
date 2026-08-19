@@ -53,7 +53,7 @@ Your layer choices are remembered between sessions (the fog overview is the deli
 
 Clicking a ground object or air-defense site opens an **intel/target dialog**. The fork's panel shows known strength, mission suitability, weapon and detection ranges, IADS membership, visibility, and capture/purchase state.
 
-Intelligence here is deliberately incomplete: in 414Ret an enemy site can be *known to exist* without its exact composition, strength, damage state, or threat rings being known until you attack or scout it, and confirmed battle damage may require a surviving recon (TARPS) pass. If you need the real picture for planning, the **Reveal fog of war** toggle in the layers panel un-fogs these dialogs along with the map.
+Intelligence here is deliberately incomplete: in 414Ret an enemy site can be *known to exist* without its exact composition, strength, damage state, or threat rings being known until you engage it. Once engaged you see all of it, damage included — there is no separate confirmation pass. If you need the real picture for planning, the **Reveal fog of war** toggle in the layers panel un-fogs these dialogs along with the map.
 
 ## The debrief
 

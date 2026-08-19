@@ -968,7 +968,7 @@ TR", not "ST-68U Tin Shield SR" — and it fixes a real bug where an SA-5 site p
 reference ("No weapons") from its acquisition radar despite a 138 nm MEZ. A bare radar site (nothing
 lethal co-located) still honestly names itself. **Recon-fog aware** (§3): a site the player has not identified
 (`known_for(player)` False) contributes only to a per-band "Unidentified MERAD" card — system,
-ring, HARM code and defeat note withheld until a TARPS overflight reveals it. The unidentified cards
+ring, HARM code and defeat note withheld until the site is engaged. The unidentified cards
 also **withhold the count**: how many unidentified (often mobile) sites are in theatre is intel we
 wouldn't realistically have, so they drop the "N site(s)" headline and the intro's running total, and
 their detected-contact bearings overflow to an ellipsis (`_unknown_cues_text`) rather than a "+N" total
@@ -3350,7 +3350,7 @@ a declutter pass:
   `update_from_settings` re-applies it after a difficulty preset. Wired: the four `red_intent_*` ←
   `red_intent`, the `coin_*` family ← `coin_insurgency`, `qra_defense_depth_nm` ← `qra_forward_defense`,
   `motorpool_spawn_cap` ← `motorpool_enabled`, `comms_jam_requires_capture` ← `enemy_comms_jamming`,
-  `concealed_enemy_forces` ← `recon_intel_fog`, `perf_culling_distance` ← `perf_culling`,
+  `perf_culling_distance` ← `perf_culling`,
   `perf_smoke_spacing` ← `perf_smoke_gen`, `dynamic_slots_hot` ← `dynamic_slots`,
   `supercarrier_deck_crew` ← `supercarrier`, the two squadron-limit knobs ← `enable_squadron_pilot_limits`,
   and the **inverse**
@@ -4910,9 +4910,10 @@ historical record only.
 A mobile theater-missile site — a SCUD/SSM group, `TheaterGroundObject.category == "missile"` — has
 always spawned parked exactly where the campaign map says it is, every mission, forever. "Hunting" it
 was flying to a coordinate. Real shoot-and-scoot launchers were the archetypal Desert Storm needle in a
-haystack: the Weasel/SCUD hunt is a hunt precisely because the target *moves*. With the concealment
-layer (§3 `concealed_enemy_forces`) already denying the exact map position until recon localizes it,
-the last missing half was the launcher itself sitting still once you got there.
+haystack: the Weasel/SCUD hunt is a hunt precisely because the target *moves*. The missing half was
+the launcher itself sitting still once you got there. (This originally leaned on §3's concealment
+layer denying the exact map position; that layer was removed 2026-08-18, so a site carries an exact
+marker and the hunt is now purely about in-mission movement.)
 
 ### How it works
 
@@ -6648,7 +6649,7 @@ approximate-precision spirit: honest but coarse). (2) **Reveal** (`apply_comint_
 an `initialize_turn` hook): snaps ONE concealed enemy site to
 exact via the normal discovery flip (`discovered_by_player` → `known_for`, +
 `events.update_tgo`) — eligible = the dashed-circle population (flag-`concealed` COIN
-spawns, or the §3 category-concealable field forces when `concealed_enemy_forces` is on),
+spawns — the §3 category-concealable field forces went with that layer, 2026-08-18),
 not already known to blue, within `COMINT_REVEAL_RANGE_M` (60 km) of an alive source (the
 fiction: the site's own chatter gave it away, so a silent corner of the map stays dark);
 **`map_hidden` is never eligible** (the §50 ambush teams stay untelegraphed

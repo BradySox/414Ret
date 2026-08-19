@@ -37,7 +37,7 @@ air-defence and quality-of-life work on top of upstream.
 ## 414th features
 
 - [What's Different in the 414th Fork](414th-Fork-Overview) — the overview.
-- [Fog of War and Reconnaissance](Fog-of-War-and-Reconnaissance) — intel fog, BDA lag, approximate targeting.
+- [Fog of War and Reconnaissance](Fog-of-War-and-Reconnaissance) — intel fog, hidden command posts, approximate targeting.
 - [TARPS Reconnaissance](TARPS-Reconnaissance) — player photo recon and the recon engine.
 - [SCAR](SCAR) — the "Sandy" rescue escort.
 - [Combat SAR](Combat-SAR) — rescuing a downed pilot.

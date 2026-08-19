@@ -433,7 +433,12 @@ class TheaterGroundObject(MissionTarget, SidcDescribable, ABC):
         return SymbolIdentificationCode(
             standard_identity=self.standard_identity_for(viewer),
             symbol_set=symbol_set,
-            status=self.sidc_status,
+            # The status digit is the symbol's operational condition, and milsymbol
+            # draws it as the bar under the icon -- so shipping ground truth here
+            # tells the player an un-engaged site is intact (or destroyed) without
+            # their ever having touched it. A viewer who cannot see the composition
+            # gets plain PRESENT: the site is there, its condition is not yours.
+            status=self.sidc_status if self.known_for(viewer) else Status.PRESENT,
             entity=entity,
         )
 

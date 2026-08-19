@@ -47,9 +47,10 @@ def _enemy_sam(*, fog: bool = True) -> SamGroundObject:
     tgo.control_point = cast(
         Any,
         SimpleNamespace(
+            captured=Player.RED,  # sidc_status reads captured.is_neutral
             coalition=SimpleNamespace(
                 game=SimpleNamespace(settings=SimpleNamespace(recon_intel_fog=fog))
-            )
+            ),
         ),
     )
     return tgo
@@ -103,3 +104,22 @@ def test_old_saves_migrate_to_discovered() -> None:
     tgo.__setstate__(state)
     # An in-progress campaign keeps everything visible rather than blanking.
     assert tgo.discovered_by_player is True
+
+
+def test_the_map_symbol_does_not_leak_condition_while_fogged() -> None:
+    """The SIDC status digit is the symbol's *operational condition*, and milsymbol
+    draws it as the bar under the icon. Shipping ground truth there told the player
+    an un-engaged site was fully capable (green bar) — or destroyed — without their
+    ever touching it. Regression: the BDA-lag removal collapsed `sidc_status_for`
+    into a plain property and `sidc_for` kept using it."""
+    from game.sidc import Status
+
+    tgo = _enemy_sam()  # no groups, so ground truth is "destroyed"
+    assert tgo.sidc_status is Status.PRESENT_DESTROYED
+    # The fogged viewer must not learn that. Plain PRESENT draws no condition bar.
+    assert tgo.sidc_for(Player.BLUE).status is Status.PRESENT
+    # The omniscient view (AI, planner, threat math) is unaffected.
+    assert tgo.sidc_for(None).status is Status.PRESENT_DESTROYED
+    # Engaging the site hands over the real condition.
+    tgo.discovered_by_player = True
+    assert tgo.sidc_for(Player.BLUE).status is Status.PRESENT_DESTROYED

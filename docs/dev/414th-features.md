@@ -403,6 +403,16 @@ What went, concretely:
   debrief channel and the `recon` plugin still parse and run; nothing consumes the
   result (see §12).
 
+**One leak this opened, fixed 2026-08-19.** Collapsing `sidc_status_for(viewer)` into a plain
+property left `sidc_for(viewer)` shipping the **operational-condition digit** as ground truth —
+and milsymbol draws that digit as the bar under the map icon, so every un-engaged air-defence
+site advertised itself as fully capable (and a destroyed one as destroyed). `sidc_for` now falls
+back to `Status.PRESENT` when `known_for(viewer)` is False. Pinned by
+`test_the_map_symbol_does_not_leak_condition_while_fogged`. The other client-facing fields
+(`units`, `threat_ranges`, `detection_ranges`, `dead`) were gated correctly throughout; `task`
+and `category` are shown on purpose (the air-defence band is not fogged), and a TGO's `name`
+comes from the campaign author's own miz marker.
+
 What stayed viewer-aware: `visibility_for` / `known_for` / `hidden_on_player_map`
 (composition fog + the `scar_command_post_intel` command-post hiding + §50's
 `map_hidden` ambush teams), `standard_identity_for` (COIN's suspect-until-engaged

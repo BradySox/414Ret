@@ -75,7 +75,7 @@ feature — each carries the design rationale, the flown-test findings, and the 
 | [414th-feature-debt-register.md](docs/dev/414th-feature-debt-register.md) | The verification plan and debt triage. Archive once the Aug-1 wave is processed. |
 | [414th-upstreaming-inventory.md](docs/dev/414th-upstreaming-inventory.md) | The upstreaming queue, priority-ordered, with readiness marks. |
 | [414th-community-contribution-roadmap.md](docs/dev/414th-community-contribution-roadmap.md) | The long view: community-value × carve-difficulty across every feature. |
-| [414th-retribution-long-view.md](docs/dev/design/414th-retribution-long-view.md) | Structural read of the engine (2026-08-17): what Retribution is, measured, and the seven seams that follow. **1 (mission→campaign reporting) and 4 (the front line) are BUILT** as §91 and §90; **2 (the intel model), 5 (time between turns) and 7 (the enemy) are accepted, not started**; 3 is analysis only; 6 is scoped in its own note. Seam 7 is where "why don't we improve red" lives — read it before proposing anything there, because §55 already tried the obvious shape. |
+| [414th-retribution-long-view.md](docs/dev/design/414th-retribution-long-view.md) | Structural read of the engine (2026-08-17): what Retribution is, measured, and the seven seams that follow. **1 (mission→campaign reporting) and 4 (the front line) are BUILT** as §91 and §90; **2 (the intel model) and 5 (time between turns) are accepted, not started**; 3 is analysis only; 6 is scoped in its own note. **Seam 7 (the enemy) is DROPPED** — three framings, three Phase 0s, no observable defect found; read §8 and [414th-red-brain-phase0-notes.md](docs/dev/design/414th-red-brain-phase0-notes.md) before proposing anything about red, because §55 tried the obvious shape and the analytic route has now failed three times. |
 
 ### Campaign notes — `docs/dev/design/`
 
@@ -137,7 +137,10 @@ Read before touching a campaign's `.yaml`, `.miz` or build tool.
 - **Process** — `414th-verification-cadence-notes.md` (the fly-card throttle, proposed),
   `414th-dcs-olympus-notes.md`, `414th-ui-redesign-directions.md` (+ `-mockups.html`),
   `414th-juanjux-fork-watch-notes.md` (**the second fork we watch** — his adoption ledger,
-  what is already ours, and the OPFOR-AI precedent for seam 7)
+  what is already ours, and the OPFOR-AI precedent for seam 7),
+  `414th-red-brain-phase0-notes.md` (**read before proposing anything about red** — seam 7
+  framing 3 and its Phase 0; no headroom found, and the pre-registered card that would
+  reopen it)
 
 ### Superseded, draft or historical
 

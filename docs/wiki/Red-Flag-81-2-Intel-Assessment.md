@@ -216,7 +216,7 @@ Two more things. There's a scoreboard — call it Washington's patience and thei
 keep playing. Every jet we lose, every crew they capture, every rule we break, it moves. Fly
 disciplined and it moves our way. And if you come down on those ranges — there are people out
 there whose job is to get to you first. Ours are faster. Help them: get to cover, get on the
-radio, and let Sandy run it.
+radio, and put your beacon out — they home on it.
 
 Thirteen missions. The aggressors brief your kills at the bar tonight — let's make them brief
 ours instead. Step out in ten. Fight's on.

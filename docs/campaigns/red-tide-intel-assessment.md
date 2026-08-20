@@ -27,8 +27,8 @@ names you will see in the in-game ATO. Three pieces:*
 > the planner repositions mobile SAMs *between turns*, so "fly today's recon" is the real takeaway);
 > the **networked-IADS** "kill the C2 to drop the SAMs" idea (designed against the retired **Skynet**
 > engine — the fork now runs **MANTIS**; unverified in-game — the dependable lever is killing the
-> EWR/A-50 *picture*); and note this pack predates **Combat SAR**, which exists in the build but is
-> still in in-game testing. For the file-grounded working reference, see the
+> EWR/A-50 *picture*); and note this pack predates the current **Combat SAR**, which was replaced
+> wholesale on 2026-08-07. For the file-grounded working reference, see the
 > **[Campaign Briefing Handbook](red-tide-campaign-handbook.md)**.
 
 ---

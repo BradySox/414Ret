@@ -310,8 +310,8 @@ MISSION #: [____]      MC: [callsign]
 
 5. ADMIN & SAR (§11)
    Bingo / Joker: [____]   Divert: [Nellis / Indian Springs]
-   Combat SAR: Sandy [flight], pickup [helo], freq [____]
-   If down over the ranges: [the snatch teams race you — §11]
+   Combat SAR: pickup [helo], beacon 260 kHz ADF, freq [____]
+   If down over the ranges: [beacon out, hold for the pickup — §11]
 
 6. CONTINGENCIES
    - SA-2 launch on ingress: [notch/beam, then re-attack or reroute]
@@ -335,7 +335,7 @@ MISSION #: [____]      MC: [callsign]
 | **OCA (Surge Week)** | 2–4× F-4E onto TTR / the strips | full escort + TARPS | Only after the airfields release. |
 | **Air Assault** | UH-1H / CH-47D | CAS ahead of the LZ | The territorial lever — the front never sweeps. |
 | **TARPS** | RF-101B | — | Film the array + your BDA. Unarmed — speed is the defense. |
-| **Combat SAR (§11)** | Sandy + helo pickup | AH-1W | Stand up when someone's down on the ranges. |
+| **Combat SAR (§11)** | Rescue helo | UH-1H | Auto-planned; fly it yourself if you want the pickup. |
 
 ---
 
@@ -367,14 +367,15 @@ first is **captured** (the exercise fiction: "processed as a POW by the Red Forc
 held at a red field on a **4-turn clock** — recapture the field and they walk free, let the clock
 run out and the aviator is gone. Every pilot lost is a pilot not flying tomorrow.
 
-- **The race:** ejection → enemy snatch teams spawn and go for the survivor. Kill them or beat
-  them to the pickup.
-- **The package:** Sandy escort (an AI Sandy auto-diverts to a live ejection), helo pickup, the
-  C-130 King overhead (TACAN + F10 locator). `auto_combat_sar` (default OFF) stands up an AI
-  alert package if nobody takes the seat.
-- **Status:** rescue scoring is live/verified across the fork; the POW raid + King beacon are
-  newer and still being shaken out. `invulnerable_player_pilots: true` — the stakes live in the
-  ejection race, not the cockpit.
+- **The clock:** come down out on the ranges and you have two turns before you are written
+  off — three if you made it back to friendly ground. Inside 15 nm of a field there is no
+  rescue flight at all: friendly and you walk back, hostile and you are taken.
+- **The package:** a rescue helicopter, auto-planned. No escort is planned with it — if the
+  survivor is inside threat rings, frag the cover yourself.
+- **Homing:** the survivor's beacon is **260 kHz ADF**, the same channel every time. Tune it
+  before start.
+- **Status:** `invulnerable_player_pilots: true` — the stakes live in the recovery, not the
+  cockpit. Full mechanics on the **[Combat SAR](Combat-SAR)** page.
 
 ---
 
@@ -415,7 +416,7 @@ BINGO: [______]  JOKER: [______]  DIVERT: [______]
 
 COMMS:  PKG [______]  AWACS [______]  TANKER [______]  GUARD 243.0
 LOADOUT: _______________________________________________________________
-SAR: Sandy [______]  Pickup [______]   If down: win the race (§11)
+SAR: Pickup [______]  Beacon 260 kHz ADF   If down: §11
 NOTES: _________________________________________________________________
 ```
 

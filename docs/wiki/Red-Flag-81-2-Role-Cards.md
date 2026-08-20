@@ -167,22 +167,21 @@ COMMS: LZ brief with the FAC; deconflict with the strike stack.
 
 ---
 
-## Combat SAR — Sandy + pickup *(the race, desert edition)*
+## Combat SAR — the pickup *(desert edition)*
 
 ```
-==================  COMBAT SAR · THE RACE  ==================
-JOB: When a pilot ejects over the ranges, the Red Force snatch teams spawn and
-RACE you to the survivor. Win: the pilot is spared at debrief (airframe still
-lost). Lose: CAPTURED — a POW at a red field on a 4-turn clock; freed by
-recapturing the field, gone for good if the clock runs out.
+==================  COMBAT SAR · THE PICKUP  ==================
+JOB: When a pilot ejects out on the ranges, a rescue helicopter goes and gets
+them. Recovered to a friendly field = spared at debrief (airframe still lost).
+Left out there = written off. Two turns on hostile ground, three on friendly.
 
-THE PACKAGE: Sandy escort (an AI Sandy auto-diverts to a live ejection) +
-  helo pickup + the C-130 KING overhead (TACAN + F10 locator).
-THE PLAY: kill the snatch teams FIRST — they are the clock. Then the pickup.
-STATUS: rescue scoring live/verified fork-wide; POW raid + King beacon newer,
-  still being shaken out. auto_combat_sar (OFF by default) stands up an AI alert.
-NOTE: invulnerable_player_pilots is ON — the stakes live in the ejection race.
-=============================================================
+HOMING: survivor beacon is 260 kHz ADF, same channel every time. TUNE IT BEFORE
+  START. Land or hold a low hover to hoist, then deliver to any field or FARP.
+NO ESCORT IS PLANNED WITH IT. Down inside the rings? Frag your own cover.
+CLOSE IN: come down within 15 nm of a field and there is no rescue at all --
+  friendly and you walk back, hostile and you are taken.
+NOTE: invulnerable_player_pilots is ON -- the stakes live in the recovery.
+===============================================================
 ```
 
 ---

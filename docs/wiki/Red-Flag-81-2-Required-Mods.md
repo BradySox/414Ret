@@ -34,7 +34,7 @@ vanilla + the three mods above.)*
 | **F-4E-45MC Phantom II** | Heatblur — paid, **flyable** | The 336th TFS — Strike + MiGCAP. The campaign's seat. |
 | **A-10A Thunderbolt II** | ED (Flaming Cliffs) — paid, **flyable** | BAI / the trail war |
 | **UH-1H Iroquois** | ED — paid, **flyable** | Air Assault / Mercury lift |
-| **DCS: C-130J** | Airplane Simulation Company — paid, **flyable** | Transport + the Combat SAR "King" |
+| **DCS: C-130J** | Airplane Simulation Company — paid, **flyable** | Transport + the EW/ISR jamming platform |
 | **CH-47F Chinook** | ED — paid, Early Access | Combat SAR pickup (if flown player-side) |
 | **F-5E Tiger II** | ED — the AI (FC) version flies red | The 64th/65th Aggressors — you fight it, you don't fly it (unless you start the campaign **inverted**) |
 | **MiG-21bis** | Magnitude 3 — paid | The 4477th's Fishbeds — AI red |

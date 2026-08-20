@@ -64,8 +64,8 @@ MISSION #: 001      MC: AXEMAN (ex.)
 
 5. ADMIN & SAR
    Bingo/Joker per fuel card. Divert: Frankfurt/Ramstein.
-   Combat SAR: KING (910th C-130J) overhead for EW/ISR + on-scene cmd; SANDY = HOG flight if needed.
-   If you eject: clear the area, high ground, guard freq, KING runs it. (See SAR caveats — handbook §11.)
+   Combat SAR: auto-planned. Survivor beacon 260 kHz ADF.
+   If you eject: clear the area, high ground, guard freq, authenticate. (Handbook §11.)
 
 6. CONTINGENCIES
    - Tanker no-show: shorten on-station, stagger RTB.
@@ -121,7 +121,7 @@ MISSION #: 002      MC: AXEMAN (ex.)
    Bullseye ANVIL · PUSH "SABRE" · SUCCESS "HOMERUN" · ABORT "KNOCK-IT-OFF" · CORRIDOR OPEN "GATEWAY"
 
 5. ADMIN & SAR
-   KING overhead (EW/ISR + cmd). SANDY = a HOG/Apache element on alert. Eject contract per §11.
+   Combat SAR auto-planned; beacon 260 kHz ADF. Eject contract per §11.
 
 6. CONTINGENCIES
    - Mobile SAMs relocated/no joy: VOODOO sanitizes; if the lane won't open, BAI aborts to a
@@ -179,7 +179,7 @@ MISSION #: 003      MC: AXEMAN (ex.)
    PUSH "SABRE" · SUCCESS "HOMERUN" · ABORT "KNOCK-IT-OFF" · CORRIDOR "GATEWAY" · BIG-EYE (A-50) "PEEPER"
 
 5. ADMIN & SAR
-   KING overhead; SANDY on alert. Deep-ish push — brief the eject/SAR contract hard (§11).
+   Deep-ish push — brief the eject/SAR contract hard (§11).
 
 6. CONTINGENCIES
    - Corridor closed again: BOLT holds; VOODOO/HORNET re-open or the OCA slips a turn.

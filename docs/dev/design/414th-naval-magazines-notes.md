@@ -121,6 +121,35 @@ day.**
 
 Not N3 or N4: those names stay with the deferred replenishment and unit-card items below.
 
+### The overshoot cap, and calling winchester once (2026-08-19, test 11)
+
+The salvo cap's first flight found two holes in the tier below, both in the `dry`
+branch, and both only reachable by a group that is **empty and under attack**:
+
+1. **A dry group was bounded by nothing.** `chargeShot` returned from the `dry`
+   branch before the salvo check ever ran, and an attacked group is deliberately
+   never dropped to `ReturnFire`. Flown: `0079 | CARACAL (Carrier)` — a Kuznetsov
+   that **started the mission dry** — was released by the attack rule after blue
+   put 16 AGM-84D into its group at t=1296, and then fired **12 P-700 over 336 s**
+   against a salvo cap of 6. Every anti-ship missile fired that mission came out of
+   this path, so the cap itself was never exercised at all.
+2. **`WINCHESTER` was called on every shot past zero.** Same cause: the group stays
+   weapons-free, so each subsequent shot re-entered the branch. Four log lines from
+   one hull, and the coalition message would have popped four times too.
+
+**Fixed (DM call): cap the overshoot, don't remove it.** A group already at zero
+may answer an attack for `salvoPerMission` rounds past empty, then holds — even
+under fire. That keeps the 2026-08-05 finding's point (a ship being shot at is not
+defanged the moment it runs dry) while bounding what "defending itself" can cost:
+the flown 12 becomes 6. Everything fired is still counted and debited, so the
+war-level pool never inflates. The winchester call is latched to once per group.
+
+The two rejected options are worth recording. *Leave it unbounded* keeps a
+saturation attack able to pull a full second salvo out of an empty magazine.
+*Apply the cap strictly* — bound an attacked group like any other — is the
+cleanest rule but defangs a hull the enemy is actively shooting at, and DCS ROE is
+per **group**, so it loses its SAMs and CIWS with it.
+
 ## Decisions taken during the build
 
 ### Group identity: `group_name`, not `original_name`

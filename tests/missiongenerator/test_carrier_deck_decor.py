@@ -300,19 +300,24 @@ def test_recovery_aircraft_footprints_clear_the_street_gear() -> None:
         )
 
 
-def test_recovery_tier_may_carry_aircraft_but_permanent_gear_may_not() -> None:
-    """The split that keeps the 2026-07-18 lesson intact.
+def test_no_tier_parks_a_static_aircraft_on_the_deck() -> None:
+    """The 2026-07-18 lesson, restored to every tier (DM call, 2026-08-19).
 
-    Static aircraft ARE allowed in the recovery tier (explicit call,
-    2026-08-07: the clipping that banned them was a placement problem, not an
-    aircraft problem, and this tier only stands once launches are over). They
-    remain banned from the permanent layout, which is up the whole mission
-    while every spawn path runs.
+    The 2026-08-07 relaxation let static aircraft into the recovery tier, on the
+    reasoning that the tier only stands once launches are over. Test 11
+    falsified that premise: 14 aircraft late-activated onto the CVN-71 deck
+    between t=2340 and t=3913, 9 to 35 minutes AFTER the recovery set spawned --
+    the exact condition that produced the original ban, since a blocked spot is
+    NOT skipped for a late activation.
+
+    The opt-in launch tier's round-down E-2C is deliberately out of scope: it
+    stands inside LANDING_AREA_KEEP_OUT, which is not a parking area, and is
+    struck below before recovery.
     """
     recovery_types = {item.type for _, item in recovery_phase()}
-    assert any(
-        STATIC_META[t][0] in ("Planes", "Helicopters") for t in recovery_types
-    ), "recovery tier is allowed aircraft; if none remain, drop this test"
+    assert recovery_types, "the recovery pool should not be empty"
+    for static_type in recovery_types:
+        assert STATIC_META[static_type][0] not in ("Planes", "Helicopters")
     for hull in (Stennis.id, CVN_71.id):
         for turn in range(12):
             for item in deck_layout_for(hull, "CSG 1", turn):

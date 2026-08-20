@@ -6983,7 +6983,7 @@ despawn-only invariant, **deliberately and on an explicit call** — the carrier
 place the rule cannot hold, since gear ranged forward for recovery must not be on the bow
 during the launch cycle and so cannot be generated into the miz. The exception is scoped, not
 widened: one one-shot spawn per boat, on the same trigger as the strike-below, `pcall`-wrapped,
-skipped entirely when MOOSE is absent, and the despawn half runs regardless. Data is **nine rotating variants** drawn from two installed campaigns (source campaigns are called campaign A and campaign B rather than named — they are paid third-party products and the fork does not name them in its own docs). **Static aircraft are permitted in this tier only** (explicit call, 2026-08-07): the clipping that banned them was a placement problem, not an aircraft problem, and this tier only stands once launches are over — the permanent layout is still aircraft-free, and both halves are pinned by a test. `FOOTPRINT_EXTRA_M` gained six aircraft entries at roughly half each published fuselage length, and footprint-aware clearance then rejected 15 candidate placements outright. A second guard checks the footprint *edge* against the street box, since box disjointness only compares centres and a parked Tomcat reaches ~9.5 m aft of its own. **It is default-OFF because it is the least-evidenced tier in the
+skipped entirely when MOOSE is absent, and the despawn half runs regardless. Data is **nine rotating variants** drawn from two installed campaigns (source campaigns are called campaign A and campaign B rather than named — they are paid third-party products and the fork does not name them in its own docs). **Static aircraft were permitted in this tier only** (explicit call, 2026-08-07) on the reasoning that the clipping which banned them was a placement problem and this tier only stands once launches are over — **REVERTED 2026-08-19 (DM call), because test 11 falsified that premise with measurements**: 14 aircraft late-activated onto the CVN-71 deck between t=2340 and t=3913, 9 to 35 minutes *after* the recovery set spawned, five of them onto the six-pack row — the exact condition the 2026-07-18 ban was measured on, since a late activation does not skip a blocked spot. `is_deck_gear` now filters aircraft out at variant construction (7 usable variants → **5**, all deck gear) and `test_no_tier_parks_a_static_aircraft_on_the_deck` pins it across every tier. The authored campaign B data is kept as the record, so re-enabling is a one-line change. `FOOTPRINT_EXTRA_M` gained six aircraft entries at roughly half each published fuselage length, and footprint-aware clearance then rejected 15 candidate placements outright. A second guard checks the footprint *edge* against the street box, since box disjointness only compares centres and a parked Tomcat reaches ~9.5 m aft of its own. **It is default-OFF because it is the least-evidenced tier in the
 feature**: `KNOWN_PARKING_SPOTS` holds 11 of the guide's 16 spots and the five it lacks are
 the bow-edge spots nearest this zone, so "clears every known spot" is not "clears every spot"
 here. Promoting it needs the bow spots measured (B49). Two envelopes are provably parking-free
@@ -8130,6 +8130,22 @@ A plugin option rather than a `Settings` field: it is runtime tuning like
 `releaseMinS`/`releaseMaxS`, needs no campaign preseed, and `initialize_plugin_option`
 carries a new option's default into saves written before it existed, so a campaign
 already under way picks it up on its next generation.
+
+### The overshoot cap (2026-08-19)
+
+The salvo cap's first flight found the one path that bounded nothing. A group that is
+**empty and under attack** is deliberately never dropped to `ReturnFire` — the 2026-08-05
+finding is that a ship on `ReturnFire` mounts no missile defence at all — and the `dry`
+branch returned before the salvo check ran. Flown: a Kuznetsov that *started the mission
+dry* was freed by the attack rule and fired **12 P-700 over 336 s** against a cap of 6.
+Every anti-ship missile fired that mission came through that path, so the cap was never
+exercised.
+
+A group at zero may now answer an attack for `salvoPerMission` rounds past empty, then
+holds even under fire. The point of the 2026-08-05 finding survives — a hull is not
+defanged the instant it runs dry — while "defending itself" stops being unbounded.
+Everything fired is still counted and debited. The `WINCHESTER` call is latched to once per
+group; it was firing on every shot past zero, four times from one hull.
 
 ### No double-count with §63, by construction
 

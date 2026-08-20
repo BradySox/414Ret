@@ -492,10 +492,26 @@ def clears_known_spots(item: DeckStatic) -> bool:
 #: outcome: an empty deck is correct, a two-item one looks like a bug.
 MIN_RECOVERY_SET_ITEMS = 3
 
+
+def is_deck_gear(item: DeckStatic) -> bool:
+    """Whether this placement is deck gear rather than a parked aircraft.
+
+    Static aircraft are barred from EVERY tier (DM call, 2026-08-19). The
+    2026-08-07 relaxation let them into the recovery tier on the reasoning that
+    the tier "only stands once launches are over" -- and test 11 falsified that
+    premise outright: **14 aircraft late-activated onto the CVN-71 deck between
+    t=2340 and t=3913**, i.e. 9 to 35 minutes AFTER the recovery set spawned.
+    That is exactly the condition the original 2026-07-18 ban was measured on --
+    late-activated A-6s spawning INTO standing statics, because the Supercarrier
+    manual's "a blocked spot is skipped" claim is FALSE for late activations.
+    """
+    return STATIC_META[item.type][0] not in ("Planes", "Helicopters")
+
+
 RECOVERY_DECK_VARIANTS: list[list[DeckStatic]] = [
     kept
     for kept in (
-        [it for it in variant if clears_known_spots(it)]
+        [it for it in variant if clears_known_spots(it) and is_deck_gear(it)]
         for variant in _AUTHORED_RECOVERY_VARIANTS
     )
     if len(kept) >= MIN_RECOVERY_SET_ITEMS

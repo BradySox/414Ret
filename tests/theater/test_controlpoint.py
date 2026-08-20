@@ -24,7 +24,7 @@ from game.theater.controlpoint import (
     ParkingType,
     Player,
     motorpools_inside_capture_zone,
-    motorpools_nearer_an_enemy,
+    ground_objects_beside_an_enemy_base,
     warn_if_motorpool_inside_capture_zone,
 )
 from game.theater.presetlocation import PresetLocation
@@ -313,9 +313,9 @@ def test_motorpools_inside_capture_zone_empty_when_all_outside() -> None:
     assert motorpools_inside_capture_zone([cp]) == []
 
 
-def test_a_motorpool_beside_an_enemy_base_is_reported() -> None:
-    """AARDWOLF, `operation_vectrons_claw`: 75 km from its RED parent and 7.3 km from a
-    BLUE FOB, so it spawned red armor next to a blue base."""
+def test_a_group_beside_an_enemy_base_is_reported() -> None:
+    """WARTHOG and AARDWOLF, `operation_vectrons_claw`: red groups 3.4 km and 7.3 km
+    from blue fields, bound 329 km and 75 km away by the zone fallback."""
     terrain = MagicMock(spec=Terrain)
     owner = _cp_with_motorpool_tgos(
         Point(0.0, 0.0, terrain),
@@ -326,13 +326,13 @@ def test_a_motorpool_beside_an_enemy_base_is_reported() -> None:
     enemy.captured = MagicMock()
     enemy.captured.is_blue = False
 
-    violations = motorpools_nearer_an_enemy([owner, enemy])
+    violations = ground_objects_beside_an_enemy_base([owner, enemy])
     assert len(violations) == 1
     assert violations[0].motorpool == "Stray"
     assert violations[0].control_point == "Enemy"
 
 
-def test_a_motorpool_far_from_its_parent_but_ringed_by_friends_is_not() -> None:
+def test_a_group_far_from_its_parent_but_ringed_by_friends_is_not() -> None:
     """SKUNK, same campaign: 107 km from its own field and 9 km from a friendly one.
     Odd authoring, not a problem -- flagging it teaches the reader to ignore the box."""
     terrain = MagicMock(spec=Terrain)
@@ -344,4 +344,20 @@ def test_a_motorpool_far_from_its_parent_but_ringed_by_friends_is_not() -> None:
     friend = _cp_with_motorpool_tgos(Point(116_000.0, 0.0, terrain), [], name="Friend")
     friend.captured = owner.captured
 
-    assert motorpools_nearer_an_enemy([owner, friend]) == []
+    assert ground_objects_beside_an_enemy_base([owner, friend]) == []
+
+
+def test_a_nearer_enemy_far_out_in_open_country_is_not_reported() -> None:
+    """CROCODILE and STINKBUG: nearer a hostile CP than their own, but 32 km and
+    107 km away from it. Warning on those trains the reader to dismiss the box."""
+    terrain = MagicMock(spec=Terrain)
+    owner = _cp_with_motorpool_tgos(
+        Point(0.0, 0.0, terrain),
+        [("Remote", Point(60_000.0, 0.0, terrain))],
+        name="Owner",
+    )
+    enemy = _cp_with_motorpool_tgos(Point(100_000.0, 0.0, terrain), [], name="Enemy")
+    enemy.captured = MagicMock()
+    enemy.captured.is_blue = False
+
+    assert ground_objects_beside_an_enemy_base([owner, enemy]) == []

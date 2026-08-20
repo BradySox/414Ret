@@ -236,7 +236,7 @@ opinion on a sensor number without booting DCS. Nothing else here needs periodic
 |---|---|---|
 | 1 | Check `S_300PS_64H6E_sr` and `SA_11_Buk_SR_9S18M1` `detection_range` in pydcs against 80,249 / 66,874 m. Needs the local checkout. | §3 |
 | 2 | ~~Reword the `mist_moose_shim.lua` header away from "replicated verbatim".~~ **Done 2026-08-20** — 6 comments in the shim + 1 line in its design note. | §1 |
-| 3 | Decide whether SAM magazines + rearm becomes a feature. It fits §90 supply lines and §56 depots. Not started, not scheduled. | §4 |
+| 3 | SAM magazines + rearm — **scoped 2026-08-20** in `414th-sam-magazines-notes.md` (MANTIS seam verified clean, off-mission drain hook found, v1 shape proposed). Build decision open. | §4 |
 | 4 | Decide whether `radarSim`-style sweep gating is worth adding to the MANTIS bridge. Not started. | §4 |
 | 5 | Decide whether a default-off training plugin (missile deletion) is wanted. Not started. | §5 |
 

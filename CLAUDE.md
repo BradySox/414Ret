@@ -97,7 +97,10 @@ Read before touching a campaign's `.yaml`, `.miz` or build tool.
 
 - **IADS / air defense** — `414th-mantis-iads-HANDOFF.md` (**start here**),
   `-migration-notes`, `-vs-skynet-iads-parity`, `414th-sam-site-realism-notes.md`,
-  `414th-air-defense-planning-notes.md`, `414th-qra-player-manning-notes.md`
+  `414th-air-defense-planning-notes.md`, `414th-qra-player-manning-notes.md`,
+  `414th-sam-magazines-notes.md` (**scoping only, nothing built** — cross-turn SAM missile
+  stock on the §81 architecture; the MANTIS/ROE seam is verified clean and the off-mission
+  drain hook found, so it is buildable on a decision)
 - **EW / ISR / comms** — `414th-c130-ew-isr-notes.md`, `414th-comms-jam-notes.md`,
   `414th-comint-notes.md`, `414th-gps-jamming-notes.md`,
   `414th-iads-c2-consequences-notes.md`

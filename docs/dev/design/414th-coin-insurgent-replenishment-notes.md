@@ -5,7 +5,7 @@
 `tests/fourteenth/test_coin.py` — including the multi-turn shell-sanity test that is
 the C1.5 trigger bar). This note remains the spec for the rest of the C-series. It is
 the design pass for the COIN campaign called out in
-`414th-will-generalization-notes.md` §5/§6 — squadron call 2026-07-02: COIN is the
+`414th-will-generalization-notes.md` §5/§6 (deleted 2026-08-20, recoverable from git before `5db34150f`) — squadron call 2026-07-02: COIN is the
 next campaign direction (Korea dropped), base skeleton = a fork of **Operation
 Shattered Dagger**.
 

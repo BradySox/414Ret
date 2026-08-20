@@ -13,7 +13,7 @@ The Read tool renders PDF pages as images via `pdftoppm`, which is often not
 installed; `pdftotext` is, and text is cheaper. If Read does work, the same
 numbers go in its `pages` parameter.
 
-PDFs live in this folder and are gitignored. See [README.md](README.md).
+PDFs live in this folder and are gitignored. See [README.md](../README.md).
 
 ## DCS CH-47F Early Access Guide EN.pdf
 

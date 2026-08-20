@@ -2194,7 +2194,7 @@ class Settings:
         ),
     )
 
-    # Campaign phases (W3, docs/dev/design/414th-campaign-phases-notes.md). Tier-0
+    # Campaign phases (W3; the design notes went with §40, features doc §40). Tier-0
     # inference is the DECIDED default for every campaign; this is the kill switch.
     continuous_campaign_clock: bool = boolean_option(
         "Continuous time & weather",

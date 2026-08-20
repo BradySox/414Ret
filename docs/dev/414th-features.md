@@ -2450,8 +2450,7 @@ post generates as statics, so it is invisible to the current capture loop.
 
 **The MOOSE Ops.TARS engine this section used to describe was CUT on 2026-08-05
 (`7eb247659`); `resources/plugins/tars/` no longer exists.** The old design note
-`docs/dev/design/414th-tars-recon-notes.md` documents that removed implementation —
-historical only, do not author against it.
+`414th-tars-recon-notes.md` documented that removed implementation and was deleted 2026-08-20, recoverable from git before `5db34150f`.
 
 **One mechanism for both crews.** The previous split ran a player's recon through
 MOOSE Ops.TARS (an F10 "film" menu) and AI recon through a geometric overflight
@@ -4390,11 +4389,7 @@ weapon-tracking pattern), no per-mission data:
 `PlanNextAction`), the ROE **restricted zones / free-fire zones / target-release** layer with its
 `.miz` + web + kneeboard surfaces, the campaign-status phase ribbon, and the authored
 Rolling Thunder → Linebacker II arcs are all gone. The shared `PlanNextAction._offensive_order` seam
-the classifier used to drive stays for §52/§67/§68. Do not restore. The design notes
-[`414th-campaign-phases-notes.md`](design/414th-campaign-phases-notes.md),
-[`414th-campaign-phases-pilot.md`](design/414th-campaign-phases-pilot.md) and
-[`414th-campaign-phases-all66-draft.md`](design/414th-campaign-phases-all66-draft.md) are kept as
-historical record only.
+the classifier used to drive stays for §52/§67/§68. Do not restore. The three `414th-campaign-phases-*` design notes were deleted 2026-08-20, recoverable from git before `5db34150f`.
 
 ### Red tempo (survives — rehomed 2026-07-21)
 
@@ -4966,10 +4961,8 @@ the `negotiation_verdict` win/loss ending, the campaign-authorable `will:` profi
 per-turn will feeds/ledger, and the Vietnam campaign-layer **W1 (political will) + W2 (negotiation
 ending) + W2b (static front)** pieces (`game/fourteenth/{political_will,static_front}.py` deleted). The
 Vietnam **W5 GCI ambush** and **W6 red tempo** survive (W6 lost only its `resolve_regen` lever); §21
-POWs now always run a turn-countdown clock, never an indefinite will-coupled hold. Do not restore. The
-design notes [`414th-vietnam-political-will-roe-notes.md`](design/414th-vietnam-political-will-roe-notes.md)
-and [`414th-will-generalization-notes.md`](design/414th-will-generalization-notes.md) are kept as
-historical record only.
+POWs now always run a turn-countdown clock, never an indefinite will-coupled hold. Do not restore. The design notes
+`414th-vietnam-political-will-roe-notes.md` and `414th-will-generalization-notes.md` were deleted 2026-08-20, recoverable from git before `5db34150f`.
 
 ## §49 — Mobile missile relocation (the SCUD hunt)
 
@@ -5624,8 +5617,8 @@ The effect lands on the *enemy's* next turn, so the player is told the strike wo
 
 ## §53 — War economy — REMOVED (2026-07-21)
 
-Removed with §48 and §54 in the economy drop. Do not restore. See
-`414th-war-economy-notes.md` (historical).
+Removed with §48 and §54 in the economy drop. Do not restore.
+`414th-war-economy-notes.md` was deleted 2026-08-20, recoverable from git before `5db34150f`.
 
 ## §54 — Munitions availability — REMOVED (2026-07-21)
 

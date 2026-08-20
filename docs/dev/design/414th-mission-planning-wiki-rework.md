@@ -300,7 +300,7 @@ guard a flight. SEAD Sweep = guard the corridor.**
 > section proposes was **retired 2026-06-27**: the hunt scenario and its auto-planner were
 > deleted, the `SCAR-concept-v2.md`/`SCAR-task-spec.md` docs it cites no longer exist in the
 > repo, and the fork's `FlightType.SCAR` now means the **Combat SAR "Sandy" rescue escort**
-> (features doc §15 / design note `414th-scar-rescue-rework-notes.md`) — a different feature
+> (features doc §15, itself removed 2026-08-07) — a different feature
 > entirely. Kept below only as the historical record of the proposal; if this draft is ever
 > PR'd upstream, drop §8 and the §1 SCAR table row first.
 >

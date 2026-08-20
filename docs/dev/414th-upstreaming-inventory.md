@@ -272,7 +272,7 @@ change per PR, upstream gates validated per PR, crowded zones respected. Gaps + 
   before the in-game pass** — per the readiness legend, a runtime feature gets carved after it
   is flown, not before. The scoring is fail-safe (empty export = pre-scoring behaviour), which
   de-risks the carve but does not substitute for flying it.
-- **Source of truth:** `docs/dev/design/414th-combat-sar-spec.md`, features doc §21.
+- **Source of truth:** `docs/dev/design/414th-csar-notes.md`, features doc §21.
 
 ### 10. Plugin `descriptionInUI` field — 🔵 IN REVIEW (pushed as PR #841, 2026-06-27)
 - **What:** an optional `descriptionInUI` string in the plugin manifest, rendered as an

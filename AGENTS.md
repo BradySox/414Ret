@@ -177,14 +177,33 @@ Read before touching a campaign's `.yaml`, `.miz` or build tool.
 
 Kept for reading old notes and saves; **do not author against them**.
 
-`414th-campaign-phases-*` · `414th-vietnam-political-will-roe-notes.md` ·
-`414th-will-generalization-notes.md` · `414th-war-economy-notes.md` ·
-`414th-red-intent-notes.md` · `414th-minefields-notes.md` (shelved) ·
-`414th-khe-sanh-campaign-notes.md` (merged into Yankee Station) ·
-`414th-ewrs-retirement-decision.md` · `414th-dismounts-decision.md` ·
-`414th-ctld-mantis-style-port-scope.md` · `414th-scar-*` (superseded by the CSAR doc) ·
-`414th-combat-sar-normal-task-notes.md` · `414th-mission-planning-wiki-rework.md` ·
-`414th-scenery-import-notes.md` · `turnless.md`
+`414th-minefields-notes.md` (shelved) · `414th-ewrs-retirement-decision.md` ·
+`414th-dismounts-decision.md` · `414th-ctld-mantis-style-port-scope.md` ·
+`414th-mission-planning-wiki-rework.md` · `414th-scenery-import-notes.md` ·
+`turnless.md`
+
+### Deleted design notes (2026-08-20)
+
+**18 notes, 44,910 words, whose own opening line said "do not author against this."** Each
+described a feature that had already been removed, so they were a grep tax with no reader:
+the whole point of the file was to tell you not to read it. **They are in git history —
+`git show 5db34150f:docs/dev/design/<name>` — and that is the only place they should be.**
+
+| Notes | What they described | Feature removed |
+|---|---|---|
+| the eight `414th-scar-*` / `414th-combat-sar-*` notes | the fork’s own CSAR and the Sandy escort | §21/§15, 2026-08-07 |
+| the three `414th-campaign-phases-*` notes | the phase classifier and ROE zone layer | §40, 2026-07-21 |
+| `414th-vietnam-political-will-roe-notes.md`, `414th-will-generalization-notes.md`, `414th-war-economy-notes.md` | the will and war economies | §48/§53/§54, 2026-07-21 |
+| `414th-red-intent-notes.md` | Red Intent adaptive posture | §55, 2026-07-21 |
+| `414th-tars-recon-notes.md` | the MOOSE Ops.TARS recon engine | cut 2026-08-05 |
+| `414th-airwar-planner-consolidation-notes.md` | the planner consolidation | reverted 2026-08-09 |
+| `414th-khe-sanh-campaign-notes.md` | the standalone Khe Sanh campaign | merged into Yankee Station |
+
+**Do not re-add a note here when you remove a feature.** Banner-instead-of-delete is what
+produced these: a removal writes a banner, the banner is never revisited, and the file
+accumulates. Record the removal in the features doc §N and delete the note. The one thing a
+deleted note must leave behind is any **constraint learned from a flown test** — lift those
+into the hard-constraints list or the surviving design note *before* deleting.
 
 ### Other
 
@@ -306,6 +325,11 @@ linked design note.
   with no EWR losing GCI is by design.
 - **Never restore the generic `ewrj` fighter-pod jammer** (§2). Superseded by the C-130J
   platform.
+- **The C-130J cues; it never lases or designates.** It carries no targeting sensor in DCS,
+  so any laser work stays with the strike aircraft. Retribution also has no FAC(A) task
+  type — §38 does the marking job through Vietnam Ops, not as a taskable role. (Lifted out
+  of `414th-scar-task-spec.md` before that note was deleted 2026-08-20; it was the one
+  constraint in the 18 recorded nowhere else.)
 - **Never unify §77 escort jamming with the C-130's standoff model.** §77 strengthens as the
   jammer closes; the C-130's burn-through weakens. Both are intentional and opposite.
 - **Never add a land-attack weapon family to the §81 anti-ship pattern list.** §63 and §81 stay

@@ -61,7 +61,7 @@ would die silently in-mission, so this catches it before merge.
 
 ## Features at a Glance
 
-Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-features.md)
+Full internals for each are in [414th-features.md](414th-features.md)
 (section numbers below).
 
 1. **QRA intercept reserve** — per-squadron alert reserve feeding the upstream PR #782 Moose
@@ -97,7 +97,7 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
 16. **Settings QOL audit** — dead/duplicate setting cleanup (four fields removed), AI-radio
     booleans consolidated into the `AiRadioBehavior` enum with deterministic save migration,
     plugin wording, and a UI-layer grouping/dependency handoff
-    ([docs/dev/settings-qol-audit.md](docs/dev/settings-qol-audit.md)).
+    ([settings-qol-audit.md](settings-qol-audit.md)).
 17. **Auto-planner target unpredictability** — opt-in, per-side
     (`ownfor_/opfor_planner_unpredictability`, default 0) weighted-random reordering of the
     HTN's *opportunistic* offensive targets (strike/OCA/BAI/anti-ship/non-threatening DEAD)

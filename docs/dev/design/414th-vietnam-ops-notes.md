@@ -15,8 +15,8 @@ L9).
 **Related:** [`414th-moose-ops-opportunity-map.md`](414th-moose-ops-opportunity-map.md)
 (why this is Tier-A only, never `Ops.Chief`), [`414th-tic-dynamic-fronts-notes.md`](414th-tic-dynamic-fronts-notes.md)
 (TIC firefights — the flak/convoy effects reuse its `TaskFireAtPoint` pattern),
-[`414th-scar-king-fac-notes.md`](414th-scar-king-fac-notes.md) (the King on-scene-commander
-pattern NGFS spotting reuses), [`414th-combat-sar-spec.md`](414th-combat-sar-spec.md),
+[`414th-csar-notes.md`](414th-csar-notes.md) (rescue; note the King on-scene-commander
+pattern NGFS spotting reuses was itself removed with §21 on 2026-08-07),
 CLAUDE.md §20 (drop-spawn), §28 (settings IA). Campaign target: `khe_sanh_niagara.yaml`
 (inland siege) + `1968_Yankee_Station.yaml` (coastal).
 

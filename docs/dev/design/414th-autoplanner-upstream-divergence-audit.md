@@ -3,7 +3,7 @@
 **Date:** 2026-08-09 · audit only, no code changed.
 **Baseline:** upstream `dev` @ `1a669cac` (the merge base; upstream's 4 newer commits touch no `game/` code, so this equals current upstream).
 Diffed all of `game/commander/`, `game/ato/`, doctrine, threat zones, procurement, settings, squadrons, and the aircraft `tasks:` data.
-**Related:** [consolidation notes](414th-airwar-planner-consolidation-notes.md) · [rebalance rubric](../414th-aircraft-task-rebalance-rubric.md) · fork PR [#820](https://github.com/BradySox/414Ret/pull/820).
+**Related:** `414th-airwar-planner-consolidation-notes.md` (deleted 2026-08-20, recoverable from git before `5db34150f`) · [rebalance rubric](414th-aircraft-task-rebalance-rubric.md) · fork PR [#820](https://github.com/BradySox/414Ret/pull/820).
 
 ## Verdict
 

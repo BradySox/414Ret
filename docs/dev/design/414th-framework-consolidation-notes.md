@@ -20,7 +20,7 @@ biggest MIST consumer that already has a first-class MOOSE replacement.
 
 > This is a multi-feature *program*, not a single change, and it touches upstream-shared plugins.
 > It should be done incrementally, each step behind validation, and coordinated with the upstreaming
-> strategy ([`414th-upstreaming-inventory.md`](414th-upstreaming-inventory.md)).
+> strategy ([`414th-upstreaming-inventory.md`](../414th-upstreaming-inventory.md)).
 
 ## Current state
 
@@ -143,7 +143,7 @@ Most MIST consumers are **upstream Retribution plugins** (`ctld`, `dismounts`, `
 `skynetiads`, `mist` itself, core `dcs_retribution.lua`). Replacing them is the kind of generic,
 broadly-valuable modernization that belongs upstream, not as a fork-only divergence:
 
-- Coordinate each phase with [`414th-upstreaming-inventory.md`](414th-upstreaming-inventory.md) — these
+- Coordinate each phase with [`414th-upstreaming-inventory.md`](../414th-upstreaming-inventory.md) — these
   are strong upstream-PR candidates (MANTIS, `Ops.CTLD`, MIST retirement).
 - 414th-authored pieces (`scar`, `intercept`, `c130j`, TIC/TARS) are already MOOSE and
   need no upstream coordination.

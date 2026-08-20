@@ -7,8 +7,14 @@ from game.ato.flighttype import FlightType
 from game.commander.missionproposals import EscortType
 from game.commander.tasks.packageplanningtask import PackagePlanningTask
 from game.commander.theaterstate import TheaterState
+from typing import Optional, TYPE_CHECKING
+
 from game.dcs.aircrafttype import AirRefuelType
 from game.theater import MissionTarget
+
+if TYPE_CHECKING:
+    from game.dcs.aircrafttype import AircraftType
+    from game.squadrons.airwing import AirWing
 
 
 @dataclass
@@ -16,6 +22,9 @@ class PlanRefueling(PackagePlanningTask[MissionTarget]):
     #: The refuelling methods this coalition's aircraft need, most-needed first.
     #: Filled from the coalition before the flights are proposed.
     needed_refuel_methods: list[AirRefuelType] = field(init=False, default_factory=list)
+    #: The wing, stashed before propose_flights() (which gets no state) so the
+    #: carrier station can prefer that boat's own tanker.
+    _air_wing: Optional["AirWing"] = field(default=None, compare=False)
 
     def preconditions_met(self, state: TheaterState) -> bool:
         if (
@@ -24,6 +33,7 @@ class PlanRefueling(PackagePlanningTask[MissionTarget]):
         ):
             return False
         self.needed_refuel_methods = self._methods_the_wing_needs(state)
+        self._air_wing = state.context.coalition.air_wing
         if not super().preconditions_met(state):
             return False
         return self.target in state.refueling_targets
@@ -48,7 +58,54 @@ class PlanRefueling(PackagePlanningTask[MissionTarget]):
         state.refueling_targets.remove(self.target)
         super().apply_effects(state)
 
+    @property
+    def _is_carrier_station(self) -> bool:
+        return bool(
+            getattr(self.target, "is_carrier", False)
+            or getattr(self.target, "is_fleet", False)
+        )
+
+    def _carrier_tanker_type(self) -> Optional["AircraftType"]:
+        """That boat's own tanker, or None to leave the generic ranking alone."""
+        if self._air_wing is None:
+            return None
+        for squadron in self._air_wing.iter_squadrons():
+            if squadron.untasked_aircraft <= 0:
+                continue
+            if not squadron.capable_of(FlightType.REFUELING):
+                continue
+            if squadron.location is self.target:
+                return squadron.aircraft
+        return None
+
+    def _land_tanker_for(self, method: AirRefuelType) -> Optional["AircraftType"]:
+        """A land-based tanker that dispenses `method`, or None if only a boat has one."""
+        if self._air_wing is None:
+            return None
+        for squadron in self._air_wing.iter_squadrons():
+            if squadron.untasked_aircraft <= 0:
+                continue
+            if not squadron.capable_of(FlightType.REFUELING):
+                continue
+            location = squadron.location
+            if getattr(location, "is_carrier", False) or getattr(
+                location, "is_fleet", False
+            ):
+                continue
+            if method in squadron.aircraft.tanker_refuel_types:
+                return squadron.aircraft
+        return None
+
     def propose_flights(self) -> None:
+        if self._is_carrier_station:
+            # A boat's station is covered by that boat's own tanker. The per-method
+            # fan-out below is a THEATER concern -- proposing a boom tanker at a
+            # probe-only carrier air wing just fails to fill.
+            self.propose_flight(
+                FlightType.REFUELING, 1, preferred_type=self._carrier_tanker_type()
+            )
+            self.propose_flight(FlightType.ESCORT, 2, EscortType.AirToAir)
+            return
         # The first tanker is deliberately left unconstrained, so a coalition whose
         # aircraft declare no refuelling method -- or whose only tanker declares
         # none -- plans exactly what it planned before this existed.
@@ -56,12 +113,20 @@ class PlanRefueling(PackagePlanningTask[MissionTarget]):
         # One more per further method. Optional, because a wing that flies probe
         # receivers without owning a drogue tanker should still get the boom tanker
         # it can field rather than losing the package.
+        #
+        # Only methods a LAND tanker can serve. Without that filter the land
+        # station's probe slot reaches for the carrier's A-6E and drags it 314 NM
+        # off its boat -- which is the defect this whole change exists to stop, and
+        # pointless besides: the boat's own station already covers its receivers.
         for method in self.needed_refuel_methods[1:]:
+            if not self._land_tanker_for(method):
+                continue
             self.propose_flight(
                 FlightType.REFUELING,
                 1,
                 optional=True,
                 refuel_methods=frozenset({method}),
+                preferred_type=self._land_tanker_for(method),
             )
         # See PlanAewc: untagged, this is a primary flight whose shortage scrubs
         # the tanker package outright.

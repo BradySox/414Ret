@@ -28,7 +28,7 @@ from game.server.dependencies import QtCallbacks, QtContext
 from game.theater import ControlPoint, MissionTarget, TheaterGroundObject
 from game.theater.controlpoint import (
     motorpools_inside_capture_zone,
-    motorpools_nearer_an_enemy,
+    ground_objects_beside_an_enemy_base,
 )
 from qt_ui import liberation_install
 from qt_ui.dialogs import Dialog
@@ -454,7 +454,7 @@ class QLiberationWindow(QMainWindow):
     def _warn_motorpool_capture_zone(self, game: Optional[Game]) -> None:
         if game is None or not game.settings.motorpool_enabled:
             return
-        self._warn_motorpool_nearer_an_enemy(game)
+        self._warn_ground_objects_beside_an_enemy_base(game)
         violations = motorpools_inside_capture_zone(game.theater.controlpoints)
         if not violations:
             return
@@ -472,18 +472,21 @@ class QLiberationWindow(QMainWindow):
             ),
         )
 
-    def _warn_motorpool_nearer_an_enemy(self, game: Game) -> None:
-        violations = motorpools_nearer_an_enemy(game.theater.controlpoints)
+    def _warn_ground_objects_beside_an_enemy_base(self, game: Game) -> None:
+        violations = ground_objects_beside_an_enemy_base(game.theater.controlpoints)
         if not violations:
             return
         QTimer.singleShot(
             0,
             lambda: QMessageBox.warning(
                 self,
-                "Motorpool placement problem",
-                "The nearest control point to each of these motorpools belongs to "
-                "the other side, so they spawn hostile armor on its doorstep. "
-                "Move each Garage_A marker back toward its own field:\n\n"
+                "Ground object placement problem",
+                "These groups spawn on an enemy base's doorstep: each is nearer "
+                "a hostile control point than the one that owns it. The campaign "
+                "loader binds a marker by influence zone and falls back to the "
+                "closest UNZONED control point, so a marker just outside a zoned "
+                "base is thrown to a distant field instead. Either move the marker "
+                "or widen the near base's influence zone to cover it:\n\n"
                 + "\n".join(str(v) for v in violations),
             ),
         )

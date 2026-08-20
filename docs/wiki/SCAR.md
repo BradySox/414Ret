@@ -1,5 +1,24 @@
 # SCAR — "Sandy" rescue escort
 
+> # ⛔ REMOVED — historical record only
+>
+> **Everything on this page was removed from 414Ret on 2026-08-07 and no longer exists.**
+> `FlightType.SCAR`, the Sandy rescue-escort role, the King + Jolly Green + Sandy package,
+> the `combatsar-config.lua` runtime, the survivor ledger, the enemy snatch party, and the
+> `auto_combat_sar` setting are all gone. The fork replaced its own combat-SAR (§21) and this
+> escort (§15) wholesale with upstream `dcs-retribution#929`. A saved Sandy flight loads as
+> CAS; a saved Combat SAR flight loads as the upstream rescue.
+>
+> **What to read instead:** **[Combat SAR](Combat-SAR)** — the rescue that ships now. It is a
+> single helicopter task (`FlightType.CSAR`) with no escort element and no on-scene commander.
+> There is no Sandy role to fly.
+>
+> This page is kept **only** so that older design notes, saves, and briefings that reference
+> the machinery can still be understood. **Do not author against it, and do not use it as a
+> model for new work.**
+
+---
+
 SCAR is the **rescue-escort ("Sandy")** role inside the fork's combat-SAR package. When a friendly
 pilot is down, a SCAR flight gets eyes on the survivor, **suppresses the threats around them**, and
 **walks the rescue helo in** — the classic USAF "Sandy" job. It is flown on the **A-10C** or

@@ -27,8 +27,8 @@ names you will see in the in-game ATO. Three pieces:*
 > the planner repositions mobile SAMs *between turns*, so "fly today's recon" is the real takeaway);
 > the **networked-IADS** "kill the C2 to drop the SAMs" idea (designed against the retired **Skynet**
 > engine — the fork now runs **MANTIS**; unverified in-game — the dependable lever is killing the
-> EWR/A-50 *picture*); and note this pack predates **Combat SAR**, which exists in the build but is
-> still in in-game testing. For the file-grounded working reference, see the
+> EWR/A-50 *picture*); and note this pack predates the current **Combat SAR**, which was replaced
+> wholesale on 2026-08-07. For the file-grounded working reference, see the
 > **[Campaign Briefing Handbook](Red-Tide-Campaign-Briefing)**.
 
 ---
@@ -375,4 +375,4 @@ Step out in ten. Good hunting.
 
 ---
 
-*This page is the online copy of [`docs/campaigns/red-tide-intel-assessment.md`](https://github.com/BradySox/414Ret/blob/main/docs/campaigns/red-tide-intel-assessment.md) in the repo. Edit that file; the wiki is mirrored from `docs/wiki/` on merge to `main`.*
+*Edit this page at `docs/wiki/` in the repo, never in the wiki UI. It is mirrored to the GitHub Wiki on merge to `main`.*

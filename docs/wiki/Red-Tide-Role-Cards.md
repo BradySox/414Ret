@@ -32,7 +32,7 @@ THREAT-DEFEAT
   • S-300/S-200: don't duel from inside the ring — stand off / terrain-mask / HARM from edge.
   • Fencer (Su-24M) is red's SEAD-killer — check six on egress, drag with the escort.
 COMMS: "MAGNUM" every HARM (deconflict). Give MUD type + direction. SPIKE = clock + type.
-SAR: KING overhead. If down in the belt, get clear of the site, guard freq, KING runs it.
+SAR: if down in the belt, get clear of the site, guard freq, authenticate. Beacon 260 kHz.
 ======================================================================
 ```
 
@@ -55,7 +55,7 @@ THREAT-DEFEAT
   • Fencer on egress — sanitize the egress lane with the CAP.
 COMMS: "MAGNUM" on every HARM. Call MUD + bearing for the package. Coordinate with VOODOO.
 TANKER: drogue only (ARCO / KC-135 MPRS). Don't get sent to the boom.
-SAR: KING overhead; eject contract per handbook §11.
+SAR: eject contract per handbook §11. Beacon 260 kHz ADF.
 ======================================================================
 ```
 
@@ -78,7 +78,7 @@ THREAT-DEFEAT
   • MiG-29: kill BVR or extend — never turn-fight the Archer/HMS.
   • Su-27 (831st): respect R-27ER first-shot range; notch/crank, fight as a section.
 COMMS: lead the picture — DECLARE/PICTURE with AWACS; FOX calls; "DEFENDING" = section supports.
-TANKER: drogue (ARCO / MPRS). SAR: KING overhead; §11.
+TANKER: drogue (ARCO / MPRS). SAR: §11.
 ======================================================================
 ```
 
@@ -100,7 +100,7 @@ THREAT-DEFEAT
   • Stay above the SHORAD/ZSU floor near the FLOT; toss/standoff where you can.
   • Fencer hunts strikers too — check six off target, egress with the package.
 COMMS: TOT discipline; call IN/OFF target; "MAGNUM" awareness from the SEAD.
-TANKER: boom (TEXACO / KC-135). SAR: KING overhead; §11.
+TANKER: boom (TEXACO / KC-135). SAR: §11.
 ======================================================================
 ```
 
@@ -121,31 +121,29 @@ AH-64D (1-1 ARB Fulda · 12th CAB Frankfurt) + OH-58D scout
 THREAT-DEFEAT
   • SHORAD/MANPADS/ZSU are the killers down here — never loiter predictable, never silhouette.
   • Hand off to CAP if fighters push; you are not the air-to-air answer.
-COMMS: work the JTAC/FAC + ground net; KING/Sandy if a rescue spins up.
-TANKER: A-10 = boom (TEXACO). SAR: you may BE the Sandy — see CSAR card. §11.
+COMMS: work the JTAC/FAC + ground net.
+TANKER: A-10 = boom (TEXACO). SAR: see the Combat SAR card. §11.
 ======================================================================
 ```
 
 ---
 
-## King & Sandy — Combat SAR (C-130J · A-10C/AH-64D · CH-47F)
+## Combat SAR — the rescue (CH-47F / UH-1H)
 
 ```
-==================  COMBAT SAR · KING / SANDY / JOLLY  ==================
-🟡 Built but still in in-game testing (handbook §11) — fly it, brief it as shaking-out.
+========================  COMBAT SAR · RESCUE  =========================
+Auto-planned by default. Fly it yourself if you want the pickup.
 
-KING — C-130J-30 (910th AW, Frankfurt)  [on-scene commander, a TALKING player on SRS]
-  • Overhead orbit: EW/ISR jam + ELINT picture; TACAN-only beacon + F10 LARS survivor locator.
-  • Runs the rescue by voice. Put KING up on ANY deep/contested push so it's already there.
-SANDY — A-10C / AH-64D (2–4)
-  • Protect the survivor, suppress the threats around them, walk JOLLY in. Load = CAS kit.
-JOLLY — CH-47F (5-159) / UH-1H
-  • The pickup. Comes in under Sandy cover once the area's suppressed.
-THE CAPTURE RACE (design)
-  • On ejection a red snatch party may race for the survivor. Kill it + recover → pilot SPARED
-    at debrief (airframe still lost). Lose the race → CAPTURED = POW at an enemy field (CSAR
-    objective). Recapture the field or a CSAR raid frees them; abandoned past 4 turns = killed.
-DOWNED-PILOT CONTRACT: get clear, high/defensible ground, guard/SAR freq, authenticate, KING runs it.
+RESCUE — CH-47F (5-159) / UH-1H
+  • Tune the survivor's 260 kHz ADF beacon BEFORE start. Same channel every survivor.
+  • Home the needle in, land or hold a low hover to hoist, deliver to any friendly
+    field or FARP. Recovered pilot = SPARED at debrief (the airframe is still lost).
+  • The task plans no escort of its own. If the survivor is inside threat rings,
+    frag the cover yourself.
+DOWNED-PILOT CONTRACT: get clear, high/defensible ground, guard/SAR freq, authenticate.
+  Come down within 15 nm of a base and there is no rescue flight at all — friendly
+  ground and you walk back, enemy ground and you are taken.
+Full mechanics: the Combat SAR wiki page. §11.
 ========================================================================
 ```
 
@@ -160,4 +158,4 @@ stores depend on the mission's loadout editor and difficulty settings.*
 
 ---
 
-*This page is the online copy of [`docs/campaigns/red-tide-role-cards.md`](https://github.com/BradySox/414Ret/blob/main/docs/campaigns/red-tide-role-cards.md) in the repo. Edit that file; the wiki is mirrored from `docs/wiki/` on merge to `main`.*
+*Edit this page at `docs/wiki/` in the repo, never in the wiki UI. It is mirrored to the GitHub Wiki on merge to `main`.*

@@ -3,7 +3,7 @@
 **Written 2026-07-02** at the end of the session that built the whole line. Start here;
 the specs of record are `414th-coin-insurgent-replenishment-notes.md` (the model) and
 `414th-coin-reinfiltration-notes.md` (the C1.5 design). Will-profile machinery:
-`414th-will-generalization-notes.md`.
+`414th-will-generalization-notes.md` (deleted 2026-08-20, recoverable from git before `5db34150f`).
 
 ## Where the line stands (all merged to main 2026-07-02)
 

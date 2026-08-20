@@ -513,7 +513,11 @@ G21 (commandeer preference — partial), G23 (Sandy divert — the ONE re-fly, p
 G29 (persistent evaders + always-run snatch), **G31 (pilot recovery surge — untested)**.
 G22 (POW raid) is RETIRED with the raid.
 
-## Superseded documents (historical record only)
+## Superseded documents
+
+The eight earlier CSAR/SCAR notes this document replaced were deleted 2026-08-20, recoverable from git before `5db34150f`. They had each
+carried a banner pointing here since 2026-07-03, and the feature they described was
+itself deleted on 2026-08-07, so they were two removals out of date.
 
 `414th-combat-sar-spec.md` · `414th-combat-sar-normal-task-notes.md` ·
 `414th-scar-rescue-rework-notes.md` · `414th-scar-task-spec.md` ·

@@ -60,7 +60,7 @@ MISSION #: 001      MC: BUICK LEAD (ex.)
       egress, re-fly next turn (a dead recon bird confirms nothing).
 
 4. COMMS (ex.): E-3 "ETHAN" 271.0 · Pkg 254.0 · NAIL 35.0 FM · Guard 243.0
-5. SAR: Sandy on call; if down, win the race (handbook §11).
+5. SAR: rescue auto-planned; if down, beacon 260 kHz ADF (handbook §11).
 6. CONTINGENCIES: ambush on SLICE -> BUICK engages, SLICE unloads + extends home.
 =============================================================================
 ```
@@ -107,7 +107,7 @@ MISSION #: 002      MC: BUICK LEAD (ex.)
       ambush merged -> egress, keep the film, come back with a better plan.
 
 4. COMMS (ex.): as Turn 1. SAM call: "SAM, TOLICHA WEST, [clock]".
-5. SAR: Sandy briefed for the western valleys — deepest tracks yet. Win the race.
+5. SAR: rescue briefed for the western valleys — deepest tracks yet.
 6. CONTINGENCIES: the airfield-ring SAM wakes up -> it's point defense; stay out
    of its ring, it can't chase you (the SA-8 can move — treat it like a gun that
    shoots missiles). Convoy through -> expect a harder FEBA next turn.
@@ -155,7 +155,7 @@ MISSION #: 003      MC: CADILLAC LEAD (ex.)
       Resolve moving.
 
 4. COMMS (ex.): as Turn 1.
-5. SAR: Sandy + pickup on alert — deepest A-10 tracks yet.
+5. SAR: pickup on alert — deepest A-10 tracks yet.
 6. CONTINGENCIES: Week Two arrives early (Will bled) -> the deep classes open NOW;
    MC re-frags next turn onto the mock airfield complex per handbook §7.
 =============================================================================

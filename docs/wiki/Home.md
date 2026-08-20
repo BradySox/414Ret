@@ -39,7 +39,6 @@ air-defence and quality-of-life work on top of upstream.
 - [What's Different in the 414th Fork](414th-Fork-Overview) — the overview.
 - [Fog of War and Reconnaissance](Fog-of-War-and-Reconnaissance) — intel fog, hidden command posts, approximate targeting.
 - [TARPS Reconnaissance](TARPS-Reconnaissance) — player photo recon and the recon engine.
-- [SCAR](SCAR) — the "Sandy" rescue escort.
 - [Combat SAR](Combat-SAR) — rescuing a downed pilot.
 - [Electronic Warfare and ISR](Electronic-Warfare-and-ISR) — the C-130J JAMMING platform.
 - [Troops In Contact](Troops-In-Contact) — the frontline battle simulation.

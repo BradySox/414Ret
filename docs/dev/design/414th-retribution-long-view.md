@@ -637,7 +637,9 @@ needs a campaign arranged on purpose.
 ### The catch
 
 - **This is the seam most likely to reproduce a removed feature.** Anything proposed here must be
-  checked against `414th-red-intent-notes.md` and state plainly how it differs.
+  checked against what §55 Red Intent actually did and state plainly how it differs.
+  `414th-red-intent-notes.md` was deleted 2026-08-20, recoverable from git before `5db34150f`; §55's own entry in the features doc is the
+  short version.
 - Red and blue sharing a planner is a fairness property. A change that only red gets needs to be a
   change blue does not *need* (continuity of intent), not a change blue is denied (better tactics).
 - Verification is the hard part. "Red felt like it had a plan" is not a fail signature. Any fly card

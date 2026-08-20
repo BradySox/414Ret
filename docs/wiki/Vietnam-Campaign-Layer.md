@@ -50,7 +50,7 @@ The enemy isn't a mirror of you, and it isn't static either.
 The Vietnam campaigns run a period **air doctrine** that changes how the auto-planner fights,
 not just what things are called:
 
-- **Era taskings.** MiGCAP, GCI Intercept, Iron Hand, Interdiction, Sandy, College Eye — the
+- **Era taskings.** MiGCAP, GCI Intercept, Iron Hand, Interdiction, College Eye — the
   display layer renames the taskings to the period vocabulary (the underlying mission types are
   unchanged).
 - **No SEAD, and strikes go anyway.** Vietnam air wings have no reliable defense suppression, so

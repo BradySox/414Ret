@@ -38,13 +38,12 @@ Full detail: [Fog of War and Reconnaissance](Fog-of-War-and-Reconnaissance).
 
 ## Squadron missions
 
-- [Combat SAR](Combat-SAR) and the [SCAR "Sandy"](SCAR) escort. Recovering a downed aviator
-  spares the pilot; you still lose the jet. You can plan the package yourself (King + helo +
-  Sandy), or with none fragged an AI helo launches on demand. The enemy may race a snatch party
-  to capture the survivor — kill it, or the pilot becomes a POW who leaves your roster until you
-  retake the holding field, the hold clock runs out, or you win the war. A pilot neither rescued
-  nor captured goes MIA and keeps evading, and the next turn opens with a rescue package already
-  airborne at their position.
+- [Combat SAR](Combat-SAR). Recovering a downed aviator spares the pilot; you still lose the
+  jet. A helicopter rescue is auto-planned by default, or you fly it yourself, homing on the
+  survivor's briefed 260 kHz ADF beacon. Survivors within 1000 m come out on one lift. A pilot
+  who comes down within 15 nm of a base needs no flight at all — friendly ground and they walk
+  back, enemy ground and they are captured, held until you retake that base. Left too long in
+  the field they go missing in action. Red gets rescues too.
 - [Electronic Warfare and ISR](Electronic-Warfare-and-ISR) — the **JAMMING** flight type turns
   the C-130J into an EC-130H/RC-130H-style standoff jammer and ELINT platform. The old generic
   fighter-pod jammer is retired.

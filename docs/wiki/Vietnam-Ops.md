@@ -271,7 +271,7 @@ squadron airframe losses at the next debrief.
 
 - **[The Vietnam Campaign Layer](Vietnam-Campaign-Layer)** — the war *over* the war: era
   taskings and engagement ranges, ambush MiGs, Alpha Strikes, and the enemy's tempo.
-- **[Combat SAR](Combat-SAR)** and **[SCAR](SCAR)** — the Sandy/King rescue package, the other
+- **[Combat SAR](Combat-SAR)** — the downed-pilot rescue, the other
   half of the Vietnam-era content.
 - **[Troops In Contact](Troops-In-Contact)** — the frontline firefight sim the flak/convoy effects
   reuse for their fire plumbing.

@@ -187,13 +187,7 @@ Most of this is opt-in. Full list with toggles, defaults and known limitations:
   burned-down fuel instead of full tanks. The cycle also has a tail: packages keep launching
   as and after you recover, and the mission briefing opens with the air war's running score —
   flights airborne, recovered and lost on both sides before you ever started engines.
-- **Living battlespace voice net.** Optional second layer: the tasking order becomes real
-  radio traffic. Launch check-ins, pushes, on-station and RTB calls are synthesized when the
-  mission generates (Windows text-to-speech, embedded in the mission — nothing to install,
-  works in multiplayer) and transmitted from each actual flight on the briefed AWACS
-  frequency. Tune the channel and the war is audible; a flight that died never makes its
-  call.
-- **Living battlespace reactive red.** Optional third layer: the enemy visibly reacts to
+- **Living battlespace reactive red.** Optional second layer: the enemy visibly reacts to
   being hit. Real red alert fighters — claimed from real inventory, their losses counted —
   sit on the ramp; when an objective your side is tasked against loses a unit, one pair
   starts up a few minutes later and flies a defensive patrol over the struck point. Strictly
@@ -246,7 +240,7 @@ Most of this is opt-in. Full list with toggles, defaults and known limitations:
   its base dialog and the auto-planner shifts its offensive effort to match. A weight, not a
   fence — your own packages and rescue flights are never affected. Off by default.
 - Also: strikeable motor pool depots, enemy comms jamming learned from a captured pilot,
-  air-droppable minefields, a host F10 menu to scramble bandits.
+  a host F10 menu to scramble bandits.
 
 ---
 

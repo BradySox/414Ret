@@ -129,4 +129,5 @@ one most likely to feel like a lag to a player even though it technically is not
 
 - [414th-features.md §3](../414th-features.md) — the reveal rule this has to live under
 - [414th-features.md §12](../414th-features.md) — the recon engine, removed 2026-08-20
-- [414th-tars-recon-notes.md](414th-tars-recon-notes.md) — historical, do not author against
+- `414th-tars-recon-notes.md` — deleted 2026-08-20, recoverable from git before
+  `5db34150f`. Do not author against

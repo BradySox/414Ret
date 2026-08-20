@@ -130,8 +130,8 @@ the auto-planner flies. Sizes are starting squadron strength.*
 
 | Squadron | Airframe | Role | Size | |
 |---|---|---|---|---|
-| 910th Airlift Wing | **C-130J-30** | Transport / **King / EW-ISR** | 2 | **P** |
-| 5th Bn 159th Aviation | **CH-47F Block I** | Air Assault / **Jolly Green** | 4 | **P** |
+| 910th Airlift Wing | **C-130J-30** | Transport / **EW-ISR** | 2 | **P** |
+| 5th Bn 159th Aviation | **CH-47F Block I** | Air Assault / rescue | 4 | **P** |
 | 12th Combat Aviation Brigade | **AH-64D Apache** | Escort | 4 | **P** |
 | 1-17 Cavalry | **OH-58D(R) Kiowa** | Escort | 4 | **P** |
 | 126th Air Refueling Squadron | KC-135 | Refueling (boom) | 2 | AI |
@@ -155,7 +155,7 @@ the auto-planner flies. Sizes are starting squadron strength.*
 - **Strike / interdiction (move the line):** F-15E (BAI), B-52H (Strike).
 - **CAS / front:** A-10C (Ramstein), AH-64D (Fulda + Frankfurt), OH-58D, AH-1W. Fulda is your
   forward rotary base — short legs to the Haina front.
-- **Enablers & special:** C-130J (the **King** on-scene commander + EW/ISR jammer), E-3A AWACS,
+- **Enablers & special:** C-130J (the EW/ISR jammer and ELINT platform), E-3A AWACS,
   KC-135 boom + KC-135 MPRS drogue (drogue feeds the Hornets/Tomcats),
   CH-47F + UH-1H lift.
 
@@ -297,8 +297,7 @@ the SITREP for next week.
 | SEAD escort | F/A-18C Hornet | Suppresses pop-up threats for the package |
 | CAP/Escort lead | F-14B / F-15C | Owns the air picture, protects the package |
 | CAS/FAC | A-10C / AH-64D | Works the FLOT with the ground commander |
-| King (on-scene cdr) | C-130J | EW/ISR + Combat SAR command (talking player) |
-| Sandy lead | A-10C / AH-64D | Combat SAR rescue escort |
+| EW/ISR | C-130J | Standoff jamming + ELINT picture (talking player) |
 
 ---
 
@@ -344,7 +343,7 @@ MISSION #: [____]      OP NIGHT: [date]      MC: [callsign]
 
 5. ADMIN & SAR (§11)
    Bingo / Joker: [____]   Divert: [field]
-   Combat SAR: King [callsign/freq], Jolly [callsign], Sandy [flight]
+   Combat SAR: rescue [callsign], survivor beacon 260 kHz ADF
    If you eject: [SAR contract — squawk, get to high ground, comms]
    ROE / IFF: [____]
 
@@ -373,10 +372,10 @@ the threat. "+tkr/+AWACS" assumed on every offensive package.
 | **CAS / front** | A-10C + AH-64D | OH-58D recon/FAC | — | Works the FLOT with the ground commander. Fulda helos are closest. |
 | **Enabler hunt (A-50/Il-78)** | 2× F-14B (long stick) | +2 escort | — | Deliberate, escorted intercept on Schönefeld's high-value enablers. |
 | **Anti-ship (Baltic SAGs)** | F/A-18C (Harpoon) | F-14B escort | Hornet SEAD | End-game; kill Copenhagen fighters first. |
-| **Combat SAR (§11)** | 1× **King** (C-130J) + 1× **Jolly** (CH-47F) | 2–4× **Sandy** (A-10C/AH-64D) | — | Stand it up when a pilot is down; can be a standing alert. |
+| **Combat SAR (§11)** | 1–2× rescue helo (CH-47F / UH-1H) | — | — | Auto-planned by default; fly it yourself if you want the pickup. |
 
-> Put the **C-130J King** up on any deep/contested push as the EW/ISR + on-scene commander — it
-> jams, builds the ELINT picture, and is already overhead if someone goes down.
+> Put the **C-130J** up on any deep or contested push — it jams and builds the ELINT picture,
+> and it is the one asset that makes a defended corridor survivable.
 
 ---
 
@@ -390,7 +389,7 @@ NETS
   Package (primary) ....... [____]      Guard ................... 243.0 / 121.5
   Inter-flight ............ [____]      SRS (squadron) ......... [____]
   AWACS ("Magic"/[name]) .. [____]      Tanker ([name]) ........ [____]
-  King (Combat SAR) ....... [____]      JTAC/FAC ............... [____]
+  SAR / guard ............. 243.0 / 121.5   JTAC/FAC ............... [____]
 
 CODE WORDS  (set fresh each mission — these print on the kneeboard cover/game plan)
   PUSH ......... [____]   (commit / start the run-in)
@@ -412,9 +411,8 @@ KEY BREVITY
   POPEYE ............. in the weather/clouds
 ```
 
-> Keep **Combat SAR on its own contract**: the **King (C-130J)** is a *talking player* over SRS who
-> runs the on-scene picture. Scripted aids (TACAN beacon, F10 LARS survivor locator) complement his
-> voice — they don't replace it.
+> Keep **Combat SAR on its own contract**: the rescue crew works the survivor's 260 kHz ADF
+> beacon and talks the pickup over SRS.
 
 ---
 
@@ -453,40 +451,21 @@ current MANTIS engine — try it, but don't bet a package on it until it's flown
 
 ## 11 · Combat SAR — when a pilot goes down
 
-Red Tide has the airframes to fly the 414th's **Combat SAR** package (the C-130J, CH-47F, A-10C and
-AH-64D are all in the roster — confirmed), and the design has red **race to capture** downed
-aviators. 🟡 **Status caveat:** Combat SAR is **built but still in in-game testing** — several of its
-pieces are UNTESTED on the checklist and the AI auto-rescue actually *failed* a flight on 2026-06-28
-(a fix landed; a re-fly is owed). So fly it, but brief it as a capability we're shaking out, not a
-guaranteed safety net. The mechanics below are the *intended* design.
+Red Tide flies rescues. The roster carries the helicopters for it (CH-47F with 5-159, plus
+UH-1H), and a downed aviator recovered to a friendly field is **spared at debrief** — you lose
+the jet, you keep the pilot.
 
-**The package:** **1 King + 1 Jolly Green + 2–4 Sandy.**
+Brief the pilot contract, not the machinery:
 
-- **King** — **C-130J-30** (910th AW). On-scene commander: flies the HC-130 "King" overhead orbit, a
-  **TACAN-only** air-tracking beacon + **F10 LARS** survivor locator, and runs the rescue over SRS
-  voice. Also the EW/ISR jammer.
-- **Jolly Green** — **CH-47F** (5-159) or UH-1H. The rescue helo that picks the survivor up.
-- **Sandy** — **A-10C / AH-64D** (2–4). Protect the downed pilot, suppress the threats around them,
-  and walk the helo in (the SCAR "Sandy"/RESCAP role).
+- Eject → get clear, get to high or defensible ground, conserve.
+- Comms on the SAR/guard freq.
+- Your survivor beacon is a **260 kHz ADF** homing signal, the same channel for every survivor.
+  The rescue crew tunes it before start.
 
-**The capture race:** on ejection, a **CJTF_RED snatch party** may race to seize the survivor.
-- **Kill the snatch party** and a surviving rescue → the aviator is **spared at debrief** (the
-  airframe is still lost, but you keep the pilot).
-- **Lose the race** → the pilot is **CAPTURED**, held as a **POW at an enemy airfield**, and offered
-  back as a **CSAR objective**. A surviving CSAR raid — or **recapturing the field** — frees them. A
-  POW abandoned past the **4-turn clock is killed.**
-
-**AI safety net:** with `auto_combat_sar` on, an AI King + Jolly + 1 Sandy is *designed* to stand
-alert and go after downed pilots you don't reach. 🟡 This is the exact path that failed its
-2026-06-28 flight (fix landed, re-fly owed) — don't rely on it yet; fly the human SAR package.
-
-**Pilot SAR contract (put it in §5 of the brief):**
-- Eject → get clear, get to high/defensible ground, conserve.
-- Comms on the SAR/guard freq; King runs the show — follow his calls.
-- Squawk / authenticate per the day's plan.
-
-> Stand up a **Combat SAR alert** package any op night you're pushing into contested airspace — and
-> put the **King** overhead anyway for the EW/ISR picture, so it's already on station if it's needed.
+Everything else — who plans the rescue, how close it has to get, how long you last on the
+ground — is in **[Combat SAR](Combat-SAR)**. Read it there rather than briefing it from memory;
+the rescue system was replaced wholesale on 2026-08-07 and the old King / Jolly Green / Sandy
+package no longer exists.
 
 ---
 
@@ -503,8 +482,7 @@ General pairing guidance — tune to the threat and what the tool offers per tur
 | **BAI / interdiction** | F-15E | CBU/Mk-82/Maverick | Convoys & echelons — moves the line. |
 | **Air superiority** | F-14B, F-15C | AIM-54/7/120 + AIM-9 | Long stick. F-14B = your reach. |
 | **CAS** | A-10C, AH-64D | Mav/Hellfire + gun + rockets | Work the FLOT with the ground cdr. |
-| **Sandy (CSAR escort)** | A-10C, AH-64D | gun + rockets + Mav/Hellfire | Suppress around the survivor; walk the helo in. |
-| **King / EW-ISR** | C-130J-30 | EW pods (per the C-130 systems) | Jam, ELINT, on-scene SAR command. |
+| **EW / ISR** | C-130J-30 | EW pods (per the C-130 systems) | Jam and build the ELINT picture. |
 
 **Receiver/tanker pairing (don't strand a striker):**
 - **Boom (KC-135):** F-16, F-15C/E, A-10, B-52H (and the JG 74 Phantoms).
@@ -536,7 +514,7 @@ CODE:   PUSH [____]  SUCCESS [____]  ABORT [____]  THREAT [____]
 BULLSEYE: [__________]
 
 LOADOUT: _______________________________________________________________
-SAR: King [______]  Jolly [______]  Sandy [______]   If down: ___________
+SAR: rescue [______]   Beacon 260 kHz ADF     If down: ___________
 NOTES: _________________________________________________________________
 ```
 
@@ -576,4 +554,4 @@ Rising *tradition and freely editable.*
 
 ---
 
-*This page is the online copy of [`docs/campaigns/red-tide-campaign-handbook.md`](https://github.com/BradySox/414Ret/blob/main/docs/campaigns/red-tide-campaign-handbook.md) in the repo. Edit that file; the wiki is mirrored from `docs/wiki/` on merge to `main`.*
+*Edit this page at `docs/wiki/` in the repo, never in the wiki UI. It is mirrored to the GitHub Wiki on merge to `main`.*

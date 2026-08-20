@@ -4744,7 +4744,17 @@ budget arithmetic is unit-tested; the arrival time is a mission.
 
 ### B54 — Planner behavior bar switches the suite in the settings UI · re-convergence · ☐ UNTESTED
 
-**History:** built 2026-08-09, app pass not flight
+**History:** built 2026-08-09, app pass not flight.
+**2026-08-20 app pass: FAILED, root-caused and fixed the same day.** The bar never
+rendered. `QSettingsWindow` prepends it only when the page name equals
+`CAMPAIGN_DOCTRINE_PAGE` ("Campaign Doctrine"), and `Settings.pages()` never yields
+that name -- the dialog's eight pages are Difficulty & Realism, Air Doctrine, Campaign
+Management, Mission Generation, Kneeboards, Vietnam Ops, Performance and 414th
+Features. No error: the branch simply never fired and `planner_suite_bar` stayed None,
+guarded everywhere it is read. The bar is now bound to `PLANNER_SUITE_PAGE` on the
+**414th Features** page, which holds five of the eight fields it switches, and
+`test_plannersuite` pins both preset bars against `Settings.pages()`. **Retest on
+414th Features, not Air Doctrine.**
 
 > First slice of the 2026-08-09 re-convergence decision (see the divergence audit's DECIDED
 > block): the eight planner gates ship at stock/upstream values, and a **Planner behavior** bar

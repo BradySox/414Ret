@@ -4,7 +4,11 @@ from .boundedintoption import BoundedIntOption
 from .choicesoption import ChoicesOption
 from .difficultypreset import DifficultyPreset, apply_preset, detect_preset
 from .minutesoption import MinutesOption
-from .plannersuite import apply_planner_suite, detect_planner_suite
+from .plannersuite import (
+    PLANNER_SUITE_PAGE,
+    apply_planner_suite,
+    detect_planner_suite,
+)
 from .optiondescription import OptionDescription
 from .textoption import TextOption
 from .settings import (

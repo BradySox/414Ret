@@ -3,6 +3,8 @@ from __future__ import annotations
 from datetime import timedelta
 from typing import Any, Optional, TYPE_CHECKING
 
+from game.settings.settings import FEATURES_PAGE
+
 if TYPE_CHECKING:
     from game.settings.settings import Settings
 
@@ -17,6 +19,11 @@ if TYPE_CHECKING:
 # the suite when work order C reverted the feature outright -- there is no gate
 # to flip any more.
 #
+#: The settings page the one-click bar is prepended to. It lives beside the values
+#: rather than in the dialog because a page name nothing resolves to renders no bar
+#: at all, silently -- which is how this one shipped invisible. Pinned by a test.
+PLANNER_SUITE_PAGE = FEATURES_PAGE
+
 # field -> (stock value, suite value)
 PLANNER_SUITE_VALUES: dict[str, tuple[Any, Any]] = {
     "barcap_overlap_time": (timedelta(minutes=0), timedelta(minutes=15)),

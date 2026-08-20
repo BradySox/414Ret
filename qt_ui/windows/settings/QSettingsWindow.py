@@ -37,12 +37,12 @@ from game.settings import (
     BooleanOption,
     BoundedFloatOption,
     BoundedIntOption,
-    CAMPAIGN_DOCTRINE_PAGE,
     ChoicesOption,
     DIFFICULTY_REALISM_PAGE,
     DifficultyPreset,
     MinutesOption,
     OptionDescription,
+    PLANNER_SUITE_PAGE,
     Settings,
     TextOption,
     apply_planner_suite,
@@ -922,7 +922,7 @@ class QSettingsWidget(QtWidgets.QWizardPage, SettingsContainer):
                 container_layout.addWidget(self.difficulty_preset_bar)
                 container_layout.addWidget(page)
                 scroll.setWidget(container)
-            elif name == CAMPAIGN_DOCTRINE_PAGE:
+            elif name == PLANNER_SUITE_PAGE:
                 # Prepend the stock-vs-414th planner suite switch.
                 container = QWidget()
                 container_layout = QVBoxLayout(container)

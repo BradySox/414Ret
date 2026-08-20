@@ -6,6 +6,7 @@ from game.commander.tasks.primitive.dead import PlanDead
 from game.commander.tasks.targetorder import shuffled_by_priority
 from game.commander.theaterstate import TheaterState
 from game.data.groups import GroupTask
+from game.fourteenth.region_priorities import auto_planning_skips
 from game.htn import CompoundTask, Method
 from game.theater.theatergroundobject import IadsGroundObject, NavalGroundObject
 
@@ -18,11 +19,15 @@ class DegradeIads(CompoundTask[TheaterState]):
         for air_defense in state.threatening_air_defenses:
             yield [self.plan_against(air_defense)]
 
+        # §93: this tier PICKS a region to work on, so an IGNORED one is skipped.
+        # The reactive tier above is deliberately not gated -- a SAM shooting at a
+        # package flying elsewhere is a threat response, not a choice of target.
         prioritized_air_defenses = sorted(
             [
                 tgo
                 for tgo in state.enemy_air_defenses
                 if tgo.task in [GroupTask.LORAD, GroupTask.MERAD]
+                and not auto_planning_skips(tgo, state)
             ],
             key=lambda x: (state.priority_cp.distance_to(x) if state.priority_cp else 0)
             - x.max_threat_range().meters,

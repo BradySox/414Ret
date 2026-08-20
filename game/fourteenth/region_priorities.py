@@ -78,3 +78,19 @@ def planning_factor(
     if priority is RegionPriority.IGNORED:
         return None
     return SORT_FACTOR[priority]
+
+
+def auto_planning_skips(target: Any, state: Any) -> bool:
+    """True when the auto-planner must not propose a package against *target*.
+
+    For targeting sites that read a `TheaterState` list which is ALSO threat data --
+    `enemy_ships` feeds `_rebuild_threat_zones`, so filtering the list itself would
+    route blue over a carrier it had been told to ignore. Gate the tasking, never
+    the threat picture.
+    """
+    context = getattr(state, "context", None)
+    coalition = getattr(context, "coalition", None)
+    player = getattr(coalition, "player", None)
+    is_blue = bool(getattr(player, "is_blue", False))
+    settings = getattr(context, "settings", None)
+    return planning_factor(target, settings, is_blue) is None

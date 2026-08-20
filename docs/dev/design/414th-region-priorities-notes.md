@@ -75,7 +75,15 @@ sort_key = min_range_to_friendly_cp * level_factor(owning_cp)
 
 with `IGNORED` targets dropped from the iterator (auto-planning only). One site, every
 offensive task, no per-task plumbing — the same one-question-one-place property §3's
-`visibility_for` set as fork style. BMS-note candidate 3 (front-distance term) lands in this
+`visibility_for` set as fork style.
+
+**Two tasks could not use that site, and shipping without them was the v1 defect.**
+`AttackShips` and `AttackBattlePositions` read `TheaterState` lists that are *also* threat
+data — `enemy_ships` feeds `_rebuild_threat_zones`. Filtering those lists would have made
+blue route over an ignored carrier as if it were not there. They call `auto_planning_skips`
+at the point of tasking instead (fixed 2026-08-20). The rule for any new offensive task:
+if its list is only ever a target list, gate the list; if it doubles as threat data, gate
+the tasking. BMS-note candidate 3 (front-distance term) lands in this
 same key later; compose, don't co-build.
 
 ## 5. v1 scope

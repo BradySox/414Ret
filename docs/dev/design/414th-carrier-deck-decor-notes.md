@@ -611,6 +611,20 @@ Hornets, 12 Tomcats, plus an A-6E, S-3Bs, a UH-60A and E-2Cs. Strip those under 
 no-permanent-static-aircraft rule and the campaign yields almost nothing: 7 usable recovery
 items and 5 street items, none of the street sets above 2 items.
 
+**⚠️ REVERTED 2026-08-19 (DM call) — the recovery tier carries NO static aircraft either.**
+The relaxation below rested on "the recovery tier only stands once launches are over", and
+test 11 falsified that premise with measurements: on CVN-71, **14 aircraft late-activated
+onto the deck between t=2340 and t=3913**, i.e. 9 to 35 minutes *after* the recovery set
+spawned, and five of them landed squarely on the six-pack row (y = +34). That is the exact
+condition the original 2026-07-18 ban was measured on — a late activation does NOT skip a
+blocked spot. `is_deck_gear` now filters aircraft out of every variant at
+`RECOVERY_DECK_VARIANTS` construction, taking the pool from 7 usable variants to **5**, all
+of them deck gear; `test_no_tier_parks_a_static_aircraft_on_the_deck` replaces the guard
+that pinned the relaxation. The authored campaign B data is kept as the record, so
+re-enabling is a one-line change if the premise is ever re-established.
+
+The rest of this section is the 2026-08-07 reasoning, kept for the history:
+
 **That rule was relaxed for the recovery tier only, on an explicit call.** The reasoning: the
 clipping that produced the ban was a *placement* problem, not an aircraft problem, and the
 recovery tier only stands once launches are over. The split is now:
@@ -620,7 +634,8 @@ recovery tier only stands once launches are over. The split is now:
 - **RECOVERY tier: aircraft allowed**, because it appears after the launch cycle and because a
   deck respotted for recovery with jets ranged forward is the point of the tier.
 
-Both halves are pinned by `test_recovery_tier_may_carry_aircraft_but_permanent_gear_may_not`.
+Both halves were pinned by `test_recovery_tier_may_carry_aircraft_but_permanent_gear_may_not`,
+now replaced by `test_no_tier_parks_a_static_aircraft_on_the_deck` (see the reversal above).
 
 **What the relaxation cost, and what pays for it.** Aircraft are far bigger than deck gear, so
 `FOOTPRINT_EXTRA_M` gained six entries at roughly half each type's published fuselage length

@@ -770,6 +770,27 @@ circle would obviously be fake. Nothing to fly. See features doc §79 and §3.
 
 ### B39 — Cross-turn naval magazines · §81 · ◐ PARTIAL
 
+> **Test 11 (2026-08-19, `Tacview-20260819-203334`) — the turn-2 carry-over PASSES; a new hole
+> opened and is fixed.** Turn 2 of the same Vectron's Claw save, with the salvo cap shipped:
+>
+> - `NAVALMAGAZINES|: armed -- 7 naval group(s), stagger true (120s-900s), metered true, **salvo cap 6**`
+> - `0079 | CARACAL (Carrier) stays ReturnFire at release (magazine dry)` — **the last leg this
+>   row owed.** The Kuznetsov spent its 8 rounds on turn 1 and opened turn 2 empty, so the
+>   debit persists across the turn boundary and a fired magazine does not refill.
+>
+> **But the cap still has not been exercised**, and the reason is the defect this test found:
+> the only anti-ship fire all mission came through the one path that bounded nothing. Blue put
+> 16 AGM-84D into the Kuznetsov group at t=1296; the attack rule freed it; and being *already
+> dry*, it returned to the `dry` branch on every shot — which exits before the salvo check and
+> never drops an attacked group to ReturnFire. It fired **12 P-700 over 336 s against a cap of
+> 6**, and called `WINCHESTER` four times doing it. Both fixed 2026-08-19: an empty group may
+> answer an attack for one `salvoPerMission` past empty and then holds even under fire, and the
+> winchester call is latched to once per group.
+>
+> **Still owed:** a mission where the cap actually bites — a *loaded* group firing, stopping at
+> 6, and logging `salvo complete (6 this mission) -- holding`. Vectron's Claw turn 3 with
+> DRAGONFLY (28 rounds left) in range would do it.
+
 > **UNBLOCKED and largely passed, 2026-08-19.** The "no Starfire campaign has a red navy" block
 > below was wrong: **Caucasus — Vectron's Claw** (Starfire, USA 2005 vs Russia 2010) fields a
 > Kuznetsov, a Slava and two escort groups against a CVN-71 CSG and an LHA ARG. Flown turn 1
@@ -4524,6 +4545,22 @@ Play a turn on a Growler- or Prowler-fielding wing against a campaign with sever
      answer is to reinstate the sweep for specific callers rather than for all of them.
 
 ### B49 — Carrier recovery-phase deck dressing · §72 · ◐ PARTIAL
+
+> **Test 11 (2026-08-19) — the tier ran, and the DM rejected its static aircraft.** On CVN-71:
+> `spawned 5 recovery-phase static(s) forward` + `struck 1 launch-phase static(s) below`. The
+> DM's report: *"Carrier 6pack still spawning during recovery phase. I told you to remove it…
+> they were statics part of the deck trash."*
+>
+> **The 2026-08-07 aircraft relaxation is REVERTED**, and the measurements say it should be:
+> 14 aircraft late-activated onto that deck between t=2340 and t=3913 — **9 to 35 minutes after
+> the recovery set spawned** — and five landed on the six-pack row (ship-frame y = +34). That is
+> the 2026-07-18 late-activation clip condition, which the tier's "it only stands once launches
+> are over" premise had assumed away. The pool drops from 7 usable variants to **5**, all deck
+> gear. Nothing landed inside `LANDING_AREA_KEEP_OUT`, so the landing area itself was never
+> fouled.
+>
+> **Still owed:** a look at the gear-only sets on a real deck, and whether a late-activated jet
+> ever spawns onto one of them.
 
 > **Test 9 flown 2026-08-18** (Syria `operation_desert_trident`, `Tacview-20260818-214946` + `dcs.log` + `state.json` + the generated `.miz`) — **the regression is fixed**, upgraded ✗ → ◐. The plugin ran its whole
 > sequence on CVN-72, including the step that silently never happened before:

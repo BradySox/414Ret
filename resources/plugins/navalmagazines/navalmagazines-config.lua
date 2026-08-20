@@ -88,6 +88,8 @@ local released = {} -- group name -> true once weapons-free (stagger or attack)
 local underAttack = {} -- group name -> true once the enemy has fired at it
 local salvoFired = {} -- group name -> anti-ship missiles fired THIS mission
 local salvoDone = {} -- group name -> true once it has spent its per-mission salvo
+local winchesterCalled = {} -- group name -> true once it has been called winchester
+local overshootFired = {} -- group name -> anti-ship missiles fired past an empty magazine
 
 local function sideOf(name)
     if name == "red" then
@@ -260,6 +262,9 @@ local function chargeShot(groupName)
     end
     local salvo = (salvoFired[groupName] or 0) + 1
     salvoFired[groupName] = salvo
+    -- Read before the decrement: this shot came out of an ALREADY-empty magazine,
+    -- which is the overshoot the cap below bounds.
+    local wasDry = METERED and (remaining[groupName] or 0) <= 0
     local dry = false
     if METERED then
         recordFired(groupName, 1)
@@ -273,12 +278,34 @@ local function chargeShot(groupName)
     if dry then
         if not underAttack[groupName] then
             setRoe(groupName, ROE_RETURN_FIRE)
+        elseif wasDry then
+            -- An attacked group is kept weapons-free so it can defend itself, and
+            -- that left it firing without any bound at all: flown 2026-08-19, a
+            -- Kuznetsov that STARTED the mission dry put 12 P-700 into the air over
+            -- 336 s. It may still answer an attack, but only for one salvo's worth
+            -- past empty (DM call) -- after that the hull holds even under fire.
+            local over = (overshootFired[groupName] or 0) + 1
+            overshootFired[groupName] = over
+            if SALVO_CAP > 0 and over == SALVO_CAP then
+                setRoe(groupName, ROE_RETURN_FIRE)
+                env.info(string.format(
+                    "NAVALMAGAZINES|: %s overshoot cap (%d past empty) -- holding",
+                    groupName, over))
+            end
         end
-        env.info(string.format("NAVALMAGAZINES|: %s WINCHESTER anti-ship", groupName))
-        if ANNOUNCE then
-            navMsg(groupSide[groupName] or coalition.side.BLUE, string.format(
-                "WINCHESTER -- %s has expended its anti-ship missiles. No rearm this war.",
-                groupName))
+        -- Once only. An attacked group is deliberately NOT dropped to ReturnFire, so
+        -- it keeps firing past zero and every one of those shots re-enters this
+        -- branch -- which called winchester four times in one mission (flown
+        -- 2026-08-19), and would have popped the coalition message four times too.
+        if not winchesterCalled[groupName] then
+            winchesterCalled[groupName] = true
+            env.info(string.format(
+                "NAVALMAGAZINES|: %s WINCHESTER anti-ship", groupName))
+            if ANNOUNCE then
+                navMsg(groupSide[groupName] or coalition.side.BLUE, string.format(
+                    "WINCHESTER -- %s has expended its anti-ship missiles. "
+                    .. "No rearm this war.", groupName))
+            end
         end
         return
     end

@@ -611,3 +611,94 @@ def test_an_attacked_group_fires_through_its_salvo_cap() -> None:
     h.assert_no_lua_errors()
     assert [r for r in _roe(h) if r["value"] == ROE_RETURN_FIRE] == []
     assert _state(h) == [{"group": "0001 | Slava", "fired": 3}]
+
+
+def test_winchester_is_called_once_however_long_the_group_keeps_firing() -> None:
+    """An attacked group is never dropped to ReturnFire, so it fires past zero and
+    re-enters the dry branch on every shot. Flown 2026-08-19: four WINCHESTER lines
+    from one hull, and the coalition message would have popped four times too."""
+    h = DcsPluginHarness()
+    h.add_group(_ship_group("0079 | Kuznetsov", int(h.side.RED)))
+    h.add_group(_ship_group("0099 | Raider", int(h.side.BLUE)))
+    _load(
+        h,
+        _config(
+            [{"group": "0079 | Kuznetsov", "coalition": "red", "remaining": "1"}],
+            stagger=False,
+        ),
+    )
+    h.fire_shot(
+        {
+            "initiator": "0099 | Raider",
+            "weapon": {"typeName": "AGM_84D"},
+            "target": "0079 | Kuznetsov",
+        }
+    )
+    for _ in range(5):
+        h.fire_shot({"initiator": "0079 | Kuznetsov", "weapon": {"typeName": "P_700"}})
+    h.assert_no_lua_errors()
+    calls = [t for t in h.records("texts") if "WINCHESTER" in str(t.get("text", ""))]
+    assert len(calls) == 1
+    # Every shot is still counted for the turn debit -- only the shouting is capped.
+    assert _state(h) == [{"group": "0079 | Kuznetsov", "fired": 5}]
+
+
+def test_an_attacked_dry_group_stops_after_one_salvo_past_empty() -> None:
+    """The flown Kuznetsov (2026-08-19): it STARTED the mission dry, was attacked,
+    and fired 12 P-700 over 336 s because the dry branch bounded nothing. It may
+    still answer an attack, but only for one salvo's worth past empty."""
+    h = DcsPluginHarness()
+    h.add_group(_ship_group("0079 | Kuznetsov", int(h.side.RED)))
+    h.add_group(_ship_group("0099 | Raider", int(h.side.BLUE)))
+    _load(
+        h,
+        _config(
+            [{"group": "0079 | Kuznetsov", "coalition": "red", "remaining": "0"}],
+            stagger=False,
+            options={"salvoPerMission": 3},
+        ),
+    )
+    h.fire_shot(
+        {
+            "initiator": "0099 | Raider",
+            "weapon": {"typeName": "AGM_84D"},
+            "target": "0079 | Kuznetsov",
+        }
+    )
+    for _ in range(8):
+        h.fire_shot({"initiator": "0079 | Kuznetsov", "weapon": {"typeName": "P_700"}})
+    h.assert_no_lua_errors()
+    values = [r["value"] for r in _roe(h)]
+    # Pulled to ReturnFire at load (dry), freed by the attack, then held again once
+    # it had fired its salvo past empty -- and held only once.
+    assert values == [ROE_RETURN_FIRE, ROE_WEAPON_FREE, ROE_RETURN_FIRE]
+    # Everything it fired is still counted, so the debit stays honest.
+    assert _state(h) == [{"group": "0079 | Kuznetsov", "fired": 8}]
+
+
+def test_the_overshoot_cap_does_not_fire_before_the_magazine_is_empty() -> None:
+    """A group with stock left is bounded by the ordinary salvo cap, not this one --
+    the overshoot counter only starts once the magazine is already at zero."""
+    h = DcsPluginHarness()
+    h.add_group(_ship_group("0001 | Burke", int(h.side.BLUE)))
+    h.add_group(_ship_group("0099 | Raider", int(h.side.RED)))
+    _load(
+        h,
+        _config(
+            [{"group": "0001 | Burke", "coalition": "blue", "remaining": "4"}],
+            stagger=False,
+            options={"salvoPerMission": 0},
+        ),
+    )
+    h.fire_shot(
+        {
+            "initiator": "0099 | Raider",
+            "weapon": {"typeName": "YJ-83"},
+            "target": "0001 | Burke",
+        }
+    )
+    for _ in range(4):
+        h.fire_shot({"initiator": "0001 | Burke", "weapon": {"typeName": "RGM_84F"}})
+    h.assert_no_lua_errors()
+    # Cap off and never past empty by more than the emptying shot: still weapons-free.
+    assert [r for r in _roe(h) if r["value"] == ROE_RETURN_FIRE] == []

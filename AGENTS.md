@@ -76,6 +76,7 @@ feature — each carries the design rationale, the flown-test findings, and the 
 | [414th-upstreaming-inventory.md](docs/dev/414th-upstreaming-inventory.md) | The upstreaming queue, priority-ordered, with readiness marks. |
 | [414th-community-contribution-roadmap.md](docs/dev/414th-community-contribution-roadmap.md) | The long view: community-value × carve-difficulty across every feature. |
 | [414th-retribution-long-view.md](docs/dev/design/414th-retribution-long-view.md) | Structural read of the engine (2026-08-17): what Retribution is, measured, and the seven seams that follow. **1 (mission→campaign reporting) and 4 (the front line) are BUILT** as §91 and §90; **2 (the intel model) and 5 (time between turns) are accepted, not started**; 3 is analysis only; 6 is scoped in its own note. **Seam 7 (the enemy) is DROPPED** — three framings, three Phase 0s, no observable defect found; read §8 and [414th-red-brain-phase0-notes.md](docs/dev/design/414th-red-brain-phase0-notes.md) before proposing anything about red, because §55 tried the obvious shape and the analytic route has now failed three times. |
+| [414th-campaign-architecture-notes.md](docs/dev/design/414th-campaign-architecture-notes.md) | **Direction note (2026-08-20, DM call): the one-substrate architecture.** The graveyard's shared diagnosis (private numbers, no substrate), five pillars (flow-network substrate, mission-as-transaction, event-driven turns, red legibility, command-by-weight), the four admission rules, and rungs R0–R7 with gates and falsifiers. Nothing built; no tombstone lifted — each rung lands on its own call. |
 
 ### Campaign notes — `docs/dev/design/`
 
@@ -123,6 +124,8 @@ Read before touching a campaign's `.yaml`, `.miz` or build tool.
   `414th-region-priorities-notes.md` (**BUILT 2026-08-20 as §93** — per-CP blue planning
   priorities: upstream #686's surface × BMS's PAK weight; the fence stays dead with §40;
   B89 app pass owed),
+  `414th-campaign-architecture-notes.md` (**direction note** — the one-substrate architecture
+  and rungs R0–R7; see the tracking table),
   `414th-airwar-planner-consolidation-notes.md`,
   `414th-aircraft-task-rebalance-rubric.md`, `414th-victory-conditions-notes.md`,
   `414th-wing-growth-notes.md`, `414th-single-player-loop-notes.md`,

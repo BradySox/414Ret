@@ -690,6 +690,9 @@ class MizCampaignLoader:
                 if cp.cptype != ControlPointType.OFF_MAP
             ]
 
+        # Kept before the zone filter: the blue-block preference below needs to
+        # see zoned CPs, anonymous proximity binding must not.
+        candidates_for_blue = list(fallback_candidates)
         fallback_candidates = [
             cp for cp in fallback_candidates if not cp.influence_radius
         ]
@@ -714,8 +717,14 @@ class MizCampaignLoader:
             key=lambda cp: cp.position.distance_to_point(near.position),
         )
         if prefer_blue and id(near) in self._blue_block_group_ids:
+            # Candidates here are the ELIGIBLE set, not `fallback_candidates`:
+            # that list drops every zoned CP, so a blue-block marker a few
+            # hundred metres outside a blue field's own zone could never bind
+            # it. `operation_vectrons_claw` has one 617 m outside the UNOMIG
+            # FOB's 6096 m zone; it bound RED Sukhumi 75 km away and spawned a
+            # red motorpool beside a blue base. The detour bound still applies.
             friendly = [
-                cp for cp in fallback_candidates if cp.starting_coalition is Player.BLUE
+                cp for cp in candidates_for_blue if cp.starting_coalition is Player.BLUE
             ]
             if friendly:
                 nearest_blue = min(
@@ -820,7 +829,7 @@ class MizCampaignLoader:
             )
 
         for static in self.motorpools:
-            closest, distance = self.objective_info(static)
+            closest, distance = self.objective_info(static, prefer_blue=True)
             closest.preset_locations.motorpools.append(
                 PresetLocation.from_group(static)
             )

@@ -126,6 +126,12 @@ Read before touching a campaign's `.yaml`, `.miz` or build tool.
   B89 app pass owed),
   `414th-campaign-architecture-notes.md` (**direction note** — the one-substrate architecture
   and rungs R0–R7; see the tracking table),
+  `414th-substrate-inventory-notes.md` (**R0, done 2026-08-20** — every campaign quantity's
+  writers/readers/cockpit path with receipts; verdict: the core is already coherent, two
+  private ledgers exist (§81/§63 magazines), five couplings missing; R1 reshaped smaller),
+  `414th-substrate-HANDOFF.md` (**start here to continue the substrate work** — repo state,
+  the local-only queue incl. the B65–B68 and B89 passes, R1's opening moves, reserved
+  decisions, and this line's traps),
   `414th-airwar-planner-consolidation-notes.md`,
   `414th-aircraft-task-rebalance-rubric.md`, `414th-victory-conditions-notes.md`,
   `414th-wing-growth-notes.md`, `414th-single-player-loop-notes.md`,

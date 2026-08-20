@@ -131,6 +131,7 @@ stress it · `✗` fail signature reproduced in-game.
 | B82 | The AWACS orbits at a field it can actually fly from | planner shape | ☐ |
 | B83 | ATMOS-X live weather: the turn flies a real observation | ATMOS-X live weather | ☐ |
 | B86 | Retribution survives DCS taking over the GPU (Qt 6.8) | app / Qt | ☐ |
+| B87 | A stand-off shooter starts its run at its own launch range | §8 | ☐ |
 
 ---
 
@@ -5487,6 +5488,43 @@ turn on a wing with a small dedicated-jammer squadron and read the ATO before fl
 - **Setup:** frag a player cold-start F-16C and a player cold-start F-4E in the same turn. Read each package's takeoff time against its TOT, then actually fly both starts with a stopwatch — **stored heading**, which is what the numbers assume. ~40 min for both. Also confirm an airframe with no value (a Hornet) is unchanged at 10 minutes.
 - **Pass:** you make the briefed taxi time on a normal unhurried start in all three. The Phantom's 9 minutes should feel close but sufficient — its gyros alone eat most of it.
 - **Fail signature:** you are still in the chocks when the package is due to taxi, which means the number is too tight and the note's inferred ~2-minute systems window is wrong. Record the stopwatch figure — a measurement replaces the arithmetic outright. The opposite signature also matters: arriving at the hold-short with minutes to spare means the value is generous and the whole exercise bought nothing.
+
+### B87 — A stand-off shooter starts its run at its own launch range · §8 · ☐ UNTESTED
+
+**History:** built 2026-08-19 from juanjux's OPFOR playbook, which documents the failure in
+detail from an LLM commanding red through the player's own API.
+
+> The attack task does not activate until a flight reaches the ingress point, and the
+> doctrine ingress bound is weapon-agnostic — 45 nm on modern doctrine, for a dumb bomb and
+> a 270 nm Kh-22 alike. So a stand-off shooter was dragged from its launch range into the
+> target's defenses without shooting. A weapon yaml may now declare `range:` in nautical
+> miles and the package's ingress is widened to its shortest shooter's reach, capped at 60%
+> of the departure-to-target leg so the route cannot invert.
+
+- **What CI cannot exercise:** whether the DCS AI actually launches from the moved ingress.
+  The bound, the minimum-across-shooters rule, the escort exclusion and the cap are
+  unit-tested; the release is not, and **the release distance is DCS's own** — this buys the
+  flight a run that starts outside the defenses, not brochure range.
+- **Setup:** a campaign where one side fields a long-range stand-off shooter against a
+  defended target — a Tu-22M3/Kh-22 or an H-6 against a fleet is the clean case, an F/A-18
+  with Harpoons against a SAM-armed group also works. Frag the package and fly or
+  fast-forward. Compare against an older save's route for the same pairing if you have one.
+- **Pass:** the ingress waypoint sits well out from the target (roughly the weapon's
+  authored range, or 60% of the leg if that is shorter), the flight turns in there, and it
+  **launches**. Tacview shows a release rather than a fly-in.
+- **Fail signatures:**
+  1. **The flight still flies to ~45 nm.** The package's shortest shooter has no authored
+     range — check every flight in it, since the minimum sets the number. A short-legged
+     strike flight mixed into a bomber package is the likely culprit and is a real planning
+     mistake, not only a data gap.
+  2. **The ingress sits behind the join point** and the route doubles back. The 60% cap
+     failed; capture the leg length and the authored range.
+  3. **The flight turns in at the right distance and still does not shoot.** That is DCS's
+     release doctrine, not this fix — note the type and the distance, because it bounds what
+     any authored number can ever buy.
+  4. **A package that used to work now routes oddly** — an authored range on a weapon that
+     is not the package's actual attack weapon. `range:` is for air-to-ground stand-off
+     weapons only.
 
 ### B86 — Retribution survives DCS taking over the GPU (Qt 6.8) · app / Qt · ☐ UNTESTED
 

@@ -1,6 +1,7 @@
 name: Kh-35
 year: 2003
 fallback: Kh-31A
+range: 70
 clsids:
   - "{Ka52_Kh35U}"   # Kh-35U
   - "{Su30_KH_35A}"   # Kh-35 (AS-20 Kayak) - 520kg

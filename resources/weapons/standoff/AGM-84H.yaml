@@ -1,6 +1,7 @@
 name: AGM-84H SLAM-ER
 year: 2000
 fallback: AGM-84E SLAM
+range: 150
 clsids:
   - "{AGM_84H}"   # AGM-84H SLAM-ER (Expanded Response)
   - "{SUPERHORNET_PYLON_03_MB_SM_1X_AGM-84H}"   #  [ STA 03	  | SUU79 | LAU117 ] - 1x AGM-84H SLAM-ER (Expanded Response)

@@ -448,6 +448,25 @@ and red/blue planner fairness), and a **pre-registered card** for anyone who wan
 further: [414th-red-brain-phase0-notes.md](414th-red-brain-phase0-notes.md). Instrument:
 `tools/measure_red_planner_headroom.py`.
 
+**Amended the same day, after reading his evidence rather than his design docs.** The Phase 0
+measured which targets red picks and with what tasks. His findings are about **how the package
+is built and routed** — ingress placement, escort and SEAD waypoints, composition, formation
+behaviour under fire — which is downstream of selection, **shared with blue**, and something
+the instrument never looked at. His demonstrated output is engine defects, not a better red:
+five of his fix PRs were authored inside the agent work, including the hold-release clamp this
+fork adopted on 2026-08-19.
+
+So the verdict stands as measured and does not answer the question his work raises. The
+reframe, which is a better target than seam 7 ever was because it is fixable in the engine and
+helps both sides:
+
+> The gap is not red's brain. It is the planner's output, which a human player silently
+> compensates for by dragging waypoints and an HTN cannot.
+
+The first instance is fixed — the ingress bound was weapon-agnostic at 45 nm, so any stand-off
+shooter flew past its own launch range (features doc §8, checklist B87). Seam 7 stays dropped;
+what is now open is how many more such defects there are and how cheaply they can be found.
+
 ---
 
 ### Phase 0 RESULT, 2026-08-17 — the axis framing is dead

@@ -2,6 +2,7 @@ name: AGM-88C HARM
 type: ARM
 year: 1984
 fallback: AGM-45B Shrike ARM (Imp)
+range: 80
 clsids:
   - "{B06DD79A-F21E-4EB9-BD9D-AB3844618C9C}"   # AGM-88C HARM - High Speed Anti-Radiation Missile
   - "{B06DD79A-F21E-4EB9-BD9D-AB3844618C93}"   # AGM-88C HARM - High Speed Anti-Radiation Missile

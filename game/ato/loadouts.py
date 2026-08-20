@@ -13,6 +13,7 @@ from game.data.weapons import Pylon, Weapon, WeaponType
 from game.dcs.aircrafttype import AircraftType
 from game.factions.faction import Faction
 from game.persistency import prefer_liberation_payloads
+from game.utils import Distance
 
 if TYPE_CHECKING:
     from .flight import Flight
@@ -78,6 +79,20 @@ class Loadout:
             self.is_custom,
             copy.deepcopy(self.pylon_settings),
         )
+
+    @property
+    def max_standoff_range(self) -> Optional[Distance]:
+        """The furthest a weapon on this loadout can be released from the target.
+
+        None when no weapon on it declares a range, which is every loadout until
+        one is authored -- see `WeaponGroup.standoff_range`.
+        """
+        ranges = [
+            weapon.standoff_range
+            for weapon in self.pylons.values()
+            if weapon is not None and weapon.standoff_range is not None
+        ]
+        return max(ranges) if ranges else None
 
     def has_weapon_of_type(self, weapon_type: WeaponType) -> bool:
         for weapon in self.pylons.values():

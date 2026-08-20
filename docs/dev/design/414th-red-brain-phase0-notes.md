@@ -149,6 +149,75 @@ the strength of "the HTN walks a fixed priority list" — which is true, and is 
 reason — would be building on a structural observation that has now twice failed to produce an
 observable defect.
 
+## AMENDMENT 2026-08-19 — the Phase 0 above tested the wrong thing
+
+Written the same day, after reading his actual evidence rather than his design docs. The
+measurement stands; the framing around it was too narrow, and this section says how.
+
+### What his evidence turned out to be
+
+Not a design experiment. `game/agent/` has **100 commits over six weeks** (2026-07-02 →
+08-12), real campaigns played against it ("first campaign", "Red Sea Rising" round 2), and
+five models tried. The LLM is called **GeneraLLM** and is credited in the commit log.
+
+**Its demonstrated output is engine defects, not a better red.** Five of his `[FIX]` PRs
+were authored inside the agent work — the commits touch `game/agent/` alongside the engine
+change. One of them is the hold-release clamp we ported today (his #100, commit `bb83b720`,
+which touches `planner.py`, `schemas.py`, the playbook, `tests/agent/test_tot_floor.py` **and**
+`holdpoint.py` in one change). The others: a FOB reported as a cratered runway, the planner
+seeing a squadron count instead of the base's contents, `/start` documenting twelve endpoints
+that do not exist, and the planner not being able to see what an aircraft costs.
+
+An agent that must command through the player's own API and reports back when the data is
+wrong is a **defect-finding instrument**. That is a different product from "a smarter red",
+and it is the one with evidence behind it.
+
+### What he does not claim
+
+No changelog entry for it. README says **"not intended for upstream."** The claim is
+"refined across real campaigns played against it" — usage, not superiority. For someone with
+28 merged upstream PRs who carves nearly everything, that restraint is a data point.
+
+He did take the fairness constraint seriously unprompted: commit `a9d5c5be` closed a hole
+where the LLM could read blue's entire ATO, on the principle that *"every other asymmetry in
+this game is one the human can see and reason about; this one is not."*
+
+### Why the Phase 0 above missed it
+
+It measured **which targets red picks and with what tasks**. His findings are about **how the
+package is built and routed** — ingress placement, escort and SEAD waypoint placement, package
+composition, formation behaviour under fire. That is downstream of target selection, it is
+**shared with blue**, and the instrument never looked at waypoint geometry at all.
+
+So the verdict "no headroom in red's plan" is true as measured and does not answer the
+question his work raises. The reframe:
+
+> The gap is not red's brain. It is the planner's output, which a human player silently
+> compensates for by dragging waypoints and an HTN cannot.
+
+**That is a better target than seam 7 ever was**, because it is fixable in the engine, it
+helps both sides, and it needs no LLM. The first instance is already fixed — the stand-off
+ingress bound (features doc §8, checklist B87), verified live in our tree before the fix.
+
+### The inference worth keeping
+
+His playbook grew **42.6 KB → 62.9 KB** in five weeks of play, and it is almost entirely
+corrections: don't let the formation abort, move the ingress out, move SEAD SEARCH out, move
+ESCORT SEARCH out, don't mix short-legged flights into a bomber package, separate by altitude
+or they mid-air. **An LLM handed only `turn_context` plans badly.** The work is being done by
+accumulated engine lore, not by the model — which means the transferable asset is the lore,
+and the lore is a bug list.
+
+### What this does and does not change
+
+- The pre-registered card below **still stands** for anyone who wants to test framing 3 on
+  its own terms. Do not edit it.
+- Seam 7 **stays dropped**. Nothing here shows red's decisions are bad.
+- What is now open is a different question with its own evidence: **how many more of these
+  planner-geometry defects are there, and what is the cheapest way to find them?** His answer
+  was to point an agent at the API and let it complain. That is worth considering on its
+  merits, and it is not seam 7.
+
 ## The card, pre-registered 2026-08-19
 
 **Written before the feature exists, and not to be edited once it has run.** If it is the wrong

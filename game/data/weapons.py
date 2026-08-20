@@ -15,6 +15,7 @@ from dcs.weapons_data import weapon_ids
 from dcs.weapon_settings import WeaponSettings, has_settings, create_settings
 
 from game.dcs.aircrafttype import AircraftType
+from game.utils import Distance, nautical_miles
 from game.factions.faction import Faction
 
 PydcsWeapon = Any
@@ -95,6 +96,10 @@ class Weapon:
     @property
     def name(self) -> str:
         return self.pydcs_data["name"]
+
+    @property
+    def standoff_range(self) -> Optional[Distance]:
+        return self.weapon_group.standoff_range
 
     def __setstate__(self, state: dict[str, Any]) -> None:
         # Update any existing models with new data on load.
@@ -244,6 +249,13 @@ class WeaponGroup:
     #: The name of the fallback weapon group.
     fallback_name: Optional[str] = field(compare=False)
 
+    #: How far from the target this weapon can be released, when that is further
+    #: than the doctrine ingress distance. Authored ONLY for air-to-ground
+    #: stand-off weapons -- an air-to-air range here would drag an attack
+    #: package's ingress out for a missile that has nothing to do with the
+    #: target. Consumed by `PackageWaypoints.create`.
+    standoff_range: Optional[Distance] = field(compare=False, default=None)
+
     #: The specific weapons that belong to this weapon group.
     weapons: list[Weapon] = field(init=False, default_factory=list)
 
@@ -313,7 +325,14 @@ class WeaponGroup:
             fallback_name = data.get("fallback")
             if fallback_name:
                 links.append((name, fallback_name))
-            group = WeaponGroup(name, weapon_type, year, fallback_name)
+            authored_range = data.get("range")
+            group = WeaponGroup(
+                name,
+                weapon_type,
+                year,
+                fallback_name,
+                nautical_miles(authored_range) if authored_range is not None else None,
+            )
 
             target_overrides = data.get("target_overrides", {})
             object.__setattr__(group, "target_overrides", target_overrides)

@@ -143,6 +143,38 @@ reproduces immediately. `QWidget.layout()` is now typed `QLayout | None` (more a
 `QObject.findChildren` is now `Iterable[PlaceHolderType]` — an unbindable type variable, so a
 **worse** stub than 6.4's, needing the element type at the call site.
 
+**Stand-off ingress by weapon range** (his changelog; the failure is documented at length in
+his OPFOR playbook), taken 2026-08-19. The defect was verified live here first:
+`Doctrine.max_ingress_distance` is 45 nm on modern doctrine and `ipsolver.py` constrains the
+IP to `at_most()` it with **no weapon-range term**, so a stand-off shooter was dragged from
+its launch range into the defenses before its attack task existed. A weapon yaml may now
+declare `range:` in nautical miles; the package's ingress widens to its **shortest** shooter's
+reach, capped at 60% of the departure-to-target leg so the route cannot invert past the join.
+Features doc §8, checklist **B87**.
+
+Two things his write-up gets right that are worth repeating: the number is a **planning
+bound, not a promise** (DCS releases at its own doctrine distance — he measured ~140 nm for a
+YJ-12 and ~130 nm for a Kh-22 that reaches 270+), and **a short-legged flight in a stand-off
+package drags the whole package to its attack distance**, which is why the minimum sets the
+number rather than the maximum.
+
+### Checked, and it went the other way
+
+- **His formation-abort cascade does NOT explain our M1 zero-missile finding.** He observed a
+  14-flight anti-ship strike fire nothing after a single frigate's SM-6 — the DCS AI going
+  defensive and aborting as a formation. That is a genuine third mechanism we had not
+  documented, but our M1 case already has its own verified cause: escorts spawned
+  `OptROE=OpenFire` ("engage only designated targets") with the designating task attaching at
+  JOIN, so the pre-join legal-target set was **empty** and the MiG-29s were mechanically
+  unable to return fire. Fixed in 414Ret#581; checklist row A6. Our §81 naval finding is a
+  third, separate ROE mechanism (a DCS ship on `ReturnFire` mounts no missile defense at
+  all). Three different ways to die without shooting; do not merge them.
+- **"SEAD SEARCH and ESCORT SEARCH sit right on the target" does not describe our tree.** Our
+  ingress is bounded to 10–45 nm (`min_ingress_distance` / `max_ingress_distance`), not placed
+  on the target. His complaint and the stand-off one are the same defect seen from two ends —
+  the band is weapon-agnostic — and widening it by weapon range addresses both. His base may
+  differ; ours re-converged to upstream's planner on 2026-08-09.
+
 ### Already ours, no action
 
 shapely `contains_xy` · escort-leash `mist.DBs.groupsById` · LGB fuze (#919) ·
@@ -157,7 +189,6 @@ already #773, this is the observation half).
 |---|---|
 | Base capture zone radius (his #89) | Ours is `TRIGGER_RADIUS_CAPTURE = 3000`. He tested in-game that DCS ground AI engages T-72, BMP-2 and even an unarmed truck, but **never a ZU-23 emplacement** — so one surviving AD emplacement inside 3 km blocks a capture forever and dropped troops cannot clear it. He made it a setting, default 1000 m. |
 | IADS rebuild economy (his #97) | Comms/power/command buildings generate no income, so they have no repair price and stay rubble for the rest of the campaign. He priced them flat: 15M power, 10M command centre, 5M comms tower. Turns striking the network into an attrition loop. Sits beside §52. |
-| Weapon `range:` drives the stand-off ingress point | A package carrying a weapon whose range exceeds the doctrine ingress distance starts its run at that range instead of being dragged in. We have no equivalent. |
 
 ## Running the watch
 

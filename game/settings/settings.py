@@ -3919,6 +3919,12 @@ class Settings:
     # LUA Plugins system
     plugins: Dict[str, bool] = field(default_factory=dict)
 
+    #: §93 target families -> RegionPriority value. Carries no option metadata on
+    #: purpose: the auto settings dialog renders declared options, and this one is
+    #: owned by its own window. Absent family = NORMAL, so old saves need no
+    #: migration.
+    blue_target_family_priorities: Dict[str, str] = field(default_factory=dict)
+
     def start_type_for(self, flight_type: "FlightType", has_players: bool) -> StartType:
         """The start type a newly planned flight of this kind should default to.
 

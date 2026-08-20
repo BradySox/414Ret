@@ -9463,6 +9463,36 @@ untouched, which is what keeps this clear of §40's removed ROE zones. Red never
   flying somewhere else is a threat response, and muting it would send flights into a ring
   nothing was allowed to suppress. `detecting_air_defenses` is reactive for the same reason.
 
+### Two axes, added 2026-08-20
+
+§93 shipped as one axis: a priority per control point. It now has a second, and they
+multiply.
+
+| Axis | Set where | Answers |
+|---|---|---|
+| **Place** | the CP dialog, or a single target's own dialog | "not that base" / "not that factory" |
+| **Kind** | the **Target Priorities** toolbar window | "not factories, anywhere" |
+
+- **Per-target override** (`TheaterGroundObject.blue_region_priority`, `None` = inherit).
+  The combo carries five entries, because *Inherit* and *Normal* stop meaning the same
+  thing the moment the parent is `IGNORED`: an explicit value beats the control point in
+  **both** directions, so one target inside an ignored base can still be planned. Without
+  that the override could only ever subtract, which is half a feature.
+- **Target families** (`TARGET_FAMILIES`) group the 20 plannable categories into seven:
+  Air defense, Command and control, Infrastructure, Logistics, Armor, Naval, Missile
+  sites. Per-*category* control was rejected as twenty combo rows on one page — the fine
+  grain is the per-target override. `fob` is deliberately absent: that TGO is the FOB
+  structure and is never targetable. Stored on `Settings.blue_target_family_priorities`,
+  a plain field with no option metadata so the auto settings dialog never renders it.
+- **Composition:** `factor = place x kind`. An emphasized region (0.5) with deprioritized
+  factories (2.0) reads as 1.0 — they cancel, which is the intuitive answer.
+- **`IGNORED` is asymmetric on purpose.** A place-IGNORED is overridable per target; a
+  kind-IGNORED is absolute and nothing reopens it. "No factories" is theater-wide policy;
+  "not this base" is a judgement a single target can be carved out of.
+- **The window shows live counts.** A priority means nothing until you can see it moves
+  31 air-defence sites and one ship. Two tests pin the family table itself: every category
+  in it is a real one, and no category is in two families.
+
 ### Known v1 limits
 
 - Convoy/cargo-ship interdiction and front-line (CAS) tasking are unweighted by design —

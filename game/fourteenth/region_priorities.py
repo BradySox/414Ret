@@ -37,9 +37,79 @@ SORT_FACTOR: dict[RegionPriority, float] = {
 }
 
 
+#: Target categories grouped into the families the player actually thinks in.
+#: Per-CATEGORY control was rejected as 20 combo rows on one page; the fine grain
+#: lives on the per-target override instead, which is where "not THAT factory"
+#: belongs anyway. `fob` is absent on purpose -- that TGO is the FOB structure and
+#: is never targetable.
+TARGET_FAMILIES: dict[str, tuple[str, ...]] = {
+    "Air defense": ("aa", "ewr"),
+    "Command and control": ("commandcenter", "comms"),
+    "Infrastructure": (
+        "factory",
+        "power",
+        "oil",
+        "fuel",
+        "derrick",
+        "ware",
+        "village",
+        "allycamp",
+        "farp",
+        "ww2bunker",
+    ),
+    "Logistics": ("ammo", "motorpool"),
+    "Armor": ("armor",),
+    "Naval": ("ship", "coastal"),
+    "Missile sites": ("missile",),
+}
+
+_FAMILY_BY_CATEGORY: dict[str, str] = {
+    category: family
+    for family, categories in TARGET_FAMILIES.items()
+    for category in categories
+}
+
+
+def family_of(target: Any) -> Optional[str]:
+    """The target family *target* belongs to, or None if nothing governs it."""
+    return _FAMILY_BY_CATEGORY.get(getattr(target, "category", None) or "")
+
+
+def family_priority(family: str, settings: Optional["Settings"]) -> RegionPriority:
+    """The player's priority for one target family; NORMAL when unset."""
+    stored = getattr(settings, "blue_target_family_priorities", None) or {}
+    try:
+        return RegionPriority(stored.get(family, RegionPriority.NORMAL.value))
+    except ValueError:
+        return RegionPriority.NORMAL
+
+
 def priority_of(control_point: "ControlPoint") -> RegionPriority:
     """The CP's blue planning priority; NORMAL for pre-§93 saves."""
     return getattr(control_point, "_blue_region_priority", RegionPriority.NORMAL)
+
+
+def priority_for_target(target: Any) -> Optional[RegionPriority]:
+    """The place-priority governing *target*: its own override, else its CP's.
+
+    None means nothing governs it (front lines, convoys, downed pilots) and it is
+    never weighted -- a rescue must not rank lower for being in a quiet region.
+
+    The override deliberately beats the control point in BOTH directions, so a
+    single target inside an IGNORED base can be marked NORMAL and still be planned.
+    That is the whole point of a per-target setting; without it the override could
+    only ever subtract.
+    """
+    from game.theater.controlpoint import ControlPoint
+
+    if not isinstance(target, ControlPoint):
+        own = getattr(target, "_blue_region_priority", None)
+        if own is not None:
+            return own
+    owner = owning_control_point(target)
+    if owner is None:
+        return None
+    return priority_of(owner)
 
 
 def owning_control_point(target: Any) -> Optional["ControlPoint"]:
@@ -71,13 +141,24 @@ def planning_factor(
     """
     if not is_blue or not getattr(settings, "region_priorities", False):
         return 1.0
-    owner = owning_control_point(target)
-    if owner is None:
+
+    # Kind first, and it is absolute: an IGNORED family means no target of that
+    # kind anywhere, and no per-target override reopens it. Place is where the
+    # override lives.
+    family = family_of(target)
+    if family is not None:
+        kind = family_priority(family, settings)
+        if kind is RegionPriority.IGNORED:
+            return None
+    else:
+        kind = RegionPriority.NORMAL
+
+    place = priority_for_target(target)
+    if place is None:
         return 1.0
-    priority = priority_of(owner)
-    if priority is RegionPriority.IGNORED:
+    if place is RegionPriority.IGNORED:
         return None
-    return SORT_FACTOR[priority]
+    return SORT_FACTOR[place] * SORT_FACTOR[kind]
 
 
 def auto_planning_skips(target: Any, state: Any) -> bool:

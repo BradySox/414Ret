@@ -5608,6 +5608,20 @@ unflown.**
 > missing on enemy bases with the setting on, a rescue dropping because its region was
 > deprioritized, or any red package pattern change.
 
+**2026-08-20, second pass — the feature grew a second axis.** Two more things to check
+now, both on the same enemy target:
+
+- **Per-target override.** An enemy target's own dialog carries a five-entry priority combo
+  (Inherit plus the four). Pass: setting one target IGNORED at an otherwise NORMAL base
+  stops packages against that target only; and with the BASE set IGNORED, setting one
+  target back to NORMAL gets it planned again. That second half is the point of the
+  override — if it does not work, the feature only subtracts.
+- **Target Priorities window** (toolbar). Seven families with live enemy counts. Pass: a
+  family set IGNORED stops every package against that kind theater-wide, including at an
+  EMPHASIZED base and including a target explicitly marked NORMAL — kind is absolute.
+  Fail signature: a count of 0 beside a family the map plainly has, or a change that does
+  nothing because `region_priorities` is off (the window warns when it is).
+
 ### B87 — A stand-off shooter starts its run at its own launch range · §8 · ☐ UNTESTED
 
 **History:** built 2026-08-19 from juanjux's OPFOR playbook, which documents the failure in

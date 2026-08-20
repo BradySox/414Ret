@@ -149,8 +149,8 @@ own DM call. Later rungs read earlier ones; none requires a later one.
 
 | Rung | What | Absorbs | Gate | Falsifier (kills the rung) |
 |---|---|---|---|---|
-| **R0** | Inventory: map every campaign quantity to (readers, writers, cockpit path); the substrate spec falls out | — | none (a doc) | the inventory finds the quantities already coherent — then the substrate is a rename, do less |
-| **R1** | Consolidate stocks/flows into one owned `TheaterState` model, behavior-identical, test-locked | supply tiers, rung A, §56 reserve, §81/§63 magazines, procurement | DM call | any system still needs a private ledger after; or campaign balance shifts beyond test tolerance |
+| **R0** | Inventory: map every campaign quantity to (readers, writers, cockpit path); the substrate spec falls out | — | none (a doc) | **DONE 2026-08-20 — and the falsifier partially fired**: the core is already coherent (`414th-substrate-inventory-notes.md`); R1 shrinks to magazine consolidation + five named couplings |
+| **R1** | ~~Big consolidation~~ **reshaped by R0**: one persistence home for magazine stocks (§81 + §63, ready for SAM) + answer the inventory's open questions (delivery-vs-ISOLATED, income route-coupling) | §81/§63 magazines only | DM call | a third magazine channel ships anyway; or the couplings land as new private numbers |
 | **R2** | Supply scales combat effectiveness (BMS candidate 1, already scoped) | §90 rung C counting | **B65–B68 flown first** | cutting a real supply line produces no felt change in one turn |
 | **R3** | Munitions as substrate stocks: un-park SAM magazines onto R1; ground-munitions class if R2 held | `414th-sam-magazines-notes.md`, §81 pattern | DM call | scarcity never reaches a cockpit (rule 2 breach) |
 | **R4** | In-mission substrate ticking: front micro-moves + flow deliveries age the theater across a sortie | §9 TIC, §89, convoy movers | in-game pass owed by design | mission-length aging is imperceptible or double-counts the between-turn pass |
@@ -173,6 +173,6 @@ the long view disagree about emphasis, the long view's *audits* win and this not
 
 ## 8. Owed
 
-Nothing is in flight. R0 starts on a DM call. When any rung lands, this note gains that
+R0 is done — `414th-substrate-inventory-notes.md` (2026-08-20), verdict in its §4. When any rung lands, this note gains that
 rung's result and the features doc gains the section; until then this is direction, and the
 tombstone list in CLAUDE.md remains exactly as it stands.

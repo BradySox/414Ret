@@ -41,6 +41,14 @@ Never derive the state of the codebase from memory; always read the current file
    rule in its own words ("until scouted", "BDA lag", the removed setting name), not for the
    `§N`. Audited in `docs/dev/design/414th-doc-mass-notes.md`.
 
+   **Run the audit rather than the grep** — `python tools/audit_stale_docs.py` checks every
+   published file (README, `docs/wiki/`, `docs/campaigns/`) against a table of removed
+   features and exits non-zero on a hit. It is only as good as that table: **when you remove
+   a feature, add its `Removed` row in the same change.** The 2026-08-07 CSAR replacement is
+   why it exists — the design note was updated and five published pages, one of them
+   sidebar-linked and written in the present tense, went on briefing a package that no
+   longer existed for thirteen days.
+
 A push that moves code past its docs is a broken push.
 
 ---

@@ -9456,11 +9456,15 @@ untouched, which is what keeps this clear of §40's removed ROE zones. Red never
 - Setting: `region_priorities` (Campaign doctrine page, default OFF; Auto-planner behaviour
   group on the 414th Features page).
 
+- **SEAD/DEAD has two tiers and only one of them is gated** (fixed 2026-08-20). The
+  opportunistic tier in `DegradeIads` picks LORAD/MERAD sites off `enemy_air_defenses` — that
+  is a choice of where to work, so it honors `IGNORED`. The reactive tier
+  (`threatening_air_defenses`) is deliberately **not** gated: a SAM shooting at a package
+  flying somewhere else is a threat response, and muting it would send flights into a ring
+  nothing was allowed to suppress. `detecting_air_defenses` is reactive for the same reason.
+
 ### Known v1 limits
 
-- DEAD/SEAD target choice is not range-sorted today (`enemy_air_defenses` feeds
-  `theaterstate` unsorted), so air-defense tasking ignores region priority in v1 — an
-  `IGNORED` region can still draw SEAD. Recorded in the design note as deferred.
 - Convoy/cargo-ship interdiction and front-line (CAS) tasking are unweighted by design —
   they follow the ground war, not the strike map.
 - Friendly-CP priorities are accepted by the model but nothing reads them yet (defensive

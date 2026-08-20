@@ -11,6 +11,8 @@ from types import SimpleNamespace
 from game.commander.objectivefinder import ObjectiveFinder
 from game.commander.tasks.compound.attackbattlepositions import AttackBattlePositions
 from game.commander.tasks.compound.attackships import AttackShips
+from game.commander.tasks.compound.degradeiads import DegradeIads
+from game.data.groups import GroupTask
 from game.fourteenth.region_priorities import (
     RegionPriority,
     auto_planning_skips,
@@ -199,3 +201,31 @@ def test_an_ignored_cp_gets_neither_bai_nor_armed_recon() -> None:
     assert live in targets
     assert ignored not in targets
     assert normal in targets
+
+
+def test_an_ignored_regions_sam_is_not_hunted_but_still_answers_a_threat() -> None:
+    """DegradeIads has two tiers and only one of them chooses a region.
+
+    Flown 2026-08-20 on test.retribution: with Sukhumi-Babushara IGNORED, its MERAD
+    (CASTOR) was still offered as a DEAD target by the opportunistic tier. The
+    reactive tier stays ungated on purpose -- a SAM shooting at a package flying
+    somewhere else is a threat response, not a choice of where to work.
+    """
+    ignored, normal = _fake_cp(RegionPriority.IGNORED), _fake_cp(RegionPriority.NORMAL)
+    hidden, live = _target(ignored), _target(normal)
+    for sam in (hidden, live):
+        sam.task = GroupTask.MERAD
+        sam.max_threat_range = lambda: SimpleNamespace(meters=40_000.0)
+
+    state = _state(
+        True,
+        enemy_air_defenses=[hidden, live],
+        threatening_air_defenses=[],
+        detecting_air_defenses=[],
+        priority_cp=None,
+    )
+    assert _targets_of(DegradeIads().each_valid_method(state)) == [live]  # type: ignore[arg-type]
+
+    # ... but the same SAM, once it threatens a planned package, is serviced.
+    state.threatening_air_defenses = [hidden]
+    assert hidden in _targets_of(DegradeIads().each_valid_method(state))  # type: ignore[arg-type]

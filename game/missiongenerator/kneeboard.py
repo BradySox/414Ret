@@ -1887,6 +1887,7 @@ _CARD_IDENTITY_PRIORITY: Dict[UnitClass, int] = {
     UnitClass.SHORAD: 2,
     UnitClass.AAA: 3,
     UnitClass.SEARCH_RADAR: 6,  # Big Bird, Snow Drift, Tin Shield, Flat Face, Dog Ear
+    UnitClass.AAA_RADAR: 6,  # SON-9 Fire Can: ranks with the radars it was split from
     UnitClass.SPECIALIZED_RADAR: 6,  # Clam Shell
     UnitClass.EARLY_WARNING_RADAR: 7,  # 1L13 / 55G6 — only names a card when alone
 }

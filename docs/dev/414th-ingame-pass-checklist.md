@@ -5587,6 +5587,14 @@ turn on a wing with a small dedicated-jammer squadron and read the ATO before fl
 
 **History:** built 2026-08-20 — upstream #686's map-control idea reworked to BMS's PAK
 weighting (design note `414th-region-priorities-notes.md`).
+**2026-08-20 app pass: FAILED on IGNORED, fixed the same day.** Flown on
+`test.retribution` turn 2 (Caucasus — Vectron's Claw): a red carrier set IGNORED still drew
+an anti-ship package plus escort on the next turn. The dialog, the persistence and the
+factor were all correct — `planning_factor` returned the drop — but `AttackShips` and
+`AttackBattlePositions` read `TheaterState` lists nothing gated. Both now call
+`auto_planning_skips`; verified by replanning that same save, where the package
+disappears and no other package changes. **The EMPHASIZED/DEPRIORITIZED half is still
+unflown.**
 
 > The planner half is headless-verified (`tests/fourteenth/test_region_priorities.py`: the
 > factor reorders, IGNORED drops, rescues exempt, red never weighted). What only an app pass

@@ -14,7 +14,6 @@ from game.missiongenerator.interceptattrition import (
     fielded_qra_by_squadron,
     reconcile_intercept_losses,
 )
-from game.missiongenerator.reconluadata import TARPS_POD_RADIUS_NM
 from game.profiling import logged_duration
 from game.sitrep import Sitrep
 from game.squadrons.csarservice import CsarService
@@ -30,6 +29,11 @@ if TYPE_CHECKING:
     from ..game import Game
     from game.dcs.groundunittype import GroundUnitType
 
+
+#: How close a TARPS pass has to come to a hidden command post to find it. Was
+#: the recon plugin's pod radius until that plugin was removed (2026-08-20); the
+#: reveal below is the only thing that ever read it.
+TARPS_POD_RADIUS_NM = 3.0
 
 MINOR_DEFEAT_INFLUENCE = 0.1
 DEFEAT_INFLUENCE = 0.3

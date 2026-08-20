@@ -1208,9 +1208,11 @@ Needs a flight to confirm the fix end to end. The cheap version deliberately rep
 
 **Closed by the recon rework:** engaging a site is the only reveal now, so a recon
 overflight — player or AI — changes no campaign state and there is no BDA fog left for it
-to lift. The `recon` plugin still runs and still writes `tars_recon_captures`; nothing
-consumes it. Whether to delete `FlightType.TARPS` and the plugin is an open call, not a
-flight test. The pass description below is kept for reading old sessions.
+to lift. **The open call was answered 2026-08-20: the plugin is deleted, `FlightType.TARPS`
+stays.** It was still popping a "confirmed BDA" cue on landing for a mechanic that no longer
+existed, and scanning every red ground and ship unit to produce the number in it. TARPS keeps
+its own job — the command-post find, G40, which is planner-side Python. Nothing here needs a
+flight test. See features doc §12. The pass description below is kept for reading old sessions.
 
 **History:** **REBUILT 2026-08-05** `units-runway-generation-bf755e`, from the DM's "the system as a whole needs a fresh look". The old split — MOOSE `Ops.TARS` event callbacks for the player, a geometric overflight check for the AI — was two unrelated implementations of one question that could not agree by construction, which is why "is TARS broken" was unanswerable. **MOOSE `Ops.TARS` is cut.** All it contributed was a unit NAME scraped off a `Snapshot` whose schema was never confirmed (`snap.name or snap.unitName or snap.UnitName`, under a comment saying the one-time dump existed so the schema "can be confirmed in-game") — if all three guesses were wrong the player path recorded nothing, silently, forever, while the AI path kept working. **PASS:** fly a player TARPS sortie over a fogged enemy site, land, and confirm (a) the "RECON: … confirmed BDA on N target(s)" cue appears **only after touchdown**, not over the target, and (b) the site is un-fogged at debrief; repeat with an AI-flown recon flight and confirm identical behaviour. Then fly one pass HIGH (≥40,000 ft) and one at a normal recon altitude over comparable sites and confirm the high pass banks fewer targets. **FAIL signatures:** the cue firing over the target (the landing gate broke); a player sortie confirming nothing while an AI one works, or vice versa (the two paths have diverged again — the exact defect the rebuild removes); nothing ever confirming (check the `DCSRetribution|Recon armed for N recon flight(s)` line at load); or altitude/cloud making no difference at all. NOTE the deliberate asymmetry — the CAPTURE happens on overfly and is **not** gated on landing, because missions routinely end before flights land; only the cue waits. Emitter + runtime are covered by `game/missiongenerator/tests/test_reconluadata.py` (16) and `tests/lua/test_recon_runtime.py` (13), which pin the landing-held cue, the capture surviving a flight that never lands, and both degradation curves) (was ✗ REGRESSED 2026-08-05 — "G2 needs reworking"; was ☑ VERIFIED 2026-06-24 as the MOOSE TARS bridge
 - **Setup:** Fly an F-14 TARPS recon pass over enemy targets.
@@ -1908,9 +1910,10 @@ profile — drop any pass criterion about intelligence being banked.
   planner frag a Strike/DEAD package the RF-101B or RA-5C squadron is in range for (or hand-frag a
   TARPS package on either type). Generate + run the mission.
 - **Pass:** The recon bird spawns with the clean `Retribution TARPS` loadout (no offensive stores),
-  flies the recon ingress and **overflies** the target ~5 min behind the strikers, recovers, and the
-  photographed site's BDA confirms at debrief (same as the F-14 path, G2). With TARS on, captures
-  reach the debrief.
+  flies the recon ingress ~2 min behind the strikers, and **recovers with at least one aircraft
+  alive** — surviving is what the find is credited on since the plugin went (2026-08-20). If a
+  hidden enemy command post sits within 3 NM of the package target, it is revealed at debrief
+  (that is G40; there is no per-site BDA confirmation left to check here).
 - **Fail signature:** Squadron never gets tasked TARPS; the jet spawns with a wrong/empty loadout or
   bombing tasks; the AI flies an aborting attack pattern and never crosses the target; or the
   overflight produces no BDA confirmation.

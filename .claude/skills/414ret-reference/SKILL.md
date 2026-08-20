@@ -205,7 +205,7 @@ first, marked "(Recommended)", each with its trade-off.
 | Fork feature layer | `game/fourteenth/` — turn-model features, hooked from `finish_turn` / `initialize_turn` / `plan_missions` |
 | IADS engine | **MANTIS only.** Skynet is *removed* — the plugin, the selector and the dual-engine wiring are gone. The shared `IadsNetwork` data model stays |
 | Framework | **MOOSE.** MIST is retired behind a compat shim (`base/plugin.json`) |
-| Custom flight types | `TARPS` (photo-recon, feeds the `recon` plugin's BDA capture) · `JAMMING` (C-130J standoff EW) · `SCAR` (repurposed into the CSAR "Sandy" rescue escort — the armour-hunt scenario is deleted) · `COMBAT_SAR` · `ESCORT_JAMMER` |
+| Custom flight types | `TARPS` (photo-recon; finds hidden enemy command posts — the `recon` plugin was removed 2026-08-20) · `JAMMING` (C-130J standoff EW) · `SCAR` (repurposed into the CSAR "Sandy" rescue escort — the armour-hunt scenario is deleted) · `COMBAT_SAR` · `ESCORT_JAMMER` |
 | CI gates | `lint.yml` (black whole-tree + mypy game/tests) · `test.yml` (pytest incl. 3 out-of-tree dirs) · `lua-lint.yml` (blocking syntax gate) · `414th-latest.yml` (rolling pre-release) |
 | Release | rolling `latest` pre-release is *the* release; pinned tags are `v<X.Y.Z>-414th`. **Never `git push --tags`** |
 | Squadron script stack | separate repo: `tyfoultz/414th-Joint-Fighter-Group`, `bradys-changes` branch |

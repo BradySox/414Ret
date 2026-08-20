@@ -354,7 +354,6 @@ versions:
 - **C-130J EW/ISR** → `resources/plugins/c130j/` (`FlightType.JAMMING`). Supersedes the retired
   generic `ewrj` / "EW Jammer Script".
 - **QRA / AI_A2A_DISPATCHER** → `resources/plugins/intercept/` (per-squadron `intercept_reserve`)
-- **Recon** → `resources/plugins/recon/` (runtime engine for `FlightType.TARPS`)
 
 This repo is the engine-level side: capabilities planned and spawned by the campaign generator
 rather than hand-placed in the Mission Editor.

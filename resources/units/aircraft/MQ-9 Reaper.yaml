@@ -10,8 +10,7 @@ tasks:
   CAS: 10
   OCA/Aircraft: 10
   # Armed ISR is the Reaper's actual job (OIR flew it as the persistent eye first,
-  # shooter second): TARPS makes drone squadrons plannable recon and lets the
-  # airecon plugin feed AI overflights into the BDA/discovery ledger.
+  # shooter second); TARPS makes drone squadrons plannable recon.
   TARPS: 700
 secondary_tasks:
   - DEAD

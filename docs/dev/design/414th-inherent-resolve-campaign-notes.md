@@ -115,10 +115,10 @@ The user spotted the MQ-9/MQ-1 and asked to use them — they are the OIR signat
 close the ISR loop the concealment layer opened. Three coordinated changes:
 
 - **Unit data** (shared, all campaigns): `MQ-9 Reaper.yaml` + `RQ-1A Predator.yaml` gain
-  `TARPS: 700` (drones become plannable recon; the `airecon` plugin banks an AI drone's
-  overflight as confirmed BDA, so **the drones are what localize the concealed IED/HVT/cell
-  circles**) and honest `max_range` (800 / 400 NM — the 150 NM default would have gated them
-  out of Balad→Mosul). The Reaper keeps its background combat tasks (armed ISR); the
+  `TARPS: 700` (drones become plannable recon) and honest `max_range` (800 / 400 NM — the
+  150 NM default would have gated them out of Balad→Mosul). The BDA-capture half of this —
+  an AI drone overflight localizing the concealed circles — is **gone**: the decoy circles
+  went with §79 (2026-08-18) and the capture plugin with §12 (2026-08-20). The Reaper keeps its background combat tasks (armed ISR); the
   Predator's Hellfire tasks stay at zero priority (pure ISR bird).
 - **Faction**: `MQ-9 Reaper` + `RQ-1A Predator` added to `cjtf_oir_2016` `aircrafts` (the
   MQ-9 was previously only the faction's JTAC unit).

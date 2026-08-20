@@ -26,62 +26,41 @@ how to arrange the condition. Keep it short — a card nobody finishes is a card
 
 ## On the card
 
-### 1 · A downed pilot turns up MIA, then evades — `G29`
-
-**Try:** in an ordinary ATO jet — **never a dynamic slot**, those can never go MIA by design —
-eject deep over enemy ground, end the mission with no rescue, then pass the turn. **~10 min.**
-
-- **Pass:** next mission that pilot reads **MIA** in three places — the SITREP band, the
-  squadron roster, and an **orange marker** on the map at his last known position — and he
-  re-spawns as an evader there, with a fresh snatch race against him.
-- **Fail:** the pilot is simply **dead** and no MIA entry ever appears anywhere. That is the
-  signature worth catching, because it is silent: the whole §21 rescue economy would be doing
-  nothing and nothing would say so.
-- **Why it's here:** the Lua half is already proven live (2026-07-11 — the no-asset path armed
-  instead of bailing, and `combat_sar_survivors` was written). What has **never** been seen is
-  the Python turn-boundary arc: MIA flip → SITREP / roster / map → next-mission respawn. That
-  half is unit-tested and unflown, and every consequence of it is player-facing.
-- **One trap, already paid for once:** the 2026-07-11 run *did* leave a survivor entry, but it
-  belonged to a **DCS dynamic-slot** jet, which `record_downed_pilots` correctly discards. If
-  you eject from a dynamic slot this test proves nothing and looks like a failure.
-
-### 2 · A full deck still parks 16 jets with the decorations on — `B25` follow-on
-
-**Try:** load a Nimitz-hull campaign (Stennis / CVN-71 / 72 / 73 / 75), frag a **cold** carrier
-mission with at least 16 deck starts, and count the jets that actually make it onto the deck.
-Then flip `carrier_deck_decorations` **off**, regenerate the same turn, and count again.
-**~15 min**, most of it generation.
-
-- **Pass:** both runs park the same number. The Supercarrier guide documents **16 parking
-  spots + 4 catapults**, so a healthy deck fills 16.
-
-> **Test 9 (2026-08-18) — strong partial, the control run is still owed.** A Syria turn parked
-> **24 jets on CVN-72** (8 BARCAP + 16 BAI, all `TakeOffParkingHot`) plus 8 on LHA-1, with
-> `carrier_deck_decorations` **on**, and every one launched — the six-pack last-resort path was
-> never used. That is well past the 16 spots this card worries about, so "the decorations-on run
-> parks fewer" is hard to sustain. What is still missing is the **decorations-off control run on
-> the same turn**, which is the actual comparison. Row stays open for that.
-- **Fail:** the decorations-on run parks fewer, or a jet reports *"your flight is delayed to
-  start"* while the control run does not. Either means a street static is standing on a spawn
-  spot.
-- **Why it's here:** `KNOWN_PARKING_SPOTS` holds **11** spots. ED documents **16**. On the
-  starboard side our table runs out at `x = −35.5` (aft end of the six-pack row) and does not
-  resume until `x = −98.7` (El-3 shoulder) — a **63.2 m stretch with no entry** — and **52 of
-  the 67** street-gear placements sit inside it. Every variant's guard-tested clearance
-  (12.7–14.7 m) is measured to `(−35.5, 34.0)`, the *edge* of that gap; nothing inside it is
-  tested, because nothing inside it is in the table. The manual's parking diagram puts
-  **spots 5 and 6** in that region — forward of the island on the starboard deck edge, with
-  spot 5 drawn E-2-sized.
-- **Why B25 does not already cover it:** B25 closed 2026-08-06 on the DM's "Passing" verdict,
-  which answered the *appearance* symptoms — gear on the deck, nothing floating, nothing out of
-  place. The parking-capacity half of its criterion was never run. This card is that half and
-  only that half; it does not reopen B25.
-- **One trap:** a blocked spot is **silent**. §72's own history is that late-activated groups
-  spawn *into* statics rather than skipping them, so the failure can look like a normal deck
-  rather than an error. Count, do not eyeball.
+*(Empty as of 2026-08-20. Both seed rows are closed — see Done. Add the next contrived
+condition here the moment one is identified; an empty card is fine, a stale one is not.)*
 
 ---
 
 ## Done
 
-*(Nothing yet — first card, seeded 2026-08-07.)*
+### 1 · A downed pilot turns up MIA, then evades — `G29` — **OFF THE CARD 2026-08-20**
+
+Closed twice over, and it should have come off the card the first time:
+
+- **Verified 2026-07-17** at scale on a fresh Scenic Route turn 1 — 10 survivor groups, 12
+  snatch parties, `combat_sar_survivors: 8` flushed clean, the player’s own pilot banked as an
+  evader. MIA banking and ledger hygiene both confirmed. That is the arc this card was
+  written to see, and it was already seen three weeks before the card was created.
+- **Retired 2026-08-07** when §21/§15 were removed and replaced by upstream #929. Nothing this
+  row describes still exists — no snatch race, no POW hold, no `combat_sar_survivors`. There
+  is nothing left to fly. Upstream’s CSAR needs its own rows (B71–B75, G33–G38).
+
+The card was created on 2026-08-07 — the same day the feature was deleted — citing a four-week
+stall as the reason it existed. The stall was real; the row was simply already answered and
+about to be moot. **The lesson is the card’s own:** check the checklist row before seeding a
+fly card from it, or the card briefs a test nobody can run.
+
+### 2 · A full deck still parks 16 jets with the decorations on — `B25` follow-on — **CLOSED 2026-08-20**
+
+DM verdict: B25 is verified. The capacity half is answered by its own strongest evidence —
+the 2026-08-18 Syria turn parked **24 jets on CVN-72** (8 BARCAP + 16 BAI, all
+`TakeOffParkingHot`) plus 8 on LHA-1 with `carrier_deck_decorations` **on**, and every one
+launched, with the six-pack last-resort path never used. 24 is well past the 16 spots this
+row worried about, so "the decorations-on run parks fewer" cannot be sustained.
+
+The decorations-off control run was never run and now will not be. **What survives, as a note
+and not a test:** `KNOWN_PARKING_SPOTS` holds 11 of the Supercarrier guide’s 16 spots, with a
+63.2 m starboard stretch carrying 52 of the 67 street placements and no table entry. That did
+not cost anything measurable across 24 spawns. If a "your flight is delayed to start" ever
+turns up on a dressed deck, re-measure that gap first — do not re-seat the gear on the raw
+campaign A offsets, which is a separate accepted drift.

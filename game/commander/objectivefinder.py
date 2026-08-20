@@ -285,15 +285,17 @@ class ObjectiveFinder:
             raise RuntimeError("Found no friendly control points. You probably lost.")
         return farthest
 
-    def _aewc_hosting_anchor(self, *, forward: bool) -> ControlPoint | None:
-        """The unthreatened land CP hosting a usable AWACS, rear-most or forward-most.
+    def _support_hosting_anchor(
+        self, task: FlightType, *, forward: bool
+    ) -> ControlPoint | None:
+        """The unthreatened land CP hosting a usable `task` squadron, rear or forward.
 
-        Shared by both AEW&C anchors. The orbit is laid out relative to whatever
-        this returns, and the squadron that flies it is chosen separately, so an
-        anchor picked without asking where the wing's AWACS actually live sends the
-        aircraft across the theater to orbit beside a field it did not come from.
-        None when no unthreatened field hosts one -- each caller then falls back to
-        its own stock pick, so an all-carrier wing still anchors somewhere sane.
+        Shared by the AEW&C and tanker anchors. A support orbit is laid out relative
+        to whatever this returns, and the squadron that flies it is chosen
+        separately, so an anchor picked without asking where those aircraft actually
+        live sends them across the theater to orbit beside a field they did not come
+        from. None when no unthreatened field hosts one -- each caller then falls
+        back to its own stock pick, so an all-carrier wing still anchors sanely.
         """
         threat_zones = self.game.threat_zone_for(self.is_player.opponent)
         best: ControlPoint | None = None
@@ -304,7 +306,7 @@ class ObjectiveFinder:
             if threat_zones.threatened(cp.position):
                 continue
             if not any(
-                squadron.capable_of(FlightType.AEWC) and squadron.untasked_aircraft > 0
+                squadron.capable_of(task) and squadron.untasked_aircraft > 0
                 for squadron in cp.squadrons
             ):
                 continue
@@ -313,6 +315,23 @@ class ObjectiveFinder:
             if best is None or closer:
                 best, best_distance = cp, distance
         return best
+
+    def _aewc_hosting_anchor(self, *, forward: bool) -> ControlPoint | None:
+        return self._support_hosting_anchor(FlightType.AEWC, forward=forward)
+
+    def tanker_land_anchor(self) -> ControlPoint:
+        """The land tanker station: the most forward field that hosts a tanker.
+
+        The stock pick is the CP nearest the enemy and asks nothing about basing,
+        so on a flown Caucasus turn the station landed on a sector HQ with the
+        KC-135 **103 NM** away and a carrier A-6E dragged **226 NM** to reach it
+        (test.retribution turn 2, 2026-08-19). Forward like the stock pick, but
+        among the fields that can actually put a tanker there; stock pick when
+        none can.
+        """
+        return self._support_hosting_anchor(FlightType.REFUELING, forward=True) or (
+            self.closest_friendly_control_point()
+        )
 
     def aewc_land_anchor(self) -> ControlPoint:
         """The rear-safe land AEW&C anchor, biased to a field that hosts an AWACS.

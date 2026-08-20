@@ -172,13 +172,19 @@ def test_no_matching_basing_falls_back_to_generic_ranking() -> None:
 # farthest from threats, the forward pick the one nearest.
 
 
-def _host_cp(name: str, threat_distance: float, hosts_awacs: bool = True) -> Any:
+def _host_cp(
+    name: str,
+    threat_distance: float,
+    hosts_awacs: bool = True,
+    hosts: Any = None,
+) -> Any:
     from game.ato.flighttype import FlightType
 
+    capability = hosts if hosts is not None else FlightType.AEWC
     squadrons = (
         [
             SimpleNamespace(
-                capable_of=lambda task: task is FlightType.AEWC, untasked_aircraft=2
+                capable_of=lambda task: task is capability, untasked_aircraft=2
             )
         ]
         if hosts_awacs
@@ -238,3 +244,32 @@ def test_no_hosting_field_returns_none_so_each_caller_falls_back() -> None:
     finder = _objective_finder([bare])
     assert finder._aewc_hosting_anchor(forward=True) is None
     assert finder._aewc_hosting_anchor(forward=False) is None
+
+
+# ---- tanker stations (2026-08-19) ---------------------------------------------
+
+
+def test_every_carrier_gets_its_own_tanker_station_plus_one_ashore() -> None:
+    from game.commander.theaterstate import _refueling_targets
+
+    boat, spare, ashore = (
+        _cp("CVN", carrier=True),
+        _cp("LHA", carrier=True),
+        _cp("Base"),
+    )
+    finder = SimpleNamespace(
+        friendly_control_points=lambda: iter([boat, spare, ashore]),
+        tanker_land_anchor=lambda: ashore,
+    )
+    assert _refueling_targets(finder) == [boat, spare, ashore]  # type: ignore[arg-type]
+
+
+def test_the_tanker_land_anchor_takes_a_tanker_hosting_field() -> None:
+    # Test 9 follow-up: the stock pick was the CP nearest the enemy and hosted no
+    # tanker, leaving the KC-135 151 NM and the carrier A-6E 173 NM from station.
+    from game.ato.flighttype import FlightType
+
+    bare = _host_cp("Bare", 10_000, hosts_awacs=False)
+    host = _host_cp("TankerHome", 300_000, hosts=FlightType.REFUELING)
+    finder = _objective_finder([bare, host])
+    assert finder._support_hosting_anchor(FlightType.REFUELING, forward=True) is host

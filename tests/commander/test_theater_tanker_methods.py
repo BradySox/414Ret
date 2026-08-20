@@ -39,10 +39,39 @@ def _state(*receiver_methods: AirRefuelType | None) -> Any:
     )
 
 
-def _proposals(*receiver_methods: AirRefuelType | None) -> list[Any]:
-    task = PlanRefueling(MagicMock())
+def _tanker_sqn(name: str, *dispenses: AirRefuelType, carrier: bool = False) -> Any:
+    """A tanker squadron. `carrier` puts it on a boat, which the land station skips."""
+    return SimpleNamespace(
+        aircraft=SimpleNamespace(
+            name=name, air_refuel_type=None, tanker_refuel_types=frozenset(dispenses)
+        ),
+        location=SimpleNamespace(is_carrier=carrier, is_fleet=carrier),
+        untasked_aircraft=2,
+        capable_of=lambda task: task is FlightType.REFUELING,
+    )
+
+
+def _land_station() -> Any:
+    """A land tanker station. MagicMock would read as a carrier on every getattr."""
+    return SimpleNamespace(is_carrier=False, is_fleet=False)
+
+
+def _proposals(
+    *receiver_methods: AirRefuelType | None, tankers: list[Any] | None = None
+) -> list[Any]:
+    task = PlanRefueling(_land_station())
     task.needed_refuel_methods = PlanRefueling._methods_the_wing_needs(
         _state(*receiver_methods)
+    )
+    # A land station only fans out over methods a LAND tanker can serve, so the
+    # wing has to carry one of each unless a test says otherwise.
+    if tankers is None:
+        tankers = [
+            _tanker_sqn("KC-135", AirRefuelType.BOOM),
+            _tanker_sqn("KC-130", AirRefuelType.PROBE),
+        ]
+    task._air_wing = SimpleNamespace(  # type: ignore[assignment]
+        iter_squadrons=lambda: iter(tankers)
     )
     task.propose_flights()
     return [f for f in task.flights if f.task is FlightType.REFUELING]
@@ -159,3 +188,51 @@ def test_an_explicit_tanker_constraint_beats_the_receivers_derived_one() -> None
         FlightType.REFUELING, 1, refuel_methods=frozenset({AirRefuelType.PROBE})
     )
     assert builder._required_refuel_methods(stated) == frozenset({AirRefuelType.PROBE})
+
+
+# ---- per-carrier stations (2026-08-19) ----------------------------------------
+#
+# The station list was a single element: the CP nearest the enemy, chosen with no
+# regard for basing. On a flown Caucasus turn that put both tankers on a sector HQ
+# with the KC-135 151 NM away and the carrier's A-6E 173 NM off its boat. Each
+# carrier now gets its own station, and the land station goes to a field that
+# hosts a tanker.
+
+
+def test_a_carrier_station_plans_one_tanker_from_that_boat() -> None:
+    boat = SimpleNamespace(is_carrier=True, is_fleet=True)
+    own = _tanker_sqn("A-6E", AirRefuelType.PROBE, carrier=True)
+    own.location = boat  # the squadron IS on this station's boat
+    ashore = _tanker_sqn("KC-135", AirRefuelType.BOOM)
+    task = PlanRefueling(boat)  # type: ignore[arg-type]
+    task.needed_refuel_methods = [AirRefuelType.BOOM, AirRefuelType.PROBE]
+    task._air_wing = SimpleNamespace(  # type: ignore[assignment]
+        iter_squadrons=lambda: iter([own, ashore])
+    )
+    task.propose_flights()
+
+    tankers = [f for f in task.flights if f.task is FlightType.REFUELING]
+    assert len(tankers) == 1, "a boat covers its own station, no per-method fan-out"
+    assert tankers[0].preferred_type is own.aircraft
+
+
+def test_the_land_station_skips_a_method_only_a_boat_can_serve() -> None:
+    # The regression this guards: the land station's probe slot reached for the
+    # carrier's A-6E and dragged it 314 NM off its boat, which is worse than the
+    # defect being fixed -- and pointless, because the boat's own station covers
+    # those receivers.
+    tankers = [
+        _tanker_sqn("KC-135", AirRefuelType.BOOM),
+        _tanker_sqn("A-6E", AirRefuelType.PROBE, carrier=True),
+    ]
+    planned = _proposals(
+        AirRefuelType.BOOM, AirRefuelType.BOOM, AirRefuelType.PROBE, tankers=tankers
+    )
+    assert len(planned) == 1
+    assert planned[0].refuel_methods is None
+
+
+def test_the_land_station_still_fans_out_when_both_are_ashore() -> None:
+    planned = _proposals(AirRefuelType.BOOM, AirRefuelType.BOOM, AirRefuelType.PROBE)
+    assert len(planned) == 2
+    assert planned[1].refuel_methods == frozenset({AirRefuelType.PROBE})

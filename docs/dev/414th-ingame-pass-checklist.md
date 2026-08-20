@@ -129,6 +129,7 @@ stress it · `✗` fail signature reproduced in-game.
 | B80 | String plugin options can actually be edited | §14 | ☐ |
 | B81 | SEAD-evasion scoot distance is a campaign setting | MANTIS | ☐ |
 | B82 | The AWACS orbits at a field it can actually fly from | planner shape | ☐ |
+| B88 | Tankers orbit at their own base, and each carrier gets one | planner shape | ☐ |
 | B83 | ATMOS-X live weather: the turn flies a real observation | ATMOS-X live weather | ☐ |
 | B86 | Retribution survives DCS taking over the GPU (Qt 6.8) | app / Qt | ☐ |
 | B87 | A stand-off shooter starts its run at its own launch range | §8 | ☐ |
@@ -5388,6 +5389,42 @@ given a TOT 5 minutes out from a base 29 minutes away; the mission shipped
 - **Pass:** the flight leaves its hold and flies the mission. It will be late; that is expected.
 - **Fail signature:** the flight orbits the hold point for the whole mission. Check the
   generated `.miz` for any negative `stopCondition.time` — there should be none.
+
+### B88 — Tankers orbit at their own base, and each carrier gets one · planner shape · ☐ UNTESTED
+
+**History:** built 2026-08-19, the tanker half of the B82 defect.
+
+> `refueling_targets` was a single element — `closest_friendly_control_point()`, the CP
+> nearest the enemy — with no basing awareness and, unlike AEW&C, **no front/no-front
+> branching at all**. Measured on the flown save (`test.retribution` turn 2, Caucasus, which
+> HAS a front line): both tankers stationed on **UNOMIG Sector HQ**, a sector HQ, with the
+> KC-135 **151 NM** away and the carrier's A-6E **173 NM** off its own boat.
+>
+> Now one station per friendly carrier plus one land station, the shape AEW&C already used.
+> The land anchor prefers the most forward field that hosts a tanker, via the same
+> `_support_hosting_anchor` #899 added. Re-planned on that save both transits go to
+> **0.0 NM**, and the generated mission puts BOOM receivers (B-52H, F-22A, F-15C, F-16CM,
+> F-15E) on the KC-135 and PROBE receivers (F/A-18C, EA-18G, F-14B) on the A-6E.
+
+> **One trap found while building it, kept as a test.** Giving the land station its own
+> per-method fan-out made it reach for the carrier's A-6E for the probe slot and drag it
+> **314 NM** off the boat — worse than the defect being fixed. The land station now only
+> fans out over methods a **land** tanker can serve; the boat's own station covers the rest.
+
+Play a turn on a wing with both a land tanker base and a carrier.
+
+- **Pass:** one tanker package per carrier plus one ashore; each tanker orbits near the base
+  it launched from; boom receivers route to a boom tanker and probe to a probe tanker.
+- **Fail signatures:**
+  1. **A tanker crossing the theater again.** The land anchor fell back to the stock pick —
+     check whether any unthreatened field hosts a tanker squadron with untasked aircraft.
+  2. **A carrier tanker at the land station.** The land fan-out's basing filter is not
+     holding; that is the 314 NM trap above.
+  3. **More tanker packages than you want.** One per carrier is the design. On a two-boat
+     wing that is three packages, and their escorts are threat-gated (#879) so an
+     unthreatened station should not consume fighters.
+  4. **Probe receivers with no tanker.** The wing owns no probe tanker ashore and has no
+     carrier; the method is skipped rather than filled badly.
 
 ### B71 — Several survivors come out on one lift · CSAR (#929 Phase 5) · ☐ UNTESTED
 

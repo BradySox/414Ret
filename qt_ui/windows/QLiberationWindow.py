@@ -51,6 +51,7 @@ from qt_ui.windows.preferences.QLiberationPreferencesWindow import (
 )
 from qt_ui.windows.settings.QSettingsWindow import QSettingsWindow
 from qt_ui.windows.stats.QStatsWindow import QStatsWindow
+from qt_ui.windows.whatsnew.QWhatsNewWindow import QWhatsNewWindow
 
 
 class QLiberationWindow(QMainWindow):
@@ -230,6 +231,12 @@ class QLiberationWindow(QMainWindow):
             self.showCustomKneeboardsDialog
         )
 
+        # Deliberately outside enable_game_actions: this describes the build, not
+        # the campaign, so it is readable before a save is open.
+        self.openWhatsNewAction = QAction("What's New", self)
+        self.openWhatsNewAction.setIcon(CONST.ICONS["What's New"])
+        self.openWhatsNewAction.triggered.connect(self.showWhatsNewDialog)
+
         self.importTemplatesAction = QAction("Import Layouts", self)
         self.importTemplatesAction.triggered.connect(self.import_templates)
 
@@ -269,6 +276,8 @@ class QLiberationWindow(QMainWindow):
         self.tool_bar.addAction(self.openStatsAction)
         self.tool_bar.addAction(self.openNotesAction)
         self.tool_bar.addAction(self.openCustomKneeboardsAction)
+        self.tool_bar.addSeparator()
+        self.tool_bar.addAction(self.openWhatsNewAction)
 
     def initMenuBar(self):
         self.menu = self.menuBar()
@@ -624,6 +633,10 @@ class QLiberationWindow(QMainWindow):
     def showNotesDialog(self):
         self.notes_dialog = QNotesWindow(self.game)
         self.notes_dialog.show()
+
+    def showWhatsNewDialog(self) -> None:
+        self.whats_new_dialog = QWhatsNewWindow()
+        self.whats_new_dialog.show()
 
     def showCustomKneeboardsDialog(self):
         self.kneeboards_dialog = QCustomKneeboardsWindow(self.game)

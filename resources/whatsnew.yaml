@@ -1,0 +1,131 @@
+# What's New — the recent player-visible changes, newest first.
+#
+# Surfaced by the "What's New" toolbar button (docs/dev/414th-features.md §92).
+# The window shows the first `limit` entries, so the file is authored newest-first
+# and the oldest rows simply fall off the bottom of the window.
+#
+# Add an entry when a player-visible change lands. `watch` is the point of the
+# file and the reason it is not just the changelog: it says what to actually look
+# for in the next mission. `row` links the in-game-pass checklist row that owns
+# the verdict, when one exists.
+#
+# Entries are re-sorted by date on load, and the sort is stable, so several
+# changes sharing a date keep the order written here.
+
+entries:
+  - date: 2026-08-19
+    title: The app stops freezing when DCS takes the GPU
+    change: >-
+      Qt moved from 6.4 to 6.8, which draws the embedded map through Direct3D 11
+      instead of desktop OpenGL. The old path could deadlock inside the graphics
+      driver while a fullscreen DCS held the card.
+    watch: >-
+      Open Retribution, then launch DCS. The app should stay responsive, and a
+      dialog opened over the map should no longer hang it.
+    pr: "905"
+
+  - date: 2026-08-19
+    title: Warships stop emptying every anti-ship tube in one mission
+    change: >-
+      A ship group now holds fire after a set number of anti-ship missiles per
+      mission (default 6) and stays quiet for the rest of the day. Its campaign
+      magazine is unchanged, and a group under attack still shoots back.
+    watch: >-
+      Red's cruiser should fire a salvo and go silent instead of ripple-firing its
+      whole loadout in half a minute. The log says "salvo complete (6 this
+      mission)".
+    row: B39
+    pr: "906"
+
+  - date: 2026-08-19
+    title: Carrier Strike Group 8 sails a cruiser screen
+    change: >-
+      Three Ticonderogas and one Arleigh Burke, instead of four Burkes and one
+      Ticonderoga. Only that one named US layout changed; the mixed carrier and
+      LHA screens, and every other navy, generate as before.
+    watch: >-
+      On a turn that rolls the CSG-8 layout, count the escorts ringing the
+      carrier.
+    pr: "906"
+
+  - date: 2026-08-19
+    title: A dead comms or power node keeps degrading its SAMs
+    change: >-
+      The IADS dropped any node whose units were all dead, so from the turn after
+      you killed it the dependency vanished and the SAMs it fed went back to full
+      capability.
+    watch: >-
+      Kill a comms or power node, pass the turn, and the SAMs behind it should
+      still be degraded in the next mission rather than fighting fresh.
+    pr: "904"
+
+  - date: 2026-08-19
+    title: ATMOS-X live weather — the turn flies a real observation
+    change: >-
+      With the ATMOS-X cloud pack selected, "Use ATMOS-X live weather" replaces the
+      generated weather with a real one. The turn display, the kneeboard QNH and
+      winds, the active runway and the carrier's course into wind all read it.
+    watch: >-
+      Turn it on and check the kneeboard QNH and winds match the turn display.
+      Any fetch failure should log and leave the generated weather in place.
+    row: B83
+    pr: "902"
+
+  - date: 2026-08-18
+    title: The AWACS orbits at a field it can actually fly from
+    change: >-
+      The orbit is anchored on a field that actually hosts an AWACS, whether or not
+      that field is near the front.
+    watch: >-
+      Check the AEW&C racetrack sits within reach of a field with the aircraft on
+      it, rather than over an empty forward strip.
+    row: B82
+    pr: "899"
+
+  - date: 2026-08-18
+    title: An un-engaged site stops leaking its condition on the map
+    change: >-
+      Every enemy air-defence site you had not engaged was drawing a green "fully
+      capable" bar, a regression from removing the BDA lag. The symbol hides
+      condition again until you earn it.
+    watch: >-
+      With "Reveal fog of war" off, an enemy site you have never touched should
+      carry no condition bar at all.
+    row: G39
+    pr: "898"
+
+  - date: 2026-08-18
+    title: Engaging a site reveals it completely; recon no longer does
+    change: >-
+      A site is revealed by putting ordnance on it, or by any ground-attack sortie
+      that reaches it, and is then known permanently, damage included. Recon's one
+      job is finding the hidden enemy command posts.
+    watch: >-
+      Strike a site and its composition and damage should be fully readable
+      afterwards. Fly recon over a site nobody has engaged and it should stay
+      hidden.
+    row: G39
+    pr: "890"
+
+  - date: 2026-08-18
+    title: Automatic fire missions stop naming targets you cannot see
+    change: >-
+      Auto cruise-missile raids and the long-range carrier strike both picked from
+      ground truth with no fog gate, so the first raid of a campaign could go
+      straight at a command post you had not found, and reveal it permanently.
+    watch: >-
+      With the fog on, an automatic raid should never name a site that is absent
+      from your own map.
+    row: G40
+    pr: "893"
+
+  - date: 2026-08-18
+    title: DTC cartridge push times are Zulu, not the mission clock
+    change: >-
+      The cartridge wrote mission-local times where the jet's avionics run Zulu, so
+      the steerpoint times disagreed with the DED and HUD by the map's offset.
+    watch: >-
+      Load a cartridge and compare a steerpoint's time of arrival against System
+      Time on the DED or HUD. They should agree.
+    row: B28
+    pr: "895"

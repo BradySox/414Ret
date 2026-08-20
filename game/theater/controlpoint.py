@@ -182,38 +182,48 @@ def motorpools_inside_capture_zone(
     return violations
 
 
-def motorpools_nearer_an_enemy(
+#: How close an object has to be to a hostile control point before the placement
+#: warning fires. Judgement call, not a measured constant: it is the band where a
+#: group reads as "sitting on that base", well inside its local ground area. Above
+#: it, a nearer-hostile object is just a marker in open country between two fields.
+BESIDE_AN_ENEMY_BASE = 25_000
+
+
+def ground_objects_beside_an_enemy_base(
     control_points: Iterable[ControlPoint],
 ) -> list[MotorpoolCaptureViolation]:
-    """Every motorpool whose NEAREST control point is a hostile one.
+    """Every ground object parked on a hostile control point's doorstep.
 
-    A motorpool takes its coalition from the CP the marker bound it to, so one
-    authored beside the wrong field spawns enemy armor on someone else's doorstep.
-    Found on `operation_vectrons_claw` 2026-08-20: AARDWOLF is 75 km from its RED
-    parent and 7.3 km from a BLUE FOB.
+    A marker takes its coalition from the control point the campaign loader bound it
+    to, and `MizCampaignLoader.objective_info` binds by influence ZONE: a point inside
+    an authored zone joins that CP, and a point inside none falls back to the closest
+    CP *that has no zone at all*. So a marker dropped just outside a zoned base is not
+    adopted by it -- it is thrown to whatever unzoned field is closest, however far.
 
-    Nearest-is-hostile, not merely far-from-parent: a motorpool 100 km from its own
-    field but ringed by friendly ones is odd authoring, not a problem, and flagging
-    it trains the reader to dismiss the warning (SKUNK, same campaign).
+    On `operation_vectrons_claw` that puts red armor 3.4 km from blue Vaziani (WARTHOG,
+    bound 329.5 km away to Mineralnye Vody) and a red motorpool 7.3 km from the blue
+    UNOMIG FOB (AARDWOLF, bound 75.0 km away). Both fell through the zone fallback.
+
+    Two conditions, because either alone cries wolf: the object must be nearer a
+    hostile CP than its own owner (the mis-binding signature), and within
+    `BESIDE_AN_ENEMY_BASE` of it (the part a player actually sees).
     """
     points = list(control_points)
     violations: list[MotorpoolCaptureViolation] = []
     for cp in points:
         for tgo in cp.ground_objects:
-            if not isinstance(tgo, MotorpoolGroundObject):
+            own = tgo.position.distance_to_point(cp.position)
+            hostile = [p for p in points if not p.is_friendly_to(cp)]
+            if not hostile:
                 continue
             nearest = min(
-                points, key=lambda p: tgo.position.distance_to_point(p.position)
+                hostile, key=lambda p: tgo.position.distance_to_point(p.position)
             )
-            if nearest.is_friendly_to(cp):
-                continue
-            violations.append(
-                MotorpoolCaptureViolation(
-                    nearest.name,
-                    tgo.name,
-                    meters(tgo.position.distance_to_point(nearest.position)),
+            distance = tgo.position.distance_to_point(nearest.position)
+            if distance < own and distance < BESIDE_AN_ENEMY_BASE:
+                violations.append(
+                    MotorpoolCaptureViolation(nearest.name, tgo.name, meters(distance))
                 )
-            )
     return violations
 
 

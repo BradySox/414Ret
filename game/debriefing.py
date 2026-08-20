@@ -148,11 +148,6 @@ class StateData:
     #: Per-squadron QRA survivor counts reported by the intercept plugin.
     intercept_survivors: dict[str, int]
 
-    #: DCS unit names photographed by TARS recon sorties this turn. Drives the
-    #: BDA fog-of-war reveal (confirm exactly what was seen). Empty when the TARS
-    #: plugin is disabled.
-    tars_recon_captures: List[str]
-
     #: ``(id, x, z, radius_m, charges)`` per air-dropped minefield the §57 plugin managed
     #: this mission -- persisted fields (by their Python id) + newly-laid fields (id 0), each
     #: with its remaining charges. ``reconcile_minefields`` carries the undisturbed fields
@@ -217,23 +212,6 @@ class StateData:
                 return {}
             return {str(k): int(v) for k, v in raw.items()}
 
-        def parse_tars_captures(raw: Any) -> List[str]:
-            # The TARS bridge appends {unit=, life=, type=} tables; the Lua JSON
-            # encoder serializes them as a list of dicts (or [] when none). Pull
-            # the photographed DCS unit names defensively, tolerating either dict
-            # entries or bare strings.
-            if not isinstance(raw, list):
-                return []
-            names: List[str] = []
-            for entry in raw:
-                if isinstance(entry, dict):
-                    unit = entry.get("unit")
-                    if isinstance(unit, str) and unit:
-                        names.append(unit)
-                elif isinstance(entry, str) and entry:
-                    names.append(entry)
-            return names
-
         killed_aircraft = []
         killed_ground_units = []
 
@@ -256,8 +234,6 @@ class StateData:
         intercept_survivors = parse_intercept_survivors(
             data.get("intercept_survivors", {})
         )
-
-        tars_recon_captures = parse_tars_captures(data.get("tars_recon_captures", []))
 
         def parse_minefields_state(
             raw: Any,
@@ -328,7 +304,6 @@ class StateData:
             destroyed_statics=data.get("destroyed_objects_positions", []),
             base_capture_events=data.get("base_capture_events", []),
             intercept_survivors=intercept_survivors,
-            tars_recon_captures=tars_recon_captures,
             minefields_state=minefields_state,
             cruise_missiles_state=cruise_missiles_state,
             naval_magazines_state=naval_magazines_state,

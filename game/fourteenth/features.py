@@ -81,7 +81,12 @@ FEATURES: tuple[Feature, ...] = (
         11,
         retired=True,
     ),
-    Feature("recon_engine", "Recon engine (TARPS + drone BDA)", 12, plugin_id="recon"),
+    Feature(
+        "recon_engine",
+        "Recon engine (TARPS + drone BDA)",
+        12,
+        retired=True,
+    ),
     Feature("flight_control_atc", "Flight Control ATC", 13, retired=True),
     Feature("plugin_options_ui", "Plugin Options UI", 14),
     Feature(

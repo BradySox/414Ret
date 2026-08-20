@@ -195,7 +195,7 @@ the whole point of the file was to tell you not to read it. **They are in git hi
 | the three `414th-campaign-phases-*` notes | the phase classifier and ROE zone layer | §40, 2026-07-21 |
 | `414th-vietnam-political-will-roe-notes.md`, `414th-will-generalization-notes.md`, `414th-war-economy-notes.md` | the will and war economies | §48/§53/§54, 2026-07-21 |
 | `414th-red-intent-notes.md` | Red Intent adaptive posture | §55, 2026-07-21 |
-| `414th-tars-recon-notes.md` | the MOOSE Ops.TARS recon engine | cut 2026-08-05 |
+| `414th-tars-recon-notes.md` | the MOOSE Ops.TARS recon engine | cut 2026-08-05; its `recon` successor removed 2026-08-20 (§12) |
 | `414th-airwar-planner-consolidation-notes.md` | the planner consolidation | reverted 2026-08-09 |
 | `414th-khe-sanh-campaign-notes.md` | the standalone Khe Sanh campaign | merged into Yankee Station |
 
@@ -238,7 +238,7 @@ into the hard-constraints list or the surviving design note *before* deleting.
 ## Key Architecture Patterns
 
 **Planner / Lua split.** Python plans and spawns the mission (flight plans, ROE, templates);
-runtime behavior (EW, ISR, recon scoring, frontline firefights) is driven by the Lua
+runtime behavior (EW, ISR, frontline firefights) is driven by the Lua
 plugins. When a feature has both, the Python side sets up and the Lua side executes — don't
 move runtime logic into the planner or vice versa.
 
@@ -360,7 +360,6 @@ linked design note.
 8. **Robustness / crash fixes** — helo CFIT, carrier-recovery stagger, convoy runway spawns, support-flight radio collisions, locked speed/time route rejection.
 9. **TIC — Troops In Contact** — scripted frontline firefights with per-stance movement and ambient fire.
 10. **CurrentHill Iran assets pack** — Shahed-136, IRGCN FAC, `[CH] Iran 2020` faction.
-12. **Recon engine** — the `recon` plugin: one capture rule for player and AI, shaped by sensor, altitude and cloud.
 14. **Plugin Options UI** — `descriptionInUI` field plus label and default polish.
 16. **Settings QOL audit** — dead-field cleanup and the `AiRadioBehavior` enum consolidation.
 17. **Auto-planner target unpredictability** — opt-in per-side reordering of opportunistic offensive targets only.
@@ -433,6 +432,7 @@ Kept numbered so old notes and saves stay readable. Details and rationale in the
 | § | Feature | Status |
 |---|---|---|
 | 11 | Native DCS DTC cartridge export (v1) | Retired 2026-06-26 — superseded by §74 |
+| 12 | Recon engine (TARPS + drone BDA) | Removed 2026-08-20 — the §3 rework left its captures with no consumer |
 | 13 | Flight Control ATC | Retired 2026-06-26 |
 | 20 | Drop-spawn map unit placement | Removed 2026-08-02 |
 | 15 | SCAR — RESCAP "Sandy" rescue escort | Removed 2026-08-07 — see §21 |

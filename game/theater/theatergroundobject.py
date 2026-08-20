@@ -62,13 +62,12 @@ NAME_BY_CATEGORY = {
 }
 
 
-# The only search radar that legitimately belongs to a gun-AAA site: the SON-9
-# "Fire Can" that directs a KS-19 battery (the KS-19 preset lists it explicitly).
-# Any other search radar on an AAA site is the pre-2026-06 generation bug where
-# the generic `AAA Site` layout's radar slot defaulted to `fill: true` and pulled
-# in a random faction search radar (sometimes a SAM site's), so it is stripped
-# from existing saves on load. Matched by variant name so a DCS-id rename can't
-# silently re-let the SAM radars through.
+# Any search radar on a gun-AAA site is the pre-2026-06 generation bug where the
+# generic layout's radar slot defaulted to `fill: true` and pulled in a random
+# faction search radar (sometimes a SAM site's), so it is stripped on load.
+# The two Fire Can variants are now `AAARadar`, not `SearchRadar`, so this list
+# only still matters for a unit that reaches here without being re-derived from
+# resources; keeping it costs nothing and a rename cannot re-let SAM radars in.
 _AAA_FIRE_CONTROL_RADAR_VARIANTS = frozenset(
     {"AAA Fire Can SON-9", "AAA SON-9 Fire Can"}
 )

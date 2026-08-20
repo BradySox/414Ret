@@ -26,7 +26,7 @@ from dcs.mapping import Point
 
 from game.ato.flighttype import FlightType
 from game.debriefing import AirLosses, Debriefing, GroundLosses
-from game.missiongenerator.reconluadata import TARPS_POD_RADIUS_NM
+from game.sim.missionresultsprocessor import TARPS_POD_RADIUS_NM
 from game.sim.gameupdateevents import GameUpdateEvents
 from game.sim.missionresultsprocessor import MissionResultsProcessor
 from game.theater import Player

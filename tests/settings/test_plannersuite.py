@@ -1,6 +1,12 @@
 from datetime import timedelta
 
-from game.settings import Settings, apply_planner_suite, detect_planner_suite
+from game.settings import (
+    DIFFICULTY_REALISM_PAGE,
+    PLANNER_SUITE_PAGE,
+    Settings,
+    apply_planner_suite,
+    detect_planner_suite,
+)
 from game.settings.plannersuite import PLANNER_SUITE_VALUES
 
 
@@ -40,3 +46,13 @@ def test_suite_fields_exist_on_settings() -> None:
     settings = Settings()
     for name in PLANNER_SUITE_VALUES:
         assert hasattr(settings, name), name
+
+
+def test_the_preset_bars_are_bound_to_pages_that_exist() -> None:
+    """A bar is prepended by page NAME, so a name nothing resolves to renders no
+    bar at all -- no error, no widget. The planner bar shipped that way for eleven
+    days pointing at a "Campaign Doctrine" page the dialog never builds.
+    """
+    pages = set(Settings.pages())
+    assert PLANNER_SUITE_PAGE in pages
+    assert DIFFICULTY_REALISM_PAGE in pages

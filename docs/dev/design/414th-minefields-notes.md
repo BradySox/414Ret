@@ -138,7 +138,7 @@ name → push `{wpn, pos, vel, shooter, shotTime}` → `timer.scheduleFunction` 
 
 A normal work-order plugin (no `LuaPlugin` late-init needed — it reads no other plugin's config
 at file scope). Loaded after `dcs_retribution.lua` (so the base globals exist; guard them anyway
-with `x = x or {}` for load-order safety, per `airecon-config.lua:27`).
+with `x = x or {}` for load-order safety, as `intercept-config.lua:21` does).
 
 **Inputs (read at start):**
 - `dcsRetribution.minefields` — persisted fields from prior turns, each

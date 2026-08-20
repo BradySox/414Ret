@@ -82,7 +82,7 @@ ELINT tracks as sliders.
 
 ## The plugins
 
-All 30, in `plugins.json` load order. "Inert unless" means the plugin ships in every mission
+All 29, in `plugins.json` load order. "Inert unless" means the plugin ships in every mission
 but does nothing until the mission generator emits its data — turning the matching campaign
 setting off costs nothing at runtime.
 
@@ -108,7 +108,6 @@ setting off costs nothing at runtime.
 | `rednet` | on | The audible, DF-able enemy radio net (§70 COMINT). Inert unless the setting is on. |
 | `bigeye` | off | BigEye EWR — text threat reports to pilots, prioritised by contact danger. |
 | `lotatc` | off | Exports anti-air sites to LotATC so GCI controllers see the SAM/AAA picture. |
-| `recon` | on | Recon overflight capture for TARPS flights and drones. **See the note below.** |
 
 ### Ground war and the front line
 
@@ -141,12 +140,10 @@ setting off costs nothing at runtime.
 | `splashdamage3` | on | The squadron's locked, softened Splash Damage 3.4.2 build. No user-adjustable options by design. |
 | `aisleep` | on | Ground AI sleep — distant garrisons stop thinking and wake on approach. Inert unless the performance setting is on. |
 
-> **`recon` does not currently affect the campaign.** Its capture ledger is written,
-> serialised and parsed, but nothing reads the result: the recon-to-BDA bridge was removed on
-> 2026-08-18 when engaging a site became the only reveal. Recon's surviving job — finding
-> hidden enemy command posts — is pure Python and does not use this plugin. Its settings-page
-> description and its six tunables still describe the removed bridge. See
-> [Fog of War and Reconnaissance](Fog-of-War-and-Reconnaissance) for what recon actually does.
+> **There is no recon plugin.** It was removed on 2026-08-20 along with its capture ledger:
+> the 2026-08-18 rework made engaging a site the only reveal, so nothing read a capture.
+> Recon's surviving job — finding hidden enemy command posts — is planner-side Python. See
+> [Fog of War and Reconnaissance](Fog-of-War-and-Reconnaissance).
 
 > Civilian background air traffic is **no longer a Lua plugin** — it was reimplemented
 > as Python-planned, pydcs-spawned air traffic (`game/missiongenerator/civiliantraffic.py`),

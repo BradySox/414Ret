@@ -3,7 +3,8 @@
 Status: **candidate A is BUILT** (2026-08-18, same day — see
 [414th-features.md §3](../414th-features.md), "Recon's one remaining job"). B and C remain
 scoping only. Written immediately after the §3 recon rework left `FlightType.TARPS` and the
-`recon` plugin mechanically inert.
+`recon` plugin mechanically inert. **The plugin was deleted 2026-08-20** (§12); neither B
+nor C would have used its capture ledger, so nothing here is blocked by that.
 
 ## The constraint any new job must satisfy
 
@@ -127,5 +128,6 @@ one most likely to feel like a lag to a player even though it technically is not
 ## See also
 
 - [414th-features.md §3](../414th-features.md) — the reveal rule this has to live under
-- [414th-features.md §12](../414th-features.md) — the recon engine, currently inert
-- `414th-tars-recon-notes.md` — deleted 2026-08-20, recoverable from git before `5db34150f`. Do not author against
+- [414th-features.md §12](../414th-features.md) — the recon engine, removed 2026-08-20
+- `414th-tars-recon-notes.md` — deleted 2026-08-20, recoverable from git before
+  `5db34150f`. Do not author against

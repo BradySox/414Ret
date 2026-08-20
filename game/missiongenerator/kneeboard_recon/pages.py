@@ -1450,6 +1450,7 @@ _THREAT_PRIORITY: dict[UnitClass, int] = {
     UnitClass.TRACK_RADAR: 1,
     UnitClass.SEARCH_TRACK_RADAR: 1,
     UnitClass.SEARCH_RADAR: 1,
+    UnitClass.AAA_RADAR: 1,  # split out of SEARCH_RADAR; keep the rank it had
     UnitClass.SPECIALIZED_RADAR: 1,
     UnitClass.LAUNCHER: 2,
     UnitClass.TELAR: 2,

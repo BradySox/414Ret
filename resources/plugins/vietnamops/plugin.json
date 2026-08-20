@@ -128,8 +128,9 @@
             "defaultValue": 600
         },
         {
-            "nameInUI": "FAC(A): forward-air-controller aircraft DCS type",
+            "nameInUI": "FAC(A): forward-air-controller aircraft type",
             "mnemonic": "facType",
+            "choices": ["Bronco-OV-10A", "vwv_o-1"],
             "defaultValue": "Bronco-OV-10A"
         },
         {

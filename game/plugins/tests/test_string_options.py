@@ -4,7 +4,8 @@ The settings page picked its widget from the option's default type and handled
 bool and int/float only, so a string option rendered a label beside an empty
 cell -- visible, and uneditable. The fork ships seven of them (a taxi-card
 frequency, four comma-separated weapon-pattern lists, the FAC(A) aircraft type
-and the red-scramble spawn mode).
+and the red-scramble spawn mode). Two of the seven name one exact thing and are
+dropdowns; the pattern lists stay free text because they are plural by design.
 
 `choices` is what separates the two shapes: a closed set becomes a dropdown, and
 everything else stays free text, because a pattern list has no enumerable values.
@@ -104,3 +105,20 @@ def test_the_red_scramble_spawn_mode_offers_the_three_modes_its_lua_reads() -> N
     )
     takeoff = next(o for o in data["specificOptions"] if o["mnemonic"] == "takeoff")
     assert takeoff["choices"] == ["air", "hot", "runway"]
+
+
+def test_the_fac_aircraft_choices_are_types_dcs_actually_has() -> None:
+    # facType is compared against u:getTypeName() in vietnamops.lua, so a mod that
+    # renames its id leaves the dropdown offering an aircraft that can never be
+    # found -- and nothing errors. The LvS-103 layouts lost their launchers this way.
+    import game  # noqa: F401  -- the pack registration order the app uses
+    import pydcs_extensions  # noqa: F401
+    from dcs.planes import plane_map
+
+    data = json.loads(
+        (PLUGINS / "vietnamops" / "plugin.json").read_text(encoding="utf-8-sig")
+    )
+    fac = next(o for o in data["specificOptions"] if o["mnemonic"] == "facType")
+    assert fac["choices"], "the FAC aircraft must stay a dropdown, not free text"
+    for choice in fac["choices"]:
+        assert choice in plane_map, choice

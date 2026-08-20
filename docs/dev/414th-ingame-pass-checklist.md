@@ -5288,10 +5288,16 @@ Open **Settings → Plugins** and find the five plugins with string options: `br
 (ground frequency), `minefields`, `navalmagazines`, `vietnamops` (two pattern lists plus the
 FAC type) and `redscramble` (spawn mode).
 
-- **Pass:** every string option has a control beside its label. `redscramble`'s spawn mode is
-  a dropdown offering exactly air / hot / runway; the rest are text fields carrying their
-  current value. An edit survives closing and reopening the dialog, and reaches the generated
-  mission's Lua config table.
+**2026-08-20 app pass, partial:** `vietnamops`' two options render as editable text fields
+carrying their defaults, so the empty-cell bug is cleared there. The other five are still
+unchecked. Same day, on the DM's call, the FAC(A) aircraft became a **dropdown** — an
+exact DCS type name is not something to retype, and a typo silently meant no FAC.
+
+- **Pass:** every string option has a control beside its label. Two are dropdowns:
+  `redscramble`'s spawn mode offers exactly air / hot / runway, and `vietnamops`' FAC(A)
+  aircraft offers `Bronco-OV-10A` and `vwv_o-1`. The remaining five are text fields
+  carrying their current value. An edit survives closing and reopening the dialog, and
+  reaches the generated mission's Lua config table.
 - **Fail signatures:**
   1. **Still an empty cell.** The option's `defaultValue` is not a string in `plugin.json` —
      check the type, not the widget.

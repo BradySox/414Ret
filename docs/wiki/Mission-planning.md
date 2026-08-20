@@ -2,7 +2,7 @@
      page (same section order: Mission timing, Rendezvous planning, Unlimited fuel,
      Task types), reworked with the consolidated TOT-by-task offset table and one
      standardized per-task template grouped by family, and extended with the fork's
-     player task types (TARPS, SCAR, Combat SAR, JAMMING). -->
+     player task types (TARPS, CSAR, JAMMING). -->
 
 # Mission planning
 
@@ -84,10 +84,9 @@ coverage is established before the strikers arrive. The full set of rules, in on
 | CAS | Loiter / search start | 0 (patrol begins at TOT) | — |
 | Armed Recon | Search start | 0 (patrol begins at TOT) | — |
 | BAI | Weapons on target | 0 (package TOT) | Against a stationary armour group. |
-| SCAR | On-station / orbit start | 0 (patrol-start) | "Sandy" rescue escort over a downed pilot; see [SCAR](SCAR). |
 | TARPS | On-station / photo run start | 0 (patrol-start) | Player photo recon; see [Fog-of-War-and-Reconnaissance](Fog-of-War-and-Reconnaissance). |
 | JAMMING | Standoff orbit start | 0 (orbit begins at TOT) | C-130J EW/ISR racetrack outside the threat zone; see [Electronic-Warfare-and-ISR](Electronic-Warfare-and-ISR). |
-| Combat SAR | On-station / orbit start | 0 (patrol-start) | Player pilot-rescue; see [Combat-SAR](Combat-SAR). |
+| CSAR | On-station / orbit start | 0 (patrol-start) | Downed-pilot rescue; see [Combat-SAR](Combat-SAR). |
 | Air Assault | Insert sequencing | n/a (helo plan) | Requires CTLD plugin. |
 | Airlift | Transfer sequencing | n/a | CTLD creates pickup/dropoff zones for player flights only. |
 
@@ -135,8 +134,8 @@ Each task below uses the same field order so the page is scannable:
   see [Air-Defense-and-the-Air-War](Air-Defense-and-the-Air-War).
 
 Tasks are grouped by family: Air-to-Air, Suppression (SEAD/DEAD), Air-to-Ground strike,
-Battlefield support, and Support & logistics. The fork's player task types — SCAR, TARPS,
-Combat SAR, and JAMMING — appear in their families with a link to their dedicated page.
+Battlefield support, and Support & logistics. The fork's player task types — TARPS and
+JAMMING — appear in their families with a link to their dedicated page.
 
 ### Air-to-Air
 
@@ -350,23 +349,6 @@ planning is aimed at the sites that actually warrant a deliberate package. See
   BAI remains the normal planner task for conventional anti-armour work.
 - **AI limitations:** Best against a stationary group; same visual-acquisition caveats apply.
 
-#### SCAR ("Sandy" rescue escort)
-
-- **Purpose:** Escort a combat-SAR rescue — protect the downed pilot, suppress the threats around
-  them, and walk the rescue helo (Jolly Green) in. The "Sandy" role.
-- **Valid targets:** Whatever threatens the survivor — AAA, MANPADs, and any enemy snatch party
-  closing to **capture** the pilot. Worked off the King's cues.
-- **Typical airframes:** **A-10C / AH-64D** (the loiter-and-fight escort airframes).
-- **Package role:** Part of the combat-SAR package (King + Jolly Green + 2–4 Sandy); coordination
-  is player-run off the King.
-- **TOT meaning:** Start of the on-station/orbit window (patrol-start).
-- **Player technique:** Hold with the King and Jolly, suppress around the survivor, and clear the
-  helo's run-in. Kill the snatch party before it reaches the pilot — let it dwell and the pilot is
-  captured. See [SCAR](SCAR) and [Combat SAR](Combat-SAR).
-- **AI limitations:** The AI fields a Sandy only as part of the combat-SAR standing alert
-  (`auto_combat_sar`, default off). *(SCAR was repurposed from a retired armor-hunt task; the
-  conventional anti-armour task is **BAI**, which is unchanged.)*
-
 #### Armed Recon
 
 - **Purpose:** Mop up stragglers / engage targets of opportunity — and hunt **moving supply
@@ -420,17 +402,18 @@ planning is aimed at the sites that actually warrant a deliberate package. See
 
 - **Purpose:** Recover a downed pilot and return them to a friendly field.
 - **Valid targets:** A downed (ejected) friendly pilot near the front line.
-- **Package role:** Lead of the combat-SAR package. A CH-47 (Jolly Green) holds near the FLOT as
-  the rescuer; a C-130 flies the HC-130 "King" overhead; 2–4 [Sandy](SCAR) escorts protect the
-  survivor.
-- **Typical airframes:** CH-47 (rescuer) + C-130 (King) + A-10C/AH-64D (Sandy); helicopter recovery.
+- **Package role:** Lead. Planned as a pair by default; `csar_single_flight` sends one.
+- **Typical airframes:** Helicopters only — CH-47D/F, CH-53E, Mi-8MT, SH-60B, UH-1H, UH-60A/L. A
+  fixed-wing aircraft cannot fly it (the rescue lands at an unprepared site, and the DCS AI
+  `Land` task is helicopter-only).
 - **TOT meaning:** Start of the on-station / orbit window (patrol-start).
-- **Player technique:** Home on the survivor's air-tracking TACAN, use the F10 survivor-locator
-  readout, pick the pilot up, and deliver them to any friendly field — the campaign then
-  **spares the aviator** (you still lose the jet). Watch for an enemy snatch party racing to
-  **capture** the survivor.
-- **AI limitations:** Player-flown, with an optional AI standing alert (`auto_combat_sar`,
-  default off) that fields King + Jolly + 1 Sandy. See [Combat-SAR](Combat-SAR).
+- **Player technique:** Tune the briefed **260 kHz ADF** beacon before you start — it is the same
+  channel for every survivor and it is on your kneeboard. Home the needle in, land or hold a low
+  hover to hoist, and deliver to any friendly field or FARP. The campaign then **spares the
+  aviator** (you still lose the jet).
+- **AI limitations:** Auto-planned by default, up to `max_csar_flights` (2) per side per turn.
+  The task plans no escort of its own — frag cover yourself if the survivor is inside threat
+  rings. See [Combat-SAR](Combat-SAR).
 
 #### Air Assault
 
@@ -461,8 +444,7 @@ planning is aimed at the sites that actually warrant a deliberate package. See
   around your packages (QRA, BARCAP layering, support orbits, SEAD/DEAD reachability, IADS).
 - [Fog-of-War-and-Reconnaissance](Fog-of-War-and-Reconnaissance) — recon fog, TARPS, and the
   overview reveal toggle.
-- [SCAR](SCAR) — the "Sandy" rescue-escort role in the combat-SAR package.
-- [Combat-SAR](Combat-SAR) — the downed-pilot rescue loop.
+- [Combat-SAR](Combat-SAR) — the downed-pilot rescue.
 - [Electronic-Warfare-and-ISR](Electronic-Warfare-and-ISR) — the C-130J JAMMING platform.
 - [Getting-Started](Getting-Started) — first-campaign walkthrough.
 - [Air-Wing-Configuration](Air-Wing-Configuration) — squadron and reserve setup.

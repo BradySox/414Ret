@@ -260,21 +260,32 @@ def is_historical(path: Path) -> bool:
     return any(banner in head for banner in BANNERS)
 
 
-def paragraphs(text: str) -> list[tuple[int, str]]:
-    """Split into blank-line-separated blocks, each with its first line number."""
-    blocks: list[tuple[int, str]] = []
+def paragraphs(text: str) -> list[tuple[int, str, str]]:
+    """Blank-line-separated blocks: (first line number, block, enclosing heading).
+
+    The heading travels with the block because a section that announces the removal
+    in its own title -- "## Skynet was removed" -- covers every paragraph under it,
+    and a heading is itself a blank-line-separated block. Without this, the body of
+    a correctly-titled removal section reads as a live claim.
+    """
+    blocks: list[tuple[int, str, str]] = []
     start = 1
+    heading = ""
     buffer: list[str] = []
+
     for number, line in enumerate(text.splitlines(), 1):
         if line.strip():
             if not buffer:
                 start = number
             buffer.append(line)
-        elif buffer:
-            blocks.append((start, "\n".join(buffer)))
+            continue
+        if buffer:
+            blocks.append((start, "\n".join(buffer), heading))
+            if len(buffer) == 1 and buffer[0].lstrip().startswith("#"):
+                heading = buffer[0]
             buffer = []
     if buffer:
-        blocks.append((start, "\n".join(buffer)))
+        blocks.append((start, "\n".join(buffer), heading))
     return blocks
 
 
@@ -285,14 +296,14 @@ def scan(paths: Iterable[Path]) -> list[tuple[Removed, Path, int, str]]:
         allowed = REMOVAL_WORDS + entry.allow
         for path in paths:
             text = path.read_text(encoding="utf-8", errors="replace")
-            for start, block in paragraphs(text):
+            for start, block, heading in paragraphs(text):
                 match = matcher.search(block)
                 if not match:
                     continue
                 # Emphasis splits a phrase mid-way ("is **not** shipped"), and a
                 # wrapped line splits it across a newline. Flatten both before
                 # looking for the words that say this is a removal notice.
-                prose = re.sub(r"[*_`]+", "", block).replace("\n", " ")
+                prose = re.sub(r"[*_`]+", "", heading + " " + block).replace("\n", " ")
                 if any(token in prose for token in allowed):
                     continue
                 offset = block[: match.start()].count("\n")

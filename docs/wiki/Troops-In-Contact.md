@@ -54,4 +54,4 @@ real-AI detectability.
 
 ## See also
 
-- [Frontline-Stances-and-Movement](The-Ground-War)
+- [The-Ground-War](The-Ground-War)

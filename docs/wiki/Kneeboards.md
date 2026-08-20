@@ -136,19 +136,12 @@ All five live on the **Kneeboards** settings page.
 
 ---
 
-## Retired — do not expect these
+## Not in the deck
 
-The 2026-07-13 "back to basics" pass removed a large amount of fork-specific kneeboard machinery in
-favour of upstream's page set. If you are reading an older note or an old screenshot:
-
-| Retired | What happened to it |
-|---|---|
-| **Cover page** (§30) | Deleted. The deck opens on Mission Info. New content folds into an existing stock page instead of adding one. |
-| **Compact 3–4 page deck** (§25) | Deleted, with `compact_kneeboard`. The folding machinery was the fork's biggest divergence in `kneeboard.py`. |
-| **Brief Sheet** (§31) | Deleted — every row duplicated a stock page. The BLUF, the code words and the colour palette are what survived. |
-| **Fuel Ladder page** | Folded into the flight plan as the **Fuel** column + RTB margin call-out. |
-| **Brevity card** | Deleted except its code words, now on Support Info. |
-| **Phase & ROE band** | Removed 2026-07-21 with the campaign-phase and ROE features themselves. |
+The cover page, compact deck and Brief Sheet were removed in the 2026-07-13 pass.
+The deck opens on Mission Info; there is no cover page, no compact 3-4 page mode, and no separate
+Brief Sheet or brevity card. Fuel is the **Fuel** column on the flight plan plus its RTB margin
+call-out, not its own page. Code words live on Support Info.
 
 ---
 

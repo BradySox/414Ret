@@ -73,18 +73,12 @@ flag.
 
 ---
 
-## What happened to Skynet
+## Skynet was removed
 
-Earlier builds shipped two engines — MANTIS and Skynet-IADS — and let you pick one per campaign.
-**Skynet has been removed.** The `skynetiads` plugin, the `iads_engine` selector, and all the
-dual-engine wiring are gone; **MANTIS is the sole engine**. The shared IADS *data model* that both
-engines used (the Python `IadsNetwork` / `IadsRole` / `IadsProperties` graph, including the
-`Skynet*` back-compat names) stays — MANTIS consumes it — so nothing about how campaigns describe
-their air defenses changed.
-
-**Existing saves still load.** A campaign created back when Skynet was an option opens fine; the
-old per-save engine pin is migrated out automatically, and the campaign simply runs on MANTIS from
-then on. You do not need to do anything.
+MANTIS is the only engine and there is nothing to choose. The shared IADS data model both
+engines used stays — MANTIS consumes it, including the `Skynet*` back-compat names — so nothing
+about how campaigns describe their air defences changed. Old saves load and migrate their engine
+pin out automatically.
 
 ---
 

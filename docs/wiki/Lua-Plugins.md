@@ -46,14 +46,14 @@ now caught by an automated test (`game/plugins/tests/test_late_init.py`) at CI t
 of the feature **silently never starting** in-game. (This replaces the former
 `_inject_*_script()` "scramble pattern".)
 
-## The framework: MOOSE (MIST is retired)
+## The framework: MOOSE
 
-The in-mission framework is **MOOSE** (a bundled `Moose.lua`; some plugins vendor classes
-verbatim). **MIST is retired** — the MIST-to-MOOSE consolidation is complete. The `base`
-plugin's `"mist"` work order now loads `resources/plugins/base/mist_moose_shim.lua`, a
-vanilla-DCS compatibility shim implementing only the `mist.*` symbols the remaining
-consumers (CTLD, the intercept glue, the core script, the COIN and mobile-missile
-runtimes, and the upstream land/water relocate scripts) actually call, so the old `mist_4_5_126.lua` no longer loads. Write new runtime logic against MOOSE.
+Write runtime logic against **MOOSE** (bundled `Moose.lua`; some plugins vendor classes verbatim).
+
+**MIST is retired.** The `base` plugin's `"mist"` work order loads
+`resources/plugins/base/mist_moose_shim.lua`, a vanilla-DCS shim implementing only the `mist.*`
+symbols the remaining consumers actually call — CTLD, the intercept glue, the core script, the
+COIN and mobile-missile runtimes, and the upstream land/water relocate scripts.
 
 MOOSE API docs:
 https://flightcontrol-master.github.io/MOOSE_DOCS_DEVELOP/Documentation/index.html

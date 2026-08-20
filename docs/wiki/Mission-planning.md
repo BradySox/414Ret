@@ -1,9 +1,3 @@
-<!-- 414Ret wiki: Mission planning. Modeled on the upstream DCS Retribution wiki
-     page (same section order: Mission timing, Rendezvous planning, Unlimited fuel,
-     Task types), reworked with the consolidated TOT-by-task offset table and one
-     standardized per-task template grouped by family, and extended with the fork's
-     player task types (TARPS, CSAR, JAMMING). -->
-
 # Mission planning
 
 A **package** is a group of one or more flights all working toward the same goal, arriving at
@@ -117,7 +111,7 @@ fuel-starvation during landing.
 
 ## Task types
 
-Each task below uses the same field order so the page is scannable:
+Every task below uses the same fields:
 
 - **Purpose** — one line.
 - **Valid targets** — what you can frag it against.
@@ -132,10 +126,6 @@ Each task below uses the same field order so the page is scannable:
   (air-defence tasks). 414Ret runs **MANTIS** for every campaign (the sole engine; Skynet was
   removed). It shuts radars down reactively, so a HARM is less likely to score an emitter kill —
   see [Air-Defense-and-the-Air-War](Air-Defense-and-the-Air-War).
-
-Tasks are grouped by family: Air-to-Air, Suppression (SEAD/DEAD), Air-to-Ground strike,
-Battlefield support, and Support & logistics. The fork's player task types — TARPS and
-JAMMING — appear in their families with a link to their dedicated page.
 
 ### Air-to-Air
 
@@ -447,4 +437,4 @@ planning is aimed at the sites that actually warrant a deliberate package. See
 - [Combat-SAR](Combat-SAR) — the downed-pilot rescue.
 - [Electronic-Warfare-and-ISR](Electronic-Warfare-and-ISR) — the C-130J JAMMING platform.
 - [Getting-Started](Getting-Started) — first-campaign walkthrough.
-- [Air-Wing-Configuration](Squadrons-and-Pilots) — squadron and reserve setup.
+- [Squadrons-and-Pilots](Squadrons-and-Pilots) — squadron and reserve setup.

@@ -37,7 +37,7 @@ runtime base defence, instead of having every airframe fragged into the ATO.
   `qra_engagement_range_nm`), so you can re-tune them per campaign.
 
 The reserve is edited in the air-wing / squadron dialogs; see
-[Air-Wing-Configuration](Squadrons-and-Pilots). The old ramp-scramble system is retired — QRA
+[Squadrons-and-Pilots](Squadrons-and-Pilots). The old ramp-scramble system is retired — QRA
 is the only live reactive-A2A path.
 
 ## BARCAP coverage
@@ -170,7 +170,7 @@ degradation graph have their own page:
 
 - [Mission-planning](Mission-planning) — packages, TOT timing, and the full per-task detail
   (SEAD/DEAD decision guide, BARCAP, escorts).
-- [Air-Wing-Configuration](Squadrons-and-Pilots) — squadron setup and the QRA reserve.
+- [Squadrons-and-Pilots](Squadrons-and-Pilots) — squadron setup and the QRA reserve.
 - [IADS Engine: MANTIS](IADS-Engine-MANTIS) — the runtime engine behind enemy air defenses.
 - [Electronic Warfare and ISR](Electronic-Warfare-and-ISR) — the C-130J jammer/ELINT platform.
 - [Fog-of-War-and-Reconnaissance](Fog-of-War-and-Reconnaissance) — recon fog and the overview

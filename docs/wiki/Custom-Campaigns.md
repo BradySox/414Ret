@@ -146,21 +146,16 @@ the source of truth — edit the script and re-run it; a hand edit to the `.miz`
 next build. Hand-authored campaigns (Red Tide, 1968 Yankee Station) still edit the `.miz` directly.
 
 <a name="authoring-the-campaign-layer"></a>
-## Removed: phases, ROE zones, and political will
+## Blocks that no longer do anything
 
-Earlier versions of this fork let a campaign author a `phases:` arc, ROE
-restricted/free-fire zones, and a `will:` political-will profile. **All three were removed
-on 2026-07-21** along with the war economy they fed, and the settings and YAML keys that
-drove them no longer exist.
+A campaign authoring `phases:`, `restricted_zones:`, `free_fire_zones:` or `will:` is ignored at
+load, not honoured. All four were removed 2026-07-21.
 
-If you are reading an older campaign YAML or an old design note, treat those blocks as
-historical: they are ignored at load, not honoured. Do not re-add them.
-
-| Removed | What replaced it |
-|---|---|
-| `phases:` and the inferred phase arc | Nothing — campaign shape is expressed through the laydown, supply routes, and squadron availability |
-| ROE restricted / free-fire zones | Nothing — the map's ROE overlays went with it |
-| `will:` profiles, BLUE Political Will / RED Regime Resolve, the negotiation ending | An authored `victory:` block — explicit win/lose conditions (captured CPs, destroyed targets or categories, territory and strength thresholds, each with an optional `min_turn` guard). Used by Baltic Fury, Red Flag 81-2, Enduring Resolve and 1968 Yankee Station |
+Campaign shape is expressed through the laydown, supply routes and squadron availability. For an
+authored ending use a **`victory:`** block — explicit win/lose conditions on captured control
+points, destroyed targets or categories, and territory or strength thresholds, each with an
+optional `min_turn` guard. Baltic Fury, Red Flag 81-2, Enduring Resolve and 1968 Yankee Station
+all use one.
 
 ## The `settings:` block
 

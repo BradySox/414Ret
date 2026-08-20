@@ -118,7 +118,7 @@ birthless-spawn fallback, dead-entry drop).
 ## Rollout plan (each step keeps `main` safe)
 
 1. **Foundation:** `resources/plugins/base/mist_moose_shim.lua`. **✅ DONE — all 42 symbols**, all
-   replicated verbatim from MIST or thin vanilla-DCS wrappers. **It ended up 100% vanilla DCS — no
+   written to MIST's documented signatures or thin vanilla-DCS wrappers. **It ended up 100% vanilla DCS — no
    MOOSE dependency at all** (`tostringLL` is now inlined rather than delegating to `UTILS`). Dead-path
    best-effort impls: `getUnitsLOS`/`getGroupRoute`/bracket-form `makeUnitTable` (CTLD JTAC autolase,
    disabled in Retribution).

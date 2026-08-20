@@ -140,7 +140,11 @@ Read before touching a campaign's `.yaml`, `.miz` or build tool.
   what is already ours, and the OPFOR-AI precedent for seam 7),
   `414th-red-brain-phase0-notes.md` (**read before proposing anything about red** — seam 7
   framing 3 and its Phase 0; no headroom found, and the pre-registered card that would
-  reopen it)
+  reopen it),
+  `414th-grimes-repos-assessment-notes.md` (**the licence gate on Grimes' code, and the one
+  repo worth reading** — his published in-game unit dump is a second ground truth for sensor
+  ranges; MIST and SLmod are GPL-3 and `DCS-miscScripts` is unlicensed, so none of it may be
+  vendored into this LGPL-3 tree)
 
 ### Superseded, draft or historical
 
@@ -463,6 +467,31 @@ gh pr list --repo juanjux/dcs-retribution --state all --limit 40 --json number,t
 glance. The four were fixed the same day (hold-release clamp, two front-line hold causes, and
 the IADS C2 graph). Open candidates, the OPFOR-AI precedent for seam 7, and the full ledger are
 in [414th-juanjux-fork-watch-notes.md](docs/dev/design/414th-juanjux-fork-watch-notes.md).
+
+### Grimes (mrSkortch) — read-only, licence-gated (ASSESSED 2026-08-20)
+
+Grimes wrote MIST and SLmod and maintains the Hoggit scripting wiki. His 7 repositories were
+assessed in full; **one is worth reading and none may be copied.**
+
+- **The licence gate is hard.** MIST and SLmod are **GPL-3.0**; `DCS-miscScripts` has **no
+  licence file at all**. This tree is **LGPL-3.0**. Read his work, verify our numbers against
+  it, reimplement a mechanism from the DCS API if we want it — never vendor a file, never
+  commit his data. (Retiring MIST on 2026-07-10 removed the tree's only GPL-3 file.)
+- **The one live repo is `DCS-miscScripts`** (updated Feb 2026). `ObjectDB2/everyObject.lua` is a
+  published in-game dump of `getDesc()` + `getSensors()` + `getAmmo()` for 625 DCS objects — a
+  **second ground truth** for sensor ranges that needs no DCS box, unlike `verify_mod_export.py`.
+  `IADScript/script_iads_dev.lua` carries a 24-system SAM database with radar rotation periods,
+  per-launcher magazine sizes and rearm times.
+- **Open defect candidate:** his runtime dump reads the S-300 64H6E "Big Bird" at **80,249 m** and
+  the Buk SR at **66,874 m**, against the 160,000 / 100,000 m their DCS database entries advertise.
+  If pydcs carries the database numbers, our detection rings overstate by ~2×. Needs the local
+  checkout to confirm.
+- **Corroborated, do not re-litigate:** his IADS calls `enableEmission` **zero** times — same
+  conclusion as our hard constraint. And measured Dog Ear detection is 23.4 km against 1L13's
+  200.6 km, which confirms Ramius007's objection that closed #887.
+
+Full assessment, including the SAM-magazine and radar-sweep ideas MANTIS lacks, is in
+[414th-grimes-repos-assessment-notes.md](docs/dev/design/414th-grimes-repos-assessment-notes.md).
 
 **He reverted one of ours and was right**: his #40 backed out the support-orbit port because
 the FLOT anchoring sent AWACS and tankers over enemy ship groups. We reverted the same geometry

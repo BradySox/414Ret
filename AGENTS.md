@@ -603,6 +603,7 @@ Carved out of this work, against `dcs-retribution/dcs-retribution` (all authored
 
 **Crowded upstream zones — do NOT carve into these without coordinating** (active non-414th PRs):
 - Planning revamps — prokop7 [#676](https://github.com/dcs-retribution/dcs-retribution/pull/676) BARCAP, [#674](https://github.com/dcs-retribution/dcs-retribution/pull/674) SEAD/DEAD, [#678](https://github.com/dcs-retribution/dcs-retribution/pull/678) BAI, [#677](https://github.com/dcs-retribution/dcs-retribution/pull/677) attack-infra.
+- Player region control — red-one1 [#686](https://github.com/dcs-retribution/dcs-retribution/pull/686) (WIP draft: navmesh-polygon AO hard-limiting A2G missions). The BMS study note's candidate 4 is the *weighting* version of this territory; the fork's own *constraint* version was §40's ROE zones, removed 2026-07-21.
 - QRA — geofffranks [#782](https://github.com/dcs-retribution/dcs-retribution/pull/782) (our reserve *feeds* this; don't resubmit).
 - Frontline — geofffranks [#823](https://github.com/dcs-retribution/dcs-retribution/pull/823) (already adopted into the fork), Druss99 [#681](https://github.com/dcs-retribution/dcs-retribution/pull/681).
 - SEAD — geofffranks [#772](https://github.com/dcs-retribution/dcs-retribution/pull/772).

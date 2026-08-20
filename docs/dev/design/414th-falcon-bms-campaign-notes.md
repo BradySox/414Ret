@@ -129,6 +129,16 @@ Smallest first. None started; each carries its own gate.
 4. **PAK-style region priorities.** A per-region emphasis the player sets on the map,
    weighted into target selection. Real UI + planner work; the only candidate that adds a
    player-facing control surface. Gate: DM appetite — it is a feature, not a fix.
+   **Upstream is already in this territory** (DM spot, 2026-08-20): red-one1's
+   [#686](https://github.com/dcs-retribution/dcs-retribution/pull/686) (WIP draft, v1.6
+   milestone, no reviews) lets the player click navmesh polygons as an Area of Operations and
+   then **hard-limits all A2G missions to them**, in the same code sites this candidate names
+   (`objectivefinder.py`, `theaterstate.py`). The distinction is load-bearing: #686 is a
+   *constraint* (a fence missions may not cross), PAK is a *weight* (0–100 emphasis entering
+   the priority sum, where 0 approximates the fence and everything between exists). The fork
+   has a verdict on the constraint shape — §40's removed ROE-zones layer was exactly that,
+   dropped 2026-07-21 — so if this candidate is ever built it is the weighting version, and it
+   coordinates with (or waits out) #686 rather than colliding with it.
 
 Not a candidate but recorded: BMS corroborates the parked SAM-magazines note (§3 table row);
 if that feature is ever built, its design needs no change on BMS's evidence.

@@ -4290,8 +4290,10 @@ Same shape as §33 flak — an **on-marker + runtime discovery**, no per-mission
   target to a CAS package or coordinate a strike (that overlaps the ground-JTAC/tasking systems). The
   smoke-mark is the iconic, low-risk core; FAC→CAS coordination is a possible later increment.
 - **Runtime-cosmetic.** A smoke plume, no gameplay-model change — the value is the visual target cue.
-- **FAC type is a single configurable id.** Default `Bronco-OV-10A`; the O-2 Skymaster or another light FAC
-  could be added as a discovered type in a later pass.
+- **FAC type is a dropdown, not a typed id.** `Bronco-OV-10A` (default) or `vwv_o-1`, the two observation
+  airframes in the tree — the value is matched against `getTypeName()`, so a typo silently meant no FAC at
+  all. Add a light FAC to `choices` in `vietnamops/plugin.json` when one enters the tree;
+  `test_string_options` pins every choice against `plane_map`.
 
 ## §39 — Snake and nape (napalm CAS) (Vietnam Ops suite)
 

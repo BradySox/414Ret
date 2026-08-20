@@ -249,7 +249,7 @@ variants:
 **414th:** hold new aircraft yamls to the fork's extra unit-data standards — honest
 `max_range`, real `introduced` dates (they feed era gating), task weights per the
 rebalance rubric, `TARPS`/drone/heavy-bomber set membership — see the
-[aircraft module checklist's 414th additions](New-aircraft-module-checklist#414th-additions).
+[aircraft module checklist's 414th additions](Module-Checklists).
 Unit prices matter beyond the budget here too (e.g. the COIN insurgent whitelist is
 price-capped), so compare against similar shipped units rather than guessing.
 

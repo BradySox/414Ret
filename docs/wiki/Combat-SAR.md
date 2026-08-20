@@ -13,7 +13,7 @@ frags rescues on its own — you do not have to build the package by hand.
 > [dcs-retribution#929](https://github.com/dcs-retribution/dcs-retribution/pull/929)**, driven by
 > MOOSE `Ops.CSAR` (the `opscsar` plugin). It replaced the fork's own combat-SAR entirely. The
 > old King + Jolly Green + Sandy package, the enemy snatch party, the POW hold clock and the
-> `auto_combat_sar` setting are **gone** — see [SCAR](SCAR) for that historical record.
+> `auto_combat_sar` setting are **gone**.
 
 ---
 
@@ -115,4 +115,3 @@ or already collected is not credited twice.
 - [Squadrons and Pilots](Squadrons-and-Pilots)
 - [Air Defense and the Air War](Air-Defense-and-the-Air-War)
 - [Mission planning](Mission-planning)
-- [SCAR](SCAR) — the removed "Sandy" escort, historical record only

@@ -146,21 +146,16 @@ the source of truth — edit the script and re-run it; a hand edit to the `.miz`
 next build. Hand-authored campaigns (Red Tide, 1968 Yankee Station) still edit the `.miz` directly.
 
 <a name="authoring-the-campaign-layer"></a>
-## Removed: phases, ROE zones, and political will
+## Blocks that no longer do anything
 
-Earlier versions of this fork let a campaign author a `phases:` arc, ROE
-restricted/free-fire zones, and a `will:` political-will profile. **All three were removed
-on 2026-07-21** along with the war economy they fed, and the settings and YAML keys that
-drove them no longer exist.
+A campaign authoring `phases:`, `restricted_zones:`, `free_fire_zones:` or `will:` is ignored at
+load, not honoured. All four were removed 2026-07-21.
 
-If you are reading an older campaign YAML or an old design note, treat those blocks as
-historical: they are ignored at load, not honoured. Do not re-add them.
-
-| Removed | What replaced it |
-|---|---|
-| `phases:` and the inferred phase arc | Nothing — campaign shape is expressed through the laydown, supply routes, and squadron availability |
-| ROE restricted / free-fire zones | Nothing — the map's ROE overlays went with it |
-| `will:` profiles, BLUE Political Will / RED Regime Resolve, the negotiation ending | An authored `victory:` block — explicit win/lose conditions (captured CPs, destroyed targets or categories, territory and strength thresholds, each with an optional `min_turn` guard). Used by Baltic Fury, Red Flag 81-2, Enduring Resolve and 1968 Yankee Station |
+Campaign shape is expressed through the laydown, supply routes and squadron availability. For an
+authored ending use a **`victory:`** block — explicit win/lose conditions on captured control
+points, destroyed targets or categories, and territory or strength thresholds, each with an
+optional `min_turn` guard. Baltic Fury, Red Flag 81-2, Enduring Resolve and 1968 Yankee Station
+all use one.
 
 ## The `settings:` block
 
@@ -229,8 +224,7 @@ What it demonstrates:
   Voodoo, the 414th TFS, JFG Hornets) fly on the blue side — no mismatched paint.
 
 The full build log, including the `.miz` edit points and gotchas, is in
-`docs/dev/design/414th-red-tide-campaign-notes.md`. For the player-facing briefing pack, see the
-**[Red Tide — Campaign Briefing](Red-Tide-Campaign-Briefing)** and its companion pages.
+`docs/dev/design/414th-red-tide-campaign-notes.md`.
 
 ## Worked example: 1968 Yankee Station
 
@@ -259,7 +253,7 @@ is rooted in the real 1968 war. It demonstrates a different toolbox:
 
 Design log: `docs/dev/design/414th-vietnam-retribution-notes.md` (framing) +
 `docs/dev/design/414th-vietnam-ops-notes.md` (the mechanics). See also
-**[The Vietnam Campaign Layer](Vietnam-Campaign-Layer)** and **[Vietnam Ops](Vietnam-Ops)**.
+**[Vietnam Ops](Vietnam-Ops)** and **[Vietnam Ops](Vietnam-Ops)**.
 
 ## Worked example: Operation Enduring Resolve (COIN)
 
@@ -276,7 +270,6 @@ describes, used in anger:
 - **`settings:` preseeds** for the whole COIN stack plus the carrier pair
   (`long_range_carrier_ops` + `max_mission_range_planes: 600`).
 
-Player-facing briefing: **[Operation Enduring Resolve (COIN)](Enduring-Resolve-Campaign-Briefing)**.
 Design logs: `docs/dev/design/414th-coin-*.md`.
 
 ## See also
@@ -286,4 +279,4 @@ Design logs: `docs/dev/design/414th-coin-*.md`.
 - [Custom Factions](Custom-Factions) — who fights and with what units
 - [Custom Loadouts](Custom-Loadouts) — per-aircraft default payloads
 - [Lua Plugins](Lua-Plugins) — the in-mission scripting layer
-- [Turn Zero](Turn-Zero) — what happens when a campaign starts
+- [Getting Started](Getting-Started) — what happens when a campaign starts

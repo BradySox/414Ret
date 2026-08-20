@@ -106,7 +106,7 @@ opponent AI buys. There are three independently toggleable behaviors, applied in
 priority order:
 
 1. **Runway repair.** Damaged runways automatically begin repairs when affordable — top
-   budget priority, so your fields come back online (see [Base Capture](Base-Capture)).
+   budget priority, so your fields come back online (see [The Ground War](The-Ground-War)).
 2. **Front line reinforcement.** Up to half the remaining budget buys ground units,
    prioritizing active fronts with fewer than ~30 units, then distributing extras across
    active points.
@@ -116,7 +116,7 @@ priority order:
 
 ## See also
 
-- [Base Capture](Base-Capture)
-- [Frontline Stances and Movement](Frontline-Stances-and-Movement)
-- [Unit Transfers](Unit-Transfers)
+- [The Ground War](The-Ground-War)
+- [The Ground War](The-Ground-War)
+- [The Ground War](The-Ground-War)
 - [Mission Planning](Mission-planning)

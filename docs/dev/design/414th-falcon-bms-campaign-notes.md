@@ -60,7 +60,18 @@ victories, captured objectives and successful human sorties. Notably, **only 4.3
 gave 2D ground movement real path-aware routing between objectives** — for 27 years the
 premier dynamic campaign moved its ground war on abstractions of the road net.
 
-### 2.4 Logistics — one closed loop
+### 2.4 Initiative and posture — the strategic layer
+
+(Added from the BMS wiki's campaign section, 2026-08-20.) **Initiative points** sit above the
+ground war: they shift on ground victories, captured objectives and successful human-flown
+sorties, and they set each team's **posture** — Offensive, Minor-Offensive, Defensive, or
+Consolidate. A big enough lead puts one team Offensive and forces the other Defensive; a
+narrow lead yields only a Minor-Offensive. Crucially, **trigger files can shift initiative
+directly**, independent of the military situation — the documented pattern for scripted
+political events: an ally enters the war (shift toward that team → offensive), a capital
+falls (shift toward the loser → a reconquest offensive).
+
+### 2.5 Logistics — one closed loop
 
 The part everything else hangs off. Factories produce supply, refineries fuel; airlift and
 convoys physically move it (a transport landing is community-documented at ~20 supply /
@@ -72,7 +83,7 @@ the airbase** (its sortie generation stops until repaired); community consensus 
 runway closure is the *only* airbase strike effect that matters. Interdicting the flow
 degrades everything downstream of it.
 
-### 2.5 Victory
+### 2.6 Victory
 
 Trigger files: capture or hold named objectives, by day where scripted, inside a campaign
 time limit. Four endings — Victory, Stalemate, Timeout, Defeat.
@@ -94,7 +105,8 @@ time limit. Four endings — Victory, Stalemate, Timeout, Defeat.
 | SAM sites shoot dry, rearm off the net | **The parked SAM-magazines note** (`414th-sam-magazines-notes.md`) is exactly this mechanism at turn cadence. BMS corroborates the design, including rearm-from-supply |
 | Runway closure stops sorties | **Present.** `ControlPoint.can_operate` refuses a damaged runway (`runway_status.damaged`), squadrons relocate around it, repair runs over turns |
 | Campaign-map fog / recon intel | BMS's own community calls its strategic fog weak; recon flights update unit intel on the map. The fork's §3 engage-to-reveal is a *deliberately different* answer, and seam 2's audit capped intel-layer work at a tidy-up. Nothing to take |
-| Initiative points | Tombstone §48. Do not restore |
+| Initiative → posture (Offensive/Minor-Offensive/Defensive/Consolidate) | Split verdict. The *systemic* version is §55 Red Intent — tried, removed, seam 7 dropped. The *authored* version (trigger-file initiative shifts for political events) is exactly what the fork kept: red tempo's turn-windowed surges (M6/W6) and §75's authored victory blocks. BMS validates the path chosen. Note also the fork already has posture at a finer grain: the commander assigns per-front ground stances, where BMS postures the whole team |
+| Initiative as a scored currency | Tombstone §48 (political will). Do not restore |
 | Victory triggers, four endings | §75 (authored win/lose blocks + domination/attrition endings). Covered |
 | Player as theater commander (sliders) | Fork exposes doctrine through settings + the auto-planner; BMS's per-slider live steering is finer-grained but the turn cadence makes settings equivalent in practice |
 | Time-compress until interesting, then commit | §83 SP Pilot Mode (accept-and-fly-next, reasons-to-continue brief) is the turn-shaped version; seam 5's reporting reframe covers the rest |
@@ -131,11 +143,18 @@ if that feature is ever built, its design needs no change on BMS's evidence.
 - **The economy loop, piecemeal.** §48/§53/§54 died here once. BMS shows the loop only
   works whole and continuous. Candidate 1 deliberately takes the *smallest consuming end*
   of the loop (effectiveness) without the production side — that is the line, hold it.
-- **Anything about red.** BMS's red is the same planner mirrored — which is what
-  Retribution already does. Seam 7 stays dropped; the red-brain Phase 0 note governs.
+- **Anything about red.** BMS's red runs the same planner mirrored, topped by the
+  initiative→posture layer (§2.4) — and that layer is the system §55 already tried here and
+  removed. Retribution mirrors the planner today; the posture layer's authored half survives
+  as red tempo and triggers. Seam 7 stays dropped; the red-brain Phase 0 note governs.
 
 ## 6. Sources
 
+- **BMS wiki campaign section** (reached via domain-scoped search — the proxy blocks direct
+  fetch): [campaign index](https://wiki.falcon-bms.com/en/bms-campaign) ·
+  [Campaign Initiative](https://wiki.falcon-bms.com/bms-campaign/initiative) (the §2.4
+  posture mechanics) · [changelog index](https://wiki.falcon-bms.com/en/changelogs) (newest
+  indexed entry 4.38.1.1; 4.38.1 also reworked the TvT campaign and integrated the F-35A)
 - [BMS 4.38 release](https://www.falcon-bms.com/blog/the-wait-is-over-falcon-4-38-is-here) ·
   [4.38 changelog](https://wiki.falcon-bms.com/changelogs/4-38/release) (campaign entries:
   HAVCAP/BARCAP/TARCAP/RESCORT/AMBUSHCAP evaluation refactors; path-aware 2D ground routes) ·

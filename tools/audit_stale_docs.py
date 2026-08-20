@@ -9,9 +9,9 @@ existed, including a sidebar-linked wiki page written in the present tense.
 
 That step is a manual grep nobody runs. This makes it a command.
 
-Scope is the **published** surface only -- ``README.md``, ``docs/wiki/`` and
-``docs/campaigns/``. Design notes under ``docs/dev/`` are deliberately excluded:
-they are a historical record and are *expected* to describe dead features.
+Scope is the **published** surface only -- ``README.md`` and ``docs/wiki/``.
+Design notes under ``docs/dev/`` are deliberately excluded: they are a
+historical record and are *expected* to describe dead features.
 
 A file whose opening carries a removal banner is exempt, so the established
 "banner it and keep it so old saves stay readable" pattern does not trip the
@@ -41,7 +41,7 @@ from typing import Iterable
 REPO = Path(__file__).resolve().parent.parent
 
 #: The published surface. Design notes are excluded on purpose -- see the module docstring.
-ROOTS = ("README.md", "docs/wiki", "docs/campaigns")
+ROOTS = ("README.md", "docs/wiki")
 
 #: A file opening with one of these is a deliberate historical record, not a defect.
 BANNERS = ("⛔ REMOVED", "historical record only", "SUPERSEDED")
@@ -205,6 +205,16 @@ REMOVED: tuple[Removed, ...] = (
         "2026-07-01",
         r"SOF Insert|SOF capture|capture economy",
         allow=("removed", "retired", "no longer"),
+    ),
+    Removed(
+        # Found by the docs/campaigns collapse: the repo copy of the Red Tide
+        # handbook still briefed reading the SITREP off the kneeboard COVER page
+        # while the wiki copy had been fixed. Neither was in this table.
+        "the retired kneeboard decks (S25, S30, S31)",
+        "2026-07-05 / 2026-07-13",
+        r"kneeboard cover page|cover page of the kneeboard|Brief Sheet"
+        r"|compact (3|three)[- ]?(to[- ])?4?[- ]?page",
+        allow=("retired", "removed", "no longer", "folds into"),
     ),
     Removed(
         "Flight Control ATC (S13)",

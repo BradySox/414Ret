@@ -158,4 +158,4 @@ stores depend on the mission's loadout editor and difficulty settings.*
 
 ---
 
-*This page is the online copy of [`docs/campaigns/red-tide-role-cards.md`](https://github.com/BradySox/414Ret/blob/main/docs/campaigns/red-tide-role-cards.md) in the repo. Edit that file; the wiki is mirrored from `docs/wiki/` on merge to `main`.*
+*Edit this page at `docs/wiki/` in the repo, never in the wiki UI. It is mirrored to the GitHub Wiki on merge to `main`.*

@@ -680,7 +680,7 @@ untouched. Offensive fixed-wing tasking now concentrates on the human's 414th je
 remaining AI fast jets are all in supporting roles (TARCAP/Escort) except the B-52H.
 Side effects: the description's Heatblur-F-4E note + "Phantoms" line reworded; the
 `settings:` comment airframe list updated; wiki briefing/role-cards/first-three-turns +
-`docs/campaigns/` mirrors re-synced (F-4E role card deleted, OCA recipes re-pointed at
+`docs/campaigns/` mirrors re-synced (that folder was collapsed into `docs/wiki/` 2026-08-20) (F-4E role card deleted, OCA recipes re-pointed at
 F-15E/B-52H, tanker pairing lists trimmed). The squadron defs (`414th 480th TFS.yaml` etc.)
 are kept on disk — they're generic resources, just no longer referenced by this campaign.
 The upstream carve payload (`docs/dev/upstreaming/red-tide/`) is stale until

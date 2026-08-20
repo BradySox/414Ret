@@ -21,7 +21,7 @@ Upstream shows you the enemy laydown. The fork fogs it.
   surviving recon pass.
 - Unscouted mobile forces draw a dashed circle offset from their true position instead of an
   exact marker. Fixed infrastructure stays exact.
-- [TARPS](TARPS-Reconnaissance) is a player task — the F-14 plus the Vietnam-era RF-101B Voodoo
+- [TARPS](Fog-of-War-and-Reconnaissance) is a player task — the F-14 plus the Vietnam-era RF-101B Voodoo
   and RA-5C Vigilante. Recon is automatic on overfly: fly the profile over the target and the
   take is banked as confirmed intelligence. Drones film whatever they overfly regardless of
   their tasking.
@@ -95,9 +95,9 @@ Full detail: [Air Defense and the Air War](Air-Defense-and-the-Air-War).
   the aimpoint until you kill the jammer.
 - Warships fire **cruise missile raids** from finite magazines that never rearm, and anti-ship
   magazines carry across turns.
-- The shipped flavours: the [Vietnam campaign layer](Vietnam-Campaign-Layer) (ambush MiGs, Alpha
+- The shipped flavours: the [Vietnam campaign layer](Vietnam-Ops) (ambush MiGs, Alpha
   Strikes, era planner ranges, a red tempo tied to the campaign clock) and the
-  [COIN model](Enduring-Resolve-Campaign-Briefing) (an insurgency that regenerates from ammo
+  COIN model (an insurgency that regenerates from ammo
   caches, re-infiltrates cleared ground, and hides among the population).
 - [Vietnam Ops](Vietnam-Ops) adds the era's mission-level mechanics — Arc Light, flak gauntlet,
   naval gunfire, trail interdiction, airbase harassment, Super Gaggle, FAC(A) marking, snake and
@@ -106,9 +106,9 @@ Full detail: [Air Defense and the Air War](Air-Defense-and-the-Air-War).
   + buddy tanker + E-2) off the boat's own squadrons, with carrier flights routed to tank from
   the boat's own tanker.
 
-> Removed 2026-07-21: the inferred campaign-phase arc, the ROE zone layer, and the political-will
-> economy. Kept for historical reference only on
-> [Campaign Phases and ROE](Campaign-Phases-and-ROE) — do not author against it.
+> Removed 2026-07-21: the inferred campaign-phase arc, the ROE zone layer, and the
+> political-will economy. Campaigns authoring `phases:`, `restricted_zones:`,
+> `free_fire_zones:` or `will:` are ignored, not honoured.
 
 ---
 
@@ -133,7 +133,7 @@ Full detail: [Air Defense and the Air War](Air-Defense-and-the-Air-War).
   membership, visibility, capture and purchase state.
 - Package and flight dialogs show task, TOT, player slots, departure bases, squadron fit and
   target distance in one place.
-- The [unified map layers panel](Map-Layers-and-Interface) replaces both stock Leaflet controls
+- The [unified map layers panel](The-Retribution-UI) replaces both stock Leaflet controls
   with one grouped, collapsible control, preset views (Default / SEAD / Recon / Clean) and
   remembered choices.
 - The [kneeboard deck](Kneeboards) is the stock deck with 414th content folded in — a BLUF on

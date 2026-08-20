@@ -332,7 +332,9 @@ Mirrors Yankee Station's block except:
 - [x] Factions ×2
 - [x] Campaign YAML (squadrons, routes, phases arc, preseed)
 - [x] First-cut `.miz` (script-built from `exercise_vegas_nerve.miz`)
-- [x] Wiki campaign pack (`docs/wiki/Red-Flag-81-2-*.md` ×5: briefing / intel / role cards /
+- [x] Wiki campaign pack (**deleted 2026-08-20** with every campaign page — briefing material
+      is squadron content, not project documentation. In git history before `e3cfd24d7`.
+      Was: `docs/wiki/Red-Flag-81-2-*.md` ×5: briefing / intel / role cards /
   first-three-turns / required mods — carries the 🟡 unflown + first-cut-laydown flags)
 - [x] **Re-point laydown at the real 81-2 `.miz`** (done 2026-07-02 — §3a; faction
   gains SA-6/SON-9/SA-8; needs a NEW game)

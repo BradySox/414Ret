@@ -130,14 +130,12 @@ All exposed in the Plugin Options UI under **C-130J Mission Systems** (default O
 | Max simultaneous ELINT tracks | 3 | 1–10 | How many emitters you can track at once |
 | On-screen message duration (s) | 15 | 5–60 | How long EW/ISR messages stay up |
 
-## The retired generic EW model
+## No scripted jamming outside the C-130J
 
-The standalone `ewrj` / "EW Jammer Script 2.1" plugin is gone. Do **not** expect F-16 or A-10 ECM
-pods to create an F10 "Jammer menu" — only the C-130J Mission Systems plugin owns scripted
-jamming now. Fighter/attack ECM pods still exist as loadout equipment and DCS-native ECM, but
-they drive no scripted 414th menu, and AI SEAD/DEAD flights no longer get the old generic jamming
-waypoint actions. Legacy saved `ewrj` settings are purged automatically when an old campaign is
-loaded.
+The generic `ewrj` jammer script was retired: F-16 and A-10 ECM pods create no F10 jammer menu. Only the C-130J Mission Systems plugin owns
+scripted jamming. ECM pods still exist as loadout equipment and DCS-native ECM, but drive no
+scripted menu, and AI SEAD/DEAD flights get no generic jamming waypoint actions. Legacy saved
+`ewrj` settings are purged when an old campaign loads.
 
 ## Tips
 

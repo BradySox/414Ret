@@ -11,6 +11,9 @@ queue**: what's genuinely generic, how ready it is, and — just as important �
 what is fork-specific and must **never** go upstream.
 
 > **Scope note.** This file is the *tactical carve queue* for the generic **bug-fixes**.
+> Since **2026-08-20** it also carries the [upstream issue ledger](#upstream-issue-ledger) —
+> the standing triage of `dcs-retribution/dcs-retribution/issues`, swept for the first time
+> that day.
 > For the longer view — that every 414th *feature* is community-upstreamable once
 > packaged — see
 > [414th-community-contribution-roadmap.md](414th-community-contribution-roadmap.md).
@@ -418,6 +421,105 @@ change per PR, upstream gates validated per PR, crowded zones respected. Gaps + 
   denominator, not upstream's `total_armor`. The clustering/placement/stance code
   itself matches upstream and needs no carve. Full record:
   `docs/dev/design/414th-pr823-frontline-merge-notes.md`.
+
+---
+
+## Upstream issue ledger
+
+> **First sweep 2026-08-20.** Before it the fork had never read
+> `dcs-retribution/dcs-retribution/issues` as a list. Six issue numbers appeared anywhere in
+> `docs/` — #104, #214, #243, #627, #863, #865 — and every one was found while doing something
+> else. The Queue above stays the PR queue; this is the standing issue triage beside it.
+
+Baseline at the sweep: **60 open issues**, oldest from 2023-01. Rows marked ✔ were checked
+against the fork's own files. Rows marked · are a title/body match only and need a code check
+before anyone acts on them.
+
+**Freeze note.** Everything in **B** is a NEW PR and is bound by the upstream PR freeze
+(CLAUDE.md). **A** is not: reporting a fix on an existing issue is a thread comment, the same
+reasoning that leaves queue item 30 unheld.
+
+### A. Fixed fork-side, still open upstream
+
+| Issue | Their state | Fork state | Action |
+|---|---|---|---|
+| ✔ [#948](https://github.com/dcs-retribution/dcs-retribution/issues/948) Division by zero in `add_strike_tasks` | Bug, opened 2026-08-16, unresolved | Fixed **2026-06-17** in `167d4e6f8`, two months before they hit it. `add_strike_tasks` returns early when `waypoint.targets` is empty instead of dividing by `len(targets)`; `tests/missiongenerator/aircraft/test_strikeingress.py` pins it | Comment the fix on the thread. **Offer it, do not claim the diagnosis** — the reporter states their motor pool is filled, so whether the empty-target guard covers their save is unverified |
+| ✔ [#901](https://github.com/dcs-retribution/dcs-retribution/issues/901) AAA sites get inappropriate search radars | Bug, opened 2026-07-22, unresolved | Fixed **2026-06-23** in `9ed1b2ac0` — `fill: false` on the `AAA_Site.yaml` radar slot, so a generic AAA site stays optically guided instead of auto-filling whatever `SearchRadar` the faction owns | Comment the fix. red-one1's comment in the thread quotes the exact yaml block the fix changes |
+
+Both are comment-only items, not PRs. Queue them as item 30's siblings if the DM wants them
+tracked in the Queue table.
+
+### B. A fork feature answers an open issue
+
+Carve candidates. All freeze-bound.
+
+| Issue | Fork feature | State |
+|---|---|---|
+| ✔ [#753](https://github.com/dcs-retribution/dcs-retribution/issues/753) Auto-hide mobile SAMs on MFD | §7 | **Closed as duplicate 2026-08-20 by BradySox**, mid-sweep. §7 is still fork-only: PR #794 self-closed on review because the reviewer wanted the behavior behind an option, and the fork has none — `hide_on_mfd` defaults by task type with a per-yaml override (`game/armedforces/forcegroup.py:163`, `:528`). **Adding the setting is the re-carve precondition**, closed issue or not |
+| ✔ [#715](https://github.com/dcs-retribution/dcs-retribution/issues/715) Cargo/troop aircraft have no missions | §76 | Already carved as **open PR #884** (un-drafted). The PR does not reference the issue — linking it costs a comment and is not a new PR |
+| ✔ [#561](https://github.com/dcs-retribution/dcs-retribution/issues/561) Frontline unit naming | §59 | The title is about naming; the body asks for Tiresias, which turns off AI for ground units far from opposing aircraft. §59 is that, built natively (`game/missiongenerator/aisleepluadata.py`, `perf_ground_ai_sleep`). We solved the problem the naming request was a workaround for |
+| ✔ [#864](https://github.com/dcs-retribution/dcs-retribution/issues/864) Configurable tanker/AWACS TACAN, freq, callsign | partial | Fork has squadron `callsign:` (`game/squadrons/squadrondef.py:44`). TACAN and frequency are not configurable — 1 ask of 3 |
+| · [#479](https://github.com/dcs-retribution/dcs-retribution/issues/479) Escort flight improvements | partial | The fork fixed the pre-join ROE and escort release/spend; the join-waypoint geometry the issue leads with is untouched |
+| [#865](https://github.com/dcs-retribution/dcs-retribution/issues/865) Realistic carrier recovery heading | §88 | Known. Built from geofffranks' `12d71346`; he is doing it upstream — drift-watch, not a carve |
+| [#863](https://github.com/dcs-retribution/dcs-retribution/issues/863) / [#862](https://github.com/dcs-retribution/dcs-retribution/issues/862) Per-pilot modex / livery | §62 + parked | Known. §62 sequences per squadron and does **not** close #863; the per-pilot work is built and unpushed |
+| [#104](https://github.com/dcs-retribution/dcs-retribution/issues/104) CSAR as a mission type | CSAR | Known. Answered by upstream's own open PR #929, which the fork re-adopts by phase |
+| [#243](https://github.com/dcs-retribution/dcs-retribution/issues/243) Multiple tankers per refuel method | queue item 28 | Known |
+| [#214](https://github.com/dcs-retribution/dcs-retribution/issues/214) Configurable startup times | queue item 29 | Known |
+
+### C. Open gaps the fork shares
+
+Build candidates, fork-first. Nothing here is a carve today.
+
+| Issue | Fork state |
+|---|---|
+| ✔ [#869](https://github.com/dcs-retribution/dcs-retribution/issues/869) UI-configurable tanker speed | No tanker-speed setting exists fork-side |
+| ✔ [#586](https://github.com/dcs-retribution/dcs-retribution/issues/586) Restrict frontline non-AD units from engaging air | Fork has the `manpads` setting only |
+| ✔ [#244](https://github.com/dcs-retribution/dcs-retribution/issues/244) Customizable savegame folders | §66 archives generated missions; it does not make `layouts` / `groups` / `scripts` user-overridable |
+| · [#734](https://github.com/dcs-retribution/dcs-retribution/issues/734) Aircraft spawn on occupied ramp slots | **Check this first.** A crash-on-spawn bug, and whether the fork carries it is unverified. §64 covers carrier decks only |
+| · [#629](https://github.com/dcs-retribution/dcs-retribution/issues/629) Per-side mission statistics | §29 and §91 both carry per-side data; the Qt mission-status table does not split it |
+| · [#131](https://github.com/dcs-retribution/dcs-retribution/issues/131) Airfield strike targets | Fork plans OCA/Strike against aircraft and runway only |
+| · [#128](https://github.com/dcs-retribution/dcs-retribution/issues/128) Show parking-slot info | Slots are tracked in `aircraftgenerator.py`; nothing surfaces the count |
+| · [#82](https://github.com/dcs-retribution/dcs-retribution/issues/82) SHORAD movement at the frontline | §90 moves the line; SHORAD waypointing unchecked |
+| · [#508](https://github.com/dcs-retribution/dcs-retribution/issues/508) Track unit damage across turns | §91 records sorties, not unit damage state |
+| · [#654](https://github.com/dcs-retribution/dcs-retribution/issues/654) Transport strike targets on supply routes | §50 / §56 / §78 hit convoys and depots, not route nodes |
+| · [#590](https://github.com/dcs-retribution/dcs-retribution/issues/590) Fuller CTLD incl. sling loading | §76 is paradrop only |
+| · [#597](https://github.com/dcs-retribution/dcs-retribution/issues/597) OpFor client support | §27 kneeboards and §45 markers are blue-only |
+| · [#708](https://github.com/dcs-retribution/dcs-retribution/issues/708) Start type in squadron config | §64 covers carrier decks only |
+| · [#866](https://github.com/dcs-retribution/dcs-retribution/issues/866) Carrier standoff from land | geofffranks is rolling it into his #865 work — watch, do not build |
+| · [#242](https://github.com/dcs-retribution/dcs-retribution/issues/242) / [#241](https://github.com/dcs-retribution/dcs-retribution/issues/241) RTB when winchester | A stock DCS AI option; nothing fork-side sets it |
+| · [#102](https://github.com/dcs-retribution/dcs-retribution/issues/102) ATO sort · [#105](https://github.com/dcs-retribution/dcs-retribution/issues/105) highlight flights · [#54](https://github.com/dcs-retribution/dcs-retribution/issues/54) map legend · [#631](https://github.com/dcs-retribution/dcs-retribution/issues/631) module-vs-mod labels · [#671](https://github.com/dcs-retribution/dcs-retribution/issues/671) waypoint reordering | Cheap UI, none built fork-side |
+| · [#628](https://github.com/dcs-retribution/dcs-retribution/issues/628) Neutral airports pick a side · [#878](https://github.com/dcs-retribution/dcs-retribution/issues/878) user templates · [#858](https://github.com/dcs-retribution/dcs-retribution/issues/858) opfor frontline options · [#498](https://github.com/dcs-retribution/dcs-retribution/issues/498) saved-mission resume · [#506](https://github.com/dcs-retribution/dcs-retribution/issues/506) block crashed-slot respawn · [#89](https://github.com/dcs-retribution/dcs-retribution/issues/89) channel presets · [#490](https://github.com/dcs-retribution/dcs-retribution/issues/490) DCS mission options · [#497](https://github.com/dcs-retribution/dcs-retribution/issues/497) WW2 big formation | Not built fork-side, no fork blocker recorded |
+
+### D. Not ours
+
+| Issue | Why |
+|---|---|
+| [#248](https://github.com/dcs-retribution/dcs-retribution/issues/248), [#187](https://github.com/dcs-retribution/dcs-retribution/issues/187) Ammunition economy | **Do not build.** §53 war economy and §54 munitions availability were removed 2026-07-21. Either is a re-litigation |
+| [#107](https://github.com/dcs-retribution/dcs-retribution/issues/107) Overhaul BARCAP planner | **Do not build.** The fork's BARCAP geometry was reverted to upstream 2026-08-09 in the planner re-convergence. Settled |
+| [#714](https://github.com/dcs-retribution/dcs-retribution/issues/714) Air Doctrine | Read `design/414th-red-brain-phase0-notes.md` first. Seam 7 is dropped and the analytic route failed three times. The stock-ME-AI-option half is separable and is **not** tombstoned |
+| [#247](https://github.com/dcs-retribution/dcs-retribution/issues/247) Repair destroyed infrastructure | §68 repairs SAM sites only, so it is a real gap — but prokop7's #679 / #680 ground-repair PRs are in flight. Crowded zone |
+| ✔ [#701](https://github.com/dcs-retribution/dcs-retribution/issues/701) Missing weapon `year` / `fallback` | **Measured 2026-08-20; no work owed.** The issue's counts are stale (227 files / 3 / 32, Feb 2026): upstream `dev` now reads **301 / 3 / 70** and the fork **304 / 4 / 70** — the same gap, not a fork regression. The counts also do not measure defects. A missing `fallback` is a chain terminator (`WeaponGroup.fallback` ends the `fallbacks()` walk), which is correct for the oldest weapon in a family — filling all 70 would be wrong. A missing `year` means `available_on` returns `True`, i.e. never date-gated; of the 4, `lantirn.yaml` is a **deliberate** fork decision documented in the file (`b823963c7`, un-gate the LANTIRN by era) and the other 3 are upstream's era-agnostic Hydra-70 and gun pods. If anything is owed it is a comment on the thread reporting the measurement, not a PR |
+| [#527](https://github.com/dcs-retribution/dcs-retribution/issues/527) CH-47 logistics for Pretense | Pretense was removed fork-side |
+| [#712](https://github.com/dcs-retribution/dcs-retribution/issues/712) CH UK pack, [#718](https://github.com/dcs-retribution/dcs-retribution/issues/718) Su-35s | Already shipped upstream (`pydcs_extensions/ukmilitaryassetspack`, `su35s`). Stale issues |
+| [#727](https://github.com/dcs-retribution/dcs-retribution/issues/727) Rafale, [#716](https://github.com/dcs-retribution/dcs-retribution/issues/716) A-4E 2.3, [#411](https://github.com/dcs-retribution/dcs-retribution/issues/411) Tornado F3, [#350](https://github.com/dcs-retribution/dcs-retribution/issues/350) VSN Mirage III | Mod requests; neither tree carries them |
+| [#401](https://github.com/dcs-retribution/dcs-retribution/issues/401) Webapp, [#361](https://github.com/dcs-retribution/dcs-retribution/issues/361) offline map | Upstream app-shape calls. §42 local tiles is adjacent to #361 but solves a different problem |
+| [#83](https://github.com/dcs-retribution/dcs-retribution/issues/83) Frontline unit behavior, [#192](https://github.com/dcs-retribution/dcs-retribution/issues/192) SEAD TALDs deploy early, [#238](https://github.com/dcs-retribution/dcs-retribution/issues/238) FARP that follows the front | Planner and frontline surfaces upstream is actively working (geofffranks #823, Druss99 #681). Crowded zone — coordinate before touching |
+
+### Re-running the sweep
+
+```
+gh issue list --repo dcs-retribution/dcs-retribution --state open --limit 200 \
+  --json number,title,createdAt,labels
+```
+
+Read the **Bug**-labelled rows first: those are the ones the fork may already have fixed, and a
+fix report costs one comment instead of a PR. Enhancement rows are PRs and wait on the freeze.
+The tracker moves slowly — 60 open, most untouched for months — so this is a low-frequency
+sweep, not a per-sync one.
+
+**What this sweep did not do.** It read titles and bodies, not the full comment threads, and it
+did not check the closed issues for a fix the fork should adopt. Rows marked · are unverified
+against fork code.
 
 ---
 

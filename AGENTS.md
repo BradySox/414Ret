@@ -120,6 +120,8 @@ Read before touching a campaign's `.yaml`, `.miz` or build tool.
 - **Planning / doctrine** — `414th-falcon-bms-campaign-notes.md` (**study note** — what the
   BMS dynamic campaign actually does, the full crosswalk to fork features, four gated
   candidates, and the tombstones it must not resurrect — §48/§53/§54 and turnless),
+  `414th-region-priorities-notes.md` (**scoping only, nothing built** — per-CP blue planning
+  priorities: upstream #686's surface × BMS's PAK weight; the fence stays dead with §40),
   `414th-airwar-planner-consolidation-notes.md`,
   `414th-aircraft-task-rebalance-rubric.md`, `414th-victory-conditions-notes.md`,
   `414th-wing-growth-notes.md`, `414th-single-player-loop-notes.md`,

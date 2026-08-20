@@ -138,7 +138,9 @@ Smallest first. None started; each carries its own gate.
    the priority sum, where 0 approximates the fence and everything between exists). The fork
    has a verdict on the constraint shape — §40's removed ROE-zones layer was exactly that,
    dropped 2026-07-21 — so if this candidate is ever built it is the weighting version, and it
-   coordinates with (or waits out) #686 rather than colliding with it.
+   coordinates with (or waits out) #686 rather than colliding with it. **Scoped 2026-08-20**
+   on the DM's proposal: `414th-region-priorities-notes.md` — the #686-surface × PAK-weight
+   synthesis, anchored on control points after the navmesh-ID instability finding.
 
 Not a candidate but recorded: BMS corroborates the parked SAM-magazines note (§3 table row);
 if that feature is ever built, its design needs no change on BMS's evidence.

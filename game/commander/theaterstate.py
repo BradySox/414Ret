@@ -300,7 +300,7 @@ class TheaterState(WorldState["TheaterState"]):
             front_line_stances={f: None for f in finder.front_lines()},
             vulnerable_front_lines=list(finder.front_lines()),
             aewc_targets=list(aewc_targets),
-            refueling_targets=[finder.closest_friendly_control_point()],
+            refueling_targets=_refueling_targets(finder),
             recovery_targets={cp: 0 for cp in finder.friendly_naval_control_points()},
             csar_targets=list(finder.downed_pilots()),
             csar_flights_planned=0,
@@ -328,6 +328,23 @@ class TheaterState(WorldState["TheaterState"]):
                 ordered_capturable_points[0] if ordered_capturable_points else None
             ),
         )
+
+
+def _refueling_targets(finder: ObjectiveFinder) -> list[MissionTarget]:
+    """One tanker station per friendly carrier, plus one land station.
+
+    The stock single station was the CP nearest the enemy and asked nothing about
+    basing, which stranded both of a flown Caucasus wing's tankers: the KC-135
+    103 NM from its station and the carrier's A-6E 226 NM from its boat
+    (test.retribution turn 2, 2026-08-19). A carrier's tanker belongs over its own
+    boat -- the same shape AEW&C already uses -- and the land station goes to the
+    most forward field that can actually put a tanker there.
+    """
+    targets: list[MissionTarget] = [
+        cp for cp in finder.friendly_control_points() if cp.is_carrier
+    ]
+    targets.append(finder.tanker_land_anchor())
+    return targets
 
 
 def _aewc_targets(finder: ObjectiveFinder) -> list[MissionTarget]:

@@ -114,6 +114,11 @@ def load_icons():
         "./resources/ui/misc/" + get_theme_icons() + "/pluginsoptions.png"
     )
     ICONS["Notes"] = QPixmap("./resources/ui/misc/" + get_theme_icons() + "/notes.png")
+    # Only the light set ships an info glyph, and a QPixmap built from a missing
+    # path is silently null -- which would leave the toolbar button iconless under
+    # every other theme. Fall back to the notes glyph instead.
+    _whats_new = QPixmap("./resources/ui/misc/" + get_theme_icons() + "/info.png")
+    ICONS["What's New"] = _whats_new if not _whats_new.isNull() else ICONS["Notes"]
     ICONS["Reload"] = QPixmap(
         "./resources/ui/misc/" + get_theme_icons() + "/reload.png"
     )

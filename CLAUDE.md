@@ -368,6 +368,7 @@ linked design note.
 89. **Living battlespace** — phase-aware mid-cycle mission starts: earlier packages are already airborne or parked back home when you walk out, follow-on waves launch behind you, the briefing carries the day's running score, and real red alert fighters fly a defensive patrol over a struck objective.
 90. **Front-line model** — reinforcement follows the supply lines, attacking costs more than defending, the line's position counts the forces actually present, terrain slows the advance, and the front bulges instead of running straight.
 91. **Per-flight sortie records** — the mission reports back what each flight did: track, time airborne, fuel, shots and hits, not just which units died.
+92. **What's New** — a toolbar window listing the recent player-visible changes, each with what to look for in the next mission.
 
 ### Retired, removed or shelved — do not restore
 

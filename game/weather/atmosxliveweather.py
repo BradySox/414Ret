@@ -428,6 +428,23 @@ def apply_weather(weather: Weather, vdata: dict[str, Any]) -> None:
         weather.dust_density = int(round(float(vdata["dust_density"])))
 
 
+def preferred_airfields(theater: Any) -> list[str]:
+    """Blue base names, to favour a station the player actually flies from.
+
+    Deliberately ``starting_coalition`` and not ``captured``: conditions are generated
+    inside ``Game.__init__``, before ``ControlPoint.finish_init`` wires the coalitions,
+    so ``captured`` raises there and took New Game down with it. It is also the steadier
+    input -- the observing station should not move to another airfield mid-campaign
+    because a base changed hands.
+    """
+    names = []
+    for control_point in getattr(theater, "controlpoints", []):
+        coalition = getattr(control_point, "starting_coalition", None)
+        if coalition is not None and coalition.is_blue:
+            names.append(control_point.name)
+    return names
+
+
 def fetch_observation(
     theater: Any, settings: Any
 ) -> Optional[tuple[str, dict[str, Any]]]:
@@ -460,7 +477,7 @@ def fetch_observation(
 
     icao = (settings.atmosx_metar_station or "").strip().upper()
     if not icao:
-        bases = [cp.name for cp in theater.player_points()]
+        bases = preferred_airfields(theater)
         positions = {}
         try:
             positions = {a.name: a.position for a in theater.terrain.airport_list()}
@@ -572,7 +589,15 @@ class LiveWeather(GameWeather):
 
 def live_weather_for(theater: Any, settings: Any) -> Optional[LiveWeather]:
     """This turn's weather, taken from the sky rather than from the dice."""
-    observation = fetch_observation(theater, settings)
+    try:
+        observation = fetch_observation(theater, settings)
+    except Exception:
+        # The header's promise, enforced. An uncaught raise here does not cost the
+        # weather, it kills New Game -- which is how this guard was earned.
+        logging.exception(
+            "ATMOS-X live weather: lookup failed; keeping the generated weather"
+        )
+        return None
     if observation is None:
         return None
     station, vdata = observation

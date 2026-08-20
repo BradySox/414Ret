@@ -539,7 +539,13 @@ independently on 2026-08-09. Two forks, same verdict, different evidence — do 
   existing `enabled_when` (greys out, live across pages) rather than upstream's parallel
   `visible_when` (hides). The live-weather half also needed three fork couplings upstream has
   no reason to carry — §47's weather ladder, `Conditions.advance`, and §67's planner all had
-  to learn what a `LiveWeather` is. See
+  to learn what a `LiveWeather` is. **A fourth divergence was added 2026-08-20 and is the one
+  that must not be resynced**: the station picker reads each control point's
+  `starting_coalition`, not `captured`. Our port predated upstream's own fix for the same
+  crash (`ControlPoint not fully initialized` — conditions are generated inside
+  `Game.__init__`, before the coalitions are wired, and the raise killed New Game), and
+  upstream's fix returns an empty base list, which sends `choose_station` to an arbitrary
+  field. See
   [414th-atmosx-live-weather-notes.md](docs/dev/design/414th-atmosx-live-weather-notes.md).
 
 **Sync 2026-07-26 — upstream dev @ `e9b2387e`** (merge base moved `acf02b75` → `e9b2387e`; fork PR

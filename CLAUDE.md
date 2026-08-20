@@ -504,10 +504,14 @@ this repo, PR metadata or commit messages; the DM holds the link.
   **second ground truth** for sensor ranges that needs no DCS box, unlike `verify_mod_export.py`.
   `IADScript/script_iads_dev.lua` carries a 24-system SAM database with radar rotation periods,
   per-launcher magazine sizes and rearm times.
-- **Open defect candidate:** his runtime dump reads the S-300 64H6E "Big Bird" at **80,249 m** and
-  the Buk SR at **66,874 m**, against the 160,000 / 100,000 m their DCS database entries advertise.
-  If pydcs carries the database numbers, our detection rings overstate by ~2×. Needs the local
-  checkout to confirm.
+- **Detection-range candidate — CHECKED 2026-08-20, no defect found. Do not re-run it.** The
+  runtime dump and the mission-editor database are not measured against the same target: across
+  every unit in the note's table `database ÷ runtime` is a constant **1.4953 = 5^¼** (radar range
+  scales as RCS^¼). Normalised, the **Buk SR is exact** and the "~2×" was an artifact. pydcs is
+  also not stale — the DM's own 2026-07-20 export matches it on all seven units. Three units still
+  disagree (64H6E sr high 33 %, 40B6MD sr low 50 %, Patriot str low 38 %) and need `getSensors()`
+  run on our own install to settle; they are vanilla values faithfully mirroring the database, so
+  changing them is a data divergence needing its own call, not a bug fix.
 - **Corroborated, do not re-litigate:** his IADS calls `enableEmission` **zero** times — same
   conclusion as our hard constraint. And measured Dog Ear detection is 23.4 km against 1L13's
   200.6 km, which confirms Ramius007's objection that closed #887.

@@ -96,12 +96,41 @@ and the 40B6MD's exact range — so in the running sim the Big Bird detects at ~
 160 km its database entry advertises. The IADS script hand-copied 160,000 from the DCS
 `scripts/database` files; the runtime API is what actually governs a mission.
 
-**Open item, needs the local checkout (pydcs is not installed in the CI container).** Compare
-`AirDefence.S_300PS_64H6E_sr.detection_range` and the Buk SR against the table above. If pydcs
-carries 160 km, then every detection ring we draw for an S-300 search radar overstates by 2×,
-and the player is being told to stand off twice as far as the sim requires. Same check for the
-Buk SR. This is the same class of defect as the `IranFAC_MG_AShM` 14× inflation caught on
-2026-07-20 — a database field standing in for a sensor field.
+**CHECKED 2026-08-20 on the local install. The 2× claim above was an artifact; do not act on
+it.** The two columns are not measured against the same target, so comparing them raw overstates
+every row. Across the table `database ÷ runtime` is a constant **1.4953 = 5^¼** — radar range
+scales as RCS^¼, so the runtime `getSensors()` head-on figure is quoted against a reference
+target one fifth the RCS of the database field's. Normalising by it recovers a round database
+number for every single row.
+
+| Unit | pydcs | runtime × 5^¼ | verdict |
+|---|---|---|---|
+| S-300PS 40B6M tr | 160,000 | 160,000 | exact |
+| SA-11 Buk SR 9S18M1 | 100,000 | 100,000 | **exact — the Buk claim is falsified** |
+| Dog Ear radar | 35,000 | 35,000 | exact |
+| Hawk sr | 90,000 | 90,000 | exact |
+| S-300PS 64H6E sr | 160,000 | 120,000 | pydcs high by 33 % |
+| S-300PS 40B6MD sr | 60,000 | 120,000 | pydcs low by 50 % |
+| Patriot str | 160,000 | 260,000 | pydcs low by 38 % |
+
+**pydcs is not stale.** The DM's own `pydcs_export.lua` run (2026-07-20) and its earlier baseline
+both report the same seven values as the pinned pydcs, so this is not a pin-bump defect and the
+`IranFAC_MG_AShM` comparison does not hold.
+
+**The three survivors are not resolvable from published data.** Both readings fit: DCS's
+mission-editor `DetectionRange` field (what the exporter reads, `pydcs_export.lua:1024`) may
+simply disagree with the sensor for those three units, or his install's database carried
+different numbers than ours. The 64H6E and 40B6MD both landing on 120,000 corroborates the
+`typeName = "S-300PS 40B6MD sr"` observation above — in the running sim they are one sensor.
+Separating the two needs `getSensors()` run on **our** install, which is a DCS-box task, not a
+code change.
+
+**It is load-bearing if it ever turns out to be real.** `TheaterUnit.detection_range`
+(`game/theater/theatergroup.py:154`) returns `type.detection_range` verbatim, and it feeds the
+kneeboard recon detection rings, the map rings (`game/server/controlpoints/models.py`), the
+planner's target range (`game/commander/tasks/packageplanningtask.py:184`) and the anti-ship
+gate. But these are vanilla units whose values faithfully mirror the installed database —
+overriding them fork-side is a data divergence, not a bug fix, and needs its own call.
 
 **Second use — closure on PR #887.** Ramius007 closed the Dog Ear carve saying an EWR gives the
 same benefit at far greater range. Measured: Dog Ear 23.4 km, 1L13 EWR 200.6 km. He was right by
@@ -236,11 +265,11 @@ opinion on a sensor number without booting DCS. Nothing else here needs periodic
 
 | # | Item | Where |
 |---|---|---|
-| 1 | Check `S_300PS_64H6E_sr` and `SA_11_Buk_SR_9S18M1` `detection_range` in pydcs against 80,249 / 66,874 m. Needs the local checkout. | §3 |
+| 1 | ~~Check `S_300PS_64H6E_sr` and `SA_11_Buk_SR_9S18M1` `detection_range` against 80,249 / 66,874 m.~~ **Done 2026-08-20 — no defect found.** The gap was a 5^¼ reference-RCS artifact; the Buk SR is exact. Three units still disagree and need `getSensors()` on our own install to settle. | §3 |
 | 2 | ~~Reword the `mist_moose_shim.lua` header away from "replicated verbatim".~~ **Done 2026-08-20** — 6 comments in the shim + 1 line in its design note. | §1 |
 | 3 | SAM magazines + rearm — **scoped 2026-08-20** in `414th-sam-magazines-notes.md` (MANTIS seam verified clean, off-mission drain hook found, v1 shape proposed). Build decision open. | §4 |
 | 4 | Decide whether `radarSim`-style sweep gating is worth adding to the MANTIS bridge. Not started. | §4 |
 | 5 | Decide whether a default-off training plugin (missile deletion) is wanted. Not started. | §5 |
 
-Items 3–5 are proposals, not commitments. Item 1 is a possible live defect and should be checked
-before the others.
+Items 3–5 are proposals, not commitments. Item 1 is closed: it was checked and the alleged
+defect did not survive.

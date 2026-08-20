@@ -45,11 +45,11 @@ Highest value first. Each is blocked remotely (needs DCS, the real app, or the l
    turn twice, and compare the ATO's target distribution against a NORMAL baseline. Fail
    signature: no visible shift, or a rescue/manual package suppressed (both would be bugs —
    the exemptions are tested but the app path is not).
-3. **The detection-range check** from `414th-mist-author-repos-notes.md` §4 (~30 min, pure
-   local data). Compare pydcs/our export values against the note's runtime dump numbers —
-   S-300 64H6E "Big Bird" 80,249 m vs the 160,000 m database figure; Buk SR 66,874 vs
-   100,000. If pydcs carries the database numbers, our threat rings overstate by ~2× and
-   that becomes a real defect note. Uses `tools/verify_mod_export.py` conventions.
+3. ~~The detection-range check~~ **DONE 2026-08-20 — no defect found.** The two columns are not
+   measured against the same target; `database ÷ runtime` is a flat 5^¼ across the table, the Buk
+   SR is exact once normalised, and the DM's own export matches pydcs on all seven units. Three
+   units still disagree and would need `getSensors()` run on this install to settle — that part
+   *is* a DCS-box task if it is ever wanted. Written up in `414th-mist-author-repos-notes.md` §3.
 4. **The standing fly cards** — `docs/dev/flycards/WATCH.md` (zero setup) and `LOCAL.md`
    (arranged on purpose) as always.
 

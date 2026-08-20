@@ -811,6 +811,14 @@ FEATURES: tuple[Feature, ...] = (
         91,
         plugin_id="base",
     ),
+    Feature(
+        # The recent-changes window on the toolbar. Reads resources/whatsnew.yaml;
+        # no plugin, no Settings gate -- it describes the build, not the campaign,
+        # so it is available before a save is opened.
+        "whats_new",
+        "What's New",
+        92,
+    ),
     # Always-on engine plugins — major 414th machinery documented in design notes
     # rather than a numbered "Features at a Glance" entry.
     Feature("mantis_iads", "MANTIS IADS engine", plugin_id="mantisiads"),

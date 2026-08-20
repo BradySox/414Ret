@@ -240,6 +240,8 @@ Most of this is opt-in. Full list with toggles, defaults and known limitations:
   its normal profile and lands off the aimpoint — further off the deeper inside you released.
   Laser and TV weapons are unaffected; killing the jammer restores accuracy immediately. A
   scouted jamming area is briefed on the kneeboard, an unscouted one is not.
+- **What's New.** A toolbar button lists the recent changes in the build you are running,
+  newest first, each with a line saying what to look for in the next mission.
 - Also: strikeable motor pool depots, enemy comms jamming learned from a captured pilot,
   air-droppable minefields, a host F10 menu to scramble bandits.
 

@@ -9335,3 +9335,64 @@ clears it so only the first impact counts. Pending keys are pruned on the 30 s s
 Deliberate consequence: **gun hits are no longer counted**, because DCS raises no shot event
 for them and there is nothing to rate them against. An uncountable shot must not become a
 free hit.
+
+## §92 — What's New
+
+The fork lands several player-visible changes a week, and most of them are runtime
+behaviour CI cannot exercise — the whole point of the in-game-pass checklist. Knowing
+*what changed* is only half of it; the other half is knowing *how to see it* on the next
+flight. That was living in `docs/`, which is not open while anyone is flying.
+
+A **What's New** button on the toolbar opens a window listing the recent changes, newest
+first, each with a **Watch for** line saying what to look for in the next mission.
+
+### The feed is its own file, not the changelog
+
+`changelog.md` cannot answer "what changed lately". It is grouped by area
+(`[Campaign]` / `[Mission Generation]` / `[UI]`), not ordered by date: two changes landing
+the same afternoon get written seventy lines apart, so position carries no recency at all.
+Adding a date to every historical entry to fix that would be a bigger edit than the feature.
+
+So the feed is `resources/whatsnew.yaml` — authored newest-first, one entry per
+player-visible change, five fields:
+
+| Field | |
+|---|---|
+| `date`, `title`, `change` | required; what changed, in the reader's terms |
+| `watch` | required — **the reason the file exists**: what to look for in the next mission |
+| `row` | optional in-game-pass checklist row that owns the verdict (`B39`) |
+| `pr` | optional PR number, rendered as a link |
+
+It lives in `resources/`, which PyInstaller already bundles wholesale, so it ships with no
+spec change.
+
+### Load path: never raises
+
+The toolbar action is live **before a save is opened** — it describes the build, not the
+campaign, so it sits outside `enable_game_actions` alongside nothing else. That means a
+malformed data file must cost an empty window and nothing more: a missing file, bad YAML,
+a document with no `entries`, or a single half-written entry are each logged and skipped,
+and `load_whats_new` returns `[]` rather than raising into the toolbar.
+
+Ordering is a **stable** sort on `date` descending, so several changes sharing a date keep
+the order the file wrote them — the file stays the author's list, not a re-shuffled one.
+
+### Files & tests
+
+- `game/fourteenth/whatsnew.py` — `WhatsNewEntry`, `load_whats_new`, `DEFAULT_LIMIT` (10).
+- `resources/whatsnew.yaml` — the curated feed.
+- `qt_ui/windows/whatsnew/QWhatsNewWindow.py` — the dialog. Renders through a
+  `QTextBrowser` with inline styles, because Qt's rich-text engine does not read the app's
+  QSS token sheet; entries are separated by a rule, since ten stacked blocks with only
+  margins between them read as one wall of text (the first render did).
+- `qt_ui/uiconstants.py` — `ICONS["What's New"]`. Only the light icon set ships an `info`
+  glyph and a `QPixmap` built from a missing path is silently null, so it falls back to the
+  notes glyph rather than leaving the button iconless under the other three themes.
+- `qt_ui/windows/QLiberationWindow.py` — the action, after a separator at the end of the
+  toolbar.
+- Tests: `tests/fourteenth/test_whatsnew.py` (9 — ordering, the cap, and every degrade
+  path), `tests/test_whats_new_window.py` (6 — offscreen render, escaping, the empty feed,
+  and that the icon key the toolbar asks for exists).
+
+**No in-game pass owed.** It is a window over a data file; the offscreen render test covers
+what a human would check.

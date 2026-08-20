@@ -95,4 +95,4 @@ in play.
 - [Custom Campaigns](Custom-Campaigns) — where factions are assigned
 - [Custom Loadouts](Custom-Loadouts) — default payloads for faction aircraft
 - [Squadrons and Pilots](Squadrons-and-Pilots) — squadron defs, names, and liveries
-- [Air Wing Configuration](Air-Wing-Configuration) — building a side's air wing
+- [Squadrons and Pilots](Squadrons-and-Pilots) — building a side's air wing

@@ -447,4 +447,4 @@ planning is aimed at the sites that actually warrant a deliberate package. See
 - [Combat-SAR](Combat-SAR) — the downed-pilot rescue.
 - [Electronic-Warfare-and-ISR](Electronic-Warfare-and-ISR) — the C-130J JAMMING platform.
 - [Getting-Started](Getting-Started) — first-campaign walkthrough.
-- [Air-Wing-Configuration](Air-Wing-Configuration) — squadron and reserve setup.
+- [Air-Wing-Configuration](Squadrons-and-Pilots) — squadron and reserve setup.

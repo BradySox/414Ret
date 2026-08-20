@@ -1,73 +1,136 @@
 # The Retribution UI
 
-This page is a tour of the main 414Ret window so you know where to click. Retribution runs outside DCS as a desktop app: the center of the screen is a live theater **map**, the edges and top hold the controls for planning a turn, and a series of dialogs let you inspect the enemy, build packages, and read the debrief. The workflow is map-centric — most planning starts by clicking something on the map or by opening a panel from the toolbar.
+Where to click. Retribution is a desktop app that runs outside DCS: a live theater **map** in the
+centre, planning controls around it, and dialogs for inspecting the enemy, building packages and
+reading the debrief. Most planning starts by clicking something on the map.
+
+New here? Read [Getting Started](Getting-Started) first.
 
 ![The 414Ret main window: the campaign control strip across the top, the ATO/packages and flights panels down the left, the live theater map in the center, the unified map layers panel at right, and the info panel along the bottom](https://raw.githubusercontent.com/BradySox/414Ret/main/docs/wiki/img/ui-overview.jpg)
 
-*The main window during turn planning on Germany — Red Tide: top control strip, the ATO/packages and flights columns on the left, the live map (here showing a clicked SAM site's intel popup), and the map layers panel on the right.*
+*Turn planning: top control strip, ATO and flights columns on the left, the map (a clicked SAM
+site's intel popup showing), and the layers panel on the right.*
 
-If you are brand new, read [Getting Started](Getting-Started) first, then come back here for the layout.
+---
 
 ## The map
 
-The map is the heart of the application. It shows the theater, your bases and the enemy's, the front line (FLOT), known ground objects and air defenses, and the routes of planned flights. You interact with it directly:
+Shows the theater, both sides' bases, the front line, known ground objects and air defences, and
+planned flight routes.
 
-- **Click a base, ground target, or front-line sector** to select it and open its context — selecting an objective is usually the first step in fragging a package against it.
-- **Click an air-defense site or known enemy ground object** to open its intel/target dialog (see below).
+- **Click a base, ground target or front-line sector** to select it — usually the first step in
+  fragging a package.
+- **Click an air-defence site or known ground object** to open its intel dialog.
+- **Right-click an enemy supply route** to frag an interdiction package: the dialog opens at the
+  route's enemy end with **Armed Recon** pre-selected.
+- **Right-click a front line** to plan CAS.
 
-The fork makes the map easier to read: SAM rings, emitters, routes, and IADS links are clearer, and short-range mobile defenses are kept off player datalinks while deliberate-SEAD-sized sites stay visible.
+Short-range mobile defences are kept off player datalinks; SEAD-sized sites stay visible.
 
-The **campaign-status ribbon** across the top of the map shows the campaign name, turn and date, the **LAST TURN** SITREP digest, and — on a campaign that authors a `victory:` block — a green **VICTORY** chip you can expand into the live win/lose checklist. You can also **right-click an enemy supply route** to frag an interdiction package against it.
+### The campaign-status ribbon
 
-## The top toolbar and menus
+A slim ribbon over the map carries the campaign name, turn and date, the **LAST TURN** SITREP
+digest, and — on a campaign authoring a `victory:` block — a green **VICTORY** chip that expands
+into the live win/lose checklist.
 
-The toolbar across the top is your campaign control strip. From here you:
+---
 
-- **Save and load** the campaign, and start a **New Game** (the wizard described in [Getting Started](Getting-Started)).
-- Open **Settings** — the difficulty, doctrine, plugin, and cheat options. The fork reorganised this screen into focused pages (Difficulty & Realism · Air Doctrine · Campaign Management · Mission Generation · Kneeboards · Performance · **Vietnam Ops**) with one-click **difficulty presets** (Casual / Normal / Veteran / Ace) on the Difficulty & Realism page; a settings audit also removed dead/duplicate options and merged the AI-radio toggles into a single **AI wingman radio behavior** choice. Doctrine settings here expose the fork's air-defense, SCAR, and unpredictability knobs.
-- **Generate the mission / take off** — produce the `.miz` for the current turn and hand off to DCS.
-- **Advance the turn / fast-forward** — resolve and move the campaign forward after a mission, or let the AI auto-resolve.
-- Open the **Air Wing** and finance/intel summaries for the current state.
+## The toolbar
+
+- **Save / load / New Game.**
+- **Settings** — organised into focused pages (Difficulty & Realism · Air Doctrine · Campaign
+  Management · Mission Generation · Kneeboards · Performance · Vietnam Ops) with one-click
+  difficulty presets (Casual / Normal / Veteran / Ace).
+- **Generate the mission / take off.**
+- **Advance the turn / fast-forward.**
+- **Air Wing** and the finance/intel summaries.
+
+---
 
 ## The ATO and packages panel
 
-The **Air Tasking Order (ATO)** lists every package you have planned for the turn, and each package lists its flights. This panel is where a turn's plan lives:
+The **Air Tasking Order** lists every package planned for the turn, and each package its flights.
 
-- A **package** groups flights with a shared objective and timing (for example a strike with its escort and SEAD).
-- Selecting a package or flight shows its task, time-on-target, player slots, departure base, squadron fit, available aircraft, and target distance — the fork surfaces this without making you hunt across windows.
-- From here you add flights, set tasks (including the fork's tasks: **JAMMING**, **TARPS**, **SCAR**, and **Combat SAR**), choose loadouts, and edit waypoints/altitudes.
+- A **package** groups flights with a shared objective and timing — a strike with its escort and
+  SEAD.
+- Selecting a package or flight shows task, time-on-target, player slots, departure base, squadron
+  fit, available aircraft and target distance.
+- Add flights, set tasks (including the fork's **JAMMING**, **TARPS** and **CSAR**), choose
+  loadouts, edit waypoints and altitudes.
 
-For the full planning workflow — building packages, flight plans, escorts, and timing — see [Mission Planning](Mission-planning).
+Full workflow: [Mission Planning](Mission-planning).
 
-## The unified map layers panel
+---
 
-In the upstream app, map display is controlled by two separate stock Leaflet controls. **The 414th fork replaces both with a single dark-themed, grouped, collapsible map layers panel** that matches the rest of the UI. From it you can:
+## The map layers panel
 
-- Toggle layers (threat zones, navmesh, terrain, enemy intel, routes, and more), with advanced groups collapsed by default.
-- Apply one-click **preset views**: **Default**, **SEAD**, **Recon**, and **Clean**, each enabling a useful set of layers for that job.
-- Flip the transient **Reveal fog of war (overview)** toggle in the enemy-intel group. This shows ground truth — full enemy composition, threat rings, and otherwise-hidden command posts — as a view-only override. It never changes the campaign and is never saved.
+Upstream splits map display across two stock Leaflet controls. The fork replaces both with one
+dark-themed grouped panel.
 
-Your layer choices are remembered between sessions (the fog overview is the deliberate exception). Full details are on [Map Layers and Interface](Map-Layers-and-Interface).
+![The unified map layers panel: Default/SEAD/Recon/Clean preset buttons and a Clarity/Firefly/Topographic basemap row across the top, then collapsible groups — Friendly & shared, Air defences, Enemy intel (with the Reveal fog of war overview toggle), Allied & flight plans, Threat zones, Navmesh & terrain — and a Hide all overlays button](https://raw.githubusercontent.com/BradySox/414Ret/main/docs/wiki/img/map-layers-panel.png)
 
-## Intel and target dialogs
+- **Grouped, collapsible sections** — Friendly & shared, Air defences, Enemy intel, Allied & flight
+  plans, Threat zones, Navmesh & terrain. Advanced groups start collapsed.
+- **Preset views** — **Default**, **SEAD**, **Recon**, **Clean**, plus "Hide all overlays".
+- **Choices persist** with the campaign and are restored between sessions.
+- **Local chart base maps** — tile sets in `Saved Games/Retribution/MapTiles/` appear as extra
+  base-map buttons beside Clarity/Firefly/Topographic, so the map can show a chart of the *DCS*
+  terrain instead of mismatched real-world imagery. Sliced with `tools/tile_geotiff.py`.
 
-Clicking a ground object or air-defense site opens an **intel/target dialog**. The fork's panel shows known strength, mission suitability, weapon and detection ranges, IADS membership, visibility, and capture/purchase state.
+### Reveal fog of war
 
-Intelligence here is deliberately incomplete: in 414Ret an enemy site can be *known to exist* without its exact composition, strength, damage state, or threat rings being known until you engage it. Once engaged you see all of it, damage included — there is no separate confirmation pass. If you need the real picture for planning, the **Reveal fog of war** toggle in the layers panel un-fogs these dialogs along with the map.
+A transient checkbox in the Enemy intel group. It forces every player-facing fog rule to ground
+truth, so the map and the intel dialogs un-fog together — full enemy composition, threat rings, and
+otherwise-hidden command posts.
 
-## The debrief
+**View toggle only.** It never changes the campaign and is deliberately never persisted, so a saved
+game can never carry a god-view. See
+[Fog of War and Reconnaissance](Fog-of-War-and-Reconnaissance).
 
-After a mission, the **debrief** opens with **mission impact first** — territorial changes, runway and base damage, and losses — before the full event-by-event detail. This is where you confirm what the turn cost and gained before advancing. The Combat SAR feature also resolves here: a downed human pilot you recovered and delivered to a friendly field is spared at debrief (you still lose the airframe, but the aviator returns to the squadron).
+---
+
+## What the DCS F10 map shows
+
+Planning information is painted into every generated mission, so it survives into the cockpit with
+no DTC and no screenshots:
+
+- **Front lines** — solid red arrowed lines.
+- **Supply routes** — convoy corridors coloured by ownership. On campaigns authored to the
+  [corridor standard](Custom-Campaigns#supply-routes-follow-the-driveable-corridor) these follow
+  the real driveable roads.
+- **Control points** — a coloured capture-radius circle per airbase and FARP.
+- **Tanker and AWACS orbits** — each racetrack as a cyan dashed capsule labelled with callsign,
+  type, frequency and TACAN (`Texaco 1-1 KC-135 · 251.0 AM TCN 31Y`). *(Pending its first
+  in-cockpit check, checklist R1.)*
+
+---
+
+## Intel and planning dialogs
+
+Clicking a ground object opens its **intel dialog**: known strength, valid mission types, weapon
+and detection ranges, IADS membership, the hide-on-MFD flag, and capture/purchase state.
+
+**Intelligence is deliberately incomplete.** A site can be known to exist while its composition,
+strength, damage and threat rings read `Unknown (not engaged)`. Engage it — ordnance on it, or any
+ground-attack sortie that reaches it — and you know all of it permanently, damage included. There
+is no separate confirmation pass.
+
+Three other dialogs surface planner reasoning rather than raw numbers:
+
+- **Package context bar** — primary task, flight count, player slots, actual TOT and departure
+  bases on one line.
+- **Flight creation** — a live summary of what the selected task, aircraft and squadron mean;
+  squadron hover text gives primary role, auto-assignability, spare aircraft, base and distance to
+  target.
+- **Debrief** — leads with **Mission Impact**: end-state, bases captured and lost, runway damage
+  and loss counts, above the full casualty tables.
 
 ![The debrief's Casualty report, leading with a Mission Impact block — mission status, bases lost/captured, runway damage — above the per-side loss lists for both coalitions](https://raw.githubusercontent.com/BradySox/414Ret/main/docs/wiki/img/debrief-mission-impact.png)
 
-*The debrief leads with the Mission Impact summary (end-state, captures, runway damage, loss counts) before the full casualty tables.*
+---
 
 ## See also
 
-- [Getting Started](Getting-Started)
 - [Mission Planning](Mission-planning)
-- [Map Layers and Interface](Map-Layers-and-Interface)
+- [Fog of War and Reconnaissance](Fog-of-War-and-Reconnaissance)
 - [414th Fork Overview](414th-Fork-Overview)
-- [Squadrons and Pilots](Squadrons-and-Pilots)
-- [Home](Home)

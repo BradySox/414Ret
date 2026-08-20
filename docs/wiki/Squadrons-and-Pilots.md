@@ -1,82 +1,108 @@
 # Squadrons and Pilots
 
-Your air force is organized into **squadrons**, each a group of **pilots** flying a single
-aircraft type. Pilots gain experience, can be lost, and are replaced over time. This page
-covers how squadrons and pilots work, and the fork-specific wrinkles — most notably that a
-downed pilot you rescue can be **spared** at debrief.
+Your air force is squadrons of pilots flying one aircraft type each. This page covers how the wing
+is assembled, how you shape it, and how pilots are gained and lost.
 
-## Squadrons
+---
 
-A squadron is a pool of pilots flying one aircraft type with a defined set of roles. Each
-squadron has a fixed livery and operates from a shore base, a carrier, or both, depending on
-what the airframe supports.
+## How the wing is assembled
 
-- **Predefined squadrons** load from YAML files that set the squadron name, aircraft, roles,
-  and pilot names. YAML squadrons can also carry custom **radio presets** (intra-flight
-  channels and frequencies) for consistent multiplayer comms.
-- **Generated squadrons** are created automatically with randomized names when an aircraft
-  type has no predefined squadron for the faction.
+Four things decide it:
+
+1. **The faction** — the pool of aircraft, helicopters, tankers, AWACS, ground units and naval
+   assets legal for your side.
+2. **The campaign's preset squadrons** — most campaigns ship named squadrons (livery, country,
+   capable tasks) pinned to bases. Unfilled slots get an auto-generated generic squadron.
+3. **The control points you own** — each base carries squadron slots tied to mission roles, and
+   only suitable aircraft can fill them.
+4. **What you buy** — budget and parking cap how large the wing grows.
+
+Open a friendly base from the map to see its squadrons in **Airfield Command**. Each base exposes
+profiles matching its infrastructure:
+
+- **Airfields** — fast jets and support: BARCAP, SEAD/DEAD, Strike, AEW&C, refuelling.
+- **Carriers** — carrier-capable roles: BARCAP, anti-ship, AEW&C, refuelling.
+- **FOBs and FARPs** — heliport-only: CAS and Transport, flown by helicopters.
+
+When the planner fills a slot it tries, in order: a squadron assigned to that role, then a
+preferred airframe, then any compatible aircraft from the faction roster, then an auto-generated
+squadron. Picking squadrons up front keeps packages flying the airframes you want.
+
+### Buying
+
+Add aircraft from a base's command panel with **+**. Purchases arrive **next turn**, are limited by
+budget and parking, and can be cancelled before the turn rolls — sales are immediate and final.
+
+You are equipping the whole faction's war, not just your own slot, so buy to cover the missions you
+intend to plan.
+
+Ground units come from **Ground Forces HQ**. Auto-purchase handles routine reinforcement so you
+hand-buy only what you care about.
+
+### Squadrons you need for the fork's player tasks
+
+- **TARPS** photo-recon — any TARPS-tagged airframe; the F-14 is the modern carrier of the role.
+- **JAMMING** standoff EW/ISR — a C-130J squadron.
+- **CSAR** pilot rescue — a helicopter squadron. Fixed-wing cannot fly it.
+
+---
 
 ## Pilots
 
 Each aircraft on a mission has one assigned pilot from its squadron.
 
-- **Experience.** AI pilots start at a base skill level set in campaign settings and gain a
-  skill increase roughly every four missions completed, climbing toward ace.
-- **Loss.** A pilot can be killed when their aircraft is destroyed, which removes them from
-  the squadron and requires a replacement.
-- **Replacements.** Squadrons can optionally auto-recruit new pilots each turn, up to a
-  limited rate, while below their maximum (default 24 pilots per squadron).
-- **Leave.** You can send a pilot on leave to keep them from being auto-assigned to
-  missions.
+- **Experience.** AI pilots start at the campaign's base skill level and gain a skill increase
+  roughly every four missions, climbing toward ace.
+- **Loss.** A pilot can be killed when their aircraft is destroyed, removing them from the squadron.
+- **Replacements.** Squadrons can auto-recruit each turn at a limited rate, up to a maximum
+  (default 24 per squadron).
+- **Leave.** Send a pilot on leave to keep them out of auto-assignment.
 
-## Player pilots
+**Player pilots are named individuals, not anonymous slots.** By default a player pilot cannot be
+killed — the aircraft is still lost. Toggleable in the difficulty settings. The auto-planner offers
+never-assign-players, no preference, or prefer-player-pilots.
 
-Players are treated as individual named pilots rather than as anonymous slots. By default a
-**player pilot cannot be killed** (the aircraft is still lost) — this is toggleable in the
-difficulty settings. The auto-planner offers preferences for whether players are assigned at
-all: never assign players, no preference, or prefer player pilots.
+### A rescued pilot is spared
 
-## Fork difference: Combat SAR can spare an experienced pilot
+When a pilot ejects they spawn on the ground with a beacon. Recover them with a rescue helicopter
+and deliver them to any friendly field and the campaign **spares the aviator at debrief** — you
+still lose the jet, but the experienced crew returns to the squadron.
 
-This fork adds a **Combat SAR** flight type that makes a downed aviator worth flying for.
-When a human pilot ejects, they spawn on the ground with a beacon. If you recover them with
-the rescue helicopter and deliver them to any friendly field, the campaign **spares the
-aviator at debrief** — you still lose the jet, but the experienced pilot returns to the
-squadron instead of being counted as lost. The rescue closes the loop end to end: the
-delivery is what removes that pilot from the loss list. If no rescue is flown (or it fails),
-the loss applies as normal.
+A veteran you would otherwise replace from scratch can be brought home, so recovering downed
+players has real campaign value. See [Combat SAR](Combat-SAR).
 
-This is a meaningful change to pilot economy: a veteran crew you would otherwise have to
-replace from scratch can be brought home, so protecting and recovering downed players has
-real campaign value. See [Combat SAR](Combat-SAR) for how to fly it.
+---
 
-## Fork content: named-livery squadrons in Red Tide
+## Squadron identity
 
-The fork's **Germany – Red Tide** campaign replaces generic, mismatched paint schemes with
-**named historical units wearing matching liveries**. Every squadron in that campaign is a
-real identity — GSFG and VVS regiments on the red side, 414th Joint Fighter Group units
-(VMF-29, Voodoo, the 414th TFS, JFG Hornets) on the blue side — so the air war no longer
-spawns aircraft in liveries that do not fit the unit flying them.
+- **Predefined squadrons** load from YAML: name, aircraft, roles, pilot names, and optional custom
+  **radio presets** (intra-flight channels and frequencies) for consistent multiplayer comms.
+- **Generated squadrons** get randomised names when an aircraft type has no preset for the faction.
 
-## Fork difference: per-squadron nation and nation-aware pilot names
+### Per-squadron nation
 
-On a multinational coalition (like `Combined Joint Task Forces Blue`), each squadron now spawns its
-air units under its **own DCS country** rather than one shared faction country. A mixed-nation side
-therefore gets **nation-specific voiceovers and radio comms** instead of one voice for the whole
-coalition. A `CountryAssigner` resolves the country per squadron, registers each nation on the
-coalition, and enforces the DCS **one-country-per-coalition** rule (blue claims a country first; a
-colliding red squadron falls back to the red faction country). It's a no-op for single-nation
-factions.
+On a multinational coalition each squadron spawns its air units under **its own DCS country**
+rather than one shared faction country, so a mixed-nation side gets nation-specific voiceovers and
+radio comms instead of one voice for everyone.
 
-**Pilot names follow the nation too.** Each squadron's roster is generated from **its own country's**
-name pool — a Greek squadron gets Greek names, an Iranian one Persian, and so on — falling back to
-the faction's locale for unmapped or multinational countries, so generation never breaks.
+A `CountryAssigner` resolves the country per squadron, registers each nation on the coalition, and
+enforces the DCS **one-country-per-coalition** rule — blue claims a country first, and a colliding
+red squadron falls back to the red faction country. It is a no-op for single-nation factions.
+
+**Pilot names follow the nation.** Each roster is generated from its own country's name pool — a
+Greek squadron gets Greek names, an Iranian one Persian — falling back to the faction's locale for
+unmapped or multinational countries, so generation never breaks.
+
+### Named liveries
+
+The **Germany – Red Tide** campaign replaces generic mismatched paint with named historical units
+wearing matching liveries — GSFG and VVS regiments on the red side, 414th Joint Fighter Group units
+on the blue side — so the air war stops spawning aircraft in liveries that do not fit the unit
+flying them.
 
 ## See also
 
 - [Combat SAR](Combat-SAR)
-- [Unit Transfers](Unit-Transfers)
-- [Base Capture](Base-Capture)
+- [The Ground War](The-Ground-War)
 - [Mission Planning](Mission-planning)
-- [Fast Forward and Performance](Fast-Forward-and-Performance)
+- [Air Defense and the Air War](Air-Defense-and-the-Air-War)

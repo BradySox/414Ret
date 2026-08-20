@@ -37,7 +37,7 @@ runtime base defence, instead of having every airframe fragged into the ATO.
   `qra_engagement_range_nm`), so you can re-tune them per campaign.
 
 The reserve is edited in the air-wing / squadron dialogs; see
-[Air-Wing-Configuration](Air-Wing-Configuration). The old ramp-scramble system is retired — QRA
+[Air-Wing-Configuration](Squadrons-and-Pilots). The old ramp-scramble system is retired — QRA
 is the only live reactive-A2A path.
 
 ## BARCAP coverage
@@ -66,7 +66,7 @@ enemy threat by the configured buffer (`aewc_threat_buffer_min_distance`,
   generated mission's **F10 map** as a cyan dashed racetrack with a label — callsign, type,
   radio frequency, TACAN — so "where's my gas?" is answered by the F10 map, no DTC and no
   briefing screenshot needed. See
-  [Map Layers and Interface](Map-Layers-and-Interface#what-the-dcs-f10-map-shows).
+  [The Retribution UI](The-Retribution-UI).
 
 <a name="long-range-carrier-ops"></a>
 ## Long-range carrier ops
@@ -89,9 +89,9 @@ squadron just sat on deck. With this on, the boat joins the war deterministicall
 - Campaigns pair the toggle with a wider `max_mission_range_planes` so the carrier squadrons are
   assignable to normal tasking at that range at all.
 
-No carrier, no capable jets, or no legal target ⇒ silent no-op. Blue-side only. See the
-**[Enduring Resolve briefing](Enduring-Resolve-Campaign-Briefing#the-carriers-war)** for the
-shipped example. *(Engine-verified; awaiting its first flown campaign — checklist P2.)*
+No carrier, no capable jets, or no legal target ⇒ silent no-op. Blue-side only. The shipped
+example is the COIN campaign `coin_enduring_resolve`. *(Engine-verified; awaiting its first
+flown campaign — checklist P2.)*
 
 ## DEAD reachability gate
 
@@ -170,7 +170,7 @@ degradation graph have their own page:
 
 - [Mission-planning](Mission-planning) — packages, TOT timing, and the full per-task detail
   (SEAD/DEAD decision guide, BARCAP, escorts).
-- [Air-Wing-Configuration](Air-Wing-Configuration) — squadron setup and the QRA reserve.
+- [Air-Wing-Configuration](Squadrons-and-Pilots) — squadron setup and the QRA reserve.
 - [IADS Engine: MANTIS](IADS-Engine-MANTIS) — the runtime engine behind enemy air defenses.
 - [Electronic Warfare and ISR](Electronic-Warfare-and-ISR) — the C-130J jammer/ELINT platform.
 - [Fog-of-War-and-Reconnaissance](Fog-of-War-and-Reconnaissance) — recon fog and the overview

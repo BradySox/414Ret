@@ -154,7 +154,7 @@ favour of upstream's page set. If you are reading an older note or an old screen
 
 ## See also
 
-- [Your First Operation](Your-First-Operation) — opening the kneeboard in the cockpit
+- [Getting Started](Getting-Started) — opening the kneeboard in the cockpit
 - [Fog of War and Reconnaissance](Fog-of-War-and-Reconnaissance) — approximate-mode kneeboard pages
 - [Mission Planning](Mission-planning) — packages, comms, and code words that feed the deck
 - [Combat SAR](Combat-SAR) — the Combat SAR kneeboard page

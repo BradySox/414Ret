@@ -13,9 +13,10 @@ Scope is the **published** surface only -- ``README.md`` and ``docs/wiki/``.
 Design notes under ``docs/dev/`` are deliberately excluded: they are a
 historical record and are *expected* to describe dead features.
 
-A file whose opening carries a removal banner is exempt, so the established
-"banner it and keep it so old saves stay readable" pattern does not trip the
-audit. See ``docs/wiki/Campaign-Phases-and-ROE.md`` for the shape.
+A file whose opening carries a removal banner (see ``BANNERS``) is exempt, so a
+page deliberately kept as a historical record does not trip the audit. No such
+page exists right now -- the 2026-08-20 trim deleted both of them, on the view
+that a published wiki should not carry tombstones at all.
 
     python tools/audit_stale_docs.py            # report; exit 1 if anything is found
     python tools/audit_stale_docs.py --quiet    # exit status only, for a CI gate
@@ -108,6 +109,22 @@ REMOVED: tuple[Removed, ...] = (
         allow=("removed", "no longer exists", "historical", "replaced"),
     ),
     Removed(
+        # Each of these slipped past the first version of this table during the
+        # 2026-08-20 wiki trim, and each was live on a published page:
+        #  - bare "SCAR" as a task you can frag (the pattern above needs Sandy or
+        #    FlightType.SCAR, and three pages just wrote SCAR in a task list);
+        #  - "scout"/"not scouted" as the reveal rule, and the UI label it quotes
+        #    is now "not engaged";
+        #  - "Front-line navmesh" (the reverted S6 pattern says "FLOT navmesh");
+        #  - "resolve regenerates" for the removed will economy.
+        "phrasings that outlived their feature",
+        "various",
+        r"\*\*SCAR\*\*|`SCAR`|SCAR (task|flight|hunt|moving-target)"
+        r"|not scouted|until (you )?scout|scout or attack|unscouted"
+        r"|[Ff]ront-line navmesh|resolve regenerat|Regime Resolve",
+        allow=("removed", "retired", "no longer", "is gone", "historical"),
+    ),
+    Removed(
         "campaign phases, ROE zones and target release (S40)",
         "2026-07-21",
         r"restricted_zones:|free_fire_zones:|campaign_phase|free-fire zone|ROE zone",
@@ -142,7 +159,8 @@ REMOVED: tuple[Removed, ...] = (
     Removed(
         "The Wing Grows (S82)",
         "2026-08-16",
-        r"[Ww]ing [Gg]rows|wing_growth|scheduled squadron arrival",
+        # Title case only: "cap how large the wing grows" is ordinary English.
+        r"The Wing Grows|wing_growth|scheduled squadron arrival",
         allow=("removed", "no longer"),
     ),
     Removed(

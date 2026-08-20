@@ -223,7 +223,7 @@ before uploading a PR.
    `game/plugins/tests`).
 3. **Lua syntax gate** (blocking): `luac5.1 -p` over every `resources/plugins/**/*.lua`,
    plus an advisory luacheck pass.
-4. The rolling-release build (see [Release process](Release-process)).
+4. The rolling-release build (see [Contributing to DCS Retribution](Contributing-to-DCS-Retribution)).
 
 The local pre-push trio (PowerShell, against a `.venv` checkout):
 
@@ -244,7 +244,7 @@ dies at runtime, not in CI.
 
 ## Making a release
 
-[Release process](Release-process)
+[Contributing to DCS Retribution](Contributing-to-DCS-Retribution)
 
 ## Pull requests
 

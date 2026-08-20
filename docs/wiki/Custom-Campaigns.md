@@ -229,8 +229,7 @@ What it demonstrates:
   Voodoo, the 414th TFS, JFG Hornets) fly on the blue side — no mismatched paint.
 
 The full build log, including the `.miz` edit points and gotchas, is in
-`docs/dev/design/414th-red-tide-campaign-notes.md`. For the player-facing briefing pack, see the
-**[Red Tide — Campaign Briefing](Red-Tide-Campaign-Briefing)** and its companion pages.
+`docs/dev/design/414th-red-tide-campaign-notes.md`.
 
 ## Worked example: 1968 Yankee Station
 
@@ -259,7 +258,7 @@ is rooted in the real 1968 war. It demonstrates a different toolbox:
 
 Design log: `docs/dev/design/414th-vietnam-retribution-notes.md` (framing) +
 `docs/dev/design/414th-vietnam-ops-notes.md` (the mechanics). See also
-**[The Vietnam Campaign Layer](Vietnam-Campaign-Layer)** and **[Vietnam Ops](Vietnam-Ops)**.
+**[Vietnam Ops](Vietnam-Ops)** and **[Vietnam Ops](Vietnam-Ops)**.
 
 ## Worked example: Operation Enduring Resolve (COIN)
 
@@ -276,7 +275,6 @@ describes, used in anger:
 - **`settings:` preseeds** for the whole COIN stack plus the carrier pair
   (`long_range_carrier_ops` + `max_mission_range_planes: 600`).
 
-Player-facing briefing: **[Operation Enduring Resolve (COIN)](Enduring-Resolve-Campaign-Briefing)**.
 Design logs: `docs/dev/design/414th-coin-*.md`.
 
 ## See also
@@ -286,4 +284,4 @@ Design logs: `docs/dev/design/414th-coin-*.md`.
 - [Custom Factions](Custom-Factions) — who fights and with what units
 - [Custom Loadouts](Custom-Loadouts) — per-aircraft default payloads
 - [Lua Plugins](Lua-Plugins) — the in-mission scripting layer
-- [Turn Zero](Turn-Zero) — what happens when a campaign starts
+- [Getting Started](Getting-Started) — what happens when a campaign starts

@@ -4,8 +4,11 @@ Status: **study note, nothing built.** Written 2026-08-20 on the DM's ask. What 
 engine actually does, mechanism by mechanism; the crosswalk to what this fork already has;
 the four candidates worth considering; and the tombstones this material must not resurrect.
 
-**Sources and limits.** BMS is closed-source freeware (current release **4.38**, 2025-07-01;
-Update 1, Nov 2025). The original Falcon 4.0 source circulating online is **leaked
+**Sources and limits.** BMS is closed-source freeware. Latest version verifiable from this
+container: **4.38.1.1** (Build 3315, Dec 2025), via 4.38.0 (2025-07-01) and 4.38.1 Update 1
+(Nov 2025). The egress proxy blocks falcon-bms.com, its forum and wiki, so a newer 2026
+release may exist that search does not surface — check
+https://www.falcon-bms.com/changelogs/ from a normal connection before citing "current". The original Falcon 4.0 source circulating online is **leaked
 proprietary code — not read, and not to be read**, the same licence gate as
 `414th-mist-author-repos-notes.md`. Everything here comes from public documentation,
 developer interviews and community guides, reached through search summaries because the
@@ -147,5 +150,9 @@ if that feature is ever built, its design needs no change on BMS's evidence.
 
 ## 7. Owed
 
-Nothing. Candidates 1–4 are offers with named gates, not commitments. If one is picked up,
-it gets its own note; this one stays a study.
+Candidates 1–4 are offers with named gates, not commitments. If one is picked up, it gets
+its own note; this one stays a study. One standing watch line: the 4.38 changelog marks its
+HAVCAP/BARCAP/TARCAP/RESCORT/AMBUSHCAP mission-evaluation refactors as "to prepare for new
+code" — when the next BMS release lands (check the changelog index; the DM may see the
+announcement before search does), read its campaign section for what those refactors were
+preparing. That is the one place their engine is visibly mid-change.

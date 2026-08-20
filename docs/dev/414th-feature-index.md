@@ -23,7 +23,7 @@ pass checklist `§N` is unregistered, or this table drifts.
 | §9 | TIC — Troops In Contact | `tic` | — |
 | §10 | CurrentHill Iran assets pack | — | — |
 | §11 | Native DCS DTC cartridge export _(retired)_ | — | — |
-| §12 | Recon engine (TARPS + drone BDA) | `recon` | — |
+| §12 | Recon engine (TARPS + drone BDA) _(retired)_ | — | — |
 | §13 | Flight Control ATC _(retired)_ | — | — |
 | §14 | Plugin Options UI | — | — |
 | §15 | SCAR — RESCAP "Sandy" rescue escort _(retired)_ | — | — |

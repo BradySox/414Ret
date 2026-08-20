@@ -31,10 +31,12 @@ units hold formation and fight scripted, maneuvering firefights with per-stance 
 so flying CAS over the front finally looks and feels alive — and your strafing passes are
 the real source of attrition.
 
-**Recon fog + TARPS BDA.** Enemy sites show as targets you can plan against, but their
-*composition, damage state, and threat rings stay hidden* until you scout, strike, or kill
-a unit there. Fly the F-14 on a TARPS pass and your film feeds **confirmed BDA** back into
-the campaign. The AI planner always uses ground truth, so auto-planning is unaffected —
+**Recon fog.** Enemy sites show as targets you can plan against, but their *composition and
+threat rings stay hidden* until you engage them — ordnance on the site, or any ground-attack
+sortie that reaches it. Engaging reveals the site completely and permanently, damage included;
+there is no BDA lag and scouting reveals nothing. What recon is for is enemy **command posts**,
+which are hidden from the map outright: a surviving TARPS flight finds one within about 3 NM of
+its package target. The AI planner always uses ground truth, so auto-planning is unaffected —
 the fog is yours alone. A one-click overview toggle lifts it when you want the full map.
 
 **SCAR — a moving-target hunt.** A player-flown Strike Coordination & Reconnaissance task:

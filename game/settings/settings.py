@@ -3919,12 +3919,6 @@ class Settings:
     # LUA Plugins system
     plugins: Dict[str, bool] = field(default_factory=dict)
 
-    # Marker for the one-time TARS default-on migration (see __setstate__; the
-    # retired Flight Control plugin was flipped by the same marker). True on a fresh
-    # Settings so new campaigns are never re-migrated; only legacy saves that lack
-    # the marker get the one-time flip.
-    applied_recon_plugins_default: bool = True
-
     def start_type_for(self, flight_type: "FlightType", has_players: bool) -> StartType:
         """The start type a newly planned flight of this kind should default to.
 
@@ -3978,18 +3972,6 @@ class Settings:
         new_state.update(migrated_state)
         self.__dict__.update(new_state)
 
-        # This used to force the TARS plugin on once for saves predating it. Both
-        # recon plugins it covered ("tars", "airecon") were retired on 2026-08-05
-        # when MOOSE Ops.TARS was cut, so the force-enable had become a write of a
-        # dead key that nothing reads (`LuaPluginManager.load_settings` iterates
-        # plugins.json, never the saved keys). Its successor needs no migration: a
-        # pre-retirement save carries no "recon" key at all, so the plugin falls
-        # back to its own `defaultValue: true`, and a save that deliberately turned
-        # recon off must keep it off. The marker is still stamped so the meaning of
-        # its absence stays stable for any future recon-plugin migration; the dead
-        # option keys are pruned below.
-        self.applied_recon_plugins_default = True
-
         # Drop retired plugin option keys so dead configuration does not persist
         # across a load/save cycle. The obsolete Anubis "herculescargo" plugin and
         # its option keys were removed in favor of the official C-130J-30. The old
@@ -4006,7 +3988,9 @@ class Settings:
         # active plugin list and their directories are now removed. The "tars"
         # (MOOSE Ops.TARS) and "airecon" plugins were retired on 2026-08-05 when the
         # two split recon implementations were replaced by the single "recon" plugin
-        # (§12); a save made before that still carries their keys.
+        # (§12); that successor was itself removed on 2026-08-20, once the reveal
+        # rework left its captures with no consumer. A save made before each of those
+        # still carries the keys.
         for plugin_key in [
             key
             for key in self.plugins
@@ -4016,6 +4000,8 @@ class Settings:
             or key.startswith("tars.")
             or key == "airecon"
             or key.startswith("airecon.")
+            or key == "recon"
+            or key.startswith("recon.")
             or key == "ewrj"
             or key.startswith("ewrj.")
             or key == "dismounts"

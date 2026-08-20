@@ -106,11 +106,10 @@ HEAVY_BOMBER_DCS_IDS = frozenset(
 
 # Unmanned ISR/strike aircraft (UAVs). DCS carries no reliable "is a drone" flag --
 # `category` buckets them as generic "Air" alongside the B-52/C-130 -- so this is a
-# curated id set (the vanilla drones; extend if a mod drone is ever added). A drone is
-# always a sensor: it feeds recon/BDA home regardless of its tasked mission (the 414th
-# "a drone is always filming" rule), so the AI-recon capture emits every AI-flown drone
-# flight, not only the TARPS-tasked ones (game/missiongenerator/reconluadata.py). Also
-# the JTAC-drone platform for a faction (game/factions/faction.py `jtac_unit`).
+# curated id set (the vanilla drones; extend if a mod drone is ever added). Consumers:
+# the §70 COMINT collector check (game/fourteenth/comint.py) and a faction's JTAC-drone
+# platform (game/factions/faction.py `jtac_unit`). The 414th "a drone is always filming"
+# rule died with the recon plugin (2026-08-20) -- recon now credits a TARPS tasking only.
 UAV_DCS_IDS = frozenset(
     {
         "MQ-9 Reaper",

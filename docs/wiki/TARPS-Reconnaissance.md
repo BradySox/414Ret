@@ -7,9 +7,8 @@
 > [Fog of War and Reconnaissance](Fog-of-War-and-Reconnaissance).
 
 TARPS is the **Tactical Airborne Reconnaissance Pod System**, the real F-14 recon pod. Here it is
-a flight type (`FlightType.TARPS`) driven by the `recon` plugin. The flight type is
-**airframe-agnostic** — the F-14 is the modern carrier of the role, but any aircraft tagged with
-the `TARPS` task can fly it.
+a flight type (`FlightType.TARPS`). The flight type is **airframe-agnostic** — the F-14 is the
+modern carrier of the role, but any aircraft tagged with the `TARPS` task can fly it.
 
 ---
 
@@ -17,26 +16,25 @@ the `TARPS` task can fly it.
 
 1. **Get tasked.** Build a `FlightType.TARPS` package by hand, or let the auto-planner append one
    (below).
-2. **Overfly the target.** The target waypoint is a flyover, not an attack run. There is no menu
-   and no film limit — crossing the site is what captures the take.
-3. **Come home for the read-out.** A flight that is shot down or aborts before the pass finds
-   nothing.
+2. **Bring the flight home.** The find is credited if at least one aircraft of the recon flight
+   survives the mission. A flight wiped out finds nothing.
 
-Any hidden command post within about 3 NM of the area you were sent to photograph is revealed at
-debrief, with a "RECON: enemy command post located" message. Nothing else about the area changes
-— an un-engaged site's composition stays fogged whether you photographed it or not.
+At debrief, any hidden command post within about 3 NM of the **package's target** is revealed,
+with a "RECON: enemy command post located" message. Nothing else about the area changes — an
+un-engaged site's composition stays fogged whether you photographed it or not.
 
-### What shapes the take
+### What does not change the find
 
-- **Sensor.** A TARPS tasking reads a wider area than a drone's ball.
-- **Altitude.** Full radius up to 20,000 ft, degrading to about 40% by 40,000 ft. A high, fast
-  pass resolves less.
-- **Weather.** Cloud cover from the campaign's own weather cuts what the cameras see. In rain or
-  storms the auto-planner stops appending recon flights entirely.
+Altitude, speed, cloud cover and which sensor you carry make no difference, and there is no film
+menu or per-sortie limit. The plugin that scored an overflight that way was removed in August
+2026, once the reveal rules left it with nothing to feed.
 
-**Drones are always filming.** Any drone records what it overflies regardless of its tasking —
-solo recon, JTAC overwatch on a strike, or CAS. A manned jet only films when actually tasked
-TARPS.
+Weather still matters one step earlier: in rain or storms the auto-planner stops appending recon
+flights at all.
+
+A drone can be fragged as the recon bird like any other TARPS-capable airframe, but a drone flying
+some other tasking no longer contributes anything — the "a drone is always filming" rule went with
+the plugin.
 
 ---
 
@@ -84,7 +82,6 @@ With **`auto_add_tarps_recon`** on (default), the planner appends a single TARPS
 | Setting | Default | Effect |
 |---|---|---|
 | `auto_add_tarps_recon` | ON | Planner appends a recon flight to Strike / DEAD / Armed Recon packages |
-| `recon` plugin | ON | The runtime that scores an overflight. Its output is currently unused |
 
 ## See also
 

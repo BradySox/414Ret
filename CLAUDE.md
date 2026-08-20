@@ -211,7 +211,7 @@ Kept for reading old notes and saves; **do not author against them**.
 ## Key Architecture Patterns
 
 **Planner / Lua split.** Python plans and spawns the mission (flight plans, ROE, templates);
-runtime behavior (EW, ISR, recon scoring, frontline firefights) is driven by the Lua
+runtime behavior (EW, ISR, frontline firefights) is driven by the Lua
 plugins. When a feature has both, the Python side sets up and the Lua side executes — don't
 move runtime logic into the planner or vice versa.
 
@@ -328,7 +328,6 @@ linked design note.
 8. **Robustness / crash fixes** — helo CFIT, carrier-recovery stagger, convoy runway spawns, support-flight radio collisions, locked speed/time route rejection.
 9. **TIC — Troops In Contact** — scripted frontline firefights with per-stance movement and ambient fire.
 10. **CurrentHill Iran assets pack** — Shahed-136, IRGCN FAC, `[CH] Iran 2020` faction.
-12. **Recon engine** — the `recon` plugin: one capture rule for player and AI, shaped by sensor, altitude and cloud.
 14. **Plugin Options UI** — `descriptionInUI` field plus label and default polish.
 16. **Settings QOL audit** — dead-field cleanup and the `AiRadioBehavior` enum consolidation.
 17. **Auto-planner target unpredictability** — opt-in per-side reordering of opportunistic offensive targets only.
@@ -401,6 +400,7 @@ Kept numbered so old notes and saves stay readable. Details and rationale in the
 | § | Feature | Status |
 |---|---|---|
 | 11 | Native DCS DTC cartridge export (v1) | Retired 2026-06-26 — superseded by §74 |
+| 12 | Recon engine (TARPS + drone BDA) | Removed 2026-08-20 — the §3 rework left its captures with no consumer |
 | 13 | Flight Control ATC | Retired 2026-06-26 |
 | 20 | Drop-spawn map unit placement | Removed 2026-08-02 |
 | 15 | SCAR — RESCAP "Sandy" rescue escort | Removed 2026-08-07 — see §21 |

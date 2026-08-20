@@ -85,9 +85,9 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
    414th ambient-fire extension (plugin, default ON).
 10. **CurrentHill Iran assets pack** — Shahed-136, IRGCN FAC, `[CH] Iran 2020` faction.
 11. **Native DCS DTC cartridge export** — RETIRED (2026-06-26): half-baked; removed.
-12. **Recon engine** — the `recon` plugin: one geometric capture rule for player AND AI recon,
-    sensor/altitude/weather-shaped, feeding confirmed BDA (default ON). MOOSE `Ops.TARS` was
-    cut 2026-08-05.
+12. **Recon engine** — REMOVED (2026-08-20): the §3 reveal rework left its captures with no
+    consumer, so the plugin scored a take nothing read. MOOSE `Ops.TARS` had already been cut
+    2026-08-05.
 13. **Flight Control ATC** — RETIRED (2026-06-26): half-baked; removed.
 14. **Plugin Options UI** — `descriptionInUI` field + label/default polish across all plugins.
 15. **SCAR** — player-flown Strike Coordination and Reconnaissance against a moving HVT

@@ -400,8 +400,8 @@ What went, concretely:
   `FIELD_FORCE_RADIUS_M` and `_CONCEALABLE_SAM_TASKS` went with it.
 - **Recon as a reveal key.** `reconned_tgos_this_turn`, `_reconned_tgos_from_ato` and
   `tars_reconned_tgos` in `missionresultsprocessor.py`. The `tars_recon_captures`
-  debrief channel and the `recon` plugin still parse and run; nothing consumes the
-  result (see §12).
+  debrief channel and the `recon` plugin that wrote it were removed on 2026-08-20, once
+  it was clear nothing had consumed a capture since this rework (see §12).
 
 **One leak this opened, fixed 2026-08-19.** Collapsing `sidc_status_for(viewer)` into a plain
 property left `sidc_for(viewer)` shipping the **operational-condition digit** as ground truth —
@@ -447,8 +447,9 @@ a marker.
 **§50's `map_hidden` ambush teams are explicitly excluded**: the first sign of them is meant
 to be the in-mission TROOPS IN CONTACT call.
 
-Note this is **planner-side geometry, not the `recon` plugin** — §12's runtime is still inert
-(see below). The design alternatives that were weighed and not taken are in
+Note this is **planner-side geometry**: it keys on the flight's package target and on the
+flight surviving, never on what the aircraft actually photographed. The §12 plugin that did
+the photographing was removed 2026-08-20. The design alternatives that were weighed and not taken are in
 [414th-recon-role-scoping-notes.md](design/414th-recon-role-scoping-notes.md).
 
 Tests: `tests/test_recon_reveal_rule.py` (the reveal rule, the no-lag guarantee, and the
@@ -2435,67 +2436,49 @@ which shares nothing with this retired implementation.
 
 ---
 
-## 12. Recon → BDA engine (`recon` plugin, default ON)
+## 12. Recon → BDA engine (`recon` plugin) — REMOVED (2026-08-20)
 
-**⚠️ INERT since the 2026-08-18 recon rework (§3).** The plugin still loads, still
-scores captures by sensor/altitude/cloud, and still appends them to
-`tars_recon_captures`, which `StateData` still parses — but **nothing consumes the
-result**. `FlightType.TARPS` itself does have a job again — it finds hidden command posts
-— but that reveal is **planner-side geometry** in `missionresultsprocessor`, not this
-plugin: it keys on the flight's package target and survival, never on what the aircraft
-actually photographed. So the plugin's in-mission scoring runs and reports nothing.
-Left in place rather than deleted. Wiring the command-post find to real captures would
-need the Lua to scan statics (`captureAt` covers ground groups and ships only) — a command
-post generates as statics, so it is invisible to the current capture loop.
+**The plugin, its emitter and the capture ledger are deleted.** The 2026-08-18 reveal rework
+(§3) removed both jobs a capture could do: an un-engaged site's composition is no longer
+revealed by scouting, and an engaged one carries no BDA lag to confirm. From that day the
+plugin scored captures nothing read.
 
-**The MOOSE Ops.TARS engine this section used to describe was CUT on 2026-08-05
-(`7eb247659`); `resources/plugins/tars/` no longer exists.** The old design note
-`docs/dev/design/414th-tars-recon-notes.md` documents that removed implementation —
-historical only, do not author against it.
+**It was not inert while it sat there.** On landing it popped a blue-coalition cue reading
+`RECON: <callsign> confirmed BDA on N target(s) at <target>` — a claim about a mechanic that no
+longer existed — and to produce that N it scanned every RED ground and ship unit in the
+mission. The six LUA Plugins settings rows tuned only that scan.
 
-**One mechanism for both crews.** The previous split ran a player's recon through
-MOOSE Ops.TARS (an F10 "film" menu) and AI recon through a geometric overflight
-check — two unrelated implementations answering one question, which could not agree
-by construction. The MOOSE path contributed only a unit name scraped off a Snapshot
-object whose schema was never confirmed, so a wrong field name meant the player path
-recorded nothing, silently and forever.
+Removed:
 
-- Plugin: `resources/plugins/recon/` (`recon-config.lua`, `plugin.json`). Emitter:
-  `game/missiongenerator/reconluadata.py` emits
-  `dcsRetribution.Recon = { cloudFactor, flights = [...] }`, one record per BLUE
-  recon-capable flight — **player and AI alike** — plus its target.
-- **Capture**: when a watched flight closes within `TRIGGER_RANGE` (default 5 NM,
-  `triggerRangeNm`) of its target, every RED ground and ship unit inside the
-  effective sensor radius is written to the shared `tars_recon_captures` ledger —
-  the same table and `{unit, life, type}` schema `game/debriefing.py`
-  `parse_tars_captures` → `tars_reconned_tgos` already parses, so nothing downstream
-  changed.
-- **Effective radius** = the flight's own sensor radius, degraded by **altitude**
-  (full radius at or below `OPTIMAL_ALT`, falling to `MIN_ALT_FACTOR` by
-  `CEILING_ALT` — a high fast pass resolves less than a real recon profile) and by
-  the campaign's **cloud cover** (`cloudFactor`; recon previously ignored the §47/§67
-  weather model entirely).
-- **Timing, and why the halves differ**: the *capture* fires on overfly, because
-  missions routinely end before flights land (a player quits after their own sortie)
-  and gating the take on touchdown would silently destroy most recon. The *cue*
-  fires on landing (DM call) — you get the read-out when the take is home. The cue is
-  cosmetic, so a flight that never lands simply never announces; its capture still
-  counts.
-- One-shot per flight: shot down or aborting before the target confirms nothing.
-  Vanilla DCS, pcall-guarded throughout.
-- Tests: `tests/test_tarps_recon.py`, `tests/test_tars_bda_bridge.py` (the BDA bridge
-  name predates the engine swap; the ledger contract is unchanged).
+- `resources/plugins/recon/` (`recon-config.lua`, `plugin.json`) and its `plugins.json` entry.
+- The six plugin options (`triggerRangeNm`, `captureCap`, `pollS`, `optimalAltFt`,
+  `ceilingAltFt`, `minAltitudeFactor`). Old saves drop the keys in the retired-plugin purge in
+  `Settings.__setstate__`.
+- `game/missiongenerator/reconluadata.py` (`dcsRetribution.Recon`) and its `luagenerator.py` call.
+- `tars_recon_captures`: the global and `write_state()` entry in `dcs_retribution.lua`, and
+  `StateData.tars_recon_captures` + `parse_tars_captures` in `game/debriefing.py`.
+- Tests `game/missiongenerator/tests/test_reconluadata.py`, `tests/lua/test_recon_runtime.py`,
+  `tests/test_tars_bda_bridge.py`.
 
-- BDA bridge (unchanged across the engine swap): the capture appends
-  `{unit, life, type}` to the global `tars_recon_captures` and sets `dirty_state=true`;
-  `dcs_retribution.lua` `write_state()` serializes it; `game/debriefing.py`
-  `StateData.parse_tars_captures()` parses it; `game/sim/missionresultsprocessor.py`
-  `tars_reconned_tgos()` resolves names via
-  `unit_map.theater_units(...).theater_unit.ground_object` and `update_confirmed_bda()`
-  syncs those TGOs. Additive — empty/no-op when the plugin is OFF.
-- Lua in-game pass ☑ VERIFIED 2026-06-24 (G2 — recon captures feed Retribution BDA)
-  under the old engine; the 2026-08-05 rewrite (G2 re-fly) carried the same ledger
-  contract.
+**What recon still does**: `MissionResultsProcessor.reveal_scouted_command_posts` (§3) — a
+surviving TARPS flight reveals a hidden enemy command post within `TARPS_POD_RADIUS_NM` (3 NM)
+of its package target. Planner-side Python, keyed on the package target and on survival. That
+constant moved to `game/sim/missionresultsprocessor.py`; it was the only symbol outside the
+plugin path that read `reconluadata`.
+
+**Reviving this starts with statics.** `captureAt` covered ground groups and ships only, and a
+command post generates as statics — so the capture loop could never have seen the one site the
+reveal cares about. The runtime, including the sensor × altitude × cloud degradation model, is
+at `git show da9f19246:resources/plugins/recon/recon-config.lua`. The candidates for a new recon
+job are in [414th-recon-role-scoping-notes.md](design/414th-recon-role-scoping-notes.md);
+neither open one (B, re-fixing moved naval groups; C, a kneeboard imagery card) would use this
+ledger.
+
+**History.** The MOOSE Ops.TARS engine this section used to describe was cut 2026-08-05
+(`7eb247659`), together with the AI-side `airecon` plugin, and replaced by the single `recon`
+plugin removed here. `docs/dev/design/414th-tars-recon-notes.md` documents that implementation —
+historical only, do not author against it. In-game pass G2 was ☑ VERIFIED 2026-06-24 under the
+MOOSE engine and is closed.
 
 ---
 

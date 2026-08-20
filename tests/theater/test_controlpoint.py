@@ -24,6 +24,7 @@ from game.theater.controlpoint import (
     ParkingType,
     Player,
     motorpools_inside_capture_zone,
+    motorpools_nearer_an_enemy,
     warn_if_motorpool_inside_capture_zone,
 )
 from game.theater.presetlocation import PresetLocation
@@ -281,6 +282,7 @@ def _cp_with_motorpool_tgos(
     cp.position = cp_position
     cp.captured = MagicMock()
     cp.captured.is_blue = True
+    cp.is_friendly_to = lambda other: other.captured is cp.captured
     cp.ground_objects = [
         MotorpoolGroundObject(tgo_name, _preset(tgo_name, pos), cp, None)
         for tgo_name, pos in tgo_positions
@@ -309,3 +311,37 @@ def test_motorpools_inside_capture_zone_empty_when_all_outside() -> None:
         Point(0.0, 0.0, terrain), [("Far", Point(4000.0, 0.0, terrain))]
     )
     assert motorpools_inside_capture_zone([cp]) == []
+
+
+def test_a_motorpool_beside_an_enemy_base_is_reported() -> None:
+    """AARDWOLF, `operation_vectrons_claw`: 75 km from its RED parent and 7.3 km from a
+    BLUE FOB, so it spawned red armor next to a blue base."""
+    terrain = MagicMock(spec=Terrain)
+    owner = _cp_with_motorpool_tgos(
+        Point(0.0, 0.0, terrain),
+        [("Stray", Point(75_000.0, 0.0, terrain))],
+        name="Owner",
+    )
+    enemy = _cp_with_motorpool_tgos(Point(82_000.0, 0.0, terrain), [], name="Enemy")
+    enemy.captured = MagicMock()
+    enemy.captured.is_blue = False
+
+    violations = motorpools_nearer_an_enemy([owner, enemy])
+    assert len(violations) == 1
+    assert violations[0].motorpool == "Stray"
+    assert violations[0].control_point == "Enemy"
+
+
+def test_a_motorpool_far_from_its_parent_but_ringed_by_friends_is_not() -> None:
+    """SKUNK, same campaign: 107 km from its own field and 9 km from a friendly one.
+    Odd authoring, not a problem -- flagging it teaches the reader to ignore the box."""
+    terrain = MagicMock(spec=Terrain)
+    owner = _cp_with_motorpool_tgos(
+        Point(0.0, 0.0, terrain),
+        [("Distant", Point(107_000.0, 0.0, terrain))],
+        name="Owner",
+    )
+    friend = _cp_with_motorpool_tgos(Point(116_000.0, 0.0, terrain), [], name="Friend")
+    friend.captured = owner.captured
+
+    assert motorpools_nearer_an_enemy([owner, friend]) == []

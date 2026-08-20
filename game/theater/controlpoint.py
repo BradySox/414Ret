@@ -182,6 +182,41 @@ def motorpools_inside_capture_zone(
     return violations
 
 
+def motorpools_nearer_an_enemy(
+    control_points: Iterable[ControlPoint],
+) -> list[MotorpoolCaptureViolation]:
+    """Every motorpool whose NEAREST control point is a hostile one.
+
+    A motorpool takes its coalition from the CP the marker bound it to, so one
+    authored beside the wrong field spawns enemy armor on someone else's doorstep.
+    Found on `operation_vectrons_claw` 2026-08-20: AARDWOLF is 75 km from its RED
+    parent and 7.3 km from a BLUE FOB.
+
+    Nearest-is-hostile, not merely far-from-parent: a motorpool 100 km from its own
+    field but ringed by friendly ones is odd authoring, not a problem, and flagging
+    it trains the reader to dismiss the warning (SKUNK, same campaign).
+    """
+    points = list(control_points)
+    violations: list[MotorpoolCaptureViolation] = []
+    for cp in points:
+        for tgo in cp.ground_objects:
+            if not isinstance(tgo, MotorpoolGroundObject):
+                continue
+            nearest = min(
+                points, key=lambda p: tgo.position.distance_to_point(p.position)
+            )
+            if nearest.is_friendly_to(cp):
+                continue
+            violations.append(
+                MotorpoolCaptureViolation(
+                    nearest.name,
+                    tgo.name,
+                    meters(tgo.position.distance_to_point(nearest.position)),
+                )
+            )
+    return violations
+
+
 class ControlPointType(Enum):
     #: An airbase with slots for everything.
     AIRBASE = 0

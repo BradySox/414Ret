@@ -26,7 +26,10 @@ from game.layout import LAYOUTS
 from game.server import EventStream, GameContext
 from game.server.dependencies import QtCallbacks, QtContext
 from game.theater import ControlPoint, MissionTarget, TheaterGroundObject
-from game.theater.controlpoint import motorpools_inside_capture_zone
+from game.theater.controlpoint import (
+    motorpools_inside_capture_zone,
+    motorpools_nearer_an_enemy,
+)
 from qt_ui import liberation_install
 from qt_ui.dialogs import Dialog
 from qt_ui.models import GameModel
@@ -451,6 +454,7 @@ class QLiberationWindow(QMainWindow):
     def _warn_motorpool_capture_zone(self, game: Optional[Game]) -> None:
         if game is None or not game.settings.motorpool_enabled:
             return
+        self._warn_motorpool_nearer_an_enemy(game)
         violations = motorpools_inside_capture_zone(game.theater.controlpoints)
         if not violations:
             return
@@ -464,6 +468,22 @@ class QLiberationWindow(QMainWindow):
                 "These motorpools are inside their control point's 3 km capture "
                 "zone, so their parked reserve vehicles will block base capture. "
                 "Move each Garage_A marker outside the capture radius:\n\n"
+                + "\n".join(str(v) for v in violations),
+            ),
+        )
+
+    def _warn_motorpool_nearer_an_enemy(self, game: Game) -> None:
+        violations = motorpools_nearer_an_enemy(game.theater.controlpoints)
+        if not violations:
+            return
+        QTimer.singleShot(
+            0,
+            lambda: QMessageBox.warning(
+                self,
+                "Motorpool placement problem",
+                "The nearest control point to each of these motorpools belongs to "
+                "the other side, so they spawn hostile armor on its doorstep. "
+                "Move each Garage_A marker back toward its own field:\n\n"
                 + "\n".join(str(v) for v in violations),
             ),
         )

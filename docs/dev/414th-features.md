@@ -5673,6 +5673,15 @@ directly.
   Haina (RED) and materialises exactly one `MotorpoolGroundObject` (CI-locked in
   `tests/fourteenth/test_red_tide_motorpool.py`). Every other campaign is **inert until it places a
   `Garage_A`** — it changes nothing until a depot is authored.
+- **Two placement guards, opposite mistakes.** `motorpools_inside_capture_zone` catches a marker
+  inside its own CP's 3 km capture radius (parked reserve blocks the base being taken).
+  `motorpools_nearer_an_enemy` (added 2026-08-20) catches a marker whose **nearest** control point
+  belongs to the other side — it spawns hostile armor on that base's doorstep. Both warn from
+  `QLiberationWindow._warn_motorpool_capture_zone` at generation and on save load; neither moves
+  anything, because the marker is the campaign author's call. The trigger is *nearest-is-hostile*,
+  not distance-from-parent: `operation_vectrons_claw` has AARDWOLF 75 km from its RED parent and
+  7.3 km from a BLUE FOB (a real defect) **and** SKUNK 107 km from its parent but ringed by
+  friendly fields (harmless). Flagging the second would train the reader to dismiss the box.
 - **Population** — `MotorpoolPopulator` (`game/missiongenerator/motorpoolpopulator.py`), run once per
   mission-gen before the TGO generator, rebuilds each motorpool's vehicle groups from the CP's current
   reserve slice. `ai_ground_planner.reserve_armor_for` computes the reserve as *exactly*

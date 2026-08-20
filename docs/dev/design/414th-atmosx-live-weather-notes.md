@@ -51,6 +51,32 @@ Names are folded (accents, `Air Base`/`Airport`/`International` suffixes, punctu
 matching: ED and ATMOS-X spell the same airfield differently often enough that a verbatim
 match finds two of sixty on Syria.
 
+### The player's bases come from `starting_coalition`, not `captured`
+
+**This crashed New Game (2026-08-20).** `Game.__init__` generates the turn's conditions
+*before* `ControlPoint.finish_init` hands each point to a coalition, so reading `captured`
+there raises `ControlPoint not fully initialized: coalition not set` — and the raise escaped
+`live_weather_for` and killed campaign generation outright, in a module whose own header
+promises that nothing in it can stop a mission being generated.
+
+Two fixes, both kept:
+
+1. `preferred_airfields` reads `starting_coalition`, which is set at construction.
+2. `live_weather_for` catches everything and logs. The header's promise is now enforced
+   rather than assumed.
+
+**Deliberate divergence from upstream #927 (drift-watch).** Upstream hit the same crash and
+fixed it differently — their `player_base_names` wraps `theater.player_points()` in
+`try/except RuntimeError` and returns `[]`. That works, but with no preferred airfield
+`choose_station` falls through to `return stations[0]`, an arbitrary field on the map: turn 1
+would take its weather from somewhere the player does not fly, and turn 2 onward from
+somewhere else once the coalitions exist. `starting_coalition` keeps the station both correct
+and *stable* across the campaign. **Do not resync this function from upstream** without
+re-reading this paragraph.
+
+The fork's port predates upstream's fix, which is why we shipped the crash and they did not —
+the general lesson is in the upstream-adoption drift watch.
+
 ## Setup gotcha
 
 The CLI runs, fetches and writes a preset **whether or not the ATMOS-X mod is activated in

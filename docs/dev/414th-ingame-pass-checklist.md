@@ -5652,6 +5652,12 @@ verification are juanjux's (his fork's #52); the pin bump is the whole change.
 
 **History:** built 2026-08-19, adopting upstream #927's second commit. Never flown. Design
 note: [414th-atmosx-live-weather-notes.md](design/414th-atmosx-live-weather-notes.md).
+**2026-08-20 — this row's own setup crashed New Game and is now fixed.** Leaving the station
+box blank (which the Setup below tells you to do) sent the picker at `theater.player_points()`
+while `Game.__init__` was still running, before the control points had coalitions:
+`RuntimeError: ControlPoint not fully initialized`, campaign generation dead. The picker now
+reads `starting_coalition`, and `live_weather_for` swallows and logs anything else. **Retest
+from a fresh New Game, not a save** — a save never took this path.
 - **What it is:** with the ATMOS-X cloud pack selected, the turn's weather is a real METAR
   observation fetched through the ATMOS-X CLI instead of a generated one. The mission keeps its
   own date and time and takes only the sky.

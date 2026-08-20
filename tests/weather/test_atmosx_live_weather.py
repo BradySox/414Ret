@@ -27,7 +27,9 @@ from game.weather.atmosxliveweather import (
     Station,
     apply_weather,
     choose_station,
+    live_weather_for,
     parse_preset,
+    preferred_airfields,
     stations_for_theater,
 )
 
@@ -214,6 +216,46 @@ def test_a_terrain_atmosx_does_not_cover_has_no_station(cli: Path) -> None:
 
 def test_a_missing_csv_is_survivable(tmp_path: Path) -> None:
     assert stations_for_theater(tmp_path / "atmosx-cli.exe", "Syria") == []
+
+
+def test_the_bases_are_read_before_the_coalitions_are_wired() -> None:
+    """`Game.__init__` generates conditions before `ControlPoint.finish_init` runs.
+
+    Reading `captured` there raised and took New Game down with it, so the preference
+    list comes from `starting_coalition` instead.
+    """
+
+    class NotYetInitialized:
+        def __init__(self, name: str, blue: bool) -> None:
+            self.name = name
+            self.starting_coalition = SimpleNamespace(is_blue=blue)
+
+        @property
+        def captured(self) -> Any:
+            raise RuntimeError("ControlPoint not fully initialized: coalition not set")
+
+    theater = SimpleNamespace(
+        controlpoints=[
+            NotYetInitialized("Incirlik", True),
+            NotYetInitialized("Hama", False),
+        ]
+    )
+    assert preferred_airfields(theater) == ["Incirlik"]
+
+
+def test_a_theater_with_no_control_points_asks_for_nothing() -> None:
+    assert preferred_airfields(SimpleNamespace()) == []
+
+
+def test_a_failure_inside_the_lookup_never_stops_the_turn() -> None:
+    """The module header promises this. Until New Game crashed it was not enforced."""
+
+    class Exploding:
+        @property
+        def atmosx_live_weather(self) -> bool:
+            raise RuntimeError("the CLI, the network, or a half-built theater")
+
+    assert live_weather_for(SimpleNamespace(), Exploding()) is None
 
 
 # --- the settings only apply when they can do something -------------------------

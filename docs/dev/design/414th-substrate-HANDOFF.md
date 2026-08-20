@@ -25,8 +25,8 @@ repo; where this note and the repo disagree, the repo wins.
 
 | Thing | State |
 |---|---|
-| `main` | `a0ed0b007` — #912 squash-merged: §93 region priorities + the four study/scoping notes + the architecture note. Rolling `latest` rebuilt from it. |
-| PR **#913** | **Open draft, docs-only** — R0 inventory + the R1 reshape, branch `claude/substrate-r0-inventory`. The remote session that authored it watches it until merged/closed; merging it ends that watch cleanly. |
+| `main` | `ee75401cf` — #913 merged 2026-08-20 (R0 inventory + the R1 reshape) on top of #912's §93 region priorities, study notes and architecture note. |
+| PR **#913** | **Merged 2026-08-20.** The watch it carried is closed. Branch from `main`, never from `claude/substrate-r0-inventory`. |
 | Branch `claude/grimes-dcs-repositories-pnf9ut` | Stale on the remote — holds only #912's already-merged history. Safe to delete on the DM's word; nothing references it. |
 | §93 checklist row | **B89** ☐ UNTESTED — the app pass below. |
 | §90 checklist rows | **B65–B68** ☐ UNTESTED — the fly pass that gates R2. |
@@ -55,14 +55,12 @@ Highest value first. Each is blocked remotely (needs DCS, the real app, or the l
 
 ## 3. Code work available to any machine, in order
 
-1. **Merge #913 first** (DM's click or an agent on their word) — everything below builds on
-   its R1 reshape. Then branch fresh from `main`; do not reuse the stale branch.
-2. **R1 opening move — answer inventory open question 1** (~1 hr, read-only): does a unit
-   delivery to an ISOLATED CP arrive today? Start at `GroundUnitOrders`
-   (`game/groundunitorders.py`) and the delivery-processing path in
-   `game/sim/missionresultsprocessor.py` / `ControlPoint.process_turn`; write the answer
-   into the inventory note §5 with receipts. It decides whether R1 carries a
-   delivery-gating fix.
+1. ~~Merge #913 first~~ **DONE** — merged 2026-08-20 as `ee75401cf`. Branch fresh from `main`;
+   do not reuse the stale branch.
+2. ~~R1 opening move — answer inventory open question 1~~ **DONE 2026-08-20**, written up in
+   the inventory note §5.1. Verdict: transfers are already network-gated, but a factory on the
+   destination control point commissions units at full rate with no supply read. That folds
+   into gap 1 (income route-coupling), so **R1 carries no delivery-gating fix**.
 3. **R1 proper on the DM's call** — one persistence home for magazine stocks: absorb
    `game/fourteenth/naval_magazines.py` (§81) and the §63 cruise state channel, shaped so
    the parked SAM magazines land in it as a third row, not a third mechanism. Inventory

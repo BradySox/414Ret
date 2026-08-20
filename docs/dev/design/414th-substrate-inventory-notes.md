@@ -26,7 +26,7 @@ fired**; §4 records what that changes.
 | Quantity | Home | Writers | Readers | Cockpit path | Verdict |
 |---|---|---|---|---|---|
 | Income → budget | `game/income.py` (alive `REWARDS` buildings + CP income) → `Coalition.budget` | turn income; spends | procurement, runway repair, §68 SAM repair, player purchases | capture CPs; bomb income buildings | **citizen — an economy already exists and is coupled** |
-| Unit purchase pipeline | `GroundUnitOrders` / pending deliveries | procurement, player UI | arrival into `Base.armor`, mission results | interdict? — see §4 gap 2 | citizen with an unverified edge |
+| Unit purchase pipeline | `GroundUnitOrders` / pending deliveries | procurement, player UI | arrival into `Base.armor`, mission results | interdict the convoy; §5.1 for the factory hole | citizen; local production is its one ungated edge |
 | Unit transfers | `game/transfers.py` (`TransferOrder`, `Convoy`, `CargoShip`) | ground planner, player | convoy/ship generation, §35/§50/§78 interdiction, arrival | shoot the convoy | **citizen — the one fully-realized edge flow** |
 | Supply status | `game/theater/supply.py` (derived per CP per turn) | derived from transit network | strength recovery multiplier (today its only consumer) | cut the route | citizen; R2 adds its second reader |
 
@@ -52,8 +52,8 @@ priorities and the doctrine settings (command inputs, already planner-read) · d
    have been the third. That is the whole consolidation surface.
 3. **The value is in five missing couplings, not consolidation:**
    1. Income is not route-coupled — an ISOLATED CP still pays full income.
-   2. Unit-delivery arrival vs supply state — unverified; R1 must answer whether a cut-off
-      CP can still take deliveries.
+   2. Unit-delivery arrival vs supply state — **answered, §5.1**: transfers are gated, but a
+      factory on a cut-off CP produces at full rate. Folds into gap 1, not its own fix.
    3. Pilot/airframe replenishment ignores supply entirely.
    4. Combat effectiveness ignores supply — already scoped as R2.
    5. Magazines do not resupply via flows — R3's actual design space.
@@ -67,6 +67,55 @@ priorities and the doctrine settings (command inputs, already planner-read) · d
 
 | # | Question | Owner |
 |---|---|---|
-| 1 | Does a delivery to an ISOLATED CP arrive today? (gap 2) | R1, first task |
+| 1 | Does a delivery to an ISOLATED CP arrive today? (gap 2) | **ANSWERED 2026-08-20 — §5.1** |
 | 2 | Should income route-couple (gap 1), and at what fraction — the §90 rung-A 1.0/0.25/0.0 ladder? | DM call at R1 |
 | 3 | Magazine home: extend the §81 state shape or a new `TheaterStocks` owner both migrate into? | R1 design |
+
+### 5.1 Question 1 — local production arrives, anything shipped in does not
+
+Traced on main @ `a0ed0b007`. **Deliveries are already network-gated. The one unconditional
+path is a factory standing on the destination control point itself.**
+
+All three cases run through `GroundUnitOrders.process` (`game/groundunitorders.py:56`), called
+from `ControlPoint.process_turn` (`game/theater/controlpoint.py:1175`):
+
+| Destination | Path | Arrives? |
+|---|---|---|
+| Cut off, factory alive on the CP | `find_ground_unit_source` short-circuits to the destination (`groundunitorders.py:122` → `can_recruit_ground_units` → `has_factory`, `controlpoint.py:738`); units land via `base.commission_units` (`groundunitorders.py:90`) | **Yes — same turn, full rate, supply never consulted** |
+| Cut off, no factory, none reachable | `find_ground_unit_source_in_network` finds no source (`groundunitorders.py:139`) → refund + "lost its source for ground unit reinforcements" | No — money back |
+| Cut off, no factory, factory inside the pocket | `TransferOrder` → convoy over the pocket's own roads | Yes, and correctly — it drove there |
+
+Anything shipped in is gated twice, and both gates bite:
+
+- `PendingTransfers.arrange_transport` (`game/transfers.py:633`) picks the transport from the
+  first hop's link type. An Airlift hop needs a TRANSPORT squadron able to operate at both ends
+  (`AirliftPlanner.compatible_with_mission`, `transfers.py:288`). With none, `transfer.transport`
+  stays `None`, `TransferOrder.proceed` (`transfers.py:228`) returns early, and the units sit at
+  the origin, retried every turn by `plan_transports`.
+- A route that dies mid-transit disbands the transfer where it stands
+  (`disband_uncompletable_transfers`, `transfers.py:755`), commissioning the units at their
+  current position, not the destination.
+
+**ISOLATED is rarer than the question assumed, and that makes the hole bigger, not smaller.**
+`_reaches_rear` BFSes through frontline control points (`supply.py:53–72`), and
+`TransitNetworkBuilder` links every friendly airfield with an operational runway to every other
+one (`transitnetwork.py:186–195`). So one intact strip anywhere in a cut-off pocket reaches the
+rear and downgrades the whole pocket to AIRLIFTED. ISOLATED needs the pocket to hold no
+operational runway at all — a FOB with no helipads and no ground spawns
+(`Fob.runway_is_operational`, `controlpoint.py:1815`), or an airfield whose runway is cratered
+(`Airfield.runway_is_operational`, `controlpoint.py:1442`). But an AIRLIFTED factory produces
+unconditionally too — nothing on that path reads `SupplyStatus` either — so the common case is
+the leaky one.
+
+**Recommendation: R1 carries no delivery-gating fix.** A factory in an encircled pocket
+producing locally is defensible on its own terms. What is not is that the pocket buys that armor
+from a theater-wide budget it also still pays into at full rate. That is gap 1, not gap 2 — the
+two gaps are one coupling seen twice, and income is the cheaper place to cut it. If a production
+gate is wanted anyway, the seam is `can_recruit_ground_units` (`controlpoint.py:728`): one
+`SupplyStatus` read, no new mechanism.
+
+**Found alongside, not acted on.** `ENEMY_BASE_STRENGTH_RECOVERY = 0.05` (`game/game.py:95`) is
+read nowhere in the tree — the only `affect_strength` top-up applies
+`PLAYER_BASE_STRENGTH_RECOVERY` to `theater.player_points()` (`game.py:576`). Red bases take no
+per-turn strength recovery at all. Inherited from upstream; rung A's gate is therefore the only
+recovery rule in play, not a blue-side asymmetry.

@@ -5662,12 +5662,18 @@ directly.
 - **The doorstep guard is about marker BINDING, not authoring.**
   `MizCampaignLoader.objective_info` binds by influence *zone*: a point inside an authored zone
   joins that CP, and a point inside none falls back to the closest CP **that has no zone at all**.
-  So a marker dropped just outside a zoned base is not adopted by it — it is thrown to whatever
-  unzoned field is closest, however far. `operation_vectrons_claw` has two: WARTHOG, red armor
-  **3.4 km from blue Vaziani**, bound 329.5 km away to Mineralnye Vody; and AARDWOLF, a red
-  motorpool **7.3 km from the blue UNOMIG FOB**, bound 75.0 km away. Both fell through the
-  fallback. The fix a campaign author wants is usually to widen the near base's influence zone,
-  not to move the marker.
+  **Fixed 2026-08-20 for blue-block markers.** A blue-block group is an explicit ownership
+  declaration, so its blue preference is now evaluated against every eligible CP rather than only
+  the unzoned fallback list, and motorpools joined the marker classes that pass `prefer_blue`.
+  `operation_vectrons_claw` had a blue-block `Garage_A` **617 m** outside the blue UNOMIG FOB's
+  6096 m zone; it bound RED Sukhumi-Babushara **75 km** away and spawned a red motorpool beside a
+  blue base. Measured across 12 campaigns and 1402 marker bindings, that change moves **exactly
+  one** binding — the defect itself. `BLUE_BLOCK_MAX_DETOUR` still bounds the preference.
+- **Red-block markers are deliberately untouched.** The red block is the coalition-agnostic
+  default and binds by proximity. Letting *it* see zoned CPs was measured too and rejected: it
+  rebinds 24 of 751 markers, 16 of them across coalitions, and moves all 13 of Velvet Thunder's
+  red air defenses onto neutral FOBs. So WARTHOG — red armor 3.4 km from blue Vaziani, bound
+  329.5 km away — is still only warned about, not rebound.
 - **Two conditions, because either alone cries wolf:** nearer a hostile CP than its own owner (the
   mis-binding signature) **and** within `BESIDE_AN_ENEMY_BASE` (25 km) of it (the part a player
   sees). The same campaign has SKUNK 107 km from its parent but ringed by friendly fields, and

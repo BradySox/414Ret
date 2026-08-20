@@ -266,3 +266,53 @@ def test_dynamic_spawn_airfield_keeps_its_coalition(tmp_path: Path) -> None:
 
     red_field = theater.control_point_named("Senaki-Kolkhi")
     assert red_field.starting_coalition is Player.RED
+
+
+def _build_zoned_miz(path: Path) -> None:
+    """A blue field with a tight influence zone and a blue-block garage just outside it.
+
+    `operation_vectrons_claw` in miniature: the marker misses UNOMIG Sector HQ's
+    6096 m zone by 617 m, and the zone fallback drops every zoned CP, so it bound
+    RED Sukhumi-Babushara 75 km away and spawned a red motorpool beside a blue base.
+    """
+    mission = Mission(terrain=Caucasus())
+    blue_field = mission.terrain.airports["Kutaisi"]
+    red_field = mission.terrain.airports["Senaki-Kolkhi"]
+    blue_field.set_blue()
+    red_field.set_red()
+
+    blue_country = CombinedJointTaskForcesBlue()
+    mission.coalition["blue"].add_country(blue_country)
+    mission.coalition["red"].add_country(CombinedJointTaskForcesRed())
+
+    zone = mission.triggers.add_triggerzone(
+        blue_field.position, radius=3000, name="Kutaisi"
+    )
+    # DCS stores both as 1-indexed dicts; ControlPointInfluenceRadius reads a
+    # red zone whose first property names the control point.
+    zone.color = {1: 1, 2: 0, 3: 0, 4: 0.15}
+    zone.properties = {1: {"key": "PROPERTY_1", "value": "Kutaisi"}}
+
+    mission.static_group(
+        blue_country,
+        "Static Garage A-1",
+        Fortification.Garage_A,
+        blue_field.position.point_from_heading(0, 3600),
+    )
+    mission.save(str(path))
+
+
+def test_a_blue_block_marker_binds_its_own_zoned_field(tmp_path: Path) -> None:
+    miz = tmp_path / "zoned_binding.miz"
+    _build_zoned_miz(miz)
+
+    theater = TheaterLoader("caucasus").load()
+    MizCampaignLoader(miz, theater).populate_theater()
+
+    kutaisi = theater.control_point_named("Kutaisi")
+    senaki = theater.control_point_named("Senaki-Kolkhi")
+
+    # 600 m outside its own field's zone -- and it stays that field's motorpool
+    # instead of being thrown to the nearest control point with no zone at all.
+    assert len(kutaisi.preset_locations.motorpools) == 1
+    assert not senaki.preset_locations.motorpools

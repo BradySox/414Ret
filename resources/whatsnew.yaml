@@ -13,6 +13,20 @@
 # changes sharing a date keep the order written here.
 
 entries:
+  - date: 2026-08-20
+    title: Point the air war where you want it
+    change: >-
+      Every enemy base dialog gains a planning-priority control (with the new
+      Region priorities setting on): emphasized regions draw the auto-planner's
+      offensive packages as if at half the distance, deprioritized ones as if at
+      double, and an ignored region is left entirely to packages you build by
+      hand. Rescues and your own packages are never affected, and the enemy
+      planner cannot read it.
+    watch: >-
+      Turn the setting on, mark a far enemy base Emphasized and a near one
+      Ignored, and regenerate the turn. The ATO should lean toward the far base
+      and auto-plan nothing at the ignored one.
+    row: B89
   - date: 2026-08-19
     title: The app stops freezing when DCS takes the GPU
     change: >-

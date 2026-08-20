@@ -463,6 +463,7 @@ export type ControlPoint = {
   threat_ranges: number[];
   detection_ranges: number[];
   supply_status?: string | null;
+  region_priority?: string | null;
 };
 export type ValidationError = {
   loc: (string | number)[];

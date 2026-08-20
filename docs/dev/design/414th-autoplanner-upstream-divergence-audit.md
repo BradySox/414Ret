@@ -81,6 +81,7 @@ One line each. Ref = the flown/documented reason where one exists.
 | `auto_add_tarps_recon` | ON | off |
 | `weather_aware_planning` | ON | off (no-op in clear skies) |
 | `max_escort_jammers` | 4 | 0 (needs a Growler/Prowler anyway) |
+| `region_priorities` | OFF | off — §93 (2026-08-20): per-CP blue emphasis weighting `_targets_by_range`; identity while off |
 | `csar_enabled(_red)` | ON | off (#929 brings it upstream anyway) |
 | `adaptive_procurement` | ON | off |
 | `auto_range_fuel_tanks` | ON | off (U31 stays either way) |

@@ -1,6 +1,7 @@
 # Region priorities — scoping note
 
-Status: **scoping only, nothing built.** Written 2026-08-20 on the DM's proposal: take
+Status: **BUILT 2026-08-20** (same day, on the DM's go) — the v1 scope of §5 landed as §93;
+in-game pass row B89 owed. Originally: scoping on the DM's proposal to take
 upstream [#686](https://github.com/dcs-retribution/dcs-retribution/pull/686)'s idea and
 rework it with the BMS study note in mind — the weight, not the fence.
 Origin: BMS-note candidate 4 (`414th-falcon-bms-campaign-notes.md` §4) × red-one1's #686.

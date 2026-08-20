@@ -120,8 +120,9 @@ Read before touching a campaign's `.yaml`, `.miz` or build tool.
 - **Planning / doctrine** — `414th-falcon-bms-campaign-notes.md` (**study note** — what the
   BMS dynamic campaign actually does, the full crosswalk to fork features, four gated
   candidates, and the tombstones it must not resurrect — §48/§53/§54 and turnless),
-  `414th-region-priorities-notes.md` (**scoping only, nothing built** — per-CP blue planning
-  priorities: upstream #686's surface × BMS's PAK weight; the fence stays dead with §40),
+  `414th-region-priorities-notes.md` (**BUILT 2026-08-20 as §93** — per-CP blue planning
+  priorities: upstream #686's surface × BMS's PAK weight; the fence stays dead with §40;
+  B89 app pass owed),
   `414th-airwar-planner-consolidation-notes.md`,
   `414th-aircraft-task-rebalance-rubric.md`, `414th-victory-conditions-notes.md`,
   `414th-wing-growth-notes.md`, `414th-single-player-loop-notes.md`,
@@ -382,6 +383,7 @@ linked design note.
 90. **Front-line model** — reinforcement follows the supply lines, attacking costs more than defending, the line's position counts the forces actually present, terrain slows the advance, and the front bulges instead of running straight.
 91. **Per-flight sortie records** — the mission reports back what each flight did: track, time airborne, fuel, shots and hits, not just which units died.
 92. **What's New** — a toolbar window listing the recent player-visible changes, each with what to look for in the next mission.
+93. **Region priorities** — per-control-point BLUE planning emphasis: emphasized regions rank closer, deprioritized farther, ignored left to manual packages. A weight, never a fence.
 
 ### Retired, removed or shelved — do not restore
 

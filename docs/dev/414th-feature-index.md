@@ -104,5 +104,6 @@ pass checklist `§N` is unregistered, or this table drifts.
 | §90 | Front-line model: supply, assault cost, force weight, terrain, salients | — | `supply_gated_reinforcement`, `assault_costs_the_attacker`, `scale_aware_front_line`, `terrain_weighted_front_line`, `front_line_salients` |
 | §91 | Per-flight sortie records | `base` | — |
 | §92 | What's New | — | — |
+| §93 | Region priorities | — | `region_priorities` |
 | — | MANTIS IADS engine | `mantisiads` | — |
 | — | Splash Damage (414th tuned) | `splashdamage3` | — |

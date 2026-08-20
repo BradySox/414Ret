@@ -20,6 +20,7 @@ from game.theater import (
     NavalControlPoint,
     Player,
 )
+from game.fourteenth.region_priorities import planning_factor
 from game.ground_forces.ai_ground_planner import reserve_armor_for
 from game.squadrons.downedpilot import DownedPilot
 from game.theater.theatergroundobject import (
@@ -77,17 +78,28 @@ class ObjectiveFinder:
         Groups are sorted by their closest proximity to any friendly control
         point (airfield or fleet).
         """
-        return self._targets_by_range(self.enemy_ships())
+        return self._targets_by_range(self.enemy_ships(), weighted=True)
 
     def _targets_by_range(
-        self, targets: Iterable[MissionTargetType]
+        self, targets: Iterable[MissionTargetType], *, weighted: bool = False
     ) -> Iterator[MissionTargetType]:
         target_ranges: list[tuple[MissionTargetType, float]] = []
         for target in targets:
+            factor = 1.0
+            if weighted:
+                # §93 region priorities: weight offensive target choice by the
+                # owning CP's priority; None (IGNORED) drops the target from
+                # auto-planning only. Identity when off, red, or CP-less.
+                maybe_factor = planning_factor(
+                    target, self.game.settings, self.is_player.is_blue
+                )
+                if maybe_factor is None:
+                    continue
+                factor = maybe_factor
             ranges: list[float] = []
             for cp in self.friendly_control_points():
                 ranges.append(target.distance_to(cp))
-            target_ranges.append((target, min(ranges)))
+            target_ranges.append((target, min(ranges) * factor))
 
         target_ranges = sorted(target_ranges, key=operator.itemgetter(1))
         for target, _range in target_ranges:
@@ -136,10 +148,17 @@ class ObjectiveFinder:
                     continue
                 if ground_object.name in found_targets:
                     continue
+                # §93 region priorities (same weighting as _targets_by_range;
+                # this iterator carries its own sort for the multi-TGO dedup).
+                factor = planning_factor(
+                    ground_object, self.game.settings, self.is_player.is_blue
+                )
+                if factor is None:
+                    continue
                 ranges: list[float] = []
                 for friendly_cp in self.friendly_control_points():
                     ranges.append(ground_object.distance_to(friendly_cp))
-                targets.append((ground_object, min(ranges)))
+                targets.append((ground_object, min(ranges) * factor))
                 found_targets.add(ground_object.name)
         targets = sorted(targets, key=operator.itemgetter(1))
         for target, _range in targets:
@@ -169,7 +188,7 @@ class ObjectiveFinder:
             for ground_object in enemy_cp.ground_objects:
                 if isinstance(ground_object, MotorpoolGroundObject):
                     candidates.append(ground_object)
-        yield from self._targets_by_range(candidates)
+        yield from self._targets_by_range(candidates, weighted=True)
 
     def downed_pilots(self) -> Iterator[DownedPilot]:
         """Iterates over friendly downed pilots awaiting CSAR.
@@ -241,7 +260,7 @@ class ObjectiveFinder:
                 >= min_aircraft
             ):
                 airfields.append(control_point)
-        return self._targets_by_range(airfields)
+        return self._targets_by_range(airfields, weighted=True)
 
     def convoys(self) -> Iterator[Convoy]:
         if self.game.settings.perf_disable_convoys:

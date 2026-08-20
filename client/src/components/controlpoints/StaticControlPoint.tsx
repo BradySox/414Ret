@@ -26,6 +26,7 @@ export const StaticControlPoint = (props: StaticControlPointProps) => {
           atcFrequency={props.controlPoint.atc_frequency}
           units={props.controlPoint.units}
           supplyStatus={props.controlPoint.supply_status}
+          regionPriority={props.controlPoint.region_priority}
         />
       </Tooltip>
     </Marker>

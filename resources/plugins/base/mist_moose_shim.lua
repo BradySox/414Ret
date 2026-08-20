@@ -8,16 +8,17 @@
 -- See docs/dev/design/414th-mist-moose-shim-notes.md.
 --
 -- IMPLEMENTATION: entirely vanilla DCS (coalition, Group, Unit, land, trigger, world, timer, env,
--- coord, math, string) with MIST behavior replicated verbatim. Despite the "_moose" name it has NO
+-- coord, math, string), written to MIST's documented call signatures and return shapes. Despite
+-- the "_moose" name it has NO
 -- MOOSE dependency, so it can occupy mist's existing slot in base/plugin.json with NO reordering.
 --
 -- LOAD ORDER: drops into mist's current (first) work-order slot. No dependency on json/Moose/
 -- dcs_retribution, so loading first is fine; the DB tier reads coalition.getGroups/env.mission,
 -- which are available at mission start.
 --
--- Lua 5.1 only. Define before first use. Behavior is replicated from the MIST
--- source verbatim (semantics matter -- a subtly-wrong vector/distance silently
--- breaks a consumer at runtime, not parse time).
+-- Lua 5.1 only. Define before first use. Each symbol must match the observable
+-- contract our consumers rely on -- a subtly-wrong vector or distance silently
+-- breaks one at runtime, not parse time.
 --
 -- BUILD STATUS:
 --   [x] Tier 1a  vector + math utils
@@ -42,7 +43,7 @@ mist.DBs = mist.DBs or {}
 mist.message = mist.message or {}
 
 ---------------------------------------------------------------------------------------------------
--- Tier 1a -- vectors (replicated verbatim from mist_4_5_126.lua; DCS Vec3 = {x, y, z}, y = altitude)
+-- Tier 1a -- vectors (DCS Vec3 = {x, y, z}, y = altitude)
 ---------------------------------------------------------------------------------------------------
 
 function mist.vec.sub(vec1, vec2)
@@ -362,7 +363,7 @@ end
 -- Tier 1b -- coordinate string formatting
 ---------------------------------------------------------------------------------------------------
 
--- MGRS table (from coord.LLtoMGRS) -> string. Replicated verbatim from MIST.
+-- MGRS table (from coord.LLtoMGRS) -> string, in the format consumers parse.
 function mist.tostringMGRS(MGRS, acc)
     if acc == 0 then
         return MGRS.UTMZone .. " " .. MGRS.MGRSDigraph
@@ -373,7 +374,7 @@ function mist.tostringMGRS(MGRS, acc)
     end
 end
 
--- LL formatting, replicated verbatim from MIST. (Originally delegated to MOOSE UTILS.tostringLL,
+-- LL formatting, in the format consumers parse. (Originally delegated to MOOSE UTILS.tostringLL,
 -- but inlining it keeps the shim free of ANY MOOSE dependency -> it can load in mist's existing
 -- slot with no plugin.json reordering.)
 function mist.tostringLL(lat, lon, acc, DMS)
@@ -968,7 +969,7 @@ function mist.dynAddStatic(n)
     return false
 end
 
--- Push a route onto a group as a Mission task (verbatim from MIST).
+-- Push a route onto a group as a Mission task.
 function mist.goRoute(group, path)
     local misTask = {
         id = "Mission",

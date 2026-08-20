@@ -108,6 +108,7 @@ function PrimaryMarker(props: PrimaryMarkerProps) {
               atcFrequency={props.controlPoint.atc_frequency}
               units={props.controlPoint.units}
               supplyStatus={props.controlPoint.supply_status}
+          regionPriority={props.controlPoint.region_priority}
             />
           )
     );

@@ -35,6 +35,7 @@ from typing import TYPE_CHECKING, Optional
 from game.ato.flighttype import FlightType
 from game.commander.missionproposals import ProposedFlight, ProposedMission
 from game.theater import Player
+from game.fourteenth.region_priorities import planning_factor
 from game.theater.fogofwar import hidden_from
 
 if TYPE_CHECKING:
@@ -280,6 +281,10 @@ def _nearest_legal_strike_target(
             # it (§3/G40), not by the boat picking it out of ground truth. This
             # planner is BLUE-only, so the viewer is never in question.
             if getattr(tgo, "map_hidden", False) or hidden_from(Player.BLUE, tgo):
+                continue
+            # §93 region priorities: an IGNORED region is left to manual
+            # packages — this planner is BLUE-only, like the fog gate above.
+            if planning_factor(tgo, getattr(game, "settings", None), True) is None:
                 continue
             dist = carrier.position.distance_to_point(tgo.position)
             if getattr(tgo, "category", None) == "ammo":

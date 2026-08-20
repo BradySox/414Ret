@@ -819,6 +819,12 @@ FEATURES: tuple[Feature, ...] = (
         "What's New",
         92,
     ),
+    Feature(
+        "region_priorities",
+        "Region priorities",
+        93,
+        settings_fields=("region_priorities",),
+    ),
     # Always-on engine plugins — major 414th machinery documented in design notes
     # rather than a numbered "Features at a Glance" entry.
     Feature("mantis_iads", "MANTIS IADS engine", plugin_id="mantisiads"),

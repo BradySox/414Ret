@@ -76,6 +76,7 @@ feature — each carries the design rationale, the flown-test findings, and the 
 | [414th-upstreaming-inventory.md](docs/dev/414th-upstreaming-inventory.md) | The upstreaming queue, priority-ordered, with readiness marks. |
 | [414th-community-contribution-roadmap.md](docs/dev/414th-community-contribution-roadmap.md) | The long view: community-value × carve-difficulty across every feature. |
 | [414th-retribution-long-view.md](docs/dev/design/414th-retribution-long-view.md) | Structural read of the engine (2026-08-17): what Retribution is, measured, and the seven seams that follow. **1 (mission→campaign reporting) and 4 (the front line) are BUILT** as §91 and §90; **2 (the intel model) and 5 (time between turns) are accepted, not started**; 3 is analysis only; 6 is scoped in its own note. **Seam 7 (the enemy) is DROPPED** — three framings, three Phase 0s, no observable defect found; read §8 and [414th-red-brain-phase0-notes.md](docs/dev/design/414th-red-brain-phase0-notes.md) before proposing anything about red, because §55 tried the obvious shape and the analytic route has now failed three times. |
+| [414th-campaign-architecture-notes.md](docs/dev/design/414th-campaign-architecture-notes.md) | **Direction note (2026-08-20, DM call): the one-substrate architecture.** The graveyard's shared diagnosis (private numbers, no substrate), five pillars (flow-network substrate, mission-as-transaction, event-driven turns, red legibility, command-by-weight), the four admission rules, and rungs R0–R7 with gates and falsifiers. Nothing built; no tombstone lifted — each rung lands on its own call. |
 
 ### Campaign notes — `docs/dev/design/`
 
@@ -97,7 +98,10 @@ Read before touching a campaign's `.yaml`, `.miz` or build tool.
 
 - **IADS / air defense** — `414th-mantis-iads-HANDOFF.md` (**start here**),
   `-migration-notes`, `-vs-skynet-iads-parity`, `414th-sam-site-realism-notes.md`,
-  `414th-air-defense-planning-notes.md`, `414th-qra-player-manning-notes.md`
+  `414th-air-defense-planning-notes.md`, `414th-qra-player-manning-notes.md`,
+  `414th-sam-magazines-notes.md` (**scoping only, nothing built** — cross-turn SAM missile
+  stock on the §81 architecture; the MANTIS/ROE seam is verified clean and the off-mission
+  drain hook found, so it is buildable on a decision)
 - **EW / ISR / comms** — `414th-c130-ew-isr-notes.md`, `414th-comms-jam-notes.md`,
   `414th-comint-notes.md`, `414th-gps-jamming-notes.md`,
   `414th-iads-c2-consequences-notes.md`
@@ -114,7 +118,15 @@ Read before touching a campaign's `.yaml`, `.miz` or build tool.
   targets never register as killed; the M4 IADS stand-in; the proxy unit that was built and
   reverted, and the position matcher measured to have no input. **The reported failure was never
   reproduced — read §8.1 before building anything here**)
-- **Planning / doctrine** — `414th-airwar-planner-consolidation-notes.md`,
+- **Planning / doctrine** — `414th-falcon-bms-campaign-notes.md` (**study note** — what the
+  BMS dynamic campaign actually does, the full crosswalk to fork features, four gated
+  candidates, and the tombstones it must not resurrect — §48/§53/§54 and turnless),
+  `414th-region-priorities-notes.md` (**BUILT 2026-08-20 as §93** — per-CP blue planning
+  priorities: upstream #686's surface × BMS's PAK weight; the fence stays dead with §40;
+  B89 app pass owed),
+  `414th-campaign-architecture-notes.md` (**direction note** — the one-substrate architecture
+  and rungs R0–R7; see the tracking table),
+  `414th-airwar-planner-consolidation-notes.md`,
   `414th-aircraft-task-rebalance-rubric.md`, `414th-victory-conditions-notes.md`,
   `414th-wing-growth-notes.md`, `414th-single-player-loop-notes.md`,
   `414th-living-battlespace-notes.md` (all five slices — pre-roll, residue, follow-on
@@ -140,7 +152,12 @@ Read before touching a campaign's `.yaml`, `.miz` or build tool.
   what is already ours, and the OPFOR-AI precedent for seam 7),
   `414th-red-brain-phase0-notes.md` (**read before proposing anything about red** — seam 7
   framing 3 and its Phase 0; no headroom found, and the pre-registered card that would
-  reopen it)
+  reopen it),
+  `414th-mist-author-repos-notes.md` (**the licence gate on the MIST author's repos, and the
+  one worth reading** — his published in-game unit dump is a second ground truth for sensor
+  ranges; MIST and SLmod are GPL-3 and his misc-scripts repo is unlicensed, so none of it may
+  be vendored into this LGPL-3 tree; per the naming convention his name/handle stay out of
+  this repo)
 
 ### Superseded, draft or historical
 
@@ -369,6 +386,7 @@ linked design note.
 90. **Front-line model** — reinforcement follows the supply lines, attacking costs more than defending, the line's position counts the forces actually present, terrain slows the advance, and the front bulges instead of running straight.
 91. **Per-flight sortie records** — the mission reports back what each flight did: track, time airborne, fuel, shots and hits, not just which units died.
 92. **What's New** — a toolbar window listing the recent player-visible changes, each with what to look for in the next mission.
+93. **Region priorities** — per-control-point BLUE planning emphasis: emphasized regions rank closer, deprioritized farther, ignored left to manual packages. A weight, never a fence.
 
 ### Retired, removed or shelved — do not restore
 
@@ -463,6 +481,33 @@ gh pr list --repo juanjux/dcs-retribution --state all --limit 40 --json number,t
 glance. The four were fixed the same day (hold-release clamp, two front-line hold causes, and
 the IADS C2 graph). Open candidates, the OPFOR-AI precedent for seam 7, and the full ledger are
 in [414th-juanjux-fork-watch-notes.md](docs/dev/design/414th-juanjux-fork-watch-notes.md).
+
+### The MIST author's repositories — read-only, licence-gated (ASSESSED 2026-08-20)
+
+The author of MIST and SLmod — one of DCS's longest-standing mission scripters — has 7 public
+repositories, assessed in full; **one is worth reading and none may be copied.** Per the naming
+convention (paid-campaign treatment, 2026-08-20 user call) his name and handle appear nowhere in
+this repo, PR metadata or commit messages; the DM holds the link.
+
+- **The licence gate is hard.** MIST and SLmod are **GPL-3.0**; `DCS-miscScripts` has **no
+  licence file at all**. This tree is **LGPL-3.0**. Read his work, verify our numbers against
+  it, reimplement a mechanism from the DCS API if we want it — never vendor a file, never
+  commit his data. (Retiring MIST on 2026-07-10 removed the tree's only GPL-3 file.)
+- **The one live repo is his misc-scripts collection** (updated Feb 2026). `ObjectDB2/everyObject.lua` is a
+  published in-game dump of `getDesc()` + `getSensors()` + `getAmmo()` for 625 DCS objects — a
+  **second ground truth** for sensor ranges that needs no DCS box, unlike `verify_mod_export.py`.
+  `IADScript/script_iads_dev.lua` carries a 24-system SAM database with radar rotation periods,
+  per-launcher magazine sizes and rearm times.
+- **Open defect candidate:** his runtime dump reads the S-300 64H6E "Big Bird" at **80,249 m** and
+  the Buk SR at **66,874 m**, against the 160,000 / 100,000 m their DCS database entries advertise.
+  If pydcs carries the database numbers, our detection rings overstate by ~2×. Needs the local
+  checkout to confirm.
+- **Corroborated, do not re-litigate:** his IADS calls `enableEmission` **zero** times — same
+  conclusion as our hard constraint. And measured Dog Ear detection is 23.4 km against 1L13's
+  200.6 km, which confirms Ramius007's objection that closed #887.
+
+Full assessment, including the SAM-magazine and radar-sweep ideas MANTIS lacks, is in
+[414th-mist-author-repos-notes.md](docs/dev/design/414th-mist-author-repos-notes.md).
 
 **He reverted one of ours and was right**: his #40 backed out the support-orbit port because
 the FLOT anchoring sent AWACS and tankers over enemy ship groups. We reverted the same geometry
@@ -565,6 +610,7 @@ Carved out of this work, against `dcs-retribution/dcs-retribution` (all authored
 
 **Crowded upstream zones — do NOT carve into these without coordinating** (active non-414th PRs):
 - Planning revamps — prokop7 [#676](https://github.com/dcs-retribution/dcs-retribution/pull/676) BARCAP, [#674](https://github.com/dcs-retribution/dcs-retribution/pull/674) SEAD/DEAD, [#678](https://github.com/dcs-retribution/dcs-retribution/pull/678) BAI, [#677](https://github.com/dcs-retribution/dcs-retribution/pull/677) attack-infra.
+- Player region control — red-one1 [#686](https://github.com/dcs-retribution/dcs-retribution/pull/686) (WIP draft: navmesh-polygon AO hard-limiting A2G missions). The BMS study note's candidate 4 is the *weighting* version of this territory; the fork's own *constraint* version was §40's ROE zones, removed 2026-07-21.
 - QRA — geofffranks [#782](https://github.com/dcs-retribution/dcs-retribution/pull/782) (our reserve *feeds* this; don't resubmit).
 - Frontline — geofffranks [#823](https://github.com/dcs-retribution/dcs-retribution/pull/823) (already adopted into the fork), Druss99 [#681](https://github.com/dcs-retribution/dcs-retribution/pull/681).
 - SEAD — geofffranks [#772](https://github.com/dcs-retribution/dcs-retribution/pull/772).

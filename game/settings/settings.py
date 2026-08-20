@@ -341,6 +341,7 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                     "opfor_autoplanner_aggressiveness",
                     "ownfor_planner_unpredictability",
                     "opfor_planner_unpredictability",
+                    "region_priorities",
                     "c2_decapitation_effects",
                     "weather_aware_planning",
                     "sead_strike_coordination",
@@ -768,6 +769,7 @@ FEATURE_GATE_FIELDS: dict[str, list[str]] = {
         "naval_magazines",  # §81
     ],
     "Auto-planner behaviour": [
+        "region_priorities",  # §93
         "weather_aware_planning",  # §67
         "sead_strike_coordination",  # §69
         "single_sead_escort_flavour",  # §77
@@ -1362,6 +1364,21 @@ class Settings:
             "it sometimes service a lower-priority target first so red's offensive "
             "target selection is less repetitive turn to turn. Reactive defensive "
             "tasking is unaffected."
+        ),
+    )
+    region_priorities: bool = boolean_option(
+        "Region priorities (per-objective planning emphasis)",
+        page=CAMPAIGN_DOCTRINE_PAGE,
+        section=GENERAL_SECTION,
+        default=False,
+        detail=(
+            "Weight the BLUE auto-planner's offensive target selection by a "
+            "priority set per control point: an emphasized region's targets rank "
+            "as if at half their distance, a deprioritized region's as if at "
+            "double, and an ignored region is left to manual packages entirely. "
+            "A weight on your own planning, never a fence -- manual packages, "
+            "ROE and rescue tasking are unaffected, and the enemy planner never "
+            "reads it."
         ),
     )
     c2_decapitation_effects: bool = boolean_option(

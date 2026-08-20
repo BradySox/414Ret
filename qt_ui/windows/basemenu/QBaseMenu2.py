@@ -3,6 +3,7 @@ from copy import deepcopy
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QCloseEvent, QPixmap
 from PySide6.QtWidgets import (
+    QComboBox,
     QDialog,
     QHBoxLayout,
     QLabel,
@@ -18,6 +19,7 @@ from game import Game
 from game.ato.flighttype import FlightType
 from game.config import RUNWAY_REPAIR_COST
 from game.dcs.aircrafttype import AircraftType
+from game.fourteenth.region_priorities import RegionPriority
 from game.radio.ICLSContainer import ICLSContainer
 from game.radio.RadioFrequencyContainer import RadioFrequencyContainer
 from game.radio.TacanContainer import TacanContainer
@@ -141,6 +143,23 @@ class QBaseMenu2(QDialog):
         self.repair_button.clicked.connect(self.begin_runway_repair)
         self.update_repair_button()
         runway_buttons_layout.addWidget(self.repair_button)
+
+        # §93 region priorities: the BLUE planning emphasis for this CP's
+        # targets. Enemy CPs only (that is where the targets are), and only
+        # while the setting is on -- a weight on auto-planning, never a fence.
+        if not is_friendly and self.game_model.game.settings.region_priorities:
+            self.region_priority_combo = QComboBox()
+            for priority in RegionPriority:
+                self.region_priority_combo.addItem(
+                    f"Planning: {priority.value.capitalize()}", priority
+                )
+            self.region_priority_combo.setCurrentIndex(
+                list(RegionPriority).index(self.cp.blue_region_priority)
+            )
+            self.region_priority_combo.currentIndexChanged.connect(
+                self.on_region_priority_changed
+            )
+            runway_buttons_layout.addWidget(self.region_priority_combo)
         runway_buttons_layout.addStretch()
 
         base_menu_header.setProperty("style", "baseMenuHeader")
@@ -183,6 +202,12 @@ class QBaseMenu2(QDialog):
         bottom_row.addWidget(self.budget_display)
         GameUpdateSignal.get_instance().budgetupdated.connect(self.update_budget)
         self.setLayout(main_layout)
+
+    def on_region_priority_changed(self, index: int) -> None:
+        self.cp.blue_region_priority = self.region_priority_combo.itemData(index)
+        # Push the change onto the map/event stream so the web client refreshes.
+        with EventStream.event_context() as events:
+            events.update_control_point(self.cp)
 
     @property
     def cheat_capturable(self) -> bool:

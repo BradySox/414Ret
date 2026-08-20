@@ -37,6 +37,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Iterator, Optional
 
 from game.theater import Player
+from game.fourteenth.region_priorities import planning_factor
 from game.theater.fogofwar import hidden_from
 from game.utils import nautical_miles
 
@@ -349,6 +350,13 @@ def _enemy_raid_targets(game: "Game", side: str) -> Iterator["TheaterGroundObjec
             # the first raid of the campaign finds the HQ the player never located,
             # and the strike then reveals it permanently. Red is never fogged.
             if side == "blue" and hidden_from(Player.BLUE, tgo):
+                continue
+            # §93 region priorities: an IGNORED region's targets are left to
+            # manual fires only — the same courtesy the fog gate above gives.
+            if (
+                side == "blue"
+                and planning_factor(tgo, getattr(game, "settings", None), True) is None
+            ):
                 continue
             if not any(unit.alive for unit in tgo.units):
                 continue

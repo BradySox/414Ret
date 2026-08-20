@@ -133,6 +133,7 @@ stress it · `✗` fail signature reproduced in-game.
 | B83 | ATMOS-X live weather: the turn flies a real observation | ATMOS-X live weather | ☐ |
 | B86 | Retribution survives DCS taking over the GPU (Qt 6.8) | app / Qt | ☐ |
 | B87 | A stand-off shooter starts its run at its own launch range | §8 | ☐ |
+| B89 | Region priorities: the CP-dialog control shifts the ATO | §93 | ☐ |
 
 ---
 
@@ -5562,6 +5563,23 @@ turn on a wing with a small dedicated-jammer squadron and read the ATO before fl
 - **Setup:** frag a player cold-start F-16C and a player cold-start F-4E in the same turn. Read each package's takeoff time against its TOT, then actually fly both starts with a stopwatch — **stored heading**, which is what the numbers assume. ~40 min for both. Also confirm an airframe with no value (a Hornet) is unchanged at 10 minutes.
 - **Pass:** you make the briefed taxi time on a normal unhurried start in all three. The Phantom's 9 minutes should feel close but sufficient — its gyros alone eat most of it.
 - **Fail signature:** you are still in the chocks when the package is due to taxi, which means the number is too tight and the note's inferred ~2-minute systems window is wrong. Record the stopwatch figure — a measurement replaces the arithmetic outright. The opposite signature also matters: arriving at the hold-short with minutes to spare means the value is generous and the whole exercise bought nothing.
+
+### B89 — Region priorities: the CP-dialog control shifts the ATO · §93 · ☐ UNTESTED
+
+**History:** built 2026-08-20 — upstream #686's map-control idea reworked to BMS's PAK
+weighting (design note `414th-region-priorities-notes.md`).
+
+> The planner half is headless-verified (`tests/fourteenth/test_region_priorities.py`: the
+> factor reorders, IGNORED drops, rescues exempt, red never weighted). What only an app pass
+> can check: the combo on an enemy base dialog shows and persists with the setting on, the
+> web tooltip carries the non-NORMAL line, and a turn generated with an EMPHASIZED axis
+> visibly shifts the ATO toward it against a NORMAL baseline of the same save.
+>
+> **Pass:** set a far enemy CP EMPHASIZED and a near one IGNORED, regenerate the turn; the
+> ATO gains packages toward the far CP and auto-plans nothing at the ignored one, while a
+> hand-built package against the ignored CP still works. **Fail signature:** the combo
+> missing on enemy bases with the setting on, a rescue dropping because its region was
+> deprioritized, or any red package pattern change.
 
 ### B87 — A stand-off shooter starts its run at its own launch range · §8 · ☐ UNTESTED
 

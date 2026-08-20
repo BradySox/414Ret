@@ -5,6 +5,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
+from game.fourteenth.region_priorities import priority_of
 from game.server.leaflet import LeafletPoint
 
 if TYPE_CHECKING:
@@ -32,6 +33,10 @@ class ControlPointJs(BaseModel):
     # whether it recovers strength at all, and it had no surface anywhere --
     # a player whose base stopped rebuilding had no way to find out why.
     supply_status: str | None
+    # §93 region priorities: the BLUE planning emphasis for this CP's targets
+    # (emphasized/normal/deprioritized/ignored), or None when the setting is
+    # off. Set from the base dialog; the planner weight reads the same field.
+    region_priority: str | None
 
     class Config:
         title = "ControlPoint"
@@ -97,6 +102,18 @@ class ControlPointJs(BaseModel):
             # hashes the control point, and callers that pass no supply map
             # must not be made to require a hashable one.
             supply_status=supply.get(control_point) if supply else None,
+            # getattr chain: model tests hold duck-typed CPs with no
+            # coalition, and priority_of getattr-guards the field itself.
+            region_priority=(
+                priority_of(control_point).value
+                if getattr(
+                    getattr(getattr(control_point, "coalition", None), "game", None),
+                    "settings",
+                    None,
+                )
+                and control_point.coalition.game.settings.region_priorities
+                else None
+            ),
         )
 
     @staticmethod

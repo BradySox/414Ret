@@ -53,6 +53,7 @@ from game.ground_forces.combat_stance import CombatStance
 from game.point_with_heading import PointWithHeading
 from game.runways import RunwayAssigner, RunwayData
 from game.scenery_group import SceneryGroup
+from game.fourteenth.region_priorities import RegionPriority
 from game.sidc import (
     Entity,
     LandInstallationEntity,
@@ -505,6 +506,15 @@ class ControlPoint(MissionTarget, SidcDescribable, ABC):
 
     def __repr__(self) -> str:
         return f"<{self.__class__}: {self.name}>"
+
+    @property
+    def blue_region_priority(self) -> RegionPriority:
+        # §93 region priorities. getattr-guarded: pre-§93 saves carry no field.
+        return getattr(self, "_blue_region_priority", RegionPriority.NORMAL)
+
+    @blue_region_priority.setter
+    def blue_region_priority(self, value: RegionPriority) -> None:
+        self._blue_region_priority = value
 
     @property
     def dcs_airport(self) -> Airport | None:

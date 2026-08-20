@@ -106,6 +106,44 @@ def set_destination(
 
 
 @router.put(
+    "/{cp_id}/region-priority",
+    operation_id="set_control_point_region_priority",
+    status_code=status.HTTP_204_NO_CONTENT,
+    response_class=Response,
+)
+def set_region_priority(
+    cp_id: UUID,
+    priority: str = Body(..., embed=True, title="priority"),
+    game: Game = Depends(GameContext.require),
+) -> None:
+    """§93 region priorities: set the BLUE planning emphasis for one CP.
+
+    Stored regardless of the region_priorities setting (state persists; the
+    planner only reads it under the gate). Host-set campaign state, like the
+    other doctrine controls.
+    """
+    cp = game.theater.find_control_point_by_id(cp_id)
+    if cp is None:
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND,
+            detail=f"Game has no control point with ID {cp_id}",
+        )
+    from game.fourteenth.region_priorities import RegionPriority
+
+    try:
+        cp.blue_region_priority = RegionPriority(priority)
+    except ValueError:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            detail=f"Unknown region priority {priority!r}",
+        )
+    from .. import EventStream
+
+    with EventStream.event_context() as events:
+        events.update_control_point(cp)
+
+
+@router.put(
     "/{cp_id}/cancel-travel",
     operation_id="clear_control_point_destination",
     status_code=status.HTTP_204_NO_CONTENT,

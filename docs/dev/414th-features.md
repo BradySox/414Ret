@@ -9412,3 +9412,61 @@ the order the file wrote them — the file stays the author's list, not a re-shu
 
 **No in-game pass owed.** It is a window over a data file; the offscreen render test covers
 what a human would check.
+
+## §93 — Region priorities
+
+Per-control-point BLUE planning emphasis — upstream #686's map-control idea reworked to BMS's
+PAK weighting. Design and the full rationale:
+[`414th-region-priorities-notes.md`](design/414th-region-priorities-notes.md); the study
+inputs are [`414th-falcon-bms-campaign-notes.md`](design/414th-falcon-bms-campaign-notes.md)
+candidate 4 and red-one1's upstream draft
+[#686](https://github.com/dcs-retribution/dcs-retribution/pull/686), credited as the
+surface's origin.
+
+### The rule
+
+Every control point carries a BLUE planning priority — `EMPHASIZED` / `NORMAL` /
+`DEPRIORITIZED` / `IGNORED`, default `NORMAL`. When the `region_priorities` setting is on,
+the BLUE auto-planner's offensive target ordering multiplies each target's effective range
+by the owning CP's factor (0.5 / 1.0 / 2.0), and an `IGNORED` CP's targets are dropped from
+auto-planning. **A weight, never a fence** — manual packages, ROE and rescue tasking are
+untouched, which is what keeps this clear of §40's removed ROE zones. Red never reads it
+(seam 7), and it is host-set campaign state like every other doctrine control.
+
+### Shape
+
+- `game/fourteenth/region_priorities.py` — the enum, the factor table, `planning_factor()`
+  (the single gate: identity when off, red, or CP-less; `None` = drop).
+- `ControlPoint.blue_region_priority` — a getattr-guarded property
+  (`game/theater/controlpoint.py`), so pre-§93 saves read `NORMAL` with no migration.
+- `ObjectiveFinder._targets_by_range(..., weighted=True)` weights `threatening_ships`,
+  `oca_targets` and `motorpool_targets`; `strike_targets` applies the same factor in its own
+  inline sort (it carries a per-TGO dedup). `downed_pilots` and the ground-war CP rankings
+  deliberately stay unweighted — a rescue must never rank lower for its region.
+- The §63 auto raids and the §44 carrier strike honor `IGNORED` beside their existing
+  fog gates (`cruise_raids.py`, `carrier_ops.py`) — auto fires obey the same courtesy.
+- Setting: `region_priorities` (Campaign doctrine page, default OFF; Auto-planner behaviour
+  group on the 414th Features page).
+
+### Known v1 limits
+
+- DEAD/SEAD target choice is not range-sorted today (`enemy_air_defenses` feeds
+  `theaterstate` unsorted), so air-defense tasking ignores region priority in v1 — an
+  `IGNORED` region can still draw SEAD. Recorded in the design note as deferred.
+- Convoy/cargo-ship interdiction and front-line (CAS) tasking are unweighted by design —
+  they follow the ground war, not the strike map.
+- Friendly-CP priorities are accepted by the model but nothing reads them yet (defensive
+  emphasis is a possible follow-on).
+
+### Files & tests
+
+- `game/fourteenth/region_priorities.py` · `game/theater/controlpoint.py` ·
+  `game/commander/objectivefinder.py` · `game/fourteenth/cruise_raids.py` ·
+  `game/fourteenth/carrier_ops.py` · `game/settings/settings.py` · server/web UI under
+  `game/server/controlpoints/` + `client/src/`.
+- Tests: `tests/fourteenth/test_region_priorities.py` (the factor gates, the ordering
+  effect, the IGNORED drop, the rescue exemption, the off-gate identity).
+
+**In-game pass owed:** none for the planner half (headless-checkable — generate a turn with
+an emphasized axis and compare the ATO's target spread against a NORMAL baseline); one UI
+pass row for the CP-dialog control once the web UI lands (B89).

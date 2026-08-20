@@ -9447,6 +9447,12 @@ untouched, which is what keeps this clear of §40's removed ROE zones. Red never
   deliberately stay unweighted — a rescue must never rank lower for its region.
 - The §63 auto raids and the §44 carrier strike honor `IGNORED` beside their existing
   fog gates (`cruise_raids.py`, `carrier_ops.py`) — auto fires obey the same courtesy.
+- **Ships and battle positions are gated at the task, not the list** (fixed 2026-08-20 after
+  an IGNORED red carrier still drew an anti-ship package plus escort). `state.enemy_ships` is
+  threat data as well as a target list — it feeds `_rebuild_threat_zones` — so filtering it
+  would route blue over the very carrier it was told to ignore. `AttackShips` and
+  `AttackBattlePositions` (BAI *and* its Armed Recon leg) call `auto_planning_skips` instead.
+  When adding an offensive task, gate the tasking; never the threat picture.
 - Setting: `region_priorities` (Campaign doctrine page, default OFF; Auto-planner behaviour
   group on the 414th Features page).
 

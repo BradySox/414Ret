@@ -9,8 +9,11 @@ from __future__ import annotations
 from types import SimpleNamespace
 
 from game.commander.objectivefinder import ObjectiveFinder
+from game.commander.tasks.compound.attackbattlepositions import AttackBattlePositions
+from game.commander.tasks.compound.attackships import AttackShips
 from game.fourteenth.region_priorities import (
     RegionPriority,
+    auto_planning_skips,
     planning_factor,
     priority_of,
 )
@@ -29,7 +32,14 @@ def _target(owner: Airfield | None, distance: float = 10_000.0) -> SimpleNamespa
 
 
 def _settings(on: bool) -> SimpleNamespace:
-    return SimpleNamespace(region_priorities=on)
+    # The unpredictability pair keeps shuffled_by_priority a no-op, so the task
+    # tests assert on order deterministically.
+    return SimpleNamespace(
+        region_priorities=on,
+        ownfor_planner_unpredictability=0,
+        opfor_planner_unpredictability=0,
+        c2_decapitation_effects=False,
+    )
 
 
 def test_pre_93_save_reads_normal() -> None:
@@ -121,3 +131,71 @@ def test_red_planner_never_weighted() -> None:
         finder._targets_by_range([near_ignored, far], weighted=True)  # type: ignore[type-var]
     )
     assert out == [near_ignored, far]
+
+
+def _targets_of(methods: object) -> list[object]:
+    """The target of each single-task method a compound task yielded."""
+    return [m[0].target for m in methods]  # type: ignore[attr-defined]
+
+
+def _state(on: bool, player: Player = Player.BLUE, **lists: object) -> SimpleNamespace:
+    context = SimpleNamespace(
+        settings=_settings(on),
+        coalition=SimpleNamespace(player=player),
+        theater=SimpleNamespace(),
+    )
+    return SimpleNamespace(context=context, **lists)
+
+
+def test_an_ignored_ship_is_not_tasked_but_stays_a_threat() -> None:
+    """`state.enemy_ships` feeds the threat zones as well as AttackShips.
+
+    Flown 2026-08-20 (test.retribution turn 2): an IGNORED red carrier still drew an
+    anti-ship package plus escort, because the task read the list and nothing gated
+    it. Filtering the list itself instead would route blue over the carrier.
+    """
+    ignored = _fake_cp(RegionPriority.IGNORED)
+    normal = _fake_cp(RegionPriority.NORMAL)
+    carrier, freighter = _target(ignored), _target(normal)
+    state = _state(True, enemy_ships=[carrier, freighter])
+
+    assert auto_planning_skips(carrier, state)
+    assert not auto_planning_skips(freighter, state)
+    tasked = _targets_of(AttackShips().each_valid_method(state))  # type: ignore[arg-type]
+    assert tasked == [freighter]
+    assert state.enemy_ships == [carrier, freighter]
+
+
+def test_ignored_ships_still_tasked_when_the_feature_is_off() -> None:
+    ignored = _fake_cp(RegionPriority.IGNORED)
+    carrier = _target(ignored)
+    state = _state(False, enemy_ships=[carrier])
+    methods = AttackShips().each_valid_method(state)  # type: ignore[arg-type]
+    assert _targets_of(methods) == [carrier]
+
+
+def test_red_never_reads_blues_ignore_list_for_ships() -> None:
+    carrier = _target(_fake_cp(RegionPriority.IGNORED))
+    state = _state(True, player=Player.RED, enemy_ships=[carrier])
+    methods = AttackShips().each_valid_method(state)  # type: ignore[arg-type]
+    assert _targets_of(methods) == [carrier]
+
+
+def test_an_ignored_cp_gets_neither_bai_nor_armed_recon() -> None:
+    ignored = _fake_cp(RegionPriority.IGNORED)
+    normal = _fake_cp(RegionPriority.NORMAL)
+    hidden, live = _target(ignored), _target(normal)
+    state = _state(
+        True,
+        enemy_battle_positions={
+            ignored: SimpleNamespace(in_priority_order=[hidden]),
+            normal: SimpleNamespace(in_priority_order=[live]),
+        },
+        control_point_priority_queue=[ignored, normal],
+    )
+    methods = AttackBattlePositions().each_valid_method(state)  # type: ignore[arg-type]
+    targets = _targets_of(methods)
+    assert hidden not in targets
+    assert live in targets
+    assert ignored not in targets
+    assert normal in targets

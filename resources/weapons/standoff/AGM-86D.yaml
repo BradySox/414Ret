@@ -1,5 +1,6 @@
 name: AGM-86D
 year: 2001
 fallback: AGM-86C
+range: 590
 clsids:
   - "{769A15DF-6AFB-439F-9B24-5B7A45C59D16}"

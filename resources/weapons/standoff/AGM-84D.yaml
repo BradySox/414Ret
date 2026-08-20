@@ -1,6 +1,7 @@
 name: AGM-84D
 year: 1985
 fallback: AGM-84A
+range: 67
 clsids:
   - "{F111C_AGM_84_ARM}"   # AGM-84D Harpoon
   - "{AGM_84D}"   # AGM-84D Harpoon AShM

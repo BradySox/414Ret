@@ -11,6 +11,7 @@ from dcs.planes import C_101CC, C_101EB, Su_33, FA_18C_hornet, C_130J_30
 
 from game.dcs.aircrafttype import AircraftType
 from game.theater import ControlPoint, MissionTarget
+from game.utils import Distance
 from .flightmembers import FlightMembers
 from .flightroster import FlightRoster
 from .flightstate import FlightState, Navigating, Uninitialized
@@ -441,6 +442,16 @@ class Flight(
         return any(
             m.loadout.has_weapon_of_type(weapon_type) for m in self.iter_members()
         )
+
+    @property
+    def max_standoff_range(self) -> Optional[Distance]:
+        """The furthest any member of this flight can release from the target."""
+        ranges = [
+            r
+            for r in (m.loadout.max_standoff_range for m in self.iter_members())
+            if r is not None
+        ]
+        return max(ranges) if ranges else None
 
     def __repr__(self) -> str:
         return self.__str__()

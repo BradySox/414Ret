@@ -1,6 +1,7 @@
 name: Kh-59M
 year: 1992
 fallback: Kh-29T
+range: 62
 clsids:
   - "{SU30_KH59M}"   # Kh-59M (AS-18 Kazoo), 930kg
   - "{SU30_KH59MK}"   # Kh-59MK (AS-18 Kazoo) - 930kg

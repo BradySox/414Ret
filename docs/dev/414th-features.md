@@ -1622,6 +1622,41 @@ defect that reached a build, most of them found by flying.
 
 ### Flight plans and routing
 
+- **A stand-off shooter flew past its own launch range and died at the target
+  (2026-08-19).** The attack task does not activate until a flight reaches the ingress
+  point, and `Doctrine.max_ingress_distance` is **weapon-agnostic** — 45 nm on modern
+  doctrine, for a dumb bomb and a 270 nm Kh-22 alike. A package carrying anything that
+  out-ranges that was therefore dragged from its launch range into the target's defenses
+  without shooting: the "flew straight in and never launched" case. Applies to both
+  sides, and to §63 cruise missiles, §81 anti-ship and Arc Light alike.
+  - **The rule.** A weapon yaml may declare `range:` in **nautical miles**
+    (`WeaponGroup.standoff_range`). `PackageWaypoints.standoff_doctrine` widens the
+    ingress bound to the package's own reach. It **only ever widens** — a short-range
+    authored weapon never pulls the ingress in.
+  - **The package number is the MINIMUM across its shooters**, because one ingress point
+    serves the whole package and it attacks together. A flight carrying nothing with an
+    authored range (an escort) is **excluded, not counted as zero** — counting it would
+    collapse the package back to the doctrine bound and undo the fix.
+  - **Capped at 60% of the departure-to-target leg.** `JoinZoneGeometry` puts the join at
+    35–36% of that leg from home, so an ingress past ~64% measured from the target would
+    sit **behind** the join and invert the route. The cap is what makes a 590 nm CALCM
+    safe to author.
+  - **It is a planning bound, not a promise.** DCS releases at its own doctrine distance
+    regardless (measured elsewhere at ~140 nm for a YJ-12, ~130 nm for a Kh-22 that
+    reaches 270+). What it buys is that the flight is not inside the defenses before its
+    attack task exists — not brochure range.
+  - **Data is the gate.** 25 weapon groups are authored from published maximum range
+    (Harpoon 67, SLAM-ER 150, HARM 80, Kh-22 270, JASSM-ER 500, CALCM 590 …); anything at
+    or under 45 nm is deliberately left unauthored because it changes nothing. **`range:`
+    is for air-to-ground stand-off weapons only** — an air-to-air range would drag an
+    attack package's ingress out for a missile with nothing to do with the target.
+  - ⚠️ **This is a planner divergence from upstream**, added after the 2026-08-09
+    re-convergence. It is not one of the three reverts that decision named (§46, §6, the
+    commander behaviours) — it is a new defect fix, and juanjux's fork carries the same
+    one — but it is a divergence and should be called out if the re-convergence is
+    re-examined. Tests `tests/ato/test_standoff_ingress.py`. Needs an in-game pass
+    (checklist **B87**). Found by reviewing juanjux's fork; see
+    [414th-juanjux-fork-watch-notes.md](design/414th-juanjux-fork-watch-notes.md).
 - **A hold was never told to release when the TOT was unreachable (2026-08-19).** Flight
   plans are built backwards from the TOT, so a TOT the flight cannot physically make puts
   `push_time` before mission start. `HoldPointBuilder` passed that straight through as the

@@ -554,25 +554,15 @@ FEATURES: tuple[Feature, ...] = (
         # gear + LSO crew from campaign A replayed onto Nimitz-family
         # carriers, curated so every parking spawn spot, catapult and the
         # landing area stay usable; ten street variants rotate per turn (the
-        # campaign A mining was completed 2026-08-07). The default-OFF second toggle
-        # adds the LAUNCH-PHASE corridor set (round-down E-2C), which the
-        # deckdecor plugin strikes below before recovery. The default-OFF third
-        # toggle is its mirror: a RECOVERY-PHASE forward-deck set the plugin
-        # SPAWNS on the same trigger (MOOSE SPAWNSTATIC, linked to the hull),
-        # so the bow is dressed only once launches are over. That tier is the
-        # least-evidenced in the feature -- KNOWN_PARKING_SPOTS holds 11 of the
-        # Supercarrier guide's 16 spots and the missing five are the bow-edge
-        # ones nearest it. No permanent static aircraft -- late activations
-        # spawn INTO statics on spots (flown 2026-07-18).
+        # campaign A mining was completed 2026-08-07). One tier, standing all
+        # mission -- the launch-phase round-down E-2C and the recovery-phase bow
+        # respot were cut 2026-08-20, and the deckdecor plugin with them. No
+        # static aircraft anywhere: late activations spawn INTO statics on spots
+        # (flown 2026-07-18, and again at t+39 min in test 11).
         "carrier_deck_decorations",
         "Carrier deck decorations (campaign A deck dressing)",
         72,
-        plugin_id="deckdecor",
-        settings_fields=(
-            "carrier_deck_decorations",
-            "carrier_deck_decorations_aircraft",
-            "carrier_deck_decorations_recovery",
-        ),
+        settings_fields=("carrier_deck_decorations",),
     ),
     Feature(
         # §73 default loadout per airframe+task (game/fourteenth/loadout_defaults.py):

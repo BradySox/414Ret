@@ -567,8 +567,6 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                     "supercarrier",
                     "supercarrier_deck_crew",
                     "carrier_deck_decorations",
-                    "carrier_deck_decorations_aircraft",
-                    "carrier_deck_decorations_recovery",
                 ],
             ),
             (
@@ -801,8 +799,6 @@ FEATURE_GATE_FIELDS: dict[str, list[str]] = {
     ],
     "Carrier": [
         "carrier_deck_decorations",  # §72
-        "carrier_deck_decorations_aircraft",  # §72
-        "carrier_deck_decorations_recovery",  # §72
     ],
     "Host & event tools": [
         "host_red_scramble",  # §61
@@ -2665,42 +2661,6 @@ class Settings:
             "catapults usable; the arrangement rotates each turn."
         ),
     )
-    carrier_deck_decorations_aircraft: bool = boolean_option(
-        "Carrier launch-cycle deck dressing (struck below for recovery)",
-        MISSION_GENERATOR_PAGE,
-        GAMEPLAY_SECTION,
-        enabled_when="carrier_deck_decorations",
-        default=False,
-        detail=(
-            "Extra dressing that stands ONLY during the launch cycle, as "
-            "campaign A spots it: an E-2C on the stern round-down plus gear and "
-            "hands on the port junk row by the LSO platform. The "
-            "deck-dressing runtime strikes it all below before recovery "
-            "(ahead of the Airboss recovery window, on a fallback timer, or "
-            "the moment traffic genuinely runs in low astern), so the "
-            "landing area is always clear when jets come home. No permanent "
-            "static ever stands on a parking spot -- aircraft spawning into "
-            "deck statics is a real DCS failure mode this feature learned "
-            "the hard way."
-        ),
-    )
-    carrier_deck_decorations_recovery: bool = boolean_option(
-        "Carrier recovery-cycle deck dressing (spawned for recovery)",
-        MISSION_GENERATOR_PAGE,
-        GAMEPLAY_SECTION,
-        enabled_when="carrier_deck_decorations",
-        default=False,
-        detail=(
-            "The mirror of the launch-cycle dressing: gear and hands ranged "
-            "forward onto the bow, which is how a real deck is re-spotted once "
-            "the landing area has to be clear. Nothing stands there at mission "
-            "start -- the deck-dressing runtime spawns it at the same moment "
-            "it strikes the launch-cycle set below. EXPERIMENTAL: the bow "
-            "parking spots have not been measured yet, so this tier can only "
-            "be checked against the 11 spots that have been. Leave it off if "
-            "you fly full 16-aircraft decks."
-        ),
-    )
     generate_portable_tacans: bool = boolean_option(
         "Place portable TACAN beacons at blue airfields",
         MISSION_GENERATOR_PAGE,
@@ -3995,8 +3955,10 @@ class Settings:
         # (MOOSE Ops.TARS) and "airecon" plugins were retired on 2026-08-05 when the
         # two split recon implementations were replaced by the single "recon" plugin
         # (§12); that successor was itself removed on 2026-08-20, once the reveal
-        # rework left its captures with no consumer. A save made before each of those
-        # still carries the keys.
+        # rework left its captures with no consumer. The "deckdecor" plugin went the
+        # same day: it existed only to swap §72's launch- and recovery-phase deck
+        # dressing, and both tiers were cut. A save made before each of those still
+        # carries the keys.
         for plugin_key in [
             key
             for key in self.plugins
@@ -4020,6 +3982,8 @@ class Settings:
             or key.startswith("arty.")
             or key == "artymbot"
             or key.startswith("artymbot.")
+            or key == "deckdecor"
+            or key.startswith("deckdecor.")
         ]:
             del self.plugins[plugin_key]
 
@@ -4165,6 +4129,11 @@ class Settings:
             # §89 P4, the synthesized blue voice net, REMOVED 2026-08-18: the DCS
             # AI already talks on the radio, so the net was duplicating it.
             "living_battlespace_voice_net",
+            # §72's two phase tiers, REMOVED 2026-08-20: the round-down E-2C and
+            # the bow respot are gone, leaving the island street and LSO crew
+            # standing for both cycles. Nothing swaps dressing any more.
+            "carrier_deck_decorations_aircraft",
+            "carrier_deck_decorations_recovery",
         ):
             migrated.pop(obsolete_key, None)
 

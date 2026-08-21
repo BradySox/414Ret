@@ -125,6 +125,16 @@ REMOVED: tuple[Removed, ...] = (
         allow=("removed", "retired", "no longer", "is gone", "historical"),
     ),
     Removed(
+        # S72's two phase tiers and the plugin that swapped them. The setting
+        # names are the distinctive terms; "deckdecor" catches the plugin, and
+        # "struck below" catches the behaviour described without either name.
+        "the S72 launch- and recovery-phase deck dressing tiers",
+        "2026-08-20",
+        r"carrier_deck_decorations_aircraft|carrier_deck_decorations_recovery"
+        r"|deckdecor|struck below before recovery|round-down E-2",
+        allow=("removed", "Removed:", "no longer", "historical"),
+    ),
+    Removed(
         "campaign phases, ROE zones and target release (S40)",
         "2026-07-21",
         r"restricted_zones:|free_fire_zones:|campaign_phase|free-fire zone|ROE zone",

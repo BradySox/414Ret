@@ -7,7 +7,6 @@ from typing import Optional, TYPE_CHECKING
 from dcs.flyingunit import FlyingUnit
 from dcs.unitgroup import ShipGroup
 
-from game.data.carrier_deck_decor import DeckStatic
 from game.dcs.aircrafttype import AircraftType
 from game.dcs.groundunittype import GroundUnitType
 from game.missiongenerator.aircraft.flightdata import FlightData
@@ -142,29 +141,6 @@ class AtisInfo:
 
 
 @dataclass
-class DeckDecorInfo:
-    """One carrier's launch-phase deck dressing (§72) for the deckdecor plugin.
-
-    ``clear_names`` are static UNIT names the plugin strikes below
-    (``StaticObject:destroy``) before recovery — on the fallback timer or the
-    moment fixed-wing traffic shows up low astern. ``ship_group_name`` finds
-    the moving boat at runtime (``Group.getByName``); ``brc_degrees`` is the
-    generation-time base recovery course (the boat steams that course all
-    mission), so the plugin needs no runtime orientation API for the astern
-    cone."""
-
-    ship_group_name: str
-    carrier_unit_name: str
-    blue: bool
-    brc_degrees: float
-    clear_names: list[str]
-    #: Recovery-phase placements the plugin SPAWNS on the same trigger. These
-    #: are deliberately absent from the mission file — the bow stays a launch
-    #: deck until launches are over.
-    recovery_specs: list[DeckStatic] = field(default_factory=list)
-
-
-@dataclass
 class CsarPilotGroupInfo:
     """A downed pilot placed in the mission as a real ground group."""
 
@@ -214,10 +190,6 @@ class MissionData:
     # objectives + the fragged reaction-alert groups. None when either gate is
     # off or either half is empty.
     reactive_red: Optional[ReactiveRedInfo] = None
-    # Carriers with launch-phase deck dressing to strike below before recovery
-    # (§72, the deckdecor plugin). Empty unless the aircraft tier placed
-    # launch-phase statics this mission.
-    deck_decor: list[DeckDecorInfo] = field(default_factory=list)
     # Cold late-activation red interceptor templates for the host F10 scramble
     # menu (§61). Populated by AircraftGenerator.spawn_red_scramble_templates
     # when host_red_scramble is on; the redscramble plugin clones them on demand.

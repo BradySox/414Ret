@@ -253,6 +253,42 @@ def test_counters_only_records_are_not_counted_as_sorties() -> None:
     assert sortie_summary(records) == "1 sortie, 1.0 hours airborne, 4 shots for 3 hits"
 
 
+def test_a_parked_airframe_is_not_a_sortie() -> None:
+    """The idle ramp is sampled like a flight; it must not be counted as one.
+
+    `_spawn_unused_for` parks a squadron's untasked airframes as 1-ship
+    Completed BARCAP groups. Test 12 (2026-08-20) had 82 of 158 records sitting
+    on ramps and the SITREP would have read "145 sorties, 96.7 hours airborne"
+    for a mission 46 aircraft flew.
+    """
+    from game.sitrep import sortie_summary
+    from game.sortierecord import sorties_flown
+
+    parked = {
+        "first_seen": 30.0,
+        "last_seen": 3630.0,
+        "shots": 0,
+        "hits": 0,
+        "track": [
+            {"t": 30.0, "x": 4000.0, "z": 9000.0, "alt": 12.0, "fuel": 1.0},
+            {"t": 3630.0, "x": 4001.0, "z": 9002.0, "alt": 12.0, "fuel": 1.0},
+        ],
+    }
+    payload = _payload(
+        **{
+            "Enfield 1-1-1": _flight(),
+            "Ramp 1": _flight(**parked),
+            "Ramp 2": _flight(**parked),
+        }
+    )
+    records = parse_sortie_records(payload)
+
+    assert len(records) == 3
+    assert sorties_flown(records) == 1
+    # Its hour on the ramp is not an hour airborne either.
+    assert sortie_summary(records) == "1 sortie, 1.0 hours airborne, 2 shots for 1 hit"
+
+
 def test_a_take_with_no_tracks_at_all_says_nothing() -> None:
     """A periodic (non-final) write carries counters but no tracks."""
     from game.sitrep import sortie_summary

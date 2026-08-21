@@ -113,14 +113,14 @@ stress it · `✗` fail signature reproduced in-game.
 | B56 | Living battlespace pre-roll: mid-cycle mission start | §89 | ◐ |
 | B57 | Living battlespace P2: ramp residue + clean-wing returners | §89 | ☑ |
 | B59 | Living battlespace P4: the voice net | §89 | ⊘ |
-| B60 | Living battlespace P5: reactive red | §89 | ☐ |
+| B60 | Living battlespace P5: reactive red | §89 | ✗ |
 | B61 | Task-role degrade: mismatched-role AI flights still fly their mission | §8 | ☐ |
 | B65 | Reinforcement follows the supply lines | §90 rung A | ☐ |
 | B66 | Attacking costs more than defending | §90 rung B | ☐ |
 | B67 | The front line counts the forces present | §90 rung C | ☐ |
 | B68 | Terrain slows the front line | §90 rung D | ☐ |
 | B69 | The front bulges instead of running straight | §90 rung E | ☑ |
-| B70 | Sortie records reach the campaign | §91 | ☐ |
+| B70 | Sortie records reach the campaign | §91 | ◐ |
 | B75 | The ATO stops spending its escorts on the wrong packages | planner shape | ☐ |
 | B76 | A mixed boom/probe wing gets a tanker of each | U15 reinstated | ☐ |
 | B77 | A player's ramp allowance matches the airframe | #214 startup times | ☐ |
@@ -3918,6 +3918,8 @@ be settled from a recording instead of the cockpit. It can, across all six recor
 
 **Setup card:** [flycards/REGRESSED-SWEEP.md](flycards/REGRESSED-SWEEP.md) — one Starfire campaign (`operation_desert_trident`) clears this alongside C9 and B48.
 
+**Test 12 (2026-08-20, Persian Gulf turn 1, session `a6e32389`) corroborates test 9 on both hardware types at once, with the pinned-by-a-member signature clean.** WALLAROO fired 3 Scud_B at t≈920 and BARRACUDA fired 15 CH_Shahed136 at t≈950; all six launchers then moved **10–35 m** for the rest of a 43-minute mission. In the *same two sites*, the SA-15 Tor sharing each group drove **2,409 m** (WALLAROO) and **2,974 m** (BARRACUDA). Same site, same tick, same route push: the escort drives and the launcher does not. Nothing new to diagnose — this is the post-salvo launcher state the row already names — but it is the cleanest instance yet, and it rules out the route push, the fire hold and the give-up rule as causes.
+
 
 > **Test 9 flown 2026-08-18** (Syria `operation_desert_trident`, `Tacview-20260818-214946` + `dcs.log` + `state.json` + the generated `.miz`) — **the 2026-08-18 fix works; a site that FIRES still does not move.**
 > Three sites, and the discriminator is the fire mission, exactly as in test 6:
@@ -4891,7 +4893,17 @@ shutdown (or watch the F10 map / Tacview tail).
 
 **Retired 2026-08-18** — the feature was removed on the DM's call ("the AI already uses the radio"), so there is nothing left to fly. It never got an in-game pass; it armed 48 scheduled calls on the 2026-08-17 Syria mission and whether any of them played was never established. See `414th-features.md` §89 P4.
 
-### B60 — Living battlespace P5: reactive red · §89 · ☐ UNTESTED
+### B60 — Living battlespace P5: reactive red · §89 · ✗ REGRESSED
+
+**Test 12 flown 2026-08-20 (Persian Gulf turn 1, `Tacview-20260820-203540` + `retribution_nextturn.miz` + `state.json`, session `a6e32389`) — the reaction can never launch: the generated group is uncontrolled, not late-activated, and `Group.activate()` is a no-op on it.** Everything upstream of the launch worked. Two alert flights were fragged and emitted (`Reaction Alert Bandar Abbas Intl BARCAP|34|45|F-5E Tiger II|`, `Reaction Alert Shiraz Intl BARCAP|34|44|F-4E Phantom II|`), six objectives were watched, and three of them lost units well inside the mission — MEERKAT's Shilka at t≈1360, KATYDID's whole SA-2 site at t≈1374, DUCK's Fire Can at t≈1413. With `reactionDelaySec = 420` the first launch was owed at t≈1780 and the mission ran to t=2580. **Neither alert flight moved one metre; both sit in the Tacview at their ramp position with a single t=0 sample.**
+
+The launch path cannot work as built. `plan_red_reactions` parks the flight by pushing its TOT eight hours out, and its docstring assumes that "generates a late-activation group whose own trigger never matters — the plugin's early `activate()` is the only way it flies." It does not. A cold-start AI flight at an airfield fails every branch of `WaypointGenerator.should_activate_late()` (not non-COLD, no clients, not a fleet departure), so generation takes the `set_startup_time` path instead: `uncontrolled = True` plus a `StartCommand` trigger action fired by an `AITaskPush` at T+8 h. The miz confirms it — both reaction groups carry `["uncontrolled"]=true` and **no `lateActivation` key at all**, while 38 other groups in the same miz do have one. `activate()` only activates a late-activation group, so the plugin's one power is spent on a group that is already in the world with its engines off.
+
+**Both fixed the same day, plugin-side.** `wake()` now tries `activate()` (late-activation groups) and `Controller:setCommand({id = "Start"})` (uncontrolled ones) and treats either succeeding as a launch, so generation is untouched and neither shape can be the one that silently fails. The harness gained `Controller:setCommand` and an `uncontrolled` group spec whose `activate()` is the no-op it is in DCS, and `test_an_uncontrolled_alert_flight_is_started_not_just_activated` pins the shape that was broken.
+
+**Second, independent defect found in the same read: a static target's watched name never matches.** The emitter wrote JAGUAR's units as `0522 | Oil platform` … `0525 | Oil platform`, but the miz names those statics `0525 | Oil platform object` and that is the name the DEAD event carries. JAGUAR was struck first (B-1B carpet at t≈460, 13 minutes before any other watched objective) and the plugin could not have seen it. Vehicle-group names match exactly, so the watch works for SAM and armour targets and is dead for every scenery/static one. **Fixed** by watching both spellings in the plugin (the MANTIS `dcs_name_for_group` convention `commsjam` and `rednet` already resolve the same way), pinned by `test_a_static_target_death_is_watched_under_its_object_name`.
+
+**Re-fly criterion, unchanged from the row's Pass below but now reachable:** strike any red objective your ATO is tasked against and stay ~10 minutes. `dcs.log` should carry `REACTRED|: armed`, then `<objective> struck; alert launch in 420 s`, then `<group> scrambling over <objective>` and `<group> on station over <objective>`. A `could not wake <group>` line means neither start path took and the fix is wrong; silence after `struck` means the schedule died.
 
 **History:** built 2026-08-15; **2026-08-16 watch: double no-test** — the flown miz predated the package-custom-name fix (#842), so the plugin logged `nothing emitted; plugin idle`; AND the watched objective took zero losses anyway (the 2-ship F-14 strike was killed at its TOT by the site's HQ-7 + Shilka point defense, site untouched), so even the fixed plugin would not have triggered. Both emitter fixes are merged and verified emitted in the current cut. Next attempt: watch a softer objective (ammo/factory, not a PD-heavy SAM) or send a properly escorted/SEAD-supported strike so a watched unit actually dies
 
@@ -5110,7 +5122,7 @@ actually are.
 > against 65 red ground units committed. An even fight at the midpoint is the designed null
 > result, so nothing is misbehaving, but an even fight cannot demonstrate the armour
 > weighting. That row needs a lopsided pair.
-### B70 — Sortie records reach the campaign · §91 · ☐ UNTESTED
+### B70 — Sortie records reach the campaign · §91 · ◐ PARTIAL
 
 **History:** built 2026-08-17, session `629c250f`.
 
@@ -5157,6 +5169,17 @@ Fly any mission with several AI packages up, then read the next turn's SITREP.
 > and the line is a real hit rate. Gun hits are no longer counted at all — there is no shot
 > event to rate them against. Sixth fail signature: **hits exceeding shots, or a strike
 > sortie reporting zero hits where it clearly destroyed something.**
+
+> **Test 12 (2026-08-20) third read — the records are clean, and two thirds of `state.json` is parked scenery.** (Persian Gulf turn 1, session `a6e32389`.) Both earlier defects stay fixed: 158 records, no ground units, no blank keys, and `hits <= shots` on every one. The player's own record is exactly what the feature promises — F-16CM, 42.5 min, 343 NM, 4 shots for 4 hits, fuel 1.642 → 0.760, recovered. Two new findings:
+>
+> 1. **Idle-ramp jets are recorded as flights.** `_spawn_unused_for` parks a squadron's untasked airframes as 1-ship `Completed` BARCAP groups, so the recorder's sweep sees them as airborne-category groups and anchors one per group. 82 of the 158 records are aircraft that never moved — 20 Su-24M and 12 Mirage F1EQ at Kish, 16 F-4E-45MC and 6 F-5E at Bandar Abbas, 8 Su-25T at Abu Musa, 4 IL-76MD at Shiraz, 12 helicopters at Qeshm — each carrying 86 identical track points. **`state.json` was 1.18 MB, of which `sortie_records` was 99% and the stationary tracks alone were 68%.** That is fail signature 3 arriving by a route the row did not anticipate: not the sample cap, the population. Cheapest fix is to drop a track sample that has not moved since the last one, which also collapses a real flight's holding pattern; the surgical one is to skip units whose flight state is `Completed` at generation.
+> 2. **The `fuel` column is a constant wherever `ai_unlimited_fuel` is on.** 101 of 143 tracked flights logged one unchanging value end to end, including an F-14A that flew 280 NM at 9,144 m on a flat 1.000. Not a recorder fault: the setting writes `SetUnlimitedFuel(True)` at `group.points[0]` (142 occurrences in this miz), turned off again at the join point and racetrack start — which is exactly why the 42 flights that did burn are the ones between those waypoints. Nothing to fix in the recorder, but a consumer must not present that number as a fuel state, and the SITREP should not average it.
+>
+> Also confirmed by design, worth writing down because it looks like a bug: a wingman that shoots or ejects gets a record with `first_seen = -1` and an empty track (only one AI jet per group is anchored). 13 records here. Any consumer computing hours airborne must skip `first_seen < 0` rather than treat it as t=0.
+>
+> **Both fixed the same day, and the fixes were replayed against this mission's own `state.json`.** The recorder collapses a stationary run to its two endpoints (`STATIONARY_M = 25`) and `SortieRecord.flew` requires `MIN_SORTIE_DISTANCE_M = 1000` of sampled track before a record is a sortie or contributes hours; `sorties_flown` and `sortie_summary` both read it. On test 12's file that is **1,183,550 → 377,377 bytes** and a SITREP line of **"46 sorties, 28.0 hours airborne, 84 shots for 26 hits"** in place of "145 sorties, 96.7 hours". Pinned by `test_a_parked_aircraft_collapses_to_the_run_endpoints`, `test_a_parked_aircraft_that_takes_off_records_normally_again` and `test_a_parked_airframe_is_not_a_sortie`. **Seventh fail signature: a sortie count in the same order of magnitude as every aircraft in the mission, ramp included.**
+>
+> **Re-fly criterion:** the next turn's SITREP sortie count should be close to the number of packages that flew, not to the theatre's aircraft count, and `state.json` should be a few hundred KB rather than over a megabyte.
 
 ### B78 — The escorts let go of a package the player is leading · planner shape · ☐ UNTESTED
 

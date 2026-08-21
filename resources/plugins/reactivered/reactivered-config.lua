@@ -7,7 +7,7 @@
 --   * Positive list only: the plugin may activate ONLY the emitted groups and
 --     orbit ONLY the emitted objectives. It never widens either.
 --   * No spawns, no kills. The alert flights are real claimed ATO airframes
---     parked late-activation; activate() is the only launch path.
+--     parked past the mission; waking a listed group is the only launch path.
 --   * One reaction per objective; the fragged pool is the hard cap.
 --   * The orbit task is pushed only once the flight is airborne -- a task push
 --     mid-taxi can wedge the takeoff (the §61 redscramble lesson).
@@ -49,6 +49,12 @@ for _, rec in ipairs(net.objectives) do
     if type(rec.units) == "table" then
         for _, unit_name in ipairs(rec.units) do
             watched[tostring(unit_name)] = objective
+            -- A static's DEAD event names it "<name> object" (the MANTIS
+            -- dcs_name_for_group convention commsjam and rednet also resolve).
+            -- Watch both spellings or a scenery target is invisible here: test
+            -- 12's oil-platform strike was struck 13 min before anything else
+            -- and could not trigger a reaction.
+            watched[tostring(unit_name) .. " object"] = objective
         end
     end
 end
@@ -100,6 +106,23 @@ local function task_when_airborne(group_name, objective)
     return nil
 end
 
+-- Start a parked alert flight, whichever way generation parked it. Which one
+-- you get is not this plugin's choice and not stable: a COLD AI flight at an
+-- airfield takes WaypointGenerator's set_startup_time path and is generated
+-- `uncontrolled` (engines off, already in the world), where activate() is a
+-- no-op -- which is why no reaction ever launched before 2026-08-20. Other
+-- start types get a late-activation group, which needs activate() and has no
+-- controller to command yet. Both are tried; either succeeding is a launch.
+local function wake(grp)
+    local activated = pcall(function()
+        grp:activate()
+    end)
+    local started = pcall(function()
+        grp:getController():setCommand({ id = "Start", params = {} })
+    end)
+    return activated or started
+end
+
 local function launch_reaction(objective)
     if next_group > #pool then
         env.info("REACTRED|: reaction pool exhausted; no launch for " .. objective.name)
@@ -112,11 +135,8 @@ local function launch_reaction(objective)
         env.info("REACTRED|: " .. group_name .. " not present; reaction skipped")
         return
     end
-    local ok = pcall(function()
-        grp:activate()
-    end)
-    if not ok then
-        env.warning("REACTRED|: activate failed for " .. group_name)
+    if not wake(grp) then
+        env.warning("REACTRED|: could not wake " .. group_name)
         return
     end
     env.info(

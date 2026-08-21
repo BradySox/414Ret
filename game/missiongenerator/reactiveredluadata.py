@@ -15,8 +15,11 @@ neither widenable by Lua:
   fragged (``plan_red_reactions``, real claimed airframes in the red ATO,
   parked past the mission until activated). The pool is the cap.
 
-The plugin's only powers are ``Group.activate()`` on a listed group and an
-orbit task over a listed objective -- no spawns, no kills, no new force.
+The plugin's only powers are waking a listed group (``activate()`` for a
+late-activation group, the ``Start`` command for an ``uncontrolled`` one -- a
+COLD flight at an airfield is generated the second way, so ``activate()`` alone
+launched nothing until 2026-08-20) and an orbit task over a listed objective.
+No spawns, no kills, no new force.
 Emits nothing when either gate is off, no watched objective exists, or no
 reaction flight was fragged; the plugin then idles with a log line.
 """

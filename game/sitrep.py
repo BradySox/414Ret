@@ -191,11 +191,11 @@ def sortie_summary(records: Sequence[SortieRecord]) -> Optional[str]:
     Deliberately aggregate. A per-flight read-off belongs on a page of its own;
     this is the band that rides along with the loss counts.
     """
-    airborne = [record for record in records if record.track]
+    airborne = [record for record in records if record.flew]
     if not airborne:
         return None
-    # Hours come only from records that were position-sampled, matching the
-    # sortie count. Weapons come from every record: an AI wingman fires without
+    # Hours come only from records that were position-sampled AND moved, matching
+    # the sortie count. Weapons come from every record: an AI wingman fires without
     # ever being sampled, and its shots are still the flight's.
     hours = sum(record.duration for record in airborne) / 3600.0
     shots = sum(record.shots for record in records)

@@ -161,6 +161,76 @@ def test_unlisted_death_does_nothing() -> None:
     h.assert_no_lua_errors()
 
 
+def test_an_uncontrolled_alert_flight_is_started_not_just_activated() -> None:
+    """The shape generation actually produces, and the one that never launched.
+
+    A COLD AI flight at an airfield fails every branch of
+    `WaypointGenerator.should_activate_late()`, so it is generated
+    `uncontrolled` -- already in the world, engines off -- and DCS's
+    `Group.activate()` does nothing to it. Test 12 (2026-08-20) flew three
+    struck objectives past the tasking delay and neither alert flight moved.
+    """
+    h = DcsPluginHarness()
+    _setup(h)
+    h.add_group(
+        {
+            "name": "REACT UC",
+            "side": 1,
+            "category": 0,
+            "uncontrolled": True,  # in the world, engines off
+            "units": [
+                {
+                    "name": "REACT UC-1",
+                    "x": 50000.0,
+                    "z": 60000.0,
+                    "alt": 100.0,
+                    "airborne": False,
+                }
+            ],
+        }
+    )
+    h.lua.globals().dcsRetribution = h.to_lua(_config([_objective()], ["REACT UC"]))
+    h.load_plugin_script(PLUGIN)
+
+    h.fire_dead("0044 | SA-6 LN")
+    h.advance_to(61)
+    # activate() is the no-op it is in DCS, so the Start command is the launch.
+    assert h.records("activations") == []
+    commands = h.records("controllerCommands")
+    assert [(c["group"], c["commandId"]) for c in commands] == [("REACT UC", "Start")]
+
+    # And the reaction still reaches its orbit once the flight gets airborne.
+    h.update_unit("REACT UC", {"airborne": True})
+    h.advance_to(120)
+    tasks = h.records("controllerTasks")
+    assert len(tasks) == 1
+    assert tasks[0]["taskId"] == "Orbit"
+    h.assert_no_lua_errors()
+
+
+def test_a_static_target_death_is_watched_under_its_object_name() -> None:
+    """DCS names a static's DEAD event "<name> object"; the emitter writes the
+    bare name. Test 12's oil-platform strike went unseen for exactly this."""
+    h = DcsPluginHarness()
+    _setup(h)
+    h.add_group(
+        {
+            "name": "JAGUAR platforms",
+            "side": 1,
+            "category": 2,
+            "units": [{"name": "0525 | Oil platform object", "x": 5.0, "z": 6.0}],
+        }
+    )
+    objective = _objective(name="JAGUAR", units=["0525 | Oil platform"])
+    h.lua.globals().dcsRetribution = h.to_lua(_config([objective], ["REACT 1"]))
+    h.load_plugin_script(PLUGIN)
+
+    h.fire_dead("0525 | Oil platform object")
+    h.advance_to(61)
+    assert h.records("activations") == ["REACT 1"]
+    h.assert_no_lua_errors()
+
+
 def test_nothing_emitted_is_a_clean_noop() -> None:
     h = DcsPluginHarness()
     h.lua.globals().dcsRetribution = h.to_lua({"plugins": {"reactivered": {}}})

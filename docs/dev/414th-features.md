@@ -1812,30 +1812,6 @@ defect that reached a build, most of them found by flying.
   because `cargo_stop()` does still plan 0 AGL. The target waypoints are unaffected and keep
   their deliberate 0 AGL. Tests `tests/ato/test_flightwaypoint_ground_marked.py`,
   `tests/missiongenerator/test_kneeboard_cas_altitude.py`.
-- **The target steerpoint sat at 0 MSL, not 0 AGL (fixed 2026-08-20).** Reported from the
-  cockpit. Every consumer wrote `alt = 0` for a client's ground-marked waypoint with an AGL
-  flag beside it — `alt_type = "RADIO"` in the .miz, `altitudeType = 2` in the cartridge —
-  and the number still reached the jet as sea level, so a target on high terrain had a
-  steerpoint under the map and nothing at it to slave a pod to. That 0 is upstream's
-  (`PydcsWaypointBuilder.build`), inherited by every airframe. It needed a data source:
-  nothing in the tree knew terrain height at an arbitrary point (`airport_imagery` is
-  airfields only, pydcs ships no heightmap, campaign mizzes store 0 for ground route
-  points). `scripts/derive_terrain_elevations.py` samples every campaign-authored ground
-  object position against Open-Elevation (SRTM, ~5 m) into
-  `resources/terrain_elevation/<terrain>.json`, and
-  `game/theater/terrainelevation.elevation_at` reads it with a 1 km nearest-cell search,
-  because a marker is a point but its layout spreads units around it.
-  `ground_mark_altitude()` (`game/ato/flightwaypoint.py`) is the single rule shared by the
-  .miz builder, the DTC emitter and the kneeboard Alt column, so all three agree by
-  construction: sampled → elevation AMSL as BARO, unsampled → the old 0/RADIO.
-  **Deliberately partial:** front-line CAS boundaries, convoys and relocated mobile SAMs
-  (§49) are not authored into a campaign miz, resolve to None, and keep the 0 — the trade
-  was ~1,300 points and 34 KB per map against megabytes for a full heightmap. The upgrade
-  path if that starts to matter is a DCS-side `land.getHeight` grid dump (exact, offline,
-  complete), not a second approximate source. Checklist B90; design note
-  `414th-terrain-elevation-notes.md`; tests
-  `tests/theater/test_terrain_elevation.py`,
-  `tests/missiongenerator/test_ground_mark_elevation.py`.
 
 ---
 

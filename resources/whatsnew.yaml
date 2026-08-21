@@ -14,20 +14,6 @@
 
 entries:
   - date: 2026-08-20
-    title: Target and landing steerpoints sit on the ground
-    change: >-
-      A target steerpoint was written at altitude zero, and the jet read that as
-      sea level rather than ground level — so over high terrain the point sat
-      under the map. Targets on ground a campaign authored now carry the real
-      elevation, and the landing steerpoint carries its field's elevation
-      instead of zero.
-    watch: >-
-      Fly a target that is not near sea level and check the steerpoint elevation
-      on the DED or HSI against the terrain, then check the kneeboard Alt column
-      agrees. Land should match Takeoff when you depart and recover at the same
-      field.
-    row: B90
-  - date: 2026-08-20
     title: Hornet and Viper cards carry both clocks
     change: >-
       Those cockpits read Zulu, so their kneeboards now print the Zulu time

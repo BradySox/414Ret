@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from dcs.point import MovingPoint
 from dcs.task import (
     OptECMUsing,
@@ -47,17 +49,14 @@ class SplitPointBuilder(PydcsWaypointBuilder):
                 # A client-occupied group never runs its route tasks, so the
                 # script above is dead weight when the human leads the package.
                 # See create_player_split_release_trigger.
-                tot = self.waypoint.tot
+                plan = self.flight.flight_plan
                 create_player_split_release_trigger(
                     self.group,
                     self.package,
                     self.mission,
                     self.waypoint.position,
-                    (
-                        int((tot - self.now).total_seconds())
-                        if tot is not None
-                        else None
-                    ),
+                    self._elapsed(self.waypoint.tot),
+                    self._elapsed(plan.join_time if plan.is_formation(plan) else None),
                 )
 
         elif self.flight.flight_type in [
@@ -75,3 +74,6 @@ class SplitPointBuilder(PydcsWaypointBuilder):
                 if self.flight.flight_type.is_escort_type:
                     index = len(self.group.points)
                     self.group.add_trigger_action(SwitchWaypoint(None, index))
+
+    def _elapsed(self, tot: datetime | None) -> int | None:
+        return int((tot - self.now).total_seconds()) if tot is not None else None

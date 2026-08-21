@@ -1812,6 +1812,26 @@ defect that reached a build, most of them found by flying.
   because `cargo_stop()` does still plan 0 AGL. The target waypoints are unaffected and keep
   their deliberate 0 AGL. Tests `tests/ato/test_flightwaypoint_ground_marked.py`,
   `tests/missiongenerator/test_kneeboard_cas_altitude.py`.
+- **Escorts released at the JOIN instead of the SPLIT (test 7 follow-on, fixed 2026-08-21).**
+  Escort release is the user flag `split-<package>`: raising it fires `AITaskPush` on every
+  escort, whose triggered action is a `SwitchWaypoint` to its own SPLIT index. On 2026-08-18
+  a hidden 15 km trigger zone on the primary's SPLIT point was added as a second source,
+  because DCS never runs a client-occupied group's route tasks and the `RunScript` on that
+  waypoint therefore never fired for a player-led package. **A package's JOIN and SPLIT are
+  the same base point** — `PackageWaypoints.create` derives both from one `join_point` and
+  perturbs each by up to 1 nm — so the primary flies that zone twice and the *inbound* pass
+  released the escorts before the package had ingressed. Measured in a flown Iraq mission:
+  zone r=15000 at SPLIT (105186, 23140), JOIN at (104377, 24261), **0.75 nm** apart; the
+  SEAD escort turned for home at the join and announced its own split index on the radio.
+  No radius fixes this. `split_release_gate` adds a time condition ANDed to the zone — the
+  midpoint of the planned join→split leg (774 s / 2257 s → 1515 s there) — which the
+  outbound pass cannot reach without flying the whole route at twice the planned speed.
+  Ungateable (no join or no split TOT) drops the zone and keeps the backstop alone: a late
+  release costs a tag-along escort, an early one costs the escort over the target. Note the
+  trigger keys on the primary having client **slots**, not a human in one, so an AI-flown
+  player-slotted package was hit too; a package whose primary has no client slots releases
+  from the `RunScript` and was never affected. Checklist B78; tests
+  `tests/missiongenerator/aircraft/test_split_release.py`.
 
 ---
 

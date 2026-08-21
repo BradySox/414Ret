@@ -39,12 +39,35 @@ SPLIT_RELEASE_ZONE_RADIUS_M = 15000
 SPLIT_RELEASE_BACKSTOP_S = 900
 
 
+def split_release_gate(
+    planned_join_elapsed: Optional[int], planned_split_elapsed: Optional[int]
+) -> Optional[int]:
+    """Earliest mission time at which the release zone may fire.
+
+    A package's JOIN and SPLIT are the SAME base point -- PackageWaypoints.create
+    derives both from one join_point and only perturbs each by up to 1 nm -- so the
+    primary flies the release zone twice, inbound at join and outbound at split.
+    Measured 2026-08-21: the escorts were pushed at the INBOUND pass and turned for
+    home from the join, calling their own split waypoint index on the radio.
+
+    Time is the axis that separates the two passes. The gate is the midpoint of the
+    planned join-to-split leg, which the outbound pass cannot reach without flying
+    the whole route at twice the planned speed.
+    """
+    if planned_join_elapsed is None or planned_split_elapsed is None:
+        return None
+    if planned_split_elapsed <= planned_join_elapsed:
+        return None
+    return planned_join_elapsed + (planned_split_elapsed - planned_join_elapsed) // 2
+
+
 def create_player_split_release_trigger(
     group: FlyingGroup[Any],
     package: Package,
     mission: Mission,
     position: Point,
     planned_split_elapsed: Optional[int],
+    planned_join_elapsed: Optional[int],
 ) -> None:
     """Release a package's escorts when a PLAYER-flown primary flight splits.
 
@@ -55,24 +78,38 @@ def create_player_split_release_trigger(
     their own base (test 7, 2026-08-17 -- both Growlers landed at the player's
     field, not the boat). Mission triggers run whoever is in the cockpit, so
     mirror the flag here.
+
+    Releasing LATE costs the player an escort that follows him home; releasing
+    EARLY costs him the escort over the target. Every degrade here is therefore
+    toward late: with no gate to tell the inbound pass from the outbound one
+    (see split_release_gate) the zone is dropped and the backstop stands alone.
     """
     comment = f"SplitRelease{id(package)}"
     if any(x.comment == comment for x in mission.triggerrules.triggers):
         return
 
-    zone = mission.triggers.add_triggerzone(
-        position,
-        radius=SPLIT_RELEASE_ZONE_RADIUS_M,
-        hidden=True,
-        name=f"Split release {id(package)}",
+    gate = split_release_gate(planned_join_elapsed, planned_split_elapsed)
+    backstop = (
+        planned_split_elapsed + SPLIT_RELEASE_BACKSTOP_S
+        if planned_split_elapsed is not None
+        else None
     )
+    if gate is None and backstop is None:
+        return
 
     trigger = TriggerOnce(Event.NoEvent, comment)
-    trigger.add_condition(PartOfGroupInZone(group.id, zone.id))
-    if planned_split_elapsed is not None:
-        trigger.add_condition(Or())
-        trigger.add_condition(
-            TimeAfter(planned_split_elapsed + SPLIT_RELEASE_BACKSTOP_S)
+    if gate is not None:
+        zone = mission.triggers.add_triggerzone(
+            position,
+            radius=SPLIT_RELEASE_ZONE_RADIUS_M,
+            hidden=True,
+            name=f"Split release {id(package)}",
         )
+        trigger.add_condition(PartOfGroupInZone(group.id, zone.id))
+        trigger.add_condition(TimeAfter(gate))
+        if backstop is not None:
+            trigger.add_condition(Or())
+    if backstop is not None:
+        trigger.add_condition(TimeAfter(backstop))
     trigger.add_action(SetFlag(f"split-{id(package)}"))
     mission.triggerrules.triggers.append(trigger)

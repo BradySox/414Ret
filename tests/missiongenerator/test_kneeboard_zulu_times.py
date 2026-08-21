@@ -61,11 +61,16 @@ def test_flight_plan_is_local_only_for_an_airframe_that_does_not_ask() -> None:
     assert row[DEPARTURE_COLUMN] == "14:59:16"
 
 
-def test_flight_plan_stacks_zulu_under_local() -> None:
-    # Underneath rather than beside: the table is eight columns wide already.
+def test_flight_plan_puts_zulu_beside_local_on_one_line() -> None:
+    # Stacked first, then flown 2026-08-21: doubling nine waypoint rows pushed
+    # the Laser Code table off the bottom of the page. Height is the scarcer
+    # resource here, and 14 characters is what the Time column holds before the
+    # page fitter wraps it -- so Zulu drops to the minute and loses its colon.
     row = _takeoff_row(GULF)
-    assert row[TIME_COLUMN].splitlines() == ["14:50:24", "10:50:24Z"]
-    assert row[DEPARTURE_COLUMN].splitlines() == ["14:59:16", "10:59:16Z"]
+    assert row[TIME_COLUMN] == "14:50:24 1050Z"
+    assert len(row[TIME_COLUMN]) <= 14
+    # Departure stays local: annotating it too takes that last character back.
+    assert row[DEPARTURE_COLUMN] == "14:59:16"
 
 
 def _support_page(zulu_tz: Optional[datetime.tzinfo]) -> SupportPage:
@@ -106,5 +111,9 @@ def test_every_block_of_the_page_reports_one_instant() -> None:
     bluf = format_kneeboard_time_inline(TOT, GULF)
     packages = format_kneeboard_time(TOT, GULF)
     support = _support_page(GULF)._format_time(TOT)
+    flight_plan = _takeoff_row(GULF)[TIME_COLUMN]
     assert bluf == support == "15:12:14 (11:12:14Z)"
+    assert flight_plan == "14:50:24 1050Z"
+    # The friendly-packages page keeps the stacked form: its timing cell holds a
+    # patrol window as often as a single TOT, and "a - b (aZ - bZ)" is 31 chars.
     assert packages.splitlines() == ["15:12:14", "11:12:14Z"]

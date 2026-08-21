@@ -335,10 +335,17 @@ not Zulu, so a Zulu-only Viper card stops matching its A-10 and F-15E wingmen.
 
 So a Zulu airframe's card now carries **both**:
 
-- **Tables** — the flight plan's Time and Departure columns, and the friendly-
-  packages timing cell — stack Zulu on a second line. The flight plan is already
-  eight columns; widening two of them by nine characters risks clipping, and row
-  height is what the page can absorb.
+- **The flight plan's Time column** carries the pair on one line, local to the
+  second and Zulu to the minute: `17:28:52 1428Z`. Stacking was tried first and
+  flown 2026-08-21 — doubling nine waypoint rows pushed the Laser Code table off
+  the bottom of the page. **Fourteen characters is the budget**, measured against
+  `KneeboardPageWriter._fit_col_widths`: at 15 the fitter wraps the column and the
+  second line comes back anyway. `17:28:52 (14:28Z)` misses by one character.
+- **The Departure column stays local.** Annotating it too takes the Time column's
+  last character back and wraps both. It carries one row on a typical plan and the
+  offset is on every Time cell beside it.
+- **The friendly-packages timing cell** still stacks: its cell holds a patrol
+  window as often as a single TOT, and `a - b (aZ - bZ)` is 31 characters.
 - **Prose** — the BLUF's TOT and the Support Info package FREQ/TOT line —
   parenthesises it: `15:12:14 (11:12:14Z)`.
 - **The AWACS/tanker `TOT:`/`TOS:` cells** stack it *indented under the time*.

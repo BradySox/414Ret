@@ -328,10 +328,13 @@ So a Zulu airframe's card now carries **both**:
   packages timing cell — stack Zulu on a second line. The flight plan is already
   eight columns; widening two of them by nine characters risks clipping, and row
   height is what the page can absorb.
-- **Prose and labelled cells** — the BLUF's TOT, the Support Info package TOT,
-  and the AWACS/tanker `TOT:`/`TOS:` cells — parenthesise it
-  (`15:12:14 (11:12:14Z)`). A second line inside a `TOT:`-labelled cell would
-  leave the Zulu figure floating with no label.
+- **Prose** — the BLUF's TOT and the Support Info package FREQ/TOT line —
+  parenthesises it: `15:12:14 (11:12:14Z)`.
+- **The AWACS/tanker `TOT:`/`TOS:` cells** stack it *indented under the time*.
+  That column is the narrowest place a time appears; parenthesised, the tanker
+  cell wrapped to `TOT: 14:12:09` / `(10:12:09Z) TOS:` / `1:00:00` and lost the
+  pairing. The indent is what keeps the Zulu figure reading as the TOT rather
+  than as the TOS below it. Caught by rendering the page, not in a sortie.
 
 `format_kneeboard_time` (stacked) and `format_kneeboard_time_inline` share one
 `_zulu_text` helper, and every page takes a `zulu_tz` that is the theater

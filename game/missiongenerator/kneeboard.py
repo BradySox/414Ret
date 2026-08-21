@@ -463,10 +463,22 @@ def format_kneeboard_time(
 def format_kneeboard_time_inline(
     time: Optional[datetime.datetime], zulu_tz: Optional[datetime.tzinfo] = None
 ) -> str:
-    """The same pair for a time embedded in a line of prose or a labelled cell."""
+    """The same pair for a time embedded in a line of prose."""
     text = _format_clock(time)
     zulu = _zulu_text(time, zulu_tz)
     return text if zulu is None else f"{text} ({zulu})"
+
+
+def _labelled_time(label: str, value: str) -> str:
+    """A ``TOT: hh:mm:ss`` cell, with a Zulu second line indented under the time.
+
+    The TOT/TOS column is the narrowest place a time appears, so the pair stacks
+    rather than parenthesising; the indent is what keeps the Zulu figure reading
+    as the TOT and not as the TOS below it.
+    """
+    first, *rest = value.splitlines() or [""]
+    pad = " " * (len(label) + 1)
+    return "\n".join([f"{label} {first}"] + [pad + line for line in rest])
 
 
 @dataclass(frozen=True)
@@ -1380,7 +1392,7 @@ class SupportPage(KneeboardPage):
                 tot_a = "-"
                 tos_a = "-"
             else:
-                tot_a = self._format_time(single_aewc.start_time)
+                tot_a = format_kneeboard_time(single_aewc.start_time, self.zulu_tz)
                 tos_a = self._format_duration(
                     single_aewc.end_time - single_aewc.start_time
                 )
@@ -1389,13 +1401,13 @@ class SupportPage(KneeboardPage):
                     str(single_aewc.callsign),
                     self.format_frequency(single_aewc.freq),
                     str(single_aewc.depature_location),
-                    "TOT: " + tot_a + "\n" + "TOS: " + tos_a,
+                    _labelled_time("TOT:", tot_a) + "\n" + "TOS: " + tos_a,
                 ]
             )
 
         tanker_ladder = []
         for tanker in self.tankers:
-            tot_t = self._format_time(tanker.start_time)
+            tot_t = format_kneeboard_time(tanker.start_time, self.zulu_tz)
             tos_t = self._format_duration(tanker.end_time - tanker.start_time)
             tanker_ladder.append(
                 [
@@ -1403,7 +1415,7 @@ class SupportPage(KneeboardPage):
                     KneeboardPageWriter.wrap_line(tanker.variant, 21),
                     str(tanker.tacan) if tanker.tacan else "N/A",
                     self.format_frequency(tanker.freq),
-                    "TOT: " + tot_t + "\n" + "TOS: " + tos_t,
+                    _labelled_time("TOT:", tot_t) + "\n" + "TOS: " + tos_t,
                 ]
             )
 

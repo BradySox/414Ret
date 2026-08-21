@@ -24,6 +24,7 @@ from game.ato.flightwaypointtype import FlightWaypointType
 from game.missiongenerator.kneeboard import (
     FlightPlanBuilder,
     SupportPage,
+    _labelled_time,
     format_kneeboard_time,
     format_kneeboard_time_inline,
 )
@@ -85,11 +86,18 @@ def _support_page(zulu_tz: Optional[datetime.tzinfo]) -> SupportPage:
     )
 
 
-def test_support_page_times_are_parenthesised_not_stacked() -> None:
-    # Its three times all sit inside a label ("TOT: ..." over "TOS: ..."), where
-    # a second line would leave the Zulu figure floating without one.
+def test_the_support_package_line_parenthesises_its_tot() -> None:
+    # Prose, not a cell: "FREQ: ...    TOT: 15:12:14 (11:12:14Z)".
     assert _support_page(None)._format_time(TOT) == "15:12:14"
     assert _support_page(GULF)._format_time(TOT) == "15:12:14 (11:12:14Z)"
+
+
+def test_a_tot_cell_indents_zulu_under_the_time() -> None:
+    # The narrowest column on the deck. Parenthesised, the tanker cell wrapped
+    # to "TOT: 14:12:09 / (10:12:09Z) TOS: / 1:00:00" and lost the pairing.
+    cell = _labelled_time("TOT:", format_kneeboard_time(TOT, GULF))
+    assert cell.splitlines() == ["TOT: 15:12:14", "     11:12:14Z"]
+    assert _labelled_time("TOT:", "-") == "TOT: -"
 
 
 def test_every_block_of_the_page_reports_one_instant() -> None:

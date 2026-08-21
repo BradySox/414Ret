@@ -69,7 +69,6 @@ def test_support_page_renders_airfield_directory_section(tmp_path: Path) -> None
         awacs=[],
         tankers=[],
         jtacs=[],
-        start_time=MagicMock(),
         dark_kneeboard=False,
         airfield_rows=rows,
     )
@@ -98,7 +97,6 @@ def test_support_page_spills_long_airfield_directory_to_continuation(
         awacs=[],
         tankers=[],
         jtacs=[],
-        start_time=MagicMock(),
         dark_kneeboard=False,
         airfield_rows=rows,
     )
@@ -131,7 +129,6 @@ def test_the_flights_own_package_row_shows_its_callsign() -> None:
         awacs=[],
         tankers=[],
         jtacs=[],
-        start_time=MagicMock(),
         dark_kneeboard=False,
     )
     names = [comm.name for comm in page.comms]
@@ -150,7 +147,6 @@ def test_a_custom_named_flight_keeps_both() -> None:
         awacs=[],
         tankers=[],
         jtacs=[],
-        start_time=MagicMock(),
         dark_kneeboard=False,
     )
     assert page.comms[0].name == "Enfield 1-1\n(Sandy)"

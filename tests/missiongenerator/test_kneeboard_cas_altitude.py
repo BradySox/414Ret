@@ -4,8 +4,6 @@ flights, so the page must print what the cockpit will actually show or the two d
 (the observed case: a CAS deck printing "22000" against a steerpoint on the deck).
 """
 
-import datetime
-
 from dcs import Point
 from dcs.terrain import Caucasus
 
@@ -18,10 +16,7 @@ ALT_COLUMN = 2
 
 
 def _builder() -> FlightPlanBuilder:
-    return FlightPlanBuilder(
-        datetime.datetime(2026, 7, 16, 12, 0, 0),
-        NauticalUnits(),
-    )
+    return FlightPlanBuilder(NauticalUnits())
 
 
 def _wp(waypoint_type: FlightWaypointType, flyover: bool = False) -> FlightWaypoint:

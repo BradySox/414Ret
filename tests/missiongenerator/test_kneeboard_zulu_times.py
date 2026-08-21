@@ -1,17 +1,19 @@
-"""Every time on a Zulu airframe's card reads Zulu, not just the BLUF's TOT.
+"""A Zulu airframe's card carries both clocks, on every page.
 
 Reported from the cockpit 2026-08-20 (Persian Gulf, UTC+4): the F-16 DED read
 10:38:37 while the Mission Info flight plan printed a 14:50:24 takeoff and the
 BLUF above it printed the same event as 11:12:14Z. ``utc_kneeboard`` reached the
 BLUF and the friendly-packages page; the flight-plan table, the package TOT and
-the AWACS/tanker station times were still on the mission clock.
+the AWACS/tanker station times were still local-only.
+
+Both times, never one: the jet needs Zulu and a package flying mixed types
+coordinates off the local figure (upstream #949 review).
 """
 
 from __future__ import annotations
 
 import datetime
-from types import SimpleNamespace
-from typing import Any, Optional
+from typing import Optional
 from unittest.mock import MagicMock
 
 from dcs import Point
@@ -21,9 +23,9 @@ from game.ato.flightwaypoint import FlightWaypoint
 from game.ato.flightwaypointtype import FlightWaypointType
 from game.missiongenerator.kneeboard import (
     FlightPlanBuilder,
-    KneeboardGenerator,
     SupportPage,
-    _format_clock,
+    format_kneeboard_time,
+    format_kneeboard_time_inline,
 )
 from game.utils import NauticalUnits, feet
 
@@ -32,53 +34,43 @@ DEPARTURE_COLUMN = 6
 
 #: The reported case: Persian Gulf, whose info.yaml pins timezone +4.
 GULF = datetime.timezone(datetime.timedelta(hours=4))
+TAKEOFF = datetime.datetime(2026, 8, 20, 14, 50, 24)
+TOT = datetime.datetime(2026, 8, 20, 15, 12, 14)
 
 
-def _waypoint(tot: datetime.datetime, departure: datetime.datetime) -> FlightWaypoint:
-    wp = FlightWaypoint(
+def _takeoff_row(zulu_tz: Optional[datetime.tzinfo]) -> list[str]:
+    """One flight-plan row, built the way BriefingPage builds the table."""
+    builder = FlightPlanBuilder(NauticalUnits(), zulu_tz=zulu_tz)
+    waypoint = FlightWaypoint(
         "TAKEOFF",
         FlightWaypointType.TAKEOFF,
         Point(0, 0, Caucasus()),
         feet(191),
         "BARO",
     )
-    wp.tot = tot
-    wp.departure_time = departure
-    return wp
-
-
-def _row(zulu_tz: Optional[datetime.tzinfo]) -> list[str]:
-    builder = FlightPlanBuilder(
-        datetime.datetime(2026, 8, 20, 14, 50, 24),
-        NauticalUnits(),
-        zulu_tz=zulu_tz,
-    )
-    builder.add_waypoint(
-        0,
-        _waypoint(
-            datetime.datetime(2026, 8, 20, 14, 50, 24),
-            datetime.datetime(2026, 8, 20, 14, 59, 16),
-        ),
-    )
+    waypoint.tot = TAKEOFF
+    waypoint.departure_time = TAKEOFF + datetime.timedelta(minutes=8, seconds=52)
+    builder.add_waypoint(0, waypoint)
     return builder.rows[0]
 
 
-def test_flight_plan_stays_on_the_mission_clock_without_a_zulu_airframe() -> None:
-    row = _row(None)
+def test_flight_plan_is_local_only_for_an_airframe_that_does_not_ask() -> None:
+    row = _takeoff_row(None)
     assert row[TIME_COLUMN] == "14:50:24"
     assert row[DEPARTURE_COLUMN] == "14:59:16"
 
 
-def test_flight_plan_converts_for_a_zulu_airframe() -> None:
-    row = _row(GULF)
-    assert row[TIME_COLUMN] == "10:50:24Z"
-    assert row[DEPARTURE_COLUMN] == "10:59:16Z"
+def test_flight_plan_stacks_zulu_under_local() -> None:
+    # Underneath rather than beside: the table is eight columns wide already.
+    row = _takeoff_row(GULF)
+    assert row[TIME_COLUMN].splitlines() == ["14:50:24", "10:50:24Z"]
+    assert row[DEPARTURE_COLUMN].splitlines() == ["14:59:16", "10:59:16Z"]
 
 
 def _support_page(zulu_tz: Optional[datetime.tzinfo]) -> SupportPage:
     flight = MagicMock()
     flight.custom_name = None
-    flight.callsign = "Enfield 1-1"
+    flight.callsign = "Lobo 5"
     flight.intra_flight_channel = None
     flight.channels_for.return_value = []
     return SupportPage(
@@ -88,34 +80,23 @@ def _support_page(zulu_tz: Optional[datetime.tzinfo]) -> SupportPage:
         awacs=[],
         tankers=[],
         jtacs=[],
-        start_time=MagicMock(),
         dark_kneeboard=False,
         zulu_tz=zulu_tz,
     )
 
 
-def test_support_page_station_times_follow_the_same_clock() -> None:
-    # The package TOT line and the AWACS/tanker TOT cells all render through
-    # this one formatter, so pinning it pins the whole Support Info page.
-    tot = datetime.datetime(2026, 8, 20, 15, 12, 14)
-    assert _support_page(None)._format_time(tot) == "15:12:14"
-    assert _support_page(GULF)._format_time(tot) == "11:12:14Z"
+def test_support_page_times_are_parenthesised_not_stacked() -> None:
+    # Its three times all sit inside a label ("TOT: ..." over "TOS: ..."), where
+    # a second line would leave the Zulu figure floating without one.
+    assert _support_page(None)._format_time(TOT) == "15:12:14"
+    assert _support_page(GULF)._format_time(TOT) == "15:12:14 (11:12:14Z)"
 
 
-def _generator(utc: bool) -> KneeboardGenerator:
-    game: Any = SimpleNamespace(
-        settings=SimpleNamespace(generate_dark_kneeboard=False),
-        theater=SimpleNamespace(timezone=GULF),
-    )
-    mission = SimpleNamespace(start_time=SimpleNamespace(hour=12))
-    return KneeboardGenerator(mission, game)  # type: ignore[arg-type]
-
-
-def test_the_bluf_tot_and_the_flight_plan_agree_on_one_instant() -> None:
+def test_every_block_of_the_page_reports_one_instant() -> None:
     # The defect was visible as a 4-hour disagreement between two blocks of the
-    # same page: BLUF "TOT 11:12:14Z" over a flight plan row reading 15:12:14.
-    tot = datetime.datetime(2026, 8, 20, 15, 12, 14)
-    bluf = _format_clock(_generator(utc=True)._to_kneeboard_time(tot, utc=True))
-    builder = FlightPlanBuilder(tot, NauticalUnits(), zulu_tz=GULF)
-    builder.add_waypoint(0, _waypoint(tot, tot))
-    assert bluf == builder.rows[0][TIME_COLUMN] == "11:12:14Z"
+    # same page: BLUF "TOT 11:12:14Z" over a flight-plan row reading 15:12:14.
+    bluf = format_kneeboard_time_inline(TOT, GULF)
+    packages = format_kneeboard_time(TOT, GULF)
+    support = _support_page(GULF)._format_time(TOT)
+    assert bluf == support == "15:12:14 (11:12:14Z)"
+    assert packages.splitlines() == ["15:12:14", "11:12:14Z"]

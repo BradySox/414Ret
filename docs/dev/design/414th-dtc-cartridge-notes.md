@@ -313,18 +313,34 @@ mission start time and passed it to `BriefingPage`/`SupportPage` as `start_time`
 Both stored it and neither used it — `FlightPlanBuilder` takes `start_time` and
 prints `waypoint.tot` / `waypoint.departure_time` raw, and `SupportPage.start_time`
 was read by nothing at all. A dead parameter that looks load-bearing is what made
-the claim believable; `start_time` is upstream's signature and is left alone.
+the claim believable. The parameter is now deleted from all three.
 
-Now: `_to_zulu` and `_format_clock` are module functions, every page takes a
-`zulu_tz` (the theater timezone for a Zulu airframe, None for every other), and
-`FlightPlanBuilder` / `SupportPage` convert in their own `_format_time`. Elapsed
-time still subtracts the naive values, so GSPD and on-station dwell are unchanged.
-Pinned by `tests/missiongenerator/test_kneeboard_zulu_times.py`, which asserts the
-BLUF and the flight-plan row render one instant identically.
+### Both clocks, not one (the shape, and why)
 
-**A converted time now prints a Z** (`11:12:14Z`) — the shared formatter marks any
-zoned value, which the BLUF already did — so a Zulu card and a local card no
-longer look identical. That was the old note's unresolved half.
+The first fix converted the card to Zulu outright. That is the wrong shape for
+this squadron, and upstream said so first: on #949 Starfire13 pointed out that a
+squadron flying multiple types coordinates off the **standard kneeboard time**,
+not Zulu, so a Zulu-only Viper card stops matching its A-10 and F-15E wingmen.
+
+So a Zulu airframe's card now carries **both**:
+
+- **Tables** — the flight plan's Time and Departure columns, and the friendly-
+  packages timing cell — stack Zulu on a second line. The flight plan is already
+  eight columns; widening two of them by nine characters risks clipping, and row
+  height is what the page can absorb.
+- **Prose and labelled cells** — the BLUF's TOT, the Support Info package TOT,
+  and the AWACS/tanker `TOT:`/`TOS:` cells — parenthesise it
+  (`15:12:14 (11:12:14Z)`). A second line inside a `TOT:`-labelled cell would
+  leave the Zulu figure floating with no label.
+
+`format_kneeboard_time` (stacked) and `format_kneeboard_time_inline` share one
+`_zulu_text` helper, and every page takes a `zulu_tz` that is the theater
+timezone for a Zulu airframe and None for every other. Elapsed time still
+subtracts the naive values, so GSPD and on-station dwell are unchanged. Pinned by
+`tests/missiongenerator/test_kneeboard_zulu_times.py`.
+
+The **cartridge stays Zulu-only** — it is typed into avionics, not read by a
+wingman, so there is nothing for a second figure to serve.
 
 **Still untouched:** the other client airframes were not audited. Each needs its
 own manual check before its flag is set.

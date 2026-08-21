@@ -133,13 +133,44 @@ def is_target_waypoint(waypoint: FlightWaypoint) -> bool:
     return "TARGET" in waypoint.waypoint_type.name
 
 
-def client_altitude(waypoint: FlightWaypoint) -> tuple[float, int]:
-    """Steerpoint altitude in metres + DTC altitudeType (1 = BARO, 2 = RADIO).
+#: Waypoint types whose planned altitude IS the ground under them: B79 writes the
+#: field's own elevation AMSL onto takeoff and landing. DIVERT is excluded because
+#: an off-map one is an exit vector planned at cruise, and the two are not
+#: separable here.
+_FIELD_ELEVATION_WAYPOINTS = (
+    FlightWaypointType.TAKEOFF,
+    FlightWaypointType.LANDING_POINT,
+)
 
-    Cartridges are built only for client flights, and the generated .miz zeroes a
-    ground-marked waypoint (target areas, CAS FLOT boundaries, flyovers) to 0 AGL
-    for clients (``PydcsWaypointBuilder.build``); the cartridge must agree or the
-    AutoLoad would float the steerpoint back up to the AI's track altitude.
+
+def steerpoint_elevation(waypoint: FlightWaypoint) -> float:
+    """The ground elevation under a steerpoint, in metres AMSL.
+
+    This is NOT the altitude to fly -- that is ``leg_altitude`` below, and the two
+    are separate fields in both jets. ED's own editors fill this one from the
+    terrain (``alt = getAltitude(x, y)`` in the Viper's ``NAV_PTS.lua`` and the
+    Hornet's ``WYPT_NAV.lua``), and the Viper's loader defaults a missing one to
+    2000 m, so it has to be written and it has to be an elevation.
+
+    Only takeoff and landing know their ground. Everything else returns 0, which
+    is wrong on high terrain and is the open half of this fix -- see checklist B90.
+    """
+    if waypoint.waypoint_type in _FIELD_ELEVATION_WAYPOINTS:
+        return waypoint.alt.meters if waypoint.alt_type == "BARO" else 0.0
+    return 0.0
+
+
+def leg_altitude(waypoint: FlightWaypoint) -> tuple[float, int]:
+    """Altitude to fly the leg, in metres + DTC altitudeType (1 = MSL, 2 = AGL).
+
+    Goes in the Viper's ``routeAltitude`` and the Hornet's ``NAV_ROUTE`` entry,
+    never in the point's own ``alt``. AGL is resolved against terrain by the jet
+    (``tmpAlt + getAltitude(x, y)``, Hornet ``ROUTE_SEQ.lua``).
+
+    Cartridges are built only for client flights, and the generated .miz puts a
+    ground-marked waypoint (target areas, CAS FLOT boundaries, flyovers) on the
+    deck for clients (``PydcsWaypointBuilder.build``); the cartridge must agree or
+    the AutoLoad would float the steerpoint back up to the AI's track altitude.
     """
     if waypoint.marks_ground_for_player:
         return 0.0, 2

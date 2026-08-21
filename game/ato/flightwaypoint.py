@@ -18,18 +18,23 @@ AltitudeReference = Literal["BARO", "RADIO"]
 
 # Waypoint types that mark a place on the ground for a human pilot rather than a height
 # to fly -- keyed on what the waypoint IS, never on its route position or the owning
-# flight type. Targets and landings read 0 AGL in the cockpit even where the plan
-# carries an AI track altitude (the CAS FLOT boundaries, the escort's target area);
-# most producers already plan these at 0 AGL, so for them the listing pins the
-# invariant structurally instead of relying on each producer remembering it. DIVERT
-# stays out (an off-map divert is an exit vector flown at cruise altitude, not a
-# field); pickup/dropoff zones keep the helo approach altitudes planned for CTLD.
+# flight type. Targets read 0 AGL in the cockpit even where the plan carries an AI
+# track altitude (the CAS FLOT boundaries, the escort's target area), which is what
+# lets a pilot slave a pod to the mark; most producers already plan these at 0 AGL,
+# so for them the listing pins the invariant structurally instead of relying on each
+# producer remembering it. DIVERT stays out (an off-map divert is an exit vector
+# flown at cruise altitude, not a field); pickup/dropoff zones keep the helo approach
+# altitudes planned for CTLD.
+#
+# LANDING_POINT was listed here until 2026-08-20 and must not go back: land() plans
+# the arrival field's elevation AMSL, so zeroing it put a client's Land steerpoint at
+# sea level while the AI flew the real number, and the flown card read Takeoff 191 /
+# Land 0 at the same field. CARGO_STOP stays because cargo_stop() still plans 0 AGL.
 GROUND_MARKED_WAYPOINTS = (
     FlightWaypointType.CAS,
     FlightWaypointType.TARGET_GROUP_LOC,
     FlightWaypointType.TARGET_POINT,
     FlightWaypointType.TARGET_SHIP,
-    FlightWaypointType.LANDING_POINT,
     FlightWaypointType.CARGO_STOP,
 )
 

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import datetime
 from types import SimpleNamespace
 from typing import Any
 
@@ -37,6 +36,6 @@ def _waypoint() -> Any:
 def test_flight_plan_always_carries_the_fuel_column() -> None:
     # 8 columns: #, Action, Alt, Dist, GSPD, Time, Departure, Fuel. The standalone
     # Fuel Ladder page is retired; the ladder rides in the flight plan.
-    builder = FlightPlanBuilder(datetime.datetime(2026, 1, 1), _units())
+    builder = FlightPlanBuilder(_units())
     builder.add_waypoint(0, _waypoint())
     assert len(builder.rows[0]) == 8

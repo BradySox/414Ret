@@ -1802,6 +1802,16 @@ defect that reached a build, most of them found by flying.
   now in `BULK_ALTITUDE_SKIP_TYPES`; divert is separated by whether its control point is an
   `OffMapSpawn`, since an off-map divert is an exit vector that *should* move and altitude
   no longer distinguishes the two.
+  **The landing half never actually reached the cockpit (fixed 2026-08-20).**
+  `LANDING_POINT` was in `GROUND_MARKED_WAYPOINTS`, whose listing was justified by
+  "land() already plans 0 AGL" — true when it was written, false after the fix above. So
+  for every client flight the kneeboard row, the .miz steerpoint and the DTC cartridge all
+  zeroed the field elevation the planner had just written, while the AI flew the real
+  number. Flown 2026-08-20: a Viper card off Al Minhad read `Takeoff 191` over `Land 0`,
+  same field. `LANDING_POINT` is out of the tuple and must not go back; `CARGO_STOP` stays,
+  because `cargo_stop()` does still plan 0 AGL. The target waypoints are unaffected and keep
+  their deliberate 0 AGL. Tests `tests/ato/test_flightwaypoint_ground_marked.py`,
+  `tests/missiongenerator/test_kneeboard_cas_altitude.py`.
 
 ---
 
@@ -7316,9 +7326,41 @@ TOS page p107), but `seconds_of_day` emitted raw local seconds — so every push
 time was out by the map's UTC offset, 4 h on Caucasus and 8 h on Nevada. Now
 converted through `game.theater.timezone`, based on the mission day's Zulu
 midnight so a sortie across 00:00Z still climbs. The kneeboard half was fixed
-with it: the Hornet family already printed Zulu, and `F-16C_50.yaml` gained
-`utc_kneeboard: true` so a Viper's card and its DED agree. Kneeboard times still
-carry no Z suffix on any airframe — pre-existing, deck-wide, untouched.
+with it: `F-16C_50.yaml` gained `utc_kneeboard: true`. **That change claimed the
+flag already drove every kneeboard time; it did not, and the card shipped
+carrying two clocks (fixed 2026-08-20).** The flag reached the BLUF's TOT and the
+friendly-packages page only — the flight-plan table, the Support Info package TOT
+and the AWACS/tanker station times still printed the mission clock, because
+`FlightPlanBuilder` stored the converted `start_time` and never read it while
+`SupportPage.start_time` was read by nothing. Flown on the Persian Gulf (+4): DED
+10:38:37, BLUF `TOT 11:12:14Z`, flight-plan row 15:12:14 for that same TOT. The
+dead `start_time` parameter is deleted from all three classes. **A Zulu airframe's
+card now carries both clocks, not one** — upstream #949's review made the case
+that a squadron flying mixed types coordinates off the local figure, so tables
+stack Zulu on a second line (`format_kneeboard_time`), prose parenthesises it
+(`format_kneeboard_time_inline`, `15:12:14 (11:12:14Z)`), and the narrow
+AWACS/tanker `TOT:`/`TOS:` cells stack it indented under the time
+(`_labelled_time`) — parenthesised, that cell wrapped and lost the TOT/TOS
+pairing.
+Elapsed-time maths still runs on the naive values, so GSPD and dwell are unchanged
+(`tests/missiongenerator/test_kneeboard_zulu_times.py`). The cartridge stays
+Zulu-only: it is typed into avionics, not read by a wingman.
+**A steerpoint's `alt` is the ground under it, not the height it is flown at
+(fixed 2026-08-20).** Both jets carry two fields and §74 wrote one number into
+both: a target got `alt = 0` so its ground read as sea level, and every ordinary
+waypoint got `alt = ` its cruise altitude, telling the jet the ground under an
+18,000 ft nav point is at 18,000 ft. ED's own editors fill `alt` from terrain
+(`getAltitude(x, y)`, Viper `NAV_PTS.lua` / Hornet `WYPT_NAV.lua`) and the Viper
+loader defaults a missing one to 2000 m, so it must be written and must be an
+elevation; the height to fly is `routeAltitude` (Viper) / `NAV_ROUTE[].alt`
+(Hornet), qualified by `altitudeType` (1 MSL, 2 AGL). Now `steerpoint_elevation()`
+and `leg_altitude()`. Only takeoff and landing know their own ground (B79's field
+elevation); everything else writes 0, which is still wrong for a target on high
+terrain and is the open half — closing it needs terrain height at an arbitrary
+point, and the route to take is a DCS-side `land.getHeight` dump, not the
+SRTM-sampled table that was built and reverted the same day as over-scoped.
+Checklist B90. The .miz was never wrong: read out of a flown mission,
+`DEAD on KATYDID` is `alt = 0, alt_type = "RADIO"`, DCS's own encoding for 0 AGL.
 Comm names pre-clamped to the ME's 5-uppercase-alphanumeric filter. **The Hornet's
 nine CAP_PTS slots are spent priority-then-completeness** (two flown 2026-07-19
 findings): the §6 BARCAP wave relief flies each station as several jittered

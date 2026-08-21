@@ -38,11 +38,16 @@ def test_target_waypoints_mark_ground_for_player() -> None:
     assert _wp(FlightWaypointType.TARGET_SHIP).marks_ground_for_player
 
 
-def test_landing_waypoints_mark_ground_for_player() -> None:
-    # A landing (or a cargo stopover) is a field on the ground for every flight
-    # type. land()/cargo_stop() already plan 0 AGL; the listing makes the cockpit
-    # read structural instead of relying on each producer remembering it.
-    assert _wp(FlightWaypointType.LANDING_POINT).marks_ground_for_player
+def test_landing_is_not_ground_marked() -> None:
+    # It was, on the rationale that land() planned 0 AGL. B79 changed land() to the
+    # arrival field's elevation AMSL, which made the listing an override instead of
+    # an invariant: the client's Land steerpoint went to sea level while the AI flew
+    # the real number. Flown 2026-08-20 at Al Minhad: Takeoff 191, Land 0.
+    assert not _wp(FlightWaypointType.LANDING_POINT).marks_ground_for_player
+
+
+def test_cargo_stop_marks_ground_for_player() -> None:
+    # cargo_stop() still plans 0 AGL, so this one is still the invariant it was.
     assert _wp(FlightWaypointType.CARGO_STOP).marks_ground_for_player
 
 

@@ -14,6 +14,32 @@
 
 entries:
   - date: 2026-08-20
+    title: Steerpoint elevations stop reading as cruise altitude
+    change: >-
+      The Hornet and Viper cartridges carry two altitudes per steerpoint — the
+      ground under it, and the height you fly the leg at — and we were writing
+      the same number into both. An en-route point told the jet the ground under
+      it was at 18,000 ft. Landing points now carry their field's elevation, and
+      the route altitude is unchanged.
+    watch: >-
+      On a regenerated mission, check an en-route steerpoint's elevation on the
+      DED or the HSI: ground level, not your cruise altitude. A target steerpoint
+      still reads zero — that half is not fixed.
+    row: B90
+  - date: 2026-08-20
+    title: Hornet and Viper cards carry both clocks
+    change: >-
+      Those cockpits read Zulu, so their kneeboards now print the Zulu time
+      alongside the local one — on the flight plan, the BLUF TOT, the package
+      list and the tanker and AWACS lines. Before this only the BLUF TOT was
+      converted, so one card showed two clocks a map offset apart. The local
+      figure stays, so a mixed package still coordinates off one number.
+    watch: >-
+      On a Hornet or Viper, check the flight-plan Takeoff row before you roll:
+      local on top, Zulu underneath, and the Zulu figure matching the DED or HUD
+      clock. An A-10 or Strike Eagle card is unchanged.
+    row: B28
+  - date: 2026-08-20
     title: Point the air war where you want it
     change: >-
       Every enemy base dialog gains a planning-priority control (with the new

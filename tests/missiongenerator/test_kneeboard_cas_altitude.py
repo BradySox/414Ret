@@ -4,8 +4,6 @@ flights, so the page must print what the cockpit will actually show or the two d
 (the observed case: a CAS deck printing "22000" against a steerpoint on the deck).
 """
 
-import datetime
-
 from dcs import Point
 from dcs.terrain import Caucasus
 
@@ -18,10 +16,7 @@ ALT_COLUMN = 2
 
 
 def _builder() -> FlightPlanBuilder:
-    return FlightPlanBuilder(
-        datetime.datetime(2026, 7, 16, 12, 0, 0),
-        NauticalUnits(),
-    )
+    return FlightPlanBuilder(NauticalUnits())
 
 
 def _wp(waypoint_type: FlightWaypointType, flyover: bool = False) -> FlightWaypoint:
@@ -58,12 +53,22 @@ def test_escort_target_area_alt_column_reads_zero() -> None:
     assert builder.rows[0][ALT_COLUMN] == "0"
 
 
-def test_landing_alt_column_reads_zero_whatever_the_plan_carried() -> None:
-    # land() already plans 0 AGL; the column must not depend on that -- a landing
-    # is a ground mark for every flight type, whatever altitude reached the model.
+def test_landing_alt_column_reads_the_field_elevation() -> None:
+    # The opposite of the rule above, and the reason LANDING_POINT is not a ground
+    # mark: land() plans the arrival field's elevation AMSL (B79), so zeroing the
+    # row put the card at sea level while the AI flew the real number. Flown
+    # 2026-08-20 at Al Minhad: Takeoff 191, Land 0, same field.
+    wp = FlightWaypoint(
+        "LANDING",
+        FlightWaypointType.LANDING_POINT,
+        Point(0, 0, Caucasus()),
+        feet(191),
+        "BARO",
+    )
+    wp.pretty_name = "Land"
     builder = _builder()
-    builder.add_waypoint(1, _wp(FlightWaypointType.LANDING_POINT))
-    assert builder.rows[0][ALT_COLUMN] == "0"
+    builder.add_waypoint(1, wp)
+    assert builder.rows[0][ALT_COLUMN] == "191"
 
 
 def test_ordinary_waypoint_keeps_its_planned_altitude() -> None:

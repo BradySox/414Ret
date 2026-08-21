@@ -26,7 +26,8 @@ from game.missiongenerator.dtc.cartridge import DtcCartridge
 from game.missiongenerator.dtc.common import (
     SupportTrack,
     cap_tracks,
-    client_altitude,
+    leg_altitude,
+    steerpoint_elevation,
     flot_segments,
     is_route_waypoint,
     is_target_waypoint,
@@ -106,7 +107,8 @@ def _steerpoint(
     name: str,
     x: float,
     y: float,
-    alt_m: float,
+    elevation_m: float,
+    route_alt_m: float,
     altitude_type: int,
     on_route: bool,
     speed_kmh: float,
@@ -121,7 +123,9 @@ def _steerpoint(
         "note": name,
         "x": x,
         "y": y,
-        "alt": alt_m,
+        # The ground under the point, not the height to fly it at. ED fills this
+        # from terrain (NAV_PTS.lua) and defaults a missing one to 2000 m.
+        "alt": elevation_m,
         "altitudeType": altitude_type,
         "R1": on_route,
         "R2": False,
@@ -131,7 +135,7 @@ def _steerpoint(
         "TOS": tos,
         "isTOSEnabled": tos_enabled,
         "FIX_Time": tos_enabled,
-        "routeAltitude": alt_m,
+        "routeAltitude": route_alt_m,
         "isOAP_1": False,
         "idOA1": f"OA1{number}",
         "idOA1_Line": f"OA1{number}Line",
@@ -236,14 +240,15 @@ def _build_nav_pts(
             break
         number = len(points) + 1
         on_route = is_route_waypoint(waypoint)
-        alt_m, altitude_type = client_altitude(waypoint)
+        route_alt_m, altitude_type = leg_altitude(waypoint)
         points.append(
             _steerpoint(
                 number,
                 waypoint_display_name(waypoint.display_name or waypoint.name),
                 waypoint.position.x,
                 waypoint.position.y,
-                alt_m,
+                steerpoint_elevation(waypoint),
+                route_alt_m,
                 altitude_type,
                 on_route,
                 leg_speed_kmh(prev_route_wp if on_route else None, waypoint),
@@ -268,7 +273,8 @@ def _build_nav_pts(
                     _anchor_name(track),
                     x,
                     y,
-                    0.0,
+                    0.0,  # elevation: an orbit anchor has no ground of its own
+                    0.0,  # route altitude: not a leg the jet is sequenced through
                     1,
                     False,
                     463.0,

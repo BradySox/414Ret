@@ -56,9 +56,7 @@ def _wp(
 def _build(
     waypoints: list[Any], patrol_speed: Optional[Speed] = None
 ) -> FlightPlanBuilder:
-    builder = FlightPlanBuilder(
-        datetime.datetime(2026, 1, 1), _units(), patrol_speed=patrol_speed
-    )
+    builder = FlightPlanBuilder(_units(), patrol_speed=patrol_speed)
     for num, waypoint in enumerate(waypoints):
         builder.add_waypoint(num, waypoint)
     builder.build()

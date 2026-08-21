@@ -426,6 +426,61 @@ class KneeboardPageWriter:
         return "".join(segments + [output]).strip()
 
 
+def _format_clock(time: Optional[datetime.datetime]) -> str:
+    """Render a clock cell, marking Zulu when the value carries a zone."""
+    if time is None:
+        return ""
+    return f"{time.strftime('%H:%M:%S')}{'Z' if time.tzinfo is not None else ''}"
+
+
+def _zulu_text(
+    time: Optional[datetime.datetime], zulu_tz: Optional[datetime.tzinfo]
+) -> Optional[str]:
+    """The Zulu rendering of a naive theater-local time, or None if not wanted.
+
+    ``zulu_tz`` is the theater timezone for an airframe whose avionics run UTC
+    (``utc_kneeboard``) and None for every other.
+    """
+    if time is None or zulu_tz is None or time.tzinfo is not None:
+        return None
+    return _format_clock(time.replace(tzinfo=zulu_tz).astimezone(datetime.timezone.utc))
+
+
+def format_kneeboard_time(
+    time: Optional[datetime.datetime], zulu_tz: Optional[datetime.tzinfo] = None
+) -> str:
+    """A table cell's time, with Zulu on a second line when the airframe asks.
+
+    Both, never one: the jet needs Zulu and a squadron flying mixed types
+    coordinates off the local time. Underneath rather than beside, so the column
+    width is unchanged (see docs/dev/design/414th-dtc-cartridge-notes.md).
+    """
+    text = _format_clock(time)
+    zulu = _zulu_text(time, zulu_tz)
+    return text if zulu is None else f"{text}\n{zulu}"
+
+
+def format_kneeboard_time_inline(
+    time: Optional[datetime.datetime], zulu_tz: Optional[datetime.tzinfo] = None
+) -> str:
+    """The same pair for a time embedded in a line of prose."""
+    text = _format_clock(time)
+    zulu = _zulu_text(time, zulu_tz)
+    return text if zulu is None else f"{text} ({zulu})"
+
+
+def _labelled_time(label: str, value: str) -> str:
+    """A ``TOT: hh:mm:ss`` cell, with a Zulu second line indented under the time.
+
+    The TOT/TOS column is the narrowest place a time appears, so the pair stacks
+    rather than parenthesising; the indent is what keeps the Zulu figure reading
+    as the TOT and not as the TOS below it.
+    """
+    first, *rest = value.splitlines() or [""]
+    pad = " " * (len(label) + 1)
+    return "\n".join([f"{label} {first}"] + [pad + line for line in rest])
+
+
 @dataclass(frozen=True)
 class NumberedWaypoint:
     number: int
@@ -447,11 +502,13 @@ class FlightPlanBuilder:
 
     def __init__(
         self,
-        start_time: datetime.datetime,
         units: UnitSystem,
         patrol_speed: Optional[Speed] = None,
+        zulu_tz: Optional[datetime.tzinfo] = None,
     ) -> None:
-        self.start_time = start_time
+        # Set for an airframe whose card runs Zulu. Every time printed below
+        # converts through it; the elapsed-time maths stays on the naive values.
+        self.zulu_tz = zulu_tz
         self.rows: List[List[str]] = []
         self.target_points: List[NumberedWaypoint] = []
         self.last_waypoint: Optional[FlightWaypoint] = None
@@ -540,11 +597,8 @@ class FlightPlanBuilder:
         ]
         self.rows.append(row)
 
-    @staticmethod
-    def _format_time(time: datetime.datetime | None) -> str:
-        if time is None:
-            return ""
-        return f"{time.strftime('%H:%M:%S')}{'Z' if time.tzinfo is not None else ''}"
+    def _format_time(self, time: datetime.datetime | None) -> str:
+        return format_kneeboard_time(time, self.zulu_tz)
 
     def _format_alt(self, alt: Distance) -> str:
         return f"{self.units.distance_short(alt):.0f}"
@@ -789,18 +843,18 @@ class BriefingPage(KneeboardPage):
         flight: FlightData,
         bullseye: Bullseye,
         weather: Weather,
-        start_time: datetime.datetime,
         dark_kneeboard: bool,
         atis_by_name: Optional[dict[str, RadioFrequency]] = None,
         theater: Optional["ConflictTheater"] = None,
         omit_weather: bool = False,
         bluf_lines: Optional[List[str]] = None,
         comint_lines: Optional[List[str]] = None,
+        zulu_tz: Optional[datetime.tzinfo] = None,
     ) -> None:
         self.flight = flight
         self.bullseye = bullseye
         self.weather = weather
-        self.start_time = start_time
+        self.zulu_tz = zulu_tz
         self.dark_kneeboard = dark_kneeboard
         self.theater = theater
         self.atis_by_name = atis_by_name or {}
@@ -880,7 +934,9 @@ class BriefingPage(KneeboardPage):
         units = self.flight.aircraft_type.kneeboard_units
 
         flight_plan_builder = FlightPlanBuilder(
-            self.start_time, units, patrol_speed=self.flight.patrol_speed
+            units,
+            patrol_speed=self.flight.patrol_speed,
+            zulu_tz=self.zulu_tz,
         )
         for num, waypoint in enumerate(self.flight.waypoints):
             flight_plan_builder.add_waypoint(num, waypoint)
@@ -1219,10 +1275,10 @@ class SupportPage(KneeboardPage):
         awacs: List[AwacsInfo],
         tankers: List[TankerInfo],
         jtacs: List[JtacInfo],
-        start_time: datetime.datetime,
         dark_kneeboard: bool,
         airfield_rows: Optional[List[List[str]]] = None,
         code_words: Optional[CodeWordsBlock] = None,
+        zulu_tz: Optional[datetime.tzinfo] = None,
     ) -> None:
         self.flight = flight
         self.package_flights = package_flights
@@ -1230,7 +1286,7 @@ class SupportPage(KneeboardPage):
         self.awacs = awacs
         self.tankers = tankers
         self.jtacs = jtacs
-        self.start_time = start_time
+        self.zulu_tz = zulu_tz
         self.dark_kneeboard = dark_kneeboard
         self.airfield_rows = airfield_rows or []
         self.code_words = code_words
@@ -1336,7 +1392,7 @@ class SupportPage(KneeboardPage):
                 tot_a = "-"
                 tos_a = "-"
             else:
-                tot_a = self._format_time(single_aewc.start_time)
+                tot_a = format_kneeboard_time(single_aewc.start_time, self.zulu_tz)
                 tos_a = self._format_duration(
                     single_aewc.end_time - single_aewc.start_time
                 )
@@ -1345,13 +1401,13 @@ class SupportPage(KneeboardPage):
                     str(single_aewc.callsign),
                     self.format_frequency(single_aewc.freq),
                     str(single_aewc.depature_location),
-                    "TOT: " + tot_a + "\n" + "TOS: " + tos_a,
+                    _labelled_time("TOT:", tot_a) + "\n" + "TOS: " + tos_a,
                 ]
             )
 
         tanker_ladder = []
         for tanker in self.tankers:
-            tot_t = self._format_time(tanker.start_time)
+            tot_t = format_kneeboard_time(tanker.start_time, self.zulu_tz)
             tos_t = self._format_duration(tanker.end_time - tanker.start_time)
             tanker_ladder.append(
                 [
@@ -1359,7 +1415,7 @@ class SupportPage(KneeboardPage):
                     KneeboardPageWriter.wrap_line(tanker.variant, 21),
                     str(tanker.tacan) if tanker.tacan else "N/A",
                     self.format_frequency(tanker.freq),
-                    "TOT: " + tot_t + "\n" + "TOS: " + tos_t,
+                    _labelled_time("TOT:", tot_t) + "\n" + "TOS: " + tos_t,
                 ]
             )
 
@@ -1492,11 +1548,8 @@ class SupportPage(KneeboardPage):
         )
         return f"{names}\n{frequency}"
 
-    @staticmethod
-    def _format_time(time: datetime.datetime | None) -> str:
-        if time is None:
-            return ""
-        return f"{time.strftime('%H:%M:%S')}{'Z' if time.tzinfo is not None else ''}"
+    def _format_time(self, time: datetime.datetime | None) -> str:
+        return format_kneeboard_time_inline(time, self.zulu_tz)
 
     @staticmethod
     def _format_duration(time: Optional[datetime.timedelta]) -> str:
@@ -2855,12 +2908,11 @@ class KneeboardGenerator(MissionInfoGenerator):
     ) -> List[KneeboardPage]:
         """Returns a list of kneeboard pages for the given flight."""
 
-        if flight.aircraft_type.utc_kneeboard:
-            zoned_time = self.game.conditions.start_time.replace(
-                tzinfo=self.game.theater.timezone
-            ).astimezone(datetime.timezone.utc)
-        else:
-            zoned_time = self.game.conditions.start_time
+        # An airframe whose avionics run Zulu gets both times on every page, so
+        # the card serves the cockpit and a package coordinating in local time.
+        zulu_tz = (
+            self.game.theater.timezone if flight.aircraft_type.utc_kneeboard else None
+        )
 
         airfield_rows = (
             build_airfield_directory_rows(self.game, flight, self.atis_by_name)
@@ -2893,13 +2945,13 @@ class KneeboardGenerator(MissionInfoGenerator):
                 flight,
                 self.game.coalition_for(flight.friendly).bullseye,
                 self.game.conditions.weather,
-                zoned_time,
                 self.dark_kneeboard,
                 atis_by_name=self.atis_by_name,
                 theater=self.game.theater,
                 omit_weather=omit_weather,
                 bluf_lines=bluf_lines,
                 comint_lines=self._briefing_comint(),
+                zulu_tz=zulu_tz,
             ),
             SupportPage(
                 flight,
@@ -2908,10 +2960,10 @@ class KneeboardGenerator(MissionInfoGenerator):
                 self.awacs,
                 self.tankers,
                 self.jtacs,
-                zoned_time,
                 self.dark_kneeboard,
                 airfield_rows=airfield_rows,
                 code_words=self._code_words_block(flight),
+                zulu_tz=zulu_tz,
             ),
         ]
 
@@ -3008,11 +3060,9 @@ class KneeboardGenerator(MissionInfoGenerator):
             parts.append(_abbreviated_target_name(target_name)[:40])
         task_line = "TASK  " + "  —  ".join(parts)
         tot = getattr(flight.package, "time_over_target", None)
-        utc = flight.aircraft_type.utc_kneeboard
+        zulu_tz = self._zulu_tz(flight)
         if tot is not None and tot != datetime.datetime.min:
-            task_line += (
-                f"   TOT {SupportPage._format_time(self._to_kneeboard_time(tot, utc))}"
-            )
+            task_line += f"   TOT {format_kneeboard_time_inline(tot, zulu_tz)}"
         lines.append(task_line)
 
         # Push + event code words (gated by the feature toggle).
@@ -3174,21 +3224,15 @@ class KneeboardGenerator(MissionInfoGenerator):
                 rescue.append(airframe)
         return [("Rescue", airframe) for airframe in rescue]
 
-    def _to_kneeboard_time(
-        self, time: Optional[datetime.datetime], utc: bool
-    ) -> Optional[datetime.datetime]:
-        """Apply the same UTC/local convention the rest of the kneeboard uses."""
-        if time is None:
+    def _zulu_tz(self, flight: FlightData) -> Optional[datetime.tzinfo]:
+        """The theater zone when this airframe's card carries Zulu, else None."""
+        if not flight.aircraft_type.utc_kneeboard:
             return None
-        if utc:
-            return time.replace(tzinfo=self.game.theater.timezone).astimezone(
-                datetime.timezone.utc
-            )
-        return time
+        return self.game.theater.timezone
 
     def build_all_packages_rows(self, flight: FlightData) -> List[List[str]]:
         """One row per friendly package (target + TOT, or patrol window), sorted by time."""
-        utc = flight.aircraft_type.utc_kneeboard
+        zulu_tz = self._zulu_tz(flight)
         ato = self.game.coalition_for(flight.friendly).ato
         entries: List[Tuple[datetime.datetime, List[str]]] = []
         for package in ato.packages:
@@ -3204,15 +3248,16 @@ class KneeboardGenerator(MissionInfoGenerator):
             start = getattr(flight_plan, "patrol_start_time", None)
             end = getattr(flight_plan, "patrol_end_time", None)
             if package.primary_task in self.PATROL_TASKS and start and end:
-                timing = (
-                    f"{SupportPage._format_time(self._to_kneeboard_time(start, utc))}"
-                    f" - {SupportPage._format_time(self._to_kneeboard_time(end, utc))}"
-                )
+                timing = f"{_format_clock(start)} - {_format_clock(end)}"
+                zulu_start = _zulu_text(start, zulu_tz)
+                zulu_end = _zulu_text(end, zulu_tz)
+                if zulu_start and zulu_end:
+                    timing += f"\n{zulu_start} - {zulu_end}"
                 sort_key = start
             else:
                 tot = package.time_over_target
                 if tot is not None and tot != datetime.datetime.min:
-                    timing = SupportPage._format_time(self._to_kneeboard_time(tot, utc))
+                    timing = format_kneeboard_time(tot, zulu_tz)
                     sort_key = tot
                 else:
                     timing = ""

@@ -69,8 +69,19 @@ point), 15 THREAT_PTS, 20+20 COMM channels.
 
 ## Element shapes (constructor-exact)
 
+- **`alt` on a point is the GROUND under it, not the height you fly it at.** Both
+  jets, and it is the single easiest field to get wrong. ED's own editors fill it
+  from terrain — `alt = getAltitude(mapX, mapY)` in the Viper's
+  `CoreMods/aircraft/F-16C/DTC/MPD/NAV_PTS.lua` and the Hornet's
+  `FA-18C/DTC/WYPT/WYPT_NAV.lua` — and the Viper's loader defaults a missing one to
+  **2000 m** (`F-16C_50_DTC.lua:791`), so it must be written and it must be an
+  elevation. The height to fly is a separate field: `routeAltitude` on the Viper's
+  point, `NAV_ROUTE[].alt` on the Hornet's. `altitudeType` (1 = MSL, 2 = AGL)
+  qualifies **that** one — its combo box lives on NAV_Routes
+  (`NAV_Routes.lua:508`), and the Hornet resolves AGL as
+  `tmpAlt + getAltitude(x, y)` (`ROUTE_SEQ.lua:50-54`).
 - **Hornet NAV_PTS**: `{wypt_num, id "STPT<n>", text_note, note, x, y, alt,
-  altitudeType (1 baro / 2 radio), velocityType 3, R1/R2/R3, R<n>_order, +
+  altitudeType (1 MSL / 2 AGL), velocityType 3, R1/R2/R3, R<n>_order, +
   offset-aimpoint boilerplate (isOA false, idOA "OA<n>"…)}`; route data lives in
   `NAV_ROUTE = [ {"STPT<n>": {route_num, wypt_num, alt, altitudeType, speed, ETA,
   FIX_Time, TGT}}, [], [] ]`.
@@ -297,13 +308,85 @@ had no flag**, so its card printed local while its avionics ran Zulu — card an
 DED an offset apart.
 
 `F-16C_50.yaml` now sets `utc_kneeboard: true`, sourced to the guide's System
-Time definition (p103). No code changed; the flag already drives every kneeboard
-time through the same conversion.
+Time definition (p103).
 
-**Unresolved and deliberately untouched:** kneeboard times carry **no Z suffix**
-on any airframe, so a Zulu card and a local card look identical. That predates
-this work and applies to the whole deck. And the other client airframes were not
-audited — each needs its own manual check before its flag is touched.
+### "The flag already drives every kneeboard time" was wrong (fixed 2026-08-20)
+
+That sentence shipped in the 08-19 change and in the features doc. The flag drove
+the BLUF's TOT and the friendly-packages page. It did **not** drive the
+flight-plan table, the Support Info package TOT, or the AWACS/tanker station
+times, so one Viper card carried two clocks four hours apart. Flown 2026-08-20 on
+the Persian Gulf (+4): the DED read 10:38:37 under a BLUF of `TOT 11:12:14Z` over
+a flight-plan row reading 15:12:14 for that same TOT.
+
+The conversion looked plumbed because it was: `KneeboardGenerator` converted the
+mission start time and passed it to `BriefingPage`/`SupportPage` as `start_time`.
+Both stored it and neither used it — `FlightPlanBuilder` takes `start_time` and
+prints `waypoint.tot` / `waypoint.departure_time` raw, and `SupportPage.start_time`
+was read by nothing at all. A dead parameter that looks load-bearing is what made
+the claim believable. The parameter is now deleted from all three.
+
+### Both clocks, not one (the shape, and why)
+
+The first fix converted the card to Zulu outright. That is the wrong shape for
+this squadron, and upstream said so first: on #949 Starfire13 pointed out that a
+squadron flying multiple types coordinates off the **standard kneeboard time**,
+not Zulu, so a Zulu-only Viper card stops matching its A-10 and F-15E wingmen.
+
+So a Zulu airframe's card now carries **both**:
+
+- **Tables** — the flight plan's Time and Departure columns, and the friendly-
+  packages timing cell — stack Zulu on a second line. The flight plan is already
+  eight columns; widening two of them by nine characters risks clipping, and row
+  height is what the page can absorb.
+- **Prose** — the BLUF's TOT and the Support Info package FREQ/TOT line —
+  parenthesises it: `15:12:14 (11:12:14Z)`.
+- **The AWACS/tanker `TOT:`/`TOS:` cells** stack it *indented under the time*.
+  That column is the narrowest place a time appears; parenthesised, the tanker
+  cell wrapped to `TOT: 14:12:09` / `(10:12:09Z) TOS:` / `1:00:00` and lost the
+  pairing. The indent is what keeps the Zulu figure reading as the TOT rather
+  than as the TOS below it. Caught by rendering the page, not in a sortie.
+
+`format_kneeboard_time` (stacked) and `format_kneeboard_time_inline` share one
+`_zulu_text` helper, and every page takes a `zulu_tz` that is the theater
+timezone for a Zulu airframe and None for every other. Elapsed time still
+subtracts the naive values, so GSPD and on-station dwell are unchanged. Pinned by
+`tests/missiongenerator/test_kneeboard_zulu_times.py`.
+
+The **cartridge stays Zulu-only** — it is typed into avionics, not read by a
+wingman, so there is nothing for a second figure to serve.
+
+**Still untouched:** the other client airframes were not audited. Each needs its
+own manual check before its flag is set.
+
+### `alt` and the leg altitude were the same number (fixed 2026-08-20)
+
+Reported from the cockpit: the DEAD steerpoint does not sit at 0 AGL, it sits at
+**0 MSL**.
+
+`client_altitude()` returned one number and both jets wrote it into the point's `alt`
+*and* into the route entry. Two consequences, and the second is the wider one:
+
+- A **target** got `alt = 0`, so its ground read as sea level. On high terrain the
+  steerpoint ends up under the map, with nothing there to slave a pod to.
+- **Every ordinary waypoint** got `alt = ` its cruise altitude, so the jet was told
+  the ground under an 18,000 ft nav point is at 18,000 ft. That was on every card
+  since §74 shipped.
+
+Split into `steerpoint_elevation()` (the point's ground) and `leg_altitude()` (what
+to fly, with `altitudeType`). Only takeoff and landing know their own ground — B79
+plans the field's elevation onto them — so everything else writes 0.
+
+**The open half:** 0 is still wrong for a target on high terrain, and closing it
+needs terrain height at an arbitrary point, which nothing in the tree has. A
+SRTM-sampled table was built and reverted the same day as over-scoped for an
+unreproduced premise; if it is wanted, take the DCS-side `land.getHeight` dump
+instead (exact, offline, complete) and check first that a non-zero elevation is
+actually what the cockpit needed. Checklist B90.
+
+**The .miz was never wrong.** Read out of a flown mission:
+`DEAD on KATYDID` is `alt = 0, alt_type = "RADIO"`, which is DCS's own encoding for
+0 AGL. Upstream has no DTC at all, so this whole class of defect is fork-only.
 
 ### The Hornet half: the guide has no DTC chapter
 

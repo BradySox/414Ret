@@ -472,20 +472,26 @@ def format_kneeboard_time_inline(
 def format_kneeboard_time_compact(
     time: Optional[datetime.datetime], zulu_tz: Optional[datetime.tzinfo] = None
 ) -> str:
-    """The pair at its shortest: local to the second, Zulu to the minute.
+    """The pair for a table cell: ``17:28L 14:28Z``, local first and both labelled.
 
-    Fourteen characters, which is exactly what the flight-plan table's Time
-    column can hold without the page fitter wrapping it (measured against
-    ``_fit_col_widths``). Stacking the pair instead cost a second line on every
-    waypoint row and pushed the Laser Code table off the bottom of the page
-    (flown 2026-08-21); the seconds are read off the local figure, and Zulu only
-    has to be minute-accurate to check against the jet's clock.
+    Thirteen characters against the flight-plan Time column's budget of thirteen,
+    measured with ``_fit_col_widths``. Three constraints shaped it:
+
+    * Stacking cost a second line on every waypoint row and pushed the Laser Code
+      table off the bottom of the page (flown 2026-08-21).
+    * Seconds do not fit -- ``17:28:52L 1428Z`` is 15 and wraps the column, which
+      brings the second line straight back. They stay on the BLUF's TOT, which is
+      prose and has the width.
+    * The local figure carries an ``L``. Marking only the Zulu one made it read as
+      the authoritative time, which is backwards: the wing coordinates on local.
+
+    An airframe that does not ask for Zulu is untouched, seconds and all.
     """
     text = _format_clock(time)
     if time is None or zulu_tz is None or time.tzinfo is not None:
         return text
     zulu = time.replace(tzinfo=zulu_tz).astimezone(datetime.timezone.utc)
-    return f"{text} {zulu.strftime('%H%M')}Z"
+    return f"{time.strftime('%H:%M')}L {zulu.strftime('%H:%M')}Z"
 
 
 def _labelled_time(label: str, value: str) -> str:
@@ -626,10 +632,15 @@ class FlightPlanBuilder:
         return format_kneeboard_time_compact(time, self.zulu_tz)
 
     def _format_departure_time(self, time: datetime.datetime | None) -> str:
-        """Local only: annotating this column too takes the Time column's last
-        character back and wraps both. It carries one row on a typical plan, and
-        the Zulu offset is on every Time cell beside it."""
-        return _format_clock(time)
+        """Local only, but labelled to match the Time cell beside it.
+
+        Carrying the pair here too takes the Time column's last character back and
+        wraps both. This column holds one row on a typical plan and the offset is
+        on every Time cell next to it, so the ``L`` is all it needs.
+        """
+        if time is None or self.zulu_tz is None or time.tzinfo is not None:
+            return _format_clock(time)
+        return f"{time.strftime('%H:%M')}L"
 
     def _format_alt(self, alt: Distance) -> str:
         return f"{self.units.distance_short(alt):.0f}"

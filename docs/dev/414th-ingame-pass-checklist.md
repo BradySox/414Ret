@@ -25,7 +25,7 @@ so the two docs don't drift.
 
 ## Outstanding rows at a glance
 
-63 rows need a live pass. Full detail is under each `###` heading below —
+62 rows need a live pass. Full detail is under each `###` heading below —
 search the row id. `☐` untested · `◐` flown but not under the conditions that
 stress it · `✗` fail signature reproduced in-game.
 
@@ -101,7 +101,7 @@ stress it · `✗` fail signature reproduced in-game.
 | T3 | Iraq "Umm al-Ma'arik (Desert Storm 1991)" campaign plays | Desert Storm campaign | ☑ |
 | T4 | DCS 2.9.28 Iraq map pass: dam destructibility + the ED airfield fixes | Desert Storm / Inherent Resolve | ☑ |
 | T5 | Marianas "Second Island Chain (2027)" campaign plays | Marianas 2027 campaign | ☑ |
-| T6 | The survival clock leaves exactly one flyable rescue window | CSAR | ☐ |
+| T6 | The survival clock leaves exactly one flyable rescue window | CSAR | ☑ |
 | U1 | Water/land relocate scripts run on the MIST shim | base plugin | ☑ |
 | B45 | GPS jamming (satellite-guided weapons go long) | §86 | ☐ |
 | B52 | Escort-jammer distribution + the one-SEAD-flavour escort set | §77 | ◐ |
@@ -4087,7 +4087,9 @@ on `enemy_comms_jamming` + a live comms/command-center node + at least one brief
 frequency, and nothing else. Fly only the jamming half: bursts arrive on briefed channels, the
 JAM BACKUP is clean, and killing the node silences it. Drop every criterion below that starts
 with a capture. Whether the gate should come back on upstream #929's POW ledger is an open
-decision, not a defect to fly.
+decision **and it was decided on 2026-08-21: the jamming stays unconditional.** The orphan
+`captureReactionS` plugin option went with that call; `coalition.py`'s `pending_pow_recoveries`
+save drop stays, because that pop IS the cleanup for old saves.
 
 **History:** 2026-07-11 flown Red Tide M1 `csar-snatch-toggle-question-dfdb7a`: the dormant leg observed — `COMMSJAM|: intel gate armed -- 18 C2 jammer(s), 3 channel(s), dormant until an aircrew capture` at load, radios stayed clean all ~125 min with zero captures, no Lua errors. Correct behavior, but silence-while-dormant can't distinguish "correctly gated" from "broken and silent", so the status stays UNTESTED until a capture→jam moment is heard — use the `[TEST] force capture` toggle. Built 2026-07-06, intel gate added same day; the plan ordering / GUARD filter / cap / backup collision re-roll / intel-gate flags / emit shape are in `tests/missiongenerator/test_commsjamluadata.py`, and the plugin's grace / burst-stop-rotation / dead-jammer silence (both death paths) / ceased cue / intel-gate dormancy + live-capture + POW-story + watch-bail / no-node no-op in `tests/lua/test_commsjam_runtime.py` — whether the static is audible on a tuned radio, the falloff feel, the capture→jam moment, and the kill-to-silence loop need a mission
 
@@ -4223,7 +4225,13 @@ decision, not a defect to fly.
 - **Known and deliberate:** the northern islands (Anatahan, Pagan, Agrihan, Uracus) are `is_in_sea` in the Marianas landmap — a pre-existing terrain-data property inherited from Repartee, which is why no missile site is authored north of Saipan. North West Field stays NEUTRAL (zero runways). Red fields no ambient convoys because no two red bases share an island.
 - **Added 2026-08-03 — the auto-planner fix rides this row.** The first flown turn came out **100% defensive** (33 packages, 28 BARCAP, zero strike/SEAD/DEAD/anti-ship) because BARCAP demand — doubled per fleet CP, and this laydown has four — consumed all 66 fighters, so every offensive package scrubbed for want of its escort; plus the stock 150 NM range gate put the northern half of red out of reach in a 421 NM theatre. Was fixed by `MODERN_DOCTRINE.strike_escort_reserve` 0 → 8 (**fork-wide**) plus campaign preseeds `max_mission_range_planes: 400` and `desired_barcap_mission_duration: 60`. Headless-verified BLUE 2 → **25 offensive flights** (74 → 143 aircraft tasked, BARCAP 22 → 14). **Pass:** the turn-1 ATO contains real strike/SEAD/DEAD/anti-ship packages against the PLAN groups and island SAMs, escorted, with CAP still covering both carriers and Andersen. **Fail signature:** an all-BARCAP ATO again (the preseeds did not land — check Settings shows 400 NM and a 60-minute BARCAP station), or the opposite, CAP so thin that red's Badgers reach the boat unopposed. **Watch fork-wide:** the doctrine change touches *every* modern campaign — Baltic Fury and Inherent Resolve should show slightly fewer BARCAP flights and more escorted strikes; Red Tide is Cold War doctrine and must be unchanged. **⚠ The doctrine half was REVERTED 2026-08-09** by the planner re-convergence (work order B): `MODERN_DOCTRINE.strike_escort_reserve` is back to 0 fork-wide, so this row's all-BARCAP fail signature is live again on Marianas until the campaign preseeds the 414th planner suite or a per-campaign doctrine fork restores the reserve. The two campaign preseeds (`max_mission_range_planes: 400`, `desired_barcap_mission_duration: 60`) are untouched. Vietnam keeps its reserve of 4.
 
-### T6 — The survival clock leaves exactly one flyable rescue window · CSAR · ☐ UNTESTED
+### T6 — The survival clock leaves exactly one flyable rescue window · CSAR · ☑ VERIFIED
+
+**2026-08-21, DM call — closed, the clock stays as upstream wrote it.** The survival numbers
+are not the fork's: `csar_survival_turns` (3) and `csar_survival_turns_hostile` (2) arrived on
+2026-08-07 with fork PR #805, the adoption of upstream's open CSAR PR dcs-retribution#929, and
+are read by `game/squadrons/csarservice.py`. The fork tracks #929 phase by phase, so changing
+the numbers here means re-reconciling them on every future phase. Left alone.
 
 **History:** the clock arithmetic is unit-tested; whether the window is long enough to actually fly a rescue is the design question, and only a played campaign answers it
 - **What it is:** a survivor lasts `csar_survival_turns` (3), or `csar_survival_turns_hostile` (2) behind the lines, then goes MIA for good.

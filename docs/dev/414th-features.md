@@ -5444,11 +5444,11 @@ the fork's Combat SAR with upstream #929 took every one of those away — the se
 the POW attribute and the plugin's capture watch are all gone, and `plan_comms_jam` now gates on nothing
 but `enemy_comms_jamming`, a live comms/command-center node, and at least one briefed blue frequency.
 
-Two live vestiges, found by the 2026-08-21 audit and **not** cleaned up, because a decision about
-restoring the gate would want them: the `captureReactionS` option still ships in
-`resources/plugins/commsjam/plugin.json` with no reader, and `game/coalition.py`'s `__setstate__` still
-drops `pending_pow_recoveries` from old saves. Upstream #929 does hold POWs (§21's replacement, Phase 5),
-so a restored gate would read that ledger, not the deleted one.
+**DM call 2026-08-21: it stays unconditional.** Upstream #929 does hold POWs, so a rebuilt gate could
+read that ledger — it is not being rebuilt. The `captureReactionS` option in
+`resources/plugins/commsjam/plugin.json` was the last orphan the gate left behind (zero readers in the
+Lua, still drawn in the plugin options UI) and is removed. `game/coalition.py`'s `__setstate__` pop of
+`pending_pow_recoveries` **stays** — that pop is the migration, not a leftover.
 
 The C2 node was always the transmitter and still is: no alive comms/command-center node ⇒ no jamming, and
 killing it silences the mission.

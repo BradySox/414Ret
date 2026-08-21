@@ -38,11 +38,6 @@
             "nameInUI": "Startup grace before the first burst (s)",
             "mnemonic": "startGraceS",
             "defaultValue": 240
-        },
-        {
-            "nameInUI": "Exploitation delay: live capture to first burst (s)",
-            "mnemonic": "captureReactionS",
-            "defaultValue": 120
         }
     ],
     "scriptsWorkOrders": [],

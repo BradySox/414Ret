@@ -1,5 +1,12 @@
 # 414th — Enemy Comms Jamming (IADS comms nodes) design notes
 
+> **The capture gate is GONE (2026-08-07).** `comms_jam_requires_capture`, the `combatsar`
+> plugin's `combat_sar_captures` poll, `captureReactionS` and `Coalition.pending_pow_recoveries`
+> all went with §21 when upstream #929 replaced the fork's Combat SAR. `plan_comms_jam` gates on
+> `enemy_comms_jamming`, a live comms/command-center node and at least one briefed blue frequency,
+> and nothing else. DM call 2026-08-21: it stays unconditional. Everything below about capture,
+> POW compromise and exploitation delay is historical.
+
 **Status: LANDED 2026-07-06** (feature §51). Squadron ask (2026-07-06): *"IADS supports
 communications nodes — what if we expanded this and allowed red to 'jam' our communications
 by flooding SRS channels with audio?"* This note records why the shipped shape is the

@@ -9020,7 +9020,7 @@ reacts to being hit, inside red's settled defensive fighter posture and the all-
 1. **Real alert flights** — `plan_red_reactions` (`game/fourteenth/living_battlespace.py`,
    hooked in `coalition.plan_missions` after the scheduler): up to 2 red 2-ship home-defense
    BARCAPs fragged from real untasked inventory (normal claiming, normal debrief), TOT parked
-   8 h past the mission so the plugin's early `activate()` is the only way they fly. The §61
+   8 h past the mission so the plugin waking them early is the only way they fly. The §61
    red-scramble "untracked freebie" exemption is deliberately NOT used — these jets are
    claimed, tracked, and their losses count.
 2. **The positive list** — `game/missiongenerator/reactiveredluadata.py`: watched objectives
@@ -9032,8 +9032,27 @@ reacts to being hit, inside red's settled defensive fighter posture and the all-
    defensive patrol orbit over the struck objective is pushed only once the flight is
    airborne (the §61 mid-taxi wedge lesson). One reaction per objective; the fragged pool is
    the hard cap; every skip and the exhaustion are logged. Harness-covered
-   (`tests/lua/test_reactivered_runtime.py`; the stubs gained `Group:activate()` and
-   `fireDead` for it).
+   (`tests/lua/test_reactivered_runtime.py`; the stubs gained `Group:activate()`,
+   `Controller:setCommand` and `fireDead` for it).
+
+**Two fixes from test 12 (2026-08-20), the first flown read where a watched objective actually
+died — before them the feature could not launch at all.** Both are one-liners with the same
+shape: an assumption about a name or a state that generation does not produce.
+
+- **Waking the flight.** `plan_red_reactions` parks the flight by pushing TOT 8 h out, and its
+  docstring said that "generates a late-activation group." It does not. A COLD AI flight at an
+  airfield fails every branch of `WaypointGenerator.should_activate_late()`, so generation takes
+  the `set_startup_time` path instead: `uncontrolled = True` plus a `StartCommand` fired by a
+  T+8 h trigger. DCS's `Group.activate()` does nothing to a group that is already in the world,
+  so the plugin's one power was spent on a no-op. The plugin now tries both — `activate()` for a
+  late-activation group, `Controller:setCommand({id = "Start"})` for an uncontrolled one — and
+  the harness models the difference so the shape cannot regress silently again.
+- **Watching a static.** The emitter writes a static's bare unit name (`0525 | Oil platform`) but
+  DCS's DEAD event names it `0525 | Oil platform object` — the MANTIS `dcs_name_for_group`
+  convention `commsjam` and `rednet` already resolve. The plugin now watches both spellings.
+  Vehicle names always matched, so the watch worked for SAM and armour objectives and was dead
+  for every scenery one; in test 12 the oil-platform strike landed 13 minutes before anything
+  else and could not have triggered a reaction.
 
 ### Needs an in-game pass
 
@@ -9261,6 +9280,20 @@ Loads before `dcs_retribution.lua` in `resources/plugins/base/plugin.json`.
 - **A record with an empty track is counters-only** — a wingman that fired but was never
   position-sampled. `sorties_flown()` excludes them, or the sortie count inflates by the group size;
   their weapons still count toward the flight.
+- **A record that never moved is ramp furniture, not a sortie.** `_spawn_unused_for` parks a
+  squadron's untasked airframes as 1-ship `Completed` BARCAP groups, and the sweep — which walks
+  `coalition.getGroups` by category — cannot tell them from flights. Two defences, because either
+  alone leaves half the problem: the recorder collapses a stationary run to its two endpoints
+  (`STATIONARY_M = 25`), and `SortieRecord.flew` requires `MIN_SORTIE_DISTANCE_M = 1000` of
+  sampled track before the record counts as a sortie or contributes hours. Test 12's file was
+  1.18 MB of which 68% was 82 parked jets writing 86 identical samples each, and its SITREP would
+  have read *"145 sorties, 96.7 hours airborne"* for a mission 46 aircraft flew. Replayed against
+  that file the two fixes give 377 KB and *"46 sorties, 28.0 hours airborne"*.
+- **The `fuel` field is not a fuel state when `ai_unlimited_fuel` is on.** That setting writes
+  `SetUnlimitedFuel(True)` at `group.points[0]` and turns it off again only between the join point
+  and the racetrack, so most AI records log one unchanging value for the whole mission (101 of 143
+  in test 12, including an F-14A that flew 280 NM at 9,144 m on a flat 1.000). Nothing to fix here;
+  a consumer must not present it as remaining fuel or average it.
 - **Every entry point is called through `pcall`** from the event handler that also does loss
   reporting. A recorder fault must never cost a mission its results.
 - Parsing degrades rather than fails: missing channel, an empty Lua table serialised as `[]`, a newer

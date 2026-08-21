@@ -33,6 +33,7 @@ local Harness = {
         controllerTasks = {}, -- { group, taskId, targetGroupId, x, y, t } from Controller:setTask
         controllerResets = {}, -- { group, t } from Controller:resetTask
         activations = {}, -- group names from Group:activate (late-activation launches)
+        controllerCommands = {}, -- { group, commandId, t } from Controller:setCommand
         options = {}, -- { group, option, value, t } from Controller:setOption
         weaponDestroys = {}, -- { name, t } from Weapon:destroy (growler spoof)
         spawns = {}, -- { template, alias, base, takeoff, altitude, grouping, speedKt, t }
@@ -245,6 +246,21 @@ function ControllerFake:setTask(task)
     })
 end
 
+-- Controller commands. `Start` is the only way to launch an UNCONTROLLED group
+-- (Group:activate() does nothing to one), which is how a COLD AI flight at an
+-- airfield is generated -- the shape §89 P5 was silently broken on.
+function ControllerFake:setCommand(command)
+    local id = command and command.id
+    if id == "Start" then
+        self.group.uncontrolled = nil
+    end
+    table.insert(Harness.records.controllerCommands, {
+        group = self.group:getName(),
+        commandId = id,
+        t = Harness.now,
+    })
+end
+
 function ControllerFake:resetTask()
     table.insert(Harness.records.controllerResets, {
         group = self.group:getName(),
@@ -307,8 +323,14 @@ function GroupFake:getCoalition()
 end
 
 -- Late-activation launch (the §89 P5 reactivered lever): recorded, and the
--- group reads as existing from then on.
+-- group reads as existing from then on. An `uncontrolled = true` group is
+-- already in the world with its engines off, and DCS's activate() does nothing
+-- to it -- modelled, because assuming otherwise is what left reactive red
+-- unable to launch for five days (test 12, 2026-08-20).
 function GroupFake:activate()
+    if self.uncontrolled then
+        return
+    end
     self.exists = true
     table.insert(Harness.records.activations, self.name)
 end
@@ -337,6 +359,7 @@ function Harness.addGroup(spec)
         side = spec.side,
         category = spec.category,
         exists = spec.exists,
+        uncontrolled = spec.uncontrolled,
         units = {},
     }, GroupFake)
     for _, u in ipairs(spec.units or {}) do

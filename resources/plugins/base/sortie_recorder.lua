@@ -31,8 +31,22 @@ local MAX_SAMPLES = 480
 
 sortie_records = { version = SORTIE_RECORD_VERSION, flights = {} }
 
+-- Metres of movement between sweeps below which the aircraft is parked. A jet
+-- sitting on the ramp jitters well under a metre; the slowest thing worth a
+-- sample covers hundreds over 30 s.
+local STATIONARY_M = 25
+
 -- unit name -> true for the one AI jet per group whose position is sampled.
 local anchors = {}
+
+-- unit name -> true while the last sample continued a stationary run, so the
+-- run is stored as its two endpoints instead of one row per sweep. The idle
+-- ramp is why: `_spawn_unused_for` parks a squadron's untasked airframes as
+-- 1-ship Completed groups and this sweep cannot tell them from flights, so 82
+-- of test 12's 158 records were parked jets writing 86 identical samples each
+-- -- 68% of a 1.18 MB state.json. Kept OUT of the record so nothing new is
+-- serialized.
+local parked = {}
 
 local function safe(unit, method)
     if not unit then
@@ -119,6 +133,10 @@ local function sample_unit(unit, now)
     if not record then
         return
     end
+    local unit_name = safe(unit, "getName")
+    if not unit_name then
+        return
+    end
     if record.first_seen < 0 then
         record.first_seen = now
     end
@@ -128,13 +146,32 @@ local function sample_unit(unit, now)
         record.player = true
     end
 
-    table.insert(record.track, {
+    local sample = {
         t = now,
         x = point.x,
         z = point.z,
         alt = point.y,
         fuel = safe(unit, "getFuel") or 0,
-    })
+    }
+    local tail = record.track[#record.track]
+    if
+        tail
+        and math.abs(sample.x - tail.x) < STATIONARY_M
+        and math.abs(sample.z - tail.z) < STATIONARY_M
+    then
+        -- Second and later sweeps of a stationary run overwrite the run's tail,
+        -- so the run costs two rows however long it lasts. The run's first row
+        -- always survives, and last_seen above is already current.
+        if parked[unit_name] then
+            record.track[#record.track] = sample
+            return
+        end
+        parked[unit_name] = true
+    else
+        parked[unit_name] = nil
+    end
+
+    table.insert(record.track, sample)
     if #record.track > MAX_SAMPLES then
         table.remove(record.track, 1)
     end

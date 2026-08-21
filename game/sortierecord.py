@@ -28,6 +28,14 @@ from typing import Any, Sequence
 #: need a bump -- readers ignore what they do not know.
 SORTIE_RECORD_VERSION = 1
 
+#: Metres of sampled track below which a record is ramp furniture, not a sortie.
+#: `_spawn_unused_for` parks a squadron's untasked airframes as 1-ship Completed
+#: BARCAP groups; the recorder's sweep sees airborne-category groups and cannot
+#: tell them from flights. Test 12 (2026-08-20) had 82 of 158 records sitting on
+#: ramps, and the SITREP would have read "145 sorties, 96.7 hours airborne" for a
+#: mission 46 aircraft flew. Well above parking jitter, well below a taxi.
+MIN_SORTIE_DISTANCE_M = 1000.0
+
 
 @dataclass(frozen=True)
 class TrackSample:
@@ -85,6 +93,16 @@ class SortieRecord:
         for before, after in zip(self.track, self.track[1:]):
             total += math.hypot(after.x - before.x, after.y - before.y)
         return total
+
+    @property
+    def flew(self) -> bool:
+        """Whether this record is a sortie rather than a parked airframe.
+
+        Position-sampled AND actually moved. A record with no track is a
+        counters-only wingman entry; a record that never moved is idle-ramp
+        filler the sweep could not distinguish from a flight.
+        """
+        return bool(self.track) and self.distance_flown >= MIN_SORTIE_DISTANCE_M
 
     @property
     def fuel_at_end(self) -> float | None:
@@ -173,6 +191,8 @@ def sorties_flown(records: Sequence[SortieRecord]) -> int:
 
     A record with no track is a counters-only entry -- a wingman that fired but
     was never position-sampled, which is every AI jet except its group's anchor.
-    Counting those as sorties would inflate the figure by the group size.
+    Counting those as sorties would inflate the figure by the group size. A
+    record that has a track but never moved is ramp furniture; see
+    :data:`MIN_SORTIE_DISTANCE_M`.
     """
-    return sum(1 for record in records if record.track)
+    return sum(1 for record in records if record.flew)

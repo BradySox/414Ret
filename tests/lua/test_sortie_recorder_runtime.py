@@ -374,12 +374,60 @@ def test_the_track_covers_four_hours_then_drops_its_oldest() -> None:
 
     for step in range(500):
         harness.advance_to(step * 30.0)
+        # Actually flying: a stationary aircraft collapses to two rows instead.
+        harness.update_unit("Enfield 1-1", {"x": step * 5000.0})
         _sample(harness)
     harness.assert_no_lua_errors()
 
     record = _records(harness)["Enfield 1-1-1"]
     assert len(record["track"]) == 480  # 4 hours at 30 s
     assert record["last_seen"] == 499 * 30.0
+
+
+def test_a_parked_aircraft_collapses_to_the_run_endpoints() -> None:
+    """The idle ramp is recorded whether we like it or not, so make it cheap.
+
+    `_spawn_unused_for` parks a squadron's untasked airframes as 1-ship
+    Completed groups and this sweep cannot tell them from flights: 82 of test
+    12's 158 records were parked jets carrying 86 identical samples each, 68%
+    of a 1.18 MB state.json.
+    """
+    harness = DcsPluginHarness()
+    _load(harness)
+    harness.add_group(_flight("Enfield 1-1", 2, [_unit("Enfield 1-1-1", x=100.0)]))
+
+    for step in range(40):
+        harness.advance_to(step * 30.0)
+        _sample(harness)
+
+    record = _records(harness)["Enfield 1-1-1"]
+    assert len(record["track"]) == 2
+    assert record["track"][0]["t"] == 0.0
+    assert record["track"][-1]["t"] == 39 * 30.0
+    # The counters the run exists for are untouched.
+    assert record["first_seen"] == 0.0
+    assert record["last_seen"] == 39 * 30.0
+    harness.assert_no_lua_errors()
+
+
+def test_a_parked_aircraft_that_takes_off_records_normally_again() -> None:
+    harness = DcsPluginHarness()
+    _load(harness)
+    harness.add_group(_flight("Enfield 1-1", 2, [_unit("Enfield 1-1-1", x=0.0)]))
+
+    for step in range(5):  # holding on the ramp
+        harness.advance_to(step * 30.0)
+        _sample(harness)
+    for step in range(5, 9):  # rolling
+        harness.advance_to(step * 30.0)
+        harness.update_unit("Enfield 1-1", {"x": step * 4000.0})
+        _sample(harness)
+
+    track = _records(harness)["Enfield 1-1-1"]["track"]
+    # Two rows for the whole ramp hold, then one per sweep once it moves.
+    assert len(track) == 6
+    assert [s["x"] for s in track[2:]] == [20000.0, 24000.0, 28000.0, 32000.0]
+    harness.assert_no_lua_errors()
 
 
 def test_the_periodic_payload_carries_counters_but_no_track() -> None:
@@ -414,6 +462,7 @@ def test_the_final_payload_carries_the_track() -> None:
     harness.add_group(_flight("Enfield 1-1", 2, [_unit("Enfield 1-1-1")]))
     for step in range(5):
         harness.advance_to(step * 30.0)
+        harness.update_unit("Enfield 1-1", {"x": step * 4000.0})
         _sample(harness)
 
     final = harness.to_python(harness.lua.eval("sortie_recorder_payload")(True))

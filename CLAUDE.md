@@ -149,6 +149,9 @@ Read before touching a campaign's `.yaml`, `.miz` or build tool.
   diff**, 2026-08-09: every divergence classified by gate and default; read before
   reverting or carving planner behavior)
 - **Cockpit / data** — `414th-dtc-cartridge-notes.md`, `414th-weapon-dates-proposal.md`,
+  `414th-terrain-elevation-notes.md` (**where a ground-marked steerpoint's altitude comes
+  from** — the sampled elevation table, what it deliberately does not cover, and the
+  `land.getHeight` upgrade path to take before widening it),
   `414th-startup-times-notes.md` (**where a `startup_minutes:` value may come from** — read
   before adding one; unsourced numbers are the failure mode),
   `414th-loadout-integrity-audit-notes.md`

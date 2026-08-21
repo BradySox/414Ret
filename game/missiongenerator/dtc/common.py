@@ -20,6 +20,7 @@ from typing import TYPE_CHECKING, Optional
 from dcs import Point
 
 from game.ato.flighttype import FlightType
+from game.ato.flightwaypoint import ground_mark_altitude
 from game.ato.flightwaypointtype import FlightWaypointType
 
 if TYPE_CHECKING:
@@ -28,6 +29,7 @@ if TYPE_CHECKING:
     from game.missiongenerator.aircraft.flightdata import FlightData
     from game.missiongenerator.missiondata import MissionData
     from game.radio.radios import RadioFrequency
+    from game.theater import ConflictTheater
     from game.theater.player import Player
 
 #: Route-sequence default speed the ME uses when a leg speed is unknown (km/h).
@@ -133,16 +135,20 @@ def is_target_waypoint(waypoint: FlightWaypoint) -> bool:
     return "TARGET" in waypoint.waypoint_type.name
 
 
-def client_altitude(waypoint: FlightWaypoint) -> tuple[float, int]:
+def client_altitude(
+    waypoint: FlightWaypoint, theater: ConflictTheater
+) -> tuple[float, int]:
     """Steerpoint altitude in metres + DTC altitudeType (1 = BARO, 2 = RADIO).
 
-    Cartridges are built only for client flights, and the generated .miz zeroes a
-    ground-marked waypoint (target areas, CAS FLOT boundaries, flyovers) to 0 AGL
-    for clients (``PydcsWaypointBuilder.build``); the cartridge must agree or the
-    AutoLoad would float the steerpoint back up to the AI's track altitude.
+    Cartridges are built only for client flights, and the generated .miz puts a
+    ground-marked waypoint (target areas, CAS FLOT boundaries, flyovers) on the
+    deck for clients (``PydcsWaypointBuilder.build``); the cartridge must write the
+    same number or the AutoLoad would float the steerpoint back up to the AI's
+    track altitude.
     """
     if waypoint.marks_ground_for_player:
-        return 0.0, 2
+        altitude, reference = ground_mark_altitude(waypoint, theater)
+        return altitude.meters, 2 if reference == "RADIO" else 1
     return waypoint.alt.meters, 2 if waypoint.alt_type == "RADIO" else 1
 
 

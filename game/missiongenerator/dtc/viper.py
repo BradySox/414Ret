@@ -236,7 +236,7 @@ def _build_nav_pts(
             break
         number = len(points) + 1
         on_route = is_route_waypoint(waypoint)
-        alt_m, altitude_type = client_altitude(waypoint)
+        alt_m, altitude_type = client_altitude(waypoint, game.theater)
         points.append(
             _steerpoint(
                 number,

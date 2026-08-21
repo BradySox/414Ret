@@ -12,7 +12,7 @@ from game.theater.theatergroup import TheaterUnit
 from game.utils import Distance, meters
 
 if TYPE_CHECKING:
-    from game.theater import ControlPoint
+    from game.theater import ConflictTheater, ControlPoint
 
 AltitudeReference = Literal["BARO", "RADIO"]
 
@@ -37,6 +37,25 @@ GROUND_MARKED_WAYPOINTS = (
     FlightWaypointType.TARGET_SHIP,
     FlightWaypointType.CARGO_STOP,
 )
+
+
+def ground_mark_altitude(
+    waypoint: FlightWaypoint, theater: ConflictTheater
+) -> tuple[Distance, AltitudeReference]:
+    """The altitude a client's ground-marked steerpoint is written at.
+
+    Terrain elevation AMSL wherever the campaign sampled it, so the steerpoint
+    sits on the ground it marks. 0 AGL where it did not -- that was the only
+    behaviour until 2026-08-20, and it reaches the jet as sea level, which puts
+    a target on high ground underneath the terrain.
+    """
+    # Local import: game.theater imports this module's package at load time.
+    from game.theater.terrainelevation import elevation_at
+
+    elevation = elevation_at(theater.terrain, waypoint.position)
+    if elevation is None:
+        return meters(0), "RADIO"
+    return elevation, "BARO"
 
 
 @dataclass

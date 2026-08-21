@@ -134,6 +134,7 @@ stress it · `✗` fail signature reproduced in-game.
 | B86 | Retribution survives DCS taking over the GPU (Qt 6.8) | app / Qt | ☐ |
 | B87 | A stand-off shooter starts its run at its own launch range | §8 | ☐ |
 | B89 | Region priorities: the CP-dialog control shifts the ATO | §93 | ☐ |
+| B90 | A target steerpoint sits on the ground, not at sea level | §8 | ☐ |
 
 ---
 
@@ -5588,6 +5589,39 @@ turn on a wing with a small dedicated-jammer squadron and read the ATO before fl
 - **Setup:** frag a player cold-start F-16C and a player cold-start F-4E in the same turn. Read each package's takeoff time against its TOT, then actually fly both starts with a stopwatch — **stored heading**, which is what the numbers assume. ~40 min for both. Also confirm an airframe with no value (a Hornet) is unchanged at 10 minutes.
 - **Pass:** you make the briefed taxi time on a normal unhurried start in all three. The Phantom's 9 minutes should feel close but sufficient — its gyros alone eat most of it.
 - **Fail signature:** you are still in the chocks when the package is due to taxi, which means the number is too tight and the note's inferred ~2-minute systems window is wrong. Record the stopwatch figure — a measurement replaces the arithmetic outright. The opposite signature also matters: arriving at the hold-short with minutes to spare means the value is generous and the whole exercise bought nothing.
+
+### B90 — A target steerpoint sits on the ground, not at sea level · §8 · ☐ UNTESTED
+
+**History:** built 2026-08-20, from the cockpit. Upstream-inherited, not a fork regression:
+`PydcsWaypointBuilder.build`'s "Set Altitute to 0 AGL for player flights" is upstream's.
+
+> Reported while flying: the DEAD steerpoint does not sit at 0 AGL, it sits at **0 MSL**.
+> Every consumer wrote `alt = 0` with an AGL flag beside it (`alt_type = "RADIO"` in the
+> .miz, `altitudeType = 2` in the cartridge) and the number still reached the jet as sea
+> level. On high terrain the steerpoint ends up under the map, with nothing at it to slave
+> a pod to — which is the thing the 0 exists to enable.
+> Nothing in the tree knew terrain height at an arbitrary point, so this needed a data
+> source: `scripts/derive_terrain_elevations.py` samples every campaign-authored ground
+> object position against Open-Elevation (SRTM, ~5 m) into
+> `resources/terrain_elevation/<terrain>.json`. `ground_mark_altitude()` is now the one
+> rule, shared by the .miz builder, the DTC emitter and the kneeboard Alt column.
+> Design note `414th-terrain-elevation-notes.md`.
+
+Fly a DEAD, Strike or BAI target that is not near sea level and look at the steerpoint.
+
+- **Pass:** the steerpoint elevation in the DED/HSI and the kneeboard Alt column both read
+  the terrain's height, they agree with each other, and a pod slaved to the steerpoint
+  lands on the target rather than short of it.
+- **Fail signatures:**
+  1. **Still 0.** Either the target is on terrain the campaign never authored an object
+     near — front line, a convoy, a relocated mobile SAM (§49) — or the map is **Kola**,
+     which ships no table at all because SRTM stops at 60°N. Both are out of scope by
+     decision and keep the old 0; confirm which before treating it as a bug.
+  2. **A non-zero elevation and the steerpoint is still wrong.** Then the number was never
+     the problem and the next suspect is `altitudeType` handling itself. Say so rather
+     than widening the sampling.
+  3. **The card and the jet disagree.** They read the same function, so this means the
+     cartridge and the .miz were built from different theaters — a wiring bug, not data.
 
 ### B89 — Region priorities: the CP-dialog control shifts the ATO · §93 · ☐ UNTESTED
 

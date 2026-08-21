@@ -40,7 +40,7 @@ from tabulate import tabulate
 
 from game.ato.codewords import PushCategory, present_categories, push_category_for
 from game.ato.flighttype import FlightType
-from game.ato.flightwaypoint import FlightWaypoint
+from game.ato.flightwaypoint import FlightWaypoint, ground_mark_altitude
 from game.ato.flightwaypointtype import FlightWaypointType
 from game.data.alic import AlicCodes
 from game.data.threat_reference import ThreatReference, reference_for
@@ -505,10 +505,14 @@ class FlightPlanBuilder:
         units: UnitSystem,
         patrol_speed: Optional[Speed] = None,
         zulu_tz: Optional[datetime.tzinfo] = None,
+        theater: Optional["ConflictTheater"] = None,
     ) -> None:
         # Set for an airframe whose card runs Zulu. Every time printed below
         # converts through it; the elapsed-time maths stays on the naive values.
         self.zulu_tz = zulu_tz
+        # Needed to resolve a ground mark's terrain elevation; without it the row
+        # prints the 0 the steerpoint used to carry everywhere.
+        self.theater = theater
         self.rows: List[List[str]] = []
         self.target_points: List[NumberedWaypoint] = []
         self.last_waypoint: Optional[FlightWaypoint] = None
@@ -570,14 +574,17 @@ class FlightPlanBuilder:
         ):
             self._record_patrol(self.last_waypoint, waypoint.waypoint)
         # Kneeboards are only generated for client flights (see
-        # client_flights_by_airframe), so a ground-marked waypoint is always zeroed in
-        # the .miz for this reader -- print what the cockpit will actually show rather
-        # than the AI track altitude the planner recorded.
-        alt = (
-            meters(0)
-            if waypoint.waypoint.marks_ground_for_player
-            else waypoint.waypoint.alt
-        )
+        # client_flights_by_airframe), so a ground-marked waypoint is put on the deck
+        # in the .miz for this reader -- print what the cockpit will actually show
+        # rather than the AI track altitude the planner recorded. Same rule, same
+        # number: terrain elevation where the campaign sampled it, else 0.
+        alt = waypoint.waypoint.alt
+        if waypoint.waypoint.marks_ground_for_player:
+            alt = (
+                ground_mark_altitude(waypoint.waypoint, self.theater)[0]
+                if self.theater is not None
+                else meters(0)
+            )
         is_reference = (
             waypoint.waypoint.waypoint_type
             in FlightPlanBuilder.REFERENCE_WAYPOINT_TYPES
@@ -937,6 +944,7 @@ class BriefingPage(KneeboardPage):
             units,
             patrol_speed=self.flight.patrol_speed,
             zulu_tz=self.zulu_tz,
+            theater=self.theater,
         )
         for num, waypoint in enumerate(self.flight.waypoints):
             flight_plan_builder.add_waypoint(num, waypoint)

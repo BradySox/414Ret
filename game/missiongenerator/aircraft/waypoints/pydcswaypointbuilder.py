@@ -10,6 +10,7 @@ from dcs.task import ControlledTask, OrbitAction, RunScript
 from dcs.unitgroup import FlyingGroup
 
 from game.ato import Flight, FlightWaypoint
+from game.ato.flightwaypoint import ground_mark_altitude
 from game.ato.flightwaypointtype import FlightWaypointType
 from game.ato.starttype import StartType
 from game.ato.traveltime import GroundSpeed
@@ -98,9 +99,14 @@ class PydcsWaypointBuilder:
             # though it's set to "Turning Point". If I set this to "Fly Over
             # Point" and then save the mission in the ME DCS resets it.
         if self.flight.client_count > 0 and self.waypoint.marks_ground_for_player:
-            # Set Altitute to 0 AGL for player flights so that they can slave target pods or weapons to the waypoint
-            waypoint.alt = 0
-            waypoint.alt_type = "RADIO"
+            # Put the steerpoint on the ground so a pod or weapon can slave to it.
+            # Terrain elevation AMSL where the campaign sampled it; 0 AGL where it
+            # did not, which the jet reads as sea level (see ground_mark_altitude).
+            altitude, reference = ground_mark_altitude(
+                self.waypoint, self.flight.coalition.game.theater
+            )
+            waypoint.alt = round(altitude.meters)
+            waypoint.alt_type = reference
 
         self._assign_waypoint_tot(waypoint)
         self.add_tasks(waypoint)

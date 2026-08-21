@@ -1,10 +1,11 @@
 """An item carrying both scalars and a nested table must emit both.
 
-Flown 2026-08-16: the deckdecor boat record kept its `recoverySpawns` table and
-lost `group`/`unit`/`side`/`brc`/`clearNames`, so the plugin armed, looked up
-`Group.getByName("")`, took its "boat gone" exit and never cleared the deck --
-silently, because that exit does not log. The reactive-red group pool was
-dropped the same way. The serializer, not the emitters, was at fault.
+Flown 2026-08-16: a boat record kept its nested table and lost every scalar
+beside it -- `group`/`unit`/`side` -- so the plugin armed, looked up
+`Group.getByName("")` and took its "nothing to do" exit, silently, because that
+exit does not log. The reactive-red group pool was dropped the same way. The
+serializer, not the emitters, was at fault. (That emitter was itself removed
+2026-08-20 with the §72 phase tiers; the reactive-red one still relies on this.)
 """
 
 from game.missiongenerator.luagenerator import LuaData

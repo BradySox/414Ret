@@ -142,8 +142,7 @@ Most of this is opt-in. Full list with toggles, defaults and known limitations:
   channels, the ship's real name. If a map beacon owns the hull channel the boat takes the
   nearest free one. Navy jets wear sequential per-squadron modexes.
 - Carrier decks carry dressing — tractors, crash truck, deck crew, LSO team — placed clear of
-  every parking spot and catapult. An optional launch-corridor set is struck below before
-  recovery.
+  every parking spot and catapult, and standing for the whole mission.
 - Carriers steam for wind down the **angled** deck, not the bow, using each hull's own deck
   angle (9° Nimitz, 10.5° Forrestal, 7.95° Kuznetsov). BRC sits up to 15° off the wind
   reciprocal — that is the ship's real heading. New missions only.

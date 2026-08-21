@@ -82,7 +82,7 @@ ELINT tracks as sliders.
 
 ## The plugins
 
-All 29, in `plugins.json` load order. "Inert unless" means the plugin ships in every mission
+All 28, in `plugins.json` load order. "Inert unless" means the plugin ships in every mission
 but does nothing until the mission generator emits its data — turning the matching campaign
 setting off costs nothing at runtime.
 
@@ -124,7 +124,6 @@ setting off costs nothing at runtime.
 | Plugin | Default | What it does |
 |---|---|---|
 | `airboss` | on | MOOSE Airboss — LSO and Marshal voice comms, the recovery window schedule, optional rescue helo and recovery tanker. |
-| `deckdecor` | on | Carrier deck dressing (§72): strikes each boat's launch-phase statics below before recovery. |
 | `cruisemissiles` | on | Ship-launched land-attack cruise missiles, F10 call-for-fire and auto raids. Inert unless the setting is on. |
 | `navalmagazines` | on | The fleet's finite anti-ship missiles and staggered weapons-free release. Inert unless the setting is on. |
 

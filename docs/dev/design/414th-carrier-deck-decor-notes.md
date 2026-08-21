@@ -9,6 +9,13 @@ This note records where the data came from, what the parking evidence is, and wh
 specific campaign A decorations were dropped — so a future edit argues with the evidence, not
 with vibes.
 
+**Current shape (2026-08-20): one tier.** The island street gear and the LSO team, standing
+for the whole mission. The launch-phase round-down E-2C, the recovery-phase bow respot and
+the `deckdecor` plugin are **removed** — see *The phase tiers are cut* at the end of this
+note. Every section below dated 2026-07-18 through 2026-08-17 that describes the respot, the
+astern cone, the Airboss tie-in or the recovery tier is **history**, kept for the evidence it
+carries; do not author against it.
+
 ## Source: what campaign A actually does
 
 All 13 missions of campaign A (a paid FA-18C campaign in the DM's
@@ -113,8 +120,8 @@ test re-checks every table entry — min actual clearance in the shipped tables 
 ## What shipped
 
 `game/data/carrier_deck_decor.py`: the LSO 4-figure set (identical in all missions) +
-**four street variants** (missions 3 / 10 / 11 / 12 sets, verbatim placements filtered
-to the envelope), rotated per (carrier group name, turn) crc32 — deterministic across
+**ten street variants** (the 2026-08-07 mining; the first cut shipped four, missions
+3 / 10 / 11 / 12), rotated per (carrier group name, turn) crc32 — deterministic across
 regeneration (§70 pattern), varying across turns.
 `game/missiongenerator/carrierdeckdecor.py`: `DeckDecorStatic`/`DeckDecorPoint` pydcs
 subclasses adding `offsets`/`linkUnit`, one single-static group per decoration (campaign A
@@ -661,10 +668,9 @@ across missions within a zone" rule stays checkable.
 
 ## In-game pass
 
-Checklist **B49** covers the recovery tier (spawned dressing appears forward when the
-launch set is struck below, rides the steaming deck, and a full cold deck still parks
-16 with the tier on). LOCAL card 2 covers the capacity question for the permanent
-street.
+Checklist **B49** is closed — the tier it covered no longer exists. LOCAL card 2 closed
+2026-08-20 on its own strongest evidence (24 jets on CVN-72 plus 8 on LHA-1 with the
+decorations on, every one launched).
 
 Checklist **B25**: statics ride the steaming deck (no floaters left in the wake), a
 max-density cold spawn still fills every spot vs a decorations-off control, AI
@@ -742,3 +748,46 @@ respotted at all. `launch_cycle_ends_at` now returns the *current* cycle: the ru
 departures from the first, broken by an idle gap longer than `LAUNCH_CYCLE_MARGIN_S`. That
 constant serves as both the post-launch margin and the cycle-ending gap; a second constant
 would only let the two drift.
+
+## The phase tiers are cut (2026-08-20, DM call)
+
+**The ask:** "remove the E-2, only the stuff in front of the island and the LSO station for
+both launch and recovery." Both phase tiers go, and the same dressing stands for both cycles.
+
+**Removed:**
+
+| Thing | What it was |
+|---|---|
+| `carrier_deck_decorations_aircraft` | the launch-phase round-down E-2C, struck below before recovery |
+| `carrier_deck_decorations_recovery` | the recovery-phase bow respot, spawned once launches were over |
+| `resources/plugins/deckdecor/` | the runtime that did both |
+| `game/missiongenerator/deckdecorluadata.py` | its emitter, plus `MissionData.deck_decor` and `DeckDecorInfo` |
+
+Both setting keys and the `deckdecor` plugin option keys are swept in
+`_migrate_legacy_settings`, so a save carrying them loads clean.
+
+**What this retires.** Everything downstream of "something has to move before the wires are
+live": the astern cone and its four hardening passes, the fallback deadline, the Airboss
+window tie-in, the launch-cycle floor, the outbound roster, and the one sanctioned
+`SPAWNSTATIC` that broke the plugin's despawn-only invariant. Two of those were still open
+problems on the day they were cut — the cone fired on 2026-08-16 with **nothing in the cone**
+(a faithful replay of the plugin's own logic over that recording never trips, and the trip
+source was never found), and the recovery tier's one flown outing put three static Hornets in
+the player's taxi lane 8.66 m off his track. Neither needs solving now.
+
+**What survives, and must not be re-lost.** Two constraints outlive the tiers that taught
+them, and both are guard-tested in the data module:
+
+1. **Nothing stands inside `LANDING_AREA_KEEP_OUT`.** The E-2 on the round-down cleared every
+   parking spot and was still wrong: 5.6 m tall, 17.6 m long, essentially at the ramp
+   crossing. There is no longer any exemption to this — the exemption *was* the plugin.
+2. **No static aircraft anywhere, at any point in the mission.** Falsified twice, both times
+   with measurements: the CVN-73 A-6 pair spawning into the Seahawk statics (2026-07-18), and
+   test 11's 14 aircraft late-activating onto the CVN-71 deck between t=2340 and t=3913 — 9 to
+   35 minutes *after* the recovery set spawned. "It only stands once launches are over" is not
+   a safe premise on any deck.
+
+**Restoring either tier is not a revert.** The tables are in git history
+(`git show 9ed78ac8d:game/data/carrier_deck_decor.py`), but re-adding one means answering the
+question that closed it: for the E-2, what removes it and how that detection is trusted; for
+the bow set, whether the bow spots have been measured. Neither answer exists today.

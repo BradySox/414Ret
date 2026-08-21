@@ -8,7 +8,7 @@ already carries everything below.
 
 | It has | Which clears |
 |---|---|
-| **Stennis** (a `NIMITZ_DECK_HULLS` member) | B49, C9 |
+| **Stennis** (a `NIMITZ_DECK_HULLS` member) | C9 |
 | LHA Tarawa + USS Arleigh Burke IIa | B48 |
 | **3 × `Scud_B`** | S2 |
 
@@ -28,34 +28,19 @@ has no carrier at all.
 
 | Where | Setting | Why |
 |---|---|---|
-| Mission Generation → Carrier | `carrier_deck_decorations` | main gate |
-| Mission Generation → Carrier | `carrier_deck_decorations_recovery` | **B49**, default OFF |
 | — | `mobile_missile_relocation` + `mobilemissiles` plugin | **S2** — confirm both, Starfire campaigns do not preseed them |
 
 Leave recon fog on (default). Tacview on.
 
 ---
 
-## One mission, four rows
+## One mission, three rows
 
 Fly or watch a carrier turn long enough for **two ~8-minute relocation intervals** — roughly 20
 minutes. You do not need to attack the Scuds; you need them to fire and then move.
 
-### B49 — carrier recovery deck dressing · ✗ REGRESSED
-
-- **Pass:** nothing on the bow at mission start. When the launch set is struck below, 3–9 pieces
-  of gear appear forward on the **starboard bow** and **ride the deck** — still in place, still
-  square to the ship, after the boat has steamed a few miles.
-- **Fail — three signatures, they mean different things:**
-  1. **Nothing appears** → MOOSE absent or `SPAWNSTATIC` errored. Grep `DECKDECOR|` in `dcs.log`;
-     the spawn is `pcall`-wrapped and logs a count, so a **0 is diagnostic**.
-  2. **Gear appears, boat sails out from under it** → the link failed, statics are
-     world-anchored. Kills the tier as designed.
-  3. **A jet spawns into the new gear** → bow spots 11/12/13 are unmeasured. Known risk, and the
-     reason this ships default-OFF.
-- Three further 2026-08-17 changes ride this same re-fly; if the row passes they pass with it.
-- **Bonus if it flies clean:** Tacview the deck at t=0 on a full cold spawn and **count the bow
-  spots** — that closes the 11-vs-16 gap and is the gate on ever making this default-ON.
+**B49 is off this card — CLOSED 2026-08-20.** The recovery-phase deck dressing it covered was
+removed along with the launch-phase E-2C and the `deckdecor` plugin.
 
 ### C9 — carrier-recovery stagger · ◐ PARTIAL · free, same recovery
 

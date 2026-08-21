@@ -1,13 +1,18 @@
 """Curated carrier deck decoration layouts (§72).
 
-Deck-dressing statics for the Nimitz-family carriers, extracted from the campaign A
-(campaign A) campaign missions -- the campaign author's deck dressing
-language, replayed onto Retribution's carriers: LSO platform crew on the
-port-aft sponson, a "street" of deck equipment (tow tractors, P-25
-firefighting vehicle, Hyster forklift, crane, deck crew) in the corral forward
-of the island, and an opt-in LAUNCH-PHASE round-down E-2 in the recovery
-corridor that the ``deckdecor`` plugin strikes below before recovery traffic
-arrives.
+Deck-dressing statics for the Nimitz-family carriers, extracted from the
+campaign A campaign missions -- the campaign author's deck dressing language,
+replayed onto Retribution's carriers: LSO platform crew on the port-aft
+sponson, and a "street" of deck equipment (tow tractors, P-25 firefighting
+vehicle, Hyster forklift, crane, deck crew) alongside the island, forward of
+the angled deck.
+
+One tier, standing the whole mission. There is no launch-phase or
+recovery-phase set: the same dressing is correct for both cycles because it
+stands where a deck is never spotted (DM call, 2026-08-20). The two phase
+tiers that used to exist -- a round-down E-2C struck below before recovery,
+and a bow respot spawned in its place -- are gone, along with the runtime
+plugin that swapped them.
 
 Every static type here is base-game content: the AS32 gear and carrier
 personnel ship in ``CoreMods/tech/USS_Nimitz`` and the CV-59 Hyster forklift in
@@ -15,29 +20,24 @@ personnel ship in ``CoreMods/tech/USS_Nimitz`` and the CV-59 Hyster forklift in
 ownership required.
 
 Parking safety is the hard constraint (the whole point of the curation).
-Placement classes and their rules:
+Dressing may stand ONLY where parking does not happen -- the off-deck LSO
+sponson and the island street, starboard of the angled-deck foul line and
+inboard of the six-pack parking row (the campaign A by-the-island offsets
+rendered on the foul-line strip and were repositioned forward, flown CVN-71
+2026-07-21). Never inside the recovery corridor, and guard-tested clear of
+every known spot.
 
-- PERMANENT gear (LSO crew + street): only where parking does not happen --
-  the off-deck LSO sponson and the corral, the clear staging lane forward of
-  the island, starboard of the angled-deck foul line and inboard of the
-  six-pack parking row (the campaign A by-the-island offsets rendered on the foul-line
-  strip and were repositioned forward, flown CVN-71 2026-07-21). Never inside
-  the recovery corridor, and guard-tested clear of every known spot.
-- LAUNCH-PHASE (the opt-in aircraft tier, default OFF): may stand in the
-  recovery corridor because the deckdecor plugin strikes them below before
-  recovery (fallback timer / the Airboss window / fixed-wing traffic low
-  astern). Must still clear every known spot (spawns run while they stand),
-  and must always reach the plugin's clear list.
-
-There is deliberately NO permanent static-aircraft class. The first cut
-parked campaign A's Seahawk pair + a fixed-wing accent on the starboard-aft spots
-under the manual's "a blocked spot is skipped" claim -- and the first flown
-mission FALSIFIED that for Retribution's dominant spawn path: LATE-ACTIVATED
-groups (the §64 TOT-delay pattern) do NOT skip statics-obstructed spots (a
-flown CVN-73 late-activated A-6E pair straight INTO the Seahawk statics,
-2026-07-18). No static may stand on ANY spawn spot, so the parked-aircraft
-look comes from Retribution's real deck population instead; those positions
-are kept below as LEARNED spot anchors.
+NO static aircraft, anywhere, ever. The first cut parked campaign A's Seahawk
+pair + a fixed-wing accent on the starboard-aft spots under the manual's "a
+blocked spot is skipped" claim -- and the first flown mission FALSIFIED that
+for Retribution's dominant spawn path: LATE-ACTIVATED groups (the §64 TOT-delay
+pattern) do NOT skip statics-obstructed spots (a flown CVN-73 late-activated
+A-6E pair straight INTO the Seahawk statics, 2026-07-18). Test 11 then showed
+the same hazard reaches any hour of the mission: 14 aircraft late-activated
+onto the CVN-71 deck between t=2340 and t=3913, so "it only stands once
+launches are over" was never a safe exemption. The parked-aircraft look comes
+from Retribution's real deck population instead; those positions are kept
+below as LEARNED spot anchors.
 
 The known spot anchors below were measured from flown-mission Tacview
 recordings (t=0 frame, ship-frame transform) plus a 12 m row-pitch
@@ -81,17 +81,6 @@ STATIC_META: dict[str, tuple[str, str | None]] = {
     "Carrier LSO Personell 3": ("Personnel", "carrier_lso3_usa"),
     "Carrier LSO Personell 4": ("Personnel", "carrier_lso4_usa"),
     "Carrier LSO Personell 5": ("Personnel", "carrier_lso5_usa"),
-    "E-2C": ("Planes", None),  # static Hawkeye (renders FOLDED -- user-confirmed)
-    # Recovery-tier deck aircraft and crew (campaign B).
-    "FA-18C_hornet": ("Planes", None),
-    "F-14B": ("Planes", None),
-    "A6E": ("Planes", None),
-    "S-3B": ("Planes", None),
-    "S-3B Tanker": ("Planes", None),
-    "UH-60A": ("Helicopters", None),
-    "Carrier Seaman": ("Personnel", "carrier_seaman_USA"),
-    "Carrier Airboss": ("Personnel", "carrier_airboss_USA"),
-    "Carrier LSO Personell 2": ("Personnel", "carrier_lso2_usa"),
 }
 
 # Hulls sharing the Nimitz deck plan (same spot geography, same island/LSO
@@ -142,32 +131,7 @@ KNOWN_PARKING_SPOTS: tuple[tuple[float, float], ...] = (
 # placement jitter (<2 m) + margin.
 MIN_SPOT_CLEARANCE_M = 9.0
 
-# Aircraft statics are bigger than deck gear: their required clearance is
-# MIN_SPOT_CLEARANCE_M + this per-type extra (their own worst-case
-# half-extent). The E-2C static renders FOLDED (user-confirmed in game --
-# the earlier wings-spread read was wrong), so its extent is the 17.6 m
-# fuselage length, not the 24.6 m span.
-# Aircraft entries are ~half the type's published fuselage length, the same
-# convention the E-2C row set. NOTE the E-2C's 8.0 was confirmed against the
-# in-game render; the rest are derived from published dimensions and have NOT
-# been eyeballed in DCS, so they are rounded UP where a half-length fell
-# between values. They only ever make the guard stricter.
-FOOTPRINT_EXTRA_M: dict[str, float] = {
-    "E-2C": 8.0,
-    "FA-18C_hornet": 8.5,
-    "F-14B": 9.5,
-    "A6E": 8.5,
-    "S-3B": 8.0,
-    "S-3B Tanker": 8.0,
-    "UH-60A": 8.0,
-}
-
-
-def required_spot_clearance_m(static_type: str) -> float:
-    return MIN_SPOT_CLEARANCE_M + FOOTPRINT_EXTRA_M.get(static_type, 0.0)
-
-
-# The safe envelopes for PERMANENT gear, as (x_min, x_max, y_min, y_max).
+# The safe envelopes, as (x_min, x_max, y_min, y_max).
 LSO_PLATFORM_ENVELOPE = (-134.0, -126.0, -25.0, -18.0)
 # The island street: the clear staging strip ALONGSIDE the island, starboard
 # of the angled-deck foul line and inboard of the six-pack parking row. This is
@@ -181,22 +145,10 @@ ISLAND_STREET_ENVELOPE = (-65.0, -30.0, 10.0, 25.0)
 
 # The ramp-crossing / wires keep-out (x_min, x_max, y_min, y_max): the stern
 # threshold and touchdown zone that every recovering aircraft crosses a few
-# metres above the deck. PERMANENT placements may never stand here -- the
-# lesson of the round-down E-2C (user-caught 2026-07-18): it cleared every
-# parking spot but stands 5.6 m tall and 17.6 m long essentially at the ramp
-# crossing. Only LAUNCH-PHASE dressing may stand inside, because the deckdecor
-# plugin strikes it below before recovery.
+# metres above the deck. Nothing may stand here -- the lesson of the round-down
+# E-2C (user-caught 2026-07-18): it cleared every parking spot but stands 5.6 m
+# tall and 17.6 m long essentially at the ramp crossing.
 LANDING_AREA_KEEP_OUT = (-170.0, -120.0, -15.0, 12.0)
-
-# Everything launch-phase must stand INSIDE the recovery-corridor keep-out box
-# (LANDING_AREA_KEEP_OUT) -- that is the ONLY zone the deckdecor plugin clears
-# before recovery, and by definition it is not a parking area. The flown
-# CVN-71 (2026-07-21) proved why this must be the rule and not a looser
-# "aft of x" one: the old port junk row sat at x -105..-114 / y -24..-28 --
-# forward and port of the keep-out box, i.e. squarely in the port-quarter
-# PARKING row -- and a Hornet spawned onto the port-quarter spot at (-108,-34)
-# 8.7 m from its tractor. It was launch-phase in name only. Removed; the
-# guard test now requires every launch-phase item to fall inside the box.
 
 # The LSO platform crew -- identical offsets in all 13 campaign A missions.
 LSO_PLATFORM_CREW: list[DeckStatic] = [
@@ -361,178 +313,13 @@ STREET_VARIANTS: list[list[DeckStatic]] = [
     for variant in _CAMPAIGN_A_STREET_VARIANTS
 ]
 
-# --- Launch-phase dressing (aircraft tier; runtime-cleared) -----------------
-#
-# Statics that stand INSIDE the recovery corridor (LANDING_AREA_KEEP_OUT)
-# during the launch cycle and are struck below by the deckdecor plugin before
-# recovery. Only the round-down E-2 qualifies: it stands on the aft round-down,
-# in the corridor (not a parking area), and no aircraft has ever spawned near
-# it across the flown missions. The campaign A "port junk row" was tried here and
-# REMOVED (flown CVN-71, 2026-07-21): it sat forward/port of the corridor box,
-# in the port-quarter parking row, and clipped a spawning Hornet.
-ROUND_DOWN_VARIANTS: list[list[DeckStatic]] = [
-    [DeckStatic("E-2C", -152.14, 5.37, 350.0)],  # campaign A mission 8
-    [DeckStatic("E-2C", -138.04, 5.12, 352.1)],  # campaign A mission 1
-]
-
-
-# --- Recovery-phase dressing (forward deck; runtime-SPAWNED) ---------------
-#
-# The mirror of the launch-phase tier. A real deck is re-spotted for recovery:
-# the landing area is cleared and gear is ranged forward onto the bow, which is
-# exactly what the Supercarrier guide's "Static Object Safe Zones" slides show
-# -- its Recovery column marks the bow and catapult tracks safe while the
-# angled deck must stay clear, and its Launch column marks the opposite.
-#
-# These do NOT exist at mission start. The deckdecor plugin spawns them (MOOSE
-# SPAWNSTATIC + InitLinkToUnit, so they ride the steaming deck like every other
-# §72 static) on the SAME trigger that strikes the launch-phase set below --
-# the astern cone or the fallback timer, whichever fires first. Launch is over
-# by then, so the bow is free.
-#
-# ⚠️ THIS IS THE LEAST-EVIDENCED TIER IN §72, AND IT IS DEFAULT-OFF FOR THAT
-# REASON. The placements are verbatim campaign A / campaign B authoring.
-#
-# The 2026-08-17 measurement pass confirmed the warning this comment used to
-# carry: the spots it lacked DID include the ones nearest this zone, and the
-# forward six-pack pair now in KNOWN_PARKING_SPOTS lands inside five of these
-# authored sets. Rather than nudge coordinates by eye -- the method that has
-# failed this feature before -- the clearance rule is applied to the authored
-# data below, once, so a future measured spot prunes whatever it invalidates
-# with no further authoring. See the design note's "The 11-vs-16 spot gap".
-_AUTHORED_RECOVERY_VARIANTS: list[list[DeckStatic]] = [
-    # campaign A mission 4 bow set -- the full forward respot
-    # 9 items; min known-spot clearance 9.8 m
-    [
-        DeckStatic("AS32-31A", 30.71, 33.58, 91.2),
-        DeckStatic("us carrier tech", 30.07, 29.44, 295.6),
-        DeckStatic("AS32-31A", 25.81, 33.32, 47.2),
-        DeckStatic("us carrier tech", 25.71, 30.31, 248.6),
-        DeckStatic("AS32-32A", 20.33, 34.93, 346.2),
-        DeckStatic("us carrier tech", 20.12, 32.24, 262.6),
-        DeckStatic("us carrier tech", 5.80, 25.40, 269.6),
-        DeckStatic("us carrier tech", 5.40, 21.89, 282.6),
-        DeckStatic("AS32-p25", 3.71, 24.10, 265.2),
-    ],
-    # campaign A mission 8 forward mid-deck cluster
-    # 4 items; min known-spot clearance 9.6 m
-    [
-        DeckStatic("us carrier tech", -1.84, 24.87, 253.0),
-        DeckStatic("us carrier tech", -2.25, 20.37, 253.0),
-        DeckStatic("AS32-p25", -3.63, 22.73, 260.0),
-        DeckStatic("us carrier tech", -5.78, 21.30, 253.0),
-    ],
-    # campaign A mission 3 forward mid-deck cluster
-    # 3 items; min known-spot clearance 19.9 m
-    [
-        DeckStatic("us carrier tech", -4.66, 12.80, 189.0),
-        DeckStatic("AS32-p25", -5.96, 14.89, 267.5),
-        DeckStatic("us carrier tech", -7.56, 12.85, 305.0),
-    ],
-    # campaign A mission 5 forward mid-deck cluster
-    # 3 items; min known-spot clearance 17.4 m
-    [
-        DeckStatic("AS32-p25", -0.00, 16.58, 260.0),
-        DeckStatic("us carrier tech", -0.26, 13.77, 270.8),
-        DeckStatic("us carrier tech", -1.74, 13.67, 252.8),
-    ],
-    # campaign B set 1: 6 items (3 static aircraft);
-    # min gear-equivalent clearance 12.0 m
-    [
-        DeckStatic("FA-18C_hornet", 31.72, 14.82, 310.0),
-        DeckStatic("FA-18C_hornet", 15.66, 13.19, 317.0),
-        DeckStatic("us carrier tech", 14.90, 35.90, 236.0),
-        DeckStatic("us carrier tech", 14.72, 32.06, 236.0),
-        DeckStatic("us carrier tech", 14.31, 33.93, 236.0),
-        DeckStatic("FA-18C_hornet", 0.93, 13.53, 313.0),
-    ],
-    # campaign B set 2: 5 items (1 static aircraft);
-    # min gear-equivalent clearance 10.0 m
-    [
-        DeckStatic("FA-18C_hornet", 19.64, 13.41, 270.5),
-        DeckStatic("us carrier tech", 14.41, 30.87, 249.5),
-        DeckStatic("AS32-36A", 10.94, 32.95, 238.5),
-        DeckStatic("us carrier tech", 6.18, 21.83, 176.5),
-        DeckStatic("us carrier tech", -4.20, 21.94, 96.5),
-    ],
-    # campaign B set 3: 3 items (3 static aircraft);
-    # min gear-equivalent clearance 9.3 m
-    [
-        DeckStatic("F-14B", 19.15, 29.01, 266.8),
-        DeckStatic("F-14B", 14.36, 12.43, 301.9),
-        DeckStatic("F-14B", -8.66, 13.29, 301.9),
-    ],
-    # campaign B set 4: 3 items (3 static aircraft);
-    # min gear-equivalent clearance 14.7 m
-    [
-        DeckStatic("FA-18C_hornet", 27.21, 11.36, 310.0),
-        DeckStatic("FA-18C_hornet", 11.97, 11.08, 310.0),
-        DeckStatic("FA-18C_hornet", -3.50, 11.23, 310.0),
-    ],
-    # campaign B set 5: 3 items (3 static aircraft);
-    # min gear-equivalent clearance 11.7 m
-    [
-        DeckStatic("FA-18C_hornet", 21.99, 13.55, 2.3),
-        DeckStatic("FA-18C_hornet", 20.96, 31.09, 268.3),
-        DeckStatic("FA-18C_hornet", 3.61, 13.18, 2.3),
-    ],
-]
-
 
 def clears_known_spots(item: DeckStatic) -> bool:
     """Whether this placement keeps its required distance from every known spot."""
-    need = required_spot_clearance_m(item.type)
     return all(
-        math.hypot(item.x - sx, item.y - sy) >= need for sx, sy in KNOWN_PARKING_SPOTS
+        math.hypot(item.x - sx, item.y - sy) >= MIN_SPOT_CLEARANCE_M
+        for sx, sy in KNOWN_PARKING_SPOTS
     )
-
-
-#: The minimum a spawned set may shrink to and still read as a re-spotted deck
-#: rather than a stray tractor. Below it the set is dropped, which is the honest
-#: outcome: an empty deck is correct, a two-item one looks like a bug.
-MIN_RECOVERY_SET_ITEMS = 3
-
-
-def is_deck_gear(item: DeckStatic) -> bool:
-    """Whether this placement is deck gear rather than a parked aircraft.
-
-    Static aircraft are barred from EVERY tier (DM call, 2026-08-19). The
-    2026-08-07 relaxation let them into the recovery tier on the reasoning that
-    the tier "only stands once launches are over" -- and test 11 falsified that
-    premise outright: **14 aircraft late-activated onto the CVN-71 deck between
-    t=2340 and t=3913**, i.e. 9 to 35 minutes AFTER the recovery set spawned.
-    That is exactly the condition the original 2026-07-18 ban was measured on --
-    late-activated A-6s spawning INTO standing statics, because the Supercarrier
-    manual's "a blocked spot is skipped" claim is FALSE for late activations.
-    """
-    return STATIC_META[item.type][0] not in ("Planes", "Helicopters")
-
-
-RECOVERY_DECK_VARIANTS: list[list[DeckStatic]] = [
-    kept
-    for kept in (
-        [it for it in variant if clears_known_spots(it) and is_deck_gear(it)]
-        for variant in _AUTHORED_RECOVERY_VARIANTS
-    )
-    if len(kept) >= MIN_RECOVERY_SET_ITEMS
-]
-
-# The forward-deck box the recovery tier must stay inside (x_min, x_max, y_min,
-# y_max). Covers the bow proper plus the forward mid-deck strip the campaign A sets
-# actually use, starboard of the centreline so it can never reach the angled
-# deck or the waist. Two hard properties, both guard-tested:
-#
-#   * it does NOT overlap ISLAND_STREET_ENVELOPE -- the permanent street gear
-#     stands there all mission, and spawning recovery gear on top of it would
-#     interpenetrate. This is what excluded the campaign A mission 7/12/13 forward
-#     clusters, which sit inside the street box.
-#   * it is entirely to starboard and clear of LANDING_AREA_KEEP_OUT.
-#
-# Sized to the shipped campaign A extent plus a metre of slack, NOT to a deck edge read
-# off the Supercarrier guide's safe-zone slides -- those could not be registered
-# to ship-frame metres (the derived deck aspect came out 22 % wide), so no bound
-# in this feature is taken from them.
-FORWARD_DECK_ENVELOPE = (-9.0, 32.0, 11.0, 36.0)
 
 
 def _pick(
@@ -542,37 +329,12 @@ def _pick(
 
 
 def deck_layout_for(hull_id: str, seed_key: str, turn: int) -> list[DeckStatic]:
-    """The PERMANENT decoration set for one carrier this turn.
+    """The decoration set for one carrier this turn.
 
     Empty for non-Nimitz decks. The street variant rotates deterministically
     on (carrier, turn) so a re-generated turn always dresses the deck the
-    same way, while consecutive turns vary. Deliberately gear-only: permanent
-    static aircraft were removed after the flown late-activation spawn-clip
-    (see the module docstring).
+    same way, while consecutive turns vary.
     """
     if hull_id not in NIMITZ_DECK_HULLS:
         return []
     return LSO_PLATFORM_CREW + _pick(STREET_VARIANTS, seed_key, "street", turn)
-
-
-def launch_phase_dressing_for(
-    hull_id: str, seed_key: str, turn: int, include_aircraft: bool
-) -> list[DeckStatic]:
-    """The launch-phase (runtime-cleared) set for one carrier this turn."""
-    if not include_aircraft or hull_id not in NIMITZ_DECK_HULLS:
-        return []
-    return _pick(ROUND_DOWN_VARIANTS, seed_key, "rounddown", turn)
-
-
-def recovery_dressing_for(
-    hull_id: str, seed_key: str, turn: int, include_recovery: bool
-) -> list[DeckStatic]:
-    """The recovery-phase (runtime-SPAWNED) forward-deck set for one carrier.
-
-    Never generated into the ``.miz``: the deckdecor plugin spawns these when
-    the deck stops being a launch deck. Empty unless the tier is enabled and
-    the hull is Nimitz-family.
-    """
-    if not include_recovery or hull_id not in NIMITZ_DECK_HULLS:
-        return []
-    return _pick(RECOVERY_DECK_VARIANTS, seed_key, "recovery", turn)

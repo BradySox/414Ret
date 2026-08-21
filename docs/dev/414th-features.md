@@ -6969,33 +6969,30 @@ now a five-item curation floor with a test behind it. User request
 2026-07-18 ("apply them to ALL retribution carriers for flavor — BUT we need all of
 the parking spots still usable").
 
+**One tier, standing all mission (DM call, 2026-08-20).** The street gear and the LSO
+team are the whole feature. They stand where a deck is never spotted, so the same dressing
+is right for both the launch cycle and the recovery cycle and nothing has to be swapped.
+Two phase tiers used to exist and both are **removed**, along with the runtime plugin that
+swapped them:
+
+- the **launch-phase round-down E-2C** (`carrier_deck_decorations_aircraft`) — a static
+  Hawkeye on the stern round-down, struck below before recovery;
+- the **recovery-phase bow respot** (`carrier_deck_decorations_recovery`) — deck gear
+  spawned forward onto the bow once launches were over;
+- the **`deckdecor` plugin** + its `deckdecorluadata.py` emitter, whose only job was the
+  strike-below and the one sanctioned spawn.
+
+Both settings are swept from old saves by `_migrate_legacy_settings`, and the `deckdecor`
+plugin option keys with them. What that removal costs and what it buys is below, under
+*What the phase tiers were, and why they are gone*.
+
 **The hard constraint — every parking spot stays usable, and no static may stand on
 one.** The SC manual claims a blocked parking location is skipped (capacity loss);
 **flown evidence says worse**: for late-activated groups (Retribution's dominant §64
 spawn path) DCS does NOT skip — it spawns the aircraft INTO the static (the CVN-73
 A-6-in-the-Seahawks clip, 2026-07-18). So the curation is an evidence-driven filter,
-not a copy, and "on a spot" is a hard never.
-
-**The recovery-phase tier (2026-08-07, default OFF, `carrier_deck_decorations_recovery`).**
-The mirror of the launch-phase set, and the first §72 dressing that is *spawned* rather than
-placed. A real deck is re-spotted for recovery — landing area cleared, gear ranged forward
-onto the bow — which is what the DCS Supercarrier guide's "Static Object Safe Zones" slides
-encode: its Recovery column marks the bow and cat tracks safe while the angled deck must stay
-clear, and its Launch column marks the opposite. §72 had already shipped that split without
-knowing ED had drawn it. These placements are deliberately **absent from the `.miz`** — the
-bow stays a launch deck until launches are over — and the `deckdecor` plugin spawns them on
-the same trigger that strikes the launch set below, via MOOSE `SPAWNSTATIC:InitLinkToUnit`
-(the only runtime path that writes the three-level linked static; a plain
-`coalition.addStaticObject` would leave the gear behind as the boat steams on). This broke the plugin's
-despawn-only invariant, **deliberately and on an explicit call** — the carrier case is the one
-place the rule cannot hold, since gear ranged forward for recovery must not be on the bow
-during the launch cycle and so cannot be generated into the miz. The exception is scoped, not
-widened: one one-shot spawn per boat, on the same trigger as the strike-below, `pcall`-wrapped,
-skipped entirely when MOOSE is absent, and the despawn half runs regardless. Data is **nine rotating variants** drawn from two installed campaigns (source campaigns are called campaign A and campaign B rather than named — they are paid third-party products and the fork does not name them in its own docs). **Static aircraft were permitted in this tier only** (explicit call, 2026-08-07) on the reasoning that the clipping which banned them was a placement problem and this tier only stands once launches are over — **REVERTED 2026-08-19 (DM call), because test 11 falsified that premise with measurements**: 14 aircraft late-activated onto the CVN-71 deck between t=2340 and t=3913, 9 to 35 minutes *after* the recovery set spawned, five of them onto the six-pack row — the exact condition the 2026-07-18 ban was measured on, since a late activation does not skip a blocked spot. `is_deck_gear` now filters aircraft out at variant construction (7 usable variants → **5**, all deck gear) and `test_no_tier_parks_a_static_aircraft_on_the_deck` pins it across every tier. The authored campaign B data is kept as the record, so re-enabling is a one-line change. `FOOTPRINT_EXTRA_M` gained six aircraft entries at roughly half each published fuselage length, and footprint-aware clearance then rejected 15 candidate placements outright. A second guard checks the footprint *edge* against the street box, since box disjointness only compares centres and a parked Tomcat reaches ~9.5 m aft of its own. **It is default-OFF because it is the least-evidenced tier in the
-feature**: `KNOWN_PARKING_SPOTS` holds 11 of the guide's 16 spots and the five it lacks are
-the bow-edge spots nearest this zone, so "clears every known spot" is not "clears every spot"
-here. Promoting it needs the bow spots measured (B49). Two envelopes are provably parking-free
-and every permanent placement lives inside them:
+not a copy, and "on a spot" is a hard never. Two envelopes are provably parking-free
+and every placement lives inside them:
 
 - **LSO platform sponson** (x −134..−126, y −25..−18): off the deck surface; aircraft
   physically cannot park there. campaign A puts the LSO crew there in all 13 missions at
@@ -7012,92 +7009,64 @@ re-export positions on change, so only same-frame data is valid): six-pack outer
 spots at (+1, +34) and (−11.5, +34) on a 12 m pitch (extrapolated to the row's four),
 port-quarter spots at (−84.5, −34) and (−96.5, −34) (the first F-14-capable spots — the
 manual's "large aircraft may not be able to use some parking spots" explains the
-six-pack skip), and the bow-port helo spot (+58.5, −31.4) where the §21 rescue helo
-parks. `KNOWN_PARKING_SPOTS` + a 9 m clearance floor are embedded in the data module
-and a guard test enforces them against every table entry, so a future layout edit
-cannot silently eat a spot. **Not in the default layout:** the fantail/bow static
-aircraft (E-2C, S-3B, SH-60B — they sit on real parking real estate; the campaign author could
-afford the spots, we can't), the junkyard cranes (AS32-36A, unproven zone), and the
-port-quarter one-offs. Cats are also untouched — the user allowed blocking one, but a
-static on a cat is a player-taxi collision hazard while the AI clips through it anyway
-(no functional block), so nothing is gained.
+six-pack skip), and the bow-port helo spot (+58.5, −31.4) where the rescue helo
+parks. A 2026-08-17 pass added five more from five CVN-71 recordings, closing the two
+holes the 2026-08-07 audit named (nothing was known forward of x = +1.0, and nothing at
+all in the 63 m starboard band between x = −35.5 and x = −98.7). `KNOWN_PARKING_SPOTS`
++ a 9 m clearance floor are embedded in the data module and a guard test enforces them
+against every table entry, so a future layout edit cannot silently eat a spot. The table
+is a **keep-out set** — an extra entry can only reject a placement, never create one — so
+two thin entries (n=1, n=2) are deliberately kept. Cats are untouched: the user allowed
+blocking one, but a static on a cat is a player-taxi collision hazard while the AI clips
+through it anyway (no functional block), so nothing is gained.
 
-**No permanent static aircraft — the late-activation falsification (flown
-2026-07-18).** The tier briefly shipped campaign A's starboard-aft look as *permanent*
-statics (a folded-Seahawk pair on the junkyard spots + an E-2C/S-3B accent on the
-El-3 shoulder) under the SC manual's "a blocked parking location is skipped" claim —
-and the first flown mission **falsified that claim for Retribution's dominant spawn
-path**: on a CVN-73 with 30 TOT-delayed (§64 late-activated) deck starts, DCS
-spawned an A-6E pair **straight into the Seahawk statics**. Late activations do not
-skip statics-obstructed spots. The permanent aircraft class was removed the same
-day; their positions are kept as **learned spot anchors** in `KNOWN_PARKING_SPOTS`
-(the junkyard pair ≈ spots 7/8 + the El-3 shoulder — campaign A parks aircraft exactly on
-them, which is how the lesson was bought), and a guard test asserts the permanent
-layout never contains a Planes/Helicopters category static. The parked-aircraft
-look comes from Retribution's own real deck population — which the flown decks show
-is already rich.
+**No static aircraft, anywhere, ever — falsified twice.** The feature briefly shipped
+campaign A's starboard-aft look as *permanent* statics (a folded-Seahawk pair on the
+junkyard spots + an E-2C/S-3B accent on the El-3 shoulder) under the SC manual's "a
+blocked parking location is skipped" claim — and the first flown mission **falsified that
+claim for Retribution's dominant spawn path**: on a CVN-73 with 30 TOT-delayed (§64
+late-activated) deck starts, DCS spawned an A-6E pair **straight into the Seahawk
+statics**. The permanent aircraft class was removed the same day. The 2026-08-07 recovery
+tier then re-admitted aircraft on the reasoning that they only stood once launches were
+over — and **test 11 falsified that too, with measurements**: 14 aircraft late-activated
+onto the CVN-71 deck between t=2340 and t=3913, 9 to 35 minutes *after* the recovery set
+spawned, five of them onto the six-pack row. There is no hour of a mission at which a
+static aircraft on a deck is safe. Their positions survive as **learned spot anchors** in
+`KNOWN_PARKING_SPOTS` (the junkyard pair ≈ spots 7/8 + the El-3 shoulder — campaign A
+parks aircraft exactly on them, which is how the lesson was bought), and a guard test
+asserts no layout ever contains a Planes/Helicopters category static. The parked-aircraft
+look comes from Retribution's own real deck population — which the flown decks show is
+already rich.
 
-**The launch-phase corridor + the dynamic respot (the `deckdecor` plugin, same day).**
-The tier's first cut shipped campaign A M8's round-down Hawkeye (−152.1, +5.4) statically and
-the user's screenshot caught it within the hour ("how can planes land with the E2
-there?"): it cleared every parking spot but stands 5.6 m tall and 17.6 m long
-essentially at the ramp crossing (the static E-2C renders **folded** — user-corrected
-from a closer screenshot; the first wings-spread read was wrong, but the ramp argument
-stands on height + length). A scripted campaign can stage-manage its recoveries around
-that; a dynamic campaign recovers jets every mission. The user's follow-up ("move the
-E-2 after the launch is over… we could fill the round down within reason") is the
-shipped answer: statics can't drive (no AI controller), but they can be **struck
-below**. The launch-phase set (with the tier) is the **round-down E-2C** (M8's or M1's
-position, rotated) — the one spot that stands inside the recovery corridor and never on
-a parking spot. (A **port junk row** by the LSO platform was tried alongside it and
-**removed** — flown CVN-71, 2026-07-21: it was launch-phase in name only, sitting
-forward and port of the corridor box in the port-quarter *parking* row, and clipped a
-Hornet spawning onto the newly-measured spot at (−108, −34). The launch-phase invariant
-is now "must fall inside `LANDING_AREA_KEEP_OUT`", which the junk row failed.) The
-`deckdecor` plugin despawns the round-down E-2
-(`StaticObject:destroy`, silent — the elevator ride, narratively) when EITHER fires
-first: friendly **fixed-wing traffic genuinely running in low astern** (a cone off
-the reciprocal of the emitted BRC — 4.5 NM / **1 000 ft** / ±50° / **closing ≥30 kt
-ship-relative** / **two consecutive polls**; the CASE I initial at 800 ft and the
-CASE III final both qualify) or a **fallback timer** (35 min), plus a one-line "deck
-respotted for recovery" cue. The cone was falsified twice on 2026-07-18 and hardened
-twice: the first flown trip (~5 min) was blamed on launch turnbacks and drew the
-1 000 ft ceiling + closing gate + debounce, but the **night re-fly false-tripped
-again on both boats** (GW at t+74 s pre-fix, TR at t+171 s on the hardened build) —
-the Tacview showed the **aft parking rows themselves** were the qualifiers: parked
-jets ride the steaming boat 130–170 m astern of the ship's pivot, DCS reports units
-on a moving deck as `inAir()`, and with world-frame velocity they "close" at exactly
-boat speed (22 kt GW — under the 30 kt gate by luck; a faster boat defeats it). The
-cone now measures closing **relative to the boat's own velocity** (a deck rider
-closes at ~0 however fast the boat steams), treats everything within **400 m** as
-deck footprint (stamp radius, replaces the old 100 m floor), and keeps an **outbound
-roster** — any unit seen inside that radius (parked, taxiing, cat stroke) cannot
-read as recovery traffic for **600 s** after it was last seen there, so a jet fresh
-off this deck is its own launch traffic however low and inbound its turnback looks;
-a genuine recovery starts miles out and is never stamped. All four modes are
-harness-pinned (deck riders on a 35 kt boat, sub-boat-speed closers, the roster
-suppress + lapse, and the moving-boat genuine run-in). **The Airboss
-tie-in**: the sibling `airboss` plugin (default ON) schedules its recovery window
-`windowStartOption` minutes in (default 30 — i.e. BEFORE the plain fallback) and
-steers the boat into wind with U-turns while it is open (the one thing that violates
-the emitted-BRC assumption the cone rests on); when its options are present in the
-mission, deckdecor pulls the clear deadline forward to **window start −
-`airbossMarginS`** (300 s), so the corridor is guaranteed clean before Marshal brings
-anyone down — read from the shared plugin-options table, zero MOOSE API coupling
-(deliberately NOT the `AIRBOSS` object: the airboss plugin stores it in a
-last-boat-wins global, and Airboss can be unticked). Emitter
-`deckdecorluadata.py` → `dcsRetribution.deckDecor` (ship group name to find the moving
-boat, side, BRC, clear names), populated from `MissionData.deck_decor` by the
-tgogenerator hook; emits nothing (plugin no-ops) when no launch-phase static was
-placed. Despawn only — no runtime spawns, no gameplay-model change. The
-placement-class rules are guard-tested: **permanent** items never stand in the
-`LANDING_AREA_KEEP_OUT` box (stern threshold + wires); **launch-phase** items must fall
-**inside** it (the recovery corridor is the only zone the plugin clears, and it is not
-a parking area — the rule that replaced the looser "aft of x ≤ −100" one after the
-port-junk-row clip); and EVERY class clears every measured spot with **per-type
-footprint margins** (an aircraft static needs more clearance than a tractor). Still
-excluded outright: both port-quarter E-2s (foul the measured patio spots the F-14 pairs
-park on, even folded) and the port junk row (in the port-quarter parking row).
+**What the phase tiers were, and why they are gone (2026-08-20).** Both were opt-in and
+default-OFF, and both existed to dress zones the permanent tier may not touch.
+
+- The **launch-phase E-2C** stood on the stern round-down, inside `LANDING_AREA_KEEP_OUT`.
+  That placement is only survivable if something removes it: the user's screenshot caught
+  the first, static version within the hour ("how can planes land with the E2 there?") —
+  it cleared every parking spot but stands 5.6 m tall and 17.6 m long essentially at the
+  ramp crossing. The plugin's answer was to strike it below (`StaticObject:destroy`,
+  silent — the elevator ride) on whichever came first: friendly fixed-wing running in low
+  astern, or a fallback timer. **The detection half never became trustworthy.** The astern
+  cone was falsified on 2026-07-18 and hardened twice (1 000 ft ceiling, ship-relative
+  closing, two-poll debounce, a 400 m deck stamp and a 600 s outbound roster, after the
+  Tacview showed the *aft parking rows themselves* were the qualifiers — deck riders read
+  as `inAir()` and "close" at exactly boat speed). It still fired once on 2026-08-16 with
+  **nothing in the cone**, and a faithful replay of the plugin's own logic over that whole
+  recording never trips. That trip source was never identified.
+- The **recovery-phase bow respot** was its mirror: gear ranged forward onto the bow once
+  launches were over, spawned by the plugin via MOOSE `SPAWNSTATIC:InitLinkToUnit` because
+  it must not be on the bow during the launch cycle and so could not be generated into the
+  miz. It was the least-evidenced tier in the feature and shipped default-OFF for that
+  reason. The one flown outing put three static Hornets in the player's taxi lane, 8.66 m
+  off his track, 375 s before his own takeoff roll.
+
+Cutting both retires the whole detection problem — no cone, no fallback deadline, no
+launch-cycle floor, no sanctioned spawn, and the plugin's despawn-only invariant is moot.
+**The constraint each tier was built around survives in the data module**: nothing may
+stand inside `LANDING_AREA_KEEP_OUT` (the E-2's lesson, now with no exemption), and no
+static aircraft may stand anywhere (the two falsifications above). Restoring either tier
+means re-answering the question that closed them — not just re-adding the table.
 
 **Mechanism.** A ship-linked static serializes across three levels of the mission
 format, none fully covered by stock pydcs: `linkUnit` (carrier unit id) on the static
@@ -7118,27 +7087,18 @@ existing campaigns get it on their next mission without a new game.
 Tarawa, Forrestal and Invincible have different deck plans with starboard-aft parking
 rows where these envelopes are NOT provably safe. Dressing them needs their own
 curated layouts against their own spot evidence — a follow-up, not a blind copy.
+**Offered and DECLINED (user call 2026-07-18)** — they stay bare.
 
-**Wiring.** `carrier_deck_decorations` (Mission Generation → Carrier, default **ON** —
-the cosmetic-gen kill-switch pattern, §58/§49 precedent) +
-`carrier_deck_decorations_aircraft` (same section, default **OFF**, the spot-spending
-aft tier incl. the launch-phase E-2C). Data: `game/data/carrier_deck_decor.py` (layout
-tables + spot anchors + envelopes + keep-out + the `deck_layout_for` rotation).
-Generator: `game/missiongenerator/carrierdeckdecor.py`, called from
-`game/missiongenerator/tgogenerator.py` (which records `MissionData.deck_decor`).
-Runtime: emitter `game/missiongenerator/deckdecorluadata.py` + the
-`resources/plugins/deckdecor/` plugin (plugin `defaultValue` ON — the setting is the
-gate, the §36 lesson). Tests: `tests/missiongenerator/test_carrier_deck_decor.py`
-(parking-spot guard over every variant, envelope + keep-out integrity, hull gate +
-rotation determinism, launch-phase rules, three-level link serialization + the clear
-list against a real pydcs mission), `tests/missiongenerator/test_deckdecorluadata.py`
-(the emit contract) and `tests/lua/test_deckdecor_runtime.py` (the harness: fallback
-clear, astern-cone clear, high/ahead/helo/deck traffic never clears, once-only,
-no-node no-op). Checklist B25 — needs an in-game pass (statics ride the deck through
-a full mission; a max-density spawn still fills every spot; AI recovery taxi around
-the street gear; the E-2 vanishes cleanly before recovery). **Non-Nimitz hull
-dressing was offered and DECLINED (user call 2026-07-18)** — Kuznetsov/Tarawa/
-Forrestal stay bare.
+**Wiring.** One setting: `carrier_deck_decorations` (Mission Generation → Carrier,
+default **ON** — the cosmetic-gen kill-switch pattern, §58/§49 precedent). Data:
+`game/data/carrier_deck_decor.py` (layout tables + spot anchors + envelopes + keep-out +
+the `deck_layout_for` rotation). Generator:
+`game/missiongenerator/carrierdeckdecor.py`, called from
+`game/missiongenerator/tgogenerator.py`. Tests:
+`tests/missiongenerator/test_carrier_deck_decor.py` (parking-spot guard over every
+variant, envelope + keep-out integrity, the no-static-aircraft rule, hull gate +
+rotation determinism, three-level link serialization against a real pydcs mission).
+Checklist B25 — verified 2026-08-06, capacity half closed 2026-08-20.
 
 ## §73 — Per-airframe default loadout for a task
 

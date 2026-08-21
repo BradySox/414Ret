@@ -28,7 +28,6 @@ from .csarbeacon import sar_beacon_hz
 from .aisleepluadata import populate_ai_sleep_lua
 from .briefingluadata import populate_briefing_lua
 from .coinluadata import populate_coin_lua
-from .deckdecorluadata import populate_deck_decor_lua
 from .commsjamluadata import populate_comms_jam_lua
 from .reactiveredluadata import populate_reactive_red_lua
 from .rednetluadata import populate_red_net_lua
@@ -500,13 +499,6 @@ class LuaGenerator:
         # when they slot in. Display only, no gameplay-model change.
         populate_briefing_lua(lua_data, self.game, self.mission_data)
 
-        # Launch-phase carrier deck dressing (§72) -- emits dcsRetribution.deckDecor
-        # only when the aircraft tier placed launch-phase statics (the round-down
-        # E-2C); the deckdecor plugin strikes them below before recovery (fallback
-        # timer or fixed-wing traffic low astern). Display only -- despawn, no
-        # spawns, no gameplay-model change.
-        populate_deck_decor_lua(lua_data, self.game, self.mission_data)
-
         # Host red-interceptor scramble (§61) -- emits dcsRetribution.redScramble only
         # when host_red_scramble is on and red fighter templates + red airfields exist;
         # the redscramble plugin builds the host's F10 menu and force-vectors the
@@ -930,11 +922,11 @@ class LuaData(LuaItem):
         if self.objects:
             # Nested objects AND this item's own scalars. Emitting only the
             # nested half silently dropped every add_key_value/add_data_array on
-            # a mixed item -- flown 2026-08-16: the deckdecor boat record kept
-            # its recoverySpawns but lost group/unit/side/brc/clearNames, so the
-            # plugin looked up Group.getByName("") and took its "boat gone" exit
-            # without ever clearing the deck. Same shape hid the reactive-red
-            # group pool. Locked by tests/missiongenerator/test_luadata.py.
+            # a mixed item -- flown 2026-08-16: a record that carried both kept
+            # its nested list and lost every scalar beside it, so the plugin read
+            # empty names and took its "nothing to do" exit. Hid the reactive-red
+            # group pool the same way. Locked by
+            # tests/missiongenerator/test_luadata.py.
             entries = self._serialized_scalars()
             entries += [o.serialize(level + 1) for o in self.objects]
             if self.name:

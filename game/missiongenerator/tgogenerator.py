@@ -66,7 +66,7 @@ from game.missiongenerator.groundforcepainter import (
 from game.data.carrier_comms import CARRIER_COMMS_PLANS, CarrierCommsPlan
 from game.data.units import MOBILE_AIR_DEFENSE_UNIT_CLASSES
 from game.missiongenerator.carrierdeckdecor import generate_carrier_deck_decorations
-from game.missiongenerator.missiondata import CarrierInfo, DeckDecorInfo, MissionData
+from game.missiongenerator.missiondata import CarrierInfo, MissionData
 from game.point_with_heading import PointWithHeading
 from game.settings import DatalinkPolicy
 from game.radio.RadioFrequencyContainer import RadioFrequencyContainer
@@ -1061,27 +1061,13 @@ class GenericCarrierGenerator(GroundObjectGenerator):
                     )
                 )
                 if self.game.settings.carrier_deck_decorations:
-                    deck_brc = brc or Heading.from_degrees(0)
-                    decor = generate_carrier_deck_decorations(
+                    generate_carrier_deck_decorations(
                         self.m,
                         self.country,
                         ship_group,
-                        deck_brc,
+                        brc or Heading.from_degrees(0),
                         self.game.turn,
-                        self.game.settings.carrier_deck_decorations_aircraft,
-                        self.game.settings.carrier_deck_decorations_recovery,
                     )
-                    if decor.clear_names or decor.recovery_specs:
-                        self.mission_data.deck_decor.append(
-                            DeckDecorInfo(
-                                ship_group_name=str(ship_group.name),
-                                carrier_unit_name=str(ship_group.units[0].name),
-                                blue=self.control_point.captured.is_blue,
-                                brc_degrees=deck_brc.degrees,
-                                clear_names=decor.clear_names,
-                                recovery_specs=decor.recovery_specs,
-                            )
-                        )
 
     @property
     def carrier_type(self) -> Optional[Type[ShipType]]:

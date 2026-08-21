@@ -405,7 +405,7 @@ linked design note.
 69. **SEAD-before-strike coordination** — strikes retimed behind the suppressor servicing their target.
 70. **COMINT collection** — the §51 mirror: a surviving collector buys a tasking leak and one exact fix, plus an audible red UHF net.
 71. **Expanded F-4E Weapons Pack** — AGM-78 Weasel fits gated on live pylon legality.
-72. **Carrier deck decorations** — island-street and LSO dressing, plus a launch-corridor set struck below before recovery.
+72. **Carrier deck decorations** — island-street and LSO dressing, clear of every parking spot and standing for the whole mission.
 73. **Per-airframe default loadout for a task** — pin a fit for an airframe and task across campaigns.
 74. **Native DTC data pre-population** — auto-loading cartridges for Hornets, Vipers and CJS Super Hornets, with a per-flight DTC tab.
 75. **Custom victory conditions** — authored win/lose blocks plus generic domination and attrition endings.

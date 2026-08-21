@@ -391,7 +391,13 @@ AA sites); `pytest tests/fourteenth tests/armedforces tests/test_newgame_setting
 
 The signature Praying Mantis content, in two parts:
 
-**Part 1 — coastal Silkworm shoot-and-scoot (§49 extension).** §49 (`mobile_missile_relocation`)
+**Part 1 — coastal Silkworm shoot-and-scoot (§49 extension). REMOVED 2026-08-21 — do not
+re-author against this part.** `coastal_missile_relocation` is gone (DM call: "it doesn't work
+and was proven"). The vanilla Silkworm battery is a fixed emplacement — `hy_launcher` and
+`Silkworm_SR` are both in `IMMOBILE_UNIT_IDS` on the flown evidence in §49 — so the 9 emitted
+sites below included 7 that could never drive. If this campaign is ever built, its Silkworms
+stay put and the Praying Mantis content has to come from somewhere else. The rest of the
+paragraph is kept as the record of what was tried. §49 (`mobile_missile_relocation`)
 deliberately excludes `coastal` sites, so the Silkworm batteries didn't move. Added an **opt-in
 `coastal_missile_relocation`** setting (Mission Generation → Battlefield life, default OFF): the
 emitter (`mobilemissileluadata.py`) now emits `coastal` TGOs too when it's on, feeding the same

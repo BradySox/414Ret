@@ -388,7 +388,7 @@ linked design note.
 47. **Continuous campaign clock & weather** — one marched clock with weather evolving from the previous turn.
 49. **Mobile missile relocation** — shoot-and-scoot theater missile sites; fire first, then scoot.
 50. **Convoy ambush + ambient supply convoys** — untelegraphed ambush teams on friendly roads, authored as native DCS triggers.
-51. **Enemy comms jamming** — IADS comms nodes jam briefed channels, gated behind a captured aircrew.
+51. **Enemy comms jamming** — IADS comms nodes jam briefed channels whenever one is alive; the captured-aircrew gate went with §21 on 2026-08-07.
 52. **Command-center decapitation** — a headless HQ picks targets worse and frags fewer offensive packages.
 56. **Strikeable motorpool depots** — the reserve armor pool made bombable, 1:1 with no economy.
 58. **Mission-start briefing popup** — per-pilot slot-in cards with a beep and the taxi call.

@@ -2,10 +2,9 @@
 
 Locks the shape the ``mobilemissiles`` plugin consumes: each moved TGO with at least one
 alive *vehicle* emits its drivable group names + campaign centre. ``missile`` sites move
-under ``mobile_missile_relocation``; ``coastal`` sites move only when
-``coastal_missile_relocation`` is also on (default off, a naval-campaign opt-in). Anti-air
-and building TGOs are never emitted (the SAM network must never move); statics-only and
-fully-dead sites are skipped.
+under ``mobile_missile_relocation``. Every other category -- anti-air, buildings, and the
+coastal anti-ship sites that had their own opt-in until 2026-08-21 -- is never emitted;
+statics-only and fully-dead sites are skipped.
 """
 
 from __future__ import annotations
@@ -42,13 +41,10 @@ def _tgo(category: str, group_name: str, units: list[Any], pos: _Point) -> Any:
     )
 
 
-def _game(tgos: list[Any], *, on: bool = True, coastal: bool = False) -> Any:
+def _game(tgos: list[Any], *, on: bool = True) -> Any:
     cp = SimpleNamespace(ground_objects=tgos)
     return SimpleNamespace(
-        settings=SimpleNamespace(
-            mobile_missile_relocation=on,
-            coastal_missile_relocation=coastal,
-        ),
+        settings=SimpleNamespace(mobile_missile_relocation=on),
         theater=SimpleNamespace(controlpoints=[cp]),
     )
 
@@ -92,14 +88,12 @@ def test_gated_off_by_the_setting() -> None:
     assert _sites(_game([scud], on=False)) == []
 
 
-def test_emits_coastal_sites_only_when_opted_in() -> None:
+def test_a_coastal_battery_is_never_moved() -> None:
+    # The coastal opt-in was removed 2026-08-21: hy_launcher and Silkworm_SR are
+    # both fixed emplacements, so the setting could only ever route a mod launcher
+    # nobody fielded. There is no way back in for a "coastal" TGO.
     silkworm = _tgo("coastal", "0080 | Silkworm", [_unit()], _Point(5.0, 6.0))
-    # Default: coastal_missile_relocation off -> a coastal site never moves.
     assert _sites(_game([silkworm])) == []
-    # Opted in -> the coastal battery joins the shoot-and-scoot set.
-    sites = _sites(_game([silkworm], coastal=True))
-    assert len(sites) == 1
-    assert sites[0]["groups"] == ["0080 | Silkworm"]
 
 
 def test_forwards_fire_mission_holds_for_the_sites_own_groups() -> None:
@@ -125,17 +119,6 @@ def test_no_mission_data_emits_no_fire_holds() -> None:
     sites = _sites(_game([scud]), mission_data=None)
     assert len(sites) == 1
     assert "fireHoldGroups" not in sites[0]
-
-
-def test_coastal_opt_in_composes_with_the_missile_setting() -> None:
-    scud = _tgo("missile", "0081 | SCUD", [_unit()], _Point(1.0, 2.0))
-    silkworm = _tgo("coastal", "0082 | Silkworm", [_unit()], _Point(3.0, 4.0))
-    # Both on -> both categories move.
-    both = _sites(_game([scud, silkworm], on=True, coastal=True))
-    assert {s["groups"][0] for s in both} == {"0081 | SCUD", "0082 | Silkworm"}
-    # Only coastal on -> only the silkworm (the SCUD stays put).
-    coastal_only = _sites(_game([scud, silkworm], on=False, coastal=True))
-    assert [s["groups"][0] for s in coastal_only] == ["0082 | Silkworm"]
 
 
 def test_fire_window_stays_inside_the_plugin_scoot_margin() -> None:
@@ -176,25 +159,27 @@ def test_immobile_silkworm_hardware_is_never_routed() -> None:
     """The vanilla Silkworm battery (hy_launcher + Silkworm_SR) is a fixed
     emplacement: routing it produces no movement, only a per-frame ground-AI
     leveling storm (the 2026-07-17 single-digit-FPS finding). A group carrying
-    any such unit is excluded; a genuinely mobile coastal group still scoots."""
+    any such unit is excluded; a genuinely mobile group still scoots. Written against
+    coastal TGOs until 2026-08-21; the category is no longer emitted, so the same
+    hardware is checked on the one category that is."""
     from types import SimpleNamespace as NS
 
     def typed_unit(type_id: str) -> Any:
         return NS(alive=True, is_vehicle=True, is_static=False, type=NS(id=type_id))
 
     silkworm = _tgo(
-        "coastal",
+        "missile",
         "0090 | Silkworm",
         [typed_unit("hy_launcher"), typed_unit("Ural-375")],
         _Point(1.0, 2.0),
     )
     radar_only = _tgo(
-        "coastal", "0091 | SW radar", [typed_unit("Silkworm_SR")], _Point(3.0, 4.0)
+        "missile", "0091 | SW radar", [typed_unit("Silkworm_SR")], _Point(3.0, 4.0)
     )
     mobile = _tgo(
-        "coastal", "0092 | Mobile AShM", [typed_unit("Ural-375")], _Point(5.0, 6.0)
+        "missile", "0092 | Mobile AShM", [typed_unit("Ural-375")], _Point(5.0, 6.0)
     )
-    sites = _sites(_game([silkworm, radar_only, mobile], on=False, coastal=True))
+    sites = _sites(_game([silkworm, radar_only, mobile]))
     assert [s["groups"][0] for s in sites] == ["0092 | Mobile AShM"]
 
 

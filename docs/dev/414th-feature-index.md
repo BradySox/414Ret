@@ -60,7 +60,7 @@ pass checklist `§N` is unregistered, or this table drifts.
 | §46 | Route-aware fuel-tank planning (fuel-first) _(retired)_ | — | — |
 | §47 | Continuous campaign clock & weather | — | `continuous_campaign_clock` |
 | §48 | Commitment ceiling (will-coupled war budget) _(retired)_ | — | — |
-| §49 | Mobile missile relocation (the SCUD hunt) | `mobilemissiles` | `mobile_missile_relocation`, `coastal_missile_relocation` |
+| §49 | Mobile missile relocation (the SCUD hunt) | `mobilemissiles` | `mobile_missile_relocation` |
 | §50 | Convoy ambush (a chance, never telegraphed) + ambient supply convoys | — | `convoy_ambush`, `ambient_supply_convoys` |
 | §51 | Enemy comms jamming (IADS comms nodes) | `commsjam` | `enemy_comms_jamming` |
 | §52 | Command-center decapitation degrades enemy planning | — | `c2_decapitation_effects` |

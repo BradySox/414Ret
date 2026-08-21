@@ -31,15 +31,10 @@ if TYPE_CHECKING:
     from .luagenerator import LuaData
     from .missiondata import MissionData
 
-#: The default category this feature moves: theater-missile sites (SCUD/SSM). Never
-#: anti-air -- IADS/MANTIS owns those.
+#: The only category this feature moves: theater-missile sites (SCUD/SSM). Never
+#: anti-air -- IADS/MANTIS owns those. Coastal anti-ship sites had an opt-in until
+#: 2026-08-21; the vanilla Silkworm battery is a fixed emplacement, so it moved nothing.
 MOBILE_MISSILE_CATEGORY = "missile"
-#: Coastal anti-ship sites (e.g. Silkworm batteries) -- opted in per-campaign by the
-#: ``coastal_missile_relocation`` setting (default off). Excluded by default because a
-#: shore battery's geometry is usually authored against the water it covers; a naval
-#: naval campaign can turn it on so the coastal-missile hunt is a hunt for
-#: something that moves.
-COASTAL_DEFENSE_CATEGORY = "coastal"
 
 #: DCS unit types that physically cannot drive; a group containing one is never
 #: emitted. Routing a fixed emplacement produces no movement, only a per-frame
@@ -58,12 +53,7 @@ def populate_mobile_missiles_lua(
     root: "LuaData", game: "Game", mission_data: "MissionData"
 ) -> None:
     """Build the ``dcsRetribution.mobileMissiles`` subtree (shoot-and-scoot sites)."""
-    categories: set[str] = set()
-    if getattr(game.settings, "mobile_missile_relocation", False):
-        categories.add(MOBILE_MISSILE_CATEGORY)
-    if getattr(game.settings, "coastal_missile_relocation", False):
-        categories.add(COASTAL_DEFENSE_CATEGORY)
-    if not categories:
+    if not getattr(game.settings, "mobile_missile_relocation", False):
         return
 
     # Fire-mission hold deadlines recorded by MissileSiteGenerator (guarded:
@@ -75,7 +65,7 @@ def populate_mobile_missiles_lua(
     sites: list[dict[str, Any]] = []
     for cp in game.theater.controlpoints:
         for tgo in cp.ground_objects:
-            if getattr(tgo, "category", None) not in categories:
+            if getattr(tgo, "category", None) != MOBILE_MISSILE_CATEGORY:
                 continue
             groups = _mobile_group_names(tgo)
             pos = getattr(tgo, "position", None)

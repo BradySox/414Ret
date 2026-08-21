@@ -245,6 +245,23 @@ REMOVED: tuple[Removed, ...] = (
         allow=("retired", "removed", "no longer", "folds into"),
     ),
     Removed(
+        # The §12 removal wrote its own doc faces and left this table alone, which
+        # is the exact miss CLAUDE.md step 7 exists to catch. Terms are the names
+        # that only exist if a capture is still banked somewhere.
+        "the recon engine: the recon/airecon plugins and the capture ledger (S12)",
+        "2026-08-20",
+        r"tars_recon_captures|airecon|aireconluadata|reconluadata"
+        r"|parse_tars_captures|tars_reconned_tgos|confirmed BDA",
+        allow=("removed", "no longer", "went with", "historical"),
+    ),
+    Removed(
+        "the S49 coastal shoot-and-scoot opt-in",
+        "2026-08-21",
+        r"coastal_missile_relocation|coastal(-| )missile hunt"
+        r"|[Cc]oastal anti-ship sites relocate",
+        allow=("removed", "no longer", "proven"),
+    ),
+    Removed(
         "Flight Control ATC (S13)",
         "2026-06-26",
         r"Flight Control ATC|`flightcontrol`",

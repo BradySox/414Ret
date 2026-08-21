@@ -594,7 +594,6 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                     "artillery_base_harassment",
                     "artillery_harassment_reach_km",
                     "mobile_missile_relocation",
-                    "coastal_missile_relocation",
                     "civilian_air_traffic",
                     "ambient_supply_convoys",
                     "convoy_ambush",
@@ -762,7 +761,6 @@ FEATURE_GATE_FIELDS: dict[str, list[str]] = {
         "cargo_ship_convoys",  # §78
         "coastal_batteries_engage_ships",  # §78
         "mobile_missile_relocation",  # §49
-        "coastal_missile_relocation",  # §49
         "naval_weapon_release_stagger",  # §81
         "naval_magazines",  # §81
     ],
@@ -3216,22 +3214,6 @@ class Settings:
             "position, and nothing changes at turn end. Applies to both sides."
         ),
     )
-    coastal_missile_relocation: bool = boolean_option(
-        "Coastal anti-ship sites relocate too (shoot and scoot)",
-        page=MISSION_GENERATION_PAGE,
-        section=GENERAL_SECTION,
-        default=False,
-        detail=(
-            "Extends the shoot-and-scoot behaviour above to coastal anti-ship "
-            "missile sites with genuinely mobile hardware, so a shore battery is "
-            "never quite where your last recon photographed it -- the "
-            "coastal-missile hunt. The vanilla Silkworm battery is a fixed "
-            "emplacement and is never routed (driving it produces no movement, "
-            "only a ground-AI storm that tanks the frame rate), so this only "
-            "matters for mod coastal sites whose launchers can actually drive. "
-            "Off by default; movement only, both sides, same guarantees as above."
-        ),
-    )
     dtc_data_cartridges: bool = boolean_option(
         "Pre-load DTC data cartridges (F/A-18C, F-16C)",
         page=MISSION_GENERATION_PAGE,
@@ -4134,6 +4116,10 @@ class Settings:
             # standing for both cycles. Nothing swaps dressing any more.
             "carrier_deck_decorations_aircraft",
             "carrier_deck_decorations_recovery",
+            # §49's coastal opt-in, REMOVED 2026-08-21: the vanilla Silkworm
+            # battery is a fixed emplacement (hy_launcher and Silkworm_SR are
+            # both immobile), so the coastal scoot had nothing left to drive.
+            "coastal_missile_relocation",
         ):
             migrated.pop(obsolete_key, None)
 

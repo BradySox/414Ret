@@ -5256,6 +5256,12 @@ Fly any sortie off a field that is not at sea level and read the waypoint list.
 - **Pass:** the takeoff and landing steerpoints show the field's real elevation in the jet,
   on the kneeboard and in the ME. The target waypoint still reads 0 AGL — that one is
   deliberate, it is what lets a player slave a pod to the mark.
+- **The landing half did not work until 2026-08-20 and is the thing to check first.**
+  `LANDING_POINT` was listed in `GROUND_MARKED_WAYPOINTS`, so every client flight had its
+  landing steerpoint zeroed after the planner wrote the field elevation — kneeboard, .miz
+  and DTC alike, while the AI flew the real number. Flown that day off Al Minhad: the card
+  read `Takeoff 191` over `Land 0`, same field. Fixed by removing it from the tuple.
+  Fail signature: Takeoff and Land disagree at the same airfield.
 - **Fail signatures:**
   1. **Still 0 at a field above sea level.** No entry for that airport in the terrain's
      imagery JSON. GermanyCW is the weakest coverage (135 of 227).

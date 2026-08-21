@@ -1802,6 +1802,16 @@ defect that reached a build, most of them found by flying.
   now in `BULK_ALTITUDE_SKIP_TYPES`; divert is separated by whether its control point is an
   `OffMapSpawn`, since an off-map divert is an exit vector that *should* move and altitude
   no longer distinguishes the two.
+  **The landing half never actually reached the cockpit (fixed 2026-08-20).**
+  `LANDING_POINT` was in `GROUND_MARKED_WAYPOINTS`, whose listing was justified by
+  "land() already plans 0 AGL" — true when it was written, false after the fix above. So
+  for every client flight the kneeboard row, the .miz steerpoint and the DTC cartridge all
+  zeroed the field elevation the planner had just written, while the AI flew the real
+  number. Flown 2026-08-20: a Viper card off Al Minhad read `Takeoff 191` over `Land 0`,
+  same field. `LANDING_POINT` is out of the tuple and must not go back; `CARGO_STOP` stays,
+  because `cargo_stop()` does still plan 0 AGL. The target waypoints are unaffected and keep
+  their deliberate 0 AGL. Tests `tests/ato/test_flightwaypoint_ground_marked.py`,
+  `tests/missiongenerator/test_kneeboard_cas_altitude.py`.
 
 ---
 

@@ -36,7 +36,7 @@ entries:
       figure stays, so a mixed package still coordinates off one number.
     watch: >-
       On a Hornet or Viper, check the flight-plan Takeoff row before you roll:
-      "17:28:52 1428Z", with the Zulu figure matching the DED or HUD clock. An
+      "17:28L 14:28Z", with the Zulu figure matching the DED or HUD clock. An
       A-10 or Strike Eagle card is unchanged.
     row: B28
   - date: 2026-08-20

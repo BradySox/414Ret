@@ -335,15 +335,22 @@ not Zulu, so a Zulu-only Viper card stops matching its A-10 and F-15E wingmen.
 
 So a Zulu airframe's card now carries **both**:
 
-- **The flight plan's Time column** carries the pair on one line, local to the
-  second and Zulu to the minute: `17:28:52 1428Z`. Stacking was tried first and
-  flown 2026-08-21 — doubling nine waypoint rows pushed the Laser Code table off
-  the bottom of the page. **Fourteen characters is the budget**, measured against
-  `KneeboardPageWriter._fit_col_widths`: at 15 the fitter wraps the column and the
-  second line comes back anyway. `17:28:52 (14:28Z)` misses by one character.
-- **The Departure column stays local.** Annotating it too takes the Time column's
-  last character back and wraps both. It carries one row on a typical plan and the
-  offset is on every Time cell beside it.
+- **The flight plan's Time column** carries the pair on one line, both figures
+  labelled and local first: `17:28L 14:28Z`. Three constraints produced that shape.
+  Stacking was tried first and flown 2026-08-21 — doubling nine waypoint rows
+  pushed the Laser Code table off the bottom of the page. **Thirteen characters is
+  the budget**, measured against `KneeboardPageWriter._fit_col_widths`: the fitter
+  rebalances columns to the page width, so adding characters moves the wrap rather
+  than removing it, and `17:28:52L 1428Z` at 15 brings the second line straight
+  back. And the local figure carries an **`L`** because marking only the Zulu one
+  made it read as the authoritative time, which is backwards — the wing
+  coordinates on local, which is why both times are on the card at all.
+- **The Departure column carries local only, labelled.** The pair here takes the
+  Time column's last character back and wraps both. It holds one row on a typical
+  plan and the offset is on every Time cell beside it, so the `L` is all it needs.
+- **Seconds live in prose.** The BLUF's TOT and the Support Info line keep
+  `17:53:16 (14:53:16Z)`; they are not under width pressure. An airframe that does
+  not ask for Zulu keeps its seconds in the table too, and gets no `L`.
 - **The friendly-packages timing cell** still stacks: its cell holds a patrol
   window as often as a single TOT, and `a - b (aZ - bZ)` is 31 characters.
 - **Prose** — the BLUF's TOT and the Support Info package FREQ/TOT line —

@@ -56,6 +56,8 @@ def _takeoff_row(zulu_tz: Optional[datetime.tzinfo]) -> list[str]:
 
 
 def test_flight_plan_is_local_only_for_an_airframe_that_does_not_ask() -> None:
+    # Seconds and all: an A-10 or Strike Eagle card is byte-identical to before,
+    # and carries no L either -- there is nothing to tell it apart from.
     row = _takeoff_row(None)
     assert row[TIME_COLUMN] == "14:50:24"
     assert row[DEPARTURE_COLUMN] == "14:59:16"
@@ -64,13 +66,14 @@ def test_flight_plan_is_local_only_for_an_airframe_that_does_not_ask() -> None:
 def test_flight_plan_puts_zulu_beside_local_on_one_line() -> None:
     # Stacked first, then flown 2026-08-21: doubling nine waypoint rows pushed
     # the Laser Code table off the bottom of the page. Height is the scarcer
-    # resource here, and 14 characters is what the Time column holds before the
-    # page fitter wraps it -- so Zulu drops to the minute and loses its colon.
+    # resource here, and thirteen characters is what the Time column holds before
+    # the page fitter wraps it -- so seconds go (they stay on the BLUF's TOT).
     row = _takeoff_row(GULF)
-    assert row[TIME_COLUMN] == "14:50:24 1050Z"
-    assert len(row[TIME_COLUMN]) <= 14
-    # Departure stays local: annotating it too takes that last character back.
-    assert row[DEPARTURE_COLUMN] == "14:59:16"
+    assert row[TIME_COLUMN] == "14:50L 10:50Z"
+    assert len(row[TIME_COLUMN]) <= 13
+    # Departure carries local only -- the pair here takes the Time column's last
+    # character back -- but it is labelled, so the two columns read the same way.
+    assert row[DEPARTURE_COLUMN] == "14:59L"
 
 
 def _support_page(zulu_tz: Optional[datetime.tzinfo]) -> SupportPage:
@@ -112,8 +115,9 @@ def test_every_block_of_the_page_reports_one_instant() -> None:
     packages = format_kneeboard_time(TOT, GULF)
     support = _support_page(GULF)._format_time(TOT)
     flight_plan = _takeoff_row(GULF)[TIME_COLUMN]
+    # Prose keeps full precision; the table cell is the one under width pressure.
     assert bluf == support == "15:12:14 (11:12:14Z)"
-    assert flight_plan == "14:50:24 1050Z"
+    assert flight_plan == "14:50L 10:50Z"
     # The friendly-packages page keeps the stacked form: its timing cell holds a
     # patrol window as often as a single TOT, and "a - b (aZ - bZ)" is 31 chars.
     assert packages.splitlines() == ["15:12:14", "11:12:14Z"]

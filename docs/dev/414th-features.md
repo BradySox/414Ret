@@ -7337,7 +7337,11 @@ and the AWACS/tanker station times still printed the mission clock, because
 dead `start_time` parameter is deleted from all three classes. **A Zulu airframe's
 card now carries both clocks, not one** — upstream #949's review made the case
 that a squadron flying mixed types coordinates off the local figure, so tables
-stack Zulu on a second line (`format_kneeboard_time`), prose parenthesises it
+stack Zulu on a second line (`format_kneeboard_time`), the flight-plan Time column
+carries it compact on one line (`format_kneeboard_time_compact`, `17:28:52 1428Z`
+— stacking it was flown 2026-08-21 and pushed the Laser Code table off the page,
+and 14 characters is what the column holds before `_fit_col_widths` wraps it),
+prose parenthesises it
 (`format_kneeboard_time_inline`, `15:12:14 (11:12:14Z)`), and the narrow
 AWACS/tanker `TOT:`/`TOS:` cells stack it indented under the time
 (`_labelled_time`) — parenthesised, that cell wrapped and lost the TOT/TOS

@@ -55,6 +55,9 @@ from qt_ui.windows.preferences.QLiberationPreferencesWindow import (
 from qt_ui.windows.settings.QSettingsWindow import QSettingsWindow
 from qt_ui.windows.stats.QStatsWindow import QStatsWindow
 from qt_ui.windows.whatsnew.QWhatsNewWindow import QWhatsNewWindow
+from qt_ui.windows.targetpriorities.QTargetPrioritiesWindow import (
+    QTargetPrioritiesWindow,
+)
 
 
 class QLiberationWindow(QMainWindow):
@@ -236,6 +239,11 @@ class QLiberationWindow(QMainWindow):
 
         # Deliberately outside enable_game_actions: this describes the build, not
         # the campaign, so it is readable before a save is open.
+        self.openTargetPrioritiesAction = QAction("Target Priorities", self)
+        self.openTargetPrioritiesAction.setIcon(CONST.ICONS["Generator"])
+        self.openTargetPrioritiesAction.triggered.connect(
+            self.showTargetPrioritiesDialog
+        )
         self.openWhatsNewAction = QAction("What's New", self)
         self.openWhatsNewAction.setIcon(CONST.ICONS["What's New"])
         self.openWhatsNewAction.triggered.connect(self.showWhatsNewDialog)
@@ -280,6 +288,7 @@ class QLiberationWindow(QMainWindow):
         self.tool_bar.addAction(self.openNotesAction)
         self.tool_bar.addAction(self.openCustomKneeboardsAction)
         self.tool_bar.addSeparator()
+        self.tool_bar.addAction(self.openTargetPrioritiesAction)
         self.tool_bar.addAction(self.openWhatsNewAction)
 
     def initMenuBar(self):
@@ -656,6 +665,12 @@ class QLiberationWindow(QMainWindow):
     def showNotesDialog(self):
         self.notes_dialog = QNotesWindow(self.game)
         self.notes_dialog.show()
+
+    def showTargetPrioritiesDialog(self) -> None:
+        if self.game is None:
+            return
+        self.target_priorities_dialog = QTargetPrioritiesWindow(self.game, self)
+        self.target_priorities_dialog.show()
 
     def showWhatsNewDialog(self) -> None:
         self.whats_new_dialog = QWhatsNewWindow()

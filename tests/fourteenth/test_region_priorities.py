@@ -14,6 +14,10 @@ from game.commander.tasks.compound.attackships import AttackShips
 from game.commander.tasks.compound.degradeiads import DegradeIads
 from game.data.groups import GroupTask
 from game.fourteenth.region_priorities import (
+    TARGET_FAMILIES,
+    family_of,
+    family_priority,
+    priority_for_target,
     RegionPriority,
     auto_planning_skips,
     planning_factor,
@@ -229,3 +233,93 @@ def test_an_ignored_regions_sam_is_not_hunted_but_still_answers_a_threat() -> No
     # ... but the same SAM, once it threatens a planned package, is serviced.
     state.threatening_air_defenses = [hidden]
     assert hidden in _targets_of(DegradeIads().each_valid_method(state))  # type: ignore[arg-type]
+
+
+# --- the second axis: target families ------------------------------------------
+
+
+def _kinded(owner: Airfield, category: str) -> SimpleNamespace:
+    target = _target(owner)
+    target.category = category
+    return target
+
+
+def _settings_with(on: bool, **families: str) -> SimpleNamespace:
+    settings = _settings(on)
+    settings.blue_target_family_priorities = dict(families)
+    return settings
+
+
+def test_every_family_category_is_a_real_one() -> None:
+    """A typo here is silent: the family just never matches a target."""
+    from game.theater.theatergroundobject import NAME_BY_CATEGORY
+
+    for family, categories in TARGET_FAMILIES.items():
+        for category in categories:
+            assert category in NAME_BY_CATEGORY, f"{family}: {category}"
+
+
+def test_no_category_belongs_to_two_families() -> None:
+    seen: set[str] = set()
+    for categories in TARGET_FAMILIES.values():
+        for category in categories:
+            assert category not in seen, category
+            seen.add(category)
+
+
+def test_the_two_axes_multiply() -> None:
+    """An emphasized place and a deprioritized kind cancel out, and read that way."""
+    cp = _fake_cp(RegionPriority.EMPHASIZED)
+    factory = _kinded(cp, "factory")
+    settings = _settings_with(True, Infrastructure="deprioritized")
+    assert planning_factor(factory, settings, True) == 1.0  # type: ignore[arg-type]
+
+
+def test_a_target_override_beats_its_base_in_both_directions() -> None:
+    """The point of a per-target setting: carve one target out of an ignored base."""
+    cp = _fake_cp(RegionPriority.IGNORED)
+    spared = _kinded(cp, "factory")
+    spared._blue_region_priority = RegionPriority.NORMAL
+    inheriting = _kinded(cp, "factory")
+
+    assert priority_for_target(spared) is RegionPriority.NORMAL
+    assert priority_for_target(inheriting) is RegionPriority.IGNORED
+    settings = _settings(True)
+    assert planning_factor(spared, settings, True) == 1.0  # type: ignore[arg-type]
+    assert planning_factor(inheriting, settings, True) is None  # type: ignore[arg-type]
+
+
+def test_an_ignored_family_is_absolute() -> None:
+    """Kind is theater-wide policy; no per-target override reopens it."""
+    cp = _fake_cp(RegionPriority.EMPHASIZED)
+    target = _kinded(cp, "factory")
+    target._blue_region_priority = RegionPriority.EMPHASIZED
+    settings = _settings_with(True, Infrastructure="ignored")
+    assert planning_factor(target, settings, True) is None  # type: ignore[arg-type]
+
+
+def test_families_do_nothing_while_the_feature_is_off() -> None:
+    cp = _fake_cp(RegionPriority.NORMAL)
+    target = _kinded(cp, "factory")
+    settings = _settings_with(False, Infrastructure="ignored")
+    assert planning_factor(target, settings, True) == 1.0  # type: ignore[arg-type]
+
+
+def test_a_target_with_no_family_is_weighted_by_place_alone() -> None:
+    cp = _fake_cp(RegionPriority.DEPRIORITIZED)
+    target = _kinded(cp, "fob")  # the FOB structure: never a family member
+    assert family_of(target) is None
+    assert planning_factor(target, _settings_with(True), True) == 2.0  # type: ignore[arg-type]
+
+
+def test_an_unknown_stored_value_reads_as_normal() -> None:
+    """A hand-edited save must not crash the planner."""
+    settings = _settings_with(True, Infrastructure="nonsense")
+    assert family_priority("Infrastructure", settings) is RegionPriority.NORMAL  # type: ignore[arg-type]
+
+
+def test_red_never_reads_the_family_list() -> None:
+    cp = _fake_cp(RegionPriority.NORMAL)
+    target = _kinded(cp, "factory")
+    settings = _settings_with(True, Infrastructure="ignored")
+    assert planning_factor(target, settings, False) == 1.0  # type: ignore[arg-type]

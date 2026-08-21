@@ -22,6 +22,7 @@ from game.sidc import (
     SymbolIdentificationCode,
 )
 from game.theater.presetlocation import PresetLocation
+from game.fourteenth.region_priorities import RegionPriority
 from .fogofwar import Visibility, viewer_sees_truth
 from .missiontarget import MissionTarget
 from .player import Player
@@ -120,6 +121,10 @@ class TheaterGroundObject(MissionTarget, SidcDescribable, ABC):
         self._threat_poly: ThreatPoly | None = None
         self.task = task
         self.hide_on_mfd = hide_on_mfd
+        # §93 per-target override. None means inherit the control point's
+        # priority; an explicit value beats it in BOTH directions, so one target
+        # inside an IGNORED base can still be marked NORMAL and planned.
+        self._blue_region_priority: Optional[RegionPriority] = None
         # Recon intel-fog: has the human (BLUE) player discovered what is actually
         # at this site? New enemy sites start unknown (composition + threat rings
         # hidden) until attacked, scouted, or destroyed. Friendly/neutral sites and
@@ -305,6 +310,15 @@ class TheaterGroundObject(MissionTarget, SidcDescribable, ABC):
     @property
     def waypoint_name(self) -> str:
         return f"[{self.name}] {self.category}"
+
+    @property
+    def blue_region_priority(self) -> Optional[RegionPriority]:
+        """This target's own planning priority, or None to inherit its CP's."""
+        return getattr(self, "_blue_region_priority", None)
+
+    @blue_region_priority.setter
+    def blue_region_priority(self, value: Optional[RegionPriority]) -> None:
+        self._blue_region_priority = value
 
     def __str__(self) -> str:
         return NAME_BY_CATEGORY[self.category]

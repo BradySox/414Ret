@@ -2,6 +2,7 @@ import logging
 
 from PySide6.QtGui import QTransform
 from PySide6.QtWidgets import (
+    QComboBox,
     QDialog,
     QGridLayout,
     QGroupBox,
@@ -18,6 +19,7 @@ from dcs import Point
 from game.config import REWARDS
 from game.data.building_data import FORTIFICATION_BUILDINGS
 from game.fourteenth.cruise_raids import tgo_magazines
+from game.fourteenth.region_priorities import RegionPriority, family_of
 from game.server import EventStream
 from game.sim.gameupdateevents import GameUpdateEvents
 from game.theater import ControlPoint, TheaterGroundObject, Player
@@ -93,6 +95,8 @@ class QGroundObjectMenu(QDialog):
         self.doLayout()
 
         self.mainLayout.addWidget(self.targetIntelBox)
+        if self.show_priority_control:
+            self.mainLayout.addWidget(self.priorityBox)
         if isinstance(self.ground_object, BuildingGroundObject):
             self.mainLayout.addWidget(self.buildingBox)
             if self.cp.captured.is_blue:
@@ -276,10 +280,43 @@ class QGroundObjectMenu(QDialog):
         self.orientationBox.setLayout(self.orientationBoxLayout)
         self.hiddenBox.setLayout(self.hiddenBoxLayout)
 
+        # §93 per-target planning priority. "Inherit" is a distinct choice from
+        # "Normal": inside an IGNORED base only an explicit value keeps one target
+        # plannable, which is the whole reason the override exists.
+        self.priorityBox = QGroupBox("Auto-planner :")
+        priority_layout = QHBoxLayout()
+        family = family_of(self.ground_object)
+        priority_layout.addWidget(
+            QLabel(f"Priority ({family}):" if family else "Priority:")
+        )
+        self.priority_combo = QComboBox()
+        self.priority_combo.addItem("Inherit from base", None)
+        for priority in RegionPriority:
+            self.priority_combo.addItem(priority.value.capitalize(), priority)
+        current = self.ground_object.blue_region_priority
+        self.priority_combo.setCurrentIndex(
+            0 if current is None else 1 + list(RegionPriority).index(current)
+        )
+        self.priority_combo.currentIndexChanged.connect(self.on_priority_changed)
+        priority_layout.addWidget(self.priority_combo)
+        priority_layout.addStretch()
+        self.priorityBox.setLayout(priority_layout)
+
     def friendly_cruise_missile_magazines(self) -> list[tuple[str, int]]:
         if not self.cp.is_friendly(to_player=self.viewer):
             return []
         return tgo_magazines(self.game, self.ground_object)
+
+    @property
+    def show_priority_control(self) -> bool:
+        return (
+            self.game.settings.region_priorities
+            and not self.cp.is_friendly(to_player=Player.BLUE)
+            and family_of(self.ground_object) is not None
+        )
+
+    def on_priority_changed(self, index: int) -> None:
+        self.ground_object.blue_region_priority = self.priority_combo.itemData(index)
 
     def update_hidden_on_mfd(self, state: bool) -> None:
         self.ground_object.hide_on_mfd = bool(state)
@@ -296,6 +333,8 @@ class QGroundObjectMenu(QDialog):
 
             self.doLayout()
             self.mainLayout.addWidget(self.targetIntelBox)
+            if self.show_priority_control:
+                self.mainLayout.addWidget(self.priorityBox)
             if isinstance(self.ground_object, BuildingGroundObject):
                 self.mainLayout.addWidget(self.buildingBox)
             else:

@@ -236,9 +236,12 @@ Most of this is opt-in. Full list with toggles, defaults and known limitations:
   scouted jamming area is briefed on the kneeboard, an unscouted one is not.
 - **What's New.** A toolbar button lists the recent changes in the build you are running,
   newest first, each with a line saying what to look for in the next mission.
-- **Region priorities.** Mark an enemy base's region emphasized, deprioritized or ignored from
-  its base dialog and the auto-planner shifts its offensive effort to match. A weight, not a
-  fence — your own packages and rescue flights are never affected. Off by default.
+- **Target priorities.** Tell the auto-planner where to push and what to chase. Mark an enemy
+  base emphasized, deprioritized or ignored from its base dialog; mark a single target the
+  same way from its own dialog; and set a priority per kind of target — air defense,
+  infrastructure, armor, naval and so on — in the Target Priorities window. A weight, not a
+  fence: your own packages and rescue flights are never affected, and a target inside an
+  ignored base can still be marked back on. Off by default.
 - Also: strikeable motor pool depots, enemy comms jamming learned from a captured pilot,
   a host F10 menu to scramble bandits.
 

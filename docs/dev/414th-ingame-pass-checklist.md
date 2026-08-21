@@ -5201,6 +5201,26 @@ its Tacview and `state.json`).
 > `tests/missiongenerator/aircraft/test_split_release.py`; verified in a regenerated `.miz`
 > as `c_part_of_group_in_zone(273, 69) or c_time_after(5670)` → `a_set_flag("split-...")`.
 
+**2026-08-21 — that fix REPRODUCED the opposite failure and has itself been fixed.** Two
+flown sessions: the SEAD escort broke off at the JOIN and called its own SPLIT index on the
+radio ("passing waypoint 4"). Cause: `PackageWaypoints.create` derives join AND split from a
+single `join_point`, perturbed ≤1 nm each, so the primary flies the release zone twice and
+the inbound pass released the escorts before the package had ingressed. Measured in the
+supplied `retribution_nextturn.miz` (Iraq): zone 41 r=15000 at the SPLIT (105186, 23140),
+primary JOIN at (104377, 24261) — **0.75 nm from the centre**; trigger 105
+`c_part_of_group_in_zone(234, 41)` → `a_set_flag` → trigger 106 `a_ai_task(235, 1);
+a_ai_task(236, 1)` → each escort's `SwitchWaypoint goToWaypointIndex 5`, and wp4 on
+ARMADILLO SEAD Escort is SPLIT. No radius is small enough to fix this — the two points are
+the same point. The zone now ANDs with `split_release_gate`, the midpoint of the planned
+join→split leg (774 s / 2257 s → 1515 s on that mission), which the inbound pass cannot
+reach. An ungateable release drops the zone and keeps only the backstop.
+
+**Affects AI-flown packages too.** The trigger is emitted whenever the primary flight has
+client SLOTS, not whether a human occupies one, so a player-slotted flight the AI ended up
+flying got the same early release. A package whose primary has no client slots was never
+affected — it releases from the `RunScript` on the SPLIT waypoint, which is route-order
+based and has always been correct.
+
 Lead a package that has an escort or escort jammer on it and fly the whole profile home.
 
 - **Pass:** at the split point the escorts break off and route to their own recovery field.
@@ -5208,9 +5228,11 @@ Lead a package that has an escort or escort jammer on it and fly the whole profi
   1. **They still follow you home.** The zone was missed and the backstop had not elapsed —
      check the `.miz` for a `SplitRelease<n>` trigger at all; a package whose primary is AI
      deliberately gets none.
-  2. **They leave over the target.** The zone radius is catching the ingress rather than the
-     egress. That means SPLIT and a target point are within 15 km on that plan, not that the
-     radius is wrong in general.
+  2. **They leave at the JOIN, calling their own split waypoint number.** This is the
+     2026-08-21 regression above: the release zone fired on the inbound pass. Check the
+     `.miz` trigger for a `c_time_after` gate ANDed to the `c_part_of_group_in_zone`, not
+     `or`-ed to it. Do NOT answer this by shrinking the zone — join and split are the same
+     base point.
   3. **They leave far too early on a slow sortie.** The time backstop fired. It is 15 min
      past the *planned* split, so a very long delay on station will trip it.
   4. **The escort jammer keeps a SAM in weapons-hold long after the strike.** §77 pulses only

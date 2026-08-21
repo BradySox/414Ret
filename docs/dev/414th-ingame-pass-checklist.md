@@ -134,6 +134,7 @@ stress it · `✗` fail signature reproduced in-game.
 | B86 | Retribution survives DCS taking over the GPU (Qt 6.8) | app / Qt | ☐ |
 | B87 | A stand-off shooter starts its run at its own launch range | §8 | ☐ |
 | B89 | Region priorities: the CP-dialog control shifts the ATO | §93 | ☐ |
+| B90 | A steerpoint's elevation is the ground under it | §74 | ☐ |
 
 ---
 
@@ -5588,6 +5589,34 @@ turn on a wing with a small dedicated-jammer squadron and read the ATO before fl
 - **Setup:** frag a player cold-start F-16C and a player cold-start F-4E in the same turn. Read each package's takeoff time against its TOT, then actually fly both starts with a stopwatch — **stored heading**, which is what the numbers assume. ~40 min for both. Also confirm an airframe with no value (a Hornet) is unchanged at 10 minutes.
 - **Pass:** you make the briefed taxi time on a normal unhurried start in all three. The Phantom's 9 minutes should feel close but sufficient — its gyros alone eat most of it.
 - **Fail signature:** you are still in the chocks when the package is due to taxi, which means the number is too tight and the note's inferred ~2-minute systems window is wrong. Record the stopwatch figure — a measurement replaces the arithmetic outright. The opposite signature also matters: arriving at the hold-short with minutes to spare means the value is generous and the whole exercise bought nothing.
+
+### B90 — A steerpoint's elevation is the ground under it · §74 · ☐ UNTESTED
+
+**History:** built 2026-08-20, from the cockpit. Fork-only — upstream ships no DTC.
+
+> Reported while flying: the DEAD steerpoint does not sit at 0 AGL, it sits at
+> **0 MSL**. `client_altitude()` returned one number and both cartridges wrote it into
+> the point's `alt` and into the route entry, which are different things: ED fills
+> `alt` from terrain (`getAltitude(x, y)`) and the height to fly rides `routeAltitude`
+> / `NAV_ROUTE[].alt` with `altitudeType`. So a target's ground read as sea level, and
+> every ordinary waypoint told the jet its ground was at cruise altitude. Split into
+> `steerpoint_elevation()` and `leg_altitude()`; design note
+> `414th-dtc-cartridge-notes.md`.
+
+Fly a Viper or Hornet on a regenerated mission and read the steerpoint pages.
+
+- **Pass:** an en-route steerpoint's elevation reads ground level rather than its
+  cruise altitude, and the route page still shows the altitude you planned to fly.
+- **Known and NOT fixed:** a target steerpoint's elevation still reads 0, because
+  nothing in the tree knows terrain height at an arbitrary point. **Check this one
+  specifically**: if a pod slaved to a target on high ground now behaves, the
+  elevation was never what mattered and the remaining gap is cosmetic. If it still
+  aims short, the gap is real and the route to close it is a DCS-side
+  `land.getHeight` dump — not the SRTM table that was built and reverted on
+  2026-08-20 as over-scoped for an unreproduced premise.
+- **Fail signature:** an en-route steerpoint reading 2000 m of elevation means `alt`
+  went missing entirely rather than being written as 0 — that is the Viper loader's
+  default for an absent field.
 
 ### B89 — Region priorities: the CP-dialog control shifts the ATO · §93 · ☐ UNTESTED
 

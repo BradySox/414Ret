@@ -595,18 +595,26 @@ def test_viper_destinations_stop_at_the_partition_end() -> None:
     assert dest[-1]["id"] == "DEST99"
 
 
-def test_cartridges_ground_marked_waypoints_like_the_miz() -> None:
-    """The .miz zeroes a ground-marked steerpoint (target areas, CAS FLOT
-    boundaries) to 0 AGL for client flights; the cartridge must agree or the
-    AutoLoad floats the target diamond back up to the AI's track altitude (the
-    flown DS91 escort kneeboard's 22,000 ft "Target area")."""
+def test_a_steerpoints_alt_is_its_ground_not_its_leg_altitude() -> None:
+    """``alt`` on a point is the ground under it; the leg altitude is a separate
+    field. ED's own editors fill the first from terrain -- ``alt = getAltitude(x, y)``
+    in the Viper's ``NAV_PTS.lua`` and the Hornet's ``WYPT_NAV.lua`` -- and resolve
+    the second against terrain when it is AGL (``tmpAlt + getAltitude(x, y)``,
+    Hornet ``ROUTE_SEQ.lua``).
+
+    We wrote the leg altitude into both until 2026-08-20, so a nav point at 22,000 ft
+    told the jet the ground under it was at 22,000 ft, and a target told it the
+    ground was at sea level. Reported from the cockpit as the target steerpoint
+    sitting at 0 MSL rather than 0 AGL.
+    """
     takeoff = _waypoint("TAKEOFF", FlightWaypointType.TAKEOFF, 0, 0, 0, None)
     nav = _waypoint("NAV", FlightWaypointType.NAV, 10000, 0, 6705, None)
     target = _waypoint(
         "TARGET", FlightWaypointType.TARGET_GROUP_LOC, 60000, 80000, 6705, None
     )
-    # Kneeboard row 0 (takeoff) is not emitted; NAV/TARGET land on STPT 1/2.
-    flight = _flight(waypoints=[takeoff, nav, target])
+    land = _waypoint("LANDING", FlightWaypointType.LANDING_POINT, 0, 0, 58, None)
+    # Kneeboard row 0 (takeoff) is not emitted; the rest land on STPT 1/2/3.
+    flight = _flight(waypoints=[takeoff, nav, target, land])
     mission_data = _mission_data([flight])
     game = _game()
 
@@ -614,18 +622,25 @@ def test_cartridges_ground_marked_waypoints_like_the_miz() -> None:
         build_hornet_cartridge(flight, mission_data, game, "Test FA-18C").to_json()
     )["data"]
     nav_pts = hornet["WYPT"]["NAV_PTS"]
-    assert nav_pts[0]["alt"] == 6705 and nav_pts[0]["altitudeType"] == 1
-    assert nav_pts[1]["alt"] == 0 and nav_pts[1]["altitudeType"] == 2
-    # The route sequence carries the same zeroed leg.
-    assert hornet["WYPT"]["NAV_ROUTE"][0]["STPT2"]["alt"] == 0
+    route = hornet["WYPT"]["NAV_ROUTE"][0]
+    # Nav point: ground unknown, so 0 -- never the 6705 m it is flown at.
+    assert nav_pts[0]["alt"] == 0
+    assert route["STPT1"]["alt"] == 6705 and route["STPT1"]["altitudeType"] == 1
+    # Target: still 0, and the leg is the .miz's 0 AGL.
+    assert nav_pts[1]["alt"] == 0
+    assert route["STPT2"]["alt"] == 0 and route["STPT2"]["altitudeType"] == 2
+    # Landing: the one point whose planned altitude IS its ground (B79).
+    assert nav_pts[2]["alt"] == 58
 
     flight.aircraft_type = SimpleNamespace(dcs_unit_type=SimpleNamespace(id="F-16C_50"))
     viper = json.loads(
         build_viper_cartridge(flight, mission_data, game, "Test F-16C").to_json()
     )["data"]
     steerpoints = viper["MPD"]["NAV_PTS"]
-    assert steerpoints[0]["alt"] == 6705 and steerpoints[0]["altitudeType"] == 1
-    assert steerpoints[1]["alt"] == 0 and steerpoints[1]["altitudeType"] == 2
+    assert steerpoints[0]["alt"] == 0 and steerpoints[0]["routeAltitude"] == 6705
+    assert steerpoints[1]["alt"] == 0 and steerpoints[1]["routeAltitude"] == 0
+    assert steerpoints[1]["altitudeType"] == 2
+    assert steerpoints[2]["alt"] == 58
 
 
 def test_unit_dict_and_miz_round_trip(tmp_path: Path) -> None:

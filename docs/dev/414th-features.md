@@ -7385,6 +7385,22 @@ pairing.
 Elapsed-time maths still runs on the naive values, so GSPD and dwell are unchanged
 (`tests/missiongenerator/test_kneeboard_zulu_times.py`). The cartridge stays
 Zulu-only: it is typed into avionics, not read by a wingman.
+**A steerpoint's `alt` is the ground under it, not the height it is flown at
+(fixed 2026-08-20).** Both jets carry two fields and §74 wrote one number into
+both: a target got `alt = 0` so its ground read as sea level, and every ordinary
+waypoint got `alt = ` its cruise altitude, telling the jet the ground under an
+18,000 ft nav point is at 18,000 ft. ED's own editors fill `alt` from terrain
+(`getAltitude(x, y)`, Viper `NAV_PTS.lua` / Hornet `WYPT_NAV.lua`) and the Viper
+loader defaults a missing one to 2000 m, so it must be written and must be an
+elevation; the height to fly is `routeAltitude` (Viper) / `NAV_ROUTE[].alt`
+(Hornet), qualified by `altitudeType` (1 MSL, 2 AGL). Now `steerpoint_elevation()`
+and `leg_altitude()`. Only takeoff and landing know their own ground (B79's field
+elevation); everything else writes 0, which is still wrong for a target on high
+terrain and is the open half — closing it needs terrain height at an arbitrary
+point, and the route to take is a DCS-side `land.getHeight` dump, not the
+SRTM-sampled table that was built and reverted the same day as over-scoped.
+Checklist B90. The .miz was never wrong: read out of a flown mission,
+`DEAD on KATYDID` is `alt = 0, alt_type = "RADIO"`, DCS's own encoding for 0 AGL.
 Comm names pre-clamped to the ME's 5-uppercase-alphanumeric filter. **The Hornet's
 nine CAP_PTS slots are spent priority-then-completeness** (two flown 2026-07-19
 findings): the §6 BARCAP wave relief flies each station as several jittered

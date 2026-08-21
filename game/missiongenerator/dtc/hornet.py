@@ -28,7 +28,8 @@ from typing import TYPE_CHECKING, Any, Optional
 from game.missiongenerator.dtc.cartridge import DtcCartridge
 from game.missiongenerator.dtc.common import (
     SupportTrack,
-    client_altitude,
+    leg_altitude,
+    steerpoint_elevation,
     dedupe_stations,
     flot_segments,
     frequency_labels,
@@ -161,7 +162,7 @@ def _build_wypt(
     waypoints = flight.waypoints[1 : MAX_WAYPOINTS + 1] if options.route else []
     for number, waypoint in enumerate(waypoints, start=1):
         on_route = is_route_waypoint(waypoint)
-        alt_m, altitude_type = client_altitude(waypoint)
+        route_alt_m, altitude_type = leg_altitude(waypoint)
         entry: dict[str, Any] = {
             "wypt_num": number,
             "id": f"STPT{number}",
@@ -169,7 +170,9 @@ def _build_wypt(
             "note": "",
             "x": waypoint.position.x,
             "y": waypoint.position.y,
-            "alt": alt_m,
+            # The ground under the point, not the height to fly it at. ED fills
+            # this from terrain (WYPT_NAV.lua); the leg altitude rides NAV_ROUTE.
+            "alt": steerpoint_elevation(waypoint),
             "altitudeType": altitude_type,
             "velocityType": 3,
             "R1": on_route,
@@ -183,7 +186,7 @@ def _build_wypt(
             route_one[f"STPT{number}"] = {
                 "route_num": 1,
                 "wypt_num": number,
-                "alt": alt_m,
+                "alt": route_alt_m,
                 "altitudeType": entry["altitudeType"],
                 "speed": leg_speed_kmh(prev_route_wp, waypoint),
                 "ETA": seconds_of_day(game, waypoint.tot),

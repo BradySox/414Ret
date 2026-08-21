@@ -69,8 +69,19 @@ point), 15 THREAT_PTS, 20+20 COMM channels.
 
 ## Element shapes (constructor-exact)
 
+- **`alt` on a point is the GROUND under it, not the height you fly it at.** Both
+  jets, and it is the single easiest field to get wrong. ED's own editors fill it
+  from terrain — `alt = getAltitude(mapX, mapY)` in the Viper's
+  `CoreMods/aircraft/F-16C/DTC/MPD/NAV_PTS.lua` and the Hornet's
+  `FA-18C/DTC/WYPT/WYPT_NAV.lua` — and the Viper's loader defaults a missing one to
+  **2000 m** (`F-16C_50_DTC.lua:791`), so it must be written and it must be an
+  elevation. The height to fly is a separate field: `routeAltitude` on the Viper's
+  point, `NAV_ROUTE[].alt` on the Hornet's. `altitudeType` (1 = MSL, 2 = AGL)
+  qualifies **that** one — its combo box lives on NAV_Routes
+  (`NAV_Routes.lua:508`), and the Hornet resolves AGL as
+  `tmpAlt + getAltitude(x, y)` (`ROUTE_SEQ.lua:50-54`).
 - **Hornet NAV_PTS**: `{wypt_num, id "STPT<n>", text_note, note, x, y, alt,
-  altitudeType (1 baro / 2 radio), velocityType 3, R1/R2/R3, R<n>_order, +
+  altitudeType (1 MSL / 2 AGL), velocityType 3, R1/R2/R3, R<n>_order, +
   offset-aimpoint boilerplate (isOA false, idOA "OA<n>"…)}`; route data lives in
   `NAV_ROUTE = [ {"STPT<n>": {route_num, wypt_num, alt, altitudeType, speed, ETA,
   FIX_Time, TGT}}, [], [] ]`.
@@ -347,6 +358,35 @@ wingman, so there is nothing for a second figure to serve.
 
 **Still untouched:** the other client airframes were not audited. Each needs its
 own manual check before its flag is set.
+
+### `alt` and the leg altitude were the same number (fixed 2026-08-20)
+
+Reported from the cockpit: the DEAD steerpoint does not sit at 0 AGL, it sits at
+**0 MSL**.
+
+`client_altitude()` returned one number and both jets wrote it into the point's `alt`
+*and* into the route entry. Two consequences, and the second is the wider one:
+
+- A **target** got `alt = 0`, so its ground read as sea level. On high terrain the
+  steerpoint ends up under the map, with nothing there to slave a pod to.
+- **Every ordinary waypoint** got `alt = ` its cruise altitude, so the jet was told
+  the ground under an 18,000 ft nav point is at 18,000 ft. That was on every card
+  since §74 shipped.
+
+Split into `steerpoint_elevation()` (the point's ground) and `leg_altitude()` (what
+to fly, with `altitudeType`). Only takeoff and landing know their own ground — B79
+plans the field's elevation onto them — so everything else writes 0.
+
+**The open half:** 0 is still wrong for a target on high terrain, and closing it
+needs terrain height at an arbitrary point, which nothing in the tree has. A
+SRTM-sampled table was built and reverted the same day as over-scoped for an
+unreproduced premise; if it is wanted, take the DCS-side `land.getHeight` dump
+instead (exact, offline, complete) and check first that a non-zero elevation is
+actually what the cockpit needed. Checklist B90.
+
+**The .miz was never wrong.** Read out of a flown mission:
+`DEAD on KATYDID` is `alt = 0, alt_type = "RADIO"`, which is DCS's own encoding for
+0 AGL. Upstream has no DTC at all, so this whole class of defect is fork-only.
 
 ### The Hornet half: the guide has no DTC chapter
 

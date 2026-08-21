@@ -297,13 +297,37 @@ had no flag**, so its card printed local while its avionics ran Zulu — card an
 DED an offset apart.
 
 `F-16C_50.yaml` now sets `utc_kneeboard: true`, sourced to the guide's System
-Time definition (p103). No code changed; the flag already drives every kneeboard
-time through the same conversion.
+Time definition (p103).
 
-**Unresolved and deliberately untouched:** kneeboard times carry **no Z suffix**
-on any airframe, so a Zulu card and a local card look identical. That predates
-this work and applies to the whole deck. And the other client airframes were not
-audited — each needs its own manual check before its flag is touched.
+### "The flag already drives every kneeboard time" was wrong (fixed 2026-08-20)
+
+That sentence shipped in the 08-19 change and in the features doc. The flag drove
+the BLUF's TOT and the friendly-packages page. It did **not** drive the
+flight-plan table, the Support Info package TOT, or the AWACS/tanker station
+times, so one Viper card carried two clocks four hours apart. Flown 2026-08-20 on
+the Persian Gulf (+4): the DED read 10:38:37 under a BLUF of `TOT 11:12:14Z` over
+a flight-plan row reading 15:12:14 for that same TOT.
+
+The conversion looked plumbed because it was: `KneeboardGenerator` converted the
+mission start time and passed it to `BriefingPage`/`SupportPage` as `start_time`.
+Both stored it and neither used it — `FlightPlanBuilder` takes `start_time` and
+prints `waypoint.tot` / `waypoint.departure_time` raw, and `SupportPage.start_time`
+was read by nothing at all. A dead parameter that looks load-bearing is what made
+the claim believable; `start_time` is upstream's signature and is left alone.
+
+Now: `_to_zulu` and `_format_clock` are module functions, every page takes a
+`zulu_tz` (the theater timezone for a Zulu airframe, None for every other), and
+`FlightPlanBuilder` / `SupportPage` convert in their own `_format_time`. Elapsed
+time still subtracts the naive values, so GSPD and on-station dwell are unchanged.
+Pinned by `tests/missiongenerator/test_kneeboard_zulu_times.py`, which asserts the
+BLUF and the flight-plan row render one instant identically.
+
+**A converted time now prints a Z** (`11:12:14Z`) — the shared formatter marks any
+zoned value, which the BLUF already did — so a Zulu card and a local card no
+longer look identical. That was the old note's unresolved half.
+
+**Still untouched:** the other client airframes were not audited. Each needs its
+own manual check before its flag is set.
 
 ### The Hornet half: the guide has no DTC chapter
 

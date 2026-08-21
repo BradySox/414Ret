@@ -14,6 +14,18 @@
 
 entries:
   - date: 2026-08-20
+    title: The Viper and Hornet kneeboard runs on the jet's clock
+    change: >-
+      Those cockpits read Zulu, and their cards now do too — everywhere, not just
+      the TOT at the top. The flight plan, the package TOT and the tanker and
+      AWACS station times were still printing mission-local time, so one card
+      showed two clocks a map offset apart. Converted times end in Z.
+    watch: >-
+      On a Hornet or Viper, compare the flight-plan Takeoff row against the DED
+      or HUD clock before you roll. They should agree, and every time on the card
+      should end in Z.
+    row: B28
+  - date: 2026-08-20
     title: Point the air war where you want it
     change: >-
       Every enemy base dialog gains a planning-priority control (with the new

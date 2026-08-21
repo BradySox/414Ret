@@ -7357,8 +7357,19 @@ time was out by the map's UTC offset, 4 h on Caucasus and 8 h on Nevada. Now
 converted through `game.theater.timezone`, based on the mission day's Zulu
 midnight so a sortie across 00:00Z still climbs. The kneeboard half was fixed
 with it: the Hornet family already printed Zulu, and `F-16C_50.yaml` gained
-`utc_kneeboard: true` so a Viper's card and its DED agree. Kneeboard times still
-carry no Z suffix on any airframe — pre-existing, deck-wide, untouched.
+`utc_kneeboard: true` so a Viper's card and its DED agree. **That change claimed
+the flag already drove every kneeboard time; it did not, and the card shipped
+carrying two clocks (fixed 2026-08-20).** The flag reached the BLUF's TOT and the
+friendly-packages page only — the flight-plan table, the Support Info package TOT
+and the AWACS/tanker station times still printed the mission clock, because
+`FlightPlanBuilder` stores the converted `start_time` and never reads it while
+`SupportPage.start_time` is read by nothing. Flown on the Persian Gulf (+4): DED
+10:38:37, BLUF `TOT 11:12:14Z`, flight-plan row 15:12:14 for that same TOT. The
+conversion is now one pair of module helpers (`_to_zulu`, `_format_clock`) with a
+`zulu_tz` on `FlightPlanBuilder`, `BriefingPage` and `SupportPage`; elapsed-time
+maths still runs on the naive values, so GSPD and dwell are unchanged
+(`tests/missiongenerator/test_kneeboard_zulu_times.py`). A converted time now
+carries a **Z** suffix, so a Zulu card and a local card are told apart on sight.
 Comm names pre-clamped to the ME's 5-uppercase-alphanumeric filter. **The Hornet's
 nine CAP_PTS slots are spent priority-then-completeness** (two flown 2026-07-19
 findings): the §6 BARCAP wave relief flies each station as several jittered

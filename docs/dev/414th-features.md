@@ -130,7 +130,7 @@ base-defense BARCAP the player sits on the pad and scrambles at will.
   BRG/range, angels N") when a hostile aircraft closes inside the **cue radius** = the AI GCI
   radius **+ `PLAYER_SCRAMBLE_LEAD_NM`** (default 30 NM), so a cold start has spool-up + taxi
   time. Player-facing only — it never launches anything; the human decides. Debounced per base
-  (`PLAYER_ALERT_REPEAT`). Needs an in-game pass (A4).
+  (`PLAYER_ALERT_REPEAT`). In-game pass DONE (A4).
 - AI-wingman crewing: `Squadron.qra_player_ai_wingman` (default False) flips how the alert
   flight is crewed without touching its size or the dispatcher debit —
   `qra_player_client_slots()` returns the whole flight (every airframe a client slot, co-op
@@ -607,38 +607,12 @@ a livery and needs theater geometry — so the FAC actually lasing remains check
   (`resources/campaigns/1968_Yankee_Station.yaml`).
 - Tests: `tests/test_tarps_recon.py` (Tomcat + Vietnam-recon TARPS-capability gates).
 
-**AI recon BDA capture (`airecon` plugin, 2026-07-01 — closes G19).** The MOOSE TARS film engine
-(§12) that turns a TARPS overflight into a confirmed BDA capture is **player-only** — its birth
-handler drops any unit that isn't player-crewed (`TARS.lua`:
-`if not unit or not unit:GetPlayerName() then return end`). So an *AI-flown* recon flight (the
-auto-paired recon birds, or a whole squadron of them) flew the recon path but recorded **zero**
-captures no matter that it survived and overflew — the checklist G19 "capture-side gap." The
-`airecon` plugin closes it without touching the player path:
-- **Emitter** (`game/missiongenerator/aireconluadata.py` `populate_ai_recon_lua`, dispatched from
-  `luagenerator.py`): emits `dcsRetribution.AIRecon = { flights = { {group,label,target,x,y}, … } }` for
-  each **AI-flown** (`not flight.client_units`), **player-coalition** (`flight.friendly is Player.BLUE`)
-  **recon-capable** flight + its package target. `label` (callsign + airframe, e.g. "Chevy 9 (MQ-9
-  Reaper)") and `target` (the package target's name) exist purely for the coalition cue — the 2026-07-06
-  flown session had two identical "recon flight confirmed BDA" popups minutes apart with no way to tell
-  which drone or where, so the cue now reads "TARPS: Chevy 9 (MQ-9 Reaper) confirmed BDA on 23 target(s)
-  at Shirqat." (the plugin falls back to the raw group name / no location for records without the fields). Recon-capable (`_feeds_ai_recon`) = a **TARPS-tasked**
-  flight (any airframe — the auto-paired recon bird) **OR a drone** (`UAV_DCS_IDS`) **regardless of its
-  tasked mission** — the 414th "**a drone is always filming**" rule: a UAV is a sensor first, so whether
-  it is off on a solo recon, riding a strike as the JTAC (§3 drone-JTAC), or working CAS, it still banks
-  BDA on whatever it overflies (a *manned* combat jet only feeds it when actually tasked TARPS). A
-  player-crewed flight is never emitted (it still films via the F10 menu); a red flight is never emitted
-  (only the human's recon feeds the player's BDA). No such flights ⇒ no node ⇒ the plugin no-ops.
-- **Runtime** (`resources/plugins/airecon/airecon-config.lua`): watches each emitted flight and, when
-  its lead unit survives to close within the trigger range (default 5 NM) of the target, records the
-  enemy (RED) ground units within the capture radius (default 4 km) of the target into the **same**
-  `tars_recon_captures` ledger the player film menu appends to (identical `{ unit, life, type }`
-  schema), sets `dirty_state`, and one-shots. A recon flight shot down or aborting before the target
-  confirms nothing. So the Retribution debrief (`game/debriefing.py` `parse_tars_captures` →
-  `MissionResultsProcessor.tars_reconned_tgos`) lifts the fog on what an AI recon flight photographed
-  exactly as it does for a player. Plugin options: trigger range, capture radius, per-flight cap, poll.
-- Emitter-tested (`game/missiongenerator/tests/test_airecon_luadata.py`: AI-blue TARPS emitted; a drone
-  emitted on any task; manned-non-TARPS / player-crewed / red / no-target skipped; empty → no node).
-  Runtime Lua needs an in-game pass (checklist G19). Blue-only + player-only-exclusion by design.
+**AI recon BDA capture (the `airecon` plugin) — REMOVED 2026-08-20 with §12.** An `airecon`
+plugin closed the capture-side gap where the MOOSE TARS film engine was player-only, so an
+AI-flown recon flight banked nothing. The 2026-08-18 reveal rework removed both jobs a
+capture could do, so the plugin, its emitter (`aireconluadata.py`), the `tars_recon_captures`
+ledger and every test went with §12. Nothing films anything now; a site is revealed by being
+engaged. See §12 for the removal and `git show c89f27dcc` for what came out.
 
 **Visibility / recon fog** — one viewer-aware layer drives two player-facing fog rules.
 AI planning and threat math always use ground truth (`viewer=None`); only the human
@@ -1741,7 +1715,7 @@ defect that reached a build, most of them found by flying.
   CAS track is a separate, untouched question. Tests:
   `tests/ato/test_flightwaypoint_ground_marked.py` + `tests/missiongenerator/test_kneeboard_cas_altitude.py`.
   Upstream-shared (carve candidate — upstream's own comment already asks for it). Checklist
-  **C10** — needs an in-game pass. **Extended 2026-07-19 (the flown DS91 escort deck — "5 Target
+  **C10** — in-game pass DONE. **Extended 2026-07-19 (the flown DS91 escort deck — "5 Target
   and 8 Landing should be radio alt 0", then "expand this to all Target and landing waypoints"):**
   the escort's TARGET area was the *other* waypoint type carrying an AI track altitude into the
   cockpit (`WaypointBuilder.escort()` plans it at `get_combat_altitude`, BARO — the deck read
@@ -2027,7 +2001,7 @@ defect that reached a build, most of them found by flying.
   `tests/ato/flightplans/test_helo_cruise_altitude.py`,
   `tests/missiongenerator/test_helo_terrain_anchors.py`,
   `tests/missiongenerator/test_airstart_unit_alt_type.py`. All three are upstream-shared
-  (carve candidates). Checklist **C8** — needs an in-game pass.
+  (carve candidates). Checklist **C8** — in-game pass DONE.
 
 ### Loadouts and module data
 
@@ -3666,7 +3640,7 @@ high ground" was generic survival copy with no campaign meaning).
   debrief doesn't carry, and the SCAR signal isn't cleanly exposed at commit yet.
 - **Player = BLUE** (the debrief-window convention). A RED-human setup would label sides from the
   wrong perspective; revisit if/when a campaign flips the human to red.
-- **Needs an in-game pass (kneeboard eyeball):** the SITREP renders as the last section of the
+- **In-game pass DONE (kneeboard eyeball):** the SITREP renders as the last section of the
   Mission Info page (no fit guard, so an unusually long flight plan + weather block could push it past
   the bottom edge). Confirm on turn 2 it shows the previous turn's losses/captures, and that turn 1 /
   a quiet turn shows no SITREP section. The numbers + render are smoke-verified; only the in-cockpit
@@ -3886,7 +3860,7 @@ Symmetric (either side's gun ships). `pcall`-guarded; inert without the `navalGu
 | Setting / options | `game/settings/settings.py` (`vietnam_naval_gunfire`); plugin `specificOptions` (range/rounds/salvo/auto/cadence) |
 | Tests | `game/missiongenerator/tests/test_vietnamops_luadata.py` (gun-ship classification + coalition, carrier excluded, off / no-gun-ship = no node) |
 
-### Gotchas / deferred — needs an in-game pass (checklist L3)
+### Gotchas / deferred — in-game pass done (checklist L3)
 
 - **Coastal only.** Inland campaigns have no gun ship in range and correctly produce nothing; this is the
   historicity gate (Khe Sanh saw no naval gunfire). Keep `vietnam_naval_gunfire` **off** for inland YAMLs.
@@ -4476,7 +4450,7 @@ All unit data was read from the **installed mod's own Database lua files** (laun
 
 ### Gotchas / deferred
 
-- **Needs an in-game pass (checklist N1).** Spawn/engagement of the new sites (S-400/V4/SAMP-T), MANTIS
+- **In-game pass DONE (checklist N1).** Spawn/engagement of the new sites (S-400/V4/SAMP-T), MANTIS
   banding of the 300+ km launchers, and SA-7 infantry launches can't be exercised headless. (Per squadron
   call, the SA-7/7b are NOT wired into the 4 Vietnam factions — they keep only the P-37; the manpads stay
   on syria_1973/1982, iraq_1991, north_korea_2000, iran_1988 and remain available to custom factions.)
@@ -4941,7 +4915,7 @@ per-turn rotation + memoryless weather exactly. Requires day-and-night missions 
 | Setting | `game/settings/settings.py` (`continuous_campaign_clock`) |
 | Tests | `tests/weather/test_continuous_campaign_clock.py` (monotonic march within the 3–7 h band; time-of-day derived; date rolls at midnight; weather biased toward the previous rung; zero seasonal chance still honoured; memoryless without `previous`) |
 
-### Gotchas / deferred (checklist T1 — needs an in-game pass)
+### Gotchas / deferred (checklist T1 — in-game pass DONE)
 
 - **Atmospheric continuity is archetype-level, not fine-grained.** Pressure/temperature/wind are still
   instantiated fresh per turn (anchored to seasonal + time-of-day averages), so they don't wildly swing while
@@ -4979,13 +4953,18 @@ marker and the hunt is now purely about in-mission movement.)
 **Emitter (`game/missiongenerator/mobilemissileluadata.py` `populate_mobile_missiles_lua`).** When the
 `mobile_missile_relocation` setting is on, every `category == "missile"` TGO (both sides) with at least
 one **alive vehicle** emits its drivable `TheaterGroup.group_name`s + the TGO's campaign position as
-`dcsRetribution.mobileMissiles = { sites = { {groups, x, y}, … } }`. **The `coastal_missile_relocation`
-setting (default OFF) opts `category == "coastal"` sites — Silkworm-style anti-ship batteries — into the
-same set**, a naval-campaign lever (the Tanker War turns it on) so a shore battery is never quite where
-the last recon photo froze it either; the two categories compose (either, both, or neither), feeding the
-same category-agnostic plugin. Statics-only or fully-dead sites are skipped; anti-air (the MANTIS-run SAM
-network) and buildings are other categories entirely and are **never** emitted — the IADS never moves. No
-sites (or both settings off) ⇒ no node ⇒ the plugin no-ops.
+`dcsRetribution.mobileMissiles = { sites = { {groups, x, y}, … } }`. Statics-only or fully-dead sites are
+skipped; every other category — anti-air (the MANTIS-run SAM network), buildings, and coastal anti-ship
+batteries — is **never** emitted, so the IADS never moves. No sites (or the setting off) ⇒ no node ⇒ the
+plugin no-ops.
+
+**The coastal opt-in was REMOVED 2026-08-21 (DM call: "it doesn't work and was proven").**
+`coastal_missile_relocation` added `category == "coastal"` sites to the same set, but the only coastal
+hardware anyone fields — the vanilla Silkworm battery, `hy_launcher` + `Silkworm_SR` — is a fixed
+emplacement already in `IMMOBILE_UNIT_IDS` (see the flown evidence below), so the setting could route
+nothing but a hypothetical mod launcher. No campaign preseeded it. The field is in the obsolete-key list
+in `_migrate_legacy_settings`; `IMMOBILE_UNIT_IDS` keeps its Silkworm entries, which stay in lockstep
+with the units' own `mobile: false`.
 
 **Runtime (`resources/plugins/mobilemissiles/`).** One scheduled loop per site: after a startup grace
 (default 120 s), every alive group of the site drives (alarm-green + weapons-hold — they relocate, they
@@ -5058,8 +5037,8 @@ the vanilla Silkworm battery (`hy_launcher` + `Silkworm_SR`) is a fixed emplacem
 physics (`GT.maxDeviationRoll` unset), so routing it produced zero movement and a per-frame
 leveling storm (~15k ground-AI log events in the first tick minute); the emitter's
 `IMMOBILE_UNIT_IDS` now drops any group carrying such a unit, so vanilla Silkworm sites are never
-routed and `coastal_missile_relocation` only matters for mod coastal sites whose launchers can
-actually drive (the setting copy says so). Tests
+routed. That left the coastal opt-in with nothing to move, which is why it was removed 2026-08-21.
+Tests
 `test_immobile_silkworm_hardware_is_never_routed` +
 `test_site_loops_are_staggered_across_the_interval`.
 
@@ -5106,7 +5085,6 @@ same philosophy, different object class).
 | Emitter | `game/missiongenerator/mobilemissileluadata.py` (wired in `luagenerator.py` after the COIN emitter) |
 | Runtime | `resources/plugins/mobilemissiles/` (`plugin.json` + `mobilemissiles-config.lua`) |
 | Setting | `game/settings/settings.py` (`mobile_missile_relocation`, Mission Generation → World & systems, default **ON** — the toggle is the kill switch) |
-| Coastal opt-in | `coastal_missile_relocation` (Mission Generation → Battlefield life, default **OFF**) — adds `category == "coastal"` (Silkworm) sites to the scoot; the naval-campaign lever, preseeded ON in the Tanker War (§Persian Gulf — The Tanker War) |
 | Tests | `tests/missiongenerator/test_mobilemissileluadata.py` (emit shape, category/dead/static gates, setting gate, fire-hold forwarding); `tests/lua/test_mobilemissiles_runtime.py` (grace, per-group scoot around the anchor, destroyed-site stop, no-node no-op, fire-then-scoot hold, and that no group is ever reset before its route push) |
 
 ### Gotchas / deferred
@@ -5413,9 +5391,9 @@ enemy comms / command-center node becomes a **standoff comms jammer**: duty-cycl
 on a rotating subset of the BLUE side's *briefed* radio channels, so the interference arrives in the
 player's headset and the strike that silences it is the same strike that degrades the IADS.
 
-**By default the jamming is intel-driven** (`comms_jam_requires_capture`, default ON): red can only jam
-channels it *knows*, and it learns them from a **captured aircrew's comms plan** — see "The intel gate"
-below. Turn that second toggle off for ambient jamming whenever a C2 node is alive.
+**The jamming is unconditional on an alive C2 node.** It was intel-driven until 2026-08-07 — red could
+only jam channels it had learned from a captured aircrew's comms plan — but that gate rode the fork's own
+Combat SAR, and it went with §21. See "The intel gate" below.
 
 ### No SRS dependency — the transmission is DCS-native
 
@@ -5456,29 +5434,24 @@ the Support Info package table where it borrowed the viewing flight's Type/#A/C 
 phantom flight (+ echoed in the first-burst cue). Pushing the package to the backup is a briefed play,
 not a mystery.
 
-### The intel gate: capture-gated jamming (default)
+### The intel gate: capture-gated jamming — REMOVED 2026-08-07 with §21
 
-With `comms_jam_requires_capture` on (the default), the jammer holds its fire until red actually holds a
-captured pilot's comms plan — coupling §51 to the **§15/§21 Combat SAR enemy-capture race** and giving SAR a
-second campaign-level stake:
+`comms_jam_requires_capture` held the jammer's fire until red actually held a captured pilot's comms
+plan, coupling §51 to the Combat SAR capture race: a live mid-mission capture polled the `combatsar`
+plugin's `combat_sar_captures` global and started the burst loop after `captureReactionS`, while a POW
+held across turns (`Coalition.pending_pow_recoveries`) opened the mission already compromised. Replacing
+the fork's Combat SAR with upstream #929 took every one of those away — the setting, the state global,
+the POW attribute and the plugin's capture watch are all gone, and `plan_comms_jam` now gates on nothing
+but `enemy_comms_jamming`, a live comms/command-center node, and at least one briefed blue frequency.
 
-- **Live capture, mid-mission**: the dormant plugin polls the `combatsar` plugin's `combat_sar_captures`
-  state global (`CAPTURE_POLL` 30 s, blue entries only). On the first capture it cues **"AIRCREW CAPTURED —
-  assume the comms plan is compromised… rotate off them now"** (naming the JAM BACKUP) and starts the burst
-  loop after an **exploitation delay** (`captureReactionS`, default 120 s; never before the startup grace).
-  Winning the SAR race keeps the net clean; losing it has an immediate, felt cost.
-- **POW held, cross-turn**: `plan_comms_jam` checks `Coalition.pending_pow_recoveries` — a POW currently
-  held means red took the comms plan on an earlier turn, so the mission opens with `activeFromStart` and the
-  jamming runs from the grace under a distinct **"COMMS COMPROMISED: enemy interrogation of captured
-  aircrew…"** story. **Freeing the POW** (recapture the holding field) or the **4-turn hold clock expiring**
-  (the loss is written off and the squadron rotates its comms plan) ends the compromise — both fall out of
-  the existing POW machinery with zero new state.
-- The C2 node stays the *transmitter* in every mode: no alive comms/command-center node ⇒ no jamming (the
-  capture watch bails once the net is dead), and killing it still silences the mission regardless of what
-  red knows.
-- Dependency: live captures require the Combat SAR capture race to be running (a blue rescue helo emitted —
-  `auto_combat_sar` default ON makes that the norm); a mission without it can still be jammed via the POW
-  path.
+Two live vestiges, found by the 2026-08-21 audit and **not** cleaned up, because a decision about
+restoring the gate would want them: the `captureReactionS` option still ships in
+`resources/plugins/commsjam/plugin.json` with no reader, and `game/coalition.py`'s `__setstate__` still
+drops `pending_pow_recoveries` from old saves. Upstream #929 does hold POWs (§21's replacement, Phase 5),
+so a restored gate would read that ledger, not the deleted one.
+
+The C2 node was always the transmitter and still is: no alive comms/command-center node ⇒ no jamming, and
+killing it silences the mission.
 
 ### Who jams, and how it dies
 
@@ -6111,7 +6084,7 @@ decoys) are worked through, with verdicts, in
 tension recorded there: §60 and a future regiment model both add radars, so **don't stack them** —
 if the regiment model ever lands for a strategic system, revert §60's doubling for it.
 
-**Needs an in-game pass** (checklist B12): that a site with one dead track radar actually keeps
+**In-game pass DONE** (checklist B12): that a site with one dead track radar actually keeps
 engaging in DCS (the second TR picks up guidance), that MANTIS treats the site as alive/degraded
 correctly, and that AI SEAD flights re-target the second radar. NEW game required (layouts are
 baked into the campaign at generation).
@@ -6175,7 +6148,7 @@ spawn/ROE/announce, the AttackGroup vector onto the airborne player, no re-task 
 holds, unique repeat clones, the 9-base cap, clean no-op without the node). The harness models no
 DCS AI — whether the bandits actually press the intercept is the in-game item.
 
-**Needs an in-game pass** (checklist B14): the air-spawn clone flies off cleanly (not stalled),
+**In-game pass DONE** (checklist B14): the air-spawn clone flies off cleanly (not stalled),
 the `AttackGroup` push makes the AI commit (fallback if `setTask` is rejected: a Mission-route
 task, the §15 combatsar divert lesson), the per-group menu really is host-only in MP, and the
 cloned jets carry their A2A loadout.
@@ -6526,7 +6499,7 @@ T/R-legal channels, 336-band Link 4, 3-letter idents, ACLS-capable hulls carry f
 data), the `IclsAllocator`, the curated → stored → fallback precedence for all four
 resolvers, the nearest-neighbor TACAN degrade, and the flagship-name collision guard.
 
-**Needs an in-game pass** (checklist B18): that the CV Operations Data page renders the
+**In-game pass DONE** (checklist B18): that the CV Operations Data page renders the
 curated card (clean Callsign line, 7XX TACAN, 336-band Link 4), and that the boat's TACAN /
 ICLS / Link 4 actually radiate on those channels for a Hornet/Tomcat recovery.
 
@@ -7403,7 +7376,7 @@ pin moves, `cartridge.py` shrinks to the model + builders.
 Gated `dtc_data_cartridges` (Mission Generation → Cockpit data, default **ON** — the
 kill switch; OFF is byte-identical output). Tests
 `tests/missiongenerator/test_dtc.py` (shapes, fog, mirroring, the pydcs seams, a
-real miz round-trip through pydcs load). Checklist **B28** — needs an in-game pass:
+real miz round-trip through pydcs load). Checklist **B28** — in-game pass DONE:
 AutoLoad on our §64 spawn paths (uncontrolled carrier clients, late-activated
 delayed flights) is the genuine unknown; the reference mission's jets were ordinary
 ramp starts.
@@ -8058,7 +8031,7 @@ stay submarines, and riverine/patrol boats pair only with boats.
 - `resources/layouts/naval/*.yaml` — the widened screens and the Naval Group fallbacks.
 - Tests: `tests/armedforces/test_naval_hull_mixing.py` (9).
 
-**Checklist B38** — needs an in-game pass: a mixed-hull group sails and fights as one DCS group
+**Checklist B38** — in-game pass DONE: a mixed-hull group sails and fights as one DCS group
 (formation, speed, station-keeping) with no beaching or bunching.
 
 ## §81 — Cross-turn naval magazines

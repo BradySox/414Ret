@@ -328,9 +328,7 @@ def test_the_emitter_skips_a_group_with_an_undrivable_launcher() -> None:
         )
 
     game = SimpleNamespace(
-        settings=SimpleNamespace(
-            mobile_missile_relocation=True, coastal_missile_relocation=False
-        ),
+        settings=SimpleNamespace(mobile_missile_relocation=True),
         theater=SimpleNamespace(
             controlpoints=[
                 SimpleNamespace(

@@ -25,7 +25,7 @@ so the two docs don't drift.
 
 ## Outstanding rows at a glance
 
-62 rows need a live pass. Full detail is under each `###` heading below —
+63 rows need a live pass. Full detail is under each `###` heading below —
 search the row id. `☐` untested · `◐` flown but not under the conditions that
 stress it · `✗` fail signature reproduced in-game.
 
@@ -136,6 +136,7 @@ stress it · `✗` fail signature reproduced in-game.
 | B89 | Region priorities: the CP-dialog control shifts the ATO | §93 | ☑ |
 | B90 | A steerpoint's elevation is the ground under it | §74 | ☐ |
 | B91 | The F-14B(U) spawns with its cartridge loaded | §74 | ☐ |
+| B92 | A rescued marker belongs to the base it sits next to | campaign loading | ☐ |
 
 ---
 
@@ -5810,3 +5811,49 @@ from a fresh New Game, not a save** — a save never took this path.
   is nearest-that-reports, which on a big map can be far off — a Syria turn from a Lebanese
   field taking Larnaca is expected, taking something in Turkey is worth recording.
 
+---
+
+### B92 — A rescued marker belongs to the base it sits next to · campaign loading · ☐ UNTESTED
+
+**History:** built 2026-08-22, from the DM's own `test.retribution` on
+`operation_desert_trident` — the placement warning listed seven groups on King
+Abdullah II's doorstep.
+
+> A marker outside every influence zone used to fall back to the nearest control
+> point **with no zone at all**, so a base whose zone hugs its runway could not
+> adopt its own outlying markers. Six armour groups and a fuel depot 15–25 km
+> from red King Abdullah II were blue Ben Gurion's, 110–140 km away. A nearby
+> zoned base now adopts a stranded marker: within `ADOPT_ZONED_WITHIN` (25 km),
+> and only when the fallback would put it past `STRANDED_BEYOND` (50 km).
+> `tests/test_miz_marker_binding.py` pins both bounds, each with a test that
+> fails without it.
+
+**Already measured, so do not re-derive it:** across every shipped campaign 16 of
+7,653 bindings move, none ends up farther from its owner, and Desert Trident's
+warning goes 7 → 0. Eight campaigns move at least one marker: clash_of_the_titans,
+crossing_the_rubicon, operation_desert_trident, operation_gazelle,
+operation_vectrons_claw, red_sea_rising, red_tide, the_anvil_of_war.
+
+**What CI cannot exercise** is what the rebound objects *do* once they are the
+other base's. King Abdullah II goes from 6 ground objects to 13; Ben Gurion drops
+26 → 19. That changes who defends them, who is tasked against them, and where the
+front line between those bases sits.
+
+Needs a new game on one of the eight, not a flight. Desert Trident is the
+reference — it carries 8 of the 16 moves.
+
+- **Pass:** no placement warning on load; the moved groups render in the *near*
+  base's colour on the F10 map; the ATO frags against them from the correct side.
+- **Fail signatures:**
+  1. **The warning still lists them** — the adoption did not fire. Check the two
+     bounds against the real distances before touching the rule; a marker 26 km
+     out, or one whose old owner was 45 km away, is outside the guard by design.
+  2. **A marker moved to a base it is NOT nearest to** — the rule is
+     nearest-zoned-only, so this would mean the eligible set is wrong. Stop.
+  3. **A campaign that was fine now looks reshuffled** — markers hopping between
+     neighbouring fields is the failure `STRANDED_BEYOND` exists to prevent, and
+     Marianas (Velvet Thunder) is the campaign that showed it. Re-measure before
+     assuming the bound is too loose.
+  4. **The front line between two affected bases jumps** — ownership feeds base
+     strength, so an 8-object swing is worth a look on Desert Trident's Jordan
+     sector specifically.

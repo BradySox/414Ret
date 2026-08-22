@@ -1018,7 +1018,7 @@ def test_the_hold_stand_in_reaches_the_viper_and_tomcat_too() -> None:
     points = json.loads(
         build_tomcat_cartridge(flight, mission_data, game, "Hold").to_json()
     )["data"]["NAV"][0]["additional_points"]
-    assert [p["name"] for p in points] == ["WIZAR", "ARCO", "SA2"]
+    assert [p["name"] for p in points] == ["WIZAR", "ARCO", "SA2XHA"]
 
 
 def test_viper_dest_paints_the_enemy_field_being_worked_over() -> None:
@@ -1190,7 +1190,7 @@ def test_tomcat_references_carry_the_jets_name_codes() -> None:
     # The base name gives way to the code, never the other way round.
     assert names[:2] == ["BULLSEXB", "BATUMIXD"]
     # Then the tanker; COLT is another flight's station and stays out.
-    assert names[2:] == ["ARCO", "SA2"]
+    assert names[2:] == ["ARCO", "SA2XHA"]
     assert all(len(name) <= 8 for name in names)
     bullseye = points[0]
     assert (bullseye["x"], bullseye["y"]) == (5000, 5000)
@@ -1224,7 +1224,7 @@ def test_tomcat_threat_points_ride_the_recon_fog() -> None:
     flight.dtc_options = DtcOptions(route=False, friendly_orbits=False)
     cartridge = build_tomcat_cartridge(flight, mission_data, game, "Threats")
     points = json.loads(cartridge.to_json())["data"]["NAV"][0]["additional_points"]
-    assert [point["name"] for point in points] == ["SA2"]
+    assert [point["name"] for point in points] == ["SA2XHA"]
 
     fogged = _game(controlpoints=[_sam_cp(known=False)])
     cartridge = build_tomcat_cartridge(flight, mission_data, fogged, "Fogged")
@@ -1705,4 +1705,38 @@ def test_only_the_first_target_in_a_cluster_is_the_surface_target() -> None:
     route = json.loads(
         build_tomcat_cartridge(flight, mission_data, game, "XST").to_json()
     )["data"]["NAV"][1]["waypoints"]
-    assert [w["name"] for w in route] == ["INGREXIP", "BLDG1XST", "BLDG2", "BLDG3"]
+    assert [w["name"] for w in route] == ["INGREXIP", "BLDG1XST", "BLDG2XL", "BLDG3XL"]
+
+
+def test_only_the_top_ranked_sam_is_the_hostile_area() -> None:
+    """The jet holds one hostile area and sets its threat axis from the
+    bullseye to it, so only the first site -- longest range -- carries XHA."""
+    flight, mission_data, game = _tomcat_fixture()
+    flight.dtc_options = DtcOptions(route=False, friendly_orbits=False)
+    game.theater.controlpoints = [_sam_cp(), _sam_cp()]
+    points = json.loads(
+        build_tomcat_cartridge(flight, mission_data, game, "HA").to_json()
+    )["data"]["NAV"][0]["additional_points"]
+    assert [p["name"] for p in points] == ["SA2XHA", "SA2"]
+
+
+def test_a_cap_flight_gets_its_defended_asset_as_the_dp() -> None:
+    """'Waypoint used to show area to protect' -- for a CAP, the asset it
+    covers. A strike flight has no defended point."""
+    flight, mission_data, game = _tomcat_fixture()
+    flight.flight_type = FlightType.BARCAP
+    flight.package = SimpleNamespace(
+        frequency=None, target=SimpleNamespace(name="Kutaisi", position=Pt(0, 0))
+    )
+    points = json.loads(
+        build_tomcat_cartridge(flight, mission_data, game, "DP").to_json()
+    )["data"]["NAV"][0]["additional_points"]
+    names = [p["name"] for p in points]
+    assert "KUTAIXDP" in names
+    assert names.index("KUTAIXDP") == 2  # right after the bullseye and divert
+
+    flight.flight_type = FlightType.STRIKE
+    points = json.loads(
+        build_tomcat_cartridge(flight, mission_data, game, "DP").to_json()
+    )["data"]["NAV"][0]["additional_points"]
+    assert not any(p["name"].endswith("XDP") for p in points)

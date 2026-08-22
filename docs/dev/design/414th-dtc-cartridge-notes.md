@@ -722,9 +722,27 @@ never states: **`XST` is the surface target, which the HUD highlights with a
 pentagon**, and `XB` on the bullseye puts its bearing and range on the HUD in A2A.
 The bullseye is an additional point rather than a route waypoint — that is how the
 authored cartridge carries it (`BULLSXB`), so the code is assumed to work there.
-`XST` goes on one point only, the first target, which is also STA 3's PP1; whether
-the jet honours a second is unknown. `DP`, `HA` and `FP` still have no stated
-meaning, so nothing is guessed onto them.
+**The jet holds one point per type.** The F-14 manual's navigation summary lists
+the set — three waypoints, a fixed point (FP), an initial point (IP), a surface
+target (ST), a home base (HB), a defended point (DP) and a hostile area (HA) — and
+defines them in its symbology table: DP is "waypoint used to show area to
+protect", HA "waypoint indicating a hostile area", FP "generic fixed-point
+waypoint". It also states the rule that makes `HA` matter: on spawn **the threat
+axis is set from the bullseye to the first valid point in the order HA, DP, ST,
+FP, 3, 2, 1, HB**. So each code goes on exactly one point:
+
+| Code | On | Why |
+|---|---|---|
+| `XST` | the first target in route order (also STA 3's PP1) | the HUD pentagon; the threat axis's third choice |
+| `XL` | every further target in a cluster | "LANTIRN (max 20)" — the pod's target store, where a second building belongs since the jet has one ST |
+| `XHA` | the top-ranked known SAM site (longest range, first in the list) | one hostile area; it sets the threat axis |
+| `XDP` | a BARCAP/TARCAP flight's package target — the asset it covers | "area to protect"; strike flights get none |
+| `XB` / `XD` / `XHB` / `XIP` | bullseye, divert, recovery field, every ingress | as before |
+
+`FP` and the `X#1–X#7` priority/generic forms are not used: the three classic
+waypoint slots would need a choice of which route points matter most, and nothing
+sources that. All of the HUD/TID effects are unverified until a Tomcat sortie —
+checklist B91.
 
 ### Editor-mined limits
 

@@ -22,9 +22,9 @@ entries:
       flat map. The ingress point also stops wearing the target symbol on the
       Viper's HSD and the Hornet's route.
     watch: >-
-      On a Viper, check a target steerpoint's elevation on the DED: the nearest
-      field's height, not 0. Then slave the pod to it on high ground and see
-      whether it lands on the target or short.
+      On a Viper, check a target steerpoint's ELEV on the DED STPT page: the
+      nearest field's height, not 0. Then slave the pod to it on high ground and
+      see whether it lands on the target or short.
     row: B90
   - date: 2026-08-22
     title: The cartridge shows your own orbit, and the Viper gets the enemy field

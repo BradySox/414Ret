@@ -646,7 +646,7 @@ def test_a_steerpoints_alt_is_its_ground_not_its_leg_altitude() -> None:
     assert route["STPT1"]["alt"] == 6705 and route["STPT1"]["altitudeType"] == 1
     # Target: still 0, and the leg is the .miz's 0 AGL.
     assert nav_pts[1]["alt"] == 0
-    assert route["STPT2"]["alt"] == 0 and route["STPT2"]["altitudeType"] == 2
+    assert route["STPT2"]["alt"] == 0 and route["STPT2"]["altitudeType"] == 1
     # Landing: the one point whose planned altitude IS its ground (B79).
     assert nav_pts[2]["alt"] == 58
 
@@ -657,7 +657,7 @@ def test_a_steerpoints_alt_is_its_ground_not_its_leg_altitude() -> None:
     steerpoints = viper["MPD"]["NAV_PTS"]
     assert steerpoints[0]["alt"] == 0 and steerpoints[0]["routeAltitude"] == 6705
     assert steerpoints[1]["alt"] == 0 and steerpoints[1]["routeAltitude"] == 0
-    assert steerpoints[1]["altitudeType"] == 2
+    assert steerpoints[1]["altitudeType"] == 1
     assert steerpoints[2]["alt"] == 58
 
 
@@ -1490,3 +1490,46 @@ def test_an_ingress_carrying_the_target_list_is_still_an_ip() -> None:
         build_viper_cartridge(flight, mission_data, game, "IP").to_json()
     )["data"]["MPD"]["NAV_PTS"]
     assert [p["type"] for p in nav_pts[:3]] == ["IP", "TGT", "STPT"]
+
+
+def test_a_ground_marked_target_carries_the_ground_as_its_altitude(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The Viper's DED shows routeAltitude as the steerpoint ELEV, and nothing
+    honours the AGL tag (the editor's transformAltitude is a no-op). A target
+    written as "0 AGL" read ELEV 0 in the jet; it now carries the ground
+    estimate in MSL, and an AGL-planned leg is converted the same way."""
+    from game.missiongenerator.kneeboard_recon import airport_imagery
+
+    monkeypatch.setattr(
+        airport_imagery, "field_elevation_for_airport", lambda terrain, airport: 700.0
+    )
+    flight, mission_data, game = _hornet_fixture()
+    game.theater.controlpoints = [_field_cp("Kirkuk", 0, 0, "kirkuk")]
+    flight.aircraft_type = SimpleNamespace(dcs_unit_type=SimpleNamespace(id="F-16C_50"))
+    flight.waypoints = [
+        _waypoint("TAKEOFF", FlightWaypointType.TAKEOFF, 0, 0, 0, None),
+        _waypoint(
+            "LOW",
+            FlightWaypointType.INGRESS_STRIKE,
+            100,
+            100,
+            150,
+            None,
+            alt_type="RADIO",
+        ),
+        _waypoint(
+            "DEAD", FlightWaypointType.TARGET_GROUP_LOC, 200, 200, 0, None, targets=[1]
+        ),
+        _waypoint("LANDING", FlightWaypointType.LANDING_POINT, 0, 0, 0, None),
+    ]
+    nav_pts = json.loads(
+        build_viper_cartridge(flight, mission_data, game, "DED").to_json()
+    )["data"]["MPD"]["NAV_PTS"]
+    low, dead = nav_pts[0], nav_pts[1]
+    assert dead["routeAltitude"] == pytest.approx(700.0)
+    assert dead["altitudeType"] == 1
+    assert dead["alt"] == pytest.approx(700.0)
+    # 150 m AGL over 700 m ground is written as 850 m MSL.
+    assert low["routeAltitude"] == pytest.approx(850.0)
+    assert low["altitudeType"] == 1

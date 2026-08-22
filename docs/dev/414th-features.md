@@ -7389,7 +7389,11 @@ the kneeboard's per-field OSM/DEM elevation is the only height data the campaign
 has; fields without a record, boats and FOBs never answer). An estimate, closer
 than 0 everywhere; the exact route if it proves short is a DCS-side
 `Terrain.GetHeight` dump, not the SRTM-sampled table that was built and reverted
-the same day as over-scoped. Checklist B90. The .miz was never wrong: read out of a flown mission,
+the same day as over-scoped. **The Viper's DED shows `routeAltitude` as the
+steerpoint ELEV, not `alt`** (flown the same day), and nothing honours the AGL
+tag — the editor's `transformAltitude` is a no-op — so every altitude is written
+MSL and a ground-marked target's `routeAltitude` is the ground estimate itself,
+never "0 AGL". Checklist B90. The .miz was never wrong: read out of a flown mission,
 `DEAD on KATYDID` is `alt = 0, alt_type = "RADIO"`, DCS's own encoding for 0 AGL.
 Comm names pre-clamped to the ME's 5-uppercase-alphanumeric filter. **The Hornet's
 nine CAP_PTS slots are spent priority-then-completeness** (two flown 2026-07-19

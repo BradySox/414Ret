@@ -5657,6 +5657,11 @@ directly.
   Haina (RED) and materialises exactly one `MotorpoolGroundObject` (CI-locked in
   `tests/fourteenth/test_red_tide_motorpool.py`). Every other campaign is **inert until it places a
   `Garage_A`** — it changes nothing until a depot is authored.
+- **The kneeboard briefed a dead sortie type until 2026-08-22.** Every unidentified-site
+  row on the Threat Intel page read "Fly TARPS to ID." — a procedure the 2026-08-18 rework
+  removed, and one the page's own intro contradicted ("engage them to ID"). It now reads
+  "Engage to ID.", and the test that had been pinning the stale string asserts the opposite.
+  The COIN HVT checklist row (P5) carried the same instruction and was corrected with it.
 - **Two placement guards, opposite mistakes.** `motorpools_inside_capture_zone` catches a marker
   inside its own CP's 3 km capture radius (parked reserve blocks the base being taken).
   `ground_objects_beside_an_enemy_base` (added 2026-08-20) catches **any** ground object parked on

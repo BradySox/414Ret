@@ -2314,7 +2314,11 @@ class ThreatIntelBriefPage(KneeboardPage):
             if card.defeat:
                 writer.text(f"DEFEAT: {card.defeat}", font=body, wrap=True)
         else:
-            prefix = "Fly TARPS to ID.   BE "
+            # Engaging a site is the ONLY thing that reveals it since the
+            # 2026-08-18 §3 rework; recon finds hidden command posts and
+            # nothing else. This line briefed a TARPS sortie that cannot
+            # identify any of these, and contradicted the intro above it.
+            prefix = "Engage to ID.   BE "
             writer.text_runs(
                 [
                     (prefix, None),

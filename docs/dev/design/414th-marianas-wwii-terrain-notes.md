@@ -178,22 +178,44 @@ but its Retribution yaml variant is `Type 89 I Go Tank`, and a faction naming th
 loads with the unit **silently missing**. Validate every faction string by loading the faction
 and comparing counts; do not trust the pydcs name.
 
-## Open — the carrier needs an in-game pass
+## The Essex is a real carrier, and its `HelicopterCarrier` class is a trigger
 
-`resources/units/ships/Essex.yaml` declares **`class: HelicopterCarrier`**, not
-`AircraftCarrier` (price 0, no deck angle). The only `AircraftCarrier` Essex is
-`Essex_SCB125`, which is the VWV mod's 1950s angled-deck refit — wrong hull for 1944 and
-mod-gated.
+`resources/units/ships/Essex.yaml` declares `class: HelicopterCarrier`. **Do not "fix" that to
+`AircraftCarrier`.** It is not a claim about the ship; it is the condition
+`start_generator.transform_to_essex_if_needed` tests. A naval group whose units are
+`HelicopterCarrier` and contain no `AircraftCarrier` gets its control point swapped for
+`EssexCarrier`, and `EssexCarrier` subclasses **`Carrier`**, not `Lha`:
 
-That is why `carrier_names` is ignored for this faction and `helicopter_carrier_names` is the
-field that takes effect, which is what `allies_1944.json` already does.
+```python
+class EssexCarrier(Carrier):
+    def can_operate(self, aircraft: AircraftType) -> bool:
+        return aircraft.lha_capable
+```
 
-The F4U-1D is `carrier_capable: true` **and** `lha_capable: true`, and `controlpoint.py`'s
-basing gate is `aircraft.helicopter or aircraft.lha_capable`, so Corsairs can base on it. But
-`flightgroupspawner.py` sets `is_vtol = not is_heli and aircraft.lha_capable`, so a Corsair on
-the Essex takes the **VTOL spawn path built for Harriers**. Whether it launches correctly off
-a straight WWII deck is untested and cannot be checked headlessly. Fly it before building a
-carrier campaign around it.
+So the result is a full carrier control point — carrier deck spawn, recovery heading, deck
+decorations — that gates basing on `lha_capable` rather than `carrier_capable`, because a 1944
+deck has no catapults. The ship itself is unambiguous in pydcs: `plane_num=90`,
+`helicopter_num=1`, the most fixed-wing-dominant hull DCS ships. LHA-1 Tarawa, for contrast,
+is 40 and 36.
+
+Two consequences for a faction:
+
+- **Hull names go in `helicopter_carrier_names`, not `carrier_names`**, because the unit class
+  is still `HelicopterCarrier` when the faction loads. `allies_1944.json` already does this;
+  `usa_1944_marianas.json` follows it. Names put in `carrier_names` are silently ignored.
+- **Only `lha_capable` aircraft can base there.** Of this faction's seven types that is the
+  **F4U-1D alone**, which is historically exact — Corsairs flew off carriers, Thunderbolts
+  never did.
+
+An earlier draft of this note claimed a Corsair on the Essex would take
+`flightgroupspawner`'s VTOL path. That was wrong: the `is_vtol` line sits inside the
+`isinstance(cp, Fob)` branch, and a carrier control point is handled by the
+`isinstance(cp, NavalControlPoint)` branch above it. There is no VTOL involvement and no
+in-game pass owed for it.
+
+One real defect does follow from the classification, and is **not** fixed here: `theatergroup.py`
+removes a sunk carrier's squadrons only when the dead unit's class is `AIRCRAFT_CARRIER`, so
+sinking the Essex leaves its squadrons in place. Worth a separate change with its own test.
 
 ## Not done, and out of scope for the map itself
 

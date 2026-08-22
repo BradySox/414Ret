@@ -95,6 +95,7 @@ Read before touching a campaign's `.yaml`, `.miz` or build tool.
 | Germany — Red Tide | `414th-red-tide-campaign-notes.md` (+ `-supply-routes-`, `-c2-real-buildings-HANDOFF`) |
 | Operation Baltic Fury | `414th-baltic-fury-campaign-notes.md` |
 | Marianas — Second Island Chain 2027 | `414th-marianas-2027-campaign-notes.md` |
+| Marianas — Operation Forager (1944) | `414th-marianas-wwii-terrain-notes.md` (the terrain note owns it) |
 | Iraq — Umm al-Ma'arik (Desert Storm) | `414th-desert-storm-campaign-notes.md` |
 | Iraq — Operation Inherent Resolve | `414th-inherent-resolve-campaign-notes.md` |
 | Afghanistan — Enduring Resolve (COIN) | `414th-coin-HANDOFF.md` — **start here for COIN** |

@@ -1,0 +1,135 @@
+---
+name: Marianas - Operation Forager (1944)
+theater: MarianasWWII
+authors: 414th Joint Fighter Group
+recommended_player_faction: USA 1944 (Marianas)
+recommended_enemy_faction: Japan 1944 (Marianas)
+description:
+  <p>15 June 1944. The 2nd and 4th Marine Divisions are ashore on Saipan's west
+  coast at Chalan Kanoa and hold nothing else. Aslito Field is four miles south
+  and still Japanese. Task Force 58 stands off to the west.</p>
+  <p>Take Saipan, then Tinian across the strait, then Guam. Rota was bypassed in
+  1944 and its garrison never surrendered; it is yours to bypass or reduce.</p>
+  <p><strong>Substitutions.</strong> DCS ships no Japanese aircraft, so the I-16
+  and Fw 190 A-8 stand in for the defenders, wearing the IJN liveries DCS ships
+  for that purpose. Only the F4U-1D can fly from the carrier -- it is the one
+  carrier-capable type of the period in DCS. The P-47D is not a substitute. The
+  318th Fighter Group really did fly Thunderbolts from this island in June
+  1944.</p>
+miz: marianas_forager_1944.miz
+performance: 1
+recommended_start_date: 1944-06-15
+version: "10.9"
+
+settings:
+  restrict_weapons_by_date: true
+  # A 1944 island fight is decided over the beach and the airfield, not at 150 NM.
+  # The defaults stand support orbits off far enough to sit in open ocean on a map
+  # this small.
+  aewc_threat_buffer_min_distance: 25
+  tanker_threat_buffer_min_distance: 20
+
+# The beachhead is one day old and holds a strip, not a garrison. Red's fields are
+# fully manned. The front on Saipan therefore starts hard against Charan Kanoa,
+# which is where it was on 15 June.
+control_point_strengths:
+  Charon Kanoa: 0.15
+
+squadrons:
+  # ==================== BLUE ====================
+  # The beachhead strip. The 318th FG's Thunderbolts flew from Aslito once it fell
+  # on 18 June; putting them on the beach strip on day one is the one liberty this
+  # campaign takes with the order of events, and it is what gives blue a land-based
+  # squadron to fight with at all.
+  # Charan Kanoa is a beach strip with 12 stands, three of them big enough for a
+  # fighter. One squadron is what fits; asking for two put the second on the ramp
+  # with zero aircraft. Air-to-air is the carrier's job here anyway, which is how
+  # the CAP over Saipan was actually flown.
+  Charon Kanoa:
+    - primary: CAS
+      secondary: air-to-ground
+      aircraft:
+        - P-47D-30 Thunderbolt (Late)
+      size: 8
+
+  # Task Force 58. Corsairs only -- see the substitution note.
+  Carrier Task Force 58:
+    - primary: BARCAP
+      secondary: air-to-air
+      aircraft:
+        - F4U-1D Corsair
+      size: 12
+    - primary: CAS
+      secondary: air-to-ground
+      aircraft:
+        - F4U-1D Corsair
+      size: 12
+
+  # ==================== RED ====================
+  # Thin and not replaced. The Great Marianas Turkey Shoot on 19-20 June cost Japan
+  # roughly 600 aircraft, and what was left in the islands was never reinforced. The
+  # real defence here is the flak belt and the ground.
+  Agana:
+    - primary: BARCAP
+      secondary: air-to-air
+      aircraft:
+        - I-16 Ishak
+      size: 6
+  Rota:
+    - primary: Fighter sweep
+      secondary: air-to-air
+      aircraft:
+        - Fw 190 A-8 Anton
+      size: 4
+
+# On-island roads. Each route binds to a control point by its first and last
+# waypoint only; the intermediates keep it on the island rather than across water.
+supply_routes:
+  # Saipan -- the west-coast road north from the beachhead to Aslito.
+  - waypoints:
+      - [184644, 99390]
+      - [182600, 100200]
+      - [180112, 101538]
+  # Saipan -- Aslito north-east to Kagman across the waist of the island.
+  - waypoints:
+      - [180112, 101538]
+      - [182400, 104000]
+      - [185396, 106656]
+  # Saipan -- Kagman north up the east side to Marpi Point.
+  - waypoints:
+      - [185396, 106656]
+      - [191000, 108600]
+      - [197999, 110912]
+  # Tinian -- West Field north to Airfield 3 up Broadway.
+  - waypoints:
+      - [167172, 87767]
+      - [171000, 89800]
+      - [174465, 91676]
+  # Tinian -- Airfield 3 to North Field; the two are barely a mile apart.
+  - waypoints:
+      - [174465, 91676]
+      - [175591, 91893]
+  # Guam -- Orote round Apra Harbour to Agana.
+  - waypoints:
+      - [-5114, -17192]
+      - [-3200, -10500]
+      - [-265, -855]
+
+# Between islands there is only water. Waypoints run offshore to the west, clear of
+# the reefs the real convoys stood off from.
+shipping_lanes:
+  # Saipan to Tinian across the strait.
+  - waypoints:
+      - [180112, 101538]
+      - [178000, 96000]
+      - [175591, 91893]
+  # Tinian south-west to Rota.
+  - waypoints:
+      - [167172, 87767]
+      - [130000, 70000]
+      - [75891, 48691]
+  # Rota south-west to Guam.
+  - waypoints:
+      - [75891, 48691]
+      - [40000, 22000]
+      - [-265, -855]

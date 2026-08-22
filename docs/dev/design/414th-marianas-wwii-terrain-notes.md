@@ -141,14 +141,67 @@ threw".
 
 ---
 
+## What DCS actually ships for 1944 in the Pacific
+
+Checked against the install and pydcs on 2026-08-22, because three claims made from memory
+during this work were wrong. The corrected picture:
+
+| | |
+|---|---|
+| Japanese aircraft | **none.** `Japan().planes` is the generic list; no A6M, Ki- or G4M anywhere |
+| Japanese ground | **8 real units** — Type 3 80mm, Type 88 75mm, Type 96 25mm and Type 94 25mm AA; Type 89 I Go and Type 98 Ke Ni tanks; Type 98 So Da APC; Type 94 truck |
+| Japanese ships | **none.** No IJN hull of any kind |
+| US carrier | **`Essex`, "Essex Class Carrier 1944"** — ships with DCS, with a `WW2Essex` preset group fielding USS Bennington (CV-20) |
+| US Pacific aircraft | **F4U-1D Corsair ships.** No Hellcat, Avenger, Dauntless or B-29 |
+
+DCS also ships **5 fictional IJN liveries for the Fw 190 A-8** and a **Japan livery for the
+I-16**, so the stand-in path for red air is one ED built deliberately.
+
+## Factions
+
+Two campaign-specific factions, validated to load with **no dropped unit strings**:
+
+- **`usa_1944_marianas.json`** — "USA 1944 (Marianas)". F4U-1D, P-47D-30 Early/Late, P-47D-40,
+  A-20G, B-17G, C-47; the Essex, the LST and Ally Flak. The P-47D is not a stand-in: the 318th
+  Fighter Group flew Thunderbolts off Aslito from 22 June 1944, and Aslito is Isley here. The
+  P-51D is deliberately absent — it did not reach the Pacific until Iwo Jima in March 1945.
+- **`japan_1944_marianas.json`** — "Japan 1944 (Marianas)". All eight real Japanese ground and
+  AA types, no German armour. I-16 and Fw 190 A-8 in the shipped IJN liveries for air, German
+  towed guns for field artillery, `Infantry Mauser 98` for infantry — DCS has no Japanese
+  equivalent of any of the three. No navy.
+
+The generic `japan_1944.json` and `usa_1944.json` are untouched; other campaigns use them.
+
+**Silent-drop trap, hit during this work:** `Type_89_I_Go`'s pydcs name is `Tk Type 89 I Go`
+but its Retribution yaml variant is `Type 89 I Go Tank`, and a faction naming the pydcs form
+loads with the unit **silently missing**. Validate every faction string by loading the faction
+and comparing counts; do not trust the pydcs name.
+
+## Open — the carrier needs an in-game pass
+
+`resources/units/ships/Essex.yaml` declares **`class: HelicopterCarrier`**, not
+`AircraftCarrier` (price 0, no deck angle). The only `AircraftCarrier` Essex is
+`Essex_SCB125`, which is the VWV mod's 1950s angled-deck refit — wrong hull for 1944 and
+mod-gated.
+
+That is why `carrier_names` is ignored for this faction and `helicopter_carrier_names` is the
+field that takes effect, which is what `allies_1944.json` already does.
+
+The F4U-1D is `carrier_capable: true` **and** `lha_capable: true`, and `controlpoint.py`'s
+basing gate is `aircraft.helicopter or aircraft.lha_capable`, so Corsairs can base on it. But
+`flightgroupspawner.py` sets `is_vtol = not is_heli and aircraft.lha_capable`, so a Corsair on
+the Essex takes the **VTOL spawn path built for Harriers**. Whether it launches correctly off
+a straight WWII deck is untested and cannot be checked headlessly. Fly it before building a
+carrier campaign around it.
+
 ## Not done, and out of scope for the map itself
 
 - **No campaign.** Nothing is authored on the terrain, so it does not appear in the New Game
   wizard and no changelog entry has been written. Supply routes on it must trace real 1944
   roads per the corridor standard — `tools/supply_route_geo.py` already carries Guam routes
   for the modern map and they transfer unchanged, since the grid is shared.
-- **Factions.** `japan_1944.json` fields an I-16 and an Fw 190 A-8 as stand-ins; DCS ships no
-  Japanese airframe. `usa_1944.json` is a western-front army — P-47s, P-51s, B-17s, no
-  Corsairs or Hellcats. A Pacific campaign needs both reworked.
-- **Carriers.** Operation Forager is a carrier war and DCS ships no WWII US carrier.
+- **No Japanese flak layout.** Preset-group layouts pin specific unit ids
+  (`WW2_Flak_Site.yaml` names `flak18`), so a Japanese AA site needs its own `.miz` + `.yaml`
+  layout pair. The faction ships `preset_groups: []` and builds AD from `air_defense_units`
+  meanwhile, which is what `japan_1944.json` already does.
 - **Pagan.** Airfield 11 is unusable until the landmap covers the island. See above.

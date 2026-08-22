@@ -1,0 +1,58 @@
+{
+  "country": "Japan",
+  "name": "Japan 1944 (Marianas)",
+  "authors": "414th Joint Fighter Group",
+  "description": "<p>The Japanese garrison of the Marianas in mid-1944: the 43rd Division on Saipan, the 29th on Guam, and the anti-aircraft belt that made Aslito and Orote expensive.</p><p>Every ground and air-defense unit is a real Japanese type. The two aircraft are not: DCS ships no Japanese airframe, so the I-16 stands in for the A6M and the Fw 190 A-8 for the heavier Army fighters, both wearing the IJN liveries DCS ships for exactly this purpose. Field artillery is a German towed stand-in for the same reason.</p><p>No navy. The IJN carrier force was destroyed at the Philippine Sea on 19-20 June 1944, and DCS ships no IJN hull.</p>",
+  "locales": [
+    "ja_JP"
+  ],
+  "aircrafts": [
+    "I-16 Ishak",
+    "Fw 190 A-8 Anton"
+  ],
+  "frontline_units": [
+    "Type 89 I Go Tank",
+    "Type 98 Ke Ni Tank",
+    "APC Type 98 So Da",
+    "AAA 25mm x 2 Type 94 Truck"
+  ],
+  "artillery_units": [
+    "FH Pak 40 75mm",
+    "FH LeFH-18 105mm"
+  ],
+  "logistics_units": [
+    "Truck Type 94"
+  ],
+  "infantry_units": [
+    "Infantry Mauser 98"
+  ],
+  "air_defense_units": [
+    "AAA 80mm Type 3 Flak",
+    "AAA 75mm Type 88 Flak",
+    "AAA 25mm x 2 Type 96",
+    "AAA 25mm x 2 Type 94 Truck"
+  ],
+  "preset_groups": [],
+  "naval_units": [],
+  "missiles": [],
+  "requirements": {
+    "WW2 Asset Pack": "https://www.digitalcombatsimulator.com/en/products/other/wwii_assets_pack/"
+  },
+  "carrier_names": [],
+  "helicopter_carrier_names": [],
+  "has_jtac": false,
+  "doctrine": "ww2",
+  "building_set": "ww2free",
+  "liveries_overrides": {
+    "Fw 190 A-8 Anton": [
+      "Fictional IJN 256th Kokutai Rai-153",
+      "Fictional IJN Carrier Akagi AI-103",
+      "Fictional IJN Carrier Akagi AI-151",
+      "Fictional IJN Carrier Soryu BI-112",
+      "Fictional IJN OTU Tsukuba Tsu-102"
+    ],
+    "I-16 Ishak": [
+      "Japan"
+    ]
+  }
+}

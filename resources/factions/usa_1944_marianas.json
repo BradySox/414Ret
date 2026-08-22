@@ -1,0 +1,61 @@
+{
+  "country": "USA",
+  "name": "USA 1944 (Marianas)",
+  "authors": "414th Joint Fighter Group",
+  "description": "<p>US forces in the Marianas, June to August 1944: Operation Forager.</p><p>The P-47D is not a substitute here. The 318th Fighter Group flew Thunderbolts off Aslito Field from 22 June 1944, a week after the Saipan landings, and Aslito is Isley on this map. Marine and Navy Corsairs and the Essex-class carriers of Task Force 58 round it out.</p><p>No Hellcat, Avenger, Dauntless or B-24 in DCS, so the B-17G stands in for the heavy bombers and the A-20G for the mediums. Landing craft and the LST are the real thing.</p>",
+  "locales": [
+    "en_US"
+  ],
+  "aircrafts": [
+    "F4U-1D Corsair",
+    "P-47D-30 Thunderbolt (Early)",
+    "P-47D-30 Thunderbolt (Late)",
+    "P-47D-40 Thunderbolt",
+    "A-20G Havoc",
+    "B-17G Flying Fortress",
+    "C-47 Skytrain"
+  ],
+  "frontline_units": [
+    "M4A2(75) Sherman",
+    "M10 3-inch Gun Motor Carriage",
+    "M8 Greyhound Light Armored Car",
+    "M2A1 Half-Track"
+  ],
+  "artillery_units": [
+    "M12 Gun Motor Carriage"
+  ],
+  "logistics_units": [
+    "Truck GMC \"Jimmy\" 6x6 Truck"
+  ],
+  "infantry_units": [
+    "Infantry M1 Garand"
+  ],
+  "air_defense_units": [
+    "Bofors 40 mm Gun"
+  ],
+  "preset_groups": [
+    "Ally Flak",
+    "WW2LST",
+    "WW2Essex"
+  ],
+  "naval_units": [
+    "USS Bennington (CV-20)"
+  ],
+  "missiles": [],
+  "requirements": {
+    "WW2 Asset Pack": "https://www.digitalcombatsimulator.com/en/products/other/wwii_assets_pack/"
+  },
+  "carrier_names": [
+    "USS Essex",
+    "USS Yorktown",
+    "USS Hornet",
+    "USS Bunker Hill",
+    "USS Wasp",
+    "USS Lexington"
+  ],
+  "helicopter_carrier_names": [],
+  "has_jtac": false,
+  "doctrine": "ww2",
+  "building_set": "ww2ally",
+  "cargo_ship": "LST Mk.II"
+}

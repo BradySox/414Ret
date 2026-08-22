@@ -25,6 +25,7 @@ aircraft will be able to see the enemy's kneeboard for the same airframe.
 
 import datetime
 import math
+import re
 import textwrap
 from collections import defaultdict
 from dataclasses import dataclass, field
@@ -2314,7 +2315,11 @@ class ThreatIntelBriefPage(KneeboardPage):
             if card.defeat:
                 writer.text(f"DEFEAT: {card.defeat}", font=body, wrap=True)
         else:
-            prefix = "Fly TARPS to ID.   BE "
+            # Engaging a site is the ONLY thing that reveals it since the
+            # 2026-08-18 §3 rework; recon finds hidden command posts and
+            # nothing else. This line briefed a TARPS sortie that cannot
+            # identify any of these, and contradicted the intro above it.
+            prefix = "Engage to ID.   BE "
             writer.text_runs(
                 [
                     (prefix, None),
@@ -2420,6 +2425,10 @@ def _brief_sam_threats(cards: List[ThreatCard], limit: int = 3) -> str:
     return " · ".join(bits)
 
 
+#: A rack-mounted store names its own count ("2xMk 82", "4 x GBU-12").
+_RACK_MULTIPLIER_RE = re.compile(r"^(\d+)\s*x\s*(.+)$", re.IGNORECASE)
+
+
 def _brief_loadout(units: List[Any]) -> str:
     """One-line **ordnance** summary from the lead aircraft's generated pylons.
 
@@ -2445,7 +2454,14 @@ def _brief_loadout(units: List[Any]) -> str:
         if getattr(weapon.weapon_group, "type", None) is WeaponType.TGP:
             has_tgp = True
             continue
-        name = (getattr(weapon.weapon_group, "name", None) or weapon.name or "").strip()
+        # A weapon whose GROUP is unnamed still has a name of its own, and the
+        # group's placeholder is the literal string "Unknown" -- truthy, so it
+        # won the `or` and was then dropped by the guard below. That silently
+        # ate every 370 gal fuel tank on an F-16 BAI card.
+        group_name = getattr(weapon.weapon_group, "name", None)
+        if not group_name or group_name == "Unknown":
+            group_name = weapon.name
+        name = (group_name or "").strip()
         low = name.lower()
         if "harm targeting" in low:  # AN/ASQ-213 HTS pod -- a SEAD sensor, not a weapon
             has_hts = True
@@ -2459,13 +2475,20 @@ def _brief_loadout(units: List[Any]) -> str:
             or "jammer" in low
         ):
             continue
+        # A rack carries several stores on one station, and the count is the
+        # thing a pilot briefs: a TER with 2 x Mk-82 is two bombs, not one.
+        # The multiplier used to be stripped off the name and discarded.
+        per_station = 1
         if "fuel" in low or "tank" in low:
             name = "bag"
-        elif name[0].isdigit() and "x" in name[:4].lower():
-            name = name.split("x", 1)[1].strip()  # strip a rack multiplier
+        else:
+            rack = _RACK_MULTIPLIER_RE.match(name)
+            if rack:
+                per_station = int(rack.group(1))
+                name = rack.group(2).strip()
         if name not in counts:
             order.append(name)
-        counts[name] = counts.get(name, 0) + 1
+        counts[name] = counts.get(name, 0) + per_station
     parts = [(f"{counts[n]}× {n}" if counts[n] > 1 else n) for n in order]
     if has_hts:
         parts.append("HTS")
@@ -2540,6 +2563,16 @@ class PackagesMapPage(KneeboardPage):
     ENEMY = (200, 45, 45)
     NEUTRAL = (110, 110, 110)
     TARGET = (255, 140, 0)
+
+    #: How far a label may sit from its own marker. The search used to walk to
+    #: the map edge, so a crowded cluster threw its names hundreds of pixels
+    #: into open sea where they read as belonging to whatever was near them
+    #: (flown 2026-08-22: eleven target names stacked in a column clear of the
+    #: dots, and "King Abdullah II" printed over water).
+    MAX_LABEL_OFFSET = 90
+    #: Past this gap a label gets a leader line back to its marker. Below it the
+    #: label is adjacent and a line would just be clutter.
+    LEADER_AT = 22
 
     def __init__(
         self,
@@ -2681,11 +2714,34 @@ class PackagesMapPage(KneeboardPage):
                     continue
                 for step in (label_h, -label_h):
                     ly = py - 7
-                    while off_y <= ly <= bottom_edge:
+                    while (
+                        off_y <= ly <= bottom_edge
+                        and abs(ly - (py - 7)) <= self.MAX_LABEL_OFFSET
+                    ):
                         if not overlaps((lx, ly, lx + tw, ly + label_h)):
                             return lx, ly
                         ly += step
             return None
+
+        def leader(
+            px: int, py: int, lx: float, ly: float, tw: float, color: Any
+        ) -> None:
+            """Join a displaced label back to the marker it belongs to.
+
+            A label pushed clear of its dot is worse than no label: the reader
+            attaches it to whatever it landed next to.
+
+            Ends at the label's NEAR edge, and stops short of it. Drawing to the
+            far edge runs the line straight through the text, which then reads as
+            punctuation -- "H3 Northwest" came out as "H3-Northwest" when the
+            label sat left of its marker.
+            """
+            near_x = lx + tw if lx + tw < px else lx
+            gap = 3 if near_x < px else -3
+            cx, cy = near_x + gap, ly + label_h / 2
+            if math.dist((px, py), (cx, cy)) < self.LEADER_AT:
+                return
+            draw.line((px, py, cx, cy), fill=color, width=1)
 
         #: Target names already drawn. A package target that IS a control point
         #: appears in both lists, and the base pass would then print the same
@@ -2711,6 +2767,7 @@ class PackagesMapPage(KneeboardPage):
             lx, ly = slot
             placed.append((lx, ly, lx + tw, ly + label_h))
             labelled.add(name)
+            leader(px, py, lx, ly, tw, self.TARGET)
             # White plate behind the label so it reads against the map.
             draw.rectangle(
                 (lx - 1, ly, lx + tw + 1, ly + label_h), fill=(255, 255, 255)
@@ -2731,6 +2788,7 @@ class PackagesMapPage(KneeboardPage):
                 continue
             lx, ly = slot
             placed.append((lx, ly, lx + tw, ly + label_h))
+            leader(px, py, lx, ly, tw, color)
             draw.text(
                 (lx, ly),
                 name,

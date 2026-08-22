@@ -329,7 +329,10 @@ def test_unidentified_card_shows_bearings_without_a_count() -> None:
     assert "site(s)" not in text  # no count headline
     assert "+" not in text  # no "+N" overflow total
     assert "…" in text  # capped contacts end in an ellipsis instead
-    assert "fly TARPS to ID" in text.lower() or "Fly TARPS to ID" in text
+    # Engaging a site is the only reveal since the 2026-08-18 §3 rework, so the
+    # card must not brief a TARPS sortie that cannot identify anything.
+    assert "engage to id" in text.lower()
+    assert "tarps" not in text.lower()
 
 
 def test_fit_cues_truncates_to_available_width() -> None:

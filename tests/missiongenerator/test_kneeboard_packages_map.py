@@ -149,3 +149,127 @@ def test_the_map_fills_the_page(
     assert any(
         pixel != background for pixel in row
     ), "bottom of the page is still blank background"
+
+
+def render_with_markers(
+    targets: List[Tuple[str, float, float]],
+    control_points: List[Tuple[float, float, str, str, str]],
+    terrain: Any,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> Tuple[
+    List[Tuple[str, Tuple[float, float, float, float]]], List[Tuple[float, float]]
+]:
+    """Render, returning the labels drawn AND every marker centre.
+
+    The placement bug this guards is a label landing far from the thing it
+    names, which is invisible to a labels-only view: each name is legible on its
+    own, and the page is still wrong.
+    """
+    drawn: List[Tuple[str, Tuple[float, float, float, float]]] = []
+    markers: List[Tuple[float, float]] = []
+    original_text = ImageDraw.ImageDraw.text
+    original_ellipse = ImageDraw.ImageDraw.ellipse
+
+    def record_text(self: Any, xy: Any, text: str, *args: Any, **kwargs: Any) -> Any:
+        font = kwargs.get("font")
+        width = font.getlength(text) if font is not None else 8.0 * len(text)
+        drawn.append((text, (xy[0], xy[1], xy[0] + width, xy[1] + 15)))
+        return original_text(self, xy, text, *args, **kwargs)
+
+    def record_ellipse(self: Any, xy: Any, *args: Any, **kwargs: Any) -> Any:
+        x0, y0, x1, y1 = xy
+        markers.append(((x0 + x1) / 2, (y0 + y1) / 2))
+        return original_ellipse(self, xy, *args, **kwargs)
+
+    monkeypatch.setattr(ImageDraw.ImageDraw, "text", record_text)
+    monkeypatch.setattr(ImageDraw.ImageDraw, "ellipse", record_ellipse)
+    PackagesMapPage(targets, control_points, terrain, dark_kneeboard=False).write(
+        tmp_path / "map.png"
+    )
+    labels = [
+        d for d in drawn if d[0] not in ("Package Targets Map",) and len(d[0]) < 40
+    ]
+    return labels, markers
+
+
+#: A dozen package targets inside ~25 km, the shape a Syria BAI turn actually
+#: generates. Flown 2026-08-22: eleven of these names came out stacked in a
+#: column clear of every dot, and an airfield name printed over open water.
+_DENSE_CLUSTER: List[Tuple[str, float, float]] = [
+    ("NUMBAT", -318000.0, 30000.0),
+    ("COW", -316500.0, 33500.0),
+    ("KOMODO", -321000.0, 28500.0),
+    ("BAT", -319500.0, 35500.0),
+    ("SHEEP", -324000.0, 31000.0),
+    ("CRICKET", -326500.0, 29500.0),
+    ("ERMINE", -329500.0, 34000.0),
+    ("SABERTOOTH", -333000.0, 30500.0),
+    ("HERRING", -335500.0, 33000.0),
+    ("STAGHORN", -338000.0, 28000.0),
+    ("TURTLE", -341000.0, 31500.0),
+    ("TAPIR", -315000.0, 39000.0),
+]
+
+
+#: The bases around the cluster are load-bearing in this fixture: they seed the
+#: occupied boxes that push a target's name away from its dot. With no control
+#: points every label places on its first try and the case proves nothing.
+_SURROUNDING_BASES: List[Tuple[float, float, str, str, str]] = [
+    (-311000.0, -3000.0, "friendly", "airbase", "Akrotiri"),
+    (-330000.0, 6000.0, "friendly", "airbase", "Ben Gurion"),
+    (-334000.0, 4000.0, "friendly", "airbase", "Tel Nof"),
+    (-337000.0, 2000.0, "friendly", "airbase", "Hatzor"),
+    (-326000.0, -14000.0, "friendly", "carrier", "CVN-73 George Washington"),
+    (-318000.0, -8000.0, "friendly", "lha", "LHA-1 Tarawa"),
+    (-343000.0, 32000.0, "enemy", "airbase", "King Abdullah II"),
+    (-321000.0, 44000.0, "enemy", "airbase", "Muwaffaq Salti"),
+    (-317000.0, 37000.0, "enemy", "airbase", "Prince Hassan"),
+    (-300000.0, 62000.0, "enemy", "airbase", "H3"),
+    (-297000.0, 58000.0, "enemy", "airbase", "H3 Northwest"),
+    (-303000.0, 59000.0, "enemy", "airbase", "H3 Southwest"),
+    (-294000.0, 52000.0, "enemy", "airbase", "HJ01"),
+    (-308000.0, 66000.0, "enemy", "airbase", "Ruwayshid"),
+]
+
+
+def test_a_crowded_label_stays_with_its_marker(
+    terrain: Any, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """No label may be stranded away from every marker on the page.
+
+    The slot search used to walk to the map edge, so a dense cluster threw its
+    names into open terrain where a reader attaches them to whatever they landed
+    beside. Bounding the walk is what this pins; a name that cannot be placed
+    within reach is dropped instead, which costs the name but never lies.
+    """
+    labels, markers = render_with_markers(
+        _DENSE_CLUSTER, _SURROUNDING_BASES, terrain, tmp_path, monkeypatch
+    )
+    # Targets are drawn one dot each, in order, before any base dot, so marker i
+    # belongs to _DENSE_CLUSTER[i]. Measuring against the NEAREST marker instead
+    # would pass trivially: in a cluster this tight some dot is always close, and
+    # a name sitting on the wrong dot is exactly the failure.
+    assert len(markers) >= len(_DENSE_CLUSTER)
+    own = {name: markers[i] for i, (name, _, _) in enumerate(_DENSE_CLUSTER)}
+    reach = PackagesMapPage.MAX_LABEL_OFFSET + 40
+    stranded = []
+    for text, (x0, y0, x1, y1) in labels:
+        marker = own.get(text)
+        if marker is None:
+            continue
+        cx, cy = x0, (y0 + y1) / 2
+        away = ((cx - marker[0]) ** 2 + (cy - marker[1]) ** 2) ** 0.5
+        if away > reach:
+            stranded.append((text, round(away)))
+    assert not stranded, f"labels stranded from their own marker: {stranded}"
+
+
+def test_a_crowded_cluster_still_does_not_overprint(
+    terrain: Any, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # Bounding the search must not reintroduce the overprinting it replaced.
+    labels, _ = render_with_markers(
+        _DENSE_CLUSTER, _SURROUNDING_BASES, terrain, tmp_path, monkeypatch
+    )
+    assert overlapping(labels) == []

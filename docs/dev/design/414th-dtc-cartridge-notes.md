@@ -434,14 +434,42 @@ Reported from the cockpit: the DEAD steerpoint does not sit at 0 AGL, it sits at
 
 Split into `steerpoint_elevation()` (the point's ground) and `leg_altitude()` (what
 to fly, with `altitudeType`). Only takeoff and landing know their own ground — B79
-plans the field's elevation onto them — so everything else writes 0.
+plans the field's elevation onto them.
 
-**The open half:** 0 is still wrong for a target on high terrain, and closing it
-needs terrain height at an arbitrary point, which nothing in the tree has. A
-SRTM-sampled table was built and reverted the same day as over-scoped for an
-unreproduced premise; if it is wanted, take the DCS-side `land.getHeight` dump
-instead (exact, offline, complete) and check first that a non-zero elevation is
-actually what the cockpit needed. Checklist B90.
+**Everything else takes the nearest airfield's elevation (2026-08-22, DM call).**
+A generated Viper cartridge showed every steerpoint but the landing at 0, and the
+only height data the campaign carries is the per-airfield OSM/DEM elevation the
+kneeboard already uses for QFE (`field_elevation_for_airport`). So
+`nearest_field_elevation()` picks the closest airfield *with a record* — boats and
+FOBs have none and never answer, so a coastal target is not pulled to sea level
+by the carrier — and returns 0 only when no field on the map has one. Exact on a
+flat map, within the field's valley elsewhere, closer than 0 everywhere. Fork-only:
+upstream has no airfield elevation data, so the held carve keeps 0.
+
+**Still an estimate.** The exact route, if a pod slaved to a hilltop target still
+aims short, is a DCS-side dump: the GUI-environment `Terrain.GetHeight(x, y)` the
+mission editor itself uses, sampled on a grid per terrain the way the pydcs export
+is run — not the SRTM-sampled table that was built and reverted on 2026-08-20.
+Checklist B90.
+
+### The DED reads `routeAltitude`, and nothing honours the AGL tag (2026-08-22)
+
+The nearest-field fix above landed in `alt`, and the DM's next Viper still read
+**ELEV 0 on the DED** for the DEAD steerpoint. The ME's NAV PTS panel shows `alt`
+("Elevation ft MSL"; "Terrain ft" is computed live from the map and never stored),
+but **the jet's steerpoint ELEV is `routeAltitude`** — the same number the Routes
+panel edits. We were writing the ground-marked target as `routeAltitude = 0,
+altitudeType = 2`, mirroring the miz route's "0 AGL", and the jet showed exactly
+that: 0.
+
+`altitudeType` is decorative. In `MPD/NAV_Routes.lua` the editor's
+`transformAltitude()` is `return val_3` — switching AGL/MSL changes the tag and
+nothing else — and its own Mach calculation tests `route.alt_type`, a key that
+does not exist, so even the editor never adds terrain to an AGL value. So every
+altitude is now written **MSL with `altitudeType = 1`**: a ground-marked point's
+altitude is the ground estimate itself, and an AGL-planned leg (low-level and
+helicopter profiles) is converted with the same estimate. The .miz route keeps its
+own 0 AGL, which DCS does resolve.
 
 **The .miz was never wrong.** Read out of a flown mission:
 `DEAD on KATYDID` is `alt = 0, alt_type = "RADIO"`, which is DCS's own encoding for

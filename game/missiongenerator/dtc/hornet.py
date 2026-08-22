@@ -160,7 +160,7 @@ def _build_wypt(
     waypoints = flight.waypoints[1 : MAX_WAYPOINTS + 1] if options.route else []
     for number, waypoint in enumerate(waypoints, start=1):
         on_route = is_route_waypoint(waypoint)
-        route_alt_m, altitude_type = leg_altitude(waypoint)
+        route_alt_m, altitude_type = leg_altitude(waypoint, game)
         entry: dict[str, Any] = {
             "wypt_num": number,
             "id": f"STPT{number}",
@@ -170,7 +170,7 @@ def _build_wypt(
             "y": waypoint.position.y,
             # The ground under the point, not the height to fly it at. ED fills
             # this from terrain (WYPT_NAV.lua); the leg altitude rides NAV_ROUTE.
-            "alt": steerpoint_elevation(waypoint),
+            "alt": steerpoint_elevation(waypoint, game),
             "altitudeType": altitude_type,
             "velocityType": 3,
             "R1": on_route,

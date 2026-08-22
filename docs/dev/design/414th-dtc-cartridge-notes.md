@@ -741,9 +741,23 @@ Mach x 3 values) and its bilinear lookup are ported into `tomcat.py` as
 knots into Mach. The ME's *import* recomputes them and ignores what the file
 says; the jet does not, so they are written correctly.
 
-Every station gets the **same ordered target list**. Which bomb takes which
-aimpoint is the crew's call from the CDNU index — the generator does not read the
-loadout and does not guess.
+**Each station that carries a JDAM gets its own target as PP1** (2026-08-22, on
+a squadron question). The mission generator has already written every pylon into
+the miz, so `jdam_stations()` reads the lead client's `unit.pylons` and matches the
+CLSIDs against everything pydcs names a JDAM (racks included). The pylon-to-station
+mapping is DCS's own: `F-14B.lua` defines the pylons in the order 1A, 1B, 2, 3, 4,
+5, 6, 7, 8B, 8A, so **pydcs pylons 4–7 are the tunnel stations the jet labels 3–6**
+— the descriptor's STA 3–6. Targets are handed out in route order across the
+loaded stations, wrapping when there are more bombs than targets, so releasing
+STA 3, 4, 5, 6 at PP1 walks the list with no cockpit selection. Every target stays
+on every station behind it (PP2 onward, in order) and a station carrying anything
+else gets the plain list, so the crew can always re-pick.
+
+**Every target in a cluster runs in from the IP.** A strike plan gives each
+building its own target waypoint a few hundred metres apart; measuring the second
+bomb's run-in from the first target gave it a heading set by a 300 m hop, a
+two-second leg for its speed and the ground as its release altitude. The reference
+is the last non-target route waypoint before the cluster.
 
 `attack_heading` is the run-in: the bearing from the previous route waypoint to
 the target. `drop_alt` is the planned leg altitude, falling back to the ingress

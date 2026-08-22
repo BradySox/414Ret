@@ -14,6 +14,21 @@
 
 entries:
   - date: 2026-08-22
+    title: The Tomcat's JDAM page hands each bomb its own target
+    change: >-
+      The F-14B(U) cartridge reads which tunnel stations actually carry a JDAM
+      and gives each one a different target as PP1, in route order, wrapping
+      when there are more bombs than targets. Every target stays on every
+      station for a re-pick. All targets in a cluster now run in from the IP;
+      the second building used to measure its heading, speed and release
+      altitude from the first.
+    watch: >-
+      Load a multi-building strike with two or more JDAMs on the tunnel
+      stations. On the JDAM page, STA 3 PP1 should be the first building and
+      the next loaded station's PP1 the second, both with the same run-in
+      heading and 20,000-ft-class release altitude.
+    row: B91
+  - date: 2026-08-22
     title: The Package Targets Map shows real terrain
     change: >-
       The page behind the packages list drew land as a flat tan fill with a

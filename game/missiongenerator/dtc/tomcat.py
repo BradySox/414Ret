@@ -320,10 +320,10 @@ def _reference(coords: _Coords, name: str, x: float, y: float) -> dict[str, Any]
     return entry
 
 
-#: Waypoint types and the jet's name code for each. Only the four codes the NAV
-#: tab documents unambiguously are used -- an ED-authored cartridge in hand names
-#: its initial point ``IPORCXIP``, so the grammar is real, but ``DP``/``HA``/``ST``
-#: have no stated meaning and guessing one would be an unsourced value.
+#: Waypoint types and the jet's name code for each. ``XST`` (the surface target,
+#: a HUD pentagon -- squadron tip 2026-08-22) goes on the first target in
+#: ``_build_nav`` rather than here. ``DP``/``HA``/``FP`` still have no stated
+#: meaning and guessing one would be an unsourced value.
 _NAME_SUFFIXES = {
     FlightWaypointType.BULLSEYE: "XB",
     FlightWaypointType.DIVERT: "XD",
@@ -413,9 +413,11 @@ def _route_waypoint(
     coords: _Coords,
     waypoint: FlightWaypoint,
     previous: Optional[FlightWaypoint],
+    code: Optional[str] = None,
 ) -> dict[str, Any]:
     tot = _zulu_clock(game, waypoint)
-    entry: dict[str, Any] = {"name": _coded_name(waypoint)}
+    name = _suffixed(_point_name(waypoint), code) if code else _coded_name(waypoint)
+    entry: dict[str, Any] = {"name": name}
     entry.update(
         coords.of(
             waypoint.position.x,
@@ -467,12 +469,22 @@ def _build_nav(
     # Skip waypoint 0 (the spawn) so plan 2's waypoint n IS the kneeboard's
     # waypoint n -- the same off-by-one the Hornet hit.
     previous: Optional[FlightWaypoint] = None
+    surface_target_named = False
     for waypoint in flight.waypoints[1:]:
         if not is_route_waypoint(waypoint):
             continue
         if len(route["waypoints"]) == MAX_WAYPOINTS:
             break
-        route["waypoints"].append(_route_waypoint(game, coords, waypoint, previous))
+        # XST marks the surface target the HUD highlights with a pentagon
+        # (squadron tip, 2026-08-22). One point: the first target in route
+        # order, which is also STA 3's PP1. Whether the jet honours more is
+        # unknown, so the rest stay plain.
+        code = None
+        if is_target_waypoint(waypoint) and not surface_target_named:
+            code, surface_target_named = "XST", True
+        route["waypoints"].append(
+            _route_waypoint(game, coords, waypoint, previous, code)
+        )
         previous = waypoint
     return plans
 

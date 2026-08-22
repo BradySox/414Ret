@@ -1164,9 +1164,10 @@ def test_tomcat_route_lands_on_plan_two_with_the_jets_name_codes() -> None:
     assert route["route_as_line"] is True
     # Waypoint 0 is the spawn, so plan 2's n matches the kneeboard's n.
     # Bare uppercase alphanumerics, like every name in the authored cartridge.
+    # The first target carries XST, the surface target the HUD highlights.
     assert [w["name"] for w in route["waypoints"]] == [
         "INGREXIP",
-        "POWERPLA",
+        "POWERXST",
         "LANDIXHB",
     ]
     # 07:25 local on a UTC+4 map is 03:25Z.
@@ -1697,3 +1698,11 @@ def test_jdam_release_speed_never_exceeds_the_module_default() -> None:
         build_tomcat_cartridge(flight, mission_data, game, "Slow").to_json()
     )["data"]["JDAM"]["stations"][0]["targets"][0]
     assert 250 <= slow["drop_spd"] <= 265
+
+
+def test_only_the_first_target_in_a_cluster_is_the_surface_target() -> None:
+    flight, mission_data, game = _cluster_flight()
+    route = json.loads(
+        build_tomcat_cartridge(flight, mission_data, game, "XST").to_json()
+    )["data"]["NAV"][1]["waypoints"]
+    assert [w["name"] for w in route] == ["INGREXIP", "BLDG1XST", "BLDG2", "BLDG3"]

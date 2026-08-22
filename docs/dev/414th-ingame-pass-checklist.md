@@ -5614,8 +5614,17 @@ turn on a wing with a small dedicated-jammer squadron and read the ATO before fl
 
 **Already done, on paper:** the emitted JSON was diffed against a hand-authored
 F-14B(U) cartridge (the training-night package) and every section's key set matches,
-with an unused JDAM slot byte-identical. What that cannot show is whether the jet
-reads it.
+with an unused JDAM slot byte-identical.
+
+**ME import — DONE 2026-08-22, one defect found and fixed.** The DM loaded a cartridge
+generated from the Iraq autosave: NAV imported outright (plan 2 route with TOTs, the
+front line as line 2, the `XB` references) and so did the JDAM data, but the
+post-import refresh died in `init_CMDS` because the first cut omitted the `CMDS`
+section — JDAM grid blank until a tab switch, cartridge name stuck on `DEFAULT`.
+Fixed the same day: every section is always written, CMDS as ED's defaults.
+**Re-import the regenerated `Retribution F-14BU test.dtc` to confirm** the name reads
+the flight's callsign rather than `DEFAULT`, and the JDAM grid fills on load. Load it into a mission on the Iraq map —
+the ME derives lat/lon from x/y in the open mission's projection.
 
 **Cheapest remaining check, and it needs no flying:** open the generated `.miz` in the
 Mission Editor, open the DTC manager, and load the flight's `DTC/*.dtc`. If the ME
@@ -5633,6 +5642,9 @@ Then fly one: F-14B(U) client flight on a campaign that fields it
 - **Fail signature — the whole cartridge is absent:** the file is in the miz but
   nothing loads. Check `type` reads exactly `F-14BU` in both the top level and
   `data` — `setData` refuses any other value outright.
+- **Fail signature — a section missing from the file:** any of `NAV`/`JDAM`/`CMDS`/
+  `TIS` absent crashes the descriptor's refresh (`dcs.log`: `attempt to index field
+  ... (a nil value)` in `F-14BU_DTC.lua`). All four must always be present.
 - **Fail signature — points are in the sea, or 3.28x off:** the coordinate pair
   the jet reads is not the one we favour. NAV elevations are feet and JDAM
   elevations are metres; a systematic 3.28 ratio means one of the two got the

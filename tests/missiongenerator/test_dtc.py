@@ -1330,7 +1330,11 @@ def test_tomcat_tis_sends_to_the_package() -> None:
     assert tis["own_callsign"] == "      "
 
 
-def test_tomcat_sections_are_omitted_when_off() -> None:
+def test_tomcat_sections_off_carry_the_editors_reset_state() -> None:
+    """This descriptor cannot take a partial cartridge -- setData's tail calls
+    init_CMDS(), which indexes data.CMDS.CMDSProgramSettings outright (the ME
+    import of 2026-08-22 died there). So every section is always present, and
+    an off section looks exactly like an untouched cartridge's."""
     flight, mission_data, game = _tomcat_fixture()
     flight.dtc_options = DtcOptions(
         comms=False,
@@ -1343,12 +1347,69 @@ def test_tomcat_sections_are_omitted_when_off() -> None:
     data = json.loads(
         build_tomcat_cartridge(flight, mission_data, game, "Bare").to_json()
     )["data"]
-    assert "NAV" not in data
-    assert "JDAM" not in data
-    assert "TIS" not in data
-    # CMDS is never emitted: ED's programs are the tuning, and nothing in the
-    # campaign improves on them.
-    assert "CMDS" not in data
+    assert sorted(data) == [
+        "CMDS",
+        "JDAM",
+        "NAV",
+        "TIS",
+        "cartridge_name",
+        "name",
+        "type",
+    ]
+    assert len(data["NAV"]) == 12
+    assert all(plan == _EMPTY_PLAN for plan in data["NAV"])
+    stations = data["JDAM"]["stations"]
+    assert len(stations) == 4
+    assert all(
+        len(s["targets"]) == 8 and not any(t["active"] for t in s["targets"])
+        for s in stations
+    )
+    assert data["TIS"] == {
+        "use_mission_callsign": True,
+        "own_callsign": "      ",
+        "add_wingmen_to_list": True,
+        "send_to_callsigns": [],
+    }
+
+
+def test_tomcat_cmds_is_eds_stock_table() -> None:
+    """Always written, never campaign-tuned: the values the editor itself saves
+    for an untouched cartridge, checked against an authored one."""
+    flight, mission_data, game = _tomcat_fixture()
+    cmds = json.loads(
+        build_tomcat_cartridge(flight, mission_data, game, "CMDS").to_json()
+    )["data"]["CMDS"]
+    assert cmds["CMDSBingoSettings"] == {
+        "ChaffNum": 10,
+        "FlaresNum": 10,
+        "Other1Num": 0,
+        "Other2Num": 0,
+    }
+    assert cmds["CMDSAutoPrograms"]["SAM"] == {"Program": 5, "Threshold": 3}
+    assert cmds["CMDSAutoOverrides"] == []
+    programs = cmds["CMDSProgramSettings"]
+    assert [programs[f"PROG_{i}"]["Priority"] for i in range(1, 9)] == [
+        2,
+        0,
+        0,
+        0,
+        1,
+        1,
+        0,
+        0,
+    ]
+    assert programs["PROG_1"]["Chaff"] == {
+        "BurstQuantity": 2,
+        "BurstInterval": 0.2,
+        "SalvoQuantity": 8,
+        "SalvoInterval": 1,
+    }
+    assert programs["PROG_5"]["Other2"] == {
+        "BurstQuantity": 0,
+        "BurstInterval": 0,
+        "SalvoQuantity": 0,
+        "SalvoInterval": 0,
+    }
 
 
 def test_tomcat_flight_gets_a_cartridge_bound_to_its_clients() -> None:

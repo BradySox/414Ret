@@ -7468,9 +7468,11 @@ reference layer, which plan 2 repeats:
 
 **Two unit traps, both mined:** NAV elevations are **feet**
 (`metersToFeet(getAltitude(...))`) while JDAM target elevations are **metres**; and a
-waypoint carries `spd` **or** `tot`, never both. **`CMDS` is never emitted** — same
-call as the Viper's, plus the Tomcat's per-type override table would need invented
-program/threshold pairs. Section toggles ride the same Edit Flight → DTC tab, with a
+waypoint carries `spd` **or** `tot`, never both. **All four sections are always
+written, `CMDS` as ED's stock table verbatim** — this descriptor's post-import
+refresh indexes every section, and omitting `CMDS` crashed it in the ME (the
+2026-08-22 import; `dcs.log` line in the design note). An off section carries the
+editor's reset state. Section toggles ride the same Edit Flight → DTC tab, with a
 new **Pre-planned target points** checkbox (`DtcOptions.jdam_targets`); `nav_aids`
 and `destinations` have no Tomcat equivalent and are ignored.
 

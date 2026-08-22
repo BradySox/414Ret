@@ -731,14 +731,43 @@ flights**, each sanitized to 6 blank-padded characters exactly like
 `sanitizeTISCallsign`. Anything shorter than 6 is padded; the import drops an
 all-blank entry.
 
-### No CMDS section
+### CMDS is always written — the descriptor cannot take a partial cartridge
 
-Same call as the Viper's (see *Decision: no CMDS section*, above) and for the
-same first two reasons: the programs are ED's defaults, so emitting them
-reproduces the jet's own state, and an AutoLoaded write would clobber whatever
-the pilot hand-set. The Tomcat adds a third: its `CMDSAutoOverrides` is a
-per-DCS-type table, and populating it from the campaign's known threats would
-mean inventing program/threshold pairs per SAM type — unsourced numbers.
+The first cut omitted `CMDS` on the Viper's reasoning. **The ME import of
+2026-08-22 proved that wrong for this descriptor**, from `dcs.log`:
+
+```
+F-14BU_DTC.lua:455: attempt to index field 'CMDSProgramSettings' (a nil value)
+  in function 'init_CMDS'  ←  in function 'setData' (3607)  ←  me_managerDTC.lua:442
+```
+
+`setData` resets `data.CMDS` to `{}`, overlays only the sections the file
+carries, then ends with `init_CMDS(); init_JDAM(); refreshNAV(); refreshTIS()`.
+`init_CMDS` reads `data.CMDS.CMDSProgramSettings.PROG_1` unconditionally, so a
+missing `CMDS` kills the whole tail: the NAV grid still drew (the tab's own
+`onShow` redraws it), but the JDAM grid stayed blank until a tab switch rebuilt
+it and the cartridge-name box never left `DEFAULT`. The *data* had imported —
+TARGETAR was on every station once the grid refreshed — only the refresh died.
+
+So the Tomcat writes **all four sections, always**. A section the planner turned
+off carries the editor's reset state (twelve empty plans; four stations of eight
+default slots; the TIS defaults), and `CMDS` is **ED's stock table verbatim** —
+`_CMDS_DEFAULTS` in `tomcat.py`, byte-equal to what the authored reference
+cartridge carries, because that is what the editor saves for an untouched one.
+Not a place for campaign values: `CMDSAutoOverrides` is a per-DCS-type table and
+filling it from known threats would mean inventing program/threshold pairs.
+The "omit when off" rule stays right for the Hornet and Viper, whose importers
+tolerate a missing section; it is a per-descriptor fact, not a §74 principle.
+
+### x/y is what the ME reads; lat/lon is derived
+
+The DM loaded the Iraq-built test cartridge into a mission on another map and
+the ME showed E 066° — Afghanistan — for every point: it recomputed lat/lon from
+our `x`/`y` in the open mission's projection and ignored the `lat`/`lon` we
+wrote. So the cartridge is **terrain-bound through `x`/`y`**, and unlike the
+Hornet and Viper the Tomcat schema has no `terrain` field to say which. Load a
+generated cartridge only into a mission on its own map. Whether the *jet* reads
+`x`/`y` or `lat`/`lon` is still the B91 question.
 
 ### Checked against an authored cartridge (2026-08-22)
 
@@ -808,5 +837,11 @@ Generate one the same way when this changes: load the save, man a lead, point
 `CARTRIDGE_BUILDERS` at the builder under test, `MissionSimulation.begin_simulation()`
 then `MissionGenerator(...).generate_miz()`. The flight states have to be
 initialized first or generation raises on an uninitialized flight.
+
+**ME import, 2026-08-22 (B91 step 1):** NAV passed outright — plan 2 `ROUTE 1`
+with eight waypoints and their TOTs, the front line as plot line 2 behind the
+route, seven references with their `XB` names, elevations in feet. JDAM's data
+imported. The only defect was the missing `CMDS`, above, fixed the same day.
+Re-import owed, then the cockpit.
 
 In-game pass: checklist **B91**.

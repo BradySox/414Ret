@@ -5622,9 +5622,11 @@ front line as line 2, the `XB` references) and so did the JDAM data, but the
 post-import refresh died in `init_CMDS` because the first cut omitted the `CMDS`
 section — JDAM grid blank until a tab switch, cartridge name stuck on `DEFAULT`.
 Fixed the same day: every section is always written, CMDS as ED's defaults.
-**Re-import the regenerated `Retribution F-14BU test.dtc` to confirm** the name reads
-the flight's callsign rather than `DEFAULT`, and the JDAM grid fills on load. Load it into a mission on the Iraq map —
-the ME derives lat/lon from x/y in the open mission's projection.
+**Re-import VERIFIED 2026-08-22, DM:** the regenerated file loads with the cartridge
+name reading the flight's callsign, the JDAM grid filled on load (TARGETAR on every
+station, hdg 0, 20000 ft), the coordinates reading Iraq on an Iraq mission, and no
+descriptor error in `dcs.log`. ED's importer accepts our JSON end to end. What remains
+is the cockpit.
 
 **Cheapest remaining check, and it needs no flying:** open the generated `.miz` in the
 Mission Editor, open the DTC manager, and load the flight's `DTC/*.dtc`. If the ME

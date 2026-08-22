@@ -842,6 +842,8 @@ initialized first or generation raises on an uninitialized flight.
 with eight waypoints and their TOTs, the front line as plot line 2 behind the
 route, seven references with their `XB` names, elevations in feet. JDAM's data
 imported. The only defect was the missing `CMDS`, above, fixed the same day.
-Re-import owed, then the cockpit.
+**Re-import verified the same day**: cartridge name, JDAM grid on load, Iraq
+coordinates on an Iraq mission, a clean `dcs.log` — ED's importer accepts our JSON
+end to end. The cockpit is what remains.
 
 In-game pass: checklist **B91**.

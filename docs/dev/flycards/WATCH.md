@@ -11,9 +11,9 @@ next from the parking lot.
 
 ## The list
 
-*(All three previous items were already closed when the card was still asking for them —
-see [`ARCHIVE.md`](ARCHIVE.md). Refilled 2026-08-17 from the parking lot and the outstanding
-rows.)*
+*(Refilled 2026-08-22. Slots 1–2 carried over; 3–4 are new. The previous parking lot was
+cleared — both entries named rows that had already closed, `Q3` VERIFIED and the loadout
+watch pointing at RETIRED `B42`.)*
 
 ### 1 · The enemy C2 net is audible on the radio — `B23`
 
@@ -34,13 +34,37 @@ for CW/voice traffic; it is DF-able, so a bearing swing as you fly past is the c
 - **Fail:** a group well off station, or stopped dead.
 - **Why it's here:** §87 anchors the ovals; whether they hold over a long mission is a look.
 
+### 3 · The day's flying is reported back, and the numbers are believable — `B70`
+
+**Where:** the next turn's SITREP, after any mission with several AI packages up. **~1 min.**
+
+- **Pass:** the sortie count is close to the number of packages that **flew**, hits never
+  exceed shots, and `state.json` is a few hundred KB.
+- **Fail:** a sortie count near the theatre's whole aircraft inventory (idle ramp jets counted
+  as flights), hits above shots, or a `state.json` over a megabyte.
+- **Why it's here:** both defects were fixed on 2026-08-20 against test 12's own save and the
+  fix has not been seen on a fresh mission. This is the cheapest row on the board — it closes
+  from a mission you already flew.
+
+### 4 · The escorts leave you at the split instead of following you home — `B78`
+
+**Try:** lead a package that has an escort or escort jammer on it and fly the whole profile.
+At your split point, look behind you. **Free — it is the flight you were flying.**
+
+- **Pass:** the escorts break off at the split and route to their own recovery field.
+- **Fail:** they formate on you all the way home (the release never fired), **or** they break
+  off at the *join* on the way in and call their own split index on the radio.
+- **Why it's here:** the release fix landed 2026-08-18 and its first version reproduced the
+  opposite failure, fixed again 2026-08-21. Neither shape has been flown since. Both failures
+  are visible from the cockpit without looking anything up.
+
 ## Parking lot (pull one when a slot frees)
 
 | Row | Watch for | Note |
 |---|---|---|
-| — | Loadouts are **identical** again across flights of one airframe + task | Confirms the §84 rip landed in the build you actually run. Low priority: the removal is test-covered |
-| `Q3` | "Apply to all" moves every flown leg's altitude, including AGL ones | App-side, ~30 s in the flight editor |
-| `B60` | Red alert fighters appear over an objective you just struck | §89 P5. Armed on 10–11 objectives on 2026-08-17 and never triggered — needs something struck |
+| `B79` | A ground-level waypoint sits at the field's elevation, not at sea level | App-side, ~30 s in the flight editor |
+| `B77` | The ramp time you are given matches the airframe you are starting | App-side; a Tomcat and a Viper should not get the same allowance |
+| `B54` | The planner behaviour bar actually switches the suite | Settings UI, ~1 min |
 
 Closed and dropped items, with the reasoning: [`ARCHIVE.md`](ARCHIVE.md).
 Contrived-condition tests live on [`LOCAL.md`](LOCAL.md).

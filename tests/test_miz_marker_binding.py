@@ -34,6 +34,8 @@ from dcs.vehicles import AirDefence, Armor, Unarmed
 
 from game import persistency
 from game.campaignloader.mizcampaignloader import MizCampaignLoader
+from game.theater import ControlPoint
+from game.theater.conflicttheater import ConflictTheater
 from game.theater.player import Player
 from game.theater.theaterloader import TheaterLoader
 
@@ -316,3 +318,99 @@ def test_a_blue_block_marker_binds_its_own_zoned_field(tmp_path: Path) -> None:
     # instead of being thrown to the nearest control point with no zone at all.
     assert len(kutaisi.preset_locations.motorpools) == 1
     assert not senaki.preset_locations.motorpools
+
+
+def _build_tight_zone_miz(
+    path: Path, offset_m: int, unzoned_is_far: bool = True
+) -> None:
+    """`operation_desert_trident` in miniature.
+
+    A RED field whose influence zone hugs the runway, an armour marker just
+    outside that zone, and the nearest UNZONED field far away. The zone fallback
+    drops every zoned control point, so the marker skipped the field it sits next
+    to and bound the distant one: six armour groups and a fuel depot 15-25 km
+    from red King Abdullah II became blue Ben Gurion's, 110-140 km away.
+
+    Armour is the point -- it does not pass ``prefer_blue``, so the blue-block
+    preference cannot reach it and the fallback is the only rule in play.
+
+    ``unzoned_is_far`` picks which unzoned field exists: Mineralnye Vody (~200 km,
+    a stranding) or Kutaisi (~37 km, an ordinary neighbour).
+    """
+    mission = Mission(terrain=Caucasus())
+    red_field = mission.terrain.airports["Senaki-Kolkhi"]
+    blue_field = mission.terrain.airports[
+        "Mineralnye Vody" if unzoned_is_far else "Kutaisi"
+    ]
+    red_field.set_red()
+    blue_field.set_blue()
+
+    mission.coalition["blue"].add_country(CombinedJointTaskForcesBlue())
+    red_country = CombinedJointTaskForcesRed()
+    mission.coalition["red"].add_country(red_country)
+
+    # Tight zone on the red field only, so the blue field is the sole fallback
+    # candidate. DCS stores colour and properties as 1-indexed dicts.
+    zone = mission.triggers.add_triggerzone(
+        red_field.position, radius=2000, name="Senaki-Kolkhi"
+    )
+    zone.color = {1: 1, 2: 0, 3: 0, 4: 0.15}
+    zone.properties = {1: {"key": "PROPERTY_1", "value": "Senaki-Kolkhi"}}
+
+    mission.vehicle_group(
+        red_country,
+        "Red armor outside the zone",
+        Armor.M_1_Abrams,
+        red_field.position.point_from_heading(180, offset_m),
+    )
+    mission.save(str(path))
+
+
+def _load(miz: Path) -> tuple[ConflictTheater, ControlPoint]:
+    theater = TheaterLoader("caucasus").load()
+    MizCampaignLoader(miz, theater).populate_theater()
+    return theater, theater.control_point_named("Senaki-Kolkhi")
+
+
+def test_a_nearby_zoned_field_adopts_a_stranded_marker(tmp_path: Path) -> None:
+    miz = tmp_path / "tight_zone.miz"
+    _build_tight_zone_miz(miz, offset_m=4000)
+    theater, senaki = _load(miz)
+    far = theater.control_point_named("Mineralnye Vody")
+
+    # 2 km outside its own field's zone, and ~200 km from the nearest unzoned
+    # field. It stays the red field's armour instead of being thrown across the
+    # map to a blue one.
+    assert len(senaki.preset_locations.armor_groups) == 1
+    assert not far.preset_locations.armor_groups
+
+
+def test_a_distant_zoned_field_does_not_adopt(tmp_path: Path) -> None:
+    # The near bound matters as much as the rule: a marker out in open country
+    # is not claimed by a zoned field just because that field happens to be
+    # nearest. Past ADOPT_ZONED_WITHIN the unzoned fallback still decides.
+    miz = tmp_path / "tight_zone_far.miz"
+    _build_tight_zone_miz(miz, offset_m=30000)
+    theater, senaki = _load(miz)
+    far = theater.control_point_named("Mineralnye Vody")
+
+    assert not senaki.preset_locations.armor_groups
+    assert len(far.preset_locations.armor_groups) == 1
+
+
+def test_a_healthy_binding_is_never_reshuffled(tmp_path: Path) -> None:
+    """The other bound, and the one that cost a measurement to find.
+
+    Proximity alone moves 40 of 7653 bindings, and 14 of them are Velvet
+    Thunder markers hopping between neighbouring fields already 2.2-12.4 km
+    away. Nothing is wrong in that campaign, and #924 measured and rejected the
+    same outcome. Adoption only rescues a marker the fallback would strand past
+    STRANDED_BEYOND; a marker whose owner is merely a bit farther stays put.
+    """
+    miz = tmp_path / "tight_zone_healthy.miz"
+    _build_tight_zone_miz(miz, offset_m=4000, unzoned_is_far=False)
+    theater, senaki = _load(miz)
+    near = theater.control_point_named("Kutaisi")
+
+    assert not senaki.preset_locations.armor_groups
+    assert len(near.preset_locations.armor_groups) == 1

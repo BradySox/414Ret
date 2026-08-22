@@ -5672,11 +5672,24 @@ directly.
   6096 m zone; it bound RED Sukhumi-Babushara **75 km** away and spawned a red motorpool beside a
   blue base. Measured across 12 campaigns and 1402 marker bindings, that change moves **exactly
   one** binding — the defect itself. `BLUE_BLOCK_MAX_DETOUR` still bounds the preference.
-- **Red-block markers are deliberately untouched.** The red block is the coalition-agnostic
-  default and binds by proximity. Letting *it* see zoned CPs was measured too and rejected: it
-  rebinds 24 of 751 markers, 16 of them across coalitions, and moves all 13 of Velvet Thunder's
-  red air defenses onto neutral FOBs. So WARTHOG — red armor 3.4 km from blue Vaziani, bound
-  329.5 km away — is still only warned about, not rebound.
+- **Red-block markers get no blue preference,** and that stays true. The red block is the
+  coalition-agnostic default and binds by proximity; letting *it* use the blue-ownership
+  preference was measured and rejected (24 of 751 markers rebind, 16 across coalitions, and all
+  13 of Velvet Thunder's red air defenses move onto neutral FOBs).
+- **The fallback itself now rescues a stranded marker (2026-08-22), block-agnostic.**
+  `ADOPT_ZONED_WITHIN` (25 km) and `STRANDED_BEYOND` (50 km): the nearest **zoned** CP adopts a
+  marker when it is within 25 km *and* the unzoned fallback would otherwise put the marker more
+  than 50 km from its owner. Both bounds are load-bearing and each has a test that fails without
+  it. **Measured across every campaign: 16 of 7653 bindings move, and not one ends up farther
+  from its owner** — old distances 53–142 km become 9–25 km, improvements of 2.7×–11.9×.
+  `operation_desert_trident`'s doorstep warning goes from 7 objects to 0.
+  - **The near bound stops the rule claiming a marker in open country.** Without it a zoned
+    field adopts anything it happens to be nearest to.
+  - **The far bound is what separates a rescue from a reshuffle,** and it was added after
+    measuring. Proximity alone moves 40 bindings, 14 of them Velvet Thunder markers hopping
+    between neighbouring fields already 2.2–12.4 km away — churn in a campaign with nothing
+    wrong with it, and the same outcome the blue-preference widening was rejected for.
+  - Set `ADOPT_ZONED_WITHIN = None` to restore the pre-2026-08-22 unzoned-only fallback.
 - **Two conditions, because either alone cries wolf:** nearer a hostile CP than its own owner (the
   mis-binding signature) **and** within `BESIDE_AN_ENEMY_BASE` (25 km) of it (the part a player
   sees). The same campaign has SKUNK 107 km from its parent but ringed by friendly fields, and

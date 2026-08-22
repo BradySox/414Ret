@@ -25,7 +25,7 @@ so the two docs don't drift.
 
 ## Outstanding rows at a glance
 
-62 rows need a live pass. Full detail is under each `###` heading below —
+63 rows need a live pass. Full detail is under each `###` heading below —
 search the row id. `☐` untested · `◐` flown but not under the conditions that
 stress it · `✗` fail signature reproduced in-game.
 
@@ -45,7 +45,7 @@ stress it · `✗` fail signature reproduced in-game.
 | B32 | Sea-supply convoys + coastal anti-ship engagement | §78 | ☐ |
 | B35 | Air-defense class rows are filters of the "Air defences" master | §19 | ☑ |
 | B39 | Cross-turn naval magazines | §81 | ◐ |
-| B63 | A destroyed strike target is recorded in the campaign | §8 | ✗ |
+| B63 | A destroyed strike target is recorded in the campaign | §8 | ☐ |
 | B64 | The datalink era gate: the SA page populates when it should | datalink | ☑ |
 | B50 | The auto-planner never picks the King for a rescue | CSAR | ☑ |
 | B51 | The rescue package is not planned into threat it cannot survive | CSAR | ☑ |
@@ -90,12 +90,12 @@ stress it · `✗` fail signature reproduced in-game.
 | P8 | COIN in-mission liveliness: cell movers + insurgent indirect fire on the FOBs | COIN | ☐ |
 | O2 | Downed-pilot map overlays: both coalitions, the fog, and the countdown | CSAR | ☑ |
 | Q3 | Bulk waypoint altitude moves every flown leg | §4 (flight altitude editing) | ☑ |
-| S1 | Route-aware fuel-tank planning (fuel-first) | §46 | ⊘ |
+| S1 | Route-aware fuel-tank planning (fuel-first) | §46 | ✅ |
 | S2 | Mobile missile sites relocate (the SCUD hunt) | §49 | ✗ |
 | S3 | Friendly convoy ambush (a chance, never telegraphed) | §50 | ◐ |
 | S4 | Enemy comms jamming: capture the intel, then the C2 belt steps on the radios | §51 | ◐ |
 | S5 | Ambient supply convoys: both sides' roads have randomized traffic | §50 | ◐ |
-| S6 | Tanker fragged for a no-`fuel:`-block airframe on a long sortie | §46 | ⊘ |
+| S6 | Tanker fragged for a no-`fuel:`-block airframe on a long sortie | §46 | ✅ |
 | S7 | Measured fuel data adopted from DCS Liberation drives tanker + bingo for 12 airframes | §46 | ☐ |
 | T1 | Continuous clock marches + weather evolves across turns | §47 | ☑ |
 | T3 | Iraq "Umm al-Ma'arik (Desert Storm 1991)" campaign plays | Desert Storm campaign | ☑ |
@@ -107,7 +107,7 @@ stress it · `✗` fail signature reproduced in-game.
 | B52 | Escort-jammer distribution + the one-SEAD-flavour escort set | §77 | ◐ |
 | B49 | Carrier recovery-phase deck dressing | §72 | ✅ |
 | B48 | Naval station-keeping racetracks | §87 | ◐ |
-| B53 | AI flights no longer push early for a tanker stop they never fly | §46 | ⊘ |
+| B53 | AI flights no longer push early for a tanker stop they never fly | §46 | ✅ |
 | B54 | Planner behavior bar switches the suite in the settings UI | re-convergence | ☐ |
 | B55 | Carrier steams for wind down the angled deck | §88 | ☑ |
 | B56 | Living battlespace pre-roll: mid-cycle mission start | §89 | ◐ |
@@ -136,6 +136,7 @@ stress it · `✗` fail signature reproduced in-game.
 | B89 | Region priorities: the CP-dialog control shifts the ATO | §93 | ☑ |
 | B90 | A steerpoint's elevation is the ground under it | §74 | ☐ |
 | B91 | The F-14B(U) spawns with its cartridge loaded | §74 | ☐ |
+| B92 | A rescued marker belongs to the base it sits next to | campaign loading | ☐ |
 
 ---
 
@@ -148,6 +149,8 @@ stress it · `✗` fail signature reproduced in-game.
 | ☑ VERIFIED | Watched for the fail signature in-game; did not occur (note date/Tacview) |
 | ✗ REGRESSED | Fail signature reproduced in-game — reopen the fix |
 | ⊘ RETIRED | Feature dormant/removed — the scenario no longer runs; not a pending test |
+| ✖ REMOVED | The feature was deleted; the row is kept so old notes stay readable |
+| ✅ CLOSED | No pass is owed — the feature was removed, reverted or answered elsewhere |
 
 ---
 
@@ -1085,7 +1088,7 @@ Needs a flight to confirm the fix end to end. The cheap version deliberately rep
   `_refuel_tasking` in `game/ato/flightplans/formationattack.py` if the pre/post/none
   split looks off.
 
-### C7 — Theater tanker placed on receiver demand · ☒ CLOSED (reverted 2026-08-09)
+### C7 — Theater tanker placed on receiver demand · ✅ CLOSED (reverted 2026-08-09)
 
 - **Closed by the planner re-convergence (work order B).** The post-planning reposition
   pass `game/commander/tankerdemand.py` is deleted, so there is nothing left to fly. A
@@ -1615,7 +1618,7 @@ flight test. See features doc §12. The pass description below is kept for readi
   without delivery). Empty list ⇒ pre-scoring behaviour (everyone dies) — that is the safe fallback,
   not a separate bug.
 
-### G12 — Combat SAR extracts a stranded SOF team · Combat SAR + SCAR · ✗ RETIRED (2026-07-01 — the dormant SOF capture economy was removed; nothing can strand a team, so there is nothing to extract)
+### G12 — Combat SAR extracts a stranded SOF team · Combat SAR + SCAR · ⊘ RETIRED (2026-07-01 — the dormant SOF capture economy was removed; nothing can strand a team, so there is nothing to extract)
 - The whole channel this row tested (`sofTeams` emission → `SOFRESCUE` CASEVAC → `combat_sar_sof_recoveries`
   → `commit_sof_recoveries` refund) was deleted with the rest of the dead commander-capture loop
   (features doc §15). The scoring layer had been headless-adjudicated 2026-06-26 but the path was
@@ -5807,3 +5810,50 @@ from a fresh New Game, not a save** — a save never took this path.
 - **Worth noting while you are there** (not pass/fail): which station it picked. The fallback
   is nearest-that-reports, which on a big map can be far off — a Syria turn from a Lebanese
   field taking Larnaca is expected, taking something in Turkey is worth recording.
+
+---
+
+### B92 — A rescued marker belongs to the base it sits next to · campaign loading · ☐ UNTESTED
+
+**History:** built 2026-08-22, from the DM's own `test.retribution` on
+`operation_desert_trident` — the placement warning listed seven groups on King
+Abdullah II's doorstep.
+
+> A marker outside every influence zone used to fall back to the nearest control
+> point **with no zone at all**, so a base whose zone hugs its runway could not
+> adopt its own outlying markers. Six armour groups and a fuel depot 15–25 km
+> from red King Abdullah II were blue Ben Gurion's, 110–140 km away. A nearby
+> zoned base now adopts a stranded marker: within `ADOPT_ZONED_WITHIN` (25 km),
+> and only when the fallback would put it past `STRANDED_BEYOND` (50 km).
+> `tests/test_miz_marker_binding.py` pins both bounds, each with a test that
+> fails without it.
+
+**Already measured, so do not re-derive it:** across every shipped campaign 16 of
+7,653 bindings move, none ends up farther from its owner, and Desert Trident's
+warning goes 7 → 0. Eight campaigns move at least one marker: clash_of_the_titans,
+crossing_the_rubicon, operation_desert_trident, operation_gazelle,
+operation_vectrons_claw, red_sea_rising, red_tide, the_anvil_of_war.
+
+**What CI cannot exercise** is what the rebound objects *do* once they are the
+other base's. King Abdullah II goes from 6 ground objects to 13; Ben Gurion drops
+26 → 19. That changes who defends them, who is tasked against them, and where the
+front line between those bases sits.
+
+Needs a new game on one of the eight, not a flight. Desert Trident is the
+reference — it carries 8 of the 16 moves.
+
+- **Pass:** no placement warning on load; the moved groups render in the *near*
+  base's colour on the F10 map; the ATO frags against them from the correct side.
+- **Fail signatures:**
+  1. **The warning still lists them** — the adoption did not fire. Check the two
+     bounds against the real distances before touching the rule; a marker 26 km
+     out, or one whose old owner was 45 km away, is outside the guard by design.
+  2. **A marker moved to a base it is NOT nearest to** — the rule is
+     nearest-zoned-only, so this would mean the eligible set is wrong. Stop.
+  3. **A campaign that was fine now looks reshuffled** — markers hopping between
+     neighbouring fields is the failure `STRANDED_BEYOND` exists to prevent, and
+     Marianas (Velvet Thunder) is the campaign that showed it. Re-measure before
+     assuming the bound is too loose.
+  4. **The front line between two affected bases jumps** — ownership feeds base
+     strength, so an 8-object swing is worth a look on Desert Trident's Jordan
+     sector specifically.

@@ -60,6 +60,8 @@ parking lot without a fresh call.
 
 | Dropped | Item | Row(s) | Why it went |
 |---|---|---|---|
+| 2026-08-22 | "Apply to all" moves every flown leg's altitude | `Q3` | **Already VERIFIED when the parking lot was briefing it.** Dropped from the parking lot, not watched. |
+| 2026-08-22 | Loadouts are identical again across flights of one airframe | `B42` (§84) | **The feature is RETIRED.** There is nothing left to look at; the row was kept only so old notes stay readable. Dropped from the parking lot. |
 | 2026-08-06 | SITREP page in the kneeboard | `K2` | Cosmetic doc surface. You either see it or you don't; it does not warrant standing attention. |
 | 2026-08-06 | Two AI packages recovering at the boat | `C9` | **Assessed a one-off and accepted** (DM call). Evidence checked: exactly ONE carrier-recovery midair on record, ever — Scenic Route turn 3, 2026-07-16 — and no other collision report anywhere in the checklist. The fix is live (`_deconflict_carrier_recoveries`) and test-covered, and the part that is testable headlessly (≥5 min TOT spacing) is the deterministic part. **Honest caveat: the one-off is the BUG, not the FIX** — the fix shipped the same day it was found and has never been observed working. What makes that acceptable is that a recurrence self-reports: two AI aircraft dying at the boat shows up as unexplained AI losses in the debrief. If that ever appears, widen `CARRIER_RECOVERY_INTERVAL`. |
 | 2026-08-06 | Shared-airframe kneeboard index | `H10` | Condition (2+ client flights in one airframe) is MP-only and has not arisen since 2026-06-28. Costs a glance if it ever does. |

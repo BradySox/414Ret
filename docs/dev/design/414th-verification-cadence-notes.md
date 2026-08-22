@@ -1,6 +1,14 @@
 # Verification cadence — the fly-card throttle
 
-> **STATUS: PROPOSED 2026-08-06. Nothing built.** This note came out of a methods audit of
+> **STATUS: PARTLY BUILT.** Proposed 2026-08-06. Built since: the **watch list**
+> (`flycards/WATCH.md`), the **local card** (`flycards/LOCAL.md`) and the session-start
+> hook that prints both (build order steps 1–2, and the first line of step 4). Still
+> unbuilt: the `· card:` token, the aging/disposition pass (Part 3), the
+> `SHIPPED UNVERIFIED (accepted)` state, and the Part 2 admission CI test. The counts
+> quoted below are the 2026-08-06 figures and are now stale — as of 2026-08-22 the board
+> reads 121 verified / 38 untested / 22 partial / 2 regressed, i.e. **62 outstanding**.
+>
+> This note came out of a methods audit of
 > the fork (methods, not bugs) whose headline finding was that the in-game-pass backlog has
 > no governor: **71 outstanding rows** (45 untested / 22 partial / 4 regressed) against
 > **82 verified**, with untested rows dating to 2026-07-01 and nothing in the process
@@ -334,6 +342,55 @@ does not convert daily flights into closed rows within a week or two, the rest o
 is unlikely to be worth building either.
 
 ---
+
+## Board defects found and fixed 2026-08-22
+
+The board had been briefing closed work as outstanding. Two independent parsing bugs, both in
+`.claude/hooks/session-start.sh`, and the same root shape in each: **crossing something off did
+not take it off the board.**
+
+**1. Six closed checklist rows were listed as outstanding.** The hook matched a fixed list of
+whole markers (`☑ VERIFIED|☐ UNTESTED|◐ PARTIAL|✗ REGRESSED|⊘ RETIRED|✖ REMOVED`). `✅ CLOSED`
+and `☒ CLOSED` were both invented after the hook was written and were in neither the list nor
+the Status legend. A row marked `✅ CLOSED` therefore matched nothing on its marker, and
+first-marker-wins fell through to the `(was ☐ UNTESTED` that the checklist's own convention
+makes every re-marked row quote. B33, G2, S1, S6, B49 and B53 were briefed as pending flights,
+and inflated the counts by 4 untested and 2 partial.
+
+**2. Both fly-card items on the LOCAL card were closed items.** The card parser read every
+`### ` heading in the file, including the ones under `## Done`. `G29` was taken off the card on
+2026-08-20 and `B25`'s follow-on closed the same day; the board asked for both on 2026-08-22.
+The card was correct and the board contradicted it. WATCH escaped only because it files closed
+items in `ARCHIVE.md` rather than in a section of its own.
+
+**3. A section heading was counted as a verified row.** The scope was `^#{2,3} `, so
+`## E. SOF insert generation · #85 · ☑ VERIFIED` counted once as a row.
+
+**4. The at-a-glance table disagreed with four row headings** — B63, S1, S6, B53. Two of them
+showed a closed feature as outstanding.
+
+**5. The WATCH parking lot named two rows that had already closed** — `Q3`, VERIFIED, and a
+loadout watch pointing at `B42`, RETIRED. This is the failure the card's own "check the row
+before you add an item" rule already warned about.
+
+**What changed.** The hook now matches a `<symbol> <WORD>` **pair** rather than fixed strings,
+so a newly invented symbol degrades to a legend failure in CI instead of silently unmarking a
+row; it scopes rows to `^### `; and the card parser reads only live sections, skipping
+`Done`/`Archive`/`Dropped`/`Parking` and any item whose own heading says it is closed. An empty
+card now prints as empty rather than vanishing. The Status legend gained the two marks it was
+missing (`✖ REMOVED`, `✅ CLOSED`), `C7`'s `☒` and `G12`'s `✗ RETIRED` were normalised onto it,
+and the four table cells were corrected to match their headings.
+
+**The guard is `tests/test_flycard_board.py`.** Each of its six checks was verified to fail
+against the defect it targets before the fix was kept. It pins: every row heading carries a
+legend-listed mark; the table agrees with the headings; the stated outstanding count matches
+the headings; no closed item sits in a live card section; every card item names a checklist row
+that is still open; and WATCH respects its five-slot cap.
+
+**The lesson, and it is the note's own.** A verification surface that is not itself verified
+decays toward telling you to do work you have already done. The board is the only artifact
+that routes cockpit time, so its being wrong costs flights — which is the resource this whole
+design exists to protect.
 
 ## Writing a WATCH item (moved off the card 2026-08-17)
 

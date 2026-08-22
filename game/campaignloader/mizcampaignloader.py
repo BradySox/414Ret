@@ -635,6 +635,14 @@ class MizCampaignLoader:
     # ~55-420 km from the nearest blue field.
     BLUE_BLOCK_MAX_DETOUR = meters(50000)
 
+    # A zoned CP adopts a marker outside its zone when the marker is within the
+    # first distance AND the unzoned fallback would strand it past the second.
+    # Both bounds are load-bearing and each has a test that fails without it;
+    # the measurements are in 414th-features.md under Motorpool placement.
+    # Set ADOPT_ZONED_WITHIN to None for the pre-2026-08-22 fallback.
+    ADOPT_ZONED_WITHIN: Optional[Distance] = meters(25000)
+    STRANDED_BEYOND: Distance = meters(50000)
+
     def objective_info(
         self, near: Positioned, allow_naval: bool = False, prefer_blue: bool = False
     ) -> Tuple[ControlPoint, Distance]:
@@ -696,10 +704,7 @@ class MizCampaignLoader:
         fallback_candidates = [
             cp for cp in fallback_candidates if not cp.influence_radius
         ]
-        if not fallback_candidates:
-            raise RuntimeError(
-                f"All control points have an influence zone but no zones contain {near} at {near.position}"
-            )
+
         # A blue-block MARKER (SAM/EWR/missile/coastal/ship/offshore -- callers
         # that pass prefer_blue) binds the nearest BLUE control point when one
         # is reasonably close, not merely the nearest of either side (found via
@@ -712,10 +717,31 @@ class MizCampaignLoader:
         # of those to distant blue fields -- Sperenberg's factory to Frankfurt
         # 408 km away, every red ammo depot to a blue base across the map.
         # Authored influence zones above stay authoritative.
-        closest = min(
-            fallback_candidates,
-            key=lambda cp: cp.position.distance_to_point(near.position),
-        )
+        def _range_to(cp: ControlPoint) -> float:
+            return cp.position.distance_to_point(near.position)
+
+        # Rescue a marker the unzoned fallback would strand: a base whose zone
+        # hugs its runway cannot otherwise adopt its own outlying markers, and
+        # they land on whatever unzoned field is nearest, however far.
+        nearest_any = min(candidates_for_blue, key=_range_to, default=None)
+        nearest_unzoned = min(fallback_candidates, key=_range_to, default=None)
+        if (
+            self.ADOPT_ZONED_WITHIN is not None
+            and nearest_any is not None
+            and nearest_any is not nearest_unzoned
+            and meters(_range_to(nearest_any)) <= self.ADOPT_ZONED_WITHIN
+            and (
+                nearest_unzoned is None
+                or meters(_range_to(nearest_unzoned)) > self.STRANDED_BEYOND
+            )
+        ):
+            closest = nearest_any
+        elif nearest_unzoned is not None:
+            closest = nearest_unzoned
+        else:
+            raise RuntimeError(
+                f"All control points have an influence zone but no zones contain {near} at {near.position}"
+            )
         if prefer_blue and id(near) in self._blue_block_group_ids:
             # Candidates here are the ELIGIBLE set, not `fallback_candidates`:
             # that list drops every zoned CP, so a blue-block marker a few

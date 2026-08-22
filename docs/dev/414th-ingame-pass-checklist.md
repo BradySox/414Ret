@@ -5681,9 +5681,12 @@ Then fly one: F-14B(U) client flight on a campaign that fields it
 
 Fly a Viper or Hornet on a regenerated mission and read the steerpoint pages.
 
-- **Pass:** an en-route steerpoint's elevation reads the nearest airfield's
-  elevation rather than its cruise altitude or 0, and the route page still shows
-  the altitude you planned to fly.
+- **Pass:** on the Viper's DED STPT page, a target steerpoint's ELEV reads the
+  nearest airfield's elevation rather than 0, and an en-route steerpoint's ELEV
+  reads the altitude you planned to fly. (The DED shows `routeAltitude`; the ME
+  DTC panel's "Elevation" box shows the other field, `alt` — both now carry the
+  estimate. Flown 2026-08-22: the first fix landed in `alt` only and the DED still
+  read 0.)
 - **Estimated, not exact (2026-08-22):** a target steerpoint's elevation is now the
   nearest airfield's, because that is the only height data the campaign carries.
   The DM's generated Viper cartridge had every steerpoint but the landing at 0

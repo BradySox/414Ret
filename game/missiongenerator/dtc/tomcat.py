@@ -79,8 +79,8 @@ JDAM_STATIONS = 4
 JDAM_TARGETS_PER_STATION = 8
 DEFAULT_DROP_ALT_FT = 20000.0
 DEFAULT_DROP_SPD_KTS = 450.0
-#: A ground-marked target waypoint plans on the deck, which is no release
-#: altitude; below this the ingress leg's altitude is used instead.
+#: Below this a planned altitude is no release altitude and the ingress
+#: leg's is used instead.
 MIN_DROP_ALT_FT = 1000.0
 
 TIS_CALLSIGN_LEN = 6
@@ -394,8 +394,8 @@ def _waypoint_elevation(waypoint: FlightWaypoint, game: Game) -> int:
     ground = steerpoint_elevation(waypoint, game)
     if ground:
         return _feet(ground)
-    altitude_m, altitude_type = leg_altitude(waypoint)
-    return _feet(altitude_m) if altitude_type == 1 else 0
+    altitude_m, _ = leg_altitude(waypoint, game)
+    return _feet(altitude_m)
 
 
 def _route_waypoint(
@@ -488,9 +488,14 @@ def _jdam_target(
     }
     if waypoint is not None:
         assert game is not None
-        planned_alt_ft = _feet(leg_altitude(waypoint)[0])
+        # A ground-marked target's own altitude is the ground; the release
+        # altitude is the ingress leg's.
+        release_from = ingress if waypoint.marks_ground_for_player else waypoint
+        planned_alt_ft = (
+            _feet(leg_altitude(release_from, game)[0]) if release_from else 0
+        )
         if planned_alt_ft < MIN_DROP_ALT_FT and ingress is not None:
-            planned_alt_ft = _feet(leg_altitude(ingress)[0])
+            planned_alt_ft = _feet(leg_altitude(ingress, game)[0])
         if planned_alt_ft >= MIN_DROP_ALT_FT:
             drop_alt = float(planned_alt_ft)
         if ingress is not None:

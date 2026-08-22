@@ -452,6 +452,25 @@ mission editor itself uses, sampled on a grid per terrain the way the pydcs expo
 is run — not the SRTM-sampled table that was built and reverted on 2026-08-20.
 Checklist B90.
 
+### The DED reads `routeAltitude`, and nothing honours the AGL tag (2026-08-22)
+
+The nearest-field fix above landed in `alt`, and the DM's next Viper still read
+**ELEV 0 on the DED** for the DEAD steerpoint. The ME's NAV PTS panel shows `alt`
+("Elevation ft MSL"; "Terrain ft" is computed live from the map and never stored),
+but **the jet's steerpoint ELEV is `routeAltitude`** — the same number the Routes
+panel edits. We were writing the ground-marked target as `routeAltitude = 0,
+altitudeType = 2`, mirroring the miz route's "0 AGL", and the jet showed exactly
+that: 0.
+
+`altitudeType` is decorative. In `MPD/NAV_Routes.lua` the editor's
+`transformAltitude()` is `return val_3` — switching AGL/MSL changes the tag and
+nothing else — and its own Mach calculation tests `route.alt_type`, a key that
+does not exist, so even the editor never adds terrain to an AGL value. So every
+altitude is now written **MSL with `altitudeType = 1`**: a ground-marked point's
+altitude is the ground estimate itself, and an AGL-planned leg (low-level and
+helicopter profiles) is converted with the same estimate. The .miz route keeps its
+own 0 AGL, which DCS does resolve.
+
 **The .miz was never wrong.** Read out of a flown mission:
 `DEAD on KATYDID` is `alt = 0, alt_type = "RADIO"`, which is DCS's own encoding for
 0 AGL. Upstream has no DTC at all, so this whole class of defect is fork-only.

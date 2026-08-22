@@ -160,7 +160,7 @@ def _build_wypt(
     waypoints = flight.waypoints[1 : MAX_WAYPOINTS + 1] if options.route else []
     for number, waypoint in enumerate(waypoints, start=1):
         on_route = is_route_waypoint(waypoint)
-        route_alt_m, altitude_type = leg_altitude(waypoint)
+        route_alt_m, altitude_type = leg_altitude(waypoint, game)
         entry: dict[str, Any] = {
             "wypt_num": number,
             "id": f"STPT{number}",

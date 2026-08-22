@@ -192,21 +192,27 @@ def steerpoint_elevation(waypoint: FlightWaypoint, game: Game) -> float:
     return nearest_field_elevation(game, waypoint.position)
 
 
-def leg_altitude(waypoint: FlightWaypoint) -> tuple[float, int]:
-    """Altitude to fly the leg, in metres + DTC altitudeType (1 = MSL, 2 = AGL).
+def leg_altitude(waypoint: FlightWaypoint, game: Game) -> tuple[float, int]:
+    """The steerpoint's altitude, in metres MSL + DTC altitudeType (always 1).
 
     Goes in the Viper's ``routeAltitude`` and the Hornet's ``NAV_ROUTE`` entry,
-    never in the point's own ``alt``. AGL is resolved against terrain by the jet
-    (``tmpAlt + getAltitude(x, y)``, Hornet ``ROUTE_SEQ.lua``).
+    never in the point's own ``alt``. **This is the number the Viper's DED shows
+    as the steerpoint ELEV** (flown 2026-08-22), and nothing honours the AGL
+    tag: the editor's ``transformAltitude`` is a no-op and its own Mach calc
+    tests a key that does not exist, so a ground-marked target written as
+    "0 AGL" read ELEV 0 in the jet. Every altitude is therefore written MSL.
 
-    Cartridges are built only for client flights, and the generated .miz puts a
-    ground-marked waypoint (target areas, CAS FLOT boundaries, flyovers) on the
-    deck for clients (``PydcsWaypointBuilder.build``); the cartridge must agree or
-    the AutoLoad would float the steerpoint back up to the AI's track altitude.
+    A ground-marked waypoint (target areas, CAS FLOT boundaries, flyovers) is on
+    the deck for a client flight in the .miz, so its altitude IS the ground --
+    the nearest field's estimate, the only height data there is. An AGL plan
+    elsewhere (a low-level or helicopter profile) is converted with the same
+    estimate.
     """
     if waypoint.marks_ground_for_player:
-        return 0.0, 2
-    return waypoint.alt.meters, 2 if waypoint.alt_type == "RADIO" else 1
+        return nearest_field_elevation(game, waypoint.position), 1
+    if waypoint.alt_type == "RADIO":
+        return waypoint.alt.meters + nearest_field_elevation(game, waypoint.position), 1
+    return waypoint.alt.meters, 1
 
 
 @dataclass(frozen=True)

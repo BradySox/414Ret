@@ -557,8 +557,9 @@ def _build_jdam(flight: FlightData, game: Game, coords: _Coords) -> dict[str, An
     """Each station that carries a JDAM gets its own target as PP1.
 
     Targets are handed out in route order across the loaded stations, wrapping
-    when there are more bombs than targets, so releasing STA 3 then 4 then 5
-    then 6 at PP1 walks the list with no cockpit selection. Every target is
+    when there are more bombs than targets. STA 3, 4, 5, 6 is the jet's drop
+    order (DM-confirmed 2026-08-22), so releasing at PP1 each time takes the
+    targets in route order with no cockpit selection. Every target is
     still on every station behind it (PP2 onward, in order), and a station
     without a JDAM gets the plain list, so the crew can always re-pick.
 

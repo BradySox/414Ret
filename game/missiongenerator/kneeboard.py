@@ -2550,9 +2550,10 @@ def _abbreviated_target_name(name: str) -> str:
 class PackagesMapPage(KneeboardPage):
     """A theater map with each attack package's target labelled.
 
-    Draws the theater coastline (filled land over sea, from the recon module's
-    landmap) so the pilot can see where the attack packages on the previous
-    page are headed. Control points are marked for orientation: airfields,
+    Draws the theater terrain behind the packages so the pilot can see where
+    the ones on the previous page are headed — the shipped theater raster
+    where it covers the area, else filled coastlines from the landmap. Never
+    the network. Control points are marked for orientation: airfields,
     carriers and LHAs get a distinct shape (square / diamond / triangle) and a
     haloed name label, while FOBs and other points stay as plain dots. All are
     coloured by side (blue friendly, red enemy). Overlapping labels are stacked
@@ -2588,7 +2589,10 @@ class PackagesMapPage(KneeboardPage):
 
     def write(self, path: Path) -> None:
         from dcs.mapping import Point as DcsPoint
-        from .kneeboard_recon.basemap import render_landmap_basemap
+        from .kneeboard_recon.basemap import (
+            align_extent_to_theater_raster,
+            render_theater_basemap,
+        )
         from .kneeboard_recon.extent import MapExtent, aspect_correct
         from .kneeboard_recon.projection import Projector
 
@@ -2636,9 +2640,16 @@ class PackagesMapPage(KneeboardPage):
         map_w, map_h = avail_w, avail_h
         off_x, off_y = margin, top
 
-        extent = aspect_correct(extent, map_w, map_h)
+        # Aspect-correct first — the padded extent is what gets drawn, so it is
+        # what the raster has to cover — then slide it back on if the padding
+        # alone pushed it off. Both must precede the Projector below: backdrop
+        # and symbology drawn for different extents is the §22 defect again.
+        ao_extent = extent
+        extent = align_extent_to_theater_raster(
+            aspect_correct(extent, map_w, map_h), keep_visible=ao_extent
+        )
         writer.image.paste(
-            render_landmap_basemap(extent, map_w, map_h, dark=self.dark_kneeboard),
+            render_theater_basemap(extent, map_w, map_h, dark=self.dark_kneeboard),
             (off_x, off_y),
         )
 

@@ -25,7 +25,7 @@ so the two docs don't drift.
 
 ## Outstanding rows at a glance
 
-63 rows need a live pass. Full detail is under each `###` heading below —
+65 rows need a live pass. Full detail is under each `###` heading below —
 search the row id. `☐` untested · `◐` flown but not under the conditions that
 stress it · `✗` fail signature reproduced in-game.
 
@@ -72,6 +72,8 @@ stress it · `✗` fail signature reproduced in-game.
 | H14 | The kneeboard SAR line is accurate, and the rescue crew gets a usable card | CSAR | ☐ |
 | I2 | Civilian background air traffic (region fleets + airways) |  | ☑ |
 | H10 | Shared-airframe kneeboard index | §27 | ☐ |
+| H15 | Offline recon pages: imagery under the symbology, or none at all | §22 | ☐ |
+| H16 | Package Targets Map: terrain behind the packages, and it lines up | §22 | ☐ |
 | H11 | Estimated fuel figures for dataless airframes | §4 | ☑ |
 | K2 | Campaign SITREP band on its own kneeboard page | §29 | ☑ |
 | L5 | New-Game "Vietnam" card | Vietnam mode P2 shell | ◐ |
@@ -2664,6 +2666,22 @@ either way — the row needs a shot deliberately taken at a site that has point 
 - **Setup:** generate a mission on a busy campaign with a live survivor and a CSAR package. Read the SAR line on an ordinary striker's card, then read the CSAR flight's own card. ~10 min, no flying.
 - **Pass:** the SAR line fits without overflow and names a beacon channel that matches the one the survivor keys; the CSAR crew's card carries the pickup point and the beacon.
 - **Fail signature:** the SAR line overflows or truncates on a busy page; the briefed channel does not match the transmitted one (the pin fell back to MOOSE's random draw — see G33); the CSAR crew's card carries no beacon at all. **Also worth knowing:** the SAR line is printed on **every** flight's card including dynamic-slot aircraft, whose pilots can never go MIA and can never have a beacon — so a dynamic-slot pilot is briefed a rescue that structurally cannot come. That is a real mismatch, not a rendering bug, and if it bothers the squadron the fix is in the card, not the plugin.
+
+### H15 — Offline recon pages: imagery under the symbology, or none at all · §22 · ☐ UNTESTED
+
+**History:** added 2026-08-22 with the `gif_georef` fix. The old path georeferenced the shipped theater raster by `terrain.bounds` and clamped the crop to the image, so an extent the raster could not cover was stretched to fill the page — every Syria crop collapsed to a one-pixel-tall strip, and a Batumi page landed 116 km east. The crop now refuses instead of clamping and drops to the landmap renderer.
+- **What CI cannot exercise:** whether the *real* raster crop lines up with the drawn symbology on a rendered page. The tests use synthetic rasters to pin the world-to-pixel mapping; they cannot tell you the imagery looks right under the markers.
+- **Setup:** `generate_target_recon_kneeboard` ON, **network down or blocked** so the Esri tile path fails and the OFFLINE banner appears. Generate on Syria and on Caucasus, then open the DEPARTURE / RECON OVERVIEW / RECON DETAIL pages. ~15 min, no flying. Worth doing on Syria specifically with a package fragged at **Tabqa** (in frame) and one at **King Abdullah II** (off frame).
+- **Pass:** the in-frame page shows terrain imagery whose coastline and features sit under the markers, at the requested area rather than a smear. The off-frame page shows the plain tan landmap with the grid — no imagery — and the markers are still correctly placed on it. Both carry the red OFFLINE banner.
+- **Fail signature:** imagery that is a vertical smear of one pixel row (the raster was georeferenced by `terrain.bounds` again); markers floating tens of km off the coastline they should follow (the coverage rect drifted — re-run `test_gif_georef.py`); a Cyprus page showing open water under an airbase (the `unrendered` hole stopped being consulted); a blank or crashed page where the landmap fallback should have drawn (the refusal path returned None all the way up instead of falling through).
+
+### H16 — Package Targets Map: terrain behind the packages, and it lines up · §22 · ☐ UNTESTED
+
+**History:** added 2026-08-22. The page drew a flat tan fill with a coastline; it now draws the shipped theater raster where `gif_georef` says it reaches. The swap had been tried and reverted in `7cc256f5c` (#945) because the georeference was broken — that is fixed, so it is made. Rendered on real Syria and Caucasus coordinates during development and it looked right; this row is the check on a real generated turn.
+- **What CI cannot exercise:** whether the imagery reads as a useful orientation map at whatever extent a real turn's packages happen to produce, and whether the labels stay legible over photographic terrain rather than a flat fill. Both are judgements about a picture.
+- **Setup:** `generate_all_packages_kneeboard` ON (it defaults OFF — it adds pages). Generate a turn on Syria and one on Caucasus, open the Package Targets Map. **No network needed and none should be used.** ~10 min, no flying. Try a dark-kneeboard turn too.
+- **Pass:** the backdrop is terrain, and coastal airfields sit **on** the imaged shoreline rather than near it. The packages may sit off-centre on the page — that is the slide buying imagery with margin it did not need, and every package is still drawn — Batumi, Kobuleti, Gudauta and Sochi-Adler on Caucasus are the quick read. Orange target dots and their white-plated names stay legible over the imagery. On a dark kneeboard the terrain is dimmed and the labels still read.
+- **Fail signature:** markers consistently offset from the coastline (georeference drift — H15's fail signatures apply); a flat tan fill where the raster should have reached (check the extent against `COVERAGE` — remember `aspect_correct` runs first, so the padded extent must fit, not just the packages); labels washing out over busy terrain; any network access during generation (the backdrop is offline by construction and a test pins it — if this happens, something re-wired it to the tile path). Any package missing from the page entirely (the slide is meant to refuse rather than crop — that would be a real bug). A theater-wide spread showing the flat fill is **correct behaviour**, not a failure.
 
 
 ## I. Mission generation

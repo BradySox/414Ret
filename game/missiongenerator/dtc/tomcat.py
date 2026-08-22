@@ -527,14 +527,21 @@ def _jdam_target(
 
 def _build_jdam(flight: FlightData, game: Game, coords: _Coords) -> dict[str, Any]:
     """Every station gets the same ordered list, so any bomb can take any
-    planned point -- the crew picks the index; we do not guess the fit."""
+    planned point -- the crew picks the index; we do not guess the fit.
+
+    Every target in a cluster measures its run-in from the same point: the last
+    route waypoint before the first target, the IP. A strike plan gives each
+    building its own target waypoint a few hundred metres apart, and measuring
+    from the previous target instead made the second bomb's heading random and
+    its release altitude the ground.
+    """
     planned: list[dict[str, Any]] = []
     previous: Optional[FlightWaypoint] = None
     for waypoint in flight.waypoints:
         is_target = is_target_waypoint(waypoint)
         if is_target and len(planned) < JDAM_TARGETS_PER_STATION:
             planned.append(_jdam_target(coords, game, waypoint, previous))
-        if is_route_waypoint(waypoint):
+        if is_route_waypoint(waypoint) and not is_target:
             previous = waypoint
     targets = planned + [
         _jdam_target(coords) for _ in range(JDAM_TARGETS_PER_STATION - len(planned))

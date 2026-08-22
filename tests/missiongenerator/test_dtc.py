@@ -1533,3 +1533,62 @@ def test_a_ground_marked_target_carries_the_ground_as_its_altitude(
     # 150 m AGL over 700 m ground is written as 850 m MSL.
     assert low["routeAltitude"] == pytest.approx(850.0)
     assert low["altitudeType"] == 1
+
+
+def test_every_target_in_a_cluster_runs_in_from_the_ip() -> None:
+    """A strike plan gives each building its own target waypoint. The second
+    bomb must not measure its run-in, release altitude and speed from the
+    first target; all of them come from the IP."""
+    flight, mission_data, game = _tomcat_fixture()
+    flight.waypoints = [
+        _waypoint(
+            "TAKEOFF", FlightWaypointType.TAKEOFF, 0, 0, 0, datetime(1988, 7, 15, 7, 5)
+        ),
+        _waypoint(
+            "INGRESS",
+            FlightWaypointType.INGRESS_STRIKE,
+            40000,
+            40000,
+            6096,
+            datetime(1988, 7, 15, 7, 25),
+            targets=[object()],
+        ),
+        _waypoint(
+            "BLDG 1",
+            FlightWaypointType.TARGET_POINT,
+            80000,
+            40000,
+            0,
+            datetime(1988, 7, 15, 7, 30),
+            targets=[object()],
+        ),
+        _waypoint(
+            "BLDG 2",
+            FlightWaypointType.TARGET_POINT,
+            80000,
+            40300,
+            0,
+            datetime(1988, 7, 15, 7, 30, 2),
+            targets=[object()],
+        ),
+        _waypoint(
+            "LANDING",
+            FlightWaypointType.LANDING_POINT,
+            0,
+            0,
+            0,
+            datetime(1988, 7, 15, 8, 10),
+        ),
+    ]
+    targets = json.loads(
+        build_tomcat_cartridge(flight, mission_data, game, "Cluster").to_json()
+    )["data"]["JDAM"]["stations"][0]["targets"]
+    first, second = targets[0], targets[1]
+    assert first["active"] and second["active"]
+    # Both run in from the IP: due north, at the IP's 20,000 ft, at the IP-to-
+    # target leg speed -- not the 300 m hop between the two buildings.
+    assert first["attack_heading"] == pytest.approx(0.0)
+    assert second["attack_heading"] == pytest.approx(0.4, abs=0.1)
+    assert first["drop_alt"] == second["drop_alt"] == 20000
+    assert first["drop_spd"] == second["drop_spd"]
+    assert first["lar_rmax_nmi"] == pytest.approx(second["lar_rmax_nmi"])

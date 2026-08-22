@@ -38,7 +38,6 @@ from game.missiongenerator.dtc.common import (
     dedupe_stations,
     flot_segments,
     is_route_waypoint,
-    is_target_waypoint,
     known_enemy_threat_sites,
     leg_altitude,
     leg_speed_kmh,
@@ -213,9 +212,15 @@ def _zulu_clock(game: Game, waypoint: FlightWaypoint) -> str:
 
 
 def _point_name(waypoint: FlightWaypoint) -> str:
-    return waypoint_display_name(
-        waypoint.display_name or waypoint.name, WAYPOINT_NAME_LEN
-    )
+    """``TARGETAR`` -- what the authored cartridge's names look like.
+
+    The descriptor only truncates, but every name in a real cartridge is bare
+    uppercase alphanumerics, and the CDNU has no lower case. Retribution's own
+    labels arrive as "Target area" and "Join - Point", which would reach the
+    cockpit with their spaces and dashes intact.
+    """
+    folded = waypoint_display_name(waypoint.display_name or waypoint.name)
+    return sanitize_short_name(folded, WAYPOINT_NAME_LEN)
 
 
 def _empty_plan() -> dict[str, Any]:
@@ -242,6 +247,16 @@ def _reference(coords: _Coords, name: str, x: float, y: float) -> dict[str, Any]
     entry: dict[str, Any] = {"name": name[:WAYPOINT_NAME_LEN]}
     entry.update(coords.of(x, y))
     return entry
+
+
+#: Target waypoint types, which is narrower than ``is_target_waypoint``: an
+#: ingress waypoint carries the same target list so the task can be built, but
+#: it is where the run starts, not something to aim a bomb at.
+_JDAM_TARGET_TYPES = (
+    FlightWaypointType.TARGET_POINT,
+    FlightWaypointType.TARGET_GROUP_LOC,
+    FlightWaypointType.TARGET_SHIP,
+)
 
 
 #: Waypoint types and the jet's name code for each. Only the four codes the NAV
@@ -453,7 +468,8 @@ def _build_jdam(flight: FlightData, coords: _Coords) -> dict[str, Any]:
     planned: list[dict[str, Any]] = []
     previous: Optional[FlightWaypoint] = None
     for waypoint in flight.waypoints:
-        if is_target_waypoint(waypoint) and len(planned) < JDAM_TARGETS_PER_STATION:
+        is_target = waypoint.waypoint_type in _JDAM_TARGET_TYPES
+        if is_target and len(planned) < JDAM_TARGETS_PER_STATION:
             planned.append(_jdam_target(coords, waypoint, previous))
         if is_route_waypoint(waypoint):
             previous = waypoint

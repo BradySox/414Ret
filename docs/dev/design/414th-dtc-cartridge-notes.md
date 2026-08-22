@@ -810,4 +810,25 @@ The author never touched the tab; the editor saved it anyway. That is the case
 for omitting it: emitting the section writes ED's own numbers back and clobbers
 anything the pilot set.
 
+### What generating one from a real save caught (2026-08-22)
+
+A cartridge built from the turn-2 Iraq autosave — a real route, real package,
+real threats — showed two things no unit test would have:
+
+1. **Names reached the file as Retribution writes them**: `Join - Point`,
+   `Target area`, `Landing`. Every name in the authored cartridge is bare
+   uppercase alphanumerics and the CDNU has no lower case, so `_point_name()`
+   now runs them through `sanitize_short_name` — `JOINPUSH`, `TARGETAR`,
+   `LANDXHB`.
+2. **The ingress waypoint was being pre-planned as a JDAM aimpoint.**
+   `is_target_waypoint()` is true for it, because Retribution hangs the target
+   list on the ingress point so the task can be built. `_build_jdam` now filters
+   on the waypoint *type* (`TARGET_POINT`, `TARGET_GROUP_LOC`, `TARGET_SHIP`)
+   instead, which halved the planned points on a SEAD escort.
+
+Generate one the same way when this changes: load the save, man a lead, point
+`CARTRIDGE_BUILDERS` at the builder under test, `MissionSimulation.begin_simulation()`
+then `MissionGenerator(...).generate_miz()`. The flight states have to be
+initialized first or generation raises on an uninitialized flight.
+
 In-game pass: checklist **B91**.

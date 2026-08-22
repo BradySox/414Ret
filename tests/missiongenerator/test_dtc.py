@@ -1232,9 +1232,10 @@ def test_tomcat_route_lands_on_plan_two_with_the_jets_name_codes() -> None:
     assert route["name"] == "ROUTE 1"
     assert route["route_as_line"] is True
     # Waypoint 0 is the spawn, so plan 2's n matches the kneeboard's n.
+    # Bare uppercase alphanumerics, like every name in the authored cartridge.
     assert [w["name"] for w in route["waypoints"]] == [
         "INGREXIP",
-        "POWER PL",
+        "POWERPLA",
         "LANDIXHB",
     ]
     # 07:25 local on a UTC+4 map is 03:25Z.
@@ -1320,11 +1321,15 @@ def test_tomcat_jdam_points_load_every_station() -> None:
 
     target = stations[0]["targets"][0]
     assert target["active"] is True
-    assert target["name"] == "POWER PL"
+    assert target["name"] == "POWERPLA"
     # Run-in heading from the ingress point: due north on this fixture.
     assert target["attack_heading"] == pytest.approx(0.0)
     assert target["drop_alt"] == pytest.approx(20000.0)
     assert target["lar_rmax_nmi"] > target["lar_rmin_nmi"] > 0
+
+    # The ingress waypoint carries the same target list for the task setup, and
+    # it is not an aimpoint -- only the target point is planned.
+    assert stations[0]["targets"][1]["active"] is False
 
     empty = stations[0]["targets"][1]
     assert empty["active"] is False

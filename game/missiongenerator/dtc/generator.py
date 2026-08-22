@@ -43,12 +43,11 @@ if TYPE_CHECKING:
 #: :mod:`game.missiongenerator.dtc.superhornet`); the generator then skips it.
 CartridgeBuilder = Callable[..., Optional[DtcCartridge]]
 
-#: DCS unit type id -> cartridge builder. Only modules with native DTC support
-#: belong here (a ``DTC`` descriptor must ship in the module's own directory --
-#: ``CoreMods/aircraft/<type>/DTC`` for stock jets, the mod's own folder for the
-#: CJS Super Hornets). The F-14B(U) -- id ``F-14BU``, not the F-14B -- CH-47F and
-#: the MiG-29 Fulcrum also have descriptors; add them when a campaign fields them
-#: as blue client airframes.
+#: DCS unit type id -> cartridge builder. Capability is the unit DB's ``DTC``
+#: flag plus a matching ``<module>/DTC/<type>_DTC.lua`` -- the descriptor folder
+#: alone is not enough (the CH-47F ships one and sets ``DTC = false``). The stock
+#: capable set is ``FA-18C_hornet``, ``F-16C_50`` and ``F-14BU``, plus the CJS
+#: Super Hornets; see the design note.
 CARTRIDGE_BUILDERS: dict[str, CartridgeBuilder] = {
     HORNET_UNIT_TYPE: build_hornet_cartridge,
     VIPER_UNIT_TYPE: build_viper_cartridge,

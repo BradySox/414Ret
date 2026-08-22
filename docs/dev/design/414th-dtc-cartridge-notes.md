@@ -16,11 +16,25 @@ Two authoritative sources, cross-checked:
    and `...\F-16C\DTC\` (per-jet descriptors: data model, element constructors,
    defaults, limits, import filters) plus
    `MissionEditor\modules\me_managerDTC.lua` (the miz read/write + unit binding).
-   DTC descriptors exist for **FA-18C_hornet, F-16C_50, F-14BU, CH-47Fbl1,
-   MiG-29 Fulcrum** — that set defines "DTC-capable" today. The Tomcat entry is
-   `CoreMods/aircraft/F14/DTC/F-14BU_DTC.lua`, `type = "F-14BU"`: the **F-14B(U)
-   only, added in 2.9.28**. The plain F-14B has no descriptor and reads no
-   cartridge.
+   **"DTC-capable" is the unit DB flag, not the descriptor folder** (checked
+   2026-08-22): `fillTypes()` lists a type when `DB.unit_by_type[t].DTC` is
+   true, and `loadDescriptors()` then loads `<module>/DTC/<type>_DTC.lua`. Both
+   halves must be present. Install-wide on 2.9.28 the flag is declared six
+   times, and only three of them are usable:
+
+   | Declaration | Verdict |
+   |---|---|
+   | `FA-18C/FA-18C_hornet.lua` = `true` | capable |
+   | `F-16C/F-16C.lua` = `true` | capable |
+   | `F14/Entry/F-14B.lua` = `rewrite_settings.Name == "F-14BU"` | capable, **F-14B(U) only** — the plain F-14B reads no cartridge |
+   | `FA-18C/FA-18C.lua` = `true` (the AI Hornet) | no `FA-18C_DTC.lua` exists |
+   | `MiG-29-Fulcrum/MiG-29-Fulcrum.lua` = `true` | AI-only module (`MiG-29 Fulcrum AI`, no `Cockpit/`) — nothing ingests a cartridge |
+   | `CH-47F/CH-47F_bl1.lua` = **`false`** | descriptor folder ships, flag does not — **not capable** |
+
+   The CJS Super Hornet mod sets its own flag in
+   `Entry/FA-18EFG_AIRCRAFT_DATA.lua` and ships `DTC/{FA-18E,FA-18F,EA-18G}_DTC.lua`.
+   **Do not read the capable set off the `CoreMods/aircraft/*/DTC` folders** —
+   that is how CH-47F and the Fulcrum got wrongly listed here until 2026-08-22.
 
 The retired §11 export predated all of this: it wrote cartridges to the local
 Saved Games library (no MP distribution) against a DCS build whose pre-load didn't

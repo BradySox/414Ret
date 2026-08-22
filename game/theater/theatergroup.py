@@ -90,13 +90,19 @@ class TheaterUnit:
             iads.update_tgo(self.ground_object, events)
         if self.ground_object.is_naval_control_point:
             for unit in self.ground_object.units:
+                # HELICOPTER_CARRIER is not only the LHAs: the WWII Essex carries
+                # that class so transform_to_essex_if_needed can spot it, which
+                # exempted an aircraft carrier from its own sinking.
                 if (
                     unit.unit_type
-                    and unit.unit_type.unit_class is UnitClass.AIRCRAFT_CARRIER
+                    and unit.unit_type.unit_class
+                    in (UnitClass.AIRCRAFT_CARRIER, UnitClass.HELICOPTER_CARRIER)
                     and not unit.alive
                 ):
                     cp = self.ground_object.control_point
-                    for squadron in cp.squadrons:
+                    # cp.squadrons is a lazy chain over the very lists being
+                    # mutated here, so iterating it directly skips squadrons.
+                    for squadron in list(cp.squadrons):
                         cp.coalition.air_wing.squadrons[squadron.aircraft].remove(
                             squadron
                         )

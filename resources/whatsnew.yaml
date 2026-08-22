@@ -32,6 +32,21 @@ entries:
       off-centre, which is the page shifting to stay on the imagery.
     row: H15
   - date: 2026-08-22
+    title: A sunk carrier takes its squadrons down with it
+    change: >-
+      Sinking a carrier grounded the squadrons based on it only when the hull
+      was classed as an aircraft carrier. The LHAs and the WWII Essex are
+      classed as helicopter carriers, so putting one on the bottom left its
+      air wing flying from a ship that no longer existed. A second fault hit
+      the supercarriers too: the squadrons were removed while the list holding
+      them was being walked, so where two squadrons shared an aircraft type
+      the second one survived.
+    watch: >-
+      Sink a carrier or an LHA and pass the turn. Every squadron that was
+      based on it should be gone from the air wing, not just the first of each
+      type.
+
+  - date: 2026-08-22
     title: Steerpoint elevations stop reading 0
     change: >-
       Every cartridge steerpoint but the landing point carried an elevation of

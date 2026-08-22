@@ -1590,5 +1590,7 @@ def test_every_target_in_a_cluster_runs_in_from_the_ip() -> None:
     assert first["attack_heading"] == pytest.approx(0.0)
     assert second["attack_heading"] == pytest.approx(0.4, abs=0.1)
     assert first["drop_alt"] == second["drop_alt"] == 20000
-    assert first["drop_spd"] == second["drop_spd"]
-    assert first["lar_rmax_nmi"] == pytest.approx(second["lar_rmax_nmi"])
+    # The IP-to-target leg is measured per target, so the second building, 300 m
+    # further and two seconds later, reads a knot or two different.
+    assert abs(first["drop_spd"] - second["drop_spd"]) <= 5
+    assert first["lar_rmax_nmi"] == pytest.approx(second["lar_rmax_nmi"], rel=0.05)

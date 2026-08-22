@@ -576,14 +576,15 @@ FEATURES: tuple[Feature, ...] = (
     ),
     Feature(
         # §74 native DTC pre-population (game/missiongenerator/dtc/): one JSON
-        # cartridge per blue client Hornet/Viper flight embedded at DTC/<name>.dtc
-        # in the miz + the per-unit DTC.Cartridges/AutoLoad block, so the jet
-        # spawns with named comms, steerpoints + push times, recovery TACAN/ICLS/
-        # ACLS, and the SA/HSD picture (FLOT, ROE zones, CAP + tanker/AWACS
-        # orbits, viewer-fogged SAM rings) already loaded -- zero pilot action,
-        # MP-distributed with the mission download. Supersedes the retired §11.
+        # cartridge per blue client flight embedded at DTC/<name>.dtc in the miz
+        # + the per-unit DTC.Cartridges/AutoLoad block, so the jet spawns with
+        # named comms, steerpoints + push times, recovery TACAN/ICLS/ACLS, and
+        # the SA/HSD picture (FLOT, CAP + tanker/AWACS orbits, viewer-fogged SAM
+        # rings) already loaded -- zero pilot action, MP-distributed with the
+        # mission download. The F-14B(U) takes the same seam with its own
+        # sections. Supersedes the retired §11.
         "dtc_data_prepopulation",
-        "Native DTC data pre-population (F/A-18C + F-16C)",
+        "Native DTC data pre-population (F/A-18C + F-16C + F-14B(U))",
         74,
         settings_fields=("dtc_data_cartridges",),
     ),

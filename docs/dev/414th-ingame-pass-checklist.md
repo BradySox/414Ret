@@ -135,6 +135,7 @@ stress it · `✗` fail signature reproduced in-game.
 | B87 | A stand-off shooter starts its run at its own launch range | §8 | ☑ |
 | B89 | Region priorities: the CP-dialog control shifts the ATO | §93 | ☑ |
 | B90 | A steerpoint's elevation is the ground under it | §74 | ☐ |
+| B91 | The F-14B(U) spawns with its cartridge loaded | §74 | ☐ |
 
 ---
 
@@ -5583,6 +5584,43 @@ turn on a wing with a small dedicated-jammer squadron and read the ATO before fl
 - **Setup:** frag a player cold-start F-16C and a player cold-start F-4E in the same turn. Read each package's takeoff time against its TOT, then actually fly both starts with a stopwatch — **stored heading**, which is what the numbers assume. ~40 min for both. Also confirm an airframe with no value (a Hornet) is unchanged at 10 minutes.
 - **Pass:** you make the briefed taxi time on a normal unhurried start in all three. The Phantom's 9 minutes should feel close but sufficient — its gyros alone eat most of it.
 - **Fail signature:** you are still in the chocks when the package is due to taxi, which means the number is too tight and the note's inferred ~2-minute systems window is wrong. Record the stopwatch figure — a measurement replaces the arithmetic outright. The opposite signature also matters: arriving at the hold-short with minutes to spare means the value is generous and the whole exercise bought nothing.
+
+### B91 — The F-14B(U) spawns with its cartridge loaded · §74 · ☐ UNTESTED
+
+**History:** built 2026-08-22. Fork-only — upstream ships no DTC. Mined from
+`CoreMods/aircraft/F14/DTC/F-14BU_DTC.lua`; design note
+`414th-dtc-cartridge-notes.md`, "F-14B(U) — the Tomcat schema".
+
+> The Tomcat is the first §74 airframe whose schema is not the Hornet's, and the
+> first whose navigation plan 1 already belongs to the mission route — so the
+> cartridge carries references, pre-planned JDAM points and the TIS list rather
+> than steerpoints. None of it has been read in a cockpit.
+
+**Cheapest check first, and it needs no flying:** open the generated `.miz` in the
+Mission Editor, open the DTC manager, and load the flight's `DTC/*.dtc`. If the ME
+draws the reference points, the front line and the JDAM targets on its own panels,
+the JSON matches ED's importer. Do this before spending a sortie.
+
+Then fly one: F-14B(U) client flight on a campaign that fields it
+(`clash_of_the_titans`, `red_sea_rising`, `operation_desert_trident`…), cold start.
+
+- **Pass:** the CDNU cartridge label reads the flight callsign; the bullseye and
+  divert appear as reference points with their `XB`/`XD` names; the tanker, AWACS
+  and CAP anchors are there; the JDAM page shows the flight's target on STA 3-6
+  PP1 with a sensible run-in heading and a LAR that draws; the TIS send-to list
+  carries the package's other flights.
+- **Fail signature — the whole cartridge is absent:** the file is in the miz but
+  nothing loads. Check `type` reads exactly `F-14BU` in both the top level and
+  `data` — `setData` refuses any other value outright.
+- **Fail signature — points are in the sea, or 3.28x off:** the coordinate pair
+  the jet reads is not the one we favour. NAV elevations are feet and JDAM
+  elevations are metres; a systematic 3.28 ratio means one of the two got the
+  other's unit.
+- **Fail signature — the route is missing:** it should come from the ME route
+  (plan 1), not from us. If the jet has no route at all, the deferred
+  "duplicate the route into plan 2" work becomes real; record which.
+- **Watch for:** whether the reference points' elevation being 0 matters in the
+  cockpit. That is B90's open half, and this is a second place to observe it.
 
 ### B90 — A steerpoint's elevation is the ground under it · §74 · ☐ UNTESTED
 

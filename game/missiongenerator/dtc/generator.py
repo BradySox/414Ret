@@ -1,8 +1,8 @@
 """DTC cartridge generation pass (§74).
 
 Builds one cartridge **per blue client flight** of a DTC-capable airframe
-(FA-18C and F-16C natively, plus the CJS Super Hornets FA-18E/F + EA-18G, whose
-mod ships its own DTC descriptor), binds it to the flight's client units with
+(FA-18C, F-16C and F-14B(U) natively, plus the CJS Super Hornets FA-18E/F +
+EA-18G, whose mod ships its own DTC descriptor), binds it to the client units with
 ``AutoLoad``, and appends the JSON files to the saved miz. Per-flight rather than per-type because each flight flies its
 own route -- a package's four Hornet flights get four cartridges, each loading
 its own steerpoints while sharing the mission comm plan and SA picture.
@@ -29,6 +29,10 @@ from game.missiongenerator.dtc.superhornet import (
     SUPER_HORNET_UNIT_TYPES,
     build_super_hornet_cartridge,
 )
+from game.missiongenerator.dtc.tomcat import (
+    TOMCAT_UNIT_TYPE,
+    build_tomcat_cartridge,
+)
 from game.missiongenerator.dtc.viper import VIPER_UNIT_TYPE, build_viper_cartridge
 
 if TYPE_CHECKING:
@@ -51,6 +55,7 @@ CartridgeBuilder = Callable[..., Optional[DtcCartridge]]
 CARTRIDGE_BUILDERS: dict[str, CartridgeBuilder] = {
     HORNET_UNIT_TYPE: build_hornet_cartridge,
     VIPER_UNIT_TYPE: build_viper_cartridge,
+    TOMCAT_UNIT_TYPE: build_tomcat_cartridge,
     **{unit: build_super_hornet_cartridge for unit in SUPER_HORNET_UNIT_TYPES},
 }
 

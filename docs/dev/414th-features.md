@@ -7224,7 +7224,7 @@ teeth:
 **Deliberately not touched:** the `TACAN Channel Presel` typo is pydcs mirroring the
 DCS module data (`planes.py`, alongside `ILS Channel Presel`) — not ours to patch.
 
-## §74 — Native DTC data pre-population (F/A-18C + F-16C + CJS Super Hornets)
+## §74 — Native DTC data pre-population (F/A-18C + F-16C + F-14B(U) + CJS Super Hornets)
 
 Design note: [`docs/dev/design/414th-dtc-cartridge-notes.md`](design/414th-dtc-cartridge-notes.md)
 (the mined format reference — read before touching the JSON shapes). Supersedes the
@@ -7465,6 +7465,48 @@ current DCS. That one is lazy (ME DTC-editor TCN panel only) and harmless to us 
 scripts — see the CJS resync note in the memory index. Tests
 `tests/missiongenerator/test_dtc.py` (8 added: shape, per-variant dispatch, SA never
 emitted, empty→`None`, registration/tanker-variant exclusion).
+
+**F-14B(U) — the Tomcat (added 2026-08-22).** `game/missiongenerator/dtc/tomcat.py`,
+registered on DCS type **`F-14BU`**. Not the Hornet schema and not a variant of it:
+the descriptor (`CoreMods/aircraft/F14/DTC/F-14BU_DTC.lua`) declares four sections —
+`NAV`, `JDAM`, `CMDS`, `TIS` — and a `data` table with `cartridge_name` where the
+other jets have `terrain`. Only the **(U) rewrite** is capable: `F14/Entry/F-14B.lua`
+sets `DTC = rewrite_settings.Name == "F-14BU"` and `setData` refuses any other
+`type`, so the plain F-14B and every F-14A stay unregistered.
+
+**The route is not ours to write.** Plan 1 of `data.NAV`'s twelve is the *mission
+editor's* route — the panel says so and `updateNAVPlanEditability()` greys its
+waypoint fields out — and Retribution's flight plan already **is** that route. So the
+cartridge carries what the route cannot:
+
+- `lines` — the front line, one per active front (same `flot_segments` geometry as
+  the Hornet's FLOT and the F10 drawing).
+- `additional_points` — bullseye and divert named with the jet's own suffix codes
+  (`XB`, `XD` — the NAV tab documents the grammar), then the tanker/AEW&C and CAP
+  anchors, then the recon-confirmed SAM sites, capped at the descriptor's declared
+  20 references.
+- `JDAM.stations` — the flight's target waypoints as pre-planned aimpoints on all
+  four stations (STA 3-6, 8 slots each), with the run-in heading from the ingress
+  point, the planned release altitude and speed, and the three cached LAR scalars.
+  `JDAM_LAR_TABLE` and its bilinear lookup are ported into `tomcat.py` because the
+  CDNU reads those numbers straight out of the cartridge.
+- `TIS.send_to_callsigns` — the package's other flights, 6-char blank-padded.
+
+**Two unit traps, both mined:** NAV elevations are **feet**
+(`metersToFeet(getAltitude(...))`) while JDAM target elevations are **metres**; and a
+waypoint carries `spd` **or** `tot`, never both. **`CMDS` is never emitted** — same
+call as the Viper's, plus the Tomcat's per-type override table would need invented
+program/threshold pairs. Section toggles ride the same Edit Flight → DTC tab, with a
+new **Pre-planned target points** checkbox (`DtcOptions.jdam_targets`); `nav_aids`
+and `destinations` have no Tomcat equivalent and are ignored.
+
+Unlike the Viper, the F14 descriptor ships **no `defaults/` example cartridge**, so
+the shape is validated against `setData`, the element constructors and the editor
+panels only. Tests `tests/missiongenerator/test_dtc.py` (11 added: registration and
+the F-14B exclusion, plan 1 left to the ME route, the name codes, fogged threat
+points, the reference cap, the JDAM stations and empty slots, the LAR corners, TIS
+package membership, per-section omission, generator binding). In-game pass:
+checklist **B91** — its first step is an ME import, which needs no sortie.
 
 ## §75 — Custom victory conditions
 

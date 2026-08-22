@@ -45,7 +45,17 @@ from game.missiongenerator.dtc.superhornet import (
     SUPER_HORNET_UNIT_TYPES,
     build_super_hornet_cartridge,
 )
+from game.missiongenerator.dtc.tomcat import (
+    MAX_ADDITIONAL_POINTS,
+    TOMCAT_UNIT_TYPE,
+    build_tomcat_cartridge,
+    lookup_jdam_lar,
+)
 from game.missiongenerator.dtc.viper import build_viper_cartridge
+
+#: Metres per degree, near enough for a fake projection the tests only need to
+#: be reversible.
+DEG_M = 111120.0
 
 
 class Pt:
@@ -55,6 +65,13 @@ class Pt:
 
     def distance_to_point(self, other: "Pt") -> float:
         return math.hypot(self.x - other.x, self.y - other.y)
+
+    def new_in_same_map(self, x: float, y: float) -> "Pt":
+        return Pt(x, y)
+
+    def latlng(self) -> Any:
+        # DCS x is north, y is east.
+        return SimpleNamespace(lat=self.x / DEG_M, lng=self.y / DEG_M)
 
 
 def _waypoint(
@@ -786,6 +803,7 @@ def test_all_sections_off_builds_no_cartridge(
         friendly_orbits=False,
         threat_rings=False,
         destinations=False,
+        jdam_targets=False,
     )
     generator = _generator(_game(), [_flight(dtc_options=bare)])
     generator.generate()
@@ -1120,3 +1138,214 @@ def test_super_hornet_ids_are_registered_but_tanker_variants_are_not() -> None:
         assert CARTRIDGE_BUILDERS[dcs_id] is build_super_hornet_cartridge
     assert "FA-18ET" not in CARTRIDGE_BUILDERS
     assert "FA-18FT" not in CARTRIDGE_BUILDERS
+
+
+def _tomcat_fixture() -> tuple[Any, Any, Any]:
+    flight, mission_data, game = _hornet_fixture()
+    flight.aircraft_type = SimpleNamespace(
+        dcs_unit_type=SimpleNamespace(id=TOMCAT_UNIT_TYPE)
+    )
+    flight.callsign = "Dodge 1"
+    flight.waypoints = [
+        _waypoint(
+            "TAKEOFF", FlightWaypointType.TAKEOFF, 0, 0, 0, datetime(1988, 7, 15, 7, 5)
+        ),
+        _waypoint(
+            "INGRESS",
+            FlightWaypointType.INGRESS_STRIKE,
+            40000,
+            40000,
+            6096,
+            datetime(1988, 7, 15, 7, 25),
+        ),
+        _waypoint(
+            "POWER PLANT",
+            FlightWaypointType.TARGET_POINT,
+            80000,
+            40000,
+            6096,
+            datetime(1988, 7, 15, 7, 30),
+            targets=[object()],
+        ),
+        _waypoint(
+            "LANDING",
+            FlightWaypointType.LANDING_POINT,
+            0,
+            0,
+            0,
+            datetime(1988, 7, 15, 8, 10),
+        ),
+        _waypoint("BULLSEYE", FlightWaypointType.BULLSEYE, 5000, 5000, 0, None),
+        _waypoint("BATUMI", FlightWaypointType.DIVERT, -9000, 3000, 0, None),
+    ]
+    mission_data.flights[0] = flight
+    return flight, mission_data, game
+
+
+def test_tomcat_is_registered_but_the_plain_f14b_is_not() -> None:
+    """F14/Entry/F-14B.lua sets DTC only for the F-14BU rewrite, so a cartridge
+    bound to any other Tomcat would have nothing to read it."""
+    assert CARTRIDGE_BUILDERS[TOMCAT_UNIT_TYPE] is build_tomcat_cartridge
+    assert "F-14B" not in CARTRIDGE_BUILDERS
+    assert "F-14A-135-GR" not in CARTRIDGE_BUILDERS
+
+
+def test_tomcat_leaves_plan_one_waypoints_to_the_me_route() -> None:
+    """Plan 1 IS the miz route -- the editor greys its waypoint fields out for
+    that reason, so the cartridge adds only what a route cannot carry."""
+    flight, mission_data, game = _tomcat_fixture()
+    cartridge = build_tomcat_cartridge(flight, mission_data, game, "Test F-14BU")
+    payload = json.loads(cartridge.to_json())
+    assert payload["type"] == TOMCAT_UNIT_TYPE
+    data = payload["data"]
+    assert data["type"] == TOMCAT_UNIT_TYPE
+    assert data["cartridge_name"] == "DODGE1"
+
+    plans = data["NAV"]
+    assert len(plans) == 12
+    assert plans[0]["waypoints"] == []
+    # An empty name keeps the editor's own "1: ME Route" label.
+    assert plans[0]["name"] == ""
+    assert plans[0]["route_as_line"] is False
+    assert all(plan["additional_points"] == [] for plan in plans[1:])
+
+
+def test_tomcat_references_carry_the_jets_name_codes() -> None:
+    """The NAV tab documents the trailing codes: XB types a point as a bullseye
+    reference, XD as a destination, and every name caps at 8 characters."""
+    flight, mission_data, game = _tomcat_fixture()
+    cartridge = build_tomcat_cartridge(flight, mission_data, game, "Test F-14BU")
+    points = json.loads(cartridge.to_json())["data"]["NAV"][0]["additional_points"]
+    names = [point["name"] for point in points]
+    # The base name gives way to the code, never the other way round.
+    assert names[:2] == ["BULLSEXB", "BATUMIXD"]
+    # Then the support anchors: tankers and AEW&C before the CAP stations.
+    assert names[2:] == ["ARCO", "COLT", "SA2"]
+    assert all(len(name) <= 8 for name in names)
+    bullseye = points[0]
+    assert (bullseye["x"], bullseye["y"]) == (5000, 5000)
+    assert bullseye["lat"] == pytest.approx(5000 / DEG_M)
+    assert bullseye["lon"] == pytest.approx(5000 / DEG_M)
+
+
+def test_tomcat_threat_points_ride_the_recon_fog() -> None:
+    flight, mission_data, game = _tomcat_fixture()
+    flight.dtc_options = DtcOptions(route=False, friendly_orbits=False)
+    cartridge = build_tomcat_cartridge(flight, mission_data, game, "Threats")
+    points = json.loads(cartridge.to_json())["data"]["NAV"][0]["additional_points"]
+    assert [point["name"] for point in points] == ["SA2"]
+
+    fogged = _game(controlpoints=[_sam_cp(known=False)])
+    cartridge = build_tomcat_cartridge(flight, mission_data, fogged, "Fogged")
+    assert json.loads(cartridge.to_json())["data"]["NAV"][0]["additional_points"] == []
+
+
+def test_tomcat_reference_points_stop_at_the_descriptors_budget() -> None:
+    flight, mission_data, game = _tomcat_fixture()
+    game.theater.controlpoints = [_sam_cp() for _ in range(40)]
+    cartridge = build_tomcat_cartridge(flight, mission_data, game, "Crowded")
+    points = json.loads(cartridge.to_json())["data"]["NAV"][0]["additional_points"]
+    assert len(points) == MAX_ADDITIONAL_POINTS
+
+
+def test_tomcat_jdam_points_load_every_station() -> None:
+    """Four stations of eight, the same ordered list on each: the crew picks
+    the index rather than the generator guessing which bomb goes where."""
+    flight, mission_data, game = _tomcat_fixture()
+    cartridge = build_tomcat_cartridge(flight, mission_data, game, "Test F-14BU")
+    stations = json.loads(cartridge.to_json())["data"]["JDAM"]["stations"]
+    assert len(stations) == 4
+    assert all(len(station["targets"]) == 8 for station in stations)
+    assert all(
+        station["targets"][0] == stations[0]["targets"][0] for station in stations
+    )
+
+    target = stations[0]["targets"][0]
+    assert target["active"] is True
+    assert target["name"] == "POWER PL"
+    # Run-in heading from the ingress point: due north on this fixture.
+    assert target["attack_heading"] == pytest.approx(0.0)
+    assert target["drop_alt"] == pytest.approx(20000.0)
+    assert target["lar_rmax_nmi"] > target["lar_rmin_nmi"] > 0
+
+    empty = stations[0]["targets"][1]
+    assert empty["active"] is False
+    assert empty["name"] == ""
+    # An unplaced slot carries no coordinates at all, like createJDAMTarget.
+    assert "lat" not in empty and "x" not in empty
+
+
+def test_tomcat_elevations_use_each_sections_own_unit() -> None:
+    """NAV writes metersToFeet(getAltitude(...)); JDAM stores the raw metres and
+    converts only for display. Mixing them is a 3.28x error."""
+    flight, mission_data, game = _tomcat_fixture()
+    data = json.loads(
+        build_tomcat_cartridge(flight, mission_data, game, "Units").to_json()
+    )["data"]
+    assert isinstance(data["JDAM"]["stations"][0]["targets"][0]["elev"], float)
+    for point in data["NAV"][0]["additional_points"]:
+        assert isinstance(point["elev"], int)
+
+
+def test_tomcat_lar_table_matches_the_descriptor() -> None:
+    """Ported table: the corners clamp to the published cells, and the jet
+    reads these cached scalars straight out of the cartridge."""
+    slow_low = lookup_jdam_lar(100.0, 1.0)
+    assert slow_low == pytest.approx((0.87, 1.50, 20.00))
+    fast_high = lookup_jdam_lar(2000.0, 60.0)
+    assert fast_high == pytest.approx((3.87, 15.27, 45.00))
+    # A mid-table lookup lands between its neighbours, not on a corner.
+    middle = lookup_jdam_lar(450.0, 20.0)
+    assert 1.0 < middle[0] < 2.5
+    assert 3.0 < middle[1] < 9.0
+
+
+def test_tomcat_tis_sends_to_the_package() -> None:
+    """Package mates only, six characters, blank-padded -- sanitizeTISCallsign."""
+    flight, mission_data, game = _tomcat_fixture()
+    package = SimpleNamespace(frequency=None)
+    flight.package = package
+    mate = _flight(callsign="Uzi 1-1", dcs_id=TOMCAT_UNIT_TYPE)
+    mate.package = package
+    red = _flight(callsign="Ivan 1", blue=False)
+    red.package = package
+    mission_data.flights = [flight, mate, red]
+
+    tis = json.loads(
+        build_tomcat_cartridge(flight, mission_data, game, "TIS").to_json()
+    )["data"]["TIS"]
+    assert tis["send_to_callsigns"] == ["UZI11 "]
+    assert tis["use_mission_callsign"] is True
+    assert tis["add_wingmen_to_list"] is True
+    assert tis["own_callsign"] == "      "
+
+
+def test_tomcat_sections_are_omitted_when_off() -> None:
+    flight, mission_data, game = _tomcat_fixture()
+    flight.dtc_options = DtcOptions(
+        comms=False,
+        route=False,
+        flot_and_zones=False,
+        friendly_orbits=False,
+        threat_rings=False,
+        jdam_targets=False,
+    )
+    data = json.loads(
+        build_tomcat_cartridge(flight, mission_data, game, "Bare").to_json()
+    )["data"]
+    assert "NAV" not in data
+    assert "JDAM" not in data
+    assert "TIS" not in data
+    # CMDS is never emitted: ED's programs are the tuning, and nothing in the
+    # campaign improves on them.
+    assert "CMDS" not in data
+
+
+def test_tomcat_flight_gets_a_cartridge_bound_to_its_clients() -> None:
+    flight, mission_data, game = _tomcat_fixture()
+    generator = DtcGenerator(Mission(Caucasus()), game, mission_data)
+    generator.generate()
+    assert len(generator.cartridges) == 1
+    cartridge = generator.cartridges[0]
+    assert cartridge.unit_type == TOMCAT_UNIT_TYPE
+    assert getattr(flight.client_units[0], "retribution_dtc")["AutoLoad"] is True

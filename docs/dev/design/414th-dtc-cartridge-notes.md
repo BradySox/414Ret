@@ -587,10 +587,12 @@ the descriptors.
   names; emitting names alone would blank the presets. The same holds for the
   route sections. A disagreement between the miz and the cartridge is a bug in
   the cartridge.
-- **The Viper `COMM` section is the one genuinely redundant piece** — identical
-  to the unit's `Radio` table, key for key. Dropping it would change nothing the
-  pilot sees. **Not dropped; it is the DM's call** (harmless as a mirror, and the
-  thing it guards against — a future Viper schema with names — is cheap to keep).
+- **The Viper `COMM` section was the one genuinely redundant piece** — identical
+  to the unit's `Radio` table, key for key. **Dropped 2026-08-22 on the DM's call.**
+  The Viper's presets come from the miz; `viper.py` emits no `COMM` at all, and the
+  tab's comms switch is documented as Hornet-only (on the Tomcat it carries TIS).
+  If a future Viper schema ever adds channel names, re-add the section as a mirror
+  plus names, the way the Hornet's works.
 - This is also why the Super Hornets lost their cartridge: with no `SA`, the
   whole file was the first two rows of this table.
 

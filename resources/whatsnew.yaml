@@ -23,7 +23,8 @@ entries:
       you are working over, right after the briefed divert. The F-14B(U) gets a
       cartridge of its own: plan 1 references, the route on plan 2, pre-planned
       JDAM points and the package in the TIS list. Super Hornets no longer take
-      one; everything theirs could hold already reaches them through the miz.
+      one, and the Viper's cartridge drops its comm section: in both cases the
+      data already reaches the jet through the mission itself.
     watch: >-
       Strike Hornet: CAP point 1 should be on your hold and selected at spawn.
       Viper on an airfield strike: DEST 82 should be the target field.

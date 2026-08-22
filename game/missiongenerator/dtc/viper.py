@@ -2,8 +2,9 @@
 
 Sections emitted (schema mined from ``CoreMods/aircraft/F-16C/DTC``):
 
-* ``COMM`` -- COM1 (UHF) / COM2 (VHF) preset tables mirroring the radio
-  allocator's channel numbers. The Viper's DTC channels carry no name field.
+* No ``COMM``: the Viper's channel schema has no name field, so the section
+  could only mirror the ``Radio`` table upstream's channel allocator already
+  writes into the unit. Dropped 2026-08-22 -- the presets come from the miz.
 * ``MPD.NAV_PTS`` -- steerpoints with TOS + per-leg speed inline (the Viper
   keeps route timing on the point, unlike the Hornet's separate route table),
   named via the ``note`` field; the flight route first, then the flight's OWN
@@ -83,27 +84,6 @@ def _default_comm_table(freqs: list[float]) -> dict[str, Any]:
     return {
         f"Channel_{i}": {"freq": freq, "modulation": 1}
         for i, freq in enumerate(freqs, start=1)
-    }
-
-
-def _build_comm(flight: FlightData) -> dict[str, Any]:
-    com1 = _default_comm_table(_COM1_DEFAULT_FREQS)
-    com2 = _default_comm_table(_COM2_DEFAULT_FREQS)
-    tables = {1: com1, 2: com2}
-    for frequency, assignments in flight.frequency_to_channel_map.items():
-        for assignment in assignments:
-            table = tables.get(assignment.radio_id)
-            if table is None or not 1 <= assignment.channel <= 20:
-                continue
-            table[f"Channel_{assignment.channel}"] = {
-                "freq": frequency.mhz,
-                "modulation": 1,
-            }
-    return {
-        "COMM1": com1,
-        "COMM2": com2,
-        "mirror_COMM1": False,
-        "mirror_COMM2": False,
     }
 
 
@@ -380,8 +360,6 @@ def build_viper_cartridge(
     }
     # A section the planner turned off is omitted entirely so the jet's own
     # defaults stand (the §74 Edit Flight DTC tab).
-    if options.comms:
-        data["COMM"] = _build_comm(flight)
     if (
         options.route
         or options.friendly_orbits

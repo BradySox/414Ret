@@ -468,9 +468,9 @@ def test_viper_cartridge_shape() -> None:
     assert threat[0]["radius"] == pytest.approx(43000.0)
     assert threat[0]["id"] == "THREAT_PTS56"
 
-    comm1 = data["COMM"]["COMM1"]
-    assert comm1["Channel_2"] == {"freq": 251.0, "modulation": 1}
-    assert "name" not in comm1["Channel_1"]
+    # No COMM section: the Viper's schema has no channel names, so it could
+    # only mirror the Radio table the miz already carries.
+    assert "COMM" not in data
 
 
 def test_viper_marks_the_target_and_the_run_in() -> None:

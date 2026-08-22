@@ -7246,12 +7246,14 @@ mechanism byte-for-byte.
 **What's in a cartridge** (per **blue client flight** — each flight gets its own route;
 package-mates share the comm plan and SA picture):
 
-- **COMM** — COMM1/COMM2 (Viper COM1 UHF / COM2 VHF) preset tables that **mirror the
-  channel numbers the radio allocator already wrote** into the unit `Radio` table
+- **COMM** (Hornet only) — COMM1/COMM2 preset tables that **mirror the channel
+  numbers the radio allocator already wrote** into the unit `Radio` table
   (`FlightData.frequency_to_channel_map`), so the kneeboard, the ME radio page, and
   the DTC agree — the DTC adds ≤5-char **names** (flight callsign, `MAGIC`, `ARCO`,
   `DEP`/`ARR`/`DVT`, `PKG`, `JTAC`). Unassigned channels keep the module defaults.
-  The Viper's channel schema carries no name field (`{freq, modulation}`).
+  **The Viper emits no COMM section** (dropped 2026-08-22): its channel schema has no
+  name field, so the section could only mirror the `Radio` table the miz already
+  carries. The Viper's presets come from the mission itself.
 - **WYPT / MPD.NAV_PTS** — the flight's waypoints as named steerpoints (ASCII-folded
   display names), the Hornet Route-1 sequence with per-leg altitude/speed (km/h) and
   **ETA in absolute seconds-since-midnight** (the Viper carries TOS inline), the

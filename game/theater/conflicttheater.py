@@ -61,6 +61,10 @@ class ConflictTheater:
             "PersianGulf": "persian gulf",
             "TheChannel": "the channel",
             "MarianaIslands": "marianaislands",
+            # Mandatory, not cosmetic: the loop below matches by substring, and
+            # "marianaislands" is a substring of "marianaislandswwii", so without
+            # this the WWII theater silently loads the modern Marianas landmap.
+            "MarianaIslandsWWII": "marianaswwii",
         }
         if terrain_name in theather_mapping:
             terrain_name = theather_mapping[terrain_name]

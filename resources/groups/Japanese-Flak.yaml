@@ -1,0 +1,11 @@
+name: Japanese Flak
+tasks:
+  - AAA
+units:
+  - AAA 75mm Type 88 Flak
+  - AAA 80mm Type 3 Flak
+  - AAA 25mm x 2 Type 96
+  - AAA 25mm x 2 Type 94 Truck
+  - Truck Type 94
+layouts:
+  - Japanese Flak Site

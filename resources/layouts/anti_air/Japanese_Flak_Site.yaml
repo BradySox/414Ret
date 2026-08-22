@@ -1,0 +1,28 @@
+name: Japanese Flak Site
+tasks:
+  - AAA
+groups:
+  - Flak:
+    - name: Japanese Flak Site 0
+      unit_count:
+        - 4
+      unit_types:
+        - Type_88_75mm_AA
+    - name: Japanese Flak Site 1
+      optional: true # the Navy's gun; an Army-only garrison has none
+      unit_count:
+        - 2
+      unit_types:
+        - Type_3_80mm_AA
+    - name: Japanese Flak Site 2
+      unit_count:
+        - 6
+      unit_types:
+        - Type_96_25mm_AA
+    - name: Japanese Flak Site 3
+      optional: true
+      fill: false # transport, not a firing slot
+      unit_count:
+        - 1
+      unit_types:
+        - Type_94_Truck

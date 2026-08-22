@@ -41,6 +41,7 @@ from game.missiongenerator.dtc.common import (
     bearing_degrees,
     flot_segments,
     is_route_waypoint,
+    is_target_waypoint,
     known_enemy_threat_sites,
     leg_altitude,
     leg_speed_kmh,
@@ -78,8 +79,8 @@ JDAM_STATIONS = 4
 JDAM_TARGETS_PER_STATION = 8
 DEFAULT_DROP_ALT_FT = 20000.0
 DEFAULT_DROP_SPD_KTS = 450.0
-#: A ground-marked target waypoint plans on the deck, which is no release
-#: altitude; below this the ingress leg's altitude is used instead.
+#: Below this a planned altitude is no release altitude and the ingress
+#: leg's is used instead.
 MIN_DROP_ALT_FT = 1000.0
 
 TIS_CALLSIGN_LEN = 6
@@ -309,16 +310,6 @@ def _reference(coords: _Coords, name: str, x: float, y: float) -> dict[str, Any]
     return entry
 
 
-#: Target waypoint types, which is narrower than ``is_target_waypoint``: an
-#: ingress waypoint carries the same target list so the task can be built, but
-#: it is where the run starts, not something to aim a bomb at.
-_JDAM_TARGET_TYPES = (
-    FlightWaypointType.TARGET_POINT,
-    FlightWaypointType.TARGET_GROUP_LOC,
-    FlightWaypointType.TARGET_SHIP,
-)
-
-
 #: Waypoint types and the jet's name code for each. Only the four codes the NAV
 #: tab documents unambiguously are used -- an ED-authored cartridge in hand names
 #: its initial point ``IPORCXIP``, so the grammar is real, but ``DP``/``HA``/``ST``
@@ -391,7 +382,7 @@ def _lines(game: Game, coords: _Coords) -> list[dict[str, Any]]:
     return lines
 
 
-def _waypoint_elevation(waypoint: FlightWaypoint) -> int:
+def _waypoint_elevation(waypoint: FlightWaypoint, game: Game) -> int:
     """Feet for the waypoint's single altitude field, which is not the Hornet's.
 
     The Tomcat waypoint has one number where the other jets have two (ground
@@ -400,11 +391,11 @@ def _waypoint_elevation(waypoint: FlightWaypoint) -> int:
     at the ends of the route, the planned altitude in between. A ground-marked
     point keeps 0, which is what it is planned at.
     """
-    ground = steerpoint_elevation(waypoint)
+    ground = steerpoint_elevation(waypoint, game)
     if ground:
         return _feet(ground)
-    altitude_m, altitude_type = leg_altitude(waypoint)
-    return _feet(altitude_m) if altitude_type == 1 else 0
+    altitude_m, _ = leg_altitude(waypoint, game)
+    return _feet(altitude_m)
 
 
 def _route_waypoint(
@@ -417,7 +408,9 @@ def _route_waypoint(
     entry: dict[str, Any] = {"name": _coded_name(waypoint)}
     entry.update(
         coords.of(
-            waypoint.position.x, waypoint.position.y, _waypoint_elevation(waypoint)
+            waypoint.position.x,
+            waypoint.position.y,
+            _waypoint_elevation(waypoint, game),
         )
     )
     # Speed and TOT are mutually exclusive in the editor. The planned time wins
@@ -476,6 +469,7 @@ def _build_nav(
 
 def _jdam_target(
     coords: _Coords,
+    game: Optional[Game] = None,
     waypoint: Optional[FlightWaypoint] = None,
     ingress: Optional[FlightWaypoint] = None,
 ) -> dict[str, Any]:
@@ -493,9 +487,15 @@ def _jdam_target(
         "active": False,
     }
     if waypoint is not None:
-        planned_alt_ft = _feet(leg_altitude(waypoint)[0])
+        assert game is not None
+        # A ground-marked target's own altitude is the ground; the release
+        # altitude is the ingress leg's.
+        release_from = ingress if waypoint.marks_ground_for_player else waypoint
+        planned_alt_ft = (
+            _feet(leg_altitude(release_from, game)[0]) if release_from else 0
+        )
         if planned_alt_ft < MIN_DROP_ALT_FT and ingress is not None:
-            planned_alt_ft = _feet(leg_altitude(ingress)[0])
+            planned_alt_ft = _feet(leg_altitude(ingress, game)[0])
         if planned_alt_ft >= MIN_DROP_ALT_FT:
             drop_alt = float(planned_alt_ft)
         if ingress is not None:
@@ -506,7 +506,7 @@ def _jdam_target(
                 "name": _point_name(waypoint),
                 # Metres here, unlike NAV's feet: the descriptor stores the raw
                 # getAltitude() and converts only for display.
-                "elev": _whole(steerpoint_elevation(waypoint)),
+                "elev": _whole(steerpoint_elevation(waypoint, game)),
                 "attack_heading": (
                     round(bearing_degrees(ingress.position, waypoint.position), 1)
                     % 360.0
@@ -525,15 +525,15 @@ def _jdam_target(
     return target
 
 
-def _build_jdam(flight: FlightData, coords: _Coords) -> dict[str, Any]:
+def _build_jdam(flight: FlightData, game: Game, coords: _Coords) -> dict[str, Any]:
     """Every station gets the same ordered list, so any bomb can take any
     planned point -- the crew picks the index; we do not guess the fit."""
     planned: list[dict[str, Any]] = []
     previous: Optional[FlightWaypoint] = None
     for waypoint in flight.waypoints:
-        is_target = waypoint.waypoint_type in _JDAM_TARGET_TYPES
+        is_target = is_target_waypoint(waypoint)
         if is_target and len(planned) < JDAM_TARGETS_PER_STATION:
-            planned.append(_jdam_target(coords, waypoint, previous))
+            planned.append(_jdam_target(coords, game, waypoint, previous))
         if is_route_waypoint(waypoint):
             previous = waypoint
     targets = planned + [
@@ -596,7 +596,7 @@ def build_tomcat_cartridge(
     else:
         data["NAV"] = [_empty_plan() for _ in range(MAX_PLANS)]
     if options.jdam_targets:
-        data["JDAM"] = _build_jdam(flight, coords)
+        data["JDAM"] = _build_jdam(flight, game, coords)
     else:
         empty = [_jdam_target(coords) for _ in range(JDAM_TARGETS_PER_STATION)]
         data["JDAM"] = {

@@ -496,6 +496,12 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
 
 ### B11 — Ground AI sleep: distant garrisons stop thinking, wake on approach · §59 · ☐ UNTESTED
 
+**2026-08-22, test 14 — armed, never observed waking.** `AISLEEP|: managing 53 garrison group(s),
+wake radius 15 NM, poll 30s` on both loads, then **no wake line for the rest of the mission**,
+including a player BAI run onto TURTLE. Not a fail: the plugin may only log at arming. Before
+calling this a defect, confirm whether the wake path logs at all — a silent wake and a broken
+wake look identical here, which is the "prefer a loud failure" rule biting.
+
 **History:** built 2026-07-12 off the MP-performance complaint; the emitter's positive list (garrisons in; air defense / missiles / ships / buildings / the concealed scripted movers / dead groups out; gated off) is unit-tested in `tests/missiongenerator/test_aisleepluadata.py`, and the runtime (sleep after grace, wake on approach, parked aircraft never wakes, hysteresis never flaps, a hit wakes a sleeper immediately, dead groups stop the poll, no node = no-op) is harness-tested in `tests/lua/test_aisleep_runtime.py`. The harness models no DCS AI, so what sleep actually buys — and that it's invisible — is DCS-only. **First live arming evidence 2026-08-16** (Baltic Fury turn-3 spectator watch, session `c86c58dd`): dcs.log `AISLEEP|: managing 9 garrison group(s), wake radius 15 NM, poll 30s` — the emitter→plugin chain runs on a real modern campaign; the wake-on-approach and no-regression clauses remain the DCS-only part.
 - **What CI cannot exercise:** whether `Controller:setOnOff(false)` measurably reduces server load on a dense mission (the whole point), whether a slept group is visually indistinguishable (renders, killable, death recorded at debrief), whether the wake on approach is seamless (a garrison's embedded SHORAD is live before you're inside its envelope), and that MANTIS SAMs, TIC formations, convoys, SCUDs and the COIN/ambush movers are visibly untouched.
 - **Setup:** enable **"Distant ground AI sleeps until aircraft approach"** (Mission Generation → Performance; default off) on a dense campaign (Red Tide — not preseeded, feature-locked). Check the log for `AISLEEP|: managing N garrison group(s)`. Fly toward a rear enemy base garrison, kill a slept unit, watch the debrief; compare server frame/CPU on a heavy turn against the same turn with the setting off.
@@ -2357,6 +2363,11 @@ target is actually enough reach in a real laydown, and whether the message lands
 
 ### G30 — MANTIS SHORAD link: the point defense ambushes the HARM shot · MANTIS migration · ☐ UNTESTED
 
+**2026-08-22, test 14 — armed, no wake observed.** `Retribution-RED-IADS SHORAD link armed:
+1 point-defense group(s) held dark, waking 600s on HARM/Maverick` (blue: 3). No wake event
+followed. Whether a HARM was fired at the dark group was not established, so this is not evidence
+either way — the row needs a shot deliberately taken at a site that has point defence.
+
 **History:** built 2026-07-12 off the "which MANTIS features aren't we using?" audit; the bridge plumbing — PD-name collection/dedupe from the per-SAM `PD` arrays, Lua-pattern prefix escaping, one SHORAD per coalition defending `mantis.SAM_Group`, `autoshorad=false` captured AT `Start()` time, option threading, and the off/no-PD no-ops — is harness-tested in `tests/lua/test_mantis_shorad_link.py` with recording MANTIS/SHORAD fakes. The fake models no DCS AI: the actual sleep/wake and the intercept are DCS-only.
 - **What it is:** each SAM site's co-located PD escorts (the "… (PD)" Tor/Tunguska/Avenger groups) are now wrapped in a MOOSE SHORAD object linked to MANTIS (`shoradLink` plugin option, default ON). The PD **sleeps** (alarm green / dark) until a **HARM or Maverick launch** against a defended SAM — or a MANTIS SEAD suppression within ~13.5 NM — **wakes it for 600 s** to engage the incoming shot while the big radar hides, then it goes back to sleep. OFF restores the old always-alert PD.
 - **What CI cannot exercise:** whether the woken Tor/Tunguska actually shoots down the inbound HARM (the whole point), whether the sleeping PD is genuinely dark on ingress (no radar emission before the wake), whether it re-sleeps after the wake window, and that the PD still records kills/losses natively.
@@ -3707,7 +3718,7 @@ the HVT feature itself, not a zone-overlap one.
 - **Rework (2026-07-04) — fiction-appropriate unit kit.** Same change as P4 (`_retype_units` + `hvt_unit_types` in `game/fourteenth/coin.py`): the HVT group's DCS unit types are re-pointed from the faction's front-line armor to a **command team** — a leader's jeep (`UAZ-469` on Toyota Al Gaib) plus two riflemen (`Insurgent AK-74`), drawn from the faction roster. Verified headless. Covered by `tests/fourteenth/test_coin_units.py`. **Re-fly = confirm the HVT now reads as a small leadership element (a jeep + escort) rather than an APC platoon.**
 - **Rework (2026-07-04, part 2) — the HVT convoy moves in-mission.** The HVT is now a small **convoy** (`HVT_UNITS` 3→4: leader jeep + armed technical + 2 rifles) that **patrols a slow random loop around its area** rather than sitting parked, so you have to find and run it down — the old armor-hunt movement fused with the new HVT. COIN's first Lua runtime drives it: `game/missiongenerator/coinluadata.py` emits the live HVT's DCS group name + centre as `dcsRetribution.coin.hvt`, and `resources/plugins/coin/` routes it via `mist.goRoute` (alarm-green) to a fresh `mist.getRandPointInCircle` destination within `hvtPatrolRadiusM` each cadence, after a startup grace (`tests/missiongenerator/test_coinluadata.py` + `tests/lua/test_coin_runtime.py`). **Movement only** — killing the convoy inside the window is still the turn-boundary `hvt_kills` momentum blow (a decapitated convoy just stops being routed); the CDE dilemma (a kill inside a §40 ring also charges the mandate) is unchanged. **Re-fly (Lua, cockpit-only) = confirm the convoy actually drives a wandering patrol in its area, that you can track + kill it on the move, and that it stops moving once dead.**
 - **What CI cannot exercise:** the real `ForceGroup.generate` spawn of a named 3-unit HVT group near the forward stronghold, whether it reads as a recon-fogged strike target, and — crucially — the **CDE interaction**: an HVT sitting inside a population ring should make his kill *both* an `hvt_kills` momentum blow *and* a §40 `count_roe_violations` mandate hit (the dilemma is emergent from the existing ROE machinery, not special-cased here).
-- **Setup:** NEW "Afghanistan - Operation Enduring Resolve (COIN)" (`coin_hvt` preseeds on). Watch the info feed for "Intel: HVT {name} located near {stronghold} — a window to strike"; TARPS to ID him, then decide whether to take the shot (note if he's inside a town ring).
+- **Setup:** NEW "Afghanistan - Operation Enduring Resolve (COIN)" (`coin_hvt` preseeds on). Watch the info feed for "Intel: HVT {name} located near {stronghold} — a window to strike"; engage to ID him (recon reveals nothing since the 2026-08-18 §3 rework), then decide whether to take the shot (note if he's inside a town ring).
 - **Pass:** one named HVT surfaces near the most-contested stronghold, recon-fogged, live for ~4 turns; killing him inside the window drops the insurgency's **momentum** with a labeled "HVT leaders xN killed" will mover ("HVT … eliminated"); killing him **inside a population ring** *also* drains the **mandate** via the ROE-violation charge (the dilemma); letting the window pass with no kill just closes it ("gone to ground") with no penalty; a new HVT surfaces after the cooldown; only one HVT is ever live at a time.
 - **Fail signature:** the HVT renders **blue** (allegiance bug); none appears (no red strongholds, or the faction has no FRONT_LINE group); no recon fog on the emplacement; a kill doesn't move red momentum (`red_hvt_killed` weight 0 / `consume_hvt_kills` not wired); an in-ring kill charges *only* momentum and not the mandate (the ROE zones aren't covering him — a placement/zone-overlap issue, not this feature); two HVTs live at once (the active-guard broke); a missed window drains will (escape must be free).
 
@@ -3906,6 +3917,14 @@ engaged. The rest of the campaign check stands.
   Loadouts).
 
 ### S2 — Mobile missile sites relocate (the SCUD hunt) · §49 · ✗ REGRESSED
+
+**2026-08-22, test 14 (`operation_desert_trident`, Syria) — STILL REGRESSED. The 2026-08-18 fix did
+not take.** Armed on 3 sites both loads. The fail signature this row names came back verbatim:
+`19:10:54 MOBILEMISSILES|: giving up on 0090 | GORILLA (Missile) [ATZ-5, Osa 9A33 ln, Scud_B,
+Ural-375, ZSU-23-4 Shilka] (no movement across 2 route pushes)`. `0014 | TARPON` logged
+`holding ... for its fire mission` at 18:40, 18:48, 18:57, 19:05 and 19:13 — 33 minutes, never
+scooted. Per this row's own note, that rules out the controller reset as the cause. **Next lever:
+post-salvo launcher state.**
 
 **Setup card:** [flycards/REGRESSED-SWEEP.md](flycards/REGRESSED-SWEEP.md) — one Starfire campaign (`operation_desert_trident`) clears this alongside C9 and B48.
 
@@ -5136,6 +5155,15 @@ actually are.
 > weighting. That row needs a lopsided pair.
 ### B70 — Sortie records reach the campaign · §91 · ◐ PARTIAL
 
+**2026-08-22, test 14 — the record arrives, but 77 % of it is a stub.** 158 flights written.
+The player's own record is everything the feature promises: 76 track points, fuel 1.684 → 0.504
+(above 1.0 at start because of external tanks, which is correct), 3 shots / 1 hit, `ejected: true`
+matching the ejection event. **But 115 of 158 flights carry exactly two track points and 7 carry
+none** — and the two are the endpoints of a full mission (`first=30 last=2490 t0=30 t1=2490`), so
+these are not short-lived flights, they are flights whose track was reduced to first-and-last.
+Ten flights recorded shots at all (24 shots / 12 hits across both sides). Stays PARTIAL: the
+question is why a flight alive for 41 minutes keeps two samples.
+
 **History:** built 2026-08-17, session `629c250f`.
 
 > The base plugin samples every airborne flight every 30 s and counts shots, hits and
@@ -5681,15 +5709,19 @@ Then fly one: F-14B(U) client flight on a campaign that fields it
 
 Fly a Viper or Hornet on a regenerated mission and read the steerpoint pages.
 
-- **Pass:** an en-route steerpoint's elevation reads ground level rather than its
-  cruise altitude, and the route page still shows the altitude you planned to fly.
-- **Known and NOT fixed:** a target steerpoint's elevation still reads 0, because
-  nothing in the tree knows terrain height at an arbitrary point. **Check this one
-  specifically**: if a pod slaved to a target on high ground now behaves, the
-  elevation was never what mattered and the remaining gap is cosmetic. If it still
-  aims short, the gap is real and the route to close it is a DCS-side
-  `land.getHeight` dump — not the SRTM table that was built and reverted on
-  2026-08-20 as over-scoped for an unreproduced premise.
+- **Pass:** on the Viper's DED STPT page, a target steerpoint's ELEV reads the
+  nearest airfield's elevation rather than 0, and an en-route steerpoint's ELEV
+  reads the altitude you planned to fly. (The DED shows `routeAltitude`; the ME
+  DTC panel's "Elevation" box shows the other field, `alt` — both now carry the
+  estimate. Flown 2026-08-22: the first fix landed in `alt` only and the DED still
+  read 0.)
+- **Estimated, not exact (2026-08-22):** a target steerpoint's elevation is now the
+  nearest airfield's, because that is the only height data the campaign carries.
+  The DM's generated Viper cartridge had every steerpoint but the landing at 0
+  before this. **Check this one specifically**: if a pod slaved to a target on high
+  ground behaves, the estimate is good enough. If it still aims short, the route to
+  close it is a DCS-side `Terrain.GetHeight` dump per terrain — not the SRTM table
+  that was built and reverted on 2026-08-20.
 - **Fail signature:** an en-route steerpoint reading 2000 m of elevation means `alt`
   went missing entirely rather than being written as 0 — that is the Viper loader's
   default for an absent field.

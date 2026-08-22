@@ -5657,6 +5657,32 @@ directly.
   Haina (RED) and materialises exactly one `MotorpoolGroundObject` (CI-locked in
   `tests/fourteenth/test_red_tide_motorpool.py`). Every other campaign is **inert until it places a
   `Garage_A`** — it changes nothing until a depot is authored.
+- **A crowded package label used to walk off its own marker (fixed 2026-08-22).** `free_slot`
+  stepped a label down the page until it found clear space, bounded only by the map edge, and
+  nothing drew a leader line — so on a dense cluster a name landed beside an unrelated airfield
+  and read as belonging to it. Measured on a Syria BAI turn: `KOMODO` **166 px** from its dot,
+  `STAGHORN` 76. `MAX_LABEL_OFFSET` (90 px) bounds the walk and `LEADER_AT` (22 px) draws the
+  line home past that gap; all 12 labels still place, worst drift 166 px → 110. **The fixture's
+  surrounding bases are load-bearing** — with no control points every label places on its first
+  try and the case proves nothing, which is how the first version of the guard test passed
+  against the defect. The leader ends at the label's **near** edge and stops 3 px short: drawing
+  to the far edge runs the line through the text, and "H3 Northwest" rendered as
+  "H3-Northwest" when its label sat left of its marker.
+- **The kneeboard briefed a dead sortie type until 2026-08-22.** Every unidentified-site
+  row on the Threat Intel page read "Fly TARPS to ID." — a procedure the 2026-08-18 rework
+  removed, and one the page's own intro contradicted ("engage them to ID"). It now reads
+  "Engage to ID.", and the test that had been pinning the stale string asserts the opposite.
+  The COIN HVT checklist row (P5) carried the same instruction and was corrected with it.
+- **Two defects in the BLUF ordnance line, both found on a flown F-16CM BAI card (2026-08-22).**
+  `_brief_loadout` took `weapon_group.name` in preference to `weapon.name`, but an unnamed
+  group's placeholder is the literal string `"Unknown"` — truthy, so it won the `or` and was
+  then dropped by the `name == "Unknown"` guard. **Both 370 gal tanks vanished** while the fuel
+  ladder counted them, so the card briefed 7,163 lb of stores against a 12,121 lb ladder. And a
+  rack multiplier was stripped off the name (`"2xMk 82"` → `"Mk 82"`) and discarded rather than
+  applied to the count, so **a TER carrying two bombs briefed as one**. The line went from
+  `2× AIM-120B · 2× AIM-9M · Mk 82 · CBU-97 · HTS` to
+  `2× AIM-120B · 2× AIM-9M · 2× CBU-97 · 2× bag · 2× Mk 82 · HTS`. Pinned in
+  `tests/missiongenerator/test_kneeboard_bluf.py` against that jet's exact pylons.
 - **Two placement guards, opposite mistakes.** `motorpools_inside_capture_zone` catches a marker
   inside its own CP's 3 km capture radius (parked reserve blocks the base being taken).
   `ground_objects_beside_an_enemy_base` (added 2026-08-20) catches **any** ground object parked on
@@ -7369,11 +7395,16 @@ loader defaults a missing one to 2000 m, so it must be written and must be an
 elevation; the height to fly is `routeAltitude` (Viper) / `NAV_ROUTE[].alt`
 (Hornet), qualified by `altitudeType` (1 MSL, 2 AGL). Now `steerpoint_elevation()`
 and `leg_altitude()`. Only takeoff and landing know their own ground (B79's field
-elevation); everything else writes 0, which is still wrong for a target on high
-terrain and is the open half — closing it needs terrain height at an arbitrary
-point, and the route to take is a DCS-side `land.getHeight` dump, not the
-SRTM-sampled table that was built and reverted the same day as over-scoped.
-Checklist B90. The .miz was never wrong: read out of a flown mission,
+elevation); **everything else takes the nearest airfield's** (2026-08-22, DM call —
+the kneeboard's per-field OSM/DEM elevation is the only height data the campaign
+has; fields without a record, boats and FOBs never answer). An estimate, closer
+than 0 everywhere; the exact route if it proves short is a DCS-side
+`Terrain.GetHeight` dump, not the SRTM-sampled table that was built and reverted
+the same day as over-scoped. **The Viper's DED shows `routeAltitude` as the
+steerpoint ELEV, not `alt`** (flown the same day), and nothing honours the AGL
+tag — the editor's `transformAltitude` is a no-op — so every altitude is written
+MSL and a ground-marked target's `routeAltitude` is the ground estimate itself,
+never "0 AGL". Checklist B90. The .miz was never wrong: read out of a flown mission,
 `DEAD on KATYDID` is `alt = 0, alt_type = "RADIO"`, DCS's own encoding for 0 AGL.
 Comm names pre-clamped to the ME's 5-uppercase-alphanumeric filter. **The Hornet's
 nine CAP_PTS slots are spent priority-then-completeness** (two flown 2026-07-19

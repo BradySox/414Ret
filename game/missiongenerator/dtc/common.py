@@ -128,8 +128,12 @@ def is_route_waypoint(waypoint: FlightWaypoint) -> bool:
 
 
 def is_target_waypoint(waypoint: FlightWaypoint) -> bool:
-    if waypoint.targets:
-        return True
+    """A point the flight attacks, by type -- never by the attached target list.
+
+    Retribution hangs that list on the ingress point too, so the task can be
+    built; reading it put the target symbol on the IP (the Viper's HSD
+    triangle, the Hornet's route flag) in a generated miz on 2026-08-22.
+    """
     return "TARGET" in waypoint.waypoint_type.name
 
 
@@ -143,7 +147,35 @@ _FIELD_ELEVATION_WAYPOINTS = (
 )
 
 
-def steerpoint_elevation(waypoint: FlightWaypoint) -> float:
+def nearest_field_elevation(game: Game, position: Point) -> float:
+    """The elevation of the nearest airfield with a known one, metres AMSL.
+
+    The only height data the campaign carries. Exact on a flat map, within the
+    field's valley elsewhere, and closer than 0 everywhere (DM call,
+    2026-08-22). Boats and FOBs have no record and never answer, so a coastal
+    target is not pulled to sea level by the carrier. A DCS-side
+    ``Terrain.GetHeight`` dump is the exact route if this ever proves short.
+    """
+    from game.missiongenerator.kneeboard_recon.airport_imagery import (
+        field_elevation_for_airport,
+    )
+
+    best: Optional[float] = None
+    best_distance = math.inf
+    for cp in game.theater.controlpoints:
+        airport = getattr(cp, "airport", None)
+        if airport is None:
+            continue
+        elevation = field_elevation_for_airport(game.theater.terrain, airport)
+        if elevation is None:
+            continue
+        distance = cp.position.distance_to_point(position)
+        if distance < best_distance:
+            best, best_distance = elevation, distance
+    return best if best is not None else 0.0
+
+
+def steerpoint_elevation(waypoint: FlightWaypoint, game: Game) -> float:
     """The ground elevation under a steerpoint, in metres AMSL.
 
     This is NOT the altitude to fly -- that is ``leg_altitude`` below, and the two
@@ -152,29 +184,35 @@ def steerpoint_elevation(waypoint: FlightWaypoint) -> float:
     Hornet's ``WYPT_NAV.lua``), and the Viper's loader defaults a missing one to
     2000 m, so it has to be written and it has to be an elevation.
 
-    Only takeoff and landing know their ground. Everything else returns 0, which
-    is wrong on high terrain and is the open half of this fix -- see checklist B90.
+    Takeoff and landing know their ground exactly. Everything else takes the
+    nearest airfield's, which is an estimate -- see ``nearest_field_elevation``.
     """
     if waypoint.waypoint_type in _FIELD_ELEVATION_WAYPOINTS:
         return waypoint.alt.meters if waypoint.alt_type == "BARO" else 0.0
-    return 0.0
+    return nearest_field_elevation(game, waypoint.position)
 
 
-def leg_altitude(waypoint: FlightWaypoint) -> tuple[float, int]:
-    """Altitude to fly the leg, in metres + DTC altitudeType (1 = MSL, 2 = AGL).
+def leg_altitude(waypoint: FlightWaypoint, game: Game) -> tuple[float, int]:
+    """The steerpoint's altitude, in metres MSL + DTC altitudeType (always 1).
 
     Goes in the Viper's ``routeAltitude`` and the Hornet's ``NAV_ROUTE`` entry,
-    never in the point's own ``alt``. AGL is resolved against terrain by the jet
-    (``tmpAlt + getAltitude(x, y)``, Hornet ``ROUTE_SEQ.lua``).
+    never in the point's own ``alt``. **This is the number the Viper's DED shows
+    as the steerpoint ELEV** (flown 2026-08-22), and nothing honours the AGL
+    tag: the editor's ``transformAltitude`` is a no-op and its own Mach calc
+    tests a key that does not exist, so a ground-marked target written as
+    "0 AGL" read ELEV 0 in the jet. Every altitude is therefore written MSL.
 
-    Cartridges are built only for client flights, and the generated .miz puts a
-    ground-marked waypoint (target areas, CAS FLOT boundaries, flyovers) on the
-    deck for clients (``PydcsWaypointBuilder.build``); the cartridge must agree or
-    the AutoLoad would float the steerpoint back up to the AI's track altitude.
+    A ground-marked waypoint (target areas, CAS FLOT boundaries, flyovers) is on
+    the deck for a client flight in the .miz, so its altitude IS the ground --
+    the nearest field's estimate, the only height data there is. An AGL plan
+    elsewhere (a low-level or helicopter profile) is converted with the same
+    estimate.
     """
     if waypoint.marks_ground_for_player:
-        return 0.0, 2
-    return waypoint.alt.meters, 2 if waypoint.alt_type == "RADIO" else 1
+        return nearest_field_elevation(game, waypoint.position), 1
+    if waypoint.alt_type == "RADIO":
+        return waypoint.alt.meters + nearest_field_elevation(game, waypoint.position), 1
+    return waypoint.alt.meters, 1
 
 
 @dataclass(frozen=True)

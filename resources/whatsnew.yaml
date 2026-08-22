@@ -14,6 +14,24 @@
 
 entries:
   - date: 2026-08-22
+    title: The Package Targets Map shows real terrain
+    change: >-
+      The page behind the packages list drew land as a flat tan fill with a
+      coastline. It now draws the shipped theater imagery where that imagery
+      covers the area, so you can see the ground the packages are headed for.
+      Where it does not reach — a spread that runs off the picture, or Cyprus,
+      which the Syria image never drew — the page falls back to the old
+      coastline fill rather than stretching imagery over ground it cannot
+      place. The same fix repaired the offline recon pages, whose imagery had
+      been misplaced by up to a few hundred km.
+    watch: >-
+      Open the Package Targets Map on a Syria or Caucasus turn. Coastal fields
+      should sit on the imaged shoreline, not near it. A turn whose packages
+      span the whole theater will still show the plain fill — that is the page
+      refusing to guess, not a failure. The packages may also sit slightly
+      off-centre, which is the page shifting to stay on the imagery.
+    row: H15
+  - date: 2026-08-22
     title: Steerpoint elevations stop reading 0
     change: >-
       Every cartridge steerpoint but the landing point carried an elevation of

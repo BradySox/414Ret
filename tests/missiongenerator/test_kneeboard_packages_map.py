@@ -273,3 +273,228 @@ def test_a_crowded_cluster_still_does_not_overprint(
         _DENSE_CLUSTER, _SURROUNDING_BASES, terrain, tmp_path, monkeypatch
     )
     assert overlapping(labels) == []
+
+
+def _airfields(
+    terrain: Any, names: List[str]
+) -> List[Tuple[float, float, str, str, str]]:
+    return [
+        (
+            terrain.airports[n].position.x,
+            terrain.airports[n].position.y,
+            "enemy",
+            "airbase",
+            terrain.airports[n].name,
+        )
+        for n in names
+    ]
+
+
+def test_the_map_draws_theater_terrain_where_the_raster_reaches(
+    terrain: Any, tmp_path: Path
+) -> None:
+    """A northern-Syria package gets the shipped raster behind it, not a flat fill.
+
+    Substitutes a flat stand-in raster at the size the coverage table was
+    measured on, so the assertion is "the page's backdrop came from the raster"
+    rather than anything about the real imagery.
+    """
+    from PIL import Image
+    from unittest.mock import patch
+
+    from game.missiongenerator.kneeboard_recon import basemap
+    from game.missiongenerator.kneeboard_recon.gif_georef import COVERAGE
+
+    marker_rgb = (255, 0, 220)
+    stand_in = Image.new("RGB", COVERAGE[terrain.name].image_size, marker_rgb)
+    basemap._gif_cache.pop(terrain.name, None)
+    bases = _airfields(terrain, ["Tabqa", "Aleppo", "Hama", "Minakh"])
+    with patch.object(basemap, "_load_gif", return_value=stand_in):
+        PackagesMapPage([], bases, terrain, dark_kneeboard=False).write(
+            tmp_path / "map.png"
+        )
+    image = Image.open(tmp_path / "map.png").convert("RGB")
+    width, height = image.size
+    sampled = [
+        image.getpixel((x, y))
+        for x in range(60, width - 60, 40)
+        for y in range(200, height - 60, 40)
+    ]
+    assert marker_rgb in sampled, "page backdrop did not come from the theater raster"
+
+
+def test_the_map_still_draws_where_the_raster_cannot_reach(
+    terrain: Any, tmp_path: Path
+) -> None:
+    """A whole-Syria spread runs into Jordan, off syria.gif.
+
+    The raster refuses rather than stretching, and the page falls back to the
+    landmap coastlines — which, unlike the raster, actually draw Cyprus.
+    """
+    from PIL import Image
+    from unittest.mock import patch
+
+    from game.missiongenerator.kneeboard_recon import basemap
+    from game.missiongenerator.kneeboard_recon.gif_georef import COVERAGE
+
+    marker_rgb = (255, 0, 220)
+    stand_in = Image.new("RGB", COVERAGE[terrain.name].image_size, marker_rgb)
+    basemap._gif_cache.pop(terrain.name, None)
+    bases = _airfields(terrain, ["Incirlik", "Tabqa", "King Abdullah II", "Akrotiri"])
+    with patch.object(basemap, "_load_gif", return_value=stand_in):
+        PackagesMapPage([], bases, terrain, dark_kneeboard=False).write(
+            tmp_path / "map.png"
+        )
+    image = Image.open(tmp_path / "map.png").convert("RGB")
+    width, height = image.size
+    sampled = {
+        image.getpixel((x, y))
+        for x in range(60, width - 60, 40)
+        for y in range(200, height - 60, 40)
+    }
+    assert marker_rgb not in sampled, "stretched raster used for ground it never drew"
+    assert basemap._SEA_RGB in sampled or basemap._LAND_FILL in sampled
+
+
+#: Three inland Syrian fields whose aspect-padded extent overruns the raster's
+#: south edge by 28 km with slack to the north, and which sit east of the
+#: Cyprus band so the unrendered hole does not veto the slide. Guarded by
+#: test_the_sliding_fixture_actually_slides -- without a real slide the two
+#: tests below pass vacuously, which is how they were first written.
+SLIDING_FIXTURE = ["Deir ez-Zor", "Khalkhalah", "Wujah Al Hajar"]
+
+#: The same case with enough fields to make label placement non-trivial --
+#: a 3-marker page never runs out of room, so it cannot show a label lost to
+#: the slide crowding markers toward one edge.
+DENSE_SLIDING_FIXTURE = [
+    "Deir ez-Zor",
+    "Khalkhalah",
+    "Wujah Al Hajar",
+    "Damascus",
+    "Marj Ruhayyil",
+    "Sayqal",
+    "Palmyra",
+    "Tiyas",
+    "An Nasiriyah",
+    "Al Qusayr",
+    "Rene Mouawad",
+    "Hama",
+    "Abu al-Duhur",
+    "Tabqa",
+    "Shayrat",
+]
+
+
+def test_the_sliding_fixture_actually_slides(terrain: Any) -> None:
+    """Pins the premise of the two tests below."""
+    from game.missiongenerator.kneeboard_recon import basemap
+    from game.missiongenerator.kneeboard_recon.extent import MapExtent, aspect_correct
+    from game.missiongenerator.kneeboard_recon.gif_georef import COVERAGE
+
+    xs = [terrain.airports[n].position.x for n in SLIDING_FIXTURE]
+    ys = [terrain.airports[n].position.y for n in SLIDING_FIXTURE]
+    pad = 0.08 * max(max(xs) - min(xs), max(ys) - min(ys), 1.0)
+    ao = MapExtent(min(xs) - pad, max(xs) + pad, min(ys) - pad, max(ys) + pad, terrain)
+    padded = aspect_correct(ao, 912, 963)
+    assert not COVERAGE[terrain.name].can_render(padded), "fixture already fits"
+    slid = basemap.align_extent_to_theater_raster(padded, keep_visible=ao)
+    assert slid.min_x != padded.min_x, "fixture did not slide"
+    assert COVERAGE[terrain.name].can_render(slid), "slide did not rescue it"
+
+
+def test_backdrop_and_markers_share_one_extent(terrain: Any, tmp_path: Path) -> None:
+    """The slide must move the imagery and the symbology together.
+
+    If the raster were rendered for the slid extent while the projector still
+    used the unslid one, every marker would sit a slide-width off its ground —
+    the exact failure this whole change exists to remove, reintroduced one
+    layer up.
+    """
+    from unittest.mock import patch
+
+    from game.missiongenerator.kneeboard_recon import basemap, projection
+
+    seen: dict[str, Any] = {}
+    real_render = basemap.render_theater_basemap
+    real_projector = projection.Projector
+
+    def spy_render(extent: Any, w: int, h: int, **kwargs: Any) -> Any:
+        seen["backdrop"] = extent
+        return real_render(extent, w, h, **kwargs)
+
+    def spy_projector(*args: Any, **kwargs: Any) -> Any:
+        seen["projector"] = kwargs.get("extent", args[0] if args else None)
+        return real_projector(*args, **kwargs)
+
+    # An extent the raster refuses outright until the slide rescues it.
+    bases = _airfields(terrain, SLIDING_FIXTURE)
+    with patch.object(basemap, "render_theater_basemap", spy_render), patch.object(
+        projection, "Projector", spy_projector
+    ):
+        PackagesMapPage([], bases, terrain, dark_kneeboard=False).write(
+            tmp_path / "map.png"
+        )
+
+    assert "backdrop" in seen and "projector" in seen
+    b, p = seen["backdrop"], seen["projector"]
+    assert (b.min_x, b.max_x, b.min_y, b.max_y) == (
+        p.min_x,
+        p.max_x,
+        p.min_y,
+        p.max_y,
+    ), "the backdrop and the markers were drawn for different extents"
+
+
+def test_the_slide_keeps_every_package_on_the_page(
+    terrain: Any, tmp_path: Path
+) -> None:
+    """Sliding trades centring for imagery — never a target off the edge."""
+    from unittest.mock import patch
+
+    from game.missiongenerator.kneeboard_recon import basemap
+
+    seen: dict[str, Any] = {}
+    real_render = basemap.render_theater_basemap
+
+    def spy_render(extent: Any, w: int, h: int, **kwargs: Any) -> Any:
+        seen["extent"] = extent
+        return real_render(extent, w, h, **kwargs)
+
+    bases = _airfields(terrain, SLIDING_FIXTURE)
+    with patch.object(basemap, "render_theater_basemap", spy_render):
+        PackagesMapPage([], bases, terrain, dark_kneeboard=False).write(
+            tmp_path / "map.png"
+        )
+    extent = seen["extent"]
+    for x, y, _, _, name in bases:
+        assert (
+            extent.min_x <= x <= extent.max_x and extent.min_y <= y <= extent.max_y
+        ), f"{name} fell off the page"
+
+
+def test_the_slide_costs_no_labels(
+    terrain: Any, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Buying imagery must not cost an airfield name.
+
+    The slide crowds the markers toward one edge, and labels are drawn beside
+    their marker, so in principle one could run out of room and be dropped --
+    the failure class this page already has history with (41f4b38ca). Measured
+    across all six campaigns the slide recovers: no label is lost. This pins it.
+    """
+    from game.missiongenerator.kneeboard_recon import basemap
+
+    bases = _airfields(terrain, DENSE_SLIDING_FIXTURE)
+    wanted = {b[4] for b in bases}
+
+    real = basemap.align_extent_to_theater_raster
+    monkeypatch.setattr(basemap, "align_extent_to_theater_raster", lambda e, **kw: e)
+    without = {d[0] for d in render([], bases, terrain, tmp_path, monkeypatch)} & wanted
+    monkeypatch.setattr(basemap, "align_extent_to_theater_raster", real)
+    with_slide = {
+        d[0] for d in render([], bases, terrain, tmp_path, monkeypatch)
+    } & wanted
+
+    assert not (
+        without - with_slide
+    ), f"the slide dropped {sorted(without - with_slide)}"

@@ -36,6 +36,7 @@ from typing import TYPE_CHECKING, Any, Optional
 
 from dcs.weapons_data import Weapons
 
+from game.ato.flighttype import FlightType
 from game.ato.flightwaypointtype import FlightWaypointType
 from game.missiongenerator.dtc.cartridge import DtcCartridge
 from game.missiongenerator.dtc.common import (
@@ -357,6 +358,13 @@ def _orbit_tracks(flight: FlightData, mission_data: MissionData) -> list[Support
     return ([own] if own is not None else []) + support_tracks(mission_data)
 
 
+def _defended_point(flight: FlightData) -> Any:
+    """The asset a CAP flight covers, else None."""
+    if flight.flight_type not in (FlightType.BARCAP, FlightType.TARCAP):
+        return None
+    return getattr(flight.package, "target", None)
+
+
 def _additional_points(
     flight: FlightData,
     mission_data: MissionData,
@@ -374,13 +382,31 @@ def _additional_points(
         )
         for waypoint in off_route
     ]
+    defended = _defended_point(flight)
+    if defended is not None:
+        # The jet's one defended point: 'waypoint used to show area to
+        # protect' (manual), which for a CAP is the asset it covers.
+        points.append(
+            _reference(
+                coords,
+                _suffixed(sanitize_short_name(defended.name, WAYPOINT_NAME_LEN), "XDP"),
+                defended.position.x,
+                defended.position.y,
+            )
+        )
     if options.friendly_orbits:
         for track in _orbit_tracks(flight, mission_data):
             centre_x, centre_y = track.center
             points.append(_reference(coords, track.callsign, centre_x, centre_y))
     if options.threat_rings:
-        for site in known_enemy_threat_sites(game, flight.friendly):
-            points.append(_reference(coords, _threat_name(site.label), site.x, site.y))
+        for index, site in enumerate(known_enemy_threat_sites(game, flight.friendly)):
+            name = _threat_name(site.label)
+            # One hostile area in the jet, and it sets the threat axis from
+            # the bullseye (manual: first valid point in the order HA, DP,
+            # ST, FP, 3, 2, 1, HB). The top-ranked site gets it.
+            if index == 0:
+                name = _suffixed(name, "XHA")
+            points.append(_reference(coords, name, site.x, site.y))
     return points[:MAX_ADDITIONAL_POINTS]
 
 
@@ -480,8 +506,11 @@ def _build_nav(
         # order, which is also STA 3's PP1. Whether the jet honours more is
         # unknown, so the rest stay plain.
         code = None
-        if is_target_waypoint(waypoint) and not surface_target_named:
-            code, surface_target_named = "XST", True
+        if is_target_waypoint(waypoint):
+            # One surface target in the jet; the rest of a cluster go to the
+            # LANTIRN store ("XL / X##L - LANTIRN (max 20)").
+            code = "XL" if surface_target_named else "XST"
+            surface_target_named = True
         route["waypoints"].append(
             _route_waypoint(game, coords, waypoint, previous, code)
         )

@@ -24,7 +24,10 @@ entries:
       altitude from the first. The release speed behind the LAR is the slower
       of the plan and 450 kt, so the envelope the CDNU draws is the
       conservative one. The first target waypoint is named with the jet's XST
-      code, which puts a pentagon on it in the HUD.
+      code, which puts a pentagon on it in the HUD; the rest of a cluster go to
+      the LANTIRN store, the top-ranked SAM site becomes the hostile area that
+      sets the threat axis, and a CAP's defended point sits on the asset it
+      covers.
     watch: >-
       Load a multi-building strike with two or more JDAMs on the tunnel
       stations. On the JDAM page, STA 3 PP1 should be the first building and

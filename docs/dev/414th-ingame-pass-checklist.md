@@ -5703,11 +5703,15 @@ Then fly one: F-14B(U) client flight on a campaign that fields it
 - **Fail signature — the route is missing:** plan 1 should come from the ME route
   and plan 2 is ours. If plan 1 is empty in the jet, the mission route is not
   reaching it and plan 2 is the only one that works — record which plan flew.
-- **Watch for — the HUD codes:** with the cartridge loaded, the first target should
-  be highlighted with a pentagon on the HUD (`XST`), and in A2A the bullseye's
-  bearing and range should show on the HUD (`XB`, carried on an additional point
-  the way the authored cartridge does it). If the pentagon is missing, the code
-  may need to be on a different point or the jet may want it on every target.
+- **Watch for — the HUD and TID codes:** with the cartridge loaded, the first
+  target should be highlighted with a pentagon on the HUD (`XST`), and in A2A the
+  bullseye's bearing and range should show on the HUD (`XB`, carried on an
+  additional point the way the authored cartridge does it). The threat axis should
+  point from the bullseye at the top-ranked SAM site (`XHA`); on a CAP the
+  defended point should sit on the asset the package covers (`XDP`); a cluster's
+  second and third buildings should be in the LANTIRN target store (`XL`). If the
+  pentagon is missing, the code may need to be on a different point or the jet may
+  want it on every target.
 - **Watch for — the one real unknown:** a Tomcat waypoint has a *single* altitude
   field where the Hornet and Viper have two, so it cannot separate "the ground
   under this point" from "the height to fly this leg". We write the planned

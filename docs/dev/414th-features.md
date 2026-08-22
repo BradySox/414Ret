@@ -7384,11 +7384,12 @@ loader defaults a missing one to 2000 m, so it must be written and must be an
 elevation; the height to fly is `routeAltitude` (Viper) / `NAV_ROUTE[].alt`
 (Hornet), qualified by `altitudeType` (1 MSL, 2 AGL). Now `steerpoint_elevation()`
 and `leg_altitude()`. Only takeoff and landing know their own ground (B79's field
-elevation); everything else writes 0, which is still wrong for a target on high
-terrain and is the open half — closing it needs terrain height at an arbitrary
-point, and the route to take is a DCS-side `land.getHeight` dump, not the
-SRTM-sampled table that was built and reverted the same day as over-scoped.
-Checklist B90. The .miz was never wrong: read out of a flown mission,
+elevation); **everything else takes the nearest airfield's** (2026-08-22, DM call —
+the kneeboard's per-field OSM/DEM elevation is the only height data the campaign
+has; fields without a record, boats and FOBs never answer). An estimate, closer
+than 0 everywhere; the exact route if it proves short is a DCS-side
+`Terrain.GetHeight` dump, not the SRTM-sampled table that was built and reverted
+the same day as over-scoped. Checklist B90. The .miz was never wrong: read out of a flown mission,
 `DEAD on KATYDID` is `alt = 0, alt_type = "RADIO"`, DCS's own encoding for 0 AGL.
 Comm names pre-clamped to the ME's 5-uppercase-alphanumeric filter. **The Hornet's
 nine CAP_PTS slots are spent priority-then-completeness** (two flown 2026-07-19

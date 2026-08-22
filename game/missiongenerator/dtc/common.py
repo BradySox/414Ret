@@ -128,8 +128,12 @@ def is_route_waypoint(waypoint: FlightWaypoint) -> bool:
 
 
 def is_target_waypoint(waypoint: FlightWaypoint) -> bool:
-    if waypoint.targets:
-        return True
+    """A point the flight attacks, by type -- never by the attached target list.
+
+    Retribution hangs that list on the ingress point too, so the task can be
+    built; reading it put the target symbol on the IP (the Viper's HSD
+    triangle, the Hornet's route flag) in a generated miz on 2026-08-22.
+    """
     return "TARGET" in waypoint.waypoint_type.name
 
 
@@ -143,7 +147,35 @@ _FIELD_ELEVATION_WAYPOINTS = (
 )
 
 
-def steerpoint_elevation(waypoint: FlightWaypoint) -> float:
+def nearest_field_elevation(game: Game, position: Point) -> float:
+    """The elevation of the nearest airfield with a known one, metres AMSL.
+
+    The only height data the campaign carries. Exact on a flat map, within the
+    field's valley elsewhere, and closer than 0 everywhere (DM call,
+    2026-08-22). Boats and FOBs have no record and never answer, so a coastal
+    target is not pulled to sea level by the carrier. A DCS-side
+    ``Terrain.GetHeight`` dump is the exact route if this ever proves short.
+    """
+    from game.missiongenerator.kneeboard_recon.airport_imagery import (
+        field_elevation_for_airport,
+    )
+
+    best: Optional[float] = None
+    best_distance = math.inf
+    for cp in game.theater.controlpoints:
+        airport = getattr(cp, "airport", None)
+        if airport is None:
+            continue
+        elevation = field_elevation_for_airport(game.theater.terrain, airport)
+        if elevation is None:
+            continue
+        distance = cp.position.distance_to_point(position)
+        if distance < best_distance:
+            best, best_distance = elevation, distance
+    return best if best is not None else 0.0
+
+
+def steerpoint_elevation(waypoint: FlightWaypoint, game: Game) -> float:
     """The ground elevation under a steerpoint, in metres AMSL.
 
     This is NOT the altitude to fly -- that is ``leg_altitude`` below, and the two
@@ -152,12 +184,12 @@ def steerpoint_elevation(waypoint: FlightWaypoint) -> float:
     Hornet's ``WYPT_NAV.lua``), and the Viper's loader defaults a missing one to
     2000 m, so it has to be written and it has to be an elevation.
 
-    Only takeoff and landing know their ground. Everything else returns 0, which
-    is wrong on high terrain and is the open half of this fix -- see checklist B90.
+    Takeoff and landing know their ground exactly. Everything else takes the
+    nearest airfield's, which is an estimate -- see ``nearest_field_elevation``.
     """
     if waypoint.waypoint_type in _FIELD_ELEVATION_WAYPOINTS:
         return waypoint.alt.meters if waypoint.alt_type == "BARO" else 0.0
-    return 0.0
+    return nearest_field_elevation(game, waypoint.position)
 
 
 def leg_altitude(waypoint: FlightWaypoint) -> tuple[float, int]:

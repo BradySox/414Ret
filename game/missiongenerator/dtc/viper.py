@@ -259,7 +259,7 @@ def _build_nav_pts(
                 waypoint_display_name(waypoint.display_name or waypoint.name),
                 waypoint.position.x,
                 waypoint.position.y,
-                steerpoint_elevation(waypoint),
+                steerpoint_elevation(waypoint, game),
                 route_alt_m,
                 altitude_type,
                 on_route,

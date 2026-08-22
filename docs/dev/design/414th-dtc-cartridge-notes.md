@@ -434,14 +434,23 @@ Reported from the cockpit: the DEAD steerpoint does not sit at 0 AGL, it sits at
 
 Split into `steerpoint_elevation()` (the point's ground) and `leg_altitude()` (what
 to fly, with `altitudeType`). Only takeoff and landing know their own ground — B79
-plans the field's elevation onto them — so everything else writes 0.
+plans the field's elevation onto them.
 
-**The open half:** 0 is still wrong for a target on high terrain, and closing it
-needs terrain height at an arbitrary point, which nothing in the tree has. A
-SRTM-sampled table was built and reverted the same day as over-scoped for an
-unreproduced premise; if it is wanted, take the DCS-side `land.getHeight` dump
-instead (exact, offline, complete) and check first that a non-zero elevation is
-actually what the cockpit needed. Checklist B90.
+**Everything else takes the nearest airfield's elevation (2026-08-22, DM call).**
+A generated Viper cartridge showed every steerpoint but the landing at 0, and the
+only height data the campaign carries is the per-airfield OSM/DEM elevation the
+kneeboard already uses for QFE (`field_elevation_for_airport`). So
+`nearest_field_elevation()` picks the closest airfield *with a record* — boats and
+FOBs have none and never answer, so a coastal target is not pulled to sea level
+by the carrier — and returns 0 only when no field on the map has one. Exact on a
+flat map, within the field's valley elsewhere, closer than 0 everywhere. Fork-only:
+upstream has no airfield elevation data, so the held carve keeps 0.
+
+**Still an estimate.** The exact route, if a pod slaved to a hilltop target still
+aims short, is a DCS-side dump: the GUI-environment `Terrain.GetHeight(x, y)` the
+mission editor itself uses, sampled on a grid per terrain the way the pydcs export
+is run — not the SRTM-sampled table that was built and reverted on 2026-08-20.
+Checklist B90.
 
 **The .miz was never wrong.** Read out of a flown mission:
 `DEAD on KATYDID` is `alt = 0, alt_type = "RADIO"`, which is DCS's own encoding for

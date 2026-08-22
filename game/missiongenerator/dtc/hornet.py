@@ -170,7 +170,7 @@ def _build_wypt(
             "y": waypoint.position.y,
             # The ground under the point, not the height to fly it at. ED fills
             # this from terrain (WYPT_NAV.lua); the leg altitude rides NAV_ROUTE.
-            "alt": steerpoint_elevation(waypoint),
+            "alt": steerpoint_elevation(waypoint, game),
             "altitudeType": altitude_type,
             "velocityType": 3,
             "R1": on_route,

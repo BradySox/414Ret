@@ -217,6 +217,42 @@ One real defect does follow from the classification, and is **not** fixed here: 
 removes a sunk carrier's squadrons only when the dead unit's class is `AIRCRAFT_CARRIER`, so
 sinking the Essex leaves its squadrons in place. Worth a separate change with its own test.
 
+## The campaign: Operation Forager (1944)
+
+`resources/campaigns/marianas_forager_1944.{yaml,miz}`, built by
+`tools/build_marianas_forager_miz.py`. **Never hand-edit the miz** -- re-run the tool.
+Locked by `tests/fourteenth/test_marianas_forager.py`.
+
+15 June 1944. Blue holds the Charan Kanoa beach strip and a carrier; red holds the other
+nine fields. Verified through the real `GameGenerator`: 11 control points, 5 squadrons all
+fully manned, one front line (Charan Kanoa to Isley), 19 ground objects, three turns passed.
+
+Topology, which the yaml carries rather than the miz:
+
+- **Roads** (`supply_routes`): Saipan runs Charan Kanoa - Isley - Kagman - Marpi; Tinian runs
+  Gurguan Point - Airfield 3 - Ushi; Guam runs Orote - Agana.
+- **Sea** (`shipping_lanes`): Saipan-Tinian, Tinian-Rota, Rota-Guam. There is no road between
+  islands, which is the point.
+
+Four things went wrong building it, all now covered by the lock:
+
+1. **Parking.** Blue was given 20 aircraft at a 12-stand beach strip. The second squadron
+   generated with **zero aircraft and no error**. Charan Kanoa now carries one 8-ship
+   squadron; air-to-air is the carrier's, which is how the CAP over Saipan was flown.
+2. **Marker sentinels.** The AAA sites were authored as `Type_96_25mm_AA` -- the right gun and
+   the wrong marker. `MizCampaignLoader` recognises only `AAA_UNIT_TYPES`, so all eight were
+   silently dropped. `flak18` is the only WWII gun in that set. Strike targets are **statics**,
+   not vehicles.
+3. **The `theater:` key is the theater directory**, not the pydcs terrain name. `MarianasWWII`
+   resolves; `MarianaIslandsWWII` does not.
+4. **A colon inside an unquoted description** breaks the yaml parse. It is a block scalar.
+
+Deferred, and neither blocks play:
+
+- **Supply routes are approximate.** The corridor standard wants real 1944 roads via
+  `tools/supply_route_geo.py`; these follow the island spines by eye.
+- **Balance is unflown.** One blue field against nine is the history, not a tuning pass.
+
 ## Not done, and out of scope for the map itself
 
 - **No campaign.** Nothing is authored on the terrain, so it does not appear in the New Game

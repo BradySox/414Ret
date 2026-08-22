@@ -56,9 +56,30 @@ independently on 2026-08-09 (planner re-convergence work order D). Two forks rea
 the same verdict from different evidence — treat that as the strongest confirmation
 the re-convergence call was correct, and do not re-litigate it.
 
-One thing he built and then deleted: an EW jamming flight task (his #28/#44/#45,
-reverted 2026-06-30 with backup branches). No reason is recorded in the commits.
-**Do not read this as a verdict on our §2/§77** — ask him before assuming.
+### EW jamming: he tried it and gave up, and his reason does not reach our §2/§77
+
+He built an EW jamming flight task (his #28/#44/#45) and deleted it on 2026-06-30. The commits
+record no reason; **asked directly 2026-08-22, he gave one**:
+
+> after fighting with it a lot, I decided it's just impossible to implement in a realistic way
+> without support in the DCS engine. You just can turn on or off radars, but not implement
+> realistic not binary behaviour. Maybe I will try again in the future, but my hopes are not
+> high on this one.
+
+**That is a verdict on the binary approach, not on jamming.** We reached the same conclusion by
+a worse route — `enableEmission(false)` crashed missions, which is why "never toggle SAM radar
+emissions" is a hard constraint here — and then built the non-binary version he says the engine
+cannot give you, in the layer above it:
+
+- **§2 (C-130J)** models jam probability against range with a burn-through curve, and a separate
+  spoof curve for missiles. Nothing toggles a radar.
+- **§77 (escort jamming)** uses non-stacking spoof bubbles plus timed weapons-hold pulses on the
+  SAM, so suppression is a duty cycle rather than a switch.
+- **§51 (comms jamming)** steps on briefed radio channels, which is a different mechanism again.
+
+So the realistic behaviour is reachable — as **probability and duty cycle expressed through ROE
+and weapon behaviour**, never as radar state. Worth telling him; it is the one place our fork is
+ahead of his on something he actively wanted.
 
 ## The OPFOR-AI feature — the part we do not have
 
@@ -107,6 +128,12 @@ argue with.
 ## Adoption ledger
 
 ### Fixed here 2026-08-19 (found by him, verified live in our tree first)
+
+**Three of them are now flown-verified**, DM pass `sead-escort-waypoint-bug-548af6` on
+2026-08-21 — "all of these are good": **B84** front-line groups move and return fire,
+**B86** the app survives DCS taking the GPU (Qt 6.8), **B87** a stand-off shooter starts
+its run at its own launch range. **B85** (unreachable TOT) and **G41** (the C2 graph) are
+still owed a flight.
 
 | His PR | Our file | What it was |
 |---|---|---|
@@ -211,3 +238,27 @@ gh pr list --repo dcs-retribution/dcs-retribution --author juanjux --state merge
 **Verify every claim against our own files before acting.** Of the five defects
 reviewed on 2026-08-19, four were live here and one was not — and the one that was
 not (`perf_red_alert_state`) reads identical at a glance.
+
+### His README is the inventory, not the PR list
+
+Confirmed by him 2026-08-22: <https://github.com/juanjux/dcs-retribution/blob/master/README.md>
+carries every change with its PR link, grouped by area. "Generally the PRs are mergeable but
+some require some other changes." Read that page first; the PR list is the index to it.
+
+### The OPFOR-AI branch is offered, and it is kept mergeable
+
+`experiment-mcp` is maintained **clean against upstream `dev`** specifically so it can be merged
+by someone else, and he offered it to us directly. Nothing has been merged and nothing should be
+without a fresh call — the Phase 0 verdict stands and this is a large, LLM-dependent feature.
+What the offer changes is only that trying it is cheap if we ever want to.
+
+### What he confirmed when asked, 2026-08-22
+
+- **He intends to upstream all of it**, deliberately paced — "only extremely tested things and
+  important bug fixes go upstream for now because the guys can feel overwhelmed fast." Do not
+  read an un-carved feature of his as one he does not believe in; see the correction in
+  [414th-red-brain-phase0-notes.md](414th-red-brain-phase0-notes.md).
+- **Four campaigns played against the LLM commander with Claude**, now testing with Grok, "and
+  he is finding new issues" — a second model, the same defect-finding output, still no claim
+  that red plays better.
+- **The EW verdict** in the section above.

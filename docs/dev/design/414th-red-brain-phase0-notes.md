@@ -174,9 +174,26 @@ and it is the one with evidence behind it.
 
 ### What he does not claim
 
-No changelog entry for it. README says **"not intended for upstream."** The claim is
-"refined across real campaigns played against it" — usage, not superiority. For someone with
-28 merged upstream PRs who carves nearly everything, that restraint is a data point.
+The claim in the README is "refined across real campaigns played against it" — usage, not
+superiority — and there is no changelog entry for it.
+
+> **CORRECTION, 2026-08-22.** This note originally read the README's "not intended for
+> upstream" as a confidence signal: *"for someone with 28 merged upstream PRs who carves
+> nearly everything, that restraint is a data point."* **That inference was wrong, and he
+> said so when asked.** His actual position:
+>
+> > The plan is to upstream everything, but I go little by little, only extremely tested
+> > things and important bug fixes go upstream for now because the guys can feel overwhelmed
+> > fast. […] this will probably take a while yet to upstream.
+>
+> It is a **pacing decision about maintainer bandwidth**, not a judgement on the feature. The
+> line is kept here rather than quietly deleted because the failure is instructive: an absence
+> — no changelog entry, no PR — was read as evidence, and absences are the easiest thing in
+> the world to over-read. Nothing else in this note rests on it.
+
+He also confirmed the usage figure is larger than inferred: **four campaigns played with
+Claude, now being tested with Grok** — "and he is finding new issues". Which is the same
+defect-finding output, from a second model, still with no claim that red plays better.
 
 He did take the fairness constraint seriously unprompted: commit `a9d5c5be` closed a hole
 where the LLM could read blue's entire ATO, on the principle that *"every other asymmetry in

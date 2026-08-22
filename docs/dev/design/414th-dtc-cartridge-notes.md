@@ -759,11 +759,14 @@ bomb's run-in from the first target gave it a heading set by a 300 m hop, a
 two-second leg for its speed and the ground as its release altitude. The reference
 is the last non-target route waypoint before the cluster.
 
-`attack_heading` is the run-in: the bearing from the previous route waypoint to
-the target. `drop_alt` is the planned leg altitude, falling back to the ingress
-leg when the target waypoint is ground-marked (a §74 target waypoint plans on the
-deck for players, which is not a release altitude) and to the module's 20000 ft
-when neither is usable.
+`attack_heading` is the run-in: the bearing from the IP to the target. `drop_alt`
+is the IP leg's planned altitude (a target waypoint plans on the deck for players,
+which is not a release altitude), falling back to the module's 20000 ft when
+nothing usable is planned. **`drop_spd` is the slower of the plan's IP-to-target
+leg speed and the module's 450 kt default** (DM call, 2026-08-22): the TOT-derived
+number came out at 496 and 642 kt on a real save, and the LAR computed from it is
+honest only if the crew flies that fast. Capped, the LAR the CDNU draws is the
+conservative one — fly the run-in faster and the real envelope is only bigger.
 
 ### TIS
 

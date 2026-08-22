@@ -509,7 +509,12 @@ def _jdam_target(
         if planned_alt_ft >= MIN_DROP_ALT_FT:
             drop_alt = float(planned_alt_ft)
         if ingress is not None:
-            drop_speed = _knots(leg_speed_kmh(ingress, waypoint))
+            # The slower of the plan and the module's default, so the LAR the
+            # CDNU draws is the conservative one: a real plan came out at 496
+            # and 642 kt, honest only if the crew flies that fast (DM call).
+            drop_speed = min(
+                _knots(leg_speed_kmh(ingress, waypoint)), DEFAULT_DROP_SPD_KTS
+            )
         target.update(coords.of(waypoint.position.x, waypoint.position.y))
         target.update(
             {

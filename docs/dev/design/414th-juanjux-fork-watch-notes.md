@@ -250,7 +250,33 @@ some require some other changes." Read that page first; the PR list is the index
 `experiment-mcp` is maintained **clean against upstream `dev`** specifically so it can be merged
 by someone else, and he offered it to us directly. Nothing has been merged and nothing should be
 without a fresh call — the Phase 0 verdict stands and this is a large, LLM-dependent feature.
-What the offer changes is only that trying it is cheap if we ever want to.
+
+**Assessed 2026-08-22, read-only** (`git merge-tree --write-tree` against `origin/main`; nothing
+checked out, nothing merged). It is more tractable than it looks:
+
+| | |
+|---|---|
+| Merge base | upstream `1a669cac6` — he really is dev-based |
+| His branch ahead | 32 commits, 90 files, +9,664 / −306 |
+| Conflicts | **40 files** |
+| …of which line-ending noise | **27** — 20 campaign yamls + 9 faction jsons, the documented CRLF-vs-LF whole-file artifact (ours LF, his CRLF; verified on `operation_gazelle.yaml`, 143 LF vs 131 CRLF). Mechanical: `git merge-file` on `tr -d '\r'`-normalised stages. |
+| …genuinely conflicting code | **13**, and four of those (`holdpoint.py`, `convoygenerator.py`, `naming.py`, `test_convoy_name_collision.py`) are both forks having independently taken upstream #928 and the hold clamp — convergent, not divergent |
+
+Real integration work is about nine files: `game/server/app.py` (mount the sub-app), `game/game.py`,
+`mypy.ini`, `qt_ui/models.py`, `QGeneratorSettings.py`, `missiongenerator.py`, `beacons.py`, one
+client test, and the changelog.
+
+**Two things that lower the cost further, both his doing:**
+
+- **No dependency or PyInstaller-spec change is required.** `experiment-mcp` touches neither
+  `requirements.txt` nor the spec — those live on his `master`.
+- **The MCP import is guarded**: *"The MCP transport is optional: if `mcp` isn't installed the
+  REST API still runs."* So a merge without `mcp` degrades to REST-only rather than breaking
+  imports. Note that if we ever wanted MCP live it needs `mcp[cli]<2`, which wants **anyio 4.x**
+  against our pinned `anyio==3.7.1` — a transitive dep of FastAPI/starlette, so that bump is a
+  real piece of work with the same profile as the Qt one. REST costs nothing.
+
+The fetched ref is kept locally as `refs/juanjux/experiment-mcp` if anyone wants to look again.
 
 ### What he confirmed when asked, 2026-08-22
 

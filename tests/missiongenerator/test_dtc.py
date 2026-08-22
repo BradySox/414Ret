@@ -44,6 +44,7 @@ from game.missiongenerator.dtc.generator import CARTRIDGE_BUILDERS
 from game.missiongenerator.dtc.hornet import build_hornet_cartridge
 from game.missiongenerator.dtc import tomcat
 from game.missiongenerator.dtc.tomcat import (
+    jdam_stations,
     MAX_ADDITIONAL_POINTS,
     TOMCAT_UNIT_TYPE,
     build_tomcat_cartridge,
@@ -1594,3 +1595,82 @@ def test_every_target_in_a_cluster_runs_in_from_the_ip() -> None:
     # further and two seconds later, reads a knot or two different.
     assert abs(first["drop_spd"] - second["drop_spd"]) <= 5
     assert first["lar_rmax_nmi"] == pytest.approx(second["lar_rmax_nmi"], rel=0.05)
+
+
+def _cluster_flight() -> tuple[Any, Any, Any]:
+    flight, mission_data, game = _tomcat_fixture()
+    flight.waypoints = [
+        _waypoint(
+            "TAKEOFF", FlightWaypointType.TAKEOFF, 0, 0, 0, datetime(1988, 7, 15, 7, 5)
+        ),
+        _waypoint(
+            "INGRESS",
+            FlightWaypointType.INGRESS_STRIKE,
+            40000,
+            40000,
+            6096,
+            datetime(1988, 7, 15, 7, 25),
+            targets=[object()],
+        ),
+    ] + [
+        _waypoint(
+            f"BLDG {n}",
+            FlightWaypointType.TARGET_POINT,
+            80000,
+            40000 + 300 * n,
+            0,
+            datetime(1988, 7, 15, 7, 30, 2 * n),
+            targets=[object()],
+        )
+        for n in range(1, 4)
+    ]
+    return flight, mission_data, game
+
+
+def test_each_loaded_jdam_station_gets_its_own_target_first() -> None:
+    """The mission generator has already written the pylons, so the page reads
+    them: pydcs pylons 4-7 are the tunnel stations the jet calls STA 3-6. With
+    two JDAMs and three buildings, STA 3 leads with building 1 and STA 5 with
+    building 2; the stations carrying something else get the plain list, and
+    every target stays on every station for a re-pick."""
+    from dcs.weapons_data import Weapons
+
+    flight, mission_data, game = _cluster_flight()
+    flight.client_units[0].pylons = {
+        4: {"CLSID": Weapons.GBU_38_V_1_B___JDAM__500lb_GPS_Guided_Bomb_["clsid"]},
+        5: {"CLSID": "<CLEAN>"},
+        6: {"CLSID": Weapons.GBU_31_V_2_B___JDAM__2000lb_GPS_Guided_Bomb_["clsid"]},
+    }
+    assert jdam_stations(flight) == [1, 3]
+    stations = json.loads(
+        build_tomcat_cartridge(flight, mission_data, game, "Cluster").to_json()
+    )["data"]["JDAM"]["stations"]
+    names = [[t["name"] for t in s["targets"] if t["active"]] for s in stations]
+    assert names[0] == ["BLDG1", "BLDG2", "BLDG3"]  # STA 3: first JDAM
+    assert names[1] == ["BLDG1", "BLDG2", "BLDG3"]  # STA 4: no JDAM, plain
+    assert names[2] == ["BLDG2", "BLDG3", "BLDG1"]  # STA 5: second JDAM
+    assert names[3] == ["BLDG1", "BLDG2", "BLDG3"]  # STA 6: no JDAM, plain
+
+
+def test_more_jdams_than_targets_wrap_round() -> None:
+    from dcs.weapons_data import Weapons
+
+    flight, mission_data, game = _cluster_flight()
+    flight.waypoints = flight.waypoints[:4]  # two buildings
+    gbu = Weapons.GBU_38_V_1_B___JDAM__500lb_GPS_Guided_Bomb_["clsid"]
+    flight.client_units[0].pylons = {p: {"CLSID": gbu} for p in (4, 5, 6, 7)}
+    assert jdam_stations(flight) == [1, 2, 3, 4]
+    stations = json.loads(
+        build_tomcat_cartridge(flight, mission_data, game, "Wrap").to_json()
+    )["data"]["JDAM"]["stations"]
+    firsts = [s["targets"][0]["name"] for s in stations]
+    assert firsts == ["BLDG1", "BLDG2", "BLDG1", "BLDG2"]
+
+
+def test_no_jdam_loaded_means_the_plain_list_everywhere() -> None:
+    flight, mission_data, game = _cluster_flight()
+    assert jdam_stations(flight) == []
+    stations = json.loads(
+        build_tomcat_cartridge(flight, mission_data, game, "Plain").to_json()
+    )["data"]["JDAM"]["stations"]
+    assert all(s["targets"][0]["name"] == "BLDG1" for s in stations)

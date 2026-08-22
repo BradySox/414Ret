@@ -7624,9 +7624,12 @@ reference layer, which plan 2 repeats:
   (`XB`, `XD` — the NAV tab documents the grammar), then the tanker/AEW&C and CAP
   anchors, then the recon-confirmed SAM sites, capped at the descriptor's declared
   20 references.
-- `JDAM.stations` — the flight's target waypoints as pre-planned aimpoints on all
-  four stations (STA 3-6, 8 slots each), with the run-in heading from the ingress
-  point, the planned release altitude and speed, and the three cached LAR scalars.
+- `JDAM.stations` — the flight's target waypoints as pre-planned aimpoints, with
+  the run-in heading from the IP, the IP leg's altitude and speed as the release
+  parameters, and the three cached LAR scalars. **Each station carrying a JDAM gets
+  its own target as PP1** (read from the lead's loaded pylons — pydcs 4–7 are the
+  jet's STA 3–6), handed out in route order and wrapping; every target stays on
+  every station for a re-pick. All targets in a cluster run in from the IP.
   `JDAM_LAR_TABLE` and its bilinear lookup are ported into `tomcat.py` because the
   CDNU reads those numbers straight out of the cartridge.
 - `TIS.send_to_callsigns` — the package's other flights, 6-char blank-padded.

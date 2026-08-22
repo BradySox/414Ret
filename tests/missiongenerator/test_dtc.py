@@ -45,6 +45,7 @@ from game.missiongenerator.dtc.superhornet import (
     SUPER_HORNET_UNIT_TYPES,
     build_super_hornet_cartridge,
 )
+from game.missiongenerator.dtc import tomcat
 from game.missiongenerator.dtc.tomcat import (
     MAX_ADDITIONAL_POINTS,
     TOMCAT_UNIT_TYPE,
@@ -1207,7 +1208,43 @@ def test_tomcat_leaves_plan_one_waypoints_to_the_me_route() -> None:
     # An empty name keeps the editor's own "1: ME Route" label.
     assert plans[0]["name"] == ""
     assert plans[0]["route_as_line"] is False
-    assert all(plan["additional_points"] == [] for plan in plans[1:])
+    # Plan 2 is ours; 3-12 stay untouched.
+    assert all(plan == _EMPTY_PLAN for plan in plans[2:])
+
+
+#: What an untouched plan looks like -- createFlightPlan() in the descriptor.
+_EMPTY_PLAN = {
+    "name": "",
+    "waypoints": [],
+    "lines": [],
+    "additional_points": [],
+    "route_as_line": False,
+}
+
+
+def test_tomcat_route_lands_on_plan_two_with_the_jets_name_codes() -> None:
+    """The ED-authored cartridge in hand puts the flown route on plan 2 with
+    route_as_line set, TOTs rather than speeds, and names carrying the codes
+    (IPORCXIP). Plan 1 is left to the mission editor."""
+    flight, mission_data, game = _tomcat_fixture()
+    cartridge = build_tomcat_cartridge(flight, mission_data, game, "Test F-14BU")
+    route = json.loads(cartridge.to_json())["data"]["NAV"][1]
+    assert route["name"] == "ROUTE 1"
+    assert route["route_as_line"] is True
+    # Waypoint 0 is the spawn, so plan 2's n matches the kneeboard's n.
+    assert [w["name"] for w in route["waypoints"]] == [
+        "INGREXIP",
+        "POWER PL",
+        "LANDIXHB",
+    ]
+    # 07:25 local on a UTC+4 map is 03:25Z.
+    assert route["waypoints"][0]["tot"] == "03:25:00"
+    # A speed and a TOT are mutually exclusive in the editor.
+    assert route["waypoints"][0]["spd"] == 0
+    # The reference layer rides both plans, so selecting plan 2 loses nothing.
+    assert route["additional_points"] == (
+        json.loads(cartridge.to_json())["data"]["NAV"][0]["additional_points"]
+    )
 
 
 def test_tomcat_references_carry_the_jets_name_codes() -> None:
@@ -1226,6 +1263,27 @@ def test_tomcat_references_carry_the_jets_name_codes() -> None:
     assert (bullseye["x"], bullseye["y"]) == (5000, 5000)
     assert bullseye["lat"] == pytest.approx(5000 / DEG_M)
     assert bullseye["lon"] == pytest.approx(5000 / DEG_M)
+
+
+def test_tomcat_front_line_rides_the_plot_lines(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Same shape as the ED-authored cartridge's plot line, open rather than
+    closed because a front is a segment, not an area."""
+    monkeypatch.setattr(
+        tomcat,
+        "flot_segments",
+        lambda game: [("Front", [(1000.0, 2000.0), (5000.0, 6000.0)])],
+    )
+    flight, mission_data, game = _tomcat_fixture()
+    data = json.loads(
+        build_tomcat_cartridge(flight, mission_data, game, "Lines").to_json()
+    )["data"]
+    line = data["NAV"][0]["lines"][0]
+    assert line["closed"] is False
+    assert sorted(line["points"][0]) == ["elev", "lat", "lon", "x", "y"]
+    # The route plan repeats it, so switching plans does not lose the front.
+    assert data["NAV"][1]["lines"] == data["NAV"][0]["lines"]
 
 
 def test_tomcat_threat_points_ride_the_recon_fog() -> None:
@@ -1275,16 +1333,35 @@ def test_tomcat_jdam_points_load_every_station() -> None:
     assert "lat" not in empty and "x" not in empty
 
 
-def test_tomcat_elevations_use_each_sections_own_unit() -> None:
+def test_tomcat_elevations_use_each_sections_own_unit(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """NAV writes metersToFeet(getAltitude(...)); JDAM stores the raw metres and
     converts only for display. Mixing them is a 3.28x error."""
+    monkeypatch.setattr(tomcat, "steerpoint_elevation", lambda waypoint: 100.0)
     flight, mission_data, game = _tomcat_fixture()
     data = json.loads(
         build_tomcat_cartridge(flight, mission_data, game, "Units").to_json()
     )["data"]
-    assert isinstance(data["JDAM"]["stations"][0]["targets"][0]["elev"], float)
-    for point in data["NAV"][0]["additional_points"]:
-        assert isinstance(point["elev"], int)
+    assert data["JDAM"]["stations"][0]["targets"][0]["elev"] == 100
+    assert data["NAV"][1]["waypoints"][0]["elev"] == 328
+
+
+def test_tomcat_waypoints_carry_the_altitude_their_one_field_expects() -> None:
+    """The Tomcat waypoint has a single altitude field where the Hornet has two,
+    so it takes the field elevation at the route's ends and the planned altitude
+    in between -- the way the authored cartridge fills it."""
+    flight, mission_data, game = _tomcat_fixture()
+    route = json.loads(
+        build_tomcat_cartridge(flight, mission_data, game, "Alt").to_json()
+    )["data"]["NAV"][1]["waypoints"]
+    # 6096 m planned on the ingress leg.
+    assert route[0]["elev"] == 20000
+    # The target is ground-marked for players, so the miz puts it on the deck
+    # and the cartridge has to agree.
+    assert route[1]["elev"] == 0
+    # Landing takes the field's own elevation, which this fixture puts at 0.
+    assert route[2]["elev"] == 0
 
 
 def test_tomcat_lar_table_matches_the_descriptor() -> None:

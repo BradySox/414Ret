@@ -3,25 +3,26 @@
 Schema mined from ``CoreMods/aircraft/F14/DTC`` (``F-14BU_DTC.lua`` + its
 ``.dlg``). Sections emitted:
 
-* ``NAV`` -- flight plan 1's map lines (the front line) and additional points
-  (bullseye, divert, friendly orbits, known threat sites). Its **waypoint list
-  is not ours to write**: plan 1 is the ME route, which is already this
-  flight's miz route, and the editor greys the waypoint fields out there
-  (``updateNAVPlanEditability``). The reference layer is what the route cannot
-  carry, so that is what the cartridge adds.
+* ``NAV`` -- plan 1 takes the reference layer only (the front line as map lines;
+  bullseye, divert, friendly orbits and known threat sites as additional points).
+  Its **waypoint list is not ours to write**: plan 1 is the ME route, which is
+  already this flight's miz route, and the editor greys those fields out
+  (``updateNAVPlanEditability``). The flown route goes on **plan 2**, which is
+  what an authored cartridge does -- see the design note's diff.
 * ``JDAM`` -- the flight's target waypoints as pre-planned points on all four
   stations, with the run-in heading and the cached LAR scalars.
 * ``TIS`` -- the package's callsigns in the send-to list.
 
 Constraints mined, not guessed, each easy to undo by accident: ``NAV``
 elevations are FEET while ``JDAM`` target elevations are METRES; point names cap
-at 8 characters and the trailing ``X`` codes are a real convention the jet reads
-(``XB`` bullseye ref, ``XD`` destination -- the NAV tab's own help text); and the
-jet is the F-14B(U) alone, since ``F14/Entry/F-14B.lua`` sets the capability flag
-only for that rewrite.
+at 8 characters and the trailing ``X`` codes (``XB``, ``XD``, ``XHB``, ``XIP``)
+are a convention the jet reads, documented in the NAV tab and used by the
+authored cartridge; and the jet is the F-14B(U) alone, since
+``F14/Entry/F-14B.lua`` sets the capability flag only for that rewrite.
 
-``CMDS`` is deliberately omitted: its programs are ED's tuning and nothing in
-the campaign improves on them, so the jet keeps its own.
+``CMDS`` is deliberately omitted: its programs are ED's tuning, an authored
+cartridge's copy is those defaults field for field, and an AutoLoaded write would
+clobber whatever the pilot set.
 """
 
 from __future__ import annotations
@@ -43,6 +44,7 @@ from game.missiongenerator.dtc.common import (
     leg_speed_kmh,
     raw_cap_tracks,
     sanitize_short_name,
+    seconds_of_day,
     steerpoint_elevation,
     support_tracks,
     waypoint_display_name,
@@ -67,6 +69,8 @@ MAX_LINE_POINTS = 9
 MAX_ADDITIONAL_POINTS = 20
 WAYPOINT_NAME_LEN = 8
 PLAN_NAME_LEN = 16
+#: Plan 2's label, matching the ED-authored cartridge this was checked against.
+ROUTE_PLAN_NAME = "ROUTE 1"
 
 JDAM_STATIONS = 4
 JDAM_TARGETS_PER_STATION = 8
@@ -187,8 +191,25 @@ def _feet(metres: float) -> int:
     return int(round(metres * _METRES_TO_FEET))
 
 
+def _whole(value: float) -> Any:
+    """Match the editor's own output, which writes 20000 rather than 20000.0."""
+    return int(value) if float(value).is_integer() else value
+
+
 def _knots(speed_kmh: float) -> float:
     return speed_kmh * _KMH_TO_KNOTS
+
+
+def _zulu_clock(game: Game, waypoint: FlightWaypoint) -> str:
+    """The waypoint's TOT as the editor's ``HH:MM:SS`` clock, in Zulu.
+
+    Hours wrap at 24: the field is a clock face, so a sortie crossing Zulu
+    midnight loses the day rather than writing an hour the jet cannot show.
+    """
+    if waypoint.tot is None:
+        return ""
+    total = seconds_of_day(game, waypoint.tot)
+    return f"{(total // 3600) % 24:02d}:{(total % 3600) // 60:02d}:{total % 60:02d}"
 
 
 def _point_name(waypoint: FlightWaypoint) -> str:
@@ -223,15 +244,26 @@ def _reference(coords: _Coords, name: str, x: float, y: float) -> dict[str, Any]
     return entry
 
 
-#: Off-route waypoint types and the jet's name code for each.
-_REFERENCE_SUFFIXES = {
+#: Waypoint types and the jet's name code for each. Only the four codes the NAV
+#: tab documents unambiguously are used -- an ED-authored cartridge in hand names
+#: its initial point ``IPORCXIP``, so the grammar is real, but ``DP``/``HA``/``ST``
+#: have no stated meaning and guessing one would be an unsourced value.
+_NAME_SUFFIXES = {
     FlightWaypointType.BULLSEYE: "XB",
     FlightWaypointType.DIVERT: "XD",
+    FlightWaypointType.LANDING_POINT: "XHB",
 }
+_NAME_SUFFIXES.update(
+    {
+        member: "XIP"
+        for member in FlightWaypointType
+        if member.name.startswith("INGRESS_")
+    }
+)
 
 
-def _off_route_name(waypoint: FlightWaypoint) -> str:
-    suffix = _REFERENCE_SUFFIXES.get(waypoint.waypoint_type)
+def _coded_name(waypoint: FlightWaypoint) -> str:
+    suffix = _NAME_SUFFIXES.get(waypoint.waypoint_type)
     base = _point_name(waypoint)
     return _suffixed(base, suffix) if suffix else base
 
@@ -258,7 +290,7 @@ def _additional_points(
     points = [
         _reference(
             coords,
-            _off_route_name(waypoint),
+            _coded_name(waypoint),
             waypoint.position.x,
             waypoint.position.y,
         )
@@ -282,30 +314,86 @@ def _lines(game: Game, coords: _Coords) -> list[dict[str, Any]]:
     return lines
 
 
+def _waypoint_elevation(waypoint: FlightWaypoint) -> int:
+    """Feet for the waypoint's single altitude field, which is not the Hornet's.
+
+    The Tomcat waypoint has one number where the other jets have two (ground
+    under the point, and the height to fly the leg), so it cannot carry both.
+    The authored cartridge fills it the way this does: the field's own elevation
+    at the ends of the route, the planned altitude in between. A ground-marked
+    point keeps 0, which is what it is planned at.
+    """
+    ground = steerpoint_elevation(waypoint)
+    if ground:
+        return _feet(ground)
+    altitude_m, altitude_type = leg_altitude(waypoint)
+    return _feet(altitude_m) if altitude_type == 1 else 0
+
+
+def _route_waypoint(
+    game: Game,
+    coords: _Coords,
+    waypoint: FlightWaypoint,
+    previous: Optional[FlightWaypoint],
+) -> dict[str, Any]:
+    tot = _zulu_clock(game, waypoint)
+    entry: dict[str, Any] = {"name": _coded_name(waypoint)}
+    entry.update(
+        coords.of(
+            waypoint.position.x, waypoint.position.y, _waypoint_elevation(waypoint)
+        )
+    )
+    # Speed and TOT are mutually exclusive in the editor. The planned time wins
+    # where there is one, because that is what the package flies to.
+    entry["spd"] = 0 if tot else int(round(_knots(leg_speed_kmh(previous, waypoint))))
+    entry["tot"] = tot
+    return entry
+
+
 def _build_nav(
     flight: FlightData, mission_data: MissionData, game: Game, coords: _Coords
 ) -> list[dict[str, Any]]:
-    """The twelve plans, of which we fill one.
+    """Twelve plans, of which we fill two.
 
-    Plan 1's ``name`` and ``waypoints`` are deliberately left alone: the editor
-    labels it "1: ME Route" while the name is empty, and its waypoints ARE the
-    miz route DCS already flies (``updateNAVPlanEditability`` greys the fields
-    out for exactly that reason). Lines and additional points are what plan 1
-    accepts and what a route cannot express.
+    **Plan 1 keeps its own waypoints**: the editor labels it "1: ME Route" while
+    its name is empty and greys the waypoint fields out
+    (``updateNAVPlanEditability``), because those waypoints ARE the miz route DCS
+    already flies. It takes the reference layer only -- lines and additional
+    points, the two things it accepts and a route cannot express.
+
+    **Plan 2 is the flown route**, which is the shape an ED-authored cartridge in
+    hand uses: named waypoints with TOTs, ``route_as_line`` set so the plan draws
+    itself, and the reference layer repeated so selecting it loses nothing.
     """
     options = flight.dtc_options
     plans = [_empty_plan() for _ in range(MAX_PLANS)]
-    plan = plans[0]
     off_route = (
         [w for w in flight.waypoints if not is_route_waypoint(w)]
         if options.route
         else []
     )
-    if options.flot_and_zones:
-        plan["lines"] = _lines(game, coords)
-    plan["additional_points"] = _additional_points(
-        flight, mission_data, game, coords, off_route
-    )
+    lines = _lines(game, coords) if options.flot_and_zones else []
+    references = _additional_points(flight, mission_data, game, coords, off_route)
+    plans[0]["lines"] = list(lines)
+    plans[0]["additional_points"] = list(references)
+    if not options.route:
+        return plans
+
+    route = plans[1]
+    route["name"] = ROUTE_PLAN_NAME
+    route["route_as_line"] = True
+    route["lines"] = list(lines)
+    route["additional_points"] = list(references)
+    # Skip waypoint 0 (the spawn) so plan 2's waypoint n IS the kneeboard's
+    # waypoint n -- the same off-by-one the Hornet hit.
+    previous: Optional[FlightWaypoint] = None
+    for waypoint in flight.waypoints[1:]:
+        if not is_route_waypoint(waypoint):
+            continue
+        if len(route["waypoints"]) == MAX_WAYPOINTS:
+            break
+        route["waypoints"].append(_route_waypoint(game, coords, waypoint, previous))
+        previous = waypoint
     return plans
 
 
@@ -319,7 +407,7 @@ def _jdam_target(
     drop_speed = DEFAULT_DROP_SPD_KTS
     target: dict[str, Any] = {
         "name": "",
-        "elev": 0.0,
+        "elev": 0,
         "attack_heading": 0.0,
         "has_impact_heading": False,
         "impact_heading": 0,
@@ -341,7 +429,7 @@ def _jdam_target(
                 "name": _point_name(waypoint),
                 # Metres here, unlike NAV's feet: the descriptor stores the raw
                 # getAltitude() and converts only for display.
-                "elev": steerpoint_elevation(waypoint),
+                "elev": _whole(steerpoint_elevation(waypoint)),
                 "attack_heading": (
                     round(bearing_degrees(ingress.position, waypoint.position), 1)
                     if ingress is not None
@@ -351,7 +439,7 @@ def _jdam_target(
             }
         )
     rmin, rmax, half_angle = lookup_jdam_lar(drop_speed, drop_alt / 1000)
-    target["drop_alt"] = drop_alt
+    target["drop_alt"] = _whole(drop_alt)
     target["drop_spd"] = round(drop_speed)
     target["lar_rmin_nmi"] = rmin
     target["lar_rmax_nmi"] = rmax

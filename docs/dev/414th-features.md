@@ -7474,10 +7474,12 @@ other jets have `terrain`. Only the **(U) rewrite** is capable: `F14/Entry/F-14B
 sets `DTC = rewrite_settings.Name == "F-14BU"` and `setData` refuses any other
 `type`, so the plain F-14B and every F-14A stay unregistered.
 
-**The route is not ours to write.** Plan 1 of `data.NAV`'s twelve is the *mission
-editor's* route — the panel says so and `updateNAVPlanEditability()` greys its
-waypoint fields out — and Retribution's flight plan already **is** that route. So the
-cartridge carries what the route cannot:
+**Plan 1 of `data.NAV`'s twelve is not ours to write.** It is the *mission editor's*
+route — the panel says so and `updateNAVPlanEditability()` greys its waypoint fields
+out — and Retribution's flight plan already **is** that route. The flown route goes on
+**plan 2** as `ROUTE 1` with `route_as_line`, waypoints carrying Zulu TOTs and names
+ending in the jet's own codes (`XIP` ingress, `XHB` recovery field). Plan 1 takes the
+reference layer, which plan 2 repeats:
 
 - `lines` — the front line, one per active front (same `flot_segments` geometry as
   the Hornet's FLOT and the F10 drawing).
@@ -7501,11 +7503,17 @@ new **Pre-planned target points** checkbox (`DtcOptions.jdam_targets`); `nav_aid
 and `destinations` have no Tomcat equivalent and are ignored.
 
 Unlike the Viper, the F14 descriptor ships **no `defaults/` example cartridge**, so
-the shape is validated against `setData`, the element constructors and the editor
-panels only. Tests `tests/missiongenerator/test_dtc.py` (11 added: registration and
-the F-14B exclusion, plan 1 left to the ME route, the name codes, fogged threat
-points, the reference cap, the JDAM stations and empty slots, the LAR corners, TIS
-package membership, per-section omission, generator binding). In-game pass:
+the shape was mined from `setData`, the element constructors and the editor panels —
+then **diffed against a hand-authored F-14B(U) cartridge** (the squadron's
+training-night package). Every section's key set matches, an unused JDAM slot comes
+out byte-identical including all three `lar_*` floats, and the reference's own plan 1
+is empty-named with zero waypoints while its route sits on plan 2 — which is where
+the plan-2 behaviour and the name codes came from. Tests `tests/missiongenerator/test_dtc.py` (14 added: registration and
+the F-14B exclusion, plan 1 left to the ME route, the plan-2 route with its codes
+and TOTs, the front line, fogged threat points, the reference cap, the JDAM
+stations and empty slots, the two elevation units and the single-field altitude
+rule, the LAR corners, TIS package membership, per-section omission, generator
+binding). In-game pass:
 checklist **B91** — its first step is an ME import, which needs no sortie.
 
 ## §75 — Custom victory conditions

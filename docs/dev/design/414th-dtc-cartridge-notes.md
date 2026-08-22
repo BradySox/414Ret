@@ -207,9 +207,18 @@ The clean first-class version (unit attrs + `load_from_dict` round-trip + a
   paths (uncontrolled-at-t=0 carrier clients, late-activated delayed flights);
   the reference mission's jets were plain ramp starts. Also eyeball: SA-page
   FLOT/CAP/MEZ rendering, COMM names on the DDI/UFC, Viper DED steerpoint notes.
-- CH-47F / MiG-29 builders when a campaign fields them blue-client.
+- **B91 in-game pass** — the F-14B(U), whose first step is an ME import and needs
+  no sortie.
+- ~~CH-47F / MiG-29 builders~~ — **dead, 2026-08-22.** The Chinook sets
+  `DTC = false` and the Fulcrum is an AI-only module with no cockpit; neither can
+  read a cartridge. See the capability table at the top of this note.
+- **`ELINT` on the Viper** — the authored F-16C cartridge in the same package
+  carries a top-level `ELINT.RWR` table: per-emitter `PRI` (priority), `search`,
+  `display` and `unknown` flags, three bands. We emit none of it. A campaign-aware
+  version would rank the emitters the mission actually fields, which is real data
+  rather than invented values — the first honest v2 candidate. Nothing built.
 - v2 candidates: TCN stations, ALR-67/CMDS program tables, corridors for transit
-  lanes, MEZ from the §40 restricted circles.
+  lanes.
 
 ---
 
@@ -653,15 +662,17 @@ express:
 Plan 1's `name` is left empty on purpose: the editor labels it "1: ME Route"
 while it is, and naming it would hide that.
 
-**Deferred, not rejected:** duplicating the route into plan 2 with our own names,
-speeds and TOTs. It is only worth doing if a flown check shows the ME route
-reaches the jet without them — see the in-game row.
+**Plan 2 is the flown route**, named `ROUTE 1` with `route_as_line = true`. That
+is not a guess: the ED-authored cartridge checked against (below) does exactly
+this, and its waypoints carry TOTs with `spd = 0` and names ending in the jet's
+codes. The reference layer is repeated on plan 2 so selecting it loses nothing.
 
 ### Units and exclusivity — the two traps
 
 | Field | Unit | Source |
 |---|---|---|
 | NAV waypoint / line point / additional point `elev` | **feet** | `wp.elev = metersToFeet(getAltitude(...))` |
+| — and it is the point's **only** altitude field | | there is no `routeAltitude` twin here |
 | JDAM target `elev` | **metres** | `tgt.elev = getAltitude(...)`, converted only for display |
 | NAV waypoint `spd` | knots ground speed, 0 = unset | dlg tooltip, range 0-999 |
 | NAV waypoint `tot` | `"HH:MM:SS"` text | dlg tooltip, "e.g. 08:30:00" |
@@ -669,6 +680,17 @@ reaches the jet without them — see the in-game row.
 
 `spd` and `tot` are **mutually exclusive**: `updateSpdTOTEnabled()` disables each
 when the other is set, so a waypoint carries one or neither.
+
+**The single altitude field is why this jet breaks B90's rule.** The Hornet and
+Viper each carry two numbers — the ground under the point and the height to fly
+the leg — and §74 keeps them apart. The Tomcat has one, so it cannot. The editor
+auto-fills terrain height, but the authored cartridge shows a human overwriting
+that with the planned altitude on the two waypoints where it mattered (`20000` on
+both IPs) and leaving the auto-filled terrain at the ends (`142`, `167`).
+`_waypoint_elevation()` reproduces that: the field's own elevation where we know
+it, the planned MSL leg altitude in between, and 0 on a ground-marked point
+because that is where the miz puts it for a client. **Which one the CDNU actually
+wants is the open question** — read it in the cockpit, checklist B91.
 
 ### Name codes — the jet types a point by its name
 
@@ -685,9 +707,11 @@ Example: OCEANAXHB = 'OCEANA' as Home Base
 
 Names cap at **8 characters** (`NAV_WP_NAME_MAXLEN`, enforced on both waypoints
 and additional points), so the base name is what gives way, never the code:
-`_suffixed()` trims the base. We emit `XB` on the bullseye and `XD` on the
-divert; the rest stay plain, because guessing a code we have not confirmed is the
-unsourced-value failure mode.
+`_suffixed()` trims the base. The authored cartridge below uses the grammar in
+anger — `IPORCXIP`, `IPBLUXFP`, `BULLSXB` — so it is real, not documentation of
+an intention. We emit `XB` (bullseye), `XD` (divert), `XHB` (the recovery field)
+and `XIP` (every ingress waypoint type). `DP`, `HA` and `ST` have no stated
+meaning anywhere, so nothing is guessed onto them.
 
 ### Editor-mined limits
 
@@ -738,12 +762,52 @@ the pilot hand-set. The Tomcat adds a third: its `CMDSAutoOverrides` is a
 per-DCS-type table, and populating it from the campaign's known threats would
 mean inventing program/threshold pairs per SAM type — unsourced numbers.
 
-### No shipped example to check against
+### Checked against an authored cartridge (2026-08-22)
 
-Unlike the Viper (`F-16C/DTC/defaults/test*.json`), the F14 descriptor ships **no
-`defaults/` folder**, so the emitted JSON has been validated against the
-descriptor's own `setData`/constructors and the editor's panels, not against an
-ED-authored artifact. The cheap confirmation is to save a cartridge from the ME's
-DTC manager and diff it — see the in-game row.
+The F14 descriptor ships **no `defaults/` example** the way the Viper does
+(`F-16C/DTC/defaults/test*.json`), so the shape was first mined from `setData`,
+the element constructors and the editor panels. It was then **diffed against a
+real hand-authored F-14B(U) cartridge** — the squadron's training-night package,
+`DTC/F-14BU/02_29th_Demon-1_29th_Demon-1_OB.dtc`, 42 KB, built in the ME by a
+person rather than by us.
+
+Every section's key set matches:
+
+| Compared | Result |
+|---|---|
+| top level, `data`, plan, route waypoint, line, line point, additional point, `JDAM`, station, target, `TIS` | key sets identical |
+| an unused JDAM slot | **byte-identical**, including all three `lar_*` floats |
+| `data.CMDS` | present in the reference; absent in ours, deliberately |
+
+Two things that diff told us, and both changed the builder:
+
+1. **The route belongs on plan 2.** The reference leaves plan 1 empty-named with
+   zero waypoints — confirming the ME-route rule — and puts a five-waypoint
+   `ROUTE 1` on plan 2 with `route_as_line = true`. That turned a deferred idea
+   into the shipped behaviour.
+2. **The name codes are in live use**, which is what promoted them from "the
+   dialog documents a grammar" to "emit them".
+
+The `lar_*` match is the strongest single result: our ported `JDAM_LAR_TABLE`
+reproduces ED's cached defaults to the last digit
+(`1.5712031862492397 / 7.250980621174471 / 44.98373439541641`), so the
+interpolation and the ISA speed-of-sound came across correctly.
+
+**The same package validated the other two builders for free.** It carries
+authored cartridges for the F-16C and the FA-18C as well, and against those our
+Viper's `NAV_PTS` + `COMM` and our Hornet's `WYPT` + `SA` + `COMM` key sets match
+exactly. Each reference carries one section we deliberately skip — `MPD.CMDS` and
+`ELINT` on the Viper, `ALR67` on the Hornet — and nothing else differs.
+
+**And it corroborates the capability table.** Eight aircraft have kneeboards in
+that package; exactly three have cartridges — `F-14BU`, `F-16C_50`,
+`FA-18C_hornet`. The F-14B has kneeboards and no cartridge, which is the same
+answer the DB flag gives.
+
+**The reference's `CMDS` is stock defaults, field for field** — bingo 10/10/0/0,
+the same five auto-program pairs, `PROG_1` Priority 2 with 2/0.2/8/1.0 chaff.
+The author never touched the tab; the editor saved it anyway. That is the case
+for omitting it: emitting the section writes ED's own numbers back and clobbers
+anything the pilot set.
 
 In-game pass: checklist **B91**.

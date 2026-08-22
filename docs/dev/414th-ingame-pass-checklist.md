@@ -5596,10 +5596,15 @@ turn on a wing with a small dedicated-jammer squadron and read the ATO before fl
 > cartridge carries references, pre-planned JDAM points and the TIS list rather
 > than steerpoints. None of it has been read in a cockpit.
 
-**Cheapest check first, and it needs no flying:** open the generated `.miz` in the
+**Already done, on paper:** the emitted JSON was diffed against a hand-authored
+F-14B(U) cartridge (the training-night package) and every section's key set matches,
+with an unused JDAM slot byte-identical. What that cannot show is whether the jet
+reads it.
+
+**Cheapest remaining check, and it needs no flying:** open the generated `.miz` in the
 Mission Editor, open the DTC manager, and load the flight's `DTC/*.dtc`. If the ME
 draws the reference points, the front line and the JDAM targets on its own panels,
-the JSON matches ED's importer. Do this before spending a sortie.
+our file survives ED's importer. Do this before spending a sortie.
 
 Then fly one: F-14B(U) client flight on a campaign that fields it
 (`clash_of_the_titans`, `red_sea_rising`, `operation_desert_trident`…), cold start.
@@ -5616,9 +5621,15 @@ Then fly one: F-14B(U) client flight on a campaign that fields it
   the jet reads is not the one we favour. NAV elevations are feet and JDAM
   elevations are metres; a systematic 3.28 ratio means one of the two got the
   other's unit.
-- **Fail signature — the route is missing:** it should come from the ME route
-  (plan 1), not from us. If the jet has no route at all, the deferred
-  "duplicate the route into plan 2" work becomes real; record which.
+- **Fail signature — the route is missing:** plan 1 should come from the ME route
+  and plan 2 is ours. If plan 1 is empty in the jet, the mission route is not
+  reaching it and plan 2 is the only one that works — record which plan flew.
+- **Watch for — the one real unknown:** a Tomcat waypoint has a *single* altitude
+  field where the Hornet and Viper have two, so it cannot separate "the ground
+  under this point" from "the height to fly this leg". We write the planned
+  altitude en route and the field elevation at the ends, which is how the
+  authored cartridge in hand reads. If the CDNU turns out to want terrain height
+  there, flip `_waypoint_elevation()` and say so in the design note.
 - **Watch for:** whether the reference points' elevation being 0 matters in the
   cockpit. That is B90's open half, and this is a second place to observe it.
 

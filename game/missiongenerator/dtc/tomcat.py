@@ -34,6 +34,8 @@ from __future__ import annotations
 import math
 from typing import TYPE_CHECKING, Any, Optional
 
+from dcs.weapons_data import Weapons
+
 from game.ato.flightwaypointtype import FlightWaypointType
 from game.missiongenerator.dtc.cartridge import DtcCartridge
 from game.missiongenerator.dtc.common import (
@@ -77,6 +79,14 @@ ROUTE_PLAN_NAME = "ROUTE 1"
 
 JDAM_STATIONS = 4
 JDAM_TARGETS_PER_STATION = 8
+#: pydcs pylon -> the descriptor's station index. DCS defines the Tomcat's
+#: pylons in the order 1A, 1B, 2, 3, 4, 5, 6, 7, 8B, 8A, so pydcs pylons 4-7
+#: are the tunnel stations the jet labels 3-6 and the JDAM page lists as STA 3-6.
+_JDAM_PYLON_TO_STATION = {4: 1, 5: 2, 6: 3, 7: 4}
+#: Every CLSID pydcs names as a JDAM, racks included.
+_JDAM_CLSIDS = frozenset(
+    getattr(Weapons, name)["clsid"] for name in dir(Weapons) if "JDAM" in name.upper()
+)
 DEFAULT_DROP_ALT_FT = 20000.0
 DEFAULT_DROP_SPD_KTS = 450.0
 #: Below this a planned altitude is no release altitude and the ingress
@@ -525,21 +535,59 @@ def _jdam_target(
     return target
 
 
+def jdam_stations(flight: FlightData) -> list[int]:
+    """The station indices (1-4 = STA 3-6) the lead client carries a JDAM on.
+
+    Read from the loaded pylons the mission generator has already written, so
+    the page matches what is hanging on the jet. An empty list when no client
+    unit or no JDAM is loaded; every station then gets the plain list.
+    """
+    clients = flight.client_units
+    if not clients:
+        return []
+    pylons = getattr(clients[0], "pylons", {}) or {}
+    return [
+        station
+        for pylon, station in _JDAM_PYLON_TO_STATION.items()
+        if (pylons.get(pylon) or {}).get("CLSID") in _JDAM_CLSIDS
+    ]
+
+
 def _build_jdam(flight: FlightData, game: Game, coords: _Coords) -> dict[str, Any]:
-    """Every station gets the same ordered list, so any bomb can take any
-    planned point -- the crew picks the index; we do not guess the fit."""
+    """Each station that carries a JDAM gets its own target as PP1.
+
+    Targets are handed out in route order across the loaded stations, wrapping
+    when there are more bombs than targets, so releasing STA 3 then 4 then 5
+    then 6 at PP1 walks the list with no cockpit selection. Every target is
+    still on every station behind it (PP2 onward, in order), and a station
+    without a JDAM gets the plain list, so the crew can always re-pick.
+
+    Every target in a cluster measures its run-in from the same point: the last
+    route waypoint before the first target, the IP. A strike plan gives each
+    building its own target waypoint a few hundred metres apart, and measuring
+    from the previous target instead made the second bomb's heading random and
+    its release altitude the ground.
+    """
     planned: list[dict[str, Any]] = []
     previous: Optional[FlightWaypoint] = None
     for waypoint in flight.waypoints:
         is_target = is_target_waypoint(waypoint)
         if is_target and len(planned) < JDAM_TARGETS_PER_STATION:
             planned.append(_jdam_target(coords, game, waypoint, previous))
-        if is_route_waypoint(waypoint):
+        if is_route_waypoint(waypoint) and not is_target:
             previous = waypoint
-    targets = planned + [
-        _jdam_target(coords) for _ in range(JDAM_TARGETS_PER_STATION - len(planned))
-    ]
-    return {"stations": [{"targets": list(targets)} for _ in range(JDAM_STATIONS)]}
+    loaded = jdam_stations(flight)
+    stations = []
+    for station in range(1, JDAM_STATIONS + 1):
+        ordered = list(planned)
+        if planned and station in loaded:
+            first = loaded.index(station) % len(planned)
+            ordered = planned[first:] + planned[:first]
+        empties = [
+            _jdam_target(coords) for _ in range(JDAM_TARGETS_PER_STATION - len(ordered))
+        ]
+        stations.append({"targets": ordered + empties})
+    return {"stations": stations}
 
 
 def _tis_callsign(callsign: str) -> str:

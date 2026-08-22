@@ -2564,6 +2564,16 @@ class PackagesMapPage(KneeboardPage):
     NEUTRAL = (110, 110, 110)
     TARGET = (255, 140, 0)
 
+    #: How far a label may sit from its own marker. The search used to walk to
+    #: the map edge, so a crowded cluster threw its names hundreds of pixels
+    #: into open sea where they read as belonging to whatever was near them
+    #: (flown 2026-08-22: eleven target names stacked in a column clear of the
+    #: dots, and "King Abdullah II" printed over water).
+    MAX_LABEL_OFFSET = 90
+    #: Past this gap a label gets a leader line back to its marker. Below it the
+    #: label is adjacent and a line would just be clutter.
+    LEADER_AT = 22
+
     def __init__(
         self,
         targets: List[Tuple[str, float, float]],
@@ -2704,11 +2714,34 @@ class PackagesMapPage(KneeboardPage):
                     continue
                 for step in (label_h, -label_h):
                     ly = py - 7
-                    while off_y <= ly <= bottom_edge:
+                    while (
+                        off_y <= ly <= bottom_edge
+                        and abs(ly - (py - 7)) <= self.MAX_LABEL_OFFSET
+                    ):
                         if not overlaps((lx, ly, lx + tw, ly + label_h)):
                             return lx, ly
                         ly += step
             return None
+
+        def leader(
+            px: int, py: int, lx: float, ly: float, tw: float, color: Any
+        ) -> None:
+            """Join a displaced label back to the marker it belongs to.
+
+            A label pushed clear of its dot is worse than no label: the reader
+            attaches it to whatever it landed next to.
+
+            Ends at the label's NEAR edge, and stops short of it. Drawing to the
+            far edge runs the line straight through the text, which then reads as
+            punctuation -- "H3 Northwest" came out as "H3-Northwest" when the
+            label sat left of its marker.
+            """
+            near_x = lx + tw if lx + tw < px else lx
+            gap = 3 if near_x < px else -3
+            cx, cy = near_x + gap, ly + label_h / 2
+            if math.dist((px, py), (cx, cy)) < self.LEADER_AT:
+                return
+            draw.line((px, py, cx, cy), fill=color, width=1)
 
         #: Target names already drawn. A package target that IS a control point
         #: appears in both lists, and the base pass would then print the same
@@ -2734,6 +2767,7 @@ class PackagesMapPage(KneeboardPage):
             lx, ly = slot
             placed.append((lx, ly, lx + tw, ly + label_h))
             labelled.add(name)
+            leader(px, py, lx, ly, tw, self.TARGET)
             # White plate behind the label so it reads against the map.
             draw.rectangle(
                 (lx - 1, ly, lx + tw + 1, ly + label_h), fill=(255, 255, 255)
@@ -2754,6 +2788,7 @@ class PackagesMapPage(KneeboardPage):
                 continue
             lx, ly = slot
             placed.append((lx, ly, lx + tw, ly + label_h))
+            leader(px, py, lx, ly, tw, color)
             draw.text(
                 (lx, ly),
                 name,

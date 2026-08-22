@@ -496,6 +496,12 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
 
 ### B11 — Ground AI sleep: distant garrisons stop thinking, wake on approach · §59 · ☐ UNTESTED
 
+**2026-08-22, test 14 — armed, never observed waking.** `AISLEEP|: managing 53 garrison group(s),
+wake radius 15 NM, poll 30s` on both loads, then **no wake line for the rest of the mission**,
+including a player BAI run onto TURTLE. Not a fail: the plugin may only log at arming. Before
+calling this a defect, confirm whether the wake path logs at all — a silent wake and a broken
+wake look identical here, which is the "prefer a loud failure" rule biting.
+
 **History:** built 2026-07-12 off the MP-performance complaint; the emitter's positive list (garrisons in; air defense / missiles / ships / buildings / the concealed scripted movers / dead groups out; gated off) is unit-tested in `tests/missiongenerator/test_aisleepluadata.py`, and the runtime (sleep after grace, wake on approach, parked aircraft never wakes, hysteresis never flaps, a hit wakes a sleeper immediately, dead groups stop the poll, no node = no-op) is harness-tested in `tests/lua/test_aisleep_runtime.py`. The harness models no DCS AI, so what sleep actually buys — and that it's invisible — is DCS-only. **First live arming evidence 2026-08-16** (Baltic Fury turn-3 spectator watch, session `c86c58dd`): dcs.log `AISLEEP|: managing 9 garrison group(s), wake radius 15 NM, poll 30s` — the emitter→plugin chain runs on a real modern campaign; the wake-on-approach and no-regression clauses remain the DCS-only part.
 - **What CI cannot exercise:** whether `Controller:setOnOff(false)` measurably reduces server load on a dense mission (the whole point), whether a slept group is visually indistinguishable (renders, killable, death recorded at debrief), whether the wake on approach is seamless (a garrison's embedded SHORAD is live before you're inside its envelope), and that MANTIS SAMs, TIC formations, convoys, SCUDs and the COIN/ambush movers are visibly untouched.
 - **Setup:** enable **"Distant ground AI sleeps until aircraft approach"** (Mission Generation → Performance; default off) on a dense campaign (Red Tide — not preseeded, feature-locked). Check the log for `AISLEEP|: managing N garrison group(s)`. Fly toward a rear enemy base garrison, kill a slept unit, watch the debrief; compare server frame/CPU on a heavy turn against the same turn with the setting off.
@@ -2357,6 +2363,11 @@ target is actually enough reach in a real laydown, and whether the message lands
 
 ### G30 — MANTIS SHORAD link: the point defense ambushes the HARM shot · MANTIS migration · ☐ UNTESTED
 
+**2026-08-22, test 14 — armed, no wake observed.** `Retribution-RED-IADS SHORAD link armed:
+1 point-defense group(s) held dark, waking 600s on HARM/Maverick` (blue: 3). No wake event
+followed. Whether a HARM was fired at the dark group was not established, so this is not evidence
+either way — the row needs a shot deliberately taken at a site that has point defence.
+
 **History:** built 2026-07-12 off the "which MANTIS features aren't we using?" audit; the bridge plumbing — PD-name collection/dedupe from the per-SAM `PD` arrays, Lua-pattern prefix escaping, one SHORAD per coalition defending `mantis.SAM_Group`, `autoshorad=false` captured AT `Start()` time, option threading, and the off/no-PD no-ops — is harness-tested in `tests/lua/test_mantis_shorad_link.py` with recording MANTIS/SHORAD fakes. The fake models no DCS AI: the actual sleep/wake and the intercept are DCS-only.
 - **What it is:** each SAM site's co-located PD escorts (the "… (PD)" Tor/Tunguska/Avenger groups) are now wrapped in a MOOSE SHORAD object linked to MANTIS (`shoradLink` plugin option, default ON). The PD **sleeps** (alarm green / dark) until a **HARM or Maverick launch** against a defended SAM — or a MANTIS SEAD suppression within ~13.5 NM — **wakes it for 600 s** to engage the incoming shot while the big radar hides, then it goes back to sleep. OFF restores the old always-alert PD.
 - **What CI cannot exercise:** whether the woken Tor/Tunguska actually shoots down the inbound HARM (the whole point), whether the sleeping PD is genuinely dark on ingress (no radar emission before the wake), whether it re-sleeps after the wake window, and that the PD still records kills/losses natively.
@@ -3907,6 +3918,14 @@ engaged. The rest of the campaign check stands.
 
 ### S2 — Mobile missile sites relocate (the SCUD hunt) · §49 · ✗ REGRESSED
 
+**2026-08-22, test 14 (`operation_desert_trident`, Syria) — STILL REGRESSED. The 2026-08-18 fix did
+not take.** Armed on 3 sites both loads. The fail signature this row names came back verbatim:
+`19:10:54 MOBILEMISSILES|: giving up on 0090 | GORILLA (Missile) [ATZ-5, Osa 9A33 ln, Scud_B,
+Ural-375, ZSU-23-4 Shilka] (no movement across 2 route pushes)`. `0014 | TARPON` logged
+`holding ... for its fire mission` at 18:40, 18:48, 18:57, 19:05 and 19:13 — 33 minutes, never
+scooted. Per this row's own note, that rules out the controller reset as the cause. **Next lever:
+post-salvo launcher state.**
+
 **Setup card:** [flycards/REGRESSED-SWEEP.md](flycards/REGRESSED-SWEEP.md) — one Starfire campaign (`operation_desert_trident`) clears this alongside C9 and B48.
 
 **Test 12 (2026-08-20, Persian Gulf turn 1, session `a6e32389`) corroborates test 9 on both hardware types at once, with the pinned-by-a-member signature clean.** WALLAROO fired 3 Scud_B at t≈920 and BARRACUDA fired 15 CH_Shahed136 at t≈950; all six launchers then moved **10–35 m** for the rest of a 43-minute mission. In the *same two sites*, the SA-15 Tor sharing each group drove **2,409 m** (WALLAROO) and **2,974 m** (BARRACUDA). Same site, same tick, same route push: the escort drives and the launcher does not. Nothing new to diagnose — this is the post-salvo launcher state the row already names — but it is the cleanest instance yet, and it rules out the route push, the fire hold and the give-up rule as causes.
@@ -5135,6 +5154,15 @@ actually are.
 > result, so nothing is misbehaving, but an even fight cannot demonstrate the armour
 > weighting. That row needs a lopsided pair.
 ### B70 — Sortie records reach the campaign · §91 · ◐ PARTIAL
+
+**2026-08-22, test 14 — the record arrives, but 77 % of it is a stub.** 158 flights written.
+The player's own record is everything the feature promises: 76 track points, fuel 1.684 → 0.504
+(above 1.0 at start because of external tanks, which is correct), 3 shots / 1 hit, `ejected: true`
+matching the ejection event. **But 115 of 158 flights carry exactly two track points and 7 carry
+none** — and the two are the endpoints of a full mission (`first=30 last=2490 t0=30 t1=2490`), so
+these are not short-lived flights, they are flights whose track was reduced to first-and-last.
+Ten flights recorded shots at all (24 shots / 12 hits across both sides). Stays PARTIAL: the
+question is why a flight alive for 41 minutes keeps two samples.
 
 **History:** built 2026-08-17, session `629c250f`.
 

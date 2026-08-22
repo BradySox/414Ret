@@ -41,10 +41,6 @@ from game.missiongenerator.dtc.common import (
 )
 from game.missiongenerator.dtc.generator import CARTRIDGE_BUILDERS
 from game.missiongenerator.dtc.hornet import build_hornet_cartridge
-from game.missiongenerator.dtc.superhornet import (
-    SUPER_HORNET_UNIT_TYPES,
-    build_super_hornet_cartridge,
-)
 from game.missiongenerator.dtc import tomcat
 from game.missiongenerator.dtc.tomcat import (
     MAX_ADDITIONAL_POINTS,
@@ -208,6 +204,9 @@ def _sam_cp(*, known: bool = True, hidden: bool = False) -> Any:
         groups=[SimpleNamespace(units=[SimpleNamespace(type="SA-2 launcher")])],
     )
     return SimpleNamespace(
+        name="SAM SA-2 Site",
+        position=Pt(120000, -30000),
+        is_fleet=False,
         captured=SimpleNamespace(is_red=True),
         ground_objects=[tgo],
         runway_is_operational=lambda: True,
@@ -228,6 +227,7 @@ def _airbase_cp(
         position=Pt(x, y),
         field_elevation=SimpleNamespace(meters=elevation_m),
         captured=SimpleNamespace(is_red=red),
+        is_fleet=False,
         runway_is_operational=lambda: operational,
         ground_objects=[],
     )
@@ -392,14 +392,14 @@ def test_hornet_cartridge_shape() -> None:
     assert comm1["Channel_3"]["name"] == "CH 3"  # untouched default
     assert data["COMM"]["mirror_COMM1"] is False
 
-    # SA: CAP + tanker racetracks, the SAM ring, styles visible.
+    # SA: the tanker racetrack, the SAM ring, styles visible. The COLT CAP
+    # station is another flight's and stays off the page; this strike plan
+    # has no hold point, so there is no own-orbit entry either.
     caps = data["SA"]["CAP_PTS"]
-    # Support orbits lead so the 9-slot SA limit can never squeeze them out.
-    assert [c["note"] for c in caps] == ["ARCO", "COLT"]
+    assert [c["note"] for c in caps] == ["ARCO"]
     assert caps[0]["id"] == "CAP_PTS_1"
     assert caps[0]["course"] == pytest.approx(0.0)  # along +x = north
     assert caps[0]["length"] == pytest.approx(20000.0)
-    assert caps[1]["course"] == pytest.approx(90.0)  # along +y = east
     mez = data["SA"]["MEZ_THRTS"]
     assert len(mez) == 1
     assert mez[0]["threat_type"] == "Custom"
@@ -456,12 +456,11 @@ def test_viper_cartridge_shape() -> None:
         "TARGET",
         "LANDING",
         "TKR ARCO",
-        "CAP COLT",
     ]
     assert nav_pts[0]["TOS"] == 3 * 3600 + 30 * 60  # 07:30 local, UTC+4
     assert nav_pts[0]["isTOSEnabled"] is True
     assert nav_pts[2]["R1"] is False
-    assert [p["type"] for p in nav_pts] == ["TGT", "STPT", "STPT", "STPT"]
+    assert [p["type"] for p in nav_pts] == ["TGT", "STPT", "STPT"]
 
     threat = data["MPD"]["THREAT_PTS"]
     assert len(threat) == 1
@@ -469,9 +468,9 @@ def test_viper_cartridge_shape() -> None:
     assert threat[0]["radius"] == pytest.approx(43000.0)
     assert threat[0]["id"] == "THREAT_PTS56"
 
-    comm1 = data["COMM"]["COMM1"]
-    assert comm1["Channel_2"] == {"freq": 251.0, "modulation": 1}
-    assert "name" not in comm1["Channel_1"]
+    # No COMM section: the Viper's schema has no channel names, so it could
+    # only mirror the Radio table the miz already carries.
+    assert "COMM" not in data
 
 
 def test_viper_marks_the_target_and_the_run_in() -> None:
@@ -520,8 +519,8 @@ def test_viper_route_stops_at_the_auto_sequencing_limit() -> None:
     ]
     nav_pts = data["MPD"]["NAV_PTS"]
     assert [p["note"] for p in nav_pts[:20]] == [f"NAV{i}" for i in range(1, 21)]
-    assert [p["note"] for p in nav_pts[20:]] == ["TKR ARCO", "CAP COLT"]
-    assert nav_pts[-1]["number"] == 22
+    assert [p["note"] for p in nav_pts[20:]] == ["TKR ARCO"]
+    assert nav_pts[-1]["number"] == 21
 
 
 def test_viper_geo_lines_stay_inside_their_partition(
@@ -845,7 +844,7 @@ def test_viper_sections_are_omitted_when_off() -> None:
     data = json.loads(cartridge.to_json())["data"]
     assert "COMM" not in data
     # Route off, friendly orbits on: only the support anchors load.
-    assert [p["note"] for p in data["MPD"]["NAV_PTS"]] == ["TKR ARCO", "CAP COLT"]
+    assert [p["note"] for p in data["MPD"]["NAV_PTS"]] == ["TKR ARCO"]
 
     flight.dtc_options = DtcOptions(
         comms=False,
@@ -946,78 +945,98 @@ def test_distinct_stations_survive_dedupe() -> None:
     assert len(dedupe_stations(far_apart)) == 3
 
 
-def test_hornet_sa_page_prioritizes_coverage_then_fills_free_slots() -> None:
+def test_other_flights_cap_stations_never_appear() -> None:
+    """However many CAP stations the ATO flies, none of them is this jet's
+    business: the page carries its own orbit and the support orbits only."""
     flight, mission_data, game = _hornet_fixture()
-    # A second wave of the COLT station: jittered a few km, same course.
-    mission_data.flights.append(
-        _support_flight(
-            FlightType.BARCAP, "Colt 2", Pt(-17000, 6500), Pt(-17000, 26500)
+    for callsign, x in (("Colt 2", -17000), ("Ford 1", 30000), ("Uzi 1", 50000)):
+        mission_data.flights.append(
+            _support_flight(FlightType.BARCAP, callsign, Pt(x, 6500), Pt(x, 26500))
         )
-    )
-    cartridge = build_hornet_cartridge(flight, mission_data, game, "Waves")
+    cartridge = build_hornet_cartridge(flight, mission_data, game, "Crowded")
     caps = json.loads(cartridge.to_json())["data"]["SA"]["CAP_PTS"]
-    # Support first, one per station next -- and with slots to spare, the
-    # second wave draws too ("all the racetracks" whenever they fit).
-    assert [c["note"] for c in caps] == ["ARCO", "COLT", "COLT"]
+    assert [c["note"] for c in caps] == ["ARCO"]
 
 
-def test_default_cap_point_is_the_flights_own_station() -> None:
+def test_own_racetrack_leads_and_is_preselected() -> None:
+    """A flight that flies a racetrack gets it as CAP point 1, selected at
+    spawn; the tanker follows; the other flight's COLT station never appears."""
     flight, mission_data, game = _hornet_fixture()
-    # A strike flight defaults to entry 1 (the first support orbit).
-    cartridge = build_hornet_cartridge(flight, mission_data, game, "Strike")
-    assert json.loads(cartridge.to_json())["data"]["SA"]["Default_CAP_Point"] == 1
-
-    # A CAP flight flying the COLT station pre-selects its own racetrack.
     flight.flight_type = FlightType.BARCAP
     flight.waypoints = list(flight.waypoints) + [
         _waypoint(
-            "RACETRACK START", FlightWaypointType.PATROL_TRACK, -20000, 5000, 6000, None
+            "RACETRACK START", FlightWaypointType.PATROL_TRACK, -40000, 5000, 6000, None
         ),
         _waypoint(
-            "RACETRACK END", FlightWaypointType.PATROL, -20000, 25000, 6000, None
+            "RACETRACK END", FlightWaypointType.PATROL, -40000, 25000, 6000, None
         ),
     ]
     cartridge = build_hornet_cartridge(flight, mission_data, game, "Own CAP")
     data = json.loads(cartridge.to_json())["data"]["SA"]
-    # The client flight is itself the station's first wave, so the merged
-    # station wears its callsign; the COLT relief wave folds into it.
-    assert [c["note"] for c in data["CAP_PTS"]][:2] == ["ARCO", "WIZAR"]
-    assert data["Default_CAP_Point"] == 2  # the flight's own station
+    assert [c["note"] for c in data["CAP_PTS"]] == ["WIZAR", "ARCO"]
+    assert data["CAP_PTS"][0]["course"] == pytest.approx(90.0)
+    assert data["Default_CAP_Point"] == 1
 
 
-def _wave_flight(
-    callsign: str, cx: float, cy: float, course: float, length: float
-) -> Any:
-    half = length / 2.0
-    dx = math.cos(math.radians(course)) * half
-    dy = math.sin(math.radians(course)) * half
-    return _support_flight(
-        FlightType.BARCAP, callsign, Pt(cx - dx, cy - dy), Pt(cx + dx, cy + dy)
+def _with_hold(flight: Any) -> None:
+    flight.waypoints = (
+        [flight.waypoints[0]]
+        + [_waypoint("HOLD", FlightWaypointType.LOITER, 15000, 15000, 6000, None)]
+        + list(flight.waypoints[1:])
     )
 
 
-def test_hornet_sa_page_fills_all_nine_slots_when_the_ato_overflows() -> None:
+def test_a_flight_without_an_orbit_gets_a_track_at_its_hold() -> None:
+    """Not a true orbiting plan, so instead of no track at all the page gets
+    one at the hold point -- the minimum-length racetrack, selected at spawn."""
     flight, mission_data, game = _hornet_fixture()
-    # The nine flown wave tracks (three stations, three waves each) on top of
-    # the fixture's own COLT station + ARCO tanker: 10 raw CAP waves, 1 support.
-    for args in [
-        ("Ford 1", -24468, -404462, 56, 43244),
-        ("Ford 2", -4741, -383779, 62, 60018),
-        ("Jedi 1", 40, -406873, 74, 60759),
-        ("Uzi 1", -25732, -406336, 56, 59938),
-        ("Uzi 2", -2637, -379822, 62, 35138),
-        ("Dodge 1", 5270, -388631, 74, 44069),
-        ("Ponti 1", -20464, -398527, 56, 59184),
-        ("Uzi 3", -1618, -377906, 62, 34482),
-        ("Colt 9", 1501, -401777, 74, 62656),
-    ]:
-        mission_data.flights.append(_wave_flight(*args))
-    cartridge = build_hornet_cartridge(flight, mission_data, game, "Full Page")
-    caps = json.loads(cartridge.to_json())["data"]["SA"]["CAP_PTS"]
-    # Every one of the jet's nine slots is used: the tanker, one racetrack per
-    # station (fixture COLT + the three flown stations), then leftover waves.
-    assert len(caps) == 9
-    assert [c["note"] for c in caps][:5] == ["ARCO", "COLT", "FORD", "FORD", "JEDI"]
+    _with_hold(flight)
+    cartridge = build_hornet_cartridge(flight, mission_data, game, "Hold")
+    data = json.loads(cartridge.to_json())["data"]["SA"]
+    caps = data["CAP_PTS"]
+    assert [c["note"] for c in caps] == ["WIZAR", "ARCO"]
+    assert (caps[0]["x"], caps[0]["y"]) == (15000, 15000)
+    assert caps[0]["length"] == pytest.approx(3704.0)
+    assert data["Default_CAP_Point"] == 1
+
+
+def test_the_hold_stand_in_reaches_the_viper_and_tomcat_too() -> None:
+    flight, mission_data, game = _hornet_fixture()
+    _with_hold(flight)
+    flight.aircraft_type = SimpleNamespace(dcs_unit_type=SimpleNamespace(id="F-16C_50"))
+    nav_pts = json.loads(
+        build_viper_cartridge(flight, mission_data, game, "Hold").to_json()
+    )["data"]["MPD"]["NAV_PTS"]
+    # The route takes 1-3 (hold, target, landing); the anchors follow.
+    assert [p["note"] for p in nav_pts[3:]] == ["HOLD WIZAR", "TKR ARCO"]
+
+    flight.aircraft_type = SimpleNamespace(
+        dcs_unit_type=SimpleNamespace(id=TOMCAT_UNIT_TYPE)
+    )
+    points = json.loads(
+        build_tomcat_cartridge(flight, mission_data, game, "Hold").to_json()
+    )["data"]["NAV"][0]["additional_points"]
+    assert [p["name"] for p in points] == ["WIZAR", "ARCO", "SA2"]
+
+
+def test_viper_dest_paints_the_enemy_field_being_worked_over() -> None:
+    """An OCA Viper wants the target field on the HSD, and only the DEST
+    partition draws an airfield: it lands right after the briefed divert."""
+    flight, mission_data, game = _hornet_fixture()
+    flight.aircraft_type = SimpleNamespace(dcs_unit_type=SimpleNamespace(id="F-16C_50"))
+    flight.divert = _runway("Batumi")
+    # The target is at (60000, 80000); the red field sits 5 km from it.
+    game.theater.controlpoints = [
+        _airbase_cp("Batumi", -9000, 3000),
+        _airbase_cp("Kutaisi", 0, 0),
+        _airbase_cp("Senaki", 62000, 84000, red=True),
+        _airbase_cp("Sukhumi", 200000, 200000, red=True),
+    ]
+    dest = json.loads(
+        build_viper_cartridge(flight, mission_data, game, "OCA").to_json()
+    )["data"]["MPD"]["DEST"]
+    assert [d["note"] for d in dest] == ["Batumi", "Senaki", "Kutaisi"]
+    assert dest[1]["id"] == "DEST82"
 
 
 def test_old_saves_default_the_flight_options() -> None:
@@ -1032,113 +1051,22 @@ def test_old_saves_default_the_flight_options() -> None:
     assert flight.dtc_options.any_content
 
 
-# --- CJS Super Hornets (FA-18E/F + EA-18G) ------------------------------------
-
-
-def _super_hornet_fixture(dcs_id: str = "FA-18F") -> tuple[Any, Any, Any]:
-    flight, mission_data, game = _hornet_fixture()
-    flight.aircraft_type = SimpleNamespace(dcs_unit_type=SimpleNamespace(id=dcs_id))
-    return flight, mission_data, game
-
-
-def test_super_hornet_inherits_the_hornet_cockpit_fixes() -> None:
-    """The mod ships no manual of its own and no DTC code of its own -- its
-    descriptor dofiles ED's FA-18C NAV_SETTINGS -- so the Zulu clock and the
-    designated A/A waypoint have to reach the E/F/G unchanged."""
-    flight, mission_data, game = _super_hornet_fixture()
-    flight.waypoints = list(flight.waypoints) + [
-        _waypoint("BULLSEYE", FlightWaypointType.BULLSEYE, 5000, 5000, 0, None)
-    ]
-    cartridge = build_super_hornet_cartridge(flight, mission_data, game, "SH")
-    assert cartridge is not None
-    wypt = json.loads(cartridge.to_json())["data"]["WYPT"]
-    bulls = wypt["NAV_PTS"][-1]["wypt_num"]
-    assert wypt["NAV_SETTINGS"]["AA_Waypoint"] == {
-        "AA_WP_Number": bulls,
-        "AA_WP_Enabled": True,
-    }
-    assert wypt["NAV_ROUTE"][0]["STPT1"]["ETA"] == 3 * 3600 + 30 * 60
-
-
-def test_super_hornet_cartridge_shape() -> None:
-    """The mod's descriptor delegates COMM/WYPT to ED's own FA-18C files, so
-    those sections must come out identical to the Hornet's -- but it ships no
-    SA table, so that section must never be emitted."""
-    flight, mission_data, game = _super_hornet_fixture()
-    cartridge = build_super_hornet_cartridge(flight, mission_data, game, "Test SH")
-    assert cartridge is not None
-
-    payload = json.loads(cartridge.to_json())
-    assert payload["type"] == "FA-18F"
-    data = payload["data"]
-    assert data["type"] == "FA-18F"
-    assert "SA" not in data
-    assert "GPS_WYPT" not in data
-    assert set(data) == {"TCN", "type", "name", "terrain", "COMM", "WYPT"}
-
-    # COMM + WYPT are byte-identical to what the Hornet builder emits: same
-    # ED implementation behind the mod's descriptor.
-    hornet = build_hornet_cartridge(flight, mission_data, game, "Test SH")
-    hornet_data = json.loads(hornet.to_json())["data"]
-    assert data["COMM"] == hornet_data["COMM"]
-    assert data["WYPT"] == hornet_data["WYPT"]
-    # The §65 boat card still reaches the jet.
-    assert data["WYPT"]["NAV_SETTINGS"]["TACAN"]["Channel"] == 71
-    assert data["WYPT"]["NAV_SETTINGS"]["ICLS"]["Channel"] == 11
-
-
-@pytest.mark.parametrize("dcs_id", ["FA-18E", "FA-18F", "EA-18G"])
-def test_super_hornet_variants_all_build(dcs_id: str) -> None:
-    flight, mission_data, game = _super_hornet_fixture(dcs_id)
-    cartridge = build_super_hornet_cartridge(flight, mission_data, game, "SH")
-    assert cartridge is not None
-    assert cartridge.unit_type == dcs_id
-    assert json.loads(cartridge.to_json())["data"]["type"] == dcs_id
-
-
-def test_super_hornet_never_emits_sa_even_when_the_planner_asks() -> None:
-    """SA switches stay inert rather than writing a table the mod can't read."""
-    flight, mission_data, game = _super_hornet_fixture()
-    flight.dtc_options = DtcOptions(
-        flot_and_zones=True, friendly_orbits=True, threat_rings=True
-    )
-    cartridge = build_super_hornet_cartridge(flight, mission_data, game, "SA On")
-    assert cartridge is not None
-    assert "SA" not in json.loads(cartridge.to_json())["data"]
-
-
-def test_super_hornet_with_only_sa_sections_builds_nothing() -> None:
-    """any_content passes upstream, but nothing this jet supports is on."""
-    flight, mission_data, game = _super_hornet_fixture()
-    flight.dtc_options = DtcOptions(
-        comms=False,
-        route=False,
-        nav_aids=False,
-        flot_and_zones=True,
-        friendly_orbits=True,
-        threat_rings=True,
-    )
-    assert build_super_hornet_cartridge(flight, mission_data, game, "Empty") is None
-
-
 def test_generator_skips_a_builder_that_returns_none(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setitem(CARTRIDGE_BUILDERS, "FA-18F", lambda *args: None)
-    flight = _flight(dcs_id="FA-18F", callsign="Rhino 1")
+    monkeypatch.setitem(CARTRIDGE_BUILDERS, "FAKE-JET", lambda *args: None)
+    flight = _flight(dcs_id="FAKE-JET", callsign="Rhino 1")
     generator = _generator(_game(), [flight])
     generator.generate()
     assert generator.cartridges == []
     assert not hasattr(flight.client_units[0], "retribution_dtc")
 
 
-def test_super_hornet_ids_are_registered_but_tanker_variants_are_not() -> None:
-    """The mod ships DTC descriptors for E/F/G only -- the ET/FT tanker
-    variants have none, so a cartridge would have nothing to load it."""
-    for dcs_id in SUPER_HORNET_UNIT_TYPES:
-        assert CARTRIDGE_BUILDERS[dcs_id] is build_super_hornet_cartridge
-    assert "FA-18ET" not in CARTRIDGE_BUILDERS
-    assert "FA-18FT" not in CARTRIDGE_BUILDERS
+def test_super_hornets_take_no_cartridge() -> None:
+    """Removed 2026-08-22: the mod's descriptor has no SA table, and the comm
+    presets and route already reach the jet through the miz."""
+    for dcs_id in ("FA-18E", "FA-18F", "EA-18G", "FA-18ET", "FA-18FT"):
+        assert dcs_id not in CARTRIDGE_BUILDERS
 
 
 def _tomcat_fixture() -> tuple[Any, Any, Any]:
@@ -1257,8 +1185,8 @@ def test_tomcat_references_carry_the_jets_name_codes() -> None:
     names = [point["name"] for point in points]
     # The base name gives way to the code, never the other way round.
     assert names[:2] == ["BULLSEXB", "BATUMIXD"]
-    # Then the support anchors: tankers and AEW&C before the CAP stations.
-    assert names[2:] == ["ARCO", "COLT", "SA2"]
+    # Then the tanker; COLT is another flight's station and stays out.
+    assert names[2:] == ["ARCO", "SA2"]
     assert all(len(name) <= 8 for name in names)
     bullseye = points[0]
     assert (bullseye["x"], bullseye["y"]) == (5000, 5000)
@@ -1402,7 +1330,11 @@ def test_tomcat_tis_sends_to_the_package() -> None:
     assert tis["own_callsign"] == "      "
 
 
-def test_tomcat_sections_are_omitted_when_off() -> None:
+def test_tomcat_sections_off_carry_the_editors_reset_state() -> None:
+    """This descriptor cannot take a partial cartridge -- setData's tail calls
+    init_CMDS(), which indexes data.CMDS.CMDSProgramSettings outright (the ME
+    import of 2026-08-22 died there). So every section is always present, and
+    an off section looks exactly like an untouched cartridge's."""
     flight, mission_data, game = _tomcat_fixture()
     flight.dtc_options = DtcOptions(
         comms=False,
@@ -1415,12 +1347,69 @@ def test_tomcat_sections_are_omitted_when_off() -> None:
     data = json.loads(
         build_tomcat_cartridge(flight, mission_data, game, "Bare").to_json()
     )["data"]
-    assert "NAV" not in data
-    assert "JDAM" not in data
-    assert "TIS" not in data
-    # CMDS is never emitted: ED's programs are the tuning, and nothing in the
-    # campaign improves on them.
-    assert "CMDS" not in data
+    assert sorted(data) == [
+        "CMDS",
+        "JDAM",
+        "NAV",
+        "TIS",
+        "cartridge_name",
+        "name",
+        "type",
+    ]
+    assert len(data["NAV"]) == 12
+    assert all(plan == _EMPTY_PLAN for plan in data["NAV"])
+    stations = data["JDAM"]["stations"]
+    assert len(stations) == 4
+    assert all(
+        len(s["targets"]) == 8 and not any(t["active"] for t in s["targets"])
+        for s in stations
+    )
+    assert data["TIS"] == {
+        "use_mission_callsign": True,
+        "own_callsign": "      ",
+        "add_wingmen_to_list": True,
+        "send_to_callsigns": [],
+    }
+
+
+def test_tomcat_cmds_is_eds_stock_table() -> None:
+    """Always written, never campaign-tuned: the values the editor itself saves
+    for an untouched cartridge, checked against an authored one."""
+    flight, mission_data, game = _tomcat_fixture()
+    cmds = json.loads(
+        build_tomcat_cartridge(flight, mission_data, game, "CMDS").to_json()
+    )["data"]["CMDS"]
+    assert cmds["CMDSBingoSettings"] == {
+        "ChaffNum": 10,
+        "FlaresNum": 10,
+        "Other1Num": 0,
+        "Other2Num": 0,
+    }
+    assert cmds["CMDSAutoPrograms"]["SAM"] == {"Program": 5, "Threshold": 3}
+    assert cmds["CMDSAutoOverrides"] == []
+    programs = cmds["CMDSProgramSettings"]
+    assert [programs[f"PROG_{i}"]["Priority"] for i in range(1, 9)] == [
+        2,
+        0,
+        0,
+        0,
+        1,
+        1,
+        0,
+        0,
+    ]
+    assert programs["PROG_1"]["Chaff"] == {
+        "BurstQuantity": 2,
+        "BurstInterval": 0.2,
+        "SalvoQuantity": 8,
+        "SalvoInterval": 1,
+    }
+    assert programs["PROG_5"]["Other2"] == {
+        "BurstQuantity": 0,
+        "BurstInterval": 0,
+        "SalvoQuantity": 0,
+        "SalvoInterval": 0,
+    }
 
 
 def test_tomcat_flight_gets_a_cartridge_bound_to_its_clients() -> None:

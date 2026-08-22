@@ -2,20 +2,23 @@
 
 Sections emitted (schema mined from ``CoreMods/aircraft/F-16C/DTC``):
 
-* ``COMM`` -- COM1 (UHF) / COM2 (VHF) preset tables mirroring the radio
-  allocator's channel numbers. The Viper's DTC channels carry no name field.
+* No ``COMM``: the Viper's channel schema has no name field, so the section
+  could only mirror the ``Radio`` table upstream's channel allocator already
+  writes into the unit. Dropped 2026-08-22 -- the presets come from the miz.
 * ``MPD.NAV_PTS`` -- steerpoints with TOS + per-leg speed inline (the Viper
   keeps route timing on the point, unlike the Hornet's separate route table),
-  named via the ``note`` field; the flight route first, then tanker / AEW&C /
-  CAP anchors as extra steerpoints (the SA-page ask, Viper-style -- the jet
-  has no orbit element). The editor caps the list at 25 and the jet
-  auto-sequences only 1-20, so the route takes 1-20 and anchors 21-25.
+  named via the ``note`` field; the flight route first, then the flight's OWN
+  orbit (racetrack or hold point) and the tanker / AEW&C anchors as extra
+  steerpoints (the SA-page ask, Viper-style -- the jet has no orbit element).
+  The editor caps the list at 25 and the jet auto-sequences only 1-20, so the
+  route takes 1-20 and anchors 21-25.
 * ``MPD.GEO_LINES`` -- the active front lines (FLOT) as up to 4 line sets on
   the HSD, capped at the partition's 25 points.
 * ``MPD.THREAT_PTS`` -- viewer-fogged enemy SAM rings ("Custom" type, radius
   in meters, <= 15).
 * ``MPD.DEST`` -- friendly recovery fields as Destination steerpoints 81-99,
-  labelled with the HSD's 3-character Destination text.
+  labelled with the HSD's 3-character Destination text, plus the hostile field
+  the flight is working over when there is one within 10 NM of the target.
 """
 
 from __future__ import annotations
@@ -25,7 +28,6 @@ from typing import TYPE_CHECKING, Any
 from game.missiongenerator.dtc.cartridge import DtcCartridge
 from game.missiongenerator.dtc.common import (
     SupportTrack,
-    cap_tracks,
     leg_altitude,
     steerpoint_elevation,
     flot_segments,
@@ -33,6 +35,7 @@ from game.missiongenerator.dtc.common import (
     is_target_waypoint,
     known_enemy_threat_sites,
     leg_speed_kmh,
+    own_orbit_track,
     seconds_of_day,
     support_tracks,
     waypoint_display_name,
@@ -58,6 +61,9 @@ MAX_GEO_POINTS = 25
 MAX_THREAT_POINTS = 15
 #: DEST owns steerpoints 81-99, and the editor refuses a 20th.
 MAX_DESTINATIONS = 19
+#: A hostile field within this of the target is the one the flight is working
+#: over, so it goes on the DEST page beside the recovery options.
+TARGET_AIRFIELD_RADIUS_M = 18520.0  # 10 NM
 
 #: Stock preset frequencies (MHz), from the module's COMM defaults.
 _COM1_DEFAULT_FREQS = [
@@ -78,27 +84,6 @@ def _default_comm_table(freqs: list[float]) -> dict[str, Any]:
     return {
         f"Channel_{i}": {"freq": freq, "modulation": 1}
         for i, freq in enumerate(freqs, start=1)
-    }
-
-
-def _build_comm(flight: FlightData) -> dict[str, Any]:
-    com1 = _default_comm_table(_COM1_DEFAULT_FREQS)
-    com2 = _default_comm_table(_COM2_DEFAULT_FREQS)
-    tables = {1: com1, 2: com2}
-    for frequency, assignments in flight.frequency_to_channel_map.items():
-        for assignment in assignments:
-            table = tables.get(assignment.radio_id)
-            if table is None or not 1 <= assignment.channel <= 20:
-                continue
-            table[f"Channel_{assignment.channel}"] = {
-                "freq": frequency.mhz,
-                "modulation": 1,
-            }
-    return {
-        "COMM1": com1,
-        "COMM2": com2,
-        "mirror_COMM1": False,
-        "mirror_COMM2": False,
     }
 
 
@@ -188,11 +173,33 @@ def _dest_reference(flight: FlightData) -> Any:
     return flight.waypoints[-1].position if flight.waypoints else None
 
 
-def _build_dest(flight: FlightData, game: Game) -> list[dict[str, Any]]:
-    """Friendly recovery fields as Destination steerpoints.
+def _target_airfield(flight: FlightData, game: Game) -> Any:
+    """The hostile field the flight is working over, if there is one.
 
-    The briefed divert leads the list; the rest sort by distance from the
-    target, so the nearest alternates are the ones that fit the 19 slots.
+    Not a recovery option -- it earns a Destination slot because the HSD is
+    where the crew wants the field they are attacking or fighting above, and
+    only the DEST partition draws an airfield. Keep it out of the divert slot.
+    """
+    reference = _dest_reference(flight)
+    if reference is None:
+        return None
+    nearest = None
+    closest = TARGET_AIRFIELD_RADIUS_M
+    for cp in game.theater.controlpoints:
+        if not cp.captured.is_red or cp.is_fleet:
+            continue
+        distance = cp.position.distance_to_point(reference)
+        if distance <= closest:
+            nearest, closest = cp, distance
+    return nearest
+
+
+def _build_dest(flight: FlightData, game: Game) -> list[dict[str, Any]]:
+    """Recovery fields as Destination steerpoints, plus the target's field.
+
+    The briefed divert leads the list, the hostile field the flight is working
+    over follows it so the cap can never squeeze it out, and the rest sort by
+    distance from the target so the nearest alternates fill the 19 slots.
     """
     reference = _dest_reference(flight)
     divert_name = flight.divert.airfield_name if flight.divert else None
@@ -205,6 +212,11 @@ def _build_dest(flight: FlightData, game: Game) -> list[dict[str, Any]]:
         )
         fields.append((cp.name != divert_name, distance, cp))
     fields.sort(key=lambda entry: (entry[0], entry[1]))
+    ordered = [cp for _, _, cp in fields]
+
+    hostile = _target_airfield(flight, game)
+    if hostile is not None:
+        ordered.insert(1 if ordered else 0, hostile)
 
     taken: set[str] = set()
     return [
@@ -217,7 +229,7 @@ def _build_dest(flight: FlightData, game: Game) -> list[dict[str, Any]]:
             "text": _dest_label(cp.name, taken),
             "note": cp.name,
         }
-        for index, (_, _, cp) in enumerate(fields[:MAX_DESTINATIONS], start=1)
+        for index, cp in enumerate(ordered[:MAX_DESTINATIONS], start=1)
     ]
 
 
@@ -259,10 +271,14 @@ def _build_nav_pts(
         )
         if on_route:
             prev_route_wp = waypoint
-    # Support anchors after the route: tanker/AEW&C orbits, then CAP stations
-    # (the Viper's stand-in for the Hornet's SA racetracks).
+    # Support anchors after the route: this flight's own orbit (racetrack, or
+    # the hold point when it flies none), then the tanker/AEW&C orbits -- the
+    # Viper's stand-in for the Hornet's SA racetracks. Other flights' CAP
+    # stations are not this jet's business.
     if options.friendly_orbits:
-        for track in support_tracks(mission_data) + cap_tracks(mission_data):
+        own = own_orbit_track(flight)
+        anchors = ([own] if own is not None else []) + support_tracks(mission_data)
+        for track in anchors:
             if len(points) >= MAX_STEERPOINTS:
                 break
             number = len(points) + 1
@@ -344,8 +360,6 @@ def build_viper_cartridge(
     }
     # A section the planner turned off is omitted entirely so the jet's own
     # defaults stand (the §74 Edit Flight DTC tab).
-    if options.comms:
-        data["COMM"] = _build_comm(flight)
     if (
         options.route
         or options.friendly_orbits

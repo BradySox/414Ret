@@ -7237,7 +7237,7 @@ teeth:
 **Deliberately not touched:** the `TACAN Channel Presel` typo is pydcs mirroring the
 DCS module data (`planes.py`, alongside `ILS Channel Presel`) — not ours to patch.
 
-## §74 — Native DTC data pre-population (F/A-18C + F-16C + F-14B(U) + CJS Super Hornets)
+## §74 — Native DTC data pre-population (F/A-18C + F-16C + F-14B(U))
 
 Design note: [`docs/dev/design/414th-dtc-cartridge-notes.md`](design/414th-dtc-cartridge-notes.md)
 (the mined format reference — read before touching the JSON shapes). Supersedes the
@@ -7259,12 +7259,14 @@ mechanism byte-for-byte.
 **What's in a cartridge** (per **blue client flight** — each flight gets its own route;
 package-mates share the comm plan and SA picture):
 
-- **COMM** — COMM1/COMM2 (Viper COM1 UHF / COM2 VHF) preset tables that **mirror the
-  channel numbers the radio allocator already wrote** into the unit `Radio` table
+- **COMM** (Hornet only) — COMM1/COMM2 preset tables that **mirror the channel
+  numbers the radio allocator already wrote** into the unit `Radio` table
   (`FlightData.frequency_to_channel_map`), so the kneeboard, the ME radio page, and
   the DTC agree — the DTC adds ≤5-char **names** (flight callsign, `MAGIC`, `ARCO`,
   `DEP`/`ARR`/`DVT`, `PKG`, `JTAC`). Unassigned channels keep the module defaults.
-  The Viper's channel schema carries no name field (`{freq, modulation}`).
+  **The Viper emits no COMM section** (dropped 2026-08-22): its channel schema has no
+  name field, so the section could only mirror the `Radio` table the miz already
+  carries. The Viper's presets come from the mission itself.
 - **WYPT / MPD.NAV_PTS** — the flight's waypoints as named steerpoints (ASCII-folded
   display names), the Hornet Route-1 sequence with per-leg altitude/speed (km/h) and
   **ETA in absolute seconds-since-midnight** (the Viper carries TOS inline), the
@@ -7437,47 +7439,17 @@ Tests: the override/omission/pickle cases in `tests/missiongenerator/test_dtc.py
 the offscreen widget behavior in `tests/test_dtc_tab.py`. The tab itself needs an
 in-app eyeball (B28's app-side bullet).
 
-**CJS Super Hornets — FA-18E/F + EA-18G (added 2026-08-02).** The community mod
-ships **native DTC descriptors of its own** (`<mod>/DTC/{FA-18E,FA-18F,EA-18G}_DTC.lua`),
-so these airframes take a cartridge exactly like the stock jets. Those descriptors
-are **thin wrappers around ED's own FA-18C implementation** — they `dofile`
-`CoreMods/aircraft/FA-18C/DTC/{COMM/COMM_common,COMM1,COMM2 · WYPT/WYPT_NAV,ROUTE_SEQ,
-NAV_SETTINGS · ALR67/CMDS,RWR · TCN/TACAN}.lua` — which is why
-`game/missiongenerator/dtc/superhornet.py` reuses the Hornet builder's COMM/WYPT emit
-verbatim (`build_hornet_family_cartridge`, factored out of `hornet.py`) rather than
-reimplementing it: **the schema is ED's, not CJS's**, and a test asserts the two
-sections come out byte-identical to the Hornet's.
-
-**No SA section, by descriptor.** Unlike ED's FA-18C, the CJS `data` table declares
-only `ALR67`/`COMM`/`WYPT`/`TCN` — no `SA` table, no `GPS_WYPT`. Four confirmations,
-since the whole `with_sa=False` call rests on it: the `data` table is complete as
-written; **`SA` occurs 0 times** across all three CJS descriptors + their `defs.lua`
-vs **205** in ED's (`CAP_PTS` 0/43, `MEZ_THRTS` 0/49, `FAOR_FLOT` 0/42); the CJS
-**panel list is five** (`pWYPT`/`pRTE_SEQ`/`pTACAN`/`pCOMM`/`pALR67`) against ED's
-eight, which adds **`pSA`**, `pGPS_WYPT` and `pHARM` — so the ME's DTC editor has no
-SA tab for these jets at all; and the `.dlg` keeps a **hollow `pSA` stub**, one
-reference (ED: 196) containing a lone static label `"Panel SA"`. CJS forked an ED
-descriptor and stripped SA out, leaving the shell. 🔎 **That shell is the tripwire:**
-if a CJS release fills it in and adds the `SA` table, flipping `with_sa=True` lights
-up FLOT + CAP racetracks + threat rings with no other change. So a
-Super Hornet gets the **comm plan, steerpoints/route, and the §65 recovery aids**, but
-**not** the SA picture — no FLOT, no CAP/tanker racetracks, **no enemy threat rings**.
-The planner's three SA switches are inert for these jets rather than emitting a table
-the module cannot read (`with_sa=False`), and a flight with *only* SA sections on
-builds **no cartridge at all** (the builder returns `None`; `CartridgeBuilder` is now
-`Optional`-returning and the generator skips it) — an empty AutoLoading cartridge is
-worse than none. The tanker variants `FA-18ET`/`FA-18FT` are deliberately **not**
-registered: the mod ships no descriptor for them.
-
-⚠️ **Drift warning:** this builds against a *mod* descriptor, not ED's. A CJS release
-can change the schema (adding `SA` would be the welcome case), and the mod's own
-descriptor already carries one stale reference — `initialize_TACAN()` `dofile`s
-`CoreMods/aircraft/FA-18C/DTC/TCN/TACAN_defs.lua`, which **no longer exists** in
-current DCS. That one is lazy (ME DTC-editor TCN panel only) and harmless to us since
-§74 emits `"TCN": []`, but it is the same staleness class that broke the mod's cockpit
-scripts — see the CJS resync note in the memory index. Tests
-`tests/missiongenerator/test_dtc.py` (8 added: shape, per-variant dispatch, SA never
-emitted, empty→`None`, registration/tanker-variant exclusion).
+**CJS Super Hornets — REMOVED 2026-08-22 (DM call).** FA-18E/F and EA-18G took a
+cartridge from 2026-08-02 to 2026-08-22 on the Hornet's COMM/WYPT schema, because the
+mod's descriptors `dofile` ED's own FA-18C implementations. Removed on the
+double-work audit (design note, *What the miz already delivers*): the mod's `data`
+table has no `SA`, so the cartridge could carry nothing the jet does not already get
+from the miz — the radio presets are written into the unit by upstream's channel
+allocator, and the route is the flight plan. The builder, its registration and its
+tests are gone (`git show c67783176:game/missiongenerator/dtc/superhornet.py` to
+read it); the one constraint worth keeping is that a re-add must re-mine the mod's
+descriptor first, since CJS can change it between releases. Checklist B28's CJS
+bullet is closed.
 
 **F-14B(U) — the Tomcat (added 2026-08-22).** `game/missiongenerator/dtc/tomcat.py`,
 registered on DCS type **`F-14BU`**. Not the Hornet schema and not a variant of it:
@@ -7509,9 +7481,11 @@ reference layer, which plan 2 repeats:
 
 **Two unit traps, both mined:** NAV elevations are **feet**
 (`metersToFeet(getAltitude(...))`) while JDAM target elevations are **metres**; and a
-waypoint carries `spd` **or** `tot`, never both. **`CMDS` is never emitted** — same
-call as the Viper's, plus the Tomcat's per-type override table would need invented
-program/threshold pairs. Section toggles ride the same Edit Flight → DTC tab, with a
+waypoint carries `spd` **or** `tot`, never both. **All four sections are always
+written, `CMDS` as ED's stock table verbatim** — this descriptor's post-import
+refresh indexes every section, and omitting `CMDS` crashed it in the ME (the
+2026-08-22 import; `dcs.log` line in the design note). An off section carries the
+editor's reset state. Section toggles ride the same Edit Flight → DTC tab, with a
 new **Pre-planned target points** checkbox (`DtcOptions.jdam_targets`); `nav_aids`
 and `destinations` have no Tomcat equivalent and are ignored.
 

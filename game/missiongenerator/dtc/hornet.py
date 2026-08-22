@@ -10,9 +10,10 @@ Sections emitted (schema mined from ``CoreMods/aircraft/FA-18C/DTC``):
   sequence with per-leg altitude/speed/ETA, and ``NAV_SETTINGS`` that auto-tune
   the recovery TACAN / ICLS / ACLS (the §65 boat card, closing the loop) and
   the FPAS home waypoint.
-* ``SA`` -- FLOT line(s) from the live front, friendly CAP stations +
-  tanker/AEW&C orbits as CAP_PTS racetracks, and viewer-fogged enemy SAM
-  rings as MEZ threats ("Custom" type; radius NM).
+* ``SA`` -- FLOT line(s) from the live front; the flight's OWN orbit as the
+  first, pre-selected CAP_PTS racetrack (its patrol track, or a stand-in at
+  the hold point) followed by the tanker/AEW&C orbits; and viewer-fogged
+  enemy SAM rings as MEZ threats ("Custom" type; radius NM).
 * ``TCN`` -- deliberately empty in v1 (the boat's TACAN already auto-tunes via
   NAV_SETTINGS; a stations list needs channel->frequency pairing, deferred).
 
@@ -22,7 +23,6 @@ FLOT lines of 7 points, 40 MEZ threats.
 
 from __future__ import annotations
 
-import math
 from typing import TYPE_CHECKING, Any, Optional
 
 from game.missiongenerator.dtc.cartridge import DtcCartridge
@@ -30,15 +30,13 @@ from game.missiongenerator.dtc.common import (
     SupportTrack,
     leg_altitude,
     steerpoint_elevation,
-    dedupe_stations,
     flot_segments,
     frequency_labels,
     is_route_waypoint,
     is_target_waypoint,
     known_enemy_threat_sites,
     leg_speed_kmh,
-    racetrack_ends,
-    raw_cap_tracks,
+    own_orbit_track,
     seconds_of_day,
     support_tracks,
     waypoint_display_name,
@@ -277,25 +275,6 @@ def _build_nav_settings(
     }
 
 
-def _default_cap_index(flight: FlightData, shown: list[SupportTrack]) -> int:
-    """The 1-based CAP point pre-selected on the SA page.
-
-    The jet displays the *selected* CAP point's racetrack, so pick the one
-    this flight most wants at spawn: its own patrol station when it flies a
-    racetrack itself (matched by orbit center), else entry 1 (the first
-    support orbit -- a tanker, given the emit order).
-    """
-    own_start, own_end = racetrack_ends(flight)
-    if own_start is None or own_end is None:
-        return 1
-    own_center = ((own_start.x + own_end.x) / 2, (own_start.y + own_end.y) / 2)
-    for index, track in enumerate(shown, start=1):
-        center = track.center
-        if math.hypot(center[0] - own_center[0], center[1] - own_center[1]) < 1000.0:
-            return index
-    return 1
-
-
 def _cap_point(track: SupportTrack, number: int) -> dict[str, Any]:
     x, y = track.center
     return {
@@ -327,24 +306,16 @@ def _build_sa(
     caps: list[dict[str, Any]] = []
     default_cap_point = 1
     if options.friendly_orbits:
-        # Priority, then completeness, inside the hard nine-slot SA limit:
-        # support orbits first (few, and "where's my gas" is the page's
-        # biggest answer), then one racetrack per CAP station (coverage can't
-        # be squeezed out by wave duplicates), then the remaining §6 wave
-        # tracks fill whatever slots are left. The jet's SA page DISPLAYS one
-        # CAP point at a time -- the selected one (flown 2026-07-19) -- so
-        # the list is a library to flip through, and the pre-selected default
-        # matters: a CAP flight gets its own station up at spawn, everyone
-        # else gets the first tanker.
-        raw_waves = raw_cap_tracks(mission_data)
-        stations = dedupe_stations(raw_waves)
-        kept = {id(track) for track in stations}
-        extra_waves = [track for track in raw_waves if id(track) not in kept]
-        ordered = support_tracks(mission_data) + stations + extra_waves
-        shown = ordered[:MAX_CAP_POINTS]
-        for track in shown:
+        # This flight's own orbit first -- its racetrack when it flies one, a
+        # stand-in at the hold point when it does not -- then the tanker and
+        # AEW&C orbits, so "where's my gas" stays answerable. Other flights'
+        # CAP stations are not this jet's business and stay off the page. The
+        # SA page DISPLAYS one CAP point at a time -- the selected one (flown
+        # 2026-07-19) -- so entry 1 being your own orbit is what spawns up.
+        own = own_orbit_track(flight)
+        ordered = ([own] if own is not None else []) + support_tracks(mission_data)
+        for track in ordered[:MAX_CAP_POINTS]:
             caps.append(_cap_point(track, len(caps) + 1))
-        default_cap_point = _default_cap_index(flight, shown)
 
     flot_lines: list[dict[str, Any]] = []
     if options.flot_and_zones:
@@ -420,27 +391,14 @@ def _sa_settings() -> dict[str, Any]:
     }
 
 
-def build_hornet_family_cartridge(
-    flight: FlightData,
-    mission_data: MissionData,
-    game: Game,
-    name: str,
-    unit_type: str,
-    *,
-    with_sa: bool,
+def build_hornet_cartridge(
+    flight: FlightData, mission_data: MissionData, game: Game, name: str
 ) -> DtcCartridge:
-    """Assemble a cartridge for any airframe on the Hornet DTC schema.
-
-    ``with_sa`` is False for descriptors that ship no ``SA`` table (the CJS
-    Super Hornets -- see :mod:`game.missiongenerator.dtc.superhornet`); those
-    sections are then dropped rather than emitted into a table the module
-    cannot parse.
-    """
     terrain = game.theater.terrain.name
     options = flight.dtc_options
     data: dict[str, Any] = {
         "TCN": [],
-        "type": unit_type,
+        "type": HORNET_UNIT_TYPE,
         "name": name,
         "terrain": terrain,
     }
@@ -451,20 +409,12 @@ def build_hornet_family_cartridge(
     if options.route or options.nav_aids:
         carrier = _find_carrier(flight, mission_data)
         data["WYPT"] = _build_wypt(flight, game, carrier)
-    if with_sa and (
-        options.flot_and_zones or options.friendly_orbits or options.threat_rings
-    ):
+    if options.flot_and_zones or options.friendly_orbits or options.threat_rings:
         data["SA"] = _build_sa(flight, mission_data, game)
-    return DtcCartridge(name=name, unit_type=unit_type, terrain=terrain, data=data)
+    return DtcCartridge(
+        name=name, unit_type=HORNET_UNIT_TYPE, terrain=terrain, data=data
+    )
 
 
 #: The section keys a cartridge can carry; used to spot an empty one.
 CARTRIDGE_SECTIONS = ("COMM", "WYPT", "SA")
-
-
-def build_hornet_cartridge(
-    flight: FlightData, mission_data: MissionData, game: Game, name: str
-) -> DtcCartridge:
-    return build_hornet_family_cartridge(
-        flight, mission_data, game, name, HORNET_UNIT_TYPE, with_sa=True
-    )

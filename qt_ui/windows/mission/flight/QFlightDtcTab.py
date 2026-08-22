@@ -24,7 +24,9 @@ _SECTIONS = (
         "Comm presets (named channels)",
         "comms",
         "COMM1/COMM2 presets on the same channel numbers as the kneeboard "
-        "comm plan, with short names (flight, AWACS, tankers, ATC).",
+        "comm plan, with short names (flight, AWACS, tankers, ATC). Hornet "
+        "only -- the Viper's presets come from the mission itself. On the "
+        "F-14B(U) this switch carries the TIS send-to list instead.",
     ),
     (
         "Route steerpoints + push times",

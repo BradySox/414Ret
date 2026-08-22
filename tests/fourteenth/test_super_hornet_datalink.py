@@ -37,6 +37,6 @@ def test_networked_datalink_types_resolve_in_pydcs(plane: Type[PlaneType]) -> No
 
 def test_tanker_variants_claim_no_networked_datalink() -> None:
     # Both are absent from pydcs' `for_aircraft_id` table and from the mod's own
-    # DTC descriptors (see game/missiongenerator/dtc/superhornet.py).
+    # DTC descriptors (only FA-18E/F and EA-18G ship one).
     for plane in (FA_18ET, FA_18FT):
         assert plane.networked_datalink is False

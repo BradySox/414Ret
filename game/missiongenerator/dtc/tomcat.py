@@ -20,9 +20,13 @@ are a convention the jet reads, documented in the NAV tab and used by the
 authored cartridge; and the jet is the F-14B(U) alone, since
 ``F14/Entry/F-14B.lua`` sets the capability flag only for that rewrite.
 
-``CMDS`` is deliberately omitted: its programs are ED's tuning, an authored
-cartridge's copy is those defaults field for field, and an AutoLoaded write would
-clobber whatever the pilot set.
+Every section is always written, ``CMDS`` included, because this descriptor
+cannot take a partial cartridge: ``setData`` ends with ``init_CMDS()``, which
+indexes ``data.CMDS.CMDSProgramSettings`` unconditionally, and a missing section
+crashes the whole post-import refresh (ME-proven 2026-08-22). A section the
+planner turned off carries the editor's own reset state instead; ``CMDS`` is
+ED's stock table verbatim, which is what the editor saves for an untouched
+cartridge.
 """
 
 from __future__ import annotations
@@ -35,13 +39,12 @@ from game.missiongenerator.dtc.cartridge import DtcCartridge
 from game.missiongenerator.dtc.common import (
     SupportTrack,
     bearing_degrees,
-    dedupe_stations,
     flot_segments,
     is_route_waypoint,
     known_enemy_threat_sites,
     leg_altitude,
     leg_speed_kmh,
-    raw_cap_tracks,
+    own_orbit_track,
     sanitize_short_name,
     seconds_of_day,
     steerpoint_elevation,
@@ -80,6 +83,63 @@ DEFAULT_DROP_SPD_KTS = 450.0
 MIN_DROP_ALT_FT = 1000.0
 
 TIS_CALLSIGN_LEN = 6
+
+
+def _dispenser(
+    burst: int, interval: float, salvo: int, salvo_interval: float
+) -> dict[str, Any]:
+    return {
+        "BurstQuantity": burst,
+        "BurstInterval": interval,
+        "SalvoQuantity": salvo,
+        "SalvoInterval": salvo_interval,
+    }
+
+
+_NO_DISPENSE = _dispenser(0, 0, 0, 0)
+
+
+def _program(
+    priority: int, chaff: dict[str, Any], flare: dict[str, Any]
+) -> dict[str, Any]:
+    return {
+        "Priority": priority,
+        "Chaff": chaff,
+        "Flare": flare,
+        "Other1": dict(_NO_DISPENSE),
+        "Other2": dict(_NO_DISPENSE),
+    }
+
+
+#: The descriptor's ``CMDS`` table, as the editor serializes it for an untouched
+#: cartridge. ED's tuning, carried so ``init_CMDS`` has something to read -- not
+#: a place for campaign values.
+_CMDS_DEFAULTS: dict[str, Any] = {
+    "CMDSBingoSettings": {
+        "ChaffNum": 10,
+        "FlaresNum": 10,
+        "Other1Num": 0,
+        "Other2Num": 0,
+    },
+    "CMDSAutoPrograms": {
+        "SAM": {"Program": 5, "Threshold": 3},
+        "AAA": {"Program": 2, "Threshold": 2},
+        "Aircraft": {"Program": 4, "Threshold": 3},
+        "Naval": {"Program": 5, "Threshold": 3},
+        "Unknown": {"Program": 4, "Threshold": 3},
+    },
+    "CMDSAutoOverrides": [],
+    "CMDSProgramSettings": {
+        "PROG_1": _program(2, _dispenser(2, 0.2, 8, 1), _dispenser(2, 0.5, 8, 1)),
+        "PROG_2": _program(0, _dispenser(3, 0.25, 3, 2), _dispenser(1, 1, 1, 1)),
+        "PROG_3": _program(0, _dispenser(1, 1, 1, 1), _dispenser(2, 0.5, 4, 3)),
+        "PROG_4": _program(0, _dispenser(2, 0.25, 4, 3), _dispenser(1, 1, 4, 3)),
+        "PROG_5": _program(1, _dispenser(4, 0.2, 4, 2), _dispenser(1, 1, 2, 2)),
+        "PROG_6": _program(1, _dispenser(1, 1, 2, 2), _dispenser(2, 0.5, 6, 2)),
+        "PROG_7": _program(0, _dispenser(1, 1, 1, 1), _dispenser(1, 1, 1, 1)),
+        "PROG_8": _program(0, _dispenser(1, 1, 1, 1), _dispenser(1, 1, 1, 1)),
+    },
+}
 
 _METRES_TO_FEET = 3.28084
 _KMH_TO_KNOTS = 1 / 1.852
@@ -288,10 +348,12 @@ def _threat_name(label: str) -> str:
     return f"SA{label}" if label.isdigit() else label
 
 
-def _orbit_tracks(mission_data: MissionData) -> list[SupportTrack]:
-    """Tankers and AEW&C first: a fighter wants the basket before the CAP
-    stations, and the 20-reference budget runs out."""
-    return support_tracks(mission_data) + dedupe_stations(raw_cap_tracks(mission_data))
+def _orbit_tracks(flight: FlightData, mission_data: MissionData) -> list[SupportTrack]:
+    """This flight's own orbit (racetrack or hold point), then the tankers and
+    AEW&C. Other flights' CAP stations are not this jet's business, and the
+    20-reference budget runs out."""
+    own = own_orbit_track(flight)
+    return ([own] if own is not None else []) + support_tracks(mission_data)
 
 
 def _additional_points(
@@ -312,7 +374,7 @@ def _additional_points(
         for waypoint in off_route
     ]
     if options.friendly_orbits:
-        for track in _orbit_tracks(mission_data):
+        for track in _orbit_tracks(flight, mission_data):
             centre_x, centre_y = track.center
             points.append(_reference(coords, track.callsign, centre_x, centre_y))
     if options.threat_rings:
@@ -447,6 +509,7 @@ def _jdam_target(
                 "elev": _whole(steerpoint_elevation(waypoint)),
                 "attack_heading": (
                     round(bearing_degrees(ingress.position, waypoint.position), 1)
+                    % 360.0
                     if ingress is not None
                     else 0.0
                 ),
@@ -483,6 +546,15 @@ def _tis_callsign(callsign: str) -> str:
     return sanitize_short_name(callsign, TIS_CALLSIGN_LEN).ljust(TIS_CALLSIGN_LEN)
 
 
+def _tis_defaults(send_to: list[str]) -> dict[str, Any]:
+    return {
+        "use_mission_callsign": True,
+        "own_callsign": " " * TIS_CALLSIGN_LEN,
+        "add_wingmen_to_list": True,
+        "send_to_callsigns": send_to,
+    }
+
+
 def _build_tis(flight: FlightData, mission_data: MissionData) -> dict[str, Any]:
     """The package's other flights, so the RIO can pass tracks without typing a
     callsign in. Wingmen ride the module's own union, not this list."""
@@ -495,12 +567,7 @@ def _build_tis(flight: FlightData, mission_data: MissionData) -> dict[str, Any]:
         callsign = _tis_callsign(other.callsign)
         if callsign.strip() and callsign not in send_to:
             send_to.append(callsign)
-    return {
-        "use_mission_callsign": True,
-        "own_callsign": " " * TIS_CALLSIGN_LEN,
-        "add_wingmen_to_list": True,
-        "send_to_callsigns": send_to,
-    }
+    return _tis_defaults(send_to)
 
 
 #: Options that put something in the NAV section. ``nav_aids`` and
@@ -520,14 +587,25 @@ def build_tomcat_cartridge(
         # The label the CDNU shows for the loaded cartridge.
         "cartridge_name": sanitize_short_name(flight.callsign, PLAN_NAME_LEN),
     }
-    # A section the planner turned off is omitted entirely so the jet's own
-    # defaults stand (the §74 Edit Flight DTC tab).
+    # Unlike the Hornet and Viper, a section the planner turned off cannot be
+    # omitted -- the descriptor's post-import refresh indexes every section.
+    # It carries the editor's reset state instead, which is what the jet would
+    # have had anyway (the §74 Edit Flight DTC tab).
     if any(getattr(options, option) for option in _NAV_OPTIONS):
         data["NAV"] = _build_nav(flight, mission_data, game, coords)
+    else:
+        data["NAV"] = [_empty_plan() for _ in range(MAX_PLANS)]
     if options.jdam_targets:
         data["JDAM"] = _build_jdam(flight, coords)
-    if options.comms:
-        data["TIS"] = _build_tis(flight, mission_data)
+    else:
+        empty = [_jdam_target(coords) for _ in range(JDAM_TARGETS_PER_STATION)]
+        data["JDAM"] = {
+            "stations": [{"targets": list(empty)} for _ in range(JDAM_STATIONS)]
+        }
+    data["TIS"] = (
+        _build_tis(flight, mission_data) if options.comms else _tis_defaults([])
+    )
+    data["CMDS"] = _CMDS_DEFAULTS
     return DtcCartridge(
         name=name,
         unit_type=TOMCAT_UNIT_TYPE,

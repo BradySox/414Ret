@@ -280,6 +280,34 @@ def _tracks_of_types(
     return tracks
 
 
+#: Waypoint types that anchor a non-orbiting flight's own-track stand-in, in
+#: preference order: the hold point is where the flight actually orbits while
+#: it waits, the join point is the next best fix.
+_HOLD_WAYPOINTS = (FlightWaypointType.LOITER, FlightWaypointType.JOIN)
+
+
+def own_orbit_track(flight: FlightData) -> Optional[SupportTrack]:
+    """The flight's own racetrack, or a stand-in at its hold point.
+
+    A flight that flies a real racetrack (BARCAP, TARCAP, tanker, AEW&C) gets
+    that track. Everyone else orbits somewhere too -- the hold -- so rather
+    than no track at all, a degenerate one at the hold (or join) point draws as
+    the minimum-length racetrack. None only when the plan has neither.
+    """
+    start, end = racetrack_ends(flight)
+    callsign = short_callsign(flight.callsign)
+    if start is not None and end is not None:
+        return SupportTrack(callsign=callsign, kind="CAP", start=start, end=end)
+    for waypoint_type in _HOLD_WAYPOINTS:
+        for waypoint in flight.waypoints:
+            if waypoint.waypoint_type == waypoint_type:
+                position = waypoint.position
+                return SupportTrack(
+                    callsign=callsign, kind="HOLD", start=position, end=position
+                )
+    return None
+
+
 def raw_cap_tracks(mission_data: MissionData) -> list[SupportTrack]:
     """Every blue CAP orbit *flight* (each §6 wave separately)."""
     return _tracks_of_types(
@@ -287,12 +315,6 @@ def raw_cap_tracks(mission_data: MissionData) -> list[SupportTrack]:
         _CAP_FLIGHT_TYPES,
         {FlightType.BARCAP: "CAP", FlightType.TARCAP: "CAP"},
     )
-
-
-def cap_tracks(mission_data: MissionData) -> list[SupportTrack]:
-    """Every blue CAP *station* flying this mission (BARCAP + TARCAP), with
-    the §6 wave-relief duplicates collapsed to one racetrack per station."""
-    return dedupe_stations(raw_cap_tracks(mission_data))
 
 
 def support_tracks(mission_data: MissionData) -> list[SupportTrack]:

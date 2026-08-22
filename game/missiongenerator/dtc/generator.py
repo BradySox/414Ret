@@ -1,8 +1,7 @@
 """DTC cartridge generation pass (§74).
 
 Builds one cartridge **per blue client flight** of a DTC-capable airframe
-(FA-18C, F-16C and F-14B(U) natively, plus the CJS Super Hornets FA-18E/F +
-EA-18G, whose mod ships its own DTC descriptor), binds it to the client units with
+(FA-18C, F-16C and F-14B(U)), binds it to the flight's client units with
 ``AutoLoad``, and appends the JSON files to the saved miz. Per-flight rather than per-type because each flight flies its
 own route -- a package's four Hornet flights get four cartridges, each loading
 its own steerpoints while sharing the mission comm plan and SA picture.
@@ -25,10 +24,6 @@ from game.missiongenerator.dtc.cartridge import (
     attach_cartridge_to_unit,
 )
 from game.missiongenerator.dtc.hornet import HORNET_UNIT_TYPE, build_hornet_cartridge
-from game.missiongenerator.dtc.superhornet import (
-    SUPER_HORNET_UNIT_TYPES,
-    build_super_hornet_cartridge,
-)
 from game.missiongenerator.dtc.tomcat import (
     TOMCAT_UNIT_TYPE,
     build_tomcat_cartridge,
@@ -42,21 +37,22 @@ if TYPE_CHECKING:
     from game.missiongenerator.aircraft.flightdata import FlightData
     from game.missiongenerator.missiondata import MissionData
 
-#: A builder returns ``None`` when nothing the airframe supports is switched on
-#: (e.g. a Super Hornet with only the SA sections enabled -- see
-#: :mod:`game.missiongenerator.dtc.superhornet`); the generator then skips it.
+#: A builder may return ``None`` when nothing the airframe supports is switched
+#: on; the generator then skips the flight rather than binding an empty
+#: AutoLoading cartridge, which is worse than none.
 CartridgeBuilder = Callable[..., Optional[DtcCartridge]]
 
 #: DCS unit type id -> cartridge builder. Capability is the unit DB's ``DTC``
 #: flag plus a matching ``<module>/DTC/<type>_DTC.lua`` -- the descriptor folder
 #: alone is not enough (the CH-47F ships one and sets ``DTC = false``). The stock
-#: capable set is ``FA-18C_hornet``, ``F-16C_50`` and ``F-14BU``, plus the CJS
-#: Super Hornets; see the design note.
+#: capable set is ``FA-18C_hornet``, ``F-16C_50`` and ``F-14BU``. The CJS Super
+#: Hornets also qualify but are deliberately not built (removed 2026-08-22: their
+#: descriptor has no SA table, and everything else a cartridge could give them
+#: already reaches the jet through the miz). See the design note.
 CARTRIDGE_BUILDERS: dict[str, CartridgeBuilder] = {
     HORNET_UNIT_TYPE: build_hornet_cartridge,
     VIPER_UNIT_TYPE: build_viper_cartridge,
     TOMCAT_UNIT_TYPE: build_tomcat_cartridge,
-    **{unit: build_super_hornet_cartridge for unit in SUPER_HORNET_UNIT_TYPES},
 }
 
 

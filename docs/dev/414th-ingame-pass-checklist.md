@@ -5681,15 +5681,16 @@ Then fly one: F-14B(U) client flight on a campaign that fields it
 
 Fly a Viper or Hornet on a regenerated mission and read the steerpoint pages.
 
-- **Pass:** an en-route steerpoint's elevation reads ground level rather than its
-  cruise altitude, and the route page still shows the altitude you planned to fly.
-- **Known and NOT fixed:** a target steerpoint's elevation still reads 0, because
-  nothing in the tree knows terrain height at an arbitrary point. **Check this one
-  specifically**: if a pod slaved to a target on high ground now behaves, the
-  elevation was never what mattered and the remaining gap is cosmetic. If it still
-  aims short, the gap is real and the route to close it is a DCS-side
-  `land.getHeight` dump — not the SRTM table that was built and reverted on
-  2026-08-20 as over-scoped for an unreproduced premise.
+- **Pass:** an en-route steerpoint's elevation reads the nearest airfield's
+  elevation rather than its cruise altitude or 0, and the route page still shows
+  the altitude you planned to fly.
+- **Estimated, not exact (2026-08-22):** a target steerpoint's elevation is now the
+  nearest airfield's, because that is the only height data the campaign carries.
+  The DM's generated Viper cartridge had every steerpoint but the landing at 0
+  before this. **Check this one specifically**: if a pod slaved to a target on high
+  ground behaves, the estimate is good enough. If it still aims short, the route to
+  close it is a DCS-side `Terrain.GetHeight` dump per terrain — not the SRTM table
+  that was built and reverted on 2026-08-20.
 - **Fail signature:** an en-route steerpoint reading 2000 m of elevation means `alt`
   went missing entirely rather than being written as 0 — that is the Viper loader's
   default for an absent field.

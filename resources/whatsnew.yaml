@@ -14,6 +14,19 @@
 
 entries:
   - date: 2026-08-22
+    title: Steerpoint elevations stop reading 0
+    change: >-
+      Every cartridge steerpoint but the landing point carried an elevation of
+      0. They now carry the nearest airfield's elevation, the only height data
+      the campaign has. An estimate, but closer than 0 everywhere and exact on a
+      flat map. The ingress point also stops wearing the target symbol on the
+      Viper's HSD and the Hornet's route.
+    watch: >-
+      On a Viper, check a target steerpoint's elevation on the DED: the nearest
+      field's height, not 0. Then slave the pod to it on high ground and see
+      whether it lands on the target or short.
+    row: B90
+  - date: 2026-08-22
     title: The cartridge shows your own orbit, and the Viper gets the enemy field
     change: >-
       The Hornet's SA page and the Viper's extra steerpoints used to carry every

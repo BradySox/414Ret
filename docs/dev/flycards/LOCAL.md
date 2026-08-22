@@ -22,14 +22,79 @@ Conventions follow WATCH.md, and the session-start hook parses both files identi
 the `### ` heading states the observable in plain words, and a `**Try:**` line under it says
 how to arrange the condition. Keep it short — a card nobody finishes is a card nobody reads.
 
+**Only items under `## On the card` are printed.** Anything filed under `## Done` is history.
+Until 2026-08-22 the hook read every `### ` in the file, so both closed rows below were
+briefed as live work after they were crossed off — the card was right and the board was
+wrong. `tests/test_flycard_board.py` now fails if a closed item is left in the live section.
+
 ---
 
 ## On the card
 
-*(Empty as of 2026-08-20. Both seed rows are closed — see Done. Add the next contrived
-condition here the moment one is identified; an empty card is fine, a stale one is not.)*
+*(Refilled 2026-08-22. The card had been empty since 2026-08-20, and the session-start hook
+was printing the two rows under **Done** as if they were still live work — so the board asked
+for a test that had been crossed off two days earlier. The hook now reads only this section;
+see the note at the bottom.)*
 
----
+### 1 · Red alert fighters answer a strike you just made — `B60`
+
+**Try:** turn on the living-battlespace master **and** `living_battlespace_reactive_red` (it
+defaults off), take a turn 3 or later, strike a red objective your own ATO is tasked against,
+and stay within ~10 NM for ten minutes. **~25 min.**
+
+- **Pass:** `dcs.log` carries `REACTRED|: armed`, then `<objective> struck; alert launch in
+  420 s`, then `<group> scrambling over <objective>` — and a red pair sets up an orbit over
+  what you hit.
+- **Fail:** `could not wake <group>` (neither start path took), nothing after `armed` (the
+  death event's unit name does not match the emitted list), or a red flight airborne at
+  mission start (its parked TOT broke).
+- **Why it's here:** the launch could never fire — the generated group is uncontrolled, not
+  late-activated, so `activate()` was a no-op on it. Fixed plugin-side 2026-08-20 and not
+  flown since. It is REGRESSED, so this is a bug re-test, not a first look.
+
+### 2 · A target you destroyed stays destroyed next turn — `B63`
+
+**Try:** frag a strike on a **map-scenery** target (a port, factory or terminal drawn as white
+zones — not a spawned static). Launch the mission, **quit to the menu after about a minute,
+then relaunch and fly it properly.** Destroy the target, land, accept the results. **~30 min.**
+
+- **Pass:** the target reads destroyed on the next turn's map, and `retribution.log` carries
+  `state.json on disk carries N recorded events but the last polled debriefing had only M —
+  committing the fresh read`.
+- **Fail:** the target is still standing next turn, or a kill is charged twice.
+- **Why it's here:** the quit-and-relaunch is the exact condition that broke it, and it is the
+  one thing an ordinary sortie will never do by accident. The root cause was found and fixed
+  the same day it was reported and has never been confirmed end to end.
+
+### 3 · The Tomcat's cartridge loads in the Mission Editor — `B91`
+
+**Try:** no flying. Generate a turn on a campaign that fields the F-14B(U)
+(`clash_of_the_titans`, `red_sea_rising`, `operation_desert_trident`), open the `.miz` in the
+Mission Editor, open the DTC manager and load that flight's `DTC/*.dtc`. **~10 min.**
+
+- **Pass:** the ME draws the reference points, the front line and the JDAM targets on its own
+  panels — our file survives ED's importer.
+- **Fail:** nothing loads (check `type` reads exactly `F-14BU`), or points land in the sea or
+  off by a factor of 3.28 (feet/metres crossed between the NAV and JDAM sections).
+- **Why it's here:** the Tomcat is the first §74 airframe that is not on the Hornet's schema,
+  it shipped 2026-08-22, and this check costs no sortie. Do it before spending one.
+
+### 4 · A missile site that fires afterwards drives away — `S2`
+
+**Try:** the setup already has its own card —
+[`REGRESSED-SWEEP.md`](REGRESSED-SWEEP.md). Confirm `mobile_missile_relocation` and the
+`mobilemissiles` plugin are both on (Starfire campaigns preseed neither), then watch a Scud
+campaign for two ~8-minute relocation intervals. You do not need to attack the launchers.
+**~25 min, and it clears C9 and B48 in the same mission.**
+
+- **Pass:** every battery that launches then relocates to a fresh spot, and no
+  `giving up on ...` line names a battery that fired.
+- **Fail:** a fired battery still on its launch point at mission end. If a **SAM** site moves,
+  stop — that is the category filter broken, and it matters more than S2 itself.
+- **Why it's here:** measured three times now (tests 6, 9 and 12) and a site that fires still
+  moves only 10–250 m while a Tor in the same group drives 2.4 km. The 2026-08-18 fix improved
+  it and did not close it; the next lever is post-salvo launcher state. Until 2026-08-22 this
+  row was on no card the board printed, so the only REGRESSED item besides B60 was invisible.
 
 ## Done
 

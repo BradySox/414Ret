@@ -7,59 +7,45 @@ set -euo pipefail
 md="${CLAUDE_PROJECT_DIR:-.}/docs/dev/414th-ingame-pass-checklist.md"
 [ -f "$md" ] || exit 0   # checklist absent (e.g. stale checkout) — nothing to do
 
-# Status markers (☑ ☐ ◐ ✗ ⊘ ✖) live in section/row HEADING lines (## / ###).
-# Scoping to headings deliberately excludes the legend table (| ☐ ... |) and
-# prose notes, which also contain the symbols but are not tracked rows.
-headings="$(grep -E '^#{2,3} ' "$md" || true)"
+# Rows are `### ` headings ONLY. `## ` section headings are not rows, and one of
+# them carries a marker ("## E. SOF insert generation · ☑ VERIFIED"), so the old
+# `^#{2,3}` scope counted a section as a verified row.
+headings="$(grep -E '^### ' "$md" || true)"
 
-# A row's status is the FIRST marker on its heading line -- never any later one.
-# Matching the whole line (the old behaviour) re-admitted rows whose PROSE
-# quotes a marker, and the checklist's own conventions quote them constantly:
-# every re-verified row carries "(was ☐ UNTESTED, built ...)" and the shelved
-# B9 says "Re-open as ☐ UNTESTED if the feature is ever resumed". The effect was
-# that VERIFIED and RETIRED rows were listed as outstanding AND double-counted
-# into the untested total. `index()` is byte-based, so the UTF-8 markers match
-# literally and no assumption is made about the " · " separators, which prose
-# also uses.
-statuses="$(printf '%s\n' "$headings" | awk '
-  function first_status(s,   i, at, best, best_name) {
-    best = 0; best_name = ""
-    for (i = 1; i <= n_markers; i++) {
-      at = index(s, marker[i])
-      if (at > 0 && (best == 0 || at < best)) { best = at; best_name = marker[i] }
-    }
-    return best_name
+# A row's status is the FIRST `<symbol> <WORD>` pair on its heading line.
+#
+# Matching a symbol+word PAIR, rather than a fixed list of whole markers, is what
+# makes this survive someone inventing a marker. `✅ CLOSED` and `☒ CLOSED` were
+# both introduced after this hook was written; neither was in the old list, so
+# six closed rows matched nothing on their marker and fell through to the
+# "(was ☐ UNTESTED" that the checklist's own convention makes every re-verified
+# row quote. They were briefed as outstanding work for weeks and inflated the
+# untested/partial counts. First-pair-wins still excludes that trailing prose.
+read -r -d '' STATUS_FN <<'AWKEOF' || true
+function status(s,   m) {
+  if (match(s, /(☑|☐|◐|✗|⊘|✖|✅|☒) (VERIFIED|UNTESTED|PARTIAL|REGRESSED|RETIRED|REMOVED|CLOSED)/)) {
+    m = substr(s, RSTART, RLENGTH)
+    sub(/^[^ ]+ /, "", m)
+    return m
   }
-  BEGIN {
-    n_markers = split("☑ VERIFIED|☐ UNTESTED|◐ PARTIAL|✗ REGRESSED|⊘ RETIRED|✖ REMOVED",
-                      marker, "|")
-  }
-  { st = first_status($0); if (st != "") print st }
+  return ""
+}
+AWKEOF
+
+statuses="$(printf '%s\n' "$headings" | awk "$STATUS_FN"'
+  { st = status($0); if (st != "") print st }
 ')"
 count() { printf '%s\n' "$statuses" | grep -cFx "$1" || true; }
 
 echo "=== 414th in-game-pass checklist ==="
-echo "verified $(count '☑ VERIFIED') | untested $(count '☐ UNTESTED') | partial $(count '◐ PARTIAL') | regressed $(count '✗ REGRESSED') | closed $(( $(count '⊘ RETIRED') + $(count '✖ REMOVED') ))"
+echo "verified $(count VERIFIED) | untested $(count UNTESTED) | partial $(count PARTIAL) | regressed $(count REGRESSED) | closed $(( $(count RETIRED) + $(count REMOVED) + $(count CLOSED) ))"
 echo
 
-outstanding="$(printf '%s\n' "$headings" | awk '
-  function first_status(s,   i, at, best, best_name) {
-    best = 0; best_name = ""
-    for (i = 1; i <= n_markers; i++) {
-      at = index(s, marker[i])
-      if (at > 0 && (best == 0 || at < best)) { best = at; best_name = marker[i] }
-    }
-    return best_name
-  }
-  BEGIN {
-    n_markers = split("☑ VERIFIED|☐ UNTESTED|◐ PARTIAL|✗ REGRESSED|⊘ RETIRED|✖ REMOVED",
-                      marker, "|")
-    n_open = split("☐ UNTESTED|◐ PARTIAL|✗ REGRESSED", open, "|")
-  }
+outstanding="$(printf '%s\n' "$headings" | awk "$STATUS_FN"'
   {
-    st = first_status($0)
-    for (i = 1; i <= n_open; i++) {
-      if (st == open[i]) { line = $0; sub(/^#+ +/, "", line); print line; break }
+    st = status($0)
+    if (st == "UNTESTED" || st == "PARTIAL" || st == "REGRESSED") {
+      line = $0; sub(/^#+ +/, "", line); print line
     }
   }
 ' || true)"
@@ -72,38 +58,50 @@ fi
 echo
 echo "Source: docs/dev/414th-ingame-pass-checklist.md"
 
-# --- WATCH list -------------------------------------------------------------
-# The standing daily-fly list: rows that close from ORDINARY flying if someone
-# is looking. Parsed from the file rather than hardcoded so rotating an item is
-# a one-line edit to WATCH.md and never a hook change. Item headings are the
-# only `### ` lines in that file (the parking lot is a table, its sections are
-# `## `), so this stays correct as the list churns.
+# --- the fly cards ----------------------------------------------------------
+# Two standing cards, same format, parsed by one function so they can never
+# drift apart: WATCH (closes from ordinary flying) and LOCAL (needs a contrived
+# condition arranged on purpose). Items are the `### ` headings; the `**Try:**`
+# paragraph under one says how to make it happen and is printed with it, because
+# 2026-08-06 an item came back unanswered purely because its heading named two
+# row IDs and no observable. A Try may wrap across source lines; it is joined and
+# ends at the first blank line. An item with no Try still prints its heading.
 #
-# Each item prints as TWO lines: the heading (what to look for) and its
-# `**Try:**` paragraph (how to make it happen). Printing the heading alone was
-# not enough -- 2026-08-06 an item came back unanswered purely because its
-# heading named two row IDs and no observable, and the pass/fail detail that
-# would have explained it sits in the body this hook never printed. The Try
-# paragraph may wrap across source lines; it is joined back into one line and
-# ends at the first blank line. An item with no Try line still prints its
-# heading, so a half-written item degrades instead of vanishing.
-# Shared by both cards (WATCH + LOCAL) so their formats can never drift apart.
+# Only items in a LIVE section are printed. A closed item is moved to a `## Done`
+# section (LOCAL) or to ARCHIVE.md (WATCH) — but the old parser read every `### `
+# in the file, so LOCAL's two CLOSED items were briefed as live work for two
+# days after they were closed. That is the "it doesn't update when something is
+# checked off" failure, and it is the same class as the marker bug above: the
+# card was crossed off correctly and the reader was told otherwise.
 card_items() {
   awk '
     function flush(   t) {
       if (heading == "") return
-      print "  " heading
-      if (try_text != "") {
-        t = try_text
-        gsub(/^ +| +$/, "", t)
-        print "      Try: " t
+      if (live) {
+        print "  " heading
+        if (try_text != "") {
+          t = try_text
+          gsub(/^ +| +$/, "", t)
+          print "      Try: " t
+        }
+        n_printed++
       }
       heading = ""; try_text = ""; in_try = 0
+    }
+    # A section heading opens or closes the live list. Anything filed under Done,
+    # Archive, Dropped, Closed, Superseded or the parking lot is history, not work.
+    /^## / {
+      flush()
+      live = ($0 !~ /^## *(Done|Archive|Archived|Closed|Dropped|Superseded|Parking)/)
+      next
     }
     /^### / {
       flush()
       heading = substr($0, 5)
       gsub(/`|\*\*/, "", heading)
+      # Belt and braces with the section rule: an item crossed off in place still
+      # says so in its own heading.
+      if (heading ~ /(CLOSED|OFF THE CARD|DONE|VERIFIED)/) heading = ""
       next
     }
     heading == "" { next }
@@ -121,41 +119,28 @@ card_items() {
       try_text = try_text " " line
       next
     }
-    END { flush() }
+    END { flush(); if (n_printed == 0) print "  (empty — nothing on this card)" }
   ' "$1" || true
 }
 
-watch="${CLAUDE_PROJECT_DIR:-.}/docs/dev/flycards/WATCH.md"
-if [ -f "$watch" ]; then
-  items="$(card_items "$watch")"
-  if [ -n "$items" ]; then
-    echo
-    echo "=== WATCH — look for these on the next fly ==="
-    printf '%s
-' "$items"
-    echo "Source: docs/dev/flycards/WATCH.md (full pass/fail detail per item)"
-  fi
-fi
+print_card() {
+  local file="$1" title="$2" source="$3"
+  [ -f "$file" ] || return 0
+  echo
+  echo "$title"
+  card_items "$file"
+  echo "Source: $source (full pass/fail detail per item)"
+}
 
-# --- LOCAL card -------------------------------------------------------------
-# The sibling of WATCH: rows needing a CONTRIVED condition (a toggle, a specific
-# campaign, or something made to happen on purpose), run against the local fly
-# every 2-3 days. Split out 2026-08-07 because G29 sat PARTIAL for four weeks and
-# then failed to close on the WATCH list too -- it needs a pilot to eject on
-# purpose, which the WATCH rules explicitly exclude, so it had been parked on the
-# one surface that structurally could not close it. Same parser, same format.
-local_card="${CLAUDE_PROJECT_DIR:-.}/docs/dev/flycards/LOCAL.md"
-if [ -f "$local_card" ]; then
-  items="$(card_items "$local_card")"
-  if [ -n "$items" ]; then
-    echo
-    echo "=== LOCAL card — needs setting up on purpose (every 2-3 days) ==="
-    printf '%s
-' "$items"
-    echo "Source: docs/dev/flycards/LOCAL.md (full pass/fail detail per item)"
-  fi
-fi
+print_card "${CLAUDE_PROJECT_DIR:-.}/docs/dev/flycards/WATCH.md" \
+  "=== WATCH — look for these on the next fly ===" \
+  "docs/dev/flycards/WATCH.md"
 
+print_card "${CLAUDE_PROJECT_DIR:-.}/docs/dev/flycards/LOCAL.md" \
+  "=== LOCAL card — needs setting up on purpose (every 2-3 days) ===" \
+  "docs/dev/flycards/LOCAL.md"
+
+echo
 echo "[Claude: present this board to the user near the top of your first reply."
 echo " Re-surface BOTH cards whenever the user is about to fly, generate a turn,"
 echo " or otherwise test — link docs/dev/flycards/WATCH.md (zero setup, look for"

@@ -78,6 +78,7 @@ def test_section_checkboxes_write_the_options() -> None:
         "friendly_orbits",
         "threat_rings",
         "destinations",
+        "jdam_targets",
     }
     assert all(box.isChecked() for box in by_attr.values())
 

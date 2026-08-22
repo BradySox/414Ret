@@ -1,8 +1,8 @@
 """DTC cartridge generation pass (§74).
 
 Builds one cartridge **per blue client flight** of a DTC-capable airframe
-(FA-18C and F-16C natively, plus the CJS Super Hornets FA-18E/F + EA-18G, whose
-mod ships its own DTC descriptor), binds it to the flight's client units with
+(FA-18C, F-16C and F-14B(U) natively, plus the CJS Super Hornets FA-18E/F +
+EA-18G, whose mod ships its own DTC descriptor), binds it to the client units with
 ``AutoLoad``, and appends the JSON files to the saved miz. Per-flight rather than per-type because each flight flies its
 own route -- a package's four Hornet flights get four cartridges, each loading
 its own steerpoints while sharing the mission comm plan and SA picture.
@@ -29,6 +29,10 @@ from game.missiongenerator.dtc.superhornet import (
     SUPER_HORNET_UNIT_TYPES,
     build_super_hornet_cartridge,
 )
+from game.missiongenerator.dtc.tomcat import (
+    TOMCAT_UNIT_TYPE,
+    build_tomcat_cartridge,
+)
 from game.missiongenerator.dtc.viper import VIPER_UNIT_TYPE, build_viper_cartridge
 
 if TYPE_CHECKING:
@@ -43,14 +47,15 @@ if TYPE_CHECKING:
 #: :mod:`game.missiongenerator.dtc.superhornet`); the generator then skips it.
 CartridgeBuilder = Callable[..., Optional[DtcCartridge]]
 
-#: DCS unit type id -> cartridge builder. Only modules with native DTC support
-#: belong here (a ``DTC`` descriptor must ship in the module's own directory --
-#: ``CoreMods/aircraft/<type>/DTC`` for stock jets, the mod's own folder for the
-#: CJS Super Hornets). CH-47F and the MiG-29 Fulcrum also have descriptors; add
-#: them when a campaign fields them as blue client airframes.
+#: DCS unit type id -> cartridge builder. Capability is the unit DB's ``DTC``
+#: flag plus a matching ``<module>/DTC/<type>_DTC.lua`` -- the descriptor folder
+#: alone is not enough (the CH-47F ships one and sets ``DTC = false``). The stock
+#: capable set is ``FA-18C_hornet``, ``F-16C_50`` and ``F-14BU``, plus the CJS
+#: Super Hornets; see the design note.
 CARTRIDGE_BUILDERS: dict[str, CartridgeBuilder] = {
     HORNET_UNIT_TYPE: build_hornet_cartridge,
     VIPER_UNIT_TYPE: build_viper_cartridge,
+    TOMCAT_UNIT_TYPE: build_tomcat_cartridge,
     **{unit: build_super_hornet_cartridge for unit in SUPER_HORNET_UNIT_TYPES},
 }
 

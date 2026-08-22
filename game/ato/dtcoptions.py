@@ -40,6 +40,8 @@ class DtcOptions:
     #: Friendly recovery fields as Destination steerpoints (Viper only -- the
     #: Hornet descriptor has no equivalent section).
     destinations: bool = True
+    #: Pre-planned target points on the weapon stations (F-14B(U) only).
+    jdam_targets: bool = True
 
     def resolve_enabled(self, campaign_default: bool) -> bool:
         """The effective on/off for this flight."""
@@ -59,5 +61,6 @@ class DtcOptions:
                 self.friendly_orbits,
                 self.threat_rings,
                 self.destinations,
+                self.jdam_targets,
             )
         )

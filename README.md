@@ -91,13 +91,19 @@ Most of this is opt-in. Full list with toggles, defaults and known limitations:
 
 - QRA intercept reserve holds fighters for base defence. Part of it can be player-manned as
   cold alert.
-- Native DCS data cartridges auto-load in Hornets, Vipers and CJS Super Hornets: comm presets
-  matching the kneeboard, route with push times, boat TACAN/ICLS/ACLS, and the SA/HSD picture
-  (FLOT, no-strike zones, friendly orbits, recon-confirmed SAM rings). Hornets get the
+- Native DCS data cartridges auto-load in Hornets, Vipers, F-14B(U)s and CJS Super Hornets:
+  comm presets matching the kneeboard, route with push times, boat TACAN/ICLS/ACLS, and the
+  SA/HSD picture (FLOT, friendly orbits, recon-confirmed SAM rings). Hornets get the
   bullseye designated as the air-to-air waypoint; Vipers get the friendly recovery fields as
   Destination steerpoints, the briefed divert first. A per-flight
   DTC tab controls the cartridge or any single section of it. Super Hornets carry no SA
   picture — the mod's cartridge format has no field for one.
+- The F-14B(U) cartridge is built differently, because plan 1 of its navigation page is
+  already the mission route. It leaves that alone and adds the front line as map lines, the
+  bullseye, divert, tanker, AWACS and CAP anchors and the confirmed SAM sites as reference
+  points, puts the flown route on plan 2 with its times, loads the flight's targets as
+  pre-planned JDAM aimpoints on every station with the run-in heading, and fills the TIS
+  send-to list with the rest of the package.
 - A wing flying both boom and probe receivers gets a theater tanker of each, on separate
   orbits. A wing that only needs one method still gets one tanker.
 - Cold-start allowances follow the airframe where the time is known — a Viper aligns on a

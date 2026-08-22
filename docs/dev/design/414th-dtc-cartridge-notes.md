@@ -16,8 +16,25 @@ Two authoritative sources, cross-checked:
    and `...\F-16C\DTC\` (per-jet descriptors: data model, element constructors,
    defaults, limits, import filters) plus
    `MissionEditor\modules\me_managerDTC.lua` (the miz read/write + unit binding).
-   DTC descriptors exist for **FA-18C_hornet, F-16C_50, CH-47Fbl1, MiG-29
-   Fulcrum** — that set defines "DTC-capable" today.
+   **"DTC-capable" is the unit DB flag, not the descriptor folder** (checked
+   2026-08-22): `fillTypes()` lists a type when `DB.unit_by_type[t].DTC` is
+   true, and `loadDescriptors()` then loads `<module>/DTC/<type>_DTC.lua`. Both
+   halves must be present. Install-wide on 2.9.28 the flag is declared six
+   times, and only three of them are usable:
+
+   | Declaration | Verdict |
+   |---|---|
+   | `FA-18C/FA-18C_hornet.lua` = `true` | capable |
+   | `F-16C/F-16C.lua` = `true` | capable |
+   | `F14/Entry/F-14B.lua` = `rewrite_settings.Name == "F-14BU"` | capable, **F-14B(U) only** — the plain F-14B reads no cartridge |
+   | `FA-18C/FA-18C.lua` = `true` (the AI Hornet) | no `FA-18C_DTC.lua` exists |
+   | `MiG-29-Fulcrum/MiG-29-Fulcrum.lua` = `true` | AI-only module (`MiG-29 Fulcrum AI`, no `Cockpit/`) — nothing ingests a cartridge |
+   | `CH-47F/CH-47F_bl1.lua` = **`false`** | descriptor folder ships, flag does not — **not capable** |
+
+   The CJS Super Hornet mod sets its own flag in
+   `Entry/FA-18EFG_AIRCRAFT_DATA.lua` and ships `DTC/{FA-18E,FA-18F,EA-18G}_DTC.lua`.
+   **Do not read the capable set off the `CoreMods/aircraft/*/DTC` folders** —
+   that is how CH-47F and the Fulcrum got wrongly listed here until 2026-08-22.
 
 The retired §11 export predated all of this: it wrote cartridges to the local
 Saved Games library (no MP distribution) against a DCS build whose pre-load didn't
@@ -190,9 +207,18 @@ The clean first-class version (unit attrs + `load_from_dict` round-trip + a
   paths (uncontrolled-at-t=0 carrier clients, late-activated delayed flights);
   the reference mission's jets were plain ramp starts. Also eyeball: SA-page
   FLOT/CAP/MEZ rendering, COMM names on the DDI/UFC, Viper DED steerpoint notes.
-- CH-47F / MiG-29 builders when a campaign fields them blue-client.
+- **B91 in-game pass** — the F-14B(U), whose first step is an ME import and needs
+  no sortie.
+- ~~CH-47F / MiG-29 builders~~ — **dead, 2026-08-22.** The Chinook sets
+  `DTC = false` and the Fulcrum is an AI-only module with no cockpit; neither can
+  read a cartridge. See the capability table at the top of this note.
+- **`ELINT` on the Viper** — the authored F-16C cartridge in the same package
+  carries a top-level `ELINT.RWR` table: per-emitter `PRI` (priority), `search`,
+  `display` and `unknown` flags, three bands. We emit none of it. A campaign-aware
+  version would rank the emitters the mission actually fields, which is real data
+  rather than invented values — the first honest v2 candidate. Nothing built.
 - v2 candidates: TCN stations, ALR-67/CMDS program tables, corridors for transit
-  lanes, MEZ from the §40 restricted circles.
+  lanes.
 
 ---
 
@@ -591,3 +617,218 @@ cockpit corrections (the Zulu clock and the designated A/A waypoint) reach the
 E/F/G unchanged, locked by a test.
 
 In-game pass: checklist **B28**, CJS bullet.
+
+---
+
+## F-14B(U) — the Tomcat schema (2026-08-22)
+
+Mined from `CoreMods/aircraft/F14/DTC/F-14BU_DTC.lua` (138 KB) and its `.dlg`,
+cross-read against the ME's DTC panel. Builder: `game/missiongenerator/dtc/tomcat.py`.
+
+**Only the F-14B(U) reads a cartridge.** `F14/Entry/F-14B.lua` sets
+`DTC = rewrite_settings.Name == "F-14BU"`, and the descriptor's `setData` refuses
+anything whose `type` is not `"F-14BU"`. The plain F-14B and every F-14A have no
+DTC at all. (This is also the mistake that reached the pydcs PR thread; see the
+capability table at the top of this note.)
+
+The `data` table is **not** the Hornet's shape:
+
+```lua
+data = {
+    type = "F-14BU", name = "F-14BU DTC", cartridge_name = "DEFAULT",
+    CMDS = {}, NAV = {}, JDAM = { stations = { {targets={}} x4 } }, TIS = {},
+}
+```
+
+Two differences from every other jet §74 writes: there is **no `terrain` member**
+(it carries `cartridge_name`, the label the CDNU shows, instead), and `setData`
+only imports keys that already exist in that table — an extra key is dropped
+silently rather than erroring.
+
+### Plan 1 is the ME route — do not write waypoints into it
+
+`data.NAV` is twelve flight plans, each
+`{name, waypoints, lines, additional_points, route_as_line}`. **Plan 1 is the
+mission's own route**: the editor prints "Plan 1 waypoints are defined by the ME
+route planner" and `updateNAVPlanEditability()` greys out every waypoint field
+there. Since Retribution's flight plan *is* that route, the cartridge writes no
+waypoints at all — it fills the two things plan 1 accepts and a route cannot
+express:
+
+- `lines` — the front line, one line per active front (`flot_segments`).
+- `additional_points` — bullseye, divert, the tanker/AEW&C and CAP anchors, and
+  the recon-confirmed SAM sites.
+
+Plan 1's `name` is left empty on purpose: the editor labels it "1: ME Route"
+while it is, and naming it would hide that.
+
+**Plan 2 is the flown route**, named `ROUTE 1` with `route_as_line = true`. That
+is not a guess: the ED-authored cartridge checked against (below) does exactly
+this, and its waypoints carry TOTs with `spd = 0` and names ending in the jet's
+codes. The reference layer is repeated on plan 2 so selecting it loses nothing.
+
+### Units and exclusivity — the two traps
+
+| Field | Unit | Source |
+|---|---|---|
+| NAV waypoint / line point / additional point `elev` | **feet** | `wp.elev = metersToFeet(getAltitude(...))` |
+| — and it is the point's **only** altitude field | | there is no `routeAltitude` twin here |
+| JDAM target `elev` | **metres** | `tgt.elev = getAltitude(...)`, converted only for display |
+| NAV waypoint `spd` | knots ground speed, 0 = unset | dlg tooltip, range 0-999 |
+| NAV waypoint `tot` | `"HH:MM:SS"` text | dlg tooltip, "e.g. 08:30:00" |
+| JDAM `drop_alt` / `drop_spd` | feet / knots | dlg spinboxes, 20000 / 450 default |
+
+`spd` and `tot` are **mutually exclusive**: `updateSpdTOTEnabled()` disables each
+when the other is set, so a waypoint carries one or neither.
+
+**The single altitude field is why this jet breaks B90's rule.** The Hornet and
+Viper each carry two numbers — the ground under the point and the height to fly
+the leg — and §74 keeps them apart. The Tomcat has one, so it cannot. The editor
+auto-fills terrain height, but the authored cartridge shows a human overwriting
+that with the planned altitude on the two waypoints where it mattered (`20000` on
+both IPs) and leaving the auto-filled terrain at the ends (`142`, `167`).
+`_waypoint_elevation()` reproduces that: the field's own elevation where we know
+it, the planned MSL leg altitude in between, and 0 on a ground-marked point
+because that is where the miz puts it for a client. **Which one the CDNU actually
+wants is the open question** — read it in the cockpit, checklist B91.
+
+### Name codes — the jet types a point by its name
+
+The NAV tab documents a suffix grammar, and it is the reason our reference points
+are named the way they are:
+
+```
+X##  special point: FP, IP, HB, DP, HA, ST
+XB / X##B  bullseye ref      XD / X##D  destination
+XL / X##L  LANTIRN (max 20)
+X#1-X#3  priority 1-3        X#4-X#7  generic
+Example: OCEANAXHB = 'OCEANA' as Home Base
+```
+
+Names cap at **8 characters** (`NAV_WP_NAME_MAXLEN`, enforced on both waypoints
+and additional points), so the base name is what gives way, never the code:
+`_suffixed()` trims the base. The authored cartridge below uses the grammar in
+anger — `IPORCXIP`, `IPBLUXFP`, `BULLSXB` — so it is real, not documentation of
+an intention. We emit `XB` (bullseye), `XD` (divert), `XHB` (the recovery field)
+and `XIP` (every ingress waypoint type). `DP`, `HA` and `ST` have no stated
+meaning anywhere, so nothing is guessed onto them.
+
+### Editor-mined limits
+
+12 plans · 50 waypoints · 4 lines of 9 points (8 if closed, the closing repeat
+takes a slot) · plan names 16 chars · point names 8 chars ·
+`NAV_MAX_TOTAL_REFS = 20`. That last one is **declared and never enforced** in
+the descriptor (the import path allows 50); we honour the smaller number as the
+authored intent.
+
+### JDAM — four stations of eight, and the cached LAR
+
+`data.JDAM.stations` is exactly 4 (`STA 3`-`STA 6`), each with 8 pre-planned
+targets. An empty slot is `createJDAMTarget()`'s defaults with no coordinate keys
+at all; the cartridge omits `x`/`y`/`lat`/`lon`/`launch_x`/`launch_y` rather than
+writing zeroes.
+
+The three `lar_*` scalars are the launch-acceptability numbers, **persisted so the
+CDNU can read them without the C++ table**. `JDAM_LAR_TABLE` (6 altitudes x 9
+Mach x 3 values) and its bilinear lookup are ported into `tomcat.py` as
+`lookup_jdam_lar`, including the ISA speed-of-sound the descriptor uses to turn
+knots into Mach. The ME's *import* recomputes them and ignores what the file
+says; the jet does not, so they are written correctly.
+
+Every station gets the **same ordered target list**. Which bomb takes which
+aimpoint is the crew's call from the CDNU index — the generator does not read the
+loadout and does not guess.
+
+`attack_heading` is the run-in: the bearing from the previous route waypoint to
+the target. `drop_alt` is the planned leg altitude, falling back to the ingress
+leg when the target waypoint is ground-marked (a §74 target waypoint plans on the
+deck for players, which is not a release altitude) and to the module's 20000 ft
+when neither is usable.
+
+### TIS
+
+`use_mission_callsign` and `add_wingmen_to_list` stay true — the module already
+unions the flight's own wingmen. `send_to_callsigns` gets the **package's other
+flights**, each sanitized to 6 blank-padded characters exactly like
+`sanitizeTISCallsign`. Anything shorter than 6 is padded; the import drops an
+all-blank entry.
+
+### No CMDS section
+
+Same call as the Viper's (see *Decision: no CMDS section*, above) and for the
+same first two reasons: the programs are ED's defaults, so emitting them
+reproduces the jet's own state, and an AutoLoaded write would clobber whatever
+the pilot hand-set. The Tomcat adds a third: its `CMDSAutoOverrides` is a
+per-DCS-type table, and populating it from the campaign's known threats would
+mean inventing program/threshold pairs per SAM type — unsourced numbers.
+
+### Checked against an authored cartridge (2026-08-22)
+
+The F14 descriptor ships **no `defaults/` example** the way the Viper does
+(`F-16C/DTC/defaults/test*.json`), so the shape was first mined from `setData`,
+the element constructors and the editor panels. It was then **diffed against a
+real hand-authored F-14B(U) cartridge** — the squadron's training-night package,
+`DTC/F-14BU/02_29th_Demon-1_29th_Demon-1_OB.dtc`, 42 KB, built in the ME by a
+person rather than by us.
+
+Every section's key set matches:
+
+| Compared | Result |
+|---|---|
+| top level, `data`, plan, route waypoint, line, line point, additional point, `JDAM`, station, target, `TIS` | key sets identical |
+| an unused JDAM slot | **byte-identical**, including all three `lar_*` floats |
+| `data.CMDS` | present in the reference; absent in ours, deliberately |
+
+Two things that diff told us, and both changed the builder:
+
+1. **The route belongs on plan 2.** The reference leaves plan 1 empty-named with
+   zero waypoints — confirming the ME-route rule — and puts a five-waypoint
+   `ROUTE 1` on plan 2 with `route_as_line = true`. That turned a deferred idea
+   into the shipped behaviour.
+2. **The name codes are in live use**, which is what promoted them from "the
+   dialog documents a grammar" to "emit them".
+
+The `lar_*` match is the strongest single result: our ported `JDAM_LAR_TABLE`
+reproduces ED's cached defaults to the last digit
+(`1.5712031862492397 / 7.250980621174471 / 44.98373439541641`), so the
+interpolation and the ISA speed-of-sound came across correctly.
+
+**The same package validated the other two builders for free.** It carries
+authored cartridges for the F-16C and the FA-18C as well, and against those our
+Viper's `NAV_PTS` + `COMM` and our Hornet's `WYPT` + `SA` + `COMM` key sets match
+exactly. Each reference carries one section we deliberately skip — `MPD.CMDS` and
+`ELINT` on the Viper, `ALR67` on the Hornet — and nothing else differs.
+
+**And it corroborates the capability table.** Eight aircraft have kneeboards in
+that package; exactly three have cartridges — `F-14BU`, `F-16C_50`,
+`FA-18C_hornet`. The F-14B has kneeboards and no cartridge, which is the same
+answer the DB flag gives.
+
+**The reference's `CMDS` is stock defaults, field for field** — bingo 10/10/0/0,
+the same five auto-program pairs, `PROG_1` Priority 2 with 2/0.2/8/1.0 chaff.
+The author never touched the tab; the editor saved it anyway. That is the case
+for omitting it: emitting the section writes ED's own numbers back and clobbers
+anything the pilot set.
+
+### What generating one from a real save caught (2026-08-22)
+
+A cartridge built from the turn-2 Iraq autosave — a real route, real package,
+real threats — showed two things no unit test would have:
+
+1. **Names reached the file as Retribution writes them**: `Join - Point`,
+   `Target area`, `Landing`. Every name in the authored cartridge is bare
+   uppercase alphanumerics and the CDNU has no lower case, so `_point_name()`
+   now runs them through `sanitize_short_name` — `JOINPUSH`, `TARGETAR`,
+   `LANDXHB`.
+2. **The ingress waypoint was being pre-planned as a JDAM aimpoint.**
+   `is_target_waypoint()` is true for it, because Retribution hangs the target
+   list on the ingress point so the task can be built. `_build_jdam` now filters
+   on the waypoint *type* (`TARGET_POINT`, `TARGET_GROUP_LOC`, `TARGET_SHIP`)
+   instead, which halved the planned points on a SEAD escort.
+
+Generate one the same way when this changes: load the save, man a lead, point
+`CARTRIDGE_BUILDERS` at the builder under test, `MissionSimulation.begin_simulation()`
+then `MissionGenerator(...).generate_miz()`. The flight states have to be
+initialized first or generation raises on an uninitialized flight.
+
+In-game pass: checklist **B91**.

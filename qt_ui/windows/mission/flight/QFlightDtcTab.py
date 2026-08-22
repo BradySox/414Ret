@@ -58,6 +58,13 @@ _SECTIONS = (
         "(the campaign map's exact sites only -- suspected sites never leak).",
     ),
     (
+        "Pre-planned target points",
+        "jdam_targets",
+        "The flight's targets as pre-planned aimpoints on every weapon "
+        "station, with the run-in heading and release parameters. F-14B(U) "
+        "only; the other jets carry no equivalent cartridge section.",
+    ),
+    (
         "Friendly recovery fields",
         "destinations",
         "Friendly airfields and boats as Destination steerpoints, the briefed "

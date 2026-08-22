@@ -25,6 +25,7 @@ aircraft will be able to see the enemy's kneeboard for the same airframe.
 
 import datetime
 import math
+import re
 import textwrap
 from collections import defaultdict
 from dataclasses import dataclass, field
@@ -2424,6 +2425,10 @@ def _brief_sam_threats(cards: List[ThreatCard], limit: int = 3) -> str:
     return " · ".join(bits)
 
 
+#: A rack-mounted store names its own count ("2xMk 82", "4 x GBU-12").
+_RACK_MULTIPLIER_RE = re.compile(r"^(\d+)\s*x\s*(.+)$", re.IGNORECASE)
+
+
 def _brief_loadout(units: List[Any]) -> str:
     """One-line **ordnance** summary from the lead aircraft's generated pylons.
 
@@ -2449,7 +2454,14 @@ def _brief_loadout(units: List[Any]) -> str:
         if getattr(weapon.weapon_group, "type", None) is WeaponType.TGP:
             has_tgp = True
             continue
-        name = (getattr(weapon.weapon_group, "name", None) or weapon.name or "").strip()
+        # A weapon whose GROUP is unnamed still has a name of its own, and the
+        # group's placeholder is the literal string "Unknown" -- truthy, so it
+        # won the `or` and was then dropped by the guard below. That silently
+        # ate every 370 gal fuel tank on an F-16 BAI card.
+        group_name = getattr(weapon.weapon_group, "name", None)
+        if not group_name or group_name == "Unknown":
+            group_name = weapon.name
+        name = (group_name or "").strip()
         low = name.lower()
         if "harm targeting" in low:  # AN/ASQ-213 HTS pod -- a SEAD sensor, not a weapon
             has_hts = True
@@ -2463,13 +2475,20 @@ def _brief_loadout(units: List[Any]) -> str:
             or "jammer" in low
         ):
             continue
+        # A rack carries several stores on one station, and the count is the
+        # thing a pilot briefs: a TER with 2 x Mk-82 is two bombs, not one.
+        # The multiplier used to be stripped off the name and discarded.
+        per_station = 1
         if "fuel" in low or "tank" in low:
             name = "bag"
-        elif name[0].isdigit() and "x" in name[:4].lower():
-            name = name.split("x", 1)[1].strip()  # strip a rack multiplier
+        else:
+            rack = _RACK_MULTIPLIER_RE.match(name)
+            if rack:
+                per_station = int(rack.group(1))
+                name = rack.group(2).strip()
         if name not in counts:
             order.append(name)
-        counts[name] = counts.get(name, 0) + 1
+        counts[name] = counts.get(name, 0) + per_station
     parts = [(f"{counts[n]}× {n}" if counts[n] > 1 else n) for n in order]
     if has_hts:
         parts.append("HTS")

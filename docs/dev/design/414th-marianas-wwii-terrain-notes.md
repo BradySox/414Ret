@@ -168,7 +168,8 @@ Two campaign-specific factions, validated to load with **no dropped unit strings
 - **`japan_1944_marianas.json`** — "Japan 1944 (Marianas)". All eight real Japanese ground and
   AA types, no German armour. I-16 and Fw 190 A-8 in the shipped IJN liveries for air, German
   towed guns for field artillery, `Infantry Mauser 98` for infantry — DCS has no Japanese
-  equivalent of any of the three. No navy.
+  equivalent of any of the three. No navy. Its AA sites are the Japanese flak layout below,
+  not generic placements.
 
 The generic `japan_1944.json` and `usa_1944.json` are untouched; other campaigns use them.
 
@@ -200,8 +201,33 @@ carrier campaign around it.
   wizard and no changelog entry has been written. Supply routes on it must trace real 1944
   roads per the corridor standard — `tools/supply_route_geo.py` already carries Guam routes
   for the modern map and they transfer unchanged, since the grid is shared.
-- **No Japanese flak layout.** Preset-group layouts pin specific unit ids
-  (`WW2_Flak_Site.yaml` names `flak18`), so a Japanese AA site needs its own `.miz` + `.yaml`
-  layout pair. The faction ships `preset_groups: []` and builds AD from `air_defense_units`
-  meanwhile, which is what `japan_1944.json` already does.
 - **Pagan.** Airfield 11 is unusable until the landmap covers the island. See above.
+
+## The Japanese flak site
+
+`resources/layouts/anti_air/Japanese_Flak_Site.{miz,yaml}` plus the
+`resources/groups/Japanese-Flak.yaml` preset group, wired into the red faction. Without it
+red AA came from generic layouts, which is how `japan_1944.json` still works.
+
+Thirteen units, laid out as a 1944 airfield battery rather than a ring of identical guns:
+
+| Slot | Units | Placement | |
+|---|---|---|---|
+| 0 | 4x Type 88 75mm | inner ring, r=58 m | the IJA standard heavy AA gun |
+| 1 | 2x Type 3 80mm | r=30 m | **optional** — the Navy's gun; an Army-only garrison has none |
+| 2 | 6x Type 96 25mm | outer ring, r=102 m | the ubiquitous IJN light mount |
+| 3 | 1x Type 94 truck | r=14 m | **optional**, `fill: false` — transport, not a firing slot |
+
+Guns are headed outward from the battery centre.
+
+**The `.miz` is generated, not drawn.** `build_japanese_flak_site.py` (scratchpad, not in the
+repo — it hardcodes nothing but is a one-shot) authors it with pydcs so the geometry is
+reviewable as radius/bearing numbers instead of editor clicks. Two things to know if it is
+rebuilt: a fresh pydcs `Mission` carries **no CJTF countries**, so `Combined Joint Task Forces
+Red` must be added to the red coalition first or `m.country(...)` returns `None`; and group
+names must match the yaml exactly, or the loader silently drops the slot.
+
+Verified headlessly: the layout loads with all 13 units placed, `ArmedForces` builds a
+`Japanese Flak` force group for the faction — 13 groups against the generic faction's 12, so
+nothing was swallowed by a `LayoutException` — and every slot resolves to exactly its intended
+Japanese gun. `tests/test_layout_unit_types.py` locks the four `unit_types` strings.

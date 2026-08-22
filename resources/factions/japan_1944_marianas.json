@@ -32,7 +32,9 @@
     "AAA 25mm x 2 Type 96",
     "AAA 25mm x 2 Type 94 Truck"
   ],
-  "preset_groups": [],
+  "preset_groups": [
+    "Japanese Flak"
+  ],
   "naval_units": [],
   "missiles": [],
   "requirements": {

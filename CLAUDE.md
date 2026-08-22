@@ -152,6 +152,12 @@ Read before touching a campaign's `.yaml`, `.miz` or build tool.
   `414th-startup-times-notes.md` (**where a `startup_minutes:` value may come from** — read
   before adding one; unsourced numbers are the failure mode),
   `414th-loadout-integrity-audit-notes.md`
+- **Terrain / maps** — `414th-marianas-wwii-terrain-notes.md` (**Marianas 1944,
+  `MarianaIslandsWWII`: wiring built 2026-08-22, airfields blocked on a Mission Editor
+  export** — carries that runbook, the shared-grid finding that let the projection and
+  landmap be lifted from the modern Marianas, and the two traps a second WWII/modern
+  terrain pair will hit again: the landmap-directory substring collision and the DCS
+  install folder not matching the theatre id)
 - **Framework / tooling** — `414th-framework-consolidation-notes.md`,
   `414th-mist-moose-shim-notes.md` (**the shim that retired MIST**),
   `414th-moose-ops-opportunity-map.md`, `414th-lua-plugin-harness-notes.md`

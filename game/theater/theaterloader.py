@@ -11,6 +11,7 @@ from dcs.terrain import (
     Caucasus,
     Falklands,
     MarianaIslands,
+    MarianaIslandsWWII,
     Nevada,
     Normandy,
     PersianGulf,
@@ -33,6 +34,7 @@ ALL_TERRAINS = [
     PersianGulf(),
     Normandy(),
     MarianaIslands(),
+    MarianaIslandsWWII(),
     Nevada(),
     TheChannel(),
     Syria(),
@@ -105,7 +107,11 @@ class TheaterLoader:
     def menu_thumbnail_dcs_relative_path(self) -> Path:
         with self.descriptor_path.open(encoding="utf-8") as descriptor_file:
             data = yaml.safe_load(descriptor_file)
-        name = data.get("pydcs_name", data["name"])
+        # The install folder is usually the pydcs terrain name, but not always:
+        # MarianaIslandsWWII ships in Mods/terrains/MarianasWWII. A terrain whose
+        # folder differs sets dcs_terrain_dir, or the icon silently falls back to
+        # the shipped gif.
+        name = data.get("dcs_terrain_dir", data.get("pydcs_name", data["name"]))
         return Path("Mods/terrains") / name / "Theme/icon.png"
 
     def load(self) -> ConflictTheater:

@@ -135,6 +135,7 @@ REGIONS: dict[str, CivilRegion] = {
     # 1944. Modern civil traffic over the beachhead is an anachronism, not flavour.
     "Normandy": CIVIL_TRAFFIC_NONE,
     "TheChannel": CIVIL_TRAFFIC_NONE,
+    "MarianaIslandsWWII": CIVIL_TRAFFIC_NONE,
 }
 
 DEFAULT_REGION = _SOVIET_SPHERE

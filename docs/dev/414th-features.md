@@ -5657,6 +5657,17 @@ directly.
   Haina (RED) and materialises exactly one `MotorpoolGroundObject` (CI-locked in
   `tests/fourteenth/test_red_tide_motorpool.py`). Every other campaign is **inert until it places a
   `Garage_A`** — it changes nothing until a depot is authored.
+- **A crowded package label used to walk off its own marker (fixed 2026-08-22).** `free_slot`
+  stepped a label down the page until it found clear space, bounded only by the map edge, and
+  nothing drew a leader line — so on a dense cluster a name landed beside an unrelated airfield
+  and read as belonging to it. Measured on a Syria BAI turn: `KOMODO` **166 px** from its dot,
+  `STAGHORN` 76. `MAX_LABEL_OFFSET` (90 px) bounds the walk and `LEADER_AT` (22 px) draws the
+  line home past that gap; all 12 labels still place, worst drift 166 px → 110. **The fixture's
+  surrounding bases are load-bearing** — with no control points every label places on its first
+  try and the case proves nothing, which is how the first version of the guard test passed
+  against the defect. The leader ends at the label's **near** edge and stops 3 px short: drawing
+  to the far edge runs the line through the text, and "H3 Northwest" rendered as
+  "H3-Northwest" when its label sat left of its marker.
 - **The kneeboard briefed a dead sortie type until 2026-08-22.** Every unidentified-site
   row on the Threat Intel page read "Fly TARPS to ID." — a procedure the 2026-08-18 rework
   removed, and one the page's own intro contradicted ("engage them to ID"). It now reads

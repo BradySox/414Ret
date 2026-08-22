@@ -5657,6 +5657,21 @@ directly.
   Haina (RED) and materialises exactly one `MotorpoolGroundObject` (CI-locked in
   `tests/fourteenth/test_red_tide_motorpool.py`). Every other campaign is **inert until it places a
   `Garage_A`** — it changes nothing until a depot is authored.
+- **The kneeboard briefed a dead sortie type until 2026-08-22.** Every unidentified-site
+  row on the Threat Intel page read "Fly TARPS to ID." — a procedure the 2026-08-18 rework
+  removed, and one the page's own intro contradicted ("engage them to ID"). It now reads
+  "Engage to ID.", and the test that had been pinning the stale string asserts the opposite.
+  The COIN HVT checklist row (P5) carried the same instruction and was corrected with it.
+- **Two defects in the BLUF ordnance line, both found on a flown F-16CM BAI card (2026-08-22).**
+  `_brief_loadout` took `weapon_group.name` in preference to `weapon.name`, but an unnamed
+  group's placeholder is the literal string `"Unknown"` — truthy, so it won the `or` and was
+  then dropped by the `name == "Unknown"` guard. **Both 370 gal tanks vanished** while the fuel
+  ladder counted them, so the card briefed 7,163 lb of stores against a 12,121 lb ladder. And a
+  rack multiplier was stripped off the name (`"2xMk 82"` → `"Mk 82"`) and discarded rather than
+  applied to the count, so **a TER carrying two bombs briefed as one**. The line went from
+  `2× AIM-120B · 2× AIM-9M · Mk 82 · CBU-97 · HTS` to
+  `2× AIM-120B · 2× AIM-9M · 2× CBU-97 · 2× bag · 2× Mk 82 · HTS`. Pinned in
+  `tests/missiongenerator/test_kneeboard_bluf.py` against that jet's exact pylons.
 - **Two placement guards, opposite mistakes.** `motorpools_inside_capture_zone` catches a marker
   inside its own CP's 3 km capture radius (parked reserve blocks the base being taken).
   `ground_objects_beside_an_enemy_base` (added 2026-08-20) catches **any** ground object parked on

@@ -243,3 +243,60 @@ def test_table_leaves_a_fitting_table_untouched() -> None:
         writer._fit_col_widths(narrow, ["Callsign", "Task", "#A/C"], writer.table_font)
         is None
     )
+
+
+#: Venom 3-1's stations exactly as `retribution_nextturn.miz` carried them on
+#: 2026-08-22 -- the F-16CM BAI card whose LOADOUT line was reported wrong.
+_VENOM_3_PYLONS: dict[int, dict[str, str]] = {
+    1: {"CLSID": "{C8E06185-7CD6-4C90-959F-044679E90751}"},  # AIM-120B
+    2: {"CLSID": "{6CEB49FC-DED8-4DED-B053-E1F033FF72D3}"},  # AIM-9M
+    3: {"CLSID": "{TER_9A_2L*CBU-97}"},  # TER-9/A, 2 x CBU-97
+    4: {"CLSID": "{F376DBEE-4CAE-41BA-ADD9-B2910AC95DEC}"},  # Fuel tank 370 gal
+    5: {"CLSID": "ALQ_184"},  # ECM pod -- deliberately not briefed
+    6: {"CLSID": "{F376DBEE-4CAE-41BA-ADD9-B2910AC95DEC}"},  # Fuel tank 370 gal
+    7: {"CLSID": "{TER_9A_2R*MK-82}"},  # TER-9/A, 2 x Mk-82
+    8: {"CLSID": "{6CEB49FC-DED8-4DED-B053-E1F033FF72D3}"},  # AIM-9M
+    9: {"CLSID": "{C8E06185-7CD6-4C90-959F-044679E90751}"},  # AIM-120B
+    10: {"CLSID": "{AN_ASQ_213}"},  # HTS
+}
+
+
+def test_brief_loadout_shows_fuel_tanks() -> None:
+    """A store whose weapon GROUP is unnamed still has a name of its own.
+
+    The group's placeholder is the literal string "Unknown", which is truthy, so it
+    won the `or` and was then dropped by the `name == "Unknown"` guard. Both 370 gal
+    tanks vanished from the card while the fuel ladder counted them -- the jet
+    briefed 7,163 lb of stores against a 12,121 lb ladder.
+    """
+    from game.data.weapons import WeaponGroup
+
+    WeaponGroup.load_all()
+    summary = _brief_loadout([SimpleNamespace(pylons=_VENOM_3_PYLONS)])
+    assert "2× bag" in summary, summary
+
+
+def test_brief_loadout_counts_rack_mounted_stores() -> None:
+    """A TER with two bombs is two bombs.
+
+    The multiplier was stripped off the name ("2xMk 82" -> "Mk 82") and thrown away,
+    so a station carrying two weapons briefed as one. On a BAI card that halves the
+    ordnance the pilot thinks they have.
+    """
+    from game.data.weapons import WeaponGroup
+
+    WeaponGroup.load_all()
+    summary = _brief_loadout([SimpleNamespace(pylons=_VENOM_3_PYLONS)])
+    assert "2× Mk 82" in summary, summary
+    assert "2× CBU-97" in summary, summary
+
+
+def test_brief_loadout_still_drops_pods_and_collapses_hts() -> None:
+    # The ECM pod is noise on an ordnance line and stays out; the HTS is a sensor
+    # and collapses to its own tag rather than a weapon entry.
+    from game.data.weapons import WeaponGroup
+
+    WeaponGroup.load_all()
+    summary = _brief_loadout([SimpleNamespace(pylons=_VENOM_3_PYLONS)])
+    assert "ALQ" not in summary, summary
+    assert summary.endswith("HTS"), summary

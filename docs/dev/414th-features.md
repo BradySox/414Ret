@@ -7390,9 +7390,9 @@ units carrying `retribution_dtc`, and a post-save zip append for the `DTC/` file
 `common.py` (extraction helpers), `hornet.py` / `viper.py` (per-jet builders),
 `generator.py` (`DtcGenerator`, wired in `missiongenerator.py` after the drawings
 pass + after `mission.save`). Both hooks are best-effort — a failure logs and leaves
-the pre-feature miz. CH-47F and the MiG-29 Fulcrum also ship DTC descriptors; add
-builders in `CARTRIDGE_BUILDERS` when a campaign fields them as blue client
-airframes. The clean first-class seams are PR'd to `dcs-retribution/pydcs`; when the
+the pre-feature miz. The F-14B(U) (`F-14BU`, 2.9.28 — not the F-14B), CH-47F and
+the MiG-29 Fulcrum also ship DTC descriptors; add builders in `CARTRIDGE_BUILDERS`
+when a campaign fields them as blue client airframes. The clean first-class seams are PR'd to `dcs-retribution/pydcs`; when the
 pin moves, `cartridge.py` shrinks to the model + builders.
 
 Gated `dtc_data_cartridges` (Mission Generation → Cockpit data, default **ON** — the

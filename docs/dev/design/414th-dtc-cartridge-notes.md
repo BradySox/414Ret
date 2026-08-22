@@ -16,8 +16,11 @@ Two authoritative sources, cross-checked:
    and `...\F-16C\DTC\` (per-jet descriptors: data model, element constructors,
    defaults, limits, import filters) plus
    `MissionEditor\modules\me_managerDTC.lua` (the miz read/write + unit binding).
-   DTC descriptors exist for **FA-18C_hornet, F-16C_50, CH-47Fbl1, MiG-29
-   Fulcrum** — that set defines "DTC-capable" today.
+   DTC descriptors exist for **FA-18C_hornet, F-16C_50, F-14BU, CH-47Fbl1,
+   MiG-29 Fulcrum** — that set defines "DTC-capable" today. The Tomcat entry is
+   `CoreMods/aircraft/F14/DTC/F-14BU_DTC.lua`, `type = "F-14BU"`: the **F-14B(U)
+   only, added in 2.9.28**. The plain F-14B has no descriptor and reads no
+   cartridge.
 
 The retired §11 export predated all of this: it wrote cartridges to the local
 Saved Games library (no MP distribution) against a DCS build whose pre-load didn't

@@ -46,8 +46,9 @@ CartridgeBuilder = Callable[..., Optional[DtcCartridge]]
 #: DCS unit type id -> cartridge builder. Only modules with native DTC support
 #: belong here (a ``DTC`` descriptor must ship in the module's own directory --
 #: ``CoreMods/aircraft/<type>/DTC`` for stock jets, the mod's own folder for the
-#: CJS Super Hornets). CH-47F and the MiG-29 Fulcrum also have descriptors; add
-#: them when a campaign fields them as blue client airframes.
+#: CJS Super Hornets). The F-14B(U) -- id ``F-14BU``, not the F-14B -- CH-47F and
+#: the MiG-29 Fulcrum also have descriptors; add them when a campaign fields them
+#: as blue client airframes.
 CARTRIDGE_BUILDERS: dict[str, CartridgeBuilder] = {
     HORNET_UNIT_TYPE: build_hornet_cartridge,
     VIPER_UNIT_TYPE: build_viper_cartridge,

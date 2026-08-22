@@ -748,8 +748,11 @@ CLSIDs against everything pydcs names a JDAM (racks included). The pylon-to-stat
 mapping is DCS's own: `F-14B.lua` defines the pylons in the order 1A, 1B, 2, 3, 4,
 5, 6, 7, 8B, 8A, so **pydcs pylons 4–7 are the tunnel stations the jet labels 3–6**
 — the descriptor's STA 3–6. Targets are handed out in route order across the
-loaded stations, wrapping when there are more bombs than targets, so releasing
-STA 3, 4, 5, 6 at PP1 walks the list with no cockpit selection. Every target stays
+loaded stations, wrapping when there are more bombs than targets. **STA 3, 4, 5, 6
+is the jet's drop order** (DM-confirmed 2026-08-22 — the page's display order
+happens to match), so releasing at PP1 each time takes the targets in route order
+with no cockpit selection. If a loadout ever releases in a different order, the
+assignment order in `_build_jdam` is the one thing to change. Every target stays
 on every station behind it (PP2 onward, in order) and a station carrying anything
 else gets the plain list, so the crew can always re-pick.
 

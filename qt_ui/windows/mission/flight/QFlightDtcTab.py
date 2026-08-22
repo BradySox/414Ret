@@ -1,9 +1,11 @@
 """Edit Flight -> DTC tab: the planner's per-flight cartridge controls (§74).
 
-Shown only for DTC-capable airframes (FA-18C, F-16C). Writes
+Shown only for DTC-capable airframes (FA-18C, F-16C, F-14B(U)). Writes
 ``flight.dtc_options`` live -- the choices pickle with the save and the next
-generation's ``DtcGenerator`` honors them. A section that is off is omitted
-from the cartridge entirely, leaving the jet's own defaults untouched.
+generation's ``DtcGenerator`` honors them. A section that is off leaves the
+jet's own defaults untouched: omitted from the Hornet and Viper cartridges,
+written as the editor's reset state on the Tomcat, whose descriptor cannot
+take a partial cartridge.
 """
 
 from PySide6.QtWidgets import (
@@ -32,7 +34,9 @@ _SECTIONS = (
         "Route steerpoints + push times",
         "route",
         "The flight's waypoints as named steerpoints with the planned "
-        "per-leg speeds and ETAs.",
+        "per-leg speeds and ETAs. On the F-14B(U) the route goes on flight "
+        "plan 2 -- plan 1 is the mission editor's own -- and the bullseye and "
+        "divert become reference points.",
     ),
     (
         "Recovery aids (TACAN / ICLS / ACLS, home waypoint)",
@@ -45,19 +49,25 @@ _SECTIONS = (
     (
         "Front line (FLOT)",
         "flot_and_zones",
-        "The front line on the SA page (Hornet) or as HSD lines (Viper).",
+        "The front line on the SA page (Hornet), as HSD lines (Viper) or as "
+        "a plot line (F-14B(U)).",
     ),
     (
-        "Friendly CAP + tanker/AWACS orbits",
+        "Own orbit + tanker/AWACS orbits",
         "friendly_orbits",
-        "Friendly racetracks on the SA page; on the Viper these load as "
-        "extra named steerpoints after the route.",
+        "This flight's own orbit first -- its patrol track, or its hold point "
+        "when it flies no track -- then the tanker and AWACS orbits. Never "
+        "another flight's CAP station. Racetracks on the Hornet's SA page, "
+        "extra named steerpoints after the route on the Viper, reference "
+        "points on the F-14B(U).",
     ),
     (
         "Known enemy SAM rings",
         "threat_rings",
         "Threat rings for enemy air-defense sites your recon has confirmed "
-        "(the campaign map's exact sites only -- suspected sites never leak).",
+        "(the campaign map's exact sites only -- suspected sites never leak). "
+        "Rings on the Hornet and Viper; named reference points on the "
+        "F-14B(U).",
     ),
     (
         "Pre-planned target points",
@@ -67,10 +77,11 @@ _SECTIONS = (
         "only; the other jets carry no equivalent cartridge section.",
     ),
     (
-        "Friendly recovery fields",
+        "Recovery fields + the target airfield",
         "destinations",
         "Friendly airfields and boats as Destination steerpoints, the briefed "
-        "divert first. Viper only; the Hornet carries no equivalent section.",
+        "divert first and the enemy field you are working over right after "
+        "it. Viper only; the other jets carry no equivalent section.",
     ),
 )
 
@@ -87,9 +98,11 @@ class QFlightDtcTab(QFrame):
 
         intro = QLabel(
             "This flight's native DCS data cartridge auto-loads at spawn: "
-            "comms, route, recovery aids, and the SA picture, straight into "
-            "the jet -- multiplayer clients get it with the mission download. "
-            "Changes apply the next time the mission is generated."
+            "comms, route, recovery aids, the SA picture and, on the F-14B(U), "
+            "pre-planned JDAM points -- straight into the jet, and multiplayer "
+            "clients get it with the mission download. Radio presets and the "
+            "route reach the jet through the mission anyway; the cartridge adds "
+            "the rest. Changes apply the next time the mission is generated."
         )
         intro.setWordWrap(True)
         layout.addWidget(intro)

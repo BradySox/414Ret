@@ -3215,20 +3215,26 @@ class Settings:
         ),
     )
     dtc_data_cartridges: bool = boolean_option(
-        "Pre-load DTC data cartridges (F/A-18C, F-16C)",
+        "Pre-load DTC data cartridges (F/A-18C, F-16C, F-14B(U))",
         page=MISSION_GENERATION_PAGE,
         section=GENERAL_SECTION,
         default=True,
         detail=(
             "Embed a native DCS Data Transfer Cartridge for every blue client "
-            "Hornet and Viper flight and auto-load it at spawn: named COMM "
-            "presets matching the kneeboard comm plan, the flight's steerpoints "
-            "with names and push times, recovery TACAN/ICLS/ACLS pre-tuned, and "
-            "the SA/HSD picture -- FLOT, no-strike zones, friendly CAP and "
-            "tanker/AWACS orbits, and the known enemy SAM rings (recon fog "
-            "respected: only sites your map shows exactly). The cartridge "
+            "Hornet, Viper and F-14B(U) flight and auto-load it at spawn. "
+            "Hornet: named COMM presets matching the kneeboard, the route with "
+            "push times, recovery TACAN/ICLS/ACLS, the bullseye as the A/A "
+            "waypoint, and the SA page -- front line, your own orbit, the "
+            "tankers and AWACS, the known enemy SAM rings. Viper: the route with "
+            "TOS, the same picture on the HSD, and the recovery fields as "
+            "Destinations with the enemy field you are working over beside the "
+            "divert. F-14B(U): references and the front line, the route on plan "
+            "2, pre-planned JDAM aimpoints, and the package in the TIS list. "
+            "Radio presets and the route reach every jet through the mission "
+            "anyway, so turning this off costs only the extras. Threat rings "
+            "respect recon fog: only sites your map shows exactly. The cartridge "
             "travels inside the .miz, so multiplayer clients get it with the "
-            "mission download and need to do nothing in the jet."
+            "mission download and do nothing in the jet."
         ),
     )
     mission_briefing_popup: bool = boolean_option(

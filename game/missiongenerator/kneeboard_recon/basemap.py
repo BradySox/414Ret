@@ -21,11 +21,11 @@ from typing import Any, Iterable, Optional, TypeVar
 
 _VT = TypeVar("_VT")
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageEnhance, ImageFont
 from dcs.mapping import Point
 from dcs.terrain.terrain import Terrain
 
-from . import airport_imagery
+from . import airport_imagery, gif_georef
 from ._fonts import PilFont
 from .extent import MapExtent
 from .tile_compositor import (
@@ -186,6 +186,59 @@ def render_landmap_basemap(
     return img
 
 
+# Dim applied to the theater raster on a dark kneeboard. The raster is a
+# daylight satellite render and there is no dark variant of it; 0.45 sits it
+# close to the dark landmap's own land fill so the two paths read alike, and
+# keeps the white label plates and haloes high-contrast.
+_DARK_RASTER_DIM = 0.45
+
+
+def align_extent_to_theater_raster(
+    extent: MapExtent, *, keep_visible: MapExtent
+) -> MapExtent:
+    """``extent`` nudged onto the theater raster where a nudge is enough.
+
+    Call this before rendering AND before building the projector — the
+    backdrop and the symbology must share one extent or the markers move off
+    the ground they name.
+
+    Returns ``extent`` unchanged when no shift is possible or none is needed,
+    so the caller never has to branch; :func:`render_theater_basemap` then
+    falls back to the coastline draw on its own.
+    """
+    gif = _load_gif(extent.terrain)
+    if gif is None:
+        return extent
+    coverage = gif_georef.coverage_for(extent.terrain, gif.size)
+    if coverage is None or coverage.can_render(extent):
+        return extent
+    return coverage.slide_to_cover(extent, keep_visible) or extent
+
+
+def render_theater_basemap(
+    extent: MapExtent,
+    page_width: int,
+    page_height: int,
+    *,
+    dark: bool = False,
+) -> Image.Image:
+    """Terrain imagery for a wide orientation map, else filled coastlines.
+
+    Never touches the network: the shipped theater raster or nothing. Falls
+    back to :func:`render_landmap_basemap` whenever ``gif_georef`` refuses the
+    extent — no measured georeference, a raster that is not the size it was
+    measured on, an extent reaching past the raster, or one over ground the
+    raster never drew. Either way the page is drawn and the symbology is
+    placed correctly; only the backdrop differs.
+    """
+    crop = _crop_from_gif(extent, page_width, page_height)
+    if crop is None:
+        return render_landmap_basemap(extent, page_width, page_height, dark=dark)
+    if dark:
+        crop = ImageEnhance.Brightness(crop).enhance(_DARK_RASTER_DIM)
+    return crop
+
+
 def _banner_text_for_reason(reason: str) -> str:
     """Pick the OFFLINE banner string for a ``render_tiles`` failure reason.
 
@@ -319,21 +372,42 @@ def _load_gif(terrain: Terrain) -> Optional[Image.Image]:
 def _crop_from_gif(
     extent: MapExtent, page_width: int, page_height: int
 ) -> Optional[Image.Image]:
+    """Crop the theater raster to ``extent``, or None if it cannot cover it.
+
+    Refuses rather than clamps. An earlier version clamped the crop rectangle
+    to the image, so an extent reaching past the raster was stretched to fill
+    the page and the markers drawn over it landed on the wrong ground with
+    nothing to show for it. Returning None drops to the landmap renderer,
+    which is plain but placed correctly.
+    """
     gif = _load_gif(extent.terrain)
     if gif is None:
         return None
-    bounds = extent.terrain.bounds
+    coverage = gif_georef.coverage_for(extent.terrain, gif.size)
+    if coverage is None or not coverage.can_render(extent):
+        logger.debug(
+            "kneeboard_recon: %s raster cannot place extent x %.0f..%.0f "
+            "y %.0f..%.0f; using the landmap renderer",
+            extent.terrain.name,
+            extent.min_x,
+            extent.max_x,
+            extent.min_y,
+            extent.max_y,
+        )
+        return None
+
+    rect = coverage.rect
     gif_w, gif_h = gif.size
-    px_per_m_x = gif_w / (bounds.right - bounds.left)
-    px_per_m_y = gif_h / (bounds.top - bounds.bottom)
-    gx0 = int(round((extent.min_y - bounds.left) * px_per_m_x))
-    gx1 = int(round((extent.max_y - bounds.left) * px_per_m_x))
-    gy0 = int(round((bounds.top - extent.max_x) * px_per_m_y))
-    gy1 = int(round((bounds.top - extent.min_x) * px_per_m_y))
-    gx0 = max(0, min(gif_w - 1, gx0))
-    gx1 = max(gx0 + 1, min(gif_w, gx1))
-    gy0 = max(0, min(gif_h - 1, gy0))
-    gy1 = max(gy0 + 1, min(gif_h, gy1))
+    px_per_m_x = gif_w / (rect.max_y - rect.min_y)
+    px_per_m_y = gif_h / (rect.max_x - rect.min_x)
+    gx0 = int(round((extent.min_y - rect.min_y) * px_per_m_x))
+    gx1 = int(round((extent.max_y - rect.min_y) * px_per_m_x))
+    gy0 = int(round((rect.max_x - extent.max_x) * px_per_m_y))
+    gy1 = int(round((rect.max_x - extent.min_x) * px_per_m_y))
+    # can_render() put the extent inside the rect, so the only way out of
+    # range now is a sub-pixel extent rounding to an empty box.
+    if gx1 - gx0 < 1 or gy1 - gy0 < 1:
+        return None
     crop = gif.crop((gx0, gy0, gx1, gy1))
     return crop.resize((page_width, page_height), Image.LANCZOS)
 

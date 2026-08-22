@@ -844,6 +844,127 @@ applies the robust regional offset of the nearest measured airports
 residual (~5 page px on a 300 km overview) is removed by a subdivided MESH warp
 (`tile_compositor`). Default stays OFF pending the in-game pass (checklist H13).
 
+**The offline basemap placed its imagery by `terrain.bounds`, which does not bound the map
+(fixed 2026-08-22).** When `render_tiles` returns None — no network, ToS refusal, or a terrain
+with no projection — `_render_legacy_fallback` crops the shipped theater raster
+(`resources/syria.gif`, `caumap.gif`, …) and draws the same symbology over it. `_crop_from_gif`
+georeferenced that crop with `extent.terrain.bounds` and then **clamped** the crop rectangle to
+the image, so an extent the raster could not cover was silently stretched to fill the page
+rather than failing. The page looked correct and the markers were on the wrong ground.
+
+`terrain.bounds` is not a georeference and must never be used as one. Measured: it leaves **24
+of Syria's 224 airfields outside itself** — the whole Jordanian corner and the Negev, including
+King Abdullah II, Muwaffaq Salti, Nevatim and Hatzerim — plus 23 of Normandy's 89, 4 of Persian
+Gulf's 29 and 2 of Nevada's 17. pydcs also declares Syria, Normandy and PersianGulf with
+`top < bottom`, inverting its own `Rectangle` contract, so the north-south scale came out
+negative and the clamp collapsed **every** Syria crop to a one-pixel-tall strip stretched over
+the whole page. The damage was not confined to the out-of-bounds corner: a Tabqa page, well
+inside the raster, drew ground centred 215 km south and 58 km east of what it asked for, and a
+Batumi page came out 116 km east over a 38×33 km crop where 80×80 km was requested.
+
+`gif_georef.py` replaces it with a **measured** world rect per raster, taken from the two
+per-theater reference airports the pre-2021 Qt map used to georeference these same images
+(`git show 30f6220c3^:game/theater/conflicttheater.py`) and re-derived against each GIF's
+current pixel size. Validated independently against the airfields: 0 of Caucasus's 21 and 0 of
+Nevada's 17 project onto sea pixels, and 29/29 Persian Gulf fields sit in frame. Coverage and
+resolution:
+
+| Theater | Raster | m/px E, N | Note |
+|---|---|---|---|
+| Caucasus | `caumap.gif` 2464×1400 | 282.0, 336.7 | Anapa sits ~6 km off the west edge |
+| Nevada | `nevada.gif` 1192×1008 | 537.3, 578.9 | all 17 fields in frame |
+| Normandy | `normandy.gif` 2158×2500 | 130.5, 135.5 | predates Normandy 2.0; London and Paris off-frame (28/89 fields) |
+| PersianGulf | `persiangulf.gif` 1870×3552 | 292.3, 294.7 | all 29 fields in frame |
+| Syria | `syria.gif` 2059×1370 | 439.6, 451.7 | predates the Jordan/Israel expansion; Cyprus never drawn |
+
+Two rules follow, both of which the old code broke:
+
+- **Refuse, never clamp.** `coverage_for()` returns None for a theater with no measured rect and
+  for a raster that is not the pixel size the rect was measured on (a replaced asset invalidates
+  the numbers). `can_render()` then requires the extent to fit **entirely** inside the rect.
+  Any refusal drops to `_draw_landmap_only`, which is plain but placed correctly.
+- **A hole is a refusal too.** syria.gif draws flat sea over Cyprus even though the island is
+  inside its frame — all 25 Cyprus airfields (Akrotiri, Larnaca, Paphos, Ercan, Gecitkale,
+  Kingsfield, Lakatamia, Pinarbashi and the HC/HMed helipads) project onto sea pixels, in an
+  island-shaped arrangement that confirms the georeference is right and the imagery is missing.
+  `GifCoverage.unrendered` records it as a world rect and refuses any extent that touches it.
+
+**The Package Targets Map draws terrain (2026-08-22).** Found while investigating why that page
+drew land as a flat fill: switching it to the raster had been tried and reverted for exactly the
+georeference defect above (`7cc256f5c`, upstream-of-fork PR #945). With the defect fixed the swap is safe, and it is made
+here. `PackagesMapPage` now calls `render_theater_basemap` instead of `render_landmap_basemap`
+— the shipped raster where `gif_georef` says it reaches, the filled-coastline landmap otherwise.
+Markers, labels and the label-placement rules are untouched.
+
+- **Offline by construction.** This page is generated for every mission, not just the gated recon
+  deck, so the backdrop must never cost a network round-trip. `render_theater_basemap` does not
+  call `render_tiles` at all, pinned by a test.
+- **The extent is aspect-corrected first, then offered to the raster.** The padded extent is what
+  gets drawn, so it is what has to be covered. A theater-wide spread usually exceeds the raster
+  and falls back — which is right, and the fallback is the more complete picture in that case
+  anyway: the landmap draws Cyprus, which syria.gif does not.
+- **Dark kneeboards dim the raster** by `_DARK_RASTER_DIM` (0.45). There is no dark variant of a
+  daylight satellite render; 0.45 sits it near the dark landmap's own land fill and keeps the
+  white label plates and haloes high-contrast.
+
+Independent confirmation the georeference is right, from the rendered pages: on Caucasus every
+coastal field — Sochi-Adler, Gudauta, Sukhumi-Babushara, Kobuleti, Batumi — sits on the imaged
+shoreline, and only Batumi is a reference point. On northern Syria the raster's coastline traces
+the landmap's coastline, two unrelated data sources agreeing.
+
+**How often it actually fires: 9 of the 42 shipped campaigns on a raster theater.** Measured by
+loading every campaign and running its real control points through the page's own extent
+maths. The limit is the rasters, not the code — they were authored for smaller maps than DCS
+now ships. syria.gif covers 619 × 905 km of a theater whose airfields span 763 × 709 km, so any
+campaign spread across Syria loses. The winners are the compact ones: `WRL_AleppoInsurgency`,
+`WRL_Battle4SyriaNorth`, `WRL_Battle4Georgia`, `northern_russia`, `red_flag_81_2`,
+`exercise_vegas_nerve`, `WRL_Battle4area51`, `scenic_route`, `WRL_PG_Wargames`. Nevada is the
+best-served theater (3 of 3) because its raster outruns its map.
+
+**The slide takes that 9 to 15.** `aspect_correct` pads symmetrically about the extent centre,
+so when the padding pushes one edge off the raster there is normally slack on the opposite
+edge. `GifCoverage.slide_to_cover` spends it: the extent is **translated, never resized**, so
+the page keeps its scale and aspect and all that moves is where the area of interest sits.
+Recovered: `golan_heights_lite`, `Caucasus_Multi_Georgia`, `TblisiGap`, `WRL_Kutaisi2Vaziani`,
+`mozdok_to_maykop`, `caen_to_evreux`.
+
+Three guards, each with a test:
+
+- **The packages never move off the page.** `slide_to_cover` takes the pre-padding extent as
+  `must_contain` and refuses any slide that would push part of it out. Trading centring for
+  imagery is fine; trading a target for imagery is not.
+- **The hole is re-checked after the slide, not only before.** `IntotheHornetsNest` and
+  `WRL_AssaultonDamascus` are the two that still fall back, and neither is a slide failure —
+  the slide succeeds and lands them on Cyprus, so the `unrendered` rect vetoes it.
+- **The backdrop and the symbology share one extent.** `align_extent_to_theater_raster` runs in
+  the page *before* both the render and the `Projector`, because rendering the raster for the
+  slid extent while projecting markers into the unslid one would reintroduce the original
+  defect one layer up. `test_backdrop_and_markers_share_one_extent` fails on exactly that
+  mistake — and its fixture is itself guarded by `test_the_sliding_fixture_actually_slides`,
+  because the first version of both tests used an extent that never slid and passed vacuously.
+
+**The slide costs no labels.** Crowding the markers toward one edge could in principle leave
+a name nowhere legible to sit, which is the failure `7cc256f5c` fixed. Counted across all six
+recovered campaigns, every name drawn without the slide is still drawn with it. Pinned by
+`test_the_slide_costs_no_labels` on a 15-field fixture — the 3-field one cannot show this,
+since a sparse page never runs out of room.
+
+**Also found, not changed:** `sinai.gif` and `marianasislands.gif` ship but are unreachable —
+`_theater_gif_path` normalises `SinaiMap` → `sinaimap` and `MarianaIslands` → `marianaislands`,
+neither of which matches its filename, so those theaters have always taken the landmap
+renderer. No reference points were ever authored for them, so they are left out of `COVERAGE`
+rather than guessed; wiring them up needs a measurement pass first.
+
+Tests: `game/missiongenerator/kneeboard_recon/tests/test_gif_georef.py` re-derives every rect
+from its reference airports (a typo'd metre fails), pins each raster's pixel size, pins the
+`terrain.bounds` counter-evidence so nobody reaches for it again, and checks the Jordan/Negev
+and Cyprus refusals against real airfield coordinates. `test_basemap.py` adds a quadrant test
+that paints one corner of a stand-in raster and asserts the crop returns that corner — the
+world-to-pixel mapping, not just "some image came back". The two pre-existing GIF-path tests
+were rewritten: they used a 200×200 placeholder and a Caucasus extent at y 0..30 km, ~250 km
+outside the theater, and asserted `len(colors) > 5`, which the tan-landmap fallback also
+satisfies. Their own docstring had flagged that risk; they were passing while covering nothing.
+
 **Recon pages are JPEG; everything else stays PNG (2026-07-16).** A kneeboard page is written
 by `KneeboardPage.write` and lands in the miz under its own filename (pydcs writes `page.name`
 verbatim), so the *suffix* is the whole of the format decision. Every page used to be `.png` —

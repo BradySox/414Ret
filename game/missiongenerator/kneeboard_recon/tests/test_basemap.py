@@ -16,6 +16,7 @@ from game.missiongenerator.kneeboard_recon.basemap import (
     render_basemap,
 )
 from game.missiongenerator.kneeboard_recon.extent import MapExtent
+from game.missiongenerator.kneeboard_recon.gif_georef import COVERAGE
 
 
 @pytest.fixture(scope="module")
@@ -75,33 +76,57 @@ def test_render_basemap_legacy_fallback_below_threshold_uses_tan_landmap(
     assert img.getpixel((0, 50)) == (224, 213, 191)
 
 
+# A colour the tan-landmap renderer can never emit, so "did the GIF crop run"
+# is answered by looking at the page rather than by trusting a call spy.
+_SYNTHETIC_GIF_RGB = (255, 0, 220)
+
+
+def _synthetic_theater_gif(terrain: Caucasus) -> Image.Image:
+    """A stand-in raster at the exact size the coverage table was measured on.
+
+    The size matters: ``coverage_for`` refuses a raster that is not the one
+    the rect was measured against, so a convenient 200x200 placeholder now
+    exercises the refusal path instead of the crop path.
+    """
+    return Image.new("RGB", COVERAGE[terrain.name].image_size, _SYNTHETIC_GIF_RGB)
+
+
+def _extent_inside_caucasus_raster(
+    caucasus: Caucasus, span_x: float, span_y: float
+) -> MapExtent:
+    rect = COVERAGE[caucasus.name].rect
+    mid_x = (rect.min_x + rect.max_x) / 2
+    mid_y = (rect.min_y + rect.max_y) / 2
+    return MapExtent(
+        min_x=mid_x - span_x / 2,
+        max_x=mid_x + span_x / 2,
+        min_y=mid_y - span_y / 2,
+        max_y=mid_y + span_y / 2,
+        terrain=caucasus,
+    )
+
+
 def test_render_basemap_legacy_fallback_above_threshold_uses_gif_crop(
     caucasus: Caucasus, tmp_path: Path
 ) -> None:
     """Above DETAIL_THRESHOLD_M the legacy path crops the theater gif.
 
     Patch ``_load_gif`` so the test does not depend on the GIF file being
-    present in the CI environment, and explicitly assert it was invoked —
-    a prior version only checked ``len(colors) > 5`` which also passes
-    on the tan-landmap fallback when the GIF is absent, providing no
-    real regression coverage for the GIF path.
+    present in the CI environment, and assert the page carries the raster's
+    own colour — a prior version only checked ``len(colors) > 5``, which also
+    passes on the tan-landmap fallback and so covered nothing.
     """
-    extent = MapExtent(
-        min_x=0.0, max_x=30_000.0, min_y=0.0, max_y=30_000.0, terrain=caucasus
-    )
-    synthetic_gif = Image.new("RGB", (200, 200), (50, 90, 130))
+    extent = _extent_inside_caucasus_raster(caucasus, 30_000.0, 30_000.0)
     # Drop any cached gif from a previous test so the spy actually runs.
     basemap._gif_cache.pop(caucasus.name, None)
     with patch.object(basemap, "render_tiles", return_value=None), patch.object(
-        basemap, "_load_gif", return_value=synthetic_gif
+        basemap, "_load_gif", return_value=_synthetic_theater_gif(caucasus)
     ) as gif_spy:
         img = render_basemap(
             extent, page_width=920, page_height=600, cache_dir=tmp_path
         )
     gif_spy.assert_called()
-    colors = img.getcolors(maxcolors=100_000)
-    assert colors is not None
-    assert len(colors) > 5, "gif crop fallback should produce a multi-color image"
+    assert img.getpixel((460, 400)) == _SYNTHETIC_GIF_RGB
 
 
 def test_render_basemap_legacy_fallback_wide_east_west_uses_gif_crop(
@@ -110,16 +135,97 @@ def test_render_basemap_legacy_fallback_wide_east_west_uses_gif_crop(
     """A corridor short north-south but wide east-west is still a large area
     and must take the GIF crop, not the tan grid. Guards against keying the
     threshold off span_x_m alone."""
-    extent = MapExtent(
-        min_x=0.0, max_x=2_000.0, min_y=0.0, max_y=30_000.0, terrain=caucasus
-    )
-    synthetic_gif = Image.new("RGB", (200, 200), (50, 90, 130))
+    extent = _extent_inside_caucasus_raster(caucasus, 2_000.0, 30_000.0)
     basemap._gif_cache.pop(caucasus.name, None)
     with patch.object(basemap, "render_tiles", return_value=None), patch.object(
-        basemap, "_load_gif", return_value=synthetic_gif
+        basemap, "_load_gif", return_value=_synthetic_theater_gif(caucasus)
     ) as gif_spy:
-        render_basemap(extent, page_width=920, page_height=600, cache_dir=tmp_path)
+        img = render_basemap(
+            extent, page_width=920, page_height=600, cache_dir=tmp_path
+        )
     gif_spy.assert_called()
+    assert img.getpixel((460, 400)) == _SYNTHETIC_GIF_RGB
+
+
+def test_gif_crop_refused_outside_coverage_falls_back_to_landmap(
+    caucasus: Caucasus, tmp_path: Path
+) -> None:
+    """An extent past the raster's edge must not be stretched to fill the page.
+
+    This is the 2026-08-22 defect: the crop rectangle was clamped to the
+    image, so ground the raster never drew was rendered as a stretch of
+    whatever sat nearest the edge, with the symbology drawn over it.
+    """
+    rect = COVERAGE[caucasus.name].rect
+    extent = MapExtent(
+        min_x=rect.min_x - 60_000.0,
+        max_x=rect.min_x - 20_000.0,
+        min_y=rect.min_y + 100_000.0,
+        max_y=rect.min_y + 140_000.0,
+        terrain=caucasus,
+    )
+    basemap._gif_cache.pop(caucasus.name, None)
+    with patch.object(basemap, "render_tiles", return_value=None), patch.object(
+        basemap, "_load_gif", return_value=_synthetic_theater_gif(caucasus)
+    ):
+        img = render_basemap(
+            extent, page_width=920, page_height=600, cache_dir=tmp_path
+        )
+    assert img.getpixel((460, 400)) != _SYNTHETIC_GIF_RGB
+    # Sample below the 24 px OFFLINE banner: the landmap renderer's tan.
+    assert img.getpixel((0, 50)) == (224, 213, 191)
+
+
+def test_gif_crop_refused_for_a_raster_that_is_not_the_measured_size(
+    caucasus: Caucasus, tmp_path: Path
+) -> None:
+    """A replaced or resized raster invalidates the rect; refuse, don't scale."""
+    extent = _extent_inside_caucasus_raster(caucasus, 30_000.0, 30_000.0)
+    wrong_size = Image.new("RGB", (200, 200), _SYNTHETIC_GIF_RGB)
+    basemap._gif_cache.pop(caucasus.name, None)
+    with patch.object(basemap, "render_tiles", return_value=None), patch.object(
+        basemap, "_load_gif", return_value=wrong_size
+    ):
+        img = render_basemap(
+            extent, page_width=920, page_height=600, cache_dir=tmp_path
+        )
+    assert img.getpixel((460, 400)) != _SYNTHETIC_GIF_RGB
+
+
+def test_gif_crop_samples_the_right_corner_of_the_raster(
+    caucasus: Caucasus, tmp_path: Path
+) -> None:
+    """The crop reads the pixels the extent actually names.
+
+    Paints one quadrant of a stand-in raster a marker colour and asks for an
+    extent wholly inside that quadrant. Getting the marker colour back proves
+    the world-to-pixel mapping picked the right rows and columns, which a
+    clamped crop of a wrong rect would not.
+    """
+    rect = COVERAGE[caucasus.name].rect
+    width, height = COVERAGE[caucasus.name].image_size
+    gif = Image.new("RGB", (width, height), (10, 10, 10))
+    marker = (0, 255, 120)
+    # Top-left image quadrant = north-west corner of the world rect.
+    gif.paste(Image.new("RGB", (width // 2, height // 2), marker), (0, 0))
+
+    quarter_x = (rect.max_x - rect.min_x) / 4
+    quarter_y = (rect.max_y - rect.min_y) / 4
+    north_west = MapExtent(
+        min_x=rect.max_x - quarter_x - 15_000.0,
+        max_x=rect.max_x - quarter_x + 15_000.0,
+        min_y=rect.min_y + quarter_y - 15_000.0,
+        max_y=rect.min_y + quarter_y + 15_000.0,
+        terrain=caucasus,
+    )
+    basemap._gif_cache.pop(caucasus.name, None)
+    with patch.object(basemap, "render_tiles", return_value=None), patch.object(
+        basemap, "_load_gif", return_value=gif
+    ):
+        img = render_basemap(
+            north_west, page_width=920, page_height=600, cache_dir=tmp_path
+        )
+    assert img.getpixel((460, 400)) == marker
 
 
 def test_detail_threshold_is_5km() -> None:
@@ -286,3 +392,78 @@ def test_imagery_offset_survives_unprojectable_terrain() -> None:
         min_x=0.0, max_x=1_000.0, min_y=0.0, max_y=1_000.0, terrain=MagicMock()
     )
     assert basemap._imagery_offset_for(extent, None) is None
+
+
+def test_theater_basemap_uses_the_raster_when_it_covers_the_extent(
+    caucasus: Caucasus,
+) -> None:
+    """The orientation map's backdrop is the shipped raster where it reaches."""
+    extent = _extent_inside_caucasus_raster(caucasus, 200_000.0, 200_000.0)
+    basemap._gif_cache.pop(caucasus.name, None)
+    with patch.object(
+        basemap, "_load_gif", return_value=_synthetic_theater_gif(caucasus)
+    ):
+        img = basemap.render_theater_basemap(extent, 400, 400)
+    assert img.size == (400, 400)
+    assert img.getpixel((200, 200)) == _SYNTHETIC_GIF_RGB
+
+
+def test_theater_basemap_falls_back_to_coastlines_when_the_raster_refuses(
+    caucasus: Caucasus,
+) -> None:
+    """Off the raster the page still draws, from world-coordinate polygons."""
+    rect = COVERAGE[caucasus.name].rect
+    extent = MapExtent(
+        min_x=rect.min_x - 300_000.0,
+        max_x=rect.min_x - 100_000.0,
+        min_y=rect.min_y + 100_000.0,
+        max_y=rect.min_y + 300_000.0,
+        terrain=caucasus,
+    )
+    basemap._gif_cache.pop(caucasus.name, None)
+    with patch.object(
+        basemap, "_load_gif", return_value=_synthetic_theater_gif(caucasus)
+    ):
+        img = basemap.render_theater_basemap(extent, 400, 400)
+    assert img.size == (400, 400)
+    colours = {
+        img.getpixel((x, y)) for x in range(0, 400, 40) for y in range(0, 400, 40)
+    }
+    assert _SYNTHETIC_GIF_RGB not in colours
+    # render_landmap_basemap paints sea, land fill or its grid line — nothing else.
+    assert colours <= {
+        basemap._SEA_RGB,
+        basemap._LAND_FILL,
+        basemap._COAST_RGB,
+        basemap._GRID_LINE,
+    }
+
+
+def test_theater_basemap_dims_the_raster_for_a_dark_kneeboard(
+    caucasus: Caucasus,
+) -> None:
+    """No dark variant of the raster exists, so the daylight render is dimmed."""
+    extent = _extent_inside_caucasus_raster(caucasus, 200_000.0, 200_000.0)
+    basemap._gif_cache.pop(caucasus.name, None)
+    with patch.object(
+        basemap, "_load_gif", return_value=_synthetic_theater_gif(caucasus)
+    ):
+        light = basemap.render_theater_basemap(extent, 400, 400, dark=False)
+        dark = basemap.render_theater_basemap(extent, 400, 400, dark=True)
+    assert sum(dark.getpixel((200, 200))) < sum(light.getpixel((200, 200)))
+
+
+def test_theater_basemap_never_reaches_for_tiles(caucasus: Caucasus) -> None:
+    """This backdrop is offline by construction — it must not hit the network.
+
+    The orientation map is generated for every mission, unlike the recon pages,
+    so a tile fetch here would put a network round-trip on the normal path.
+    """
+    extent = _extent_inside_caucasus_raster(caucasus, 200_000.0, 200_000.0)
+    basemap._gif_cache.pop(caucasus.name, None)
+    with patch.object(
+        basemap, "_load_gif", return_value=_synthetic_theater_gif(caucasus)
+    ), patch.object(
+        basemap, "render_tiles", side_effect=AssertionError("must not fetch tiles")
+    ):
+        basemap.render_theater_basemap(extent, 400, 400)

@@ -1164,9 +1164,10 @@ def test_tomcat_route_lands_on_plan_two_with_the_jets_name_codes() -> None:
     assert route["route_as_line"] is True
     # Waypoint 0 is the spawn, so plan 2's n matches the kneeboard's n.
     # Bare uppercase alphanumerics, like every name in the authored cartridge.
+    # The first target carries XST, the surface target the HUD highlights.
     assert [w["name"] for w in route["waypoints"]] == [
         "INGREXIP",
-        "POWERPLA",
+        "POWERXST",
         "LANDIXHB",
     ]
     # 07:25 local on a UTC+4 map is 03:25Z.
@@ -1674,3 +1675,34 @@ def test_no_jdam_loaded_means_the_plain_list_everywhere() -> None:
         build_tomcat_cartridge(flight, mission_data, game, "Plain").to_json()
     )["data"]["JDAM"]["stations"]
     assert all(s["targets"][0]["name"] == "BLDG1" for s in stations)
+
+
+def test_jdam_release_speed_never_exceeds_the_module_default() -> None:
+    """A plan timed at 600 kt draws a LAR the crew only gets by flying 600 kt.
+    The release speed is the slower of the plan and 450 kt, so the envelope
+    on the page is the conservative one; a slower plan keeps its own number."""
+    flight, mission_data, game = _cluster_flight()
+    ingress, target = flight.waypoints[1], flight.waypoints[2]
+    # 40 km in 130 s is about 600 kt.
+    ingress.tot = datetime(1988, 7, 15, 7, 25, 0)
+    target.tot = datetime(1988, 7, 15, 7, 27, 10)
+    fast = json.loads(
+        build_tomcat_cartridge(flight, mission_data, game, "Fast").to_json()
+    )["data"]["JDAM"]["stations"][0]["targets"][0]
+    assert fast["drop_spd"] == 450
+    assert fast["lar_rmax_nmi"] == pytest.approx(lookup_jdam_lar(450.0, 20.0)[1])
+
+    # 40 km in 300 s is about 259 kt: below the cap, the plan's own number.
+    target.tot = datetime(1988, 7, 15, 7, 30, 0)
+    slow = json.loads(
+        build_tomcat_cartridge(flight, mission_data, game, "Slow").to_json()
+    )["data"]["JDAM"]["stations"][0]["targets"][0]
+    assert 250 <= slow["drop_spd"] <= 265
+
+
+def test_only_the_first_target_in_a_cluster_is_the_surface_target() -> None:
+    flight, mission_data, game = _cluster_flight()
+    route = json.loads(
+        build_tomcat_cartridge(flight, mission_data, game, "XST").to_json()
+    )["data"]["NAV"][1]["waypoints"]
+    assert [w["name"] for w in route] == ["INGREXIP", "BLDG1XST", "BLDG2", "BLDG3"]

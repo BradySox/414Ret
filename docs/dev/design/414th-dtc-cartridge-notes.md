@@ -715,9 +715,16 @@ Names cap at **8 characters** (`NAV_WP_NAME_MAXLEN`, enforced on both waypoints
 and additional points), so the base name is what gives way, never the code:
 `_suffixed()` trims the base. The authored cartridge below uses the grammar in
 anger — `IPORCXIP`, `IPBLUXFP`, `BULLSXB` — so it is real, not documentation of
-an intention. We emit `XB` (bullseye), `XD` (divert), `XHB` (the recovery field)
-and `XIP` (every ingress waypoint type). `DP`, `HA` and `ST` have no stated
-meaning anywhere, so nothing is guessed onto them.
+an intention. We emit `XB` (bullseye), `XD` (divert), `XHB` (the recovery field),
+`XIP` (every ingress waypoint type) and **`XST` on the first target waypoint in
+route order**. A squadron tip (2026-08-22) supplied the two meanings the help text
+never states: **`XST` is the surface target, which the HUD highlights with a
+pentagon**, and `XB` on the bullseye puts its bearing and range on the HUD in A2A.
+The bullseye is an additional point rather than a route waypoint — that is how the
+authored cartridge carries it (`BULLSXB`), so the code is assumed to work there.
+`XST` goes on one point only, the first target, which is also STA 3's PP1; whether
+the jet honours a second is unknown. `DP`, `HA` and `FP` still have no stated
+meaning, so nothing is guessed onto them.
 
 ### Editor-mined limits
 
@@ -762,11 +769,14 @@ bomb's run-in from the first target gave it a heading set by a 300 m hop, a
 two-second leg for its speed and the ground as its release altitude. The reference
 is the last non-target route waypoint before the cluster.
 
-`attack_heading` is the run-in: the bearing from the previous route waypoint to
-the target. `drop_alt` is the planned leg altitude, falling back to the ingress
-leg when the target waypoint is ground-marked (a §74 target waypoint plans on the
-deck for players, which is not a release altitude) and to the module's 20000 ft
-when neither is usable.
+`attack_heading` is the run-in: the bearing from the IP to the target. `drop_alt`
+is the IP leg's planned altitude (a target waypoint plans on the deck for players,
+which is not a release altitude), falling back to the module's 20000 ft when
+nothing usable is planned. **`drop_spd` is the slower of the plan's IP-to-target
+leg speed and the module's 450 kt default** (DM call, 2026-08-22): the TOT-derived
+number came out at 496 and 642 kt on a real save, and the LAR computed from it is
+honest only if the crew flies that fast. Capped, the LAR the CDNU draws is the
+conservative one — fly the run-in faster and the real envelope is only bigger.
 
 ### TIS
 

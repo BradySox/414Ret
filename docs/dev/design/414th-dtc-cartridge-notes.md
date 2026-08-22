@@ -184,6 +184,25 @@ point), 15 THREAT_PTS, 20+20 COMM channels.
   are sane. A curated program table no longer needs hand-authoring — ED ships
   one (see the manual cross-check).
 
+## Orbits and destinations — the 2026-08-22 rule
+
+**Only the flight's own orbit is drawn, then the tankers and AWACS.** The Hornet SA
+page displays one CAP point at a time (the selected one), so the list is a library
+to flip through, and other flights' BARCAP stations were clutter the pilot never
+asked for. Entry 1 is now the flight's own racetrack when it flies one (BARCAP,
+TARCAP, tanker, AEW&C) — or, for a flight with no true orbit, a stand-in at its
+**hold point** (the `LOITER` waypoint, else `JOIN`), so every jet gets a track
+rather than none. The tanker and AEW&C orbits follow. `own_orbit_track()` in
+`common.py` is the one implementation; the Viper's anchor steerpoints and the
+Tomcat's reference points take the same list. `Default_CAP_Point` is always 1.
+
+**The Viper's DEST page carries the enemy field the flight is working over.** The
+HSD is where the crew wants the field they are attacking or fighting above, and
+only the DEST partition draws an airfield. A red, non-naval control point within
+10 NM of the target earns the slot right after the briefed divert, so the 19-slot
+cap can never squeeze it out. Not a recovery option — it is kept out of the divert
+slot on purpose.
+
 ## pydcs seams (fork-side until upstream lands)
 
 pydcs (pin `dcs-retribution/pydcs@b0fc06a`) knows neither piece; neither does
@@ -520,103 +539,60 @@ more mining.
 
 ---
 
-## CJS Super Hornets — FA-18E/F + EA-18G (2026-08-02)
+## CJS Super Hornets — REMOVED 2026-08-22
 
-The community CJS mod ships **native DTC descriptors of its own** at
-`<mod>/Core Module/DTC/{FA-18E,FA-18F,EA-18G}_DTC.lua` (~21.6 KB each, all three
-identical bar the `type`/`name`), so these airframes take a cartridge exactly like
-the stock jets. Mined the same way as the ED descriptors above.
+FA-18E/F and EA-18G took a cartridge from 2026-08-02 to 2026-08-22. The mod's
+descriptors (`<mod>/Core Module/DTC/{FA-18E,FA-18F,EA-18G}_DTC.lua`) are thin
+wrappers that `dofile` ED's FA-18C `COMM`, `WYPT`, `ALR67` and `TCN`
+implementations and declare **no `SA` table** — no FLOT, no racetracks, no threat
+rings. So the cartridge could only carry the comm presets and the route, and the
+audit below shows both already reach every jet through the miz. Double work for
+no cockpit gain; removed on the DM's call.
 
-**They are thin wrappers around ED's Hornet DTC.** The load-time block `dofile`s
-ED's *own* implementations:
+The builder and its tests are in git history
+(`git show c67783176:game/missiongenerator/dtc/superhornet.py`). **A re-add must
+re-mine the mod's descriptor first** — CJS can change it between releases, and
+it already carried one stale `dofile` (`TCN/TACAN_defs.lua`, gone from current
+DCS). The `FA-18ET`/`FA-18FT` tanker variants never had a descriptor at all.
 
-```
-CoreMods/aircraft/FA-18C/DTC/defs.lua
-CoreMods/aircraft/FA-18C/DTC/COMM/{COMM_common,COMM1,COMM2}.lua
-CoreMods/aircraft/FA-18C/DTC/WYPT/{WYPT_NAV,ROUTE_SEQ,NAV_SETTINGS}.lua
-CoreMods/aircraft/FA-18C/DTC/ALR67/{CMDS,RWR}.lua
-CoreMods/aircraft/FA-18C/DTC/TCN/TACAN.lua
-```
+---
 
-So the **COMM and WYPT schemas are ED's, not CJS's** — which is why
-`game/missiongenerator/dtc/superhornet.py` reuses the Hornet builder's emit verbatim
-(`build_hornet_family_cartridge`, factored out of `hornet.py`) instead of
-reimplementing. A test asserts both sections come out byte-identical to the Hornet's.
+## What the miz already delivers — the double-work audit (2026-08-22)
 
-**What the descriptor does *not* have — the one real limitation.** The CJS `data`
-table is:
+Asked by the DM: how much of a cartridge duplicates what Retribution already
+writes into the miz for every aircraft, and what is lost if the DTC layer is
+ever switched off. Checked against the code that writes the miz, not against
+the descriptors.
 
-```lua
-data = { ALR67 = {CMDS, RWR}, COMM = {COMM1, COMM2, mirror_*},
-         WYPT = {NAV_PTS, NAV_ROUTE, NAV_SETTINGS, terrain, mirror_NAV_PTS},
-         TCN = {}, type = "FA-18F", name = "FA-18F", terrain = "" }
-```
+| Data | Reaches the jet without a cartridge? | What the cartridge adds |
+|---|---|---|
+| Radio presets on channels | **Yes** — upstream's channel allocator writes every client unit's `Radio` table (`FlightData.assign_channel` → `unit.set_radio_channel_preset`, driven by `game/radio/channels.py`) | Hornet: ≤5-char channel **names**. Viper: **nothing** — its schema has no name field, so `COMM` is a pure mirror |
+| The route as steerpoints | **Yes** — the miz flight plan | Hornet: names, per-leg ETA/speed, the target flag. Viper: TOS and leg speed inline, TGT/IP sub-types. Tomcat: nothing (plan 1 is the ME route; plan 2 repeats it with TOTs) |
+| Recovery TACAN / ICLS / ACLS | No | Hornet `NAV_SETTINGS` |
+| A/A waypoint on the bullseye, FPAS home | No | Hornet `NAV_SETTINGS` |
+| Own orbit, tanker/AWACS orbits | No (the F10 map has them; the cockpit does not) | Hornet `CAP_PTS`, Viper anchors 21–25, Tomcat references |
+| Front line | No | Hornet `FAOR_FLOT`, Viper `GEO_LINES`, Tomcat plot lines |
+| Confirmed SAM rings | Partly — the Hornet SA page draws MERAD sites natively (§7) | SHORAD/LORAD rings, and every ring on the Viper and Tomcat |
+| Recovery fields + the target's field | No | Viper `DEST` |
+| Pre-planned JDAM aimpoints | No | Tomcat `JDAM` |
+| TIS send-to list | No | Tomcat `TIS` |
 
-There is **no `SA` table and no `GPS_WYPT`**. Four independent confirmations, because
-this is the one claim the whole `with_sa=False` decision rests on:
+**Consequences.**
 
-1. **The `data` table above is the complete table** — `ALR67`/`COMM`/`WYPT`/`TCN` plus
-   `type`/`name`/`terrain`, nothing else.
-2. **Token counts, CJS vs ED** (all three CJS descriptors + their `defs.lua`):
-   `SA` **0** vs ED's 205 · `CAP_PTS` 0 vs 43 · `MEZ_THRTS` 0 vs 49 · `FAOR_FLOT` 0 vs 42.
-3. **The panel list.** CJS declares five — `pWYPT`, `pRTE_SEQ`, `pTACAN`, `pCOMM`,
-   `pALR67`. ED declares eight: the same five **plus `pSA`, `pGPS_WYPT`, `pHARM`**. The
-   ME's DTC editor for a Super Hornet therefore has no SA tab at all.
-4. **The `.dlg` carries a hollow `pSA` stub** — exactly one `pSA` reference (ED's has
-   **196**), whose entire contents are a single static label reading `"Panel SA"`.
-
-Read together: CJS forked an ED Hornet descriptor and **stripped SA out** (along with
-GPS_WYPT and HARM), leaving an empty panel shell. Since the `.lua` never lists `pSA` in
-`MAIN_panels` and `data` has no `SA` key, nothing populates or reads it.
-
-🔎 **That stub is the tripwire.** If a future CJS release fills `pSA` in and adds the
-`SA` table, flipping `with_sa=True` lights up the entire picture — FLOT, CAP racetracks,
-threat rings — with **no other code change**. Re-check it after a mod update: grep the
-descriptor for `SA` and compare the panel list against ED's.
-
-The Super Hornet therefore gets the comm plan, steerpoints/route and the §65 recovery
-aids, but **none of the SA picture** — no FLOT, no CAP/tanker racetracks, no enemy
-threat rings. Implemented as
-`with_sa=False`: the planner's three SA switches go inert rather than emitting a
-table the module cannot parse. A flight with *only* SA sections enabled passes the
-generator's `any_content` gate but yields nothing, so the builder returns `None`
-(`CartridgeBuilder` is now `Optional`-returning) — an empty AutoLoading cartridge is
-worse than no cartridge.
-
-`FA-18ET`/`FA-18FT` (tanker variants) are deliberately unregistered: no descriptor
-ships for them, so a cartridge would have nothing to load it.
-
-### Drift risk — read before trusting this
-
-Unlike the rest of §74, this targets a **mod** descriptor. Two consequences:
-
-1. **A CJS release can change the schema.** Adding `SA` would be the welcome case
-   (flip `with_sa=True` and the whole picture lights up); renaming or restructuring
-   COMM/WYPT would silently produce a cartridge the jet rejects. Re-mine
-   `<mod>/DTC/FA-18F_DTC.lua` after a mod update.
-2. **The descriptor is already partly stale.** `initialize_TACAN()` `dofile`s
-   `CoreMods/aircraft/FA-18C/DTC/TCN/TACAN_defs.lua`, which **no longer exists** in
-   current DCS (ED's `TCN/` now holds only `TACAN.lua`). That call is lazy — it fires
-   only when the ME DTC editor's TCN panel opens — and harmless to us because §74
-   emits `"TCN": []`. But it is the same staleness that broke the mod's *cockpit*
-   scripts and crashed the SA page (2026-08-02); treat mod-vs-current-DCS drift as
-   the default assumption, not the exception.
-
-**Re-mined at CJS v2.4 (2026-08-19), per the drift instruction above.**
-Unchanged: `MAIN_panels` is still the same five (`pWYPT`, `pRTE_SEQ`, `pTACAN`,
-`pCOMM`, `pALR67`) and `data` still has no `SA` and no `GPS_WYPT`, so
-`with_sa=False` holds and the `pSA` tripwire has not fired. The stale
-`TACAN_defs.lua` `dofile` is still there and still harmless (lazy, and we emit
-`"TCN": []`).
-
-**There is no Super Hornet manual to cross-check against.** No vendor PDF ships
-in `references/manuals/`, and the mod's own `Doc/` folder is empty. The
-applicable manual is the **FA-18C guide**, because the descriptor `dofile`s ED's
-`WYPT/NAV_SETTINGS.lua`, `COMM/*`, `ALR67/*` and `TCN/TACAN.lua` — so both
-cockpit corrections (the Zulu clock and the designated A/A waypoint) reach the
-E/F/G unchanged, locked by a test.
-
-In-game pass: checklist **B28**, CJS bullet.
+- **The cartridge is an overlay, never load-bearing.** With `dtc_data_cartridges`
+  off — or the cartridge rejected by the jet — radios and route are exactly
+  upstream's. That is the revert path, and it costs nothing to exercise.
+- **The mirrors must stay mirrors.** The Hornet `COMM` section overwrites the
+  whole channel table, so it has to carry the allocator's frequencies to add its
+  names; emitting names alone would blank the presets. The same holds for the
+  route sections. A disagreement between the miz and the cartridge is a bug in
+  the cartridge.
+- **The Viper `COMM` section is the one genuinely redundant piece** — identical
+  to the unit's `Radio` table, key for key. Dropping it would change nothing the
+  pilot sees. **Not dropped; it is the DM's call** (harmless as a mirror, and the
+  thing it guards against — a future Viper schema with names — is cheap to keep).
+- This is also why the Super Hornets lost their cartridge: with no `SA`, the
+  whole file was the first two rows of this table.
 
 ---
 

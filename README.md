@@ -91,13 +91,14 @@ Most of this is opt-in. Full list with toggles, defaults and known limitations:
 
 - QRA intercept reserve holds fighters for base defence. Part of it can be player-manned as
   cold alert.
-- Native DCS data cartridges auto-load in Hornets, Vipers, F-14B(U)s and CJS Super Hornets:
-  comm presets matching the kneeboard, route with push times, boat TACAN/ICLS/ACLS, and the
-  SA/HSD picture (FLOT, friendly orbits, recon-confirmed SAM rings). Hornets get the
-  bullseye designated as the air-to-air waypoint; Vipers get the friendly recovery fields as
-  Destination steerpoints, the briefed divert first. A per-flight
-  DTC tab controls the cartridge or any single section of it. Super Hornets carry no SA
-  picture — the mod's cartridge format has no field for one.
+- Native DCS data cartridges auto-load in Hornets, Vipers and F-14B(U)s: comm presets
+  matching the kneeboard, route with push times, boat TACAN/ICLS/ACLS, and the SA/HSD
+  picture (FLOT, your own orbit, the tankers and AWACS, recon-confirmed SAM rings). The
+  orbit shown is the flight's own — its patrol track, or its hold point when it flies no
+  track — never another flight's station. Hornets get the bullseye designated as the
+  air-to-air waypoint; Vipers get the friendly recovery fields as Destination steerpoints,
+  the briefed divert first and the enemy field they are working over beside it. A
+  per-flight DTC tab controls the cartridge or any single section of it.
 - The F-14B(U) cartridge is built differently, because plan 1 of its navigation page is
   already the mission route. It leaves that alone and adds the front line as map lines, the
   bullseye, divert, tanker, AWACS and CAP anchors and the confirmed SAM sites as reference

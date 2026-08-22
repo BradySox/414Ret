@@ -35,13 +35,12 @@ from game.missiongenerator.dtc.cartridge import DtcCartridge
 from game.missiongenerator.dtc.common import (
     SupportTrack,
     bearing_degrees,
-    dedupe_stations,
     flot_segments,
     is_route_waypoint,
     known_enemy_threat_sites,
     leg_altitude,
     leg_speed_kmh,
-    raw_cap_tracks,
+    own_orbit_track,
     sanitize_short_name,
     seconds_of_day,
     steerpoint_elevation,
@@ -288,10 +287,12 @@ def _threat_name(label: str) -> str:
     return f"SA{label}" if label.isdigit() else label
 
 
-def _orbit_tracks(mission_data: MissionData) -> list[SupportTrack]:
-    """Tankers and AEW&C first: a fighter wants the basket before the CAP
-    stations, and the 20-reference budget runs out."""
-    return support_tracks(mission_data) + dedupe_stations(raw_cap_tracks(mission_data))
+def _orbit_tracks(flight: FlightData, mission_data: MissionData) -> list[SupportTrack]:
+    """This flight's own orbit (racetrack or hold point), then the tankers and
+    AEW&C. Other flights' CAP stations are not this jet's business, and the
+    20-reference budget runs out."""
+    own = own_orbit_track(flight)
+    return ([own] if own is not None else []) + support_tracks(mission_data)
 
 
 def _additional_points(
@@ -312,7 +313,7 @@ def _additional_points(
         for waypoint in off_route
     ]
     if options.friendly_orbits:
-        for track in _orbit_tracks(mission_data):
+        for track in _orbit_tracks(flight, mission_data):
             centre_x, centre_y = track.center
             points.append(_reference(coords, track.callsign, centre_x, centre_y))
     if options.threat_rings:

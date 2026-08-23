@@ -5968,11 +5968,16 @@ not implicated** — an earlier reading of this data that blamed 90 %-full ramps
 taxi was wrong, and the 62 %/73 % "break" was an artifact of which fields happened to hold
 the early-activating flights.
 
-**Still open, and the reason this is not simply closed:** the ATO schedules activations out
-to **13,517 s (3 h 45 m)** on the blue side against a mission flown for ~62 min, so 8 of
-blue's 37 and 1 of red's 8 never fired. Unflown packages auto-resolve, so this is not
-obviously a defect — but nobody has decided it is correct either. Worth its own row if the
-turn's flying is meant to be seen.
+**The 3 h 45 m ATO was chased and is settled — a setting, not the campaign.** Blue's
+activations ran out to **13,517 s** against ~62 min flown, so 8 of blue's 37 and 1 of red's 8
+never fired. That save carried a 100-minute mission duration, a 15-minute BARCAP overlap, and
+**Max simultaneous carrier BARCAP waves at 1**. Overlap shortens each wave's fresh coverage
+rather than adding cover, which raises the round count; a fleet control point doubles it; and
+at 1 the stacking that is meant to absorb the doubling never happens, so six waves go in
+sequence at 0/45/89/135/180/225 min. At the default 2 they become three pairs and the schedule
+fits the mission. Nothing to fix here — the two setting descriptions that hid this are fixed
+in this branch.
+
 **History:** the campaign is new; see
 [414th-iron-gate-campaign-notes.md](design/414th-iron-gate-campaign-notes.md).
 

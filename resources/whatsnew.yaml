@@ -13,6 +13,27 @@
 # changes sharing a date keep the order written here.
 
 entries:
+  - date: 2026-08-23
+    title: The front line sits on ground the armour can hold
+    change: >-
+      Where the supply route crossed the edge of ground vehicles cannot drive,
+      the front line was drawn entirely onto the impassable side and none of it
+      onto the passable side. On a Caucasus mountain crossing that put the whole
+      20 km front on a ridge, and left blue and red bunched 15 km apart on
+      opposite edges of it instead of facing each other. The front is now
+      measured against the ground that is actually drivable. A front pinched
+      into a pass is legitimately narrower than the width setting asks for.
+      Caucasus - Northern Russia also had the supply line that caused it: its
+      Kutaisi-Khashuri road crossed the Likhi range in one 41 km straight leg,
+      and now follows the E60 through the Rikoti pass. That half needs a new
+      game.
+    watch: >-
+      Look at the orange front line on the campaign map where it meets a
+      mountain or a coast. It should run into passable ground alongside the
+      supply route rather than off into terrain. In the mission, the two sides'
+      ground groups should face each other across the front instead of sitting
+      in two separate blobs.
+    row: B93
   - date: 2026-08-22
     title: The Tomcat's JDAM page hands each bomb its own target
     change: >-

@@ -48,11 +48,12 @@ def test_tarps_resolves_the_recon_fit() -> None:
     assert ETHER_ELINT_POD in clsids
 
 
-def test_the_dcs_shipped_fits_are_still_selectable() -> None:
-    # Adding a named preset must not displace the stock ones in the payload
-    # editor -- pydcs merges by name across payload directories.
-    Su_24MR.load_payloads()
-    payloads = Su_24MR.payloads
-    assert payloads is not None
-    assert "SHPIL,ETHER,R-60M*2" in payloads
-    assert "TANGAZH,ETHER,R-60M*2" in payloads
+def test_we_add_one_preset_and_redefine_none() -> None:
+    # pydcs merges payload files by name and the first directory wins, so a file
+    # reusing a stock name would replace that fit in the payload editor. Assert
+    # on our own file rather than on the merged result: the shipped fits come
+    # from the DCS install, which CI does not have.
+    text = (PAYLOADS_DIR / "Su-24MR.lua").read_text()
+    names = set(re.findall(r'\["name"\]\s*=\s*"([^"]*)"', text))
+    # ["name"] also appears once at file scope, holding the unit id.
+    assert names == {"Su-24MR", "Retribution TARPS"}

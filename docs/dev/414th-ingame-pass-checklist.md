@@ -5957,8 +5957,9 @@ DCS rather than being it. Whether every aircraft actually gets a stand is a
 mission-generation question.
 
 - **Setup:** New Game on **Caucasus - Iron Gate**, generate turn 1, open the .miz in the
-  Mission Editor. Check Kutaisi, Kobuleti, Beslan and Tbilisi-Lochini, then **Nigniy Pasanauri
-  FOB** — the campaign's only FOB-based squadron.
+  Mission Editor. Check Kutaisi, Kobuleti, Beslan and Tbilisi-Lochini, then **both red FOBs** —
+  Nigniy Pasanauri and Khashuri each base a four-ship Hind squadron, the only place the
+  campaign puts a squadron on helicopter pads rather than an airfield.
 - **Pass:** every squadron has its aircraft on a stand, nothing on a taxiway or overlapping;
   the Hercules at Kutaisi is on a large stand; the tankers and E-3A start **airborne** out of
   the Turkey spawn rather than on a ramp anywhere.

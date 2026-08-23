@@ -241,27 +241,22 @@ squadrons:
   # Tbilisi-Lochini
   29:
     - primary: BARCAP
-      size: 20
+      size: 18
       aircraft:
         - MiG-29S Fulcrum-C
     - primary: BARCAP
-      size: 10
+      size: 18
       aircraft:
         - MIG-29-FULCRUM
     - primary: BAI
-      secondary: air-to-ground
-      size: 10
-      aircraft:
-        - Mi-24V Hind-E
-    - primary: BAI
       secondary:
         - Strike
-      size: 20
+      size: 17
       aircraft:
         - Su-25 Frogfoot
     - primary: OCA/Runway
       secondary: air-to-ground
-      size: 10
+      size: 17
       aircraft:
         - Su-24M Fencer-D
   # Beslan
@@ -352,3 +347,10 @@ squadrons:
       country: USA
       aircraft:
         - VF-103
+  # Khashuri FOB
+  "Khashuri FOB":
+    - primary: BAI
+      secondary: air-to-ground
+      size: 4
+      aircraft:
+        - Mi-24V Hind-E

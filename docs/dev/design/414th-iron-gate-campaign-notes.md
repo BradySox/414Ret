@@ -82,19 +82,20 @@ the rotary pool is the one that applies.
 | **Kobuleti** | 42 | 36 | F-15E 12, F-16CM 12, F-15C 12 |
 | **Turkey** (off-map air spawn) | ∞ | 6 | KC-135 MPRS 2, KC-135 2, E-3A 2 |
 | **Blue CV** | 90 | 66 | F-14B 24 (VMF-29), F/A-18C 24 (VFA-113), A-6E Tanker 4, E-2D 2, F-14B(U) 12 |
-| Tbilisi-Lochini | 74 | 70 | 5 squadrons |
+| Tbilisi-Lochini | 74 | 70 | MiG-29S 18, MiG-29A 18, Su-25 17, Su-24M 17 |
 | Mozdok | 39 | 39 | 5 |
 | Mineralnye Vody | 28 | 28 | 6, including red's only AWACS and tanker |
 | Beslan | 15 | 15 | Su-27 5, MiG-29S 10 |
 | Nalchik | 15 | 15 | 3, one each of MiG-31, MiG-29S, MiG-29A |
 | Nigniy Pasanauri FOB | 4 rotary | 4 | Mi-24V 4 |
+| Khashuri FOB | 4 rotary | 4 | Mi-24V 4 |
 
 **Blue's land-based fighters total 36 aircraft**, three full squadrons on Kobuleti's 42 stands.
 Batumi was the first choice and was dropped: ten stands is not a fighter base. Gudauta was the
 other candidate at 31 stands, but it sits 160 NM from the fighting against Kobuleti's 132, and
 102 NM from Kutaisi against 32.
 
-**39 squadrons, 316 aircraft.** Squadrons of the same airframe at the same base are merged
+**39 squadrons, 320 aircraft.** Squadrons of the same airframe at the same base are merged
 rather than duplicated — two MiG-31 flights at Mineralnye Vody are one squadron of 8, not two
 of 4. Where the pair had different primaries the second becomes a `secondary:`, so the merge
 never costs a role: Mozdok's Su-24M is SEAD with Strike secondary, Tbilisi's Su-25 is BAI with
@@ -126,12 +127,21 @@ Huey and Kiowa halved. Kobuleti was no help — its 26 helicopter stands are a s
 The trade was made deliberately (DM call): a simpler laydown, at the price of blue's
 rotary strength and of the only sea-based air assault the campaign had.
 
-### Beslan's Hind
+### Red's helicopters live at the FOBs
 
-At **Nigniy Pasanauri FOB**, not Beslan. Beslan has five large stands and the Flanker regiment
-wants them; the FOB had four helicopter pads and nothing on them, and sits 59 NM from the
-fighting against Beslan's 19 — the wrong way round for Flankers, the right way round for attack
-helicopters. This is the campaign's first FOB-based squadron.
+Neither Hind squadron is on an airfield. Both red FOBs had four helicopter pads and nothing on
+them, and both sit closer to the fighting than the fields the squadrons came from:
+
+| squadron | from | to | NM to the fighting |
+|---|---|---|---|
+| Mi-24V 4 | Beslan | **Nigniy Pasanauri FOB** | 19 → 59 |
+| Mi-24V 4 | Tbilisi-Lochini | **Khashuri FOB** | 104 → 82 |
+
+Beslan's move was forced: it has five large stands and the Flanker regiment wants them, so
+the two were sharing at 3 and 2. Tbilisi's was free — better than free. A FOB holds four, so
+the squadron drops from 10 to 4, but the ten stands it vacates go to Tbilisi's jets, which
+were capped at 70 by their own stand class and sitting at 60. **Red ends up four aircraft
+ahead**, and its attack helicopters are 22 NM further forward.
 
 ---
 

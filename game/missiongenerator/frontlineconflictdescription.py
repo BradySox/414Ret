@@ -7,6 +7,7 @@ from typing import Optional, Tuple
 
 from dcs.mapping import Point
 from shapely.geometry import LineString, Point as ShapelyPoint
+from shapely.geometry.base import BaseGeometry
 from shapely.ops import nearest_points
 
 from game.settings import Settings
@@ -148,19 +149,15 @@ class FrontLineConflictDescription:
         """
         settings = front_line.coalition.game.settings
         center_position, heading = cls.frontline_position(front_line, theater, settings)
-        left_heading = heading.left
-        right_heading = heading.right
-        left_position = cls.extend_ground_position(
-            center_position,
-            int(settings.max_frontline_width * 1000 / 2),
-            left_heading,
-            theater,
+        max_width = int(settings.max_frontline_width * 1000)
+        left_reach, right_reach = cls.usable_reach(
+            center_position, heading, max_width, theater
         )
-        right_position = cls.extend_ground_position(
-            center_position,
-            int(settings.max_frontline_width * 1000 / 2),
-            right_heading,
-            theater,
+        left_position = center_position.point_from_heading(
+            heading.left.degrees, left_reach
+        )
+        right_position = center_position.point_from_heading(
+            heading.right.degrees, right_reach
         )
         bounds = FrontLineBounds(left_position, right_position)
         if not settings.front_line_salients:
@@ -170,6 +167,80 @@ class FrontLineConflictDescription:
             right_position,
             cls.sector_depths(bounds, theater),
         )
+
+    @classmethod
+    def usable_reach(
+        cls,
+        center: Point,
+        heading: Heading,
+        max_width: int,
+        theater: ConflictTheater,
+    ) -> Tuple[float, float]:
+        """How far the front may run left and right of `center`, in metres.
+
+        A ray each way stopping at the first inclusion-zone boundary misreads a
+        centre sitting ON that boundary -- what `find_ground_position` returns
+        when the route crosses the edge of the drivable zone -- and draws the
+        whole front on the impassable side. Measuring the drivable interval
+        agrees with the ray cast everywhere else, so this only moves edges.
+
+        Deliberately does NOT spend a pinned side's slack on the other: that
+        widens fronts wherever there is terrain on one flank, and drags the
+        fight off the supply crossing the two sides are contesting.
+        See docs/dev/414th-features.md §90.
+        """
+        half = max_width / 2
+        if theater.landmap is None:
+            return half, half
+        axis = LineString(
+            [
+                dcs_to_shapely_point(
+                    center.point_from_heading(heading.left.degrees, max_width)
+                ),
+                dcs_to_shapely_point(
+                    center.point_from_heading(heading.right.degrees, max_width)
+                ),
+            ]
+        )
+        drivable = theater.landmap.inclusion_zone_only.intersection(axis)
+        if drivable.is_empty:
+            return half, half
+        room = cls._room_around_center(drivable, axis, max_width)
+        if room is None:
+            # The axis only grazes a corner, so there is no run to measure.
+            return half, half
+        return min(half, room[0]), min(half, room[1])
+
+    @staticmethod
+    def _room_around_center(
+        drivable: BaseGeometry, axis: LineString, max_width: int
+    ) -> Optional[Tuple[float, float]]:
+        """Drivable room either side of the centre, measured along `axis`.
+
+        The centre is the midpoint of `axis`, so an offset is
+        `axis.project(...) - max_width`, negative to the left. Picks the run
+        holding the centre, or the nearest run when the centre sits a rounding
+        error outside every one of them -- `find_ground_position` returns a
+        boundary point, which `contains` rejects.
+        """
+        best: Optional[Tuple[float, float]] = None
+        best_gap: Optional[float] = None
+        for geom in getattr(drivable, "geoms", [drivable]):
+            if geom.is_empty or geom.geom_type != "LineString":
+                continue
+            coords = list(geom.coords)
+            ends = [
+                axis.project(ShapelyPoint(coords[0])) - max_width,
+                axis.project(ShapelyPoint(coords[-1])) - max_width,
+            ]
+            low, high = min(ends), max(ends)
+            gap = 0.0 if low <= 0.0 <= high else min(abs(low), abs(high))
+            if best_gap is None or gap < best_gap:
+                best, best_gap = (low, high), gap
+        if best is None:
+            return None
+        low, high = best
+        return -min(low, 0.0), max(high, 0.0)
 
     @classmethod
     def sector_depths(
@@ -243,9 +314,12 @@ class FrontLineConflictDescription:
 
         intersection = line.intersection(theater.landmap.inclusion_zone_only.boundary)
         if intersection.is_empty:
-            # Max extent does not intersect with the boundary of the inclusion
-            # zone, so the full front line is usable. This does assume that the
-            # front line was centered on a valid location.
+            # No crossing means the ray never changes side. From inside the
+            # drivable zone that is the whole extent. From outside it there is
+            # nothing to extend into, and reading it as clear is what walked
+            # salient probes out into ground no vehicle can enter.
+            if not theater.is_on_land(initial):
+                return initial
             return extended
 
         # Otherwise extend the front line only up to the intersection.

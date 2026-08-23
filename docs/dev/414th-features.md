@@ -3721,6 +3721,39 @@ the reported display, and the dialog's own width unchanged. Tests
 `tests/test_payload_tab_layout.py` drive the real `QLoadoutEditor` against real pydcs pylon data
 (picking the longest pylon list by measurement, so a new module is covered the day it lands).
 
+### The New Game wizard grows after it is fitted (2026-08-23, "the new campaign popup renders off screen")
+
+`ScreenFitFilter` fits a dialog on **Show**, once. That is the wrong moment for a `QWizard`, which
+is sized by whichever page is current: New Game shows the intro page, so the filter measures a
+500x461 window that fits any display, and `NewGameWizard._center_on_screen` centres that same small
+window. Clicking Next loads the theater page and the wizard nearly doubles in height, keeping the
+intro page's top-left. Nothing re-fits it.
+
+Measured on the reported display (2560x1392 usable, a 4K panel at 150 %): centred at **1030,465**,
+grown to **1409x963**, so the frame ran to y=1427 and the Back/Next/Cancel row sat 36 px under the
+taskbar. All five pages after the intro were off-screen; paging back did not recover it.
+
+`NewGameWizard.resizeEvent` now calls `fit_to_available_screen(self)` on every resize once the
+wizard is visible, so the fit follows the growth instead of preceding it. Verified page by page
+against the real wizard on the real display: **5 pages off-screen → 0**, and the same for paging
+back down. A class-level `_fitting` re-entry guard is required, not an `__init__` one — Qt resizes
+the wizard from *inside* `__init__` (`setWizardStyle`), before any instance attribute exists.
+
+- **Clamp, do not re-centre.** `_center_on_screen` runs on first show only, deliberately, so a
+  wizard the user dragged somewhere is not yanked back. `fitted_geometry` moves the window the
+  minimum distance needed, which preserves that.
+- **The theater page's minimum width is pinned by one unwrapped label** — the docs line under the
+  campaign list measures ~1356 px and is the widest thing on the page. `setWordWrap(True)` on it
+  cuts the wizard from 1409 to 1027 px wide, and was **reverted**: the narrower column truncates
+  campaign names ("Afghanistan - Operation Enduring Resol"). Width was never the reported fault.
+  Revisit only if a display turns up that the height clamp cannot satisfy.
+
+Tests `tests/test_newgame_wizard_screenfit.py` — the measured overflow as pure geometry, plus the
+real `resizeEvent` driven offscreen on a pageless `NewGameWizard` subclass (grow-past-the-bottom,
+no resize/fit feedback loop, and a window that fits is left where the user put it). The subclass is
+deliberate: lifting `resizeEvent` onto a bare `QWizard` **segfaults PySide6**, because its
+zero-argument `super()` is bound to `NewGameWizard` and `self` is not one.
+
 ## §29 — Campaign SITREP kneeboard band
 
 A "what happened last turn" digest on the player's next kneeboard — a morning intel brief in the
@@ -6358,8 +6391,8 @@ On first use the squadron's whole block is reserved with its pydcs `Country`
 number inside it. Every other airframe keeps the stock pydcs number.
 
 **Scope.** Curated to the Hornet + Tomcat families (`MODEX_AIRCRAFT_IDS`): `FA-18C_hornet`,
-the AI `F/A-18A`/`F/A-18C`, the four Heatblur F-14 variants, and the AI `F-14A` (so Iranian
-Tomcat squadrons sequence too — blocks are per coalition, each starting at 100). The campaign
+the AI `F/A-18A`/`F/A-18C`, the five Heatblur F-14 variants (`F-14BU` added 2026-08-23), and
+the AI `F-14A` (so Iranian Tomcat squadrons sequence too — blocks are per coalition, each starting at 100). The campaign
 does not model individual airframes, so numbering is **per-mission generation order** —
 deterministic within a mission, not sticky to a pilot across turns. Pure generation behavior:
 no setting, no plugin, no save-format change; applies to the next generated mission of any
@@ -6370,12 +6403,65 @@ distinct per-squadron blocks, Tomcats-before-Hornets block order, per-coalition 
 starting at 100, the non-modex no-op, the once-only whole-block country reservation, the
 nine-squadron wrap, and a pydcs guard that every curated id resolves to a real plane type.
 
-**In-game pass: ✅ VERIFIED 2026-07-16** (checklist B15). The open question was whether DCS
-renders the assigned board number on the airframe at all — with the Heatblur F-14 the specific
-doubt, since its BORT number is livery-driven and might have ignored the mission's `onboardNum`.
-User visual confirmation on the flown Scenic Route turn-3 test (a US Navy 2005 carrier campaign
-fielding both Hornets and Tomcats, 8 Tomcats airborne): *"The Modex on our fork is 100% working
-… Everyone's modex looked accurate."* **DCS honors `onboard_num`, F-14 included.**
+### The Tomcat's board number is its livery, not its `onboard_num` (2026-08-23)
+
+**The 2026-07-16 verification was a false positive and B15 is re-opened.** The Hornet half
+holds; the Tomcat half never worked. No F-14 livery declares a board-number material, so DCS
+draws nothing on the airframe and the jet shows whatever its diffuse texture carries.
+
+The control that settles it: every airframe that *does* paint `onboard_num` names the material
+in its livery `description.lua` — Su-27 (`su27_nose_numbers`), MiG-29A (`mig-29_numbers_tail`),
+F-15C (`f15_numbers`), Su-25 (`Su-25-numbers-1`), FA-18C (`f18c1_number_nose_left`). **0 of 47
+stock F-14 liveries do**, across the A, B and B(U) folders, and neither does the 414th's own
+VMF-29 set. Neither F-14 EDM contains a bort string. Heatblur ships four VF-32 skins differing
+only in the painted number (100/101/102/103) and four VF-1 Wolfpack skins NK100–NK103 — nobody
+authors that for a jet that renders the number dynamically.
+
+**Why 2026-07-16 passed.** That Scenic Route turn flew VF-32 F-14Bs, whose `livery_set` is
+literally numbered 100/101/102/103, while §62 had stamped `onboard_num` 100/101/102/103 on the
+same four jets. The painted numbers and the assigned numbers agreed by coincidence, so a coarse
+visual pass could not tell them apart.
+
+**Reported by the DM, 2026-08-23: every F-14B(U) in a mission wore the same board number.** The
+five F-14B(U) presets each pinned one `livery:` — so the whole squadron wore one skin and one
+painted modex — while the F-14B presets already used `livery_set`. The live
+`retribution_nextturn.miz` had four COBIA Escort B(U)s with four *different* `onboard_num`
+values (459/597/768/976) on one livery, `vf-103 2004 aa100`.
+
+**The fix.** `LiveryAllocator` (`game/missiongenerator/aircraft/liveryallocator.py`), held by
+`AircraftGenerator` beside `ModexAllocator` and passed to `AircraftPainter` at all three
+`apply_livery` sites (including through `FlightGroupConfigurator`), hands a squadron's **first
+jet of the mission the first entry of its `livery_set`** — by convention the X00 CAG bird — then
+cycles the line jets behind it in generation order. One CAG bird per squadron per mission, like
+a real air wing. **A set of fewer than three cycles whole instead** — reserving one of two leaves
+every later jet on the single survivor, which is the one-number squadron this fixes. It replaces
+`Squadron.random_round_robin_livery_from_set`, which picked at
+random and so put two CAG birds in an eight-jet squadron; that method is still the fallback for
+any caller with no allocator. `Squadron.ordered_livery_set` rejoins `_livery_pool`, because the
+old random path drained `livery_set` into it and a save taken mid-rotation would otherwise be
+missing liveries.
+
+Data side: the ten `resources/squadrons/F-14B(U) Tomcat` presets collapse to five — one per
+squadron, `livery_set` ordered CAG bird first. **DCS ships only two B(U) liveries for VF-101,
+VF-11 and VF-143**, so those three alternate; only VF-103 (AA100/101/103/105) and VF-32
+(AC100/101/107/111) have enough to hold a CAG bird out. VF-101 and VF-11 have no X00 jet in the
+distribution at all. The F-14B VF-32 set was reordered to lead with 100. **Squadron liveries are pickled, so this reaches new campaigns only** — an
+in-flight save keeps its single livery.
+
+`F-14BU` was also missing from `MODEX_AIRCRAFT_IDS` entirely, which is why its `onboard_num`
+came out random (459/597/768/976) while the F-14B got the clean 100/101/102/103. Added. The F-14
+ids stay in the set even though nothing paints them, so anything reading `onboard_num` sees a
+coherent sequence; the cost is a reserved 100-number block per Tomcat squadron.
+
+Tests: `tests/missiongenerator/test_livery_allocator.py` (CAG-once-then-cycle, per-squadron
+sequences, the two-livery and one-livery degenerate cases, the empty-set no-op, the drained-pool
+rejoin) and `tests/test_squadron_livery_sets.py` (every F-14B(U) preset carries a set, leads
+with its lowest modex, and repeats no board number).
+
+**In-game pass: ◐ PARTIAL** (checklist B15). Hornet sequencing verified 2026-07-16 on the flown
+Scenic Route turn-3 test (*"The Modex on our fork is 100% working … Everyone's modex looked
+accurate"*) — that reading stands for the Hornet, whose liveries do carry the number material.
+The Tomcat's livery sequence has not been flown.
 
 That mechanism is what any per-pilot modex work rests on — see upstream issue
 [#863](https://github.com/dcs-retribution/dcs-retribution/issues/863) (per-pilot modex pins in
@@ -9454,11 +9540,78 @@ consumers of `frontline_bounds` — CAS patrol legs, the DTC cartridge, and two 
 only `left_position`, `right_position` and `length`, which are untouched. `polyline` pins its ends to
 those exact points rather than the trig-walked approximations, which drift sub-micron.
 
+### The front is measured against drivable ground (2026-08-23)
+
+A defect in the shared base the five rungs sit on, inherited unmodified from upstream.
+`frontline_bounds` cast one ray each way from the centre and stopped at the first
+inclusion-zone boundary (`extend_ground_position`).
+
+- `find_ground_position` returns the nearest point of the drivable stretch, which is a point
+  **on its boundary**. `poly_contains` rejects a boundary point, so the centre reads as outside.
+- From there the ray toward the usable ground meets the boundary at ~0 m and stops. The ray into
+  ground no vehicle can enter never meets a boundary at all, and `extend_ground_position` read
+  "no crossing" as "clear the whole way" and returned the full half-width.
+- Result: the entire front drawn on the impassable side, none of it on the passable side.
+
+Reproduced from a save on **Caucasus - Northern Russia**, Kutaisi/Khashuri FOB, turn 1
+(`max_frontline_width` 40 km). The front ran 20.00 km left and 0.00 km right with **0 % of its
+trace on drivable ground**. Along that axis the drivable ground was +0.0 to +6.2 km and +28 to
++40 km — all of it on the side that got nothing. `flotgenerator` then found `is_on_land` false
+for nearly every lateral offset and took its degenerate-front fallback, which collapses groups
+onto the nearest valid patch: blue bunched on one edge of the ridge, red on the other, ~15 km
+apart with impassable ground between them.
+
+The fix replaces the two ray casts with `usable_reach`, which intersects the front axis
+(± `max_frontline_width`, so the run is found whichever side it lies on) with
+`inclusion_zone_only`, picks the run holding the centre — or the nearest run, since the centre is
+a boundary point — and caps each side at half the nominal width. Same axis, same centre, same
+answer in open country; only an edge moves. `extend_ground_position` keeps its ray cast for
+rung E's salient probes, with the `is_empty` branch now returning `initial` when the start is
+off drivable ground, so a probe cannot report room it does not have.
+
+After the fix, the same front: 0.00 km left, 6.15 km right, **98 % of the bowed trace on drivable
+ground**, and both sides' rear areas at 2 km and 6 km depth clear.
+
+Deliberately **not** done: spending a pinned flank's slack on the other side. It would have made
+that front 40 km wide instead of 6.15 km, but it widens fronts in every campaign with terrain on
+one flank and drags the fight off the supply crossing the two sides are contesting. The narrow
+front here is rung D's intent — a pass is a chokepoint.
+
+Upstreamable: `find_ground_position` and `extend_ground_position` are upstream's, unmodified, and
+the defect is theirs.
+
+**The route under that front was also wrong, and is fixed separately.** `northern_russia`'s miz
+path group `Ground-4` reached the Likhi range in a single **41 km straight leg** and put its own
+waypoint off drivable ground; every other route in that miz has 15-39 waypoints and hugs roads.
+The front is placed by distance along the polyline, so a chord across a ridge puts the fight on
+the ridge. A yaml `supply_routes:` override follows the E60/S1 instead — the Rioni valley through
+Terjola and Zestafoni, then the Chkherimela valley and the Rikoti pass to Surami. Measured over 15
+sampled front positions along the route:
+
+| | miz `Ground-4` | yaml override |
+|---|---|---|
+| waypoints | 8 | 22 |
+| longest leg | 40.9 km | 11.2 km |
+| waypoints off drivable ground | 1 | 0 |
+| drawn line on drivable ground | 75 % | 98 % |
+| front positions on drivable ground | 10/15 | 15/15 |
+| mean front width | 9.55 km | 10.18 km |
+
+That override needed a loader fix to be safe at all: `add_supply_routes` (miz) and
+`add_yaml_supply_routes` (yaml) both call `create_convoy_route`, whose `convoy_routes` dict
+overwrites but whose `connected_points.append` did not — so a yaml route for a pair the miz
+already defines **linked the two CPs twice**, and `ai_ground_planner` counts that list rather than
+de-duplicating it. `create_convoy_route` is now idempotent on the connection.
+`tests/theater/test_supply_route_drivability.py` locks both, and the duplicate test fails without
+the guard.
+
 ### Tests
 
 `tests/theater/test_supply_status.py` (13) · `tests/sim/test_assault_cost.py` (7) ·
 `tests/theater/test_front_line_weight.py` (11) · `tests/theater/test_front_line_terrain.py` (10) ·
-`tests/missiongenerator/test_front_line_salients.py` (10).
+`tests/missiongenerator/test_front_line_salients.py` (10) ·
+`tests/missiongenerator/test_front_line_usable_reach.py` (8) ·
+`tests/theater/test_supply_route_drivability.py` (5).
 
 ### Deferred
 

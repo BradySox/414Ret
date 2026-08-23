@@ -36,11 +36,13 @@ TOMCAT_VARIANT_IDS: tuple[str, ...] = (
     "F-14B Tomcat",
 )
 
-# Vietnam-era dedicated photo-recon birds (VWV mod pack). TARPS is their primary
-# role — unarmed camera ships, see resources/units/aircraft/vwv_{rf101b,ra-5}.yaml.
-VIETNAM_RECON_VARIANT_IDS: tuple[str, ...] = (
+# Dedicated photo-recon birds. TARPS is their primary role and their only task:
+# the two Vietnam-era ships (VWV mod pack) carry no ordnance at all, and the
+# Su-24MR carries only a self-defence R-60M pair on its recon fit.
+DEDICATED_RECON_VARIANT_IDS: tuple[str, ...] = (
     "RF-101B Voodoo",
     "RA-5C Vigilante",
+    "Su-24MR",
 )
 
 
@@ -94,17 +96,17 @@ def test_all_tomcat_variants_can_plan_tarps(variant_id: str, tmp_path: Path) -> 
     assert AircraftType.named(variant_id).capable_of(FlightType.TARPS)
 
 
-@pytest.mark.parametrize("variant_id", VIETNAM_RECON_VARIANT_IDS)
-def test_vietnam_recon_planes_can_plan_tarps(variant_id: str, tmp_path: Path) -> None:
-    # The Vietnam-era recon birds were extended from the F-14 to fly TARPS too, so
-    # the auto-planner can pair them with Strike/DEAD packages in period campaigns.
+@pytest.mark.parametrize("variant_id", DEDICATED_RECON_VARIANT_IDS)
+def test_dedicated_recon_planes_can_plan_tarps(variant_id: str, tmp_path: Path) -> None:
+    # The dedicated recon birds were extended from the F-14 to fly TARPS too, so the
+    # auto-planner can pair them with Strike/DEAD packages.
     persistency.setup(str(tmp_path), prefer_liberation_payloads=False, port=16880)
     assert AircraftType.named(variant_id).capable_of(FlightType.TARPS)
 
 
-@pytest.mark.parametrize("variant_id", VIETNAM_RECON_VARIANT_IDS)
-def test_vietnam_recon_planes_are_tarps_only(variant_id: str, tmp_path: Path) -> None:
-    # These are UNARMED photo birds (weaponless loadout). The planner must never
+@pytest.mark.parametrize("variant_id", DEDICATED_RECON_VARIANT_IDS)
+def test_dedicated_recon_planes_are_tarps_only(variant_id: str, tmp_path: Path) -> None:
+    # These are photo birds with no offensive stores. The planner must never
     # task them to attack or escort -- they'd spawn empty and fly an aborting
     # pattern. Guards against re-adding combat tasks to their YAMLs, which (via the
     # ARMED_RECON enrich on CAS/BAI) is what put them on Armed Recon. See G19.

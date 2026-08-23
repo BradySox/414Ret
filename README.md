@@ -147,7 +147,8 @@ Most of this is opt-in. Full list with toggles, defaults and known limitations:
   `country:` per squadron.
 - Carrier comms match the hull: TACAN and ident (Roosevelt 71X TRO, Stennis 74X STN), stable
   channels, the ship's real name. If a map beacon owns the hull channel the boat takes the
-  nearest free one. Navy jets wear sequential per-squadron modexes.
+  nearest free one. Navy jets wear sequential per-squadron modexes, and a Tomcat squadron
+  flies its CAG bird plus line jets rather than four copies of one airframe.
 - Carrier decks carry dressing — tractors, crash truck, deck crew, LSO team — placed clear of
   every parking spot and catapult, and standing for the whole mission.
 - Carriers steam for wind down the **angled** deck, not the bow, using each hull's own deck
@@ -210,7 +211,9 @@ Most of this is opt-in. Full list with toggles, defaults and known limitations:
   costs you part of the ground you took; winning dug in costs nothing. Where the line sits
   accounts for how much armour each side actually has there, not just an abstract strength
   figure. Bad going slows an advance, so fronts stall at passes and run in the open. And the
-  line bows instead of running straight, showing salients where the ground is good.
+  line bows instead of running straight, showing salients where the ground is good. The line is
+  drawn only across ground vehicles can actually drive on, so a front pinched into a pass is
+  narrower than the width setting asks for rather than sitting on the ridge beside it.
 - **Missions report back.** Every flight's track, time airborne, fuel, shots and hits come home
   with the results, not just which aircraft died. The campaign summary says what the day's
   flying actually amounted to. No third-party software required.

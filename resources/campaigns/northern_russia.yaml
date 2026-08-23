@@ -264,16 +264,18 @@ squadrons:
   # Beslan
   32:
     - primary: BARCAP
-      size: 3
+      size: 5
       aircraft:
         - Su-27 Flanker-B
     - primary: BARCAP
       size: 10
       aircraft:
         - MiG-29S Fulcrum-C
+  # Nigniy Pasanauri FOB
+  "Nigniy Pasanauri FOB":
     - primary: BAI
       secondary: air-to-ground
-      size: 2
+      size: 4
       aircraft:
         - Mi-24V Hind-E
   # Blue CV

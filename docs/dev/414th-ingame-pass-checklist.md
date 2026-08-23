@@ -5984,7 +5984,9 @@ model of DCS, not DCS. Whether every aircraft actually gets a stand is a mission
 question, and a squadron that cannot be placed is the failure this rule exists to prevent.
 
 - **Setup:** New Game on Caucasus - Northern Russia, generate turn 1, open the .miz in the
-  Mission Editor. Check Kutaisi, Batumi and Gudauta, then Beslan and Tbilisi-Lochini.
+  Mission Editor. Check Kutaisi, Batumi and Gudauta, then Beslan and Tbilisi-Lochini, and
+  finally **Nigniy Pasanauri FOB** — it is the first FOB in this campaign to base a
+  squadron, so its four pads holding a four-ship Hind unit is the untested half.
 - **Pass:** every squadron has its aircraft on a stand; nothing is parked on a taxiway or
   overlapping another airframe; the Hinds and Hips at Kutaisi are on large stands and the
   tankers and E-3A at Gudauta are on its ten large ones.

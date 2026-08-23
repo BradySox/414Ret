@@ -1,5 +1,6 @@
 ---
-name: GermanyCW # Mostly based on Caucasus, could be updated with more appropriate data if necessary
+name: Germany Cold War # Mostly based on Caucasus, could be updated with more appropriate data if necessary
+pydcs_name: GermanyCW
 timezone: +1
 daytime:
   dawn: [6, 9]

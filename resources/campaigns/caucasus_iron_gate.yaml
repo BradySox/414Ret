@@ -91,8 +91,8 @@ squadrons:
       country: USA
       aircraft:
         - 910th Airlift Wing
-  # Batumi
-  22:
+  # Kobuleti
+  24:
     - primary: Strike
       secondary:
         - OCA/Aircraft
@@ -104,7 +104,7 @@ squadrons:
         - TARCAP
         - OCA/Runway
         - Escort
-      size: 4
+      size: 12
       aircraft_type: F-15E Strike Eagle (Suite 4+)
       country: USA
       aircraft:
@@ -124,13 +124,13 @@ squadrons:
         - SEAD Sweep
         - OCA/Runway
         - Escort
-      size: 3
+      size: 12
       aircraft_type: F-16CM Fighting Falcon (Block 50)
       country: USA
       aircraft:
         - 55th FS
     - primary: BARCAP
-      size: 3
+      size: 12
       aircraft_type: F-15C Eagle
       country: USA
       aircraft:
@@ -158,7 +158,7 @@ squadrons:
   # Mineralnye Vody
   26:
     - primary: BARCAP
-      size: 4
+      size: 8
       aircraft:
         - MiG-31 Foxhound
     - primary: BARCAP
@@ -166,15 +166,7 @@ squadrons:
       aircraft:
         - MiG-29S Fulcrum-C
     - primary: BARCAP
-      size: 4
-      aircraft:
-        - MiG-31 Foxhound
-    - primary: BARCAP
-      size: 4
-      aircraft:
-        - Su-27 Flanker-B
-    - primary: BARCAP
-      size: 4
+      size: 8
       aircraft:
         - Su-27 Flanker-B
     - primary: Strike
@@ -222,17 +214,15 @@ squadrons:
       aircraft:
         - Tu-95MS Bear-H
     - primary: SEAD
-      size: 7
-      aircraft:
-        - Su-24M Fencer-D
-    - primary: Strike
-      size: 7
+      secondary:
+        - Strike
+      size: 14
       aircraft:
         - Su-24M Fencer-D
   # Tbilisi-Lochini
   29:
     - primary: BARCAP
-      size: 10
+      size: 20
       aircraft:
         - MiG-29S Fulcrum-C
     - primary: BARCAP
@@ -245,17 +235,11 @@ squadrons:
       aircraft:
         - Mi-24V Hind-E
     - primary: BAI
-      size: 10
+      secondary:
+        - Strike
+      size: 20
       aircraft:
         - Su-25 Frogfoot
-    - primary: Strike
-      size: 10
-      aircraft:
-        - Su-25 Frogfoot
-    - primary: BARCAP
-      size: 10
-      aircraft:
-        - MiG-29S Fulcrum-C
     - primary: OCA/Runway
       secondary: air-to-ground
       size: 10
@@ -282,75 +266,43 @@ squadrons:
   "Blue CV":
     - primary: BARCAP
       secondary:
-        - TARPS
-        - Fighter sweep
-        - TARCAP
+        - Armed Recon
+        - BAI
+        - CAS
+        - DEAD
         - Escort
-      size: 12
+        - Fighter sweep
+        - OCA/Aircraft
+        - OCA/Runway
+        - Strike
+        - TARCAP
+        - TARPS
+      size: 24
       aircraft_type: F-14B Tomcat
       country: USA
       aircraft:
         - VMF-29
-    - primary: BARCAP
-      secondary:
-        - TARPS
-        - OCA/Aircraft
-        - Fighter sweep
-        - CAS
-        - DEAD
-        - Armed Recon
-        - BAI
-        - TARCAP
-        - OCA/Runway
-        - Strike
-        - Escort
-      size: 12
-      aircraft_type: F-14B Tomcat
-      country: USA
-      aircraft:
-        - VF-102
     - primary: Strike
       secondary:
-        - SEAD
-        - OCA/Aircraft
-        - Fighter sweep
-        - CAS
-        - DEAD
-        - BARCAP
-        - SEAD Escort
+        - Anti-ship
         - Armed Recon
         - BAI
-        - TARCAP
-        - SEAD Sweep
-        - OCA/Runway
-        - Anti-ship
+        - BARCAP
+        - CAS
+        - DEAD
         - Escort
-      size: 12
+        - Fighter sweep
+        - OCA/Aircraft
+        - OCA/Runway
+        - SEAD
+        - SEAD Escort
+        - SEAD Sweep
+        - TARCAP
+      size: 24
       aircraft_type: F/A-18C Hornet (Lot 20)
       country: USA
       aircraft:
         - VFA-113
-    - primary: BAI
-      secondary:
-        - SEAD
-        - OCA/Aircraft
-        - Fighter sweep
-        - CAS
-        - DEAD
-        - BARCAP
-        - SEAD Escort
-        - Armed Recon
-        - TARCAP
-        - SEAD Sweep
-        - OCA/Runway
-        - Strike
-        - Anti-ship
-        - Escort
-      size: 12
-      aircraft_type: F/A-18C Hornet (Lot 20)
-      country: USA
-      aircraft:
-        - VFA-37
     - primary: Refueling
       size: 4
       aircraft_type: A-6E Tanker

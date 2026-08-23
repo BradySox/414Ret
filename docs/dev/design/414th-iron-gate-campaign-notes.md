@@ -1,7 +1,7 @@
 # Caucasus — Iron Gate
 
 The 414th's fork of Plob's **Northern Russia**. June 2018, Russia 2020, blue flying from
-Kutaisi and Batumi with its tankers and AWACS on an off-map air spawn.
+Kutaisi and Kobuleti with its tankers and AWACS on an off-map air spawn.
 
 **Plob's campaign still ships, unchanged.** `northern_russia.yaml` is byte-identical to its
 pre-fork state — 1995-06-13 against Russia 1975, no `settings:`, no authored squadron sizes.
@@ -27,7 +27,7 @@ What changed, and why each was forced rather than chosen:
 | **2018-06-13, Russia 2020** | The premise needs a modern VKS. Russia 2020 is vanilla DCS, so red's SAM belt does not silently collapse for anyone without High Digit SAMs. |
 | **17 red squadrons re-equipped** | MiG-21bis, MiG-23MLD, MiG-25PD and Su-17M4 are not a 2018 air force. Successors: MiG-29S, Su-27, MiG-31, Su-24M. **Not cosmetic** — see the assigner trap below. |
 | **Every squadron sized** | The campaign asked for 324 red aircraft across 171 stands. See the parking section. |
-| **Blue re-based** | Kutaisi held blue's entire land wing on 58 stands. Now Kutaisi is the A-10/helicopter field, the fast jets sit at Batumi, and the support spawns airborne. |
+| **Blue re-based** | Kutaisi held blue's entire land wing on 58 stands. Now Kutaisi is the A-10/helicopter field, the fast jets sit at Kobuleti, and the support spawns airborne. |
 | **Blue re-equipped** | The shipped blue wing was a MiG-23MLD, a JF-17, a Mirage 2000C, an AJS-37, a Ka-50 and a pair of Hips and Hinds. It now flies the wing the squadron actually uses. |
 
 ---
@@ -52,7 +52,7 @@ resolves in the new one.**
 
 A stand that takes a Hind also takes a Huey, not the reverse. At Kutaisi only **13** of 58
 stands take an Mi-8 or Mi-24, only **25** take any helicopter, and the 13 heavy stands sit
-*inside* the 25. Batumi has ten stands and **two** of them take a KC-135.
+*inside* the 25. Batumi, tried first, had ten stands and **two** of them took a KC-135.
 
 Sizing against a base's grand total therefore overfills the big stands **with no error
 anywhere** — the yaml looks fine, the loader is happy, and DCS fails at spawn. It bit four
@@ -79,21 +79,29 @@ the rotary pool is the one that applies.
 | base | stands | used | squadrons |
 |---|---|---|---|
 | **Kutaisi** | 58 | 37 | UH-1H 12, OH-58D Kiowa 11, A-10C Suite 7 12, C-130J-30 2 |
-| **Batumi** | 10 | 10 | F-15E 4, F-16CM 3, F-15C 3 |
+| **Kobuleti** | 42 | 36 | F-15E 12, F-16CM 12, F-15C 12 |
 | **Turkey** (off-map air spawn) | ∞ | 6 | KC-135 MPRS 2, KC-135 2, E-3A 2 |
-| **Blue CV** | 90 | 66 | F-14B ×2 12, F/A-18C ×2 12, A-6E Tanker 4, E-2D 2, F-14B(U) 12 |
+| **Blue CV** | 90 | 66 | F-14B 24 (VMF-29), F/A-18C 24 (VFA-113), A-6E Tanker 4, E-2D 2, F-14B(U) 12 |
 | **Blue LHA** | 20 | 20 | AH-64D 10, CH-47F 10 |
-| Tbilisi-Lochini | 74 | 70 | 7 squadrons |
-| Mozdok | 39 | 39 | 6 |
-| Mineralnye Vody | 28 | 28 | 8, including red's only AWACS and tanker |
+| Tbilisi-Lochini | 74 | 70 | 5 squadrons |
+| Mozdok | 39 | 39 | 5 |
+| Mineralnye Vody | 28 | 28 | 6, including red's only AWACS and tanker |
 | Beslan | 15 | 15 | Su-27 5, MiG-29S 10 |
-| Nalchik | 15 | 15 | 3 |
+| Nalchik | 15 | 15 | 3, one each of MiG-31, MiG-29S, MiG-29A |
 | Nigniy Pasanauri FOB | 4 rotary | 4 | Mi-24V 4 |
 
-**Blue's land-based fighters total ten aircraft.** That is the campaign's defining constraint
-and it is deliberate: Batumi has ten stands. Kutaisi is carrying 37 of 58, so a squadron can
-move forward if that proves too thin — that is the lever, and it costs the A-10-and-helicopters
-character of the field.
+**Blue's land-based fighters total 36 aircraft**, three full squadrons on Kobuleti's 42 stands.
+Batumi was the first choice and was dropped: ten stands is not a fighter base. Gudauta was the
+other candidate at 31 stands, but it sits 160 NM from the fighting against Kobuleti's 132, and
+102 NM from Kutaisi against 32.
+
+**39 squadrons, 336 aircraft.** Squadrons of the same airframe at the same base are merged
+rather than duplicated — two MiG-31 flights at Mineralnye Vody are one squadron of 8, not two
+of 4. Where the pair had different primaries the second becomes a `secondary:`, so the merge
+never costs a role: Mozdok's Su-24M is SEAD with Strike secondary, Tbilisi's Su-25 is BAI with
+Strike. On the carrier the merge takes the **union** of both squadrons' task lists, because
+VF-102 carried eleven secondaries against VMF-29's four and keeping only the first would have
+quietly halved what the Tomcats could be tasked with.
 
 ### The off-map air spawn
 
@@ -103,9 +111,9 @@ off the airfield span, so it reads as Turkish airspace. `OffMapSpawn` reports 10
 accepts any airframe, and forces `StartType.IN_FLIGHT`. Thirteen shipped campaigns already use
 the pattern.
 
-Gudauta was tried as a third field first — it is the only south-west airfield besides Kutaisi
-with enough large stands (10) — and dropped in favour of the spawn, because a tanker that never
-lands does not need a ramp and Batumi could then have all ten of its stands for fighters.
+Gudauta was tried as a third field first — it is one of only two south-west airfields besides
+Kutaisi with enough large stands (10) — and dropped in favour of the spawn: a tanker that never
+lands does not need a ramp.
 
 ### Beslan's Hind
 

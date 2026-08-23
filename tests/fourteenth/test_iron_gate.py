@@ -1,7 +1,7 @@
 """Caucasus - Iron Gate laydown guards.
 
 The 414th's fork of Plob's *Northern Russia*: June 2018 against Russia 2020,
-blue flying from Kutaisi and Batumi with its tankers and AWACS on an off-map
+blue flying from Kutaisi and Kobuleti with its tankers and AWACS on an off-map
 air spawn. Plob's campaign still ships unchanged beside it, so the first thing
 these pins protect is that the two stay separate.
 
@@ -31,7 +31,7 @@ from game.theater.controlpoint import OffMapSpawn
 YAML = Path("resources/campaigns/caucasus_iron_gate.yaml")
 PLOBS = Path("resources/campaigns/northern_russia.yaml")
 
-BLUE_FIELDS = {"Kutaisi", "Batumi"}
+BLUE_FIELDS = {"Kutaisi", "Kobuleti"}
 AIR_SPAWN = "Turkey"
 RED_FIELDS = {"Beslan", "Mineralnye Vody", "Mozdok", "Nalchik", "Tbilisi-Lochini"}
 #: Kutaisi is the A-10 and helicopter base; the fast jets are pushed back to Batumi.
@@ -80,8 +80,10 @@ def test_blue_flies_from_two_fields_and_an_air_spawn(
     blue = {cp.name for cp in theater.controlpoints if cp.starting_coalition.is_blue}
     assert BLUE_FIELDS <= blue
     assert AIR_SPAWN in blue
-    # Gudauta was tried and dropped in favour of the air spawn.
-    assert "Gudauta" not in {cp.name for cp in theater.controlpoints}
+    # Batumi and Gudauta were both tried and dropped: Batumi has ten stands,
+    # Gudauta thirty-one against Kobuleti's forty-two and a longer transit.
+    names = {cp.name for cp in theater.controlpoints}
+    assert "Gudauta" not in names and "Batumi" not in names
     spawn = theater.control_point_named(AIR_SPAWN)
     assert isinstance(spawn, OffMapSpawn)
 

@@ -5957,15 +5957,15 @@ DCS rather than being it. Whether every aircraft actually gets a stand is a
 mission-generation question.
 
 - **Setup:** New Game on **Caucasus - Iron Gate**, generate turn 1, open the .miz in the
-  Mission Editor. Check Kutaisi, Batumi, Beslan and Tbilisi-Lochini, then **Nigniy Pasanauri
+  Mission Editor. Check Kutaisi, Kobuleti, Beslan and Tbilisi-Lochini, then **Nigniy Pasanauri
   FOB** — the campaign's only FOB-based squadron.
 - **Pass:** every squadron has its aircraft on a stand, nothing on a taxiway or overlapping;
   the Hercules at Kutaisi is on a large stand; the tankers and E-3A start **airborne** out of
   the Turkey spawn rather than on a ramp anywhere.
 - **Fail signature:** a squadron shows fewer aircraft than its `size:`, or DCS logs a parking
   error. Report which airframe and which field — the fix is per stand class, not a blanket trim.
-- **Free while you are there:** blue has **ten** land-based fighters. Worth a note on whether
-  that is enough to contest the pass, and whether Batumi's transit leaves useful fuel.
+- **Free while you are there:** blue has **36** land-based fighters at Kobuleti. Worth a note on whether
+  that is enough to contest the pass, and whether Kobuleti's transit leaves useful fuel.
 ### B94 — Editing a faction mid-campaign reaches the buy menus · juanjux #953 · ☐ UNTESTED
 
 **History:** ported 2026-08-23 from juanjux's upstream #953, after verifying all three

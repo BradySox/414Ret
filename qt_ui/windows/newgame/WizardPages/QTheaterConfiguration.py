@@ -17,6 +17,7 @@ from PySide6.QtWidgets import (
 
 from game.campaignloader import Campaign
 from game.campaignloader.campaign import DEFAULT_BUDGET
+from game.theater.theaterloader import TheaterLoader
 from qt_ui.liberation_install import get_dcs_install_directory
 from qt_ui.widgets.QLiberationCalendar import QLiberationCalendar
 from qt_ui.widgets.spinsliders import CurrencySpinner
@@ -159,9 +160,14 @@ class TheaterConfiguration(QtWidgets.QWizardPage):
         filter_sort_layout.addWidget(QtWidgets.QLabel("Map:"), 1, 0)
         self.map_filter = QtWidgets.QComboBox()
         self.map_filter.addItem("All Maps", "")
-        for map_name in sorted(all_maps):
+        # Label each map with the theater's own name, not the campaign's raw
+        # `theater:` key. The key is a directory name, so the list read
+        # "MarianaIslands" against "MarianasWWII" -- two maps of the same place,
+        # side by side, near-indistinguishable. The item DATA stays the key, which
+        # is what currentData() filters on.
+        for map_name in sorted(all_maps, key=_map_label):
             if map_name:  # Skip empty map names
-                self.map_filter.addItem(map_name, map_name)
+                self.map_filter.addItem(_map_label(map_name), map_name)
         self.map_filter.currentTextChanged.connect(self.on_filter_changed)
         filter_sort_layout.addWidget(self.map_filter, 1, 1)
 
@@ -432,6 +438,17 @@ class TheaterConfiguration(QtWidgets.QWizardPage):
         self.faction_selection.blueFactionSelect.setCurrentIndex(red)
         self.faction_selection.redFactionSelect.setCurrentIndex(blue)
         self.faction_selection.updateUnitRecap()
+
+
+def _map_label(theater_key: str) -> str:
+    """The theater's display name, falling back to the raw key if it has no
+    descriptor (a campaign naming a theater this build does not ship)."""
+    if not theater_key:
+        return ""
+    try:
+        return TheaterLoader(theater_key.lower()).display_name
+    except (OSError, KeyError):
+        return theater_key
 
 
 class QCampaignItem(QStandardItem):

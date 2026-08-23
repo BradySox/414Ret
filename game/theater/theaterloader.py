@@ -104,6 +104,18 @@ class TheaterLoader:
         return self.descriptor_path.with_name("icon.gif")
 
     @property
+    def display_name(self) -> str:
+        """The theater's human name, for UI that lists maps.
+
+        Campaigns carry the theater *directory* in their ``theater:`` key, so a
+        list built from that shows raw identifiers -- and two maps of the same
+        place are then near-indistinguishable (``MarianaIslands`` against
+        ``MarianasWWII``). Reads the descriptor only; loading the theater would
+        pull a landmap of up to 2 MB per entry."""
+        with self.descriptor_path.open(encoding="utf-8") as descriptor_file:
+            return str(yaml.safe_load(descriptor_file)["name"])
+
+    @property
     def menu_thumbnail_dcs_relative_path(self) -> Path:
         with self.descriptor_path.open(encoding="utf-8") as descriptor_file:
             data = yaml.safe_load(descriptor_file)

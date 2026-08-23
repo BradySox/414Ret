@@ -33,6 +33,7 @@ stress it · `✗` fail signature reproduced in-game.
 |---|---|---|---|
 | B6 | Command-center decapitation degrades enemy planning | §52 | ☐ |
 | B11 | Ground AI sleep: distant garrisons stop thinking, wake on approach | §59 | ☐ |
+| B15 | Squadron-sequenced board numbers: the Tomcat's livery is its modex | §62 | ◐ |
 | B17 | Carrier deck spawn policy (six-pack last resort + MP slot timing) | §64 | ◐ |
 | B19 | Weather-aware auto-planning | §67 | ☐ |
 | B20 | Adaptive procurement: SAM repair + price-weighted choice | §68 | ☐ |
@@ -537,7 +538,33 @@ wake look identical here, which is the "prefer a loud failure" rule biting.
 - **Pass:** only your slot sees the menu (a squadmate confirms theirs is clean); within seconds of the press the announce card appears and 2 armed bandits appear over/at the chosen base (log: `REDSCRAMBLE|: spawned ...`); they turn toward the nearest airborne blue fighters, commit, and shoot; the EMERGENCY press launches from the base nearest the airborne players; a second press spawns a fresh flight; killing them all ends it (no respawn) and nothing changes at the turn boundary.
 - **Fail signature:** no menu for the named host (fragment mismatch — the match is a case-insensitive substring of the in-game name, so check the tag really appears in it; or the node wasn't emitted — check the setting + `REDSCRAMBLE|` arm line); everyone sees the menu despite a configured name (option didn't reach the miz — the §36 plugin-preseed lesson); a non-host sees the menu (their name contains the tag — pick a more distinctive fragment); bandits spawn stalled/diving (InitSpeedKnots didn't take — QRA history); bandits spawn then orbit ignoring the players (`AttackGroup` via `setTask` rejected — re-scope the vector push to a Mission-route task, the §15 combatsar lesson); a spawn press does nothing with `spawn failed` in the log on hot/runway mode (ramp congestion — use the default air mode); red QRA dispatcher errors right after a clone (alias collision with the `Intercept|` templates — rename).
 
-### B15 — Squadron-sequenced Hornet/Tomcat board numbers · §62 · ☑ VERIFIED
+### B15 — Squadron-sequenced Hornet/Tomcat board numbers · §62 · ◐ PARTIAL
+
+**2026-08-23 — the Tomcat half was falsified and this row is re-opened.** No F-14 livery
+declares a board-number material, so DCS paints nothing on a Tomcat; its visible modex is the
+livery texture. Control: Su-27, MiG-29A, F-15C, Su-25 and FA-18C all name the material in their
+livery `description.lua`, and 0 of 47 stock F-14 liveries do. The 2026-07-16 pass read VF-32
+F-14Bs whose livery set is numbered 100/101/102/103 while §62 had stamped `onboard_num`
+100/101/102/103 on the same jets — the two agreed by coincidence. **The Hornet half stands**
+(its liveries carry the material). Fixed by `LiveryAllocator`: a squadron's first jet of the
+mission wears the first entry of its `livery_set` (the X00 CAG bird), the rest cycle the line
+jets. See §62.
+- **What CI cannot exercise (the new half):** whether a Tomcat squadron's jets actually show
+  different painted numbers in the F2 view.
+- **Setup (Tomcat):** any campaign fielding an F-14B(U) squadron — `clash_of_the_titans`,
+  `red_sea_rising`, `operation_desert_trident`. **Start a NEW campaign**; squadron liveries are
+  pickled, so an in-flight save keeps its old single livery. Generate a turn with at least a
+  4-ship, then F2 through the flight.
+- **Pass (Tomcat):** on VF-103 or VF-32 the four jets wear four different board numbers, the
+  first the squadron's X00 CAG bird (AA100 / AC100), and a second flight of the same squadron
+  continues into the line jets without a second CAG bird. VF-101, VF-11 and VF-143 have only two
+  liveries in the DCS distribution, so they alternate — two numbers, not four.
+- **Fail signature (Tomcat):** all four identical (the allocator wasn't reached — check the three
+  `apply_livery` sites pass `self.livery_allocator`); the CAG bird on jet 2/3/4 (preset set is
+  not ordered lowest-modex-first — `tests/test_squadron_livery_sets.py` locks this); two CAG
+  birds in one squadron (an un-plumbed caller fell back to the random round-robin); a livery
+  missing entirely from the rotation (an old save's drained `_livery_pool` — `ordered_livery_set`
+  rejoins it).
 
 **History:** 2026-07-16 (user visual confirmation on the flown Scenic Route turn-3 test — a US Navy 2005 carrier campaign fielding both Hornets and Tomcats: *"The Modex on our fork is 100% working I watched it with the last test. Everyone's modex looked accurate."* This settles the row's one DCS-only unknown — **DCS does paint the mission's `onboard_num` on the airframe**, and it clears the specific doubt below about the Heatblur F-14's livery-driven BORT rendering ignoring it (8 Tomcats were airborne on that test). Built 2026-07-12 off the user finding "board/modex numbers are completely random"; the per-squadron 100/200/300 blocks, the cross-flight X00/X01/… sequence, Tomcats-before-Hornets block order, per-coalition blocks, the non-modex no-op, the whole-block country reservation, the nine-squadron wrap, and the pydcs id guard are unit-tested in `tests/missiongenerator/test_modex.py`.)
 - **Scope of the confirmation:** a coarse visual pass ("everyone's looked accurate"), not a block-by-block audit — it establishes the *mechanism* (`onboard_num` → painted number), which is what every downstream design rests on. Not yet separately confirmed: a nine-squadron wrap, and any airframe outside `MODEX_AIRCRAFT_IDS` (moot today — the set is the whole feature; it matters only if upstream [#863](https://github.com/dcs-retribution/dcs-retribution/issues/863) per-pilot pins land, since a pin deliberately bypasses the id set and would apply to e.g. the A-4E-C).

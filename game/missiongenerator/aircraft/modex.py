@@ -37,12 +37,16 @@ MODEX_AIRCRAFT_IDS: frozenset[str] = frozenset(
         "FA-18C_hornet",
         "F/A-18A",
         "F/A-18C",
-        # Tomcats (Heatblur player variants + the AI F-14A).
+        # Tomcats (Heatblur player variants + the AI F-14A). No F-14 livery
+        # declares a board-number material, so DCS never paints these on the
+        # airframe -- the Tomcat's visible modex is its livery, sequenced by
+        # game/missiongenerator/aircraft/liveryallocator.py instead.
         "F-14A",
         "F-14A-135-GR",
         "F-14A-135-GR-Early",
         "F-14A-95-GR",
         "F-14B",
+        "F-14BU",
     }
 )
 

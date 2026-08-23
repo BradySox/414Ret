@@ -417,6 +417,8 @@ FEATURES: tuple[Feature, ...] = (
         # Hornet/Tomcat squadron a 100/200/300 block (Tomcats first, the CVW
         # convention) and numbers its jets sequentially X00, X01, ... in
         # generation order. Pure generation behavior — no setting, no plugin.
+        # The Tomcat paints its board number into the livery instead, so
+        # LiveryAllocator sequences those CAG-bird-first (2026-08-23).
         "squadron_modex",
         "Squadron-sequenced Hornet/Tomcat board numbers",
         62,

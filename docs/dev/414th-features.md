@@ -6391,8 +6391,8 @@ On first use the squadron's whole block is reserved with its pydcs `Country`
 number inside it. Every other airframe keeps the stock pydcs number.
 
 **Scope.** Curated to the Hornet + Tomcat families (`MODEX_AIRCRAFT_IDS`): `FA-18C_hornet`,
-the AI `F/A-18A`/`F/A-18C`, the four Heatblur F-14 variants, and the AI `F-14A` (so Iranian
-Tomcat squadrons sequence too — blocks are per coalition, each starting at 100). The campaign
+the AI `F/A-18A`/`F/A-18C`, the five Heatblur F-14 variants (`F-14BU` added 2026-08-23), and
+the AI `F-14A` (so Iranian Tomcat squadrons sequence too — blocks are per coalition, each starting at 100). The campaign
 does not model individual airframes, so numbering is **per-mission generation order** —
 deterministic within a mission, not sticky to a pilot across turns. Pure generation behavior:
 no setting, no plugin, no save-format change; applies to the next generated mission of any
@@ -6403,12 +6403,65 @@ distinct per-squadron blocks, Tomcats-before-Hornets block order, per-coalition 
 starting at 100, the non-modex no-op, the once-only whole-block country reservation, the
 nine-squadron wrap, and a pydcs guard that every curated id resolves to a real plane type.
 
-**In-game pass: ✅ VERIFIED 2026-07-16** (checklist B15). The open question was whether DCS
-renders the assigned board number on the airframe at all — with the Heatblur F-14 the specific
-doubt, since its BORT number is livery-driven and might have ignored the mission's `onboardNum`.
-User visual confirmation on the flown Scenic Route turn-3 test (a US Navy 2005 carrier campaign
-fielding both Hornets and Tomcats, 8 Tomcats airborne): *"The Modex on our fork is 100% working
-… Everyone's modex looked accurate."* **DCS honors `onboard_num`, F-14 included.**
+### The Tomcat's board number is its livery, not its `onboard_num` (2026-08-23)
+
+**The 2026-07-16 verification was a false positive and B15 is re-opened.** The Hornet half
+holds; the Tomcat half never worked. No F-14 livery declares a board-number material, so DCS
+draws nothing on the airframe and the jet shows whatever its diffuse texture carries.
+
+The control that settles it: every airframe that *does* paint `onboard_num` names the material
+in its livery `description.lua` — Su-27 (`su27_nose_numbers`), MiG-29A (`mig-29_numbers_tail`),
+F-15C (`f15_numbers`), Su-25 (`Su-25-numbers-1`), FA-18C (`f18c1_number_nose_left`). **0 of 47
+stock F-14 liveries do**, across the A, B and B(U) folders, and neither does the 414th's own
+VMF-29 set. Neither F-14 EDM contains a bort string. Heatblur ships four VF-32 skins differing
+only in the painted number (100/101/102/103) and four VF-1 Wolfpack skins NK100–NK103 — nobody
+authors that for a jet that renders the number dynamically.
+
+**Why 2026-07-16 passed.** That Scenic Route turn flew VF-32 F-14Bs, whose `livery_set` is
+literally numbered 100/101/102/103, while §62 had stamped `onboard_num` 100/101/102/103 on the
+same four jets. The painted numbers and the assigned numbers agreed by coincidence, so a coarse
+visual pass could not tell them apart.
+
+**Reported by the DM, 2026-08-23: every F-14B(U) in a mission wore the same board number.** The
+five F-14B(U) presets each pinned one `livery:` — so the whole squadron wore one skin and one
+painted modex — while the F-14B presets already used `livery_set`. The live
+`retribution_nextturn.miz` had four COBIA Escort B(U)s with four *different* `onboard_num`
+values (459/597/768/976) on one livery, `vf-103 2004 aa100`.
+
+**The fix.** `LiveryAllocator` (`game/missiongenerator/aircraft/liveryallocator.py`), held by
+`AircraftGenerator` beside `ModexAllocator` and passed to `AircraftPainter` at all three
+`apply_livery` sites (including through `FlightGroupConfigurator`), hands a squadron's **first
+jet of the mission the first entry of its `livery_set`** — by convention the X00 CAG bird — then
+cycles the line jets behind it in generation order. One CAG bird per squadron per mission, like
+a real air wing. **A set of fewer than three cycles whole instead** — reserving one of two leaves
+every later jet on the single survivor, which is the one-number squadron this fixes. It replaces
+`Squadron.random_round_robin_livery_from_set`, which picked at
+random and so put two CAG birds in an eight-jet squadron; that method is still the fallback for
+any caller with no allocator. `Squadron.ordered_livery_set` rejoins `_livery_pool`, because the
+old random path drained `livery_set` into it and a save taken mid-rotation would otherwise be
+missing liveries.
+
+Data side: the ten `resources/squadrons/F-14B(U) Tomcat` presets collapse to five — one per
+squadron, `livery_set` ordered CAG bird first. **DCS ships only two B(U) liveries for VF-101,
+VF-11 and VF-143**, so those three alternate; only VF-103 (AA100/101/103/105) and VF-32
+(AC100/101/107/111) have enough to hold a CAG bird out. VF-101 and VF-11 have no X00 jet in the
+distribution at all. The F-14B VF-32 set was reordered to lead with 100. **Squadron liveries are pickled, so this reaches new campaigns only** — an
+in-flight save keeps its single livery.
+
+`F-14BU` was also missing from `MODEX_AIRCRAFT_IDS` entirely, which is why its `onboard_num`
+came out random (459/597/768/976) while the F-14B got the clean 100/101/102/103. Added. The F-14
+ids stay in the set even though nothing paints them, so anything reading `onboard_num` sees a
+coherent sequence; the cost is a reserved 100-number block per Tomcat squadron.
+
+Tests: `tests/missiongenerator/test_livery_allocator.py` (CAG-once-then-cycle, per-squadron
+sequences, the two-livery and one-livery degenerate cases, the empty-set no-op, the drained-pool
+rejoin) and `tests/test_squadron_livery_sets.py` (every F-14B(U) preset carries a set, leads
+with its lowest modex, and repeats no board number).
+
+**In-game pass: ◐ PARTIAL** (checklist B15). Hornet sequencing verified 2026-07-16 on the flown
+Scenic Route turn-3 test (*"The Modex on our fork is 100% working … Everyone's modex looked
+accurate"*) — that reading stands for the Hornet, whose liveries do carry the number material.
+The Tomcat's livery sequence has not been flown.
 
 That mechanism is what any per-pilot modex work rests on — see upstream issue
 [#863](https://github.com/dcs-retribution/dcs-retribution/issues/863) (per-pilot modex pins in

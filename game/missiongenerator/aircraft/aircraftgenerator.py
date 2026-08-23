@@ -58,6 +58,7 @@ from game.theater.controlpoint import (
 )
 from game.unitmap import UnitMap
 from .aircraftpainter import AircraftPainter
+from .liveryallocator import LiveryAllocator
 from .flightdata import FlightData
 from .flightgroupconfigurator import FlightGroupConfigurator
 from .flightgroupspawner import FlightGroupSpawner
@@ -108,6 +109,7 @@ class AircraftGenerator:
         self.ground_spawns = ground_spawns
         self.country_assigner = country_assigner
         self.modex_allocator = ModexAllocator(game)
+        self.livery_allocator = LiveryAllocator()
 
     @cached_property
     def use_client(self) -> bool:
@@ -546,7 +548,7 @@ class AircraftGenerator:
                     )
                     group.uncontrolled = False
                     group.units[0].skill = Skill.Client
-                AircraftPainter(flight, group).apply_livery()
+                AircraftPainter(flight, group, self.livery_allocator).apply_livery()
                 self.modex_allocator.assign(squadron, group, country)
                 self.unit_map.add_aircraft(group, flight)
 
@@ -584,7 +586,7 @@ class AircraftGenerator:
         if group is None:
             logging.info(f"No parking for returned flight {flight} at {cp}")
             return 0
-        AircraftPainter(flight, group).apply_livery()
+        AircraftPainter(flight, group, self.livery_allocator).apply_livery()
         self.modex_allocator.assign(flight.squadron, group, country)
         self.unit_map.add_aircraft(group, flight)
         return len(group.units)
@@ -620,6 +622,7 @@ class AircraftGenerator:
             self.mission_data,
             dynamic_runways,
             self.use_client,
+            self.livery_allocator,
         ).configure()
 
         self.flights.append(flight_data)

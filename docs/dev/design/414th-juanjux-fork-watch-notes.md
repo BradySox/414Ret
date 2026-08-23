@@ -158,6 +158,31 @@ YJ-12 and ~130 nm for a Kh-22 that reaches 270+), and **a short-legged flight in
 package drags the whole package to its attack distance**, which is why the minimum sets the
 number rather than the maximum.
 
+**Faction-editor papercuts** (his upstream **#953**), taken 2026-08-23. Three defects in the
+Air Wing dialog's faction tabs. All three were verified live in our tree *before* porting, and
+his patch then applied to our files with **zero conflicts** — so this is his code, not a
+reimplementation of it.
+
+1. **A faction edit never reached the buy menus.** `ArmedForces` is built from the faction once,
+   in `Coalition.__init__`, and each `ForceGroup` freezes the units it could reach then. The
+   rebuild hung off `preset_groups_changed`, which only `_on_add_preset_group` emitted — so
+   adding a *unit* changed nothing you could buy. The signal is now `faction_changed` and every
+   mutation emits it.
+2. **The tick boxes never removed anything outside the wizard.** `_filter_selected_units` is
+   reached only from `QFactionSelection`'s two properties, so unticking a unit from the
+   in-campaign Air Wing button did nothing at all. Entries there get a remove button instead,
+   gated on an `in_use` callback that refuses while squadrons fly the type or the map has it
+   deployed. The checkbox is still built and registered — the wizard's save path reads every
+   entry and an unshown one reads as kept.
+3. **Both lists sorted by the internal DCS id** while displaying `display_name`/`variant_id`,
+   which are unrelated, so the combo boxes looked shuffled. Now case-insensitive by the name
+   the player actually reads.
+
+**Drift watch: #953 was OPEN when we took it**, with no reviews. This is a pre-merge adoption of
+the kind the adoption-drift rule warns about — re-check our copy against his when it merges, and
+expect the `in_use` refusal wording and the remove-button glyph to be the parts a reviewer moves.
+Upstream's own test came with it (`tests/test_faction_edit_rebuilds_forces.py`, 5 cases).
+Checklist **B94**.
 ### Checked, and it went the other way
 
 - **His formation-abort cascade does NOT explain our M1 zero-missile finding.** He observed a

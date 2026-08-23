@@ -7567,7 +7567,15 @@ TOS page p107), but `seconds_of_day` emitted raw local seconds — so every push
 time was out by the map's UTC offset, 4 h on Caucasus and 8 h on Nevada. Now
 converted through `game.theater.timezone`, based on the mission day's Zulu
 midnight so a sortie across 00:00Z still climbs. The kneeboard half was fixed
-with it: `F-16C_50.yaml` gained `utc_kneeboard: true`. **That change claimed the
+with it: `F-16C_50.yaml` gained `utc_kneeboard: true` — and **that flag is now on
+the Viper and nothing else** (DM call 2026-08-21). It had been on twelve airframes
+(FA-18C since 2022, the Super Hornets and EA-18G since 2023, the VSN F-35s since
+2026-01) without ever reaching the flight-plan table, so making it work changed
+every one of those cards at once; the reported defect was the Viper's card against
+its DED, and the other eleven yamls had the line removed. Their BLUF TOT, which
+used to print Zulu-only while the rest of the card printed local, is now local like
+the rest of it. Upstream keeps its twelve — the divergence is which yamls set the
+flag, not the code. **That change claimed the
 flag already drove every kneeboard time; it did not, and the card shipped
 carrying two clocks (fixed 2026-08-20).** The flag reached the BLUF's TOT and the
 friendly-packages page only — the flight-plan table, the Support Info package TOT

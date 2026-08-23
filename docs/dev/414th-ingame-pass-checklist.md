@@ -25,7 +25,7 @@ so the two docs don't drift.
 
 ## Outstanding rows at a glance
 
-69 rows need a live pass. Full detail is under each `###` heading below —
+70 rows need a live pass. Full detail is under each `###` heading below —
 search the row id. `☐` untested · `◐` flown but not under the conditions that
 stress it · `✗` fail signature reproduced in-game.
 
@@ -143,6 +143,7 @@ stress it · `✗` fail signature reproduced in-game.
 | B93 | The front line sits on ground the armour can hold | §90 | ☐ |
 | B94 | Editing a faction mid-campaign reaches the buy menus | juanjux #953 | ☐ |
 | B95 | Saving the air wing keeps both coalitions | air wing config | ☐ |
+| B96 | Blue's three fields fill without a jet losing its stand | campaign parking | ☐ |
 
 ---
 
@@ -5965,6 +5966,34 @@ and whether the `in_use` refusal catches a unit that is deployed but flown by no
   holding materiel its faction no longer admits.
 - **Free while you are there:** the aircraft/unit/ship/preset combo boxes should read
   alphabetically. They used to be ordered by internal DCS id.
+### B96 — Blue's three fields fill without a jet losing its stand · campaign parking · ☐ UNTESTED
+
+**History:** Northern Russia moved blue off one field onto three (Kutaisi keeps the A-10s
+and helicopters; Batumi and Gudauta were made blue airfields). Sizing was reworked at the
+same time to respect stand *class*, not just slot count.
+
+> DCS stands are nested: one that takes a Hind also takes a Huey, not the reverse. Only 13
+> of Kutaisi's 58 take an Mi-8 or Mi-24, only 25 take any helicopter, and Batumi has room
+> for exactly two heavy aircraft. Sizing against a base's grand total overfills the big
+> stands silently — it produced 28 helicopters for 25 helicopter-capable spots, and the
+> red re-check found Beslan asking 10 aircraft to share 5 large stands and Tbilisi-Lochini
+> holding 74 when its jets fit 70.
+
+**What CI cannot exercise:** the numbers are arithmetic over pydcs stand data, which is a
+model of DCS, not DCS. Whether every aircraft actually gets a stand is a mission-generation
+question, and a squadron that cannot be placed is the failure this rule exists to prevent.
+
+- **Setup:** New Game on Caucasus - Northern Russia, generate turn 1, open the .miz in the
+  Mission Editor. Check Kutaisi, Batumi and Gudauta, then Beslan and Tbilisi-Lochini.
+- **Pass:** every squadron has its aircraft on a stand; nothing is parked on a taxiway or
+  overlapping another airframe; the Hinds and Hips at Kutaisi are on large stands and the
+  tankers and E-3A at Gudauta are on its ten large ones.
+- **Fail signature:** a squadron shows fewer aircraft than its `size:`, or DCS logs a
+  parking error on load. Either means a stand class is still over-subscribed — report which
+  airframe and which field, because the fix is per-class, not a blanket trim.
+- **Free while you are there:** blue's transit is now ~50 NM longer from Batumi and Gudauta
+  than it was from Kutaisi. Worth a note on whether the fast jets still reach the fight with
+  useful fuel.
 ### B95 — Saving the air wing keeps both coalitions · air wing config · ☐ UNTESTED
 
 **History:** reported by the DM 2026-08-23, with the file it happened to — `Northen

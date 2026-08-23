@@ -130,20 +130,20 @@ squadrons:
   # Tbilisi-Lochini
   29:
     - primary: BARCAP
-      size: 11
+      size: 10
       aircraft:
         - MiG-29S Fulcrum-C
     - primary: BARCAP
-      size: 11
+      size: 10
       aircraft:
         - MIG-29-FULCRUM
     - primary: BAI
       secondary: air-to-ground
-      size: 11
+      size: 10
       aircraft:
         - Mi-24V Hind-E
     - primary: BAI
-      size: 11
+      size: 10
       aircraft:
         - Su-25 Frogfoot
     - primary: Strike
@@ -162,16 +162,16 @@ squadrons:
   # Beslan
   32:
     - primary: BARCAP
-      size: 5
+      size: 3
       aircraft:
         - Su-27 Flanker-B
     - primary: BARCAP
-      size: 5
+      size: 10
       aircraft:
         - MiG-29S Fulcrum-C
     - primary: BAI
       secondary: air-to-ground
-      size: 5
+      size: 2
       aircraft:
         - Mi-24V Hind-E
   # Mozdok

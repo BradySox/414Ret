@@ -140,6 +140,7 @@ stress it · `✗` fail signature reproduced in-game.
 | B90 | A steerpoint's elevation is the ground under it | §74 | ☐ |
 | B91 | The F-14B(U) spawns with its cartridge loaded | §74 | ☐ |
 | B92 | A rescued marker belongs to the base it sits next to | campaign loading | ☐ |
+| B94 | Editing a faction mid-campaign reaches the buy menus | juanjux #953 | ☐ |
 | B93 | Saving the air wing keeps both coalitions | air wing config | ☐ |
 
 ---
@@ -5939,6 +5940,30 @@ from a fresh New Game, not a save** — a save never took this path.
 
 ---
 
+### B94 — Editing a faction mid-campaign reaches the buy menus · juanjux #953 · ☐ UNTESTED
+
+**History:** ported 2026-08-23 from juanjux's upstream #953, after verifying all three
+defects live here. See [414th-juanjux-fork-watch-notes.md](design/414th-juanjux-fork-watch-notes.md).
+
+> `ArmedForces` is built from the faction once, in `Coalition.__init__`, so a mid-campaign
+> faction edit was invisible to everything downstream. The rebuild hung off a signal only
+> preset-group adds emitted. Adding a unit now rebuilds too, entries get a working remove
+> button gated on an `in_use` check, and both lists sort by the displayed name.
+
+**What CI cannot exercise:** upstream's test covers the rebuild, not the dialog. The unknowns
+are whether the rebuilt `ArmedForces` is what the purchase menu actually reads mid-campaign,
+and whether the `in_use` refusal catches a unit that is deployed but flown by no squadron.
+
+- **Setup:** load a save mid-campaign, Air Wing → Faction OPFOR. Add an early-warning radar
+  the faction lacks, close, then open the ground-unit purchase menu at a red base.
+- **Pass:** the new radar is offered. Then reopen the tab, press ✕ on a unit type nothing
+  fields — it disappears; press ✕ on one a squadron flies — a popup names the squadrons and
+  refuses.
+- **Fail signature:** the added unit never appears in the buy list (the rebuild did not reach
+  the menu's model); or ✕ removes something the map still has deployed, leaving the game
+  holding materiel its faction no longer admits.
+- **Free while you are there:** the aircraft/unit/ship/preset combo boxes should read
+  alphabetically. They used to be ordered by internal DCS id.
 ### B93 — Saving the air wing keeps both coalitions · air wing config · ☐ UNTESTED
 
 **History:** reported by the DM 2026-08-23, with the file it happened to — `Northen

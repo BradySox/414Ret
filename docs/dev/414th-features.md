@@ -9487,11 +9487,78 @@ consumers of `frontline_bounds` — CAS patrol legs, the DTC cartridge, and two 
 only `left_position`, `right_position` and `length`, which are untouched. `polyline` pins its ends to
 those exact points rather than the trig-walked approximations, which drift sub-micron.
 
+### The front is measured against drivable ground (2026-08-23)
+
+A defect in the shared base the five rungs sit on, inherited unmodified from upstream.
+`frontline_bounds` cast one ray each way from the centre and stopped at the first
+inclusion-zone boundary (`extend_ground_position`).
+
+- `find_ground_position` returns the nearest point of the drivable stretch, which is a point
+  **on its boundary**. `poly_contains` rejects a boundary point, so the centre reads as outside.
+- From there the ray toward the usable ground meets the boundary at ~0 m and stops. The ray into
+  ground no vehicle can enter never meets a boundary at all, and `extend_ground_position` read
+  "no crossing" as "clear the whole way" and returned the full half-width.
+- Result: the entire front drawn on the impassable side, none of it on the passable side.
+
+Reproduced from a save on **Caucasus - Northern Russia**, Kutaisi/Khashuri FOB, turn 1
+(`max_frontline_width` 40 km). The front ran 20.00 km left and 0.00 km right with **0 % of its
+trace on drivable ground**. Along that axis the drivable ground was +0.0 to +6.2 km and +28 to
++40 km — all of it on the side that got nothing. `flotgenerator` then found `is_on_land` false
+for nearly every lateral offset and took its degenerate-front fallback, which collapses groups
+onto the nearest valid patch: blue bunched on one edge of the ridge, red on the other, ~15 km
+apart with impassable ground between them.
+
+The fix replaces the two ray casts with `usable_reach`, which intersects the front axis
+(± `max_frontline_width`, so the run is found whichever side it lies on) with
+`inclusion_zone_only`, picks the run holding the centre — or the nearest run, since the centre is
+a boundary point — and caps each side at half the nominal width. Same axis, same centre, same
+answer in open country; only an edge moves. `extend_ground_position` keeps its ray cast for
+rung E's salient probes, with the `is_empty` branch now returning `initial` when the start is
+off drivable ground, so a probe cannot report room it does not have.
+
+After the fix, the same front: 0.00 km left, 6.15 km right, **98 % of the bowed trace on drivable
+ground**, and both sides' rear areas at 2 km and 6 km depth clear.
+
+Deliberately **not** done: spending a pinned flank's slack on the other side. It would have made
+that front 40 km wide instead of 6.15 km, but it widens fronts in every campaign with terrain on
+one flank and drags the fight off the supply crossing the two sides are contesting. The narrow
+front here is rung D's intent — a pass is a chokepoint.
+
+Upstreamable: `find_ground_position` and `extend_ground_position` are upstream's, unmodified, and
+the defect is theirs.
+
+**The route under that front was also wrong, and is fixed separately.** `northern_russia`'s miz
+path group `Ground-4` reached the Likhi range in a single **41 km straight leg** and put its own
+waypoint off drivable ground; every other route in that miz has 15-39 waypoints and hugs roads.
+The front is placed by distance along the polyline, so a chord across a ridge puts the fight on
+the ridge. A yaml `supply_routes:` override follows the E60/S1 instead — the Rioni valley through
+Terjola and Zestafoni, then the Chkherimela valley and the Rikoti pass to Surami. Measured over 15
+sampled front positions along the route:
+
+| | miz `Ground-4` | yaml override |
+|---|---|---|
+| waypoints | 8 | 22 |
+| longest leg | 40.9 km | 11.2 km |
+| waypoints off drivable ground | 1 | 0 |
+| drawn line on drivable ground | 75 % | 98 % |
+| front positions on drivable ground | 10/15 | 15/15 |
+| mean front width | 9.55 km | 10.18 km |
+
+That override needed a loader fix to be safe at all: `add_supply_routes` (miz) and
+`add_yaml_supply_routes` (yaml) both call `create_convoy_route`, whose `convoy_routes` dict
+overwrites but whose `connected_points.append` did not — so a yaml route for a pair the miz
+already defines **linked the two CPs twice**, and `ai_ground_planner` counts that list rather than
+de-duplicating it. `create_convoy_route` is now idempotent on the connection.
+`tests/theater/test_supply_route_drivability.py` locks both, and the duplicate test fails without
+the guard.
+
 ### Tests
 
 `tests/theater/test_supply_status.py` (13) · `tests/sim/test_assault_cost.py` (7) ·
 `tests/theater/test_front_line_weight.py` (11) · `tests/theater/test_front_line_terrain.py` (10) ·
-`tests/missiongenerator/test_front_line_salients.py` (10).
+`tests/missiongenerator/test_front_line_salients.py` (10) ·
+`tests/missiongenerator/test_front_line_usable_reach.py` (8) ·
+`tests/theater/test_supply_route_drivability.py` (5).
 
 ### Deferred
 

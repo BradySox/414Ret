@@ -860,7 +860,12 @@ class ControlPoint(MissionTarget, SidcDescribable, ABC):
     def create_convoy_route(
         self, to: ControlPoint, waypoints: Iterable[Point], spawns: Iterable[Point]
     ) -> None:
-        self.connected_points.append(to)
+        # A campaign may define the same pair twice -- a miz path group and a yaml
+        # `supply_routes:` entry overriding it. The route dict below overwrites, but
+        # an unguarded append double-linked the CPs, and the ground planner counts
+        # `connected_points` rather than de-duplicating it.
+        if to not in self.connected_points:
+            self.connected_points.append(to)
         self.stances[to.id] = CombatStance.DEFENSIVE
         self.convoy_routes[to] = tuple(waypoints)
         self.convoy_spawns[to] = tuple(spawns)

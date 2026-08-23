@@ -25,7 +25,7 @@ so the two docs don't drift.
 
 ## Outstanding rows at a glance
 
-65 rows need a live pass. Full detail is under each `###` heading below —
+66 rows need a live pass. Full detail is under each `###` heading below —
 search the row id. `☐` untested · `◐` flown but not under the conditions that
 stress it · `✗` fail signature reproduced in-game.
 
@@ -139,6 +139,7 @@ stress it · `✗` fail signature reproduced in-game.
 | B90 | A steerpoint's elevation is the ground under it | §74 | ☐ |
 | B91 | The F-14B(U) spawns with its cartridge loaded | §74 | ☐ |
 | B92 | A rescued marker belongs to the base it sits next to | campaign loading | ☐ |
+| B93 | Saving the air wing keeps both coalitions | air wing config | ☐ |
 
 ---
 
@@ -5902,6 +5903,33 @@ from a fresh New Game, not a save** — a save never took this path.
 
 ---
 
+### B93 — Saving the air wing keeps both coalitions · air wing config · ☐ UNTESTED
+
+**History:** reported by the DM 2026-08-23, with the file it happened to — `Northen
+russia.yaml` held the blue wing, a Red-tab save replaced it, and there was nothing in
+the file to say either version was one side of a pair.
+
+> `_build_air_wing` read `self.tab_widget.currentWidget()`, so Save wrote only the tab
+> in front and Load applied a file to whichever tab was in front. Save now writes both
+> coalitions under `coalitions:`; a file holding both asks on load whether to restore
+> both or only the open side. Files without that key are legacy and still load into the
+> current tab. `tests/fourteenth/test_air_wing_file_format.py` pins the detection both
+> ways, including a control point named `coalitions`.
+
+**What CI cannot exercise** is the dialog itself: the tests cover format detection, not
+whether `configure_default_air_wing` applied to a tab that is *not* in front redraws that
+tab and survives Accept Changes. A squadron restored into the background tab could look
+right in the file and never reach the game.
+
+- **Setup:** New Game, open Air Wing Configuration, change something on Blue **and**
+  something on Red, Save Config. Reopen, change both again, Load Config, choose **Both**.
+- **Pass:** both tabs show what was saved, Accept Changes sticks, and the first mission
+  generates with those squadrons. Then repeat choosing **<side> only** and confirm the
+  other tab is untouched.
+- **Fail signature:** the background tab still shows the old wing after a Both load (the
+  `w.revert()` did not reach it); or Accept Changes drops the background tab's squadrons.
+- **Legacy check, free:** load one of the DM's existing files (`Northen russia red.yaml`,
+  no `coalitions:` key) with the Red tab open. It must load exactly as it did before.
 ### B92 — A rescued marker belongs to the base it sits next to · campaign loading · ☐ UNTESTED
 
 **History:** built 2026-08-22, from the DM's own `test.retribution` on

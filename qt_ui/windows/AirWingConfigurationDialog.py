@@ -51,6 +51,40 @@ from qt_ui.uiconstants import AIRCRAFT_ICONS, ICONS
 from qt_ui.widgets.combos.QSquadronLiverySelector import SquadronLiverySelector
 from qt_ui.widgets.combos.primarytaskselector import PrimaryTaskSelector
 
+#: Air wing files used to be a bare control-point -> squadrons mapping built from
+#: whichever dialog tab happened to be in front, so saving Red over a file that
+#: held Blue silently replaced it -- there was nothing in the file to say which
+#: side it was. A versioned file carries both coalitions under `coalitions:`.
+#: Files without that key are legacy and still load into the current tab.
+AIR_WING_FILE_VERSION = 2
+
+BLUE = "blue"
+RED = "red"
+
+
+def coalition_key(coalition: Coalition) -> str:
+    return BLUE if coalition.player.is_blue else RED
+
+
+def air_wing_coalitions(document: Any) -> Optional[dict[str, Any]]:
+    """The per-coalition payloads in a saved air wing, or None if it is legacy.
+
+    A legacy file's top-level keys are control points, so the check has to be
+    positive: a `coalitions` mapping keyed by a side we recognize. Anything else
+    is treated as legacy rather than guessed at.
+    """
+    if not isinstance(document, dict):
+        return None
+    coalitions = document.get("coalitions")
+    if not isinstance(coalitions, dict):
+        return None
+    found = {
+        key: payload
+        for key, payload in coalitions.items()
+        if key in (BLUE, RED) and isinstance(payload, dict)
+    }
+    return found or None
+
 
 class QMissionType(QCheckBox):
     def __init__(
@@ -883,7 +917,7 @@ class AirWingConfigurationDialog(QDialog):
         self.tab_widget = QTabWidget()
         layout.addWidget(self.tab_widget)
 
-        self.tabs = []
+        self.tabs: list[AirWingConfigurationTab] = []
         for coalition in game.coalitions:
             coalition_tab = AirWingConfigurationTab(coalition, game, aircraft_present)
             name = "Blue" if coalition.player.is_blue else "Red"
@@ -916,6 +950,8 @@ class AirWingConfigurationDialog(QDialog):
         result = QMessageBox.information(
             None,
             "Save Air Wing?",
+            "Both coalitions will be written to the file, not just the tab you "
+            "have open.<br />"
             "Revert will not be possible after saving a different Air Wing.<br />"
             "Are you sure you want to continue?",
             QMessageBox.StandardButton.Yes,
@@ -932,14 +968,18 @@ class AirWingConfigurationDialog(QDialog):
         if fd.exec_():
             for tab in self.tabs:
                 tab.apply()
-            airwing = self._build_air_wing()
+            document = {
+                "version": AIR_WING_FILE_VERSION,
+                "coalitions": {
+                    coalition_key(tab.coalition): self._build_air_wing(tab)
+                    for tab in self.tabs
+                },
+            }
             filename = fd.selectedFiles()[0]
             with open(filename, "w") as f:
-                f.write(yaml.dump(airwing))
+                f.write(yaml.dump(document))
 
-    def _build_air_wing(self) -> dict:
-        w = self.tab_widget.currentWidget()
-        assert isinstance(w, AirWingConfigurationTab)
+    def _build_air_wing(self, w: AirWingConfigurationTab) -> dict:
         squadrons = {}
         for ac, sqs in w.coalition.air_wing.squadrons.items():
             for s in sqs:
@@ -993,12 +1033,63 @@ class AirWingConfigurationDialog(QDialog):
         if fd.exec_():
             filename = fd.selectedFiles()[0]
             with open(filename, "r") as f:
-                airwing = yaml.safe_load(f)
-                self._construct_air_wing_tab(airwing)
+                document = yaml.safe_load(f)
+            self._load_air_wing_document(document)
 
-    def _construct_air_wing_tab(self, airwing: dict[str, Any]) -> None:
+    def _current_tab(self) -> AirWingConfigurationTab:
         w = self.tab_widget.currentWidget()
         assert isinstance(w, AirWingConfigurationTab)
+        return w
+
+    def _load_air_wing_document(self, document: Any) -> None:
+        coalitions = air_wing_coalitions(document)
+        if coalitions is None:
+            # Legacy file: it cannot say which side it holds, so it goes where it
+            # has always gone rather than being guessed at from its squadrons.
+            self._construct_air_wing_tab(document, self._current_tab())
+            return
+
+        tabs = {coalition_key(tab.coalition): tab for tab in self.tabs}
+        loadable = [key for key in (BLUE, RED) if key in coalitions and key in tabs]
+        if not loadable:
+            QMessageBox.warning(
+                None,
+                "Load Air Wing",
+                "This air wing file holds no coalition this game has.",
+            )
+            return
+        if len(loadable) > 1:
+            loadable = self._choose_coalitions_to_load(loadable)
+        for key in loadable:
+            self._construct_air_wing_tab(coalitions[key], tabs[key])
+
+    def _choose_coalitions_to_load(self, loadable: list[str]) -> list[str]:
+        """Both sides, or just the one whose tab is open. Empty list cancels."""
+        current = coalition_key(self._current_tab().coalition)
+        box = QMessageBox()
+        box.setWindowTitle("Load Air Wing")
+        box.setText(
+            "This air wing file holds both coalitions.<br />"
+            "Restore both, or only the side whose tab is open?"
+        )
+        both_button = box.addButton("Both", QMessageBox.ButtonRole.AcceptRole)
+        one_button = box.addButton(
+            f"{current.capitalize()} only", QMessageBox.ButtonRole.AcceptRole
+        )
+        box.addButton(QMessageBox.StandardButton.Cancel)
+        box.setDefaultButton(both_button)
+        box.exec_()
+
+        clicked = box.clickedButton()
+        if clicked is both_button:
+            return loadable
+        if clicked is one_button and current in loadable:
+            return [current]
+        return []
+
+    def _construct_air_wing_tab(
+        self, airwing: dict[str, Any], w: AirWingConfigurationTab
+    ) -> None:
         c = w.coalition
         for s in c.air_wing.squadrons.values():
             for squadron in s:

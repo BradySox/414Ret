@@ -145,17 +145,17 @@ entries:
       still reads zero — that half is not fixed.
     row: B90
   - date: 2026-08-20
-    title: Hornet and Viper cards carry both clocks
+    title: The Viper card carries both clocks
     change: >-
-      Those cockpits read Zulu, so their kneeboards now print the Zulu time
-      beside the local one — on the flight plan, the BLUF TOT, the package
-      list and the tanker and AWACS lines. Before this only the BLUF TOT was
-      converted, so one card showed two clocks a map offset apart. The local
-      figure stays, so a mixed package still coordinates off one number.
+      The F-16's DED runs Zulu and its kneeboard ran local, so the card and the
+      cockpit read a map offset apart. The Viper card now prints both, local
+      first — "17:28L 14:28Z" — on the flight plan, the BLUF TOT, the package
+      list and the tanker and AWACS lines, so it matches the DED and still
+      matches the wingman coordinating off local. No other airframe is touched.
     watch: >-
-      On a Hornet or Viper, check the flight-plan Takeoff row before you roll:
-      "17:28L 14:28Z", with the Zulu figure matching the DED or HUD clock. An
-      A-10 or Strike Eagle card is unchanged.
+      On a Viper, check the flight-plan Takeoff row before you roll:
+      "17:28L 14:28Z", with the Zulu figure matching the DED. Every other
+      aircraft's card is local only, exactly as before.
     row: B28
   - date: 2026-08-20
     title: Point the air war where you want it

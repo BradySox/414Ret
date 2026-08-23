@@ -101,4 +101,6 @@ datalink_introduced: 2003
 # The avionics run Zulu: System Time on the DED/HUD is "based on Zulu time
 # (UTC)" (EA guide p103), and the CRUS TOS page compares desired TOS against
 # it. A local kneeboard put the card and the DED an offset apart.
+# The ONLY airframe that sets this, by decision 2026-08-21 -- do not re-add it
+# to the Hornets or the F-35s. See docs/dev/design/414th-dtc-cartridge-notes.md.
 utc_kneeboard: true

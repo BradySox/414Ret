@@ -25,7 +25,6 @@ fuel:
   min_safe: 2000
 variants:
   F-35C Lightning II: {}
-utc_kneeboard: true
 tasks:
   BARCAP: 450
   Escort: 450

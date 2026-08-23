@@ -347,13 +347,39 @@ which is the same mistake in a different chair.
 ### The Viper kneeboard now reads Zulu too (2026-08-19)
 
 Fixing the cartridge exposed a second half of the same problem. The Hornet
-family's kneeboards already printed Zulu (`utc_kneeboard: true` on the FA-18C/E/F
-and EA-18G yamls), so those cards and the corrected cartridge agree. The **Viper
+family carried `utc_kneeboard: true` (FA-18C/E/F and EA-18G yamls) and the **Viper
 had no flag**, so its card printed local while its avionics ran Zulu — card and
-DED an offset apart.
+DED an offset apart. (The flag was later found to drive almost nothing, and is now
+on the Viper alone — see the two sections below.)
 
 `F-16C_50.yaml` now sets `utc_kneeboard: true`, sourced to the guide's System
 Time definition (p103).
+
+### Scoped to the Viper alone (DM call, 2026-08-21)
+
+`utc_kneeboard` was on **twelve** airframes: the FA-18C since 2022-01-09 (upstream's
+own "Add aircraft property for Zulu time preference"), the Super Hornets and EA-18G
+since 2023, the six VSN F-35s since 2026-01, and the F-16C added 2026-08-18. It had
+never reached the flight-plan table on any of them, so making it work lit up every
+one at once.
+
+**It is now on `F-16C_50.yaml` and nowhere else.** The reported defect was the
+Viper's card disagreeing with its DED; the DM's read is that every other airframe
+was already correct and none of them cares what the Viper shows. The eleven other
+yamls had the line removed.
+
+One line does not return to its exact pre-2026-08-20 state: those cards' BLUF TOT
+used to print **Zulu only** (`TOT 14:36:29Z`), because the old path converted it and
+nothing else on the card followed. They now print local, like the rest of that card.
+That is a change toward local-only consistency, not away from it.
+
+**Do not re-add the flag to the Hornets or the F-35s** without a fresh call. The
+FA-18C guide does say its TOT is entered "based on Zulu time" (p123) and its
+cartridge push times are Zulu regardless of this flag — `seconds_of_day` converts
+unconditionally — so the argument for putting it back exists and was heard and
+declined. Upstream keeps its twelve: the carve in
+[#949](https://github.com/dcs-retribution/dcs-retribution/pull/949) is code-identical
+and diverges only in which yamls set the flag.
 
 ### "The flag already drives every kneeboard time" was wrong (fixed 2026-08-20)
 

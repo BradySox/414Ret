@@ -1168,7 +1168,7 @@ def test_tomcat_route_lands_on_plan_two_with_the_jets_name_codes() -> None:
     assert [w["name"] for w in route["waypoints"]] == [
         "INGREXIP",
         "POWERXST",
-        "LANDIXHB",
+        "CVN71XHB",
     ]
     # 07:25 local on a UTC+4 map is 03:25Z.
     assert route["waypoints"][0]["tot"] == "03:25:00"
@@ -1740,3 +1740,85 @@ def test_a_cap_flight_gets_its_defended_asset_as_the_dp() -> None:
         build_tomcat_cartridge(flight, mission_data, game, "DP").to_json()
     )["data"]["NAV"][0]["additional_points"]
     assert not any(p["name"].endswith("XDP") for p in points)
+
+
+def test_duplicate_names_are_numbered() -> None:
+    """A real strike gave eight buildings the same label. Collisions get a
+    digit, the base gives way, the code stays on the end -- on the route, the
+    JDAM page and the reference points alike."""
+    flight, mission_data, game = _cluster_flight()
+    for waypoint in flight.waypoints[2:]:
+        waypoint.name = waypoint.display_name = "STRIKE JOINT OPS"
+    mission_data.flights = [
+        flight,
+        _support_flight(
+            FlightType.REFUELING, "Arco 1", Pt(10000, 10000), Pt(30000, 10000)
+        ),
+        _support_flight(
+            FlightType.REFUELING, "Arco 2", Pt(40000, 10000), Pt(60000, 10000)
+        ),
+    ]
+    data = json.loads(
+        build_tomcat_cartridge(flight, mission_data, game, "Dupes").to_json()
+    )["data"]
+    # Numbered by position in the cluster, so the digit is the same building
+    # on the route and on the JDAM page even though the codes eat a different
+    # number of characters.
+    assert [w["name"] for w in data["NAV"][1]["waypoints"]] == [
+        "INGREXIP",
+        "STRI1XST",
+        "STRIK2XL",
+        "STRIK3XL",
+    ]
+    assert [t["name"] for t in data["JDAM"]["stations"][0]["targets"][:3]] == [
+        "STRIKEJ1",
+        "STRIKEJ2",
+        "STRIKEJ3",
+    ]
+    refs = [p["name"] for p in data["NAV"][0]["additional_points"]]
+    assert refs.count("ARCO1") == 1 and refs.count("ARCO2") == 1
+    assert "ARCO" not in refs
+
+
+def test_recovery_and_divert_points_are_named_after_the_field() -> None:
+    flight, mission_data, game = _tomcat_fixture()
+    flight.divert = _runway("Batumi", 131.0)
+    data = json.loads(
+        build_tomcat_cartridge(flight, mission_data, game, "Fields").to_json()
+    )["data"]
+    assert data["NAV"][1]["waypoints"][-1]["name"] == "CVN71XHB"
+    assert "BATUMIXD" in [p["name"] for p in data["NAV"][0]["additional_points"]]
+
+
+def test_a_lone_target_keeps_its_plain_name() -> None:
+    """One target is not a cluster: no digit, on either page."""
+    flight, mission_data, game = _tomcat_fixture()
+    data = json.loads(
+        build_tomcat_cartridge(flight, mission_data, game, "One").to_json()
+    )["data"]
+    assert [w["name"] for w in data["NAV"][1]["waypoints"]] == [
+        "INGREXIP",
+        "POWERXST",
+        "CVN71XHB",
+    ]
+    assert data["JDAM"]["stations"][0]["targets"][0]["name"] == "POWERPLA"
+
+
+def test_distinct_target_names_are_left_alone() -> None:
+    """A cluster whose buildings already have different names gains no digits:
+    the names themselves correlate the two pages."""
+    flight, mission_data, game = _cluster_flight()
+    data = json.loads(
+        build_tomcat_cartridge(flight, mission_data, game, "Named").to_json()
+    )["data"]
+    assert [w["name"] for w in data["NAV"][1]["waypoints"]] == [
+        "INGREXIP",
+        "BLDG1XST",
+        "BLDG2XL",
+        "BLDG3XL",
+    ]
+    assert [t["name"] for t in data["JDAM"]["stations"][0]["targets"][:3]] == [
+        "BLDG1",
+        "BLDG2",
+        "BLDG3",
+    ]

@@ -27,7 +27,8 @@ entries:
       code, which puts a pentagon on it in the HUD; the rest of a cluster go to
       the LANTIRN store, the top-ranked SAM site becomes the hostile area that
       sets the threat axis, and a CAP's defended point sits on the asset it
-      covers.
+      covers. Points that would share a name are numbered, and the recovery
+      and divert points are named after their fields.
     watch: >-
       Load a multi-building strike with two or more JDAMs on the tunnel
       stations. On the JDAM page, STA 3 PP1 should be the first building and

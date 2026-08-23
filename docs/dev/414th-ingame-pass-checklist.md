@@ -25,7 +25,7 @@ so the two docs don't drift.
 
 ## Outstanding rows at a glance
 
-65 rows need a live pass. Full detail is under each `###` heading below —
+66 rows need a live pass. Full detail is under each `###` heading below —
 search the row id. `☐` untested · `◐` flown but not under the conditions that
 stress it · `✗` fail signature reproduced in-game.
 
@@ -51,7 +51,7 @@ stress it · `✗` fail signature reproduced in-game.
 | B51 | The rescue package is not planned into threat it cannot survive | CSAR | ☑ |
 | C9 | Carrier-recovery stagger (same-boat package landings spaced) | §8 | ◐ |
 | G2 | Recon BDA bridge (one plugin, player + AI) | §12 | ✅ |
-| G19 | TARPS on Vietnam-era recon birds (RF-101B / RA-5C) | §3 | ◐ |
+| G19 | TARPS recon birds fly the recon leg (RF-101B / RA-5C / Su-24MR) | §3 | ◐ |
 | G39 | Engaging a site reveals it completely; recon does not | §3 | ☑ |
 | G40 | TARPS recon finds a hidden enemy command post | §3 | ☐ |
 | G41 | A bombed power station keeps its SAMs down on the NEXT turn | MANTIS C2 | ☐ |
@@ -139,6 +139,7 @@ stress it · `✗` fail signature reproduced in-game.
 | B90 | A steerpoint's elevation is the ground under it | §74 | ☐ |
 | B91 | The F-14B(U) spawns with its cartridge loaded | §74 | ☐ |
 | B92 | A rescued marker belongs to the base it sits next to | campaign loading | ☐ |
+| B93 | The front line sits on ground the armour can hold | §90 | ☐ |
 
 ---
 
@@ -1878,7 +1879,7 @@ flight test. See features doc §12. The pass description below is kept for readi
   Tide red still shows 0 EWR groups (faction EWR date-gated out at 1988, or markers not placed); a
   `mantis-config.lua` Lua error; or `1L13` EWRs spawn in blue/contested territory (placement off).
 
-### G19 — TARPS on Vietnam-era recon birds (RF-101B / RA-5C) · §3 · ◐ PARTIAL
+### G19 — TARPS recon birds fly the recon leg (RF-101B / RA-5C / Su-24MR) · §3 · ◐ PARTIAL
 
 **Re-scoped 2026-08-21, executing the 2026-08-18 banner.** TARPS reveals nothing any more
 (§3's rework: a site is revealed by engaging it), and the §12 recon engine that turned an
@@ -1897,6 +1898,13 @@ sane profile.
 - **Setup:** 1968 Yankee Station (RF-101B at Da Nang, RA-5C on the carriers, both tasked
   `primary: TARPS` in `resources/campaigns/1968_Yankee_Station.yaml`). Frag one of each and
   watch the Tacview.
+- **Setup (Su-24MR, added 2026-08-23):** red-side, so you cannot frag it — it is the only
+  recon airframe on this row you have to *observe*. Russia 2020 fields it; switch on
+  **Campaign Doctrine → "Auto-planner adds a recon flight to Strike/DEAD/Armed Recon
+  packages"** (off by default since the re-convergence), take a turn where red frags a
+  Strike/DEAD package in clear weather, and look for a single Su-24MR trailing it in the
+  Tacview. Its own fail signature is spawning **clean** — no Shpil-2, no ETHER, no R-60M —
+  which means the `Retribution TARPS` loadout name stopped matching.
 - **Pass:** both airframes launch, fly the planned recon route, overfly the target area and
   recover. Nothing is expected to be revealed on the map — that is no longer what recon does.
 - **Fail signature:** the flight never leaves the ramp or is dropped from the mission (the
@@ -5943,6 +5951,54 @@ reference — it carries 8 of the 16 moves.
      neighbouring fields is the failure `STRANDED_BEYOND` exists to prevent, and
      Marianas (Velvet Thunder) is the campaign that showed it. Re-measure before
      assuming the bound is too loose.
+
+---
+
+### B93 — The front line sits on ground the armour can hold · §90 · ☐ UNTESTED
+
+**History:** built 2026-08-23, from the DM's own `Maybe 414.retribution` on
+`Caucasus - Northern Russia` — the app map showed the FLOT hanging entirely off
+one side of the supply route, and the mission put blue and red ~15 km apart on
+opposite edges of the same ridge.
+
+> `frontline_bounds` cast one ray each way from the centre and stopped at the
+> first inclusion-zone boundary. `find_ground_position` hands it a centre sitting
+> **on** that boundary whenever the route crosses the edge of the drivable zone,
+> so the ray toward the usable ground stopped at ~0 m and the ray into ground no
+> vehicle can enter never met a boundary and took the full half-width. Measured
+> on Kutaisi/Khashuri FOB, turn 1: 20.00 km left, 0.00 km right, **0 % of the
+> trace on drivable ground**, with the real drivable run (+0.0 to +6.2 km)
+> entirely on the side that got nothing. `usable_reach` now measures the drivable
+> interval instead. Same front after the fix: 0.00 / 6.15 km, 98 % drivable.
+> `tests/missiongenerator/test_front_line_usable_reach.py` pins the edge case and
+> the open-country parity.
+
+**What CI cannot exercise** is whether the resulting fights read well. A front
+pinned into a mountain pass is now legitimately narrow — 6 km where the setting
+says 40 — and that is rung D's intent, not a bug. Whether a 6 km front produces a
+good CAS mission is a judgment only a flight makes.
+
+Needs a campaign whose front crosses broken ground, not a specific flight.
+Caucasus - Northern Russia (Kutaisi → Khashuri FOB) is the reference; any
+mountain or coastal front will do.
+
+- **Pass:** the orange FLOT on the app map straddles or runs alongside the supply
+  route into passable ground, not away from it. In the mission, blue and red
+  ground groups face each other across the front instead of bunching in two
+  blobs with impassable terrain between them.
+- **Fail signatures:**
+  1. **The FLOT still hangs off one side into terrain** — check
+     `usable_reach` picked the run holding the centre. A centre that is a
+     boundary point is expected; `_room_around_center` falls back to the nearest
+     run for exactly that.
+  2. **The front is absurdly short (< 2 km) and the fight is a knife fight** —
+     the drivable run really is that narrow, or the supply route crosses a ridge
+     on a long straight segment. Check the route waypoints before touching the
+     code: Northern Russia's wp3→wp4 is a 41 km chord over mountains, which is
+     campaign data, not engine behaviour.
+  3. **Groups still stack in one blob** — that is `flotgenerator`'s
+     degenerate-front fallback, which means `is_on_land` is still false along the
+     trace. Measure the trace before assuming the bounds are wrong.
   4. **The front line between two affected bases jumps** — ownership feeds base
      strength, so an 8-object swing is worth a look on Desert Trident's Jordan
      sector specifically.

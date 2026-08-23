@@ -11,6 +11,39 @@ performance: 2
 version: "10.5"
 settings:
   squadron_start_full: true
+
+# Kutaisi <-> Khashuri FOB overrides the miz path group `Ground-4`, which reached the
+# Likhi range in one 41 km straight leg across the ridge and put its own waypoint on
+# ground vehicles cannot cross. The front line is placed by distance along this
+# polyline, so it landed on the ridge rather than in the pass. These waypoints follow
+# the E60/S1 -- the Rioni valley through Terjola and Zestafoni, then the Chkherimela
+# valley and the Rikoti pass down to Surami. Every waypoint is inside the landmap's
+# drivable zone and 98% of the drawn line is (was 75%); over 15 sampled front
+# positions all 15 now sit on drivable ground, against 10 before.
+supply_routes:
+  - waypoints:
+      - [-283355, 685103]   # Kutaisi CP
+      - [-281841, 693087]   # Rioni valley, east of Kutaisi
+      - [-285620, 703632]   # Rioni valley
+      - [-281000, 705000]   # Rioni valley, north bank
+      - [-280599, 710048]   # Terjola
+      - [-280500, 717000]   # Rioni valley
+      - [-284000, 723000]   # Rioni valley
+      - [-286874, 731840]   # Zestafoni
+      - [-292540, 738699]   # Shorapani
+      - [-295430, 745353]   # Kharagauli
+      - [-297750, 748000]   # Chkherimela valley
+      - [-300000, 750000]   # Chkherimela valley
+      - [-301500, 754000]   # Moliti
+      - [-300500, 757000]   # Chkherimela valley, upper
+      - [-297875, 761000]   # Rikoti approach
+      - [-295250, 764000]   # Rikoti pass, west side
+      - [-293500, 767000]   # Rikoti pass
+      - [-291875, 770000]   # Rikoti pass, east side
+      - [-291000, 773000]   # Surami
+      - [-291000, 777500]   # Kura valley
+      - [-290500, 780000]   # Kura valley
+      - [-294162, 781242]   # Khashuri FOB
 squadrons:
   # Kutaisi
   25:

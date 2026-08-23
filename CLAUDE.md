@@ -99,6 +99,7 @@ Read before touching a campaign's `.yaml`, `.miz` or build tool.
 | Iraq — Umm al-Ma'arik (Desert Storm) | `414th-desert-storm-campaign-notes.md` |
 | Iraq — Operation Inherent Resolve | `414th-inherent-resolve-campaign-notes.md` |
 | Afghanistan — Enduring Resolve (COIN) | `414th-coin-HANDOFF.md` — **start here for COIN** |
+| Caucasus — Iron Gate | `414th-iron-gate-campaign-notes.md` |
 | Nevada — Red Flag 81-2 | `414th-red-flag-81-campaign-notes.md` |
 | Vietnam set | `414th-vietnam-retribution-HANDOFF.md`, `-notes.md`, `-ops-notes.md`, `-red-tempo-notes.md`, `-airbase-harassment-notes.md` |
 | Iraq map 2.9.28 content | `414th-iraq-map-2928-notes.md` — authoring plan, not yet built |

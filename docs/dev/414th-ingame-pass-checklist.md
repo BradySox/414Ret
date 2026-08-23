@@ -25,7 +25,7 @@ so the two docs don't drift.
 
 ## Outstanding rows at a glance
 
-69 rows need a live pass. Full detail is under each `###` heading below —
+70 rows need a live pass. Full detail is under each `###` heading below —
 search the row id. `☐` untested · `◐` flown but not under the conditions that
 stress it · `✗` fail signature reproduced in-game.
 
@@ -143,6 +143,7 @@ stress it · `✗` fail signature reproduced in-game.
 | B93 | The front line sits on ground the armour can hold | §90 | ☐ |
 | B94 | Editing a faction mid-campaign reaches the buy menus | juanjux #953 | ☐ |
 | B95 | Saving the air wing keeps both coalitions | air wing config | ☐ |
+| B96 | Iron Gate's fields fill without an aircraft losing its stand | Iron Gate | ☐ |
 
 ---
 
@@ -5941,6 +5942,30 @@ from a fresh New Game, not a save** — a save never took this path.
 
 ---
 
+### B96 — Iron Gate's fields fill without an aircraft losing its stand · Iron Gate · ☐ UNTESTED
+
+**History:** the campaign is new; see
+[414th-iron-gate-campaign-notes.md](design/414th-iron-gate-campaign-notes.md).
+
+> DCS stands are nested — one that takes a Hind also takes a Huey, not the reverse — so a
+> base's slot count is not the binding constraint. Sizing against it overfills the big
+> stands silently. It bit four times during the build, including 28 helicopters into
+> Kutaisi's 25 helicopter-capable spots.
+
+**What CI cannot exercise:** the numbers are arithmetic over pydcs stand data, which models
+DCS rather than being it. Whether every aircraft actually gets a stand is a
+mission-generation question.
+
+- **Setup:** New Game on **Caucasus - Iron Gate**, generate turn 1, open the .miz in the
+  Mission Editor. Check Kutaisi, Batumi, Beslan and Tbilisi-Lochini, then **Nigniy Pasanauri
+  FOB** — the campaign's only FOB-based squadron.
+- **Pass:** every squadron has its aircraft on a stand, nothing on a taxiway or overlapping;
+  the Hercules at Kutaisi is on a large stand; the tankers and E-3A start **airborne** out of
+  the Turkey spawn rather than on a ramp anywhere.
+- **Fail signature:** a squadron shows fewer aircraft than its `size:`, or DCS logs a parking
+  error. Report which airframe and which field — the fix is per stand class, not a blanket trim.
+- **Free while you are there:** blue has **ten** land-based fighters. Worth a note on whether
+  that is enough to contest the pass, and whether Batumi's transit leaves useful fuel.
 ### B94 — Editing a faction mid-campaign reaches the buy menus · juanjux #953 · ☐ UNTESTED
 
 **History:** ported 2026-08-23 from juanjux's upstream #953, after verifying all three

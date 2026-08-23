@@ -1,0 +1,404 @@
+---
+name: Caucasus - Iron Gate
+theater: Caucasus
+authors: Plob, 414th Joint Fighter Group
+description: "<p>June 2018. Russian armour came through the eastern mountains and took Tbilisi. The Likhi range is the gate between the half of Georgia they hold and the half you still do, and the Rikoti pass is the hinge it turns on. Take it back.</p><p>You fly from three places and none of them is comfortable. <b>Kutaisi</b> is the closest field to the fighting and holds the Warthogs, the Kiowas, the Hueys and the Hercules — the aircraft that have to be near the front to be worth anything. The fast jets sit back at <b>Batumi</b> on the Turkish border, ten stands for three squadrons, so every Eagle and Viper on the ground is one not over the pass. The tankers and the AWACS never land at all; they come out of Turkish airspace and go home there.</p><p>The rest is at sea: a Tomcat and Hornet air wing off the boat, Apaches and Chinooks on the LHA, and the air assault option the ground war does not otherwise give you.</p><p>Red is the modern VKS — Flankers, Fulcrums, Foxhounds, Frogfoots and a Bear across five fields under an S-300 belt. They outnumber you on the ground and they know where your two runways are.</p><p>Built by the 414th from Plob's <i>Northern Russia</i>, which is still shipped unchanged.</p>"
+recommended_player_faction: Bluefor Modern
+recommended_enemy_faction: Russia 2020
+recommended_start_date: 2018-06-13
+miz: caucasus_iron_gate.miz
+performance: 2
+version: "10.5"
+settings:
+  squadron_start_full: true
+
+# Kutaisi <-> Khashuri FOB overrides the miz path group `Ground-4`, which reached the
+# Likhi range in one 41 km straight leg across the ridge and put its own waypoint on
+# ground vehicles cannot cross. The front line is placed by distance along this
+# polyline, so it landed on the ridge rather than in the pass. These waypoints follow
+# the E60/S1 -- the Rioni valley through Terjola and Zestafoni, then the Chkherimela
+# valley and the Rikoti pass down to Surami. Every waypoint is inside the landmap's
+# drivable zone and 98% of the drawn line is (was 75%); over 15 sampled front
+# positions all 15 now sit on drivable ground, against 10 before.
+supply_routes:
+  - waypoints:
+      - [-283355, 685103]   # Kutaisi CP
+      - [-281841, 693087]   # Rioni valley, east of Kutaisi
+      - [-285620, 703632]   # Rioni valley
+      - [-281000, 705000]   # Rioni valley, north bank
+      - [-280599, 710048]   # Terjola
+      - [-280500, 717000]   # Rioni valley
+      - [-284000, 723000]   # Rioni valley
+      - [-286874, 731840]   # Zestafoni
+      - [-292540, 738699]   # Shorapani
+      - [-295430, 745353]   # Kharagauli
+      - [-297750, 748000]   # Chkherimela valley
+      - [-300000, 750000]   # Chkherimela valley
+      - [-301500, 754000]   # Moliti
+      - [-300500, 757000]   # Chkherimela valley, upper
+      - [-297875, 761000]   # Rikoti approach
+      - [-295250, 764000]   # Rikoti pass, west side
+      - [-293500, 767000]   # Rikoti pass
+      - [-291875, 770000]   # Rikoti pass, east side
+      - [-291000, 773000]   # Surami
+      - [-291000, 777500]   # Kura valley
+      - [-290500, 780000]   # Kura valley
+      - [-294162, 781242]   # Khashuri FOB
+squadrons:
+  # Kutaisi
+  25:
+    - primary: CAS
+      secondary:
+        - OCA/Aircraft
+        - Armed Recon
+        - BAI
+        - Air Assault
+        - CSAR
+      size: 12
+      aircraft_type: UH-1H Iroquois
+      country: USA
+      aircraft:
+        - HMLA-269 (UH-1H)
+    - primary: Armed Recon
+      secondary:
+        - OCA/Aircraft
+        - CAS
+        - BAI
+        - Escort
+      size: 11
+      aircraft_type: OH-58D(R) Kiowa Warrior
+      country: Combined Joint Task Forces Blue
+      aircraft:
+        - Taiwanese Army
+    - primary: Armed Recon
+      secondary:
+        - OCA/Aircraft
+        - CAS
+        - BAI
+        - OCA/Runway
+      size: 12
+      aircraft_type: A-10C Thunderbolt II (Suite 7)
+      country: Combined Joint Task Forces Blue
+      aircraft:
+        - A-10C Thunderbolt II (Suite 7)
+    - primary: Transport
+      secondary:
+        - Jamming
+        - CSAR
+        - Air Assault
+      size: 2
+      aircraft_type: C-130J-30
+      country: USA
+      aircraft:
+        - 910th Airlift Wing
+  # Batumi
+  22:
+    - primary: Strike
+      secondary:
+        - OCA/Aircraft
+        - Fighter sweep
+        - CAS
+        - Armed Recon
+        - BARCAP
+        - BAI
+        - TARCAP
+        - OCA/Runway
+        - Escort
+      size: 4
+      aircraft_type: F-15E Strike Eagle (Suite 4+)
+      country: USA
+      aircraft:
+        - 334th Fighter Squadron
+    - primary: Strike
+      secondary:
+        - SEAD
+        - OCA/Aircraft
+        - Fighter sweep
+        - CAS
+        - DEAD
+        - BARCAP
+        - SEAD Escort
+        - Armed Recon
+        - BAI
+        - TARCAP
+        - SEAD Sweep
+        - OCA/Runway
+        - Escort
+      size: 3
+      aircraft_type: F-16CM Fighting Falcon (Block 50)
+      country: USA
+      aircraft:
+        - 55th FS
+    - primary: BARCAP
+      size: 3
+      aircraft_type: F-15C Eagle
+      country: USA
+      aircraft:
+        - 493rd Fighter Squadron
+  # Turkey (off-map air spawn)
+  "Turkey":
+    - primary: Refueling
+      size: 2
+      aircraft_type: KC-135 Stratotanker MPRS
+      country: USA
+      aircraft:
+        - 340th Expeditionary Air Refueling Squadron
+    - primary: Refueling
+      size: 2
+      aircraft_type: KC-135 Stratotanker
+      country: USA
+      aircraft:
+        - 18th Air Refueling Squadron
+    - primary: AEW&C
+      size: 2
+      aircraft_type: E-3A
+      country: USA
+      aircraft:
+        - 960th AAC Squadron
+  # Mineralnye Vody
+  26:
+    - primary: BARCAP
+      size: 4
+      aircraft:
+        - MiG-31 Foxhound
+    - primary: BARCAP
+      size: 4
+      aircraft:
+        - MiG-29S Fulcrum-C
+    - primary: BARCAP
+      size: 4
+      aircraft:
+        - MiG-31 Foxhound
+    - primary: BARCAP
+      size: 4
+      aircraft:
+        - Su-27 Flanker-B
+    - primary: BARCAP
+      size: 4
+      aircraft:
+        - Su-27 Flanker-B
+    - primary: Strike
+      size: 4
+      aircraft:
+        - Su-25 Frogfoot
+    - primary: AEW&C
+      size: 2
+      aircraft:
+        - A-50
+    - primary: Refueling
+      size: 2
+      aircraft:
+        - IL-78M
+  # Nalchik
+  27:
+    - primary: BARCAP
+      size: 5
+      aircraft:
+        - MiG-31 Foxhound
+    - primary: BARCAP
+      size: 5
+      aircraft:
+        - MiG-29S Fulcrum-C
+    - primary: BARCAP
+      size: 5
+      aircraft:
+        - MIG-29-FULCRUM
+  # Mozdok
+  28:
+    - primary: BARCAP
+      size: 7
+      aircraft:
+        - Su-27 Flanker-B
+    - primary: BARCAP
+      size: 7
+      aircraft:
+        - MiG-29S Fulcrum-C
+    - primary: BAI
+      size: 7
+      aircraft:
+        - Su-25 Frogfoot
+    - primary: Strike
+      size: 4
+      aircraft:
+        - Tu-95MS Bear-H
+    - primary: SEAD
+      size: 7
+      aircraft:
+        - Su-24M Fencer-D
+    - primary: Strike
+      size: 7
+      aircraft:
+        - Su-24M Fencer-D
+  # Tbilisi-Lochini
+  29:
+    - primary: BARCAP
+      size: 10
+      aircraft:
+        - MiG-29S Fulcrum-C
+    - primary: BARCAP
+      size: 10
+      aircraft:
+        - MIG-29-FULCRUM
+    - primary: BAI
+      secondary: air-to-ground
+      size: 10
+      aircraft:
+        - Mi-24V Hind-E
+    - primary: BAI
+      size: 10
+      aircraft:
+        - Su-25 Frogfoot
+    - primary: Strike
+      size: 10
+      aircraft:
+        - Su-25 Frogfoot
+    - primary: BARCAP
+      size: 10
+      aircraft:
+        - MiG-29S Fulcrum-C
+    - primary: OCA/Runway
+      secondary: air-to-ground
+      size: 10
+      aircraft:
+        - Su-24M Fencer-D
+  # Beslan
+  32:
+    - primary: BARCAP
+      size: 5
+      aircraft:
+        - Su-27 Flanker-B
+    - primary: BARCAP
+      size: 10
+      aircraft:
+        - MiG-29S Fulcrum-C
+  # Nigniy Pasanauri FOB
+  "Nigniy Pasanauri FOB":
+    - primary: BAI
+      secondary: air-to-ground
+      size: 4
+      aircraft:
+        - Mi-24V Hind-E
+  # Blue CV
+  "Blue CV":
+    - primary: BARCAP
+      secondary:
+        - TARPS
+        - Fighter sweep
+        - TARCAP
+        - Escort
+      size: 12
+      aircraft_type: F-14B Tomcat
+      country: USA
+      aircraft:
+        - VMF-29
+    - primary: BARCAP
+      secondary:
+        - TARPS
+        - OCA/Aircraft
+        - Fighter sweep
+        - CAS
+        - DEAD
+        - Armed Recon
+        - BAI
+        - TARCAP
+        - OCA/Runway
+        - Strike
+        - Escort
+      size: 12
+      aircraft_type: F-14B Tomcat
+      country: USA
+      aircraft:
+        - VF-102
+    - primary: Strike
+      secondary:
+        - SEAD
+        - OCA/Aircraft
+        - Fighter sweep
+        - CAS
+        - DEAD
+        - BARCAP
+        - SEAD Escort
+        - Armed Recon
+        - BAI
+        - TARCAP
+        - SEAD Sweep
+        - OCA/Runway
+        - Anti-ship
+        - Escort
+      size: 12
+      aircraft_type: F/A-18C Hornet (Lot 20)
+      country: USA
+      aircraft:
+        - VFA-113
+    - primary: BAI
+      secondary:
+        - SEAD
+        - OCA/Aircraft
+        - Fighter sweep
+        - CAS
+        - DEAD
+        - BARCAP
+        - SEAD Escort
+        - Armed Recon
+        - TARCAP
+        - SEAD Sweep
+        - OCA/Runway
+        - Strike
+        - Anti-ship
+        - Escort
+      size: 12
+      aircraft_type: F/A-18C Hornet (Lot 20)
+      country: USA
+      aircraft:
+        - VFA-37
+    - primary: Refueling
+      size: 4
+      aircraft_type: A-6E Tanker
+      country: USA
+      aircraft:
+        - VA-65 (Tanker)
+    - primary: AEW&C
+      size: 2
+      aircraft_type: E-2D Advanced Hawkeye
+      country: Combined Joint Task Forces Blue
+      aircraft:
+        - E-2D Advanced Hawkeye
+    - primary: BAI
+      secondary:
+        - TARPS
+        - OCA/Aircraft
+        - Fighter sweep
+        - CAS
+        - DEAD
+        - BARCAP
+        - Armed Recon
+        - TARCAP
+        - OCA/Runway
+        - Strike
+        - Escort
+      size: 12
+      aircraft_type: F-14B(U) Tomcat
+      country: USA
+      aircraft:
+        - VF-103
+  # Blue LHA
+  "Blue LHA":
+    - primary: BAI
+      secondary:
+        - CAS
+        - OCA/Aircraft
+        - Armed Recon
+      size: 10
+      aircraft_type: AH-64D Apache Longbow
+      country: USA
+      aircraft:
+        - 1-1 Attack Reconnaissance Battalion
+    - primary: Air Assault
+      secondary:
+        - Transport
+        - CSAR
+      size: 10
+      aircraft_type: CH-47F Block I
+      country: USA
+      aircraft:
+        - 5th Battalion 159th Aviation

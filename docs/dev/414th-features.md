@@ -3721,6 +3721,39 @@ the reported display, and the dialog's own width unchanged. Tests
 `tests/test_payload_tab_layout.py` drive the real `QLoadoutEditor` against real pydcs pylon data
 (picking the longest pylon list by measurement, so a new module is covered the day it lands).
 
+### The New Game wizard grows after it is fitted (2026-08-23, "the new campaign popup renders off screen")
+
+`ScreenFitFilter` fits a dialog on **Show**, once. That is the wrong moment for a `QWizard`, which
+is sized by whichever page is current: New Game shows the intro page, so the filter measures a
+500x461 window that fits any display, and `NewGameWizard._center_on_screen` centres that same small
+window. Clicking Next loads the theater page and the wizard nearly doubles in height, keeping the
+intro page's top-left. Nothing re-fits it.
+
+Measured on the reported display (2560x1392 usable, a 4K panel at 150 %): centred at **1030,465**,
+grown to **1409x963**, so the frame ran to y=1427 and the Back/Next/Cancel row sat 36 px under the
+taskbar. All five pages after the intro were off-screen; paging back did not recover it.
+
+`NewGameWizard.resizeEvent` now calls `fit_to_available_screen(self)` on every resize once the
+wizard is visible, so the fit follows the growth instead of preceding it. Verified page by page
+against the real wizard on the real display: **5 pages off-screen → 0**, and the same for paging
+back down. A class-level `_fitting` re-entry guard is required, not an `__init__` one — Qt resizes
+the wizard from *inside* `__init__` (`setWizardStyle`), before any instance attribute exists.
+
+- **Clamp, do not re-centre.** `_center_on_screen` runs on first show only, deliberately, so a
+  wizard the user dragged somewhere is not yanked back. `fitted_geometry` moves the window the
+  minimum distance needed, which preserves that.
+- **The theater page's minimum width is pinned by one unwrapped label** — the docs line under the
+  campaign list measures ~1356 px and is the widest thing on the page. `setWordWrap(True)` on it
+  cuts the wizard from 1409 to 1027 px wide, and was **reverted**: the narrower column truncates
+  campaign names ("Afghanistan - Operation Enduring Resol"). Width was never the reported fault.
+  Revisit only if a display turns up that the height clamp cannot satisfy.
+
+Tests `tests/test_newgame_wizard_screenfit.py` — the measured overflow as pure geometry, plus the
+real `resizeEvent` driven offscreen on a pageless `NewGameWizard` subclass (grow-past-the-bottom,
+no resize/fit feedback loop, and a window that fits is left where the user put it). The subclass is
+deliberate: lifting `resizeEvent` onto a bare `QWizard` **segfaults PySide6**, because its
+zero-argument `super()` is bound to `NewGameWizard` and `self` is not one.
+
 ## §29 — Campaign SITREP kneeboard band
 
 A "what happened last turn" digest on the player's next kneeboard — a morning intel brief in the

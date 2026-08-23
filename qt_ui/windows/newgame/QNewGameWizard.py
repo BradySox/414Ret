@@ -6,6 +6,7 @@ from PySide6 import QtGui, QtWidgets
 
 from game.campaignloader.campaign import Campaign
 from game.theater.start_generator import GameGenerator, GeneratorSettings, ModSettings
+from qt_ui.screenfit import fit_to_available_screen
 from qt_ui.windows.AirWingConfigurationDialog import AirWingConfigurationDialog
 from qt_ui.windows.newgame.WizardPages.QFactionSelection import FactionSelection
 from qt_ui.windows.newgame.WizardPages.QGeneratorSettings import GeneratorOptions
@@ -17,6 +18,10 @@ from qt_ui.windows.newgame.WizardPages.QTheaterConfiguration import (
 
 
 class NewGameWizard(QtWidgets.QWizard):
+    # Class attribute: Qt resizes the wizard from inside __init__, before any
+    # instance attribute exists, and resizeEvent reads this guard.
+    _fitting = False
+
     def __init__(self, parent=None):
         super(NewGameWizard, self).__init__(parent)
         self.setOption(QtWidgets.QWizard.WizardOption.IndependentPages)
@@ -57,6 +62,20 @@ class NewGameWizard(QtWidgets.QWizard):
         if not self._centered:
             self._centered = True
             self._center_on_screen()
+
+    def resizeEvent(self, event: QtGui.QResizeEvent) -> None:
+        super().resizeEvent(event)
+        # The wizard roughly doubles in height when the intro page gives way to
+        # the theater page. ScreenFitFilter fits a dialog once, on show, when this
+        # one is still at its smallest, so the grown wizard kept the intro page's
+        # top-left and hung its button row below the bottom of the screen.
+        if self._fitting or not self.isVisible():
+            return
+        self._fitting = True
+        try:
+            fit_to_available_screen(self)
+        finally:
+            self._fitting = False
 
     def _center_on_screen(self) -> None:
         """Put the wizard in the middle of the screen the app is already on.

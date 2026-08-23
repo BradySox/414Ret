@@ -63,17 +63,17 @@ def test_flight_plan_is_local_only_for_an_airframe_that_does_not_ask() -> None:
     assert row[DEPARTURE_COLUMN] == "14:59:16"
 
 
-def test_flight_plan_puts_zulu_beside_local_on_one_line() -> None:
+def test_flight_plan_leads_with_zulu_on_one_line() -> None:
     # Stacked first, then flown 2026-08-21: doubling nine waypoint rows pushed
     # the Laser Code table off the bottom of the page. Height is the scarcer
     # resource here, and thirteen characters is what the Time column holds before
     # the page fitter wraps it -- so seconds go (they stay on the BLUF's TOT).
     row = _takeoff_row(GULF)
-    assert row[TIME_COLUMN] == "14:50L 10:50Z"
+    assert row[TIME_COLUMN] == "10:50Z 14:50L"
     assert len(row[TIME_COLUMN]) <= 13
-    # Departure carries local only -- the pair here takes the Time column's last
-    # character back -- but it is labelled, so the two columns read the same way.
-    assert row[DEPARTURE_COLUMN] == "14:59L"
+    # Departure carries Zulu only -- the pair here takes the Time column's last
+    # character back -- and Zulu is the half being checked against the DED.
+    assert row[DEPARTURE_COLUMN] == "10:59Z"
 
 
 def _support_page(zulu_tz: Optional[datetime.tzinfo]) -> SupportPage:
@@ -97,14 +97,14 @@ def _support_page(zulu_tz: Optional[datetime.tzinfo]) -> SupportPage:
 def test_the_support_package_line_parenthesises_its_tot() -> None:
     # Prose, not a cell: "FREQ: ...    TOT: 15:12:14 (11:12:14Z)".
     assert _support_page(None)._format_time(TOT) == "15:12:14"
-    assert _support_page(GULF)._format_time(TOT) == "15:12:14 (11:12:14Z)"
+    assert _support_page(GULF)._format_time(TOT) == "11:12:14Z (15:12:14L)"
 
 
 def test_a_tot_cell_indents_zulu_under_the_time() -> None:
     # The narrowest column on the deck. Parenthesised, the tanker cell wrapped
     # to "TOT: 14:12:09 / (10:12:09Z) TOS: / 1:00:00" and lost the pairing.
     cell = _labelled_time("TOT:", format_kneeboard_time(TOT, GULF))
-    assert cell.splitlines() == ["TOT: 15:12:14", "     11:12:14Z"]
+    assert cell.splitlines() == ["TOT: 11:12:14Z", "     15:12:14L"]
     assert _labelled_time("TOT:", "-") == "TOT: -"
 
 
@@ -116,8 +116,8 @@ def test_every_block_of_the_page_reports_one_instant() -> None:
     support = _support_page(GULF)._format_time(TOT)
     flight_plan = _takeoff_row(GULF)[TIME_COLUMN]
     # Prose keeps full precision; the table cell is the one under width pressure.
-    assert bluf == support == "15:12:14 (11:12:14Z)"
-    assert flight_plan == "14:50L 10:50Z"
+    assert bluf == support == "11:12:14Z (15:12:14L)"
+    assert flight_plan == "10:50Z 14:50L"
     # The friendly-packages page keeps the stacked form: its timing cell holds a
     # patrol window as often as a single TOT, and "a - b (aZ - bZ)" is 31 chars.
-    assert packages.splitlines() == ["15:12:14", "11:12:14Z"]
+    assert packages.splitlines() == ["11:12:14Z", "15:12:14L"]

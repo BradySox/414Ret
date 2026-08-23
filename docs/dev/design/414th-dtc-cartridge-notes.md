@@ -381,31 +381,34 @@ not Zulu, so a Zulu-only Viper card stops matching its A-10 and F-15E wingmen.
 So a Zulu airframe's card now carries **both**:
 
 - **The flight plan's Time column** carries the pair on one line, both figures
-  labelled and local first: `17:28L 14:28Z`. Three constraints produced that shape.
+  labelled and **Zulu leading**: `14:28Z 17:28L`. Zulu leads because it is the
+  figure the DED shows, so it is the one being cross-checked in the cockpit; local
+  follows for the wingman who is not (DM call 2026-08-21). Three constraints produced that shape.
   Stacking was tried first and flown 2026-08-21 — doubling nine waypoint rows
   pushed the Laser Code table off the bottom of the page. **Thirteen characters is
   the budget**, measured against `KneeboardPageWriter._fit_col_widths`: the fitter
   rebalances columns to the page width, so adding characters moves the wrap rather
   than removing it, and `17:28:52L 1428Z` at 15 brings the second line straight
-  back. And the local figure carries an **`L`** because marking only the Zulu one
-  made it read as the authoritative time, which is backwards — the wing
-  coordinates on local, which is why both times are on the card at all.
-- **The Departure column carries local only, labelled.** The pair here takes the
+  back. Both figures carry a suffix; marking only one made it read as the
+  authoritative time on its own.
+- **The Departure column carries Zulu only, labelled.** The pair here takes the
   Time column's last character back and wraps both. It holds one row on a typical
-  plan and the offset is on every Time cell beside it, so the `L` is all it needs.
-- **Seconds live in prose.** The BLUF's TOT and the Support Info line keep
-  `17:53:16 (14:53:16Z)`; they are not under width pressure. An airframe that does
+  plan, so it shows the half being checked against the DED and leaves the offset to
+  the Time cell beside it.
+- **Seconds live in prose.** The BLUF's TOT and the Support Info line read
+  `14:53:16Z (17:53:16L)`; they are not under width pressure. An airframe that does
   not ask for Zulu keeps its seconds in the table too, and gets no `L`.
-- **Colour separates the pair, the suffixes only confirm it.** The Zulu figure is
-  drawn in `col_nav`; the local one keeps the page's own foreground, because it is
-  the primary time and the darkest ink on the page should say so. `tabulate`
+- **Colour separates the pair, the suffixes only confirm it.** The local figure is
+  drawn in `col_nav`; Zulu keeps the page's own foreground, because it is the
+  figure the DED shows and the darkest ink on the page should be the one being
+  checked against the cockpit. `tabulate`
   renders a table as one block in one fill, so `KneeboardPageWriter.table` gained a
   `highlight` regex + fill: matched runs are drawn as separate segments, advanced
   by measured width so the columns land exactly where the single-call path puts
   them, and the cursor is left where `text()` would leave it so nothing below the
-  flight plan moves. `ZULU_CELL_TOKEN` matches the cell form (`14:28Z`) and
+  flight plan moves. `LOCAL_CELL_TOKEN` matches the cell form (`17:28L`) and
   deliberately not the prose form, where a naive pattern would colour the
-  `53:16Z` tail of `14:53:16Z`. Pinned by
+  `53:16L` tail of `17:53:16L`. Pinned by
   `tests/missiongenerator/test_kneeboard_zulu_colour.py`, including the
   cursor-position invariant.
 - **The friendly-packages timing cell** still stacks: its cell holds a patrol

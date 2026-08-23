@@ -4,11 +4,13 @@ theater: Caucasus
 authors: Plob
 description: <p><p>A medium campaign through the north eastern part of the Caucasus map.</p><p>Russia has invaded Georgia through the eastern mountains. Mount a counter offense and push them back!</p>
 recommended_player_faction: Bluefor Modern
-recommended_enemy_faction: Russia 1975
-recommended_start_date: 1995-06-13
+recommended_enemy_faction: Russia 2020
+recommended_start_date: 2018-06-13
 miz: northern_russia.miz
 performance: 2
 version: "10.5"
+settings:
+  squadron_start_full: true
 squadrons:
   # Kutaisi
   25:
@@ -77,10 +79,10 @@ squadrons:
   29:
     - primary: BARCAP
       aircraft:
-        - MiG-21bis Fishbed-N
+        - MiG-29S Fulcrum-C
     - primary: BARCAP
       aircraft:
-        - MiG-29A Fulcrum-A
+        - MIG-29-FULCRUM
     - primary: BAI
       secondary: air-to-ground
       aircraft:
@@ -89,13 +91,13 @@ squadrons:
   32:
     - primary: BARCAP
       aircraft:
-        - MiG-23MLD Flogger-K
+        - Su-27 Flanker-B
     - primary: BARCAP
       aircraft:
-        - MiG-21bis Fishbed-N
+        - MiG-29S Fulcrum-C
     - primary: BARCAP
       aircraft:
-        - MiG-21bis Fishbed-N
+        - MiG-29S Fulcrum-C
     - primary: BAI
       secondary: air-to-ground
       aircraft:
@@ -110,10 +112,10 @@ squadrons:
   28:
     - primary: BARCAP
       aircraft:
-        - MiG-23MLD Flogger-K
+        - Su-27 Flanker-B
     - primary: BARCAP
       aircraft:
-        - MiG-21bis Fishbed-N
+        - MiG-29S Fulcrum-C
     - primary: BAI
       aircraft:
         - Su-25 Frogfoot
@@ -122,21 +124,21 @@ squadrons:
         - Tu-95MS Bear-H
     - primary: SEAD
       aircraft:
-        - Su-17M4 Fitter-K
+        - Su-24M Fencer-D
     - primary: Strike
       aircraft:
-        - Su-17M4 Fitter-K
+        - Su-24M Fencer-D
   # Nalchik
   27:
     - primary: BARCAP
       aircraft:
-        - MiG-25PD Foxbat-E
+        - MiG-31 Foxhound
     - primary: BARCAP
       aircraft:
-        - MiG-21bis Fishbed-N
+        - MiG-29S Fulcrum-C
     - primary: BARCAP
       aircraft:
-        - MiG-29A Fulcrum-A
+        - MIG-29-FULCRUM
     - primary: OCA/Runway
       secondary: air-to-ground
       aircraft:
@@ -145,19 +147,19 @@ squadrons:
   26:
     - primary: BARCAP
       aircraft:
-        - MiG-25PD Foxbat-E
+        - MiG-31 Foxhound
     - primary: BARCAP
       aircraft:
-        - MiG-21bis Fishbed-N
+        - MiG-29S Fulcrum-C
     - primary: BARCAP
       aircraft:
-        - MiG-25PD Foxbat-E
+        - MiG-31 Foxhound
     - primary: BARCAP
       aircraft:
-        - MiG-23MLD Flogger-K
+        - Su-27 Flanker-B
     - primary: BARCAP
       aircraft:
-        - MiG-23MLD Flogger-K
+        - Su-27 Flanker-B
     - primary: Strike
       aircraft:
         - Su-25 Frogfoot

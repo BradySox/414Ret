@@ -5968,15 +5968,25 @@ not implicated** — an earlier reading of this data that blamed 90 %-full ramps
 taxi was wrong, and the 62 %/73 % "break" was an artifact of which fields happened to hold
 the early-activating flights.
 
-**The 3 h 45 m ATO was chased and is settled — a setting, not the campaign.** Blue's
-activations ran out to **13,517 s** against ~62 min flown, so 8 of blue's 37 and 1 of red's 8
-never fired. That save carried a 100-minute mission duration, a 15-minute BARCAP overlap, and
-**Max simultaneous carrier BARCAP waves at 1**. Overlap shortens each wave's fresh coverage
-rather than adding cover, which raises the round count; a fleet control point doubles it; and
-at 1 the stacking that is meant to absorb the doubling never happens, so six waves go in
-sequence at 0/45/89/135/180/225 min. At the default 2 they become three pairs and the schedule
-fits the mission. Nothing to fix here — the two setting descriptions that hid this are fixed
-in this branch.
+**The long ATO is settled: one setting, and it is measured.** Blue's activations ran out to
+**13,517 s** against ~62 min flown, so 8 of blue's 37 and 1 of red's 8 never fired. A fleet
+control point **doubles** the BARCAP round count, and `max_carrier_simultaneous_barcaps` is
+what turns the extra rounds into pairs on station rather than waves in sequence — at **1** it
+never stacks, so each wave advances the handover instead of joining it.
+
+Re-planning blue on `Maybe 414.retribution` (turn 1, 100-min mission, overlap 0, 19 packages)
+at each value:
+
+| value | carrier BARCAPs | last TOT | past the mission |
+|---|---|---|---|
+| **1** (that save) | 4 singles at 4/64/124/184 min | 184 min | **3 of 19** |
+| **2** (default) | two pairs at 3/4/64/64 min | **95 min** | **0 of 19** |
+| 3 | 3/3/4/64 min | 102 min | 1 of 19 |
+
+Every non-carrier package finishes by 95 min at any value, so this setting is the whole
+effect. Overlap multiplies it when non-zero — the flown mission ran 15 min, which is why its
+ATO reached 225 rather than 184 — but is not the cause. Nothing to fix in the campaign; the
+two setting descriptions that hid this are fixed in this branch.
 
 **History:** the campaign is new; see
 [414th-iron-gate-campaign-notes.md](design/414th-iron-gate-campaign-notes.md).

@@ -172,33 +172,36 @@ here says a full ramp is safe either — it says this test did not test it. If i
 suspected again, the discriminator is the activation time in the miz's `trigrules`, not the
 track span.
 
-### The 3 h 45 m ATO was a setting, not the campaign
+### The long ATO is one setting, and it is measured
 
 The first flight scheduled activations out to **13,517 s (3 h 45 m)** against a ~62 min
-mission, so 8 of blue's 37 activations never fired. Chased to the end; **nothing to fix in
-the campaign or the code.**
+mission, so 8 of blue's 37 never fired. Chased to the end; **nothing to fix in the campaign
+or the code.**
 
-Two settings, both moved off their defaults in that save, multiply together:
+`barcap_rounds = ceil(mission_duration / (barcap_duration - overlap))`, and a **fleet control
+point doubles it**. The doubling is only half a mechanism:
+`max_carrier_simultaneous_barcaps` is what turns the extra rounds into *pairs on station
+together* rather than more waves in sequence, and at **1** it never stacks —
+`count >= max - 1` is `count >= 0`, true for the first package, so every wave advances the
+handover instead of joining the current one.
 
-| setting | that save | default |
-|---|---|---|
-| Desired mission duration | 100 min | 60 |
-| BARCAP overlap time | 15 min | 0 |
-| Max simultaneous carrier BARCAP waves | **1** | **2** |
+Measured on `Maybe 414.retribution` (turn 1, 100-min mission, overlap 0, 19 blue packages),
+re-planning blue at each value:
 
-`barcap_rounds = ceil(mission_duration / (barcap_duration - overlap))`, and a fleet control
-point doubles it. 100 min over 45 min of fresh coverage is 3 rounds, doubled to 6 for the
-carrier.
+| `max_carrier_simultaneous_barcaps` | carrier BARCAPs | last TOT | packages past the mission |
+|---|---|---|---|
+| **1** (that save) | 4 singles at 4/64/124/184 min | 184 min | **3 of 19** |
+| **2** (the default) | 4 in two pairs at 3/4/64/64 min | **95 min** | **0 of 19** |
+| 3 | 3/3/4/64 min | 102 min | 1 of 19 |
 
-**The doubling is only half a mechanism.** `max_carrier_simultaneous_barcaps` is what turns
-the extra rounds into *pairs on station together* rather than more waves in sequence, and at
-**1** it never stacks: `count >= max - 1` is `count >= 0`, true for the first package, so
-every wave advances the handover. Six singles at 0/45/89/135/180/225 min. At the default 2,
-the same six become **three pairs at 0/45/89** and the window collapses to about the mission
-length.
+At the default the whole ATO fits inside the mission and the last package is a DEAD, not a
+BARCAP. **This one setting is the entire effect** — every non-carrier package finishes by
+95 min at any value.
 
-Overlap compounds it in the same direction: it does not add cover on top, it *shortens* each
-wave's fresh coverage, which is what took the round count from 2 to 3.
+Overlap pushes the same way when it is non-zero: it does not add cover on top, it *shortens*
+each wave's fresh coverage, so more waves get planned. The flown mission had it at 15 min,
+which is why that ATO reached 225 min where this save's reaches 184. It is a multiplier on
+the problem, not its cause.
 
 So a carrier campaign wants `max_carrier_simultaneous_barcaps` at 2 or more. Iron Gate
 preseeds neither setting and should not — they are doctrine, not campaign content.

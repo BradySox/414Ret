@@ -25,7 +25,7 @@ so the two docs don't drift.
 
 ## Outstanding rows at a glance
 
-66 rows need a live pass. Full detail is under each `###` heading below —
+69 rows need a live pass. Full detail is under each `###` heading below —
 search the row id. `☐` untested · `◐` flown but not under the conditions that
 stress it · `✗` fail signature reproduced in-game.
 
@@ -140,8 +140,9 @@ stress it · `✗` fail signature reproduced in-game.
 | B90 | A steerpoint's elevation is the ground under it | §74 | ☐ |
 | B91 | The F-14B(U) spawns with its cartridge loaded | §74 | ☐ |
 | B92 | A rescued marker belongs to the base it sits next to | campaign loading | ☐ |
+| B93 | The front line sits on ground the armour can hold | §90 | ☐ |
 | B94 | Editing a faction mid-campaign reaches the buy menus | juanjux #953 | ☐ |
-| B93 | Saving the air wing keeps both coalitions | air wing config | ☐ |
+| B95 | Saving the air wing keeps both coalitions | air wing config | ☐ |
 
 ---
 
@@ -5964,7 +5965,7 @@ and whether the `in_use` refusal catches a unit that is deployed but flown by no
   holding materiel its faction no longer admits.
 - **Free while you are there:** the aircraft/unit/ship/preset combo boxes should read
   alphabetically. They used to be ordered by internal DCS id.
-### B93 — Saving the air wing keeps both coalitions · air wing config · ☐ UNTESTED
+### B95 — Saving the air wing keeps both coalitions · air wing config · ☐ UNTESTED
 
 **History:** reported by the DM 2026-08-23, with the file it happened to — `Northen
 russia.yaml` held the blue wing, a Red-tab save replaced it, and there was nothing in

@@ -9494,12 +9494,38 @@ front here is rung D's intent — a pass is a chokepoint.
 Upstreamable: `find_ground_position` and `extend_ground_position` are upstream's, unmodified, and
 the defect is theirs.
 
+**The route under that front was also wrong, and is fixed separately.** `northern_russia`'s miz
+path group `Ground-4` reached the Likhi range in a single **41 km straight leg** and put its own
+waypoint off drivable ground; every other route in that miz has 15-39 waypoints and hugs roads.
+The front is placed by distance along the polyline, so a chord across a ridge puts the fight on
+the ridge. A yaml `supply_routes:` override follows the E60/S1 instead — the Rioni valley through
+Terjola and Zestafoni, then the Chkherimela valley and the Rikoti pass to Surami. Measured over 15
+sampled front positions along the route:
+
+| | miz `Ground-4` | yaml override |
+|---|---|---|
+| waypoints | 8 | 22 |
+| longest leg | 40.9 km | 11.2 km |
+| waypoints off drivable ground | 1 | 0 |
+| drawn line on drivable ground | 75 % | 98 % |
+| front positions on drivable ground | 10/15 | 15/15 |
+| mean front width | 9.55 km | 10.18 km |
+
+That override needed a loader fix to be safe at all: `add_supply_routes` (miz) and
+`add_yaml_supply_routes` (yaml) both call `create_convoy_route`, whose `convoy_routes` dict
+overwrites but whose `connected_points.append` did not — so a yaml route for a pair the miz
+already defines **linked the two CPs twice**, and `ai_ground_planner` counts that list rather than
+de-duplicating it. `create_convoy_route` is now idempotent on the connection.
+`tests/theater/test_supply_route_drivability.py` locks both, and the duplicate test fails without
+the guard.
+
 ### Tests
 
 `tests/theater/test_supply_status.py` (13) · `tests/sim/test_assault_cost.py` (7) ·
 `tests/theater/test_front_line_weight.py` (11) · `tests/theater/test_front_line_terrain.py` (10) ·
 `tests/missiongenerator/test_front_line_salients.py` (10) ·
-`tests/missiongenerator/test_front_line_usable_reach.py` (8).
+`tests/missiongenerator/test_front_line_usable_reach.py` (8) ·
+`tests/theater/test_supply_route_drivability.py` (5).
 
 ### Deferred
 

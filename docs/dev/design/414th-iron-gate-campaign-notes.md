@@ -145,6 +145,67 @@ ahead**, and its attack helicopters are 22 NM further forward.
 
 ---
 
+## First flown test, 2026-08-23 — it works, and the numbers lie to you
+
+62 minutes of sim, 1,091 units, 238 aircraft. `Tacview-20260823-181233`; the game is on
+turn 2 in `autosave.retribution`.
+
+**The parking held.** No field exceeded its stands, every aircraft got a slot, the Turkey
+spawn produced air-started tankers, both FOBs parked their Hind squadron on pads, and the
+Hercules took one of Kutaisi's large stands. Checklist **B96** is verified.
+
+### Two numbers that read as failures and are not
+
+**"Red flew 5 sorties out of 159 aircraft."** Red's ATO was **8 flights**. The other ~150
+aircraft are squadron inventory sitting on the ramp because `squadron_start_full` is on and
+every base is filled to its stands — they were never tasked. Seven of the eight activated
+inside the flown window and four flew.
+
+**"`CRANE DEAD` never moved: track span 0.0 NM over 30–3750 s."** It activated at **3629 s**
+into a mission that ended at **3750 s** — two minutes to start engines and taxi. The 30–3750 s
+window is the sortie recorder watching the group object, not time airborne.
+
+**An earlier reading of this same data concluded that ramps filled past ~73 % block AI taxi,
+and that conclusion was wrong.** The apparent break between Kobuleti at 62 % and Beslan at
+73 % was an artifact of which fields happened to hold the early-activating flights. Nothing
+here says a full ramp is safe either — it says this test did not test it. If it is ever
+suspected again, the discriminator is the activation time in the miz's `trigrules`, not the
+track span.
+
+### The 3 h 45 m ATO was a setting, not the campaign
+
+The first flight scheduled activations out to **13,517 s (3 h 45 m)** against a ~62 min
+mission, so 8 of blue's 37 activations never fired. Chased to the end; **nothing to fix in
+the campaign or the code.**
+
+Two settings, both moved off their defaults in that save, multiply together:
+
+| setting | that save | default |
+|---|---|---|
+| Desired mission duration | 100 min | 60 |
+| BARCAP overlap time | 15 min | 0 |
+| Max simultaneous carrier BARCAP waves | **1** | **2** |
+
+`barcap_rounds = ceil(mission_duration / (barcap_duration - overlap))`, and a fleet control
+point doubles it. 100 min over 45 min of fresh coverage is 3 rounds, doubled to 6 for the
+carrier.
+
+**The doubling is only half a mechanism.** `max_carrier_simultaneous_barcaps` is what turns
+the extra rounds into *pairs on station together* rather than more waves in sequence, and at
+**1** it never stacks: `count >= max - 1` is `count >= 0`, true for the first package, so
+every wave advances the handover. Six singles at 0/45/89/135/180/225 min. At the default 2,
+the same six become **three pairs at 0/45/89** and the window collapses to about the mission
+length.
+
+Overlap compounds it in the same direction: it does not add cover on top, it *shortens* each
+wave's fresh coverage, which is what took the round count from 2 to 3.
+
+So a carrier campaign wants `max_carrier_simultaneous_barcaps` at 2 or more. Iron Gate
+preseeds neither setting and should not — they are doctrine, not campaign content.
+
+Separately, `sortie_records` logged **183 flights when 30 aircraft moved**: parked inventory
+recorded as sorties. That is §91's problem, not this campaign's — checklist B70.
+---
 ## Deferred
 
 - **No in-game pass yet.** Checklist **B96**. The parking numbers are arithmetic over pydcs

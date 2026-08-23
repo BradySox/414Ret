@@ -1031,7 +1031,9 @@ class Settings:
         max=150,
         detail=(
             "Also determines how many BARCAP waves are planned: mission duration "
-            "divided by desired on-station time."
+            "divided by the FRESH coverage each wave adds, which is this value "
+            "minus BARCAP wave overlap. A carrier plans double that number, and "
+            "flies them in stacks of Max simultaneous carrier BARCAP waves."
         ),
     )
     barcap_overlap_time: timedelta = minutes_option(
@@ -1186,7 +1188,10 @@ class Settings:
         detail=(
             "How many BARCAP waves a carrier stacks on-station simultaneously before "
             "queueing the next wave to launch after the current ones recover. Land "
-            "bases use overlapping waves instead (see BARCAP wave overlap)."
+            "bases use overlapping waves instead (see BARCAP wave overlap). "
+            "At 1 nothing stacks, so a carrier's doubled wave count is spent on "
+            "waves in sequence rather than aircraft on station together, and the "
+            "schedule can run hours past the mission."
         ),
     )
     autoplan_tankers_for_strike: bool = boolean_option(

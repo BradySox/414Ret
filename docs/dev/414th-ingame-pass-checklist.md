@@ -25,7 +25,7 @@ so the two docs don't drift.
 
 ## Outstanding rows at a glance
 
-70 rows need a live pass. Full detail is under each `###` heading below —
+69 rows need a live pass. Full detail is under each `###` heading below —
 search the row id. `☐` untested · `◐` flown but not under the conditions that
 stress it · `✗` fail signature reproduced in-game.
 
@@ -143,7 +143,7 @@ stress it · `✗` fail signature reproduced in-game.
 | B93 | The front line sits on ground the armour can hold | §90 | ☐ |
 | B94 | Editing a faction mid-campaign reaches the buy menus | juanjux #953 | ☐ |
 | B95 | Saving the air wing keeps both coalitions | air wing config | ☐ |
-| B96 | Iron Gate's fields fill without an aircraft losing its stand | Iron Gate | ☐ |
+| B96 | Iron Gate's fields fill without an aircraft losing its stand | Iron Gate | ☑ |
 
 ---
 
@@ -5942,7 +5942,41 @@ from a fresh New Game, not a save** — a save never took this path.
 
 ---
 
-### B96 — Iron Gate's fields fill without an aircraft losing its stand · Iron Gate · ☐ UNTESTED
+### B96 — Iron Gate's fields fill without an aircraft losing its stand · Iron Gate · ☑ VERIFIED
+
+**VERIFIED 2026-08-23** (`Tacview-20260823-181233`, 62 min of sim, 1,091 units, 238
+aircraft, `autosave.retribution` now on turn 2).
+
+No field exceeded its stands and every aircraft got a slot. The Turkey off-map spawn
+produced air-started KC-135s, both FOBs parked their Hind squadron on pads, and the
+Hercules sat on one of Kutaisi's large stands. The nested-stand arithmetic held against a
+real mission.
+
+**A false alarm worth recording, because the next reader will hit it too.** Red appears to
+fly 5 sorties out of 159 aircraft, and `CRANE DEAD` (Su-24M, Mozdok) records a track span of
+**0.0 NM** across 30–3750 s. Neither means what it looks like:
+
+- **~150 of those aircraft were never tasked.** Red's ATO was **8 flights**. The rest is
+  squadron inventory parked on the ramp — expected, and the reason `sortie_records` shows 183
+  entries when only 30 aircraft moved (see B70).
+- **`CRANE DEAD` activated at 3629 s into a mission that ended at 3750 s.** Two minutes to
+  start engines and taxi. Its 30–3750 s "seen" window is the recorder watching the group
+  object, not the aircraft being airborne.
+
+Seven of red's eight flights activated inside the window and four flew. **Ramp occupancy was
+not implicated** — an earlier reading of this data that blamed 90 %-full ramps for blocking
+taxi was wrong, and the 62 %/73 % "break" was an artifact of which fields happened to hold
+the early-activating flights.
+
+**The 3 h 45 m ATO was chased and is settled — a setting, not the campaign.** Blue's
+activations ran out to **13,517 s** against ~62 min flown, so 8 of blue's 37 and 1 of red's 8
+never fired. That save carried a 100-minute mission duration, a 15-minute BARCAP overlap, and
+**Max simultaneous carrier BARCAP waves at 1**. Overlap shortens each wave's fresh coverage
+rather than adding cover, which raises the round count; a fleet control point doubles it; and
+at 1 the stacking that is meant to absorb the doubling never happens, so six waves go in
+sequence at 0/45/89/135/180/225 min. At the default 2 they become three pairs and the schedule
+fits the mission. Nothing to fix here — the two setting descriptions that hid this are fixed
+in this branch.
 
 **History:** the campaign is new; see
 [414th-iron-gate-campaign-notes.md](design/414th-iron-gate-campaign-notes.md).

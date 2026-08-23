@@ -217,6 +217,8 @@ class KneeboardPageWriter:
         cells: List[List[str]],
         headers: Optional[List[str]] = None,
         font: Optional[ImageFont.FreeTypeFont] = None,
+        highlight: Optional["re.Pattern[str]"] = None,
+        highlight_fill: Optional[Tuple[int, int, int]] = None,
     ) -> None:
         if headers is None:
             headers = []
@@ -226,7 +228,52 @@ class KneeboardPageWriter:
         table = tabulate(
             cells, headers=headers, numalign="right", maxcolwidths=maxcolwidths
         )
-        self.text(table, font, fill=self.foreground_fill)
+        if highlight is None or highlight_fill is None:
+            self.text(table, font, fill=self.foreground_fill)
+            return
+        self._text_highlighted(table, font, highlight, highlight_fill)
+
+    def _text_highlighted(
+        self,
+        text: str,
+        font: ImageFont.FreeTypeFont,
+        pattern: "re.Pattern[str]",
+        fill: Tuple[int, int, int],
+    ) -> None:
+        """Draw a monospace block, recolouring every match of ``pattern``.
+
+        Segments advance by measured width, so a match keeps the column alignment
+        the single-call path gives it, and the cursor lands exactly where ``text``
+        would have left it -- nothing below the table moves.
+        """
+        line_height = self._line_advance(font)
+        y = self.y
+        for line in text.splitlines():
+            x = self.x
+            cursor = 0
+            for match in pattern.finditer(line):
+                for chunk, chunk_fill in (
+                    (line[cursor : match.start()], self.foreground_fill),
+                    (match.group(), fill),
+                ):
+                    if chunk:
+                        self.draw.text((x, y), chunk, font=font, fill=chunk_fill)
+                        x += int(round(font.getlength(chunk)))
+                cursor = match.end()
+            if line[cursor:]:
+                self.draw.text(
+                    (x, y), line[cursor:], font=font, fill=self.foreground_fill
+                )
+            y += line_height
+        box = self.draw.textbbox(self.position, text, font=font)
+        self.y += abs(box[1] - box[3]) + self.line_spacing
+        self.text_buffer.append(text)
+
+    def _line_advance(self, font: ImageFont.FreeTypeFont) -> int:
+        """Pillow's own line pitch for this font, taken from a two-line sample."""
+        two = self.draw.textbbox((0, 0), "Ag" + chr(10) + "Ag", font=font)
+        one = self.draw.textbbox((0, 0), "Ag", font=font)
+        return abs(two[3] - two[1]) - abs(one[3] - one[1])
 
     def _fit_col_widths(
         self,
@@ -425,6 +472,12 @@ class KneeboardPageWriter:
             else:
                 output = combo
         return "".join(segments + [output]).strip()
+
+
+#: The Zulu half of a flight-plan Time cell ("14:28Z"), for recolouring it apart
+#: from the local half beside it. Deliberately does not match the prose form
+#: ("14:53:16Z"), which is parenthesised and needs no colour to read apart.
+ZULU_CELL_TOKEN = re.compile(r"(?<!\d:)\d{2}:\d{2}Z")
 
 
 def _format_clock(time: Optional[datetime.datetime]) -> str:
@@ -999,10 +1052,15 @@ class BriefingPage(KneeboardPage):
             units.mass_uom,
         ]
 
+        # Colour the Zulu figure apart from the local one beside it. Local keeps
+        # the page's own foreground -- it is the primary time, and the darkest
+        # ink on the page says so. Nothing to colour on a local-only card.
         writer.table(
             flight_plan_builder.build() + [uom_row],
             headers=headers,
             font=self.flight_plan_font,
+            highlight=ZULU_CELL_TOKEN if self.zulu_tz is not None else None,
+            highlight_fill=writer.col_nav,
         )
 
         margin_line = flight_plan_builder.fuel_margin_line()

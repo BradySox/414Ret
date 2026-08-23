@@ -7583,7 +7583,10 @@ carries it compact on one line (`format_kneeboard_time_compact`, `17:28L 14:28Z`
 — stacking it was flown 2026-08-21 and pushed the Laser Code table off the page;
 13 characters is what the column holds before `_fit_col_widths` wraps it, so the
 seconds stay in prose, and the local figure is labelled `L` because marking only
-the Zulu one made it read as the authoritative time),
+the Zulu one made it read as the authoritative time; the Zulu figure is also drawn
+in `col_nav` while local keeps the page foreground, via a `highlight` regex on
+`KneeboardPageWriter.table` that draws matched runs as separate segments —
+`tabulate` renders a table as one block in one fill),
 prose parenthesises it
 (`format_kneeboard_time_inline`, `15:12:14 (11:12:14Z)`), and the narrow
 AWACS/tanker `TOT:`/`TOS:` cells stack it indented under the time

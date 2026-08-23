@@ -396,6 +396,18 @@ So a Zulu airframe's card now carries **both**:
 - **Seconds live in prose.** The BLUF's TOT and the Support Info line keep
   `17:53:16 (14:53:16Z)`; they are not under width pressure. An airframe that does
   not ask for Zulu keeps its seconds in the table too, and gets no `L`.
+- **Colour separates the pair, the suffixes only confirm it.** The Zulu figure is
+  drawn in `col_nav`; the local one keeps the page's own foreground, because it is
+  the primary time and the darkest ink on the page should say so. `tabulate`
+  renders a table as one block in one fill, so `KneeboardPageWriter.table` gained a
+  `highlight` regex + fill: matched runs are drawn as separate segments, advanced
+  by measured width so the columns land exactly where the single-call path puts
+  them, and the cursor is left where `text()` would leave it so nothing below the
+  flight plan moves. `ZULU_CELL_TOKEN` matches the cell form (`14:28Z`) and
+  deliberately not the prose form, where a naive pattern would colour the
+  `53:16Z` tail of `14:53:16Z`. Pinned by
+  `tests/missiongenerator/test_kneeboard_zulu_colour.py`, including the
+  cursor-position invariant.
 - **The friendly-packages timing cell** still stacks: its cell holds a patrol
   window as often as a single TOT, and `a - b (aZ - bZ)` is 31 characters.
 - **Prose** — the BLUF's TOT and the Support Info package FREQ/TOT line —

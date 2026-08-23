@@ -47,6 +47,55 @@ supply_routes:
 squadrons:
   # Kutaisi
   25:
+    - primary: BAI
+      secondary: air-to-ground
+      size: 5
+      aircraft:
+        - AH-64D Apache Longbow
+    - primary: BAI
+      secondary: air-to-ground
+      size: 12
+      aircraft:
+        - A-10C Thunderbolt II (Suite 7)
+    - primary: BAI
+      secondary: air-to-ground
+      size: 12
+      aircraft:
+        - A-10C Thunderbolt II (Suite 3)
+    - primary: BAI
+      secondary: air-to-ground
+      size: 5
+      aircraft:
+        - Ka-50 Hokum
+    - primary: CAS
+      secondary: air-to-ground
+      size: 5
+      aircraft:
+        - UH-1H Iroquois
+    - primary: CAS
+      secondary: air-to-ground
+      size: 5
+      aircraft:
+        - Mi-8MTV2 Hip
+    - primary: CAS
+      secondary: air-to-ground
+      size: 5
+      aircraft:
+        - Mi-24P Hind-F
+  # Batumi
+  22:
+    - primary: Strike
+      secondary: any
+      size: 5
+      aircraft:
+        - AJS-37 Viggen
+    - primary: Strike
+      secondary: any
+      size: 5
+      aircraft:
+        - Mirage 2000C
+  # Gudauta
+  21:
     - primary: Refueling
       size: 2
       aircraft:
@@ -66,63 +115,18 @@ squadrons:
         - C-130J-30
     - primary: Strike
       secondary: any
-      size: 5
+      size: 8
       aircraft:
         - F-16CM Fighting Falcon (Block 50)
-    - primary: BAI
-      secondary: air-to-ground
-      size: 5
-      aircraft:
-        - AH-64D Apache Longbow
-    - primary: BAI
-      secondary: air-to-ground
-      size: 4
-      aircraft:
-        - A-10C Thunderbolt II (Suite 7)
-    - primary: BAI
-      secondary: air-to-ground
-      size: 4
-      aircraft:
-        - A-10C Thunderbolt II (Suite 3)
     - primary: BARCAP
       secondary: any
-      size: 4
+      size: 8
       aircraft:
         - JF-17 Thunder
     - primary: BARCAP
-      size: 4
+      size: 7
       aircraft:
         - MiG-23MLD Flogger-K
-    - primary: BAI
-      secondary: air-to-ground
-      size: 4
-      aircraft:
-        - Ka-50 Hokum
-    - primary: Strike
-      secondary: any
-      size: 4
-      aircraft:
-        - AJS-37 Viggen
-    - primary: Strike
-      secondary: any
-      size: 4
-      aircraft:
-        - Mirage 2000C
-    - primary: CAS
-      secondary: air-to-ground
-      size: 4
-      aircraft:
-        - UH-1H Iroquois
-    - primary: CAS
-      secondary: air-to-ground
-      size: 4
-      aircraft:
-        - Mi-8MTV2 Hip
-    - primary: CAS
-      secondary: air-to-ground
-      size: 4
-      aircraft:
-        - Mi-24P Hind-F
   # Tbilisi-Lochini
   29:
     - primary: BARCAP

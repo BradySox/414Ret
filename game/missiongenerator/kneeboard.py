@@ -217,6 +217,8 @@ class KneeboardPageWriter:
         cells: List[List[str]],
         headers: Optional[List[str]] = None,
         font: Optional[ImageFont.FreeTypeFont] = None,
+        highlight: Optional["re.Pattern[str]"] = None,
+        highlight_fill: Optional[Tuple[int, int, int]] = None,
     ) -> None:
         if headers is None:
             headers = []
@@ -226,7 +228,52 @@ class KneeboardPageWriter:
         table = tabulate(
             cells, headers=headers, numalign="right", maxcolwidths=maxcolwidths
         )
-        self.text(table, font, fill=self.foreground_fill)
+        if highlight is None or highlight_fill is None:
+            self.text(table, font, fill=self.foreground_fill)
+            return
+        self._text_highlighted(table, font, highlight, highlight_fill)
+
+    def _text_highlighted(
+        self,
+        text: str,
+        font: ImageFont.FreeTypeFont,
+        pattern: "re.Pattern[str]",
+        fill: Tuple[int, int, int],
+    ) -> None:
+        """Draw a monospace block, recolouring every match of ``pattern``.
+
+        Segments advance by measured width, so a match keeps the column alignment
+        the single-call path gives it, and the cursor lands exactly where ``text``
+        would have left it -- nothing below the table moves.
+        """
+        line_height = self._line_advance(font)
+        y = self.y
+        for line in text.splitlines():
+            x = self.x
+            cursor = 0
+            for match in pattern.finditer(line):
+                for chunk, chunk_fill in (
+                    (line[cursor : match.start()], self.foreground_fill),
+                    (match.group(), fill),
+                ):
+                    if chunk:
+                        self.draw.text((x, y), chunk, font=font, fill=chunk_fill)
+                        x += int(round(font.getlength(chunk)))
+                cursor = match.end()
+            if line[cursor:]:
+                self.draw.text(
+                    (x, y), line[cursor:], font=font, fill=self.foreground_fill
+                )
+            y += line_height
+        box = self.draw.textbbox(self.position, text, font=font)
+        self.y += abs(box[1] - box[3]) + self.line_spacing
+        self.text_buffer.append(text)
+
+    def _line_advance(self, font: ImageFont.FreeTypeFont) -> int:
+        """Pillow's own line pitch for this font, taken from a two-line sample."""
+        two = self.draw.textbbox((0, 0), "Ag" + chr(10) + "Ag", font=font)
+        one = self.draw.textbbox((0, 0), "Ag", font=font)
+        return abs(two[3] - two[1]) - abs(one[3] - one[1])
 
     def _fit_col_widths(
         self,
@@ -427,6 +474,13 @@ class KneeboardPageWriter:
         return "".join(segments + [output]).strip()
 
 
+#: The local half of a flight-plan Time cell ("17:28L"), for recolouring it apart
+#: from the Zulu half that leads it. Zulu keeps the page foreground because it is
+#: the figure that matches the DED. Deliberately does not match a prose form,
+#: which is parenthesised and needs no colour to read apart.
+LOCAL_CELL_TOKEN = re.compile(r"(?<!\d:)\d{2}:\d{2}L")
+
+
 def _format_clock(time: Optional[datetime.datetime]) -> str:
     """Render a clock cell, marking Zulu when the value carries a zone."""
     if time is None:
@@ -450,41 +504,41 @@ def _zulu_text(
 def format_kneeboard_time(
     time: Optional[datetime.datetime], zulu_tz: Optional[datetime.tzinfo] = None
 ) -> str:
-    """A table cell's time, with Zulu on a second line when the airframe asks.
+    """A table cell's time, Zulu leading and local under it when the airframe asks.
 
-    Both, never one: the jet needs Zulu and a squadron flying mixed types
-    coordinates off the local time. Underneath rather than beside, so the column
-    width is unchanged (see docs/dev/design/414th-dtc-cartridge-notes.md).
+    Both, never one: Zulu is what the DED reads, and a squadron flying mixed types
+    coordinates off local. Zulu leads because it is the figure the cockpit shows.
+    Stacked rather than side by side, so the column width is unchanged (see
+    docs/dev/design/414th-dtc-cartridge-notes.md).
     """
-    text = _format_clock(time)
+    local = _format_clock(time)
     zulu = _zulu_text(time, zulu_tz)
-    return text if zulu is None else f"{text}\n{zulu}"
+    return local if zulu is None else f"{zulu}\n{local}L"
 
 
 def format_kneeboard_time_inline(
     time: Optional[datetime.datetime], zulu_tz: Optional[datetime.tzinfo] = None
 ) -> str:
-    """The same pair for a time embedded in a line of prose."""
-    text = _format_clock(time)
+    """The same pair for a time embedded in a line of prose: ``14:53:16Z (17:53:16L)``."""
+    local = _format_clock(time)
     zulu = _zulu_text(time, zulu_tz)
-    return text if zulu is None else f"{text} ({zulu})"
+    return local if zulu is None else f"{zulu} ({local}L)"
 
 
 def format_kneeboard_time_compact(
     time: Optional[datetime.datetime], zulu_tz: Optional[datetime.tzinfo] = None
 ) -> str:
-    """The pair for a table cell: ``17:28L 14:28Z``, local first and both labelled.
+    """The pair for a table cell: ``14:28Z 17:28L``, Zulu leading and both labelled.
 
     Thirteen characters against the flight-plan Time column's budget of thirteen,
     measured with ``_fit_col_widths``. Three constraints shaped it:
 
     * Stacking cost a second line on every waypoint row and pushed the Laser Code
       table off the bottom of the page (flown 2026-08-21).
-    * Seconds do not fit -- ``17:28:52L 1428Z`` is 15 and wraps the column, which
-      brings the second line straight back. They stay on the BLUF's TOT, which is
-      prose and has the width.
-    * The local figure carries an ``L``. Marking only the Zulu one made it read as
-      the authoritative time, which is backwards: the wing coordinates on local.
+    * Seconds do not fit -- a 15-character cell wraps the column, which brings the
+      second line straight back. They stay on the BLUF's TOT, which is prose.
+    * **Zulu leads** because it is the figure the DED shows, so it is the one being
+      cross-checked in the cockpit. Local follows for the wingman who is not.
 
     An airframe that does not ask for Zulu is untouched, seconds and all.
     """
@@ -492,7 +546,7 @@ def format_kneeboard_time_compact(
     if time is None or zulu_tz is None or time.tzinfo is not None:
         return text
     zulu = time.replace(tzinfo=zulu_tz).astimezone(datetime.timezone.utc)
-    return f"{time.strftime('%H:%M')}L {zulu.strftime('%H:%M')}Z"
+    return f"{zulu.strftime('%H:%M')}Z {time.strftime('%H:%M')}L"
 
 
 def _labelled_time(label: str, value: str) -> str:
@@ -633,15 +687,17 @@ class FlightPlanBuilder:
         return format_kneeboard_time_compact(time, self.zulu_tz)
 
     def _format_departure_time(self, time: datetime.datetime | None) -> str:
-        """Local only, but labelled to match the Time cell beside it.
+        """Zulu only, labelled to match the Time cell beside it.
 
         Carrying the pair here too takes the Time column's last character back and
-        wraps both. This column holds one row on a typical plan and the offset is
-        on every Time cell next to it, so the ``L`` is all it needs.
+        wraps both. This column holds one row on a typical plan, so it shows the
+        figure being cross-checked against the DED and leaves the offset to the
+        Time cell next to it.
         """
         if time is None or self.zulu_tz is None or time.tzinfo is not None:
             return _format_clock(time)
-        return f"{time.strftime('%H:%M')}L"
+        zulu = time.replace(tzinfo=self.zulu_tz).astimezone(datetime.timezone.utc)
+        return f"{zulu.strftime('%H:%M')}Z"
 
     def _format_alt(self, alt: Distance) -> str:
         return f"{self.units.distance_short(alt):.0f}"
@@ -999,10 +1055,16 @@ class BriefingPage(KneeboardPage):
             units.mass_uom,
         ]
 
+        # Colour the local figure apart from the Zulu one leading it. Zulu keeps
+        # the page's own foreground -- it is what the DED reads, so the darkest
+        # ink on the page is the figure being checked against the cockpit.
+        # Nothing to colour on a local-only card.
         writer.table(
             flight_plan_builder.build() + [uom_row],
             headers=headers,
             font=self.flight_plan_font,
+            highlight=LOCAL_CELL_TOKEN if self.zulu_tz is not None else None,
+            highlight_fill=writer.col_nav,
         )
 
         margin_line = flight_plan_builder.fuel_margin_line()
@@ -3359,11 +3421,14 @@ class KneeboardGenerator(MissionInfoGenerator):
             start = getattr(flight_plan, "patrol_start_time", None)
             end = getattr(flight_plan, "patrol_end_time", None)
             if package.primary_task in self.PATROL_TASKS and start and end:
-                timing = f"{_format_clock(start)} - {_format_clock(end)}"
+                local = f"{_format_clock(start)} - {_format_clock(end)}"
                 zulu_start = _zulu_text(start, zulu_tz)
                 zulu_end = _zulu_text(end, zulu_tz)
+                # Zulu leads here too, so the whole card reads one way round.
                 if zulu_start and zulu_end:
-                    timing += f"\n{zulu_start} - {zulu_end}"
+                    timing = f"{zulu_start} - {zulu_end}\n{local}L"
+                else:
+                    timing = local
                 sort_key = start
             else:
                 tot = package.time_over_target

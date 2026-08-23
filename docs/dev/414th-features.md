@@ -7587,11 +7587,15 @@ dead `start_time` parameter is deleted from all three classes. **A Zulu airframe
 card now carries both clocks, not one** — upstream #949's review made the case
 that a squadron flying mixed types coordinates off the local figure, so tables
 stack Zulu on a second line (`format_kneeboard_time`), the flight-plan Time column
-carries it compact on one line (`format_kneeboard_time_compact`, `17:28L 14:28Z`
+carries it compact on one line (`format_kneeboard_time_compact`, `14:28Z 17:28L`,
+Zulu leading because it is the figure the DED shows
 — stacking it was flown 2026-08-21 and pushed the Laser Code table off the page;
 13 characters is what the column holds before `_fit_col_widths` wraps it, so the
-seconds stay in prose, and the local figure is labelled `L` because marking only
-the Zulu one made it read as the authoritative time),
+seconds stay in prose, and both figures are labelled because marking only one made
+it read as the authoritative time; the local figure is also drawn in `col_nav`
+while Zulu keeps the page foreground, via a `highlight` regex on
+`KneeboardPageWriter.table` that draws matched runs as separate segments —
+`tabulate` renders a table as one block in one fill),
 prose parenthesises it
 (`format_kneeboard_time_inline`, `15:12:14 (11:12:14Z)`), and the narrow
 AWACS/tanker `TOT:`/`TOS:` cells stack it indented under the time

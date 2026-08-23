@@ -51,7 +51,7 @@ stress it · `✗` fail signature reproduced in-game.
 | B51 | The rescue package is not planned into threat it cannot survive | CSAR | ☑ |
 | C9 | Carrier-recovery stagger (same-boat package landings spaced) | §8 | ◐ |
 | G2 | Recon BDA bridge (one plugin, player + AI) | §12 | ✅ |
-| G19 | TARPS on Vietnam-era recon birds (RF-101B / RA-5C) | §3 | ◐ |
+| G19 | TARPS recon birds fly the recon leg (RF-101B / RA-5C / Su-24MR) | §3 | ◐ |
 | G39 | Engaging a site reveals it completely; recon does not | §3 | ☑ |
 | G40 | TARPS recon finds a hidden enemy command post | §3 | ☐ |
 | G41 | A bombed power station keeps its SAMs down on the NEXT turn | MANTIS C2 | ☐ |
@@ -1878,7 +1878,7 @@ flight test. See features doc §12. The pass description below is kept for readi
   Tide red still shows 0 EWR groups (faction EWR date-gated out at 1988, or markers not placed); a
   `mantis-config.lua` Lua error; or `1L13` EWRs spawn in blue/contested territory (placement off).
 
-### G19 — TARPS on Vietnam-era recon birds (RF-101B / RA-5C) · §3 · ◐ PARTIAL
+### G19 — TARPS recon birds fly the recon leg (RF-101B / RA-5C / Su-24MR) · §3 · ◐ PARTIAL
 
 **Re-scoped 2026-08-21, executing the 2026-08-18 banner.** TARPS reveals nothing any more
 (§3's rework: a site is revealed by engaging it), and the §12 recon engine that turned an
@@ -1897,6 +1897,13 @@ sane profile.
 - **Setup:** 1968 Yankee Station (RF-101B at Da Nang, RA-5C on the carriers, both tasked
   `primary: TARPS` in `resources/campaigns/1968_Yankee_Station.yaml`). Frag one of each and
   watch the Tacview.
+- **Setup (Su-24MR, added 2026-08-23):** red-side, so you cannot frag it — it is the only
+  recon airframe on this row you have to *observe*. Russia 2020 fields it; switch on
+  **Campaign Doctrine → "Auto-planner adds a recon flight to Strike/DEAD/Armed Recon
+  packages"** (off by default since the re-convergence), take a turn where red frags a
+  Strike/DEAD package in clear weather, and look for a single Su-24MR trailing it in the
+  Tacview. Its own fail signature is spawning **clean** — no Shpil-2, no ETHER, no R-60M —
+  which means the `Retribution TARPS` loadout name stopped matching.
 - **Pass:** both airframes launch, fly the planned recon route, overfly the target area and
   recover. Nothing is expected to be revealed on the map — that is no longer what recon does.
 - **Fail signature:** the flight never leaves the ramp or is dropped from the mission (the

@@ -741,7 +741,21 @@ FP, 3, 2, 1, HB**. So each code goes on exactly one point:
 
 `FP` and the `X#1–X#7` priority/generic forms are not used: the three classic
 waypoint slots would need a choice of which route points matter most, and nothing
-sources that. All of the HUD/TID effects are unverified until a Tomcat sortie —
+sources that.
+
+**Names are unique within a list, and the fields carry their own names**
+(2026-08-22, from a generated mission). A strike on an eight-building objective
+produced eight `STRIKEXL` route points and eight `STRIKEJO` JDAM entries nobody
+could tell apart, three tankers were all `ARCO`, and the recovery and divert
+points read `LANDXHB` / `DIVERTXD`. Two passes fix it, both giving way on the base and keeping the
+code on the end. `_number_targets()` numbers a cluster's targets **by their
+position in the cluster** on both the route and the JDAM page — `STRI1XST`,
+`STRIK2XL`, `STRIKEJ1`, `STRIKEJ2` — so the digit is the same building on both,
+which numbering by name collision would not guarantee (the codes eat a different
+number of characters per page, and a mixed cluster would number differently on
+each). `_number_duplicates()` then catches everything else: three `ARCO`, a
+racetrack's two `RACETRAC` ends. A lone target keeps its plain name. The recovery
+and divert points are named after the field (`CVN71XHB`, `BATUMIXD`). All of the HUD/TID effects are unverified until a Tomcat sortie —
 checklist B91.
 
 ### Editor-mined limits

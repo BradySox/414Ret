@@ -339,10 +339,80 @@ _NAME_SUFFIXES.update(
 )
 
 
-def _coded_name(waypoint: FlightWaypoint) -> str:
+#: Every code the builder writes, longest first so ``XST`` is split off before
+#: ``XB`` could match its tail.
+_CODES = ("XST", "XHB", "XIP", "XHA", "XDP", "XL", "XB", "XD")
+
+
+def _field_name(flight: FlightData, waypoint: FlightWaypoint) -> Optional[str]:
+    """The field's own name for the recovery and divert points.
+
+    Retribution labels those waypoints "Land" and "Divert"; the crew wants the
+    field, and the code already says which it is.
+    """
+    if waypoint.waypoint_type == FlightWaypointType.LANDING_POINT:
+        return flight.arrival.airfield_name
+    if waypoint.waypoint_type == FlightWaypointType.DIVERT and flight.divert:
+        return flight.divert.airfield_name
+    return None
+
+
+def _coded_name(waypoint: FlightWaypoint, flight: Optional[FlightData] = None) -> str:
     suffix = _NAME_SUFFIXES.get(waypoint.waypoint_type)
-    base = _point_name(waypoint)
+    field = _field_name(flight, waypoint) if flight is not None else None
+    base = (
+        sanitize_short_name(field, WAYPOINT_NAME_LEN)
+        if field
+        else _point_name(waypoint)
+    )
     return _suffixed(base, suffix) if suffix else base
+
+
+def _split_code(name: str) -> tuple[str, str]:
+    for code in _CODES:
+        if name.endswith(code) and len(name) > len(code):
+            return name[: -len(code)], code
+    return name, ""
+
+
+def _numbered(name: str, index: int) -> str:
+    """``STRIKEXL`` + 2 -> ``STRIK2XL``. The base gives way, the code stays."""
+    base, code = _split_code(name)
+    digits = str(index)
+    return base[: WAYPOINT_NAME_LEN - len(code) - len(digits)] + digits + code
+
+
+def _number_targets(points: list[dict[str, Any]], sources: list[str]) -> None:
+    """Number a cluster's targets when any two of them share a source name.
+
+    A real strike gave eight buildings the same label. Numbering is by position
+    in the cluster and triggered by the SOURCE names, not the written ones, for
+    two reasons: the digit then means the same building on the route and on the
+    JDAM page (the codes eat a different number of characters on each, so the
+    written names differ), and a cluster of genuinely distinct names is left
+    alone rather than gaining noise.
+    """
+    if len(points) < 2 or len(set(sources)) == len(sources):
+        return
+    for index, point in enumerate(points, start=1):
+        point["name"] = _numbered(point["name"], index)
+
+
+def _number_duplicates(points: list[dict[str, Any]]) -> None:
+    """Make names unique within a list by numbering the collisions.
+
+    Three tankers all came out ``ARCO`` and a racetrack's two ends both
+    ``RACETRAC``. Targets are numbered by :func:`_number_targets` before this
+    runs, so they are already unique and untouched.
+    """
+    groups: dict[str, list[dict[str, Any]]] = {}
+    for point in points:
+        groups.setdefault(point["name"], []).append(point)
+    for name, members in groups.items():
+        if len(members) < 2:
+            continue
+        for index, point in enumerate(members, start=1):
+            point["name"] = _numbered(name, index)
 
 
 def _threat_name(label: str) -> str:
@@ -376,7 +446,7 @@ def _additional_points(
     points = [
         _reference(
             coords,
-            _coded_name(waypoint),
+            _coded_name(waypoint, flight),
             waypoint.position.x,
             waypoint.position.y,
         )
@@ -407,7 +477,9 @@ def _additional_points(
             if index == 0:
                 name = _suffixed(name, "XHA")
             points.append(_reference(coords, name, site.x, site.y))
-    return points[:MAX_ADDITIONAL_POINTS]
+    points = points[:MAX_ADDITIONAL_POINTS]
+    _number_duplicates(points)
+    return points
 
 
 def _lines(game: Game, coords: _Coords) -> list[dict[str, Any]]:
@@ -437,12 +509,17 @@ def _waypoint_elevation(waypoint: FlightWaypoint, game: Game) -> int:
 def _route_waypoint(
     game: Game,
     coords: _Coords,
+    flight: FlightData,
     waypoint: FlightWaypoint,
     previous: Optional[FlightWaypoint],
     code: Optional[str] = None,
 ) -> dict[str, Any]:
     tot = _zulu_clock(game, waypoint)
-    name = _suffixed(_point_name(waypoint), code) if code else _coded_name(waypoint)
+    name = (
+        _suffixed(_point_name(waypoint), code)
+        if code
+        else _coded_name(waypoint, flight)
+    )
     entry: dict[str, Any] = {"name": name}
     entry.update(
         coords.of(
@@ -496,6 +573,8 @@ def _build_nav(
     # waypoint n -- the same off-by-one the Hornet hit.
     previous: Optional[FlightWaypoint] = None
     surface_target_named = False
+    targets: list[dict[str, Any]] = []
+    target_names: list[str] = []
     for waypoint in flight.waypoints[1:]:
         if not is_route_waypoint(waypoint):
             continue
@@ -503,18 +582,21 @@ def _build_nav(
             break
         # XST marks the surface target the HUD highlights with a pentagon
         # (squadron tip, 2026-08-22). One point: the first target in route
-        # order, which is also STA 3's PP1. Whether the jet honours more is
-        # unknown, so the rest stay plain.
+        # order, which is also STA 3's PP1.
         code = None
         if is_target_waypoint(waypoint):
             # One surface target in the jet; the rest of a cluster go to the
             # LANTIRN store ("XL / X##L - LANTIRN (max 20)").
             code = "XL" if surface_target_named else "XST"
             surface_target_named = True
-        route["waypoints"].append(
-            _route_waypoint(game, coords, waypoint, previous, code)
-        )
+        entry = _route_waypoint(game, coords, flight, waypoint, previous, code)
+        route["waypoints"].append(entry)
+        if code:
+            targets.append(entry)
+            target_names.append(waypoint.display_name or waypoint.name)
         previous = waypoint
+    _number_targets(targets, target_names)
+    _number_duplicates(route["waypoints"])
     return plans
 
 
@@ -616,13 +698,16 @@ def _build_jdam(flight: FlightData, game: Game, coords: _Coords) -> dict[str, An
     its release altitude the ground.
     """
     planned: list[dict[str, Any]] = []
+    planned_names: list[str] = []
     previous: Optional[FlightWaypoint] = None
     for waypoint in flight.waypoints:
         is_target = is_target_waypoint(waypoint)
         if is_target and len(planned) < JDAM_TARGETS_PER_STATION:
             planned.append(_jdam_target(coords, game, waypoint, previous))
+            planned_names.append(waypoint.display_name or waypoint.name)
         if is_route_waypoint(waypoint) and not is_target:
             previous = waypoint
+    _number_targets(planned, planned_names)
     loaded = jdam_stations(flight)
     stations = []
     for station in range(1, JDAM_STATIONS + 1):

@@ -35,11 +35,14 @@ BLUE_FIELDS = {"Kutaisi", "Kobuleti"}
 AIR_SPAWN = "Turkey"
 RED_FIELDS = {"Beslan", "Mineralnye Vody", "Mozdok", "Nalchik", "Tbilisi-Lochini"}
 #: Kutaisi is the A-10 and helicopter base; the fast jets are pushed back to Batumi.
+#: The LHA was dropped and its Apaches and Chinooks came ashore here.
 KUTAISI_TYPES = {
     "A-10C Thunderbolt II (Suite 7)",
     "UH-1H Iroquois",
     "OH-58D(R) Kiowa Warrior",
     "C-130J-30",
+    "AH-64D Apache Longbow",
+    "CH-47F Block I",
 }
 
 

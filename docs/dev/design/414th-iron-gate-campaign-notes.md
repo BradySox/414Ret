@@ -78,11 +78,10 @@ the rotary pool is the one that applies.
 
 | base | stands | used | squadrons |
 |---|---|---|---|
-| **Kutaisi** | 58 | 37 | UH-1H 12, OH-58D Kiowa 11, A-10C Suite 7 12, C-130J-30 2 |
+| **Kutaisi** | 58 | 37 | A-10C Suite 7 12, UH-1H 6, OH-58D Kiowa 6, AH-64D 6, CH-47F 5, C-130J-30 2 |
 | **Kobuleti** | 42 | 36 | F-15E 12, F-16CM 12, F-15C 12 |
 | **Turkey** (off-map air spawn) | ∞ | 6 | KC-135 MPRS 2, KC-135 2, E-3A 2 |
 | **Blue CV** | 90 | 66 | F-14B 24 (VMF-29), F/A-18C 24 (VFA-113), A-6E Tanker 4, E-2D 2, F-14B(U) 12 |
-| **Blue LHA** | 20 | 20 | AH-64D 10, CH-47F 10 |
 | Tbilisi-Lochini | 74 | 70 | 5 squadrons |
 | Mozdok | 39 | 39 | 5 |
 | Mineralnye Vody | 28 | 28 | 6, including red's only AWACS and tanker |
@@ -95,7 +94,7 @@ Batumi was the first choice and was dropped: ten stands is not a fighter base. G
 other candidate at 31 stands, but it sits 160 NM from the fighting against Kobuleti's 132, and
 102 NM from Kutaisi against 32.
 
-**39 squadrons, 336 aircraft.** Squadrons of the same airframe at the same base are merged
+**39 squadrons, 316 aircraft.** Squadrons of the same airframe at the same base are merged
 rather than duplicated — two MiG-31 flights at Mineralnye Vody are one squadron of 8, not two
 of 4. Where the pair had different primaries the second becomes a `secondary:`, so the merge
 never costs a role: Mozdok's Su-24M is SEAD with Strike secondary, Tbilisi's Su-25 is BAI with
@@ -114,6 +113,18 @@ the pattern.
 Gudauta was tried as a third field first — it is one of only two south-west airfields besides
 Kutaisi with enough large stands (10) — and dropped in favour of the spawn: a tanker that never
 lands does not need a ramp.
+
+### The LHA was dropped
+
+The Tarawa carried an Apache squadron and a Chinook squadron and nothing else, so it came
+out of the miz and they came ashore to Kutaisi. **It cost 20 aircraft** and there was no way
+round that: Kutaisi has 58 stands but only **25** take a helicopter, and the Huey, Kiowa and
+Hercules already filled them. Five rotary squadrons now share those 25 at 6/6/6/5, so the
+Huey and Kiowa halved. Kobuleti was no help — its 26 helicopter stands are a subset of the
+42 the fighters occupy 36 of.
+
+The trade was made deliberately (DM call): a simpler laydown, at the price of blue's
+rotary strength and of the only sea-based air assault the campaign had.
 
 ### Beslan's Hind
 

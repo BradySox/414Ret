@@ -2,7 +2,7 @@
 name: Caucasus - Iron Gate
 theater: Caucasus
 authors: Plob, 414th Joint Fighter Group
-description: "<p>June 2018. Russian armour came through the eastern mountains and took Tbilisi. The Likhi range is the gate between the half of Georgia they hold and the half you still do, and the Rikoti pass is the hinge it turns on. Take it back.</p><p>You fly from three places and none of them is comfortable. <b>Kutaisi</b> is the closest field to the fighting and holds the Warthogs, the Kiowas, the Hueys and the Hercules — the aircraft that have to be near the front to be worth anything. The fast jets sit back at <b>Batumi</b> on the Turkish border, ten stands for three squadrons, so every Eagle and Viper on the ground is one not over the pass. The tankers and the AWACS never land at all; they come out of Turkish airspace and go home there.</p><p>The rest is at sea: a Tomcat and Hornet air wing off the boat, Apaches and Chinooks on the LHA, and the air assault option the ground war does not otherwise give you.</p><p>Red is the modern VKS — Flankers, Fulcrums, Foxhounds, Frogfoots and a Bear across five fields under an S-300 belt. They outnumber you on the ground and they know where your two runways are.</p><p>Built by the 414th from Plob's <i>Northern Russia</i>, which is still shipped unchanged.</p>"
+description: "<p>June 2018. Russian armour came through the eastern mountains and took Tbilisi. The Likhi range is the gate between the half of Georgia they hold and the half you still do, and the Rikoti pass is the hinge it turns on. Take it back.</p><p>You fly from three places and none of them is comfortable. <b>Kutaisi</b> is the closest field to the fighting and holds the Warthogs, the Kiowas, the Hueys and the Hercules — the aircraft that have to be near the front to be worth anything. The fast jets sit back at <b>Batumi</b> on the Turkish border, ten stands for three squadrons, so every Eagle and Viper on the ground is one not over the pass. The tankers and the AWACS never land at all; they come out of Turkish airspace and go home there.</p><p>The rest is at sea: a Tomcat and Hornet air wing off the boat. The Apaches and Chinooks are ashore at Kutaisi with the rest of the rotary wing, which is as far forward as they get.</p><p>Red is the modern VKS — Flankers, Fulcrums, Foxhounds, Frogfoots and a Bear across five fields under an S-300 belt. They outnumber you on the ground and they know where your two runways are.</p><p>Built by the 414th from Plob's <i>Northern Russia</i>, which is still shipped unchanged.</p>"
 recommended_player_faction: Bluefor Modern
 recommended_enemy_faction: Russia 2020
 recommended_start_date: 2018-06-13
@@ -54,7 +54,7 @@ squadrons:
         - BAI
         - Air Assault
         - CSAR
-      size: 12
+      size: 6
       aircraft_type: UH-1H Iroquois
       country: USA
       aircraft:
@@ -65,7 +65,7 @@ squadrons:
         - CAS
         - BAI
         - Escort
-      size: 11
+      size: 6
       aircraft_type: OH-58D(R) Kiowa Warrior
       country: Combined Joint Task Forces Blue
       aircraft:
@@ -91,6 +91,25 @@ squadrons:
       country: USA
       aircraft:
         - 910th Airlift Wing
+    - primary: BAI
+      secondary:
+        - CAS
+        - OCA/Aircraft
+        - Armed Recon
+      size: 6
+      aircraft_type: AH-64D Apache Longbow
+      country: USA
+      aircraft:
+        - 1-1 Attack Reconnaissance Battalion
+    - primary: Air Assault
+      secondary:
+        - Transport
+        - CSAR
+      size: 5
+      aircraft_type: CH-47F Block I
+      country: USA
+      aircraft:
+        - 5th Battalion 159th Aviation
   # Kobuleti
   24:
     - primary: Strike
@@ -333,24 +352,3 @@ squadrons:
       country: USA
       aircraft:
         - VF-103
-  # Blue LHA
-  "Blue LHA":
-    - primary: BAI
-      secondary:
-        - CAS
-        - OCA/Aircraft
-        - Armed Recon
-      size: 10
-      aircraft_type: AH-64D Apache Longbow
-      country: USA
-      aircraft:
-        - 1-1 Attack Reconnaissance Battalion
-    - primary: Air Assault
-      secondary:
-        - Transport
-        - CSAR
-      size: 10
-      aircraft_type: CH-47F Block I
-      country: USA
-      aircraft:
-        - 5th Battalion 159th Aviation

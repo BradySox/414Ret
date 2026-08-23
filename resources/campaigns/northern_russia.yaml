@@ -4,194 +4,280 @@ theater: Caucasus
 authors: Plob
 description: <p><p>A medium campaign through the north eastern part of the Caucasus map.</p><p>Russia has invaded Georgia through the eastern mountains. Mount a counter offense and push them back!</p>
 recommended_player_faction: Bluefor Modern
-recommended_enemy_faction: Russia 1975
-recommended_start_date: 1995-06-13
+recommended_enemy_faction: Russia 2020
+recommended_start_date: 2018-06-13
 miz: northern_russia.miz
 performance: 2
 version: "10.5"
+settings:
+  squadron_start_full: true
+
+# Kutaisi <-> Khashuri FOB overrides the miz path group `Ground-4`, which reached the
+# Likhi range in one 41 km straight leg across the ridge and put its own waypoint on
+# ground vehicles cannot cross. The front line is placed by distance along this
+# polyline, so it landed on the ridge rather than in the pass. These waypoints follow
+# the E60/S1 -- the Rioni valley through Terjola and Zestafoni, then the Chkherimela
+# valley and the Rikoti pass down to Surami. Every waypoint is inside the landmap's
+# drivable zone and 98% of the drawn line is (was 75%); over 15 sampled front
+# positions all 15 now sit on drivable ground, against 10 before.
+supply_routes:
+  - waypoints:
+      - [-283355, 685103]   # Kutaisi CP
+      - [-281841, 693087]   # Rioni valley, east of Kutaisi
+      - [-285620, 703632]   # Rioni valley
+      - [-281000, 705000]   # Rioni valley, north bank
+      - [-280599, 710048]   # Terjola
+      - [-280500, 717000]   # Rioni valley
+      - [-284000, 723000]   # Rioni valley
+      - [-286874, 731840]   # Zestafoni
+      - [-292540, 738699]   # Shorapani
+      - [-295430, 745353]   # Kharagauli
+      - [-297750, 748000]   # Chkherimela valley
+      - [-300000, 750000]   # Chkherimela valley
+      - [-301500, 754000]   # Moliti
+      - [-300500, 757000]   # Chkherimela valley, upper
+      - [-297875, 761000]   # Rikoti approach
+      - [-295250, 764000]   # Rikoti pass, west side
+      - [-293500, 767000]   # Rikoti pass
+      - [-291875, 770000]   # Rikoti pass, east side
+      - [-291000, 773000]   # Surami
+      - [-291000, 777500]   # Kura valley
+      - [-290500, 780000]   # Kura valley
+      - [-294162, 781242]   # Khashuri FOB
 squadrons:
   # Kutaisi
   25:
     - primary: Refueling
+      size: 2
       aircraft:
         - KC-135 Stratotanker MPRS
     - primary: Refueling
+      size: 2
       aircraft:
         - KC-135 Stratotanker
     - primary: AEW&C
+      size: 2
       aircraft:
         - E-3A
     - primary: Transport
       secondary: any
+      size: 2
       aircraft:
         - C-130J-30
     - primary: Strike
       secondary: any
+      size: 5
       aircraft:
         - F-16CM Fighting Falcon (Block 50)
     - primary: BAI
       secondary: air-to-ground
+      size: 5
       aircraft:
         - AH-64D Apache Longbow
     - primary: BAI
       secondary: air-to-ground
+      size: 4
       aircraft:
         - A-10C Thunderbolt II (Suite 7)
     - primary: BAI
       secondary: air-to-ground
+      size: 4
       aircraft:
         - A-10C Thunderbolt II (Suite 3)
     - primary: BARCAP
       secondary: any
+      size: 4
       aircraft:
         - JF-17 Thunder
     - primary: BARCAP
+      size: 4
       aircraft:
         - MiG-23MLD Flogger-K
     - primary: BAI
       secondary: air-to-ground
+      size: 4
       aircraft:
         - Ka-50 Hokum
     - primary: Strike
       secondary: any
+      size: 4
       aircraft:
         - AJS-37 Viggen
     - primary: Strike
       secondary: any
+      size: 4
       aircraft:
         - Mirage 2000C
     - primary: CAS
       secondary: air-to-ground
+      size: 4
       aircraft:
         - UH-1H Iroquois
     - primary: CAS
       secondary: air-to-ground
+      size: 4
       aircraft:
         - Mi-8MTV2 Hip
     - primary: CAS
       secondary: air-to-ground
+      size: 4
       aircraft:
         - Mi-24P Hind-F
-    
   # Tbilisi-Lochini
   29:
     - primary: BARCAP
+      size: 11
       aircraft:
-        - MiG-21bis Fishbed-N
+        - MiG-29S Fulcrum-C
     - primary: BARCAP
+      size: 11
       aircraft:
-        - MiG-29A Fulcrum-A
+        - MIG-29-FULCRUM
     - primary: BAI
       secondary: air-to-ground
+      size: 11
       aircraft:
         - Mi-24V Hind-E
+    - primary: BAI
+      size: 11
+      aircraft:
+        - Su-25 Frogfoot
+    - primary: Strike
+      size: 10
+      aircraft:
+        - Su-25 Frogfoot
+    - primary: BARCAP
+      size: 10
+      aircraft:
+        - MiG-29S Fulcrum-C
+    - primary: OCA/Runway
+      secondary: air-to-ground
+      size: 10
+      aircraft:
+        - Su-24M Fencer-D
   # Beslan
   32:
     - primary: BARCAP
+      size: 5
       aircraft:
-        - MiG-23MLD Flogger-K
+        - Su-27 Flanker-B
     - primary: BARCAP
+      size: 5
       aircraft:
-        - MiG-21bis Fishbed-N
-    - primary: BARCAP
-      aircraft:
-        - MiG-21bis Fishbed-N
+        - MiG-29S Fulcrum-C
     - primary: BAI
       secondary: air-to-ground
+      size: 5
       aircraft:
         - Mi-24V Hind-E
-    - primary: Strike
-      aircraft:
-        - Su-25 Frogfoot
-    - primary: BAI
-      aircraft:
-        - Su-25 Frogfoot
   # Mozdok
   28:
     - primary: BARCAP
+      size: 7
       aircraft:
-        - MiG-23MLD Flogger-K
+        - Su-27 Flanker-B
     - primary: BARCAP
+      size: 7
       aircraft:
-        - MiG-21bis Fishbed-N
+        - MiG-29S Fulcrum-C
     - primary: BAI
+      size: 7
       aircraft:
         - Su-25 Frogfoot
     - primary: Strike
+      size: 4
       aircraft:
         - Tu-95MS Bear-H
     - primary: SEAD
+      size: 7
       aircraft:
-        - Su-17M4 Fitter-K
+        - Su-24M Fencer-D
     - primary: Strike
+      size: 7
       aircraft:
-        - Su-17M4 Fitter-K
+        - Su-24M Fencer-D
   # Nalchik
   27:
     - primary: BARCAP
+      size: 5
       aircraft:
-        - MiG-25PD Foxbat-E
+        - MiG-31 Foxhound
     - primary: BARCAP
+      size: 5
       aircraft:
-        - MiG-21bis Fishbed-N
+        - MiG-29S Fulcrum-C
     - primary: BARCAP
+      size: 5
       aircraft:
-        - MiG-29A Fulcrum-A
-    - primary: OCA/Runway
-      secondary: air-to-ground
-      aircraft:
-        - Su-24M Fencer-D
+        - MIG-29-FULCRUM
   # Mineralnye Vody
   26:
     - primary: BARCAP
+      size: 4
       aircraft:
-        - MiG-25PD Foxbat-E
+        - MiG-31 Foxhound
     - primary: BARCAP
+      size: 4
       aircraft:
-        - MiG-21bis Fishbed-N
+        - MiG-29S Fulcrum-C
     - primary: BARCAP
+      size: 4
       aircraft:
-        - MiG-25PD Foxbat-E
+        - MiG-31 Foxhound
     - primary: BARCAP
+      size: 4
       aircraft:
-        - MiG-23MLD Flogger-K
+        - Su-27 Flanker-B
     - primary: BARCAP
+      size: 4
       aircraft:
-        - MiG-23MLD Flogger-K
+        - Su-27 Flanker-B
     - primary: Strike
+      size: 4
       aircraft:
         - Su-25 Frogfoot
     - primary: AEW&C
+      size: 2
       aircraft:
         - A-50
     - primary: Refueling
+      size: 2
       aircraft:
         - IL-78M
-  Blue CV:
+  # Blue CV
+  "Blue CV":
     - primary: BARCAP
       secondary: air-to-air
+      size: 12
       aircraft:
         - F-14B Tomcat
     - primary: BARCAP
       secondary: any
+      size: 12
       aircraft:
         - F-14B Tomcat
     - primary: Strike
       secondary: any
+      size: 12
       aircraft:
         - F/A-18C Hornet (Lot 20)
     - primary: BAI
       secondary: any
+      size: 12
       aircraft:
         - F/A-18C Hornet (Lot 20)
     - primary: Refueling
+      size: 2
       aircraft:
         - A-6E Tanker
     - primary: AEW&C
+      size: 2
       aircraft:
         - E-2C Hawkeye
-  Blue LHA:
+  # Blue LHA
+  "Blue LHA":
     - primary: BAI
       secondary: air-to-ground
+      size: 12
       aircraft:
         - AV-8B Harrier II Night Attack

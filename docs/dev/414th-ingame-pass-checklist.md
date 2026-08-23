@@ -52,7 +52,7 @@ stress it · `✗` fail signature reproduced in-game.
 | B51 | The rescue package is not planned into threat it cannot survive | CSAR | ☑ |
 | C9 | Carrier-recovery stagger (same-boat package landings spaced) | §8 | ◐ |
 | G2 | Recon BDA bridge (one plugin, player + AI) | §12 | ✅ |
-| G19 | TARPS on Vietnam-era recon birds (RF-101B / RA-5C) | §3 | ◐ |
+| G19 | TARPS recon birds fly the recon leg (RF-101B / RA-5C / Su-24MR) | §3 | ◐ |
 | G39 | Engaging a site reveals it completely; recon does not | §3 | ☑ |
 | G40 | TARPS recon finds a hidden enemy command post | §3 | ☐ |
 | G41 | A bombed power station keeps its SAMs down on the NEXT turn | MANTIS C2 | ☐ |
@@ -140,6 +140,7 @@ stress it · `✗` fail signature reproduced in-game.
 | B90 | A steerpoint's elevation is the ground under it | §74 | ☐ |
 | B91 | The F-14B(U) spawns with its cartridge loaded | §74 | ☐ |
 | B92 | A rescued marker belongs to the base it sits next to | campaign loading | ☐ |
+| B93 | Saving the air wing keeps both coalitions | air wing config | ☐ |
 
 ---
 
@@ -712,6 +713,8 @@ jets. See §62.
 - **Pass:** every dialog opens with its title bar and its bottom edge on screen, on both monitors; the Edit Flight General tab no longer shows a wide empty band under Custom Name; switching to Payload/Waypoints keeps every control reachable (the pylon list may compress, but nothing may be cut off with no way to reach it); no dialog opens comically small; and `dcs.log` carries no `cannot fit the available screen area` warning — if it does, that dialog's *layout minimum* genuinely exceeds the display and needs a scroll area, so note which one (the warning names the class).
 - **Fail signature:** a dialog still opening off the top (the fit did not fire — confirm `ScreenFitFilter` is installed; non-`QDialog` windows are skipped by design); a dialog opening far smaller than its content with controls unreachable and no scrollbar (the clamp bit below the layout minimum — the log warning names it); the Edit Flight window jumping size when you switch tabs (the `sizeHint` override must not force a resize); a dialog that used to be resizable refusing to grow (the minimum relaxation is one-way within a session — reopening restores it, but note it).
 - **Follow-up landed 2026-07-19 (same day, off the re-flown report "you prefer tall over wide" with the payload rows visibly clipped):** the clamp fired but bit below the Payload tab's layout minimum — exactly the fail signature above — because the tab was one tall column (F-15E: 962 px wanted, **901 px minimum**, 880 available). It is now two columns with a scrolling pylon list and width-bounded dropdowns: **1553 px wide × 332–552 tall, min 346–360**, measured across every airframe in the reporter's save. Re-check on the app: the Payload tab reads as two side-by-side columns; a full loadout is visible without scrolling; **no store name is clipped top or bottom** (the original symptom); the store dropdown still shows full weapon names when opened; and the dialog is not noticeably wider than before.
+
+- **Follow-up landed 2026-08-23 (report: "the new campaign popup renders off screen", screenshot of the New Game wizard with the Back/Next/Cancel row under the taskbar):** the filter fits a dialog on **Show**, and a `QWizard` is at its smallest then. New Game showed the 500x461 intro page, was fitted and centred at that size, then grew to 1409x963 on the theater page keeping the same top-left — 36 px past the bottom of a 2560x1392 usable area. `NewGameWizard.resizeEvent` now re-fits on every resize once visible; measured page by page on the real display, 5 pages off-screen → 0. Re-check on the app: open **New Game**, click Next through all six pages and back again, on **both** monitors — the Back/Next/Cancel row and the title bar stay visible the whole way, the campaign names in the theater list are not truncated, and the window does not jitter or shrink as you page. This is the general blind spot, so watch for it on any dialog that grows after it opens (Air Wing Configuration when a squadron list loads is the likely next one).
 
 ### B28 — Native DTC data pre-population (F/A-18C + F-16C) · §74 · ☑ VERIFIED
 
@@ -1905,7 +1908,7 @@ flight test. See features doc §12. The pass description below is kept for readi
   Tide red still shows 0 EWR groups (faction EWR date-gated out at 1988, or markers not placed); a
   `mantis-config.lua` Lua error; or `1L13` EWRs spawn in blue/contested territory (placement off).
 
-### G19 — TARPS on Vietnam-era recon birds (RF-101B / RA-5C) · §3 · ◐ PARTIAL
+### G19 — TARPS recon birds fly the recon leg (RF-101B / RA-5C / Su-24MR) · §3 · ◐ PARTIAL
 
 **Re-scoped 2026-08-21, executing the 2026-08-18 banner.** TARPS reveals nothing any more
 (§3's rework: a site is revealed by engaging it), and the §12 recon engine that turned an
@@ -1924,6 +1927,13 @@ sane profile.
 - **Setup:** 1968 Yankee Station (RF-101B at Da Nang, RA-5C on the carriers, both tasked
   `primary: TARPS` in `resources/campaigns/1968_Yankee_Station.yaml`). Frag one of each and
   watch the Tacview.
+- **Setup (Su-24MR, added 2026-08-23):** red-side, so you cannot frag it — it is the only
+  recon airframe on this row you have to *observe*. Russia 2020 fields it; switch on
+  **Campaign Doctrine → "Auto-planner adds a recon flight to Strike/DEAD/Armed Recon
+  packages"** (off by default since the re-convergence), take a turn where red frags a
+  Strike/DEAD package in clear weather, and look for a single Su-24MR trailing it in the
+  Tacview. Its own fail signature is spawning **clean** — no Shpil-2, no ETHER, no R-60M —
+  which means the `Retribution TARPS` loadout name stopped matching.
 - **Pass:** both airframes launch, fly the planned recon route, overfly the target area and
   recover. Nothing is expected to be revealed on the map — that is no longer what recon does.
 - **Fail signature:** the flight never leaves the ramp or is dropped from the mission (the
@@ -5929,6 +5939,33 @@ from a fresh New Game, not a save** — a save never took this path.
 
 ---
 
+### B93 — Saving the air wing keeps both coalitions · air wing config · ☐ UNTESTED
+
+**History:** reported by the DM 2026-08-23, with the file it happened to — `Northen
+russia.yaml` held the blue wing, a Red-tab save replaced it, and there was nothing in
+the file to say either version was one side of a pair.
+
+> `_build_air_wing` read `self.tab_widget.currentWidget()`, so Save wrote only the tab
+> in front and Load applied a file to whichever tab was in front. Save now writes both
+> coalitions under `coalitions:`; a file holding both asks on load whether to restore
+> both or only the open side. Files without that key are legacy and still load into the
+> current tab. `tests/fourteenth/test_air_wing_file_format.py` pins the detection both
+> ways, including a control point named `coalitions`.
+
+**What CI cannot exercise** is the dialog itself: the tests cover format detection, not
+whether `configure_default_air_wing` applied to a tab that is *not* in front redraws that
+tab and survives Accept Changes. A squadron restored into the background tab could look
+right in the file and never reach the game.
+
+- **Setup:** New Game, open Air Wing Configuration, change something on Blue **and**
+  something on Red, Save Config. Reopen, change both again, Load Config, choose **Both**.
+- **Pass:** both tabs show what was saved, Accept Changes sticks, and the first mission
+  generates with those squadrons. Then repeat choosing **<side> only** and confirm the
+  other tab is untouched.
+- **Fail signature:** the background tab still shows the old wing after a Both load (the
+  `w.revert()` did not reach it); or Accept Changes drops the background tab's squadrons.
+- **Legacy check, free:** load one of the DM's existing files (`Northen russia red.yaml`,
+  no `coalitions:` key) with the Red tab open. It must load exactly as it did before.
 ### B92 — A rescued marker belongs to the base it sits next to · campaign loading · ☐ UNTESTED
 
 **History:** built 2026-08-22, from the DM's own `test.retribution` on
@@ -5970,6 +6007,54 @@ reference — it carries 8 of the 16 moves.
      neighbouring fields is the failure `STRANDED_BEYOND` exists to prevent, and
      Marianas (Velvet Thunder) is the campaign that showed it. Re-measure before
      assuming the bound is too loose.
+
+---
+
+### B93 — The front line sits on ground the armour can hold · §90 · ☐ UNTESTED
+
+**History:** built 2026-08-23, from the DM's own `Maybe 414.retribution` on
+`Caucasus - Northern Russia` — the app map showed the FLOT hanging entirely off
+one side of the supply route, and the mission put blue and red ~15 km apart on
+opposite edges of the same ridge.
+
+> `frontline_bounds` cast one ray each way from the centre and stopped at the
+> first inclusion-zone boundary. `find_ground_position` hands it a centre sitting
+> **on** that boundary whenever the route crosses the edge of the drivable zone,
+> so the ray toward the usable ground stopped at ~0 m and the ray into ground no
+> vehicle can enter never met a boundary and took the full half-width. Measured
+> on Kutaisi/Khashuri FOB, turn 1: 20.00 km left, 0.00 km right, **0 % of the
+> trace on drivable ground**, with the real drivable run (+0.0 to +6.2 km)
+> entirely on the side that got nothing. `usable_reach` now measures the drivable
+> interval instead. Same front after the fix: 0.00 / 6.15 km, 98 % drivable.
+> `tests/missiongenerator/test_front_line_usable_reach.py` pins the edge case and
+> the open-country parity.
+
+**What CI cannot exercise** is whether the resulting fights read well. A front
+pinned into a mountain pass is now legitimately narrow — 6 km where the setting
+says 40 — and that is rung D's intent, not a bug. Whether a 6 km front produces a
+good CAS mission is a judgment only a flight makes.
+
+Needs a campaign whose front crosses broken ground, not a specific flight.
+Caucasus - Northern Russia (Kutaisi → Khashuri FOB) is the reference; any
+mountain or coastal front will do.
+
+- **Pass:** the orange FLOT on the app map straddles or runs alongside the supply
+  route into passable ground, not away from it. In the mission, blue and red
+  ground groups face each other across the front instead of bunching in two
+  blobs with impassable terrain between them.
+- **Fail signatures:**
+  1. **The FLOT still hangs off one side into terrain** — check
+     `usable_reach` picked the run holding the centre. A centre that is a
+     boundary point is expected; `_room_around_center` falls back to the nearest
+     run for exactly that.
+  2. **The front is absurdly short (< 2 km) and the fight is a knife fight** —
+     the drivable run really is that narrow, or the supply route crosses a ridge
+     on a long straight segment. Check the route waypoints before touching the
+     code: Northern Russia's wp3→wp4 is a 41 km chord over mountains, which is
+     campaign data, not engine behaviour.
+  3. **Groups still stack in one blob** — that is `flotgenerator`'s
+     degenerate-front fallback, which means `is_on_land` is still false along the
+     trace. Measure the trace before assuming the bounds are wrong.
   4. **The front line between two affected bases jumps** — ownership feeds base
      strength, so an 8-object swing is worth a look on Desert Trident's Jordan
      sector specifically.

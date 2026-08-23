@@ -172,16 +172,39 @@ here says a full ramp is safe either — it says this test did not test it. If i
 suspected again, the discriminator is the activation time in the miz's `trigrules`, not the
 track span.
 
-### What is genuinely open
+### The 3 h 45 m ATO was a setting, not the campaign
 
-The ATO schedules activations out to **13,517 s (3 h 45 m)** on the blue side against a
-mission flown for ~62 minutes, so 8 of blue's 37 activations and 1 of red's 8 never fired.
-Unflown packages auto-resolve, so this may be intended; nobody has decided. It is the reason
-a turn's later BARCAP waves are never seen from the cockpit.
+The first flight scheduled activations out to **13,517 s (3 h 45 m)** against a ~62 min
+mission, so 8 of blue's 37 activations never fired. Chased to the end; **nothing to fix in
+the campaign or the code.**
 
-Separately, `sortie_records` logged **183 flights when 30 aircraft moved** — the parked
-inventory is recorded as sorties. That is §91's problem, not this campaign's: checklist B70.
+Two settings, both moved off their defaults in that save, multiply together:
 
+| setting | that save | default |
+|---|---|---|
+| Desired mission duration | 100 min | 60 |
+| BARCAP overlap time | 15 min | 0 |
+| Max simultaneous carrier BARCAP waves | **1** | **2** |
+
+`barcap_rounds = ceil(mission_duration / (barcap_duration - overlap))`, and a fleet control
+point doubles it. 100 min over 45 min of fresh coverage is 3 rounds, doubled to 6 for the
+carrier.
+
+**The doubling is only half a mechanism.** `max_carrier_simultaneous_barcaps` is what turns
+the extra rounds into *pairs on station together* rather than more waves in sequence, and at
+**1** it never stacks: `count >= max - 1` is `count >= 0`, true for the first package, so
+every wave advances the handover. Six singles at 0/45/89/135/180/225 min. At the default 2,
+the same six become **three pairs at 0/45/89** and the window collapses to about the mission
+length.
+
+Overlap compounds it in the same direction: it does not add cover on top, it *shortens* each
+wave's fresh coverage, which is what took the round count from 2 to 3.
+
+So a carrier campaign wants `max_carrier_simultaneous_barcaps` at 2 or more. Iron Gate
+preseeds neither setting and should not — they are doctrine, not campaign content.
+
+Separately, `sortie_records` logged **183 flights when 30 aircraft moved**: parked inventory
+recorded as sorties. That is §91's problem, not this campaign's — checklist B70.
 ---
 ## Deferred
 

@@ -121,6 +121,78 @@ proposing anything here.
 Nothing about this is adopted. It is recorded so seam 7 has a worked precedent to
 argue with.
 
+### How he actually uses it — a testbed, not just an opponent (CORRECTED 2026-08-24)
+
+**The design docs above describe a product; his use of it is a research instrument, and
+the second is what matters to us.** The 2026-08-24 read of this note framed `game/agent/`
+as a feature to evaluate for adoption and recorded only the adoption timing. That missed
+the point, caught by the DM from talking to him directly: he is running it as a **testbed
+for "red could be done like X instead of Y."**
+
+The evidence is in his commit pattern, not his design docs:
+
+```
+howtoplay: fold in the campaign-4 lessons
+howtoplay: what turn 0 is free in is time, not money
+howtoplay: stagger a BARCAP racetrack by reversing START/END
+prev_turns: what died, what killed it, and which killed which
+OPFOR-AI: each flight reports when it starts engines
+OPFOR-AI: per-flight TOT offsets, readable and settable
+```
+
+That is one loop, run per campaign: **play → watch a strong general handle red → find
+something it wanted to do that the engine could not express or the model could not see →
+either expose the data/control, or write the lesson down.** The `OPFOR-AI:` commits widen
+what red can observe and act on; the `howtoplay:` commits are the findings.
+
+### `ai-docs/howtoplay.md` is the artifact, and it needs none of his code
+
+218 lines, and most of it is **not API mechanics — it is an empirically derived doctrine
+for red**, accumulated campaign by campaign. It carries a section called *"the ten things
+that cost the most aircraft when forgotten."* A sample, all engine-agnostic and all true
+of our tree:
+
+- **Concentration of force.** "Pick 1–3 objectives and concentrate on them. **Do not** plan
+  a little bit of everything everywhere." Our HTN plans a little bit of everything
+  everywhere — that is his own diagnosis of it, quoted above.
+- **A TOT has a floor, and the launch base decides the order.** Plans build backward from
+  the TOT, so a SEAD lifting from 180 nm never precedes a strike from 40 nm whatever TOT
+  you set; asking for an impossible-early time floors it and can drop a push trigger into
+  the past so the flight never launches. Stagger from each package's *floor*, not from
+  zero.
+- **Time the strikes into the player's actual mission window.** Aim every TOT inside
+  `desired_player_mission_duration` — a TOT after it is wasted, because the mission is over
+  before it happens. Concentrate in time, not only in space. **Nothing in our tree does
+  this for red**; §69 and §89 are the blue-side and pre-roll analogues.
+- **DEAD before CAS, for the same reason as DEAD before strike** — the front-line
+  sandwich: CAS descends to acquire and eats MANPADS, climbs to escape and enters the area
+  SAM ring, with no safe altitude between.
+- **Route helos over land, never open water** — nap-of-earth masks a helo in ground
+  clutter; over sea it is engaged like any other contact.
+
+### Why this reopens seam 7 as a question of method
+
+Seam 7 is DROPPED after three framings and three Phase 0s that each **asked analytically
+whether red had headroom and measured none**. His method asks it empirically: put a strong
+general in the seat, and the delta between what it does and what the HTN does *is* the
+headroom. `howtoplay.md` is the transcript of that delta.
+
+That is a genuinely different instrument from the three that failed, and it is the reason
+to keep watching this — **not** the prospect of shipping an LLM in our tree.
+
+**What this does NOT license.** It is not evidence that adopting `game/agent/` is right,
+and it does not lift the seam-7 tombstone: reading a list of things a good commander does
+is not the same as showing our HTN measurably loses for want of them. Any move here still
+starts at [414th-red-brain-phase0-notes.md](414th-red-brain-phase0-notes.md) and the §55
+removal record. What changed is that a fourth Phase 0 now has a **cheap, concrete
+pre-registered card** available to it — take two or three of the doctrine points above,
+check whether our planner can express them at all, and measure one.
+
+**His own adoption timing, unchanged and in his words:** "better to wait a little until is
+more polished or even merged upstream." He is also benchmarking Grok against Claude and
+means to try Codex, so the design is model-agnostic in practice rather than tuned to one
+provider. Read the docs; do not evaluate the code for adoption yet.
+
 ## Adoption ledger
 
 ### Fixed here 2026-08-19 (found by him, verified live in our tree first)
@@ -329,11 +401,10 @@ solution unless the crew lases.
 general, need to test Codex too next campaign)… better to wait a little until is more
 polished or even merged upstream."*
 
-Two things follow. **He is running a model bake-off**, so his design is model-agnostic in
-practice and not tuned to one provider — worth knowing before seam 7 is ever reopened,
-because it means the shape survives model swaps. And **he has told us the adoption
-timing himself**: not yet, wait for polish or an upstream merge. Do not evaluate
-`game/agent/` for adoption before then; do keep reading its design docs.
+What that quote is evidence *of* is worked through above under
+[How he actually uses it](#how-he-actually-uses-it--a-testbed-not-just-an-opponent-corrected-2026-08-24)
+— it is a testbed, and `ai-docs/howtoplay.md` is the artifact worth reading. Do not
+evaluate `game/agent/` for adoption yet; do read its docs.
 
 ## Running the watch
 

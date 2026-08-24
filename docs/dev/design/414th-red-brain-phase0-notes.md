@@ -278,6 +278,29 @@ save and emit a package list, which does not require juanjux's service layer to 
 `tools/measure_red_axis_persistence.py` from the first framing. Any successor question needs the
 same candidate-target and task-mix mapping, and it should not be improvised per run.
 
+## 2026-08-24 — the method changed, the verdict did not
+
+Framing 3 measured the LLM commander the same way as framings 1 and 2: **analytically, asking
+whether red had headroom**, and finding none. The 2026-08-24 read of juanjux's fork found that
+he is not running his LLM as an opponent to be measured — he runs it as a **testbed**, one loop
+per campaign: play, watch a strong general handle red, find something it wanted to do that the
+engine could not express, then either expose the data or write the lesson down. The lessons
+accumulate in `ai-docs/howtoplay.md` (218 lines), which is an empirically derived doctrine for
+red and needs none of his code to read.
+
+Several of its points name things our planner does not do at all — concentration of force on
+1–3 objectives rather than a little of everything; aiming red's TOTs inside the player's actual
+mission window; DEAD before CAS for the front-line sandwich. **That is a different instrument
+from the three that failed here**, because it produces candidate defects to test rather than a
+single aggregate measure that keeps coming back flat.
+
+**This does not lift the drop.** A list of things a good commander does is not evidence our HTN
+measurably loses for want of them, and no measurement has been run. What it provides is a
+cheaper pre-registered card for any fourth attempt: take two or three named doctrine points,
+check whether our planner can express them at all, and measure exactly one. Full record and the
+quoted doctrine in
+[414th-juanjux-fork-watch-notes.md](414th-juanjux-fork-watch-notes.md).
+
 ## The correction this note also carries
 
 `CLAUDE.md` described seams "2, 5 and 7" as *accepted, not started*. Seam 7 has been **dropped**

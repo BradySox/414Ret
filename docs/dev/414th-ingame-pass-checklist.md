@@ -140,7 +140,7 @@ stress it · `✗` fail signature reproduced in-game.
 | B87 | A stand-off shooter starts its run at its own launch range | §8 | ☑ |
 | B89 | Region priorities: the CP-dialog control shifts the ATO | §93 | ☑ |
 | B90 | A steerpoint's elevation is the ground under it | §74 | ☐ |
-| B91 | The F-14B(U) spawns with its cartridge loaded | §74 | ☐ |
+| B91 | The F-14B(U) spawns with its cartridge loaded | §74 | ☑ |
 | B92 | A rescued marker belongs to the base it sits next to | campaign loading | ☐ |
 | B93 | The front line sits on ground the armour can hold | §90 | ☐ |
 | B94 | Editing a faction mid-campaign reaches the buy menus | juanjux #953 | ☐ |
@@ -5693,7 +5693,7 @@ turn on a wing with a small dedicated-jammer squadron and read the ATO before fl
 - **Pass:** you make the briefed taxi time on a normal unhurried start in all three. The Phantom's 9 minutes should feel close but sufficient — its gyros alone eat most of it.
 - **Fail signature:** you are still in the chocks when the package is due to taxi, which means the number is too tight and the note's inferred ~2-minute systems window is wrong. Record the stopwatch figure — a measurement replaces the arithmetic outright. The opposite signature also matters: arriving at the hold-short with minutes to spare means the value is generous and the whole exercise bought nothing.
 
-### B91 — The F-14B(U) spawns with its cartridge loaded · §74 · ☐ UNTESTED
+### B91 — The F-14B(U) spawns with its cartridge loaded · §74 · ☑ VERIFIED
 
 **History:** built 2026-08-22. Fork-only — upstream ships no DTC. Mined from
 `CoreMods/aircraft/F14/DTC/F-14BU_DTC.lua`; design note
@@ -5702,7 +5702,21 @@ turn on a wing with a small dedicated-jammer squadron and read the ATO before fl
 > The Tomcat is the first §74 airframe whose schema is not the Hornet's, and the
 > first whose navigation plan 1 already belongs to the mission route — so the
 > cartridge carries references, pre-planned JDAM points and the TIS list rather
-> than steerpoints. None of it has been read in a cockpit.
+> than steerpoints.
+
+**VERIFIED in the cockpit 2026-08-23, DM: "F14 data cart is confirmed good and
+loading."** The squadron also supplied the vocabulary that confirms the central
+design call: **"Route 1 should be the mission editor route. Route 2 is the first
+one we can mess with."** That is exactly the split the builder was written to —
+plan 1 left to the miz route, plan 2 ours — arrived at from the descriptor
+(`updateNAVPlanEditability` greys plan 1's fields) and an authored cartridge, and
+now confirmed by the people who fly it.
+
+**Still unobserved, and worth a glance on any later Tomcat sortie** — none of it
+blocks the row, and each is listed under "Watch for" below: the HUD pentagon
+(`XST`), the A2A bullseye readout (`XB`), the threat axis (`XHA`), a CAP's
+defended point (`XDP`), the LANTIRN store (`XL`), and whether the single altitude
+field wants the ground or the planned height.
 
 **Already done, on paper:** the emitted JSON was diffed against a hand-authored
 F-14B(U) cartridge (the training-night package) and every section's key set matches,
@@ -5743,9 +5757,9 @@ Then fly one: F-14B(U) client flight on a campaign that fields it
   the jet reads is not the one we favour. NAV elevations are feet and JDAM
   elevations are metres; a systematic 3.28 ratio means one of the two got the
   other's unit.
-- **Fail signature — the route is missing:** plan 1 should come from the ME route
-  and plan 2 is ours. If plan 1 is empty in the jet, the mission route is not
-  reaching it and plan 2 is the only one that works — record which plan flew.
+- **Answered 2026-08-23:** plan 1 is the mission editor's route and plan 2 is the
+  first one the crew can edit — the squadron's own words. The builder's split is
+  correct and is not to be revisited.
 - **Watch for — the HUD and TID codes:** with the cartridge loaded, the first
   target should be highlighted with a pentagon on the HUD (`XST`), and in A2A the
   bullseye's bearing and range should show on the HUD (`XB`, carried on an

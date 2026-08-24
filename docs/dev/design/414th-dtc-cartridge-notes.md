@@ -709,10 +709,16 @@ express:
 Plan 1's `name` is left empty on purpose: the editor labels it "1: ME Route"
 while it is, and naming it would hide that.
 
-**Plan 2 is the flown route**, named `ROUTE 1` with `route_as_line = true`. That
-is not a guess: the ED-authored cartridge checked against (below) does exactly
-this, and its waypoints carry TOTs with `spd = 0` and names ending in the jet's
-codes. The reference layer is repeated on plan 2 so selecting it loses nothing.
+**Plan 2 is the flown route**, with `route_as_line = true`. That is not a guess:
+the ED-authored cartridge checked against (below) does exactly this, and its
+waypoints carry TOTs with `spd = 0` and names ending in the jet's codes. The
+reference layer is repeated on plan 2 so selecting it loses nothing.
+
+**Confirmed by the squadron, 2026-08-23** — "Route 1 should be the mission editor
+route. Route 2 is the first one we can mess with." Three independent sources now
+agree on the split: the descriptor (`updateNAVPlanEditability` greys plan 1's
+waypoint fields), the authored cartridge (plan 1 empty-named with zero waypoints,
+the route on plan 2), and the crews. Do not revisit it.
 
 ### Units and exclusivity — the two traps
 

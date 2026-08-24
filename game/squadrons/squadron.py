@@ -114,6 +114,13 @@ class Squadron:
         init=False, hash=False, compare=False, default=False
     )
 
+    #: The same one-shot latch for RECOVERY. Separate from the CSAR flag so an
+    #: existing save gains recovery tanking without also being re-opted into
+    #: CSAR it may have been turned off.
+    recovery_auto_assign_seeded: bool = field(
+        init=False, hash=False, compare=False, default=False
+    )
+
     def __setstate__(self, state: dict[str, Any]) -> None:
         if "id" not in state:
             state["id"] = uuid4()
@@ -138,6 +145,8 @@ class Squadron:
         if "csar_auto_assign_seeded" not in state:
             # Pre-CSAR save: let the migrator opt this squadron in once.
             state["csar_auto_assign_seeded"] = False
+        if "recovery_auto_assign_seeded" not in state:
+            state["recovery_auto_assign_seeded"] = False
         self.__dict__.update(state)
 
     def __str__(self) -> str:
@@ -239,6 +248,24 @@ class Squadron:
         """
         if self.capable_of(FlightType.CSAR):
             self.auto_assignable_mission_types.add(FlightType.CSAR)
+
+    def enable_recovery_if_capable(self) -> None:
+        """Seeds RECOVERY into the auto-assignable set for capable squadrons.
+
+        Same hole CSAR fell into, found 2026-08-24 and measured: a squadron's
+        auto-assignable set is ``secondary | {primary}``, and **no campaign in
+        the tree lists Recovery** as either. So the carrier tanker squadron the
+        campaign authored was capable of it, was sat on the boat with dozens of
+        aircraft recovering, and was never offered the tasking -- which made the
+        whole recovery-tanker path (``RecoverySupport``, the carrier-ETA queue at
+        the end of ``schedule_missions``, ``aircraft_per_recovery_tanker``) dead
+        in practice. Kept out of ``set_auto_assignable_mission_types`` for the
+        same reason CSAR is: that is what the Air Wing dialog applies the
+        player's explicit choices with, so forcing it there would make it
+        impossible to turn off.
+        """
+        if self.capable_of(FlightType.RECOVERY):
+            self.auto_assignable_mission_types.add(FlightType.RECOVERY)
 
     def claim_new_pilot_if_allowed(self) -> Optional[Pilot]:
         if self.pilot_limits_enabled:

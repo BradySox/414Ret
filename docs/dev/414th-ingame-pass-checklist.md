@@ -25,7 +25,7 @@ so the two docs don't drift.
 
 ## Outstanding rows at a glance
 
-70 rows need a live pass. Full detail is under each `###` heading below —
+71 rows need a live pass. Full detail is under each `###` heading below —
 search the row id. `☐` untested · `◐` flown but not under the conditions that
 stress it · `✗` fail signature reproduced in-game.
 
@@ -58,6 +58,7 @@ stress it · `✗` fail signature reproduced in-game.
 | G41 | A bombed power station keeps its SAMs down on the NEXT turn | MANTIS C2 | ☐ |
 | B84 | Front-line groups move and return fire instead of holding | §8 | ☑ |
 | B85 | A flight with an unreachable TOT flies instead of orbiting | §8 | ☐ |
+| B98 | A carrier launches a recovery tanker before its jets come home | §8 | ☐ |
 | G25 | Armed Recon package: recon drone + SEAD Viper escort + 4-ship sweep | §3 | ◐ |
 | G30 | MANTIS SHORAD link: the point defense ambushes the HARM shot | MANTIS migration | ☐ |
 | G33 | Survivor ADF beacon: the pinned 260 kHz drives a real needle | CSAR (upstream #929 + 414th pin) | ☐ |
@@ -6162,3 +6163,34 @@ mountain or coastal front will do.
   4. **The front line between two affected bases jumps** — ownership feeds base
      strength, so an 8-object swing is worth a look on Desert Trident's Jordan
      sector specifically.
+
+### B98 — A carrier launches a recovery tanker before its jets come home · §8 · ☐ UNTESTED
+
+**History:** built 2026-08-24, planner doctrine-mining row 6. A squadron's auto-assignable
+set is `secondary | {primary}` from the campaign air-wing config, and no campaign in the tree
+lists `Recovery`, so the carrier tanker squadron was never offered the tasking and the whole
+recovery-tanker path was unreachable. Measured on three carrier saves: the tanker squadron
+was on the boat in each, its task set read `['Refueling']` every time, and zero RECOVERY
+packages were planned. After the fix, 3 on CVN-71 and 1 on CVN-75.
+
+- **What CI cannot exercise:** that the tanker is actually useful in the air — airborne on
+  station overhead the boat, at a height and offset the recovering jets can reach, with a
+  drogue they can take. The assignment and the timing are tested headless; being in the right
+  piece of sky is not.
+- **Setup:** a campaign whose blue faction fields a recovery-capable tanker (A-6E Tanker or
+  S-3B Tanker — check the faction's `tankers` list) with a carrier and enough carrier flights
+  to trip the threshold, which is `aircraft_per_recovery_tanker + 4` aircraft recovering.
+  Generate a turn and fly, or watch the boat.
+- **Pass:** a tanker is airborne overhead the carrier before the first recovery, holding a
+  racetrack, and stays up across the recovery window.
+- **Fail signatures:**
+  1. **No recovery tanker at all** — check the squadron's task list in the Air Wing dialog.
+     An existing save gets it from the migrator's one-shot latch, so a save loaded once
+     before this change and saved again should still pick it up on the next load.
+  2. **The tanker launches but arrives after the recoveries** — measured station transit was
+     5–7 minutes against the schedule's 10-minute lead on boat-based tankers, so this points
+     at a land-based recovery tanker, which the measurement never observed.
+  3. **The tanker is told to take off before it can start** — the assigned takeoff time has
+     no reachability floor, which is real in the code and did not fire on any measured save
+     because every tanker started warm, runway or in-flight (a 30-second floor). A COLD-start
+     carrier campaign is the condition that would surface it.

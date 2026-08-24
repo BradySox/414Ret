@@ -2108,6 +2108,35 @@ defect that reached a build, most of them found by flying.
   `MIN_RECOVERY_SET_ITEMS` (9 authored sets → 7 shipped), so a future measured spot prunes
   whatever it invalidates with no further authoring. The launch-phase street sets were
   already clear of all 16.
+- **The recovery tanker was never planned, in any campaign (2026-08-24).** A squadron's
+  auto-assignable set is `secondary | {primary}` from the campaign's air-wing config, and
+  **no campaign in the tree lists `Recovery` as either**. So the carrier tanker squadron a
+  campaign authored was capable of recovery tanking, sat on the boat while dozens of
+  aircraft recovered, and was never offered the tasking. The whole path was unreachable
+  in practice: `RecoverySupport`, `PlanRecovery`, `RecoveryTankerFlightPlan`, the
+  carrier-ETA queue that closes `schedule_missions`, and both settings
+  (`aircraft_per_recovery_tanker`, `max_simultaneous_recovery_tankers`).
+  - **Measured, not read.** Across three saves with carriers the tanker squadron was
+    present and on the boat every time — A-6E Tanker ×4 on CVN-71, S-3B Tanker ×2 on
+    CVN-75 — its auto-assignable set read `['Refueling']` in every case, and **zero**
+    RECOVERY packages were planned on any save or turn. After the fix: **3** on CVN-71
+    and **1** on CVN-75. The third save's faction fields no recovery-capable tanker at
+    all, so it stays at zero, correctly.
+  - **This is the third instance of one hole**, and is fixed the way the other two were.
+    TARPS and ESCORT_JAMMER are unioned into `SquadronConfig.auto_assignable` for the same
+    reason; CSAR gets `enable_csar_if_capable()` plus a one-shot migrator latch.
+    RECOVERY takes the CSAR shape — `Squadron.enable_recovery_if_capable()`, called from
+    `DefaultSquadronAssigner` for new games and from the migrator (own
+    `recovery_auto_assign_seeded` latch) for existing saves. Deliberately **not** folded
+    into `set_auto_assignable_mission_types`: that is what the Air Wing dialog applies the
+    player's explicit choices with, so seeding it there would make the tasking impossible
+    to turn off.
+  - **Almost certainly upstream's bug too** — the base `secondary | {primary}` rule is
+    upstream's and upstream campaigns do not list Recovery either. Not carved (the PR
+    freeze); worth an inventory row.
+  - Found by the planner doctrine-mining queue while trying to measure row 6, which could
+    not be measured because the packages did not exist. Tests
+    `tests/test_recovery_tanker_assignment.py`. Needs an in-game pass (checklist **B98**).
 
 ### Helicopters
 

@@ -90,6 +90,9 @@ class DefaultSquadronAssigner:
                 # Air Wing configuration dialog. Done before the wing-growth branch
                 # below so a scheduled arrival is opted in the same way.
                 squadron.enable_csar_if_capable()
+                # Same hole: no campaign lists Recovery as a primary or secondary
+                # task, so the carrier tanker squadron was never offered it.
+                squadron.enable_recovery_if_capable()
                 self.air_wing.add_squadron(squadron)
 
     def find_squadron_for(

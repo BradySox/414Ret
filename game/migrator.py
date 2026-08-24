@@ -222,6 +222,13 @@ class Migrator:
                 if not s.csar_auto_assign_seeded:
                     s.enable_csar_if_capable()
                     s.csar_auto_assign_seeded = True
+
+                # The same one-time opt-in for RECOVERY, on its own latch so a
+                # save gains recovery tanking without being re-opted into CSAR.
+                try_set_attr(s, "recovery_auto_assign_seeded", False)
+                if not s.recovery_auto_assign_seeded:
+                    s.enable_recovery_if_capable()
+                    s.recovery_auto_assign_seeded = True
         # SquadronDefs
         for coa in self.game.coalitions:
             for ac, sdefs in coa.air_wing.squadron_defs.items():

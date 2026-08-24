@@ -32,7 +32,7 @@ What changed, and why each was forced rather than chosen:
 
 ---
 
-## The two traps, both of which bit
+## The three traps, all of which bit
 
 ### 1. A missing airframe does not fail — it substitutes, badly
 
@@ -72,14 +72,39 @@ aircraft needing a stand of that class or smaller must total ≤ `k`. `test_iron
 against fixed-wing parking will call a FOB helicopter squadron oversubscribed when it is not;
 the rotary pool is the one that applies.
 
+### 3. A squadron that names its own airframe has no identity at all
+
+A campaign entry's `aircraft:` list holds **squadron preset names**, not aircraft types. Put
+the type there and it matches no preset, so the squadron flies with **no name, no nickname
+and no livery** — and nothing warns. Two of Iron Gate's blue squadrons shipped that way:
+
+| squadron | was | now |
+|---|---|---|
+| A-10C, Kobuleti | `A-10C Thunderbolt II (Suite 7)` — its own type | **81st FS "Termites"**, Spangdahlem |
+| OH-58D, Kutaisi | `Taiwanese Army`, CJTF Blue, livery `TWN Army Fictional` | **1-17 Cavalry "Saber"**, livery `US 1-17 A 002` |
+
+The Kiowa case is the nastier one, because it *looks* right — it names a real preset that
+really exists. It was a Taiwanese unit with a fictional livery in a US-led coalition, and it
+also carried `country: Combined Joint Task Forces Blue`, which costs the §23 US voiceovers and
+pilot names every other squadron in the campaign gets.
+
+`Bluefor Modern` is a CJTF faction, so `SquadronDefLoader` does **no country filtering** and
+every preset in the repo is reachable. That is why the wrong nation resolved happily.
+
+`test_every_blue_squadron_is_a_real_unit` locks it: no blue squadron may name its own type,
+every name must exist as a preset, and that preset must fly that airframe. **The E-2D is the
+one documented exception** — no Hawkeye preset exists anywhere in `resources/squadrons`, so
+the carrier's Hawkeye has nothing to be named after.
+
 ---
 
 ## The laydown
 
 | base | stands | used | squadrons |
 |---|---|---|---|
-| **Kutaisi** | 58 | 37 | A-10C Suite 7 12, UH-1H 6, OH-58D Kiowa 6, AH-64D 6, CH-47F 5, C-130J-30 2 |
-| **Kobuleti** | 42 | 36 | F-15E 12, F-16CM 12, F-15C 12 |
+| **Kutaisi** | 58 | 25 | UH-1H 6, OH-58D Kiowa 6, AH-64D 6, CH-47F 5, C-130J-30 2 |
+| **Kobuleti** | 42 | 36 | F-15E 12, F-16CM 12, A-10C Suite 7 12 |
+| **Batumi** | 10 | 10 | F-15C 10 |
 | **Turkey** (off-map air spawn) | ∞ | 6 | KC-135 MPRS 2, KC-135 2, E-3A 2 |
 | **Blue CV** | 90 | 66 | F-14B 24 (VMF-29), F/A-18C 24 (VFA-113), A-6E Tanker 4, E-2D 2, F-14B(U) 12 |
 | Tbilisi-Lochini | 74 | 70 | MiG-29S 18, MiG-29A 18, Su-25 17, Su-24M 17 |
@@ -90,12 +115,27 @@ the rotary pool is the one that applies.
 | Nigniy Pasanauri FOB | 4 rotary | 4 | Mi-24V 4 |
 | Khashuri FOB | 4 rotary | 4 | Mi-24V 4 |
 
-**Blue's land-based fighters total 36 aircraft**, three full squadrons on Kobuleti's 42 stands.
-Batumi was the first choice and was dropped: ten stands is not a fighter base. Gudauta was the
-other candidate at 31 stands, but it sits 160 NM from the fighting against Kobuleti's 132, and
-102 NM from Kutaisi against 32.
+**Blue flies from three fields, and each is a different distance from the pass.** Measured to
+the turn-1 front line: **Kutaisi 27 NM, Kobuleti 55 NM, Batumi 73 NM.**
 
-**39 squadrons, 320 aircraft.** Squadrons of the same airframe at the same base are merged
+| field | holds | why |
+|---|---|---|
+| Kutaisi | the rotary wing + the Hercules | closest to the front, and its 25 helicopter stands are exactly full |
+| Kobuleti | the strike wing — F-15E, F-16CM, A-10C | 42 stands, the only field that fits three fixed-wing squadrons |
+| Batumi | the F-15C, and only the F-15C | **ten stands, ten aircraft** — the squadron cannot be sized above 10 |
+
+Batumi was dropped once and brought back (2026-08-23, DM call). Ten stands is not a base for
+three squadrons, which is what the first attempt tried; it is a fine base for one. **Gudauta
+stays out** — 31 stands, but it sits behind both and a tanker that never lands needs no ramp
+at all.
+
+**The Warthogs moved back to Kobuleti and it costs them about six minutes each way** (27 NM to
+55 NM, ~5 to ~11 at 300 kt). Kutaisi keeps them within reach of nothing else it could hold:
+the 25 helicopter-capable stands were already full, so vacating twelve *fixed-wing* stands
+frees nothing for the rotary squadrons. **Kutaisi now runs 25 of 58** — 33 idle stands that
+only another fixed-wing squadron could use.
+
+**39 squadrons, 318 aircraft.** Squadrons of the same airframe at the same base are merged
 rather than duplicated — two MiG-31 flights at Mineralnye Vody are one squadron of 8, not two
 of 4. Where the pair had different primaries the second becomes a `secondary:`, so the merge
 never costs a role: Mozdok's Su-24M is SEAD with Strike secondary, Tbilisi's Su-25 is BAI with
@@ -172,33 +212,36 @@ here says a full ramp is safe either — it says this test did not test it. If i
 suspected again, the discriminator is the activation time in the miz's `trigrules`, not the
 track span.
 
-### The 3 h 45 m ATO was a setting, not the campaign
+### The long ATO is one setting, and it is measured
 
 The first flight scheduled activations out to **13,517 s (3 h 45 m)** against a ~62 min
-mission, so 8 of blue's 37 activations never fired. Chased to the end; **nothing to fix in
-the campaign or the code.**
+mission, so 8 of blue's 37 never fired. Chased to the end; **nothing to fix in the campaign
+or the code.**
 
-Two settings, both moved off their defaults in that save, multiply together:
+`barcap_rounds = ceil(mission_duration / (barcap_duration - overlap))`, and a **fleet control
+point doubles it**. The doubling is only half a mechanism:
+`max_carrier_simultaneous_barcaps` is what turns the extra rounds into *pairs on station
+together* rather than more waves in sequence, and at **1** it never stacks —
+`count >= max - 1` is `count >= 0`, true for the first package, so every wave advances the
+handover instead of joining the current one.
 
-| setting | that save | default |
-|---|---|---|
-| Desired mission duration | 100 min | 60 |
-| BARCAP overlap time | 15 min | 0 |
-| Max simultaneous carrier BARCAP waves | **1** | **2** |
+Measured on `Maybe 414.retribution` (turn 1, 100-min mission, overlap 0, 19 blue packages),
+re-planning blue at each value:
 
-`barcap_rounds = ceil(mission_duration / (barcap_duration - overlap))`, and a fleet control
-point doubles it. 100 min over 45 min of fresh coverage is 3 rounds, doubled to 6 for the
-carrier.
+| `max_carrier_simultaneous_barcaps` | carrier BARCAPs | last TOT | packages past the mission |
+|---|---|---|---|
+| **1** (that save) | 4 singles at 4/64/124/184 min | 184 min | **3 of 19** |
+| **2** (the default) | 4 in two pairs at 3/4/64/64 min | **95 min** | **0 of 19** |
+| 3 | 3/3/4/64 min | 102 min | 1 of 19 |
 
-**The doubling is only half a mechanism.** `max_carrier_simultaneous_barcaps` is what turns
-the extra rounds into *pairs on station together* rather than more waves in sequence, and at
-**1** it never stacks: `count >= max - 1` is `count >= 0`, true for the first package, so
-every wave advances the handover. Six singles at 0/45/89/135/180/225 min. At the default 2,
-the same six become **three pairs at 0/45/89** and the window collapses to about the mission
-length.
+At the default the whole ATO fits inside the mission and the last package is a DEAD, not a
+BARCAP. **This one setting is the entire effect** — every non-carrier package finishes by
+95 min at any value.
 
-Overlap compounds it in the same direction: it does not add cover on top, it *shortens* each
-wave's fresh coverage, which is what took the round count from 2 to 3.
+Overlap pushes the same way when it is non-zero: it does not add cover on top, it *shortens*
+each wave's fresh coverage, so more waves get planned. The flown mission had it at 15 min,
+which is why that ATO reached 225 min where this save's reaches 184. It is a multiplier on
+the problem, not its cause.
 
 So a carrier campaign wants `max_carrier_simultaneous_barcaps` at 2 or more. Iron Gate
 preseeds neither setting and should not — they are doctrine, not campaign content.

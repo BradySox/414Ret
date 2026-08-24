@@ -21,6 +21,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+import yaml
 
 from game import persistency
 from game.campaignloader.campaign import Campaign
@@ -34,15 +35,22 @@ PLOBS = Path("resources/campaigns/northern_russia.yaml")
 BLUE_FIELDS = {"Kutaisi", "Kobuleti"}
 AIR_SPAWN = "Turkey"
 RED_FIELDS = {"Beslan", "Mineralnye Vody", "Mozdok", "Nalchik", "Tbilisi-Lochini"}
-#: Kutaisi is the A-10 and helicopter base; the fast jets are pushed back to Batumi.
-#: The LHA was dropped and its Apaches and Chinooks came ashore here.
+#: Kutaisi is the rotary field -- nothing fixed-wing but the Hercules. The Warthogs
+#: went back to Kobuleti with the rest of the strike wing and the Eagles to Batumi,
+#: so all 25 of Kutaisi's helicopter-capable stands are helicopters plus the Herc.
 KUTAISI_TYPES = {
-    "A-10C Thunderbolt II (Suite 7)",
     "UH-1H Iroquois",
     "OH-58D(R) Kiowa Warrior",
     "C-130J-30",
     "AH-64D Apache Longbow",
     "CH-47F Block I",
+}
+#: Batumi has exactly ten stands, so the squadron there can never exceed ten.
+BATUMI_TYPES = {"F-15C Eagle"}
+KOBULETI_TYPES = {
+    "F-15E Strike Eagle (Suite 4+)",
+    "F-16CM Fighting Falcon (Block 50)",
+    "A-10C Thunderbolt II (Suite 7)",
 }
 
 
@@ -76,17 +84,16 @@ def test_the_era_and_the_enemy_match(loaded: tuple[Campaign, ConflictTheater]) -
     assert campaign.recommended_enemy_faction == "Russia 2020"
 
 
-def test_blue_flies_from_two_fields_and_an_air_spawn(
+def test_blue_flies_from_three_fields_and_an_air_spawn(
     loaded: tuple[Campaign, ConflictTheater],
 ) -> None:
     _, theater = loaded
     blue = {cp.name for cp in theater.controlpoints if cp.starting_coalition.is_blue}
     assert BLUE_FIELDS <= blue
     assert AIR_SPAWN in blue
-    # Batumi and Gudauta were both tried and dropped: Batumi has ten stands,
-    # Gudauta thirty-one against Kobuleti's forty-two and a longer transit.
+    # Gudauta was dropped for the air spawn: a tanker that never lands needs no ramp.
     names = {cp.name for cp in theater.controlpoints}
-    assert "Gudauta" not in names and "Batumi" not in names
+    assert "Gudauta" not in names
     spawn = theater.control_point_named(AIR_SPAWN)
     assert isinstance(spawn, OffMapSpawn)
 
@@ -152,3 +159,58 @@ def test_no_base_oversubscribes_a_stand_class(
                 f"{cp.name}: {needed} aircraft need a stand of class {capacity} "
                 f"or smaller, but only {capacity} such stands exist"
             )
+
+
+def test_the_strike_wing_and_the_eagles_split_two_fields(
+    loaded: tuple[Campaign, ConflictTheater],
+) -> None:
+    campaign, theater = loaded
+    config = campaign.load_air_wing_config(theater)
+    for field, expected in (("Kobuleti", KOBULETI_TYPES), ("Batumi", BATUMI_TYPES)):
+        cp = theater.control_point_named(field)
+        flown = {s.aircraft_type or s.aircraft[0] for s in config.by_location[cp]}
+        assert flown == expected, (field, flown)
+
+
+#: The E-2D ships no squadron preset anywhere in `resources/squadrons`, so the carrier's
+#: Hawkeye squadron has nothing to name itself after and falls back to the type name.
+#: That is a content gap in the repo, not a campaign defect -- listed so the guard below
+#: stays meaningful instead of being switched off.
+NO_PRESET_EXISTS = {"E-2D Advanced Hawkeye"}
+
+
+def test_every_blue_squadron_is_a_real_unit(
+    loaded: tuple[Campaign, ConflictTheater],
+) -> None:
+    """No blue squadron may fall back to its own type name.
+
+    A campaign entry whose ``aircraft:`` repeats the ``aircraft_type`` gets no
+    name, no nickname and no livery -- the squadron flies as a bare airframe.
+    Both of the campaign's original offenders looked fine in the yaml: the
+    Warthogs named the type, and the Kiowas named a Taiwanese preset carrying a
+    *fictional* livery in a US-led coalition.
+    """
+    presets: dict[str, set[str]] = defaultdict(set)
+    for path in Path("resources/squadrons").rglob("*.yaml"):
+        data = yaml.safe_load(path.read_text(encoding="utf-8"))
+        if data and "name" in data and "aircraft" in data:
+            presets[str(data["name"])].add(str(data["aircraft"]))
+
+    campaign, theater = loaded
+    config = campaign.load_air_wing_config(theater)
+    for cp, squadrons in config.by_location.items():
+        if not cp.starting_coalition.is_blue:
+            continue
+        for squadron in squadrons:
+            kind = squadron.aircraft_type or squadron.aircraft[0]
+            for named in squadron.aircraft:
+                if named in NO_PRESET_EXISTS:
+                    continue
+                assert named != kind, (
+                    f"{cp.name}: the {kind} squadron names its own type instead of "
+                    f"a unit, so it flies with no name, nickname or livery"
+                )
+                assert named in presets, f"{cp.name}: no preset named {named!r}"
+                assert (
+                    kind in presets[named]
+                ), f"{cp.name}: preset {named!r} does not fly the {kind}"

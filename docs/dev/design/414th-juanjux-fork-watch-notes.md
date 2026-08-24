@@ -208,15 +208,60 @@ of our tree:
 - **Route helos over land, never open water** — nap-of-earth masks a helo in ground
   clutter; over sea it is engaged like any other contact.
 
-### Why this reopens seam 7 as a question of method
+### How the loop actually runs — and what it is NOT
 
-Seam 7 is DROPPED after three framings and three Phase 0s that each **asked analytically
-whether red had headroom and measured none**. His method asks it empirically: put a strong
-general in the seat, and the delta between what it does and what the HTN does *is* the
-headroom. `howtoplay.md` is the transcript of that delta.
+**It is live, whole-campaign, and there is no A/B against the scripted planner.** Worth
+stating because the obvious guess — generate a campaign, save turn 0, hand it to an agent,
+compare the plan to stock — is wrong on every clause:
 
-That is a genuinely different instrument from the three that failed, and it is the reason
-to keep watching this — **not** the prospect of shipping an LLM in our tree.
+- **Live over HTTP, never a save.** A headless save-file mode was in early drafts and is
+  explicitly **out**: the Qt app already runs FastAPI in-process against the live `Game`,
+  and the agent talks to that.
+- **The whole campaign, not one turn.** The human says "your turn" in chat, the agent
+  plans red, and **Take Off is blocked until it finishes**. Six campaigns end to end.
+- **Stock red never runs alongside it.** When the AI is on, the engine does not auto-plan
+  red at all — the scripted `TheaterCommander` is a *fallback* for when the agent is
+  absent, errors or times out. There is a dev-only "review-only" mode that generates a
+  plan and applies nothing, and he calls it a test aid, not a product mode.
+
+**So no measured delta between LLM-red and HTN-red exists anywhere.** An earlier revision
+of this note said the delta "is the headroom" and that `howtoplay.md` is "the transcript
+of that delta." That was wrong — nobody has run the comparison, him included.
+
+### What `howtoplay.md` actually is: a requirements list
+
+It is the set of things a strong general had to be **told** in order to play this engine
+well. Each line is one of four things, and only the third is worth our time:
+
+1. an engine rule the scripted planner already honours — no action;
+2. an engine defect or missing read/control — his papercuts, which he fixes and we harvest;
+3. **something a competent commander does that our planner cannot express** — a planner gap;
+4. genuine judgement that should stay with a human.
+
+That is not evidence of headroom and it does not lift the seam-7 tombstone. It is a much
+cheaper source of **candidates** than another analytic sweep, because each candidate is
+already stated as a concrete behaviour rather than an aggregate that comes back flat.
+
+### The standing direction here (DM, 2026-08-24)
+
+> "Long term I don't want the LLM planning red, I wanna use the LLM to teach the
+> model/Retribution to plan better."
+
+So the programme is **category 3, mined offline**: read the playbook, find what our planner
+cannot express, and build those as ordinary Python in the scripted planner. No LLM at
+runtime, no API, no adoption of `game/agent/`, no dependency on his fork beyond reading a
+markdown file. The LLM is the instrument that found the requirement; it is not part of the
+product.
+
+**First confirmed gap, found this way, 2026-08-24.** His doctrine says the front-line
+sandwich makes CAS need suppression exactly as a strike does — CAS descends to acquire and
+eats MANPADS, climbs to escape and enters the area-SAM ring, with no safe altitude between.
+Our §69 `COORDINATED_STRIKE_TYPES` is `{STRIKE, BAI, OCA_RUNWAY, OCA_AIRCRAFT}` — **`CAS` is
+absent**, and nothing else in `game/commander/` times CAS behind a suppressor. The
+docstring names Armed Recon and Air Assault as deliberate exclusions and does not mention
+CAS, so this reads as an oversight rather than a decision. Not yet fixed; needs the
+same check §69 got (does the CAS target sit inside a ring a SEAD/DEAD package is servicing)
+and a flown pass before it counts.
 
 **What this does NOT license.** It is not evidence that adopting `game/agent/` is right,
 and it does not lift the seam-7 tombstone: reading a list of things a good commander does

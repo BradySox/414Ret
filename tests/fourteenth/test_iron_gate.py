@@ -34,15 +34,22 @@ PLOBS = Path("resources/campaigns/northern_russia.yaml")
 BLUE_FIELDS = {"Kutaisi", "Kobuleti"}
 AIR_SPAWN = "Turkey"
 RED_FIELDS = {"Beslan", "Mineralnye Vody", "Mozdok", "Nalchik", "Tbilisi-Lochini"}
-#: Kutaisi is the A-10 and helicopter base; the fast jets are pushed back to Batumi.
-#: The LHA was dropped and its Apaches and Chinooks came ashore here.
+#: Kutaisi is the rotary field -- nothing fixed-wing but the Hercules. The Warthogs
+#: went back to Kobuleti with the rest of the strike wing and the Eagles to Batumi,
+#: so all 25 of Kutaisi's helicopter-capable stands are helicopters plus the Herc.
 KUTAISI_TYPES = {
-    "A-10C Thunderbolt II (Suite 7)",
     "UH-1H Iroquois",
     "OH-58D(R) Kiowa Warrior",
     "C-130J-30",
     "AH-64D Apache Longbow",
     "CH-47F Block I",
+}
+#: Batumi has exactly ten stands, so the squadron there can never exceed ten.
+BATUMI_TYPES = {"F-15C Eagle"}
+KOBULETI_TYPES = {
+    "F-15E Strike Eagle (Suite 4+)",
+    "F-16CM Fighting Falcon (Block 50)",
+    "A-10C Thunderbolt II (Suite 7)",
 }
 
 
@@ -76,17 +83,16 @@ def test_the_era_and_the_enemy_match(loaded: tuple[Campaign, ConflictTheater]) -
     assert campaign.recommended_enemy_faction == "Russia 2020"
 
 
-def test_blue_flies_from_two_fields_and_an_air_spawn(
+def test_blue_flies_from_three_fields_and_an_air_spawn(
     loaded: tuple[Campaign, ConflictTheater],
 ) -> None:
     _, theater = loaded
     blue = {cp.name for cp in theater.controlpoints if cp.starting_coalition.is_blue}
     assert BLUE_FIELDS <= blue
     assert AIR_SPAWN in blue
-    # Batumi and Gudauta were both tried and dropped: Batumi has ten stands,
-    # Gudauta thirty-one against Kobuleti's forty-two and a longer transit.
+    # Gudauta was dropped for the air spawn: a tanker that never lands needs no ramp.
     names = {cp.name for cp in theater.controlpoints}
-    assert "Gudauta" not in names and "Batumi" not in names
+    assert "Gudauta" not in names
     spawn = theater.control_point_named(AIR_SPAWN)
     assert isinstance(spawn, OffMapSpawn)
 
@@ -152,3 +158,14 @@ def test_no_base_oversubscribes_a_stand_class(
                 f"{cp.name}: {needed} aircraft need a stand of class {capacity} "
                 f"or smaller, but only {capacity} such stands exist"
             )
+
+
+def test_the_strike_wing_and_the_eagles_split_two_fields(
+    loaded: tuple[Campaign, ConflictTheater],
+) -> None:
+    campaign, theater = loaded
+    config = campaign.load_air_wing_config(theater)
+    for field, expected in (("Kobuleti", KOBULETI_TYPES), ("Batumi", BATUMI_TYPES)):
+        cp = theater.control_point_named(field)
+        flown = {s.aircraft_type or s.aircraft[0] for s in config.by_location[cp]}
+        assert flown == expected, (field, flown)

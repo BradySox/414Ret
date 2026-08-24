@@ -78,8 +78,9 @@ the rotary pool is the one that applies.
 
 | base | stands | used | squadrons |
 |---|---|---|---|
-| **Kutaisi** | 58 | 37 | A-10C Suite 7 12, UH-1H 6, OH-58D Kiowa 6, AH-64D 6, CH-47F 5, C-130J-30 2 |
-| **Kobuleti** | 42 | 36 | F-15E 12, F-16CM 12, F-15C 12 |
+| **Kutaisi** | 58 | 25 | UH-1H 6, OH-58D Kiowa 6, AH-64D 6, CH-47F 5, C-130J-30 2 |
+| **Kobuleti** | 42 | 36 | F-15E 12, F-16CM 12, A-10C Suite 7 12 |
+| **Batumi** | 10 | 10 | F-15C 10 |
 | **Turkey** (off-map air spawn) | ∞ | 6 | KC-135 MPRS 2, KC-135 2, E-3A 2 |
 | **Blue CV** | 90 | 66 | F-14B 24 (VMF-29), F/A-18C 24 (VFA-113), A-6E Tanker 4, E-2D 2, F-14B(U) 12 |
 | Tbilisi-Lochini | 74 | 70 | MiG-29S 18, MiG-29A 18, Su-25 17, Su-24M 17 |
@@ -90,12 +91,27 @@ the rotary pool is the one that applies.
 | Nigniy Pasanauri FOB | 4 rotary | 4 | Mi-24V 4 |
 | Khashuri FOB | 4 rotary | 4 | Mi-24V 4 |
 
-**Blue's land-based fighters total 36 aircraft**, three full squadrons on Kobuleti's 42 stands.
-Batumi was the first choice and was dropped: ten stands is not a fighter base. Gudauta was the
-other candidate at 31 stands, but it sits 160 NM from the fighting against Kobuleti's 132, and
-102 NM from Kutaisi against 32.
+**Blue flies from three fields, and each is a different distance from the pass.** Measured to
+the turn-1 front line: **Kutaisi 27 NM, Kobuleti 55 NM, Batumi 73 NM.**
 
-**39 squadrons, 320 aircraft.** Squadrons of the same airframe at the same base are merged
+| field | holds | why |
+|---|---|---|
+| Kutaisi | the rotary wing + the Hercules | closest to the front, and its 25 helicopter stands are exactly full |
+| Kobuleti | the strike wing — F-15E, F-16CM, A-10C | 42 stands, the only field that fits three fixed-wing squadrons |
+| Batumi | the F-15C, and only the F-15C | **ten stands, ten aircraft** — the squadron cannot be sized above 10 |
+
+Batumi was dropped once and brought back (2026-08-23, DM call). Ten stands is not a base for
+three squadrons, which is what the first attempt tried; it is a fine base for one. **Gudauta
+stays out** — 31 stands, but it sits behind both and a tanker that never lands needs no ramp
+at all.
+
+**The Warthogs moved back to Kobuleti and it costs them about six minutes each way** (27 NM to
+55 NM, ~5 to ~11 at 300 kt). Kutaisi keeps them within reach of nothing else it could hold:
+the 25 helicopter-capable stands were already full, so vacating twelve *fixed-wing* stands
+frees nothing for the rotary squadrons. **Kutaisi now runs 25 of 58** — 33 idle stands that
+only another fixed-wing squadron could use.
+
+**39 squadrons, 318 aircraft.** Squadrons of the same airframe at the same base are merged
 rather than duplicated — two MiG-31 flights at Mineralnye Vody are one squadron of 8, not two
 of 4. Where the pair had different primaries the second becomes a `secondary:`, so the merge
 never costs a role: Mozdok's Su-24M is SEAD with Strike secondary, Tbilisi's Su-25 is BAI with

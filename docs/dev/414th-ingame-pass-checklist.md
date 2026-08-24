@@ -25,7 +25,7 @@ so the two docs don't drift.
 
 ## Outstanding rows at a glance
 
-69 rows need a live pass. Full detail is under each `###` heading below —
+70 rows need a live pass. Full detail is under each `###` heading below —
 search the row id. `☐` untested · `◐` flown but not under the conditions that
 stress it · `✗` fail signature reproduced in-game.
 
@@ -143,7 +143,7 @@ stress it · `✗` fail signature reproduced in-game.
 | B93 | The front line sits on ground the armour can hold | §90 | ☐ |
 | B94 | Editing a faction mid-campaign reaches the buy menus | juanjux #953 | ☐ |
 | B95 | Saving the air wing keeps both coalitions | air wing config | ☐ |
-| B96 | Iron Gate's fields fill without an aircraft losing its stand | Iron Gate | ☑ |
+| B96 | Iron Gate's fields fill without an aircraft losing its stand | Iron Gate | ◐ |
 
 ---
 
@@ -5942,7 +5942,7 @@ from a fresh New Game, not a save** — a save never took this path.
 
 ---
 
-### B96 — Iron Gate's fields fill without an aircraft losing its stand · Iron Gate · ☑ VERIFIED
+### B96 — Iron Gate's fields fill without an aircraft losing its stand · Iron Gate · ◐ PARTIAL
 
 **VERIFIED 2026-08-23** (`Tacview-20260823-181233`, 62 min of sim, 1,091 units, 238
 aircraft, `autosave.retribution` now on turn 2).
@@ -5951,6 +5951,14 @@ No field exceeded its stands and every aircraft got a slot. The Turkey off-map s
 produced air-started KC-135s, both FOBs parked their Hind squadron on pads, and the
 Hercules sat on one of Kutaisi's large stands. The nested-stand arithmetic held against a
 real mission.
+
+**The laydown changed after this flight (2026-08-23, DM call) and one field in it is
+unflown.** Batumi came back as a third blue field, the Warthogs moved Kutaisi -> Kobuleti and
+the Eagles Kobuleti -> Batumi. Kutaisi and Kobuleti were both flown at equal or greater
+occupancy than they now carry, so this row stands for them. **Batumi has never been
+generated** — ten stands, ten F-15Cs, zero slack, which is the tightest field in the campaign.
+`test_iron_gate.py` proves the arithmetic; only a generated turn proves the stands. Look at
+Batumi first on the next pass.
 
 **A false alarm worth recording, because the next reader will hit it too.** Red appears to
 fly 5 sorties out of 159 aircraft, and `CRANE DEAD` (Su-24M, Mozdok) records a track span of

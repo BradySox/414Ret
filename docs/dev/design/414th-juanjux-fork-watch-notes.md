@@ -57,8 +57,25 @@ the same verdict from different evidence — treat that as the strongest confirm
 the re-convergence call was correct, and do not re-litigate it.
 
 One thing he built and then deleted: an EW jamming flight task (his #28/#44/#45,
-reverted 2026-06-30 with backup branches). No reason is recorded in the commits.
-**Do not read this as a verdict on our §2/§77** — ask him before assuming.
+reverted 2026-06-30 with backup branches). **The reason is now recorded — found
+2026-08-24 in his README's "Halted for Now" section, not in the commits**, which is
+why the earlier "ask him before assuming" stood for as long as it did:
+
+> after a lot of in-game soak-testing, a *reliable and good* EWAR turned out to be
+> basically impossible without proper support from the DCS engine itself. The available
+> levers (scripted ROE, missile deletion, engine ECM) don't scale consistently — e.g. a
+> few jammers saturate a fleet's radar into total silence, which is neither realistic
+> nor fun.
+
+His scope was wider than ours (a dedicated EWAR flight task across EA-18G, EA-6B, Su-34,
+Mi-8 and emulated Compass Call / Su-24MP / Tornado ECR, built on upstream's `ewrj`), and
+he kept every branch — `juanjux/ew_jamming_parked` is the complete pre-removal state.
+
+**Read this before the B31 and B52 escort-jamming passes.** It is soak-test evidence
+against the *saturation* failure mode specifically, which is the one our §77 guards with
+non-stacking bubbles and a per-side jammer cap. It is not a verdict on §77 — his levers
+and ours differ — but it is the closest thing to a second opinion that exists, and it
+came from more in-game hours than we have spent on §77.
 
 ## The OPFOR-AI feature — the part we do not have
 
@@ -103,6 +120,165 @@ proposing anything here.
 
 Nothing about this is adopted. It is recorded so seam 7 has a worked precedent to
 argue with.
+
+### How he actually uses it — an engine QA harness (CORRECTED 2026-08-24, twice)
+
+**The design docs above describe a product. His use of it is a defect-finding instrument
+pointed at Retribution itself, and that is what matters to us.** This took two
+corrections to get right: the first read here treated `game/agent/` as a feature to
+evaluate for adoption; the second, on the DM's steer, called it a testbed for red
+doctrine. The doctrine half is real (below) but it is the smaller half.
+
+**In his own words, relayed 2026-08-24:**
+
+> They find problems and papercuts when using the API to play opfor, then I fix it and
+> repeat. I have used it on six campaigns already but still they find more bugs or things
+> to improve, so it'll be a while until I try to merge it upstream.
+
+An agent that must actually plan and execute a whole red turn through the API is a
+tireless, literal-minded user that exercises paths no human clicks. Six campaigns of that
+has produced a continuous stream of engine fixes.
+
+**It is stated outright in his commit messages.** On `e06b25c`, which added
+`rebuild: {force_group, turns_remaining}` because a site under construction was
+indistinguishable from a wrecked one:
+
+> Reported from a live campaign by the LLM planning red: two of its own sites had
+> vanished from every read while the human could see them being rebuilt.
+
+**The defect class is the seam between game state and any consumer that is not a human
+looking at the map.** A player never hits that one — they can *see* the works. Our own
+verification is a person flying missions against a checklist, so it cannot reach this
+layer either. We have no equivalent instrument.
+
+**This loop already feeds us and we did not know it.** The faction-editor trio adopted
+here on 2026-08-23 (his #953, checklist **B94** — the faction edit that never reached the
+buy menus, the tick boxes that removed nothing, the lists sorted by internal id) came out
+of exactly this. So did the convoy-counter and hold-release fixes. Expect the stream to
+continue for as long as he runs campaigns, and read his `[FIX]` commits after each one.
+
+**Checked here, and NOT applicable — do not re-check:** the `rebuild` defect itself
+cannot occur in our tree, because we have no multi-turn construction. §68's SAM repair is
+the instant pay-full-price flip-alive the player's own repair button does, and
+`theatergroundobject.py` / `theatergroup.py` carry no construction countdown at all. If a
+multi-turn rebuild is ever added here, this is the hole to design against: represent
+"under construction" distinctly from "dead" *in the read model*, not only on the map.
+
+### The doctrine half
+
+The other output of the same loop. Findings that are not engine bugs get written into the
+LLM's playbook instead, and his commit pattern shows both kinds landing together:
+
+```
+howtoplay: fold in the campaign-4 lessons
+howtoplay: what turn 0 is free in is time, not money
+howtoplay: stagger a BARCAP racetrack by reversing START/END
+prev_turns: what died, what killed it, and which killed which
+OPFOR-AI: each flight reports when it starts engines
+OPFOR-AI: per-flight TOT offsets, readable and settable
+```
+
+That is one loop, run per campaign: **play → watch a strong general handle red → find
+something it wanted to do that the engine could not express or the model could not see →
+either expose the data/control, or write the lesson down.** The `OPFOR-AI:` commits widen
+what red can observe and act on; the `howtoplay:` commits are the findings.
+
+### `ai-docs/howtoplay.md` is the artifact, and it needs none of his code
+
+218 lines, and most of it is **not API mechanics — it is an empirically derived doctrine
+for red**, accumulated campaign by campaign. It carries a section called *"the ten things
+that cost the most aircraft when forgotten."* A sample, all engine-agnostic and all true
+of our tree:
+
+- **Concentration of force.** "Pick 1–3 objectives and concentrate on them. **Do not** plan
+  a little bit of everything everywhere." Our HTN plans a little bit of everything
+  everywhere — that is his own diagnosis of it, quoted above.
+- **A TOT has a floor, and the launch base decides the order.** Plans build backward from
+  the TOT, so a SEAD lifting from 180 nm never precedes a strike from 40 nm whatever TOT
+  you set; asking for an impossible-early time floors it and can drop a push trigger into
+  the past so the flight never launches. Stagger from each package's *floor*, not from
+  zero.
+- **Time the strikes into the player's actual mission window.** Aim every TOT inside
+  `desired_player_mission_duration` — a TOT after it is wasted, because the mission is over
+  before it happens. Concentrate in time, not only in space. **Nothing in our tree does
+  this for red**; §69 and §89 are the blue-side and pre-roll analogues.
+- **DEAD before CAS, for the same reason as DEAD before strike** — the front-line
+  sandwich: CAS descends to acquire and eats MANPADS, climbs to escape and enters the area
+  SAM ring, with no safe altitude between.
+- **Route helos over land, never open water** — nap-of-earth masks a helo in ground
+  clutter; over sea it is engaged like any other contact.
+
+### How the loop actually runs — and what it is NOT
+
+**It is live, whole-campaign, and there is no A/B against the scripted planner.** Worth
+stating because the obvious guess — generate a campaign, save turn 0, hand it to an agent,
+compare the plan to stock — is wrong on every clause:
+
+- **Live over HTTP, never a save.** A headless save-file mode was in early drafts and is
+  explicitly **out**: the Qt app already runs FastAPI in-process against the live `Game`,
+  and the agent talks to that.
+- **The whole campaign, not one turn.** The human says "your turn" in chat, the agent
+  plans red, and **Take Off is blocked until it finishes**. Six campaigns end to end.
+- **Stock red never runs alongside it.** When the AI is on, the engine does not auto-plan
+  red at all — the scripted `TheaterCommander` is a *fallback* for when the agent is
+  absent, errors or times out. There is a dev-only "review-only" mode that generates a
+  plan and applies nothing, and he calls it a test aid, not a product mode.
+
+**So no measured delta between LLM-red and HTN-red exists anywhere.** An earlier revision
+of this note said the delta "is the headroom" and that `howtoplay.md` is "the transcript
+of that delta." That was wrong — nobody has run the comparison, him included.
+
+### What `howtoplay.md` actually is: a requirements list
+
+It is the set of things a strong general had to be **told** in order to play this engine
+well. Each line is one of four things, and only the third is worth our time:
+
+1. an engine rule the scripted planner already honours — no action;
+2. an engine defect or missing read/control — his papercuts, which he fixes and we harvest;
+3. **something a competent commander does that our planner cannot express** — a planner gap;
+4. genuine judgement that should stay with a human.
+
+That is not evidence of headroom and it does not lift the seam-7 tombstone. It is a much
+cheaper source of **candidates** than another analytic sweep, because each candidate is
+already stated as a concrete behaviour rather than an aggregate that comes back flat.
+
+### The standing direction here (DM, 2026-08-24)
+
+> "Long term I don't want the LLM planning red, I wanna use the LLM to teach the
+> model/Retribution to plan better."
+
+So the programme is **category 3, mined offline**: read the playbook, find what our planner
+cannot express, and build those as ordinary Python in the scripted planner. No LLM at
+runtime, no API, no adoption of `game/agent/`, no dependency on his fork beyond reading a
+markdown file. The LLM is the instrument that found the requirement; it is not part of the
+product.
+
+**First confirmed gap, found this way, 2026-08-24.** His doctrine says the front-line
+sandwich makes CAS need suppression exactly as a strike does — CAS descends to acquire and
+eats MANPADS, climbs to escape and enters the area-SAM ring, with no safe altitude between.
+Our §69 `COORDINATED_STRIKE_TYPES` is `{STRIKE, BAI, OCA_RUNWAY, OCA_AIRCRAFT}` — **`CAS` is
+absent**, and nothing else in `game/commander/` times CAS behind a suppressor. The
+docstring names Armed Recon and Air Assault as deliberate exclusions and does not mention
+CAS, so this reads as an oversight rather than a decision. Not yet fixed; needs the
+same check §69 got (does the CAS target sit inside a ring a SEAD/DEAD package is servicing)
+and a flown pass before it counts.
+
+**What this does NOT license.** It is not evidence that adopting `game/agent/` is right,
+and it does not lift the seam-7 tombstone: reading a list of things a good commander does
+is not the same as showing our HTN measurably loses for want of them. Any move here still
+starts at [414th-red-brain-phase0-notes.md](414th-red-brain-phase0-notes.md) and the §55
+removal record. What changed is that a fourth Phase 0 now has a **cheap, concrete
+pre-registered card** available to it — take two or three of the doctrine points above,
+check whether our planner can express them at all, and measure one.
+
+**His own adoption timing, and it is firmer than it first looked.** The opening quote was
+"better to wait a little until is more polished or even merged upstream"; the fuller
+version is six campaigns in and the agents are *still* finding bugs, so "it'll be a while
+until I try to merge it upstream." Treat that as the schedule. He is also benchmarking
+Grok against Claude and means to try Codex, so the design is model-agnostic in practice
+rather than tuned to one provider.
+
+Read the docs and harvest the fixes; do not evaluate the code for adoption yet.
 
 ## Adoption ledger
 
@@ -214,6 +390,108 @@ already #773, this is the observation half).
 |---|---|
 | Base capture zone radius (his #89) | Ours is `TRIGGER_RADIUS_CAPTURE = 3000`. He tested in-game that DCS ground AI engages T-72, BMP-2 and even an unarmed truck, but **never a ZU-23 emplacement** — so one surviving AD emplacement inside 3 km blocks a capture forever and dropped troops cannot clear it. He made it a setting, default 1000 m. |
 | IADS rebuild economy (his #97) | Comms/power/command buildings generate no income, so they have no repair price and stay rubble for the rest of the campaign. He priced them flat: 15M power, 10M command centre, 5M comms tower. Turns striking the network into an attrition loop. Sits beside §52. |
+
+## He keeps his own ledger on us — read it first (found 2026-08-24)
+
+Two files in his repo say exactly what he has taken from us and what he has declined,
+with reasons. Neither was known to this note before 2026-08-24, and both are cheaper to
+read than any diff.
+
+- **`inventario_fork_414ret.txt`** (repo root, Spanish, 374 lines). His decision ledger
+  on our fork: 30 numbered features, 13 SÍ / 17 NO, each with an implementation sketch,
+  a `PROBADO` flag, an overlap verdict, and — the useful part — a **`Flip a SÍ si:`**
+  line naming what would change his mind. It also carries a "YA ES NUESTRO" section
+  listing our commits that are really back-ports of *his* PRs, which is the fastest way
+  to avoid offering him his own work.
+- **`README.md` → "From the 414Ret fork"** — what actually landed, each row crediting the
+  original author, plus a **"Queued from the 2026-08 review"** section of what he has
+  decided to take but not started. His stated bar: *"every feature carried here is one
+  more thing to reconcile on each upstream sync, so the bar is 'clearly worth the
+  maintenance', not 'interesting'."*
+
+His last review covered our commits **2026-06-23 → 2026-08-22**. Anything of ours after
+that date he has not assessed.
+
+**His standing NO reasons, so we stop re-offering things he has already ruled on:** MOOSE
+dependency (hard no — heavy, untestable in Python, third-party code in the repo); the
+BARCAP planning family (#9/#10/#11, "no interesa"); anything requiring the fog refactor
+(#5 — it breaks the accessors his own map PRs read); and features that are immature or
+gated off in our tree.
+
+### Two structural facts that constrain any carve
+
+- **He runs Skynet, not MANTIS.** His `resources/plugins/` has `skynetiads`; he has no
+  `mantisiads`. Anything of ours riding MANTIS does not port to him at all — that covers
+  §51, §70's red net, the C2 consequences layer and G41.
+- **A patch built against our fork point does not apply to him.** `dce851ea` predates
+  both trees' upstream syncs; his `tgogenerator.py` is 1,760 lines to that base's 1,636
+  and ours' 2,213. Generate against *his* HEAD and verify with `git apply --check`.
+
+### Carve payloads prepared 2026-08-24
+
+[`docs/dev/upstreaming/juanjux/`](../../upstreaming/juanjux/) — three patches verified to
+apply at `ca780fd2` (§87 naval station-keeping, §69 SEAD coordination, §93 region
+priorities core) and two comparison briefs (§91 sortie records vs his `prev_turns`
+aggregates; §74 DTC, whose declined premise our B28 evidence falsifies).
+
+The handoff written **for his agent** is
+[`AGENT-HANDOFF.md`](../../upstreaming/juanjux/AGENT-HANDOFF.md) — the spec form, since he
+works his fork through agents. The patches are the fast path inside it, not the deliverable.
+
+These are for his fork and his testing; what he sends upstream is his call.
+
+### Zero-port test asks
+
+He already ships three of our features that we cannot close a row on. These cost no
+porting at all — only his hardware:
+
+| Row | Feature | What is owed |
+|---|---|---|
+| B39 ◐ | §81 naval magazines | Re-fly with release window back at 120/900 (ours ran with leftover 3600/3600 diagnostics, so no magazine was ever exercised). Pass = AShM launches spread across the mission, a `WINCHESTER` line, the debrief debit matching the track, turn 2 opening with reduced stock. |
+| B45 ☐ | §86 GPS jamming | A JDAM strike inside 15 nm of a jammer, with a GBU-12 on the same pass as the control. Pass = the JDAM flies its normal profile and lands ~200 m off, the laser weapon hits, and killing the jammer restores the next JDAM in the same mission. |
+| B32 ☐ | §78 coastal batteries | He has the coastal half only (`coastal_batteries_engage_ships`), not the convoy half. Pass = a land-based anti-ship site engages a hull passing in range on its own. |
+
+**B45 is already part-answered, unasked** (2026-08-24, his own words): *"The GPS Jamming
+works pretty well, now it's a lot harder to destroy those SA-22 or Patriots… I will give
+you feedback once I have finished this campaign."* That is his port, not our build, and it
+is a play impression rather than the instrumented pass B45 asks for — so the row does not
+move on it. What it does establish is that the feature reads as intended in someone else's
+campaign, and that fuller feedback is coming. Chase it when his campaign ends.
+
+### His SLAM-ER exemption — a defect in OURS, found by using it (2026-08-24)
+
+His commit `4b4d2a1` removes `AGM-84H` / `AGM-84K` / `SLAM` from the jammed weapon set.
+Our §86 still jams all three. His reasoning has two halves and the second is the one we
+missed:
+
+1. **Physics.** The SLAM-ER's GPS/INS leg is only the midcourse. The imaging seeker can
+   be brought up far outside a jammer's reach — bubbles are ~15 nm — so by the time the
+   weapon is over denied ground it is already looking at the target and no longer
+   navigating by satellite.
+2. **The counter.** Jamming it "left no sane way to service a jammer with a stand-off
+   weapon at all."
+
+Our stated counters are laser/TV delivery and killing the jammer, both of which mean
+flying into the bubble. **A feature should not remove its own counter**, and §86 does. His
+play report is the evidence it matters: he unlocked SLAM/SLAM-ER specifically as the
+answer to jamming bubbles, which is the shape the feature should have had.
+
+**Candidate for us, not yet taken:** drop the three ids from `AFFECTED_WEAPONS` in
+`game/fourteenth/gps_jamming.py`, update the setting text and the §86 note. Cheap. The
+open question is whether GBU-54 (Laser JDAM, GPS/INS baseline) belongs in the same
+exemption — it does not, on the same reasoning, because its GPS mode *is* the terminal
+solution unless the crew lases.
+
+### His OPFOR-AI status, in his words (2026-08-24)
+
+*"the LLM control is awesome. (I am finding Grok works better than Claude as OPFOR
+general, need to test Codex too next campaign)… better to wait a little until is more
+polished or even merged upstream."*
+
+What that quote is evidence *of* is worked through above under
+[How he actually uses it](#how-he-actually-uses-it--a-testbed-not-just-an-opponent-corrected-2026-08-24)
+— it is a testbed, and `ai-docs/howtoplay.md` is the artifact worth reading. Do not
+evaluate `game/agent/` for adoption yet; do read its docs.
 
 ## Running the watch
 

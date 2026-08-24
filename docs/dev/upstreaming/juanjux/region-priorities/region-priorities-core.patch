@@ -1,0 +1,325 @@
+--- /dev/null
++++ b/game/regionpriorities.py
+@@ -0,0 +1,176 @@
++"""Region priorities — per-control-point blue planning emphasis.
++
++A weight, never a fence:
++IGNORED mutes the auto-planner only, a manual package is never blocked. Blue
++only by design (the enemy planner never reads it). Anchored on control
++points because navmesh polygon ids are rebuilt from threat zones every turn.
++"""
++
++from __future__ import annotations
++
++from enum import Enum, unique
++from typing import TYPE_CHECKING, Any, Optional
++
++if TYPE_CHECKING:
++    from game.settings import Settings
++    from game.theater.controlpoint import ControlPoint
++
++
++@unique
++class RegionPriority(Enum):
++    """The player's planning emphasis for one control point's targets."""
++
++    EMPHASIZED = "emphasized"
++    NORMAL = "normal"
++    DEPRIORITIZED = "deprioritized"
++    IGNORED = "ignored"
++
++
++#: Distance-equivalent factors for the target sort key: an EMPHASIZED region's
++#: targets rank as if at half their range, DEPRIORITIZED as if at double.
++#: IGNORED has no factor — the target is dropped from auto-planning entirely.
++SORT_FACTOR: dict[RegionPriority, float] = {
++    RegionPriority.EMPHASIZED: 0.5,
++    RegionPriority.NORMAL: 1.0,
++    RegionPriority.DEPRIORITIZED: 2.0,
++}
++
++
++#: Target categories grouped into the families the player actually thinks in.
++#: Per-CATEGORY control was rejected as 20 combo rows on one page; the fine grain
++#: lives on the per-target override instead, which is where "not THAT factory"
++#: belongs anyway. `fob` is absent on purpose -- that TGO is the FOB structure and
++#: is never targetable.
++TARGET_FAMILIES: dict[str, tuple[str, ...]] = {
++    "Air defense": ("aa", "ewr"),
++    "Command and control": ("commandcenter", "comms"),
++    "Infrastructure": (
++        "factory",
++        "power",
++        "oil",
++        "fuel",
++        "derrick",
++        "ware",
++        "village",
++        "allycamp",
++        "farp",
++        "ww2bunker",
++    ),
++    "Logistics": ("ammo", "motorpool"),
++    "Armor": ("armor",),
++    "Naval": ("ship", "coastal"),
++    "Missile sites": ("missile",),
++}
++
++_FAMILY_BY_CATEGORY: dict[str, str] = {
++    category: family
++    for family, categories in TARGET_FAMILIES.items()
++    for category in categories
++}
++
++
++def family_of(target: Any) -> Optional[str]:
++    """The target family *target* belongs to, or None if nothing governs it."""
++    return _FAMILY_BY_CATEGORY.get(getattr(target, "category", None) or "")
++
++
++def family_priority(family: str, settings: Optional["Settings"]) -> RegionPriority:
++    """The player's priority for one target family; NORMAL when unset."""
++    stored = getattr(settings, "blue_target_family_priorities", None) or {}
++    try:
++        return RegionPriority(stored.get(family, RegionPriority.NORMAL.value))
++    except ValueError:
++        return RegionPriority.NORMAL
++
++
++def priority_of(control_point: "ControlPoint") -> RegionPriority:
++    """The CP's blue planning priority; NORMAL for pre-saves."""
++    return getattr(control_point, "_blue_region_priority", RegionPriority.NORMAL)
++
++
++def priority_for_target(target: Any) -> Optional[RegionPriority]:
++    """The place-priority governing *target*: its own override, else its CP's.
++
++    None means nothing governs it (front lines, convoys, downed pilots) and it is
++    never weighted -- a rescue must not rank lower for being in a quiet region.
++
++    The override deliberately beats the control point in BOTH directions, so a
++    single target inside an IGNORED base can be marked NORMAL and still be planned.
++    That is the whole point of a per-target setting; without it the override could
++    only ever subtract.
++    """
++    from game.theater.controlpoint import ControlPoint
++
++    if not isinstance(target, ControlPoint):
++        own = getattr(target, "_blue_region_priority", None)
++        if own is not None:
++            return own
++    owner = owning_control_point(target)
++    if owner is None:
++        return None
++    return priority_of(owner)
++
++
++def owning_control_point(target: Any) -> Optional["ControlPoint"]:
++    """The CP whose region priority governs *target*, or None (exempt).
++
++    A control point governs itself; a TGO is governed by its owning CP. Anything
++    else (front lines, convoys, downed pilots) resolves None and is never
++    weighted — a rescue must not rank lower for being in a deprioritized region.
++    """
++    from game.theater.controlpoint import ControlPoint
++
++    if isinstance(target, ControlPoint):
++        return target
++    owner = getattr(target, "control_point", None)
++    if isinstance(owner, ControlPoint):
++        return owner
++    return None
++
++
++def planning_factor(
++    target: Any, settings: Optional["Settings"], is_blue: bool
++) -> Optional[float]:
++    """Sort-key factor for one auto-planner target; None means drop it.
++
++    1.0 (identity) whenever the feature is off, the planner is red, or no
++    control point governs the target — the gate lives here so every caller
++    stays a one-liner. ``settings`` may be None (duck-typed test fakes hold
++    partial games); absent means off.
++    """
++    if not is_blue or not getattr(settings, "region_priorities", False):
++        return 1.0
++
++    # Kind first, and it is absolute: an IGNORED family means no target of that
++    # kind anywhere, and no per-target override reopens it. Place is where the
++    # override lives.
++    family = family_of(target)
++    if family is not None:
++        kind = family_priority(family, settings)
++        if kind is RegionPriority.IGNORED:
++            return None
++    else:
++        kind = RegionPriority.NORMAL
++
++    place = priority_for_target(target)
++    if place is None:
++        return 1.0
++    if place is RegionPriority.IGNORED:
++        return None
++    return SORT_FACTOR[place] * SORT_FACTOR[kind]
++
++
++def auto_planning_skips(target: Any, state: Any) -> bool:
++    """True when the auto-planner must not propose a package against *target*.
++
++    For targeting sites that read a `TheaterState` list which is ALSO threat data --
++    `enemy_ships` feeds `_rebuild_threat_zones`, so filtering the list itself would
++    route blue over a carrier it had been told to ignore. Gate the tasking, never
++    the threat picture.
++    """
++    context = getattr(state, "context", None)
++    coalition = getattr(context, "coalition", None)
++    player = getattr(coalition, "player", None)
++    is_blue = bool(getattr(player, "is_blue", False))
++    settings = getattr(context, "settings", None)
++    return planning_factor(target, settings, is_blue) is None
+--- a/game/commander/objectivefinder.py
++++ b/game/commander/objectivefinder.py
+@@ -8,6 +8,7 @@
+ from typing import TYPE_CHECKING, TypeVar
+ 
+ from game.ato.closestairfields import ClosestAirfields, ObjectiveDistanceCache
++from game.regionpriorities import planning_factor
+ from game.theater import (
+     Airfield,
+     ControlPoint,
+@@ -70,17 +71,28 @@
+         Groups are sorted by their closest proximity to any friendly control
+         point (airfield or fleet).
+         """
+-        return self._targets_by_range(self.enemy_ships())
++        return self._targets_by_range(self.enemy_ships(), weighted=True)
+ 
+     def _targets_by_range(
+-        self, targets: Iterable[MissionTargetType]
++        self, targets: Iterable[MissionTargetType], *, weighted: bool = False
+     ) -> Iterator[MissionTargetType]:
+         target_ranges: list[tuple[MissionTargetType, float]] = []
+         for target in targets:
++            factor = 1.0
++            if weighted:
++                # Region priorities: weight offensive target choice by the owning
++                # CP's priority; None (IGNORED) drops the target from
++                # auto-planning only. Identity when off, red, or CP-less.
++                maybe_factor = planning_factor(
++                    target, self.game.settings, self.is_player.is_blue
++                )
++                if maybe_factor is None:
++                    continue
++                factor = maybe_factor
+             ranges: list[float] = []
+             for cp in self.friendly_control_points():
+                 ranges.append(target.distance_to(cp))
+-            target_ranges.append((target, min(ranges)))
++            target_ranges.append((target, min(ranges) * factor))
+ 
+         target_ranges = sorted(target_ranges, key=operator.itemgetter(1))
+         for target, _range in target_ranges:
+@@ -129,10 +141,17 @@
+                     continue
+                 if ground_object.name in found_targets:
+                     continue
++                # Region priorities (same weighting as _targets_by_range; this
++                # iterator carries its own sort for the multi-TGO dedup).
++                factor = planning_factor(
++                    ground_object, self.game.settings, self.is_player.is_blue
++                )
++                if factor is None:
++                    continue
+                 ranges: list[float] = []
+                 for friendly_cp in self.friendly_control_points():
+                     ranges.append(ground_object.distance_to(friendly_cp))
+-                targets.append((ground_object, min(ranges)))
++                targets.append((ground_object, min(ranges) * factor))
+                 found_targets.add(ground_object.name)
+         targets = sorted(targets, key=operator.itemgetter(1))
+         for target, _range in targets:
+--- a/game/theater/controlpoint.py
++++ b/game/theater/controlpoint.py
+@@ -62,6 +62,7 @@
+     SymbolSet,
+ )
+ from game.theater.presetlocation import PresetLocation
++from game.regionpriorities import RegionPriority
+ from game.utils import Distance, Heading, meters
+ from pydcs_extensions import L02, L52, L61, USS_Bon_Homme_Richard
+ from .base import Base
+@@ -487,6 +488,15 @@
+         return f"<{self.__class__}: {self.name}>"
+ 
+     @property
++    def blue_region_priority(self) -> RegionPriority:
++        # Region priorities. getattr-guarded: pre-feature saves carry no field.
++        return getattr(self, "_blue_region_priority", RegionPriority.NORMAL)
++
++    @blue_region_priority.setter
++    def blue_region_priority(self, value: RegionPriority) -> None:
++        self._blue_region_priority = value
++
++    @property
+     def dcs_airport(self) -> Airport | None:
+         return None
+ 
+--- a/game/theater/theatergroundobject.py
++++ b/game/theater/theatergroundobject.py
+@@ -8,6 +8,7 @@
+ from dcs.mapping import Point
+ from shapely.geometry import Point as ShapelyPoint
+ 
++from game.regionpriorities import RegionPriority
+ from game.config import IADS_REPAIR_COST, REWARDS
+ from game.data.units import UnitClass
+ from game.sidc import (
+@@ -82,6 +83,10 @@
+         self._threat_poly: ThreatPoly | None = None
+         self.task = task
+         self.hide_on_mfd = hide_on_mfd
++        # Per-target override. None means inherit the control point's priority;
++        # an explicit value beats it in BOTH directions, so one target inside an
++        # IGNORED base can still be marked NORMAL and planned.
++        self._blue_region_priority: Optional[RegionPriority] = None
+         self.required_unit_classes: set[UnitClass] = set()
+ 
+     def __getstate__(self) -> dict[str, Any]:
+--- a/game/settings/settings.py
++++ b/game/settings/settings.py
+@@ -259,6 +259,21 @@
+         detail="Implicitly determines the number of BARCAPs planned by taking the mission duration"
+         " and dividing it by the desired on-station time.",
+     )
++    region_priorities: bool = boolean_option(
++        "Region priorities (per-objective planning emphasis)",
++        page=CAMPAIGN_DOCTRINE_PAGE,
++        section=GENERAL_SECTION,
++        default=False,
++        detail=(
++            "Weight the BLUE auto-planner's offensive target selection by a "
++            "priority set per control point: an emphasized region's targets rank "
++            "as if at half their distance, a deprioritized region's as if at "
++            "double, and an ignored region is left to manual packages entirely. "
++            "A weight on your own planning, never a fence -- manual packages, "
++            "ROE and rescue tasking are unaffected, and the enemy planner never "
++            "reads it."
++        ),
++    )
+     desired_awacs_mission_duration: timedelta = minutes_option(
+         "Desired AWACS on-station time",
+         page=CAMPAIGN_DOCTRINE_PAGE,
+@@ -1952,6 +1967,13 @@
+     # LUA Plugins system
+     plugins: Dict[str, bool] = field(default_factory=dict)
+ 
++    #: Target families -> RegionPriority value. Carries no option metadata on
++    #: purpose: the auto settings dialog renders declared options, and this one is
++    #: owned by its own window. Absent family = NORMAL, so old saves need no
++    #: migration.
++    blue_target_family_priorities: Dict[str, str] = field(default_factory=dict)
++
++
+     only_player_takeoff: bool = True  # Legacy parameter do not use
+ 
+     @staticmethod

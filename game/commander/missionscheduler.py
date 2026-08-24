@@ -110,12 +110,19 @@ class MissionScheduler:
     #: The strike-class package types that get timed into a SEAD window. Armed
     #: Recon (a loitering sweep, not a push) and AIR ASSAULT (tied to the
     #: ground war's timing) deliberately stay on the spread schedule.
+    #:
+    #: CAS is here for the front-line sandwich: it descends to acquire and eats
+    #: MANPADS low, climbs to escape into the area-SAM ring high, so a front
+    #: under a live SAM umbrella wants that umbrella down first, exactly as a
+    #: strike does. Its organic SEAD_SWEEP escort flies the package's own TOT
+    #: and so accompanies rather than pre-suppresses.
     COORDINATED_STRIKE_TYPES = frozenset(
         {
             FlightType.STRIKE,
             FlightType.BAI,
             FlightType.OCA_RUNWAY,
             FlightType.OCA_AIRCRAFT,
+            FlightType.CAS,
         }
     )
 

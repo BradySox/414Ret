@@ -25,7 +25,7 @@ so the two docs don't drift.
 
 ## Outstanding rows at a glance
 
-70 rows need a live pass. Full detail is under each `###` heading below —
+71 rows need a live pass. Full detail is under each `###` heading below —
 search the row id. `☐` untested · `◐` flown but not under the conditions that
 stress it · `✗` fail signature reproduced in-game.
 
@@ -144,6 +144,7 @@ stress it · `✗` fail signature reproduced in-game.
 | B94 | Editing a faction mid-campaign reaches the buy menus | juanjux #953 | ☐ |
 | B95 | Saving the air wing keeps both coalitions | air wing config | ☐ |
 | B96 | Iron Gate's fields fill without an aircraft losing its stand | Iron Gate | ◐ |
+| B97 | One salvo, and only the targeted flight breaks | §94 | ☐ |
 
 ---
 
@@ -6019,6 +6020,36 @@ mission-generation question.
   error. Report which airframe and which field — the fix is per stand class, not a blanket trim.
 - **Free while you are there:** blue has **36** land-based fighters at Kobuleti. Worth a note on whether
   that is enough to contest the pass, and whether Kobuleti's transit leaves useful fuel.
+### B97 — One salvo, and only the targeted flight breaks · §94 · ☐ UNTESTED
+
+**Setup.** Any campaign with a long-range SAM belt or a defended ship group, and at least
+two blue packages airborne near it at the same time. `Smart threat reaction` is on by
+default; tick its `DEBUG` option for this pass only — it prints every tagged shot on screen.
+~20 min.
+
+**Pass.** A SAM or naval launch tags one flight. The on-screen line names one group and the
+count stays low (`[1 flights evading]`, occasionally 2-3 on a real multi-shot engagement).
+Packages that were not shot at keep formation and keep flying their route. When the missile
+is gone the tagged flight returns to route within ~10 s.
+
+**Fail signatures, and what each means:**
+
+- **Nothing ever prints and every jet still scatters** — the plugin did not load. Check
+  `dcs.log` for `AIReaction| Smart Threat Reaction loaded`; absent means the DoScriptFile
+  trigger was dropped (the known DCS behaviour with a dead plugin), not that the logic is
+  wrong.
+- **The count climbs into the dozens on one salvo** — `weapon:getTarget()` is resolving to
+  aircraft it should not, or the release path is not firing. Capture the log.
+- **Blue AI dies noticeably more than the campaign's baseline** — this is the trade §94 names,
+  not a bug. Record the loss count against a previous turn on the same campaign before
+  reacting; the design note's falsifier is written against exactly this observation.
+- **§61 bandits stop maneuvering after ~10 s** — the `aiReactionExempt` claim broke. Grep
+  `claim_exempt` in `redscramble-config.lua`.
+
+**Cheap secondary read:** an anti-ship salvo should produce *no* on-screen spam at all, because
+ship-targeted shots are dropped at the event. If a naval battle floods the screen, the
+`notair` early return is not working and the perf fix that made this adoptable is gone.
+
 ### B94 — Editing a faction mid-campaign reaches the buy menus · juanjux #953 · ☐ UNTESTED
 
 **History:** ported 2026-08-23 from juanjux's upstream #953, after verifying all three

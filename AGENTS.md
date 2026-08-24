@@ -124,6 +124,10 @@ Read before touching a campaign's `.yaml`, `.miz` or build tool.
 - **Naval** — `414th-cruise-missile-raids-notes.md`, `414th-naval-magazines-notes.md`,
   `414th-carrier-deck-decor-notes.md`
 - **Ground / frontline** — `414th-tic-dynamic-fronts-notes.md`
+- **AI behaviour** — `414th-ai-threat-reaction-notes.md` (**§94, adopted 2026-08-24 from
+  juanjux #63** — why the baseline is Passive Defense, the `aiReactionExempt` protocol any
+  plugin setting reaction-on-threat must use, why we took his head and not the merged PR,
+  and the pre-registered falsifier if AI attrition rises)
 - **Strike targets / BDA** — `414th-scenery-kill-tracking-notes.md` (why some scenery strike
   targets never register as killed; the M4 IADS stand-in; the proxy unit that was built and
   reverted, and the position matcher measured to have no input. **The reported failure was never
@@ -433,6 +437,7 @@ linked design note.
 91. **Per-flight sortie records** — the mission reports back what each flight did: track, time airborne, fuel, shots and hits, not just which units died.
 92. **What's New** — a toolbar window listing the recent player-visible changes, each with what to look for in the next mission.
 93. **Region priorities** — per-control-point BLUE planning emphasis: emphasized regions rank closer, deprioritized farther, ignored left to manual packages. A weight, never a fence.
+94. **Smart threat reaction** — only the flight a missile is actually guiding on goes defensive; everything else holds formation and uses countermeasures.
 
 ### Retired, removed or shelved — do not restore
 

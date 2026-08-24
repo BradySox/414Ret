@@ -1,0 +1,20 @@
+{
+    "nameInUI": "Smart threat reaction (only the targeted flight evades)",
+    "descriptionInUI": "DCS' stock Evade Fire breaks every aircraft that merely PERCEIVES a launch, so a single S-300 or naval salvo scatters dozens of jets from packages the missile was never aimed at. This parks every airplane at Passive Defense -- fly the route, use chaff and flares, hold formation -- and switches only the flight the missile is actually guiding on to Evade Fire, until that missile is gone. The target is read from the engine (weapon:getTarget), never guessed from geometry. The option is per-group, so the targeted FLIGHT evades rather than the single jet. Helicopters are untouched and keep stock Evade Fire. The trade: a flight facing a missile whose target the engine will not resolve flies straight instead of breaking, so AI attrition against dense SAM belts can rise. Turn this off to restore stock DCS behaviour.",
+    "defaultValue": true,
+    "specificOptions": [
+        {
+            "nameInUI": "DEBUG (on-screen messages and per-shot logging)",
+            "descriptionInUI": "Off by default. On, every tagged shot prints to the screen for all players and every untagged shot is written to dcs.log -- useful for a test flight, unusable in a mission with an anti-ship salvo in it.",
+            "mnemonic": "DEBUG",
+            "defaultValue": false
+        }
+    ],
+    "scriptsWorkOrders": [
+        {
+            "file": "ai_reaction.lua",
+            "mnemonic": "ai_reaction"
+        }
+    ],
+    "configurationWorkOrders": []
+}

@@ -823,6 +823,15 @@ FEATURES: tuple[Feature, ...] = (
         93,
         settings_fields=("region_priorities",),
     ),
+    Feature(
+        # Plugin-only: there is no Settings gate, because the plugin toggle IS the
+        # gate and stock DCS behaviour is what you get with it off. Ported from
+        # juanjux/dcs-retribution#63 at its post-perf-rewrite head, not the PR.
+        "smart_threat_reaction",
+        "Smart threat reaction",
+        94,
+        plugin_id="ai_reaction",
+    ),
     # Always-on engine plugins — major 414th machinery documented in design notes
     # rather than a numbered "Features at a Glance" entry.
     Feature("mantis_iads", "MANTIS IADS engine", plugin_id="mantisiads"),

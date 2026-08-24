@@ -780,15 +780,59 @@ FP, 3, 2, 1, HB**. So each code goes on exactly one point:
 
 | Code | On | Why |
 |---|---|---|
-| `XST` | the first target in route order (also STA 3's PP1) | the HUD pentagon; the threat axis's third choice |
-| `XL` | every further target in a cluster | "LANTIRN (max 20)" — the pod's target store, where a second building belongs since the jet has one ST |
+| `XST` | the **only** target in the route (also STA 3's PP1) | the HUD pentagon; the threat axis's third choice |
 | `XHA` | the top-ranked known SAM site (longest range, first in the list) | one hostile area; it sets the threat axis |
 | `XDP` | a BARCAP/TARCAP flight's package target — the asset it covers | "area to protect"; strike flights get none |
 | `XB` / `XD` / `XHB` / `XIP` | bullseye, divert, recovery field, every ingress | as before |
 
-`FP` and the `X#1–X#7` priority/generic forms are not used: the three classic
-waypoint slots would need a choice of which route points matter most, and nothing
-sources that.
+### One target in the route, the rest on the JDAM page (2026-08-23)
+
+A strike plans a waypoint per building, so an eight-building objective put eight
+target points in the route. **DM call: drop them, paint them as JDAM points
+instead.** The route now carries exactly one — the surface target, `XST`.
+
+**The reason is display priority, not a capacity limit.** The word going round was
+that the jet holds seven waypoints in a route; the manual says otherwise, and the
+real constraint is worth recording because it is easy to mis-fix:
+
+- The CDNU stores **twelve flight plans of fifty preset waypoints** each (51+ are
+  impromptu). A fifteen-point route fits.
+- The **PTID displays eighteen waypoints at a time**, and because of that a
+  prioritisation scheme decides which survive: *always* `FP, IP, HB, DP, HA, ST,
+  Priority WP 1-3`, then `Generic Priority 4-7`, the destination steering waypoint
+  and the EGI fly-to. **That is where "seven" comes from** — priority 1-3 plus
+  generic 4-7 — and it is a display ranking, not a route cap.
+- "Only one waypoint can have a specific designation at a time", so there is one
+  ST slot. A second target waypoint could only be a plain point, which is exactly
+  what gets crowded out.
+
+So the eight target points were not overflowing the route; they were filling the
+display with plain points and pushing the coded ones down. One `XST` costs no
+priority slot and always displays.
+
+### The priority slots are assigned, and the literal is a reading (2026-08-23)
+
+Since the constraint is a display ranking, the fix is to rank: **every route point
+without a code of its own takes the next priority slot**, `X1`…`X7`, in route
+order. A hold, a push and a refuel become `HOLDX1`, `JOINX2`, `SPLITX3`; points
+that already carry `XIP`, `XST`, `XHB` or `XD` keep theirs; past seven the rest
+stay plain rather than borrowing a slot.
+
+**Route order rather than a tactical ranking.** Nothing sources which of a hold, a
+push and a refuel matters most to a RIO, and forward order is at least predictable
+in the cockpit. If the crews want the egress points ranked first, that is a
+one-line change in `_build_nav`.
+
+**The literal `X1` is a reading, not a source.** The NAV tab writes the forms as
+`X#1`–`X#3` and `X#4`–`X#7` while writing the others as `XB / X##B`, so `#` is a
+wildcard for the optional special code and the bare form is `X1`. No authored
+cartridge in hand uses a priority code, so this is the one emitted code with no
+artifact behind it. It fails safe — a wrong literal is simply a name the jet does
+not parse — which is why it ships flagged rather than blocked. **Checklist B91
+carries the check.**
+
+`FP` stays unused: it is the generic fixed point, and every point we write already
+has a better-fitting code or a priority slot.
 
 **Names are unique within a list, and the fields carry their own names**
 (2026-08-22, from a generated mission). A strike on an eight-building objective

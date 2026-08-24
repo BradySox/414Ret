@@ -25,7 +25,7 @@ so the two docs don't drift.
 
 ## Outstanding rows at a glance
 
-73 rows need a live pass. Full detail is under each `###` heading below —
+72 rows need a live pass. Full detail is under each `###` heading below —
 search the row id. `☐` untested · `◐` flown but not under the conditions that
 stress it · `✗` fail signature reproduced in-game.
 
@@ -5715,8 +5715,8 @@ now confirmed by the people who fly it.
 **Still unobserved, and worth a glance on any later Tomcat sortie** — none of it
 blocks the row, and each is listed under "Watch for" below: the HUD pentagon
 (`XST`), the A2A bullseye readout (`XB`), the threat axis (`XHA`), a CAP's
-defended point (`XDP`), the LANTIRN store (`XL`), and whether the single altitude
-field wants the ground or the planned height.
+defended point (`XDP`), the priority slots (`X1`-`X7`), and whether the single
+altitude field wants the ground or the planned height.
 
 **Already done, on paper:** the emitted JSON was diffed against a hand-authored
 F-14B(U) cartridge (the training-night package) and every section's key set matches,
@@ -5765,10 +5765,20 @@ Then fly one: F-14B(U) client flight on a campaign that fields it
   bullseye's bearing and range should show on the HUD (`XB`, carried on an
   additional point the way the authored cartridge does it). The threat axis should
   point from the bullseye at the top-ranked SAM site (`XHA`); on a CAP the
-  defended point should sit on the asset the package covers (`XDP`); a cluster's
-  second and third buildings should be in the LANTIRN target store (`XL`). If the
-  pentagon is missing, the code may need to be on a different point or the jet may
-  want it on every target.
+  defended point should sit on the asset the package covers (`XDP`). If the
+  pentagon is missing, the code may need to be on a different point.
+- **Watch for — the priority codes, the one guessed literal:** plain route points
+  carry `X1`-`X7` in route order (`HOLDX1`, `JOINX2`, `SPLITX3`) so they rank with
+  the coded ones on the PTID's 18-item display. **That literal is a reading of the
+  NAV tab's `X#1`-`X#7` help text, not an authored cartridge** — every other code
+  we emit has one behind it. On the PTID, check whether those points show as
+  priority waypoints P1-P7 or merely as points named `...X1`. If the latter, the
+  literal is wrong: try `X#1`, and say which worked in the design note.
+- **Answered 2026-08-23 — there is no seven-waypoint route cap.** The CDNU stores
+  twelve flight plans of fifty waypoints; the *PTID displays* eighteen at a time
+  and ranks them (`FP, IP, HB, DP, HA, ST, Priority 1-3`, then `Generic 4-7`).
+  A strike's extra target points are off the route because they crowd that
+  display, not because anything overflowed.
 - **Watch for — the one real unknown:** a Tomcat waypoint has a *single* altitude
   field where the Hornet and Viper have two, so it cannot separate "the ground
   under this point" from "the height to fly this leg". We write the planned

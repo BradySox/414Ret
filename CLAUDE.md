@@ -793,6 +793,25 @@ aircraft. Do NOT "resync" this block from upstream until they fix it.
   when asked, confirm destructive actions, stop iterating in a debug spiral, one clarifying
   question on real ambiguity). Composes with the question convention below: a needed decision
   still lands in the ❓ block at the end — that block IS the "one concrete next action."
+- **When the evidence contradicts the instruction, lead with that and stop (STANDARD,
+  2026-08-23 user call — "I am very often wrong and if you find EVIDENCE that im going
+  down the wrong path then speak up and say it").** If something in the tree, a manual,
+  a log or a generated artifact contradicts what was asked, the reply opens with that
+  finding. Do not build the thing and record the contradiction in a design note — a
+  buried contradiction changes nothing and costs the work twice.
+  - **The case this exists to prevent** (2026-08-23, the F-14's "7 waypoints"): the ask
+    was to drop target waypoints to fit a seven-waypoint route cap. The Heatblur manual
+    says the CDNU stores twelve flight plans of fifty waypoints, and that the *PTID
+    displays* eighteen at a time under a priority ranking — "seven" is `Priority WP 1-3`
+    plus `Generic 4-7`, a display rank, not a capacity. There was no cap to fit. The
+    route was trimmed anyway and the finding went into the note.
+  - **Evidence means checkable**: a file, a manual page, a measurement, a log line. Name
+    the source in the same breath. A *preference* cannot be contradicted by evidence —
+    taste calls stand, and "the LAR should read conservative" needs no defence.
+  - **Two sentences, then the question.** Not a lecture, not a refusal. If the call is
+    reaffirmed, build it in full and say plainly that it was reaffirmed.
+  - This outranks agreeableness. Saying "yes" to a call the evidence has already
+    answered is the expensive failure, not the polite one.
 - **Ask decisions via the AskUserQuestion widget (STANDARD, 2026-07-21 user call).** Whenever
   you need a decision or a choice from the user, use the **`AskUserQuestion` tool** — the
   interactive widget with clickable options — **not** a typed "1, 2, 3" list. Lead with your

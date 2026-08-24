@@ -1705,7 +1705,8 @@ def test_only_the_first_target_in_a_cluster_is_the_surface_target() -> None:
     route = json.loads(
         build_tomcat_cartridge(flight, mission_data, game, "XST").to_json()
     )["data"]["NAV"][1]["waypoints"]
-    assert [w["name"] for w in route] == ["INGREXIP", "BLDG1XST", "BLDG2XL", "BLDG3XL"]
+    # Only the surface target reaches the route; the rest are JDAM points.
+    assert [w["name"] for w in route] == ["INGREXIP", "BLDG1XST"]
 
 
 def test_only_the_top_ranked_sam_is_the_hostile_area() -> None:
@@ -1764,11 +1765,10 @@ def test_duplicate_names_are_numbered() -> None:
     # Numbered by position in the cluster, so the digit is the same building
     # on the route and on the JDAM page even though the codes eat a different
     # number of characters.
+    # Names cap at 8, so the base gives way to the code.
     assert [w["name"] for w in data["NAV"][1]["waypoints"]] == [
         "INGREXIP",
-        "STRI1XST",
-        "STRIK2XL",
-        "STRIK3XL",
+        "STRIKXST",
     ]
     assert [t["name"] for t in data["JDAM"]["stations"][0]["targets"][:3]] == [
         "STRIKEJ1",
@@ -1814,11 +1814,48 @@ def test_distinct_target_names_are_left_alone() -> None:
     assert [w["name"] for w in data["NAV"][1]["waypoints"]] == [
         "INGREXIP",
         "BLDG1XST",
-        "BLDG2XL",
-        "BLDG3XL",
     ]
     assert [t["name"] for t in data["JDAM"]["stations"][0]["targets"][:3]] == [
         "BLDG1",
         "BLDG2",
         "BLDG3",
     ]
+
+
+def test_plain_route_points_take_the_priority_slots() -> None:
+    """The PTID ranks coded points above plain ones, so every point without a
+    code of its own takes the next priority slot in route order. Points that
+    already carry a code keep it, and the budget stops at seven."""
+    flight, mission_data, game = _tomcat_fixture()
+    hold = _waypoint("HOLD", FlightWaypointType.LOITER, 1000, 1000, 6096, None)
+    join = _waypoint("JOIN", FlightWaypointType.JOIN, 2000, 2000, 6096, None)
+    split = _waypoint("SPLIT", FlightWaypointType.SPLIT, 3000, 3000, 6096, None)
+    flight.waypoints = (
+        flight.waypoints[:1] + [hold, join] + flight.waypoints[1:3] + [split]
+    )
+    route = json.loads(
+        build_tomcat_cartridge(flight, mission_data, game, "Priority").to_json()
+    )["data"]["NAV"][1]["waypoints"]
+    assert [w["name"] for w in route] == [
+        "HOLDX1",
+        "JOINX2",
+        "INGREXIP",
+        "POWERXST",
+        "SPLITX3",
+    ]
+
+
+def test_the_priority_budget_stops_at_seven() -> None:
+    flight, mission_data, game = _tomcat_fixture()
+    flight.waypoints = flight.waypoints[:1] + [
+        _waypoint(f"NAV {n}", FlightWaypointType.NAV, 1000 * n, 1000 * n, 6096, None)
+        for n in range(1, 10)
+    ]
+    route = json.loads(
+        build_tomcat_cartridge(flight, mission_data, game, "Budget").to_json()
+    )["data"]["NAV"][1]["waypoints"]
+    coded = [w["name"] for w in route if w["name"][-2:-1] == "X"]
+    assert len(coded) == 7
+    assert coded[0].endswith("X1") and coded[-1].endswith("X7")
+    # The eighth and ninth stay plain rather than borrowing a slot.
+    assert route[7]["name"].endswith("7") is False

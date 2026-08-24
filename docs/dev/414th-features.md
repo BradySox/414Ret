@@ -1949,7 +1949,7 @@ defect that reached a build, most of them found by flying.
     §89's widened tail intact.
   - Found by the planner doctrine-mining queue (row 2). Tests `tests/test_missionscheduler.py`
     (2 behavioural, red/green confirmed; 2 exclusion pins). Needs an in-game pass
-    (checklist **B97**).
+    (checklist **B99**).
 
 ---
 

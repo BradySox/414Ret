@@ -58,7 +58,7 @@ stress it · `✗` fail signature reproduced in-game.
 | G41 | A bombed power station keeps its SAMs down on the NEXT turn | MANTIS C2 | ☐ |
 | B84 | Front-line groups move and return fire instead of holding | §8 | ☑ |
 | B85 | A flight with an unreachable TOT flies instead of orbiting | §8 | ☐ |
-| B97 | AI packages arrive inside the mission, not after it | §8 | ☐ |
+| B99 | AI packages arrive inside the mission, not after it | §8 | ☐ |
 | G25 | Armed Recon package: recon drone + SEAD Viper escort + 4-ship sweep | §3 | ◐ |
 | G30 | MANTIS SHORAD link: the point defense ambushes the HARM shot | MANTIS migration | ☐ |
 | G33 | Survivor ADF beacon: the pinned 260 kHz drives a real needle | CSAR (upstream #929 + 414th pin) | ☐ |
@@ -6195,7 +6195,7 @@ mountain or coastal front will do.
      strength, so an 8-object swing is worth a look on Desert Trident's Jordan
      sector specifically.
 
-### B97 — AI packages arrive inside the mission, not after it · §8 · ☐ UNTESTED
+### B99 — AI packages arrive inside the mission, not after it · §8 · ☐ UNTESTED
 
 **History:** built 2026-08-24, planner doctrine-mining row 2. The non-CAP spread bounded the
 random **offset** by the cycle and then added transit on top, so a long-transit package was

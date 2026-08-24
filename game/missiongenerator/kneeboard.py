@@ -949,9 +949,18 @@ class BriefingPage(KneeboardPage):
         bluf_lines: Optional[List[str]] = None,
         comint_lines: Optional[List[str]] = None,
         zulu_tz: Optional[datetime.tzinfo] = None,
+        bullseye_moved: bool = False,
+        bullseye_anchor: Optional[str] = None,
     ) -> None:
         self.flight = flight
         self.bullseye = bullseye
+        # The bullseye is pinned for the campaign, so the one turn it does move
+        # is the one turn the pilots need telling.
+        self.bullseye_moved = bullseye_moved
+        # The control point it is planted on. A place a pilot can find on the F10
+        # map beats a coordinate they have to plot; the BLUF's second BULLSEYE
+        # line was struck as a duplicate, so this stays the only one.
+        self.bullseye_anchor = bullseye_anchor
         self.weather = weather
         self.zulu_tz = zulu_tz
         self.dark_kneeboard = dark_kneeboard
@@ -1089,7 +1098,7 @@ class BriefingPage(KneeboardPage):
                 ),
             )
 
-        writer.text(f"Bullseye: {self.bullseye.position.latlng().format_dms()}")
+        writer.text(self._bullseye_line())
 
         fl = self.flight
 
@@ -1262,6 +1271,17 @@ class BriefingPage(KneeboardPage):
             ils,
             runway.runway_name,
         ]
+
+    def _bullseye_line(self) -> str:
+        """The one bullseye line: the place, its coordinates, and any move.
+
+        The BLUF's second BULLSEYE line was struck as a duplicate, so everything
+        the pilot gets about the bullseye is on this row.
+        """
+        where = f"{self.bullseye_anchor} — " if self.bullseye_anchor else ""
+        moved = "   ** MOVED THIS TURN **" if self.bullseye_moved else ""
+        coords = self.bullseye.position.latlng().format_dms()
+        return f"Bullseye: {where}{coords}{moved}"
 
     def _row_with_atis(self, row_title: str, runway: Optional[RunwayData]) -> List[str]:
         row = self.airfield_info_row(row_title, runway)
@@ -3125,6 +3145,13 @@ class KneeboardGenerator(MissionInfoGenerator):
                 bluf_lines=bluf_lines,
                 comint_lines=self._briefing_comint(),
                 zulu_tz=zulu_tz,
+                bullseye_moved=(
+                    self.game.coalition_for(flight.friendly).bullseye_moved_on_turn
+                    == self.game.turn
+                ),
+                bullseye_anchor=self.game.coalition_for(
+                    flight.friendly
+                ).bullseye_anchor_name,
             ),
             SupportPage(
                 flight,

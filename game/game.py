@@ -42,7 +42,6 @@ from .settings import NightMissions, Settings
 from .data.groups import GroupTask
 from .spatialindex import LiveUnitIndex
 from .theater import ConflictTheater, Player
-from .theater.bullseye import Bullseye
 from .theater.supply import RECOVERY_MULTIPLIER, SupplyStatus, supply_statuses
 from .theater.theatergroundobject import (
     EwrGroundObject,
@@ -687,9 +686,11 @@ class Game:
         return TurnState.CONTINUE
 
     def set_bullseye(self) -> None:
-        player_cp, enemy_cp = self.theater.closest_opposing_control_points()
-        self.blue.bullseye = Bullseye(enemy_cp.position)
-        self.red.bullseye = Bullseye(player_cp.position)
+        blue_cp, red_cp = self.theater.bullseye_anchors()
+        if self.blue.anchor_bullseye(red_cp, self.turn):
+            logging.info(f"Blue bullseye re-anchored on {red_cp.name}")
+        if self.red.anchor_bullseye(blue_cp, self.turn):
+            logging.info(f"Red bullseye re-anchored on {blue_cp.name}")
 
     def initialize_turn(
         self,

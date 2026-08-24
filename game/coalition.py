@@ -28,6 +28,7 @@ if TYPE_CHECKING:
     from .game import Game
     from .lasercodes import LaserCodeRegistry
     from .sim import GameUpdateEvents
+    from .theater.controlpoint import ControlPoint
     from .squadrons.downedpilot import DownedPilot
 
 
@@ -43,6 +44,15 @@ class Coalition:
         self.transit_network = TransitNetwork()
         self.procurement_requests: OrderedSet[AircraftProcurementRequest] = OrderedSet()
         self.bullseye = Bullseye(self.game.point_in_world(0, 0))
+        # The bullseye is pinned for the campaign rather than re-derived each
+        # turn: a squadron memorizes one point. False until it is first anchored.
+        self.bullseye_pinned = False
+        # The turn a drifted bullseye was last moved, so the kneeboard can warn
+        # the pilots who memorized the old one. None while it has never moved.
+        self.bullseye_moved_on_turn: Optional[int] = None
+        # The control point the bullseye is planted on, so the kneeboard can name
+        # the place rather than only its coordinates.
+        self.bullseye_anchor_name: Optional[str] = None
         self.air_wing = AirWing(player, game, self.faction)
         self.armed_forces = ArmedForces(self.faction)
         self.transfers = PendingTransfers(game, player)
@@ -148,6 +158,13 @@ class Coalition:
             else:
                 state["player"] = Player.RED
 
+        # A pre-pin save's bullseye was re-derived every turn and may sit on a
+        # boat, which the anchor picker will not do again -- so re-anchor once
+        # under the new rule rather than freezing a bad point for the campaign.
+        state.setdefault("bullseye_pinned", False)
+        state.setdefault("bullseye_moved_on_turn", None)
+        state.setdefault("bullseye_anchor_name", None)
+
         # CSAR postdates the oldest saves.
         if "downed_pilots" not in state:
             state["downed_pilots"] = []
@@ -211,6 +228,28 @@ class Coalition:
 
     def set_bullseye(self, bullseye: Bullseye) -> None:
         self.bullseye = bullseye
+
+    def anchor_bullseye(self, anchor: ControlPoint, turn: int) -> bool:
+        """Pin the bullseye on ``anchor``, or leave it where it already is.
+
+        Returns True only when the point a pilot memorized actually changed, so
+        the kneeboard can say so: the front carried the pin away, or a save from
+        before the bullseye was pinned re-anchored somewhere else. A campaign's
+        own first pin is not a move.
+        """
+        candidate = anchor.position
+        previous = getattr(self, "bullseye", None)
+        if self.bullseye_pinned and previous is not None:
+            if not previous.drifted_from(candidate):
+                return False
+
+        self.bullseye = Bullseye(candidate)
+        self.bullseye_pinned = True
+        self.bullseye_anchor_name = anchor.name
+        if turn > 0 and previous is not None and previous.position != candidate:
+            self.bullseye_moved_on_turn = turn
+            return True
+        return False
 
     def end_turn(self) -> None:
         """Processes coalition-specific turn finalization.

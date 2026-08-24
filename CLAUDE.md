@@ -128,7 +128,14 @@ Read before touching a campaign's `.yaml`, `.miz` or build tool.
   targets never register as killed; the M4 IADS stand-in; the proxy unit that was built and
   reverted, and the position matcher measured to have no input. **The reported failure was never
   reproduced — read §8.1 before building anything here**)
-- **Planning / doctrine** — `414th-falcon-bms-campaign-notes.md` (**study note** — what the
+- **Planning / doctrine** — `414th-planner-doctrine-mining-notes.md` (**the working
+  procedure for teaching the scripted planner, and the queue** — juanjux's LLM played six
+  campaigns as red and wrote down what a competent commander must do; we mine that for
+  things our planner *cannot express*, and build them as ordinary Python. **No LLM runs in
+  this fork under this programme** — not behind a setting, not opt-in. Read its guardrails
+  before proposing anything: seam 7 stays dropped, and the method changes the cost of a
+  candidate, never the standard of proof. First one built is §69's CAS extension),
+  `414th-falcon-bms-campaign-notes.md` (**study note** — what the
   BMS dynamic campaign actually does, the full crosswalk to fork features, four gated
   candidates, and the tombstones it must not resurrect — §48/§53/§54 and turnless),
   `414th-region-priorities-notes.md` (**BUILT 2026-08-20 as §93** — per-CP blue planning

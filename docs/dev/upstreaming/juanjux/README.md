@@ -62,7 +62,5 @@ cited a fork design note were cut rather than re-pointed at a file he does not h
 - No in-game verification on his hardware. Our own rows: B48 is ◐ PARTIAL, B21 and B89
   are ☑ VERIFIED. See each payload's README.
 - No Qt or React surfaces for §93 (core engine only).
-- No upstream PR. The freeze binds us, and routing a carve through him to get around it
-  would be using him as a proxy for a policy we have been told applies to us. These are
-  offered for his fork and his testing; what he sends upstream is his call, on his
-  timeline, as it already is.
+- No upstream PR. These are offered for his fork and his testing; what he sends upstream
+  is his call, on his timeline, as it already is.

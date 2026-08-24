@@ -275,9 +275,11 @@ apply at `ca780fd2` (§87 naval station-keeping, §69 SEAD coordination, §93 re
 priorities core) and two comparison briefs (§91 sortie records vs his `prev_turns`
 aggregates; §74 DTC, whose declined premise our B28 evidence falsifies).
 
-**Nothing has been sent.** The upstream PR freeze binds us, and routing a carve through
-him to get around it would be using him as a proxy for a policy we have been told applies
-to us. These are for his fork and his testing; what he sends upstream is his call.
+The handoff written **for his agent** is
+[`AGENT-HANDOFF.md`](../../upstreaming/juanjux/AGENT-HANDOFF.md) — the spec form, since he
+works his fork through agents. The patches are the fast path inside it, not the deliverable.
+
+These are for his fork and his testing; what he sends upstream is his call.
 
 ### Zero-port test asks
 
@@ -289,6 +291,49 @@ porting at all — only his hardware:
 | B39 ◐ | §81 naval magazines | Re-fly with release window back at 120/900 (ours ran with leftover 3600/3600 diagnostics, so no magazine was ever exercised). Pass = AShM launches spread across the mission, a `WINCHESTER` line, the debrief debit matching the track, turn 2 opening with reduced stock. |
 | B45 ☐ | §86 GPS jamming | A JDAM strike inside 15 nm of a jammer, with a GBU-12 on the same pass as the control. Pass = the JDAM flies its normal profile and lands ~200 m off, the laser weapon hits, and killing the jammer restores the next JDAM in the same mission. |
 | B32 ☐ | §78 coastal batteries | He has the coastal half only (`coastal_batteries_engage_ships`), not the convoy half. Pass = a land-based anti-ship site engages a hull passing in range on its own. |
+
+**B45 is already part-answered, unasked** (2026-08-24, his own words): *"The GPS Jamming
+works pretty well, now it's a lot harder to destroy those SA-22 or Patriots… I will give
+you feedback once I have finished this campaign."* That is his port, not our build, and it
+is a play impression rather than the instrumented pass B45 asks for — so the row does not
+move on it. What it does establish is that the feature reads as intended in someone else's
+campaign, and that fuller feedback is coming. Chase it when his campaign ends.
+
+### His SLAM-ER exemption — a defect in OURS, found by using it (2026-08-24)
+
+His commit `4b4d2a1` removes `AGM-84H` / `AGM-84K` / `SLAM` from the jammed weapon set.
+Our §86 still jams all three. His reasoning has two halves and the second is the one we
+missed:
+
+1. **Physics.** The SLAM-ER's GPS/INS leg is only the midcourse. The imaging seeker can
+   be brought up far outside a jammer's reach — bubbles are ~15 nm — so by the time the
+   weapon is over denied ground it is already looking at the target and no longer
+   navigating by satellite.
+2. **The counter.** Jamming it "left no sane way to service a jammer with a stand-off
+   weapon at all."
+
+Our stated counters are laser/TV delivery and killing the jammer, both of which mean
+flying into the bubble. **A feature should not remove its own counter**, and §86 does. His
+play report is the evidence it matters: he unlocked SLAM/SLAM-ER specifically as the
+answer to jamming bubbles, which is the shape the feature should have had.
+
+**Candidate for us, not yet taken:** drop the three ids from `AFFECTED_WEAPONS` in
+`game/fourteenth/gps_jamming.py`, update the setting text and the §86 note. Cheap. The
+open question is whether GBU-54 (Laser JDAM, GPS/INS baseline) belongs in the same
+exemption — it does not, on the same reasoning, because its GPS mode *is* the terminal
+solution unless the crew lases.
+
+### His OPFOR-AI status, in his words (2026-08-24)
+
+*"the LLM control is awesome. (I am finding Grok works better than Claude as OPFOR
+general, need to test Codex too next campaign)… better to wait a little until is more
+polished or even merged upstream."*
+
+Two things follow. **He is running a model bake-off**, so his design is model-agnostic in
+practice and not tuned to one provider — worth knowing before seam 7 is ever reopened,
+because it means the shape survives model swaps. And **he has told us the adoption
+timing himself**: not yet, wait for polish or an upstream merge. Do not evaluate
+`game/agent/` for adoption before then; do keep reading its design docs.
 
 ## Running the watch
 

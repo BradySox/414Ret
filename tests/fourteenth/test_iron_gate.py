@@ -21,6 +21,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+import yaml
 
 from game import persistency
 from game.campaignloader.campaign import Campaign
@@ -169,3 +170,47 @@ def test_the_strike_wing_and_the_eagles_split_two_fields(
         cp = theater.control_point_named(field)
         flown = {s.aircraft_type or s.aircraft[0] for s in config.by_location[cp]}
         assert flown == expected, (field, flown)
+
+
+#: The E-2D ships no squadron preset anywhere in `resources/squadrons`, so the carrier's
+#: Hawkeye squadron has nothing to name itself after and falls back to the type name.
+#: That is a content gap in the repo, not a campaign defect -- listed so the guard below
+#: stays meaningful instead of being switched off.
+NO_PRESET_EXISTS = {"E-2D Advanced Hawkeye"}
+
+
+def test_every_blue_squadron_is_a_real_unit(
+    loaded: tuple[Campaign, ConflictTheater],
+) -> None:
+    """No blue squadron may fall back to its own type name.
+
+    A campaign entry whose ``aircraft:`` repeats the ``aircraft_type`` gets no
+    name, no nickname and no livery -- the squadron flies as a bare airframe.
+    Both of the campaign's original offenders looked fine in the yaml: the
+    Warthogs named the type, and the Kiowas named a Taiwanese preset carrying a
+    *fictional* livery in a US-led coalition.
+    """
+    presets: dict[str, set[str]] = defaultdict(set)
+    for path in Path("resources/squadrons").rglob("*.yaml"):
+        data = yaml.safe_load(path.read_text(encoding="utf-8"))
+        if data and "name" in data and "aircraft" in data:
+            presets[str(data["name"])].add(str(data["aircraft"]))
+
+    campaign, theater = loaded
+    config = campaign.load_air_wing_config(theater)
+    for cp, squadrons in config.by_location.items():
+        if not cp.starting_coalition.is_blue:
+            continue
+        for squadron in squadrons:
+            kind = squadron.aircraft_type or squadron.aircraft[0]
+            for named in squadron.aircraft:
+                if named in NO_PRESET_EXISTS:
+                    continue
+                assert named != kind, (
+                    f"{cp.name}: the {kind} squadron names its own type instead of "
+                    f"a unit, so it flies with no name, nickname or livery"
+                )
+                assert named in presets, f"{cp.name}: no preset named {named!r}"
+                assert (
+                    kind in presets[named]
+                ), f"{cp.name}: preset {named!r} does not fly the {kind}"

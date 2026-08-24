@@ -67,9 +67,9 @@ squadrons:
         - Escort
       size: 6
       aircraft_type: OH-58D(R) Kiowa Warrior
-      country: Combined Joint Task Forces Blue
+      country: USA
       aircraft:
-        - Taiwanese Army
+        - 1-17 Cavalry
     - primary: Transport
       secondary:
         - Jamming
@@ -145,9 +145,9 @@ squadrons:
         - OCA/Runway
       size: 12
       aircraft_type: A-10C Thunderbolt II (Suite 7)
-      country: Combined Joint Task Forces Blue
+      country: USA
       aircraft:
-        - A-10C Thunderbolt II (Suite 7)
+        - 81st FS
   # Batumi
   22:
     - primary: BARCAP

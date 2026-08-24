@@ -32,7 +32,7 @@ What changed, and why each was forced rather than chosen:
 
 ---
 
-## The two traps, both of which bit
+## The three traps, all of which bit
 
 ### 1. A missing airframe does not fail — it substitutes, badly
 
@@ -71,6 +71,30 @@ aircraft needing a stand of that class or smaller must total ≤ `k`. `test_iron
 **`total_aircraft_parking` on a FOB reports 0 for the fixed-wing pool.** A check that compares
 against fixed-wing parking will call a FOB helicopter squadron oversubscribed when it is not;
 the rotary pool is the one that applies.
+
+### 3. A squadron that names its own airframe has no identity at all
+
+A campaign entry's `aircraft:` list holds **squadron preset names**, not aircraft types. Put
+the type there and it matches no preset, so the squadron flies with **no name, no nickname
+and no livery** — and nothing warns. Two of Iron Gate's blue squadrons shipped that way:
+
+| squadron | was | now |
+|---|---|---|
+| A-10C, Kobuleti | `A-10C Thunderbolt II (Suite 7)` — its own type | **81st FS "Termites"**, Spangdahlem |
+| OH-58D, Kutaisi | `Taiwanese Army`, CJTF Blue, livery `TWN Army Fictional` | **1-17 Cavalry "Saber"**, livery `US 1-17 A 002` |
+
+The Kiowa case is the nastier one, because it *looks* right — it names a real preset that
+really exists. It was a Taiwanese unit with a fictional livery in a US-led coalition, and it
+also carried `country: Combined Joint Task Forces Blue`, which costs the §23 US voiceovers and
+pilot names every other squadron in the campaign gets.
+
+`Bluefor Modern` is a CJTF faction, so `SquadronDefLoader` does **no country filtering** and
+every preset in the repo is reachable. That is why the wrong nation resolved happily.
+
+`test_every_blue_squadron_is_a_real_unit` locks it: no blue squadron may name its own type,
+every name must exist as a preset, and that preset must fly that airframe. **The E-2D is the
+one documented exception** — no Hawkeye preset exists anywhere in `resources/squadrons`, so
+the carrier's Hawkeye has nothing to be named after.
 
 ---
 

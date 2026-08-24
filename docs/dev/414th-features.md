@@ -1927,6 +1927,31 @@ defect that reached a build, most of them found by flying.
   player-slotted package was hit too; a package whose primary has no client slots releases
   from the `RunScript` and was never affected. Checklist B78; tests
   `tests/missiongenerator/aircraft/test_split_release.py`.
+- **AI packages were timed to arrive after the mission ended (2026-08-24).** The spread that
+  staggers non-CAP packages bounds the random **offset** by the cycle length, then adds it to
+  the package's earliest possible TOT: `package.time_over_target = next(start_time) + tot`.
+  Offset plus transit is the arrival, and nothing bounded that, so a long-transit package was
+  scheduled past the end of the mission and never serviced its target at all.
+  - **Measured, not read.** `tools/measure_tot_past_mission_window.py` counts packages whose
+    final TOT exceeds the scheduler's own ceiling (`desired_player_mission_duration` plus §89's
+    follow-on minutes), separating the ones a clamp could fix from the ones too far away to
+    reach it at any offset. Across five saves × 3 turns × both coalitions, **60 of 158
+    spread-scheduled packages (38.0%) arrived late avoidably, median 20 min past the end**;
+    only 3 were unreachable. After the fix, 2 of 157 (1.3%), median 2 min — inside the
+    generator's own ±5 min jitter. Thresholds were pre-registered in the tool's docstring
+    before the first run.
+  - **The offset now buys from the room the transit leaves**, scaled rather than clamped
+    (`MissionScheduler._spread_arrival`). Clamping to the ceiling would give every over-long
+    package the *same* TOT — the one arrival time a spread exists to stop packages sharing. A
+    transit already past the ceiling takes no delay at all: it cannot make the cycle, so it
+    goes as early as it can rather than later still.
+  - **Blue was hit harder than red** (11 of 16 blue spread packages on one dense turn), so this
+    is a shared-path correction, not a red buff. Ungated — a package outside the mission is
+    wrong on both sides. A zero-transit package is timed exactly as before, which is what keeps
+    §89's widened tail intact.
+  - Found by the planner doctrine-mining queue (row 2). Tests `tests/test_missionscheduler.py`
+    (2 behavioural, red/green confirmed; 2 exclusion pins). Needs an in-game pass
+    (checklist **B97**).
 
 ---
 

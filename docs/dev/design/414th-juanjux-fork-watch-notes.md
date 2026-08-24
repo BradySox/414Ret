@@ -57,8 +57,25 @@ the same verdict from different evidence — treat that as the strongest confirm
 the re-convergence call was correct, and do not re-litigate it.
 
 One thing he built and then deleted: an EW jamming flight task (his #28/#44/#45,
-reverted 2026-06-30 with backup branches). No reason is recorded in the commits.
-**Do not read this as a verdict on our §2/§77** — ask him before assuming.
+reverted 2026-06-30 with backup branches). **The reason is now recorded — found
+2026-08-24 in his README's "Halted for Now" section, not in the commits**, which is
+why the earlier "ask him before assuming" stood for as long as it did:
+
+> after a lot of in-game soak-testing, a *reliable and good* EWAR turned out to be
+> basically impossible without proper support from the DCS engine itself. The available
+> levers (scripted ROE, missile deletion, engine ECM) don't scale consistently — e.g. a
+> few jammers saturate a fleet's radar into total silence, which is neither realistic
+> nor fun.
+
+His scope was wider than ours (a dedicated EWAR flight task across EA-18G, EA-6B, Su-34,
+Mi-8 and emulated Compass Call / Su-24MP / Tornado ECR, built on upstream's `ewrj`), and
+he kept every branch — `juanjux/ew_jamming_parked` is the complete pre-removal state.
+
+**Read this before the B31 and B52 escort-jamming passes.** It is soak-test evidence
+against the *saturation* failure mode specifically, which is the one our §77 guards with
+non-stacking bubbles and a per-side jammer cap. It is not a verdict on §77 — his levers
+and ours differ — but it is the closest thing to a second opinion that exists, and it
+came from more in-game hours than we have spent on §77.
 
 ## The OPFOR-AI feature — the part we do not have
 
@@ -214,6 +231,64 @@ already #773, this is the observation half).
 |---|---|
 | Base capture zone radius (his #89) | Ours is `TRIGGER_RADIUS_CAPTURE = 3000`. He tested in-game that DCS ground AI engages T-72, BMP-2 and even an unarmed truck, but **never a ZU-23 emplacement** — so one surviving AD emplacement inside 3 km blocks a capture forever and dropped troops cannot clear it. He made it a setting, default 1000 m. |
 | IADS rebuild economy (his #97) | Comms/power/command buildings generate no income, so they have no repair price and stay rubble for the rest of the campaign. He priced them flat: 15M power, 10M command centre, 5M comms tower. Turns striking the network into an attrition loop. Sits beside §52. |
+
+## He keeps his own ledger on us — read it first (found 2026-08-24)
+
+Two files in his repo say exactly what he has taken from us and what he has declined,
+with reasons. Neither was known to this note before 2026-08-24, and both are cheaper to
+read than any diff.
+
+- **`inventario_fork_414ret.txt`** (repo root, Spanish, 374 lines). His decision ledger
+  on our fork: 30 numbered features, 13 SÍ / 17 NO, each with an implementation sketch,
+  a `PROBADO` flag, an overlap verdict, and — the useful part — a **`Flip a SÍ si:`**
+  line naming what would change his mind. It also carries a "YA ES NUESTRO" section
+  listing our commits that are really back-ports of *his* PRs, which is the fastest way
+  to avoid offering him his own work.
+- **`README.md` → "From the 414Ret fork"** — what actually landed, each row crediting the
+  original author, plus a **"Queued from the 2026-08 review"** section of what he has
+  decided to take but not started. His stated bar: *"every feature carried here is one
+  more thing to reconcile on each upstream sync, so the bar is 'clearly worth the
+  maintenance', not 'interesting'."*
+
+His last review covered our commits **2026-06-23 → 2026-08-22**. Anything of ours after
+that date he has not assessed.
+
+**His standing NO reasons, so we stop re-offering things he has already ruled on:** MOOSE
+dependency (hard no — heavy, untestable in Python, third-party code in the repo); the
+BARCAP planning family (#9/#10/#11, "no interesa"); anything requiring the fog refactor
+(#5 — it breaks the accessors his own map PRs read); and features that are immature or
+gated off in our tree.
+
+### Two structural facts that constrain any carve
+
+- **He runs Skynet, not MANTIS.** His `resources/plugins/` has `skynetiads`; he has no
+  `mantisiads`. Anything of ours riding MANTIS does not port to him at all — that covers
+  §51, §70's red net, the C2 consequences layer and G41.
+- **A patch built against our fork point does not apply to him.** `dce851ea` predates
+  both trees' upstream syncs; his `tgogenerator.py` is 1,760 lines to that base's 1,636
+  and ours' 2,213. Generate against *his* HEAD and verify with `git apply --check`.
+
+### Carve payloads prepared 2026-08-24
+
+[`docs/dev/upstreaming/juanjux/`](../../upstreaming/juanjux/) — three patches verified to
+apply at `ca780fd2` (§87 naval station-keeping, §69 SEAD coordination, §93 region
+priorities core) and two comparison briefs (§91 sortie records vs his `prev_turns`
+aggregates; §74 DTC, whose declined premise our B28 evidence falsifies).
+
+**Nothing has been sent.** The upstream PR freeze binds us, and routing a carve through
+him to get around it would be using him as a proxy for a policy we have been told applies
+to us. These are for his fork and his testing; what he sends upstream is his call.
+
+### Zero-port test asks
+
+He already ships three of our features that we cannot close a row on. These cost no
+porting at all — only his hardware:
+
+| Row | Feature | What is owed |
+|---|---|---|
+| B39 ◐ | §81 naval magazines | Re-fly with release window back at 120/900 (ours ran with leftover 3600/3600 diagnostics, so no magazine was ever exercised). Pass = AShM launches spread across the mission, a `WINCHESTER` line, the debrief debit matching the track, turn 2 opening with reduced stock. |
+| B45 ☐ | §86 GPS jamming | A JDAM strike inside 15 nm of a jammer, with a GBU-12 on the same pass as the control. Pass = the JDAM flies its normal profile and lands ~200 m off, the laser weapon hits, and killing the jammer restores the next JDAM in the same mission. |
+| B32 ☐ | §78 coastal batteries | He has the coastal half only (`coastal_batteries_engage_ships`), not the convoy half. Pass = a land-based anti-ship site engages a hull passing in range on its own. |
 
 ## Running the watch
 

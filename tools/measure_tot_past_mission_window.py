@@ -35,6 +35,10 @@ Population is the spread branch only: BARCAP/TARCAP waves are planned in rounds
 to SPAN the mission (so a late one is correct), AEWC chains, `auto_asap` is
 immediate, and RECOVERY is tied to carrier ETAs.
 
+!! Drive this from `tools/_campaign_game.py`, not from a `.retribution` save. The
+saves in Saved Games are hand-edited, and the numbers this tool first produced
+from them described the save rather than the planner. They are withdrawn.
+
 Sibling of `tools/measure_red_planner_headroom.py`; same four-line harness.
 Procedure: `docs/dev/design/414th-planner-doctrine-mining-notes.md`.
 

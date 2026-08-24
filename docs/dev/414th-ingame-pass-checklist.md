@@ -6199,9 +6199,10 @@ mountain or coastal front will do.
 
 **History:** built 2026-08-24, planner doctrine-mining row 2. The non-CAP spread bounded the
 random **offset** by the cycle and then added transit on top, so a long-transit package was
-timed past the end of the mission. Measured before the fix at 60 of 158 spread-scheduled
-packages across five saves (38.0%), median 20 min past the ceiling; after, 2 of 157 (1.3%),
-median 2 min. Instrument: `tools/measure_tot_past_mission_window.py`.
+timed past the end of the mission. The share this affected was first measured against
+hand-edited saves and was overstated; those numbers are withdrawn, and the fix stands on the
+code being wrong. Instrument: `tools/measure_tot_past_mission_window.py`, driven from
+`tools/_campaign_game.py`.
 
 - **What CI cannot exercise:** whether the compressed arrivals still *read* as a spread in the
   air. The clamp is unit-tested and the population is counted headless; "the packages arrived

@@ -20,9 +20,9 @@ this says, find it by the surrounding code and adapt. Do not force a match.
 **The fast path.** Each feature has a patch verified to apply cleanly at `ca780fd2`:
 
 ```
-curl -O https://raw.githubusercontent.com/BradySox/414Ret/claude/build-audit-test-candidates-c6t7vt/docs/dev/upstreaming/juanjux/naval-station-keeping/station-keeping.patch
-curl -O https://raw.githubusercontent.com/BradySox/414Ret/claude/build-audit-test-candidates-c6t7vt/docs/dev/upstreaming/juanjux/sead-coordination/sead-coordination.patch
-curl -O https://raw.githubusercontent.com/BradySox/414Ret/claude/build-audit-test-candidates-c6t7vt/docs/dev/upstreaming/juanjux/region-priorities/region-priorities-core.patch
+curl -O https://raw.githubusercontent.com/BradySox/414Ret/main/docs/dev/upstreaming/juanjux/naval-station-keeping/station-keeping.patch
+curl -O https://raw.githubusercontent.com/BradySox/414Ret/main/docs/dev/upstreaming/juanjux/sead-coordination/sead-coordination.patch
+curl -O https://raw.githubusercontent.com/BradySox/414Ret/main/docs/dev/upstreaming/juanjux/region-priorities/region-priorities-core.patch
 git apply station-keeping.patch sead-coordination.patch region-priorities-core.patch
 ```
 

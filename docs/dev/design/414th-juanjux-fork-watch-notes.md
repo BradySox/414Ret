@@ -200,8 +200,16 @@ of our tree:
   zero.
 - **Time the strikes into the player's actual mission window.** Aim every TOT inside
   `desired_player_mission_duration` — a TOT after it is wasted, because the mission is over
-  before it happens. Concentrate in time, not only in space. **Nothing in our tree does
-  this for red**; §69 and §89 are the blue-side and pre-roll analogues.
+  before it happens. Concentrate in time, not only in space.
+  **Correction, 2026-08-24:** an earlier revision said "nothing in our tree does this for
+  red." Wrong, and so is the obvious counter-reading. `MissionScheduler` *is* handed
+  `desired_player_mission_duration`, and `start_time_generator` bounds the random spread by
+  it — but the final TOT is `next(start_time) + tot`, where `tot` is
+  `TotEstimator(package).earliest_tot(now)`. **The window bounds the spread offset, not the
+  TOT**, so a long-transit package can still be placed past the end of the mission. Whether
+  that actually happens, and how often, is measurable headless and is the first queued
+  candidate in
+  [414th-planner-doctrine-mining-notes.md](414th-planner-doctrine-mining-notes.md).
 - **DEAD before CAS, for the same reason as DEAD before strike** — the front-line
   sandwich: CAS descends to acquire and eats MANPADS, climbs to escape and enters the area
   SAM ring, with no safe altitude between.

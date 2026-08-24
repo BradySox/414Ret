@@ -5556,6 +5556,45 @@ changed** — same radius, same grace, same cue, same ROE-only discipline.
   FOB roads before them. Syrian Shield / Caucasus_Multi_Russia could still gain a corridor if a
   through-red supply line is ever wanted.
 
+### A base is never its own corridor (the 2026-08-24 turn-pass crash)
+
+`_top_up_side` picked `Tiyas -> Tiyas` and `Game.finish_turn` died on
+`IndexError: list index out of range` at `transfers.py` `arrange_transport`'s `path[0]`. The campaign
+could not pass a turn at all, from any save that reached the state.
+
+**Why the pair existed.** `MizCampaignLoader.add_supply_routes` maps a path group's first and last
+waypoint to `closest_control_point` *independently*, so a single-waypoint group — or a road drawn back
+onto its own field — resolves both ends to one base and links it to itself. `operation_syrian_shield.miz`
+ships both shapes: the one-point group `Suelo-5` (Tiyas) and a 38-waypoint loop (Palmyra).
+
+**Why it is fatal rather than cosmetic.** `TransitNetwork.shortest_path_between` raises `NoPathError`
+for a *disconnected* pair — loud, and `disband_uncompletable_transfers` screens for it — but returns an
+**empty list** for a base-to-itself query, because the reconstruction loop exits before appending
+anything. `arrange_transport` indexes that unguarded.
+
+**Fixed at both ends.**
+
+- `MizCampaignLoader._binds_one_control_point` warns and skips any route or lane whose two ends resolve
+  to one control point, at all four creation sites (miz + yaml, supply routes + shipping lanes). This
+  matches the `< 2 waypoints` warn-and-skip the yaml paths already did, and also stops the self-entry
+  inflating `connected_points`, which the ground planner counts. Measured over the 73 shipped campaigns:
+  4 carried one (Syrian Shield's Palmyra + Tiyas as convoy routes; Allied Sword's FOB Samandag and
+  Scenic Route / Scenic Merge's Havadarya as shipping lanes — all stray single-point groups, no real
+  connection lost), 0 after.
+- `_same_side_corridors` (§50) and `_pick_trail_corridor` (§35) skip `other is cp`. The loader guard does
+  not reach an existing save: the theater graph is pickled, so a save built before the fix keeps its
+  self-link and needs the caller guard to pass a turn.
+
+**Not carved upstream as an `arrange_transport` guard.** Upstream's own two `new_transfer` callers cannot
+produce `origin == destination` — `TransferDestinationComboBox` filters `cp != origin`, and
+`groundunitorders` routes a same-CP purchase into `bought_units` instead of a transfer — so the empty-path
+index is latent there, and a defensive guard has no reproducible upstream failure behind it. The **loader**
+half is the real upstream defect (upstream code, upstream-shipped campaign) and is the carve candidate.
+
+Tests: `tests/campaignloader/test_self_binding_supply_route.py` (the loader guard, 3 of 5 fail unpatched),
+plus the corridor guards and the empty-path contract pin in `test_ambient_convoys.py` /
+`test_vietnam_convoy.py`.
+
 ## §51 — Enemy comms jamming (IADS comms nodes)
 
 **The IADS comms nodes, given a voice.** The IADS data model has always carried communications nodes

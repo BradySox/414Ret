@@ -25,7 +25,7 @@ so the two docs don't drift.
 
 ## Outstanding rows at a glance
 
-72 rows need a live pass. Full detail is under each `###` heading below —
+73 rows need a live pass. Full detail is under each `###` heading below —
 search the row id. `☐` untested · `◐` flown but not under the conditions that
 stress it · `✗` fail signature reproduced in-game.
 
@@ -58,8 +58,8 @@ stress it · `✗` fail signature reproduced in-game.
 | G41 | A bombed power station keeps its SAMs down on the NEXT turn | MANTIS C2 | ☐ |
 | B84 | Front-line groups move and return fire instead of holding | §8 | ☑ |
 | B85 | A flight with an unreachable TOT flies instead of orbiting | §8 | ☐ |
-| B97 | AI packages arrive inside the mission, not after it | §8 | ☐ |
 | B98 | The bullseye is the same place it was last mission | §95 | ☐ |
+| B99 | AI packages arrive inside the mission, not after it | §8 | ☐ |
 | G25 | Armed Recon package: recon drone + SEAD Viper escort + 4-ship sweep | §3 | ◐ |
 | G30 | MANTIS SHORAD link: the point defense ambushes the HARM shot | MANTIS migration | ☐ |
 | G33 | Survivor ADF beacon: the pinned 260 kHz drives a real needle | CSAR (upstream #929 + 414th pin) | ☐ |

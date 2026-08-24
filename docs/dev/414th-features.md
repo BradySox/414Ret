@@ -1932,14 +1932,12 @@ defect that reached a build, most of them found by flying.
   the package's earliest possible TOT: `package.time_over_target = next(start_time) + tot`.
   Offset plus transit is the arrival, and nothing bounded that, so a long-transit package was
   scheduled past the end of the mission and never serviced its target at all.
-  - **Measured, not read.** `tools/measure_tot_past_mission_window.py` counts packages whose
-    final TOT exceeds the scheduler's own ceiling (`desired_player_mission_duration` plus §89's
-    follow-on minutes), separating the ones a clamp could fix from the ones too far away to
-    reach it at any offset. Across five saves × 3 turns × both coalitions, **60 of 158
-    spread-scheduled packages (38.0%) arrived late avoidably, median 20 min past the end**;
-    only 3 were unreachable. After the fix, 2 of 157 (1.3%), median 2 min — inside the
-    generator's own ±5 min jitter. Thresholds were pre-registered in the tool's docstring
-    before the first run.
+  - **⚠️ The share this affected was overstated, and the numbers are withdrawn.** They
+    were measured against hand-edited saves, whose air wings, basing and laydown are curated
+    rather than generated, so they described the save and not the planner. Re-run on fresh
+    campaigns the effect is small. `tools/measure_tot_past_mission_window.py` still counts it
+    -- drive it from `tools/_campaign_game.py`, never from a save. The fix stays on the
+    strength of the code being wrong, not of a measurement.
   - **The offset now buys from the room the transit leaves**, scaled rather than clamped
     (`MissionScheduler._spread_arrival`). Clamping to the ceiling would give every over-long
     package the *same* TOT — the one arrival time a spread exists to stop packages sharing. A
@@ -1951,7 +1949,7 @@ defect that reached a build, most of them found by flying.
     §89's widened tail intact.
   - Found by the planner doctrine-mining queue (row 2). Tests `tests/test_missionscheduler.py`
     (2 behavioural, red/green confirmed; 2 exclusion pins). Needs an in-game pass
-    (checklist **B97**).
+    (checklist **B99**).
 
 ---
 

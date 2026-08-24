@@ -96,9 +96,26 @@ Write a sibling tool per candidate rather than growing that one. Name the count 
 docstring so the number is reproducible, and **pre-register the threshold that would make
 it a defect before running it** — the three prior Phase 0s are the reason this rule exists.
 
+`tools/measure_tot_past_mission_window.py` (row 2) is the second one, and the shape to copy
+for a scheduling candidate: it takes several saves and pools them into one verdict, prints a
+per-save subtotal so an outlier is visible rather than averaged away, and carries its
+thresholds in its own docstring. It also **splits the population by whether a fix could
+reach it** — 60 packages were late, but only the ones whose transit alone would have fitted
+are the defect; the rest are a different question. Deciding that split before running is
+most of the work.
+
+**Separate the two coalitions in the output even when the doctrine line is about red.** Row
+2's defect turned out to hit blue harder than red, which is what established it as a
+shared-path correction rather than something red was being handed.
+
 Pick saves that are **not** fork-authored campaigns where possible. Our own campaigns are
 tuned to fork features and are not representative; the phase-0 note uses a Starfire
 campaign for exactly this reason.
+
+**Turn-passing can die in code unrelated to the measurement.** `game.pass_turn(no_action=True)`
+raised `IndexError` in the ambient-convoy layer on one of the five saves. Catch per turn and
+take the turns the save did give rather than losing the whole sample — and file the crash,
+because a save that cannot pass a turn headless cannot pass one in the app either.
 
 ### 4. Build it as ordinary planner code
 
@@ -169,10 +186,11 @@ Verification state is what matters; do not re-do a row that is already resolved.
 | # | Doctrine point | State |
 |---|---|---|
 | 1 | **CAS behind its SEAD window** | ✅ Built — #973. Flown pass owed. |
-| 2 | **A TOT past the end of the mission window** | 🔵 **Next.** Expressibility established (step 2 above): the window bounds the spread offset, not the TOT. **Not yet measured** — count red packages whose final TOT exceeds `desired_player_mission_duration`, across several saves and several re-plans. Pre-register the threshold first. If it is near zero the row dies and that is a good outcome. |
+| 2 | **A TOT past the end of the mission window** | ✅ Built — [#975](https://github.com/BradySox/414Ret/pull/975). Measured at **60 of 158 spread-scheduled packages (38.0%) arriving past the cycle, median 20 min over**, across five saves × 3 turns × both coalitions; the pre-registered bar was 10% and 5 min. Only 3 were unreachable at any offset. Fixed by scaling the spread offset into the room the transit leaves — clamping would give every over-long package the same TOT. Re-measured at 1.3% / 2 min. Instrument `tools/measure_tot_past_mission_window.py`. Flown pass owed (B97). |
 | 3 | **Concentration of force on 1–3 objectives** | ⚪ Unstarted, and the biggest. His diagnosis is that `PlanNextAction.each_valid_method` walks a fixed priority list with no operational shape. Ours is the same walker. Note §93 region priorities is the *blue-side, human-set* analogue already built — read it before designing anything, because a red-side version that is a weight rather than a fence is the same shape. |
 | 4 | **Route helos over land, never open water** | ⚪ Unstarted. Nap-of-earth masks a helo in ground clutter; over sea it is engaged like any other contact. Flight-plan/navmesh territory. Check what §90's terrain weighting and the navmesh already do first. |
-| 5 | **Stagger from each package's floor, not from zero** | ⚪ Unstarted, and possibly category A. §69 already uses `TotEstimator(package).earliest_tot(now)` as its clamp, so we may honour this on the coordinated path and not elsewhere. Read before measuring. |
+| 5 | **Stagger from each package's floor, not from zero** | ✅ **Category A — we already do this. Do not re-check.** Audited every branch of `schedule_missions` 2026-08-24: CAP land (`tot + jitter`, then `max(tot, desired)`), CAP naval, `auto_asap` (`set_tot_asap` is `earliest_tot`), AEWC, the generic spread, `_coordinate_sead_windows` (`max(window_start, earliest_tot)`) and the carrier stagger (delay-only) all floor on the package's own `earliest_tot`. One exception, split out as row 6. |
+| 6 | **Recovery tankers are the one branch with no floor** | 🔵 **Next, and cheap.** Found while closing row 5. The RECOVERY branch assigns `package.time_over_target = carrier_etas[package.target].pop(0)` with no `max(tot, ...)`, so a recovery tanker can be given a TOT it cannot physically reach — the only scheduler branch that can. B85's hold clamp means it degrades rather than breaks, which is why nobody saw it. **Not yet measured**: count RECOVERY packages whose assigned ETA precedes their `earliest_tot`, on saves with carriers. Pre-register the threshold first; a short CAP landing early in the cycle is the shape that would produce one. |
 
 Add a row per doctrine line assessed, including the ones that die. **A category-A finding
 is worth recording precisely because it stops the next pass re-checking it.**

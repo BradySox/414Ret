@@ -108,6 +108,20 @@ most of the work.
 2's defect turned out to hit blue harder than red, which is what established it as a
 shared-path correction rather than something red was being handed.
 
+**Name the bias that would push the reading toward a defect, and check whether the
+verdict survives it.** `tools/measure_offensive_concentration.py` (row 3) over-counts the
+candidate pool, because some tasks pick from a narrower slice than `TheaterState` holds.
+That inflates "it spreads". The row died anyway, so the bias could not have manufactured
+the result — which is the only reason the number was quotable. A DEFECT verdict under a
+known bias in the same direction is not a finding.
+
+**A gate can be unsatisfiable rather than merely strict.** Row 3's inclusion gate was
+first written as "candidate objectives >= 2 x packages" and could never fire: objective
+count is bounded by the map, package count is not. Every turn scored as "no room" and it
+had to be rewritten after the data was visible, which costs the pre-registration most of
+its value. Sanity-check a gate against the ranges the quantities actually take before
+running.
+
 Pick saves that are **not** fork-authored campaigns where possible. Our own campaigns are
 tuned to fork features and are not representative; the phase-0 note uses a Starfire
 campaign for exactly this reason.
@@ -187,7 +201,7 @@ Verification state is what matters; do not re-do a row that is already resolved.
 |---|---|---|
 | 1 | **CAS behind its SEAD window** | ✅ Built — #973. Flown pass owed. |
 | 2 | **A TOT past the end of the mission window** | ✅ Built — [#975](https://github.com/BradySox/414Ret/pull/975). Measured at **60 of 158 spread-scheduled packages (38.0%) arriving past the cycle, median 20 min over**, across five saves × 3 turns × both coalitions; the pre-registered bar was 10% and 5 min. Only 3 were unreachable at any offset. Fixed by scaling the spread offset into the room the transit leaves — clamping would give every over-long package the same TOT. Re-measured at 1.3% / 2 min. Instrument `tools/measure_tot_past_mission_window.py`. Flown pass owed (B97). |
-| 3 | **Concentration of force on 1–3 objectives** | ⚪ Unstarted, and the biggest. His diagnosis is that `PlanNextAction.each_valid_method` walks a fixed priority list with no operational shape. Ours is the same walker. Note §93 region priorities is the *blue-side, human-set* analogue already built — read it before designing anything, because a red-side version that is a weight rather than a fence is the same shape. |
+| 3 | **Concentration of force on 1–3 objectives** | ❌ **DEAD 2026-08-24 — the planner already concentrates. Do not re-open without new evidence.** Measured on 16 scored coalition-turns (5 saves × 3 turns, both sides, turns with room to choose): median **0.37 objectives per package** (~3 packages per objective), median **69% of a touched objective's candidates tasked**, and target picks tighter than **97% of random draws from the planner's own pool** (median dispersion percentile 3.0). All three pre-registered ROW DIES conditions fired independently; no DEFECT condition was met, and the instrument's known bias runs toward declaring a defect, so the verdict survives it. Instrument `tools/measure_offensive_concentration.py`. The step-2 composition is below — read it before proposing anything here. |
 | 4 | **Route helos over land, never open water** | ⚪ Unstarted. Nap-of-earth masks a helo in ground clutter; over sea it is engaged like any other contact. Flight-plan/navmesh territory. Check what §90's terrain weighting and the navmesh already do first. |
 | 5 | **Stagger from each package's floor, not from zero** | ✅ **Category A — we already do this. Do not re-check.** Audited every branch of `schedule_missions` 2026-08-24: CAP land (`tot + jitter`, then `max(tot, desired)`), CAP naval, `auto_asap` (`set_tot_asap` is `earliest_tot`), AEWC, the generic spread, `_coordinate_sead_windows` (`max(window_start, earliest_tot)`) and the carrier stagger (delay-only) all floor on the package's own `earliest_tot`. One exception, split out as row 6. |
 | 6 | **Recovery tankers are the one branch with no floor** | 🔵 **Next, and cheap.** Found while closing row 5. The RECOVERY branch assigns `package.time_over_target = carrier_etas[package.target].pop(0)` with no `max(tot, ...)`, so a recovery tanker can be given a TOT it cannot physically reach — the only scheduler branch that can. B85's hold clamp means it degrades rather than breaks, which is why nobody saw it. **Not yet measured**: count RECOVERY packages whose assigned ETA precedes their `earliest_tot`, on saves with carriers. Pre-register the threshold first; a short CAP landing early in the cycle is the shape that would produce one. |
@@ -202,3 +216,50 @@ is worth recording precisely because it stops the next pass re-checking it.**
 - A settings page. These are planner corrections, not knobs.
 - A justification for shipping doctrine we have not tested because a good commander said
   it. He is playing his fork, not ours; several of these will not survive step 2.
+
+## Row 3's composition — where concentration lives in our planner
+
+Row 3 is dead, but the reading behind it is the expensive part and is recorded so the
+next pass does not repeat it. Path read end to end 2026-08-24: `theatercommander.py` →
+`PlanNextAction.each_valid_method` → each compound task → `PackagePlanningTask` →
+`objectivefinder`.
+
+**Concentration is expressed in three places, all narrow:**
+
+| Mechanism | What it does | How far it reaches |
+|---|---|---|
+| `Doctrine.strike_flight_count` — the Alpha Strike fan | `PlanStrike.propose_flights` puts N coordinated STRIKE sections on one target sharing a TOT. The first is required, the rest optional, so they mass as deep as the squadron allows and drop silently when it runs dry. | **1 on every doctrine except `VIETNAM_DOCTRINE`, which is 4.** Real concentration of force, built, and set to 1 almost everywhere. |
+| `AttackBattlePositions` | Iterates `state.control_point_priority_queue[:2]` — the top two capturable control points and nothing else. | That task only. |
+| `DegradeIads`, opportunistic tier | Sorts by `priority_cp.distance_to(x) - x.max_threat_range()`. | That tier only. `priority_cp` is read in **exactly one place in the whole tree**. |
+
+**It is not expressed anywhere else:**
+
+- `AttackBuildings`, `AttackMotorpools`, `AttackAirInfrastructure`, `AttackShips` and
+  `InterdictReinforcements` each consume a globally range-sorted candidate list.
+- That sort key is `min(distance to ANY friendly control point)` — `_targets_by_range`
+  and the `strike_targets` iterator. Global proximity with no notion of grouping: two
+  targets 200 km apart sort adjacent when each is 50 km from a different friendly base,
+  so the near-list is a band along the whole front rather than a cluster.
+- A tasked TGO leaves the planning state (`PlanStrike.apply_effects` →
+  `strike_targets.remove`; `PlanDead` → `eliminate_air_defense`), so several packages on
+  one TGO is impossible by construction. Massing on one *objective* means planning
+  several of its TGOs, and nothing steers toward that.
+- `each_valid_method` walks a fixed method order. Only §67 weather demotion reorders it
+  and only the §52 C2 throttle trims it; neither weights by place.
+
+**The naive reading is wrong in both directions**, which is the whole point of step 2.
+"No operational shape" is false — two tasks already concentrate and the Alpha Strike fan
+is real massing sitting at 1. "We already handle it" is also false — the five remaining
+offensive tasks pick globally by proximity with nothing weighting them by place.
+
+**Where a weight would attach, if this is ever re-opened on new evidence.** `priority_cp`
+is already computed every turn and almost unused, and §93's `planning_factor` is exactly
+the right shape — a multiplicative factor on the range sort, with call sites already cut
+into both sort sites. A derived, both-sides analogue goes there, not into a new
+subsystem. But the measurement says there is nothing to buy: the planner puts roughly
+three packages on each objective it touches and finishes 69% of what that objective
+offers.
+
+**What row 3 did NOT ask.** It asked *how many* objectives the effort lands on, not
+*which*. If the real complaint is that the objectives chosen are the wrong ones, that is
+a different row with a different measurement, and this verdict says nothing about it.

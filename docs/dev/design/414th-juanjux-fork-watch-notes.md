@@ -121,15 +121,53 @@ proposing anything here.
 Nothing about this is adopted. It is recorded so seam 7 has a worked precedent to
 argue with.
 
-### How he actually uses it — a testbed, not just an opponent (CORRECTED 2026-08-24)
+### How he actually uses it — an engine QA harness (CORRECTED 2026-08-24, twice)
 
-**The design docs above describe a product; his use of it is a research instrument, and
-the second is what matters to us.** The 2026-08-24 read of this note framed `game/agent/`
-as a feature to evaluate for adoption and recorded only the adoption timing. That missed
-the point, caught by the DM from talking to him directly: he is running it as a **testbed
-for "red could be done like X instead of Y."**
+**The design docs above describe a product. His use of it is a defect-finding instrument
+pointed at Retribution itself, and that is what matters to us.** This took two
+corrections to get right: the first read here treated `game/agent/` as a feature to
+evaluate for adoption; the second, on the DM's steer, called it a testbed for red
+doctrine. The doctrine half is real (below) but it is the smaller half.
 
-The evidence is in his commit pattern, not his design docs:
+**In his own words, relayed 2026-08-24:**
+
+> They find problems and papercuts when using the API to play opfor, then I fix it and
+> repeat. I have used it on six campaigns already but still they find more bugs or things
+> to improve, so it'll be a while until I try to merge it upstream.
+
+An agent that must actually plan and execute a whole red turn through the API is a
+tireless, literal-minded user that exercises paths no human clicks. Six campaigns of that
+has produced a continuous stream of engine fixes.
+
+**It is stated outright in his commit messages.** On `e06b25c`, which added
+`rebuild: {force_group, turns_remaining}` because a site under construction was
+indistinguishable from a wrecked one:
+
+> Reported from a live campaign by the LLM planning red: two of its own sites had
+> vanished from every read while the human could see them being rebuilt.
+
+**The defect class is the seam between game state and any consumer that is not a human
+looking at the map.** A player never hits that one — they can *see* the works. Our own
+verification is a person flying missions against a checklist, so it cannot reach this
+layer either. We have no equivalent instrument.
+
+**This loop already feeds us and we did not know it.** The faction-editor trio adopted
+here on 2026-08-23 (his #953, checklist **B94** — the faction edit that never reached the
+buy menus, the tick boxes that removed nothing, the lists sorted by internal id) came out
+of exactly this. So did the convoy-counter and hold-release fixes. Expect the stream to
+continue for as long as he runs campaigns, and read his `[FIX]` commits after each one.
+
+**Checked here, and NOT applicable — do not re-check:** the `rebuild` defect itself
+cannot occur in our tree, because we have no multi-turn construction. §68's SAM repair is
+the instant pay-full-price flip-alive the player's own repair button does, and
+`theatergroundobject.py` / `theatergroup.py` carry no construction countdown at all. If a
+multi-turn rebuild is ever added here, this is the hole to design against: represent
+"under construction" distinctly from "dead" *in the read model*, not only on the map.
+
+### The doctrine half
+
+The other output of the same loop. Findings that are not engine bugs get written into the
+LLM's playbook instead, and his commit pattern shows both kinds landing together:
 
 ```
 howtoplay: fold in the campaign-4 lessons
@@ -188,10 +226,14 @@ removal record. What changed is that a fourth Phase 0 now has a **cheap, concret
 pre-registered card** available to it — take two or three of the doctrine points above,
 check whether our planner can express them at all, and measure one.
 
-**His own adoption timing, unchanged and in his words:** "better to wait a little until is
-more polished or even merged upstream." He is also benchmarking Grok against Claude and
-means to try Codex, so the design is model-agnostic in practice rather than tuned to one
-provider. Read the docs; do not evaluate the code for adoption yet.
+**His own adoption timing, and it is firmer than it first looked.** The opening quote was
+"better to wait a little until is more polished or even merged upstream"; the fuller
+version is six campaigns in and the agents are *still* finding bugs, so "it'll be a while
+until I try to merge it upstream." Treat that as the schedule. He is also benchmarking
+Grok against Claude and means to try Codex, so the design is model-agnostic in practice
+rather than tuned to one provider.
+
+Read the docs and harvest the fixes; do not evaluate the code for adoption yet.
 
 ## Adoption ledger
 

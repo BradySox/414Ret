@@ -282,11 +282,15 @@ same candidate-target and task-mix mapping, and it should not be improvised per 
 
 Framing 3 measured the LLM commander the same way as framings 1 and 2: **analytically, asking
 whether red had headroom**, and finding none. The 2026-08-24 read of juanjux's fork found that
-he is not running his LLM as an opponent to be measured — he runs it as a **testbed**, one loop
-per campaign: play, watch a strong general handle red, find something it wanted to do that the
-engine could not express, then either expose the data or write the lesson down. The lessons
-accumulate in `ai-docs/howtoplay.md` (218 lines), which is an empirically derived doctrine for
-red and needs none of his code to read.
+he is not running his LLM as an opponent to be measured at all. In his words, the agents "find
+problems and papercuts when using the API to play opfor, then I fix it and repeat" — six
+campaigns so far, still finding. It is primarily a **QA harness pointed at the engine**, and
+most of what it produces is engine defects rather than anything about red's competence (that
+half is in the fork-watch note; it is why the faction-editor fixes we adopted exist).
+
+The part that bears on seam 7 is the residue: findings that are *not* engine bugs get written
+into `ai-docs/howtoplay.md` (218 lines) instead, which has accumulated into an empirically
+derived doctrine for red and needs none of his code to read.
 
 Several of its points name things our planner does not do at all — concentration of force on
 1–3 objectives rather than a little of everything; aiming red's TOTs inside the player's actual

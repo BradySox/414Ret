@@ -121,6 +121,8 @@ known bias in the same direction is not a finding.
 
 **Before calling a dead code path a defect, find out whether its JOB is already being done under another name.** This is step 2's second half and skipping it is what killed [#978](https://github.com/BradySox/414Ret/pull/978). RECOVERY was genuinely unreachable — measured, reproducible, correctly diagnosed. But the carrier already had a tanker orbiting 22 NM overhead for the whole mission, fragged as REFUELING, so there was no capability gap to close; enabling RECOVERY just took the tanker squadron from 1 of 4 aircraft committed to 4 of 4. **"The planner does not do X" and "the planner does not achieve X" are different claims**, and only the second one is a defect. The procedure already says not to trust a grep in either direction; a dead path is the case where the "we already handle it" half is easiest to forget, because there is nothing named X to find. Search for the OUTCOME, not the name. Caught by the DM on the flown save.
 
+**A zero needs a control before you believe it.** Row 4 measured 0 of 41 helo flights crossing water, which is equally consistent with "they do not" and "the detector is broken." The control was one line: the same detector on fixed-wing flights over the same saves returns 31 / 52 / 14. Run it before quoting a null.
+
 **A gate can be unsatisfiable rather than merely strict.** Row 3's inclusion gate was
 first written as "candidate objectives >= 2 x packages" and could never fire: objective
 count is bounded by the map, package count is not. Every turn scored as "no room" and it
@@ -208,7 +210,7 @@ Verification state is what matters; do not re-do a row that is already resolved.
 | 1 | **CAS behind its SEAD window** | ✅ Built — #973. Flown pass owed. |
 | 2 | **A TOT past the end of the mission window** | ✅ Built — [#975](https://github.com/BradySox/414Ret/pull/975). Measured at **60 of 158 spread-scheduled packages (38.0%) arriving past the cycle, median 20 min over**, across five saves × 3 turns × both coalitions; the pre-registered bar was 10% and 5 min. Only 3 were unreachable at any offset. Fixed by scaling the spread offset into the room the transit leaves — clamping would give every over-long package the same TOT. Re-measured at 1.3% / 2 min. Instrument `tools/measure_tot_past_mission_window.py`. Flown pass owed (B97). |
 | 3 | **Concentration of force on 1–3 objectives** | ❌ **DEAD 2026-08-24 — the planner already concentrates. Do not re-open without new evidence.** Measured on 16 scored coalition-turns (5 saves × 3 turns, both sides, turns with room to choose): median **0.37 objectives per package** (~3 packages per objective), median **69% of a touched objective's candidates tasked**, and target picks tighter than **97% of random draws from the planner's own pool** (median dispersion percentile 3.0). All three pre-registered ROW DIES conditions fired independently; no DEFECT condition was met, and the instrument's known bias runs toward declaring a defect, so the verdict survives it. Instrument `tools/measure_offensive_concentration.py`. The step-2 composition is below — read it before proposing anything here. |
-| 4 | **Route helos over land, never open water** | ⚪ Unstarted. Nap-of-earth masks a helo in ground clutter; over sea it is engaged like any other contact. Flight-plan/navmesh territory. Check what §90's terrain weighting and the navmesh already do first. |
+| 4 | **Route helos over land, never open water** | ❌ **DEAD 2026-08-24 — nothing to fix, and the benefit is unrepresentable anyway.** Measured: **0 of 41** qualifying helo flights (land base → land target, 6 saves × 3 turns, both sides) put any water on route; the bar to die was <5%. Control run because a zero can mean a broken detector: fixed-wing flights on the same saves cross water **31 / 52 / 14** times, so the detector works. Instrument `tools/measure_helo_water_routing.py`. Step 2 below says why it would still not be worth building. |
 | 5 | **Stagger from each package's floor, not from zero** | ✅ **Category A — we already do this. Do not re-check.** Audited every branch of `schedule_missions` 2026-08-24: CAP land (`tot + jitter`, then `max(tot, desired)`), CAP naval, `auto_asap` (`set_tot_asap` is `earliest_tot`), AEWC, the generic spread, `_coordinate_sead_windows` (`max(window_start, earliest_tot)`) and the carrier stagger (delay-only) all floor on the package's own `earliest_tot`. One exception, split out as row 6. |
 | 6 | **Recovery tankers are the one branch with no floor** | ❌ **DEAD — do not build this. The path is unreachable and should stay that way.** No RECOVERY package has ever been planned in any campaign: a squadron's auto-assignable set is `secondary | {primary}` and no campaign lists `Recovery`. That is real, but it is **not a capability gap** — the carrier already has a tanker on station. On `Maybe 414` the same A-6E Tanker squadron is fragged every turn as a REFUELING package targeting CVN-71, on station **22.2 NM from the boat at 14,000 ft for two hours**. Turning RECOVERY on (tried in the closed [#978](https://github.com/BradySox/414Ret/pull/978)) takes tanker commitment from **1 of 4 aircraft to 4 of 4** and puts three of them **40.0 NM out at 6,000 ft** — further from the boat than the tanker already there. |
 | 7 | **Why the recovery station lands 40 NM out** | ⚪ Recorded, unbuilt. `RecoveryTankerFlightPlan`'s builder sets `time_to_landing = desired_tanker_on_station_time` — the whole two-hour station time — and projects the carrier along the reciprocal wind at 20 kt: 7200 s × 20 kt = 40 NM. The station is placed where the boat will be when the tanker goes **home**, not where it is during recoveries. A bolter needs gas overhead, now. **Anyone reopening recovery tanking fixes this first**, and must answer why a second tanker is worth the squadron when the refueling station already orbits the boat. |
@@ -271,3 +273,53 @@ offers.
 **What row 3 did NOT ask.** It asked *how many* objectives the effort lands on, not
 *which*. If the real complaint is that the objectives chosen are the wrong ones, that is
 a different row with a different measurement, and this verdict says nothing about it.
+
+## Row 4's composition — why helo water routing would not be worth building
+
+Row 4 died on the count (0 of 41). The reading behind it is recorded because it kills the
+row twice over, and because the second reason applies to anything else that proposes to
+route aircraft for a survivability benefit.
+
+**Nothing routes by terrain.** `game/navmesh.py` contains **zero** references to land, sea
+or water. `NavMesh.from_threat_zones` triangulates map-bounds-minus-threat-polygons, and
+`travel_cost` is `distance × (3.0 if the poly is threatened else 1.0)`. `nav_path` never
+consults the landmap.
+
+**Three things touch land vs water near routing, and none of them moves a route:**
+
+| Where | What it does | Why it is not this |
+|---|---|---|
+| `PydcsWaypointBuilder.switch_to_baro_if_in_sea` | flips a RADIO (AGL) waypoint to BARO over water | fixes the altitude *reference*; the helo is still over open sea |
+| `AirAssaultFlightPlan` | snaps the drop-off to `nearest_land_pos`, bounded so an island map does not teleport the LZ | the destination, not the route to it |
+| `frontlineconflictdescription` | masks the FLOT to drivable land | ground placement, not flight routing |
+
+**The benefit our engine cannot represent.** `ThreatZones` is pure geometry — range circles
+intersected with flight paths. No terrain, no line of sight, no altitude, no clutter. So the
+thing the doctrine line buys, *masking*, is invisible to the planner: routing a helo over
+land instead of water changes nothing it can see, nothing the debrief measures, and nothing
+a test could assert beyond "the route avoided water." Whether DCS itself rewards it is a
+separate question, and per the guardrails it would need a flown test showing helos dying
+more over water before any of this is worth revisiting.
+
+**And it would cost a second navmesh.** The cost model has the right *shape* already — a
+per-polygon boolean with a multiplier — so a `wet` flag looks like a ten-line change. It is
+not:
+
+- The triangles are sized by threat geometry over a map-bounds box buffered 200 NM. One
+  triangle spans hundreds of NM and covers land and sea alike, so a per-triangle "is water"
+  boolean is close to meaningless.
+- The clean alternative is the one the constructor already uses for threats —
+  `bounds = bounds.difference(poly)` — applied to the landmap's water. But that makes water
+  unnavigable for **everything**, so it has to be a helo-only mesh.
+- `Coalition._navmesh` is one mesh per coalition, dropped from the pickle and rebuilt every
+  turn. A helo mesh doubles that on a path already known to be perf-sensitive.
+
+**The cheap version, if it is ever wanted**, is not the mesh at all: post-process the path
+`nav_path` already returned, and for helo flights only, push any leg crossing water onto the
+coast with `nearest_land_pos`. Local, no mesh, no per-turn cost. Recorded so the next pass
+does not start by redesigning the navmesh — but the measurement says there is nothing to
+push, and the threat model says nobody would notice if there were.
+
+**Also learned, and it bounds every future helo row:** these campaigns field about **two**
+helo flights per side per turn. Whatever helo behaviour a doctrine line describes, it is
+acting on a very small slice of the ATO.

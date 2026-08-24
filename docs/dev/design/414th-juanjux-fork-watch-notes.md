@@ -200,8 +200,16 @@ of our tree:
   zero.
 - **Time the strikes into the player's actual mission window.** Aim every TOT inside
   `desired_player_mission_duration` — a TOT after it is wasted, because the mission is over
-  before it happens. Concentrate in time, not only in space. **Nothing in our tree does
-  this for red**; §69 and §89 are the blue-side and pre-roll analogues.
+  before it happens. Concentrate in time, not only in space.
+  **Correction, 2026-08-24:** an earlier revision said "nothing in our tree does this for
+  red." Wrong, and so is the obvious counter-reading. `MissionScheduler` *is* handed
+  `desired_player_mission_duration`, and `start_time_generator` bounds the random spread by
+  it — but the final TOT is `next(start_time) + tot`, where `tot` is
+  `TotEstimator(package).earliest_tot(now)`. **The window bounds the spread offset, not the
+  TOT**, so a long-transit package can still be placed past the end of the mission. Whether
+  that actually happens, and how often, is measurable headless and is the first queued
+  candidate in
+  [414th-planner-doctrine-mining-notes.md](414th-planner-doctrine-mining-notes.md).
 - **DEAD before CAS, for the same reason as DEAD before strike** — the front-line
   sandwich: CAS descends to acquire and eats MANPADS, climbs to escape and enters the area
   SAM ring, with no safe altitude between.
@@ -304,6 +312,28 @@ planner side of the same idea.
 | #94 — SA-10B/S-300PS never spawn | Specific to Auranis HDS 2.1.0, which dropped the S-300PS family. We are on Ultimate Compilation. |
 
 ### Adopted here
+
+**Smart threat reaction** (his [#63](https://github.com/juanjux/dcs-retribution/pull/63)),
+taken 2026-08-24 as §94. DCS' stock Evade Fire breaks every aircraft that *perceives* a
+launch, so one naval or S-300 salvo scatters dozens of jets the missile was never aimed at.
+The plugin parks every airplane at Passive Defense and flips only the group
+`weapon:getTarget()` names. Design + adoption record:
+[`414th-ai-threat-reaction-notes.md`](414th-ai-threat-reaction-notes.md); checklist **B97**.
+
+**Two things about this one that generalise.** First, **the merged PR was the wrong file to
+take**: he rewrote it a week later (2026-07-15) because the merged version ran a `setOption`
+over every airplane every 5 s and *"was stalling the sim"* during an anti-ship salvo. Check
+the file's commit history before porting from a diff — his `[FIX]` PRs land clean, but a
+prototype he merged into his own fork may have been superseded in place. Second, this is the
+first adoption that is **a doctrine change rather than a defect fix**, so it carries a
+pre-registered falsifier instead of a verification: if AI attrition against SAM belts rises
+enough to change how a campaign plays, narrow the baseline or turn the plugin off.
+
+**Checked while porting, and worth not re-checking:** `redscramble` is the only plugin in our
+tree that sets a reaction-on-threat option at runtime, so it is the only one needing the new
+`dcsRetribution.aiReactionExempt` claim. MOOSE's `AI_A2A_DISPATCHER` does not set ROT; only
+its `ESCORT` class does, and we do not use it.
+
 
 **PySide6/Qt 6.4.2 → 6.8.3** (his #52), taken 2026-08-19 as 414Ret#905. Four pins, no application
 code. On 6.4.x QtWebEngine composites the map through the native desktop-OpenGL driver, whose

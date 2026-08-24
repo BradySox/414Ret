@@ -25,7 +25,7 @@ so the two docs don't drift.
 
 ## Outstanding rows at a glance
 
-71 rows need a live pass. Full detail is under each `###` heading below —
+72 rows need a live pass. Full detail is under each `###` heading below —
 search the row id. `☐` untested · `◐` flown but not under the conditions that
 stress it · `✗` fail signature reproduced in-game.
 
@@ -58,6 +58,7 @@ stress it · `✗` fail signature reproduced in-game.
 | G41 | A bombed power station keeps its SAMs down on the NEXT turn | MANTIS C2 | ☐ |
 | B84 | Front-line groups move and return fire instead of holding | §8 | ☑ |
 | B85 | A flight with an unreachable TOT flies instead of orbiting | §8 | ☐ |
+| B97 | AI packages arrive inside the mission, not after it | §8 | ☐ |
 | B98 | A carrier launches a recovery tanker before its jets come home | §8 | ☐ |
 | G25 | Armed Recon package: recon drone + SEAD Viper escort + 4-ship sweep | §3 | ◐ |
 | G30 | MANTIS SHORAD link: the point defense ambushes the HARM shot | MANTIS migration | ☐ |
@@ -145,6 +146,7 @@ stress it · `✗` fail signature reproduced in-game.
 | B94 | Editing a faction mid-campaign reaches the buy menus | juanjux #953 | ☐ |
 | B95 | Saving the air wing keeps both coalitions | air wing config | ☐ |
 | B96 | Iron Gate's fields fill without an aircraft losing its stand | Iron Gate | ◐ |
+| B97 | One salvo, and only the targeted flight breaks | §94 | ☐ |
 
 ---
 
@@ -6020,6 +6022,36 @@ mission-generation question.
   error. Report which airframe and which field — the fix is per stand class, not a blanket trim.
 - **Free while you are there:** blue has **36** land-based fighters at Kobuleti. Worth a note on whether
   that is enough to contest the pass, and whether Kobuleti's transit leaves useful fuel.
+### B97 — One salvo, and only the targeted flight breaks · §94 · ☐ UNTESTED
+
+**Setup.** Any campaign with a long-range SAM belt or a defended ship group, and at least
+two blue packages airborne near it at the same time. `Smart threat reaction` is on by
+default; tick its `DEBUG` option for this pass only — it prints every tagged shot on screen.
+~20 min.
+
+**Pass.** A SAM or naval launch tags one flight. The on-screen line names one group and the
+count stays low (`[1 flights evading]`, occasionally 2-3 on a real multi-shot engagement).
+Packages that were not shot at keep formation and keep flying their route. When the missile
+is gone the tagged flight returns to route within ~10 s.
+
+**Fail signatures, and what each means:**
+
+- **Nothing ever prints and every jet still scatters** — the plugin did not load. Check
+  `dcs.log` for `AIReaction| Smart Threat Reaction loaded`; absent means the DoScriptFile
+  trigger was dropped (the known DCS behaviour with a dead plugin), not that the logic is
+  wrong.
+- **The count climbs into the dozens on one salvo** — `weapon:getTarget()` is resolving to
+  aircraft it should not, or the release path is not firing. Capture the log.
+- **Blue AI dies noticeably more than the campaign's baseline** — this is the trade §94 names,
+  not a bug. Record the loss count against a previous turn on the same campaign before
+  reacting; the design note's falsifier is written against exactly this observation.
+- **§61 bandits stop maneuvering after ~10 s** — the `aiReactionExempt` claim broke. Grep
+  `claim_exempt` in `redscramble-config.lua`.
+
+**Cheap secondary read:** an anti-ship salvo should produce *no* on-screen spam at all, because
+ship-targeted shots are dropped at the event. If a naval battle floods the screen, the
+`notair` early return is not working and the perf fix that made this adoptable is gone.
+
 ### B94 — Editing a faction mid-campaign reaches the buy menus · juanjux #953 · ☐ UNTESTED
 
 **History:** ported 2026-08-23 from juanjux's upstream #953, after verifying all three
@@ -6164,6 +6196,36 @@ mountain or coastal front will do.
      strength, so an 8-object swing is worth a look on Desert Trident's Jordan
      sector specifically.
 
+### B97 — AI packages arrive inside the mission, not after it · §8 · ☐ UNTESTED
+
+**History:** built 2026-08-24, planner doctrine-mining row 2. The non-CAP spread bounded the
+random **offset** by the cycle and then added transit on top, so a long-transit package was
+timed past the end of the mission. Measured before the fix at 60 of 158 spread-scheduled
+packages across five saves (38.0%), median 20 min past the ceiling; after, 2 of 157 (1.3%),
+median 2 min. Instrument: `tools/measure_tot_past_mission_window.py`.
+
+- **What CI cannot exercise:** whether the compressed arrivals still *read* as a spread in the
+  air. The clamp is unit-tested and the population is counted headless; "the packages arrived
+  in a sensible order, and the sky was not empty for the second half" is a flying observation.
+- **Setup:** any campaign with long transits — a large map with the front far from the rear
+  fields. Fly a full-length turn and watch the ATO, or generate the turn and read the TOTs off
+  the app before flying.
+- **Pass:** every AI package's TOT falls inside the mission cycle, arrivals stay spread across
+  it rather than bunching, and the second half of the mission still has traffic in it.
+- **Fail signatures:**
+  1. **Several packages share one TOT at the very end of the cycle** — that is the clamping
+     behaviour the scaling exists to avoid; check `_spread_arrival` was not simplified to a
+     `min()`.
+  2. **Everything arrives in the first third and the sky dies** — the scaling pulled too hard.
+     Compare `max effective offset` from the tool before and after; it should still reach
+     roughly half the window, not a fifth of it.
+  3. **A package still lands past the end** — re-run the tool on that save. Two residual cases
+     at ≤4 min are expected (later passes nudge a TOT), and are inside the generator's own
+     ±5 min jitter margin.
+- **Not a fail:** arrivals bunching late on a campaign where *every* target is near the far edge
+  of the cycle. If the whole ATO is 90 minutes out in a 100-minute cycle there are only 10
+  minutes of spread to distribute, and the alternative is the half of it that used to fall
+  outside the mission. Check the transits before calling it a regression.
 ### B98 — A carrier launches a recovery tanker before its jets come home · §8 · ☐ UNTESTED
 
 **History:** built 2026-08-24, planner doctrine-mining row 6. A squadron's auto-assignable

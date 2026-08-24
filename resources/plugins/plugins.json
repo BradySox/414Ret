@@ -26,5 +26,6 @@
     "MooseSoundhandler",
     "MooseMarkerOps",
     "MooseAtis",
-    "opscsar"
+    "opscsar",
+    "ai_reaction"
 ]

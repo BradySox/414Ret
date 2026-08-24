@@ -220,3 +220,80 @@ def test_living_battlespace_widens_the_spread_window() -> None:
     tots = [p.time_over_target for p in packages]
     assert all(t is not None for t in tots)
     assert max(t for t in tots if t is not None) > NOW + timedelta(minutes=125)
+
+
+class _TransitTotEstimator:
+    """earliest_tot is `now` plus the package's own transit to its target."""
+
+    def __init__(self, package: object) -> None:
+        self.package = package
+
+    def earliest_tot(self, now: datetime) -> datetime:
+        return now + getattr(self.package, "transit", timedelta())
+
+
+def _schedule_transits(
+    transits: list[timedelta],
+    ceiling: timedelta,
+    monkeypatch: pytest.MonkeyPatch,
+) -> list[datetime]:
+    """Spread-schedule one STRIKE per transit; return their TOTs in order."""
+    monkeypatch.setattr(ms, "TotEstimator", _TransitTotEstimator)
+    packages = []
+    for transit in transits:
+        package = _FakePackage(_LandTarget(), task=FlightType.STRIKE)
+        package.transit = transit  # type: ignore[attr-defined]
+        packages.append(package)
+    coalition = _FakeCoalition(packages, _FakeSettings(timedelta()))
+    ms.MissionScheduler(coalition, ceiling).schedule_missions(NOW)  # type: ignore[arg-type]
+    tots = [p.time_over_target for p in packages]
+    assert all(t is not None for t in tots)
+    return tots  # type: ignore[return-value]
+
+
+def test_a_long_transit_package_still_arrives_inside_the_cycle(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # The spread bounded the OFFSET by the cycle and then added transit on top,
+    # so the tail of a long-transit ATO was timed past the end of the mission
+    # and never serviced its target. 12 packages over 120 min put the last
+    # offset near 120; a 40 min transit used to carry it to ~155.
+    ceiling = timedelta(minutes=120)
+    tots = _schedule_transits([timedelta(minutes=40)] * 12, ceiling, monkeypatch)
+    assert max(tots) <= NOW + ceiling
+
+
+def test_a_package_that_cannot_reach_the_cycle_launches_as_early_as_it_can(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # No offset can put a 150 min transit inside a 120 min cycle, so it takes
+    # none at all rather than being delayed further still.
+    transit = timedelta(minutes=150)
+    tots = _schedule_transits([transit], timedelta(minutes=120), monkeypatch)
+    assert tots[0] == NOW + transit
+
+
+def test_over_long_packages_do_not_collapse_onto_one_arrival(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Pins the choice of scaling over clamping. Clamping to the ceiling would
+    # give every package whose transit + offset overran it the SAME TOT, which
+    # is the one arrival time the spread exists to stop packages sharing.
+    # (Passes on the unpatched tree too -- it guards a later refactor, and is
+    # not the evidence for the fix.)
+    tots = _schedule_transits(
+        [timedelta(minutes=60)] * 8, timedelta(minutes=120), monkeypatch
+    )
+    assert len(set(tots)) == len(tots)
+
+
+def test_a_package_with_no_transit_keeps_the_full_spread(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # The scaling is room-relative, so a package that is already over its target
+    # spends the whole cycle exactly as before -- the fix must not squash the
+    # spread for everyone to rescue its tail. (Also passes unpatched.)
+    ceiling = timedelta(minutes=120)
+    tots = _schedule_transits([timedelta()] * 12, ceiling, monkeypatch)
+    assert max(tots) > NOW + timedelta(minutes=100)
+    assert min(tots) < NOW + timedelta(minutes=20)

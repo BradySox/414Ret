@@ -186,3 +186,48 @@ def test_a_dead_sams_zero_ring_opens_no_window() -> None:
     strike = _package(FlightType.STRIKE, _tot(10), _ground_target(IN_RING))
     _coordinate([sead, strike])
     assert strike.time_over_target == _tot(10)
+
+
+# --- CAS and the front-line sandwich ---
+#
+# A FrontLine is a MissionTarget like any other here: a name and a position, no
+# threat ring of its own, so it duck-types as _ground_target does.
+
+
+def _front_line(position: Point) -> Any:
+    return SimpleNamespace(name="Front line Foo/Bar", position=position)
+
+
+def test_cas_under_a_live_sam_umbrella_pushes_behind_the_dead() -> None:
+    dead = _package(FlightType.DEAD, _tot(30), _sam_target())
+    cas = _package(FlightType.CAS, _tot(10), _front_line(IN_RING))
+    _coordinate([dead, cas])
+    assert cas.time_over_target == _tot(32)
+
+
+def test_cas_on_an_uncovered_front_keeps_the_spread_schedule() -> None:
+    dead = _package(FlightType.DEAD, _tot(30), _sam_target())
+    cas = _package(FlightType.CAS, _tot(10), _front_line(OUT_OF_RING))
+    _coordinate([dead, cas])
+    assert cas.time_over_target == _tot(10)
+
+
+def test_armed_recon_and_air_assault_stay_out_of_the_window() -> None:
+    # The two deliberate exclusions, pinned at the same front line the CAS above
+    # is retimed at: a loitering sweep is not a push, and an assault is timed by
+    # the ground war. Sweeping them in later should fail here first.
+    sead = _package(FlightType.SEAD, _tot(30), _sam_target())
+    recon = _package(FlightType.ARMED_RECON, _tot(10), _front_line(IN_RING))
+    assault = _package(FlightType.AIR_ASSAULT, _tot(10), _front_line(IN_RING))
+    _coordinate([sead, recon, assault])
+    assert recon.time_over_target == _tot(10)
+    assert assault.time_over_target == _tot(10)
+
+
+def test_cas_and_a_strike_mass_into_one_window() -> None:
+    sead = _package(FlightType.SEAD, _tot(30), _sam_target())
+    cas = _package(FlightType.CAS, _tot(10), _front_line(IN_RING))
+    strike = _package(FlightType.STRIKE, _tot(75), _ground_target(IN_RING))
+    _coordinate([sead, cas, strike])
+    assert cas.time_over_target == _tot(32)
+    assert strike.time_over_target == _tot(32)

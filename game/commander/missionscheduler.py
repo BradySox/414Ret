@@ -110,12 +110,19 @@ class MissionScheduler:
     #: The strike-class package types that get timed into a SEAD window. Armed
     #: Recon (a loitering sweep, not a push) and AIR ASSAULT (tied to the
     #: ground war's timing) deliberately stay on the spread schedule.
+    #:
+    #: CAS is here for the front-line sandwich: it descends to acquire and eats
+    #: MANPADS low, climbs to escape into the area-SAM ring high, so a front
+    #: under a live SAM umbrella wants that umbrella down first, exactly as a
+    #: strike does. Its organic SEAD_SWEEP escort flies the package's own TOT
+    #: and so accompanies rather than pre-suppresses.
     COORDINATED_STRIKE_TYPES = frozenset(
         {
             FlightType.STRIKE,
             FlightType.BAI,
             FlightType.OCA_RUNWAY,
             FlightType.OCA_AIRCRAFT,
+            FlightType.CAS,
         }
     )
 
@@ -168,6 +175,7 @@ class MissionScheduler:
         # gate off -- the spread is upstream's.
         latest_s = int(self.desired_mission_length.total_seconds())
         latest_s += 60 * followon_window_minutes(self.coalition)
+        spread_ceiling = timedelta(seconds=latest_s)
         start_time = start_time_generator(
             count=len(non_dca_packages),
             earliest=5 * 60,
@@ -243,7 +251,16 @@ class MissionScheduler:
                 # airfields to hit grounded aircraft, since they're more likely
                 # to be present. Runway and air started aircraft will be
                 # delayed until their takeoff time by AirConflictGenerator.
-                package.time_over_target = next(start_time) + tot
+                #
+                # The offset buys from the room the package's TRANSIT leaves in
+                # the cycle, not from the whole cycle. Spending the full window
+                # on top of a long transit placed the package past the end of
+                # the mission, where it never serviced its target at all --
+                # measured at 60 of 158 AI packages across five saves, median
+                # 20 min late (tools/measure_tot_past_mission_window.py).
+                package.time_over_target = tot + self._spread_arrival(
+                    next(start_time), tot - now, spread_ceiling
+                )
 
         # §89 living battlespace: seat player packages a phase-aware pre-roll
         # into the cycle, BEFORE the SEAD windows and the carrier stagger so
@@ -286,6 +303,26 @@ class MissionScheduler:
         ]:
             if carrier_etas[package.target]:
                 package.time_over_target = carrier_etas[package.target].pop(0)
+
+    @staticmethod
+    def _spread_arrival(
+        offset: timedelta, transit: timedelta, ceiling: timedelta
+    ) -> timedelta:
+        """The delay to add to a package's earliest TOT, inside the cycle.
+
+        Scaled rather than clamped: clamping collapses every over-long package
+        onto the ceiling itself, which is the one arrival time a spread exists
+        to stop packages sharing. A transit already past the ceiling takes no
+        delay -- it cannot make the cycle at any offset, so it goes as early as
+        it can rather than later still.
+        """
+        if ceiling <= timedelta():
+            return offset
+        room = ceiling - transit
+        if room <= timedelta():
+            return timedelta()
+        # The generator's jitter margin can exceed the ceiling it drew from.
+        return room * min(1.0, offset / ceiling)
 
     def _coordinate_sead_windows(self, now: datetime) -> None:
         """Cross-package SEAD-before-strike sequencing (§69).

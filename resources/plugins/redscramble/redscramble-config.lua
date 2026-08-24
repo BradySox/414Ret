@@ -147,6 +147,20 @@ end
 -- airborne (a task push mid-taxi can wedge the takeoff).
 ---------------------------------------------------------------------------------------------------
 local active = {} -- { { name = <group name>, lastTarget = <groupId|nil> }, ... }
+
+-- §94's baseline would stomp these bandits back to Passive Defense every 10 s. They are set Evade
+-- Fire deliberately -- they exist to fight -- so they claim the exemption for as long as they live.
+local function claim_exempt(name)
+    if not dcsRetribution then return end
+    dcsRetribution.aiReactionExempt = dcsRetribution.aiReactionExempt or {}
+    dcsRetribution.aiReactionExempt[name] = true
+end
+
+local function release_exempt(name)
+    if dcsRetribution and dcsRetribution.aiReactionExempt then
+        dcsRetribution.aiReactionExempt[name] = nil
+    end
+end
 local loop_running = false
 
 local function group_lead_point(grp)
@@ -190,6 +204,8 @@ local function vector_bandits()
                     end
                 end
             end
+        else
+            release_exempt(rec.name)
         end
     end
     active = remaining
@@ -285,6 +301,7 @@ local function do_scramble(base_name, template_index, size, requester_gid)
         pcall(function()
             grp:OptionROTEvadeFire()
         end)
+        claim_exempt(grp:GetName())
         table.insert(active, { name = grp:GetName() })
         start_vector_loop()
         announce(requester_gid, string.format(

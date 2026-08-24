@@ -218,6 +218,10 @@ def _pick_trail_corridor(
         if cp.captured != coalition.player:
             continue
         for other in cp.convoy_routes.keys():
+            # A base cannot supply itself -- a self-referential route paths to an
+            # empty route and kills the turn pass (features doc §50).
+            if other is cp:
+                continue
             # Only opfor -> opfor roads (a supply corridor behind the lines); an
             # opfor -> friendly road is the contested front itself.
             if other.captured != coalition.player:

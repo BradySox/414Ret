@@ -453,3 +453,41 @@ def test_full_destination_stops_drawing_convoys() -> None:
     front_cp.base.armor = {"tank": TRAIL_DESTINATION_STOCK_CAP - 1}
     ensure(game)
     assert len(game.red.transfers.created) == 1
+
+
+def test_corridor_never_picks_a_base_as_its_own_source() -> None:
+    """A self-referential convoy route is not a trail corridor.
+
+    The §50 ambient layer crashed the turn pass on one (operation_syrian_shield ships
+    two); this picker reads the same graph, so it carries the same guard. See
+    docs/dev/414th-features.md §50.
+    """
+    lone = _CP("lone", "RED", 50.0, {"tank": 8})
+    lone.convoy_routes = {lone: ()}
+    assert (
+        _pick_trail_corridor(
+            SimpleNamespace(
+                theater=SimpleNamespace(
+                    controlpoints=[lone], conflicts=lambda: [_front()]
+                )
+            ),  # type: ignore[arg-type]
+            SimpleNamespace(player="RED"),  # type: ignore[arg-type]
+        )
+        is None
+    )
+
+
+def test_a_self_route_does_not_displace_the_real_trail() -> None:
+    rear = _CP("rear", "RED", 200.0, {"tank": 8})
+    front_cp = _CP("front", "RED", 10.0, {"tank": 2})
+    rear.convoy_routes = {front_cp: (), rear: ()}
+    front_cp.convoy_routes = {rear: (), front_cp: ()}
+    corridor = _pick_trail_corridor(
+        SimpleNamespace(
+            theater=SimpleNamespace(
+                controlpoints=[rear, front_cp], conflicts=lambda: [_front()]
+            )
+        ),  # type: ignore[arg-type]
+        SimpleNamespace(player="RED"),  # type: ignore[arg-type]
+    )
+    assert corridor == (rear, front_cp)

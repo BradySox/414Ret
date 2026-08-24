@@ -551,6 +551,29 @@ class MizCampaignLoader:
             )
         )
 
+    @staticmethod
+    def _binds_one_control_point(
+        kind: str, name: str, origin: ControlPoint, destination: ControlPoint
+    ) -> bool:
+        """True when both ends of an authored route resolve to the same control point.
+
+        A single-waypoint path group, or a road drawn back onto its own field, binds a
+        control point to itself. The self-entry inflates `connected_points`, and asking
+        the transit network to path a base to itself returns an EMPTY path, which
+        `PendingTransfers.arrange_transport` indexes unguarded -- so any consumer that
+        picks the pair kills the turn pass (docs/dev/414th-features.md §50). Warn and
+        skip, the same treatment the yaml paths already give a sub-two-waypoint route.
+        """
+        if origin is not destination:
+            return False
+        logging.warning(
+            "%s '%s' begins and ends at %s - skipped (both ends bind one control point)",
+            kind,
+            name,
+            origin.name,
+        )
+        return True
+
     def add_supply_routes(self) -> None:
         for group in self.front_line_path_groups:
             # The unit will have its first waypoint at the source CP and the final
@@ -567,6 +590,11 @@ class MizCampaignLoader:
                 raise RuntimeError(
                     f"No control point near the final waypoint of {group.name}"
                 )
+
+            if self._binds_one_control_point(
+                "supply route", group.name, origin, destination
+            ):
+                continue
 
             o_spawns = self._construct_cp_spawnpoints(waypoints[0])
             d_spawns = self._construct_cp_spawnpoints(waypoints[-1])
@@ -594,6 +622,11 @@ class MizCampaignLoader:
                 raise RuntimeError(
                     f"No control point near the final waypoint of {group.name}"
                 )
+
+            if self._binds_one_control_point(
+                "shipping lane", group.name, origin, destination
+            ):
+                continue
 
             self.control_points[origin.id].create_shipping_lane(destination, waypoints)
             self.control_points[destination.id].create_shipping_lane(
@@ -889,7 +922,7 @@ class MizCampaignLoader:
             closest.preset_locations.scenery.append(scenery_group)
 
     def add_yaml_supply_routes(self) -> None:
-        for route in self.campaign_data.get("supply_routes", []):
+        for index, route in enumerate(self.campaign_data.get("supply_routes", [])):
             raw = route.get("waypoints", [])
             if len(raw) < 2:
                 logging.warning(
@@ -899,6 +932,10 @@ class MizCampaignLoader:
             waypoints = [dcs.mapping.Point(x, y, self.mission.terrain) for x, y in raw]
             origin = self.theater.closest_control_point(waypoints[0])
             destination = self.theater.closest_control_point(waypoints[-1])
+            if self._binds_one_control_point(
+                "supply_routes entry", str(index), origin, destination
+            ):
+                continue
             o_spawns = self._construct_cp_spawnpoints(waypoints[0])
             d_spawns = self._construct_cp_spawnpoints(waypoints[-1])
             self.control_points[origin.id].create_convoy_route(
@@ -909,7 +946,7 @@ class MizCampaignLoader:
             )
 
     def add_yaml_shipping_lanes(self) -> None:
-        for lane in self.campaign_data.get("shipping_lanes", []):
+        for index, lane in enumerate(self.campaign_data.get("shipping_lanes", [])):
             raw = lane.get("waypoints", [])
             if len(raw) < 2:
                 logging.warning(
@@ -919,6 +956,10 @@ class MizCampaignLoader:
             waypoints = [dcs.mapping.Point(x, y, self.mission.terrain) for x, y in raw]
             origin = self.theater.closest_control_point(waypoints[0])
             destination = self.theater.closest_control_point(waypoints[-1])
+            if self._binds_one_control_point(
+                "shipping_lanes entry", str(index), origin, destination
+            ):
+                continue
             self.control_points[origin.id].create_shipping_lane(destination, waypoints)
             self.control_points[destination.id].create_shipping_lane(
                 origin, list(reversed(waypoints))

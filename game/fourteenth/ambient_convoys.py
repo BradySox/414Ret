@@ -211,6 +211,11 @@ def _same_side_corridors(
         if cp.captured != coalition.player:
             continue
         for other in cp.convoy_routes.keys():
+            # A route whose two ends bind ONE control point is not a corridor -- it
+            # paths to an empty route and kills the turn pass. The loader now rejects
+            # one, but an older save keeps its pickled graph (features doc §50).
+            if other is cp:
+                continue
             if other.captured != coalition.player:
                 continue
             a, b = str(cp.name), str(other.name)

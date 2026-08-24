@@ -480,3 +480,61 @@ def test_garrison_fallback_respects_the_floor_and_red_is_excluded(
     assert all(
         len(group.units) == 6 for group in red_rear.connected_objectives[0].groups  # type: ignore[attr-defined]
     )
+
+
+# ---- self-referential routes (the 2026-08-24 turn-pass crash) ------------------------
+
+
+def _self_road(cp: _CP) -> None:
+    """The graph a campaign gets when both ends of an authored route bind one base."""
+    cp.convoy_routes[cp] = ()
+
+
+def test_a_base_is_never_its_own_corridor() -> None:
+    # operation_syrian_shield ships two (Palmyra, Tiyas): the loader mapped both ends of
+    # a path group to one CP. `new_transfer` then asks the transit network to path the
+    # base to itself, `shortest_path_between` returns [], and `arrange_transport` dies on
+    # `path[0]` -- inside `finish_turn`, so the campaign cannot pass a turn at all.
+    lone = _CP("lone", BLUE_PLAYER, 50.0, {"tank": 40})
+    _self_road(lone)
+    game = _game(on=True, cps=[lone])
+
+    assert _same_side_corridors(game, game.blue) == []
+
+
+def test_a_self_route_does_not_displace_the_real_road(monkeypatch: Any) -> None:
+    # The crashing save's shape: Tiyas holds a real road AND a self-route. The real
+    # corridor must still run, and nothing may be ordered from a base to itself.
+    rear = _CP("rear", BLUE_PLAYER, 200.0, {"tank": 40})
+    fwd = _CP("fwd", BLUE_PLAYER, 10.0, {"tank": 2})
+    _road(rear, fwd)
+    _self_road(rear)
+    _self_road(fwd)
+    game = _game(on=True, cps=[rear, fwd])
+    monkeypatch.setattr(ambient_module, "_RNG", _Rng(ints=[3, 1]))
+
+    ensure_ambient_convoys(game)
+
+    orders = game.blue.transfers.created
+    assert len(orders) == 1
+    assert orders[0].origin is rear
+    assert orders[0].destination is fwd
+    assert all(order.origin is not order.destination for order in orders)
+
+
+def test_transit_network_returns_an_empty_path_for_a_base_to_itself() -> None:
+    """The upstream contract the guard exists for.
+
+    A disconnected pair raises ``NoPathError``, which is loud. A base-to-itself query
+    returns ``[]`` instead -- the reconstruction loop exits before appending anything --
+    and ``arrange_transport`` indexes that unguarded.
+    """
+    from game.theater.transitnetwork import TransitNetwork
+
+    a = _CP("a", BLUE_PLAYER, 0.0)
+    b = _CP("b", BLUE_PLAYER, 100.0)
+    network = TransitNetwork()
+    network.link_road(a, b)  # type: ignore[arg-type]
+
+    assert network.shortest_path_between(a, b) == [b]  # type: ignore[arg-type]
+    assert network.shortest_path_between(a, a) == []  # type: ignore[arg-type]

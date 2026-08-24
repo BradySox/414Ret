@@ -105,5 +105,6 @@ pass checklist `§N` is unregistered, or this table drifts.
 | §91 | Per-flight sortie records | `base` | — |
 | §92 | What's New | — | — |
 | §93 | Region priorities | — | `region_priorities` |
+| §94 | Smart threat reaction | `ai_reaction` | — |
 | — | MANTIS IADS engine | `mantisiads` | — |
 | — | Splash Damage (414th tuned) | `splashdamage3` | — |

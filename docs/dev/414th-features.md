@@ -9911,3 +9911,77 @@ multiply.
 **In-game pass owed:** none for the planner half (headless-checkable — generate a turn with
 an emphasized axis and compare the ATO's target spread against a NORMAL baseline); one UI
 pass row for the CP-dialog control once the web UI lands (B89).
+
+---
+
+## §94 — Smart threat reaction
+
+Only the flight a missile is actually guiding on goes defensive. Design and the adoption
+record: [`414th-ai-threat-reaction-notes.md`](design/414th-ai-threat-reaction-notes.md).
+Ported from juanjux's fork
+([#63](https://github.com/juanjux/dcs-retribution/pull/63)) at its post-rewrite head, not at
+the PR — see **Why head, not the PR** below.
+
+### The rule
+
+DCS' `REACTION_ON_THREAT` option is set to Evade Fire on nearly every flight
+(`game/missiongenerator/aircraft/aircraftbehavior.py`, ~18 configurations), and Evade Fire
+breaks *every* aircraft that perceives a launch. One S-300 or naval salvo therefore scatters
+dozens of jets from packages the missile was never aimed at.
+
+The `ai_reaction` plugin parks every airplane at **Passive Defense** — fly the route, use
+chaff and flares, hold formation — and switches to **Evade Fire** only the group that
+`weapon:getTarget()` names, until that missile stops existing. The target is read from the
+engine; nothing is inferred from geometry.
+
+### Constraints
+
+- **`REACTION_ON_THREAT` is a per-group option.** The targeted *flight* evades, not the one
+  jet. That is still ~2–4 aircraft instead of ~45.
+- **A sweep pays `setOption` only on a state transition**, and a shot that resolves to a
+  ship or ground target is dropped at `S_EVENT_SHOT` with no re-check. The first version did
+  neither and stalled the sim during an anti-ship salvo. Do not re-add a blanket
+  per-airplane `setOption` pass.
+- **AIRPLANE only.** Helicopters keep stock Evade Fire — they have no formation to hold.
+- **§61's scrambled bandits are exempt.** `redscramble-config.lua` sets them Evade Fire on
+  purpose; without the exemption the baseline stomps them back within 10 s. Any plugin can
+  claim the same exemption by writing `dcsRetribution.aiReactionExempt[groupName] = true`,
+  and should clear it when the group dies.
+- **DEBUG is off by default here** (it ships on in juanjux's copy). On, every tagged shot
+  prints on screen for all players and every untagged shot writes to `dcs.log`.
+
+### The trade, stated plainly
+
+This is a doctrine change, not a bug fix. A flight facing a missile whose target the engine
+will not resolve — the re-check runs once at 1 s and then gives up — flies straight instead
+of breaking. Against the fork's SAM density (§41 belts, §60 radar redundancy, MANTIS) that
+can raise AI attrition. The plugin toggle is the whole gate: off restores stock DCS
+behaviour with no other change.
+
+### Shape
+
+- `resources/plugins/ai_reaction/ai_reaction.lua` — the runtime. `S_EVENT_SHOT` → `tryTag`;
+  a 1 s `watch` releases a flight when its missile stops existing; a 10 s `baseline` sweep
+  re-parks anything clear, with a full re-assert every sixth sweep (≈1 min) to catch groups
+  the engine reset to Evade Fire on activation and to prune destroyed ones.
+- `resources/plugins/ai_reaction/plugin.json` — default **on**, `DEBUG` default **off**.
+- `resources/plugins/redscramble/redscramble-config.lua` — `claim_exempt` on spawn,
+  `release_exempt` in the bandit prune loop.
+
+### Why head, not the PR
+
+[#63](https://github.com/juanjux/dcs-retribution/pull/63) merged 2026-07-08 and was rewritten
+2026-07-15 because it *"was stalling the sim"* during a naval missile storm: the merged
+version ran a `setOption` over every airplane group every 5 s and logged every shot
+unconditionally. Given §63 raids, §81 magazines and the carrier campaigns, the fork would
+have hit the same wall. The file here is the rewritten one.
+
+### Files & tests
+
+- `resources/plugins/ai_reaction/` · `resources/plugins/redscramble/redscramble-config.lua` ·
+  `resources/plugins/plugins.json` · `game/fourteenth/features.py`.
+- No Python surface, so no pytest coverage. The `lua-lint.yml` syntax gate covers both files;
+  the `tests/lua/` harness does not model `weapon:getTarget()` or controller options, so
+  behaviour is an in-game question.
+
+**In-game pass owed:** B97 — one salvo, and only the targeted flight breaks.

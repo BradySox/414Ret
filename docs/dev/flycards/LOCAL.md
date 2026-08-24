@@ -66,20 +66,7 @@ then relaunch and fly it properly.** Destroy the target, land, accept the result
   one thing an ordinary sortie will never do by accident. The root cause was found and fixed
   the same day it was reported and has never been confirmed end to end.
 
-### 3 · The Tomcat's cartridge loads in the Mission Editor — `B91`
-
-**Try:** no flying. Generate a turn on a campaign that fields the F-14B(U)
-(`clash_of_the_titans`, `red_sea_rising`, `operation_desert_trident`), open the `.miz` in the
-Mission Editor, open the DTC manager and load that flight's `DTC/*.dtc`. **~10 min.**
-
-- **Pass:** the ME draws the reference points, the front line and the JDAM targets on its own
-  panels — our file survives ED's importer.
-- **Fail:** nothing loads (check `type` reads exactly `F-14BU`), or points land in the sea or
-  off by a factor of 3.28 (feet/metres crossed between the NAV and JDAM sections).
-- **Why it's here:** the Tomcat is the first §74 airframe that is not on the Hornet's schema,
-  it shipped 2026-08-22, and this check costs no sortie. Do it before spending one.
-
-### 4 · A missile site that fires afterwards drives away — `S2`
+### 3 · A missile site that fires afterwards drives away — `S2`
 
 **Try:** the setup already has its own card —
 [`REGRESSED-SWEEP.md`](REGRESSED-SWEEP.md). Confirm `mobile_missile_relocation` and the

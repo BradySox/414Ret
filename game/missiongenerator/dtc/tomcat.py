@@ -94,6 +94,17 @@ DEFAULT_DROP_SPD_KTS = 450.0
 #: leg's is used instead.
 MIN_DROP_ALT_FT = 1000.0
 
+#: Priority waypoint slots. The PTID shows 18 waypoints at a time and ranks
+#: them: FP, IP, HB, DP, HA, ST and priority 1-3 always, then generic 4-7. Our
+#: plain route points rank below every coded one, so they take these.
+#:
+#: The literal is a reading, not a source: the NAV tab writes the forms as
+#: ``X#1``-``X#3`` and ``X#4``-``X#7`` where the other codes appear as
+#: ``XB / X##B``, so ``#`` is a wildcard and the bare form is ``X1``. No
+#: authored cartridge in hand uses one. A wrong literal degrades to a plain
+#: name, which is why this ships flagged rather than blocked -- checklist B91.
+MAX_PRIORITY_WAYPOINTS = 7
+
 TIS_CALLSIGN_LEN = 6
 
 
@@ -341,7 +352,16 @@ _NAME_SUFFIXES.update(
 
 #: Every code the builder writes, longest first so ``XST`` is split off before
 #: ``XB`` could match its tail.
-_CODES = ("XST", "XHB", "XIP", "XHA", "XDP", "XL", "XB", "XD")
+_CODES = (
+    "XST",
+    "XHB",
+    "XIP",
+    "XHA",
+    "XDP",
+    "XL",
+    "XB",
+    "XD",
+) + tuple(f"X{n}" for n in range(1, 8))
 
 
 def _field_name(flight: FlightData, waypoint: FlightWaypoint) -> Optional[str]:
@@ -573,29 +593,34 @@ def _build_nav(
     # waypoint n -- the same off-by-one the Hornet hit.
     previous: Optional[FlightWaypoint] = None
     surface_target_named = False
-    targets: list[dict[str, Any]] = []
-    target_names: list[str] = []
+    priority = 0
     for waypoint in flight.waypoints[1:]:
         if not is_route_waypoint(waypoint):
             continue
         if len(route["waypoints"]) == MAX_WAYPOINTS:
             break
-        # XST marks the surface target the HUD highlights with a pentagon
-        # (squadron tip, 2026-08-22). One point: the first target in route
-        # order, which is also STA 3's PP1.
+        # One target reaches the route: the surface target, which the HUD
+        # highlights with a pentagon and the PTID always displays. The rest are
+        # JDAM points only (DM call, 2026-08-23) -- a strike plans a waypoint
+        # per building, and eight of them crowd a display that shows 18 at a
+        # time and prioritises the coded points over plain ones.
         code = None
         if is_target_waypoint(waypoint):
-            # One surface target in the jet; the rest of a cluster go to the
-            # LANTIRN store ("XL / X##L - LANTIRN (max 20)").
-            code = "XL" if surface_target_named else "XST"
+            if surface_target_named:
+                continue
+            code = "XST"
             surface_target_named = True
+        elif _NAME_SUFFIXES.get(waypoint.waypoint_type) is None:
+            # A point with no code of its own takes the next priority slot, in
+            # route order. Route order rather than a tactical ranking: nothing
+            # sources which of a hold, a push and a refuel matters most, and
+            # forward order is at least predictable in the cockpit.
+            if priority < MAX_PRIORITY_WAYPOINTS:
+                priority += 1
+                code = f"X{priority}"
         entry = _route_waypoint(game, coords, flight, waypoint, previous, code)
         route["waypoints"].append(entry)
-        if code:
-            targets.append(entry)
-            target_names.append(waypoint.display_name or waypoint.name)
         previous = waypoint
-    _number_targets(targets, target_names)
     _number_duplicates(route["waypoints"])
     return plans
 

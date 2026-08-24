@@ -7774,7 +7774,7 @@ sets `DTC = rewrite_settings.Name == "F-14BU"` and `setData` refuses any other
 **Plan 1 of `data.NAV`'s twelve is not ours to write.** It is the *mission editor's*
 route — the panel says so and `updateNAVPlanEditability()` greys its waypoint fields
 out — and Retribution's flight plan already **is** that route. The flown route goes on
-**plan 2** as `ROUTE 1` with `route_as_line`, waypoints carrying Zulu TOTs and names
+**plan 2** with `route_as_line`, waypoints carrying Zulu TOTs and names
 ending in the jet's own codes (`XIP` ingress, `XHB` recovery field). Plan 1 takes the
 reference layer, which plan 2 repeats:
 
@@ -7790,6 +7790,13 @@ reference layer, which plan 2 repeats:
   its own target as PP1** (read from the lead's loaded pylons — pydcs 4–7 are the
   jet's STA 3–6), handed out in route order and wrapping; every target stays on
   every station for a re-pick. All targets in a cluster run in from the IP.
+  Only **one** target reaches the route -- the surface target -- because a strike
+  plans a waypoint per building and the PTID displays 18 at a time, ranking the
+  coded points above plain ones (DM call 2026-08-23; the manual's prioritisation
+  scheme is in the design note). Every remaining plain point takes a priority slot,
+  `X1`-`X7` in route order, so it ranks with the coded ones; that code literal is
+  read off the NAV tab's help text and is the one emitted code with no authored
+  cartridge behind it.
   `JDAM_LAR_TABLE` and its bilinear lookup are ported into `tomcat.py` because the
   CDNU reads those numbers straight out of the cartridge.
 - `TIS.send_to_callsigns` — the package's other flights, 6-char blank-padded.

@@ -49,7 +49,10 @@ entries:
       the LANTIRN store, the top-ranked SAM site becomes the hostile area that
       sets the threat axis, and a CAP's defended point sits on the asset it
       covers. Points that would share a name are numbered, and the recovery
-      and divert points are named after their fields.
+      and divert points are named after their fields. A strike's extra target
+      points stay off the route and appear as JDAM points only, and the
+      remaining plain points take the jet's priority waypoint slots so they
+      rank with the coded ones on a crowded display.
     watch: >-
       Load a multi-building strike with two or more JDAMs on the tunnel
       stations. On the JDAM page, STA 3 PP1 should be the first building and

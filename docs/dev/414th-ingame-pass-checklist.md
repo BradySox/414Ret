@@ -25,7 +25,7 @@ so the two docs don't drift.
 
 ## Outstanding rows at a glance
 
-71 rows need a live pass. Full detail is under each `###` heading below —
+72 rows need a live pass. Full detail is under each `###` heading below —
 search the row id. `☐` untested · `◐` flown but not under the conditions that
 stress it · `✗` fail signature reproduced in-game.
 
@@ -59,6 +59,7 @@ stress it · `✗` fail signature reproduced in-game.
 | B84 | Front-line groups move and return fire instead of holding | §8 | ☑ |
 | B85 | A flight with an unreachable TOT flies instead of orbiting | §8 | ☐ |
 | B97 | AI packages arrive inside the mission, not after it | §8 | ☐ |
+| B98 | The bullseye is the same place it was last mission | §95 | ☐ |
 | G25 | Armed Recon package: recon drone + SEAD Viper escort + 4-ship sweep | §3 | ◐ |
 | G30 | MANTIS SHORAD link: the point defense ambushes the HARM shot | MANTIS migration | ☐ |
 | G33 | Survivor ADF beacon: the pinned 260 kHz drives a real needle | CSAR (upstream #929 + 414th pin) | ☐ |
@@ -6225,3 +6226,51 @@ median 2 min. Instrument: `tools/measure_tot_past_mission_window.py`.
   of the cycle. If the whole ATO is 90 minutes out in a 100-minute cycle there are only 10
   minutes of spread to distribute, and the alternative is the half of it that used to fall
   outside the mission. Check the transits before calling it a regression.
+
+### B98 — The bullseye is the same place it was last mission · §95 · ☐ UNTESTED
+
+**History:** built 2026-08-24. Replaces upstream's per-turn re-derivation. Design note
+[`414th-bullseye-notes.md`](design/414th-bullseye-notes.md).
+
+> Upstream re-derived both bullseyes inside every `initialize_turn`, so the point a
+> squadron memorizes moved whenever the nearest opposing pair did — and on a Marianas
+> save blue's bullseye was a red carrier in open water. It is now pinned for the
+> campaign and the anchor can never be a fleet or an off-map spawn.
+
+**Headless-verified already, so do not re-run it:** the anchor filter, the drift hold,
+both migration paths and the boats-only fallback are pinned in
+`tests/theater/test_bullseye.py` (10 tests), and the change was replayed against four
+real saves — the three land campaigns re-anchor in place, Marianas moves 61.4 NM off
+the Kuznetsov onto FOB Agrihan, and all four hold across five further turn inits.
+
+**What only a cockpit can answer:** whether the pinned point is a *usable* reference —
+DCS draws it on the F10 map and its own AWACS calls contacts against it, and neither is
+exercised by any test here.
+
+- **Setup:** any campaign, two consecutive turns. Read the kneeboard `Bullseye:` line on
+  turn N, fly, pass the turn, read it again on turn N+1. Free — it is two kneeboards.
+- **Pass:** the line names the control point before the coordinates
+  (`Bullseye: King Abdullah II — 32°00'20"N 36°13'25"E`); the two turns carry the same
+  line; the F10 map's bullseye ring sits on that field; and an AWACS bullseye call places
+  a contact where you expect it.
+- **Fail signature — no name, just coordinates:** `bullseye_anchor_name` did not reach the
+  page. Expected exactly once, on a save made before 2026-08-24 and read before its first
+  turn init; anything else means the kwarg is not being passed.
+- **Fail signature — it moved anyway:** check `retribution.log` for
+  `bullseye re-anchored on <cp>`. If the line is there, the front genuinely carried it
+  past `MAX_DRIFT` (80 NM) and the kneeboard should be reading
+  `** MOVED THIS TURN **` — that is the feature working. If the line is absent and it
+  still moved, the pin is not persisting; check `bullseye_pinned` survived the save.
+- **Fail signature — the banner cries wolf:** `** MOVED THIS TURN **` on a bullseye whose
+  coordinates match last turn's. `anchor_bullseye` compares positions before recording a
+  move, so that means something re-anchored to a *different* point of the same name.
+- **Fail signature — it is over water:** the anchor filter did not run. The bullseye
+  should be on a land control point unless one whole side owns nothing but ships.
+- **Watch for:** a bullseye that is now *too far* to be useful — calls running past
+  150 NM on every contact. `MAX_DRIFT` is a module constant in
+  `game/theater/bullseye.py`, not a setting; if 80 NM is wrong for a real campaign, say
+  which one and it becomes a knob.
+- **Watch for — the one this did not fix:** a package fragged against the anchor base
+  itself calls "bullseye 000 for 0". Standing the point off the field was considered and
+  declined (it would stop being a findable landmark). If the degenerate calls actually
+  bite in the air, that decision reopens.

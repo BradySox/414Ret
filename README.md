@@ -257,6 +257,12 @@ Most of this is opt-in. Full list with toggles, defaults and known limitations:
   facing a missile the engine will not resolve a target for flies straight instead of
   breaking, so AI losses in heavy SAM country can go up. Turn the plugin off for stock DCS
   behaviour.
+- **The bullseye stays put, and the kneeboard says where it is.** The Bullseye line now
+  names the place — `Bullseye: King Abdullah II — 32°00'20"N 36°13'25"E` — instead of
+  only its coordinates. It is set once for the campaign and stays there, so the number
+  you memorize on turn 3 is still good on turn 30, and it is never planted on a ship or
+  an off-map field. On the rare turn the front carries it far enough that it has to
+  move, the same line reads **MOVED THIS TURN**.
 - Also: strikeable motor pool depots, enemy comms jamming learned from a captured pilot,
   a host F10 menu to scramble bandits.
 

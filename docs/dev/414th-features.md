@@ -10049,3 +10049,89 @@ have hit the same wall. The file here is the rewritten one.
   behaviour is an in-game question.
 
 **In-game pass owed:** B97 — one salvo, and only the targeted flight breaks.
+
+## §95 — Pinned bullseye
+
+Design note: [`docs/dev/design/414th-bullseye-notes.md`](design/414th-bullseye-notes.md)
+
+Built 2026-08-24. Replaces upstream's `Game.set_bullseye`. No plugin, no setting.
+
+### What upstream did, and what was wrong with it
+
+Upstream re-derived both bullseyes on every `initialize_turn` — which is not once a turn;
+cheat capture, a front-line move and any TGO buy or sell run it too:
+
+```python
+player_cp, enemy_cp = theater.closest_opposing_control_points()
+blue.bullseye = Bullseye(enemy_cp.position)
+red.bullseye = Bullseye(player_cp.position)
+```
+
+Four local saves, probed headlessly 2026-08-24:
+
+- **`autosave` (Marianas, t1): blue's bullseye was `CV 1143.5 Admiral Kuznetsov`** — a
+  carrier, in open water. Fleets are in `player_points()` / `enemy_points()`, so nothing
+  excluded them. A blue carrier is player-draggable, so moving your own boat moved *red's*
+  bullseye.
+- **`Maybe 414` (Caucasus, t1): 5 of 19 blue packages within 10 NM of the bullseye, one at
+  0.0 NM** — an Armed Recon fragged against the anchor FOB itself.
+- Both Syria saves: 5 of ~30 packages within 10 NM.
+- Caucasus also carries a `Turkey` `OffMapSpawn`, an eligible anchor that happened not to win.
+
+### The two rules
+
+**The anchor cannot be a boat or an off-map spawn.** `ConflictTheater.bullseye_anchors()`
+runs the same nearest-opposing-pair search over a filtered candidate list. A side with
+nothing else falls back to its full list — a boat anchor beats an assertion.
+`closest_opposing_control_points()` is untouched, so `AirConflictDescription` keeps
+upstream's conflict centre.
+
+**The pin is for the campaign, not the turn.** `Coalition.anchor_bullseye()` keeps the
+existing point unless it has drifted more than `MAX_DRIFT` (80 NM, `game/theater/bullseye.py`)
+from where it would be re-derived now. Repeated `initialize_turn` calls in one turn are
+idempotent.
+
+**The kneeboard names the place.** `Coalition.bullseye_anchor_name` carries the control
+point the bullseye sits on, and `BriefingPage._bullseye_line()` renders one row with all
+three facts — where, the coordinates, and whether it just moved:
+
+```
+Bullseye: King Abdullah II — 32°00'20"N 36°13'25"E
+Bullseye: FOB Agrihan — 18°46'34"N 145°39'52"E   ** MOVED THIS TURN **
+```
+
+`bullseye_moved_on_turn` gates the banner. A first pin is not a move, and a re-anchor onto
+the same point is not a move. **One line, not two** — the BLUF's duplicate BULLSEYE line
+was struck on the brief-sheet rework (§4); put anything new on `_bullseye_line()`.
+
+Nothing is authored per campaign — the DM's call is that the point is generated so any
+future campaign works with no yaml edit.
+
+### Save migration
+
+`Coalition.__setstate__` defaults `bullseye_pinned` to **False**. A pre-pin save's bullseye
+may be sitting on a boat, so it re-anchors once under the new rule and is pinned after that.
+Measured: the three land saves re-anchor in place (0.0 NM, no banner); Marianas moves blue
+61.4 NM off the Kuznetsov onto FOB Agrihan and banners once. All four stable across five
+further turn inits.
+
+### Why it matters more here than upstream
+
+More fork surface hangs off this one point than upstream's: the Hornet A/A waypoint (§74),
+the Tomcat `XB` reference and `XHA` threat axis, the kneeboard `Bullseye:` DMS line, and
+every `Bullseye <brg> for <nm>` cue on the SEAD and threat-intel pages.
+
+### Files & tests
+
+- `game/theater/bullseye.py` (`MAX_DRIFT`, `Bullseye.drifted_from`) ·
+  `game/theater/conflicttheater.py` (`bullseye_anchors`, `_closest_opposing_pair`) ·
+  `game/coalition.py` (`anchor_bullseye`, pin state, migration) · `game/game.py`
+  (`set_bullseye`) · `game/missiongenerator/kneeboard.py` (the banner) ·
+  `game/fourteenth/features.py`.
+- `tests/theater/test_bullseye.py` — 10 tests: the fleet and off-map skips, the
+  boats-only fallback, that `closest_opposing_control_points` still sees the fleet, the
+  first pin, the hold inside drift, the move beyond it, both migration cases, and the
+  drift threshold itself. `tests/test_briefing_page_bullseye.py` — 3 tests on the
+  kneeboard row: the place before the coordinates, the unnamed fallback, and the banner.
+
+**In-game pass owed:** B98 — the bullseye is the same place it was last mission.

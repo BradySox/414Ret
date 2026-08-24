@@ -832,6 +832,7 @@ FEATURES: tuple[Feature, ...] = (
         94,
         plugin_id="ai_reaction",
     ),
+    Feature("pinned_bullseye", "Pinned bullseye", 95),
     # Always-on engine plugins — major 414th machinery documented in design notes
     # rather than a numbered "Features at a Glance" entry.
     Feature("mantis_iads", "MANTIS IADS engine", plugin_id="mantisiads"),

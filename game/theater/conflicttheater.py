@@ -242,22 +242,15 @@ class ConflictTheater:
                 closest_distance = distance
         return closest
 
-    def closest_opposing_control_points(self) -> Tuple[ControlPoint, ControlPoint]:
-        """
-        Returns a tuple of the two nearest opposing ControlPoints in theater.
-        (player_cp, enemy_cp)
-        """
-        seen = set()
+    @staticmethod
+    def _closest_opposing_pair(
+        blue_points: List[ControlPoint], red_points: List[ControlPoint]
+    ) -> Tuple[ControlPoint, ControlPoint]:
         min_distance = math.inf
         closest_blue = None
         closest_red = None
-        for blue_cp in self.player_points():
-            for red_cp in self.enemy_points():
-                if (blue_cp, red_cp) in seen:
-                    continue
-                seen.add((blue_cp, red_cp))
-                seen.add((red_cp, blue_cp))
-
+        for blue_cp in blue_points:
+            for red_cp in red_points:
                 dist = red_cp.position.distance_to_point(blue_cp.position)
                 if dist < min_distance:
                     closest_red = red_cp
@@ -267,6 +260,37 @@ class ConflictTheater:
         assert closest_blue is not None
         assert closest_red is not None
         return closest_blue, closest_red
+
+    def closest_opposing_control_points(self) -> Tuple[ControlPoint, ControlPoint]:
+        """
+        Returns a tuple of the two nearest opposing ControlPoints in theater.
+        (player_cp, enemy_cp)
+        """
+        return self._closest_opposing_pair(self.player_points(), self.enemy_points())
+
+    def bullseye_anchors(self) -> Tuple[ControlPoint, ControlPoint]:
+        """The (blue, red) control points the two bullseyes anchor on.
+
+        The nearest-opposing-pair rule above, minus the points that cannot serve
+        as a memorized reference: a fleet sails (measured on a Marianas save,
+        blue's bullseye was a red carrier in open water, and a blue carrier is
+        player-draggable) and an off-map spawn sits outside the theater. A side
+        with nothing else falls back to its full list -- a bullseye on a boat
+        beats no bullseye at all.
+        """
+        from .controlpoint import OffMapSpawn
+
+        def anchorable(points: List[ControlPoint]) -> List[ControlPoint]:
+            usable = [
+                cp
+                for cp in points
+                if not cp.is_fleet and not isinstance(cp, OffMapSpawn)
+            ]
+            return usable or points
+
+        return self._closest_opposing_pair(
+            anchorable(self.player_points()), anchorable(self.enemy_points())
+        )
 
     def closest_friendly_control_points_to(
         self, cp: ControlPoint

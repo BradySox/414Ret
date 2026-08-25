@@ -95,9 +95,24 @@ const ROWS: Row[] = [
     label: "Minefield (your own)",
   },
   {
-    color: mapColors.neutralBorder,
-    signature: mapStrokes.neutralBorder,
-    label: "Neutral airspace — defended below the briefed floor",
+    color: mapColors.airspaceNeutral,
+    signature: mapStrokes.airspaceEnforced,
+    label: "Neutral airspace — defended, it will intercept",
+  },
+  {
+    color: mapColors.airspaceNeutral,
+    signature: mapStrokes.airspaceOpen,
+    label: "Neutral airspace — overflight permitted",
+  },
+  {
+    color: mapColors.airspaceRed,
+    signature: mapStrokes.airspaceEnforced,
+    label: "Enemy-aligned airspace — their QRA defends it",
+  },
+  {
+    color: mapColors.airspaceBlue,
+    signature: mapStrokes.airspaceOpen,
+    label: "Friendly airspace — fly through",
   },
   { color: mapColors.routeFriendly, kind: "line", label: "Convoy route: friendly" },
   { color: mapColors.routeEnemy, kind: "line", label: "Convoy route: enemy — interdict" },

@@ -33,14 +33,20 @@ class NeutralBorderLuaZone:
 
     country: str
     floor_ft: int
+    #: "neutral", "blue" or "red" -- who owns the airspace, which picks the
+    #: colour family. Only a neutral that refuses transit carries templates and
+    #: is scanned; everything else is map information.
+    posture: str = "neutral"
+    #: A neutral that permits transit. Drawn unshaded, never enforced.
+    overflight: bool = False
     #: Exact .miz group name of the late-activation fighter template.
-    fighter_template: str
+    fighter_template: str | None = None
     #: Exact .miz group name of the late-activation SAM template, or None.
-    sam_template: str | None
+    sam_template: str | None = None
     #: pydcs country ids present in the mission, one per side: the clone spawns
     #: under whichever opposes the intruder.
-    red_country_id: int
-    blue_country_id: int
+    red_country_id: int = 0
+    blue_country_id: int = 0
     #: Exact map airbase name (``AIRBASE:FindByName``), or None for a zone whose
     #: neutral has no airfield on the map (Afghanistan's neighbours).
     airfield: str | None = None
@@ -52,6 +58,11 @@ class NeutralBorderLuaZone:
     origin_label: str = ""
     #: Terrain XY vertices (pydcs Point.x/.y = DCS x/z), implicit closure.
     border: list[tuple[float, float]] = field(default_factory=list)
+
+    @property
+    def enforces(self) -> bool:
+        """Only an uninvolved country that refuses transit intercepts."""
+        return self.posture == "neutral" and not self.overflight
 
 
 def populate_neutral_border_lua(
@@ -69,20 +80,24 @@ def populate_neutral_border_lua(
     for zone in zones:
         record = zones_node.add_item()
         record.add_key_value("country", zone.country)
-        # Exactly one of field / spawn is present -- the Lua branches on it.
-        if zone.airfield is not None:
-            record.add_key_value("field", zone.airfield)
-        if zone.spawn is not None:
-            record.add_key_value("spawnX", f"{zone.spawn[0]:.1f}")
-            record.add_key_value("spawnZ", f"{zone.spawn[1]:.1f}")
-            record.add_key_value("spawnAltM", f"{zone.spawn_alt_m:.1f}")
+        record.add_key_value("posture", zone.posture)
+        record.add_key_value("overflight", "true" if zone.overflight else "false")
         record.add_key_value("originLabel", zone.origin_label)
-        record.add_key_value("floorFt", str(zone.floor_ft))
-        record.add_key_value("fighterTemplate", zone.fighter_template)
-        if zone.sam_template is not None:
-            record.add_key_value("samTemplate", zone.sam_template)
-        record.add_key_value("redCountryId", str(zone.red_country_id))
-        record.add_key_value("blueCountryId", str(zone.blue_country_id))
+        if zone.enforces:
+            # Exactly one of field / spawn is present -- the Lua branches on it.
+            if zone.airfield is not None:
+                record.add_key_value("field", zone.airfield)
+            if zone.spawn is not None:
+                record.add_key_value("spawnX", f"{zone.spawn[0]:.1f}")
+                record.add_key_value("spawnZ", f"{zone.spawn[1]:.1f}")
+                record.add_key_value("spawnAltM", f"{zone.spawn_alt_m:.1f}")
+            record.add_key_value("floorFt", str(zone.floor_ft))
+            assert zone.fighter_template is not None
+            record.add_key_value("fighterTemplate", zone.fighter_template)
+            if zone.sam_template is not None:
+                record.add_key_value("samTemplate", zone.sam_template)
+            record.add_key_value("redCountryId", str(zone.red_country_id))
+            record.add_key_value("blueCountryId", str(zone.blue_country_id))
         border_node = record.get_or_create_item("border")
         for x, y in zone.border:
             vertex = border_node.add_item()

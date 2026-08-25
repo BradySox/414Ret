@@ -136,15 +136,20 @@ def render_zone(
         f"({len(ring_xy)} vertices).",
         f"  - country: {args.country}",
     ]
-    if args.airfield:
-        lines.append(f"    airfield: {args.airfield}")
+    if args.overflight:
+        # Permits transit: drawn and never enforced, so it spawns nothing and
+        # needs no aircraft, origin, floor or SAM.
+        lines.append("    overflight: true")
     else:
-        assert spawn_xy is not None
-        lines.append(f"    spawn: [{spawn_xy[0]:.0f}, {spawn_xy[1]:.0f}]")
-        lines.append(f"    spawn_alt_ft: {args.spawn_alt_ft}")
-    lines.append(f"    aircraft: {args.aircraft}")
-    lines.append(f"    floor_ft: {args.floor_ft}")
-    lines.append(f"    sam: {'true' if args.sam else 'false'}")
+        if args.airfield:
+            lines.append(f"    airfield: {args.airfield}")
+        else:
+            assert spawn_xy is not None
+            lines.append(f"    spawn: [{spawn_xy[0]:.0f}, {spawn_xy[1]:.0f}]")
+            lines.append(f"    spawn_alt_ft: {args.spawn_alt_ft}")
+        lines.append(f"    aircraft: {args.aircraft}")
+        lines.append(f"    floor_ft: {args.floor_ft}")
+        lines.append(f"    sam: {'true' if args.sam else 'false'}")
     lines.append("    border:")
     for x, y in ring_xy:
         lines.append(f"      - [{x:.0f}, {y:.0f}]")
@@ -168,7 +173,14 @@ def main() -> None:
     )
     parser.add_argument("--spawn-alt-ft", type=int, default=20000)
     parser.add_argument(
-        "--aircraft", required=True, help='pydcs plane id, e.g. "MiG-21Bis"'
+        "--aircraft", help='pydcs plane id, e.g. "MiG-21Bis" (not for --overflight)'
+    )
+    parser.add_argument(
+        "--overflight",
+        action="store_true",
+        help="This neutral permits transit: drawn, never enforced, spawns nothing "
+        "(and so needs no pydcs country -- the only way to draw a nation DCS "
+        "does not model, e.g. Turkmenistan)",
     )
     parser.add_argument("--floor-ft", type=int, default=10000)
     parser.add_argument("--sam", action="store_true")
@@ -189,8 +201,16 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    if bool(args.airfield) == bool(args.auto_spawn):
-        raise SystemExit("Pass exactly one of --airfield or --auto-spawn.")
+    if args.overflight:
+        if args.airfield or args.auto_spawn or args.aircraft:
+            raise SystemExit(
+                "--overflight spawns nothing: drop --airfield/--auto-spawn/--aircraft."
+            )
+    else:
+        if bool(args.airfield) == bool(args.auto_spawn):
+            raise SystemExit("Pass exactly one of --airfield or --auto-spawn.")
+        if not args.aircraft:
+            raise SystemExit("A neutral that refuses transit needs --aircraft.")
 
     data = json.loads(args.geojson.read_text(encoding="utf-8"))
     if data.get("type") == "FeatureCollection":
@@ -220,7 +240,7 @@ def main() -> None:
         ring = simplify_to_budget(piece, args.max_vertices)
         ring_xy = to_xy(terrain, ring)
         spawn_xy = None
-        if args.auto_spawn:
+        if args.auto_spawn and not args.overflight:
             rep = piece.representative_point()
             spawn_xy = to_xy(terrain, [(rep.x, rep.y)])[0]
         label = args.country

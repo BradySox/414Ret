@@ -637,6 +637,8 @@ export type Minefield = {
 export type NeutralBorder = {
   country: string;
   airfield: string;
+  posture: string;
+  overflight: boolean;
   floor_ft: number;
   border: LatLng[][];
 };

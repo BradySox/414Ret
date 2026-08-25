@@ -44,13 +44,15 @@ export const mapColors = {
   pilotMia: "#ff8c2e", // rescue orange: an evader awaiting pickup (actionable)
   pilotPow: "#9aa0a6", // gray: held at an enemy field (freed by recapture)
 
-  // --- third parties ---
-  // §96 neutral border: APP-6 green, the standard for a NEUTRAL track. Amber was
-  // the obvious pick (it is what the DCS F10 markup used first) but amber is
-  // already SUSPECTED, and "un-reconned enemy" and "a country that is not in the
-  // war" must not read as the same thing. The DCS-side markup was moved to match
-  // this, so the planner map and the F10 map agree.
-  neutralBorder: "#3faf6c",
+  // --- bordering-nation airspace (§96) ---
+  // Three colour families, one per owner (DM call): colour says WHO owns the
+  // airspace, and the shade says whether it bites. A neutral that refuses
+  // transit and one that permits it share the green and differ by shading.
+  // Amber was considered and rejected: it is already SUSPECTED, and
+  // "un-reconned enemy" must not read as "a country not in the war".
+  airspaceNeutral: "#3faf6c", // APP-6 neutral green
+  airspaceRed: "#c85050", // the enemy family
+  airspaceBlue: "#0084ff", // the friendly family
 
   // --- misc ---
   highlight: "#ffff00",
@@ -92,7 +94,8 @@ export const mapStrokes: Record<
   | "minefield"
   | "pilotMia"
   | "pilotPow"
-  | "neutralBorder",
+  | "airspaceEnforced"
+  | "airspaceOpen",
   StrokeSignature
 > = {
   suspectedArea: {
@@ -115,7 +118,18 @@ export const mapStrokes: Record<
   pilotMia: { weight: 2.5, casingWeight: 6 },
   pilotPow: { dashArray: "3 5", weight: 2.5, casingWeight: 6 },
   // A long map-boundary dash — the one pattern that reads as a border rather
-  // than a hazard. It encloses a whole country, so it is drawn thinner than the
-  // point-hazard families or it would dominate the theatre.
-  neutralBorder: { dashArray: "12 7", weight: 2, casingWeight: 0 },
+  // than a hazard. 16/10 is the removed §40 ROE zone's own signature, whose
+  // comment called it "an authored border: firm, legal" — exactly this.
+  airspaceEnforced: { dashArray: "16 10", weight: 3, casingWeight: 0 },
+  // Airspace you may cross: present, not a warning. Still drawn heavily enough
+  // to FIND -- a 1.5px unshaded dashed ring was invisible over satellite
+  // imagery, which is the same defect the removed §40 layer recorded about a
+  // too-faint fill. It stays clearly lighter than the enforced signature, so
+  // "bites" vs "does not bite" survives; it just is not hidden any more.
+  airspaceOpen: { dashArray: "10 6", weight: 2.5, casingWeight: 0 },
 };
+
+//: Fill opacity per airspace state. Open airspace gets a real (if faint) shade
+//: rather than none: an outline alone did not read as a region on imagery.
+export const AIRSPACE_FILL_ENFORCED = 0.14;
+export const AIRSPACE_FILL_OPEN = 0.06;

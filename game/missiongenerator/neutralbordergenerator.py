@@ -29,7 +29,7 @@ from dcs.planes import plane_map
 from dcs.task import CAP
 from dcs.vehicles import AirDefence
 
-from game.theater.neutralborder import NeutralBorderZone
+from game.theater.neutralborder import NEUTRAL, NeutralBorderZone
 from game.utils import feet
 from .neutralborderluadata import NeutralBorderLuaZone
 
@@ -75,6 +75,21 @@ class NeutralBorderGenerator:
                 self.mission_data.neutral_border_zones.append(built)
 
     def _build_zone(self, zone: NeutralBorderZone) -> NeutralBorderLuaZone | None:
+        posture = zone.posture_in(self.game.theater)
+        if not zone.enforces_in(self.game.theater):
+            # An aligned country is not a third party: it spawns nothing here, so
+            # it needs no pydcs country and no aircraft. A red-aligned one is
+            # defended by §1's QRA instead (see aligned_defense_polygons), which
+            # keeps one interception system over that ground rather than two.
+            return NeutralBorderLuaZone(
+                country=zone.country,
+                posture=posture,
+                overflight=zone.overflight,
+                origin_label=zone.origin_label(posture),
+                floor_ft=zone.floor_ft,
+                border=list(zone.border),
+            )
+
         airport = None
         if zone.airfield is not None:
             airport = self.mission.terrain.airports.get(zone.airfield)
@@ -85,6 +100,7 @@ class NeutralBorderGenerator:
                     zone.country,
                 )
                 return None
+        assert zone.aircraft is not None  # guaranteed for a hostile zone
         aircraft = plane_map.get(zone.aircraft)
         if aircraft is None:
             logging.warning(
@@ -158,10 +174,11 @@ class NeutralBorderGenerator:
 
         return NeutralBorderLuaZone(
             country=zone.country,
+            posture=NEUTRAL,
             airfield=zone.airfield,
             spawn=zone.spawn,
             spawn_alt_m=spawn_alt_m,
-            origin_label=zone.origin_label,
+            origin_label=zone.origin_label(NEUTRAL),
             floor_ft=zone.floor_ft,
             fighter_template=fighter_name,
             sam_template=sam_name,

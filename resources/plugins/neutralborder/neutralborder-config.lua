@@ -76,9 +76,20 @@ for _, raw in ipairs(data.zones or {}) do
         -- over their own side instead (see the design note).
         local spawn_x, spawn_z = tonumber(raw.spawnX), tonumber(raw.spawnZ)
         local has_origin = raw.field ~= nil or (spawn_x ~= nil and spawn_z ~= nil)
-        if #verts >= 3 and raw.fighterTemplate and has_origin then
+        local posture = tostring(raw.posture or "neutral")
+        local overflight = (raw.overflight == "true" or raw.overflight == true)
+        -- Only an uninvolved country that REFUSES transit enforces. An aligned
+        -- one is defended by its own side's QRA (§1 accept zones) and a
+        -- permitting neutral is a line on the map, so both are drawn and never
+        -- scanned, carry no templates, and need no origin to be usable.
+        local enforces = (posture == "neutral") and not overflight
+        local usable = (not enforces)
+            or (raw.fighterTemplate ~= nil and has_origin)
+        if #verts >= 3 and usable then
             zones[#zones + 1] = {
                 country = tostring(raw.country or "Neutral"),
+                posture = posture,
+                enforces = enforces,
                 field = raw.field and tostring(raw.field) or nil,
                 spawn_x = spawn_x,
                 spawn_z = spawn_z,
@@ -201,11 +212,39 @@ local function draw_borders()
             end
             -- close the ring
             args[#args + 1] = { x = zone.verts[1].x, y = 0, z = zone.verts[1].z }
-            -- APP-6 neutral green, matching the planner map's border colour
-            -- (client/src/theme/mapColors.ts). Amber is SUSPECTED there.
-            args[#args + 1] = { 0.25, 0.69, 0.42, 0.9 } -- line
-            args[#args + 1] = { 0.25, 0.69, 0.42, 0.05 } -- fill
-            args[#args + 1] = 2 -- dashed
+            -- Three themes, by DM call: red family for red-aligned airspace,
+            -- blue family for blue-aligned, and its own colour for the neutral.
+            -- Colour says WHO owns the airspace; the shade and dash say what
+            -- happens to you there. The shade is not decoration -- the removed
+            -- §40 layer measured that "a faint 6% fill left large box/corridor
+            -- zones looking like a lone dashed edge", and a national border is
+            -- exactly that shape, so an enforced one is shaded at 14%.
+            if zone.posture == "blue" then
+                -- Faintly shaded, not bare: an unshaded outline was invisible
+                -- on the F10 map. Well below the enforced 0.14, so it still
+                -- never reads as a keep-out block.
+                args[#args + 1] = { 0.0, 0.52, 1.0, 1.0 } -- friendly blue line
+                args[#args + 1] = { 0.0, 0.52, 1.0, 0.06 }
+                args[#args + 1] = 2 -- dashed
+            elseif zone.posture == "red" then
+                args[#args + 1] = { 0.78, 0.31, 0.31, 0.9 } -- enemy red line
+                args[#args + 1] = { 0.78, 0.31, 0.31, 0.14 } -- shaded: hostile
+                args[#args + 1] = 5 -- long dash
+            elseif zone.enforces then
+                -- APP-6 neutral green, shaded: out of the war, refuses transit,
+                -- and it WILL intercept you. The shaded one is the warning.
+                args[#args + 1] = { 0.25, 0.69, 0.42, 0.9 }
+                args[#args + 1] = { 0.25, 0.69, 0.42, 0.14 }
+                args[#args + 1] = 5 -- long dash: an authored border, firm and legal
+            else
+                -- Same green, faintly shaded: a neutral that lets you through.
+                -- The colour says who owns it, the shade weight says whether it
+                -- bites -- but a bare outline could not be seen at all, so this
+                -- carries a light fill too.
+                args[#args + 1] = { 0.25, 0.69, 0.42, 1.0 }
+                args[#args + 1] = { 0.25, 0.69, 0.42, 0.06 }
+                args[#args + 1] = 2 -- dashed
+            end
             args[#args + 1] = true -- read only
             trigger.action.markupToAll(unpack(args))
         end)
@@ -505,7 +544,10 @@ local function scan_group(group, side, now)
     local p = lead:getPoint()
     local state = intruders[name]
     for zi, zone in ipairs(zones) do
-        if p.y < zone.floor_m and in_bbox(zone, p.x, p.z) and in_polygon(zone, p.x, p.z) then
+        if zone.enforces
+            and p.y < zone.floor_m
+            and in_bbox(zone, p.x, p.z)
+            and in_polygon(zone, p.x, p.z) then
             if not state then
                 state = {
                     name = name,
@@ -609,9 +651,15 @@ local ok, err = pcall(function()
     timer.scheduleFunction(function()
         return scan()
     end, {}, timer.getTime() + SCAN_INTERVAL_S)
+    local hostile = 0
+    for _, z in ipairs(zones) do
+        if z.enforces then
+            hostile = hostile + 1
+        end
+    end
     log(string.format(
-        "watching %d neutral border zone(s); warn %ds, engage %ds",
-        #zones, WARN_DWELL_S, ENGAGE_DWELL_S))
+        "%d border zone(s) drawn, %d defended; warn %ds, engage %ds",
+        #zones, hostile, WARN_DWELL_S, ENGAGE_DWELL_S))
 end)
 if not ok then
     env.error("NEUTRALBORDER|: setup error: " .. tostring(err))

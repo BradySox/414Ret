@@ -189,6 +189,10 @@ class NeutralBorderJs(BaseModel):
     #: Where the alert flight comes from, for the tooltip: a field name, or
     #: "<country> border CAP" for a neutral with no airfield on the map.
     airfield: str
+    #: "neutral", "blue" or "red" -- who owns the airspace (the colour family).
+    posture: str
+    #: A neutral that permits transit: drawn, never enforced.
+    overflight: bool
     floor_ft: int
     #: The border ring as a Leaflet polygon (array-of-arrays, one ring, no holes).
     border: LeafletPoly
@@ -200,6 +204,7 @@ class NeutralBorderJs(BaseModel):
         zones = getattr(game.theater, "neutral_border_zones", [])
         borders = []
         for zone in zones:
+            posture = zone.posture_in(game.theater)
             ring = [
                 LeafletPoint.from_latlng(Point(x, y, game.theater.terrain).latlng())
                 for x, y in zone.border
@@ -207,7 +212,9 @@ class NeutralBorderJs(BaseModel):
             borders.append(
                 NeutralBorderJs(
                     country=zone.country,
-                    airfield=zone.origin_label,
+                    airfield=zone.origin_label(posture),
+                    posture=posture,
+                    overflight=zone.overflight,
                     floor_ft=zone.floor_ft,
                     border=[ring],
                 )

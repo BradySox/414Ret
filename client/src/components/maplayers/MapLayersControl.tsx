@@ -365,6 +365,9 @@ const DEFAULT_ON: LayerId[] = [
   "otherGround",
   "supplyRoutes",
   "minefields",
+  // On by default like minefields: a border you cannot see is a border you
+  // cross. Empty (and invisible) unless a campaign authors zones.
+  "neutralBorders",
   "frontLines",
   "downedPilotsBlue",
   "enemySamThreat",

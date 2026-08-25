@@ -33,7 +33,9 @@ from .reactiveredluadata import populate_reactive_red_lua
 from .rednetluadata import populate_red_net_lua
 from .minefieldluadata import populate_minefields_lua
 from .interceptluadata import (
+    DefensePolygonEntry,
     DefenseZoneEntry,
+    aligned_defense_polygons,
     defense_zone_entries,
     populate_intercept_lua,
 )
@@ -342,11 +344,22 @@ class LuaGenerator:
                 nautical_miles(self.game.settings.qra_defense_depth_nm),
             )
 
+        # §96: a country hosting a side's airfields is that side's territory, so
+        # its border joins that side's QRA accept zones. Independent of
+        # qra_forward_defense -- this is about who owns the airspace, not about
+        # the forward-defense geometry -- but still only useful with a dispatcher.
+        defense_polygons: list[DefensePolygonEntry] = []
+        if self.mission_data.intercept_entries and getattr(
+            self.game.settings, "neutral_border_defense", False
+        ):
+            defense_polygons = aligned_defense_polygons(self.game.theater)
+
         populate_intercept_lua(
             lua_data,
             self.mission_data.intercept_entries,
             self.mission_data.player_alert_entries,
             defense_zones,
+            defense_polygons,
         )
 
         # Add artillery and support units info

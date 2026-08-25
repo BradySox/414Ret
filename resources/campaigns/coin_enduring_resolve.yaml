@@ -59,22 +59,25 @@ victory:
     - label: "Camp Bastion is lost"
       lose_cps: [Camp Bastion]
 
-# §96 neutral border defense -- the OEF "boulevard". Afghanistan is landlocked and
-# the DCS map carries no foreign airfield at all, so each neighbour flies a standing
-# CAP from a spawn point over its own territory rather than scrambling from a field.
-# Pakistan's zone is cut into two walls with a ~225 km lane between them: that lane is
-# the corridor the carrier air has to thread coming north out of the Arabian Sea. A
-# direct line from the boat to a western target (Farah) crosses Pakistan; the dogleg up
-# the corridor and then west is clean. Borders traced from real boundary data with
-# tools/neutral_border_geo.py (--clip 24 38 59.5 73 --corridor-lon 64.0 66.3).
-# Players who press get engaged; AI strays are only shadowed, so a tight lane costs the
-# campaign nothing.
+# §96 bordering-nation airspace. Every nation that borders Afghanistan and is on
+# the map is drawn; alignment is derived from who holds the airfields inside each
+# border (none of these host any, so all five are neutral). Whether a neutral lets
+# you THROUGH is the separate "overflight" fact.
 #
-# Only Pakistan and Iran are here because DCS HAS no Turkmenistan, Uzbekistan or
-# Tajikistan -- they are not pydcs countries, so a northern zone could only fly under
-# some other nation's flag. The northern border is undefended rather than mislabelled.
+# Pakistan and Iran refuse transit and intercept. Pakistan's zone is cut into two
+# walls with a ~225 km lane between them: the OEF "boulevard" the carrier air must
+# thread coming north out of the Arabian Sea. A direct line from the boat to Farah
+# crosses Pakistan; the dogleg up the corridor then west is clean.
+#
+# Turkmenistan, Uzbekistan and Tajikistan permit overflight -- which is also the
+# only way they can appear at all: DCS has no such countries, and a permitting
+# neutral spawns nothing so it needs none. China's Wakhan border is off the
+# playable map entirely (measured) and is deliberately absent.
+#
+# Traced with tools/neutral_border_geo.py (--clip 24 38 59.5 73,
+# --corridor-lon 64.0 66.3 for Pakistan).
 neutral_border_defense:
-  # Pakistan -- east wall of the carrier corridor (20 vertices).
+  # Pakistan (east of the corridor) -- real boundary data via tools/neutral_border_geo.py (20 vertices).
   - country: Pakistan
     spawn: [-375979, 341652]
     spawn_alt_ft: 20000
@@ -103,7 +106,7 @@ neutral_border_defense:
       - [-897090, 471201]
       - [-1036888, 525564]
 
-  # Pakistan -- west wall of the carrier corridor (23 vertices).
+  # Pakistan (west of the corridor) -- real boundary data via tools/neutral_border_geo.py (23 vertices).
   - country: Pakistan
     spawn: [-727669, -259559]
     spawn_alt_ft: 20000
@@ -135,7 +138,7 @@ neutral_border_defense:
       - [-506433, -350472]
       - [-503736, -203152]
 
-  # Iran -- the western no-go, off the Farah approach (23 vertices).
+  # Iran -- real boundary data via tools/neutral_border_geo.py (23 vertices).
   - country: Iran
     spawn: [-315321, -523142]
     spawn_alt_ft: 20000
@@ -166,6 +169,84 @@ neutral_border_defense:
       - [-993098, -461350]
       - [-948694, -548035]
       - [-944143, -652278]
+
+  # Turkmenistan -- real boundary data via tools/neutral_border_geo.py (18 vertices).
+  - country: Turkmenistan
+    overflight: true
+    border:
+      - [451061, 20412]
+      - [380477, 14575]
+      - [403022, -54177]
+      - [367894, -71179]
+      - [350939, -143235]
+      - [252975, -169820]
+      - [224716, -204311]
+      - [209399, -290442]
+      - [192618, -278251]
+      - [160633, -290389]
+      - [128769, -362916]
+      - [164809, -390831]
+      - [181768, -456473]
+      - [298589, -466986]
+      - [297812, -537768]
+      - [343565, -565840]
+      - [362953, -610808]
+      - [451941, -607487]
+
+  # Uzbekistan -- real boundary data via tools/neutral_border_geo.py (16 vertices).
+  - country: Uzbekistan
+    overflight: true
+    border:
+      - [459380, 164393]
+      - [448362, 162751]
+      - [450828, 150735]
+      - [406610, 129050]
+      - [365070, 124768]
+      - [375434, 97858]
+      - [364532, 77837]
+      - [384825, 58392]
+      - [386814, 48071]
+      - [377158, 25303]
+      - [383659, 11224]
+      - [390879, 22517]
+      - [405845, 11731]
+      - [428319, 11852]
+      - [443722, 23602]
+      - [452400, 19138]
+
+  # Tajikistan (east part) -- real boundary data via tools/neutral_border_geo.py (14 vertices).
+  - country: Tajikistan
+    overflight: true
+    border:
+      - [415933, 587271]
+      - [404594, 569248]
+      - [381991, 560446]
+      - [375217, 532388]
+      - [337001, 491910]
+      - [333899, 474317]
+      - [360762, 452076]
+      - [437443, 451160]
+      - [472419, 455677]
+      - [475332, 447414]
+      - [466452, 432939]
+      - [469995, 426033]
+      - [478101, 426407]
+      - [493659, 578898]
+
+  # Tajikistan (west part) -- real boundary data via tools/neutral_border_geo.py (10 vertices).
+  - country: Tajikistan
+    overflight: true
+    border:
+      - [470165, 340328]
+      - [462933, 330677]
+      - [428042, 341003]
+      - [419473, 275022]
+      - [367675, 261604]
+      - [389508, 221967]
+      - [338342, 146003]
+      - [355258, 123549]
+      - [406610, 129050]
+      - [459380, 164393]
 
 settings:
   # FOB standoff fire (vietnam_airbase_harassment, below) runs on the `vietnamops`

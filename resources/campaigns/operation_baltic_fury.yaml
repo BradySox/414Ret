@@ -171,11 +171,6 @@ settings:
   # any red field and vectors it onto the nearest blue fighters (MP events; gated to the host's
   # static "Flash" name tag). Free/untracked event content.
   host_red_scramble: true
-  # §59 ground-AI sleep (MP performance): rear garrison + AAA sites idle their DCS controller
-  # until an aircraft closes in (still visible/strikeable, kills record natively). A big win on
-  # this dense IADS + TIC map -- the flown turn 1 showed ANTIFREEZE stutters under the load.
-  perf_ground_ai_sleep: true
-  perf_aaa_site_sleep: true
   # §86 GPS jamming: red EW Radio Jammers deny satellite guidance around two of its
   # early-warning sites (see ground_forces below), so a JDAM/JSOW/JASSM released inside the
   # bubble lands off the aimpoint. Laser and TV weapons are unaffected -- the counter is to
@@ -192,7 +187,6 @@ settings:
     commsjam: true
     redscramble: true
     vietnamops: true
-    aisleep: true                    # §59 ground-AI sleep runtime (perf)
     gpsjamming: true                 # §86 GPS jamming runtime -- the setting does NOTHING without it
     # §61 host-menu gate: only DCS names containing "Flash" see the HOST: Red Scramble menu.
     redscramble.hostPlayers: Flash

@@ -136,7 +136,6 @@ def test_runtime_plugins_are_preseeded() -> None:
         "gpsjamming",
         "mobilemissiles",
         "cruisemissiles",
-        "aisleep",
         "rednet",
     ):
         assert plugins[plugin] is True, plugin

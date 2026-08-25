@@ -28,23 +28,20 @@ repo; where this note and the repo disagree, the repo wins.
 | `main` | `ee75401cf` — #913 merged 2026-08-20 (R0 inventory + the R1 reshape) on top of #912's §93 region priorities, study notes and architecture note. |
 | PR **#913** | **Merged 2026-08-20.** The watch it carried is closed. Branch from `main`, never from `claude/substrate-r0-inventory`. |
 | Branch `claude/grimes-dcs-repositories-pnf9ut` | Stale on the remote — holds only #912's already-merged history. Safe to delete on the DM's word; nothing references it. |
-| §93 checklist row | **B89** ☐ UNTESTED — the app pass below. |
-| §90 checklist rows | **B65–B68** ☐ UNTESTED — the fly pass that gates R2. |
+| §93 checklist row | **B89 ☑ VERIFIED** — the app pass is DONE (corrected 2026-08-25; this said ☐ UNTESTED). |
+| §90 checklist rows | **B65, B66, B67 ☐ UNTESTED · B68 ☑ VERIFIED.** Three rows left on the fly pass that gates R2 (corrected 2026-08-25; this said all four were untested). |
 
 ## 2. What only the local machine can do (why this handoff exists)
 
 Highest value first. Each is blocked remotely (needs DCS, the real app, or the local install).
 
-1. **B65–B68 fly pass** (~1 evening; gates rung R2). Germany Red Tide is the natural
+1. **B65–B67 fly pass** (~1 evening; gates rung R2). Germany Red Tide is the natural
    campaign. Criteria per row in `docs/dev/414th-ingame-pass-checklist.md`: reinforcement
    follows supply lines (A), attacking costs more than defending (B), the line counts forces
-   present (C), terrain slows the advance (D). Record pass/fail per row; R2 is buildable the
-   day these pass.
-2. **B89 app pass for §93** (~20 min). Enable `region_priorities` (Settings → Campaign
-   doctrine), set an enemy CP EMPHASIZED and another IGNORED from the base dialog, pass the
-   turn twice, and compare the ATO's target distribution against a NORMAL baseline. Fail
-   signature: no visible shift, or a rescue/manual package suppressed (both would be bugs —
-   the exemptions are tested but the app path is not).
+   present (C). **Rung D (terrain slows the advance) is already ☑ VERIFIED as B68** — do not
+   re-fly it. Record pass/fail per row; R2 is buildable the day these three pass.
+2. ~~**B89 app pass for §93**~~ — ✅ **DONE.** B89 is ☑ VERIFIED; the CP-dialog control does
+   shift the ATO. Nothing owed.
 3. ~~The detection-range check~~ **DONE 2026-08-20 — no defect found.** The two columns are not
    measured against the same target; `database ÷ runtime` is a flat 5^¼ across the table, the Buk
    SR is exact once normalised, and the DM's own export matches pydcs on all seven units. Three
@@ -66,7 +63,7 @@ Highest value first. Each is blocked remotely (needs DCS, the real app, or the l
    the parked SAM magazines land in it as a third row, not a third mechanism. Inventory
    §5 question 3 (extend §81's shape vs a new owner) is the first design decision — put it
    to the DM with a recommendation before writing code.
-4. **R2 after the B65–B68 pass** — supply scales combat effectiveness. Already scoped:
+4. **R2 after the B65–B67 pass** — supply scales combat effectiveness. Already scoped:
    BMS note candidate 1. The build is an `EFFECTIVENESS_MULTIPLIER` sibling beside
    `RECOVERY_MULTIPLIER` in `game/theater/supply.py`, applied where rung C counts forces
    (`game/theater/frontline.py:298–314`). Mind `supply.py`'s two docstring warnings.

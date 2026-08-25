@@ -695,8 +695,11 @@ leak: a package planned against a concealed TGO puts its steerpoint at the true 
 Implementation: `concealed_uncertainty`/`_concealed_radius` in `game/server/tgos/models.py`
 (both the `/game` pull and the SSE `updated_tgos` path go through it),
 `client/src/components/tgos/Tgo.tsx` (`ConcealedTgo`), `Tgo.uncertainty_radius_m` in the API
-model. Tests: `tests/fourteenth/test_coin_concealment.py`. Checklist **G24** + the COIN P3
-concealment bullet — needs an in-app pass + the CI client rebuild.
+model. Tests: `tests/fourteenth/test_coin_concealment.py`. Checklist **P3** — its "concealed
+'in here somewhere' areas" and "map symbology" bullets cover P3–P6 — needs an in-app pass + the
+CI client rebuild. (This cited **G24** until 2026-08-25. G24 was *concealed field forces*, closed
+by removal 2026-08-18 and replaced by G39; the COIN suspect-until-engaged concealment described
+here survived that rework, so its pass rides P3.)
 
 **Overview reveal toggle ("show the real picture").** A single runtime switch that forces
 every player-facing fog rule above to resolve to ground truth, for whoever is looking. It
@@ -1362,7 +1365,9 @@ Design notes: `docs/dev/design/414th-air-defense-planning-notes.md` (read this f
 - Strike-escort reserve trim (`trim_rounds_for_escort_reserve`,
   `game/commander/theaterstate.py`): when `Doctrine.strike_escort_reserve > 0` the
   planner gives up BARCAP rounds so ~reserve airframes stay untasked for the strike
-  escorts planned later in the same run. Only Vietnam sets a non-zero reserve (4), so
+  escorts planned later in the same run. **Why it exists:** the M4 Vietnam flight
+  observed *every* strike escort being pruned at Linebacker tempo — BARCAP consumed the
+  fighters first and the strikes went out bare. Only Vietnam sets a non-zero reserve (4), so
   this is a no-op everywhere else. The companion fence is
   `PackageFulfiller.escort_reserve_withholds`. Trim order is the planner's own CP
   order — it used to rank by air threat, but that field went with the revert; the
@@ -3436,7 +3441,9 @@ which it never actually was — the old code just never had a cross-section pair
 
 Tests: `tests/test_settings_filter.py` (19, driving the real Qt widgets under the offscreen
 platform) and the rewritten cross-page case in `tests/test_settings_dependencies.py`.
-`qt_ui` is not CI type-checked, so this needs an in-app eyeball — checklist **B39**.
+`qt_ui` is not CI type-checked, so this needed an in-app eyeball — checklist **B46**, ☑ VERIFIED.
+(This pointed at **B39** until 2026-08-25; B39 is §81's naval magazines, an unrelated row that is
+still owed. Nothing is owed here.)
 
 ### The information-architecture reorg
 
@@ -6993,9 +7000,15 @@ physics always win (never earlier than `TotEstimator.earliest_tot`; an unreachab
 keeps the spread schedule unless that would leave the strike ahead of its SEAD). Several
 strikes behind one SEAD mass into the same window — the push is the point.
 
-**The §8 stagger discipline applies.** Movable = `STRIKE`/`BAI`/`OCA_RUNWAY`/`OCA_AIRCRAFT`
-(`COORDINATED_STRIKE_TYPES` — Armed Recon is a loitering sweep, AIR ASSAULT is tied to the
-ground war's timing; both deliberately stay spread), AI-only, non-ASAP. A package with a
+**The §8 stagger discipline applies.** Movable =
+`STRIKE`/`BAI`/`OCA_RUNWAY`/`OCA_AIRCRAFT`/`CAS` (`COORDINATED_STRIKE_TYPES` — Armed Recon is a
+loitering sweep, AIR ASSAULT is tied to the ground war's timing; both deliberately stay
+spread), AI-only, non-ASAP. **CAS was added 2026-08-24** (#973, the first gap mined out of the
+planner-doctrine queue): it descends to acquire and eats MANPADS low, then climbs into the
+area-SAM ring high, so a front under a live umbrella wants that umbrella down first exactly as
+a strike does. Its organic `SEAD_SWEEP` escort flies the package's own TOT and so accompanies
+rather than pre-suppresses. **The CAS case has not had its own in-game pass** — B21 is verified
+for the strike case only. A package with a
 player flight is never rescheduled — but a **player-flown SEAD still opens a window the AI
 strikes push behind** (providers are read-only). The carrier stagger runs after and only
 ever delays, so it can push a strike deeper into — never ahead of — its window;
@@ -9461,10 +9474,12 @@ shape: an assumption about a name or a state that generation does not produce.
 Checklist **B56** (P1: the launch-flow wiring lives in `qt_ui`, not CI-typechecked, and the
 mid-cycle feel at spawn is what CI cannot exercise), **B57** (P2: residue on the ramp,
 clean-wing returners, no parking exhaustion), **B58** (P3: a wave launches after player
-egress; the briefing narrates the pre-roll; parking survives the longer occupation), **B59**
-(P4: calls audible on the briefed AWACS channel at plausible times; SAPI voice quality
-verdict; no spam), and **B60** (P5: a struck objective produces one visible red patrol over
-it; nothing outside the positive list ever launches).
+egress; the briefing narrates the pre-roll; parking survives the longer occupation), and
+**B60** (P5: a struck objective produces one visible red patrol over it; nothing outside the
+positive list ever launches).
+
+**B59 is not on this list.** It covered P4, the synthesized voice net, which was REMOVED
+2026-08-18 (see the P4 heading above); the row is ⊘ RETIRED and there is nothing to fly.
 
 ### Deferred
 

@@ -166,14 +166,19 @@ stress it · `✗` fail signature reproduced in-game.
 
 ---
 
-## OPEN WORK ORDERS — 2026-08-05 DM review pass
+## WORK ORDERS — 2026-08-05 DM review pass · ALL SIX CLOSED
 
 > **Read this first.** These came out of a single review pass by the DM on 2026-08-05
 > (session `units-runway-generation-bf755e`) and are recorded here — at the top of the file the
 > session-start hook reads — specifically so a later agent does not lose them. Each has a
 > matching row further down carrying the full detail; this is the index, not the record.
 >
-> **None of these are started.** Do not begin one without confirming it is still wanted.
+> **All six are closed as of 2026-08-25. Nothing here is owed.** Four were worked and closed in
+> the days after the review; orders 5 and 6 closed on their own rows and this index never caught
+> up — G31 was **retired 2026-08-07** when §21/§15 CSAR were deleted for upstream #929 (nothing
+> the order describes still exists), and H11 was **verified 2026-08-17** on the DM's call. Keep
+> the block for the history; **do not start work from it.** If the fuel-estimate over-read
+> resurfaces it is a fresh report against H11, not this order.
 
 | # | Order | Row | State | Blocking question |
 |---|---|---|---|---|
@@ -181,8 +186,8 @@ stress it · `✗` fail signature reproduced in-game.
 | 2 | ~~**§72 carrier deck decor — position drift + a floating static**~~ | B25 | ✅ **CLOSED 2026-08-06 by non-reproduction** — WATCH item 4, DM verdict "Passing": gear on the deck, nothing floating, nothing out of place. No code changed; the diagnosis in the row stands as the record. **Caveat kept:** one session on an unrecorded hull/variant (6 rotate), and the ~10 m aft / ~5 m outboard `CORRAL_SHIFT` drift from raw campaign A is **accepted, not fixed** — do not re-seat on raw campaign A without re-validating `KNOWN_PARKING_SPOTS`. | Answered: it looks right now. If a float ever resurfaces, note WHICH hull + WHICH static. |
 | 3 | ~~**G2 TARS BDA bridge rework**~~ | G2 · G19 | ✅ **DONE 2026-08-05** — rebuilt as ONE plugin (`recon`) covering player AND AI, replacing the `tars` + `airecon` pair. MOOSE `Ops.TARS` cut. Sensor/altitude/weather-shaped capture; cue held until landing. black + mypy + 3725 tests green. | Answered: the whole system, fresh. |
 | 4 | ~~**I2 civilian air traffic rebuild**~~ | I2 | ✅ **DONE 2026-08-05** — both named issues fixed in Python; RAT stays retired. Region-appropriate fleets/operators/cruise levels (`civilianfleet.py`), single long airway transits instead of 5-leg milk runs, widened endpoint pool. Found + fixed in passing: **modern civil traffic was flying over 1944 Normandy and The Channel** — both now field nothing. black + mypy + 3737 tests green. | Answered: stay in Python. |
-| 5 | **G31 pilot recovery surge never appears.** DM: "non existant as far as I can tell." | G31 | Needs triage before code | Rule out the benign case FIRST: the surge requires an un-surged MIA evader banked from a previous turn. Four of its five gates return silently — worth adding log lines regardless. |
-| 6 | **H11 fuel estimate over-reads.** "Generating too much fuel for aircraft in cases" — flatters the jet, which is the dangerous direction (it also feeds the §46 tanker decision). | H11 | Bug confirmed, unscoped | WHICH airframes? Only types with no `fuel:` block use the estimate; the fix is a better model vs. real per-airframe data depending on whether the over-read is uniform or type-specific. |
+| 5 | ~~**G31 pilot recovery surge never appears.**~~ DM: "non existant as far as I can tell." | G31 | ✅ **CLOSED 2026-08-07 by removal** — the row is ⊘ RETIRED. The fork's §21/§15 CSAR was deleted and upstream dcs-retribution#929 adopted in its place, so `plan_pilot_recovery_surge`, its five gates and its tests are all gone. **The triage below was never needed and must not be started.** Upstream's CSAR carries its own rows (B71/B73/G33/G36/H14). | Moot — the feature it reported on no longer exists. |
+| 6 | ~~**H11 fuel estimate over-reads.**~~ "Generating too much fuel for aircraft in cases" — flatters the jet, which is the dangerous direction. | H11 | ✅ **CLOSED 2026-08-17 — H11 is ☑ VERIFIED** on the DM's call, clearing the REGRESSED mark. Note the §46 tanker coupling named in the original order **no longer applies**: §46's planner half was reverted 2026-08-09, so the estimate is kneeboard-scoped only. | Answered on the row. A fresh over-read is a new report against H11, not this order. |
 
 ---
 

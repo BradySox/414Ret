@@ -139,6 +139,8 @@ countries:
       - { from: "2005", to: "present", id: J-11A }
 
   Cyprus:
+    # The whole island, north included (DM call 2026-08-25) — a de facto entity
+    # recognised only by Turkey is not drawn as its own nation.
     # Non-aligned since independence; not in NATO. The Akrotiri and Dhekelia SBAs
     # are UK sovereign territory sitting inside this polygon, so on any campaign
     # the UK plays, §96's derived rule flips Cyprus blue-aligned on its own and
@@ -264,6 +266,9 @@ countries:
       - { from: "1993", to: "present", id: MiG-29A }
 
   India:
+    # Measured on the Afghanistan map at 1.03 % with no airfield, and deliberately
+    # NOT drawn there (DM call 2026-08-25): a point-spawn over Rajasthan is too far
+    # from anything an OEF campaign flies. The postures stay — the zone does not.
     toward_us_led:
       - { from: "1955", to: "1971-08", posture: contested }     # non-aligned
       - { from: "1971-08", to: "1991-12", posture: closed }     # the Indo-Soviet Treaty, 9 Aug 1971
@@ -384,14 +389,6 @@ countries:
       - { from: "1955", to: "present", posture: allied }
     toward_ru_led:
       - { from: "1955", to: "present", posture: closed }
-
-  Northern Cyprus:
-    # Not a pydcs country, and recognised only by Turkey. Whether §96 should draw
-    # it at all is an open question for the DM — see the note.
-    toward_us_led:
-      - { from: "1983-11", to: "present", posture: contested }
-    toward_ru_led:
-      - { from: "1983-11", to: "present", posture: closed }
 
   Norway:
     # NATO founder; the standing base policy bars foreign forces in peacetime and

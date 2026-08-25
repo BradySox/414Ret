@@ -135,7 +135,7 @@ Read before touching a campaign's `.yaml`, `.miz` or build tool.
   real-data border pipeline, and the DECIDED-not-built automagic direction;
   fictional-overlay campaigns are out of scope),
   `414th-national-postures-notes.md` (**RESEARCHED 2026-08-25, data drafted, nothing
-  wired** — `resources/borders/national_postures.yaml`: 48 countries, 246 dated posture
+  wired** — `resources/borders/national_postures.yaml`: 47 countries, 244 dated posture
   ranges, both blocs, five buckets. Also the measured country-per-map table that
   **corrected four errors in the research brief's from-memory list** (India on the
   Afghanistan map; no Qatar/Bahrain/Saudi on the Persian Gulf map; Belgium not Germany

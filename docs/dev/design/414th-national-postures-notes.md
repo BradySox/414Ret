@@ -2,7 +2,7 @@
 
 **Status: RESEARCHED 2026-08-25. Data drafted, nothing wired.** The table is
 [`resources/borders/national_postures.yaml`](../../../resources/borders/national_postures.yaml):
-48 countries, 246 dated ranges, 84 aircraft rows, no code reads it. Wiring is its own change —
+47 countries, 244 dated ranges, 84 aircraft rows, no code reads it. Wiring is its own change —
 see *What the engine cannot do with this yet*.
 
 Supersedes the handoff brief, deleted in the same change and recoverable with
@@ -266,7 +266,7 @@ is a real war on it.
 | Liechtenstein (Germany CW, 1 sample) | No armed forces; airspace policed by Switzerland. Folded into Switzerland |
 | Falkland Islands, Jersey, Guernsey | UK territory; the UK entry covers them |
 | Guam, Northern Marianas | US territory; the USA entry covers them |
-| Northern Cyprus (Syria map, 8 airfields) | **Included, but flagged** — see the open questions |
+| Northern Cyprus (Syria map, 8 airfields) | **Folded into Cyprus** (DM call 2026-08-25). One island, one polygon — a de facto entity recognised only by Turkey is not drawn as its own nation |
 
 ## Pre-1991 geometry: the blocker, and the source that clears it
 
@@ -309,6 +309,15 @@ Two caveats for whoever builds it:
 Until that lands, **every pre-1991 era is undrawable** and the Germany Cold War map cannot carry
 §96 zones at all. The postures data is still worth having: every other campaign is post-1991.
 
+## Measured on a map but not drawn there
+
+Distinct from the table above: the country keeps its postures, and one specific map does not get
+a zone for it.
+
+| Country | Map | Why |
+|---|---|---|
+| India | Afghanistan | 1.03 % of the land, no airfield. Any alert flight is a point-spawn over Rajasthan, a very long way from anything an OEF campaign flies (DM call 2026-08-25) |
+
 ## What the engine cannot do with this yet
 
 The table is drafted against the schema in the brief, with one clarification: **all dates are
@@ -319,31 +328,26 @@ Four gaps between the data and §96 as built:
 
 1. **Per-side overflight is not modelled.** The table supports a nation open to blue and closed
    to red; `NeutralBorderZone.overflight` is a single bool. The zone needs a per-side flag.
-2. **Seven countries in the table cannot ever defend** — Armenia, Azerbaijan, Turkmenistan,
-   Uzbekistan, Tajikistan, Luxembourg, Northern Cyprus are not pydcs countries. Each is marked in
-   the yaml. Do not "fix" this with a substitute flag: it would put a wrong nation's markings and
+2. **Six countries in the table cannot ever defend** — Armenia, Azerbaijan, Turkmenistan,
+   Uzbekistan, Tajikistan and Luxembourg are not pydcs countries. Each is marked in the yaml. Do not "fix" this with a substitute flag: it would put a wrong nation's markings and
    tooltip over real territory, which is already the standing call.
 3. **No date resolver exists.** Reading `[from, to)` against a campaign start date, defaulting an
    uncovered date to `closed`, and picking the bloc — none of that is written.
 4. **No test guards the table.** The draft was validated by a scratchpad script that checks the
    bucket vocabulary, quoted dates, `from < to`, non-overlapping ranges, vanilla plane ids and
    coverage of every measured country. That script should become a real test when this is wired;
-   it currently reports 0 errors against 48 countries and 246 ranges.
+   it currently reports 0 errors against 47 countries and 244 ranges.
 
 ## Open questions for the DM
 
-1. **Northern Cyprus.** Drawing it is a political statement in a way that drawing Cyprus is not —
-   it is recognised only by Turkey, and the Republic of Cyprus claims the territory. It has 8
-   airfields on the Syria map, so §96's "draw every bordering nation" rule reaches it. Draw it,
-   fold it into Cyprus, or leave it out?
-2. **Does `hostile` ever differ from `closed` in v1?** Both collapse to transit-refused. The
+1. **Does `hostile` ever differ from `closed` in v1?** Both collapse to transit-refused. The
    split is recorded faithfully but buys nothing until basing or targeting logic uses it.
-3. **India on the Afghanistan map.** 1.03 % of the land and no airfield, so any alert flight is a
-   point-spawn over Rajasthan, a very long way from anything an OEF campaign flies. Worth drawing
-   at all, or is it below the threshold?
-4. **Do the two Marianas terrains and Nevada get a border layer?** Every country on them is the
+2. **Do the two Marianas terrains and Nevada get a border layer?** Every country on them is the
    US, so there is no bordering nation and nothing for §96 to draw.
-5. **Is assembling WDB-II line segments into polygons worth a session?** It is the only path
+
+Two are settled (DM, 2026-08-25) and are recorded above rather than here: Northern Cyprus folds
+into Cyprus, and India keeps its postures but gets no zone on the Afghanistan map.
+3. **Is assembling WDB-II line segments into polygons worth a session?** It is the only path
    to a Germany Cold War border layer, and it unlocks the USSR, Czechoslovakia and Yugoslavia
    in the same pass. Nothing else on the pre-1991 list is reachable without it.
 

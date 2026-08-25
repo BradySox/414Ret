@@ -1,10 +1,12 @@
-# Held PR body — strikes push behind their SEAD window (§69 carve)
+# PR body — strikes push behind their SEAD window (§69 carve)
 
 Branch: `BradySox:feature/sead-strike-coordination`, cut from upstream `dev` @ `59719b24`.
-Target: `dcs-retribution/dcs-retribution` `dev`. **Held under the PR freeze** — §69 answers no
-open upstream issue, so the 2026-08-20 issue-ledger exception does not cover it.
+**Open as draft [#955](https://github.com/dcs-retribution/dcs-retribution/pull/955)** since
+2026-08-25, under a scoped DM exception to the freeze (§69 answers no open upstream issue, so
+the 2026-08-20 issue-ledger exception did not cover it).
 
-Paste the body below with `gh pr create --body-file`, as a draft.
+This file is the working copy of the description; the published body is the source of truth
+once they diverge.
 
 ---
 
@@ -43,8 +45,13 @@ This adds one pass that sequences them, behind a new option, off by default.
   kept, unless keeping it would still leave the strike ahead of its SEAD.
 - Several strikes behind one suppressor mass into the same window.
 
-Armed Recon and Air Assault are deliberately excluded. Armed Recon is a loitering sweep rather
-than a push, and Air Assault is timed by the ground war.
+`ARMED_RECON` and `AIR_ASSAULT` are excluded for scope, not for a mechanism. Both are
+`FormationAttackFlightPlan` against a `ControlPoint`, structurally the same tasking as OCA,
+which is included, and neither is `auto_asap`. Nothing prevents adding them.
+
+**The earlier wording here was false on both halves** and shipped to the published PR before a
+reviewer caught it: Armed Recon does not loiter (`CasFlightPlan` is the patroller), and nothing
+times an Air Assault by the ground war. See features doc §69's correction box.
 
 CAS is included for the front-line sandwich: it descends to acquire and takes MANPADS low, then
 climbs to escape into the area-SAM ring high, so a front under a live umbrella wants that

@@ -25,8 +25,19 @@ One pass after the spread schedule, before the recovery-tanker ETAs.
 - Several strikes behind one SEAD mass into the same window. That is the point — it
   reads as a push.
 
-`STRIKE`, `BAI`, `OCA_RUNWAY`, `OCA_AIRCRAFT`. Armed Recon (a loitering sweep, not a
-push) and Air Assault (tied to the ground war's timing) deliberately stay on the spread.
+`STRIKE`, `BAI`, `OCA_RUNWAY`, `OCA_AIRCRAFT`. Armed Recon and Air Assault stay on the
+spread.
+
+> **Correction, 2026-08-25.** The patch's own comment says Armed Recon is "a loitering
+> sweep" and Air Assault is "tied to the ground war's timing". **Both are false** and the
+> patch text has not been regenerated, so fix the comment when you apply it.
+> `ArmedReconFlightPlan` extends `FormationAttackFlightPlan` — no loiter; it is
+> search-and-engage in zone. `CasFlightPlan` is the `PatrollingFlightPlan`. And nothing
+> times an Air Assault by the ground war: `auto_asap` is set only for the first AEWC
+> package and for player packages, so it takes the same spread as a strike. Both are
+> `FormationAttackFlightPlan` against a `ControlPoint`, structurally the same as OCA, so
+> the exclusion is unexamined scope rather than a mechanism. Include them if you want
+> them; nothing prevents it.
 
 **Only AI, non-ASAP packages move.** A package with a player flight is never
 rescheduled — but a player-flown SEAD still opens a window the AI pushes behind, because

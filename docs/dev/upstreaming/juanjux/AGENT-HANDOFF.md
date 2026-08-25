@@ -212,8 +212,15 @@ COORDINATED_STRIKE_TYPES = frozenset({
 })
 ```
 
-Armed Recon (a loitering sweep, not a push) and Air Assault (tied to the ground war's
-timing) deliberately stay on the spread schedule.
+Armed Recon and Air Assault stay on the spread schedule.
+
+> **Correction, 2026-08-25.** The patch comment justifies those two exclusions with
+> "a loitering sweep, not a push" and "tied to the ground war's timing". **Both are
+> false**; fix the comment when you apply the patch. `ArmedReconFlightPlan` extends
+> `FormationAttackFlightPlan` and does not loiter — `CasFlightPlan` is the
+> `PatrollingFlightPlan`. Nothing times an Air Assault by the ground war either:
+> `auto_asap` is set only for the first AEWC package and for player packages. Both
+> exclusions are unexamined scope, not mechanism; include them if you want them.
 
 **The pass:**
 

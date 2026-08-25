@@ -6994,9 +6994,10 @@ keeps the spread schedule unless that would leave the strike ahead of its SEAD).
 strikes behind one SEAD mass into the same window — the push is the point.
 
 **The §8 stagger discipline applies.** Movable =
-`STRIKE`/`BAI`/`OCA_RUNWAY`/`OCA_AIRCRAFT`/`CAS` (`COORDINATED_STRIKE_TYPES` — Armed Recon is a
-loitering sweep, AIR ASSAULT is tied to the ground war's timing; both deliberately stay
-spread), AI-only, non-ASAP. **CAS was added 2026-08-24** (#973, the first gap mined out of the
+`STRIKE`/`BAI`/`OCA_RUNWAY`/`OCA_AIRCRAFT`/`CAS` (`COORDINATED_STRIKE_TYPES`), AI-only,
+non-ASAP. **`ARMED_RECON` and `AIR_ASSAULT` are excluded for scope, not for a mechanism**
+(corrected 2026-08-25 — see the box below), and both are pinned excluded by a test at the same
+front line the CAS test retimes at. **CAS was added 2026-08-24** (#973, the first gap mined out of the
 planner-doctrine queue): it descends to acquire and eats MANPADS low, then climbs into the
 area-SAM ring high, so a front under a live umbrella wants that umbrella down first exactly as
 a strike does. Its organic `SEAD_SWEEP` escort flies the package's own TOT and so accompanies
@@ -7006,6 +7007,28 @@ player flight is never rescheduled — but a **player-flown SEAD still opens a w
 strikes push behind** (providers are read-only). The carrier stagger runs after and only
 ever delays, so it can push a strike deeper into — never ahead of — its window;
 best-effort by design. Symmetric (each coalition's scheduler coordinates its own ATO).
+
+### The exclusion rationale was false, twice (corrected 2026-08-25)
+
+From the original 2026-07-17 build until this correction, the exclusion comment read "Armed
+Recon (a loitering sweep, not a push) and AIR ASSAULT (tied to the ground war's timing)". Both
+halves are wrong, and it shipped in the code comment, the features doc, the tests, the §69
+upstream carve and the outbound juanjux brief before an upstream reviewer asked what the Air
+Assault half meant.
+
+| Claim | What the code says |
+|---|---|
+| Armed Recon is a loitering sweep | `ArmedReconFlightPlan` extends **`FormationAttackFlightPlan`** — ingress, target, egress, no patrol. It is a search-and-engage-in-zone task with no loiter. **`CasFlightPlan` is the `PatrollingFlightPlan`** with a `patrol_duration`, so the one type the comment excluded for loitering does not, and the one type #973 *added* is the actual patroller. |
+| Air Assault is tied to the ground war's timing | Nothing times it that way. `auto_asap` is set only for the first AEWC package (`packageplanningtask.py`) and for player packages under `player_missions_asap`, so an Air Assault takes the same random spread as a strike. Its only ground-war coupling is planning *eligibility* — `PlanAirAssault.preconditions_met` needs the target in `state.vulnerable_control_points` — which decides whether it is planned, not when it arrives. |
+
+Both are `FormationAttackFlightPlan` against a `ControlPoint`, structurally the same tasking as
+OCA, which **is** included. So there is no mechanism behind the exclusion; it is unexamined
+scope, and the comment was written to make an omission read as a decision.
+
+**The lesson is the shape, not the two facts.** A rationale comment asserting *why* something is
+excluded is load-bearing — reviewers and future edits trust it — so it has to be checked against
+the code the same way a behavioural claim is. This one survived four documents and a published
+PR because every copy was made from the previous copy.
 
 Gated by `sead_strike_coordination` (Air Doctrine → Auto-planner behavior, default **OFF since
 the 2026-08-09 re-convergence**; the planner-suite preset turns it on).

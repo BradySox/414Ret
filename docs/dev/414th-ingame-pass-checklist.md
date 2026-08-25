@@ -6231,14 +6231,17 @@ stand-down. What the harness cannot exercise: the DCS AI actually flying the sha
 vector, the airborne clone surviving its air spawn, the AttackGroup task producing a
 real attack, and the SA-6 clone engaging.
 
-**Setup:** Into the Hornet's Nest (both gates preseeded). Fly any Damascus-area tasking
-and cut the corner over Lebanon below 10,000 ft MSL.
+**Setup:** Enduring Resolve (both gates preseeded). Fly any southern tasking — a
+carrier sortie is ideal — and cut a corner into Pakistan below 10,000 ft MSL.
+(Hornet's Nest no longer exercises the ladder: its Lebanon zone derives red-aligned
+off Beirut's red squadrons, so nothing §96 enforces there.)
 
-**Pass:** warned by text within ~40 s; a MiG-29 pair appears from Rayak and holds near
-you without firing; exiting promptly ends it (they RTB and despawn). Pressing —
-staying ~3 min, or releasing a weapon inside the border — flips them hostile
-(datalink), they attack, and an SA-6 wakes at Rayak. The amber border polyline is
-visible on the F10 map.
+**Pass:** warned by text within ~40 s; a MiG-21 pair air-spawns at the border CAP
+station and holds near you without firing; exiting promptly ends it (they route home
+and despawn). Pressing — staying ~3 min, or releasing a weapon inside the border —
+flips them hostile (datalink), they attack, and an SA-6 clones in at the CAP anchor.
+The green-shaded border polygon is visible on the F10 map, with Pakistan's corridor
+gap and the faint-green overflight neighbours distinct from it.
 
 **Fail signatures:** the shadow fires during the shadow phase (ROE wrong); no shadow
 ever launches (template/clone failure — check dcs.log for NEUTRALBORDER| lines); the
@@ -6254,8 +6257,8 @@ ever engaged. Harness-covered for the no-escalation invariant; what needs eyes i
 whether AI strays happen at believable rates on Hornet's Nest and what the shadow
 pairs do around them.
 
-**Setup:** same campaign; watch the F10 map for red/blue AI crossing the Lebanese
-border below 10,000 ft during a normal mission.
+**Setup:** same campaign; watch the F10 map for red/blue AI crossing the Pakistani or
+Iranian border below 10,000 ft during a normal mission.
 
 **Pass:** an AI stray gets a shadow pair and nothing else; the shadow stands down when
 the stray leaves. No neutral-side attack on an AI group, ever.

@@ -14,10 +14,13 @@ recommended_player_money: 300
 recommended_enemy_money: 300
 recommended_player_income_multiplier: 0.7
 recommended_enemy_income_multiplier: 0.7
-# §96: the whole air war flies within corner-cutting distance of the Lebanese
-# border. Lebanon defends its airspace below 10,000 ft MSL from Rayak -- shadow
-# first, engage a player who presses. MiG-29A: the type Russia offered Lebanon
-# in 2008. Border traced from real boundary data (tools/neutral_border_geo.py).
+# §96: Lebanon's border, drawn for context. Alignment is DERIVED from who holds
+# the airfields inside a border, and Beirut hosts four red squadrons -- so this
+# zone resolves red-aligned: drawn in the enemy colour family and covered by
+# red's QRA accept zone, never a §96 alert flight. The aircraft/floor/sam fields
+# below are therefore inert in this campaign; they are kept because the zone
+# schema requires them for any zone that COULD derive neutral. Border traced
+# from real boundary data (tools/neutral_border_geo.py).
 neutral_border_defense:
   - country: Lebanon
     airfield: Rayak
@@ -77,8 +80,8 @@ settings:
   # jammer, which restores accuracy at once. Runs via the 'GPS jamming' LUA plugin, preseeded
   # below -- the setting does NOTHING without it.
   gps_jamming: true
-  # §96 neutral border defense: Lebanon defends its airspace (see the
-  # neutral_border_defense block below). Both gates preseeded -- the setting
+  # §96 bordering-nation airspace: Lebanon's border drawn (it derives
+  # red-aligned -- see the block below). Both gates preseeded -- the setting
   # does nothing without the plugin.
   neutral_border_defense: true
   plugins:

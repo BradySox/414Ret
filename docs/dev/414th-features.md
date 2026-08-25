@@ -10143,14 +10143,22 @@ every `Bullseye <brg> for <nm>` cue on the SEAD and threat-intel pages.
 
 ## §96 — Neutral-faction border defense
 
-Campaign-authored neutral countries defend their own airspace. Cross a neutral border
-below the altitude floor and an alert flight scrambles from the neutral's field: it
-spawns on the intruder's opposing coalition (the only way a "neutral" can legally fire
-in DCS), shadows at return-fire ROE, and radio-warns. A player who stays past the
-engage timer, releases a weapon inside the border, or fires on the shadower is
-engaged — and the field's SA-6 battery clones in awake. AI intruders are shadowed but
-never engaged. Design + the session's decisions:
-`docs/dev/design/414th-neutral-border-defense-notes.md`.
+Every nation bordering the war is drawn with its real border, and what each one does
+about an intruder follows from two facts. **Alignment is derived, never authored** —
+a nation hosting a RED or BLUE airfield is aligned with that team (computed from the
+control points inside its polygon; `posture:` overrides); a nation hosting neither is
+the neutral. **Overflight is a separate authored fact** — a neutral either permits
+transit (drawn only) or refuses it and defends. Cross a refusing neutral's border
+below the altitude floor and an alert flight spawns on the intruder's opposing
+coalition (the only way a "neutral" can legally fire in DCS), shadows at return-fire
+ROE, and radio-warns; a player who stays past the engage timer, releases a weapon
+inside, or fires on the shadower is engaged — and the SA-6 battery clones in awake.
+AI intruders are shadowed but never engaged. A red-aligned nation gets no §96 flight:
+its polygon joins §1's QRA accept zones, so the enemy's existing interceptors defend
+it. Colours: red family / blue family / APP-6 green, shading = enforcement. Design +
+the session's decisions: `docs/dev/design/414th-neutral-border-defense-notes.md`
+(incl. the DECIDED-not-built automagic direction and the national-postures research
+brief).
 
 ### The engine verdict, in one line
 
@@ -10220,10 +10228,12 @@ because amber is already SUSPECTED on the planner map.
 
 ### Reference implementations
 
-**Into the Hornet's Nest (Syria) — the airfield case.** Lebanon defends its airspace
-below 10,000 ft MSL from Rayak with MiG-29As (the type Russia offered Lebanon in 2008)
-— the whole Damascus air war flies within corner-cutting distance of the Lebanese
-border. Both gates preseeded; the 44-vertex border traced from real boundary data.
+**Into the Hornet's Nest (Syria) — the derived-alignment case.** Lebanon was authored
+as the neutral and the derivation rule corrected us: Beirut sits inside its border
+hosting four red squadrons, so it resolves **red-aligned** — drawn in the enemy
+family, covered by red's QRA accept zone, and its authored aircraft/SAM fields are
+inert. The zone's yaml is kept as-is (the border is the context the DM wanted drawn);
+the campaign's §96 *interception* showcase is Enduring Resolve, not this.
 
 **Enduring Resolve (Afghanistan) — the corridor case.** The OEF "boulevard": the
 carrier sits at 24.5°N 65.0°E in the Arabian Sea, and everything it launches has to

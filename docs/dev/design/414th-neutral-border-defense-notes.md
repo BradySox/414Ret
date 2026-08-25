@@ -158,6 +158,64 @@ and those three are not among them. The northern border is undefended rather tha
 flown under a substitute flag. Do not "fix" this with Kazakhstan or Russia — it would
 put a wrong nation's markings and tooltip over real territory.
 
+## The alignment rework (2026-08-25, DM calls)
+
+The feature's model grew from one axis to two, in the same session that added the
+planning-map layer:
+
+- **Every bordering nation is drawn**, not only the dangerous ones (DM call). A map
+  that shows only the keep-outs reads as "the rest is unmodelled".
+- **Alignment is derived, never authored**: a nation hosting a RED or BLUE airfield
+  is aligned with that team; one hosting neither is the neutral (DM rule, verbatim).
+  Computed by point-in-polygon over the control points inside each border
+  (`NeutralBorderZone.posture_in`); off-map spawns excluded; contested resolves to
+  the larger holder. `posture:` in the yaml overrides. **This caught our own defect
+  the day it landed**: the Hornet's Nest preseed had shipped Lebanon as the neutral
+  while Beirut hosts four red squadrons — under the rule it derives red-aligned with
+  no hand-edit, and flips if Beirut ever falls.
+- **Overflight is a separate authored fact from alignment** (DM call: "Neutral with
+  overflight and Neutral without overflight"). Turkmenistan permitted coalition
+  transit in 2006 and Iran did not; both were neutral. Only a neutral that refuses
+  transit is enforced by §96. A permitting neutral spawns nothing — which is what
+  finally let Turkmenistan/Uzbekistan/Tajikistan be drawn (no pydcs country needed).
+- **A red-aligned nation is defended by the QRA it already has**: its polygon joins
+  §1's accept zones (`aligned_defense_polygons` → `ZONE_POLYGON` → `SetBorderZone`),
+  never a second §96 flight over the same ground (DM call: "tied in with the
+  existing interceptor work").
+- **Three colour families** (DM call): red for red-aligned, blue for blue-aligned,
+  APP-6 green for the neutral; shading carries enforcement. Open airspace is drawn
+  with a real (6%) fill after the bare outline proved invisible over satellite
+  imagery — the §40 layer's own recorded lesson, relearned.
+
+## The automagic direction (2026-08-25, DM call — DECIDED, NOT BUILT)
+
+**"I do not wish this to be specified in any existing campaign, I want this to
+automagically work with existing campaigns, but if we or Starfire wish to establish
+it via the yaml we can."**
+
+Target architecture, to be built after the national-postures research lands:
+
+- **Borders become terrain data, not campaign data**: shipped per-terrain border
+  files (generated once by `tools/neutral_border_geo.py` for every real-world map),
+  so a campaign needs no `border:` vertices at all.
+- **Overflight becomes date-resolved**: `resources/borders/national_postures.yaml`
+  (five buckets, both blocs, dated ranges — see
+  `414th-national-postures-brief.md`, the handoff brief for the research session)
+  is read against the campaign's start date and each side's bloc; `allied`/
+  `permissive` collapse to overflight-allowed, `contested`/`closed`/`hostile` to
+  refused. The data supports per-side asymmetry (a nation open to blue and closed
+  to red), which the Lua does not model yet — the zone gains per-side overflight
+  when this is built.
+- **Alert origin and aircraft become automatic** for a defending neutral: an
+  airfield inside the polygon if the terrain has one, else the representative-point
+  spawn; the airframe from the postures table's optional `aircraft` column, else a
+  documented fallback.
+- **The campaign yaml survives as pure override** — same schema, highest
+  precedence. The derived airfield-alignment rule is untouched by all of this and
+  always wins over the table.
+- Gate unchanged (`neutral_border_defense` + plugin): "automagic" means no yaml
+  needed, not default-on. Flipping the default is its own call after B100/B101 fly.
+
 ## Deferred (not built, not promised)
 
 - Cross-mission consequences: escalating posture, airspace closure, the neutral joining

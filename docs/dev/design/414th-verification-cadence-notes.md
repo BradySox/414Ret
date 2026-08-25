@@ -62,7 +62,10 @@ ledger — which is why throttling the build is the wrong tool.
 
 ## The mechanism is already designed
 
-`414th-feature-debt-register.md` (2026-07-15) contains the whole thing:
+`414th-feature-debt-register.md` (2026-07-15) contained the whole thing. **That file was
+deleted 2026-08-25** once its Aug-1 wave was spent, per its own archive instruction — read it
+with `git show bb8d019c6:docs/dev/414th-feature-debt-register.md`. The mechanism it described
+is summarised here and the live cards are `docs/dev/flycards/`:
 
 - **§3 — the pre-flight desk pass.** Load the miz, read the arming lines in `dcs.log`, read
   the ATO, read the map/SITREP. *"Anything that fails here fails before the squadron ever

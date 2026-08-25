@@ -34,7 +34,6 @@ settings:
     gpsjamming: true            # §86 runtime -- the setting does nothing without it
     mobilemissiles: true        # §49 shoot-and-scoot theatre-missile sites
     cruisemissiles: true        # §63 ship-launched raids + the call-for-fire menu
-    aisleep: true               # §59 rear ground-AI sleep
     rednet: true                # §70 audible red UHF net
   # Every squadron fields its full authored strength on turn 1. This is a come-as-you-
   # are fight -- the war opened with a missile salvo on Guam, nobody spins up a training
@@ -91,11 +90,6 @@ settings:
   # -- Blue COMINT off the PLA net (§70), and the net being audible to home on (C1).
   comint_collection: true
   red_comms_net: true
-
-  # -- Performance. This is a heavy maritime laydown (a three-carrier PLAN order of
-  # battle plus the island garrisons); rear ground AI sleeps until something is near.
-  perf_ground_ai_sleep: true
-  perf_aaa_site_sleep: true
 
   # -- Making the auto-planner fight. Measured on a flown turn-1 save whose ATO came
   # out 100% defensive: 33 packages, 28 of them BARCAP, and ZERO strike/SEAD/DEAD/

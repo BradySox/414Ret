@@ -3798,7 +3798,13 @@ class Settings:
             "Air defenses, the front line, convoys and every scripted mover are never "
             "touched. Composes with culling: sleep what you keep, cull only what you "
             "never want to exist. Runtime lives in the 'Ground AI sleep' LUA plugin "
-            "(wake radius and cadence tunable there)."
+            "(wake radius and cadence tunable there). OFF by default, and no campaign "
+            "turns it on: an AI strike or SEAD flight cannot prosecute a sleeping "
+            "group -- its attack task finds no target from the ingress point and the "
+            "flight returns with full racks. Measured on Desert Trident turn 1, "
+            "2026-08-24: sleep on, 12 of 13 air-to-ground packages fired nothing; the "
+            "same turn with it off released 31 Mk-82 and 6 HARM. Only enable it when "
+            "nothing is fragged against the ground it puts to sleep."
         ),
     )
     perf_aaa_site_sleep: bool = boolean_option(
@@ -3816,8 +3822,11 @@ class Settings:
             "its own sensor envelope: what it contributes to the IADS picture, and "
             "when it opens fire, are unchanged. Search and track radars, dedicated "
             "early-warning sites, longer-sighted guns such as the Gepard, and every "
-            "SAM or point defense MANTIS actively drives are never touched. Turn this "
-            "on if a gun-heavy mission is stuttering; leave it off otherwise."
+            "SAM or point defense MANTIS actively drives are never touched. A sleeping "
+            "gun site also stops radiating, so an anti-radiation shooter has nothing "
+            "to home on and the SEAD half of a package goes home loaded. Turn this on "
+            "only if a gun-heavy mission is stuttering and nothing is fragged at those "
+            "guns; leave it off otherwise."
         ),
     )
     perf_culling: bool = boolean_option(

@@ -13,6 +13,23 @@
 # changes sharing a date keep the order written here.
 
 entries:
+  - date: 2026-08-24
+    title: Neutral countries defend their borders
+    change: >-
+      On Into the Hornet's Nest, Lebanon now defends its own airspace. Cross the
+      Lebanese border below 10,000 ft and a MiG-29 pair scrambles from Rayak,
+      shadows you, and warns you off the radio. Stay three minutes, release a
+      weapon inside the border, or shoot at the shadow flight, and they engage
+      -- and an SA-6 battery wakes at their field. Leave, and they go home. AI
+      flights that stray are shadowed but never fired on. The border is drawn
+      on the F10 map. Campaign authors can give any real-map neutral country
+      the same posture (settings gate + the neutralborder plugin).
+    watch: >-
+      Cut the corner over Lebanon below 10,000 ft on any Damascus-area tasking.
+      You should be warned within ~40 seconds, see the shadow pair arrive from
+      Rayak on your enemy's IFF, and -- if you exit promptly -- watch them break
+      off and go home. Check the amber border polyline on the F10 map.
+    row: B100
   - date: 2026-08-23
     title: The front line sits on ground the armour can hold
     change: >-

@@ -15,6 +15,7 @@ from .daytimemap import DaytimeMap
 from .frontline import FrontLine
 from .iadsnetwork.iadsnetwork import IadsNetwork
 from .landmap import poly_contains, load_landmap
+from .neutralborder import NeutralBorderZone
 from .player import Player
 from .seasonalconditions import SeasonalConditions
 from ..utils import Heading
@@ -46,12 +47,14 @@ class ConflictTheater:
         self.daytime_map = daytime_map
         self.controlpoints: list[ControlPoint] = []
         self.rebel_zones: list[TriggerZone] = []
+        self.neutral_border_zones: list[NeutralBorderZone] = []
 
     def __setstate__(self, state: dict[str, Any]) -> None:
         if "landmap_path" not in state:
             state["landmap_path"] = self.landmap_path_for_terrain_name(
                 state["terrain"].name
             )
+        state.setdefault("neutral_border_zones", [])
         self.__dict__ = state
         self.landmap = load_landmap(self.landmap_path)
 

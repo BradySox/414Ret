@@ -20,6 +20,7 @@ from dcs.unitgroup import PlaneGroup, ShipGroup, StaticGroup, VehicleGroup
 from dcs.vehicles import AirDefence, Armor, MissilesSS, Unarmed
 
 from game.controlpoint_influenceradius import ControlPointInfluenceRadius, point_in_zone
+from game.theater.neutralborder import NeutralBorderZone
 from game.point_with_heading import PointWithHeading
 from game.positioned import Positioned
 from game.profiling import logged_duration
@@ -982,6 +983,15 @@ class MizCampaignLoader:
                 continue
             cp.base.strength = max(0.0, min(1.0, float(value)))
 
+    def add_neutral_border_zones(self) -> None:
+        """Parse the campaign's ``neutral_border_defense:`` blocks (§96)."""
+        zones = []
+        for entry in self.campaign_data.get("neutral_border_defense", []):
+            zone = NeutralBorderZone.from_yaml(entry)
+            if zone is not None:
+                zones.append(zone)
+        self.theater.neutral_border_zones = zones
+
     def populate_theater(self) -> None:
         for control_point in self.control_points.values():
             self.theater.add_controlpoint(control_point)
@@ -992,6 +1002,7 @@ class MizCampaignLoader:
         self.add_yaml_shipping_lanes()
         self.apply_control_point_strengths()
         self.add_rebel_zones()
+        self.add_neutral_border_zones()
 
     def get_ctld_zones(self, prefix: str) -> List[Tuple[Point, float]]:
         zones = [t for t in self.mission.triggers.zones() if prefix + " CTLD" in t.name]

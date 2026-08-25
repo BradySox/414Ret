@@ -833,6 +833,19 @@ FEATURES: tuple[Feature, ...] = (
         plugin_id="ai_reaction",
     ),
     Feature("pinned_bullseye", "Pinned bullseye", 95),
+    Feature(
+        # §96 neutral-faction border defense: campaign-authored neutral countries
+        # (real-data border polygons, tools/neutral_border_geo.py) scramble an
+        # alert flight at any intruder below the floor — shadow at return-fire,
+        # engage a player who presses. Spawns are untracked event content (the
+        # §61 precedent); the planner never learns the borders (no navmesh
+        # hazard — do not reopen the §6 revert).
+        "neutral_border_defense",
+        "Neutral-faction border defense",
+        96,
+        plugin_id="neutralborder",
+        settings_fields=("neutral_border_defense",),
+    ),
     # Always-on engine plugins — major 414th machinery documented in design notes
     # rather than a numbered "Features at a Glance" entry.
     Feature("mantis_iads", "MANTIS IADS engine", plugin_id="mantisiads"),

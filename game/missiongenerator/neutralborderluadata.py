@@ -1,0 +1,76 @@
+"""Neutral border defense -> Lua config bridge (``dcsRetribution.neutralBorder``).
+
+§96: campaign-authored neutral countries defend their own airspace. The
+generator (``NeutralBorderGenerator``) builds late-activation alert templates at
+each neutral field and records what it actually built here; this module only
+serializes that record. A zone whose templates could not be built never reaches
+the Lua, so the plugin needs no missing-template handling.
+
+All values are emitted as Lua strings (the ``LuaItem`` contract); the plugin
+``tonumber()``s the numerics once at load. Border vertices are terrain XY —
+pydcs ``Point.x``/``.y`` = DCS ``x``/``z`` — which the plugin compares against
+``unit:getPoint().x``/``.z``.
+
+Emits nothing when the setting is off or no zone was built; such missions carry
+no ``neutralBorder`` node and the plugin no-ops.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from game import Game
+
+    from .luagenerator import LuaData
+    from .missiondata import MissionData
+
+
+@dataclass(frozen=True)
+class NeutralBorderLuaZone:
+    """One neutral country's zone, as actually built into the miz."""
+
+    country: str
+    #: Exact map airbase name (``AIRBASE:FindByName``).
+    airfield: str
+    floor_ft: int
+    #: Exact .miz group name of the late-activation fighter template.
+    fighter_template: str
+    #: Exact .miz group name of the late-activation SAM template, or None.
+    sam_template: str | None
+    #: pydcs country ids present in the mission, one per side: the clone spawns
+    #: under whichever opposes the intruder.
+    red_country_id: int
+    blue_country_id: int
+    #: Terrain XY vertices (pydcs Point.x/.y = DCS x/z), implicit closure.
+    border: list[tuple[float, float]] = field(default_factory=list)
+
+
+def populate_neutral_border_lua(
+    root: "LuaData", game: "Game", mission_data: "MissionData"
+) -> None:
+    """Build the ``dcsRetribution.neutralBorder`` subtree."""
+    if not getattr(game.settings, "neutral_border_defense", False):
+        return
+    zones = mission_data.neutral_border_zones
+    if not zones:
+        return
+
+    node = root.add_item("neutralBorder")
+    zones_node = node.get_or_create_item("zones")
+    for zone in zones:
+        record = zones_node.add_item()
+        record.add_key_value("country", zone.country)
+        record.add_key_value("field", zone.airfield)
+        record.add_key_value("floorFt", str(zone.floor_ft))
+        record.add_key_value("fighterTemplate", zone.fighter_template)
+        if zone.sam_template is not None:
+            record.add_key_value("samTemplate", zone.sam_template)
+        record.add_key_value("redCountryId", str(zone.red_country_id))
+        record.add_key_value("blueCountryId", str(zone.blue_country_id))
+        border_node = record.get_or_create_item("border")
+        for x, y in zone.border:
+            vertex = border_node.add_item()
+            vertex.add_key_value("x", f"{x:.1f}")
+            vertex.add_key_value("y", f"{y:.1f}")

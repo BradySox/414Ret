@@ -10140,3 +10140,76 @@ every `Bullseye <brg> for <nm>` cue on the SEAD and threat-intel pages.
   kneeboard row: the place before the coordinates, the unnamed fallback, and the banner.
 
 **In-game pass owed:** B98 — the bullseye is the same place it was last mission.
+
+## §96 — Neutral-faction border defense
+
+Campaign-authored neutral countries defend their own airspace. Cross a neutral border
+below the altitude floor and an alert flight scrambles from the neutral's field: it
+spawns on the intruder's opposing coalition (the only way a "neutral" can legally fire
+in DCS), shadows at return-fire ROE, and radio-warns. A player who stays past the
+engage timer, releases a weapon inside the border, or fires on the shadower is
+engaged — and the field's SA-6 battery clones in awake. AI intruders are shadowed but
+never engaged. Design + the session's decisions:
+`docs/dev/design/414th-neutral-border-defense-notes.md`.
+
+### The engine verdict, in one line
+
+A true-neutral unit cannot be made to fire (hostility gates weapons release, not
+tasking; no runtime coalition move exists), so the alert units are clones spawned under
+the opposing side's country (`SPAWN:InitCountry`/`InitCoalition`) with the escalation
+applied §61-style: a raw `{id="AttackGroup"}` controller task, re-set only when the
+target changes.
+
+### Shape
+
+- **Python** — `game/theater/neutralborder.py` (`NeutralBorderZone`, the campaign yaml
+  contract), parsed by `MizCampaignLoader.add_neutral_border_zones` onto
+  `ConflictTheater.neutral_border_zones` (persisted; `__setstate__` defaults it for old
+  saves). `NeutralBorderGenerator` builds, per zone, a cold late-activation 2-ship
+  fighter template + optional SA-6 template at the (non-CP) neutral field under the
+  neutral country, and records what it built on `MissionData.neutral_border_zones`;
+  `neutralborderluadata.py` serializes that to `dcsRetribution.neutralBorder`.
+- **Lua** — `resources/plugins/neutralborder/neutralborder-config.lua`: border scan
+  (bbox + ray-cast point-in-polygon on terrain XY), per-group dwell, the warn → shadow
+  → escalate ladder, the SAM wake, exit-grace stand-down, and F10 border polylines
+  (default on — the §86 invisible-bubble lesson).
+- **Borders are real data, never hand-traced** — `tools/neutral_border_geo.py`:
+  public-domain country GeoJSON → shapely simplify to a vertex budget →
+  `Point.from_latlng` → terrain XY yaml. Real-world-georeferenced maps only;
+  fictional-overlay campaigns are out of scope (DM call, 2026-08-24).
+
+### Rules fixed by DM call (2026-08-24)
+
+- Single-flight ladder: the same flight that shadows is the one that engages. It spawns
+  visibly red/blue from the start; the accepted risk is that nearby AI of the intruder's
+  side may engage the shadower uninvited (return-fire ROE answers it). The recorded
+  fallback if flown tests show shadowers dying early is the in-place coalition-swap
+  respawn — see the design note; do not re-derive it.
+- Everyone trips the border; only players are ever engaged. The planner stays blind —
+  no navmesh hazard (do not reopen the §6 revert).
+- In-mission only: nothing persists past the debrief. Spawns are free, untracked event
+  content (the §61 precedent).
+- Escalation is ROE + tasking only. Never `enableEmission` (hard constraint).
+
+### Reference implementation
+
+Into the Hornet's Nest: Lebanon defends its airspace below 10,000 ft MSL from Rayak
+with MiG-29As (the type Russia offered Lebanon in 2008) — the whole Damascus air war
+flies within corner-cutting distance of the Lebanese border. Both gates preseeded; the
+44-vertex border traced from real boundary data.
+
+### Files & tests
+
+- `game/theater/neutralborder.py` · `game/campaignloader/mizcampaignloader.py` ·
+  `game/missiongenerator/neutralbordergenerator.py` · `neutralborderluadata.py` ·
+  `game/settings/settings.py` (`neutral_border_defense`) ·
+  `resources/plugins/neutralborder/` · `tools/neutral_border_geo.py`.
+- `tests/lua/test_neutralborder_runtime.py` — 8 harness tests: clean no-op, the
+  warn/shadow with the opposing-side clone (both directions), dwell escalation with the
+  AttackGroup task + SAM wake, AI-never-engaged, the high-transit non-trip, the
+  weapon-release escalation, and the exit stand-down. `tests/test_neutralborder.py` —
+  yaml parsing never raises. `game/missiongenerator/tests/test_neutralborder_luadata.py`
+  — the emitter contract.
+
+**In-game pass owed:** B100 (the player ladder end to end) and B101 (AI shadowed only —
+and how often the intruder's own side kills the shadower, the accepted-risk watch).

@@ -1,0 +1,157 @@
+"""Neutral border defense: late-activation alert templates in the miz (§96).
+
+For each authored ``NeutralBorderZone`` this builds, at the zone's (non-CP)
+airfield, a cold late-activation 2-ship fighter template under the neutral
+country plus an optional SA-6 point-defense template — and records the result on
+``MissionData.neutral_border_zones`` for the emitter. The ``neutralborder``
+plugin clones a template at runtime under the intruder's *opposing* coalition
+(``SPAWN:InitCountry``/``InitCoalition``), which is the only way a "neutral" can
+legally fire in DCS.
+
+Clones are free, untracked event content by design (the §61 precedent):
+``claim_inv`` has no meaning here because no squadron is involved — the neutral
+country owns no campaign forces at all. A zone that cannot be built (unknown
+aircraft, unknown airfield, spawn error) is skipped with a warning; this feature
+must never break mission generation.
+"""
+
+from __future__ import annotations
+
+import logging
+from typing import TYPE_CHECKING
+
+from dcs import Mission
+from dcs.country import Country
+from dcs.countries import country_dict
+from dcs.mapping import Point
+from dcs.mission import StartType
+from dcs.planes import plane_map
+from dcs.task import CAP
+from dcs.vehicles import AirDefence
+
+from game.theater.neutralborder import NeutralBorderZone
+from .neutralborderluadata import NeutralBorderLuaZone
+
+if TYPE_CHECKING:
+    from game import Game
+
+    from .missiondata import MissionData
+
+
+class NeutralBorderGenerator:
+    def __init__(
+        self,
+        mission: Mission,
+        game: "Game",
+        mission_data: "MissionData",
+        blue_country_id: int,
+        red_country_id: int,
+    ) -> None:
+        self.mission = mission
+        self.game = game
+        self.mission_data = mission_data
+        self.blue_country_id = blue_country_id
+        self.red_country_id = red_country_id
+
+    def generate(self) -> None:
+        if not getattr(self.game.settings, "neutral_border_defense", False):
+            return
+        zones = getattr(self.game.theater, "neutral_border_zones", [])
+        for zone in zones:
+            try:
+                built = self._build_zone(zone)
+            except Exception:
+                logging.warning(
+                    "Neutral border: could not build the %s zone; skipped.",
+                    zone.country,
+                    exc_info=True,
+                )
+                continue
+            if built is not None:
+                self.mission_data.neutral_border_zones.append(built)
+
+    def _build_zone(self, zone: NeutralBorderZone) -> NeutralBorderLuaZone | None:
+        airport = self.mission.terrain.airports.get(zone.airfield)
+        if airport is None:
+            logging.warning(
+                "Neutral border: airfield '%s' not on this terrain — %s skipped.",
+                zone.airfield,
+                zone.country,
+            )
+            return None
+        aircraft = plane_map.get(zone.aircraft)
+        if aircraft is None:
+            logging.warning(
+                "Neutral border: unknown aircraft '%s' — %s skipped.",
+                zone.aircraft,
+                zone.country,
+            )
+            return None
+        country = self._country(zone.country)
+        if country is None:
+            logging.warning(
+                "Neutral border: unknown country '%s' — zone skipped.", zone.country
+            )
+            return None
+
+        fighter_name = f"NeutralBorder|{zone.country}|{zone.aircraft}"
+        group = self.mission.flight_group_from_airport(
+            country=country,
+            name=fighter_name,
+            aircraft_type=aircraft,
+            airport=airport,
+            start_type=StartType.Cold,
+            group_size=2,
+        )
+        group.late_activation = True
+        # The clones inherit the template's pylons, so arm it once here. An
+        # airframe with no CAP default flies guns-only rather than failing.
+        if not group.load_task_default_loadout(CAP):
+            logging.info(
+                "Neutral border: %s has no CAP default loadout; guns only.",
+                zone.aircraft,
+            )
+
+        sam_name: str | None = None
+        if zone.sam:
+            sam_name = f"NeutralBorder|{zone.country}|SAM"
+            sam_position = Point(
+                airport.position.x + 700,
+                airport.position.y + 700,
+                self.mission.terrain,
+            )
+            sam_group = self.mission.vehicle_group_platoon(
+                country,
+                sam_name,
+                [
+                    AirDefence.Kub_1S91_str,
+                    AirDefence.Kub_2P25_ln,
+                    AirDefence.Kub_2P25_ln,
+                ],
+                sam_position,
+            )
+            sam_group.late_activation = True
+
+        return NeutralBorderLuaZone(
+            country=zone.country,
+            airfield=zone.airfield,
+            floor_ft=zone.floor_ft,
+            fighter_template=fighter_name,
+            sam_template=sam_name,
+            red_country_id=self.red_country_id,
+            blue_country_id=self.blue_country_id,
+            border=list(zone.border),
+        )
+
+    def _country(self, name: str) -> Country | None:
+        """The named country from the neutrals coalition, registered if needed."""
+        neutrals = self.mission.coalition["neutrals"]
+        existing = neutrals.countries.get(name)
+        if existing is not None:
+            return existing
+        for country_class in country_dict.values():
+            if country_class.name == name:
+                country = country_class()
+                neutrals.add_country(country)
+                return country
+        return None

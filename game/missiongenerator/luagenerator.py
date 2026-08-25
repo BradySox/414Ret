@@ -43,6 +43,7 @@ from .gpsjammingluadata import populate_gps_jamming_lua
 from .growlerluadata import populate_growler_lua
 from .mobilemissileluadata import populate_mobile_missiles_lua
 from .navalmagazineluadata import populate_naval_magazines_lua
+from .neutralborderluadata import populate_neutral_border_lua
 from .redscrambleluadata import populate_red_scramble_lua
 from .vietnamopsluadata import populate_vietnam_ops_lua
 
@@ -504,6 +505,12 @@ class LuaGenerator:
         # the redscramble plugin builds the host's F10 menu and force-vectors the
         # cloned bandits onto blue fighters (a GM event tool -- untracked by design).
         populate_red_scramble_lua(lua_data, self.game, self.mission_data)
+
+        # Neutral-faction border defense (§96) -- emits dcsRetribution.neutralBorder
+        # only when neutral_border_defense is on and the campaign authored zones the
+        # generator could build templates for; the neutralborder plugin runs the
+        # border watch, the shadow launches and the escalation ladder.
+        populate_neutral_border_lua(lua_data, self.game, self.mission_data)
 
         # Combat SAR -- emits dcsRetribution.CSAR (the downed-pilot list, the
         # rescue-capable type whitelist and the Ops.CSAR flags) for the opscsar

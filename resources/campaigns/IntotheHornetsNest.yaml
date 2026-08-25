@@ -14,6 +14,61 @@ recommended_player_money: 300
 recommended_enemy_money: 300
 recommended_player_income_multiplier: 0.7
 recommended_enemy_income_multiplier: 0.7
+# §96: the whole air war flies within corner-cutting distance of the Lebanese
+# border. Lebanon defends its airspace below 10,000 ft MSL from Rayak -- shadow
+# first, engage a player who presses. MiG-29A: the type Russia offered Lebanon
+# in 2008. Border traced from real boundary data (tools/neutral_border_geo.py).
+neutral_border_defense:
+  - country: Lebanon
+    airfield: Rayak
+    aircraft: MiG-29A
+    floor_ft: 10000
+    sam: true
+    border:
+      - [-37713, 38996]
+      - [-44689, 33157]
+      - [-41534, 6105]
+      - [-55592, 4943]
+      - [-62031, -10471]
+      - [-67385, -10198]
+      - [-78532, -23806]
+      - [-96934, -28942]
+      - [-113468, -28568]
+      - [-121940, -34442]
+      - [-122653, -44197]
+      - [-135109, -43957]
+      - [-156885, -52904]
+      - [-191924, -72708]
+      - [-202878, -73365]
+      - [-211351, -80947]
+      - [-210909, -60929]
+      - [-217426, -55276]
+      - [-213243, -43627]
+      - [-191183, -37188]
+      - [-196769, -31784]
+      - [-187238, -22326]
+      - [-186708, -15685]
+      - [-172288, -632]
+      - [-166709, -1432]
+      - [-166588, 5528]
+      - [-161763, 9235]
+      - [-153049, -1387]
+      - [-134731, 10903]
+      - [-134216, 26519]
+      - [-130518, 28224]
+      - [-133744, 41424]
+      - [-123453, 31136]
+      - [-109691, 43556]
+      - [-109527, 52157]
+      - [-92502, 63845]
+      - [-89956, 60088]
+      - [-81401, 61770]
+      - [-74047, 55543]
+      - [-69413, 58315]
+      - [-58637, 48411]
+      - [-58772, 38201]
+      - [-44682, 50211]
+      - [-44380, 42821]
 settings:
   # §86 GPS jamming: red EW companies deny satellite guidance within 15 nm of two sites
   # (see ground_forces). A JDAM/JSOW/JASSM aimed at anything inside a bubble lands off the
@@ -22,8 +77,13 @@ settings:
   # jammer, which restores accuracy at once. Runs via the 'GPS jamming' LUA plugin, preseeded
   # below -- the setting does NOTHING without it.
   gps_jamming: true
+  # §96 neutral border defense: Lebanon defends its airspace (see the
+  # neutral_border_defense block below). Both gates preseeded -- the setting
+  # does nothing without the plugin.
+  neutral_border_defense: true
   plugins:
     gpsjamming: true            # §86 runtime -- the setting does nothing without it
+    neutralborder: true         # §96 runtime -- the setting does nothing without it
   max_frontline_width: 30
   squadron_start_full: true
   enable_squadron_aircraft_limits: true

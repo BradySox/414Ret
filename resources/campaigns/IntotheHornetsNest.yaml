@@ -88,7 +88,12 @@ neutral_border_defense:
   # working, not a leftover.
   # Turkey -- real boundary data via tools/neutral_border_geo.py (19 vertices).
   - country: Turkey
-    overflight: true
+    # Permissive toward the US bloc, closed toward the Russian one, so
+    # it waves blue through and intercepts red. Turkish F-16C Block 50s out of Incirlik.
+    airfield: Incirlik
+    aircraft: F-16C_50
+    floor_ft: 10000
+    sam: false
     border:
       - [206018, 392664]
       - [178245, 301585]
@@ -112,7 +117,13 @@ neutral_border_defense:
 
   # Cyprus -- real boundary data via tools/neutral_border_geo.py (14 vertices).
   - country: Cyprus
-    overflight: true
+    # The table reads contested, so Cyprus defends its own airspace. Greek
+    # air-policing detachments deploy to Paphos under the Single Defence
+    # Area doctrine; the Republic itself flies no fast jets.
+    airfield: Paphos
+    aircraft: Mirage 2000-5
+    floor_ft: 10000
+    sam: false
     border:
       - [78237, -115818]
       - [35014, -179655]
@@ -131,7 +142,12 @@ neutral_border_defense:
 
   # Jordan -- real boundary data via tools/neutral_border_geo.py (19 vertices).
   - country: Jordan
-    overflight: true
+    # Permissive toward the US bloc, closed toward the Russian one, so
+    # it waves blue through and intercepts red. RJAF F-16AM.
+    airfield: King Hussein Air College
+    aircraft: F-16A MLU
+    floor_ft: 10000
+    sam: false
     border:
       - [-440070, -58666]
       - [-416181, -60115]
@@ -155,7 +171,12 @@ neutral_border_defense:
 
   # Iraq -- real boundary data via tools/neutral_border_geo.py (9 vertices).
   - country: Iraq
-    overflight: true
+    # Permissive toward the US bloc, closed toward the Russian one, so
+    # it waves blue through and intercepts red. Iraqi F-16IQ (Block 52); the vanilla C-50 stands in.
+    airfield: H3
+    aircraft: F-16C_50
+    floor_ft: 10000
+    sam: false
     border:
       - [-322252, 301951]
       - [-313999, 311405]

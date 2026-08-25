@@ -29,6 +29,7 @@ from dcs.planes import plane_map
 from dcs.task import CAP
 from dcs.vehicles import AirDefence
 
+from game.theater.nationalpostures import bloc_for_faction
 from game.theater.neutralborder import NEUTRAL, NeutralBorderZone
 from game.utils import feet
 from .neutralborderluadata import NeutralBorderLuaZone
@@ -74,9 +75,24 @@ class NeutralBorderGenerator:
             if built is not None:
                 self.mission_data.neutral_border_zones.append(built)
 
+    def _blocs(self) -> tuple[str, str]:
+        """(blue bloc, red bloc) for this campaign, from the factions' countries."""
+        on = self.game.current_day
+        return (
+            bloc_for_faction(self.game.blue.faction, True, on),
+            bloc_for_faction(self.game.red.faction, False, on),
+        )
+
     def _build_zone(self, zone: NeutralBorderZone) -> NeutralBorderLuaZone | None:
         posture = zone.posture_in(self.game.theater)
-        if not zone.enforces_in(self.game.theater):
+        on = self.game.current_day
+        blue_bloc, red_bloc = self._blocs()
+        # Per side: a country may let one bloc through and not the other.
+        permits_blue = zone.permits(blue_bloc, on)
+        permits_red = zone.permits(red_bloc, on)
+        enforced = posture == NEUTRAL and not (permits_blue and permits_red)
+
+        if not enforced:
             # An aligned country is not a third party: it spawns nothing here, so
             # it needs no pydcs country and no aircraft. A red-aligned one is
             # defended by §1's QRA instead (see aligned_defense_polygons), which
@@ -84,8 +100,32 @@ class NeutralBorderGenerator:
             return NeutralBorderLuaZone(
                 country=zone.country,
                 posture=posture,
-                overflight=zone.overflight,
-                origin_label=zone.origin_label(posture),
+                overflight_blue=permits_blue,
+                overflight_red=permits_red,
+                origin_label=zone.origin_label(posture, enforced=False),
+                floor_ft=zone.floor_ft,
+                border=list(zone.border),
+            )
+
+        # It defends against at least one side, so it needs something to defend
+        # with. Missing means it is DRAWN but toothless -- never dropped. Every
+        # bordering nation is meant to appear (DM call), and a country that
+        # cannot field an interceptor is exactly the case that rule is for: DCS
+        # models no Turkmenistan, so its border can only ever be a line.
+        if zone.aircraft is None or (zone.airfield is None and zone.spawn is None):
+            logging.info(
+                "Neutral border: %s would defend its airspace but the campaign "
+                "gives it no %s, so its border is drawn and not enforced. Add "
+                "them to make it intercept.",
+                zone.country,
+                "aircraft" if zone.aircraft is None else "airfield/spawn point",
+            )
+            return NeutralBorderLuaZone(
+                country=zone.country,
+                posture=posture,
+                overflight_blue=True,
+                overflight_red=True,
+                origin_label=zone.origin_label(posture, enforced=False),
                 floor_ft=zone.floor_ft,
                 border=list(zone.border),
             )
@@ -175,6 +215,8 @@ class NeutralBorderGenerator:
         return NeutralBorderLuaZone(
             country=zone.country,
             posture=NEUTRAL,
+            overflight_blue=permits_blue,
+            overflight_red=permits_red,
             airfield=zone.airfield,
             spawn=zone.spawn,
             spawn_alt_m=spawn_alt_m,

@@ -41,6 +41,9 @@ def _config(sam: bool = True, floor_ft: str = "10000") -> dict[str, Any]:
         "redCountryId": str(RED_COUNTRY),
         "blueCountryId": str(BLUE_COUNTRY),
         "border": SQUARE,
+        # Refuses both sides: this fixture is the interception case.
+        "overflightBlue": "false",
+        "overflightRed": "false",
     }
     if sam:
         zone["samTemplate"] = "NeutralBorder|Lebanon|SAM"
@@ -302,5 +305,42 @@ def test_leaving_before_escalation_stands_the_shadow_down() -> None:
     destroys = h.records("destroys")
     assert destroys, "stood-down shadow was never despawned"
     # Never escalated on the way out.
+    assert _attack_tasks(h) == []
+    h.assert_no_lua_errors()
+
+
+def test_a_side_that_is_permitted_transit_is_never_intercepted() -> None:
+    """Per-side consent: a country open to blue and closed to red must wave one
+    through and shadow the other. Turkey in 2022 is exactly this."""
+    cfg = _config()
+    zone = cfg["neutralBorder"]["zones"][0]
+    zone["overflightBlue"] = "true"
+    zone["overflightRed"] = "false"
+
+    h = _setup(cfg)
+    h.add_group(_intruder("Viper 1-1", 42, side=2))  # BLUE, permitted
+    h.add_group(_intruder("Bandit 1", 50, side=1, player=None))  # RED, refused
+    h.load_plugin_script(PLUGIN)
+    h.advance_to(60)
+
+    spawns = _shadow_spawns(h)
+    assert len(spawns) == 1, "only the refused side should be shadowed"
+    # Opposing a RED intruder means a BLUE clone.
+    assert spawns[0]["coalitionId"] == 2
+    h.assert_no_lua_errors()
+
+
+def test_a_zone_open_to_everyone_never_scans() -> None:
+    cfg = _config(sam=False)
+    zone = cfg["neutralBorder"]["zones"][0]
+    zone["overflightBlue"] = "true"
+    zone["overflightRed"] = "true"
+
+    h = _setup(cfg)
+    h.add_group(_intruder("Viper 1-1", 42, side=2))
+    h.load_plugin_script(PLUGIN)
+    h.advance_to(400)
+
+    assert h.records("spawns") == []
     assert _attack_tasks(h) == []
     h.assert_no_lua_errors()

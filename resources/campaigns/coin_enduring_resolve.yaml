@@ -84,6 +84,11 @@ neutral_border_defense:
     aircraft: MiG-21Bis
     floor_ft: 10000
     sam: true
+    # OVERRIDE. The table reads Pakistan permissive toward the US bloc in
+    # 2006 and that is correct -- but the permission was for designated
+    # corridors, and the corridor is the ~225 km lane this polygon leaves
+    # out. Consent inside the lane is the gap; outside it there was none.
+    overflight: false
     border:
       - [-1091535, 142953]
       - [-945022, 31851]
@@ -113,6 +118,11 @@ neutral_border_defense:
     aircraft: MiG-21Bis
     floor_ft: 10000
     sam: true
+    # OVERRIDE. The table reads Pakistan permissive toward the US bloc in
+    # 2006 and that is correct -- but the permission was for designated
+    # corridors, and the corridor is the ~225 km lane this polygon leaves
+    # out. Consent inside the lane is the gap; outside it there was none.
+    overflight: false
     border:
       - [-960679, -205207]
       - [-958685, -241160]
@@ -172,7 +182,6 @@ neutral_border_defense:
 
   # Turkmenistan -- real boundary data via tools/neutral_border_geo.py (18 vertices).
   - country: Turkmenistan
-    overflight: true
     border:
       - [451061, 20412]
       - [380477, 14575]
@@ -195,6 +204,11 @@ neutral_border_defense:
 
   # Uzbekistan -- real boundary data via tools/neutral_border_geo.py (16 vertices).
   - country: Uzbekistan
+    # OVERRIDE, and a concession to DCS rather than to history. The table
+    # reads contested after the Nov-2005 K2 expulsion, so Uzbekistan should
+    # refuse transit -- but DCS has no Uzbekistan to fly an interceptor, so
+    # the choice is drawn-and-permissive or not drawn at all. Drop this
+    # override the day a defending posture becomes possible.
     overflight: true
     border:
       - [459380, 164393]
@@ -216,7 +230,6 @@ neutral_border_defense:
 
   # Tajikistan (east part) -- real boundary data via tools/neutral_border_geo.py (14 vertices).
   - country: Tajikistan
-    overflight: true
     border:
       - [415933, 587271]
       - [404594, 569248]
@@ -235,7 +248,6 @@ neutral_border_defense:
 
   # Tajikistan (west part) -- real boundary data via tools/neutral_border_geo.py (10 vertices).
   - country: Tajikistan
-    overflight: true
     border:
       - [470165, 340328]
       - [462933, 330677]

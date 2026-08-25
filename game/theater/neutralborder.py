@@ -44,7 +44,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Optional
 
 #: Air-spawn altitude for a point-spawned alert flight when the campaign does
 #: not say. A standing CAP, not a scramble -- high enough to be a credible
@@ -83,13 +83,13 @@ class NeutralBorderZone:
     spawn_alt_ft: int = DEFAULT_SPAWN_ALT_FT
     #: Author override for the derived alignment, or None to derive it.
     posture_override: str | None = None
-    #: Does this neutral permit transit? Alignment says whose side a country is
-    #: on; this says whether an uninvolved one lets you through, which is a
-    #: separate diplomatic fact the campaign has to state. In 2006 Turkmenistan
-    #: permitted coalition overflight and Iran did not, and both were neutral.
-    #: A permitting neutral spawns nothing, so it needs no aircraft or origin.
-    #: Meaningless on an aligned zone (blue lets you through, red is the enemy).
-    overflight: bool = False
+    #: Author override for transit consent, or None to resolve it from the
+    #: dated posture table. Alignment says whose side a country is on; this says
+    #: whether an uninvolved one lets you through, which alignment cannot decide
+    #: -- in 2006 Turkmenistan permitted coalition transit and Iran did not, and
+    #: both were neutral. Resolved per side, so a country may be open to one
+    #: bloc and closed to the other. Meaningless on an aligned zone.
+    overflight_override: Optional[bool] = None
     #: Border polygon as terrain XY pairs (pydcs Point.x/.y = DCS x/z), closed
     #: implicitly (last vertex connects to first).
     border: list[tuple[float, float]] = field(default_factory=list)
@@ -135,22 +135,34 @@ class NeutralBorderZone:
                 red += 1
         return (blue, red)
 
-    def enforces_in(self, theater: Any) -> bool:
-        """True when this border will actually intercept an intruder.
+    def permits(self, bloc: str, on: Any) -> bool:
+        """Does this country let ``bloc``'s aircraft transit on ``on``?
 
-        Only an uninvolved country that refuses transit does: an aligned one is
-        handled by its own side's QRA, and a permitting neutral is a line on the
-        map by definition.
+        The campaign's override wins outright; otherwise the dated table
+        decides, defaulting to refusal for anything it does not cover.
         """
-        return self.posture_in(theater) == NEUTRAL and not self.overflight
+        if self.overflight_override is not None:
+            return self.overflight_override
+        from game.theater.nationalpostures import permits_overflight
 
-    def origin_label(self, posture: str) -> str:
+        return permits_overflight(self.country, on, bloc)
+
+    def enforces_against(self, theater: Any, bloc: str, on: Any) -> bool:
+        """True when this border intercepts ``bloc``'s aircraft.
+
+        Only an uninvolved country that refuses that side transit does: an
+        aligned one is handled by its own side's QRA, and a permitting neutral
+        is a line on the map by definition.
+        """
+        return self.posture_in(theater) == NEUTRAL and not self.permits(bloc, on)
+
+    def origin_label(self, posture: str, enforced: bool = True) -> str:
         """What the map tooltip calls this border's meaning."""
         if posture == BLUE_ALIGNED:
             return "friendly — overflight permitted"
         if posture == RED_ALIGNED:
             return "enemy-aligned"
-        if self.overflight:
+        if not enforced:
             return "neutral — overflight permitted"
         if self.airfield is not None:
             return self.airfield
@@ -195,27 +207,24 @@ class NeutralBorderZone:
             airfield = data.get("airfield")
             spawn_raw = data.get("spawn")
             aircraft = data.get("aircraft")
-            overflight = bool(data.get("overflight", False))
-            # Only a zone that could end up intercepting needs the means to.
-            can_be_neutral = override in (None, NEUTRAL) and not overflight
+            overflight = data.get("overflight")
+            if overflight is not None:
+                overflight = bool(overflight)
 
-            if can_be_neutral:
-                # It may end up defending, so it needs something to defend with.
-                if (airfield is None) == (spawn_raw is None):
-                    logging.warning(
-                        "neutral_border_defense entry for %s: a zone that can "
-                        "derive to neutral needs exactly one of 'airfield' or "
-                        "'spawn' — skipped",
-                        country,
-                    )
-                    return None
-                if aircraft is None:
-                    logging.warning(
-                        "neutral_border_defense entry for %s: a zone that can "
-                        "derive to neutral needs 'aircraft' — skipped",
-                        country,
-                    )
-                    return None
+            # Naming BOTH origins is a real authoring error and still refused.
+            # Naming NEITHER is not: whether this zone ever needs one depends on
+            # its alignment and the posture table, neither of which exists at
+            # parse time -- and requiring them here would defeat the point of a
+            # campaign being able to list a country and its border, nothing
+            # else. A zone that turns out to need an origin it lacks is skipped
+            # by the generator, with a log line naming the country.
+            if airfield is not None and spawn_raw is not None:
+                logging.warning(
+                    "neutral_border_defense entry for %s: name 'airfield' or "
+                    "'spawn', not both — skipped",
+                    country,
+                )
+                return None
 
             spawn = None
             if spawn_raw is not None:
@@ -230,7 +239,7 @@ class NeutralBorderZone:
                 spawn=spawn,
                 spawn_alt_ft=int(data.get("spawn_alt_ft", DEFAULT_SPAWN_ALT_FT)),
                 posture_override=override,
-                overflight=overflight,
+                overflight_override=overflight,
                 border=border,
             )
         except (KeyError, TypeError, ValueError, IndexError):

@@ -227,7 +227,55 @@ unaffected** (<0.5 % delta inside each map's clip) — the mainland happened to 
 the next country added could easily have been the one that broke, and a fragment
 border is close to invisible on a map you have not seen drawn correctly.
 
-## The automagic direction (2026-08-25, DM call — DECIDED, NOT BUILT)
+## The postures table, wired (2026-08-25)
+
+`overflight` is no longer a campaign's to state. `game/theater/nationalpostures.py`
+reads the 47-country dated table against the campaign's date and each side's bloc;
+the yaml key survives as an override. Three rules live in that module, none of them
+in the data:
+
+- **Which bloc a coalition is.** From its faction's own country in the table — the
+  bloc it is most favourably disposed toward. USA resolves us-led, Russia ru-led; a
+  faction whose country the table does not know (CJTF, Insurgents, "Bluefor Modern")
+  falls back to blue=us-led / red=ru-led, which is every campaign we ship.
+- **An uncovered date is `closed`.** The safe default for a border is that it
+  defends.
+- **`allied`/`permissive` permit transit; `contested`/`closed`/`hostile` do not.**
+  Five buckets are kept in the data because the split will matter later; overflight
+  is binary today.
+
+**Consent is per side.** A country may wave one bloc through and intercept the
+other, so the zone carries two flags and the Lua checks each intruder against its
+own. This is not a corner case: in 2022 Turkey, Jordan and Iraq all permit US
+transit and refuse Russian, so on Hornet's Nest they intercept red only.
+
+### What wiring it immediately corrected
+
+The table disagreed with the postures hand-authored the day before, and was right
+twice:
+
+- **Uzbekistan** — hand-authored permissive; the table reads `contested` from the
+  Nov-2005 K2 expulsion. It should refuse and cannot, because DCS models no
+  Uzbekistan to fly an interceptor. Kept permissive by an override that says so.
+- **Turkey / Jordan / Iraq** on Hornet's Nest — hand-authored as permitting
+  everyone. They are closed toward the Russian bloc, so they now intercept red.
+  Given real defenders (Incirlik, King Hussein, H3).
+- **Pakistan** on Enduring Resolve — the table reads `permissive` toward the US in
+  2006 and that is correct history: the corridors were the consent. But the
+  corridor is the lane the polygon leaves out, so the campaign overrides to refuse.
+  **This is the case the override exists for** — geometry expressing a
+  consent-with-conditions the country-level table cannot.
+
+### A zone that cannot defend is drawn, never dropped
+
+If a zone should enforce but the campaign gives it no aircraft or origin, the
+generator emits it as drawn-only with an `info` line, rather than skipping it.
+Every bordering nation is meant to appear (DM call), and the countries that cannot
+field an interceptor — the ones DCS does not model — are exactly the case that rule
+exists for. Dropping them would have silently deleted Turkmenistan's border the
+moment the table said it refuses Russian transit.
+
+## The automagic direction (2026-08-25, DM call — the postures half is now BUILT)
 
 **"I do not wish this to be specified in any existing campaign, I want this to
 automagically work with existing campaigns, but if we or Starfire wish to establish

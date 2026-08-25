@@ -37,8 +37,11 @@ class NeutralBorderLuaZone:
     #: colour family. Only a neutral that refuses transit carries templates and
     #: is scanned; everything else is map information.
     posture: str = "neutral"
-    #: A neutral that permits transit. Drawn unshaded, never enforced.
-    overflight: bool = False
+    #: Per-side transit consent, resolved from the campaign date against the
+    #: posture table (or the campaign's override). A country may be open to one
+    #: bloc and closed to the other, so this is two flags, not one.
+    overflight_blue: bool = False
+    overflight_red: bool = False
     #: Exact .miz group name of the late-activation fighter template.
     fighter_template: str | None = None
     #: Exact .miz group name of the late-activation SAM template, or None.
@@ -61,8 +64,10 @@ class NeutralBorderLuaZone:
 
     @property
     def enforces(self) -> bool:
-        """Only an uninvolved country that refuses transit intercepts."""
-        return self.posture == "neutral" and not self.overflight
+        """True when this border intercepts anyone at all."""
+        return self.posture == "neutral" and not (
+            self.overflight_blue and self.overflight_red
+        )
 
 
 def populate_neutral_border_lua(
@@ -81,7 +86,15 @@ def populate_neutral_border_lua(
         record = zones_node.add_item()
         record.add_key_value("country", zone.country)
         record.add_key_value("posture", zone.posture)
-        record.add_key_value("overflight", "true" if zone.overflight else "false")
+        # Per side: the Lua checks the intruder's own coalition against its own
+        # flag, so a country open to blue and closed to red behaves correctly
+        # for both. The client renders the blue view.
+        record.add_key_value(
+            "overflightBlue", "true" if zone.overflight_blue else "false"
+        )
+        record.add_key_value(
+            "overflightRed", "true" if zone.overflight_red else "false"
+        )
         record.add_key_value("originLabel", zone.origin_label)
         if zone.enforces:
             # Exactly one of field / spawn is present -- the Lua branches on it.

@@ -1,7 +1,12 @@
-"""NeutralBorderZone yaml parsing (§96): malformed campaign data never raises."""
+"""§96 border zones: yaml parsing, derived alignment, and per-side transit."""
 
 from __future__ import annotations
 
+from datetime import date
+from types import SimpleNamespace
+from typing import Any
+
+from game.theater.nationalpostures import RU_LED, US_LED
 from game.theater.neutralborder import (
     BLUE_ALIGNED,
     DEFAULT_SPAWN_ALT_FT,
@@ -9,6 +14,8 @@ from game.theater.neutralborder import (
     RED_ALIGNED,
     NeutralBorderZone,
 )
+
+ON = date(2006, 4, 24)
 
 
 def _entry(**overrides: object) -> dict[str, object]:
@@ -22,6 +29,9 @@ def _entry(**overrides: object) -> dict[str, object]:
     }
     entry.update(overrides)
     return entry
+
+
+# -- parsing -------------------------------------------------------------------
 
 
 def test_happy_path() -> None:
@@ -43,15 +53,17 @@ def test_defaults() -> None:
     assert zone is not None
     assert zone.floor_ft == 10000
     assert zone.sam is False
+    assert zone.overflight_override is None
+    assert zone.posture_override is None
 
 
 def test_too_few_vertices_is_skipped() -> None:
     assert NeutralBorderZone.from_yaml(_entry(border=[[0, 0], [1, 1]])) is None
 
 
-def test_missing_required_key_is_skipped() -> None:
+def test_missing_country_is_skipped() -> None:
     entry = _entry()
-    del entry["airfield"]
+    del entry["country"]
     assert NeutralBorderZone.from_yaml(entry) is None
 
 
@@ -59,10 +71,27 @@ def test_garbage_border_is_skipped() -> None:
     assert NeutralBorderZone.from_yaml(_entry(border="nonsense")) is None
 
 
-# -- the point-spawn path: a neutral with no airfield anywhere on the map ------
-# Every one of the DCS Afghanistan map's 26 airfields is inside Afghanistan, so
-# Pakistan, Iran, Turkmenistan, Uzbekistan and Tajikistan have nothing to
-# scramble from and fly a standing CAP from a spawn point instead.
+def test_bad_posture_value_is_skipped() -> None:
+    assert NeutralBorderZone.from_yaml(_entry(posture="allied")) is None
+
+
+def test_both_origins_is_skipped() -> None:
+    """Naming an airfield AND a spawn point is ambiguous, so it is refused."""
+    assert NeutralBorderZone.from_yaml(_entry(spawn=[1, 2])) is None
+
+
+def test_a_country_and_a_border_is_enough_to_parse() -> None:
+    """The automagic case: whether this zone ever needs an aircraft depends on
+    its alignment and the posture table, neither of which exists at parse time,
+    so parsing must not demand one."""
+    zone = NeutralBorderZone.from_yaml(
+        {"country": "Turkmenistan", "border": [[0, 0], [100, 0], [100, 100]]}
+    )
+    assert zone is not None
+    assert zone.aircraft is None and zone.airfield is None and zone.spawn is None
+
+
+# -- the point-spawn origin ----------------------------------------------------
 
 
 def _spawn_entry(**overrides: object) -> dict[str, object]:
@@ -94,29 +123,15 @@ def test_airfield_zone_labels_by_its_field() -> None:
     assert zone.origin_label(NEUTRAL) == "Rayak"
 
 
-def test_both_airfield_and_spawn_is_skipped() -> None:
-    """Ambiguous origin: refuse rather than silently picking one."""
-    assert NeutralBorderZone.from_yaml(_spawn_entry(airfield="Rayak")) is None
-
-
-def test_neither_airfield_nor_spawn_is_skipped() -> None:
-    entry = _entry()
-    del entry["airfield"]
-    assert NeutralBorderZone.from_yaml(entry) is None
-
-
 def test_malformed_spawn_is_skipped() -> None:
     assert NeutralBorderZone.from_yaml(_spawn_entry(spawn=[1])) is None
 
 
-# -- alignment is DERIVED from who holds the airfields inside the border -------
+# -- alignment is DERIVED from who holds the airfields inside the border --------
 # The DM's rule (2026-08-24): a nation hosting a RED or BLUE airfield is aligned
 # with that team; one hosting neither is the neutral. Derived rather than
 # authored so it cannot drift from the campaign -- and so a country flips the
 # turn its field changes hands.
-
-from types import SimpleNamespace
-from typing import Any
 
 
 def _cp(x: float, y: float, blue: bool = False, red: bool = False) -> Any:
@@ -139,11 +154,9 @@ def _box_zone(**overrides: object) -> NeutralBorderZone:
     return zone
 
 
-def test_no_airfield_inside_is_neutral_and_enforces() -> None:
+def test_no_airfield_inside_is_neutral() -> None:
     zone = _box_zone()
-    theater = _theater(_cp(9999, 9999, blue=True))
-    assert zone.posture_in(theater) == NEUTRAL
-    assert zone.enforces_in(theater) is True
+    assert zone.posture_in(_theater(_cp(9999, 9999, blue=True))) == NEUTRAL
 
 
 def test_a_blue_airfield_inside_makes_it_blue_aligned() -> None:
@@ -151,7 +164,8 @@ def test_a_blue_airfield_inside_makes_it_blue_aligned() -> None:
     theater = _theater(_cp(50, 50, blue=True))
     assert zone.posture_in(theater) == BLUE_ALIGNED
     # Aligned countries are never enforced by §96 -- their own side's QRA does it.
-    assert zone.enforces_in(theater) is False
+    assert zone.enforces_against(theater, US_LED, ON) is False
+    assert zone.enforces_against(theater, RU_LED, ON) is False
 
 
 def test_a_red_airfield_inside_makes_it_red_aligned() -> None:
@@ -159,7 +173,7 @@ def test_a_red_airfield_inside_makes_it_red_aligned() -> None:
     zone = _box_zone()
     theater = _theater(_cp(50, 50, red=True))
     assert zone.posture_in(theater) == RED_ALIGNED
-    assert zone.enforces_in(theater) is False
+    assert zone.enforces_against(theater, US_LED, ON) is False
 
 
 def test_contested_resolves_to_the_larger_holder_not_neutral() -> None:
@@ -189,37 +203,44 @@ def test_posture_override_wins_over_the_derivation() -> None:
     assert zone.posture_in(_theater(_cp(50, 50, blue=True))) == RED_ALIGNED
 
 
-# -- overflight is a SEPARATE fact from alignment ------------------------------
-# In 2006 Turkmenistan permitted coalition transit and Iran did not. Both were
-# neutral, so alignment cannot be what decides it.
+# -- transit consent is PER SIDE and comes from the dated table -----------------
 
 
-def test_a_permitting_neutral_is_neutral_but_never_enforces() -> None:
+def test_override_wins_over_the_table_for_both_sides() -> None:
     zone = _box_zone(overflight=True)
-    theater = _theater()
-    assert zone.posture_in(theater) == NEUTRAL
-    assert zone.enforces_in(theater) is False
-    assert zone.origin_label(NEUTRAL) == "neutral — overflight permitted"
+    assert zone.permits(US_LED, ON) is True
+    assert zone.permits(RU_LED, ON) is True
+    assert zone.enforces_against(_theater(), US_LED, ON) is False
 
 
-def test_a_permitting_neutral_needs_no_aircraft_or_origin() -> None:
-    """This is what lets a country DCS does not model be drawn at all."""
-    zone = NeutralBorderZone.from_yaml(
-        {
-            "country": "Turkmenistan",
-            "overflight": True,
-            "border": [[0, 0], [100, 0], [100, 100]],
-        }
-    )
-    assert zone is not None
-    assert zone.aircraft is None and zone.spawn is None and zone.airfield is None
-    assert zone.enforces_in(_theater()) is False
+def test_a_refusing_override_enforces_even_where_the_table_permits() -> None:
+    """Enduring Resolve's Pakistan: the table reads permissive toward the US in
+    2006 and is right, but that consent was for the corridor -- the lane this
+    polygon leaves out. The override says what the geometry already means."""
+    zone = _box_zone(country="Pakistan", overflight=False)
+    assert zone.permits(US_LED, ON) is False
+    assert zone.enforces_against(_theater(), US_LED, ON) is True
 
 
-def test_a_refusing_neutral_still_needs_the_means_to_intercept() -> None:
-    assert (
-        NeutralBorderZone.from_yaml(
-            {"country": "Iran", "border": [[0, 0], [100, 0], [100, 100]]}
-        )
-        is None
+def test_the_table_decides_when_the_campaign_says_nothing() -> None:
+    """Iran 2006: closed toward the US bloc, permissive toward the Russian one."""
+    zone = _box_zone(country="Iran")
+    assert zone.permits(US_LED, ON) is False
+    assert zone.permits(RU_LED, ON) is True
+    # It therefore intercepts blue and waves red through.
+    assert zone.enforces_against(_theater(), US_LED, ON) is True
+    assert zone.enforces_against(_theater(), RU_LED, ON) is False
+
+
+def test_an_unknown_country_defaults_to_refusing() -> None:
+    """The safe default for a border is that it defends."""
+    zone = _box_zone(country="Freedonia")
+    assert zone.permits(US_LED, ON) is False
+    assert zone.permits(RU_LED, ON) is False
+
+
+def test_permitting_neutral_labels_itself_as_open() -> None:
+    zone = _box_zone(overflight=True)
+    assert zone.origin_label(NEUTRAL, enforced=False) == (
+        "neutral — overflight permitted"
     )

@@ -8,6 +8,7 @@ routes around empty sky. The Lebanon fixture's real bounding box is the oracle.
 
 from __future__ import annotations
 
+from datetime import date
 from types import SimpleNamespace
 from typing import Any
 
@@ -50,6 +51,8 @@ def _zone() -> NeutralBorderZone:
 def _game(enabled: bool = True, zones: list[Any] | None = None) -> Any:
     return SimpleNamespace(
         settings=SimpleNamespace(neutral_border_defense=enabled),
+        current_day=date(2022, 6, 4),
+        blue=SimpleNamespace(faction=SimpleNamespace(country=None)),
         theater=SimpleNamespace(
             neutral_border_zones=[_zone()] if zones is None else zones,
             terrain=Syria(),
@@ -88,6 +91,8 @@ def test_theater_without_the_attribute_is_tolerated() -> None:
     """An old save predates neutral_border_zones; the payload must not raise."""
     game = SimpleNamespace(
         settings=SimpleNamespace(neutral_border_defense=True),
+        current_day=date(2022, 6, 4),
+        blue=SimpleNamespace(faction=SimpleNamespace(country=None)),
         theater=SimpleNamespace(terrain=Syria()),
     )
     assert NeutralBorderJs.all_in_game(game) == []  # type: ignore[arg-type]

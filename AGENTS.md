@@ -134,10 +134,19 @@ Read before touching a campaign's `.yaml`, `.miz` or build tool.
   overflight/refuses split, the accepted shadow-risk and its recorded fallback, the
   real-data border pipeline, and the DECIDED-not-built automagic direction;
   fictional-overlay campaigns are out of scope),
-  `414th-national-postures-brief.md` (**the handoff brief for the dated US/Soviet
-  relations research** — five posture buckets, both blocs, every DCS-map nation;
-  run it in a fresh session, output lands as `resources/borders/national_postures.yaml`
-  + its own notes file)
+  `414th-national-postures-notes.md` (**RESEARCHED 2026-08-25, data drafted, nothing
+  wired** — `resources/borders/national_postures.yaml`: 48 countries, 246 dated posture
+  ranges, both blocs, five buckets. Also the measured country-per-map table that
+  **corrected four errors in the research brief's from-memory list** (India on the
+  Afghanistan map; no Qatar/Bahrain/Saudi on the Persian Gulf map; Belgium not Germany
+  on Normandy/Channel; Saudi Arabia on the Syria map), the two rules that decide the
+  hard cases, and the four gaps between the data and §96 as built. **Armenia and
+  Azerbaijan are not pydcs countries either** — the same hole as Turkmenistan, on the
+  most-used terrain). **Answers the pre-1991 geometry blocker**: CShapes 2.0 is
+  CC BY-NC-SA and historical-basemaps is GPL-3, both gated, but **GSHHG/CIA World
+  Data Bank II is LGPL over US-Government public domain** and its 1972-77 vintage
+  covers every boundary the fork needs — the work is assembling its line segments
+  into polygons, not finding data
 - **Strike targets / BDA** — `414th-scenery-kill-tracking-notes.md` (why some scenery strike
   targets never register as killed; the M4 IADS stand-in; the proxy unit that was built and
   reverted, and the position matcher measured to have no input. **The reported failure was never

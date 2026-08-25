@@ -1,0 +1,640 @@
+# §96 national postures: dated overflight/alignment posture per country per bloc.
+#
+# Sources, reasoning and the open questions: docs/dev/design/414th-national-postures-notes.md.
+# DRAFT — nothing reads this file yet. The wiring is its own change.
+#
+# Buckets, in order of consent. The test is overflight, not sympathy: would this
+# nation let this bloc's military aircraft transit for the war being fought?
+#   allied     treaty ally or basing host; transit and basing presumed
+#   permissive grants transit without alliance
+#   contested  sometimes tolerated, sometimes denied; event-dependent
+#   closed     refuses transit and defends its airspace, but is not a belligerent
+#   hostile    an active belligerent, or in a state of war, with that bloc
+#
+# Ranges are [from, to). All dates are quoted strings: "YYYY" or "YYYY-MM", or
+# "present". Quoting keeps a bare year an int and a YYYY-MM a YAML timestamp from
+# landing in the same field as two different types.
+#
+# A date covered by no range is `closed`. That is the safe default for a border
+# feature and it is never filled in by guessing: no source, no range.
+#
+# Countries that did not exist yet have no ranges before independence; the
+# territory belongs to the predecessor, which has its own entry (USSR, GDR).
+#
+# `aircraft` is optional and secondary — the alert type a §96 flight should fly.
+# Vanilla pydcs ids only (hard fork constraint: no mods). Omitted where no
+# vanilla type matches a real operator; the engine has a fallback.
+#
+# A comment marks every country DCS does not model. Those can only ever be drawn
+# or permitted — a zone that spawns nothing needs no pydcs country.
+
+countries:
+
+  Afghanistan:
+    toward_us_led:
+      - { from: "1955", to: "1978-04", posture: contested }   # non-aligned, Soviet-equipped
+      - { from: "1978-04", to: "2001-10", posture: closed }   # Saur Revolution
+      - { from: "2001-10", to: "2001-12", posture: hostile }  # OEF against the Taliban government
+      - { from: "2001-12", to: "2021-08", posture: allied }   # Bonn Agreement; Bagram and Kandahar
+      - { from: "2021-08", to: "present", posture: closed }
+    toward_ru_led:
+      - { from: "1955-12", to: "1978-04", posture: permissive } # Bulganin visit; Soviet-built fields
+      - { from: "1978-04", to: "1992-04", posture: allied }     # DRA; Soviet forces from Dec 1979
+      - { from: "1992-04", to: "2001-11", posture: contested }
+      - { from: "2001-11", to: "2021-08", posture: closed }
+      - { from: "2021-08", to: "present", posture: contested }
+    aircraft:
+      - { from: "1978", to: "2001", id: MiG-21Bis }
+
+  Argentina:
+    toward_us_led:
+      - { from: "1955", to: "1982-04", posture: contested }
+      - { from: "1982-04", to: "1982-06", posture: hostile }    # Falklands; the US backed the UK from 30 Apr
+      - { from: "1982-06", to: "1998-01", posture: contested }
+      - { from: "1998-01", to: "present", posture: permissive } # Major Non-NATO Ally, Jan 1998
+    toward_ru_led:
+      - { from: "1955", to: "present", posture: closed }
+
+  Armenia:
+    # Not a pydcs country — drawable and permittable, never a defender.
+    toward_us_led:
+      - { from: "1991-09", to: "1994-10", posture: closed }
+      - { from: "1994-10", to: "present", posture: contested }  # PfP, but Russian forces in country
+    toward_ru_led:
+      - { from: "1991-09", to: "2024-02", posture: allied }     # CSTO; 102nd Base at Gyumri, treaty to 2044
+      - { from: "2024-02", to: "present", posture: contested }  # CSTO participation frozen
+
+  Austria:
+    # Permanent neutrality, Neutrality Act 26 Oct 1955. Closed to both, always.
+    # It has granted UN-mandated exceptions (1991) and refused non-mandated ones
+    # (2003) — case by case, which is what `closed` means here.
+    toward_us_led:
+      - { from: "1955-10", to: "present", posture: closed }
+    toward_ru_led:
+      - { from: "1955-10", to: "present", posture: closed }
+    aircraft:
+      - { from: "2004", to: "2008", id: F-5E-3 }               # leased from Switzerland
+
+  Azerbaijan:
+    # Not a pydcs country — drawable and permittable, never a defender.
+    toward_us_led:
+      - { from: "1991-08", to: "1994-05", posture: closed }
+      - { from: "1994-05", to: "2001-09", posture: contested }  # PfP; the Section 907 aid ban
+      - { from: "2001-09", to: "present", posture: permissive } # blanket OEF overflight
+    toward_ru_led:
+      - { from: "1991-08", to: "1999-04", posture: permissive } # CIS collective security, not renewed
+      - { from: "1999-04", to: "present", posture: contested }
+
+  Bahrain:
+    # US Navy at Jufair since 1949 (under British cover to 1971); Fifth Fleet
+    # re-established 1995; Major Non-NATO Ally 2002. The 1973 termination notice
+    # is a caveat in the note, not a range — its end date is not solid.
+    toward_us_led:
+      - { from: "1955", to: "present", posture: allied }
+    toward_ru_led:
+      - { from: "1955", to: "present", posture: closed }
+    aircraft:
+      - { from: "1990", to: "present", id: F-16C bl.50 }
+
+  Belgium:
+    toward_us_led:
+      - { from: "1955", to: "present", posture: allied }
+    toward_ru_led:
+      - { from: "1955", to: "present", posture: closed }
+    aircraft:
+      - { from: "1955", to: "1979", id: F-100D }
+      - { from: "1979", to: "present", id: F-16A MLU }
+
+  Chile:
+    toward_us_led:
+      - { from: "1955", to: "1970-11", posture: permissive }
+      - { from: "1970-11", to: "1973-09", posture: contested }  # Allende
+      - { from: "1973-09", to: "1976-06", posture: permissive }
+      - { from: "1976-06", to: "1982-04", posture: contested }  # Kennedy Amendment arms embargo
+      - { from: "1982-04", to: "1982-06", posture: permissive } # covert support to the UK task force
+      - { from: "1982-06", to: "1990-03", posture: contested }
+      - { from: "1990-03", to: "present", posture: permissive }
+    toward_ru_led:
+      - { from: "1955", to: "1970-11", posture: closed }
+      - { from: "1970-11", to: "1973-09", posture: contested }
+      - { from: "1973-09", to: "present", posture: closed }
+    aircraft:
+      - { from: "1976", to: "2006", id: F-5E-3 }
+      - { from: "2006", to: "present", id: F-16C bl.50 }
+
+  China:
+    toward_us_led:
+      - { from: "1955", to: "1972-02", posture: hostile }       # no relations; US recon aircraft shot down
+      - { from: "1972-02", to: "present", posture: closed }     # Nixon's visit
+    toward_ru_led:
+      - { from: "1955", to: "1960-07", posture: allied }        # 1950 Treaty; advisers withdrawn Jul 1960
+      - { from: "1960-07", to: "1969-03", posture: contested }
+      - { from: "1969-03", to: "1969-09", posture: hostile }    # the Zhenbao / Ussuri border war
+      - { from: "1969-09", to: "1989-05", posture: closed }
+      - { from: "1989-05", to: "2001-07", posture: contested }
+      - { from: "2001-07", to: "present", posture: permissive } # Treaty of Good-Neighbourliness; SCO
+    aircraft:
+      - { from: "1965", to: "1990", id: MiG-19P }               # J-6
+      - { from: "1990", to: "2005", id: MiG-21Bis }             # J-7
+      - { from: "2005", to: "present", id: J-11A }
+
+  Cyprus:
+    # Non-aligned since independence; not in NATO. The Akrotiri and Dhekelia SBAs
+    # are UK sovereign territory sitting inside this polygon, so on any campaign
+    # the UK plays, §96's derived rule flips Cyprus blue-aligned on its own and
+    # never consults this table. No combat aircraft — no `aircraft` block.
+    toward_us_led:
+      - { from: "1955", to: "1960-08", posture: allied }        # Crown colony
+      - { from: "1960-08", to: "present", posture: contested }
+    toward_ru_led:
+      - { from: "1960-08", to: "present", posture: contested }
+
+  Czech Republic:
+    # Czechoslovakia until Jan 1993; the Warsaw Pact ranges below are its.
+    toward_us_led:
+      - { from: "1955-05", to: "1991-07", posture: closed }
+      - { from: "1991-07", to: "1994-02", posture: contested }
+      - { from: "1994-02", to: "1999-03", posture: permissive } # Partnership for Peace
+      - { from: "1999-03", to: "present", posture: allied }     # NATO accession 12 Mar 1999
+    toward_ru_led:
+      - { from: "1955-05", to: "1991-07", posture: allied }     # Warsaw Pact founder
+      - { from: "1991-07", to: "present", posture: closed }
+    aircraft:
+      - { from: "1962", to: "1990", id: MiG-21Bis }
+      - { from: "1990", to: "present", id: MiG-29A }
+
+  Denmark:
+    # NATO founder, but the standing base policy bars foreign forces on Danish
+    # soil in peacetime. It has never barred transit.
+    toward_us_led:
+      - { from: "1955", to: "present", posture: allied }
+    toward_ru_led:
+      - { from: "1955", to: "present", posture: closed }
+    aircraft:
+      - { from: "1955", to: "1980", id: F-100D }
+      - { from: "1980", to: "present", id: F-16A MLU }
+
+  Egypt:
+    toward_us_led:
+      - { from: "1955", to: "1973-11", posture: closed }        # relations broken Jun 1967
+      - { from: "1973-11", to: "1979-03", posture: contested }  # relations restored 7 Nov 1973
+      - { from: "1979-03", to: "present", posture: permissive } # peace treaty; standing blanket overflight
+    toward_ru_led:
+      - { from: "1955-09", to: "1967-06", posture: permissive } # the Czech arms deal, Sep 1955
+      - { from: "1967-06", to: "1972-07", posture: allied }     # Soviet combat units in country
+      - { from: "1972-07", to: "1976-03", posture: contested }  # advisers expelled Jul 1972
+      - { from: "1976-03", to: "present", posture: closed }     # friendship treaty abrogated
+    aircraft:
+      - { from: "1960", to: "1985", id: MiG-21Bis }
+      - { from: "1985", to: "present", id: F-16C bl.52d }
+
+  Finland:
+    # The 1948 FCMA obliged Finland to resist a Western attack through Finnish
+    # territory; in practice it permitted neither bloc and intercepted both.
+    toward_us_led:
+      - { from: "1955", to: "1994-05", posture: closed }
+      - { from: "1994-05", to: "2023-04", posture: permissive } # PfP, 9 May 1994
+      - { from: "2023-04", to: "present", posture: allied }     # NATO, 4 Apr 2023
+    toward_ru_led:
+      - { from: "1955", to: "present", posture: closed }
+    aircraft:
+      - { from: "1963", to: "1998", id: MiG-21Bis }
+      - { from: "1998", to: "present", id: FA-18C_hornet }
+
+  France:
+    # Left NATO's integrated command in 1966 and rejoined in 2009, and denied US
+    # transit for out-of-area strikes (Libya, 1986). It stayed committed to
+    # Central Front defence throughout, which is the war the maps carrying France
+    # actually fight — hence allied, with the caveat in the note.
+    toward_us_led:
+      - { from: "1955", to: "present", posture: allied }
+    toward_ru_led:
+      - { from: "1955", to: "present", posture: closed }
+    aircraft:
+      - { from: "1955", to: "1975", id: F-100D }
+      - { from: "1975", to: "2000", id: Mirage-F1C }
+      - { from: "2000", to: "present", id: M-2000C }
+
+  GDR:
+    # Ceases to exist 3 Oct 1990; the territory is Germany's after that.
+    toward_us_led:
+      - { from: "1955-05", to: "1990-10", posture: closed }
+    toward_ru_led:
+      - { from: "1955-05", to: "1990-10", posture: allied }     # Warsaw Pact founder
+    aircraft:
+      - { from: "1962", to: "1988", id: MiG-21Bis }
+      - { from: "1988", to: "1990-10", id: MiG-29G }
+
+  Georgia:
+    toward_us_led:
+      - { from: "1991-04", to: "1994-03", posture: closed }
+      - { from: "1994-03", to: "2002-05", posture: contested }  # PfP, Mar 1994
+      - { from: "2002-05", to: "present", posture: permissive } # the Train and Equip Program
+    toward_ru_led:
+      - { from: "1991-04", to: "1993-12", posture: contested }
+      - { from: "1993-12", to: "2003-11", posture: permissive } # CIS; Russian bases in country
+      - { from: "2003-11", to: "2008-08", posture: contested }  # Rose Revolution
+      - { from: "2008-08", to: "present", posture: closed }     # the August war
+    aircraft:
+      - { from: "1992", to: "present", id: Su-25 }
+
+  Germany:
+    # FRG 1955-1990, unified from 3 Oct 1990. It refused US use of German soil for
+    # the 1973 Israel airlift — a caveat in the note, not a range: no war on a map
+    # carrying Germany turns on it.
+    toward_us_led:
+      - { from: "1955-05", to: "present", posture: allied }     # NATO accession 6 May 1955
+    toward_ru_led:
+      - { from: "1955-05", to: "present", posture: closed }
+    aircraft:
+      - { from: "1958", to: "1974", id: F-86F Sabre }
+      - { from: "1974", to: "present", id: F-4E }
+
+  Hungary:
+    toward_us_led:
+      - { from: "1955-05", to: "1991-07", posture: closed }
+      - { from: "1991-07", to: "1994-02", posture: contested }
+      - { from: "1994-02", to: "1999-03", posture: permissive }
+      - { from: "1999-03", to: "present", posture: allied }     # NATO accession 12 Mar 1999
+    toward_ru_led:
+      - { from: "1955-05", to: "1991-07", posture: allied }     # Warsaw Pact founder
+      - { from: "1991-07", to: "present", posture: closed }
+    aircraft:
+      - { from: "1961", to: "1993", id: MiG-21Bis }
+      - { from: "1993", to: "present", id: MiG-29A }
+
+  India:
+    toward_us_led:
+      - { from: "1955", to: "1971-08", posture: contested }     # non-aligned
+      - { from: "1971-08", to: "1991-12", posture: closed }     # the Indo-Soviet Treaty, 9 Aug 1971
+      - { from: "1991-12", to: "2016-08", posture: contested }
+      - { from: "2016-08", to: "present", posture: permissive } # LEMOA, reciprocal logistics access
+    toward_ru_led:
+      - { from: "1955", to: "1962-10", posture: contested }
+      - { from: "1962-10", to: "1971-08", posture: permissive }
+      - { from: "1971-08", to: "1991-12", posture: allied }
+      - { from: "1991-12", to: "present", posture: permissive }
+    aircraft:
+      - { from: "1964", to: "1987", id: MiG-21Bis }
+      - { from: "1987", to: "2002", id: MiG-29A }
+      - { from: "2002", to: "present", id: Su-30 }
+
+  Iran:
+    toward_us_led:
+      - { from: "1955-11", to: "1979-02", posture: allied }     # CENTO; US intelligence sites
+      - { from: "1979-02", to: "1979-11", posture: closed }
+      - { from: "1979-11", to: "1981-01", posture: hostile }    # the hostage crisis; Eagle Claw
+      - { from: "1981-01", to: "1987-07", posture: closed }
+      - { from: "1987-07", to: "1988-08", posture: hostile }    # Earnest Will and Praying Mantis
+      - { from: "1988-08", to: "present", posture: closed }
+    toward_ru_led:
+      - { from: "1955-11", to: "1979-02", posture: closed }     # CENTO was aimed at the USSR
+      - { from: "1979-02", to: "1989-06", posture: contested }
+      - { from: "1989-06", to: "present", posture: permissive } # the Rafsanjani-Gorbachev arms accord
+    aircraft:
+      - { from: "1965", to: "1977", id: F-5E-3 }
+      - { from: "1977", to: "1990", id: F-14A }
+      - { from: "1990", to: "present", id: MiG-29A }
+
+  Iraq:
+    toward_us_led:
+      - { from: "1955-02", to: "1958-07", posture: allied }     # the Baghdad Pact
+      - { from: "1958-07", to: "1959-03", posture: contested }  # the 14 July Revolution
+      - { from: "1959-03", to: "1984-11", posture: closed }     # Pact withdrawal, 24 Mar 1959
+      - { from: "1984-11", to: "1990-08", posture: contested }  # relations restored; the tanker-war tilt
+      - { from: "1990-08", to: "2003-05", posture: hostile }    # Kuwait, then the no-fly zones
+      - { from: "2003-05", to: "2011-12", posture: allied }
+      - { from: "2011-12", to: "2014-06", posture: permissive }
+      - { from: "2014-06", to: "2020-01", posture: allied }     # the anti-ISIS coalition invited back
+      - { from: "2020-01", to: "present", posture: permissive } # parliament votes to expel; forces stay
+    toward_ru_led:
+      - { from: "1955", to: "1958-07", posture: closed }
+      - { from: "1958-07", to: "1972-04", posture: permissive }
+      - { from: "1972-04", to: "1991-02", posture: allied }     # Treaty of Friendship, 9 Apr 1972
+      - { from: "1991-02", to: "2003-05", posture: contested }
+      - { from: "2003-05", to: "present", posture: closed }
+    aircraft:
+      - { from: "1965", to: "1980", id: MiG-21Bis }
+      - { from: "1980", to: "1991", id: Mirage-F1EQ }
+      - { from: "1991", to: "2003", id: MiG-25PD }
+      - { from: "2014", to: "present", id: F-16C bl.52d }
+
+  Israel:
+    # No treaty ally, but a Major Non-NATO Ally since 1987 and the one country on
+    # these maps the US has fought for. Contested before 1967: the US was not yet
+    # its arms supplier and embargoed it into the mid-1960s.
+    toward_us_led:
+      - { from: "1955", to: "1967-06", posture: contested }
+      - { from: "1967-06", to: "1987-02", posture: permissive }
+      - { from: "1987-02", to: "present", posture: allied }
+    toward_ru_led:
+      - { from: "1955", to: "present", posture: closed }
+    aircraft:
+      - { from: "1969", to: "1980", id: F-4E }
+      - { from: "1980", to: "present", id: F-16C bl.50 }
+
+  Jordan:
+    toward_us_led:
+      - { from: "1955", to: "1957-04", posture: contested }     # British-officered to Mar 1956
+      - { from: "1957-04", to: "1990-08", posture: permissive } # Eisenhower Doctrine backing
+      - { from: "1990-08", to: "1991-04", posture: contested }  # tilted to Iraq; US aid suspended
+      - { from: "1991-04", to: "1996-11", posture: permissive }
+      - { from: "1996-11", to: "present", posture: allied }     # Major Non-NATO Ally; Muwaffaq Salti
+    toward_ru_led:
+      - { from: "1955", to: "present", posture: closed }
+    aircraft:
+      - { from: "1969", to: "1981", id: F-5E-3 }
+      - { from: "1981", to: "1997", id: Mirage-F1CJ }
+      - { from: "1997", to: "present", id: F-16A MLU }
+
+  Kuwait:
+    # 1990-08 to 1991-02 is the occupation: the airspace was Iraq's and was
+    # defended as Iraq's. In a Desert Storm campaign §96 never asks — the fields
+    # are red-held, so the derived rule makes Kuwait red-aligned on its own.
+    toward_us_led:
+      - { from: "1961-06", to: "1987-03", posture: contested }
+      - { from: "1987-03", to: "1990-08", posture: permissive } # the reflagging, Earnest Will
+      - { from: "1990-08", to: "1991-02", posture: hostile }
+      - { from: "1991-09", to: "present", posture: allied }     # the Defense Cooperation Agreement
+    toward_ru_led:
+      - { from: "1961-06", to: "1976-11", posture: closed }
+      - { from: "1976-11", to: "1991-02", posture: contested }  # first GCC state to buy Soviet arms
+      - { from: "1991-02", to: "present", posture: closed }
+    aircraft:
+      - { from: "1977", to: "1992", id: Mirage-F1CK }
+      - { from: "1992", to: "present", id: FA-18C_hornet }
+
+  Lebanon:
+    toward_us_led:
+      - { from: "1955", to: "1958-07", posture: contested }
+      - { from: "1958-07", to: "1958-10", posture: permissive } # Blue Bat, at Chamoun's request
+      - { from: "1958-10", to: "1975-04", posture: contested }
+      - { from: "1975-04", to: "1982-08", posture: closed }     # the civil war
+      - { from: "1982-08", to: "1984-02", posture: permissive } # the Multinational Force
+      - { from: "1984-02", to: "2005-04", posture: closed }     # Syrian control
+      - { from: "2005-04", to: "present", posture: contested }
+    toward_ru_led:
+      - { from: "1955", to: "present", posture: closed }        # the 2008 MiG-29 offer was never taken up
+    aircraft:
+      - { from: "2008", to: "present", id: MiG-29A }            # the type Russia offered in 2008
+
+  Luxembourg:
+    # Not a pydcs country — drawable and permittable, never a defender.
+    toward_us_led:
+      - { from: "1955", to: "present", posture: allied }
+    toward_ru_led:
+      - { from: "1955", to: "present", posture: closed }
+
+  Northern Cyprus:
+    # Not a pydcs country, and recognised only by Turkey. Whether §96 should draw
+    # it at all is an open question for the DM — see the note.
+    toward_us_led:
+      - { from: "1983-11", to: "present", posture: contested }
+    toward_ru_led:
+      - { from: "1983-11", to: "present", posture: closed }
+
+  Norway:
+    # NATO founder; the standing base policy bars foreign forces in peacetime and
+    # has never barred transit.
+    toward_us_led:
+      - { from: "1955", to: "present", posture: allied }
+    toward_ru_led:
+      - { from: "1955", to: "present", posture: closed }
+    aircraft:
+      - { from: "1957", to: "1980", id: F-5E-3 }
+      - { from: "1980", to: "present", id: F-16A MLU }
+
+  Oman:
+    toward_us_led:
+      - { from: "1955", to: "1977-03", posture: allied }        # RAF Masirah and Salalah
+      - { from: "1977-03", to: "1980-04", posture: contested }
+      - { from: "1980-04", to: "present", posture: allied }     # Facilities Access Agreement, 21 Apr 1980
+    toward_ru_led:
+      - { from: "1955", to: "present", posture: closed }        # no relations until 1985
+    aircraft:
+      - { from: "1975", to: "1993", id: Hawk }
+      - { from: "1993", to: "present", id: F-16C bl.50 }
+
+  Pakistan:
+    toward_us_led:
+      - { from: "1955-09", to: "1965-09", posture: allied }     # SEATO and CENTO; the Badaber station
+      - { from: "1965-09", to: "1979-12", posture: contested }  # the arms embargo; SEATO exit 1972
+      - { from: "1979-12", to: "1990-10", posture: permissive } # the Afghan pipeline
+      - { from: "1990-10", to: "2001-09", posture: contested }  # the Pressler Amendment
+      - { from: "2001-09", to: "2011-05", posture: permissive } # OEF overflight, Shamsi, the GLOC and ALOC
+      - { from: "2011-05", to: "2021-08", posture: contested }  # Abbottabad; Salala; the GLOC closure
+      - { from: "2021-08", to: "present", posture: closed }
+    toward_ru_led:
+      - { from: "1955-09", to: "1965-09", posture: closed }
+      - { from: "1965-09", to: "1979-12", posture: contested }  # Tashkent; Soviet arms sales 1968-70
+      - { from: "1979-12", to: "1989-02", posture: hostile }    # PAF shootdowns over Pakistani territory
+      - { from: "1989-02", to: "present", posture: closed }
+    aircraft:
+      - { from: "1955", to: "1965", id: F-86F Sabre }
+      - { from: "1965", to: "1983", id: MiG-19P }               # F-6
+      - { from: "1983", to: "2010", id: F-16A }
+      - { from: "2010", to: "present", id: JF-17 }
+
+  Poland:
+    toward_us_led:
+      - { from: "1955-05", to: "1991-07", posture: closed }
+      - { from: "1991-07", to: "1994-02", posture: contested }
+      - { from: "1994-02", to: "1999-03", posture: permissive }
+      - { from: "1999-03", to: "present", posture: allied }     # NATO accession 12 Mar 1999
+    toward_ru_led:
+      - { from: "1955-05", to: "1991-07", posture: allied }     # Warsaw Pact founder
+      - { from: "1991-07", to: "present", posture: closed }
+    aircraft:
+      - { from: "1963", to: "1989", id: MiG-21Bis }
+      - { from: "1989", to: "2006", id: MiG-29A }
+      - { from: "2006", to: "present", id: F-16C bl.52d }
+
+  Qatar:
+    toward_us_led:
+      - { from: "1971-09", to: "1992-06", posture: closed }
+      - { from: "1992-06", to: "2000-01", posture: permissive } # the Defense Cooperation Agreement
+      - { from: "2000-01", to: "present", posture: allied }     # Al Udeid access; the CAOC from 2003
+    toward_ru_led:
+      - { from: "1971-09", to: "present", posture: closed }
+    aircraft:
+      - { from: "1984", to: "1997", id: Mirage-F1EDA }
+      - { from: "1997", to: "present", id: Mirage 2000-5 }
+
+  Russia:
+    # Successor to the USSR from 26 Dec 1991.
+    toward_us_led:
+      - { from: "1991-12", to: "2001-09", posture: closed }
+      - { from: "2001-09", to: "2015-05", posture: permissive } # OEF airspace, then the NDN
+      - { from: "2015-05", to: "present", posture: closed }
+    toward_ru_led:
+      - { from: "1991-12", to: "present", posture: allied }
+    aircraft:
+      - { from: "1991-12", to: "2010", id: MiG-31 }
+      - { from: "2010", to: "present", id: Su-30 }
+
+  Saudi Arabia:
+    toward_us_led:
+      - { from: "1955", to: "1973-10", posture: permissive }
+      - { from: "1973-10", to: "1974-03", posture: contested }  # the oil embargo
+      - { from: "1974-03", to: "1990-08", posture: permissive }
+      - { from: "1990-08", to: "2003-08", posture: allied }     # Desert Shield through Prince Sultan AB
+      - { from: "2003-08", to: "2019-10", posture: permissive } # US combat forces leave the Kingdom
+      - { from: "2019-10", to: "present", posture: allied }     # PSAB reoccupied after Abqaiq
+    toward_ru_led:
+      - { from: "1955", to: "present", posture: closed }        # no relations 1938-1990
+    aircraft:
+      - { from: "1971", to: "1981", id: F-5E-3 }
+      - { from: "1981", to: "present", id: F-15C }
+
+  Slovakia:
+    # Czechoslovakia until Jan 1993; the Warsaw Pact ranges below are its.
+    toward_us_led:
+      - { from: "1955-05", to: "1991-07", posture: closed }
+      - { from: "1991-07", to: "1994-02", posture: contested }
+      - { from: "1994-02", to: "2004-03", posture: permissive }
+      - { from: "2004-03", to: "present", posture: allied }     # NATO accession 29 Mar 2004
+    toward_ru_led:
+      - { from: "1955-05", to: "1991-07", posture: allied }
+      - { from: "1991-07", to: "present", posture: closed }
+    aircraft:
+      - { from: "1993", to: "present", id: MiG-29A }
+
+  Sweden:
+    # Non-aligned in public through the Cold War, with documented secret
+    # contingency cooperation with NATO. The public posture is what a border
+    # feature enforces.
+    toward_us_led:
+      - { from: "1955", to: "1994-05", posture: closed }
+      - { from: "1994-05", to: "2024-03", posture: permissive } # PfP, 9 May 1994
+      - { from: "2024-03", to: "present", posture: allied }     # NATO, 7 Mar 2024
+    toward_ru_led:
+      - { from: "1955", to: "present", posture: closed }
+    aircraft:
+      - { from: "1971", to: "2005", id: AJS37 }
+
+  Switzerland:
+    toward_us_led:
+      - { from: "1955", to: "present", posture: closed }
+    toward_ru_led:
+      - { from: "1955", to: "present", posture: closed }
+    aircraft:
+      - { from: "1978", to: "1997", id: F-5E-3 }
+      - { from: "1997", to: "present", id: FA-18C_hornet }
+
+  Syria:
+    toward_us_led:
+      - { from: "1955", to: "1990-08", posture: closed }
+      - { from: "1990-08", to: "1991-04", posture: permissive } # Syria was in the Desert Storm coalition
+      - { from: "1991-04", to: "2014-09", posture: closed }
+      - { from: "2014-09", to: "2024-12", posture: hostile }    # uninvited OIR overflight; the 2017 Su-22
+      - { from: "2024-12", to: "present", posture: contested }
+    toward_ru_led:
+      - { from: "1955", to: "1971-07", posture: permissive }
+      - { from: "1971-07", to: "2024-12", posture: allied }     # Tartus; the 1980 Treaty; Hmeimim from 2015
+      - { from: "2024-12", to: "present", posture: contested }
+    aircraft:
+      - { from: "1966", to: "1982", id: MiG-21Bis }
+      - { from: "1982", to: "1990", id: MiG-23MLD }
+      - { from: "1990", to: "present", id: MiG-29A }
+
+  Tajikistan:
+    # Not a pydcs country — drawable and permittable, never a defender.
+    toward_us_led:
+      - { from: "1991-09", to: "2001-12", posture: closed }
+      - { from: "2001-12", to: "2014-10", posture: permissive } # the French detachment at Dushanbe
+      - { from: "2014-10", to: "2021-08", posture: contested }
+      - { from: "2021-08", to: "present", posture: closed }
+    toward_ru_led:
+      - { from: "1993-01", to: "present", posture: allied }     # the 201st Base; a CSTO founder
+
+  The Netherlands:
+    toward_us_led:
+      - { from: "1955", to: "present", posture: allied }
+    toward_ru_led:
+      - { from: "1955", to: "present", posture: closed }
+    aircraft:
+      - { from: "1955", to: "1979", id: F-86F Sabre }
+      - { from: "1979", to: "present", id: F-16A MLU }
+
+  Turkey:
+    toward_us_led:
+      - { from: "1955", to: "1973-10", posture: allied }        # NATO since Feb 1952
+      - { from: "1973-10", to: "1973-12", posture: contested }  # refused landing rights for Nickel Grass
+      - { from: "1973-12", to: "1975-02", posture: allied }
+      - { from: "1975-02", to: "1978-09", posture: contested }  # US arms embargo; all bases but Incirlik shut
+      - { from: "1978-09", to: "2003-03", posture: allied }
+      - { from: "2003-03", to: "2003-04", posture: contested }  # the 1 Mar vote; overflight granted 21 Mar
+      - { from: "2003-04", to: "present", posture: allied }
+    toward_ru_led:
+      - { from: "1955", to: "present", posture: closed }
+    aircraft:
+      - { from: "1958", to: "1974", id: F-100D }
+      - { from: "1974", to: "1990", id: F-4E }
+      - { from: "1990", to: "present", id: F-16C bl.50 }
+
+  Turkmenistan:
+    # Not a pydcs country — drawable and permittable, never a defender.
+    # UN-recognised permanent neutrality since 12 Dec 1995.
+    toward_us_led:
+      - { from: "1991-10", to: "2001-10", posture: closed }
+      - { from: "2001-10", to: "2021-08", posture: permissive } # Ashgabat refuelling; the NDN
+      - { from: "2021-08", to: "present", posture: closed }
+    toward_ru_led:
+      - { from: "1991-10", to: "1999-06", posture: permissive } # Russian border troops and pilots
+      - { from: "1999-06", to: "present", posture: closed }
+
+  UK:
+    # Also covers the Falkland Islands, Jersey, Guernsey and the Cyprus SBAs.
+    toward_us_led:
+      - { from: "1955", to: "present", posture: allied }
+    toward_ru_led:
+      - { from: "1955", to: "present", posture: closed }
+    aircraft:
+      - { from: "1955", to: "1980", id: Hawk }
+      - { from: "1980", to: "present", id: Tornado GR4 }
+
+  USA:
+    toward_us_led:
+      - { from: "1955", to: "present", posture: allied }
+    toward_ru_led:
+      - { from: "1955", to: "present", posture: closed }
+    aircraft:
+      - { from: "1955", to: "1975", id: F-100D }
+      - { from: "1975", to: "present", id: F-15C }
+
+  USSR:
+    # Ceases to exist 26 Dec 1991; the territory afterwards is Russia's, Georgia's,
+    # Armenia's, Azerbaijan's, Turkmenistan's, Uzbekistan's and Tajikistan's.
+    toward_us_led:
+      - { from: "1955", to: "1991-12", posture: closed }
+    toward_ru_led:
+      - { from: "1955", to: "1991-12", posture: allied }
+    aircraft:
+      - { from: "1955", to: "1965", id: MiG-19P }
+      - { from: "1965", to: "1980", id: MiG-21Bis }
+      - { from: "1980", to: "1991-12", id: MiG-31 }
+
+  United Arab Emirates:
+    toward_us_led:
+      - { from: "1971-12", to: "1990-08", posture: contested }
+      - { from: "1990-08", to: "1994-07", posture: permissive }
+      - { from: "1994-07", to: "present", posture: allied }     # the Defense Cooperation Agreement; Al Dhafra
+    toward_ru_led:
+      - { from: "1971-12", to: "present", posture: closed }
+    aircraft:
+      - { from: "1983", to: "2005", id: Mirage 2000-5 }
+      - { from: "2005", to: "present", id: F-16C bl.52d }
+
+  Uzbekistan:
+    # Not a pydcs country — drawable and permittable, never a defender.
+    toward_us_led:
+      - { from: "1991-08", to: "2001-10", posture: closed }
+      - { from: "2001-10", to: "2005-11", posture: allied }     # K2 hosted US aircraft
+      - { from: "2005-11", to: "2009-01", posture: contested }  # the eviction; Termez stays open to Germany
+      - { from: "2009-01", to: "2021-08", posture: permissive } # the Northern Distribution Network
+      - { from: "2021-08", to: "present", posture: closed }
+    toward_ru_led:
+      - { from: "1991-08", to: "1999-04", posture: permissive }
+      - { from: "1999-04", to: "2005-11", posture: contested }
+      - { from: "2005-11", to: "2012-06", posture: allied }     # rejoined CSTO after evicting the US
+      - { from: "2012-06", to: "present", posture: contested }

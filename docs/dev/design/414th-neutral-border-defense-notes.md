@@ -240,10 +240,11 @@ Target architecture, to be built after the national-postures research lands:
   so a campaign needs no `border:` vertices at all.
 - **Overflight becomes date-resolved**: `resources/borders/national_postures.yaml`
   (five buckets, both blocs, dated ranges — see
-  `414th-national-postures-brief.md`, the handoff brief for the research session)
+  `414th-national-postures-notes.md`)
   is read against the campaign's start date and each side's bloc; `allied`/
   `permissive` collapse to overflight-allowed, `contested`/`closed`/`hostile` to
-  refused. The data supports per-side asymmetry (a nation open to blue and closed
+  refused. **The data landed 2026-08-25** — 48 countries, 246 ranges, unwired;
+  the four gaps between it and this feature are listed in that note. The data supports per-side asymmetry (a nation open to blue and closed
   to red), which the Lua does not model yet — the zone gains per-side overflight
   when this is built.
 - **Alert origin and aircraft become automatic** for a defending neutral: an

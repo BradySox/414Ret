@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from dcs.mapping import Point
 from pydantic import BaseModel
 
 from game.server.controlpoints.models import ControlPointJs
@@ -9,7 +10,7 @@ from game.server.downedpilots.models import DownedPilotJs
 from game.server.flights.models import FlightJs
 from game.server.frontlines.models import FrontLineJs
 from game.server.iadsnetwork.models import IadsNetworkJs
-from game.server.leaflet import LeafletPoint
+from game.server.leaflet import LeafletPoint, LeafletPoly
 from game.server.mapzones.models import (
     ThreatZoneContainerJs,
     UnculledZoneJs,
@@ -171,6 +172,56 @@ class MinefieldJs(BaseModel):
         ]
 
 
+class NeutralBorderJs(BaseModel):
+    """§96: one neutral country's defended airspace, for the planning map.
+
+    The DCS F10 map draws this at runtime, but by then you are already in the
+    cockpit -- the border has to be visible while you are *planning* the route,
+    which is the only time you can choose to route around it. Emitted only when
+    ``neutral_border_defense`` is on and the campaign authored zones (the
+    minefields pattern); empty otherwise, which hides the layer.
+
+    Not fogged: a national border is public knowledge, and the whole point is
+    that the player can see the line they are choosing to cross.
+    """
+
+    country: str
+    #: Where the alert flight comes from, for the tooltip: a field name, or
+    #: "<country> border CAP" for a neutral with no airfield on the map.
+    airfield: str
+    #: "neutral", "blue" or "red" -- who owns the airspace (the colour family).
+    posture: str
+    #: A neutral that permits transit: drawn, never enforced.
+    overflight: bool
+    floor_ft: int
+    #: The border ring as a Leaflet polygon (array-of-arrays, one ring, no holes).
+    border: LeafletPoly
+
+    @staticmethod
+    def all_in_game(game: Game) -> list[NeutralBorderJs]:
+        if not getattr(game.settings, "neutral_border_defense", False):
+            return []
+        zones = getattr(game.theater, "neutral_border_zones", [])
+        borders = []
+        for zone in zones:
+            posture = zone.posture_in(game.theater)
+            ring = [
+                LeafletPoint.from_latlng(Point(x, y, game.theater.terrain).latlng())
+                for x, y in zone.border
+            ]
+            borders.append(
+                NeutralBorderJs(
+                    country=zone.country,
+                    airfield=zone.origin_label(posture),
+                    posture=posture,
+                    overflight=zone.overflight,
+                    floor_ft=zone.floor_ft,
+                    border=[ring],
+                )
+            )
+        return borders
+
+
 class GameJs(BaseModel):
     control_points: list[ControlPointJs]
     tgos: list[TgoJs]
@@ -189,6 +240,9 @@ class GameJs(BaseModel):
     # §57 air-dropped minefields: BLUE-only live fields (dashed circles). Empty unless
     # air_droppable_minefields is on, which hides the layer; the enemy never sees them.
     minefields: list[MinefieldJs]
+    # §96 neutral border defense: the defended airspace of each authored neutral
+    # country. Empty unless neutral_border_defense is on, which hides the layer.
+    neutral_borders: list[NeutralBorderJs]
 
     class Config:
         title = "Game"
@@ -198,6 +252,7 @@ class GameJs(BaseModel):
         return GameJs(
             campaign_status=CampaignStatusJs.from_game(game),
             minefields=MinefieldJs.all_in_game(game),
+            neutral_borders=NeutralBorderJs.all_in_game(game),
             control_points=ControlPointJs.all_in_game(game),
             tgos=TgoJs.all_in_game(game),
             downed_pilots=DownedPilotJs.all_in_game(game),

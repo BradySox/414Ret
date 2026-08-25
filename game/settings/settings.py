@@ -598,6 +598,7 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                     "ambient_supply_convoys",
                     "convoy_ambush",
                     "mission_briefing_popup",
+                    "neutral_border_defense",
                 ],
             ),
             (
@@ -748,6 +749,7 @@ FEATURE_GATE_FIELDS: dict[str, list[str]] = {
         "artillery_base_harassment",  # §36
         "motorpool_enabled",  # §56
         "mission_briefing_popup",  # §58
+        "neutral_border_defense",  # §96
     ],
     "Electronic & command warfare": [
         "enemy_comms_jamming",  # §51
@@ -3274,6 +3276,24 @@ class Settings:
             "prefix); empty shows it to every BLUE client. "
             "Spawned bandits are free and untracked by design -- killing them "
             "changes nothing at the turn boundary; they are event content only."
+        ),
+    )
+    neutral_border_defense: bool = boolean_option(
+        "Neutral-faction border defense",
+        page=MISSION_GENERATION_PAGE,
+        section=GENERAL_SECTION,
+        default=False,
+        detail=(
+            "Campaign-authored neutral countries defend their own airspace: fly "
+            "inside their border below the altitude floor and an alert flight "
+            "spawns on your enemy's coalition, shadows you at return-fire, and "
+            "warns you off. Stay past the engage timer, release a weapon inside "
+            "the border, or fire on the shadower, and it attacks -- and the "
+            "field's SAM battery wakes. AI intruders are shadowed but never "
+            "engaged, and the auto-planner ignores the borders entirely. Needs "
+            "the 'Neutral border defense' LUA plugin ticked and a campaign that "
+            "authors border zones (nothing happens otherwise). Alert units are "
+            "free, untracked event content."
         ),
     )
     civilian_air_traffic: bool = boolean_option(

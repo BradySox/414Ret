@@ -38,6 +38,8 @@ local Harness = {
         weaponDestroys = {}, -- { name, t } from Weapon:destroy (growler spoof)
         spawns = {}, -- { template, alias, base, takeoff, altitude, grouping, speedKt, t }
         roe = {}, -- { group, option, t } from MOOSE Option* calls
+        routes = {}, -- { group, x, y, z, speed, t } from MOOSE RouteToVec3
+        destroys = {}, -- group names from MOOSE GROUP:Destroy
         radioTransmissions = {}, -- { file, x, y, z, mod, loop, hz, power, name, t }
         stoppedTransmissions = {}, -- transmission names
         sounds = {}, -- { groupId, file, t } from outSound*
@@ -921,6 +923,32 @@ function MooseGroup:OptionROTEvadeFire()
     })
 end
 
+function MooseGroup:OptionROEReturnFire()
+    table.insert(Harness.records.roe, {
+        group = self.group:getName(),
+        option = "ReturnFire",
+        t = Harness.now,
+    })
+end
+
+-- neutralborder shadow vectoring: record the fly-to point, no movement model.
+function MooseGroup:RouteToVec3(point, speed)
+    table.insert(Harness.records.routes, {
+        group = self.group:getName(),
+        x = point.x,
+        y = point.y,
+        z = point.z,
+        speed = speed,
+        t = Harness.now,
+    })
+end
+
+function MooseGroup:Destroy(_)
+    local name = self.group:getName()
+    table.insert(Harness.records.destroys, name)
+    Harness.groupsByName[name] = nil
+end
+
 UNIT = {}
 
 function UNIT.FindByName(_, name)
@@ -984,6 +1012,8 @@ function SPAWN.NewWithAlias(_, template, alias)
         counter = 0,
         grouping = 2,
         speedKt = nil,
+        countryId = nil,
+        coalitionId = nil,
     }, SpawnFake)
 end
 
@@ -994,6 +1024,18 @@ end
 
 function SpawnFake:InitSpeedKnots(kt)
     self.speedKt = kt
+    return self
+end
+
+-- Spawn-time coalition choice (neutralborder): the clone joins the given
+-- country/coalition, like MOOSE's template CountryID/CoalitionID override.
+function SpawnFake:InitCountry(id)
+    self.countryId = id
+    return self
+end
+
+function SpawnFake:InitCoalition(side)
+    self.coalitionId = side
     return self
 end
 
@@ -1010,6 +1052,8 @@ function SpawnFake:SpawnAtAirbase(airbase, takeoff, altitude)
         altitude = altitude,
         grouping = self.grouping,
         speedKt = self.speedKt,
+        countryId = self.countryId,
+        coalitionId = self.coalitionId,
         t = Harness.now,
     })
     nextSpawnGroupId = nextSpawnGroupId + 1
@@ -1027,9 +1071,76 @@ function SpawnFake:SpawnAtAirbase(airbase, takeoff, altitude)
     local grp = Harness.addGroup({
         name = name,
         id = nextSpawnGroupId,
-        side = coalition.side.RED,
+        side = self.coalitionId or coalition.side.RED,
         category = Group.Category.AIRPLANE,
         units = units,
+    })
+    return setmetatable({ group = grp }, MooseGroup)
+end
+
+-- Air-spawn at an arbitrary coordinate (neutralborder point-spawned CAP, for a
+-- neutral with no airfield on the map). MOOSE takes altitude as the Vec3 y.
+function SpawnFake:SpawnFromVec3(vec3)
+    self.counter = self.counter + 1
+    local name = self.alias .. "#" .. string.format("%03d", self.counter)
+    table.insert(Harness.records.spawns, {
+        template = self.template,
+        alias = self.alias,
+        base = "point",
+        x = vec3.x,
+        z = vec3.z,
+        altitude = vec3.y,
+        grouping = self.grouping,
+        speedKt = self.speedKt,
+        countryId = self.countryId,
+        coalitionId = self.coalitionId,
+        t = Harness.now,
+    })
+    nextSpawnGroupId = nextSpawnGroupId + 1
+    local units = {}
+    for i = 1, self.grouping do
+        units[#units + 1] = {
+            name = name .. "-" .. i,
+            type = "FAKE_FIGHTER",
+            x = vec3.x,
+            z = vec3.z,
+            alt = vec3.y,
+            airborne = true,
+        }
+    end
+    local grp = Harness.addGroup({
+        name = name,
+        id = nextSpawnGroupId,
+        side = self.coalitionId or coalition.side.RED,
+        category = Group.Category.AIRPLANE,
+        units = units,
+    })
+    return setmetatable({ group = grp }, MooseGroup)
+end
+
+-- In-place clone at the template's own position (neutralborder SAM wake):
+-- MOOSE SPAWN:Spawn() spawns the next group where the template stands.
+function SpawnFake:Spawn()
+    self.counter = self.counter + 1
+    local name = self.alias .. "#" .. string.format("%03d", self.counter)
+    table.insert(Harness.records.spawns, {
+        template = self.template,
+        alias = self.alias,
+        base = "template",
+        takeoff = nil,
+        altitude = nil,
+        grouping = self.grouping,
+        countryId = self.countryId,
+        coalitionId = self.coalitionId,
+        t = Harness.now,
+    })
+    nextSpawnGroupId = nextSpawnGroupId + 1
+    local grp = Harness.addGroup({
+        name = name,
+        id = nextSpawnGroupId,
+        side = self.coalitionId or coalition.side.RED,
+        category = Group.Category.GROUND,
+        units = { { name = name .. "-1", type = "FAKE_SAM", x = 0, z = 0 } },
     })
     return setmetatable({ group = grp }, MooseGroup)
 end

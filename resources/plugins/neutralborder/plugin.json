@@ -1,0 +1,54 @@
+{
+    "nameInUI": "Neutral border defense (§96 runtime)",
+    "descriptionInUI": "Runtime for the 'Neutral-faction border defense' setting. Inert unless the mission generator emits dcsRetribution.neutralBorder (the setting is on and the campaign authors border zones). Neutral countries scramble an alert flight against any aircraft inside their border polygon below the altitude floor: the flight spawns on the intruder's opposing coalition at return-fire, shadows, and radio-warns. A player who stays past the engage timer, releases a weapon inside the border, or fires on the shadower is engaged -- and the field's SAM battery wakes. AI intruders are shadowed only, never engaged. Spawned alert units are free, untracked event content.",
+    "defaultValue": true,
+    "specificOptions": [
+        {
+            "nameInUI": "Seconds inside the border before the warning + shadow launch",
+            "mnemonic": "warnDwellS",
+            "defaultValue": 30,
+            "minimumValue": 10,
+            "maximumValue": 300
+        },
+        {
+            "nameInUI": "Seconds inside the border before a player intruder is engaged",
+            "mnemonic": "engageDwellS",
+            "defaultValue": 180,
+            "minimumValue": 60,
+            "maximumValue": 900
+        },
+        {
+            "nameInUI": "Seconds between border scans",
+            "mnemonic": "scanIntervalS",
+            "defaultValue": 10,
+            "minimumValue": 5,
+            "maximumValue": 60
+        },
+        {
+            "nameInUI": "Seconds between shadow-flight vector updates",
+            "mnemonic": "vectorIntervalS",
+            "defaultValue": 45,
+            "minimumValue": 15,
+            "maximumValue": 300
+        },
+        {
+            "nameInUI": "Concurrent shadow flights per neutral country",
+            "mnemonic": "maxShadows",
+            "defaultValue": 2,
+            "minimumValue": 1,
+            "maximumValue": 4
+        },
+        {
+            "nameInUI": "Draw each neutral border on the F10 map",
+            "mnemonic": "drawBorders",
+            "defaultValue": true
+        }
+    ],
+    "scriptsWorkOrders": [],
+    "configurationWorkOrders": [
+        {
+            "file": "neutralborder-config.lua",
+            "mnemonic": "neutralborder-config"
+        }
+    ]
+}

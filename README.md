@@ -263,6 +263,14 @@ Most of this is opt-in. Full list with toggles, defaults and known limitations:
   you memorize on turn 3 is still good on turn 30, and it is never planted on a ship or
   an off-map field. On the rare turn the front carries it far enough that it has to
   move, the same line reads **MOVED THIS TURN**.
+- **Neutral countries defend their borders.** A campaign can give a bystander nation an
+  alert flight at a border field. Cross its airspace below the briefed altitude floor and
+  a pair scrambles, shadows you, and warns you off the radio. Leave and they go home.
+  Stay too long, release a weapon inside the border, or shoot at them, and they engage —
+  and a SAM battery wakes at their field. AI flights that stray are shadowed but never
+  fired on, and the auto-planner does not route around the border, so it is your corner
+  to cut or not. The border is drawn on the F10 map. Off by default; Into the Hornet's
+  Nest ships with Lebanon defending its airspace.
 - Also: strikeable motor pool depots, enemy comms jamming learned from a captured pilot,
   a host F10 menu to scramble bandits.
 

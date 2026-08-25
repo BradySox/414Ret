@@ -14,6 +14,181 @@ recommended_player_money: 300
 recommended_enemy_money: 300
 recommended_player_income_multiplier: 0.7
 recommended_enemy_income_multiplier: 0.7
+# §96: Lebanon's border, drawn for context. Alignment is DERIVED from who holds
+# the airfields inside a border, and Beirut hosts four red squadrons -- so this
+# zone resolves red-aligned: drawn in the enemy colour family and covered by
+# red's QRA accept zone, never a §96 alert flight. The aircraft/floor/sam fields
+# below are therefore inert in this campaign; they are kept because the zone
+# schema requires them for any zone that COULD derive neutral. Border traced
+# from real boundary data (tools/neutral_border_geo.py).
+neutral_border_defense:
+  - country: Lebanon
+    airfield: Rayak
+    aircraft: MiG-29A
+    floor_ft: 10000
+    sam: true
+    border:
+      - [-37713, 38996]
+      - [-44689, 33157]
+      - [-41534, 6105]
+      - [-55592, 4943]
+      - [-62031, -10471]
+      - [-67385, -10198]
+      - [-78532, -23806]
+      - [-96934, -28942]
+      - [-113468, -28568]
+      - [-121940, -34442]
+      - [-122653, -44197]
+      - [-135109, -43957]
+      - [-156885, -52904]
+      - [-191924, -72708]
+      - [-202878, -73365]
+      - [-211351, -80947]
+      - [-210909, -60929]
+      - [-217426, -55276]
+      - [-213243, -43627]
+      - [-191183, -37188]
+      - [-196769, -31784]
+      - [-187238, -22326]
+      - [-186708, -15685]
+      - [-172288, -632]
+      - [-166709, -1432]
+      - [-166588, 5528]
+      - [-161763, 9235]
+      - [-153049, -1387]
+      - [-134731, 10903]
+      - [-134216, 26519]
+      - [-130518, 28224]
+      - [-133744, 41424]
+      - [-123453, 31136]
+      - [-109691, 43556]
+      - [-109527, 52157]
+      - [-92502, 63845]
+      - [-89956, 60088]
+      - [-81401, 61770]
+      - [-74047, 55543]
+      - [-69413, 58315]
+      - [-58637, 48411]
+      - [-58772, 38201]
+      - [-44682, 50211]
+      - [-44380, 42821]
+  #
+  # Syria's remaining neighbours, all traced from real boundary data
+  # (tools/neutral_border_geo.py --clip 31 38.1 32 40.3). Alignment is DERIVED
+  # from who holds the airfields inside each border, so none of these state it:
+  # Israel resolves blue (it hosts the Ramat David and Haifa squadrons) and the
+  # rest resolve neutral. What IS stated is overflight, which alignment cannot
+  # decide -- in 2022 Turkey, Cyprus, Jordan and Iraq all permit coalition
+  # transit, so they are drawn and never enforced.
+  #
+  # Israel carries an aircraft and field it will never use: the schema demands
+  # them from any zone that could derive neutral, and Israel only escapes that
+  # by hosting blue bases. If blue ever lost Ramat David and Haifa, Israel would
+  # start defending its own airspace with them -- which is the derivation
+  # working, not a leftover.
+  # Turkey -- real boundary data via tools/neutral_border_geo.py (19 vertices).
+  - country: Turkey
+    overflight: true
+    border:
+      - [206018, 392664]
+      - [178245, 301585]
+      - [206789, 215904]
+      - [175273, 146523]
+      - [198582, 74851]
+      - [162190, 62887]
+      - [133640, 75684]
+      - [131250, 47522]
+      - [86733, 26204]
+      - [144120, -7053]
+      - [174382, 31478]
+      - [210338, 16429]
+      - [169360, -44999]
+      - [200994, -105744]
+      - [141271, -169487]
+      - [122772, -275929]
+      - [185073, -344349]
+      - [360257, -331310]
+      - [337842, 396785]
+
+  # Cyprus -- real boundary data via tools/neutral_border_geo.py (14 vertices).
+  - country: Cyprus
+    overflight: true
+    border:
+      - [78237, -115818]
+      - [35014, -179655]
+      - [-1876, -164799]
+      - [1745, -203639]
+      - [-15262, -211738]
+      - [-28890, -264188]
+      - [-39750, -263819]
+      - [-15362, -321292]
+      - [20226, -332555]
+      - [20832, -313478]
+      - [33454, -305222]
+      - [29900, -274880]
+      - [56373, -270355]
+      - [45871, -210169]
+
+  # Jordan -- real boundary data via tools/neutral_border_geo.py (19 vertices).
+  - country: Jordan
+    overflight: true
+    border:
+      - [-440070, -58666]
+      - [-416181, -60115]
+      - [-360771, -43444]
+      - [-262589, -39941]
+      - [-251090, -17371]
+      - [-294711, 38928]
+      - [-302378, 81520]
+      - [-288923, 90831]
+      - [-253642, 165373]
+      - [-238480, 170820]
+      - [-187084, 263520]
+      - [-284205, 290937]
+      - [-286263, 281390]
+      - [-305286, 286817]
+      - [-300369, 307232]
+      - [-313999, 311405]
+      - [-339310, 283458]
+      - [-392977, 93043]
+      - [-449309, 140354]
+
+  # Iraq -- real boundary data via tools/neutral_border_geo.py (9 vertices).
+  - country: Iraq
+    overflight: true
+    border:
+      - [-322252, 301951]
+      - [-313999, 311405]
+      - [-300369, 307232]
+      - [-305286, 286817]
+      - [-286263, 281390]
+      - [-284205, 290937]
+      - [-187084, 263520]
+      - [-101038, 402655]
+      - [-342423, 405642]
+
+  # Israel -- real boundary data via tools/neutral_border_geo.py (14 vertices).
+  - country: Israel
+    airfield: Ramat David
+    aircraft: F-16C_50
+    floor_ft: 10000
+    sam: false
+    border:
+      - [-440965, -161448]
+      - [-211351, -80947]
+      - [-217426, -55276]
+      - [-191183, -37188]
+      - [-196135, -27389]
+      - [-291062, -41302]
+      - [-271978, -71862]
+      - [-311217, -98354]
+      - [-350984, -98053]
+      - [-358388, -74214]
+      - [-376831, -101131]
+      - [-401143, -108706]
+      - [-390401, -51973]
+      - [-444761, -58995]
+
 settings:
   # §86 GPS jamming: red EW companies deny satellite guidance within 15 nm of two sites
   # (see ground_forces). A JDAM/JSOW/JASSM aimed at anything inside a bubble lands off the
@@ -22,8 +197,13 @@ settings:
   # jammer, which restores accuracy at once. Runs via the 'GPS jamming' LUA plugin, preseeded
   # below -- the setting does NOTHING without it.
   gps_jamming: true
+  # §96 bordering-nation airspace: Lebanon's border drawn (it derives
+  # red-aligned -- see the block below). Both gates preseeded -- the setting
+  # does nothing without the plugin.
+  neutral_border_defense: true
   plugins:
     gpsjamming: true            # §86 runtime -- the setting does nothing without it
+    neutralborder: true         # §96 runtime -- the setting does nothing without it
   max_frontline_width: 30
   squadron_start_full: true
   enable_squadron_aircraft_limits: true

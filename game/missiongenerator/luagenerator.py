@@ -33,7 +33,9 @@ from .reactiveredluadata import populate_reactive_red_lua
 from .rednetluadata import populate_red_net_lua
 from .minefieldluadata import populate_minefields_lua
 from .interceptluadata import (
+    DefensePolygonEntry,
     DefenseZoneEntry,
+    aligned_defense_polygons,
     defense_zone_entries,
     populate_intercept_lua,
 )
@@ -43,6 +45,7 @@ from .gpsjammingluadata import populate_gps_jamming_lua
 from .growlerluadata import populate_growler_lua
 from .mobilemissileluadata import populate_mobile_missiles_lua
 from .navalmagazineluadata import populate_naval_magazines_lua
+from .neutralborderluadata import populate_neutral_border_lua
 from .redscrambleluadata import populate_red_scramble_lua
 from .vietnamopsluadata import populate_vietnam_ops_lua
 
@@ -341,11 +344,22 @@ class LuaGenerator:
                 nautical_miles(self.game.settings.qra_defense_depth_nm),
             )
 
+        # §96: a country hosting a side's airfields is that side's territory, so
+        # its border joins that side's QRA accept zones. Independent of
+        # qra_forward_defense -- this is about who owns the airspace, not about
+        # the forward-defense geometry -- but still only useful with a dispatcher.
+        defense_polygons: list[DefensePolygonEntry] = []
+        if self.mission_data.intercept_entries and getattr(
+            self.game.settings, "neutral_border_defense", False
+        ):
+            defense_polygons = aligned_defense_polygons(self.game.theater)
+
         populate_intercept_lua(
             lua_data,
             self.mission_data.intercept_entries,
             self.mission_data.player_alert_entries,
             defense_zones,
+            defense_polygons,
         )
 
         # Add artillery and support units info
@@ -504,6 +518,12 @@ class LuaGenerator:
         # the redscramble plugin builds the host's F10 menu and force-vectors the
         # cloned bandits onto blue fighters (a GM event tool -- untracked by design).
         populate_red_scramble_lua(lua_data, self.game, self.mission_data)
+
+        # Neutral-faction border defense (§96) -- emits dcsRetribution.neutralBorder
+        # only when neutral_border_defense is on and the campaign authored zones the
+        # generator could build templates for; the neutralborder plugin runs the
+        # border watch, the shadow launches and the escalation ladder.
+        populate_neutral_border_lua(lua_data, self.game, self.mission_data)
 
         # Combat SAR -- emits dcsRetribution.CSAR (the downed-pilot list, the
         # rescue-capable type whitelist and the Ops.CSAR flags) for the opscsar

@@ -25,7 +25,7 @@ so the two docs don't drift.
 
 ## Outstanding rows at a glance
 
-72 rows need a live pass. Full detail is under each `###` heading below —
+74 rows need a live pass. Full detail is under each `###` heading below —
 search the row id. `☐` untested · `◐` flown but not under the conditions that
 stress it · `✗` fail signature reproduced in-game.
 
@@ -60,6 +60,8 @@ stress it · `✗` fail signature reproduced in-game.
 | B85 | A flight with an unreachable TOT flies instead of orbiting | §8 | ☐ |
 | B98 | The bullseye is the same place it was last mission | §95 | ☐ |
 | B99 | AI packages arrive inside the mission, not after it | §8 | ☐ |
+| B100 | Neutral border: warned, shadowed, then engaged only if you press | §96 | ☐ |
+| B101 | Neutral border: AI intruders are shadowed, never engaged | §96 | ☐ |
 | G25 | Armed Recon package: recon drone + SEAD Viper escort + 4-ship sweep | §3 | ◐ |
 | G30 | MANTIS SHORAD link: the point defense ambushes the HARM shot | MANTIS migration | ☐ |
 | G33 | Survivor ADF beacon: the pinned 260 kHz drives a real needle | CSAR (upstream #929 + 414th pin) | ☐ |
@@ -6219,6 +6221,52 @@ mountain or coastal front will do.
   4. **The front line between two affected bases jumps** — ownership feeds base
      strength, so an 8-object swing is worth a look on Desert Trident's Jordan
      sector specifically.
+
+### B100 — Neutral border: warned, shadowed, then engaged only if you press · §96 · ☐ UNTESTED
+
+**History:** built 2026-08-24 (the neutral-border session — design note
+`414th-neutral-border-defense-notes.md`). Harness-covered: warn/shadow timing, the
+opposing-coalition clone, the AttackGroup escalation, the SAM wake, the exit
+stand-down. What the harness cannot exercise: the DCS AI actually flying the shadow
+vector, the airborne clone surviving its air spawn, the AttackGroup task producing a
+real attack, and the SA-6 clone engaging.
+
+**Setup:** Enduring Resolve (both gates preseeded). Fly any southern tasking — a
+carrier sortie is ideal — and cut a corner into Pakistan below 10,000 ft MSL.
+(Hornet's Nest no longer exercises the ladder: its Lebanon zone derives red-aligned
+off Beirut's red squadrons, so nothing §96 enforces there.)
+
+**Pass:** warned by text within ~40 s; a MiG-21 pair air-spawns at the border CAP
+station and holds near you without firing; exiting promptly ends it (they route home
+and despawn). Pressing — staying ~3 min, or releasing a weapon inside the border —
+flips them hostile (datalink), they attack, and an SA-6 clones in at the CAP anchor.
+The green-shaded border polygon is visible on the F10 map, with Pakistan's corridor
+gap and the faint-green overflight neighbours distinct from it.
+
+**Fail signatures:** the shadow fires during the shadow phase (ROE wrong); no shadow
+ever launches (template/clone failure — check dcs.log for NEUTRALBORDER| lines); the
+shadow is destroyed by your own AI escort before escalation **more often than not**
+(the accepted risk turning structural — triggers the recorded coalition-swap
+fallback); the SA-6 spawns cold or never engages; escalation fires on an AI-only
+intruder.
+
+### B101 — Neutral border: AI intruders are shadowed, never engaged · §96 · ☐ UNTESTED
+
+**History:** built 2026-08-24. The DM call: everyone trips the border, only players are
+ever engaged. Harness-covered for the no-escalation invariant; what needs eyes is
+whether AI strays happen at believable rates on Hornet's Nest and what the shadow
+pairs do around them.
+
+**Setup:** same campaign; watch the F10 map for red/blue AI crossing the Pakistani or
+Iranian border below 10,000 ft during a normal mission.
+
+**Pass:** an AI stray gets a shadow pair and nothing else; the shadow stands down when
+the stray leaves. No neutral-side attack on an AI group, ever.
+
+**Fail signatures:** neutral fighters attacking an AI intruder; shadow pairs
+accumulating without standing down (leak — check `maxShadows`); constant scrambles
+every mission (borders sit on the AI's routes — the campaign author should raise the
+floor or accept the theatre).
 
 ### B99 — AI packages arrive inside the mission, not after it · §8 · ☐ UNTESTED
 

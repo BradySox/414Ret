@@ -128,6 +128,16 @@ Read before touching a campaign's `.yaml`, `.miz` or build tool.
   juanjux #63** — why the baseline is Passive Defense, the `aiReactionExempt` protocol any
   plugin setting reaction-on-threat must use, why we took his head and not the merged PR,
   and the pre-registered falsifier if AI attrition rises)
+- **Neutral factions** — `414th-neutral-border-defense-notes.md` (**§96** — the engine
+  verdict on why a true neutral cannot fire, the opposing-coalition clone mechanism, the
+  DM-locked rules incl. derived alignment (airfield-hosting decides the side), the
+  overflight/refuses split, the accepted shadow-risk and its recorded fallback, the
+  real-data border pipeline, and the DECIDED-not-built automagic direction;
+  fictional-overlay campaigns are out of scope),
+  `414th-national-postures-brief.md` (**the handoff brief for the dated US/Soviet
+  relations research** — five posture buckets, both blocs, every DCS-map nation;
+  run it in a fresh session, output lands as `resources/borders/national_postures.yaml`
+  + its own notes file)
 - **Strike targets / BDA** — `414th-scenery-kill-tracking-notes.md` (why some scenery strike
   targets never register as killed; the M4 IADS stand-in; the proxy unit that was built and
   reverted, and the position matcher measured to have no input. **The reported failure was never
@@ -446,6 +456,7 @@ linked design note.
 93. **Region priorities** — per-control-point BLUE planning emphasis: emphasized regions rank closer, deprioritized farther, ignored left to manual packages. A weight, never a fence.
 94. **Smart threat reaction** — only the flight a missile is actually guiding on goes defensive; everything else holds formation and uses countermeasures.
 95. **Pinned bullseye** — one bullseye for the campaign instead of a new one every turn, never anchored on a ship or an off-map spawn; the kneeboard names the place it sits on and flags the rare turn it moves.
+96. **Neutral-faction border defense** — every nation bordering the war is drawn with its real border: alignment derived from who holds the airfields inside it (red/blue colour families; red-aligned airspace joins §1's QRA accept zones), and a true neutral either permits overflight or defends — cross below the floor and an alert flight (spawned on your enemy's coalition) shadows and warns; press, and it engages and the SAM wakes. Players only; AI is shadowed, never engaged.
 
 ### Retired, removed or shelved — do not restore
 

@@ -59,6 +59,195 @@ victory:
     - label: "Camp Bastion is lost"
       lose_cps: [Camp Bastion]
 
+# §96 bordering-nation airspace. Every nation that borders Afghanistan and is on
+# the map is drawn; alignment is derived from who holds the airfields inside each
+# border (none of these host any, so all five are neutral). Whether a neutral lets
+# you THROUGH is the separate "overflight" fact.
+#
+# Pakistan and Iran refuse transit and intercept. Pakistan's zone is cut into two
+# walls with a ~225 km lane between them: the OEF "boulevard" the carrier air must
+# thread coming north out of the Arabian Sea. A direct line from the boat to Farah
+# crosses Pakistan; the dogleg up the corridor then west is clean.
+#
+# Turkmenistan, Uzbekistan and Tajikistan permit overflight -- which is also the
+# only way they can appear at all: DCS has no such countries, and a permitting
+# neutral spawns nothing so it needs none. China's Wakhan border is off the
+# playable map entirely (measured) and is deliberately absent.
+#
+# Traced with tools/neutral_border_geo.py (--clip 24 38 59.5 73,
+# --corridor-lon 64.0 66.3 for Pakistan).
+neutral_border_defense:
+  # Pakistan (east of the corridor) -- real boundary data via tools/neutral_border_geo.py (20 vertices).
+  - country: Pakistan
+    spawn: [-375979, 341652]
+    spawn_alt_ft: 20000
+    aircraft: MiG-21Bis
+    floor_ft: 10000
+    sam: true
+    border:
+      - [-1091535, 142953]
+      - [-945022, 31851]
+      - [-331399, 23469]
+      - [-225639, 189555]
+      - [-234978, 279941]
+      - [-86430, 307024]
+      - [-46033, 381975]
+      - [28245, 337329]
+      - [37460, 445323]
+      - [172514, 491271]
+      - [269064, 441933]
+      - [367356, 592436]
+      - [-492961, 675020]
+      - [-634729, 577093]
+      - [-639457, 425705]
+      - [-755466, 347109]
+      - [-802513, 415377]
+      - [-871286, 412275]
+      - [-897090, 471201]
+      - [-1036888, 525564]
+
+  # Pakistan (west of the corridor) -- real boundary data via tools/neutral_border_geo.py (23 vertices).
+  - country: Pakistan
+    spawn: [-727669, -259559]
+    spawn_alt_ft: 20000
+    aircraft: MiG-21Bis
+    floor_ft: 10000
+    sam: true
+    border:
+      - [-960679, -205207]
+      - [-958685, -241160]
+      - [-974684, -252438]
+      - [-970276, -349285]
+      - [-986984, -369291]
+      - [-973667, -386659]
+      - [-985768, -388952]
+      - [-989813, -433595]
+      - [-921822, -433391]
+      - [-895884, -410978]
+      - [-855915, -410857]
+      - [-853794, -378402]
+      - [-826312, -368702]
+      - [-812392, -280596]
+      - [-759628, -267112]
+      - [-744630, -280823]
+      - [-744755, -322487]
+      - [-631249, -320439]
+      - [-634898, -339809]
+      - [-595576, -410686]
+      - [-454635, -505571]
+      - [-506433, -350472]
+      - [-503736, -203152]
+
+  # Iran -- real boundary data via tools/neutral_border_geo.py (23 vertices).
+  - country: Iran
+    spawn: [-315321, -523142]
+    spawn_alt_ft: 20000
+    aircraft: MiG-29A
+    floor_ft: 10000
+    sam: true
+    border:
+      - [362618, -610647]
+      - [297812, -537768]
+      - [286753, -462297]
+      - [173921, -455803]
+      - [63684, -510345]
+      - [39413, -492433]
+      - [18346, -530634]
+      - [-32527, -530088]
+      - [-48622, -490652]
+      - [-100079, -526307]
+      - [-272604, -505404]
+      - [-285600, -422319]
+      - [-327139, -410216]
+      - [-454635, -505571]
+      - [-595576, -410686]
+      - [-631249, -320439]
+      - [-744755, -322487]
+      - [-759628, -267112]
+      - [-812392, -280596]
+      - [-855915, -410857]
+      - [-993098, -461350]
+      - [-948694, -548035]
+      - [-944143, -652278]
+
+  # Turkmenistan -- real boundary data via tools/neutral_border_geo.py (18 vertices).
+  - country: Turkmenistan
+    overflight: true
+    border:
+      - [451061, 20412]
+      - [380477, 14575]
+      - [403022, -54177]
+      - [367894, -71179]
+      - [350939, -143235]
+      - [252975, -169820]
+      - [224716, -204311]
+      - [209399, -290442]
+      - [192618, -278251]
+      - [160633, -290389]
+      - [128769, -362916]
+      - [164809, -390831]
+      - [181768, -456473]
+      - [298589, -466986]
+      - [297812, -537768]
+      - [343565, -565840]
+      - [362953, -610808]
+      - [451941, -607487]
+
+  # Uzbekistan -- real boundary data via tools/neutral_border_geo.py (16 vertices).
+  - country: Uzbekistan
+    overflight: true
+    border:
+      - [459380, 164393]
+      - [448362, 162751]
+      - [450828, 150735]
+      - [406610, 129050]
+      - [365070, 124768]
+      - [375434, 97858]
+      - [364532, 77837]
+      - [384825, 58392]
+      - [386814, 48071]
+      - [377158, 25303]
+      - [383659, 11224]
+      - [390879, 22517]
+      - [405845, 11731]
+      - [428319, 11852]
+      - [443722, 23602]
+      - [452400, 19138]
+
+  # Tajikistan (east part) -- real boundary data via tools/neutral_border_geo.py (14 vertices).
+  - country: Tajikistan
+    overflight: true
+    border:
+      - [415933, 587271]
+      - [404594, 569248]
+      - [381991, 560446]
+      - [375217, 532388]
+      - [337001, 491910]
+      - [333899, 474317]
+      - [360762, 452076]
+      - [437443, 451160]
+      - [472419, 455677]
+      - [475332, 447414]
+      - [466452, 432939]
+      - [469995, 426033]
+      - [478101, 426407]
+      - [493659, 578898]
+
+  # Tajikistan (west part) -- real boundary data via tools/neutral_border_geo.py (10 vertices).
+  - country: Tajikistan
+    overflight: true
+    border:
+      - [470165, 340328]
+      - [462933, 330677]
+      - [428042, 341003]
+      - [419473, 275022]
+      - [367675, 261604]
+      - [389508, 221967]
+      - [338342, 146003]
+      - [355258, 123549]
+      - [406610, 129050]
+      - [459380, 164393]
+
 settings:
   # FOB standoff fire (vietnam_airbase_harassment, below) runs on the `vietnamops`
   # Lua plugin, and a host whose saved plugin defaults have it unticked loses it with
@@ -66,6 +255,11 @@ settings:
   # preseed is what overrides a saved default.
   plugins:
     vietnamops: true
+    # §96 runtime -- the neutral_border_defense setting does nothing without it.
+    neutralborder: true
+  # §96: Iran, Pakistan, Turkmenistan, Uzbekistan and Tajikistan defend their
+  # airspace below 10,000 ft. See the neutral_border_defense block above.
+  neutral_border_defense: true
   squadron_start_full: true
   # The COIN stack (feature docs: 414th-coin-insurgent-replenishment-notes.md):
   # cache-throttled cell regeneration + the ratline + FOB standoff fire + the

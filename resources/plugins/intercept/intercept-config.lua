@@ -128,6 +128,34 @@ local function defense_zones_for(coalition_name)
             zones[#zones + 1] = ZONE_RADIUS:New(rec.name, { x = x, y = y }, radius, true)
         end
     end
+    -- §96: a country hosting this side's airfields is this side's territory, so
+    -- its real national border joins the accept zones as a polygon. A circle
+    -- would spill across the frontier; the border is the honest shape. This is
+    -- how an aligned nation is defended -- by the QRA that already exists, not
+    -- by a second interception system laid over the same ground.
+    local polys = dcsRetribution.Intercept and dcsRetribution.Intercept.POLYGONS
+    local poly_records = polys and polys[coalition_name]
+    if poly_records then
+        for _, rec in pairs(poly_records) do
+            local pts = {}
+            for _, p in ipairs(rec.points or {}) do
+                local x, y = tonumber(p.x), tonumber(p.y)
+                if x and y then
+                    pts[#pts + 1] = { x = x, y = y }
+                end
+            end
+            if #pts >= 3 then
+                local ok, zone = pcall(function()
+                    return ZONE_POLYGON:NewFromPointsArray(rec.name, pts)
+                end)
+                if ok and zone then
+                    zones[#zones + 1] = zone
+                else
+                    env.error("INTERCEPT|: bad airspace polygon " .. tostring(rec.name))
+                end
+            end
+        end
+    end
     return zones
 end
 

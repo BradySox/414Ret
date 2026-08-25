@@ -59,6 +59,114 @@ victory:
     - label: "Camp Bastion is lost"
       lose_cps: [Camp Bastion]
 
+# §96 neutral border defense -- the OEF "boulevard". Afghanistan is landlocked and
+# the DCS map carries no foreign airfield at all, so each neighbour flies a standing
+# CAP from a spawn point over its own territory rather than scrambling from a field.
+# Pakistan's zone is cut into two walls with a ~225 km lane between them: that lane is
+# the corridor the carrier air has to thread coming north out of the Arabian Sea. A
+# direct line from the boat to a western target (Farah) crosses Pakistan; the dogleg up
+# the corridor and then west is clean. Borders traced from real boundary data with
+# tools/neutral_border_geo.py (--clip 24 38 59.5 73 --corridor-lon 64.0 66.3).
+# Players who press get engaged; AI strays are only shadowed, so a tight lane costs the
+# campaign nothing.
+#
+# Only Pakistan and Iran are here because DCS HAS no Turkmenistan, Uzbekistan or
+# Tajikistan -- they are not pydcs countries, so a northern zone could only fly under
+# some other nation's flag. The northern border is undefended rather than mislabelled.
+neutral_border_defense:
+  # Pakistan -- east wall of the carrier corridor (20 vertices).
+  - country: Pakistan
+    spawn: [-375979, 341652]
+    spawn_alt_ft: 20000
+    aircraft: MiG-21Bis
+    floor_ft: 10000
+    sam: true
+    border:
+      - [-1091535, 142953]
+      - [-945022, 31851]
+      - [-331399, 23469]
+      - [-225639, 189555]
+      - [-234978, 279941]
+      - [-86430, 307024]
+      - [-46033, 381975]
+      - [28245, 337329]
+      - [37460, 445323]
+      - [172514, 491271]
+      - [269064, 441933]
+      - [367356, 592436]
+      - [-492961, 675020]
+      - [-634729, 577093]
+      - [-639457, 425705]
+      - [-755466, 347109]
+      - [-802513, 415377]
+      - [-871286, 412275]
+      - [-897090, 471201]
+      - [-1036888, 525564]
+
+  # Pakistan -- west wall of the carrier corridor (23 vertices).
+  - country: Pakistan
+    spawn: [-727669, -259559]
+    spawn_alt_ft: 20000
+    aircraft: MiG-21Bis
+    floor_ft: 10000
+    sam: true
+    border:
+      - [-960679, -205207]
+      - [-958685, -241160]
+      - [-974684, -252438]
+      - [-970276, -349285]
+      - [-986984, -369291]
+      - [-973667, -386659]
+      - [-985768, -388952]
+      - [-989813, -433595]
+      - [-921822, -433391]
+      - [-895884, -410978]
+      - [-855915, -410857]
+      - [-853794, -378402]
+      - [-826312, -368702]
+      - [-812392, -280596]
+      - [-759628, -267112]
+      - [-744630, -280823]
+      - [-744755, -322487]
+      - [-631249, -320439]
+      - [-634898, -339809]
+      - [-595576, -410686]
+      - [-454635, -505571]
+      - [-506433, -350472]
+      - [-503736, -203152]
+
+  # Iran -- the western no-go, off the Farah approach (23 vertices).
+  - country: Iran
+    spawn: [-315321, -523142]
+    spawn_alt_ft: 20000
+    aircraft: MiG-29A
+    floor_ft: 10000
+    sam: true
+    border:
+      - [362618, -610647]
+      - [297812, -537768]
+      - [286753, -462297]
+      - [173921, -455803]
+      - [63684, -510345]
+      - [39413, -492433]
+      - [18346, -530634]
+      - [-32527, -530088]
+      - [-48622, -490652]
+      - [-100079, -526307]
+      - [-272604, -505404]
+      - [-285600, -422319]
+      - [-327139, -410216]
+      - [-454635, -505571]
+      - [-595576, -410686]
+      - [-631249, -320439]
+      - [-744755, -322487]
+      - [-759628, -267112]
+      - [-812392, -280596]
+      - [-855915, -410857]
+      - [-993098, -461350]
+      - [-948694, -548035]
+      - [-944143, -652278]
+
 settings:
   # FOB standoff fire (vietnam_airbase_harassment, below) runs on the `vietnamops`
   # Lua plugin, and a host whose saved plugin defaults have it unticked loses it with
@@ -66,6 +174,11 @@ settings:
   # preseed is what overrides a saved default.
   plugins:
     vietnamops: true
+    # §96 runtime -- the neutral_border_defense setting does nothing without it.
+    neutralborder: true
+  # §96: Iran, Pakistan, Turkmenistan, Uzbekistan and Tajikistan defend their
+  # airspace below 10,000 ft. See the neutral_border_defense block above.
+  neutral_border_defense: true
   squadron_start_full: true
   # The COIN stack (feature docs: 414th-coin-insurgent-replenishment-notes.md):
   # cache-throttled cell regeneration + the ratline + FOB standoff fire + the

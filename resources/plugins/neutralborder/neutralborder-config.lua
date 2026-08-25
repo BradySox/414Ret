@@ -71,10 +71,19 @@ for _, raw in ipairs(data.zones or {}) do
                 if not maxz or z > maxz then maxz = z end
             end
         end
-        if #verts >= 3 and raw.fighterTemplate and raw.field then
+        -- A zone launches from a FIELD or from a POINT. Afghanistan's neighbours
+        -- have no airbase on the map at all, so those air-spawn a standing CAP
+        -- over their own side instead (see the design note).
+        local spawn_x, spawn_z = tonumber(raw.spawnX), tonumber(raw.spawnZ)
+        local has_origin = raw.field ~= nil or (spawn_x ~= nil and spawn_z ~= nil)
+        if #verts >= 3 and raw.fighterTemplate and has_origin then
             zones[#zones + 1] = {
                 country = tostring(raw.country or "Neutral"),
-                field = tostring(raw.field),
+                field = raw.field and tostring(raw.field) or nil,
+                spawn_x = spawn_x,
+                spawn_z = spawn_z,
+                spawn_alt_m = tonumber(raw.spawnAltM) or 6000,
+                origin_label = tostring(raw.originLabel or raw.field or "border CAP"),
                 floor_m = (tonumber(raw.floorFt) or 10000) * FT_TO_M,
                 floor_ft = tonumber(raw.floorFt) or 10000,
                 fighter_template = tostring(raw.fighterTemplate),
@@ -227,11 +236,6 @@ local function spawn_shadow(zone, zi, intruder_name, intruder_side)
     end
     local shadow = nil
     local ok, err = pcall(function()
-        local airbase = AIRBASE:FindByName(zone.field)
-        if not airbase then
-            log("airbase '" .. zone.field .. "' not found -- no shadow")
-            return
-        end
         local clone_side_id = opposing(intruder_side)
         local sp = spawner_for(zone, zi, clone_side_id)
         sp:InitGrouping(2)
@@ -242,14 +246,33 @@ local function spawn_shadow(zone, zi, intruder_name, intruder_side)
         if sp.InitCoalition then
             sp:InitCoalition(clone_side_id)
         end
-        local elevation = 0
-        pcall(function()
-            elevation = airbase:GetCoordinate():GetLandHeight() or 0
-        end)
         pcall(function()
             sp:InitSpeedKnots(SHADOW_SPEED_KT)
         end)
-        local grp = sp:SpawnAtAirbase(airbase, SPAWN.Takeoff.Air, elevation + SHADOW_AGL_M)
+
+        local grp
+        if zone.field then
+            local airbase = AIRBASE:FindByName(zone.field)
+            if not airbase then
+                log("airbase '" .. zone.field .. "' not found -- no shadow")
+                return
+            end
+            local elevation = 0
+            pcall(function()
+                elevation = airbase:GetCoordinate():GetLandHeight() or 0
+            end)
+            grp = sp:SpawnAtAirbase(
+                airbase, SPAWN.Takeoff.Air, elevation + SHADOW_AGL_M)
+        else
+            -- No airbase for this neutral anywhere on the map: air-spawn the
+            -- standing CAP at the authored point (MOOSE takes altitude as the
+            -- Vec3 y).
+            grp = sp:SpawnFromVec3({
+                x = zone.spawn_x,
+                y = zone.spawn_alt_m,
+                z = zone.spawn_z,
+            })
+        end
         if not grp then
             return
         end
@@ -272,7 +295,8 @@ local function spawn_shadow(zone, zi, intruder_name, intruder_side)
         zone.shadows[shadow.name] = shadow
         zone.shadow_count = zone.shadow_count + 1
         log(string.format(
-            "shadow %s up from %s vs %s", shadow.name, zone.field, intruder_name))
+            "shadow %s up from %s vs %s",
+            shadow.name, zone.origin_label, intruder_name))
     end)
     if not ok then
         log("shadow spawn error: " .. tostring(err))
@@ -312,10 +336,17 @@ local function stand_down(zone, shadow)
     end
     shadow.stood_down = true
     pcall(function()
-        local airbase = AIRBASE:FindByName(zone.field)
-        if airbase then
-            local c = airbase:GetCoordinate()
-            shadow.group:RouteToVec3({ x = c.x, y = (c.y or 0) + SHADOW_AGL_M, z = c.z }, 200)
+        if zone.field then
+            local airbase = AIRBASE:FindByName(zone.field)
+            if airbase then
+                local c = airbase:GetCoordinate()
+                shadow.group:RouteToVec3(
+                    { x = c.x, y = (c.y or 0) + SHADOW_AGL_M, z = c.z }, 200)
+            end
+        else
+            -- Point-spawned CAP: send it back to its own station.
+            shadow.group:RouteToVec3(
+                { x = zone.spawn_x, y = zone.spawn_alt_m, z = zone.spawn_z }, 200)
         end
     end)
     destroy_shadow_later(zone, shadow)
@@ -343,7 +374,7 @@ local function wake_sam(zone, intruder_side)
             sp:InitCoalition(opposing(intruder_side))
         end
         sp:Spawn()
-        log("SAM battery awake at " .. zone.field)
+        log("SAM battery awake at " .. zone.origin_label)
     end)
     if not ok then
         zone.sam_spawned = false

@@ -32,8 +32,6 @@ class NeutralBorderLuaZone:
     """One neutral country's zone, as actually built into the miz."""
 
     country: str
-    #: Exact map airbase name (``AIRBASE:FindByName``).
-    airfield: str
     floor_ft: int
     #: Exact .miz group name of the late-activation fighter template.
     fighter_template: str
@@ -43,6 +41,15 @@ class NeutralBorderLuaZone:
     #: under whichever opposes the intruder.
     red_country_id: int
     blue_country_id: int
+    #: Exact map airbase name (``AIRBASE:FindByName``), or None for a zone whose
+    #: neutral has no airfield on the map (Afghanistan's neighbours).
+    airfield: str | None = None
+    #: Terrain XY + altitude the alert flight air-spawns at, when there is no
+    #: airfield. Mutually exclusive with ``airfield``.
+    spawn: tuple[float, float] | None = None
+    spawn_alt_m: float = 0.0
+    #: What the map tooltip calls the alert flight's source.
+    origin_label: str = ""
     #: Terrain XY vertices (pydcs Point.x/.y = DCS x/z), implicit closure.
     border: list[tuple[float, float]] = field(default_factory=list)
 
@@ -62,7 +69,14 @@ def populate_neutral_border_lua(
     for zone in zones:
         record = zones_node.add_item()
         record.add_key_value("country", zone.country)
-        record.add_key_value("field", zone.airfield)
+        # Exactly one of field / spawn is present -- the Lua branches on it.
+        if zone.airfield is not None:
+            record.add_key_value("field", zone.airfield)
+        if zone.spawn is not None:
+            record.add_key_value("spawnX", f"{zone.spawn[0]:.1f}")
+            record.add_key_value("spawnZ", f"{zone.spawn[1]:.1f}")
+            record.add_key_value("spawnAltM", f"{zone.spawn_alt_m:.1f}")
+        record.add_key_value("originLabel", zone.origin_label)
         record.add_key_value("floorFt", str(zone.floor_ft))
         record.add_key_value("fighterTemplate", zone.fighter_template)
         if zone.sam_template is not None:

@@ -10174,9 +10174,36 @@ target changes.
   → escalate ladder, the SAM wake, exit-grace stand-down, and F10 border polylines
   (default on — the §86 invisible-bubble lesson).
 - **Borders are real data, never hand-traced** — `tools/neutral_border_geo.py`:
-  public-domain country GeoJSON → shapely simplify to a vertex budget →
-  `Point.from_latlng` → terrain XY yaml. Real-world-georeferenced maps only;
-  fictional-overlay campaigns are out of scope (DM call, 2026-08-24).
+  public-domain country GeoJSON → clip to the map → optional corridor cut →
+  shapely simplify to a vertex budget → `Point.from_latlng` → terrain XY yaml.
+  Real-world-georeferenced maps only; fictional-overlay campaigns are out of
+  scope (DM call, 2026-08-24). **Always `--clip`** — a country's real outline is
+  mostly off any one DCS map, and un-clipped the vertex budget is spent on
+  coastline nobody can fly to.
+- **The alert flight comes from a field OR a point.** Most maps carry the
+  neutral's own airbase (Syria has Rayak). Some carry none at all: the DCS
+  Afghanistan map has 26 airfields and **every one is inside Afghanistan**, so
+  Pakistan and Iran have nothing to scramble from. Those zones declare
+  `spawn: [x, y]` + `spawn_alt_ft` instead of `airfield:` and the flight
+  air-spawns as a standing CAP over its own side (MOOSE `SpawnFromVec3`). The
+  yaml requires exactly one of the two; both, or neither, skips the zone.
+  `--auto-spawn` puts each piece's station at its own `representative_point()`,
+  so it is guaranteed inside that piece's territory.
+- **`--corridor-lon` cuts a lane**, splitting one country into the two walls of
+  a flight corridor. See the Afghanistan reference below.
+
+### The planning map
+
+The DCS F10 map draws the border at mission start, but by then the route is
+flown. The decision the feature asks for — cut the corner or go around — is made
+in the planner, so the border is also a **"Neutral airspace" layer** on the web
+map (`client/src/components/neutralborders/`), fed by the `/game` payload like
+the minefields layer and empty (a no-op) unless the feature is on. It is drawn
+in APP-6 neutral green with a long boundary dash, tooltipped with the altitude
+floor and the alert field, and listed in the map legend. **Never fogged** — a
+national border is public knowledge, and seeing the line is the point. The
+DCS-side markup uses the same green; amber was the first choice and was moved
+because amber is already SUSPECTED on the planner map.
 
 ### Rules fixed by DM call (2026-08-24)
 
@@ -10191,12 +10218,32 @@ target changes.
   content (the §61 precedent).
 - Escalation is ROE + tasking only. Never `enableEmission` (hard constraint).
 
-### Reference implementation
+### Reference implementations
 
-Into the Hornet's Nest: Lebanon defends its airspace below 10,000 ft MSL from Rayak
-with MiG-29As (the type Russia offered Lebanon in 2008) — the whole Damascus air war
-flies within corner-cutting distance of the Lebanese border. Both gates preseeded; the
-44-vertex border traced from real boundary data.
+**Into the Hornet's Nest (Syria) — the airfield case.** Lebanon defends its airspace
+below 10,000 ft MSL from Rayak with MiG-29As (the type Russia offered Lebanon in 2008)
+— the whole Damascus air war flies within corner-cutting distance of the Lebanese
+border. Both gates preseeded; the 44-vertex border traced from real boundary data.
+
+**Enduring Resolve (Afghanistan) — the corridor case.** The OEF "boulevard": the
+carrier sits at 24.5°N 65.0°E in the Arabian Sea, and everything it launches has to
+come north across Pakistan to reach Helmand and Kandahar. Pakistan's zone is cut into
+two walls with a **~225 km lane** between them (`--corridor-lon 64.0 66.3`), and Iran
+is the western no-go. Measured on the authored polygons: the direct carrier routes to
+Kandahar, Bastion, Bost, Dwyer and Tarinkot all thread the lane clean, while the direct
+line to **Farah** (62.2°E) crosses Pakistan — the dogleg up the corridor and then west
+is clear. That is the constraint the campaign exists to create, and it is real
+geometry, not a scripted scold.
+
+Three zones, all point-spawned. **Only Pakistan and Iran are modelled** because DCS has
+no Turkmenistan, Uzbekistan or Tajikistan — they are not pydcs countries at all, so a
+northern zone could only fly under some other nation's flag. The northern border is
+left undefended rather than mislabelled; do not "fix" this by substituting Kazakhstan
+or Russia.
+
+Because AI intruders are shadowed and never engaged, a lane this tight costs the
+campaign nothing: an AI flight that clips a wall picks up a shadow escort, and only the
+player is ever shot at.
 
 ### Files & tests
 

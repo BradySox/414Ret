@@ -3,21 +3,44 @@
 **The standard (2026-08-24, DM call):** a neutral country's border polygon comes
 from real boundary data, never hand-tracing -- and only real-world-georeferenced
 maps get the feature (fictional-overlay campaigns are out of scope). Pipeline:
-a public-domain country GeoJSON (e.g. Natural Earth or a derivative) ->
-shapely simplify to a vertex budget -> ``Point.from_latlng`` -> terrain XY
-(the calibrated ``supply_route_geo.py`` machinery, ~1-5 km on Afghanistan) ->
+a public-domain country GeoJSON -> clip to the map area -> optional corridor cut
+-> shapely simplify to a vertex budget -> ``Point.from_latlng`` -> terrain XY ->
 the yaml block pasted into ``resources/campaigns/*.yaml``. The GeoJSON is a
 dev-time input read from disk; nothing here runs at campaign or mission time.
 
+Three things matter beyond the basic trace:
+
+**Clip to the map.** A country's real outline is mostly off any given DCS map --
+Iran's runs to the Persian Gulf, hundreds of km outside Afghanistan's terrain.
+Un-clipped, the vertex budget is spent on coastline nobody can fly to. Always
+pass ``--clip``.
+
+**Cut the corridor.** ``--corridor-lon`` subtracts a north-south lane, which
+turns one country into the two walls of a flight corridor. This is how the
+Afghanistan campaign models the OEF "boulevard": carrier aircraft coming north
+out of the Arabian Sea have a lane through Pakistan and get intercepted if they
+wander out of it. Each surviving piece is emitted as its own zone.
+
+**Spawn point vs airfield.** ``--airfield`` for a neutral whose airbase is on
+the map. ``--auto-spawn`` for one whose is not (every Afghanistan neighbour):
+each piece gets an air-spawn point at its own representative point, guaranteed
+inside that piece's territory.
+
 Usage:
 
-    python tools/neutral_border_geo.py <country.geojson> --terrain syria \\
-        --country Lebanon --airfield Rayak --aircraft MiG-29A \\
-        --floor-ft 10000 --sam --max-vertices 56
+    # Lebanon: it has a field on the Syria map.
+    python tools/neutral_border_geo.py lebanon.json --terrain syria \\
+        --country Lebanon --airfield Rayak --aircraft MiG-29A --sam
+
+    # Pakistan: no field on the Afghanistan map, and a corridor cut for the
+    # carrier route north.
+    python tools/neutral_border_geo.py pakistan.json --terrain afghanistan \\
+        --country Pakistan --aircraft MiG-21Bis --auto-spawn \\
+        --clip 24 36.5 60 72 --corridor-lon 64.3 66.3
 
 GeoJSON coordinates are [lon, lat]; DCS terrain XY is pydcs Point.x/.y = DCS
-x/z. The polygon's exterior ring is simplified with growing tolerance until it
-fits the vertex budget -- a border trigger needs corridor fidelity, not meters.
+x/z. Rings are simplified with growing tolerance until they fit the budget --
+a border trigger needs corridor fidelity, not meters.
 """
 
 from __future__ import annotations
@@ -38,7 +61,7 @@ from dcs.terrain.normandy import Normandy
 from dcs.terrain.persiangulf import PersianGulf
 from dcs.terrain.sinai import Sinai
 from dcs.terrain.syria import Syria
-from shapely.geometry import Polygon
+from shapely.geometry import MultiPolygon, Polygon, box
 
 TERRAINS = {
     "afghanistan": Afghanistan,
@@ -53,53 +76,79 @@ TERRAINS = {
     "syria": Syria,
 }
 
+#: A clipped piece smaller than this (square degrees) is a sliver the author
+#: never meant -- a coastal speck or a border artifact -- and is dropped.
+MIN_PIECE_AREA = 0.05
 
-def largest_ring(geometry: dict[str, Any]) -> list[tuple[float, float]]:
-    """The exterior ring of the largest polygon, as (lon, lat) pairs.
 
-    Handles Polygon and MultiPolygon; islands and exclaves are dropped -- an
-    airspace border wants the mainland ring.
-    """
+def country_polygon(geometry: dict[str, Any]) -> Polygon | MultiPolygon:
+    """The country as a shapely geometry, islands included."""
     if geometry["type"] == "Polygon":
-        rings = [geometry["coordinates"][0]]
-    elif geometry["type"] == "MultiPolygon":
-        rings = [poly[0] for poly in geometry["coordinates"]]
-    else:
-        raise SystemExit(f"Unsupported geometry type: {geometry['type']}")
-    largest = max(rings, key=lambda ring: Polygon(ring).area)
-    return [(float(lon), float(lat)) for lon, lat in largest]
+        return Polygon(
+            geometry["coordinates"][0],
+            holes=geometry["coordinates"][1:] or None,
+        )
+    if geometry["type"] == "MultiPolygon":
+        return MultiPolygon(
+            [(poly[0], poly[1:] or None) for poly in geometry["coordinates"]]
+        )
+    raise SystemExit(f"Unsupported geometry type: {geometry['type']}")
 
 
-def simplify_to_budget(
-    ring: list[tuple[float, float]], max_vertices: int
-) -> list[tuple[float, float]]:
+def pieces_of(geom: Polygon | MultiPolygon) -> list[Polygon]:
+    """Non-sliver polygon pieces, largest first."""
+    parts = list(geom.geoms) if isinstance(geom, MultiPolygon) else [geom]
+    kept = [p for p in parts if not p.is_empty and p.area >= MIN_PIECE_AREA]
+    return sorted(kept, key=lambda p: p.area, reverse=True)
+
+
+def simplify_to_budget(poly: Polygon, max_vertices: int) -> list[tuple[float, float]]:
     """Douglas-Peucker with growing tolerance until the ring fits the budget."""
-    polygon = Polygon(ring)
     tolerance = 0.001  # degrees, ~100 m
-    for _ in range(40):
-        simplified = polygon.simplify(tolerance, preserve_topology=True)
-        coords = list(simplified.exterior.coords)[:-1]  # drop the closing dup
-        if len(coords) <= max_vertices:
-            return [(lon, lat) for lon, lat in coords]
+    for _ in range(50):
+        simplified = poly.simplify(tolerance, preserve_topology=True)
+        if not simplified.is_empty:
+            coords = list(simplified.exterior.coords)[:-1]  # drop the closing dup
+            if len(coords) <= max_vertices:
+                return [(float(lon), float(lat)) for lon, lat in coords]
         tolerance *= 1.5
-    raise SystemExit("Could not simplify the ring to the vertex budget.")
+    raise SystemExit("Could not simplify a ring to the vertex budget.")
 
 
-def render(args: argparse.Namespace, verts_xy: list[tuple[float, float]]) -> str:
+def to_xy(
+    terrain: object, ring: list[tuple[float, float]]
+) -> list[tuple[float, float]]:
+    out = []
+    for lon, lat in ring:
+        p = Point.from_latlng(LatLng(lat, lon), terrain)  # type: ignore[arg-type]
+        out.append((p.x, p.y))
+    return out
+
+
+def render_zone(
+    args: argparse.Namespace,
+    label: str,
+    ring_xy: list[tuple[float, float]],
+    spawn_xy: tuple[float, float] | None,
+) -> list[str]:
     lines = [
-        "neutral_border_defense:",
-        f"  # {args.country} border traced from real boundary data by",
-        f"  # tools/neutral_border_geo.py ({len(verts_xy)} vertices).",
+        f"  # {label} -- real boundary data via tools/neutral_border_geo.py "
+        f"({len(ring_xy)} vertices).",
         f"  - country: {args.country}",
-        f"    airfield: {args.airfield}",
-        f"    aircraft: {args.aircraft}",
-        f"    floor_ft: {args.floor_ft}",
-        f"    sam: {'true' if args.sam else 'false'}",
-        "    border:",
     ]
-    for x, y in verts_xy:
+    if args.airfield:
+        lines.append(f"    airfield: {args.airfield}")
+    else:
+        assert spawn_xy is not None
+        lines.append(f"    spawn: [{spawn_xy[0]:.0f}, {spawn_xy[1]:.0f}]")
+        lines.append(f"    spawn_alt_ft: {args.spawn_alt_ft}")
+    lines.append(f"    aircraft: {args.aircraft}")
+    lines.append(f"    floor_ft: {args.floor_ft}")
+    lines.append(f"    sam: {'true' if args.sam else 'false'}")
+    lines.append("    border:")
+    for x, y in ring_xy:
         lines.append(f"      - [{x:.0f}, {y:.0f}]")
-    return "\n".join(lines)
+    return lines
 
 
 def main() -> None:
@@ -107,18 +156,41 @@ def main() -> None:
     parser.add_argument("geojson", type=Path, help="Country boundary GeoJSON")
     parser.add_argument("--terrain", required=True, choices=sorted(TERRAINS))
     parser.add_argument(
-        "--country", required=True, help='DCS country name, e.g. "Lebanon"'
+        "--country", required=True, help='DCS country name, e.g. "Pakistan"'
     )
     parser.add_argument(
-        "--airfield", required=True, help="Map airbase the alert flight uses"
+        "--airfield", help="Map airbase the alert flight uses (omit for --auto-spawn)"
     )
     parser.add_argument(
-        "--aircraft", required=True, help='pydcs plane id, e.g. "MiG-29A"'
+        "--auto-spawn",
+        action="store_true",
+        help="Air-spawn each piece's CAP at its own representative point",
+    )
+    parser.add_argument("--spawn-alt-ft", type=int, default=20000)
+    parser.add_argument(
+        "--aircraft", required=True, help='pydcs plane id, e.g. "MiG-21Bis"'
     )
     parser.add_argument("--floor-ft", type=int, default=10000)
     parser.add_argument("--sam", action="store_true")
     parser.add_argument("--max-vertices", type=int, default=56)
+    parser.add_argument(
+        "--clip",
+        nargs=4,
+        type=float,
+        metavar=("LAT_MIN", "LAT_MAX", "LON_MIN", "LON_MAX"),
+        help="Clip the country to the map area. Effectively mandatory.",
+    )
+    parser.add_argument(
+        "--corridor-lon",
+        nargs=2,
+        type=float,
+        metavar=("LON_MIN", "LON_MAX"),
+        help="Subtract a north-south lane, leaving the corridor's two walls",
+    )
     args = parser.parse_args()
+
+    if bool(args.airfield) == bool(args.auto_spawn):
+        raise SystemExit("Pass exactly one of --airfield or --auto-spawn.")
 
     data = json.loads(args.geojson.read_text(encoding="utf-8"))
     if data.get("type") == "FeatureCollection":
@@ -128,16 +200,42 @@ def main() -> None:
     else:
         geometry = data
 
-    ring = largest_ring(geometry)
-    simplified = simplify_to_budget(ring, args.max_vertices)
+    geom: Polygon | MultiPolygon = country_polygon(geometry)
+
+    if args.clip:
+        lat_min, lat_max, lon_min, lon_max = args.clip
+        geom = geom.intersection(box(lon_min, lat_min, lon_max, lat_max))
+    if args.corridor_lon:
+        c_min, c_max = args.corridor_lon
+        # The lane is cut full-height; the clip above already bounds it.
+        geom = geom.difference(box(c_min, -90, c_max, 90))
+
+    parts = pieces_of(geom)
+    if not parts:
+        raise SystemExit("Nothing left after clipping — check --clip / --corridor-lon.")
 
     terrain = TERRAINS[args.terrain]()
-    verts_xy = []
-    for lon, lat in simplified:
-        p = Point.from_latlng(LatLng(lat, lon), terrain)  # type: ignore[arg-type]
-        verts_xy.append((p.x, p.y))
+    out: list[str] = ["neutral_border_defense:"]
+    for index, piece in enumerate(parts):
+        ring = simplify_to_budget(piece, args.max_vertices)
+        ring_xy = to_xy(terrain, ring)
+        spawn_xy = None
+        if args.auto_spawn:
+            rep = piece.representative_point()
+            spawn_xy = to_xy(terrain, [(rep.x, rep.y)])[0]
+        label = args.country
+        if len(parts) > 1:
+            # Only a corridor cut makes the pieces *walls of a corridor*. A
+            # country can also land in several pieces just from the clip (the
+            # Tajikistan case), and calling those "of the corridor" is a lie.
+            side = "west" if piece.centroid.x < geom.centroid.x else "east"
+            qualifier = "of the corridor" if args.corridor_lon else "part"
+            label = f"{args.country} ({side} {qualifier})"
+        out.extend(render_zone(args, label, ring_xy, spawn_xy))
+        if index != len(parts) - 1:
+            out.append("")
 
-    print(render(args, verts_xy))
+    print("\n".join(out))
 
 
 if __name__ == "__main__":

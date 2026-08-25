@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from game.theater.neutralborder import NeutralBorderZone
+from game.theater.neutralborder import DEFAULT_SPAWN_ALT_FT, NeutralBorderZone
 
 
 def _entry(**overrides: object) -> dict[str, object]:
@@ -51,3 +51,53 @@ def test_missing_required_key_is_skipped() -> None:
 
 def test_garbage_border_is_skipped() -> None:
     assert NeutralBorderZone.from_yaml(_entry(border="nonsense")) is None
+
+
+# -- the point-spawn path: a neutral with no airfield anywhere on the map ------
+# Every one of the DCS Afghanistan map's 26 airfields is inside Afghanistan, so
+# Pakistan, Iran, Turkmenistan, Uzbekistan and Tajikistan have nothing to
+# scramble from and fly a standing CAP from a spawn point instead.
+
+
+def _spawn_entry(**overrides: object) -> dict[str, object]:
+    entry = _entry(country="Pakistan", aircraft="MiG-21Bis")
+    del entry["airfield"]
+    entry["spawn"] = [-375979, 341652]
+    entry.update(overrides)
+    return entry
+
+
+def test_spawn_point_zone() -> None:
+    zone = NeutralBorderZone.from_yaml(_spawn_entry(spawn_alt_ft=22000))
+    assert zone is not None
+    assert zone.airfield is None
+    assert zone.spawn == (-375979.0, 341652.0)
+    assert zone.spawn_alt_ft == 22000
+    assert zone.origin_label == "Pakistan border CAP"
+
+
+def test_spawn_altitude_defaults() -> None:
+    zone = NeutralBorderZone.from_yaml(_spawn_entry())
+    assert zone is not None
+    assert zone.spawn_alt_ft == DEFAULT_SPAWN_ALT_FT
+
+
+def test_airfield_zone_labels_by_its_field() -> None:
+    zone = NeutralBorderZone.from_yaml(_entry())
+    assert zone is not None
+    assert zone.origin_label == "Rayak"
+
+
+def test_both_airfield_and_spawn_is_skipped() -> None:
+    """Ambiguous origin: refuse rather than silently picking one."""
+    assert NeutralBorderZone.from_yaml(_spawn_entry(airfield="Rayak")) is None
+
+
+def test_neither_airfield_nor_spawn_is_skipped() -> None:
+    entry = _entry()
+    del entry["airfield"]
+    assert NeutralBorderZone.from_yaml(entry) is None
+
+
+def test_malformed_spawn_is_skipped() -> None:
+    assert NeutralBorderZone.from_yaml(_spawn_entry(spawn=[1])) is None

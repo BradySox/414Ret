@@ -30,7 +30,11 @@ from dcs.task import CAP
 from dcs.vehicles import AirDefence
 
 from game.theater.neutralborder import NeutralBorderZone
+from game.utils import feet
 from .neutralborderluadata import NeutralBorderLuaZone
+
+#: Cruise speed for a point-spawned CAP, in km/h (pydcs speed units).
+CAP_SPEED_KPH = 750.0
 
 if TYPE_CHECKING:
     from game import Game
@@ -71,14 +75,16 @@ class NeutralBorderGenerator:
                 self.mission_data.neutral_border_zones.append(built)
 
     def _build_zone(self, zone: NeutralBorderZone) -> NeutralBorderLuaZone | None:
-        airport = self.mission.terrain.airports.get(zone.airfield)
-        if airport is None:
-            logging.warning(
-                "Neutral border: airfield '%s' not on this terrain — %s skipped.",
-                zone.airfield,
-                zone.country,
-            )
-            return None
+        airport = None
+        if zone.airfield is not None:
+            airport = self.mission.terrain.airports.get(zone.airfield)
+            if airport is None:
+                logging.warning(
+                    "Neutral border: airfield '%s' not on this terrain — %s skipped.",
+                    zone.airfield,
+                    zone.country,
+                )
+                return None
         aircraft = plane_map.get(zone.aircraft)
         if aircraft is None:
             logging.warning(
@@ -95,14 +101,32 @@ class NeutralBorderGenerator:
             return None
 
         fighter_name = f"NeutralBorder|{zone.country}|{zone.aircraft}"
-        group = self.mission.flight_group_from_airport(
-            country=country,
-            name=fighter_name,
-            aircraft_type=aircraft,
-            airport=airport,
-            start_type=StartType.Cold,
-            group_size=2,
-        )
+        spawn_alt_m = feet(zone.spawn_alt_ft).meters
+        if airport is not None:
+            group = self.mission.flight_group_from_airport(
+                country=country,
+                name=fighter_name,
+                aircraft_type=aircraft,
+                airport=airport,
+                start_type=StartType.Cold,
+                group_size=2,
+            )
+            anchor = airport.position
+        else:
+            assert zone.spawn is not None
+            anchor = Point(zone.spawn[0], zone.spawn[1], self.mission.terrain)
+            # km/h: pydcs writes speed/3.6 onto the spawned unit records and the
+            # first waypoint, so passing m/s spawns the flight stalled (the
+            # civilian-traffic lesson).
+            group = self.mission.flight_group_inflight(
+                country=country,
+                name=fighter_name,
+                aircraft_type=aircraft,
+                position=anchor,
+                altitude=int(spawn_alt_m),
+                speed=CAP_SPEED_KPH,
+                group_size=2,
+            )
         group.late_activation = True
         # The clones inherit the template's pylons, so arm it once here. An
         # airframe with no CAP default flies guns-only rather than failing.
@@ -116,8 +140,8 @@ class NeutralBorderGenerator:
         if zone.sam:
             sam_name = f"NeutralBorder|{zone.country}|SAM"
             sam_position = Point(
-                airport.position.x + 700,
-                airport.position.y + 700,
+                anchor.x + 700,
+                anchor.y + 700,
                 self.mission.terrain,
             )
             sam_group = self.mission.vehicle_group_platoon(
@@ -135,6 +159,9 @@ class NeutralBorderGenerator:
         return NeutralBorderLuaZone(
             country=zone.country,
             airfield=zone.airfield,
+            spawn=zone.spawn,
+            spawn_alt_m=spawn_alt_m,
+            origin_label=zone.origin_label,
             floor_ft=zone.floor_ft,
             fighter_template=fighter_name,
             sam_template=sam_name,

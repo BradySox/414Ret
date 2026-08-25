@@ -30,6 +30,24 @@ entries:
       Rayak on your enemy's IFF, and -- if you exit promptly -- watch them break
       off and go home. Check the amber border polyline on the F10 map.
     row: B100
+  - date: 2026-08-24
+    title: The carrier corridor over Pakistan
+    change: >-
+      Enduring Resolve now runs the OEF "boulevard". The carrier sits in the
+      Arabian Sea and everything it launches has to come north across Pakistan
+      to reach Helmand and Kandahar -- and Pakistan defends its airspace below
+      10,000 ft either side of a roughly 225 km lane. Iran is the western no-go.
+      Stray out of the lane and a Pakistani pair shadows you; press and they
+      engage. The direct run to Kandahar, Bastion, Bost, Dwyer and Tarinkot all
+      fit inside the lane. The direct line to Farah does not -- go up the
+      corridor first, then turn west. AI flights that stray are shadowed but
+      never fired on, so this is your problem, not the campaign's.
+    watch: >-
+      Turn on the Neutral airspace map layer and look at the two Pakistani
+      blocks with the gap between them. Plan a carrier sortie to Farah and see
+      the direct line clip the western block; then drop a waypoint around
+      30.5N 65.0E and watch it go clean.
+    row: B100
   - date: 2026-08-23
     title: The front line sits on ground the armour can hold
     change: >-

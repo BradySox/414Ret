@@ -1078,6 +1078,46 @@ function SpawnFake:SpawnAtAirbase(airbase, takeoff, altitude)
     return setmetatable({ group = grp }, MooseGroup)
 end
 
+-- Air-spawn at an arbitrary coordinate (neutralborder point-spawned CAP, for a
+-- neutral with no airfield on the map). MOOSE takes altitude as the Vec3 y.
+function SpawnFake:SpawnFromVec3(vec3)
+    self.counter = self.counter + 1
+    local name = self.alias .. "#" .. string.format("%03d", self.counter)
+    table.insert(Harness.records.spawns, {
+        template = self.template,
+        alias = self.alias,
+        base = "point",
+        x = vec3.x,
+        z = vec3.z,
+        altitude = vec3.y,
+        grouping = self.grouping,
+        speedKt = self.speedKt,
+        countryId = self.countryId,
+        coalitionId = self.coalitionId,
+        t = Harness.now,
+    })
+    nextSpawnGroupId = nextSpawnGroupId + 1
+    local units = {}
+    for i = 1, self.grouping do
+        units[#units + 1] = {
+            name = name .. "-" .. i,
+            type = "FAKE_FIGHTER",
+            x = vec3.x,
+            z = vec3.z,
+            alt = vec3.y,
+            airborne = true,
+        }
+    end
+    local grp = Harness.addGroup({
+        name = name,
+        id = nextSpawnGroupId,
+        side = self.coalitionId or coalition.side.RED,
+        category = Group.Category.AIRPLANE,
+        units = units,
+    })
+    return setmetatable({ group = grp }, MooseGroup)
+end
+
 -- In-place clone at the template's own position (neutralborder SAM wake):
 -- MOOSE SPAWN:Spawn() spawns the next group where the template stands.
 function SpawnFake:Spawn()

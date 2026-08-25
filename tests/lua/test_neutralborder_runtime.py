@@ -225,6 +225,66 @@ def test_weapon_release_inside_escalates_after_warning() -> None:
     h.assert_no_lua_errors()
 
 
+def _point_config() -> dict[str, Any]:
+    """A zone whose neutral has no airfield on the map (the Afghanistan case)."""
+    cfg = _config()
+    zone = cfg["neutralBorder"]["zones"][0]
+    del zone["field"]
+    zone["spawnX"] = "12000"
+    zone["spawnZ"] = "12000"
+    zone["spawnAltM"] = "6096"
+    zone["originLabel"] = "Pakistan border CAP"
+    return cfg
+
+
+def test_point_spawned_cap_launches_without_an_airfield() -> None:
+    # No airbase is registered at all: the whole point is that this neutral has
+    # none anywhere on the map.
+    h = DcsPluginHarness()
+    h.lua.globals().dcsRetribution = h.to_lua(_point_config())
+    h.add_group(_intruder("Viper 1-1", 42, side=2))
+    h.load_plugin_script(PLUGIN)
+    h.advance_to(45)
+
+    spawns = [r for r in h.records("spawns") if r.get("base") == "point"]
+    assert len(spawns) == 1
+    assert spawns[0]["x"] == 12000
+    assert spawns[0]["z"] == 12000
+    assert spawns[0]["altitude"] == 6096  # MOOSE takes altitude as the Vec3 y
+    assert spawns[0]["coalitionId"] == 1  # still opposes the BLUE intruder
+    assert spawns[0]["countryId"] == RED_COUNTRY
+    h.assert_no_lua_errors()
+
+
+def test_point_spawned_cap_escalates_and_stands_down() -> None:
+    h = DcsPluginHarness()
+    h.lua.globals().dcsRetribution = h.to_lua(_point_config())
+    h.add_group(_intruder("Viper 1-1", 42, side=2))
+    h.load_plugin_script(PLUGIN)
+    h.advance_to(200)
+
+    attacks = _attack_tasks(h)
+    assert attacks and attacks[0]["targetGroupId"] == 42
+    assert len(_sam_spawns(h)) == 1
+    h.assert_no_lua_errors()
+
+
+def test_point_spawned_cap_routes_back_to_its_own_station() -> None:
+    h = DcsPluginHarness()
+    h.lua.globals().dcsRetribution = h.to_lua(_point_config())
+    h.add_group(_intruder("Viper 1-1", 42, side=2))
+    h.load_plugin_script(PLUGIN)
+    h.advance_to(45)
+    h.update_unit("Viper 1-1", {"x": 90000, "z": 90000})
+    h.advance_to(45 + 130 + 10)
+
+    routes = [r for r in h.records("routes") if isinstance(r, dict)]
+    assert routes, "stood-down point CAP was never routed home"
+    # Home is its spawn station, not an airbase it does not have.
+    assert routes[-1]["x"] == 12000 and routes[-1]["z"] == 12000
+    h.assert_no_lua_errors()
+
+
 def test_leaving_before_escalation_stands_the_shadow_down() -> None:
     h = _setup(_config())
     h.add_group(_intruder("Viper 1-1", 42, side=2))

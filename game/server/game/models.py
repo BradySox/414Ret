@@ -186,6 +186,8 @@ class NeutralBorderJs(BaseModel):
     """
 
     country: str
+    #: Where the alert flight comes from, for the tooltip: a field name, or
+    #: "<country> border CAP" for a neutral with no airfield on the map.
     airfield: str
     floor_ft: int
     #: The border ring as a Leaflet polygon (array-of-arrays, one ring, no holes).
@@ -205,7 +207,7 @@ class NeutralBorderJs(BaseModel):
             borders.append(
                 NeutralBorderJs(
                     country=zone.country,
-                    airfield=zone.airfield,
+                    airfield=zone.origin_label,
                     floor_ft=zone.floor_ft,
                     border=[ring],
                 )

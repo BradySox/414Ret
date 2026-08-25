@@ -135,6 +135,29 @@ Planner/Lua split as usual — Python sets up, Lua executes:
 - **Liveries are left to the template's country default.** A per-campaign livery pin is
   possible later; nothing about the mechanism depends on it.
 
+## The point-spawn extension (2026-08-24, same session)
+
+**Found while scoping Afghanistan: the DCS Afghanistan map's 26 airfields are all
+inside Afghanistan** — checked every one against the real country outline, 26 in, 0
+out. Pakistan, Iran, Turkmenistan, Uzbekistan and Tajikistan have nothing to scramble
+from, so the airfield-only v1 could not do the map the feature most wants.
+
+A zone now declares **either** `airfield:` **or** `spawn: [x, y]` + `spawn_alt_ft:`
+(exactly one; both or neither skips the zone). A point zone air-spawns a standing CAP
+over its own territory via MOOSE `SpawnFromVec3`, which is what a nervous neighbour
+actually keeps up anyway. Stand-down routes back to the station instead of a field.
+
+**The corridor.** `tools/neutral_border_geo.py --corridor-lon MIN MAX` subtracts a
+north-south lane before simplifying, so one country emits as the two walls of a flight
+corridor. Afghanistan uses it for the OEF boulevard (see features doc §96). `--clip` is
+effectively mandatory — Iran's real outline runs to the Persian Gulf and would spend
+the whole vertex budget on coastline off the map.
+
+**DCS has no Turkmenistan, Uzbekistan or Tajikistan.** Not pydcs countries; 92 exist
+and those three are not among them. The northern border is undefended rather than
+flown under a substitute flag. Do not "fix" this with Kazakhstan or Russia — it would
+put a wrong nation's markings and tooltip over real territory.
+
 ## Deferred (not built, not promised)
 
 - Cross-mission consequences: escalating posture, airspace closure, the neutral joining

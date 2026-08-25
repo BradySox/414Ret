@@ -90,4 +90,4 @@ def test_theater_without_the_attribute_is_tolerated() -> None:
         settings=SimpleNamespace(neutral_border_defense=True),
         theater=SimpleNamespace(terrain=Syria()),
     )
-    assert NeutralBorderJs.all_in_game(game) == []
+    assert NeutralBorderJs.all_in_game(game) == []  # type: ignore[arg-type]

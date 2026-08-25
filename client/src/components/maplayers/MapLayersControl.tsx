@@ -21,6 +21,7 @@ import Iadsnetworklayer from "../iadsnetworklayer";
 import DownedPilotsLayer from "../downedpilotslayer";
 import MinefieldsLayer from "../minefields";
 import NavMeshLayer from "../navmesh/NavMeshLayer";
+import NeutralBordersLayer from "../neutralborders";
 import SupplyRoutesLayer from "../supplyrouteslayer";
 import {
   ExclusionZonesLayer,
@@ -44,6 +45,7 @@ type LayerId =
   | "combat"
   | "supplyRoutes"
   | "minefields"
+  | "neutralBorders"
   | "downedPilotsBlue"
   | "downedPilotsRed"
   | "frontLines"
@@ -107,6 +109,14 @@ const OVERLAYS: Record<LayerId, { label: string; node: ReactNode }> = {
   // §57 air-dropped minefields (BLUE-only). Empty unless air_droppable_minefields is
   // on, so the layer is a no-op everywhere else even while toggled on.
   minefields: { label: "Minefields", node: <MinefieldsLayer /> },
+  // §96 neutral border defense: the airspace of countries that are not in the
+  // war but will defend it. Empty unless neutral_border_defense is on and the
+  // campaign authors zones, so the layer is a no-op everywhere else even while
+  // toggled on. Not fogged — the point is to see the line before you cross it.
+  neutralBorders: {
+    label: "Neutral airspace",
+    node: <NeutralBordersLayer />,
+  },
   // Downed aviators awaiting CSAR (upstream #929). Blue and red get independent
   // overlays. Empty when nobody is down, so each is a no-op on a quiet campaign
   // even while toggled on.
@@ -256,6 +266,7 @@ const GROUPS: GroupDef[] = [
       { id: "combat" },
       { id: "downedPilotsBlue" },
       { id: "frontLines" },
+      { id: "neutralBorders" },
       { id: "factories" },
       { id: "ships" },
       { id: "otherGround" },

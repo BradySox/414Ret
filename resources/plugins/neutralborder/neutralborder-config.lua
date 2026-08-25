@@ -192,8 +192,10 @@ local function draw_borders()
             end
             -- close the ring
             args[#args + 1] = { x = zone.verts[1].x, y = 0, z = zone.verts[1].z }
-            args[#args + 1] = { 0.9, 0.6, 0.1, 0.9 } -- color (amber)
-            args[#args + 1] = { 0.9, 0.6, 0.1, 0.05 } -- fill
+            -- APP-6 neutral green, matching the planner map's border colour
+            -- (client/src/theme/mapColors.ts). Amber is SUSPECTED there.
+            args[#args + 1] = { 0.25, 0.69, 0.42, 0.9 } -- line
+            args[#args + 1] = { 0.25, 0.69, 0.42, 0.05 } -- fill
             args[#args + 1] = 2 -- dashed
             args[#args + 1] = true -- read only
             trigger.action.markupToAll(unpack(args))

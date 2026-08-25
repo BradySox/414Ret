@@ -44,6 +44,14 @@ export const mapColors = {
   pilotMia: "#ff8c2e", // rescue orange: an evader awaiting pickup (actionable)
   pilotPow: "#9aa0a6", // gray: held at an enemy field (freed by recapture)
 
+  // --- third parties ---
+  // §96 neutral border: APP-6 green, the standard for a NEUTRAL track. Amber was
+  // the obvious pick (it is what the DCS F10 markup used first) but amber is
+  // already SUSPECTED, and "un-reconned enemy" and "a country that is not in the
+  // war" must not read as the same thing. The DCS-side markup was moved to match
+  // this, so the planner map and the F10 map agree.
+  neutralBorder: "#3faf6c",
+
   // --- misc ---
   highlight: "#ffff00",
 } as const;
@@ -79,7 +87,12 @@ export interface StrokeSignature {
 }
 
 export const mapStrokes: Record<
-  "suspectedArea" | "suspectedCluster" | "minefield" | "pilotMia" | "pilotPow",
+  | "suspectedArea"
+  | "suspectedCluster"
+  | "minefield"
+  | "pilotMia"
+  | "pilotPow"
+  | "neutralBorder",
   StrokeSignature
 > = {
   suspectedArea: {
@@ -101,4 +114,8 @@ export const mapStrokes: Record<
   minefield: { dashArray: "2 8", weight: 2.5, casingWeight: 6 },
   pilotMia: { weight: 2.5, casingWeight: 6 },
   pilotPow: { dashArray: "3 5", weight: 2.5, casingWeight: 6 },
+  // A long map-boundary dash — the one pattern that reads as a border rather
+  // than a hazard. It encloses a whole country, so it is drawn thinner than the
+  // point-hazard families or it would dominate the theatre.
+  neutralBorder: { dashArray: "12 7", weight: 2, casingWeight: 0 },
 };

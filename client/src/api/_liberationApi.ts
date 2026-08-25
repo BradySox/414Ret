@@ -634,6 +634,12 @@ export type Minefield = {
   radius_m: number;
   charges: number;
 };
+export type NeutralBorder = {
+  country: string;
+  airfield: string;
+  floor_ft: number;
+  border: LatLng[][];
+};
 export type Game = {
   control_points: ControlPoint[];
   tgos: Tgo[];
@@ -649,6 +655,7 @@ export type Game = {
   map_zones: MapZones;
   campaign_status?: CampaignStatus | null;
   minefields?: Minefield[];
+  neutral_borders?: NeutralBorder[];
 };
 export type MapZones = {
   inclusion: LatLng[][][];

@@ -6993,9 +6993,15 @@ physics always win (never earlier than `TotEstimator.earliest_tot`; an unreachab
 keeps the spread schedule unless that would leave the strike ahead of its SEAD). Several
 strikes behind one SEAD mass into the same window — the push is the point.
 
-**The §8 stagger discipline applies.** Movable = `STRIKE`/`BAI`/`OCA_RUNWAY`/`OCA_AIRCRAFT`
-(`COORDINATED_STRIKE_TYPES` — Armed Recon is a loitering sweep, AIR ASSAULT is tied to the
-ground war's timing; both deliberately stay spread), AI-only, non-ASAP. A package with a
+**The §8 stagger discipline applies.** Movable =
+`STRIKE`/`BAI`/`OCA_RUNWAY`/`OCA_AIRCRAFT`/`CAS` (`COORDINATED_STRIKE_TYPES` — Armed Recon is a
+loitering sweep, AIR ASSAULT is tied to the ground war's timing; both deliberately stay
+spread), AI-only, non-ASAP. **CAS was added 2026-08-24** (#973, the first gap mined out of the
+planner-doctrine queue): it descends to acquire and eats MANPADS low, then climbs into the
+area-SAM ring high, so a front under a live umbrella wants that umbrella down first exactly as
+a strike does. Its organic `SEAD_SWEEP` escort flies the package's own TOT and so accompanies
+rather than pre-suppresses. **The CAS case has not had its own in-game pass** — B21 is verified
+for the strike case only. A package with a
 player flight is never rescheduled — but a **player-flown SEAD still opens a window the AI
 strikes push behind** (providers are read-only). The carrier stagger runs after and only
 ever delays, so it can push a strike deeper into — never ahead of — its window;

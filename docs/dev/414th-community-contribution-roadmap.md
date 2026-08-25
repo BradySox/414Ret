@@ -1,10 +1,15 @@
 # 414th — Community Contribution Roadmap (the long view)
 
-> **Last verified against live upstream state: 2026-08-02.** PR numbers and statuses
-> below were checked with `gh pr view`/`gh pr list` on that date — re-verify before
-> trusting a status more than a couple weeks old; this doc drifts fast (nine "in
-> review" rows had gone stale — mostly closed — over the ~13 days since the prior
-> revision).
+> **⚠️ Last full verification against live upstream state: 2026-08-02 — now stale.**
+> PR numbers and statuses below were checked with `gh pr view`/`gh pr list` on that date
+> — re-verify before trusting a status more than a couple weeks old; this doc drifts fast
+> (nine "in review" rows had gone stale — mostly closed — over the ~13 days since the prior
+> revision). **That window has elapsed. Re-verify every 🔵 row before acting on it.**
+>
+> **Spot-corrected 2026-08-25** (doc-rot sweep, not a full re-verification): the Splash
+> Damage row was closed 2026-08-06 and is fixed below. The other 🔵 rows were NOT re-checked
+> — the [upstreaming inventory](414th-upstreaming-inventory.md) is fresher (2026-08-24) and
+> wins on any disagreement.
 
 > **POLICY (2026-07-19, squadron directive): everything is upstreamable.** There is no
 > permanent "fork-only" category — a thing either goes back clean and correct, or it
@@ -70,7 +75,7 @@ upstream PR looks like.
 
 | Item | Upstream story | Status |
 |---|---|---|
-| **Splash Damage tuned build** | **A fix to shipping defaults, not identity.** Upstream's shipped config turned out internally broken (raw ×130 rockets, 3% scaling double-divided in the bomblet path, static boost 2000, test mode enabled); the 414th's flown values replace them in upstream's own config architecture. | 🔵 **Pushed as [PR #880](https://github.com/dcs-retribution/dcs-retribution/pull/880)** (2026-07-19) — inventory item 21 |
+| **Splash Damage tuned build** | **A fix to shipping defaults, not identity.** Upstream's shipped config turned out internally broken (raw ×130 rockets, 3% scaling double-divided in the bomblet path, static boost 2000, test mode enabled); the 414th's flown values replace them in upstream's own config architecture. | ⛔ **CLOSED 2026-08-06 — permanently fork-only.** [PR #880](https://github.com/dcs-retribution/dcs-retribution/pull/880) was closed on the DM's call ("it's a preference we use, not everyone else"), making this the one named exception to the everything-upstreamable policy. **Do not re-carve without a fresh call.** Two genuine upstream *bugs* found in the closing audit are separable and still un-carved: the `cluster_bomblet_reduction_modifier` key mismatch that makes the toggle inert, and the OCA block's call to `getAGL()`, which is defined nowhere in upstream's tree. See inventory item 21. |
 | **[CH] Iran 2020 faction + pack** | Mod-dependent factions are normal upstream (HDS, CurrentHill assets elsewhere). #784 was **self-withdrawn, never rejected** — re-carved clean behind a new `iranmilitaryassetspack` toggle, the exact pattern of the six CH packs upstream already carries. | 🔵 **Pushed as [PR #886](https://github.com/dcs-retribution/dcs-retribution/pull/886)** — un-drafted, open, awaiting maintainer review |
 | **Doctrine default *values*** (QRA radii, engagement ranges, `QRA_SINGLE_SHIP_PROBABILITY`) | The mechanisms are largely upstream (#782 et al.). Propose the tuned numbers as defaults **with the flown rationale**; if upstream prefers different defaults, fine — defaults are their call, the proposal costs one PR. | Rides the QRA-family carves |
 | **C-130J EW physics constants** (spoof curve, burn-through) | Ship **with** the C-130J framework carve as its tested tuning, constants documented (the HANDOFF doc's rationale travels with the PR). Not separable from the framework — sequenced behind it. | Rides the Tier-3 C-130 carve |
@@ -119,7 +124,7 @@ closed, one superseded by a follow-up PR — since 2026-07-20.
 | Squadron country + Air Wing selector (§23 follow-on, answers the #854/#627 Discord ask) | #896 | 🟢 OPEN, not draft — trimmed to Druss99's request (yaml pin + selector, no default-behavior change); awaiting merge |
 | Cruise missile strikes (§63 core) | #872 | 🟢 OPEN, not draft — the DM flew the full loop locally ("works 10/10"), defender launch wake ported in; awaiting merge |
 | Curated carrier comms (§65) | #874 | 🟢 OPEN, not draft — un-drafted; awaiting merge |
-| Splash Damage coherent defaults (item 21) | #880 | 🟡 OPEN, still draft — active review thread on the offer to split bug-fixes from tuning |
+| Splash Damage coherent defaults (item 21) | #880 | ⛔ **CLOSED 2026-08-06** on the DM's call — permanently fork-only, not a carve candidate |
 | Sborka "Dog Ear" acquisition radar (item 23, new since last revision) | #887 | 🟡 OPEN, draft — vanilla-unit SHORAD radar fix, un-draft call open |
 | Bulk-altitude for target/refuel legs (§805 follow-up, new since last revision) | #920 | 🟡 OPEN, draft — opened 2026-07-31 |
 | Real per-aircraft patrol altitude yaml values (new since last revision) | #925 | 🟡 OPEN, draft — opened 2026-08-02, **supersedes #806** below (Druss99's suggested direction) |
@@ -229,8 +234,9 @@ surface first; when someone else owns it, contribute by reviewing their PR.
   the template (reconciled §23/§24/§56/#805 to upstream's merged shapes same-day);
   the 2026-08-02 sync repeated it for #876/#913/#917/#918/#919/#922/#923.
 - **Wave 3 (in progress, needs a gardening pass): finish the open set + the ready
-  fixes.** Genuinely open and awaiting review: #872, #874, #880, #881, #884, #886,
-  #887, #896, #920, #925. **Needing an explicit decision before being carried
+  fixes.** Genuinely open and awaiting review: #872, #874, #881, #884, #886,
+  #896, #920, #925 (**#880 closed 2026-08-06** — permanently fork-only; **#887 closed
+  2026-08-11** on Ramius007's review; both corrected 2026-08-25). **Needing an explicit decision before being carried
   forward** (all closed 2026-07-20 → 2026-08-02, no successor opened yet): #828,
   #882, #883, #885 (ceded to Druss99, not ours to decide), #873, #891, #892, #893,
   #806 (superseded by #925, no decision needed there). From the inventory: F-14A

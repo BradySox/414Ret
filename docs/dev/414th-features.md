@@ -695,8 +695,11 @@ leak: a package planned against a concealed TGO puts its steerpoint at the true 
 Implementation: `concealed_uncertainty`/`_concealed_radius` in `game/server/tgos/models.py`
 (both the `/game` pull and the SSE `updated_tgos` path go through it),
 `client/src/components/tgos/Tgo.tsx` (`ConcealedTgo`), `Tgo.uncertainty_radius_m` in the API
-model. Tests: `tests/fourteenth/test_coin_concealment.py`. Checklist **G24** + the COIN P3
-concealment bullet — needs an in-app pass + the CI client rebuild.
+model. Tests: `tests/fourteenth/test_coin_concealment.py`. Checklist **P3** — its "concealed
+'in here somewhere' areas" and "map symbology" bullets cover P3–P6 — needs an in-app pass + the
+CI client rebuild. (This cited **G24** until 2026-08-25. G24 was *concealed field forces*, closed
+by removal 2026-08-18 and replaced by G39; the COIN suspect-until-engaged concealment described
+here survived that rework, so its pass rides P3.)
 
 **Overview reveal toggle ("show the real picture").** A single runtime switch that forces
 every player-facing fog rule above to resolve to ground truth, for whoever is looking. It
@@ -1362,7 +1365,9 @@ Design notes: `docs/dev/design/414th-air-defense-planning-notes.md` (read this f
 - Strike-escort reserve trim (`trim_rounds_for_escort_reserve`,
   `game/commander/theaterstate.py`): when `Doctrine.strike_escort_reserve > 0` the
   planner gives up BARCAP rounds so ~reserve airframes stay untasked for the strike
-  escorts planned later in the same run. Only Vietnam sets a non-zero reserve (4), so
+  escorts planned later in the same run. **Why it exists:** the M4 Vietnam flight
+  observed *every* strike escort being pruned at Linebacker tempo — BARCAP consumed the
+  fighters first and the strikes went out bare. Only Vietnam sets a non-zero reserve (4), so
   this is a no-op everywhere else. The companion fence is
   `PackageFulfiller.escort_reserve_withholds`. Trim order is the planner's own CP
   order — it used to rank by air threat, but that field went with the revert; the
@@ -3436,7 +3441,9 @@ which it never actually was — the old code just never had a cross-section pair
 
 Tests: `tests/test_settings_filter.py` (19, driving the real Qt widgets under the offscreen
 platform) and the rewritten cross-page case in `tests/test_settings_dependencies.py`.
-`qt_ui` is not CI type-checked, so this needs an in-app eyeball — checklist **B39**.
+`qt_ui` is not CI type-checked, so this needed an in-app eyeball — checklist **B46**, ☑ VERIFIED.
+(This pointed at **B39** until 2026-08-25; B39 is §81's naval magazines, an unrelated row that is
+still owed. Nothing is owed here.)
 
 ### The information-architecture reorg
 
@@ -9467,10 +9474,12 @@ shape: an assumption about a name or a state that generation does not produce.
 Checklist **B56** (P1: the launch-flow wiring lives in `qt_ui`, not CI-typechecked, and the
 mid-cycle feel at spawn is what CI cannot exercise), **B57** (P2: residue on the ramp,
 clean-wing returners, no parking exhaustion), **B58** (P3: a wave launches after player
-egress; the briefing narrates the pre-roll; parking survives the longer occupation), **B59**
-(P4: calls audible on the briefed AWACS channel at plausible times; SAPI voice quality
-verdict; no spam), and **B60** (P5: a struck objective produces one visible red patrol over
-it; nothing outside the positive list ever launches).
+egress; the briefing narrates the pre-roll; parking survives the longer occupation), and
+**B60** (P5: a struck objective produces one visible red patrol over it; nothing outside the
+positive list ever launches).
+
+**B59 is not on this list.** It covered P4, the synthesized voice net, which was REMOVED
+2026-08-18 (see the P4 heading above); the row is ⊘ RETIRED and there is nothing to fly.
 
 ### Deferred
 

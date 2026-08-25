@@ -20,8 +20,11 @@
 > player to scramble when a hostile closes inside the AI GCI radius + a lead margin.
 > The **AI-wingman option** is also built: `Squadron.qra_player_ai_wingman` crews the
 > alert flight as a human lead + AI wingmen (vs. all-client co-op) without changing
-> its size or the dispatcher debit (`qra_player_client_slots`). Nothing deferred now
-> beyond the in-game pass (A3/A4).
+> its size or the dispatcher debit (`qra_player_client_slots`). Phases 1 and 2 are complete
+> and owe only the in-game pass (A3/A4). **Phase 3 — scramble scoring/timer ("airborne
+> within N minutes") — is still deferred and unbuilt** (§3.3, §8; no `scramble_timer` or
+> equivalent exists in the tree). This line claimed "nothing deferred" until 2026-08-25,
+> which contradicted both of those sections.
 
 ---
 

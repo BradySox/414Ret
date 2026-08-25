@@ -9,8 +9,11 @@ extensions had been registered against newer pack versions all along, and every
 new air-defense system (Patriot CH family, THAAD, NASAMS 3, IRIS-T SLM, RBS-70/98,
 LvS-103 incl. HX-mobile) is fielded through an existing, factioned preset group.
 
-**Genuinely open: four units.** Fork-side work; the upstream PR freeze is
-irrelevant to it.
+**Genuinely open: two units** (was four — the two Project 22160 hulls closed
+2026-08-23; see item 3). Fork-side work; the upstream PR freeze is irrelevant to it.
+
+**Re-audited 2026-08-25** against the tree, since this file had not been touched
+since it was written.
 
 ## Open items
 
@@ -23,10 +26,12 @@ irrelevant to it.
    faction ✖. Pure DM call: which (if any) faction gets a stealth bomber; task
    weights would make it a Strike/OCA platform. No technical work beyond the
    faction line.
-3. **`CHAP_Project22160`** / **`CHAP_Project22160_TorM2KM`** — Vasily Bykov
-   patrol ships, vanilla. pydcs pin ✔ · yamls ✔ · no faction/naval wiring. Ladder:
-   add to the modern-Russia faction `naval_units` (the Tor-M2KM hull is a §63-adjacent
-   point-defense escort, NOT an LACM shooter — no magazine entry).
+3. ~~**`CHAP_Project22160`** / **`CHAP_Project22160_TorM2KM`** — Vasily Bykov
+   patrol ships~~ — ✅ **CLOSED 2026-08-23** in `58c2f22c9` (#955, "Russia 2020 goes
+   vanilla"). Both hulls are wired into the naval unit lists of `russia_2020.json`,
+   `redfor_russia_2020.json`, `redfor_current.json` and `CH_russia_2020.json`.
+   **The guidance still stands:** the Tor-M2KM hull is a §63-adjacent point-defense
+   escort, NOT an LACM shooter — it takes no magazine entry.
 
 ## Adopted-and-verified inventory (receipts, no action)
 

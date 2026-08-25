@@ -1,8 +1,8 @@
 # Upstream #896 — replacement PR body
 
 Paste-ready description for [dcs-retribution#896](https://github.com/dcs-retribution/dcs-retribution/pull/896).
-The published body still describes the code that was deleted on 2026-07-31, so a reviewer
-opening the PR today reads an advertisement for the exact thing Druss99 requested changes over.
+The published body describes code that was deleted on 2026-07-31 (the operator-country trim
+Druss99 requested changes over). It was never edited after that trim.
 
 Updating an existing PR is allowed under the freeze, so this is not freeze-held. Only the
 description changes; no commit is needed.
@@ -42,11 +42,11 @@ carry a count forward from this file; a stale count is what this refresh exists 
 ```markdown
 ## What
 
-Answers the Discord discussion about #854/#627: how do you choose a squadron's nation? The country
-lives only in preset yamls, so an airframe-name squadron config under a CJTF faction picks its preset
-by `random.choice` across every nation's presets — a USAF-named F-16 squadron can roll an Israeli
-preset and fly the campaign with the wrong DCS voice and pilot names. The only fix today is
-hand-authoring a preset yaml.
+Answers the Discord discussion on #854/#627. The country lives only in preset yamls, so an
+airframe-name squadron config under a CJTF faction picks its preset by `random.choice` across
+every nation's presets — a USAF-named F-16 squadron can roll an Israeli preset and fly the
+campaign with the wrong DCS voice and pilot names. The only fix today is hand-authoring a preset
+yaml.
 
 This PR surfaces the nation in both authoring layers.
 

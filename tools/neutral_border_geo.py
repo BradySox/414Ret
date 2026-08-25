@@ -62,6 +62,7 @@ from dcs.terrain.persiangulf import PersianGulf
 from dcs.terrain.sinai import Sinai
 from dcs.terrain.syria import Syria
 from shapely.geometry import MultiPolygon, Polygon, box
+from shapely.ops import unary_union
 
 TERRAINS = {
     "afghanistan": Afghanistan,
@@ -81,8 +82,7 @@ TERRAINS = {
 MIN_PIECE_AREA = 0.05
 
 
-def country_polygon(geometry: dict[str, Any]) -> Polygon | MultiPolygon:
-    """The country as a shapely geometry, islands included."""
+def one_geometry(geometry: dict[str, Any]) -> Polygon | MultiPolygon:
     if geometry["type"] == "Polygon":
         return Polygon(
             geometry["coordinates"][0],
@@ -93,6 +93,28 @@ def country_polygon(geometry: dict[str, Any]) -> Polygon | MultiPolygon:
             [(poly[0], poly[1:] or None) for poly in geometry["coordinates"]]
         )
     raise SystemExit(f"Unsupported geometry type: {geometry['type']}")
+
+
+def country_polygon(data: dict[str, Any]) -> Polygon | MultiPolygon:
+    """The whole country from a GeoJSON file, every feature merged.
+
+    **Read every feature, never just the first.** These files split a country
+    into one feature per landmass -- Denmark is 64, Russia 320, Germany 39 --
+    and taking ``features[0]`` silently yields a fragment: Denmark's first
+    feature does not contain Copenhagen, so the "border" would have been one
+    island. It cost nothing to get wrong and would have been near-impossible to
+    spot on a map you had never seen drawn correctly.
+    """
+    if data.get("type") == "FeatureCollection":
+        parts = [one_geometry(f["geometry"]) for f in data["features"]]
+    elif data.get("type") == "Feature":
+        parts = [one_geometry(data["geometry"])]
+    else:
+        parts = [one_geometry(data)]
+    merged = unary_union(parts)
+    if isinstance(merged, (Polygon, MultiPolygon)):
+        return merged
+    raise SystemExit("Merged geometry is not polygonal.")
 
 
 def pieces_of(geom: Polygon | MultiPolygon) -> list[Polygon]:
@@ -213,14 +235,7 @@ def main() -> None:
             raise SystemExit("A neutral that refuses transit needs --aircraft.")
 
     data = json.loads(args.geojson.read_text(encoding="utf-8"))
-    if data.get("type") == "FeatureCollection":
-        geometry = data["features"][0]["geometry"]
-    elif data.get("type") == "Feature":
-        geometry = data["geometry"]
-    else:
-        geometry = data
-
-    geom: Polygon | MultiPolygon = country_polygon(geometry)
+    geom: Polygon | MultiPolygon = country_polygon(data)
 
     if args.clip:
         lat_min, lat_max, lon_min, lon_max = args.clip

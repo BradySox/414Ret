@@ -123,6 +123,25 @@ Uzbekistan, Tajikistan, Kuwait — verify) still gets postures: a permissive one
 spawns nothing and needs no pydcs country, which is precisely how those become
 drawable at all.
 
+## A blocker found before you start: pre-1991 geometry
+
+Modern boundary data cannot express any era before 1991, and the border feature is
+useless without it. Measured 2026-08-25 on Red Tide (Germany CW, 1988): modern
+Germany is one polygon, **6 of the campaign's 12 bases sit in what was the GDR**,
+and the alignment rule resolves the country on a meaningless 5-blue/6-red split.
+
+So the dated posture table has a matching dated *geometry* problem. States that
+need period boundaries for the eras in scope: **the two Germanys** (1949–1990),
+**Czechoslovakia** (to 1993 — its modern GeoJSON 404s), **the USSR** (to 1991, and
+with it every Central Asian and Caucasus successor), **Yugoslavia** (to 1992),
+**North/South Vietnam** (to 1975), **North/South Yemen** (to 1990).
+
+Treat this as **a finding to report, not a task to solve** unless it is quick:
+identify a usable public-domain historical-boundary source (or confirm none exists)
+and say so in the notes. Do not hand-draw borders. The postures table is still
+worth building without it — most campaigns are post-1991 — but the note must state
+plainly which eras cannot be drawn yet.
+
 ## Method and standards
 
 - **Per country: a dated timeline first, buckets second.** Anchor each range

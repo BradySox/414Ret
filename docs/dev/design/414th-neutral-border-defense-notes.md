@@ -187,6 +187,46 @@ planning-map layer:
   with a real (6%) fill after the bare outline proved invisible over satellite
   imagery — the §40 layer's own recorded lesson, relearned.
 
+## Cross-map validation of the derivation (2026-08-25)
+
+Run against two campaigns the rule had never seen, with **zero authoring** — the
+derivation was fed each campaign's real base ownership and asked what it produced.
+
+**Caucasus / Iron Gate (2018) — clean pass.** Georgia → blue (4 blue fields),
+Russia → red (4 red fields), Turkey / Armenia / Azerbaijan → neutral (0,0). Exactly
+right, nothing stated.
+
+**Syria / Hornet's Nest — clean pass.** Lebanon → red (Beirut), Israel → blue
+(Ramat David + Haifa), Turkey / Cyprus / Jordan / Iraq → neutral.
+
+**Germany CW / Red Tide (1988) — the rule cannot work here, and it is a DATA gap,
+not a logic one.** Modern Germany is one polygon; in 1988 it was two states, and
+**6 of Red Tide's 12 bases sit in what was the GDR**. Fed modern borders the zone
+derives `red` off a 5-blue/6-red split — a meaningless coin-toss. Denmark derives
+blue correctly (1 blue field).
+
+The fix is historical boundaries, not a code change: **a Cold-War Germany campaign
+needs a 1949–1990 inner-German border** (and period Czechoslovakia, which also no
+longer exists — its modern GeoJSON 404s under that name). Until that data exists,
+**do not author §96 zones on `GermanyCW`**; the derivation will silently pick a
+side. Recorded for the postures research, which faces the same problem for every
+pre-1991 era: the USSR, Yugoslavia, Czechoslovakia and the two Germanys all need
+period geometry, and the posture table's dated ranges are worthless without it.
+
+### The `features[0]` defect (found and fixed the same day)
+
+`tools/neutral_border_geo.py` read `data["features"][0]["geometry"]` — but these
+GeoJSON files split a country into **one feature per landmass**: Denmark is 64
+features, Russia 320, Germany 39. Denmark's first feature does not contain
+Copenhagen, so its "border" was **0.8 % of the country**. Fixed by merging every
+feature (`country_polygon` → `unary_union`).
+
+**All eleven already-shipped borders were re-measured against the fix and are
+unaffected** (<0.5 % delta inside each map's clip) — the mainland happened to be
+`features[0]` every time. The bug was latent, never live. It is recorded because
+the next country added could easily have been the one that broke, and a fragment
+border is close to invisible on a map you have not seen drawn correctly.
+
 ## The automagic direction (2026-08-25, DM call — DECIDED, NOT BUILT)
 
 **"I do not wish this to be specified in any existing campaign, I want this to

@@ -215,6 +215,11 @@ The neutrals are the interesting half, and they are what §96 is for:
   exceptions worth having: `permissive` Aug 1990 – Apr 1991, because **Syria fought in the Desert
   Storm coalition**, and `hostile` from Sept 2014, because coalition aircraft flew Syrian
   airspace uninvited and a US F/A-18 shot down a Syrian Su-22 in June 2017.
+- **Egypt and Israel were both designated Major Non-NATO Allies in 1987, and the table still
+  splits them.** Israel is `allied` because US combat aircraft operate from and over it and the
+  US has fought for it; Egypt is `permissive` because its consent is standing but transactional —
+  unfettered overflight and expedited Suez transit, more than 36,000 US overflights across
+  Afghanistan and Iraq, and no US base. The designation is not the test; basing is.
 - **Iraq** runs allied → hostile → allied. Baghdad Pact member to the 14 July 1958 revolution,
   out of the Pact 24 Mar 1959, the 15-year Soviet Treaty of Friendship signed 9 Apr 1972.
   `hostile` toward the US bloc from Aug 1990 straight through the no-fly zones to May 2003 —

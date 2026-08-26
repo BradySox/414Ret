@@ -111,7 +111,16 @@ def country_polygon(data: dict[str, Any]) -> Polygon | MultiPolygon:
         parts = [one_geometry(data["geometry"])]
     else:
         parts = [one_geometry(data)]
-    merged = unary_union(parts)
+    # Repair before merging. Some published rings self-intersect (Saudi Arabia
+    # has one on the Kuwaiti border) and unary_union raises a TopologyException
+    # on them outright -- a zero-width buffer is the standard fix and leaves a
+    # valid ring untouched.
+    repaired = []
+    for part in parts:
+        repaired.append(part if part.is_valid else part.buffer(0))
+    merged = unary_union(repaired)
+    if not merged.is_valid:
+        merged = merged.buffer(0)
     if isinstance(merged, (Polygon, MultiPolygon)):
         return merged
     raise SystemExit("Merged geometry is not polygonal.")

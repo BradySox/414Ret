@@ -123,6 +123,30 @@ def permits_overflight(
     return posture_for(country, on, bloc, postures) in OVERFLIGHT_BUCKETS
 
 
+def aircraft_for(
+    country: str,
+    on: date,
+    postures: Optional[dict[str, Any]] = None,
+) -> Optional[str]:
+    """The interceptor this country flew on ``on``, or None if unrecorded.
+
+    Lets a border be drawn from terrain data alone: the campaign states no
+    airframe, and the era picks one. Vanilla pydcs ids only.
+    """
+    table = load_postures() if postures is None else postures
+    ranges = (table.get(country) or {}).get("aircraft")
+    if not ranges:
+        return None
+    when = (on.year, on.month)
+    for entry in ranges:
+        try:
+            if _sort_key(entry["from"]) <= when < _sort_key(entry["to"]):
+                return str(entry["id"])
+        except (KeyError, TypeError, ValueError):
+            continue
+    return None
+
+
 def bloc_for_country(
     country: str,
     on: date,

@@ -29,7 +29,7 @@ from dcs.planes import plane_map
 from dcs.task import CAP
 from dcs.vehicles import AirDefence
 
-from game.theater.nationalpostures import bloc_for_faction
+from game.theater.nationalpostures import aircraft_for, bloc_for_faction
 from game.theater.neutralborder import NEUTRAL, NeutralBorderZone
 from game.utils import feet
 from .neutralborderluadata import NeutralBorderLuaZone
@@ -112,13 +112,15 @@ class NeutralBorderGenerator:
         # bordering nation is meant to appear (DM call), and a country that
         # cannot field an interceptor is exactly the case that rule is for: DCS
         # models no Turkmenistan, so its border can only ever be a line.
-        if zone.aircraft is None or (zone.airfield is None and zone.spawn is None):
+        has_aircraft = zone.aircraft is not None or (
+            aircraft_for(zone.country, self.game.current_day) is not None
+        )
+        if not has_aircraft or (zone.airfield is None and zone.spawn is None):
             logging.info(
-                "Neutral border: %s would defend its airspace but the campaign "
-                "gives it no %s, so its border is drawn and not enforced. Add "
-                "them to make it intercept.",
+                "Neutral border: %s would defend its airspace but has no %s, so "
+                "its border is drawn and not enforced.",
                 zone.country,
-                "aircraft" if zone.aircraft is None else "airfield/spawn point",
+                "airframe for this era" if not has_aircraft else "airfield/spawn point",
             )
             return NeutralBorderLuaZone(
                 country=zone.country,
@@ -140,8 +142,11 @@ class NeutralBorderGenerator:
                     zone.country,
                 )
                 return None
-        assert zone.aircraft is not None  # guaranteed for a hostile zone
-        aircraft = plane_map.get(zone.aircraft)
+        # The campaign may name no airframe -- a terrain-shipped border never
+        # does -- in which case the era picks one from the posture table.
+        aircraft_id = zone.aircraft or aircraft_for(zone.country, self.game.current_day)
+        assert aircraft_id is not None  # the caller checked one is available
+        aircraft = plane_map.get(aircraft_id)
         if aircraft is None:
             logging.warning(
                 "Neutral border: unknown aircraft '%s' — %s skipped.",
@@ -156,7 +161,7 @@ class NeutralBorderGenerator:
             )
             return None
 
-        fighter_name = f"NeutralBorder|{zone.country}|{zone.aircraft}"
+        fighter_name = f"NeutralBorder|{zone.country}|{aircraft_id}"
         spawn_alt_m = feet(zone.spawn_alt_ft).meters
         if airport is not None:
             group = self.mission.flight_group_from_airport(

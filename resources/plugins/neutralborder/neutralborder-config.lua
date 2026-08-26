@@ -77,12 +77,16 @@ for _, raw in ipairs(data.zones or {}) do
         local spawn_x, spawn_z = tonumber(raw.spawnX), tonumber(raw.spawnZ)
         local has_origin = raw.field ~= nil or (spawn_x ~= nil and spawn_z ~= nil)
         local posture = tostring(raw.posture or "neutral")
-        local overflight = (raw.overflight == "true" or raw.overflight == true)
-        -- Only an uninvolved country that REFUSES transit enforces. An aligned
+        local function flag(v) return (v == "true" or v == true) end
+        -- Transit consent is PER SIDE: a country may let one bloc through and
+        -- refuse the other, so each intruder is checked against its own flag.
+        local ofBlue = flag(raw.overflightBlue)
+        local ofRed = flag(raw.overflightRed)
+        -- Only an uninvolved country that refuses SOMEONE enforces. An aligned
         -- one is defended by its own side's QRA (§1 accept zones) and a
-        -- permitting neutral is a line on the map, so both are drawn and never
-        -- scanned, carry no templates, and need no origin to be usable.
-        local enforces = (posture == "neutral") and not overflight
+        -- fully-permitting neutral is a line on the map, so both are drawn and
+        -- never scanned, carry no templates, and need no origin to be usable.
+        local enforces = (posture == "neutral") and not (ofBlue and ofRed)
         local usable = (not enforces)
             or (raw.fighterTemplate ~= nil and has_origin)
         if #verts >= 3 and usable then
@@ -90,6 +94,8 @@ for _, raw in ipairs(data.zones or {}) do
                 country = tostring(raw.country or "Neutral"),
                 posture = posture,
                 enforces = enforces,
+                permits_blue = ofBlue,
+                permits_red = ofRed,
                 field = raw.field and tostring(raw.field) or nil,
                 spawn_x = spawn_x,
                 spawn_z = spawn_z,
@@ -544,7 +550,12 @@ local function scan_group(group, side, now)
     local p = lead:getPoint()
     local state = intruders[name]
     for zi, zone in ipairs(zones) do
+        -- This intruder's own side decides: a country open to blue and closed
+        -- to red must wave one through and intercept the other.
+        local permitted = (side == coalition.side.BLUE) and zone.permits_blue
+            or (side == coalition.side.RED) and zone.permits_red
         if zone.enforces
+            and not permitted
             and p.y < zone.floor_m
             and in_bbox(zone, p.x, p.z)
             and in_polygon(zone, p.x, p.z) then

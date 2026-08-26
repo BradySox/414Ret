@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import math
 from datetime import timezone
 from pathlib import Path
@@ -54,9 +55,36 @@ class ConflictTheater:
             state["landmap_path"] = self.landmap_path_for_terrain_name(
                 state["terrain"].name
             )
-        state.setdefault("neutral_border_zones", [])
+        # §96: a save with no borders picks up the terrain's shipped ones. That
+        # covers both the save made before the feature existed and the one made
+        # on a campaign that authors none -- which is 52 of the 54 campaigns on
+        # real-world maps, so without this the feature reaches almost nobody
+        # already mid-campaign. A campaign that authors its own always wins,
+        # because those are already in the pickle.
+        if not state.get("neutral_border_zones"):
+            state["neutral_border_zones"] = self._terrain_border_zones(
+                state["terrain"].name
+            )
         self.__dict__ = state
         self.landmap = load_landmap(self.landmap_path)
+
+    @staticmethod
+    def _terrain_border_zones(terrain_name: str) -> list[NeutralBorderZone]:
+        """Shipped border zones for a terrain. Never raises: a bad file costs
+        the borders, never the save."""
+        from game.theater.terrainborders import load_terrain_borders
+
+        zones = []
+        try:
+            for entry in load_terrain_borders(terrain_name):
+                zone = NeutralBorderZone.from_yaml(entry)
+                if zone is not None:
+                    zones.append(zone)
+        except Exception:
+            logging.warning(
+                "Could not load shipped borders for %s.", terrain_name, exc_info=True
+            )
+        return zones
 
     @staticmethod
     def landmap_path_for_terrain_name(terrain_name: str) -> Path:

@@ -10181,6 +10181,13 @@ target changes.
   (bbox + ray-cast point-in-polygon on terrain XY), per-group dwell, the warn → shadow
   → escalate ladder, the SAM wake, exit-grace stand-down, and F10 border polylines
   (default on — the §86 invisible-bubble lesson).
+- **A campaign needs to author nothing.** Borders ship per terrain in
+  `resources/borders/<terrain>.yaml` (Afghanistan, Syria, Caucasus, Iraq, Kola,
+  Persian Gulf), built by `tools/build_terrain_borders.py`; posture and airframe
+  resolve from `national_postures.yaml` against the campaign's date. A campaign
+  that declares its own `neutral_border_defense:` block overrides the terrain
+  file **completely** — never merged. Saves already in progress pick the borders
+  up on load, so no re-roll is needed.
 - **Borders are real data, never hand-traced** — `tools/neutral_border_geo.py`:
   public-domain country GeoJSON → clip to the map → optional corridor cut →
   shapely simplify to a vertex budget → `Point.from_latlng` → terrain XY yaml.

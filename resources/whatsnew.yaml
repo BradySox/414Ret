@@ -14,6 +14,23 @@
 
 entries:
   - date: 2026-08-25
+    title: Every campaign gets its neighbours, with no setup
+    change: >-
+      Turning on neutral border defense used to do nothing unless the campaign
+      had borders written into it by hand -- which only two of them did. The
+      borders now ship with the map instead, so any campaign on Afghanistan,
+      Syria, the Caucasus, Iraq, Kola or the Persian Gulf draws its neighbours
+      automatically. Who each country sides with, whether it lets you through,
+      and even which fighter it scrambles are all worked out from the campaign's
+      date -- so the same map is right in 1975 and in 2025. Campaigns already in
+      progress pick the borders up on load; you do not need to start a new one.
+    watch: >-
+      Load any save on one of those six maps with the setting and the plugin on,
+      and tick the Neutral airspace layer. On a 2006 Afghanistan campaign you
+      should see Iran, Uzbekistan and India shaded (they will intercept you) and
+      Pakistan, Turkmenistan and Tajikistan faint (transit permitted).
+    row: B100
+  - date: 2026-08-25
     title: The nations around the war are on the map
     change: >-
       Every country bordering the war is now drawn with its real border, in

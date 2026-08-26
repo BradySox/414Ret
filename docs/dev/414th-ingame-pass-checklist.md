@@ -25,7 +25,7 @@ so the two docs don't drift.
 
 ## Outstanding rows at a glance
 
-74 rows need a live pass. Full detail is under each `###` heading below —
+78 rows need a live pass. Full detail is under each `###` heading below —
 search the row id. `☐` untested · `◐` flown but not under the conditions that
 stress it · `✗` fail signature reproduced in-game.
 
@@ -149,6 +149,12 @@ stress it · `✗` fail signature reproduced in-game.
 | B95 | Saving the air wing keeps both coalitions | air wing config | ☐ |
 | B96 | Iron Gate's fields fill without an aircraft losing its stand | Iron Gate | ◐ |
 | B97 | One salvo, and only the targeted flight breaks | §94 | ☐ |
+| B100 | The ramp still holds the squadrons authored against it | DCS 2026-08-26 parking rework | ☐ |
+| B101 | The F-4E's Shrike and gun pod are still on the jet | §71 | ☐ |
+| B102 | A low ingress against an SA-2/SA-3 belt is still flyable | DCS 2026-08-26 SAM guidance | ☐ |
+| B103 | BMP-3s in a firefight still fire like armour, not infantry | §9 TIC | ☐ |
+| B104 | The Viper's ROE tab declares the campaign's own sides | §74 | ☐ |
+| B105 | The Apache's cartridge loads: route, targets and the front line on the TSD | §74 | ☐ |
 
 ---
 
@@ -6368,3 +6374,216 @@ exercised by any test here.
   itself calls "bullseye 000 for 0". Standing the point off the field was considered and
   declined (it would stop being a findable landmark). If the degenerate calls actually
   bite in the air, that decision reopens.
+
+### B100 — The ramp still holds the squadrons authored against it · DCS 2026-08-26 parking rework · ☐ UNTESTED
+
+The 2026-08-26 DCS patch rebuilt AI taxiway pathing to use aircraft dimensions, and says
+in its own words that this changes the placement of parking spaces and increases the
+number of slots for large aircraft. Iron Gate and Northern Russia both had every
+squadron's `size:` hand-fitted to a stand count within the last month, so both are
+sitting on numbers that may no longer be true. Related to **B96**, which is the same
+question asked before the rework.
+
+**Setup.** Start a new game on Caucasus - Iron Gate, then again on Northern Russia. Both
+are authored to fill; that is the point of the row. ~20 min for the pair.
+
+**Pass.** Every squadron on both sides comes up with the aircraft its campaign file
+asks for. `retribution.log` carries no "No parking slots available" line at generation.
+A C-130J or KC-135 tasked out of a field that has large stands spawns on one rather than
+falling through to a runway or air start.
+
+**Fail signatures, and what each means:**
+
+- **A squadron comes up empty** — the base is oversubscribed. Squadrons fill in list
+  order until the ramp runs out, so the ones at the bottom get nothing and do it
+  silently. This is what cost Northern Russia its only AWACS and only tanker before the
+  sizes were authored. Count the base's slots in the ME and re-fit the `size:` values.
+- **A large aircraft air-starts or runway-starts where it used to sit on a stand** —
+  `flightgroupspawner.py:277`'s `width > 40` classification is still ours and unchanged,
+  so this means the slot supply beneath it moved. Check `ground_spawns_large` for that
+  control point.
+- **Aircraft spawn on top of each other, or taxi into each other leaving the stands** —
+  the terrain's parking data and pydcs's copy of it have diverged. That is a pin
+  problem, not a campaign problem; re-export before touching any campaign file.
+
+**Watch for — the constraint this does not lift.** §1's per-base backstop EWR stays
+removed. It was cut because a ground unit sat on taxiways and broke AI taxi routing, and
+the fact that the routing code was rewritten is not evidence the constraint lapsed.
+
+### B101 — The F-4E's Shrike and gun pod are still on the jet · §71 · ☐ UNTESTED
+
+**Both halves are confirmed against the updated install (2.9.29.27278) and both fixes
+are IN** -- the pydcs pin moved to `bfdbb4d` the same day and the extension was trimmed
+to match. Full detail in
+[414th-dcs-update-2026-08-26-notes.md](design/414th-dcs-update-2026-08-26-notes.md) §2.2
+and §2.3.
+
+- **AGM-45B.** Stock now declares `{LAU_34_AGM_45B}` itself
+  (`CoreMods/aircraft/AircraftWeaponPack/anti-radiation missiles.lua:1252`). §71 injects
+  the same clsid with AGM-45A's settings borrowed, through a bare `setattr` with no
+  collision check, after import — so ours wins, against a missile whose FM this patch
+  reworked from scratch.
+- **SUU-23.** HB split the pod into `{SUU_23_POD_Wing}` / `{SUU_23_POD_Centerline}` and
+  its migration table covers pylons 1, 7 and 13 only. §71 wires the pod to pylons **3 and
+  11**, which are outside that table.
+
+The payload Lua is **not** at risk: `resources/customized_payloads/F-4E.lua` and
+`F-4E-45MC.lua` name no SUU-23 clsid at all. The earlier draft of this row said to grep
+them against the export; that has been done and they are clean.
+
+**Setup.** Any campaign fielding the F-4E-45MC — Red Tide or Desert Storm. Frag a SEAD
+flight and a flight carrying the gun pod, generate, and look at both jets in the ME
+before flying. ~15 min.
+
+**Pass.** The Weasel jet carries Shrikes on the rail it is authored for and the AGM-78
+fits still resolve. The gun-pod fit shows a SUU-23 on the inner wing station. In the air,
+a Shrike launches and guides.
+
+**Fail signatures, and what each means:**
+
+- **The gun pod is missing from the inner wing** — the OVGME pack is not applied, or its
+  rebased copy no longer declares the pod on 3/11. The repo side already wires
+  `{SUU_23_POD_Wing}` there (it had been wiring the **Centerline** variant since the July
+  sync -- pydcs's attribute shuffle, fixed 2026-08-26).
+- **The Shrike is there but behaves like the old missile** — our injected dict is
+  overriding the native entry. Delete the `WeaponsF4EExpanded` AGM-45B entry and keep the
+  pylon wiring; it resolves natively once the pin moves.
+- **The pylon rejects the store in the ME** — the LAU-34 rail's legality changed. §71's
+  design rule is that fits are gated on live pylon legality, so this is a data refresh.
+
+**The remaining blocker is the OVGME pack, not the repo.** The planner side is fixed
+and test-verified; but the 414th's `Expanded_F-4E_Weapons_Pack` OVGME mod is unapplied
+(the update overwrote it), so in DCS the pack's own stores do not exist until its four
+files are rebased onto the new stock and re-applied. Fly this row after that rebase.
+
+**Watch for.** The 414th's `Expanded_F-4E_Weapons_Pack` OVGME mod was overwritten by the
+update and is currently unapplied. Re-enabling the July copy reverts ED's AGM-45B and
+SUU-23 work — see the note's §2.4 before turning it back on.
+
+### B102 — A low ingress against an SA-2/SA-3 belt is still flyable · DCS 2026-08-26 SAM guidance · ☐ UNTESTED
+
+SA-2's V755 and SA-3's 5V27 gained the missing K-method of guidance (half-lead, elevated
+by a constant) specifically for low-level targets, and the SA-8's 9M33 moved to a new
+CFD-derived flight model with CLOS guidance enabled. Nothing in this tree changes —
+threat rings come from pydcs sensor data and guidance method is not in it — so this row
+exists to find out whether a campaign profile that used to work still does.
+
+**Setup.** Red Tide, Vietnam or Desert Storm — any campaign whose front is screened by
+legacy MERAD. Fly one strike at the altitude the squadron normally ingresses at, against
+a defended target. Do not change the campaign. ~25 min.
+
+**Pass.** Going low still trades radar exposure for a survivable run, and the fork's own
+numbers are unaffected: the threat rings on the kneeboard match what actually engages,
+and §60's two-guidance-radar doubling still means one HARM does not kill a site.
+
+**Fail signatures, and what each means:**
+
+- **Low ingress is now simply lethal where it was survivable** — this is a DCS balance
+  change, not a fork defect, and the fix is doctrine rather than code. Say so on the fly
+  card before anyone re-tunes a campaign's SAM belt to compensate.
+- **The kneeboard's threat ring no longer predicts where you get shot at** — the ring is
+  drawn from sensor detection range, and the change was to missile guidance, so the two
+  should still agree. If they do not, the export is stale.
+- **§60-doubled sites die to one HARM again** — unrelated to this patch, but it is the
+  cheapest thing to notice on the same sortie. Check the site actually generated two
+  track radars.
+
+**Watch for.** The Patriot's DLZ was corrected against ballistic targets in the same
+patch. That only matters where a campaign fields both Patriot and §49's mobile theatre
+missiles — Desert Storm — and nobody has looked at it.
+
+### B103 — BMP-3s in a firefight still fire like armour, not infantry · §9 TIC · ☐ UNTESTED
+
+DCS 2.9.29 folded the CurrentHill pack into core. `CHAP_BMP3.lua` keeps the vanilla id
+`BMP-3` but renames its DisplayName to `IFV BMP-3 [CH]`. TIC keys its per-unit profile
+table by DisplayName (`TIC_v1.1.lua:512` → `:2300`) and swallows a miss with `or {}`, so
+the BMP-3 entry's `SalvoQty = 1` silently reverted to the generic profile — BMP-3s
+started firing at the infantry salvo rate. Fixed by falling back to the name with a
+trailing vendor suffix stripped; verified on Lua 5.1 that both spellings resolve.
+
+The id is unchanged, so no layout or unit yaml was ever at risk and
+`tests/test_layout_unit_types.py` stays green. Detail in
+[414th-dcs-update-2026-08-26-notes.md](design/414th-dcs-update-2026-08-26-notes.md) §2.1.
+
+**Setup.** Any campaign whose red order of battle fields the BMP-3 with TIC enabled —
+Red Tide is the readiest. Fly a CAS or TIC sortie over a contested front section and
+watch a BMP-3 group engage. ~20 min.
+
+**Pass.** BMP-3 groups fire in single aimed shots, visibly slower than a BTR-80 or
+BTR-82A group in the same firefight. The distinction between IFV and APC fire is
+audible and visible from the cockpit.
+
+**Fail signatures, and what each means:**
+
+- **BMP-3s pour fire like APCs** — the fallback did not match. Check the live
+  DisplayName with `getDesc().displayName`; if ED used a different suffix shape than
+  ` [CH]`, the pattern `%s*%[%u+%]$` needs widening.
+- **No unit fires at its profile rate any more** — the fallback broke the exact-match
+  path. That would mean the `or` chain is returning the wrong table; revert to
+  `profile[self:GetDisplayName()] or {}` and re-test.
+- **The T-90 behaves oddly too** — `CHAP_T90A.lua` also claims a vanilla id (`T-90`,
+  DisplayName `MBT T-90A [CH]`). TIC does not key it today, so this would mean something
+  else keys by DisplayName. Grep the plugin tree before assuming it is this fix.
+
+**Note.** TIC has no headless harness coverage — `tests/lua/` covers `vietnamops` only.
+Nothing catches the next DisplayName rename, which is the general risk this row stands
+for.
+
+### B104 — The Viper's ROE tab declares the campaign's own sides · §74 · ☐ UNTESTED
+
+The cartridge now carries `MPD.ROE`: the 48-row Air Target Data Table with
+sovereignty derived from the campaign's order of battle (blue-only families
+FRIENDLY, red-only HOSTILE, shared/unflown UNKNOWN). Rows ship as
+`{group_name, sovereignty}` only; the jet compiles membership from its own
+`threat_base.lua`. Enum settled against `ROE_defs.lua` and a DM-set cartridge.
+Detail in the features doc §74 and the DCS-update note §4.
+
+**Setup.** Any campaign with a client F-16C — Iron Gate or Northern Russia. Fly a
+Viper slot, MFD → DTE page: confirm the cartridge loaded, then open the ROE tab
+(MMC format page). ~10 min on the ramp, no sortie needed.
+
+**Pass.** The ATDT shows this campaign's sides: the families blue flies read
+FRIENDLY, red's read HOSTILE, and a family both fly (Northern Russia's MiG-23…
+check the campaign) reads UNKNOWN. In the air, a friendly type the FCR types out
+(NCTR) or a TNDL track draws the green circle without an interrogation.
+
+**Fail signatures, and what each means:**
+
+- **The tab shows all UNKNOWN** — the ROE section did not load. Check the DTE
+  page took the cartridge at all (if the route loaded but ROE did not, the
+  section name or row shape is wrong — diff a saved cartridge against ours).
+- **A family reads the wrong side** — the membership mirror disagrees with the
+  jet's `threat_base`. Run `test_atdt_ids_all_exist_in_pydcs` first; if green,
+  the id belongs to a different family jet-side than repo-side.
+- **Wrong colours in the air but the right table on the ground** — not this
+  feature. The ROE tree needs two factors for Hostile and TNDL for Mode 4; on a
+  pre-datalink campaign red tops out at Suspect yellow by design.
+
+### B105 — The Apache's cartridge loads: route, targets and the front line on the TSD · §74 · ☐ UNTESTED
+
+`apache.py` is the fourth §74 builder: WPTHZ waypoints W01.., the ALPHA route in
+the editor's own leg shape, fogged SAM sites as TGT points, the FLOT as TSD
+lines. Partitions the planner computes nothing for are omitted or ship as the
+ME sample's empty skeleton — **that omission is the one structural risk**: the
+DTU loader indexing an absent partition would fail the whole load, and no
+headless test can see it.
+
+**Setup.** Iron Gate or COIN, a client AH-64D flight. Spawn in, let the DTU
+auto-load, TSD → check waypoints/route; PLT and CPG both. ~15 min.
+
+**Pass.** The route shows as W01.. with the briefed names on point review, the
+ALPHA route sequences them with sane leg speeds/ETAs, known SAM sites appear as
+T-points named for their site, and the front line draws. Nothing else about the
+jet's setup regressed (radios still tune, weapons page sane).
+
+**Fail signatures, and what each means:**
+
+- **Nothing loads / DTU error** — the loader indexed an omitted partition. Save
+  a cartridge from the ME with only NAV touched and diff its top-level keys
+  against ours; add the missing empty skeleton.
+- **Points load but the route is empty** — the Routes element shape drifted
+  from the editor's add-point handler (`{num, alt, speed, dist, eta, fix}`).
+- **Route ETAs are nonsense** — the first-leg ETA anchor (TOS seconds) or the
+  kts conversion. Compare one leg by hand: dist / (kts × 0.514).
+- **T-points sit on unengaged sites** — the recon fog leaked; that is a §3
+  regression, not a DTC one (`known_enemy_threat_sites` gates on `known_for`).

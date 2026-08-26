@@ -7545,7 +7545,7 @@ teeth:
 **Deliberately not touched:** the `TACAN Channel Presel` typo is pydcs mirroring the
 DCS module data (`planes.py`, alongside `ILS Channel Presel`) — not ours to patch.
 
-## §74 — Native DTC data pre-population (F/A-18C + F-16C + F-14B(U))
+## §74 — Native DTC data pre-population (F/A-18C + F-16C + F-14B(U) + AH-64D)
 
 Design note: [`docs/dev/design/414th-dtc-cartridge-notes.md`](design/414th-dtc-cartridge-notes.md)
 (the mined format reference — read before touching the JSON shapes). Supersedes the
@@ -7837,6 +7837,41 @@ stations and empty slots, the two elevation units and the single-field altitude
 rule, the LAR corners, TIS package membership, per-section omission, generator
 binding). In-game pass:
 checklist **B91** — its first step is an ME import, which needs no sortie.
+
+**The F-16C ROE table (added 2026-08-26).** The 2.9.29 patch's ROE tab reads a
+per-type sovereignty table (`MPD.ROE`), and the campaign is the one thing that can
+fill it: `game/missiongenerator/dtc/roedata.py` derives the 48-row Air Target Data
+Table from both coalitions' air wings — a family only blue flies is FRIENDLY (1),
+only red HOSTILE (2), flown by both or nobody UNKNOWN (3, the jet's own default).
+The family-level collision rule is the point: one side's variant can never declare
+the other side's variant of the same family friendly. Rows carry **only**
+`{group_name, sovereignty}` — the jet's `make_ROE_table` compiles membership from
+its own `threat_base.lua` and reads nothing else from the cartridge, which also
+resolves the wsType families (F-15C, MiG-23, E-3…) jet-side. The repo's membership
+mirror exists only to *derive* the verdicts and is pinned to pydcs by
+`test_atdt_ids_all_exist_in_pydcs`, so a DCS rename fails loudly. The enum was
+settled the day the tab shipped: DM-set rows in the ME's editor, corroborated by
+`ROE_defs.lua`'s own `sovereigntyName` table. Toggle: **ROE air target table** on
+the Edit Flight DTC tab (`DtcOptions.roe_table`). Pre-datalink campaigns cap red
+declarations at a yellow Suspect (Mode 4 needs TNDL); the payoff there is the green
+friendlies, which is the blue-on-blue half. In-game pass: checklist **B104**.
+
+**The AH-64D cartridge (added 2026-08-26).** `apache.py`, the fourth builder on the
+same pattern, from the 2.9.29 DTC (schema:
+`CoreMods/aircraft/AH-64D/DTC` + an ME-saved sample; the shape audit is in the
+DCS-update note §3). Emits `NAV.Mission_1`: the route as **WPTHZ** waypoints
+W01–W50 (name in `note`, ground elevation, map metres), the **ALPHA route** over
+them in the editor's own element shape (`{num, alt, speed kts, dist m, eta s,
+fix}`, ETA anchored on the first TOS), fogged enemy SAM sites as **TGT** points
+T01–T50 (site name in `note` — the TSD draws no ring, so no radius exists to
+carry), and the FLOT as TSD **Lines** (`type_num` 6). Everything the planner
+computes nothing for ships as the sample's empty skeleton (Zones/Areas/CTRLM) or
+is omitted (Laser, Radios, Weapon, MISC, Presets, IDM) so the aircraft's defaults
+stand — the Viper precedent. **ADF is deliberately empty**: the sample's `Freq`
+integers carry no stated unit, so the CSAR beacon slot (G33) waits on a flown
+round-trip. Old saves are safe: `DtcOptions.__setstate__` defaults any field the
+pickle predates. In-game pass: checklist **B105** — the risk it exists for is the
+DTU loader indexing a partition the cartridge omits.
 
 ## §75 — Custom victory conditions
 

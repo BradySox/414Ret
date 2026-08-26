@@ -8,6 +8,7 @@ origin: USA
 role: Transport
 price: 5
 cabin_size: 24
+airlift_capacity: 1  # 2.7 t payload
 variants:
   C-47 Skytrain: null
   C-47 Dakota: null

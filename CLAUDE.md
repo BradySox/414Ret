@@ -123,7 +123,17 @@ Read before touching a campaign's `.yaml`, `.miz` or build tool.
 - **COIN** — `414th-coin-insurgent-replenishment-notes.md`, `-reinfiltration-notes.md`
 - **Naval** — `414th-cruise-missile-raids-notes.md`, `414th-naval-magazines-notes.md`,
   `414th-carrier-deck-decor-notes.md`
-- **Ground / frontline** — `414th-tic-dynamic-fronts-notes.md`
+- **Ground / frontline** — `414th-tic-dynamic-fronts-notes.md`,
+  `414th-airlift-capacity-notes.md` (**BUILT 2026-08-26** — airlift capacity was one
+  constant, `1 if helicopter else 2`, times a raw vehicle count; both halves are now
+  graded in ~7-tonne lift slots, cargo cost from the existing `class:` field and
+  aircraft capacity from an optional `airlift_capacity`. **`cabin_size` is NOT this**
+  — it is clamped CTLD infantry seats and the C-17A and An-26B both read 24. The
+  fallback is the old constant, so unauthored airframes are unchanged),
+  `414th-het-convoy-notes.md` (**scoping only, nothing built** — a ground transfer
+  spawns its own cargo, so ten T-90Ms road-march themselves between bases; heavy
+  equipment transporters on §78's existing `ConvoyUnit.shipment` manifest model.
+  Needs the 2026-08-26 patch's SLT-50/HX81, so it is gated on the pydcs re-export)
 - **AI behaviour** — `414th-ai-threat-reaction-notes.md` (**§94, adopted 2026-08-24 from
   juanjux #63** — why the baseline is Passive Defense, the `aiReactionExempt` protocol any
   plugin setting reaction-on-threat must use, why we took his head and not the merged PR,
@@ -200,6 +210,13 @@ Read before touching a campaign's `.yaml`, `.miz` or build tool.
   sections still needing sub-headings, and **how to replace a section without destroying its
   neighbours** — the first attempt silently deleted four live sections.
 - **Process** — `414th-verification-cadence-notes.md` (the fly-card throttle, proposed),
+  `414th-dcs-update-2026-08-26-notes.md` (**the 2026-08-26 DCS patch triaged against this
+  tree** — the stale pydcs pin that blocks everything, three silent-breakage candidates
+  (the replaced BMP-3, the §71 AGM-45B clsid collision, the F-4E SUU-23 migration), the
+  AH-64D DTC as §74's next airframe, the F-16C ROE tab whose Air Target Data Table is
+  derivable from the campaign's own order of battle (**and whose shipped default marks
+  blue's own JF-17 hostile on Northern Russia**), and the rows to re-run. Written from
+  the patch notes alone — **nothing in it is verified against an updated install**),
   `414th-dcs-olympus-notes.md`, `414th-ui-redesign-directions.md` (+ `-mockups.html`),
   `414th-juanjux-fork-watch-notes.md` (**the second fork we watch** — his adoption ledger,
   what is already ours, and the OPFOR-AI precedent for seam 7),

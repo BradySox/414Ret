@@ -1,3 +1,4 @@
+airlift_capacity: 1  # 3 t payload
 description: The An-30M is a military transport aircraft.
 price: 15
 variants:

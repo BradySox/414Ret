@@ -327,6 +327,14 @@ class AircraftType(UnitType[Type[FlyingType]]):
     #: docs/dev/design/414th-datalink-era-notes.md.
     datalink_introduced: Optional[int] = None
 
+    #: Lift slots this airframe can carry on a ground-unit transfer, from the
+    #: data file's ``airlift_capacity``. One slot is about seven tonnes; see
+    #: game/data/airliftcapacity.py for the anchor and the cargo costs. ``None``
+    #: (the default, and the case for every airframe that is not a transport)
+    #: falls back to the pre-2026-08-26 constant. Deliberately NOT ``cabin_size``
+    #: -- that counts CTLD infantry seats and is clamped for gameplay.
+    airlift_capacity: Optional[int] = None
+
     _by_name: ClassVar[dict[str, AircraftType]] = {}
     _by_unit_type: ClassVar[dict[type[FlyingType], list[AircraftType]]] = defaultdict(
         list
@@ -842,7 +850,35 @@ class AircraftType(UnitType[Type[FlyingType]]):
                 data.get("date_gated_properties")
             ),
             datalink_introduced=cls._parse_datalink_introduced(data),
+            airlift_capacity=cls._parse_airlift_capacity(data),
         )
+
+    @staticmethod
+    def _parse_airlift_capacity(data: dict[str, Any]) -> Optional[int]:
+        """The ``airlift_capacity`` in lift slots, or None when unauthored.
+
+        A malformed or non-positive value is dropped with a warning rather
+        than raising, matching ``_parse_datalink_introduced``: a typo in one
+        unit file must not take the game down, and None restores the old
+        constant. Zero is refused because it would mean "cannot airlift", a
+        claim the transport task list already makes.
+        """
+        raw = data.get("airlift_capacity")
+        if raw is None:
+            return None
+        try:
+            capacity = int(raw)
+        except (TypeError, ValueError):
+            logging.warning(
+                "Ignoring non-integer airlift_capacity %r in aircraft data", raw
+            )
+            return None
+        if capacity < 1:
+            logging.warning(
+                "Ignoring non-positive airlift_capacity %r in aircraft data", raw
+            )
+            return None
+        return capacity
 
     @staticmethod
     def _parse_datalink_introduced(data: dict[str, Any]) -> Optional[int]:

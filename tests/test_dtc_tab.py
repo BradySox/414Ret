@@ -79,6 +79,7 @@ def test_section_checkboxes_write_the_options() -> None:
         "threat_rings",
         "destinations",
         "jdam_targets",
+        "roe_table",
     }
     assert all(box.isChecked() for box in by_attr.values())
 

@@ -11,6 +11,7 @@ price: 15
 role: Transport
 max_range: 1000
 cabin_size: 24 #TODO: Copied from Hercules, unsure if needed
+airlift_capacity: 3  # 19 t payload
 radios:
   intra_flight: AN/ARC-222
   inter_flight: AN/ARC-164

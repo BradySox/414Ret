@@ -57,6 +57,10 @@ entries:
       outlines carry more detail while using fewer points than before. If the
       F10 map ever feels slow to open, the border drawing has its own off
       switch in the plugin options.
+    watch: >-
+      On Kola, check that Norway's border follows the fjords instead of cutting
+      straight across them, and that where two countries meet you see one line
+      rather than two running side by side.
     row: B100
   - date: 2026-08-26
     title: The map draws the country the war is in
@@ -145,6 +149,20 @@ entries:
       the direct line clip the western block; then drop a waypoint around
       30.5N 65.0E and watch it go clean.
     row: B100
+  - date: 2026-08-26
+    title: Apache data cartridge + the Viper's ROE tab filled in
+    change: >-
+      The AH-64D now spawns with its cartridge pre-loaded: the briefed route as
+      named waypoints with the ALPHA route sequenced over them, found enemy SAM
+      sites as named target points, and the front line on the TSD. The F-16C's
+      new ROE tab is set from the campaign itself: families only your side
+      flies are FRIENDLY, enemy-only HOSTILE, shared or unflown UNKNOWN.
+    watch: >-
+      Apache: TSD after spawn - W-points with briefed names, the ALPHA route,
+      T-points on known SAMs. Viper: DTE load, then the MMC ROE tab - your
+      types green-declared, red's hostile-declared.
+    row: B105
+    pr: "992"
   - date: 2026-08-23
     title: The front line sits on ground the armour can hold
     change: >-

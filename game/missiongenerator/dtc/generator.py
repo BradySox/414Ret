@@ -1,7 +1,7 @@
 """DTC cartridge generation pass (§74).
 
 Builds one cartridge **per blue client flight** of a DTC-capable airframe
-(FA-18C, F-16C and F-14B(U)), binds it to the flight's client units with
+(FA-18C, F-16C, F-14B(U) and AH-64D BLK.II), binds it to the flight's client units with
 ``AutoLoad``, and appends the JSON files to the saved miz. Per-flight rather than per-type because each flight flies its
 own route -- a package's four Hornet flights get four cartridges, each loading
 its own steerpoints while sharing the mission comm plan and SA picture.
@@ -23,6 +23,7 @@ from game.missiongenerator.dtc.cartridge import (
     append_cartridges_to_miz,
     attach_cartridge_to_unit,
 )
+from game.missiongenerator.dtc.apache import APACHE_UNIT_TYPE, build_apache_cartridge
 from game.missiongenerator.dtc.hornet import HORNET_UNIT_TYPE, build_hornet_cartridge
 from game.missiongenerator.dtc.tomcat import (
     TOMCAT_UNIT_TYPE,
@@ -45,7 +46,7 @@ CartridgeBuilder = Callable[..., Optional[DtcCartridge]]
 #: DCS unit type id -> cartridge builder. Capability is the unit DB's ``DTC``
 #: flag plus a matching ``<module>/DTC/<type>_DTC.lua`` -- the descriptor folder
 #: alone is not enough (the CH-47F ships one and sets ``DTC = false``). The stock
-#: capable set is ``FA-18C_hornet``, ``F-16C_50`` and ``F-14BU``. The CJS Super
+#: capable set is ``FA-18C_hornet``, ``F-16C_50``, ``F-14BU`` and (since DCS 2.9.29) ``AH-64D_BLK_II``. The CJS Super
 #: Hornets also qualify but are deliberately not built (removed 2026-08-22: their
 #: descriptor has no SA table, and everything else a cartridge could give them
 #: already reaches the jet through the miz). See the design note.
@@ -53,6 +54,7 @@ CARTRIDGE_BUILDERS: dict[str, CartridgeBuilder] = {
     HORNET_UNIT_TYPE: build_hornet_cartridge,
     VIPER_UNIT_TYPE: build_viper_cartridge,
     TOMCAT_UNIT_TYPE: build_tomcat_cartridge,
+    APACHE_UNIT_TYPE: build_apache_cartridge,
 }
 
 

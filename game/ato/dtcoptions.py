@@ -42,6 +42,15 @@ class DtcOptions:
     destinations: bool = True
     #: Pre-planned target points on the weapon stations (F-14B(U) only).
     jdam_targets: bool = True
+    #: The ROE tab's Air Target Data Table, derived from the campaign's own
+    #: order of battle (F-16C only -- blue-only families FRIENDLY, red-only
+    #: HOSTILE, shared or unflown UNKNOWN).
+    roe_table: bool = True
+
+    def __setstate__(self, state: dict[str, object]) -> None:
+        """A field added after a save was written unpickles to its default."""
+        self.__dict__.update(DtcOptions().__dict__)
+        self.__dict__.update(state)
 
     def resolve_enabled(self, campaign_default: bool) -> bool:
         """The effective on/off for this flight."""
@@ -62,5 +71,6 @@ class DtcOptions:
                 self.threat_rings,
                 self.destinations,
                 self.jdam_targets,
+                self.roe_table,
             )
         )

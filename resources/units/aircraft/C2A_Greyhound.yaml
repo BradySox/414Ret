@@ -1,3 +1,4 @@
+airlift_capacity: 1  # 4.5 t payload
 carrier_capable: true
 description: "The Grumman C-2 Greyhound is a twin-engine, high-wing cargo aircraft designed to carry supplies, mail, and passengers to and from aircraft carriers of the United States Navy. 
   Its primary mission is carrier onboard delivery (COD). The aircraft provides critical logistics support to carrier strike groups. The aircraft is mainly used to transport high-priority 

@@ -415,6 +415,9 @@ class ThreatSite:
     """One enemy air-defense site the blue player's map already shows exact."""
 
     label: str
+    #: The site's full map name; the Apache's TGT notes want it where the
+    #: F-16 SA page wants the 3-char label.
+    name: str
     x: float
     y: float
     range_m: float
@@ -494,6 +497,7 @@ def known_enemy_threat_sites(game: Game, viewer: Player) -> list[ThreatSite]:
             sites.append(
                 ThreatSite(
                     label=_threat_label(tgo.name, unit_names),
+                    name=str(tgo.name),
                     x=tgo.position.x,
                     y=tgo.position.y,
                     range_m=threat_range.meters,

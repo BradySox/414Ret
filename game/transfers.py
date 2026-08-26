@@ -55,6 +55,7 @@ from game.ato.closestairfields import ObjectiveDistanceCache
 from game.ato.flight import Flight
 from game.ato.flighttype import FlightType
 from game.ato.package import Package
+from game.data.airliftcapacity import airlift_capacity, lift_cost, units_fitting_in
 from game.dcs.aircrafttype import AircraftType
 from game.dcs.groundunittype import GroundUnitType
 from game.naming import namegen
@@ -335,7 +336,12 @@ class AirliftPlanner:
                         and squadron.has_available_pilots
                         and self.transfer.transport is None
                     ):
-                        self.create_airlift_flight(squadron)
+                        # A squadron whose aircraft cannot lift even the next
+                        # vehicle returns 0. Without this break the loop would
+                        # spin forever on it, because no transport ever gets
+                        # assigned and no aircraft are ever consumed.
+                        if not self.create_airlift_flight(squadron):
+                            break
         if self.package.flights:
             self.package.set_tot_asap(now)
             self.game.ato_for(self.for_player).add_package(self.package)
@@ -348,9 +354,19 @@ class AirliftPlanner:
             EventStream.put_nowait(events)
 
     def create_airlift_flight(self, squadron: Squadron) -> int:
+        """Add one transport flight for this transfer, or return 0 if it cannot.
+
+        Capacity is counted in lift slots rather than in vehicles, so a C-17 and
+        a Gazelle no longer differ by one unit and a tank no longer costs what an
+        infantry squad costs. See game/data/airliftcapacity.py.
+        """
         available_aircraft = squadron.untasked_aircraft
-        capacity_each = 1 if squadron.aircraft.dcs_unit_type.helicopter else 2
-        required = math.ceil(self.transfer.size / capacity_each)
+        capacity_each = airlift_capacity(squadron.aircraft)
+        required_slots = sum(
+            lift_cost(unit_type) * count
+            for unit_type, count in self.transfer.units.items()
+        )
+        required = math.ceil(required_slots / capacity_each)
         flight_size = min(
             required,
             available_aircraft,
@@ -361,12 +377,19 @@ class AirliftPlanner:
         # are disabled.
         if not squadron.can_fulfill_flight(flight_size):
             flight_size = squadron.max_fulfillable_aircraft
-        capacity = flight_size * capacity_each
+        if flight_size < 1:
+            return 0
 
-        if capacity < self.transfer.size:
+        carriable = units_fitting_in(self.transfer.units, flight_size * capacity_each)
+        if not carriable:
+            # This airframe cannot lift the next vehicle in the transfer. Leave
+            # the transfer alone for a squadron that can, or for a road or ship.
+            return 0
+
+        if carriable < self.transfer.size:
             transfer = self.game.coalition_for(
                 self.for_player
-            ).transfers.split_transfer(self.transfer, capacity)
+            ).transfers.split_transfer(self.transfer, carriable)
         else:
             transfer = self.transfer
 

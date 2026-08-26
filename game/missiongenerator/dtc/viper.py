@@ -19,6 +19,10 @@ Sections emitted (schema mined from ``CoreMods/aircraft/F-16C/DTC``):
 * ``MPD.DEST`` -- friendly recovery fields as Destination steerpoints 81-99,
   labelled with the HSD's 3-character Destination text, plus the hostile field
   the flight is working over when there is one within 10 NM of the target.
+* ``MPD.ROE`` -- the ROE tab's Air Target Data Table derived from the
+  campaign's order of battle (see ``roedata``). Rows carry only
+  ``{group_name, sovereignty}``: the jet's own ``make_ROE_table`` compiles
+  membership from its ``threat_base`` and reads nothing else from the file.
 """
 
 from __future__ import annotations
@@ -26,6 +30,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 from game.missiongenerator.dtc.cartridge import DtcCartridge
+from game.missiongenerator.dtc.roedata import build_atdt
 from game.missiongenerator.dtc.common import (
     SupportTrack,
     leg_altitude,
@@ -366,6 +371,7 @@ def build_viper_cartridge(
         or options.flot_and_zones
         or options.threat_rings
         or options.destinations
+        or options.roe_table
     ):
         data["MPD"] = {
             "terrain": terrain,
@@ -380,6 +386,11 @@ def build_viper_cartridge(
             "mirror_DEST": False,
             "DEST": _build_dest(flight, game) if options.destinations else [],
         }
+        if options.roe_table:
+            data["MPD"]["ROE"] = {
+                "Settings": {"TypeSovereignty": True, "Mode4Status": True},
+                "List": build_atdt(game),
+            }
     return DtcCartridge(
         name=name, unit_type=VIPER_UNIT_TYPE, terrain=terrain, data=data
     )

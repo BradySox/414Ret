@@ -2297,7 +2297,13 @@ function GLSCO_COMBATANT:mergeProfiles()
       return copy
    end
 
-   local override = profile[self:GetDisplayName()] or {}
+   -- DCS 2.9.29 folded the CurrentHill pack into core: its units keep the vanilla
+   -- id but gain a " [CH]" DisplayName suffix, which silently missed this table and
+   -- cost BMP-3 its SalvoQty. Fall back to the bare name so either spelling matches.
+   local displayName = self:GetDisplayName()
+   local override = profile[displayName]
+      or profile[(displayName:gsub("%s*%[%u+%]$", ""))]
+      or {}
    for key, val in pairs(override) do
       copy[key] = val
    end

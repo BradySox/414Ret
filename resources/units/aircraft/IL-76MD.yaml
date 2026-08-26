@@ -1,6 +1,7 @@
 price: 20
 max_range: 1000
 cabin_size: 24
+airlift_capacity: 7  # 48 t payload
 variants:
   IL-76MD: null
 tasks:

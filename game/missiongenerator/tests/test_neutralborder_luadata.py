@@ -63,3 +63,18 @@ def test_setting_off_emits_nothing() -> None:
 def test_no_zones_emits_nothing() -> None:
     lua = _emit(True, [])
     assert "neutralBorder" not in lua
+
+
+def test_the_label_anchor_reaches_the_plugin() -> None:
+    """Without it the F10 map draws a shape with no name on it."""
+    zone = _zone()
+    lua = _emit(True, [type(zone)(**{**zone.__dict__, "label": (12345.0, -678.0)})])
+    assert "labelX" in lua and "12345.0" in lua
+    assert "labelZ" in lua and "-678.0" in lua
+
+
+def test_a_zone_with_no_label_anchor_emits_none() -> None:
+    """A degenerate ring has no representative point; the plugin then draws the
+    border unlabelled rather than at the map origin."""
+    lua = _emit(True, [_zone()])
+    assert "labelX" not in lua

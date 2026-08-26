@@ -111,6 +111,23 @@ class NeutralBorderZone:
     #: campaign state and are never touched.
     from_terrain: bool = False
 
+    def label_point(self) -> Optional[tuple[float, float]]:
+        """Where the F10 map should write this country's name.
+
+        The polygon's representative point, not its centroid: a country is
+        usually concave (Norway spectacularly so) and a centroid lands in the
+        sea or in the neighbour. shapely guarantees this one is inside.
+        """
+        from shapely.geometry import Polygon
+
+        if len(self.border) < 3:
+            return None
+        try:
+            point = Polygon(self.border).buffer(0).representative_point()
+        except Exception:
+            return None
+        return (float(point.x), float(point.y))
+
     def posture_in(self, theater: Any) -> str:
         """This country's alignment: who owns the airfields inside its border.
 

@@ -623,6 +623,37 @@ The lesson generalises: **now that borders ship per terrain, a campaign should
 author a block only when it needs geometry the terrain file cannot give.** For
 anything else, authoring is a way to opt out of seven countries by accident.
 
+## The F10 map names each border (2026-08-26)
+
+A drawn polygon with nothing written on it is a shape the pilot has to guess at.
+Each zone now carries a two-line label, in the same hue as its own border:
+
+```
+IRAN
+CLOSED - alert from Bandar Abbas
+```
+
+Captions are `friendly` / `enemy-held` / `contested` / `transit permitted` /
+`CLOSED - alert from <field>`. A spawn-point zone's origin is
+"<country> border CAP", and the country's name is already the line above, so the
+prefix is stripped — otherwise Saudi Arabia read "SAUDI ARABIA / alert from
+Saudi Arabia border CAP".
+
+**Drawn in the border's own colour, deliberately.** §45's support orbits own the
+cyan; matching each label to its border makes the label and the line read as one
+object and keeps the two systems apart.
+
+**Placed at the polygon's representative point**, not its centroid — a country
+is usually concave (Norway spectacularly), and a centroid lands in the sea or in
+the neighbour. Computed Python-side with shapely, which guarantees it is inside,
+and shipped as `labelX`/`labelZ`; verified on all 8 zones of a Syria campaign.
+
+`drawBorders` still switches the whole draw off, labels included.
+
+**Not verified in DCS**: whether `trigger.action.textToAll` renders the `\n` as
+two lines. If it does not, the label will read as one run-on line — cosmetic,
+and on the B100 fail-signature list.
+
 ## The remaining automagic gap (DECIDED, NOT BUILT)
 
 **"I do not wish this to be specified in any existing campaign, I want this to

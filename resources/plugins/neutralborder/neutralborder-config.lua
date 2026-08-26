@@ -57,6 +57,10 @@ local SHADOW_STANDOFF_M = 46300
 local SHADOW_DESPAWN_S = 300 -- stood-down shadow lifetime after the RTB vector
 local FT_TO_M = 0.3048
 local MARKUP_ID_BASE = 96000 -- §96 block; one freeform id per zone
+--: The name labels sit in their own half of the block so an outline id and a
+--: label id can never collide.
+local LABEL_ID_OFFSET = 500
+local LABEL_FONT_SIZE = 16
 
 local function log(msg)
     env.info("NEUTRALBORDER|: " .. tostring(msg))
@@ -118,6 +122,11 @@ for _, raw in ipairs(data.zones or {}) do
                 spawn_z = spawn_z,
                 spawn_alt_m = tonumber(raw.spawnAltM) or 6000,
                 origin_label = tostring(raw.originLabel or raw.field or "border CAP"),
+                -- Where to write the country's name: inside the polygon by
+                -- construction (shapely's representative point), which a
+                -- centroid is not on a concave country.
+                label_x = tonumber(raw.labelX),
+                label_z = tonumber(raw.labelZ),
                 fighter_template = tostring(raw.fighterTemplate),
                 sam_template = raw.samTemplate and tostring(raw.samTemplate) or nil,
                 red_country = tonumber(raw.redCountryId),
@@ -245,6 +254,28 @@ local function border_theme(zone)
     return { 0.62, 0.85, 0.72 }, 0.10, 2 -- pale mint: neutral, you may cross
 end
 
+-- What the F10 label says under the country's name. A pilot reading the map
+-- wants one thing from a border: may I cross it, and if not what happens.
+local function border_caption(zone)
+    if zone.posture == "blue" then
+        return "friendly"
+    elseif zone.posture == "red" then
+        return "enemy-held"
+    elseif zone.posture == "contested" then
+        return "contested"
+    elseif zone.enforces then
+        -- The country's name is already the line above, so a spawn-point zone's
+        -- "<country> border CAP" would say it twice.
+        local origin = zone.origin_label
+        local prefix = zone.country .. " "
+        if origin:sub(1, #prefix) == prefix then
+            origin = origin:sub(#prefix + 1)
+        end
+        return "CLOSED - alert from " .. origin
+    end
+    return "transit permitted"
+end
+
 local function draw_borders()
     if not DRAW_BORDERS then
         return
@@ -269,6 +300,28 @@ local function draw_borders()
             poly:SetDrawCoalition(-1)
             poly:ReFill(rgb, fill_alpha)
         end)
+        -- The NAME, so the map says what the shape is without a hover. Same
+        -- hue as its border, so the label and the line read as one thing and
+        -- neither is confusable with the cyan §45 support orbits.
+        if zone.label_x and zone.label_z then
+            pcall(function()
+                local y = 0
+                pcall(function()
+                    y = land.getHeight({ x = zone.label_x, y = zone.label_z }) or 0
+                end)
+                trigger.action.textToAll(
+                    -1,
+                    MARKUP_ID_BASE + LABEL_ID_OFFSET + zi,
+                    { x = zone.label_x, y = y, z = zone.label_z },
+                    { rgb[1], rgb[2], rgb[3], 1.0 },
+                    { 0, 0, 0, 0.45 },
+                    LABEL_FONT_SIZE,
+                    true,
+                    string.upper(zone.country) .. "\n" .. border_caption(zone)
+                )
+            end)
+        end
+
         -- The OUTLINE: one freeform for the whole ring, which DCS does honour,
         -- and which keeps the dash pattern the fill triangles cannot carry.
         pcall(function()

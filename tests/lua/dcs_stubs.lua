@@ -45,6 +45,7 @@ local Harness = {
         sounds = {}, -- { groupId, file, t } from outSound*
         destroyedStatics = {}, -- static unit names removed via StaticObject:destroy
         markups = {}, -- { shape, id, points, color, fill, lineType, t } from markupToAll
+        mapTexts = {}, -- { id, x, z, color, fill, fontSize, text } from textToAll
         zoneFills = {}, -- { name, points, coalition, color, alpha } from ZONE_POLYGON:ReFill
 
         infos = {},
@@ -740,6 +741,20 @@ trigger = {
                 z = point.z,
                 side = side,
                 t = Harness.now,
+            })
+        end,
+        -- F10 map text. Recorded for the same reason as markupToAll: the label
+        -- is what tells a pilot what a drawn border IS without hovering it.
+        textToAll = function(coalition, id, point, color, fillColor, fontSize, readOnly, text)
+            table.insert(Harness.records.mapTexts, {
+                coalition = coalition,
+                id = id,
+                x = point and point.x,
+                z = point and point.z,
+                color = color,
+                fill = fillColor,
+                fontSize = fontSize,
+                text = tostring(text),
             })
         end,
         -- Freeform/shape drawing. Recorded rather than ignored because the F10

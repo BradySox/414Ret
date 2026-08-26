@@ -6266,7 +6266,9 @@ gap and the faint-green overflight neighbours distinct from it.
 
 **Fail signatures:** the shadow never gets within visual range (the 2026-08-25
 stand-off regression — check the Tacview separation, not just that it launched); the
-border draws as an outline with no shading; the F10 map is sluggish to open (the fill
+border draws as an outline with no shading; a border carries no name, or its name and
+caption run together on one line (`textToAll` may not honour `\n` — cosmetic); the F10
+map is sluggish to open (the fill
 is one markup per triangle — 247 on Afghanistan, the busiest map; `drawBorders`
 off is the isolating test); a country both sides hold ground in draws
 red or blue rather than grey; the shadow fires during the shadow phase

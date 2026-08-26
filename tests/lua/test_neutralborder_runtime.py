@@ -41,6 +41,10 @@ def _config(sam: bool = True, floor_ft: str = "10000") -> dict[str, Any]:
         "redCountryId": str(RED_COUNTRY),
         "blueCountryId": str(BLUE_COUNTRY),
         "border": SQUARE,
+        # Where the F10 map writes the country's name. The emitter takes it
+        # from the polygon's representative point; the square's is its middle.
+        "labelX": "10000",
+        "labelZ": "10000",
         # Refuses both sides: this fixture is the interception case.
         "overflightBlue": "false",
         "overflightRed": "false",
@@ -495,3 +499,57 @@ def test_an_open_neutral_and_a_closed_one_do_not_draw_alike() -> None:
     assert closed.records("zoneFills")[0]["alpha"] > (
         permits.records("zoneFills")[0]["alpha"]
     )
+
+
+# -- the F10 map says what a border IS without a hover -------------------------
+
+
+def test_each_border_is_named_on_the_map() -> None:
+    """A drawn polygon with no label is a shape a pilot has to guess at. The
+    label carries the country and what its airspace does, in the same hue as
+    its border so the two read as one thing."""
+    h = _drawn(_config())
+    texts = h.records("mapTexts")
+    assert len(texts) == 1, "the border was drawn without a name"
+    assert texts[0]["text"] == "LEBANON\nCLOSED - alert from Rayak"
+    assert texts[0]["coalition"] == -1, "both sides see the border they may cross"
+    # Same hue as the enforced border, and not the cyan the §45 support orbits use.
+    outline = [r for r in h.records("markups") if r["shape"] == 7][0]
+    assert texts[0]["color"][:3] == outline["color"][:3]
+
+
+def test_the_label_sits_inside_its_own_border() -> None:
+    """It is placed from the polygon's representative point, not its centroid:
+    a country is usually concave and a centroid lands in the neighbour."""
+    h = _drawn(_config())
+    text = h.records("mapTexts")[0]
+    xs = [float(v["x"]) for v in SQUARE]
+    zs = [float(v["y"]) for v in SQUARE]
+    assert min(xs) <= text["x"] <= max(xs)
+    assert min(zs) <= text["z"] <= max(zs)
+
+
+def test_a_country_you_may_cross_says_so() -> None:
+    cfg = _config()
+    cfg["neutralBorder"]["zones"][0]["overflightBlue"] = "true"
+    cfg["neutralBorder"]["zones"][0]["overflightRed"] = "true"
+    h = _drawn(cfg)
+    assert h.records("mapTexts")[0]["text"] == "LEBANON\ntransit permitted"
+
+
+def test_no_labels_when_the_draw_is_switched_off() -> None:
+    h = _setup(_config())
+    h.load_plugin_script(PLUGIN)
+    assert h.records("mapTexts") == []
+
+
+def test_the_label_does_not_say_the_country_twice() -> None:
+    """A zone with no airfield labels its origin '<country> border CAP', and the
+    country's name is already the line above it."""
+    cfg = _config()
+    zone = cfg["neutralBorder"]["zones"][0]
+    del zone["field"]
+    zone["spawnX"], zone["spawnZ"], zone["spawnAltM"] = "9000", "9000", "6096"
+    zone["originLabel"] = "Lebanon border CAP"
+    h = _drawn(cfg)
+    assert h.records("mapTexts")[0]["text"] == "LEBANON\nCLOSED - alert from border CAP"

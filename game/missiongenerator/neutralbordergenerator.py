@@ -102,6 +102,7 @@ class NeutralBorderGenerator:
                 floor_blue_ft=floor_blue,
                 floor_red_ft=floor_red,
                 border=list(zone.border),
+                label=zone.label_point(),
             )
 
         # It defends against at least one side, so it needs something to defend
@@ -128,6 +129,7 @@ class NeutralBorderGenerator:
                 floor_blue_ft=floor_blue,
                 floor_red_ft=floor_red,
                 border=list(zone.border),
+                label=zone.label_point(),
             )
 
         airport = None
@@ -231,6 +233,7 @@ class NeutralBorderGenerator:
             red_country_id=self.red_country_id,
             blue_country_id=self.blue_country_id,
             border=list(zone.border),
+            label=zone.label_point(),
         )
 
     def _country(self, name: str) -> Country | None:

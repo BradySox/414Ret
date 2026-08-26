@@ -65,6 +65,9 @@ class NeutralBorderLuaZone:
     origin_label: str = ""
     #: Terrain XY vertices (pydcs Point.x/.y = DCS x/z), implicit closure.
     border: list[tuple[float, float]] = field(default_factory=list)
+    #: Terrain XY the F10 map writes the country's name at -- inside the
+    #: polygon by construction, which a centroid is not.
+    label: tuple[float, float] | None = None
 
     @property
     def enforces(self) -> bool:
@@ -100,6 +103,9 @@ def populate_neutral_border_lua(
             "overflightRed", "true" if zone.overflight_red else "false"
         )
         record.add_key_value("originLabel", zone.origin_label)
+        if zone.label is not None:
+            record.add_key_value("labelX", f"{zone.label[0]:.1f}")
+            record.add_key_value("labelZ", f"{zone.label[1]:.1f}")
         if zone.enforces:
             # Exactly one of field / spawn is present -- the Lua branches on it.
             if zone.airfield is not None:

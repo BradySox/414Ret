@@ -10306,6 +10306,14 @@ target changes.
 - **`--corridor-lon` cuts a lane**, splitting one country into the two walls of
   a flight corridor. See the Afghanistan reference below.
 
+- **The F10 map names each border**: a two-line label at the polygon's
+  representative point (shapely, so it is inside a concave country; a centroid
+  is not) reading the country and what its airspace does — `friendly` /
+  `enemy-held` / `contested` / `transit permitted` / `CLOSED - alert from
+  <field>`. Drawn in the border's own hue, which keeps it distinct from §45's
+  cyan support orbits and ties the label to its line. `drawBorders` switches
+  both off together.
+
 ### The planning map
 
 The DCS F10 map draws the border at mission start, but by then the route is

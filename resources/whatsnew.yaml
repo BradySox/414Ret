@@ -14,6 +14,33 @@
 
 entries:
   - date: 2026-08-26
+    title: A country you are both fighting over is grey now
+    change: >-
+      A country where you and the enemy both hold airfields used to be painted
+      whichever colour had one more field, so on Able Archer 83 Norway -- the
+      NATO host -- came out enemy red because the Soviets held two of its three
+      fields. Those countries are grey now: the war is being fought there and
+      neither side owns the sky. Countries split across the map edge are also
+      counted as one country again, which had drawn Soviet Karelia as an
+      uninvolved neutral that would intercept you.
+    watch: >-
+      Open the map layer on a Kola campaign. Norway and Finland grey, Sweden
+      blue, both halves of Russia red -- and nothing filled solid unless it is a
+      country that is not in the war at all.
+    row: B100
+  - date: 2026-08-26
+    title: Borders follow the coastline
+    change: >-
+      Country outlines were drawn with far too few points, which mattered most
+      where the coast is complicated -- almost a third of Norway was in the
+      wrong place. They carry nearly three times the detail now. If the F10 map
+      ever feels slow to open, the border drawing has its own off switch in the
+      plugin options.
+    watch: >-
+      On Kola, check that Norway's border follows the fjords instead of cutting
+      straight across them.
+    row: B100
+  - date: 2026-08-26
     title: The map draws the country the war is in
     change: >-
       The map's own nation used to be left off the border layer, which meant

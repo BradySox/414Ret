@@ -145,12 +145,15 @@ def aligned_defense_polygons(theater: "ConflictTheater") -> list[DefensePolygonE
     alert flight, and adding them here would let a belligerent's QRA scramble
     over a country that is not in the war.
     """
-    from game.theater.neutralborder import BLUE_ALIGNED, NEUTRAL
+    from game.theater.neutralborder import BLUE_ALIGNED, CONTESTED_ALIGNED, NEUTRAL
 
     polygons: list[DefensePolygonEntry] = []
     for zone in getattr(theater, "neutral_border_zones", []):
         posture = zone.posture_in(theater)
-        if posture == NEUTRAL:
+        # Neither an uninvolved country nor one both sides are fighting over:
+        # handing a contested country's sky to whoever holds one more airfield
+        # would scramble a QRA over ground its enemy also holds.
+        if posture in (NEUTRAL, CONTESTED_ALIGNED):
             continue
         polygons.append(
             DefensePolygonEntry(

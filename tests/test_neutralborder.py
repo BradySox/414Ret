@@ -9,6 +9,7 @@ from typing import Any
 from game.theater.nationalpostures import RU_LED, US_LED
 from game.theater.neutralborder import (
     BLUE_ALIGNED,
+    CONTESTED_ALIGNED,
     DEFAULT_CONTESTED_FLOOR_FT,
     DEFAULT_SPAWN_ALT_FT,
     NEUTRAL,
@@ -178,12 +179,39 @@ def test_a_red_airfield_inside_makes_it_red_aligned() -> None:
     assert zone.enforces_against(theater, US_LED, ON) is False
 
 
-def test_contested_resolves_to_the_larger_holder_not_neutral() -> None:
+def test_both_sides_holding_ground_is_contested_not_the_larger_holder() -> None:
+    """Able Archer 83: Norway holds Bodo (blue) plus Banak and Kirkenes (red),
+    so majority-wins drew the NATO host in enemy red. Both sides being present
+    is the front line, not allegiance -- neither hue is true, so neither is
+    used."""
     zone = _box_zone()
     theater = _theater(
         _cp(20, 20, red=True), _cp(60, 60, red=True), _cp(80, 80, blue=True)
     )
-    assert zone.posture_in(theater) == RED_ALIGNED
+    assert zone.posture_in(theater) == CONTESTED_ALIGNED
+    # And it is nobody's to defend: not §96's, not either QRA's.
+    assert zone.enforces_against(theater, US_LED, ON) is False
+    assert zone.enforces_against(theater, RU_LED, ON) is False
+
+
+def test_alignment_counts_every_piece_of_the_same_country() -> None:
+    """Russia is two zones on the Kola map. Counting per polygon drew Karelia --
+    116,420 km2, the largest zone on the map -- as an uninvolved neutral that
+    intercepts you, in a campaign where Russia is the enemy."""
+    empty = _box_zone(country="Russia")
+    held = _box_zone(country="Russia", border=[[200, 200], [300, 200], [300, 300]])
+    theater = _theater(_cp(280, 220, red=True))
+    theater.neutral_border_zones = [empty, held]
+    assert empty.posture_in(theater) == RED_ALIGNED
+    assert held.posture_in(theater) == RED_ALIGNED
+    assert empty.enforces_against(theater, US_LED, ON) is False
+
+
+def test_a_lone_zone_needs_no_sibling_list() -> None:
+    """posture_in is called on theaters that carry no zone list at all (every
+    unit test built before the merge, and any caller holding one zone)."""
+    zone = _box_zone()
+    assert zone.posture_in(_theater(_cp(50, 50, red=True))) == RED_ALIGNED
 
 
 def test_off_map_spawns_never_align_a_country() -> None:

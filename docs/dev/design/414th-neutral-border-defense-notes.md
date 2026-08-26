@@ -431,6 +431,68 @@ This is the same class as the `features[0]` defect above, and the same lesson: t
 source data is not a country, it is a pile of features, and some of them are not
 land.
 
+## What Kola found (2026-08-26, Able Archer 83)
+
+Drawing the host nation put the derivation on a map where the war is fought
+*inside* the drawn countries, and it broke in two ways at once. Both are fixed;
+neither is verified in DCS.
+
+### Alignment was derived per polygon piece, not per country
+
+Russia is two zones on Kola — Karelia and the Pechenga strip — because the clip
+splits it. The only Russian control point (Koshka Yavr) is in Pechenga, so
+Karelia counted zero and read `neutral`. **The Soviet Union's own territory,
+116,420 km² and the largest zone on the map, drew as an uninvolved third party
+that would intercept you, in an Able Archer campaign.** Its neighbour piece drew
+enemy-red. Counting is now over every zone of the same country name.
+
+### A country both sides hold is contested, not the majority holder's
+
+| Country | Holds | Was | Now |
+|---|---|---|---|
+| Norway | Bodo (blue), Banak + Kirkenes (red) | **red** | contested |
+| Finland | Rovaniemi (blue), 3 red | **red** | contested |
+| Sweden | 3 blue | blue | blue |
+| Russia | 1 red | neutral + red | red |
+
+Norway is the NATO host. Drawing it in enemy red because the Soviets hold two of
+its three fields reports the **front line** as though it were **allegiance**.
+
+`contested` (DM call) is a fourth alignment: neutral grey outline over the same
+faint belligerent wash, never enforcing, and claimed by **neither** side's QRA
+accept zones — handing a contested country's sky to whoever holds one more
+airfield would scramble a QRA over ground its enemy also holds.
+
+**The postures table does not solve this** and was checked before the call: on
+1983-11-09 it reads Norway `allied`, Finland `closed`, Sweden `closed`, Russia
+`closed` — historically right, but it would draw Sweden and Finland as enforcing
+neutrals while both sides fly combat sorties from their runways. The two signals
+answer different questions: the table says *whose side a country is on*, the
+control points say *whose ground it is now*. §96 needs the second, and
+`contested` is what the second says when both answers are true.
+
+### The vertex budget was too low for a real coastline
+
+Measured by symmetric difference against the true clipped country:
+
+| Country | 24 vertices | 64 |
+|---|---|---|
+| **Norway** | **30.2 %** | 14.7 % |
+| Sweden | 9.7 % | 1.3 % |
+| Finland | 7.0 % | 2.7 % |
+| Pakistan | 6.3 % | 2.6 % |
+
+Norway is the worst case Douglas-Peucker meets here — a thin fjord coast
+wrapping around Sweden — and at 24 nearly a third of it was wrong. The budget is
+**64**; 96 buys another point or two for double the cost. Fjords are not fully
+resolvable at any sane budget, so Norway stays the outlier.
+
+**The cost is F10 markup count.** The fill is drawn triangle by triangle, so a
+64-vertex ring is 62 shapes: **446 on Afghanistan**, the busiest map, against
+~176 before. They are static and drawn once, with no per-frame work, but this is
+the number to watch if the F10 map feels heavy — `drawBorders` turns the whole
+draw off without touching the interception.
+
 ## The remaining automagic gap (DECIDED, NOT BUILT)
 
 **"I do not wish this to be specified in any existing campaign, I want this to

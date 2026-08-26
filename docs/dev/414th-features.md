@@ -10158,11 +10158,15 @@ every `Bullseye <brg> for <nm>` cue on the SEAD and threat-intel pages.
 
 ## §96 — Neutral-faction border defense
 
-Every nation bordering the war is drawn with its real border, and what each one does
-about an intruder follows from two facts. **Alignment is derived, never authored** —
-a nation hosting a RED or BLUE airfield is aligned with that team (computed from the
-control points inside its polygon; `posture:` overrides); a nation hosting neither is
-the neutral. **Overflight is a separate authored fact** — a neutral either permits
+Every nation on the map is drawn with its real border, the map's own nation included,
+and what each one does about an intruder follows from two facts. **Alignment is
+derived, never authored** — a nation hosting a RED or BLUE airfield is aligned with
+that team, one hosting **both** is `contested` (the battlefield: grey, never enforcing,
+claimed by neither side's QRA), and one hosting neither is the neutral. Counted over
+every zone of the same country, not per polygon: Russia is two zones on Kola, and
+per-piece counting drew Karelia — the largest zone on the map — as an uninvolved
+neutral that intercepts you, in a campaign where Russia is the enemy. `posture:`
+overrides. **Overflight is a separate authored fact** — a neutral either permits
 transit (drawn only) or refuses it and defends. Cross a refusing neutral's border
 below the altitude floor and an alert flight spawns on the intruder's opposing
 coalition (the only way a "neutral" can legally fire in DCS), shadows at return-fire
@@ -10218,6 +10222,13 @@ target changes.
   scope (DM call, 2026-08-24). **Always `--clip`** — a country's real outline is
   mostly off any one DCS map, and un-clipped the vertex budget is spent on
   coastline nobody can fly to.
+- **The vertex budget is 64**, measured 2026-08-26 by symmetric difference against
+  the true clipped country: at the old 24, Norway was **30.2 %** wrong (a thin
+  fjord coast wrapping around Sweden is the worst case here), Sweden 9.7 %,
+  Finland 7.0 %; at 64 they are 14.7 / 1.3 / 2.7. The cost is F10 markup count —
+  the fill is drawn triangle by triangle, so 64 vertices is 62 shapes per zone
+  and **446 on Afghanistan**, the busiest map. Static and drawn once; `drawBorders`
+  turns the draw off without touching the interception.
 - **The alert flight comes from a field OR a point.** Most maps carry the
   neutral's own airbase (Syria has Rayak). Some carry none at all: the DCS
   Afghanistan map has 26 airfields and **every one is inside Afghanistan**, so

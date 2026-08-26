@@ -13,7 +13,8 @@ import { LayerGroup, Polygon, Tooltip } from "react-leaflet";
 //
 // Two channels, and they answer different questions.
 //
-//   HUE  - whose airspace: red enemy-held, blue friendly, mint uninvolved.
+//   HUE  - whose airspace: red enemy-held, blue friendly, grey fought over by
+//          both, mint uninvolved.
 //   SHADE- will it intercept you. Only ONE state does: a country not in the
 //          war that refuses you transit. That state alone gets a real fill.
 //
@@ -41,6 +42,8 @@ export default function NeutralBordersLayer() {
             ? mapColors.airspaceRed
             : border.posture === "blue"
             ? mapColors.airspaceBlue
+            : border.posture === "contested"
+            ? mapColors.airspaceContested
             : enforced
             ? mapColors.airspaceHostileNeutral
             : mapColors.airspaceOpenNeutral;

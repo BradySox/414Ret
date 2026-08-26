@@ -57,6 +57,10 @@ export const mapColors = {
   // and both passable ones are not, and the pair within each family differ by
   // hue so they stay tellable apart.
   airspaceRed: "#c85050", // enemy-aligned: hosts the enemy's fields
+  // Both sides hold airfields in it. Grey because the two allegiance hues are
+  // the two answers that are NOT true here -- Able Archer 83 drew Norway, the
+  // NATO host, in enemy red because the Soviets held two of its three fields.
+  airspaceContested: "#b9b0a6",
   airspaceHostileNeutral: "#e0555f", // a third party that refuses YOU transit
   airspaceOpenNeutral: "#9fd9b8", // pale mint: neutral, overflight permitted
   airspaceBlue: "#0084ff", // your own side's airspace

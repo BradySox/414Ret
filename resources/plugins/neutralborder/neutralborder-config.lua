@@ -231,6 +231,10 @@ local function border_theme(zone)
         return { 0.0, 0.52, 1.0 }, 0.06, 1 -- in the war, friendly: solid, faint
     elseif zone.posture == "red" then
         return { 0.78, 0.31, 0.31 }, 0.06, 1 -- in the war, enemy: solid, faint
+    elseif zone.posture == "contested" then
+        -- Both sides hold fields in it. Grey because the two allegiance hues
+        -- are the two answers that are NOT true here.
+        return { 0.73, 0.69, 0.65 }, 0.06, 1
     elseif zone.enforces then
         -- Crimson: a third party that refuses transit and WILL intercept. Red
         -- because hue answers "will this engage me", not "whose side is it on"

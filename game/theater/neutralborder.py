@@ -61,7 +61,13 @@ NEUTRAL = "neutral"
 BLUE_ALIGNED = "blue"
 #: Hosts RED airfields.
 RED_ALIGNED = "red"
-POSTURES = (NEUTRAL, BLUE_ALIGNED, RED_ALIGNED)
+#: Both sides hold airfields inside this country: it is the battlefield, and
+#: neither side is the truth about it. Measured on Able Archer 83, where Norway
+#: -- the NATO host -- drew as enemy-red because the Soviets held two of its
+#: three fields, and Finland the same. §96 never enforces a contested country;
+#: nor does either side's QRA claim it, because the claim would be a lie.
+CONTESTED_ALIGNED = "contested"
+POSTURES = (NEUTRAL, BLUE_ALIGNED, RED_ALIGNED, CONTESTED_ALIGNED)
 
 
 @dataclass(frozen=True)
@@ -112,16 +118,40 @@ class NeutralBorderZone:
     def posture_in(self, theater: Any) -> str:
         """This country's alignment: who owns the airfields inside its border.
 
-        A country hosting both sides' fields is contested, not neutral; it
-        resolves to whoever holds more, because the one thing it certainly is
-        not is an uninvolved third party.
+        Counted over every zone of the same country, not this polygon alone: a
+        country clipped into pieces is still one country. Russia is two zones on
+        the Kola map, and per-piece counting drew Karelia -- 116,420 km2, the
+        largest zone on the map -- as an uninvolved neutral that intercepts you,
+        in a campaign where Russia is the enemy.
+
+        Both sides holding airfields makes it contested, not one side's. It is
+        the battlefield, and calling it red because red holds one more field
+        than blue reports the front line as though it were allegiance.
         """
         if self.posture_override is not None:
             return self.posture_override
-        blue, red = self.control_points_in(theater)
+        blue, red = self.country_control_points(theater)
+        if blue and red:
+            return CONTESTED_ALIGNED
         if blue == 0 and red == 0:
             return NEUTRAL
-        return BLUE_ALIGNED if blue >= red else RED_ALIGNED
+        return BLUE_ALIGNED if blue else RED_ALIGNED
+
+    def country_control_points(self, theater: Any) -> tuple[int, int]:
+        """(blue, red) counts over every zone this country has on the map."""
+        siblings = [
+            zone
+            for zone in getattr(theater, "neutral_border_zones", [])
+            if zone.country == self.country
+        ]
+        if self not in siblings:
+            siblings.append(self)
+        blue = red = 0
+        for zone in siblings:
+            zone_blue, zone_red = zone.control_points_in(theater)
+            blue += zone_blue
+            red += zone_red
+        return (blue, red)
 
     def control_points_in(self, theater: Any) -> tuple[int, int]:
         """(blue, red) control-point counts inside this border."""
@@ -191,6 +221,8 @@ class NeutralBorderZone:
             return "friendly — overflight permitted"
         if posture == RED_ALIGNED:
             return "enemy-aligned"
+        if posture == CONTESTED_ALIGNED:
+            return "contested — both sides hold ground here"
         if not enforced:
             return "neutral — overflight permitted"
         if self.airfield is not None:

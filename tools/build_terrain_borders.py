@@ -87,7 +87,18 @@ def main() -> None:
         required=True,
         metavar=("LAT_MIN", "LAT_MAX", "LON_MIN", "LON_MAX"),
     )
-    parser.add_argument("--max-vertices", type=int, default=24)
+    parser.add_argument(
+        "--max-vertices",
+        type=int,
+        default=64,
+        help="Ring vertex budget. MEASURED 2026-08-26 as symmetric-difference "
+        "against the true clipped country: 24 left Norway 30.2%% wrong (a thin "
+        "fjord coast wrapping around Sweden is the worst case Douglas-Peucker "
+        "has), Sweden 9.7%%, Finland 7.0%%. At 64 those are 14.7 / 1.3 / 2.7, and "
+        "96 buys only another point or two for double the fill triangles -- the "
+        "F10 fill is drawn triangle-by-triangle, so this number sets how many "
+        "markup shapes a mission carries.",
+    )
     parser.add_argument(
         "--min-area-km2",
         type=float,

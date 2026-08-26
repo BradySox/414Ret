@@ -6347,7 +6347,7 @@ the fact that the routing code was rewritten is not evidence the constraint laps
 ### B101 — The F-4E's Shrike and gun pod are still on the jet · §71 · ☐ UNTESTED
 
 **Both halves are confirmed against the updated install (2.9.29.27278) and both fixes
-are IN** -- the pydcs pin moved to `a03b87e` the same day and the extension was trimmed
+are IN** -- the pydcs pin moved to `bfdbb4d` the same day and the extension was trimmed
 to match. Full detail in
 [414th-dcs-update-2026-08-26-notes.md](design/414th-dcs-update-2026-08-26-notes.md) §2.2
 and §2.3.

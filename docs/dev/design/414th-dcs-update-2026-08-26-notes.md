@@ -13,7 +13,7 @@ in place: that nothing could be settled before running the export (§1), and tha
 stock F-16C ROE table marks blue's own JF-17 hostile (§4.3).
 
 **The pin moved the same day.** `requirements.txt:37` now points at
-`BradySox/pydcs@a03b87e` -- the pin commit plus a surgical 2.9.29 delta cut from a
+`BradySox/pydcs@bfdbb4d` -- the pin commit plus a surgical 2.9.29 delta cut from a
 full-install export run on the updated machine: the AGM-45B pair on the F-4E's four
 LAU-34 pylons, ten new base-game vehicles (the CHAP transporters and TechWeaponPack
 trailers among them), and the BMP-3's in-place update. The patch's weapon display-name
@@ -31,7 +31,7 @@ with no DCS launch.
 The export ran the same day (output in `C:/Users/brady/dcs-export/dcs-20260826/`,
 July's runs preserved beside it) and both of its real jobs are done:
 
-1. **The pin moved** -- pydcs branch `dcs-2.9.29-surgical` (`a03b87e`), cut from the
+1. **The pin moved** -- pydcs branch `dcs-2.9.29-surgical` (`bfdbb4d`), cut from the
    pin commit so the fork gets exactly pin + delta. The join was export-vs-pin per
    clsid/unit id, provenance-filtered to declarations living in the DCS install
    itself; Saved Games mod content excluded. The July export could not have served
@@ -47,6 +47,17 @@ July's runs preserved beside it) and both of its real jobs are done:
    does: the first push of this change "fixed" the flag to True over the
    in-file comment saying not to, and the suite failed exactly there. A sweep
    mismatch is a lead, not an instruction.
+
+**The surgical branch was then validated against a second, clean-stock export**
+(all Saved Games mods disabled, same install, output in
+`C:/Users/brady/dcs-export/dcs-20260826-stock/`): every vehicle add field-exact,
+BMP-3 exact, F-4E pylons attribute-identical, zero missed vehicle or plane classes.
+One gap found and closed -- `{MB339_AIM-9B}`, the patch's one MB-339 addition
+(commit `bfdbb4d`). Two side notes from that run: a clean install lets the exporter
+finish the countries pass, so `dcs-20260826-stock/countries.py` is a full 1.76 MB
+country-wiring dump the modded runs never produced; and settings-bearing weapons are
+invisible to `ast.literal_eval`-based diffing (their `settings` is a registry
+subscript) -- string-match clsids before concluding a weapon is absent.
 
 The runbook and the heavy-mod gotchas are in `tools/verify_mod_export.py`'s docstring;
 the nil-guarded exporter is at `C:\Users\brady\dcs-export\pydcs_export.lua`.
@@ -119,7 +130,7 @@ with no collision check. Injection runs after import, so **our stale copy wins**
 against a missile whose FM this patch reworked from scratch.
 
 **LANDED with the pin bump.** The two stale dicts are deleted from
-`WeaponsF4EExpanded`, and the six AGM-45B pylon rows went with them -- pydcs `a03b87e`
+`WeaponsF4EExpanded`, and the six AGM-45B pylon rows went with them -- pydcs `bfdbb4d`
 carries all six natively, and an injected copy would have made `eject_F4E` strip a
 stock store whenever the mod toggles off. Verified: the native entry (full RF-guidance
 settings block) sits on pylons 1/3/11/13 after inject and survives eject.

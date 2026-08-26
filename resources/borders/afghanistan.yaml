@@ -6,9 +6,34 @@
 # so this file is correct in every era. A campaign that declares its own
 # neutral_border_defense: block overrides this file completely.
 #
-# Clip: 24.0 38.0 59.5 73.0 · host nation excluded: Afghanistan
+# Clip: 24.0 38.0 59.5 73.0
 terrain: afghanistan
 zones:
+  # Afghanistan — 21 vertices
+  - country: Afghanistan
+    airfield: Camp Bastion Heliport
+    border:
+      - [367583, 588251]
+      - [269064, 441933]
+      - [172514, 491271]
+      - [37460, 445323]
+      - [28245, 337329]
+      - [-46033, 381975]
+      - [-86430, 307024]
+      - [-209720, 298362]
+      - [-301112, 55572]
+      - [-452069, 15390]
+      - [-508398, -190301]
+      - [-454635, -505571]
+      - [-327139, -410216]
+      - [-272604, -505404]
+      - [-100079, -526307]
+      - [182621, -455402]
+      - [142516, -321848]
+      - [403022, -54177]
+      - [338342, 146003]
+      - [478634, 427220]
+      - [333899, 474317]
   # Pakistan — 20 vertices
   - country: Pakistan
     spawn: [-375979, 341652]

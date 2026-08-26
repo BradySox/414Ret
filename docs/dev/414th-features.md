@@ -10194,8 +10194,14 @@ target changes.
   `neutralborderluadata.py` serializes that to `dcsRetribution.neutralBorder`.
 - **Lua** — `resources/plugins/neutralborder/neutralborder-config.lua`: border scan
   (bbox + ray-cast point-in-polygon on terrain XY), per-group dwell, the warn → shadow
-  → escalate ladder, the SAM wake, exit-grace stand-down, and F10 border polylines
-  (default on — the §86 invisible-bubble lesson).
+  → escalate ladder, the SAM wake, exit-grace stand-down, and the F10 border draw
+  (default on — the §86 invisible-bubble lesson). **DCS will not fill a concave
+  freeform** — it draws the outline and drops the fill, and a national border is
+  about as concave as a shape gets, so every zone first flew as a bare line. The
+  fill is MOOSE's `ZONE_POLYGON_BASE:ReFill` triangulation (its own
+  single-freeform path is dead-coded behind `if false then`, which is the
+  corroboration); the plugin keeps a one-freeform outline on top for the dash
+  pattern, and no longer repeats vertex one.
 - **A campaign needs to author nothing.** Borders ship per terrain in
   `resources/borders/<terrain>.yaml` (Afghanistan, Syria, Caucasus, Iraq, Kola,
   Persian Gulf, Sinai, Falklands — Nevada and the Marianas are all-US and
@@ -10221,6 +10227,23 @@ target changes.
   yaml requires exactly one of the two; both, or neither, skips the zone.
   `--auto-spawn` puts each piece's station at its own `representative_point()`,
   so it is guaranteed inside that piece's territory.
+- **The origin names the flight; a 25 NM stand-off decides where it comes up.**
+  Measured on the first flown test (2026-08-25, Tacview): Iran's origin is the
+  middle of its clipped polygon, so the pair spawned 224 NM behind an F-15E,
+  closed to 127 NM in twelve minutes and gave up — a MiG-29A has ~80 kt on a
+  cruising Strike Eagle, and *every* launch on a country that size was that
+  launch. Inside 25 NM the origin is used as it stands, so a small country still
+  scrambles off its own runway; beyond it, the flight comes up 25 NM from the
+  intruder on the line toward the origin. 25 NM is ~3 min at the shadow's speed,
+  which is the engage dwell. A concave border that puts that line outside the
+  country falls back to the origin.
+- **Every country on the map is drawn, the map's own nation included.** The host
+  was excluded until 2026-08-26, which deleted Russia from Kola, Iran from the
+  Persian Gulf, Georgia from the Caucasus, Egypt from Sinai and Iraq from Iraq —
+  and left the war itself as the one region with no line on it. What a country's
+  airspace means is decided at run time from who holds the control points inside
+  it, so the geometry leaves none out. Syria was separately missing from the Iraq
+  map: never excluded, just never named in `--countries`.
 - **`--corridor-lon` cuts a lane**, splitting one country into the two walls of
   a flight corridor. See the Afghanistan reference below.
 

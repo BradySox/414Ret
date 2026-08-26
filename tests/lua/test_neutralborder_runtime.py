@@ -375,3 +375,123 @@ def test_the_warning_does_not_offer_an_altitude_that_does_not_exist() -> None:
     assert warned, "no warning was issued"
     assert not any("below" in t or "Climb" in t for t in warned)
     h.assert_no_lua_errors()
+
+
+# -- the alert flight has to be able to reach you -------------------------------
+# MEASURED 2026-08-25 (Tacview, Inherent Resolve): Iran's origin is the
+# representative point of its clipped polygon, so the pair came up 224 NM behind
+# an F-15E, closed to 127 NM in twelve minutes and gave up. A shadow that cannot
+# arrive is not a deterrent, and on any country bigger than Kuwait every launch
+# was that launch.
+
+BIG_SQUARE = [
+    {"x": "0", "y": "0"},
+    {"x": "600000", "y": "0"},
+    {"x": "600000", "y": "600000"},
+    {"x": "0", "y": "600000"},
+]
+
+STANDOFF_M = 46300
+
+
+def _big_country(**overrides: Any) -> dict[str, Any]:
+    cfg = _config()
+    zone = cfg["neutralBorder"]["zones"][0]
+    zone["border"] = BIG_SQUARE
+    zone.update(overrides)
+    return cfg
+
+
+def _sep(spawn: dict[str, Any], x: float, z: float) -> float:
+    return ((spawn["x"] - x) ** 2 + (spawn["z"] - z) ** 2) ** 0.5
+
+
+def test_a_distant_intruder_gets_a_shadow_within_reach() -> None:
+    """The field is 400 km away, so the alert flight comes up near the intruder
+    instead of launching a stern chase it can never win."""
+    h = _setup(_big_country())
+    h.add_group(_intruder("BLUE 1", 1, 2, x=420000, z=420000, alt=2000))
+    h.load_plugin_script(PLUGIN)
+    h.advance_to(45)
+    spawns = [r for r in h.records("spawns") if r.get("base") == "point"]
+    assert len(spawns) == 1, "no air-spawned shadow for a distant intruder"
+    assert _sep(spawns[0], 420000, 420000) <= STANDOFF_M + 1
+    # And it is not simply sitting on top of the intruder either.
+    assert _sep(spawns[0], 420000, 420000) > STANDOFF_M * 0.9
+    # Still the opposing coalition -- the mechanism that lets it fire at all.
+    assert spawns[0]["coalitionId"] == 1
+    assert spawns[0]["countryId"] == RED_COUNTRY
+
+
+def test_a_near_intruder_still_scrambles_off_the_runway() -> None:
+    """Inside the stand-off the origin is used as it stands, so a small country
+    launches from its own field rather than materialising in mid-air."""
+    h = _setup(_big_country())
+    h.add_group(_intruder("BLUE 1", 1, 2, x=12000, z=12000, alt=2000))
+    h.load_plugin_script(PLUGIN)
+    h.advance_to(45)
+    assert len(_shadow_spawns(h)) == 1, "near intruder did not draw a field scramble"
+    assert [r for r in h.records("spawns") if r.get("base") == "point"] == []
+
+
+def test_the_shadow_launches_from_inside_the_country() -> None:
+    """The stand-off point is on the line to the origin, so it is inside the
+    border for any intruder that is -- the polygon is what makes the alert
+    flight national rather than an ambush staged over the neighbour."""
+    h = _setup(_big_country())
+    h.add_group(_intruder("BLUE 1", 1, 2, x=590000, z=300000, alt=2000))
+    h.load_plugin_script(PLUGIN)
+    h.advance_to(45)
+    spawns = [r for r in h.records("spawns") if r.get("base") == "point"]
+    assert len(spawns) == 1
+    assert 0 <= spawns[0]["x"] <= 600000
+    assert 0 <= spawns[0]["z"] <= 600000
+
+
+# -- the F10 draw --------------------------------------------------------------
+
+
+def _drawn(cfg: dict[str, Any]) -> DcsPluginHarness:
+    cfg["plugins"]["neutralborder"]["drawBorders"] = True
+    h = _setup(cfg)
+    h.load_plugin_script(PLUGIN)
+    return h
+
+
+def test_the_border_is_filled_by_triangles_not_by_the_freeform() -> None:
+    """DCS draws a concave freeform's outline and refuses its fill, and a
+    national border is about as concave as a shape gets -- every zone came out a
+    bare line on the Iraq map. The fill is MOOSE's triangulation; the freeform
+    carries only the outline, and must ask for no fill of its own."""
+    h = _drawn(_config())
+    fills = h.records("zoneFills")
+    assert len(fills) == 1, "the border was never filled"
+    assert fills[0]["alpha"] > 0
+    assert fills[0]["coalition"] == -1, "fill must be visible to both sides"
+    assert len(fills[0]["points"]) == len(SQUARE)
+    outlines = [r for r in h.records("markups") if r["shape"] == 7]
+    assert len(outlines) == 1
+    assert outlines[0]["fill"] is not None and outlines[0]["fill"][3] == 0.0
+
+
+def test_the_outline_does_not_repeat_its_first_vertex() -> None:
+    """DCS closes a freeform itself. Repeating vertex one adds a zero-length
+    edge, which is the other half of why the fill never rendered."""
+    h = _drawn(_config())
+    outline = [r for r in h.records("markups") if r["shape"] == 7][0]
+    assert len(outline["points"]) == len(SQUARE)
+    first, last = outline["points"][0], outline["points"][-1]
+    assert (first["x"], first["z"]) != (last["x"], last["z"])
+
+
+def test_an_open_neutral_and_a_closed_one_do_not_draw_alike() -> None:
+    """Shade answers "will this intercept me", so the one that will is the one
+    that gets a real fill."""
+    closed = _drawn(_config())
+    cfg = _config()
+    cfg["neutralBorder"]["zones"][0]["overflightBlue"] = "true"
+    cfg["neutralBorder"]["zones"][0]["overflightRed"] = "true"
+    permits = _drawn(cfg)
+    assert closed.records("zoneFills")[0]["alpha"] > (
+        permits.records("zoneFills")[0]["alpha"]
+    )

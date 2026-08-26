@@ -44,6 +44,8 @@ local Harness = {
         stoppedTransmissions = {}, -- transmission names
         sounds = {}, -- { groupId, file, t } from outSound*
         destroyedStatics = {}, -- static unit names removed via StaticObject:destroy
+        markups = {}, -- { shape, id, points, color, fill, lineType, t } from markupToAll
+        zoneFills = {}, -- { name, points, coalition, color, alpha } from ZONE_POLYGON:ReFill
 
         infos = {},
         warnings = {},
@@ -740,6 +742,35 @@ trigger = {
                 t = Harness.now,
             })
         end,
+        -- Freeform/shape drawing. Recorded rather than ignored because the F10
+        -- border draw is the half of §96 a player sees before ever entering a
+        -- polygon, and it failed silently once already.
+        markupToAll = function(...)
+            local args = { ... }
+            local points, color, fill, lineType = {}, nil, nil, nil
+            for i = 4, #args do
+                local a = args[i]
+                if type(a) == "table" and a.x ~= nil then
+                    points[#points + 1] = { x = a.x, y = a.y, z = a.z }
+                elseif type(a) == "table" and color == nil then
+                    color = a
+                elseif type(a) == "table" then
+                    fill = a
+                elseif type(a) == "number" then
+                    lineType = a
+                end
+            end
+            table.insert(Harness.records.markups, {
+                shape = args[1],
+                coalition = args[2],
+                id = args[3],
+                points = points,
+                color = color,
+                fill = fill,
+                lineType = lineType,
+                t = Harness.now,
+            })
+        end,
         removeMark = function(id)
             table.insert(Harness.records.removedMarks, id)
         end,
@@ -963,6 +994,37 @@ function UNIT.FindByName(_, name)
 end
 
 -------------------------------------------------------------------------------
+-- ZONE_POLYGON: only the surface §96 touches. DCS will not fill a concave
+-- freeform, so the plugin hands the ring to MOOSE, whose ReFill triangulates.
+-- The triangulation is MOOSE's business and is not modelled here; what IS
+-- pinned is that the plugin asks for the fill at all, and with what.
+ZONE_POLYGON = {}
+ZONE_POLYGON.__index = ZONE_POLYGON
+
+function ZONE_POLYGON:NewFromPointsArray(name, points)
+    local copy = {}
+    for i = 1, #points do
+        copy[i] = { x = points[i].x, y = points[i].y }
+    end
+    return setmetatable({ name = name, points = copy, coalition = nil }, ZONE_POLYGON)
+end
+
+function ZONE_POLYGON:SetDrawCoalition(side)
+    self.coalition = side
+    return self
+end
+
+function ZONE_POLYGON:ReFill(color, alpha)
+    table.insert(Harness.records.zoneFills, {
+        name = self.name,
+        points = self.points,
+        coalition = self.coalition,
+        color = color,
+        alpha = alpha,
+    })
+    return self
+end
+
 -- AIRBASE / SPAWN fakes (MOOSE surface for the redscramble plugin). Airbases
 -- are registered by tests via Harness.addAirbase{ name, x, z, elev, side };
 -- SPAWN:SpawnAtAirbase records the spawn and synthesizes a real harness group

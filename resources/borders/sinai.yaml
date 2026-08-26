@@ -6,9 +6,31 @@
 # so this file is correct in every era. A campaign that declares its own
 # neutral_border_defense: block overrides this file completely.
 #
-# Clip: 26.0 34.3 29.0 36.9 · host nation excluded: Egypt
+# Clip: 26.0 34.3 29.0 36.9
 terrain: sinai
 zones:
+  # Egypt — 18 vertices
+  - country: Egypt
+    airfield: El Minya
+    border:
+      - [100545, -204904]
+      - [166259, -82154]
+      - [180310, -8853]
+      - [160732, 81866]
+      - [115952, 133095]
+      - [142145, 284407]
+      - [-61443, 354319]
+      - [-259158, 294067]
+      - [-165077, 189252]
+      - [-14461, 123908]
+      - [-52173, 108859]
+      - [-163086, 158900]
+      - [-235722, 225177]
+      - [-299113, 240817]
+      - [-315960, 268255]
+      - [-372659, 266381]
+      - [-448897, 307596]
+      - [-443494, -231290]
   # Saudi Arabia — 22 vertices
   - country: Saudi Arabia
     airfield: Tabuk

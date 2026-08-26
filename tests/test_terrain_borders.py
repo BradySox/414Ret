@@ -56,17 +56,28 @@ def test_an_unreadable_directory_costs_the_borders_not_the_campaign() -> None:
     assert load_terrain_borders("Afghanistan", Path("does/not/exist")) == []
 
 
-def test_the_host_nation_is_absent() -> None:
-    """A border drawn around the whole battlefield is noise."""
+def test_the_map_draws_its_own_nation() -> None:
+    """The map's host nation is a country like any other.
+
+    It was excluded until 2026-08-26 on the theory that a border round the
+    battlefield is noise. That deleted Russia from Kola and Iran from the
+    Persian Gulf -- the most relevant border on each of those maps -- and left
+    the war itself as the one region with no line on it. What a country's
+    airspace means is decided at run time from who holds the control points
+    inside it, so the geometry has no business leaving one out.
+    """
     hosts = {
         "Afghanistan": "Afghanistan",
         "Syria": "Syria",
         "Iraq": "Iraq",
         "Sinai": "Egypt",
+        "Kola": "Russia",
+        "PersianGulf": "Iran",
+        "Caucasus": "Georgia",
     }
     for terrain, host in hosts.items():
         names = {e["country"] for e in load_terrain_borders(terrain)}
-        assert host not in names, f"{terrain} draws its own host nation"
+        assert host in names, f"{terrain} does not draw its own nation"
 
 
 @pytest.mark.parametrize("terrain", SHIPPED)
@@ -117,6 +128,7 @@ def test_afghanistans_neighbours_are_all_there() -> None:
     misses; China's Wakhan strip is off the playable area and is not."""
     names = {e["country"] for e in load_terrain_borders("Afghanistan")}
     assert names == {
+        "Afghanistan",
         "Pakistan",
         "Iran",
         "Turkmenistan",
@@ -124,3 +136,35 @@ def test_afghanistans_neighbours_are_all_there() -> None:
         "Tajikistan",
         "India",
     }
+
+
+def test_syria_is_on_the_iraq_map() -> None:
+    """The Iraq map's clip reaches lng 52, and Syria's east runs to 42.4.
+
+    It was missing until 2026-08-26 -- not excluded, just never named in the
+    tool's --countries list, which is a silent way to lose a border. Iraq's own
+    absence made it invisible: the country next to the hole is hard to miss when
+    the hole is not there.
+    """
+    names = {e["country"] for e in load_terrain_borders("Iraq")}
+    assert "Syria" in names
+
+
+def test_no_kola_zone_reaches_across_northern_norway() -> None:
+    """Russia's GeoJSON carries a feature spanning 359.8 deg of longitude in a
+    0.87 deg latitude band. Merged in, it became a 75,554 km2 Russian claim over
+    Finnmark -- a shape with no land under it, on a map where Norway is a real
+    zone of its own. The guard is in tools/neutral_border_geo.py; this pins the
+    shipped result, because the artifact is invisible in the yaml.
+    """
+    from dcs.mapping import Point
+    from dcs.terrain import Kola
+
+    terrain = Kola()
+    for entry in load_terrain_borders("Kola"):
+        if entry["country"] != "Russia":
+            continue
+        lngs = [Point(x, y, terrain).latlng().lng for x, y in entry["border"]]
+        assert (
+            max(lngs) - min(lngs) < 25.0
+        ), f"Russia zone spans {max(lngs) - min(lngs):.1f} deg of longitude"

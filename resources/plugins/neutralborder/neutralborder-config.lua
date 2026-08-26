@@ -44,6 +44,16 @@ end
 local EXIT_GRACE_S = 120 -- outside this long (pre-escalation) -> shadow stands down
 local SHADOW_AGL_M = 760 -- air-spawn altitude over the field (the QRA scramble profile)
 local SHADOW_SPEED_KT = 300 -- air-spawn speed (a ~0 kt clone spawns stalled; QRA lesson)
+-- How far from the intruder the alert flight comes up when its own origin is
+-- further away than this. MEASURED 2026-08-25 (Tacview, Inherent Resolve): Iran's
+-- origin is the representative point of its clipped polygon, so the pair spawned
+-- 224 NM behind an F-15E and closed to 127 NM in twelve minutes before giving up
+-- -- a MiG-29A has ~80 kt on a cruising Strike Eagle, and a stern chase from
+-- there never converges. 25 NM is ~3 min at the shadow's speed, which is the
+-- engage dwell, so the shadow is present when the timer it exists to enforce
+-- expires. Nearer than this and the origin is used as-is, so a small country
+-- still scrambles off its own runway.
+local SHADOW_STANDOFF_M = 46300
 local SHADOW_DESPAWN_S = 300 -- stood-down shadow lifetime after the RTB vector
 local FT_TO_M = 0.3048
 local MARKUP_ID_BASE = 96000 -- §96 block; one freeform id per zone
@@ -209,52 +219,62 @@ local function announce(group, msg)
 end
 
 ---------------------------------------------------------------------------------------------------
--- F10 border polylines (drawn once at start; the border must be visible -- §86 lesson).
+-- F10 border drawing (once at start; the border must be visible -- §86 lesson).
 ---------------------------------------------------------------------------------------------------
+-- The colour grammar, shared with the planning map's layer (mapColors.ts):
+--   HUE  - whose airspace: red enemy-held, blue friendly, mint uninvolved.
+--   SHADE- will it intercept you. Only an uninvolved country that refuses you
+--          transit gets a real one; a country IN the war is context, because
+--          its own QRA governs it and the unit icons already say whose it is.
+local function border_theme(zone)
+    if zone.posture == "blue" then
+        return { 0.0, 0.52, 1.0 }, 0.06, 1 -- in the war, friendly: solid, faint
+    elseif zone.posture == "red" then
+        return { 0.78, 0.31, 0.31 }, 0.06, 1 -- in the war, enemy: solid, faint
+    elseif zone.enforces then
+        -- Crimson: a third party that refuses transit and WILL intercept. Red
+        -- because hue answers "will this engage me", not "whose side is it on"
+        -- -- drawing this green put Iran in the same colour as a country that
+        -- waves you through.
+        return { 0.88, 0.33, 0.37 }, 0.20, 5 -- long dash: firm, legal
+    end
+    return { 0.62, 0.85, 0.72 }, 0.10, 2 -- pale mint: neutral, you may cross
+end
+
 local function draw_borders()
     if not DRAW_BORDERS then
         return
     end
     for zi, zone in ipairs(zones) do
+        local rgb, fill_alpha, line_type = border_theme(zone)
+        -- The FILL, first so the outline lands on top.
+        --
+        -- DCS will not fill a concave freeform: it draws the outline and stops.
+        -- A national border is about as concave as a shape gets, so every zone
+        -- came out as a bare line (reported 2026-08-25 on the Iraq map). MOOSE
+        -- hit the same wall -- ZONE_POLYGON_BASE:DrawZone triangulates and fills
+        -- triangle by triangle, and its single-freeform path is dead-coded
+        -- behind `if false then`. Reuse its triangulation rather than repeat the
+        -- discovery.
+        pcall(function()
+            local pts = {}
+            for _, v in ipairs(zone.verts) do
+                pts[#pts + 1] = { x = v.x, y = v.z }
+            end
+            local poly = ZONE_POLYGON:NewFromPointsArray("NB96-" .. zi, pts)
+            poly:SetDrawCoalition(-1)
+            poly:ReFill(rgb, fill_alpha)
+        end)
+        -- The OUTLINE: one freeform for the whole ring, which DCS does honour,
+        -- and which keeps the dash pattern the fill triangles cannot carry.
         pcall(function()
             local args = { 7, -1, MARKUP_ID_BASE + zi } -- freeform, all coalitions
             for _, v in ipairs(zone.verts) do
                 args[#args + 1] = { x = v.x, y = 0, z = v.z }
             end
-            -- close the ring
-            args[#args + 1] = { x = zone.verts[1].x, y = 0, z = zone.verts[1].z }
-            -- Three themes, by DM call: red family for red-aligned airspace,
-            -- blue family for blue-aligned, and its own colour for the neutral.
-            -- Colour says WHO owns the airspace; the shade and dash say what
-            -- happens to you there. The shade is not decoration -- the removed
-            -- §40 layer measured that "a faint 6% fill left large box/corridor
-            -- zones looking like a lone dashed edge", and a national border is
-            -- exactly that shape, so an enforced one is shaded at 14%.
-            if zone.posture == "blue" then
-                -- Faintly shaded, not bare: an unshaded outline was invisible
-                -- on the F10 map. Well below the enforced 0.14, so it still
-                -- never reads as a keep-out block.
-                args[#args + 1] = { 0.0, 0.52, 1.0, 1.0 } -- friendly blue line
-                args[#args + 1] = { 0.0, 0.52, 1.0, 0.06 }
-                args[#args + 1] = 2 -- dashed
-            elseif zone.posture == "red" then
-                args[#args + 1] = { 0.78, 0.31, 0.31, 0.9 } -- enemy red line
-                args[#args + 1] = { 0.78, 0.31, 0.31, 0.14 } -- shaded: hostile
-                args[#args + 1] = 5 -- long dash
-            elseif zone.enforces then
-                -- Crimson: a third party that refuses transit and WILL
-                -- intercept. Red because hue answers "will this engage me",
-                -- not "whose side is it on" -- drawing this green put Iran in
-                -- the same colour as a country that waves you through.
-                args[#args + 1] = { 0.88, 0.33, 0.37, 0.95 }
-                args[#args + 1] = { 0.88, 0.33, 0.37, 0.20 }
-                args[#args + 1] = 5 -- long dash: an authored border, firm and legal
-            else
-                -- Pale mint, barely shaded: a neutral that lets you through.
-                args[#args + 1] = { 0.62, 0.85, 0.72, 0.95 }
-                args[#args + 1] = { 0.62, 0.85, 0.72, 0.05 }
-                args[#args + 1] = 2 -- dashed
-            end
+            args[#args + 1] = { rgb[1], rgb[2], rgb[3], 0.95 }
+            args[#args + 1] = { 0, 0, 0, 0 } -- fill is the triangles' job
+            args[#args + 1] = line_type
             args[#args + 1] = true -- read only
             trigger.action.markupToAll(unpack(args))
         end)
@@ -279,7 +299,46 @@ local function spawner_for(zone, zi, clone_side)
     return zone.spawners[clone_side]
 end
 
-local function spawn_shadow(zone, zi, intruder_name, intruder_side)
+-- Where the alert flight comes up: its own origin when that is close enough to
+-- matter, otherwise a stand-off point between the intruder and that origin. The
+-- origin keeps its name either way -- the radio call and the log still say which
+-- field launched it.
+local function launch_point(zone, ix, iz)
+    local ox, oz
+    local alt = zone.spawn_alt_m
+    if zone.field then
+        local airbase = AIRBASE:FindByName(zone.field)
+        if not airbase then
+            return nil
+        end
+        local c = airbase:GetCoordinate()
+        ox, oz = c.x, c.z
+    else
+        ox, oz = zone.spawn_x, zone.spawn_z
+    end
+    if ox == nil or oz == nil then
+        return nil
+    end
+    if ix == nil or iz == nil then
+        return { x = ox, y = alt, z = oz, at_origin = true }
+    end
+    local dx, dz = ox - ix, oz - iz
+    local dist = math.sqrt(dx * dx + dz * dz)
+    if dist <= SHADOW_STANDOFF_M then
+        return { x = ox, y = alt, z = oz, at_origin = true }
+    end
+    local f = SHADOW_STANDOFF_M / dist
+    local lx, lz = ix + dx * f, iz + dz * f
+    -- A concave border can put the straight line briefly outside the country.
+    -- Launching a national alert flight over the neighbour is worse than a slow
+    -- response, so that case falls back to the origin.
+    if not in_polygon(zone, lx, lz) then
+        return { x = ox, y = alt, z = oz, at_origin = true }
+    end
+    return { x = lx, y = alt, z = lz, at_origin = false }
+end
+
+local function spawn_shadow(zone, zi, intruder_name, intruder_side, ix, iz)
     if zone.shadow_count >= MAX_SHADOWS then
         return nil
     end
@@ -299,13 +358,14 @@ local function spawn_shadow(zone, zi, intruder_name, intruder_side)
             sp:InitSpeedKnots(SHADOW_SPEED_KT)
         end)
 
+        local at = launch_point(zone, ix, iz)
+        if not at then
+            log("no usable origin for " .. zone.country .. " -- no shadow")
+            return
+        end
         local grp
-        if zone.field then
+        if at.at_origin and zone.field then
             local airbase = AIRBASE:FindByName(zone.field)
-            if not airbase then
-                log("airbase '" .. zone.field .. "' not found -- no shadow")
-                return
-            end
             local elevation = 0
             pcall(function()
                 elevation = airbase:GetCoordinate():GetLandHeight() or 0
@@ -313,14 +373,8 @@ local function spawn_shadow(zone, zi, intruder_name, intruder_side)
             grp = sp:SpawnAtAirbase(
                 airbase, SPAWN.Takeoff.Air, elevation + SHADOW_AGL_M)
         else
-            -- No airbase for this neutral anywhere on the map: air-spawn the
-            -- standing CAP at the authored point (MOOSE takes altitude as the
-            -- Vec3 y).
-            grp = sp:SpawnFromVec3({
-                x = zone.spawn_x,
-                y = zone.spawn_alt_m,
-                z = zone.spawn_z,
-            })
+            -- MOOSE takes the altitude as the Vec3 y.
+            grp = sp:SpawnFromVec3({ x = at.x, y = at.y, z = at.z })
         end
         if not grp then
             return
@@ -542,7 +596,7 @@ local function warn(state, intruder_group)
         announce(intruder_group, msg)
     end
     local zi = state.zone
-    local shadow = spawn_shadow(zone, zi, state.name, state.side)
+    local shadow = spawn_shadow(zone, zi, state.name, state.side, state.px, state.pz)
     if shadow then
         start_vector_loop()
     end
@@ -593,6 +647,9 @@ local function scan_group(group, side, now)
                 }
                 intruders[name] = state
             end
+            -- Kept fresh every scan: the alert flight launches relative to
+            -- where the intruder actually is, not to the country's midpoint.
+            state.px, state.pz = p.x, p.z
             state.zone = zi
             state.dwell = state.dwell + SCAN_INTERVAL_S
             state.last_inside = now

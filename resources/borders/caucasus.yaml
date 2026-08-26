@@ -6,9 +6,33 @@
 # so this file is correct in every era. A campaign that declares its own
 # neutral_border_defense: block overrides this file completely.
 #
-# Clip: 38.0 48.0 33.0 49.0 · host nation excluded: Georgia
+# Clip: 38.0 48.0 33.0 49.0
 terrain: caucasus
 zones:
+  # Georgia — 20 vertices
+  - country: Georgia
+    airfield: Kutaisi
+    border:
+      - [-146759, 485732]
+      - [-176534, 600657]
+      - [-170080, 703012]
+      - [-228794, 801498]
+      - [-198393, 846288]
+      - [-213985, 950978]
+      - [-247248, 941880]
+      - [-267283, 1012080]
+      - [-303869, 1000076]
+      - [-335653, 1051579]
+      - [-364763, 1034883]
+      - [-332811, 930445]
+      - [-368027, 899239]
+      - [-390928, 803663]
+      - [-389343, 759165]
+      - [-346883, 719917]
+      - [-369218, 621496]
+      - [-309597, 624530]
+      - [-234236, 592494]
+      - [-170972, 468287]
   # Russia — 22 vertices
   - country: Russia
     airfield: Mineralnye Vody

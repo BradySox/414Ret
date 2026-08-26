@@ -6232,9 +6232,19 @@ mountain or coastal front will do.
 **History:** built 2026-08-24 (the neutral-border session — design note
 `414th-neutral-border-defense-notes.md`). Harness-covered: warn/shadow timing, the
 opposing-coalition clone, the AttackGroup escalation, the SAM wake, the exit
-stand-down. What the harness cannot exercise: the DCS AI actually flying the shadow
-vector, the airborne clone surviving its air spawn, the AttackGroup task producing a
-real attack, and the SA-6 clone engaging.
+stand-down, and (since 2026-08-26) the launch stand-off and the F10 fill. What the
+harness cannot exercise: the DCS AI actually flying the shadow vector, the airborne
+clone surviving its air spawn, the AttackGroup task producing a real attack, and the
+SA-6 clone engaging.
+
+**First flight, 2026-08-25 (Inherent Resolve, Iraq map) — partial, not a pass.**
+The scan, the clone, the dwell timers and the stand-down all fired: Iran launched a
+shadow on the opposing coalition against a blue F-15E BAI package and stood it down
+when the package left. Two defects, both since fixed and both still unverified in
+DCS: the shadow spawned **224 NM** behind the intruder (Tacview: closed to 127 NM in
+twelve minutes, then diverged — the origin was the middle of the country) and the F10
+borders drew as **bare outlines with no fill** (DCS refuses a concave freeform's
+fill). Re-fly before marking either row.
 
 **Setup:** Enduring Resolve (both gates preseeded). Fly any southern tasking — a
 carrier sortie is ideal — and cut a corner into Pakistan below 10,000 ft MSL.
@@ -6248,8 +6258,11 @@ flips them hostile (datalink), they attack, and an SA-6 clones in at the CAP anc
 The green-shaded border polygon is visible on the F10 map, with Pakistan's corridor
 gap and the faint-green overflight neighbours distinct from it.
 
-**Fail signatures:** the shadow fires during the shadow phase (ROE wrong); no shadow
-ever launches (template/clone failure — check dcs.log for NEUTRALBORDER| lines); the
+**Fail signatures:** the shadow never gets within visual range (the 2026-08-25
+stand-off regression — check the Tacview separation, not just that it launched); the
+border draws as an outline with no shading; the shadow fires during the shadow phase
+(ROE wrong); no shadow ever launches (template/clone failure — check dcs.log for
+NEUTRALBORDER| lines); the
 shadow is destroyed by your own AI escort before escalation **more often than not**
 (the accepted risk turning structural — triggers the recorded coalition-swap
 fallback); the SA-6 spawns cold or never engages; escalation fires on an AI-only

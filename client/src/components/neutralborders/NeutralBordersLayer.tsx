@@ -1,6 +1,7 @@
 import { selectNeutralBorders } from "../../api/neutralBorderSlice";
 import { useAppSelector } from "../../app/hooks";
 import {
+  AIRSPACE_FILL_BELLIGERENT,
   AIRSPACE_FILL_ENFORCED,
   AIRSPACE_FILL_OPEN,
   mapColors,
@@ -8,15 +9,21 @@ import {
 } from "../../theme/mapColors";
 import { LayerGroup, Polygon, Tooltip } from "react-leaflet";
 
-// §96: the countries bordering the war, and what happens if you enter them.
+// §96: every country on the map, and what its airspace does to you.
 //
-// Colour says WHO owns the airspace; shading says whether it bites:
-//   red   + shade  - hosts the enemy's fields; its own QRA defends it
-//   green + shade  - neutral, refuses transit, WILL intercept you
-//   green, no shade- neutral, overflight permitted
-//   blue,  no shade- hosts your fields; fly through
+// Two channels, and they answer different questions.
 //
-// The DCS F10 map draws the same four, but by then the route is flown. The
+//   HUE  - whose airspace: red enemy-held, blue friendly, mint uninvolved.
+//   SHADE- will it intercept you. Only ONE state does: a country not in the
+//          war that refuses you transit. That state alone gets a real fill.
+//
+// A country in the war is drawn as a solid outline over a faint wash. Its sky
+// is governed by its own side's QRA, not by this feature, and its allegiance is
+// already carried by the unit icons, the threat rings and the front line --
+// filling it as heavily as a hostile neutral washed half the Syria map pink.
+// Dashes are reserved for a boundary you have to make a decision about.
+//
+// The DCS F10 map draws the same states, but by then the route is flown. The
 // decision the feature asks for -- go around, or go through -- is made in the
 // planner, so the lines have to be visible here too.
 //
@@ -27,9 +34,8 @@ export default function NeutralBordersLayer() {
   return (
     <LayerGroup>
       {borders.map((border, idx) => {
-        const enforced = border.posture === "neutral" && !border.overflight;
-        // Red = it will engage you. That covers the enemy's hosts AND a third
-        // party that refuses you transit; the two differ by hue, not by family.
+        const belligerent = border.posture !== "neutral";
+        const enforced = !belligerent && !border.overflight;
         const color =
           border.posture === "red"
             ? mapColors.airspaceRed
@@ -38,12 +44,16 @@ export default function NeutralBordersLayer() {
             : enforced
             ? mapColors.airspaceHostileNeutral
             : mapColors.airspaceOpenNeutral;
-        // Shaded means dangerous. The enemy's airspace qualifies even though
-        // this layer is not what sends the fighters -- its QRA covers it.
-        const shaded = enforced || border.posture === "red";
-        const stroke = shaded
+        const stroke = belligerent
+          ? mapStrokes.airspaceBelligerent
+          : enforced
           ? mapStrokes.airspaceEnforced
           : mapStrokes.airspaceOpen;
+        const fillOpacity = belligerent
+          ? AIRSPACE_FILL_BELLIGERENT
+          : enforced
+          ? AIRSPACE_FILL_ENFORCED
+          : AIRSPACE_FILL_OPEN;
         return (
           <Polygon
             key={`neutral-border-${idx}`}
@@ -52,12 +62,7 @@ export default function NeutralBordersLayer() {
             weight={stroke.weight}
             dashArray={stroke.dashArray}
             fillColor={color}
-            // The shade is what makes a country-sized ring read as a region
-            // rather than a stray dashed edge. Open airspace gets a faint one
-            // rather than none: an unshaded outline was invisible over
-            // satellite imagery. It stays well below the enforced shade, so
-            // "you may fly here" still never looks like a keep-out block.
-            fillOpacity={shaded ? AIRSPACE_FILL_ENFORCED : AIRSPACE_FILL_OPEN}
+            fillOpacity={fillOpacity}
           >
             <Tooltip sticky>
               <b>{border.country} airspace</b>

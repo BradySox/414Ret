@@ -102,7 +102,8 @@ export const mapStrokes: Record<
   | "pilotMia"
   | "pilotPow"
   | "airspaceEnforced"
-  | "airspaceOpen",
+  | "airspaceOpen"
+  | "airspaceBelligerent",
   StrokeSignature
 > = {
   suspectedArea: {
@@ -134,10 +135,22 @@ export const mapStrokes: Record<
   // too-faint fill. It stays clearly lighter than the enforced signature, so
   // "bites" vs "does not bite" survives; it just is not hidden any more.
   airspaceOpen: { dashArray: "6 8", weight: 2, casingWeight: 0 },
+  // A country IN the war. Solid, because dashes in this family mean "a
+  // boundary you must decide about" and there is no decision here -- the
+  // belligerent's own QRA already governs its sky, not §96.
+  airspaceBelligerent: { weight: 2, casingWeight: 0 },
 };
 
-//: Fill opacity per airspace state. Open airspace keeps a real (if faint) shade
-//: rather than none -- an outline alone did not read as a region on imagery --
-//: but the gap is now wide enough to see beside the hue change.
+//: Fill opacity per airspace state. The shade answers one question -- *will
+//: this airspace intercept me* -- so only an enforcing neutral gets a real one.
+//:
+//: The other two were both wrong on the first pass and both were reported from
+//: the same screenshot. A belligerent country was filled as heavily as an
+//: enforcing neutral, so Jordan and Iraq washed half the Syria map pink over
+//: ground the unit icons, threat rings and front line already describe. And an
+//: open neutral at 0.05 is arithmetically invisible over desert imagery -- a
+//: hover on Saudi Arabia was read as red terrain, because the terrain IS red
+//: and the fill added nothing to it.
 export const AIRSPACE_FILL_ENFORCED = 0.2;
-export const AIRSPACE_FILL_OPEN = 0.05;
+export const AIRSPACE_FILL_OPEN = 0.1;
+export const AIRSPACE_FILL_BELLIGERENT = 0.06;

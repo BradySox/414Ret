@@ -13,14 +13,20 @@ simplifies to a vertex budget, converts to terrain XY, and picks an origin --
 a real map airfield inside the polygon where one exists, otherwise an air-spawn
 station at the polygon's representative point.
 
-**The map's host nation is excluded** (``--host``): a border drawn around the
-whole battlefield is noise, and the feature is about the countries around the war.
+**Every country on the map is drawn, the map's own nation included.** An
+earlier ``--host`` flag left it out on the theory that a border round the
+battlefield is noise. That deleted Russia from Kola and Iran from the Persian
+Gulf -- the most relevant border on each of those maps -- and left the war
+itself as the one region with no line on it. What a country's airspace *means*
+is decided at run time from who holds the control points inside it, so the
+tool has no business deciding which countries are interesting.
 
 Usage:
 
     python tools/build_terrain_borders.py afghanistan \\
-        --geojson-dir <dir> --host Afghanistan \\
-        --countries Pakistan Iran Turkmenistan Uzbekistan Tajikistan India \\
+        --geojson-dir <dir> \\
+        --countries Afghanistan Pakistan Iran Turkmenistan Uzbekistan \\
+                    Tajikistan India \\
         --clip 24 38 59.5 73
 
 Country land shares per map -- and which ones the eyeball misses -- are measured
@@ -74,7 +80,6 @@ def main() -> None:
     parser.add_argument("terrain", choices=sorted(TERRAINS))
     parser.add_argument("--geojson-dir", type=Path, required=True)
     parser.add_argument("--countries", nargs="+", required=True)
-    parser.add_argument("--host", help="Map's own nation, excluded from the output")
     parser.add_argument(
         "--clip",
         nargs=4,
@@ -108,16 +113,13 @@ def main() -> None:
         "# so this file is correct in every era. A campaign that declares its own",
         "# neutral_border_defense: block overrides this file completely.",
         "#",
-        f"# Clip: {lat_min} {lat_max} {lon_min} {lon_max}"
-        + (f" · host nation excluded: {args.host}" if args.host else ""),
+        f"# Clip: {lat_min} {lat_max} {lon_min} {lon_max}",
         f"terrain: {args.terrain}",
         "zones:",
     ]
 
     written = 0
     for name in args.countries:
-        if args.host and name.lower() == args.host.lower():
-            continue
         path = args.geojson_dir / f"{name.lower().replace(' ', '_')}.json"
         if not path.exists():
             print(f"  !! {name}: no geojson at {path}", file=sys.stderr)

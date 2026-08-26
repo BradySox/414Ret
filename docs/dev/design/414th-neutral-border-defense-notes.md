@@ -301,9 +301,22 @@ the pre-1991 inner-German border.
 - **Origin picks itself**: a real map airfield inside the polygon where one
   exists — the one furthest from the frontier, so nothing launches from a strip
   metres inside its own border — otherwise an air-spawn station at the polygon's
-  representative point.
-- **The host nation is excluded.** A border around the whole battlefield is
-  noise; the feature is about the countries *around* the war.
+  representative point. **The origin names the flight; it does not have to be
+  where the flight comes up** — see the stand-off below.
+- **Every country on the map is drawn, the map's own included** (2026-08-26).
+  The host was excluded until then, on the theory that a border round the
+  battlefield is noise. Measured, that theory deleted **Russia from Kola, Iran
+  from the Persian Gulf, Georgia from the Caucasus, Egypt from Sinai, Iraq from
+  Iraq and Syria from Syria** — the most relevant border on each of those maps —
+  and left the war itself as the one region on the map with no line on it. On
+  Inherent Resolve the result was that Iran, not in the war, was the single
+  largest shaded region while Iraq, the entire war, was blank. The treatment a
+  country gets is decided at run time from who holds the control points inside
+  it, so the geometry has no business leaving one out.
+  - **Syria was also missing from the Iraq map** — never excluded, just never
+    named in the tool's `--countries` list, which is how a border is lost
+    silently. Iraq's own absence hid it: the country next to the hole is hard to
+    notice when the hole is not there either.
 - **Precedence is total, never merged.** A campaign that declares its own block
   owns its borders completely and the terrain file is not consulted. Merging
   would make it impossible to say where a zone came from — and Enduring Resolve
@@ -342,6 +355,71 @@ Cyprus combined).
   repair, which leaves a valid ring untouched. Four terrain files failed to
   generate before this.
 - The `features[0]` fragment bug is recorded above; it was found the same way.
+
+## What the first flown test found (2026-08-25, Inherent Resolve, Iraq map)
+
+The first mission with §96 live produced one clean pass and three defects, two of
+them measured off the Tacview rather than reported. **All three are fixed; none
+is verified in DCS yet** (B100/B101 still owed).
+
+**It worked at all.** `6 border zone(s) drawn, 6 defended`, and against a blue
+F-15E BAI package Iran launched a shadow on the opposing coalition and stood it
+down when the package left. The clone mechanism, the scan, the dwell timers and
+the stand-down all did what they were built to do.
+
+### The alert flight could not reach the intruder — the one that mattered
+
+The Tacview says the pair came up **224 NM behind** the F-15Es, closed to
+**127 NM** over twelve minutes, then diverged. A MiG-29A has roughly 80 kt on a
+cruising Strike Eagle; a stern chase from that range never converges.
+
+The cause is the origin. Iran's is the **representative point of its clipped
+polygon** — the geometric middle of the country — and the shadow spawned there.
+That is fine for Kuwait and hopeless for Iran, Russia or Saudi Arabia, so *every*
+launch on a large country was that launch. Nothing in the harness could catch it:
+its fixture is a 20 km square, where the middle is always in reach.
+
+The fix is a **stand-off**: within 25 NM of the intruder the origin is used as it
+stands (a small country still scrambles off its own runway), and beyond that the
+flight comes up 25 NM from the intruder on the line toward the origin, which is
+inside the border for any intruder that is. 25 NM is ~3 minutes at the shadow's
+speed, which is the engage dwell — so the shadow is present when the timer it
+exists to enforce expires. The origin keeps its name in the radio call and the
+log either way. A concave border can put that line briefly outside the country;
+that case falls back to the origin, because launching a *national* alert flight
+over the neighbour is worse than a slow response.
+
+### DCS will not fill a concave freeform
+
+Reported from the F10 map: the borders drew as bare lines with no shading, on a
+map where the planner shades them. `trigger.action.markupToAll` with shape 7 took
+the fill colour and ignored it.
+
+**MOOSE had already hit this and worked around it**, which is the corroboration
+that made it a five-minute diagnosis instead of a flight: `ZONE_POLYGON_BASE:ReFill`
+triangulates the ring and fills triangle by triangle, and the single-freeform path
+right below it is dead-coded behind `if false then`. A national border is about as
+concave as a shape gets. The plugin now hands the ring to MOOSE for the fill and
+keeps its own one-freeform outline on top, which DCS does honour and which carries
+the dash pattern the triangles cannot. The outline also stopped repeating vertex
+one — DCS closes a freeform itself, and the duplicate was a zero-length edge.
+
+`markupToAll` and a `ZONE_POLYGON` facade are now stubbed in the Lua harness. They
+were not before, which is why `drawBorders: false` in every fixture had hidden the
+whole draw path from the one test suite that could have exercised it.
+
+### A GeoJSON feature that is not land
+
+Adding Russia to Kola surfaced it: `russia.json` carries a feature spanning
+**359.8° of longitude in a 0.87° latitude band**. Merged in, it became a 75,554 km²
+Russian claim across northern Norway — on a map where Norway is a real zone of its
+own. Russia's *real* mainland feature spans the globe too (Chukotka crosses the
+antimeridian) but is 36.6° tall, so the guard is on the **aspect ratio**, not the
+width. Only Russia carries one; every other country file scanned clean.
+
+This is the same class as the `features[0]` defect above, and the same lesson: the
+source data is not a country, it is a pile of features, and some of them are not
+land.
 
 ## The remaining automagic gap (DECIDED, NOT BUILT)
 

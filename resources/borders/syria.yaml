@@ -6,9 +6,33 @@
 # so this file is correct in every era. A campaign that declares its own
 # neutral_border_defense: block overrides this file completely.
 #
-# Clip: 31.0 38.1 32.0 40.3 · host nation excluded: Syria
+# Clip: 31.0 38.1 32.0 40.3
 terrain: syria
 zones:
+  # Syria — 20 vertices
+  - country: Syria
+    airfield: HS03
+    border:
+      - [-101038, 402655]
+      - [-302378, 81520]
+      - [-258233, -32554]
+      - [-193548, -32033]
+      - [-92502, 63845]
+      - [-58772, 38201]
+      - [-44333, 50003]
+      - [-43385, 5065]
+      - [44861, 528]
+      - [64262, -15679]
+      - [100089, 1657]
+      - [86733, 26204]
+      - [131250, 47522]
+      - [133640, 75684]
+      - [162190, 62887]
+      - [198582, 74851]
+      - [175273, 146523]
+      - [206789, 215904]
+      - [178245, 301585]
+      - [209096, 398564]
   # Turkey — 19 vertices
   - country: Turkey
     airfield: Sanliurfa

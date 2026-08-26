@@ -106,13 +106,13 @@ const ROWS: Row[] = [
   },
   {
     color: mapColors.airspaceRed,
-    signature: mapStrokes.airspaceEnforced,
-    label: "Enemy-aligned airspace — their QRA defends it",
+    signature: mapStrokes.airspaceBelligerent,
+    label: "Enemy-held country — in the war, their QRA defends it",
   },
   {
     color: mapColors.airspaceBlue,
-    signature: mapStrokes.airspaceOpen,
-    label: "Friendly airspace — fly through",
+    signature: mapStrokes.airspaceBelligerent,
+    label: "Friendly country — in the war, fly through",
   },
   { color: mapColors.routeFriendly, kind: "line", label: "Convoy route: friendly" },
   { color: mapColors.routeEnemy, kind: "line", label: "Convoy route: enemy — interdict" },

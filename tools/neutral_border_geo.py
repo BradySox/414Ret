@@ -97,6 +97,26 @@ def one_geometry(geometry: dict[str, Any]) -> Polygon | MultiPolygon:
     raise SystemExit(f"Unsupported geometry type: {geometry['type']}")
 
 
+#: A source feature this much wider than it is tall is a wrap-around artifact
+#: rather than land. Russia's file carries one spanning 359.8 deg of longitude
+#: in a 0.87 deg latitude band; merged in, it becomes a fake 75,554 km2 Russian
+#: claim across northern Norway on the Kola map. Russia's real mainland feature
+#: also spans the globe -- Chukotka crosses the antimeridian -- but is 36.6 deg
+#: tall, so the ratio is the test and the width is not.
+MAX_FEATURE_ASPECT = 100.0
+
+
+def is_wraparound_artifact(geom: Any) -> bool:
+    """Is this source feature a degenerate longitude band rather than land?"""
+    if geom.is_empty:
+        return True
+    min_x, min_y, max_x, max_y = geom.bounds
+    height = max_y - min_y
+    if height <= 0:
+        return True
+    return (max_x - min_x) / height > MAX_FEATURE_ASPECT
+
+
 def country_polygon(data: dict[str, Any]) -> Polygon | MultiPolygon:
     """The whole country from a GeoJSON file, every feature merged.
 
@@ -113,6 +133,7 @@ def country_polygon(data: dict[str, Any]) -> Polygon | MultiPolygon:
         parts = [one_geometry(data["geometry"])]
     else:
         parts = [one_geometry(data)]
+    parts = [part for part in parts if not is_wraparound_artifact(part)]
     # Repair before merging. Some published rings self-intersect (Saudi Arabia
     # has one on the Kuwaiti border) and unary_union raises a TopologyException
     # on them outright -- a zero-width buffer is the standard fix and leaves a

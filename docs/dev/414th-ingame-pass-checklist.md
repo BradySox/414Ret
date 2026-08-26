@@ -25,7 +25,7 @@ so the two docs don't drift.
 
 ## Outstanding rows at a glance
 
-75 rows need a live pass. Full detail is under each `###` heading below —
+76 rows need a live pass. Full detail is under each `###` heading below —
 search the row id. `☐` untested · `◐` flown but not under the conditions that
 stress it · `✗` fail signature reproduced in-game.
 
@@ -150,6 +150,7 @@ stress it · `✗` fail signature reproduced in-game.
 | B100 | The ramp still holds the squadrons authored against it | DCS 2026-08-26 parking rework | ☐ |
 | B101 | The F-4E's Shrike and gun pod are still on the jet | §71 | ☐ |
 | B102 | A low ingress against an SA-2/SA-3 belt is still flyable | DCS 2026-08-26 SAM guidance | ☐ |
+| B103 | BMP-3s in a firefight still fire like armour, not infantry | §9 TIC | ☐ |
 
 ---
 
@@ -6345,34 +6346,49 @@ the fact that the routing code was rewritten is not evidence the constraint laps
 
 ### B101 — The F-4E's Shrike and gun pod are still on the jet · §71 · ☐ UNTESTED
 
-The 2026-08-26 patch added AGM-45B loadouts for the LAU-34 rail to core weapons, added
-AGM-45B to the F-4E, and shipped a migration for missions carrying old SUU-23 pods. §71
-injects its own `{LAU_34_AGM_45B}` and wires `Weapons.SUU_23` to pylons 3 and 11.
-`pydcs_extensions/weapon_injector.py` overwrites with a bare `setattr`, so a collision
-is silent and ours wins. Full reasoning in
-[414th-dcs-update-2026-08-26-notes.md](design/414th-dcs-update-2026-08-26-notes.md) §2.
+**Both halves are confirmed against the updated install** (2.9.29.27278), and both fixes
+are gated on the pydcs pin moving. Full detail in
+[414th-dcs-update-2026-08-26-notes.md](design/414th-dcs-update-2026-08-26-notes.md) §2.2
+and §2.3.
+
+- **AGM-45B.** Stock now declares `{LAU_34_AGM_45B}` itself
+  (`CoreMods/aircraft/AircraftWeaponPack/anti-radiation missiles.lua:1252`). §71 injects
+  the same clsid with AGM-45A's settings borrowed, through a bare `setattr` with no
+  collision check, after import — so ours wins, against a missile whose FM this patch
+  reworked from scratch.
+- **SUU-23.** HB split the pod into `{SUU_23_POD_Wing}` / `{SUU_23_POD_Centerline}` and
+  its migration table covers pylons 1, 7 and 13 only. §71 wires the pod to pylons **3 and
+  11**, which are outside that table.
+
+The payload Lua is **not** at risk: `resources/customized_payloads/F-4E.lua` and
+`F-4E-45MC.lua` name no SUU-23 clsid at all. The earlier draft of this row said to grep
+them against the export; that has been done and they are clean.
 
 **Setup.** Any campaign fielding the F-4E-45MC — Red Tide or Desert Storm. Frag a SEAD
 flight and a flight carrying the gun pod, generate, and look at both jets in the ME
 before flying. ~15 min.
 
 **Pass.** The Weasel jet carries Shrikes on the rail it is authored for and the AGM-78
-fits still resolve. The gun-pod fit shows a SUU-23 on the centreline. In the air, a
-Shrike launches and guides.
+fits still resolve. The gun-pod fit shows a SUU-23 on the inner wing station. In the air,
+a Shrike launches and guides.
 
 **Fail signatures, and what each means:**
 
-- **The jet spawns clean, or with a generic fallback fit** — a clsid moved and the
-  payload file no longer matches. This is upstream #889's failure exactly: the aircraft
-  flies, it just is not carrying what the file says. Grep
-  `resources/customized_payloads/F-4E.lua` and `F-4E-45MC.lua` against the fresh export.
+- **The gun pod is missing from the inner wing** — the expected failure. Pylons 3 and 11
+  are outside ED's migration table, so `{SUU_23_POD}` is not remapped there. Re-point both
+  to `{SUU_23_POD_Wing}` once the pin carries it.
 - **The Shrike is there but behaves like the old missile** — our injected dict is
-  overriding a native entry. The patch reworked the AGM-45 FM from scratch and forwarded
-  the A changes to the B; our copy borrows AGM-45A's settings and was written before any
-  of that. Delete the `WeaponsF4EExpanded` entry and let the native one resolve.
+  overriding the native entry. Delete the `WeaponsF4EExpanded` AGM-45B entry and keep the
+  pylon wiring; it resolves natively once the pin moves.
 - **The pylon rejects the store in the ME** — the LAU-34 rail's legality changed. §71's
-  whole design rule is that fits are gated on live pylon legality, so this is a data
-  refresh, not a code change.
+  design rule is that fits are gated on live pylon legality, so this is a data refresh.
+
+**Do not fly this before the pin moves.** Both fixes need `Weapons.AGM_45B_Shrike_ARM__LAU_34_`
+and `{SUU_23_POD_Wing}` to exist in pydcs. Until then the row reproduces a known cause.
+
+**Watch for.** The 414th's `Expanded_F-4E_Weapons_Pack` OVGME mod was overwritten by the
+update and is currently unapplied. Re-enabling the July copy reverts ED's AGM-45B and
+SUU-23 work — see the note's §2.4 before turning it back on.
 
 ### B102 — A low ingress against an SA-2/SA-3 belt is still flyable · DCS 2026-08-26 SAM guidance · ☐ UNTESTED
 
@@ -6405,3 +6421,40 @@ and §60's two-guidance-radar doubling still means one HARM does not kill a site
 **Watch for.** The Patriot's DLZ was corrected against ballistic targets in the same
 patch. That only matters where a campaign fields both Patriot and §49's mobile theatre
 missiles — Desert Storm — and nobody has looked at it.
+
+### B103 — BMP-3s in a firefight still fire like armour, not infantry · §9 TIC · ☐ UNTESTED
+
+DCS 2.9.29 folded the CurrentHill pack into core. `CHAP_BMP3.lua` keeps the vanilla id
+`BMP-3` but renames its DisplayName to `IFV BMP-3 [CH]`. TIC keys its per-unit profile
+table by DisplayName (`TIC_v1.1.lua:512` → `:2300`) and swallows a miss with `or {}`, so
+the BMP-3 entry's `SalvoQty = 1` silently reverted to the generic profile — BMP-3s
+started firing at the infantry salvo rate. Fixed by falling back to the name with a
+trailing vendor suffix stripped; verified on Lua 5.1 that both spellings resolve.
+
+The id is unchanged, so no layout or unit yaml was ever at risk and
+`tests/test_layout_unit_types.py` stays green. Detail in
+[414th-dcs-update-2026-08-26-notes.md](design/414th-dcs-update-2026-08-26-notes.md) §2.1.
+
+**Setup.** Any campaign whose red order of battle fields the BMP-3 with TIC enabled —
+Red Tide is the readiest. Fly a CAS or TIC sortie over a contested front section and
+watch a BMP-3 group engage. ~20 min.
+
+**Pass.** BMP-3 groups fire in single aimed shots, visibly slower than a BTR-80 or
+BTR-82A group in the same firefight. The distinction between IFV and APC fire is
+audible and visible from the cockpit.
+
+**Fail signatures, and what each means:**
+
+- **BMP-3s pour fire like APCs** — the fallback did not match. Check the live
+  DisplayName with `getDesc().displayName`; if ED used a different suffix shape than
+  ` [CH]`, the pattern `%s*%[%u+%]$` needs widening.
+- **No unit fires at its profile rate any more** — the fallback broke the exact-match
+  path. That would mean the `or` chain is returning the wrong table; revert to
+  `profile[self:GetDisplayName()] or {}` and re-test.
+- **The T-90 behaves oddly too** — `CHAP_T90A.lua` also claims a vanilla id (`T-90`,
+  DisplayName `MBT T-90A [CH]`). TIC does not key it today, so this would mean something
+  else keys by DisplayName. Grep the plugin tree before assuming it is this fix.
+
+**Note.** TIC has no headless harness coverage — `tests/lua/` covers `vietnamops` only.
+Nothing catches the next DisplayName rename, which is the general risk this row stands
+for.

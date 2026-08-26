@@ -1,88 +1,158 @@
-# DCS update 2026-08-26 — what it does to the fork
+# DCS update 2026-08-26 - what it does to the fork
 
-Triage of the 2026-08-26 DCS patch against this tree. Written from the published
-patch notes plus a read of our own files; **nothing here has been verified against
-an updated install**, because the update is not installed on the machine this was
-written on.
+Triage of the 2026-08-26 DCS patch against this tree.
 
-The single blocking fact: `requirements.txt:37` pins
-`BradySox/pydcs@f84e7d2cb967bd5eebdf9180c1f7b0d5e994d8bd`, cut for DCS
-2.9.28.26283. Every new unit, trailer, loadout and AI skill level in this patch is
-unreachable until that pin moves.
+**Verified against the updated install on 2026-08-26** (`autoupdate.cfg` reports
+`2.9.29.27278`, stamped `20260826-084519`). Sections 1 and 2 are settled from the
+install's own Lua. Sections 3 to 5 are still read from the published patch notes and
+our own files, and say so where it matters.
 
----
+`requirements.txt:37` still pins
+`BradySox/pydcs@f84e7d2cb967bd5eebdf9180c1f7b0d5e994d8bd`, cut for DCS 2.9.28.26283.
+Every new unit, trailer, loadout and AI skill level in this patch remains unreachable
+until that pin moves. That gates **new content**, not the three questions below.
 
-## 1. Do the export first
+## 1. The export gates the pin, not the triage
 
-Nothing below can be settled without it.
+The first draft of this note said nothing below could be settled without running the
+wiki's `pydcs_export.lua` process. **That was wrong, and it cost nothing to find out.**
+All three questions in section 2 are questions about what DCS declares, and DCS
+declares it in plain Lua inside the install. Reading those files answered all three,
+with no DCS launch.
 
-1. Run the wiki's `pydcs_export.lua` process on the updated install. The runbook and
-   the heavy-mod gotchas are in `tools/verify_mod_export.py`'s docstring; the
-   nil-guarded copy is at `C:\Users\brady\dcs-export\pydcs_export.lua`.
-2. Diff the export against `pydcs_extensions/` and `resources/units/ground_units/`.
-3. Run `pytest tests/test_layout_unit_types.py`. That test exists because of the
-   2026-08-08 LvS-103 breakage, and item 2.1 below is the same failure class.
+The export is still owed, for the thing it is actually for:
 
-## 2. Three silent-breakage candidates
+1. Moving the pydcs pin so the patch's new units, trailers and loadouts become
+   reachable at all.
+2. Re-verifying the `pydcs_extensions/` registrations field-for-field
+   (`tools/verify_mod_export.py`), the standing post-update sweep.
 
-### 2.1 "BMP-3 IFV (replaces the old model)"
+The runbook and the heavy-mod gotchas are in `tools/verify_mod_export.py`'s docstring;
+the nil-guarded exporter is at `C:\Users\brady\dcs-export\pydcs_export.lua`.
 
-Listed under the Current Hill Assets Pack, which ED now ships in
-`CoreMods/tech/Currenthill Assets Pack` under `CHAP_*` ids.
+**Read the install first, export second.** For any question of the form "did ED rename
+or remove X", the install is ground truth and is greppable now.
 
-We field the vanilla `BMP-3` id in `resources/units/ground_units/BMP-3.yaml`, and
-`resources/plugins/tic/TIC_v1.1.lua:146` keys `["IFV BMP-3"]` by name.
+## 2. Three silent-breakage candidates - all three settled
 
-If "replaces" means a new id rather than a new 3D model on the old id, layouts
-naming `BMP-3` resolve to `None`, `GroupLayoutMapping.from_dict` drops them without
-an error, and the affected sites raise `LayoutException` at generation. That is
-exactly what cost Sweden 2020 its only long-range SAM in August.
+| # | Candidate | Predicted | Verdict |
+|---|---|---|---|
+| 2.1 | BMP-3 id rename | `LayoutException` | **Falsified** - id unchanged. A different break found instead. |
+| 2.2 | AGM-45B clsid collision | our stale dict wins | **Confirmed** - stock now declares the clsid. |
+| 2.3 | F-4E SUU-23 migration | payload Lua names a dead clsid | **Confirmed, different exposure** - the Lua is clean; the pylon wiring is not. |
 
-**Check:** does `BMP-3` still appear in the export, and is there a new `CHAP_BMP3`?
-**Catcher:** `tests/test_layout_unit_types.py`.
+### 2.1 "BMP-3 IFV (replaces the old model)" - no LayoutException, but TIC lost its override
 
-### 2.2 AGM-45B clsid collision (§71)
+**The predicted failure does not happen.** "Replaces" means replaced in place, keeping
+the id. `CoreMods/tech/Currenthill Assets Pack/Database/Vehicles/CHAP_BMP3.lua:274`
+sets `GT.Name = "BMP-3"`, and no vanilla `BMP-3.lua` survives anywhere under `CoreMods`
+or `Scripts` - the CurrentHill file is now the sole definition of the vanilla id.
+`db_countries.lua` still assigns `"BMP-3"` to countries. So
+`resources/units/ground_units/BMP-3.yaml` (which keys `variants: BMP-3`) and every
+layout naming `BMP-3` keep resolving, and `tests/test_layout_unit_types.py` stays green.
 
-`pydcs_extensions/f4e_expanded_weapons/f4e_expanded_weapons.py:9` injects:
+**A different break is real.** The same file sets
+`GT.DisplayName = _("IFV BMP-3 [CH]")`. `resources/plugins/tic/TIC_v1.1.lua` keys its
+per-unit profile table by **DisplayName**, not by id:
 
-```python
-AGM_45B_Shrike_ARM__LAU_34_ = {
-    "clsid": "{LAU_34_AGM_45B}",
-    "weight": 224,
-    "settings": Weapons.AGM_45A_Shrike_ARM["settings"],
+- `:512` - `self.displayName = units[1]:GetDesc().displayName or ""`
+- `:2300` - `local override = profile[self:GetDisplayName()] or {}`
+
+`profile["IFV BMP-3 [CH]"]` is nil, `or {}` swallows the miss, and the BMP-3 entry's
+`SalvoQty = 1` ("These are more like tanks, so need to decrease") silently reverts to
+the generic profile. No error, no log line.
+
+**Fixed** in this change: the lookup falls back to the name with a trailing vendor
+suffix stripped, so both spellings match and older DCS installs are unaffected.
+Verified on Lua 5.1 - `IFV BMP-3 [CH]` and `IFV BMP-3` both resolve to `SalvoQty = 1`,
+`APC BTR-80` is untouched, and an unknown name still falls through to default.
+
+**Scope of the sweep.** Two CurrentHill files claim a non-CH id: `CHAP_BMP3.lua`
+(`BMP-3`) and `CHAP_T90A.lua` (`T-90`, DisplayName `MBT T-90A [CH]`). TIC is the only
+consumer in the tree that keys by DisplayName, it holds five real unit keys
+(`IFV BMP-3`, `APC BTR-80`, `APC BTR-82A`, `APC M113`, `SAM Avenger (Stinger)`), and
+only `IFV BMP-3` collides. `Moose.lua`'s `IFV BMP-3 [32912lb]` entries are cargo
+weights in a different namespace and are unaffected.
+
+**The general lesson, worth more than the fix.** Keying a table by DCS DisplayName is
+load-bearing on a string ED can change in any patch, and `or {}` makes the failure
+silent. TIC has no harness coverage (`tests/lua/` covers `vietnamops` only), so nothing
+catches the next one.
+
+### 2.2 AGM-45B clsid collision (§71) - confirmed
+
+`CoreMods/aircraft/AircraftWeaponPack/anti-radiation missiles.lua:1250-1252` now
+declares both clsids natively:
+
+```lua
+local AGM_45B_name = "AGM-45B Shrike ARM (LAU-34)"
+declare_loadout(LoadAGM45(true,  AGM_45B, AGM_45B_name, "{LAU_34_AGM_45B_SWA}"))
+declare_loadout(LoadAGM45(false, AGM_45B, AGM_45B_name, "{LAU_34_AGM_45B}"))
+```
+
+Stock settings come from `Get_RFGU_GUISettings_Preset("AGM_45")`.
+`pydcs_extensions/f4e_expanded_weapons/f4e_expanded_weapons.py:9` injects the same
+`{LAU_34_AGM_45B}` with `Weapons.AGM_45A_Shrike_ARM["settings"]` borrowed, and
+`weapon_injector.py` writes with a bare `setattr` plus a bare `weapon_ids[clsid] =`,
+with no collision check. Injection runs after import, so **our stale copy wins** -
+against a missile whose FM this patch reworked from scratch.
+
+**Gated on the pin.** The fix is to delete the `WeaponsF4EExpanded` entry and keep the
+pylon wiring, which then resolves natively. It cannot land before the pin moves:
+pydcs `f84e7d2c` predates the clsid, so deleting the injection today removes the
+weapon instead of de-duplicating it. **Do the pin first, then this.**
+
+`resources/weapons/standoff/AGM-45B.yaml` already lists the clsid, so the 1972 date
+gate holds either way.
+
+### 2.3 F-4E SUU-23 migration - confirmed, and the exposure is not where the note looked
+
+**The payload Lua is clean.** `resources/customized_payloads/F-4E.lua` and
+`F-4E-45MC.lua` contain no SUU-23 reference at all, so the upstream-#889 failure mode
+does not apply to them.
+
+**The pylon wiring is the exposure.** HB split the pod into `{SUU_23_POD_Wing}` and
+`{SUU_23_POD_Centerline}`, and `{SUU_23_POD}` is no longer declared as a loadout
+anywhere in the module. The migration ED shipped is a fixed table
+(`CoreMods/aircraft/F-4E/Entry/F-4E.lua:1140-1154`) covering **three pylons**:
+
+```lua
+local deprecated_loadouts = {
+    [pylon_1]  = {["{SUU_23_POD}"] = "{SUU_23_POD_Wing}"},
+    [pylon_7]  = {["{SUU_23_POD}"] = "{SUU_23_POD_Centerline}"},
+    [pylon_13] = {["{SUU_23_POD}"] = "{SUU_23_POD_Wing}"},
 }
 ```
 
-This patch adds "AGM-45B loadouts for LAU-34 rail" to core weapons and "AGM-45B
-(Shrike B)" to the F-4E. If either ships `{LAU_34_AGM_45B}`, our copy collides.
+`f4e_expanded_weapons.py:256` and `:416` wire `Weapons.SUU_23` on pylons **3 and 11** -
+the inner wing stations, which our §71 pack added and stock never carried. They are
+outside the migration table, so nothing remaps them.
 
-`pydcs_extensions/weapon_injector.py` writes with a bare `setattr` and a bare
-`weapon_ids[clsid] = value`. There is no collision check and no error. Injection
-runs after import, so **our stale dict wins** — including the borrowed AGM-45A
-settings, which the patch has now diverged from ("Forwarded all changes from
-AGM-45A to AGM-45B", plus a reworked FM and a 3-degree autopilot deadzone).
+**Gated on the pin**, same as 2.2: the correct target clsid is `{SUU_23_POD_Wing}`,
+which pydcs `f84e7d2c` does not carry. Re-point both pylons when the pin moves, and
+confirm against the export that the inner-wing station accepts the wing variant.
 
-**Check:** is `{LAU_34_AGM_45B}` in the fresh export?
-**If yes:** delete the `WeaponsF4EExpanded` entry, keep the pylon wiring — the
-pylons reference `Weapons.AGM_45B_Shrike_ARM__LAU_34_`, which resolves natively
-once pydcs carries it.
+### 2.4 The §71 OVGME mod is unapplied and stale - read before re-enabling it
 
-`resources/weapons/standoff/AGM-45B.yaml` already lists that clsid, so the 1972
-date gate holds either way.
+Not predicted by the first draft, and the most urgent item here for anyone about to fly.
 
-### 2.3 F-4E SUU-23 migration
+The DCS update overwrote the 414th's `Expanded_F-4E_Weapons_Pack` OVGME mod. The live
+`CoreMods/aircraft/F-4E/Entry/F-4E.lua` is stock (43,501 bytes, stamped Aug 26 15:36);
+the mod's copy under `OVGME MODS/` is 56,917 bytes, stamped Jul 18. They differ, so the
+mod is currently **not applied**.
 
-HB shipped "Migration for existing missions with old SUU-23 pods". Our pack wires
-`Weapons.SUU_23` on pylons 3 and 11
-(`f4e_expanded_weapons.py:256`, `:416`), and `resources/customized_payloads/F-4E.lua`
-and `F-4E-45MC.lua` may name the old clsid directly.
+The mod's July copies predate everything this patch did to the F-4E:
 
-A changed clsid means every F-4E fit carrying the gun pod falls through to a
-fallback loadout. This is the F-14A-135-GR-Early failure mode (upstream #889): the
-jet flies, it just does not carry what the file says.
+- Zero occurrences of `SUU_23_POD_Wing`, `SUU_23_POD_Centerline` or
+  `deprecated_loadouts` - it still ships the single `{SUU_23_POD}`.
+- Its own `{LAU_34_AGM_45B}` declaration, which stock now owns.
 
-**Check:** grep both payload Lua files for the SUU-23 clsid and compare against the
-export.
+**Re-enabling it in OVGME as-is reverts ED's 2026-08-26 F-4E work** - the AGM-45B FM
+rework and the SUU-23 pod split both go back to July. The four files it ships
+(`anti-radiation missiles.lua`, `aim9_family.lua`, `F-4E.lua`, `Weapons.lua`) need
+rebasing onto the new stock files before the pack goes back on.
+
+This is a DCS-install matter, not a repo change, so nothing in this PR fixes it.
 
 ## 3. AH-64D DTC — the largest new opportunity (§74)
 

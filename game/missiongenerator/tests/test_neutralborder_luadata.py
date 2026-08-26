@@ -16,7 +16,8 @@ def _zone(sam: bool = True) -> NeutralBorderLuaZone:
     return NeutralBorderLuaZone(
         country="Lebanon",
         airfield="Rayak",
-        floor_ft=10000,
+        floor_blue_ft=None,
+        floor_red_ft=None,
         fighter_template="NeutralBorder|Lebanon|MiG-29A",
         sam_template="NeutralBorder|Lebanon|SAM" if sam else None,
         red_country_id=34,
@@ -40,7 +41,10 @@ def test_emits_the_zone_with_templates_ids_and_border() -> None:
     assert "Rayak" in lua
     assert "NeutralBorder|Lebanon|MiG-29A" in lua
     assert "NeutralBorder|Lebanon|SAM" in lua
-    assert "10000" in lua
+    # No floor emitted at all: this zone grants no safe altitude, and a
+    # number in the payload would imply one exists.
+    assert "floorBlueFt" not in lua
+    assert "floorRedFt" not in lua
     assert "34" in lua and "2" in lua
     assert "20000.0" in lua  # border vertex, one decimal
 

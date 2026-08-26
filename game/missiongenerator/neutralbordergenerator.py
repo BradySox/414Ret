@@ -90,6 +90,10 @@ class NeutralBorderGenerator:
         # Per side: a country may let one bloc through and not the other.
         permits_blue = zone.permits(blue_bloc, on)
         permits_red = zone.permits(red_bloc, on)
+        # None = no safe altitude for that side, which is what a closed or
+        # hostile country actually offers.
+        floor_blue = zone.floor_for(blue_bloc, on)
+        floor_red = zone.floor_for(red_bloc, on)
         enforced = posture == NEUTRAL and not (permits_blue and permits_red)
 
         if not enforced:
@@ -103,7 +107,8 @@ class NeutralBorderGenerator:
                 overflight_blue=permits_blue,
                 overflight_red=permits_red,
                 origin_label=zone.origin_label(posture, enforced=False),
-                floor_ft=zone.floor_ft,
+                floor_blue_ft=floor_blue,
+                floor_red_ft=floor_red,
                 border=list(zone.border),
             )
 
@@ -128,7 +133,8 @@ class NeutralBorderGenerator:
                 overflight_blue=True,
                 overflight_red=True,
                 origin_label=zone.origin_label(posture, enforced=False),
-                floor_ft=zone.floor_ft,
+                floor_blue_ft=floor_blue,
+                floor_red_ft=floor_red,
                 border=list(zone.border),
             )
 
@@ -226,7 +232,8 @@ class NeutralBorderGenerator:
             spawn=zone.spawn,
             spawn_alt_m=spawn_alt_m,
             origin_label=zone.origin_label(NEUTRAL),
-            floor_ft=zone.floor_ft,
+            floor_blue_ft=floor_blue,
+            floor_red_ft=floor_red,
             fighter_template=fighter_name,
             sam_template=sam_name,
             red_country_id=self.red_country_id,

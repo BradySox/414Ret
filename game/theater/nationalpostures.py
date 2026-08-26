@@ -42,6 +42,12 @@ RU_LED = "toward_ru_led"
 #: Buckets whose meaning is "this side's aircraft may transit".
 OVERFLIGHT_BUCKETS = frozenset({"allied", "permissive"})
 
+#: The one bucket an altitude floor makes sense for. "Sometimes tolerated,
+#: sometimes denied" is exactly a country that lets a high transit pass and
+#: challenges a low penetration. `closed` and `hostile` grant no sanctuary at
+#: any height -- a floor there would invent a safe altitude that does not exist.
+CONTESTED = "contested"
+
 #: An uncovered date, an unknown country, or an unreadable file.
 DEFAULT_POSTURE = "closed"
 

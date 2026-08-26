@@ -18,7 +18,7 @@ no ``neutralBorder`` node and the plugin no-ops.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
     from game import Game
@@ -32,7 +32,11 @@ class NeutralBorderLuaZone:
     """One neutral country's zone, as actually built into the miz."""
 
     country: str
-    floor_ft: int
+    #: Per side: the altitude below which a crossing trips, or None for any
+    #: altitude. A floor means "high transit is tolerated", which only a
+    #: contested country grants -- a closed one offers no safe height.
+    floor_blue_ft: Optional[int] = None
+    floor_red_ft: Optional[int] = None
     #: "neutral", "blue" or "red" -- who owns the airspace, which picks the
     #: colour family. Only a neutral that refuses transit carries templates and
     #: is scanned; everything else is map information.
@@ -104,7 +108,12 @@ def populate_neutral_border_lua(
                 record.add_key_value("spawnX", f"{zone.spawn[0]:.1f}")
                 record.add_key_value("spawnZ", f"{zone.spawn[1]:.1f}")
                 record.add_key_value("spawnAltM", f"{zone.spawn_alt_m:.1f}")
-            record.add_key_value("floorFt", str(zone.floor_ft))
+            # Absent = no floor at all: that side is intercepted at any
+            # altitude. The Lua treats a missing value as "no sanctuary".
+            if zone.floor_blue_ft is not None:
+                record.add_key_value("floorBlueFt", str(zone.floor_blue_ft))
+            if zone.floor_red_ft is not None:
+                record.add_key_value("floorRedFt", str(zone.floor_red_ft))
             assert zone.fighter_template is not None
             record.add_key_value("fighterTemplate", zone.fighter_template)
             if zone.sam_template is not None:

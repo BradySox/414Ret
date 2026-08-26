@@ -82,7 +82,6 @@ neutral_border_defense:
     spawn: [-375979, 341652]
     spawn_alt_ft: 20000
     aircraft: MiG-21Bis
-    floor_ft: 10000
     sam: true
     # OVERRIDE. The table reads Pakistan permissive toward the US bloc in
     # 2006 and that is correct -- but the permission was for designated
@@ -116,7 +115,6 @@ neutral_border_defense:
     spawn: [-727669, -259559]
     spawn_alt_ft: 20000
     aircraft: MiG-21Bis
-    floor_ft: 10000
     sam: true
     # OVERRIDE. The table reads Pakistan permissive toward the US bloc in
     # 2006 and that is correct -- but the permission was for designated
@@ -153,7 +151,6 @@ neutral_border_defense:
     spawn: [-315321, -523142]
     spawn_alt_ft: 20000
     aircraft: MiG-29A
-    floor_ft: 10000
     sam: true
     border:
       - [362618, -610647]

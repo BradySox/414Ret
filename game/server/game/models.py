@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from dcs.mapping import Point
 from pydantic import BaseModel
@@ -193,7 +193,9 @@ class NeutralBorderJs(BaseModel):
     posture: str
     #: Whether BLUE may transit — the map is drawn from the player's side.
     overflight: bool
-    floor_ft: int
+    #: Altitude below which BLUE is intercepted, or None for any altitude. A
+    #: floor means "high transit is tolerated"; a closed country grants none.
+    floor_ft: Optional[int]
     #: The border ring as a Leaflet polygon (array-of-arrays, one ring, no holes).
     border: LeafletPoly
 
@@ -220,7 +222,7 @@ class NeutralBorderJs(BaseModel):
                     airfield=zone.origin_label(posture, enforced=not permits_blue),
                     posture=posture,
                     overflight=permits_blue,
-                    floor_ft=zone.floor_ft,
+                    floor_ft=zone.floor_for(blue_bloc, on),
                     border=[ring],
                 )
             )

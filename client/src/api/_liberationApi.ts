@@ -639,7 +639,7 @@ export type NeutralBorder = {
   airfield: string;
   posture: string;
   overflight: boolean;
-  floor_ft: number;
+  floor_ft?: number | null;
   border: LatLng[][];
 };
 export type Game = {

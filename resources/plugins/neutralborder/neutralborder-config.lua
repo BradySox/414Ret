@@ -96,13 +96,18 @@ for _, raw in ipairs(data.zones or {}) do
                 enforces = enforces,
                 permits_blue = ofBlue,
                 permits_red = ofRed,
+                -- nil = no safe altitude for that side. A floor means "high
+                -- transit is tolerated", which a closed or hostile country
+                -- does not offer at any height (DM call).
+                floor_blue_m = tonumber(raw.floorBlueFt)
+                    and tonumber(raw.floorBlueFt) * FT_TO_M or nil,
+                floor_red_m = tonumber(raw.floorRedFt)
+                    and tonumber(raw.floorRedFt) * FT_TO_M or nil,
                 field = raw.field and tostring(raw.field) or nil,
                 spawn_x = spawn_x,
                 spawn_z = spawn_z,
                 spawn_alt_m = tonumber(raw.spawnAltM) or 6000,
                 origin_label = tostring(raw.originLabel or raw.field or "border CAP"),
-                floor_m = (tonumber(raw.floorFt) or 10000) * FT_TO_M,
-                floor_ft = tonumber(raw.floorFt) or 10000,
                 fighter_template = tostring(raw.fighterTemplate),
                 sam_template = raw.samTemplate and tostring(raw.samTemplate) or nil,
                 red_country = tonumber(raw.redCountryId),
@@ -518,10 +523,23 @@ local function warn(state, intruder_group)
     state.warned = true
     local zone = zones[state.zone]
     if state.is_player then
-        announce(intruder_group, string.format(
-            "%s AIR FORCE: You are violating %s airspace below %d ft. "
-                .. "Exit immediately or you will be engaged.",
-            string.upper(zone.country), zone.country, zone.floor_ft))
+        -- A country that grants no safe altitude must not be radioed as though
+        -- climbing would fix it. Only a floored (contested) zone names one.
+        local floor = (state.side == coalition.side.BLUE)
+            and zone.floor_blue_m or zone.floor_red_m
+        local msg
+        if floor then
+            msg = string.format(
+                "%s AIR FORCE: You are violating %s airspace below %d ft. "
+                    .. "Climb above it or exit, or you will be engaged.",
+                string.upper(zone.country), zone.country, floor / FT_TO_M)
+        else
+            msg = string.format(
+                "%s AIR FORCE: You are violating %s airspace. "
+                    .. "Exit immediately or you will be engaged.",
+                string.upper(zone.country), zone.country)
+        end
+        announce(intruder_group, msg)
     end
     local zi = state.zone
     local shadow = spawn_shadow(zone, zi, state.name, state.side)
@@ -551,11 +569,15 @@ local function scan_group(group, side, now)
     for zi, zone in ipairs(zones) do
         -- This intruder's own side decides: a country open to blue and closed
         -- to red must wave one through and intercept the other.
-        local permitted = (side == coalition.side.BLUE) and zone.permits_blue
+        local is_blue = (side == coalition.side.BLUE)
+        local permitted = is_blue and zone.permits_blue
             or (side == coalition.side.RED) and zone.permits_red
+        -- No floor for this side means no sanctuary: any altitude trips it.
+        local floor = is_blue and zone.floor_blue_m or zone.floor_red_m
+        local below = (floor == nil) or (p.y < floor)
         if zone.enforces
             and not permitted
-            and p.y < zone.floor_m
+            and below
             and in_bbox(zone, p.x, p.z)
             and in_polygon(zone, p.x, p.z) then
             if not state then

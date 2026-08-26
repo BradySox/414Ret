@@ -190,7 +190,11 @@ def test_ai_intruder_is_shadowed_but_never_engaged() -> None:
 
 
 def test_high_transit_above_the_floor_trips_nothing() -> None:
-    h = _setup(_config())
+    """Only a floored (contested) zone grants a safe altitude."""
+    cfg = _config()
+    cfg["neutralBorder"]["zones"][0]["floorBlueFt"] = "10000"
+    cfg["neutralBorder"]["zones"][0]["floorRedFt"] = "10000"
+    h = _setup(cfg)
     # 10,000 ft floor = 3048 m; the transit crosses at 5000 m.
     h.add_group(_intruder("Heavy 7-1", 70, side=2, alt=5000))
     h.load_plugin_script(PLUGIN)
@@ -343,4 +347,31 @@ def test_a_zone_open_to_everyone_never_scans() -> None:
 
     assert h.records("spawns") == []
     assert _attack_tasks(h) == []
+    h.assert_no_lua_errors()
+
+
+def test_a_zone_with_no_floor_intercepts_at_any_altitude() -> None:
+    """ "If they are hostile then they are hostile" (DM, 2026-08-25). A floor
+    means high transit is tolerated; a closed country grants no such height, so
+    a zone emitted without one must trip a transit at any altitude."""
+    h = _setup(_config())  # the fixture emits no floorBlueFt/floorRedFt
+    h.add_group(_intruder("Heavy 7-1", 70, side=2, alt=9000))  # ~30,000 ft
+    h.load_plugin_script(PLUGIN)
+    h.advance_to(60)
+
+    assert len(_shadow_spawns(h)) == 1, "a closed border let a high transit pass"
+    h.assert_no_lua_errors()
+
+
+def test_the_warning_does_not_offer_an_altitude_that_does_not_exist() -> None:
+    """A floorless zone must not radio 'climb above it' -- there is no above."""
+    h = _setup(_config())
+    h.add_group(_intruder("Viper 1-1", 42, side=2))
+    h.load_plugin_script(PLUGIN)
+    h.advance_to(45)
+
+    texts = [str(r.get("text", "")) for r in h.records("texts") if isinstance(r, dict)]
+    warned = [t for t in texts if "violating" in t]
+    assert warned, "no warning was issued"
+    assert not any("below" in t or "Climb" in t for t in warned)
     h.assert_no_lua_errors()

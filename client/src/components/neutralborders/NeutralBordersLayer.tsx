@@ -63,9 +63,13 @@ export default function NeutralBordersLayer() {
               <b>{border.country} airspace</b>
               <br />
               {enforced
-                ? `Defended below ${border.floor_ft.toLocaleString()} ft · alert from ${
-                    border.airfield
-                  }`
+                ? // No floor means no safe altitude, so the tooltip must not
+                  // imply one exists by naming a number.
+                  `${
+                    border.floor_ft
+                      ? `Defended below ${border.floor_ft.toLocaleString()} ft`
+                      : "Closed to you at any altitude"
+                  } · alert from ${border.airfield}`
                 : border.airfield}
             </Tooltip>
           </Polygon>

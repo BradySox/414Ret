@@ -9,6 +9,7 @@ from typing import Any
 from game.theater.nationalpostures import RU_LED, US_LED
 from game.theater.neutralborder import (
     BLUE_ALIGNED,
+    DEFAULT_CONTESTED_FLOOR_FT,
     DEFAULT_SPAWN_ALT_FT,
     NEUTRAL,
     RED_ALIGNED,
@@ -51,7 +52,8 @@ def test_defaults() -> None:
     del entry["sam"]
     zone = NeutralBorderZone.from_yaml(entry)
     assert zone is not None
-    assert zone.floor_ft == 10000
+    # No floor authored and none derived: a floor is not a universal rule.
+    assert zone.floor_ft is None
     assert zone.sam is False
     assert zone.overflight_override is None
     assert zone.posture_override is None
@@ -244,3 +246,44 @@ def test_permitting_neutral_labels_itself_as_open() -> None:
     assert zone.origin_label(NEUTRAL, enforced=False) == (
         "neutral — overflight permitted"
     )
+
+
+# -- a floor is not a universal rule -------------------------------------------
+# "If they are hostile then they are hostile" (DM, 2026-08-25). A floor means
+# high transit is tolerated, which only a `contested` country grants. A closed
+# or hostile one offers no safe altitude, and inventing one invents a sanctuary.
+
+
+def _unfloored(**overrides: object) -> NeutralBorderZone:
+    """A zone with no authored floor, so the posture decides."""
+    entry = _spawn_entry(border=[[0, 0], [100, 0], [100, 100], [0, 100]])
+    del entry["floor_ft"]
+    entry.update(overrides)
+    zone = NeutralBorderZone.from_yaml(entry)
+    assert zone is not None
+    return zone
+
+
+def test_a_closed_country_grants_no_safe_altitude() -> None:
+    """Iran 2006 is closed toward the US bloc."""
+    zone = _unfloored(country="Iran")
+    assert zone.floor_for(US_LED, ON) is None
+
+
+def test_a_contested_country_gets_the_default_floor() -> None:
+    """Pakistan reads contested toward the US bloc after Abbottabad."""
+    zone = _unfloored(country="Pakistan")
+    assert zone.floor_for(US_LED, date(2015, 1, 1)) == DEFAULT_CONTESTED_FLOOR_FT
+
+
+def test_an_authored_floor_always_wins() -> None:
+    zone = _box_zone(country="Iran", floor_ft=8000)
+    assert zone.floor_for(US_LED, ON) == 8000
+
+
+def test_the_floor_is_per_side_like_consent() -> None:
+    """A country may tolerate one bloc at height and refuse the other outright."""
+    zone = _unfloored(country="Pakistan")
+    when = date(2015, 1, 1)
+    assert zone.floor_for(US_LED, when) == DEFAULT_CONTESTED_FLOOR_FT
+    assert zone.floor_for(RU_LED, when) is None

@@ -51,6 +51,10 @@ from typing import Any, Optional
 #: intercept and clear of Afghanistan's terrain.
 DEFAULT_SPAWN_ALT_FT = 20000
 
+#: Floor for a `contested` country when the campaign does not state one. Only
+#: that bucket gets a floor at all -- see NeutralBorderZone.floor_for.
+DEFAULT_CONTESTED_FLOOR_FT = 10000
+
 #: No coalition airfield inside it: out of the war, and it defends itself.
 NEUTRAL = "neutral"
 #: Hosts BLUE airfields -- a blue host, not a third party.
@@ -69,8 +73,13 @@ class NeutralBorderZone:
     country: str
     #: pydcs plane id for the alert fighters (vanilla only). Neutral only.
     aircraft: str | None = None
-    #: Crossings above this are legal transit; below it a neutral border trips.
-    floor_ft: int = 10000
+    #: Author override for the altitude below which a crossing trips, or None
+    #: to derive it. **A floor is not a universal rule** (DM call, 2026-08-25):
+    #: it means "high transit is tolerated", which is true of a country that
+    #: merely dislikes you and false of one that is closed. Derived, only a
+    #: `contested` posture gets one; `closed` and `hostile` intercept at any
+    #: altitude, because inventing a safe height there is inventing a sanctuary.
+    floor_ft: Optional[int] = None
     #: Author an SA-6 point-defense battery, cloned on player escalation only.
     sam: bool = False
     #: Map airfield the alert flight air-spawns overhead. Any airfield on the
@@ -146,6 +155,20 @@ class NeutralBorderZone:
         from game.theater.nationalpostures import permits_overflight
 
         return permits_overflight(self.country, on, bloc)
+
+    def floor_for(self, bloc: str, on: Any) -> Optional[int]:
+        """Altitude below which a crossing trips, or None for any altitude.
+
+        The campaign's value wins. Otherwise only a `contested` posture gets a
+        floor -- a country that is closed or hostile offers no safe height.
+        """
+        if self.floor_ft is not None:
+            return self.floor_ft
+        from game.theater.nationalpostures import CONTESTED, posture_for
+
+        if posture_for(self.country, on, bloc) == CONTESTED:
+            return DEFAULT_CONTESTED_FLOOR_FT
+        return None
 
     def enforces_against(self, theater: Any, bloc: str, on: Any) -> bool:
         """True when this border intercepts ``bloc``'s aircraft.
@@ -233,7 +256,9 @@ class NeutralBorderZone:
             return cls(
                 country=country,
                 aircraft=str(aircraft) if aircraft is not None else None,
-                floor_ft=int(data.get("floor_ft", 10000)),
+                floor_ft=(
+                    int(data["floor_ft"]) if data.get("floor_ft") is not None else None
+                ),
                 sam=bool(data.get("sam", False)),
                 airfield=str(airfield) if airfield is not None else None,
                 spawn=spawn,

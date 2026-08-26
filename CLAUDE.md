@@ -181,6 +181,11 @@ Read before touching a campaign's `.yaml`, `.miz` or build tool.
   sections still needing sub-headings, and **how to replace a section without destroying its
   neighbours** — the first attempt silently deleted four live sections.
 - **Process** — `414th-verification-cadence-notes.md` (the fly-card throttle, proposed),
+  `414th-dcs-update-2026-08-26-notes.md` (**the 2026-08-26 DCS patch triaged against this
+  tree** — the stale pydcs pin that blocks everything, three silent-breakage candidates
+  (the replaced BMP-3, the §71 AGM-45B clsid collision, the F-4E SUU-23 migration), the
+  AH-64D DTC as §74's next airframe, and the rows to re-run. Written from the patch notes
+  alone — **nothing in it is verified against an updated install**),
   `414th-dcs-olympus-notes.md`, `414th-ui-redesign-directions.md` (+ `-mockups.html`),
   `414th-juanjux-fork-watch-notes.md` (**the second fork we watch** — his adoption ledger,
   what is already ours, and the OPFOR-AI precedent for seam 7),

@@ -25,7 +25,7 @@ so the two docs don't drift.
 
 ## Outstanding rows at a glance
 
-72 rows need a live pass. Full detail is under each `###` heading below —
+75 rows need a live pass. Full detail is under each `###` heading below —
 search the row id. `☐` untested · `◐` flown but not under the conditions that
 stress it · `✗` fail signature reproduced in-game.
 
@@ -147,6 +147,9 @@ stress it · `✗` fail signature reproduced in-game.
 | B95 | Saving the air wing keeps both coalitions | air wing config | ☐ |
 | B96 | Iron Gate's fields fill without an aircraft losing its stand | Iron Gate | ◐ |
 | B97 | One salvo, and only the targeted flight breaks | §94 | ☐ |
+| B100 | The ramp still holds the squadrons authored against it | DCS 2026-08-26 parking rework | ☐ |
+| B101 | The F-4E's Shrike and gun pod are still on the jet | §71 | ☐ |
+| B102 | A low ingress against an SA-2/SA-3 belt is still flyable | DCS 2026-08-26 SAM guidance | ☐ |
 
 ---
 
@@ -6304,3 +6307,101 @@ exercised by any test here.
   itself calls "bullseye 000 for 0". Standing the point off the field was considered and
   declined (it would stop being a findable landmark). If the degenerate calls actually
   bite in the air, that decision reopens.
+
+### B100 — The ramp still holds the squadrons authored against it · DCS 2026-08-26 parking rework · ☐ UNTESTED
+
+The 2026-08-26 DCS patch rebuilt AI taxiway pathing to use aircraft dimensions, and says
+in its own words that this changes the placement of parking spaces and increases the
+number of slots for large aircraft. Iron Gate and Northern Russia both had every
+squadron's `size:` hand-fitted to a stand count within the last month, so both are
+sitting on numbers that may no longer be true. Related to **B96**, which is the same
+question asked before the rework.
+
+**Setup.** Start a new game on Caucasus - Iron Gate, then again on Northern Russia. Both
+are authored to fill; that is the point of the row. ~20 min for the pair.
+
+**Pass.** Every squadron on both sides comes up with the aircraft its campaign file
+asks for. `retribution.log` carries no "No parking slots available" line at generation.
+A C-130J or KC-135 tasked out of a field that has large stands spawns on one rather than
+falling through to a runway or air start.
+
+**Fail signatures, and what each means:**
+
+- **A squadron comes up empty** — the base is oversubscribed. Squadrons fill in list
+  order until the ramp runs out, so the ones at the bottom get nothing and do it
+  silently. This is what cost Northern Russia its only AWACS and only tanker before the
+  sizes were authored. Count the base's slots in the ME and re-fit the `size:` values.
+- **A large aircraft air-starts or runway-starts where it used to sit on a stand** —
+  `flightgroupspawner.py:277`'s `width > 40` classification is still ours and unchanged,
+  so this means the slot supply beneath it moved. Check `ground_spawns_large` for that
+  control point.
+- **Aircraft spawn on top of each other, or taxi into each other leaving the stands** —
+  the terrain's parking data and pydcs's copy of it have diverged. That is a pin
+  problem, not a campaign problem; re-export before touching any campaign file.
+
+**Watch for — the constraint this does not lift.** §1's per-base backstop EWR stays
+removed. It was cut because a ground unit sat on taxiways and broke AI taxi routing, and
+the fact that the routing code was rewritten is not evidence the constraint lapsed.
+
+### B101 — The F-4E's Shrike and gun pod are still on the jet · §71 · ☐ UNTESTED
+
+The 2026-08-26 patch added AGM-45B loadouts for the LAU-34 rail to core weapons, added
+AGM-45B to the F-4E, and shipped a migration for missions carrying old SUU-23 pods. §71
+injects its own `{LAU_34_AGM_45B}` and wires `Weapons.SUU_23` to pylons 3 and 11.
+`pydcs_extensions/weapon_injector.py` overwrites with a bare `setattr`, so a collision
+is silent and ours wins. Full reasoning in
+[414th-dcs-update-2026-08-26-notes.md](design/414th-dcs-update-2026-08-26-notes.md) §2.
+
+**Setup.** Any campaign fielding the F-4E-45MC — Red Tide or Desert Storm. Frag a SEAD
+flight and a flight carrying the gun pod, generate, and look at both jets in the ME
+before flying. ~15 min.
+
+**Pass.** The Weasel jet carries Shrikes on the rail it is authored for and the AGM-78
+fits still resolve. The gun-pod fit shows a SUU-23 on the centreline. In the air, a
+Shrike launches and guides.
+
+**Fail signatures, and what each means:**
+
+- **The jet spawns clean, or with a generic fallback fit** — a clsid moved and the
+  payload file no longer matches. This is upstream #889's failure exactly: the aircraft
+  flies, it just is not carrying what the file says. Grep
+  `resources/customized_payloads/F-4E.lua` and `F-4E-45MC.lua` against the fresh export.
+- **The Shrike is there but behaves like the old missile** — our injected dict is
+  overriding a native entry. The patch reworked the AGM-45 FM from scratch and forwarded
+  the A changes to the B; our copy borrows AGM-45A's settings and was written before any
+  of that. Delete the `WeaponsF4EExpanded` entry and let the native one resolve.
+- **The pylon rejects the store in the ME** — the LAU-34 rail's legality changed. §71's
+  whole design rule is that fits are gated on live pylon legality, so this is a data
+  refresh, not a code change.
+
+### B102 — A low ingress against an SA-2/SA-3 belt is still flyable · DCS 2026-08-26 SAM guidance · ☐ UNTESTED
+
+SA-2's V755 and SA-3's 5V27 gained the missing K-method of guidance (half-lead, elevated
+by a constant) specifically for low-level targets, and the SA-8's 9M33 moved to a new
+CFD-derived flight model with CLOS guidance enabled. Nothing in this tree changes —
+threat rings come from pydcs sensor data and guidance method is not in it — so this row
+exists to find out whether a campaign profile that used to work still does.
+
+**Setup.** Red Tide, Vietnam or Desert Storm — any campaign whose front is screened by
+legacy MERAD. Fly one strike at the altitude the squadron normally ingresses at, against
+a defended target. Do not change the campaign. ~25 min.
+
+**Pass.** Going low still trades radar exposure for a survivable run, and the fork's own
+numbers are unaffected: the threat rings on the kneeboard match what actually engages,
+and §60's two-guidance-radar doubling still means one HARM does not kill a site.
+
+**Fail signatures, and what each means:**
+
+- **Low ingress is now simply lethal where it was survivable** — this is a DCS balance
+  change, not a fork defect, and the fix is doctrine rather than code. Say so on the fly
+  card before anyone re-tunes a campaign's SAM belt to compensate.
+- **The kneeboard's threat ring no longer predicts where you get shot at** — the ring is
+  drawn from sensor detection range, and the change was to missile guidance, so the two
+  should still agree. If they do not, the export is stale.
+- **§60-doubled sites die to one HARM again** — unrelated to this patch, but it is the
+  cheapest thing to notice on the same sortie. Check the site actually generated two
+  track radars.
+
+**Watch for.** The Patriot's DLZ was corrected against ballistic targets in the same
+patch. That only matters where a campaign fields both Patriot and §49's mobile theatre
+missiles — Desert Storm — and nobody has looked at it.

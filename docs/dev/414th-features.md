@@ -6994,10 +6994,13 @@ keeps the spread schedule unless that would leave the strike ahead of its SEAD).
 strikes behind one SEAD mass into the same window — the push is the point.
 
 **The §8 stagger discipline applies.** Movable =
-`STRIKE`/`BAI`/`OCA_RUNWAY`/`OCA_AIRCRAFT`/`CAS` (`COORDINATED_STRIKE_TYPES`), AI-only,
-non-ASAP. **`ARMED_RECON` and `AIR_ASSAULT` are excluded for scope, not for a mechanism**
-(corrected 2026-08-25 — see the box below), and both are pinned excluded by a test at the same
-front line the CAS test retimes at. **CAS was added 2026-08-24** (#973, the first gap mined out of the
+`STRIKE`/`BAI`/`OCA_RUNWAY`/`OCA_AIRCRAFT`/`ARMED_RECON`/`CAS` (`COORDINATED_STRIKE_TYPES`),
+AI-only, non-ASAP. The rule is **every `FormationAttackFlightPlan` tasking making one timed
+arrival on a point inside a ring, plus CAS**. `ARMED_RECON` joined 2026-08-25 (it is a formation
+attack against a control point, the same shape and target type as OCA). **`AIR_ASSAULT` is the
+one such tasking left out** — it is `ROTARY_WING`, so massing a slow helo into an 8-minute
+window with fast movers converging on one point trades suppression for a deconfliction risk;
+a test pins it excluded inside a ring that would otherwise cover it. **CAS was added 2026-08-24** (#973, the first gap mined out of the
 planner-doctrine queue): it descends to acquire and eats MANPADS low, then climbs into the
 area-SAM ring high, so a front under a live umbrella wants that umbrella down first exactly as
 a strike does. Its organic `SEAD_SWEEP` escort flies the package's own TOT and so accompanies
@@ -7022,8 +7025,14 @@ Assault half meant.
 | Air Assault is tied to the ground war's timing | Nothing times it that way. `auto_asap` is set only for the first AEWC package (`packageplanningtask.py`) and for player packages under `player_missions_asap`, so an Air Assault takes the same random spread as a strike. Its only ground-war coupling is planning *eligibility* — `PlanAirAssault.preconditions_met` needs the target in `state.vulnerable_control_points` — which decides whether it is planned, not when it arrives. |
 
 Both are `FormationAttackFlightPlan` against a `ControlPoint`, structurally the same tasking as
-OCA, which **is** included. So there is no mechanism behind the exclusion; it is unexamined
+OCA, which **is** included. So there was no mechanism behind either exclusion; it was unexamined
 scope, and the comment was written to make an omission read as a decision.
+
+**What was done about it.** `ARMED_RECON` was added to the set the same day — the reasoning that
+put OCA in applies to it unchanged. `AIR_ASSAULT` stays out on a reason that survives being
+checked: it is `ROTARY_WING`, so massing a slow helo into an 8-minute window with fast movers
+converging on one point trades a suppression gain for a deconfliction risk. That is a judgement,
+and it is labelled as one rather than dressed as a mechanism.
 
 **The lesson is the shape, not the two facts.** A rationale comment asserting *why* something is
 excluded is load-bearing — reviewers and future edits trust it — so it has to be checked against

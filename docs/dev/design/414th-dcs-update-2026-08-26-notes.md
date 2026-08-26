@@ -326,14 +326,23 @@ Whether those two absences are an ED omission or an artefact of what the editor 
 a second cartridge from a different terrain to settle. **Do not build against the 87-id
 list until that is checked.**
 
-### 4.5 The blocking unknown: what `sovereignty: 3` means
+### 4.5 The sovereignty enum -- SETTLED 2026-08-26
 
-Every row in the sample is `3`, so the enum cannot be read from it. Nothing can be
-generated without knowing which integer is Friendly and which is Hostile.
+The one-more-cartridge experiment ran the same day: the DM hand-set a handful of rows
+in the ME's DTC editor ("they all start neutral") and re-saved. Five rows moved off
+the default, in two values:
 
-**The cheapest way to settle it** is one more cartridge: open the DTC editor, set one
-aircraft to FRIENDLY and a different one to HOSTILE, leave the rest alone, save, and diff
-the `List` against this file. Two changed integers answer it permanently.
+| Value | Meaning | Evidence |
+|---|---|---|
+| `1` | FRIENDLY | KC-135 (the blue tanker), An-30 |
+| `2` | HOSTILE | MiG-23, Mirage F1, Tu-95 |
+| `3` | UNKNOWN / neutral | the starting state of all 48 rows, DM-confirmed |
+
+Two independent lines agree on which hand-set value is which: the natural side of
+each changed row, and ED's own tab description enumerating the states as "FRIENDLY,
+HOSTILE or UNKNOWN" -- 1, 2, 3 in listing order. An all-UNKNOWN shipping default is
+also the sane one, reinforcing §4.3. Nothing blocks the ATDT derivation now except
+the §4.4 wsType rows and the F-15C absence.
 
 ### 4.6 Before ~2003 nothing can ever read Hostile, and that is fine
 

@@ -1,3 +1,4 @@
+airlift_capacity: 1  # 9.1 t internal payload
 description: "The Bell Boeing V-22 Osprey is an American multi-use, tiltrotor military transport and cargo aircraft with both vertical takeoff and landing (VTOL) 
   and short takeoff and landing (STOL) capabilities. It is designed to combine the functionality of a conventional helicopter with the long-range, high-speed cruise 
   performance of a turboprop aircraft. The V-22 is operated by the United States and Japan, and is not only a new aircraft design, but a new type of aircraft that 

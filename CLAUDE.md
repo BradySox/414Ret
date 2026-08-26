@@ -124,6 +124,12 @@ Read before touching a campaign's `.yaml`, `.miz` or build tool.
 - **Naval** — `414th-cruise-missile-raids-notes.md`, `414th-naval-magazines-notes.md`,
   `414th-carrier-deck-decor-notes.md`
 - **Ground / frontline** — `414th-tic-dynamic-fronts-notes.md`,
+  `414th-airlift-capacity-notes.md` (**BUILT 2026-08-26** — airlift capacity was one
+  constant, `1 if helicopter else 2`, times a raw vehicle count; both halves are now
+  graded in ~7-tonne lift slots, cargo cost from the existing `class:` field and
+  aircraft capacity from an optional `airlift_capacity`. **`cabin_size` is NOT this**
+  — it is clamped CTLD infantry seats and the C-17A and An-26B both read 24. The
+  fallback is the old constant, so unauthored airframes are unchanged),
   `414th-het-convoy-notes.md` (**scoping only, nothing built** — a ground transfer
   spawns its own cargo, so ten T-90Ms road-march themselves between bases; heavy
   equipment transporters on §78's existing `ConvoyUnit.shipment` manifest model.

@@ -1,3 +1,4 @@
+airlift_capacity: 1  # 9 t payload
 class: Plane
 id: vwv_l-1049
 name: "Lockheed L-1049G Constellation"

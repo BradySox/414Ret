@@ -1,5 +1,6 @@
 class: Helicopter
 cabin_size: 24 # It should have 60+ but we do not want so much for CTLD to be possible
+airlift_capacity: 3  # 20 t payload
 can_carry_crates: true
 price: 6
 variants:

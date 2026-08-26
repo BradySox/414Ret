@@ -13,6 +13,7 @@ description:  # from https://en.wikipedia.org/wiki/Boeing_CH-47_Chinook
 lha_capable: true
 introduced: 2006
 cabin_size: 24 # It should have 33 but we do not want so much for CTLD to be possible
+airlift_capacity: 2  # 10.9 t payload
 can_carry_crates: true
 manufacturer: Boeing
 origin: USA

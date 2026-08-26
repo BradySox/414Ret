@@ -91,11 +91,10 @@ genuinely needs the patch; it is not buildable ahead of the export.
   moves *as* a unit and does not carry the transfer. Their place is §9 TIC's stance
   table and §90's front line. Adding a passenger concept to `transfers.py` would be a
   third cargo model on top of the two the tree already has.
-- **The airlift leg.** Related, and worse, but separate: `AirliftPlanner`
-  (`game/transfers.py:352`) sets `capacity_each = 1 if helicopter else 2` for every
-  aircraft in the game. Fixing that is blocked on there being no per-ground-unit mass or
-  size anywhere in `GroundUnitType`, and on `cabin_size` being a CTLD infantry-seat
-  count rather than a lift capacity — it is clamped for gameplay (`CH-47D`: *"It should
-  have 33 but we do not want so much for CTLD to be possible"*) and flat across lift
-  classes (`C-17A` and `An-26B` are both 24). That needs its own decision and its own
-  note.
+- **The airlift leg.** Related, and was worse, but separate -- and now done.
+  `AirliftPlanner` used to set `capacity_each = 1 if helicopter else 2` for every
+  aircraft in the game. It is now graded in lift slots on both halves, cargo and
+  aircraft. See
+  [414th-airlift-capacity-notes.md](414th-airlift-capacity-notes.md). The road
+  convoy is the half still outstanding, and it is the harder one, because a
+  convoy is spawned cargo rather than an abstract capacity.

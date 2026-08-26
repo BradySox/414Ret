@@ -113,14 +113,102 @@ existing three were reverse-engineered from a hand-built MP mission and are lock
 against the ME's own DTC editor schemas in `tests/missiongenerator/test_dtc.py`;
 the Apache needs the same treatment before a line of it is written.
 
-## 4. Two smaller §74 items
+## 4. The F-16C ROE tab (§74) — derivable from the campaign, and the stock table is wrong
 
-- **F-16C gained COLR and MPD ROE partitions.** Not cosmetic: the patch says air
-  track sovereignty (Friendly / Unknown / Suspect / Hostile) "now relies on DTC ROE
-  tab settings", and that ROE factors apply to onboard FCR tracks and offboard
-  datalink tracks alike. A Viper we generate without an ROE tab may declare tracks
-  differently than it did yesterday. Read `game/missiongenerator/dtc/viper.py`
-  against it.
+ED published the ROE tab's spec on 2026-08-26. It is not a cosmetic partition, and it is
+the second-strongest §74 item in this patch after the Apache.
+
+### 4.1 What the tab is
+
+Two checkboxes — **Type Sovereignty** and **Mode 4 Status** — plus an **Air Target Data
+Table (ATDT)**: a scrollable list of aircraft types, each set FRIENDLY, HOSTILE or
+UNKNOWN. The MMC feeds those into an ROE tree that decides how a track draws on the FCR
+and HSD:
+
+| Track state | Symbol | What it takes |
+|---|---|---|
+| Friendly | green circle | **one** ROE factor |
+| Hostile | red triangle | **two** ROE factors |
+| Suspect | yellow square | one factor indicating hostile |
+| Unknown | white square | nothing available |
+
+Type comes from the F-16's own NCTR scan or from another aircraft on the TNDL network.
+Mode 4 status **can only** come from TNDL — the F-16C's onboard IFF interrogator is not
+wired into the ROE logic.
+
+### 4.2 We can generate the ATDT; DCS ships one global default
+
+Retribution knows every squadron's airframe and coalition, which is exactly the input the
+table wants:
+
+| Flown by | Sovereignty |
+|---|---|
+| Blue only | FRIENDLY |
+| Red only | HOSTILE |
+| Both | UNKNOWN |
+
+Nothing needs authoring. The derivation is per campaign, which is the thing a single
+shipped default cannot be.
+
+### 4.3 The stock default is wrong on a campaign we ship
+
+`resources/campaigns/northern_russia.yaml`, Kutaisi (CP 25), is blue. Its squadrons
+include:
+
+- **JF-17 Thunder** — the published default table marks JF-17 **HOSTILE**. Blue's own
+  jets, on the hostile side of blue's ROE tree.
+- **AJS-37 Viggen** — default UNKNOWN. A friendly declaration left unclaimed.
+- **MiG-23MLD** (line 50) — and red flies MiG-23MLD as well, at Beslan (line 92) and
+  Mozdok (line 113). The one type genuinely on both sides is the one that most needs an
+  explicit UNKNOWN.
+
+The campaign ships upstream unchanged and the fork ships it too, so this is not
+hypothetical.
+
+### 4.4 The trap: the ATDT keys on NCTR families, not on our AircraftType
+
+The published table's rows are coarse — `F-15`, `F/A-18`, `MiG-21`, `F-14` — not DCS unit
+ids. So `F-15C Eagle` and `F-15E Strike Eagle (Suite 4+)` collapse to one row, as do
+`F-14A`, `F-14B` and `F-14B(U)`.
+
+**A per-`AircraftType` derivation would therefore produce a fratricide table**: one side's
+variant marks a family FRIENDLY while the other side flies a different variant of the same
+family. The collision rule has to be applied at family level — any family with variants on
+both coalitions is UNKNOWN.
+
+The work is a fixed `AircraftType` → ATDT-family mapping of roughly 30-40 rows, held as
+data. The derivation itself is a few lines.
+
+### 4.5 Before ~2003 nothing can ever read Hostile, and that is fine
+
+Mode 4 status requires TNDL, and Hostile requires two factors. Where a campaign has no
+datalink, Type Sovereignty is the only factor available and every red track tops out at a
+yellow Suspect square.
+
+We already hold the data to know which campaigns those are: `datalink_introduced` on the
+14 airframes that carry it (`resources/units/aircraft/F-16C_50.yaml:100` is 2003) plus the
+`DatalinkPolicy` setting. Red Tide, Desert Storm, Red Flag 81-2 and Northern Russia (1995)
+are all in that bracket.
+
+This is correct behaviour, not a defect. It does mean the payoff of writing the ATDT is
+overwhelmingly the **green Friendly declarations** — which is also the half that prevents
+blue-on-blue, so the feature earns its place on that alone.
+
+### 4.6 The correlation half — nothing owed
+
+Offboard datalink tracks now correlate only with real FCR tracks, capped by sub-mode
+(SAM/STT 1, DT SAM/DTT 2, TWS 10); uncorrelated datalink symbols overlay Search Targets
+instead. The datalink declutter setting no longer disables ROE factors.
+
+§7 hides mobile SAMs from the datalink, but that is ground symbology on the HSD and is
+untouched by any of this. **B64** (the datalink era gate) is the row to re-run; there is no
+code change here.
+
+**COLR partition.** Defaults TWS Track Targets yellow and uncorrelated System Tracks white,
+both overridable. Low value — recorded, not queued.
+
+### 4.7 Two smaller §74 items
+
 - **"F-16 DTC Multiple in multiplayer loads only first DTC" is fixed.** The §74
   checklist row's open question is whether `AutoLoad` fires on the two §64 spawn
   paths (uncontrolled carrier client, late-activated delayed flight). This fix is
@@ -276,6 +364,7 @@ Existing checklist rows this patch touches, none of them rewritten here:
 | B17 | §64 carrier spawn policy — dynamic spawn parking/FARP improvements |
 | B31, B52 | Jammer burnthrough changed in the cockpit (§5.6) |
 | G19, G40 | TARPS behaviour and imagery changed under §3 (§6.3) |
+| B64 | FCR/TNDL correlation reworked; the datalink era gate is the row that sees it (§4.6) |
 
 New rows added by this triage: **B100**, **B101**, **B102** — see
 [414th-ingame-pass-checklist.md](../414th-ingame-pass-checklist.md).

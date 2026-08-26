@@ -168,3 +168,67 @@ def test_no_kola_zone_reaches_across_northern_norway() -> None:
         assert (
             max(lngs) - min(lngs) < 25.0
         ), f"Russia zone spans {max(lngs) - min(lngs):.1f} deg of longitude"
+
+
+# -- a terrain list is a cache of a file, not campaign state --------------------
+
+
+def _restored(saved: list[NeutralBorderZone] | None) -> list[NeutralBorderZone]:
+    """A ConflictTheater coming back out of a save with these zones in it."""
+    from dcs.terrain import Syria
+
+    from game.theater.conflicttheater import ConflictTheater
+
+    theater = ConflictTheater.__new__(ConflictTheater)
+    state: dict[str, object] = {"terrain": Syria()}
+    if saved is not None:
+        state["neutral_border_zones"] = saved
+    theater.__setstate__(state)
+    return list(theater.neutral_border_zones)
+
+
+def _terrain_zone(country: str) -> NeutralBorderZone:
+    zone = NeutralBorderZone.from_yaml(
+        {"country": country, "border": [[0, 0], [100, 0], [100, 100]]},
+        from_terrain=True,
+    )
+    assert zone is not None
+    return zone
+
+
+def test_a_save_with_no_borders_picks_up_the_terrains() -> None:
+    """52 of the 54 real-world-map campaigns author none, so without this the
+    feature reaches almost nobody already mid-campaign."""
+    assert _restored(None), "an old save got no borders"
+
+
+def test_a_terrain_list_is_refreshed_not_frozen() -> None:
+    """Whatever shipped the day the campaign was rolled is not what the file
+    says today: the host nation was added to all seven maps on 2026-08-26, and a
+    save that froze its list would never see Iraq or Syria."""
+    restored = _restored([_terrain_zone("Turkey")])
+    names = {zone.country for zone in restored}
+    assert len(restored) > 1, "the terrain list was frozen at one country"
+    assert "Syria" in names, "the map's own nation never reached the save"
+
+
+def test_a_campaigns_own_borders_are_never_replaced() -> None:
+    """Enduring Resolve's corridor-cut Pakistan has to beat the terrain file's
+    whole-country one, which is the whole reason precedence is total."""
+    authored = NeutralBorderZone.from_yaml(
+        {"country": "Pakistan", "border": [[0, 0], [100, 0], [100, 100]]}
+    )
+    assert authored is not None
+    restored = _restored([authored])
+    assert [zone.country for zone in restored] == ["Pakistan"]
+
+
+def test_an_unmarked_list_is_left_alone() -> None:
+    """A save older than the flag cannot say where its zones came from, so it
+    keeps them rather than risk overwriting an authored set."""
+    legacy = NeutralBorderZone.from_yaml(
+        {"country": "Turkey", "border": [[0, 0], [100, 0], [100, 100]]}
+    )
+    assert legacy is not None
+    del legacy.__dict__["from_terrain"]
+    assert [zone.country for zone in _restored([legacy])] == ["Turkey"]

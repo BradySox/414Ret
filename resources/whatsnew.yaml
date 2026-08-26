@@ -13,6 +13,37 @@
 # changes sharing a date keep the order written here.
 
 entries:
+  - date: 2026-08-26
+    title: The map draws the country the war is in
+    change: >-
+      The map's own nation used to be left off the border layer, which meant
+      Kola had no Russia, the Persian Gulf no Iran, and Iraq no Iraq -- the war
+      itself was the one region with no line on it. Every country is now drawn.
+      A country that is in the war gets an outline and only the faintest wash,
+      because your units, the threat rings and the front line already say whose
+      ground it is; a solid shade now means one thing, that the airspace will
+      intercept you. Airspace you may cross is also shaded a little harder,
+      since the old one was invisible over desert.
+    watch: >-
+      Start a campaign on Iraq or the Persian Gulf and tick the Neutral airspace
+      layer. Iraq (or Iran) should now be outlined, and the only strongly shaded
+      country should be one that is not in the war and refuses you transit.
+      Borders already in a save keep the set they were rolled with.
+    row: B100
+  - date: 2026-08-26
+    title: Neutral interceptors can actually reach you
+    change: >-
+      A neutral country's alert flight launched from the middle of that country,
+      which was fine for Kuwait and hopeless for Iran -- on the first flown test
+      the MiGs came up 224 miles behind their target and never closed. They now
+      come up within 25 miles of whoever crossed the border, so they arrive
+      while it still matters. A small country still scrambles off its own
+      runway. The borders drawn on the F10 map also had no shading at all; they
+      match the planning map now.
+    watch: >-
+      Cross a defended border and watch your RWR. A pair should show up inside
+      a couple of minutes and sit with you rather than trailing far behind.
+    row: B100
   - date: 2026-08-25
     title: Every campaign gets its neighbours, with no setup
     change: >-
@@ -33,23 +64,23 @@ entries:
   - date: 2026-08-25
     title: The nations around the war are on the map
     change: >-
-      Every country bordering the war is now drawn with its real border, in
-      three colour families: red for a nation hosting the enemy's airfields,
-      blue for one hosting yours, green for a true neutral -- shaded where the
-      airspace bites, faint where you may fly. Who a nation sides with is
-      worked out from who actually holds the airfields inside its border, so
-      it flips by itself if a base changes hands (on Into the Hornet's Nest,
-      Lebanon reads enemy-red because red flies out of Beirut). A green-shaded
-      neutral refuses transit and defends it: cross below 10,000 ft and a pair
-      shadows you, warns you off, and engages only if you stay, drop, or shoot.
-      AI flights that stray are shadowed, never fired on. Enemy-red airspace is
-      covered by the enemy's own alert fighters, not a second system.
+      Every country bordering the war is now drawn with its real border. Colour
+      says whose airspace it is -- red for a nation holding the enemy's fields,
+      blue for one holding yours, mint for a country not in the war -- and
+      shading says whether it bites. Who a nation sides with is worked out from
+      who actually holds the airfields inside its border, so it flips by itself
+      if a base changes hands (on Into the Hornet's Nest, Lebanon reads enemy
+      because red flies out of Beirut). A neutral that refuses you transit is
+      the one shaded solid: cross it and a pair shadows you, warns you off, and
+      engages only if you stay, drop, or shoot. AI flights that stray are
+      shadowed, never fired on. Enemy airspace is covered by the enemy's own
+      alert fighters, not a second system.
     watch: >-
-      On Enduring Resolve, check the map layer: Pakistan's two green-shaded
-      blocks with the carrier lane between them, Iran to the west, and the
-      Central Asian neighbours in faint green you may overfly. Then cut a
-      corner into Pakistan below 10,000 ft and hold -- warned in ~40 s, a
-      MiG-21 pair on your enemy's IFF, and they go home if you leave promptly.
+      On Enduring Resolve, check the map layer: Pakistan's two shaded blocks
+      with the carrier lane between them, Iran to the west, and the Central
+      Asian neighbours in faint mint you may overfly. Then cut a corner into
+      Pakistan and hold -- warned in ~40 s, a MiG-21 pair on your enemy's IFF,
+      and they go home if you leave promptly.
     row: B100
   - date: 2026-08-24
     title: The carrier corridor over Pakistan

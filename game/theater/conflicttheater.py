@@ -59,9 +59,19 @@ class ConflictTheater:
         # covers both the save made before the feature existed and the one made
         # on a campaign that authors none -- which is 52 of the 54 campaigns on
         # real-world maps, so without this the feature reaches almost nobody
-        # already mid-campaign. A campaign that authors its own always wins,
-        # because those are already in the pickle.
-        if not state.get("neutral_border_zones"):
+        # already mid-campaign.
+        #
+        # A terrain list is also REFRESHED, not just filled: it is a cache of a
+        # shipped file, and freezing it would leave a campaign in progress with
+        # whatever borders happened to ship the day it was rolled. The 2026-08-26
+        # host-nation fix is exactly that case -- an existing save would never
+        # have seen Iraq or Syria. A campaign that authors its own is campaign
+        # state and is never touched; that is what `from_terrain` distinguishes.
+        # An unmarked list predates the flag, so it is left alone.
+        existing = state.get("neutral_border_zones")
+        if not existing or all(
+            getattr(zone, "from_terrain", False) for zone in existing
+        ):
             state["neutral_border_zones"] = self._terrain_border_zones(
                 state["terrain"].name
             )
@@ -77,7 +87,7 @@ class ConflictTheater:
         zones = []
         try:
             for entry in load_terrain_borders(terrain_name):
-                zone = NeutralBorderZone.from_yaml(entry)
+                zone = NeutralBorderZone.from_yaml(entry, from_terrain=True)
                 if zone is not None:
                     zones.append(zone)
         except Exception:

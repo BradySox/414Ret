@@ -1000,7 +1000,7 @@ class MizCampaignLoader:
             source = "terrain"
         zones = []
         for entry in entries or []:
-            zone = NeutralBorderZone.from_yaml(entry)
+            zone = NeutralBorderZone.from_yaml(entry, from_terrain=source == "terrain")
             if zone is not None:
                 zones.append(zone)
         if zones:

@@ -322,10 +322,20 @@ the pre-1991 inner-German border.
   would make it impossible to say where a zone came from — and Enduring Resolve
   depends on this, because its corridor-cut Pakistan must beat the terrain file's
   whole-country one.
-- **Existing saves pick them up.** `ConflictTheater.__setstate__` fills empty
-  border zones from the terrain file, so a campaign already in progress gets
-  borders without a re-roll. Verified against the DM's own save: 0 zones before,
-  7 after, no campaign edit.
+- **Existing saves pick them up, and keep picking them up.**
+  `ConflictTheater.__setstate__` fills empty border zones from the terrain file,
+  so a campaign already in progress gets borders without a re-roll. Verified
+  against the DM's own save: 0 zones before, 7 after, no campaign edit.
+  A terrain list is also **refreshed** on load rather than frozen — it is a cache
+  of a shipped file, and the 2026-08-26 host-nation fix is exactly why: a save
+  that froze its list would never see Iraq or Syria. `from_terrain` on the zone
+  is what makes that safe; a campaign's own zones are campaign state and are
+  never touched.
+  - **A save older than the flag is left alone**, because it cannot say where
+    its zones came from and the two campaigns that author their own are the two
+    most often under test. Refreshing them blind would hand Enduring Resolve the
+    whole-country Pakistan its carrier corridor exists to avoid. Roll a new
+    campaign to get the current set.
 
 Country lists come from the **measured** per-terrain table in
 `414th-national-postures-notes.md`, not from the eyeball — that table is why

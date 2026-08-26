@@ -102,6 +102,12 @@ class NeutralBorderZone:
     #: Border polygon as terrain XY pairs (pydcs Point.x/.y = DCS x/z), closed
     #: implicitly (last vertex connects to first).
     border: list[tuple[float, float]] = field(default_factory=list)
+    #: Came from resources/borders/<terrain>.yaml rather than the campaign.
+    #: Set after construction, never parsed -- a terrain list is a cache of a
+    #: shipped file, so a save carrying one is refreshed on load instead of
+    #: freezing whatever shipped the day it was made. A campaign's own zones are
+    #: campaign state and are never touched.
+    from_terrain: bool = False
 
     def posture_in(self, theater: Any) -> str:
         """This country's alignment: who owns the airfields inside its border.
@@ -192,7 +198,9 @@ class NeutralBorderZone:
         return f"{self.country} border CAP"
 
     @classmethod
-    def from_yaml(cls, data: dict[str, Any]) -> "NeutralBorderZone | None":
+    def from_yaml(
+        cls, data: dict[str, Any], from_terrain: bool = False
+    ) -> "NeutralBorderZone | None":
         """Build a zone from one ``neutral_border_defense:`` yaml entry.
 
         Returns None (with a log line) on a malformed entry rather than raising:
@@ -266,6 +274,7 @@ class NeutralBorderZone:
                 posture_override=override,
                 overflight_override=overflight,
                 border=border,
+                from_terrain=from_terrain,
             )
         except (KeyError, TypeError, ValueError, IndexError):
             logging.warning(

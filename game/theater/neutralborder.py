@@ -51,10 +51,6 @@ from typing import Any, Optional
 #: intercept and clear of Afghanistan's terrain.
 DEFAULT_SPAWN_ALT_FT = 20000
 
-#: Floor for a `contested` country when the campaign does not state one. Only
-#: that bucket gets a floor at all -- see NeutralBorderZone.floor_for.
-DEFAULT_CONTESTED_FLOOR_FT = 10000
-
 #: No coalition airfield inside it: out of the war, and it defends itself.
 NEUTRAL = "neutral"
 #: Hosts BLUE airfields -- a blue host, not a third party.
@@ -180,40 +176,53 @@ class NeutralBorderZone:
                 red += 1
         return (blue, red)
 
-    def permits(self, bloc: str, on: Any) -> bool:
-        """Does this country let ``bloc``'s aircraft transit on ``on``?
+    def permits(self, theater: Any, is_blue: bool) -> bool:
+        """Does this country let that side's aircraft transit?
 
-        The campaign's override wins outright; otherwise the dated table
-        decides, defaulting to refusal for anything it does not cover.
+        **Derived from the airbases inside its border** (DM call, 2026-08-26),
+        the same fact that decides alignment: a country you fly from is a
+        country that has let you in, and one you have no presence in has not.
+        A country both sides operate from lets both through, because it plainly
+        already does.
+
+        The dated posture table used to answer this. It was dropped as the
+        source because it made consent a fact about the calendar rather than
+        about the campaign in front of you -- it read Sweden and Finland
+        `closed` in 1983 while both sides flew combat sorties off their
+        runways, and it cannot see a base changing hands. The research is kept
+        (`resources/borders/national_postures.yaml`) and still picks each
+        country's era-correct airframe, which nothing else can supply.
+
+        A campaign's ``overflight:`` still wins outright.
         """
         if self.overflight_override is not None:
             return self.overflight_override
-        from game.theater.nationalpostures import permits_overflight
+        posture = self.posture_in(theater)
+        if posture == CONTESTED_ALIGNED:
+            return True
+        if posture == NEUTRAL:
+            return False
+        return posture == (BLUE_ALIGNED if is_blue else RED_ALIGNED)
 
-        return permits_overflight(self.country, on, bloc)
-
-    def floor_for(self, bloc: str, on: Any) -> Optional[int]:
+    def floor_for(self, theater: Any, is_blue: bool) -> Optional[int]:
         """Altitude below which a crossing trips, or None for any altitude.
 
-        The campaign's value wins. Otherwise only a `contested` posture gets a
-        floor -- a country that is closed or hostile offers no safe height.
+        Authored only. A floor means "high transit is tolerated", which is a
+        judgement no fact on the map supports -- it used to come from the
+        posture table's `contested` bucket, and went with it.
         """
-        if self.floor_ft is not None:
-            return self.floor_ft
-        from game.theater.nationalpostures import CONTESTED, posture_for
+        return self.floor_ft
 
-        if posture_for(self.country, on, bloc) == CONTESTED:
-            return DEFAULT_CONTESTED_FLOOR_FT
-        return None
+    def enforces_against(self, theater: Any, is_blue: bool) -> bool:
+        """True when this border intercepts that side's aircraft.
 
-    def enforces_against(self, theater: Any, bloc: str, on: Any) -> bool:
-        """True when this border intercepts ``bloc``'s aircraft.
-
-        Only an uninvolved country that refuses that side transit does: an
-        aligned one is handled by its own side's QRA, and a permitting neutral
-        is a line on the map by definition.
+        Only an uninvolved country does: one that hosts a side is handled by
+        that side's QRA, one both sides use has already let them both in, and a
+        country with nothing inside its border is nobody's business but its own.
         """
-        return self.posture_in(theater) == NEUTRAL and not self.permits(bloc, on)
+        return self.posture_in(theater) == NEUTRAL and not self.permits(
+            theater, is_blue
+        )
 
     def origin_label(self, posture: str, enforced: bool = True) -> str:
         """What the map tooltip calls this border's meaning."""

@@ -493,6 +493,69 @@ resolvable at any sane budget, so Norway stays the outlier.
 the number to watch if the F10 map feels heavy — `drawBorders` turns the whole
 draw off without touching the interception.
 
+## Consent moved to the airbases (2026-08-26, DM call)
+
+> "Keep the research, drop what we did with it. Overflight should be derived by
+> airbases in the borders."
+
+The dated posture table answered *may this side transit* from the day it was
+wired. It no longer does. Consent is now derived from the same fact as
+alignment — the airbases inside the border:
+
+| Inside the border | Blue may cross | Red may cross | Defends |
+|---|---|---|---|
+| Blue's bases only | yes | no | no — blue's QRA covers it |
+| Red's bases only | no | yes | no — red's QRA covers it |
+| Both sides' bases | yes | yes | no — it plainly already let them both in |
+| Neither | no | no | **yes** |
+
+A campaign's `overflight:` still wins outright, which is what keeps Enduring
+Resolve's corridor-cut Pakistan correct.
+
+### Why the table lost the job
+
+It made consent a fact about the **calendar** rather than about the campaign in
+front of you.
+
+- It reads Sweden and Finland `closed` in 1983 — historically right — while on
+  Kola both sides fly combat sorties off their runways.
+- It cannot see a base change hands. Take an airfield and the country's posture
+  toward you does not move; the airbase rule flips it that turn.
+- Turkey was the case that surfaced it: in the Aleppo Insurgency campaign it
+  holds Gaziantep, Hatay and **Incirlik** for blue. Table and airbases happened
+  to agree there, which is exactly why it was worth checking what happens when
+  they do not.
+
+### What was kept, and what was deleted
+
+**Kept:** `resources/borders/national_postures.yaml` — all 47 countries and 244
+ranges, untouched — plus `load_postures` and `posture_for` that read it, and
+`aircraft_for`, which is the one answer nothing else can give: a country holding
+no control points has no faction to borrow a jet from, so without it a border
+cannot scramble anything.
+
+**Deleted:** `permits_overflight`, `bloc_for_country`, `bloc_for_faction`. All
+three existed only to answer consent, and the fork does not keep code for a
+question nothing asks.
+
+### Two consequences to know
+
+**Altitude floors are gone.** They were derived from the table's `contested`
+bucket, so a floor is authored-only now and a defending country defends at any
+height. `DEFAULT_CONTESTED_FLOOR_FT` is deleted.
+
+**More countries defend.** Measured on the Aleppo Insurgency save: Turkey reads
+friendly (blue's three bases) and Syria contested, but **Lebanon, Israel, Jordan,
+Iraq, Cyprus and Saudi Arabia all defend**, where the table had Israel, Jordan
+and Saudi Arabia as `allied` transit corridors. That is the rule working as
+stated — nobody is based in them, so nobody has been invited — and it is a large
+change to how much of a map is closed. The rule a pilot can hold is one
+sentence: *if we do not fly from it, do not fly over it.*
+
+**Consent no longer depends on the date at all.** The same map on the same turn
+reads identically in 1975 and 2025. Era-correctness was the research's selling
+point and is now unused by this feature, deliberately.
+
 ## The remaining automagic gap (DECIDED, NOT BUILT)
 
 **"I do not wish this to be specified in any existing campaign, I want this to

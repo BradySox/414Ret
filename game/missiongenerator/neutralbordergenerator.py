@@ -29,7 +29,7 @@ from dcs.planes import plane_map
 from dcs.task import CAP
 from dcs.vehicles import AirDefence
 
-from game.theater.nationalpostures import aircraft_for, bloc_for_faction
+from game.theater.nationalpostures import aircraft_for
 from game.theater.neutralborder import NEUTRAL, NeutralBorderZone
 from game.utils import feet
 from .neutralborderluadata import NeutralBorderLuaZone
@@ -75,25 +75,17 @@ class NeutralBorderGenerator:
             if built is not None:
                 self.mission_data.neutral_border_zones.append(built)
 
-    def _blocs(self) -> tuple[str, str]:
-        """(blue bloc, red bloc) for this campaign, from the factions' countries."""
-        on = self.game.current_day
-        return (
-            bloc_for_faction(self.game.blue.faction, True, on),
-            bloc_for_faction(self.game.red.faction, False, on),
-        )
-
     def _build_zone(self, zone: NeutralBorderZone) -> NeutralBorderLuaZone | None:
-        posture = zone.posture_in(self.game.theater)
-        on = self.game.current_day
-        blue_bloc, red_bloc = self._blocs()
-        # Per side: a country may let one bloc through and not the other.
-        permits_blue = zone.permits(blue_bloc, on)
-        permits_red = zone.permits(red_bloc, on)
-        # None = no safe altitude for that side, which is what a closed or
-        # hostile country actually offers.
-        floor_blue = zone.floor_for(blue_bloc, on)
-        floor_red = zone.floor_for(red_bloc, on)
+        theater = self.game.theater
+        posture = zone.posture_in(theater)
+        # Per side: a country hosting one side's fields has let that side in
+        # and not the other.
+        permits_blue = zone.permits(theater, True)
+        permits_red = zone.permits(theater, False)
+        # None = no safe altitude, which is what a country out of the war and
+        # defending itself actually offers.
+        floor_blue = zone.floor_for(theater, True)
+        floor_red = zone.floor_for(theater, False)
         enforced = posture == NEUTRAL and not (permits_blue and permits_red)
 
         if not enforced:

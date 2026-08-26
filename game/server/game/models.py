@@ -203,15 +203,11 @@ class NeutralBorderJs(BaseModel):
     def all_in_game(game: Game) -> list[NeutralBorderJs]:
         if not getattr(game.settings, "neutral_border_defense", False):
             return []
-        from game.theater.nationalpostures import bloc_for_faction
-
         zones = getattr(game.theater, "neutral_border_zones", [])
         borders = []
-        on = game.current_day
-        blue_bloc = bloc_for_faction(game.blue.faction, True, on)
         for zone in zones:
             posture = zone.posture_in(game.theater)
-            permits_blue = zone.permits(blue_bloc, on)
+            permits_blue = zone.permits(game.theater, True)
             ring = [
                 LeafletPoint.from_latlng(Point(x, y, game.theater.terrain).latlng())
                 for x, y in zone.border
@@ -222,7 +218,7 @@ class NeutralBorderJs(BaseModel):
                     airfield=zone.origin_label(posture, enforced=not permits_blue),
                     posture=posture,
                     overflight=permits_blue,
-                    floor_ft=zone.floor_for(blue_bloc, on),
+                    floor_ft=zone.floor_for(game.theater, True),
                     border=[ring],
                 )
             )

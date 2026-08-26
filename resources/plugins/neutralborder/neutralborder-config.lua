@@ -582,7 +582,7 @@ local function warn(state, intruder_group)
     local zone = zones[state.zone]
     if state.is_player then
         -- A country that grants no safe altitude must not be radioed as though
-        -- climbing would fix it. Only a floored (contested) zone names one.
+        -- climbing would fix it. A floor is authored by the campaign only.
         local floor = (state.side == coalition.side.BLUE)
             and zone.floor_blue_m or zone.floor_red_m
         local msg

@@ -12,13 +12,10 @@ from pathlib import Path
 import pytest
 
 from game.theater.nationalpostures import (
-    OVERFLIGHT_BUCKETS,
     RU_LED,
     US_LED,
-    bloc_for_country,
-    bloc_for_faction,
+    aircraft_for,
     load_postures,
-    permits_overflight,
     posture_for,
 )
 
@@ -87,50 +84,20 @@ def test_documented_history(country: str, when: date, bloc: str, expected: str) 
     assert posture_for(country, when, bloc) == expected
 
 
-# -- the collapse to a boolean -------------------------------------------------
+# -- what the table still decides ---------------------------------------------
+# Consent moved to the airbases inside a border on 2026-08-26 (DM call), so
+# `permits_overflight`, `bloc_for_country` and `bloc_for_faction` are gone with
+# it. The posture ranges are kept and still read by `posture_for`; the airframe
+# is the answer §96 actually uses.
 
 
-def test_only_allied_and_permissive_permit_transit() -> None:
-    assert OVERFLIGHT_BUCKETS == {"allied", "permissive"}
+def test_the_era_picks_the_interceptor() -> None:
+    """The reason the table survives: a country with no control points has no
+    faction to borrow a jet from, and nothing else knows what it flew."""
+    assert aircraft_for("Turkey", date(1965, 1, 1)) == "F-100D"
+    assert aircraft_for("Turkey", date(1985, 1, 1)) == "F-4E"
+    assert aircraft_for("Turkey", date(2022, 1, 1)) == "F-16C bl.50"
 
 
-def test_contested_does_not_permit_transit() -> None:
-    """'Sometimes tolerated' is not consent for a border that has to decide."""
-    assert posture_for("Pakistan", date(2015, 1, 1), US_LED) == "contested"
-    assert permits_overflight("Pakistan", date(2015, 1, 1), US_LED) is False
-
-
-def test_permissive_permits_transit() -> None:
-    assert permits_overflight("Pakistan", date(2006, 4, 24), US_LED) is True
-
-
-# -- picking a bloc ------------------------------------------------------------
-
-
-def test_a_country_belongs_to_the_bloc_it_favours() -> None:
-    on = date(2006, 1, 1)
-    assert bloc_for_country("USA", on) == US_LED
-    assert bloc_for_country("Russia", on) == RU_LED
-
-
-def test_an_unknown_country_has_no_bloc() -> None:
-    assert bloc_for_country("Freedonia", date(2006, 1, 1)) is None
-
-
-def test_a_faction_uses_its_own_country() -> None:
-    on = date(2022, 6, 4)
-    usa = type("F", (), {"country": type("C", (), {"name": "USA"})()})()
-    russia = type("F", (), {"country": type("C", (), {"name": "Russia"})()})()
-    assert bloc_for_faction(usa, True, on) == US_LED
-    assert bloc_for_faction(russia, False, on) == RU_LED
-
-
-def test_an_unmappable_faction_falls_back_to_its_coalition() -> None:
-    """CJTF, Insurgents, a generic 'Bluefor Modern' -- blue is the US-led side."""
-    cjtf = type("F", (), {"country": type("C", (), {"name": "Freedonia"})()})()
-    assert bloc_for_faction(cjtf, True, date(2006, 1, 1)) == US_LED
-    assert bloc_for_faction(cjtf, False, date(2006, 1, 1)) == RU_LED
-
-
-def test_a_faction_with_no_country_at_all_still_resolves() -> None:
-    assert bloc_for_faction(object(), True, date(2006, 1, 1)) == US_LED
+def test_an_unrecorded_country_gets_no_interceptor() -> None:
+    assert aircraft_for("Freedonia", date(2006, 1, 1)) is None

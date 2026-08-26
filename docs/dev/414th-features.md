@@ -10166,8 +10166,16 @@ claimed by neither side's QRA), and one hosting neither is the neutral. Counted 
 every zone of the same country, not per polygon: Russia is two zones on Kola, and
 per-piece counting drew Karelia — the largest zone on the map — as an uninvolved
 neutral that intercepts you, in a campaign where Russia is the enemy. `posture:`
-overrides. **Overflight is a separate authored fact** — a neutral either permits
-transit (drawn only) or refuses it and defends. Cross a refusing neutral's border
+overrides. **Overflight is derived from the same airbases** (DM call, 2026-08-26) — a
+country you fly from has let you in, one both sides use has let both in, and one
+with no coalition base inside it has invited nobody and defends. `overflight:`
+overrides. The dated posture table used to answer this and was dropped as the
+source: it made consent a fact about the calendar rather than about the campaign
+in front of you, reading Sweden and Finland `closed` in 1983 while both sides
+flew combat sorties off their runways, and it cannot see a base change hands.
+The research is kept and still supplies the airframe. **Altitude floors went
+with it** — they came from its `contested` bucket, so a floor is now authored
+only and a defending country defends at any height. Cross a refusing neutral's border
 below the altitude floor and an alert flight spawns on the intruder's opposing
 coalition (the only way a "neutral" can legally fire in DCS), shadows at return-fire
 ROE, and radio-warns; a player who stays past the engage timer, releases a weapon
@@ -10210,8 +10218,8 @@ target changes.
   `resources/borders/<terrain>.yaml` (Afghanistan, Syria, Caucasus, Iraq, Kola,
   Persian Gulf, Sinai, Falklands — Nevada and the Marianas are all-US and
   correctly have none; GermanyCW is blocked on pre-1991 geometry), built by
-  `tools/build_terrain_borders.py`; posture and airframe
-  resolve from `national_postures.yaml` against the campaign's date. A campaign
+  `tools/build_terrain_borders.py`; only the airframe
+  resolves from `national_postures.yaml` against the campaign's date. A campaign
   that declares its own `neutral_border_defense:` block overrides the terrain
   file **completely** — never merged. Saves already in progress pick the borders
   up on load, so no re-roll is needed.

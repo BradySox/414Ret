@@ -1,27 +1,28 @@
-"""Dated national postures (§96): who lets whom fly through, and when.
+"""Dated national postures (§96): what each country flew, and where it stood.
 
 Reads ``resources/borders/national_postures.yaml`` — 47 countries, both blocs,
-dated ranges in five buckets — and answers the one question the border feature
-asks: *at this campaign's date, does this country permit this side's aircraft to
-transit its airspace?*
+244 dated ranges in five buckets. Sources and the reasoning behind every range
+are in ``docs/dev/design/414th-national-postures-notes.md``.
 
-Sources and the reasoning behind every range are in
-``docs/dev/design/414th-national-postures-notes.md``. The table is data; this
-module is the only place that interprets it.
+**What this decides today: the airframe.** ``aircraft_for`` is what lets a border
+be drawn from terrain data alone — the campaign names no fighter and the era
+picks one, so the same file is right in 1975 and 2025. Nothing else can supply
+it: a country with no control points has no faction to borrow a jet from.
 
-Three things the table deliberately does not decide, resolved here:
+**What it no longer decides: whether you may transit.** That was its original
+job and it was dropped on 2026-08-26 (DM call) in favour of deriving consent
+from the airbases inside a country's border — see
+``NeutralBorderZone.permits``. The table made consent a fact about the calendar
+rather than about the campaign in front of you: it reads Sweden and Finland
+``closed`` in 1983, while on the Kola map both sides fly combat sorties off
+their runways, and it cannot see a base change hands mid-campaign.
 
-* **Which bloc a coalition belongs to.** Taken from the faction's own country
-  looked up in the table: the bloc it is most favourably disposed toward at that
-  date is its bloc. USA resolves us-led, Russia ru-led, and a faction whose
-  country is not in the table (CJTF, Insurgents, a generic "Bluefor Modern")
-  falls back to blue=us-led / red=ru-led, which is every fork campaign.
-* **An uncovered date is ``closed``** — the safe default for a border feature is
-  that it defends. Never invent coverage.
-* **The collapse to a boolean**: ``allied`` and ``permissive`` permit transit;
-  ``contested``, ``closed`` and ``hostile`` do not. The five buckets are kept in
-  the data because the split will matter later (contested = risky transit,
-  hostile ≠ closed for basing), but overflight is binary today.
+The posture data is kept, not deleted, and ``posture_for`` still reads it — it
+is 244 researched ranges that took a session to assemble, and the question it
+answers ("whose side was this country on, that year") is a real one that a
+future feature may want. It just is not the question §96 asks.
+
+An uncovered date, country or bloc is ``closed``: never invent coverage.
 """
 
 from __future__ import annotations
@@ -39,26 +40,8 @@ POSTURES_FILE = Path("resources/borders/national_postures.yaml")
 US_LED = "toward_us_led"
 RU_LED = "toward_ru_led"
 
-#: Buckets whose meaning is "this side's aircraft may transit".
-OVERFLIGHT_BUCKETS = frozenset({"allied", "permissive"})
-
-#: The one bucket an altitude floor makes sense for. "Sometimes tolerated,
-#: sometimes denied" is exactly a country that lets a high transit pass and
-#: challenges a low penetration. `closed` and `hostile` grant no sanctuary at
-#: any height -- a floor there would invent a safe altitude that does not exist.
-CONTESTED = "contested"
-
 #: An uncovered date, an unknown country, or an unreadable file.
 DEFAULT_POSTURE = "closed"
-
-#: How favourably a bucket reads, for deciding which bloc a country belongs to.
-_FAVOURABILITY = {
-    "allied": 4,
-    "permissive": 3,
-    "contested": 2,
-    "closed": 1,
-    "hostile": 0,
-}
 
 _cache: Optional[dict[str, Any]] = None
 
@@ -120,15 +103,6 @@ def posture_for(
     return DEFAULT_POSTURE
 
 
-def permits_overflight(
-    country: str,
-    on: date,
-    bloc: str,
-    postures: Optional[dict[str, Any]] = None,
-) -> bool:
-    return posture_for(country, on, bloc, postures) in OVERFLIGHT_BUCKETS
-
-
 def aircraft_for(
     country: str,
     on: date,
@@ -151,46 +125,3 @@ def aircraft_for(
         except (KeyError, TypeError, ValueError):
             continue
     return None
-
-
-def bloc_for_country(
-    country: str,
-    on: date,
-    postures: Optional[dict[str, Any]] = None,
-) -> Optional[str]:
-    """Which bloc this country belongs to, or None if the table cannot say.
-
-    A country's bloc is the one it is most favourably disposed toward: the USA
-    reads allied toward the US-led bloc and closed toward the other, Russia the
-    mirror. A tie means the table has no opinion.
-    """
-    table = load_postures() if postures is None else postures
-    if country not in table:
-        return None
-    us = _FAVOURABILITY.get(posture_for(country, on, US_LED, table), 1)
-    ru = _FAVOURABILITY.get(posture_for(country, on, RU_LED, table), 1)
-    if us == ru:
-        return None
-    return US_LED if us > ru else RU_LED
-
-
-def bloc_for_faction(faction: Any, is_blue: bool, on: date) -> str:
-    """The bloc a coalition fights for.
-
-    Derived from its faction's own country where the table knows it; otherwise
-    blue is the US-led side and red the Soviet/Russian one, which is true of
-    every campaign this fork ships.
-    """
-    name = None
-    try:
-        country = getattr(faction, "country", None)
-        name = getattr(country, "name", None) or (
-            str(country) if country is not None else None
-        )
-    except Exception:  # a duck-typed faction in a test
-        name = None
-    if name:
-        bloc = bloc_for_country(str(name), on)
-        if bloc is not None:
-            return bloc
-    return US_LED if is_blue else RU_LED

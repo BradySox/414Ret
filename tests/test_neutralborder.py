@@ -6,11 +6,9 @@ from datetime import date
 from types import SimpleNamespace
 from typing import Any
 
-from game.theater.nationalpostures import RU_LED, US_LED
 from game.theater.neutralborder import (
     BLUE_ALIGNED,
     CONTESTED_ALIGNED,
-    DEFAULT_CONTESTED_FLOOR_FT,
     DEFAULT_SPAWN_ALT_FT,
     NEUTRAL,
     RED_ALIGNED,
@@ -167,8 +165,8 @@ def test_a_blue_airfield_inside_makes_it_blue_aligned() -> None:
     theater = _theater(_cp(50, 50, blue=True))
     assert zone.posture_in(theater) == BLUE_ALIGNED
     # Aligned countries are never enforced by §96 -- their own side's QRA does it.
-    assert zone.enforces_against(theater, US_LED, ON) is False
-    assert zone.enforces_against(theater, RU_LED, ON) is False
+    assert zone.enforces_against(theater, True) is False
+    assert zone.enforces_against(theater, False) is False
 
 
 def test_a_red_airfield_inside_makes_it_red_aligned() -> None:
@@ -176,7 +174,7 @@ def test_a_red_airfield_inside_makes_it_red_aligned() -> None:
     zone = _box_zone()
     theater = _theater(_cp(50, 50, red=True))
     assert zone.posture_in(theater) == RED_ALIGNED
-    assert zone.enforces_against(theater, US_LED, ON) is False
+    assert zone.enforces_against(theater, True) is False
 
 
 def test_both_sides_holding_ground_is_contested_not_the_larger_holder() -> None:
@@ -190,8 +188,8 @@ def test_both_sides_holding_ground_is_contested_not_the_larger_holder() -> None:
     )
     assert zone.posture_in(theater) == CONTESTED_ALIGNED
     # And it is nobody's to defend: not §96's, not either QRA's.
-    assert zone.enforces_against(theater, US_LED, ON) is False
-    assert zone.enforces_against(theater, RU_LED, ON) is False
+    assert zone.enforces_against(theater, True) is False
+    assert zone.enforces_against(theater, False) is False
 
 
 def test_alignment_counts_every_piece_of_the_same_country() -> None:
@@ -204,7 +202,7 @@ def test_alignment_counts_every_piece_of_the_same_country() -> None:
     theater.neutral_border_zones = [empty, held]
     assert empty.posture_in(theater) == RED_ALIGNED
     assert held.posture_in(theater) == RED_ALIGNED
-    assert empty.enforces_against(theater, US_LED, ON) is False
+    assert empty.enforces_against(theater, True) is False
 
 
 def test_a_lone_zone_needs_no_sibling_list() -> None:
@@ -233,40 +231,78 @@ def test_posture_override_wins_over_the_derivation() -> None:
     assert zone.posture_in(_theater(_cp(50, 50, blue=True))) == RED_ALIGNED
 
 
-# -- transit consent is PER SIDE and comes from the dated table -----------------
+def _unfloored(**overrides: object) -> NeutralBorderZone:
+    """A zone with no authored floor."""
+    entry = _spawn_entry(border=[[0, 0], [100, 0], [100, 100], [0, 100]])
+    del entry["floor_ft"]
+    entry.update(overrides)
+    zone = NeutralBorderZone.from_yaml(entry)
+    assert zone is not None
+    return zone
 
 
-def test_override_wins_over_the_table_for_both_sides() -> None:
+# -- transit consent is DERIVED FROM THE AIRBASES, like alignment --------------
+# DM call, 2026-08-26: "overflight should be derived by airbases in the borders".
+# A country you fly from has let you in; one you have no presence in has not.
+# The dated posture table used to answer this and no longer does -- it made
+# consent a fact about the calendar rather than about the campaign in front of
+# you. The research is kept, and still supplies each country's era airframe.
+
+
+def test_a_country_you_fly_from_lets_you_through() -> None:
+    zone = _box_zone()
+    theater = _theater(_cp(50, 50, blue=True))
+    assert zone.permits(theater, True) is True
+    assert zone.permits(theater, False) is False
+
+
+def test_a_country_the_enemy_flies_from_does_not_let_you_through() -> None:
+    zone = _box_zone()
+    theater = _theater(_cp(50, 50, red=True))
+    assert zone.permits(theater, True) is False
+    assert zone.permits(theater, False) is True
+
+
+def test_a_country_both_sides_use_has_already_let_both_in() -> None:
+    zone = _box_zone()
+    theater = _theater(_cp(20, 20, blue=True), _cp(60, 60, red=True))
+    assert zone.permits(theater, True) is True
+    assert zone.permits(theater, False) is True
+
+
+def test_a_country_neither_side_is_in_refuses_both() -> None:
+    """The §96 case: nobody is based there, so nobody has been invited."""
+    zone = _box_zone()
+    theater = _theater()
+    assert zone.permits(theater, True) is False
+    assert zone.permits(theater, False) is False
+    assert zone.enforces_against(theater, True) is True
+    assert zone.enforces_against(theater, False) is True
+
+
+def test_the_campaigns_override_still_wins_for_both_sides() -> None:
     zone = _box_zone(overflight=True)
-    assert zone.permits(US_LED, ON) is True
-    assert zone.permits(RU_LED, ON) is True
-    assert zone.enforces_against(_theater(), US_LED, ON) is False
+    theater = _theater()
+    assert zone.permits(theater, True) is True
+    assert zone.permits(theater, False) is True
+    assert zone.enforces_against(theater, True) is False
 
 
-def test_a_refusing_override_enforces_even_where_the_table_permits() -> None:
-    """Enduring Resolve's Pakistan: the table reads permissive toward the US in
-    2006 and is right, but that consent was for the corridor -- the lane this
-    polygon leaves out. The override says what the geometry already means."""
+def test_a_refusing_override_beats_the_derivation() -> None:
+    """Enduring Resolve's Pakistan: the corridor IS the consent, and this
+    polygon is the ground either side of it."""
     zone = _box_zone(country="Pakistan", overflight=False)
-    assert zone.permits(US_LED, ON) is False
-    assert zone.enforces_against(_theater(), US_LED, ON) is True
+    theater = _theater(_cp(50, 50, blue=True))
+    assert zone.permits(theater, True) is False
 
 
-def test_the_table_decides_when_the_campaign_says_nothing() -> None:
-    """Iran 2006: closed toward the US bloc, permissive toward the Russian one."""
-    zone = _box_zone(country="Iran")
-    assert zone.permits(US_LED, ON) is False
-    assert zone.permits(RU_LED, ON) is True
-    # It therefore intercepts blue and waves red through.
-    assert zone.enforces_against(_theater(), US_LED, ON) is True
-    assert zone.enforces_against(_theater(), RU_LED, ON) is False
-
-
-def test_an_unknown_country_defaults_to_refusing() -> None:
-    """The safe default for a border is that it defends."""
-    zone = _box_zone(country="Freedonia")
-    assert zone.permits(US_LED, ON) is False
-    assert zone.permits(RU_LED, ON) is False
+def test_the_date_no_longer_changes_anything() -> None:
+    """The same map on the same turn reads the same in 1975 and 2025. Sweden and
+    Finland were the case that killed the table: it read them `closed` in 1983
+    while both sides flew combat sorties off their runways."""
+    zone = _box_zone(country="Sweden")
+    theater = _theater(_cp(50, 50, blue=True))
+    assert zone.permits(theater, True) is True
 
 
 def test_permitting_neutral_labels_itself_as_open() -> None:
@@ -276,42 +312,17 @@ def test_permitting_neutral_labels_itself_as_open() -> None:
     )
 
 
-# -- a floor is not a universal rule -------------------------------------------
+# -- a floor is authored only --------------------------------------------------
 # "If they are hostile then they are hostile" (DM, 2026-08-25). A floor means
-# high transit is tolerated, which only a `contested` country grants. A closed
-# or hostile one offers no safe altitude, and inventing one invents a sanctuary.
+# high transit is tolerated, which is a judgement no fact on the map supports;
+# it came from the posture table's `contested` bucket and went with it.
 
 
-def _unfloored(**overrides: object) -> NeutralBorderZone:
-    """A zone with no authored floor, so the posture decides."""
-    entry = _spawn_entry(border=[[0, 0], [100, 0], [100, 100], [0, 100]])
-    del entry["floor_ft"]
-    entry.update(overrides)
-    zone = NeutralBorderZone.from_yaml(entry)
-    assert zone is not None
-    return zone
-
-
-def test_a_closed_country_grants_no_safe_altitude() -> None:
-    """Iran 2006 is closed toward the US bloc."""
+def test_no_floor_unless_the_campaign_states_one() -> None:
     zone = _unfloored(country="Iran")
-    assert zone.floor_for(US_LED, ON) is None
+    assert zone.floor_for(_theater(), True) is None
 
 
-def test_a_contested_country_gets_the_default_floor() -> None:
-    """Pakistan reads contested toward the US bloc after Abbottabad."""
-    zone = _unfloored(country="Pakistan")
-    assert zone.floor_for(US_LED, date(2015, 1, 1)) == DEFAULT_CONTESTED_FLOOR_FT
-
-
-def test_an_authored_floor_always_wins() -> None:
+def test_an_authored_floor_is_honoured() -> None:
     zone = _box_zone(country="Iran", floor_ft=8000)
-    assert zone.floor_for(US_LED, ON) == 8000
-
-
-def test_the_floor_is_per_side_like_consent() -> None:
-    """A country may tolerate one bloc at height and refuse the other outright."""
-    zone = _unfloored(country="Pakistan")
-    when = date(2015, 1, 1)
-    assert zone.floor_for(US_LED, when) == DEFAULT_CONTESTED_FLOOR_FT
-    assert zone.floor_for(RU_LED, when) is None
+    assert zone.floor_for(_theater(), True) == 8000

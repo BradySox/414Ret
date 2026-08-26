@@ -14,6 +14,23 @@
 
 entries:
   - date: 2026-08-26
+    title: If we do not fly from it, do not fly over it
+    change: >-
+      Whether a country lets you through used to come from a research table of
+      what each nation's politics were in that year. It now comes from the
+      airbases on the map: a country you fly from has let you in, one both sides
+      operate from has let both in, and one with no coalition base inside it has
+      invited nobody and will defend itself. That means more of the map is
+      closed than before -- on a Syria campaign, Israel, Jordan, Iraq, Cyprus
+      and Saudi Arabia all defend, where they used to be transit corridors.
+      Altitude floors went with the table, so a country that defends now defends
+      at any height unless its campaign says otherwise.
+    watch: >-
+      Hover a country on the map layer. If your side has an airbase inside it,
+      it reads friendly; if nobody does, it is defended. It should match what
+      you can see on the map with no reference to the year.
+    row: B100
+  - date: 2026-08-26
     title: A country you are both fighting over is grey now
     change: >-
       A country where you and the enemy both hold airfields used to be painted

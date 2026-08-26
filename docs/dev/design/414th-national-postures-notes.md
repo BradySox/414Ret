@@ -1,9 +1,26 @@
 # National Postures — Research Note (§96)
 
-**Status: RESEARCHED 2026-08-25. Data drafted, nothing wired.** The table is
+**Status: RESEARCHED 2026-08-25. Wired 2026-08-25, then narrowed to the airframe
+2026-08-26.** The table is
 [`resources/borders/national_postures.yaml`](../../../resources/borders/national_postures.yaml):
-47 countries, 244 dated ranges, 84 aircraft rows, no code reads it. Wiring is its own change —
-see *What the engine cannot do with this yet*.
+47 countries, 244 dated ranges, 84 aircraft rows, all kept.
+
+⚠️ **The posture ranges no longer decide whether you may transit a border.** They did for one
+day. On 2026-08-26 the DM moved consent onto the airbases inside each country's border — "keep
+the research, drop what we did with it" — because the table makes consent a fact about the
+calendar rather than about the campaign in front of you: it reads Sweden and Finland `closed`
+in 1983 while both sides fly combat sorties off their runways on Kola, and it cannot see a base
+change hands. `permits_overflight`, `bloc_for_country` and `bloc_for_faction` were deleted with
+the decision. **The altitude floor went too** — it was derived from the `contested` bucket.
+
+**What the table still does, and why it survives:** `aircraft_for` picks each country's
+era-correct interceptor. That is the one answer nothing else can give — a country holding no
+control points has no faction to borrow a jet from — so without it a border cannot scramble
+anything. `posture_for` still reads the ranges; the question they answer ("whose side was this
+country on, that year") is real, and a future feature may want it. It is just not the question
+§96 asks. Read the *Consent moved to the airbases* section of
+[`414th-neutral-border-defense-notes.md`](414th-neutral-border-defense-notes.md) before
+proposing anything that re-wires these ranges to a decision.
 
 Supersedes the handoff brief, deleted in the same change and recoverable with
 `git show 6b7b4f8bf:docs/dev/design/414th-national-postures-brief.md`.

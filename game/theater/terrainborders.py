@@ -14,11 +14,17 @@ Precedence is simple and total: **a campaign that declares
 consulted. Mixing the two would make it impossible to tell where a zone came
 from.
 
-Each terrain entry carries geometry and an origin, nothing else. Posture and
-airframe come from the dated table (``nationalpostures``), so the same border
-file is correct in 1975 and 2025. The map's own host nation is deliberately
-absent — a border drawn around the whole battlefield is noise, and the feature
-is about the countries *around* the war.
+Each terrain entry carries geometry and an origin, nothing else. What a
+country's airspace means — whose it is, and whether it lets you through — is
+derived at run time from the airbases inside its border, so one file is correct
+on every campaign that map carries. Only the airframe it scrambles comes from
+the dated table (``nationalpostures``), which is the one fact no campaign can
+supply for a country that holds nothing.
+
+**Every country on the map is here, the map's own nation included.** It was
+excluded until 2026-08-26 on the theory that a border round the battlefield is
+noise; that deleted Russia from Kola and Iran from the Persian Gulf and left
+the war itself as the one region with no line on it.
 """
 
 from __future__ import annotations

@@ -95,12 +95,12 @@ const ROWS: Row[] = [
     label: "Minefield (your own)",
   },
   {
-    color: mapColors.airspaceNeutral,
+    color: mapColors.airspaceHostileNeutral,
     signature: mapStrokes.airspaceEnforced,
-    label: "Neutral airspace — defended, it will intercept",
+    label: "Neutral airspace — closed to you, it will intercept",
   },
   {
-    color: mapColors.airspaceNeutralOpen,
+    color: mapColors.airspaceOpenNeutral,
     signature: mapStrokes.airspaceOpen,
     label: "Neutral airspace — overflight permitted",
   },

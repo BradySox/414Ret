@@ -50,16 +50,16 @@ export const mapColors = {
   // transit and one that permits it share the green and differ by shading.
   // Amber was considered and rejected: it is already SUSPECTED, and
   // "un-reconned enemy" must not read as "a country not in the war".
-  // The two neutral states are the ones a pilot must tell apart, and on a map
-  // where every neighbour is neutral they were the ONLY thing on screen -- as
-  // one green separated by line weight and a 0.14-vs-0.06 fill, which is
-  // invisible at theatre zoom. They are now split by value and saturation
-  // inside the APP-6 neutral family: nothing else on the map is green, so this
-  // collides with no existing colour (amber is SUSPECTED, orange is the FLOT).
-  airspaceNeutral: "#1f8a4d", // deep green: it WILL intercept you
-  airspaceNeutralOpen: "#9fd9b8", // pale mint: overflight permitted
-  airspaceRed: "#c85050", // the enemy family
-  airspaceBlue: "#0084ff", // the friendly family
+  // **Hue answers "will this airspace engage me", not "whose side is it on".**
+  // The first cut coded alignment, which drew Iran -- closed, and it intercepts
+  // -- the same green as Turkmenistan, which waves you through. Alignment is
+  // trivia in the cockpit; the threat is not. So both hostile states are red
+  // and both passable ones are not, and the pair within each family differ by
+  // hue so they stay tellable apart.
+  airspaceRed: "#c85050", // enemy-aligned: hosts the enemy's fields
+  airspaceHostileNeutral: "#e0555f", // a third party that refuses YOU transit
+  airspaceOpenNeutral: "#9fd9b8", // pale mint: neutral, overflight permitted
+  airspaceBlue: "#0084ff", // your own side's airspace
 
   // --- misc ---
   highlight: "#ffff00",

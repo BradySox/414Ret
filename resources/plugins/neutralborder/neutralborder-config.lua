@@ -237,13 +237,12 @@ local function draw_borders()
                 args[#args + 1] = { 0.78, 0.31, 0.31, 0.14 } -- shaded: hostile
                 args[#args + 1] = 5 -- long dash
             elseif zone.enforces then
-                -- Deep green, heavily shaded: out of the war, refuses transit,
-                -- and it WILL intercept you. On a map where every neighbour is
-                -- neutral these two states are the only thing on screen, so
-                -- they are split by value and saturation, not by line weight --
-                -- that was invisible at theatre zoom.
-                args[#args + 1] = { 0.12, 0.54, 0.30, 0.95 }
-                args[#args + 1] = { 0.12, 0.54, 0.30, 0.20 }
+                -- Crimson: a third party that refuses transit and WILL
+                -- intercept. Red because hue answers "will this engage me",
+                -- not "whose side is it on" -- drawing this green put Iran in
+                -- the same colour as a country that waves you through.
+                args[#args + 1] = { 0.88, 0.33, 0.37, 0.95 }
+                args[#args + 1] = { 0.88, 0.33, 0.37, 0.20 }
                 args[#args + 1] = 5 -- long dash: an authored border, firm and legal
             else
                 -- Pale mint, barely shaded: a neutral that lets you through.

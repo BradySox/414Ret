@@ -28,16 +28,18 @@ export default function NeutralBordersLayer() {
     <LayerGroup>
       {borders.map((border, idx) => {
         const enforced = border.posture === "neutral" && !border.overflight;
+        // Red = it will engage you. That covers the enemy's hosts AND a third
+        // party that refuses you transit; the two differ by hue, not by family.
         const color =
           border.posture === "red"
             ? mapColors.airspaceRed
             : border.posture === "blue"
             ? mapColors.airspaceBlue
             : enforced
-            ? mapColors.airspaceNeutral
-            : mapColors.airspaceNeutralOpen;
-        // Red airspace is shaded too: it is the enemy's, and the enemy's QRA
-        // will come for you there even though this layer is not what sends it.
+            ? mapColors.airspaceHostileNeutral
+            : mapColors.airspaceOpenNeutral;
+        // Shaded means dangerous. The enemy's airspace qualifies even though
+        // this layer is not what sends the fighters -- its QRA covers it.
         const shaded = enforced || border.posture === "red";
         const stroke = shaded
           ? mapStrokes.airspaceEnforced

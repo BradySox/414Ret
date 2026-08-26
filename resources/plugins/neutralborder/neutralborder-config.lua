@@ -237,18 +237,18 @@ local function draw_borders()
                 args[#args + 1] = { 0.78, 0.31, 0.31, 0.14 } -- shaded: hostile
                 args[#args + 1] = 5 -- long dash
             elseif zone.enforces then
-                -- APP-6 neutral green, shaded: out of the war, refuses transit,
-                -- and it WILL intercept you. The shaded one is the warning.
-                args[#args + 1] = { 0.25, 0.69, 0.42, 0.9 }
-                args[#args + 1] = { 0.25, 0.69, 0.42, 0.14 }
+                -- Deep green, heavily shaded: out of the war, refuses transit,
+                -- and it WILL intercept you. On a map where every neighbour is
+                -- neutral these two states are the only thing on screen, so
+                -- they are split by value and saturation, not by line weight --
+                -- that was invisible at theatre zoom.
+                args[#args + 1] = { 0.12, 0.54, 0.30, 0.95 }
+                args[#args + 1] = { 0.12, 0.54, 0.30, 0.20 }
                 args[#args + 1] = 5 -- long dash: an authored border, firm and legal
             else
-                -- Same green, faintly shaded: a neutral that lets you through.
-                -- The colour says who owns it, the shade weight says whether it
-                -- bites -- but a bare outline could not be seen at all, so this
-                -- carries a light fill too.
-                args[#args + 1] = { 0.25, 0.69, 0.42, 1.0 }
-                args[#args + 1] = { 0.25, 0.69, 0.42, 0.06 }
+                -- Pale mint, barely shaded: a neutral that lets you through.
+                args[#args + 1] = { 0.62, 0.85, 0.72, 0.95 }
+                args[#args + 1] = { 0.62, 0.85, 0.72, 0.05 }
                 args[#args + 1] = 2 -- dashed
             end
             args[#args + 1] = true -- read only

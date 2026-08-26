@@ -100,7 +100,7 @@ const ROWS: Row[] = [
     label: "Neutral airspace — defended, it will intercept",
   },
   {
-    color: mapColors.airspaceNeutral,
+    color: mapColors.airspaceNeutralOpen,
     signature: mapStrokes.airspaceOpen,
     label: "Neutral airspace — overflight permitted",
   },

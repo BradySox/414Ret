@@ -33,7 +33,9 @@ export default function NeutralBordersLayer() {
             ? mapColors.airspaceRed
             : border.posture === "blue"
             ? mapColors.airspaceBlue
-            : mapColors.airspaceNeutral;
+            : enforced
+            ? mapColors.airspaceNeutral
+            : mapColors.airspaceNeutralOpen;
         // Red airspace is shaded too: it is the enemy's, and the enemy's QRA
         // will come for you there even though this layer is not what sends it.
         const shaded = enforced || border.posture === "red";

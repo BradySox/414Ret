@@ -50,7 +50,14 @@ export const mapColors = {
   // transit and one that permits it share the green and differ by shading.
   // Amber was considered and rejected: it is already SUSPECTED, and
   // "un-reconned enemy" must not read as "a country not in the war".
-  airspaceNeutral: "#3faf6c", // APP-6 neutral green
+  // The two neutral states are the ones a pilot must tell apart, and on a map
+  // where every neighbour is neutral they were the ONLY thing on screen -- as
+  // one green separated by line weight and a 0.14-vs-0.06 fill, which is
+  // invisible at theatre zoom. They are now split by value and saturation
+  // inside the APP-6 neutral family: nothing else on the map is green, so this
+  // collides with no existing colour (amber is SUSPECTED, orange is the FLOT).
+  airspaceNeutral: "#1f8a4d", // deep green: it WILL intercept you
+  airspaceNeutralOpen: "#9fd9b8", // pale mint: overflight permitted
   airspaceRed: "#c85050", // the enemy family
   airspaceBlue: "#0084ff", // the friendly family
 
@@ -120,16 +127,17 @@ export const mapStrokes: Record<
   // A long map-boundary dash — the one pattern that reads as a border rather
   // than a hazard. 16/10 is the removed §40 ROE zone's own signature, whose
   // comment called it "an authored border: firm, legal" — exactly this.
-  airspaceEnforced: { dashArray: "16 10", weight: 3, casingWeight: 0 },
+  airspaceEnforced: { dashArray: "18 8", weight: 3.5, casingWeight: 0 },
   // Airspace you may cross: present, not a warning. Still drawn heavily enough
   // to FIND -- a 1.5px unshaded dashed ring was invisible over satellite
   // imagery, which is the same defect the removed §40 layer recorded about a
   // too-faint fill. It stays clearly lighter than the enforced signature, so
   // "bites" vs "does not bite" survives; it just is not hidden any more.
-  airspaceOpen: { dashArray: "10 6", weight: 2.5, casingWeight: 0 },
+  airspaceOpen: { dashArray: "6 8", weight: 2, casingWeight: 0 },
 };
 
-//: Fill opacity per airspace state. Open airspace gets a real (if faint) shade
-//: rather than none: an outline alone did not read as a region on imagery.
-export const AIRSPACE_FILL_ENFORCED = 0.14;
-export const AIRSPACE_FILL_OPEN = 0.06;
+//: Fill opacity per airspace state. Open airspace keeps a real (if faint) shade
+//: rather than none -- an outline alone did not read as a region on imagery --
+//: but the gap is now wide enough to see beside the hue change.
+export const AIRSPACE_FILL_ENFORCED = 0.2;
+export const AIRSPACE_FILL_OPEN = 0.05;

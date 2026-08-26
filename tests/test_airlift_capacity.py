@@ -10,6 +10,7 @@ for an unauthored airframe, and the greedy count agreeing with the order
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Optional, TYPE_CHECKING, cast
 
 import pytest
 
@@ -22,13 +23,13 @@ from game.data.airliftcapacity import (
 )
 from game.data.units import UnitClass
 
+if TYPE_CHECKING:
+    from game.dcs.groundunittype import GroundUnitType
+
 
 @dataclass(frozen=True)
 class FakeGroundUnit:
     unit_class: UnitClass
-
-    def __hash__(self) -> int:
-        return hash(self.unit_class)
 
 
 @dataclass(frozen=True)
@@ -39,13 +40,24 @@ class FakeDcsType:
 @dataclass(frozen=True)
 class FakeAircraft:
     dcs_unit_type: FakeDcsType
-    airlift_capacity: int | None = None
+    airlift_capacity: Optional[int] = None
 
 
 TANK = FakeGroundUnit(UnitClass.TANK)
 INFANTRY = FakeGroundUnit(UnitClass.INFANTRY)
 APC = FakeGroundUnit(UnitClass.APC)
 MYSTERY = FakeGroundUnit(UnitClass.UNKNOWN)
+
+
+def manifest(*entries: tuple[FakeGroundUnit, int]) -> dict[GroundUnitType, int]:
+    """A transfer's unit dict, built from fakes and typed as the real thing.
+
+    One cast site instead of a ``dict-item`` ignore on every call. Insertion
+    order is preserved deliberately: it is the order ``split_transfer``
+    consumes, and half of what these tests check is that the count agrees
+    with it.
+    """
+    return cast("dict[GroundUnitType, int]", dict(entries))
 
 
 def test_a_tank_costs_more_than_a_squad() -> None:
@@ -78,17 +90,17 @@ def test_unauthored_capacity_is_the_old_constant(
 
 def test_counts_units_not_slots() -> None:
     """Four squads at one slot each fit in four slots."""
-    assert units_fitting_in({INFANTRY: 4}, 4) == 4  # type: ignore[arg-type]
+    assert units_fitting_in(manifest((INFANTRY, 4)), 4) == 4
 
 
 def test_partial_load_is_counted() -> None:
     tank = lift_cost(TANK)  # type: ignore[arg-type]
-    assert units_fitting_in({TANK: 3}, tank * 2) == 2  # type: ignore[arg-type]
+    assert units_fitting_in(manifest((TANK, 3)), tank * 2) == 2
 
 
 def test_an_aircraft_too_small_for_the_next_vehicle_carries_nothing() -> None:
     """Returning 0 is what stops the planner looping on a hopeless squadron."""
-    assert units_fitting_in({TANK: 1}, 1) == 0  # type: ignore[arg-type]
+    assert units_fitting_in(manifest((TANK, 1)), 1) == 0
 
 
 def test_the_count_stops_at_the_head_of_the_queue() -> None:
@@ -98,12 +110,12 @@ def test_the_count_stops_at_the_head_of_the_queue() -> None:
     infantry behind it would have fitted. Counting them would describe a load
     the split would never actually hand over.
     """
-    assert units_fitting_in({TANK: 1, INFANTRY: 5}, 2) == 0  # type: ignore[arg-type]
+    assert units_fitting_in(manifest((TANK, 1), (INFANTRY, 5)), 2) == 0
 
 
 def test_a_strategic_lifter_moves_armour_and_a_helo_does_not() -> None:
     """The whole point, stated as one comparison."""
     c17 = FakeAircraft(FakeDcsType(helicopter=False), airlift_capacity=11)
     huey = FakeAircraft(FakeDcsType(helicopter=True))
-    assert units_fitting_in({TANK: 1}, airlift_capacity(c17)) == 1  # type: ignore[arg-type]
-    assert units_fitting_in({TANK: 1}, airlift_capacity(huey)) == 0  # type: ignore[arg-type]
+    assert units_fitting_in(manifest((TANK, 1)), airlift_capacity(c17)) == 1  # type: ignore[arg-type]
+    assert units_fitting_in(manifest((TANK, 1)), airlift_capacity(huey)) == 0  # type: ignore[arg-type]

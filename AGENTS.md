@@ -123,7 +123,11 @@ Read before touching a campaign's `.yaml`, `.miz` or build tool.
 - **COIN** — `414th-coin-insurgent-replenishment-notes.md`, `-reinfiltration-notes.md`
 - **Naval** — `414th-cruise-missile-raids-notes.md`, `414th-naval-magazines-notes.md`,
   `414th-carrier-deck-decor-notes.md`
-- **Ground / frontline** — `414th-tic-dynamic-fronts-notes.md`
+- **Ground / frontline** — `414th-tic-dynamic-fronts-notes.md`,
+  `414th-het-convoy-notes.md` (**scoping only, nothing built** — a ground transfer
+  spawns its own cargo, so ten T-90Ms road-march themselves between bases; heavy
+  equipment transporters on §78's existing `ConvoyUnit.shipment` manifest model.
+  Needs the 2026-08-26 patch's SLT-50/HX81, so it is gated on the pydcs re-export)
 - **AI behaviour** — `414th-ai-threat-reaction-notes.md` (**§94, adopted 2026-08-24 from
   juanjux #63** — why the baseline is Passive Defense, the `aiReactionExempt` protocol any
   plugin setting reaction-on-threat must use, why we took his head and not the merged PR,

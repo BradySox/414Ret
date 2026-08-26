@@ -14264,7 +14264,7 @@ class FA_18ET(PlaneType):
     # variant ids raise there, killing mission generation outright. The mod ships
     # no DTC/datalink descriptor for them either (see dtc/superhornet.py), so the
     # honest value is False -- pydcs then skips datalink setup entirely.
-    networked_datalink = True
+    networked_datalink = False
     category = "Tankers"  # {8A302789-A55D-4897-B647-66493FA6826F}
     radio_frequency = 305
 
@@ -14810,7 +14810,7 @@ class FA_18FT(PlaneType):
     # variant ids raise there, killing mission generation outright. The mod ships
     # no DTC/datalink descriptor for them either (see dtc/superhornet.py), so the
     # honest value is False -- pydcs then skips datalink setup entirely.
-    networked_datalink = True
+    networked_datalink = False
     category = "Tankers"  # {8A302789-A55D-4897-B647-66493FA6826F}
     radio_frequency = 305
 

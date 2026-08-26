@@ -37,12 +37,16 @@ July's runs preserved beside it) and both of its real jobs are done:
    itself; Saved Games mod content excluded. The July export could not have served
    as the baseline: it ran with the 414th's OVGME F-4E pack applied, so for anything
    that pack touched it is stock-2.9.28 + pack, not stock.
-2. **The extension sweep is clean: 430/430 registered units match** the fresh
-   export. Four drifts found and fixed on the way -- the two CJS trainer Hornets
-   read `networked_datalink = False` where the mod says True (pre-existing, the
-   field simply had not been swept), and the two Ukraine-pack jets carried
-   un-prefixed `livery_name`s, caught on the pack's first real load since the
-   double-nesting fix.
+2. **The extension sweep found four mismatches; two were drift and two were
+   deliberate.** Fixed: the two Ukraine-pack jets' un-prefixed `livery_name`s,
+   caught on the pack's first real load since the double-nesting fix. NOT fixed,
+   on purpose: the CJS trainer Hornets read `networked_datalink = False` where the
+   mod says True -- pydcs's `DataLink.for_aircraft_id` has no entry for the trainer
+   ids and raises at spawn, so True kills mission generation.
+   `tests/fourteenth/test_super_hornet_datalink.py` locks this, and CI proved it
+   does: the first push of this change "fixed" the flag to True over the
+   in-file comment saying not to, and the suite failed exactly there. A sweep
+   mismatch is a lead, not an instruction.
 
 The runbook and the heavy-mod gotchas are in `tools/verify_mod_export.py`'s docstring;
 the nil-guarded exporter is at `C:\Users\brady\dcs-export\pydcs_export.lua`.

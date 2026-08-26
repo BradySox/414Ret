@@ -14,7 +14,15 @@ import pytest
 from game.theater.neutralborder import NeutralBorderZone
 from game.theater.terrainborders import load_terrain_borders
 
-SHIPPED = ["Afghanistan", "Syria", "Caucasus", "Iraq", "Kola", "PersianGulf"]
+SHIPPED = [
+    "Afghanistan",
+    "Syria",
+    "Caucasus",
+    "Iraq",
+    "Kola",
+    "PersianGulf",
+    "Sinai",
+]
 
 
 @pytest.mark.parametrize("terrain", SHIPPED)
@@ -53,10 +61,41 @@ def test_the_host_nation_is_absent() -> None:
         "Afghanistan": "Afghanistan",
         "Syria": "Syria",
         "Iraq": "Iraq",
+        "Sinai": "Egypt",
     }
     for terrain, host in hosts.items():
         names = {e["country"] for e in load_terrain_borders(terrain)}
         assert host not in names, f"{terrain} draws its own host nation"
+
+
+@pytest.mark.parametrize("terrain", SHIPPED)
+def test_no_zone_is_a_clip_artifact(terrain: str) -> None:
+    """A clip box wider than the map leaves triangles hanging off its edge.
+
+    Sinai first shipped a 3-vertex Saudi sliver of 1,629 km² at lng 37.0-37.5,
+    past the map's own 36.61 — real territory, cut into a meaningless wedge by
+    the box rather than by a coastline. Bounding vertices by airfield extent
+    cannot catch it (the Afghanistan map reaches empty sea at 24.5°N for the
+    carrier), so the test is on the shape: a border simplified from a real
+    country keeps its corners, an artifact collapses to a few.
+    """
+    for entry in load_terrain_borders(terrain):
+        border = entry["border"]
+        area_km2 = (
+            abs(
+                sum(
+                    border[i][0] * border[(i + 1) % len(border)][1]
+                    - border[(i + 1) % len(border)][0] * border[i][1]
+                    for i in range(len(border))
+                )
+            )
+            / 2
+            / 1e6
+        )
+        assert not (len(border) < 6 and area_km2 < 5000), (
+            f"{terrain}/{entry['country']}: {len(border)} vertices over "
+            f"{area_km2:.0f} km² reads as a clip artifact, not a border"
+        )
 
 
 def test_afghanistans_neighbours_are_all_there() -> None:

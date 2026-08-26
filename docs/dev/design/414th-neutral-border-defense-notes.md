@@ -607,6 +607,22 @@ square metres is far below anything drawable.
   coverage simplification reduces a small polygon to a triangle in the limit, so
   the clip-artifact test can no longer read "few vertices" as "fake shape".
 
+## Into the Hornet's Nest stopped authoring its own borders (2026-08-26)
+
+It preseeded one zone, Lebanon. **Precedence is total, so authoring one zone
+costs a campaign the other seven** — it was getting Lebanon alone where the Syria
+terrain file gives Syria, Turkey, Lebanon, Israel, Jordan, Iraq, Cyprus and Saudi
+Arabia. Lebanon derives red-aligned there anyway (Beirut's four red squadrons),
+so the block enforced nothing and was purely a subtraction.
+
+The block is deleted; both gates stay preseeded. **Enduring Resolve keeps
+its own**, because its corridor-cut Pakistan is the thing total precedence exists
+to protect.
+
+The lesson generalises: **now that borders ship per terrain, a campaign should
+author a block only when it needs geometry the terrain file cannot give.** For
+anything else, authoring is a way to opt out of seven countries by accident.
+
 ## The remaining automagic gap (DECIDED, NOT BUILT)
 
 **"I do not wish this to be specified in any existing campaign, I want this to

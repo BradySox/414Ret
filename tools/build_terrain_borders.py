@@ -57,6 +57,30 @@ from shapely.geometry import Point as ShapelyPoint, Polygon, box  # noqa: E402
 SPAWN_ALT_FT = 20000
 
 
+def border_lines(ring: list[tuple[float, float]]) -> list[str]:
+    """The ring as wrapped yaml flow style.
+
+    One vertex per line is 2,573 lines across the eight shipped maps and reviews
+    as noise -- nobody reads a coordinate list, and at 96 vertices a country is
+    a page of it. Flow style parses to exactly the same thing and costs a tenth
+    of the lines.
+    """
+    out = ["    border: ["]
+    row = "      "
+    for index, (x, y) in enumerate(ring):
+        pair = f"[{x:.0f}, {y:.0f}]"
+        if index < len(ring) - 1:
+            pair += ","
+        if len(row) + len(pair) > 88 and row.strip():
+            out.append(row.rstrip())
+            row = "      "
+        row += pair + " "
+    if row.strip():
+        out.append(row.rstrip())
+    out.append("    ]")
+    return out
+
+
 def airfield_in(terrain: Any, polygon: Polygon) -> Optional[str]:
     """A real map airfield inside this polygon, if the terrain has one.
 
@@ -200,9 +224,7 @@ def main() -> None:
             x, y = to_xy(terrain, [(rep.x, rep.y)])[0]
             lines.append(f"    spawn: [{x:.0f}, {y:.0f}]")
             lines.append(f"    spawn_alt_ft: {SPAWN_ALT_FT}")
-        lines.append("    border:")
-        for x, y in ring_xy:
-            lines.append(f"      - [{x:.0f}, {y:.0f}]")
+        lines.extend(border_lines(ring_xy))
         written += 1
 
     args.out.mkdir(parents=True, exist_ok=True)

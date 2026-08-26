@@ -119,9 +119,13 @@ capture/CSAR cannot break**); the `Ops.CTLD` template-model mismatch never arise
 
 **Active plan:** [`414th-mist-moose-shim-notes.md`](414th-mist-moose-shim-notes.md) (surface, tier
 breakdown, the DB-from-`_DATABASE` keystone, rollout). The `Ops.CTLD` port is **shelved**
-([`414th-ctld-mantis-style-port-scope.md`](414th-ctld-mantis-style-port-scope.md)). Foundation
-(`resources/plugins/base/mist_moose_shim.lua`, Tier-1a) is in; it is **not yet in `base/plugin.json`**,
-so MIST still loads and `main` is unaffected until the validation swap.
+([`414th-ctld-mantis-style-port-scope.md`](414th-ctld-mantis-style-port-scope.md)).
+
+**✅ This shipped — MIST was retired 2026-06-25.** `base/plugin.json`'s `"mist"` work-order now
+loads `resources/plugins/base/mist_moose_shim.lua`, and `mist_4_5_126.lua` was **deleted
+2026-07-10** after the shim flew clean across campaigns. Until 2026-08-25 this paragraph still
+read "not yet in `base/plugin.json`, so MIST still loads" — that was stale by two months. The
+shim note is the record; treat it as authoritative over anything here.
 
 The completed phases (dismounts, ewrs) were **deletions of dead code** — still correct, independent of
 this change. The MANTIS G6 pass (done) was likewise independent.

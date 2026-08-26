@@ -1450,12 +1450,12 @@ class Settings:
             "Packages used to be timed independently, so a strike could arrive "
             "at a defended target half an hour before the SEAD package tasked "
             "against the SAM covering it. With this on, each side's AI "
-            "strike/BAI/OCA packages whose target sits inside a SAM threat ring "
-            "that a SEAD/DEAD package is servicing are retimed into the window "
-            "just behind it -- SEAD opens the corridor, then the strikes push, "
-            "several packages massing behind one suppressor. Player packages "
-            "are never rescheduled, but a player-flown SEAD still opens a "
-            "window the AI pushes behind."
+            "strike, BAI, OCA and CAS packages whose target sits inside a SAM "
+            "threat ring that a SEAD/DEAD package is servicing are retimed into "
+            "the window just behind it -- SEAD opens the corridor, then the "
+            "strikes push, several packages massing behind one suppressor. "
+            "Player packages are never rescheduled, but a player-flown SEAD "
+            "still opens a window the AI pushes behind."
         ),
     )
     max_escort_jammers: int = bounded_int_option(

@@ -3,9 +3,14 @@
 Triage of the 2026-08-26 DCS patch against this tree.
 
 **Verified against the updated install on 2026-08-26** (`autoupdate.cfg` reports
-`2.9.29.27278`, stamped `20260826-084519`). Sections 1 and 2 are settled from the
-install's own Lua. Sections 3 to 5 are still read from the published patch notes and
-our own files, and say so where it matters.
+`2.9.29.27278`, stamped `20260826-084519`). **Sections 1 to 4 are settled from the
+install** — sections 1 and 2 from its own Lua, sections 3 and 4 from two cartridges
+saved by the ME's DTC editor on the updated build. Sections 5 onward are still read
+from the published patch notes and our own files, and say so where it matters.
+
+Two claims in the first draft were **falsified** by that reading and are marked as such
+in place: that nothing could be settled before running the export (§1), and that the
+stock F-16C ROE table marks blue's own JF-17 hostile (§4.3).
 
 `requirements.txt:37` still pins
 `BradySox/pydcs@f84e7d2cb967bd5eebdf9180c1f7b0d5e994d8bd`, cut for DCS 2.9.28.26283.
@@ -154,117 +159,166 @@ rebasing onto the new stock files before the pack goes back on.
 
 This is a DCS-install matter, not a repo change, so nothing in this PR fixes it.
 
-## 3. AH-64D DTC — the largest new opportunity (§74)
+## 3. AH-64D DTC — the shape is confirmed
 
-DCS added a full Apache DTC. Its partitions map onto data §74 already computes:
+**The cartridge's on-disk shape was the one thing blocking this, and it is now known.**
+Read from a cartridge saved by the ME's own DTC editor on 2.9.29.27278
+(`Saved Games/DCS/DTC/AH-64D BLK.II DTC_1.dtc`, 310 KB).
 
-| DCS partition | What we already build |
-|---|---|
-| WPTHZ 01-50, CTRLM 51-99, 10 Routes | `DtcOptions.route` — steerpoints + route sequence |
-| TGT/THRT 01-50 | `DtcOptions.threat_rings` — recon-fogged SAM rings |
-| 15 LINES, 12 AREAS, 8 PFZ / 8 NFZ | `DtcOptions.flot_and_zones` — the front line |
-| RADIOS, 10 COM presets | `DtcOptions.comms` — the radio allocator's channels |
-| 10 ADF presets | CSAR pins a 260 kHz survivor beacon (checklist G33) |
+It is plain JSON. Top level is `{name, type, data}` with `type = "AH-64D_BLK_II"`, and
+`data` additionally carries `terrain` — the cartridge is **terrain-scoped**, which the
+existing three writers do not have to think about.
 
-Also in the partition set and **not** currently computed anywhere: laser
-settings/codes, ASE settings and chaff/flare programs, the RLWR threat table, PERF
-data, and 10 MPS text messages.
+```
+data
+├── NAV
+│   ├── MissionFile            int (which mission slot is active)
+│   ├── Mission_1              ← the whole nav picture, twice
+│   │   ├── Points             {WPTHZ, CTRLM, TGT}, each {isEnabled, POINTS[]}
+│   │   ├── Routes             10 named routes: ALPHA, BRAVO, DELTA, ECHO, ...
+│   │   ├── Lines              [{note, text, type_num, vertices[{x,y}]}]
+│   │   ├── Areas              polygons + caption_pos
+│   │   ├── Zones              {NFZ, PFZ}
+│   │   └── ADF                Preset_1..Preset_10, each {Freq, ID}
+│   └── Mission_2              same shape
+├── Presets     {COMM, MPS}    MPS = the 10 text messages, {Title, Option, OptionID, TextLine1..4}
+├── Radios      {FM, IFF, InitialRadioSettings, UHF_GuardReceiver}
+├── Radios_HF   []
+├── Laser       {ChannelsCodes A..K each {One,Two,Three,Four}, DevicesSettings}
+├── Weapon      {MissileChannels, SelectedChannels, OtherSettings{PLT, CPG}}
+├── MISC        {ASE, PERF, RFI, RLWR}
+└── IDM         []
+```
 
-`game/missiongenerator/dtc/` holds `viper.py`, `hornet.py` and `tomcat.py` behind a
-shared `common.py` and one `generator.py`. An `apache.py` is a fourth sibling on a
-settled pattern, and the module gained a DMS DTU sub-page plus TSD LINES/AREAS
-pages to read the upload back — so the result is observable in the cockpit.
+**A point is `{num, id, alt, text, note, x, y}`, and `x`/`y` are map metres** — the same
+frame `Point` already uses, so no projection work. Example: `{"num": 51, "text": "C51",
+"alt": 109, "x": -79974.96, "y": -77762.26}`.
 
-The Apache is an Iron Gate and COIN airframe, so it earns its place in those
-campaigns rather than being a demo.
+### 3.1 What this changes about the §74 estimate
 
-**Not scoped here.** Nobody has confirmed the cartridge's on-disk shape. §74's
-existing three were reverse-engineered from a hand-built MP mission and are locked
-against the ME's own DTC editor schemas in `tests/missiongenerator/test_dtc.py`;
-the Apache needs the same treatment before a line of it is written.
+The mapping in the first draft was taken from the patch notes' description of the cockpit
+pages. The file agrees with it, and is simpler:
 
-## 4. The F-16C ROE tab (§74) — derivable from the campaign, and the stock table is wrong
+| Partition | What we already build | Note |
+|---|---|---|
+| `NAV.Mission_1.Points.WPTHZ` / `.CTRLM` | `DtcOptions.route` | numbered points with alt + label |
+| `NAV.Mission_1.Points.TGT` | `DtcOptions.threat_rings` | recon-fogged SAM rings |
+| `NAV.Mission_1.Lines` / `.Areas` / `.Zones` | `DtcOptions.flot_and_zones` | NFZ/PFZ are the front line |
+| `Presets.COMM` + `Radios` | `DtcOptions.comms` | the radio allocator's channels |
+| `NAV.Mission_1.ADF` | CSAR's 260 kHz survivor beacon | **checklist G33** — 10 slots, `{Freq, ID}` |
 
-ED published the ROE tab's spec on 2026-08-26. It is not a cosmetic partition, and it is
-the second-strongest §74 item in this patch after the Apache.
+Still computed nowhere: `Laser.ChannelsCodes`, `MISC.ASE`, `MISC.RLWR`, `MISC.PERF`, and
+`Presets.MPS`.
+
+`game/missiongenerator/dtc/` holds `viper.py`, `hornet.py` and `tomcat.py` behind a shared
+`common.py` and one `generator.py`. An `apache.py` is a fourth sibling on a settled
+pattern, and the format is friendlier than the note assumed.
+
+**Two things to settle before writing it.** `NAV.MissionFile` selects between `Mission_1`
+and `Mission_2` and nothing here says which the aircraft loads by default. And the ADF
+`Freq` values in this cartridge are bare integers (106, 103, 100) with no unit stated, so
+the 260 kHz beacon needs one confirmed round-trip before G33 can rely on it.
+
+The Apache is an Iron Gate and COIN airframe, so it earns its place in those campaigns
+rather than being a demo. Lock it against the ME's schemas in
+`tests/missiongenerator/test_dtc.py` the way the existing three are.
+
+## 4. The F-16C ROE tab (§74) — the table is derivable, and §4.3 was wrong
+
+**Read from `Saved Games/DCS/DTC/F-16CM bl.50 DTC_1.dtc` (1.2 MB) on 2.9.29.27278.**
+The partition is `data.MPD.ROE`; the colour partition is `data.COLR` (65 scalar entries).
 
 ### 4.1 What the tab is
 
-Two checkboxes — **Type Sovereignty** and **Mode 4 Status** — plus an **Air Target Data
-Table (ATDT)**: a scrollable list of aircraft types, each set FRIENDLY, HOSTILE or
-UNKNOWN. The MMC feeds those into an ROE tree that decides how a track draws on the FCR
-and HSD:
+Two checkboxes and a table, and the file names them exactly:
 
-| Track state | Symbol | What it takes |
-|---|---|---|
-| Friendly | green circle | **one** ROE factor |
-| Hostile | red triangle | **two** ROE factors |
-| Suspect | yellow square | one factor indicating hostile |
-| Unknown | white square | nothing available |
+```json
+"ROE": { "Settings": { "Mode4Status": true, "TypeSovereignty": true }, "List": [ ... ] }
+```
 
-Type comes from the F-16's own NCTR scan or from another aircraft on the TNDL network.
-Mode 4 status **can only** come from TNDL — the F-16C's onboard IFF interrogator is not
-wired into the ROE logic.
+Each of the 48 `List` rows is:
 
-### 4.2 We can generate the ATDT; DCS ships one global default
+```json
+{ "group_name": "A-10", "hint": "A-10A\nA-10C\nA-10C II", "sovereignty": 3,
+  "threats": [ {"unit_type": "A-10A", "wstype": [], "displayName": ""}, ... ] }
+```
 
-Retribution knows every squadron's airframe and coalition, which is exactly the input the
-table wants:
+The MMC feeds Type Sovereignty into an ROE tree: Friendly needs one factor, Hostile two,
+Suspect one indicating hostile, Unknown nothing. Type comes from NCTR or from another
+aircraft on TNDL; Mode 4 status can only come from TNDL.
 
-| Flown by | Sovereignty |
-|---|---|
-| Blue only | FRIENDLY |
-| Red only | HOSTILE |
-| Both | UNKNOWN |
+### 4.2 The family mapping does not need authoring — it is in the cartridge
 
-Nothing needs authoring. The derivation is per campaign, which is the thing a single
-shipped default cannot be.
+The first draft budgeted "a fixed `AircraftType` → ATDT-family mapping of roughly 30-40
+rows, held as data". **That work is already done by ED and shipped in the file.** The 48
+rows carry **87 distinct `unit_type` ids** between them, and those ids are pydcs unit ids:
+`F-14` holds seven (`F-14A`, `F-14A-135-GR`, `F-14A-135-GR-Early`, `F-14A-95-GR`, `F-14B`,
+`F-14BU`, `F-14D`), `Mirage F1` holds 25, `MiG-29` four.
 
-### 4.3 The stock default is wrong on a campaign we ship
+So the derivation is: read the rows, map each `unit_type` to the coalitions flying it, and
+set `sovereignty` per row — Friendly if only blue, Hostile if only red, Unknown if both.
+The family-level collision rule from the first draft still holds and is still the point;
+it just does not need a hand-written table to apply it.
 
-`resources/campaigns/northern_russia.yaml`, Kutaisi (CP 25), is blue. Its squadrons
-include:
+### 4.3 The claim that the stock table is wrong — FALSIFIED
 
-- **JF-17 Thunder** — the published default table marks JF-17 **HOSTILE**. Blue's own
-  jets, on the hostile side of blue's ROE tree.
-- **AJS-37 Viggen** — default UNKNOWN. A friendly declaration left unclaimed.
-- **MiG-23MLD** (line 50) — and red flies MiG-23MLD as well, at Beslan (line 92) and
-  Mozdok (line 113). The one type genuinely on both sides is the one that most needs an
-  explicit UNKNOWN.
+The first draft said the published default marks **JF-17 HOSTILE**, leaving blue's own
+jets on the hostile side of blue's ROE tree on `northern_russia` (Kutaisi, CP 25). It
+named AJS-37 as an unclaimed friendly and MiG-23MLD as needing an explicit Unknown.
 
-The campaign ships upstream unchanged and the fork ships it too, so this is not
-hypothetical.
+**No part of that survives contact with the file.** Every one of the 48 rows ships
+`"sovereignty": 3` — one uniform value, JF-17 included. Nothing is marked Hostile,
+nothing is marked Friendly, and there is no per-type default to be wrong about.
 
-### 4.4 The trap: the ATDT keys on NCTR families, not on our AircraftType
+Nor is there a shipped table to check it against: the install carries **no `.dtc` file at
+all**, and no ROE defaults are declared in the F-16C module's Lua. The cartridge the ME
+writes on a fresh save is the only default that exists.
 
-The published table's rows are coarse — `F-15`, `F/A-18`, `MiG-21`, `F-14` — not DCS unit
-ids. So `F-15C Eagle` and `F-15E Strike Eagle (Suite 4+)` collapse to one row, as do
-`F-14A`, `F-14B` and `F-14B(U)`.
+**The case for building this is unchanged and is now simply the plain one** — the ATDT is
+per-campaign data that no single shipped default could supply, and the payoff is the green
+Friendly declarations that stop blue-on-blue. It never rested on a defect.
 
-**A per-`AircraftType` derivation would therefore produce a fratricide table**: one side's
-variant marks a family FRIENDLY while the other side flies a different variant of the same
-family. The collision rule has to be applied at family level — any family with variants on
-both coalitions is UNKNOWN.
+### 4.4 The real traps, both found in the file
 
-The work is a fixed `AircraftType` → ATDT-family mapping of roughly 30-40 rows, held as
-data. The derivation itself is a few lines.
+1. **Seven rows carry no `unit_type` at all.** `E-2`, `E-3`, `MiG-23`, `MiG-31`, `Su-24`,
+   `Su-30` and `Su-34` identify by `wstype` quadruples instead — `E-3` is
+   `[1, 1, 5, 27]`, `Su-24` carries two, `MiG-23` is `[1, 1, 1, 1]`. **An `AircraftType`
+   cannot be matched to these by id.** Any derivation must either carry a wsType table for
+   those seven or leave them at the default and say so.
+2. **`F-15C` does not appear anywhere in the table.** The `F-15` row lists only `F-15ESE`,
+   and no F-15 wsType row exists. An F-15C squadron therefore cannot be declared Friendly
+   by unit id — which matters, because Iron Gate's Batumi is ten F-15Cs and nothing else.
+   `MiG-23MLD` is likewise absent from every `unit_type` list, though the wsType `MiG-23`
+   row presumably reaches it at runtime.
 
-### 4.5 Before ~2003 nothing can ever read Hostile, and that is fine
+Whether those two absences are an ED omission or an artefact of what the editor lists needs
+a second cartridge from a different terrain to settle. **Do not build against the 87-id
+list until that is checked.**
+
+### 4.5 The blocking unknown: what `sovereignty: 3` means
+
+Every row in the sample is `3`, so the enum cannot be read from it. Nothing can be
+generated without knowing which integer is Friendly and which is Hostile.
+
+**The cheapest way to settle it** is one more cartridge: open the DTC editor, set one
+aircraft to FRIENDLY and a different one to HOSTILE, leave the rest alone, save, and diff
+the `List` against this file. Two changed integers answer it permanently.
+
+### 4.6 Before ~2003 nothing can ever read Hostile, and that is fine
 
 Mode 4 status requires TNDL, and Hostile requires two factors. Where a campaign has no
 datalink, Type Sovereignty is the only factor available and every red track tops out at a
 yellow Suspect square.
 
-We already hold the data to know which campaigns those are: `datalink_introduced` on the
-14 airframes that carry it (`resources/units/aircraft/F-16C_50.yaml:100` is 2003) plus the
-`DatalinkPolicy` setting. Red Tide, Desert Storm, Red Flag 81-2 and Northern Russia (1995)
-are all in that bracket.
+`datalink_introduced` on the 14 airframes that carry it
+(`resources/units/aircraft/F-16C_50.yaml:100` is 2003) plus the `DatalinkPolicy` setting
+already tell us which campaigns those are: Red Tide, Desert Storm, Red Flag 81-2 and
+Northern Russia (1995).
 
-This is correct behaviour, not a defect. It does mean the payoff of writing the ATDT is
-overwhelmingly the **green Friendly declarations** — which is also the half that prevents
-blue-on-blue, so the feature earns its place on that alone.
+This is correct behaviour, not a defect, and it means the payoff is overwhelmingly the
+green Friendly declarations — which is also the half that prevents blue-on-blue.
 
-### 4.6 The correlation half — nothing owed
+### 4.7 The correlation half — nothing owed
 
 Offboard datalink tracks now correlate only with real FCR tracks, capped by sub-mode
 (SAM/STT 1, DT SAM/DTT 2, TWS 10); uncorrelated datalink symbols overlay Search Targets
@@ -274,10 +328,12 @@ instead. The datalink declutter setting no longer disables ROE factors.
 untouched by any of this. **B64** (the datalink era gate) is the row to re-run; there is no
 code change here.
 
-**COLR partition.** Defaults TWS Track Targets yellow and uncorrelated System Tracks white,
-both overridable. Low value — recorded, not queued.
+**COLR partition — shape known, value low.** `data.COLR` is 65 flat integer entries keyed
+by symbol (`HSDHAD_AcquisitionCursor`, `HSDHAD_BullseyeLineOfSight`, …), all `1` in the
+sample. Trivial to write and nothing in the campaign derives a colour, so it stays
+recorded rather than queued.
 
-### 4.7 Two smaller §74 items
+### 4.8 Two smaller §74 items
 
 - **"F-16 DTC Multiple in multiplayer loads only first DTC" is fixed.** The §74
   checklist row's open question is whether `AutoLoad` fires on the two §64 spawn

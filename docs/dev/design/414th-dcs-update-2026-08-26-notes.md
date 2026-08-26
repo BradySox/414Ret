@@ -338,11 +338,11 @@ the default, in two values:
 | `2` | HOSTILE | MiG-23, Mirage F1, Tu-95 |
 | `3` | UNKNOWN / neutral | the starting state of all 48 rows, DM-confirmed |
 
-Two independent lines agree on which hand-set value is which: the natural side of
-each changed row, and ED's own tab description enumerating the states as "FRIENDLY,
-HOSTILE or UNKNOWN" -- 1, 2, 3 in listing order. An all-UNKNOWN shipping default is
-also the sane one, reinforcing §4.3. Nothing blocks the ATDT derivation now except
-the §4.4 wsType rows and the F-15C absence.
+The mapping is DM-confirmed row by row, not inferred: "a 30 is friend, mig 23 is
+hostile." It also matches ED's own tab description enumerating the states as
+"FRIENDLY, HOSTILE or UNKNOWN" -- 1, 2, 3 in listing order. An all-UNKNOWN shipping
+default is the sane one, reinforcing §4.3. Nothing blocks the ATDT derivation now
+except the §4.4 wsType rows and the F-15C absence.
 
 ### 4.6 Before ~2003 nothing can ever read Hostile, and that is fine
 

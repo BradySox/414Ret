@@ -83,6 +83,16 @@ _SECTIONS = (
         "divert first and the enemy field you are working over right after "
         "it. Viper only; the other jets carry no equivalent section.",
     ),
+    (
+        "ROE air target table",
+        "roe_table",
+        "The F-16C ROE tab's Air Target Data Table, derived from this "
+        "campaign's order of battle: a family only your side flies is "
+        "declared FRIENDLY, one only the enemy flies HOSTILE, anything "
+        "flown by both (or nobody) stays UNKNOWN. Green circles need one "
+        "ROE factor, so the friendly declarations are what stop "
+        "blue-on-blue. Viper only.",
+    ),
 )
 
 
@@ -98,7 +108,8 @@ class QFlightDtcTab(QFrame):
 
         intro = QLabel(
             "This flight's native DCS data cartridge auto-loads at spawn: "
-            "comms, route, recovery aids, the SA picture and, on the F-14B(U), "
+            "comms, route, recovery aids, the SA picture, the Viper's ROE "
+            "table and, on the F-14B(U), "
             "pre-planned JDAM points -- straight into the jet, and multiplayer "
             "clients get it with the mission download. Radio presets and the "
             "route reach the jet through the mission anyway; the cartridge adds "

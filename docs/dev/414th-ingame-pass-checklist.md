@@ -25,7 +25,7 @@ so the two docs don't drift.
 
 ## Outstanding rows at a glance
 
-76 rows need a live pass. Full detail is under each `###` heading below —
+78 rows need a live pass. Full detail is under each `###` heading below —
 search the row id. `☐` untested · `◐` flown but not under the conditions that
 stress it · `✗` fail signature reproduced in-game.
 
@@ -151,6 +151,8 @@ stress it · `✗` fail signature reproduced in-game.
 | B101 | The F-4E's Shrike and gun pod are still on the jet | §71 | ☐ |
 | B102 | A low ingress against an SA-2/SA-3 belt is still flyable | DCS 2026-08-26 SAM guidance | ☐ |
 | B103 | BMP-3s in a firefight still fire like armour, not infantry | §9 TIC | ☐ |
+| B104 | The Viper's ROE tab declares the campaign's own sides | §74 | ☐ |
+| B105 | The Apache's cartridge loads: route, targets and the front line on the TSD | §74 | ☐ |
 
 ---
 
@@ -6462,3 +6464,62 @@ audible and visible from the cockpit.
 **Note.** TIC has no headless harness coverage — `tests/lua/` covers `vietnamops` only.
 Nothing catches the next DisplayName rename, which is the general risk this row stands
 for.
+
+### B104 — The Viper's ROE tab declares the campaign's own sides · §74 · ☐ UNTESTED
+
+The cartridge now carries `MPD.ROE`: the 48-row Air Target Data Table with
+sovereignty derived from the campaign's order of battle (blue-only families
+FRIENDLY, red-only HOSTILE, shared/unflown UNKNOWN). Rows ship as
+`{group_name, sovereignty}` only; the jet compiles membership from its own
+`threat_base.lua`. Enum settled against `ROE_defs.lua` and a DM-set cartridge.
+Detail in the features doc §74 and the DCS-update note §4.
+
+**Setup.** Any campaign with a client F-16C — Iron Gate or Northern Russia. Fly a
+Viper slot, MFD → DTE page: confirm the cartridge loaded, then open the ROE tab
+(MMC format page). ~10 min on the ramp, no sortie needed.
+
+**Pass.** The ATDT shows this campaign's sides: the families blue flies read
+FRIENDLY, red's read HOSTILE, and a family both fly (Northern Russia's MiG-23…
+check the campaign) reads UNKNOWN. In the air, a friendly type the FCR types out
+(NCTR) or a TNDL track draws the green circle without an interrogation.
+
+**Fail signatures, and what each means:**
+
+- **The tab shows all UNKNOWN** — the ROE section did not load. Check the DTE
+  page took the cartridge at all (if the route loaded but ROE did not, the
+  section name or row shape is wrong — diff a saved cartridge against ours).
+- **A family reads the wrong side** — the membership mirror disagrees with the
+  jet's `threat_base`. Run `test_atdt_ids_all_exist_in_pydcs` first; if green,
+  the id belongs to a different family jet-side than repo-side.
+- **Wrong colours in the air but the right table on the ground** — not this
+  feature. The ROE tree needs two factors for Hostile and TNDL for Mode 4; on a
+  pre-datalink campaign red tops out at Suspect yellow by design.
+
+### B105 — The Apache's cartridge loads: route, targets and the front line on the TSD · §74 · ☐ UNTESTED
+
+`apache.py` is the fourth §74 builder: WPTHZ waypoints W01.., the ALPHA route in
+the editor's own leg shape, fogged SAM sites as TGT points, the FLOT as TSD
+lines. Partitions the planner computes nothing for are omitted or ship as the
+ME sample's empty skeleton — **that omission is the one structural risk**: the
+DTU loader indexing an absent partition would fail the whole load, and no
+headless test can see it.
+
+**Setup.** Iron Gate or COIN, a client AH-64D flight. Spawn in, let the DTU
+auto-load, TSD → check waypoints/route; PLT and CPG both. ~15 min.
+
+**Pass.** The route shows as W01.. with the briefed names on point review, the
+ALPHA route sequences them with sane leg speeds/ETAs, known SAM sites appear as
+T-points named for their site, and the front line draws. Nothing else about the
+jet's setup regressed (radios still tune, weapons page sane).
+
+**Fail signatures, and what each means:**
+
+- **Nothing loads / DTU error** — the loader indexed an omitted partition. Save
+  a cartridge from the ME with only NAV touched and diff its top-level keys
+  against ours; add the missing empty skeleton.
+- **Points load but the route is empty** — the Routes element shape drifted
+  from the editor's add-point handler (`{num, alt, speed, dist, eta, fix}`).
+- **Route ETAs are nonsense** — the first-leg ETA anchor (TOS seconds) or the
+  kts conversion. Compare one leg by hand: dist / (kts × 0.514).
+- **T-points sit on unengaged sites** — the recon fog leaked; that is a §3
+  regression, not a DTC one (`known_enemy_threat_sites` gates on `known_for`).

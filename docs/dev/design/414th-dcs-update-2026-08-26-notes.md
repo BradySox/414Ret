@@ -190,7 +190,7 @@ rebasing onto the new stock files before the pack goes back on.
 
 This is a DCS-install matter, not a repo change, so nothing in this PR fixes it.
 
-## 3. AH-64D DTC — the shape is confirmed
+## 3. AH-64D DTC — BUILT 2026-08-26 (`apache.py`, checklist B105)
 
 **The cartridge's on-disk shape was the one thing blocking this, and it is now known.**
 Read from a cartridge saved by the ME's own DTC editor on 2.9.29.27278
@@ -254,7 +254,7 @@ The Apache is an Iron Gate and COIN airframe, so it earns its place in those cam
 rather than being a demo. Lock it against the ME's schemas in
 `tests/missiongenerator/test_dtc.py` the way the existing three are.
 
-## 4. The F-16C ROE tab (§74) — the table is derivable, and §4.3 was wrong
+## 4. The F-16C ROE tab (§74) — BUILT 2026-08-26 (`roedata.py`, checklist B104)
 
 **Read from `Saved Games/DCS/DTC/F-16CM bl.50 DTC_1.dtc` (1.2 MB) on 2.9.29.27278.**
 The partition is `data.MPD.ROE`; the colour partition is `data.COLR` (65 scalar entries).
@@ -309,22 +309,20 @@ writes on a fresh save is the only default that exists.
 per-campaign data that no single shipped default could supply, and the payoff is the green
 Friendly declarations that stop blue-on-blue. It never rested on a defect.
 
-### 4.4 The real traps, both found in the file
+### 4.4 The cartridge's traps dissolved against the install's own files
 
-1. **Seven rows carry no `unit_type` at all.** `E-2`, `E-3`, `MiG-23`, `MiG-31`, `Su-24`,
-   `Su-30` and `Su-34` identify by `wstype` quadruples instead — `E-3` is
-   `[1, 1, 5, 27]`, `Su-24` carries two, `MiG-23` is `[1, 1, 1, 1]`. **An `AircraftType`
-   cannot be matched to these by id.** Any derivation must either carry a wsType table for
-   those seven or leave them at the default and say so.
-2. **`F-15C` does not appear anywhere in the table.** The `F-15` row lists only `F-15ESE`,
-   and no F-15 wsType row exists. An F-15C squadron therefore cannot be declared Friendly
-   by unit id — which matters, because Iron Gate's Batumi is ten F-15Cs and nothing else.
-   `MiG-23MLD` is likewise absent from every `unit_type` list, though the wsType `MiG-23`
-   row presumably reaches it at runtime.
-
-Whether those two absences are an ED omission or an artefact of what the editor lists needs
-a second cartridge from a different terrain to settle. **Do not build against the 87-id
-list until that is checked.**
+The saved cartridge made two things look like blockers — seven rows identifying only
+by `wstype` quadruple, and `F-15C` absent from every `unit_type` list. **Both were
+artefacts of reading the save instead of the schema.** The jet's loader
+(`MPD/ROE.lua` `make_ROE_table`) compiles row membership from the install's
+`threat_base.lua` and reads **only `sovereignty`** from the cartridge — and
+threat_base's `F-15` row covers the F-15C via the `F_15_` wsType, its `hint` strings
+naming every member in plain text. So the built derivation ships
+`{group_name, sovereignty}` rows, mirrors membership repo-side purely to *derive*
+the verdicts (wsType families hand-resolved from the hints), and pins every
+mirrored id to pydcs in `test_atdt_ids_all_exist_in_pydcs`. One hint lied the same
+way the BMP-3 did: threat_base's Tu-95 says "[CH]" but the live DB id is still
+`Tu-95MS` — the CHAP model replaced it in place.
 
 ### 4.5 The sovereignty enum -- SETTLED 2026-08-26
 

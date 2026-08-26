@@ -9,6 +9,7 @@ midnight, SA/HSD elements, and the recon-fog discipline on threat rings.
 
 from __future__ import annotations
 
+import dataclasses
 import json
 import math
 import zipfile
@@ -49,6 +50,14 @@ from game.missiongenerator.dtc.tomcat import (
     TOMCAT_UNIT_TYPE,
     build_tomcat_cartridge,
     lookup_jdam_lar,
+)
+from game.missiongenerator.dtc.apache import build_apache_cartridge
+from game.missiongenerator.dtc.roedata import (
+    ATDT_FAMILIES,
+    SOVEREIGNTY_FRIENDLY,
+    SOVEREIGNTY_HOSTILE,
+    SOVEREIGNTY_UNKNOWN,
+    build_atdt,
 )
 from game.missiongenerator.dtc.viper import build_viper_cartridge
 
@@ -182,10 +191,28 @@ def _mission_data(flights: list[Any], carriers: Optional[list[Any]] = None) -> A
     )
 
 
-def _game(*, dtc_on: bool = True, controlpoints: Optional[list[Any]] = None) -> Any:
+def _coalition(squadron_ids: Optional[list[str]] = None) -> Any:
+    squadrons = [
+        SimpleNamespace(aircraft=SimpleNamespace(dcs_unit_type=SimpleNamespace(id=i)))
+        for i in (squadron_ids or [])
+    ]
+    return SimpleNamespace(
+        air_wing=SimpleNamespace(iter_squadrons=lambda: iter(squadrons))
+    )
+
+
+def _game(
+    *,
+    dtc_on: bool = True,
+    controlpoints: Optional[list[Any]] = None,
+    blue_ids: Optional[list[str]] = None,
+    red_ids: Optional[list[str]] = None,
+) -> Any:
     return SimpleNamespace(
         settings=SimpleNamespace(dtc_data_cartridges=dtc_on),
         conditions=SimpleNamespace(start_time=datetime(1988, 7, 15, 7, 0)),
+        blue=_coalition(blue_ids),
+        red=_coalition(red_ids),
         theater=SimpleNamespace(
             terrain=SimpleNamespace(name="Caucasus"),
             timezone=timezone(timedelta(hours=4)),
@@ -797,15 +824,10 @@ def test_all_sections_off_builds_no_cartridge(
         "FA-18C_hornet",
         lambda *args: pytest.fail("an empty cartridge must not be built"),
     )
+    # Programmatic all-off: a section flag added later must not quietly
+    # revive this cartridge (roe_table did exactly that on its first run).
     bare = DtcOptions(
-        comms=False,
-        route=False,
-        nav_aids=False,
-        flot_and_zones=False,
-        friendly_orbits=False,
-        threat_rings=False,
-        destinations=False,
-        jdam_targets=False,
+        **{f.name: False for f in dataclasses.fields(DtcOptions) if f.type == "bool"}
     )
     generator = _generator(_game(), [_flight(dtc_options=bare)])
     generator.generate()
@@ -1859,3 +1881,166 @@ def test_the_priority_budget_stops_at_seven() -> None:
     assert coded[0].endswith("X1") and coded[-1].endswith("X7")
     # The eighth and ninth stay plain rather than borrowing a slot.
     assert route[7]["name"].endswith("7") is False
+
+
+# --- the ROE Air Target Data Table (viper) ---
+
+
+def test_atdt_ids_all_exist_in_pydcs() -> None:
+    """The membership mirror is load-bearing on DCS unit ids; pin every one.
+
+    A rename in pydcs (= a rename in DCS) must fail here, not silently drop a
+    family from the sovereignty derivation.
+    """
+    from dcs.helicopters import helicopter_map
+    from dcs.planes import plane_map
+
+    known = set(plane_map) | set(helicopter_map)
+    missing = {
+        unit_id
+        for ids in ATDT_FAMILIES.values()
+        for unit_id in ids
+        if unit_id not in known
+    }
+    assert not missing, f"ATDT ids unknown to pydcs: {sorted(missing)}"
+
+
+def test_atdt_row_set_matches_the_roe_grid() -> None:
+    # ROE_defs.lua carries 48 groups; the grid compiles only rows it knows.
+    assert len(ATDT_FAMILIES) == 48
+    assert len(set(ATDT_FAMILIES)) == 48
+
+
+def test_atdt_sovereignty_follows_the_order_of_battle() -> None:
+    game = _game(
+        blue_ids=["F-16C_50", "MiG-29S"],
+        red_ids=["MiG-23MLD", "MiG-29A"],
+    )
+    rows = {row["group_name"]: row["sovereignty"] for row in build_atdt(game)}
+    assert len(rows) == 48
+    assert rows["F-16"] == SOVEREIGNTY_FRIENDLY
+    assert rows["MiG-23"] == SOVEREIGNTY_HOSTILE
+    # The family-level collision rule: variants on both sides collapse to
+    # UNKNOWN even though the variants themselves never meet.
+    assert rows["MiG-29"] == SOVEREIGNTY_UNKNOWN
+    # A family nobody flies stays at the jet's default.
+    assert rows["Tu-95"] == SOVEREIGNTY_UNKNOWN
+
+
+def test_viper_roe_section_shape() -> None:
+    flight, mission_data, game = _hornet_fixture()
+    flight.aircraft_type.dcs_unit_type.id = "F-16C_50"
+    game.blue = _coalition(["F-16C_50"])
+    game.red = _coalition(["MiG-23MLD"])
+    cartridge = json.loads(
+        build_viper_cartridge(flight, mission_data, game, "ROE").to_json()
+    )
+    roe = cartridge["data"]["MPD"]["ROE"]
+    assert roe["Settings"] == {"TypeSovereignty": True, "Mode4Status": True}
+    assert len(roe["List"]) == 48
+    # Only the two keys the jet's own loader reads.
+    assert all(set(row) == {"group_name", "sovereignty"} for row in roe["List"])
+
+
+def test_viper_roe_section_omitted_when_off() -> None:
+    flight, mission_data, game = _hornet_fixture()
+    flight.dtc_options = DtcOptions(roe_table=False)
+    cartridge = json.loads(
+        build_viper_cartridge(flight, mission_data, game, "NoROE").to_json()
+    )
+    assert "ROE" not in cartridge["data"]["MPD"]
+
+
+def test_dtc_options_from_an_old_save_defaults_new_fields() -> None:
+    stale = DtcOptions.__new__(DtcOptions)
+    stale.__setstate__({"enabled": None, "comms": False, "route": True})
+    assert stale.comms is False
+    assert stale.roe_table is True
+    assert stale.jdam_targets is True
+
+
+# --- the Apache cartridge ---
+
+
+def _apache_fixture() -> tuple[Any, Any, Any]:
+    waypoints = [
+        _waypoint("TAKEOFF", FlightWaypointType.TAKEOFF, 0, 0, 0, None),
+        _waypoint(
+            "INGRESS",
+            FlightWaypointType.INGRESS_BAI,
+            30000,
+            10000,
+            300,
+            datetime(1988, 7, 15, 7, 30),
+        ),
+        _waypoint("TARGET", FlightWaypointType.TARGET_GROUP_LOC, 60000, 20000, 0, None),
+        _waypoint("EGRESS", FlightWaypointType.EGRESS, 90000, 0, 300, None),
+    ]
+    flight = _flight(dcs_id="AH-64D_BLK_II", callsign="Chalk 1", waypoints=waypoints)
+    game = _game(controlpoints=[_sam_cp()])
+    return flight, _mission_data([flight]), game
+
+
+def test_apache_cartridge_shape() -> None:
+    flight, mission_data, game = _apache_fixture()
+    cartridge = json.loads(
+        build_apache_cartridge(flight, mission_data, game, "Chalk").to_json()
+    )
+    data = cartridge["data"]
+    assert data["type"] == "AH-64D_BLK_II"
+    assert data["terrain"] == "Caucasus"
+    nav = data["NAV"]
+    assert nav["MissionFile"] == 1
+    mission = nav["Mission_1"]
+
+    points = mission["Points"]["WPTHZ"]["POINTS"]
+    assert [p["text"] for p in points] == ["W01", "W02", "W03"]
+    assert points[0]["note"] == "INGRESS"
+    assert points[0]["x"] == 30000
+
+    route = mission["Routes"][0]
+    assert route["Name"] == "ALPHA" and route["isEnabled"] is True
+    legs = route["POINTS"]
+    assert [leg["num"] for leg in legs] == [1, 2, 3]
+    assert legs[0]["dist"] == 0.0
+    assert legs[1]["dist"] > 0
+    assert legs[1]["eta"] > legs[0]["eta"]
+    assert all(
+        set(leg) == {"num", "alt", "speed", "dist", "eta", "fix"} for leg in legs
+    )
+
+    targets = mission["Points"]["TGT"]["POINTS"]
+    assert [t["text"] for t in targets] == ["T01"]
+    assert "SA-2" in targets[0]["note"]
+
+    # The untouched twin ships as the editor's empty skeleton.
+    assert nav["Mission_2"]["Points"]["WPTHZ"]["POINTS"] == []
+    assert [r["Name"] for r in nav["Mission_2"]["Routes"]][:4] == [
+        "ALPHA",
+        "BRAVO",
+        "DELTA",
+        "ECHO ",
+    ]
+
+
+def test_apache_sections_omitted_when_off() -> None:
+    flight, mission_data, game = _apache_fixture()
+    flight.dtc_options = DtcOptions(
+        route=False, threat_rings=False, flot_and_zones=False
+    )
+    cartridge = json.loads(
+        build_apache_cartridge(flight, mission_data, game, "Bare").to_json()
+    )
+    mission = cartridge["data"]["NAV"]["Mission_1"]
+    assert mission["Points"]["WPTHZ"]["POINTS"] == []
+    assert mission["Points"]["TGT"]["POINTS"] == []
+    assert mission["Lines"] == []
+    assert all(r["isEnabled"] is False for r in mission["Routes"])
+
+
+def test_generator_builds_for_the_apache() -> None:
+    flight, mission_data, game = _apache_fixture()
+    generator = DtcGenerator(Mission(Caucasus()), game, mission_data)
+    generator.generate()
+    assert len(generator.cartridges) == 1
+    assert generator.cartridges[0].unit_type == "AH-64D_BLK_II"

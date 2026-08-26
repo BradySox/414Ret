@@ -12,10 +12,13 @@ Two claims in the first draft were **falsified** by that reading and are marked 
 in place: that nothing could be settled before running the export (§1), and that the
 stock F-16C ROE table marks blue's own JF-17 hostile (§4.3).
 
-`requirements.txt:37` still pins
-`BradySox/pydcs@f84e7d2cb967bd5eebdf9180c1f7b0d5e994d8bd`, cut for DCS 2.9.28.26283.
-Every new unit, trailer, loadout and AI skill level in this patch remains unreachable
-until that pin moves. That gates **new content**, not the three questions below.
+**The pin moved the same day.** `requirements.txt:37` now points at
+`BradySox/pydcs@a03b87e` -- the pin commit plus a surgical 2.9.29 delta cut from a
+full-install export run on the updated machine: the AGM-45B pair on the F-4E's four
+LAU-34 pylons, ten new base-game vehicles (the CHAP transporters and TechWeaponPack
+trailers among them), and the BMP-3's in-place update. The patch's weapon display-name
+renames are deliberately not carried -- that churn belongs to upstream's ordinary
+wholesale refresh when they cut one.
 
 ## 1. The export gates the pin, not the triage
 
@@ -25,12 +28,21 @@ All three questions in section 2 are questions about what DCS declares, and DCS
 declares it in plain Lua inside the install. Reading those files answered all three,
 with no DCS launch.
 
-The export is still owed, for the thing it is actually for:
+The export ran the same day (output in `C:/Users/brady/dcs-export/dcs-20260826/`,
+July's runs preserved beside it) and both of its real jobs are done:
 
-1. Moving the pydcs pin so the patch's new units, trailers and loadouts become
-   reachable at all.
-2. Re-verifying the `pydcs_extensions/` registrations field-for-field
-   (`tools/verify_mod_export.py`), the standing post-update sweep.
+1. **The pin moved** -- pydcs branch `dcs-2.9.29-surgical` (`a03b87e`), cut from the
+   pin commit so the fork gets exactly pin + delta. The join was export-vs-pin per
+   clsid/unit id, provenance-filtered to declarations living in the DCS install
+   itself; Saved Games mod content excluded. The July export could not have served
+   as the baseline: it ran with the 414th's OVGME F-4E pack applied, so for anything
+   that pack touched it is stock-2.9.28 + pack, not stock.
+2. **The extension sweep is clean: 430/430 registered units match** the fresh
+   export. Four drifts found and fixed on the way -- the two CJS trainer Hornets
+   read `networked_datalink = False` where the mod says True (pre-existing, the
+   field simply had not been swept), and the two Ukraine-pack jets carried
+   un-prefixed `livery_name`s, caught on the pack's first real load since the
+   double-nesting fix.
 
 The runbook and the heavy-mod gotchas are in `tools/verify_mod_export.py`'s docstring;
 the nil-guarded exporter is at `C:\Users\brady\dcs-export\pydcs_export.lua`.
@@ -102,10 +114,11 @@ Stock settings come from `Get_RFGU_GUISettings_Preset("AGM_45")`.
 with no collision check. Injection runs after import, so **our stale copy wins** -
 against a missile whose FM this patch reworked from scratch.
 
-**Gated on the pin.** The fix is to delete the `WeaponsF4EExpanded` entry and keep the
-pylon wiring, which then resolves natively. It cannot land before the pin moves:
-pydcs `f84e7d2c` predates the clsid, so deleting the injection today removes the
-weapon instead of de-duplicating it. **Do the pin first, then this.**
+**LANDED with the pin bump.** The two stale dicts are deleted from
+`WeaponsF4EExpanded`, and the six AGM-45B pylon rows went with them -- pydcs `a03b87e`
+carries all six natively, and an injected copy would have made `eject_F4E` strip a
+stock store whenever the mod toggles off. Verified: the native entry (full RF-guidance
+settings block) sits on pylons 1/3/11/13 after inject and survives eject.
 
 `resources/weapons/standoff/AGM-45B.yaml` already lists the clsid, so the 1972 date
 gate holds either way.
@@ -133,9 +146,12 @@ local deprecated_loadouts = {
 the inner wing stations, which our §71 pack added and stock never carried. They are
 outside the migration table, so nothing remaps them.
 
-**Gated on the pin**, same as 2.2: the correct target clsid is `{SUU_23_POD_Wing}`,
-which pydcs `f84e7d2c` does not carry. Re-point both pylons when the pin moves, and
-confirm against the export that the inner-wing station accepts the wing variant.
+**LANDED, and the live defect was worse than predicted.** pydcs has carried the split
+pods since the 2.9.28.26283 update -- with shuffled attribute names: `Weapons.SUU_23`
+became the **Centerline** pod, `Weapons.SUU_23_` the Wing pod. Our pylons 3/11 had
+therefore been wiring the centerline clsid onto wing stations since the July sync, not
+the dead `{SUU_23_POD}` this note predicted. Both re-pointed to `Weapons.SUU_23_`
+(`{SUU_23_POD_Wing}`), matching ED's own per-pylon migration for wing stations.
 
 ### 2.4 The §71 OVGME mod is unapplied and stale - read before re-enabling it
 

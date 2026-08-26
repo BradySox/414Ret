@@ -6346,8 +6346,9 @@ the fact that the routing code was rewritten is not evidence the constraint laps
 
 ### B101 — The F-4E's Shrike and gun pod are still on the jet · §71 · ☐ UNTESTED
 
-**Both halves are confirmed against the updated install** (2.9.29.27278), and both fixes
-are gated on the pydcs pin moving. Full detail in
+**Both halves are confirmed against the updated install (2.9.29.27278) and both fixes
+are IN** -- the pydcs pin moved to `a03b87e` the same day and the extension was trimmed
+to match. Full detail in
 [414th-dcs-update-2026-08-26-notes.md](design/414th-dcs-update-2026-08-26-notes.md) §2.2
 and §2.3.
 
@@ -6374,17 +6375,20 @@ a Shrike launches and guides.
 
 **Fail signatures, and what each means:**
 
-- **The gun pod is missing from the inner wing** — the expected failure. Pylons 3 and 11
-  are outside ED's migration table, so `{SUU_23_POD}` is not remapped there. Re-point both
-  to `{SUU_23_POD_Wing}` once the pin carries it.
+- **The gun pod is missing from the inner wing** — the OVGME pack is not applied, or its
+  rebased copy no longer declares the pod on 3/11. The repo side already wires
+  `{SUU_23_POD_Wing}` there (it had been wiring the **Centerline** variant since the July
+  sync -- pydcs's attribute shuffle, fixed 2026-08-26).
 - **The Shrike is there but behaves like the old missile** — our injected dict is
   overriding the native entry. Delete the `WeaponsF4EExpanded` AGM-45B entry and keep the
   pylon wiring; it resolves natively once the pin moves.
 - **The pylon rejects the store in the ME** — the LAU-34 rail's legality changed. §71's
   design rule is that fits are gated on live pylon legality, so this is a data refresh.
 
-**Do not fly this before the pin moves.** Both fixes need `Weapons.AGM_45B_Shrike_ARM__LAU_34_`
-and `{SUU_23_POD_Wing}` to exist in pydcs. Until then the row reproduces a known cause.
+**The remaining blocker is the OVGME pack, not the repo.** The planner side is fixed
+and test-verified; but the 414th's `Expanded_F-4E_Weapons_Pack` OVGME mod is unapplied
+(the update overwrote it), so in DCS the pack's own stores do not exist until its four
+files are rebased onto the new stock and re-applied. Fly this row after that rebase.
 
 **Watch for.** The 414th's `Expanded_F-4E_Weapons_Pack` OVGME mod was overwritten by the
 update and is currently unapplied. Re-enabling the July copy reverts ED's AGM-45B and

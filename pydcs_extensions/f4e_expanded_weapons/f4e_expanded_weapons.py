@@ -6,12 +6,6 @@ from pydcs_extensions.weapon_injector import inject_weapons
 
 
 class WeaponsF4EExpanded:
-    AGM_45B_Shrike_ARM__LAU_34_ = {
-        "clsid": "{LAU_34_AGM_45B}",
-        "name": "AGM-45B Shrike ARM (LAU-34)",
-        "weight": 224,
-        "settings": Weapons.AGM_45A_Shrike_ARM["settings"],
-    }
     AGM_65E2_L___Maverick_E2_L__Laser_ASM___Lg_Whd___LAU_117_ = {
         "clsid": "{HB_F4E_AGM-65L_LAU117}",
         "name": "AGM-65E2/L - Maverick E2/L (Laser ASM - Lg Whd) (LAU-117)",
@@ -184,12 +178,6 @@ class WeaponsF4EExpanded:
         "name": "3x TGM-65H - Trg Round for Mav H (CCD) (LAU-88)",
         "weight": 835,
     }
-    _Special_Weapons_Adapter__AGM_45B_Shrike_ARM__LAU_34_ = {
-        "clsid": "{LAU_34_AGM_45B_SWA}",
-        "name": "(Special Weapons Adapter) AGM-45B Shrike ARM (LAU-34)",
-        "weight": 224,
-        "settings": Weapons.AGM_45A_Shrike_ARM["settings"],
-    }
     _Special_Weapons_Adapter__AGM_65H___Maverick_H__CCD_Imp_ASM___LAU_117__Special_Weapons_Adapter__ = {
         "clsid": "{HB_F4E_AGM-65H_LAU117_SWA}",
         "name": "(Special Weapons Adapter) AGM-65H - Maverick H (CCD Imp ASM) (LAU-117)(Special Weapons Adapter) ",
@@ -211,7 +199,6 @@ inject_weapons(WeaponsF4EExpanded)
 
 
 class F4EExpandedPylon1:
-    AGM_45B_Shrike_ARM__LAU_34_ = (1, Weapons.AGM_45B_Shrike_ARM__LAU_34_)
     AGM_78A_Standard_ARM_ = (1, Weapons.AGM_78A_Standard_ARM_)
     AGM_78B_Standard_ARM_ = (1, Weapons.AGM_78B_Standard_ARM_)
     AGM_88C_HARM___High_Speed_Anti_Radiation_Missile_ = (
@@ -228,7 +215,6 @@ class F4EExpandedPylon2:
 
 
 class F4EExpandedPylon3:
-    AGM_45B_Shrike_ARM__LAU_34_ = (3, Weapons.AGM_45B_Shrike_ARM__LAU_34_)
     AGM_65E2_L___Maverick_E2_L__Laser_ASM___Lg_Whd___LAU_117_ = (
         3,
         Weapons.AGM_65E2_L___Maverick_E2_L__Laser_ASM___Lg_Whd___LAU_117_,
@@ -253,7 +239,9 @@ class F4EExpandedPylon3:
     )
     GBU_15_V1___2000_lb_TV_Guided_Bomb = (3, Weapons.GBU_15_V1___2000_lb_TV_Guided_Bomb)
     GPU_5 = (3, Weapons.GPU_5)
-    SUU_23 = (3, Weapons.SUU_23)
+    # Wing stations take {SUU_23_POD_Wing}; bare Weapons.SUU_23 became the
+    # Centerline pod when 2.9.28 split the clsid.
+    SUU_23_ = (3, Weapons.SUU_23_)
     TGM_65D___Trg_Round_for_Mav_D__IIR___LAU_117_ = (
         3,
         Weapons.TGM_65D___Trg_Round_for_Mav_D__IIR___LAU_117_,
@@ -313,10 +301,6 @@ class F4EExpandedPylon3:
     _3x_TGM_65H___Trg_Round_for_Mav_H__CCD___LAU_88_ = (
         3,
         Weapons._3x_TGM_65H___Trg_Round_for_Mav_H__CCD___LAU_88_,
-    )
-    _Special_Weapons_Adapter__AGM_45B_Shrike_ARM__LAU_34_ = (
-        3,
-        Weapons._Special_Weapons_Adapter__AGM_45B_Shrike_ARM__LAU_34_,
     )
     _Special_Weapons_Adapter__AGM_65H___Maverick_H__CCD_Imp_ASM___LAU_117__Special_Weapons_Adapter__ = (
         3,
@@ -385,7 +369,6 @@ class F4EExpandedPylon10:
 
 
 class F4EExpandedPylon11:
-    AGM_45B_Shrike_ARM__LAU_34_ = (11, Weapons.AGM_45B_Shrike_ARM__LAU_34_)
     AGM_65E2_L___Maverick_E2_L__Laser_ASM___Lg_Whd___LAU_117_ = (
         11,
         Weapons.AGM_65E2_L___Maverick_E2_L__Laser_ASM___Lg_Whd___LAU_117_,
@@ -413,7 +396,7 @@ class F4EExpandedPylon11:
         Weapons.GBU_15_V1___2000_lb_TV_Guided_Bomb,
     )
     GPU_5 = (11, Weapons.GPU_5)
-    SUU_23 = (11, Weapons.SUU_23)
+    SUU_23_ = (11, Weapons.SUU_23_)
     TGM_65D___Trg_Round_for_Mav_D__IIR___LAU_117_ = (
         11,
         Weapons.TGM_65D___Trg_Round_for_Mav_D__IIR___LAU_117_,
@@ -474,10 +457,6 @@ class F4EExpandedPylon11:
         11,
         Weapons._3x_TGM_65H___Trg_Round_for_Mav_H__CCD___LAU_88_,
     )
-    _Special_Weapons_Adapter__AGM_45B_Shrike_ARM__LAU_34_ = (
-        11,
-        Weapons._Special_Weapons_Adapter__AGM_45B_Shrike_ARM__LAU_34_,
-    )
     _Special_Weapons_Adapter__AGM_65H___Maverick_H__CCD_Imp_ASM___LAU_117__Special_Weapons_Adapter__ = (
         11,
         Weapons._Special_Weapons_Adapter__AGM_65H___Maverick_H__CCD_Imp_ASM___LAU_117__Special_Weapons_Adapter__,
@@ -500,7 +479,6 @@ class F4EExpandedPylon12:
 
 
 class F4EExpandedPylon13:
-    AGM_45B_Shrike_ARM__LAU_34_ = (13, Weapons.AGM_45B_Shrike_ARM__LAU_34_)
     AGM_78A_Standard_ARM_ = (13, Weapons.AGM_78A_Standard_ARM_)
     AGM_78B_Standard_ARM_ = (13, Weapons.AGM_78B_Standard_ARM_)
     AGM_88C_HARM___High_Speed_Anti_Radiation_Missile_ = (

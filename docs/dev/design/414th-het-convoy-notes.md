@@ -45,9 +45,11 @@ the sea convoy already has.
 | SLT-50 Tractor + SLT-50 Trailer | German heavy equipment transporter |
 | HX81 Tractor | the newer German HET tractor |
 
-**We have no tank transporter today.** The tree carries `M4_Tractor`,
-`CH_HEMTT_M983` and the various trailer units, but nothing that carries an MBT. So this
-genuinely needs the patch; it is not buildable ahead of the export.
+**The transporters are reachable as of 2026-08-26.** pydcs pin `a03b87e` carries
+`CHAP_SLT50_Tractor`, `CHAP_SLT50_Trailer` and `CHAP_HX81_Tractor` (verified against the
+2.9.29.27278 export), so the vehicle gate is gone. Unit yamls, faction wiring and the
+mechanism below are all still unbuilt -- this note remains scoping, and the balance
+question at the end is still the open decision.
 
 ## Shape
 

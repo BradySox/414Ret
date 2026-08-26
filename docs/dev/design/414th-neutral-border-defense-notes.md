@@ -556,6 +556,57 @@ sentence: *if we do not fly from it, do not fly over it.*
 reads identically in 1975 and 2025. Era-correctness was the research's selling
 point and is now unused by this feature, deliberately.
 
+## Shared frontiers: one line, not two (2026-08-26)
+
+Each country was clipped and simplified **on its own**, so every frontier two
+countries share came out as two independently-simplified traces of the same
+border, weaving across each other with slivers between them. Measured: the two
+lines coincided **35-65 %** of the time, and Russia/Norway on Kola at **7 %**,
+with overlaps up to 12.8 % of the smaller country.
+
+The whole map is now simplified as **one polygon coverage**:
+
+1. `set_precision` snaps every clipped outline to a 100 m grid. Two source files
+   trace the same frontier a few metres apart, and noding that raw leaves a
+   chain of hairline slivers — each becoming its own face, and
+   `coverage_simplify` floors every face at a triangle. Armenia came out of the
+   Caucasus build as ~32 faces with a 97-vertex floor it could never get under.
+2. The boundaries are unioned (which nodes them) and `polygonize`d into faces
+   that tile the arrangement exactly. Each face goes to the **first** country
+   that contains it, so an overlap is awarded once instead of twice.
+3. `shapely.coverage_simplify` (2.1+) simplifies that coverage — shared edges
+   once, handed to both sides identically.
+
+### Result
+
+| | Before | After |
+|---|---|---|
+| Overlap between neighbours | up to 12.8 % | **0 on every map** |
+| Shared frontier | two traces | **one line** — 7 of 8 maps are a valid coverage |
+| Norway's shape error (Kola) | 14.7 % | **7 %** |
+| Vertices, Afghanistan | 454 | **255** |
+| F10 markup shapes, Afghanistan | 446 | **247** |
+
+Better on every axis at once, because Visvalingam on a coverage spends vertices
+where the shape needs them instead of giving every country the same budget.
+
+**Falklands is the one map that is not exactly valid**, and the test asserts it
+as a known exception: Argentina and Chile interlock across Tierra del Fuego, and
+writing the rings as whole metres leaves a **12.5 m²** degenerate touch. Twelve
+square metres is far below anything drawable.
+
+### Three things that bit, worth not repeating
+
+- **Never truncate a MultiPolygon to its largest part.** Dropping a component
+  leaves the neighbour that shared its edge matched against nothing — that alone
+  made Falklands invalid, and it silently deletes islands.
+- **The vertex budget is a target, not a guarantee.** A landlocked country whose
+  every edge is shared has a floor: Armenia settles at ~98 however hard it is
+  pushed. The search stops at the plateau rather than refusing to build a map.
+- **A small country legitimately becomes a quad.** Bahrain is 571 km², and
+  coverage simplification reduces a small polygon to a triangle in the limit, so
+  the clip-artifact test can no longer read "few vertices" as "fake shape".
+
 ## The remaining automagic gap (DECIDED, NOT BUILT)
 
 **"I do not wish this to be specified in any existing campaign, I want this to

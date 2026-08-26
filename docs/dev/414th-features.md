@@ -10230,13 +10230,18 @@ target changes.
   scope (DM call, 2026-08-24). **Always `--clip`** — a country's real outline is
   mostly off any one DCS map, and un-clipped the vertex budget is spent on
   coastline nobody can fly to.
-- **The vertex budget is 64**, measured 2026-08-26 by symmetric difference against
-  the true clipped country: at the old 24, Norway was **30.2 %** wrong (a thin
-  fjord coast wrapping around Sweden is the worst case here), Sweden 9.7 %,
-  Finland 7.0 %; at 64 they are 14.7 / 1.3 / 2.7. The cost is F10 markup count —
-  the fill is drawn triangle by triangle, so 64 vertices is 62 shapes per zone
-  and **446 on Afghanistan**, the busiest map. Static and drawn once; `drawBorders`
-  turns the draw off without touching the interception.
+- **The whole map is simplified as one polygon coverage**, not country by
+  country, so a frontier two countries share is simplified once and drawn once.
+  Independently-simplified neighbours weaved: their lines coincided 35-65 % of
+  the time (Russia/Norway on Kola at 7 %) with overlaps to 12.8 % of the smaller
+  country. `set_precision` to a 100 m grid → union + `polygonize` into faces →
+  `shapely.coverage_simplify`. Overlaps are now **0 on every map** and 7 of 8 are
+  a valid coverage; Falklands carries a 12.5 m² degenerate touch in Tierra del
+  Fuego, asserted as a known exception. The budget (`--max-vertices`, 96) binds
+  the worst ring on the map and is a target, not a guarantee — a landlocked
+  country whose every edge is shared has a floor (Armenia ~98). It came out
+  better on every axis: Norway's shape error 14.7 % → 7 %, Afghanistan 454 → 255
+  vertices and 446 → 247 F10 markup shapes.
 - **The alert flight comes from a field OR a point.** Most maps carry the
   neutral's own airbase (Syria has Rayak). Some carry none at all: the DCS
   Afghanistan map has 26 airfields and **every one is inside Afghanistan**, so

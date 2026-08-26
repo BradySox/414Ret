@@ -6261,8 +6261,8 @@ gap and the faint-green overflight neighbours distinct from it.
 **Fail signatures:** the shadow never gets within visual range (the 2026-08-25
 stand-off regression — check the Tacview separation, not just that it launched); the
 border draws as an outline with no shading; the F10 map is sluggish to open (the fill
-is one markup per triangle and a 64-vertex ring is 62 of them — 446 on Afghanistan;
-`drawBorders` off is the isolating test); a country both sides hold ground in draws
+is one markup per triangle — 247 on Afghanistan, the busiest map; `drawBorders`
+off is the isolating test); a country both sides hold ground in draws
 red or blue rather than grey; the shadow fires during the shadow phase
 (ROE wrong); no shadow ever launches (template/clone failure — check dcs.log for
 NEUTRALBORDER| lines); the

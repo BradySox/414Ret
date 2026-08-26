@@ -48,7 +48,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 from dcs.mapping import LatLng, Point
 from dcs.terrain.afghanistan import Afghanistan
@@ -63,7 +63,7 @@ from dcs.terrain.persiangulf import PersianGulf
 from dcs.terrain.sinai import Sinai
 from dcs.terrain.syria import Syria
 from shapely.geometry import MultiPolygon, Polygon, box
-from shapely.ops import unary_union
+from shapely.ops import polygonize, unary_union
 
 TERRAINS = {
     "afghanistan": Afghanistan,
@@ -167,6 +167,140 @@ def simplify_to_budget(poly: Polygon, max_vertices: int) -> list[tuple[float, fl
                 return [(float(lon), float(lat)) for lon, lat in coords]
         tolerance *= 1.5
     raise SystemExit("Could not simplify a ring to the vertex budget.")
+
+
+#: Grid the country outlines are snapped to before they are noded, in degrees.
+#: ~100 m at these latitudes: below any border's real precision, and above the
+#: few-metre disagreement between two source files tracing the same frontier.
+SNAP_DEGREES = 0.001
+
+#: Where the tolerance search gives up. Several degrees is already coarser than
+#: any border on any DCS map, so past here a ring that has not shrunk is at a
+#: floor the algorithm cannot get under, not one more tolerance would fix.
+MAX_TOLERANCE_DEGREES = 5.0
+
+
+def _components(geom: Any) -> list[Polygon]:
+    """Every polygon in a geometry, largest first. Empty in, empty out."""
+    if geom.is_empty:
+        return []
+    parts = list(geom.geoms) if geom.geom_type == "MultiPolygon" else [geom]
+    return sorted(
+        (p for p in parts if not p.is_empty), key=lambda p: p.area, reverse=True
+    )
+
+
+def as_coverage(pieces: list[tuple[str, Polygon]]) -> list[tuple[str, Polygon]]:
+    """Rebuild overlapping country polygons as a valid, edge-matched coverage.
+
+    Clipped country outlines from different source files overlap slightly and
+    their shared frontiers do not share vertices, so they are not a coverage and
+    cannot be simplified as one. Unioning the boundaries nodes them; polygonize
+    turns that arrangement into faces that tile it exactly; each face goes to the
+    first country that contains it, so an overlap is awarded once rather than
+    twice.
+    """
+    import shapely
+
+    # Snap to a common grid FIRST. Two source files trace the same frontier a
+    # few metres apart, and nodding that raw leaves a chain of hairline slivers
+    # -- each of which becomes its own face, and coverage_simplify floors every
+    # face at a triangle. Armenia came out of the Caucasus build as ~32 faces
+    # with a 97-vertex floor it could never simplify under. At 100 m the slivers
+    # collapse and the frontier becomes one shared arc, which is the point.
+    snapped: list[tuple[str, Polygon]] = []
+    for name, piece in pieces:
+        # Snapping can pinch a narrow neck apart (Norway's coast does exactly
+        # this), so a piece may come back as several. Keep them all -- an island
+        # dropped here is territory the map stops defending.
+        fixed = shapely.set_precision(piece, SNAP_DEGREES)
+        snapped.extend((name, part) for part in _components(fixed))
+    boundaries = unary_union([piece.exterior for _, piece in snapped])
+    faces = [face for face in polygonize(boundaries) if not face.is_empty]
+    pieces = snapped
+    claimed: list[list[Polygon]] = [[] for _ in pieces]
+    for face in faces:
+        point = face.representative_point()
+        for index, (_, piece) in enumerate(pieces):
+            if piece.contains(point):
+                claimed[index].append(face)
+                break
+    out: list[tuple[str, Polygon]] = []
+    for (name, piece), mine in zip(pieces, claimed):
+        merged = unary_union(mine) if mine else piece
+        # Every component, never just the largest: dropping one leaves the
+        # neighbour that shared its edge matched against nothing, which is what
+        # made the Falklands coverage invalid where Argentina and Chile
+        # interlock across Tierra del Fuego.
+        out.extend((name, part) for part in _components(merged))
+    return out
+
+
+def simplify_shared(
+    pieces: list[tuple[str, Polygon]], tolerance: float
+) -> list[tuple[str, Polygon]]:
+    """Simplify a whole map's countries as ONE coverage.
+
+    Simplifying each country on its own leaves every shared frontier drawn
+    twice, because Douglas-Peucker keeps different vertices on each side's copy
+    of it. MEASURED 2026-08-26: neighbours' lines coincided only 35-65 % of the
+    time, and Russia/Norway on Kola at 7 % -- two lines weaving along one
+    border, with slivers between them.
+
+    ``shapely.coverage_simplify`` exists for exactly this: it simplifies shared
+    edges once and hands both sides the same result, so neighbours agree by
+    construction and the overlaps go with the gaps. It requires a valid
+    coverage, which ``as_coverage`` builds first.
+    """
+    import shapely
+
+    coverage = as_coverage(pieces)
+    simplified = shapely.coverage_simplify([poly for _, poly in coverage], tolerance)
+    out: list[tuple[str, Polygon]] = []
+    for (name, original), geom in zip(coverage, simplified):
+        if geom.is_empty:
+            geom = original
+        out.extend((name, part) for part in _components(geom))
+    return out
+
+
+def simplify_shared_to_budget(
+    pieces: list[tuple[str, Polygon]], max_vertices: int
+) -> list[tuple[str, Polygon]]:
+    """``simplify_shared`` at the tightest tolerance that fits every ring.
+
+    One tolerance for the whole map, not one per country -- a shared arc has to
+    be simplified once to come out the same on both sides of it, which is the
+    entire point. The budget therefore binds the *worst* ring on the map.
+
+    **The budget is a target, not a guarantee.** A landlocked country whose every
+    edge is shared has a floor no tolerance gets under: Armenia on the Caucasus
+    map settles at ~98 vertices however hard it is pushed, because each arc it
+    shares with Georgia, Turkey and Azerbaijan bottoms out separately. Stopping
+    at the plateau is right -- erroring there would refuse to build a map over a
+    ring nothing can shrink.
+    """
+    tolerance = 0.0001
+    best: Optional[list[tuple[str, Polygon]]] = None
+    best_worst: Optional[int] = None
+    for _ in range(60):
+        result = simplify_shared(pieces, tolerance)
+        worst = _worst_ring(result)
+        if worst <= max_vertices:
+            return result
+        if best_worst is None or worst < best_worst:
+            best, best_worst = result, worst
+        if tolerance > MAX_TOLERANCE_DEGREES:
+            break
+        tolerance *= 1.4
+    assert best is not None
+    return best
+
+
+def _worst_ring(result: list[tuple[str, Polygon]]) -> int:
+    return max(
+        (len(poly.exterior.coords) - 1) for _, poly in result if not poly.is_empty
+    )
 
 
 def to_xy(

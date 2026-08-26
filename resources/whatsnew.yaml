@@ -46,16 +46,17 @@ entries:
       country that is not in the war at all.
     row: B100
   - date: 2026-08-26
-    title: Borders follow the coastline
+    title: Borders follow the coastline, and neighbours share one line
     change: >-
       Country outlines were drawn with far too few points, which mattered most
       where the coast is complicated -- almost a third of Norway was in the
-      wrong place. They carry nearly three times the detail now. If the F10 map
-      ever feels slow to open, the border drawing has its own off switch in the
-      plugin options.
-    watch: >-
-      On Kola, check that Norway's border follows the fjords instead of cutting
-      straight across them.
+      wrong place. Worse, each country was drawn independently, so a border two
+      countries share came out as two lines weaving across each other with
+      slivers between them. The whole map is now simplified together: a shared
+      frontier is one line, countries no longer overlap anywhere, and the
+      outlines carry more detail while using fewer points than before. If the
+      F10 map ever feels slow to open, the border drawing has its own off
+      switch in the plugin options.
     row: B100
   - date: 2026-08-26
     title: The map draws the country the war is in

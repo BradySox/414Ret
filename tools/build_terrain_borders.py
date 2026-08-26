@@ -48,7 +48,7 @@ from neutral_border_geo import (  # noqa: E402
     TERRAINS,
     country_polygon,
     pieces_of,
-    simplify_to_budget,
+    simplify_shared_to_budget,
     to_xy,
 )
 from shapely.geometry import Point as ShapelyPoint, Polygon, box  # noqa: E402
@@ -90,14 +90,17 @@ def main() -> None:
     parser.add_argument(
         "--max-vertices",
         type=int,
-        default=64,
-        help="Ring vertex budget. MEASURED 2026-08-26 as symmetric-difference "
-        "against the true clipped country: 24 left Norway 30.2%% wrong (a thin "
-        "fjord coast wrapping around Sweden is the worst case Douglas-Peucker "
-        "has), Sweden 9.7%%, Finland 7.0%%. At 64 those are 14.7 / 1.3 / 2.7, and "
-        "96 buys only another point or two for double the fill triangles -- the "
-        "F10 fill is drawn triangle-by-triangle, so this number sets how many "
-        "markup shapes a mission carries.",
+        default=96,
+        help="Ring vertex budget, binding the WORST ring on the map -- the whole "
+        "map is simplified as one coverage at a single tolerance, because a "
+        "shared frontier has to be simplified once to come out the same on both "
+        "sides of it. MEASURED 2026-08-26 on Kola: at 96 the frontier match is "
+        "89%% (against 35%% when each country was simplified alone), Norway's "
+        "shape error is 7%% (against 14.7%%), and the map carries 219 vertices "
+        "against 289 -- better on every axis at once, because Visvalingam on a "
+        "coverage spends vertices where the shape needs them. The cost of "
+        "raising it is F10 markup count: the fill is drawn triangle by "
+        "triangle.",
     )
     parser.add_argument(
         "--min-area-km2",
@@ -131,54 +134,76 @@ def main() -> None:
         "zones:",
     ]
 
-    written = 0
+    # Pass 1: clip every country to the map and drop slivers. Nothing is
+    # simplified yet -- that has to happen across all of them at once, or each
+    # shared frontier comes out drawn twice (see simplify_shared).
+    import math
+
+    collected: list[tuple[str, Any]] = []
     for name in args.countries:
         path = args.geojson_dir / f"{name.lower().replace(' ', '_')}.json"
         if not path.exists():
             print(f"  !! {name}: no geojson at {path}", file=sys.stderr)
             continue
         geom = country_polygon(json.loads(path.read_text(encoding="utf-8")))
-        clipped = geom.intersection(clip)
-        parts = pieces_of(clipped)
+        parts = pieces_of(geom.intersection(clip))
         if not parts:
             print(f"  -- {name}: nothing on this map, skipped", file=sys.stderr)
             continue
-        if args.min_area_km2:
-            # Rough but sufficient: one degree of latitude is ~111 km, and one
-            # of longitude ~111*cos(lat) at the piece's own latitude.
-            import math
-
-            kept = []
-            for piece in parts:
+        for piece in parts:
+            if args.min_area_km2:
+                # Rough but sufficient: one degree of latitude is ~111 km, and
+                # one of longitude ~111*cos(lat) at the piece's own latitude.
                 lat = math.radians(piece.centroid.y)
                 km2 = piece.area * 111.0 * (111.0 * math.cos(lat))
-                if km2 >= args.min_area_km2:
-                    kept.append(piece)
-                else:
+                if km2 < args.min_area_km2:
                     print(
                         f"  -- {name}: dropped a {km2:.0f} km² landmass",
                         file=sys.stderr,
                     )
-            parts = kept
+                    continue
+            collected.append((name, piece))
 
-        for index, piece in enumerate(parts):
-            ring = simplify_to_budget(piece, args.max_vertices)
-            ring_xy = to_xy(terrain, ring)
-            label = name if len(parts) == 1 else f"{name} (part {index + 1})"
-            lines.append(f"  # {label} — {len(ring_xy)} vertices")
-            lines.append(f"  - country: {name}")
-            field = airfield_in(terrain, piece)
-            if field:
-                lines.append(f"    airfield: {field}")
+    # Pass 2: one shared coverage, one tolerance, so neighbours agree.
+    simplified = simplify_shared_to_budget(collected, args.max_vertices)
+    if args.min_area_km2:
+        # Again, because rebuilding the coverage can shed a country into extra
+        # fragments. Dropping one leaves a gap, which a coverage allows; an
+        # overlap or a mismatched edge is what it does not.
+        kept = []
+        for name, piece in simplified:
+            lat = math.radians(piece.centroid.y)
+            km2 = piece.area * 111.0 * (111.0 * math.cos(lat))
+            if km2 >= args.min_area_km2:
+                kept.append((name, piece))
             else:
-                rep = piece.representative_point()
-                x, y = to_xy(terrain, [(rep.x, rep.y)])[0]
-                lines.append(f"    spawn: [{x:.0f}, {y:.0f}]")
-                lines.append(f"    spawn_alt_ft: {SPAWN_ALT_FT}")
-            lines.append("    border:")
-            for x, y in ring_xy:
-                lines.append(f"      - [{x:.0f}, {y:.0f}]")
-            written += 1
+                print(f"  -- {name}: dropped a {km2:.0f} km² fragment", file=sys.stderr)
+        simplified = kept
+
+    written = 0
+    seen: dict[str, int] = {}
+    totals: dict[str, int] = {}
+    for name, _ in simplified:
+        totals[name] = totals.get(name, 0) + 1
+    for name, piece in simplified:
+        seen[name] = seen.get(name, 0) + 1
+        ring = [(float(x), float(y)) for x, y in list(piece.exterior.coords)[:-1]]
+        ring_xy = to_xy(terrain, ring)
+        label = name if totals[name] == 1 else f"{name} (part {seen[name]})"
+        lines.append(f"  # {label} — {len(ring_xy)} vertices")
+        lines.append(f"  - country: {name}")
+        field = airfield_in(terrain, piece)
+        if field:
+            lines.append(f"    airfield: {field}")
+        else:
+            rep = piece.representative_point()
+            x, y = to_xy(terrain, [(rep.x, rep.y)])[0]
+            lines.append(f"    spawn: [{x:.0f}, {y:.0f}]")
+            lines.append(f"    spawn_alt_ft: {SPAWN_ALT_FT}")
+        lines.append("    border:")
+        for x, y in ring_xy:
+            lines.append(f"      - [{x:.0f}, {y:.0f}]")
+        written += 1
 
     args.out.mkdir(parents=True, exist_ok=True)
     target = args.out / f"{args.terrain}.yaml"

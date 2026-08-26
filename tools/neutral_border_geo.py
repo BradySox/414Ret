@@ -53,6 +53,7 @@ from typing import Any
 from dcs.mapping import LatLng, Point
 from dcs.terrain.afghanistan import Afghanistan
 from dcs.terrain.caucasus import Caucasus
+from dcs.terrain.falklands import Falklands
 from dcs.terrain.germanycoldwar import GermanyColdWar
 from dcs.terrain.iraq import Iraq
 from dcs.terrain.kola import Kola
@@ -67,6 +68,7 @@ from shapely.ops import unary_union
 TERRAINS = {
     "afghanistan": Afghanistan,
     "caucasus": Caucasus,
+    "falklands": Falklands,
     "germany": GermanyColdWar,
     "iraq": Iraq,
     "kola": Kola,

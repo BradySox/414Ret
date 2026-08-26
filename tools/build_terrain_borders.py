@@ -83,6 +83,15 @@ def main() -> None:
         metavar=("LAT_MIN", "LAT_MAX", "LON_MIN", "LON_MAX"),
     )
     parser.add_argument("--max-vertices", type=int, default=24)
+    parser.add_argument(
+        "--min-area-km2",
+        type=float,
+        default=0.0,
+        help="Drop landmasses smaller than this. Each surviving piece becomes a "
+        "zone with its own alert flight, so an archipelago needs a floor: the "
+        "Falklands map otherwise gives Chile five, one of them the 1,439 km² "
+        "Cape Horn group. Real territory, but not airspace anyone contests.",
+    )
     parser.add_argument("--out", type=Path, default=Path("resources/borders"))
     args = parser.parse_args()
 
@@ -119,6 +128,24 @@ def main() -> None:
         if not parts:
             print(f"  -- {name}: nothing on this map, skipped", file=sys.stderr)
             continue
+        if args.min_area_km2:
+            # Rough but sufficient: one degree of latitude is ~111 km, and one
+            # of longitude ~111*cos(lat) at the piece's own latitude.
+            import math
+
+            kept = []
+            for piece in parts:
+                lat = math.radians(piece.centroid.y)
+                km2 = piece.area * 111.0 * (111.0 * math.cos(lat))
+                if km2 >= args.min_area_km2:
+                    kept.append(piece)
+                else:
+                    print(
+                        f"  -- {name}: dropped a {km2:.0f} km² landmass",
+                        file=sys.stderr,
+                    )
+            parts = kept
+
         for index, piece in enumerate(parts):
             ring = simplify_to_budget(piece, args.max_vertices)
             ring_xy = to_xy(terrain, ring)

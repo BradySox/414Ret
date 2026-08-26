@@ -22,6 +22,7 @@ SHIPPED = [
     "Kola",
     "PersianGulf",
     "Sinai",
+    "Falklands",
 ]
 
 
@@ -96,6 +97,19 @@ def test_no_zone_is_a_clip_artifact(terrain: str) -> None:
             f"{terrain}/{entry['country']}: {len(border)} vertices over "
             f"{area_km2:.0f} km² reads as a clip artifact, not a border"
         )
+
+
+def test_an_archipelago_does_not_become_a_dozen_zones() -> None:
+    """Every surviving landmass gets its own alert flight, so Tierra del Fuego
+    needs an area floor: unfiltered, Chile alone came out as five zones, one of
+    them the 1,439 km² Cape Horn group. Real territory, uncontested airspace."""
+    zones = load_terrain_borders("Falklands")
+    assert len(zones) <= 8, "the Falklands archipelago was not floored"
+    by_country: dict[str, int] = {}
+    for entry in zones:
+        by_country[entry["country"]] = by_country.get(entry["country"], 0) + 1
+    for country, count in by_country.items():
+        assert count <= 4, f"{country} fragmented into {count} zones"
 
 
 def test_afghanistans_neighbours_are_all_there() -> None:

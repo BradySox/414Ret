@@ -10198,7 +10198,9 @@ target changes.
   (default on — the §86 invisible-bubble lesson).
 - **A campaign needs to author nothing.** Borders ship per terrain in
   `resources/borders/<terrain>.yaml` (Afghanistan, Syria, Caucasus, Iraq, Kola,
-  Persian Gulf), built by `tools/build_terrain_borders.py`; posture and airframe
+  Persian Gulf, Sinai, Falklands — Nevada and the Marianas are all-US and
+  correctly have none; GermanyCW is blocked on pre-1991 geometry), built by
+  `tools/build_terrain_borders.py`; posture and airframe
   resolve from `national_postures.yaml` against the campaign's date. A campaign
   that declares its own `neutral_border_defense:` block overrides the terrain
   file **completely** — never merged. Saves already in progress pick the borders

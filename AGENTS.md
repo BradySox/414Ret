@@ -96,6 +96,7 @@ Read before touching a campaign's `.yaml`, `.miz` or build tool.
 | Operation Baltic Fury | `414th-baltic-fury-campaign-notes.md` |
 | Marianas — Second Island Chain 2027 | `414th-marianas-2027-campaign-notes.md` |
 | Marianas — Operation Forager (1944) | `414th-marianas-wwii-terrain-notes.md` (the terrain note owns it) |
+| Syria — Anatolian Reach (2004) | `414th-anatolian-reach-campaign-notes.md` — **Israel + US vs a Turkey–Russia bloc.** The subject is range: 250–400 nm to every target. **Akrotiri is support-only and must stay that way** — it is closest to seven of the nine Turkish fields, so a combat squadron there benches Israel and the campaign silently stops being about anything. Enemy faction is **inline** (one faction per coalition); SAM presets are period-gated **by hand** because `restrict_weapons_by_date` never gates them |
 | Iraq — Umm al-Ma'arik (Desert Storm) | `414th-desert-storm-campaign-notes.md` |
 | Iraq — Operation Inherent Resolve | `414th-inherent-resolve-campaign-notes.md` |
 | Afghanistan — Enduring Resolve (COIN) | `414th-coin-HANDOFF.md` — **start here for COIN** |

@@ -210,7 +210,7 @@ class NeutralBorderJs(BaseModel):
         borders = []
         for zone in zones:
             posture = zone.posture_in(game.theater)
-            permits_blue = zone.permits(game.theater, True)
+            permits_blue = zone.permits(game.theater, True, posture)
             # A border only bites if the country can actually put a fighter up.
             # The generator degrades a neutral that cannot to drawn-and-toothless,
             # and this map has to agree with the mission it is planning: 14 of the

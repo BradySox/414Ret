@@ -326,3 +326,42 @@ def test_no_floor_unless_the_campaign_states_one() -> None:
 def test_an_authored_floor_is_honoured() -> None:
     zone = _box_zone(country="Iran", floor_ft=8000)
     assert zone.floor_for(_theater(), True) == 8000
+
+
+# -- handing permits() a posture is a shortcut, never a second opinion ----------
+
+
+def test_a_passed_posture_gives_the_same_answer_as_deriving_it() -> None:
+    """`permits(theater, side, posture)` exists only so a caller that already
+    derived the posture does not pay for it twice -- the map paid twice per zone
+    and the generator three times, ~50% of the payload build on every terrain.
+
+    It is a parameter and NOT a cached field on purpose: posture is derived so a
+    country flips the turn its airfield changes hands, and a stored one would go
+    stale exactly then. This pins that the shortcut cannot drift into a
+    different answer, across every posture and both sides.
+    """
+    cases = {
+        NEUTRAL: _theater(_cp(9999, 9999, blue=True)),
+        BLUE_ALIGNED: _theater(_cp(50, 50, blue=True)),
+        RED_ALIGNED: _theater(_cp(50, 50, red=True)),
+        CONTESTED_ALIGNED: _theater(_cp(25, 25, blue=True), _cp(75, 75, red=True)),
+    }
+    zone = _box_zone()
+    for expected, theater in cases.items():
+        posture = zone.posture_in(theater)
+        assert posture == expected
+        for is_blue in (True, False):
+            assert zone.permits(theater, is_blue, posture) == zone.permits(
+                theater, is_blue
+            ), f"{expected}: passing the posture changed the answer"
+
+
+def test_an_overflight_override_still_wins_when_a_posture_is_passed() -> None:
+    """The override is checked before the posture is looked at either way."""
+    theater = _theater(_cp(9999, 9999, blue=True))
+    for override in (True, False):
+        zone = _box_zone(overflight=override)
+        posture = zone.posture_in(theater)
+        assert zone.permits(theater, True, posture) is override
+        assert zone.permits(theater, True) is override

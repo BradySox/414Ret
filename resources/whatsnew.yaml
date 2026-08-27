@@ -14,6 +14,19 @@
 
 entries:
   - date: 2026-08-27
+    title: The alert flight comes off a runway now
+    change: >-
+      Four countries on the Syria map were scrambling their border patrol from a
+      helipad -- Lebanon's card read "alert from HL07". The map picked whichever
+      landing site sat furthest inside the country and never checked it had a
+      runway. Lebanon now launches from Rayak, Syria from Palmyra, Jordan from
+      Marka and Iraq from H3 Northwest. The jets air-spawn overhead either way,
+      so this changes what the card says rather than whether they arrive.
+    watch: >-
+      Hover Lebanon on a Syria campaign. It should read "alert from Rayak". No
+      country anywhere should name a pad starting with H followed by digits.
+    row: B106
+  - date: 2026-08-27
     title: A border that cannot intercept you no longer says it will
     change: >-
       A country only defends its airspace if it can actually put a fighter up,

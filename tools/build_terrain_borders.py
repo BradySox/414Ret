@@ -86,9 +86,17 @@ def airfield_in(terrain: Any, polygon: Polygon) -> Optional[str]:
 
     Prefers the one furthest from the border, so an alert flight does not launch
     from a strip that is metres inside its own frontier.
+
+    **Runways only.** ``airport_list()`` includes helipads, and picking by depth
+    alone handed four of the Syria map's zones one: Lebanon's alert fighters
+    were based on HL07. A helipad is not somewhere a MiG-29 comes from, and the
+    tooltip naming one reads as a bug even though the flight air-spawns
+    overhead anyway.
     """
     best: Optional[tuple[float, str]] = None
     for airport in terrain.airport_list():
+        if not getattr(airport, "runways", None):
+            continue
         latlng = airport.position.latlng()
         point = ShapelyPoint(latlng.lng, latlng.lat)
         if not polygon.contains(point):

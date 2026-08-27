@@ -201,7 +201,7 @@ class NeutralBorderZone:
                 red += 1
         return (blue, red)
 
-    def permits(self, theater: Any, is_blue: bool) -> bool:
+    def permits(self, theater: Any, is_blue: bool, posture: str | None = None) -> bool:
         """Does this country let that side's aircraft transit?
 
         **Derived from the airbases inside its border** (DM call, 2026-08-26),
@@ -219,10 +219,20 @@ class NeutralBorderZone:
         country's era-correct airframe, which nothing else can supply.
 
         A campaign's ``overflight:`` still wins outright.
+
+        ``posture`` lets a caller that has already derived it hand it in.
+        Deriving it means walking every zone on the map and testing every
+        control point against a polygon, and the two natural callers both ask
+        for the posture and the consent together -- so without this the map
+        pays for it twice per zone and the generator three times. It is a
+        parameter and deliberately NOT a cached field: the whole value of
+        deriving posture is that a country flips the turn its airfield changes
+        hands, and a stored one would go stale exactly then.
         """
         if self.overflight_override is not None:
             return self.overflight_override
-        posture = self.posture_in(theater)
+        if posture is None:
+            posture = self.posture_in(theater)
         if posture == CONTESTED_ALIGNED:
             return True
         if posture == NEUTRAL:
@@ -245,9 +255,8 @@ class NeutralBorderZone:
         that side's QRA, one both sides use has already let them both in, and a
         country with nothing inside its border is nobody's business but its own.
         """
-        return self.posture_in(theater) == NEUTRAL and not self.permits(
-            theater, is_blue
-        )
+        posture = self.posture_in(theater)
+        return posture == NEUTRAL and not self.permits(theater, is_blue, posture)
 
     def can_field_an_interceptor(self, day: Any) -> bool:
         """Could this country actually put a fighter up, on this date?

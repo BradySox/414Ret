@@ -80,8 +80,8 @@ class NeutralBorderGenerator:
         posture = zone.posture_in(theater)
         # Per side: a country hosting one side's fields has let that side in
         # and not the other.
-        permits_blue = zone.permits(theater, True)
-        permits_red = zone.permits(theater, False)
+        permits_blue = zone.permits(theater, True, posture)
+        permits_red = zone.permits(theater, False, posture)
         # None = no safe altitude, which is what a country out of the war and
         # defending itself actually offers.
         floor_blue = zone.floor_for(theater, True)

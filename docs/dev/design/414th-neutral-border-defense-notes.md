@@ -773,6 +773,60 @@ Both sites are long-hand `if` now. Two harness tests pin it, and **both were
 confirmed to fail against the old idiom** — every pre-existing floor test set
 the two sides to the same value, which is exactly why it survived review.
 
+### The alert flight was based on a helipad
+
+Reported from the map 2026-08-27: Lebanon's card read **"alert from HL07"**.
+`airfield_in` picked the airport furthest inside the polygon, and pydcs's
+`airport_list()` includes helipads, so a helipad that happened to sit deepest
+won. Four Syria-map zones were on one:
+
+| Country | Was | Now |
+|---|---|---|
+| Lebanon | HL07 | **Rayak** |
+| Syria | HS03 | **Palmyra** |
+| Jordan | HMed22 | **Marka** |
+| Iraq | HS26 | **H3 Northwest** |
+
+The flight air-spawns overhead its origin, so it flew regardless — this was a
+card that read as a bug rather than a broken intercept. `airfield_in` now skips
+anything with no runway. Regenerating Syria changed **exactly those four lines**;
+the geometry is byte-identical, which is the check worth repeating after any
+tool change. The other seven terrain files are unchanged and were not
+regenerated: the rule only excludes helipads, and a sweep confirmed these four
+were the only helipad origins on any shipped map.
+
+`test_no_zone_launches_its_alert_flight_from_a_helipad` pins it across all eight
+terrains, and was confirmed to fail against the old file.
+
+### The posture was derived twice per zone on every map poll
+
+Not a defect, but measured and worth taking: `permits()` called `posture_in()`
+internally, and both natural callers ask for the posture and the consent
+together. So `/game` derived it twice per zone and the mission generator three
+times (blue and red consent), and deriving it is not cheap -- it walks every
+zone on the map to find same-country pieces, then builds a shapely polygon and
+tests every control point against it.
+
+`permits()` now takes an optional precomputed `posture`. Measured on the
+payload build, before → after:
+
+| Terrain | Before | After |
+|---|---|---|
+| Falklands | 86.6 ms | 42.9 ms |
+| Afghanistan | 43.8 ms | 21.4 ms |
+| Persian Gulf | 39.1 ms | 13.9 ms |
+| Iraq | 34.0 ms | 20.2 ms |
+| Kola | 31.0 ms | 15.9 ms |
+| Sinai | 25.5 ms | 12.8 ms |
+| Syria | 24.5 ms | 17.5 ms |
+| Caucasus | 23.9 ms | 12.1 ms |
+
+**A parameter, deliberately not a cached field.** The whole value of deriving
+posture is that a country flips the turn its airfield changes hands; a stored
+one would go stale exactly then, which is the bug the derivation exists to
+avoid. Two tests pin that passing the posture gives the same answer as deriving
+it, across all four postures and both sides.
+
 ### The checklist rows collided with main's
 
 This PR added its in-game rows as **B100/B101**, and `main` already owned both

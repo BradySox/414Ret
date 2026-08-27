@@ -302,3 +302,47 @@ def test_a_shared_frontier_is_one_line(terrain: str) -> None:
     assert bool(shapely.coverage_is_valid(polys)), (
         f"{terrain} is not a valid coverage: a shared frontier is being drawn " "twice"
     )
+
+
+# -- an alert flight comes off a runway, not a helipad --------------------------
+
+_TERRAIN_CLASSES = {
+    "Syria": "syria.Syria",
+    "Caucasus": "caucasus.Caucasus",
+    "PersianGulf": "persiangulf.PersianGulf",
+    "Sinai": "sinai.Sinai",
+    "Kola": "kola.Kola",
+    "Afghanistan": "afghanistan.Afghanistan",
+    "Falklands": "falklands.Falklands",
+    "Iraq": "iraq.Iraq",
+}
+
+
+@pytest.mark.parametrize("terrain", SHIPPED)
+def test_no_zone_launches_its_alert_flight_from_a_helipad(terrain: str) -> None:
+    """``airport_list()`` includes helipads, and the tool picked by depth alone.
+
+    Reported 2026-08-27 from the map: Lebanon's tooltip read "alert from HL07".
+    Four Syria-map zones were on helipads -- Syria/HS03, Lebanon/HL07,
+    Jordan/HMed22, Iraq/HS26 -- because a helipad happened to sit furthest from
+    the frontier. The flight air-spawns overhead so it flew anyway, but a
+    helipad is not somewhere a MiG-29 comes from and the card reads as a bug.
+    """
+    import importlib
+
+    module_name, class_name = _TERRAIN_CLASSES[terrain].rsplit(".", 1)
+    terrain_obj = getattr(
+        importlib.import_module(f"dcs.terrain.{module_name}"), class_name
+    )()
+    runways = {
+        airport.name: len(getattr(airport, "runways", []) or [])
+        for airport in terrain_obj.airport_list()
+    }
+    for entry in load_terrain_borders(terrain):
+        field = entry.get("airfield")
+        if field is None:
+            continue  # a point-spawned station, which has no airfield at all
+        assert runways.get(field, 0) > 0, (
+            f"{terrain}/{entry['country']} bases its alert flight on {field}, "
+            "which has no runway"
+        )

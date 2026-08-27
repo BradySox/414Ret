@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import datetime
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import MagicMock
 
 import pytest
@@ -494,9 +495,19 @@ def test_dispatcher_includes_armed_recon(
 def test_dispatcher_flight_type_contract_matches_spec() -> None:
     """Locks the recon-flight-type contract against accidental drift.
 
-    Spec design doc table (Per-flight-type behaviour): STRIKE, BAI, CAS, SEAD,
-    DEAD, OCA_AIRCRAFT, OCA_RUNWAY, ANTISHIP, ARMED_RECON get recon pages;
-    CAP/escort/sweep/awacs/tanker/transport/ferry do not.
+    Every flight whose sortie is *about* a specific ground target gets the card:
+    the strike family, ARMED_RECON, and TARPS. Pure air-to-air, support and
+    transport types do not — they have no package target to draw.
+
+    TARPS was added 2026-08-26. It had been absent since the page set was
+    written, which left the one pilot whose entire sortie is imagery as the only
+    member of a strike package without the target card.
+
+    The docstring used to cite a "Spec design doc table (Per-flight-type
+    behaviour)" in ``414th-tars-recon-notes.md``. That note was deleted
+    2026-08-20 (#922) and the citation was dead, so the rule is stated here
+    instead; the live owner of the question is
+    ``docs/dev/design/414th-recon-role-scoping-notes.md``.
     """
     from game.missiongenerator.kneeboard_recon.pages import _FLIGHT_TYPES_WITH_RECON
 
@@ -510,6 +521,7 @@ def test_dispatcher_flight_type_contract_matches_spec() -> None:
         FlightType.OCA_RUNWAY,
         FlightType.ANTISHIP,
         FlightType.ARMED_RECON,
+        FlightType.TARPS,
     }
     assert _FLIGHT_TYPES_WITH_RECON == frozenset(expected)
     # Sanity check: none of the support / patrol types are in the set.
@@ -1087,3 +1099,101 @@ def test_overview_threats_filtered_to_corridor(
     assert not any(
         "FAR" in s for s in page.last_text_log
     ), "far-away threat should be filtered out of the overview"
+
+
+def test_dispatcher_emits_recon_for_tarps(
+    stub_strike_flight: MagicMock,
+    stub_game: MagicMock,
+    stub_weather: MagicMock,
+) -> None:
+    """The recon bird gets the target card it is flying out to photograph.
+
+    TARPS rides the strike package and shares its target, so it reaches the
+    dispatcher with everything the page needs; it was simply absent from the
+    flight-type set until 2026-08-26. Its aimpoint list is the shot list.
+    """
+    stub_strike_flight.flight_type = FlightType.TARPS
+    pages = generate_recon_pages(
+        flight=stub_strike_flight,
+        game=stub_game,
+        weather=stub_weather,
+        extra_threat_search_m=0.0,
+    )
+    classes = [p.__class__.__name__ for p in pages]
+    assert "OverviewReconPage" in classes
+    assert "DetailReconPage" in classes
+
+
+# ---------------------------------------------------------------------------
+# Recon intel fog (§3)
+# ---------------------------------------------------------------------------
+
+
+def test_detail_page_withholds_composition_until_the_site_is_engaged(
+    tmp_path: Path, stub_strike_flight: MagicMock, stub_game: MagicMock
+) -> None:
+    """§3: an un-engaged site's composition is not the player's to have.
+
+    This page prints exact positions, types and dead state -- the very fields
+    the map withholds and jitters for a concealed site. It gated on nothing
+    until 2026-08-26.
+    """
+    target = stub_strike_flight.package.target
+    target.known_for = lambda viewer: False
+
+    page = DetailReconPage(flight=stub_strike_flight, game=stub_game)
+    page.write(tmp_path / "fogged.png")
+
+    # No aimpoint rows: no T-labels and no per-aimpoint MGRS strings.
+    assert not any(s.startswith("T") and s[1:].isdigit() for s in page.last_text_log)
+
+
+def test_detail_page_shows_composition_once_engaged(
+    tmp_path: Path, stub_strike_flight: MagicMock, stub_game: MagicMock
+) -> None:
+    """The other half of the same rule: engaged is known completely."""
+    target = stub_strike_flight.package.target
+    target.known_for = lambda viewer: True
+
+    page = DetailReconPage(flight=stub_strike_flight, game=stub_game)
+    page.write(tmp_path / "known.png")
+
+    assert any("37T " in s for s in page.last_text_log)
+
+
+def test_overview_drops_threat_rings_for_unengaged_sites(
+    stub_strike_flight: MagicMock, stub_game: MagicMock
+) -> None:
+    """Threat and detection ranges are fogged intel, same as composition."""
+    page = OverviewReconPage(
+        flight=stub_strike_flight,
+        game=stub_game,
+        extra_threat_search_m=0.0,
+    )
+    target = stub_strike_flight.package.target
+
+    threat = MagicMock()
+    threat.position = target.position
+    threat.is_friendly = lambda friendly: False
+    threat.max_threat_range = lambda: SimpleNamespace(meters=40000.0)
+    threat.max_detection_range = lambda: SimpleNamespace(meters=60000.0)
+    threat.obj_name = "SA-2 Site"
+
+    cp = MagicMock()
+    cp.ground_objects = [threat]
+    stub_game.theater.controlpoints = [cp]
+
+    threat.known_for = lambda viewer: True
+    known = page._nearby_threats(target, [target.position], 0.0)
+    assert [t[3] for t in known] == ["SA-2 Site"]
+
+    threat.known_for = lambda viewer: False
+    fogged = page._nearby_threats(target, [target.position], 0.0)
+    assert fogged == []
+
+
+def test_known_to_blue_treats_a_non_fogged_target_as_known() -> None:
+    """ControlPoint / FrontLine targets carry no known_for and are not fogged."""
+    from game.missiongenerator.kneeboard_recon.pages import _known_to_blue
+
+    assert _known_to_blue(SimpleNamespace()) is True

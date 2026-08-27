@@ -2723,6 +2723,8 @@ either way — the row needs a shot deliberately taken at a site that has point 
 
 ### H15 — Offline recon pages: imagery under the symbology, or none at all · §22 · ☐ UNTESTED
 
+**Raised in value 2026-08-26.** These pages are the whole of recon candidate C, and the TARPS bird now gets them too (C.1). `generate_target_recon_kneeboard` cannot come off default-off until this row and H16 are flown, so this is the gate on the feature, not a cosmetic check.
+
 **History:** added 2026-08-22 with the `gif_georef` fix. The old path georeferenced the shipped theater raster by `terrain.bounds` and clamped the crop to the image, so an extent the raster could not cover was stretched to fill the page — every Syria crop collapsed to a one-pixel-tall strip, and a Batumi page landed 116 km east. The crop now refuses instead of clamping and drops to the landmap renderer.
 - **What CI cannot exercise:** whether the *real* raster crop lines up with the drawn symbology on a rendered page. The tests use synthetic rasters to pin the world-to-pixel mapping; they cannot tell you the imagery looks right under the markers.
 - **Setup:** `generate_target_recon_kneeboard` ON, **network down or blocked** so the Esri tile path fails and the OFFLINE banner appears. Generate on Syria and on Caucasus, then open the DEPARTURE / RECON OVERVIEW / RECON DETAIL pages. ~15 min, no flying. Worth doing on Syria specifically with a package fragged at **Tabqa** (in frame) and one at **King Abdullah II** (off frame).

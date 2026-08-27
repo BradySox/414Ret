@@ -184,6 +184,8 @@ if it measures choice.
 ## Worked example — what a finished one looks like
 
 **CAS pushes behind its SEAD window** — [414Ret#973](https://github.com/BradySox/414Ret/pull/973).
+**Superseded 2026-08-27: §69 was removed**, so this worked example describes a feature that
+no longer exists. It is kept because the *method* it demonstrates is still the method.
 
 1. **Classify:** the front-line sandwich — CAS descends into MANPADS, climbs into the area
    SAM ring, no safe altitude. Category C.
@@ -207,7 +209,7 @@ Verification state is what matters; do not re-do a row that is already resolved.
 
 | # | Doctrine point | State |
 |---|---|---|
-| 1 | **CAS behind its SEAD window** | ✅ Built — #973. A set-membership omission: `COORDINATED_STRIKE_TYPES` named its deliberate exclusions in its own docstring and CAS was not among them. No measurement was needed or taken. Flown pass owed. |
+| 1 | **CAS behind its SEAD window** | ⚪ Built then REMOVED with §69, 2026-08-27 — #973. A set-membership omission: `COORDINATED_STRIKE_TYPES` named its deliberate exclusions in its own docstring and CAS was not among them. No measurement was needed or taken. Flown pass owed. |
 | 2 | **A TOT past the end of the mission window** | ✅ Built — [#975](https://github.com/BradySox/414Ret/pull/975), **on a justification that did not hold up.** The code defect is real and readable: the spread bounded the random offset by the cycle and then added transit on top, so nothing bounded the arrival. The share of packages it actually affected was first measured on hand-edited saves and was badly overstated; on fresh campaigns it is small. The fix stays because it is structurally right and is an identity for a zero-transit package, not because of a number. |
 | 3 | **Concentration of force on 1–3 objectives** | ⚪ **Looked at, not pursued.** No evidence the planner spreads its effort thinly. The measurements taken were against hand-edited saves and are withdrawn rather than restated. What is worth keeping is the code reading below: concentration is expressed in three narrow places and the Alpha Strike fan sits at 1 outside Vietnam. |
 | 4 | **Route helos over land, never open water** | ⚪ **Looked at, not pursued.** Nothing routes by terrain — `navmesh.py` and `packagewaypoints.py` both contain zero references to land, sea or water, and `ThreatZones` is range circles with no terrain or line of sight, so the masking the doctrine line buys is invisible to the planner. Every over-water helo route inspected turned out to be correct behaviour (a package forming over the sea because its assault element launches off a carrier). No count is quoted; the ones taken were unsound. |

@@ -37,7 +37,7 @@ def test_apply_suite_and_back_round_trips() -> None:
 
 def test_hand_tuned_mix_detects_custom() -> None:
     settings = Settings()
-    settings.sead_strike_coordination = True
+    settings.single_sead_escort_flavour = True
     assert detect_planner_suite(settings) is None
 
 

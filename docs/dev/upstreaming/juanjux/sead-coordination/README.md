@@ -1,3 +1,7 @@
+> **REMOVED from the 414th fork 2026-08-27** — measured inert where most packages are
+> player-flown (the pass excludes player and ASAP packages by design). The code is sound and
+> the patch still applies; it is worth taking only for AI-heavy or MP campaigns.
+
 # Strikes push behind their SEAD window
 
 414Ret §69. He queued this by name in his README's 2026-08 review — "packages are

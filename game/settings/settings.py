@@ -344,7 +344,6 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                     "region_priorities",
                     "c2_decapitation_effects",
                     "weather_aware_planning",
-                    "sead_strike_coordination",
                     "single_sead_escort_flavour",
                     "max_escort_jammers",
                 ],
@@ -767,7 +766,6 @@ FEATURE_GATE_FIELDS: dict[str, list[str]] = {
     "Auto-planner behaviour": [
         "region_priorities",  # §93
         "weather_aware_planning",  # §67
-        "sead_strike_coordination",  # §69
         "single_sead_escort_flavour",  # §77
         "adaptive_procurement",  # §68
         "auto_repair_air_defenses",  # §68
@@ -1437,26 +1435,6 @@ class Settings:
         ),
     )
 
-    sead_strike_coordination: bool = boolean_option(
-        "Strikes push behind their SEAD window",
-        page=CAMPAIGN_DOCTRINE_PAGE,
-        section=GENERAL_SECTION,
-        # Stock default (2026-08-09 re-convergence): upstream times packages
-        # independently. The 414th planner suite preset turns this on.
-        default=False,
-        detail=(
-            "Packages used to be timed independently, so a strike could arrive "
-            "at a defended target half an hour before the SEAD package tasked "
-            "against the SAM covering it. With this on, each side's AI "
-            "strike, BAI, OCA, armed recon and CAS packages whose target sits "
-            "inside a SAM threat ring that a SEAD/DEAD package is servicing "
-            "are retimed into the window just behind it -- SEAD opens the "
-            "corridor, then the strikes push, several packages massing behind "
-            "one suppressor. Air assault is left out because it is rotary-wing. "
-            "Player packages are never rescheduled, but a player-flown SEAD "
-            "still opens a window the AI pushes behind."
-        ),
-    )
     max_escort_jammers: int = bounded_int_option(
         "Max escort jammers airborne per side",
         page=CAMPAIGN_DOCTRINE_PAGE,

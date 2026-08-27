@@ -7,7 +7,7 @@ Diffed all of `game/commander/`, `game/ato/`, doctrine, threat zones, procuremen
 
 ## Verdict
 
-- The planner diverges substantially; almost all of it is deliberate and documented (§6 air-defense rework, §46 fuel, §69 SEAD windows, the rubric data, flown-failure fixes).
+- The planner diverges substantially; almost all of it is deliberate and documented (§6 air-defense rework, §46 fuel, the rubric data, flown-failure fixes). §69's SEAD windows were part of this list until the feature was removed 2026-08-27.
 - 43 ungated changes fire in every default game; 10 setting gates ship ON; 212 of 224 changed aircraft yamls differ in task weights.
 - The opt-in features (§17, §52, §44, QRA, minefields, air starts) are clean: parity at defaults.
 - Three items look accidental — see **Needs a call** below.
@@ -77,7 +77,6 @@ One line each. Ref = the flown/documented reason where one exists.
 | Setting | Default | Upstream when |
 |---|---|---|
 | `barcap_overlap_time` | 15 min | 0 |
-| `sead_strike_coordination` | ON | off |
 | `auto_add_tarps_recon` | ON | off |
 | `weather_aware_planning` | ON | off (no-op in clear skies) |
 | `max_escort_jammers` | 4 | 0 (needs a Growler/Prowler anyway) |

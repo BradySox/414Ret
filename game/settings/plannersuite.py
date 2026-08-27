@@ -27,7 +27,6 @@ PLANNER_SUITE_PAGE = FEATURES_PAGE
 # field -> (stock value, suite value)
 PLANNER_SUITE_VALUES: dict[str, tuple[Any, Any]] = {
     "barcap_overlap_time": (timedelta(minutes=0), timedelta(minutes=15)),
-    "sead_strike_coordination": (False, True),
     "single_sead_escort_flavour": (False, True),
     "auto_add_tarps_recon": (False, True),
     "weather_aware_planning": (False, True),

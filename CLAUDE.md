@@ -422,7 +422,6 @@ linked design note.
 66. **Generated-mission archive** — a dated copy of every generation, in a folder DCS lists.
 67. **Weather-aware auto-planning** — rain grounds auto-recon; storms demote low-level attack.
 68. **Adaptive procurement** — price-weighted buys and optional SAM site repair.
-69. **SEAD-before-strike coordination** — strikes retimed behind the suppressor servicing their target.
 70. **COMINT collection** — the §51 mirror: a surviving collector buys a tasking leak and one exact fix, plus an audible red UHF net.
 71. **Expanded F-4E Weapons Pack** — AGM-78 Weasel fits gated on live pylon legality.
 72. **Carrier deck decorations** — island-street and LSO dressing, clear of every parking spot and standing for the whole mission.
@@ -472,6 +471,7 @@ Kept numbered so old notes and saves stay readable. Details and rationale in the
 | 79 | Decoy suspected-activity zones | Removed 2026-08-18 — real forces no longer hide behind circles, so a lone circle would obviously be fake |
 | 82 | The Wing Grows (scheduled squadron arrivals) | Removed 2026-08-16 — "doesn't add much except in very specific campaigns" |
 | 84 | Old-stock loadout attrition | Removed 2026-08-06 |
+| 69 | Cross-package SEAD-before-strike coordination | **Removed 2026-08-27** — measured inert for this fork's play pattern: player packages are excluded by design and `player_missions_asap` marks them ASAP too, so on a Syrian Shield turn all 8 strike-class packages were skipped. Across three saves it retimed 2 packages in one. The suppression-first ordering proposed alongside it was measured and rejected the same day — see `414th-planner-doctrine-mining-notes.md` |
 
 Also removed: the blank-start campaign maker (2026-08-02), the SOF capture economy (2026-07-01),
 and the Skynet IADS engine (MANTIS is the sole engine).

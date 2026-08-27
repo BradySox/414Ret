@@ -518,21 +518,6 @@ FEATURES: tuple[Feature, ...] = (
         settings_fields=("adaptive_procurement", "auto_repair_air_defenses"),
     ),
     Feature(
-        # §69 cross-package coordination (MissionScheduler._coordinate_sead_windows):
-        # packages were timed independently, so a strike could arrive at a
-        # defended target long before the SEAD tasked against the SAM covering
-        # it. Movable AI strike/BAI/OCA packages whose target sits inside a
-        # threat ring a SEAD/DEAD package is servicing are retimed into the
-        # window just behind the latest covering suppressor -- SEAD opens, the
-        # strikes push, several packages massing behind one window. Player
-        # packages never move (a player SEAD still opens a window); the §8
-        # carrier stagger runs after and only delays.
-        "sead_strike_coordination",
-        "Cross-package SEAD-before-strike coordination",
-        69,
-        settings_fields=("sead_strike_coordination",),
-    ),
-    Feature(
         "comint_collection",
         "COMINT collection (blue-side communications intelligence)",
         70,
@@ -697,6 +682,19 @@ FEATURES: tuple[Feature, ...] = (
         "wing_growth",
         "The Wing Grows",
         82,
+        retired=True,
+    ),
+    Feature(
+        # REMOVED 2026-08-27. Not broken -- measured inert for this fork. The pass
+        # skips player packages by design, and player_missions_asap marks them
+        # ASAP too, so on a Syrian Shield turn all 8 strike-class packages were
+        # skipped; across three saves it retimed 2, in one save. The
+        # suppression-first planning order proposed alongside it was measured and
+        # rejected the same day (414th-planner-doctrine-mining-notes.md). Only
+        # this tombstone remains so §69 stays a resolvable section number.
+        "sead_strike_coordination",
+        "Cross-package SEAD-before-strike coordination",
+        69,
         retired=True,
     ),
     Feature(

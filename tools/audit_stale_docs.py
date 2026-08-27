@@ -95,6 +95,16 @@ class Removed:
 
 REMOVED: tuple[Removed, ...] = (
     Removed(
+        # S69's setting name is the distinctive term; the two window constants and
+        # the free function cover the code, and "push behind"/"SEAD window" catch
+        # the behaviour described without either name.
+        "cross-package SEAD-before-strike coordination (S69)",
+        "2026-08-27",
+        r"sead_strike_coordination|coordinated_strike_tot|COORDINATED_STRIKE_TYPES"
+        r"|SEAD_WINDOW_(LEAD|DURATION)|SEAD window|push(es)? behind (its|their) SEAD",
+        allow=("removed", "retired", "no longer", "is gone", "historical"),
+    ),
+    Removed(
         "SCAR / the Sandy rescue escort (S15)",
         "2026-08-07",
         r"\bSandy\b|FlightType\.SCAR|Jolly Green|auto_combat_sar|snatch party"

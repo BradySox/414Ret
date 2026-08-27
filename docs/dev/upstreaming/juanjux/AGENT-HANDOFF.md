@@ -167,6 +167,13 @@ Carriers are excluded by design — they steam for wind.
 
 ## Feature 2 — Strikes push behind their SEAD window
 
+> **The 414th REMOVED this feature on 2026-08-27.** Not because it is broken — it does what
+> it says. It is inert under our play pattern: the pass skips player packages by design, and
+> with `player_missions_asap` on those are ASAP too, so on one measured turn all 8
+> strike-class packages were skipped. Across three saves it retimed 2. Take it if your
+> campaigns are AI-heavy or MP, where it has packages to act on; skip it if you fly most
+> packages yourself.
+
 **Size:** two files, +143 lines. **Tests:** 15, self-contained. **Status in 414Ret:**
 verified in-game, no caveats.
 

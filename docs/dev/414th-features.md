@@ -6974,79 +6974,39 @@ struck SAM site over following turns with the toggle on).
 
 ---
 
-## §69 — Cross-package SEAD-before-strike coordination
+## §69 — Cross-package SEAD-before-strike coordination — REMOVED 2026-08-27
 
-**What it is.** Packages were timed independently — the generic scheduler branch spreads
-each package's TOT randomly across the mission window, so nothing stopped a strike from
-arriving at a defended target half an hour BEFORE the SEAD package tasked against the SAM
-covering it. `MissionScheduler._coordinate_sead_windows` (run inside `schedule_missions`
-after the main TOT assignment, BEFORE the §8 carrier-recovery stagger and the
-recovery-tanker ETA collection so both see the coordinated landings) finds, for every
-movable strike-class package, the SEAD/DEAD packages whose **TGO target's threat ring
-covers the strike's target** (`max_threat_range` distance test, duck-typed so a non-TGO
-tasking degrades to "no window"), and retimes the strike into the window just behind the
-**latest** covering suppressor: `coordinated_strike_tot` opens the window
-`SEAD_WINDOW_LEAD` (2 min) after the provider TOT and holds it `SEAD_WINDOW_DURATION`
-(8 min) — a naked strike ahead of its SEAD is delayed into the window, one the random
-spread had left long after it is pulled back, one already inside keeps its TOT, and
-physics always win (never earlier than `TotEstimator.earliest_tot`; an unreachable window
-keeps the spread schedule unless that would leave the strike ahead of its SEAD). Several
-strikes behind one SEAD mass into the same window — the push is the point.
+**Removed, and not because it was broken.** The pass retimed a strike-class package into the
+window behind the SEAD/DEAD package servicing the SAM covering its target. It worked: on a
+Vietnam save it retimed 2 packages by a net 28 minutes. It was removed because it is **inert
+under this fork's play pattern**.
 
-**The §8 stagger discipline applies.** Movable =
-`STRIKE`/`BAI`/`OCA_RUNWAY`/`OCA_AIRCRAFT`/`ARMED_RECON`/`CAS` (`COORDINATED_STRIKE_TYPES`),
-AI-only, non-ASAP. The rule is **every `FormationAttackFlightPlan` tasking making one timed
-arrival on a point inside a ring, plus CAS**. `ARMED_RECON` joined 2026-08-25 (it is a formation
-attack against a control point, the same shape and target type as OCA). **`AIR_ASSAULT` is the
-one such tasking left out** — it is `ROTARY_WING`, so massing a slow helo into an 8-minute
-window with fast movers converging on one point trades suppression for a deconfliction risk;
-a test pins it excluded inside a ring that would otherwise cover it. **CAS was added 2026-08-24** (#973, the first gap mined out of the
-planner-doctrine queue): it descends to acquire and eats MANPADS low, then climbs into the
-area-SAM ring high, so a front under a live umbrella wants that umbrella down first exactly as
-a strike does. Its organic `SEAD_SWEEP` escort flies the package's own TOT and so accompanies
-rather than pre-suppresses. **The CAS case has not had its own in-game pass** — B21 is verified
-for the strike case only. A package with a
-player flight is never rescheduled — but a **player-flown SEAD still opens a window the AI
-strikes push behind** (providers are read-only). The carrier stagger runs after and only
-ever delays, so it can push a strike deeper into — never ahead of — its window;
-best-effort by design. Symmetric (each coalition's scheduler coordinates its own ATO).
+**Why it never fired.** The pass skips any package with a player flight — correct, since the
+planner must not slide a human's TOT — and skips ASAP packages. With `player_missions_asap`
+on, a player package gets `auto_asap = True` (`packagefulfiller.py`), so player packages are
+excluded twice over. Measured on the Syrian Shield turn-12 save: **all 8** strike-class
+packages were skipped, every one tagged `HAS PLAYERS,asap`. Across three real saves the pass
+retimed 2 packages, in one save.
 
-### The exclusion rationale was false, twice (corrected 2026-08-25)
+**What went with it.** `coordinated_strike_tot`, `_coordinate_sead_windows`,
+`COORDINATED_STRIKE_TYPES`, `SEAD_WINDOW_LEAD`/`_DURATION`, the `sead_strike_coordination`
+setting, its planner-suite entry and `tests/test_sead_strike_coordination.py`. The
+recovery-tanker ETA collection **stays** below the scheduling loop: it was moved there for
+this feature, but it is behaviour-identical either way and the carrier stagger now depends on
+that position.
 
-From the original 2026-07-17 build until this correction, the exclusion comment read "Armed
-Recon (a loitering sweep, not a push) and AIR ASSAULT (tied to the ground war's timing)". Both
-halves are wrong, and it shipped in the code comment, the features doc, the tests, the §69
-upstream carve and the outbound juanjux brief before an upstream reviewer asked what the Air
-Assault half meant.
+**Do not rebuild it without answering the exclusion question first.** The mechanism is sound;
+the problem is that the packages worth sequencing are the ones it is forbidden to touch. A
+rebuild needs a story for player packages — a briefed push time the human is asked to meet,
+not a TOT silently moved — or it will be inert again.
 
-| Claim | What the code says |
-|---|---|
-| Armed Recon is a loitering sweep | `ArmedReconFlightPlan` extends **`FormationAttackFlightPlan`** — ingress, target, egress, no patrol. It is a search-and-engage-in-zone task with no loiter. **`CasFlightPlan` is the `PatrollingFlightPlan`** with a `patrol_duration`, so the one type the comment excluded for loitering does not, and the one type #973 *added* is the actual patroller. |
-| Air Assault is tied to the ground war's timing | Nothing times it that way. `auto_asap` is set only for the first AEWC package (`packageplanningtask.py`) and for player packages under `player_missions_asap`, so an Air Assault takes the same random spread as a strike. Its only ground-war coupling is planning *eligibility* — `PlanAirAssault.preconditions_met` needs the target in `state.vulnerable_control_points` — which decides whether it is planned, not when it arrives. |
+**The ordering proposal that came with it was separately measured and rejected**: planning
+suppression first roughly doubles DEAD and collapses the strike package, and the real
+constraint is airframe capacity, not priority. Full numbers in
+[`414th-planner-doctrine-mining-notes.md`](design/414th-planner-doctrine-mining-notes.md).
+The upstream carve ([#955](https://github.com/dcs-retribution/dcs-retribution/pull/955)) was
+closed unmerged on 2026-08-27.
 
-Both are `FormationAttackFlightPlan` against a `ControlPoint`, structurally the same tasking as
-OCA, which **is** included. So there was no mechanism behind either exclusion; it was unexamined
-scope, and the comment was written to make an omission read as a decision.
-
-**What was done about it.** `ARMED_RECON` was added to the set the same day — the reasoning that
-put OCA in applies to it unchanged. `AIR_ASSAULT` stays out on a reason that survives being
-checked: it is `ROTARY_WING`, so massing a slow helo into an 8-minute window with fast movers
-converging on one point trades a suppression gain for a deconfliction risk. That is a judgement,
-and it is labelled as one rather than dressed as a mechanism.
-
-**The lesson is the shape, not the two facts.** A rationale comment asserting *why* something is
-excluded is load-bearing — reviewers and future edits trust it — so it has to be checked against
-the code the same way a behavioural claim is. This one survived four documents and a published
-PR because every copy was made from the previous copy.
-
-Gated by `sead_strike_coordination` (Air Doctrine → Auto-planner behavior, default **OFF since
-the 2026-08-09 re-convergence**; the planner-suite preset turns it on).
-Tests: `tests/test_sead_strike_coordination.py` (the pure window math end-to-end + the
-wiring: ring matching, latest-provider windows, player/ASAP immunity, provider
-read-only, massing, the gate, a dead SAM's zero ring). Checklist B21 — needs an in-game
-pass (Tacview: AI strikes arrive after their SEAD is on station, not before).
-
----
 
 ## §70 — COMINT collection (blue-side communications intelligence)
 
@@ -9345,8 +9305,8 @@ flights take off inside the first 20); the player just launches at the front of 
 the player later and marches the existing simulation to their startup:
 
 1. **Player pinning** — `game/fourteenth/living_battlespace.py::pin_player_packages`, called
-   from `MissionScheduler.schedule_missions` after the base TOT pass and **before** the §69
-   SEAD windows and the §8 carrier-recovery stagger, so both see the pinned TOTs. Each player
+   from `MissionScheduler.schedule_missions` after the base TOT pass and **before** the
+   §8 carrier-recovery stagger, so it sees the pinned TOTs. Each player
    package is delayed until its earliest `flight_plan.startup_time()` sits `preroll_minutes`
    past mission start. Delay-only: a package already starting later keeps its schedule, and
    hand-planned packages are untouched (the pass only runs during auto-planning).
@@ -9367,9 +9327,10 @@ page under Single-player flow.
 
 ### Interplay
 
-- **§69 / §8 ordering** — pinning runs first, so a player SEAD's coverage window moves with the
+- **§8 ordering** — pinning runs first, so the carrier stagger sees the pinned TOTs and the
   player and AI recoveries stagger around the pinned slot. Both later passes already treat
-  player packages as immovable.
+  player packages as immovable. (Until 2026-08-27 this also fed §69's SEAD windows, since
+  removed.)
 - **`auto_ato_player_missions_asap`** — pinning runs after the ASAP placement and overrides it
   whenever the pre-roll is longer; the delay-only math keeps the two composable.
 - **MP** — every client spawns mid-cycle (stated in the setting detail). SP-first by decision;

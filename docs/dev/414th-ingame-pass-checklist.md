@@ -37,7 +37,6 @@ stress it · `✗` fail signature reproduced in-game.
 | B17 | Carrier deck spawn policy (six-pack last resort + MP slot timing) | §64 | ◐ |
 | B19 | Weather-aware auto-planning | §67 | ☐ |
 | B20 | Adaptive procurement: SAM repair + price-weighted choice | §68 | ☐ |
-| B21 | Cross-package SEAD-before-strike coordination | §69 | ☑ |
 | B22 | COMINT collection: the campaign take (tiering + leak + reveal) | §70 | ☐ |
 | B23 | Red comms net: audible + DF-able enemy C2 | §70 | ◐ |
 | B28 | Native DTC data pre-population (F/A-18C + F-16C) | §74 | ☑ |
@@ -663,11 +662,15 @@ jets. See §62.
 - **Pass:** the struck site regains ~2 units per turn (radar first) while red's budget shows the spend; a fully-dead site only rebuilds after the partially-alive ones; command centers/comms nodes never come back; with the toggle OFF the site stays dead forever (pre-feature behavior).
 - **Fail signature:** the whole site back in one turn (the cap broke); a repaired unit standing next to its own wreck model (`_clear_wreck_near` didn't fire); C2/comms nodes regenerating (category filter broke — §51/§52 must stay permanent); threat rings not re-growing after repair (`invalidate_threat_poly` not reached); blue money spent on repairs when the player manages repairs manually (the `manage_runways` coupling broke).
 
-### B21 — Cross-package SEAD-before-strike coordination · §69 · ☑ VERIFIED
+### B21 — Cross-package SEAD-before-strike coordination · §69 · ✅ CLOSED
+
+> §69 was removed. The verdict below is kept because it is a real flown result — the
+> mechanism worked when it had AI packages to move. It was removed for being inert under
+> this fork's play pattern, not for being broken.
 
 **History:** 2026-08-21, DM pass `sead-escort-waypoint-bug-548af6` — "all of these are good") (was ☐ UNTESTED, built 2026-07-17; the pure window math and the scheduler wiring — ring matching, latest-provider windows, player/ASAP immunity, provider read-only, massing, the gate — are unit-tested in `tests/test_sead_strike_coordination.py`; whether the flown timeline actually reads "SEAD first, then the push" is Tacview-level
 - **What CI cannot exercise:** a real generated mission where an AI strike package tasked into a defended area arrives AFTER the SEAD/DEAD package servicing that SAM is on station (Tacview timeline: HARMs/suppression first, bombers 2–10 min behind), instead of the old random spread that could send the bombers in half an hour early.
-- **Setup:** any campaign where the AI plans SEAD/DEAD + strikes into the same defended area (`sead_strike_coordination` default ON). Generate a turn with a red SAM covering a strike target; check package TOTs in the ATO, then fly/spectate and read the Tacview.
+- **Setup (historical, the feature is gone):** any campaign where the AI plans SEAD/DEAD + strikes into the same defended area. Generate a turn with a red SAM covering a strike target; check package TOTs in the ATO, then fly/spectate and read the Tacview.
 - **Pass:** the ATO shows the strike/BAI/OCA packages targeting SAM-covered objectives with TOTs ~2–10 min after their covering SEAD/DEAD package's TOT (several strikes may share one window — the push); packages against undefended targets keep the random spread; a player package's TOT is never moved by this (and a player-flown SEAD still has AI strikes timed behind it).
 - **Fail signature:** a strike still arriving before its SEAD with both AI (the ring match missed — check the SAM TGO's `max_threat_range` and that the SEAD's target is the TGO); strike TOTs pushed absurdly late (the window should clamp to `earliest_tot` — check `coordinated_strike_tot`); player packages rescheduled (the movability gate broke); mass mid-airs at the shared TOT (packages route separately, but if seen, widen `SEAD_WINDOW_LEAD` spacing per client or stagger within the window).
 

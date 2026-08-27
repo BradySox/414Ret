@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import datetime
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import MagicMock
 
 import pytest
@@ -1121,3 +1122,78 @@ def test_dispatcher_emits_recon_for_tarps(
     classes = [p.__class__.__name__ for p in pages]
     assert "OverviewReconPage" in classes
     assert "DetailReconPage" in classes
+
+
+# ---------------------------------------------------------------------------
+# Recon intel fog (§3)
+# ---------------------------------------------------------------------------
+
+
+def test_detail_page_withholds_composition_until_the_site_is_engaged(
+    tmp_path: Path, stub_strike_flight: MagicMock, stub_game: MagicMock
+) -> None:
+    """§3: an un-engaged site's composition is not the player's to have.
+
+    This page prints exact positions, types and dead state -- the very fields
+    the map withholds and jitters for a concealed site. It gated on nothing
+    until 2026-08-26.
+    """
+    target = stub_strike_flight.package.target
+    target.known_for = lambda viewer: False
+
+    page = DetailReconPage(flight=stub_strike_flight, game=stub_game)
+    page.write(tmp_path / "fogged.png")
+
+    # No aimpoint rows: no T-labels and no per-aimpoint MGRS strings.
+    assert not any(s.startswith("T") and s[1:].isdigit() for s in page.last_text_log)
+
+
+def test_detail_page_shows_composition_once_engaged(
+    tmp_path: Path, stub_strike_flight: MagicMock, stub_game: MagicMock
+) -> None:
+    """The other half of the same rule: engaged is known completely."""
+    target = stub_strike_flight.package.target
+    target.known_for = lambda viewer: True
+
+    page = DetailReconPage(flight=stub_strike_flight, game=stub_game)
+    page.write(tmp_path / "known.png")
+
+    assert any("37T " in s for s in page.last_text_log)
+
+
+def test_overview_drops_threat_rings_for_unengaged_sites(
+    stub_strike_flight: MagicMock, stub_game: MagicMock
+) -> None:
+    """Threat and detection ranges are fogged intel, same as composition."""
+    page = OverviewReconPage(
+        flight=stub_strike_flight,
+        game=stub_game,
+        extra_threat_search_m=0.0,
+    )
+    target = stub_strike_flight.package.target
+
+    threat = MagicMock()
+    threat.position = target.position
+    threat.is_friendly = lambda friendly: False
+    threat.max_threat_range = lambda: SimpleNamespace(meters=40000.0)
+    threat.max_detection_range = lambda: SimpleNamespace(meters=60000.0)
+    threat.obj_name = "SA-2 Site"
+
+    cp = MagicMock()
+    cp.ground_objects = [threat]
+    stub_game.theater.controlpoints = [cp]
+
+    threat.known_for = lambda viewer: True
+    known = page._nearby_threats(target, [target.position], 0.0)
+    assert [t[3] for t in known] == ["SA-2 Site"]
+
+    threat.known_for = lambda viewer: False
+    fogged = page._nearby_threats(target, [target.position], 0.0)
+    assert fogged == []
+
+
+def test_known_to_blue_treats_a_non_fogged_target_as_known() -> None:
+    """ControlPoint / FrontLine targets carry no known_for and are not fogged."""
+    from game.missiongenerator.kneeboard_recon.pages import _known_to_blue
+
+    assert _known_to_blue(SimpleNamespace()) is True

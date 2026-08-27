@@ -1,0 +1,384 @@
+---
+name: Syria - Anatolian Reach
+theater: Syria
+authors: 414th Joint Fighter Group
+recommended_player_faction: USA-Israel 2000
+description:
+  <p>In 2004 a rupture between Ankara and Washington ends with Turkish airspace
+  and Incirlik closed to coalition traffic. Moscow moves into the gap. An
+  air-defence protocol puts Russian long-range SAM regiments on the Anatolian
+  plateau and Russian squadrons at Diyarbakir within the year. Damascus, a
+  client of Moscow since the Soviet era and isolated since the occupation of
+  Lebanon began to draw sanction, signs on as the third partner. The combined
+  network now reaches from the Black Sea coast to the Golan.</p><p>Israel
+  cannot reach Anatolia without help. Every target that matters sits between
+  250 and 400 nautical miles from the Negev, and the direct routes run through
+  the Syrian corridor. A US tanker and control package operating from Akrotiri,
+  and a carrier in the eastern Mediterranean, are what turn Israeli strike
+  squadrons into a force that can hold Turkish airfields at risk.</p><p>The
+  fight is in Turkey. Getting there is the campaign.</p>
+
+# Retribution allows one faction per coalition, so an alliance has to be written
+# inline. This follows Fuzzle's shipped Operation Allied Sword, which does the
+# same thing on this map with its "Syria-Lebanon 2005 ... with several imported
+# Russian assets" faction.
+#
+# Gated to 2004: no S-400 (SA-21, service 2007), no Buk-M2 (SA-17, 2008), no
+# Su-34 (2014), no T-72B3 (2011). restrict_weapons_by_date gates WEAPONS but
+# never SAM presets, so the period filtering here is manual and deliberate.
+recommended_enemy_faction:
+  country: Combined Joint Task Forces Red
+  name: Turkey-Russia 2004 (Anatolian Reach)
+  authors: 414th Joint Fighter Group
+  description:
+    <p>The Ankara-Moscow air-defence protocol of 2004, with Syria as the third
+    partner. Turkish F-16s and Phantoms in the west and south; Russian
+    expeditionary regiments holding the deep east and the Syrian corridor.</p>
+  aircrafts:
+    # Turkish
+    - F-16CM Fighting Falcon (Block 50)
+    - F-16D Fighting Falcon (Block 50)
+    - F-16D Fighting Falcon (Block 50+)
+    - F-4E Phantom II
+    - F-4E-45MC Phantom II
+    - AH-1W SuperCobra
+    - OH-58D(R) Kiowa Warrior
+    - UH-1H Iroquois
+    - UH-60A
+    - CH-47D
+    - C-130J-30
+    # Russian
+    - MIG-29-FULCRUM
+    - MiG-29S Fulcrum-C
+    - MiG-31 Foxhound
+    - Su-27 Flanker-B
+    - Su-24M Fencer-D
+    - Su-25 Frogfoot
+    - Su-25T Frogfoot
+    - Mi-24V Hind-E
+    - Mi-24P Hind-F
+    - Mi-8MTV2 Hip
+    - Ka-50 Hokum
+    - IL-76MD
+    - L-39ZA Albatros
+  awacs:
+    - A-50
+    - E-3A
+  tankers:
+    - IL-78M
+    - KC-135 Stratotanker
+  preset_groups:
+    # Turkish national kit
+    - Hawk
+    - SA-3/S-125
+    - Rapier
+    # Russian deployment - this is what makes a 300 nm penetration contested
+    - SA-6
+    - SA-11
+    - SA-10/S-300PS
+    - SA-20/S-300PMU-1
+  frontline_units:
+    - Leopard 2A4 Trs
+    - M60A3 "Patton"
+    - Cobra
+    - M113
+    - BTR-80
+    - BMP-2
+    - BMP-3
+    - T-72B with Kontakt-1 ERA
+    - T-80UD
+    - T-90A
+  artillery_units:
+    - Firtina
+    - M270 Multiple Launch Rocket System
+    - 2S19 Msta-S
+    - BM-27 Uragan
+  logistics_units:
+    - Truck M818 6x6
+    - Truck Ural-375
+    - LUV UAZ-469 Jeep
+  infantry_units:
+    - Infantry AK-74 Rus
+    - Infantry M4
+    - MANPADS SA-18 Igla-S "Grouse"
+    - Paratrooper AKS
+    - Mortar 2B11 120mm
+  naval_units:
+    - FFG Oliver Hazard Perry
+    - Frigate 1135M Rezky
+    - Corvette 1241.1 Molniya
+  air_defense_units:
+    - EWR 1L13
+    - EWR 55G6
+    - EWR AN/FPS-117 Radar
+    - SA-15 Tor
+    - SA-19 Grison (2K22 Tunguska)
+    - SAM SA-8 Osa "Gecko" TEL
+    - SA-13 Gopher (9K35 Strela-10M3)
+    - ZSU-23-4 Shilka
+    - M1097 Heavy HMMWV Avenger
+    - AAA ZU-23 Closed Emplacement
+    - ZU-23 on Ural-375
+  missiles: []
+  carrier_names: []
+  helicopter_carrier_names: []
+  requirements: {}
+  has_jtac: true
+  jtac_unit: Yak-52
+miz: anatolian_reach.miz
+performance: 3
+recommended_start_date: 2004-06-01
+version: "10.9"
+
+# The .miz carries comms towers, power sources and command centres, so the
+# network is wired in range mode (comms <=15 nm, power <=35 nm) rather than by
+# an explicit iads_config. This is what makes §51 comms jamming, §52
+# decapitation and the bombed-power-station rule mean anything here -- worth
+# having in a campaign whose whole shape is SEAD and deep strike.
+advanced_iads: true
+
+settings:
+  squadron_start_full: true
+  # 2004 loadouts. Without this the Israeli jets carry weapons that postdate the
+  # scenario by a decade and the long-range problem solves itself.
+  restrict_weapons_by_date: true
+  restrict_props_by_date: true
+  # Default true, preseeded because a host's saved settings layer UNDER campaign
+  # preseeds: a Default.zip with these off silently strips the tankers this
+  # campaign is built around.
+  autoplan_tankers_for_strike: true
+  autoplan_tankers_for_oca: true
+  autoplan_tankers_for_dead: true
+
+# The .miz places a CVN-71. The loader only recognises the Stennis hull as a
+# carrier, so the group must be a CVN-74 in the editor; this block paints it
+# back to a Roosevelt in game.
+carriers:
+  Naval-1:
+    preferred_name: CVN-71 Theodore Roosevelt
+    preferred_type: CVN-71 Theodore Roosevelt
+
+squadrons:
+  # ---------------------------------------------------------------- BLUE ----
+  # Hatzerim (191 stands) - the deep-strike home. Farthest Israeli field from
+  # Turkey at 326-484 nm, which is the point rather than a problem.
+  81:
+    - primary: Strike
+      secondary: air-to-ground
+      aircraft:
+        - F-15E Strike Eagle (Suite 4+)
+      size: 12
+    - primary: DEAD
+      secondary: air-to-ground
+      aircraft:
+        - F-16CM Fighting Falcon (Block 50)
+      size: 12
+    - primary: Escort
+      secondary: air-to-air
+      aircraft:
+        - F-15C Eagle
+      size: 12
+
+  # Ramat David (86 stands) - forward staging, 254 nm to the nearest Turkish
+  # field and 62 nm off the Syrian corridor. Recovery field for deep packages.
+  30:
+    - primary: BARCAP
+      secondary: air-to-air
+      aircraft:
+        - F-15C Eagle
+      size: 12
+    - primary: SEAD
+      secondary: air-to-ground
+      aircraft:
+        - F-16CM Fighting Falcon (Block 50)
+      size: 12
+    - primary: OCA/Runway
+      secondary: air-to-ground
+      aircraft:
+        - F-15E Strike Eagle (Suite 4+)
+      size: 8
+
+  # Akrotiri (45 stands) - SUPPORT ONLY. Deliberately no strike and no fighters.
+  # Akrotiri is the closest blue base to seven of the nine Turkish fields
+  # (Incirlik 188 nm vs Ramat David's 260), so any combat squadron based here
+  # wins every auto-planner comparison and the Israeli squadrons stop flying.
+  # Keep this list to tankers, AEW&C and lift.
+  44:
+    - primary: Refueling
+      aircraft:
+        - KC-135 Stratotanker
+      size: 4
+    - primary: Refueling
+      aircraft:
+        - KC-135 Stratotanker MPRS
+      size: 2
+    - primary: AEW&C
+      aircraft:
+        - E-3A
+      size: 2
+    - primary: Transport
+      secondary: any
+      aircraft:
+        - C-130J-30
+      size: 2
+
+  # CVN-71 - the western axis. Works Gazipasa/Chukurova/Incirlik/Konya at
+  # 152-244 nm while Israel takes the deep east.
+  Naval-1:
+    - primary: Strike
+      secondary: air-to-ground
+      aircraft:
+        - F/A-18C Hornet (Lot 20)
+      size: 16
+    - primary: Escort
+      secondary: any
+      aircraft:
+        - F-14B(U) Tomcat
+      size: 16
+    - primary: Escort Jammer
+      aircraft:
+        - EA-6B Prowler
+      size: 4
+    - primary: AEW&C
+      aircraft:
+        - E-2C Hawkeye
+      size: 4
+    - primary: Anti-ship
+      secondary: air-to-ground
+      aircraft:
+        - S-3B Viking
+      size: 6
+
+  # ----------------------------------------------------------------- RED ----
+  # Incirlik (126 stands) - red's main fighter base and the campaign's
+  # centrepiece objective.
+  16:
+    - primary: BARCAP
+      secondary: air-to-air
+      aircraft:
+        - F-16CM Fighting Falcon (Block 50)
+      size: 16
+      country: Turkey
+    - primary: Strike
+      secondary: air-to-ground
+      aircraft:
+        - F-4E-45MC Phantom II
+      size: 12
+      country: Turkey
+
+  # Konya (152 stands) - the largest Turkish field, deep west. Support hub.
+  218:
+    - primary: BARCAP
+      secondary: air-to-air
+      aircraft:
+        - F-16D Fighting Falcon (Block 50+)
+      size: 16
+      country: Turkey
+    - primary: AEW&C
+      aircraft:
+        - E-3A
+      size: 2
+      country: Turkey
+    - primary: Refueling
+      aircraft:
+        - KC-135 Stratotanker
+      size: 2
+      country: Turkey
+
+  # Diyarbakir (133 stands) - eastern main base, 398 nm from Ramat David and the
+  # deepest target on the map. This is the Russian expeditionary group: the one
+  # place blue cannot reach without a full tanker plan, so it holds the heaviest
+  # interceptors.
+  217:
+    - primary: BARCAP
+      secondary: air-to-air
+      aircraft:
+        - MiG-31 Foxhound
+      size: 12
+      country: Russia
+    - primary: TARCAP
+      secondary: air-to-air
+      aircraft:
+        - Su-27 Flanker-B
+      size: 16
+      country: Russia
+    - primary: BAI
+      secondary: air-to-ground
+      aircraft:
+        - Su-24M Fencer-D
+      size: 12
+      country: Russia
+
+  # Chukurova (60 stands) - forward south, 254 nm from Ramat David.
+  90:
+    - primary: SEAD
+      secondary: air-to-ground
+      aircraft:
+        - F-16CM Fighting Falcon (Block 50)
+      size: 12
+      country: Turkey
+    - primary: CAS
+      secondary: air-to-ground
+      aircraft:
+        - AH-1W SuperCobra
+      size: 4
+      country: Turkey
+
+  # Gulechoba (23 stands) - deep north-east. Russian lift and control.
+  216:
+    - primary: Transport
+      secondary: any
+      aircraft:
+        - IL-76MD
+      size: 4
+      country: Russia
+    - primary: AEW&C
+      aircraft:
+        - A-50
+      size: 2
+      country: Russia
+
+  # Sanliurfa (11 stands) - small eastern strip, Russian ground-attack.
+  58:
+    - primary: CAS
+      secondary: air-to-ground
+      aircraft:
+        - Su-25T Frogfoot
+      size: 8
+      country: Russia
+
+  # Bassel Al-Assad (54 stands) - the coastal corridor gate. 168 nm from Israel,
+  # 99 nm from Chukurova. Russian naval-aviation detachment: this is the field
+  # that ranges the carrier.
+  21:
+    - primary: BARCAP
+      secondary: air-to-air
+      aircraft:
+        - MiG-29S Fulcrum-C
+      size: 12
+      country: Russia
+    - primary: Anti-ship
+      secondary: air-to-ground
+      aircraft:
+        - Su-24M Fencer-D
+      size: 8
+      country: Russia
+
+  # Aleppo (23 stands) - the overland corridor gate and the hinge that joins the
+  # Syrian front to the Turkish one. 234 nm from Israel, 82 nm from Kahramanmaras.
+  27:
+    - primary: TARCAP
+      secondary: air-to-air
+      aircraft:
+        - MIG-29-FULCRUM
+      size: 12
+      country: Russia
+    - primary: CAS
+      secondary: air-to-ground
+      aircraft:
+        - Mi-24P Hind-F
+      size: 4
+      country: Russia
+
+  # Kahramanmaras (7), Adiyaman (6) and Gazipasa (6) carry no squadrons. They are
+  # too small to base one and serve as objectives and dispersal fields.

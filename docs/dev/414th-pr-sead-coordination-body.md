@@ -1,12 +1,14 @@
 # PR body — strikes push behind their SEAD window (§69 carve)
 
 Branch: `BradySox:feature/sead-strike-coordination`, cut from upstream `dev` @ `59719b24`.
-**Open as draft [#955](https://github.com/dcs-retribution/dcs-retribution/pull/955)** since
+**CLOSED 2026-08-27** ("its not ready"). Was open as draft [#955](https://github.com/dcs-retribution/dcs-retribution/pull/955) from
 2026-08-25, under a scoped DM exception to the freeze (§69 answers no open upstream issue, so
 the 2026-08-20 issue-ledger exception did not cover it).
 
-This file is the working copy of the description; the published body is the source of truth
-once they diverge.
+**The body below is the text as first opened, and the branch moved past it before the PR
+closed.** The branch's final state adds `ARMED_RECON` to the coordinated set (Air Assault is
+the only exclusion left, on the rotary-wing reason) and carries 20 tests, not 19. Read the
+branch, not this, if §69 is ever re-offered.
 
 ---
 

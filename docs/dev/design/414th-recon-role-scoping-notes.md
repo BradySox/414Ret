@@ -197,6 +197,27 @@ reaches sites that are not on the map at all.
 actually pointing at. B remains open, and is the largest and the one most likely to
 feel like a lag to a player even though it technically is not.
 
+### A's reach — the KA-99 question, BLOCKED on a measurement
+
+`TARPS_POD_RADIUS_NM = 3.0` (`game/sim/missionresultsprocessor.py:36`) is what candidate
+A uses to decide whether a pass found a hidden command post. Its own comment records it as
+the **deleted** recon plugin's pod radius; it was never sized against a camera, and the
+reveal is the only thing that ever read it.
+
+The 2026-08-26 KA-99 panoramic camera is a legitimate reason to widen it — and widening it
+is legal under §3 in a way C.2 never was, because it only changes recon's *reach* toward
+the one thing recon is already permitted to find, not its *rights* over composition.
+
+**No number was available, so none was invented.** The F-14 manual documents no KA-99 and
+no panoramic camera anywhere in its 1,156 pages — the camera is newer than the manual, and
+the patch notes say only the AH-64D and F-16C manuals were updated. Guessing here is the
+exact failure mode `414th-startup-times-notes.md` exists to prevent.
+
+It is now a flown measurement: **LOCAL card 0** in
+[`docs/dev/flycards/LOCAL.md`](../flycards/LOCAL.md) says how to take it (straight level
+pass at a known altitude past a line of units, read the outermost circled unit after
+landing, repeat at two or three altitudes). Set the radius from that, not from a patch note.
+
 **Recon's job is therefore settled at A + C.1**: it finds what is hidden outright
 (command posts), and its own pilot carries the target card. Anything more requires
 changing §3 itself, which is a DM decision and not a recon decision.

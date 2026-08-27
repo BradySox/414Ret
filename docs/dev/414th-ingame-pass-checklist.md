@@ -60,8 +60,8 @@ stress it · `✗` fail signature reproduced in-game.
 | B85 | A flight with an unreachable TOT flies instead of orbiting | §8 | ☐ |
 | B98 | The bullseye is the same place it was last mission | §95 | ☐ |
 | B99 | AI packages arrive inside the mission, not after it | §8 | ☐ |
-| B100 | Neutral border: warned, shadowed, then engaged only if you press | §96 | ☐ |
-| B101 | Neutral border: AI intruders are shadowed, never engaged | §96 | ☐ |
+| B106 | Neutral border: warned, shadowed, then engaged only if you press | §96 | ☐ |
+| B107 | Neutral border: AI intruders are shadowed, never engaged | §96 | ☐ |
 | G25 | Armed Recon package: recon drone + SEAD Viper escort + 4-ship sweep | §3 | ◐ |
 | G30 | MANTIS SHORAD link: the point defense ambushes the HARM shot | MANTIS migration | ☐ |
 | G33 | Survivor ADF beacon: the pinned 260 kHz drives a real needle | CSAR (upstream #929 + 414th pin) | ☐ |
@@ -6233,7 +6233,7 @@ mountain or coastal front will do.
      strength, so an 8-object swing is worth a look on Desert Trident's Jordan
      sector specifically.
 
-### B100 — Neutral border: warned, shadowed, then engaged only if you press · §96 · ☐ UNTESTED
+### B106 — Neutral border: warned, shadowed, then engaged only if you press · §96 · ☐ UNTESTED
 
 **History:** built 2026-08-24 (the neutral-border session — design note
 `414th-neutral-border-defense-notes.md`). Harness-covered: warn/shadow timing, the
@@ -6279,7 +6279,7 @@ shadow is destroyed by your own AI escort before escalation **more often than no
 fallback); the SA-6 spawns cold or never engages; escalation fires on an AI-only
 intruder.
 
-### B101 — Neutral border: AI intruders are shadowed, never engaged · §96 · ☐ UNTESTED
+### B107 — Neutral border: AI intruders are shadowed, never engaged · §96 · ☐ UNTESTED
 
 **History:** built 2026-08-24. The DM call: everyone trips the border, only players are
 ever engaged. Harness-covered for the no-escalation invariant; what needs eyes is

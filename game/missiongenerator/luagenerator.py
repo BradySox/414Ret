@@ -520,8 +520,8 @@ class LuaGenerator:
         populate_red_scramble_lua(lua_data, self.game, self.mission_data)
 
         # Neutral-faction border defense (§96) -- emits dcsRetribution.neutralBorder
-        # only when neutral_border_defense is on and the campaign authored zones the
-        # generator could build templates for; the neutralborder plugin runs the
+        # only when neutral_border_defense is on and the generator could build
+        # templates for the map's zones; the neutralborder plugin runs the
         # border watch, the shadow launches and the escalation ladder.
         populate_neutral_border_lua(lua_data, self.game, self.mission_data)
 

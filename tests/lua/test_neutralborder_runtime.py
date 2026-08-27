@@ -8,7 +8,7 @@ releases a weapon inside the border after the warning, is engaged via a hard
 AttackGroup task on the raw controller and the SAM template wakes; AI intruders
 are shadowed but never engaged; a high transit trips nothing; leaving before
 escalation stands the shadow down. The DCS AI's actual shadow/attack flying is
-in-game-only (checklist B100/B101).
+in-game-only (checklist B106/B107).
 """
 
 from __future__ import annotations
@@ -378,6 +378,50 @@ def test_the_warning_does_not_offer_an_altitude_that_does_not_exist() -> None:
     warned = [t for t in texts if "violating" in t]
     assert warned, "no warning was issued"
     assert not any("below" in t or "Climb" in t for t in warned)
+    h.assert_no_lua_errors()
+
+
+def test_one_sides_floor_is_never_applied_to_the_other() -> None:
+    """A per-side floor is two facts, and `cond and a or b` cannot carry them.
+
+    Every other floor test sets floorBlueFt and floorRedFt to the SAME value,
+    which is why this survived: the Lua read
+    `is_blue and zone.floor_blue_m or zone.floor_red_m`, and when blue's floor
+    is nil -- the no-safe-altitude case, and the common one -- that idiom falls
+    straight through to RED's floor. Blue would then be judged against a height
+    nobody authored for it.
+
+    Here blue has no floor (trip at any altitude) and red has a high one. The
+    blue transit is well above red's floor, so if red's number leaks across,
+    nothing launches.
+    """
+    cfg = _config()
+    cfg["neutralBorder"]["zones"][0]["floorRedFt"] = "10000"  # blue's stays unset
+    h = _setup(cfg)
+    h.add_group(_intruder("Viper 1-1", 42, side=2, alt=9000))  # ~30,000 ft
+    h.load_plugin_script(PLUGIN)
+    h.advance_to(60)
+
+    assert len(_shadow_spawns(h)) == 1, "blue was judged against RED's floor"
+    h.assert_no_lua_errors()
+
+
+def test_the_warning_quotes_this_sides_floor_not_the_other_sides() -> None:
+    """The radio call is the same bug's user-visible face: a blue player with no
+    floor must not be told to climb above a number that is red's."""
+    cfg = _config()
+    cfg["neutralBorder"]["zones"][0]["floorRedFt"] = "10000"
+    h = _setup(cfg)
+    h.add_group(_intruder("Viper 1-1", 42, side=2, alt=9000))
+    h.load_plugin_script(PLUGIN)
+    h.advance_to(45)
+
+    texts = [str(r.get("text", "")) for r in h.records("texts") if isinstance(r, dict)]
+    warned = [t for t in texts if "violating" in t]
+    assert warned, "no warning was issued"
+    assert not any(
+        "below" in t or "Climb" in t for t in warned
+    ), "the warning offered blue a safe altitude taken from red's floor"
     h.assert_no_lua_errors()
 
 

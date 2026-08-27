@@ -110,15 +110,12 @@ class NeutralBorderGenerator:
         # bordering nation is meant to appear (DM call), and a country that
         # cannot field an interceptor is exactly the case that rule is for: DCS
         # models no Turkmenistan, so its border can only ever be a line.
-        has_aircraft = zone.aircraft is not None or (
-            aircraft_for(zone.country, self.game.current_day) is not None
-        )
-        if not has_aircraft or (zone.airfield is None and zone.spawn is None):
+        if not zone.can_field_an_interceptor(self.game.current_day):
             logging.info(
-                "Neutral border: %s would defend its airspace but has no %s, so "
-                "its border is drawn and not enforced.",
+                "Neutral border: %s would defend its airspace but cannot field an "
+                "interceptor (no airframe for this era, or no airfield/spawn "
+                "point), so its border is drawn and not enforced.",
                 zone.country,
-                "airframe for this era" if not has_aircraft else "airfield/spawn point",
             )
             return NeutralBorderLuaZone(
                 country=zone.country,

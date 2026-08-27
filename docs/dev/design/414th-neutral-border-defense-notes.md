@@ -2,7 +2,7 @@
 
 **Status: BUILT 2026-08-24 (§96).** Scope locked in a DM Q&A session the same day; every
 decision below is a DM call from that session. Read this before editing or re-litigating
-any of it. Features doc §96 carries the file list; in-game passes B100/B101 owed.
+any of it. Features doc §96 carries the file list; in-game passes B106/B107 owed.
 
 ## Build outcome (what changed between the sketch and the code)
 
@@ -25,7 +25,7 @@ any of it. Features doc §96 carries the file list; in-game passes B100/B101 owe
 - **Border source**: `tools/neutral_border_geo.py` (GeoJSON → shapely simplify →
   `Point.from_latlng` → yaml). The Lebanon trace used the public-domain
   `georgique/world-geojson` country file, 44 vertices. The harness cannot exercise DCS
-  behavior — B100/B101 carry the flown verdicts.
+  behavior — B106/B107 carry the flown verdicts.
 
 ## The feature
 
@@ -370,7 +370,7 @@ Cyprus combined).
 
 The first mission with §96 live produced one clean pass and three defects, two of
 them measured off the Tacview rather than reported. **All three are fixed; none
-is verified in DCS yet** (B100/B101 still owed).
+is verified in DCS yet** (B106/B107 still owed).
 
 **It worked at all.** `6 border zone(s) drawn, 6 defended`, and against a blue
 F-15E BAI package Iran launched a shadow on the opposing coalition and stood it
@@ -652,7 +652,7 @@ and shipped as `labelX`/`labelZ`; verified on all 8 zones of a Syria campaign.
 
 **Not verified in DCS**: whether `trigger.action.textToAll` renders the `\n` as
 two lines. If it does not, the label will read as one run-on line — cosmetic,
-and on the B100 fail-signature list.
+and on the B106 fail-signature list.
 
 ## A faint line is not a quiet line (2026-08-26)
 
@@ -714,7 +714,85 @@ Target architecture, to be built after the national-postures research lands:
   precedence. The derived airfield-alignment rule is untouched by all of this and
   always wins over the table.
 - Gate unchanged (`neutral_border_defense` + plugin): "automagic" means no yaml
-  needed, not default-on. Flipping the default is its own call after B100/B101 fly.
+  needed, not default-on. Flipping the default is its own call after B106/B107 fly.
+
+## Audit, 2026-08-27 — two defects the gates could not see
+
+A full pass over the PR against `upstream/dev`. The mechanics were clean (black,
+mypy, 4450 tests, and the 11 upstream-owned files touched additively, nothing
+deleted). Both findings were behavioural, and neither is the kind CI catches.
+
+### The planning map promised an interception the mission could not deliver
+
+`NeutralBorderGenerator` degrades a neutral that cannot field an interceptor to
+**drawn and toothless** — no airframe for the era, or no airfield/spawn. The web
+map computed `enforced` from posture and consent alone and never asked that
+question, so the two disagreed on **14 zones across 6 of the 8 shipped terrains**:
+
+| Terrain | Drawn closed, actually toothless |
+|---|---|
+| Afghanistan | Afghanistan, Turkmenistan, Uzbekistan, Tajikistan ×2 |
+| Caucasus | Armenia, Azerbaijan ×2 |
+| Syria | Iraq, Cyprus |
+| Iraq | Iraq |
+| Kola | Sweden |
+| Falklands | Argentina ×2 |
+
+Cyprus was drawn "Closed to you at any altitude" over a mission that let you fly
+straight through it. **The whole feature is a planning decision** — go around, or
+go through — so a map that overstates the threat is worse than one that draws no
+line: the player routes around nothing, and learns to distrust the layer.
+
+Fixed by asking it once: `NeutralBorderZone.can_field_an_interceptor(day)`, used
+by the generator and by `NeutralBorderJs.all_in_game`. Same shape as
+`visibility_for` — one question, one place.
+
+### A per-side floor read the other side's number
+
+`neutralborder-config.lua` resolved the altitude floor with the Lua ternary
+idiom, at two sites:
+
+```lua
+local floor = is_blue and zone.floor_blue_m or zone.floor_red_m
+```
+
+`cond and a or b` is not a ternary when `a` can be falsy, and **`nil` is the
+normal case here** — no floor means no sanctuary. With blue's floor unset and
+red's authored, blue was judged against *red's* number: a blue player crossed a
+closed border above red's floor and was never warned, never shadowed, never
+engaged. The `warn` site had it too, so the radio call would have offered blue a
+safe altitude taken from red's — under a comment saying it must not.
+
+**Masked, not live**: `floor_for` currently ignores `is_blue` and returns the
+authored value, so both sides read the same number today. But the field is
+per-side end to end (`floorBlueFt`/`floorRedFt` emitted and parsed separately)
+and `floor_for` takes `is_blue`, so the first per-side floor would have shipped
+a silent hole in the enforcement path.
+
+Both sites are long-hand `if` now. Two harness tests pin it, and **both were
+confirmed to fail against the old idiom** — every pre-existing floor test set
+the two sides to the same value, which is exactly why it survived review.
+
+### The checklist rows collided with main's
+
+This PR added its in-game rows as **B100/B101**, and `main` already owned both
+(the DCS 2026-08-26 parking rework, and the F-4E Shrike row). The session-start
+board listed each ID twice against unrelated features, and all nine of the §96
+whatsnew entries pointed at `row: B100` — which named two different things, so a
+verdict recorded against it could have marked the wrong feature verified. The
+§96 rows are **B106/B107** now; main's keep their numbers. Check the highest ID
+in use before adding a row on a branch that has been open across a main merge.
+
+### Also corrected
+
+The late direction changes — terrain-shipped borders, and consent derived from
+airfields — reached the code and the design notes but not the inline docs. Nine
+places still said the feature needs a campaign to author zones (including the
+Settings description and the plugin-options text the host reads), the module
+docstring still said "three postures" and described overflight as authored, and
+`IntotheHornetsNest.yaml` pointed at a block deleted earlier in the branch. This
+is the failure mode CLAUDE.md's step 7 exists for: the feature's own faces were
+updated, the notes that merely mention it were not.
 
 ## Deferred (not built, not promised)
 
@@ -725,6 +803,6 @@ Target architecture, to be built after the national-postures research lands:
 
 ## In-game passes owed
 
-**B100** (the player ladder end to end) and **B101** (AI shadowed only, plus the
+**B106** (the player ladder end to end) and **B107** (AI shadowed only, plus the
 accepted-risk watch: how often the intruder's own side kills the shadower before
 escalation). Full setup, pass criteria and fail signatures are on those checklist rows.

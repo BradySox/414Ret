@@ -14,20 +14,31 @@ repeat it only creates something that can go stale -- and deriving it means a
 country flips the turn its field changes hands. ``posture:`` overrides the
 derivation for the case base-ownership gets wrong.
 
-The three postures and what each means to a pilot:
+The four postures and what each means to a pilot:
 
-* ``neutral`` -- genuinely out of the war. Whether it lets you *through* is a
-  second, authored fact (``overflight``), because alignment does not decide it:
-  in 2006 Turkmenistan permitted coalition transit and Iran did not, and both
-  were neutral. A neutral that refuses transit defends its airspace -- cross
-  below the floor and a §96 alert flight shadows, warns, and engages a player
-  who presses. One that permits it is drawn and nothing more.
+* ``neutral`` -- genuinely out of the war: no coalition holds an airfield
+  inside it. It defends its airspace -- cross the border and a §96 alert flight
+  shadows, warns, and engages a player who presses. A neutral that can field no
+  interceptor (DCS models no Turkmenistan; Cyprus and Armenia have no entry in
+  the dated table) is drawn and toothless, on the map as well as in the
+  mission.
 * ``blue`` -- hosts your side's fields. Overflight is allowed; the border is
   drawn and nothing enforces it.
 * ``red`` -- hosts the enemy's fields. Not a third party, so it gets no §96
   flight of its own; instead its polygon is handed to **§1's QRA dispatcher as
   a RED accept zone**, so the enemy's existing alert fighters defend it. One
   interception system over that ground, not two.
+* ``contested`` -- both sides hold airfields inside it. Neither side's claim is
+  the truth about it, so §96 never enforces it and neither side's QRA claims
+  it.
+
+**Whether a country lets you through is derived from the same airfields** (DM
+call, 2026-08-26): a country you fly from has plainly let you in, one both
+sides fly from lets both through, and one you have no presence in has not. The
+dated posture table used to answer this and no longer does -- it made consent a
+fact about the calendar rather than about the campaign in front of you. It
+survives as the source of each country's era-correct airframe, which nothing
+else can supply. ``overflight:`` still overrides outright.
 
 Only ``neutral`` zones need an ``aircraft`` and an origin, because only they
 spawn anything. That is also what lets a nation DCS does not model be drawn at
@@ -75,12 +86,12 @@ class NeutralBorderZone:
     country: str
     #: pydcs plane id for the alert fighters (vanilla only). Neutral only.
     aircraft: str | None = None
-    #: Author override for the altitude below which a crossing trips, or None
-    #: to derive it. **A floor is not a universal rule** (DM call, 2026-08-25):
-    #: it means "high transit is tolerated", which is true of a country that
-    #: merely dislikes you and false of one that is closed. Derived, only a
-    #: `contested` posture gets one; `closed` and `hostile` intercept at any
-    #: altitude, because inventing a safe height there is inventing a sanctuary.
+    #: Altitude below which a crossing trips, or None for any altitude.
+    #: **A floor is not a universal rule** (DM call, 2026-08-25): it means "high
+    #: transit is tolerated", which is a judgement no fact on the map supports,
+    #: so it is authored only -- it used to come from the posture table's
+    #: `contested` bucket and went with it. None is the normal case, and it
+    #: means no sanctuary at any height.
     floor_ft: Optional[int] = None
     #: Author an SA-6 point-defense battery, cloned on player escalation only.
     sam: bool = False
@@ -94,12 +105,9 @@ class NeutralBorderZone:
     spawn_alt_ft: int = DEFAULT_SPAWN_ALT_FT
     #: Author override for the derived alignment, or None to derive it.
     posture_override: str | None = None
-    #: Author override for transit consent, or None to resolve it from the
-    #: dated posture table. Alignment says whose side a country is on; this says
-    #: whether an uninvolved one lets you through, which alignment cannot decide
-    #: -- in 2006 Turkmenistan permitted coalition transit and Iran did not, and
-    #: both were neutral. Resolved per side, so a country may be open to one
-    #: bloc and closed to the other. Meaningless on an aligned zone.
+    #: Author override for transit consent, or None to derive it from the
+    #: airfields inside the border (see ``permits``). Resolved per side, so a
+    #: country may be open to one bloc and closed to the other.
     overflight_override: Optional[bool] = None
     #: Border polygon as terrain XY pairs (pydcs Point.x/.y = DCS x/z), closed
     #: implicitly (last vertex connects to first).
@@ -240,6 +248,28 @@ class NeutralBorderZone:
         return self.posture_in(theater) == NEUTRAL and not self.permits(
             theater, is_blue
         )
+
+    def can_field_an_interceptor(self, day: Any) -> bool:
+        """Could this country actually put a fighter up, on this date?
+
+        A border that enforces needs somewhere to launch from and an airframe
+        the era allows. 14 of the shipped zones have neither -- DCS models no
+        Turkmenistan, and Cyprus, Armenia and Azerbaijan have no entry in the
+        dated table -- so they are drawn and toothless.
+
+        Asked here rather than in each consumer because the generator and the
+        planning map both need it and used to answer it separately: the map
+        drew Cyprus as "closed to you at any altitude" while the mission it
+        generated let you fly straight through. Promising an interception the
+        mission cannot deliver is worse than drawing no line at all.
+        """
+        if self.airfield is None and self.spawn is None:
+            return False
+        if self.aircraft is not None:
+            return True
+        from game.theater.nationalpostures import aircraft_for
+
+        return aircraft_for(self.country, day) is not None
 
     def origin_label(self, posture: str, enforced: bool = True) -> str:
         """What the map tooltip calls this border's meaning."""

@@ -2,7 +2,7 @@
 -- Neutral-faction border defense (§96) -- a neutral country's airspace, defended.
 --
 -- Reads dcsRetribution.neutralBorder (emitted only when neutral_border_defense is on and the
--- campaign authored zones the generator could build; inert otherwise). Design + decisions:
+-- generator could build the map's zones; inert otherwise). Design + decisions:
 -- docs/dev/design/414th-neutral-border-defense-notes.md. Constraints a reader could undo:
 --   * The shadow spawns on the intruder's OPPOSING coalition (SPAWN:InitCountry/InitCoalition)
 --     because a true-neutral unit cannot fire, ever -- do not "fix" the spawn to neutral.
@@ -636,8 +636,12 @@ local function warn(state, intruder_group)
     if state.is_player then
         -- A country that grants no safe altitude must not be radioed as though
         -- climbing would fix it. A floor is authored by the campaign only.
-        local floor = (state.side == coalition.side.BLUE)
-            and zone.floor_blue_m or zone.floor_red_m
+        -- NOT `cond and a or b`: a nil floor is the normal case (no safe
+        -- altitude), and that idiom falls through to the other side's floor.
+        local floor = zone.floor_red_m
+        if state.side == coalition.side.BLUE then
+            floor = zone.floor_blue_m
+        end
         local msg
         if floor then
             msg = string.format(
@@ -684,7 +688,13 @@ local function scan_group(group, side, now)
         local permitted = is_blue and zone.permits_blue
             or (side == coalition.side.RED) and zone.permits_red
         -- No floor for this side means no sanctuary: any altitude trips it.
-        local floor = is_blue and zone.floor_blue_m or zone.floor_red_m
+        -- Written long-hand deliberately: `is_blue and floor_blue_m or
+        -- floor_red_m` reads the RED floor whenever blue's is nil, which is
+        -- exactly the no-floor case this line exists to handle.
+        local floor = zone.floor_red_m
+        if is_blue then
+            floor = zone.floor_blue_m
+        end
         local below = (floor == nil) or (p.y < floor)
         if zone.enforces
             and not permitted
@@ -763,6 +773,10 @@ function event_handler:onEvent(event)
                 return
             end
             local state = intruders[grp:getName() or ""]
+            -- `warned` is required here and deliberately NOT on the HIT branch
+            -- below: a bomb dropped before they have said anything is a strike
+            -- that happens to be inside the border, but shooting at the flight
+            -- shadowing you is unambiguous whenever it happens.
             if state and state.warned and not state.escalated and state.is_player then
                 escalate(state, grp)
             end

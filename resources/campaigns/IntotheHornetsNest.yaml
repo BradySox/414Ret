@@ -22,9 +22,11 @@ settings:
   # jammer, which restores accuracy at once. Runs via the 'GPS jamming' LUA plugin, preseeded
   # below -- the setting does NOTHING without it.
   gps_jamming: true
-  # §96 bordering-nation airspace: Lebanon's border drawn (it derives
-  # red-aligned -- see the block below). Both gates preseeded -- the setting
-  # does nothing without the plugin.
+  # §96 bordering-nation airspace. No block here: the campaign authors no
+  # borders, so it picks up the shipped Syria-terrain set (every country on the
+  # map), and each one's alignment is derived from who holds the airfields
+  # inside it. Both gates preseeded -- the setting does nothing without the
+  # plugin.
   neutral_border_defense: true
   plugins:
     gpsjamming: true            # §86 runtime -- the setting does nothing without it

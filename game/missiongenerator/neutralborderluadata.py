@@ -1,6 +1,6 @@
 """Neutral border defense -> Lua config bridge (``dcsRetribution.neutralBorder``).
 
-§96: campaign-authored neutral countries defend their own airspace. The
+§96: a country not in the war defends its own airspace. The
 generator (``NeutralBorderGenerator``) builds late-activation alert templates at
 each neutral field and records what it actually built here; this module only
 serializes that record. A zone whose templates could not be built never reaches
@@ -41,9 +41,9 @@ class NeutralBorderLuaZone:
     #: colour family. Only a neutral that refuses transit carries templates and
     #: is scanned; everything else is map information.
     posture: str = "neutral"
-    #: Per-side transit consent, resolved from the campaign date against the
-    #: posture table (or the campaign's override). A country may be open to one
-    #: bloc and closed to the other, so this is two flags, not one.
+    #: Per-side transit consent, derived from the airfields inside the border
+    #: (or the campaign's override). A country may be open to one bloc and
+    #: closed to the other, so this is two flags, not one.
     overflight_blue: bool = False
     overflight_red: bool = False
     #: Exact .miz group name of the late-activation fighter template.

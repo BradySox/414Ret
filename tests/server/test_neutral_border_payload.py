@@ -96,3 +96,49 @@ def test_theater_without_the_attribute_is_tolerated() -> None:
         theater=SimpleNamespace(terrain=Syria()),
     )
     assert NeutralBorderJs.all_in_game(game) == []  # type: ignore[arg-type]
+
+
+# -- the map must not promise an interception the mission will not fly ----------
+
+
+def _toothless_zone() -> NeutralBorderZone:
+    """A neutral with an origin but no airframe: DCS models no Turkmenistan, and
+    Cyprus, Armenia, Azerbaijan and Argentina have no entry in the dated table."""
+    zone = NeutralBorderZone.from_yaml(
+        {
+            "country": "Turkmenistan",
+            "airfield": "Rayak",
+            "border": [
+                [-37713, 38996],
+                [-211351, -80947],
+                [-217426, -55276],
+                [-44380, 42821],
+            ],
+        }
+    )
+    assert zone is not None
+    return zone
+
+
+def test_a_country_that_cannot_launch_is_not_drawn_as_closed() -> None:
+    """The generator degrades it to drawn-and-toothless, so the map has to agree.
+
+    It did not until 2026-08-27: the map computed enforcement from posture and
+    consent alone and never asked whether the country could put a fighter up.
+    Measured across the shipped terrains, 14 zones were drawn "closed to you at
+    any altitude" over a mission that let you fly straight through them --
+    Cyprus and Iraq on Syria, Armenia and Azerbaijan on Caucasus. The feature
+    exists to be planned against, so overstating the threat is the expensive
+    direction of wrong: you route around nothing and stop trusting the layer.
+    """
+    borders = NeutralBorderJs.all_in_game(_game(zones=[_toothless_zone()]))
+    assert len(borders) == 1
+    assert borders[0].overflight is True, "a country that cannot launch read closed"
+    assert "permitted" in borders[0].airfield
+
+
+def test_a_country_that_can_launch_is_still_drawn_as_closed() -> None:
+    """The control: the fix must not open every border it touches."""
+    borders = NeutralBorderJs.all_in_game(_game())
+    assert len(borders) == 1
+    assert borders[0].overflight is False, "a defended border was opened"

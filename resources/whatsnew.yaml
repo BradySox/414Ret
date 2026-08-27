@@ -13,6 +13,23 @@
 # changes sharing a date keep the order written here.
 
 entries:
+  - date: 2026-08-27
+    title: A border that cannot intercept you no longer says it will
+    change: >-
+      A country only defends its airspace if it can actually put a fighter up,
+      and some cannot -- DCS models no Turkmenistan at all, and Cyprus, Armenia,
+      Azerbaijan and Argentina have no aircraft on record for the era. The
+      mission always knew that and let you fly through them. The planning map
+      did not, and drew them closed, so on a Caucasus campaign you would route
+      the long way around Armenia for nothing. The map now agrees with the
+      mission: 14 countries across six maps that read closed are drawn as
+      passable, because that is what they are.
+    watch: >-
+      Hover Armenia or Azerbaijan on a Caucasus campaign, or Cyprus on a Syria
+      one. They should read as overflight permitted, not "closed to you at any
+      altitude". Any country still drawn closed should be one that really does
+      come up after you.
+    row: B106
   - date: 2026-08-26
     title: If we do not fly from it, do not fly over it
     change: >-
@@ -29,7 +46,7 @@ entries:
       Hover a country on the map layer. If your side has an airbase inside it,
       it reads friendly; if nobody does, it is defended. It should match what
       you can see on the map with no reference to the year.
-    row: B100
+    row: B106
   - date: 2026-08-26
     title: A country you are both fighting over is grey now
     change: >-
@@ -44,7 +61,7 @@ entries:
       Open the map layer on a Kola campaign. Norway and Finland grey, Sweden
       blue, both halves of Russia red -- and nothing filled solid unless it is a
       country that is not in the war at all.
-    row: B100
+    row: B106
   - date: 2026-08-26
     title: Borders follow the coastline, and neighbours share one line
     change: >-
@@ -61,7 +78,7 @@ entries:
       On Kola, check that Norway's border follows the fjords instead of cutting
       straight across them, and that where two countries meet you see one line
       rather than two running side by side.
-    row: B100
+    row: B106
   - date: 2026-08-26
     title: The map draws the country the war is in
     change: >-
@@ -78,7 +95,7 @@ entries:
       layer. Iraq (or Iran) should now be outlined, and the only strongly shaded
       country should be one that is not in the war and refuses you transit.
       Borders already in a save keep the set they were rolled with.
-    row: B100
+    row: B106
   - date: 2026-08-26
     title: Neutral interceptors can actually reach you
     change: >-
@@ -92,7 +109,7 @@ entries:
     watch: >-
       Cross a defended border and watch your RWR. A pair should show up inside
       a couple of minutes and sit with you rather than trailing far behind.
-    row: B100
+    row: B106
   - date: 2026-08-25
     title: Every campaign gets its neighbours, with no setup
     change: >-
@@ -109,7 +126,7 @@ entries:
       and tick the Neutral airspace layer. On a 2006 Afghanistan campaign you
       should see Iran, Uzbekistan and India shaded (they will intercept you) and
       Pakistan, Turkmenistan and Tajikistan faint (transit permitted).
-    row: B100
+    row: B106
   - date: 2026-08-25
     title: The nations around the war are on the map
     change: >-
@@ -130,7 +147,7 @@ entries:
       Asian neighbours in faint mint you may overfly. Then cut a corner into
       Pakistan and hold -- warned in ~40 s, a MiG-21 pair on your enemy's IFF,
       and they go home if you leave promptly.
-    row: B100
+    row: B106
   - date: 2026-08-24
     title: The carrier corridor over Pakistan
     change: >-
@@ -148,7 +165,7 @@ entries:
       blocks with the gap between them. Plan a carrier sortie to Farah and see
       the direct line clip the western block; then drop a waypoint around
       30.5N 65.0E and watch it go clean.
-    row: B100
+    row: B106
   - date: 2026-08-26
     title: Apache data cartridge + the Viper's ROE tab filled in
     change: >-

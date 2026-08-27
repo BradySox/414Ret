@@ -178,8 +178,9 @@ class NeutralBorderJs(BaseModel):
     The DCS F10 map draws this at runtime, but by then you are already in the
     cockpit -- the border has to be visible while you are *planning* the route,
     which is the only time you can choose to route around it. Emitted only when
-    ``neutral_border_defense`` is on and the campaign authored zones (the
-    minefields pattern); empty otherwise, which hides the layer.
+    ``neutral_border_defense`` is on and the theater carries zones (the
+    minefields pattern); empty otherwise, which hides the layer. Borders ship
+    per terrain, so that is every real-world map, authored or not.
 
     Not fogged: a national border is public knowledge, and the whole point is
     that the player can see the line they are choosing to cross.
@@ -203,11 +204,23 @@ class NeutralBorderJs(BaseModel):
     def all_in_game(game: Game) -> list[NeutralBorderJs]:
         if not getattr(game.settings, "neutral_border_defense", False):
             return []
+        from game.theater.neutralborder import NEUTRAL
+
         zones = getattr(game.theater, "neutral_border_zones", [])
         borders = []
         for zone in zones:
             posture = zone.posture_in(game.theater)
             permits_blue = zone.permits(game.theater, True)
+            # A border only bites if the country can actually put a fighter up.
+            # The generator degrades a neutral that cannot to drawn-and-toothless,
+            # and this map has to agree with the mission it is planning: 14 of the
+            # shipped zones have no era airframe, so Cyprus and Armenia were drawn
+            # "closed to you at any altitude" over a mission that let you fly
+            # straight through them.
+            if posture == NEUTRAL and not zone.can_field_an_interceptor(
+                game.current_day
+            ):
+                permits_blue = True
             ring = [
                 LeafletPoint.from_latlng(Point(x, y, game.theater.terrain).latlng())
                 for x, y in zone.border

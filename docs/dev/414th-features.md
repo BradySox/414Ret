@@ -10217,7 +10217,12 @@ ROE, and radio-warns; a player who stays past the engage timer, releases a weapo
 inside, or fires on the shadower is engaged — and the SA-6 battery clones in awake.
 AI intruders are shadowed but never engaged. A red-aligned nation gets no §96 flight:
 its polygon joins §1's QRA accept zones, so the enemy's existing interceptors defend
-it. Colours: red family / blue family / APP-6 green, shading = enforcement. Design +
+it. A contested country — both sides holding airfields inside it — is enforced by
+nobody and claimed by neither QRA. A neutral that can field no interceptor (no era
+airframe, or no airfield/spawn) is drawn toothless; `can_field_an_interceptor` is
+asked by the generator **and** by the web map, which used to disagree with it on 14
+of the shipped zones and draw Cyprus closed over a mission you could fly through.
+Colours: red / blue / contested grey / neutral mint, shading = enforcement. Design +
 the session's decisions: `docs/dev/design/414th-neutral-border-defense-notes.md`
 (incl. the DECIDED-not-built automagic direction and the national-postures research
 brief).
@@ -10382,5 +10387,5 @@ player is ever shot at.
   yaml parsing never raises. `game/missiongenerator/tests/test_neutralborder_luadata.py`
   — the emitter contract.
 
-**In-game pass owed:** B100 (the player ladder end to end) and B101 (AI shadowed only —
+**In-game pass owed:** B106 (the player ladder end to end) and B107 (AI shadowed only —
 and how often the intruder's own side kills the shadower, the accepted-risk watch).

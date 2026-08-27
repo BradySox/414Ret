@@ -1945,6 +1945,10 @@ class AirbaseReconPage(_RecordingPage):
 # Dispatcher
 # ---------------------------------------------------------------------------
 
+#: TARPS is here for the obvious reason and was missing until 2026-08-26: the
+#: recon bird rides the strike package and shares its target, so the one pilot
+#: whose whole sortie is imagery was the only one on the ATO without the target
+#: card. Its aimpoint list doubles as the shot list.
 _FLIGHT_TYPES_WITH_RECON = frozenset(
     {
         FlightType.STRIKE,
@@ -1956,6 +1960,7 @@ _FLIGHT_TYPES_WITH_RECON = frozenset(
         FlightType.OCA_RUNWAY,
         FlightType.ANTISHIP,
         FlightType.ARMED_RECON,
+        FlightType.TARPS,
     }
 )
 

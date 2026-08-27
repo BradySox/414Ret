@@ -116,14 +116,58 @@ reason to be on.
 **Size:** medium, and it is the only candidate that is purely additive — it can never
 conflict with the reveal rule because it never writes campaign state.
 
+### C.1 — the recon bird gets the target card — **BUILT 2026-08-26**
+
+**The hole nobody had noticed.** `_FLIGHT_TYPES_WITH_RECON`
+(`kneeboard_recon/pages.py`) held nine air-to-ground types and **not `TARPS`**. The
+recon bird rides the strike package and shares its target, so it reached the
+dispatcher with everything a page needs — it was simply never in the set. The one
+pilot whose entire sortie is imagery was the only member of the package flying
+without the target card. Its aimpoint list doubles as the shot list.
+
+One line plus its contract test. The contract test's docstring cited a
+"Spec design doc table" in `414th-tars-recon-notes.md`, **deleted 2026-08-20 (#922)** —
+a dead citation, now replaced with the rule stated in place and a pointer here.
+
+**Why this became worth doing on 2026-08-26.** The DCS patch reworked TARPS: a
+*significantly* reduced performance cost, pilot-operable recording (`hold Store
+Release`, plus a Jester submenu) so it is a single-seat sortie, the KA-99 panoramic
+camera, and an "intel analysis department" that circles and describes units in the
+developed photos. The imagery itself is **not script-reachable** — it lives in
+`F14-Avionics.dll` and renders to a cockpit indicator — which is precisely why C is
+the right shape: we cannot consume DCS's product, but we can hand the same pilot our
+own card for the same pass. Full reading in
+[414th-dcs-update-2026-08-26-notes.md](414th-dcs-update-2026-08-26-notes.md) §6.3.
+
+### C.2 — the remaining half, NOT built
+
+C as written implies the card is recon's *output* — that flying a pass is what earns
+the detailed card for a later strike. C.1 does not do that: every strike flight still
+gets its own card whether or not anyone flew recon, so recon's job is still not
+*exclusive*.
+
+Making it exclusive needs a per-target "last photographed" ledger, a save migration,
+and a decision that taking the card away from an un-scouted strike is an improvement
+rather than a nerf. **That is a DM call, not an implementation detail** — and it is
+the point at which C stops being purely additive, because withholding a page from a
+strike pilot is a behaviour change even though it never touches the fog.
+
+`generate_target_recon_kneeboard` stays **default off**: the tile-alignment fix of
+2026-07-18 is still unflown (checklist **H15**/**H16**). Those rows are now worth
+more than they were — they gate the whole of C.
+
 ## Recommendation
 
 **A first, on its own** — done. It was small, it fixed a live hole rather than inventing a
 mechanic, and it gives recon a job that is impossible to confuse with scout-to-reveal: it only
 reaches sites that are not on the map at all.
 
-B and C are both defensible follow-ons. C composes with A cleanly; B is the largest and the
-one most likely to feel like a lag to a player even though it technically is not.
+**C.1 followed, 2026-08-26** — same character: a live hole, not a new mechanic. The
+2026-08-26 TARPS rework is what made it worth doing.
+
+C.2 and B remain open. C.2 is the half that makes recon's job exclusive and is a DM
+call; B is the largest and the one most likely to feel like a lag to a player even
+though it technically is not.
 
 ## See also
 

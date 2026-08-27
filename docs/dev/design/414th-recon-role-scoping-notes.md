@@ -139,22 +139,50 @@ the right shape: we cannot consume DCS's product, but we can hand the same pilot
 own card for the same pass. Full reading in
 [414th-dcs-update-2026-08-26-notes.md](414th-dcs-update-2026-08-26-notes.md) §6.3.
 
-### C.2 — the remaining half, NOT built
+### C.2 — WITHDRAWN as written; the fog gate is what it actually was
 
-C as written implies the card is recon's *output* — that flying a pass is what earns
-the detailed card for a later strike. C.1 does not do that: every strike flight still
-gets its own card whether or not anyone flew recon, so recon's job is still not
-*exclusive*.
+**C.2 was wrong, and it was written here on 2026-08-26 by the same session that
+built C.1.** It said the card should become recon's *output* — that flying a pass
+earns the detailed card for a later strike. That is scout-to-reveal in a kneeboard
+costume, and **the constraint section at the top of this very note forbids it**:
+recon "cannot reveal an un-engaged site's composition — that is 'hidden until
+scouted', the rule the rework removed". Under §3 there is no room for recon to grant
+composition, so there was never a legal version of C.2 to build. Do not re-propose it.
 
-Making it exclusive needs a per-target "last photographed" ledger, a save migration,
-and a decision that taking the card away from an un-scouted strike is an improvement
-rather than a nerf. **That is a DM call, not an implementation detail** — and it is
-the point at which C stops being purely additive, because withholding a page from a
-strike pilot is a behaviour change even though it never touches the fog.
+**What was really there was a fog leak, and it is now fixed.** The recon pages read
+enemy state through no gate at all — `grep` found zero references to `known_for`,
+`hidden_from` or `visibility_for` across all 17 modules:
+
+| Site | Handed over ungated |
+|---|---|
+| `DetailReconPage._build_aimpoints` | exact unit positions, type descriptions, footprints, alive/dead state |
+| `OverviewReconPage._nearby_threats` | `max_threat_range()`, `max_detection_range()` and true position for every enemy TGO in the corridor |
+
+The canonical contract is `game/server/tgos/models.py` `TgoJs.for_tgo`, which
+withholds exactly those fields for an un-engaged site **and jitters the position**.
+So a strike fragged at a site nobody had touched printed its composition and accurate
+rings, while the map beside it showed a jittered circle and nothing else.
+
+Both now gate on `_known_to_blue` (a thin wrapper over `known_for(Player.BLUE)`,
+tolerant of non-fogged targets like a ControlPoint or FrontLine). Two tests pin it and
+were checked to **fail without the gate**, which is the only reason to trust them —
+every pre-existing test used `MagicMock` targets that read as "known" and passed
+unchanged either way.
+
+**One deliberate asymmetry, recorded so it is not read as an oversight.** An
+un-engaged site is dropped from the overview entirely rather than drawn ring-less.
+The map can show a bare contact because it jitters the position; this page has no
+jitter, so a ring-less marker at the true coordinate would still leak a location the
+map conceals. The cost is that an unknown threat is absent rather than shown as an
+unranged contact — under-showing is the safe direction for a fog fix.
+
+Not a nerf, either: nothing was taken from a player who was entitled to it. The
+un-engaged card is now sparse **because the fog says so**, which is the same reason
+the map is.
 
 `generate_target_recon_kneeboard` stays **default off**: the tile-alignment fix of
-2026-07-18 is still unflown (checklist **H15**/**H16**). Those rows are now worth
-more than they were — they gate the whole of C.
+2026-07-18 is still unflown (checklist **H15**/**H16**). Those rows gate the whole of
+C — and this leak is why the setting could not have come on before now regardless.
 
 ## Recommendation
 
@@ -165,9 +193,13 @@ reaches sites that are not on the map at all.
 **C.1 followed, 2026-08-26** — same character: a live hole, not a new mechanic. The
 2026-08-26 TARPS rework is what made it worth doing.
 
-C.2 and B remain open. C.2 is the half that makes recon's job exclusive and is a DM
-call; B is the largest and the one most likely to feel like a lag to a player even
-though it technically is not.
+**C.2 is withdrawn** — it was never legal under §3, and the fog gate is what it was
+actually pointing at. B remains open, and is the largest and the one most likely to
+feel like a lag to a player even though it technically is not.
+
+**Recon's job is therefore settled at A + C.1**: it finds what is hidden outright
+(command posts), and its own pilot carries the target card. Anything more requires
+changing §3 itself, which is a DM decision and not a recon decision.
 
 ## See also
 

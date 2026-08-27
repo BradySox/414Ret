@@ -494,9 +494,19 @@ def test_dispatcher_includes_armed_recon(
 def test_dispatcher_flight_type_contract_matches_spec() -> None:
     """Locks the recon-flight-type contract against accidental drift.
 
-    Spec design doc table (Per-flight-type behaviour): STRIKE, BAI, CAS, SEAD,
-    DEAD, OCA_AIRCRAFT, OCA_RUNWAY, ANTISHIP, ARMED_RECON get recon pages;
-    CAP/escort/sweep/awacs/tanker/transport/ferry do not.
+    Every flight whose sortie is *about* a specific ground target gets the card:
+    the strike family, ARMED_RECON, and TARPS. Pure air-to-air, support and
+    transport types do not — they have no package target to draw.
+
+    TARPS was added 2026-08-26. It had been absent since the page set was
+    written, which left the one pilot whose entire sortie is imagery as the only
+    member of a strike package without the target card.
+
+    The docstring used to cite a "Spec design doc table (Per-flight-type
+    behaviour)" in ``414th-tars-recon-notes.md``. That note was deleted
+    2026-08-20 (#922) and the citation was dead, so the rule is stated here
+    instead; the live owner of the question is
+    ``docs/dev/design/414th-recon-role-scoping-notes.md``.
     """
     from game.missiongenerator.kneeboard_recon.pages import _FLIGHT_TYPES_WITH_RECON
 
@@ -510,6 +520,7 @@ def test_dispatcher_flight_type_contract_matches_spec() -> None:
         FlightType.OCA_RUNWAY,
         FlightType.ANTISHIP,
         FlightType.ARMED_RECON,
+        FlightType.TARPS,
     }
     assert _FLIGHT_TYPES_WITH_RECON == frozenset(expected)
     # Sanity check: none of the support / patrol types are in the set.
@@ -1087,3 +1098,26 @@ def test_overview_threats_filtered_to_corridor(
     assert not any(
         "FAR" in s for s in page.last_text_log
     ), "far-away threat should be filtered out of the overview"
+
+
+def test_dispatcher_emits_recon_for_tarps(
+    stub_strike_flight: MagicMock,
+    stub_game: MagicMock,
+    stub_weather: MagicMock,
+) -> None:
+    """The recon bird gets the target card it is flying out to photograph.
+
+    TARPS rides the strike package and shares its target, so it reaches the
+    dispatcher with everything the page needs; it was simply absent from the
+    flight-type set until 2026-08-26. Its aimpoint list is the shot list.
+    """
+    stub_strike_flight.flight_type = FlightType.TARPS
+    pages = generate_recon_pages(
+        flight=stub_strike_flight,
+        game=stub_game,
+        weather=stub_weather,
+        extra_threat_search_m=0.0,
+    )
+    classes = [p.__class__.__name__ for p in pages]
+    assert "OverviewReconPage" in classes
+    assert "DetailReconPage" in classes

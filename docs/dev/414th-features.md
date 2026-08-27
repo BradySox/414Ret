@@ -2340,7 +2340,10 @@ defect that reached a build, most of them found by flying.
   `tests/test_aircraft_task_generation.py` walks every claimed pair (2,176) through the
   real `configure_task` and pins the Tu-160 degrade; its `TASK_MAPPING` mirrors
   `apply_to`'s dispatch — update both together.
-- **A CSAR flight the AI cannot fly took the whole turn down (fixed 2026-08-17).**
+- **A CSAR flight the AI cannot fly took the whole turn down (fixed 2026-08-17).** The quoted
+  message now reads `CSAR pickups are only usable by helicopters`, and since 2026-08-26 a
+  fixed-wing CSAR flight dispatches to `KingFlightPlan` and never reaches that raise at all —
+  the auto-planner gate below is what still keeps the King out of the ATO.
   `PlanningError: CSAR is only usable by helicopters` came out of
   `packagefulfiller.plan_mission` → `pass_turn` → the UI: the campaign could not be
   advanced at all (flown 2026-08-16, 5th test). The C-130J declares `CSAR` so the King can
@@ -2939,6 +2942,19 @@ Removed with §15 and replaced by upstream
 an **open PR, not merged** — the fork re-adopts its phases by hand (Phase 5 landed
 2026-08-17). Read the adoption log in `414th-csar-notes.md` before touching anything here,
 especially the hover height.
+
+### The King — fixed-wing CSAR (2026-08-26)
+
+The C-130J's yaml `CSAR: 5` made the "King" on-scene commander plannable, and
+`CsarFlightPlan.Builder` made it impossible: it raised for any non-helo, so the hand-fragged
+King died on "Could not create flight" alongside the auto-planned one the raise was written to
+stop. Fixed-wing CSAR now dispatches to `KingFlightPlan` (`game/ato/flightplans/king.py`), a
+`PatrollingFlightPlan` racetrack anchored on the survivor — 15 nm off on the away side, pushed
+clear of any ring the survivor sits inside. `CsarFlightPlan` stays helicopter-only and still
+raises; the King never reaches it. The auto-planner gates (`FlightType.requires_helicopter`,
+`Squadron.can_auto_assign_mission`) are untouched, so an AI King still cannot be fragged.
+Tests: `tests/ato/flightplans/test_king.py`. In-game pass owed: **B106**. Full rationale in
+`414th-csar-notes.md`.
 
 ## §23 — Per-squadron DCS country (nation-specific voiceovers)
 

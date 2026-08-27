@@ -17,6 +17,7 @@ from .dead import DeadFlightPlan
 from .escort import EscortFlightPlan
 from .ferry import FerryFlightPlan
 from .ibuilder import IBuilder
+from .king import KingFlightPlan
 from .ocaaircraft import OcaAircraftFlightPlan
 from .ocarunway import OcaRunwayFlightPlan
 from .packagerefueling import PackageRefuelingFlightPlan
@@ -38,6 +39,14 @@ class FlightPlanBuilderTypes:
     @staticmethod
     def for_flight(flight: Flight) -> Type[IBuilder[Any, Any]]:
         from game.theater import FrontLine
+
+        # A fixed-wing CSAR flight is the King: the on-scene commander, not the
+        # rescuer. CsarFlightPlan is helicopter-only by design (the DCS AI Land
+        # task is), so the King gets its own racetrack rather than a pickup it can
+        # never fly. Auto-planning never reaches here -- can_auto_assign_mission
+        # keeps the King off the planner; this path is the hand-fragged flight.
+        if flight.flight_type is FlightType.CSAR and not flight.is_helo:
+            return KingFlightPlan.builder_type()
 
         if flight.flight_type is FlightType.REFUELING:
             if flight.package.target.is_friendly(flight.squadron.player) or isinstance(

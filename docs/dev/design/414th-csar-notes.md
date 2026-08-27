@@ -33,6 +33,41 @@ Adoption log:
 | 2026-08-07 | head `9f7d5edc` | The whole feature (414Ret#805). Two defects found by reading and fixed on the way in: the survivor beacon named a file that exists nowhere in the tree, and the pickup waypoint briefed a hover above MOOSE's winch ceiling. |
 | 2026-08-17 | commit `82b3ab10` | Phase 5, in full. See below. |
 
+### The King — fixed-wing CSAR (2026-08-26)
+
+The C-130J carries an explicit `CSAR: 5` in its yaml so a player can fly the on-scene
+commander. Three places said that was supported — the yaml, `Squadron.can_auto_assign_mission`
+("the player may still frag one by hand") and `tests/test_csar.py` — and one made it
+impossible: `CsarFlightPlan.Builder.layout()` raised for any non-helo, which killed the
+hand-fragged King exactly as dead as an auto-planned one. The player got "Could not create
+flight" after picking their survivor, airframe and squadron, and the README had been
+advertising the role since 2026-08-07.
+
+Fixed-wing CSAR now dispatches to **`KingFlightPlan`** (`game/ato/flightplans/king.py`), a
+`PatrollingFlightPlan` racetrack. Same shape the C-130J's JAMMING task already flies — that
+task maps to `AewcFlightPlan` for the same reason.
+
+- **The dispatch is in `FlightPlanBuilderTypes.for_flight`**, an early return next to the
+  REFUELING one. `CsarFlightPlan` stays helicopter-only and still raises; the King simply
+  never reaches it. Nothing about upstream's helicopter rule was relaxed, which is what the
+  yaml's own comment demands.
+- **The auto-planner gate is untouched.** `FlightType.requires_helicopter` and
+  `can_auto_assign_mission` still keep the King off the planner, and `CSAR: 5` is still the
+  lowest CSAR number in the fleet. An AI-crewed King cannot finish a pickup and must never be
+  fragged for one; that was never the bug.
+- **Geometry.** The orbit anchors on the survivor: 15 nm off on the side away from the nearest
+  threat, closing to as little as 5 nm when the threat crowds it, and pushed to
+  `distance_to_boundary + 10 nm` when the survivor is inside a ring. Legs run tangential
+  (10 nm each side of centre) so the King holds one distance instead of driving in and out.
+  All four branches are pinned in `tests/ato/flightplans/test_king.py`.
+- **Constants are hardcoded, not settings.** The flight is hand-fragged, so the player who
+  wants a different orbit moves the waypoints.
+
+**Not verified in DCS — checklist B106.** The flight still spawns through
+`configure_transport` (main task `Transport`, ROE weapon-hold), and no headless test can say
+whether a Transport-tasked C-130 flies a `ControlledTask` racetrack. If it does not, the fix
+is a King-specific branch in `aircraftbehavior.py`, not a change to this plan.
+
 ### Phase 5 (upstream `82b3ab10`, adopted 2026-08-17)
 
 +680/−35 across 11 files, all of them files we already carried. Five behaviours:

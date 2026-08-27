@@ -119,7 +119,7 @@ Read before touching a campaign's `.yaml`, `.miz` or build tool.
   (**scoping only, nothing built** — what job recon gets now that engaging a site is the
   only reveal; also records the command-post hole the rework opened)
 - **CSAR** — `414th-csar-notes.md` (**the one CSAR doc**; supersedes the eight earlier
-  SCAR/CSAR notes, each bannered), `414th-scar-rescue-rework-notes.md`
+  SCAR/CSAR notes, all deleted 2026-08-20)
 - **COIN** — `414th-coin-insurgent-replenishment-notes.md`, `-reinfiltration-notes.md`
 - **Naval** — `414th-cruise-missile-raids-notes.md`, `414th-naval-magazines-notes.md`,
   `414th-carrier-deck-decor-notes.md`
@@ -475,7 +475,7 @@ Kept numbered so old notes and saves stay readable. Details and rationale in the
 | 13 | Flight Control ATC | Retired 2026-06-26 |
 | 20 | Drop-spawn map unit placement | Removed 2026-08-02 |
 | 15 | SCAR — RESCAP "Sandy" rescue escort | Removed 2026-08-07 — see §21 |
-| 21 | Combat SAR (fork implementation) | Removed 2026-08-07 — replaced by upstream dcs-retribution#929, which is **an OPEN PR, not merged** (zero reviews as of 2026-08-17). We re-adopt its phases by hand; Phase 5 landed 2026-08-17. See the adoption log in `414th-csar-notes.md` before touching the hover height |
+| 21 | Combat SAR (fork implementation) | Removed 2026-08-07 — replaced by upstream dcs-retribution#929, which is **an OPEN PR, not merged** (zero reviews as of 2026-08-17). We re-adopt its phases by hand; Phase 5 landed 2026-08-17. The C-130J "King" is fixed-wing CSAR and is **hand-fragged only** — it flies `KingFlightPlan`'s on-scene racetrack (2026-08-26); the auto-planner gate stays. See the adoption log in `414th-csar-notes.md` before touching the hover height |
 | 25 | Compact 3–4 page kneeboard deck | Retired 2026-07-05 |
 | 30 | Dedicated kneeboard cover page | Retired 2026-07-13 — new info folds into a stock page |
 | 31 | One-page Brief Sheet | Retired 2026-07-13 — BLUF and code words survived |

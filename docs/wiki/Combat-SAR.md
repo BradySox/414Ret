@@ -19,15 +19,24 @@ frags rescues on its own — you do not have to build the package by hand.
 
 ## The rescue flight
 
-CSAR is flown by a **helicopter**. There is no escort element and no on-scene commander built
-into the task; a fixed-wing aircraft cannot fly it, because the rescue lands at an unprepared
-site and the DCS AI `Land` task is helicopter-only.
+The pickup is flown by a **helicopter**. There is no escort element built into the task, and a
+fixed-wing aircraft cannot make the pickup: the rescue lands at an unprepared site, and the DCS
+AI `Land` task is helicopter-only.
 
 Eligible airframes: **CH-47D**, **CH-47Fbl1**, **CH-53E**, **Mi-8MT**, **SH-60B**, **UH-1H**,
-**UH-60A**, **UH-60L**. (The **C-130J-30** carries the task only so a human can fly the
-overhead role by hand; the planner will not build a rescue flight plan for it.)
+**UH-60A**, **UH-60L**.
 
 By default the auto-planner sends a **pair**. Turn on `csar_single_flight` to send one.
+
+### The King
+
+The **C-130J-30** flies CSAR as the on-scene commander. It holds a racetrack near the survivor —
+15 nm off on the side away from the nearest threat, and outside any SAM ring the survivor is
+sitting in — and never picks anyone up.
+
+Add it by hand: right-click the survivor, add the rescue helicopter, then add a second flight
+with the C-130J-30 on the CSAR task. The auto-planner will not frag one, because an AI King
+would orbit a survivor it can never collect.
 
 ---
 

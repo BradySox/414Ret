@@ -43,7 +43,8 @@ hand-buy only what you care about.
 
 - **TARPS** photo-recon — any TARPS-tagged airframe; the F-14 is the modern carrier of the role.
 - **JAMMING** standoff EW/ISR — a C-130J squadron.
-- **CSAR** pilot rescue — a helicopter squadron. Fixed-wing cannot fly it.
+- **CSAR** pilot rescue — a helicopter squadron makes the pickup; fixed-wing cannot. A C-130J
+  squadron can fly the *King* on-scene orbit, added to the package by hand.
 
 ---
 

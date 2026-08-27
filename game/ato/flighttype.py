@@ -132,13 +132,16 @@ class FlightType(Enum):
 
     @property
     def requires_helicopter(self) -> bool:
-        """Tasks whose flight plan a fixed-wing aircraft cannot fly at all.
+        """Tasks the AUTO-PLANNER must never hand to a fixed-wing squadron.
 
-        CSAR lands at an unprepared site and the DCS AI ``Land`` task is
-        helicopter-only, so ``CsarFlightPlan`` refuses to build for a fixed-wing
-        flight. Without this the auto-planner picks the C-130J -- which offers
-        CSAR for the player-flown King role -- and the PlanningError takes the
-        whole turn down with it (flown 2026-08-16, 5th test).
+        A CSAR pickup is an unprepared site and the DCS AI ``Land`` task is
+        helicopter-only, so an AI-crewed fixed-wing rescuer orbits the survivor
+        forever -- a silent failure with no error anywhere. The C-130J offers CSAR
+        for the player-flown King role, so without this the planner frags one
+        (flown 2026-08-16, 5th test).
+
+        Auto-planning only. A hand-fragged fixed-wing CSAR flight is supported and
+        flies ``KingFlightPlan``, the on-scene racetrack.
         """
         return self is FlightType.CSAR
 

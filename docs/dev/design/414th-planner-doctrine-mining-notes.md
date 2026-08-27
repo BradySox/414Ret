@@ -271,3 +271,58 @@ taken were unsound and have been withdrawn.
 **What row 3 did NOT ask.** It asked *how many* objectives the effort lands on, not
 *which*. If the real complaint is that the objectives chosen are the wrong ones, that is
 a different row with a different measurement, and this verdict says nothing about it.
+
+---
+
+## Suppression-first ordering — MEASURED AND REJECTED (2026-08-27)
+
+**The ask.** Make the auto-planner work in the order SEAD → DEAD → SEAD Sweep → BAI →
+Armed Recon → OCA → Strike → Air Assault, i.e. plan suppression first instead of last.
+
+**Two facts kill the literal form.** SEAD and SEAD Sweep are not objectives — there is no
+`PlanSead` primitive. `DegradeIads` plans `PlanDead`; SEAD and SEAD Sweep are proposed as
+`EscortType.Sead` inside other packages (`dead.py`, `antiship.py`, `cas.py`,
+`propose_common_escorts`). You cannot plan SEAD before DEAD; the SEAD flight exists only
+because a DEAD package asked for it.
+
+**`DegradeIads` is last on purpose, and it is load-bearing.**
+`TheaterState.threatening_air_defenses` is built empty and is populated by
+`target_area_preconditions_met`, which every offensive task calls as it evaluates a target.
+Planning suppression last means its reactive tier services the SAMs the other tasks just
+declared. Hoist it and that list is empty, so only the opportunistic tiers run.
+
+**Measured** — three real saves, BLUE re-planned via `initialize_turn`, same RNG seed.
+"Offensive" counts Strike/BAI/OCA/Armed Recon/Air Assault packages.
+
+| Save | Order | DEAD | Offensive |
+|---|---|---|---|
+| Syrian Shield t12 | stock | 5 | **7** |
+| | suppression first | 9 | **2** |
+| Vietnam 3 | stock | 4 | **4** |
+| | suppression first | 6 | **2** |
+| Persian Gulf t6 | stock | 0 | **5** |
+| | suppression first | 2 | **2** |
+
+Suppression roughly doubles and the strike package collapses. It is zero-sum: the HTN plans
+until airframes run out, so order **is** priority for a fixed pool. Two side results — the
+full 8-step sequence is indistinguishable from moving `DegradeIads` alone (every other
+position is inert), and the hoisted DEAD targets are a strict *superset* of stock's, so the
+cost is over-spending rather than mis-aiming.
+
+**A reserved floor was built and reverted the same day.** Holding airframes back from
+non-suppression tasking (`sead_aircraft_reserve`, gated in `can_auto_assign_mission`) does
+not redirect them — it strands them. Syrian Shield went to DEAD 4 / offensive 5 at
+`floor=2`, worse than stock on **both** axes, with total packages falling 22 → 19 → 15.
+Narrowing the reserve to fixed-wing DEAD-capable squadrons made Persian Gulf worse again
+(DEAD 0, offensive 4). Denying a strike an airframe does not make that airframe fly DEAD,
+because fulfilment also fails on range, base and package composition.
+
+**The real constraint is capacity, not priority.** Instrumented on the Persian Gulf save
+under stock order: `DegradeIads` offered **62** DEAD taskings against **22** correctly
+declared threats, and **all 61** fulfilment attempts failed for lack of aircraft — the
+Weasel squadron (77th FS F-16CM) is at zero available by the time suppression runs. You
+cannot re-slice a pie that is already fully eaten.
+
+**Do not re-run either experiment.** If suppression coverage is the goal, the levers are
+procurement (more DEAD-capable airframes) or fewer offensive objectives per turn — not
+ordering and not reservation. A future attempt needs a *new* mechanism, not a new order.

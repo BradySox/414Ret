@@ -484,24 +484,61 @@ issue**, so the freeze binds it — the 2026-08-20 issue-ledger exception does n
 cover it, and the 2026-08-25 §69 precedent says put it to the DM as a call rather
 than infer.
 
-### 6.3 F-14 TARPS
+### 6.3 F-14 TARPS — the largest opportunity in the patch
 
-The module reworked TARPS: photos are visible only after the flight ends, a KA-99
-panoramic camera was added, and an "intel analysis department" auto-circles units
-found in the imagery and writes descriptions.
+**Re-read against the published notes 2026-08-26 (DM's own paste).** The first draft
+of this section listed three of the eleven TARPS lines and called the rest a design
+seam. That undersold it: the three lines it skipped are the ones that decide whether
+the fork can field recon at all.
 
-The landing-gate matches §3's own shape — our recon cue is held until touchdown for
-the same reason. That is a convergence, not a conflict.
+The full TARPS block, and what each line costs or buys us:
 
-**The seam worth a call:** DCS's own TARPS now delivers real identification
-imagery, while §3's rule is that engaging a site is the only thing that reveals it
-and recon reveals nothing except a hidden command post within 3 NM. We also just
-rewrote every Threat Intel kneeboard row from "Fly TARPS to ID" to "Engage to ID".
-A pilot who flies a TARPS pass will now get pictures with circles on them that the
-campaign refuses to act on.
+| Patch line | Why it matters here |
+|---|---|
+| **"Significantly reduced performance impact"** | The barrier that actually mattered. Frame rate is a first-order constraint in this fork — Yankee Station measures 2-4x sim load and dense TIC sieges are a known sink. An expensive TARPS was an unfieldable TARPS. |
+| **"As pilot: hold Store Release button to record (or use Jester wheel)"** + a dedicated Jester submenu + TARPS on the Jester Wheel's new AG → Utilities menu | TARPS was RIO work. It is now a **single-seat sortie** — the difference between a squadron feature and one needing two humans in one jet. Directly relevant to §83 SP Pilot Mode. |
+| **KA-99 panoramic camera**, plus KS-87 FWD mode and a *decreased* photo interval | One pass covers materially more ground than the frame camera did. This is the line that bears on `TARPS_POD_RADIUS_NM` — see below. |
+| "Images are only visible only after finishing a flight" | The landing gate. Matches §3's own shape: our reveal is processed at debrief for the same reason. Convergence, not conflict. |
+| **"intel analysis department"** — circles units found, adds descriptions | DCS now produces an annotated identification product in the cockpit. |
+| "Fixed first photo being empty", exposure evening-out | Quality-of-life; nothing owed. |
 
-This is a design question, not a defect. Do not resolve it in code — §3's rework is
-recent, deliberate, and cost eight doc files to land.
+**The intel is NOT script-reachable.** Verified against the install: TARPS is
+`F14Avionics::TARPS` in `bin/F14-Avionics.dll`, rendering to the
+`ccTARPS_KS87` / `ccTARPS_KA99` cockpit indicators
+(`Cockpit/device_init.lua:202-203`). No file output, no export hook, nothing in
+Saved Games. **The campaign cannot read what a photo contains**, and any design that
+assumes otherwise is dead on arrival.
+
+**What this unlocks: candidate C in
+[414th-recon-role-scoping-notes.md](414th-recon-role-scoping-notes.md).** That note
+calls C "the only candidate that is purely additive — it can never conflict with the
+reveal rule because it never writes campaign state", and says its machinery already
+exists needing only "a reason to be on". The reason shipped in this patch, and the
+un-readability above is *why C is the right shape*: we cannot consume DCS's imagery,
+but we can put our own card in the same pilot's hands for the same pass. The two
+halves are complementary rather than redundant —
+
+- **our card** (`game/missiongenerator/kneeboard_recon/`, gated by
+  `generate_target_recon_kneeboard`, default off) is the planning half: aimpoints,
+  revetment layout, approach notes. *How to hit it.*
+- **DCS's photos** are the verification half: circled, described units, after
+  landing. *What was actually there.*
+
+**`TARPS_POD_RADIUS_NM = 3.0` is an orphan** (`game/sim/missionresultsprocessor.py:36`).
+Its own comment records that it was the deleted recon plugin's pod radius and that the
+command-post reveal "is the only thing that ever read it" — it was never sized against
+a camera. The KA-99 is a legitimate reason to revisit it. **Do not pick a new number
+from the patch notes**: they state no swath, and an unsourced figure is the failure
+mode the startup-times note exists to prevent. It needs a real spec or a flown
+measurement.
+
+**The §3 seam is sharper than the first draft said, and still not ours to resolve.**
+A pilot can now obtain identification solo and cheaply, and the Threat Intel kneeboard
+rows were rewritten from "Fly TARPS to ID" to "Engage to ID" in the same month. So the
+pilot gets circled pictures the campaign declines to act on. That is a design question
+for the DM — §3's rework is recent, deliberate, and cost eight doc files. **Do not
+resolve it in code.** Candidate C is deliberately the path that does not require
+resolving it.
 
 ## 7. Nothing owed
 

@@ -25,7 +25,7 @@ so the two docs don't drift.
 
 ## Outstanding rows at a glance
 
-78 rows need a live pass. Full detail is under each `###` heading below —
+79 rows need a live pass. Full detail is under each `###` heading below —
 search the row id. `☐` untested · `◐` flown but not under the conditions that
 stress it · `✗` fail signature reproduced in-game.
 
@@ -153,6 +153,7 @@ stress it · `✗` fail signature reproduced in-game.
 | B103 | BMP-3s in a firefight still fire like armour, not infantry | §9 TIC | ☐ |
 | B104 | The Viper's ROE tab declares the campaign's own sides | §74 | ☐ |
 | B105 | The Apache's cartridge loads: route, targets and the front line on the TSD | §74 | ☐ |
+| B106 | The C-130J King can be fragged into a rescue, and holds an orbit clear of the threat | CSAR | ☐ |
 
 ---
 
@@ -975,7 +976,7 @@ Needs a flight to confirm the fix end to end. The cheap version deliberately rep
 - **What CI cannot exercise:** the actual pick, in a wing that fields both a King and rescue helos.
 - **Setup:** a campaign whose wing has both a C-130J-30 squadron and at least one rescue-helo squadron. Create a survivor, pass the turn, read the ATO. ~20 min, no flying. **Also run the harder case: a survivor in range of the King's base but out of range of every helo** — that is the shape that crashed, and the correct outcome is now no CSAR package at all.
 - **Pass:** the CSAR package is crewed by a helo, or is absent. The King is never auto-fragged for CSAR. The turn passes.
-- **Fail signature:** an AI King fragged for the rescue — it will fly to the survivor, orbit, and never pick anyone up, so the rescue silently fails and the pilot goes MIA. Or the turn refuses to pass with `PlanningError: CSAR is only usable by helicopters`, which means the capability gate is not being consulted.
+- **Fail signature:** an AI King fragged for the rescue — it will fly to the survivor, orbit, and never pick anyone up, so the rescue silently fails and the pilot goes MIA. Or the turn refuses to pass with `PlanningError: CSAR pickups are only usable by helicopters`, which means the capability gate is not being consulted. (Since 2026-08-26 a fixed-wing CSAR flight dispatches to `KingFlightPlan` instead, so that raise would now mean the dispatch broke too — see B106.)
 
 ### B51 — The rescue package is not planned into threat it cannot survive · CSAR · ☑ VERIFIED
 
@@ -6525,3 +6526,38 @@ jet's setup regressed (radios still tune, weapons page sane).
   kts conversion. Compare one leg by hand: dist / (kts × 0.514).
 - **T-points sit on unengaged sites** — the recon fog leaked; that is a §3
   regression, not a DTC one (`known_enemy_threat_sites` gates on `known_for`).
+
+### B106 — The C-130J King can be fragged into a rescue, and holds an orbit clear of the threat · CSAR · ☐ UNTESTED
+
+A hand-fragged fixed-wing CSAR flight now builds `KingFlightPlan` (an on-scene
+racetrack) instead of raising "CSAR is only usable by helicopters". Nothing about
+this is exercised in DCS: the orbit geometry is pinned by
+`tests/ato/flightplans/test_king.py`, but the flight still spawns under
+`configure_transport` (main task `Transport`, ROE weapon-hold) and no test can say
+whether a Transport-tasked C-130 actually flies a ControlledTask racetrack.
+
+**Setup.** Any campaign with a downed pilot on the map. Right-click the survivor →
+add a helo CSAR flight (AI) → add a second flight, C-130J-30, task CSAR. Fly the
+King. ~25 min, and it closes G36/G33/H14 in the same mission if you crew the helo
+slot too.
+
+**Pass.** The flight creates without a dialog. The map draws a racetrack, not a
+line to the survivor. The orbit sits outside every drawn threat ring. Airborne, the
+jet reaches the racetrack and holds it for the on-station window rather than flying
+through and going home.
+
+**Fail signatures, and what each means:**
+
+- **"Could not create flight: CSAR pickups are only usable by helicopters"** — the
+  dispatch in `flightplanbuildertypes.py` stopped matching; the flight fell through
+  to `CsarFlightPlan`. Check `flight.is_helo` on the C-130J.
+- **The orbit is drawn inside a SAM ring** — `threat_zones.threatened()` read False
+  for a survivor who is in fact threatened, so the plan took the hold-off branch.
+  The geometry is pinned; the input is not.
+- **AI King flies to the racetrack and straight home** — `RaceTrackBuilder`
+  refused the plan (it requires a `PatrollingFlightPlan`) or `Transport` as the DCS
+  main task blocks a ControlledTask orbit. First one logs; the second does not, and
+  the fix would be a King-specific `configure_*` in `aircraftbehavior.py`.
+- **The orbit sits 80+ nm off** — the survivor is deep inside a large ring, so
+  `distance_to_threat + THREAT_BUFFER` is genuinely that far. Working as designed;
+  move the waypoints.

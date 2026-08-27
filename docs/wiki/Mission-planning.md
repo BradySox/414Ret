@@ -393,9 +393,10 @@ planning is aimed at the sites that actually warrant a deliberate package. See
 - **Purpose:** Recover a downed pilot and return them to a friendly field.
 - **Valid targets:** A downed (ejected) friendly pilot near the front line.
 - **Package role:** Lead. Planned as a pair by default; `csar_single_flight` sends one.
-- **Typical airframes:** Helicopters only — CH-47D/F, CH-53E, Mi-8MT, SH-60B, UH-1H, UH-60A/L. A
-  fixed-wing aircraft cannot fly it (the rescue lands at an unprepared site, and the DCS AI
-  `Land` task is helicopter-only).
+- **Typical airframes:** Helicopters make the pickup — CH-47D/F, CH-53E, Mi-8MT, SH-60B, UH-1H,
+  UH-60A/L. A fixed-wing aircraft cannot: the rescue lands at an unprepared site, and the DCS AI
+  `Land` task is helicopter-only. The **C-130J-30** flies the task as the *King* — an on-scene
+  orbit with no pickup — and has to be added to the package by hand.
 - **TOT meaning:** Start of the on-station / orbit window (patrol-start).
 - **Player technique:** Tune the briefed **260 kHz ADF** beacon before you start — it is the same
   channel for every survivor and it is on your kneeboard. Home the needle in, land or hold a low

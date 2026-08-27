@@ -110,8 +110,11 @@ class Builder(IBuilder[CsarFlightPlan, CsarLayout]):
     def layout(self) -> CsarLayout:
         # Helicopters only: the pickup is an unprepared site and the DCS AI Land
         # task is helicopter-only, so a fixed-wing CSAR flight would just orbit.
+        # Fixed-wing CSAR is not refused, it is routed elsewhere -- the King flies
+        # KingFlightPlan (an on-scene racetrack) and never reaches this builder.
+        # Reaching it means the dispatch in flightplanbuildertypes.py broke.
         if not self.flight.is_helo:
-            raise PlanningError("CSAR is only usable by helicopters")
+            raise PlanningError("CSAR pickups are only usable by helicopters")
 
         builder = WaypointBuilder(self.flight)
 

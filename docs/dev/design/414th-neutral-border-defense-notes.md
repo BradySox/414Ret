@@ -798,6 +798,43 @@ were the only helipad origins on any shipped map.
 `test_no_zone_launches_its_alert_flight_from_a_helipad` pins it across all eight
 terrains, and was confirmed to fail against the old file.
 
+### Air-spawn stations were standing off the map
+
+A clip box is bigger than the terrain it clips, so a country that only catches
+the map's edge gets a polygon whose *middle* is off the map. The station was
+`representative_point()` of that polygon, with no check that the map models
+anything there. Measured against each terrain's landmap:
+
+| Terrain | Country | Was, from modelled land | Airframe |
+|---|---|---|---|
+| Afghanistan | India | 272 km | Su-30 |
+| Caucasus | Turkey | 171 km | F-16C / F-4E |
+| Iraq | Jordan | 37 km | F-16A MLU |
+| Iraq | Turkey | 26 km | F-16C |
+
+All four scramble something, so all four would have tried to launch from there.
+`spawn_station` now intersects the border with the landmap's inclusion zones and
+takes the representative point of the largest piece; every station that can
+field an interceptor is on modelled land.
+
+**Calibrate before calling a point off-map.** The landmap's coastline is
+approximate: Novorossiysk and Anapa are real Caucasus airfields and read 0.2 km
+and 1.1 km *outside* the inclusion zones. A first pass flagged Falklands/Chile
+at 1.3 km as off-map; it was a coastal artifact, not a defect. Distance to the
+nearest land polygon is the discriminator, and the off-map signature is
+"in neither inclusion nor sea zones, and tens of km from land" -- the same
+reading a point in the Caspian gives.
+
+Caucasus/Azerbaijan's Nakhchivan piece stays off-map and is **correct as it
+stands**: the map models no land inside it to move to, and Azerbaijan has no
+airframe in any era, so it never launches. The tool says so on stderr rather
+than silently leaving a bad station.
+
+**Regeneration gotcha:** zone order follows the `--countries` order, so passing
+a different order rewrites the whole file for no semantic change. Take the order
+from the existing file's own zones, then the diff is the `spawn:` lines alone --
+which is also the check that the geometry did not move.
+
 ### The posture was derived twice per zone on every map poll
 
 Not a defect, but measured and worth taking: `permits()` called `posture_in()`

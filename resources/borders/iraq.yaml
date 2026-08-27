@@ -41,7 +41,7 @@ zones:
     ]
   # Saudi Arabia — 32 vertices
   - country: Saudi Arabia
-    spawn: [-459590, -211333]
+    spawn: [-624062, 127944]
     spawn_alt_ft: 20000
     border: [
       [-459773, 223511], [-469564, 312518], [-487378, 324802], [-507515, 327000],
@@ -55,7 +55,7 @@ zones:
     ]
   # Iran — 81 vertices
   - country: Iran
-    spawn: [-25492, 460371]
+    spawn: [32841, 413649]
     spawn_alt_ft: 20000
     border: [
       [430923, 53197], [446004, 55979], [464042, 35492], [499876, 36003],
@@ -82,7 +82,7 @@ zones:
     ]
   # Kuwait — 21 vertices
   - country: Kuwait
-    spawn: [-443908, 306377]
+    spawn: [-412774, 318660]
     spawn_alt_ft: 20000
     border: [
       [-373299, 403229], [-395687, 396816], [-413427, 377618], [-410781, 355711],
@@ -94,7 +94,7 @@ zones:
     ]
   # Turkey — 33 vertices
   - country: Turkey
-    spawn: [463668, -337038]
+    spawn: [417849, -417134]
     spawn_alt_ft: 20000
     border: [
       [429190, -163033], [443959, -162975], [449654, -175595], [437220, -197476],
@@ -108,7 +108,7 @@ zones:
     ]
   # Jordan — 10 vertices
   - country: Jordan
-    spawn: [-40600, -536823]
+    spawn: [-99710, -479178]
     spawn_alt_ft: 20000
     border: [
       [-107681, -474752], [-123774, -494230], [-145263, -591383], [-12375, -582651],
@@ -117,14 +117,14 @@ zones:
     ]
   # Bahrain — 4 vertices
   - country: Bahrain
-    spawn: [-779041, 626595]
+    spawn: [-778532, 626174]
     spawn_alt_ft: 20000
     border: [
       [-792222, 635788], [-792918, 619428], [-765909, 616184], [-755101, 634677]
     ]
   # Syria — 29 vertices
   - country: Syria
-    spawn: [236838, -417302]
+    spawn: [268437, -343294]
     spawn_alt_ft: 20000
     border: [
       [29951, -505532], [-12375, -582651], [419119, -552349], [427736, -529374],

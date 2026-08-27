@@ -37,7 +37,7 @@ zones:
     ]
   # Pakistan — 78 vertices
   - country: Pakistan
-    spawn: [-377528, 340614]
+    spawn: [-402988, 97708]
     spawn_alt_ft: 20000
     border: [
       [367356, 592436], [-492993, 675023], [-507295, 670909], [-538931, 619815],
@@ -63,7 +63,7 @@ zones:
     ]
   # Iran — 34 vertices
   - country: Iran
-    spawn: [-314236, -525815]
+    spawn: [204156, -476569]
     spawn_alt_ft: 20000
     border: [
       [-454596, -505608], [-508229, -459403], [-553107, -443463], [-595576, -410638],
@@ -78,7 +78,7 @@ zones:
     ]
   # Turkmenistan — 20 vertices
   - country: Turkmenistan
-    spawn: [273272, -312957]
+    spawn: [341175, -220925]
     spawn_alt_ft: 20000
     border: [
       [181742, -456492], [298568, -467024], [297795, -537805], [343604, -565823],
@@ -89,7 +89,7 @@ zones:
     ]
   # Uzbekistan — 7 vertices
   - country: Uzbekistan
-    spawn: [429684, 82144]
+    spawn: [410575, 101322]
     spawn_alt_ft: 20000
     border: [
       [380523, 14560], [452400, 19133], [459379, 164371], [406555, 129048],
@@ -97,7 +97,7 @@ zones:
     ]
   # Tajikistan (part 1) — 8 vertices
   - country: Tajikistan
-    spawn: [443712, 519091]
+    spawn: [420361, 503358]
     spawn_alt_ft: 20000
     border: [
       [478637, 427249], [493659, 578898], [415923, 587272], [382039, 560452],
@@ -105,7 +105,7 @@ zones:
     ]
   # Tajikistan (part 2) — 10 vertices
   - country: Tajikistan
-    spawn: [397617, 200253]
+    spawn: [423082, 249465]
     spawn_alt_ft: 20000
     border: [
       [365031, 124774], [406555, 129048], [459379, 164371], [471577, 343567],
@@ -114,7 +114,7 @@ zones:
     ]
   # India — 24 vertices
   - country: India
-    spawn: [-784166, 539804]
+    spawn: [-510824, 667110]
     spawn_alt_ft: 20000
     border: [
       [-492993, 675023], [-1068954, 720448], [-1093458, 285249], [-1069555, 295391],

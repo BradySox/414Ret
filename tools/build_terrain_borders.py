@@ -43,6 +43,7 @@ from pathlib import Path
 from typing import Any, Optional
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from neutral_border_geo import (  # noqa: E402
     TERRAINS,
@@ -55,6 +56,64 @@ from shapely.geometry import Point as ShapelyPoint, Polygon, box  # noqa: E402
 
 #: Air-spawn altitude for a country with no airfield inside its own border.
 SPAWN_ALT_FT = 20000
+
+
+def modelled_land(terrain_name: str) -> Any:
+    """The map's actual land, in terrain XY. None if it cannot be loaded."""
+    try:
+        from game.theater.conflicttheater import ConflictTheater
+        from game.theater.landmap import load_landmap
+
+        landmap = load_landmap(
+            ConflictTheater.landmap_path_for_terrain_name(terrain_name)
+        )
+        return landmap.inclusion_zones if landmap else None
+    except Exception as exc:  # pragma: no cover - a tool convenience
+        print(f"  -- no landmap for {terrain_name} ({exc})", file=sys.stderr)
+        return None
+
+
+def spawn_station(
+    terrain: Any, piece: Polygon, land: Any, country: str
+) -> tuple[float, float]:
+    """Where a country with no airfield stations its alert flight, in terrain XY.
+
+    The representative point of the clipped polygon, **constrained to ground the
+    map actually models**. A clip box is bigger than its terrain, so a country
+    that only clips the map's edge gets a polygon whose middle is off the map
+    entirely: measured 2026-08-27, Caucasus put Turkey's station 170 km from the
+    nearest modelled land, in neither the landmap's inclusion nor its sea zones
+    -- the same signature as a point in the Caspian, well off that terrain.
+
+    Turkey is the case that matters, because it is the only one of the four with
+    an airframe in any era; Armenia and Azerbaijan scramble nothing whatever
+    their station says. The Lua normally launches 25 NM from the intruder rather
+    than from the station, so this only bit through the documented concave
+    fallback -- but that fallback exists precisely for awkward geometry, which
+    is what a clipped border is.
+    """
+    from shapely.geometry import Polygon as ShapelyPolygon
+
+    ring_xy = to_xy(terrain, [(x, y) for x, y in list(piece.exterior.coords)[:-1]])
+    on_map = ShapelyPolygon(ring_xy)
+    if land is not None:
+        try:
+            grounded = on_map.intersection(land)
+            if not grounded.is_empty:
+                parts = getattr(grounded, "geoms", [grounded])
+                best = max(parts, key=lambda g: g.area)
+                if best.area > 0:
+                    point = best.representative_point()
+                    return (float(point.x), float(point.y))
+            print(
+                f"  -- {country}: no modelled land inside its border; station "
+                "left at the polygon's own middle",
+                file=sys.stderr,
+            )
+        except Exception as exc:  # pragma: no cover - a tool convenience
+            print(f"  -- {country}: landmap intersect failed ({exc})", file=sys.stderr)
+    point = on_map.representative_point()
+    return (float(point.x), float(point.y))
 
 
 def border_lines(ring: list[tuple[float, float]]) -> list[str]:
@@ -212,6 +271,7 @@ def main() -> None:
                 print(f"  -- {name}: dropped a {km2:.0f} km² fragment", file=sys.stderr)
         simplified = kept
 
+    land = modelled_land(args.terrain)
     written = 0
     seen: dict[str, int] = {}
     totals: dict[str, int] = {}
@@ -228,8 +288,7 @@ def main() -> None:
         if field:
             lines.append(f"    airfield: {field}")
         else:
-            rep = piece.representative_point()
-            x, y = to_xy(terrain, [(rep.x, rep.y)])[0]
+            x, y = spawn_station(terrain, piece, land, name)
             lines.append(f"    spawn: [{x:.0f}, {y:.0f}]")
             lines.append(f"    spawn_alt_ft: {SPAWN_ALT_FT}")
         lines.extend(border_lines(ring_xy))

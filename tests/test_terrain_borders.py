@@ -346,3 +346,45 @@ def test_no_zone_launches_its_alert_flight_from_a_helipad(terrain: str) -> None:
             f"{terrain}/{entry['country']} bases its alert flight on {field}, "
             "which has no runway"
         )
+
+
+@pytest.mark.parametrize("terrain", SHIPPED)
+def test_an_air_spawn_station_sits_on_ground_the_map_models(terrain: str) -> None:
+    """A clip box is bigger than its terrain, so a country that only clips the
+    map's edge can get a polygon whose middle is off the map entirely.
+
+    Measured 2026-08-27: Caucasus stationed Turkey 170 km from the nearest
+    modelled land, Afghanistan put India 272 km out, and Iraq's Turkey and
+    Jordan were 26 and 37 km out. All four have an airframe, so all four would
+    have tried to launch from there. The Lua usually launches 25 NM from the
+    intruder instead, so this bit only through the concave fallback -- but that
+    fallback exists for exactly the awkward geometry a clipped border has.
+
+    The invariant is conditional: a zone is only held to it when the map models
+    some land inside its border at all. Caucasus/Azerbaijan's Nakhchivan piece
+    has none, and no airframe in any era either, so it never launches anything.
+    """
+    import warnings
+
+    from shapely.geometry import Polygon
+
+    from game.theater.conflicttheater import ConflictTheater
+    from game.theater.landmap import load_landmap, poly_contains
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        landmap = load_landmap(ConflictTheater.landmap_path_for_terrain_name(terrain))
+    if landmap is None:
+        pytest.skip(f"{terrain} ships no landmap")
+
+    for entry in load_terrain_borders(terrain):
+        spawn = entry.get("spawn")
+        if spawn is None:
+            continue  # it launches off a real airfield
+        border = Polygon(entry["border"]).buffer(0)
+        if border.intersection(landmap.inclusion_zones).is_empty:
+            continue  # no modelled land inside it; nowhere better to stand
+        assert poly_contains(spawn[0], spawn[1], landmap.inclusion_zones), (
+            f"{terrain}/{entry['country']} stations its alert flight at "
+            f"{spawn}, which is not on ground this map models"
+        )

@@ -33,7 +33,7 @@ zones:
     ]
   # Turkey — 28 vertices
   - country: Turkey
-    spawn: [-503648, 356757]
+    spawn: [-425403, 666161]
     spawn_alt_ft: 20000
     border: [
       [-544532, 915234], [-580584, 851491], [-731973, 890521], [-792300, -99517],
@@ -46,7 +46,7 @@ zones:
     ]
   # Armenia — 99 vertices
   - country: Armenia
-    spawn: [-441453, 885844]
+    spawn: [-426356, 866472]
     spawn_alt_ft: 20000
     border: [
       [-547865, 963602], [-547496, 962401], [-546079, 962203], [-543613, 958183],
@@ -77,7 +77,7 @@ zones:
     ]
   # Azerbaijan (part 1) — 11 vertices
   - country: Azerbaijan
-    spawn: [-429025, 1118164]
+    spawn: [-374331, 933536]
     spawn_alt_ft: 20000
     border: [
       [-270017, 1015045], [-325822, 1150887], [-245817, 1196861], [-285064, 1239122],
@@ -86,7 +86,7 @@ zones:
     ]
   # Azerbaijan (part 2) — 109 vertices
   - country: Azerbaijan
-    spawn: [-567944, 988415]
+    spawn: [-564023, 976104]
     spawn_alt_ft: 20000
     border: [
       [-536604, 911221], [-535880, 910542], [-535272, 910446], [-534932, 910968],

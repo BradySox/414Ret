@@ -68,8 +68,10 @@ Most of this is opt-in. Full list with toggles, defaults and known limitations:
   qualifies, and a human can fly the rescue in any CSAR-capable helo.
 - The survivor keys an **ADF homing beacon on 260 kHz**, briefed on your kneeboard. Tune it
   before you launch — the C-130J, UH-1H and Mi-8 all home it directly.
-- The C-130J flies the "King" on-scene commander role. It is player-flown: DCS only lets
-  helicopters land at an unprepared pickup site, so an AI King will not complete a pickup.
+- The C-130J flies the "King" on-scene commander role, on an orbit near the survivor rather
+  than a pickup run. Add it to a rescue package by hand: the auto-planner never frags one,
+  because DCS only lets helicopters land at an unprepared pickup site and an AI King would
+  orbit a survivor it can never collect.
 - Two pickup styles: land and let the survivor walk aboard, or hoist them on a hover. A pilot
   down in the water is always hoisted.
 - Survivors pop smoke for AI rescue flights. Human crews get the F10 menu — list active

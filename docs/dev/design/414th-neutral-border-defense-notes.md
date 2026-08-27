@@ -2,7 +2,7 @@
 
 **Status: BUILT 2026-08-24 (§96).** Scope locked in a DM Q&A session the same day; every
 decision below is a DM call from that session. Read this before editing or re-litigating
-any of it. Features doc §96 carries the file list; in-game passes B106/B107 owed.
+any of it. Features doc §96 carries the file list; in-game passes B107/B108 owed.
 
 ## Build outcome (what changed between the sketch and the code)
 
@@ -25,7 +25,7 @@ any of it. Features doc §96 carries the file list; in-game passes B106/B107 owe
 - **Border source**: `tools/neutral_border_geo.py` (GeoJSON → shapely simplify →
   `Point.from_latlng` → yaml). The Lebanon trace used the public-domain
   `georgique/world-geojson` country file, 44 vertices. The harness cannot exercise DCS
-  behavior — B106/B107 carry the flown verdicts.
+  behavior — B107/B108 carry the flown verdicts.
 
 ## The feature
 
@@ -370,7 +370,7 @@ Cyprus combined).
 
 The first mission with §96 live produced one clean pass and three defects, two of
 them measured off the Tacview rather than reported. **All three are fixed; none
-is verified in DCS yet** (B106/B107 still owed).
+is verified in DCS yet** (B107/B108 still owed).
 
 **It worked at all.** `6 border zone(s) drawn, 6 defended`, and against a blue
 F-15E BAI package Iran launched a shadow on the opposing coalition and stood it
@@ -652,7 +652,7 @@ and shipped as `labelX`/`labelZ`; verified on all 8 zones of a Syria campaign.
 
 **Not verified in DCS**: whether `trigger.action.textToAll` renders the `\n` as
 two lines. If it does not, the label will read as one run-on line — cosmetic,
-and on the B106 fail-signature list.
+and on the B107 fail-signature list.
 
 ## A faint line is not a quiet line (2026-08-26)
 
@@ -714,7 +714,7 @@ Target architecture, to be built after the national-postures research lands:
   precedence. The derived airfield-alignment rule is untouched by all of this and
   always wins over the table.
 - Gate unchanged (`neutral_border_defense` + plugin): "automagic" means no yaml
-  needed, not default-on. Flipping the default is its own call after B106/B107 fly.
+  needed, not default-on. Flipping the default is its own call after B107/B108 fly.
 
 ## Audit, 2026-08-27 — two defects the gates could not see
 
@@ -864,7 +864,32 @@ one would go stale exactly then, which is the bug the derivation exists to
 avoid. Two tests pin that passing the posture gives the same answer as deriving
 it, across all four postures and both sides.
 
-### The checklist rows collided with main's
+### The checklist rows collided with main's -- twice
+
+This PR added its in-game rows as **B100/B101**, and `main` already owned both
+(the DCS parking rework, and the F-4E Shrike row). Renumbering them to B106/B107
+then collided a second time on the next merge: main had meanwhile allocated
+**B106** to the CSAR King row. They are **B107/B108** now.
+
+The consequence is worse than an ambiguous label. `_row_statuses()` in
+`tests/test_flycard_board.py` keys by row id, so a duplicate silently overwrites
+its twin and the board **under-reports outstanding work**: the first collision
+hid the §96 rows (78 stated, 80 real), and the second hid main's own CSAR row
+(80 stated, 81 real). The count test is what catches it, and only when run from
+the worktree -- `CHECKLIST` is a CWD-relative path, so running pytest from the
+main checkout silently validates the wrong tree.
+
+**Check the highest id in use before adding a row on a branch that has been open
+across a main merge**, and re-check after every merge:
+
+```
+grep -oP "^### [A-Z]+[0-9]+(?= )" docs/dev/414th-ingame-pass-checklist.md | sort | uniq -d
+```
+
+Renumber your own rows, never main's, and update the `row:` field in every
+whatsnew entry plus the design note and features doc that name them.
+
+
 
 This PR added its in-game rows as **B100/B101**, and `main` already owned both
 (the DCS 2026-08-26 parking rework, and the F-4E Shrike row). The session-start
@@ -894,6 +919,6 @@ updated, the notes that merely mention it were not.
 
 ## In-game passes owed
 
-**B106** (the player ladder end to end) and **B107** (AI shadowed only, plus the
+**B107** (the player ladder end to end) and **B108** (AI shadowed only, plus the
 accepted-risk watch: how often the intruder's own side kills the shadower before
 escalation). Full setup, pass criteria and fail signatures are on those checklist rows.

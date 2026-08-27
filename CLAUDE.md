@@ -96,6 +96,7 @@ Read before touching a campaign's `.yaml`, `.miz` or build tool.
 | Operation Baltic Fury | `414th-baltic-fury-campaign-notes.md` |
 | Marianas — Second Island Chain 2027 | `414th-marianas-2027-campaign-notes.md` |
 | Marianas — Operation Forager (1944) | `414th-marianas-wwii-terrain-notes.md` (the terrain note owns it) |
+| Syria — Anatolian Reach (2004) | `414th-anatolian-reach-campaign-notes.md` — **Israel + US vs a Turkey–Russia bloc.** The subject is range: 250–400 nm to every target. **Akrotiri is support-only and must stay that way** — it is closest to seven of the nine Turkish fields, so a combat squadron there benches Israel and the campaign silently stops being about anything. Enemy faction is **inline** (one faction per coalition); SAM presets are period-gated **by hand** because `restrict_weapons_by_date` never gates them |
 | Iraq — Umm al-Ma'arik (Desert Storm) | `414th-desert-storm-campaign-notes.md` |
 | Iraq — Operation Inherent Resolve | `414th-inherent-resolve-campaign-notes.md` |
 | Afghanistan — Enduring Resolve (COIN) | `414th-coin-HANDOFF.md` — **start here for COIN** |
@@ -119,7 +120,7 @@ Read before touching a campaign's `.yaml`, `.miz` or build tool.
   (**scoping only, nothing built** — what job recon gets now that engaging a site is the
   only reveal; also records the command-post hole the rework opened)
 - **CSAR** — `414th-csar-notes.md` (**the one CSAR doc**; supersedes the eight earlier
-  SCAR/CSAR notes, each bannered), `414th-scar-rescue-rework-notes.md`
+  SCAR/CSAR notes, all deleted 2026-08-20)
 - **COIN** — `414th-coin-insurgent-replenishment-notes.md`, `-reinfiltration-notes.md`
 - **Naval** — `414th-cruise-missile-raids-notes.md`, `414th-naval-magazines-notes.md`,
   `414th-carrier-deck-decor-notes.md`
@@ -495,7 +496,7 @@ Kept numbered so old notes and saves stay readable. Details and rationale in the
 | 13 | Flight Control ATC | Retired 2026-06-26 |
 | 20 | Drop-spawn map unit placement | Removed 2026-08-02 |
 | 15 | SCAR — RESCAP "Sandy" rescue escort | Removed 2026-08-07 — see §21 |
-| 21 | Combat SAR (fork implementation) | Removed 2026-08-07 — replaced by upstream dcs-retribution#929, which is **an OPEN PR, not merged** (zero reviews as of 2026-08-17). We re-adopt its phases by hand; Phase 5 landed 2026-08-17. See the adoption log in `414th-csar-notes.md` before touching the hover height |
+| 21 | Combat SAR (fork implementation) | Removed 2026-08-07 — replaced by upstream dcs-retribution#929, which is **an OPEN PR, not merged** (zero reviews as of 2026-08-17). We re-adopt its phases by hand; Phase 5 landed 2026-08-17. The C-130J "King" is fixed-wing CSAR and is **hand-fragged only** — it flies `KingFlightPlan`'s on-scene racetrack (2026-08-26); the auto-planner gate stays. See the adoption log in `414th-csar-notes.md` before touching the hover height |
 | 25 | Compact 3–4 page kneeboard deck | Retired 2026-07-05 |
 | 30 | Dedicated kneeboard cover page | Retired 2026-07-13 — new info folds into a stock page |
 | 31 | One-page Brief Sheet | Retired 2026-07-13 — BLUF and code words survived |

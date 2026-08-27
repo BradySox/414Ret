@@ -132,17 +132,23 @@ export const mapStrokes: Record<
   // A long map-boundary dash — the one pattern that reads as a border rather
   // than a hazard. 16/10 is the removed §40 ROE zone's own signature, whose
   // comment called it "an authored border: firm, legal" — exactly this.
-  airspaceEnforced: { dashArray: "18 8", weight: 3.5, casingWeight: 0 },
+  airspaceEnforced: { dashArray: "18 8", weight: 3.5, casingWeight: 7 },
   // Airspace you may cross: present, not a warning. Still drawn heavily enough
   // to FIND -- a 1.5px unshaded dashed ring was invisible over satellite
   // imagery, which is the same defect the removed §40 layer recorded about a
   // too-faint fill. It stays clearly lighter than the enforced signature, so
   // "bites" vs "does not bite" survives; it just is not hidden any more.
-  airspaceOpen: { dashArray: "6 8", weight: 2, casingWeight: 0 },
+  airspaceOpen: { dashArray: "6 8", weight: 2, casingWeight: 5 },
   // A country IN the war. Solid, because dashes in this family mean "a
   // boundary you must decide about" and there is no decision here -- the
   // belligerent's own QRA already governs its sky, not §96.
-  airspaceBelligerent: { weight: 2, casingWeight: 0 },
+  //
+  // The casing is what makes it findable. Reported 2026-08-26: a friendly
+  // country read as its neighbour's crimson, because an uncased 2px blue line
+  // over a map full of blue flight paths is not a line anyone can pick out, and
+  // the eye takes the nearest thing that IS legible. Every other family here
+  // carries a halo for the same reason.
+  airspaceBelligerent: { weight: 2.5, casingWeight: 6 },
 };
 
 //: Fill opacity per airspace state. The shade answers one question -- *will

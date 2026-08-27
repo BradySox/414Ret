@@ -654,6 +654,38 @@ and shipped as `labelX`/`labelZ`; verified on all 8 zones of a Syria campaign.
 two lines. If it does not, the label will read as one run-on line — cosmetic,
 and on the B100 fail-signature list.
 
+## A faint line is not a quiet line (2026-08-26)
+
+Reported: "friendly still showing red", on a Syria map where a blue-aligned
+country appeared to carry its enforcing neighbour's crimson border.
+
+**Not reproduced from the save**, and the colour chain is not capable of it: a
+`blue` posture takes `airspaceBlue` before `enforced` is ever consulted, and the
+shipped bundle compiles to exactly that. What the layer *was* doing is drawing a
+belligerent as an **uncased 2 px line** — the only family on the map without the
+dark halo `CasedShapes` exists to provide. Over satellite imagery, on a map
+already full of `#0084ff` flight paths, a thin blue border is not a subtle line;
+it is an absent one, and the eye takes the nearest thing that IS legible, which
+is the neighbour's crimson dash.
+
+Two things make that easy to fall into:
+
+- The overdraw is real but small: at a shared frontier both countries draw the
+  same line and the later one wins. **Measured on Israel: 97 km of its 876 km
+  border (11 %) is painted over by Jordan**, drawn after it. Enough to mislead
+  at a glance, not enough to recolour a country.
+- The 6 % belligerent wash was chosen to stop half the Syria map reading pink.
+  It does that, and it also removed the last thing making the border findable.
+
+All three airspace strokes are cased now (7 / 6 / 5 px) and the layer draws
+through `CasedPolygon` like the rest of the family. The belligerent weight goes
+2 → 2.5.
+
+**If a friendly country still reads crimson after this, it is a real defect and
+the save is needed in the state it shows it** — the one on disk has Israel as a
+genuine enforcing neutral with no bases inside it, which is a different campaign
+state from the screenshot.
+
 ## The remaining automagic gap (DECIDED, NOT BUILT)
 
 **"I do not wish this to be specified in any existing campaign, I want this to

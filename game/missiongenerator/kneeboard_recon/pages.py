@@ -1027,6 +1027,15 @@ class OverviewReconPage(_RecordingPage):
                     continue
                 if tgo.is_friendly(self.flight.friendly):
                     continue
+                # Threat and detection ranges are fogged intel, same as
+                # composition -- an un-engaged site's rings are exactly what the
+                # player has not earned. Dropped entirely rather than drawn
+                # ring-less: a ring-less marker at the TRUE position would still
+                # leak a location the map deliberately jitters, and this page
+                # has no jitter of its own. The cost is that an unknown site is
+                # absent from the overview rather than shown as a bare contact.
+                if not _known_to_blue(tgo):
+                    continue
                 max_r = tgo.max_threat_range().meters
                 det_r = tgo.max_detection_range().meters
                 if max_r == 0 and det_r == 0:
@@ -1153,6 +1162,16 @@ class DetailReconPage(_RecordingPage):
     CLUSTER_CAP = 12
 
     def _build_aimpoints(self, target: Any) -> List[Aimpoint]:
+        # §3: a site's composition is unknown until it is engaged, and this page
+        # is the most privileged view of one in the product -- exact positions,
+        # types, footprints and dead state. It gated on nothing until
+        # 2026-08-26, so a strike fragged at a site nobody had touched printed
+        # everything the map beside it was busy concealing (compare
+        # ``game/server/tgos/models.py`` TgoJs.for_tgo, which withholds exactly
+        # these fields and jitters the position). Generation already runs inside
+        # ``fog_intact()``, so the §18 overview toggle cannot re-open this.
+        if not _known_to_blue(target):
+            return []
         units = list(getattr(target, "strike_targets", None) or [])
         # Fallback to all live units if strike_targets is empty (CAS / armed recon).
         if not units:
@@ -1945,6 +1964,27 @@ class AirbaseReconPage(_RecordingPage):
 # Dispatcher
 # ---------------------------------------------------------------------------
 
+
+#: TARPS is here for the obvious reason and was missing until 2026-08-26: the
+#: recon bird rides the strike package and shares its target, so the one pilot
+#: whose whole sortie is imagery was the only one on the ATO without the target
+#: card. Its aimpoint list doubles as the shot list.
+def _known_to_blue(tgo: Any) -> bool:
+    """Whether BLUE has earned this site's composition and ranges (§3).
+
+    Fog is BLUE-only by design, and ``known_for`` is the one chokepoint the map,
+    the intel dialogs and the §74 DTC threat rings all read. A target that does
+    not implement it (a ControlPoint, a FrontLine, or a test double) is not a
+    fogged object and is treated as known.
+    """
+    known_for = getattr(tgo, "known_for", None)
+    if known_for is None:
+        return True
+    from game.theater import Player
+
+    return bool(known_for(Player.BLUE))
+
+
 _FLIGHT_TYPES_WITH_RECON = frozenset(
     {
         FlightType.STRIKE,
@@ -1956,6 +1996,7 @@ _FLIGHT_TYPES_WITH_RECON = frozenset(
         FlightType.OCA_RUNWAY,
         FlightType.ANTISHIP,
         FlightType.ARMED_RECON,
+        FlightType.TARPS,
     }
 )
 

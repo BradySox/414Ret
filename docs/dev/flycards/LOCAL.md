@@ -36,6 +36,33 @@ was printing the two rows under **Done** as if they were still live work — so 
 for a test that had been crossed off two days earlier. The hook now reads only this section;
 see the note at the bottom.)*
 
+### 0 · Measure what the KA-99 actually covers — sizes the reveal radius `G40` uses
+
+**Why this is a card and not a code change.** `TARPS_POD_RADIUS_NM = 3.0`
+(`game/sim/missionresultsprocessor.py:36`) decides how close a TARPS pass must come to
+find a hidden command post (§3 candidate A, row `G40`). Its own comment records it as
+the *deleted* recon plugin's pod radius — it was never sized against a camera. The
+2026-08-26 patch added the KA-99 panoramic camera, which is a real reason to widen it,
+and **the F-14 manual documents no KA-99 at all** (checked: no "KA-99", no "panoramic"
+anywhere in its 1,156 pages — the camera is newer than the manual). There is no number
+to look up, so the only honest source is a measurement.
+
+**Try:** any campaign with a client F-14 carrying the TARPS pod — Red Tide or a Vietnam
+turn. Fly a straight, level pass at a **known altitude** past a line of enemy ground
+units whose map positions you can read afterwards. Land (photos only develop after the
+flight). On the TARPS page, note the **outermost unit that got circled** by the intel
+analysis department on either side of track. **~20 min.**
+
+- **Record:** pass altitude (AGL), and the lateral distance from your ground track to
+  the furthest circled unit, left and right. Two or three passes at different altitudes
+  is much better than one — the swath almost certainly scales with height.
+- **Pass criterion:** none. This card produces a *number*, not a verdict. Write it into
+  [`414th-recon-role-scoping-notes.md`](../design/414th-recon-role-scoping-notes.md)
+  and the radius can then be set from evidence.
+- **Watch for:** the KS-87 frame camera and the KA-99 panoramic have different coverage
+  — note which was recording. The pilot can now run either (`hold Store Release`), so
+  this no longer needs a human RIO.
+
 ### 1 · Red alert fighters answer a strike you just made — `B60`
 
 **Try:** turn on the living-battlespace master **and** `living_battlespace_reactive_red` (it

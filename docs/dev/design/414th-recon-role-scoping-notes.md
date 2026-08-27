@@ -222,6 +222,82 @@ landing, repeat at two or three altitudes). Set the radius from that, not from a
 (command posts), and its own pilot carries the target card. Anything more requires
 changing §3 itself, which is a DM decision and not a recon decision.
 
+## Reopening §3 — asked 2026-08-26, recommendation: DON'T
+
+The DM asked whether DCS shipping real in-cockpit identification imagery is grounds to
+revisit engage-to-reveal. It is a fair question and the honest answer took a reframe.
+
+### The new fact, stated fairly
+
+The 2026-08-18 call was, verbatim: *"Hidden until scouted is wrong, it should be hidden
+until struck, then you should be omniscient like it was before we touched any fog of war
+setting."*
+
+**What made scouting feel wrong then was that it produced nothing.** You flew a profile
+and a number changed in a database — a bookkeeping fiction with no cockpit counterpart.
+As of 2026-08-26 that is no longer true for the F-14: a pass produces circled, described
+units on the TARPS page after landing, cheaply, without a human RIO. The thing the rework
+rejected has acquired the substance it was missing.
+
+That is a genuine new fact and it deserved the reopen. Three arguments answer it.
+
+### 1. A campaign rule has to cover the airframes where nothing changed
+
+DCS's product exists for **one airframe flown by one human**. Our TARPS-capable set is
+the F-14 family, the RF-101B, the RA-5C, the Su-24MR and, on drone-fielding factions, an
+MQ-9 that the auto-planner frags by itself. Four of those five produce no imagery
+whatsoever, and the drone has no pilot to look at any.
+
+A scout-to-reveal rule restored on the strength of the Tomcat would be **earned by one
+airframe and gifted to the rest** — and an AI-flown recon flight revealing a site by fiat
+is precisely the fiction the 08-18 call threw out. It would come back wearing a better
+costume.
+
+### 2. Seeing something in the cockpit has never updated campaign state, for anything
+
+This is the reframe that settles it. A player can eyeball a SAM site from 20,000 ft, count
+the launchers on the TGP, read a hull number through binoculars — and the campaign does not
+care. **In-mission observation has never been campaign intel in this engine**, and nobody
+has ever thought that inconsistent.
+
+TARPS photos are the same class of thing: an in-mission observation, delivered in the
+cockpit, to one crew. §3's rule is about what the **campaign** knows, and by that standard
+it is already consistent with everything else the fork does.
+
+### 3. The contradiction that actually mattered is already fixed
+
+The sharp version of the complaint was: *"a pilot gets circled pictures the campaign refuses
+to act on, while our own kneeboard tells them to Engage to ID."* Half of that was **our
+defect, not a design tension** — the recon kneeboard was printing the exact composition and
+threat rings of un-engaged sites (see C.2 above, fixed 2026-08-26). The card claimed a
+knowledge the campaign denied.
+
+With the fog gate in, the campaign, the map and the kneeboard now say the same thing. What
+remains is DCS's own cockpit page saying something different, which is item 2 and is normal.
+
+### What reopening would actually cost
+
+Not a rule change — a rebuild. `CLAUDE-architecture` records the collapse as finished:
+*"Do **not** reintroduce a viewer parameter on those, and do **not** reintroduce the old
+`_for` method twins."* Scout-to-reveal needs a reveal key on the recon path
+(`reconned_tgos_this_turn`, `_reconned_tgos_from_ato`), all deleted; §12's plugin, deleted;
+and a decision on the MP case, where one crew flies the pass and the whole squadron gets
+the reveal.
+
+### The narrow version, if the DM still wants it
+
+The only shape that survives argument 1 is: **a player-flown F-14 TARPS pass reveals
+composition; nothing else does.** It is defensible — that pilot genuinely saw it — but it
+makes the reveal rule differ by airframe *and* by human-vs-AI, which is the kind of
+special-casing this fork usually refuses. If it is wanted, it wants its own decision, not
+a revival of the old machinery.
+
+### Verdict
+
+**Keep §3 as it stands.** The reopen was correctly asked and the answer is that the new
+fact, real as it is, lives in the cockpit rather than in the campaign — and the one place
+the two genuinely disagreed was a bug, now fixed. Recon's job stays A + C.1.
+
 ## See also
 
 - [414th-features.md §3](../414th-features.md) — the reveal rule this has to live under

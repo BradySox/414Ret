@@ -241,14 +241,14 @@ def test_an_unmarked_list_is_left_alone() -> None:
 
 
 def test_a_complex_coast_is_not_simplified_into_a_blob() -> None:
-    """Norway is the worst shape Douglas-Peucker meets here: a thin fjord coast
-    wrapping around Sweden. MEASURED 2026-08-26 by symmetric difference against
-    the true clipped country -- at a 24-vertex budget it was 30.2% wrong,
-    against Sweden's 9.7% and Finland's 7.0%. The budget is 64 now; this pins
-    that a regeneration did not quietly drop it again."""
+    """Norway is the worst shape the simplifier meets here: a thin fjord coast
+    wrapping around Sweden. Measured by symmetric difference against the true
+    clipped country: 30.2% wrong at a 24-vertex budget, 7.31% at 96, and 1.28%
+    at the 384 shipped now. This pins that a regeneration did not quietly drop
+    the budget -- the tool defaults to 384, and 96 put Norway at 93 vertices."""
     norway = [e for e in load_terrain_borders("Kola") if e["country"] == "Norway"]
     assert norway, "Kola no longer draws Norway"
-    assert len(norway[0]["border"]) >= 40, (
+    assert len(norway[0]["border"]) >= 250, (
         f"Norway came out at {len(norway[0]['border'])} vertices -- at that "
         "budget its coastline is a blob"
     )

@@ -14,6 +14,22 @@
 
 entries:
   - date: 2026-08-28
+    title: Borders follow the real coastline now
+    change: >-
+      Country outlines were capped at a point count that was holding six of them
+      back -- Norway worst of all, where the fjord coast was about 7 percent
+      away from where the land actually is. The outlines carry nearly four times
+      the detail now and Norway is within about 1 percent. The planning map
+      draws all of it; on the F10 map the outline is exact and only the faint
+      wash inside it is simplified, because a filled shape there costs roughly
+      one drawing per point and the outline does not.
+    watch: >-
+      On Kola, compare Norway's border against the coast. It should follow the
+      fjords in and out rather than cutting across their mouths. If the F10 map
+      ever feels slow to open, the border drawing still has its own off switch
+      in the plugin options.
+    row: B107
+  - date: 2026-08-28
     title: The border guards actually turn up now
     change: >-
       First real flight of the border defence found three things. The country's

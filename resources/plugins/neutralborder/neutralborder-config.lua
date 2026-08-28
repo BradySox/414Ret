@@ -43,6 +43,17 @@ local DRAW_BORDERS = true -- F10 border polylines (the §86 invisible-bubble les
 --: re-opens the "defends, never initiates" call.
 local SHADOW_HOLD_M = 37040 -- 20 NM
 
+--: Vertices the FILL may use. The outline is one freeform however many points
+--: it carries, and the web map draws them for free -- but DCS will not fill a
+--: concave shape, so the fill is handed to MOOSE and comes back as one markup
+--: per triangle. Measured: F10 markup count tracks vertex count about 1:1.
+--:
+--: So detail is free on the line and expensive in the wash. The border rings
+--: ship at full resolution and only the fill is thinned to this, which keeps
+--: the F10 cost where it was while the outline gets every point. At 5% alpha
+--: under a precise outline the thinning is not visible.
+local FILL_MAX_VERTS = 96
+
 if dcsRetribution.plugins and dcsRetribution.plugins.neutralborder then
     local o = dcsRetribution.plugins.neutralborder
     WARN_DWELL_S = tonumber(o.warnDwellS) or WARN_DWELL_S
@@ -310,9 +321,20 @@ local function draw_borders()
         -- behind `if false then`. Reuse its triangulation rather than repeat the
         -- discovery.
         pcall(function()
+            -- Even stride, first vertex always kept, so the thinned ring still
+            -- closes on itself and keeps the shape's extremes.
+            local n = #zone.verts
+            local stride = 1
+            if n > FILL_MAX_VERTS then
+                stride = math.ceil(n / FILL_MAX_VERTS)
+            end
             local pts = {}
-            for _, v in ipairs(zone.verts) do
+            for i = 1, n, stride do
+                local v = zone.verts[i]
                 pts[#pts + 1] = { x = v.x, y = v.z }
+            end
+            if #pts < 3 then
+                return
             end
             local poly = ZONE_POLYGON:NewFromPointsArray("NB96-" .. zi, pts)
             poly:SetDrawCoalition(-1)

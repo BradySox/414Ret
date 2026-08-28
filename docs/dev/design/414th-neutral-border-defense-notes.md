@@ -993,6 +993,51 @@ range — 20 NM delays that, it does not prevent it. The re-fly is what says
 whether the loss rate actually moved; 20 NM is a starting point, not a measured
 optimum, which is why it is an option rather than a constant.
 
+## Full-detail borders, 2026-08-28 — detail is free on the line, not in the wash
+
+The vertex budget was 96 and it was **binding on six of the 52 zones** — Syria
+96, Azerbaijan 109, Armenia 99, Norway 93, UAE 93, Egypt 91, Iraq 91. Those are
+exactly the ones losing shape. Measured against the true clipped country:
+
+| Budget | Norway error | Kola verts | Syria verts |
+|---|---|---|---|
+| 96 | **7.31 %** | 228 | 377 |
+| 192 | 5.52 % | 306 | 516 |
+| **384** | **1.28 %** | 780 | 1210 |
+| 800 | 0.17 % | 1611 | 2625 |
+
+192 buys almost nothing; 384 is where the curve turns. Shipped at **384**:
+2,240 → 8,244 vertices, 3.7×, with every map keeping the same zones and the
+same countries.
+
+**The cost is not symmetric, and that is what makes this affordable.** The web
+map draws any number of points for free. In DCS the *outline* is a single
+freeform however many points it carries — but the *fill* cannot be, because DCS
+will not fill a concave shape, so it goes through MOOSE's triangulation and
+comes back as roughly one markup per vertex.
+
+So the rings ship at full resolution and **only the fill is thinned**, to
+`FILL_MAX_VERTS = 96` per zone on an even stride. Result per map:
+
+| | Outline markups | Fill vertices |
+|---|---|---|
+| Before | 5–8 | 222–377 |
+| Full detail, unthinned | 5–8 | 715–1264 |
+| **Shipped (thinned fill)** | **5–8** | **340–516** |
+
+DCS pays about 1.4×, still below the 446 shapes Afghanistan shipped with before
+the coverage work; the planning map gets the whole 3.7×. At 5 % alpha under a
+precise outline the thinned wash is not visible.
+
+**A higher budget needs an area floor.** Finer geometry stops absorbing slivers:
+at 384 with no floor, Kola gained a 340 km²/6-vertex Russian fragment and a
+0 km²/**3-vertex** Norwegian one, each of which becomes a zone with its own
+alert flight, and the 3-vertex one trips `test_no_zone_is_a_clip_artifact`. The
+floor is **500 km²**, which cuts between those and the smallest genuine
+territories — Bahrain 598 km², Oman's Musandam 1,799, Iran's coastal piece
+1,973, all with 32+ vertices. Falklands keeps its own 2,000 km² archipelago
+floor. **Regenerating without `--min-area-km2` reintroduces the slivers.**
+
 ## Deferred (not built, not promised)
 
 - Cross-mission consequences: escalating posture, airspace closure, the neutral joining

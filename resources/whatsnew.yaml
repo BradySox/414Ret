@@ -28,7 +28,9 @@ entries:
     watch: >-
       Cross a defended border and stay. The warning should come almost at once,
       a pair should be airborne inside a minute, and if you keep pressing, the
-      field's SAM should come up as they engage.
+      field's SAM should come up as they engage. They now shadow from about 20
+      miles rather than pulling alongside, so look for them on radar rather than
+      out of the window.
     row: B107
   - date: 2026-08-27
     title: Border patrols were waiting off the edge of the map

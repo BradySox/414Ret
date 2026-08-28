@@ -6302,8 +6302,15 @@ escalated on. But the pre-registered risk fired at 100 %: **all four alert
 aircraft were killed by the intruder's own BARCAP**, and the un-escalated pair
 was shot down having **fired nothing** (return-fire ROE means it cannot shoot
 first, so an escorted intruder kills it for free). Recorded, not fixed —
-changing it re-opens the "defends, never initiates" call. Re-fly to see whether
-the runway start changes the survival rate.
+the alert flight now shepherds from **20 NM** (`shadowHoldNm`) instead of
+closing to a merge -- it was being routed to the intruder's position +1200 m,
+measured at 0.9 NM. Arming it first stays shut: that breaks "defends, never
+initiates".
+
+**Re-fly asks one question: did the loss rate move?** Standing off buys time,
+not safety -- the shadow is on the intruder's opposing coalition, so a CAP over
+the area hunts it at any range. Record how many of the pair survive to the
+escalation, and whether 20 NM still reads as "being shadowed" from the cockpit.
 
 **History:** built 2026-08-24. The DM call: everyone trips the border, only players are
 ever engaged. Harness-covered for the no-escalation invariant; what needs eyes is

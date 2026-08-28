@@ -32,6 +32,13 @@
             "maximumValue": 300
         },
         {
+            "nameInUI": "Nautical miles the alert flight keeps from an intruder it has not engaged",
+            "mnemonic": "shadowHoldNm",
+            "defaultValue": 20,
+            "minimumValue": 3,
+            "maximumValue": 60
+        },
+        {
             "nameInUI": "Concurrent shadow flights per neutral country",
             "mnemonic": "maxShadows",
             "defaultValue": 2,

@@ -28,6 +28,20 @@ local SCAN_INTERVAL_S = 10 -- border scan cadence
 local VECTOR_INTERVAL_S = 45 -- shadow vector cadence
 local MAX_SHADOWS = 2 -- concurrent shadow flights per zone
 local DRAW_BORDERS = true -- F10 border polylines (the §86 invisible-bubble lesson)
+--: How far an UN-escalated shadow keeps from the intruder.
+--:
+--: It used to route to the intruder's own position +1200 m, i.e. it closed to a
+--: merge. At return-fire ROE it cannot shoot first, so it arrived inside an
+--: escorted flight's engagement envelope and was killed for free -- flown
+--: 2026-08-28, all four alert aircraft lost and the un-escalated pair shot down
+--: having fired nothing. It shepherds from here instead.
+--:
+--: This reduces the loss rate; it does not fix it. The shadow spawns on the
+--: intruder's OPPOSING coalition, so it is a hostile contact to that side and a
+--: CAP tasked over the area will hunt it at any range. Standing off buys time,
+--: not safety. The real lever is the return-fire ROE, and changing that
+--: re-opens the "defends, never initiates" call.
+local SHADOW_HOLD_M = 37040 -- 20 NM
 
 if dcsRetribution.plugins and dcsRetribution.plugins.neutralborder then
     local o = dcsRetribution.plugins.neutralborder
@@ -35,6 +49,9 @@ if dcsRetribution.plugins and dcsRetribution.plugins.neutralborder then
     ENGAGE_DWELL_S = tonumber(o.engageDwellS) or ENGAGE_DWELL_S
     SCAN_INTERVAL_S = tonumber(o.scanIntervalS) or SCAN_INTERVAL_S
     VECTOR_INTERVAL_S = tonumber(o.vectorIntervalS) or VECTOR_INTERVAL_S
+    if tonumber(o.shadowHoldNm) then
+        SHADOW_HOLD_M = tonumber(o.shadowHoldNm) * 1852
+    end
     MAX_SHADOWS = tonumber(o.maxShadows) or MAX_SHADOWS
     if o.drawBorders ~= nil then
         DRAW_BORDERS = (o.drawBorders == true) or (o.drawBorders == "true")
@@ -55,6 +72,7 @@ local SHADOW_SPEED_KT = 300 -- air-spawn speed (a ~0 kt clone spawns stalled; QR
 -- still scrambles off its own runway.
 local SHADOW_STANDOFF_M = 46300
 local SHADOW_DESPAWN_S = 300 -- stood-down shadow lifetime after the RTB vector
+
 local FT_TO_M = 0.3048
 local MARKUP_ID_BASE = 96000 -- §96 block; one freeform id per zone
 --: The name labels sit in their own half of the block so an outline id and a
@@ -614,10 +632,23 @@ vector_tick = function()
                         return
                     end
                     local p = lead:getPoint()
-                    -- Offset abeam, never the exact point: a co-located waypoint
-                    -- reads as a collision course to the AI.
-                    shadow.group:RouteToVec3(
-                        { x = p.x + 1200, y = p.y, z = p.z + 1200 }, 250)
+                    -- Shepherd from SHADOW_HOLD_M, on whatever bearing the
+                    -- shadow already sits, rather than closing on the intruder.
+                    -- Routing to its position +1200 m was a merge, and a
+                    -- return-fire flight that merges with an escorted one dies
+                    -- without shooting (flown 2026-08-28, 4 of 4 lost).
+                    local sx, sz = p.x + SHADOW_HOLD_M, p.z
+                    local slead = lead_unit(Group.getByName(shadow.name))
+                    if slead then
+                        local sp = slead:getPoint()
+                        local dx, dz = sp.x - p.x, sp.z - p.z
+                        local dist = math.sqrt(dx * dx + dz * dz)
+                        if dist > 1 then
+                            local f = SHADOW_HOLD_M / dist
+                            sx, sz = p.x + dx * f, p.z + dz * f
+                        end
+                    end
+                    shadow.group:RouteToVec3({ x = sx, y = p.y, z = sz }, 250)
                 end)
             end
         end

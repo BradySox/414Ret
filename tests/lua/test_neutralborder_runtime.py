@@ -653,3 +653,53 @@ def test_a_zone_with_no_sam_says_so_instead_of_going_quiet() -> None:
 
     assert not _sam_spawns(h), "a zone with no template spawned a SAM"
     h.assert_no_lua_errors()
+
+
+# -- the shadow shepherds from a distance; it does not merge --------------------
+
+HOLD_NM = 20
+HOLD_M = HOLD_NM * 1852
+
+
+def test_an_unengaged_shadow_holds_off_instead_of_merging() -> None:
+    """Flown 2026-08-28: all four alert aircraft lost, and the un-escalated pair
+    was shot down having fired nothing.
+
+    The vector loop routed the shadow to the intruder's own position + 1200 m --
+    a merge. At return-fire ROE it cannot shoot first, so it arrived inside an
+    escorted flight's envelope and died for free. It holds at shadowHoldNm now.
+
+    This does not make it safe: the shadow spawns on the intruder's OPPOSING
+    coalition, so a CAP over the area hunts it at any range. It buys time.
+    """
+    h = _setup(_config())
+    h.add_group(_intruder("Viper 1-1", 42, side=2, x=5000, z=5000))
+    h.load_plugin_script(PLUGIN)
+    h.advance_to(120)  # past the launch and at least one vector tick
+
+    routes = [r for r in h.records("routes") if isinstance(r, dict)]
+    assert routes, "the shadow was never vectored"
+    last = routes[-1]
+    gap = ((last["x"] - 5000) ** 2 + (last["z"] - 5000) ** 2) ** 0.5
+    assert gap > HOLD_M * 0.5, (
+        f"the shadow was vectored to {gap / 1852:.1f} NM of the intruder -- "
+        "that is a merge, and a return-fire flight loses it"
+    )
+    h.assert_no_lua_errors()
+
+
+def test_the_hold_distance_is_configurable() -> None:
+    """It is a plugin option because the right number is a taste call, and the
+    flown one (20 NM) is a starting point rather than a measured optimum."""
+    cfg = _config()
+    cfg["plugins"]["neutralborder"]["shadowHoldNm"] = 45
+    h = _setup(cfg)
+    h.add_group(_intruder("Viper 1-1", 42, side=2, x=5000, z=5000))
+    h.load_plugin_script(PLUGIN)
+    h.advance_to(120)
+
+    routes = [r for r in h.records("routes") if isinstance(r, dict)]
+    assert routes, "the shadow was never vectored"
+    gap = ((routes[-1]["x"] - 5000) ** 2 + (routes[-1]["z"] - 5000) ** 2) ** 0.5
+    assert gap > 20 * 1852, f"a 45 NM hold vectored to {gap / 1852:.1f} NM"
+    h.assert_no_lua_errors()

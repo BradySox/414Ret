@@ -975,10 +975,23 @@ and was fighting, which is legitimate. **R3#002 was still a shadow at
 return-fire ROE and was shot down without firing** — it cannot shoot first by
 design, so an escorted intruder kills it for free.
 
-This is the accepted risk the design recorded, now with a number against it: on
-this pass it was 100 %. Recorded, not fixed — changing it means either arming
-the shadow first (which breaks the "defends, never initiates" call) or keeping
-it further out. **Do not change the ROE without re-opening that decision.**
+**Fixed by standing it off** (DM call, 2026-08-28), which is the second of the
+two levers — the first, arming the shadow, would break "defends, never
+initiates" and stays shut.
+
+The cause was in the vector loop, not the spawn: an un-escalated shadow was
+routed to the intruder's own position **+1200 m**, i.e. it closed to a merge and
+sat there. Measured against the harness, that put it **0.9 NM** off an escorted
+flight it is forbidden to shoot at first. It now shepherds from
+`shadowHoldNm`, a plugin option defaulting to **20 NM**; escalation still closes,
+because an engaged flight is no longer shadowing.
+
+**This buys time, not safety, and the note should not be read as closing the
+risk.** The shadow spawns on the intruder's *opposing* coalition, so it is a
+hostile contact to that side and a CAP tasked over the area will hunt it at any
+range — 20 NM delays that, it does not prevent it. The re-fly is what says
+whether the loss rate actually moved; 20 NM is a starting point, not a measured
+optimum, which is why it is an option rather than a constant.
 
 ## Deferred (not built, not promised)
 

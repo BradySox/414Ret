@@ -910,6 +910,76 @@ docstring still said "three postures" and described overflight as authored, and
 is the failure mode CLAUDE.md's step 7 exists for: the feature's own faces were
 updated, the notes that merely mention it were not.
 
+## Flown 2026-08-28 (Syria, Lebanon) — the first real pass
+
+Session `New test/19`. The ladder itself worked exactly as specified. Three
+defects and one measurement came out of it.
+
+**Timeline from `dcs.log`**, mission start 22:08:31:
+
+| Time | Event |
+|---|---|
+| 22:08:31 | 8 borders drawn, 5 defended; warn 30 s, engage 180 s |
+| 22:14:25 | shadow R3#001 up from Rayak vs the player's flight |
+| 22:16:56 | ESCALATED — 180 s after entry, to the second |
+| 22:24:10 | shadow R3#002 up vs the other BARCAP element |
+
+### The SAM could not have fired on any campaign
+
+`sam` was an **authored-only** field defaulting False, and the terrain files —
+which became the only source of borders once the campaign block was deleted —
+never set it. So `NeutralBorderGenerator` built no template, `wake_sam` found
+none and **returned silently**, and the escalation looked identical to a ladder
+that had not run. Confirmed in the log: five fighter templates registered
+(`NeutralBorder|Lebanon|MiG-29A` and four more), **zero SAM templates**.
+
+Meanwhile the setting text and the plugin description both promised "the field's
+SAM battery wakes". The feature advertised something unreachable.
+
+`sam` defaults **on** now, in the dataclass and in `from_yaml` — both, because
+`from_yaml` passed its own `False` default and silently beat the field. An
+authored `sam: false` still wins. `wake_sam` says why it did nothing.
+
+### The alert flight cold-started on the ramp
+
+Measured from the sortie tracks: both pairs sat at **908 m — Rayak's own field
+elevation — for 270 s** before climbing. The Lua asked MOOSE for
+`SPAWN.Takeoff.Air` at field elevation + 760 m, but `SpawnAtAirbase` **keeps the
+template's own start type**, and the template was built `StartType.Cold`. The
+air spawn was silently ignored and the jets did engine start, taxi and takeoff
+while the intruder left.
+
+Both sides say **runway** now (DM call: "lets set them to runway spawn"), which
+is what a QRA scramble is anyway. The point-spawn path was never affected — it
+builds an in-flight template.
+
+### The hail arrived 30 s after the crossing
+
+The radio call and the shadow launch were the same event, gated on
+`warnDwellS`. DM: *"good text, pop it immediately on entry to airspace"*. Split:
+`hail` fires on the first scan that finds you inside (so within
+`scanIntervalS`), `warn` still launches the flight at the dwell. Being told is
+instant; being intercepted is not.
+
+### Measured: the shadow does not survive the intruder's escort
+
+**All four alert aircraft were killed, and the un-escalated pair never fired.**
+
+| Flight | Shots | Alive | Escalated? |
+|---|---|---|---|
+| R3#001 (2 ×  MiG-29A) | 1 | 360 s | yes |
+| R3#002 (2 ×  MiG-29A) | **0** | 270 s | no |
+
+Blue's BARCAP took them all: four pilots, 7 shots, 5 hits. R3#001 had escalated
+and was fighting, which is legitimate. **R3#002 was still a shadow at
+return-fire ROE and was shot down without firing** — it cannot shoot first by
+design, so an escorted intruder kills it for free.
+
+This is the accepted risk the design recorded, now with a number against it: on
+this pass it was 100 %. Recorded, not fixed — changing it means either arming
+the shadow first (which breaks the "defends, never initiates" call) or keeping
+it further out. **Do not change the ROE without re-opening that decision.**
+
 ## Deferred (not built, not promised)
 
 - Cross-mission consequences: escalating posture, airspace closure, the neutral joining

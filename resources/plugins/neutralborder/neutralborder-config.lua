@@ -42,7 +42,7 @@ if dcsRetribution.plugins and dcsRetribution.plugins.neutralborder then
 end
 
 local EXIT_GRACE_S = 120 -- outside this long (pre-escalation) -> shadow stands down
-local SHADOW_AGL_M = 760 -- air-spawn altitude over the field (the QRA scramble profile)
+local SHADOW_AGL_M = 760 -- AGL for the off-field launch point and the vector loop
 local SHADOW_SPEED_KT = 300 -- air-spawn speed (a ~0 kt clone spawns stalled; QRA lesson)
 -- How far from the intruder the alert flight comes up when its own origin is
 -- further away than this. MEASURED 2026-08-25 (Tacview, Inherent Resolve): Iran's
@@ -423,12 +423,11 @@ local function spawn_shadow(zone, zi, intruder_name, intruder_side, ix, iz)
         local grp
         if at.at_origin and zone.field then
             local airbase = AIRBASE:FindByName(zone.field)
-            local elevation = 0
-            pcall(function()
-                elevation = airbase:GetCoordinate():GetLandHeight() or 0
-            end)
-            grp = sp:SpawnAtAirbase(
-                airbase, SPAWN.Takeoff.Air, elevation + SHADOW_AGL_M)
+            -- Runway, matching the template's own start type. Takeoff.Air was
+            -- asked for here until 2026-08-28 and silently did not happen:
+            -- SpawnAtAirbase keeps the template's start type, so a cold ramp
+            -- template stayed a cold ramp start and took 270 s to get up.
+            grp = sp:SpawnAtAirbase(airbase, SPAWN.Takeoff.Runway)
         else
             -- MOOSE takes the altitude as the Vec3 y.
             grp = sp:SpawnFromVec3({ x = at.x, y = at.y, z = at.z })
@@ -516,7 +515,15 @@ end
 -- The SAM wake: clone the battery on the escalating intruder's opposing side. Alarm
 -- state and ROE come with the fresh spawn; never touch radar emissions.
 local function wake_sam(zone, intruder_side)
-    if zone.sam_spawned or not zone.sam_template then
+    if zone.sam_spawned then
+        return
+    end
+    if not zone.sam_template then
+        -- Say so. This returned silently until 2026-08-28, so a mission where
+        -- the escalation fired and no battery woke looked identical to one
+        -- where the ladder had not run at all.
+        log("no SAM template for " .. zone.country .. " -- nothing to wake")
+        zone.sam_spawned = true
         return
     end
     zone.sam_spawned = true
@@ -630,8 +637,14 @@ end
 ---------------------------------------------------------------------------------------------------
 -- The border watch.
 ---------------------------------------------------------------------------------------------------
-local function warn(state, intruder_group)
-    state.warned = true
+-- The radio call, on the FIRST scan that finds you inside. It used to wait for
+-- WARN_DWELL_S along with the shadow launch, which put the hail half a minute
+-- after the crossing that caused it -- flown 2026-08-28: "pop it immediately on
+-- entry to airspace". The scan interval bounds "immediately" at SCAN_INTERVAL_S.
+-- Launching the shadow still waits: being told is instant, being intercepted is
+-- not.
+local function hail(state, intruder_group)
+    state.hailed = true
     local zone = zones[state.zone]
     if state.is_player then
         -- A country that grants no safe altitude must not be radioed as though
@@ -656,6 +669,13 @@ local function warn(state, intruder_group)
         end
         announce(intruder_group, msg)
     end
+end
+
+-- The shadow launch, at WARN_DWELL_S. Separate from the hail above so the
+-- radio call is immediate and the interceptor is not.
+local function warn(state, intruder_group)
+    state.warned = true
+    local zone = zones[state.zone]
     local zi = state.zone
     local shadow = spawn_shadow(zone, zi, state.name, state.side, state.px, state.pz)
     if shadow then
@@ -707,6 +727,7 @@ local function scan_group(group, side, now)
                     zone = zi,
                     side = side,
                     dwell = 0,
+                    hailed = false,
                     warned = false,
                     escalated = false,
                     is_player = false,
@@ -721,6 +742,10 @@ local function scan_group(group, side, now)
             state.dwell = state.dwell + SCAN_INTERVAL_S
             state.last_inside = now
             state.is_player = is_player_group(group)
+            -- Told at once; intercepted only if you stay.
+            if not state.hailed then
+                hail(state, group)
+            end
             if not state.warned and state.dwell >= WARN_DWELL_S then
                 warn(state, group)
             end

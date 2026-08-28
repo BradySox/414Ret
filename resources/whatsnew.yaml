@@ -13,6 +13,23 @@
 # changes sharing a date keep the order written here.
 
 entries:
+  - date: 2026-08-28
+    title: The border guards actually turn up now
+    change: >-
+      First real flight of the border defence found three things. The country's
+      SAM battery could never fire on any campaign -- it had to be switched on
+      per country in a campaign file, and the map's own border data never did,
+      so the escalation ran correctly and nothing woke. The alert fighters were
+      starting cold on the ramp and took four and a half minutes to get
+      airborne, by which time you were long gone; they scramble off the runway
+      now. And the radio warning waited half a minute after you crossed, so it
+      never felt connected to what you had just done -- it is immediate on
+      entry, and only the interceptors wait.
+    watch: >-
+      Cross a defended border and stay. The warning should come almost at once,
+      a pair should be airborne inside a minute, and if you keep pressing, the
+      field's SAM should come up as they engage.
+    row: B107
   - date: 2026-08-27
     title: Border patrols were waiting off the edge of the map
     change: >-

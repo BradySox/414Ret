@@ -53,7 +53,11 @@ def test_defaults() -> None:
     assert zone is not None
     # No floor authored and none derived: a floor is not a universal rule.
     assert zone.floor_ft is None
-    assert zone.sam is False
+    # The SAM defaults ON. It was authored-only until 2026-08-28, and the
+    # terrain files that are now the only source of borders never set it, so no
+    # shipped campaign could produce a battery at all -- flown that day, the
+    # escalation fired and nothing woke. A campaign may still switch it off.
+    assert zone.sam is True
     assert zone.overflight_override is None
     assert zone.posture_override is None
 
@@ -365,3 +369,12 @@ def test_an_overflight_override_still_wins_when_a_posture_is_passed() -> None:
         posture = zone.posture_in(theater)
         assert zone.permits(theater, True, posture) is override
         assert zone.permits(theater, True) is override
+
+
+def test_a_campaign_can_still_turn_the_sam_off() -> None:
+    """The default flipped on; the authored value has to keep winning."""
+    entry = _entry()
+    entry["sam"] = False
+    zone = NeutralBorderZone.from_yaml(entry)
+    assert zone is not None
+    assert zone.sam is False

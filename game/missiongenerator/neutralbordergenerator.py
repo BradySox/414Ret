@@ -166,7 +166,14 @@ class NeutralBorderGenerator:
                 name=fighter_name,
                 aircraft_type=aircraft,
                 airport=airport,
-                start_type=StartType.Cold,
+                # Runway, not Cold. MEASURED 2026-08-28 (Rayak, Lebanon): a
+                # cold ramp template took 270 s to get airborne -- engine
+                # start, taxi, takeoff -- and by then the intruder was gone.
+                # The Lua asks MOOSE for an air spawn over the field, but
+                # SpawnAtAirbase keeps the template's own start type, so the
+                # request was silently ignored and the flight sat on the ramp.
+                # A QRA scramble is a runway start; the two now agree.
+                start_type=StartType.Runway,
                 group_size=2,
             )
             anchor = airport.position

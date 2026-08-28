@@ -60,8 +60,8 @@ stress it · `✗` fail signature reproduced in-game.
 | B85 | A flight with an unreachable TOT flies instead of orbiting | §8 | ☐ |
 | B98 | The bullseye is the same place it was last mission | §95 | ☐ |
 | B99 | AI packages arrive inside the mission, not after it | §8 | ☐ |
-| B107 | Neutral border: warned, shadowed, then engaged only if you press | §96 | ☐ |
-| B108 | Neutral border: AI intruders are shadowed, never engaged | §96 | ☐ |
+| B107 | Neutral border: warned, shadowed, then engaged only if you press | §96 | ◐ |
+| B108 | Neutral border: AI intruders are shadowed, never engaged | §96 | ◐ |
 | G25 | Armed Recon package: recon drone + SEAD Viper escort + 4-ship sweep | §3 | ◐ |
 | G30 | MANTIS SHORAD link: the point defense ambushes the HARM shot | MANTIS migration | ☐ |
 | G33 | Survivor ADF beacon: the pinned 260 kHz drives a real needle | CSAR (upstream #929 + 414th pin) | ☐ |
@@ -6236,7 +6236,20 @@ mountain or coastal front will do.
      strength, so an 8-object swing is worth a look on Desert Trident's Jordan
      sector specifically.
 
-### B107 — Neutral border: warned, shadowed, then engaged only if you press · §96 · ☐ UNTESTED
+### B107 — Neutral border: warned, shadowed, then engaged only if you press · §96 · ◐ PARTIAL
+
+**Flown 2026-08-28** (Syria/Lebanon, session `New test/19`). The ladder ran to
+spec: hail, shadow from Rayak, and ESCALATED exactly 180 s after entry. Three
+defects found and fixed the same day, so this needs a **re-fly** to close:
+
+* The SAM never existed on any campaign — `sam` was authored-only and the
+  terrain files never set it. Now defaults on. Re-fly must see the battery wake
+  on escalation.
+* The alert flight cold-started and took **270 s** to get airborne. Now a runway
+  start. Re-fly must see it up in well under a minute.
+* The hail waited 30 s for the shadow launch. Now immediate on entry.
+
+Full analysis in `docs/dev/design/414th-neutral-border-defense-notes.md`.
 
 **History:** built 2026-08-24 (the neutral-border session — design note
 `414th-neutral-border-defense-notes.md`). Harness-covered: warn/shadow timing, the
@@ -6282,7 +6295,15 @@ shadow is destroyed by your own AI escort before escalation **more often than no
 fallback); the SA-6 spawns cold or never engages; escalation fires on an AI-only
 intruder.
 
-### B108 — Neutral border: AI intruders are shadowed, never engaged · §96 · ☐ UNTESTED
+### B108 — Neutral border: AI intruders are shadowed, never engaged · §96 · ◐ PARTIAL
+
+**Flown 2026-08-28.** The never-engaged half held — only the player's flight was
+escalated on. But the pre-registered risk fired at 100 %: **all four alert
+aircraft were killed by the intruder's own BARCAP**, and the un-escalated pair
+was shot down having **fired nothing** (return-fire ROE means it cannot shoot
+first, so an escorted intruder kills it for free). Recorded, not fixed —
+changing it re-opens the "defends, never initiates" call. Re-fly to see whether
+the runway start changes the survival rate.
 
 **History:** built 2026-08-24. The DM call: everyone trips the border, only players are
 ever engaged. Harness-covered for the no-escalation invariant; what needs eyes is

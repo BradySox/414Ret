@@ -93,8 +93,14 @@ class NeutralBorderZone:
     #: `contested` bucket and went with it. None is the normal case, and it
     #: means no sanctuary at any height.
     floor_ft: Optional[int] = None
-    #: Author an SA-6 point-defense battery, cloned on player escalation only.
-    sam: bool = False
+    #: An SA-6 point-defense battery, cloned on player escalation only.
+    #: **Defaults on.** It was authored-only until 2026-08-28, and the terrain
+    #: files that are now the only source of borders never set it -- so no
+    #: shipped campaign could produce a SAM at all, while the setting text and
+    #: the plugin description both promised one. Flown that day: escalation
+    #: fired correctly and nothing woke, because the template was never built.
+    #: A campaign may still turn it off per zone.
+    sam: bool = True
     #: Map airfield the alert flight air-spawns overhead. Any airfield on the
     #: terrain works -- it does not need to be a campaign control point.
     airfield: str | None = None
@@ -364,7 +370,7 @@ class NeutralBorderZone:
                 floor_ft=(
                     int(data["floor_ft"]) if data.get("floor_ft") is not None else None
                 ),
-                sam=bool(data.get("sam", False)),
+                sam=bool(data.get("sam", True)),
                 airfield=str(airfield) if airfield is not None else None,
                 spawn=spawn,
                 spawn_alt_ft=int(data.get("spawn_alt_ft", DEFAULT_SPAWN_ALT_FT)),

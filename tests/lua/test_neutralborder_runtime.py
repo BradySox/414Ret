@@ -136,7 +136,12 @@ def test_blue_player_is_warned_and_shadowed_by_a_red_clone() -> None:
     assert len(spawns) == 1
     assert spawns[0]["coalitionId"] == 1  # opposing a BLUE intruder = RED
     assert spawns[0]["countryId"] == RED_COUNTRY
-    assert spawns[0]["takeoff"] == 1  # air spawn, the QRA profile
+    # Runway, not air. MEASURED 2026-08-28 at Rayak: the template was built
+    # StartType.Cold and MOOSE's SpawnAtAirbase keeps the template's own start
+    # type, so the air spawn asked for here silently did not happen and the
+    # flight spent 270 s starting, taxiing and rolling. Both sides say runway
+    # now, which is what a QRA scramble is anyway.
+    assert spawns[0]["takeoff"] == 2
 
     texts = [r for r in h.records("texts") if isinstance(r, dict)]
     assert any("violating" in str(r.get("text", "")) for r in texts)
@@ -597,3 +602,54 @@ def test_the_label_does_not_say_the_country_twice() -> None:
     zone["originLabel"] = "Lebanon border CAP"
     h = _drawn(cfg)
     assert h.records("mapTexts")[0]["text"] == "LEBANON\nCLOSED - alert from border CAP"
+
+
+# -- the radio call is immediate; the interceptor is not -----------------------
+
+
+def test_the_hail_lands_on_entry_not_at_the_shadow_launch() -> None:
+    """Flown 2026-08-28: "good text, pop it immediately on entry to airspace".
+
+    The hail used to wait for warnDwellS along with the shadow, which put the
+    call half a minute after the crossing that caused it and made the whole
+    ladder feel disconnected from what the player did. Being told is instant now;
+    being intercepted still costs the dwell.
+    """
+    h = _setup(_config())
+    h.add_group(_intruder("Viper 1-1", 42, side=2))
+    h.load_plugin_script(PLUGIN)
+    h.advance_to(12)  # one scan, well inside warnDwellS of 30
+
+    texts = [str(r.get("text", "")) for r in h.records("texts") if isinstance(r, dict)]
+    assert any("violating" in t for t in texts), "no hail on entry"
+    assert not _shadow_spawns(h), "the alert flight launched before its dwell"
+    h.assert_no_lua_errors()
+
+
+def test_the_shadow_still_waits_for_its_dwell() -> None:
+    """The control for the test above: immediate hail must not drag the launch
+    forward with it."""
+    h = _setup(_config())
+    h.add_group(_intruder("Viper 1-1", 42, side=2))
+    h.load_plugin_script(PLUGIN)
+    h.advance_to(45)
+    assert len(_shadow_spawns(h)) == 1
+    h.assert_no_lua_errors()
+
+
+def test_a_zone_with_no_sam_says_so_instead_of_going_quiet() -> None:
+    """Flown 2026-08-28: "No sam spawn?" -- escalation fired and nothing woke.
+
+    The template had never been built (sam was authored-only and the terrain
+    files that are now the only source of borders never set it), and wake_sam
+    returned silently, so a mission where the ladder ran correctly looked
+    identical to one where it had not run at all.
+    """
+    cfg = _config(sam=False)
+    h = _setup(cfg)
+    h.add_group(_intruder("Viper 1-1", 42, side=2))
+    h.load_plugin_script(PLUGIN)
+    h.advance_to(200)
+
+    assert not _sam_spawns(h), "a zone with no template spawned a SAM"
+    h.assert_no_lua_errors()

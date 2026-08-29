@@ -6249,6 +6249,13 @@ defects found and fixed the same day, so this needs a **re-fly** to close:
   start. Re-fly must see it up in well under a minute.
 * The hail waited 30 s for the shadow launch. Now immediate on entry.
 
+**Re-flown 2026-08-28 on Afghanistan.** The SAM wake and the escalation both
+confirmed working in game. One further defect found and fixed: on a long thin
+country with no airbase (Pakistan), the alert flight launched **271 NM** behind
+the intruder, because the launch point gave up and used the far-end station
+whenever the direct line left the border. Not a vertex-budget regression --
+measured identical at 96 and 384. Still needs a pass on a long country to close.
+
 Full analysis in `docs/dev/design/414th-neutral-border-defense-notes.md`.
 
 **History:** built 2026-08-24 (the neutral-border session — design note

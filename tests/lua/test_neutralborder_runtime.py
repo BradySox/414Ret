@@ -703,3 +703,57 @@ def test_the_hold_distance_is_configurable() -> None:
     gap = ((routes[-1]["x"] - 5000) ** 2 + (routes[-1]["z"] - 5000) ** 2) ** 0.5
     assert gap > 20 * 1852, f"a 45 NM hold vectored to {gap / 1852:.1f} NM"
     h.assert_no_lua_errors()
+
+
+# -- a long thin country must not launch from the far end ----------------------
+
+# Pakistan on the Afghanistan map: a band along the map edge, ~700 km long and
+# ~90 km deep. Its station is the polygon's representative point, which sits at
+# the far end from wherever you actually cross.
+THIN_BAND = [
+    {"x": "0", "y": "0"},
+    {"x": "90000", "y": "0"},
+    {"x": "90000", "y": "700000"},
+    {"x": "0", "y": "700000"},
+]
+
+
+def _thin_country() -> dict[str, Any]:
+    cfg = _config(sam=False)
+    zone = cfg["neutralBorder"]["zones"][0]
+    zone["border"] = THIN_BAND
+    zone.pop("field", None)
+    zone["spawnX"] = "45000"  # station at the FAR end of the band
+    zone["spawnZ"] = "650000"
+    zone["spawnAltM"] = "6096"
+    return cfg
+
+
+def test_a_long_country_launches_near_you_not_from_the_far_end() -> None:
+    """FLOWN 2026-08-28, Afghanistan map, reported as a regression.
+
+    The rule was "if the straight line to the origin leaves the country, launch
+    from the origin instead" -- written so a national flight never transits the
+    neighbour. On Pakistan, a thin band whose station sits ~270 NM along it,
+    every crossing failed that test and the alert flight spawned **271 NM**
+    behind the intruder. Measured at both 96 and 384 vertices, so it was never
+    the vertex budget: the rule itself does not survive a long country.
+
+    The intruder is inside the polygon by definition, so a point near it is too.
+    launch_point sweeps bearings from the homeward one outward, shrinking the
+    radius, and only gives up for a country thinner than a quarter of the
+    standoff.
+    """
+    h = _setup(_thin_country())
+    h.add_group(_intruder("Viper 1-1", 42, side=2, x=45000, z=40000))
+    h.load_plugin_script(PLUGIN)
+    h.advance_to(60)
+
+    spawns = [r for r in h.records("spawns") if r.get("x") is not None]
+    assert spawns, "no shadow was launched"
+    gap = _sep(spawns[0], 45000, 40000) / 1852
+    assert gap < 40, (
+        f"the alert flight launched {gap:.0f} NM from the intruder -- that is "
+        "the far-end station, not a scramble"
+    )
+    h.assert_no_lua_errors()

@@ -1038,6 +1038,51 @@ territories — Bahrain 598 km², Oman's Musandam 1,799, Iran's coastal piece
 1,973, all with 32+ vertices. Falklands keeps its own 2,000 km² archipelago
 floor. **Regenerating without `--min-area-km2` reintroduces the slivers.**
 
+## Flown 2026-08-28 (Afghanistan) — the alert flight launched 271 NM away
+
+Session `New test/20`, reported as a regression from the vertex-budget change.
+**It is not one.** The fallback fires identically at 96 and at 384 vertices,
+measured against the player's own recorded track — this map is simply the first
+to expose a rule that never survived a long country.
+
+Two things from the same log confirm the previous pass's fixes work in game:
+`SAM battery awake at Pakistan border CAP`, and the escalation on the player's
+flight.
+
+### What happened
+
+`launch_point` computed a point 25 NM from the intruder on the bearing toward
+the origin, and if that point fell outside the border it **gave up and launched
+from the origin** — a rule written so a national alert flight never transits the
+neighbour. Pakistan on the Afghanistan map is a band roughly 700 km long and
+90 km deep, and its station is the polygon's representative point, which sits at
+the far end from wherever you cross. So the straight line always left the band
+early, the rule always fired, and the flight always spawned at the far end:
+
+| Crossing (mission time) | Station distance | Old rule | Fixed |
+|---|---|---|---|
+| t=330 | 271 NM | falls back **271 NM** | 25.0 NM, inside |
+| t=390 | 271 NM | falls back **271 NM** | 25.0 NM, inside |
+| t=540 | 276 NM | falls back **276 NM** | 25.0 NM, inside |
+
+### The fix
+
+The intruder is inside the polygon by definition, so a point near it is too —
+there was never a need to give up and go home. `launch_point` now sweeps
+bearings outward from the homeward one (0, ±30°, ±60° …) at the standoff radius,
+then at half and a quarter of it, and takes the first point that lies inside the
+border. The origin is the last resort only, for a country thinner than a quarter
+of the standoff, where it is close by anyway.
+
+The bearing order matters: the first hit is the closest bearing to home that is
+actually in the country, so the flight still reads as coming from its own
+territory rather than materialising abeam.
+
+**The lesson is about the shape of the country, not the shape of the code.**
+Lebanon hid this: it is small enough that the fallback landed at Rayak, inside
+the action. Every rule here needs testing against a long thin country as well as
+a compact one, which is what `THIN_BAND` in the harness now does.
+
 ## Deferred (not built, not promised)
 
 - Cross-mission consequences: escalating posture, airspace closure, the neutral joining

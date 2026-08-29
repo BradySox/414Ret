@@ -424,15 +424,38 @@ local function launch_point(zone, ix, iz)
     if dist <= SHADOW_STANDOFF_M then
         return { x = ox, y = alt, z = oz, at_origin = true }
     end
-    local f = SHADOW_STANDOFF_M / dist
-    local lx, lz = ix + dx * f, iz + dz * f
-    -- A concave border can put the straight line briefly outside the country.
-    -- Launching a national alert flight over the neighbour is worse than a slow
-    -- response, so that case falls back to the origin.
-    if not in_polygon(zone, lx, lz) then
-        return { x = ox, y = alt, z = oz, at_origin = true }
+    -- Launch from inside the country, near the intruder. The bearing toward
+    -- the origin is tried first so the flight still reads as coming from home,
+    -- then the sweep widens and the radius shrinks.
+    --
+    -- The old rule was "if the straight line leaves the country, launch from
+    -- the origin instead", which is fine for a small country and catastrophic
+    -- for a long one. MEASURED 2026-08-28 on the Afghanistan map: Pakistan is a
+    -- thin band along the map edge, its station sits at the far end, and every
+    -- crossing failed the straight-line test -- so the alert flight spawned
+    -- **271 NM** behind the intruder, every time. The intruder is by definition
+    -- inside the polygon, so a point near it is too; there is no need to give up
+    -- and go home.
+    local base = math.atan2(dz, dx)
+    for _, radius in ipairs({ SHADOW_STANDOFF_M, SHADOW_STANDOFF_M * 0.5,
+                              SHADOW_STANDOFF_M * 0.25 }) do
+        for step = 0, 11 do
+            -- 0, +30, -30, +60, -60 ... so the first hit is the closest bearing
+            -- to home that actually lies in the country.
+            local half = math.floor((step + 1) / 2)
+            local sign = (step % 2 == 0) and 1 or -1
+            local ang = base + sign * half * (math.pi / 6)
+            local lx = ix + math.cos(ang) * radius
+            local lz = iz + math.sin(ang) * radius
+            if in_polygon(zone, lx, lz) then
+                return { x = lx, y = alt, z = lz, at_origin = false }
+            end
+        end
     end
-    return { x = lx, y = alt, z = lz, at_origin = false }
+    -- Nowhere inside the border is far enough from the intruder to launch: the
+    -- country is thinner than a quarter of the standoff. The origin is all
+    -- that is left, and for a country that small it is close by anyway.
+    return { x = ox, y = alt, z = oz, at_origin = true }
 end
 
 local function spawn_shadow(zone, zi, intruder_name, intruder_side, ix, iz)

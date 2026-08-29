@@ -14,6 +14,22 @@
 
 entries:
   - date: 2026-08-28
+    title: Border patrols scramble from near you, not from the far end
+    change: >-
+      A country with no airbase of its own stations its patrol at the middle of
+      its territory, and the flight was supposed to launch about 25 miles from
+      whoever crossed. If the direct line back to that station left the country
+      on the way, it gave up and launched from the station instead -- which is
+      fine for a small country and useless for a long one. On the Afghanistan
+      map, Pakistan is a thin band and its station sits at the far end, so every
+      crossing put the interceptors 271 miles behind you. They now look around
+      for the nearest spot inside the border and launch from there.
+    watch: >-
+      Cross into Pakistan on the Afghanistan map, or any long country with no
+      airbase on it, and stay. A pair should show up within a few minutes rather
+      than never arriving at all.
+    row: B107
+  - date: 2026-08-28
     title: Borders follow the real coastline now
     change: >-
       Country outlines were capped at a point count that was holding six of them

@@ -26,7 +26,7 @@ Design notes:
   higher-priority candidate exists -- the §71 expanded-weapons ``(XW)`` fits sort
   ahead of the plain name -- so the override always lands in the slot the planner
   actually reads, and stays idempotent once written.
-* Every write backs the file up first (into ``_retribution_backups``) and only ever
+* Every write backs the file up first (into ``Retribution/PayloadBackups``) and only ever
   touches the single named entry, so a hand-authored Mission Editor payload sitting in
   the same file survives.
 * A file that exists but cannot be parsed is left completely alone. Rewriting it from

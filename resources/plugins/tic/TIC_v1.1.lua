@@ -973,7 +973,13 @@ function GLSCO_COMBATANT:New(group)
 			-- Recovered condition, not an error: re-issue the move with roads
 			-- prohibited (below) to get unstuck. Logged at info so it doesn't
 			-- pollute the warning stream (can fire often on buggy ground pathing).
-			env.info("OnBeforeArrived: unit is stuck; retrying move without roads")
+			-- Name + running count separate "a few units recovered once" from "one
+			-- unit wedged all mission"; the anonymous line fired 846 times in 7
+			-- minutes and answered neither. 414th-tic-dynamic-fronts-notes.md.
+			combatant.stuckRetries = (combatant.stuckRetries or 0) + 1
+			env.info(string.format(
+			   "OnBeforeArrived: unit is stuck; retrying move without roads [%s] (retry %d)",
+			   tostring(combatant:GetName()), combatant.stuckRetries))
 
 			-- Using roads is very buggy, so let's disable their usage to help
 			-- get unstuck.

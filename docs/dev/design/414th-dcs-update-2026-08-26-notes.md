@@ -62,6 +62,9 @@ subscript) -- string-match clsids before concluding a weapon is absent.
 The runbook and the heavy-mod gotchas are in `tools/verify_mod_export.py`'s docstring;
 the nil-guarded exporter is at `C:\Users\brady\dcs-export\pydcs_export.lua`.
 
+**That exporter covers units, weapons and countries only.** Terrain and parking-slot data
+comes from a different dump that has NOT been run against 2.9.29 on any map -- see section 9.
+
 **Read the install first, export second.** For any question of the form "did ED rename
 or remove X", the install is ground truth and is greppable now.
 
@@ -396,7 +399,9 @@ Three of ours sit on that surface:
   `ground_spawns_large`. The threshold is ours; the slot supply underneath it is
   DCS's, and it just moved.
 - **B96** (Iron Gate's fields fill without an aircraft losing its stand) is ◐
-  PARTIAL and is a stand-count row.
+  PARTIAL and is a stand-count row. Flown 2026-08-29 (test 24): generation and load
+  were clean on all eight Iron Gate fields, so no count is too high. The open half is
+  large-aircraft slots -- **section 9** is the task that would answer it.
 - Iron Gate and Northern Russia both had every squadron's `size:` hand-fitted to
   its base's stand count within the last month. If slot counts changed, those
   numbers are stale in both directions — oversubscription starves the bottom of the
@@ -569,3 +574,87 @@ Existing checklist rows this patch touches, none of them rewritten here:
 
 New rows added by this triage: **B100**, **B101**, **B102** — see
 [414th-ingame-pass-checklist.md](../414th-ingame-pass-checklist.md).
+
+## 9. TASK — the terrain export has not been run, and nothing has run it since
+
+**Not started. Needs a DCS box. ~30 min for the first map, ~10 for each one after.**
+
+Section 1 closed the unit half of the pin: `pydcs_export.lua` ran on 2026-08-26 and the pin
+moved to `dcs-2.9.29-surgical`. That exporter covers units, weapons and countries. **It does not
+touch terrain.** Airport and parking-slot data comes from a separate dump, and that dump has not
+been run against 2.9.29 on any map.
+
+| Map | `airports.py` last regenerated | Campaigns on it |
+|---|---|---|
+| Syria | 2026-06-16 | 18 |
+| Persian Gulf | 2025-11-30 | 8 |
+| Normandy | 2025-10-27 | 2 |
+| Caucasus | 2025-09-20 | 13 |
+| Nevada | 2022-11-20 | 3 |
+
+### Why it matters, and in which direction
+
+§5.1 records that ED rebuilt AI taxi pathing to use aircraft dimensions, and states the change
+alters parking placement and **increases** the number of slots for large aircraft. Our slot counts
+therefore **under**-report. That costs ramp; it does not overflow one — an undercount wastes
+capacity, it never puts two aircraft on one stand.
+
+**The observable cost, measured.** Caucasus Mineralnye Vody reports **28 slots, 0 of them
+large-capable**. Its A-50 and IL-78M are large airframes
+(`flightgroupspawner.py` classifies large as `width > 40`), so they fall through
+`ground_spawns_large` and air-start instead of taking a stand. If the rework added large slots
+there, a re-export puts them on the ramp. The same shape applies anywhere a heavy is based on a
+field whose large slots may have changed.
+
+### What this is NOT
+
+**Test 24 is not evidence for this task**, and the first read of it said otherwise. Its four
+`Mineralnye Vody: No parking place for 'Su-24M'` lines fire at t+57 and t+60 minutes, not at load;
+generation placed exactly 28 aircraft into the 28 slots and DCS accepted all 28. That is a runtime
+spawner, not a stale count. See checklist **B100**, corrected 2026-08-29. Nothing observed anywhere
+shows a slot count that is too **high**, which is the only direction that would break a mission.
+
+So this is a capacity improvement on a decision, not a defect fix on a clock.
+
+### Runbook
+
+The procedure and its two traps are already written up — **read
+[`414th-marianas-wwii-terrain-notes.md`](414th-marianas-wwii-terrain-notes.md) "How the airfields
+were exported, and the two traps in doing it again" before starting.** Do not rediscover them:
+a backslash in the dump path is a syntax error that breaks the whole Mission Editor, and DCS loads
+the module once at startup so patching a running DCS fails silently.
+
+Per map:
+
+1. Patch `<DCS>\MissionEditor\modules\me_map_window.lua` with `dumpairportdata()` and call it
+   from `createAircraft()` under `pcall`. Back the file up first. The patch target is current —
+   the 2026-08-26 patch itself rewrote that file.
+2. Restart DCS. New mission on the terrain, place any aircraft; that fires the dump.
+3. `tools/airport_import.py -t <terrain> <dumpfile>` in the pydcs checkout, which rewrites
+   `dcs/terrain/<terrain>/airports.py`.
+4. Restore the Lua file. A modified install file can trip DCS's integrity check.
+
+The stand data is not readable without this. `Bazar/Map/airdromes.dat` is 388 bytes of binary and
+the per-slot fields come from `Terrain.getStandList()` at runtime, so section 1's "read the install
+first" does not apply here — this one genuinely needs a launch.
+
+### The step that decides whether any of it was worth doing
+
+**Diff `airports.py` before and after, per map, and count the slots.** That diff is the whole
+answer:
+
+- **No change** — the rework did not move slot data on that map, and the question is closed for it
+  permanently. Record that here so nobody re-runs it.
+- **Counts up** — the gain is ramp we were not using. Nothing needs re-authoring; campaign `size:`
+  values are fitted to counts that were correct-or-conservative, so they stay valid.
+- **Counts down anywhere** — the only case that needs work, and the only one that can break a
+  mission. Re-check every campaign authored to the limit on that map against the new numbers.
+
+**Do not re-author any campaign's `size:` values before the diff.** Fitting them against data we
+already know is stale is work that would be redone.
+
+### Order to do them in
+
+Caucasus first: 13 campaigns, and it is the map with a measured 0-large-slot field to check the
+result against. Syria second on campaign count. Nevada last — its data is from 2022, so its diff
+will be the noisiest and the least attributable to this patch.

@@ -599,12 +599,21 @@ alters parking placement and **increases** the number of slots for large aircraf
 therefore **under**-report. That costs ramp; it does not overflow one — an undercount wastes
 capacity, it never puts two aircraft on one stand.
 
-**The observable cost, measured.** Caucasus Mineralnye Vody reports **28 slots, 0 of them
-large-capable**. Its A-50 and IL-78M are large airframes
-(`flightgroupspawner.py` classifies large as `width > 40`), so they fall through
-`ground_spawns_large` and air-start instead of taking a stand. If the rework added large slots
-there, a re-export puts them on the ramp. The same shape applies anywhere a heavy is based on a
-field whose large slots may have changed.
+**There is no observed symptom, and an earlier draft of this section claimed one wrongly.** It said
+Mineralnye Vody has "0 large-capable slots", which is why its A-50 and IL-78M air-start. Both
+halves are false:
+
+- `ParkingSlot.large` is the **slot_version 1** flag. **Every airport on every installed terrain is
+  slot_version 2**, and v2 decides heavy capacity by physical dimensions instead — so `large` is
+  `False` on all 25,954 slots in pydcs and always will be. `qt_ui/.../QBaseMenu2.py` says exactly
+  this in a comment; the claim was made without reading it.
+- By the v2 test the base menu actually shows the player, **Mineralnye Vody has 15 slots that fit
+  an A-50 or IL-78M**, and in the test-24 mission those airframes did park there. The air-started
+  ones were flights on a mid-cycle arrival, not aircraft that failed to find a stand.
+
+So the honest case for this task is **an unverified staleness with no known cost**, not a defect.
+It is worth doing because the answer is cheap and closes a standing unknown, and because the
+direction of any surprise matters — not because anything is visibly broken.
 
 ### What this is NOT
 
@@ -624,6 +633,22 @@ were exported, and the two traps in doing it again" before starting.** Do not re
 a backslash in the dump path is a syntax error that breaks the whole Mission Editor, and DCS loads
 the module once at startup so patching a running DCS fails silently.
 
+**Build the patch from the Marianas note's snippet with three changes**, all of them that note's
+own advice applied. It is deliberately not committed, for the same reason the Marianas helper was
+not: it hardcodes an install path. The three changes: the output path uses forward slashes, it writes
+a `.status.txt` marker before touching any DCS API and overwrites it with the `pcall` result
+afterwards, and it names each dump `C:/dcs-standlist/<TheatreOfWarData.getName()>.lua` so 13 maps
+do not overwrite each other. Guard it on a per-terrain table too, so placing a second aircraft does not re-dump.
+
+**Compile-check it before installing.** `luac5.1` is not on this box but `lupa.lua51` is, and it is
+already a test dependency:
+
+    python -c "import lupa.lua51 as l; r=l.LuaRuntime();       print(r.eval(\"function(s) local f,e=loadstring(s,'c') return f and 'OK' or e end\")      (open(r'<path>','rb').read().decode('utf-8','replace')))"
+
+Every symbol the dump needs is already bound at the top of `me_map_window.lua`: `base` (`_G`, line
+1), `Terrain` (line 19), `TheatreOfWarData` (line 52), `AirdromeData` (line 61), `terrainDATA`
+(line 85). Only `Serializer` needs a `require` inside the function.
+
 Per map:
 
 1. Patch `<DCS>\MissionEditor\modules\me_map_window.lua` with `dumpairportdata()` and call it
@@ -640,8 +665,35 @@ first" does not apply here — this one genuinely needs a launch.
 
 ### The step that decides whether any of it was worth doing
 
-**Diff `airports.py` before and after, per map, and count the slots.** That diff is the whole
-answer:
+**Use `tools/airport_slot_census.py`** — it reads pydcs rather than parsing generated source, so it
+is immune to formatting churn and reports exactly what the campaign engine sees:
+
+    python tools/airport_slot_census.py --out before.json   # BEFORE any import
+    python tools/airport_slot_census.py --compare before.json
+
+The baseline does not have to be captured in advance: `airports.py` lives in **pydcs**, not this
+repo, so the pre-export numbers are always recoverable from the pinned commit
+(`requirements.txt`, currently `95342c05`). The census as of 2026-08-29 on that pin:
+
+| Terrain | Airfields | Slots | Take a heavy (v2 fit) |
+|---|---|---|---|
+| Caucasus | 21 | 900 | 195 |
+| Syria | 224 | 3,976 | 162 |
+| Persian Gulf | 29 | 1,289 | 193 |
+| Nevada | 17 | 632 | 15 |
+| Normandy | 89 | 3,434 | 0 |
+| Sinai | 55 | 3,383 | 268 |
+| Mariana Islands | 8 | 264 | 112 |
+| Afghanistan | 26 | 1,381 | 66 |
+| Falklands | 26 | 280 | 15 |
+| Kola | 37 | 1,161 | 79 |
+| Iraq | 20 | 1,397 | 56 |
+| The Channel | 12 | 572 | 12 |
+
+MarianasWWII and GermanyCW are not in that list — the census walks `dcs.terrain` by class name and
+those two do not resolve under the names used there. Add them before calling a sweep complete.
+
+Read the result this way:
 
 - **No change** — the rework did not move slot data on that map, and the question is closed for it
   permanently. Record that here so nobody re-runs it.

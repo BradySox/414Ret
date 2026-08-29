@@ -1216,6 +1216,87 @@ abandoned an engagement already in progress. The §61 rule still applies: the
 task is only re-set when the target id actually changes, because a repeated
 identical `setTask` restarts the attack run.
 
+## Flown 2026-08-29 (test 23) — a racetrack with one waypoint is not a racetrack
+
+The 112 kt fix held: the orbit task carried 208.33 m/s and the patrols were up
+and orbiting. Everything from crossing to the SAM firing then ran end to end for
+the first time. What still failed was the route itself.
+
+### Every leader flew into the ground; every wingman lived
+
+| Aircraft | Died at | Wingman |
+|---|---|---|
+| India Su-30 #1 | 43.3 s | #2 flew the full 649 s |
+| Iran MiG-29A #1 | 42.2 s | #2 flew the full 649 s |
+| Pakistan F-16A #1 | 34.6 s | #2 flew to the swap at 440 s |
+
+Three for three, and the split is exact: **#1 dies, #2 lives**. The wingmen were
+not spared — they followed the leaders down to 1,035 / 1,035 / 3,791 m and
+pulled out once the lead was gone.
+
+**A DCS Race-Track orbit flies between its waypoint and the next one.** The
+patrol was built by `flight_group_inflight`, which makes a one-waypoint route,
+and the orbit task was attached to it. There was no second point, so there was
+no leg. The descent starts at the first sample and never levels: 6,093 m to
+1,866 m in 34 s at ~210 m/s — a dive under power, not a stall.
+
+The control is in the same `.miz`: every working Race-Track in it (the blue
+BARCAP, both tankers, the AWACS, the CSAR orbit) has **13–15 route points**. The
+three neutral patrols had **one**. The tree's only single-waypoint orbit —
+`holdpoint.py` — uses `Circle`, which is the pattern that needs no second point.
+
+**The fix** is `NeutralBorderZone.patrol_leg_end`: a 25 NM leg from the anchor on
+the first of twelve bearings whose whole length stays inside the border polygon,
+shortened to 15 or 9 NM if the full leg leaves. A country too thin for even the
+short leg gets `Circle` instead. `test_the_generated_patrol_has_a_second_waypoint`
+builds the real group through the real generator and asserts two points, because
+the leg maths passing in isolation is not what shipped broken.
+
+Run against the shipped geometry, **all 52 zones across the 8 terrains get a
+racetrack** — 50 at the full 25 NM, Oman's smaller polygon at 15 and Bahrain at
+8.8. The `Circle` fallback is therefore never reached on shipped data; it exists
+for a campaign-authored polygon narrower than anything real.
+
+### What did work, and is now proven in DCS
+
+- **The airborne coalition swap.** Pakistan's pair came back as `Coalition=Allies,
+  Country=xr` at the same altitude (6,093.4 m) and was doing **211 m/s within
+  5 s**. The recorded risk was that `Respawn` is a destroy-and-re-add that does
+  not carry velocity; measured, it does not matter. **That risk is closed.**
+- **The SAM fired.** Two `SA3M9M` launches at 517 s and 528 s. The escalation
+  clone works end to end, which no earlier test reached.
+- **The ladder.** `ESCALATED on Kandahar BARCAP|...` logged in both sessions.
+
+### The patrol never fired back, and that is the loadout
+
+`load_task_default_loadout(CAP)` gave the F-16A **4× AIM-9M, 2× 370 gal, ALQ-131**
+— a pure WVR fit. The player's Block 50 killed both from AMRAAM range, so the
+patrol died without a shot. This is not a defect; it is what a Sidewinder-armed
+jet does against AMRAAMs. Whether a neutral's deterrent should carry a BVR
+weapon is a **DM call and has not been made** — do not change the loadout
+silently.
+
+### One log line, guarded
+
+`OptionROEWeaponFree` ran on MOOSE's pre-`Respawn` GROUP and logged a `GetVec3`
+error, once per escalation. The call now asks DCS whether the group exists first.
+
+### The self-scan guard missed the patrol after the rename
+
+`scan_group` skips a country's own aircraft by name, and the list was written
+for the scramble: `NEUTRAL AF` and `NEUTRAL SAM`. The standing patrol is
+`NeutralBorder|<country>|<type>`, so from the moment it swaps — which puts it on
+a coalition — it was scanned as an intruder inside its own border. **Nothing
+player-facing came of it**: hail, warn, escalation and the SAM wake are all
+gated on `is_player`, and the patrol is never a player. The guard now lists the
+patrol's real prefix as well.
+
+**No test.** With every rung `is_player`-gated the guard has no observable
+effect from the harness, and `intruders` is a file-local. A test here would
+have to fake the patrol into a player group to see anything, which asserts a
+situation that cannot occur. The guard is defensive: it costs a string compare
+and it closes the trap for whoever later relaxes one of those gates.
+
 ## Deferred (not built, not promised)
 
 - Cross-mission consequences: escalating posture, airspace closure, the neutral joining

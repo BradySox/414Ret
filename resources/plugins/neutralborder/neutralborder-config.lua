@@ -580,9 +580,16 @@ local function escalate(state, intruder_group)
     -- Respawn re-adds 0.1 s later, so the group only exists again after a tick.
     timer.scheduleFunction(function()
         pcall(function()
-            local mg = GROUP:FindByName(patrol_for(zone, state.side))
-            if mg then
-                mg:OptionROEWeaponFree()
+            -- Ask DCS first. MOOSE's registry still holds the pre-Respawn
+            -- group for a moment, and OptionROEWeaponFree on that one logs a
+            -- GetVec3 error (seen once per escalation, flown 2026-08-29).
+            local pname = patrol_for(zone, state.side)
+            local dg = pname and Group.getByName(pname)
+            if dg and dg:isExist() then
+                local mg = GROUP:FindByName(pname)
+                if mg then
+                    mg:OptionROEWeaponFree()
+                end
             end
             retarget(zone, state.side)
         end)
@@ -656,7 +663,13 @@ local function scan_group(group, side, now)
         return
     end
     local name = group:getName() or ""
-    if string.find(name, "NEUTRAL AF", 1, true) or string.find(name, "NEUTRAL SAM", 1, true) then
+    -- A country's own aircraft are never its intruders. The standing patrol
+    -- ("NeutralBorder|") joins a coalition the moment it swaps and was scanned
+    -- inside its own border until 2026-08-29; nothing reached a player because
+    -- every rung of the ladder is gated on is_player.
+    if string.find(name, "NeutralBorder|", 1, true)
+        or string.find(name, "NEUTRAL AF", 1, true)
+        or string.find(name, "NEUTRAL SAM", 1, true) then
         return
     end
     local p = lead:getPoint()

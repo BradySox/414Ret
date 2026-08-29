@@ -31,11 +31,15 @@ from dcs.vehicles import AirDefence
 
 from game.theater.nationalpostures import aircraft_for
 from game.theater.neutralborder import NEUTRAL, NeutralBorderZone
-from game.utils import feet
+from game.utils import feet, nautical_miles
 from .neutralborderluadata import NeutralBorderLuaZone
 
 #: Cruise speed for a point-spawned CAP, in km/h (pydcs speed units).
 CAP_SPEED_KPH = 750.0
+
+#: Racetrack leg length. Shortened automatically for a country too narrow to
+#: hold it, and dropped for a circle when even the shortest leg leaves.
+PATROL_LEG_NM = nautical_miles(25)
 
 if TYPE_CHECKING:
     from game import Game
@@ -190,17 +194,25 @@ class NeutralBorderGenerator:
             speed=CAP_SPEED_KPH,
             group_size=2,
         )
+        # A Race-Track orbit flies between its waypoint and the NEXT one, so it
+        # needs a second point. Flown 2026-08-29 with one waypoint: all three
+        # patrol leaders flew into the ground inside 43 s.
+        leg_end = zone.patrol_leg_end((anchor.x, anchor.y), PATROL_LEG_NM.meters)
+        if leg_end is None:
+            # Too thin a country to hold a leg. A circle needs no second point.
+            pattern = OrbitAction.OrbitPattern.Circle
+        else:
+            pattern = OrbitAction.OrbitPattern.RaceTrack
+            group.add_waypoint(
+                Point(leg_end[0], leg_end[1], self.mission.terrain),
+                int(spawn_alt_m),
+                speed=int(CAP_SPEED_KPH),
+            )
         # km/h, NOT m/s. Every pydcs speed argument is km/h and it divides by
         # 3.6 on write, so a "helpful" conversion here is applied twice. Flown
-        # 2026-08-29: passing CAP_SPEED_KPH / 3.6 put 57.8 m/s -- 112 kt -- in
-        # the orbit task, and the F-16A, MiG-29A and Su-30 patrols all stalled
-        # and crashed within a minute of mission start.
+        # 2026-08-29: /3.6 here put 112 kt in the task and every patrol stalled.
         group.points[0].tasks.append(
-            OrbitAction(
-                int(spawn_alt_m),
-                int(CAP_SPEED_KPH),
-                OrbitAction.OrbitPattern.RaceTrack,
-            )
+            OrbitAction(int(spawn_alt_m), int(CAP_SPEED_KPH), pattern)
         )
         group.late_activation = False
         # The clones inherit the template's pylons, so arm it once here. An

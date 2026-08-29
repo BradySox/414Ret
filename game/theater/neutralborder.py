@@ -1,7 +1,8 @@
 """Bordering-nation airspace (§96).
 
 A campaign yaml lists the countries that border the war, each with a border
-polygon (real-data traced, see ``tools/neutral_border_geo.py``). **Every
+polygon, though in practice every shipped border comes from the terrain files
+that ``tools/build_terrain_borders.py`` generates. **Every
 bordering nation should be represented** (DM call, 2026-08-24): drawing only the
 dangerous ones tells the player where not to go but never where they *may* go,
 which reads as "the rest of the map is unmodelled" rather than "this one is
@@ -17,8 +18,9 @@ derivation for the case base-ownership gets wrong.
 The four postures and what each means to a pilot:
 
 * ``neutral`` -- genuinely out of the war: no coalition holds an airfield
-  inside it. It defends its airspace -- cross the border and a §96 alert flight
-  shadows, warns, and engages a player who presses. A neutral that can field no
+  inside it. It defends its airspace -- it flies a standing patrol inside its
+  own border from mission start, hails you on entry, and turns hostile in place
+  on a player who presses. A neutral that can field no
   interceptor (DCS models no Turkmenistan; Cyprus and Armenia have no entry in
   the dated table) is drawn and toothless, on the map as well as in the
   mission.
@@ -54,6 +56,7 @@ these -- the border is a runtime (Lua) rule only, by design.
 from __future__ import annotations
 
 import logging
+import math
 from dataclasses import dataclass, field
 from typing import Any, Optional
 
@@ -285,6 +288,40 @@ class NeutralBorderZone:
         from game.theater.nationalpostures import aircraft_for
 
         return aircraft_for(self.country, day) is not None
+
+    def patrol_leg_end(
+        self, anchor: tuple[float, float], length_m: float
+    ) -> tuple[float, float] | None:
+        """The far end of a racetrack leg from ``anchor`` that stays inside.
+
+        A DCS Race-Track orbit flies between its waypoint and the *next* one.
+        Flown 2026-08-29: with a one-waypoint route there is no leg, and all
+        three patrol leaders flew into the ground inside 43 s (the wingmen
+        followed them down to 1,000-3,800 m and pulled out once the lead was
+        gone). Returns None for a country too thin to hold even a short leg;
+        the caller orbits in a circle instead, which needs no second point.
+        """
+        from shapely.geometry import LineString, Polygon
+
+        if len(self.border) < 3:
+            return None
+        polygon = Polygon(self.border)
+        if not polygon.is_valid:
+            polygon = polygon.buffer(0)
+        best: tuple[float, tuple[float, float]] | None = None
+        for degrees in range(0, 360, 30):
+            radians = math.radians(degrees)
+            for scale in (1.0, 0.6, 0.35):
+                end = (
+                    anchor[0] + length_m * scale * math.cos(radians),
+                    anchor[1] + length_m * scale * math.sin(radians),
+                )
+                if not polygon.contains(LineString([anchor, end])):
+                    continue
+                if best is None or scale > best[0]:
+                    best = (scale, end)
+                break
+        return None if best is None else best[1]
 
     def origin_label(self, posture: str, enforced: bool = True) -> str:
         """What the map tooltip calls this border's meaning."""

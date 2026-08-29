@@ -14,6 +14,23 @@
 
 entries:
   - date: 2026-08-29
+    title: The border patrol leaders were flying into the ground
+    change: >-
+      Every patrol's leader crashed within 34 to 43 seconds of the mission
+      starting, and the wingmen followed them most of the way down before
+      pulling out. The patrol was given a racetrack to fly but only one point
+      to fly it between, so there was no racetrack -- the flight simply
+      descended until it hit something. They now get a 25 mile leg along their
+      own border, shortened or swapped for a circle if the country is too
+      narrow to hold one. Two things did work for the first time in the same
+      test: the moment a patrol changes sides it keeps flying normally, and
+      the country's SAM battery actually fired.
+    watch: >-
+      Look for the patrol still at altitude ten minutes in, and flying a long
+      oval rather than sitting in one place. Both aircraft should still be
+      there, not one.
+    row: B110
+  - date: 2026-08-29
     title: The border patrols can stay in the air now
     change: >-
       The new standing patrols were being told to orbit at 112 knots, which no

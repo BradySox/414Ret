@@ -106,3 +106,119 @@ def test_the_orbit_speed_is_written_in_km_h_not_m_s() -> None:
         "stalls and falls out of the sky"
     )
     assert knots < 700, f"the orbit task commands {knots:.0f} kt, which is not an orbit"
+
+
+def test_a_racetrack_leg_stays_inside_the_border() -> None:
+    """A Race-Track orbit flies between its waypoint and the NEXT one.
+
+    FLOWN 2026-08-29: the patrol had a one-waypoint route, so there was no leg.
+    All three leaders -- India's Su-30, Iran's MiG-29A and Pakistan's F-16A --
+    flew into the ground within 34-43 s, and the wingmen followed them down to
+    1,035-3,791 m before pulling out. Every working racetrack in the same .miz
+    had 13-15 route points.
+    """
+    from game.missiongenerator.neutralbordergenerator import PATROL_LEG_NM
+    from game.theater.neutralborder import NeutralBorderZone
+
+    # A 200 x 200 km square: any 25 NM leg from the middle fits.
+    square = [
+        (-100_000.0, -100_000.0),
+        (100_000.0, -100_000.0),
+        (100_000.0, 100_000.0),
+        (-100_000.0, 100_000.0),
+    ]
+    zone = NeutralBorderZone(country="Nowhere", border=square)
+
+    end = zone.patrol_leg_end((0.0, 0.0), PATROL_LEG_NM.meters)
+    assert end is not None, "a leg fits in a 200 km square and one was not found"
+    assert all(abs(v) < 100_000.0 for v in end), f"leg end {end} left the border"
+
+
+def test_a_country_too_thin_for_a_leg_gets_no_racetrack() -> None:
+    """The fallback matters: a circle needs no second point, a racetrack does.
+
+    Without this the thin-country case would ship the exact one-waypoint
+    racetrack that put three patrol leaders into the ground.
+    """
+    from game.missiongenerator.neutralbordergenerator import PATROL_LEG_NM
+    from game.theater.neutralborder import NeutralBorderZone
+
+    # 2 km wide. The shortest leg tried is 0.35 x 25 NM = 16 km.
+    sliver = [
+        (-1_000.0, -1_000.0),
+        (1_000.0, -1_000.0),
+        (1_000.0, 1_000.0),
+        (-1_000.0, 1_000.0),
+    ]
+    zone = NeutralBorderZone(country="Sliver", border=sliver)
+
+    assert zone.patrol_leg_end((0.0, 0.0), PATROL_LEG_NM.meters) is None
+
+
+def test_a_zone_with_no_border_polygon_gets_no_racetrack() -> None:
+    """A campaign may author a zone with an airfield and no polygon."""
+    from game.missiongenerator.neutralbordergenerator import PATROL_LEG_NM
+    from game.theater.neutralborder import NeutralBorderZone
+
+    zone = NeutralBorderZone(country="Unbounded")
+    assert zone.patrol_leg_end((0.0, 0.0), PATROL_LEG_NM.meters) is None
+
+
+def test_the_generated_patrol_has_a_second_waypoint() -> None:
+    """The isolated leg maths is not the thing that shipped broken.
+
+    FLOWN 2026-08-29: patrol_leg_end did not exist and the generator wrote one
+    waypoint, so this is the assertion that would have caught it. Builds the
+    real group through the real generator on a real pydcs mission.
+    """
+    from datetime import date
+
+    from dcs import Mission
+    from dcs.coalition import Coalition
+    from dcs.task import OrbitAction
+    from dcs.terrain import Caucasus
+
+    from game.missiongenerator.neutralbordergenerator import NeutralBorderGenerator
+    from game.theater.neutralborder import NeutralBorderZone
+
+    mission = Mission(terrain=Caucasus())
+    mission.coalition["neutrals"] = Coalition("neutrals")
+    # A square around the map origin, big enough to hold a 25 NM leg.
+    square = [
+        (-120_000.0, -120_000.0),
+        (120_000.0, -120_000.0),
+        (120_000.0, 120_000.0),
+        (-120_000.0, 120_000.0),
+    ]
+    zone = NeutralBorderZone(
+        country="Turkey",
+        aircraft="F-4E-45MC",
+        spawn=(0.0, 0.0),
+        border=square,
+    )
+    theater = SimpleNamespace(neutral_border_zones=[zone], controlpoints=[])
+    game = SimpleNamespace(
+        settings=SimpleNamespace(neutral_border_defense=True),
+        theater=theater,
+        current_day=date(2004, 6, 1),
+    )
+    mission_data = SimpleNamespace(neutral_border_zones=[])
+    NeutralBorderGenerator(
+        mission, game, mission_data, blue_country_id=2, red_country_id=34  # type: ignore[arg-type]
+    ).generate()
+
+    groups = [
+        group
+        for country in mission.coalition["neutrals"].countries.values()
+        for group in country.plane_group
+        if group.name.startswith("NeutralBorder|")
+    ]
+    assert groups, "the patrol was never built"
+    patrol = groups[0]
+    assert len(patrol.points) == 2, (
+        f"the patrol has {len(patrol.points)} route point(s); a Race-Track orbit "
+        "flies between its waypoint and the next one, so one point is no leg"
+    )
+    orbits = [t for t in patrol.points[0].tasks if isinstance(t, OrbitAction)]
+    assert orbits, "no orbit task on the patrol"
+    assert orbits[0].dict()["params"]["pattern"] == "Race-Track"

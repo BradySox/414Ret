@@ -6254,11 +6254,24 @@ defects found and fixed the same day, so this needs a **re-fly** to close:
 
 **REDESIGNED 2026-08-29 — re-fly from scratch.** The scramble is gone: a
 defended country now flies a standing neutral patrol over its own border from
-mission start, and its coalition is swapped in place when you press it. Watch
-for two things nothing can test outside DCS: that the patrol is **visible and
-orbiting before you cross**, and that at the moment it turns hostile it **keeps
-flying** — `GROUP:Respawn` is a destroy-and-re-add, so velocity comes from the
-route rather than carrying over. If it drops out of the sky, stop and report.
+mission start, and its coalition is swapped in place when you press it.
+
+**Flown twice on 2026-08-29** (Afghanistan, sessions `New test/22` and `23`).
+Test 22: all three patrols stalled and crashed inside a minute — the orbit task
+was given 112 kt, because `OrbitAction` takes km/h and the value was converted
+to m/s first, so pydcs divided by 3.6 twice. Test 23, with that fixed: the
+patrols orbited, the ladder ran, the coalition swap worked **and kept the pair
+flying at 211 m/s within 5 s** (the destroy-and-re-add velocity risk is now
+closed by measurement), and **the SA-6 fired for the first time**. Still failed:
+every patrol *leader* flew into the ground in 34–43 s while every wingman lived,
+because a Race-Track orbit flies between its waypoint and the next one and the
+route had only one. The patrol now gets a 25 NM leg inside its own border.
+
+**Re-fly must show:** both aircraft still up ten minutes in, flying a long oval
+rather than holding one point; the pair visible before you cross; and the SAM
+waking on escalation. Known and NOT a defect: the patrol carries a WVR fit
+(4× AIM-9M on the F-16A) and will die to AMRAAMs without firing — whether a
+neutral gets a BVR weapon is an open DM call.
 
 **Re-flown 2026-08-28 on Afghanistan.** The SAM wake and the escalation both
 confirmed working in game. One further defect found and fixed: on a long thin

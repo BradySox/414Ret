@@ -10238,12 +10238,19 @@ in front of you, reading Sweden and Finland `closed` in 1983 while both sides
 flew combat sorties off their runways, and it cannot see a base change hands.
 The research is kept and still supplies the airframe. **Altitude floors went
 with it** — they came from its `contested` bucket, so a floor is now authored
-only and a defending country defends at any height. Cross a refusing neutral's border
-below the altitude floor and an alert flight spawns on the intruder's opposing
-coalition (the only way a "neutral" can legally fire in DCS), shadows at return-fire
-ROE, and radio-warns; a player who stays past the engage timer, releases a weapon
-inside, or fires on the shadower is engaged — and the SA-6 battery clones in awake.
-AI intruders are shadowed but never engaged. A red-aligned nation gets no §96 flight:
+only and a defending country defends at any height. **A refusing neutral flies a
+standing patrol inside its own border, airborne from mission generation** — a
+25 NM racetrack leg chosen to stay inside the polygon, or a circle for a country
+too thin to hold one. It is visible before you cross, which is the deterrent the
+scramble never managed (three flown attempts, all too slow or too far). Cross and
+it hails you at once, and warns again at dwell; neither call launches anything.
+A player who stays past the engage timer, releases a weapon inside, or fires on
+the patrol turns it hostile **in place** — `GROUP:Respawn` onto the intruder's
+opposing coalition, the only way a "neutral" can legally fire in DCS — and the
+SA-6 battery clones in awake. Both sides violating one country gets a second
+flight rather than a re-swap; two intruders on one side gets nearest-target
+retasking on a 20 s loop. AI intruders are warned but never engaged.
+A red-aligned nation gets no §96 flight:
 its polygon joins §1's QRA accept zones, so the enemy's existing interceptors defend
 it. A contested country — both sides holding airfields inside it — is enforced by
 nobody and claimed by neither QRA. A neutral that can field no interceptor (no era

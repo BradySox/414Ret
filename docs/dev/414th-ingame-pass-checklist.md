@@ -45,6 +45,13 @@ re-runs the same campaign expecting a different answer.
 | H10 | One client flight, so no shared-airframe index to build |
 | B107–B109 | The `.miz` was generated four seconds before #997 merged onto the branch |
 
+**pydcs's parking data predates the 2026-08-26 rework on every map.** `airports.py` was last
+regenerated 2026-06-16 for Syria, 2025-09-20 for Caucasus, and 2022 for Nevada. The rework's own
+claim is that slot counts went **up** for large aircraft, so a stale count under-reports and costs
+ramp rather than overflowing it — Mineralnye Vody reads 0 large-capable slots, which is why its
+A-50 and IL-78M air-start. Re-exporting is a capacity question, not a correctness one; nothing in
+test 24 shows a count that is too high.
+
 **A gotcha for whoever parses the next ACMI.** Tacview's `Coalition` field is unreliable here —
 a Russian T-90 records as `Coalition: Allies` with `Color: Red`. Use `Color`. Object positions are
 also relative to `ReferenceLatitude=38 / ReferenceLongitude=36`, not absolute.
@@ -172,7 +179,7 @@ stress it · `✗` fail signature reproduced in-game.
 | B95 | Saving the air wing keeps both coalitions | air wing config | ☐ |
 | B96 | Iron Gate's fields fill without an aircraft losing its stand | Iron Gate | ◐ |
 | B97 | One salvo, and only the targeted flight breaks | §94 | ◐ |
-| B100 | The ramp still holds the squadrons authored against it | DCS 2026-08-26 parking rework | ✗ |
+| B100 | The ramp still holds the squadrons authored against it | DCS 2026-08-26 parking rework | ◐ |
 | B101 | The F-4E's Shrike and gun pod are still on the jet | §71 | ☐ |
 | B102 | A low ingress against an SA-2/SA-3 belt is still flyable | DCS 2026-08-26 SAM guidance | ☐ |
 | B103 | BMP-3s in a firefight still fire like armour, not infantry | §9 TIC | ☐ |
@@ -5888,8 +5895,8 @@ from a fresh New Game, not a save** — a save never took this path.
 field this row said to look at first, generated with **9 F-15C on 10 stands** and fits. But
 `Mineralnye Vody: No parking place for 'Su-24M'` appears **4 times** in the log — that base is
 authored at **28 aircraft on 28 stands**, zero slack, and four more Su-24M were sent to it than it
-can hold. First occurrence of the signature since the 2026-08-26 DCS parking rework. See **B100**,
-which is the same question asked of the rework.
+can hold — but at t+57 min, not at load, and the field has no Su-24M squadron. See **B100**: this
+is a runtime spawner, not the parking rework, and generation itself was clean.
 
 **VERIFIED 2026-08-23** (`Tacview-20260823-181233`, 62 min of sim, 1,091 units, 238
 aircraft, `autosave.retribution` now on turn 2).
@@ -6255,15 +6262,29 @@ exercised by any test here.
   declined (it would stop being a findable landmark). If the degenerate calls actually
   bite in the air, that decision reopens.
 
-### B100 — The ramp still holds the squadrons authored against it · DCS 2026-08-26 parking rework · ✗ REGRESSED
+### B100 — The ramp still holds the squadrons authored against it · DCS 2026-08-26 parking rework · ◐ PARTIAL
 
-**2026-08-29, test 24** (Caucasus — Iron Gate turn 1, 72 min, `Tacview-20260829-162330`, DCS 2.9.29.27278) — **fail signature reproduced on DCS 2.9.29.27278.** The generated
-mission logged `Mineralnye Vody: No parking place for 'Su-24M'` four times. Mineralnye Vody is
-authored at 28 aircraft against 28 stands — no slack — so any aircraft routed there beyond its own
-squadrons has nowhere to go. Iron Gate's blue fields were fine in the same mission (Batumi 9/10,
-Kobuleti 27/42, Kutaisi 23/58), so this is not a whole-campaign shortfall; it is one
-authored-to-the-limit red field meeting the reworked placement. Northern Russia has not been
-checked yet.
+**2026-08-29, test 24** (Caucasus — Iron Gate turn 1, DCS 2.9.29.27278) — **generation passes;
+the parking rework is NOT implicated.** Every squadron on both sides came up with the aircraft its
+campaign file asks for, and **mission load produced no parking failure at all**. Generation placed
+exactly 28 aircraft at Mineralnye Vody against pydcs's 28 slots and DCS accepted all 28.
+
+**A correction, because the first read of this was wrong.** Four
+`Mineralnye Vody: No parking place for 'Su-24M'` lines do appear — but at **t+57 and t+60 minutes**,
+in two-ship pairs, long after load, and with an uninitialised group name in the log
+(`'¿'`). **No Su-24M is homed at Mineralnye Vody in the `.miz`** — all 19 Su-24M groups
+are at Mozdok or Tbilisi-Lochini, and the field's own QRA templates are MiG-31/MiG-29S/Su-27. So
+this is a **runtime spawner adding aircraft to a field generation had already filled to exactly
+100 %**, not a stand-count mismatch and not the 2026-08-26 rework. The spawner was not identified;
+`intercept`, `redscramble` and `neutralborder` were all on and none of their templates is a Su-24M.
+Worth its own row if it recurs.
+
+**What this row still owes.** The large-aircraft clause is unresolved: pydcs reports
+**0 large-capable slots** at Mineralnye Vody, so its A-50 and IL-78M air-start rather than taking a
+stand. Whether the rework added large slots there cannot be answered without re-exporting pydcs's
+terrain data — **no map's `airports.py` has been regenerated since the patch** (newest is Syria,
+2026-06-16; Nevada's is from 2022). An undercount only wastes ramp, so this is capacity, not
+correctness. Northern Russia is still unchecked.
 
 The 2026-08-26 DCS patch rebuilt AI taxiway pathing to use aircraft dimensions, and says
 in its own words that this changes the placement of parking spaces and increases the

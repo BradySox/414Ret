@@ -6267,12 +6267,19 @@ every patrol *leader* flew into the ground in 34–43 s while every wingman live
 because a Race-Track orbit flies between its waypoint and the next one and the
 route had only one. The patrol now gets a 25 NM leg inside its own border.
 
-**Re-fly must show:** both aircraft still up ten minutes in, flying a long oval
-rather than holding one point; the pair visible before you cross; and the SAM
-waking on escalation, and **four aircraft per patrol, not two**. Known and NOT
-a defect: the patrol keeps its era's WVR fit (4× AIM-9M on the F-16A), so a
-modern jet still out-ranges it — the DM's call on 2026-08-29 was to answer that
-with numbers rather than better missiles. Do not "fix" the loadout.
+**Test 24 (Caucasus, Turkey) replicated the leader crash on a second terrain**
+before the fix shipped — it was generated 25 minutes early, so its `.miz` still
+had one route point. Leader hit the ground at 34.3 s against Pakistan's 34.6 s,
+and here the wingman went in too, at 65.3 s, both at under 15 m AGL in a
+near-vertical spiral. Nothing about §96 was exercised in that session because
+the patrol was gone inside a minute.
+
+**Re-fly must show:** all four aircraft still up ten minutes in, flying a long
+oval rather than holding one point; the flight visible before you cross; and the
+SAM waking on escalation. Known and NOT a defect: the patrol keeps its era's WVR
+fit (4× AIM-9M on the F-16A), so a modern jet still out-ranges it — the DM's call
+on 2026-08-29 was to answer that with numbers rather than better missiles. Do not
+"fix" the loadout.
 
 **Re-flown 2026-08-28 on Afghanistan.** The SAM wake and the escalation both
 confirmed working in game. One further defect found and fixed: on a long thin

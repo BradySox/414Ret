@@ -1276,6 +1276,32 @@ jet does against AMRAAMs. Whether a neutral's deterrent should carry a BVR
 weapon is a **DM call and has not been made** — do not change the loadout
 silently.
 
+### Test 24 confirmed the diagnosis on a second terrain, before the fix shipped
+
+Test 24 (Caucasus, Turkey, F-16C bl.50) was **generated at 16:22, before the
+racetrack fix landed at 16:47** — its `.miz` carries one route point and two
+pilots, so it is provably the test-23 build. That makes it an unplanned
+replication, and it replicates exactly:
+
+| | Leader | Wingman |
+|---|---|---|
+| Test 23, Afghanistan, Pakistan F-16A | ground at **34.6 s** | recovered, flew to the swap |
+| Test 24, Caucasus, Turkey F-16C | ground at **34.3 s** | ground at **65.3 s** |
+
+Four airframes across two terrains, and the leader dies at the same 34 seconds.
+Both aircraft hit terrain — last samples at **13 m and 4 m AGL** — and the
+wingman's last attitude is **−66.9° pitch at 71.9° bank**, a near-vertical
+spiral, not a stall mush. That rules out the 112 kt reading a second time: the
+orbit task in this `.miz` carries 208.33 m/s.
+
+**Neither Afghanistan wingman was saved by anything the patrol did** — they had
+ground to recover into. Turkey's spawn sits over ~2,000 m of rock and neither
+aircraft got out. On this map the whole patrol was gone in 65 s, which is why
+the session logs no escalation at all: there was nothing left to escalate with.
+
+The fix was checked against this exact zone: Turkey's spawn `(-426756, 661245)`
+yields a **25.0 NM leg**, and the patrol is now four aircraft.
+
 ### Numbers, not better missiles (DM call, 2026-08-29)
 
 The patrol takes `load_task_default_loadout(CAP)`, which on the F-16A is

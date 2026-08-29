@@ -7242,6 +7242,15 @@ Side="I",
 Event="OnEventWeaponDrop",
 Text="S_EVENT_WEAPON_DROP"
 },
+-- 414Ret patch (event 61 spam): upstream MOOSE declares UnitTaskComplete in EVENTS
+-- but has no _EVENTMETA row for it, so onEvent drops the event and logs an error.
+-- DCS fires it ~14/s with TIC running: 6,807 log lines in one 8-minute mission.
+[EVENTS.UnitTaskComplete]={
+Order=1,
+Side="I",
+Event="OnEventUnitTaskComplete",
+Text="S_EVENT_UNIT_TASK_COMPLETE"
+},
 [EVENTS.UnitTaskStage]={
 Order=1,
 Side="I",

@@ -7478,11 +7478,23 @@ a second copy of the Lua read-modify-write.
   same airframe+task resolves the same name), **every campaign** until cleared, and
   **newly planned flights only** — flights already in the ATO keep what they have.
 - **Non-destructive writes.** `ensure_backup` copies the file into
-  `UnitPayloads/_retribution_backups` before the first modification, and only the one
+  `Retribution/PayloadBackups` before the first modification, and only the one
   named entry is ever touched, so a hand-authored Mission Editor payload in the same
   file survives a set *or* a clear. A file that exists but **cannot be parsed is left
   byte-identical** and the save is refused with a warning — rewriting it from scratch
   would silently destroy every other payload for that airframe.
+- **The backups moved out of `UnitPayloads` on 2026-08-29.** They used to sit in
+  `UnitPayloads/_retribution_backups`, and DCS enumerates that folder expecting only
+  payload `.lua` files: every launch logged `ERROR EDCORE: Can't open file
+  '...UnitPayloads//_retribution_backups' from real path fs`, twice. The store is now
+  `Saved Games/DCS/Retribution/PayloadBackups`, beside the other 414th directories
+  (`Groups`, `Layouts`, `MapTiles`, `Settings`, `AirWing`, `Kneeboards`).
+  `persistency._migrate_legacy_payload_backups` moves existing backups across the
+  first time `payloads_dir` is called — either branch, since opening a payload tab is
+  a likelier first touch than saving a default — and removes the old folder, but
+  **only once it is empty**, so anything unexpected in there is kept rather than
+  deleted (at the cost of the DCS error surviving until it is dealt with by hand).
+  Do not move this back inside `UnitPayloads`.
 - **Key allocation fixed in passing.** The old `next_key = len(pdict) + 1` collides
   with a live entry in any file whose keys don't start at 1 (`{2, 3}` → key 3),
   silently overwriting a payload. Now `max(int keys) + 1`.

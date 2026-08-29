@@ -58,6 +58,19 @@ At your split point, look behind you. **Free — it is the flight you were flyin
   opposite failure, fixed again 2026-08-21. Neither shape has been flown since. Both failures
   are visible from the cockpit without looking anything up.
 
+### 5 · The log is no longer 60 % one MOOSE error — `B107`
+
+**Where:** `Saved Games/DCS/Logs/dcs.log` after any flight, one grep. **~1 min.**
+
+- **Pass:** `grep -c "EVENTMETA data for event ID" dcs.log` returns 0, and every plugin still
+  prints its startup banner (CTLD, CSAR, MANTIS, TIC).
+- **Fail:** thousands of them still — the `414Ret patch` in the vendored `Moose.lua` was lost,
+  most likely to a bundle bump. A *different* unknown event id means DCS added another event.
+- **Why it's here:** it fired 6,807 times in one 7-minute mission and 11,861 in an archived
+  Germany Cold War log, and it cannot be exercised headlessly — the harness never raises it.
+
+---
+
 ## Parking lot (pull one when a slot frees)
 
 | Row | Watch for | Note |
@@ -65,6 +78,8 @@ At your split point, look behind you. **Free — it is the flight you were flyin
 | `B79` | A ground-level waypoint sits at the field's elevation, not at sea level | App-side, ~30 s in the flight editor |
 | `B77` | The ramp time you are given matches the airframe you are starting | App-side; a Tomcat and a Viper should not get the same allowance |
 | `B54` | The planner behaviour bar actually switches the suite | Settings UI, ~1 min |
+| `B108` | A stuck TIC unit names itself in the log, and the retries spread across many units | Same log, same read as slot 5; the distribution is the actual question |
+| `B109` | `_retribution_backups` is gone from `UnitPayloads` and the launch error with it | App-side; set one default loadout first, then restart DCS |
 
 Closed and dropped items, with the reasoning: [`ARCHIVE.md`](ARCHIVE.md).
 Contrived-condition tests live on [`LOCAL.md`](LOCAL.md).

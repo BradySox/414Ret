@@ -21,6 +21,7 @@ from dcs.unittype import FlyingType
 
 from game.ato.flighttype import FlightType
 from game.ato.loadouts import Loadout
+from game import persistency
 from game.fourteenth import loadout_defaults
 
 PAYLOADS_DIR = Path(__file__).parent.parent.parent / "resources" / "customized_payloads"
@@ -35,9 +36,11 @@ def user_payloads(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[P
     directory supplies a given payload name first.
     """
     payloads = tmp_path / "UnitPayloads"
-    backups = payloads / "_retribution_backups"
+    # Beside UnitPayloads, never inside it -- DCS enumerates that folder and errors
+    # on any subdirectory. Mirrors persistency.payloads_dir.
+    backups = tmp_path / "Retribution" / "PayloadBackups"
     payloads.mkdir(parents=True)
-    backups.mkdir()
+    backups.mkdir(parents=True)
 
     def fake_payloads_dir(backup: bool = False) -> Path:
         return backups if backup else payloads
@@ -215,7 +218,9 @@ def test_the_first_write_backs_the_existing_file_up(
     hornet: Type[FlyingType], user_payloads: Path
 ) -> None:
     loadout_defaults.write_payload_entry(hornet, "First", a_payload("First"))
-    backup = user_payloads / "_retribution_backups" / f"{hornet.id}.lua"
+    backup = (
+        user_payloads.parent / "Retribution" / "PayloadBackups" / f"{hornet.id}.lua"
+    )
     assert not backup.exists(), "nothing to back up when we created the file"
 
     loadout_defaults.write_payload_entry(hornet, "Second", a_payload("Second"))
@@ -234,3 +239,46 @@ def test_state_checks_degrade_to_no_override_without_a_saved_games_tree(
 
     monkeypatch.setattr(loadout_defaults, "payloads_dir", explode)
     assert not loadout_defaults.has_override_for(hornet, "Retribution CAS")
+
+
+def test_backups_live_outside_unitpayloads_and_the_old_folder_is_migrated(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # A subdirectory of UnitPayloads makes DCS log an ERROR on every launch, so the
+    # store moved out and the legacy folder has to leave with it.
+    monkeypatch.setattr(persistency, "_dcs_saved_game_folder", str(tmp_path))
+    legacy = tmp_path / "MissionEditor" / "UnitPayloads" / "_retribution_backups"
+    legacy.mkdir(parents=True)
+    (legacy / "FA-18C_hornet.lua").write_text("old backup", encoding="utf-8")
+
+    backups = persistency.payloads_dir(backup=True)
+
+    assert backups == tmp_path / "Retribution" / "PayloadBackups"
+    assert (backups / "FA-18C_hornet.lua").read_text(encoding="utf-8") == "old backup"
+    assert not legacy.exists()
+
+
+def test_migration_keeps_an_unexpected_entry_rather_than_deleting_it(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(persistency, "_dcs_saved_game_folder", str(tmp_path))
+    legacy = tmp_path / "MissionEditor" / "UnitPayloads" / "_retribution_backups"
+    (legacy / "someones_own_folder").mkdir(parents=True)
+
+    persistency.payloads_dir(backup=True)
+
+    assert (legacy / "someones_own_folder").is_dir()
+
+
+def test_the_plain_payloads_dir_call_also_migrates(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # Opening a payload tab is a likelier first touch than saving a default, and the
+    # DCS launch error persists for as long as the legacy folder does.
+    monkeypatch.setattr(persistency, "_dcs_saved_game_folder", str(tmp_path))
+    legacy = tmp_path / "MissionEditor" / "UnitPayloads" / "_retribution_backups"
+    legacy.mkdir(parents=True)
+
+    persistency.payloads_dir()
+
+    assert not legacy.exists()

@@ -199,6 +199,10 @@ Read before touching a campaign's `.yaml`, `.miz` or build tool.
   derivable from the campaign's own order of battle (**and whose shipped default marks
   blue's own JF-17 hostile on Northern Russia**), and the rows to re-run. Written from
   the patch notes alone — **nothing in it is verified against an updated install**),
+  `414th-dcs-log-noise-notes.md` (**read before triaging a `dcs.log`** — which lines are
+  ED's, which are mods', and which are ours, with the evidence for each; the ATC rows
+  are the cautionary case, since `INVALID ATC` fires during terrain init for helipads
+  that are not in our `.miz` at all, on every map),
   `414th-dcs-olympus-notes.md`, `414th-ui-redesign-directions.md` (+ `-mockups.html`),
   `414th-juanjux-fork-watch-notes.md` (**the second fork we watch** — his adoption ledger,
   what is already ours, and the OPFOR-AI precedent for seam 7),

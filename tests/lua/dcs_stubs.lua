@@ -45,6 +45,7 @@ local Harness = {
         sounds = {}, -- { groupId, file, t } from outSound*
         destroyedStatics = {}, -- static unit names removed via StaticObject:destroy
         markups = {}, -- { shape, id, points, color, fill, lineType, t } from markupToAll
+        coalitionSwaps = {}, -- { group, countryId, coalitionId, t } from GROUP:Respawn
         mapTexts = {}, -- { id, x, z, color, fill, fontSize, text } from textToAll
         zoneFills = {}, -- { name, points, coalition, color, alpha } from ZONE_POLYGON:ReFill
 
@@ -947,6 +948,29 @@ function GROUP.FindByName(_, name)
         return nil
     end
     return setmetatable({ group = g }, MooseGroup)
+end
+
+-- The coalition swap (§96). MOOSE's Respawn copies live positions into the
+-- template and DATABASE:Spawn hands template.CountryID to coalition.addGroup;
+-- the harness records the intent rather than modelling DCS's re-add, because
+-- what a test can pin is WHO the group was swapped to, not how DCS lands it.
+function MooseGroup:GetTemplate()
+    return {
+        name = self.group:getName(),
+        units = {},
+        route = { points = {} },
+    }
+end
+
+function MooseGroup:Respawn(template, reset)
+    table.insert(Harness.records.coalitionSwaps, {
+        group = self.group:getName(),
+        countryId = template and template.CountryID or nil,
+        coalitionId = template and template.CoalitionID or nil,
+        reset = reset,
+        t = Harness.now,
+    })
+    return self
 end
 
 function MooseGroup:GetName()

@@ -24,7 +24,7 @@ from dcs import Mission
 from dcs.country import Country
 from dcs.countries import country_dict
 from dcs.mapping import Point
-from dcs.mission import StartType
+from dcs.task import OrbitAction
 from dcs.planes import plane_map
 from dcs.task import CAP
 from dcs.vehicles import AirDefence
@@ -160,39 +160,44 @@ class NeutralBorderGenerator:
 
         fighter_name = f"NeutralBorder|{zone.country}|{aircraft_id}"
         spawn_alt_m = feet(zone.spawn_alt_ft).meters
+        # A STANDING patrol, airborne from mission start, not a scramble.
+        #
+        # Flown 2026-08-28/29: a scramble cannot work. Cold on the ramp it took
+        # 270 s to get up; from a runway it still launched behind the intruder;
+        # and once airborne it could not hold a standoff, because the geometry
+        # belongs to whoever is closing -- measured 22.8 NM down to 6.5 NM while
+        # still shadowing. A patrol already flying its own border never plays
+        # that game: it is visible before you cross, which is the deterrent the
+        # feature was always trying to be.
+        #
+        # It orbits as a TRUE NEUTRAL and so cannot fire (the engine verdict).
+        # The plugin swaps its coalition on escalation, which is the only way a
+        # neutral ever shoots.
         if airport is not None:
-            group = self.mission.flight_group_from_airport(
-                country=country,
-                name=fighter_name,
-                aircraft_type=aircraft,
-                airport=airport,
-                # Runway, not Cold. MEASURED 2026-08-28 (Rayak, Lebanon): a
-                # cold ramp template took 270 s to get airborne -- engine
-                # start, taxi, takeoff -- and by then the intruder was gone.
-                # The Lua asks MOOSE for an air spawn over the field, but
-                # SpawnAtAirbase keeps the template's own start type, so the
-                # request was silently ignored and the flight sat on the ramp.
-                # A QRA scramble is a runway start; the two now agree.
-                start_type=StartType.Runway,
-                group_size=2,
-            )
             anchor = airport.position
         else:
-            assert zone.spawn is not None
+            assert zone.spawn is not None  # the caller checked one origin exists
             anchor = Point(zone.spawn[0], zone.spawn[1], self.mission.terrain)
-            # km/h: pydcs writes speed/3.6 onto the spawned unit records and the
-            # first waypoint, so passing m/s spawns the flight stalled (the
-            # civilian-traffic lesson).
-            group = self.mission.flight_group_inflight(
-                country=country,
-                name=fighter_name,
-                aircraft_type=aircraft,
-                position=anchor,
-                altitude=int(spawn_alt_m),
-                speed=CAP_SPEED_KPH,
-                group_size=2,
+        # km/h: pydcs writes speed/3.6 onto the spawned unit records and the
+        # first waypoint, so passing m/s spawns the flight stalled (the
+        # civilian-traffic lesson).
+        group = self.mission.flight_group_inflight(
+            country=country,
+            name=fighter_name,
+            aircraft_type=aircraft,
+            position=anchor,
+            altitude=int(spawn_alt_m),
+            speed=CAP_SPEED_KPH,
+            group_size=2,
+        )
+        group.points[0].tasks.append(
+            OrbitAction(
+                int(spawn_alt_m),
+                int(CAP_SPEED_KPH / 3.6),
+                OrbitAction.OrbitPattern.RaceTrack,
             )
-        group.late_activation = True
+        )
+        group.late_activation = False
         # The clones inherit the template's pylons, so arm it once here. An
         # airframe with no CAP default flies guns-only rather than failing.
         if not group.load_task_default_loadout(CAP):

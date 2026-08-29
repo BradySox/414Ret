@@ -25,23 +25,7 @@ local data = dcsRetribution.neutralBorder
 local WARN_DWELL_S = 30 -- inside the border this long -> warning + shadow launch
 local ENGAGE_DWELL_S = 180 -- a PLAYER inside this long -> engaged
 local SCAN_INTERVAL_S = 10 -- border scan cadence
-local VECTOR_INTERVAL_S = 45 -- shadow vector cadence
-local MAX_SHADOWS = 2 -- concurrent shadow flights per zone
 local DRAW_BORDERS = true -- F10 border polylines (the §86 invisible-bubble lesson)
---: How far an UN-escalated shadow keeps from the intruder.
---:
---: It used to route to the intruder's own position +1200 m, i.e. it closed to a
---: merge. At return-fire ROE it cannot shoot first, so it arrived inside an
---: escorted flight's engagement envelope and was killed for free -- flown
---: 2026-08-28, all four alert aircraft lost and the un-escalated pair shot down
---: having fired nothing. It shepherds from here instead.
---:
---: This reduces the loss rate; it does not fix it. The shadow spawns on the
---: intruder's OPPOSING coalition, so it is a hostile contact to that side and a
---: CAP tasked over the area will hunt it at any range. Standing off buys time,
---: not safety. The real lever is the return-fire ROE, and changing that
---: re-opens the "defends, never initiates" call.
-local SHADOW_HOLD_M = 37040 -- 20 NM
 
 --: Vertices the FILL may use. The outline is one freeform however many points
 --: it carries, and the web map draws them for free -- but DCS will not fill a
@@ -59,18 +43,12 @@ if dcsRetribution.plugins and dcsRetribution.plugins.neutralborder then
     WARN_DWELL_S = tonumber(o.warnDwellS) or WARN_DWELL_S
     ENGAGE_DWELL_S = tonumber(o.engageDwellS) or ENGAGE_DWELL_S
     SCAN_INTERVAL_S = tonumber(o.scanIntervalS) or SCAN_INTERVAL_S
-    VECTOR_INTERVAL_S = tonumber(o.vectorIntervalS) or VECTOR_INTERVAL_S
-    if tonumber(o.shadowHoldNm) then
-        SHADOW_HOLD_M = tonumber(o.shadowHoldNm) * 1852
-    end
-    MAX_SHADOWS = tonumber(o.maxShadows) or MAX_SHADOWS
     if o.drawBorders ~= nil then
         DRAW_BORDERS = (o.drawBorders == true) or (o.drawBorders == "true")
     end
 end
 
 local EXIT_GRACE_S = 120 -- outside this long (pre-escalation) -> shadow stands down
-local SHADOW_AGL_M = 760 -- AGL for the off-field launch point and the vector loop
 local SHADOW_SPEED_KT = 300 -- air-spawn speed (a ~0 kt clone spawns stalled; QRA lesson)
 -- How far from the intruder the alert flight comes up when its own origin is
 -- further away than this. MEASURED 2026-08-25 (Tacview, Inherent Resolve): Iran's
@@ -81,8 +59,6 @@ local SHADOW_SPEED_KT = 300 -- air-spawn speed (a ~0 kt clone spawns stalled; QR
 -- engage dwell, so the shadow is present when the timer it exists to enforce
 -- expires. Nearer than this and the origin is used as-is, so a small country
 -- still scrambles off its own runway.
-local SHADOW_STANDOFF_M = 46300
-local SHADOW_DESPAWN_S = 300 -- stood-down shadow lifetime after the RTB vector
 
 local FT_TO_M = 0.3048
 local MARKUP_ID_BASE = 96000 -- §96 block; one freeform id per zone
@@ -156,16 +132,16 @@ for _, raw in ipairs(data.zones or {}) do
                 -- centroid is not on a concave country.
                 label_x = tonumber(raw.labelX),
                 label_z = tonumber(raw.labelZ),
-                fighter_template = tostring(raw.fighterTemplate),
+                -- The STANDING patrol's group name. It is a live neutral group
+                -- flying an orbit from mission start, not a template to clone.
+                cap_group = tostring(raw.fighterTemplate),
                 sam_template = raw.samTemplate and tostring(raw.samTemplate) or nil,
                 red_country = tonumber(raw.redCountryId),
                 blue_country = tonumber(raw.blueCountryId),
                 verts = verts,
                 bbox = { minx = minx, maxx = maxx, minz = minz, maxz = maxz },
                 -- runtime
-                spawners = {}, -- per clone side: [side] = SPAWN
-                shadows = {}, -- shadow name -> record
-                shadow_count = 0,
+                swapped = false, -- the patrol has been made hostile and stays so
                 sam_spawner = nil,
                 sam_spawned = false,
             }
@@ -382,201 +358,55 @@ end
 -- Shadow flights: spawn on the intruder's opposing coalition, return-fire, and vector loop.
 ---------------------------------------------------------------------------------------------------
 local intruders = {} -- group name -> state
-local vector_loop_running = false
-local vector_tick -- forward declaration comment only; defined below before first use in start_vector_loop
+---------------------------------------------------------------------------------------------------
+-- The standing patrol, and the one moment it stops being neutral.
+--
+-- The CAP is a real group, airborne from mission start, flying an orbit inside its own border under
+-- a NEUTRAL country. A neutral cannot fire (the engine verdict), and it does not need to while
+-- nobody is violating. On escalation its coalition is swapped in place so it can.
+--
+-- Why not scramble one: measured 2026-08-28/29. Cold on the ramp took 270 s to get airborne; a
+-- runway start still launched behind the intruder; and once up it could not hold a standoff,
+-- because the closing geometry belongs to the intruder -- 22.8 NM to 6.5 NM while still shadowing.
+-- A patrol already on station never plays that game, and it is visible BEFORE you cross, which is
+-- the deterrence the scramble could never provide.
+---------------------------------------------------------------------------------------------------
 
-local function spawner_for(zone, zi, clone_side)
-    if not zone.spawners[clone_side] then
-        local tag = (clone_side == coalition.side.RED) and "R" or "B"
-        zone.spawners[clone_side] = SPAWN:NewWithAlias(
-            zone.fighter_template,
-            "NEUTRAL AF " .. zone.country .. " " .. tag .. zi
-        )
+--: Swap a standing neutral patrol onto the coalition opposing the intruder.
+--:
+--: MOOSE's GROUP:Respawn(template, true) copies every live unit's x/y/alt/heading into the
+--: template, and DATABASE:Spawn reads CountryID/CoalitionID off it and hands them to
+--: coalition.addGroup (Moose.lua:11648). So the aircraft come back where they were, on the new
+--: side.
+--:
+--: **It is a Destroy + re-add, not a true in-place edit**: position, altitude and heading survive,
+--: velocity does not -- the group takes its speed from the route's first waypoint. If a swapped
+--: flight ever drops out of the sky, that is the reason, and it is the one part of this that
+--: cannot be proven outside DCS.
+local function swap_to_shooting(zone, intruder_side)
+    if zone.swapped then
+        return Group.getByName(zone.cap_group)
     end
-    return zone.spawners[clone_side]
-end
-
--- Where the alert flight comes up: its own origin when that is close enough to
--- matter, otherwise a stand-off point between the intruder and that origin. The
--- origin keeps its name either way -- the radio call and the log still say which
--- field launched it.
-local function launch_point(zone, ix, iz)
-    local ox, oz
-    local alt = zone.spawn_alt_m
-    if zone.field then
-        local airbase = AIRBASE:FindByName(zone.field)
-        if not airbase then
-            return nil
-        end
-        local c = airbase:GetCoordinate()
-        ox, oz = c.x, c.z
-    else
-        ox, oz = zone.spawn_x, zone.spawn_z
-    end
-    if ox == nil or oz == nil then
+    local grp = GROUP:FindByName(zone.cap_group)
+    if not grp or not grp:IsAlive() then
+        log("no standing patrol for " .. zone.country .. " -- nothing to engage with")
         return nil
     end
-    if ix == nil or iz == nil then
-        return { x = ox, y = alt, z = oz, at_origin = true }
-    end
-    local dx, dz = ox - ix, oz - iz
-    local dist = math.sqrt(dx * dx + dz * dz)
-    if dist <= SHADOW_STANDOFF_M then
-        return { x = ox, y = alt, z = oz, at_origin = true }
-    end
-    -- Launch from inside the country, near the intruder. The bearing toward
-    -- the origin is tried first so the flight still reads as coming from home,
-    -- then the sweep widens and the radius shrinks.
-    --
-    -- The old rule was "if the straight line leaves the country, launch from
-    -- the origin instead", which is fine for a small country and catastrophic
-    -- for a long one. MEASURED 2026-08-28 on the Afghanistan map: Pakistan is a
-    -- thin band along the map edge, its station sits at the far end, and every
-    -- crossing failed the straight-line test -- so the alert flight spawned
-    -- **271 NM** behind the intruder, every time. The intruder is by definition
-    -- inside the polygon, so a point near it is too; there is no need to give up
-    -- and go home.
-    local base = math.atan2(dz, dx)
-    for _, radius in ipairs({ SHADOW_STANDOFF_M, SHADOW_STANDOFF_M * 0.5,
-                              SHADOW_STANDOFF_M * 0.25 }) do
-        for step = 0, 11 do
-            -- 0, +30, -30, +60, -60 ... so the first hit is the closest bearing
-            -- to home that actually lies in the country.
-            local half = math.floor((step + 1) / 2)
-            local sign = (step % 2 == 0) and 1 or -1
-            local ang = base + sign * half * (math.pi / 6)
-            local lx = ix + math.cos(ang) * radius
-            local lz = iz + math.sin(ang) * radius
-            if in_polygon(zone, lx, lz) then
-                return { x = lx, y = alt, z = lz, at_origin = false }
-            end
-        end
-    end
-    -- Nowhere inside the border is far enough from the intruder to launch: the
-    -- country is thinner than a quarter of the standoff. The origin is all
-    -- that is left, and for a country that small it is close by anyway.
-    return { x = ox, y = alt, z = oz, at_origin = true }
-end
-
-local function spawn_shadow(zone, zi, intruder_name, intruder_side, ix, iz)
-    if zone.shadow_count >= MAX_SHADOWS then
-        return nil
-    end
-    local shadow = nil
     local ok, err = pcall(function()
-        local clone_side_id = opposing(intruder_side)
-        local sp = spawner_for(zone, zi, clone_side_id)
-        sp:InitGrouping(2)
-        local country = clone_country(zone, intruder_side)
-        if country and sp.InitCountry then
-            sp:InitCountry(country)
-        end
-        if sp.InitCoalition then
-            sp:InitCoalition(clone_side_id)
-        end
-        pcall(function()
-            sp:InitSpeedKnots(SHADOW_SPEED_KT)
-        end)
-
-        local at = launch_point(zone, ix, iz)
-        if not at then
-            log("no usable origin for " .. zone.country .. " -- no shadow")
-            return
-        end
-        local grp
-        if at.at_origin and zone.field then
-            local airbase = AIRBASE:FindByName(zone.field)
-            -- Runway, matching the template's own start type. Takeoff.Air was
-            -- asked for here until 2026-08-28 and silently did not happen:
-            -- SpawnAtAirbase keeps the template's start type, so a cold ramp
-            -- template stayed a cold ramp start and took 270 s to get up.
-            grp = sp:SpawnAtAirbase(airbase, SPAWN.Takeoff.Runway)
-        else
-            -- MOOSE takes the altitude as the Vec3 y.
-            grp = sp:SpawnFromVec3({ x = at.x, y = at.y, z = at.z })
-        end
-        if not grp then
-            return
-        end
-        -- Return fire, never initiate: the shadow-phase ROE (DM call). EvadeFire
-        -- so a shot at it is answered with defense, not a parade-ground death.
-        pcall(function()
-            grp:OptionROEReturnFire()
-        end)
-        pcall(function()
-            grp:OptionROTEvadeFire()
-        end)
-        shadow = {
-            name = grp:GetName(),
-            group = grp,
-            intruder = intruder_name,
-            zone = zi,
-            escalated = false,
-            stood_down = false,
-        }
-        zone.shadows[shadow.name] = shadow
-        zone.shadow_count = zone.shadow_count + 1
-        log(string.format(
-            "shadow %s up from %s vs %s",
-            shadow.name, zone.origin_label, intruder_name))
+        local template = grp:GetTemplate()
+        template.CountryID = clone_country(zone, intruder_side)
+        template.CoalitionID = opposing(intruder_side)
+        grp:Respawn(template, true)
     end)
     if not ok then
-        log("shadow spawn error: " .. tostring(err))
-    end
-    return shadow
-end
-
-local function shadow_for(intruder_name)
-    for _, zone in ipairs(zones) do
-        for _, shadow in pairs(zone.shadows) do
-            if shadow.intruder == intruder_name and not shadow.stood_down then
-                return shadow
-            end
-        end
-    end
-    return nil
-end
-
-local function destroy_shadow_later(zone, shadow)
-    timer.scheduleFunction(function()
-        pcall(function()
-            if shadow.group and shadow.group:IsAlive() then
-                shadow.group:Destroy(false)
-            end
-        end)
-        if zone.shadows[shadow.name] then
-            zone.shadows[shadow.name] = nil
-            zone.shadow_count = math.max(0, zone.shadow_count - 1)
-        end
+        log("coalition swap failed for " .. zone.country .. ": " .. tostring(err))
         return nil
-    end, {}, timer.getTime() + SHADOW_DESPAWN_S)
-end
-
-local function stand_down(zone, shadow)
-    if shadow.stood_down or shadow.escalated then
-        return
     end
-    shadow.stood_down = true
-    pcall(function()
-        if zone.field then
-            local airbase = AIRBASE:FindByName(zone.field)
-            if airbase then
-                local c = airbase:GetCoordinate()
-                shadow.group:RouteToVec3(
-                    { x = c.x, y = (c.y or 0) + SHADOW_AGL_M, z = c.z }, 200)
-            end
-        else
-            -- Point-spawned CAP: send it back to its own station.
-            shadow.group:RouteToVec3(
-                { x = zone.spawn_x, y = zone.spawn_alt_m, z = zone.spawn_z }, 200)
-        end
-    end)
-    destroy_shadow_later(zone, shadow)
-    log("shadow " .. shadow.name .. " standing down")
+    zone.swapped = true
+    log(zone.country .. " patrol is now hostile to the intruder")
+    return Group.getByName(zone.cap_group)
 end
 
--- The SAM wake: clone the battery on the escalating intruder's opposing side. Alarm
--- state and ROE come with the fresh spawn; never touch radar emissions.
 local function wake_sam(zone, intruder_side)
     if zone.sam_spawned then
         return
@@ -621,93 +451,30 @@ local function escalate(state, intruder_group)
     announce(intruder_group, string.format(
         "%s AIR FORCE: You were warned. %s fighters are ENGAGING.",
         string.upper(zone.country), zone.country))
-    local shadow = shadow_for(state.name)
-    if shadow then
-        shadow.escalated = true
+    -- The swap is what lets a neutral shoot at all, so it comes first; the
+    -- attack task is worthless on a group that cannot fire.
+    swap_to_shooting(zone, state.side)
+    -- Respawn re-adds 0.1 s later, so the group only exists again after a tick.
+    timer.scheduleFunction(function()
         pcall(function()
-            shadow.group:OptionROEWeaponFree()
-        end)
-        -- The §61 shape: a hard AttackGroup task on the raw controller,
-        -- re-set by the vector loop only when the target changes.
-        pcall(function()
-            local sg = Group.getByName(shadow.name)
+            local sg = Group.getByName(zone.cap_group)
             local tgt = Group.getByName(state.name)
             if sg and tgt then
-                shadow.last_target = tgt:getID()
+                -- The §61 shape: a hard AttackGroup on the raw controller.
                 sg:getController():setTask({
                     id = "AttackGroup",
                     params = { groupId = tgt:getID() },
                 })
+                local mg = GROUP:FindByName(zone.cap_group)
+                if mg then
+                    mg:OptionROEWeaponFree()
+                end
             end
         end)
-    end
+        return nil
+    end, {}, timer.getTime() + 2)
     wake_sam(zone, state.side)
     log("ESCALATED on " .. state.name)
-end
-
----------------------------------------------------------------------------------------------------
--- Vector loop: pre-escalation shadows chase a point beside the intruder; escalated
--- shadows get their attack task refreshed (the §61 pattern -- a dead task never sticks).
----------------------------------------------------------------------------------------------------
-vector_tick = function()
-    for _, zone in ipairs(zones) do
-        for _, shadow in pairs(zone.shadows) do
-            if not shadow.stood_down then
-                pcall(function()
-                    local intruder = Group.getByName(shadow.intruder)
-                    local lead = lead_unit(intruder)
-                    if not lead then
-                        stand_down(zone, shadow)
-                        return
-                    end
-                    if shadow.escalated then
-                        -- Re-set only when the target id changed (the §61 rule:
-                        -- a repeated identical setTask resets the AI's attack run).
-                        local tid = intruder:getID()
-                        if tid and tid ~= shadow.last_target then
-                            shadow.last_target = tid
-                            local sg = Group.getByName(shadow.name)
-                            if sg then
-                                sg:getController():setTask({
-                                    id = "AttackGroup",
-                                    params = { groupId = tid },
-                                })
-                            end
-                        end
-                        return
-                    end
-                    local p = lead:getPoint()
-                    -- Shepherd from SHADOW_HOLD_M, on whatever bearing the
-                    -- shadow already sits, rather than closing on the intruder.
-                    -- Routing to its position +1200 m was a merge, and a
-                    -- return-fire flight that merges with an escorted one dies
-                    -- without shooting (flown 2026-08-28, 4 of 4 lost).
-                    local sx, sz = p.x + SHADOW_HOLD_M, p.z
-                    local slead = lead_unit(Group.getByName(shadow.name))
-                    if slead then
-                        local sp = slead:getPoint()
-                        local dx, dz = sp.x - p.x, sp.z - p.z
-                        local dist = math.sqrt(dx * dx + dz * dz)
-                        if dist > 1 then
-                            local f = SHADOW_HOLD_M / dist
-                            sx, sz = p.x + dx * f, p.z + dz * f
-                        end
-                    end
-                    shadow.group:RouteToVec3({ x = sx, y = p.y, z = sz }, 250)
-                end)
-            end
-        end
-    end
-    return timer.getTime() + VECTOR_INTERVAL_S
-end
-
-local function start_vector_loop()
-    if not vector_loop_running then
-        vector_loop_running = true
-        timer.scheduleFunction(function()
-            return vector_tick()
-        end, {}, timer.getTime() + 5)
-    end
 end
 
 ---------------------------------------------------------------------------------------------------
@@ -747,15 +514,16 @@ local function hail(state, intruder_group)
     end
 end
 
--- The shadow launch, at WARN_DWELL_S. Separate from the hail above so the
--- radio call is immediate and the interceptor is not.
+-- The second radio call, at WARN_DWELL_S: the patrol has been told about you.
+-- Nothing is launched -- it has been airborne since mission start -- and it does
+-- not break its orbit, because chasing you is the thing that never worked.
 local function warn(state, intruder_group)
     state.warned = true
     local zone = zones[state.zone]
-    local zi = state.zone
-    local shadow = spawn_shadow(zone, zi, state.name, state.side, state.px, state.pz)
-    if shadow then
-        start_vector_loop()
+    if state.is_player then
+        announce(intruder_group, string.format(
+            "%s AIR FORCE: Our patrol has been advised. Leave %s airspace.",
+            string.upper(zone.country), zone.country))
     end
 end
 
@@ -832,13 +600,10 @@ local function scan_group(group, side, now)
             return
         end
     end
-    -- Outside every zone: pre-escalation states cool off and stand their shadow down.
+    -- Outside every zone long enough: forget the intruder. The patrol never
+    -- left its orbit, so there is nothing to recall -- and an escalated zone
+    -- stays hostile, because a country that has been shot at does not un-swap.
     if state and not state.escalated and (now - state.last_inside) > EXIT_GRACE_S then
-        local zone = zones[state.zone]
-        local shadow = shadow_for(name)
-        if shadow then
-            stand_down(zone, shadow)
-        end
         intruders[name] = nil
     end
 end

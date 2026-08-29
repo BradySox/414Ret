@@ -1083,6 +1083,83 @@ Lebanon hid this: it is small enough that the fallback landed at Rayak, inside
 the action. Every rule here needs testing against a long thin country as well as
 a compact one, which is what `THIN_BAND` in the harness now does.
 
+## The standing patrol (DM call, 2026-08-29) — the scramble is gone
+
+**A neutral country now flies a real air patrol over its own border from mission
+start.** It orbits as a true neutral, is visible before you cross, warns you by
+radio on entry, and — only if you press — its coalition is swapped in place so it
+can attack. No scramble, no chase, no standoff.
+
+### Why the scramble had to go
+
+Three flown passes, three failures, all of the same kind:
+
+| Flown | Failure |
+|---|---|
+| 08-28 (Syria) | cold on the ramp: **270 s** to get airborne |
+| 08-28 (Afghanistan) | launch point fell back to the station: **271 NM** behind |
+| 08-29 (Afghanistan) | airborne, but closed **22.8 → 6.5 NM** while still shadowing |
+
+The last one is the one that settles it. The standoff cannot be held, because
+**the closing geometry belongs to the intruder**: the vector loop re-asserts the
+hold every 45 s and the measured closure was 488 m/s — 11.8 NM per tick. Tuning
+the cadence does not fix it; a fighter told to keep its distance from someone
+flying at it either runs away, which is not shadowing, or merges.
+
+A patrol already on station never plays that game. It also fixes the thing none
+of the scramble versions could: **you can see it before you cross.** A border you
+only discover after violating it is a trap, not a deterrent.
+
+### How a neutral ends up able to shoot
+
+The engine verdict stands — a neutral cannot fire. The patrol is generated as a
+live in-flight group under a **neutral** country with an `OrbitAction` racetrack,
+and on escalation the plugin swaps its coalition:
+
+```lua
+local tpl = grp:GetTemplate()
+tpl.CountryID  = <country opposing the intruder>
+tpl.CoalitionID = <coalition opposing the intruder>
+grp:Respawn(tpl, true)
+```
+
+`GROUP:Respawn(template, true)` copies every live unit's x/y/**alt**/heading into
+the template, and `DATABASE:Spawn` reads `CountryID`/`CoalitionID` off it and
+hands them to `coalition.addGroup` (`Moose.lua:11648`). This is the fallback the
+2026-08-24 engine research recorded and did not use; it is used now.
+
+**The one thing that cannot be proven outside DCS.** `Respawn` is a
+`Destroy(false)` plus a re-add 0.1 s later. Position, altitude and heading
+survive; **velocity does not** — the group takes its speed from the route's first
+waypoint. If a swapped flight ever drops out of the sky, that is why. There is
+also a 0.1 s blink if you happen to be looking at it. **DM call: if the swap
+misbehaves, stop and report rather than picking a fallback.**
+
+### What went with it
+
+`spawn_shadow`, `launch_point`, `spawner_for`, `shadow_for`, `stand_down`,
+`destroy_shadow_later`, the vector loop, and the `SHADOW_*` constants. The
+`vectorIntervalS`, `maxShadows` and `shadowHoldNm` plugin options are deleted —
+they tuned a mechanism that no longer exists. `warnDwellS` now gates a second
+radio call ("our patrol has been advised") rather than a launch.
+
+Kept unchanged: the border scan, the immediate hail, the escalation triggers
+(dwell, weapon release, fire on the patrol), the SAM wake, AI-never-engaged, and
+the F10 drawing.
+
+### The tests
+
+Eleven scramble-only tests were deleted rather than adapted — they pinned launch
+distance, hold distance, takeoff type and stand-down, none of which exist. The
+harness gains a `coalitionSwaps` recorder, and the fixture now puts a live
+neutral patrol in the air so the swap has something to act on.
+
+One test had to change shape rather than assertion:
+`test_a_side_that_is_permitted_transit_is_never_challenged` used to watch a
+refused AI get shadowed. With a standing patrol **and** AI-never-engaged, a
+refused AI produces no observable at all, so consent is now tested from both
+sides of the same border against the player.
+
 ## Deferred (not built, not promised)
 
 - Cross-mission consequences: escalating posture, airspace closure, the neutral joining

@@ -1,10 +1,10 @@
 {
-    "nameInUI": "Neutral border defense (§96 runtime)",
-    "descriptionInUI": "Runtime for the 'Neutral-faction border defense' setting. Inert unless the mission generator emits dcsRetribution.neutralBorder (the setting is on and the map has border zones -- they ship with the eight real-world terrains). A country with no coalition airfield inside it scrambles an alert flight against any aircraft inside their border polygon below the altitude floor: the flight spawns on the intruder's opposing coalition at return-fire, shadows, and radio-warns. The radio warning is immediate on entry; the flight launches after the dwell. A player who stays past the engage timer, releases a weapon inside the border, or fires on the shadower is engaged -- and the field's SAM battery wakes. AI intruders are shadowed only, never engaged. Spawned alert units are free, untracked event content.",
+    "nameInUI": "Neutral border defense (\u00a796 runtime)",
+    "descriptionInUI": "Draws every country's real border on the F10 map. A country with no coalition airfield inside it flies a standing air patrol over its own territory from mission start -- visible before you cross, which is the point. Enter and you are warned by radio at once; stay past the engage timer, release a weapon inside the border, or fire on the patrol, and it turns hostile and attacks -- and the field's SAM battery wakes. It orbits as a true neutral and cannot fire until that moment, because a neutral unit in DCS never can. AI intruders are warned but never engaged. Patrol aircraft are free, untracked event content.",
     "defaultValue": true,
     "specificOptions": [
         {
-            "nameInUI": "Seconds inside the border before the alert flight launches",
+            "nameInUI": "Seconds inside the border before the patrol is advised",
             "mnemonic": "warnDwellS",
             "defaultValue": 30,
             "minimumValue": 10,
@@ -23,27 +23,6 @@
             "defaultValue": 10,
             "minimumValue": 5,
             "maximumValue": 60
-        },
-        {
-            "nameInUI": "Seconds between shadow-flight vector updates",
-            "mnemonic": "vectorIntervalS",
-            "defaultValue": 45,
-            "minimumValue": 15,
-            "maximumValue": 300
-        },
-        {
-            "nameInUI": "Nautical miles the alert flight keeps from an intruder it has not engaged",
-            "mnemonic": "shadowHoldNm",
-            "defaultValue": 20,
-            "minimumValue": 3,
-            "maximumValue": 60
-        },
-        {
-            "nameInUI": "Concurrent shadow flights per neutral country",
-            "mnemonic": "maxShadows",
-            "defaultValue": 2,
-            "minimumValue": 1,
-            "maximumValue": 4
         },
         {
             "nameInUI": "Draw each neutral border on the F10 map",

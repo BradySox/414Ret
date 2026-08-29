@@ -6249,6 +6249,14 @@ defects found and fixed the same day, so this needs a **re-fly** to close:
   start. Re-fly must see it up in well under a minute.
 * The hail waited 30 s for the shadow launch. Now immediate on entry.
 
+**REDESIGNED 2026-08-29 — re-fly from scratch.** The scramble is gone: a
+defended country now flies a standing neutral patrol over its own border from
+mission start, and its coalition is swapped in place when you press it. Watch
+for two things nothing can test outside DCS: that the patrol is **visible and
+orbiting before you cross**, and that at the moment it turns hostile it **keeps
+flying** — `GROUP:Respawn` is a destroy-and-re-add, so velocity comes from the
+route rather than carrying over. If it drops out of the sky, stop and report.
+
 **Re-flown 2026-08-28 on Afghanistan.** The SAM wake and the escalation both
 confirmed working in game. One further defect found and fixed: on a long thin
 country with no airbase (Pakistan), the alert flight launched **271 NM** behind

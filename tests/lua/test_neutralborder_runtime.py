@@ -94,15 +94,58 @@ def _intruder(
     }
 
 
-def _setup(cfg: dict[str, Any]) -> DcsPluginHarness:
+#: The standing patrol's group name, matching the generator's
+#: ``NeutralBorder|<country>|<airframe>``. It is a LIVE group from mission start,
+#: not a template -- the plugin swaps its coalition rather than cloning it.
+CAP_GROUP = "NeutralBorder|Lebanon|MiG-29A"
+
+
+def _setup(cfg: dict[str, Any], with_patrol: bool = True) -> DcsPluginHarness:
     h = DcsPluginHarness()
     h.add_airbase({"name": "Rayak", "x": 10000, "z": 10000, "elev": 900, "side": 0})
+    if with_patrol:
+        # Airborne on the NEUTRAL coalition from the start, orbiting inside the
+        # border. Side 0 is neutral, which is why it cannot fire until swapped.
+        h.add_group(
+            {
+                "name": CAP_GROUP,
+                "id": 900,
+                "side": 0,
+                "category": 0,
+                "units": [
+                    {
+                        "name": CAP_GROUP + "-1",
+                        "type": "MiG-29A",
+                        "x": 10000,
+                        "z": 10000,
+                        "alt": 6096,
+                        "airborne": True,
+                    }
+                ],
+            }
+        )
     h.lua.globals().dcsRetribution = h.to_lua(cfg)
     return h
 
 
-def _shadow_spawns(h: DcsPluginHarness) -> list[dict[str, Any]]:
-    return [r for r in h.records("spawns") if r.get("base") == "Rayak"]
+def _swaps(h: DcsPluginHarness) -> list[dict[str, Any]]:
+    """Coalition swaps: the only way a neutral patrol ever becomes able to fire."""
+    return [r for r in h.records("coalitionSwaps") if isinstance(r, dict)]
+
+
+def _texts(h: DcsPluginHarness) -> list[str]:
+    return [str(r.get("text", "")) for r in h.records("texts") if isinstance(r, dict)]
+
+
+def _hails(h: DcsPluginHarness) -> list[str]:
+    """The entry call. With a standing patrol there is nothing to spawn, so this
+    is what says the border noticed you."""
+    return [t for t in _texts(h) if "violating" in t]
+
+
+def _advisories(h: DcsPluginHarness) -> list[str]:
+    """The second call at warnDwellS -- the patrol has been told about you."""
+    return [t for t in _texts(h) if "advised" in t]
 
 
 def _sam_spawns(h: DcsPluginHarness) -> list[dict[str, Any]]:
@@ -126,45 +169,57 @@ def test_no_node_is_a_clean_noop() -> None:
     h.assert_no_lua_errors()
 
 
-def test_blue_player_is_warned_and_shadowed_by_a_red_clone() -> None:
+def test_a_blue_player_is_warned_and_nothing_is_launched() -> None:
+    """The patrol is already flying. Crossing gets you talked to, not chased.
+
+    Scrambling was tried and measured 2026-08-28/29: 270 s cold, still behind
+    from a runway start, and unable to hold a standoff once airborne because the
+    closing geometry belongs to the intruder. Nothing is spawned here now.
+    """
     h = _setup(_config())
     h.add_group(_intruder("Viper 1-1", 42, side=2))
     h.load_plugin_script(PLUGIN)
     h.advance_to(45)
 
-    spawns = _shadow_spawns(h)
-    assert len(spawns) == 1
-    assert spawns[0]["coalitionId"] == 1  # opposing a BLUE intruder = RED
-    assert spawns[0]["countryId"] == RED_COUNTRY
-    # Runway, not air. MEASURED 2026-08-28 at Rayak: the template was built
-    # StartType.Cold and MOOSE's SpawnAtAirbase keeps the template's own start
-    # type, so the air spawn asked for here silently did not happen and the
-    # flight spent 270 s starting, taxiing and rolling. Both sides say runway
-    # now, which is what a QRA scramble is anyway.
-    assert spawns[0]["takeoff"] == 2
-
-    texts = [r for r in h.records("texts") if isinstance(r, dict)]
-    assert any("violating" in str(r.get("text", "")) for r in texts)
-
-    roe = [r for r in h.records("roe") if isinstance(r, dict)]
-    assert any(r.get("option") == "ReturnFire" for r in roe)
-    # Not escalated yet: no weapons free, no attack task, no SAM.
-    assert not any(r.get("option") == "WeaponFree" for r in roe)
+    assert _hails(h), "no radio call on entry"
+    assert _advisories(h), "the patrol was never advised at the dwell"
+    # Nothing has become hostile yet: no swap, no attack task, no SAM.
+    assert _swaps(h) == [], "the patrol turned hostile before the engage dwell"
     assert _attack_tasks(h) == []
     assert _sam_spawns(h) == []
     h.assert_no_lua_errors()
 
 
-def test_red_intruder_gets_a_blue_clone() -> None:
+def test_the_patrol_swaps_onto_the_side_opposing_the_intruder() -> None:
+    """A neutral cannot fire, so engaging means changing which side it is on --
+    the coalition OPPOSING whoever violated."""
     h = _setup(_config())
-    h.add_group(_intruder("Bandit 1", 50, side=1, player=None))
+    h.add_group(_intruder("Viper 1-1", 42, side=2))  # BLUE intruder
     h.load_plugin_script(PLUGIN)
-    h.advance_to(45)
+    h.advance_to(200)
 
-    spawns = _shadow_spawns(h)
-    assert len(spawns) == 1
-    assert spawns[0]["coalitionId"] == 2  # opposing a RED intruder = BLUE
-    assert spawns[0]["countryId"] == BLUE_COUNTRY
+    swaps = _swaps(h)
+    assert len(swaps) == 1, "the patrol did not swap on escalation"
+    assert swaps[0]["group"] == CAP_GROUP
+    assert swaps[0]["coalitionId"] == 1, "a BLUE intruder must be opposed by RED"
+    assert swaps[0]["countryId"] == RED_COUNTRY
+    assert swaps[0]["reset"] is True, (
+        "Respawn must be told to copy the live positions -- without Reset the "
+        "patrol teleports back to where it started the mission"
+    )
+    h.assert_no_lua_errors()
+
+
+def test_a_zone_with_no_patrol_says_so_instead_of_going_quiet() -> None:
+    """If the standing group is missing or dead there is nothing to swap, and a
+    silent return would look exactly like a ladder that never ran."""
+    h = _setup(_config(), with_patrol=False)
+    h.add_group(_intruder("Viper 1-1", 42, side=2))
+    h.load_plugin_script(PLUGIN)
+    h.advance_to(200)
+
+    assert _swaps(h) == []
+    assert _hails(h), "the border should still talk even with no patrol up"
     h.assert_no_lua_errors()
 
 
@@ -184,13 +239,15 @@ def test_player_dwell_escalates_attack_task_and_sam() -> None:
     h.assert_no_lua_errors()
 
 
-def test_ai_intruder_is_shadowed_but_never_engaged() -> None:
+def test_an_ai_intruder_is_warned_but_never_engaged() -> None:
+    """DM call: only players earn the attack. An AI that strays is talked to and
+    the patrol stays neutral, which is the whole point of it being neutral."""
     h = _setup(_config())
     h.add_group(_intruder("Strike 9-1", 60, side=2, player=None))
     h.load_plugin_script(PLUGIN)
     h.advance_to(400)
 
-    assert len(_shadow_spawns(h)) == 1
+    assert _swaps(h) == [], "the patrol turned hostile over an AI intruder"
     roe = [r for r in h.records("roe") if isinstance(r, dict)]
     assert not any(r.get("option") == "WeaponFree" for r in roe)
     assert _attack_tasks(h) == []
@@ -241,106 +298,50 @@ def test_weapon_release_inside_escalates_after_warning() -> None:
     h.assert_no_lua_errors()
 
 
-def _point_config() -> dict[str, Any]:
-    """A zone whose neutral has no airfield on the map (the Afghanistan case)."""
-    cfg = _config()
-    zone = cfg["neutralBorder"]["zones"][0]
-    del zone["field"]
-    zone["spawnX"] = "12000"
-    zone["spawnZ"] = "12000"
-    zone["spawnAltM"] = "6096"
-    zone["originLabel"] = "Pakistan border CAP"
-    return cfg
-
-
-def test_point_spawned_cap_launches_without_an_airfield() -> None:
-    # No airbase is registered at all: the whole point is that this neutral has
-    # none anywhere on the map.
-    h = DcsPluginHarness()
-    h.lua.globals().dcsRetribution = h.to_lua(_point_config())
-    h.add_group(_intruder("Viper 1-1", 42, side=2))
-    h.load_plugin_script(PLUGIN)
-    h.advance_to(45)
-
-    spawns = [r for r in h.records("spawns") if r.get("base") == "point"]
-    assert len(spawns) == 1
-    assert spawns[0]["x"] == 12000
-    assert spawns[0]["z"] == 12000
-    assert spawns[0]["altitude"] == 6096  # MOOSE takes altitude as the Vec3 y
-    assert spawns[0]["coalitionId"] == 1  # still opposes the BLUE intruder
-    assert spawns[0]["countryId"] == RED_COUNTRY
-    h.assert_no_lua_errors()
-
-
-def test_point_spawned_cap_escalates_and_stands_down() -> None:
-    h = DcsPluginHarness()
-    h.lua.globals().dcsRetribution = h.to_lua(_point_config())
-    h.add_group(_intruder("Viper 1-1", 42, side=2))
-    h.load_plugin_script(PLUGIN)
-    h.advance_to(200)
-
-    attacks = _attack_tasks(h)
-    assert attacks and attacks[0]["targetGroupId"] == 42
-    assert len(_sam_spawns(h)) == 1
-    h.assert_no_lua_errors()
-
-
-def test_point_spawned_cap_routes_back_to_its_own_station() -> None:
-    h = DcsPluginHarness()
-    h.lua.globals().dcsRetribution = h.to_lua(_point_config())
-    h.add_group(_intruder("Viper 1-1", 42, side=2))
-    h.load_plugin_script(PLUGIN)
-    h.advance_to(45)
-    h.update_unit("Viper 1-1", {"x": 90000, "z": 90000})
-    h.advance_to(45 + 130 + 10)
-
-    routes = [r for r in h.records("routes") if isinstance(r, dict)]
-    assert routes, "stood-down point CAP was never routed home"
-    # Home is its spawn station, not an airbase it does not have.
-    assert routes[-1]["x"] == 12000 and routes[-1]["z"] == 12000
-    h.assert_no_lua_errors()
-
-
-def test_leaving_before_escalation_stands_the_shadow_down() -> None:
+def test_leaving_before_escalation_costs_you_nothing() -> None:
+    """Turn round in time and the border forgets you. There is no recall to do:
+    the patrol never left its orbit, which is why it can be forgotten cheaply."""
     h = _setup(_config())
     h.add_group(_intruder("Viper 1-1", 42, side=2))
     h.load_plugin_script(PLUGIN)
     h.advance_to(45)
-    assert len(_shadow_spawns(h)) == 1
+    assert _hails(h), "the border never noticed the crossing"
 
-    # Exit the polygon well above the grace period and watch the RTB + despawn.
     h.update_unit("Viper 1-1", {"x": 90000, "z": 90000})
     h.advance_to(45 + 130 + 10)  # exit grace (120 s) + a scan
 
-    routes = [r for r in h.records("routes") if isinstance(r, dict)]
-    assert routes, "stood-down shadow was never routed home"
-    h.advance_to(45 + 130 + 10 + 310)  # the despawn timer
-    destroys = h.records("destroys")
-    assert destroys, "stood-down shadow was never despawned"
-    # Never escalated on the way out.
+    assert _swaps(h) == [], "the patrol went hostile over someone who left"
     assert _attack_tasks(h) == []
+    assert _sam_spawns(h) == []
     h.assert_no_lua_errors()
 
 
-def test_a_side_that_is_permitted_transit_is_never_intercepted() -> None:
-    """Per-side consent: a country open to blue and closed to red must wave one
-    through and shadow the other. Turkey in 2022 is exactly this."""
+def _consent_run(blue_may_cross: bool) -> "DcsPluginHarness":
     cfg = _config()
     zone = cfg["neutralBorder"]["zones"][0]
-    zone["overflightBlue"] = "true"
-    zone["overflightRed"] = "false"
-
+    zone["overflightBlue"] = "true" if blue_may_cross else "false"
+    zone["overflightRed"] = "false" if blue_may_cross else "true"
     h = _setup(cfg)
-    h.add_group(_intruder("Viper 1-1", 42, side=2))  # BLUE, permitted
-    h.add_group(_intruder("Bandit 1", 50, side=1, player=None))  # RED, refused
+    h.add_group(_intruder("Viper 1-1", 42, side=2))  # the BLUE player
     h.load_plugin_script(PLUGIN)
     h.advance_to(60)
+    return h
 
-    spawns = _shadow_spawns(h)
-    assert len(spawns) == 1, "only the refused side should be shadowed"
-    # Opposing a RED intruder means a BLUE clone.
-    assert spawns[0]["coalitionId"] == 2
-    h.assert_no_lua_errors()
+
+def test_a_side_that_is_permitted_transit_is_never_challenged() -> None:
+    """Per-side consent: a country open to blue and closed to red waves one
+    through and challenges the other. Turkey in 2022 is exactly this.
+
+    Tested from both sides of the same border rather than with two intruders:
+    with a standing patrol and AI-never-engaged, a refused AI produces no
+    observable at all, so only the player's own consent is visible.
+    """
+    assert not _hails(
+        _consent_run(blue_may_cross=True)
+    ), "a side the country lets through was challenged anyway"
+    assert _hails(
+        _consent_run(blue_may_cross=False)
+    ), "a side the country refuses was waved through"
 
 
 def test_a_zone_open_to_everyone_never_scans() -> None:
@@ -368,7 +369,7 @@ def test_a_zone_with_no_floor_intercepts_at_any_altitude() -> None:
     h.load_plugin_script(PLUGIN)
     h.advance_to(60)
 
-    assert len(_shadow_spawns(h)) == 1, "a closed border let a high transit pass"
+    assert _hails(h), "a closed border let a high transit pass unremarked"
     h.assert_no_lua_errors()
 
 
@@ -407,7 +408,7 @@ def test_one_sides_floor_is_never_applied_to_the_other() -> None:
     h.load_plugin_script(PLUGIN)
     h.advance_to(60)
 
-    assert len(_shadow_spawns(h)) == 1, "blue was judged against RED's floor"
+    assert _hails(h), "blue was judged against RED's floor"
     h.assert_no_lua_errors()
 
 
@@ -428,77 +429,6 @@ def test_the_warning_quotes_this_sides_floor_not_the_other_sides() -> None:
         "below" in t or "Climb" in t for t in warned
     ), "the warning offered blue a safe altitude taken from red's floor"
     h.assert_no_lua_errors()
-
-
-# -- the alert flight has to be able to reach you -------------------------------
-# MEASURED 2026-08-25 (Tacview, Inherent Resolve): Iran's origin is the
-# representative point of its clipped polygon, so the pair came up 224 NM behind
-# an F-15E, closed to 127 NM in twelve minutes and gave up. A shadow that cannot
-# arrive is not a deterrent, and on any country bigger than Kuwait every launch
-# was that launch.
-
-BIG_SQUARE = [
-    {"x": "0", "y": "0"},
-    {"x": "600000", "y": "0"},
-    {"x": "600000", "y": "600000"},
-    {"x": "0", "y": "600000"},
-]
-
-STANDOFF_M = 46300
-
-
-def _big_country(**overrides: Any) -> dict[str, Any]:
-    cfg = _config()
-    zone = cfg["neutralBorder"]["zones"][0]
-    zone["border"] = BIG_SQUARE
-    zone.update(overrides)
-    return cfg
-
-
-def _sep(spawn: dict[str, Any], x: float, z: float) -> float:
-    return ((spawn["x"] - x) ** 2 + (spawn["z"] - z) ** 2) ** 0.5
-
-
-def test_a_distant_intruder_gets_a_shadow_within_reach() -> None:
-    """The field is 400 km away, so the alert flight comes up near the intruder
-    instead of launching a stern chase it can never win."""
-    h = _setup(_big_country())
-    h.add_group(_intruder("BLUE 1", 1, 2, x=420000, z=420000, alt=2000))
-    h.load_plugin_script(PLUGIN)
-    h.advance_to(45)
-    spawns = [r for r in h.records("spawns") if r.get("base") == "point"]
-    assert len(spawns) == 1, "no air-spawned shadow for a distant intruder"
-    assert _sep(spawns[0], 420000, 420000) <= STANDOFF_M + 1
-    # And it is not simply sitting on top of the intruder either.
-    assert _sep(spawns[0], 420000, 420000) > STANDOFF_M * 0.9
-    # Still the opposing coalition -- the mechanism that lets it fire at all.
-    assert spawns[0]["coalitionId"] == 1
-    assert spawns[0]["countryId"] == RED_COUNTRY
-
-
-def test_a_near_intruder_still_scrambles_off_the_runway() -> None:
-    """Inside the stand-off the origin is used as it stands, so a small country
-    launches from its own field rather than materialising in mid-air."""
-    h = _setup(_big_country())
-    h.add_group(_intruder("BLUE 1", 1, 2, x=12000, z=12000, alt=2000))
-    h.load_plugin_script(PLUGIN)
-    h.advance_to(45)
-    assert len(_shadow_spawns(h)) == 1, "near intruder did not draw a field scramble"
-    assert [r for r in h.records("spawns") if r.get("base") == "point"] == []
-
-
-def test_the_shadow_launches_from_inside_the_country() -> None:
-    """The stand-off point is on the line to the origin, so it is inside the
-    border for any intruder that is -- the polygon is what makes the alert
-    flight national rather than an ambush staged over the neighbour."""
-    h = _setup(_big_country())
-    h.add_group(_intruder("BLUE 1", 1, 2, x=590000, z=300000, alt=2000))
-    h.load_plugin_script(PLUGIN)
-    h.advance_to(45)
-    spawns = [r for r in h.records("spawns") if r.get("base") == "point"]
-    assert len(spawns) == 1
-    assert 0 <= spawns[0]["x"] <= 600000
-    assert 0 <= spawns[0]["z"] <= 600000
 
 
 # -- the F10 draw --------------------------------------------------------------
@@ -622,18 +552,18 @@ def test_the_hail_lands_on_entry_not_at_the_shadow_launch() -> None:
 
     texts = [str(r.get("text", "")) for r in h.records("texts") if isinstance(r, dict)]
     assert any("violating" in t for t in texts), "no hail on entry"
-    assert not _shadow_spawns(h), "the alert flight launched before its dwell"
+    assert not _advisories(h), "the patrol was advised before its dwell"
     h.assert_no_lua_errors()
 
 
-def test_the_shadow_still_waits_for_its_dwell() -> None:
-    """The control for the test above: immediate hail must not drag the launch
-    forward with it."""
+def test_the_second_call_still_waits_for_its_dwell() -> None:
+    """The control for the test above: an immediate hail must not drag the
+    advisory forward with it."""
     h = _setup(_config())
     h.add_group(_intruder("Viper 1-1", 42, side=2))
     h.load_plugin_script(PLUGIN)
     h.advance_to(45)
-    assert len(_shadow_spawns(h)) == 1
+    assert _advisories(h), "the patrol was never advised at the dwell"
     h.assert_no_lua_errors()
 
 
@@ -652,108 +582,4 @@ def test_a_zone_with_no_sam_says_so_instead_of_going_quiet() -> None:
     h.advance_to(200)
 
     assert not _sam_spawns(h), "a zone with no template spawned a SAM"
-    h.assert_no_lua_errors()
-
-
-# -- the shadow shepherds from a distance; it does not merge --------------------
-
-HOLD_NM = 20
-HOLD_M = HOLD_NM * 1852
-
-
-def test_an_unengaged_shadow_holds_off_instead_of_merging() -> None:
-    """Flown 2026-08-28: all four alert aircraft lost, and the un-escalated pair
-    was shot down having fired nothing.
-
-    The vector loop routed the shadow to the intruder's own position + 1200 m --
-    a merge. At return-fire ROE it cannot shoot first, so it arrived inside an
-    escorted flight's envelope and died for free. It holds at shadowHoldNm now.
-
-    This does not make it safe: the shadow spawns on the intruder's OPPOSING
-    coalition, so a CAP over the area hunts it at any range. It buys time.
-    """
-    h = _setup(_config())
-    h.add_group(_intruder("Viper 1-1", 42, side=2, x=5000, z=5000))
-    h.load_plugin_script(PLUGIN)
-    h.advance_to(120)  # past the launch and at least one vector tick
-
-    routes = [r for r in h.records("routes") if isinstance(r, dict)]
-    assert routes, "the shadow was never vectored"
-    last = routes[-1]
-    gap = ((last["x"] - 5000) ** 2 + (last["z"] - 5000) ** 2) ** 0.5
-    assert gap > HOLD_M * 0.5, (
-        f"the shadow was vectored to {gap / 1852:.1f} NM of the intruder -- "
-        "that is a merge, and a return-fire flight loses it"
-    )
-    h.assert_no_lua_errors()
-
-
-def test_the_hold_distance_is_configurable() -> None:
-    """It is a plugin option because the right number is a taste call, and the
-    flown one (20 NM) is a starting point rather than a measured optimum."""
-    cfg = _config()
-    cfg["plugins"]["neutralborder"]["shadowHoldNm"] = 45
-    h = _setup(cfg)
-    h.add_group(_intruder("Viper 1-1", 42, side=2, x=5000, z=5000))
-    h.load_plugin_script(PLUGIN)
-    h.advance_to(120)
-
-    routes = [r for r in h.records("routes") if isinstance(r, dict)]
-    assert routes, "the shadow was never vectored"
-    gap = ((routes[-1]["x"] - 5000) ** 2 + (routes[-1]["z"] - 5000) ** 2) ** 0.5
-    assert gap > 20 * 1852, f"a 45 NM hold vectored to {gap / 1852:.1f} NM"
-    h.assert_no_lua_errors()
-
-
-# -- a long thin country must not launch from the far end ----------------------
-
-# Pakistan on the Afghanistan map: a band along the map edge, ~700 km long and
-# ~90 km deep. Its station is the polygon's representative point, which sits at
-# the far end from wherever you actually cross.
-THIN_BAND = [
-    {"x": "0", "y": "0"},
-    {"x": "90000", "y": "0"},
-    {"x": "90000", "y": "700000"},
-    {"x": "0", "y": "700000"},
-]
-
-
-def _thin_country() -> dict[str, Any]:
-    cfg = _config(sam=False)
-    zone = cfg["neutralBorder"]["zones"][0]
-    zone["border"] = THIN_BAND
-    zone.pop("field", None)
-    zone["spawnX"] = "45000"  # station at the FAR end of the band
-    zone["spawnZ"] = "650000"
-    zone["spawnAltM"] = "6096"
-    return cfg
-
-
-def test_a_long_country_launches_near_you_not_from_the_far_end() -> None:
-    """FLOWN 2026-08-28, Afghanistan map, reported as a regression.
-
-    The rule was "if the straight line to the origin leaves the country, launch
-    from the origin instead" -- written so a national flight never transits the
-    neighbour. On Pakistan, a thin band whose station sits ~270 NM along it,
-    every crossing failed that test and the alert flight spawned **271 NM**
-    behind the intruder. Measured at both 96 and 384 vertices, so it was never
-    the vertex budget: the rule itself does not survive a long country.
-
-    The intruder is inside the polygon by definition, so a point near it is too.
-    launch_point sweeps bearings from the homeward one outward, shrinking the
-    radius, and only gives up for a country thinner than a quarter of the
-    standoff.
-    """
-    h = _setup(_thin_country())
-    h.add_group(_intruder("Viper 1-1", 42, side=2, x=45000, z=40000))
-    h.load_plugin_script(PLUGIN)
-    h.advance_to(60)
-
-    spawns = [r for r in h.records("spawns") if r.get("x") is not None]
-    assert spawns, "no shadow was launched"
-    gap = _sep(spawns[0], 45000, 40000) / 1852
-    assert gap < 40, (
-        f"the alert flight launched {gap:.0f} NM from the intruder -- that is "
-        "the far-end station, not a scramble"
-    )
     h.assert_no_lua_errors()

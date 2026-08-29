@@ -13,6 +13,23 @@
 # changes sharing a date keep the order written here.
 
 entries:
+  - date: 2026-08-29
+    title: Border patrols are up before you get there
+    change: >-
+      Countries that guard their airspace no longer scramble when you cross --
+      they fly a patrol over their own border for the whole mission. You can see
+      them on the way in, which is the point: a border you only find out about
+      after crossing it is a trap rather than a warning. Cross anyway and they
+      call you on the radio; keep going, drop something, or shoot at them, and
+      they turn hostile and come for you. Three attempts at scrambling one on
+      demand all failed the same way -- too slow, too far away, or unable to keep
+      its distance from someone flying straight at it.
+    watch: >-
+      Before crossing a defended border, look for a pair already orbiting inside
+      it. They should be there from the start of the mission and should not chase
+      you. If you press them and they engage, check they keep flying normally at
+      the moment they turn hostile rather than falling out of the sky.
+    row: B107
   - date: 2026-08-28
     title: Border patrols scramble from near you, not from the far end
     change: >-

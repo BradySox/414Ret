@@ -43,14 +43,6 @@ def test_red_tide_preseeds_the_commsjam_plugin_for_enemy_comms_jamming() -> None
     assert settings["plugins"]["commsjam"] is True
 
 
-def test_red_tide_preseeds_the_mobilemissiles_plugin_for_the_scud_hunt() -> None:
-    settings = _campaign_settings()
-    # §49 relocates the red SS-1C Scud-B batteries in-mission; the runtime lives in
-    # the mobilemissiles plugin -- same saved-default-off trap as the others.
-    assert settings["mobile_missile_relocation"] is True
-    assert settings["plugins"]["mobilemissiles"] is True
-
-
 def test_red_tide_preseeds_the_redscramble_plugin_for_the_host_menu() -> None:
     settings = _campaign_settings()
     # §61's runtime lives in the redscramble plugin -- same saved-default-off trap

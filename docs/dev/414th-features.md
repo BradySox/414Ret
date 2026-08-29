@@ -5158,225 +5158,51 @@ Vietnam **W5 GCI ambush** and **W6 red tempo** survive (W6 lost only its `resolv
 POWs now always run a turn-countdown clock, never an indefinite will-coupled hold. Do not restore. The design notes
 `414th-vietnam-political-will-roe-notes.md` and `414th-will-generalization-notes.md` were deleted 2026-08-20, recoverable from git before `5db34150f`.
 
-## §49 — Mobile missile relocation (the SCUD hunt)
+## §49 — Mobile missile relocation (the SCUD hunt) — REMOVED (2026-08-29)
 
-A mobile theater-missile site — a SCUD/SSM group, `TheaterGroundObject.category == "missile"` — has
-always spawned parked exactly where the campaign map says it is, every mission, forever. "Hunting" it
-was flying to a coordinate. Real shoot-and-scoot launchers were the archetypal Desert Storm needle in a
-haystack: the Weasel/SCUD hunt is a hunt precisely because the target *moves*. The missing half was
-the launcher itself sitting still once you got there. (This originally leaned on §3's concealment
-layer denying the exact map position; that layer was removed 2026-08-18, so a site carries an exact
-marker and the hunt is now purely about in-mission movement.)
+**REMOVED 2026-08-29 (DM call, on the test-24 evidence).** Theatre-missile sites no longer
+relocate; they generate where the campaign map puts them and stay there, which is the
+pre-§49 behaviour. Deleted: `game/missiongenerator/mobilemissileluadata.py`, the
+`mobilemissiles` plugin, the `mobile_missile_relocation` setting, its four campaign preseeds
+(Desert Storm, Marianas 2027, Baltic Fury, Red Tide), and
+`MissionData.missile_fire_missions`. Sites themselves, their §85 support sections and their
+scripted `FireAtPoint` volleys are untouched. Do not restore.
 
-### How it works
+**Why it went.** The feature never once relocated a site in a flown mission, across three
+attempts to fix the same interaction:
 
-**Emitter (`game/missiongenerator/mobilemissileluadata.py` `populate_mobile_missiles_lua`).** When the
-`mobile_missile_relocation` setting is on, every `category == "missile"` TGO (both sides) with at least
-one **alive vehicle** emits its drivable `TheaterGroup.group_name`s + the TGO's campaign position as
-`dcsRetribution.mobileMissiles = { sites = { {groups, x, y}, … } }`. Statics-only or fully-dead sites are
-skipped; every other category — anti-air (the MANTIS-run SAM network), buildings, and coastal anti-ship
-batteries — is **never** emitted, so the IADS never moves. No sites (or the setting off) ⇒ no node ⇒ the
-plugin no-ops.
+- **2026-07-16** — the scoot's `setTask` clobbered the pending fire task; 12 of 13
+  batteries silently lost their fire missions to the first relocation. Fixed by holding a
+  group until its fire window passed.
+- **2026-07-17** (Scenic Route) — a fired battery would not drive afterwards. `resetTask()`
+  recovered 2 of 9 fired batteries; all 4 whose fire task never ran drove fine. Fixed by
+  giving `FireAtPoint` a stop condition (`MISSILE_FIRE_WINDOW_S`) so the task completes.
+- **2026-08-29** (test 24, Caucasus Iron Gate turn 1, 72 min) — both fixes in place and
+  **still zero relocations across six sites**. Maximum displacement was **44.5 m** against a
+  4,000 m scoot radius. Two sites (CAT, DIREWOLF) carried fire holds of 5,181 s and 5,483 s
+  against a 4,344 s mission, so they were held past the end and never tried. The other four
+  fired — 18 × 9M723 launched — and then refused every route push; the plugin's own
+  progress check gave up on all four with `no movement across 2 route pushes`.
 
-**The coastal opt-in was REMOVED 2026-08-21 (DM call: "it doesn't work and was proven").**
-`coastal_missile_relocation` added `category == "coastal"` sites to the same set, but the only coastal
-hardware anyone fields — the vanilla Silkworm battery, `hy_launcher` + `Silkworm_SR` — is a fixed
-emplacement already in `IMMOBILE_UNIT_IDS` (see the flown evidence below), so the setting could route
-nothing but a hypothetical mod launcher. No campaign preseeded it. The field is in the obsolete-key list
-in `_migrate_legacy_settings`; `IMMOBILE_UNIT_IDS` keeps its Silkworm entries, which stay in lockstep
-with the units' own `mobile: false`.
+The stop condition stays: without it a fired battery's task never ends and the group is
+locked in its deployed state for the rest of the mission. That is a property of the fire
+task, not of the scoot, and it is now recorded on `MISSILE_FIRE_WINDOW_S` itself.
 
-**Runtime (`resources/plugins/mobilemissiles/`).** One scheduled loop per site: after a startup grace
-(default 120 s), every alive group of the site drives (alarm-green + weapons-hold — they relocate, they
-don't stop to fight) to a fresh `mist.getRandPointInCircle` point within the **scoot radius** (default
-4 km) of the site's **campaign-map centre**, re-rolled every `scootIntervalS` (default 480 s). Anchoring
-the wander on the campaign position (not the last waypoint) means the site works its area but never
-migrates — threat rings and the turn-boundary model stay honest. A destroyed site stops being routed.
-Options: interval, radius, speed, grace, fire-margin.
+**Constraints lifted out before deletion**, because they apply to every scripted mover and
+outlived §49:
 
-**Fire first, THEN scoot (2026-07-16, the flown Scenic Route finding).** The upstream missile-site
-fire task (`MissileSiteGenerator`: a `Hold(random 60 s…mission) → FireAtPoint` on waypoint 0) and the
-scoot are one coin with two failure faces — `mist.goRoute` pushes routes via `Controller:setTask`,
-which **replaces** the whole mission task, so a battery that scooted before its Hold expired silently
-lost its fire mission (12 of 13 groups in the flown test), and the one battery whose Hold happened to
-beat the 120 s grace fired — then sat pinned on the spent task, ignoring every later route push. Fix:
-the generator records each fire-tasked group's hold deadline on
-`MissionData.missile_fire_missions`; the emitter forwards them per-site as the parallel arrays
-`fireHoldGroups`/`fireHoldS`; the plugin holds such a group still until its window + `fireMarginS`
-(default 300 s) has passed, then routes it. (It originally called `Controller:resetTask()` first, to
-clear the spent fire task; that was **removed 2026-08-18** — see "The reset was the thing stopping
-them" below.) Groups without a fire mission scoot exactly as before.
+- A mover's DCS group needs a **2-waypoint route** — current position, then destination. A
+  single destination waypoint reads as "you are already there" and the group never drives.
+- One **undrivable member pins a whole group**: a route push moves a DCS group as a unit, so
+  a static emplacement in it produces no movement and a per-frame ground-AI levelling storm.
+  This is why the §85 missile-battery support section is trucks only, and why four ground
+  unit yamls carry `mobile: false` (still read by the web client's TGO movement routes).
+- Any **player-interactable mover must still be moving 90 minutes in**, so a late intercept
+  is possible.
 
-**The fire task must end itself (2026-07-17, the flown turn-2 re-fly).** The re-fly proved the fire
-half — 9/10 fire-tasked batteries launched full volleys 12–15 s after their forwarded deadlines (18
-SCUD + 45 Shahed), holds released on schedule, and two batteries fired *then* scooted — but 7 of the
-9 fired batteries still never drove: a bare `FireAtPoint` has **no round limit and no stop
-condition**, so once the launchers run dry the task never completes, the units never leave their
-deployed fire state, and `resetTask()` un-pins only sometimes (2/9; every never-fired group drove
-fine; the sitters' escorts crept 20–80 m into formation and stalled against the pinned launchers —
-combat exposure ruled out in the Tacview). The generator therefore wraps the fire task too:
-`ControlledTask(FireAtPoint)` with `stop_after_time(hold + MISSILE_FIRE_WINDOW_S)` (240 s — flown
-volleys complete within ~40 s of the deadline), so the task ends through DCS's normal completion
-path and the group is ordinarily idle before the plugin's 300 s margin routes it. The
-window-inside-margin coupling is pinned by `test_fire_window_stays_inside_the_plugin_scoot_margin`;
-the plugin's `resetTask` stayed as belt-and-braces for pre-window missions — until 2026-08-18, when
-it turned out to be the defect itself. If the re-fly shows the
-stop condition also fails to stow dry launchers, the next lever is an explicit `rounds=` expend
-count on the task.
-
-**The reset was the thing stopping them (2026-08-17 flown, fixed 2026-08-18).** One mission, three
-sites, and the correlation is exact:
-
-| site | fire mission | moved |
-|---|---|---|
-| CICHLID | none | **3,542–3,840 m** |
-| OSTRICH | hold 1735 s | 0–21 m, then the give-up detector dropped it |
-| BUFFALO | hold 2748 s | 0–17 m |
-
-Composition is not the discriminator — CICHLID and OSTRICH are both Scud batteries, BUFFALO is an
-SA-8. Ground-AI sleep (§59) is not either: its emitted list excludes missile sites entirely, checked
-in the flown `.miz`. The only thing separating the site that drove from the two that did not is
-whether `driveTo` was called with `clearTask`, i.e. whether it issued `Controller:resetTask()`
-before the route push.
-
-`mist.goRoute` routes via `setTask`, which **replaces** the task queue — this section's own text
-says so — so the reset was redundant to begin with. Issuing both in the same frame let the reset
-land last and wipe the route it was meant to enable, which is also the honest reading of the
-2026-07-17 result where it "un-pins only sometimes (2/9)". Removed: `driveTo` no longer takes
-`clearTask` and never resets. The give-up detector stays as the backstop — if some launcher state
-really does pin a group, two dry pushes drop it and the log names the unit types.
-
-**The FPS storm (2026-07-17, the first flown test on the fixed build).** A fresh 39-site game hit
-single-digit FPS with DCS's `ANTIFREEZE` sim-overload protection firing continuously from the
-first scoot tick — before a single drone launched, exonerating the Shahed volleys. Two compounding
-causes, both fixed: **(1) synchronized route pushes** — every site armed at the same moment, so all
-39 routed in the same frame every interval (and with a 4 km scoot at 30 km/h taking ~8 min, the
-whole fleet was effectively always driving); the plugin now staggers each site's loop start by
-`(i-1) · interval/N`, spreading pushes across the interval. **(2) drive-broken coastal hardware** —
-the vanilla Silkworm battery (`hy_launcher` + `Silkworm_SR`) is a fixed emplacement with no ground
-physics (`GT.maxDeviationRoll` unset), so routing it produced zero movement and a per-frame
-leveling storm (~15k ground-AI log events in the first tick minute); the emitter's
-`IMMOBILE_UNIT_IDS` now drops any group carrying such a unit, so vanilla Silkworm sites are never
-routed. That left the coastal opt-in with nothing to move, which is why it was removed 2026-08-21.
-Tests
-`test_immobile_silkworm_hardware_is_never_routed` +
-`test_site_loops_are_staggered_across_the_interval`.
-
-**The CH_CJ10 PLARF launcher joined the exclusion (2026-08-05, two flown Marianas 2027 missions —
-Tacviews `-190738` and `-203549`).** **All nine launchers of all three PLARF sites moved 0.00 km**
-— not one metre, in either mission — while the drivable vehicles sharing those groups (the §85
-refuellers ATZ-5 / TZ-22 / GAZ-66 and the PGZ-09 / PGL-625 / LD-3000 SHORAD) jittered only
-0.05–0.31 km. That asymmetry is the signature of a group **pinned by an undrivable member**, not
-one that was never routed: `mobile_missile_relocation` and the `mobilemissiles` plugin were both
-preseeded and `CH_CJ10` was not excluded, so the plugin pushed routes all mission. The sites fired
-25+ CJ-10s and then sat for the remaining ~25 minutes, so mechanically it reads as the same
-post-fire pin as the Shahed below — but this hardware fires early every mission, so "pinned after
-firing" and "never scoots" are the same thing in play. `CH_CJ10` is therefore in
-`IMMOBILE_UNIT_IDS` (no futile pushes, no ground-AI churn) while **`CH_Shahed136` deliberately is
-not**, since its never-fired sites drive fine and excluding it would kill a scoot that does work
-before the salvo. Test `test_the_ch_cj10_plarf_launcher_is_never_routed`. **Campaign consequence:**
-Marianas 2027's authored "§49 shoot-and-scoot + §3 concealment make the PLARF hunt the campaign's
-signature" is **not true in play** — those three sites are stationary targets, and restoring the
-mechanic needs launcher hardware DCS will drive.
-
-**The CH Shahed post-fire pin + the give-up rule (2026-07-17, the flown Scenic Route Merged 39-site
-Tacview).** The fire-window fix is **proven on vanilla hardware** — every Scud_B battery that fired
-then scooted (13/13, 546–3057 m, towed-AAA escorts included) — but all 8 fired `CH_Shahed136` sites
-stayed pinned post-salvo (23–172 m escort-creep) while the two never-fired Shahed sites drove
-2.1–2.7 km: the CH launcher truck has full drive physics and its 22 s salvo fits the 240 s window,
-so the pin is a **mod-side post-fire state DCS will not drive out of** (deploy/anim; `resetTask` +
-alarm-green don't clear it). Mitigation, not cure: the plugin **gives up** on a group after 2
-consecutive dry route pushes (<`MIN_PROGRESS_M` 100 m progress; real movement resets the count) —
-one log line (`giving up on <group>`), then the battery is left alone instead of drawing 6 futile
-pushes an hour. A spent Shahed site not scooting is tactically nil (its magazine is empty — the
-scoot exists to protect *loaded* launchers). Tests `test_stuck_group_is_given_up_after_dry_pushes`
-+ `test_moving_group_is_never_given_up`.
-
-**Movement only** (the Combat-SAR / COIN mover discipline): the routed DCS groups are the force model's
-own spawned units, so kills record natively; nothing changes at turn end; there is no Lua-owned scoring
-or spawning. Composes with §3 concealment (the map shows "in here somewhere", and when you get there the
-launcher has moved within its patch) and §5 Approximate mode (fuzzed steerpoints against mobile SAMs —
-same philosophy, different object class).
-
-### Files & tests
-
-| Area | Path |
-|---|---|
-| Emitter | `game/missiongenerator/mobilemissileluadata.py` (wired in `luagenerator.py` after the COIN emitter) |
-| Runtime | `resources/plugins/mobilemissiles/` (`plugin.json` + `mobilemissiles-config.lua`) |
-| Setting | `game/settings/settings.py` (`mobile_missile_relocation`, Mission Generation → World & systems, default **ON** — the toggle is the kill switch) |
-| Tests | `tests/missiongenerator/test_mobilemissileluadata.py` (emit shape, category/dead/static gates, setting gate, fire-hold forwarding); `tests/lua/test_mobilemissiles_runtime.py` (grace, per-group scoot around the anchor, destroyed-site stop, no-node no-op, fire-then-scoot hold, and that no group is ever reset before its route push) |
-
-### Gotchas / deferred
-
-- **Default ON.** Movement-only, pcall-guarded, and node-gated, so the blast radius of a failure is "the
-  launchers don't move" — but it does change every campaign with missile sites; the setting is the kill
-  switch (the §40 `campaign_phases` precedent). In-game pass: checklist **S2**.
-- **The SAM network is out by construction.** Only `category == "missile"` is emitted. Do not extend this
-  to SAM TGOs without solving the MANTIS-emitter-position question first.
-- **A campaign must actually place a missile TGO** or this is inert. **Germany — Red Tide** is the first
-  414th campaign to do so on purpose: its laydown carries **two red SS-1C Scud-B batteries** (a forward
-  one off Haina, a rear/mid one near Wittstock) and preseeds `mobile_missile_relocation: true` + the
-  `mobilemissiles` plugin, so the SCUD hunt is live there (see the Red Tide design note).
-- **DCS pathing risk.** A site authored in rough terrain may fail to path off-road; worst case the group
-  sits (status quo ante). Watch dcs.log for repeated goRoute failures on the pass.
-- **Movement bug fixed 2026-07-09.** The first flown Red Tide test found the launchers **never moved**
-  (Tacview: a single position record for all 6 `Scud_B`) despite `shoot-and-scoot armed` and **no**
-  error. Root cause: `driveTo` built a **1-waypoint** `mist.goRoute` (destination only), and a DCS ground
-  group needs its route to START at its current position or it reads as "already there" and never drives
-  — MIST's own `groupToRandomZone` prepends the lead position (2 WPs). Fixed to a 2-WP route
-  `{ buildWP(lead:getPoint()), buildWP(dest) }`. **The identical `driveTo` in `coin-config.lua` had the
-  same bug** (copy-paste) so every COIN mover was silently affected too (§P4/P8, all "untested"). The
-  fix is strictly more correct (start=current is always valid, so it can't regress a working mover);
-  the harness tests assert `points == 2`. See the memory note `dcs-ground-movers-need-2wp-route`.
-  **Re-fly PASSED 2026-07-10** (flown Red Tide turn 1, Tacview `Tacview-20260710-195823`): all 6 launchers
-  in both batteries relocated ~1.5 km net (inside the 4 km scoot anchor), escorts moved with them, no SAM
-  site moved, alarm-green held — checklist S2 is VERIFIED. The COIN mover (`coin-config.lua`, same fix)
-  still owes its own fly on a COIN campaign (§P4/P8).
-- **Deferred:** per-side gating (currently symmetric), and coupling the *fired* missile events to a
-  scoot-away reaction (real shoot-THEN-scoot needs an S_EVENT_SHOT hook — v2 if the wander plays well).
-
-### Mobility is a unit-data contract now (2026-08-06)
-
-Every entry in `IMMOBILE_UNIT_IDS` was discovered the same expensive way: fly a mission, read a
-Tacview, notice a launcher's track is a single point, append an id to a frozenset in Python. Two
-changes make the next one cheap.
-
-**`mobile: false` in the unit's own definition** (`GroundUnitType.mobile`, the §24
-`date_gated_properties` / §86 `gps_jamming` precedent). `hy_launcher`, `Silkworm_SR` and `CH_CJ10`
-carry it, each with its flown evidence in a comment next to the flag, and `_is_immobile` in the
-emitter reads it. `IMMOBILE_UNIT_IDS` survives as the fallback for a DCS type with **no** registered
-yaml (statics, unregistered mod hardware) and as the thing an unknown type is never matched against
-by accident; `test_immobile_ids_and_unit_definitions_stay_in_lockstep` fails CI if the two disagree,
-so there is one source of truth in practice. Adding a launcher to the exclusion is now a data edit
-with its reason attached, not a code change.
-
-**The give-up log names the units.** The plugin already stops routing a group after two dry pushes,
-but it logged only *which group* was stuck — which is why the Marianas verdict needed Tacview
-archaeology and still only produced a verdict for one of the three PLARF launcher types. It now logs
-`MOBILEMISSILES|: giving up on <group> [CH_CJ10, CH_SX2190] (no movement across 2 route pushes)`, so
-the next flown mission answers "which of these can drive?" from `dcs.log` alone.
-
-**Still open, and worth knowing before authoring a hunt:** `CH_CJ10` does not drive, `CH_Shahed136`
-pins only *after* firing, and **`CHAP_9K720_HE`/`CHAP_9K720_Cluster`/`CH_IskanderK`/`CH_DF21D`/
-`CH_YJ12B` have never been established either way**. Marianas 2027's signature "hunt the launchers
-before they scoot" therefore does not currently exist in play (all three of its PLARF sites roll
-from a pool whose one measured member is immobile), and Baltic Fury's Iskander battery is
-unmeasured. Neither is fixable from the data available offline — the fly criteria are on checklist
-**S2**.
-
-Two entries did NOT come from a Tacview, and did not need to. **`v1_launcher`** (added 2026-08-06)
-is a 1944 launch ramp — a poured emplacement of exactly the `hy_launcher` shape — and its
-`class: Missile` puts it in this emitter's category while `mobile_missile_relocation` defaults ON,
-so it was a latent ANTIFREEZE waiting for the first WWII campaign to author a missile marker. None
-does today (`germany_1944` is its only faction and neither of its campaigns places one), so the
-flag closes a trap rather than fixing an observed failure. And the Iskander-M above is listed under
-its **`CHAP_9K720_*`** ids on purpose: **`CH_IskanderM.yaml` is a tombstone that no longer
-registers** — no pydcs extension declares that id, because the CurrentHill Russia pack dropped it
-when ED integrated the system into base DCS under `CHAP_`. Three factions (`CH_russia_2020`,
-`redfor_current`, `redfor_russia_2020`) still list its display name `"[CH] Iskander-M SRBM"`, which
-the faction loader drops silently; all three also list the live pair, so they do still field the
-Iskander and the dead string costs nothing but confusion.
+The first two were previously anchored on §49; they now live on the §85 layout comment
+(`resources/layouts/defenses/missile.yaml`), the unit yamls, and the hard-constraints list
+in `CLAUDE.md`.
 
 ## §50 — Convoy ambush (a chance, never telegraphed) + ambient supply convoys
 

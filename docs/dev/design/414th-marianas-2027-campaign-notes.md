@@ -150,13 +150,16 @@ also adds one medium-range SAM marker there, or the red field nearest Guam would
 
 Three `MissilesSS.Scud_B` markers in the red block — the loader's missile-site convention —
 on **Rota, Tinian and Saipan**. The red faction's own roster fills them (China 2020 declares
-DF-21D, CJ-10 and YJ-12B) and §49 `mobile_missile_relocation` makes them shoot and scoot
+DF-21D, CJ-10 and YJ-12B). §49 `mobile_missile_relocation` was meant to make them shoot and scoot
 during the mission, so the launcher is never quite where the last pass left it.
 
 > The concealment half of this design is **gone** (2026-08-18): §3 no longer hides
 > un-engaged field forces behind a "suspected activity" circle, so a PLARF site carries an
 > exact marker from turn one and only its composition is fogged until engaged.
 
+> ⚠️ **§49 WAS REMOVED 2026-08-29.** The three PLARF sites are stationary, permanently.
+> The flown evidence below is why, and is kept as the record.
+>
 > ⚠️ **FLOWN 2026-08-05: the scoot half of this does NOT happen.** Across two missions
 > (Tacviews `Tacview-20260805-190738` + `-203549`) **all nine `CH_CJ10` launchers of all three
 > sites moved 0.00 km** — while the drivable vehicles sharing those groups (the §85 refuellers,
@@ -440,7 +443,6 @@ identity and it is kept.
 
 Preseeded feature set, and why each earns its place:
 
-- **§49 `mobile_missile_relocation`** — the PLARF sites above.
 - **§63 `cruise_missile_strikes` + auto raids** — both fleets carry real, finite, no-rearm
   magazines. Sinking a shooter ends its raids. This is the feature the campaign was waiting for.
 - **§78 `cargo_ship_convoys` + `coastal_batteries_engage_ships`** — island logistics sail as

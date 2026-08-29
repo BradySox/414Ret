@@ -21,11 +21,11 @@ groups:
     # section is transport + transload + fuel + command, not a transcription of
     # the full TO&E.
     #
-    # Every slot is drivable metal ON PURPOSE. All of these share one DCS group
-    # with the launchers, mist.goRoute routes a group as a whole, and one
-    # undrivable member pins the entire battery (the §49 IMMOBILE_UNIT_IDS
-    # finding) -- so no statics, no trailers, and no power station (a 5I57A is
-    # S-300 kit, and is not in the Iskander's list anyway).
+    # Every slot is drivable metal ON PURPOSE -- no statics, no trailers, and no
+    # power station (a 5I57A is S-300 kit, and is not in the Iskander's list
+    # anyway). A battery is one DCS group, and a route push moves a group as a
+    # whole, so an undrivable member pins the lot. §49's removal did not lift
+    # that: it is why the section is trucks.
     #
     # Slots are optional so a faction that fields none of this simply generates
     # the site it generated before.

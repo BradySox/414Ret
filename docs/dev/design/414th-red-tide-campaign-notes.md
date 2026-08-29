@@ -762,16 +762,14 @@ edit); guard `tests/fourteenth/test_campaign_plugin_preseed.py`.
    consolidate") made mechanical. Reactive defense is untouched (the §17 boundary). A SITREP
    band line reports "N/M command posts operational (claimed)".
 
-2. **§49 mobile-missile relocation — two SS-1C Scud-B batteries added to the `.miz`.**
-   `mobile_missile_relocation` is default ON but had **nothing to relocate** — the laydown
-   placed no missile-category TGO, so the SCUD hunt was inert. Added **two red `Scud_B`
-   vehicle markers** to the CJTF Red country block (a forward battery off **Haina**, a
-   rear/mid one near **Wittstock**), so `MizCampaignLoader.missile_sites` builds two
-   `MissileSiteGroundObject`s (`category == "missile"`). With §49 on they shoot-and-scoot
-   within the 4 km scoot radius each ~8 min, so the launcher is never quite where the last
-   pass left it. `mobile_missile_relocation:
-   true` and the **`mobilemissiles` plugin** are both preseeded (same saved-default-off
-   reasoning as the vietnamops/convoyambush/commsjam plugins).
+2. **Two SS-1C Scud-B batteries added to the `.miz`.** The laydown placed no
+   missile-category TGO at all. Added **two red `Scud_B` vehicle markers** to the CJTF Red
+   country block (a forward battery off **Haina**, a rear/mid one near **Wittstock**), so
+   `MizCampaignLoader.missile_sites` builds two `MissileSiteGroundObject`s
+   (`category == "missile"`). They are strike targets that fire scripted volleys.
+   **They do not move**: §49 mobile-missile relocation was added for them and removed
+   2026-08-29 after never relocating a site in three flown attempts, so the preseeds that
+   went with it are gone too.
 
    **`.miz` edit method / verification.** pydcs `m.vehicle_group(red, …, MissilesSS.Scud_B,
    …)` for both markers (auto-assigned `groupId` 413/414, `unitId` 813/814, past the mission

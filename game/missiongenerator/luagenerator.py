@@ -41,7 +41,6 @@ from .cruisemissileluadata import populate_cruise_missiles_lua
 from .missiondata import MissionData
 from .gpsjammingluadata import populate_gps_jamming_lua
 from .growlerluadata import populate_growler_lua
-from .mobilemissileluadata import populate_mobile_missiles_lua
 from .navalmagazineluadata import populate_naval_magazines_lua
 from .redscrambleluadata import populate_red_scramble_lua
 from .vietnamopsluadata import populate_vietnam_ops_lua
@@ -65,7 +64,7 @@ class LuaGenerator:
         # one bundled TriggerStart (flush_deferred_plugin_scripts). DCS silently
         # drops some mission-start DoScriptFile triggers when a heavy mission
         # fields many separate ones -- observed on Red Tide, where the
-        # vietnamops/mobilemissiles/commsjam config loads never executed while
+        # vietnamops/commsjam config loads never executed while
         # adjacent, byte-identically-wired plugin loads did. Bundling into a
         # single trigger (the same shape the reliable late-init pass uses) keeps
         # any one config from being dropped.
@@ -441,11 +440,6 @@ class LuaGenerator:
         # bubble and puts it down off the aimpoint. Real ordnance from a real
         # jet: no spawns, and killing the jammer restores accuracy at once.
         populate_gps_jamming_lua(lua_data, self.game, self.mission_data)
-
-        # Mobile missile sites (the SCUD hunt) -- emits dcsRetribution.mobileMissiles
-        # only when the setting is on and a live vehicle-carrying missile site exists;
-        # the mobilemissiles plugin wanders them shoot-and-scoot at runtime.
-        populate_mobile_missiles_lua(lua_data, self.game, self.mission_data)
 
         # Ground AI sleep (§59) -- emits dcsRetribution.aiSleep only when
         # perf_ground_ai_sleep is on and an eligible garrison group exists; the

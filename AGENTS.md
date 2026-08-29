@@ -381,12 +381,16 @@ linked design note.
 - **`powerW` is range, not loudness** (§51, §70). Do not chase audio volume with it.
 - **GPS jamming (§86): at most 3 sites per campaign, non-overlapping.** Bubbles are large and
   invisible on the map, and effects do not stack.
-- **A mover's DCS group needs a 2-waypoint route** (§49). A 1-waypoint `mist.goRoute` never
-  drives.
+- **A mover's DCS group needs a 2-waypoint route** — current position, then destination. A
+  single destination waypoint reads as "you are already there" and the group never drives.
+  Learned on §49 (removed 2026-08-29); applies to every scripted mover.
+- **One undrivable member pins a whole group.** A route push moves a DCS group as a unit, so a
+  static emplacement in it yields no movement and a per-frame ground-AI levelling storm. This
+  is why §85's missile-battery support section is trucks only.
 - **Ground movers must last 90 minutes.** Any player-interactable mover is paced so an intercept
   is still possible late in a mission.
 - **Never spawn phantom units.** Every scripted force is a real, tracked unit whose loss records
-  natively. Applies to §35, §37, §49, §50.
+  natively. Applies to §35, §37, §50.
 - **A plugin toggle is a second gate.** An unticked plugin silently kills its setting — campaigns
   must preseed both (the §36 lesson).
 
@@ -428,7 +432,6 @@ linked design note.
 44. **Long-range carrier ops** — a deterministic package off a standoff boat, routed to its own tanker.
 45. **Support-package F10 orbit markers** — tanker and AEW&C racetracks drawn with callsign, freq, TACAN.
 47. **Continuous campaign clock & weather** — one marched clock with weather evolving from the previous turn.
-49. **Mobile missile relocation** — shoot-and-scoot theater missile sites; fire first, then scoot.
 50. **Convoy ambush + ambient supply convoys** — untelegraphed ambush teams on friendly roads, authored as native DCS triggers.
 51. **Enemy comms jamming** — IADS comms nodes jam briefed channels whenever one is alive; the captured-aircrew gate went with §21 on 2026-08-07.
 52. **Command-center decapitation** — a headless HQ picks targets worse and frags fewer offensive packages.
@@ -487,6 +490,7 @@ Kept numbered so old notes and saves stay readable. Details and rationale in the
 | 40 | Campaign phases, ROE zones, target release | Removed 2026-07-21 |
 | 46 | Route-aware fuel-tank planning (fuel-first) | **Reverted 2026-08-09** — planner re-convergence work order C; tanker tasking is upstream's again and nothing fits tanks. The external-fuel *accounting* helpers survive for the fuel readouts |
 | 48 | Commitment ceiling and the political-will economy | Removed 2026-07-21 |
+| 49 | Mobile missile relocation (the SCUD hunt) | Removed 2026-08-29 — never relocated a site in three flown attempts; test 24 measured 44.5 m against a 4,000 m radius |
 | 53 | War economy | Removed 2026-07-21 |
 | 54 | Munitions availability | Removed 2026-07-21 |
 | 55 | Red Intent adaptive posture | Removed 2026-07-21 |

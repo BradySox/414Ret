@@ -68,10 +68,6 @@ settings:
   # Plugin preseeds (the s36 saved-default-off lesson): a plugin unticked in the
   # host's saved defaults would otherwise silently kill its preseeded feature.
   plugins:
-    # s49 shoot-and-scoot for the authored Scud batteries (incl. the two western
-    # baskets on the H-3 front) -- the Great Scud Hunt needs the launchers to never
-    # be where the last recon photo froze them.
-    mobilemissiles: true
     # s70 C1: the audible KARI UHF net (CW traffic from every alive C2 node).
     rednet: true
     redscramble: true

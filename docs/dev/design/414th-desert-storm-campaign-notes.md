@@ -193,8 +193,9 @@ command centers degrade red's planning), `auto_repair_air_defenses` (§68 — KA
 historically repaired between strikes), `comint_collection` + `red_comms_net` (§70
 C0+C1 — bomb-it-or-tap-it on the same nine nets), `convoy_ambush` (§50),
 `host_red_scramble` + `redscramble.hostPlayers: Flash` (§61), plugins
-`mobilemissiles` (§49 — the seven authored Scud batteries shoot-and-scoot; **the
-Great Scud Hunt needs this**) + `convoyambush` + `rednet` + `redscramble`.
+`convoyambush` + `rednet` + `redscramble`. (The seven authored Scud batteries are
+stationary: §49 was removed 2026-08-29, so the Great Scud Hunt is a hunt for fixed
+sites you have to find, not for launchers that move.)
 `restrict_weapons_by_date` + `restrict_props_by_date` enforce the era (both halves,
 per the settings-split-orphans lesson). Budgets: P2000 / E1000 ×0.5 income — the
 sanctioned, blockaded state.

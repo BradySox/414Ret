@@ -93,23 +93,6 @@ then relaunch and fly it properly.** Destroy the target, land, accept the result
   one thing an ordinary sortie will never do by accident. The root cause was found and fixed
   the same day it was reported and has never been confirmed end to end.
 
-### 3 · A missile site that fires afterwards drives away — `S2`
-
-**Try:** the setup already has its own card —
-[`REGRESSED-SWEEP.md`](REGRESSED-SWEEP.md). Confirm `mobile_missile_relocation` and the
-`mobilemissiles` plugin are both on (Starfire campaigns preseed neither), then watch a Scud
-campaign for two ~8-minute relocation intervals. You do not need to attack the launchers.
-**~25 min, and it clears C9 and B48 in the same mission.**
-
-- **Pass:** every battery that launches then relocates to a fresh spot, and no
-  `giving up on ...` line names a battery that fired.
-- **Fail:** a fired battery still on its launch point at mission end. If a **SAM** site moves,
-  stop — that is the category filter broken, and it matters more than S2 itself.
-- **Why it's here:** measured three times now (tests 6, 9 and 12) and a site that fires still
-  moves only 10–250 m while a Tor in the same group drives 2.4 km. The 2026-08-18 fix improved
-  it and did not close it; the next lever is post-salvo launcher state. Until 2026-08-22 this
-  row was on no card the board printed, so the only REGRESSED item besides B60 was invisible.
-
 ## Done
 
 ### 1 · A downed pilot turns up MIA, then evades — `G29` — **OFF THE CARD 2026-08-20**

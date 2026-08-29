@@ -36,11 +36,9 @@ from dcs.mapping import Point
 from dcs.unittype import VehicleType
 
 from game import persistency
-from game.dcs.groundunittype import GroundUnitType
 from game.dcs.helpers import unit_type_from_name
 from game.layout import LAYOUTS
 from game.layout.layout import TgoLayoutUnitGroup
-from game.missiongenerator.mobilemissileluadata import IMMOBILE_UNIT_IDS
 from game.theater.presetlocation import PresetLocation
 from game.utils import Heading
 
@@ -265,87 +263,6 @@ def test_the_kit_is_nation_correct(faction_name: str, slot: str, expected: str) 
     group = ForceGroup.for_layout(layout, FACTIONS[faction_name])
     offered = {t.id for t in group.dcs_unit_types_for_group(_slot(slot))}
     assert expected in offered, f"{faction_name} {slot} offers {sorted(offered)}"
-
-
-# --- 5. §49: nothing in the support section may pin the battery ----------------
-
-
-def test_no_support_unit_can_pin_the_scoot() -> None:
-    """The §49 rule, enforced on the data. A missile site is ONE DCS group and
-    `mist.goRoute` routes it as a whole, so a single undrivable member stops the
-    whole battery relocating -- which is why there is no power station or static
-    in this section, unlike the S-300's.
-    """
-    immobile = []
-    for name in SUPPORT_SLOTS:
-        for dcs_type in _slot(name).unit_types:
-            if dcs_type.id in IMMOBILE_UNIT_IDS:
-                immobile.append((name, dcs_type.id))
-                continue
-            assert issubclass(dcs_type, VehicleType)
-            for unit in GroundUnitType.for_dcs_type(dcs_type):
-                if not unit.mobile:
-                    immobile.append((name, dcs_type.id))
-    assert not immobile, f"undrivable support units would pin the battery: {immobile}"
-
-
-def test_immobile_ids_and_unit_definitions_stay_in_lockstep() -> None:
-    """Two sources of truth would drift. The emitter's id set is the fallback for
-    a DCS type with no registered yaml; every id in it that DOES have one must
-    carry `mobile: false`, and no other unit may claim it silently.
-    """
-    flagged = {
-        unit_id
-        for unit_id, data in _unit_yamls()
-        if data.get("mobile") is False  # noqa: E712
-    }
-    registered = {
-        u for u in IMMOBILE_UNIT_IDS if (GROUND_UNIT_DIR / f"{u}.yaml").is_file()
-    }
-    assert registered <= flagged, (
-        f"{sorted(registered - flagged)} are excluded in code but their unit "
-        f"definitions still say they drive"
-    )
-    assert flagged == registered, (
-        f"{sorted(flagged - registered)} declare `mobile: false` but are missing "
-        f"from IMMOBILE_UNIT_IDS"
-    )
-
-
-def test_the_emitter_skips_a_group_with_an_undrivable_launcher() -> None:
-    """End to end on real DCS types: a CJ-10 battery is never routed (it does not
-    drive), a Scud battery is."""
-    from game.missiongenerator.luagenerator import LuaData
-    from game.missiongenerator.mobilemissileluadata import populate_mobile_missiles_lua
-
-    def tgo(name: str, unit_id: str) -> Any:
-        unit_type = unit_type_from_name(unit_id)
-        unit = SimpleNamespace(alive=True, is_vehicle=True, type=unit_type)
-        return SimpleNamespace(
-            category="missile",
-            groups=[SimpleNamespace(group_name=name, units=[unit])],
-            position=SimpleNamespace(x=1.0, y=2.0),
-        )
-
-    game = SimpleNamespace(
-        settings=SimpleNamespace(mobile_missile_relocation=True),
-        theater=SimpleNamespace(
-            controlpoints=[
-                SimpleNamespace(
-                    ground_objects=[tgo("scud", "Scud_B"), tgo("cj10", "CH_CJ10")]
-                )
-            ]
-        ),
-    )
-    root = LuaData("dcsRetribution")
-    populate_mobile_missiles_lua(root, game, mission_data=None)  # type: ignore[arg-type]
-    node = root.get_item("mobileMissiles")
-    assert isinstance(node, LuaData)
-    sites = node.get_item("sites")
-    assert isinstance(sites, LuaData)
-    emitted = sites.serialize()
-    assert "scud" in emitted
-    assert "cj10" not in emitted
 
 
 # --- 6. the template itself ----------------------------------------------------

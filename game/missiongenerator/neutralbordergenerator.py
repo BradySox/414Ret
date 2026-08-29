@@ -190,10 +190,15 @@ class NeutralBorderGenerator:
             speed=CAP_SPEED_KPH,
             group_size=2,
         )
+        # km/h, NOT m/s. Every pydcs speed argument is km/h and it divides by
+        # 3.6 on write, so a "helpful" conversion here is applied twice. Flown
+        # 2026-08-29: passing CAP_SPEED_KPH / 3.6 put 57.8 m/s -- 112 kt -- in
+        # the orbit task, and the F-16A, MiG-29A and Su-30 patrols all stalled
+        # and crashed within a minute of mission start.
         group.points[0].tasks.append(
             OrbitAction(
                 int(spawn_alt_m),
-                int(CAP_SPEED_KPH / 3.6),
+                int(CAP_SPEED_KPH),
                 OrbitAction.OrbitPattern.RaceTrack,
             )
         )

@@ -1160,6 +1160,53 @@ refused AI get shadowed. With a standing patrol **and** AI-never-engaged, a
 refused AI produces no observable at all, so consent is now tested from both
 sides of the same border against the player.
 
+## Flown 2026-08-29 (test 22) — the patrols fell out of the sky
+
+**Every patrol crashed within a minute of mission start** — Pakistan's F-16A,
+Iran's MiG-29A, India's Su-30. One bug, and it produced both symptoms the DM
+reported (the crash, and "flying at stall speed").
+
+`OrbitAction`'s speed argument is **km/h**, like every pydcs speed argument, and
+pydcs divides by 3.6 on write. The generator converted `CAP_SPEED_KPH` to m/s
+first, so the division happened twice. Read out of the generated `.miz`, the
+route carried:
+
+```
+208.33 m/s   <- waypoint speed, correct (750 km/h)
+ 57.78 m/s   <- the ORBIT task: 112 kt
+208.33 m/s
+```
+
+A fighter commanded to hold 112 kt departs. Pakistan's track shows 8,125 m to
+2,196 m in one 30-second sample.
+
+**This is the trap the `pydcs-speed-args-are-kph` memory exists for, and it was
+walked into anyway** — the value looks plausible in every file it passes
+through, and no gate can tell 57.8 from 208.3. `test_the_orbit_speed_is_written_in_km_h_not_m_s`
+now asserts the task lands between 250 and 700 kt.
+
+## Two incursions into one country (DM calls, 2026-08-29)
+
+The standing patrol raised two questions the scramble never had to answer,
+because it spawned per-intruder.
+
+**Both sides violate the same country.** Once the patrol has swapped it belongs
+to one coalition, which makes it an *ally* of the other side: it cannot fire on
+them, and an `AttackGroup` task on an ally is silently dropped. **The country
+puts a second flight up** (`NEUTRAL AF2 <country>`), cloned from the standing
+patrol's own template onto the coalition opposing the new violator. Flipping the
+first patrol's allegiance instead was rejected — it costs a second
+destroy-and-re-add mid-fight and a country visibly changing sides while shooting.
+
+This is the one place a spawn survives the standing-patrol redesign, and it is
+deliberate: a country fighting two enemies at once genuinely needs two flights.
+
+**Two intruders on the same side.** The patrol re-targets the **nearest**, on a
+20-second loop, rather than whoever escalated last — committing to the newest
+abandoned an engagement already in progress. The §61 rule still applies: the
+task is only re-set when the target id actually changes, because a repeated
+identical `setTask` restarts the attack run.
+
 ## Deferred (not built, not promised)
 
 - Cross-mission consequences: escalating posture, airspace closure, the neutral joining

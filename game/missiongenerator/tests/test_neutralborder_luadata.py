@@ -78,3 +78,31 @@ def test_a_zone_with_no_label_anchor_emits_none() -> None:
     border unlabelled rather than at the map origin."""
     lua = _emit(True, [_zone()])
     assert "labelX" not in lua
+
+
+# -- the patrol has to be able to stay in the air ------------------------------
+
+
+def test_the_orbit_speed_is_written_in_km_h_not_m_s() -> None:
+    """Every pydcs speed argument is km/h and it divides by 3.6 on write.
+
+    FLOWN 2026-08-29: the generator "helpfully" converted CAP_SPEED_KPH to m/s
+    before handing it to OrbitAction, so the division happened twice and the
+    orbit task carried 57.8 m/s -- 112 kt. The F-16A, MiG-29A and Su-30 patrols
+    all stalled and crashed within a minute of mission start. Nothing caught it:
+    the value is plausible-looking in every file it passes through.
+    """
+    from dcs.task import OrbitAction
+
+    from game.missiongenerator.neutralbordergenerator import CAP_SPEED_KPH
+
+    speed_ms = OrbitAction(
+        6096, int(CAP_SPEED_KPH), OrbitAction.OrbitPattern.RaceTrack
+    ).dict()["params"]["speed"]
+    knots = speed_ms * 1.94384
+
+    assert knots > 250, (
+        f"the orbit task commands {knots:.0f} kt -- a fighter told to hold that "
+        "stalls and falls out of the sky"
+    )
+    assert knots < 700, f"the orbit task commands {knots:.0f} kt, which is not an orbit"

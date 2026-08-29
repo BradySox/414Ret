@@ -14,6 +14,22 @@
 
 entries:
   - date: 2026-08-29
+    title: The border patrols can stay in the air now
+    change: >-
+      The new standing patrols were being told to orbit at 112 knots, which no
+      fighter can hold, so every one of them stalled and crashed in the first
+      minute. A unit mix-up: the speed was converted twice on its way into the
+      mission file. They fly at 405 knots now. Two other things follow from
+      patrols being permanent rather than scrambled: if both sides violate the
+      same country it now puts a second flight up for the other one, and a
+      patrol chasing two intruders goes for the nearer instead of whoever
+      crossed most recently.
+    watch: >-
+      Check the patrol is still flying a few minutes into the mission rather
+      than smoking in a field. If you and the enemy both stray into the same
+      country, expect two separate flights to come up, one for each of you.
+    row: B107
+  - date: 2026-08-29
     title: Border patrols are up before you get there
     change: >-
       Countries that guard their airspace no longer scramble when you cross --

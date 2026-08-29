@@ -583,3 +583,60 @@ def test_a_zone_with_no_sam_says_so_instead_of_going_quiet() -> None:
 
     assert not _sam_spawns(h), "a zone with no template spawned a SAM"
     h.assert_no_lua_errors()
+
+
+# -- more than one incursion into the same country ------------------------------
+
+
+def _second_patrols(h: DcsPluginHarness) -> list[dict[str, Any]]:
+    return [
+        r
+        for r in h.records("spawns")
+        if isinstance(r, dict) and str(r.get("alias", "")).startswith("NEUTRAL AF2")
+    ]
+
+
+def test_the_other_side_gets_a_second_flight_not_a_re_swap() -> None:
+    """A patrol can only be on one coalition, and once swapped it is an ALLY of
+    the other side -- it cannot fire on them and the attack task is silently
+    dropped. DM call 2026-08-29: the country puts a second flight up rather than
+    flipping allegiance mid-fight.
+    """
+    h = _setup(_config())
+    h.add_group(_intruder("Viper 1-1", 42, side=2))  # BLUE player
+    h.load_plugin_script(PLUGIN)
+    h.advance_to(200)
+    assert len(_swaps(h)) == 1, "the standing patrol never swapped"
+    assert _second_patrols(h) == [], "a second flight went up too early"
+
+    # Now the OTHER side violates the same airspace.
+    h.add_group(_intruder("Bandit 1", 50, side=1))  # RED player
+    h.advance_to(200 + 200)
+
+    second = _second_patrols(h)
+    assert len(second) == 1, "the other side was never answered"
+    assert second[0]["coalitionId"] == 2, "a RED intruder must be opposed by BLUE"
+    assert len(_swaps(h)) == 1, "the standing patrol flipped allegiance instead"
+    h.assert_no_lua_errors()
+
+
+def test_a_hostile_patrol_takes_the_nearest_of_two_intruders() -> None:
+    """One patrol cannot cover two violators. DM call: it takes the nearest,
+    rather than whoever escalated most recently -- committing to the newest
+    abandoned an engagement already in progress.
+    """
+    h = _setup(_config())
+    h.add_group(_intruder("Far 1-1", 42, side=2, x=9000, z=9000))
+    h.add_group(_intruder("Near 2-1", 43, side=2, x=10500, z=10500))
+    h.load_plugin_script(PLUGIN)
+    h.advance_to(260)
+
+    tasks = _attack_tasks(h)
+    assert tasks, "the patrol never took a target"
+    # The patrol orbits at (10000, 10000), so Near 2-1 (id 43) is closer than
+    # Far 1-1 (id 42). Both escalated; the nearer one must be the target.
+    assert tasks[-1]["targetGroupId"] == 43, (
+        f"the patrol engaged group {tasks[-1]['targetGroupId']} -- the further "
+        "intruder, or whoever escalated last"
+    )
+    h.assert_no_lua_errors()

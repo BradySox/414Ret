@@ -1140,6 +1140,11 @@ function SpawnFake:InitCoalition(side)
     return self
 end
 
+function SpawnFake:InitLimit(alive, total)
+    self.limitAlive, self.limitTotal = alive, total
+    return self
+end
+
 local nextSpawnGroupId = 9000
 
 function SpawnFake:SpawnAtAirbase(airbase, takeoff, altitude)

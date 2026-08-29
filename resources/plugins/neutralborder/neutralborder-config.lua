@@ -25,6 +25,7 @@ local data = dcsRetribution.neutralBorder
 local WARN_DWELL_S = 30 -- inside the border this long -> warning + shadow launch
 local ENGAGE_DWELL_S = 180 -- a PLAYER inside this long -> engaged
 local SCAN_INTERVAL_S = 10 -- border scan cadence
+local RETARGET_INTERVAL_S = 20 -- how often a hostile patrol re-picks its nearest target
 local DRAW_BORDERS = true -- F10 border polylines (the §86 invisible-bubble lesson)
 
 --: Vertices the FILL may use. The outline is one freeform however many points
@@ -110,6 +111,9 @@ for _, raw in ipairs(data.zones or {}) do
             or (raw.fighterTemplate ~= nil and has_origin)
         if #verts >= 3 and usable then
             zones[#zones + 1] = {
+                -- Its own position in `zones`, so an intruder state (which
+                -- stores the zone index) can be matched back to it.
+                index = #zones + 1,
                 country = tostring(raw.country or "Neutral"),
                 posture = posture,
                 enforces = enforces,
@@ -383,8 +387,47 @@ local intruders = {} -- group name -> state
 --: velocity does not -- the group takes its speed from the route's first waypoint. If a swapped
 --: flight ever drops out of the sky, that is the reason, and it is the one part of this that
 --: cannot be proven outside DCS.
+--: A second flight, for the case where BOTH sides violate the same country.
+--:
+--: The standing patrol can only be on one coalition, and once swapped it is an
+--: ALLY of the other side -- it cannot fire on them and the attack task is
+--: silently dropped. So the country puts a second pair up, on the coalition
+--: opposing the new violator, cloned from the standing patrol's own template.
+--:
+--: This is the one place a spawn survives the standing-patrol redesign, and it
+--: is deliberate: a country fighting two enemies at once genuinely needs two
+--: flights, and there is no orbit to have kept it on.
+local function second_patrol(zone, intruder_side)
+    if zone.second_group then
+        return Group.getByName(zone.second_group)
+    end
+    local name = "NEUTRAL AF2 " .. zone.country
+    local ok, err = pcall(function()
+        local sp = SPAWN:NewWithAlias(zone.cap_group, name)
+        sp:InitCountry(clone_country(zone, intruder_side))
+        sp:InitCoalition(opposing(intruder_side))
+        sp:InitLimit(2, 0)
+        sp:Spawn()
+    end)
+    if not ok then
+        log("second patrol failed for " .. zone.country .. ": " .. tostring(err))
+        return nil
+    end
+    zone.second_group = name
+    zone.second_side = intruder_side
+    log(zone.country .. " put a second flight up against the other side")
+    return Group.getByName(name)
+end
+
 local function swap_to_shooting(zone, intruder_side)
     if zone.swapped then
+        if intruder_side ~= zone.engaged_side then
+            -- The OTHER side has now violated the same airspace. The standing
+            -- patrol already belongs to their coalition, so it cannot fire on
+            -- them -- and an AttackGroup task on an ally is silently ignored.
+            -- A country fighting both sides needs a second flight (DM call).
+            return second_patrol(zone, intruder_side)
+        end
         return Group.getByName(zone.cap_group)
     end
     local grp = GROUP:FindByName(zone.cap_group)
@@ -403,8 +446,18 @@ local function swap_to_shooting(zone, intruder_side)
         return nil
     end
     zone.swapped = true
+    zone.engaged_side = intruder_side
     log(zone.country .. " patrol is now hostile to the intruder")
     return Group.getByName(zone.cap_group)
+end
+
+--: Which group is answering a given intruder side: the swapped standing patrol,
+--: or the second flight raised for the other one.
+local function patrol_for(zone, intruder_side)
+    if zone.swapped and intruder_side ~= zone.engaged_side then
+        return zone.second_group
+    end
+    return zone.cap_group
 end
 
 local function wake_sam(zone, intruder_side)
@@ -442,6 +495,76 @@ local function wake_sam(zone, intruder_side)
     end
 end
 
+--: Re-task a hostile patrol onto the NEAREST escalated intruder of the side it
+--: opposes (DM call). One patrol cannot cover two violators, and committing to
+--: whoever escalated last abandoned an engagement already in progress.
+--:
+--: The §61 rule applies: a repeated identical setTask resets the AI's attack
+--: run, so the task is only re-set when the target actually changes.
+local function retarget(zone, side)
+    local name = patrol_for(zone, side)
+    if not name then
+        return
+    end
+    local sg = Group.getByName(name)
+    local lead = lead_unit(sg)
+    if not lead then
+        return
+    end
+    local sp = lead:getPoint()
+    local best, best_d
+    for iname, st in pairs(intruders) do
+        if st.escalated and st.side == side and st.zone == zone.index then
+            local tgt = Group.getByName(iname)
+            local tl = lead_unit(tgt)
+            if tl then
+                local p = tl:getPoint()
+                local d = (p.x - sp.x) ^ 2 + (p.z - sp.z) ^ 2
+                if not best_d or d < best_d then
+                    best, best_d = tgt, d
+                end
+            end
+        end
+    end
+    if not best then
+        return
+    end
+    local id = best:getID()
+    if zone.last_target and zone.last_target[name] == id then
+        return -- unchanged: re-setting it would restart the attack run
+    end
+    zone.last_target = zone.last_target or {}
+    zone.last_target[name] = id
+    pcall(function()
+        sg:getController():setTask({
+            id = "AttackGroup",
+            params = { groupId = id },
+        })
+    end)
+end
+
+local retarget_loop_running = false
+
+local function start_retarget_loop()
+    if retarget_loop_running then
+        return
+    end
+    retarget_loop_running = true
+    timer.scheduleFunction(function()
+        for _, zone in ipairs(zones) do
+            if zone.swapped then
+                pcall(function()
+                    retarget(zone, zone.engaged_side)
+                    if zone.second_side then
+                        retarget(zone, zone.second_side)
+                    end
+                end)
+            end
+        end
+        return timer.getTime() + RETARGET_INTERVAL_S
+    end, {}, timer.getTime() + RETARGET_INTERVAL_S)
+end
+
 local function escalate(state, intruder_group)
     if state.escalated or not state.is_player then
         return
@@ -457,22 +580,15 @@ local function escalate(state, intruder_group)
     -- Respawn re-adds 0.1 s later, so the group only exists again after a tick.
     timer.scheduleFunction(function()
         pcall(function()
-            local sg = Group.getByName(zone.cap_group)
-            local tgt = Group.getByName(state.name)
-            if sg and tgt then
-                -- The §61 shape: a hard AttackGroup on the raw controller.
-                sg:getController():setTask({
-                    id = "AttackGroup",
-                    params = { groupId = tgt:getID() },
-                })
-                local mg = GROUP:FindByName(zone.cap_group)
-                if mg then
-                    mg:OptionROEWeaponFree()
-                end
+            local mg = GROUP:FindByName(patrol_for(zone, state.side))
+            if mg then
+                mg:OptionROEWeaponFree()
             end
+            retarget(zone, state.side)
         end)
         return nil
     end, {}, timer.getTime() + 2)
+    start_retarget_loop()
     wake_sam(zone, state.side)
     log("ESCALATED on " .. state.name)
 end

@@ -2,37 +2,48 @@
 
 **Status: BUILT 2026-08-24 (§96).** Scope locked in a DM Q&A session the same day; every
 decision below is a DM call from that session. Read this before editing or re-litigating
-any of it. Features doc §96 carries the file list; in-game passes B107/B108 owed.
+any of it. Features doc §96 carries the file list; in-game passes B110/B111 owed.
 
-## Build outcome (what changed between the sketch and the code)
+## What it is now
 
+This note is chronological below this point; the 2026-08-24 sections describe the shape
+the feature was first built in, not the shape it is in. Read this section for what is
+true, then the dated sections for why.
+
+- **Every nation on the map is drawn with its real border**, the map's own nation
+  included. Alignment is derived from who holds the airfields inside it, counted per
+  country: both sides holding it is contested grey and claimed by neither, a country
+  already in the war is outline-only, and red-aligned airspace joins §1's QRA accept
+  zones. Overflight consent comes from the same airbases -- you may cross what you fly
+  from, and what both sides fly from.
+- **A country not in the war flies a standing patrol inside its own border**, spawned
+  in the air at mission generation, orbiting for the whole mission. It is on the neutrals
+  coalition, so it cannot shoot and nothing shoots it. **The scramble is gone** -- three
+  flown attempts to launch one on demand failed the same way each time (see *The standing
+  patrol*, 2026-08-29).
+- **Crossing gets you hailed on the radio immediately, then warned again at dwell.**
+  Neither call launches anything -- the patrol is already up.
+- **Pressing turns the patrol hostile in place**: `GROUP:Respawn(template, true)` with the
+  intruder's opposing `CountryID`/`CoalitionID`, which copies live position, altitude and
+  heading. It then engages with §61's raw `AttackGroup` task, re-set only when the target
+  id changes. **Players only** -- an AI intruder is shadowed, never engaged.
+- **Both sides violating one country gets a second flight**, not a re-swap: the first
+  patrol keeps its coalition and a `NEUTRAL AF2 <country>` clone comes up on the other.
+  Two intruders on one side gets nearest-target retasking on a 20 s loop.
 - **The SAM belt is an escalation-time clone, not standing units.** A cold late-activation
-  SA-6 template (1S91 + 2×2P25) sits at the field and is SPAWN-cloned under the opposing
-  coalition only when a player escalates. No standing red units at a neutral field — which
+  SA-6 template (1S91 + 2x2P25) sits at the field and is SPAWN-cloned under the opposing
+  coalition only when a player escalates. No standing red units at a neutral field -- which
   also avoids DCS auto-capturing the airbase at mission start. Composition is fixed v1;
-  the yaml carries only `sam: true`.
-- **The engage task is §61's exact shape**: raw `getController():setTask({id="AttackGroup",
-  params={groupId=...}})`, re-set only when the target id changes — not the MOOSE task
-  builder. The vector loop uses MOOSE `RouteToVec3` for the benign shadow phase.
-- **One fighter template per zone, cloned to either side** via `SPAWN:InitCountry` +
-  `InitCoalition` at trip time (template itself lives under the neutral country in the
-  neutrals coalition, so it collides with nobody's campaign forces).
-- **Reference campaign locked: Into the Hornet's Nest + Lebanon** (DM call). Rayak field,
-  MiG-29A (the type Russia offered Lebanon in 2008), 10,000 ft floor, SA-6 on. Desert
-  Storm + Iran was investigated and rejected on the evidence: the DS corridor is
-  H-3→Baghdad (west) and the map's only Iranian field is Kharg, far south — the border
-  would never trip.
-- **Border source**: `tools/neutral_border_geo.py` (GeoJSON → shapely simplify →
-  `Point.from_latlng` → yaml). The Lebanon trace used the public-domain
-  `georgique/world-geojson` country file, 44 vertices. The harness cannot exercise DCS
-  behavior — B107/B108 carry the flown verdicts.
-
-## The feature
-
-On a map where most nations are bystanders, a neutral country keeps an alert force at an
-airfield near its border. If red or blue violate that border, the neutral scrambles:
-shadow first, shoot only if the intruder presses. A third party defending itself — as
-theatre, and as a real hazard to a player who cuts the corner.
+  the yaml carries `sam: true` by default.
+- **Borders ship with the terrain**, built by `tools/build_terrain_borders.py` from
+  public-domain GeoJSON into `resources/borders/*.yaml` -- 8 terrains, 8,244 vertices at a
+  384-vertex / 500 km2 budget. A campaign authors none of this.
+- **Reference campaign: Into the Hornet's Nest + Lebanon** (DM call). Rayak field, MiG-29A
+  (the type Russia offered Lebanon in 2008), 10,000 ft floor, SA-6 on. Desert Storm + Iran
+  was investigated and rejected on the evidence: the DS corridor is H-3 to Baghdad (west)
+  and the map's only Iranian field is Kharg, far south -- the border would never trip.
+- **Nothing here is verified in DCS.** The Lua harness cannot exercise DCS AI; B110/B111
+  carry the flown verdicts, and both are `PARTIAL` against the standing-patrol redesign.
 
 ## Engine verdict (investigated 2026-08-24 — do not re-investigate)
 
@@ -370,7 +381,7 @@ Cyprus combined).
 
 The first mission with §96 live produced one clean pass and three defects, two of
 them measured off the Tacview rather than reported. **All three are fixed; none
-is verified in DCS yet** (B107/B108 still owed).
+is verified in DCS yet** (B110/B111 still owed).
 
 **It worked at all.** `6 border zone(s) drawn, 6 defended`, and against a blue
 F-15E BAI package Iran launched a shadow on the opposing coalition and stood it
@@ -652,7 +663,7 @@ and shipped as `labelX`/`labelZ`; verified on all 8 zones of a Syria campaign.
 
 **Not verified in DCS**: whether `trigger.action.textToAll` renders the `\n` as
 two lines. If it does not, the label will read as one run-on line — cosmetic,
-and on the B107 fail-signature list.
+and on the B110 fail-signature list.
 
 ## A faint line is not a quiet line (2026-08-26)
 
@@ -714,7 +725,7 @@ Target architecture, to be built after the national-postures research lands:
   precedence. The derived airfield-alignment rule is untouched by all of this and
   always wins over the table.
 - Gate unchanged (`neutral_border_defense` + plugin): "automagic" means no yaml
-  needed, not default-on. Flipping the default is its own call after B107/B108 fly.
+  needed, not default-on. Flipping the default is its own call after B110/B111 fly.
 
 ## Audit, 2026-08-27 — two defects the gates could not see
 
@@ -864,12 +875,18 @@ one would go stale exactly then, which is the bug the derivation exists to
 avoid. Two tests pin that passing the posture gives the same answer as deriving
 it, across all four postures and both sides.
 
-### The checklist rows collided with main's -- twice
+### The checklist rows collided with main's -- three times
 
 This PR added its in-game rows as **B100/B101**, and `main` already owned both
-(the DCS parking rework, and the F-4E Shrike row). Renumbering them to B106/B107
-then collided a second time on the next merge: main had meanwhile allocated
-**B106** to the CSAR King row. They are **B107/B108** now.
+(the DCS parking rework, and the F-4E Shrike row). Renumbering to **B106/B107**
+collided again -- main had meanwhile taken B106 for the CSAR King row. The third
+merge, on 2026-08-29, brought main's log-noise work, which had taken **B107,
+B108 and B109**. The §96 rows are **B110/B111** now.
+
+Three collisions on one branch is the pattern, not bad luck: a long-lived branch
+allocates from the highest id it can see, and main keeps allocating from the same
+end while the branch is open. There is no reservation mechanism, so the only
+defence is re-checking on every merge.
 
 The consequence is worse than an ambiguous label. `_row_statuses()` in
 `tests/test_flycard_board.py` keys by row id, so a duplicate silently overwrites
@@ -879,25 +896,17 @@ hid the §96 rows (78 stated, 80 real), and the second hid main's own CSAR row
 the worktree -- `CHECKLIST` is a CWD-relative path, so running pytest from the
 main checkout silently validates the wrong tree.
 
-**Check the highest id in use before adding a row on a branch that has been open
-across a main merge**, and re-check after every merge:
+**Re-check the highest id in use after every merge from main**, not just when the
+row is first written:
 
 ```
 grep -oP "^### [A-Z]+[0-9]+(?= )" docs/dev/414th-ingame-pass-checklist.md | sort | uniq -d
 ```
 
-Renumber your own rows, never main's, and update the `row:` field in every
-whatsnew entry plus the design note and features doc that name them.
-
-
-
-This PR added its in-game rows as **B100/B101**, and `main` already owned both
-(the DCS 2026-08-26 parking rework, and the F-4E Shrike row). The session-start
-board listed each ID twice against unrelated features, and all nine of the §96
-whatsnew entries pointed at `row: B100` — which named two different things, so a
-verdict recorded against it could have marked the wrong feature verified. The
-§96 rows are **B106/B107** now; main's keep their numbers. Check the highest ID
-in use before adding a row on a branch that has been open across a main merge.
+Renumber your own rows, never main's. The renumber reaches five places, and
+`resources/whatsnew.yaml` is the one that gets forgotten -- 16 entries carried
+`row: B107` on the third pass. Also: the checklist's glance table and detail
+sections, the features doc, this note, and the Lua runtime test's docstring.
 
 ### Also corrected
 
@@ -1216,6 +1225,6 @@ identical `setTask` restarts the attack run.
 
 ## In-game passes owed
 
-**B107** (the player ladder end to end) and **B108** (AI shadowed only, plus the
+**B110** (the player ladder end to end) and **B111** (AI shadowed only, plus the
 accepted-risk watch: how often the intruder's own side kills the shadower before
 escalation). Full setup, pass criteria and fail signatures are on those checklist rows.

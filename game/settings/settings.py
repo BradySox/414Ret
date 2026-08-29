@@ -3285,18 +3285,19 @@ class Settings:
         default=False,
         detail=(
             "Every nation on the map is drawn with its real border, and one "
-            "that is not in the war defends its own airspace: fly inside it and "
-            "an alert flight spawns on your enemy's coalition, shadows you at "
-            "return-fire, and warns you off. Stay past the engage timer, release "
-            "a weapon inside the border, or fire on the shadower, and it attacks "
-            "-- and the field's SAM battery wakes. Whose airspace it is, and "
-            "whether it lets you through, are read from who holds the airfields "
-            "inside it. AI intruders are shadowed but never engaged, and the "
-            "auto-planner ignores the borders entirely. Needs the 'Neutral "
+            "that is not in the war defends its own airspace: it flies a "
+            "standing patrol inside its border from mission start, so you can "
+            "see it before you cross. Enter and it warns you by radio at once. "
+            "Stay past the engage timer, release a weapon inside the border, or "
+            "fire on the patrol, and it turns hostile on your enemy's coalition "
+            "and attacks -- and the field's SAM battery wakes. Whose airspace it "
+            "is, and whether it lets you through, are read from who holds the "
+            "airfields inside it. AI intruders are warned but never engaged, and "
+            "the auto-planner ignores the borders entirely. Needs the 'Neutral "
             "border defense' LUA plugin ticked. Borders ship with the eight "
             "real-world terrains, so no campaign has to author anything; a "
-            "campaign may still author its own. Alert units are free, untracked "
-            "event content."
+            "campaign may still author its own. Patrol aircraft are free, "
+            "untracked event content."
         ),
     )
     civilian_air_traffic: bool = boolean_option(

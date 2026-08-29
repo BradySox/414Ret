@@ -547,10 +547,38 @@ def flight_defaults_path() -> Path:
 
 
 def payloads_dir(backup: bool = False) -> Path:
+    """The DCS user payload directory, or the 414th's backup store beside it.
+
+    The backups deliberately do NOT live inside ``UnitPayloads``: DCS enumerates
+    that folder expecting only payload ``.lua`` files and logs
+    ``Can't open file '...' from real path fs`` for any subdirectory it finds,
+    twice on every launch. See ``docs/dev/414th-features.md`` §73.
+    """
     payloads = base_path() / "MissionEditor" / "UnitPayloads"
-    if backup:
-        return _create_dir_if_needed(payloads / "_retribution_backups")
-    return _create_dir_if_needed(payloads)
+    backups = _create_dir_if_needed(base_path() / "Retribution" / "PayloadBackups")
+    # Migrate on either branch: the legacy folder keeps making DCS log an error
+    # until it is gone, and opening a payload tab is a far more likely first
+    # touch than saving a default loadout.
+    _migrate_legacy_payload_backups(payloads / "_retribution_backups", backups)
+    return backups if backup else _create_dir_if_needed(payloads)
+
+
+def _migrate_legacy_payload_backups(legacy: Path, current: Path) -> None:
+    """Move pre-2026-08-29 backups out of ``UnitPayloads`` and drop the old folder.
+
+    Only ever moves into a free name and only ever removes the legacy directory
+    once it is empty, so an unexpected file there is kept rather than destroyed
+    (at the cost of the DCS log error surviving until it is dealt with by hand).
+    """
+    if not legacy.is_dir():
+        return
+    try:
+        for path in legacy.iterdir():
+            if path.is_file() and not (current / path.name).exists():
+                path.rename(current / path.name)
+        legacy.rmdir()
+    except OSError:
+        logging.warning("Could not migrate legacy payload backups from %s", legacy)
 
 
 def prefer_liberation_payloads() -> bool:

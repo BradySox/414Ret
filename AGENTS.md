@@ -218,6 +218,10 @@ Read before touching a campaign's `.yaml`, `.miz` or build tool.
   derivable from the campaign's own order of battle (**and whose shipped default marks
   blue's own JF-17 hostile on Northern Russia**), and the rows to re-run. Written from
   the patch notes alone — **nothing in it is verified against an updated install**),
+  `414th-dcs-log-noise-notes.md` (**read before triaging a `dcs.log`** — which lines are
+  ED's, which are mods', and which are ours, with the evidence for each; the ATC rows
+  are the cautionary case, since `INVALID ATC` fires during terrain init for helipads
+  that are not in our `.miz` at all, on every map),
   `414th-dcs-olympus-notes.md`, `414th-ui-redesign-directions.md` (+ `-mockups.html`),
   `414th-juanjux-fork-watch-notes.md` (**the second fork we watch** — his adoption ledger,
   what is already ours, and the OPFOR-AI precedent for seam 7),
@@ -483,7 +487,7 @@ linked design note.
 93. **Region priorities** — per-control-point BLUE planning emphasis: emphasized regions rank closer, deprioritized farther, ignored left to manual packages. A weight, never a fence.
 94. **Smart threat reaction** — only the flight a missile is actually guiding on goes defensive; everything else holds formation and uses countermeasures.
 95. **Pinned bullseye** — one bullseye for the campaign instead of a new one every turn, never anchored on a ship or an off-map spawn; the kneeboard names the place it sits on and flags the rare turn it moves.
-96. **Neutral-faction border defense** — every nation on the map is drawn with its real border, the map's own nation included: alignment derived from who holds the airfields inside it, counted per country (both sides holding it = contested grey, claimed by neither QRA; a country in the war is outline-only; red-aligned airspace joins §1's QRA accept zones), and a country not in the war defends (overflight is derived from the same airbases: you may cross what you fly from, and what both sides fly from) — cross it and an alert flight (spawned on your enemy's coalition, within 25 NM of you) shadows and warns; press, and it engages and the SAM wakes. Players only; AI is shadowed, never engaged.
+96. **Neutral-faction border defense** — every nation on the map is drawn with its real border, the map's own nation included: alignment derived from who holds the airfields inside it, counted per country (both sides holding it = contested grey, claimed by neither QRA; a country in the war is outline-only; red-aligned airspace joins §1's QRA accept zones), and a country not in the war defends (overflight is derived from the same airbases: you may cross what you fly from, and what both sides fly from) — it flies a standing patrol inside its border from mission start, visible before you cross, and hails you on entry; press, and it turns hostile in place on your enemy's coalition, engages, and the SAM wakes. Both sides violating one country gets a second flight. Players only; AI is warned, never engaged.
 
 ### Retired, removed or shelved — do not restore
 

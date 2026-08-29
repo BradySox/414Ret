@@ -8,7 +8,7 @@ releases a weapon inside the border after the warning, is engaged via a hard
 AttackGroup task on the raw controller and the SAM template wakes; AI intruders
 are shadowed but never engaged; a high transit trips nothing; leaving before
 escalation stands the shadow down. The DCS AI's actual shadow/attack flying is
-in-game-only (checklist B107/B108).
+in-game-only (checklist B110/B111).
 """
 
 from __future__ import annotations

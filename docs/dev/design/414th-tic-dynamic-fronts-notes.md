@@ -113,3 +113,32 @@ with no terrain dependency.
 - Tests: `tests/` TIC suite — assert DEFENSIVE now emits a forward bound, the aggressive
   stances diverge, and the occasional counterattack fires probabilistically.
 - Keep CLAUDE.md §9's ROE/waypoint-design paragraph in sync with whatever lands.
+
+---
+
+## Ground pathing thrash — measured 2026-08-29, diagnostic added, not yet diagnosed
+
+A 7-minute Afghanistan turn with 35 TIC formations produced, in that window alone:
+
+| Line | Written | Collapsed by DCS dedup | Total |
+|---|---|---|---|
+| `WARNING TRANSPORT: CREATING PATH MAKES TOO LONG!!!!!` (DCS) | 190 | 1,307 | 1,497 |
+| `OnBeforeArrived: unit is stuck; retrying move without roads` (TIC) | 509 | 337 | 846 |
+
+Sustained 60–107 stuck-retries per minute for the whole flight, and it correlates with
+the frame hitches: 45 `ModelTimeQuantizer: ANTIFREEZE ENABLED` events fired, **38 of them
+in the one minute the retry rate peaked**. That is the framerate-sink pattern again.
+
+`OnBeforeArrived` (`TIC_v1.1.lua`) treats no-progress-since-last-tick as a recovered
+condition: it calls `ProhibitRoads()` on the current waypoint and re-issues `__Move`.
+There is no retry ceiling, so a permanently wedged unit re-issues for the whole mission.
+
+**The old log line named no unit**, so 846 occurrences could equally have been thirty
+units recovering twice or one unit wedged from minute two — the two cases want opposite
+fixes, and the log could not tell them apart. It now prints the combatant name and a
+per-combatant running count.
+
+**Next**: re-fly and read the distribution before changing behaviour. A long tail of
+distinct names means DCS pathing on that terrain and the answer is fewer/simpler routes;
+a handful of names with counts in the hundreds means a wedge and the answer is a retry
+ceiling that parks the unit.

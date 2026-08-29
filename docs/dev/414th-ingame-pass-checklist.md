@@ -25,7 +25,7 @@ so the two docs don't drift.
 
 ## Outstanding rows at a glance
 
-81 rows need a live pass. Full detail is under each `###` heading below —
+84 rows need a live pass. Full detail is under each `###` heading below —
 search the row id. `☐` untested · `◐` flown but not under the conditions that
 stress it · `✗` fail signature reproduced in-game.
 
@@ -60,8 +60,8 @@ stress it · `✗` fail signature reproduced in-game.
 | B85 | A flight with an unreachable TOT flies instead of orbiting | §8 | ☐ |
 | B98 | The bullseye is the same place it was last mission | §95 | ☐ |
 | B99 | AI packages arrive inside the mission, not after it | §8 | ☐ |
-| B107 | Neutral border: warned, shadowed, then engaged only if you press | §96 | ◐ |
-| B108 | Neutral border: AI intruders are shadowed, never engaged | §96 | ◐ |
+| B110 | Neutral border: warned, shadowed, then engaged only if you press | §96 | ◐ |
+| B111 | Neutral border: AI intruders are shadowed, never engaged | §96 | ◐ |
 | G25 | Armed Recon package: recon drone + SEAD Viper escort + 4-ship sweep | §3 | ◐ |
 | G30 | MANTIS SHORAD link: the point defense ambushes the HARM shot | MANTIS migration | ☐ |
 | G33 | Survivor ADF beacon: the pinned 260 kHz drives a real needle | CSAR (upstream #929 + 414th pin) | ☐ |
@@ -156,6 +156,9 @@ stress it · `✗` fail signature reproduced in-game.
 | B104 | The Viper's ROE tab declares the campaign's own sides | §74 | ☐ |
 | B105 | The Apache's cartridge loads: route, targets and the front line on the TSD | §74 | ☐ |
 | B106 | The C-130J King can be fragged into a rescue, and holds an orbit clear of the threat | CSAR | ☐ |
+| B107 | The log stops repeating a MOOSE event error thousands of times | vendored `Moose.lua` | ☐ |
+| B108 | A stuck TIC unit names itself, and the retries are spread not concentrated | §9 TIC | ☐ |
+| B109 | Payload backups leave `UnitPayloads` and the launch error stops | §73 | ☐ |
 
 ---
 
@@ -6236,7 +6239,7 @@ mountain or coastal front will do.
      strength, so an 8-object swing is worth a look on Desert Trident's Jordan
      sector specifically.
 
-### B107 — Neutral border: warned, shadowed, then engaged only if you press · §96 · ◐ PARTIAL
+### B110 — Neutral border: warned, shadowed, then engaged only if you press · §96 · ◐ PARTIAL
 
 **Flown 2026-08-28** (Syria/Lebanon, session `New test/19`). The ladder ran to
 spec: hail, shadow from Rayak, and ESCALATED exactly 180 s after entry. Three
@@ -6310,7 +6313,7 @@ shadow is destroyed by your own AI escort before escalation **more often than no
 fallback); the SA-6 spawns cold or never engages; escalation fires on an AI-only
 intruder.
 
-### B108 — Neutral border: AI intruders are shadowed, never engaged · §96 · ◐ PARTIAL
+### B111 — Neutral border: AI intruders are shadowed, never engaged · §96 · ◐ PARTIAL
 
 **Flown 2026-08-28.** The never-engaged half held — only the player's flight was
 escalated on. But the pre-registered risk fired at 100 %: **all four alert
@@ -6670,3 +6673,77 @@ through and going home.
 - **The orbit sits 80+ nm off** — the survivor is deep inside a large ring, so
   `distance_to_threat + THREAT_BUFFER` is genuinely that far. Working as designed;
   move the waypoints.
+
+### B107 — The log stops repeating a MOOSE event error thousands of times · vendored `Moose.lua` · ☐ UNTESTED
+
+MOOSE's `EVENTS` enum declares `UnitTaskComplete` but `_EVENTMETA` had no row for
+it, so `EVENT:onEvent` dropped DCS's task-complete event and logged an error every
+time it fired — 6,807 times in one 7-minute Afghanistan turn, 11,861 in an archived
+Germany Cold War log. A `_EVENTMETA` row was added. Nothing here is testable
+headlessly: the harness fakes the DCS sandbox and never raises event 61.
+
+**Setup.** Zero. Fly anything, then open `Saved Games/DCS/Logs/dcs.log`. ~1 min.
+
+**Pass.** `grep -c "EVENTMETA data for event ID" dcs.log` returns 0. Every MOOSE
+feature still behaves — CTLD, CSAR, MANTIS INTEL and TIC all report their startup
+banners as before.
+
+**Fail signatures, and what each means:**
+
+- **Still thousands of `event ID=61`** — the patch was lost. Grep `Moose.lua` for
+  `414Ret patch`; a bundle bump drops it silently. See
+  `docs/dev/design/414th-framework-consolidation-notes.md`.
+- **A *different* unknown event ID now spams** — DCS added another event MOOSE does
+  not carry. Same fix, one more row.
+- **MOOSE plugins stop starting** — the row broke the table. Revert the nine lines;
+  the spam is cosmetic and not worth a dead plugin.
+
+### B108 — A stuck TIC unit names itself, and the retries are spread not concentrated · §9 TIC · ☐ UNTESTED
+
+`OnBeforeArrived` re-issues a move with roads prohibited whenever a combatant made
+no progress since the last tick. It fired 846 times in 7 minutes and named no unit,
+so nobody could tell thirty units recovering twice from one unit wedged all mission
+— and those want opposite fixes. The line now carries the combatant name and a
+per-combatant count. **This row is a measurement, not a pass/fail on behaviour.**
+
+**Setup.** Any campaign with an active front and TIC on. Fly a normal turn of ~15
+minutes, then read `dcs.log`. ~20 min including the read.
+
+**Pass.** The line reads `... [<unit name>] (retry N)`. Then answer the actual
+question: `grep -oP 'stuck.*?\[\K[^]]+' dcs.log | sort | uniq -c | sort -rn`.
+A long tail of distinct names with low counts means DCS ground pathing on that
+terrain — the answer is fewer or simpler routes. A handful of names
+with counts in the hundreds means a wedge — the answer is a retry ceiling that parks
+the unit. Record which, in `414th-tic-dynamic-fronts-notes.md`.
+
+**Fail signatures, and what each means:**
+
+- **The name prints as `nil`** — `combatant:GetName()` is unsafe at that point in the
+  FSM; wrap it or use the group name.
+- **`ANTIFREEZE ENABLED` still clusters on the retry peak** — the correlation holds
+  and this is a framerate problem, not just log noise. That escalates the row.
+
+### B109 — Payload backups leave `UnitPayloads` and the launch error stops · §73 · ☐ UNTESTED
+
+§73 backed payload files up into `MissionEditor/UnitPayloads/_retribution_backups`.
+DCS enumerates that folder expecting only payload `.lua` files and logged
+`ERROR EDCORE: Can't open file '...' from real path fs` twice on every launch. The
+store moved to `Saved Games/DCS/Retribution/PayloadBackups`, with a one-time
+migration. The migration is unit-tested; what is not tested is DCS's reaction.
+
+**Setup.** With an existing `_retribution_backups` folder in place, open any flight's
+Payload tab (that alone calls `payloads_dir` and migrates). Then start DCS. ~10 min.
+
+**Pass.** `Retribution/PayloadBackups` holds the old backups plus the new one, the
+`_retribution_backups` folder is gone, and `grep _retribution_backups dcs.log`
+returns nothing on the next launch.
+
+**Fail signatures, and what each means:**
+
+- **The old folder survives with files in it** — the rename hit an `OSError`; look
+  for the `Could not migrate legacy payload backups` warning in the app log.
+- **The old folder survives and is empty except for a subdirectory** — working as
+  designed. The migration refuses to delete anything it did not put there; remove it
+  by hand.
+- **Backups stop being written at all** — `Retribution/PayloadBackups` was not
+  creatable. §73 refuses the write rather than modifying a file it could not back up.

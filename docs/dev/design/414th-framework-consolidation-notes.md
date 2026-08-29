@@ -167,3 +167,37 @@ broadly-valuable modernization that belongs upstream, not as a fork-only diverge
 
 `mist_4_5_126.lua` is removed from `resources/plugins/base/plugin.json`, every former MIST consumer
 runs on MOOSE (or is retired), and the mission loads a single scripting framework.
+
+---
+
+## Local patches to the vendored `Moose.lua` (read before bumping the bundle)
+
+The bundle is `resources/plugins/base/Moose.lua`, currently MOOSE commit `3a95e75c`
+(2025-10-13). It carries fork edits that a naive re-vendor drops silently. Each is
+marked in the file with a `-- 414Ret patch (<subject>)` comment — grep for `414Ret patch`
+before and after any bump and re-apply what is missing.
+
+**Prefer a plugin-side monkeypatch to a bundle edit.** `intercept-config.lua` patches
+`BASE.CreateEventTakeoff` from the plugin rather than editing the bundle, and that is the
+right default: it survives a bump and carries its own removal trigger. Edit the bundle
+only when the target is a `local` a plugin cannot reach.
+
+| Patch | Why it is in the bundle | Removal trigger |
+|---|---|---|
+| `civilian_traffic crash guard` (2 sites) | Orphan RAT spawns crashed the sim | Upstream fixes the orphan case |
+| `event 61 spam` | `_EVENTMETA` is a `local`; no plugin can reach it | Upstream adds the row |
+
+### `event 61 spam` (2026-08-29)
+
+MOOSE's `EVENTS` enum declares `UnitTaskComplete=world.event.S_EVENT_UNIT_TASK_COMPLETE`
+but `_EVENTMETA` has no row for it. `EVENT:onEvent` is `if EventMeta then <dispatch>
+else self:E(...) end`, so DCS's task-complete event is **dropped, not just logged**.
+
+Measured on a 2026-08-29 Afghanistan turn (7-minute flight, 35 TIC formations): **6,807
+occurrences** — 816 written plus 5,991 collapsed by DCS's log dedup, about 59 % of the
+whole `dcs.log` when taken with the two TIC pathing lines. An archived Germany Cold War
+log has 11,861. The fix is one `_EVENTMETA` row copied from the shape of its neighbours.
+
+Nothing in this tree handles task-complete, so the win is log volume, not behaviour.
+`EVENTS.UnitTaskComplete` is guarded `or -1` upstream, so the row is safe on a DCS build
+that does not define the event.

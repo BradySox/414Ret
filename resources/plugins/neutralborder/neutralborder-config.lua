@@ -406,7 +406,11 @@ local function second_patrol(zone, intruder_side)
         local sp = SPAWN:NewWithAlias(zone.cap_group, name)
         sp:InitCountry(clone_country(zone, intruder_side))
         sp:InitCoalition(opposing(intruder_side))
-        sp:InitLimit(2, 0)
+        -- 0 = no cap. A NONZERO unit cap smaller than the template silently
+        -- refuses the whole spawn (Moose.lua:21358), and the patrol is 4 ships.
+        -- One second flight per zone is guaranteed by the zone.second_group
+        -- latch above, not by this.
+        sp:InitLimit(0, 0)
         sp:Spawn()
     end)
     if not ok then

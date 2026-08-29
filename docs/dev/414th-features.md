@@ -10275,7 +10275,7 @@ target changes.
 - **Python** — `game/theater/neutralborder.py` (`NeutralBorderZone`, the campaign yaml
   contract), parsed by `MizCampaignLoader.add_neutral_border_zones` onto
   `ConflictTheater.neutral_border_zones` (persisted; `__setstate__` defaults it for old
-  saves). `NeutralBorderGenerator` builds, per zone, a cold late-activation 2-ship
+  saves). `NeutralBorderGenerator` builds, per zone, a live 4-ship
   fighter template + optional SA-6 template at the (non-CP) neutral field under the
   neutral country, and records what it built on `MissionData.neutral_border_zones`;
   `neutralborderluadata.py` serializes that to `dcsRetribution.neutralBorder`.

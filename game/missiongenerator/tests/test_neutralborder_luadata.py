@@ -178,7 +178,10 @@ def test_the_generated_patrol_has_a_second_waypoint() -> None:
     from dcs.task import OrbitAction
     from dcs.terrain import Caucasus
 
-    from game.missiongenerator.neutralbordergenerator import NeutralBorderGenerator
+    from game.missiongenerator.neutralbordergenerator import (
+        PATROL_SIZE,
+        NeutralBorderGenerator,
+    )
     from game.theater.neutralborder import NeutralBorderZone
 
     mission = Mission(terrain=Caucasus())
@@ -222,3 +225,7 @@ def test_the_generated_patrol_has_a_second_waypoint() -> None:
     orbits = [t for t in patrol.points[0].tasks if isinstance(t, OrbitAction)]
     assert orbits, "no orbit task on the patrol"
     assert orbits[0].dict()["params"]["pattern"] == "Race-Track"
+    # DM call 2026-08-29: a neutral answers a modern jet with numbers, not with
+    # a better missile. Four also breaks SPAWN:InitLimit if its unit cap is set
+    # below the template size, which is why the second flight now caps at 0.
+    assert len(patrol.units) == PATROL_SIZE

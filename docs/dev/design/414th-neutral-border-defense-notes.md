@@ -1276,6 +1276,32 @@ jet does against AMRAAMs. Whether a neutral's deterrent should carry a BVR
 weapon is a **DM call and has not been made** — do not change the loadout
 silently.
 
+### Numbers, not better missiles (DM call, 2026-08-29)
+
+The patrol takes `load_task_default_loadout(CAP)`, which on the F-16A is
+**4x AIM-9M, 2x 370 gal, ALQ-131** — a pure WVR fit. In test 23 the player's
+Block 50 killed both jets from AMRAAM range and the patrol never fired.
+
+Three options were put up: leave it, give it the era's best A2A fit, or keep the
+fit and put up more aircraft. **The call was more aircraft** — `PATROL_SIZE = 4`.
+The deterrent stays the warning and the SAM; what changes is that killing the
+whole flight and carrying on is no longer one BVR pass. **Do not "fix" this by
+upgrading the loadout** — the WVR fit is the decision, not an oversight.
+
+**This surfaced a live bug in the second flight.** `second_patrol` called
+`SPAWN:InitLimit(2, 0)`, and MOOSE refuses the whole spawn when
+`AliveUnits + #template.units > SpawnMaxUnitsAlive` (`Moose.lua:21358`) — so the
+moment the template grew to 4 the second flight would have silently never
+appeared. It is `InitLimit(0, 0)` now; one flight per zone is guaranteed by the
+`zone.second_group` latch, which is where that guarantee always belonged.
+
+**The cost, measured.** Test 23's Afghanistan turn drew 8 borders and defended
+3, so this is **12 orbiting AI fighters instead of 6**. The upper bound across
+the shipped terrains is every zone that can field an interceptor: Iraq 2020 is
+8 of 8, so 32. That bound needs a campaign where no coalition holds a field in
+any bordering country, which is not a campaign anyone has authored — but if a
+turn ever feels heavy with this on, this is the first number to check.
+
 ### One log line, guarded
 
 `OptionROEWeaponFree` ran on MOOSE's pre-`Respawn` GROUP and logged a `GetVec3`

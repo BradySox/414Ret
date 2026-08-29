@@ -1,8 +1,8 @@
-"""Neutral border defense: late-activation alert templates in the miz (§96).
+"""Neutral border defense: the standing patrol and its SAM (§96).
 
-For each authored ``NeutralBorderZone`` this builds, at the zone's (non-CP)
-airfield, a cold late-activation 2-ship fighter template under the neutral
-country plus an optional SA-6 point-defense template — and records the result on
+For each ``NeutralBorderZone`` that defends, this builds a live 4-ship fighter
+patrol orbiting inside the border under the neutral country, plus a cold
+late-activation SA-6 template at the origin — and records the result on
 ``MissionData.neutral_border_zones`` for the emitter. The ``neutralborder``
 plugin clones a template at runtime under the intruder's *opposing* coalition
 (``SPAWN:InitCountry``/``InitCoalition``), which is the only way a "neutral" can
@@ -40,6 +40,11 @@ CAP_SPEED_KPH = 750.0
 #: Racetrack leg length. Shortened automatically for a country too narrow to
 #: hold it, and dropped for a circle when even the shortest leg leaves.
 PATROL_LEG_NM = nautical_miles(25)
+
+#: Aircraft per patrol. DM call 2026-08-29: a neutral's deterrent is numbers,
+#: not better missiles -- it keeps the era-correct WVR fit and puts up four, so
+#: killing the whole flight and carrying on costs more than one BVR pass.
+PATROL_SIZE = 4
 
 if TYPE_CHECKING:
     from game import Game
@@ -192,7 +197,7 @@ class NeutralBorderGenerator:
             position=anchor,
             altitude=int(spawn_alt_m),
             speed=CAP_SPEED_KPH,
-            group_size=2,
+            group_size=PATROL_SIZE,
         )
         # A Race-Track orbit flies between its waypoint and the NEXT one, so it
         # needs a second point. Flown 2026-08-29 with one waypoint: all three

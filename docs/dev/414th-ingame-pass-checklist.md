@@ -23,9 +23,35 @@ so the two docs don't drift.
 > pass, not further headless analysis. Don't re-run the test sweep expecting a status flip — ☑ VERIFIED
 > requires watching the fail signature in DCS.
 
+## Test 24 — what it reached, and what it could not (2026-08-29)
+
+Caucasus — Iron Gate turn 1, 72 min, `Tacview-20260829-162330`, DCS 2.9.29.27278, one client
+Hornet. Nearly every 414th feature was enabled, so the rows below are recorded as **not
+exercised** rather than untested-because-nobody-looked — each names the reason, so nobody
+re-runs the same campaign expecting a different answer.
+
+| Row | Why test 24 could not answer it |
+|---|---|
+| B11 | `perf_ground_ai_sleep` off (the `aisleep` plugin was on; the setting is the gate) |
+| B19 | Weather was "Summer, clean sky", 80 km visibility, no cloud or precipitation — nothing for the planner to react to |
+| B23, S4 | The `rednet` and `commsjam` plugins were both off, whatever their settings said |
+| B29 | `alternate_victory_attrition` and `alternate_victory_domination` both 0 — no alternate ending configured |
+| B31, B52 | `GROWLER|: no growler node emitted -- plugin inert`; the campaign fields no EA-18G or EA-6B |
+| B32 | Zero ship TGOs, so no cargo-ship convoy and no coastal battery |
+| B45 | `gps_jamming` was on but no site exists in this campaign, so no `gpsJamming` node is emitted at all |
+| B48 | Zero ship TGOs — see the row |
+| B56, B60 | `living_battlespace_preroll` and `living_battlespace_reactive_red` both off |
+| G30 | MANTIS armed the SHORAD link on 11 red point-defence groups, but of 8 HARM shots only 2 had any red SHORAD launch within 120 s, both at 34–36 km — too far to attribute to the HARM |
+| H10 | One client flight, so no shared-airframe index to build |
+| B107–B109 | The `.miz` was generated four seconds before #997 merged onto the branch |
+
+**A gotcha for whoever parses the next ACMI.** Tacview's `Coalition` field is unreliable here —
+a Russian T-90 records as `Coalition: Allies` with `Color: Red`. Use `Color`. Object positions are
+also relative to `ReferenceLatitude=38 / ReferenceLongitude=36`, not absolute.
+
 ## Outstanding rows at a glance
 
-82 rows need a live pass. Full detail is under each `###` heading below —
+78 rows need a live pass. Full detail is under each `###` heading below —
 search the row id. `☐` untested · `◐` flown but not under the conditions that
 stress it · `✗` fail signature reproduced in-game.
 
@@ -57,9 +83,9 @@ stress it · `✗` fail signature reproduced in-game.
 | G40 | TARPS recon finds a hidden enemy command post | §3 | ☐ |
 | G41 | A bombed power station keeps its SAMs down on the NEXT turn | MANTIS C2 | ☐ |
 | B84 | Front-line groups move and return fire instead of holding | §8 | ☑ |
-| B85 | A flight with an unreachable TOT flies instead of orbiting | §8 | ☐ |
-| B98 | The bullseye is the same place it was last mission | §95 | ☐ |
-| B99 | AI packages arrive inside the mission, not after it | §8 | ☐ |
+| B85 | A flight with an unreachable TOT flies instead of orbiting | §8 | ◐ |
+| B98 | The bullseye is the same place it was last mission | §95 | ☑ |
+| B99 | AI packages arrive inside the mission, not after it | §8 | ◐ |
 | G25 | Armed Recon package: recon drone + SEAD Viper escort + 4-ship sweep | §3 | ◐ |
 | G30 | MANTIS SHORAD link: the point defense ambushes the HARM shot | MANTIS migration | ☐ |
 | G33 | Survivor ADF beacon: the pinned 260 kHz drives a real needle | CSAR (upstream #929 + 414th pin) | ☐ |
@@ -96,7 +122,6 @@ stress it · `✗` fail signature reproduced in-game.
 | O2 | Downed-pilot map overlays: both coalitions, the fog, and the countdown | CSAR | ☑ |
 | Q3 | Bulk waypoint altitude moves every flown leg | §4 (flight altitude editing) | ☑ |
 | S1 | Route-aware fuel-tank planning (fuel-first) | §46 | ✅ |
-| S2 | Mobile missile sites relocate (the SCUD hunt) | §49 | ✗ |
 | S3 | Friendly convoy ambush (a chance, never telegraphed) | §50 | ◐ |
 | S4 | Enemy comms jamming: capture the intel, then the C2 belt steps on the radios | §51 | ◐ |
 | S5 | Ambient supply convoys: both sides' roads have randomized traffic | §50 | ◐ |
@@ -120,9 +145,9 @@ stress it · `✗` fail signature reproduced in-game.
 | B59 | Living battlespace P4: the voice net | §89 | ⊘ |
 | B60 | Living battlespace P5: reactive red | §89 | ✗ |
 | B61 | Task-role degrade: mismatched-role AI flights still fly their mission | §8 | ☐ |
-| B65 | Reinforcement follows the supply lines | §90 rung A | ☐ |
+| B65 | Reinforcement follows the supply lines | §90 rung A | ◐ |
 | B66 | Attacking costs more than defending | §90 rung B | ☐ |
-| B67 | The front line counts the forces present | §90 rung C | ☐ |
+| B67 | The front line counts the forces present | §90 rung C | ☑ |
 | B68 | Terrain slows the front line | §90 rung D | ☑ |
 | B69 | The front bulges instead of running straight | §90 rung E | ☑ |
 | B70 | Sortie records reach the campaign | §91 | ◐ |
@@ -139,15 +164,15 @@ stress it · `✗` fail signature reproduced in-game.
 | B86 | Retribution survives DCS taking over the GPU (Qt 6.8) | app / Qt | ☑ |
 | B87 | A stand-off shooter starts its run at its own launch range | §8 | ☑ |
 | B89 | Region priorities: the CP-dialog control shifts the ATO | §93 | ☑ |
-| B90 | A steerpoint's elevation is the ground under it | §74 | ☐ |
+| B90 | A steerpoint's elevation is the ground under it | §74 | ◐ |
 | B91 | The F-14B(U) spawns with its cartridge loaded | §74 | ☑ |
 | B92 | A rescued marker belongs to the base it sits next to | campaign loading | ☐ |
-| B93 | The front line sits on ground the armour can hold | §90 | ☐ |
+| B93 | The front line sits on ground the armour can hold | §90 | ☑ |
 | B94 | Editing a faction mid-campaign reaches the buy menus | juanjux #953 | ☐ |
 | B95 | Saving the air wing keeps both coalitions | air wing config | ☐ |
 | B96 | Iron Gate's fields fill without an aircraft losing its stand | Iron Gate | ◐ |
-| B97 | One salvo, and only the targeted flight breaks | §94 | ☐ |
-| B100 | The ramp still holds the squadrons authored against it | DCS 2026-08-26 parking rework | ☐ |
+| B97 | One salvo, and only the targeted flight breaks | §94 | ◐ |
+| B100 | The ramp still holds the squadrons authored against it | DCS 2026-08-26 parking rework | ✗ |
 | B101 | The F-4E's Shrike and gun pod are still on the jet | §71 | ☐ |
 | B102 | A low ingress against an SA-2/SA-3 belt is still flyable | DCS 2026-08-26 SAM guidance | ☐ |
 | B103 | BMP-3s in a firefight still fire like armour, not infantry | §9 TIC | ☐ |
@@ -532,7 +557,7 @@ wake look identical here, which is the "prefer a loud failure" rule biting.
 - **Setup:** enable **"Distant ground AI sleeps until aircraft approach"** (Mission Generation → Performance; default off) on a dense campaign (Red Tide — not preseeded, feature-locked). Check the log for `AISLEEP|: managing N garrison group(s)`. Fly toward a rear enemy base garrison, kill a slept unit, watch the debrief; compare server frame/CPU on a heavy turn against the same turn with the setting off.
 - **Pass:** the arm line lists a plausible garrison count (not 0, not the whole world); a rear garrison behaves normally when you arrive (embedded SHORAD engages inside its envelope); a unit killed while slept records at debrief like any other; SAM/EWR sites, the FLOT firefight, convoys and every scripted mover behave exactly as with the setting off; a heavy mission runs measurably smoother server-side.
 - **Fail signature:** `managing 0 group(s)` on a garrison-rich map (the emitter filter is too tight, or group names don't match the .miz); a SAM site or EWR goes blind (a non-armor TGO leaked into the list); a COIN cell / HVT convoy / VBIED / ambush team / SCUD stops moving (a concealed/map_hidden mover leaked); a garrison never reacts even at close range (the wake poll or the hit-wake broke — check `aiOnOff` semantics against the DCS controller); kills on slept units missing from the debrief (would falsify the setOnOff-keeps-death-events assumption — pull the feature back to default-off and re-scope).
-- **AAA gun sites** (`perf_aaa_site_sleep`, added 2026-07-19 off the "10 fps on the ground" report — Yankee Station measured 2–4× every other campaign, AAA 4–12×, while the emitter managed 16 of 121 groups): **Setup** — enable it *and* the master toggle on **1968 Yankee Station** (the AAA-doctrine laydown; the flown turn-1 miz is in the §66 archive for a before/after). Expect the arm line to jump from ~16 to ~50+ groups. Fly the same profile twice, setting off vs on, and compare frame time on the ramp (the reported symptom was 10 fps parked at an *empty* field, so the ramp is the measurement point, not the target area). **Pass:** frame time visibly recovers; flak belts still open up on the same pass and at the same range they always did (the sensor guard's whole claim is that a 5 km gun is awake long before you're inside 5 km); the §33 flak-gauntlet bursts still appear; MANTIS logs no change in resolved SAM/EWR counts; SCUD batteries still scoot (§49 — their launchers report detection 0, so only the category gate stops them). **Fail signature:** guns that never fire, or fire late (the wake radius is too tight against real DCS detection — raise `wakeRadiusNm`, it is always safe); MANTIS resolving fewer EWR groups with the toggle on (an EWR-role site that MANTIS actually needed went dark — tighten `AAA_SLEEP_MAX_DETECTION`); a SCUD or coastal battery stopping (the category gate leaked); no measurable frame-time change (the AAA was never the sink — re-measure with the probe method in the §59 features-doc section before tuning further).
+- **AAA gun sites** (`perf_aaa_site_sleep`, added 2026-07-19 off the "10 fps on the ground" report — Yankee Station measured 2–4× every other campaign, AAA 4–12×, while the emitter managed 16 of 121 groups): **Setup** — enable it *and* the master toggle on **1968 Yankee Station** (the AAA-doctrine laydown; the flown turn-1 miz is in the §66 archive for a before/after). Expect the arm line to jump from ~16 to ~50+ groups. Fly the same profile twice, setting off vs on, and compare frame time on the ramp (the reported symptom was 10 fps parked at an *empty* field, so the ramp is the measurement point, not the target area). **Pass:** frame time visibly recovers; flak belts still open up on the same pass and at the same range they always did (the sensor guard's whole claim is that a 5 km gun is awake long before you're inside 5 km); the §33 flak-gauntlet bursts still appear; MANTIS logs no change in resolved SAM/EWR counts. **Fail signature:** guns that never fire, or fire late (the wake radius is too tight against real DCS detection — raise `wakeRadiusNm`, it is always safe); MANTIS resolving fewer EWR groups with the toggle on (an EWR-role site that MANTIS actually needed went dark — tighten `AAA_SLEEP_MAX_DETECTION`); no measurable frame-time change (the AAA was never the sink — re-measure with the probe method in the §59 features-doc section before tuning further).
 
 ### B12 — SAM guidance-radar redundancy: a site survives its first HARM · §60 · ☑ VERIFIED
 
@@ -858,6 +883,14 @@ circle would obviously be fake. Nothing to fly. See features doc §79 and §3.
 - **Fail signature:** still four identical hulls (the faction genuinely fields one hull of that class — check its roster before suspecting code; or the layout's slot declares explicit `unit_types:`); a speedboat/submarine/second carrier inside a surface screen (the family restriction regressed); ships colliding or drifting apart under way (mixed hull lengths against layout positions authored for Burkes — a template-spacing problem, fixable in the layout `.miz`); a carrier objective whose flagship resolves to an escort (`find_carrier_unit` takes `groups[0].units[0]` — the carrier slot must stay single-unit); or a SAM site / armor group suddenly fielding mixed types (mixing leaked past `NavalLayout`).
 
 ### B39 — Cross-turn naval magazines · §81 · ◐ PARTIAL
+
+**2026-08-29, test 24** (Caucasus — Iron Gate turn 1, 72 min, `Tacview-20260829-162330`, DCS 2.9.29.27278) — **release and stagger work; the salvo cap is still unexercised.**
+`NAVALMAGAZINES|: armed -- 2 naval group(s), stagger true (120s-900s), metered true, salvo cap 6`,
+then the carrier released weapons-free at +137 s and the escort at +951 s, so the stagger is real
+and separated the two. No `WINCHESTER`, no `salvo complete ... holding`, and
+`naval_magazines_state` came back **empty** — nothing was debited, because no anti-ship shooting
+happened. The row's outstanding item is unchanged: it still needs a *loaded* group that fires,
+stops at 6, and logs the cap.
 
 > **Test 11 (2026-08-19, `Tacview-20260819-203334`) — the turn-2 carry-over PASSES; a new hole
 > opened and is fixed.** Turn 2 of the same Vectron's Claw save, with the salvo cap shipped:
@@ -3994,182 +4027,6 @@ engaged. The rest of the campaign check stands.
   (idempotence broken). Knobs: `auto_range_fuel_tanks`, `fuel_tanks_over_jammers` (Mission Generation →
   Loadouts).
 
-### S2 — Mobile missile sites relocate (the SCUD hunt) · §49 · ✗ REGRESSED
-
-**2026-08-22, test 14 (`operation_desert_trident`, Syria) — STILL REGRESSED. The 2026-08-18 fix did
-not take.** Armed on 3 sites both loads. The fail signature this row names came back verbatim:
-`19:10:54 MOBILEMISSILES|: giving up on 0090 | GORILLA (Missile) [ATZ-5, Osa 9A33 ln, Scud_B,
-Ural-375, ZSU-23-4 Shilka] (no movement across 2 route pushes)`. `0014 | TARPON` logged
-`holding ... for its fire mission` at 18:40, 18:48, 18:57, 19:05 and 19:13 — 33 minutes, never
-scooted. Per this row's own note, that rules out the controller reset as the cause. **Next lever:
-post-salvo launcher state.**
-
-**Setup card:** [flycards/REGRESSED-SWEEP.md](flycards/REGRESSED-SWEEP.md) — one Starfire campaign (`operation_desert_trident`) clears this alongside C9 and B48.
-
-**Test 12 (2026-08-20, Persian Gulf turn 1, session `a6e32389`) corroborates test 9 on both hardware types at once, with the pinned-by-a-member signature clean.** WALLAROO fired 3 Scud_B at t≈920 and BARRACUDA fired 15 CH_Shahed136 at t≈950; all six launchers then moved **10–35 m** for the rest of a 43-minute mission. In the *same two sites*, the SA-15 Tor sharing each group drove **2,409 m** (WALLAROO) and **2,974 m** (BARRACUDA). Same site, same tick, same route push: the escort drives and the launcher does not. Nothing new to diagnose — this is the post-salvo launcher state the row already names — but it is the cleanest instance yet, and it rules out the route push, the fire hold and the give-up rule as causes.
-
-
-> **Test 9 flown 2026-08-18** (Syria `operation_desert_trident`, `Tacview-20260818-214946` + `dcs.log` + `state.json` + the generated `.miz`) — **the 2026-08-18 fix works; a site that FIRES still does not move.**
-> Three sites, and the discriminator is the fire mission, exactly as in test 6:
->
-> | Site | Fire mission | Fired | Moved |
-> |---|---|---|---|
-> | CANARY | none | no | **2,796 m** — the feature working |
-> | OKAPI | hold 483 s | **3 Scuds at t=496–500** | **~250 m**, then `giving up on` |
-> | ECHIDNA | hold ~3,300 s | no | 0 m — never released in a ~20 min mission |
->
-> So #886 (dropping the `Controller:resetTask()`) is a real improvement — test 6's fired sites
-> managed under 21 m, OKAPI now manages 250 m — but it is not the whole cause. 250 m across two
-> pushes is under `MIN_PROGRESS_M = 100` per push measured on `group:getUnit(1)`, so the plugin
-> declares it dry and gives up. **The next lever is the one this row already named: post-salvo
-> launcher state.** ECHIDNA is not evidence either way — its fire hold outlasted the mission.
->
-> Incidental, not the cause: the towed AAA in these groups (`KS-19`, `S-60_Type59_Artillery`)
-> never moves at all while the rest of the group drives off, and neither carries a `mobile:`
-> flag. It does not block the group — CANARY drove 2.8 km with a KS-19 sitting still.
-
-**2026-08-17 flown (Test 6) — REGRESSED for any site that fires, fixed 2026-08-18.** One mission, three sites: CICHLID had no fire mission and moved **3.5 km**; OSTRICH (hold 1735 s) and BUFFALO (hold 2748 s) both moved **under 21 m**, and the plugin eventually gave up on OSTRICH. Composition is not the discriminator (CICHLID and OSTRICH are both Scud batteries) and §59 sleep is not either (its emitted list excludes missile sites). The discriminator is `Controller:resetTask()`, which `driveTo` issued in the same frame as the route push and which landed last, wiping the route. Removed — `mist.goRoute` already routes via `setTask`, which replaces the queue. **Re-fly owed:** a site that fires must then move.
-- **Pass:** every site with a forwarded fire mission launches on schedule AND relocates afterwards; the log shows no `giving up on` line for a battery that fired.
-- **Fail signature:** a fired battery still sitting on its launch point at mission end, or a `giving up on ... (no movement across 2 route pushes)` line naming it. If that happens the reset was not the cause and the next lever is the post-salvo launcher state DCS will not drive out of (see features §49).
-
-**History:** 2026-07-17 night fly: stagger + immobile-exclusion + give-up all proven live, FPS storm gone; one noted collateral — slow-recovering fired SCUDs can be given up before they finish packing
-- **Hardware caveat found 2026-08-05 (flown Marianas 2027, Tacviews `Tacview-20260805-190738` + `-203549`): the CurrentHill `CH_CJ10` launcher does not drive, so a site built on it never scoots.** All **nine** launchers across all **three** PLARF sites moved **0.00 km** in both missions — not one metre — while the drivable vehicles sharing those groups (the §85 bowsers ATZ-5/TZ-22/GAZ-66 and the PGZ-09/PGL-625/LD-3000 SHORAD) jittered only 0.05–0.31 km, the signature of a group **pinned by an undrivable member** rather than one that was never routed. `mobile_missile_relocation` was preseeded, the `mobilemissiles` plugin was running, and `CH_CJ10` was not excluded, so the plugin was pushing routes the whole time — the 0.05–0.31 km jitter on the drivable group members is the direct evidence of that, so the verdict stands. (Correction, 2026-08-08: the plugin was on via its shipped `defaultValue: true`, **not** via a campaign preseed. Marianas' `plugins:` map sat at the yaml document root, where the loader never reads it, until the whole-repo health audit moved it under `settings:`. A host who had unticked the plugin would have flown this with no relocation at all.) The sites fired 25+ CJ-10s and then sat for the remaining ~25 minutes, i.e. the same post-fire pin already recorded for `CH_Shahed136` — but this hardware fires early every mission, so "pinned after firing" and "never scoots" are the same thing in play. **Fixed by adding `CH_CJ10` to `IMMOBILE_UNIT_IDS`** so the site is never emitted (no futile pushes, no ground-AI churn); `CH_Shahed136` is deliberately NOT excluded because its never-fired sites do drive. **Consequence for T5: Marianas' authored "hunt the launchers" mechanic does not exist** — those three sites are stationary targets, and making them scoot needs launcher hardware DCS will drive.
-- **Which launchers drive is now answerable from `dcs.log` alone (2026-08-06).** The verdict moved into the unit definitions as `mobile: false` (`hy_launcher`, `Silkworm_SR`, `CH_CJ10`, each with its flown evidence in a comment) and the plugin's give-up line now **names the unit types**: `MOBILEMISSILES|: giving up on <group> [CH_CJ10, CH_SX2190] (no movement across 2 route pushes)`. `v1_launcher` joined them 2026-08-06 **without** a Tacview — a 1944 launch ramp is a poured emplacement of the `hy_launcher` shape, and `class: Missile` + the setting defaulting ON made it a latent ANTIFREEZE for the first WWII campaign to author a missile marker (none does today, so nothing to re-fly). **Still unestablished either way: `CHAP_9K720_HE`, `CHAP_9K720_Cluster`, `CH_IskanderK`, `CH_DF21D`, `CH_YJ12B`** — Baltic Fury's Iskander battery is the cheapest test (one site, preseeded). Note it is tested as **`CHAP_9K720_*`**, not `CH_IskanderM`: that yaml is a tombstone that no longer registers (ED integrated the system into base DCS under the `CHAP_` ids), so a `dcs.log` line will never name it. **Fly criterion:** on any campaign with a mod launcher, grep `dcs.log` for `MOBILEMISSILES|: giving up` and record the bracketed types; a type that appears across two missions goes in its yaml as `mobile: false` (a data edit, no code change), a type that never appears drives fine. A group carrying a §85-style support park now also disambiguates the two failure modes by itself: support trucks jittering 0.05–0.31 km while the launchers read 0.00 km is the pinned-by-an-undrivable-member signature.
-- **2026-07-17 night fly (fresh Scenic Route Merged turn 1 on the #631/#632 build, Tacview
-  `Tacview-20260717-214932`, session `tacview-test-analysis-5bb161`): all three FPS fixes
-  VERIFIED.** (1) **Stagger:** move onsets of the 16 never-fired/scooting sites spread
-  t=352→3748 s (gaps +12 s to +724 s) — no same-frame mass route push; (2) **immobile
-  exclusion:** `armed on 31 site(s)` (the Silkworm sites dropped from the emit), all 20
-  `hy_launcher` at 0 m, and **zero `maxDeviationRoll` lines in dcs.log** (vs ~5.9k in the
-  storm mission); ANTIFREEZE shows no continuous flood — background 1–4/min with bursts
-  (12–26/min) only during the 165-Shahed mass-launch windows, not on scoot ticks; (3)
-  **give-up:** 15 `MOBILEMISSILES|: giving up on <group>` lines in-mission — all fired
-  CH_Shahed136 sites went silent after their 2 dry pushes exactly as designed. **Noted
-  collateral (judgment call, not a regression):** fired vanilla Scud_B batteries split into
-  fast recoverers (~10–17 min post-volley: ZEBU/TANG/HERMITCRAB/SPARROW/KANGAROO scooted
-  855–3677 m) and **slow recoverers (~40 min pack-up)**: MOUSE/GROUPER were given up (2 dry
-  pushes ≈ 16 min of stillness) and then **drove anyway** at t=2936/3748 on their last
-  stale route once DCS finished the pack-up animation; TAIPAN/VULTURE/QUAGGA/PARROT hadn't
-  moved by recording end (1,500–2,400 s post-fire, 3 of them given up — likely the same
-  slow pack-up class). Defensible under the rule's own rationale (a fired battery's
-  magazine is empty — the scoot protects loaded launchers, same argument as the Shahed
-  pin), and the stale-route quirk means a given-up group that later recovers still
-  relocates once. Optional tweak if fired-SCUD scooting is wanted: a larger dry-push
-  allowance (e.g. 4) for fire-tasked groups only.
-- **2026-07-17 evening fly (PG "Scenic Route Merged" 39-site game, Tacview
-  `Tacview-20260717-172716`, session `dcs-mission-test-040ece`): the fire-window fix is
-  PROVEN on vanilla hardware — and the residual pin is the CH Shahed launcher, not the
-  task.** Every vanilla SCUD battery that fired then scooted: **13/13** Scud_B sites drove
-  546–3057 m after their volleys (including every KS-19/ZSU-57 towed-AAA-escorted site —
-  the 2026-07-17 morning suspicion about towed escorts is disproven), and never-fired
-  sites kept scooting normally. **NEW residual:** all **8 fired `CH_Shahed136` sites
-  stayed pinned post-salvo** (post-fire max movement 23–172 m — the escort-creep
-  signature) while the two never-fired Shahed sites drove 2.1–2.7 km, so the truck's
-  drive physics are fine and the 22 s salvo sits comfortably inside the 240 s window:
-  the fired CH launcher is left in a state DCS will not drive out of (mod-side, likely
-  its deploy/anim state machine; `resetTask` + alarm-green don't clear it). **Mitigation
-  (unflown):** the plugin now **gives up** on a group after 2 consecutive dry route
-  pushes (<100 m progress) — the pinned battery is left alone (it is empty anyway; the
-  scoot matters for loaded sites) instead of drawing 6 futile pushes/hour
-  (`test_stuck_group_is_given_up_after_dry_pushes` + `test_moving_group_is_never_given_up`).
-  The same mission confirmed both FPS-storm signatures live (it flew WITHOUT the
-  stagger/Silkworm fixes): `ANTIFREEZE` from the first scoot tick + ~5.9k
-  `hy_launcher`/`Silkworm_SR` leveling errors — and ONLY those two ids, so the
-  `IMMOBILE_UNIT_IDS` set covers everything observed.
-  - **Pass (next fly):** a fired Shahed site draws exactly 3 route pushes then a
-    `MOBILEMISSILES|: giving up on <group>` log line and silence; fired SCUDs keep
-    scooting; playable FPS with no leveling flood.
-  - **Fail signature:** give-up lines for groups that DID move (threshold too tight), or
-    a healthy site stopping mid-mission.
-- **2026-07-17 re-fly (flown PG Scenic Route turn 2, Tacview `Tacview-20260716-230024`,
-  session `dcs-mission-test-040ece`): the fire half of the 2026-07-16 fix is PROVEN, a residual
-  post-fire pin was found and fixed.** 9/10 fire-tasked batteries launched their full volleys
-  12–15 s after their forwarded hold deadlines (18 SCUD + 45 Shahed, launches attributed to
-  their batteries at 3–6 m; holds released on schedule; zero tick errors; PEREGRINE alone never
-  fired — its task likely aborted as unreachable, and it scooted normally). COUGAR and LAMPREY
-  **fired then scooted** (1.4–2.3 km) — the end-to-end sequence. **Residual:** the other 7 fired
-  batteries never drove afterward — a bare `FireAtPoint` has no round limit/stop condition, so a
-  dry battery's task never ends and the launchers stay pinned deployed; `resetTask()` recovered
-  only 2/9 while all 4 never-fired groups drove (sitters' escorts crept 20–80 m and stalled —
-  the fail signature the 2026-07-16 row predicted, now root-caused; combat exposure ruled out,
-  zero shells near any site). **Fix (unflown):** the generator wraps the fire task in a
-  `ControlledTask` stopped at hold + `MISSILE_FIRE_WINDOW_S` (240 s — flown volleys finish
-  within ~40 s), ending it through the normal completion path before the plugin's 300 s
-  `fireMarginS` routes the group; coupling pinned by
-  `test_fire_window_stays_inside_the_plugin_scoot_margin`.
-  - **Pass (the re-fly):** fired batteries (not just 2/9) relocate after their volley — watch a
-    KS-19/ZSU-57-escorted SCUD site specifically.
-  - **Fail signature:** fired batteries still frozen past deadline + 300 s (the stop condition
-    didn't stow the launchers either → next lever is an explicit `rounds=` expend count), or a
-    volley truncated mid-ripple (window too tight — didn't happen in the flown data, 40 s vs 240 s).
-- **2026-07-17 FPS storm found + fixed (the first flown test on the fixed build — fresh 39-site
-  game, log-only report):** single-digit FPS with continuous DCS `ANTIFREEZE` from the FIRST scoot
-  tick (21:28, grace + 120 s) — before any Shahed launched, so the drones are exonerated. Causes:
-  all 39 sites' loops were synchronized (every route push in the same frame each interval, and at
-  30 km/h a 4 km scoot spans the whole interval so the fleet never stops driving), and the coastal
-  Silkworm hardware (`hy_launcher`/`Silkworm_SR`) has no drive physics — routing it made ~15k
-  per-frame `GT.maxDeviationRoll` ground-AI errors in one minute and zero movement (user
-  confirmation: Silkworms were never mobile). Fixed (unflown): emitter `IMMOBILE_UNIT_IDS` group
-  exclusion + per-site `(i-1)·interval/N` loop stagger in the plugin.
-  - **Pass:** a many-site campaign holds playable FPS with `mobile_missile_relocation` on; no
-    `woCar` leveling flood in the log; scoots still happen (spread over the interval, not at one
-    tick).
-  - **Fail signature:** `ANTIFREEZE ENABLED` recurring in dcs.log after the grace window, or
-    `has request to level` spam from any routed type (another immobile unit id to add to the
-    exclusion set).
-- **2026-07-16 fire-vs-scoot clobber found + fixed (flown PG Scenic Route turn 3, Tacview
-  `Tacview-20260716-014958`; unflown fix):** the scoot itself re-verified on a third campaign —
-  12 of 13 missile groups (4 Scud + 9 Shahed batteries) relocated 1.9–4.0 km inside the anchor —
-  but the upstream missile-site **fire task and the scoot clobber each other**: `mist.goRoute`
-  pushes routes via `Controller:setTask`, which replaces the waypoint-0 `Hold → FireAtPoint`, so
-  every battery that scooted before its Hold expired silently lost its fire mission, and the ONE
-  battery that fired (BAT, hold ≈117 s — under the 120 s grace) then sat pinned on the spent task
-  and never scooted. Fixed (fire first, THEN scoot): fire-hold deadlines forwarded per-site
-  (`fireHoldGroups`/`fireHoldS` via `MissionData.missile_fire_missions`), the plugin holds such
-  groups until deadline + `fireMarginS` (300 s), then routes with a `resetTask()` first. Harness
-  tests pin the hold/release/reset; **the re-fly is the arbiter**.
-  - **Pass:** a fire-tasked battery launches at its hold time AND relocates afterward; the other
-    batteries scoot as before.
-  - **Fail signature:** a fired battery still frozen after deadline + margin (the resetTask didn't
-    un-pin it in DCS — acceptable, it's out of missiles, note and move on), or held batteries
-    never scooting at all (holds mis-forwarded).
-- **2026-07-11 re-confirm (Red Tide M1 "with Mags happy" `csar-snatch-toggle-question-dfdb7a`, Tacview
-  `Tacview-20260711-171935`, ~125 min MP):** both batteries scooted again on the real event save —
-  `0015 | CROW` launchers net 107–341 m, `0138 | TETRA` launchers net 1.1–1.2 km, escorts (Ural /
-  ZU-23) moving with them; **every SAM/SHORAD/AAA group net 0 m** (category filter intact); and this
-  time the load line was captured: `MOBILEMISSILES|: shoot-and-scoot armed on 2 site(s)` (the 07-10
-  pass had lost its dcs.log). Battery names are save-generated (ROACH/TOUCAN on the 07-10 save;
-  CROW/TETRA here).
-- **2026-07-10 re-fly evidence (Tacview `Tacview-20260710-195823`, 49-min Red Tide turn 1; dcs.log lost):**
-  ALL 6 `Scud_B` launchers moved — both batteries (`0015 | ROACH` near Wittstock and `0137 | TOUCAN` off
-  Haina), net displacement ~1.5 km each over the mission (inside the 4 km scoot radius — the anchor held),
-  escorts moving with them (ROACH's Ural-375 + ZSU-57-2; TOUCAN's Ural + Osa until they were killed by the
-  player package's Mavericks at t≈2166–2191). No Scud ballistic launch (alarm-green held), and **no SAM site
-  moved** (GULL/TURTLE/SNAKE/BUMBLEBEE all static — category filter intact). Killing TOUCAN's escorts did
-  not stop the surviving launchers relocating. Still unobserved: the §3 concealment interplay and the
-  per-cadence hop pattern (Tacview gives net displacement; the ~6 expected cycles weren't decoded
-  individually), and the dcs.log "armed on N site(s)" line (log lost) — none of these block the pass.
-- **2026-07-09 flown Red Tide test (`dcs.log` + Tacview `Tacview-20260709-175837`):** `MOBILEMISSILES|: shoot-and-scoot armed on 2 site(s)` armed cleanly, zero runtime error — but **all 6 `Scud_B` launchers stayed put the whole 53-min mission** (Tacview: a single position record each = never moved). Root cause: `driveTo` issued a **1-waypoint** `mist.goRoute` (destination only); a DCS ground group needs its route to START at its current position or it has no leg to drive (see the memory note / MIST's own `groupToRandomZone` uses 2 WPs). **The identical bug was in the COIN mover `coin-config.lua`** (copy-paste) → also affected §P4/P8. Fixed both to a 2-WP route (`{current, dest}`); harness tests assert `points == 2`.
-- **Pass:** on a mission a couple of relocation intervals long (~8 min each), the SCUD launchers visibly move to fresh spots within the scoot radius; with recon fog on, they're not where the last photo froze them.
-- **Fail signature:** launchers still stationary in Tacview (a single position record) despite the armed line — the 2-WP route didn't take, or the `Scud_B` refuses to path off-road from its spot.
-- **What CI cannot exercise:** real off-road pathing (a site authored in rough terrain may fail to move —
-  status quo ante, but watch for it), whether the wander reads as shoot-and-scoot at the 8-min/4-km defaults,
-  and the interplay with §3 concealment (circle says "in here somewhere", the launcher has moved inside it).
-- **Setup:** **Germany — Red Tide** now fields two red SS-1C Scud-B batteries (off Haina, near Wittstock) and
-  preseeds the setting + `mobilemissiles` plugin (2026-07-07), so a NEW Red Tide game is the reference case;
-  any other campaign with a mobile missile site works too (`mobile_missile_relocation` is default ON). Open the
-  F10 map (or the ME) on the site's area; observe over ~15+ minutes, then kill one launcher and keep watching.
-  Watch the two GermanyCW SCUD spots aren't in forest/water (blind-placed like every GCW object).
-- **Pass:** after the ~2-min grace the site's vehicles pick up and drive to a new spot within a few km, and
-  again on the cadence; they hold fire while moving (alarm-green); the site never wanders far from its
-  campaign position; killing all its vehicles stops the movement with no dcs.log errors; the SAM network
-  (SA-2/6/10 sites etc.) never moves; `dcs.log` shows "MOBILEMISSILES|: shoot-and-scoot armed on N site(s)".
-- **Fail signature:** a **SAM site moves** (category filter broken — MANTIS/IADS depends on emitter positions);
-  a site migrates kilometers beyond its scoot radius (anchor not applied — the wander must re-anchor on the
-  campaign centre, not the last waypoint); launchers stop dead mid-road en masse with repeated `goRoute`
-  errors (pathing — consider the off-road action or a smaller radius); movement before the grace; a
-  `MOBILEMISSILES|: setup error` in dcs.log; sites still moving with the setting off (gate broken).
-
 ### S3 — Friendly convoy ambush (a chance, never telegraphed) · §50 · ◐ PARTIAL
 
 **History:** 2026-07-06 flown Inherent Resolve session `jovial-gates-574c9c`: the whole chain up to the spring VERIFIED — but the spring itself was blocked by the S5 parked-blue-convoy bug
@@ -4311,10 +4168,10 @@ save drop stays, because that pop IS the cleanup for old saves.
 ### T3 — Iraq "Umm al-Ma'arik (Desert Storm 1991)" campaign plays · Desert Storm campaign · ☑ VERIFIED
 
 **History:** 2026-08-21, DM pass `sead-escort-waypoint-bug-548af6` — "all of these are good") (was ☐ UNTESTED, built 2026-07-19 — the DM's homemade DS91 campaign fixed + modernized + promoted; **laydown v2 same day, the DM's call**: blue = the seized H-3 complex + the off-map Saudi rear (the map has ZERO 60×60 heavy stands west of Baghdad — the E-3/KC-135 wing parked nowhere; slot_version-2 dimension resolution, the legacy `large` flag is zero map-wide), Al-Asad reverts to red as Qadessiya (the real Foxbat home), the campaign climbs the pipeline-road capture ladder H-3 → H-2 → Al-Asad, red gains Balad (al-Bakr) + Mosul (Firnas), the Fulcrum reserve moves off Al-Kut's helipad farm to Al-Sahra/Tikrit. Headless-verified end-to-end (17 CPs, the front exactly H-3 Main ↔ H-2, 40 squadrons resolve exactly, **every squadron dimensionally fits its parking** — a new standing guard, 104-node KARI net, arc + will parse); CI-locked in `tests/fourteenth/test_desert_storm.py` (8 tests incl. the parking-fit invariant); design note `414th-desert-storm-campaign-notes.md`
-- **What CI cannot exercise:** the played campaign — the KARI net actually degrading as the ADOC/SOCs die (MANTIS range-mode wiring on a real laydown), the off-map support wing actually flying its orbits from the Saudi rear (tanker/AWACS on-station reliability from an `OffMapSpawn` home), the front-line ladder ADVANCING when H-2 falls (the second M-113 leg becoming the active front), the nine Scud batteries shoot-and-scooting under §49 (two now in the western baskets at the front's doorstep), the night-one 0300 start feel, the Baghdad no-strike circle pricing CDE into Coalition cohesion, red's GCI-alert posture off the QRA reserve, and the renamed 1991 target set (Saad 16 / Baba Gurgur / Daura) reading right on the building cards.
+- **What CI cannot exercise:** the played campaign — the KARI net actually degrading as the ADOC/SOCs die (MANTIS range-mode wiring on a real laydown), the off-map support wing actually flying its orbits from the Saudi rear (tanker/AWACS on-station reliability from an `OffMapSpawn` home), the front-line ladder ADVANCING when H-2 falls (the second M-113 leg becoming the active front), the night-one 0300 start feel, the Baghdad no-strike circle pricing CDE into Coalition cohesion, red's GCI-alert posture off the QRA reserve, and the renamed 1991 target set (Saad 16 / Baba Gurgur / Daura) reading right on the building cards.
 - **Setup:** New Game → "Iraq - Umm al-Ma'arik (Desert Storm 1991)" (NATO Desert Storm vs Iraq 1991, start 1991-01-17 03:00). Generate turn 1; fly or spectate the western front out of the H-3 strips.
 - **Pass:** generates + loads clean; blue's wing stands at the three H-3 strips with the E-3/tankers flying from "Coalition Rear (Saudi Arabia)"; the front reads H-3 Main ↔ H-2; the will meters read "Coalition cohesion" / "the regime's resolve"; the ribbon shows Instant Thunder with the Baghdad no-strike circle on the map; blue packages get F-15C escorts; the SAM rings light up under the KARI EWR chain and go autonomous (not dark) when a SOC dies; Scud sites relocate between missions; the A-10C/CH-47F squadrons carry era-clamped loadouts (no JDAM-era stores at a 1991 date); capturing H-2 advances the front to the H-2 ↔ Al-Asad leg and opens the H-3↔H-2 road to blue convoys.
-- **Fail signature:** any squadron flying a substituted airframe (a faction/variant string regressed — `test_desert_storm.py` should have caught it); support flights failing to materialize from the off-map spawn (the OffMapSpawn planner path); the front not advancing after the H-2 capture (the M-113 ladder legs mis-bound); the will meters reading "Washington's patience" (the `will:` parse degraded to Vietnam framing); no phase on the ribbon (arc parse degraded); SAMs dark or crashing when C2 dies (the MANTIS wiring — check the trio statics bound to the right CPs); a Scud battery pinned after firing (the §49 fire-window coupling); Wadiyan names on a building card (a zone rename regressed).
+- **Fail signature:** any squadron flying a substituted airframe (a faction/variant string regressed — `test_desert_storm.py` should have caught it); support flights failing to materialize from the off-map spawn (the OffMapSpawn planner path); the front not advancing after the H-2 capture (the M-113 ladder legs mis-bound); the will meters reading "Washington's patience" (the `will:` parse degraded to Vietnam framing); no phase on the ribbon (arc parse degraded); SAMs dark or crashing when C2 dies (the MANTIS wiring — check the trio statics bound to the right CPs); Wadiyan names on a building card (a zone rename regressed).
 
 ### T4 — DCS 2.9.28 Iraq map pass: dam destructibility + the ED airfield fixes · Desert Storm / Inherent Resolve · ☑ VERIFIED
 
@@ -4331,14 +4188,14 @@ save drop stays, because that pop IS the cleanup for old saves.
 
 **History:** 2026-08-21, DM pass `sead-escort-waypoint-bug-548af6` — "all of these are good") (was ☐ UNTESTED, built 2026-08-02 — the fork's modern-day China campaign, forked from Fuzzle's Pacific Repartee laydown after a headless audit found that one loads clean but cannot be modernized in place (red airframes are hardcoded, so a `China 2020` swap upgrades ground/naval and leaves **J-7B** flying; no red AEW&C; 165 red vs 62 blue because six carrier blocks omitted `size:`; no `missile` TGO anywhere; zero feature preseeds). Guam is inverted to BLUE (Andersen's 194-slot ramp is the only one on the map that bases a heavy wing), two dormant NEUTRAL airfields are activated, and three PLARF sites are authored. Headless-verified end-to-end (18 CPs — BLUE 5 / RED 13 — 110 TGOs / 572 units, all 38 squadrons resolve, 164 blue vs 98 red airframes, the 3 missile TGOs binding Rota/Tinian/Saipan); CI-locked in `tests/fourteenth/test_marianas_2027.py` (23 tests incl. the parking-fit, tanker-boom/drogue-compatibility, ground_forces pin-band-match, no-blue-behind-the-chain, explicit-`size:` and mod-free-carrier-squadron invariants); design note `414th-marianas-2027-campaign-notes.md`. Miz is GENERATED by `tools/build_marianas_2027_miz.py` — never hand-edit it. NEW game required.
 - **First flown evidence 2026-08-05** (Tacviews `Tacview-20260805-184424` / `-190738` / `-200950` / `-203549`, session `pr-merge-code-audit-7e8b4c`) — the campaign loads and fights, and four things were learned:
-  - **§49 shoot-and-scoot does NOT work here** — see the S2 hardware caveat: all 9 `CH_CJ10` launchers sat at 0.00 km, so the authored "hunt the launchers" signature mechanic is not in play. The three PLARF sites are stationary targets until the hardware changes.
+  - **The authored "hunt the launchers" mechanic does not exist.** §49 was removed 2026-08-29 after never relocating a site in three flown attempts, so the three PLARF sites are stationary targets. They are still worth striking; they are not a hunt.
   - **§80 mixed hulls verified** (see B38); **§87 station-keeping partially verified** (see **B48**) on this laydown: pre-§87 generation had every authored naval group parked at 0.1 km; post-§87 the same groups sail 12–24 km on station with formation spacing unchanged. *That measures distance travelled, not displacement from the campaign anchor, which is §87's actual contract — B48 stays PARTIAL until a ≥90 min mission measures position-vs-anchor.*
   - **A blue anti-ship package flew with no escort, CAP, tanker or AEW&C airborne and lost 4 of 8 F/A-18F** to red QRA (Su-30s from Rota, JF-17s from Tinian — §1 working). Worth a look at how that package was planned.
   - **Red's planned air force never launched**: 15 airframes (J-11A ×6, H-6J ×6, **KJ-2000 ×2**) spawned `uncontrolled` on the Saipan ramp and only QRA scrambles flew, so red fought with zero AEW&C airborne and no standing BARCAP — undercutting the GCI posture the campaign is built around.
-- **What CI cannot exercise:** whether the §49 scoot actually works on islands this small; whether the DF-21D/CJ-10 kit renders and fires from a `missile` TGO here at all; whether Andersen's heavy squadrons fit their stands *dimensionally* (the parking-fit test counts slots, not the slot_version-2 dimensions the DS91 audit needed); whether the AI flies Air Assault captures across 90–200 km of open water; and the frame rate with three PLAN carrier groups up.
+- **What CI cannot exercise:** whether the DF-21D/CJ-10 kit renders and fires from a `missile` TGO here at all; whether Andersen's heavy squadrons fit their stands *dimensionally* (the parking-fit test counts slots, not the slot_version-2 dimensions the DS91 audit needed); whether the AI flies Air Assault captures across 90–200 km of open water; and the frame rate with three PLAN carrier groups up.
 - **Setup:** NEW game, "Marianas - Second Island Chain (2027)", USA 2020 vs **China 2027**, with the **Chinese Military Assets Pack**, **High Digit SAMs**, the **CJS Super Hornet** pack and the **F-22A Raptor** mod ticked (all arrive ticked — the campaign preseeds them). Fly or fast-forward two turns. Watch (1) a PLARF site across a turn boundary, (2) an Air Assault package sent at Rota, (3) the carrier-group magazine after a cruise-missile raid.
 - **Pass:** the three PLARF sites relocate **and stay on their island**; their launchers are China-pack DF-21D/CJ-10/YJ-12B rather than Soviet substitutes; §3 draws them as suspected-activity circles until reconned; Andersen's B-1B/KC-135/E-3A all spawn on real stands without clipping; an Air Assault package reaches and takes Rota; the §63 magazine debits and does not rearm; **Tinian fields an S-300PMU-2 and Rota an HQ-22** (the two pinned batteries) with no SA-2/SA-6/HQ-2 anywhere; the map reads as one south→north axis with nothing blue north of Guam; **every PLAN task group is screened by Type 055/052D** (250 km HHQ-9) rather than 4-8 km missile boats and corvettes; the carrier's EA-18G det and F/A-18E tanker spawn, and the Growler is auto-fragged into the §77 Escort Jammer slot ahead of a strike package.
-- **Fail signature:** **a launcher scooting into the sea** (the §49 4 km scoot radius is not landmap-checked, and Rota/Tinian are small — this is the highest-value observation on the row); a `missile` TGO spawning empty or with Soviet Scuds (China pack not applied); a heavy squadron spawning inside another aircraft at Andersen (dimensional parking fit, not slot count); Air Assault packages never planned across water; red flying a J-7B (a faction/campaign regression the yaml test should have caught first); the Super Hornet squadrons spawning empty or substituting (CJS pack not installed/ticked) while the legacy F/A-18C squadron still fields normally.
+- **Fail signature:** a `missile` TGO spawning empty or with Soviet Scuds (China pack not applied); a heavy squadron spawning inside another aircraft at Andersen (dimensional parking fit, not slot count); Air Assault packages never planned across water; red flying a J-7B (a faction/campaign regression the yaml test should have caught first); the Super Hornet squadrons spawning empty or substituting (CJS pack not installed/ticked) while the legacy F/A-18C squadron still fields normally.
 - **Known and deliberate:** the northern islands (Anatahan, Pagan, Agrihan, Uracus) are `is_in_sea` in the Marianas landmap — a pre-existing terrain-data property inherited from Repartee, which is why no missile site is authored north of Saipan. North West Field stays NEUTRAL (zero runways). Red fields no ambient convoys because no two red bases share an island.
 - **Added 2026-08-03 — the auto-planner fix rides this row.** The first flown turn came out **100% defensive** (33 packages, 28 BARCAP, zero strike/SEAD/DEAD/anti-ship) because BARCAP demand — doubled per fleet CP, and this laydown has four — consumed all 66 fighters, so every offensive package scrubbed for want of its escort; plus the stock 150 NM range gate put the northern half of red out of reach in a 421 NM theatre. Was fixed by `MODERN_DOCTRINE.strike_escort_reserve` 0 → 8 (**fork-wide**) plus campaign preseeds `max_mission_range_planes: 400` and `desired_barcap_mission_duration: 60`. Headless-verified BLUE 2 → **25 offensive flights** (74 → 143 aircraft tasked, BARCAP 22 → 14). **Pass:** the turn-1 ATO contains real strike/SEAD/DEAD/anti-ship packages against the PLAN groups and island SAMs, escorted, with CAP still covering both carriers and Andersen. **Fail signature:** an all-BARCAP ATO again (the preseeds did not land — check Settings shows 400 NM and a 60-minute BARCAP station), or the opposite, CAP so thin that red's Badgers reach the boat unopposed. **Watch fork-wide:** the doctrine change touches *every* modern campaign — Baltic Fury and Inherent Resolve should show slightly fewer BARCAP flights and more escorted strikes; Red Tide is Cold War doctrine and must be unchanged. **⚠ The doctrine half was REVERTED 2026-08-09** by the planner re-convergence (work order B): `MODERN_DOCTRINE.strike_escort_reserve` is back to 0 fork-wide, so this row's all-BARCAP fail signature is live again on Marianas until the campaign preseeds the 414th planner suite or a per-campaign doctrine fork restores the reserve. The two campaign preseeds (`max_mission_range_planes: 400`, `desired_barcap_mission_duration: 60`) are untouched. Vietnam keeps its reserve of 4.
 
@@ -4584,18 +4441,13 @@ launchers + **2 cargo trucks** + a transporter/loader + a fuel bowser + (on Red 
 launcher line and ≥20 m apart. On USA 2020 the same site reads in NATO kit (M818/M1083 trucks, a
 HEMTT M977 as the loader, an M978 bowser, a Trojan Spirit or fire-control bunker). Germany 1944's
 V-1 site fields an Opel Blitz pair + an Sd.Kfz.7 and **no** bowser or C2 (correct — that faction has
-neither). **The battery still scoots** (§49): the whole group relocates together, support trucks
-included. Killing support units records as ordinary ground losses.
+neither). Killing support units records as ordinary ground losses.
 
 **Second half — the buy menu.** Open a base's ground-object purchase for a missile or coastal site
 and confirm the launchers now **cost money** (Scud-B 40, Iskander-M 70, CJ-10 75, DF-21D 85, Silkworm
 30 …) instead of being free, and that repairing a killed launcher is charged at the same price.
 
 **Fail signatures to watch for:**
-- **The battery stops scooting on a campaign where it used to** — the §49 pin, and the thing to
-  check first. Every support type is supposed to be drivable; `dcs.log` will name the offender
-  (`MOBILEMISSILES|: giving up on <group> [types]`, see S2). This is the one regression this change
-  could plausibly cause.
 - Support vehicles **clipping** a launcher model (spacing is ≥25 m in the template, but only DCS
   confirms the footprints), or spawning on a slope/in water at a campaign's authored site.
 - A **fuel bowser standing in as the transporter/loader**, or a site that fields a bowser and *no*
@@ -4684,6 +4536,13 @@ anything there now, so this is a note, not a task. See
 are cut*.
 
 ### B48 — Naval station-keeping racetracks · §87 · ◐ PARTIAL
+
+**2026-08-29, test 24** (Caucasus — Iron Gate turn 1, 72 min, `Tacview-20260829-162330`, DCS 2.9.29.27278) — **not exercised; do not read the drift as a failure.** This campaign
+has **zero ship TGOs** — the only naval object is the CVN-73 carrier control point, which §87
+deliberately excludes (carriers keep `steam_into_wind`). The carrier and its escorts do travel
+22–26 NM in a straight line over the 72 minutes with no heading change beyond 30°, which looks
+like station-keeping failure and is not: it is §88 steaming for wind down the angled deck,
+working as designed. The row still needs a campaign with an authored ship group.
 
 **Setup card:** [flycards/REGRESSED-SWEEP.md](flycards/REGRESSED-SWEEP.md) — one Starfire campaign (`operation_desert_trident`) clears this alongside C9 and B48.
 
@@ -5079,7 +4938,15 @@ leg in Tacview/F10.
      the waypoint tasking.
 
 
-### B65 — Reinforcement follows the supply lines · §90 rung A · ☐ UNTESTED
+### B65 — Reinforcement follows the supply lines · §90 rung A · ◐ PARTIAL
+
+**2026-08-29, test 24** (Caucasus — Iron Gate turn 1, 72 min, `Tacview-20260829-162330`, DCS 2.9.29.27278) — **the tiering does bite in a real campaign.** With
+`supply_gated_reinforcement` on, blue's Kutaisi reads **AIRLIFTED** while Batumi, Kobuleti, Turkey
+and the carrier all read SUPPLIED, and every red base reads SUPPLIED. That answers the row's first
+fail signature — "everything reads SUPPLIED because a road route survives everywhere in practice"
+— in the negative, on a shipped campaign nobody authored for this. The multi-turn half (cut the
+road, watch strength stop climbing, retake it and watch recovery resume) still needs two or three
+turns.
 
 **History:** built 2026-08-17, session `629c250f`.
 
@@ -5135,7 +5002,14 @@ Needs three or four turns of a ground campaign with the stance left on aggressiv
 
 ---
 
-### B67 — The front line counts the forces present · §90 rung C · ☐ UNTESTED
+### B67 — The front line counts the forces present · §90 rung C · ☑ VERIFIED
+
+**2026-08-29, test 24** (Caucasus — Iron Gate turn 1, 72 min, `Tacview-20260829-162330`, DCS 2.9.29.27278) — **PASSES.** Kutaisi 0.75 morale × 883 armour value = 662;
+Khashuri FOB 1.00 × 970 = 970. That predicts the line at 40.6 % of the way from Kutaisi; it
+actually sits at **38.9 %** of the 98.2 km straight line (the residual is §90's terrain weighting
+and salients, both also on). The line is displaced toward the weaker side, which is the whole
+claim. Neither fail signature occurred: the front did not start somewhere unexpected, and this is
+not an air-only campaign.
 
 **History:** built 2026-08-17, session `629c250f`.
 
@@ -5232,6 +5106,14 @@ actually are.
 > result, so nothing is misbehaving, but an even fight cannot demonstrate the armour
 > weighting. That row needs a lopsided pair.
 ### B70 — Sortie records reach the campaign · §91 · ◐ PARTIAL
+
+**2026-08-29, test 24** (Caucasus — Iron Gate turn 1, 72 min, `Tacview-20260829-162330`, DCS 2.9.29.27278) — **the test-14 defect reproduces on a second campaign and terrain.** 206
+flights recorded. The player's own record is again complete and correct (52 track points, fuel
+1.177 → 0.000, 7 shots / 2 hits, `ejected: true` matching the ejection event). But **122 of 206
+tracks carry exactly two points, and 120 of those span more than 20 minutes** — the same
+first-and-last reduction test 14 found, at 59 % instead of 73 %. A further 22 flights have no track
+at all. 45 flights recorded shots (135 shots / 81 hits across both sides). Stays PARTIAL: the
+question is still why a flight alive for forty minutes keeps two samples.
 
 **2026-08-22, test 14 — the record arrives, but 77 % of it is a stub.** 158 flights written.
 The player's own record is everything the feature promises: 76 track points, fuel 1.684 → 0.504
@@ -5560,7 +5442,12 @@ until the *enemy's* CAS TOT.
   3. **Attackers step off before their own CAS arrives.** The `AGGRESSIVE` wait was removed
      too — that one is intended behaviour, not a bug.
 
-### B85 — A flight with an unreachable TOT flies instead of orbiting · §8 · ☐ UNTESTED
+### B85 — A flight with an unreachable TOT flies instead of orbiting · §8 · ◐ PARTIAL
+
+**2026-08-29, test 24** (Caucasus — Iron Gate turn 1, 72 min, `Tacview-20260829-162330`, DCS 2.9.29.27278) — **the `.miz` check this row names comes back clean.** The
+generated mission carries 50 `stopCondition.time` values, minimum 0.0, maximum 9361.0, and
+**none negative** — the exact artefact the row says to look for. The in-game half (a held flight
+actually releasing and flying) was not observed, so this stays PARTIAL rather than closing.
 
 **History:** built 2026-08-19 from juanjux/dcs-retribution#100. His repro was a DEAD package
 given a TOT 5 minutes out from a base 29 minutes away; the mission shipped
@@ -5805,7 +5692,16 @@ Then fly one: F-14B(U) client flight on a campaign that fields it
 - **Watch for:** whether the reference points' elevation being 0 matters in the
   cockpit. That is B90's open half, and this is a second place to observe it.
 
-### B90 — A steerpoint's elevation is the ground under it · §74 · ☐ UNTESTED
+### B90 — A steerpoint's elevation is the ground under it · §74 · ◐ PARTIAL
+
+**2026-08-29, test 24** (Caucasus — Iron Gate turn 1, 72 min, `Tacview-20260829-162330`, DCS 2.9.29.27278) — **the generation half is verified; the cockpit read is still
+owed.** In the Hornet cartridge (`Retribution Ford 6 FA-18C_hornet.dtc`) the two fields the fix
+split apart are both populated and different: `NAV_PTS[].alt` matches `nearest_field_elevation()`
+on 8 of 9 steerpoints (the ninth is the landing point at 0.0), and `NAV_ROUTE[].alt` separately
+carries the 6,096 m fly-to altitude. The fail signature — an en-route steerpoint reading ~2000 m
+of elevation because `alt` went missing — does not occur. **Small open item:** the landing
+steerpoint writes 0.0 where `nearest_field_elevation()` returns 18.0. Worth a look, but it is the
+recovery point, not a target. Still needs a DED/DTC-panel read to close.
 
 **History:** built 2026-08-20, from the cockpit. Fork-only — upstream ships no DTC.
 
@@ -5988,6 +5884,13 @@ from a fresh New Game, not a save** — a save never took this path.
 
 ### B96 — Iron Gate's fields fill without an aircraft losing its stand · Iron Gate · ◐ PARTIAL
 
+**2026-08-29, test 24** (Caucasus — Iron Gate turn 1, 72 min, `Tacview-20260829-162330`, DCS 2.9.29.27278) — **Batumi answered, and a red field failed instead.** Batumi, the
+field this row said to look at first, generated with **9 F-15C on 10 stands** and fits. But
+`Mineralnye Vody: No parking place for 'Su-24M'` appears **4 times** in the log — that base is
+authored at **28 aircraft on 28 stands**, zero slack, and four more Su-24M were sent to it than it
+can hold. First occurrence of the signature since the 2026-08-26 DCS parking rework. See **B100**,
+which is the same question asked of the rework.
+
 **VERIFIED 2026-08-23** (`Tacview-20260823-181233`, 62 min of sim, 1,091 units, 238
 aircraft, `autosave.retribution` now on turn 2).
 
@@ -6063,7 +5966,17 @@ mission-generation question.
   error. Report which airframe and which field — the fix is per stand class, not a blanket trim.
 - **Free while you are there:** blue has **36** land-based fighters at Kobuleti. Worth a note on whether
   that is enough to contest the pass, and whether Kobuleti's transit leaves useful fuel.
-### B97 — One salvo, and only the targeted flight breaks · §94 · ☐ UNTESTED
+### B97 — One salvo, and only the targeted flight breaks · §94 · ◐ PARTIAL
+
+**2026-08-29, test 24** (Caucasus — Iron Gate turn 1, 72 min, `Tacview-20260829-162330`, DCS 2.9.29.27278) — **strong supporting evidence; one setting short of closing.**
+`AIReaction| Smart Threat Reaction loaded (DEBUG=false)` is in the log, so fail signature 1 (the
+plugin never loaded) is ruled out. Across **83 red SAM launches**, each with 13–14 blue aircraft
+airborne inside 60 km, the number turning more than 90° within the next 60 s was **median 2, mean
+1.86, maximum 6** — so 7–12 jets in the threat volume held formation on every launch. That is the
+shape the pass criterion describes and it rules out fail signature 2 (the count climbing into the
+dozens). It is not proof: a hard turn is not necessarily a defensive break, and with DEBUG off
+there is no ground truth for which flight was tagged. **Re-fly with `ai_reaction.DEBUG` ticked and
+this closes.**
 
 **Setup.** Any campaign with a long-range SAM belt or a defended ship group, and at least
 two blue packages airborne near it at the same time. `Smart threat reaction` is on by
@@ -6188,7 +6101,15 @@ reference — it carries 8 of the 16 moves.
 
 ---
 
-### B93 — The front line sits on ground the armour can hold · §90 · ☐ UNTESTED
+### B93 — The front line sits on ground the armour can hold · §90 · ☑ VERIFIED
+
+**2026-08-29, test 24** (Caucasus — Iron Gate turn 1, 72 min, `Tacview-20260829-162330`, DCS 2.9.29.27278) — **PASSES on the front this fix was built from.** The
+Kutaisi/Khashuri FOB front position sits on drivable ground, inside a drivable band running
+−14 km to +6 km across the trace — against the pre-fix measurement of 20.00 km one way, 0.00 km
+the other and 0 % of the trace drivable. In the generated mission the two sides met: 62 blue and
+62 red ground units within 25 km of the front point, closest blue↔red combat pair **2,634 m**
+apart at spawn, and the TIC firefight ran. The 15 km stand-off on opposite ridges that opened this
+row did not recur.
 
 **History:** built 2026-08-23, from the DM's own `Maybe 414.retribution` on
 `Caucasus - Northern Russia` — the app map showed the FLOT hanging entirely off
@@ -6237,7 +6158,16 @@ mountain or coastal front will do.
      strength, so an 8-object swing is worth a look on Desert Trident's Jordan
      sector specifically.
 
-### B99 — AI packages arrive inside the mission, not after it · §8 · ☐ UNTESTED
+### B99 — AI packages arrive inside the mission, not after it · §8 · ◐ PARTIAL
+
+**2026-08-29, test 24** (Caucasus — Iron Gate turn 1, 72 min, `Tacview-20260829-162330`, DCS 2.9.29.27278) — **the defect this fixed does not recur; the spread question is
+half-answered.** Of 206 recorded flights, 154 got airborne, and **none first went airborne in the
+last 10 % of the mission** — no package was timed past the end, which is what the clamp exists to
+prevent. 126 flights were still alive in the second half, so the sky did not die. What the data
+also shows is heavy bunching at the *start*: 131 of 154 were airborne inside the first 7 minutes.
+That is takeoff time rather than TOT, and Retribution launches on a common push and spreads
+arrivals by transit, so it is not the metric this row asks about — measuring the TOT spread itself
+needs the ATO read off the app, which was not captured.
 
 **History:** built 2026-08-24, planner doctrine-mining row 2. The non-CAP spread bounded the
 random **offset** by the cycle and then added transit on top, so a long-transit package was
@@ -6269,7 +6199,15 @@ code being wrong. Instrument: `tools/measure_tot_past_mission_window.py`, driven
   minutes of spread to distribute, and the alternative is the half of it that used to fall
   outside the mission. Check the transits before calling it a regression.
 
-### B98 — The bullseye is the same place it was last mission · §95 · ☐ UNTESTED
+### B98 — The bullseye is the same place it was last mission · §95 · ☑ VERIFIED
+
+**2026-08-29, test 24** (Caucasus — Iron Gate turn 1, 72 min, `Tacview-20260829-162330`, DCS 2.9.29.27278) — **PASSES.** The turn-1 `.miz` carries blue's bullseye at
+`-294059.76572586 / 781603.93994526`; the turn-2 save reads `-294059.77 / 781603.94` — the same
+point after a flown mission and a turn roll. `bullseye_pinned` is true on both sides,
+`bullseye_moved_on_turn` is None, and the anchors are land control points (blue on Khashuri FOB,
+red on Kutaisi), not a fleet or an off-map spawn. The cockpit half — whether the drawn point and
+the AWACS calls against it read as a usable reference — is still unobserved, but the campaign-side
+contract this row exists for is met.
 
 **History:** built 2026-08-24. Replaces upstream's per-turn re-derivation. Design note
 [`414th-bullseye-notes.md`](design/414th-bullseye-notes.md).
@@ -6317,7 +6255,15 @@ exercised by any test here.
   declined (it would stop being a findable landmark). If the degenerate calls actually
   bite in the air, that decision reopens.
 
-### B100 — The ramp still holds the squadrons authored against it · DCS 2026-08-26 parking rework · ☐ UNTESTED
+### B100 — The ramp still holds the squadrons authored against it · DCS 2026-08-26 parking rework · ✗ REGRESSED
+
+**2026-08-29, test 24** (Caucasus — Iron Gate turn 1, 72 min, `Tacview-20260829-162330`, DCS 2.9.29.27278) — **fail signature reproduced on DCS 2.9.29.27278.** The generated
+mission logged `Mineralnye Vody: No parking place for 'Su-24M'` four times. Mineralnye Vody is
+authored at 28 aircraft against 28 stands — no slack — so any aircraft routed there beyond its own
+squadrons has nowhere to go. Iron Gate's blue fields were fine in the same mission (Batumi 9/10,
+Kobuleti 27/42, Kutaisi 23/58), so this is not a whole-campaign shortfall; it is one
+authored-to-the-limit red field meeting the reworked placement. Northern Russia has not been
+checked yet.
 
 The 2026-08-26 DCS patch rebuilt AI taxiway pathing to use aircraft dimensions, and says
 in its own words that this changes the placement of parking spaces and increases the
@@ -6431,7 +6377,7 @@ and §60's two-guidance-radar doubling still means one HARM does not kill a site
   track radars.
 
 **Watch for.** The Patriot's DLZ was corrected against ballistic targets in the same
-patch. That only matters where a campaign fields both Patriot and §49's mobile theatre
+patch. That only matters where a campaign fields both Patriot and mobile theatre
 missiles — Desert Storm — and nobody has looked at it.
 
 ### B103 — BMP-3s in a firefight still fire like armour, not infantry · §9 TIC · ☐ UNTESTED
@@ -6567,6 +6513,14 @@ through and going home.
 
 ### B107 — The log stops repeating a MOOSE event error thousands of times · vendored `Moose.lua` · ☐ UNTESTED
 
+**2026-08-29, test 24** (Caucasus — Iron Gate turn 1, 72 min, `Tacview-20260829-162330`, DCS 2.9.29.27278) — **could not be tested: the flown build predates the fix.** The `.miz`
+was generated at 16:22:11, four seconds before the merge that brought #997 onto the branch at
+16:22:15, so its bundled `Moose.lua` carries the two `civilian_traffic` patches but not the
+event-61 row. **Baseline captured, and it is larger than the Afghanistan sample:** the flown
+mission alone suppressed **63,338** copies of `EVENT.onEvent ... Could not get EVENTMETA data for
+event ID=61`, plus 18,106 messages lost to buffer overflow, against 18,338 written lines. A second
+terrain confirming the diagnosis. Re-fly on a build that contains #997.
+
 MOOSE's `EVENTS` enum declares `UnitTaskComplete` but `_EVENTMETA` had no row for
 it, so `EVENT:onEvent` dropped DCS's task-complete event and logged an error every
 time it fired — 6,807 times in one 7-minute Afghanistan turn, 11,861 in an archived
@@ -6590,6 +6544,9 @@ banners as before.
   the spam is cosmetic and not worth a dead plugin.
 
 ### B108 — A stuck TIC unit names itself, and the retries are spread not concentrated · §9 TIC · ☐ UNTESTED
+
+**2026-08-29, test 24** (Caucasus — Iron Gate turn 1, 72 min, `Tacview-20260829-162330`, DCS 2.9.29.27278) — **could not be tested: the flown build predates the fix** (see B107
+for the four-second miss). The bundled `TIC_v1.1.lua` is the 2026-08-26 copy.
 
 `OnBeforeArrived` re-issues a move with roads prohibited whenever a combatant made
 no progress since the last tick. It fired 846 times in 7 minutes and named no unit,
@@ -6615,6 +6572,10 @@ the unit. Record which, in `414th-tic-dynamic-fronts-notes.md`.
   and this is a framerate problem, not just log noise. That escalates the row.
 
 ### B109 — Payload backups leave `UnitPayloads` and the launch error stops · §73 · ☐ UNTESTED
+
+**2026-08-29, test 24** (Caucasus — Iron Gate turn 1, 72 min, `Tacview-20260829-162330`, DCS 2.9.29.27278) — **could not be tested: the flown build predates the fix** (see B107).
+The old signature is still present and still exactly twice per DCS launch: `Can't open file
+'...\MissionEditor/UnitPayloads//_retribution_backups' from real path fs.`
 
 §73 backed payload files up into `MissionEditor/UnitPayloads/_retribution_backups`.
 DCS enumerates that folder expecting only payload `.lua` files and logged

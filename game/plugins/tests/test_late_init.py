@@ -100,7 +100,7 @@ def test_helper_noop_on_empty_file_list() -> None:
 # --- Bundled plugin-config loads (the DCS dropped-trigger guard) --------------
 #
 # DCS silently drops some mission-start DoScriptFile triggers on a heavy mission
-# (Red Tide: the vietnamops/mobilemissiles/commsjam config loads never ran while
+# (Red Tide: the vietnamops/commsjam config loads never ran while
 # adjacent, identically-wired ones did). Plugin config loads are therefore
 # deferred and bundled into one trigger.
 
@@ -138,16 +138,15 @@ def test_flush_bundles_all_deferred_loads_into_one_trigger() -> None:
     gen, mission = _bundling_gen()
     for ident, script, mnem in (
         ("vietnamops", "vietnamops-config.lua", "vietnamops-config"),
-        ("mobilemissiles", "mobilemissiles-config.lua", "mobilemissiles-config"),
         ("commsjam", "commsjam-config.lua", "commsjam-config"),
     ):
         gen.inject_plugin_script(ident, script, mnem, defer=True)
     mission.triggerrules.triggers.append.assert_not_called()
     gen.flush_deferred_plugin_scripts()
-    # Exactly one trigger carrying all three loads, in queue order.
+    # Exactly one trigger carrying both loads, in queue order.
     mission.triggerrules.triggers.append.assert_called_once()
     trigger = mission.triggerrules.triggers.append.call_args.args[0]
-    assert len(trigger.actions) == 3
+    assert len(trigger.actions) == 2
     assert gen._deferred_plugin_loads == []
 
 
@@ -162,11 +161,11 @@ def test_inject_configuration_defers_the_config_script() -> None:
     from game.plugins.luaplugin import LuaPluginDefinition
 
     definition = LuaPluginDefinition.from_json(
-        "mobilemissiles", Path("resources/plugins/mobilemissiles/plugin.json")
+        "commsjam", Path("resources/plugins/commsjam/plugin.json")
     )
     plugin = LuaPlugin.__new__(LuaPlugin)
     plugin.definition = definition
-    plugin.identifier = "mobilemissiles"
+    plugin.identifier = "commsjam"
     gen = MagicMock()
     plugin.inject_configuration(gen)
     gen.inject_plugin_script.assert_called_once()

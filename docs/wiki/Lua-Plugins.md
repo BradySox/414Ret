@@ -115,7 +115,6 @@ setting off costs nothing at runtime.
 |---|---|---|
 | `tic` | on | Troops In Contact — formation-keeping frontline units fighting prolonged scripted firefights. (Late-init plugin.) |
 | `coin` | on | The COIN insurgency layer's movers and ambient pressure. Inert unless a COIN campaign. |
-| `mobilemissiles` | on | The SCUD hunt — shoot-and-scoot theater missile sites. Inert unless the setting is on. |
 | `minefields` | off | Faked area mining via a designated cluster dispenser. **§57 is shelved** — inert, code retained. |
 | `vietnamops` | on | The Vietnam Ops suite (Arc Light, flak gauntlet, naval gunfire, convoy interdiction, harassment, Super Gaggle, FAC(A), snake-and-nape) plus the generic frontline-artillery runtime. |
 

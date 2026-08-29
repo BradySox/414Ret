@@ -21,7 +21,7 @@ Every plugin's **config-script load is deferred and bundled** into a single miss
 in `inject_plugins()` before the late-init pass) — the same one-trigger shape the late-init pass
 already uses. **Why:** DCS silently drops some mission-start `DoScriptFile` triggers on a heavy
 mission — a flown Red Tide turn had the `vietnamops`/`mobilemissiles`/`commsjam` config loads never
-execute (`§36`/`§49`/`§51` dead) while adjacent, byte-identically-wired loads fired; the `.miz` was
+execute (`§36`/`§49`/`§51` dead — `§49` has since been removed) while adjacent, byte-identically-wired loads fired; the `.miz` was
 provably correct (funcStartup wired, conditions `return(true)`, resource map + packaged files all
 right), so the drop is DCS-side. Bundling into one trigger keeps any one config from being dropped.
 Only the **config** loads defer (`config_work_orders`, `defer=True`); each plugin's options table is

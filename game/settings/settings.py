@@ -586,14 +586,13 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                 ],
             ),
             (
-                # In-mission life on the ground: cosmetic siege damage, indirect
-                # fire on forward strips, and shoot-and-scoot missile sites.
+                # In-mission life on the ground: cosmetic siege damage and
+                # indirect fire on forward strips.
                 "Battlefield life",
                 [
                     "base_battle_damage",
                     "artillery_base_harassment",
                     "artillery_harassment_reach_km",
-                    "mobile_missile_relocation",
                     "civilian_air_traffic",
                     "ambient_supply_convoys",
                     "convoy_ambush",
@@ -760,7 +759,6 @@ FEATURE_GATE_FIELDS: dict[str, list[str]] = {
         "cruise_missile_auto_raids",  # §63
         "cargo_ship_convoys",  # §78
         "coastal_batteries_engage_ships",  # §78
-        "mobile_missile_relocation",  # §49
         "naval_weapon_release_stagger",  # §81
         "naval_magazines",  # §81
     ],
@@ -3203,20 +3201,6 @@ class Settings:
             "forward fields sit a little farther back). Only used when 'Frontline "
             "artillery harassment on forward airbases' is on; the Vietnam Ops siege "
             "toggle keeps its own theater-wide reach."
-        ),
-    )
-    mobile_missile_relocation: bool = boolean_option(
-        "Mobile missile sites relocate (shoot and scoot)",
-        page=MISSION_GENERATION_PAGE,
-        section=GENERAL_SECTION,
-        default=True,
-        detail=(
-            "Mobile theater-missile sites (SCUD/SSM groups -- never the radar SAM "
-            "network) drive to a new position every few minutes during the mission "
-            "instead of parking where your last recon photographed them, so the "
-            "SCUD hunt is a hunt for something that moves. Movement only: kills "
-            "record normally, the site stays within a few km of its campaign-map "
-            "position, and nothing changes at turn end. Applies to both sides."
         ),
     )
     dtc_data_cartridges: bool = boolean_option(

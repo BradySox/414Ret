@@ -9,10 +9,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
-      - uses: psf/black@stable
         with:
-          src: "."
-          options: "--check"
+          python-version: "3.11"
+      # Pinned to requirements.txt rather than psf/black@stable: a floating
+      # action version reformats on Black's release schedule, not ours.
+      - name: Install Black
+        run: python -m pip install "$(grep '^black==' requirements.txt)"
+      - name: Black
+        run: black --check .
 
   mypy:
     name: Type checking

@@ -2380,6 +2380,26 @@ defect that reached a build, most of them found by flying.
   flown file had 4), which only inflated the untracked count. Full forensics in
   `docs/dev/design/414th-scenery-kill-tracking-notes.md` §0. Tests
   `tests/test_final_debriefing.py`. Upstream-shared; carve candidate post-freeze.
+- **A building objective sharing its zone with indestructible scenery was never credited
+  (fixed 2026-08-30).** Adopted from upstream
+  [#957](https://github.com/dcs-retribution/dcs-retribution/pull/957) (juanjux), open not merged.
+  The `MapObjectIsDead` trigger per white zone is true only once **every** map object in that
+  polygon is dead, and many hold scenery with no destructible body — a `WOODPILE_01` reports a
+  life of `1e38` — so those objectives read intact however often they were flattened. DCS does
+  report the death, but `getName()` on scenery returns a numeric id, so the id went into
+  `dead_events` and the debriefing, which resolves scenery by trigger-zone name, discarded it.
+  Upstream measured one Kola mission at 978 scenery deaths, 15 of them direct hits on named
+  objectives, with three objectives recording nothing across three turns while being levelled
+  each time. Now `LuaGenerator._seed_scenery_objectives` emits every `SceneryUnit`'s name,
+  position and alive state as `RETRIBUTION_SCENERY_ZONES`, and `dcs_retribution.lua` credits a
+  numeric-named `S_EVENT_DEAD` to the nearest objective within **30 m** — a measured threshold
+  (29 m hit, 31 m collateral), one-shot per zone, already-dead objectives seeded so the
+  mission-start rubble replay cannot mis-credit a live neighbour. `generate_on_dead_trigger_rule`
+  and its 342-per-mission triggers are deleted; unmatched scenery is dropped rather than
+  appending a useless id, which also shrinks `state.json`. **This does not touch the fork's
+  culling exemption** — that lives in `GroundObjectGenerator.generate`. Rationale, the answered
+  objections and what stays open: `414th-scenery-kill-tracking-notes.md` §8.6. In-game pass
+  **B63**.
 - **The Lua bridge dropped every scalar on a mixed item (fixed 2026-08-16).**
   `LuaData.serialize` branched either/or: `if self.objects:` emitted only the nested
   tables, `else:` only the key/values. An item holding **both** — the shape you get

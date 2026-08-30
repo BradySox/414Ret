@@ -32,6 +32,35 @@ Adoption log:
 |---|---|---|
 | 2026-08-07 | head `9f7d5edc` | The whole feature (414Ret#805). Two defects found by reading and fixed on the way in: the survivor beacon named a file that exists nowhere in the tree, and the pickup waypoint briefed a hover above MOOSE's winch ceiling. |
 | 2026-08-17 | commit `82b3ab10` | Phase 5, in full. See below. |
+| 2026-08-30 | commit `687cb3ee` | The AI-rescue fallback guard. We carried the bug byte-identically. **Not taken:** commit `2abd88e8`, which surfaces this turn's captures in the debrief — a feature, not a defect, and it lands on `debriefing.py` / `QDebriefingWindow.py` where §4 and §29 live. |
+
+### The AI-rescue fallback credited flights the mission had already answered (2026-08-30)
+
+`commit_csar_results` resolves rescues in two passes: Ops.CSAR pickups in `state.json` are
+authoritative, and a fallback credits a surviving AI CSAR flight that targeted a downed pilot.
+The fallback had no test for whether the flight was **in the mission at all**.
+
+So an AI CSAR flight that was generated, flew, and came home without completing the pickup was
+credited with the rescue anyway — Ops.CSAR's silence was read as "no report" instead of "reported
+nothing". Two consequences:
+
+- Rescues are invented. The pilot returns to recovery having never been picked up.
+- The debrief disagrees with the in-progress screen, which is rendered *before* results commit and
+  so can never see a fallback rescue.
+
+The fix is one set and one guard: `flown` is every flight in `debriefing.unit_map.aircraft`, and a
+flight in it skips the fallback. What remains is exactly the case the fallback exists for — flights
+the simulation resolved *before* the `.miz` was generated, which never had a chance to report. That
+branch now logs when it fires, because it is the only path that can produce the disagreement above.
+
+Adopted from upstream #929 commit `687cb3ee`. Three tests in `tests/test_csar.py`
+(`test_simulated_ai_flight_rescues_via_the_fallback`,
+`test_flown_ai_flight_needs_the_mission_to_confirm_the_rescue`,
+`test_flown_ai_flight_is_credited_when_the_mission_confirms_it`).
+
+**Watch on the next CSAR fly:** a rescue count in the debrief that exceeds what the in-progress
+screen showed now means the pre-generation branch fired, and the log line names the pilot. Before
+this fix it meant nothing at all.
 
 ### The King — fixed-wing CSAR (2026-08-26)
 

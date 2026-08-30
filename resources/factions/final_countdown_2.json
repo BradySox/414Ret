@@ -25,7 +25,9 @@
     "AH-64D Apache Longbow",
     "OH-58D(R) Kiowa Warrior",
     "CH-47F Block I",
-    "UH-60A"
+    "UH-60A",
+    "UH-60L",
+    "MH-60L DAP"
   ],
   "awacs": [
     "E-2C Hawkeye"

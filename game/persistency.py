@@ -434,8 +434,9 @@ class MigrationUnpickler(pickle.Unpickler):
 
 
 def _create_dir_if_needed(path: Path) -> Path:
-    if not path.exists():
-        path.mkdir(755, parents=True)
+    # 755 as a decimal literal is 0o1363, which leaves the directory unlistable
+    # by its owner on Linux/macOS. Upstream #915.
+    path.mkdir(parents=True, exist_ok=True)
     return path
 
 

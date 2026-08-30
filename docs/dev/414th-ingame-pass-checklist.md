@@ -954,17 +954,31 @@ stops at 6, and logs the cap.
 
 **History:** opened 2026-08-16 from the user's flown report ("Bombs hit and destroyed the target but it was not tracked in retribution"), session `c86c58dd`. **Root cause found and fixed the same day — it was never the scenery-tracking path.** The player aborted a ~100-second run of the turn-2 mission; DCS wrote `state.json` with `mission_ended`, `PollDebriefingFileThread` consumed it, logged "Mission end detected; stopping poll" at 14:05:24 and broke out permanently (its only staleness guard is an mtime newer than the `.miz`, which an aborted run of that same `.miz` satisfies). The real 49-minute sortie followed; at 14:58:41 the turn committed that two-minute snapshot. Three Tuapse dock buildings (`TARANTULA`) were destroyed and recorded by zone name in the final `state.json`, and stood untouched in the save. Rebuilding a `Debriefing` from that same file credits all three and committing it flips them dead — which is what proves the snapshot, not the matching, was at fault. Fixed in `game/finaldebriefing.py` (the commit re-reads `state.json`); `tests/test_final_debriefing.py`; forensics in `414th-scenery-kill-tracking-notes.md` §0.
 
+**2026-08-30 — a SECOND cause was found and fixed, and this row now covers both.** Upstream
+[#957](https://github.com/dcs-retribution/dcs-retribution/pull/957) (adopted; open upstream, not
+merged) found that an objective whose zone also holds indestructible scenery could never be
+credited: the `MapObjectIsDead` trigger needs *every* object in the polygon dead, and a
+`WOODPILE_01` reports a life of `1e38`. Measured on one Kola mission at 978 scenery deaths, with
+three objectives recording nothing across three turns while being levelled each time. Deaths are
+now matched to the nearest objective by position in `dcs_retribution.lua` (30 m, measured), and
+the triggers are gone. Our own note had ruled a position matcher out — correctly, for the
+*Python-side* table it measured; the Lua-side match was never tested. See
+`414th-scenery-kill-tracking-notes.md` §8.6.
+
 Needs a flight to confirm the fix end to end. The cheap version deliberately reproduces the trap:
 
 1. Generate a turn with a strike on a **map-scenery** target (a port, factory or terminal drawn as white zones — not a spawned static).
 2. **Launch the mission, quit to the menu after ~1 minute, then relaunch and fly it properly.** That is the exact condition that broke it.
 3. Destroy the target late in the sortie, land, accept the results.
 
-- **Pass:** the target reads destroyed on the next turn's map, and `retribution.log` carries the new warning `state.json on disk carries N recorded events but the last polled debriefing had only M — committing the fresh read`.
+- **Pass (cause 1, the snapshot):** the target reads destroyed on the next turn's map, and `retribution.log` carries the new warning `state.json on disk carries N recorded events but the last polled debriefing had only M — committing the fresh read`.
+- **Pass (cause 2, the matcher):** `dcs.log` carries `Scenery objectives: N known, M already destroyed, match radius 30 m` at mission start, and one `Objective destroyed: '<zone name>' (D m from the hit)` per building you flatten. Every credited zone name appears in `state.json`'s `dead_events`. Pick a target whose zone sits in clutter — a dockside or built-up objective, not an isolated one — because a zone with no indestructible neighbour would have passed before this fix too.
 - **Fail signatures:**
   1. **Target still standing** — the fresh read did not happen or was rejected; check whether the log instead says the fresh read had *fewer* events (the shrink guard fired, meaning `state.json` was mid-write or already replaced).
   2. **No warning line at all and the target IS recorded** — fine, that is the ordinary case where the watcher never stopped early.
   3. **Results double-counted** (a kill charged twice) — the fresh read and the polled snapshot both committed; stop and re-read `_process_turn`.
+  4. **`Objective destroyed` fires for a building you did NOT hit** — the 30 m radius is catching collateral. It was measured at 29 m hit / 31 m collateral, so report the distance in the log line before changing it; do not lower it below 30.
+  5. **No `Scenery objectives:` line at all** — `RETRIBUTION_SCENERY_ZONES` never reached the mission. Check the `Building objectives (positions)` TriggerStart survived generation; a dead plugin can get a mission-start trigger dropped.
 
 ### B64 — The datalink era gate: the SA page populates when it should · datalink · ☑ VERIFIED
 

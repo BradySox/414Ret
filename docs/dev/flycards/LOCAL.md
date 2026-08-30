@@ -82,16 +82,25 @@ and stay within ~10 NM for ten minutes. **~25 min.**
 ### 2 · A target you destroyed stays destroyed next turn — `B63`
 
 **Try:** frag a strike on a **map-scenery** target (a port, factory or terminal drawn as white
-zones — not a spawned static). Launch the mission, **quit to the menu after about a minute,
-then relaunch and fly it properly.** Destroy the target, land, accept the results. **~30 min.**
+zones — not a spawned static). **Pick one sitting in clutter** — a dockside or built-up
+objective, not an isolated building. Launch the mission, **quit to the menu after about a
+minute, then relaunch and fly it properly.** Destroy the target, land, accept the results.
+**~30 min.**
 
-- **Pass:** the target reads destroyed on the next turn's map, and `retribution.log` carries
-  `state.json on disk carries N recorded events but the last polled debriefing had only M —
-  committing the fresh read`.
-- **Fail:** the target is still standing next turn, or a kill is charged twice.
-- **Why it's here:** the quit-and-relaunch is the exact condition that broke it, and it is the
-  one thing an ordinary sortie will never do by accident. The root cause was found and fixed
-  the same day it was reported and has never been confirmed end to end.
+- **Pass (the snapshot fix):** the target reads destroyed on the next turn's map, and
+  `retribution.log` carries `state.json on disk carries N recorded events but the last polled
+  debriefing had only M — committing the fresh read`.
+- **Pass (the matcher, new 2026-08-30):** `dcs.log` carries `Scenery objectives: N known, M
+  already destroyed, match radius 30 m` at mission start, then one `Objective destroyed:
+  '<zone>' (D m from the hit)` per building you flatten.
+- **Fail:** the target is still standing next turn, a kill is charged twice, or `Objective
+  destroyed` fires for a building you never hit (report the logged distance before anyone
+  changes the 30 m radius).
+- **Why it's here:** this row now covers **two independent causes**, both real. The
+  quit-and-relaunch is the exact condition that broke the first and is the one thing an ordinary
+  sortie never does by accident. The second — an objective sharing its zone with indestructible
+  scenery, so it could never be credited at all — was fixed 2026-08-30 from upstream #957 and
+  is why the target must sit in clutter: an isolated zone would have passed before the fix too.
 
 ## Done
 

@@ -1280,8 +1280,10 @@ silently.
 
 Test 24 (Caucasus, Turkey, F-16C bl.50) was **generated at 16:22, before the
 racetrack fix landed at 16:47** — its `.miz` carries one route point and two
-pilots, so it is provably the test-23 build. That makes it an unplanned
-replication, and it replicates exactly:
+pilots, so it is provably the test-23 build. It was flown for the Iron Gate
+turn-1 questions, not for §96 -- the same session is the evidence on checklist
+row B99 -- so what it gives §96 is an unplanned replication, and it replicates
+exactly:
 
 | | Leader | Wingman |
 |---|---|---|

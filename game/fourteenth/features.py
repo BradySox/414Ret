@@ -288,8 +288,7 @@ FEATURES: tuple[Feature, ...] = (
         "mobile_missile_relocation",
         "Mobile missile relocation (the SCUD hunt)",
         49,
-        plugin_id="mobilemissiles",
-        settings_fields=("mobile_missile_relocation",),
+        retired=True,
     ),
     Feature(
         "convoy_ambush",

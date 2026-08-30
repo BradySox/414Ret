@@ -397,7 +397,7 @@ and was proven"). The vanilla Silkworm battery is a fixed emplacement — `hy_la
 `Silkworm_SR` are both in `IMMOBILE_UNIT_IDS` on the flown evidence in §49 — so the 9 emitted
 sites below included 7 that could never drive. If this campaign is ever built, its Silkworms
 stay put and the Praying Mantis content has to come from somewhere else. The rest of the
-paragraph is kept as the record of what was tried. §49 (`mobile_missile_relocation`)
+paragraph is kept as the record of what was tried. §49 (`mobile_missile_relocation`, removed 2026-08-29)
 deliberately excludes `coastal` sites, so the Silkworm batteries didn't move. Added an **opt-in
 `coastal_missile_relocation`** setting (Mission Generation → Battlefield life, default OFF): the
 emitter (`mobilemissileluadata.py`) now emits `coastal` TGOs too when it's on, feeding the same

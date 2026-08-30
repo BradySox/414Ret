@@ -95,6 +95,17 @@ class Removed:
 
 REMOVED: tuple[Removed, ...] = (
     Removed(
+        # S49. Deliberately NOT a bare "shoot and scoot": MANTIS displaces its
+        # own SAMs and EWRs, and two live wiki pages say so in those words. Only
+        # theatre-missile / SCUD / PLARF phrasing belongs here.
+        "mobile missile relocation, the SCUD hunt (S49)",
+        "2026-08-29",
+        r"mobile_missile_relocation|mobilemissiles"
+        r"|(SCUD|PLARF|theat(er|re)[ -]missile)[^.]{0,60}(shoot and scoot|relocate)"
+        r"|launchers relocate|relocate mid-mission",
+        allow=("removed", "Removed:", "no longer", "historical"),
+    ),
+    Removed(
         "SCAR / the Sandy rescue escort (S15)",
         "2026-08-07",
         r"\bSandy\b|FlightType\.SCAR|Jolly Green|auto_combat_sar|snatch party"

@@ -209,7 +209,7 @@ class TestAaaSiteSleep:
 
     def test_the_toggle_widens_nothing_but_gun_sites(self) -> None:
         """Regression guard for the categories the AAA door must NOT open. The
-        missile/coastal sites in particular are the mobilemissiles scoot movers
+        missile/coastal sites in particular are movers
         (§49), whose routes a sleeping controller would kill -- and their launchers
         report a detection range of 0, so only the category check stops them."""
         scud = _tgo("missile", "0213 | SCUD", [_gun()])

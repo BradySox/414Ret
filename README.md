@@ -49,7 +49,6 @@ Most of this is opt-in. Full list with toggles, defaults and known limitations:
   before it can be struck.
 - Insurgent contacts — roadside IEDs, HVT convoys, dispersed cells — are the exception: they
   show as a dashed "somewhere in here" circle until you localize them.
-- Mobile missile launchers relocate mid-mission, within a few km of their campaign position.
   The radar SAM network does not move.
 - TARPS is a player task (F-14, RF-101B, RA-5C), flown to locate command posts.
 - Also: approximate target-area mode, mobile SAMs hidden from player datalink, a fog reveal
@@ -323,7 +322,7 @@ Most of this is opt-in. Full list with toggles, defaults and known limitations:
 - **Second Island Chain** — a Taiwan crisis went kinetic; the opening salvo cratered Guam's ramps
   while amphibious groups took Rota, Tinian and Saipan. Hold the remaining ramp and fight north.
   A modern PLA air-defence belt (S-300PMU-2 on Tinian, HQ-22 on Rota, HQ-7 and HQ-17A point
-  defence), road-mobile PLARF launchers that shoot and scoot, three PLAN carrier groups and a
+  defence), road-mobile PLARF launchers, three PLAN carrier groups and a
   Badger regiment. Both fleets trade cruise missiles from finite magazines. The islands aren't
   connected, so no ground front forms — islands change hands by air assault, helicopter off the
   LHA or C-130J paradrop.

@@ -12,7 +12,7 @@ cost of hundreds of garrison units actually goes.
 Safety is decided HERE, in Python, as a positive list -- the plugin never guesses:
 
 * ``armor``-category TGO groups are always eligible. Theater/coastal missile sites
-  (the mobilemissiles movers), ships, motorpool depots (already inert by
+  ships, motorpool depots (already inert by
   construction) and building TGOs are never emitted.
 * ``aa``-category (gun) sites join only under ``perf_aaa_site_sleep`` and only when
   they pass ``_air_defense_group_may_sleep`` -- see below. Dedicated ``ewr`` sites

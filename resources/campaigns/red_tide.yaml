@@ -243,12 +243,6 @@ settings:
   # untouched -- a decapitated red still defends. Default OFF; preseeded ON here because this
   # laydown is one of the very few with a real, per-base, destroyable command network to key on.
   c2_decapitation_effects: true
-  # §49 mobile-missile relocation (the SCUD hunt) -- red fields two SS-1C Scud-B batteries in
-  # the rear (near Wittstock and forward off Haina). With this on they shoot-and-scoot during
-  # the mission, so the launcher is never quite where the last pass left it. Default ON;
-  # runtime lives in the mobilemissiles plugin
-  # (preseeded below, same saved-default-off reasoning as the others).
-  mobile_missile_relocation: true
   # §61 host red-interceptor scramble -- the game master's "give the boys something to
   # shoot" button, built off the M1 debrief ("once the first wave was over it felt
   # quiet"). An F10 "HOST: Red Scramble" menu clones a 2/4-ship red fighter flight at
@@ -262,13 +256,12 @@ settings:
   # defaults disabled "Vietnam Ops (period mechanics)" -- reasonable on a
   # conventional-campaign squadron -- doesn't silently lose the feature. Layered
   # over their defaults like every other recommended setting; still uncheckable
-  # in the wizard. Same reasoning preseeds the commsjam plugin for §51 and the
-  # mobilemissiles plugin for the §49 SCUD hunt. (§50's ambush spring needs no
-  # plugin -- it is authored as native DCS trigger rules at generation.)
+  # in the wizard. Same reasoning preseeds the commsjam plugin for §51.
+  # (§50's ambush spring needs no plugin -- it is authored as native DCS
+  # trigger rules at generation.)
   plugins:
     vietnamops: true
     commsjam: true
-    mobilemissiles: true
     # advanced_iads (line 33) is this laydown's centerpiece, and mantisiads owns its entire
     # runtime -- MANTIS ships inside the bundled MOOSE, so this plugin is the only consumer
     # of the emitted IADS table. Off, the IADS command unit is skipped at generation AND the

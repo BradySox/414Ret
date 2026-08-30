@@ -151,10 +151,6 @@ settings:
   # not just SAM autonomy -- as the player bombs the HQs, red's offensive targeting gets
   # sloppier. Reactive defense untouched. This laydown ships a real per-base C2 network to key on.
   c2_decapitation_effects: true
-  # §49 mobile-missile relocation: a coastal SS-26 Iskander battery in the red rear (in the
-  # .miz) shoots-and-scoots during the mission, so the launcher is never quite where the
-  # last pass left it.
-  mobile_missile_relocation: true
   # §50 convoy escort/ambush: NATO supply convoys run the rear roads to the front; concealed
   # recon-team ambushes dig in along the route. Fly CAS/BAI escort or the column is ground down.
   convoy_ambush: true
@@ -181,9 +177,8 @@ settings:
   plugins:
     # advanced_iads (top-level) is this laydown's centerpiece; mantisiads owns its whole runtime.
     mantisiads: true
-    # §49 SCUD hunt, §51 comms jam, §61 host scramble, §36/artillery harassment.
+    # §51 comms jam, §61 host scramble, §36/artillery harassment.
     # (§50's ambush spring is authored as native DCS triggers -- no plugin.)
-    mobilemissiles: true
     commsjam: true
     redscramble: true
     vietnamops: true

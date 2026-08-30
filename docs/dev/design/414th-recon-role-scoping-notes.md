@@ -95,12 +95,11 @@ a coordinate that actually changed, not a fact about damage.
 **Size:** medium. Needs a per-TGO "last observed position" field, a save migration, and the
 map/DTC/kneeboard consumers pointed at it.
 
-**⚠️ The mobile-missile version of this does NOT work today.** §49 relocation is
-**in-mission Lua only** (`resources/plugins/mobilemissiles/mobilemissiles-config.lua`, fed by
-`game/missiongenerator/mobilemissileluadata.py`). There is no Python-side position writeback,
-so a launcher's campaign coordinate never moves — which is what the Marianas note already
-recorded ("once photographed the coordinate stays good"). Extending B to §49 means building
-the writeback first. Do not propose "recon re-fixes a scooted SCUD" without that.
+**⚠️ There is no mobile-missile version of this any more.** §49 relocation was
+in-mission Lua with no Python-side position writeback, so a launcher's campaign coordinate never
+moved even while the site did — and it was removed 2026-08-29 after never relocating a site in a
+flown mission. A missile site's coordinate is now simply true. Do not propose "recon re-fixes a
+scooted SCUD": there is nothing to re-fix.
 
 ## Candidate C — recon produces an intel product, not campaign state
 

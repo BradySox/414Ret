@@ -24,6 +24,10 @@ C2 watcher, or before proposing a proxy unit — §5.2 and §5.4 will save you t
 does not register was reproduced, traced and fixed on 2026-08-16 (session `c86c58dd`). **The cause
 is not in this subsystem.** Nothing in §§1–9 was wrong; the kills never reached any of it.
 
+**That was one bug, not the only one. A second, independent cause was fixed 2026-08-30 — see
+§8.6.** It is in this subsystem: an objective sharing its zone with indestructible scenery could
+never be credited at all. The two are unrelated and both were real.
+
 What actually happened, from the flown files:
 
 1. The player launched the turn-2 mission, then **aborted it after ~100 seconds** and returned to
@@ -72,7 +76,7 @@ There are **two** kill-tracking mechanisms for strike targets, and only one of t
 | Target kind | Authored as | Tracked by | Reliable |
 |---|---|---|---|
 | **Spawned statics** | a `Tech_combine` marker in the campaign `.miz` → Retribution spawns a building layout | DCS `S_EVENT_DEAD` matched on the static's DCS unit name | Yes |
-| **Map scenery** | blue category zone + white per-object zones drawn in the ME over real map buildings | a `MapObjectIsDead` trigger rule per white zone, writing the **zone name** into `dead_events` | No — four failure modes, §4 |
+| **Map scenery** | blue category zone + white per-object zones drawn in the ME over real map buildings | the base script matches each scenery death to the nearest objective by position and writes the **zone name** into `dead_events` (§8.6) | Yes, since 2026-08-30 |
 
 Both kinds coexist in most campaigns. That alone produces "some track, some don't".
 
@@ -212,8 +216,11 @@ Ranked by how likely they are to explain the Discord reports.
    changed those IDs across map updates, which is exactly why the project moved to the trigger-zone
    approach it uses now. Fully map-dependent — matches the "some maps aren't set up for it"
    instinct.
-2. **Non-destructible map objects.** Some scenery has no destructible body. A zone assigned to one
-   will never satisfy the condition, whatever the player does to it.
+2. **Non-destructible map objects — FIXED 2026-08-30, see §8.6.** Some scenery has no destructible
+   body. Because `MapObjectIsDead` was true only once **every** object in the zone was dead, one
+   indestructible neighbour (a `WOODPILE_01` reports a life of `1e38`) held the whole objective
+   alive forever. This was the mode that actually bit, and it is now gone: the trigger is no longer
+   generated and deaths are matched by position instead.
 3. **Circular-zone shrink.** `add_trigger_zone_for_scenery` keeps quad-zone polygons verbatim but
    **rebuilds circular zones at a 16 ft (4.87 m) radius**, discarding the authored radius. Audit of
    all 73 shipped campaigns (§6): **3040 white zones, 2903 quad, 137 circular**, all with valid
@@ -479,9 +486,14 @@ sortie changes that.
 
 ---
 
-## 8. Position matching — measured, and it does not work today
+## 8. Position matching — the Python-side table cannot feed it; the Lua side can
 
-**This section was rewritten 2026-08-08 after the claims in it were checked against flown saves.
+**Read §8.6 first. §§8.1–8.5 are correct about the path they measured — the Python-side
+`destroyed_objects_positions` table — and that path is still unusable. They do not describe the
+path that was built: matching at event time in Lua, where the position is available and
+ungated. The section title said "does not work today" and was read as "cannot work".**
+
+**§§8.1–8.4 were rewritten 2026-08-08 after the claims in them were checked against flown saves.
 The original version was wrong in a way that would have wasted the work. It is reconstructed at
 §8.4 so the mistake is not repeated.**
 
@@ -583,6 +595,62 @@ Only one thing is consumed only by `record_carcasses`, and that part was right:
    position matching was sold as. It is simply correct when the ids agree.
 3. **Weigh it honestly against doing nothing.** In the only flown sample that contains scenery
    kills, the existing trigger caught 11 of 11. A third path would have added zero.
+
+### 8.6 BUILT 2026-08-30 — matched in Lua, adopted from upstream #957
+
+Adopted from [dcs-retribution#957](https://github.com/dcs-retribution/dcs-retribution/pull/957)
+(juanjux), which is open upstream, not merged. It fixes §4 mode 2.
+
+**What §§8.1–8.5 got right, and the one thing they did not ask.** The measurement was of
+`destroyed_objects_positions`, the table the Python side reads. That table really does contain no
+buildings, for the reason §8.2 gives, and a matcher fed from it really cannot be built. What was
+never measured is the same match done **in Lua at event time**, inside the `S_EVENT_DEAD` handler,
+where `getPoint()` works on the initiator and none of the four gates has run yet. That is where it
+is now done, so §8.2's gate analysis does not apply to it.
+
+**§8.5's third bullet was measured on too narrow a sample.** It read: *"in the only flown sample
+that contains scenery kills, the existing trigger caught 11 of 11. A third path would have added
+zero."* True of those two Red Tide saves. Not true generally — upstream measured one Kola mission
+at **978 scenery deaths, 15 of them direct hits on named objectives**, with **three objectives
+recording nothing across three turns while being levelled each time**. Red Tide's zones happened
+not to contain indestructible scenery; Kola's do.
+
+**The mechanism.**
+
+- `LuaGenerator._seed_scenery_objectives` emits `RETRIBUTION_SCENERY_ZONES` — every `SceneryUnit`
+  with its name, position and alive/dead state — as one `TriggerStart` `DoScript`.
+- `dcs_retribution.lua` matches a numeric-named `S_EVENT_DEAD` initiator to the nearest zone and
+  appends that **zone name** to `dead_events`, which is the key `unit_map.add_scenery` already uses.
+- `generate_on_dead_trigger_rule` is deleted. The `MapObjectIsDead` triggers go with it — 342 in one
+  mission.
+- Unmatched scenery is dropped instead of appending its id, which also takes several hundred dead
+  entries out of `state.json`.
+
+**Constraints, and how each §8.3 objection is answered.**
+
+- **`SCENERY_MATCH_RADIUS = 30` is measured, not chosen.** The tightest successful match observed was
+  **29 m**; collateral died from **31 m** out. Do not lower it below 30.
+- **Coordinate frame** — `point.x → zone.x`, `point.z → zone.y`, Lua `y` (altitude) discarded. This is
+  the trap §8.3 named; the shipped code does it correctly, so do not "fix" it.
+- **Over-crediting** — nearest-wins plus a one-shot latch per zone (`scenery_zone_reported`), not
+  credit-all-within-N. This is the answer to §8.3's second bullet.
+- **Already-dead objectives are still seeded**, marked dead and pre-counted. They are in the list to
+  *own* the deaths around them: the destruction zone replays their rubble at mission start, and those
+  deaths would otherwise be credited to whichever live objective was nearest.
+- **The fork's culling exemption is untouched.** It lives in `GroundObjectGenerator.generate`, not in
+  `add_trigger_zone_for_scenery`, so §4 mode 4's settled position stands unchanged.
+
+**Not settled, and flagged by the author.** A `_CRASH` rubble model dying also credits the objective.
+At 0–1 m it is the same spot and the latch stops a double count, but it has had no explicit decision.
+
+**Still open, unchanged by this.** Failure mode 1 (ED churns object ids across map updates) is
+untouched — position matching does not depend on ids, but the authored zones still have to sit on the
+buildings. Mode 3 (circular-zone shrink to 4.87 m) is unaffected either way: the match is to the
+zone's *position*, not its radius, so a shrunk zone now matters less than it did.
+
+**In-game pass: B63.** The LOCAL fly card row for it is unchanged and is now the falsifier for this.
+
+---
 
 ---
 

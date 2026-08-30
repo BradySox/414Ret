@@ -3,9 +3,10 @@
 A scenery objective's map buildings exist whether or not the campaign spawns
 anything, so a culled trigger zone leaves a bombable, visibly-collapsing
 target whose death is never recorded — the kill silently vanishes at debrief.
-The apparatus (trigger zone, MapObjectIsDead rule, IADS command stand-in)
-costs nothing, so it generates regardless of culling; culling keeps its
-performance win for real spawnable content.
+The apparatus (trigger zone, IADS command stand-in) costs nothing, so it
+generates regardless of culling; culling keeps its performance win for real
+spawnable content. The kill itself is credited by position in the base script
+(upstream #957), which needs the zone this test protects.
 """
 
 from __future__ import annotations

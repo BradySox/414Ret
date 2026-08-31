@@ -269,6 +269,24 @@ Most of this is opt-in. Full list with toggles, defaults and known limitations:
 
 ---
 
+### Training
+
+- **Formation Lead Trainer — find out whether your flying is followable.** The DCS AI
+  wingman holds position no matter what you do, so leading with it teaches you nothing;
+  the first feedback a lead gets on an unflyable turn is a human overshooting into him.
+  This flies a **virtual wingman** on your wing that is rate-limited like a person — he
+  reacts late, his throttle and G run out, and he falls out of position where a human
+  would. He calls out the roll-ins and turns he cannot stay with while you fly, and the
+  F10 menu gives a scored debrief. Pick the spacing you are grading against — fingertip,
+  route, 0.5 nm cruise or 1.5 nm combat spread — and the limits move with it, because the
+  speed a wingman needs on the outside of a turn scales with how far out he is. At 1.5 nm
+  no bank angle works at all, which is the whole reason tactical turns exist.
+- **A training mission comes with it.** `414th_formation_lead_trainer.miz` — four client
+  Hornet slots airborne over the Caucasus, a six-exercise syllabus in the briefing, and
+  the script embedded, so it needs nothing installed. The script also drops into any
+  mission as a `DO SCRIPT FILE`, or runs on a Retribution turn as a plugin (off by
+  default).
+
 ## Campaigns
 
 | Campaign | Map | Setting |

@@ -10064,3 +10064,88 @@ every `Bullseye <brg> for <nm>` cue on the SEAD and threat-intel pages.
   kneeboard row: the place before the coordinates, the unnamed fallback, and the banner.
 
 **In-game pass owed:** B98 — the bullseye is the same place it was last mission.
+
+---
+
+## §96 — Formation Lead Trainer
+
+Design note: [`docs/dev/design/414th-formation-lead-trainer-notes.md`](design/414th-formation-lead-trainer-notes.md)
+
+Built 2026-08-31. Plugin `formationlead`, **default off**. No Python side, no setting, no
+emitter — the plugin is read-only telemetry plus text output, so there is nothing for a
+positive list to bound.
+
+### What it is
+
+A training aid that grades how followable the player's flying is. It runs a **virtual
+wingman** — a point mass with a delayed, saturated control loop — that falls out of
+position where a human would, instead of holding station like the DCS AI. Live coaching
+calls during the flight, a scored debrief on the F10 menu.
+
+It answers a specific complaint: the AI wingman gives a lead no signal at all, so the
+first feedback he gets on an unflyable turn is a human overshooting into him.
+
+### The model
+
+Two equations, and every limit derives from them rather than being set per formation:
+
+- `Δv = ω · d` — the outside man's speed demand
+- `a = d · ω̇` — the rate at which he must acquire it
+
+Both scale linearly with spacing, which is the lesson. Derived limits:
+
+| Formation | Lateral | Turn | Roll-in | Roll rate |
+|---|---|---|---|---|
+| Fingertip | 59 ft | 95.5 °/s | 7.96 °/s² | 33.3 °/s |
+| Route | 492 ft | 11.5 °/s | 0.96 °/s² | 30.0 °/s |
+| Cruise (0.5 nm) | 2953 ft | 1.91 °/s | 0.16 °/s² | 25.0 °/s |
+| Combat spread (1.5 nm) | 9121 ft | 0.62 °/s | 0.05 °/s² | 20.0 °/s |
+
+At 1.5 nm no bank angle is followable — the tool *derives* why tactical turns exist.
+
+### Faults it calls
+
+`roll` (roll-in faster than #2 can match) · `turn` (tighter than the spacing allows, with
+the knots the outside man is short) · `accel` (snap roll-in, with the G of throttle
+demanded) · `g` (formation-breaking pull) · `compound` (heading, altitude and speed
+changed together) · `wide` / `lost` (#2 driven out of position) · `danger` (overshoot
+inside the mid-air threshold with closure).
+
+Faults are counted as **episodes, not samples** — per-sample counting reported `wide=177`
+for one roll-in.
+
+### Where it runs
+
+Three ways, same script:
+
+1. **Any mission** — `DO SCRIPT FILE` on `formation_lead_trainer.lua`.
+2. **The bundled training mission** — `resources/missions/414th_formation_lead_trainer.miz`,
+   four client Hornet slots airborne over the Caucasus with the script embedded inline and
+   a six-exercise syllabus in the briefing. Rebuild with
+   `python tools/build_formation_lead_mission.py`. Embedded as `DO SCRIPT` text, not a file
+   resource, so re-saving it from the editor on another machine cannot break it.
+3. **A Retribution turn** — tick the plugin.
+
+### Gotchas
+
+- **Roll is horizon-referenced** (`forward × world-up`) and degenerates pointing straight
+  up or down. Guarded here; **MOOSE's `POSITIONABLE:GetRoll()` is not** and returns nan.
+  Do not replace this with MOOSE's copy.
+- **Measure the position error before integrating the step.** Measuring after compares the
+  wingman at `t+dt` against the slot at `t` — a constant `v·dt` bias, 15.4 m at 300 kt,
+  gain-independent, reading as a permanent acute error. A gain sweep that does not move
+  the steady error is the diagnostic.
+- **Per-formation lag and gain are required**, not a refinement. One constant cannot fit
+  both a 60 ft and a 1.5 nm formation.
+- **The integral term is load-bearing** — without it every steady turn grades as a fault.
+- Nothing is graded below 60 m AGL or 60 m/s, so the pattern is free.
+
+### Tests
+
+`tests/lua/test_formation_lead_trainer.py` — 12 tests flying synthetic profiles through
+the real script on Lua 5.1: the `v·dt` regression, correct technique clean in all four
+formations, snap roll-ins caught, wide formations unturnable by banking, episode counting,
+and the linear-scaling identity. **Model tests, not flight tests** — they say the maths is
+self-consistent, not that the numbers are right for a Hornet.
+
+**In-game pass owed:** B110 — the virtual wingman falls out where a real one would.

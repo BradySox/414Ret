@@ -1,0 +1,13 @@
+{
+    "nameInUI": "Formation Lead Trainer",
+    "descriptionInUI": "Grades how followable your flying is. Runs a virtual wingman that is rate-limited like a human instead of glued to your wing, calls out roll-ins and turns he cannot stay with, and gives a scored debrief on the F10 menu. Training aid -- off by default.",
+    "defaultValue": false,
+    "specificOptions": [],
+    "scriptsWorkOrders": [
+        {
+            "file": "formation_lead_trainer.lua",
+            "mnemonic": "formationlead"
+        }
+    ],
+    "configurationWorkOrders": []
+}

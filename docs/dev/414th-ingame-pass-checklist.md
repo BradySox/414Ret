@@ -189,6 +189,7 @@ stress it · `✗` fail signature reproduced in-game.
 | B107 | The log stops repeating a MOOSE event error thousands of times | vendored `Moose.lua` | ☐ |
 | B108 | A stuck TIC unit names itself, and the retries are spread not concentrated | §9 TIC | ☐ |
 | B109 | Payload backups leave `UnitPayloads` and the launch error stops | §73 | ☐ |
+| B110 | The virtual wingman falls out of position where a real one would | §96 | ☐ |
 
 ---
 
@@ -6634,3 +6635,39 @@ returns nothing on the next launch.
   by hand.
 - **Backups stop being written at all** — `Retribution/PayloadBackups` was not
   creatable. §73 refuses the write rather than modifying a file it could not back up.
+
+### B110 — The virtual wingman falls out of position where a real one would · §96 · ☐ UNTESTED
+
+§96 grades followability against a point-mass wingman with a delayed, saturated control
+loop. The maths is self-consistent — 12 model tests pin it — but **every number in it is
+reasoned, not measured**: `wm_roll_max` 40 °/s, `wm_accel_max` 2.5 m/s², `wm_decel_max`
+3.5 m/s², `wm_spare_speed` 30 m/s, and the per-formation lag/gain pairs. What is untested
+is whether the model's wingman falls out where a *human* wingman falls out.
+
+**Setup.** Two humans, `resources/missions/414th_formation_lead_trainer.miz` (or any
+mission with the script loaded). Lead flies the syllabus; #2 flies real formation on him
+and calls his own state out loud — "sucked", "acute", "I can't hold this". Record both
+jets. Fly Fingertip and Route at minimum; Cruise if there is time. ~40 min.
+
+**Pass.** The tool's calls and the wingman's calls agree, in time and in kind. When #2
+says he is sucked, the debrief has a `wide` episode in that turn and the sign is aft.
+When #2 holds a turn comfortably, no fault fired for it.
+
+**Fail signatures, and what each means:**
+
+- **The tool faults turns #2 flies comfortably** — the envelope is too tight. Most likely
+  `wm_accel_max` / `wm_spare_speed` are low, or the formation's `lag` is too long. This is
+  the *expected* direction of error and the cheapest to fix.
+- **#2 falls out on a turn the tool called clean** — the envelope is too loose. Check the
+  `accel` limit first: `d·ω̇` is the term that bites, and it is the one most likely to be
+  under-weighted.
+- **The tool's calls are right but late** — the rate smoothing (`alpha` 0.35 / 0.25) is
+  eating the transient. Raise it before touching the limits.
+- **`danger` never fires even on a real overshoot** — the threshold is
+  `min(60 m, spacing/2)`; at fingertip that is 10.8 m, which a real overshoot may not
+  reach before #2 recovers.
+- **Score reads 100 % on a flight #2 called ugly** — the score is time-weighted, so a
+  short violation in a long flight barely moves it. Read the fault episode counts, not
+  just the headline. If this is the common case, the score needs a per-episode penalty.
+
+**Do not promote this row from the model tests.** They exercise the maths against itself.

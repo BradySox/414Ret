@@ -1336,11 +1336,30 @@ Measured over the shipped geometry afterwards:
   are Syria/Israel 22.8 NM, Afghanistan/India 17.3 and Iraq/Jordan 14.8 — the
   ones that were on the line.
 
-**Three zones cannot be fixed by geometry.** Bahrain (largest inscribed circle
-**5.0 NM**), Persian Gulf Oman (6.1) and Persian Gulf Iran (7.1) are smaller
-than the overshoot, so their patrols clear by 3.2–5.0 NM and will still cross
-out. Options were put to the DM rather than chosen here; nothing about those
-three is a bug to fix quietly.
+**Three zones cannot be fixed by geometry, so they fly nothing (DM call).**
+Bahrain (largest inscribed circle **5.0 NM**), Persian Gulf Oman (6.1) and
+Persian Gulf Iran (7.1) are smaller than the overshoot. A patrol that
+permanently trespasses on its neighbours is worse theatre than no patrol, so
+**the last clearance is a floor, not a fallback**: a country that cannot clear
+8 NM puts nothing up. It keeps its border, its radio calls and **its SAM**,
+which becomes its whole air defence.
+
+That needed three changes beyond the generator, because a patrol had been
+assumed everywhere:
+
+- the emitter's `assert zone.fighter_template is not None` is now a conditional;
+- the plugin read `cap_group = tostring(raw.fighterTemplate)`, which turns a
+  missing template into the group name `"nil"`;
+- and the plugin's `usable` rule **dropped an enforcing zone outright** unless
+  it carried a fighter template, so the SAM-only zone never loaded at all. An
+  enforcing zone now needs a fighter template *or* a SAM.
+  `test_a_country_with_no_patrol_still_wakes_its_sam` pins that, and it failed
+  on the first run for exactly this reason.
+
+Final measurement over the shipped geometry: **49 patrols and 3 SAM-only
+zones**, the leg at the full 12 NM in 48 of the 49, and the tightest clearances
+**8.1 and 8.2 NM — both Azerbaijan zones on the Caucasus**. Those two sit at
+the floor, so they are the ones to look at if a patrol still clips a frontier.
 
 ### Numbers, not better missiles (DM call, 2026-08-29)
 

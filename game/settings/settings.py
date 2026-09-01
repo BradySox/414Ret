@@ -3274,6 +3274,8 @@ class Settings:
             "see it before you cross. Enter and it warns you by radio at once. "
             "Stay past the engage timer, release a weapon inside the border, or "
             "fire on the patrol, and it turns hostile on your enemy's coalition "
+            "-- a country too small to orbit inside its own border flies no "
+            "patrol and answers with the SAM alone. "
             "and attacks -- and the field's SAM battery wakes. Whose airspace it "
             "is, and whether it lets you through, are read from who holds the "
             "airfields inside it. AI intruders are warned but never engaged, and "

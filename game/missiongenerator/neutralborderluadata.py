@@ -120,8 +120,11 @@ def populate_neutral_border_lua(
                 record.add_key_value("floorBlueFt", str(zone.floor_blue_ft))
             if zone.floor_red_ft is not None:
                 record.add_key_value("floorRedFt", str(zone.floor_red_ft))
-            assert zone.fighter_template is not None
-            record.add_key_value("fighterTemplate", zone.fighter_template)
+            # Absent when the country is too small to orbit inside its own
+            # border: it defends with its SAM alone, and the plugin's ladder
+            # runs with nothing to make hostile.
+            if zone.fighter_template is not None:
+                record.add_key_value("fighterTemplate", zone.fighter_template)
             if zone.sam_template is not None:
                 record.add_key_value("samTemplate", zone.sam_template)
             record.add_key_value("redCountryId", str(zone.red_country_id))

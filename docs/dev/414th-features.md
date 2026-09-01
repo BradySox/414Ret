@@ -10087,9 +10087,11 @@ with it** — they came from its `contested` bucket, so a floor is now authored
 only and a defending country defends at any height. **A refusing neutral flies a
 standing patrol inside its own border, airborne from mission generation** — a
 12 NM racetrack leg fitted inside the polygon **pulled in by a clearance** (12
-NM, then 8, 5, 3), because a racetrack overshoots each end before turning back
-and a leg that merely sits inside flies out; a country smaller than that gets a
-circle. It is visible before you cross, which is the deterrent the
+NM, then 10, then 8), because a racetrack overshoots each end before turning
+back and a leg that merely sits inside flies out. **8 NM is a floor, not a
+fallback**: a country smaller than its own turn puts no patrol up at all and
+defends with its SAM alone — Bahrain and the two Persian Gulf slivers, 3 of the
+52 shipped zones. It is visible before you cross, which is the deterrent the
 scramble never managed (three flown attempts, all too slow or too far). Cross and
 it hails you at once, and warns again at dwell; neither call launches anything.
 A player who stays past the engage timer, releases a weapon inside, or fires on

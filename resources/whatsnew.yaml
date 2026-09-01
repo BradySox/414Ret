@@ -25,11 +25,15 @@ entries:
       their patrol almost on the frontier -- India's sat six-tenths of a mile
       from its own border in a country with seventy-five miles of room -- and
       those move inland to the nearest spot with space to turn.
+      Three countries are smaller than a fighter's turn -- Bahrain, and Oman
+      and Iran's small Gulf pieces -- so rather than fly a patrol that is
+      always over somebody else, they now fly none at all and answer an
+      intrusion with their missile battery instead.
     watch: >-
       Watch a patrol go round a full circuit on the F10 map and check it stays
-      on its own side the whole way. Bahrain and the two small Gulf zones are
-      the known exceptions -- they are smaller than a fighter's turn, so
-      nothing fits.
+      on its own side the whole way. On the Persian Gulf and Iraq maps, expect
+      no fighters at all from the three small ones -- press their border and
+      the SAM should still come up.
     row: B110
   - date: 2026-08-29
     title: Border patrols now come up as four

@@ -6228,7 +6228,10 @@ the nearest point with room.
 oval rather than holding one point; **the whole circuit staying on its own side
 of the border**; the flight visible before you cross; and the SAM waking on
 escalation. Known exceptions: Bahrain and the two small Persian Gulf zones are
-smaller than a fighter's turn, so their patrols still cross out. Known and NOT a defect: the patrol keeps its era's WVR
+smaller than a fighter's turn, so they fly **no patrol at all** and defend with
+their SAM — press one of those borders and expect the battery, not fighters.
+The two Caucasus Azerbaijan zones sit at the 8 NM clearance floor, so they are
+where to look if a patrol still clips a frontier. Known and NOT a defect: the patrol keeps its era's WVR
 fit (4× AIM-9M on the F-16A), so a modern jet still out-ranges it — the DM's call
 on 2026-08-29 was to answer that with numbers rather than better missiles. Do not
 "fix" the loadout.

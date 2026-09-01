@@ -43,9 +43,12 @@ PATROL_LEG_NM = nautical_miles(12)
 
 #: How far inside its own frontier the whole orbit must sit, tried largest
 #: first. A DCS racetrack overshoots each end before turning back -- measured
-#: under 10 NM at 405 kt -- so the first value covers that with margin, and the
-#: rest are what a small country can still manage.
-PATROL_CLEARANCES_M = tuple(nautical_miles(nm).meters for nm in (12.0, 8.0, 5.0, 3.0))
+#: under 10 NM at 405 kt -- so 12 covers that with margin. **The last value is a
+#: floor, not a fallback**: a country that cannot clear it flies no patrol at
+#: all (DM call 2026-08-30). At 8 it drops exactly the three shipped zones
+#: smaller than a fighter's turn -- Bahrain and the two Persian Gulf slivers --
+#: and keeps the other 49.
+PATROL_CLEARANCES_M = tuple(nautical_miles(nm).meters for nm in (12.0, 10.0, 8.0))
 
 #: Aircraft per patrol. DM call 2026-08-29: a neutral's deterrent is numbers,
 #: not better missiles -- it keeps the era-correct WVR fit and puts up four, so
@@ -202,45 +205,76 @@ class NeutralBorderGenerator:
             origin, PATROL_LEG_NM.meters, PATROL_CLEARANCES_M
         )
         anchor = Point(centre[0], centre[1], self.mission.terrain)
-        # km/h: pydcs writes speed/3.6 onto the spawned unit records and the
-        # first waypoint, so passing m/s spawns the flight stalled (the
-        # civilian-traffic lesson).
-        group = self.mission.flight_group_inflight(
-            country=country,
-            name=fighter_name,
-            aircraft_type=aircraft,
-            position=anchor,
-            altitude=int(spawn_alt_m),
-            speed=CAP_SPEED_KPH,
-            group_size=PATROL_SIZE,
-        )
-        # A Race-Track orbit flies between its waypoint and the NEXT one, so it
-        # needs a second point. Flown 2026-08-29 with one waypoint: all three
-        # patrol leaders flew into the ground inside 43 s.
-        if leg_end is None:
-            # Too small a country to hold a cleared leg. A circle needs no
-            # second point; at that size it still crosses out.
-            pattern = OrbitAction.OrbitPattern.Circle
-        else:
-            pattern = OrbitAction.OrbitPattern.RaceTrack
+        # A country smaller than the orbit it would have to fly puts none up.
+        # DM call 2026-08-30: a patrol that permanently trespasses on its
+        # neighbours is worse theatre than no patrol. Three shipped zones are
+        # this -- Bahrain, and Oman and Iran's Persian Gulf slivers. They keep
+        # their border, their radio calls and their SAM.
+        if leg_end is None and not zone.sam:
+            logging.info(
+                "Neutral border: %s is too small to orbit inside and has no SAM, "
+                "so its border is drawn and not enforced.",
+                zone.country,
+            )
+            return NeutralBorderLuaZone(
+                country=zone.country,
+                posture=posture,
+                overflight_blue=True,
+                overflight_red=True,
+                origin_label=zone.origin_label(posture, enforced=False),
+                floor_blue_ft=floor_blue,
+                floor_red_ft=floor_red,
+                border=list(zone.border),
+                label=zone.label_point(),
+            )
+
+        patrol_name: str | None = None
+        if leg_end is not None:
+            patrol_name = fighter_name
+            # km/h: pydcs writes speed/3.6 onto the spawned unit records and the
+            # first waypoint, so passing m/s spawns the flight stalled (the
+            # civilian-traffic lesson).
+            group = self.mission.flight_group_inflight(
+                country=country,
+                name=fighter_name,
+                aircraft_type=aircraft,
+                position=anchor,
+                altitude=int(spawn_alt_m),
+                speed=CAP_SPEED_KPH,
+                group_size=PATROL_SIZE,
+            )
+            # A Race-Track orbit flies between its waypoint and the NEXT one, so
+            # it needs a second point. Flown 2026-08-29 with one waypoint: all
+            # three patrol leaders flew into the ground inside 43 s.
             group.add_waypoint(
                 Point(leg_end[0], leg_end[1], self.mission.terrain),
                 int(spawn_alt_m),
                 speed=int(CAP_SPEED_KPH),
             )
-        # km/h, NOT m/s. Every pydcs speed argument is km/h and it divides by
-        # 3.6 on write, so a "helpful" conversion here is applied twice. Flown
-        # 2026-08-29: /3.6 here put 112 kt in the task and every patrol stalled.
-        group.points[0].tasks.append(
-            OrbitAction(int(spawn_alt_m), int(CAP_SPEED_KPH), pattern)
-        )
-        group.late_activation = False
-        # The clones inherit the template's pylons, so arm it once here. An
-        # airframe with no CAP default flies guns-only rather than failing.
-        if not group.load_task_default_loadout(CAP):
+            # km/h, NOT m/s. Every pydcs speed argument is km/h and it divides
+            # by 3.6 on write, so a "helpful" conversion here is applied twice.
+            # Flown 2026-08-29: /3.6 put 112 kt in the task and every patrol
+            # stalled.
+            group.points[0].tasks.append(
+                OrbitAction(
+                    int(spawn_alt_m),
+                    int(CAP_SPEED_KPH),
+                    OrbitAction.OrbitPattern.RaceTrack,
+                )
+            )
+            group.late_activation = False
+            # The clones inherit the template's pylons, so arm it once here. An
+            # airframe with no CAP default flies guns-only rather than failing.
+            if not group.load_task_default_loadout(CAP):
+                logging.info(
+                    "Neutral border: %s has no CAP default loadout; guns only.",
+                    zone.aircraft,
+                )
+        else:
             logging.info(
-                "Neutral border: %s has no CAP default loadout; guns only.",
-                zone.aircraft,
+                "Neutral border: %s cannot fly an orbit clear of its own border, "
+                "so it defends with its SAM alone.",
+                zone.country,
             )
 
         sam_name: str | None = None
@@ -274,7 +308,7 @@ class NeutralBorderGenerator:
             origin_label=zone.origin_label(NEUTRAL),
             floor_blue_ft=floor_blue,
             floor_red_ft=floor_red,
-            fighter_template=fighter_name,
+            fighter_template=patrol_name,
             sam_template=sam_name,
             red_country_id=self.red_country_id,
             blue_country_id=self.blue_country_id,

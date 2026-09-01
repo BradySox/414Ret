@@ -107,8 +107,12 @@ for _, raw in ipairs(data.zones or {}) do
         -- fully-permitting neutral is a line on the map, so both are drawn and
         -- never scanned, carry no templates, and need no origin to be usable.
         local enforces = (posture == "neutral") and not (ofBlue and ofRed)
-        local usable = (not enforces)
-            or (raw.fighterTemplate ~= nil and has_origin)
+        -- An enforcing zone needs SOMETHING to enforce with. A country too
+        -- small to orbit inside its own border flies no patrol and defends
+        -- with its SAM alone, so a fighter template is not the requirement --
+        -- one or the other is.
+        local defends_with = raw.fighterTemplate ~= nil or raw.samTemplate ~= nil
+        local usable = (not enforces) or (defends_with and has_origin)
         if #verts >= 3 and usable then
             zones[#zones + 1] = {
                 -- Its own position in `zones`, so an intruder state (which
@@ -138,7 +142,11 @@ for _, raw in ipairs(data.zones or {}) do
                 label_z = tonumber(raw.labelZ),
                 -- The STANDING patrol's group name. It is a live neutral group
                 -- flying an orbit from mission start, not a template to clone.
-                cap_group = tostring(raw.fighterTemplate),
+                -- Absent for a country too small to orbit inside its own border
+                -- -- it defends with its SAM alone. NOT tostring(): that turns
+                -- a missing template into the group name "nil".
+                cap_group = raw.fighterTemplate and tostring(raw.fighterTemplate)
+                    or nil,
                 sam_template = raw.samTemplate and tostring(raw.samTemplate) or nil,
                 red_country = tonumber(raw.redCountryId),
                 blue_country = tonumber(raw.blueCountryId),
@@ -401,6 +409,9 @@ local function second_patrol(zone, intruder_side)
     if zone.second_group then
         return Group.getByName(zone.second_group)
     end
+    if not zone.cap_group then
+        return nil -- nothing to clone: this country flies no patrol
+    end
     local name = "NEUTRAL AF2 " .. zone.country
     local ok, err = pcall(function()
         local sp = SPAWN:NewWithAlias(zone.cap_group, name)
@@ -424,6 +435,11 @@ local function second_patrol(zone, intruder_side)
 end
 
 local function swap_to_shooting(zone, intruder_side)
+    if not zone.cap_group then
+        -- Too small to orbit inside its own border, so it never put one up.
+        -- The SAM still wakes; that is this country's whole air defence.
+        return nil
+    end
     if zone.swapped then
         if intruder_side ~= zone.engaged_side then
             -- The OTHER side has now violated the same airspace. The standing

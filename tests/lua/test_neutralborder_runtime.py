@@ -32,12 +32,13 @@ SQUARE = [
 ]
 
 
-def _config(sam: bool = True, floor_ft: str = "10000") -> dict[str, Any]:
+def _config(
+    sam: bool = True, floor_ft: str = "10000", patrol: bool = True
+) -> dict[str, Any]:
     zone: dict[str, Any] = {
         "country": "Lebanon",
         "field": "Rayak",
         "floorFt": floor_ft,
-        "fighterTemplate": "NeutralBorder|Lebanon|MiG-29A",
         "redCountryId": str(RED_COUNTRY),
         "blueCountryId": str(BLUE_COUNTRY),
         "border": SQUARE,
@@ -49,6 +50,8 @@ def _config(sam: bool = True, floor_ft: str = "10000") -> dict[str, Any]:
         "overflightBlue": "false",
         "overflightRed": "false",
     }
+    if patrol:
+        zone["fighterTemplate"] = "NeutralBorder|Lebanon|MiG-29A"
     if sam:
         zone["samTemplate"] = "NeutralBorder|Lebanon|SAM"
     return {
@@ -640,3 +643,20 @@ def test_a_hostile_patrol_takes_the_nearest_of_two_intruders() -> None:
         "intruder, or whoever escalated last"
     )
     h.assert_no_lua_errors()
+
+
+def test_a_country_with_no_patrol_still_wakes_its_sam() -> None:
+    """DM call 2026-08-30: a country too small to orbit inside its own border
+    puts no patrol up at all, rather than one that permanently trespasses on its
+    neighbours. Three shipped zones are this -- Bahrain, and Oman and Iran's
+    Persian Gulf slivers -- and the SAM is then their whole air defence, so the
+    ladder has to reach it with nothing to make hostile.
+    """
+    h = _setup(_config(patrol=False), with_patrol=False)
+    h.add_group(_intruder("Viper 1-1", 42, side=2))  # BLUE player
+    h.load_plugin_script(PLUGIN)
+    h.advance_to(400)
+
+    assert _swaps(h) == [], "a country with no patrol swapped something"
+    assert len(_sam_spawns(h)) == 1, "the SAM never woke, so nothing defends here"
+    assert any("ENGAGING" in m for m in _texts(h)), "the player was never told"

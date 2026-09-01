@@ -6216,9 +6216,19 @@ and here the wingman went in too, at 65.3 s, both at under 15 m AGL in a
 near-vertical spiral. Nothing about §96 was exercised in that session because
 the patrol was gone inside a minute.
 
+**Flown again 2026-08-30: four aircraft, orbiting — and overflying the
+neighbour** by under 10 NM past each end of the leg. A racetrack overshoots
+before it turns back, and the leg was only required to start inside the border;
+seven stations were also sitting almost on their own frontier (India's 0.6 NM
+from it, in a country with 75 NM of room). The leg is 12 NM now, fitted inside
+the border pulled in by 12 NM, and a station too close to the line is moved to
+the nearest point with room.
+
 **Re-fly must show:** all four aircraft still up ten minutes in, flying a long
-oval rather than holding one point; the flight visible before you cross; and the
-SAM waking on escalation. Known and NOT a defect: the patrol keeps its era's WVR
+oval rather than holding one point; **the whole circuit staying on its own side
+of the border**; the flight visible before you cross; and the SAM waking on
+escalation. Known exceptions: Bahrain and the two small Persian Gulf zones are
+smaller than a fighter's turn, so their patrols still cross out. Known and NOT a defect: the patrol keeps its era's WVR
 fit (4× AIM-9M on the F-16A), so a modern jet still out-ranges it — the DM's call
 on 2026-08-29 was to answer that with numbers rather than better missiles. Do not
 "fix" the loadout.

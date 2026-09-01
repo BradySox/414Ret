@@ -10086,8 +10086,10 @@ The research is kept and still supplies the airframe. **Altitude floors went
 with it** — they came from its `contested` bucket, so a floor is now authored
 only and a defending country defends at any height. **A refusing neutral flies a
 standing patrol inside its own border, airborne from mission generation** — a
-25 NM racetrack leg chosen to stay inside the polygon, or a circle for a country
-too thin to hold one. It is visible before you cross, which is the deterrent the
+12 NM racetrack leg fitted inside the polygon **pulled in by a clearance** (12
+NM, then 8, 5, 3), because a racetrack overshoots each end before turning back
+and a leg that merely sits inside flies out; a country smaller than that gets a
+circle. It is visible before you cross, which is the deterrent the
 scramble never managed (three flown attempts, all too slow or too far). Cross and
 it hails you at once, and warns again at dwell; neither call launches anything.
 A player who stays past the engage timer, releases a weapon inside, or fires on
@@ -10171,9 +10173,16 @@ target changes.
   air-spawns as a standing CAP over its own side (MOOSE `SpawnFromVec3`). The
   yaml requires exactly one of the two; both, or neither, skips the zone.
   `--auto-spawn` puts each piece's station at its own `representative_point()`,
-  so it is guaranteed inside that piece's territory.
-- **The origin names the flight; a 25 NM stand-off decides where it comes up.**
-  Measured on the first flown test (2026-08-25, Tacview): Iran's origin is the
+  so it is guaranteed inside that piece's territory — **but not away from its
+  edge**, which is why seven shipped stations sat within 10 NM of their own
+  frontier and India's within 0.6. The orbit fitter corrects that at generation
+  time rather than the station list being regenerated, because it also has to
+  handle an authored `airfield:` that happens to sit near a border.
+- ~~**The origin names the flight; a 25 NM stand-off decides where it comes up.**~~
+  **REMOVED 2026-08-29 with the scramble** — the patrol is airborne from mission
+  start, so nothing comes up on demand and there is no stand-off to pick. Kept
+  because the measurement is why the scramble was abandoned. Measured on the
+  first flown test (2026-08-25, Tacview): Iran's origin is the
   middle of its clipped polygon, so the pair spawned 224 NM behind an F-15E,
   closed to 127 NM in twelve minutes and gave up — a MiG-29A has ~80 kt on a
   cruising Strike Eagle, and *every* launch on a country that size was that

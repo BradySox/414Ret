@@ -1245,17 +1245,12 @@ BARCAP, both tankers, the AWACS, the CSAR orbit) has **13–15 route points**. T
 three neutral patrols had **one**. The tree's only single-waypoint orbit —
 `holdpoint.py` — uses `Circle`, which is the pattern that needs no second point.
 
-**The fix** is `NeutralBorderZone.patrol_leg_end`: a 25 NM leg from the anchor on
-the first of twelve bearings whose whole length stays inside the border polygon,
-shortened to 15 or 9 NM if the full leg leaves. A country too thin for even the
-short leg gets `Circle` instead. `test_the_generated_patrol_has_a_second_waypoint`
-builds the real group through the real generator and asserts two points, because
-the leg maths passing in isolation is not what shipped broken.
-
-Run against the shipped geometry, **all 52 zones across the 8 terrains get a
-racetrack** — 50 at the full 25 NM, Oman's smaller polygon at 15 and Bahrain at
-8.8. The `Circle` fallback is therefore never reached on shipped data; it exists
-for a campaign-authored polygon narrower than anything real.
+**The first fix** was `patrol_leg_end`: a 25 NM leg on the first of twelve
+bearings whose whole length stayed inside the border polygon. That got the
+patrols flying and was not enough — see *The orbit had to clear the frontier*
+below. `test_the_generated_patrol_has_a_second_waypoint` builds the real group
+through the real generator and asserts two points, because the leg maths
+passing in isolation is not what shipped broken.
 
 ### What did work, and is now proven in DCS
 
@@ -1303,6 +1298,49 @@ the session logs no escalation at all: there was nothing left to escalate with.
 
 The fix was checked against this exact zone: Turkey's spawn `(-426756, 661245)`
 yields a **25.0 NM leg**, and the patrol is now four aircraft.
+
+### The orbit had to clear the frontier, not just start inside it (2026-08-30)
+
+Flown with the 25 NM leg: **the patrols overflew the neighbouring country**,
+by the DM's read *under 10 NM past each end of the orbit*. A DCS racetrack
+overshoots before it turns back, so a leg that merely sits inside the polygon
+flies out of it. Requiring the *line* to be contained was the wrong test.
+
+**And the stations themselves were the bigger half.** Measured across the 52
+shipped zones, the distance from each station to its own border:
+
+| Zone | Station was | Its zone could hold |
+|---|---|---|
+| Afghanistan / India | **0.6 NM** | 75.4 NM |
+| Afghanistan / Iran | 2.6 NM | 82.9 NM |
+| Syria / Israel | 4.0 NM | 14.7 NM |
+| Iraq / Jordan | 4.9 NM | 26.0 NM |
+| Caucasus / Azerbaijan | 8.6 NM | 52.2 NM |
+
+Seven stations sat closer to the frontier than any orbit could clear, in
+countries with room to spare. No leg length fixes that.
+
+**`patrol_orbit` replaces `patrol_leg_end`** and does both jobs. It pulls the
+polygon in by a clearance — 12 NM first, then 8, 5, 3 — and fits the leg inside
+*that*. A station already that deep is left exactly where the campaign put it; a
+station that is not is moved to the **nearest** point that is, which is the
+smallest correction that works rather than a jump to the country's deep
+interior. The leg itself is **12 NM**, down from 25.
+
+Measured over the shipped geometry afterwards:
+
+- **All 52 zones still get a racetrack.** Nothing fell back to `Circle`.
+- **46 of 52 clear their border by 12 NM or more**; the leg is the full 12 NM
+  in 49 of them.
+- **Only 8 stations moved at all**, and six of those by under 6 NM. The largest
+  are Syria/Israel 22.8 NM, Afghanistan/India 17.3 and Iraq/Jordan 14.8 — the
+  ones that were on the line.
+
+**Three zones cannot be fixed by geometry.** Bahrain (largest inscribed circle
+**5.0 NM**), Persian Gulf Oman (6.1) and Persian Gulf Iran (7.1) are smaller
+than the overshoot, so their patrols clear by 3.2–5.0 NM and will still cross
+out. Options were put to the DM rather than chosen here; nothing about those
+three is a bug to fix quietly.
 
 ### Numbers, not better missiles (DM call, 2026-08-29)
 

@@ -39,7 +39,13 @@ CAP_SPEED_KPH = 750.0
 
 #: Racetrack leg length. Shortened automatically for a country too narrow to
 #: hold it, and dropped for a circle when even the shortest leg leaves.
-PATROL_LEG_NM = nautical_miles(25)
+PATROL_LEG_NM = nautical_miles(12)
+
+#: How far inside its own frontier the whole orbit must sit, tried largest
+#: first. A DCS racetrack overshoots each end before turning back -- measured
+#: under 10 NM at 405 kt -- so the first value covers that with margin, and the
+#: rest are what a small country can still manage.
+PATROL_CLEARANCES_M = tuple(nautical_miles(nm).meters for nm in (12.0, 8.0, 5.0, 3.0))
 
 #: Aircraft per patrol. DM call 2026-08-29: a neutral's deterrent is numbers,
 #: not better missiles -- it keeps the era-correct WVR fit and puts up four, so
@@ -183,10 +189,19 @@ class NeutralBorderGenerator:
         # The plugin swaps its coalition on escalation, which is the only way a
         # neutral ever shoots.
         if airport is not None:
-            anchor = airport.position
+            origin = (airport.position.x, airport.position.y)
         else:
             assert zone.spawn is not None  # the caller checked one origin exists
-            anchor = Point(zone.spawn[0], zone.spawn[1], self.mission.terrain)
+            origin = (zone.spawn[0], zone.spawn[1])
+        # The orbit is fitted first, because the centre can move: a station
+        # closer to the frontier than the racetrack overshoots cannot orbit
+        # without crossing it, and several are (India's is 0.6 NM from its own
+        # border). Flown 2026-08-30 before this: the patrol overflew the
+        # neighbour by under 10 NM past each end of its leg.
+        centre, leg_end = zone.patrol_orbit(
+            origin, PATROL_LEG_NM.meters, PATROL_CLEARANCES_M
+        )
+        anchor = Point(centre[0], centre[1], self.mission.terrain)
         # km/h: pydcs writes speed/3.6 onto the spawned unit records and the
         # first waypoint, so passing m/s spawns the flight stalled (the
         # civilian-traffic lesson).
@@ -202,9 +217,9 @@ class NeutralBorderGenerator:
         # A Race-Track orbit flies between its waypoint and the NEXT one, so it
         # needs a second point. Flown 2026-08-29 with one waypoint: all three
         # patrol leaders flew into the ground inside 43 s.
-        leg_end = zone.patrol_leg_end((anchor.x, anchor.y), PATROL_LEG_NM.meters)
         if leg_end is None:
-            # Too thin a country to hold a leg. A circle needs no second point.
+            # Too small a country to hold a cleared leg. A circle needs no
+            # second point; at that size it still crosses out.
             pattern = OrbitAction.OrbitPattern.Circle
         else:
             pattern = OrbitAction.OrbitPattern.RaceTrack

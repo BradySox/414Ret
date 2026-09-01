@@ -13,6 +13,24 @@
 # changes sharing a date keep the order written here.
 
 entries:
+  - date: 2026-08-30
+    title: Border patrols stopped straying into the next country
+    change: >-
+      A patrol flying a racetrack overshoots before it turns back, and the
+      orbit was only required to start inside the country -- so each end of it
+      ran about ten miles into the neighbour, which is the opposite of the
+      point. Two things changed. The oval is less than half as long as it was,
+      and the whole of it now has to sit at least twelve miles inside the
+      border rather than merely touching it. Seven countries were also keeping
+      their patrol almost on the frontier -- India's sat six-tenths of a mile
+      from its own border in a country with seventy-five miles of room -- and
+      those move inland to the nearest spot with space to turn.
+    watch: >-
+      Watch a patrol go round a full circuit on the F10 map and check it stays
+      on its own side the whole way. Bahrain and the two small Gulf zones are
+      the known exceptions -- they are smaller than a fighter's turn, so
+      nothing fits.
+    row: B110
   - date: 2026-08-29
     title: Border patrols now come up as four
     change: >-

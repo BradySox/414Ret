@@ -108,19 +108,22 @@ def test_the_orbit_speed_is_written_in_km_h_not_m_s() -> None:
     assert knots < 700, f"the orbit task commands {knots:.0f} kt, which is not an orbit"
 
 
-def test_a_racetrack_leg_stays_inside_the_border() -> None:
-    """A Race-Track orbit flies between its waypoint and the NEXT one.
+def test_the_whole_orbit_clears_the_border_not_just_the_leg() -> None:
+    """A racetrack overshoots each end before turning back.
 
-    FLOWN 2026-08-29: the patrol had a one-waypoint route, so there was no leg.
-    All three leaders -- India's Su-30, Iran's MiG-29A and Pakistan's F-16A --
-    flew into the ground within 34-43 s, and the wingmen followed them down to
-    1,035-3,791 m before pulling out. Every working racetrack in the same .miz
-    had 13-15 route points.
+    FLOWN 2026-08-30: the leg was only required to sit inside the border, so
+    the patrol crossed into the neighbour by under 10 NM past each end. The
+    leg is now fitted inside the border pulled in by a clearance that covers
+    the overshoot.
     """
-    from game.missiongenerator.neutralbordergenerator import PATROL_LEG_NM
+    from game.missiongenerator.neutralbordergenerator import (
+        PATROL_CLEARANCES_M,
+        PATROL_LEG_NM,
+    )
     from game.theater.neutralborder import NeutralBorderZone
+    from shapely.geometry import LineString, Polygon
 
-    # A 200 x 200 km square: any 25 NM leg from the middle fits.
+    # 200 x 200 km: room for the full leg and the full clearance.
     square = [
         (-100_000.0, -100_000.0),
         (100_000.0, -100_000.0),
@@ -129,21 +132,66 @@ def test_a_racetrack_leg_stays_inside_the_border() -> None:
     ]
     zone = NeutralBorderZone(country="Nowhere", border=square)
 
-    end = zone.patrol_leg_end((0.0, 0.0), PATROL_LEG_NM.meters)
+    centre, end = zone.patrol_orbit(
+        (0.0, 0.0), PATROL_LEG_NM.meters, PATROL_CLEARANCES_M
+    )
     assert end is not None, "a leg fits in a 200 km square and one was not found"
-    assert all(abs(v) < 100_000.0 for v in end), f"leg end {end} left the border"
+    gap = Polygon(square).exterior.distance(LineString([centre, end]))
+    assert gap >= max(PATROL_CLEARANCES_M) - 1.0, (
+        f"the leg sits {gap / 1852:.1f} NM from the border; the overshoot past "
+        "its ends would cross out"
+    )
 
 
-def test_a_country_too_thin_for_a_leg_gets_no_racetrack() -> None:
-    """The fallback matters: a circle needs no second point, a racetrack does.
+def test_a_station_on_the_frontier_is_moved_inland() -> None:
+    """Several shipped stations sit on their own border.
 
-    Without this the thin-country case would ship the exact one-waypoint
-    racetrack that put three patrol leaders into the ground.
+    India's is 0.6 NM from it in a zone that could hold 75, so no orbit
+    centred there can stay inside whatever its size. The correction is the
+    nearest point with room, not a jump to the country's deep interior.
     """
-    from game.missiongenerator.neutralbordergenerator import PATROL_LEG_NM
+    from game.missiongenerator.neutralbordergenerator import (
+        PATROL_CLEARANCES_M,
+        PATROL_LEG_NM,
+    )
+    from game.theater.neutralborder import NeutralBorderZone
+    from shapely.geometry import Point as ShapelyPoint, Polygon
+
+    square = [
+        (-100_000.0, -100_000.0),
+        (100_000.0, -100_000.0),
+        (100_000.0, 100_000.0),
+        (-100_000.0, 100_000.0),
+    ]
+    zone = NeutralBorderZone(country="Nowhere", border=square)
+    on_the_line = (-99_000.0, 0.0)
+
+    centre, end = zone.patrol_orbit(
+        on_the_line, PATROL_LEG_NM.meters, PATROL_CLEARANCES_M
+    )
+    assert end is not None
+    moved = Polygon(square).exterior.distance(ShapelyPoint(centre))
+    assert (
+        moved >= max(PATROL_CLEARANCES_M) - 1.0
+    ), f"the centre is still {moved / 1852:.1f} NM from the border"
+    # The smallest correction that works: it stays on the side it was authored.
+    assert centre[0] < 0, f"the patrol jumped across the country to {centre}"
+
+
+def test_a_country_too_small_for_any_cleared_orbit_gets_a_circle() -> None:
+    """Bahrain's zone holds a 5 NM inscribed circle and nothing fits it.
+
+    The caller flies a circle there. It still crosses out -- at that size
+    nothing does not -- but a one-waypoint racetrack would put the flight in
+    the ground, which is the failure this fallback exists to avoid.
+    """
+    from game.missiongenerator.neutralbordergenerator import (
+        PATROL_CLEARANCES_M,
+        PATROL_LEG_NM,
+    )
     from game.theater.neutralborder import NeutralBorderZone
 
-    # 2 km wide. The shortest leg tried is 0.35 x 25 NM = 16 km.
+    # 2 km across: smaller than the tightest clearance tried.
     sliver = [
         (-1_000.0, -1_000.0),
         (1_000.0, -1_000.0),
@@ -152,22 +200,30 @@ def test_a_country_too_thin_for_a_leg_gets_no_racetrack() -> None:
     ]
     zone = NeutralBorderZone(country="Sliver", border=sliver)
 
-    assert zone.patrol_leg_end((0.0, 0.0), PATROL_LEG_NM.meters) is None
+    _, end = zone.patrol_orbit((0.0, 0.0), PATROL_LEG_NM.meters, PATROL_CLEARANCES_M)
+    assert end is None
 
 
 def test_a_zone_with_no_border_polygon_gets_no_racetrack() -> None:
     """A campaign may author a zone with an airfield and no polygon."""
-    from game.missiongenerator.neutralbordergenerator import PATROL_LEG_NM
+    from game.missiongenerator.neutralbordergenerator import (
+        PATROL_CLEARANCES_M,
+        PATROL_LEG_NM,
+    )
     from game.theater.neutralborder import NeutralBorderZone
 
     zone = NeutralBorderZone(country="Unbounded")
-    assert zone.patrol_leg_end((0.0, 0.0), PATROL_LEG_NM.meters) is None
+    centre, end = zone.patrol_orbit(
+        (5.0, 7.0), PATROL_LEG_NM.meters, PATROL_CLEARANCES_M
+    )
+    assert end is None
+    assert centre == (5.0, 7.0), "an unbounded zone must not move its station"
 
 
 def test_the_generated_patrol_has_a_second_waypoint() -> None:
     """The isolated leg maths is not the thing that shipped broken.
 
-    FLOWN 2026-08-29: patrol_leg_end did not exist and the generator wrote one
+    FLOWN 2026-08-29: no leg fitter existed and the generator wrote one
     waypoint, so this is the assertion that would have caught it. Builds the
     real group through the real generator on a real pydcs mission.
     """

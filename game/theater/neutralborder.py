@@ -58,6 +58,7 @@ from __future__ import annotations
 import logging
 import math
 from dataclasses import dataclass, field
+from collections.abc import Sequence
 from typing import Any, Optional
 
 #: Air-spawn altitude for a point-spawned alert flight when the campaign does
@@ -289,34 +290,73 @@ class NeutralBorderZone:
 
         return aircraft_for(self.country, day) is not None
 
-    def patrol_leg_end(
-        self, anchor: tuple[float, float], length_m: float
-    ) -> tuple[float, float] | None:
-        """The far end of a racetrack leg from ``anchor`` that stays inside.
+    def patrol_orbit(
+        self,
+        anchor: tuple[float, float],
+        leg_m: float,
+        clearances_m: Sequence[float],
+    ) -> tuple[tuple[float, float], tuple[float, float] | None]:
+        """Where the standing patrol orbits, and the far end of its leg.
 
-        A DCS Race-Track orbit flies between its waypoint and the *next* one.
-        Flown 2026-08-29: with a one-waypoint route there is no leg, and all
-        three patrol leaders flew into the ground inside 43 s (the wingmen
-        followed them down to 1,000-3,800 m and pulled out once the lead was
-        gone). Returns None for a country too thin to hold even a short leg;
-        the caller orbits in a circle instead, which needs no second point.
+        Two things go wrong if the orbit is only required to sit *inside* the
+        border. A DCS racetrack overshoots each end before turning back --
+        measured under 10 NM at 405 kt -- so a leg ending on the frontier flies
+        across it. And several stations sit on the frontier to begin with:
+        India's is 0.6 NM from its own border in a zone that could hold 75.
+
+        So the leg is fitted inside the border pulled in by a clearance, the
+        largest of ``clearances_m`` that still admits one. A station already
+        that far in is left where the campaign put it; one that is not is moved
+        to the *nearest* point that is, which is the smallest correction that
+        works rather than a jump to the country's deep interior.
+
+        Returns ``(centre, leg_end)``. ``leg_end`` is None when no clearance
+        admits a leg, and the caller flies a circle -- which for a country
+        smaller than the overshoot still crosses out, because at that size
+        nothing does not.
         """
-        from shapely.geometry import LineString, Polygon
+        from shapely.geometry import LineString, Point as ShapelyPoint, Polygon
+        from shapely.ops import nearest_points
 
         if len(self.border) < 3:
-            return None
+            return (anchor, None)
         polygon = Polygon(self.border)
         if not polygon.is_valid:
             polygon = polygon.buffer(0)
+        here = ShapelyPoint(anchor)
+
+        fallback = anchor
+        for clearance in clearances_m:
+            inner = polygon.buffer(-clearance)
+            if inner.is_empty:
+                continue
+            if inner.contains(here):
+                centre = anchor
+            else:
+                moved = nearest_points(inner, here)[0]
+                centre = (moved.x, moved.y)
+            fallback = centre
+            end = self._leg_from(centre, leg_m, inner)
+            if end is not None:
+                return (centre, end)
+        return (fallback, None)
+
+    @staticmethod
+    def _leg_from(
+        centre: tuple[float, float], leg_m: float, inside: Any
+    ) -> tuple[float, float] | None:
+        """The longest leg from ``centre`` on any bearing that stays in ``inside``."""
+        from shapely.geometry import LineString
+
         best: tuple[float, tuple[float, float]] | None = None
         for degrees in range(0, 360, 30):
             radians = math.radians(degrees)
             for scale in (1.0, 0.6, 0.35):
                 end = (
-                    anchor[0] + length_m * scale * math.cos(radians),
-                    anchor[1] + length_m * scale * math.sin(radians),
+                    centre[0] + leg_m * scale * math.cos(radians),
+                    centre[1] + leg_m * scale * math.sin(radians),
                 )
-                if not polygon.contains(LineString([anchor, end])):
+                if not inside.contains(LineString([centre, end])):
                     continue
                 if best is None or scale > best[0]:
                     best = (scale, end)

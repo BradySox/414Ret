@@ -27,7 +27,7 @@ from .fogofwar import Visibility, viewer_sees_truth
 from .missiontarget import MissionTarget
 from .player import Player
 from ..data.groups import GroupTask
-from ..data.units import UnitClass
+from ..data.units import SEAD_TARGET_UNIT_CLASSES, UnitClass
 from ..utils import Distance, Heading, meters, nautical_miles
 
 if TYPE_CHECKING:
@@ -487,6 +487,30 @@ class TheaterGroundObject(MissionTarget, SidcDescribable, ABC):
     @property
     def strike_targets(self) -> list[TheaterUnit]:
         return [unit for unit in self.units if unit.alive]
+
+    @property
+    def sead_targets(self) -> list[TheaterUnit]:
+        """``strike_targets`` narrowed to the emitters a SEAD flight can service.
+
+        The flight plan builds one steerpoint per entry and the SEAD kneeboard
+        indexes into that list positionally, so the two MUST read this same
+        property in this same order (game/ato/flightplans/sead.py,
+        kneeboard.SeadTaskPage). Falls back to the full list when nothing
+        matches, so a site with no classified emitter still gets steerpoints.
+        """
+        targets = []
+        for unit in self.strike_targets:
+            try:
+                unit_type = unit.unit_type
+            except StopIteration:
+                # Unregistered vehicle type (a mod unit with no yaml). Unknown
+                # rather than absent, so keep it rather than silently dropping a
+                # possible emitter.
+                targets.append(unit)
+                continue
+            if unit_type is None or unit_type.unit_class in SEAD_TARGET_UNIT_CLASSES:
+                targets.append(unit)
+        return targets or self.strike_targets
 
     @property
     def mark_locations(self) -> Iterator[Point]:

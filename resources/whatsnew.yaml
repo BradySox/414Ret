@@ -24,7 +24,7 @@ entries:
     watch: >-
       F10 map after the join, before the ingress: read ground speed AND altitude
       on a striker and on its escort. They should be within about 15 kt.
-    row: B110
+    row: B111
   - date: 2026-08-26
     title: Apache data cartridge + the Viper's ROE tab filled in
     change: >-

@@ -88,6 +88,29 @@ MOBILE_AIR_DEFENSE_UNIT_CLASSES = frozenset(
     }
 )
 
+# Unit classes a SEAD flight gets a per-emitter steerpoint for. Plain SEAD loiters
+# at standoff and fires HARMs, so a steerpoint is only useful against something that
+# radiates (or the launcher it serves); the logistics trucks, fuel bowsers, optically
+# aimed AAA and MANPADs that pad a site are neither aimable nor knowable, and
+# enumerating them leaks the site's full composition and exact unit count that the
+# SEAD kneeboard deliberately withholds (recon fog §3 -- see
+# kneeboard.SeadTaskPage._emitter_units). Class-based rather than ALIC-based on
+# purpose: game/data/alic.py is a hand-curated vanilla table, so an ALIC filter would
+# drop every HDS radar (§41).
+SEAD_TARGET_UNIT_CLASSES = frozenset(
+    {
+        UnitClass.AAA_RADAR,
+        UnitClass.EARLY_WARNING_RADAR,
+        UnitClass.LAUNCHER,
+        UnitClass.SEARCH_RADAR,
+        UnitClass.SEARCH_TRACK_RADAR,
+        UnitClass.SHORAD,
+        UnitClass.SPECIALIZED_RADAR,
+        UnitClass.TELAR,
+        UnitClass.TRACK_RADAR,
+    }
+)
+
 # DCS unit ids of heavy bombers. Vanilla DCS heavy bombers only (per the fork's
 # vanilla-units rule). Shared by two Vietnam-era consumers: the Arc Light emitter
 # (game/missiongenerator/vietnamopsluadata.py -- a Strike by anything not in this

@@ -7,6 +7,7 @@ from unittest.mock import MagicMock
 from dcs.vehicles import AirDefence
 
 from game.ato.flighttype import FlightType
+from game.ato.flightwaypointtype import FlightWaypointType
 from game.missiongenerator.kneeboard import (
     KneeboardPageWriter,
     SeadTaskPage,
@@ -125,6 +126,9 @@ def test_sead_area_view_lists_only_emitters_and_dedupes() -> None:
         _unit(AirDefence.Osa_9A33_ln.id, 'SAM SA-8 Osa "Gecko" TEL', "osa-2"),
         _unit("KS-19-no-alic", "AAA KS-19 100mm", "gun"),
     ]
+    # Hand the page the unfiltered roster so this test still exercises the ALIC
+    # layer on its own; the unit-class filter is covered in tests/theater.
+    target.sead_targets = target.strike_targets
     flight.package.target = target
     page = SeadTaskPage(flight, _bullseye(), False)
     assert page._use_target_area_cues is True
@@ -166,6 +170,7 @@ def test_sead_exact_view_renames_stpt_header_to_keep_location_on_page() -> None:
     target.strike_targets = [
         _unit(AirDefence.Kub_1S91_str.id, 'SAM SA-6 "Straight Flush" STR', "str"),
     ]
+    target.sead_targets = target.strike_targets
     flight.package.target = target
     page = SeadTaskPage(flight, _bullseye(), False)
     assert page._use_target_area_cues is False
@@ -178,3 +183,39 @@ def test_sead_exact_view_renames_stpt_header_to_keep_location_on_page() -> None:
     assert "#" in text
     assert "Straight Flush" in text
     assert "loc" in text  # the DMS Location column still renders
+
+
+def test_sead_exact_view_numbers_stpts_from_the_emitter_waypoint_list() -> None:
+    # SEAD gets a steerpoint per emitter, not per unit, so the page must index the
+    # emitter list. Indexing the full roster (trucks included) walked off the end
+    # of the shorter waypoint list and printed a blank STPT for every emitter
+    # after the first support vehicle.
+    flight = _flight(FlightType.SEAD, TargetIntelPrecision.EXACT)
+    flight.friendly = object()
+    flight.callsign = "Pontiac 1"
+    flight.custom_name = None
+    flight.waypoints = [
+        SimpleNamespace(waypoint_type=FlightWaypointType.INGRESS_SEAD),
+        SimpleNamespace(waypoint_type=FlightWaypointType.TARGET_POINT),
+        SimpleNamespace(waypoint_type=FlightWaypointType.TARGET_POINT),
+    ]
+    target = MagicMock(spec=SamGroundObject)
+    target.known_for.return_value = True
+    target.position = _DummyPosition("center")
+    str_unit = _unit(AirDefence.Kub_1S91_str.id, 'SAM SA-6 "Straight Flush" STR', "str")
+    osa = _unit(AirDefence.Osa_9A33_ln.id, 'SAM SA-8 Osa "Gecko" TEL', "osa")
+    # The site carries a truck between the two emitters; only the emitters are
+    # planned as waypoints, so the Osa is STPT 2 -- not blank.
+    target.strike_targets = [str_unit, _unit("Ural-4320", "Truck Ural-4320", "t"), osa]
+    target.sead_targets = [str_unit, osa]
+    flight.package.target = target
+
+    page = SeadTaskPage(flight, _bullseye(), False)
+    assert page._target_point_numbers() == [1, 2]
+    assert [i for i, _ in page._emitter_units()] == [0, 1]
+
+    rows = [
+        page.target_info_row(unit, page._target_point_numbers()[i])
+        for i, unit in page._emitter_units()
+    ]
+    assert [row[0] for row in rows] == ["1", "2"]

@@ -1696,14 +1696,26 @@ class SeadTaskPage(KneeboardPage):
 
     @property
     def target_units(self) -> Iterator[TheaterUnit]:
-        if isinstance(self.flight.package.target, TheaterGroundObject):
-            yield from self.flight.package.target.strike_targets
+        """The units that got a per-target waypoint, in waypoint order.
+
+        SEAD gets a steerpoint per *emitter* and DEAD one per unit, so the two
+        read different lists. This must stay the list the flight plan built from
+        (game/ato/flightplans/{sead,dead}.py) or ``_target_point_numbers``
+        pairing below silently prints the wrong STPT.
+        """
+        target = self.flight.package.target
+        if not isinstance(target, TheaterGroundObject):
+            return
+        if self.flight.flight_type == FlightType.SEAD:
+            yield from target.sead_targets
+        else:
+            yield from target.strike_targets
 
     def _target_point_numbers(self) -> List[int]:
         """STPT numbers of the per-target waypoints, in target order.
 
         DEAD/SEAD flights get one TARGET_POINT waypoint per target, built from
-        the same ``strike_targets`` list (in the same order) that this page
+        the same ``target_units`` list (in the same order) that this page
         lists, so the i-th TARGET_POINT waypoint is the i-th listed target. The
         number is the index into the flight's waypoint list, matching the
         flight-plan page. Pairing by order (rather than by position) is robust
@@ -1762,7 +1774,9 @@ class SeadTaskPage(KneeboardPage):
         aimpoints; the launchers, command trucks and AAA guns that pad
         ``strike_targets`` aren't, and enumerating every one just hands the player the
         full site composition and exact unit counts (recon fog §3). The index pairs an
-        emitter with its per-target steerpoint in the exact view.
+        emitter with its per-target steerpoint in the exact view, so it must index
+        ``target_units`` -- the list the waypoints were built from -- not the raw
+        site roster.
         """
         for index, unit in enumerate(self.target_units):
             if self.alic_for(unit):

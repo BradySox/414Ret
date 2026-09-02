@@ -41,13 +41,15 @@ def _sam() -> SamGroundObject:
 def _make_builder(builder: Any, precision: TargetIntelPrecision) -> Any:
     """Configure a DEAD/SEAD Builder (with __init__ skipped) for a layout() call.
 
-    Stubs out _build to capture what layout() forwards, and strike_targets_for to
-    stand in for the per-unit list, so the test only exercises the precision gate.
+    Stubs out _build to capture what layout() forwards, and both per-unit list
+    helpers (DEAD takes every unit, SEAD only the emitters), so the test
+    exercises the precision gate alone.
     """
     builder.settings = SimpleNamespace(target_intel_precision=precision)
     builder.flight = SimpleNamespace(package=SimpleNamespace(target=_sam()))
     builder._build = lambda ingress, targets: ("built", targets)
     builder.strike_targets_for = lambda location: ["t0", "t1"]
+    builder.sead_targets_for = lambda location: ["t0", "t1"]
     return builder
 
 

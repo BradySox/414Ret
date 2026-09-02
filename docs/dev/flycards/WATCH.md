@@ -80,7 +80,7 @@ At your split point, look behind you. **Free — it is the flight you were flyin
 | `B54` | The planner behaviour bar actually switches the suite | Settings UI, ~1 min |
 | `B108` | A stuck TIC unit names itself in the log, and the retries spread across many units | Same log, same read as slot 5; the distribution is the actual question |
 | `B109` | `_retribution_backups` is gone from `UnitPayloads` and the launch error with it | App-side; set one default loadout first, then restart DCS |
-| `B110` | F10 ground speed **and altitude** for a striker and its escort, after the join | A measurement, not yet a pass/fail — it is what unblocks authoring `cruise_mach:`. Record the loadout with each number |
+| `B111` | F10 ground speed **and altitude** for a striker and its escort, after the join | A measurement, not yet a pass/fail — it is what unblocks authoring `cruise_mach:`. Record the loadout with each number |
 
 Closed and dropped items, with the reasoning: [`ARCHIVE.md`](ARCHIVE.md).
 Contrived-condition tests live on [`LOCAL.md`](LOCAL.md).

@@ -11,7 +11,7 @@ from dcs import Point
 
 from game.flightplan import HoldZoneGeometry
 from game.theater import MissionTarget, TheaterGroundObject
-from game.theater.theatergroup import SceneryUnit
+from game.theater.theatergroup import SceneryUnit, TheaterUnit
 from game.utils import nautical_miles, Speed, feet
 from .flightplan import FlightPlan
 from .formation import FormationFlightPlan, FormationLayout
@@ -313,8 +313,24 @@ class FormationAttackBuilder(IBuilder[FlightPlanT, LayoutT], ABC):
         target also gets its own TARGET_POINT waypoint in the aircraft, making it
         trivial to designate with TOO.
         """
+        return FormationAttackBuilder._targets_for(location.strike_targets)
+
+    @staticmethod
+    def sead_targets_for(location: TheaterGroundObject) -> list[StrikeTarget]:
+        """``strike_targets_for`` narrowed to the site's emitters.
+
+        Plain SEAD stands off and fires HARMs, so a steerpoint on a fuel bowser
+        or an optically aimed gun is unusable, and listing every unit hands over
+        the composition the SEAD kneeboard withholds (recon fog §3). The
+        kneeboard pairs its emitter rows with these waypoints by position, so it
+        reads the same ``sead_targets`` list in the same order.
+        """
+        return FormationAttackBuilder._targets_for(location.sead_targets)
+
+    @staticmethod
+    def _targets_for(units: list[TheaterUnit]) -> list[StrikeTarget]:
         targets: list[StrikeTarget] = []
-        for idx, unit in enumerate(location.strike_targets):
+        for idx, unit in enumerate(units):
             name = unit.name if isinstance(unit, SceneryUnit) else unit.type.id
             targets.append(StrikeTarget(f"{name} #{idx}", unit))
         return targets

@@ -58,7 +58,7 @@ also relative to `ReferenceLatitude=38 / ReferenceLongitude=36`, not absolute.
 
 ## Outstanding rows at a glance
 
-80 rows need a live pass. Full detail is under each `###` heading below —
+79 rows need a live pass. Full detail is under each `###` heading below —
 search the row id. `☐` untested · `◐` flown but not under the conditions that
 stress it · `✗` fail signature reproduced in-game.
 
@@ -93,7 +93,7 @@ stress it · `✗` fail signature reproduced in-game.
 | B85 | A flight with an unreachable TOT flies instead of orbiting | §8 | ◐ |
 | B98 | The bullseye is the same place it was last mission | §95 | ☑ |
 | B99 | AI packages arrive inside the mission, not after it | §8 | ◐ |
-| B110 | Neutral border: warned, shadowed, then engaged only if you press | §96 | ◐ |
+| B110 | Neutral border: warned, shadowed, then engaged only if you press | §96 | ☑ |
 | B111 | Neutral border: AI intruders are shadowed, never engaged | §96 | ◐ |
 | G25 | Armed Recon package: recon drone + SEAD Viper escort + 4-ship sweep | §3 | ◐ |
 | G30 | MANTIS SHORAD link: the point defense ambushes the HARM shot | MANTIS migration | ☐ |
@@ -6181,7 +6181,30 @@ mountain or coastal front will do.
      strength, so an 8-object swing is worth a look on Desert Trident's Jordan
      sector specifically.
 
-### B110 — Neutral border: warned, shadowed, then engaged only if you press · §96 · ◐ PARTIAL
+### B110 — Neutral border: warned, shadowed, then engaged only if you press · §96 · ☑ VERIFIED
+
+**CLOSED 2026-09-01, test 25** (Syria, `Tacview-20260901-225329`). Five
+four-ship patrols — Lebanon, Iraq, Jordan, Saudi Arabia, Turkey — airborne from
+`t=0.1`, holding 6,074–6,095 m, and **16 of the 20 aircraft were never removed
+at all**. Every element of the ladder is measured in one session:
+
+* **Containment.** Every sample of every track against its own polygon: **23 of
+  24 aircraft never left**, 3,017 samples each. Closest approaches 24.5 / 19.1 /
+  8.7 / 7.1 / 3.9 NM. The one exception is Lebanon's #4 *after* it turned
+  hostile, chasing the intruder under `AttackGroup` — intended, not a leak.
+* **The swap took all four together** — removed `t=330.04`, re-added `t=330.1`
+  as `Coalition=Allies`, then fought for 80–150 s.
+* **The SA-6 fired** — two `SA3M9M` at 381.7 s and 386.9 s.
+* **The patrol fired back** — two `P_73` and one `P_27P` against four
+  AIM-120C-armed Vipers, which is what the four-ship call was meant to buy.
+
+The radio calls are the one item not in the artefacts, because they are not
+logged; the DM confirmed them in test 19 ("good text, pop it immediately on
+entry to airspace"). **Measured overshoot: up to 8.1 NM past the fitted leg**,
+so the two Caucasus Azerbaijan zones — fitted at 8.1 and 8.2 — are the only
+ones that could still graze a frontier. Full analysis in the design note.
+
+#### History
 
 **Flown 2026-08-28** (Syria/Lebanon, session `New test/19`). The ladder ran to
 spec: hail, shadow from Rayak, and ESCALATED exactly 180 s after entry. Three

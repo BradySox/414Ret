@@ -13,6 +13,21 @@
 # changes sharing a date keep the order written here.
 
 entries:
+  - date: 2026-09-01
+    title: The border patrols work
+    change: >-
+      Flown on Syria with five countries guarding their airspace at once --
+      Lebanon, Iraq, Jordan, Saudi Arabia and Turkey, four aircraft each. All
+      twenty were up before the mission started and sixteen of them flew the
+      whole thing. Checked against every country's real border, twenty-three of
+      the twenty-four never crossed out once. Press one and the whole thing
+      happens: the four of them change sides together and keep flying, the
+      missile battery comes up and shoots, and they shoot back.
+    watch: >-
+      Nothing to check -- this is the confirmation, not a change. The only
+      aircraft that leaves its own country now is one that has turned hostile
+      and is chasing you, which is the point.
+    row: B110
   - date: 2026-08-30
     title: Border patrols stopped straying into the next country
     change: >-

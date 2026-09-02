@@ -1361,6 +1361,54 @@ zones**, the leg at the full 12 NM in 48 of the 49, and the tightest clearances
 **8.1 and 8.2 NM — both Azerbaijan zones on the Caucasus**. Those two sit at
 the floor, so they are the ones to look at if a patrol still clips a frontier.
 
+### Flown 2026-09-01 (test 25, Syria) — the ladder ran end to end
+
+Five four-ship patrols — Lebanon, Iraq, Jordan, Saudi Arabia, Turkey — airborne
+from `t=0.1` and holding **6,074–6,095 m** for the whole mission. **Sixteen of
+the twenty were never removed at all**, against every leader dying at 34 s two
+tests earlier.
+
+**The border containment is measured, not eyeballed.** Every sample of every
+patrol track, tested against its own polygon:
+
+| Country | Samples | Outside | Closest approach |
+|---|---|---|---|
+| Turkey | 3,017 × 4 | **0** | 24.5 NM |
+| Iraq | 3,017 × 4 | **0** | 19.1 NM |
+| Jordan | 3,017 × 4 | **0** | 8.7 NM |
+| Saudi Arabia | 3,017 × 4 | **0** | 7.1 NM |
+| Lebanon (pre-swap) | 1,415 × 4 | **0** | 3.9 NM |
+
+23 of 24 aircraft never left. The one exception is Lebanon's #4 **after it
+turned hostile** — 400 samples up to 7.2 NM out, which is a fighter chasing the
+intruder under `AttackGroup`, not a patrol on its orbit. That is the intended
+behaviour and is not a containment failure.
+
+**The overshoot, now a number: up to 8.1 NM.** Fitted leg clearance minus the
+closest approach actually flown — Lebanon 12.0 → 3.9 (**8.1**), Jordan 15.2 →
+8.7 (6.5), Iraq 25.3 → 19.1 (6.2), Saudi 13.2 → 7.1 (6.1), Turkey 27.4 → 24.5
+(2.9). The DM's "under 10 NM" eyeball was good, and 12 NM is the right first
+clearance: it leaves Lebanon, the tightest zone flown, 3.9 NM of margin.
+
+**Consequence for the 8 NM floor.** A zone fitted at exactly 8 would fly at
+roughly zero clearance. Only the **two Caucasus Azerbaijan zones** are near it
+(8.1 and 8.2), so at worst they graze their own frontier — nothing like the
+10 NM that started this. Not changed; recorded so the number exists if it ever
+matters. Everything else is fitted at 10 or more.
+
+**Orbit footprint:** a 12 NM leg flies a **~22.6 NM** diagonal box.
+
+**The rest of the ladder, all first-time evidence in one session:**
+
+- **The swap took all four together.** Removed `t=330.04`, re-added `t=330.1`
+  as `Coalition=Allies`, then fought for 80–150 s before being shot down.
+- **The SA-6 fired** — two `SA3M9M` at `t=381.7` and `386.9`.
+- **The patrol fired back** — two `P_73` and one `P_27P`. The WVR fit is doing
+  what the numbers call was meant to buy, against four AIM-120C-armed Vipers.
+
+Not evidenced here: an AI intruder (B111), and the radio calls, which are not
+logged — the DM confirmed those in test 19.
+
 ### Numbers, not better missiles (DM call, 2026-08-29)
 
 The patrol takes `load_task_default_loadout(CAP)`, which on the F-16A is

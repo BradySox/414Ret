@@ -13,6 +13,18 @@
 # changes sharing a date keep the order written here.
 
 entries:
+  - date: 2026-09-01
+    title: Escorts hold the striker's pace instead of running ahead
+    change: >-
+      The leg between the join and the ingress was the one transit segment every
+      flight priced on its own, so a light escort outran the striker it was
+      escorting. It is now flown at the package's speed. Cruise speed is also
+      per airframe where one has been measured; the F/A-18C is the first, at
+      mach 0.78, so Hornets transit a little slower than before.
+    watch: >-
+      F10 map after the join, before the ingress: read ground speed AND altitude
+      on a striker and on its escort. They should be within about 15 kt.
+    row: B111
   - date: 2026-08-26
     title: Apache data cartridge + the Viper's ROE tab filled in
     change: >-

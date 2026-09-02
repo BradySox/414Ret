@@ -519,7 +519,9 @@ kept flying after landing", and the Fuel column already blanked exactly these ro
 (`game/ato/package.py`, `game/ato/flightplans/formation.py`,
 `game/ato/flightplans/formationattack.py`, `game/missiongenerator/kneeboard.py`; tests
 `tests/ato/flightplans/test_formationattack.py` +
-`tests/missiongenerator/test_flightplan_fuel_column.py`.)
+`tests/missiongenerator/test_flightplan_fuel_column.py`.) The same machinery gained the
+join→ingress leg on 2026-09-01 — see §8 and
+[414th-cruise-mach-notes.md](design/414th-cruise-mach-notes.md).
 
 **JTAC is upstream's, unmodified (packaged-drone model STRIPPED 2026-08-05).** The fork briefly
 ran two mutually-exclusive JTAC models — upstream's front-line FAC, and a 414th packaged drone
@@ -2472,6 +2474,31 @@ defect that reached a build, most of them found by flying.
   old comment was guarding against *shrinking* the map to fit both axes, which is a different
   operation. Tests `tests/missiongenerator/test_kneeboard_packages_map.py` (assert the rendered
   text calls, not internals) + `tests/test_airfield_directory_page.py`.
+
+**The join→ingress leg is paced by the package, and cruise mach is per airframe (2026-09-01,
+from a flown F10 reading).** A Syria package's SEAD escort read **542 kt** on the F10 map after
+the join while the Hornet it was escorting read **478 kt** — M0.89 against M0.78. The planner
+was not at fault: the two are coordinated to 2 knots and 2 seconds, wind was 23 kt on a shared
+052° track, and every waypoint is `BARO`. **Store weight does not explain it either** — the
+faster Viper carried the *larger* store fraction (4,400.8 kg on 3,249 kg internal, against the
+Hornet's 4,693.4 kg on 4,900 kg), so any drag model keyed on stores predicts the wrong sign.
+What is left is airframe transonic drag, which this tree has no data for. Two changes: (1)
+**`cruise_mach:`**, an optional per-airframe yaml key on the same footing as `cruise_altitude:`,
+which wins outright in `GroundSpeed.for_flight` — unauthored is unchanged
+(`DEFAULT_CRUISE_MACH = 0.85` supersonic, `max_speed.mach() × 0.85` subsonic, `× 0.7` helo);
+(2) **`ingress` added to `FormationAttackFlightPlan.package_speed_waypoints`**, the one transit
+leg that had no package harmonisation and the exact leg the divergence was measured on.
+`combat_speed_waypoints` is **pinned to the old set** (join, split, targets) because it defaults
+to `package_speed_waypoints` and drives fuel burn — without the override every strike package
+would start charging combat consumption from the join. **One airframe is authored: the F/A-18C
+at M0.78**, verified end to end (476.4 kt at FL210 against the measured 478; the F-16C
+unchanged at 517.1). Every other airframe is unauthored and unchanged. The caveat is on the
+record: that airframe's own hand-flown `fuel:` block is measured at `0.85 mach for 100NM`, and
+the knob is airframe-wide with no per-loadout axis, so BARCAP and TARCAP Hornets now transit at
+the loaded-strike figure too. (`game/dcs/aircrafttype.py`,
+`game/ato/traveltime.py`, `game/ato/flightplans/formationattack.py`; tests
+`tests/ato/flightplans/test_package_cruise_speed.py`; design note
+[414th-cruise-mach-notes.md](design/414th-cruise-mach-notes.md); checklist B111.)
 
 ## 9. TIC — Troops In Contact frontline battle sim (plugin, default ON)
 

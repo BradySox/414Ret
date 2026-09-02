@@ -10,6 +10,12 @@ if TYPE_CHECKING:
     from .package import Package
 
 
+#: The cruise mach commanded for any supersonic jet with no authored value. Every
+#: airframe flew this before ``cruise_mach:`` existed, so an unauthored yaml is
+#: unchanged.
+DEFAULT_CRUISE_MACH = 0.85
+
+
 class GroundSpeed:
     @classmethod
     def for_flight(cls, flight: Flight, altitude: Distance) -> Speed:
@@ -18,12 +24,20 @@ class GroundSpeed:
         # on fuel, but mission speed will be fast enough to keep the flight
         # safer.
 
+        # An authored value wins outright, for any airframe. Measured F10 ground
+        # speeds contradict one flat mach for every jet -- an F/A-18C holds ~M0.78
+        # at FL210 where an F-16C exceeds M0.85 on the same package. Store weight
+        # does NOT predict which is which (the Viper carried the larger fraction),
+        # so these are measured per airframe, never derived.
+        if (authored := flight.unit_type.cruise_mach) is not None:
+            return mach(authored, altitude)
+
         # DCS's max speed is in kph at 0 MSL.
         max_speed = flight.unit_type.max_speed
         if max_speed > SPEED_OF_SOUND_AT_SEA_LEVEL:
             # Aircraft is supersonic. Limit to mach 0.85 to conserve fuel and
             # account for heavily loaded jets.
-            return mach(0.85, altitude)
+            return mach(DEFAULT_CRUISE_MACH, altitude)
 
         # For subsonic aircraft, assume the aircraft can reasonably perform at
         # 80% of its maximum, and that it can maintain the same mach at altitude

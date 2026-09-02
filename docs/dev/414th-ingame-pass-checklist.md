@@ -58,7 +58,7 @@ also relative to `ReferenceLatitude=38 / ReferenceLongitude=36`, not absolute.
 
 ## Outstanding rows at a glance
 
-79 rows need a live pass. Full detail is under each `###` heading below —
+80 rows need a live pass. Full detail is under each `###` heading below —
 search the row id. `☐` untested · `◐` flown but not under the conditions that
 stress it · `✗` fail signature reproduced in-game.
 
@@ -190,6 +190,7 @@ stress it · `✗` fail signature reproduced in-game.
 | B108 | A stuck TIC unit names itself, and the retries are spread not concentrated | §9 TIC | ☐ |
 | B109 | Payload backups leave `UnitPayloads` and the launch error stops | §73 | ☐ |
 | B110 | A SEAD jet's steerpoints are the site's emitters, and the card's STPT numbers match | §5 / §3 | ☐ |
+| B111 | A package's escort holds the striker's pace instead of running ahead | §8 cruise mach | ☐ |
 
 ---
 
@@ -6676,3 +6677,39 @@ on that emitter.
 - **A site with no emitters gets no steerpoints at all** — the `sead_targets` fallback to
   the full roster failed; `targets[0]` anchors the flight plan's timing math, so this
   would show up as a planning error rather than a quiet miss.
+### B111 — A package's escort holds the striker's pace instead of running ahead · §8 cruise mach · ☐ UNTESTED
+
+**Live for Hornet packages, a measurement row for everything else.** The mechanism landed
+2026-09-01 with **one authored airframe, the F/A-18C at M0.78**. A package pairing a Hornet
+striker with any unauthored escort is now exercisable; a package with no Hornet in it still
+commands one mach for everyone and cannot move this row.
+
+**Setup.** Any package with both a strike/DEAD flight and an escort. After the join, before
+the ingress, open F10 and read **ground speed AND altitude together** off each unit. Record
+the loadout with each number — store weight was already shown not to predict the answer
+(see the note), so the loadout is context, not the variable. ~5 min, on a flight you were
+flying anyway.
+
+**Pass, once values are authored.** Escort and striker read within ~15 kt of each other on
+the join→ingress leg, at the striker's pace.
+
+**The measured baseline this replaces** (Syria, Syrian Shield turn 2): F-16CM SEAD Escort
+542 kt at 22,000 ft (M0.89) against F/A-18C Strike 478 kt at 21,000 ft (M0.78), both
+commanded ~M0.85.
+
+**Fail signatures, and what each means:**
+
+- **Both still read their commanded ~M0.85 band (517–525 kt)** — neither flight is an
+  authored airframe. Expected for a non-Hornet package, not a defect.
+- **A clean CAP Hornet reads ~M0.78 and feels sluggish** — working as authored, and the
+  known cost of an airframe-wide knob. Record the reading: a clean Hornet measuring near
+  M0.85 is the evidence that reopens the value.
+- **They match, but the whole package is slower than the striker manages** — the authored
+  value is too low. It is airframe-wide, so a clean CAP Hornet pays a loaded striker's price;
+  that trade is recorded in the note and may need revisiting.
+- **A planned speed below 486.5 kt appears with no authored value** — impossible from
+  `GroundSpeed.for_flight`; something else wrote it. Read the note's ladder.
+- **Fuel figures moved on strike packages** — the `combat_speed_waypoints` override was lost
+  and the ingress leg is being charged combat burn.
+
+Design note: [design/414th-cruise-mach-notes.md](design/414th-cruise-mach-notes.md).

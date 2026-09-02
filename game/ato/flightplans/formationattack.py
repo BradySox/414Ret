@@ -30,6 +30,20 @@ if TYPE_CHECKING:
 class FormationAttackFlightPlan(FormationFlightPlan, ABC):
     @property
     def package_speed_waypoints(self) -> set[FlightWaypoint]:
+        # Ingress is here so the join->ingress leg is paced to the package. It was
+        # the one transit leg every flight priced on its own, which let the light
+        # escorts run ahead of the strikers they were escorting.
+        return {
+            self.layout.ingress,
+            self.layout.join,
+            self.layout.split,
+        } | set(self.layout.targets)
+
+    @property
+    def combat_speed_waypoints(self) -> set[FlightWaypoint]:
+        # Deliberately NOT package_speed_waypoints: ingress is paced with the
+        # package but is not a combat leg, and this set drives fuel burn. Including
+        # it would charge combat consumption from the join on every strike package.
         return {
             self.layout.join,
             self.layout.split,

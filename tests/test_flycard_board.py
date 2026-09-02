@@ -87,6 +87,31 @@ def _live_card_items(path: Path) -> list[str]:
     return items
 
 
+def test_no_two_rows_share_an_id() -> None:
+    """A long-lived branch and main allocate row ids from the same end.
+
+    Four collisions on the §96 branch alone -- B100/B101, then B106/B107, then
+    B110/B111 twice. `_row_statuses()` keys by id, so a duplicate silently
+    overwrites its twin and the board under-reports outstanding work; the
+    count test catches that only indirectly, and only when the two rows differ
+    in status. The fourth collision landed on a row already marked VERIFIED,
+    so being closed is no protection either.
+    """
+    from collections import Counter
+
+    ids = [
+        heading["row"]
+        for line in CHECKLIST.read_text(encoding="utf-8").splitlines()
+        if (heading := ROW_HEADING.match(line))
+    ]
+    repeated = sorted(row for row, n in Counter(ids).items() if n > 1)
+    assert not repeated, (
+        f"row id(s) used twice: {', '.join(repeated)}. Renumber YOUR rows to "
+        "the next free id, never main's, and update the features doc, the "
+        "design note and every `row:` in resources/whatsnew.yaml."
+    )
+
+
 def test_every_row_heading_carries_a_legend_marker() -> None:
     # A row whose marker is not in the legend is invisible to the board: it is
     # dropped from the counts, and the parser falls through to whatever marker the

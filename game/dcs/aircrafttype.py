@@ -256,6 +256,11 @@ class AircraftType(UnitType[Type[FlyingType]]):
     cruise_altitude: Optional[Distance]
     combat_altitude: Optional[Distance]
 
+    #: Cruise mach for this airframe, when it differs from the planner's flat
+    #: default. Authored from measurement, never derived: store weight does not
+    #: predict it. See docs/dev/design/414th-cruise-mach-notes.md.
+    cruise_mach: Optional[float]
+
     #: The maximum range between the origin airfield and the target for which the auto-
     #: planner will consider this aircraft usable for a mission.
     max_mission_range: Distance
@@ -821,6 +826,7 @@ class AircraftType(UnitType[Type[FlyingType]]):
             startup_minutes=data.get("startup_minutes"),
             cruise_altitude=altitudes_config.cruise,
             combat_altitude=altitudes_config.combat,
+            cruise_mach=data.get("cruise_mach"),
             max_mission_range=mission_range,
             fuel_consumption=fuel_consumption,
             default_livery=data.get("default_livery"),

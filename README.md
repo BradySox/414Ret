@@ -92,6 +92,10 @@ Most of this is opt-in. Full list with toggles, defaults and known limitations:
 
 - QRA intercept reserve holds fighters for base defence. Part of it can be player-manned as
   cold alert.
+- A package flies the leg from the join to the ingress at one speed, so escorts stay with
+  the strikers they are escorting instead of running ahead. Cruise speed is set per airframe
+  where one has been measured rather than assumed the same for every jet; the F/A-18C is the
+  first, and transits a little slower than before.
 - Native DCS data cartridges auto-load in Hornets, Vipers and F-14B(U)s: comm presets
   matching the kneeboard, route with push times, boat TACAN/ICLS/ACLS, and the SA/HSD
   picture (FLOT, your own orbit, the tankers and AWACS, recon-confirmed SAM rings). The

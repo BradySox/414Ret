@@ -14,6 +14,18 @@
 
 entries:
   - date: 2026-09-01
+    title: Escorts hold the striker's pace instead of running ahead
+    change: >-
+      The leg between the join and the ingress was the one transit segment every
+      flight priced on its own, so a light escort outran the striker it was
+      escorting. It is now flown at the package's speed. Cruise speed is also
+      per airframe where one has been measured; the F/A-18C is the first, at
+      mach 0.78, so Hornets transit a little slower than before.
+    watch: >-
+      F10 map after the join, before the ingress: read ground speed AND altitude
+      on a striker and on its escort. They should be within about 15 kt.
+    row: B111
+  - date: 2026-09-01
     title: The border patrols work
     change: >-
       Flown on Syria with five countries guarding their airspace at once --
@@ -27,7 +39,7 @@ entries:
       Nothing to check -- this is the confirmation, not a change. The only
       aircraft that leaves its own country now is one that has turned hostile
       and is chasing you, which is the point.
-    row: B110
+    row: B112
   - date: 2026-08-30
     title: Border patrols stopped straying into the next country
     change: >-
@@ -49,7 +61,7 @@ entries:
       on its own side the whole way. On the Persian Gulf and Iraq maps, expect
       no fighters at all from the three small ones -- press their border and
       the SAM should still come up.
-    row: B110
+    row: B112
   - date: 2026-08-29
     title: Border patrols now come up as four
     change: >-
@@ -63,7 +75,7 @@ entries:
       Count them. On Enduring Resolve the Pakistani and Iranian patrols should
       be four-ships. If you press one and both sides end up violating the same
       country, the second flight should be four as well.
-    row: B110
+    row: B112
   - date: 2026-08-29
     title: The border patrol leaders were flying into the ground
     change: >-
@@ -80,7 +92,7 @@ entries:
       Look for the patrol still at altitude ten minutes in, and flying a long
       oval rather than sitting in one place. Both aircraft should still be
       there, not one.
-    row: B110
+    row: B112
   - date: 2026-08-29
     title: The border patrols can stay in the air now
     change: >-
@@ -96,7 +108,7 @@ entries:
       Check the patrol is still flying a few minutes into the mission rather
       than smoking in a field. If you and the enemy both stray into the same
       country, expect two separate flights to come up, one for each of you.
-    row: B110
+    row: B112
   - date: 2026-08-29
     title: Border patrols are up before you get there
     change: >-
@@ -113,7 +125,7 @@ entries:
       it. They should be there from the start of the mission and should not chase
       you. If you press them and they engage, check they keep flying normally at
       the moment they turn hostile rather than falling out of the sky.
-    row: B110
+    row: B112
   - date: 2026-08-28
     title: Border patrols scramble from near you, not from the far end
     change: >-
@@ -129,7 +141,7 @@ entries:
       Cross into Pakistan on the Afghanistan map, or any long country with no
       airbase on it, and stay. A pair should show up within a few minutes rather
       than never arriving at all.
-    row: B110
+    row: B112
   - date: 2026-08-28
     title: Borders follow the real coastline now
     change: >-
@@ -145,7 +157,7 @@ entries:
       fjords in and out rather than cutting across their mouths. If the F10 map
       ever feels slow to open, the border drawing still has its own off switch
       in the plugin options.
-    row: B110
+    row: B112
   - date: 2026-08-28
     title: The border guards actually turn up now
     change: >-
@@ -164,7 +176,7 @@ entries:
       field's SAM should come up as they engage. They now shadow from about 20
       miles rather than pulling alongside, so look for them on radar rather than
       out of the window.
-    row: B110
+    row: B112
   - date: 2026-08-27
     title: Border patrols were waiting off the edge of the map
     change: >-
@@ -178,7 +190,7 @@ entries:
       Cross a border belonging to a country with no airbase on the map -- Turkey
       on Caucasus, India on Afghanistan, Jordan on the Iraq map -- and check
       that a pair actually turns up to shadow you.
-    row: B110
+    row: B112
   - date: 2026-08-27
     title: The alert flight comes off a runway now
     change: >-
@@ -191,7 +203,7 @@ entries:
     watch: >-
       Hover Lebanon on a Syria campaign. It should read "alert from Rayak". No
       country anywhere should name a pad starting with H followed by digits.
-    row: B110
+    row: B112
   - date: 2026-08-27
     title: A border that cannot intercept you no longer says it will
     change: >-
@@ -208,7 +220,7 @@ entries:
       one. They should read as overflight permitted, not "closed to you at any
       altitude". Any country still drawn closed should be one that really does
       come up after you.
-    row: B110
+    row: B112
   - date: 2026-08-26
     title: If we do not fly from it, do not fly over it
     change: >-
@@ -225,7 +237,7 @@ entries:
       Hover a country on the map layer. If your side has an airbase inside it,
       it reads friendly; if nobody does, it is defended. It should match what
       you can see on the map with no reference to the year.
-    row: B110
+    row: B112
   - date: 2026-08-26
     title: A country you are both fighting over is grey now
     change: >-
@@ -240,7 +252,7 @@ entries:
       Open the map layer on a Kola campaign. Norway and Finland grey, Sweden
       blue, both halves of Russia red -- and nothing filled solid unless it is a
       country that is not in the war at all.
-    row: B110
+    row: B112
   - date: 2026-08-26
     title: Borders follow the coastline, and neighbours share one line
     change: >-
@@ -257,7 +269,7 @@ entries:
       On Kola, check that Norway's border follows the fjords instead of cutting
       straight across them, and that where two countries meet you see one line
       rather than two running side by side.
-    row: B110
+    row: B112
   - date: 2026-08-26
     title: The map draws the country the war is in
     change: >-
@@ -274,7 +286,7 @@ entries:
       layer. Iraq (or Iran) should now be outlined, and the only strongly shaded
       country should be one that is not in the war and refuses you transit.
       Borders already in a save keep the set they were rolled with.
-    row: B110
+    row: B112
   - date: 2026-08-26
     title: Neutral interceptors can actually reach you
     change: >-
@@ -288,7 +300,7 @@ entries:
     watch: >-
       Cross a defended border and watch your RWR. A pair should show up inside
       a couple of minutes and sit with you rather than trailing far behind.
-    row: B110
+    row: B112
   - date: 2026-08-25
     title: Every campaign gets its neighbours, with no setup
     change: >-
@@ -305,7 +317,7 @@ entries:
       and tick the Neutral airspace layer. On a 2006 Afghanistan campaign you
       should see Iran, Uzbekistan and India shaded (they will intercept you) and
       Pakistan, Turkmenistan and Tajikistan faint (transit permitted).
-    row: B110
+    row: B112
   - date: 2026-08-25
     title: The nations around the war are on the map
     change: >-
@@ -326,7 +338,7 @@ entries:
       Asian neighbours in faint mint you may overfly. Then cut a corner into
       Pakistan and hold -- warned in ~40 s, a MiG-21 pair on your enemy's IFF,
       and they go home if you leave promptly.
-    row: B110
+    row: B112
   - date: 2026-08-24
     title: The carrier corridor over Pakistan
     change: >-
@@ -344,7 +356,7 @@ entries:
       blocks with the gap between them. Plan a carrier sortie to Farah and see
       the direct line clip the western block; then drop a waypoint around
       30.5N 65.0E and watch it go clean.
-    row: B110
+    row: B112
   - date: 2026-08-26
     title: Apache data cartridge + the Viper's ROE tab filled in
     change: >-

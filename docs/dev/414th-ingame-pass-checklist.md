@@ -58,7 +58,7 @@ also relative to `ReferenceLatitude=38 / ReferenceLongitude=36`, not absolute.
 
 ## Outstanding rows at a glance
 
-79 rows need a live pass. Full detail is under each `###` heading below —
+81 rows need a live pass. Full detail is under each `###` heading below —
 search the row id. `☐` untested · `◐` flown but not under the conditions that
 stress it · `✗` fail signature reproduced in-game.
 
@@ -93,8 +93,8 @@ stress it · `✗` fail signature reproduced in-game.
 | B85 | A flight with an unreachable TOT flies instead of orbiting | §8 | ◐ |
 | B98 | The bullseye is the same place it was last mission | §95 | ☑ |
 | B99 | AI packages arrive inside the mission, not after it | §8 | ◐ |
-| B110 | Neutral border: warned, shadowed, then engaged only if you press | §96 | ☑ |
-| B111 | Neutral border: AI intruders are shadowed, never engaged | §96 | ◐ |
+| B112 | Neutral border: warned, shadowed, then engaged only if you press | §96 | ☑ |
+| B113 | Neutral border: AI intruders are shadowed, never engaged | §96 | ◐ |
 | G25 | Armed Recon package: recon drone + SEAD Viper escort + 4-ship sweep | §3 | ◐ |
 | G30 | MANTIS SHORAD link: the point defense ambushes the HARM shot | MANTIS migration | ☐ |
 | G33 | Survivor ADF beacon: the pinned 260 kHz drives a real needle | CSAR (upstream #929 + 414th pin) | ☐ |
@@ -191,6 +191,8 @@ stress it · `✗` fail signature reproduced in-game.
 | B107 | The log stops repeating a MOOSE event error thousands of times | vendored `Moose.lua` | ☐ |
 | B108 | A stuck TIC unit names itself, and the retries are spread not concentrated | §9 TIC | ☐ |
 | B109 | Payload backups leave `UnitPayloads` and the launch error stops | §73 | ☐ |
+| B110 | A SEAD jet's steerpoints are the site's emitters, and the card's STPT numbers match | §5 / §3 | ☐ |
+| B111 | A package's escort holds the striker's pace instead of running ahead | §8 cruise mach | ☐ |
 
 ---
 
@@ -6181,7 +6183,7 @@ mountain or coastal front will do.
      strength, so an 8-object swing is worth a look on Desert Trident's Jordan
      sector specifically.
 
-### B110 — Neutral border: warned, shadowed, then engaged only if you press · §96 · ☑ VERIFIED
+### B112 — Neutral border: warned, shadowed, then engaged only if you press · §96 · ☑ VERIFIED
 
 **CLOSED 2026-09-01, test 25** (Syria, `Tacview-20260901-225329`). Five
 four-ship patrols — Lebanon, Iraq, Jordan, Saudi Arabia, Turkey — airborne from
@@ -6312,7 +6314,7 @@ shadow is destroyed by your own AI escort before escalation **more often than no
 fallback); the SA-6 spawns cold or never engages; escalation fires on an AI-only
 intruder.
 
-### B111 — Neutral border: AI intruders are shadowed, never engaged · §96 · ◐ PARTIAL
+### B113 — Neutral border: AI intruders are shadowed, never engaged · §96 · ◐ PARTIAL
 
 **Flown 2026-08-28.** The never-engaged half held — only the player's flight was
 escalated on. But the pre-registered risk fired at 100 %: **all four alert
@@ -6800,3 +6802,80 @@ returns nothing on the next launch.
   by hand.
 - **Backups stop being written at all** — `Retribution/PayloadBackups` was not
   creatable. §73 refuses the write rather than modifying a file it could not back up.
+
+---
+
+### B110 — A SEAD jet's steerpoints are the site's emitters, and the card's STPT numbers match · §5 / §3 · ☐ UNTESTED
+
+A SEAD flight used to get one `TARGET_POINT` per *unit* at the objective. Against an
+SA-2 that is thirteen steerpoints, six of them the layout's Logistics/Fuel/AAA slots:
+two GAZ-66, two TZ-22 bowsers, two ZU-23. The waypoint list now reads
+`TheaterGroundObject.sead_targets` (radar classes + `TELAR`/`SHORAD`/`LAUNCHER`), which
+is what the SEAD kneeboard already listed. DEAD is deliberately unchanged.
+
+The kneeboard pairs its emitter rows to those waypoints **by index**, so the risk this
+row exists to catch is the two lists drifting apart — a unit-test can pin the pairing
+but not what the jet actually loads.
+
+**Setup.** Any campaign with a legacy SAM belt; target intel precision on **Exact**
+(Approximate collapses SEAD to one area waypoint and this row does not apply). Frag a
+SEAD flight against an SA-2 or SA-3 site that has its support slots filled — check the
+site in the app first, it needs trucks in it. Fly to the aircraft, open the Waypoints
+tab and the SEAD Target Info kneeboard page. ~15 min.
+
+**Pass.** The waypoint list has one target point per radar and launcher and **none for
+the trucks, bowsers or ZU-23s**. Every row of the kneeboard's `# | Description | ALIC |
+Location` table carries a number, and that number is the steerpoint that actually sits
+on that emitter.
+
+**Fail signatures, and what each means:**
+
+- **Trucks still have steerpoints** — the plan came from a save generated before this
+  change. Flight plans are persisted; re-plan the flight or start a new turn.
+- **The card's STPT column is blank from the second row down** — `target_units` and the
+  flight plan are reading different lists. That is the exact regression
+  `test_sead_exact_view_numbers_stpts_from_the_emitter_waypoint_list` pins.
+- **A steerpoint number points at the wrong emitter** — same cause, but the lists are the
+  same length, so check ordering rather than membership.
+- **An HDS S-300/S-400 site loses its radar steerpoints** — the class filter missed a mod
+  unit's `class:`. The filter is class-based precisely so HDS units survive; ALIC would
+  not have. Check the unit's yaml in `resources/units/ground_units/`.
+- **A site with no emitters gets no steerpoints at all** — the `sead_targets` fallback to
+  the full roster failed; `targets[0]` anchors the flight plan's timing math, so this
+  would show up as a planning error rather than a quiet miss.
+### B111 — A package's escort holds the striker's pace instead of running ahead · §8 cruise mach · ☐ UNTESTED
+
+**Live for Hornet packages, a measurement row for everything else.** The mechanism landed
+2026-09-01 with **one authored airframe, the F/A-18C at M0.78**. A package pairing a Hornet
+striker with any unauthored escort is now exercisable; a package with no Hornet in it still
+commands one mach for everyone and cannot move this row.
+
+**Setup.** Any package with both a strike/DEAD flight and an escort. After the join, before
+the ingress, open F10 and read **ground speed AND altitude together** off each unit. Record
+the loadout with each number — store weight was already shown not to predict the answer
+(see the note), so the loadout is context, not the variable. ~5 min, on a flight you were
+flying anyway.
+
+**Pass, once values are authored.** Escort and striker read within ~15 kt of each other on
+the join→ingress leg, at the striker's pace.
+
+**The measured baseline this replaces** (Syria, Syrian Shield turn 2): F-16CM SEAD Escort
+542 kt at 22,000 ft (M0.89) against F/A-18C Strike 478 kt at 21,000 ft (M0.78), both
+commanded ~M0.85.
+
+**Fail signatures, and what each means:**
+
+- **Both still read their commanded ~M0.85 band (517–525 kt)** — neither flight is an
+  authored airframe. Expected for a non-Hornet package, not a defect.
+- **A clean CAP Hornet reads ~M0.78 and feels sluggish** — working as authored, and the
+  known cost of an airframe-wide knob. Record the reading: a clean Hornet measuring near
+  M0.85 is the evidence that reopens the value.
+- **They match, but the whole package is slower than the striker manages** — the authored
+  value is too low. It is airframe-wide, so a clean CAP Hornet pays a loaded striker's price;
+  that trade is recorded in the note and may need revisiting.
+- **A planned speed below 486.5 kt appears with no authored value** — impossible from
+  `GroundSpeed.for_flight`; something else wrote it. Read the note's ladder.
+- **Fuel figures moved on strike packages** — the `combat_speed_waypoints` override was lost
+  and the ingress leg is being charged combat burn.
+
+Design note: [design/414th-cruise-mach-notes.md](design/414th-cruise-mach-notes.md).

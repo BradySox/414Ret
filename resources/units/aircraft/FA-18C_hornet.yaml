@@ -23,6 +23,10 @@ price: 24
 role: Carrier-based Multirole Fighter
 # DCS default livery for the Hornet is the Blue Angels.
 default_livery: "VFA-34"
+# F10 ground speed, level at FL210, 2x GBU-31 + 2x FPU-8A. The fuel block below
+# was measured at 0.85 on a lighter jet; this knob is airframe-wide and takes the
+# loaded figure. See docs/dev/design/414th-cruise-mach-notes.md.
+cruise_mach: 0.78
 fuel:
   # Parking A1 to RWY 32 at Akrotiri.
   taxi: 170

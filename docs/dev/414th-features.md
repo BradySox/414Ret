@@ -1305,6 +1305,26 @@ controls four behaviors together when set to Approximate:
   nor publishes exact unit counts. A site with no coded emitter (a pure AAA/launcher group) falls
   back to the full unit list so the page is never blank. The exact view keeps one row per emitter
   (distinct coords) and preserves the by-order STPT pairing via the unit's original index.
+- **A SEAD flight's steerpoints are emitters too** (2026-09-01). The waypoints did not follow the
+  kneeboard until this change: `SeadFlightPlan` called `strike_targets_for`, so a jet fragged
+  against an SA-2 got a `TARGET_POINT` per *unit* — search radar, both §60 track radars, every
+  launcher, and the layout's Logistics/Fuel/AAA slots (two GAZ-66, two TZ-22 bowsers, two ZU-23).
+  A HARM shooter loitering at standoff cannot use a bowser steerpoint, and the enumeration
+  published the composition and exact unit counts this page is written to withhold.
+  `TheaterGroundObject.sead_targets` now narrows `strike_targets` to
+  `SEAD_TARGET_UNIT_CLASSES` (`game/data/units.py`: the radar classes, plus `TELAR`, `SHORAD`
+  and `LAUNCHER`), and `FormationAttackBuilder.sead_targets_for` builds the waypoints from it.
+  **DEAD is unchanged** — it kills individual launchers, so it keeps the full per-unit list.
+  Three constraints, each with a test:
+  - **The filter is class-based, never ALIC-based.** `game/data/alic.py` is a hand-curated
+    vanilla table, so an ALIC filter would drop every HDS radar (§41). A unit whose type is
+    unregistered (`unit_type` raising `StopIteration`) is **kept** — unknown is not absent.
+  - **`sead_targets` falls back to the full roster when nothing matches**, so a SEAD flight
+    hand-fragged onto an emitterless site still gets `targets[0]` for the timing math.
+  - **`SeadTaskPage.target_units` must read the same list the flight plan built from**, because
+    `_emitter_units` pairs to `_target_point_numbers()` **by index**. Leaving it on
+    `strike_targets` while the waypoints shrank ran the index off the end of the shorter
+    waypoint list and printed a blank STPT for every emitter after the first support vehicle.
 - **Recon-fog redaction (§3).** Both the cue and exact views only list the emitters once the
   site is **identified**: `SeadTaskPage._target_identified` gates on
   `TheaterGroundObject.known_for(viewer)`, and an un-discovered site is redacted to its

@@ -58,7 +58,7 @@ also relative to `ReferenceLatitude=38 / ReferenceLongitude=36`, not absolute.
 
 ## Outstanding rows at a glance
 
-78 rows need a live pass. Full detail is under each `###` heading below —
+79 rows need a live pass. Full detail is under each `###` heading below —
 search the row id. `☐` untested · `◐` flown but not under the conditions that
 stress it · `✗` fail signature reproduced in-game.
 
@@ -189,6 +189,7 @@ stress it · `✗` fail signature reproduced in-game.
 | B107 | The log stops repeating a MOOSE event error thousands of times | vendored `Moose.lua` | ☐ |
 | B108 | A stuck TIC unit names itself, and the retries are spread not concentrated | §9 TIC | ☐ |
 | B109 | Payload backups leave `UnitPayloads` and the launch error stops | §73 | ☐ |
+| B110 | A SEAD jet's steerpoints are the site's emitters, and the card's STPT numbers match | §5 / §3 | ☐ |
 
 ---
 
@@ -6634,3 +6635,44 @@ returns nothing on the next launch.
   by hand.
 - **Backups stop being written at all** — `Retribution/PayloadBackups` was not
   creatable. §73 refuses the write rather than modifying a file it could not back up.
+
+---
+
+### B110 — A SEAD jet's steerpoints are the site's emitters, and the card's STPT numbers match · §5 / §3 · ☐ UNTESTED
+
+A SEAD flight used to get one `TARGET_POINT` per *unit* at the objective. Against an
+SA-2 that is thirteen steerpoints, six of them the layout's Logistics/Fuel/AAA slots:
+two GAZ-66, two TZ-22 bowsers, two ZU-23. The waypoint list now reads
+`TheaterGroundObject.sead_targets` (radar classes + `TELAR`/`SHORAD`/`LAUNCHER`), which
+is what the SEAD kneeboard already listed. DEAD is deliberately unchanged.
+
+The kneeboard pairs its emitter rows to those waypoints **by index**, so the risk this
+row exists to catch is the two lists drifting apart — a unit-test can pin the pairing
+but not what the jet actually loads.
+
+**Setup.** Any campaign with a legacy SAM belt; target intel precision on **Exact**
+(Approximate collapses SEAD to one area waypoint and this row does not apply). Frag a
+SEAD flight against an SA-2 or SA-3 site that has its support slots filled — check the
+site in the app first, it needs trucks in it. Fly to the aircraft, open the Waypoints
+tab and the SEAD Target Info kneeboard page. ~15 min.
+
+**Pass.** The waypoint list has one target point per radar and launcher and **none for
+the trucks, bowsers or ZU-23s**. Every row of the kneeboard's `# | Description | ALIC |
+Location` table carries a number, and that number is the steerpoint that actually sits
+on that emitter.
+
+**Fail signatures, and what each means:**
+
+- **Trucks still have steerpoints** — the plan came from a save generated before this
+  change. Flight plans are persisted; re-plan the flight or start a new turn.
+- **The card's STPT column is blank from the second row down** — `target_units` and the
+  flight plan are reading different lists. That is the exact regression
+  `test_sead_exact_view_numbers_stpts_from_the_emitter_waypoint_list` pins.
+- **A steerpoint number points at the wrong emitter** — same cause, but the lists are the
+  same length, so check ordering rather than membership.
+- **An HDS S-300/S-400 site loses its radar steerpoints** — the class filter missed a mod
+  unit's `class:`. The filter is class-based precisely so HDS units survive; ALIC would
+  not have. Check the unit's yaml in `resources/units/ground_units/`.
+- **A site with no emitters gets no steerpoints at all** — the `sead_targets` fallback to
+  the full roster failed; `targets[0]` anchors the flight plan's timing math, so this
+  would show up as a planning error rather than a quiet miss.

@@ -70,12 +70,14 @@ class Builder(FormationAttackBuilder[SeadFlightPlan, FormationAttackLayout]):
         location = self.package.target
         # Only ground objectives expose individual units with coordinates (the
         # same list the SEAD kneeboard page renders). Against those, give each
-        # listed target its own waypoint; against e.g. naval groups the kneeboard
-        # lists no per-unit coordinates, so fall back to the single target area.
-        # Mobile SAMs relocate, so under Approximate intel we also fall back to a
-        # single fuzzed target-area waypoint instead of exact per-emitter points.
+        # listed emitter its own waypoint -- NOT every unit, which a HARM shooter
+        # cannot use and which leaks the site composition (see sead_targets_for);
+        # against e.g. naval groups the kneeboard lists no per-unit coordinates,
+        # so fall back to the single target area. Mobile SAMs relocate, so under
+        # Approximate intel we also fall back to a single fuzzed target-area
+        # waypoint instead of exact per-emitter points.
         targets = (
-            self.strike_targets_for(location)
+            self.sead_targets_for(location)
             if (
                 isinstance(location, TheaterGroundObject)
                 and self.settings.target_intel_precision is TargetIntelPrecision.EXACT

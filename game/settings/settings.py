@@ -597,6 +597,7 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                     "ambient_supply_convoys",
                     "convoy_ambush",
                     "mission_briefing_popup",
+                    "neutral_border_defense",
                 ],
             ),
             (
@@ -747,6 +748,7 @@ FEATURE_GATE_FIELDS: dict[str, list[str]] = {
         "artillery_base_harassment",  # §36
         "motorpool_enabled",  # §56
         "mission_briefing_popup",  # §58
+        "neutral_border_defense",  # §96
     ],
     "Electronic & command warfare": [
         "enemy_comms_jamming",  # §51
@@ -3258,6 +3260,30 @@ class Settings:
             "prefix); empty shows it to every BLUE client. "
             "Spawned bandits are free and untracked by design -- killing them "
             "changes nothing at the turn boundary; they are event content only."
+        ),
+    )
+    neutral_border_defense: bool = boolean_option(
+        "Neutral-faction border defense",
+        page=MISSION_GENERATION_PAGE,
+        section=GENERAL_SECTION,
+        default=False,
+        detail=(
+            "Every nation on the map is drawn with its real border, and one "
+            "that is not in the war defends its own airspace: it flies a "
+            "standing patrol inside its border from mission start, so you can "
+            "see it before you cross. Enter and it warns you by radio at once. "
+            "Stay past the engage timer, release a weapon inside the border, or "
+            "fire on the patrol, and it turns hostile on your enemy's coalition "
+            "-- a country too small to orbit inside its own border flies no "
+            "patrol and answers with the SAM alone. "
+            "and attacks -- and the field's SAM battery wakes. Whose airspace it "
+            "is, and whether it lets you through, are read from who holds the "
+            "airfields inside it. AI intruders are warned but never engaged, and "
+            "the auto-planner ignores the borders entirely. Needs the 'Neutral "
+            "border defense' LUA plugin ticked. Borders ship with the eight "
+            "real-world terrains, so no campaign has to author anything; a "
+            "campaign may still author its own. Patrol aircraft are free, "
+            "untracked event content."
         ),
     )
     civilian_air_traffic: bool = boolean_option(

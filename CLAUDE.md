@@ -139,6 +139,25 @@ Read before touching a campaign's `.yaml`, `.miz` or build tool.
   juanjux #63** — why the baseline is Passive Defense, the `aiReactionExempt` protocol any
   plugin setting reaction-on-threat must use, why we took his head and not the merged PR,
   and the pre-registered falsifier if AI attrition rises)
+- **Neutral factions** — `414th-neutral-border-defense-notes.md` (**§96** — the engine
+  verdict on why a true neutral cannot fire, the opposing-coalition clone mechanism, the
+  DM-locked rules incl. derived alignment (airfield-hosting decides the side), the
+  overflight/refuses split, the accepted shadow-risk and its recorded fallback, the
+  real-data border pipeline, and the DECIDED-not-built automagic direction;
+  fictional-overlay campaigns are out of scope),
+  `414th-national-postures-notes.md` (**RESEARCHED 2026-08-25, data drafted, nothing
+  wired** — `resources/borders/national_postures.yaml`: 47 countries, 244 dated posture
+  ranges, both blocs, five buckets. Also the measured country-per-map table that
+  **corrected four errors in the research brief's from-memory list** (India on the
+  Afghanistan map; no Qatar/Bahrain/Saudi on the Persian Gulf map; Belgium not Germany
+  on Normandy/Channel; Saudi Arabia on the Syria map), the two rules that decide the
+  hard cases, and the four gaps between the data and §96 as built. **Armenia and
+  Azerbaijan are not pydcs countries either** — the same hole as Turkmenistan, on the
+  most-used terrain). **Answers the pre-1991 geometry blocker**: CShapes 2.0 is
+  CC BY-NC-SA and historical-basemaps is GPL-3, both gated, but **GSHHG/CIA World
+  Data Bank II is LGPL over US-Government public domain** and its 1972-77 vintage
+  covers every boundary the fork needs — the work is assembling its line segments
+  into polygons, not finding data
 - **Strike targets / BDA** — `414th-scenery-kill-tracking-notes.md` (why some scenery strike
   targets never register as killed; the M4 IADS stand-in; the proxy unit that was built and
   reverted, and the position matcher measured to have no input. **The reported failure was never
@@ -471,6 +490,7 @@ linked design note.
 93. **Region priorities** — per-control-point BLUE planning emphasis: emphasized regions rank closer, deprioritized farther, ignored left to manual packages. A weight, never a fence.
 94. **Smart threat reaction** — only the flight a missile is actually guiding on goes defensive; everything else holds formation and uses countermeasures.
 95. **Pinned bullseye** — one bullseye for the campaign instead of a new one every turn, never anchored on a ship or an off-map spawn; the kneeboard names the place it sits on and flags the rare turn it moves.
+96. **Neutral-faction border defense** — every nation on the map is drawn with its real border, the map's own nation included: alignment derived from who holds the airfields inside it, counted per country (both sides holding it = contested grey, claimed by neither QRA; a country in the war is outline-only; red-aligned airspace joins §1's QRA accept zones), and a country not in the war defends (overflight is derived from the same airbases: you may cross what you fly from, and what both sides fly from) — it flies a standing patrol inside its border from mission start, visible before you cross, and hails you on entry (a country too small to orbit clear of its own frontier flies none and answers with its SAM); press, and it turns hostile in place on your enemy's coalition, engages, and the SAM wakes. Both sides violating one country gets a second flight. Players only; AI is warned, never engaged.
 
 ### Retired, removed or shelved — do not restore
 

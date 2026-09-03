@@ -38,10 +38,16 @@ local Harness = {
         weaponDestroys = {}, -- { name, t } from Weapon:destroy (growler spoof)
         spawns = {}, -- { template, alias, base, takeoff, altitude, grouping, speedKt, t }
         roe = {}, -- { group, option, t } from MOOSE Option* calls
+        routes = {}, -- { group, x, y, z, speed, t } from MOOSE RouteToVec3
+        destroys = {}, -- group names from MOOSE GROUP:Destroy
         radioTransmissions = {}, -- { file, x, y, z, mod, loop, hz, power, name, t }
         stoppedTransmissions = {}, -- transmission names
         sounds = {}, -- { groupId, file, t } from outSound*
         destroyedStatics = {}, -- static unit names removed via StaticObject:destroy
+        markups = {}, -- { shape, id, points, color, fill, lineType, t } from markupToAll
+        coalitionSwaps = {}, -- { group, countryId, coalitionId, t } from GROUP:Respawn
+        mapTexts = {}, -- { id, x, z, color, fill, fontSize, text } from textToAll
+        zoneFills = {}, -- { name, points, coalition, color, alpha } from ZONE_POLYGON:ReFill
 
         infos = {},
         warnings = {},
@@ -738,6 +744,49 @@ trigger = {
                 t = Harness.now,
             })
         end,
+        -- F10 map text. Recorded for the same reason as markupToAll: the label
+        -- is what tells a pilot what a drawn border IS without hovering it.
+        textToAll = function(coalition, id, point, color, fillColor, fontSize, readOnly, text)
+            table.insert(Harness.records.mapTexts, {
+                coalition = coalition,
+                id = id,
+                x = point and point.x,
+                z = point and point.z,
+                color = color,
+                fill = fillColor,
+                fontSize = fontSize,
+                text = tostring(text),
+            })
+        end,
+        -- Freeform/shape drawing. Recorded rather than ignored because the F10
+        -- border draw is the half of §96 a player sees before ever entering a
+        -- polygon, and it failed silently once already.
+        markupToAll = function(...)
+            local args = { ... }
+            local points, color, fill, lineType = {}, nil, nil, nil
+            for i = 4, #args do
+                local a = args[i]
+                if type(a) == "table" and a.x ~= nil then
+                    points[#points + 1] = { x = a.x, y = a.y, z = a.z }
+                elseif type(a) == "table" and color == nil then
+                    color = a
+                elseif type(a) == "table" then
+                    fill = a
+                elseif type(a) == "number" then
+                    lineType = a
+                end
+            end
+            table.insert(Harness.records.markups, {
+                shape = args[1],
+                coalition = args[2],
+                id = args[3],
+                points = points,
+                color = color,
+                fill = fill,
+                lineType = lineType,
+                t = Harness.now,
+            })
+        end,
         removeMark = function(id)
             table.insert(Harness.records.removedMarks, id)
         end,
@@ -901,6 +950,29 @@ function GROUP.FindByName(_, name)
     return setmetatable({ group = g }, MooseGroup)
 end
 
+-- The coalition swap (§96). MOOSE's Respawn copies live positions into the
+-- template and DATABASE:Spawn hands template.CountryID to coalition.addGroup;
+-- the harness records the intent rather than modelling DCS's re-add, because
+-- what a test can pin is WHO the group was swapped to, not how DCS lands it.
+function MooseGroup:GetTemplate()
+    return {
+        name = self.group:getName(),
+        units = {},
+        route = { points = {} },
+    }
+end
+
+function MooseGroup:Respawn(template, reset)
+    table.insert(Harness.records.coalitionSwaps, {
+        group = self.group:getName(),
+        countryId = template and template.CountryID or nil,
+        coalitionId = template and template.CoalitionID or nil,
+        reset = reset,
+        t = Harness.now,
+    })
+    return self
+end
+
 function MooseGroup:GetName()
     return self.group:getName()
 end
@@ -921,6 +993,32 @@ function MooseGroup:OptionROTEvadeFire()
     })
 end
 
+function MooseGroup:OptionROEReturnFire()
+    table.insert(Harness.records.roe, {
+        group = self.group:getName(),
+        option = "ReturnFire",
+        t = Harness.now,
+    })
+end
+
+-- neutralborder shadow vectoring: record the fly-to point, no movement model.
+function MooseGroup:RouteToVec3(point, speed)
+    table.insert(Harness.records.routes, {
+        group = self.group:getName(),
+        x = point.x,
+        y = point.y,
+        z = point.z,
+        speed = speed,
+        t = Harness.now,
+    })
+end
+
+function MooseGroup:Destroy(_)
+    local name = self.group:getName()
+    table.insert(Harness.records.destroys, name)
+    Harness.groupsByName[name] = nil
+end
+
 UNIT = {}
 
 function UNIT.FindByName(_, name)
@@ -935,6 +1033,37 @@ function UNIT.FindByName(_, name)
 end
 
 -------------------------------------------------------------------------------
+-- ZONE_POLYGON: only the surface §96 touches. DCS will not fill a concave
+-- freeform, so the plugin hands the ring to MOOSE, whose ReFill triangulates.
+-- The triangulation is MOOSE's business and is not modelled here; what IS
+-- pinned is that the plugin asks for the fill at all, and with what.
+ZONE_POLYGON = {}
+ZONE_POLYGON.__index = ZONE_POLYGON
+
+function ZONE_POLYGON:NewFromPointsArray(name, points)
+    local copy = {}
+    for i = 1, #points do
+        copy[i] = { x = points[i].x, y = points[i].y }
+    end
+    return setmetatable({ name = name, points = copy, coalition = nil }, ZONE_POLYGON)
+end
+
+function ZONE_POLYGON:SetDrawCoalition(side)
+    self.coalition = side
+    return self
+end
+
+function ZONE_POLYGON:ReFill(color, alpha)
+    table.insert(Harness.records.zoneFills, {
+        name = self.name,
+        points = self.points,
+        coalition = self.coalition,
+        color = color,
+        alpha = alpha,
+    })
+    return self
+end
+
 -- AIRBASE / SPAWN fakes (MOOSE surface for the redscramble plugin). Airbases
 -- are registered by tests via Harness.addAirbase{ name, x, z, elev, side };
 -- SPAWN:SpawnAtAirbase records the spawn and synthesizes a real harness group
@@ -984,6 +1113,8 @@ function SPAWN.NewWithAlias(_, template, alias)
         counter = 0,
         grouping = 2,
         speedKt = nil,
+        countryId = nil,
+        coalitionId = nil,
     }, SpawnFake)
 end
 
@@ -994,6 +1125,23 @@ end
 
 function SpawnFake:InitSpeedKnots(kt)
     self.speedKt = kt
+    return self
+end
+
+-- Spawn-time coalition choice (neutralborder): the clone joins the given
+-- country/coalition, like MOOSE's template CountryID/CoalitionID override.
+function SpawnFake:InitCountry(id)
+    self.countryId = id
+    return self
+end
+
+function SpawnFake:InitCoalition(side)
+    self.coalitionId = side
+    return self
+end
+
+function SpawnFake:InitLimit(alive, total)
+    self.limitAlive, self.limitTotal = alive, total
     return self
 end
 
@@ -1010,6 +1158,8 @@ function SpawnFake:SpawnAtAirbase(airbase, takeoff, altitude)
         altitude = altitude,
         grouping = self.grouping,
         speedKt = self.speedKt,
+        countryId = self.countryId,
+        coalitionId = self.coalitionId,
         t = Harness.now,
     })
     nextSpawnGroupId = nextSpawnGroupId + 1
@@ -1027,9 +1177,76 @@ function SpawnFake:SpawnAtAirbase(airbase, takeoff, altitude)
     local grp = Harness.addGroup({
         name = name,
         id = nextSpawnGroupId,
-        side = coalition.side.RED,
+        side = self.coalitionId or coalition.side.RED,
         category = Group.Category.AIRPLANE,
         units = units,
+    })
+    return setmetatable({ group = grp }, MooseGroup)
+end
+
+-- Air-spawn at an arbitrary coordinate (neutralborder point-spawned CAP, for a
+-- neutral with no airfield on the map). MOOSE takes altitude as the Vec3 y.
+function SpawnFake:SpawnFromVec3(vec3)
+    self.counter = self.counter + 1
+    local name = self.alias .. "#" .. string.format("%03d", self.counter)
+    table.insert(Harness.records.spawns, {
+        template = self.template,
+        alias = self.alias,
+        base = "point",
+        x = vec3.x,
+        z = vec3.z,
+        altitude = vec3.y,
+        grouping = self.grouping,
+        speedKt = self.speedKt,
+        countryId = self.countryId,
+        coalitionId = self.coalitionId,
+        t = Harness.now,
+    })
+    nextSpawnGroupId = nextSpawnGroupId + 1
+    local units = {}
+    for i = 1, self.grouping do
+        units[#units + 1] = {
+            name = name .. "-" .. i,
+            type = "FAKE_FIGHTER",
+            x = vec3.x,
+            z = vec3.z,
+            alt = vec3.y,
+            airborne = true,
+        }
+    end
+    local grp = Harness.addGroup({
+        name = name,
+        id = nextSpawnGroupId,
+        side = self.coalitionId or coalition.side.RED,
+        category = Group.Category.AIRPLANE,
+        units = units,
+    })
+    return setmetatable({ group = grp }, MooseGroup)
+end
+
+-- In-place clone at the template's own position (neutralborder SAM wake):
+-- MOOSE SPAWN:Spawn() spawns the next group where the template stands.
+function SpawnFake:Spawn()
+    self.counter = self.counter + 1
+    local name = self.alias .. "#" .. string.format("%03d", self.counter)
+    table.insert(Harness.records.spawns, {
+        template = self.template,
+        alias = self.alias,
+        base = "template",
+        takeoff = nil,
+        altitude = nil,
+        grouping = self.grouping,
+        countryId = self.countryId,
+        coalitionId = self.coalitionId,
+        t = Harness.now,
+    })
+    nextSpawnGroupId = nextSpawnGroupId + 1
+    local grp = Harness.addGroup({
+        name = name,
+        id = nextSpawnGroupId,
+        side = self.coalitionId or coalition.side.RED,
+        category = Group.Category.GROUND,
+        units = { { name = name .. "-1", type = "FAKE_SAM", x = 0, z = 0 } },
     })
     return setmetatable({ group = grp }, MooseGroup)
 end

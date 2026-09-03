@@ -22,8 +22,15 @@ settings:
   # jammer, which restores accuracy at once. Runs via the 'GPS jamming' LUA plugin, preseeded
   # below -- the setting does NOTHING without it.
   gps_jamming: true
+  # §96 bordering-nation airspace. No block here: the campaign authors no
+  # borders, so it picks up the shipped Syria-terrain set (every country on the
+  # map), and each one's alignment is derived from who holds the airfields
+  # inside it. Both gates preseeded -- the setting does nothing without the
+  # plugin.
+  neutral_border_defense: true
   plugins:
     gpsjamming: true            # §86 runtime -- the setting does nothing without it
+    neutralborder: true         # §96 runtime -- the setting does nothing without it
   max_frontline_width: 30
   squadron_start_full: true
   enable_squadron_aircraft_limits: true

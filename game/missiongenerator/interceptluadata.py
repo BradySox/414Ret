@@ -121,6 +121,50 @@ class DefenseZoneEntry:
     radius_m: float
 
 
+@dataclass(frozen=True)
+class DefensePolygonEntry:
+    """A coalition's defended airspace given as a polygon, not a circle (§96).
+
+    A country that hosts one side's airfields is that side's territory, and its
+    real national border is the honest shape of it -- a circle around the field
+    would spill across the frontier. The Lua builds a Moose ``ZONE_POLYGON`` and
+    appends it to the same accept-zone list the ``DefenseZoneEntry`` circles
+    feed, so the side's *existing* QRA defends it. That is deliberately not a
+    second interception system layered over the first.
+    """
+
+    name: str
+    coalition: str  # "BLUE" or "RED"
+    points: list[tuple[float, float]]
+
+
+def aligned_defense_polygons(theater: "ConflictTheater") -> list[DefensePolygonEntry]:
+    """§96 borders of countries aligned with a coalition, as QRA accept zones.
+
+    Neutral countries are excluded: they defend themselves through §96's own
+    alert flight, and adding them here would let a belligerent's QRA scramble
+    over a country that is not in the war.
+    """
+    from game.theater.neutralborder import BLUE_ALIGNED, CONTESTED_ALIGNED, NEUTRAL
+
+    polygons: list[DefensePolygonEntry] = []
+    for zone in getattr(theater, "neutral_border_zones", []):
+        posture = zone.posture_in(theater)
+        # Neither an uninvolved country nor one both sides are fighting over:
+        # handing a contested country's sky to whoever holds one more airfield
+        # would scramble a QRA over ground its enemy also holds.
+        if posture in (NEUTRAL, CONTESTED_ALIGNED):
+            continue
+        polygons.append(
+            DefensePolygonEntry(
+                name=f"Airspace {zone.country}",
+                coalition="BLUE" if posture == BLUE_ALIGNED else "RED",
+                points=list(zone.border),
+            )
+        )
+    return polygons
+
+
 def defense_zone_entries(
     theater: "ConflictTheater", depth: Distance
 ) -> list[DefenseZoneEntry]:
@@ -211,6 +255,7 @@ def populate_intercept_lua(
     entries: Iterable[InterceptEntry],
     player_alert_entries: Iterable[PlayerAlertEntry] = (),
     defense_zones: Iterable[DefenseZoneEntry] = (),
+    defense_polygons: Iterable[DefensePolygonEntry] = (),
 ) -> None:
     """Build the ``dcsRetribution.Intercept`` subtree (mirrors the IADS pattern).
 
@@ -257,3 +302,22 @@ def populate_intercept_lua(
         record.add_key_value("x", f"{zone.x:.1f}")
         record.add_key_value("y", f"{zone.y:.1f}")
         record.add_key_value("radiusM", f"{zone.radius_m:.1f}")
+
+    # §96 aligned-nation airspace, as polygons rather than circles. Emitted in
+    # its own bucket because the Lua builds a different Moose zone type; both
+    # buckets end up in the same SetBorderZone list.
+    polys = intercept.get_or_create_item("POLYGONS")
+    poly_buckets = {
+        "BLUE": polys.get_or_create_item("BLUE"),
+        "RED": polys.get_or_create_item("RED"),
+    }
+    for polygon in defense_polygons:
+        if len(polygon.points) < 3:
+            continue
+        record = poly_buckets[polygon.coalition].add_item()
+        record.add_key_value("name", polygon.name)
+        point_node = record.get_or_create_item("points")
+        for x, y in polygon.points:
+            vertex = point_node.add_item()
+            vertex.add_key_value("x", f"{x:.1f}")
+            vertex.add_key_value("y", f"{y:.1f}")

@@ -20,6 +20,8 @@ from dcs.unitgroup import PlaneGroup, ShipGroup, StaticGroup, VehicleGroup
 from dcs.vehicles import AirDefence, Armor, MissilesSS, Unarmed
 
 from game.controlpoint_influenceradius import ControlPointInfluenceRadius, point_in_zone
+from game.theater.neutralborder import NeutralBorderZone
+from game.theater.terrainborders import load_terrain_borders
 from game.point_with_heading import PointWithHeading
 from game.positioned import Positioned
 from game.profiling import logged_duration
@@ -982,6 +984,31 @@ class MizCampaignLoader:
                 continue
             cp.base.strength = max(0.0, min(1.0, float(value)))
 
+    def add_neutral_border_zones(self) -> None:
+        """The campaign's §96 borders, or the terrain's if it declares none.
+
+        Borders are a property of the map, not of a campaign, so a campaign that
+        says nothing gets the shipped ones for free -- which is the only way the
+        feature reaches the 52 real-world-map campaigns that author none. A
+        campaign that DOES declare them owns its borders completely; the two are
+        never merged, because then nothing could tell you where a zone came from.
+        """
+        entries = self.campaign_data.get("neutral_border_defense")
+        source = "campaign"
+        if not entries:
+            entries = load_terrain_borders(self.theater.terrain.name)
+            source = "terrain"
+        zones = []
+        for entry in entries or []:
+            zone = NeutralBorderZone.from_yaml(entry, from_terrain=source == "terrain")
+            if zone is not None:
+                zones.append(zone)
+        if zones:
+            logging.info(
+                "Neutral borders: %d zone(s) from %s data.", len(zones), source
+            )
+        self.theater.neutral_border_zones = zones
+
     def populate_theater(self) -> None:
         for control_point in self.control_points.values():
             self.theater.add_controlpoint(control_point)
@@ -992,6 +1019,7 @@ class MizCampaignLoader:
         self.add_yaml_shipping_lanes()
         self.apply_control_point_strengths()
         self.add_rebel_zones()
+        self.add_neutral_border_zones()
 
     def get_ctld_zones(self, prefix: str) -> List[Tuple[Point, float]]:
         zones = [t for t in self.mission.triggers.zones() if prefix + " CTLD" in t.name]

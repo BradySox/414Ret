@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import math
 from datetime import timezone
 from pathlib import Path
@@ -15,6 +16,7 @@ from .daytimemap import DaytimeMap
 from .frontline import FrontLine
 from .iadsnetwork.iadsnetwork import IadsNetwork
 from .landmap import poly_contains, load_landmap
+from .neutralborder import NeutralBorderZone
 from .player import Player
 from .seasonalconditions import SeasonalConditions
 from ..utils import Heading
@@ -46,14 +48,53 @@ class ConflictTheater:
         self.daytime_map = daytime_map
         self.controlpoints: list[ControlPoint] = []
         self.rebel_zones: list[TriggerZone] = []
+        self.neutral_border_zones: list[NeutralBorderZone] = []
 
     def __setstate__(self, state: dict[str, Any]) -> None:
         if "landmap_path" not in state:
             state["landmap_path"] = self.landmap_path_for_terrain_name(
                 state["terrain"].name
             )
+        # §96: a save with no borders picks up the terrain's shipped ones. That
+        # covers both the save made before the feature existed and the one made
+        # on a campaign that authors none -- which is 52 of the 54 campaigns on
+        # real-world maps, so without this the feature reaches almost nobody
+        # already mid-campaign.
+        #
+        # A terrain list is also REFRESHED, not just filled: it is a cache of a
+        # shipped file, and freezing it would leave a campaign in progress with
+        # whatever borders happened to ship the day it was rolled. The 2026-08-26
+        # host-nation fix is exactly that case -- an existing save would never
+        # have seen Iraq or Syria. A campaign that authors its own is campaign
+        # state and is never touched; that is what `from_terrain` distinguishes.
+        # An unmarked list predates the flag, so it is left alone.
+        existing = state.get("neutral_border_zones")
+        if not existing or all(
+            getattr(zone, "from_terrain", False) for zone in existing
+        ):
+            state["neutral_border_zones"] = self._terrain_border_zones(
+                state["terrain"].name
+            )
         self.__dict__ = state
         self.landmap = load_landmap(self.landmap_path)
+
+    @staticmethod
+    def _terrain_border_zones(terrain_name: str) -> list[NeutralBorderZone]:
+        """Shipped border zones for a terrain. Never raises: a bad file costs
+        the borders, never the save."""
+        from game.theater.terrainborders import load_terrain_borders
+
+        zones = []
+        try:
+            for entry in load_terrain_borders(terrain_name):
+                zone = NeutralBorderZone.from_yaml(entry, from_terrain=True)
+                if zone is not None:
+                    zones.append(zone)
+        except Exception:
+            logging.warning(
+                "Could not load shipped borders for %s.", terrain_name, exc_info=True
+            )
+        return zones
 
     @staticmethod
     def landmap_path_for_terrain_name(terrain_name: str) -> Path:

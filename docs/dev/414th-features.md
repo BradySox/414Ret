@@ -10111,3 +10111,220 @@ every `Bullseye <brg> for <nm>` cue on the SEAD and threat-intel pages.
   kneeboard row: the place before the coordinates, the unnamed fallback, and the banner.
 
 **In-game pass owed:** B98 — the bullseye is the same place it was last mission.
+
+## §96 — Neutral-faction border defense
+
+Every nation on the map is drawn with its real border, the map's own nation included,
+and what each one does about an intruder follows from two facts. **Alignment is
+derived, never authored** — a nation hosting a RED or BLUE airfield is aligned with
+that team, one hosting **both** is `contested` (the battlefield: grey, never enforcing,
+claimed by neither side's QRA), and one hosting neither is the neutral. Counted over
+every zone of the same country, not per polygon: Russia is two zones on Kola, and
+per-piece counting drew Karelia — the largest zone on the map — as an uninvolved
+neutral that intercepts you, in a campaign where Russia is the enemy. `posture:`
+overrides. **Overflight is derived from the same airbases** (DM call, 2026-08-26) — a
+country you fly from has let you in, one both sides use has let both in, and one
+with no coalition base inside it has invited nobody and defends. `overflight:`
+overrides. The dated posture table used to answer this and was dropped as the
+source: it made consent a fact about the calendar rather than about the campaign
+in front of you, reading Sweden and Finland `closed` in 1983 while both sides
+flew combat sorties off their runways, and it cannot see a base change hands.
+The research is kept and still supplies the airframe. **Altitude floors went
+with it** — they came from its `contested` bucket, so a floor is now authored
+only and a defending country defends at any height. **A refusing neutral flies a
+standing patrol inside its own border, airborne from mission generation** — a
+12 NM racetrack leg fitted inside the polygon **pulled in by a clearance** (12
+NM, then 10, then 8), because a racetrack overshoots each end before turning
+back and a leg that merely sits inside flies out. **8 NM is a floor, not a
+fallback**: a country smaller than its own turn puts no patrol up at all and
+defends with its SAM alone — Bahrain and the two Persian Gulf slivers, 3 of the
+52 shipped zones. It is visible before you cross, which is the deterrent the
+scramble never managed (three flown attempts, all too slow or too far). Cross and
+it hails you at once, and warns again at dwell; neither call launches anything.
+A player who stays past the engage timer, releases a weapon inside, or fires on
+the patrol turns it hostile **in place** — `GROUP:Respawn` onto the intruder's
+opposing coalition, the only way a "neutral" can legally fire in DCS — and the
+SA-6 battery clones in awake. Both sides violating one country gets a second
+flight rather than a re-swap; two intruders on one side gets nearest-target
+retasking on a 20 s loop. AI intruders are warned but never engaged.
+A red-aligned nation gets no §96 flight:
+its polygon joins §1's QRA accept zones, so the enemy's existing interceptors defend
+it. A contested country — both sides holding airfields inside it — is enforced by
+nobody and claimed by neither QRA. A neutral that can field no interceptor (no era
+airframe, or no airfield/spawn) is drawn toothless; `can_field_an_interceptor` is
+asked by the generator **and** by the web map, which used to disagree with it on 14
+of the shipped zones and draw Cyprus closed over a mission you could fly through.
+Colours: red / blue / contested grey / neutral mint, shading = enforcement. Design +
+the session's decisions: `docs/dev/design/414th-neutral-border-defense-notes.md`
+(incl. the DECIDED-not-built automagic direction and the national-postures research
+brief).
+
+### The engine verdict, in one line
+
+A true-neutral unit cannot be made to fire (hostility gates weapons release, not
+tasking; no runtime coalition move exists), so the alert units are clones spawned under
+the opposing side's country (`SPAWN:InitCountry`/`InitCoalition`) with the escalation
+applied §61-style: a raw `{id="AttackGroup"}` controller task, re-set only when the
+target changes.
+
+### Shape
+
+- **Python** — `game/theater/neutralborder.py` (`NeutralBorderZone`, the campaign yaml
+  contract), parsed by `MizCampaignLoader.add_neutral_border_zones` onto
+  `ConflictTheater.neutral_border_zones` (persisted; `__setstate__` defaults it for old
+  saves). `NeutralBorderGenerator` builds, per zone, a live 4-ship
+  fighter template + optional SA-6 template at the (non-CP) neutral field under the
+  neutral country, and records what it built on `MissionData.neutral_border_zones`;
+  `neutralborderluadata.py` serializes that to `dcsRetribution.neutralBorder`.
+- **Lua** — `resources/plugins/neutralborder/neutralborder-config.lua`: border scan
+  (bbox + ray-cast point-in-polygon on terrain XY), per-group dwell, the warn → shadow
+  → escalate ladder, the SAM wake, exit-grace stand-down, and the F10 border draw
+  (default on — the §86 invisible-bubble lesson). **DCS will not fill a concave
+  freeform** — it draws the outline and drops the fill, and a national border is
+  about as concave as a shape gets, so every zone first flew as a bare line. The
+  fill is MOOSE's `ZONE_POLYGON_BASE:ReFill` triangulation (its own
+  single-freeform path is dead-coded behind `if false then`, which is the
+  corroboration); the plugin keeps a one-freeform outline on top for the dash
+  pattern, and no longer repeats vertex one.
+- **A campaign needs to author nothing.** Borders ship per terrain in
+  `resources/borders/<terrain>.yaml` (Afghanistan, Syria, Caucasus, Iraq, Kola,
+  Persian Gulf, Sinai, Falklands — Nevada and the Marianas are all-US and
+  correctly have none; GermanyCW is blocked on pre-1991 geometry), built by
+  `tools/build_terrain_borders.py`; only the airframe
+  resolves from `national_postures.yaml` against the campaign's date. A campaign
+  that declares its own `neutral_border_defense:` block overrides the terrain
+  file **completely** — never merged. Saves already in progress pick the borders
+  up on load, so no re-roll is needed.
+- **Borders are real data, never hand-traced** — `tools/neutral_border_geo.py`:
+  public-domain country GeoJSON → clip to the map → optional corridor cut →
+  shapely simplify to a vertex budget → `Point.from_latlng` → terrain XY yaml.
+  Real-world-georeferenced maps only; fictional-overlay campaigns are out of
+  scope (DM call, 2026-08-24). **Always `--clip`** — a country's real outline is
+  mostly off any one DCS map, and un-clipped the vertex budget is spent on
+  coastline nobody can fly to.
+- **The whole map is simplified as one polygon coverage**, not country by
+  country, so a frontier two countries share is simplified once and drawn once.
+  Independently-simplified neighbours weaved: their lines coincided 35-65 % of
+  the time (Russia/Norway on Kola at 7 %) with overlaps to 12.8 % of the smaller
+  country. `set_precision` to a 100 m grid → union + `polygonize` into faces →
+  `shapely.coverage_simplify`. Overlaps are now **0 on every map** and 7 of 8 are
+  a valid coverage; Falklands carries a 12.5 m² degenerate touch in Tierra del
+  Fuego, asserted as a known exception. The budget (`--max-vertices`, 96) binds
+  the worst ring on the map and is a target, not a guarantee — a landlocked
+  country whose every edge is shared has a floor (Armenia ~98). It came out
+  better on every axis: Norway's shape error 14.7 % → 7 %, Afghanistan 454 → 255
+  vertices and 446 → 247 F10 markup shapes.
+- **The alert flight comes from a field OR a point.** Most maps carry the
+  neutral's own airbase (Syria has Rayak). Some carry none at all: the DCS
+  Afghanistan map has 26 airfields and **every one is inside Afghanistan**, so
+  Pakistan and Iran have nothing to scramble from. Those zones declare
+  `spawn: [x, y]` + `spawn_alt_ft` instead of `airfield:` and the flight
+  air-spawns as a standing CAP over its own side (MOOSE `SpawnFromVec3`). The
+  yaml requires exactly one of the two; both, or neither, skips the zone.
+  `--auto-spawn` puts each piece's station at its own `representative_point()`,
+  so it is guaranteed inside that piece's territory — **but not away from its
+  edge**, which is why seven shipped stations sat within 10 NM of their own
+  frontier and India's within 0.6. The orbit fitter corrects that at generation
+  time rather than the station list being regenerated, because it also has to
+  handle an authored `airfield:` that happens to sit near a border.
+- ~~**The origin names the flight; a 25 NM stand-off decides where it comes up.**~~
+  **REMOVED 2026-08-29 with the scramble** — the patrol is airborne from mission
+  start, so nothing comes up on demand and there is no stand-off to pick. Kept
+  because the measurement is why the scramble was abandoned. Measured on the
+  first flown test (2026-08-25, Tacview): Iran's origin is the
+  middle of its clipped polygon, so the pair spawned 224 NM behind an F-15E,
+  closed to 127 NM in twelve minutes and gave up — a MiG-29A has ~80 kt on a
+  cruising Strike Eagle, and *every* launch on a country that size was that
+  launch. Inside 25 NM the origin is used as it stands, so a small country still
+  scrambles off its own runway; beyond it, the flight comes up 25 NM from the
+  intruder on the line toward the origin. 25 NM is ~3 min at the shadow's speed,
+  which is the engage dwell. A concave border that puts that line outside the
+  country falls back to the origin.
+- **Every country on the map is drawn, the map's own nation included.** The host
+  was excluded until 2026-08-26, which deleted Russia from Kola, Iran from the
+  Persian Gulf, Georgia from the Caucasus, Egypt from Sinai and Iraq from Iraq —
+  and left the war itself as the one region with no line on it. What a country's
+  airspace means is decided at run time from who holds the control points inside
+  it, so the geometry leaves none out. Syria was separately missing from the Iraq
+  map: never excluded, just never named in `--countries`.
+- **`--corridor-lon` cuts a lane**, splitting one country into the two walls of
+  a flight corridor. See the Afghanistan reference below.
+
+- **The F10 map names each border**: a two-line label at the polygon's
+  representative point (shapely, so it is inside a concave country; a centroid
+  is not) reading the country and what its airspace does — `friendly` /
+  `enemy-held` / `contested` / `transit permitted` / `CLOSED - alert from
+  <field>`. Drawn in the border's own hue, which keeps it distinct from §45's
+  cyan support orbits and ties the label to its line. `drawBorders` switches
+  both off together.
+
+### The planning map
+
+The DCS F10 map draws the border at mission start, but by then the route is
+flown. The decision the feature asks for — cut the corner or go around — is made
+in the planner, so the border is also a **"Neutral airspace" layer** on the web
+map (`client/src/components/neutralborders/`), fed by the `/game` payload like
+the minefields layer and empty (a no-op) unless the feature is on. It is drawn
+in APP-6 neutral green with a long boundary dash, tooltipped with the altitude
+floor and the alert field, and listed in the map legend. **Never fogged** — a
+national border is public knowledge, and seeing the line is the point. The
+DCS-side markup uses the same green; amber was the first choice and was moved
+because amber is already SUSPECTED on the planner map.
+
+### Rules fixed by DM call (2026-08-24)
+
+- Single-flight ladder: the same flight that shadows is the one that engages. It spawns
+  visibly red/blue from the start; the accepted risk is that nearby AI of the intruder's
+  side may engage the shadower uninvited (return-fire ROE answers it). The recorded
+  fallback if flown tests show shadowers dying early is the in-place coalition-swap
+  respawn — see the design note; do not re-derive it.
+- Everyone trips the border; only players are ever engaged. The planner stays blind —
+  no navmesh hazard (do not reopen the §6 revert).
+- In-mission only: nothing persists past the debrief. Spawns are free, untracked event
+  content (the §61 precedent).
+- Escalation is ROE + tasking only. Never `enableEmission` (hard constraint).
+
+### Reference implementations
+
+**Into the Hornet's Nest (Syria) — the derived-alignment case.** Lebanon was authored
+as the neutral and the derivation rule corrected us: Beirut sits inside its border
+hosting four red squadrons, so it resolves **red-aligned** — drawn in the enemy
+family, covered by red's QRA accept zone, and its authored aircraft/SAM fields are
+inert. The zone's yaml is kept as-is (the border is the context the DM wanted drawn);
+the campaign's §96 *interception* showcase is Enduring Resolve, not this.
+
+**Enduring Resolve (Afghanistan) — the corridor case.** The OEF "boulevard": the
+carrier sits at 24.5°N 65.0°E in the Arabian Sea, and everything it launches has to
+come north across Pakistan to reach Helmand and Kandahar. Pakistan's zone is cut into
+two walls with a **~225 km lane** between them (`--corridor-lon 64.0 66.3`), and Iran
+is the western no-go. Measured on the authored polygons: the direct carrier routes to
+Kandahar, Bastion, Bost, Dwyer and Tarinkot all thread the lane clean, while the direct
+line to **Farah** (62.2°E) crosses Pakistan — the dogleg up the corridor and then west
+is clear. That is the constraint the campaign exists to create, and it is real
+geometry, not a scripted scold.
+
+Three zones, all point-spawned. **Only Pakistan and Iran are modelled** because DCS has
+no Turkmenistan, Uzbekistan or Tajikistan — they are not pydcs countries at all, so a
+northern zone could only fly under some other nation's flag. The northern border is
+left undefended rather than mislabelled; do not "fix" this by substituting Kazakhstan
+or Russia.
+
+Because AI intruders are shadowed and never engaged, a lane this tight costs the
+campaign nothing: an AI flight that clips a wall picks up a shadow escort, and only the
+player is ever shot at.
+
+### Files & tests
+
+- `game/theater/neutralborder.py` · `game/campaignloader/mizcampaignloader.py` ·
+  `game/missiongenerator/neutralbordergenerator.py` · `neutralborderluadata.py` ·
+  `game/settings/settings.py` (`neutral_border_defense`) ·
+  `resources/plugins/neutralborder/` · `tools/neutral_border_geo.py`.
+- `tests/lua/test_neutralborder_runtime.py` — 8 harness tests: clean no-op, the
+  warn/shadow with the opposing-side clone (both directions), dwell escalation with the
+  AttackGroup task + SAM wake, AI-never-engaged, the high-transit non-trip, the
+  weapon-release escalation, and the exit stand-down. `tests/test_neutralborder.py` —
+  yaml parsing never raises. `game/missiongenerator/tests/test_neutralborder_luadata.py`
+  — the emitter contract.
+
+**In-game pass owed:** B113 (AI shadowed only —
+and how often the intruder's own side kills the shadower, the accepted-risk watch).

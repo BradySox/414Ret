@@ -44,6 +44,27 @@ export const mapColors = {
   pilotMia: "#ff8c2e", // rescue orange: an evader awaiting pickup (actionable)
   pilotPow: "#9aa0a6", // gray: held at an enemy field (freed by recapture)
 
+  // --- bordering-nation airspace (§96) ---
+  // Three colour families, one per owner (DM call): colour says WHO owns the
+  // airspace, and the shade says whether it bites. A neutral that refuses
+  // transit and one that permits it share the green and differ by shading.
+  // Amber was considered and rejected: it is already SUSPECTED, and
+  // "un-reconned enemy" must not read as "a country not in the war".
+  // **Hue answers "will this airspace engage me", not "whose side is it on".**
+  // The first cut coded alignment, which drew Iran -- closed, and it intercepts
+  // -- the same green as Turkmenistan, which waves you through. Alignment is
+  // trivia in the cockpit; the threat is not. So both hostile states are red
+  // and both passable ones are not, and the pair within each family differ by
+  // hue so they stay tellable apart.
+  airspaceRed: "#c85050", // enemy-aligned: hosts the enemy's fields
+  // Both sides hold airfields in it. Grey because the two allegiance hues are
+  // the two answers that are NOT true here -- Able Archer 83 drew Norway, the
+  // NATO host, in enemy red because the Soviets held two of its three fields.
+  airspaceContested: "#b9b0a6",
+  airspaceHostileNeutral: "#e0555f", // a third party that refuses YOU transit
+  airspaceOpenNeutral: "#9fd9b8", // pale mint: neutral, overflight permitted
+  airspaceBlue: "#0084ff", // your own side's airspace
+
   // --- misc ---
   highlight: "#ffff00",
 } as const;
@@ -79,7 +100,14 @@ export interface StrokeSignature {
 }
 
 export const mapStrokes: Record<
-  "suspectedArea" | "suspectedCluster" | "minefield" | "pilotMia" | "pilotPow",
+  | "suspectedArea"
+  | "suspectedCluster"
+  | "minefield"
+  | "pilotMia"
+  | "pilotPow"
+  | "airspaceEnforced"
+  | "airspaceOpen"
+  | "airspaceBelligerent",
   StrokeSignature
 > = {
   suspectedArea: {
@@ -101,4 +129,38 @@ export const mapStrokes: Record<
   minefield: { dashArray: "2 8", weight: 2.5, casingWeight: 6 },
   pilotMia: { weight: 2.5, casingWeight: 6 },
   pilotPow: { dashArray: "3 5", weight: 2.5, casingWeight: 6 },
+  // A long map-boundary dash — the one pattern that reads as a border rather
+  // than a hazard. 16/10 is the removed §40 ROE zone's own signature, whose
+  // comment called it "an authored border: firm, legal" — exactly this.
+  airspaceEnforced: { dashArray: "18 8", weight: 3.5, casingWeight: 7 },
+  // Airspace you may cross: present, not a warning. Still drawn heavily enough
+  // to FIND -- a 1.5px unshaded dashed ring was invisible over satellite
+  // imagery, which is the same defect the removed §40 layer recorded about a
+  // too-faint fill. It stays clearly lighter than the enforced signature, so
+  // "bites" vs "does not bite" survives; it just is not hidden any more.
+  airspaceOpen: { dashArray: "6 8", weight: 2, casingWeight: 5 },
+  // A country IN the war. Solid, because dashes in this family mean "a
+  // boundary you must decide about" and there is no decision here -- the
+  // belligerent's own QRA already governs its sky, not §96.
+  //
+  // The casing is what makes it findable. Reported 2026-08-26: a friendly
+  // country read as its neighbour's crimson, because an uncased 2px blue line
+  // over a map full of blue flight paths is not a line anyone can pick out, and
+  // the eye takes the nearest thing that IS legible. Every other family here
+  // carries a halo for the same reason.
+  airspaceBelligerent: { weight: 2.5, casingWeight: 6 },
 };
+
+//: Fill opacity per airspace state. The shade answers one question -- *will
+//: this airspace intercept me* -- so only an enforcing neutral gets a real one.
+//:
+//: The other two were both wrong on the first pass and both were reported from
+//: the same screenshot. A belligerent country was filled as heavily as an
+//: enforcing neutral, so Jordan and Iraq washed half the Syria map pink over
+//: ground the unit icons, threat rings and front line already describe. And an
+//: open neutral at 0.05 is arithmetically invisible over desert imagery -- a
+//: hover on Saudi Arabia was read as red terrain, because the terrain IS red
+//: and the fill added nothing to it.
+export const AIRSPACE_FILL_ENFORCED = 0.2;
+export const AIRSPACE_FILL_OPEN = 0.1;
+export const AIRSPACE_FILL_BELLIGERENT = 0.06;

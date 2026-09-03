@@ -93,6 +93,8 @@ stress it · `✗` fail signature reproduced in-game.
 | B85 | A flight with an unreachable TOT flies instead of orbiting | §8 | ◐ |
 | B98 | The bullseye is the same place it was last mission | §95 | ☑ |
 | B99 | AI packages arrive inside the mission, not after it | §8 | ◐ |
+| B112 | Neutral border: warned, shadowed, then engaged only if you press | §96 | ☑ |
+| B113 | Neutral border: AI intruders are shadowed, never engaged | §96 | ◐ |
 | G25 | Armed Recon package: recon drone + SEAD Viper escort + 4-ship sweep | §3 | ◐ |
 | G30 | MANTIS SHORAD link: the point defense ambushes the HARM shot | MANTIS migration | ☐ |
 | G33 | Survivor ADF beacon: the pinned 260 kHz drives a real needle | CSAR (upstream #929 + 414th pin) | ☐ |
@@ -6181,6 +6183,170 @@ mountain or coastal front will do.
   4. **The front line between two affected bases jumps** — ownership feeds base
      strength, so an 8-object swing is worth a look on Desert Trident's Jordan
      sector specifically.
+
+### B112 — Neutral border: warned, shadowed, then engaged only if you press · §96 · ☑ VERIFIED
+
+**CLOSED 2026-09-01, test 25** (Syria, `Tacview-20260901-225329`). Five
+four-ship patrols — Lebanon, Iraq, Jordan, Saudi Arabia, Turkey — airborne from
+`t=0.1`, holding 6,074–6,095 m, and **16 of the 20 aircraft were never removed
+at all**. Every element of the ladder is measured in one session:
+
+* **Containment.** Every sample of every track against its own polygon: **23 of
+  24 aircraft never left**, 3,017 samples each. Closest approaches 24.5 / 19.1 /
+  8.7 / 7.1 / 3.9 NM. The one exception is Lebanon's #4 *after* it turned
+  hostile, chasing the intruder under `AttackGroup` — intended, not a leak.
+* **The swap took all four together** — removed `t=330.04`, re-added `t=330.1`
+  as `Coalition=Allies`, then fought for 80–150 s.
+* **The SA-6 fired** — two `SA3M9M` at 381.7 s and 386.9 s.
+* **The patrol fired back** — two `P_73` and one `P_27P` against four
+  AIM-120C-armed Vipers, which is what the four-ship call was meant to buy.
+
+The radio calls are the one item not in the artefacts, because they are not
+logged; the DM confirmed them in test 19 ("good text, pop it immediately on
+entry to airspace"). **Measured overshoot: up to 8.1 NM past the fitted leg**,
+so the two Caucasus Azerbaijan zones — fitted at 8.1 and 8.2 — are the only
+ones that could still graze a frontier. Full analysis in the design note.
+
+#### History
+
+**Flown 2026-08-28** (Syria/Lebanon, session `New test/19`). The ladder ran to
+spec: hail, shadow from Rayak, and ESCALATED exactly 180 s after entry. Three
+defects found and fixed the same day, so this needs a **re-fly** to close:
+
+* The SAM never existed on any campaign — `sam` was authored-only and the
+  terrain files never set it. Now defaults on. Re-fly must see the battery wake
+  on escalation.
+* The alert flight cold-started and took **270 s** to get airborne. Now a runway
+  start. Re-fly must see it up in well under a minute.
+* The hail waited 30 s for the shadow launch. Now immediate on entry.
+
+**REDESIGNED 2026-08-29 — re-fly from scratch.** The scramble is gone: a
+defended country now flies a standing neutral patrol over its own border from
+mission start, and its coalition is swapped in place when you press it.
+
+**Flown twice on 2026-08-29** (Afghanistan, sessions `New test/22` and `23`).
+Test 22: all three patrols stalled and crashed inside a minute — the orbit task
+was given 112 kt, because `OrbitAction` takes km/h and the value was converted
+to m/s first, so pydcs divided by 3.6 twice. Test 23, with that fixed: the
+patrols orbited, the ladder ran, the coalition swap worked **and kept the flight
+flying at 211 m/s within 5 s** (the destroy-and-re-add velocity risk is now
+closed by measurement), and **the SA-6 fired for the first time**. Still failed:
+every patrol *leader* flew into the ground in 34–43 s while every wingman lived,
+because a Race-Track orbit flies between its waypoint and the next one and the
+route had only one. The patrol now gets a 25 NM leg inside its own border.
+
+**Test 24 (Caucasus, Turkey) replicated the leader crash on a second terrain**
+before the fix shipped — it was generated 25 minutes early, so its `.miz` still
+had one route point. Leader hit the ground at 34.3 s against Pakistan's 34.6 s,
+and here the wingman went in too, at 65.3 s, both at under 15 m AGL in a
+near-vertical spiral. Nothing about §96 was exercised in that session because
+the patrol was gone inside a minute.
+
+**Flown again 2026-08-30: four aircraft, orbiting — and overflying the
+neighbour** by under 10 NM past each end of the leg. A racetrack overshoots
+before it turns back, and the leg was only required to start inside the border;
+seven stations were also sitting almost on their own frontier (India's 0.6 NM
+from it, in a country with 75 NM of room). The leg is 12 NM now, fitted inside
+the border pulled in by 12 NM, and a station too close to the line is moved to
+the nearest point with room.
+
+**Re-fly must show:** all four aircraft still up ten minutes in, flying a long
+oval rather than holding one point; **the whole circuit staying on its own side
+of the border**; the flight visible before you cross; and the SAM waking on
+escalation. Known exceptions: Bahrain and the two small Persian Gulf zones are
+smaller than a fighter's turn, so they fly **no patrol at all** and defend with
+their SAM — press one of those borders and expect the battery, not fighters.
+The two Caucasus Azerbaijan zones sit at the 8 NM clearance floor, so they are
+where to look if a patrol still clips a frontier. Known and NOT a defect: the patrol keeps its era's WVR
+fit (4× AIM-9M on the F-16A), so a modern jet still out-ranges it — the DM's call
+on 2026-08-29 was to answer that with numbers rather than better missiles. Do not
+"fix" the loadout.
+
+**Re-flown 2026-08-28 on Afghanistan.** The SAM wake and the escalation both
+confirmed working in game. One further defect found and fixed: on a long thin
+country with no airbase (Pakistan), the alert flight launched **271 NM** behind
+the intruder, because the launch point gave up and used the far-end station
+whenever the direct line left the border. Not a vertex-budget regression --
+measured identical at 96 and 384. Still needs a pass on a long country to close.
+
+Full analysis in `docs/dev/design/414th-neutral-border-defense-notes.md`.
+
+**History:** built 2026-08-24 (the neutral-border session — design note
+`414th-neutral-border-defense-notes.md`). Harness-covered: warn/shadow timing, the
+opposing-coalition clone, the AttackGroup escalation, the SAM wake, the exit
+stand-down, and (since 2026-08-26) the launch stand-off and the F10 fill. What the
+harness cannot exercise: the DCS AI actually flying the shadow vector, the airborne
+clone surviving its air spawn, the AttackGroup task producing a real attack, and the
+SA-6 clone engaging.
+
+**First flight, 2026-08-25 (Inherent Resolve, Iraq map) — partial, not a pass.**
+The scan, the clone, the dwell timers and the stand-down all fired: Iran launched a
+shadow on the opposing coalition against a blue F-15E BAI package and stood it down
+when the package left. Two defects, both since fixed and both still unverified in
+DCS: the shadow spawned **224 NM** behind the intruder (Tacview: closed to 127 NM in
+twelve minutes, then diverged — the origin was the middle of the country) and the F10
+borders drew as **bare outlines with no fill** (DCS refuses a concave freeform's
+fill). Re-fly before marking either row.
+
+**Setup:** Enduring Resolve (both gates preseeded). Fly any southern tasking — a
+carrier sortie is ideal — and cut a corner into Pakistan below 10,000 ft MSL.
+(Hornet's Nest no longer exercises the ladder: its Lebanon zone derives red-aligned
+off Beirut's red squadrons, so nothing §96 enforces there.)
+
+**Pass:** warned by text within ~40 s; a MiG-21 pair air-spawns at the border CAP
+station and holds near you without firing; exiting promptly ends it (they route home
+and despawn). Pressing — staying ~3 min, or releasing a weapon inside the border —
+flips them hostile (datalink), they attack, and an SA-6 clones in at the CAP anchor.
+The green-shaded border polygon is visible on the F10 map, with Pakistan's corridor
+gap and the faint-green overflight neighbours distinct from it.
+
+**Fail signatures:** the shadow never gets within visual range (the 2026-08-25
+stand-off regression — check the Tacview separation, not just that it launched); the
+border draws as an outline with no shading; a border carries no name, or its name and
+caption run together on one line (`textToAll` may not honour `\n` — cosmetic); the F10
+map is sluggish to open (the fill
+is one markup per triangle — 247 on Afghanistan, the busiest map; `drawBorders`
+off is the isolating test); a country both sides hold ground in draws
+red or blue rather than grey; the shadow fires during the shadow phase
+(ROE wrong); no shadow ever launches (template/clone failure — check dcs.log for
+NEUTRALBORDER| lines); the
+shadow is destroyed by your own AI escort before escalation **more often than not**
+(the accepted risk turning structural — triggers the recorded coalition-swap
+fallback); the SA-6 spawns cold or never engages; escalation fires on an AI-only
+intruder.
+
+### B113 — Neutral border: AI intruders are shadowed, never engaged · §96 · ◐ PARTIAL
+
+**Flown 2026-08-28.** The never-engaged half held — only the player's flight was
+escalated on. But the pre-registered risk fired at 100 %: **all four alert
+aircraft were killed by the intruder's own BARCAP**, and the un-escalated pair
+was shot down having **fired nothing** (return-fire ROE means it cannot shoot
+first, so an escorted intruder kills it for free). Recorded, not fixed —
+the alert flight now shepherds from **20 NM** (`shadowHoldNm`) instead of
+closing to a merge -- it was being routed to the intruder's position +1200 m,
+measured at 0.9 NM. Arming it first stays shut: that breaks "defends, never
+initiates".
+
+**Re-fly asks one question: did the loss rate move?** Standing off buys time,
+not safety -- the shadow is on the intruder's opposing coalition, so a CAP over
+the area hunts it at any range. Record how many of the pair survive to the
+escalation, and whether 20 NM still reads as "being shadowed" from the cockpit.
+
+**History:** built 2026-08-24. The DM call: everyone trips the border, only players are
+ever engaged. Harness-covered for the no-escalation invariant; what needs eyes is
+whether AI strays happen at believable rates on Hornet's Nest and what the shadow
+pairs do around them.
+
+**Setup:** same campaign; watch the F10 map for red/blue AI crossing the Pakistani or
+Iranian border below 10,000 ft during a normal mission.
+
+**Pass:** an AI stray gets a shadow pair and nothing else; the shadow stands down when
+the stray leaves. No neutral-side attack on an AI group, ever.
+
+**Fail signatures:** neutral fighters attacking an AI intruder; shadow pairs
+accumulating without standing down (leak — check `maxShadows`); constant scrambles
+every mission (borders sit on the AI's routes — the campaign author should raise the
+floor or accept the theatre).
 
 ### B99 — AI packages arrive inside the mission, not after it · §8 · ◐ PARTIAL
 

@@ -1,0 +1,40 @@
+{
+    "nameInUI": "Neutral border defense (\u00a796 runtime)",
+    "descriptionInUI": "Draws every country's real border on the F10 map. A country with no coalition airfield inside it flies a standing air patrol over its own territory from mission start -- visible before you cross, which is the point. Enter and you are warned by radio at once; stay past the engage timer, release a weapon inside the border, or fire on the patrol, and it turns hostile and attacks -- and the field's SAM battery wakes. It orbits as a true neutral and cannot fire until that moment, because a neutral unit in DCS never can. AI intruders are warned but never engaged. Patrol aircraft are free, untracked event content.",
+    "defaultValue": true,
+    "specificOptions": [
+        {
+            "nameInUI": "Seconds inside the border before the patrol is advised",
+            "mnemonic": "warnDwellS",
+            "defaultValue": 30,
+            "minimumValue": 10,
+            "maximumValue": 300
+        },
+        {
+            "nameInUI": "Seconds inside the border before a player intruder is engaged",
+            "mnemonic": "engageDwellS",
+            "defaultValue": 180,
+            "minimumValue": 60,
+            "maximumValue": 900
+        },
+        {
+            "nameInUI": "Seconds between border scans",
+            "mnemonic": "scanIntervalS",
+            "defaultValue": 10,
+            "minimumValue": 5,
+            "maximumValue": 60
+        },
+        {
+            "nameInUI": "Draw each neutral border on the F10 map",
+            "mnemonic": "drawBorders",
+            "defaultValue": true
+        }
+    ],
+    "scriptsWorkOrders": [],
+    "configurationWorkOrders": [
+        {
+            "file": "neutralborder-config.lua",
+            "mnemonic": "neutralborder-config"
+        }
+    ]
+}

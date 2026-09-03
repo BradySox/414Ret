@@ -58,7 +58,7 @@ also relative to `ReferenceLatitude=38 / ReferenceLongitude=36`, not absolute.
 
 ## Outstanding rows at a glance
 
-80 rows need a live pass. Full detail is under each `###` heading below —
+81 rows need a live pass. Full detail is under each `###` heading below —
 search the row id. `☐` untested · `◐` flown but not under the conditions that
 stress it · `✗` fail signature reproduced in-game.
 
@@ -191,6 +191,7 @@ stress it · `✗` fail signature reproduced in-game.
 | B109 | Payload backups leave `UnitPayloads` and the launch error stops | §73 | ☐ |
 | B110 | A SEAD jet's steerpoints are the site's emitters, and the card's STPT numbers match | §5 / §3 | ☐ |
 | B111 | A package's escort holds the striker's pace instead of running ahead | §8 cruise mach | ☐ |
+| B112 | The wind you set is the wind the panel shows, and the box stops at 97 kt | wind override / live weather | ☐ |
 
 ---
 
@@ -6713,3 +6714,36 @@ commanded ~M0.85.
   and the ingress leg is being charged combat burn.
 
 Design note: [design/414th-cruise-mach-notes.md](design/414th-cruise-mach-notes.md).
+
+### B112 — The wind you set is the wind the panel shows, and the box stops at 97 kt · wind override / live weather · ☐ UNTESTED
+
+**An app pass, not a flight.** Nothing here needs DCS running; it is all in the Retribution
+window. ~3 min.
+
+**Setup.** Open **Time & Weather Conditions**. Note the three wind rows on the top panel
+(At GL / FL08 / FL26). In the dialog, change a speed and a direction on any layer, then
+Accept.
+
+**Pass.**
+1. The speed spinboxes stop at **97**, not 200. Typing a larger number is refused.
+2. After Accept, the top panel's At GL / FL08 / FL26 labels show what you set, immediately,
+   without passing a turn.
+3. Accepting with nothing changed leaves each layer within ~1 kt of where it was. It will
+   not be identical — the boxes are integer knots, so a layer can shift by up to ~0.3 m/s.
+
+**Fail signatures, and what each means:**
+
+- **The box accepts 150.** `MAX_WIND_SPEED` is not reaching `_make_speed_spin`. DCS models
+  no more than 97, so anything above it is written into the `.miz` and ignored there.
+- **The panel still reads the old wind after Accept.** The `updateWinds()` call is missing
+  from `_apply_clock_and_weather`. Display only — the generated mission has the right wind,
+  which is what makes this one easy to miss.
+- **Accepting an untouched dialog moves the wind a lot.** More than ~1 kt per layer means
+  something other than the integer round-trip is at work; before this fix, Accept re-rolled
+  the wind outright, so a large jump means the override is not being applied at all.
+
+**The live-weather half is not checkable this way.** It needs a real observation over 97 kt
+at 8,000 m, which is a jet stream you cannot arrange. It is pinned by
+`tests/weather/test_atmosx_live_weather.py::test_a_jet_stream_is_clamped_to_what_dcs_will_fly`
+instead. If you ever do see a kneeboard wind above 97 kt on a live-weather turn, that test
+is lying and this row fails.

@@ -4,10 +4,13 @@
 -- Reads dcsRetribution.neutralBorder (emitted only when neutral_border_defense is on and the
 -- generator could build the map's zones; inert otherwise). Design + decisions:
 -- docs/dev/design/414th-neutral-border-defense-notes.md. Constraints a reader could undo:
---   * The shadow spawns on the intruder's OPPOSING coalition (SPAWN:InitCountry/InitCoalition)
+--   * The patrol is a STANDING orbit, airborne from mission start, not a scramble. Three flown
+--     attempts to launch one on demand all failed; do not rebuild it.
+--   * It orbits as a true neutral and swaps to the intruder's OPPOSING coalition to shoot,
 --     because a true-neutral unit cannot fire, ever -- do not "fix" the spawn to neutral.
---   * Shadow-phase ROE is RETURN FIRE, not weapons hold: it defends, never initiates (DM call).
---   * AI intruders are shadowed but NEVER escalated on (DM call). Only players earn the attack.
+--   * AI intruders are warned but NEVER escalated on (DM call). Only players earn the attack.
+--   * A country too small to orbit clear of its own frontier flies no patrol and defends with
+--     its SAM alone, so cap_group may be nil.
 --   * Escalation is ROE + tasking only. Never enableEmission (hard constraint).
 --   * Spawns are free, untracked event content (the §61 precedent).
 -- Values arrive as Lua strings (LuaItem contract) -- tonumber() everything numeric here.
@@ -22,7 +25,7 @@ end
 local data = dcsRetribution.neutralBorder
 
 -- Defaults. Overridable via the plugin options (dcsRetribution.plugins.neutralborder).
-local WARN_DWELL_S = 30 -- inside the border this long -> warning + shadow launch
+local WARN_DWELL_S = 30 -- inside the border this long -> second radio call
 local ENGAGE_DWELL_S = 180 -- a PLAYER inside this long -> engaged
 local SCAN_INTERVAL_S = 10 -- border scan cadence
 local RETARGET_INTERVAL_S = 20 -- how often a hostile patrol re-picks its nearest target
@@ -49,17 +52,7 @@ if dcsRetribution.plugins and dcsRetribution.plugins.neutralborder then
     end
 end
 
-local EXIT_GRACE_S = 120 -- outside this long (pre-escalation) -> shadow stands down
-local SHADOW_SPEED_KT = 300 -- air-spawn speed (a ~0 kt clone spawns stalled; QRA lesson)
--- How far from the intruder the alert flight comes up when its own origin is
--- further away than this. MEASURED 2026-08-25 (Tacview, Inherent Resolve): Iran's
--- origin is the representative point of its clipped polygon, so the pair spawned
--- 224 NM behind an F-15E and closed to 127 NM in twelve minutes before giving up
--- -- a MiG-29A has ~80 kt on a cruising Strike Eagle, and a stern chase from
--- there never converges. 25 NM is ~3 min at the shadow's speed, which is the
--- engage dwell, so the shadow is present when the timer it exists to enforce
--- expires. Nearer than this and the origin is used as-is, so a small country
--- still scrambles off its own runway.
+local EXIT_GRACE_S = 120 -- outside this long (pre-escalation) -> intruder state cleared
 
 local FT_TO_M = 0.3048
 local MARKUP_ID_BASE = 96000 -- §96 block; one freeform id per zone
@@ -366,10 +359,8 @@ local function draw_borders()
     end
 end
 
----------------------------------------------------------------------------------------------------
--- Shadow flights: spawn on the intruder's opposing coalition, return-fire, and vector loop.
----------------------------------------------------------------------------------------------------
 local intruders = {} -- group name -> state
+
 ---------------------------------------------------------------------------------------------------
 -- The standing patrol, and the one moment it stops being neutral.
 --
@@ -624,11 +615,9 @@ end
 -- The border watch.
 ---------------------------------------------------------------------------------------------------
 -- The radio call, on the FIRST scan that finds you inside. It used to wait for
--- WARN_DWELL_S along with the shadow launch, which put the hail half a minute
--- after the crossing that caused it -- flown 2026-08-28: "pop it immediately on
--- entry to airspace". The scan interval bounds "immediately" at SCAN_INTERVAL_S.
--- Launching the shadow still waits: being told is instant, being intercepted is
--- not.
+-- WARN_DWELL_S, which put the hail half a minute after the crossing that caused
+-- it -- flown 2026-08-28: "pop it immediately on entry to airspace". The scan
+-- interval bounds "immediately" at SCAN_INTERVAL_S.
 local function hail(state, intruder_group)
     state.hailed = true
     local zone = zones[state.zone]
@@ -728,8 +717,8 @@ local function scan_group(group, side, now)
                 }
                 intruders[name] = state
             end
-            -- Kept fresh every scan: the alert flight launches relative to
-            -- where the intruder actually is, not to the country's midpoint.
+            -- Kept fresh every scan: retarget picks the NEAREST escalated
+            -- intruder, so it needs where each one actually is.
             state.px, state.pz = p.x, p.z
             state.zone = zi
             state.dwell = state.dwell + SCAN_INTERVAL_S
@@ -742,7 +731,7 @@ local function scan_group(group, side, now)
             if not state.warned and state.dwell >= WARN_DWELL_S then
                 warn(state, group)
             end
-            -- Players only, by DM call: AI intruders are shadowed, never engaged.
+            -- Players only, by DM call: AI intruders are warned, never engaged.
             if state.is_player and not state.escalated and state.dwell >= ENGAGE_DWELL_S then
                 escalate(state, group)
             end
@@ -774,7 +763,7 @@ local function scan()
 end
 
 ---------------------------------------------------------------------------------------------------
--- Hostile-act escalation: a weapon released inside the border, or fire on the shadower.
+-- Hostile-act escalation: a weapon released inside the border, or fire on the patrol.
 ---------------------------------------------------------------------------------------------------
 local event_handler = {}
 function event_handler:onEvent(event)
@@ -791,7 +780,7 @@ function event_handler:onEvent(event)
             -- `warned` is required here and deliberately NOT on the HIT branch
             -- below: a bomb dropped before they have said anything is a strike
             -- that happens to be inside the border, but shooting at the flight
-            -- shadowing you is unambiguous whenever it happens.
+            -- that has just warned you is unambiguous whenever it happens.
             if state and state.warned and not state.escalated and state.is_player then
                 escalate(state, grp)
             end

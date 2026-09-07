@@ -6316,36 +6316,54 @@ intruder.
 
 ### B113 — Neutral border: AI intruders are shadowed, never engaged · §96 · ◐ PARTIAL
 
-**Flown 2026-08-28.** The never-engaged half held — only the player's flight was
-escalated on. But the pre-registered risk fired at 100 %: **all four alert
-aircraft were killed by the intruder's own BARCAP**, and the un-escalated pair
-was shot down having **fired nothing** (return-fire ROE means it cannot shoot
-first, so an escorted intruder kills it for free). Recorded, not fixed —
-the alert flight now shepherds from **20 NM** (`shadowHoldNm`) instead of
-closing to a merge -- it was being routed to the intruder's position +1200 m,
-measured at 0.9 NM. Arming it first stays shut: that breaks "defends, never
-initiates".
+**REWRITTEN 2026-09-07 — the card below described the scramble, which was deleted
+2026-08-29.** It told the flyer to check `shadowHoldNm` and `maxShadows`; neither
+option exists, and there are no shadow pairs to accumulate. Nothing about the
+earlier flown result survives either: the risk it recorded — the alert flight
+being shot down by the intruder's own escort — cannot happen to a standing
+patrol, which is a neutral nobody may fire on until it swaps.
 
-**Re-fly asks one question: did the loss rate move?** Standing off buys time,
-not safety -- the shadow is on the intruder's opposing coalition, so a CAP over
-the area hunts it at any range. Record how many of the pair survive to the
-escalation, and whether 20 NM still reads as "being shadowed" from the cockpit.
+**What this row now asks.** A country that refuses transit flies a four-ship
+neutral patrol inside its own border for the whole mission. An **AI** flight that
+strays across gets the radio calls and **nothing else, ever** — no coalition
+swap, no attack task, no SAM. Only a player earns those. The invariant is
+harness-covered; what needs eyes is that it holds in a real mission, and that AI
+strays happen at a believable rate rather than constantly.
 
-**History:** built 2026-08-24. The DM call: everyone trips the border, only players are
-ever engaged. Harness-covered for the no-escalation invariant; what needs eyes is
-whether AI strays happen at believable rates on Hornet's Nest and what the shadow
-pairs do around them.
+**Setup.** Any campaign with `neutral_border_defense` on and the plugin ticked —
+Into the Hornet's Nest (Lebanon) or Enduring Resolve (Pakistan, Iran) are the
+worked cases. Fly a normal mission and watch the F10 map for red or blue **AI**
+crossing a shaded border. You do not need to cross one yourself; if you do, that
+is B112's ladder, not this row.
 
-**Setup:** same campaign; watch the F10 map for red/blue AI crossing the Pakistani or
-Iranian border below 10,000 ft during a normal mission.
+**Pass.**
 
-**Pass:** an AI stray gets a shadow pair and nothing else; the shadow stands down when
-the stray leaves. No neutral-side attack on an AI group, ever.
+* An AI stray draws the radio calls and no reaction. The patrol keeps flying its
+  oval and its colour never changes on the F10 map.
+* No neutral SAM wakes for an AI intruder.
+* The patrol is still four aircraft, on its own side of the border, when the AI
+  leaves.
 
-**Fail signatures:** neutral fighters attacking an AI intruder; shadow pairs
-accumulating without standing down (leak — check `maxShadows`); constant scrambles
-every mission (borders sit on the AI's routes — the campaign author should raise the
-floor or accept the theatre).
+**Fail signatures.**
+
+* The patrol turns hostile — its F10 colour flips to a coalition — with no player
+  inside the border. That is the players-only gate leaking.
+* A neutral SAM fires on an AI flight.
+* AI strays on every mission. That is a campaign-authoring problem, not a defect:
+  the border sits on the AI's routes, and the author should raise the altitude
+  floor or accept the theatre.
+* The patrol chases the AI out of its own airspace. It should not move.
+
+**Also record, because nothing else will:** whether a patrol on a **contested or
+already-aligned** country ever appears. It should not — only an uninvolved
+country that refuses transit gets one.
+
+**History:** built 2026-08-24 on the DM call that everyone trips the border and
+only players are ever engaged. Flown 2026-08-28 against the scramble: the
+never-engaged half held, and the alert pair was killed by the intruder's BARCAP
+in all four cases — the finding that helped kill the scramble. Superseded by the
+standing patrol; see the design note.
+
 
 ### B99 — AI packages arrive inside the mission, not after it · §8 · ◐ PARTIAL
 

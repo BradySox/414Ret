@@ -11,7 +11,6 @@ from game.dcs.aircrafttype import AircraftType
 from game.dcs.groundunittype import GroundUnitType
 from game.missiongenerator.aircraft.flightdata import FlightData
 from game.missiongenerator.interceptluadata import InterceptEntry, PlayerAlertEntry
-from game.missiongenerator.reactiveredluadata import ReactiveRedInfo
 from game.missiongenerator.redscrambleluadata import RedScrambleTemplate
 from game.runways import RunwayData
 
@@ -181,10 +180,6 @@ class MissionData:
     # The blue voice-net plan (§89 P4): the ATO-derived call schedule with its
     # synthesized clips already embedded. None when either §89 gate is off, no
     # blue AWACS flies, or synthesis is unavailable (non-Windows generation).
-    # The reactive-red plan (§89 P5): the positive list of blue-targeted red
-    # objectives + the fragged reaction-alert groups. None when either gate is
-    # off or either half is empty.
-    reactive_red: Optional[ReactiveRedInfo] = None
     # Cold late-activation red interceptor templates for the host F10 scramble
     # menu (§61). Populated by AircraftGenerator.spawn_red_scramble_templates
     # when host_red_scramble is on; the redscramble plugin clones them on demand.

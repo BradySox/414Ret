@@ -29,7 +29,6 @@ from .csarbeacon import sar_beacon_hz
 from .aisleepluadata import populate_ai_sleep_lua
 from .briefingluadata import populate_briefing_lua
 from .coinluadata import populate_coin_lua
-from .reactiveredluadata import populate_reactive_red_lua
 from .interceptluadata import (
     DefenseZoneEntry,
     defense_zone_entries,
@@ -496,12 +495,6 @@ class LuaGenerator:
         # stock, mirroring expenditure back for the turn-boundary debit. Its weapon set
         # is disjoint from §63's above, so a shot is never charged to both magazines.
         populate_naval_magazines_lua(lua_data, self.game, self.mission_data)
-
-        # Reactive red (§89 P5) -- emits dcsRetribution.reactiveRed only when the
-        # plan exists (both gates + a watched objective + a fragged reaction
-        # flight); the reactivered plugin may only activate the listed groups
-        # over the listed objectives. No spawns, no kills owned by Lua.
-        populate_reactive_red_lua(lua_data, self.mission_data)
 
         # Mission-start briefing popup (§58) -- emits dcsRetribution.briefing only when
         # mission_briefing_popup is on and the mission has a player-crewed flight; the

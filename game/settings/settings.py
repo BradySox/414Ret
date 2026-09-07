@@ -421,9 +421,6 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                     "motorpool_enabled",
                     "motorpool_spawn_cap",
                     "sp_pilot_mode",
-                    "living_battlespace_preroll",
-                    "living_battlespace_preroll_cap",
-                    "living_battlespace_reactive_red",
                     "supply_gated_reinforcement",
                     "assault_costs_the_attacker",
                     "scale_aware_front_line",
@@ -767,8 +764,6 @@ FEATURE_GATE_FIELDS: dict[str, list[str]] = {
         # §89's boolean gates only -- the pre-roll ceiling is an int knob, and
         # the Features page contract is boolean gates (test_settings_filter);
         # the cap stays in Campaign Management -> Campaign features.
-        "living_battlespace_preroll",  # §89
-        "living_battlespace_reactive_red",  # §89 P5
     ],
     "Ground war": [
         "supply_gated_reinforcement",  # §90 rung A
@@ -2244,56 +2239,6 @@ class Settings:
             "damage you caused, victory progress, and scheduled squadron arrivals. "
             "The normal map/ATO planning path is untouched -- this is an express "
             "lane, not a replacement."
-        ),
-    )
-    living_battlespace_preroll: bool = boolean_option(
-        "Living battlespace: start missions mid-cycle (pre-roll)",
-        CAMPAIGN_MANAGEMENT_PAGE,
-        "Campaign features",
-        default=False,
-        detail=(
-            "Seats your package a phase-aware distance into the turn's air-tasking "
-            "cycle and simulates the war up to your engine start before the mission "
-            "generates. You spawn with earlier packages already airborne -- "
-            "outbound, on station, or recovering -- instead of the whole war "
-            "starting on the ramp with you. The first turn keeps its H-hour "
-            "launch, the next two start 15 minutes into the cycle, and later turns "
-            "start at the ceiling below. Combat during the pre-roll resolves with "
-            "the same odds as other off-screen fights, so pre-roll losses are "
-            "real. Built for single-player; in multiplayer every client spawns "
-            "mid-cycle."
-        ),
-    )
-    living_battlespace_preroll_cap: int = bounded_int_option(
-        "Living battlespace: pre-roll ceiling (minutes)",
-        CAMPAIGN_MANAGEMENT_PAGE,
-        "Campaign features",
-        default=40,
-        min=5,
-        max=90,
-        enabled_when="living_battlespace_preroll",
-        detail=(
-            "Deepest into the cycle a mission may start once the campaign is "
-            "past its opening turns. Longer pre-rolls mean a more developed war "
-            "at spawn and more of the turn resolved without you."
-        ),
-    )
-    living_battlespace_reactive_red: bool = boolean_option(
-        "Living battlespace: reactive red (alert flight over a struck objective)",
-        CAMPAIGN_MANAGEMENT_PAGE,
-        "Campaign features",
-        default=False,
-        enabled_when="living_battlespace_preroll",
-        detail=(
-            "The enemy reacts to being hit: up to two real red alert flights are "
-            "fragged each turn from real inventory and held on the ramp. When a "
-            "red objective that blue's tasking order actually targets loses a "
-            "unit, one alert flight starts up after a short tasking delay and "
-            "flies a defensive patrol over the struck objective. Strictly "
-            "defensive -- a CAP over red's own ground, inside red's existing "
-            "fighter posture -- and strictly real: the jets are claimed, "
-            "tracked airframes whose losses count. The reaction pool is the "
-            "cap; when it is spent, nothing else launches."
         ),
     )
     supply_gated_reinforcement: bool = boolean_option(
@@ -3845,6 +3790,8 @@ class Settings:
             or key.startswith("commsjam.")
             or key == "rednet"
             or key.startswith("rednet.")
+            or key == "reactivered"
+            or key.startswith("reactivered.")
         ]:
             del self.plugins[plugin_key]
 
@@ -3987,9 +3934,12 @@ class Settings:
             # tanks at plan or generation time any more, so both gates are dead.
             "auto_range_fuel_tanks",
             "fuel_tanks_over_jammers",
-            # §89 P4, the synthesized blue voice net, REMOVED 2026-08-18: the DCS
-            # AI already talks on the radio, so the net was duplicating it.
+            # §89 living battlespace, ABANDONED 2026-09-07 -- all five slices.
+            # P4 (the synthesized blue voice net) had already gone on 2026-08-18.
             "living_battlespace_voice_net",
+            "living_battlespace_preroll",
+            "living_battlespace_preroll_cap",
+            "living_battlespace_reactive_red",
             # §72's two phase tiers, REMOVED 2026-08-20: the round-down E-2C and
             # the bow respot are gone, leaving the island street and LSO crew
             # standing for both cycles. Nothing swaps dressing any more.

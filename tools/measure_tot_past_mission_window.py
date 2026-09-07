@@ -61,7 +61,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from game import persistency  # noqa: E402
 from game.ato.flighttype import FlightType  # noqa: E402
 from game.ato.traveltime import TotEstimator  # noqa: E402
-from game.fourteenth.living_battlespace import followon_window_minutes  # noqa: E402
 
 #: The scheduler's own non-spread branches, each of which times its packages by
 #: a rule of its own. Only what falls through to the spread is under test.
@@ -79,11 +78,8 @@ def spread_scheduled(package: Any) -> bool:
 
 
 def window_for(coalition: Any) -> timedelta:
-    """The scheduler's own spread ceiling, follow-on extension included."""
-    settings = coalition.game.settings
-    return settings.desired_player_mission_duration + timedelta(
-        minutes=followon_window_minutes(coalition)
-    )
+    """The scheduler's own spread ceiling."""
+    return coalition.game.settings.desired_player_mission_duration
 
 
 def measure_coalition(coalition: Any, now: datetime) -> dict[str, Any]:

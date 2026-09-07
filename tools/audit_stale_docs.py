@@ -282,6 +282,15 @@ REMOVED: tuple[Removed, ...] = (
         allow=("removed", "no longer", "historical", "abandoned"),
     ),
     Removed(
+        # S89. All five slices. The bare words "pre-roll" and "residue" are too
+        # common to match on their own.
+        "the living battlespace (S89)",
+        "2026-09-07",
+        r"living_battlespace|\breactivered\b|reactive red|living battlespace"
+        r"|recovery residue|follow-on waves|pre-roll (ceiling|briefing)",
+        allow=("removed", "no longer", "historical", "abandoned"),
+    ),
+    Removed(
         # S51. Not a bare "jamming": S77 escort jamming, S86 GPS jamming and the
         # C-130 EW platform are all live and all use the word.
         "enemy comms jamming (S51)",

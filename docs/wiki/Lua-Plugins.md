@@ -82,7 +82,7 @@ ELINT tracks as sliders.
 
 ## The plugins
 
-All 25, in `plugins.json` load order. "Inert unless" means the plugin ships in every mission
+All 24, in `plugins.json` load order. "Inert unless" means the plugin ships in every mission
 but does nothing until the mission generator emits its data — turning the matching campaign
 setting off costs nothing at runtime.
 
@@ -129,7 +129,6 @@ setting off costs nothing at runtime.
 |---|---|---|
 | `opscsar` | on | **Combat SAR** — spawns downed pilots and runs the rescue via MOOSE `Ops.CSAR`. See [Combat SAR](Combat-SAR). |
 | `intercept` | on | Per-squadron QRA intercept reserve feeding the MOOSE `AI_A2A_DISPATCHER`. |
-| `reactivered` | on | Living battlespace reactive red — real alert fighters flying a defensive patrol over a struck objective. |
 | `redscramble` | on | Host tool: an F10 menu to scramble red interceptors. Inert unless the setting is on. |
 | `briefing` | on | The mission-start briefing card each pilot sees when they slot in. |
 | `splashdamage3` | on | The squadron's locked, softened Splash Damage 3.4.2 build. No user-adjustable options by design. |

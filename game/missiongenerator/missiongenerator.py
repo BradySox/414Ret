@@ -32,7 +32,6 @@ from game.unitmap import UnitMap
 from .atisgenerator import AtisGenerator
 from .briefinggenerator import BriefingGenerator, MissionInfoGenerator
 from .cargoshipgenerator import CargoShipGenerator
-from .reactiveredluadata import plan_reactive_red
 from .convoyambushgenerator import ConvoyAmbushGenerator
 from .convoygenerator import ConvoyGenerator
 from .csargenerator import CsarGenerator
@@ -159,10 +158,6 @@ class MissionGenerator:
 
         logging.info("MIZ generation: air units")
         self.generate_air_units(tgo_generator)
-
-        # Reactive red (§89 P5): the positive list (blue-targeted red
-        # objectives) + the fragged reaction-alert groups, before the Lua pass.
-        self.mission_data.reactive_red = plan_reactive_red(self.game, self.mission_data)
 
         logging.info("MIZ generation: scripts, triggers, visuals, and drawings")
         RebellionGenerator(self.mission, self.game).generate()

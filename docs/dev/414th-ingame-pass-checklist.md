@@ -58,7 +58,7 @@ also relative to `ReferenceLatitude=38 / ReferenceLongitude=36`, not absolute.
 
 ## Outstanding rows at a glance
 
-78 rows need a live pass. Full detail is under each `###` heading below —
+76 rows need a live pass. Full detail is under each `###` heading below —
 search the row id. `☐` untested · `◐` flown but not under the conditions that
 stress it · `✗` fail signature reproduced in-game.
 
@@ -147,10 +147,10 @@ stress it · `✗` fail signature reproduced in-game.
 | B53 | AI flights no longer push early for a tanker stop they never fly | §46 | ✅ |
 | B54 | Planner behavior bar switches the suite in the settings UI | re-convergence | ☐ |
 | B55 | Carrier steams for wind down the angled deck | §88 | ☑ |
-| B56 | Living battlespace pre-roll: mid-cycle mission start | §89 | ◐ |
-| B57 | Living battlespace P2: ramp residue + clean-wing returners | §89 | ☑ |
+| B56 | Living battlespace pre-roll: mid-cycle mission start | §89 | ⊘ |
+| B57 | Living battlespace P2: ramp residue + clean-wing returners | §89 | ⊘ |
 | B59 | Living battlespace P4: the voice net | §89 | ⊘ |
-| B60 | Living battlespace P5: reactive red | §89 | ✗ |
+| B60 | Living battlespace P5: reactive red | §89 | ⊘ |
 | B61 | Task-role degrade: mismatched-role AI flights still fly their mission | §8 | ☐ |
 | B65 | Reinforcement follows the supply lines | §90 rung A | ◐ |
 | B66 | Attacking costs more than defending | §90 rung B | ☐ |
@@ -4775,7 +4775,7 @@ Case I recovery.
      2026-08-16 sign fix moves the probed bearing by ~2× the solver offset — 166 → 216 on the
      Baltic save — so coastlines that cleared before may not clear now).
 
-### B56 — Living battlespace pre-roll: mid-cycle mission start · §89 · ◐ PARTIAL
+### B56 — Living battlespace pre-roll: mid-cycle mission start · §89 · ⊘ RETIRED
 
 **History:** 2026-08-16, spectator Game Master watch, Baltic Fury turn 3, Tacview `Tacview-20260816-104955`, session `c86c58dd`; 3 of 4 pass clauses verified — **38 aircraft airborne at spawn** both sides (CAPs mid-station at 31k ft, escorts mid-route, the pre-roll-launched strike already enroute at 21k ft), war clock read 00:40 (the ACMI ReferenceTime), first recovery T+22.6m, zero parking-overflow symptoms in dcs.log. Outstanding: the SEATED clause — player startup at the briefed time with full ground ops after the auto pre-roll (the qt_ui launch wiring) — needs the flown sortie from the app) (was ☐ UNTESTED, built 2026-08-15
 
@@ -4808,7 +4808,7 @@ version), take off normally.
   5. **Turn 0 differs at all from gate-off** — the curve's zero is not gating; the expectation
      is byte-identical.
 
-### B57 — Living battlespace P2: ramp residue + clean-wing returners · §89 · ☑ VERIFIED
+### B57 — Living battlespace P2: ramp residue + clean-wing returners · §89 · ⊘ RETIRED
 
 **2026-08-17 — VERIFIED on the DM's call.** Note for anyone re-reading this: the 2026-08-17 Syria mission (`Test 6`) is NOT evidence either way — its `.miz` contains no parked residue at all (every blue group carries a flown route), so nothing on that mission could have shown this working or broken.
 
@@ -4852,7 +4852,7 @@ Needs a flight: same setup as B56 (gate on, turn 3+), plus a look at the F10 map
      broke (the ledger records the arrival at completion time precisely so an order placed
      while the sim is paused cannot teleport already-landed jets).
 
-### B58 — Living battlespace P3: follow-on waves + pre-roll briefing · §89 · ☑ VERIFIED
+### B58 — Living battlespace P3: follow-on waves + pre-roll briefing · §89 · ⊘ RETIRED
 
 **History:** 2026-08-16, spectator watch, Tacview `Tacview-20260816-104955`, session `c86c58dd` — the briefing block rendered with plausible counts ("Friendly: airborne 4, recovered 0, lost 3 / Enemy: airborne 8, lost 3 (assessed)", carried in the ACMI's own Comments field); waves activated AND flew at T+10.6m (carrier escorts), T+21.1m (a red Tu-95 3-ship) and T+32m (Hinds); activity continuous through the 96-minute watch; no parking exhaustion (0 overflow lines in dcs.log). The deep tail past a player egress follows from the same timers) (was ☐ UNTESTED, built 2026-08-15) (**2026-08-16 addendum, session `adoring-jepsen-b63803`:** that watch's `recovered 0` was the B57 structural starvation, not a real count — completed flights leave the ATO mid-march, so the walk-only count read 0 no matter what finished; the count now also reads the residue ledger, test-pinned. The rendering verification stands; the recovered figure re-checks itself on the next B57 pass
 
@@ -4887,7 +4887,7 @@ shutdown (or watch the F10 map / Tacview tail).
 
 **Retired 2026-08-18** — the feature was removed on the DM's call ("the AI already uses the radio"), so there is nothing left to fly. It never got an in-game pass; it armed 48 scheduled calls on the 2026-08-17 Syria mission and whether any of them played was never established. See `414th-features.md` §89 P4.
 
-### B60 — Living battlespace P5: reactive red · §89 · ✗ REGRESSED
+### B60 — Living battlespace P5: reactive red · §89 · ⊘ RETIRED
 
 **Test 12 flown 2026-08-20 (Persian Gulf turn 1, `Tacview-20260820-203540` + `retribution_nextturn.miz` + `state.json`, session `a6e32389`) — the reaction can never launch: the generated group is uncontrolled, not late-activated, and `Group.activate()` is a no-op on it.** Everything upstream of the launch worked. Two alert flights were fragged and emitted (`Reaction Alert Bandar Abbas Intl BARCAP|34|45|F-5E Tiger II|`, `Reaction Alert Shiraz Intl BARCAP|34|44|F-4E Phantom II|`), six objectives were watched, and three of them lost units well inside the mission — MEERKAT's Shilka at t≈1360, KATYDID's whole SA-2 site at t≈1374, DUCK's Fire Can at t≈1413. With `reactionDelaySec = 420` the first launch was owed at t≈1780 and the mission ran to t=2580. **Neither alert flight moved one metre; both sit in the Tacview at their ramp position with a single t=0 sample.**
 

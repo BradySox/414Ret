@@ -167,8 +167,6 @@ Read before touching a campaign's `.yaml`, `.miz` or build tool.
   `414th-airwar-planner-consolidation-notes.md`,
   `414th-aircraft-task-rebalance-rubric.md`, `414th-victory-conditions-notes.md`,
   `414th-wing-growth-notes.md`, `414th-single-player-loop-notes.md`,
-  `414th-living-battlespace-notes.md` (all five slices — pre-roll, residue, follow-on
-  waves, reactive red — landed 2026-08-15 as §89; the voice net was REMOVED 2026-08-18; in-game passes B56/B57/B60 owed),
   `414th-autoplanner-upstream-divergence-audit.md` (**the full fork-vs-upstream planner
   diff**, 2026-08-09: every divergence classified by gate and default; read before
   reverting or carving planner behavior)
@@ -462,7 +460,6 @@ linked design note.
 86. **GPS jamming** — satellite-guided weapons released inside the bubble land long.
 87. **Naval station-keeping racetracks** — anchored ovals so ships hold station under way.
 88. **Angled-deck carrier recovery heading** — the boat steams for 25 kt down the angled deck, not the bow.
-89. **Living battlespace** — phase-aware mid-cycle mission starts: earlier packages are already airborne or parked back home when you walk out, follow-on waves launch behind you, the briefing carries the day's running score, and real red alert fighters fly a defensive patrol over a struck objective.
 90. **Front-line model** — reinforcement follows the supply lines, attacking costs more than defending, the line's position counts the forces actually present, terrain slows the advance, and the front bulges instead of running straight.
 91. **Per-flight sortie records** — the mission reports back what each flight did: track, time airborne, fuel, shots and hits, not just which units died.
 92. **What's New** — a toolbar window listing the recent player-visible changes, each with what to look for in the next mission.
@@ -491,6 +488,7 @@ Kept numbered so old notes and saves stay readable. Details and rationale in the
 | 49 | Mobile missile relocation (the SCUD hunt) | Removed 2026-08-29 — never relocated a site in three flown attempts; test 24 measured 44.5 m against a 4,000 m radius |
 | 51 | Enemy comms jamming | Removed 2026-09-07 — abandoned; audio pressure that never changed the force model |
 | 70 | COMINT collection (and the red comms net) | Removed 2026-09-07 — abandoned entire: the collection tiers, the tasking leak, the concealed-site reveal and the audible net |
+| 89 | Living battlespace | Removed 2026-09-07 — abandoned entire: pre-roll, recovery residue, follow-on waves and reactive red (P4's voice net had already gone 2026-08-18) |
 | 53 | War economy | Removed 2026-07-21 |
 | 54 | Munitions availability | Removed 2026-07-21 |
 | 55 | Red Intent adaptive posture | Removed 2026-07-21 |

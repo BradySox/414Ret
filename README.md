@@ -188,22 +188,6 @@ Most of this is opt-in. Full list with toggles, defaults and known limitations:
   put up, then a sortie in it — one seat, AI wingmen. The role comes from what the package
   needs. A pre-turn brief covers evading pilots and their capture odds, enemy C2 damage,
   victory progress and the next squadron arrival. The map and mission planner are untouched.
-- **Living battlespace pre-roll.** Opt-in: missions start mid-cycle instead of with the whole
-  war on the ramp. Your package is seated a phase-aware distance into the turn's air-tasking
-  cycle and the war is simulated up to your engine start, so earlier packages are already
-  outbound, on station or recovering when you spawn. The first turn keeps its H-hour launch;
-  later turns start deeper in (up to a configurable ceiling, 40 minutes by default). Pre-roll
-  combat resolves with the same odds as other off-screen fights, so its losses are real.
-  Flights already home park their jets on the ramp at their recovery field, strikers spawned
-  past their target come home with empty racks, and aircraft spawned en route carry
-  burned-down fuel instead of full tanks. The cycle also has a tail: packages keep launching
-  as and after you recover, and the mission briefing opens with the air war's running score —
-  flights airborne, recovered and lost on both sides before you ever started engines.
-- **Living battlespace reactive red.** Optional second layer: the enemy visibly reacts to
-  being hit. Real red alert fighters — claimed from real inventory, their losses counted —
-  sit on the ramp; when an objective your side is tasked against loses a unit, one pair
-  starts up a few minutes later and flies a defensive patrol over the struck point. Strictly
-  defensive, strictly capped by the alert pool.
 - **Scheduled squadron arrivals.** Campaigns can add *new airframes* on announced turns, so the
   wing you start with is not the wing you end with. Schedules follow air-campaign order:
   air superiority, SEAD/DEAD and enablers first, deep strike once the SAM belt is coming down.

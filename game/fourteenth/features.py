@@ -754,18 +754,10 @@ FEATURES: tuple[Feature, ...] = (
         88,
     ),
     Feature(
-        # The living-battlespace direction: pre-roll, residue, follow-on waves
-        # and reactive red. P4 (the synthesized voice net) was REMOVED 2026-08-18
-        # -- the DCS AI already talks on the radio.
-        # docs/dev/design/414th-living-battlespace-notes.md.
         "living_battlespace",
         "Living battlespace pre-roll",
         89,
-        settings_fields=(
-            "living_battlespace_preroll",
-            "living_battlespace_preroll_cap",
-            "living_battlespace_reactive_red",
-        ),
+        retired=True,
     ),
     Feature(
         # Seam 4 of the long-view note, rungs A-E. Five changes to how the ground

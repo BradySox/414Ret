@@ -36,7 +36,7 @@ was printing the two rows under **Done** as if they were still live work — so 
 for a test that had been crossed off two days earlier. The hook now reads only this section;
 see the note at the bottom.)*
 
-### 0 · Measure what the KA-99 actually covers — sizes the reveal radius `G40` uses
+### 1 · Measure what the KA-99 actually covers — sizes the reveal radius `G40` uses
 
 **Why this is a card and not a code change.** `TARPS_POD_RADIUS_NM = 3.0`
 (`game/sim/missionresultsprocessor.py:36`) decides how close a TARPS pass must come to
@@ -63,22 +63,6 @@ analysis department on either side of track. **~20 min.**
   — note which was recording. The pilot can now run either (`hold Store Release`), so
   this no longer needs a human RIO.
 
-### 1 · Red alert fighters answer a strike you just made — `B60`
-
-**Try:** turn on the living-battlespace master **and** `living_battlespace_reactive_red` (it
-defaults off), take a turn 3 or later, strike a red objective your own ATO is tasked against,
-and stay within ~10 NM for ten minutes. **~25 min.**
-
-- **Pass:** `dcs.log` carries `REACTRED|: armed`, then `<objective> struck; alert launch in
-  420 s`, then `<group> scrambling over <objective>` — and a red pair sets up an orbit over
-  what you hit.
-- **Fail:** `could not wake <group>` (neither start path took), nothing after `armed` (the
-  death event's unit name does not match the emitted list), or a red flight airborne at
-  mission start (its parked TOT broke).
-- **Why it's here:** the launch could never fire — the generated group is uncontrolled, not
-  late-activated, so `activate()` was a no-op on it. Fixed plugin-side 2026-08-20 and not
-  flown since. It is REGRESSED, so this is a bug re-test, not a first look.
-
 ### 2 · A target you destroyed stays destroyed next turn — `B63`
 
 **Try:** frag a strike on a **map-scenery** target (a port, factory or terminal drawn as white
@@ -104,7 +88,7 @@ minute, then relaunch and fly it properly.** Destroy the target, land, accept th
 
 ## Done
 
-### 1 · A downed pilot turns up MIA, then evades — `G29` — **OFF THE CARD 2026-08-20**
+### 3 · A downed pilot turns up MIA, then evades — `G29` — **OFF THE CARD 2026-08-20**
 
 Closed twice over, and it should have come off the card the first time:
 
@@ -121,7 +105,7 @@ stall as the reason it existed. The stall was real; the row was simply already a
 about to be moot. **The lesson is the card’s own:** check the checklist row before seeding a
 fly card from it, or the card briefs a test nobody can run.
 
-### 2 · A full deck still parks 16 jets with the decorations on — `B25` follow-on — **CLOSED 2026-08-20**
+### 4 · A full deck still parks 16 jets with the decorations on — `B25` follow-on — **CLOSED 2026-08-20**
 
 DM verdict: B25 is verified. The capacity half is answered by its own strongest evidence —
 the 2026-08-18 Syria turn parked **24 jets on CVN-72** (8 BARCAP + 16 BAI, all

@@ -18,6 +18,20 @@ jobs:
       - name: Black
         run: black --check .
 
+  stale-docs:
+    name: Published docs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      # Stdlib only, so no install step. Exit 1 = a published page still briefs a
+      # removed feature; exit 2 = a row in the audit's own table is inert and has
+      # been checking nothing (three were, until 2026-09-07).
+      - name: Audit published docs for removed features
+        run: python tools/audit_stale_docs.py
+
   mypy:
     name: Type checking
     runs-on: windows-latest

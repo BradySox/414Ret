@@ -21,6 +21,9 @@ that a published wiki should not carry tombstones at all.
     python tools/audit_stale_docs.py            # report; exit 1 if anything is found
     python tools/audit_stale_docs.py --quiet    # exit status only, for a CI gate
 
+Exit 1 means a published doc is stale. Exit 2 means a row in the table below is
+itself broken and has been checking nothing.
+
 **Adding a feature when you remove one.** Append a :class:`Removed` row carrying the
 terms that only make sense if the feature is *live*. Prefer a distinctive setting
 name, class name or role name over a generic English word -- a broad pattern buries
@@ -100,8 +103,9 @@ REMOVED: tuple[Removed, ...] = (
         # theatre-missile / SCUD / PLARF phrasing belongs here.
         "mobile missile relocation, the SCUD hunt (S49)",
         "2026-08-29",
-        r"mobile_missile_relocation|mobilemissiles"
+        r"mobile_missile_relocation|\bmobilemissiles\b"
         r"|(SCUD|PLARF|theat(er|re)[ -]missile)[^.]{0,60}(shoot and scoot|relocate)"
+        r"|mobile[- ]missile[^.]{0,40}(scoot|hunt|relocat)"
         r"|launchers relocate|relocate mid-mission",
         allow=("removed", "Removed:", "no longer", "historical"),
     ),
@@ -142,7 +146,7 @@ REMOVED: tuple[Removed, ...] = (
         "the S72 launch- and recovery-phase deck dressing tiers",
         "2026-08-20",
         r"carrier_deck_decorations_aircraft|carrier_deck_decorations_recovery"
-        r"|deckdecor|struck below before recovery|round-down E-2",
+        r"|\bdeckdecor\b|struck below before recovery|round-down E-2",
         allow=("removed", "Removed:", "no longer", "historical"),
     ),
     Removed(
@@ -261,8 +265,9 @@ REMOVED: tuple[Removed, ...] = (
         # that only exist if a capture is still banked somewhere.
         "the recon engine: the recon/airecon plugins and the capture ledger (S12)",
         "2026-08-20",
-        r"tars_recon_captures|airecon|aireconluadata|reconluadata"
-        r"|parse_tars_captures|tars_reconned_tgos|confirmed BDA",
+        r"tars_recon_captures|\bairecon\b|aireconluadata|reconluadata"
+        r"|parse_tars_captures|tars_reconned_tgos|confirmed BDA"
+        r"|recon plugin",
         allow=("removed", "no longer", "went with", "historical"),
     ),
     Removed(
@@ -386,11 +391,51 @@ def scan(paths: Iterable[Path]) -> list[tuple[Removed, Path, int, str]]:
     return findings
 
 
+def broken_patterns() -> list[tuple[Removed, str]]:
+    """Rows whose own pattern cannot do the job it was added for.
+
+    A row that matches nothing fails silently: the scan still runs, still
+    reports clean, and the doc it was meant to guard goes stale anyway. Three
+    alternatives sat dead this way: a word-boundary escape had been written into
+    the source as the backspace byte itself, which compiles fine and can only
+    match a document containing a backspace, and nothing else notices.
+    Checked on every run: CI running this audit proves nothing if the table
+    is inert.
+    """
+    broken: list[tuple[Removed, str]] = []
+    for entry in REMOVED:
+        try:
+            re.compile(entry.pattern)
+        except re.error as exc:
+            broken.append((entry, f"does not compile: {exc}"))
+            continue
+        control = sorted({c for c in entry.pattern if ord(c) < 32})
+        if control:
+            found = ", ".join(f"0x{ord(c):02x}" for c in control)
+            broken.append(
+                (
+                    entry,
+                    f"holds the control character(s) {found} -- a word-boundary "
+                    "escape was written as the byte itself, so the alternative "
+                    "around it can never match",
+                )
+            )
+    return broken
+
+
 def main(argv: list[str]) -> int:
     quiet = "--quiet" in argv
     # The docs carry emoji and en dashes; a cp1252 console dies on them mid-report.
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+
+    # Always reported, never silenced by --quiet: an inert table is worse than a
+    # stale doc, because it reads as a clean run.
+    broken = broken_patterns()
+    if broken:
+        for entry, why in broken:
+            print(f"BROKEN PATTERN: {entry.what} -- {why}", file=sys.stderr)
+        return 2
     every = published_files()
     paths = [p for p in every if not is_historical(p)]
     findings = scan(paths)

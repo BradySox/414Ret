@@ -43,8 +43,11 @@ Never derive the state of the codebase from memory; always read the current file
 
    **Run the audit rather than the grep** — `python tools/audit_stale_docs.py` checks every
    published file (README and `docs/wiki/`) against a table of removed
-   features and exits non-zero on a hit. It is only as good as that table: **when you remove
-   a feature, add its `Removed` row in the same change.** The 2026-08-07 CSAR replacement is
+   features and exits non-zero on a hit. **CI runs it** in `lint.yml` (job *Published docs*),
+   so a stale published page fails the build. It is only as good as that table: **when you
+   remove a feature, add its `Removed` row in the same change.** The table now self-checks —
+   exit 2 means a row's own pattern is inert and has been guarding nothing, which three rows
+   silently were until 2026-09-07 (a word-boundary escape stored as the backspace byte). The 2026-08-07 CSAR replacement is
    why it exists — the design note was updated and five published pages, one of them
    sidebar-linked and written in the present tense, went on briefing a package that no
    longer existed for thirteen days.

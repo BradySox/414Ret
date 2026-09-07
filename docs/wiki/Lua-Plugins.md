@@ -16,9 +16,9 @@ A `plugin.json` describes the plugin to both the loader and the settings UI:
 | Field | Meaning |
 |---|---|
 | `nameInUI` / `descriptionInUI` | Title and explanation shown on the LUA Plugins settings page. |
-| `skipUI` | Hide the plugin from the settings UI. |
+| `skipUI` | Hide the plugin from the settings UI. Used by `base`, `intercept` and `opscsar`. |
 | `defaultValue` | Whether the plugin starts enabled. |
-| `specificOptions` | Per-plugin tunables (each with its own `mnemonic`, label, default, min/max) shown as settings. |
+| `specificOptions` | Per-plugin tunables (each with its own `mnemonic`, label, default, min/max) shown as settings. `choices` renders a dropdown instead of a spinner; `enabledWhen` greys an option out until a named sibling option is set. |
 | `scriptsWorkOrders` | The Lua files to inject, with load/disable directives. |
 | `configurationWorkOrders` | Configuration scripts, same shape. |
 
@@ -53,7 +53,7 @@ Write runtime logic against **MOOSE** (bundled `Moose.lua`; some plugins vendor 
 **MIST is retired.** The `base` plugin's `"mist"` work order loads
 `resources/plugins/base/mist_moose_shim.lua`, a vanilla-DCS shim implementing only the `mist.*`
 symbols the remaining consumers actually call — CTLD, the intercept glue, the core script, the
-COIN and mobile-missile runtimes, and the upstream land/water relocate scripts.
+sortie recorder, the COIN runtime, and the upstream land/water relocate scripts.
 
 MOOSE API docs:
 https://flightcontrol-master.github.io/MOOSE_DOCS_DEVELOP/Documentation/index.html
@@ -133,6 +133,7 @@ setting off costs nothing at runtime.
 | `briefing` | on | The mission-start briefing card each pilot sees when they slot in. |
 | `splashdamage3` | on | The squadron's locked, softened Splash Damage 3.4.2 build. No user-adjustable options by design. |
 | `aisleep` | on | Ground AI sleep — distant garrisons stop thinking and wake on approach. Inert unless the performance setting is on. |
+| `ai_reaction` | on | Smart threat reaction — only the flight a missile is actually guiding on goes defensive; everything else holds formation and uses countermeasures. |
 
 > **There is no recon plugin.** It was removed on 2026-08-20 along with its capture ledger:
 > the 2026-08-18 rework made engaging a site the only reveal, so nothing read a capture.

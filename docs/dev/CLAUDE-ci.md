@@ -2,7 +2,11 @@
 
 Every push to `main` runs these workflows:
 
-1. **`lint.yml`** — Black (`--check .` whole tree) + mypy (`game tests` only).
+1. **`lint.yml`** — Black (`--check .` whole tree) + mypy (`game tests` only) + the
+   **published-docs audit** (`python tools/audit_stale_docs.py`, job *Published docs*,
+   stdlib-only). Exit 1 = a published page still briefs a removed feature; exit 2 = a
+   row in the audit's own table is inert. All three block, so they gate the rolling
+   release as well as PRs.
 2. **`test.yml`** — pytest over `tests` **plus the three out-of-tree test dirs under
    `game/`** (`game/missiongenerator/tests`, `game/missiongenerator/kneeboard_recon/tests`,
    `game/plugins/tests`) — added 2026-07-10; before that those ~245 tests never ran in CI.

@@ -222,14 +222,6 @@ Most of this is opt-in. Full list with toggles, defaults and known limitations:
 - **Missions report back.** Every flight's track, time airborne, fuel, shots and hits come home
   with the results, not just which aircraft died. The campaign summary says what the day's
   flying actually amounted to. No third-party software required.
-- **COMINT collection.** A collection sortie that makes it home (C-130J jamming orbit or any
-  drone) buys next turn's take: an intercepted enemy tasking and one suspected-activity circle
-  fixed to an exact position. The same nodes are the ones you'd bomb to wreck their planning.
-- **Enemy radio net.** Command posts transmit coded morse in periodic windows on fixed UHF
-  frequencies, held clear of every briefed channel. How many stations are up at once is a
-  setting. Phantom, Tomcat, Hornet and Tiger needles can home on an open window. Killing the
-  node silences it permanently. Insurgent cells transmit too — the kneeboard briefs a frequency
-  and an area, and the dashed map circle is the search box.
 - **Enemy procurement** favours its better hardware rather than rolling the catalogue. Optional
   SAM site repair regenerates a couple of units per turn unless pressured; command posts stay
   dead.
@@ -268,8 +260,7 @@ Most of this is opt-in. Full list with toggles, defaults and known limitations:
   you memorize on turn 3 is still good on turn 30, and it is never planted on a ship or
   an off-map field. On the rare turn the front carries it far enough that it has to
   move, the same line reads **MOVED THIS TURN**.
-- Also: strikeable motor pool depots, enemy comms jamming learned from a captured pilot,
-  a host F10 menu to scramble bandits.
+- Also: strikeable motor pool depots, a host F10 menu to scramble bandits.
 
 ---
 

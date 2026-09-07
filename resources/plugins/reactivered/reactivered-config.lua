@@ -50,7 +50,7 @@ for _, rec in ipairs(net.objectives) do
         for _, unit_name in ipairs(rec.units) do
             watched[tostring(unit_name)] = objective
             -- A static's DEAD event names it "<name> object" (the MANTIS
-            -- dcs_name_for_group convention commsjam and rednet also resolve).
+            -- dcs_name_for_group convention).
             -- Watch both spellings or a scenery target is invisible here: test
             -- 12's oil-platform strike was struck 13 min before anything else
             -- and could not trigger a reaction.

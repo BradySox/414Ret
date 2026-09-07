@@ -82,7 +82,7 @@ ELINT tracks as sliders.
 
 ## The plugins
 
-All 28, in `plugins.json` load order. "Inert unless" means the plugin ships in every mission
+All 25, in `plugins.json` load order. "Inert unless" means the plugin ships in every mission
 but does nothing until the mission generator emits its data — turning the matching campaign
 setting off costs nothing at runtime.
 
@@ -104,8 +104,6 @@ setting off costs nothing at runtime.
 | `c130j` | on | Turns the player C-130J into an EC-130H Compass Call (jamming) and RC-130H Rivet Joint (ISR/ELINT) platform — `FlightType.JAMMING`. Supersedes the retired generic `ewrj`. |
 | `growler` | on | Escort jamming for the EA-18G and EA-6B: non-stacking spoof bubbles and SAM weapons-hold pulses. Inert unless an escort-jammer flight exists. |
 | `gpsjamming` | on | GPS denial — satellite-guided weapons released inside the bubble land long. Inert unless a live GPS-jamming group is on the map. |
-| `commsjam` | on | Enemy comms jamming from IADS C2 nodes. Inert unless the setting is on. |
-| `rednet` | on | The audible, DF-able enemy radio net (§70 COMINT). Inert unless the setting is on. |
 | `bigeye` | off | BigEye EWR — text threat reports to pilots, prioritised by contact danger. |
 | `lotatc` | off | Exports anti-air sites to LotATC so GCI controllers see the SAM/AAA picture. |
 
@@ -115,7 +113,6 @@ setting off costs nothing at runtime.
 |---|---|---|
 | `tic` | on | Troops In Contact — formation-keeping frontline units fighting prolonged scripted firefights. (Late-init plugin.) |
 | `coin` | on | The COIN insurgency layer's movers and ambient pressure. Inert unless a COIN campaign. |
-| `minefields` | off | Faked area mining via a designated cluster dispenser. **§57 is shelved** — inert, code retained. |
 | `vietnamops` | on | The Vietnam Ops suite (Arc Light, flak gauntlet, naval gunfire, convoy interdiction, harassment, Super Gaggle, FAC(A), snake-and-nape) plus the generic frontline-artillery runtime. |
 
 ### Naval and carrier

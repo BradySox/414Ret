@@ -55,9 +55,9 @@ def test_no_grab_bag_sections_remain() -> None:
 
 
 def test_hidden_fields_are_real_dataclass_fields_but_never_shown() -> None:
-    # §57 (air-droppable minefields) is SHELVED: the fields must keep existing so a
-    # saved settings file with them True still deserializes and the (dormant) code
-    # can still read them -- but they must never appear on any settings surface.
+    # HIDDEN_FIELDS is empty since §57 was removed on 2026-09-07. The contract still
+    # holds vacuously, and the test stays so the next hidden field inherits it: a
+    # hidden field must be a real declared field and must reach no settings surface.
     all_declared = {
         f.name for f in fields(Settings) if SETTING_DESCRIPTION_KEY in f.metadata
     }

@@ -100,7 +100,7 @@ def test_helper_noop_on_empty_file_list() -> None:
 # --- Bundled plugin-config loads (the DCS dropped-trigger guard) --------------
 #
 # DCS silently drops some mission-start DoScriptFile triggers on a heavy mission
-# (Red Tide: the vietnamops/commsjam config loads never ran while
+# (Red Tide: the vietnamops config load never ran while
 # adjacent, identically-wired ones did). Plugin config loads are therefore
 # deferred and bundled into one trigger.
 
@@ -138,7 +138,7 @@ def test_flush_bundles_all_deferred_loads_into_one_trigger() -> None:
     gen, mission = _bundling_gen()
     for ident, script, mnem in (
         ("vietnamops", "vietnamops-config.lua", "vietnamops-config"),
-        ("commsjam", "commsjam-config.lua", "commsjam-config"),
+        ("gpsjamming", "gpsjamming-config.lua", "gpsjamming-config"),
     ):
         gen.inject_plugin_script(ident, script, mnem, defer=True)
     mission.triggerrules.triggers.append.assert_not_called()
@@ -161,11 +161,11 @@ def test_inject_configuration_defers_the_config_script() -> None:
     from game.plugins.luaplugin import LuaPluginDefinition
 
     definition = LuaPluginDefinition.from_json(
-        "commsjam", Path("resources/plugins/commsjam/plugin.json")
+        "gpsjamming", Path("resources/plugins/gpsjamming/plugin.json")
     )
     plugin = LuaPlugin.__new__(LuaPlugin)
     plugin.definition = definition
-    plugin.identifier = "commsjam"
+    plugin.identifier = "gpsjamming"
     gen = MagicMock()
     plugin.inject_configuration(gen)
     gen.inject_plugin_script.assert_called_once()

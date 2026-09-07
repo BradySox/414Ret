@@ -10,10 +10,8 @@ from dcs.unitgroup import ShipGroup
 from game.dcs.aircrafttype import AircraftType
 from game.dcs.groundunittype import GroundUnitType
 from game.missiongenerator.aircraft.flightdata import FlightData
-from game.missiongenerator.commsjamluadata import CommsJamInfo
 from game.missiongenerator.interceptluadata import InterceptEntry, PlayerAlertEntry
 from game.missiongenerator.reactiveredluadata import ReactiveRedInfo
-from game.missiongenerator.rednetluadata import RedNetInfo
 from game.missiongenerator.redscrambleluadata import RedScrambleTemplate
 from game.runways import RunwayData
 
@@ -178,11 +176,8 @@ class MissionData:
     # The enemy comms-jamming plan (§51), computed once before the Lua pass so
     # the emitter and the kneeboard (JAM BACKUP line) read the same plan. None
     # when the feature is off or has nothing to do this mission.
-    comms_jam: Optional[CommsJamInfo] = None
     # The red-net plan (§70 C1): each alive enemy C2 node's assigned UHF net
     # frequency, computed once (with the RadioRegistry reservation) before the
-    # Lua pass. None when red_comms_net is off or no enemy C2 node is alive.
-    red_net: Optional[RedNetInfo] = None
     # The blue voice-net plan (§89 P4): the ATO-derived call schedule with its
     # synthesized clips already embedded. None when either §89 gate is off, no
     # blue AWACS flies, or synthesis is unavailable (non-Windows generation).

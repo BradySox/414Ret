@@ -15,17 +15,7 @@ next from the parking lot.
 cleared — both entries named rows that had already closed, `Q3` VERIFIED and the loadout
 watch pointing at RETIRED `B42`.)*
 
-### 1 · The enemy C2 net is audible on the radio — `B23`
-
-**Try:** tune the red UHF net while you are anywhere near a live enemy command post and listen
-for CW/voice traffic; it is DF-able, so a bearing swing as you fly past is the confirmation.
-**~5 min.**
-
-- **Pass:** you hear the net, and the signal strength tracks your distance to the C2 site.
-- **Fail:** silence with a live command post in range; or audio that does not change with range.
-- **Why it's here:** §70's audible half has sat PARTIAL, and it needs ears rather than a test.
-
-### 2 · Ships hold station instead of sliding off it — `B48`
+### 1 · Ships hold station instead of sliding off it — `B48`
 
 **Where:** the F10 map, any naval group, twice ten minutes apart. **~1 min.**
 
@@ -34,7 +24,7 @@ for CW/voice traffic; it is DF-able, so a bearing swing as you fly past is the c
 - **Fail:** a group well off station, or stopped dead.
 - **Why it's here:** §87 anchors the ovals; whether they hold over a long mission is a look.
 
-### 3 · The day's flying is reported back, and the numbers are believable — `B70`
+### 2 · The day's flying is reported back, and the numbers are believable — `B70`
 
 **Where:** the next turn's SITREP, after any mission with several AI packages up. **~1 min.**
 
@@ -46,7 +36,7 @@ for CW/voice traffic; it is DF-able, so a bearing swing as you fly past is the c
   fix has not been seen on a fresh mission. This is the cheapest row on the board — it closes
   from a mission you already flew.
 
-### 4 · The escorts leave you at the split instead of following you home — `B78`
+### 3 · The escorts leave you at the split instead of following you home — `B78`
 
 **Try:** lead a package that has an escort or escort jammer on it and fly the whole profile.
 At your split point, look behind you. **Free — it is the flight you were flying.**
@@ -58,7 +48,7 @@ At your split point, look behind you. **Free — it is the flight you were flyin
   opposite failure, fixed again 2026-08-21. Neither shape has been flown since. Both failures
   are visible from the cockpit without looking anything up.
 
-### 5 · The log is no longer 60 % one MOOSE error — `B107`
+### 4 · The log is no longer 60 % one MOOSE error — `B107`
 
 **Where:** `Saved Games/DCS/Logs/dcs.log` after any flight, one grep. **~1 min.**
 

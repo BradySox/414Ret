@@ -29,10 +29,7 @@ from .csarbeacon import sar_beacon_hz
 from .aisleepluadata import populate_ai_sleep_lua
 from .briefingluadata import populate_briefing_lua
 from .coinluadata import populate_coin_lua
-from .commsjamluadata import populate_comms_jam_lua
 from .reactiveredluadata import populate_reactive_red_lua
-from .rednetluadata import populate_red_net_lua
-from .minefieldluadata import populate_minefields_lua
 from .interceptluadata import (
     DefenseZoneEntry,
     defense_zone_entries,
@@ -484,12 +481,6 @@ class LuaGenerator:
         # inside the wake radius (performance only -- no gameplay-model change).
         populate_ai_sleep_lua(lua_data, self.game, self.mission_data)
 
-        # Air-dropped minefields (§57 Phase 2) -- emits dcsRetribution.minefields only when
-        # air_droppable_minefields is on and a live persisted field exists, so the plugin
-        # re-arms fields left undisturbed last turn. Fresh drops are the plugin's own
-        # S_EVENT_SHOT detection; kills stay in the turn-boundary force model.
-        populate_minefields_lua(lua_data, self.game, self.mission_data)
-
         # Ship cruise missile strikes (§63) -- emits dcsRetribution.cruiseMissiles only
         # when cruise_missile_strikes is on and a live land-attack-capable ship group
         # has missiles left; the cruisemissiles plugin fires the auto raids + the F10
@@ -505,18 +496,6 @@ class LuaGenerator:
         # stock, mirroring expenditure back for the turn-boundary debit. Its weapon set
         # is disjoint from §63's above, so a shot is never charged to both magazines.
         populate_naval_magazines_lua(lua_data, self.game, self.mission_data)
-
-        # Enemy comms jamming (§51) -- emits dcsRetribution.commsJam only when the
-        # plan computed before this pass exists (setting on + alive enemy C2 node +
-        # briefed blue channels); the commsjam plugin transmits the barrage noise
-        # (audio pressure only, kills record natively on the ordinary C2 TGO).
-        populate_comms_jam_lua(lua_data, self.game, self.mission_data)
-
-        # Red comms net (§70 C1) -- emits dcsRetribution.redNet only when the plan
-        # computed before this pass exists (red_comms_net on + an alive enemy C2
-        # node); the rednet plugin transmits the periodic CW traffic (audio + DF
-        # geometry only, kills record natively on the ordinary C2 TGO).
-        populate_red_net_lua(lua_data, self.mission_data)
 
         # Reactive red (§89 P5) -- emits dcsRetribution.reactiveRed only when the
         # plan exists (both gates + a watched objective + a fragged reaction

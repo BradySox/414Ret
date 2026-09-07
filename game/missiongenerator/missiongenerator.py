@@ -33,8 +33,6 @@ from .atisgenerator import AtisGenerator
 from .briefinggenerator import BriefingGenerator, MissionInfoGenerator
 from .cargoshipgenerator import CargoShipGenerator
 from .reactiveredluadata import plan_reactive_red
-from .commsjamluadata import JAM_BACKUP_COMM_NAME, plan_comms_jam
-from .rednetluadata import plan_red_net
 from .convoyambushgenerator import ConvoyAmbushGenerator
 from .convoygenerator import ConvoyGenerator
 from .csargenerator import CsarGenerator
@@ -161,18 +159,6 @@ class MissionGenerator:
 
         logging.info("MIZ generation: air units")
         self.generate_air_units(tgo_generator)
-
-        # Enemy comms jamming (§51): plan which IADS C2 nodes flood which briefed
-        # blue channels + allocate the JAM BACKUP freq, before the Lua pass emits
-        # it and the kneeboard prints the backup.
-        self.mission_data.comms_jam = plan_comms_jam(
-            self.game, self.mission_data, self.radio_registry
-        )
-
-        # Red comms net (§70 C1): assign each alive enemy C2 node its fixed UHF
-        # net frequency (reserved in the registry, off the blue comms plan by
-        # construction) before the Lua pass emits it.
-        self.mission_data.red_net = plan_red_net(self.game, self.radio_registry)
 
         # Reactive red (§89 P5): the positive list (blue-targeted red
         # objectives) + the fragged reaction-alert groups, before the Lua pass.
@@ -450,9 +436,7 @@ class MissionGenerator:
         """Generates subscribed MissionInfoGenerator objects."""
         mission_data = self.mission_data
         gens: list[MissionInfoGenerator] = [
-            # §70 C2: the kneeboard's COMINT block briefs this mission's red-net
-            # frequencies, so the plan is threaded in.
-            KneeboardGenerator(self.mission, self.game, red_net=mission_data.red_net),
+            KneeboardGenerator(self.mission, self.game),
             BriefingGenerator(self.mission, self.game),
         ]
         for gen in gens:
@@ -475,17 +459,6 @@ class MissionGenerator:
                 gen.add_flight(flight)
             for atis in mission_data.atis_frequencies:
                 gen.add_atis(atis)
-
-            # Enemy comms jamming (§51): register the guaranteed-clean fallback
-            # channel on the generator so the kneeboard can surface it. The
-            # Mission Info BLUF prints it next to the code words (comms-plan data);
-            # the Support Info page filters it out of the package table so it never
-            # reads as a phantom flight.
-            if (
-                mission_data.comms_jam is not None
-                and mission_data.comms_jam.backup is not None
-            ):
-                gen.add_comm(JAM_BACKUP_COMM_NAME, mission_data.comms_jam.backup)
 
             gen.generate()
 

@@ -4,6 +4,67 @@
 decision below is a DM call from that session. Read this before editing or re-litigating
 any of it. Features doc §96 carries the file list; B112 passed 2026-09-01, B113 owed.
 
+## The patrol is gone: scope is the SAM (DM call, 2026-09-07)
+
+**"Lets drop the border patrol for now. the scope is sam only now."** Everything
+below about the standing fighter patrol is history from this date. What it
+proved carries into the battery unchanged: the deterrent has to be **there
+before you cross**, so the SAM is live from `t=0` rather than late-activated,
+and it stands as a **true neutral** and swaps coalition to shoot, because that
+is still the only way a neutral fires.
+
+**What the battery is.** One site per defending country, sized to how much room
+the country has and stood deep enough that its envelope just reaches the
+frontier:
+
+| Room (largest inscribed circle) | East, the default | West, authored list |
+|---|---|---|
+| any | SA-3 S-125, 1961 | Hawk, 1960 |
+| 40 NM+ | SA-11 Buk, 1995 | Hawk |
+| 100 NM+ | S-300PS, 1990 | Patriot, 1990 |
+
+Over the 52 shipped zones on a 2004 campaign that is **15 SA-3, 11 SA-11, 7
+S-300, 17 Hawk, 2 Patriot**.
+
+**The dates are EXPORT dates, not in-service.** Caught by running the ladder
+against the 1982 Falklands column, where in-service dates handed Argentina a
+Buk. With export dates 1982 yields only SA-3 and Hawk, which is right for it.
+
+**Nationality is an authored list, not derived.** `posture_for` was the obvious
+source and it is wrong for this: Iraq 2004 reads WEST because it was occupied,
+its inventory was Soviet, and 8 of the 52 zones have no lean at all. So the east
+ladder is the default and `WEST_EQUIPPED` names the eleven countries that plainly
+field western kit.
+
+**The site sits ON the reach ring, not merely inside it.** First cut capped depth
+at the system's reach and left anything already deeper where it was — which put
+Iran's Persian Gulf battery **175 NM** from the frontier with a 40 NM envelope,
+defending nothing. It is now placed at exactly `min(reach, room)` from the
+border, nearest the authored origin. Measured after: **0 of 52** sites are deeper
+than their own reach. Four countries are *smaller* than their system's reach
+(Bahrain has 5.0 NM of room against Hawk's 22) and sit as deep as the country
+allows, so their envelope spills across the frontier — for a SAM that is
+realistic rather than a violation.
+
+**Deep placement also closes the auto-capture risk.** A standing belligerent unit
+at a neutral airfield makes DCS capture the airbase, which is why the SA-6 was
+late-activated. The battery is neutral until escalation and is not on an airfield
+at all, so neither half of that applies.
+
+**The feature got WIDER.** `can_field_an_interceptor` became `can_defend` and
+asks only for a position — a SAM needs no airframe and no runway. The 14 zones
+that were drawn and toothless as fighter bases (DCS models no Turkmenistan;
+Cyprus, Armenia and Azerbaijan had no entry in the dated table) all defend now.
+
+**What came out with the patrol:** the orbit fitter, the four-ship, the
+nearest-target retarget loop and its 20 s timer, the `AttackGroup` task, and
+`wake_sam`. A SAM acquires for itself once weapons-free, so none of it has an
+analogue. The second-battery rule for a country violated by both sides survives
+unchanged, because a battery can only be on one coalition either.
+
+**Not yet flown.** B112 was closed against the patrol and that evidence does not
+transfer; both §96 rows are owed again.
+
 ## What it is now
 
 This note is chronological below this point; the 2026-08-24 sections describe the shape

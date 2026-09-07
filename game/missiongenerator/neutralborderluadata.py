@@ -47,9 +47,7 @@ class NeutralBorderLuaZone:
     overflight_blue: bool = False
     overflight_red: bool = False
     #: Exact .miz group name of the late-activation fighter template.
-    fighter_template: str | None = None
-    #: Exact .miz group name of the late-activation SAM template, or None.
-    sam_template: str | None = None
+    sam_group: str | None = None
     #: pydcs country ids present in the mission, one per side: the clone spawns
     #: under whichever opposes the intruder.
     red_country_id: int = 0
@@ -60,7 +58,6 @@ class NeutralBorderLuaZone:
     #: Terrain XY + altitude the alert flight air-spawns at, when there is no
     #: airfield. Mutually exclusive with ``airfield``.
     spawn: tuple[float, float] | None = None
-    spawn_alt_m: float = 0.0
     #: What the map tooltip calls the alert flight's source.
     origin_label: str = ""
     #: Terrain XY vertices (pydcs Point.x/.y = DCS x/z), implicit closure.
@@ -113,20 +110,17 @@ def populate_neutral_border_lua(
             if zone.spawn is not None:
                 record.add_key_value("spawnX", f"{zone.spawn[0]:.1f}")
                 record.add_key_value("spawnZ", f"{zone.spawn[1]:.1f}")
-                record.add_key_value("spawnAltM", f"{zone.spawn_alt_m:.1f}")
             # Absent = no floor at all: that side is intercepted at any
             # altitude. The Lua treats a missing value as "no sanctuary".
             if zone.floor_blue_ft is not None:
                 record.add_key_value("floorBlueFt", str(zone.floor_blue_ft))
             if zone.floor_red_ft is not None:
                 record.add_key_value("floorRedFt", str(zone.floor_red_ft))
-            # Absent when the country is too small to orbit inside its own
-            # border: it defends with its SAM alone, and the plugin's ladder
-            # runs with nothing to make hostile.
-            if zone.fighter_template is not None:
-                record.add_key_value("fighterTemplate", zone.fighter_template)
-            if zone.sam_template is not None:
-                record.add_key_value("samTemplate", zone.sam_template)
+            # The standing battery, live and neutral from t=0. Absent only for
+            # a zone the generator could not build, and the plugin drops an
+            # enforcing zone that has none rather than promise a defence.
+            if zone.sam_group is not None:
+                record.add_key_value("samGroup", zone.sam_group)
             record.add_key_value("redCountryId", str(zone.red_country_id))
             record.add_key_value("blueCountryId", str(zone.blue_country_id))
         border_node = record.get_or_create_item("border")

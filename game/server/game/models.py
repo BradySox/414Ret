@@ -212,14 +212,11 @@ class NeutralBorderJs(BaseModel):
             posture = zone.posture_in(game.theater)
             permits_blue = zone.permits(game.theater, True, posture)
             # A border only bites if the country can actually put a fighter up.
-            # The generator degrades a neutral that cannot to drawn-and-toothless,
-            # and this map has to agree with the mission it is planning: 14 of the
-            # shipped zones have no era airframe, so Cyprus and Armenia were drawn
-            # "closed to you at any altitude" over a mission that let you fly
-            # straight through them.
-            if posture == NEUTRAL and not zone.can_field_an_interceptor(
-                game.current_day
-            ):
+            # The generator degrades a neutral that cannot defend to
+            # drawn-and-toothless, and this map has to agree with the mission it
+            # is planning -- it once drew Cyprus and Armenia "closed to you at
+            # any altitude" over a mission that let you fly straight through.
+            if posture == NEUTRAL and not zone.can_defend(game.current_day):
                 permits_blue = True
             ring = [
                 LeafletPoint.from_latlng(Point(x, y, game.theater.terrain).latlng())

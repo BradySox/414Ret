@@ -268,100 +268,85 @@ class NeutralBorderZone:
         posture = self.posture_in(theater)
         return posture == NEUTRAL and not self.permits(theater, is_blue, posture)
 
-    def can_field_an_interceptor(self, day: Any) -> bool:
-        """Could this country actually put a fighter up, on this date?
+    def can_defend(self, day: Any) -> bool:
+        """Could this country actually stand a battery, on this date?
 
-        A border that enforces needs somewhere to launch from and an airframe
-        the era allows. 14 of the shipped zones have neither -- DCS models no
-        Turkmenistan, and Cyprus, Armenia and Azerbaijan have no entry in the
-        dated table -- so they are drawn and toothless.
+        Since the patrol was dropped 2026-09-07 this asks only for a position:
+        a SAM needs no airframe and no runway. **That widens the feature** --
+        the 14 zones that were drawn and toothless as fighter bases (DCS models
+        no Turkmenistan; Cyprus, Armenia and Azerbaijan had no entry in the
+        dated table) now defend, because every one of them has a station point.
 
         Asked here rather than in each consumer because the generator and the
-        planning map both need it and used to answer it separately: the map
-        drew Cyprus as "closed to you at any altitude" while the mission it
-        generated let you fly straight through. Promising an interception the
-        mission cannot deliver is worse than drawing no line at all.
+        planning map both need it and used to answer it separately: the map drew
+        Cyprus as "closed to you at any altitude" over a mission you could fly
+        straight through. Promising an interception the mission cannot deliver
+        is worse than drawing no line at all.
         """
-        if self.airfield is None and self.spawn is None:
-            return False
-        if self.aircraft is not None:
-            return True
-        from game.theater.nationalpostures import aircraft_for
+        del day  # era no longer gates this; the SAM ladder handles it
+        return self.airfield is not None or self.spawn is not None
 
-        return aircraft_for(self.country, day) is not None
+    def interior_room(self) -> float:
+        """Metres from the deepest interior point to the nearest frontier.
 
-    def patrol_orbit(
-        self,
-        anchor: tuple[float, float],
-        leg_m: float,
-        clearances_m: Sequence[float],
-    ) -> tuple[tuple[float, float], tuple[float, float] | None]:
-        """Where the standing patrol orbits, and the far end of its leg.
-
-        Two things go wrong if the orbit is only required to sit *inside* the
-        border. A DCS racetrack overshoots each end before turning back --
-        measured under 10 NM at 405 kt -- so a leg ending on the frontier flies
-        across it. And several stations sit on the frontier to begin with:
-        India's is 0.6 NM from its own border in a zone that could hold 75.
-
-        So the leg is fitted inside the border pulled in by a clearance, the
-        largest of ``clearances_m`` that still admits one. A station already
-        that far in is left where the campaign put it; one that is not is moved
-        to the *nearest* point that is, which is the smallest correction that
-        works rather than a jump to the country's deep interior.
-
-        Returns ``(centre, leg_end)``. ``leg_end`` is None when no clearance
-        admits a leg, and the caller flies a circle -- which for a country
-        smaller than the overshoot still crosses out, because at that size
-        nothing does not.
+        The largest circle that fits inside the border, which is the honest
+        measure of how much country there is. Sizes the SAM: measured over the
+        52 shipped zones 2026-09-07 it runs 5.0 NM (Bahrain) to 186.7 NM (Iran
+        on the Persian Gulf map).
         """
-        from shapely.geometry import LineString, Point as ShapelyPoint, Polygon
-        from shapely.ops import nearest_points
+        from shapely.geometry import Polygon
 
         if len(self.border) < 3:
-            return (anchor, None)
+            return 0.0
         polygon = Polygon(self.border)
         if not polygon.is_valid:
             polygon = polygon.buffer(0)
-        here = ShapelyPoint(anchor)
-
-        fallback = anchor
-        for clearance in clearances_m:
-            inner = polygon.buffer(-clearance)
-            if inner.is_empty:
-                continue
-            if inner.contains(here):
-                centre = anchor
+        low, high = 0.0, 400_000.0
+        for _ in range(24):
+            middle = (low + high) / 2
+            if polygon.buffer(-middle).is_empty:
+                high = middle
             else:
-                moved = nearest_points(inner, here)[0]
-                centre = (moved.x, moved.y)
-            fallback = centre
-            end = self._leg_from(centre, leg_m, inner)
-            if end is not None:
-                return (centre, end)
-        return (fallback, None)
+                low = middle
+        return low
 
-    @staticmethod
-    def _leg_from(
-        centre: tuple[float, float], leg_m: float, inside: Any
-    ) -> tuple[float, float] | None:
-        """The longest leg from ``centre`` on any bearing that stays in ``inside``."""
-        from shapely.geometry import LineString
+    def sam_site(
+        self, anchor: tuple[float, float], reach_m: float
+    ) -> tuple[float, float]:
+        """Where the battery stands: as deep as it can be and still cover its border.
 
-        best: tuple[float, tuple[float, float]] | None = None
-        for degrees in range(0, 360, 30):
-            radians = math.radians(degrees)
-            for scale in (1.0, 0.6, 0.35):
-                end = (
-                    centre[0] + leg_m * scale * math.cos(radians),
-                    centre[1] + leg_m * scale * math.sin(radians),
-                )
-                if not inside.contains(LineString([centre, end])):
-                    continue
-                if best is None or scale > best[0]:
-                    best = (scale, end)
-                break
-        return None if best is None else best[1]
+        Deep matters twice. It is what the DM asked for -- a bigger country
+        should hold its SAM further back, not on the line -- and a site away
+        from the neutral's airfield is a site DCS cannot auto-capture the
+        airbase through when the battery swaps coalition on escalation.
+
+        Depth is capped at the system's own reach, so the envelope still touches
+        the frontier it is there to defend. Ties break toward ``anchor``, which
+        keeps the site in the part of the country the campaign pointed at.
+        """
+        from shapely.geometry import Point as ShapelyPoint, Polygon
+        from shapely.ops import nearest_points
+
+        if len(self.border) < 3:
+            return anchor
+        polygon = Polygon(self.border)
+        if not polygon.is_valid:
+            polygon = polygon.buffer(0)
+        depth = min(reach_m, self.interior_room())
+        if depth <= 0:
+            return anchor
+        inner = polygon.buffer(-depth)
+        if inner.is_empty:
+            return anchor
+        # Onto the RING at that depth, not merely inside it. A site further in
+        # than its own reach defends nothing: measured 2026-09-07, Iran's
+        # Persian Gulf station sits 175 NM from the frontier and an S-300 reaches
+        # 40, so "at most this deep" left the border uncovered.
+        here = ShapelyPoint(anchor)
+        moved = nearest_points(
+            inner.exterior if hasattr(inner, "exterior") else inner.boundary, here
+        )[0]
+        return (moved.x, moved.y)
 
     def origin_label(self, posture: str, enforced: bool = True) -> str:
         """What the map tooltip calls this border's meaning."""

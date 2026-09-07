@@ -3269,21 +3269,21 @@ class Settings:
         default=False,
         detail=(
             "Every nation on the map is drawn with its real border, and one "
-            "that is not in the war defends its own airspace: it flies a "
-            "standing patrol inside its border from mission start, so you can "
-            "see it before you cross. Enter and it warns you by radio at once. "
-            "Stay past the engage timer, release a weapon inside the border, or "
-            "fire on the patrol, and it turns hostile on your enemy's coalition "
-            "-- a country too small to orbit inside its own border flies no "
-            "patrol and answers with the SAM alone. "
-            "and attacks -- and the field's SAM battery wakes. Whose airspace it "
-            "is, and whether it lets you through, are read from who holds the "
-            "airfields inside it. AI intruders are warned but never engaged, and "
+            "that is not in the war defends its own airspace with a surface-to-"
+            "air battery. It stands inside the border from the moment the "
+            "mission starts, so you can find it before you cross, and it is "
+            "sized to the country -- a small one gets an SA-3 or a Hawk, a "
+            "large one an S-300 or a Patriot, placed deep enough that its "
+            "envelope just reaches the frontier. Enter and it warns you by "
+            "radio at once. Stay past the engage timer or release a weapon "
+            "inside the border, and it changes sides and engages. Whose "
+            "airspace it is, and whether it lets you through, are read from who "
+            "holds the airfields inside it. AI intruders are never engaged, and "
             "the auto-planner ignores the borders entirely. Needs the 'Neutral "
             "border defense' LUA plugin ticked. Borders ship with the eight "
             "real-world terrains, so no campaign has to author anything; a "
-            "campaign may still author its own. Patrol aircraft are free, "
-            "untracked event content."
+            "campaign may still author its own. Batteries are free, untracked "
+            "event content."
         ),
     )
     civilian_air_traffic: bool = boolean_option(

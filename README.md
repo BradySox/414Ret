@@ -272,16 +272,18 @@ Most of this is opt-in. Full list with toggles, defaults and known limitations:
   real border, on any campaign, with nothing to author — including the one the war is
   being fought in. Which side a country is on comes from who holds the airfields inside
   it, so it flips by itself when a base changes hands. A country that is *not* in the war
-  and refuses you transit is the one that defends: it flies a patrol inside its own
-  border from the moment the mission starts, so you can see it before you cross rather
-  than finding the border by tripping it. Cross anyway and it warns you off the radio at
-  once. Leave and nothing happens. Stay too long, release a weapon inside the border, or
-  shoot at them, and they turn hostile and come for you — and a SAM battery wakes. If
-  both sides violate the same country, it puts up a second flight for the other one.
+  and refuses you transit is the one that defends: it stands a surface-to-air battery
+  inside its own border from the moment the mission starts, so you can find it before you
+  cross rather than finding the border by tripping it. The system is sized to the country
+  — a small one gets an SA-3 or a Hawk, a large one an S-300 or a Patriot — and sits deep
+  enough that its envelope just reaches the frontier. Cross and it warns you off the radio
+  at once. Leave and nothing happens. Stay too long or release a weapon inside the border,
+  and it changes sides and engages. If both sides violate the same country, it puts up a
+  second battery for the other one.
   Whether a country lets you through is read off the map, not off the calendar: you may
   cross what your side flies from, and what both sides fly from; a country neither of you
   is based in has invited nobody. Altitude buys you nothing unless the campaign says so.
-  AI flights that stray are warned but never fired on, and
+  AI flights that stray are never fired on, and
   the auto-planner does not route around the border, so it is your corner to cut or not.
   The same borders are drawn on the planning map and the F10 map. Off by default.
 - Also: strikeable motor pool depots, enemy comms jamming learned from a captured pilot,

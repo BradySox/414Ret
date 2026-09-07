@@ -9,8 +9,9 @@
 --   * It orbits as a true neutral and swaps to the intruder's OPPOSING coalition to shoot,
 --     because a true-neutral unit cannot fire, ever -- do not "fix" the spawn to neutral.
 --   * AI intruders are warned but NEVER escalated on (DM call). Only players earn the attack.
---   * A country too small to orbit clear of its own frontier flies no patrol and defends with
---     its SAM alone, so cap_group may be nil.
+--   * The battery is LIVE and neutral from t=0, not late-activated: the border has to have
+--     something in it before you cross. sam_group may still be nil for a zone that could not
+--     be built, so guard it.
 --   * Escalation is ROE + tasking only. Never enableEmission (hard constraint).
 --   * Spawns are free, untracked event content (the §61 precedent).
 -- Values arrive as Lua strings (LuaItem contract) -- tonumber() everything numeric here.
@@ -100,12 +101,8 @@ for _, raw in ipairs(data.zones or {}) do
         -- fully-permitting neutral is a line on the map, so both are drawn and
         -- never scanned, carry no templates, and need no origin to be usable.
         local enforces = (posture == "neutral") and not (ofBlue and ofRed)
-        -- An enforcing zone needs SOMETHING to enforce with. A country too
-        -- small to orbit inside its own border flies no patrol and defends
-        -- with its SAM alone, so a fighter template is not the requirement --
-        -- one or the other is.
-        local defends_with = raw.fighterTemplate ~= nil or raw.samTemplate ~= nil
-        local usable = (not enforces) or (defends_with and has_origin)
+        -- An enforcing zone needs a battery to enforce with.
+        local usable = (not enforces) or (raw.samGroup ~= nil and has_origin)
         if #verts >= 3 and usable then
             zones[#zones + 1] = {
                 -- Its own position in `zones`, so an intruder state (which
@@ -133,22 +130,16 @@ for _, raw in ipairs(data.zones or {}) do
                 -- centroid is not on a concave country.
                 label_x = tonumber(raw.labelX),
                 label_z = tonumber(raw.labelZ),
-                -- The STANDING patrol's group name. It is a live neutral group
-                -- flying an orbit from mission start, not a template to clone.
-                -- Absent for a country too small to orbit inside its own border
-                -- -- it defends with its SAM alone. NOT tostring(): that turns
-                -- a missing template into the group name "nil".
-                cap_group = raw.fighterTemplate and tostring(raw.fighterTemplate)
-                    or nil,
-                sam_template = raw.samTemplate and tostring(raw.samTemplate) or nil,
+                -- The STANDING battery's group name. A live neutral group from
+                -- mission start, not a template to clone. NOT tostring(): that
+                -- turns a missing name into the group name "nil".
+                sam_group = raw.samGroup and tostring(raw.samGroup) or nil,
                 red_country = tonumber(raw.redCountryId),
                 blue_country = tonumber(raw.blueCountryId),
                 verts = verts,
                 bbox = { minx = minx, maxx = maxx, minz = minz, maxz = maxz },
                 -- runtime
-                swapped = false, -- the patrol has been made hostile and stays so
-                sam_spawner = nil,
-                sam_spawned = false,
+                swapped = false, -- the battery has been made hostile and stays so
             }
         end
     end)
@@ -375,75 +366,58 @@ local intruders = {} -- group name -> state
 -- the deterrence the scramble could never provide.
 ---------------------------------------------------------------------------------------------------
 
---: Swap a standing neutral patrol onto the coalition opposing the intruder.
+--: A second battery, for the case where BOTH sides violate the same country.
 --:
---: MOOSE's GROUP:Respawn(template, true) copies every live unit's x/y/alt/heading into the
---: template, and DATABASE:Spawn reads CountryID/CoalitionID off it and hands them to
---: coalition.addGroup (Moose.lua:11648). So the aircraft come back where they were, on the new
---: side.
---:
---: **It is a Destroy + re-add, not a true in-place edit**: position, altitude and heading survive,
---: velocity does not -- the group takes its speed from the route's first waypoint. If a swapped
---: flight ever drops out of the sky, that is the reason, and it is the one part of this that
---: cannot be proven outside DCS.
---: A second flight, for the case where BOTH sides violate the same country.
---:
---: The standing patrol can only be on one coalition, and once swapped it is an
---: ALLY of the other side -- it cannot fire on them and the attack task is
---: silently dropped. So the country puts a second pair up, on the coalition
---: opposing the new violator, cloned from the standing patrol's own template.
---:
---: This is the one place a spawn survives the standing-patrol redesign, and it
---: is deliberate: a country fighting two enemies at once genuinely needs two
---: flights, and there is no orbit to have kept it on.
-local function second_patrol(zone, intruder_side)
+--: A battery can only be on one coalition, and once swapped it is an ALLY of
+--: the other side -- it will not fire on them. A country fighting both at once
+--: needs a second site, cloned from its own template onto the other coalition.
+local function second_battery(zone, intruder_side)
     if zone.second_group then
         return Group.getByName(zone.second_group)
     end
-    if not zone.cap_group then
-        return nil -- nothing to clone: this country flies no patrol
+    if not zone.sam_group then
+        return nil
     end
-    local name = "NEUTRAL AF2 " .. zone.country
+    local name = "NEUTRAL SAM2 " .. zone.country
     local ok, err = pcall(function()
-        local sp = SPAWN:NewWithAlias(zone.cap_group, name)
+        local sp = SPAWN:NewWithAlias(zone.sam_group, name)
         sp:InitCountry(clone_country(zone, intruder_side))
         sp:InitCoalition(opposing(intruder_side))
-        -- 0 = no cap. A NONZERO unit cap smaller than the template silently
-        -- refuses the whole spawn (Moose.lua:21358), and the patrol is 4 ships.
-        -- One second flight per zone is guaranteed by the zone.second_group
-        -- latch above, not by this.
+        -- 0 = no cap. A nonzero unit cap smaller than the template silently
+        -- refuses the whole spawn (Moose.lua:21358).
         sp:InitLimit(0, 0)
         sp:Spawn()
     end)
     if not ok then
-        log("second patrol failed for " .. zone.country .. ": " .. tostring(err))
+        log("second battery failed for " .. zone.country .. ": " .. tostring(err))
         return nil
     end
     zone.second_group = name
     zone.second_side = intruder_side
-    log(zone.country .. " put a second flight up against the other side")
+    log(zone.country .. " put a second battery up against the other side")
     return Group.getByName(name)
 end
 
+--: Swap the standing neutral battery onto the coalition opposing the intruder.
+--:
+--: This is the whole feature in one call: a true neutral cannot fire, ever, so
+--: the only way the border bites is to stop being neutral at the moment it
+--: does. Respawn is a Destroy(false) plus a re-add 0.1 s later -- for a ground
+--: battery that is free, since it has no velocity to lose (the aircraft patrol
+--: this replaced measured 211 m/s within 5 s of the same call, 2026-09-01).
 local function swap_to_shooting(zone, intruder_side)
-    if not zone.cap_group then
-        -- Too small to orbit inside its own border, so it never put one up.
-        -- The SAM still wakes; that is this country's whole air defence.
-        return nil
+    if not zone.sam_group then
+        return nil -- nothing was built here
     end
     if zone.swapped then
         if intruder_side ~= zone.engaged_side then
-            -- The OTHER side has now violated the same airspace. The standing
-            -- patrol already belongs to their coalition, so it cannot fire on
-            -- them -- and an AttackGroup task on an ally is silently ignored.
-            -- A country fighting both sides needs a second flight (DM call).
-            return second_patrol(zone, intruder_side)
+            return second_battery(zone, intruder_side)
         end
-        return Group.getByName(zone.cap_group)
+        return Group.getByName(zone.sam_group)
     end
-    local grp = GROUP:FindByName(zone.cap_group)
+    local grp = GROUP:FindByName(zone.sam_group)
     if not grp or not grp:IsAlive() then
-        log("no standing patrol for " .. zone.country .. " -- nothing to engage with")
+        log("no standing battery for " .. zone.country .. " -- nothing to engage with")
         return nil
     end
     local ok, err = pcall(function()
@@ -458,122 +432,16 @@ local function swap_to_shooting(zone, intruder_side)
     end
     zone.swapped = true
     zone.engaged_side = intruder_side
-    log(zone.country .. " patrol is now hostile to the intruder")
-    return Group.getByName(zone.cap_group)
+    log(zone.country .. " battery is now hostile to the intruder")
+    return Group.getByName(zone.sam_group)
 end
 
---: Which group is answering a given intruder side: the swapped standing patrol,
---: or the second flight raised for the other one.
-local function patrol_for(zone, intruder_side)
+--: Which group is answering a given intruder side.
+local function battery_for(zone, intruder_side)
     if zone.swapped and intruder_side ~= zone.engaged_side then
         return zone.second_group
     end
-    return zone.cap_group
-end
-
-local function wake_sam(zone, intruder_side)
-    if zone.sam_spawned then
-        return
-    end
-    if not zone.sam_template then
-        -- Say so. This returned silently until 2026-08-28, so a mission where
-        -- the escalation fired and no battery woke looked identical to one
-        -- where the ladder had not run at all.
-        log("no SAM template for " .. zone.country .. " -- nothing to wake")
-        zone.sam_spawned = true
-        return
-    end
-    zone.sam_spawned = true
-    local ok, err = pcall(function()
-        if not zone.sam_spawner then
-            zone.sam_spawner = SPAWN:NewWithAlias(
-                zone.sam_template, "NEUTRAL SAM " .. zone.country)
-        end
-        local sp = zone.sam_spawner
-        local country = clone_country(zone, intruder_side)
-        if country and sp.InitCountry then
-            sp:InitCountry(country)
-        end
-        if sp.InitCoalition then
-            sp:InitCoalition(opposing(intruder_side))
-        end
-        sp:Spawn()
-        log("SAM battery awake at " .. zone.origin_label)
-    end)
-    if not ok then
-        zone.sam_spawned = false
-        log("SAM wake error: " .. tostring(err))
-    end
-end
-
---: Re-task a hostile patrol onto the NEAREST escalated intruder of the side it
---: opposes (DM call). One patrol cannot cover two violators, and committing to
---: whoever escalated last abandoned an engagement already in progress.
---:
---: The §61 rule applies: a repeated identical setTask resets the AI's attack
---: run, so the task is only re-set when the target actually changes.
-local function retarget(zone, side)
-    local name = patrol_for(zone, side)
-    if not name then
-        return
-    end
-    local sg = Group.getByName(name)
-    local lead = lead_unit(sg)
-    if not lead then
-        return
-    end
-    local sp = lead:getPoint()
-    local best, best_d
-    for iname, st in pairs(intruders) do
-        if st.escalated and st.side == side and st.zone == zone.index then
-            local tgt = Group.getByName(iname)
-            local tl = lead_unit(tgt)
-            if tl then
-                local p = tl:getPoint()
-                local d = (p.x - sp.x) ^ 2 + (p.z - sp.z) ^ 2
-                if not best_d or d < best_d then
-                    best, best_d = tgt, d
-                end
-            end
-        end
-    end
-    if not best then
-        return
-    end
-    local id = best:getID()
-    if zone.last_target and zone.last_target[name] == id then
-        return -- unchanged: re-setting it would restart the attack run
-    end
-    zone.last_target = zone.last_target or {}
-    zone.last_target[name] = id
-    pcall(function()
-        sg:getController():setTask({
-            id = "AttackGroup",
-            params = { groupId = id },
-        })
-    end)
-end
-
-local retarget_loop_running = false
-
-local function start_retarget_loop()
-    if retarget_loop_running then
-        return
-    end
-    retarget_loop_running = true
-    timer.scheduleFunction(function()
-        for _, zone in ipairs(zones) do
-            if zone.swapped then
-                pcall(function()
-                    retarget(zone, zone.engaged_side)
-                    if zone.second_side then
-                        retarget(zone, zone.second_side)
-                    end
-                end)
-            end
-        end
-        return timer.getTime() + RETARGET_INTERVAL_S
-    end, {}, timer.getTime() + RETARGET_INTERVAL_S)
+    return zone.sam_group
 end
 
 local function escalate(state, intruder_group)
@@ -583,31 +451,27 @@ local function escalate(state, intruder_group)
     state.escalated = true
     local zone = zones[state.zone]
     announce(intruder_group, string.format(
-        "%s AIR FORCE: You were warned. %s fighters are ENGAGING.",
+        "%s AIR FORCE: You were warned. %s air defense is ENGAGING.",
         string.upper(zone.country), zone.country))
-    -- The swap is what lets a neutral shoot at all, so it comes first; the
-    -- attack task is worthless on a group that cannot fire.
     swap_to_shooting(zone, state.side)
-    -- Respawn re-adds 0.1 s later, so the group only exists again after a tick.
+    -- No attack task, and none is wanted: a SAM acquires and engages whatever
+    -- enters its envelope once it is weapons-free, so the retarget loop the
+    -- fighter patrol needed is gone with it. Respawn re-adds 0.1 s later, so
+    -- ask DCS the group exists before MOOSE touches it.
     timer.scheduleFunction(function()
         pcall(function()
-            -- Ask DCS first. MOOSE's registry still holds the pre-Respawn
-            -- group for a moment, and OptionROEWeaponFree on that one logs a
-            -- GetVec3 error (seen once per escalation, flown 2026-08-29).
-            local pname = patrol_for(zone, state.side)
-            local dg = pname and Group.getByName(pname)
+            local bname = battery_for(zone, state.side)
+            local dg = bname and Group.getByName(bname)
             if dg and dg:isExist() then
-                local mg = GROUP:FindByName(pname)
+                local mg = GROUP:FindByName(bname)
                 if mg then
                     mg:OptionROEWeaponFree()
+                    mg:OptionAlarmStateRed()
                 end
             end
-            retarget(zone, state.side)
         end)
         return nil
     end, {}, timer.getTime() + 2)
-    start_retarget_loop()
-    wake_sam(zone, state.side)
     log("ESCALATED on " .. state.name)
 end
 
@@ -672,10 +536,9 @@ local function scan_group(group, side, now)
         return
     end
     local name = group:getName() or ""
-    -- A country's own aircraft are never its intruders. The standing patrol
-    -- ("NeutralBorder|") joins a coalition the moment it swaps and was scanned
-    -- inside its own border until 2026-08-29; nothing reached a player because
-    -- every rung of the ladder is gated on is_player.
+    -- A country's own units are never its intruders. The scan is airborne
+    -- groups only, so a ground battery cannot appear here -- the guard is kept
+    -- for the second battery's spawn name and costs a string compare.
     if string.find(name, "NeutralBorder|", 1, true)
         or string.find(name, "NEUTRAL AF", 1, true)
         or string.find(name, "NEUTRAL SAM", 1, true) then
@@ -717,8 +580,6 @@ local function scan_group(group, side, now)
                 }
                 intruders[name] = state
             end
-            -- Kept fresh every scan: retarget picks the NEAREST escalated
-            -- intruder, so it needs where each one actually is.
             state.px, state.pz = p.x, p.z
             state.zone = zi
             state.dwell = state.dwell + SCAN_INTERVAL_S

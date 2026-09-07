@@ -32,9 +32,7 @@ SQUARE = [
 ]
 
 
-def _config(
-    sam: bool = True, floor_ft: str = "10000", patrol: bool = True
-) -> dict[str, Any]:
+def _config(battery: bool = True, floor_ft: str = "10000") -> dict[str, Any]:
     zone: dict[str, Any] = {
         "country": "Lebanon",
         "field": "Rayak",
@@ -50,10 +48,8 @@ def _config(
         "overflightBlue": "false",
         "overflightRed": "false",
     }
-    if patrol:
-        zone["fighterTemplate"] = "NeutralBorder|Lebanon|MiG-29A"
-    if sam:
-        zone["samTemplate"] = "NeutralBorder|Lebanon|SAM"
+    if battery:
+        zone["samGroup"] = SAM_GROUP
     return {
         "plugins": {
             "neutralborder": {
@@ -97,32 +93,33 @@ def _intruder(
     }
 
 
-#: The standing patrol's group name, matching the generator's
-#: ``NeutralBorder|<country>|<airframe>``. It is a LIVE group from mission start,
+#: The standing battery's group name, matching the generator's
+#: ``NeutralBorder|<country>|<system>``. It is a LIVE group from mission start,
 #: not a template -- the plugin swaps its coalition rather than cloning it.
-CAP_GROUP = "NeutralBorder|Lebanon|MiG-29A"
+SAM_GROUP = "NeutralBorder|Lebanon|SA-3"
 
 
-def _setup(cfg: dict[str, Any], with_patrol: bool = True) -> DcsPluginHarness:
+def _setup(cfg: dict[str, Any], with_battery: bool = True) -> DcsPluginHarness:
     h = DcsPluginHarness()
     h.add_airbase({"name": "Rayak", "x": 10000, "z": 10000, "elev": 900, "side": 0})
-    if with_patrol:
-        # Airborne on the NEUTRAL coalition from the start, orbiting inside the
-        # border. Side 0 is neutral, which is why it cannot fire until swapped.
+    if with_battery:
+        # On the ground, on the NEUTRAL coalition from the start, deep inside
+        # the border. Side 0 is neutral, which is why it cannot fire until
+        # swapped. Category 2 is GROUND, so the airborne scan never sees it.
         h.add_group(
             {
-                "name": CAP_GROUP,
+                "name": SAM_GROUP,
                 "id": 900,
                 "side": 0,
-                "category": 0,
+                "category": 2,
                 "units": [
                     {
-                        "name": CAP_GROUP + "-1",
-                        "type": "MiG-29A",
+                        "name": SAM_GROUP + "-1",
+                        "type": "p-19 s-125 sr",
                         "x": 10000,
                         "z": 10000,
-                        "alt": 6096,
-                        "airborne": True,
+                        "alt": 900,
+                        "airborne": False,
                     }
                 ],
             }
@@ -132,7 +129,7 @@ def _setup(cfg: dict[str, Any], with_patrol: bool = True) -> DcsPluginHarness:
 
 
 def _swaps(h: DcsPluginHarness) -> list[dict[str, Any]]:
-    """Coalition swaps: the only way a neutral patrol ever becomes able to fire."""
+    """Coalition swaps: the only way a neutral battery ever becomes able to fire."""
     return [r for r in h.records("coalitionSwaps") if isinstance(r, dict)]
 
 
@@ -141,13 +138,12 @@ def _texts(h: DcsPluginHarness) -> list[str]:
 
 
 def _hails(h: DcsPluginHarness) -> list[str]:
-    """The entry call. With a standing patrol there is nothing to spawn, so this
-    is what says the border noticed you."""
+    """The entry call -- what says the border noticed you."""
     return [t for t in _texts(h) if "violating" in t]
 
 
 def _advisories(h: DcsPluginHarness) -> list[str]:
-    """The second call at warnDwellS -- the patrol has been told about you."""
+    """The second call at warnDwellS -- the battery has been told about you."""
     return [t for t in _texts(h) if "advised" in t]
 
 
@@ -203,7 +199,7 @@ def test_the_patrol_swaps_onto_the_side_opposing_the_intruder() -> None:
 
     swaps = _swaps(h)
     assert len(swaps) == 1, "the patrol did not swap on escalation"
-    assert swaps[0]["group"] == CAP_GROUP
+    assert swaps[0]["group"] == SAM_GROUP
     assert swaps[0]["coalitionId"] == 1, "a BLUE intruder must be opposed by RED"
     assert swaps[0]["countryId"] == RED_COUNTRY
     assert swaps[0]["reset"] is True, (
@@ -216,7 +212,7 @@ def test_the_patrol_swaps_onto_the_side_opposing_the_intruder() -> None:
 def test_a_zone_with_no_patrol_says_so_instead_of_going_quiet() -> None:
     """If the standing group is missing or dead there is nothing to swap, and a
     silent return would look exactly like a ladder that never ran."""
-    h = _setup(_config(), with_patrol=False)
+    h = _setup(_config(), with_battery=False)
     h.add_group(_intruder("Viper 1-1", 42, side=2))
     h.load_plugin_script(PLUGIN)
     h.advance_to(200)
@@ -226,19 +222,21 @@ def test_a_zone_with_no_patrol_says_so_instead_of_going_quiet() -> None:
     h.assert_no_lua_errors()
 
 
-def test_player_dwell_escalates_attack_task_and_sam() -> None:
+def test_player_dwell_turns_the_battery_hostile() -> None:
+    """The swap IS the escalation: a true neutral cannot fire, so nothing else
+    the plugin does matters until the battery stops being one."""
     h = _setup(_config())
     h.add_group(_intruder("Viper 1-1", 42, side=2))
     h.load_plugin_script(PLUGIN)
     h.advance_to(200)
 
+    swaps = _swaps(h)
+    assert len(swaps) == 1, "the standing battery never swapped"
+    assert swaps[0]["coalitionId"] == 1, "the battery joined the escalator's own side"
     roe = [r for r in h.records("roe") if isinstance(r, dict)]
     assert any(r.get("option") == "WeaponFree" for r in roe)
-    attacks = _attack_tasks(h)
-    assert attacks and attacks[0]["targetGroupId"] == 42
-    sam = _sam_spawns(h)
-    assert len(sam) == 1
-    assert sam[0]["coalitionId"] == 1  # the SAM opposes the blue escalator
+    # No attack task, and none is wanted -- a SAM acquires for itself.
+    assert _attack_tasks(h) == []
     h.assert_no_lua_errors()
 
 
@@ -295,9 +293,7 @@ def test_weapon_release_inside_escalates_after_warning() -> None:
     )
     h.advance_to(60)
 
-    attacks = _attack_tasks(h)
-    assert attacks and attacks[0]["targetGroupId"] == 42
-    assert len(_sam_spawns(h)) == 1
+    assert len(_swaps(h)) == 1, "a weapon released inside did not turn the battery"
     h.assert_no_lua_errors()
 
 
@@ -348,7 +344,7 @@ def test_a_side_that_is_permitted_transit_is_never_challenged() -> None:
 
 
 def test_a_zone_open_to_everyone_never_scans() -> None:
-    cfg = _config(sam=False)
+    cfg = _config(battery=False)
     zone = cfg["neutralBorder"]["zones"][0]
     zone["overflightBlue"] = "true"
     zone["overflightRed"] = "true"
@@ -578,7 +574,7 @@ def test_a_zone_with_no_sam_says_so_instead_of_going_quiet() -> None:
     returned silently, so a mission where the ladder ran correctly looked
     identical to one where it had not run at all.
     """
-    cfg = _config(sam=False)
+    cfg = _config(battery=False)
     h = _setup(cfg)
     h.add_group(_intruder("Viper 1-1", 42, side=2))
     h.load_plugin_script(PLUGIN)
@@ -591,72 +587,44 @@ def test_a_zone_with_no_sam_says_so_instead_of_going_quiet() -> None:
 # -- more than one incursion into the same country ------------------------------
 
 
-def _second_patrols(h: DcsPluginHarness) -> list[dict[str, Any]]:
+def _second_batteries(h: DcsPluginHarness) -> list[dict[str, Any]]:
     return [
         r
         for r in h.records("spawns")
-        if isinstance(r, dict) and str(r.get("alias", "")).startswith("NEUTRAL AF2")
+        if isinstance(r, dict) and str(r.get("alias", "")).startswith("NEUTRAL SAM2")
     ]
 
 
-def test_the_other_side_gets_a_second_flight_not_a_re_swap() -> None:
-    """A patrol can only be on one coalition, and once swapped it is an ALLY of
-    the other side -- it cannot fire on them and the attack task is silently
-    dropped. DM call 2026-08-29: the country puts a second flight up rather than
-    flipping allegiance mid-fight.
+def test_the_other_side_gets_a_second_battery_not_a_re_swap() -> None:
+    """A battery can only be on one coalition, and once swapped it is an ALLY of
+    the other side. DM call 2026-08-29, carried over from the patrol: the
+    country puts a second site up rather than flipping allegiance mid-fight.
     """
     h = _setup(_config())
     h.add_group(_intruder("Viper 1-1", 42, side=2))  # BLUE player
     h.load_plugin_script(PLUGIN)
     h.advance_to(200)
-    assert len(_swaps(h)) == 1, "the standing patrol never swapped"
-    assert _second_patrols(h) == [], "a second flight went up too early"
+    assert len(_swaps(h)) == 1, "the standing battery never swapped"
+    assert _second_batteries(h) == [], "a second site went up too early"
 
     # Now the OTHER side violates the same airspace.
     h.add_group(_intruder("Bandit 1", 50, side=1))  # RED player
-    h.advance_to(200 + 200)
+    h.advance_to(400)
 
-    second = _second_patrols(h)
+    second = _second_batteries(h)
     assert len(second) == 1, "the other side was never answered"
-    assert second[0]["coalitionId"] == 2, "a RED intruder must be opposed by BLUE"
-    assert len(_swaps(h)) == 1, "the standing patrol flipped allegiance instead"
+    assert len(_swaps(h)) == 1, "the first battery changed sides mid-fight"
     h.assert_no_lua_errors()
 
 
-def test_a_hostile_patrol_takes_the_nearest_of_two_intruders() -> None:
-    """One patrol cannot cover two violators. DM call: it takes the nearest,
-    rather than whoever escalated most recently -- committing to the newest
-    abandoned an engagement already in progress.
-    """
-    h = _setup(_config())
-    h.add_group(_intruder("Far 1-1", 42, side=2, x=9000, z=9000))
-    h.add_group(_intruder("Near 2-1", 43, side=2, x=10500, z=10500))
-    h.load_plugin_script(PLUGIN)
-    h.advance_to(260)
-
-    tasks = _attack_tasks(h)
-    assert tasks, "the patrol never took a target"
-    # The patrol orbits at (10000, 10000), so Near 2-1 (id 43) is closer than
-    # Far 1-1 (id 42). Both escalated; the nearer one must be the target.
-    assert tasks[-1]["targetGroupId"] == 43, (
-        f"the patrol engaged group {tasks[-1]['targetGroupId']} -- the further "
-        "intruder, or whoever escalated last"
-    )
-    h.assert_no_lua_errors()
-
-
-def test_a_country_with_no_patrol_still_wakes_its_sam() -> None:
-    """DM call 2026-08-30: a country too small to orbit inside its own border
-    puts no patrol up at all, rather than one that permanently trespasses on its
-    neighbours. Three shipped zones are this -- Bahrain, and Oman and Iran's
-    Persian Gulf slivers -- and the SAM is then their whole air defence, so the
-    ladder has to reach it with nothing to make hostile.
-    """
-    h = _setup(_config(patrol=False), with_patrol=False)
-    h.add_group(_intruder("Viper 1-1", 42, side=2))  # BLUE player
+def test_a_zone_with_no_battery_never_claims_to_defend() -> None:
+    """The plugin drops an enforcing zone that carries no battery rather than
+    hail a player it has nothing to back the hail with."""
+    h = _setup(_config(battery=False), with_battery=False)
+    h.add_group(_intruder("Viper 1-1", 42, side=2))
     h.load_plugin_script(PLUGIN)
     h.advance_to(400)
 
-    assert _swaps(h) == [], "a country with no patrol swapped something"
-    assert len(_sam_spawns(h)) == 1, "the SAM never woke, so nothing defends here"
-    assert any("ENGAGING" in m for m in _texts(h)), "the player was never told"
+    assert _swaps(h) == []
+    assert _hails(h) == [], "a zone with nothing to enforce with still challenged"
+    h.assert_no_lua_errors()

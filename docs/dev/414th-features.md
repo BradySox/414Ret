@@ -10131,14 +10131,18 @@ in front of you, reading Sweden and Finland `closed` in 1983 while both sides
 flew combat sorties off their runways, and it cannot see a base change hands.
 The research is kept and still supplies the airframe. **Altitude floors went
 with it** — they came from its `contested` bucket, so a floor is now authored
-only and a defending country defends at any height. **A refusing neutral flies a
-standing patrol inside its own border, airborne from mission generation** — a
-12 NM racetrack leg fitted inside the polygon **pulled in by a clearance** (12
-NM, then 10, then 8), because a racetrack overshoots each end before turning
-back and a leg that merely sits inside flies out. **8 NM is a floor, not a
-fallback**: a country smaller than its own turn puts no patrol up at all and
-defends with its SAM alone — Bahrain and the two Persian Gulf slivers, 3 of the
-52 shipped zones. It is visible before you cross, which is the deterrent the
+only and a defending country defends at any height. **A refusing neutral stands a
+live SAM battery inside its own border from mission generation** (the fighter
+patrol it used to fly was dropped 2026-09-07, DM call — scope is the SAM). The
+system is sized to the largest circle that fits inside the country: SA-3 by
+default, SA-11 above 40 NM of room, S-300 above 100, with Hawk and Patriot for
+the eleven authored western-equipped nations. **Dates are export dates, not
+in-service** — checked against the 1982 Falklands column, where in-service dates
+handed Argentina a Buk. The site sits at exactly `min(reach, room)` from the
+frontier so its envelope just covers the border: a first cut that only capped
+depth left Iran's Persian Gulf battery 175 NM inside, defending nothing. Deep
+placement also means the site is not on an airfield, so the escalation swap
+cannot hand the neutral's airbase to a belligerent. It is visible before you cross, which is the deterrent the
 scramble never managed (three flown attempts, all too slow or too far). Cross and
 it hails you at once, and warns again at dwell; neither call launches anything.
 A player who stays past the engage timer, releases a weapon inside, or fires on
@@ -10172,9 +10176,10 @@ target changes.
 - **Python** — `game/theater/neutralborder.py` (`NeutralBorderZone`, the campaign yaml
   contract), parsed by `MizCampaignLoader.add_neutral_border_zones` onto
   `ConflictTheater.neutral_border_zones` (persisted; `__setstate__` defaults it for old
-  saves). `NeutralBorderGenerator` builds, per zone, a live 4-ship
-  fighter template + optional SA-6 template at the (non-CP) neutral field under the
-  neutral country, and records what it built on `MissionData.neutral_border_zones`;
+  saves). `NeutralBorderGenerator` builds, per zone, one live SAM battery under the
+  neutral country, sized and sited from the border polygon (`neutralbordersams.py`
+  holds the ladder; `NeutralBorderZone.interior_room` / `.sam_site` do the geometry),
+  and records what it built on `MissionData.neutral_border_zones`;
   `neutralborderluadata.py` serializes that to `dcsRetribution.neutralBorder`.
 - **Lua** — `resources/plugins/neutralborder/neutralborder-config.lua`: border scan
   (bbox + ray-cast point-in-polygon on terrain XY), per-group dwell, the warn → shadow

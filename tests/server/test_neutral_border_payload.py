@@ -102,12 +102,16 @@ def test_theater_without_the_attribute_is_tolerated() -> None:
 
 
 def _toothless_zone() -> NeutralBorderZone:
-    """A neutral with an origin but no airframe: DCS models no Turkmenistan, and
-    Cyprus, Armenia, Azerbaijan and Argentina have no entry in the dated table."""
+    """A neutral with NO origin, which is the only way to be toothless now.
+
+    It used to mean "no era airframe" as well, which covered 14 zones. Dropping
+    the fighter patrol on 2026-09-07 widened the feature: a SAM needs no airframe
+    and no runway, so Turkmenistan, Cyprus, Armenia and Azerbaijan all defend
+    today. Only a zone with nowhere to stand a battery is drawn and toothless.
+    """
     zone = NeutralBorderZone.from_yaml(
         {
             "country": "Turkmenistan",
-            "airfield": "Rayak",
             "border": [
                 [-37713, 38996],
                 [-211351, -80947],
@@ -120,24 +124,23 @@ def _toothless_zone() -> NeutralBorderZone:
     return zone
 
 
-def test_a_country_that_cannot_launch_is_not_drawn_as_closed() -> None:
+def test_a_country_that_cannot_defend_is_not_drawn_as_closed() -> None:
     """The generator degrades it to drawn-and-toothless, so the map has to agree.
 
     It did not until 2026-08-27: the map computed enforcement from posture and
-    consent alone and never asked whether the country could put a fighter up.
-    Measured across the shipped terrains, 14 zones were drawn "closed to you at
-    any altitude" over a mission that let you fly straight through them --
-    Cyprus and Iraq on Syria, Armenia and Azerbaijan on Caucasus. The feature
-    exists to be planned against, so overstating the threat is the expensive
-    direction of wrong: you route around nothing and stop trusting the layer.
+    consent alone and never asked whether the country could defend at all, so
+    zones were drawn "closed to you at any altitude" over a mission that let you
+    fly straight through them. The feature exists to be planned against, so
+    overstating the threat is the expensive direction of wrong: you route around
+    nothing and stop trusting the layer.
     """
     borders = NeutralBorderJs.all_in_game(_game(zones=[_toothless_zone()]))
     assert len(borders) == 1
-    assert borders[0].overflight is True, "a country that cannot launch read closed"
+    assert borders[0].overflight is True, "a country that cannot defend read closed"
     assert "permitted" in borders[0].airfield
 
 
-def test_a_country_that_can_launch_is_still_drawn_as_closed() -> None:
+def test_a_country_that_can_defend_is_still_drawn_as_closed() -> None:
     """The control: the fix must not open every border it touches."""
     borders = NeutralBorderJs.all_in_game(_game())
     assert len(borders) == 1

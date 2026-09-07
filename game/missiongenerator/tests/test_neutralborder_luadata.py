@@ -12,14 +12,13 @@ from game.missiongenerator.neutralborderluadata import (
 )
 
 
-def _zone(sam: bool = True) -> NeutralBorderLuaZone:
+def _zone(battery: bool = True) -> NeutralBorderLuaZone:
     return NeutralBorderLuaZone(
         country="Lebanon",
         airfield="Rayak",
         floor_blue_ft=None,
         floor_red_ft=None,
-        fighter_template="NeutralBorder|Lebanon|MiG-29A",
-        sam_template="NeutralBorder|Lebanon|SAM" if sam else None,
+        sam_group="NeutralBorder|Lebanon|SA-3" if battery else None,
         red_country_id=34,
         blue_country_id=2,
         border=[(0.0, 0.0), (20000.0, 0.0), (20000.0, 20000.0), (0.0, 20000.0)],
@@ -34,13 +33,12 @@ def _emit(enabled: bool, zones: list[Any]) -> str:
     return root.create_operations_lua()
 
 
-def test_emits_the_zone_with_templates_ids_and_border() -> None:
+def test_emits_the_zone_with_its_battery_ids_and_border() -> None:
     lua = _emit(True, [_zone()])
     assert "neutralBorder" in lua
     assert "Lebanon" in lua
     assert "Rayak" in lua
-    assert "NeutralBorder|Lebanon|MiG-29A" in lua
-    assert "NeutralBorder|Lebanon|SAM" in lua
+    assert "NeutralBorder|Lebanon|SA-3" in lua
     # No floor emitted at all: this zone grants no safe altitude, and a
     # number in the payload would imply one exists.
     assert "floorBlueFt" not in lua
@@ -49,10 +47,11 @@ def test_emits_the_zone_with_templates_ids_and_border() -> None:
     assert "20000.0" in lua  # border vertex, one decimal
 
 
-def test_sam_key_is_absent_when_no_sam_template() -> None:
-    lua = _emit(True, [_zone(sam=False)])
-    assert "samTemplate" not in lua
-    assert "fighterTemplate" in lua
+def test_the_battery_key_is_absent_when_none_was_built() -> None:
+    """The plugin drops an enforcing zone with no battery rather than promise a
+    defence it cannot deliver, so the absence has to reach it."""
+    lua = _emit(True, [_zone(battery=False)])
+    assert "samGroup" not in lua
 
 
 def test_setting_off_emits_nothing() -> None:
@@ -80,83 +79,58 @@ def test_a_zone_with_no_label_anchor_emits_none() -> None:
     assert "labelX" not in lua
 
 
-# -- the patrol has to be able to stay in the air ------------------------------
+# -- the battery has to be there, sized, and deep ------------------------------
 
 
-def test_the_orbit_speed_is_written_in_km_h_not_m_s() -> None:
-    """Every pydcs speed argument is km/h and it divides by 3.6 on write.
+def test_the_ladder_gives_a_bigger_country_a_longer_ranged_system() -> None:
+    """DM call 2026-09-07: a larger country gets a larger SAM, further back."""
+    from datetime import date
 
-    FLOWN 2026-08-29: the generator "helpfully" converted CAP_SPEED_KPH to m/s
-    before handing it to OrbitAction, so the division happened twice and the
-    orbit task carried 57.8 m/s -- 112 kt. The F-16A, MiG-29A and Su-30 patrols
-    all stalled and crashed within a minute of mission start. Nothing caught it:
-    the value is plausible-looking in every file it passes through.
-    """
-    from dcs.task import OrbitAction
+    from game.missiongenerator.neutralbordersams import system_for
+    from game.utils import nautical_miles
 
-    from game.missiongenerator.neutralbordergenerator import CAP_SPEED_KPH
-
-    speed_ms = OrbitAction(
-        6096, int(CAP_SPEED_KPH), OrbitAction.OrbitPattern.RaceTrack
-    ).dict()["params"]["speed"]
-    knots = speed_ms * 1.94384
-
-    assert knots > 250, (
-        f"the orbit task commands {knots:.0f} kt -- a fighter told to hold that "
-        "stalls and falls out of the sky"
-    )
-    assert knots < 700, f"the orbit task commands {knots:.0f} kt, which is not an orbit"
+    day = date(2004, 6, 1)
+    small = system_for("Freedonia", nautical_miles(10), day)
+    large = system_for("Freedonia", nautical_miles(150), day)
+    assert (
+        large.reach > small.reach
+    ), f"{large.name} does not out-range {small.name}, so size buys nothing"
 
 
-def test_the_whole_orbit_clears_the_border_not_just_the_leg() -> None:
-    """A racetrack overshoots each end before turning back.
+def test_a_system_the_era_cannot_export_is_not_offered() -> None:
+    """Checked 2026-09-07 against the 1982 Falklands column, where in-service
+    dates rather than export dates handed Argentina a Buk."""
+    from datetime import date
 
-    FLOWN 2026-08-30: the leg was only required to sit inside the border, so
-    the patrol crossed into the neighbour by under 10 NM past each end. The
-    leg is now fitted inside the border pulled in by a clearance that covers
-    the overshoot.
-    """
-    from game.missiongenerator.neutralbordergenerator import (
-        PATROL_CLEARANCES_M,
-        PATROL_LEG_NM,
-    )
-    from game.theater.neutralborder import NeutralBorderZone
-    from shapely.geometry import LineString, Polygon
+    from game.missiongenerator.neutralbordersams import system_for
+    from game.utils import nautical_miles
 
-    # 200 x 200 km: room for the full leg and the full clearance.
-    square = [
-        (-100_000.0, -100_000.0),
-        (100_000.0, -100_000.0),
-        (100_000.0, 100_000.0),
-        (-100_000.0, 100_000.0),
-    ]
-    zone = NeutralBorderZone(country="Nowhere", border=square)
-
-    centre, end = zone.patrol_orbit(
-        (0.0, 0.0), PATROL_LEG_NM.meters, PATROL_CLEARANCES_M
-    )
-    assert end is not None, "a leg fits in a 200 km square and one was not found"
-    gap = Polygon(square).exterior.distance(LineString([centre, end]))
-    assert gap >= max(PATROL_CLEARANCES_M) - 1.0, (
-        f"the leg sits {gap / 1852:.1f} NM from the border; the overshoot past "
-        "its ends would cross out"
-    )
+    room = nautical_miles(150)
+    assert system_for("Freedonia", room, date(1982, 5, 1)).name == "SA-3"
+    assert system_for("Freedonia", room, date(2004, 6, 1)).name == "S-300"
 
 
-def test_a_station_on_the_frontier_is_moved_inland() -> None:
-    """Several shipped stations sit on their own border.
+def test_a_western_nation_does_not_get_soviet_kit() -> None:
+    """Bloc posture gets Iraq and Russia wrong, so the west list is authored."""
+    from datetime import date
 
-    India's is 0.6 NM from it in a zone that could hold 75, so no orbit
-    centred there can stay inside whatever its size. The correction is the
-    nearest point with room, not a jump to the country's deep interior.
-    """
-    from game.missiongenerator.neutralbordergenerator import (
-        PATROL_CLEARANCES_M,
-        PATROL_LEG_NM,
-    )
-    from game.theater.neutralborder import NeutralBorderZone
+    from game.missiongenerator.neutralbordersams import system_for
+    from game.utils import nautical_miles
+
+    day = date(2004, 6, 1)
+    assert system_for("Israel", nautical_miles(20), day).name == "Hawk"
+    assert system_for("Turkey", nautical_miles(150), day).name == "Patriot"
+    assert system_for("Iran", nautical_miles(150), day).name == "S-300"
+
+
+def test_the_site_stands_deep_but_still_covers_its_border() -> None:
+    """Depth is what the DM asked for and is also why the swap cannot capture an
+    airbase -- the site is not on one. It is capped at the system's own reach so
+    the envelope still touches the frontier it defends."""
     from shapely.geometry import Point as ShapelyPoint, Polygon
 
+    from game.theater.neutralborder import NeutralBorderZone
+
     square = [
         (-100_000.0, -100_000.0),
         (100_000.0, -100_000.0),
@@ -164,124 +138,33 @@ def test_a_station_on_the_frontier_is_moved_inland() -> None:
         (-100_000.0, 100_000.0),
     ]
     zone = NeutralBorderZone(country="Nowhere", border=square)
-    on_the_line = (-99_000.0, 0.0)
+    reach = 20_000.0
+    site = zone.sam_site((-99_000.0, 0.0), reach)
 
-    centre, end = zone.patrol_orbit(
-        on_the_line, PATROL_LEG_NM.meters, PATROL_CLEARANCES_M
+    gap = Polygon(square).exterior.distance(ShapelyPoint(site))
+    assert gap >= reach - 1.0, f"the site sits {gap:.0f} m in, shallower than its reach"
+    assert gap <= reach + 1.0, (
+        f"the site sits {gap:.0f} m in, deeper than its {reach:.0f} m reach, so its "
+        "envelope no longer touches the border it defends"
     )
-    assert end is not None
-    moved = Polygon(square).exterior.distance(ShapelyPoint(centre))
-    assert (
-        moved >= max(PATROL_CLEARANCES_M) - 1.0
-    ), f"the centre is still {moved / 1852:.1f} NM from the border"
-    # The smallest correction that works: it stays on the side it was authored.
-    assert centre[0] < 0, f"the patrol jumped across the country to {centre}"
 
 
-def test_a_country_too_small_for_any_cleared_orbit_gets_a_circle() -> None:
-    """Bahrain's zone holds a 5 NM inscribed circle and nothing fits it.
-
-    The caller flies a circle there. It still crosses out -- at that size
-    nothing does not -- but a one-waypoint racetrack would put the flight in
-    the ground, which is the failure this fallback exists to avoid.
-    """
-    from game.missiongenerator.neutralbordergenerator import (
-        PATROL_CLEARANCES_M,
-        PATROL_LEG_NM,
-    )
-    from game.theater.neutralborder import NeutralBorderZone
-
-    # 2 km across: smaller than the tightest clearance tried.
-    sliver = [
-        (-1_000.0, -1_000.0),
-        (1_000.0, -1_000.0),
-        (1_000.0, 1_000.0),
-        (-1_000.0, 1_000.0),
-    ]
-    zone = NeutralBorderZone(country="Sliver", border=sliver)
-
-    _, end = zone.patrol_orbit((0.0, 0.0), PATROL_LEG_NM.meters, PATROL_CLEARANCES_M)
-    assert end is None
-
-
-def test_a_zone_with_no_border_polygon_gets_no_racetrack() -> None:
-    """A campaign may author a zone with an airfield and no polygon."""
-    from game.missiongenerator.neutralbordergenerator import (
-        PATROL_CLEARANCES_M,
-        PATROL_LEG_NM,
-    )
+def test_a_zone_with_no_border_keeps_its_authored_origin() -> None:
     from game.theater.neutralborder import NeutralBorderZone
 
     zone = NeutralBorderZone(country="Unbounded")
-    centre, end = zone.patrol_orbit(
-        (5.0, 7.0), PATROL_LEG_NM.meters, PATROL_CLEARANCES_M
-    )
-    assert end is None
-    assert centre == (5.0, 7.0), "an unbounded zone must not move its station"
+    assert zone.sam_site((5.0, 7.0), 20_000.0) == (5.0, 7.0)
+    assert zone.interior_room() == 0.0
 
 
-def test_the_generated_patrol_has_a_second_waypoint() -> None:
-    """The isolated leg maths is not the thing that shipped broken.
-
-    FLOWN 2026-08-29: no leg fitter existed and the generator wrote one
-    waypoint, so this is the assertion that would have caught it. Builds the
-    real group through the real generator on a real pydcs mission.
-    """
+def test_a_country_with_an_origin_can_defend_without_an_airframe() -> None:
+    """Since the patrol was dropped, defending needs only a position. That is a
+    WIDENING: 14 zones that were drawn and toothless as fighter bases now hold a
+    battery."""
     from datetime import date
 
-    from dcs import Mission
-    from dcs.coalition import Coalition
-    from dcs.task import OrbitAction
-    from dcs.terrain import Caucasus
-
-    from game.missiongenerator.neutralbordergenerator import (
-        PATROL_SIZE,
-        NeutralBorderGenerator,
-    )
     from game.theater.neutralborder import NeutralBorderZone
 
-    mission = Mission(terrain=Caucasus())
-    mission.coalition["neutrals"] = Coalition("neutrals")
-    # A square around the map origin, big enough to hold a 25 NM leg.
-    square = [
-        (-120_000.0, -120_000.0),
-        (120_000.0, -120_000.0),
-        (120_000.0, 120_000.0),
-        (-120_000.0, 120_000.0),
-    ]
-    zone = NeutralBorderZone(
-        country="Turkey",
-        aircraft="F-4E-45MC",
-        spawn=(0.0, 0.0),
-        border=square,
-    )
-    theater = SimpleNamespace(neutral_border_zones=[zone], controlpoints=[])
-    game = SimpleNamespace(
-        settings=SimpleNamespace(neutral_border_defense=True),
-        theater=theater,
-        current_day=date(2004, 6, 1),
-    )
-    mission_data = SimpleNamespace(neutral_border_zones=[])
-    NeutralBorderGenerator(
-        mission, game, mission_data, blue_country_id=2, red_country_id=34  # type: ignore[arg-type]
-    ).generate()
-
-    groups = [
-        group
-        for country in mission.coalition["neutrals"].countries.values()
-        for group in country.plane_group
-        if group.name.startswith("NeutralBorder|")
-    ]
-    assert groups, "the patrol was never built"
-    patrol = groups[0]
-    assert len(patrol.points) == 2, (
-        f"the patrol has {len(patrol.points)} route point(s); a Race-Track orbit "
-        "flies between its waypoint and the next one, so one point is no leg"
-    )
-    orbits = [t for t in patrol.points[0].tasks if isinstance(t, OrbitAction)]
-    assert orbits, "no orbit task on the patrol"
-    assert orbits[0].dict()["params"]["pattern"] == "Race-Track"
-    # DM call 2026-08-29: a neutral answers a modern jet with numbers, not with
-    # a better missile. Four also breaks SPAWN:InitLimit if its unit cap is set
-    # below the template size, which is why the second flight now caps at 0.
-    assert len(patrol.units) == PATROL_SIZE
+    day = date(2004, 6, 1)
+    assert NeutralBorderZone(country="Turkmenistan", spawn=(0.0, 0.0)).can_defend(day)
+    assert not NeutralBorderZone(country="Nowhere").can_defend(day)

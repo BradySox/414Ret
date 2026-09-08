@@ -421,6 +421,7 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                     "motorpool_enabled",
                     "motorpool_spawn_cap",
                     "sp_pilot_mode",
+                    "pilot_career_logbook",
                     "supply_gated_reinforcement",
                     "assault_costs_the_attacker",
                     "scale_aware_front_line",
@@ -758,6 +759,9 @@ FEATURE_GATE_FIELDS: dict[str, list[str]] = {
         "single_sead_escort_flavour",  # §77
         "adaptive_procurement",  # §68
         "auto_repair_air_defenses",  # §68
+    ],
+    "Pilots & careers": [
+        "pilot_career_logbook",  # §96
     ],
     "Single-player flow": [
         "sp_pilot_mode",  # §83
@@ -2239,6 +2243,22 @@ class Settings:
             "damage you caused, victory progress, and scheduled squadron arrivals. "
             "The normal map/ATO planning path is untouched -- this is an express "
             "lane, not a replacement."
+        ),
+    )
+    pilot_career_logbook: bool = boolean_option(
+        "Pilot career logbook",
+        CAMPAIGN_MANAGEMENT_PAGE,
+        "Campaign features",
+        default=True,
+        detail=(
+            "Keeps a permanent record for every pilot in the campaign: sorties, "
+            "combat sorties, hours airborne, air/ground/naval kills, ejections, "
+            "rank and awards. Open it from the squadron dialog. The numbers come "
+            "from what the mission actually recorded, so a jet that never left "
+            "the ramp logs nothing and a kill is credited only when DCS names "
+            "the killer. A record, not a reward -- nothing here unlocks an "
+            "aircraft, changes availability or gates a mission. Turn it off and "
+            "careers stop accumulating; what a pilot has already earned is kept."
         ),
     )
     supply_gated_reinforcement: bool = boolean_option(

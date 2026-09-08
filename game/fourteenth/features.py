@@ -812,6 +812,15 @@ FEATURES: tuple[Feature, ...] = (
         plugin_id="ai_reaction",
     ),
     Feature("pinned_bullseye", "Pinned bullseye", 95),
+    Feature(
+        # The career ledger between §91 (what a mission recorded) and the pilot
+        # roster (who flew it). Ranks and awards are data, not code:
+        # resources/pilot_career.yaml.
+        "pilot_career_logbook",
+        "Pilot career logbook",
+        96,
+        settings_fields=("pilot_career_logbook",),
+    ),
     # Always-on engine plugins — major 414th machinery documented in design notes
     # rather than a numbered "Features at a Glance" entry.
     Feature("mantis_iads", "MANTIS IADS engine", plugin_id="mantisiads"),

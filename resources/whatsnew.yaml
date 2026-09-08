@@ -13,6 +13,20 @@
 # changes sharing a date keep the order written here.
 
 entries:
+  - date: 2026-09-08
+    title: Pilots keep a logbook
+    change: >-
+      Every pilot now carries a permanent career: sorties, combat sorties, hours
+      airborne, air/ground/naval kills, ejections, a rank and awards. Open it
+      with the Logbook button in the squadron dialog. The numbers come from what
+      the mission actually recorded, so a jet that never left the ramp logs
+      nothing, and a kill is credited only when DCS names the killer and the two
+      sides differ. It changes nothing about what you may fly.
+    watch: >-
+      Note your pilot's Logbook numbers before you fly, then reopen it after
+      accepting results. Sorties should go up by one, not by the size of your
+      flight, and any kill you got should be in the right column.
+    row: B113
   - date: 2026-09-01
     title: Escorts hold the striker's pace instead of running ahead
     change: >-

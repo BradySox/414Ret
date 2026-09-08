@@ -282,7 +282,7 @@ REMOVED: tuple[Removed, ...] = (
         # discipline, and a campaign brief may use it historically.
         "COMINT collection and the red comms net (S70)",
         "2026-09-07",
-        r"comint_collection|red_comms_net|red_net_max_stations|rednet"
+        r"comint_collection|red_comms_net|red_net_max_stations|\brednet\b"
         r"|COMINT block|tasking leak|DF-able|enemy radio net",
         allow=("removed", "no longer", "historical", "abandoned"),
     ),

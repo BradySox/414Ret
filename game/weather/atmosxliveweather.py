@@ -40,7 +40,7 @@ from game.weather.clouds import Clouds
 from game.weather.fog import Fog
 from game.weather.weather import Weather as GameWeather
 from game.weather.weatherarchetype import WeatherArchetype, WeatherArchetypes
-from game.weather.wind import WindConditions
+from game.weather.wind import MAX_WIND_SPEED, WindConditions
 
 CLI_NAME = "atmosx-cli.exe"
 ICAO_CSV = "dcs_icao.csv"
@@ -320,7 +320,10 @@ def fetch_preset(cli: Path, icao: str, timeout: int = 60) -> Optional[dict[str, 
 def _wind(data: Any) -> Optional[Wind]:
     if not isinstance(data, dict):
         return None
-    return Wind(int(round(float(data.get("dir", 0)))), float(data.get("speed", 0)))
+    # A real jet stream at 8,000 m beats what DCS will model, and passing an
+    # over-ceiling value only makes the kneeboard disagree with the sim.
+    speed = min(float(data.get("speed", 0)), MAX_WIND_SPEED.meters_per_second)
+    return Wind(int(round(float(data.get("dir", 0)))), speed)
 
 
 def _cloud_preset(key: Any) -> Optional[CloudPreset]:

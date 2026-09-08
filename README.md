@@ -188,22 +188,6 @@ Most of this is opt-in. Full list with toggles, defaults and known limitations:
   put up, then a sortie in it — one seat, AI wingmen. The role comes from what the package
   needs. A pre-turn brief covers evading pilots and their capture odds, enemy C2 damage,
   victory progress and the next squadron arrival. The map and mission planner are untouched.
-- **Living battlespace pre-roll.** Opt-in: missions start mid-cycle instead of with the whole
-  war on the ramp. Your package is seated a phase-aware distance into the turn's air-tasking
-  cycle and the war is simulated up to your engine start, so earlier packages are already
-  outbound, on station or recovering when you spawn. The first turn keeps its H-hour launch;
-  later turns start deeper in (up to a configurable ceiling, 40 minutes by default). Pre-roll
-  combat resolves with the same odds as other off-screen fights, so its losses are real.
-  Flights already home park their jets on the ramp at their recovery field, strikers spawned
-  past their target come home with empty racks, and aircraft spawned en route carry
-  burned-down fuel instead of full tanks. The cycle also has a tail: packages keep launching
-  as and after you recover, and the mission briefing opens with the air war's running score —
-  flights airborne, recovered and lost on both sides before you ever started engines.
-- **Living battlespace reactive red.** Optional second layer: the enemy visibly reacts to
-  being hit. Real red alert fighters — claimed from real inventory, their losses counted —
-  sit on the ramp; when an objective your side is tasked against loses a unit, one pair
-  starts up a few minutes later and flies a defensive patrol over the struck point. Strictly
-  defensive, strictly capped by the alert pool.
 - **Scheduled squadron arrivals.** Campaigns can add *new airframes* on announced turns, so the
   wing you start with is not the wing you end with. Schedules follow air-campaign order:
   air superiority, SEAD/DEAD and enablers first, deep strike once the SAM belt is coming down.
@@ -222,14 +206,6 @@ Most of this is opt-in. Full list with toggles, defaults and known limitations:
 - **Missions report back.** Every flight's track, time airborne, fuel, shots and hits come home
   with the results, not just which aircraft died. The campaign summary says what the day's
   flying actually amounted to. No third-party software required.
-- **COMINT collection.** A collection sortie that makes it home (C-130J jamming orbit or any
-  drone) buys next turn's take: an intercepted enemy tasking and one suspected-activity circle
-  fixed to an exact position. The same nodes are the ones you'd bomb to wreck their planning.
-- **Enemy radio net.** Command posts transmit coded morse in periodic windows on fixed UHF
-  frequencies, held clear of every briefed channel. How many stations are up at once is a
-  setting. Phantom, Tomcat, Hornet and Tiger needles can home on an open window. Killing the
-  node silences it permanently. Insurgent cells transmit too — the kneeboard briefs a frequency
-  and an area, and the dashed map circle is the search box.
 - **Enemy procurement** favours its better hardware rather than rolling the catalogue. Optional
   SAM site repair regenerates a couple of units per turn unless pressured; command posts stay
   dead.
@@ -286,8 +262,7 @@ Most of this is opt-in. Full list with toggles, defaults and known limitations:
   AI flights that stray are never fired on, and
   the auto-planner does not route around the border, so it is your corner to cut or not.
   The same borders are drawn on the planning map and the F10 map. Off by default.
-- Also: strikeable motor pool depots, enemy comms jamming learned from a captured pilot,
-  a host F10 menu to scramble bandits.
+- Also: strikeable motor pool depots, a host F10 menu to scramble bandits.
 
 ---
 

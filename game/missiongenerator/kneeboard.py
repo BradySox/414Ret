@@ -61,7 +61,6 @@ from game.weather.weather import Weather
 from .aircraft.flightdata import FlightData
 from .csarbeacon import sar_beacon_brief
 from .briefinggenerator import CommInfo, JtacInfo, MissionInfoGenerator
-from .commsjamluadata import JAM_BACKUP_COMM_NAME
 from .kneeboard_page import KneeboardPage, save_kneeboard_image
 from .kneeboard_recon import airport_imagery as _airport_imagery
 from .kneeboard_recon import generate_recon_pages
@@ -947,7 +946,6 @@ class BriefingPage(KneeboardPage):
         theater: Optional["ConflictTheater"] = None,
         omit_weather: bool = False,
         bluf_lines: Optional[List[str]] = None,
-        comint_lines: Optional[List[str]] = None,
         zulu_tz: Optional[datetime.tzinfo] = None,
         bullseye_moved: bool = False,
         bullseye_anchor: Optional[str] = None,
@@ -972,10 +970,6 @@ class BriefingPage(KneeboardPage):
         # generator (``_bluf_lines``) and passed in so the page stays decoupled
         # from the threat/code-word models.
         self.bluf_lines = bluf_lines or []
-        # §70 COMINT block (C0): the tier status + (Tier 2) the tasking leak and
-        # the reveal note. None/empty when comint_collection is off. (The §29
-        # SITREP moved to its own SitrepPage.)
-        self.comint_lines = comint_lines or []
         # De-duplication (design §4): drop the weather block when the recon Departure
         # page already carries it. The Friendly Packages list moved to its own page.
         self.omit_weather = omit_weather
@@ -1173,17 +1167,6 @@ class BriefingPage(KneeboardPage):
             for idx, code in enumerate(self.flight.laser_codes, start=1):
                 codes.append([str(idx), "" if code is None else str(code)])
             writer.table(codes, ["#", "Laser Code"])
-
-        # §70 COMINT (C0): the collection take. Empty
-        # unless comint_collection is on, so the stock deck is unchanged.
-        # (The §29 SITREP that used to render above it moved to its own page —
-        # a busy turn's POW/MIA list clipped at the page edge here.)
-        if self.comint_lines:
-            writer.vspace(8)
-            writer.heading("COMINT")
-            writer.rule()
-            for line in self.comint_lines:
-                writer.text(line, wrap=True)
 
     def _departure_elevation_m(self) -> Optional[float]:
         """DCS-mesh field elevation (m) of the departure field, or None."""
@@ -2955,17 +2938,11 @@ class KneeboardGenerator(MissionInfoGenerator):
         }
     )
 
-    def __init__(
-        self, mission: Mission, game: "Game", red_net: Optional[Any] = None
-    ) -> None:
+    def __init__(self, mission: Mission, game: "Game") -> None:
         super().__init__(mission, game)
         self.dark_kneeboard = self.game.settings.generate_dark_kneeboard and (
             self.mission.start_time.hour > 19 or self.mission.start_time.hour < 7
         )
-        # §70 C2: this mission's red-net plan (MissionData.red_net), so the
-        # COMINT block can brief the active nets. None when red_comms_net is
-        # off or nothing transmits.
-        self.red_net = red_net
 
     def generate(self) -> None:
         """Generates a kneeboard per client flight, grouped by airframe.
@@ -3087,18 +3064,6 @@ class KneeboardGenerator(MissionInfoGenerator):
             self.game.settings.generate_sitrep_kneeboard,
         )
 
-    def _briefing_comint(self) -> List[str]:
-        """The §70 COMINT block for the briefing page ([] when the feature is off).
-
-        Built at generation time on purpose: red's ATO for THIS mission is fully
-        planned by now, so the Tier-2 tasking leak warns of a package actually
-        flying today — and the active-nets listing (C2) briefs the frequencies
-        the §70 C1 red net actually transmits on this mission.
-        """
-        from game.fourteenth.comint import comint_kneeboard_lines
-
-        return comint_kneeboard_lines(self.game, self.red_net)
-
     def generate_task_page(self, flight: FlightData) -> Optional[KneeboardPage]:
         if flight.flight_type in (FlightType.DEAD, FlightType.SEAD):
             return SeadTaskPage(
@@ -3142,10 +3107,7 @@ class KneeboardGenerator(MissionInfoGenerator):
         threat_cards, unidentified = build_threat_intel_cards(self.game, flight)
         bluf_lines = self._bluf_lines(flight, threat_cards)
 
-        # The JAM BACKUP fallback channel now lives in the Mission Info BLUF (above),
-        # so keep it out of the Support Info comms ladder -- there it borrowed the
-        # viewing flight's Type/#A/C columns and read as a phantom flight (§51).
-        support_comms = [c for c in self.comms if c.name != JAM_BACKUP_COMM_NAME]
+        support_comms = list(self.comms)
 
         pages: List[KneeboardPage] = [
             BriefingPage(
@@ -3157,7 +3119,6 @@ class KneeboardGenerator(MissionInfoGenerator):
                 theater=self.game.theater,
                 omit_weather=omit_weather,
                 bluf_lines=bluf_lines,
-                comint_lines=self._briefing_comint(),
                 zulu_tz=zulu_tz,
                 bullseye_moved=(
                     self.game.coalition_for(flight.friendly).bullseye_moved_on_turn
@@ -3258,8 +3219,7 @@ class KneeboardGenerator(MissionInfoGenerator):
         """Compose the BLUF lines for the Mission Info page (priority on page one).
 
         The task line is always present (task, plus target/TOT when applicable);
-        the push line is gated on the code-words feature; the JAM BACKUP line
-        appears only when enemy comms jamming (§51) allocated a fallback channel.
+        the push line is gated on the code-words feature.
         The threat, loadout and SAR lines carry the survivors of the retired
         one-page Brief Sheet: a compact air + SAM threat picture, a one-line
         ordnance summary, and the SAR assets + if-down drill.
@@ -3289,17 +3249,6 @@ class KneeboardGenerator(MissionInfoGenerator):
             bits.append(f"SUCCESS {code_words.success}")
             bits.append(f"ABORT {code_words.abort}")
             lines.append("   ".join(bits))
-
-        # JAM BACKUP fallback channel (§51). The frequency is already registered on
-        # the generator's comm ladder (missiongenerator.add_comm); surface it in the
-        # BLUF next to the code words instead of the Support Info package table,
-        # where the borrowed Type/#A/C columns made it read as a phantom flight. The
-        # channel is freshly allocated (used by nothing), so it maps to no briefed
-        # channel name -- str(freq) is exactly what the ladder would have shown.
-        for comm in self.comms:
-            if comm.name == JAM_BACKUP_COMM_NAME:
-                lines.append(f"{JAM_BACKUP_COMM_NAME}  {comm.freq}")
-                break
 
         # Compact threat picture: the enemy's likely CAP fighters + the condensed
         # top live SAM systems ("SA-5 S-200 138nm · SA-11 Buk 27nm · ...").

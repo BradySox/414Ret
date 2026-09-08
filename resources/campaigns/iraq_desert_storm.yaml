@@ -58,8 +58,6 @@ settings:
   # Blue-side COMINT (s70): read the KARI net for the ambient take, put a collector
   # over the fence for the tasking leak, and hunt the transmitting nodes on the DF
   # gear. Bomb-it-or-tap-it.
-  comint_collection: true
-  red_comms_net: true
   # s50: real supply convoys run the highway graph below; the pipeline-road ladder
   # legs live in the .miz and light up as blue captures the rungs.
   convoy_ambush: true
@@ -69,7 +67,6 @@ settings:
   # host's saved defaults would otherwise silently kill its preseeded feature.
   plugins:
     # s70 C1: the audible KARI UHF net (CW traffic from every alive C2 node).
-    rednet: true
     redscramble: true
     redscramble.hostPlayers: Flash
 

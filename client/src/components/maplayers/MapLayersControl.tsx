@@ -19,7 +19,6 @@ import FlightPlansLayer from "../flightplanslayer";
 import FrontLinesLayer from "../frontlineslayer";
 import Iadsnetworklayer from "../iadsnetworklayer";
 import DownedPilotsLayer from "../downedpilotslayer";
-import MinefieldsLayer from "../minefields";
 import NavMeshLayer from "../navmesh/NavMeshLayer";
 import NeutralBordersLayer from "../neutralborders";
 import SupplyRoutesLayer from "../supplyrouteslayer";
@@ -44,7 +43,6 @@ type LayerId =
   | "aircraft"
   | "combat"
   | "supplyRoutes"
-  | "minefields"
   | "neutralBorders"
   | "downedPilotsBlue"
   | "downedPilotsRed"
@@ -106,9 +104,6 @@ const OVERLAYS: Record<LayerId, { label: string; node: ReactNode }> = {
   // labelled near-identically ("Supply routes" / "Supply status") and were
   // indistinguishable from the panel (2026-07-18 UI audit).
   supplyRoutes: { label: "Convoy routes", node: <SupplyRoutesLayer /> },
-  // §57 air-dropped minefields (BLUE-only). Empty unless air_droppable_minefields is
-  // on, so the layer is a no-op everywhere else even while toggled on.
-  minefields: { label: "Minefields", node: <MinefieldsLayer /> },
   // §96 neutral border defense: the airspace of countries that are not in the
   // war but will defend it. Empty unless neutral_border_defense is on and the
   // campaign authors zones, so the layer is a no-op everywhere else even while
@@ -278,7 +273,7 @@ const GROUPS: GroupDef[] = [
     key: "logistics",
     title: "Logistics",
     defaultOpen: true,
-    rows: [{ id: "supplyRoutes" }, { id: "minefields" }],
+    rows: [{ id: "supplyRoutes" }],
   },
   {
     key: "airdef",
@@ -364,9 +359,8 @@ const DEFAULT_ON: LayerId[] = [
   "ships",
   "otherGround",
   "supplyRoutes",
-  "minefields",
-  // On by default like minefields: a border you cannot see is a border you
-  // cross. Empty (and invisible) unless a campaign authors zones.
+  // On by default: a border you cannot see is a border you cross. Empty (and
+  // invisible) unless a campaign authors zones.
   "neutralBorders",
   "frontLines",
   "downedPilotsBlue",

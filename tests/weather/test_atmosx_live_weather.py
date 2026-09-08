@@ -17,6 +17,7 @@ import pytest
 from dcs.weather import Weather
 
 from game.timeofday import TimeOfDay
+from game.weather.wind import MAX_WIND_SPEED
 
 from dcs.cloud_presets import CLOUD_PRESETS
 from dcs.weather import Weather as PydcsWeather
@@ -504,3 +505,34 @@ def test_a_clear_observation_leaves_the_planner_alone() -> None:
     )
     assert not weather_planning.storm(game)  # type: ignore[arg-type]
     assert not weather_planning.recon_suppressed(game)  # type: ignore[arg-type]
+
+
+# --- the DCS wind ceiling ---------------------------------------------------------
+
+
+JET_STREAM_PRESET = PRESET.replace(
+    "at8000 = { speed = 5.40, dir = 350, },",
+    "at8000 = { speed = 80.00, dir = 260, },",
+)
+
+
+def test_a_jet_stream_is_clamped_to_what_dcs_will_fly() -> None:
+    """A real 8,000 m wind can beat the 97 kt ceiling; the kneeboard must not."""
+    assert JET_STREAM_PRESET != PRESET
+
+    vdata = parse_preset(JET_STREAM_PRESET)["vdata"]
+    weather = LiveWeather("LCLK", vdata)
+
+    assert weather.wind.at_8000m.speed == pytest.approx(
+        MAX_WIND_SPEED.meters_per_second
+    )
+    assert weather.wind.at_8000m.direction == 260
+    # Only the layer that broke the ceiling is touched.
+    assert weather.wind.at_0m.speed == 3.6
+
+    mission_weather = Weather("Syria")
+    apply_weather(mission_weather, vdata)
+    assert mission_weather.wind_at_8000.speed == pytest.approx(
+        MAX_WIND_SPEED.meters_per_second
+    )
+    assert mission_weather.wind_at_ground.speed == 3.6

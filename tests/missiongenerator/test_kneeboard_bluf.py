@@ -6,7 +6,6 @@ from typing import Any
 
 from game.ato.codewords import MissionCodeWords, PushCategory
 from game.ato.flighttype import FlightType
-from game.missiongenerator.commsjamluadata import JAM_BACKUP_COMM_NAME
 from game.missiongenerator.kneeboard import (
     KneeboardGenerator,
     KneeboardPageWriter,
@@ -131,29 +130,6 @@ def test_bluf_loadout_line_omitted_without_pylons() -> None:
     gen = _generator(code_words_on=False)
     lines = gen._bluf_lines(_flight(), [])
     assert not any(line.startswith("LOADOUT") for line in lines)
-
-
-def test_bluf_jam_backup_line_none_without_a_registered_backup() -> None:
-    # No enemy comms jamming this mission -> no JAM BACKUP comm registered -> the
-    # BLUF carries no jam-backup line (§51).
-    gen = _generator(code_words_on=False)
-    lines = gen._bluf_lines(_flight(), [_live_card()])
-    assert not any(JAM_BACKUP_COMM_NAME in line for line in lines)
-
-
-def test_bluf_jam_backup_line_present_when_backup_registered() -> None:
-    # §51: when the comms-jam planner allocated a fallback channel it is registered
-    # on the generator's comm ladder; the BLUF surfaces it next to the code words
-    # (moved off the Support Info package table, where it read as a phantom flight).
-    gen = _generator(code_words_on=True)
-    gen.add_comm(JAM_BACKUP_COMM_NAME, RadioFrequency(hertz=280_000_000))
-    jam = next(
-        line
-        for line in gen._bluf_lines(_flight(), [_live_card()])
-        if JAM_BACKUP_COMM_NAME in line
-    )
-    assert jam.startswith(JAM_BACKUP_COMM_NAME)
-    assert "280.000 MHz AM" in jam
 
 
 def test_code_words_block_none_when_feature_off() -> None:

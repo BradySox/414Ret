@@ -130,8 +130,7 @@ HEAVY_BOMBER_DCS_IDS = frozenset(
 # Unmanned ISR/strike aircraft (UAVs). DCS carries no reliable "is a drone" flag --
 # `category` buckets them as generic "Air" alongside the B-52/C-130 -- so this is a
 # curated id set (the vanilla drones; extend if a mod drone is ever added). Consumers:
-# the §70 COMINT collector check (game/fourteenth/comint.py) and a faction's JTAC-drone
-# platform (game/factions/faction.py `jtac_unit`). The 414th "a drone is always filming"
+# a faction's JTAC-drone platform (game/factions/faction.py `jtac_unit`). The 414th "a drone is always filming"
 # rule died with the recon plugin (2026-08-20) -- recon now credits a TARPS tasking only.
 UAV_DCS_IDS = frozenset(
     {

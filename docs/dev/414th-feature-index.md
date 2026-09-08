@@ -62,13 +62,13 @@ pass checklist `§N` is unregistered, or this table drifts.
 | §48 | Commitment ceiling (will-coupled war budget) _(retired)_ | — | — |
 | §49 | Mobile missile relocation (the SCUD hunt) _(retired)_ | — | — |
 | §50 | Convoy ambush (a chance, never telegraphed) + ambient supply convoys | — | `convoy_ambush`, `ambient_supply_convoys` |
-| §51 | Enemy comms jamming (IADS comms nodes) | `commsjam` | `enemy_comms_jamming` |
+| §51 | Enemy comms jamming (IADS comms nodes) _(retired)_ | — | — |
 | §52 | Command-center decapitation degrades enemy planning | — | `c2_decapitation_effects` |
 | §53 | War economy _(retired)_ | — | — |
 | §54 | Munitions availability _(retired)_ | — | — |
 | §55 | Red Intent — adaptive enemy posture _(retired)_ | — | — |
 | §56 | Strikeable motorpool depots | — | `motorpool_enabled`, `motorpool_spawn_cap` |
-| §57 | Air-droppable minefields | `minefields` | `air_droppable_minefields`, `auto_plan_minefields` |
+| §57 | Air-droppable minefields _(retired)_ | — | — |
 | §58 | Mission-start briefing popup | `briefing` | `mission_briefing_popup` |
 | §59 | Ground AI sleep (graduated culling) | `aisleep` | `perf_ground_ai_sleep`, `perf_aaa_site_sleep` |
 | §60 | SAM guidance-radar redundancy (two track radars per site) | — | — |
@@ -81,7 +81,7 @@ pass checklist `§N` is unregistered, or this table drifts.
 | §67 | Weather-aware auto-planning | — | `weather_aware_planning` |
 | §68 | Adaptive procurement (posture-coupled spending + SAM repair) | — | `adaptive_procurement`, `auto_repair_air_defenses` |
 | §69 | Cross-package SEAD-before-strike coordination | — | `sead_strike_coordination` |
-| §70 | COMINT collection (blue-side communications intelligence) | `rednet` | `comint_collection`, `red_comms_net`, `red_net_max_stations` |
+| §70 | COMINT collection (blue-side communications intelligence) _(retired)_ | — | — |
 | §71 | Expanded F-4E Weapons Pack (AGM-78/-88 Weasel fits) | — | — |
 | §72 | Carrier deck decorations (campaign A deck dressing) | — | `carrier_deck_decorations` |
 | §73 | Per-airframe default loadout for a task | — | — |
@@ -100,7 +100,7 @@ pass checklist `§N` is unregistered, or this table drifts.
 | §86 | GPS jamming (satellite-guided weapons go long) | `gpsjamming` | `gps_jamming`, `gps_jamming_default_reach_nm`, `gps_jamming_miss_radius_m` |
 | §87 | Naval station-keeping racetracks | — | — |
 | §88 | Angled-deck carrier recovery heading | — | — |
-| §89 | Living battlespace pre-roll | — | `living_battlespace_preroll`, `living_battlespace_preroll_cap`, `living_battlespace_reactive_red` |
+| §89 | Living battlespace pre-roll _(retired)_ | — | — |
 | §90 | Front-line model: supply, assault cost, force weight, terrain, salients | — | `supply_gated_reinforcement`, `assault_costs_the_attacker`, `scale_aware_front_line`, `terrain_weighted_front_line`, `front_line_salients` |
 | §91 | Per-flight sortie records | `base` | — |
 | §92 | What's New | — | — |

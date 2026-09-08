@@ -629,11 +629,6 @@ export type CampaignStatus = {
   hvt_name?: string | null;
   hvt_turns_left?: number | null;
 };
-export type Minefield = {
-  position: LatLng;
-  radius_m: number;
-  charges: number;
-};
 export type NeutralBorder = {
   country: string;
   airfield: string;
@@ -656,7 +651,6 @@ export type Game = {
   unculled_zones: UnculledZone[];
   map_zones: MapZones;
   campaign_status?: CampaignStatus | null;
-  minefields?: Minefield[];
   neutral_borders?: NeutralBorder[];
 };
 export type MapZones = {

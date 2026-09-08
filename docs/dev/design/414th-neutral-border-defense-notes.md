@@ -2,7 +2,7 @@
 
 **Status: BUILT 2026-08-24 (§96).** Scope locked in a DM Q&A session the same day; every
 decision below is a DM call from that session. Read this before editing or re-litigating
-any of it. Features doc §96 carries the file list; B112 passed 2026-09-01, B113 owed.
+any of it. Features doc §96 carries the file list; B114 passed 2026-09-01, B115 owed.
 
 ## The patrol is gone: scope is the SAM (DM call, 2026-09-07)
 
@@ -62,7 +62,7 @@ nearest-target retarget loop and its 20 s timer, the `AttackGroup` task, and
 analogue. The second-battery rule for a country violated by both sides survives
 unchanged, because a battery can only be on one coalition either.
 
-**Not yet flown.** B112 was closed against the patrol and that evidence does not
+**Not yet flown.** B114 was closed against the patrol and that evidence does not
 transfer; both §96 rows are owed again.
 
 ## What it is now
@@ -103,8 +103,8 @@ true, then the dated sections for why.
   (the type Russia offered Lebanon in 2008), 10,000 ft floor, SA-6 on. Desert Storm + Iran
   was investigated and rejected on the evidence: the DS corridor is H-3 to Baghdad (west)
   and the map's only Iranian field is Kharg, far south -- the border would never trip.
-- **The player ladder is verified in DCS** (test 25, 2026-09-01; checklist B112). The Lua
-  harness cannot exercise DCS AI, so B113 -- an AI intruder -- is still owed.
+- **The player ladder is verified in DCS** (test 25, 2026-09-01; checklist B114). The Lua
+  harness cannot exercise DCS AI, so B115 -- an AI intruder -- is still owed.
 
 ## Engine verdict (investigated 2026-08-24 — do not re-investigate)
 
@@ -442,7 +442,7 @@ Cyprus combined).
 
 The first mission with §96 live produced one clean pass and three defects, two of
 them measured off the Tacview rather than reported. All three are fixed, and
-the fixes were later confirmed in DCS by test 25 (B112, 2026-09-01).
+the fixes were later confirmed in DCS by test 25 (B114, 2026-09-01).
 
 **It worked at all.** `6 border zone(s) drawn, 6 defended`, and against a blue
 F-15E BAI package Iran launched a shadow on the opposing coalition and stood it
@@ -724,7 +724,7 @@ and shipped as `labelX`/`labelZ`; verified on all 8 zones of a Syria campaign.
 
 **Not verified in DCS**: whether `trigger.action.textToAll` renders the `\n` as
 two lines. If it does not, the label will read as one run-on line — cosmetic,
-and on the B112 fail-signature list.
+and on the B114 fail-signature list.
 
 ## A faint line is not a quiet line (2026-08-26)
 
@@ -793,7 +793,7 @@ ask about — the answer is that it is deliberate, not an oversight.
 
 **Gate unchanged** (`neutral_border_defense` + plugin): "automagic" means no yaml
 needed, not default-on. **Flipping the default is now a live call** — the note
-said it waits for B112/B113, and B112 closed 2026-09-01.
+said it waits for B114/B115, and B114 closed 2026-09-01.
 
 ## Audit, 2026-08-27 — two defects the gates could not see
 
@@ -943,7 +943,7 @@ one would go stale exactly then, which is the bug the derivation exists to
 avoid. Two tests pin that passing the posture gives the same answer as deriving
 it, across all four postures and both sides.
 
-### The checklist rows collided with main's -- four times
+### The checklist rows collided with main's -- five times
 
 This PR added its in-game rows as **B100/B101**, and `main` already owned both
 (the DCS parking rework, and the F-4E Shrike row). Renumbering to **B106/B107**
@@ -951,11 +951,19 @@ collided again -- main had meanwhile taken B106 for the CSAR King row. The third
 merge, on 2026-08-29, brought main's log-noise work, which had taken **B107,
 B108 and B109**, moving §96 to B110/B111. The fourth, on 2026-09-02, brought the
 SEAD-steerpoint and escort-pace work, which had taken **B110 and B111** -- the
-same two. The §96 rows are **B112/B113** now.
+same two. The §96 rows are **B114/B115** now.
 
-The fourth is the instructive one: **B112 had already been closed as VERIFIED**
-when the collision arrived, so a row that reads as finished is not safe from
-this. Renumber it anyway; a duplicated id still breaks `_row_statuses()`.
+The fourth is the instructive one: the row it hit **had already been closed as
+VERIFIED**, so a row that reads as finished is not safe from this. Renumber it
+anyway; a duplicated id still breaks `_row_statuses()`.
+
+**The fifth, 2026-09-07, was caught by a test rather than by eye.** Main's
+wind-clamp work took B112 in the same merge that abandoned four features, and
+`test_no_two_rows_share_an_id` -- added the day before, precisely because four
+collisions is a pattern -- failed on it immediately. §96 is **B114/B115** now.
+The count test would NOT have caught this one: it only sees a duplicate when the
+two rows differ in status, and both were `UNTESTED`. That is the direct argument
+for keeping the dedicated guard.
 
 Three collisions on one branch is the pattern, not bad luck: a long-lived branch
 allocates from the highest id it can see, and main keeps allocating from the same
@@ -1480,7 +1488,7 @@ matters. Everything else is fitted at 10 or more.
 - **The patrol fired back** — two `P_73` and one `P_27P`. The WVR fit is doing
   what the numbers call was meant to buy, against four AIM-120C-armed Vipers.
 
-Not evidenced here: an AI intruder (B113), and the radio calls, which are not
+Not evidenced here: an AI intruder (B115), and the radio calls, which are not
 logged — the DM confirmed those in test 19.
 
 ### Numbers, not better missiles (DM call, 2026-08-29)
@@ -1539,10 +1547,10 @@ and it closes the trap for whoever later relaxes one of those gates.
 
 ## In-game passes
 
-**B112 — the player ladder — CLOSED 2026-09-01** (test 25, Syria). Five four-ship
+**B114 — the player ladder — CLOSED 2026-09-01** (test 25, Syria). Five four-ship
 patrols, 23 of 24 aircraft never leaving their own airspace, the swap, the SAM
 and the return fire all measured in one session.
 
-**B113 is still owed**: an AI intruder, shadowed and never engaged, plus the
+**B115 is still owed**: an AI intruder, shadowed and never engaged, plus the
 accepted-risk watch — how often the intruder's own side kills the shadower
 before escalation. Setup and fail signature are on that checklist row.

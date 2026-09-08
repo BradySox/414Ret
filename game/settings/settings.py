@@ -417,14 +417,10 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                 "Campaign features",
                 [
                     "continuous_campaign_clock",
-                    "comint_collection",
                     "long_range_carrier_ops",
                     "motorpool_enabled",
                     "motorpool_spawn_cap",
                     "sp_pilot_mode",
-                    "living_battlespace_preroll",
-                    "living_battlespace_preroll_cap",
-                    "living_battlespace_reactive_red",
                     "supply_gated_reinforcement",
                     "assault_costs_the_attacker",
                     "scale_aware_front_line",
@@ -601,15 +597,11 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                 ],
             ),
             (
-                # The comms war (§51 + §70 C1): red jamming your radios, and
-                # red's own net on the air for you to intercept. Split out of
-                # the (full) Battlefield life section -- presentation only,
-                # field names unchanged, so campaign preseeds are untouched.
-                "Comms war",
+                # §51's jamming and §70's red net were removed on 2026-09-07,
+                # leaving §86's two reach/miss knobs. Renamed to what is left;
+                # field names are unchanged, so campaign preseeds are untouched.
+                "GPS jamming",
                 [
-                    "enemy_comms_jamming",
-                    "red_comms_net",
-                    "red_net_max_stations",
                     "gps_jamming_default_reach_nm",
                     "gps_jamming_miss_radius_m",
                 ],
@@ -739,8 +731,6 @@ FEATURE_GATE_FIELDS: dict[str, list[str]] = {
     "Recon, concealment & intel": [
         "recon_intel_fog",  # §3
         "scar_command_post_intel",  # §3 (re-homed from the retired §15 row)
-        "comint_collection",  # §70
-        "red_comms_net",  # §70
     ],
     "Battlefield life": [
         "ambient_supply_convoys",  # §50
@@ -751,7 +741,6 @@ FEATURE_GATE_FIELDS: dict[str, list[str]] = {
         "neutral_border_defense",  # §96
     ],
     "Electronic & command warfare": [
-        "enemy_comms_jamming",  # §51
         "c2_decapitation_effects",  # §52
         "gps_jamming",  # §85
     ],
@@ -777,8 +766,6 @@ FEATURE_GATE_FIELDS: dict[str, list[str]] = {
         # §89's boolean gates only -- the pre-roll ceiling is an int knob, and
         # the Features page contract is boolean gates (test_settings_filter);
         # the cap stays in Campaign Management -> Campaign features.
-        "living_battlespace_preroll",  # §89
-        "living_battlespace_reactive_red",  # §89 P5
     ],
     "Ground war": [
         "supply_gated_reinforcement",  # §90 rung A
@@ -844,19 +831,10 @@ FIELD_LAYOUT: dict[str, tuple[str, str]] = {
     for name in names
 }
 
-# §57 air-droppable minefields -- SHELVED 2026-07-30. The field/default/save-compat
-# stays (a saved settings file with these True must still deserialize and, if the
-# feature is ever resumed, still work), but the checkbox is pulled out of every
-# settings surface (Qt dialog, New Game wizard) so a stale personal saved-default
-# can't leave it silently checked once no campaign preseed masks it. Not a general
-# mechanism -- there is no other hidden field in this codebase; if that changes,
-# generalize this into real metadata instead of a name set.
-HIDDEN_FIELDS: frozenset[str] = frozenset(
-    {
-        "air_droppable_minefields",
-        "auto_plan_minefields",
-    }
-)
+# No settings field is hidden from the UI today. §57's two minefield toggles were the
+# only members and went with the feature on 2026-09-07; the set is kept because the
+# dialog and the New Game wizard both consult it.
+HIDDEN_FIELDS: frozenset[str] = frozenset()
 
 # ---------------------------------------------------------------------------
 # Basic vs advanced.
@@ -1754,25 +1732,6 @@ class Settings:
             "can be enforced alone. Data is curated per airframe and incomplete."
         ),
     )
-    comint_collection: bool = boolean_option(
-        "COMINT collection (signals intelligence)",
-        page=CAMPAIGN_MANAGEMENT_PAGE,
-        section=GENERAL_SECTION,
-        default=False,
-        detail=(
-            "Blue collects communications intelligence off the enemy's emitting "
-            "C2 net (comms/command-center sites; insurgent cells on COIN "
-            "campaigns). While the net is up you get an ambient take -- the enemy "
-            "posture detail on the SITREP is sourced from it -- and flying a "
-            "collection sortie (the C-130J jamming orbit or any drone) that "
-            "survives unlocks a full take next turn: an intercepted enemy tasking "
-            "(one package flying this mission, coarse time window) and one "
-            "suspected-activity circle snapped to an exact position. Killing "
-            "enemy C2 silences their planning AND your best intel source -- "
-            "bomb it or tap it. A COMINT block renders on the Mission Info "
-            "kneeboard page."
-        ),
-    )
     alternate_victory_domination: int = bounded_int_option(
         "Domination victory (% of bases held)",
         page=CAMPAIGN_MANAGEMENT_PAGE,
@@ -2282,56 +2241,6 @@ class Settings:
             "damage you caused, victory progress, and scheduled squadron arrivals. "
             "The normal map/ATO planning path is untouched -- this is an express "
             "lane, not a replacement."
-        ),
-    )
-    living_battlespace_preroll: bool = boolean_option(
-        "Living battlespace: start missions mid-cycle (pre-roll)",
-        CAMPAIGN_MANAGEMENT_PAGE,
-        "Campaign features",
-        default=False,
-        detail=(
-            "Seats your package a phase-aware distance into the turn's air-tasking "
-            "cycle and simulates the war up to your engine start before the mission "
-            "generates. You spawn with earlier packages already airborne -- "
-            "outbound, on station, or recovering -- instead of the whole war "
-            "starting on the ramp with you. The first turn keeps its H-hour "
-            "launch, the next two start 15 minutes into the cycle, and later turns "
-            "start at the ceiling below. Combat during the pre-roll resolves with "
-            "the same odds as other off-screen fights, so pre-roll losses are "
-            "real. Built for single-player; in multiplayer every client spawns "
-            "mid-cycle."
-        ),
-    )
-    living_battlespace_preroll_cap: int = bounded_int_option(
-        "Living battlespace: pre-roll ceiling (minutes)",
-        CAMPAIGN_MANAGEMENT_PAGE,
-        "Campaign features",
-        default=40,
-        min=5,
-        max=90,
-        enabled_when="living_battlespace_preroll",
-        detail=(
-            "Deepest into the cycle a mission may start once the campaign is "
-            "past its opening turns. Longer pre-rolls mean a more developed war "
-            "at spawn and more of the turn resolved without you."
-        ),
-    )
-    living_battlespace_reactive_red: bool = boolean_option(
-        "Living battlespace: reactive red (alert flight over a struck objective)",
-        CAMPAIGN_MANAGEMENT_PAGE,
-        "Campaign features",
-        default=False,
-        enabled_when="living_battlespace_preroll",
-        detail=(
-            "The enemy reacts to being hit: up to two real red alert flights are "
-            "fragged each turn from real inventory and held on the ramp. When a "
-            "red objective that blue's tasking order actually targets loses a "
-            "unit, one alert flight starts up after a short tasking delay and "
-            "flies a defensive patrol over the struck objective. Strictly "
-            "defensive -- a CAP over red's own ground, inside red's existing "
-            "fighter posture -- and strictly real: the jets are claimed, "
-            "tracked airframes whose losses count. The reaction pool is the "
-            "cap; when it is spent, nothing else launches."
         ),
     )
     supply_gated_reinforcement: bool = boolean_option(
@@ -3334,41 +3243,6 @@ class Settings:
             "are real, tracked units -- both sides' losses count."
         ),
     )
-    air_droppable_minefields: bool = boolean_option(
-        "Air-droppable minefields (mines persist across turns)",
-        page=MISSION_GENERATION_PAGE,
-        section=GENERAL_SECTION,
-        default=False,
-        detail=(
-            "A blue jet can air-drop a CBU-99 cluster dispenser (the 'Aerial "
-            "Minefield' loadout) and the impact area becomes a scripted proximity "
-            "minefield that detonates on enemy convoys crossing it -- the same "
-            "mission you drop it. With this on, a field left undisturbed at mission "
-            "end is tracked and re-laid into the next mission, depleting as convoys "
-            "hit it and clearing once spent; it shows on the F10 map for your side "
-            "only. The mines kill real, tracked convoy units, so losses count at "
-            "debrief (no phantom spawns); blue-only. Runs via the 'Air-droppable "
-            "minefields' LUA plugin -- keep that plugin enabled. The same-turn "
-            "mining works with just the plugin on; this setting adds the cross-turn "
-            "persistence."
-        ),
-    )
-    auto_plan_minefields: bool = boolean_option(
-        "Auto-plan mining sorties ahead of enemy convoys",
-        enabled_when="air_droppable_minefields",
-        page=MISSION_GENERATION_PAGE,
-        section=GENERAL_SECTION,
-        default=False,
-        detail=(
-            "With this on, the auto-planner frags one air-drop mining sortie a turn "
-            "against an enemy supply convoy -- a mining-capable jet (one carrying the "
-            "'Aerial Minefield' loadout) flies BAI at the convoy and drops the "
-            "dispenser, laying a minefield on its road. Fly it yourself or let the AI "
-            "take it. Off = only you lay mines, by hand. Needs the 'Air-droppable "
-            "minefields' setting on and a blue squadron that can carry the CBU-99 "
-            "dispenser (A-7E / Hornet / Harrier)."
-        ),
-    )
     cruise_missile_strikes: bool = boolean_option(
         "Ship-launched cruise missile strikes",
         page=MISSION_GENERATION_PAGE,
@@ -3480,47 +3354,6 @@ class Settings:
             "to leave coastal batteries on their default passive state."
         ),
     )
-    enemy_comms_jamming: bool = boolean_option(
-        "Enemy comms jamming (IADS C2 nodes step on your radios)",
-        page=MISSION_GENERATION_PAGE,
-        section=GENERAL_SECTION,
-        default=False,
-        detail=(
-            "Alive enemy IADS communications and command-center nodes flood your "
-            "briefed radio channels with duty-cycled barrage noise during the "
-            "mission (intra-flight and AWACS channels only -- never GUARD, never "
-            "ATC), transmitted from the node's map position with real power/"
-            "distance falloff, so SRS users hear it through their cockpit-tuned "
-            "radios. The kneeboard's Mission Info BLUF gains a JAM BACKUP channel "
-            "(next to the code words) the jammer never touches; destroying the C2 "
-            "node (an ordinary IADS "
-            "strike target) silences it for good. Audio pressure only -- no "
-            "force-model change. Runs via the 'Comms jamming' LUA plugin -- keep "
-            "that plugin enabled or this setting does nothing."
-        ),
-    )
-    red_comms_net: bool = boolean_option(
-        "Enemy radio net (audible + DF-able)",
-        page=MISSION_GENERATION_PAGE,
-        section=GENERAL_SECTION,
-        default=False,
-        detail=(
-            "A few alive enemy IADS communications and command-center nodes "
-            "transmit periodic coded CW traffic, each on its own fixed UHF AM "
-            "frequency. Tune it and you hear the enemy "
-            "net; aircraft with UHF direction finding (F-4E, F-14, F/A-18C, "
-            "F-5E) can home a needle on an open transmission window. Windows "
-            "recur with silence between, so the net reads as traffic, not a "
-            "beacon. Net frequencies are held clear of every channel your "
-            "comms plan uses, by a 100 kHz guard band either side, so nothing "
-            "keys up on or beside a briefed channel. Killing the node takes "
-            "the net off the air. Audio and DF "
-            "geometry only -- no force-model change. Pairs with COMINT "
-            "collection (the same nodes are its intel source). Runs via the "
-            "'Red comms net' LUA plugin -- keep that plugin enabled or this "
-            "setting does nothing."
-        ),
-    )
     gps_jamming: bool = boolean_option(
         "GPS jamming (satellite-guided weapons go long)",
         page=MISSION_GENERATION_PAGE,
@@ -3573,26 +3406,6 @@ class Settings:
             "How far off the aimpoint a fully-jammed weapon lands. Scaled down "
             "toward the edge of the bubble, so a store clipping the fringe is "
             "nudged and one released over the emitter is thrown well clear."
-        ),
-    )
-    red_net_max_stations: int = bounded_int_option(
-        "Enemy net stations on the air",
-        enabled_when="red_comms_net",
-        page=MISSION_GENERATION_PAGE,
-        section=GENERAL_SECTION,
-        default=3,
-        min=1,
-        max=12,
-        detail=(
-            "How many enemy stations transmit at once. Every enemy command "
-            "node and every hidden insurgent cell is comms-active, which on a "
-            "dense IADS or an insurgency laydown is dozens of transmitters -- "
-            "enough coded traffic to clutter the UHF band. Only this many go "
-            "on the air, chosen closest to friendly territory (the nets you "
-            "can actually hear and DF), with one slot reserved for a fixed "
-            "command node and one for a hidden station so neither kind "
-            "disappears. Raise it for a busier, noisier band; lower it to make "
-            "catching a station on the air rarer."
         ),
     )
 
@@ -3969,8 +3782,9 @@ class Settings:
         # (§12); that successor was itself removed on 2026-08-20, once the reveal
         # rework left its captures with no consumer. The "deckdecor" plugin went the
         # same day: it existed only to swap §72's launch- and recovery-phase deck
-        # dressing, and both tiers were cut. A save made before each of those still
-        # carries the keys.
+        # dressing, and both tiers were cut. The "minefields" plugin went on
+        # 2026-09-07 with §57, abandoned rather than resumed. A save made before
+        # each of those still carries the keys.
         for plugin_key in [
             key
             for key in self.plugins
@@ -3996,6 +3810,14 @@ class Settings:
             or key.startswith("artymbot.")
             or key == "deckdecor"
             or key.startswith("deckdecor.")
+            or key == "minefields"
+            or key.startswith("minefields.")
+            or key == "commsjam"
+            or key.startswith("commsjam.")
+            or key == "rednet"
+            or key.startswith("rednet.")
+            or key == "reactivered"
+            or key.startswith("reactivered.")
         ]:
             del self.plugins[plugin_key]
 
@@ -4138,9 +3960,12 @@ class Settings:
             # tanks at plan or generation time any more, so both gates are dead.
             "auto_range_fuel_tanks",
             "fuel_tanks_over_jammers",
-            # §89 P4, the synthesized blue voice net, REMOVED 2026-08-18: the DCS
-            # AI already talks on the radio, so the net was duplicating it.
+            # §89 living battlespace, ABANDONED 2026-09-07 -- all five slices.
+            # P4 (the synthesized blue voice net) had already gone on 2026-08-18.
             "living_battlespace_voice_net",
+            "living_battlespace_preroll",
+            "living_battlespace_preroll_cap",
+            "living_battlespace_reactive_red",
             # §72's two phase tiers, REMOVED 2026-08-20: the round-down E-2C and
             # the bow respot are gone, leaving the island street and LSO crew
             # standing for both cycles. Nothing swaps dressing any more.
@@ -4150,6 +3975,18 @@ class Settings:
             # battery is a fixed emplacement (hy_launcher and Silkworm_SR are
             # both immobile), so the coastal scoot had nothing left to drive.
             "coastal_missile_relocation",
+            # §51 enemy comms jamming, ABANDONED 2026-09-07.
+            "enemy_comms_jamming",
+            # §70 COMINT, ABANDONED 2026-09-07 -- the collection tiers, the tasking
+            # leak, the concealed-site reveal and the audible red net all together.
+            "comint_collection",
+            "red_comms_net",
+            "red_net_max_stations",
+            # §57 air-droppable minefields, ABANDONED 2026-09-07. Shelved since
+            # 2026-07-30 and never resumed; the plugin, the cross-turn persistence
+            # and the auto-planned mining sortie are all gone.
+            "air_droppable_minefields",
+            "auto_plan_minefields",
         ):
             migrated.pop(obsolete_key, None)
 

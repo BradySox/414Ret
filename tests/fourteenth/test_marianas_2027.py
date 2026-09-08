@@ -132,7 +132,6 @@ def test_runtime_plugins_are_preseeded() -> None:
     for plugin in (
         "gpsjamming",
         "cruisemissiles",
-        "rednet",
     ):
         assert plugins[plugin] is True, plugin
     # §50 needs no plugin -- its ambush spring is authored as native DCS triggers.

@@ -148,13 +148,6 @@ class StateData:
     #: Per-squadron QRA survivor counts reported by the intercept plugin.
     intercept_survivors: dict[str, int]
 
-    #: ``(id, x, z, radius_m, charges)`` per air-dropped minefield the §57 plugin managed
-    #: this mission -- persisted fields (by their Python id) + newly-laid fields (id 0), each
-    #: with its remaining charges. ``reconcile_minefields`` carries the undisturbed fields
-    #: across the turn boundary. ``x`` = north / ``z`` = east (the DCS getPoint frame the
-    #: plugin works in). Empty on pre-feature state files / when the feature is off.
-    minefields_state: list[tuple[int, float, float, float, int]]
-
     #: ``(ship_group_name, fired)`` per ship group that launched cruise missiles this
     #: mission (the §63 ``cruisemissiles`` plugin mirrors its expenditure).
     #: ``reconcile_cruise_missiles`` debits the persisted campaign magazine by ``fired``
@@ -235,36 +228,6 @@ class StateData:
             data.get("intercept_survivors", {})
         )
 
-        def parse_minefields_state(
-            raw: Any,
-        ) -> list[tuple[int, float, float, float, int]]:
-            # The §57 minefields plugin writes {id=, x=, z=, radius=, charges=} per field it
-            # managed (or the Lua JSON encoder yields [] when none, and pre-feature state files
-            # omit the key). Pull the tuple defensively, skipping malformed entries.
-            if not isinstance(raw, list):
-                return []
-            out: list[tuple[int, float, float, float, int]] = []
-            for entry in raw:
-                if not isinstance(entry, dict):
-                    continue
-                x = entry.get("x")
-                z = entry.get("z")
-                charges = entry.get("charges")
-                if not (
-                    isinstance(x, (int, float))
-                    and isinstance(z, (int, float))
-                    and isinstance(charges, (int, float))
-                ):
-                    continue
-                fid = entry.get("id")
-                fid = int(fid) if isinstance(fid, (int, float)) else 0
-                radius = entry.get("radius")
-                radius = float(radius) if isinstance(radius, (int, float)) else 0.0
-                out.append((fid, float(x), float(z), radius, int(charges)))
-            return out
-
-        minefields_state = parse_minefields_state(data.get("minefields_state", []))
-
         def parse_group_fired_state(raw: Any) -> list[tuple[str, int]]:
             # The §63 cruisemissiles and §81 navalmagazines plugins both write
             # {group=, fired=} per group that launched (or the Lua JSON encoder yields
@@ -304,7 +267,6 @@ class StateData:
             destroyed_statics=data.get("destroyed_objects_positions", []),
             base_capture_events=data.get("base_capture_events", []),
             intercept_survivors=intercept_survivors,
-            minefields_state=minefields_state,
             cruise_missiles_state=cruise_missiles_state,
             naval_magazines_state=naval_magazines_state,
             ejections=ejections,

@@ -43,8 +43,11 @@ Never derive the state of the codebase from memory; always read the current file
 
    **Run the audit rather than the grep** — `python tools/audit_stale_docs.py` checks every
    published file (README and `docs/wiki/`) against a table of removed
-   features and exits non-zero on a hit. It is only as good as that table: **when you remove
-   a feature, add its `Removed` row in the same change.** The 2026-08-07 CSAR replacement is
+   features and exits non-zero on a hit. **CI runs it** in `lint.yml` (job *Published docs*),
+   so a stale published page fails the build. It is only as good as that table: **when you
+   remove a feature, add its `Removed` row in the same change.** The table now self-checks —
+   exit 2 means a row's own pattern is inert and has been guarding nothing, which three rows
+   silently were until 2026-09-07 (a word-boundary escape stored as the backspace byte). The 2026-08-07 CSAR replacement is
    why it exists — the design note was updated and five published pages, one of them
    sidebar-linked and written in the present tense, went on briefing a package that no
    longer existed for thirteen days.
@@ -66,7 +69,7 @@ feature — each carries the design rationale, the flown-test findings, and the 
   new PRs are not. **Only the DM lifts it** — never infer the lift from upstream commit activity.
 - **Red Tide's feature lock was LIFTED 2026-08-03.** It takes new work on the same terms as any
   other campaign. Two exclusions survive as separate calls, not lock consequences: the §71 F-4E
-  pack stays un-preseeded, and §57 minefields stay shelved fork-wide.
+  pack stays un-preseeded. §57 minefields were shelved and are now removed outright.
 - **Campaign ownership**: every fork-authored campaign has an owning design note and a CI lock.
 - **A generated `.miz` is never hand-edited** where a build tool owns it. Edit the tool.
 
@@ -113,8 +116,8 @@ Read before touching a campaign's `.yaml`, `.miz` or build tool.
   `414th-sam-magazines-notes.md` (**scoping only, nothing built** — cross-turn SAM missile
   stock on the §81 architecture; the MANTIS/ROE seam is verified clean and the off-mission
   drain hook found, so it is buildable on a decision)
-- **EW / ISR / comms** — `414th-c130-ew-isr-notes.md`, `414th-comms-jam-notes.md`,
-  `414th-comint-notes.md`, `414th-gps-jamming-notes.md`,
+- **EW / ISR / comms** — `414th-c130-ew-isr-notes.md`,
+  `414th-gps-jamming-notes.md`,
   `414th-iads-c2-consequences-notes.md`
 - **Recon** — `414th-tars-recon-notes.md`, `414th-recon-role-scoping-notes.md`
   (**scoping only, nothing built** — what job recon gets now that engaging a site is the
@@ -186,8 +189,6 @@ Read before touching a campaign's `.yaml`, `.miz` or build tool.
   `414th-airwar-planner-consolidation-notes.md`,
   `414th-aircraft-task-rebalance-rubric.md`, `414th-victory-conditions-notes.md`,
   `414th-wing-growth-notes.md`, `414th-single-player-loop-notes.md`,
-  `414th-living-battlespace-notes.md` (all five slices — pre-roll, residue, follow-on
-  waves, reactive red — landed 2026-08-15 as §89; the voice net was REMOVED 2026-08-18; in-game passes B56/B57/B60 owed),
   `414th-autoplanner-upstream-divergence-audit.md` (**the full fork-vs-upstream planner
   diff**, 2026-08-09: every divergence classified by gate and default; read before
   reverting or carving planner behavior)
@@ -238,7 +239,7 @@ Read before touching a campaign's `.yaml`, `.miz` or build tool.
 
 Kept for reading old notes and saves; **do not author against them**.
 
-`414th-minefields-notes.md` (shelved) · `414th-ewrs-retirement-decision.md` ·
+`414th-ewrs-retirement-decision.md` ·
 `414th-dismounts-decision.md` · `414th-ctld-mantis-style-port-scope.md` ·
 `414th-mission-planning-wiki-rework.md` · `414th-scenery-import-notes.md` ·
 `turnless.md`
@@ -452,7 +453,6 @@ linked design note.
 45. **Support-package F10 orbit markers** — tanker and AEW&C racetracks drawn with callsign, freq, TACAN.
 47. **Continuous campaign clock & weather** — one marched clock with weather evolving from the previous turn.
 50. **Convoy ambush + ambient supply convoys** — untelegraphed ambush teams on friendly roads, authored as native DCS triggers.
-51. **Enemy comms jamming** — IADS comms nodes jam briefed channels whenever one is alive; the captured-aircrew gate went with §21 on 2026-08-07.
 52. **Command-center decapitation** — a headless HQ picks targets worse and frags fewer offensive packages.
 56. **Strikeable motorpool depots** — the reserve armor pool made bombable, 1:1 with no economy.
 58. **Mission-start briefing popup** — per-pilot slot-in cards with a beep and the taxi call.
@@ -467,7 +467,6 @@ linked design note.
 67. **Weather-aware auto-planning** — rain grounds auto-recon; storms demote low-level attack.
 68. **Adaptive procurement** — price-weighted buys and optional SAM site repair.
 69. **SEAD-before-strike coordination** — strikes retimed behind the suppressor servicing their target.
-70. **COMINT collection** — the §51 mirror: a surviving collector buys a tasking leak and one exact fix, plus an audible red UHF net.
 71. **Expanded F-4E Weapons Pack** — AGM-78 Weasel fits gated on live pylon legality.
 72. **Carrier deck decorations** — island-street and LSO dressing, clear of every parking spot and standing for the whole mission.
 73. **Per-airframe default loadout for a task** — pin a fit for an airframe and task across campaigns.
@@ -483,7 +482,6 @@ linked design note.
 86. **GPS jamming** — satellite-guided weapons released inside the bubble land long.
 87. **Naval station-keeping racetracks** — anchored ovals so ships hold station under way.
 88. **Angled-deck carrier recovery heading** — the boat steams for 25 kt down the angled deck, not the bow.
-89. **Living battlespace** — phase-aware mid-cycle mission starts: earlier packages are already airborne or parked back home when you walk out, follow-on waves launch behind you, the briefing carries the day's running score, and real red alert fighters fly a defensive patrol over a struck objective.
 90. **Front-line model** — reinforcement follows the supply lines, attacking costs more than defending, the line's position counts the forces actually present, terrain slows the advance, and the front bulges instead of running straight.
 91. **Per-flight sortie records** — the mission reports back what each flight did: track, time airborne, fuel, shots and hits, not just which units died.
 92. **What's New** — a toolbar window listing the recent player-visible changes, each with what to look for in the next mission.
@@ -511,10 +509,13 @@ Kept numbered so old notes and saves stay readable. Details and rationale in the
 | 46 | Route-aware fuel-tank planning (fuel-first) | **Reverted 2026-08-09** — planner re-convergence work order C; tanker tasking is upstream's again and nothing fits tanks. The external-fuel *accounting* helpers survive for the fuel readouts |
 | 48 | Commitment ceiling and the political-will economy | Removed 2026-07-21 |
 | 49 | Mobile missile relocation (the SCUD hunt) | Removed 2026-08-29 — never relocated a site in three flown attempts; test 24 measured 44.5 m against a 4,000 m radius |
+| 51 | Enemy comms jamming | Removed 2026-09-07 — abandoned; audio pressure that never changed the force model |
+| 70 | COMINT collection (and the red comms net) | Removed 2026-09-07 — abandoned entire: the collection tiers, the tasking leak, the concealed-site reveal and the audible net |
+| 89 | Living battlespace | Removed 2026-09-07 — abandoned entire: pre-roll, recovery residue, follow-on waves and reactive red (P4's voice net had already gone 2026-08-18) |
 | 53 | War economy | Removed 2026-07-21 |
 | 54 | Munitions availability | Removed 2026-07-21 |
 | 55 | Red Intent adaptive posture | Removed 2026-07-21 |
-| 57 | Air-droppable minefields | **Shelved** 2026-07-30 — inert, code retained, resumable |
+| 57 | Air-droppable minefields | Removed 2026-09-07 — shelved 2026-07-30 and never resumed; the visible-fake problem was never worth fixing |
 | 79 | Decoy suspected-activity zones | Removed 2026-08-18 — real forces no longer hide behind circles, so a lone circle would obviously be fake |
 | 82 | The Wing Grows (scheduled squadron arrivals) | Removed 2026-08-16 — "doesn't add much except in very specific campaigns" |
 | 84 | Old-stock loadout attrition | Removed 2026-08-06 |

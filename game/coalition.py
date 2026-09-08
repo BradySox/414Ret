@@ -340,14 +340,6 @@ class Coalition:
                     from game.fourteenth.carrier_ops import plan_carrier_strike
 
                     plan_carrier_strike(self, now, tracer)
-                # 414th auto-planned convoy mining (§57 P3): frag one air-drop mining
-                # sortie a turn at an enemy convoy, before the commander so the mining
-                # jet is claimed first. No-op unless auto_plan_minefields is on (BLUE only,
-                # a wing with a CBU-99 aircraft, an enemy convoy to mine).
-                with tracer.trace(f"{color} convoy mining"):
-                    from game.fourteenth.convoy_mining import plan_convoy_mining
-
-                    plan_convoy_mining(self, now, tracer)
                 with tracer.trace(f"{color} mission identification"):
                     TheaterCommander(self.game, self.player).plan_missions(now, tracer)
                 with tracer.trace(f"{color} carrier buddy-tanker routing"):
@@ -360,14 +352,6 @@ class Coalition:
                     MissionScheduler(
                         self, self.game.settings.desired_player_mission_duration
                     ).schedule_missions(now)
-                # §89 P5: red reaction-alert flights, parked past the mission
-                # until the reactivered plugin launches one over a struck
-                # objective. After scheduling so the spread never touches them;
-                # no-op unless both living-battlespace gates are on (red only).
-                with tracer.trace(f"{color} battlespace reaction alert"):
-                    from game.fourteenth.living_battlespace import plan_red_reactions
-
-                    plan_red_reactions(self, now)
                 if self.player.is_blue:
                     with tracer.trace(f"{color} player QRA alert"):
                         self._plan_player_qra(now)

@@ -96,27 +96,12 @@ class MissionResultsProcessor:
                 self.record_carcasses(debriefing)
             with logged_duration("commit_super_gaggle"):
                 self.commit_super_gaggle(debriefing)
-            with logged_duration("commit_minefields"):
-                self.commit_minefields(debriefing)
             with logged_duration("commit_cruise_missiles"):
                 self.commit_cruise_missiles(debriefing)
             with logged_duration("commit_naval_magazines"):
                 self.commit_naval_magazines(debriefing)
-            # §70 COMINT (C0): bank this mission's collection. Commit runs before
-            # the turn increments, so the stamp is the just-played turn.
-            with logged_duration("record_comint_collection"):
-                self.record_comint_collection(debriefing)
             with logged_duration("record_sitrep"):
                 self.record_sitrep(debriefing)
-
-    def record_comint_collection(self, debriefing: Debriefing) -> None:
-        # §70 COMINT (C0): stamp the turn when a surviving blue collector (a §2
-        # JAMMING flight or a drone) flew, unlocking Tier 2 (tasking leak +
-        # concealed-site reveal) for the NEXT turn. No-op unless comint_collection
-        # is on; a shot-down collector banks nothing.
-        from game.fourteenth.comint import record_comint_collection
-
-        record_comint_collection(self.game, debriefing)
 
     def commit_super_gaggle(self, debriefing: Debriefing) -> None:
         # Vietnam Ops §37: charge Super Gaggle airframe losses back to the real BLUE
@@ -125,14 +110,6 @@ class MissionResultsProcessor:
         from game.fourteenth.super_gaggle import reconcile_super_gaggle
 
         reconcile_super_gaggle(self.game, debriefing)
-
-    def commit_minefields(self, debriefing: Debriefing) -> None:
-        # §57 Phase 2: fold the minefields plugin's end-of-mission field report into
-        # game.minefields, carrying undisturbed air-dropped fields across the turn. No-op
-        # when air_droppable_minefields is off or the plugin reported nothing.
-        from game.fourteenth.minefields import reconcile_minefields
-
-        reconcile_minefields(self.game, debriefing)
 
     def commit_cruise_missiles(self, debriefing: Debriefing) -> None:
         # §63: debit each launching ship group's persisted campaign magazine by what

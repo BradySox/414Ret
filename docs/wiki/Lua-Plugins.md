@@ -16,9 +16,9 @@ A `plugin.json` describes the plugin to both the loader and the settings UI:
 | Field | Meaning |
 |---|---|
 | `nameInUI` / `descriptionInUI` | Title and explanation shown on the LUA Plugins settings page. |
-| `skipUI` | Hide the plugin from the settings UI. |
+| `skipUI` | Hide the plugin from the settings UI. Used by `base`, `intercept` and `opscsar`. |
 | `defaultValue` | Whether the plugin starts enabled. |
-| `specificOptions` | Per-plugin tunables (each with its own `mnemonic`, label, default, min/max) shown as settings. |
+| `specificOptions` | Per-plugin tunables (each with its own `mnemonic`, label, default, min/max) shown as settings. `choices` renders a dropdown instead of a spinner; `enabledWhen` greys an option out until a named sibling option is set. |
 | `scriptsWorkOrders` | The Lua files to inject, with load/disable directives. |
 | `configurationWorkOrders` | Configuration scripts, same shape. |
 
@@ -53,7 +53,7 @@ Write runtime logic against **MOOSE** (bundled `Moose.lua`; some plugins vendor 
 **MIST is retired.** The `base` plugin's `"mist"` work order loads
 `resources/plugins/base/mist_moose_shim.lua`, a vanilla-DCS shim implementing only the `mist.*`
 symbols the remaining consumers actually call — CTLD, the intercept glue, the core script, the
-COIN and mobile-missile runtimes, and the upstream land/water relocate scripts.
+sortie recorder, the COIN runtime, and the upstream land/water relocate scripts.
 
 MOOSE API docs:
 https://flightcontrol-master.github.io/MOOSE_DOCS_DEVELOP/Documentation/index.html
@@ -82,7 +82,7 @@ ELINT tracks as sliders.
 
 ## The plugins
 
-All 28, in `plugins.json` load order. "Inert unless" means the plugin ships in every mission
+All 24, in `plugins.json` load order. "Inert unless" means the plugin ships in every mission
 but does nothing until the mission generator emits its data — turning the matching campaign
 setting off costs nothing at runtime.
 
@@ -104,8 +104,6 @@ setting off costs nothing at runtime.
 | `c130j` | on | Turns the player C-130J into an EC-130H Compass Call (jamming) and RC-130H Rivet Joint (ISR/ELINT) platform — `FlightType.JAMMING`. Supersedes the retired generic `ewrj`. |
 | `growler` | on | Escort jamming for the EA-18G and EA-6B: non-stacking spoof bubbles and SAM weapons-hold pulses. Inert unless an escort-jammer flight exists. |
 | `gpsjamming` | on | GPS denial — satellite-guided weapons released inside the bubble land long. Inert unless a live GPS-jamming group is on the map. |
-| `commsjam` | on | Enemy comms jamming from IADS C2 nodes. Inert unless the setting is on. |
-| `rednet` | on | The audible, DF-able enemy radio net (§70 COMINT). Inert unless the setting is on. |
 | `bigeye` | off | BigEye EWR — text threat reports to pilots, prioritised by contact danger. |
 | `lotatc` | off | Exports anti-air sites to LotATC so GCI controllers see the SAM/AAA picture. |
 
@@ -115,7 +113,6 @@ setting off costs nothing at runtime.
 |---|---|---|
 | `tic` | on | Troops In Contact — formation-keeping frontline units fighting prolonged scripted firefights. (Late-init plugin.) |
 | `coin` | on | The COIN insurgency layer's movers and ambient pressure. Inert unless a COIN campaign. |
-| `minefields` | off | Faked area mining via a designated cluster dispenser. **§57 is shelved** — inert, code retained. |
 | `vietnamops` | on | The Vietnam Ops suite (Arc Light, flak gauntlet, naval gunfire, convoy interdiction, harassment, Super Gaggle, FAC(A), snake-and-nape) plus the generic frontline-artillery runtime. |
 
 ### Naval and carrier
@@ -132,11 +129,11 @@ setting off costs nothing at runtime.
 |---|---|---|
 | `opscsar` | on | **Combat SAR** — spawns downed pilots and runs the rescue via MOOSE `Ops.CSAR`. See [Combat SAR](Combat-SAR). |
 | `intercept` | on | Per-squadron QRA intercept reserve feeding the MOOSE `AI_A2A_DISPATCHER`. |
-| `reactivered` | on | Living battlespace reactive red — real alert fighters flying a defensive patrol over a struck objective. |
 | `redscramble` | on | Host tool: an F10 menu to scramble red interceptors. Inert unless the setting is on. |
 | `briefing` | on | The mission-start briefing card each pilot sees when they slot in. |
 | `splashdamage3` | on | The squadron's locked, softened Splash Damage 3.4.2 build. No user-adjustable options by design. |
 | `aisleep` | on | Ground AI sleep — distant garrisons stop thinking and wake on approach. Inert unless the performance setting is on. |
+| `ai_reaction` | on | Smart threat reaction — only the flight a missile is actually guiding on goes defensive; everything else holds formation and uses countermeasures. |
 
 > **There is no recon plugin.** It was removed on 2026-08-20 along with its capture ledger:
 > the 2026-08-18 rework made engaging a site the only reveal, so nothing read a capture.

@@ -28,7 +28,6 @@ export const mapColors = {
   // --- intel ---
   suspected: "#dd9a3a", // amber dashed: un-reconned "suspected activity"
   suspectedCasing: "#8c1414", // dark-red halo under the amber dash: enemy, unconfirmed
-  mine: "#c9a227", // gold dashed: your own air-dropped minefield (friendly hazard)
   // Dark under-stroke drawn beneath a bright dashed ring so it stays legible on
   // light terrain (desert satellite imagery washed the amber ring out entirely);
   // on dark terrain the bright dash on top still carries it.
@@ -79,7 +78,6 @@ export type MapColorKey = keyof typeof mapColors;
  *
  *   suspected AREA   - medium dash, red halo   (enemy in here somewhere, go look)
  *   suspected CLUSTER- lighter dash, red halo  (one of several stacked contacts)
- *   minefield        - tick marks              (a hazard field, your own)
  *   pilot POW        - short dash              (held; freed by recapture)
  *   pilot MIA        - solid                   (a live man, exact position)
  *
@@ -102,7 +100,6 @@ export interface StrokeSignature {
 export const mapStrokes: Record<
   | "suspectedArea"
   | "suspectedCluster"
-  | "minefield"
   | "pilotMia"
   | "pilotPow"
   | "airspaceEnforced"
@@ -126,7 +123,6 @@ export const mapStrokes: Record<
     casingWeight: 4.5,
     casingColor: mapColors.suspectedCasing,
   },
-  minefield: { dashArray: "2 8", weight: 2.5, casingWeight: 6 },
   pilotMia: { weight: 2.5, casingWeight: 6 },
   pilotPow: { dashArray: "3 5", weight: 2.5, casingWeight: 6 },
   // A long map-boundary dash — the one pattern that reads as a border rather

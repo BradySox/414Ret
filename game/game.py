@@ -55,7 +55,6 @@ from .weather.conditions import Conditions
 if TYPE_CHECKING:
     from .ato.airtaaskingorder import AirTaskingOrder
     from .factions.faction import Faction
-    from .fourteenth.minefields import Minefield
     from .fourteenth.super_gaggle import SuperGaggleCommitment
     from .fourteenth.victory import VictoryBaseline
     from .navmesh import NavMesh
@@ -154,10 +153,6 @@ class Game:
         # convoy}]}), seeded at finish_turn, read by the emitter + the escort auto-frag.
         # Plain primitives; populated lazily by game.fourteenth.convoy_ambush when on.
         self.convoy_ambush_state: dict[str, Any] = {}
-        # §57 air-droppable minefields: fields left undisturbed at mission end, carried
-        # across turns and re-emitted into the next mission for the plugin to re-arm.
-        # Populated lazily by game.fourteenth.minefields when air_droppable_minefields is on.
-        self.minefields: list["Minefield"] = []
         # §63 cruise missile raids: each LACM ship group's remaining missile stock,
         # keyed by the stable TheaterGroup.group_name — seeded on first sight, debited
         # at the turn boundary from what the plugin reports fired (never at
@@ -176,14 +171,6 @@ class Game:
         # so the jittered "suspected activity" centre is deterministic but not
         # recomputable from the public TGO id. Lazily set on first use; persisted.
         self.concealment_salt: Optional[int] = None
-        # §70 COMINT (C0): the turn a surviving blue collector (JAMMING flight or
-        # drone) last flew (stamped at debrief commit -- Tier 2 next turn), the
-        # turn the once-per-turn reveal last ran (idempotence under re-init), and
-        # the human-readable note for the last revealed site (kneeboard line).
-        # All read getattr-guarded so pre-§70 saves load clean.
-        self.comint_collected_turn: Optional[int] = None
-        self.comint_reveal_turn: Optional[int] = None
-        self.comint_reveal_note: Optional[str] = None
         # NB: This is the *start* date. It is never updated.
         self.date = date(start_date.year, start_date.month, start_date.day)
         self.game_stats = GameStats()
@@ -247,7 +234,6 @@ class Game:
         state.setdefault("red_tempo_announced_window", None)
         state.setdefault("coin_state", {})
         state.setdefault("convoy_ambush_state", {})
-        state.setdefault("minefields", [])
         state.setdefault("cruise_missile_magazines", {})
         state.setdefault("naval_magazines", {})
         state.setdefault("concealment_salt", None)
@@ -756,16 +742,6 @@ class Game:
         from game.fourteenth.victory import ensure_victory_baseline
 
         ensure_victory_baseline(self)
-
-        # §70 COMINT (C0): at Tier 2 (a collector survived last mission + the
-        # enemy net is emitting) snap ONE concealed enemy site to exact via the
-        # normal discovery flip. Player-facing only -- planning never reads it
-        # (the §3 viewer discipline) -- so ordering vs the coalitions is free;
-        # idempotent under the re-init cases via a per-turn stamp. No-op when
-        # comint_collection is off.
-        from game.fourteenth.comint import apply_comint_reveal
-
-        apply_comint_reveal(self, events)
 
         # Pin the COIN conservation anchors at the true campaign start (turn 0,
         # before any mission flies). The finish_turn regen hook runs after the

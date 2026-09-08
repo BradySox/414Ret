@@ -90,11 +90,6 @@ const ROWS: Row[] = [
     label: "POW — held at an enemy field",
   },
   {
-    color: mapColors.mine,
-    signature: mapStrokes.minefield,
-    label: "Minefield (your own)",
-  },
-  {
     color: mapColors.airspaceHostileNeutral,
     signature: mapStrokes.airspaceEnforced,
     label: "Neutral airspace — closed to you, it will intercept",

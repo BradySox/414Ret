@@ -25,11 +25,6 @@ from game.ato.flightstate import Completed, WaitingForStart
 from game.ato.flighttype import FlightType
 from game.ato.package import Package
 from game.ato.starttype import StartType
-from game.fourteenth.living_battlespace import (
-    idle_spawn_count,
-    recovery_residue_enabled,
-    residue_flights_for,
-)
 from game.missiongenerator.countryassigner import CountryAssigner
 from game.missiongenerator.interceptluadata import (
     InterceptEntry,
@@ -97,11 +92,6 @@ class AircraftGenerator:
         self.datalink_registry = datalink_registry
         self.unit_map = unit_map
         self.flights: List[FlightData] = []
-        # §89 P2: airframes parked as recovery residue from the ledger, per
-        # squadron id. They are back in the untasked pool (the sim's removal
-        # returned them), so spawn_unused_aircraft debits this to avoid
-        # rendering the same jets twice.
-        self.residue_airframes: dict[UUID, int] = {}
         self.mission_data = mission_data
         self.helipads = helipads
         self.ground_spawns_roadbase = ground_spawns_roadbase
@@ -188,10 +178,6 @@ class AircraftGenerator:
                     )
                     self.unit_map.add_aircraft(group, flight)
                     spawned_flights.append(flight)
-                elif flight.alive and recovery_residue_enabled(self.game.settings):
-                    # §89 P2: a flight already home leaves its jets parked on
-                    # the ramp instead of vanishing from the world.
-                    self._spawn_completed_residue(flight)
             if (
                 package.primary_flight is not None
                 and package.primary_flight.flight_plan.is_formation(
@@ -212,23 +198,6 @@ class AircraftGenerator:
                         splittrigger.add_action(AITaskPush(flight.group_id, 1))
                 if len(splittrigger.actions) > 0:
                     self.mission.triggerrules.triggers.append(splittrigger)
-
-        # §89 P2: flights the sim already removed from the ATO (their whole
-        # cycle predates the player's startup) park via the residue ledger --
-        # the walk above cannot see them. After the tasked flights so they
-        # never contend for parking, before the QRA/idle spawns (which run
-        # later in generate_air_units) so the priority order is unchanged.
-        for flight, arrival in residue_flights_for(ato, self.game.settings):
-            parked = self._spawn_completed_residue(flight, arrival)
-            # Removing the flight returned its airframes to the untasked pool,
-            # so spawn_unused_aircraft would render these same jets a SECOND
-            # time as idle ramp filler. Debit what actually parked (a flight
-            # still in the ATO holds its claim, so the walk path never tallies).
-            if parked:
-                key = flight.squadron.id
-                self.residue_airframes[key] = (
-                    self.residue_airframes.get(key, 0) + parked
-                )
 
         # at this point all flights were generated, so now start setting up datalink...
         self._link_datalink_on_package_level_and_awacs()
@@ -508,10 +477,7 @@ class AircraftGenerator:
         ):
             return
 
-        untasked = idle_spawn_count(
-            squadron.untasked_aircraft, self.residue_airframes.get(squadron.id, 0)
-        )
-        for _ in range(untasked):
+        for _ in range(squadron.untasked_aircraft):
             flight = Flight(
                 Package(squadron.location, self.game.db.flights),
                 squadron,
@@ -551,45 +517,6 @@ class AircraftGenerator:
                 AircraftPainter(flight, group, self.livery_allocator).apply_livery()
                 self.modex_allocator.assign(squadron, group, country)
                 self.unit_map.add_aircraft(group, flight)
-
-    def _spawn_completed_residue(
-        self, flight: Flight, arrival: ControlPoint | None = None
-    ) -> int:
-        """Park a Completed flight's jets at its arrival field (§89 P2).
-
-        Registered in the unit map so a ramp kill records against the real
-        airframes. Declines with a log line, never silently, when the arrival
-        cannot host them. Ledger flights pass the arrival frozen at completion
-        time; ``None`` (the ATO-walk path) reads the flight's live arrival.
-        Returns the number of airframes actually parked.
-        """
-        cp = arrival if arrival is not None else flight.arrival
-        if isinstance(cp, NavalControlPoint):
-            # Carrier decks carry the §64 spawn policy and §72 deck dressing;
-            # parked residue there is deferred until those interplays are read.
-            logging.info(f"No carrier ramp residue for returned flight {flight}")
-            return 0
-        country = self.country_assigner.for_squadron(flight.squadron)
-        try:
-            group = FlightGroupSpawner(
-                flight,
-                country,
-                self.mission,
-                self.helipads,
-                self.ground_spawns_roadbase,
-                self.ground_spawns_large,
-                self.ground_spawns,
-                self.mission_data,
-            ).create_completed_aircraft(cp)
-        except NoParkingSlotError:
-            group = None
-        if group is None:
-            logging.info(f"No parking for returned flight {flight} at {cp}")
-            return 0
-        AircraftPainter(flight, group, self.livery_allocator).apply_livery()
-        self.modex_allocator.assign(flight.squadron, group, country)
-        self.unit_map.add_aircraft(group, flight)
-        return len(group.units)
 
     def create_and_configure_flight(
         self, flight: Flight, country: Country, dynamic_runways: Dict[str, RunwayData]

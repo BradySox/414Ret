@@ -77,7 +77,7 @@ end
 
 -- Mirror-back channel: the base script serializes `cruise_missiles_state` into the debrief and
 -- Python debits each ship group's persisted magazine by its reported `fired`. One entry per
--- group, updated in place (the §57 minefields f.state pattern), with dirty_state flagged so
+-- group, updated in place, with dirty_state flagged so
 -- write_state actually flushes.
 cruise_missiles_state = cruise_missiles_state or {}
 

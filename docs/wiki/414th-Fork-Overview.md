@@ -90,7 +90,7 @@ Full detail: [Air Defense and the Air War](Air-Defense-and-the-Air-War).
   from the whole wing, take one seat in a sortie the war decided. The map and planner are
   untouched.
 - Destroying enemy **command posts** degrades its target selection and thins its offensive
-  tempo. With **COMINT** on, those same nodes are your intel source.
+  tempo.
 - **GPS jamming** sites deny satellite guidance over an area — a JDAM released inside lands off
   the aimpoint until you kill the jammer.
 - Warships fire **cruise missile raids** from finite magazines that never rearm, and anti-ship

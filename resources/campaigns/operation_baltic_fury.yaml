@@ -158,11 +158,6 @@ settings:
   # in-mission standoff harassment fire (never a player-spawn field; startup grace).
   artillery_base_harassment: true
   artillery_harassment_reach_km: 42
-  # §51 enemy comms jamming: red's IADS comms masts step on the briefed NATO channels with
-  # duty-cycled barrage noise until struck; the kneeboard carries the JAM BACKUP channel. The
-  # default intel gate applies (red only jams once it takes a NATO comms plan off a captured
-  # aircrew), so winning the Combat SAR race keeps the net clean.
-  enemy_comms_jamming: true
   # §61 host red-interceptor scramble: F10 "HOST: Red Scramble" clones a red fighter flight at
   # any red field and vectors it onto the nearest blue fighters (MP events; gated to the host's
   # static "Flash" name tag). Free/untracked event content.
@@ -177,20 +172,13 @@ settings:
   plugins:
     # advanced_iads (top-level) is this laydown's centerpiece; mantisiads owns its whole runtime.
     mantisiads: true
-    # §51 comms jam, §61 host scramble, §36/artillery harassment.
+    # §61 host scramble, §36/artillery harassment.
     # (§50's ambush spring is authored as native DCS triggers -- no plugin.)
-    commsjam: true
     redscramble: true
     vietnamops: true
     gpsjamming: true                 # §86 GPS jamming runtime -- the setting does NOTHING without it
     # §61 host-menu gate: only DCS names containing "Flash" see the HOST: Red Scramble menu.
     redscramble.hostPlayers: Flash
-    # §51 comms-jam feel: near-continuous pressure on the top few channels (~90% on-air, capped
-    # to the 3 highest-priority nets; powerW 10000 so it reaches forward of the red C2 node).
-    commsjam.burstSec: 120
-    commsjam.intervalSec: 10
-    commsjam.maxChannels: 3
-    commsjam.powerW: 10000
 # --- §86 GPS jamming: two of red's five early-warning sites also field an EW Radio Jammer.
 #
 #     The jammer is pinned to an EWR marker on purpose. A GPS jammer emits in L-band, which no

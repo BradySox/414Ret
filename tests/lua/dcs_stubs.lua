@@ -322,11 +322,10 @@ function GroupFake:getCoalition()
     return self.side
 end
 
--- Late-activation launch (the §89 P5 reactivered lever): recorded, and the
--- group reads as existing from then on. An `uncontrolled = true` group is
--- already in the world with its engines off, and DCS's activate() does nothing
--- to it -- modelled, because assuming otherwise is what left reactive red
--- unable to launch for five days (test 12, 2026-08-20).
+-- Late-activation launch: recorded, and the group reads as existing from then
+-- on. An `uncontrolled = true` group is already in the world with its engines
+-- off, and DCS's activate() does nothing to it -- modelled, because assuming
+-- otherwise cost five days of debugging in 2026-08 (test 12).
 function GroupFake:activate()
     if self.uncontrolled then
         return

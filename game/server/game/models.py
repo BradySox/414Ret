@@ -142,35 +142,6 @@ class CampaignStatusJs(BaseModel):
         )
 
 
-class MinefieldJs(BaseModel):
-    """§57: one active air-dropped minefield on the friendly (BLUE) map overlay.
-
-    A dashed circle at the field's centre with its radius. Emitted only when
-    ``air_droppable_minefields`` is on and BLUE has live fields; empty otherwise, which
-    hides the layer (the supply-nodes / restricted-zones pattern). BLUE-only -- the enemy
-    never sees where you mined.
-    """
-
-    position: LeafletPoint
-    radius_m: float
-    charges: int
-
-    @staticmethod
-    def all_in_game(game: Game) -> list[MinefieldJs]:
-        if not getattr(game.settings, "air_droppable_minefields", False):
-            return []
-        from game.fourteenth.minefields import active_minefields
-
-        return [
-            MinefieldJs(
-                position=minefield.position.latlng(),
-                radius_m=minefield.radius_m,
-                charges=minefield.charges,
-            )
-            for minefield in active_minefields(game)
-        ]
-
-
 class GameJs(BaseModel):
     control_points: list[ControlPointJs]
     tgos: list[TgoJs]
@@ -186,9 +157,6 @@ class GameJs(BaseModel):
     map_zones: MapZonesJs
     # Campaign-status ribbon: turn/date/campaign (+ §75 victory rows when configured).
     campaign_status: CampaignStatusJs
-    # §57 air-dropped minefields: BLUE-only live fields (dashed circles). Empty unless
-    # air_droppable_minefields is on, which hides the layer; the enemy never sees them.
-    minefields: list[MinefieldJs]
 
     class Config:
         title = "Game"
@@ -197,7 +165,6 @@ class GameJs(BaseModel):
     def from_game(game: Game) -> GameJs:
         return GameJs(
             campaign_status=CampaignStatusJs.from_game(game),
-            minefields=MinefieldJs.all_in_game(game),
             control_points=ControlPointJs.all_in_game(game),
             tgos=TgoJs.all_in_game(game),
             downed_pilots=DownedPilotJs.all_in_game(game),

@@ -43,17 +43,17 @@ def test_scalar_only_and_nested_only_items_are_unchanged() -> None:
     assert 'b = "2"' in out and "inner" in out
 
 
-def test_reactive_red_pool_reaches_the_plugin() -> None:
-    # The emitter shape from reactiveredluadata.py: the group pool is a scalar
-    # array on the same item as the objectives table.
+def test_scalar_array_and_nested_table_coexist_on_one_item() -> None:
+    # The shape every plugin emitter uses when a node carries both a flat name
+    # list and a table of records.
     root = LuaData("dcsRetribution")
-    node = root.add_item("reactiveRed")
-    node.add_data_array("groups", ["Reaction Alert 1", "Reaction Alert 2"])
+    node = root.add_item("example")
+    node.add_data_array("groups", ["Alert 1", "Alert 2"])
     objectives = node.add_item("objectives")
     objective = objectives.add_item()
     objective.add_key_value("name", "QUAGGA")
 
     out = root.serialize()
 
-    assert 'groups = {"Reaction Alert 1", "Reaction Alert 2"}' in out
+    assert 'groups = {"Alert 1", "Alert 2"}' in out
     assert 'name = "QUAGGA"' in out

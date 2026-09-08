@@ -58,7 +58,7 @@ also relative to `ReferenceLatitude=38 / ReferenceLongitude=36`, not absolute.
 
 ## Outstanding rows at a glance
 
-81 rows need a live pass. Full detail is under each `###` heading below —
+76 rows need a live pass. Full detail is under each `###` heading below —
 search the row id. `☐` untested · `◐` flown but not under the conditions that
 stress it · `✗` fail signature reproduced in-game.
 
@@ -71,8 +71,8 @@ stress it · `✗` fail signature reproduced in-game.
 | B19 | Weather-aware auto-planning | §67 | ☐ |
 | B20 | Adaptive procurement: SAM repair + price-weighted choice | §68 | ☐ |
 | B21 | Cross-package SEAD-before-strike coordination | §69 | ☑ |
-| B22 | COMINT collection: the campaign take (tiering + leak + reveal) | §70 | ☐ |
-| B23 | Red comms net: audible + DF-able enemy C2 | §70 | ◐ |
+| B22 | COMINT collection: the campaign take (tiering + leak + reveal) | §70 | ⊘ |
+| B23 | Red comms net: audible + DF-able enemy C2 | §70 | ⊘ |
 | B28 | Native DTC data pre-population (F/A-18C + F-16C) | §74 | ☑ |
 | B29 | Custom victory conditions (VICTORY chip + alternate endings) | §75 | ◐ |
 | B31 | Escort jamming (Growler / Prowler + growler plugin) | §77 | ◐ |
@@ -130,7 +130,7 @@ stress it · `✗` fail signature reproduced in-game.
 | Q3 | Bulk waypoint altitude moves every flown leg | §4 (flight altitude editing) | ☑ |
 | S1 | Route-aware fuel-tank planning (fuel-first) | §46 | ✅ |
 | S3 | Friendly convoy ambush (a chance, never telegraphed) | §50 | ◐ |
-| S4 | Enemy comms jamming: capture the intel, then the C2 belt steps on the radios | §51 | ◐ |
+| S4 | Enemy comms jamming: capture the intel, then the C2 belt steps on the radios | §51 | ⊘ |
 | S5 | Ambient supply convoys: both sides' roads have randomized traffic | §50 | ◐ |
 | S6 | Tanker fragged for a no-`fuel:`-block airframe on a long sortie | §46 | ✅ |
 | S7 | Measured fuel data adopted from DCS Liberation drives tanker + bingo for 12 airframes | §46 | ☐ |
@@ -147,10 +147,10 @@ stress it · `✗` fail signature reproduced in-game.
 | B53 | AI flights no longer push early for a tanker stop they never fly | §46 | ✅ |
 | B54 | Planner behavior bar switches the suite in the settings UI | re-convergence | ☐ |
 | B55 | Carrier steams for wind down the angled deck | §88 | ☑ |
-| B56 | Living battlespace pre-roll: mid-cycle mission start | §89 | ◐ |
-| B57 | Living battlespace P2: ramp residue + clean-wing returners | §89 | ☑ |
+| B56 | Living battlespace pre-roll: mid-cycle mission start | §89 | ⊘ |
+| B57 | Living battlespace P2: ramp residue + clean-wing returners | §89 | ⊘ |
 | B59 | Living battlespace P4: the voice net | §89 | ⊘ |
-| B60 | Living battlespace P5: reactive red | §89 | ✗ |
+| B60 | Living battlespace P5: reactive red | §89 | ⊘ |
 | B61 | Task-role degrade: mismatched-role AI flights still fly their mission | §8 | ☐ |
 | B65 | Reinforcement follows the supply lines | §90 rung A | ◐ |
 | B66 | Attacking costs more than defending | §90 rung B | ☐ |
@@ -502,7 +502,7 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
   garage rendering offset from its marker. No save migration — population is ephemeral.
 ### B9 — Air-droppable minefields: mine a road, kill a convoy, carry the field across the turn · §57 · ⊘ RETIRED
 
-**History:** ⛔ SHELVED 2026-07-30 — dropped from active use by user call, not deleted; every gate defaults OFF and Red Tide's preseed was removed, so nothing runs in any current campaign. Not a pending test while shelved; code/tests untouched (`tests/lua/test_minefields_runtime.py`, `tests/fourteenth/test_minefields.py`, `tests/missiongenerator/test_minefieldluadata.py`). Re-open as ☐ UNTESTED if the feature is ever resumed.
+**History:** ⛔ REMOVED 2026-09-07 -- the feature was abandoned: the plugin, both settings, the cross-turn persistence and the map layer are deleted, so this row can never be run again. Previously: SHELVED 2026-07-30 — dropped from active use by user call, not deleted; every gate defaults OFF and Red Tide's preseed was removed, so nothing runs in any current campaign. Not a pending test while shelved; code/tests untouched (`tests/lua/test_minefields_runtime.py`, `tests/fourteenth/test_minefields.py`, `tests/missiongenerator/test_minefieldluadata.py`). Re-open as ☐ UNTESTED if the feature is ever resumed.
 - **2026-07-11 flown Red Tide M1 (`csar-snatch-toggle-question-dfdb7a`): armed cleanly, nothing laid.**
   Load log `Minefields armed (dispenser 'CBU_99', radius 200m, 6 charges/field, power 100)`, zero Lua
   errors across ~125 min, `minefields_state: []` at exit — no CBU-99 was released this mission (none in
@@ -721,7 +721,7 @@ jets. See §62.
 - **Pass:** the ATO shows the strike/BAI/OCA packages targeting SAM-covered objectives with TOTs ~2–10 min after their covering SEAD/DEAD package's TOT (several strikes may share one window — the push); packages against undefended targets keep the random spread; a player package's TOT is never moved by this (and a player-flown SEAD still has AI strikes timed behind it).
 - **Fail signature:** a strike still arriving before its SEAD with both AI (the ring match missed — check the SAM TGO's `max_threat_range` and that the SEAD's target is the TGO); strike TOTs pushed absurdly late (the window should clamp to `earliest_tot` — check `coordinated_strike_tot`); player packages rescheduled (the movability gate broke); mass mid-airs at the shared TOT (packages route separately, but if seen, widen `SEAD_WINDOW_LEAD` spacing per client or stagger within the window).
 
-### B22 — COMINT collection: the campaign take (tiering + leak + reveal) · §70 · ☐ UNTESTED
+### B22 — COMINT collection: the campaign take (tiering + leak + reveal) · §70 · ⊘ RETIRED
 
 **History:** built 2026-07-18; the tier gating incl. dead-net-beats-collector, the OFF exact no-op, the survivor requirement, drone eligibility, leak determinism, the reveal's range/known/`map_hidden` rules + re-init idempotence are unit-tested in `tests/fourteenth/test_comint.py` — the kneeboard render + the map snap are app-level
 - **What CI cannot exercise:** the rendered COMINT block on a real Mission Info kneeboard page, and the map experience of a Tier-2 reveal (an amber suspected-activity circle replaced by the exact enemy symbol at turn start). An in-APP pass (no DCS flight needed beyond generating/ending turns).
@@ -729,7 +729,7 @@ jets. See §62.
 - **Pass:** turn A (net up, no collector): the kneeboard COMINT block reads "Enemy net active … ambient take only". Turn B (collector survived): the block adds "Collection sortie banked a full take", an "Intercepted tasking traffic: …" line naming a real red package/objective with a ±30 min window, and — when an eligible concealed site sat within 60 km of a source — a "Transmissions localized: …" line with that circle now an exact symbol on the map (one site only). With `red_comms_net` also on, the block additionally lists the **active nets** (fixed C2 stations by name + frequency + area; each concealed spawn as "suspected clandestine net @ <freq> — <area> area" — NEVER the cell's identity or type; ≤5 lines + a "+N more" tail). Net dead: the block reads "Enemy C2 net silent — no COMINT take."
 - **Fail signature:** a COMINT block while the net is dead (source walk broke); two circles snapping in one turn or a snap repeating after a cheat-capture/TGO-purchase re-init (the `comint_reveal_turn` stamp broke); a §50 convoy-ambush team appearing on the map (the `map_hidden` exclusion broke — nothing may telegraph those); the leak naming a different package after a mission re-generation (determinism broke); any COMINT output with the setting OFF.
 
-### B23 — Red comms net: audible + DF-able enemy C2 · §70 · ◐ PARTIAL
+### B23 — Red comms net: audible + DF-able enemy C2 · §70 · ⊘ RETIRED
 
 **History:** 2026-08-05, user report `units-runway-generation-bf755e` — **the audible half is PROVEN**: "someone on saturday heard morse code". That is the CW clip keying from a live red C2 node through a cockpit radio, which is the leg no harness can model. **But it was heard on the PRE-band-discipline build** — the DM's own framing, "before we changed it off player freqs" — i.e. the net was audible partly *because* it was colliding with a briefed mission channel, which is exactly the defect the 2026-08-02 band-discipline change fixed (the 100 kHz `NET_GUARD_HZ` guard band + the `red_net_max_stations` cap). So this row does NOT carry over to the current build: the open question is now the opposite one — with the nets moved off every allocated frequency, **is the morse still findable when a pilot goes looking for it**, and does it stay off the briefed channels. Re-check = tune a DF-capable jet (F-4E / F-14 ARC-182 / F/A-18C UFC ADF / F-5E) across the UHF band, confirm the CW is audible and homes, and confirm no briefed channel carries it) (was ☐ UNTESTED, built 2026-07-18; the emitter's frequency plan — x.500 off-grid, GUARD skip, registry reservation, cross-mission determinism, collision probing — and the runtime invariants — grace, per-node stagger, loop+stop windows, `node_dead`, clean no-op — are pinned in `tests/missiongenerator/test_rednetluadata.py` + `tests/lua/test_rednet_runtime.py`; audibility, per-module DF needle behavior against a scripted transmission, and power reach are DCS-only
 - **What CI cannot exercise:** actual cockpit audio (is the CW clip clearly receivable at the emitted power from realistic ranges), each module's ADF/DF needle behavior against a scripted looped transmission, and whether the windowed cadence reads as traffic rather than a beacon.
@@ -4076,7 +4076,7 @@ engaged. The rest of the campaign check stands.
 - **Pass:** the convoy drives its road; NOTHING about the ambush shows anywhere beforehand (no map marker, no uncertainty circle, no ATO package, no F10 mark); when the column closes on a hidden team, it springs (a "TROOPS IN CONTACT" cue + an F10 mark at the fight) and engages; on a multi-team roll the column is hit again further down the road; diverting air onto the mark and killing the team lets the convoy drive on, ignoring the call grinds it down (fewer/no units delivered); the debrief records the dead convoy units (never arrive) AND the dead ambushers (real red ground loss); some turns the road is simply quiet ("armed 0 ambush(es)" / no node).
 - **Fail signature:** no friendly convoy ever appears (blue corridor/road missing — check the campaign has a blue→blue `supply_routes` road and `ambient_supply_convoys` is on); an ambush team is visible on the campaign map / web map / F10 before it springs, or a "suspected activity" circle appears on the road (the map_hidden contract broken — check `TgoJs.all_in_game`, the SSE filter in `GameUpdateEventsJs.from_events`, and `triggergenerator._gen_markers`); a BAI package targeting the ambush appears in the ATO (the `BattlePositions` skip broken); a team fires at max range the instant the mission loads (grace/spring broken); a TIC cue with no convoy anywhere near (the removed max-hold fallback resurrected, or trigger radius huge); every convoy every turn is ambushed (the chance roll broken); a `CONVOYAMBUSH|: setup error` in dcs.log; ambushers or convoy losses missing from the debrief (a phantom-spawn regression — both must be real, tracked units).
 
-### S4 — Enemy comms jamming: capture the intel, then the C2 belt steps on the radios · §51 · ◐ PARTIAL
+### S4 — Enemy comms jamming: capture the intel, then the C2 belt steps on the radios · §51 · ⊘ RETIRED
 
 **⚠️ Re-scope needed (2026-08-21 audit) — the capture half of this row no longer exists.**
 `comms_jam_requires_capture`, the `combatsar` plugin, `combat_sar_captures` and
@@ -4088,6 +4088,8 @@ with a capture. Whether the gate should come back on upstream #929's POW ledger 
 decision **and it was decided on 2026-08-21: the jamming stays unconditional.** The orphan
 `captureReactionS` plugin option went with that call; `coalition.py`'s `pending_pow_recoveries`
 save drop stays, because that pop IS the cleanup for old saves.
+
+**REMOVED 2026-09-07** — §51 was abandoned; the plugin, the setting, the JAM BACKUP line and both campaign preseeds are deleted, so this row can never be run.
 
 **History:** 2026-07-11 flown Red Tide M1 `csar-snatch-toggle-question-dfdb7a`: the dormant leg observed — `COMMSJAM|: intel gate armed -- 18 C2 jammer(s), 3 channel(s), dormant until an aircrew capture` at load, radios stayed clean all ~125 min with zero captures, no Lua errors. Correct behavior, but silence-while-dormant can't distinguish "correctly gated" from "broken and silent", so the status stays UNTESTED until a capture→jam moment is heard — use the `[TEST] force capture` toggle. Built 2026-07-06, intel gate added same day; the plan ordering / GUARD filter / cap / backup collision re-roll / intel-gate flags / emit shape are in `tests/missiongenerator/test_commsjamluadata.py`, and the plugin's grace / burst-stop-rotation / dead-jammer silence (both death paths) / ceased cue / intel-gate dormancy + live-capture + POW-story + watch-bail / no-node no-op in `tests/lua/test_commsjam_runtime.py` — whether the static is audible on a tuned radio, the falloff feel, the capture→jam moment, and the kill-to-silence loop need a mission
 
@@ -4773,7 +4775,7 @@ Case I recovery.
      2026-08-16 sign fix moves the probed bearing by ~2× the solver offset — 166 → 216 on the
      Baltic save — so coastlines that cleared before may not clear now).
 
-### B56 — Living battlespace pre-roll: mid-cycle mission start · §89 · ◐ PARTIAL
+### B56 — Living battlespace pre-roll: mid-cycle mission start · §89 · ⊘ RETIRED
 
 **History:** 2026-08-16, spectator Game Master watch, Baltic Fury turn 3, Tacview `Tacview-20260816-104955`, session `c86c58dd`; 3 of 4 pass clauses verified — **38 aircraft airborne at spawn** both sides (CAPs mid-station at 31k ft, escorts mid-route, the pre-roll-launched strike already enroute at 21k ft), war clock read 00:40 (the ACMI ReferenceTime), first recovery T+22.6m, zero parking-overflow symptoms in dcs.log. Outstanding: the SEATED clause — player startup at the briefed time with full ground ops after the auto pre-roll (the qt_ui launch wiring) — needs the flown sortie from the app) (was ☐ UNTESTED, built 2026-08-15
 
@@ -4806,7 +4808,7 @@ version), take off normally.
   5. **Turn 0 differs at all from gate-off** — the curve's zero is not gating; the expectation
      is byte-identical.
 
-### B57 — Living battlespace P2: ramp residue + clean-wing returners · §89 · ☑ VERIFIED
+### B57 — Living battlespace P2: ramp residue + clean-wing returners · §89 · ⊘ RETIRED
 
 **2026-08-17 — VERIFIED on the DM's call.** Note for anyone re-reading this: the 2026-08-17 Syria mission (`Test 6`) is NOT evidence either way — its `.miz` contains no parked residue at all (every blue group carries a flown route), so nothing on that mission could have shown this working or broken.
 
@@ -4850,7 +4852,7 @@ Needs a flight: same setup as B56 (gate on, turn 3+), plus a look at the F10 map
      broke (the ledger records the arrival at completion time precisely so an order placed
      while the sim is paused cannot teleport already-landed jets).
 
-### B58 — Living battlespace P3: follow-on waves + pre-roll briefing · §89 · ☑ VERIFIED
+### B58 — Living battlespace P3: follow-on waves + pre-roll briefing · §89 · ⊘ RETIRED
 
 **History:** 2026-08-16, spectator watch, Tacview `Tacview-20260816-104955`, session `c86c58dd` — the briefing block rendered with plausible counts ("Friendly: airborne 4, recovered 0, lost 3 / Enemy: airborne 8, lost 3 (assessed)", carried in the ACMI's own Comments field); waves activated AND flew at T+10.6m (carrier escorts), T+21.1m (a red Tu-95 3-ship) and T+32m (Hinds); activity continuous through the 96-minute watch; no parking exhaustion (0 overflow lines in dcs.log). The deep tail past a player egress follows from the same timers) (was ☐ UNTESTED, built 2026-08-15) (**2026-08-16 addendum, session `adoring-jepsen-b63803`:** that watch's `recovered 0` was the B57 structural starvation, not a real count — completed flights leave the ATO mid-march, so the walk-only count read 0 no matter what finished; the count now also reads the residue ledger, test-pinned. The rendering verification stands; the recovered figure re-checks itself on the next B57 pass
 
@@ -4885,7 +4887,7 @@ shutdown (or watch the F10 map / Tacview tail).
 
 **Retired 2026-08-18** — the feature was removed on the DM's call ("the AI already uses the radio"), so there is nothing left to fly. It never got an in-game pass; it armed 48 scheduled calls on the 2026-08-17 Syria mission and whether any of them played was never established. See `414th-features.md` §89 P4.
 
-### B60 — Living battlespace P5: reactive red · §89 · ✗ REGRESSED
+### B60 — Living battlespace P5: reactive red · §89 · ⊘ RETIRED
 
 **Test 12 flown 2026-08-20 (Persian Gulf turn 1, `Tacview-20260820-203540` + `retribution_nextturn.miz` + `state.json`, session `a6e32389`) — the reaction can never launch: the generated group is uncontrolled, not late-activated, and `Group.activate()` is a no-op on it.** Everything upstream of the launch worked. Two alert flights were fragged and emitted (`Reaction Alert Bandar Abbas Intl BARCAP|34|45|F-5E Tiger II|`, `Reaction Alert Shiraz Intl BARCAP|34|44|F-4E Phantom II|`), six objectives were watched, and three of them lost units well inside the mission — MEERKAT's Shilka at t≈1360, KATYDID's whole SA-2 site at t≈1374, DUCK's Fire Can at t≈1413. With `reactionDelaySec = 420` the first launch was owed at t≈1780 and the mission ran to t=2580. **Neither alert flight moved one metre; both sit in the Tacview at their ramp position with a single t=0 sample.**
 

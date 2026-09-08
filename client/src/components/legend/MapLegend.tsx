@@ -89,11 +89,6 @@ const ROWS: Row[] = [
     signature: mapStrokes.pilotPow,
     label: "POW — held at an enemy field",
   },
-  {
-    color: mapColors.mine,
-    signature: mapStrokes.minefield,
-    label: "Minefield (your own)",
-  },
   { color: mapColors.routeFriendly, kind: "line", label: "Convoy route: friendly" },
   { color: mapColors.routeEnemy, kind: "line", label: "Convoy route: enemy — interdict" },
   { color: mapColors.routeContested, kind: "line", label: "Convoy route: contested" },

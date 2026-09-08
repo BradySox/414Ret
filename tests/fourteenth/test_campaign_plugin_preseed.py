@@ -35,12 +35,14 @@ def test_red_tide_preseeds_the_vietnamops_plugin_for_artillery_harassment() -> N
     assert settings["plugins"]["vietnamops"] is True
 
 
-def test_red_tide_preseeds_the_commsjam_plugin_for_enemy_comms_jamming() -> None:
+def test_red_tide_does_not_preseed_the_removed_comms_features() -> None:
+    # §51 and §70 were abandoned 2026-09-07. A preseed naming either would name a
+    # setting that no longer exists, which nothing else in this file can catch.
     settings = _campaign_settings()
-    assert settings["enemy_comms_jamming"] is True
-    # §51's runtime lives in the commsjam plugin -- same saved-default-off trap
-    # as the vietnamops harassment above.
-    assert settings["plugins"]["commsjam"] is True
+    for key in ("enemy_comms_jamming", "comint_collection", "red_comms_net"):
+        assert key not in settings, key
+    for plugin in ("commsjam", "rednet"):
+        assert plugin not in settings["plugins"], plugin
 
 
 def test_red_tide_preseeds_the_redscramble_plugin_for_the_host_menu() -> None:
@@ -77,8 +79,9 @@ def test_red_tide_enables_convoy_ambushes_without_a_plugin() -> None:
     assert "convoyambush" not in settings["plugins"]
 
 
-def test_red_tide_does_not_preseed_the_shelved_minefields_feature() -> None:
-    # §57 is SHELVED (2026-07-30) -- Red Tide must not preseed it back on.
+def test_red_tide_does_not_preseed_the_removed_minefields_feature() -> None:
+    # §57 was REMOVED 2026-09-07. A preseed naming it would now name nothing, which
+    # the declared-option test below cannot see because the plugin is gone entirely.
     settings = _campaign_settings()
     assert "air_droppable_minefields" not in settings
     assert "auto_plan_minefields" not in settings

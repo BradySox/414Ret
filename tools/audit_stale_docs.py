@@ -278,6 +278,42 @@ REMOVED: tuple[Removed, ...] = (
         allow=("removed", "no longer", "proven"),
     ),
     Removed(
+        # S70. Not a bare "COMINT" alone -- it is also an English word for the
+        # discipline, and a campaign brief may use it historically.
+        "COMINT collection and the red comms net (S70)",
+        "2026-09-07",
+        r"comint_collection|red_comms_net|red_net_max_stations|\brednet\b"
+        r"|COMINT block|tasking leak|DF-able|enemy radio net",
+        allow=("removed", "no longer", "historical", "abandoned"),
+    ),
+    Removed(
+        # S89. All five slices. The bare words "pre-roll" and "residue" are too
+        # common to match on their own.
+        "the living battlespace (S89)",
+        "2026-09-07",
+        r"living_battlespace|\breactivered\b|reactive red|living battlespace"
+        r"|recovery residue|follow-on waves|pre-roll (ceiling|briefing)",
+        allow=("removed", "no longer", "historical", "abandoned"),
+    ),
+    Removed(
+        # S51. Not a bare "jamming": S77 escort jamming, S86 GPS jamming and the
+        # C-130 EW platform are all live and all use the word.
+        "enemy comms jamming (S51)",
+        "2026-09-07",
+        r"enemy_comms_jamming|JAM BACKUP|commsjam|comms[ -]jam"
+        r"|steps? on (your|the briefed) radios",
+        allow=("removed", "no longer", "historical", "abandoned"),
+    ),
+    Removed(
+        # S57. A bare "minefield" is too broad -- the COIN IED note uses the word to
+        # say what an IED ratline is NOT, and that sentence is still correct.
+        "air-droppable minefields (S57)",
+        "2026-09-07",
+        r"air_droppable_minefields|auto_plan_minefields|Aerial Minefield"
+        r"|minefields_state|\bminefields\b plugin|mining sortie",
+        allow=("removed", "no longer", "historical", "abandoned"),
+    ),
+    Removed(
         "Flight Control ATC (S13)",
         "2026-06-26",
         r"Flight Control ATC|`flightcontrol`",

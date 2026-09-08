@@ -36,8 +36,6 @@ before the flight plan:
 - **LOADOUT** — a one-line summary of what you are actually carrying.
 - **SAR** — the if-down drill, written to match the real Combat SAR model: evade toward friendly
   lines, capture risk climbs the deeper you went down, rescue tracks your last known position.
-- **JAM BACKUP** — when enemy comms jamming is active, the clean backup UHF channel, printed next
-  to the PUSH / SUCCESS / ABORT code words.
 
 The flight plan below it carries a **Fuel** column — planned fuel remaining at each steerpoint —
 and a one-line **RTB margin** call-out, amber when the margin goes negative. A patrol flight also

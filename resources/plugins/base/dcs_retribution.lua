@@ -10,7 +10,6 @@ unit_lost_events = {} -- killed units will be added via S_EVENT_UNIT_LOST
 kill_events = {} -- killed units will be added via S_EVENT_KILL
 base_capture_events = {}
 destroyed_objects_positions = {} -- will be added via S_EVENT_DEAD event
-minefields_state = {} -- §57 minefields plugin appends/updates {id=, x=, z=, radius=, charges=} per field it managed this mission (persisted + newly laid); Python reconciles at debrief to carry undisturbed fields across turns
 cruise_missiles_state = {} -- §63 cruisemissiles plugin appends/updates {group=, fired=} per ship group that launched cruise missiles this mission; Python debits the persisted campaign magazine at debrief
 naval_magazines_state = {} -- §81 navalmagazines plugin appends/updates {group=, fired=} per naval group that fired ANTI-SHIP missiles this mission (a disjoint weapon set from cruise_missiles_state); Python debits the persisted campaign magazine at debrief
 ejection_events = {} -- {unit=<aircraft unit name>, x=, z=} added via S_EVENT_EJECTION
@@ -125,7 +124,6 @@ function write_state()
         ["mission_ended"] = mission_ended,
         ["destroyed_objects_positions"] = destroyed_objects_positions,
         ["intercept_survivors"] = intercept_survivors or {},
-        ["minefields_state"] = minefields_state or {},
         ["cruise_missiles_state"] = cruise_missiles_state or {},
         ["naval_magazines_state"] = naval_magazines_state or {},
         ["ejection_events"] = ejection_events,

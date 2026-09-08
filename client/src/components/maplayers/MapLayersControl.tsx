@@ -19,7 +19,6 @@ import FlightPlansLayer from "../flightplanslayer";
 import FrontLinesLayer from "../frontlineslayer";
 import Iadsnetworklayer from "../iadsnetworklayer";
 import DownedPilotsLayer from "../downedpilotslayer";
-import MinefieldsLayer from "../minefields";
 import NavMeshLayer from "../navmesh/NavMeshLayer";
 import SupplyRoutesLayer from "../supplyrouteslayer";
 import {
@@ -43,7 +42,6 @@ type LayerId =
   | "aircraft"
   | "combat"
   | "supplyRoutes"
-  | "minefields"
   | "downedPilotsBlue"
   | "downedPilotsRed"
   | "frontLines"
@@ -104,9 +102,6 @@ const OVERLAYS: Record<LayerId, { label: string; node: ReactNode }> = {
   // labelled near-identically ("Supply routes" / "Supply status") and were
   // indistinguishable from the panel (2026-07-18 UI audit).
   supplyRoutes: { label: "Convoy routes", node: <SupplyRoutesLayer /> },
-  // §57 air-dropped minefields (BLUE-only). Empty unless air_droppable_minefields is
-  // on, so the layer is a no-op everywhere else even while toggled on.
-  minefields: { label: "Minefields", node: <MinefieldsLayer /> },
   // Downed aviators awaiting CSAR (upstream #929). Blue and red get independent
   // overlays. Empty when nobody is down, so each is a no-op on a quiet campaign
   // even while toggled on.
@@ -267,7 +262,7 @@ const GROUPS: GroupDef[] = [
     key: "logistics",
     title: "Logistics",
     defaultOpen: true,
-    rows: [{ id: "supplyRoutes" }, { id: "minefields" }],
+    rows: [{ id: "supplyRoutes" }],
   },
   {
     key: "airdef",
@@ -353,7 +348,6 @@ const DEFAULT_ON: LayerId[] = [
   "ships",
   "otherGround",
   "supplyRoutes",
-  "minefields",
   "frontLines",
   "downedPilotsBlue",
   "enemySamThreat",

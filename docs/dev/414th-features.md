@@ -5534,123 +5534,28 @@ Tests: `tests/campaignloader/test_self_binding_supply_route.py` (the loader guar
 plus the corridor guards and the empty-path contract pin in `test_ambient_convoys.py` /
 `test_vietnam_convoy.py`.
 
-## §51 — Enemy comms jamming (IADS comms nodes)
+## §51 — Enemy comms jamming (IADS comms nodes) — REMOVED (2026-09-07)
 
-**The IADS comms nodes, given a voice.** The IADS data model has always carried communications nodes
-(`IadsRole.CONNECTION_NODE`, TGO category `comms` — the masts and bunkers MANTIS's C2-degradation graph
-watches), but their only gameplay was as silent connection glue. With `enemy_comms_jamming` on, every alive
-enemy comms / command-center node becomes a **standoff comms jammer**: duty-cycled barrage noise transmitted
-on a rotating subset of the BLUE side's *briefed* radio channels, so the interference arrives in the
-player's headset and the strike that silences it is the same strike that degrades the IADS.
+The `commsjam` plugin, `commsjamluadata.py`, the `enemy_comms_jamming` setting, the JAM
+BACKUP kneeboard line and both campaign preseeds are deleted.
 
-**The jamming is unconditional on an alive C2 node.** It was intel-driven until 2026-08-07 — red could
-only jam channels it had learned from a captured aircrew's comms plan — but that gate rode the fork's own
-Combat SAR, and it went with §21. See "The intel gate" below.
+What it was: every alive enemy comms / command-center node transmitted duty-cycled barrage
+noise on a rotating subset of BLUE's briefed channels, via `trigger.action.radioTransmission`
+from the node's map position, so DCS's own power/distance falloff made it worst near the C2
+belt. Audio pressure only — no force-model change; the strike that silenced it was the
+ordinary IADS strike.
 
-### No SRS dependency — the transmission is DCS-native
+Constraints kept out of the deleted design note:
 
-The delivery mechanism is `trigger.action.radioTransmission` from the node's campaign-map position:
+- **GUARD and ATC were never jammed.** Anything that transmits on a player's briefed channels
+  keeps that positive-list rule — stepping on 243.0 is not a game mechanic.
+- **No SRS dependency is needed.** SRS tunes off the cockpit radios, so the in-game radio path
+  already reaches SRS users. Injecting into the SRS network needs a server-side install and a
+  process per transmission, and buys nothing. §70's net was built on the same finding.
 
-- **Real power/distance falloff.** DCS models transmitter power and range natively — the jamming is worst
-  deep in enemy territory near the C2 belt and fades toward friendly airspace. No line drawn in Lua.
-- **SRS users hear it anyway.** SRS tunes off the cockpit radios, so a player sitting on 251.0 in SRS is
-  tuned to 251.0 in the jet — the looping static on that frequency plays through DCS's own radio path.
-  Injecting audio into the actual SRS network (SRS-ExternalAudio.exe, MOOSE MSRS) was considered and
-  **dropped**: it needs a server-side install, spawns a process per transmission, and buys nothing the
-  in-game path doesn't already deliver.
-- The noise file is `commsjam-noise.wav` (synthesized shaped static, committed in the plugin dir), injected
-  into the miz via the plugin's `otherResourceFiles` and referenced as `l10n/DEFAULT/commsjam-noise.wav`.
-
-### What gets jammed (positive list, never GUARD/ATC)
-
-Python owns the target list (`_blue_briefed_frequencies`): the blue flights' **intra-flight channels**
-(human-crewed flights first, then AI) plus the blue **AWACS/GCI** freqs, deduped, GUARD (243.0 / 121.5)
-defensively filtered, capped at `MAX_JAMMED_FREQUENCIES` (10). ATC, ATIS and tanker channels are never
-listed **by construction** — ground ops and emergencies stay clean (the §36 anti-grief bar, applied to
-audio). The plugin then steps on only `maxFreqsPerBurst` (3) channels per burst cycle, rotating the window,
-so coordination is pressured but never fully denied — and switching to a channel the jammer isn't currently
-on is real, dynamic comms discipline. **`maxChannels`** (plugin option, default 10) caps how many distinct
-channels are jammed *at all* — the Lua keeps the first N of the priority-ordered emit, so a low N pins the
-jamming to the top high-priority nets and leaves the rest of the briefed net clean. Paired with a long
-`burstSec` + short `intervalSec` it turns the duty-cycled sweep into near-continuous pressure on a few
-channels; Red Tide preseeds `burstSec 120 / intervalSec 10 / maxChannels 3 / powerW 10000` (`powerW` is
-**reach**, not volume — DCS models the RF falloff, so it sets how far from the node the interference is
-receivable, not how loud it is; loudness is the audio clip, limited to ~-4 dBFS RMS so it's a dense wall of
-static in the cockpit).
-
-**The JAM BACKUP channel closes the loop:** the planner allocates one fresh UHF frequency from the same
-`RadioRegistry` every briefed channel came out of (so nothing else uses it and it can never be jammed),
-re-rolling past the freak allocator-reuse collision, and publishes it as a `JAM BACKUP` line in the
-kneeboard **Mission Info BLUF** — next to the `PUSH / SUCCESS / ABORT` code words (comms-plan data), not
-the Support Info package table where it borrowed the viewing flight's Type/#A/C columns and read as a
-phantom flight (+ echoed in the first-burst cue). Pushing the package to the backup is a briefed play,
-not a mystery.
-
-### The intel gate: capture-gated jamming — REMOVED 2026-08-07 with §21
-
-`comms_jam_requires_capture` held the jammer's fire until red actually held a captured pilot's comms
-plan, coupling §51 to the Combat SAR capture race: a live mid-mission capture polled the `combatsar`
-plugin's `combat_sar_captures` global and started the burst loop after `captureReactionS`, while a POW
-held across turns (`Coalition.pending_pow_recoveries`) opened the mission already compromised. Replacing
-the fork's Combat SAR with upstream #929 took every one of those away — the setting, the state global,
-the POW attribute and the plugin's capture watch are all gone, and `plan_comms_jam` now gates on nothing
-but `enemy_comms_jamming`, a live comms/command-center node, and at least one briefed blue frequency.
-
-**DM call 2026-08-21: it stays unconditional.** Upstream #929 does hold POWs, so a rebuilt gate could
-read that ledger — it is not being rebuilt. The `captureReactionS` option in
-`resources/plugins/commsjam/plugin.json` was the last orphan the gate left behind (zero readers in the
-Lua, still drawn in the plugin options UI) and is removed. `game/coalition.py`'s `__setstate__` pop of
-`pending_pow_recoveries` **stays** — that pop is the migration, not a leftover.
-
-The C2 node was always the transmitter and still is: no alive comms/command-center node ⇒ no jamming, and
-killing it silences the mission.
-
-### Who jams, and how it dies
-
-`_enemy_jammer_nodes` lists every alive enemy TGO of category `comms` / `commandcenter` (the same objects
-the MANTIS C2 graph watches — never SAMs, never EWRs, never generic buildings), emitting the **unit names**
-per the MANTIS naming convention. The plugin's death detection is the MANTIS `node_dead` pattern verbatim:
-a node counts as dead only on *positive evidence* — a placed static (`<name> object`) that existed and no
-longer `:isExist()`, or its name in the global `dead_events` ledger (bare-name matched). A culled /
-never-spawned node reads ALIVE, which is correct: it can't be killed this mission, and the standing
-pressure is what motivates fragging a strike at it next turn (which un-culls it). Each burst cycle rotates
-the transmitting node across the alive jammers; once every emitted node is positively dead the plugin stops
-scheduling and (if jamming had been announced) cues "comms jamming has ceased."
-
-**Audio pressure ONLY** — the §36/§49 discipline: no force-model change, the plugin owns no kills. Killing
-the node is an ordinary strike on an ordinary IADS TGO, recorded natively, with its existing IADS
-consequence (MANTIS C2 degradation) untouched.
-
-### Files & tests
-
-| Area | Path |
-|---|---|
-| Planner + emitter | `game/missiongenerator/commsjamluadata.py` (`plan_comms_jam` → `MissionData.comms_jam`, `populate_comms_jam_lua`); planned in `missiongenerator.py` before the Lua pass, emitted in `luagenerator.py` after the convoy-ambush emitter |
-| Kneeboard | `missiongenerator.py` registers the `JAM BACKUP` channel on the generator (`add_comm(JAM_BACKUP_COMM_NAME, …)`) when a plan with a backup exists; `kneeboard.py` `_bluf_lines` surfaces it as a **Mission Info BLUF** line and filters it out of the **Support Info** comms ladder (so it never reads as a phantom flight). `JAM_BACKUP_COMM_NAME` (in `commsjamluadata.py`) is the shared label so producer and consumers can't drift |
-| Runtime | `resources/plugins/commsjam/` (`plugin.json` + `commsjam-config.lua` + `commsjam-noise.wav`; registered in `plugins.json`) |
-| Settings | `game/settings/settings.py` (`enemy_comms_jamming`, default **OFF**; `comms_jam_requires_capture` — the intel gate, default **ON** — both Mission Generation → Battlefield life) |
-| Tests | `tests/missiongenerator/test_commsjamluadata.py` (plan ordering, GUARD filter, cap, backup collision re-roll, intel-gate flags, emit shape, gates); `tests/missiongenerator/test_kneeboard_bluf.py` (the JAM BACKUP BLUF line present-with-backup / absent-without); `tests/lua/test_commsjam_runtime.py` (grace, burst/stop/rotation, dead-jammer silence via both death paths, ceased cue, intel-gate dormancy/live-capture/POW-story/red-capture-ignored/watch-bail, no-node no-op) |
-
-### Gotchas / deferred
-
-- **Plugin dependency (the §36 lesson).** The runtime is the `commsjam` plugin; a saved default of it
-  unticked silently kills the setting. Red Tide preseeds `enemy_comms_jamming: true` **and**
-  `plugins: {commsjam: true}` (guarded in `tests/fourteenth/test_campaign_plugin_preseed.py`).
-- **Needs comms/command-center TGOs to exist.** A campaign whose laydown fields no `comms`/`commandcenter`
-  category objects emits nothing and the feature silently no-ops — correct (no C2, no jammer), but worth
-  knowing when preseeding it elsewhere. Red Tide's `advanced_iads` range mode wires them per base.
-- **Burst timing is wall-clock, not tactical.** The jammer doesn't react to what the player is doing —
-  bursts are a jittered cadence. A reactive jammer (step on a channel *when it's in use*) needs a radio
-  event DCS doesn't expose; out of scope.
-- **BLUE-victim only.** The target list is blue's briefed channels; red AI doesn't care about audio.
-  A symmetric blue jammer already exists as the §2 C-130J EW platform's radar side — extending it to
-  comms is a possible follow-up.
-- **The "rotation" at POW-clock expiry is a gameplay mercy.** Squadrons with authored `radio_presets` keep
-  the same intra-flight channel across turns, so red "forgetting" the plan when the POW is written off is
-  fiction; actually re-rolling compromised presets the turn after a capture is the honest follow-up
-  (deferred, see the design note).
-- **NEW game not required** (no persisted state; the plan is rebuilt every generation), but the Red Tide
-  preseed only applies to a NEW campaign.
+The intel gate that made jamming conditional on a captured aircrew's comms plan died earlier,
+with §21 on 2026-08-07. In git history at
+`git show c08b85de2:docs/dev/design/414th-comms-jam-notes.md`.
 
 ## §52 — Command-center decapitation degrades enemy planning
 
@@ -5964,19 +5869,24 @@ should now also confirm the garage lands on its authored marker.
 
 ---
 
-## §57 — Air-droppable minefields (convoy interdiction) — SHELVED (2026-07-30)
+## §57 — Air-droppable minefields (convoy interdiction) — REMOVED (2026-09-07)
 
-**Shelved, not removed — the code is retained and resumable.** The `minefields` plugin, the
-`air_droppable_minefields` / `auto_plan_minefields` settings and `game/fourteenth/minefields.py`
-are all still in the tree and inert.
+Shelved 2026-07-30, abandoned 2026-09-07. The `minefields` plugin,
+`game/fourteenth/minefields.py`, `convoy_mining.py`, `minefieldluadata.py`, the
+`minefields_state` debrief channel, the map layer and both settings are deleted.
 
-DCS has no air-droppable mine, so CBU-99 releases over a road were faked into a mined zone that
-damaged convoys entering it. That works, and the reason it stopped is that the fake is visible:
-the cluster munition detonates normally and the mining is a separate scripted effect keyed off
-the release point, so what the player sees and what the campaign records are two different
-events.
+Why it stopped: DCS has no air-droppable mine, so CBU-99 releases over a road were faked
+into a mined zone that damaged convoys entering it. That works, and the fake is visible —
+the cluster munition detonates normally and the mining is a separate scripted effect keyed
+off the release point, so what the player sees and what the campaign records are two
+different events. Thirteen months shelved settled whether it was worth fixing.
 
-An in-game pass is still owed if it is ever resumed. See `414th-minefields-notes.md`.
+Constraint kept out of the deleted design note: the mines killed **real, tracked convoy
+units** and the losses recorded natively. That is the "never spawn phantom units" rule, and
+it still binds §35, §37 and §50.
+
+Both settings are swept as obsolete keys, so an old save loads. In git history at
+`git show c08b85de2:docs/dev/design/414th-minefields-notes.md`.
 
 ## §58 — Mission-start briefing popup
 
@@ -6932,160 +6842,29 @@ pass (Tacview: AI strikes arrive after their SEAD is on station, not before).
 
 ---
 
-## §70 — COMINT collection (blue-side communications intelligence)
+## §70 — COMINT collection (blue-side communications intelligence) — REMOVED (2026-09-07)
 
-**What it is.** The blue-side mirror of §51: red already exploits a captured aircrew's
-comms plan (the capture-gated comms jam); this gives blue its own collection against red.
-DCS cannot intercept real communications — AI traffic isn't RF and no transmission event
-exists (the §51 note's "not buildable" finding) — so COMINT is a **presentation-and-gating
-layer over ground truth the engine already knows**, the §3 recon-fog shape. Design note
-`docs/dev/design/414th-comint-notes.md`; this section is its **C0** (the campaign take —
-pure Python, no `.miz`/Lua/DCS). C1 (the audible UHF red net) and C2 (the
-clandestine-transmitter DF hunt) build on it.
+All of it: the collection tiers, the tasking leak, the concealed-site reveal, the kneeboard
+COMINT block and the audible/DF-able red UHF net. `game/fourteenth/comint.py`,
+`rednetluadata.py`, the `rednet` plugin, the three settings and the Desert Storm and
+Marianas 2027 preseeds are deleted.
 
-**Sources & tiers** (`game/fourteenth/comint.py`). The enemy's emitting net = alive red
-`comms`/`commandcenter` TGOs (the same objects §51 transmits from and §52 decapitates —
-killing one degrades red's planning AND dries up this take: bomb-it-or-tap-it, emergent,
-never special-cased) plus alive **concealed COIN spawns** (insurgents field no IADS comms
-but run on radios — so the take works on the front-less COIN laydowns). Tier 0 — no alive
-sources: no product ("Enemy C2 net silent"). Tier 1 — sources alive: the ambient national-collection take (net-up presence; the §55 posture-detail
-earn that once rode Tier 1 is gone with §55's removal 2026-07-21). Tier 2 — a **collector flew last
-mission and survived**: `record_comint_collection` (a `MissionResultsProcessor.commit`
-step before `record_sitrep`) stamps `game.comint_collected_turn` when a blue
-`FlightType.JAMMING` flight (§2 C-130J) **or any drone** (`UAV_DCS_IDS` — "a drone is
-always listening", the §3 always-filming rule; era self-limits since drone-less campaigns
-field none) has surviving members (`air_losses.surviving_flight_members` — the `airecon`
-one-shot precedent: a shot-down collector banks nothing). Tier 2 is
-`comint_collected_turn == game.turn - 1` (commit runs before the turn increments).
+What it was: while the enemy C2 net was emitting, blue drew an ambient take; a collection
+sortie (a §2 JAMMING orbit or any drone) that came home unlocked Tier 2 next turn — one
+intercepted enemy tasking and one suspected-activity circle snapped to exact. The same C2
+nodes were both the intel source and a strike target, so bombing them cost you the take.
 
-**The Tier-2 products.** (1) **Tasking leak** (`comint_leak_line`, built at kneeboard
-generation when red's ATO for THIS mission is final): the most threatening red offensive
-package — class rank Strike > OCA/Runway > OCA/Aircraft > BAI > Anti-ship, then mass, then
-target name (a pure sort, no RNG, so mission re-generation never rerolls the leak) —
-coarsened to class + size band + objective name + TOT ± 30 min (the §5
-approximate-precision spirit: honest but coarse). (2) **Reveal** (`apply_comint_reveal`,
-an `initialize_turn` hook): snaps ONE concealed enemy site to
-exact via the normal discovery flip (`discovered_by_player` → `known_for`, +
-`events.update_tgo`) — eligible = the dashed-circle population (flag-`concealed` COIN
-spawns — the §3 category-concealable field forces went with that layer, 2026-08-18),
-not already known to blue, within `COMINT_REVEAL_RANGE_M` (60 km) of an alive source (the
-fiction: the site's own chatter gave it away, so a silent corner of the map stays dark);
-**`map_hidden` is never eligible** (the §50 ambush teams stay untelegraphed
-unconditionally); pick = nearest-to-a-source (deterministic); idempotent under
-initialize_turn's re-init cases via a per-turn stamp (`comint_reveal_turn`) — without it a
-cheat-capture re-init would find the first pick already discovered and snap a second
-site. Announced via `game.message` + the kneeboard line (`comint_reveal_note`).
+Constraints kept out of the deleted design note:
 
-**Surface.** A **COMINT block on the Mission Info kneeboard page**, rendered right under
-the §29 SITREP band (the §30 rule — new kneeboard info folds into stock pages): the tier
-status ("Enemy C2 net silent — no COMINT take." / "Enemy net active: N emitter(s) up." +
-"Ambient take only…" / "Collection sortie banked a full take last mission:"), the leak
-line, and the localized-site line. `KneeboardGenerator._briefing_comint` →
-`BriefingPage(comint_lines=…)`. Python-only; no client rebuild (the §55 surfacing pattern
-— a web intel surface is deferred with the design note's later phases).
+- **The reveal was player-facing only.** It flipped a site to exact on the human's map and
+  planning never read it — the §3 viewer discipline. Anything that hands blue a find keeps
+  that separation, and gates on the fog (`fogofwar.hidden_from`), never a bare leaf.
+- **Net frequencies were held 100 kHz clear of every briefed channel.** A transmitter beside
+  a briefed channel is indistinguishable from a broken comms plan.
+- **Windows recur with silence between**, so a net reads as traffic rather than a beacon.
+  A continuous carrier is a homing beacon, which is a different (and easier) game.
 
-**Zero planner coupling, zero force-model change.** The blue AI already plans on ground
-truth (§3 `viewer=None` discipline) — everything here informs the human only; kills stay
-native (§36/§49/§51 discipline). BLUE-only product (red's COMINT already exists as §51's
-capture gate). Gated `comint_collection` (Campaign Management → Campaign features, default
-**OFF**); OFF is an exact no-op. **No Red Tide preseed** (the feature lock, effective
-2026-07-17); post-M2 candidates: Red Tide (the 9-node destroyable C2 net §52 keys on) +
-both COIN campaigns. State on `Game` (`comint_collected_turn` / `comint_reveal_turn` /
-`comint_reveal_note`), all read getattr-guarded so pre-§70 saves load clean.
-
-**C1 — the audible red net (LANDED 2026-07-18, same day).** The same C2 nodes now
-*transmit*. With `red_comms_net` on (Mission Generation → Battlefield life, default
-**OFF**), `plan_red_net` (`game/missiongenerator/rednetluadata.py`, run in the §51 plan
-slot with the mission `RadioRegistry`) assigns each transmitting enemy comms/CC node a
-**deterministic UHF AM net frequency**: seeded from the node name (crc32 — stable across
-missions, so the net lives at the same spot on the dial) at **x.500 MHz**, GUARD's slot
-skipped, and collisions linearly probed in sorted-name order. The plan rides `MissionData.red_net`;
-`populate_red_net_lua` emits `dcsRetribution.redNet`. The `resources/plugins/rednet/`
-runtime (plugin `defaultValue` ON — the §36 saved-default-off lesson) keys each node's net
-in **windows**: a looped, original synthesized CW clip (`rednet-cw.wav`, "VVV 414 414 K"
-morse at 750 Hz — synthesized from scratch, zero copyright exposure; bundled via
-`otherResourceFiles` so it rides `l10n/DEFAULT/`, the §58 silent-fail lesson) via a named
-`radioTransmission` for `windowSec` (45 s), stopped, then silence for a jittered `gapSec`
-(240 s mean) — traffic patterns, not a beacon wall, and a DF needle only points while
-they're on the air. First windows are **staggered across one gap** (the §49 same-frame
-lesson); node death uses the vendored MANTIS `node_dead` convention, so a killed node goes
-off the air mid-mission. `powerW` (10 000) is range, not loudness (§51). Tune the freq and
-you hear the enemy; the call-#4 DF fleet (F-4E, F-14 ARC-182 DF, F/A-18C UFC ADF, F-5E)
-can home on an open window. Node freqs are logged at arm (`REDNET|: armed …`) — the
-tester's findability aid until C2's active-nets listing lands.
-
-**C2 — the clandestine-transmitter hunt + the findability tie (LANDED 2026-07-18, same
-day).** Two halves. **(1) Clandestine stations**: the emitter's node walk now carries the
-§70 source definition in full — alive **concealed COIN spawns** (`coin_spawned` +
-`concealed`: cells, IED teams, the HVT convoy — an insurgency runs on radios) transmit as
-**clandestine** stations, as does any authored *concealed* comms TGO; `map_hidden` (the
-§50 ambush teams) is hard-excluded from both the emitter AND `comint_sources` — nothing
-telegraphs them, anywhere. A clandestine station keys the **hunt schedule** (plugin
-options `clandestineWindowSec` 20 s / `clandestineGapSec` 480 s): short windows, long
-silence — catch one on the air and DF it or wait out the next; its §3 suspected-activity
-circle is the search area and the needle cut is how the circle becomes a fix. Because the
-stations are ordinary TGOs, everything composes free: killing one is a native kill that
-feeds §51/§52/the §70 take. The COIN campaigns field this with **zero authoring** (the
-spawns are the transmitters); an authored static field-site (comms truck + mast +
-security team) stays deferred until a campaign wants one — it only needs a loader
-convention for flagging a comms TGO `concealed`. **(2) The active-nets listing** (the A↔B
-findability tie, the §37/§38 bar): the COMINT kneeboard block (Tier ≥1) now **briefs each
-transmitting net** — fixed C2 stations by name + frequency + area; a clandestine station
-as exactly what the SIGINT shop would know ("suspected clandestine net @ 251.500 —
-Kandahar area" — never the TGO's identity or position), capped at `MAX_LISTED_NETS` (5)
-with a "+N more" tail. The plan threads `MissionData.red_net` →
-`KneeboardGenerator(red_net=…)` → `comint_kneeboard_lines(game, red_net)`; no listing
-when B is off (each feature degrades gracefully alone, designed to pair).
-
-**Band discipline — the station cap + the guard band (2026-08-02, off the flown "COMINT is
-bleeding into mission frequencies" report).** C1 shipped on a claim that turned out to be
-half true: **x.500 MHz is only off-limits to the *inter-flight* allocator**. `BLUFOR_UHF`
-steps a whole MHz, but per-flight aircraft radios (`alloc_for_radio`, e.g. AN/ARC-164
-225–400 @ **25 kHz**), field ATC, and ATIS all allocate on the 25 kHz grid — on which
-x.500 and both its neighbours are perfectly ordinary slots. So "collision-free by
-construction" was never true; the only thing holding the line was that `plan_red_net` runs
-late and probed past an **exact** `ChannelInUseError`, which still left a net free to key
-up **one 25 kHz detent** off a briefed channel — and left anything allocated *after* the
-plan (ATIS runs later) free to park beside a carrier. Two fixes, both in
-`rednetluadata.py`:
-
-* **The station cap.** Every red C2 TGO plus every concealed COIN spawn was a
-  transmitter — a KARI-style IADS (DS91: comms/power relays at *every* red base) or a COIN
-  laydown is dozens of carriers across 225–400, which is the "bleeding" as experienced.
-  `red_net_max_stations` (Mission Generation → Comms war, default **3**, min 1 / max 12,
-  `enabled_when=red_comms_net`) caps who goes on the air; `_stations_on_the_air` picks by
-  **range to the nearest blue CP** (a net you can hear and DF earns a dial slot; one 400 km
-  in the rear is clutter), deterministic tie-break by name, with **one slot anchored per
-  kind** so a crowd of near cells can't push the fixed C2 net off the dial (or vice versa).
-  A theater with no blue position (headless fixtures) falls back to name order. Emission
-  order stays name-sorted, so frequencies are unchanged by which anchors won.
-* **The guard band.** `NET_GUARD_HZ` (100 kHz = four detents): a candidate is rejected
-  unless it clears **every** allocated frequency in the band by that margin — compared by
-  **hertz, modulation-blind**, since `RadioFrequency` equality includes modulation and an
-  AM/FM pair at the same hertz is one spot on the dial to a pilot — and on success
-  `_reserve_guard_band` reserves the carrier **plus every 25 kHz detent inside the band**,
-  closing it to every later allocator.
-
-The `red_comms_net` setting detail, the plugin description, and the runtime header all
-dropped the "by construction" claim for the guard-band one.
-
-Tests: `tests/fourteenth/test_comint.py` (tier gating incl. the dead-net-beats-collector
-rule, the OFF exact no-op, the survivor requirement, drone eligibility, leak determinism +
-ranking, the reveal's nearest-pick/range/already-known/`map_hidden` rules + re-init
-idempotence, the posture-detail earn, the active-nets listing's identity-hiding + cap +
-absence without a plan, the map_hidden source exclusion) +
-`tests/missiongenerator/test_rednetluadata.py` (the freq plan: off-grid, GUARD skip,
-reservation, determinism, probing past both an exact hit and a one-detent neighbour, the
-reserved guard band, the station cap + its default + the nearest-blue pick + the
-per-kind anchor; COIN cells emit clandestine, concealed comms = clandestine,
-`map_hidden` never emitted, the area field) +
-`tests/lua/test_rednet_runtime.py` (grace, stagger, loop+stop windows, `node_dead`,
-no-op, the clandestine short-window/long-gap schedule alongside a fixed station).
-Checklist B22 — needs an in-app pass (the kneeboard block + nets listing render + the
-circle snap on the map); checklist B23 — needs an in-game pass (audibility, per-module DF
-needle behavior, death silence, the clandestine hunt).
-
----
+In git history at `git show c08b85de2:docs/dev/design/414th-comint-notes.md`.
 
 ## §71 — Expanded F-4E Weapons Pack (AGM-78/-88 Weasel fits)
 
@@ -9263,246 +9042,36 @@ Checklist: **B55**.
   a different shape for #865, reconcile to theirs.
 
 
-## §89 — Living battlespace pre-roll (P1)
+## §89 — Living battlespace — REMOVED (2026-09-07)
 
-Design: [414th-living-battlespace-notes.md](design/414th-living-battlespace-notes.md). P1 of the
-living-battlespace direction: phase-aware mid-cycle mission starts. The later slices (recovery
-residue, stores expenditure, follow-on waves, voice net, reactive red) are P2–P5 in the note.
+All five slices, abandoned entire. P4 (the synthesized blue voice net) had already gone on
+2026-08-18. Deleted: `game/fourteenth/living_battlespace.py`, `reactiveredluadata.py`, the
+`reactivered` plugin, the three settings, the briefing's pre-roll block and its template
+section, the recovery-residue ledger and ramp spawner, the follow-on window, the
+expended-stores and AI-fuel rules, and the auto fast-forward in `QTopPanel`.
 
-### Mechanism
+What it was: P1 seated the player's package a phase-aware distance into the turn's ATO cycle
+and simulated to engine start; P2 parked recovered flights on the ramp, emptied the racks of
+strikers spawned past their target and burned down the fuel of aircraft spawned en route; P3
+extended the spread's tail so packages launched as the player recovered, and printed the
+day's running score in the briefing; P5 held real red alert flights that scrambled a
+defensive patrol over an objective blue's own ATO had struck.
 
-The turn's ATO already launches across ~90 minutes (measured: 18 of 35 Baltic Fury turn-0
-flights take off inside the first 20); the player just launches at the front of it. P1 seats
-the player later and marches the existing simulation to their startup:
+Constraints kept out of the deleted design note:
 
-1. **Player pinning** — `game/fourteenth/living_battlespace.py::pin_player_packages`, called
-   from `MissionScheduler.schedule_missions` after the base TOT pass and **before** the §69
-   SEAD windows and the §8 carrier-recovery stagger, so both see the pinned TOTs. Each player
-   package is delayed until its earliest `flight_plan.startup_time()` sits `preroll_minutes`
-   past mission start. Delay-only: a package already starting later keeps its schedule, and
-   hand-planned packages are untouched (the pass only runs during auto-planning).
-2. **Phase curve** — `preroll_minutes(settings, turn)`: turn 0 → 0 (the H-hour launch is a
-   feature), turns 1–2 → 15 min, turn 3+ → `living_battlespace_preroll_cap` (default 40).
-   Strawman numbers — open call 1 in the note.
-3. **Auto pre-roll at launch** — `QTopPanel.launch_mission`: when the gate is on, the turn has
-   a pre-roll, and the user's fast-forward stop condition is DISABLED/MANUAL (which would skip
-   the march entirely), the existing `run_to_first_contact` runs under a temporary
-   `PLAYER_STARTUP` stop condition before generation. Users already running FIRST_CONTACT or a
-   PLAYER_* condition keep their own behavior.
-4. **Results** — pre-roll outcomes, including losses (measured ~5 of 35 flights per 40 min on
-   Baltic Fury), merge at debrief through the existing `merge_simulation_results` path.
+- **Reactive red never spawned a phantom.** The alert flights were claimed, tracked airframes
+  whose losses counted — the same rule that binds §35, §37 and §50.
+- **An `uncontrolled = true` group is already in the world with its engines off, and DCS's
+  `activate()` does nothing to it.** Assuming otherwise cost five days: reactive red could
+  never launch. `tests/lua/dcs_stubs.lua` still models this for every other plugin.
+- **Pre-roll combat resolved on the same odds as any other off-screen fight**, so its losses
+  were real. Anything that advances the war before the player spawns keeps that.
 
-Settings: `living_battlespace_preroll` (gate, default OFF) + `living_battlespace_preroll_cap`
-(5–90, default 40), Campaign Management → Campaign features, mirrored on the 414th Features
-page under Single-player flow.
+What survived the removal, and must not be reverted with it: the scheduler's `spread_ceiling`
+and `_spread_arrival` are **B99** work, not §89's — only the `followon_window_minutes` term
+was removed from the ceiling.
 
-### Interplay
-
-- **§69 / §8 ordering** — pinning runs first, so a player SEAD's coverage window moves with the
-  player and AI recoveries stagger around the pinned slot. Both later passes already treat
-  player packages as immovable.
-- **`auto_ato_player_missions_asap`** — pinning runs after the ASAP placement and overrides it
-  whenever the pre-roll is longer; the delay-only math keeps the two composable.
-- **MP** — every client spawns mid-cycle (stated in the setting detail). SP-first by decision;
-  MP entry criteria are open call 8 in the note.
-
-### Tests
-
-`tests/fourteenth/test_living_battlespace.py`: the curve (gate off, values, cap bounding), the
-pinning (delta math, earliest-flight selection, AI/later-start/empty-package no-ops, gate-off
-and turn-0 no-ops), and the launch trigger. The registry lock covers the §89 entry.
-
-### P2 — recovery residue + expended stores (2026-08-15)
-
-Same gate; three pieces, all no-ops with it off:
-
-1. **Recovery residue** — `AircraftGenerator._spawn_completed_residue`: a flight whose whole
-   cycle predates the player's startup parks its jets uncontrolled at its **arrival** field
-   via `FlightGroupSpawner.create_completed_aircraft` (the `create_idle_aircraft` shape
-   re-pointed at the arrival), painted, modexed, and **registered in the unit map** so a ramp
-   kill records against the real airframes. Declines with a log line when the arrival has no
-   parking. **The residue ledger (2026-08-16, row B57):** the sim's removal loop
-   (`aircraftsimulation.on_game_tick`) pulls every `Completed` flight out of its package at
-   the tick boundary, so generation's ATO walk only ever sees a completion from the final,
-   halt-interrupted tick — the original ATO-walk-only render was structurally starved (desk
-   check: zero `Completed` at generation across 40–150-minute marches; solo-flight packages,
-   most CAPs, could never render). The removal site now calls `record_completed_residue`
-   (`game/fourteenth/living_battlespace.py`), which freezes (flight, arrival) — frozen
-   because `Squadron.arrival` follows a live relocation order, and an order placed while the
-   sim is paused must not teleport already-landed jets — and `generate_flights` parks
-   ledger flights via `residue_flights_for(ato, settings)` after the tasked walk, before the
-   QRA/idle spawns, so parking priority is unchanged. The ledger is transient process state
-   on the `fogofwar.py` pattern: cleared at `begin_simulation`, never pickled.
-   Recorded-means-removed keeps ledger and walk disjoint (no duplicate airframes), and the
-   generation-time synthetic `Completed` flights (idle ramp, QRA and red-scramble templates)
-   never pass the removal site, so they stay out by construction. Airframe accounting nets
-   correct: removal returned the airframes to squadron inventory, and a ramp kill debits
-   `owned_aircraft` at debrief like any other loss. **The idle-filler debit is the second
-   half of that return, and is load-bearing:** because removal put the airframes back in
-   `untasked_aircraft`, `spawn_unused_aircraft` would render the very same jets a second time
-   as idle ramp filler. `_spawn_completed_residue` returns what actually parked,
-   `generate_flights` tallies it per squadron id into `AircraftGenerator.residue_airframes`,
-   and `_spawn_unused_for` spawns `idle_spawn_count(untasked, parked)` instead of the raw
-   pool. Only ledger flights are tallied — an ATO-walk residue flight still holds its
-   inventory claim, so debiting for it would under-spawn filler. **Carrier arrivals are deferred** — deck
-   residue interacts with the §64 spawn policy and §72 deck dressing; read those first.
-2. **Expended stores** — `FlightGroupConfigurator.setup_payload` skips non-pod pylons when
-   `stores_expended` says the flight is a strike-family task (`STRIKE/BAI/SEAD/DEAD/OCA_*/
-   ANTISHIP` — loiter-shaped A2G like CAS is deliberately excluded, its "target" waypoint is a
-   patrol anchor) in an in-flight state past its `tot_waypoint`. **v1 deviation, recorded:**
-   the design note said "keep A2A and tanks," but the tree has no A2A/tank weapon taxonomy
-   (`WeaponType` is ARM/LGB/pods/UNKNOWN), so v1 strips to a **clean wing plus pods**
-   (TGP/jammer/decoy survive). Enriching `resources/weapons` `type:` with AAM/TANK is the
-   refinement path — design-note open call 9.
-3. **Mid-air AI fuel** — `setup_fuel` wrote the state's burned-down fuel estimate only for
-   player units; AI units spawned en route kept full planned fuel. With the gate on, AI units
-   in in-flight states get the same clamped estimate (`use_estimated_fuel_for_ai`).
-
-### P3 — follow-on waves + the pre-roll briefing block (2026-08-15)
-
-Same gate; two pieces:
-
-1. **Follow-on waves** — the scheduler's generic TOT spread window gains a tail:
-   `latest += followon_window_minutes(coalition)`, which equals the phase-aware pre-roll
-   minutes (knob-free, symmetric — the same distance the player is seated INTO the cycle is
-   appended to its end). Some AI packages' TOTs now land past the desired mission length, so
-   launches continue as/after the player recovers, both sides. The existing delay machinery
-   carries them: non-COLD starts late-activate on a `TimeAfter` trigger, COLD AI spawns
-   uncontrolled at t=0 and gets a start push — no delay cap exists (open call 4 verified by
-   reading `set_activation_time`/`set_startup_time`). **Known trade:** COLD waves occupy
-   parking from mission start for longer than before — the B58 watch item.
-2. **The briefing block** — `preroll_brief_lines(game)` counts each side's flights by state
-   at generation (airborne / recovered / lost, enemy marked "assessed") and the mission
-   briefing renders "The air war so far today" above the situation section. Empty — section
-   suppressed — with the gate off or at an H-hour launch, so turn 0 briefings are unchanged.
-   The `recovered` count reads the P2 residue ledger in addition to the ATO walk (2026-08-16)
-   — completed flights leave the ATO mid-march, so the walk-only count sat at 0 forever
-   (B58's spectator watch showed exactly that).
-
-### P4 — the voice net — REMOVED (2026-08-18)
-
-**REMOVED 2026-08-18 (DM call): "the AI already uses the radio".** The synthesized blue voice net duplicated chatter DCS's own AI already produces, so it was noise on the briefed channel rather than atmosphere. Gone entirely: the emitter (`battlespacenetluadata.py`), the `battlespacenet` plugin, the generation-time text-to-speech + clip embedding, the `living_battlespace_voice_net` setting (swept as an obsolete key so existing saves load) and the runtime + schedule tests. §89's other phases are untouched: pre-roll, ramp residue, follow-on waves, the briefing score and reactive red all stay.
-
-### P5 — reactive red (2026-08-15)
-
-Sub-gate `living_battlespace_reactive_red` (default OFF, under the master gate). The war
-reacts to being hit, inside red's settled defensive fighter posture and the all-real rule:
-
-1. **Real alert flights** — `plan_red_reactions` (`game/fourteenth/living_battlespace.py`,
-   hooked in `coalition.plan_missions` after the scheduler): up to 2 red 2-ship home-defense
-   BARCAPs fragged from real untasked inventory (normal claiming, normal debrief), TOT parked
-   8 h past the mission so the plugin waking them early is the only way they fly. The §61
-   red-scramble "untracked freebie" exemption is deliberately NOT used — these jets are
-   claimed, tracked, and their losses count.
-2. **The positive list** — `game/missiongenerator/reactiveredluadata.py`: watched objectives
-   are ONLY red ground objects that are actual targets of blue's ATO this turn (name,
-   position, alive unit names); reaction groups are ONLY the fragged alert flights (matched
-   by the `Reaction Alert` package-name prefix). Either half empty → nothing emitted.
-3. **The plugin** — `resources/plugins/reactivered/`: an `S_EVENT_DEAD` watcher; a listed
-   unit's death launches ONE listed flight after a tasking delay (default 7 min), and the
-   defensive patrol orbit over the struck objective is pushed only once the flight is
-   airborne (the §61 mid-taxi wedge lesson). One reaction per objective; the fragged pool is
-   the hard cap; every skip and the exhaustion are logged. Harness-covered
-   (`tests/lua/test_reactivered_runtime.py`; the stubs gained `Group:activate()`,
-   `Controller:setCommand` and `fireDead` for it).
-
-**Two fixes from test 12 (2026-08-20), the first flown read where a watched objective actually
-died — before them the feature could not launch at all.** Both are one-liners with the same
-shape: an assumption about a name or a state that generation does not produce.
-
-- **Waking the flight.** `plan_red_reactions` parks the flight by pushing TOT 8 h out, and its
-  docstring said that "generates a late-activation group." It does not. A COLD AI flight at an
-  airfield fails every branch of `WaypointGenerator.should_activate_late()`, so generation takes
-  the `set_startup_time` path instead: `uncontrolled = True` plus a `StartCommand` fired by a
-  T+8 h trigger. DCS's `Group.activate()` does nothing to a group that is already in the world,
-  so the plugin's one power was spent on a no-op. The plugin now tries both — `activate()` for a
-  late-activation group, `Controller:setCommand({id = "Start"})` for an uncontrolled one — and
-  the harness models the difference so the shape cannot regress silently again.
-- **Watching a static.** The emitter writes a static's bare unit name (`0525 | Oil platform`) but
-  DCS's DEAD event names it `0525 | Oil platform object` — the MANTIS `dcs_name_for_group`
-  convention `commsjam` and `rednet` already resolve. The plugin now watches both spellings.
-  Vehicle names always matched, so the watch worked for SAM and armour objectives and was dead
-  for every scenery one; in test 12 the oil-platform strike landed 13 minutes before anything
-  else and could not have triggered a reaction.
-
-### Needs an in-game pass
-
-Checklist **B56** (P1: the launch-flow wiring lives in `qt_ui`, not CI-typechecked, and the
-mid-cycle feel at spawn is what CI cannot exercise), **B57** (P2: residue on the ramp,
-clean-wing returners, no parking exhaustion), **B58** (P3: a wave launches after player
-egress; the briefing narrates the pre-roll; parking survives the longer occupation), and
-**B60** (P5: a struck objective produces one visible red patrol over it; nothing outside the
-positive list ever launches).
-
-**B59 is not on this list.** It covered P4, the synthesized voice net, which was REMOVED
-2026-08-18 (see the P4 heading above); the row is ⊘ RETIRED and there is nothing to fly.
-
-### Deferred
-
-The note's W1 "spread" half — widening the AI TOT distribution itself — deliberately did NOT
-land in P1. The natural launch spread already gives the pre-roll a war to march through; the
-widening belongs with P3's follow-on waves, where the window actually grows. Carrier ramp
-residue and the AAM/TANK weapon-taxonomy enrichment are P2's two recorded deferrals.
-
-
-## Unit-coverage sweep — 2026-08-04
-
-`tools/audit_unit_coverage.py` diffs what the engine can place against what the fork has
-registered — a *coverage* report (does a yaml exist), complementing `tools/verify_mod_export.py`
-(do a registered unit's *values* still match the install). Run it after any DCS or mod-pack
-update:
-
-```
-python tools/audit_unit_coverage.py --csv coverage.csv
-```
-
-Baseline was 130 of 834 placeable units with no yaml; the sweep registered 35 and left 95, the
-remainder deliberate (rolling stock, civilian cars, scenery props). `GPS_Spoofer_Blue`/`Red` are
-registered but **unverified** — DCS calls them a "Radio jammer" and nothing confirms the
-behaviour.
-
-**Three traps closed, each now impossible to repeat silently:**
-
-1. `ControlPoint.runway_is_operational()` whitelists carrier hulls by type, and **a carrier
-   missing from it reads as SUNK** the moment a campaign bases on it. CVN-70 was absent.
-2. **pydcs saves miz countries sorted by name**, and the layout loader anchors a layout's
-   template origin on the first unit of the first matched group, iterating vehicle groups before
-   statics within a country. A vehicle group added under the statics' country (or any country
-   sorting before it) steals the origin and shifts every authored building cluster on every
-   campaign. Support groups therefore live under a country that sorts after.
-3. Layout `unit_types` entries name unit **ids**, not pydcs classes — a class name resolves to
-   None, the group empties, and the site raises `LayoutException` with no other signal.
-
-**A deliberate semantics change shipped with it.** §51's comms-jam emitter transmits from every
-alive unit of a node and §70 counts a source alive while any unit lives, so killing the tower no
-longer silences the site — the surviving van keeps transmitting. §52 counts a command center
-alive while any unit lives, so full decapitation now requires killing the C2 vehicles, raising
-the strike weight for a §52/§63 C2 kill. Layout comments and tests both state this.
-
-**Scope rule:** layout-generated objectives only. Hand-authored named targets are never
-furnished — Desert Storm's KARI network is the showcase; Red Tide's scenery-authored 9-node
-network stays as authored. Power plants stay bare on purpose.
-
-## Code audit fixes — 2026-07-07
-
-A read-only audit of the 414th surface produced a batch of correctness fixes, each bringing code
-to what its feature section already documented. The fixes are in git; three **design decisions**
-came out of it and are the part worth keeping:
-
-- **§50 ambient convoys skim, they do not commission.** `ensure_ambient_convoys` was
-  `commission_units`-ing free, un-budgeted units into both sides' rear bases every turn on every
-  campaign — roughly 48 net-new free ground units a turn, permanently reinforcing front-ward
-  bases. Free seeding is right for the §35 Vietnam trail (red-only, gated, its documented
-  character) and wrong to generalise: the ask was traffic, not reinforcement. Ambient columns now
-  relocate units that already exist, so a rear base too thin to skim yields no column. §35 is
-  untouched.
-- **§37 Super Gaggle is losses-only.** Delivery credit fired whenever a committed helo was absent
-  from the debrief kill list — but "absent" is "survived and delivered" *or* "never spawned",
-  indistinguishable without a runtime signal the plugin does not emit. The credit was dropped;
-  real delivery credit waits on a real signal.
-- **A recurring bug class, worth knowing:** `control_point.captured` is the `Player` enum and is
-  **always truthy**, so `"BLUE" if captured else "RED"` labels everything BLUE. Read
-  `captured.is_blue`.
+In git history at `git show c08b85de2:docs/dev/design/414th-living-battlespace-notes.md`.
 
 ## §90 — Front-line model: supply, assault cost, force weight, terrain, salients
 

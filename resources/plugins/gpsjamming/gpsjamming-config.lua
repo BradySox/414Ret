@@ -156,7 +156,7 @@ end
 ---------------------------------------------------------------------------------------------------
 
 -- Plain, case-insensitive substring finds against the weapon type name. NEVER a Lua pattern:
--- weapon names carry "-" and "(", which a pattern match reads as magic (the rednet lesson).
+-- weapon names carry "-" and "(", which a pattern match reads as magic.
 local patterns = {}
 local function buildPatterns()
     if not (cfg and type(cfg.weaponPatterns) == "table") then

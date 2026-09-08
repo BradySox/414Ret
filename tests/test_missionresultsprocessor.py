@@ -41,10 +41,8 @@ COMMIT_STEPS = [
     "commit_front_line_battle_impact",
     "record_carcasses",
     "commit_super_gaggle",
-    "commit_minefields",
     "commit_cruise_missiles",
     "commit_naval_magazines",
-    "record_comint_collection",
     "record_sitrep",
 ]
 

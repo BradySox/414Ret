@@ -629,11 +629,6 @@ export type CampaignStatus = {
   hvt_name?: string | null;
   hvt_turns_left?: number | null;
 };
-export type Minefield = {
-  position: LatLng;
-  radius_m: number;
-  charges: number;
-};
 export type Game = {
   control_points: ControlPoint[];
   tgos: Tgo[];
@@ -648,7 +643,6 @@ export type Game = {
   unculled_zones: UnculledZone[];
   map_zones: MapZones;
   campaign_status?: CampaignStatus | null;
-  minefields?: Minefield[];
 };
 export type MapZones = {
   inclusion: LatLng[][][];

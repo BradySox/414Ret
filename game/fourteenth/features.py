@@ -302,8 +302,7 @@ FEATURES: tuple[Feature, ...] = (
         "enemy_comms_jamming",
         "Enemy comms jamming (IADS comms nodes)",
         51,
-        plugin_id="commsjam",
-        settings_fields=("enemy_comms_jamming",),
+        retired=True,
     ),
     Feature(
         # Pure turn-model (no plugin): couples a side's command-network health to
@@ -346,16 +345,10 @@ FEATURES: tuple[Feature, ...] = (
         settings_fields=("motorpool_enabled", "motorpool_spawn_cap"),
     ),
     Feature(
-        # §57 air-droppable minefields. Same-turn tactical mining is the `minefields`
-        # Lua plugin (detect a blue CBU-99 drop -> scripted proximity field -> detonate
-        # real convoy units, recorded natively); air_droppable_minefields adds cross-turn
-        # persistence (game/fourteenth/minefields.py reconciles the minefields_state
-        # debrief channel; minefieldluadata re-arms the survivors next mission). Blue-only.
         "air_droppable_minefields",
         "Air-droppable minefields",
         57,
-        plugin_id="minefields",
-        settings_fields=("air_droppable_minefields", "auto_plan_minefields"),
+        retired=True,
     ),
     Feature(
         # §58 mission-start briefing popup. Pure display: briefingluadata emits a
@@ -535,12 +528,7 @@ FEATURES: tuple[Feature, ...] = (
         "comint_collection",
         "COMINT collection (blue-side communications intelligence)",
         70,
-        plugin_id="rednet",
-        settings_fields=(
-            "comint_collection",
-            "red_comms_net",
-            "red_net_max_stations",
-        ),
+        retired=True,
     ),
     # §71 is gated by ModSettings.f4e_expanded_weapons (a Mods-page checkbox),
     # not a Settings field, so like the §10 asset pack it carries no wiring refs.
@@ -766,18 +754,10 @@ FEATURES: tuple[Feature, ...] = (
         88,
     ),
     Feature(
-        # The living-battlespace direction: pre-roll, residue, follow-on waves
-        # and reactive red. P4 (the synthesized voice net) was REMOVED 2026-08-18
-        # -- the DCS AI already talks on the radio.
-        # docs/dev/design/414th-living-battlespace-notes.md.
         "living_battlespace",
         "Living battlespace pre-roll",
         89,
-        settings_fields=(
-            "living_battlespace_preroll",
-            "living_battlespace_preroll_cap",
-            "living_battlespace_reactive_red",
-        ),
+        retired=True,
     ),
     Feature(
         # Seam 4 of the long-view note, rungs A-E. Five changes to how the ground

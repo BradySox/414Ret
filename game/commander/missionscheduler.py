@@ -8,10 +8,6 @@ from typing import Iterator, Optional, TYPE_CHECKING
 
 from game.ato.flighttype import FlightType
 from game.ato.traveltime import TotEstimator
-from game.fourteenth.living_battlespace import (
-    followon_window_minutes,
-    pin_player_packages,
-)
 from game.theater import MissionTarget, NavalControlPoint
 
 if TYPE_CHECKING:
@@ -169,12 +165,7 @@ class MissionScheduler:
         max_carrier_simultaneous_barcaps = settings.max_carrier_simultaneous_barcaps
         carrier_barcaps: dict[MissionTarget, int] = defaultdict(int)
 
-        # §89 P3: the cycle's tail extends by the same phase-aware pre-roll the
-        # player is seated into, so follow-on packages launch as/after the
-        # player recovers instead of the sky dying behind them. Zero with the
-        # gate off -- the spread is upstream's.
         latest_s = int(self.desired_mission_length.total_seconds())
-        latest_s += 60 * followon_window_minutes(self.coalition)
         spread_ceiling = timedelta(seconds=latest_s)
         start_time = start_time_generator(
             count=len(non_dca_packages),
@@ -261,11 +252,6 @@ class MissionScheduler:
                 package.time_over_target = tot + self._spread_arrival(
                     next(start_time), tot - now, spread_ceiling
                 )
-
-        # §89 living battlespace: seat player packages a phase-aware pre-roll
-        # into the cycle, BEFORE the SEAD windows and the carrier stagger so
-        # both see the pinned TOTs. No-op with the gate off (the default).
-        pin_player_packages(self.coalition, now)
 
         # §69: time strikes into their SEAD windows BEFORE the carrier stagger
         # and the recovery-tanker ETAs, so both see the coordinated landings.

@@ -547,6 +547,17 @@ def flight_defaults_path() -> Path:
     return _create_dir_if_needed(base_path() / "Retribution") / "flight_defaults.json"
 
 
+def pilot_profiles_path() -> Path:
+    """JSON store for the §97 lifetime pilot profiles.
+
+    A pilot's career across EVERY campaign, keyed by DCS player name, so it
+    survives starting a new campaign, deleting a save, or updating the build.
+    Global and never part of a save game -- the same shape as
+    ``flight_defaults_path`` above. See ``game/fourteenth/pilot_profile.py``.
+    """
+    return _create_dir_if_needed(base_path() / "Retribution") / "pilot_profiles.json"
+
+
 def payloads_dir(backup: bool = False) -> Path:
     """The DCS user payload directory, or the 414th's backup store beside it.
 

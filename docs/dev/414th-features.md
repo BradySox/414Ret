@@ -9792,3 +9792,87 @@ wall of unexplained zeroes.
   specific service ladder means editing the shipped data file.
 - **`missions_flown` still counts assignments.** Re-pointing the skill ladder at `sorties`
   would change AI pilot progression across every campaign and needs its own call.
+
+## §97 — Lifetime pilot profiles
+
+Built 2026-09-09. Gate: `lifetime_pilot_profiles` (414th Features → Pilots & careers,
+default **ON**). No design note — this section is the deep dive.
+
+### What was wrong
+
+§96 gave every pilot a career and put it **inside the save**. A campaign's pilots are
+generated with the campaign, so starting a new one hands you a fresh roster at zero. The
+thing a person actually wants recorded — *their own flying, across everything they have
+ever flown in Retribution* — had nowhere to live.
+
+### What it is
+
+A second destination for the same §91 sortie records: `pilot_profiles.json` under the Saved
+Games tree (`game/persistency.py:pilot_profiles_path`), outside every save, the same shape as
+the §43 flight-defaults store. `game/fourteenth/pilot_profile.py` owns it;
+`commit_pilot_profiles` files a mission's human-flown sorties as results are committed.
+
+Per profile: lifetime totals, a per-aircraft breakdown, the campaigns flown, and a rolling
+list of the individual flights — date, campaign, aircraft, task, minutes, kills, ejection.
+
+`qt_ui/windows/PilotProfilesDialog.py` renders it, from a **Pilot Logbook** toolbar button
+that sits outside `enable_game_actions` so it opens with no campaign loaded. That is the
+point of the feature, so the button has to work there.
+
+### Identity is the DCS player name
+
+The recorder already called `getPlayerName()` per slot and threw the answer away, keeping
+only a boolean. It now records the name, and a profile is keyed on it.
+
+- **No setup.** The first mission you fly creates your profile.
+- **A host records everyone.** In a squadron event all eight humans get their own profile
+  rather than collapsing into one, which the "one local profile" alternative would have done.
+- **The key never moves.** Renaming sets a `display_name`; renaming the key would orphan the
+  career from the seat that feeds it.
+
+### Hard constraints
+
+- **The store is append-only with nothing to re-derive it from.** There is no campaign to
+  recompute a lifetime career from, so a bad write is permanent. Everything below follows
+  from that.
+- **A mission is folded exactly once, and the guard is keyed on the GAME.** `Game.stable_uid()`
+  mints a uuid on first use (lazily set, persisted, `__setstate__`-defaulted, so old saves
+  need no migration). Keying on campaign name plus turn would make a replay's turn 1
+  indistinguishable from the playthrough already recorded, and silently drop it.
+- **The guard is per profile, not per store.** A pilot who joined the event late has not
+  logged that mission even though everyone else has.
+- **The first human on a slot keeps the sortie.** A mid-mission handoff has no more claim on
+  it than the pilot who took it off, and crediting whoever held the seat at the last sweep
+  would hand a whole flight to someone who flew the last ten minutes.
+- **Only records that flew, and only human-crewed ones.** An AI jet has no career; §91's
+  counters-only and parked-airframe records are not sorties (`MIN_SORTIE_DISTANCE_M`).
+- **A flight whose unit the campaign cannot resolve is still logged**, with a generic task.
+  A human flew it; losing the sortie to a failed lookup is worse than a vague label.
+- **Its own setting, separate from §96.** This one writes outside the save, and that is
+  exactly the thing a player might want to decline while keeping campaign careers.
+- **No ranks and no awards.** A user call: the lifetime page is numbers. §96 owns the
+  ceremony, where a rank belongs to a service and a campaign.
+- **Nothing here raises.** It runs inside mission-results commit and backs a window that
+  opens with no game. A store that cannot be read or written is logged and skipped.
+
+### Caps
+
+`MAX_LOG_ENTRIES = 2000` flights per profile and `MAX_LOGGED_MISSIONS = 1000` guard ids.
+Totals keep counting past the log cap; only the entry list is trimmed, oldest first. The
+window lists the newest 60 and says how many older ones the store still holds.
+
+**Do not exercise the real cap in a test.** Every fold rewrites the whole store, so folding
+2,000 entries is quadratic — the first version of `test_the_log_is_capped_and_keeps_the_newest`
+took 28 of the suite's 30 seconds. Monkeypatch the constant instead.
+
+### Tests
+
+`tests/test_pilot_profiles.py` (18) · four player-name cases in
+`tests/lua/test_sortie_recorder_runtime.py`.
+
+### Deferred
+
+- **No export.** A CSV or printable logbook is the obvious next thing and is not built.
+- **No merge or delete in the UI.** Changing your DCS name starts a second profile, and the
+  only fix is editing the JSON by hand.
+- **Red humans get profiles too.** Free, and harmless, but nothing surfaces the coalition.

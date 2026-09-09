@@ -114,6 +114,11 @@ local function record_for(unit)
         type = safe(unit, "getTypeName") or "",
         coalition = safe(unit, "getCoalition") or 0,
         player = safe(unit, "getPlayerName") ~= nil,
+        -- The human's DCS name, so a sortie can be filed against a career that
+        -- outlives the campaign (section 97). First human seen on the slot keeps
+        -- it: a mid-mission handoff has no more claim on the sortie than the
+        -- pilot who took it off.
+        player_name = safe(unit, "getPlayerName") or "",
         first_seen = -1,
         last_seen = -1,
         track = {},
@@ -146,8 +151,12 @@ local function sample_unit(unit, now)
     end
     record.last_seen = now
     -- Re-read each sweep: a slot can be taken by a human mid-mission.
-    if safe(unit, "getPlayerName") ~= nil then
+    local crew = safe(unit, "getPlayerName")
+    if crew ~= nil then
         record.player = true
+        if record.player_name == nil or record.player_name == "" then
+            record.player_name = crew
+        end
     end
 
     local sample = {
@@ -360,6 +369,7 @@ function sortie_recorder_payload(include_track)
             type = record.type,
             coalition = record.coalition,
             player = record.player,
+            player_name = record.player_name,
             first_seen = record.first_seen,
             last_seen = record.last_seen,
             track = {},

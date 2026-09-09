@@ -593,3 +593,69 @@ def test_kills_survive_the_counters_only_write() -> None:
 
     light = harness.to_python(harness.lua.eval("sortie_recorder_payload")(False))
     assert light["flights"]["Enfield 1-1-1"]["air_kills"] == 1
+
+
+def test_a_human_crewed_slot_carries_the_dcs_player_name() -> None:
+    # §97 files a career against this name, so a sortie with the flag set but no
+    # name would be a flight nobody can be credited with.
+    harness = DcsPluginHarness()
+    _load(harness)
+    harness.add_group(
+        _flight(
+            "Enfield 1-1",
+            2,
+            [
+                _unit("Enfield 1-1-1", playerName="Viper"),
+                _unit("Enfield 1-1-2"),
+            ],
+        )
+    )
+    _sample(harness)
+
+    flights = _records(harness)
+    assert flights["Enfield 1-1-1"]["player"] is True
+    assert flights["Enfield 1-1-1"]["player_name"] == "Viper"
+    # The human IS the group's anchor, so the AI wingman is not sampled at all --
+    # §91's rule, unchanged: every human slot, and one jet for the AI.
+    assert "Enfield 1-1-2" not in flights
+
+
+def test_the_first_human_on_a_slot_keeps_the_sortie() -> None:
+    # A mid-mission handoff has no more claim on the sortie than the pilot who
+    # took it off, and crediting whoever happened to be in the seat at the last
+    # sweep would hand a whole flight to someone who flew the last ten minutes.
+    harness = DcsPluginHarness()
+    _load(harness)
+    harness.add_group(
+        _flight("Enfield 1-1", 2, [_unit("Enfield 1-1-1", playerName="Viper")])
+    )
+    _sample(harness)
+    harness.update_unit("Enfield 1-1", {"playerName": "Jester", "x": 40000.0})
+    _sample(harness)
+
+    assert _records(harness)["Enfield 1-1-1"]["player_name"] == "Viper"
+
+
+def test_a_slot_a_human_takes_late_is_still_named() -> None:
+    harness = DcsPluginHarness()
+    _load(harness)
+    harness.add_group(_flight("Enfield 1-1", 2, [_unit("Enfield 1-1-1")]))
+    _sample(harness)
+    harness.update_unit("Enfield 1-1", {"playerName": "Viper", "x": 40000.0})
+    _sample(harness)
+
+    record = _records(harness)["Enfield 1-1-1"]
+    assert record["player"] is True
+    assert record["player_name"] == "Viper"
+
+
+def test_the_player_name_survives_the_counters_only_write() -> None:
+    harness = DcsPluginHarness()
+    _load(harness)
+    harness.add_group(
+        _flight("Enfield 1-1", 2, [_unit("Enfield 1-1-1", playerName="Viper")])
+    )
+    _sample(harness)
+
+    light = harness.to_python(harness.lua.eval("sortie_recorder_payload")(False))
+    assert light["flights"]["Enfield 1-1-1"]["player_name"] == "Viper"

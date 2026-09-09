@@ -77,6 +77,10 @@ class SortieRecord:
     ejected: bool
     #: True if a human occupied the slot at any point in the mission.
     player: bool = False
+    #: The DCS name of the human who crewed it, empty for an AI jet. The FIRST
+    #: human seen on the slot: a mid-mission handoff has no more claim on the
+    #: sortie than the pilot who took it off. §97 files careers against this.
+    player_name: str = ""
     #: Kills credited to this aircraft, split the way a logbook splits them.
     #: Counted from `S_EVENT_KILL`, the only DCS event that names a killer, and
     #: only when the two coalitions resolve and differ -- a blue-on-blue is not
@@ -162,6 +166,7 @@ def _record_from(name: str, raw: Any) -> SortieRecord | None:
             hits=int(raw.get("hits", 0)),
             ejected=bool(raw.get("ejected", False)),
             player=bool(raw.get("player", False)),
+            player_name=str(raw.get("player_name", "") or ""),
             air_kills=int(raw.get("air_kills", 0)),
             ground_kills=int(raw.get("ground_kills", 0)),
             naval_kills=int(raw.get("naval_kills", 0)),

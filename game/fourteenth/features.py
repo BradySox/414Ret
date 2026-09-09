@@ -821,6 +821,14 @@ FEATURES: tuple[Feature, ...] = (
         96,
         settings_fields=("pilot_career_logbook",),
     ),
+    Feature(
+        # The career that outlives the campaign: same §91 records, second
+        # destination, keyed by DCS player name and written outside every save.
+        "lifetime_pilot_profiles",
+        "Lifetime pilot profiles",
+        97,
+        settings_fields=("lifetime_pilot_profiles",),
+    ),
     # Always-on engine plugins — major 414th machinery documented in design notes
     # rather than a numbered "Features at a Glance" entry.
     Feature("mantis_iads", "MANTIS IADS engine", plugin_id="mantisiads"),

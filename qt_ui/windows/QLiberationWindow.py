@@ -54,6 +54,7 @@ from qt_ui.windows.preferences.QLiberationPreferencesWindow import (
 )
 from qt_ui.windows.settings.QSettingsWindow import QSettingsWindow
 from qt_ui.windows.stats.QStatsWindow import QStatsWindow
+from qt_ui.windows.PilotProfilesDialog import PilotProfilesDialog
 from qt_ui.windows.whatsnew.QWhatsNewWindow import QWhatsNewWindow
 from qt_ui.windows.targetpriorities.QTargetPrioritiesWindow import (
     QTargetPrioritiesWindow,
@@ -244,6 +245,12 @@ class QLiberationWindow(QMainWindow):
         self.openTargetPrioritiesAction.triggered.connect(
             self.showTargetPrioritiesDialog
         )
+        # §97: the lifetime logbook describes the pilot, not the campaign, so it
+        # stays outside enable_game_actions like What's New below.
+        self.openPilotLogbookAction = QAction("Pilot Logbook", self)
+        self.openPilotLogbookAction.setIcon(CONST.ICONS["Hangar"])
+        self.openPilotLogbookAction.triggered.connect(self.showPilotLogbookDialog)
+
         self.openWhatsNewAction = QAction("What's New", self)
         self.openWhatsNewAction.setIcon(CONST.ICONS["What's New"])
         self.openWhatsNewAction.triggered.connect(self.showWhatsNewDialog)
@@ -289,6 +296,7 @@ class QLiberationWindow(QMainWindow):
         self.tool_bar.addAction(self.openCustomKneeboardsAction)
         self.tool_bar.addSeparator()
         self.tool_bar.addAction(self.openTargetPrioritiesAction)
+        self.tool_bar.addAction(self.openPilotLogbookAction)
         self.tool_bar.addAction(self.openWhatsNewAction)
 
     def initMenuBar(self):
@@ -671,6 +679,10 @@ class QLiberationWindow(QMainWindow):
             return
         self.target_priorities_dialog = QTargetPrioritiesWindow(self.game, self)
         self.target_priorities_dialog.show()
+
+    def showPilotLogbookDialog(self) -> None:
+        self.pilot_logbook_dialog = PilotProfilesDialog(self)
+        self.pilot_logbook_dialog.show()
 
     def showWhatsNewDialog(self) -> None:
         self.whats_new_dialog = QWhatsNewWindow()

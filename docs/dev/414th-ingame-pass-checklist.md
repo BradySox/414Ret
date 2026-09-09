@@ -58,7 +58,7 @@ also relative to `ReferenceLatitude=38 / ReferenceLongitude=36`, not absolute.
 
 ## Outstanding rows at a glance
 
-77 rows need a live pass. Full detail is under each `###` heading below —
+78 rows need a live pass. Full detail is under each `###` heading below —
 search the row id. `☐` untested · `◐` flown but not under the conditions that
 stress it · `✗` fail signature reproduced in-game.
 
@@ -193,6 +193,7 @@ stress it · `✗` fail signature reproduced in-game.
 | B111 | A package's escort holds the striker's pace instead of running ahead | §8 cruise mach | ☐ |
 | B112 | The wind you set is the wind the panel shows, and the box stops at 97 kt | wind override / live weather | ☐ |
 | B113 | A pilot's logbook fills in, and the kills are the ones they got | §96 | ☐ |
+| B114 | Your lifetime logbook survives starting a new campaign | §97 | ☐ |
 
 ---
 
@@ -6788,3 +6789,39 @@ destroy something on the ground, land, accept results, then reopen the same pilo
   from counters-only or parked records rather than only from records that flew.
 - **The page is all zeroes on a campaign carried over from an older build.** Expected, not a
   failure — pre-§96 saves have no records to fold and the page says so.
+
+### B114 — Your lifetime logbook survives starting a new campaign · §97 · ☐ UNTESTED
+
+**Needs two campaigns and one flown mission in each.** ~50 min, or split across two sessions.
+
+**Setup.** `lifetime_pilot_profiles` on (it is by default). Open **Pilot Logbook** on the
+toolbar — with no campaign loaded, which is half the test. Fly one mission in any campaign,
+accept results, reopen it. Then start a **different** campaign, fly one mission there, accept
+results, and reopen it again.
+
+**Pass.**
+1. The button opens the window with no campaign loaded, and after the first mission your DCS
+   player name is listed.
+2. Sorties went up by one per mission flown, not by the size of your flight.
+3. After the second campaign the totals are the **sum of both**, both campaigns are named,
+   and both aircraft appear in the per-aircraft table.
+4. The flights list shows one row per mission with the right campaign, aircraft and task.
+5. Rename works, and the profile keeps accumulating under the new display name.
+6. `<Saved Games>\DCS\Retribution\pilot_profiles.json` exists and is readable JSON.
+
+**Fail signatures, and what each means:**
+
+- **The second campaign started the totals over.** The store is being written into the save,
+  or the file path is being derived per campaign. It must be one file for the whole install.
+- **A profile named "Player".** Not a failure — that is the DCS name your install is set to.
+  Rename the display name, or change your name in DCS.
+- **Sorties double-counted after accepting results twice, or after reloading and re-accepting
+  a turn.** The `Game.stable_uid()` guard is not holding. This one matters more than the
+  campaign version: there is nothing to recompute the store from, so a double count is
+  permanent.
+- **Replaying a campaign from turn 1 records nothing.** The opposite failure — the guard is
+  keyed on the campaign name rather than the game.
+- **Everyone in a multiplayer event lands in one profile.** The recorder is reporting the
+  boolean and not the name; check `player_name` in `state.json`.
+- **The window is empty after a mission you definitely flew.** Either the slot was AI (you
+  did not occupy it) or the jet never moved far enough to count as a sortie.

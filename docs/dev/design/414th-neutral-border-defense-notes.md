@@ -1,8 +1,8 @@
 # Neutral-Faction Border Defense — Design Note
 
-**Status: BUILT 2026-08-24 (§96).** Scope locked in a DM Q&A session the same day; every
+**Status: BUILT 2026-08-24 (§97).** Scope locked in a DM Q&A session the same day; every
 decision below is a DM call from that session. Read this before editing or re-litigating
-any of it. Features doc §96 carries the file list; B114 passed 2026-09-01, B115 owed.
+any of it. Features doc §97 carries the file list; B114 passed 2026-09-01, B115 owed.
 
 ## The patrol is gone: scope is the SAM (DM call, 2026-09-07)
 
@@ -63,7 +63,7 @@ analogue. The second-battery rule for a country violated by both sides survives
 unchanged, because a battery can only be on one coalition either.
 
 **Not yet flown.** B114 was closed against the patrol and that evidence does not
-transfer; both §96 rows are owed again.
+transfer; both §97 rows are owed again.
 
 ## What it is now
 
@@ -221,7 +221,7 @@ actually keeps up anyway. Stand-down routes back to the station instead of a fie
 
 **The corridor.** `tools/neutral_border_geo.py --corridor-lon MIN MAX` subtracts a
 north-south lane before simplifying, so one country emits as the two walls of a flight
-corridor. Afghanistan uses it for the OEF boulevard (see features doc §96). `--clip` is
+corridor. Afghanistan uses it for the OEF boulevard (see features doc §97). `--clip` is
 effectively mandatory — Iran's real outline runs to the Persian Gulf and would spend
 the whole vertex budget on coastline off the map.
 
@@ -248,11 +248,11 @@ planning-map layer:
 - **Overflight is a separate authored fact from alignment** (DM call: "Neutral with
   overflight and Neutral without overflight"). Turkmenistan permitted coalition
   transit in 2006 and Iran did not; both were neutral. Only a neutral that refuses
-  transit is enforced by §96. A permitting neutral spawns nothing — which is what
+  transit is enforced by §97. A permitting neutral spawns nothing — which is what
   finally let Turkmenistan/Uzbekistan/Tajikistan be drawn (no pydcs country needed).
 - **A red-aligned nation is defended by the QRA it already has**: its polygon joins
   §1's accept zones (`aligned_defense_polygons` → `ZONE_POLYGON` → `SetBorderZone`),
-  never a second §96 flight over the same ground (DM call: "tied in with the
+  never a second §97 flight over the same ground (DM call: "tied in with the
   existing interceptor work").
 - **Three colour families** (DM call): red for red-aligned, blue for blue-aligned,
   APP-6 green for the neutral; shading carries enforcement. Open airspace is drawn
@@ -280,7 +280,7 @@ blue correctly (1 blue field).
 The fix is historical boundaries, not a code change: **a Cold-War Germany campaign
 needs a 1949–1990 inner-German border** (and period Czechoslovakia, which also no
 longer exists — its modern GeoJSON 404s under that name). Until that data exists,
-**do not author §96 zones on `GermanyCW`**; the derivation will silently pick a
+**do not author §97 zones on `GermanyCW`**; the derivation will silently pick a
 side. Recorded for the postures research, which faces the same problem for every
 pre-1991 era: the USSR, Yugoslavia, Czechoslovakia and the two Germanys all need
 period geometry, and the posture table's dated ranges are worthless without it.
@@ -440,7 +440,7 @@ Cyprus combined).
 
 ## What the first flown test found (2026-08-25, Inherent Resolve, Iraq map)
 
-The first mission with §96 live produced one clean pass and three defects, two of
+The first mission with §97 live produced one clean pass and three defects, two of
 them measured off the Tacview rather than reported. All three are fixed, and
 the fixes were later confirmed in DCS by test 25 (B114, 2026-09-01).
 
@@ -540,7 +540,7 @@ airfield would scramble a QRA over ground its enemy also holds.
 `closed` — historically right, but it would draw Sweden and Finland as enforcing
 neutrals while both sides fly combat sorties from their runways. The two signals
 answer different questions: the table says *whose side a country is on*, the
-control points say *whose ground it is now*. §96 needs the second, and
+control points say *whose ground it is now*. §97 needs the second, and
 `contested` is what the second says when both answers are true.
 
 ### The vertex budget was too low for a real coastline
@@ -949,9 +949,9 @@ This PR added its in-game rows as **B100/B101**, and `main` already owned both
 (the DCS parking rework, and the F-4E Shrike row). Renumbering to **B106/B107**
 collided again -- main had meanwhile taken B106 for the CSAR King row. The third
 merge, on 2026-08-29, brought main's log-noise work, which had taken **B107,
-B108 and B109**, moving §96 to B110/B111. The fourth, on 2026-09-02, brought the
+B108 and B109**, moving §97 to B110/B111. The fourth, on 2026-09-02, brought the
 SEAD-steerpoint and escort-pace work, which had taken **B110 and B111** -- the
-same two. The §96 rows are **B114/B115** now.
+same two. The §97 rows are **B114/B115** now.
 
 The fourth is the instructive one: the row it hit **had already been closed as
 VERIFIED**, so a row that reads as finished is not safe from this. Renumber it
@@ -960,7 +960,7 @@ anyway; a duplicated id still breaks `_row_statuses()`.
 **The fifth, 2026-09-07, was caught by a test rather than by eye.** Main's
 wind-clamp work took B112 in the same merge that abandoned four features, and
 `test_no_two_rows_share_an_id` -- added the day before, precisely because four
-collisions is a pattern -- failed on it immediately. §96 is **B114/B115** now.
+collisions is a pattern -- failed on it immediately. §97 is **B114/B115** now.
 The count test would NOT have caught this one: it only sees a duplicate when the
 two rows differ in status, and both were `UNTESTED`. That is the direct argument
 for keeping the dedicated guard.
@@ -973,7 +973,7 @@ defence is re-checking on every merge.
 The consequence is worse than an ambiguous label. `_row_statuses()` in
 `tests/test_flycard_board.py` keys by row id, so a duplicate silently overwrites
 its twin and the board **under-reports outstanding work**: the first collision
-hid the §96 rows (78 stated, 80 real), and the second hid main's own CSAR row
+hid the §97 rows (78 stated, 80 real), and the second hid main's own CSAR row
 (80 stated, 81 real). The count test is what catches it, and only when run from
 the worktree -- `CHECKLIST` is a CWD-relative path, so running pytest from the
 main checkout silently validates the wrong tree.
@@ -1358,8 +1358,8 @@ silently.
 Test 24 (Caucasus, Turkey, F-16C bl.50) was **generated at 16:22, before the
 racetrack fix landed at 16:47** — its `.miz` carries one route point and two
 pilots, so it is provably the test-23 build. It was flown for the Iron Gate
-turn-1 questions, not for §96 -- the same session is the evidence on checklist
-row B99 -- so what it gives §96 is an unplanned replication, and it replicates
+turn-1 questions, not for §97 -- the same session is the evidence on checklist
+row B99 -- so what it gives §97 is an unplanned replication, and it replicates
 exactly:
 
 | | Leader | Wingman |

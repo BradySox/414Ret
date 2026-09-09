@@ -985,7 +985,7 @@ class MizCampaignLoader:
             cp.base.strength = max(0.0, min(1.0, float(value)))
 
     def add_neutral_border_zones(self) -> None:
-        """The campaign's §96 borders, or the terrain's if it declares none.
+        """The campaign's §97 borders, or the terrain's if it declares none.
 
         Borders are a property of the map, not of a campaign, so a campaign that
         says nothing gets the shipped ones for free -- which is the only way the

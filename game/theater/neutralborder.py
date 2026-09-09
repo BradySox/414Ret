@@ -1,4 +1,4 @@
-"""Bordering-nation airspace (§96).
+"""Bordering-nation airspace (§97).
 
 A campaign yaml lists the countries that border the war, each with a border
 polygon, though in practice every shipped border comes from the terrain files
@@ -26,12 +26,12 @@ The four postures and what each means to a pilot:
   mission.
 * ``blue`` -- hosts your side's fields. Overflight is allowed; the border is
   drawn and nothing enforces it.
-* ``red`` -- hosts the enemy's fields. Not a third party, so it gets no §96
+* ``red`` -- hosts the enemy's fields. Not a third party, so it gets no §97
   flight of its own; instead its polygon is handed to **§1's QRA dispatcher as
   a RED accept zone**, so the enemy's existing alert fighters defend it. One
   interception system over that ground, not two.
 * ``contested`` -- both sides hold airfields inside it. Neither side's claim is
-  the truth about it, so §96 never enforces it and neither side's QRA claims
+  the truth about it, so §97 never enforces it and neither side's QRA claims
   it.
 
 **Whether a country lets you through is derived from the same airfields** (DM
@@ -75,7 +75,7 @@ RED_ALIGNED = "red"
 #: Both sides hold airfields inside this country: it is the battlefield, and
 #: neither side is the truth about it. Measured on Able Archer 83, where Norway
 #: -- the NATO host -- drew as enemy-red because the Soviets held two of its
-#: three fields, and Finland the same. §96 never enforces a contested country;
+#: three fields, and Finland the same. §97 never enforces a contested country;
 #: nor does either side's QRA claim it, because the claim would be a lie.
 CONTESTED_ALIGNED = "contested"
 POSTURES = (NEUTRAL, BLUE_ALIGNED, RED_ALIGNED, CONTESTED_ALIGNED)

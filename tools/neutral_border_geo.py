@@ -1,4 +1,4 @@
-"""Author campaign ``neutral_border_defense:`` borders from real boundary data (§96).
+"""Author campaign ``neutral_border_defense:`` borders from real boundary data (§97).
 
 **The standard (2026-08-24, DM call):** a neutral country's border polygon comes
 from real boundary data, never hand-tracing -- and only real-world-georeferenced

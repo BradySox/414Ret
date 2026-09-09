@@ -186,7 +186,7 @@ class MissionData:
     # when host_red_scramble is on; the redscramble plugin clones them on demand.
     red_scramble_templates: list[RedScrambleTemplate] = field(default_factory=list)
     # Neutral border-defense zones the generator actually built templates for
-    # (§96). Populated by NeutralBorderGenerator; the emitter serializes these
+    # (§97). Populated by NeutralBorderGenerator; the emitter serializes these
     # verbatim, so a zone that failed to build simply never reaches the Lua.
     neutral_border_zones: list[NeutralBorderLuaZone] = field(default_factory=list)
     #: Late-activated infantry template group names Ops.CSAR is constructed with,

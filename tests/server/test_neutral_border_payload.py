@@ -1,4 +1,4 @@
-"""§96: the neutral-border map payload the planning UI draws.
+"""§97: the neutral-border map payload the planning UI draws.
 
 The border is authored in terrain XY and drawn by Leaflet in lat/lng, so the
 conversion is the thing worth pinning: a silently wrong transform puts a

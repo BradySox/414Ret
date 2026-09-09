@@ -54,6 +54,9 @@ OFFENSIVE_STANCES = (
 class MissionResultsProcessor:
     def __init__(self, game: Game) -> None:
         self.game = game
+        #: §96 awards earned by BLUE pilots this mission, as SITREP lines. Set by
+        #: commit_pilot_careers, read by record_sitrep a few steps later.
+        self._career_award_lines: list[str] = []
 
     def commit(self, debriefing: Debriefing, events: GameUpdateEvents) -> None:
         with logged_duration("Committing mission results"):
@@ -67,6 +70,8 @@ class MissionResultsProcessor:
                 self.commit_intercept_losses(debriefing)
             with logged_duration("commit_pilot_experience"):
                 self.commit_pilot_experience()
+            with logged_duration("commit_pilot_careers"):
+                self.commit_pilot_careers(debriefing)
             with logged_duration("commit_front_line_losses"):
                 self.commit_front_line_losses(debriefing)
             with logged_duration("commit_motorpool_losses"):
@@ -147,6 +152,7 @@ class MissionResultsProcessor:
             red_c2_status=c2_status_line(self.game, Player.RED),
             victory_lines=victory_sitrep_lines(self.game),
             supply_lines=supply_sitrep_lines(self.game),
+            award_lines=getattr(self, "_career_award_lines", None),
         )
 
     def _downed_pilot_sitrep_lines(self) -> list[str]:
@@ -324,6 +330,38 @@ class MissionResultsProcessor:
     def commit_pilot_experience(self) -> None:
         self._commit_pilot_experience(self.game.blue.ato)
         self._commit_pilot_experience(self.game.red.ato)
+
+    def commit_pilot_careers(self, debriefing: Debriefing) -> None:
+        """§96: folds this mission's §91 records into the pilots' careers.
+
+        Both coalitions, because a career is bookkeeping and red's costs nothing.
+        Only BLUE's new awards reach the SITREP -- that is the player's briefing.
+        """
+        from game.fourteenth.career import fold_sortie_records
+
+        self._career_award_lines = []
+        if not self.game.settings.pilot_career_logbook:
+            return
+        records = getattr(debriefing.state_data, "sortie_records", ())
+        if not records:
+            return
+
+        blue_pilots: set[str] = set()
+
+        def pilot_for(unit_name: str) -> Any:
+            flying = debriefing.unit_map.flight(unit_name)
+            if flying is None or flying.pilot is None:
+                return None
+            if flying.flight.squadron.player is Player.BLUE:
+                blue_pilots.add(flying.pilot.name)
+            return flying.pilot, flying.flight.flight_type
+
+        earned = fold_sortie_records(records, pilot_for)
+        self._career_award_lines = [
+            f"Award: {name} — {', '.join(a.name for a in awards)}"
+            for name, awards in sorted(earned.items())
+            if name in blue_pilots
+        ]
 
     @staticmethod
     def commit_front_line_losses(debriefing: Debriefing) -> None:

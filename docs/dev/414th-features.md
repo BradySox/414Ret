@@ -9681,7 +9681,118 @@ every `Bullseye <brg> for <nm>` cue on the SEAD and threat-intel pages.
 
 **In-game pass owed:** B98 — the bullseye is the same place it was last mission.
 
-## §96 — Neutral-faction border defense
+## §96 — Player career logbook
+
+Built 2026-09-08. Answers upstream issue
+[#965](https://github.com/dcs-retribution/dcs-retribution/issues/965). No design note — this
+section is the deep dive. Gate: `pilot_career_logbook` (414th Features → Pilots & careers,
+default **ON**).
+
+### What was wrong
+
+The campaign knew who a pilot was, whether they were alive, and how many times the ATO had
+put them in a seat. It never knew what any of them had **done**. `PilotRecord` was one
+integer, `missions_flown`, and its only consumer was the AI skill ladder.
+
+Meanwhile §91 records what every aircraft in a mission did — track, hours, shots, hits,
+ejection — and then throws all of it away at end of turn. The two halves were one lookup
+apart and nothing joined them: `UnitMap.flight(unit_name)` has returned
+`FlyingUnit(flight, pilot)` since long before either feature existed.
+
+### What it is
+
+A permanent per-pilot career, folded once per turn when mission results are committed, and a
+page that reads it.
+
+| Field | Source |
+|---|---|
+| `sorties` | §91 records where `flew` is true |
+| `combat_sorties` | those on an air-to-air, air-to-ground or escort task |
+| `flight_seconds` | the record's `duration` |
+| `shots`, `hits` | the record's counters |
+| `air_kills`, `ground_kills`, `naval_kills` | **new** — `S_EVENT_KILL`, see below |
+| `ejections` | the record's `ejected` flag |
+| `awards` | award keys, granted by `update_awards` after each fold |
+
+`game/fourteenth/career.py` owns the fold, the rank walk and the award grant.
+`game/sim/missionresultsprocessor.py:commit_pilot_careers` calls it.
+`qt_ui/windows/PilotLogbookDialog.py` renders it, opened by a **Logbook** button on the
+squadron dialog.
+
+### Kill attribution — the one new channel
+
+`S_EVENT_KILL` is the only DCS event that names a **killer**. Every other loss channel in
+`dcs_retribution.lua` records the victim, which is why the campaign has never been able to
+say who shot anything down. `sortie_recorder_on_kill` counts it onto the initiator's §91
+record and splits it by the target's `getDesc().category`.
+
+### Hard constraints
+
+- **Both coalitions must resolve and differ before a kill is credited.** A blue-on-blue is
+  not an air kill, and a target whose coalition cannot be read is left uncredited rather than
+  guessed at. A logbook is worth less than nothing if its numbers are generous.
+- **A ground unit that kills a jet never becomes a flight.** The same rule §91's shot handler
+  learned in test 7: the AAA that downed you is an initiator too, and these are records of
+  *flights*.
+- **Only records that flew are folded.** A counters-only wingman entry would add a sortie for
+  a jet that was never position-sampled — once per member of the formation — and a parked
+  airframe would add one for a jet that never moved (§91's `MIN_SORTIE_DISTANCE_M`). Their
+  weapons and kills are lost with them. Overcounting sorties is worse than missing a stray
+  shot.
+- **`missions_flown` is not `sorties` and must not be merged into it.** The old field counts
+  ATO *assignments*, incremented for every roster seat whether or not that jet moved, and
+  `Squadron.pilot_skill` reads it. Changing it would move every AI pilot's skill tier.
+- **Gun hits are still not counted**, inherited from §91: DCS raises no shot event for them,
+  so there is nothing to rate them against.
+- **A record, never a reward.** Nothing here unlocks an aircraft, changes availability,
+  or gates a mission. That was explicit in the issue and it is what keeps the feature
+  additive.
+- **The resolver is wrapped.** The fold runs inside mission-results commit; a lookup fault
+  costs one record, never the turn's results.
+
+### Ranks and awards are data
+
+`resources/pilot_career.yaml`. The fork ships campaigns spanning many air forces and seventy
+years, so a ladder hard-coded to one service would be wrong for most of them. Three ladders
+(commonwealth, soviet, and a fallback used by everything else) and nine awards; a squadron
+picks the first ladder naming its DCS country, else the fallback.
+
+`requires:` is a "field must be at least this" map over the career record. A requirement
+naming an unknown field **rejects its entry** rather than dropping the requirement — a
+dropped requirement would be met by everyone on their first sortie. The rank is the highest
+grade whose requirements are met, walked to the end of the ladder rather than stopping at the
+first miss, so a ladder mixing requirement fields cannot strand a pilot on a low rung.
+
+An award, once earned, is never taken back; a key with no matching entry is dropped when
+rendering, so a career from an older build still opens.
+
+### Consumer
+
+The SITREP gains an award line for BLUE pilots (`Award: Capt Mitchell — Ace`). A career is
+otherwise only visible to someone who goes looking for it, and the one moment worth telling
+the player about is the one that just happened.
+
+### Save migration
+
+`PilotRecord.__setstate__` defaults every new field. A campaign carried over from an older
+build starts its careers at zero — the honest degrade, because the sortie records those turns
+would have been folded from are long gone. The logbook page says so rather than showing a
+wall of unexplained zeroes.
+
+### Tests
+
+`tests/test_pilot_career.py` (18) · four kill cases added to
+`tests/lua/test_sortie_recorder_runtime.py`.
+
+### Deferred
+
+- **Red careers accumulate but have no surface.** The fold runs for both coalitions because
+  the bookkeeping is free; only BLUE's awards reach the SITREP.
+- **No per-campaign rank ladders.** A campaign yaml cannot yet name a ladder, so an era-
+  specific service ladder means editing the shipped data file.
+- **`missions_flown` still counts assignments.** Re-pointing the skill ladder at `sorties`
+  would change AI pilot progression across every campaign and needs its own call.
+## §97 — Neutral-faction border defense
 
 Every nation on the map is drawn with its real border, the map's own nation included,
 and what each one does about an intruder follows from two facts. **Alignment is
@@ -9720,7 +9831,7 @@ opposing coalition, the only way a "neutral" can legally fire in DCS — and the
 SA-6 battery clones in awake. Both sides violating one country gets a second
 flight rather than a re-swap; two intruders on one side gets nearest-target
 retasking on a 20 s loop. AI intruders are warned but never engaged.
-A red-aligned nation gets no §96 flight:
+A red-aligned nation gets no §97 flight:
 its polygon joins §1's QRA accept zones, so the enemy's existing interceptors defend
 it. A contested country — both sides holding airfields inside it — is enforced by
 nobody and claimed by neither QRA. A neutral that can field no interceptor (no era
@@ -9865,7 +9976,7 @@ as the neutral and the derivation rule corrected us: Beirut sits inside its bord
 hosting four red squadrons, so it resolves **red-aligned** — drawn in the enemy
 family, covered by red's QRA accept zone, and its authored aircraft/SAM fields are
 inert. The zone's yaml is kept as-is (the border is the context the DM wanted drawn);
-the campaign's §96 *interception* showcase is Enduring Resolve, not this.
+the campaign's §97 *interception* showcase is Enduring Resolve, not this.
 
 **Enduring Resolve (Afghanistan) — the corridor case.** The OEF "boulevard": the
 carrier sits at 24.5°N 65.0°E in the Arabian Sea, and everything it launches has to

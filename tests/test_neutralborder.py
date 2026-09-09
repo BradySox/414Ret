@@ -1,4 +1,4 @@
-"""§96 border zones: yaml parsing, derived alignment, and per-side transit."""
+"""§97 border zones: yaml parsing, derived alignment, and per-side transit."""
 
 from __future__ import annotations
 
@@ -168,7 +168,7 @@ def test_a_blue_airfield_inside_makes_it_blue_aligned() -> None:
     zone = _box_zone()
     theater = _theater(_cp(50, 50, blue=True))
     assert zone.posture_in(theater) == BLUE_ALIGNED
-    # Aligned countries are never enforced by §96 -- their own side's QRA does it.
+    # Aligned countries are never enforced by §97 -- their own side's QRA does it.
     assert zone.enforces_against(theater, True) is False
     assert zone.enforces_against(theater, False) is False
 
@@ -191,7 +191,7 @@ def test_both_sides_holding_ground_is_contested_not_the_larger_holder() -> None:
         _cp(20, 20, red=True), _cp(60, 60, red=True), _cp(80, 80, blue=True)
     )
     assert zone.posture_in(theater) == CONTESTED_ALIGNED
-    # And it is nobody's to defend: not §96's, not either QRA's.
+    # And it is nobody's to defend: not §97's, not either QRA's.
     assert zone.enforces_against(theater, True) is False
     assert zone.enforces_against(theater, False) is False
 
@@ -275,7 +275,7 @@ def test_a_country_both_sides_use_has_already_let_both_in() -> None:
 
 
 def test_a_country_neither_side_is_in_refuses_both() -> None:
-    """The §96 case: nobody is based there, so nobody has been invited."""
+    """The §97 case: nobody is based there, so nobody has been invited."""
     zone = _box_zone()
     theater = _theater()
     assert zone.permits(theater, True) is False

@@ -1,4 +1,4 @@
-"""Shipped per-terrain borders (§96): the automagic half.
+"""Shipped per-terrain borders (§97): the automagic half.
 
 Borders are a property of the map, so a campaign that authors none still gets
 them. 52 of the 54 campaigns on real-world maps author none, which is the whole

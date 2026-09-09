@@ -142,7 +142,7 @@ Read before touching a campaign's `.yaml`, `.miz` or build tool.
   juanjux #63** — why the baseline is Passive Defense, the `aiReactionExempt` protocol any
   plugin setting reaction-on-threat must use, why we took his head and not the merged PR,
   and the pre-registered falsifier if AI attrition rises)
-- **Neutral factions** — `414th-neutral-border-defense-notes.md` (**§96** — the engine
+- **Neutral factions** — `414th-neutral-border-defense-notes.md` (**§97** — the engine
   verdict on why a true neutral cannot fire, the opposing-coalition clone mechanism, the
   DM-locked rules incl. derived alignment (airfield-hosting decides the side), the
   overflight/refuses split, the accepted shadow-risk and its recorded fallback, the
@@ -154,7 +154,7 @@ Read before touching a campaign's `.yaml`, `.miz` or build tool.
   **corrected four errors in the research brief's from-memory list** (India on the
   Afghanistan map; no Qatar/Bahrain/Saudi on the Persian Gulf map; Belgium not Germany
   on Normandy/Channel; Saudi Arabia on the Syria map), the two rules that decide the
-  hard cases, and the four gaps between the data and §96 as built. **Armenia and
+  hard cases, and the four gaps between the data and §97 as built. **Armenia and
   Azerbaijan are not pydcs countries either** — the same hole as Turkmenistan, on the
   most-used terrain). **Answers the pre-1991 geometry blocker**: CShapes 2.0 is
   CC BY-NC-SA and historical-basemaps is GPL-3, both gated, but **GSHHG/CIA World
@@ -488,7 +488,8 @@ linked design note.
 93. **Region priorities** — per-control-point BLUE planning emphasis: emphasized regions rank closer, deprioritized farther, ignored left to manual packages. A weight, never a fence.
 94. **Smart threat reaction** — only the flight a missile is actually guiding on goes defensive; everything else holds formation and uses countermeasures.
 95. **Pinned bullseye** — one bullseye for the campaign instead of a new one every turn, never anchored on a ship or an off-map spawn; the kneeboard names the place it sits on and flags the rare turn it moves.
-96. **Neutral-faction border defense** — every nation on the map is drawn with its real border, the map's own nation included: alignment derived from who holds the airfields inside it, counted per country (both sides holding it = contested grey, claimed by neither QRA; a country in the war is outline-only; red-aligned airspace joins §1's QRA accept zones), and a country not in the war defends (overflight is derived from the same airbases: you may cross what you fly from, and what both sides fly from) — it stands a live SAM battery inside its border from mission start, sized to the country (SA-3 up to S-300 or Patriot) and placed so its envelope just covers the frontier, visible before you cross, and hails you on entry; press, and the battery turns hostile in place on your enemy's coalition and engages. Both sides violating one country gets a second battery. Players only; AI is never engaged. The fighter patrol was dropped 2026-09-07 -- scope is the SAM.
+96. **Player career logbook** — a permanent record per pilot: sorties, combat sorties, hours airborne, air/ground/naval kills, ejections, rank and awards, folded from what the mission actually recorded. Ranks and awards are data, not code. A record, never a reward — nothing here unlocks an aircraft or gates a mission.
+97. **Neutral-faction border defense** — every nation on the map is drawn with its real border, the map's own nation included: alignment derived from who holds the airfields inside it, counted per country (both sides holding it = contested grey, claimed by neither QRA; a country in the war is outline-only; red-aligned airspace joins §1's QRA accept zones), and a country not in the war defends (overflight is derived from the same airbases: you may cross what you fly from, and what both sides fly from) — it stands a live SAM battery inside its border from mission start, sized to the country (SA-3 up to S-300 or Patriot) and placed so its envelope just covers the frontier, visible before you cross, and hails you on entry; press, and the battery turns hostile in place on your enemy's coalition and engages. Both sides violating one country gets a second battery. Players only; AI is never engaged. The fighter patrol was dropped 2026-09-07 -- scope is the SAM.
 
 ### Retired, removed or shelved — do not restore
 

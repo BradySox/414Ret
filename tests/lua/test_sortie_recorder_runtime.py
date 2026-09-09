@@ -500,3 +500,96 @@ def test_sampling_marks_the_state_dirty_so_it_gets_written() -> None:
     _sample(harness)
 
     assert harness.to_python(harness.lua.eval("dirty_state")) is True
+
+
+def _kill(harness: DcsPluginHarness, killer: str, target: str) -> None:
+    harness.lua.eval("sortie_recorder_on_kill")(
+        harness.lua.eval(f'Unit.getByName("{killer}")'),
+        harness.lua.eval(f'Unit.getByName("{target}")'),
+    )
+    harness.assert_no_lua_errors()
+
+
+def test_a_kill_lands_in_the_column_its_target_belongs_to() -> None:
+    # S_EVENT_KILL is the only DCS event that names a killer; every other loss
+    # channel records the victim, which is why the campaign could never say who
+    # shot anything down. The split is what a logbook is read for (§96).
+    harness = DcsPluginHarness()
+    _load(harness)
+    harness.add_group(_ai_pair("Enfield 1-1"))
+    harness.add_group(_flight("Mig 1-1", 1, [_unit("Mig 1-1-1", type="MiG-29S")]))
+    harness.add_group(
+        {
+            "name": "SA-6 site",
+            "side": 1,
+            "category": 2,
+            "units": [_unit("SA-6 TEL", type="Kub 2P25 ln")],
+        }
+    )
+    harness.add_group(
+        {
+            "name": "Red flotilla",
+            "side": 1,
+            "category": 3,
+            "units": [_unit("Molniya", type="MOLNIYA")],
+        }
+    )
+
+    _kill(harness, "Enfield 1-1-1", "Mig 1-1-1")
+    _kill(harness, "Enfield 1-1-1", "SA-6 TEL")
+    _kill(harness, "Enfield 1-1-1", "Molniya")
+
+    record = _records(harness)["Enfield 1-1-1"]
+    assert record["air_kills"] == 1
+    assert record["ground_kills"] == 1
+    assert record["naval_kills"] == 1
+
+
+def test_a_blue_on_blue_is_not_credited_as_a_kill() -> None:
+    # A logbook that counts friendly fire is worth less than no logbook. Both
+    # coalitions must resolve and differ before anything is credited.
+    harness = DcsPluginHarness()
+    _load(harness)
+    harness.add_group(_ai_pair("Enfield 1-1"))
+    harness.add_group(_ai_pair("Chevy 1-1"))
+    # Sample first so the killer already has a record: the assertion is that the
+    # kill is not counted, not that the shooter vanishes.
+    _sample(harness)
+
+    _kill(harness, "Enfield 1-1-1", "Chevy 1-1-1")
+
+    assert _records(harness)["Enfield 1-1-1"]["air_kills"] == 0
+
+
+def test_a_ground_unit_that_kills_never_becomes_a_flight() -> None:
+    # The same rule the shot handler learned in test 7: the AAA that downed a
+    # jet is an initiator too, and §91 is a record of FLIGHTS.
+    harness = DcsPluginHarness()
+    _load(harness)
+    harness.add_group(
+        {
+            "name": "0006 | GORILLA (AAA)",
+            "side": 1,
+            "category": 2,
+            "units": [_unit("0046 | ZSU-57-2", type="ZSU_57_2")],
+        }
+    )
+    harness.add_group(_ai_pair("Enfield 1-1"))
+
+    _kill(harness, "0046 | ZSU-57-2", "Enfield 1-1-1")
+
+    assert "0046 | ZSU-57-2" not in _records(harness)
+
+
+def test_kills_survive_the_counters_only_write() -> None:
+    # The track rides only on the final write, but the counters ride on every
+    # one -- a mission that crashes must not cost the day's kills.
+    harness = DcsPluginHarness()
+    _load(harness)
+    harness.add_group(_ai_pair("Enfield 1-1"))
+    harness.add_group(_flight("Mig 1-1", 1, [_unit("Mig 1-1-1", type="MiG-29S")]))
+
+    _kill(harness, "Enfield 1-1-1", "Mig 1-1-1")
+
+    light = harness.to_python(harness.lua.eval("sortie_recorder_payload")(False))
+    assert light["flights"]["Enfield 1-1-1"]["air_kills"] == 1

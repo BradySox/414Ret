@@ -262,6 +262,14 @@ Most of this is opt-in. Full list with toggles, defaults and known limitations:
   AI flights that stray are never fired on, and
   the auto-planner does not route around the border, so it is your corner to cut or not.
   The same borders are drawn on the planning map and the F10 map. Off by default.
+- **Pilots keep a logbook.** Every pilot carries a permanent record: sorties, combat sorties,
+  hours airborne, air, ground and naval kills, ejections, a rank and awards. Open it with the
+  **Logbook** button in the squadron dialog. The numbers come from what the mission recorded,
+  so a jet that never left the ramp logs nothing and a kill counts only when DCS names the
+  killer and the two sides differ — you are never credited for a friendly. Ranks and awards
+  are read from a data file, so they suit the air force flying. It is a record, not a reward:
+  nothing in it unlocks an aircraft, changes availability or gates a mission. A campaign
+  carried over from an older build starts its careers at zero.
 - Also: strikeable motor pool depots, a host F10 menu to scramble bandits.
 
 ---

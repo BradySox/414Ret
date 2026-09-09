@@ -1,4 +1,4 @@
-"""Headless runtime checks for the neutralborder plugin (§96).
+"""Headless runtime checks for the neutralborder plugin (§97).
 
 Pins the "script errors and the feature silently never starts" invariant plus
 the behaviour contract of the border watch: a group inside the polygon below the

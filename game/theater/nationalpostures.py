@@ -1,4 +1,4 @@
-"""Dated national postures (§96): what each country flew, and where it stood.
+"""Dated national postures (§97): what each country flew, and where it stood.
 
 Reads ``resources/borders/national_postures.yaml`` — 47 countries, both blocs,
 244 dated ranges in five buckets. Sources and the reasoning behind every range
@@ -20,7 +20,7 @@ their runways, and it cannot see a base change hands mid-campaign.
 The posture data is kept, not deleted, and ``posture_for`` still reads it — it
 is 244 researched ranges that took a session to assemble, and the question it
 answers ("whose side was this country on, that year") is a real one that a
-future feature may want. It just is not the question §96 asks.
+future feature may want. It just is not the question §97 asks.
 
 An uncovered date, country or bloc is ``closed``: never invent coverage.
 """

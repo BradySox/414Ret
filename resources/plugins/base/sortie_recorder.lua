@@ -82,6 +82,7 @@ end
 -- table cannot take the whole recorder down at file scope.
 local CAT_AIRPLANE = (Unit and Unit.Category and Unit.Category.AIRPLANE) or 0
 local CAT_HELICOPTER = (Unit and Unit.Category and Unit.Category.HELICOPTER) or 1
+local CAT_SHIP = (Unit and Unit.Category and Unit.Category.SHIP) or 3
 
 local function is_aircraft(unit)
     local desc = safe(unit, "getDesc")
@@ -118,6 +119,9 @@ local function record_for(unit)
         track = {},
         shots = 0,
         hits = 0,
+        air_kills = 0,
+        ground_kills = 0,
+        naval_kills = 0,
         ejected = false,
     }
     sortie_records.flights[unit_name] = record
@@ -299,6 +303,41 @@ function sortie_recorder_on_hit(initiator, weapon)
     count_on(initiator, "hits")
 end
 
+-- Which career column a kill lands in. Anything that is not an aircraft or a
+-- ship is ground, so a static, a structure and a scenery object all count the
+-- same way the campaign already treats them.
+local function kill_field(target)
+    local desc = safe(target, "getDesc")
+    if type(desc) == "table" then
+        if desc.category == CAT_AIRPLANE or desc.category == CAT_HELICOPTER then
+            return "air_kills"
+        end
+        if desc.category == CAT_SHIP then
+            return "naval_kills"
+        end
+    end
+    return "ground_kills"
+end
+
+-- S_EVENT_KILL is the only event that names a KILLER; every other loss channel in
+-- this file records the victim, which is why the campaign has never been able to
+-- say who shot anything down. See docs/dev/414th-features.md section 96.
+--
+-- Credited only when both coalitions resolve AND differ. A blue-on-blue is not an
+-- air kill, and a neutral or unresolvable target is left uncredited rather than
+-- guessed at -- a logbook is worth less than nothing if its numbers are generous.
+function sortie_recorder_on_kill(initiator, target)
+    if not initiator or not target then
+        return
+    end
+    local killer_side = safe(initiator, "getCoalition")
+    local target_side = safe(target, "getCoalition")
+    if killer_side == nil or target_side == nil or killer_side == target_side then
+        return
+    end
+    count_on(initiator, kill_field(target))
+end
+
 function sortie_recorder_on_ejection(initiator)
     local record = record_for(initiator)
     if record then
@@ -326,6 +365,9 @@ function sortie_recorder_payload(include_track)
             track = {},
             shots = record.shots,
             hits = record.hits,
+            air_kills = record.air_kills,
+            ground_kills = record.ground_kills,
+            naval_kills = record.naval_kills,
             ejected = record.ejected,
         }
     end

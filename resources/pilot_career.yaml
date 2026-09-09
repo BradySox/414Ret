@@ -1,0 +1,133 @@
+# Ranks and awards for the pilot logbook (414th feature 96).
+#
+# Data, not code. Retribution spans many air forces and seventy years, so a rank
+# ladder hard-coded to one service would be wrong for most campaigns. Add a
+# ladder here rather than in Python; a squadron picks the first ladder listing
+# its DCS country, and the ladder with no `countries:` is the fallback.
+#
+# `requires:` is a plain "field must be at least this" map over the pilot's
+# career record: sorties, combat_sorties, flight_hours, shots, hits, air_kills,
+# ground_kills, naval_kills, kills, ejections, missions_flown. An entry naming a
+# field that does not exist is skipped and logged -- it never blocks the app.
+#
+# Ranks and awards are RECORDS, not rewards. Nothing here unlocks an aircraft,
+# changes availability or gates a mission; that is the whole point of the
+# feature. See docs/dev/414th-features.md section 96.
+
+version: 1
+
+ranks:
+  - ladder: commonwealth
+    countries:
+      - UK
+      - Australia
+      - Canada
+      - New Zealand
+      - India
+      - Pakistan
+    grades:
+      - key: cw_1
+        name: Plt Off
+        requires: {}
+      - key: cw_2
+        name: Fg Off
+        requires: {combat_sorties: 5}
+      - key: cw_3
+        name: Flt Lt
+        requires: {combat_sorties: 15}
+      - key: cw_4
+        name: Sqn Ldr
+        requires: {combat_sorties: 35, flight_hours: 40}
+      - key: cw_5
+        name: Wg Cdr
+        requires: {combat_sorties: 70, flight_hours: 90}
+
+  - ladder: soviet
+    countries:
+      - Russia
+      - USSR
+      - Ukraine
+      - Belarus
+      - Kazakhstan
+      - Georgia
+    grades:
+      - key: sv_1
+        name: Lieutenant
+        requires: {}
+      - key: sv_2
+        name: Senior Lieutenant
+        requires: {combat_sorties: 5}
+      - key: sv_3
+        name: Captain
+        requires: {combat_sorties: 15}
+      - key: sv_4
+        name: Major
+        requires: {combat_sorties: 35, flight_hours: 40}
+      - key: sv_5
+        name: Lieutenant Colonel
+        requires: {combat_sorties: 70, flight_hours: 90}
+
+  # No `countries:`, so this is the fallback for every other air force.
+  - ladder: default
+    grades:
+      - key: of_1
+        name: 2nd Lt.
+        requires: {}
+      - key: of_2
+        name: 1st Lt.
+        requires: {combat_sorties: 5}
+      - key: of_3
+        name: Capt.
+        requires: {combat_sorties: 15}
+      - key: of_4
+        name: Maj.
+        requires: {combat_sorties: 35, flight_hours: 40}
+      - key: of_5
+        name: Lt. Col.
+        requires: {combat_sorties: 70, flight_hours: 90}
+
+awards:
+  - key: first_sortie
+    name: First Sortie
+    description: Flew a mission and came home.
+    requires: {sorties: 1}
+
+  - key: combat_veteran
+    name: Combat Veteran
+    description: Twenty-five sorties on a combat task.
+    requires: {combat_sorties: 25}
+
+  - key: century
+    name: Century Pin
+    description: A hundred hours airborne.
+    requires: {flight_hours: 100}
+
+  - key: first_blood
+    name: First Blood
+    description: A confirmed kill.
+    requires: {kills: 1}
+
+  - key: ace
+    name: Ace
+    description: Five confirmed air-to-air kills.
+    requires: {air_kills: 5}
+
+  - key: double_ace
+    name: Double Ace
+    description: Ten confirmed air-to-air kills.
+    requires: {air_kills: 10}
+
+  - key: mud_mover
+    name: Mud Mover
+    description: Fifty ground kills.
+    requires: {ground_kills: 50}
+
+  - key: ship_killer
+    name: Ship Killer
+    description: A confirmed kill against a ship.
+    requires: {naval_kills: 1}
+
+  - key: silk_letdown
+    name: Silk Letdown
+    description: Left an aircraft under a parachute and lived to log it.
+    requires: {ejections: 1}

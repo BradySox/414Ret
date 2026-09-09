@@ -90,7 +90,7 @@ def _live_card_items(path: Path) -> list[str]:
 def test_no_two_rows_share_an_id() -> None:
     """A long-lived branch and main allocate row ids from the same end.
 
-    Four collisions on the §96 branch alone -- B100/B101, then B106/B107, then
+    Four collisions on the §97 branch alone -- B100/B101, then B106/B107, then
     B110/B111 twice. `_row_statuses()` keys by id, so a duplicate silently
     overwrites its twin and the board under-reports outstanding work; the
     count test catches that only indirectly, and only when the two rows differ

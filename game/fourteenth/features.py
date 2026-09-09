@@ -813,16 +813,25 @@ FEATURES: tuple[Feature, ...] = (
     ),
     Feature("pinned_bullseye", "Pinned bullseye", 95),
     Feature(
-        # §96 neutral-faction border defense: every nation on the map drawn with
-        # its real border (tools/neutral_border_geo.py; shipped per terrain, no
+        # The career ledger between §91 (what a mission recorded) and the pilot
+        # roster (who flew it). Ranks and awards are data, not code:
+        # resources/pilot_career.yaml.
+        "pilot_career_logbook",
+        "Pilot career logbook",
+        96,
+        settings_fields=("pilot_career_logbook",),
+    ),
+    Feature(
+        # §97 neutral-faction border defense: every nation on the map drawn with
+        # its real border (tools/build_terrain_borders.py; shipped per terrain, no
         # campaign authoring needed). One with no coalition airfield inside it
-        # scrambles an alert flight at any intruder below the floor — shadow at return-fire,
-        # engage a player who presses. Spawns are untracked event content (the
-        # §61 precedent); the planner never learns the borders (no navmesh
-        # hazard — do not reopen the §6 revert).
+        # stands a live SAM battery from mission start, neutral until a player
+        # presses. Batteries are untracked event content (the §61 precedent); the
+        # planner never learns the borders (no navmesh hazard — do not reopen the
+        # §6 revert).
         "neutral_border_defense",
         "Neutral-faction border defense",
-        96,
+        97,
         plugin_id="neutralborder",
         settings_fields=("neutral_border_defense",),
     ),

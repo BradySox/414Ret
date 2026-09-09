@@ -1,4 +1,4 @@
-"""The dated posture table (§96): reading it, and the rules for reading it.
+"""The dated posture table (§97): reading it, and the rules for reading it.
 
 Spot-checks are deliberately anchored to events the design note cites, so a
 silent edit to the data trips a test rather than only changing a map.
@@ -88,7 +88,7 @@ def test_documented_history(country: str, when: date, bloc: str, expected: str) 
 # Consent moved to the airbases inside a border on 2026-08-26 (DM call), so
 # `permits_overflight`, `bloc_for_country` and `bloc_for_faction` are gone with
 # it. The posture ranges are kept and still read by `posture_for`; the airframe
-# is the answer §96 actually uses.
+# is the answer §97 actually uses.
 
 
 def test_the_era_picks_the_interceptor() -> None:

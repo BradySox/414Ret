@@ -58,7 +58,7 @@ also relative to `ReferenceLatitude=38 / ReferenceLongitude=36`, not absolute.
 
 ## Outstanding rows at a glance
 
-78 rows need a live pass. Full detail is under each `###` heading below —
+79 rows need a live pass. Full detail is under each `###` heading below —
 search the row id. `☐` untested · `◐` flown but not under the conditions that
 stress it · `✗` fail signature reproduced in-game.
 
@@ -93,8 +93,8 @@ stress it · `✗` fail signature reproduced in-game.
 | B85 | A flight with an unreachable TOT flies instead of orbiting | §8 | ◐ |
 | B98 | The bullseye is the same place it was last mission | §95 | ☑ |
 | B99 | AI packages arrive inside the mission, not after it | §8 | ◐ |
-| B114 | Neutral border: warned, then the battery engages if you press | §96 | ☐ |
-| B115 | Neutral border: AI intruders are never engaged | §96 | ☐ |
+| B114 | Neutral border: warned, then the battery engages if you press | §97 | ☐ |
+| B115 | Neutral border: AI intruders are never engaged | §97 | ☐ |
 | G25 | Armed Recon package: recon drone + SEAD Viper escort + 4-ship sweep | §3 | ◐ |
 | G30 | MANTIS SHORAD link: the point defense ambushes the HARM shot | MANTIS migration | ☐ |
 | G33 | Survivor ADF beacon: the pinned 260 kHz drives a real needle | CSAR (upstream #929 + 414th pin) | ☐ |
@@ -194,6 +194,7 @@ stress it · `✗` fail signature reproduced in-game.
 | B110 | A SEAD jet's steerpoints are the site's emitters, and the card's STPT numbers match | §5 / §3 | ☐ |
 | B111 | A package's escort holds the striker's pace instead of running ahead | §8 cruise mach | ☐ |
 | B112 | The wind you set is the wind the panel shows, and the box stops at 97 kt | wind override / live weather | ☐ |
+| B113 | A pilot's logbook fills in, and the kills are the ones they got | §97 | ☐ |
 
 ---
 
@@ -6186,7 +6187,7 @@ mountain or coastal front will do.
      strength, so an 8-object swing is worth a look on Desert Trident's Jordan
      sector specifically.
 
-### B114 — Neutral border: warned, then the battery engages if you press · §96 · ☐ UNTESTED
+### B114 — Neutral border: warned, then the battery engages if you press · §97 · ☐ UNTESTED
 
 **REOPENED 2026-09-07.** This row closed on 2026-09-01 against the standing
 fighter patrol, and the patrol was dropped the same week (DM call: scope is the
@@ -6228,7 +6229,7 @@ never leaving their airspace, the swap and the SA-6 both proven), and rescoped t
 the SAM alone 2026-09-07. Full history in the design note.
 
 
-### B115 — Neutral border: AI intruders are never engaged · §96 · ☐ UNTESTED
+### B115 — Neutral border: AI intruders are never engaged · §97 · ☐ UNTESTED
 
 **REWRITTEN 2026-09-07 — the card below described the scramble, which was deleted
 2026-08-29.** It told the flyer to check `shadowHoldNm` and `maxShadows`; neither
@@ -6844,3 +6845,41 @@ at 8,000 m, which is a jet stream you cannot arrange. It is pinned by
 `tests/weather/test_atmosx_live_weather.py::test_a_jet_stream_is_clamped_to_what_dcs_will_fly`
 instead. If you ever do see a kneeboard wind above 97 kt on a live-weather turn, that test
 is lying and this row fails.
+
+### B113 — A pilot's logbook fills in, and the kills are the ones they got · §97 · ☐ UNTESTED
+
+**Needs one flown mission.** ~25 min including the flight.
+
+**Setup.** Any campaign, `pilot_career_logbook` on (it is by default). Before generating,
+open your squadron, select the pilot you will fly as, click **Logbook** and note the numbers
+— on a fresh campaign they are all zero. Fly a mission in which you shoot something down or
+destroy something on the ground, land, accept results, then reopen the same pilot's logbook.
+
+**Pass.**
+1. **Sorties went up by exactly one**, not by the size of your flight.
+2. **Flight time is roughly what you flew** — within a minute or two, since the recorder
+   samples every 30 s and only counts you from the first sample airborne.
+3. **The kills you actually got are in the right columns.** A MiG is an air kill, a SAM
+   launcher is a ground kill, a patrol boat is a naval kill.
+4. **A rank and any earned awards render**, and the award also appeared on the SITREP band
+   of the next mission's kneeboard.
+5. **AI pilots in the same flight also have logbooks** with a sortie added.
+
+**Fail signatures, and what each means:**
+
+- **Sorties went up by four on a four-ship.** The fold is crediting the whole flight to one
+  pilot — `UnitMap.flight()` is resolving several unit names to the same pilot, which means
+  the roster seats were not bound per unit.
+- **Sorties went up on a turn you did not fly** (a jet that sat on the ramp). §91's
+  `MIN_SORTIE_DISTANCE_M` guard is not holding; check that `SortieRecord.flew` is being
+  consulted and not just `record.track`.
+- **Kills are all zero after a mission you know you got one in.** `S_EVENT_KILL` is not
+  reaching `sortie_recorder_on_kill`. Grep `state.json` for `air_kills` — if the field is
+  there and zero, the coalition check rejected it; if the field is absent, the Lua wiring in
+  `dcs_retribution.lua` is not firing.
+- **You are credited with a kill on a friendly.** The coalition guard is not working; that
+  is the one thing this feature must never do.
+- **Flight time is wildly high** (tens of hours after one mission). Hours are being summed
+  from counters-only or parked records rather than only from records that flew.
+- **The page is all zeroes on a campaign carried over from an older build.** Expected, not a
+  failure — pre-§97 saves have no records to fold and the page says so.

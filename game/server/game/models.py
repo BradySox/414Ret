@@ -144,7 +144,7 @@ class CampaignStatusJs(BaseModel):
 
 
 class NeutralBorderJs(BaseModel):
-    """§96: one neutral country's defended airspace, for the planning map.
+    """§97: one neutral country's defended airspace, for the planning map.
 
     The DCS F10 map draws this at runtime, but by then you are already in the
     cockpit -- the border has to be visible while you are *planning* the route,

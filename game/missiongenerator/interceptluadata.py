@@ -123,7 +123,7 @@ class DefenseZoneEntry:
 
 @dataclass(frozen=True)
 class DefensePolygonEntry:
-    """A coalition's defended airspace given as a polygon, not a circle (§96).
+    """A coalition's defended airspace given as a polygon, not a circle (§97).
 
     A country that hosts one side's airfields is that side's territory, and its
     real national border is the honest shape of it -- a circle around the field
@@ -139,9 +139,9 @@ class DefensePolygonEntry:
 
 
 def aligned_defense_polygons(theater: "ConflictTheater") -> list[DefensePolygonEntry]:
-    """§96 borders of countries aligned with a coalition, as QRA accept zones.
+    """§97 borders of countries aligned with a coalition, as QRA accept zones.
 
-    Neutral countries are excluded: they defend themselves through §96's own
+    Neutral countries are excluded: they defend themselves through §97's own
     alert flight, and adding them here would let a belligerent's QRA scramble
     over a country that is not in the war.
     """
@@ -303,7 +303,7 @@ def populate_intercept_lua(
         record.add_key_value("y", f"{zone.y:.1f}")
         record.add_key_value("radiusM", f"{zone.radius_m:.1f}")
 
-    # §96 aligned-nation airspace, as polygons rather than circles. Emitted in
+    # §97 aligned-nation airspace, as polygons rather than circles. Emitted in
     # its own bucket because the Lua builds a different Moose zone type; both
     # buckets end up in the same SetBorderZone list.
     polys = intercept.get_or_create_item("POLYGONS")

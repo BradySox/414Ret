@@ -469,6 +469,7 @@ linked design note.
 93. **Region priorities** — per-control-point BLUE planning emphasis: emphasized regions rank closer, deprioritized farther, ignored left to manual packages. A weight, never a fence.
 94. **Smart threat reaction** — only the flight a missile is actually guiding on goes defensive; everything else holds formation and uses countermeasures.
 95. **Pinned bullseye** — one bullseye for the campaign instead of a new one every turn, never anchored on a ship or an off-map spawn; the kneeboard names the place it sits on and flags the rare turn it moves.
+96. **Player career logbook** — a permanent record per pilot: sorties, combat sorties, hours airborne, air/ground/naval kills, ejections, rank and awards, folded from what the mission actually recorded. Ranks and awards are data, not code. A record, never a reward — nothing here unlocks an aircraft or gates a mission.
 
 ### Retired, removed or shelved — do not restore
 

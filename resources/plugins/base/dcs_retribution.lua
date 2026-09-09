@@ -314,6 +314,11 @@ local function onEvent(event)
 	
 	if event.id == world.event.S_EVENT_KILL and event.target then
         kill_events[#kill_events + 1] = event.target.getName(event.target)
+        -- The killer, for the pilot logbook. This is the only DCS event that names
+        -- one; kill_events above records the victim, as every loss channel does.
+        if event.initiator then
+            pcall(sortie_recorder_on_kill, event.initiator, event.target)
+        end
         dirty_state = true
     end
 

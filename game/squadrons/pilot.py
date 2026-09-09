@@ -10,7 +10,65 @@ from faker import Faker
 
 @dataclass
 class PilotRecord:
+    """A pilot's career, carried across the whole campaign.
+
+    ``missions_flown`` is the original field and counts ATO *assignments* -- it is
+    incremented for every roster seat when results are committed, whether or not
+    that jet ever moved, and the AI skill ladder reads it. Everything below is the
+    §96 logbook and is folded in from the §91 sortie records instead, so it counts
+    only aircraft that actually flew. The two therefore disagree, deliberately:
+    changing ``missions_flown`` would move every AI pilot's skill tier.
+
+    See docs/dev/414th-features.md §96.
+    """
+
     missions_flown: int = field(default=0)
+    #: Sorties actually flown -- a §91 record with track and movement behind it.
+    sorties: int = field(default=0)
+    #: Sorties on an air-to-air, air-to-ground or escort task. A tanker orbit is
+    #: a sortie and is not a combat sortie.
+    combat_sorties: int = field(default=0)
+    #: Seconds airborne and observed, summed over every sortie.
+    flight_seconds: float = field(default=0.0)
+    shots: int = field(default=0)
+    #: Impacts matched back to a shot this pilot fired. Gun hits are not counted:
+    #: DCS raises no shot event for them, so there is nothing to rate them
+    #: against (the §91 constraint).
+    hits: int = field(default=0)
+    air_kills: int = field(default=0)
+    ground_kills: int = field(default=0)
+    naval_kills: int = field(default=0)
+    ejections: int = field(default=0)
+    #: Award keys earned, oldest first. Keys, never rendered names -- the names
+    #: live in resources/pilot_career.yaml and may be re-worded.
+    awards: list[str] = field(default_factory=list)
+
+    def __setstate__(self, state: dict[str, Any]) -> None:
+        # Saves from before the logbook carry only missions_flown. A career that
+        # starts at zero mid-campaign is the honest degrade: the sortie records
+        # those turns would have been folded from are long gone.
+        for name, default in (
+            ("sorties", 0),
+            ("combat_sorties", 0),
+            ("flight_seconds", 0.0),
+            ("shots", 0),
+            ("hits", 0),
+            ("air_kills", 0),
+            ("ground_kills", 0),
+            ("naval_kills", 0),
+            ("ejections", 0),
+        ):
+            state.setdefault(name, default)
+        state.setdefault("awards", [])
+        self.__dict__.update(state)
+
+    @property
+    def flight_hours(self) -> float:
+        return self.flight_seconds / 3600.0
+
+    @property
+    def kills(self) -> int:
+        return self.air_kills + self.ground_kills + self.naval_kills
 
 
 @unique

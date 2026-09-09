@@ -41,6 +41,7 @@ from qt_ui.simcontroller import SimController
 from qt_ui.windows.GameUpdateSignal import GameUpdateSignal
 from qt_ui.widgets.combos.QSquadronLiverySelector import SquadronLiverySelector
 from qt_ui.widgets.combos.primarytaskselector import PrimaryTaskSelector
+from qt_ui.windows.PilotLogbookDialog import PilotLogbookDialog
 
 
 class PilotDelegate(TwoColumnRowDelegate):
@@ -437,6 +438,16 @@ class SquadronDialog(QDialog):
         button_panel.addStretch()
         layout.addLayout(button_panel)
 
+        # §96: the career page. Hidden with the feature off rather than disabled --
+        # an always-visible button onto a page of zeroes is worse than no button.
+        if self.squadron.settings.pilot_career_logbook:
+            self.logbook_button = QPushButton("Logbook")
+            self.logbook_button.setProperty("style", "start-button")
+            self.logbook_button.clicked.connect(self.open_logbook)
+            button_panel.addWidget(
+                self.logbook_button, alignment=Qt.AlignmentFlag.AlignRight
+            )
+
         self.rename_button = QPushButton("Rename pilot")
         self.rename_button.setProperty("style", "start-button")
         self.rename_button.clicked.connect(self.rename_pilot)
@@ -669,6 +680,18 @@ class SquadronDialog(QDialog):
         )
         if ok:
             p.name = text
+
+    def open_logbook(self) -> None:
+        index = self.pilot_list.currentIndex()
+        if not index.isValid():
+            logging.error("Cannot open the logbook: no pilot is selected")
+            return
+        pilot = self.squadron_model.pilot_at_index(index)
+        dialog = PilotLogbookDialog(pilot, self.squadron_model.squadron, self)
+        # Held on the dialog like every other child here, or Python collects it
+        # the moment this method returns and the window flashes shut.
+        self._child_dialogs.append(dialog)
+        dialog.show()
 
     def toggle_ai(self) -> None:
         index = self.pilot_list.currentIndex()

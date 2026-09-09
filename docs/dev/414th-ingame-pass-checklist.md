@@ -6194,10 +6194,13 @@ fighter patrol, and the patrol was dropped the same week (DM call: scope is the
 SAM). None of that evidence transfers — there is no aircraft in the feature any
 more.
 
-**What defends now.** One live SAM battery per defending country, neutral and on
-the map from `t=0`, sized to the country (SA-3 or Hawk for a small one, S-300 or
-Patriot for a large one) and placed deep enough that its envelope just reaches
-the frontier.
+**What defends now.** Live SAM batteries, neutral and on the map from `t=0`,
+sized to the country (SA-3 or Hawk for a small one, S-300 or Patriot for a large
+one) and **counted off it too** — roughly one per 200 NM of war-facing frontier,
+capped at six, spread along the stretch of border the war is near, each deep
+enough that its envelope just reaches the frontier. A single battery covered
+3.5 % of Pakistan's border on the Afghanistan map, which is why there are now
+several (2026-09-09).
 
 **Setup.** Any campaign with `neutral_border_defense` on and the plugin ticked.
 Into the Hornet's Nest (Lebanon) is the worked case.
@@ -6212,6 +6215,11 @@ Into the Hornet's Nest (Lebanon) is the worked case.
   battery **changes coalition and shoots at you**.
 * Its envelope actually reaches the border you crossed — you should not be able
   to loiter just inside the frontier untouched.
+* **A large country has several, and they are spread out** — on Afghanistan,
+  Pakistan should show 5-6 and Uzbekistan 1. Look at the F10 map before you fly.
+* **The whole country escalates.** After you are declared hostile, the batteries
+  elsewhere along that border are hostile too — fly at a second one and it should
+  engage without a fresh warning.
 
 **Fail signatures.**
 
@@ -6222,6 +6230,10 @@ Into the Hornet's Nest (Lebanon) is the worked case.
 * A country smaller than its system's reach (Bahrain, the two Persian Gulf
   slivers) shooting well outside its own border. Known and accepted, but record
   how far.
+* **Clutter.** The count was picked off measurement, not off a flight: ~17 sites
+  on an Afghanistan campaign, ~68 vehicles. If the RWR or the F10 map reads as an
+  authored IADS rather than a border, say so and the spacing goes up.
+* Two batteries stacked on top of each other, or one outside the border.
 
 **History:** built 2026-08-24 as a scramble, rebuilt 2026-08-29 as a standing
 four-ship patrol, closed 2026-09-01 on test 25 (five patrols, 23 of 24 aircraft

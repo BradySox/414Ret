@@ -49,7 +49,7 @@ def _config(battery: bool = True, floor_ft: str = "10000") -> dict[str, Any]:
         "overflightRed": "false",
     }
     if battery:
-        zone["samGroup"] = SAM_GROUP
+        zone["samGroups"] = [{"name": SAM_GROUP}]
     return {
         "plugins": {
             "neutralborder": {
@@ -627,4 +627,77 @@ def test_a_zone_with_no_battery_never_claims_to_defend() -> None:
 
     assert _swaps(h) == []
     assert _hails(h) == [], "a zone with nothing to enforce with still challenged"
+    h.assert_no_lua_errors()
+
+
+#: A country stands one battery per stretch of war-facing frontier, so the
+#: multi-battery case is the normal one -- a single site is the small country.
+MANY_GROUPS = [f"NeutralBorder|Lebanon|SA-3|{n}" for n in (1, 2, 3)]
+
+
+def _setup_many(cfg: dict[str, Any]) -> DcsPluginHarness:
+    h = DcsPluginHarness()
+    h.add_airbase({"name": "Rayak", "x": 10000, "z": 10000, "elev": 900, "side": 0})
+    for index, name in enumerate(MANY_GROUPS):
+        h.add_group(
+            {
+                "name": name,
+                "id": 900 + index,
+                "side": 0,
+                "category": 2,
+                "units": [
+                    {
+                        "name": name + "-1",
+                        "type": "p-19 s-125 sr",
+                        "x": 5000 + index * 4000,
+                        "z": 5000 + index * 4000,
+                        "alt": 900,
+                        "airborne": False,
+                    }
+                ],
+            }
+        )
+    h.lua.globals().dcsRetribution = h.to_lua(cfg)
+    return h
+
+
+def test_the_whole_country_escalates_not_just_the_site_you_flew_past() -> None:
+    """A country stands several batteries and every one of them swaps together.
+    Swapping only the nearest would leave the rest of the border a neutral the
+    player could keep crossing after being declared hostile."""
+    cfg = _config()
+    cfg["neutralBorder"]["zones"][0]["samGroups"] = [
+        {"name": name} for name in MANY_GROUPS
+    ]
+    h = _setup_many(cfg)
+    h.add_group(_intruder("Viper 1-1", 42, side=2))
+    h.load_plugin_script(PLUGIN)
+    h.advance_to(200)
+
+    swaps = _swaps(h)
+    assert sorted(s["group"] for s in swaps) == sorted(MANY_GROUPS)
+    assert all(
+        s["coalitionId"] == 1 for s in swaps
+    ), "a BLUE intruder must be opposed by RED at every site"
+    h.assert_no_lua_errors()
+
+
+def test_the_second_side_is_answered_at_every_site_too() -> None:
+    """The clone set mirrors the standing set, or the other side's intruder
+    faces a fraction of the border the first one faced."""
+    cfg = _config()
+    cfg["neutralBorder"]["zones"][0]["samGroups"] = [
+        {"name": name} for name in MANY_GROUPS
+    ]
+    h = _setup_many(cfg)
+    h.add_group(_intruder("Viper 1-1", 42, side=2))  # BLUE player
+    h.load_plugin_script(PLUGIN)
+    h.advance_to(200)
+    assert len(_swaps(h)) == len(MANY_GROUPS)
+
+    h.add_group(_intruder("Bandit 1", 50, side=1))  # RED player
+    h.advance_to(400)
+
+    assert len(_second_batteries(h)) == len(MANY_GROUPS)
+    assert len(_swaps(h)) == len(MANY_GROUPS), "a battery changed sides mid-fight"
     h.assert_no_lua_errors()

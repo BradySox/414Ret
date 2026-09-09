@@ -9811,33 +9811,47 @@ in front of you, reading Sweden and Finland `closed` in 1983 while both sides
 flew combat sorties off their runways, and it cannot see a base change hands.
 The research is kept and still supplies the airframe. **Altitude floors went
 with it** — they came from its `contested` bucket, so a floor is now authored
-only and a defending country defends at any height. **A refusing neutral stands a
-live SAM battery inside its own border from mission generation** (the fighter
+only and a defending country defends at any height. **A refusing neutral stands
+live SAM batteries inside its own border from mission generation** (the fighter
 patrol it used to fly was dropped 2026-09-07, DM call — scope is the SAM). The
 system is sized to the largest circle that fits inside the country: SA-3 by
 default, SA-11 above 40 NM of room, S-300 above 100, with Hawk and Patriot for
 the eleven authored western-equipped nations. **Dates are export dates, not
 in-service** — checked against the 1982 Falklands column, where in-service dates
-handed Argentina a Buk. The site sits at exactly `min(reach, room)` from the
-frontier so its envelope just covers the border: a first cut that only capped
-depth left Iran's Persian Gulf battery 175 NM inside, defending nothing. Deep
-placement also means the site is not on an airfield, so the escalation swap
-cannot hand the neutral's airbase to a belligerent. It is visible before you cross, which is the deterrent the
-scramble never managed (three flown attempts, all too slow or too far). Cross and
-it hails you at once, and warns again at dwell; neither call launches anything.
-A player who stays past the engage timer, releases a weapon inside, or fires on
-the patrol turns it hostile **in place** — `GROUP:Respawn` onto the intruder's
-opposing coalition, the only way a "neutral" can legally fire in DCS — and the
-SA-6 battery clones in awake. Both sides violating one country gets a second
-flight rather than a re-swap; two intruders on one side gets nearest-target
-retasking on a 20 s loop. AI intruders are warned but never engaged.
-A red-aligned nation gets no §97 flight:
+handed Argentina a Buk. **How many is the country's own size** (DM call
+2026-09-09) — roughly one per 200 NM of war-facing frontier, capped at six.
+A single site was 3.5 % of Pakistan's border on the Afghanistan map, measured
+2026-09-09 over 2,291 NM of real frontier, so crossing anywhere else met
+nothing. Only the war-facing stretch is manned: a frontier more than 250 NM from
+every airbase in the campaign is one no sortie reaches, and the map's own clip
+edge is not a frontier at all. Each site sits at exactly `min(reach, room)` from
+the border so its envelope just covers it: a first cut that only capped depth
+left Iran's Persian Gulf battery 175 NM inside, defending nothing. Deep
+placement also means no site is on an airfield, so the escalation swap cannot
+hand the neutral's airbase to a belligerent. They are visible before you cross,
+which is the deterrent the scramble never managed (three flown attempts, all too
+slow or too far). Cross and it hails you at once, and warns again at dwell;
+neither call launches anything. A player who stays past the engage timer,
+releases a weapon inside, or fires on a battery turns **the whole country**
+hostile in place — every one of its sites `GROUP:Respawn`s onto the intruder's
+opposing coalition, the only way a "neutral" can legally fire in DCS. Swapping
+only the nearest would leave the rest of the border a neutral you could keep
+crossing after being declared hostile. Both sides violating one country clones
+the whole set for the second intruder rather than re-swapping. AI intruders are
+warned but never engaged.
+A red-aligned nation gets no §97 battery:
 its polygon joins §1's QRA accept zones, so the enemy's existing interceptors defend
 it. A contested country — both sides holding airfields inside it — is enforced by
-nobody and claimed by neither QRA. A neutral that can field no interceptor (no era
-airframe, or no airfield/spawn) is drawn toothless; `can_field_an_interceptor` is
-asked by the generator **and** by the web map, which used to disagree with it on 14
-of the shipped zones and draw Cyprus closed over a mission you could fly through.
+nobody and claimed by neither QRA. A neutral with no station point at all is drawn
+toothless; `can_defend` is asked by the generator **and** by the web map, which used
+to disagree with it on 14 of the shipped zones and draw Cyprus closed over a mission
+you could fly through. **DCS models no Turkmenistan, Uzbekistan, Tajikistan, Armenia
+or Azerbaijan**, and those five zones used to be dropped from the mission outright —
+border undrawn, airspace unenforced. They now borrow a neighbour's units (DM call
+2026-09-09): the group is still named for the real country, the radio call still says
+it, and the plugin rewrites `CountryID` on escalation anyway, so the stand-in supplies
+skins and nothing else. It falls through when its first choice is already a
+belligerent, which Russia is on the Caucasus map.
 Colours: red / blue / contested grey / neutral mint, shading = enforcement. Design +
 the session's decisions: `docs/dev/design/414th-neutral-border-defense-notes.md`
 (incl. the DECIDED-not-built automagic direction and the national-postures research
@@ -9846,20 +9860,25 @@ brief).
 ### The engine verdict, in one line
 
 A true-neutral unit cannot be made to fire (hostility gates weapons release, not
-tasking; no runtime coalition move exists), so the alert units are clones spawned under
-the opposing side's country (`SPAWN:InitCountry`/`InitCoalition`) with the escalation
-applied §61-style: a raw `{id="AttackGroup"}` controller task, re-set only when the
-target changes.
+tasking; no runtime coalition move exists), so the batteries stand as neutrals and are
+respawned in place under the intruder's *opposing* country on escalation
+(`GROUP:Respawn` with a rewritten `CountryID`/`CoalitionID`). No attack task is set
+and none is wanted: a SAM acquires and engages whatever enters its envelope once it is
+weapons-free. Only the second-intruder case clones
+(`SPAWN:InitCountry`/`InitCoalition`), because a battery already swapped is an *ally*
+of the other side.
 
 ### Shape
 
 - **Python** — `game/theater/neutralborder.py` (`NeutralBorderZone`, the campaign yaml
   contract), parsed by `MizCampaignLoader.add_neutral_border_zones` onto
   `ConflictTheater.neutral_border_zones` (persisted; `__setstate__` defaults it for old
-  saves). `NeutralBorderGenerator` builds, per zone, one live SAM battery under the
+  saves). `NeutralBorderGenerator` builds, per zone, live SAM batteries under the
   neutral country, sized and sited from the border polygon (`neutralbordersams.py`
-  holds the ladder; `NeutralBorderZone.interior_room` / `.sam_site` do the geometry),
-  and records what it built on `MissionData.neutral_border_zones`;
+  holds the ladder; `NeutralBorderZone.interior_room` / `.sam_sites` do the geometry,
+  and the generator hands the latter the campaign's control points and the union of
+  every zone so it can tell war-facing frontier from map clip), and records them on
+  `MissionData.neutral_border_zones`;
   `neutralborderluadata.py` serializes that to `dcsRetribution.neutralBorder`.
 - **Lua** — `resources/plugins/neutralborder/neutralborder-config.lua`: border scan
   (bbox + ray-cast point-in-polygon on terrain XY), per-group dwell, the warn → shadow
@@ -9958,11 +9977,11 @@ because amber is already SUSPECTED on the planner map.
 
 ### Rules fixed by DM call (2026-08-24)
 
-- Single-flight ladder: the same flight that shadows is the one that engages. It spawns
-  visibly red/blue from the start; the accepted risk is that nearby AI of the intruder's
-  side may engage the shadower uninvited (return-fire ROE answers it). The recorded
-  fallback if flown tests show shadowers dying early is the in-place coalition-swap
-  respawn — see the design note; do not re-derive it.
+- ~~Single-flight ladder~~ **superseded 2026-09-07** — the patrol is gone and its
+  shadow risk with it. The recorded fallback it named, the in-place coalition-swap
+  respawn, is what shipped.
+- The **country** escalates, not the site: every battery it stands swaps together
+  (DM call 2026-09-09, with the count rework).
 - Everyone trips the border; only players are ever engaged. The planner stays blind —
   no navmesh hazard (do not reopen the §6 revert).
 - In-mission only: nothing persists past the debrief. Spawns are free, untracked event

@@ -4,14 +4,15 @@
 -- Reads dcsRetribution.neutralBorder (emitted only when neutral_border_defense is on and the
 -- generator could build the map's zones; inert otherwise). Design + decisions:
 -- docs/dev/design/414th-neutral-border-defense-notes.md. Constraints a reader could undo:
---   * The patrol is a STANDING orbit, airborne from mission start, not a scramble. Three flown
---     attempts to launch one on demand all failed; do not rebuild it.
---   * It orbits as a true neutral and swaps to the intruder's OPPOSING coalition to shoot,
+--   * A country stands SEVERAL batteries, one per stretch of war-facing frontier. One site
+--     covered 3.5 % of Pakistan's border on the Afghanistan map, so the whole zone escalates
+--     together -- never just the site the intruder happens to be near.
+--   * They sit as true neutrals and swap to the intruder's OPPOSING coalition to shoot,
 --     because a true-neutral unit cannot fire, ever -- do not "fix" the spawn to neutral.
 --   * AI intruders are warned but NEVER escalated on (DM call). Only players earn the attack.
---   * The battery is LIVE and neutral from t=0, not late-activated: the border has to have
---     something in it before you cross. sam_group may still be nil for a zone that could not
---     be built, so guard it.
+--   * The batteries are LIVE and neutral from t=0, not late-activated: the border has to have
+--     something in it before you cross. sam_groups may still be empty for a zone that could
+--     not be built, so guard it.
 --   * Escalation is ROE + tasking only. Never enableEmission (hard constraint).
 --   * Spawns are free, untracked event content (the §61 precedent).
 -- Values arrive as Lua strings (LuaItem contract) -- tonumber() everything numeric here.
@@ -102,7 +103,14 @@ for _, raw in ipairs(data.zones or {}) do
         -- never scanned, carry no templates, and need no origin to be usable.
         local enforces = (posture == "neutral") and not (ofBlue and ofRed)
         -- An enforcing zone needs a battery to enforce with.
-        local usable = (not enforces) or (raw.samGroup ~= nil and has_origin)
+        -- Several batteries per country. Emitted as a list of { name = ... }.
+        local sam_groups = {}
+        for _, entry in ipairs(raw.samGroups or {}) do
+            if entry.name then
+                sam_groups[#sam_groups + 1] = tostring(entry.name)
+            end
+        end
+        local usable = (not enforces) or (#sam_groups > 0 and has_origin)
         if #verts >= 3 and usable then
             zones[#zones + 1] = {
                 -- Its own position in `zones`, so an intruder state (which
@@ -130,10 +138,10 @@ for _, raw in ipairs(data.zones or {}) do
                 -- centroid is not on a concave country.
                 label_x = tonumber(raw.labelX),
                 label_z = tonumber(raw.labelZ),
-                -- The STANDING battery's group name. A live neutral group from
-                -- mission start, not a template to clone. NOT tostring(): that
-                -- turns a missing name into the group name "nil".
-                sam_group = raw.samGroup and tostring(raw.samGroup) or nil,
+                -- The STANDING batteries' group names. Live neutral groups from
+                -- mission start, not templates to clone. Empty for a zone the
+                -- generator could not build, which never enforces.
+                sam_groups = sam_groups,
                 red_country = tonumber(raw.redCountryId),
                 blue_country = tonumber(raw.blueCountryId),
                 verts = verts,
@@ -372,30 +380,37 @@ local intruders = {} -- group name -> state
 --: the other side -- it will not fire on them. A country fighting both at once
 --: needs a second site, cloned from its own template onto the other coalition.
 local function second_battery(zone, intruder_side)
-    if zone.second_group then
-        return Group.getByName(zone.second_group)
+    if zone.second_groups then
+        return zone.second_groups
     end
-    if not zone.sam_group then
+    if #zone.sam_groups == 0 then
         return nil
     end
-    local name = "NEUTRAL SAM2 " .. zone.country
-    local ok, err = pcall(function()
-        local sp = SPAWN:NewWithAlias(zone.sam_group, name)
-        sp:InitCountry(clone_country(zone, intruder_side))
-        sp:InitCoalition(opposing(intruder_side))
-        -- 0 = no cap. A nonzero unit cap smaller than the template silently
-        -- refuses the whole spawn (Moose.lua:21358).
-        sp:InitLimit(0, 0)
-        sp:Spawn()
-    end)
-    if not ok then
-        log("second battery failed for " .. zone.country .. ": " .. tostring(err))
+    local clones = {}
+    for index, source in ipairs(zone.sam_groups) do
+        local name = "NEUTRAL SAM2 " .. zone.country .. " " .. index
+        local ok, err = pcall(function()
+            local sp = SPAWN:NewWithAlias(source, name)
+            sp:InitCountry(clone_country(zone, intruder_side))
+            sp:InitCoalition(opposing(intruder_side))
+            -- 0 = no cap. A nonzero unit cap smaller than the template silently
+            -- refuses the whole spawn (Moose.lua:21358).
+            sp:InitLimit(0, 0)
+            sp:Spawn()
+        end)
+        if ok then
+            clones[#clones + 1] = name
+        else
+            log("second battery failed for " .. zone.country .. ": " .. tostring(err))
+        end
+    end
+    if #clones == 0 then
         return nil
     end
-    zone.second_group = name
+    zone.second_groups = clones
     zone.second_side = intruder_side
-    log(zone.country .. " put a second battery up against the other side")
-    return Group.getByName(name)
+    log(zone.country .. " put " .. #clones .. " more batteries up against the other side")
+    return clones
 end
 
 --: Swap the standing neutral battery onto the coalition opposing the intruder.
@@ -406,42 +421,51 @@ end
 --: battery that is free, since it has no velocity to lose (the aircraft patrol
 --: this replaced measured 211 m/s within 5 s of the same call, 2026-09-01).
 local function swap_to_shooting(zone, intruder_side)
-    if not zone.sam_group then
+    if #zone.sam_groups == 0 then
         return nil -- nothing was built here
     end
     if zone.swapped then
         if intruder_side ~= zone.engaged_side then
             return second_battery(zone, intruder_side)
         end
-        return Group.getByName(zone.sam_group)
+        return zone.sam_groups
     end
-    local grp = GROUP:FindByName(zone.sam_group)
-    if not grp or not grp:IsAlive() then
+    -- The COUNTRY escalates, not the site you happened to fly past: every
+    -- battery it stands swaps together, or the rest of the border stays a
+    -- neutral you can cross unopposed after being declared hostile.
+    local swapped = {}
+    for _, name in ipairs(zone.sam_groups) do
+        local grp = GROUP:FindByName(name)
+        if grp and grp:IsAlive() then
+            local ok, err = pcall(function()
+                local template = grp:GetTemplate()
+                template.CountryID = clone_country(zone, intruder_side)
+                template.CoalitionID = opposing(intruder_side)
+                grp:Respawn(template, true)
+            end)
+            if ok then
+                swapped[#swapped + 1] = name
+            else
+                log("coalition swap failed for " .. name .. ": " .. tostring(err))
+            end
+        end
+    end
+    if #swapped == 0 then
         log("no standing battery for " .. zone.country .. " -- nothing to engage with")
-        return nil
-    end
-    local ok, err = pcall(function()
-        local template = grp:GetTemplate()
-        template.CountryID = clone_country(zone, intruder_side)
-        template.CoalitionID = opposing(intruder_side)
-        grp:Respawn(template, true)
-    end)
-    if not ok then
-        log("coalition swap failed for " .. zone.country .. ": " .. tostring(err))
         return nil
     end
     zone.swapped = true
     zone.engaged_side = intruder_side
-    log(zone.country .. " battery is now hostile to the intruder")
-    return Group.getByName(zone.sam_group)
+    log(zone.country .. " turned " .. #swapped .. " batteries hostile to the intruder")
+    return swapped
 end
 
---: Which group is answering a given intruder side.
-local function battery_for(zone, intruder_side)
+--: Which groups are answering a given intruder side.
+local function batteries_for(zone, intruder_side)
     if zone.swapped and intruder_side ~= zone.engaged_side then
-        return zone.second_group
+        return zone.second_groups or {}
     end
-    return zone.sam_group
+    return zone.sam_groups
 end
 
 local function escalate(state, intruder_group)
@@ -460,13 +484,14 @@ local function escalate(state, intruder_group)
     -- ask DCS the group exists before MOOSE touches it.
     timer.scheduleFunction(function()
         pcall(function()
-            local bname = battery_for(zone, state.side)
-            local dg = bname and Group.getByName(bname)
-            if dg and dg:isExist() then
-                local mg = GROUP:FindByName(bname)
-                if mg then
-                    mg:OptionROEWeaponFree()
-                    mg:OptionAlarmStateRed()
+            for _, bname in ipairs(batteries_for(zone, state.side)) do
+                local dg = Group.getByName(bname)
+                if dg and dg:isExist() then
+                    local mg = GROUP:FindByName(bname)
+                    if mg then
+                        mg:OptionROEWeaponFree()
+                        mg:OptionAlarmStateRed()
+                    end
                 end
             end
         end)

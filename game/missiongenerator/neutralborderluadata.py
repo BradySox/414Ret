@@ -1,10 +1,10 @@
 """Neutral border defense -> Lua config bridge (``dcsRetribution.neutralBorder``).
 
-§97: a country not in the war defends its own airspace. The
-generator (``NeutralBorderGenerator``) builds late-activation alert templates at
-each neutral field and records what it actually built here; this module only
-serializes that record. A zone whose templates could not be built never reaches
-the Lua, so the plugin needs no missing-template handling.
+§97: a country not in the war defends its own airspace. The generator
+(``NeutralBorderGenerator``) stands the batteries and records what it actually
+built here; this module only serializes that record. A zone whose batteries
+could not be built never reaches the Lua, so the plugin needs no
+missing-battery handling.
 
 All values are emitted as Lua strings (the ``LuaItem`` contract); the plugin
 ``tonumber()``s the numerics once at load. Border vertices are terrain XY —
@@ -46,8 +46,10 @@ class NeutralBorderLuaZone:
     #: closed to the other, so this is two flags, not one.
     overflight_blue: bool = False
     overflight_red: bool = False
-    #: Exact .miz group name of the late-activation fighter template.
-    sam_group: str | None = None
+    #: Exact .miz group names of the standing batteries, one per stretch of
+    #: war-facing frontier. Several, not one: a single site covered 3.5 % of
+    #: Pakistan's border on the Afghanistan map (measured 2026-09-09).
+    sam_groups: list[str] = field(default_factory=list)
     #: pydcs country ids present in the mission, one per side: the clone spawns
     #: under whichever opposes the intruder.
     red_country_id: int = 0
@@ -116,11 +118,13 @@ def populate_neutral_border_lua(
                 record.add_key_value("floorBlueFt", str(zone.floor_blue_ft))
             if zone.floor_red_ft is not None:
                 record.add_key_value("floorRedFt", str(zone.floor_red_ft))
-            # The standing battery, live and neutral from t=0. Absent only for
-            # a zone the generator could not build, and the plugin drops an
-            # enforcing zone that has none rather than promise a defence.
-            if zone.sam_group is not None:
-                record.add_key_value("samGroup", zone.sam_group)
+            # The standing batteries, live and neutral from t=0. Empty only
+            # for a zone the generator could not build, and the plugin drops an
+            # enforcing zone with none rather than promise a defence.
+            if zone.sam_groups:
+                groups_node = record.get_or_create_item("samGroups")
+                for name in zone.sam_groups:
+                    groups_node.add_item().add_key_value("name", name)
             record.add_key_value("redCountryId", str(zone.red_country_id))
             record.add_key_value("blueCountryId", str(zone.blue_country_id))
         border_node = record.get_or_create_item("border")

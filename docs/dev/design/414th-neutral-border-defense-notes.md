@@ -1542,7 +1542,7 @@ and it closes the trap for whoever later relaxes one of those gates.
 
 - Cross-mission consequences: escalating posture, airspace closure, the neutral joining
   the war. All were explicitly scoped out of v1 by DM call.
-- Per-zone SAM composition in the yaml (fixed SA-6 today).
+- Per-zone SAM composition in the yaml (the ladder picks it today).
 - Naval or ground border crossings — the watch is airborne groups only.
 
 ## In-game passes
@@ -1554,3 +1554,87 @@ and the return fire all measured in one session.
 **B115 is still owed**: an AI intruder, shadowed and never engaged, plus the
 accepted-risk watch — how often the intruder's own side kills the shadower
 before escalation. Setup and fail signature are on that checklist row.
+
+## One battery was 3.5 % of a border (DM call, 2026-09-09)
+
+The DM drew what they assumed the feature did: sites scattered around each
+neighbouring country, "spread out based on how large the country is." It did not
+do that. It stood **one** battery per country. Country size picked *which* system
+and *how deep*, never how many.
+
+Measured on the Afghanistan map, 2004:
+
+| Country | Room | System | Reach | Real frontier | Sites to cover it |
+|---|---|---|---|---|---|
+| Pakistan | 139 NM | S-300 | 40 NM | 2,291 NM | 28.6 |
+| Iran | 83 NM | SA-11 | 19 NM | 1,076 NM | 28.3 |
+| India | 75 NM | SA-11 | 19 NM | 689 NM | 18.1 |
+| Turkmenistan | 69 NM | SA-11 | 19 NM | 612 NM | 16.1 |
+| Tajikistan (2 pieces) | 31 / 22 NM | SA-3 | 10 NM | 468 NM | 23.4 |
+| Uzbekistan | 22 NM | SA-3 | 10 NM | 185 NM | 9.2 |
+
+Frontier lengths exclude the map's own clip edge, found by differencing each
+polygon's exterior against the boundary of every zone unioned. Pakistan's single
+S-300 covered **3.5 %** of its border; cross anywhere else and nothing was there.
+
+### What the count is derived from, and what it is not
+
+**Not full coverage.** Tiling at `2 * reach` is what the table's last column
+costs: ~31 sites on the Afghanistan map alone, ~140 vehicles, every one of them
+emitting. That is an IADS the campaign never authored, and most of it sits where
+no sortie flies.
+
+**Not the reach either.** Spacing off the system's own envelope makes an SA-3
+country denser than an S-300 one, which inverts the thing being modelled. The
+ladder already says how far each one shoots; the count says how big the country
+is. So the spacing is flat — **one site per 200 NM of war-facing frontier,
+capped at 6** — and the sites are spread evenly along that frontier rather than
+packed from its nearest end.
+
+**War-facing** means within 250 NM of any control point in the campaign. The
+fork's longest campaigns fly 250-400 NM to target, so a border further than that
+from every airbase is one nobody reaches. The map clip is excluded outright:
+crossing it means leaving the terrain.
+
+Measured after the change, on the four Afghanistan campaigns (Afghanistan itself
+is the host and stands nothing):
+
+| | Pakistan | Iran | Turkmenistan | Uzbekistan | Tajikistan ×2 | India | total |
+|---|---|---|---|---|---|---|---|
+| Enduring Resolve | 6 | 5 | 2 | 1 | 1 + 1 | 1 | 17 (~68 vehicles) |
+| Graveyard of Empires | 6 | 4 | 3 | 1 | 1 + 1 | 1 | 17 |
+| Clash of the Titans | 5 | 3 | 2 | 1 | 1 + 1 | 1 | 14 |
+| Shattered Dagger | 5 | 4 | 2 | 1 | 1 + 1 | 1 | 15 |
+
+Caucasus lands at 8 neutral sites, Syria at 10, Sinai at 6.
+
+### The country escalates, not the site
+
+With several batteries, escalation had to pick a scope. It swaps **all of them**.
+Swapping only the one the intruder flew past leaves the rest of the border a
+neutral you can keep crossing after being declared hostile — which reads as a
+bug, not as restraint. The second-intruder clone set mirrors the whole standing
+set for the same reason.
+
+### The five countries DCS does not model
+
+Turkmenistan, Uzbekistan, Tajikistan, Armenia and Azerbaijan have no pydcs
+country, and `_country` returning `None` **dropped the zone entirely** — border
+undrawn, airspace unenforced. On the Afghanistan map that was four of eight
+zones, and the DM call that every bordering nation should appear was quietly not
+being met.
+
+They now borrow a neighbour's units (`COUNTRY_STAND_INS`), chosen for kit rather
+than politics: the Central Asian states and Armenia field Russian systems,
+Azerbaijan Turkish and Israeli ones. The group is still named for the real
+country and the radio call still says it, so the stand-in is only skins — and the
+plugin rewrites `CountryID` on escalation anyway. Each falls through when its
+first choice is already a belligerent, **which Russia is on the Caucasus map**: a
+country cannot sit on two coalitions in one mission.
+
+### Owed
+
+B114 and B115 were already open against the SAM design. Nothing here has been
+flown either. The specific thing to look for on the first pass is whether several
+batteries in one country read as a border or as clutter — the count was chosen
+off measurement, not off a flight.

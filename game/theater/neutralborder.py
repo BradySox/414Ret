@@ -18,12 +18,11 @@ derivation for the case base-ownership gets wrong.
 The four postures and what each means to a pilot:
 
 * ``neutral`` -- genuinely out of the war: no coalition holds an airfield
-  inside it. It defends its airspace -- it flies a standing patrol inside its
-  own border from mission start, hails you on entry, and turns hostile in place
-  on a player who presses. A neutral that can field no
-  interceptor (DCS models no Turkmenistan; Cyprus and Armenia have no entry in
-  the dated table) is drawn and toothless, on the map as well as in the
-  mission.
+  inside it. It defends its airspace -- it stands SAM batteries inside its own
+  border from mission start, as many as its size and its war-facing frontier
+  call for, hails you on entry, and turns every one of them hostile in place on
+  a player who presses. A neutral with no station point at all is drawn and
+  toothless, on the map as well as in the mission.
 * ``blue`` -- hosts your side's fields. Overflight is allowed; the border is
   drawn and nothing enforces it.
 * ``red`` -- hosts the enemy's fields. Not a third party, so it gets no §97
@@ -42,10 +41,10 @@ fact about the calendar rather than about the campaign in front of you. It
 survives as the source of each country's era-correct airframe, which nothing
 else can supply. ``overflight:`` still overrides outright.
 
-Only ``neutral`` zones need an ``aircraft`` and an origin, because only they
-spawn anything. That is also what lets a nation DCS does not model be drawn at
-all: DCS has no Turkmenistan, Uzbekistan or Tajikistan, and a zone that spawns
-nothing needs no pydcs country.
+Only ``neutral`` zones need an origin, because only they spawn anything. A
+nation DCS does not model -- Turkmenistan, Uzbekistan, Tajikistan, Armenia,
+Azerbaijan -- borrows a neighbour's units to stand its batteries
+(``NeutralBorderGenerator.COUNTRY_STAND_INS``); it is never dropped.
 
 Parsed at campaign load by ``MizCampaignLoader`` and persisted on
 ``ConflictTheater.neutral_border_zones``; consumed each turn by
@@ -78,6 +77,79 @@ RED_ALIGNED = "red"
 #: three fields, and Finland the same. §97 never enforces a contested country;
 #: nor does either side's QRA claim it, because the claim would be a lie.
 CONTESTED_ALIGNED = "contested"
+
+#: How far from the war a stretch of frontier can be before nobody will ever
+#: cross it. The fork's longest campaigns fly 250-400 NM to target (Anatolian
+#: Reach), so a border further than this from every airbase in the campaign is
+#: not one anyone reaches, and a battery there defends nobody.
+WAR_REACH_M = 250 * 1852.0
+
+#: Roughly one battery per this much war-facing frontier. This is a deterrent
+#: spread, not a wall: tiling at 2x the system's own reach would put an SA-3
+#: every 20 NM and hand a mid-sized country thirty sites. Flat rather than
+#: reach-derived so a country's count reads off its SIZE, which is what the DM
+#: asked for -- how far each one shoots is already the ladder's job.
+SITE_SPACING_M = 200 * 1852.0
+
+#: Ceiling on batteries in one country, whatever its size. Each is 4-5 emitting
+#: vehicles, and a border thicker than this stops reading as a deterrent and
+#: starts reading as an IADS the campaign never authored.
+MAX_SAM_SITES = 6
+
+#: Frontier sampling resolution. Fine enough to find the war-facing stretch,
+#: coarse enough that a 3,000 km border is a few thousand points.
+FRONTIER_STEP_M = 5000.0
+
+#: How close to the map's own edge a frontier sample has to be before it is the
+#: clip and not a border. ``build_terrain_borders`` snaps to a 100 m grid.
+CLIP_TOLERANCE_M = 250.0
+
+
+def war_region(war_points: Sequence[tuple[float, float]]) -> Any:
+    """The ground close enough to the campaign to be flown over.
+
+    Built once per mission and handed to every zone: buffering a few hundred
+    control points is far more expensive than placing the batteries, and doing
+    it per country made generation slower than the naive distance test it
+    replaced (measured 2026-09-09).
+    """
+    from shapely.geometry import MultiPoint, Point as ShapelyPoint
+    from shapely.prepared import prep
+
+    if not war_points:
+        return None
+    cloud = MultiPoint([ShapelyPoint(point) for point in war_points])
+    return prep(cloud.buffer(WAR_REACH_M))
+
+
+def map_edge(borders: Sequence[Sequence[tuple[float, float]]]) -> Any:
+    """The terrain's own clip boundary, which is not a frontier and gets no battery.
+
+    Every shipped border is clipped to the map, so a country's polygon carries
+    map edge and real frontier in one ring with nothing to tell them apart. The
+    union of every zone has only the edge on its outside.
+    """
+    from shapely.geometry import Polygon
+    from shapely.ops import unary_union
+    from shapely.prepared import prep
+
+    polygons = []
+    for border in borders:
+        if len(border) < 3:
+            continue
+        polygon = Polygon(border)
+        if not polygon.is_valid:
+            polygon = polygon.buffer(0)
+        polygons.append(polygon)
+    if not polygons:
+        return None
+    try:
+        return prep(unary_union(polygons).boundary.buffer(CLIP_TOLERANCE_M))
+    except Exception:
+        logging.warning("Neutral border: could not union the zones.", exc_info=True)
+        return None
+
+
 POSTURES = (NEUTRAL, BLUE_ALIGNED, RED_ALIGNED, CONTESTED_ALIGNED)
 
 
@@ -310,43 +382,92 @@ class NeutralBorderZone:
                 low = middle
         return low
 
-    def sam_site(
-        self, anchor: tuple[float, float], reach_m: float
-    ) -> tuple[float, float]:
-        """Where the battery stands: as deep as it can be and still cover its border.
+    def sam_sites(
+        self,
+        anchor: tuple[float, float],
+        reach_m: float,
+        approaches: Any = None,
+        clip: Any = None,
+        cap: int = MAX_SAM_SITES,
+    ) -> list[tuple[float, float]]:
+        """Where this country's batteries stand, spread along the frontier that matters.
 
-        Deep matters twice. It is what the DM asked for -- a bigger country
-        should hold its SAM further back, not on the line -- and a site away
-        from the neutral's airfield is a site DCS cannot auto-capture the
-        airbase through when the battery swaps coalition on escalation.
+        The count comes off the country's own size. Measured 2026-09-09,
+        Pakistan on the Afghanistan map has 2,291 NM of real frontier, so the
+        single site this used to place covered 3.5 % of it and the rest was open
+        -- which is the whole reason a country now stands several.
 
-        Depth is capped at the system's own reach, so the envelope still touches
-        the frontier it is there to defend. Ties break toward ``anchor``, which
-        keeps the site in the part of the country the campaign pointed at.
+        Only the war-facing stretch is manned. ``approaches`` -- from
+        :func:`war_region` -- is the ground within :data:`WAR_REACH_M` of an
+        airbase in the campaign; frontier outside it is frontier no sortie
+        reaches, and a battery there is units and RWR clutter spent on nobody.
+        ``clip`` -- from :func:`map_edge` -- drops the map's own boundary, which
+        is not a frontier at all: crossing it means leaving the terrain.
+        Both are prepared geometries the CALLER builds once, because buffering a
+        campaign's whole control-point list costs more than the placement does.
+
+        Depth is capped at the system's own reach, so each envelope still
+        touches the frontier it defends, and a site off the neutral's airfield
+        is one DCS cannot auto-capture the airbase through when the battery
+        swaps coalition. Ties break toward ``anchor``.
         """
         from shapely.geometry import Point as ShapelyPoint, Polygon
         from shapely.ops import nearest_points
 
         if len(self.border) < 3:
-            return anchor
+            return [anchor]
         polygon = Polygon(self.border)
         if not polygon.is_valid:
             polygon = polygon.buffer(0)
         depth = min(reach_m, self.interior_room())
         if depth <= 0:
-            return anchor
+            return [anchor]
         inner = polygon.buffer(-depth)
         if inner.is_empty:
-            return anchor
+            return [anchor]
         # Onto the RING at that depth, not merely inside it. A site further in
         # than its own reach defends nothing: measured 2026-09-07, Iran's
-        # Persian Gulf station sits 175 NM from the frontier and an S-300 reaches
-        # 40, so "at most this deep" left the border uncovered.
-        here = ShapelyPoint(anchor)
-        moved = nearest_points(
-            inner.exterior if hasattr(inner, "exterior") else inner.boundary, here
-        )[0]
-        return (moved.x, moved.y)
+        # Persian Gulf station sits 175 NM from the frontier and an S-300
+        # reaches 40, so "at most this deep" left the border uncovered.
+        ring = inner.exterior if hasattr(inner, "exterior") else inner.boundary
+        home = ShapelyPoint(anchor)
+
+        def on_ring(point: Any) -> tuple[float, float]:
+            moved = nearest_points(ring, point)[0]
+            return (moved.x, moved.y)
+
+        frontier = polygon.exterior
+        steps = max(int(frontier.length // FRONTIER_STEP_M), 1)
+        # In frontier order, which is what lets the picks below be spread along
+        # the border rather than clustered at whichever end is nearest the war.
+        samples = [
+            frontier.interpolate(index * FRONTIER_STEP_M) for index in range(steps)
+        ]
+        if clip is not None:
+            samples = [p for p in samples if not clip.contains(p)]
+
+        if approaches is None:
+            facing = list(samples)
+        else:
+            facing = [p for p in samples if approaches.contains(p)]
+        if not facing:
+            # It still defends, so it still puts something up -- at the point on
+            # its frontier closest to its authored origin.
+            nearest = min(samples, key=home.distance, default=None)
+            return [on_ring(nearest if nearest is not None else home)]
+
+        wanted = round(len(facing) * FRONTIER_STEP_M / SITE_SPACING_M)
+        count = max(1, min(cap, wanted))
+        sites: list[tuple[float, float]] = []
+        for index in range(count):
+            picked = facing[int((index + 0.5) * len(facing) / count)]
+            site = on_ring(picked)
+            # A narrow country folds two frontier stretches onto one ring point;
+            # that is one battery covering both, not two stacked on each other.
+            if any(math.dist(site, other) < reach_m for other in sites):
+                continue
+            sites.append(site)
+        return sites or [on_ring(home)]
 
     def origin_label(self, posture: str, enforced: bool = True) -> str:
         """What the map tooltip calls this border's meaning."""

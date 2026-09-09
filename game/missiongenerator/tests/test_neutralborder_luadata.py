@@ -18,7 +18,7 @@ def _zone(battery: bool = True) -> NeutralBorderLuaZone:
         airfield="Rayak",
         floor_blue_ft=None,
         floor_red_ft=None,
-        sam_group="NeutralBorder|Lebanon|SA-3" if battery else None,
+        sam_groups=["NeutralBorder|Lebanon|SA-3|1"] if battery else [],
         red_country_id=34,
         blue_country_id=2,
         border=[(0.0, 0.0), (20000.0, 0.0), (20000.0, 20000.0), (0.0, 20000.0)],
@@ -38,7 +38,7 @@ def test_emits_the_zone_with_its_battery_ids_and_border() -> None:
     assert "neutralBorder" in lua
     assert "Lebanon" in lua
     assert "Rayak" in lua
-    assert "NeutralBorder|Lebanon|SA-3" in lua
+    assert "NeutralBorder|Lebanon|SA-3|1" in lua
     # No floor emitted at all: this zone grants no safe altitude, and a
     # number in the payload would imply one exists.
     assert "floorBlueFt" not in lua
@@ -51,7 +51,25 @@ def test_the_battery_key_is_absent_when_none_was_built() -> None:
     """The plugin drops an enforcing zone with no battery rather than promise a
     defence it cannot deliver, so the absence has to reach it."""
     lua = _emit(True, [_zone(battery=False)])
-    assert "samGroup" not in lua
+    assert "samGroups" not in lua
+
+
+def test_every_battery_reaches_the_plugin() -> None:
+    """A country stands one battery per stretch of war-facing frontier, and the
+    plugin escalates the whole set together -- so it has to receive all of them,
+    not just the first."""
+    zone = NeutralBorderLuaZone(
+        country="Pakistan",
+        airfield=None,
+        spawn=(0.0, 0.0),
+        sam_groups=[f"NeutralBorder|Pakistan|S-300|{n}" for n in range(1, 5)],
+        red_country_id=34,
+        blue_country_id=2,
+        border=[(0.0, 0.0), (20000.0, 0.0), (20000.0, 20000.0), (0.0, 20000.0)],
+    )
+    lua = _emit(True, [zone])
+    for name in zone.sam_groups:
+        assert name in lua
 
 
 def test_setting_off_emits_nothing() -> None:
@@ -139,21 +157,99 @@ def test_the_site_stands_deep_but_still_covers_its_border() -> None:
     ]
     zone = NeutralBorderZone(country="Nowhere", border=square)
     reach = 20_000.0
-    site = zone.sam_site((-99_000.0, 0.0), reach)
+    frontier = Polygon(square).exterior
 
-    gap = Polygon(square).exterior.distance(ShapelyPoint(site))
-    assert gap >= reach - 1.0, f"the site sits {gap:.0f} m in, shallower than its reach"
-    assert gap <= reach + 1.0, (
-        f"the site sits {gap:.0f} m in, deeper than its {reach:.0f} m reach, so its "
-        "envelope no longer touches the border it defends"
+    for site in zone.sam_sites((-99_000.0, 0.0), reach):
+        gap = frontier.distance(ShapelyPoint(site))
+        assert (
+            gap >= reach - 1.0
+        ), f"the site sits {gap:.0f} m in, shallower than its reach"
+        assert gap <= reach + 1.0, (
+            f"the site sits {gap:.0f} m in, deeper than its {reach:.0f} m reach, so "
+            "its envelope no longer touches the border it defends"
+        )
+
+
+def test_a_long_border_gets_more_batteries_than_a_short_one() -> None:
+    """The count is the whole point of the 2026-09-09 rework: one site covered
+    3.5 % of Pakistan's frontier on the Afghanistan map."""
+    from game.theater.neutralborder import NeutralBorderZone
+
+    def square_of(half: float) -> NeutralBorderZone:
+        return NeutralBorderZone(
+            country="Nowhere",
+            border=[
+                (-half, -half),
+                (half, -half),
+                (half, half),
+                (-half, half),
+            ],
+        )
+
+    reach = 20_000.0
+    small = square_of(30_000.0).sam_sites((0.0, 0.0), reach)
+    large = square_of(400_000.0).sam_sites((0.0, 0.0), reach)
+    assert len(small) < len(large)
+    assert len(small) >= 1
+
+
+def test_the_count_never_runs_away() -> None:
+    """A battery is 4-5 emitting vehicles; an unbounded count would author an
+    IADS the campaign never asked for."""
+    from game.theater.neutralborder import MAX_SAM_SITES, NeutralBorderZone
+
+    half = 1_000_000.0
+    zone = NeutralBorderZone(
+        country="Enormous",
+        border=[(-half, -half), (half, -half), (half, half), (-half, half)],
     )
+    assert len(zone.sam_sites((0.0, 0.0), 10_000.0)) <= MAX_SAM_SITES
+
+
+def test_only_the_war_facing_frontier_is_manned() -> None:
+    """A border 250 NM from every airbase is one no sortie reaches, and a
+    battery there is units and RWR clutter spent on nobody."""
+    from game.theater.neutralborder import NeutralBorderZone, war_region
+
+    half = 400_000.0
+    zone = NeutralBorderZone(
+        country="Nowhere",
+        border=[(-half, -half), (half, -half), (half, half), (-half, half)],
+    )
+    reach = 20_000.0
+    # Uncapped, or the ceiling hides the difference this is measuring.
+    everywhere = zone.sam_sites((-half, 0.0), reach, cap=64)
+    # One airbase, hard against the western frontier.
+    near_the_west = zone.sam_sites(
+        (-half, 0.0), reach, war_region([(-half - 10_000.0, 0.0)]), cap=64
+    )
+    assert len(near_the_west) < len(everywhere)
+    assert all(
+        x < 0 for x, _ in near_the_west
+    ), "a battery was placed on the far side of the country from the only war"
+
+
+def test_a_country_always_puts_something_up() -> None:
+    """Even one whose whole frontier is map edge, or is far from the war: it
+    defends, so it defends with something."""
+    from game.theater.neutralborder import NeutralBorderZone, war_region
+
+    half = 100_000.0
+    zone = NeutralBorderZone(
+        country="Remote",
+        border=[(-half, -half), (half, -half), (half, half), (-half, half)],
+    )
+    sites = zone.sam_sites(
+        (0.0, 0.0), 20_000.0, war_region([(9_000_000.0, 9_000_000.0)])
+    )
+    assert len(sites) == 1
 
 
 def test_a_zone_with_no_border_keeps_its_authored_origin() -> None:
     from game.theater.neutralborder import NeutralBorderZone
 
     zone = NeutralBorderZone(country="Unbounded")
-    assert zone.sam_site((5.0, 7.0), 20_000.0) == (5.0, 7.0)
+    assert zone.sam_sites((5.0, 7.0), 20_000.0) == [(5.0, 7.0)]
     assert zone.interior_room() == 0.0
 
 

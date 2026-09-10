@@ -9,7 +9,8 @@
 --     together -- never just the site the intruder happens to be near.
 --   * They sit as true neutrals and swap to the intruder's OPPOSING coalition to shoot,
 --     because a true-neutral unit cannot fire, ever -- do not "fix" the spawn to neutral.
---   * AI intruders are warned but NEVER escalated on (DM call). Only players earn the attack.
+--   * AI intruders earn NOTHING by default (DM call) -- no radio call, no
+--     escalation. The engageAi option lifts that for testing only; leave it off.
 --   * The batteries are LIVE and neutral from t=0, not late-activated: the border has to have
 --     something in it before you cross. sam_groups may still be empty for a zone that could
 --     not be built, so guard it.
@@ -33,6 +34,13 @@ local SCAN_INTERVAL_S = 10 -- border scan cadence
 local RETARGET_INTERVAL_S = 20 -- how often a hostile patrol re-picks its nearest target
 local DRAW_BORDERS = true -- F10 border polylines (the §86 invisible-bubble lesson)
 
+--: Hold AI to the same rules as a player. OFF by design: the DM's standing call
+--: is that only a human earns the attack, so a stray AI flight costs the
+--: campaign nothing. Ticking it exists to make the ladder testable -- a player
+--: has to fly the whole profile to trip the border once, while AI flights stray
+--: across it on their own several times a mission.
+local ENGAGE_AI = false
+
 --: Vertices the FILL may use. The outline is one freeform however many points
 --: it carries, and the web map draws them for free -- but DCS will not fill a
 --: concave shape, so the fill is handed to MOOSE and comes back as one markup
@@ -51,6 +59,9 @@ if dcsRetribution.plugins and dcsRetribution.plugins.neutralborder then
     SCAN_INTERVAL_S = tonumber(o.scanIntervalS) or SCAN_INTERVAL_S
     if o.drawBorders ~= nil then
         DRAW_BORDERS = (o.drawBorders == true) or (o.drawBorders == "true")
+    end
+    if o.engageAi ~= nil then
+        ENGAGE_AI = (o.engageAi == true) or (o.engageAi == "true")
     end
 end
 
@@ -215,6 +226,12 @@ local function lead_unit(group)
         end
     end
     return nil
+end
+
+--: Whether this intruder is held to the ladder at all. Every gate asks this
+--: rather than is_player, so the testing override cannot reach half of them.
+local function earns_engagement(state)
+    return state.is_player or ENGAGE_AI
 end
 
 local function is_player_group(group)
@@ -469,7 +486,7 @@ local function batteries_for(zone, intruder_side)
 end
 
 local function escalate(state, intruder_group)
-    if state.escalated or not state.is_player then
+    if state.escalated or not earns_engagement(state) then
         return
     end
     state.escalated = true
@@ -510,7 +527,7 @@ end
 local function hail(state, intruder_group)
     state.hailed = true
     local zone = zones[state.zone]
-    if state.is_player then
+    if earns_engagement(state) then
         -- A country that grants no safe altitude must not be radioed as though
         -- climbing would fix it. A floor is authored by the campaign only.
         -- NOT `cond and a or b`: a nil floor is the normal case (no safe
@@ -541,7 +558,7 @@ end
 local function warn(state, intruder_group)
     state.warned = true
     local zone = zones[state.zone]
-    if state.is_player then
+    if earns_engagement(state) then
         announce(intruder_group, string.format(
             "%s AIR FORCE: Our air defenses are tracking you. Leave %s airspace.",
             string.upper(zone.country), zone.country))
@@ -617,8 +634,12 @@ local function scan_group(group, side, now)
             if not state.warned and state.dwell >= WARN_DWELL_S then
                 warn(state, group)
             end
-            -- Players only, by DM call: AI intruders are warned, never engaged.
-            if state.is_player and not state.escalated and state.dwell >= ENGAGE_DWELL_S then
+            -- Players only, by DM call, unless engageAi is ticked for testing.
+            if
+                earns_engagement(state)
+                and not state.escalated
+                and state.dwell >= ENGAGE_DWELL_S
+            then
                 escalate(state, group)
             end
             return
@@ -667,7 +688,7 @@ function event_handler:onEvent(event)
             -- below: a bomb dropped before they have said anything is a strike
             -- that happens to be inside the border, but shooting at the flight
             -- that has just warned you is unambiguous whenever it happens.
-            if state and state.warned and not state.escalated and state.is_player then
+            if state and state.warned and not state.escalated and earns_engagement(state) then
                 escalate(state, grp)
             end
         elseif event.id == world.event.S_EVENT_HIT then
@@ -685,7 +706,7 @@ function event_handler:onEvent(event)
                 return
             end
             local state = intruders[grp:getName() or ""]
-            if state and not state.escalated and state.is_player then
+            if state and not state.escalated and earns_engagement(state) then
                 escalate(state, grp)
             end
         end

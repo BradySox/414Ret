@@ -6258,6 +6258,12 @@ a player earns those. The invariant is harness-covered; what needs eyes is that 
 holds in a real mission, and that AI strays happen at a believable rate rather
 than constantly.
 
+**Tick `engageAi` to watch the ladder run without flying it** (plugin options,
+default off, added 2026-09-10). It holds AI to the player's rules, so one
+generated turn exercises the hail, the dwell, the whole-country swap and the
+engagement. Use it to adjudicate **B115**, then untick it — this row is the
+default behaviour and must be checked with the option **off**.
+
 **Setup.** Any campaign with `neutral_border_defense` on and the plugin ticked —
 Into the Hornet's Nest (Lebanon) or Enduring Resolve (Pakistan, Iran) are the
 worked cases. Fly a normal mission and watch the F10 map for red or blue **AI**

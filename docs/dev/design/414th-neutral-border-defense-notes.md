@@ -1862,3 +1862,31 @@ the frontier, and the deep-placement rule was also what kept a swapped battery
 away from the neutral's own airfield. Nothing sits on a field today — placement
 is from the polygon, never the airfield — but a neutral whose airbase hugs its
 border is the case that would break it. On B115's card.
+
+## `engageAi` — the testing override (DM call, 2026-09-10)
+
+The standing rule is unchanged: **only a human earns the attack**, and it is
+still the shipped default. `engageAi` is a plugin option, default **off**, that
+holds AI intruders to the same ladder as a player.
+
+**Why it exists.** The ladder is the part of §98 that has never been flown, and
+tripping it as a player costs a whole profile per attempt — take off, fly to a
+border, loiter three minutes inside it. AI flights stray across on their own
+several times a mission. With the option on, one generated turn exercises the
+hail, the dwell, the whole-country swap and the engagement without anyone flying
+a sortie for it.
+
+**One predicate, not six.** Every gate now asks `earns_engagement(state)` rather
+than `state.is_player`: the hail, the second call, the dwell escalation, the
+weapon-release escalation and the fired-on escalation. A gate left on
+`is_player` would warn an AI and never engage it, or engage it with no warning
+first — half a ladder is worse than none, and a test greps the script to keep
+that from drifting back.
+
+**It does not change the fired-on rule.** An AI that shoots at a neutral battery
+still escalates only when the override is on. That is the same gate.
+
+**Leave it off for anything but a test.** With it on, an AI flight that clips a
+corridor wall turns a whole country hostile for the rest of the mission, and the
+country stays hostile — a swapped battery does not un-swap. On Enduring Resolve,
+whose Pakistan block is two walls of a carrier corridor, that will fire.

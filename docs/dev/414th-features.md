@@ -9939,8 +9939,12 @@ hostile in place — every one of its sites `GROUP:Respawn`s onto the intruder's
 opposing coalition, the only way a "neutral" can legally fire in DCS. Swapping
 only the nearest would leave the rest of the border a neutral you could keep
 crossing after being declared hostile. Both sides violating one country clones
-the whole set for the second intruder rather than re-swapping. AI intruders are
-warned but never engaged.
+the whole set for the second intruder rather than re-swapping. **AI intruders
+earn nothing at all** — no radio call, no escalation — unless the `engageAi`
+plugin option is ticked, which holds them to the same ladder. That is a testing
+override and ships off: a player has to fly a whole profile to trip a border
+once, where AI flights stray across on their own several times a mission, so it
+is the only practical way to exercise the ladder without flying it.
 A red-aligned nation gets no §98 battery:
 its polygon joins §1's QRA accept zones, so the enemy's existing interceptors defend
 it. A contested country — both sides holding airfields inside it — is enforced by

@@ -32,7 +32,9 @@ SQUARE = [
 ]
 
 
-def _config(battery: bool = True, floor_ft: str = "10000") -> dict[str, Any]:
+def _config(
+    battery: bool = True, floor_ft: str = "10000", engage_ai: bool = False
+) -> dict[str, Any]:
     zone: dict[str, Any] = {
         "country": "Lebanon",
         "field": "Rayak",
@@ -62,6 +64,7 @@ def _config(battery: bool = True, floor_ft: str = "10000") -> dict[str, Any]:
                 "vectorIntervalS": 45,
                 "maxShadows": 2,
                 "drawBorders": False,
+                "engageAi": engage_ai,
             }
         },
         "neutralBorder": {"zones": [zone]},
@@ -243,15 +246,17 @@ def test_player_dwell_turns_the_battery_hostile() -> None:
     h.assert_no_lua_errors()
 
 
-def test_an_ai_intruder_is_warned_but_never_engaged() -> None:
-    """DM call: only players earn the attack. An AI that strays is talked to and
-    the patrol stays neutral, which is the whole point of it being neutral."""
+def test_an_ai_intruder_earns_nothing_by_default() -> None:
+    """DM call: only a human earns the attack. An AI that strays draws no radio
+    call either -- both gates read one predicate, so neither can drift from the
+    other. `engageAi` lifts this for testing; see the override tests below."""
     h = _setup(_config())
     h.add_group(_intruder("Strike 9-1", 60, side=2, player=None))
     h.load_plugin_script(PLUGIN)
     h.advance_to(400)
 
-    assert _swaps(h) == [], "the patrol turned hostile over an AI intruder"
+    assert _swaps(h) == [], "an AI intruder turned a neutral country hostile"
+    assert _hails(h) == [], "an AI intruder was hailed"
     roe = [r for r in h.records("roe") if isinstance(r, dict)]
     assert not any(r.get("option") == "WeaponFree" for r in roe)
     assert _attack_tasks(h) == []
@@ -707,3 +712,33 @@ def test_the_second_side_is_answered_at_every_site_too() -> None:
     assert len(_second_batteries(h)) == len(MANY_GROUPS)
     assert len(_swaps(h)) == len(MANY_GROUPS), "a battery changed sides mid-fight"
     h.assert_no_lua_errors()
+
+
+# -- the testing override ------------------------------------------------------
+# Only a human earns the attack (DM call). `engageAi` lifts that so the ladder
+# can be exercised without flying a whole profile to trip one border.
+
+
+def test_engage_ai_holds_an_ai_flight_to_the_players_ladder() -> None:
+    """With it ticked an AI stray runs the whole ladder, which is the point --
+    a player has to fly a full profile to trip a border once."""
+    h = _setup(_config(engage_ai=True))
+    h.add_group(_intruder("Strike 9-1", 60, side=2, player=None))
+    h.load_plugin_script(PLUGIN)
+    h.advance_to(400)
+
+    assert _hails(h), "the AI intruder was never hailed"
+    swaps = _swaps(h)
+    assert swaps, "the AI intruder never turned the country hostile"
+    assert swaps[0]["coalitionId"] == 1, "a BLUE intruder must be opposed by RED"
+    h.assert_no_lua_errors()
+
+
+def test_the_override_reaches_every_gate_not_half_of_them() -> None:
+    """A gate left on is_player would warn an AI and then never engage it, or
+    engage without warning. Both halves move together or the ladder is broken."""
+    from pathlib import Path
+
+    script = Path(PLUGIN).read_text(encoding="utf-8")
+    assert "state.is_player and" not in script
+    assert "not state.is_player" not in script

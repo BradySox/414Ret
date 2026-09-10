@@ -264,7 +264,7 @@ Most of this is opt-in. Full list with toggles, defaults and known limitations:
   Whether a country lets you through is read off the map, not off the calendar: you may
   cross what your side flies from, and what both sides fly from; a country neither of you
   is based in has invited nobody. Altitude buys you nothing unless the campaign says so.
-  AI flights that stray are never fired on, and
+  AI flights that stray are never fired on (a plugin option holds them to the same rules, for testing), and
   the auto-planner does not route around the border, so it is your corner to cut or not.
   The same borders are drawn on the planning map and the F10 map. Off by default.
 - **Pilots keep a logbook.** Every pilot carries a permanent record: sorties, combat sorties,

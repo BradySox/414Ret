@@ -9792,6 +9792,91 @@ wall of unexplained zeroes.
   specific service ladder means editing the shipped data file.
 - **`missions_flown` still counts assignments.** Re-pointing the skill ladder at `sorties`
   would change AI pilot progression across every campaign and needs its own call.
+
+## §97 — Lifetime pilot profiles
+
+Built 2026-09-09. Gate: `lifetime_pilot_profiles` (414th Features → Pilots & careers,
+default **ON**). No design note — this section is the deep dive.
+
+### What was wrong
+
+§96 gave every pilot a career and put it **inside the save**. A campaign's pilots are
+generated with the campaign, so starting a new one hands you a fresh roster at zero. The
+thing a person actually wants recorded — *their own flying, across everything they have
+ever flown in Retribution* — had nowhere to live.
+
+### What it is
+
+A second destination for the same §91 sortie records: `pilot_profiles.json` under the Saved
+Games tree (`game/persistency.py:pilot_profiles_path`), outside every save, the same shape as
+the §43 flight-defaults store. `game/fourteenth/pilot_profile.py` owns it;
+`commit_pilot_profiles` files a mission's human-flown sorties as results are committed.
+
+Per profile: lifetime totals, a per-aircraft breakdown, the campaigns flown, and a rolling
+list of the individual flights — date, campaign, aircraft, task, minutes, kills, ejection.
+
+`qt_ui/windows/PilotProfilesDialog.py` renders it, from a **Pilot Logbook** toolbar button
+that sits outside `enable_game_actions` so it opens with no campaign loaded. That is the
+point of the feature, so the button has to work there.
+
+### Identity is the DCS player name
+
+The recorder already called `getPlayerName()` per slot and threw the answer away, keeping
+only a boolean. It now records the name, and a profile is keyed on it.
+
+- **No setup.** The first mission you fly creates your profile.
+- **A host records everyone.** In a squadron event all eight humans get their own profile
+  rather than collapsing into one, which the "one local profile" alternative would have done.
+- **The key never moves.** Renaming sets a `display_name`; renaming the key would orphan the
+  career from the seat that feeds it.
+
+### Hard constraints
+
+- **The store is append-only with nothing to re-derive it from.** There is no campaign to
+  recompute a lifetime career from, so a bad write is permanent. Everything below follows
+  from that.
+- **A mission is folded exactly once, and the guard is keyed on the GAME.** `Game.stable_uid()`
+  mints a uuid on first use (lazily set, persisted, `__setstate__`-defaulted, so old saves
+  need no migration). Keying on campaign name plus turn would make a replay's turn 1
+  indistinguishable from the playthrough already recorded, and silently drop it.
+- **The guard is per profile, not per store.** A pilot who joined the event late has not
+  logged that mission even though everyone else has.
+- **The first human on a slot keeps the sortie.** A mid-mission handoff has no more claim on
+  it than the pilot who took it off, and crediting whoever held the seat at the last sweep
+  would hand a whole flight to someone who flew the last ten minutes.
+- **Only records that flew, and only human-crewed ones.** An AI jet has no career; §91's
+  counters-only and parked-airframe records are not sorties (`MIN_SORTIE_DISTANCE_M`).
+- **A flight whose unit the campaign cannot resolve is still logged**, with a generic task.
+  A human flew it; losing the sortie to a failed lookup is worse than a vague label.
+- **Its own setting, separate from §96.** This one writes outside the save, and that is
+  exactly the thing a player might want to decline while keeping campaign careers.
+- **No ranks and no awards.** A user call: the lifetime page is numbers. §96 owns the
+  ceremony, where a rank belongs to a service and a campaign.
+- **Nothing here raises.** It runs inside mission-results commit and backs a window that
+  opens with no game. A store that cannot be read or written is logged and skipped.
+
+### Caps
+
+`MAX_LOG_ENTRIES = 2000` flights per profile and `MAX_LOGGED_MISSIONS = 1000` guard ids.
+Totals keep counting past the log cap; only the entry list is trimmed, oldest first. The
+window lists the newest 60 and says how many older ones the store still holds.
+
+**Do not exercise the real cap in a test.** Every fold rewrites the whole store, so folding
+2,000 entries is quadratic — the first version of `test_the_log_is_capped_and_keeps_the_newest`
+took 28 of the suite's 30 seconds. Monkeypatch the constant instead.
+
+### Tests
+
+`tests/test_pilot_profiles.py` (18) · four player-name cases in
+`tests/lua/test_sortie_recorder_runtime.py`.
+
+### Deferred
+
+- **No export.** A CSV or printable logbook is the obvious next thing and is not built.
+- **No merge or delete in the UI.** Changing your DCS name starts a second profile, and the
+  only fix is editing the JSON by hand.
+- **Red humans get profiles too.** Free, and harmless, but nothing surfaces the coalition.
+
 ## §98 — Neutral-faction border defense
 
 Every nation on the map is drawn with its real border, the map's own nation included,
@@ -9881,8 +9966,9 @@ of the other side.
   `MissionData.neutral_border_zones`;
   `neutralborderluadata.py` serializes that to `dcsRetribution.neutralBorder`.
 - **Lua** — `resources/plugins/neutralborder/neutralborder-config.lua`: border scan
-  (bbox + ray-cast point-in-polygon on terrain XY), per-group dwell, the warn → shadow
-  → escalate ladder, the SAM wake, exit-grace stand-down, and the F10 border draw
+  (bbox + ray-cast point-in-polygon on terrain XY), per-group dwell, the hail → warn
+  → escalate ladder, the whole-country coalition swap, exit-grace stand-down, and the
+  F10 border draw
   (default on — the §86 invisible-bubble lesson). **DCS will not fill a concave
   freeform** — it draws the outline and drops the fill, and a national border is
   about as concave as a shape gets, so every zone first flew as a bare line. The
@@ -9918,19 +10004,17 @@ of the other side.
   country whose every edge is shared has a floor (Armenia ~98). It came out
   better on every axis: Norway's shape error 14.7 % → 7 %, Afghanistan 454 → 255
   vertices and 446 → 247 F10 markup shapes.
-- **The alert flight comes from a field OR a point.** Most maps carry the
-  neutral's own airbase (Syria has Rayak). Some carry none at all: the DCS
-  Afghanistan map has 26 airfields and **every one is inside Afghanistan**, so
-  Pakistan and Iran have nothing to scramble from. Those zones declare
-  `spawn: [x, y]` + `spawn_alt_ft` instead of `airfield:` and the flight
-  air-spawns as a standing CAP over its own side (MOOSE `SpawnFromVec3`). The
-  yaml requires exactly one of the two; both, or neither, skips the zone.
-  `--auto-spawn` puts each piece's station at its own `representative_point()`,
-  so it is guaranteed inside that piece's territory — **but not away from its
-  edge**, which is why seven shipped stations sat within 10 NM of their own
-  frontier and India's within 0.6. The orbit fitter corrects that at generation
-  time rather than the station list being regenerated, because it also has to
-  handle an authored `airfield:` that happens to sit near a border.
+- **A zone declares a field OR a point, and either one is only an anchor now.**
+  Most maps carry the neutral's own airbase (Syria has Rayak); some carry none
+  at all, since the DCS Afghanistan map has 26 airfields and **every one is
+  inside Afghanistan**. Those zones declare `spawn: [x, y]` instead of
+  `airfield:`; the yaml requires exactly one, and both or neither skips the
+  zone. Since the patrol went, neither is a launch point — the batteries are
+  placed from the polygon, and the anchor only breaks ties and names the origin
+  in the tooltip. That is also why `--auto-spawn` putting each piece's station
+  at its own `representative_point()` no longer matters: seven shipped stations
+  sat within 10 NM of their own frontier and India's within 0.6, and nothing is
+  sited off them any more.
 - ~~**The origin names the flight; a 25 NM stand-off decides where it comes up.**~~
   **REMOVED 2026-08-29 with the scramble** — the patrol is airborne from mission
   start, so nothing comes up on demand and there is no stand-off to pick. Kept
@@ -10007,15 +10091,18 @@ line to **Farah** (62.2°E) crosses Pakistan — the dogleg up the corridor and 
 is clear. That is the constraint the campaign exists to create, and it is real
 geometry, not a scripted scold.
 
-Three zones, all point-spawned. **Only Pakistan and Iran are modelled** because DCS has
-no Turkmenistan, Uzbekistan or Tajikistan — they are not pydcs countries at all, so a
-northern zone could only fly under some other nation's flag. The northern border is
-left undefended rather than mislabelled; do not "fix" this by substituting Kazakhstan
-or Russia.
+Three zones, all point-spawned. ~~**Only Pakistan and Iran are modelled**, and the
+northern border is left undefended rather than mislabelled; do not "fix" this by
+substituting Kazakhstan or Russia.~~ **OVERRULED 2026-09-09 (DM call).** DCS still has
+no Turkmenistan, Uzbekistan or Tajikistan, but leaving them out was not costing the
+campaign a label — it was dropping the zone entirely, so four of the eight zones on the
+map had no border drawn and no airspace enforced, against the standing rule that every
+bordering nation appears. They now stand their batteries under a neighbour's flag
+(`COUNTRY_STAND_INS`), chosen for kit. The group keeps the real country's name and so
+does the radio call, and the plugin rewrites `CountryID` on escalation anyway.
 
-Because AI intruders are shadowed and never engaged, a lane this tight costs the
-campaign nothing: an AI flight that clips a wall picks up a shadow escort, and only the
-player is ever shot at.
+Because AI intruders are never engaged, a lane this tight costs the campaign nothing:
+an AI flight that clips a wall is not fired on, and only the player is.
 
 ### Files & tests
 
@@ -10023,12 +10110,18 @@ player is ever shot at.
   `game/missiongenerator/neutralbordergenerator.py` · `neutralborderluadata.py` ·
   `game/settings/settings.py` (`neutral_border_defense`) ·
   `resources/plugins/neutralborder/` · `tools/neutral_border_geo.py`.
-- `tests/lua/test_neutralborder_runtime.py` — 8 harness tests: clean no-op, the
-  warn/shadow with the opposing-side clone (both directions), dwell escalation with the
-  AttackGroup task + SAM wake, AI-never-engaged, the high-transit non-trip, the
-  weapon-release escalation, and the exit stand-down. `tests/test_neutralborder.py` —
-  yaml parsing never raises. `game/missiongenerator/tests/test_neutralborder_luadata.py`
-  — the emitter contract.
+- `tests/lua/test_neutralborder_runtime.py` — 30 harness tests on real Lua 5.1: the
+  hail on entry and the second call at dwell, dwell escalation, weapon-release
+  escalation, AI-never-engaged, every battery in a country swapping on one escalation,
+  the second set when both sides violate, a zone with no battery never claiming to
+  defend, the exit stand-down, the triangulated F10 fill and the map labels.
+  `tests/test_neutralborder.py` — alignment derivation, airbase-derived consent,
+  overrides, malformed yaml skipped rather than raised.
+  `game/missiongenerator/tests/test_neutralborder_luadata.py` — the emitter contract,
+  the SAM ladder, and the placement invariants (reach ring, count from frontier
+  length, the cap, war-facing only). `tests/test_terrain_borders.py` — every shipped
+  map parses, no neighbour overlap, each map a valid coverage. 165 in total across six
+  files.
 
-**In-game pass owed:** B116 (AI shadowed only —
-and how often the intruder's own side kills the shadower, the accepted-risk watch).
+**In-game passes owed: B115 and B116.** Nobody has flown the SAM design at all — B115
+was closed against the fighter patrol, which no longer exists. B116 is the AI intruder.

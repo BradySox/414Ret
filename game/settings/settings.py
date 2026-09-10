@@ -422,6 +422,7 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                     "motorpool_spawn_cap",
                     "sp_pilot_mode",
                     "pilot_career_logbook",
+                    "lifetime_pilot_profiles",
                     "supply_gated_reinforcement",
                     "assault_costs_the_attacker",
                     "scale_aware_front_line",
@@ -764,6 +765,7 @@ FEATURE_GATE_FIELDS: dict[str, list[str]] = {
     ],
     "Pilots & careers": [
         "pilot_career_logbook",  # §96
+        "lifetime_pilot_profiles",  # §97
     ],
     "Single-player flow": [
         "sp_pilot_mode",  # §83
@@ -2261,6 +2263,24 @@ class Settings:
             "the killer. A record, not a reward -- nothing here unlocks an "
             "aircraft, changes availability or gates a mission. Turn it off and "
             "careers stop accumulating; what a pilot has already earned is kept."
+        ),
+    )
+    lifetime_pilot_profiles: bool = boolean_option(
+        "Lifetime pilot profiles (across every campaign)",
+        CAMPAIGN_MANAGEMENT_PAGE,
+        "Campaign features",
+        default=True,
+        detail=(
+            "Keeps your own flying on record across every campaign, not just "
+            "this one. Each pilot is identified by their DCS player name, so it "
+            "needs no setup and a multiplayer host records every pilot who "
+            "flew, each to their own profile. Open it from the Pilot Logbook "
+            "button on the toolbar -- it works with no campaign loaded. Records "
+            "lifetime sorties, hours, kills by type, a breakdown per aircraft, "
+            "and the individual flights. Stored in a file beside your other "
+            "Retribution settings, NOT in the save game, which is what lets it "
+            "outlive a campaign. Turn it off and nothing is written; what is "
+            "already recorded is kept."
         ),
     )
     supply_gated_reinforcement: bool = boolean_option(

@@ -108,6 +108,7 @@ pass checklist `§N` is unregistered, or this table drifts.
 | §94 | Smart threat reaction | `ai_reaction` | — |
 | §95 | Pinned bullseye | — | — |
 | §96 | Pilot career logbook | — | `pilot_career_logbook` |
+| §97 | Lifetime pilot profiles | — | `lifetime_pilot_profiles` |
 | §98 | Neutral-faction border defense | `neutralborder` | `neutral_border_defense` |
 | — | MANTIS IADS engine | `mantisiads` | — |
 | — | Splash Damage (414th tuned) | `splashdamage3` | — |

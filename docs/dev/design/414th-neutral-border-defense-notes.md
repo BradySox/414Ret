@@ -943,7 +943,7 @@ one would go stale exactly then, which is the bug the derivation exists to
 avoid. Two tests pin that passing the posture gives the same answer as deriving
 it, across all four postures and both sides.
 
-### The checklist rows collided with main's -- five times
+### The checklist rows collided with main's -- six times, and the FEATURE NUMBER twice
 
 This PR added its in-game rows as **B100/B101**, and `main` already owned both
 (the DCS parking rework, and the F-4E Shrike row). Renumbering to **B106/B107**
@@ -960,12 +960,26 @@ anyway; a duplicated id still breaks `_row_statuses()`.
 **The fifth, 2026-09-07, was caught by a test rather than by eye.** Main's
 wind-clamp work took B112 in the same merge that abandoned four features, and
 `test_no_two_rows_share_an_id` -- added the day before, precisely because four
-collisions is a pattern -- failed on it immediately. §98 is **B115/B116** now.
-The count test would NOT have caught this one: it only sees a duplicate when the
-two rows differ in status, and both were `UNTESTED`. That is the direct argument
-for keeping the dedicated guard.
+collisions is a pattern -- failed on it immediately. The count test would NOT
+have caught this one: it only sees a duplicate when the two rows differ in
+status, and both were `UNTESTED`. That is the direct argument for keeping the
+dedicated guard.
 
-Three collisions on one branch is the pattern, not bad luck: a long-lived branch
+**The sixth, 2026-09-09, took the feature number as well.** Main merged
+*Lifetime pilot profiles* (#1007) as **§97** with **B114** attached, one week
+after it took **§96** for the career logbook. The §98 rows are **B115/B116**
+now. Two feature numbers in eight days is the same mechanism as the row ids and
+has the same defence: **re-check §N and the row ids on every merge, not once.**
+
+**The §96 -> §97 sweep over-reached, and four of its edits survived the
+correction.** Renaming this feature away from §96 caught main's own career
+logbook in eight files; those were reverted at the time, but `settings.py`'s
+`pilot_career_logbook  # §97` and three lines of the B113 row were not, so a
+merged feature carried this branch's number for two days. **Check the reverse
+direction too**: after renumbering yourself, grep the number you VACATED for
+anything that is not yours.
+
+Six collisions on one branch is the pattern, not bad luck: a long-lived branch
 allocates from the highest id it can see, and main keeps allocating from the same
 end while the branch is open. There is no reservation mechanism, so the only
 defence is re-checking on every merge.
@@ -987,8 +1001,16 @@ grep -oP "^### [A-Z]+[0-9]+(?= )" docs/dev/414th-ingame-pass-checklist.md | sort
 
 Renumber your own rows, never main's. The renumber reaches five places, and
 `resources/whatsnew.yaml` is the one that gets forgotten -- 16 entries carried
-`row: B107` on the third pass. Also: the checklist's glance table and detail
-sections, the features doc, this note, and the Lua runtime test's docstring.
+`row: B107` on the third pass, and 21 carried `row: B114` on the sixth. Also:
+the checklist's glance table and detail sections, the features doc, this note,
+and the Lua runtime test's docstring. The glance table's **stated outstanding
+count** moves too, and its test only runs from the worktree.
+
+**A feature-number renumber reaches further**: the `game/fourteenth/features.py`
+registry, the generated `docs/dev/414th-feature-index.md` (regenerate, do not
+hand-edit), `CLAUDE.md` + `AGENTS.md`'s numbered list -- where the number is a
+bare `97.` and no `§97` grep will find it -- the features-doc `## §N` heading,
+every design note, and the border/campaign yamls' header comments.
 
 ### Also corrected
 

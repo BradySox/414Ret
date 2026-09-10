@@ -822,6 +822,14 @@ FEATURES: tuple[Feature, ...] = (
         settings_fields=("pilot_career_logbook",),
     ),
     Feature(
+        # The career that outlives the campaign: same §91 records, second
+        # destination, keyed by DCS player name and written outside every save.
+        "lifetime_pilot_profiles",
+        "Lifetime pilot profiles",
+        97,
+        settings_fields=("lifetime_pilot_profiles",),
+    ),
+    Feature(
         # §98 neutral-faction border defense: every nation on the map drawn with
         # its real border (tools/build_terrain_borders.py; shipped per terrain, no
         # campaign authoring needed). One with no coalition airfield inside it
@@ -831,7 +839,7 @@ FEATURES: tuple[Feature, ...] = (
         # §6 revert).
         "neutral_border_defense",
         "Neutral-faction border defense",
-        97,
+        98,
         plugin_id="neutralborder",
         settings_fields=("neutral_border_defense",),
     ),

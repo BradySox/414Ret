@@ -272,6 +272,14 @@ Most of this is opt-in. Full list with toggles, defaults and known limitations:
   are read from a data file, so they suit the air force flying. It is a record, not a reward:
   nothing in it unlocks an aircraft, changes availability or gates a mission. A campaign
   carried over from an older build starts its careers at zero.
+- **Your own logbook, across every campaign.** The per-pilot record above lives in the save,
+  so a new campaign starts it over. This one does not: a **Pilot Logbook** button on the
+  toolbar — it opens with no campaign loaded — shows your lifetime sorties, hours, kills by
+  type, a breakdown of what you actually fly, the campaigns you have flown, and the
+  individual flights. You are identified by your DCS player name, so there is nothing to set
+  up, and a host running a squadron event records every pilot who flew, each to their own
+  profile. It is kept in a file beside your other Retribution settings rather than in the
+  save game, which is what lets it survive starting over.
 - Also: strikeable motor pool depots, a host F10 menu to scramble bandits.
 
 ---

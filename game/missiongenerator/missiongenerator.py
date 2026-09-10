@@ -338,7 +338,7 @@ class MissionGenerator:
         CivilianTrafficGenerator(self.mission, self.game).generate()
         NavalCivilianTrafficGenerator(self.mission, self.game).generate()
 
-        # Neutral border defense (§97): late-activation alert templates at each
+        # Neutral border defense (§98): late-activation alert templates at each
         # authored neutral field, cloned at runtime by the neutralborder plugin.
         # Non-CP airfields only, so ramp contention with squadrons is impossible.
         from game.missiongenerator.neutralbordergenerator import (

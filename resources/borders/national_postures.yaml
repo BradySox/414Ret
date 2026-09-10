@@ -1,4 +1,4 @@
-# §97 national postures: dated overflight/alignment posture per country per bloc.
+# §98 national postures: dated overflight/alignment posture per country per bloc.
 #
 # Sources, reasoning and the open questions: docs/dev/design/414th-national-postures-notes.md.
 # DRAFT — nothing reads this file yet. The wiring is its own change.
@@ -21,7 +21,7 @@
 # Countries that did not exist yet have no ranges before independence; the
 # territory belongs to the predecessor, which has its own entry (USSR, GDR).
 #
-# `aircraft` is optional and secondary — the alert type a §97 flight should fly.
+# `aircraft` is optional and secondary — the alert type a §98 flight should fly.
 # Vanilla pydcs ids only (hard fork constraint: no mods). Omitted where no
 # vanilla type matches a real operator; the engine has a fallback.
 #
@@ -143,7 +143,7 @@ countries:
     # recognised only by Turkey is not drawn as its own nation.
     # Non-aligned since independence; not in NATO. The Akrotiri and Dhekelia SBAs
     # are UK sovereign territory sitting inside this polygon, so on any campaign
-    # the UK plays, §97's derived rule flips Cyprus blue-aligned on its own and
+    # the UK plays, §98's derived rule flips Cyprus blue-aligned on its own and
     # never consults this table. No combat aircraft — no `aircraft` block.
     toward_us_led:
       - { from: "1955", to: "1960-08", posture: allied }        # Crown colony
@@ -354,7 +354,7 @@ countries:
 
   Kuwait:
     # 1990-08 to 1991-02 is the occupation: the airspace was Iraq's and was
-    # defended as Iraq's. In a Desert Storm campaign §97 never asks — the fields
+    # defended as Iraq's. In a Desert Storm campaign §98 never asks — the fields
     # are red-held, so the derived rule makes Kuwait red-aligned on its own.
     toward_us_led:
       - { from: "1961-06", to: "1987-03", posture: contested }

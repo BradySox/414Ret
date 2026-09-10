@@ -128,7 +128,7 @@ local function defense_zones_for(coalition_name)
             zones[#zones + 1] = ZONE_RADIUS:New(rec.name, { x = x, y = y }, radius, true)
         end
     end
-    -- §97: a country hosting this side's airfields is this side's territory, so
+    -- §98: a country hosting this side's airfields is this side's territory, so
     -- its real national border joins the accept zones as a polygon. A circle
     -- would spill across the frontier; the border is the honest shape. This is
     -- how an aligned nation is defended -- by the QRA that already exists, not

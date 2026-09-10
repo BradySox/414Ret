@@ -1,6 +1,6 @@
 """Neutral border defense -> Lua config bridge (``dcsRetribution.neutralBorder``).
 
-§97: a country not in the war defends its own airspace. The generator
+§98: a country not in the war defends its own airspace. The generator
 (``NeutralBorderGenerator``) stands the batteries and records what it actually
 built here; this module only serializes that record. A zone whose batteries
 could not be built never reaches the Lua, so the plugin needs no

@@ -9792,7 +9792,7 @@ wall of unexplained zeroes.
   specific service ladder means editing the shipped data file.
 - **`missions_flown` still counts assignments.** Re-pointing the skill ladder at `sorties`
   would change AI pilot progression across every campaign and needs its own call.
-## §97 — Neutral-faction border defense
+## §98 — Neutral-faction border defense
 
 Every nation on the map is drawn with its real border, the map's own nation included,
 and what each one does about an intruder follows from two facts. **Alignment is
@@ -9839,7 +9839,7 @@ only the nearest would leave the rest of the border a neutral you could keep
 crossing after being declared hostile. Both sides violating one country clones
 the whole set for the second intruder rather than re-swapping. AI intruders are
 warned but never engaged.
-A red-aligned nation gets no §97 battery:
+A red-aligned nation gets no §98 battery:
 its polygon joins §1's QRA accept zones, so the enemy's existing interceptors defend
 it. A contested country — both sides holding airfields inside it — is enforced by
 nobody and claimed by neither QRA. A neutral with no station point at all is drawn
@@ -9995,7 +9995,7 @@ as the neutral and the derivation rule corrected us: Beirut sits inside its bord
 hosting four red squadrons, so it resolves **red-aligned** — drawn in the enemy
 family, covered by red's QRA accept zone, and its authored aircraft/SAM fields are
 inert. The zone's yaml is kept as-is (the border is the context the DM wanted drawn);
-the campaign's §97 *interception* showcase is Enduring Resolve, not this.
+the campaign's §98 *interception* showcase is Enduring Resolve, not this.
 
 **Enduring Resolve (Afghanistan) — the corridor case.** The OEF "boulevard": the
 carrier sits at 24.5°N 65.0°E in the Arabian Sea, and everything it launches has to
@@ -10030,5 +10030,5 @@ player is ever shot at.
   yaml parsing never raises. `game/missiongenerator/tests/test_neutralborder_luadata.py`
   — the emitter contract.
 
-**In-game pass owed:** B115 (AI shadowed only —
+**In-game pass owed:** B116 (AI shadowed only —
 and how often the intruder's own side kills the shadower, the accepted-risk watch).

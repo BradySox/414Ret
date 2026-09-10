@@ -822,7 +822,7 @@ FEATURES: tuple[Feature, ...] = (
         settings_fields=("pilot_career_logbook",),
     ),
     Feature(
-        # §97 neutral-faction border defense: every nation on the map drawn with
+        # §98 neutral-faction border defense: every nation on the map drawn with
         # its real border (tools/build_terrain_borders.py; shipped per terrain, no
         # campaign authoring needed). One with no coalition airfield inside it
         # stands a live SAM battery from mission start, neutral until a player

@@ -93,8 +93,8 @@ stress it · `✗` fail signature reproduced in-game.
 | B85 | A flight with an unreachable TOT flies instead of orbiting | §8 | ◐ |
 | B98 | The bullseye is the same place it was last mission | §95 | ☑ |
 | B99 | AI packages arrive inside the mission, not after it | §8 | ◐ |
-| B114 | Neutral border: warned, then the battery engages if you press | §97 | ☐ |
-| B115 | Neutral border: AI intruders are never engaged | §97 | ☐ |
+| B115 | Neutral border: warned, then the battery engages if you press | §98 | ☐ |
+| B116 | Neutral border: AI intruders are never engaged | §98 | ☐ |
 | G25 | Armed Recon package: recon drone + SEAD Viper escort + 4-ship sweep | §3 | ◐ |
 | G30 | MANTIS SHORAD link: the point defense ambushes the HARM shot | MANTIS migration | ☐ |
 | G33 | Survivor ADF beacon: the pinned 260 kHz drives a real needle | CSAR (upstream #929 + 414th pin) | ☐ |
@@ -194,7 +194,7 @@ stress it · `✗` fail signature reproduced in-game.
 | B110 | A SEAD jet's steerpoints are the site's emitters, and the card's STPT numbers match | §5 / §3 | ☐ |
 | B111 | A package's escort holds the striker's pace instead of running ahead | §8 cruise mach | ☐ |
 | B112 | The wind you set is the wind the panel shows, and the box stops at 97 kt | wind override / live weather | ☐ |
-| B113 | A pilot's logbook fills in, and the kills are the ones they got | §97 | ☐ |
+| B113 | A pilot's logbook fills in, and the kills are the ones they got | §96 | ☐ |
 
 ---
 
@@ -6187,7 +6187,7 @@ mountain or coastal front will do.
      strength, so an 8-object swing is worth a look on Desert Trident's Jordan
      sector specifically.
 
-### B114 — Neutral border: warned, then the battery engages if you press · §97 · ☐ UNTESTED
+### B115 — Neutral border: warned, then the battery engages if you press · §98 · ☐ UNTESTED
 
 **REOPENED 2026-09-07.** This row closed on 2026-09-01 against the standing
 fighter patrol, and the patrol was dropped the same week (DM call: scope is the
@@ -6241,7 +6241,7 @@ never leaving their airspace, the swap and the SA-6 both proven), and rescoped t
 the SAM alone 2026-09-07. Full history in the design note.
 
 
-### B115 — Neutral border: AI intruders are never engaged · §97 · ☐ UNTESTED
+### B116 — Neutral border: AI intruders are never engaged · §98 · ☐ UNTESTED
 
 **REWRITTEN 2026-09-07 — the card below described the scramble, which was deleted
 2026-08-29.** It told the flyer to check `shadowHoldNm` and `maxShadows`; neither
@@ -6261,7 +6261,7 @@ strays happen at a believable rate rather than constantly.
 Into the Hornet's Nest (Lebanon) or Enduring Resolve (Pakistan, Iran) are the
 worked cases. Fly a normal mission and watch the F10 map for red or blue **AI**
 crossing a shaded border. You do not need to cross one yourself; if you do, that
-is B114's ladder, not this row.
+is B115's ladder, not this row.
 
 **Pass.**
 
@@ -6858,7 +6858,7 @@ at 8,000 m, which is a jet stream you cannot arrange. It is pinned by
 instead. If you ever do see a kneeboard wind above 97 kt on a live-weather turn, that test
 is lying and this row fails.
 
-### B113 — A pilot's logbook fills in, and the kills are the ones they got · §97 · ☐ UNTESTED
+### B113 — A pilot's logbook fills in, and the kills are the ones they got · §96 · ☐ UNTESTED
 
 **Needs one flown mission.** ~25 min including the flight.
 
@@ -6894,4 +6894,4 @@ destroy something on the ground, land, accept results, then reopen the same pilo
 - **Flight time is wildly high** (tens of hours after one mission). Hours are being summed
   from counters-only or parked records rather than only from records that flew.
 - **The page is all zeroes on a campaign carried over from an older build.** Expected, not a
-  failure — pre-§97 saves have no records to fold and the page says so.
+  failure — pre-§96 saves have no records to fold and the page says so.

@@ -1,4 +1,4 @@
-# National Postures — Research Note (§97)
+# National Postures — Research Note (§98)
 
 **Status: RESEARCHED 2026-08-25. Wired 2026-08-25, then narrowed to the airframe
 2026-08-26.** The table is
@@ -18,7 +18,7 @@ era-correct interceptor. That is the one answer nothing else can give — a coun
 control points has no faction to borrow a jet from — so without it a border cannot scramble
 anything. `posture_for` still reads the ranges; the question they answer ("whose side was this
 country on, that year") is real, and a future feature may want it. It is just not the question
-§97 asks. Read the *Consent moved to the airbases* section of
+§98 asks. Read the *Consent moved to the airbases* section of
 [`414th-neutral-border-defense-notes.md`](414th-neutral-border-defense-notes.md) before
 proposing anything that re-wires these ranges to a decision.
 
@@ -29,11 +29,11 @@ this note only covers the data.
 
 ## Why the table exists
 
-§97 draws every bordering nation and derives its alignment from who holds the airfields inside
+§98 draws every bordering nation and derives its alignment from who holds the airfields inside
 its border. What alignment does *not* answer is whether an uninvolved nation lets you through:
 in 2006 Turkmenistan permitted coalition transit and Iran did not, and both were neutral. Today
 that is a hand-authored `overflight:` flag per campaign zone. This table replaces it with a
-date-resolved answer, so §97 works on an existing campaign with no yaml at all.
+date-resolved answer, so §98 works on an existing campaign with no yaml at all.
 
 ## Corrections to the brief
 
@@ -59,9 +59,9 @@ measure. It changes no posture call — China has no airfield there and cannot b
 
 Two further findings, both about what DCS models rather than what the maps contain:
 
-- **Armenia and Azerbaijan are not pydcs countries.** Same hole the §97 note already records for
+- **Armenia and Azerbaijan are not pydcs countries.** Same hole the §98 note already records for
   Turkmenistan, Uzbekistan and Tajikistan, but on the Caucasus map — the fork's most-used
-  terrain. Neither can ever fly a §97 alert flight. They are drawn and permitted only.
+  terrain. Neither can ever fly a §98 alert flight. They are drawn and permitted only.
 - **The Iraq map has 19 Iraqi airfields and Kharg. Nothing else.** Kuwait, Saudi Arabia, Jordan,
   Syria and Turkey all hold land on it and none has a field to scramble from, so every one of
   them needs the point-spawn path, not `airfield:`.
@@ -172,7 +172,7 @@ Each range boundary is a named event. Ranges are `[from, to)`; an uncovered date
   kept Termez throughout, and returns to `permissive` with the Northern Distribution Network.
 - **Turkmenistan** holds UN-recognised permanent neutrality (12 Dec 1995) and still permitted
   non-lethal overflight and refuelling at Ashgabat from late 2001, with a standing USAF team of
-  about seven airmen. That is `permissive` as the bucket is defined, and it is why the §97 note
+  about seven airmen. That is `permissive` as the bucket is defined, and it is why the §98 note
   cites Turkmenistan as its worked example.
 - **Tajikistan** is `permissive` toward the US bloc on the French air detachment at Dushanbe —
   agreement of 8 Dec 2001, 150–300 personnel, withdrawn Oct 2014 — and `allied` toward Russia
@@ -204,7 +204,7 @@ steps: `contested`, `permissive` at Partnership for Peace (Jan 1994), `allied` a
 — Poland, Czechia and Hungary 12 Mar 1999, Slovakia 29 Mar 2004. Czechoslovakia split in Jan
 1993, so the Czech and Slovak entries carry identical Pact-era ranges.
 
-The neutrals are the interesting half, and they are what §97 is for:
+The neutrals are the interesting half, and they are what §98 is for:
 
 - **Austria** — permanent neutrality by the Neutrality Act of 26 Oct 1955. `closed` to both, and
   it means it: it permitted coalition overflight in 1991 under a UN mandate and refused the US in
@@ -290,7 +290,7 @@ is a real war on it.
 The brief carried this as an assigned question — find a usable public-domain historical-boundary
 source, or confirm none exists. **One exists, and it is licence-clean.**
 
-The problem, measured by the §97 session on Red Tide (Germany CW, 1988): modern Germany is one
+The problem, measured by the §98 session on Red Tide (Germany CW, 1988): modern Germany is one
 polygon, 6 of the campaign's 12 bases sit in what was the GDR, and the alignment rule resolves
 the country on a meaningless 5-blue/6-red split. The posture table has separate `Germany` and
 `GDR` entries, and separate `USSR`, `Czech Republic` and `Slovakia` entries — but Natural Earth
@@ -321,10 +321,10 @@ Two caveats for whoever builds it:
   they come in no particular order. `tools/neutral_border_geo.py` takes country polygons, so the
   segments have to be assembled into closed rings first. That is the work, not the download.
 - **North and South Vietnam do not matter here.** The fork's Vietnam campaigns are
-  fictional-overlay on Caucasus, which the §97 DM call put out of scope.
+  fictional-overlay on Caucasus, which the §98 DM call put out of scope.
 
 Until that lands, **every pre-1991 era is undrawable** and the Germany Cold War map cannot carry
-§97 zones at all. The postures data is still worth having: every other campaign is post-1991.
+§98 zones at all. The postures data is still worth having: every other campaign is post-1991.
 
 ## Measured on a map but not drawn there
 
@@ -341,7 +341,7 @@ The table is drafted against the schema in the brief, with one clarification: **
 quoted strings.** Unquoted, a bare `1965` parses as an int and `1979-02` as a YAML timestamp, in
 the same field. Nothing else about the shape changed.
 
-Four gaps between the data and §97 as built:
+Four gaps between the data and §98 as built:
 
 1. **Per-side overflight is not modelled.** The table supports a nation open to blue and closed
    to red; `NeutralBorderZone.overflight` is a single bool. The zone needs a per-side flag.
@@ -360,7 +360,7 @@ Four gaps between the data and §97 as built:
 1. **Does `hostile` ever differ from `closed` in v1?** Both collapse to transit-refused. The
    split is recorded faithfully but buys nothing until basing or targeting logic uses it.
 2. **Do the two Marianas terrains and Nevada get a border layer?** Every country on them is the
-   US, so there is no bordering nation and nothing for §97 to draw.
+   US, so there is no bordering nation and nothing for §98 to draw.
 
 Two are settled (DM, 2026-08-25) and are recorded above rather than here: Northern Cyprus folds
 into Cyprus, and India keeps its postures but gets no zone on the Afghanistan map.

@@ -376,7 +376,7 @@ class LuaGenerator:
                 nautical_miles(self.game.settings.qra_defense_depth_nm),
             )
 
-        # §97: a country hosting a side's airfields is that side's territory, so
+        # §98: a country hosting a side's airfields is that side's territory, so
         # its border joins that side's QRA accept zones. Independent of
         # qra_forward_defense -- this is about who owns the airspace, not about
         # the forward-defense geometry -- but still only useful with a dispatcher.
@@ -522,7 +522,7 @@ class LuaGenerator:
         # cloned bandits onto blue fighters (a GM event tool -- untracked by design).
         populate_red_scramble_lua(lua_data, self.game, self.mission_data)
 
-        # Neutral-faction border defense (§97) -- emits dcsRetribution.neutralBorder
+        # Neutral-faction border defense (§98) -- emits dcsRetribution.neutralBorder
         # only when neutral_border_defense is on and the generator could build
         # templates for the map's zones; the neutralborder plugin runs the
         # border watch, the shadow launches and the escalation ladder.

@@ -758,7 +758,7 @@ trigger = {
             })
         end,
         -- Freeform/shape drawing. Recorded rather than ignored because the F10
-        -- border draw is the half of §97 a player sees before ever entering a
+        -- border draw is the half of §98 a player sees before ever entering a
         -- polygon, and it failed silently once already.
         markupToAll = function(...)
             local args = { ... }
@@ -949,7 +949,7 @@ function GROUP.FindByName(_, name)
     return setmetatable({ group = g }, MooseGroup)
 end
 
--- The coalition swap (§97). MOOSE's Respawn copies live positions into the
+-- The coalition swap (§98). MOOSE's Respawn copies live positions into the
 -- template and DATABASE:Spawn hands template.CountryID to coalition.addGroup;
 -- the harness records the intent rather than modelling DCS's re-add, because
 -- what a test can pin is WHO the group was swapped to, not how DCS lands it.
@@ -1032,7 +1032,7 @@ function UNIT.FindByName(_, name)
 end
 
 -------------------------------------------------------------------------------
--- ZONE_POLYGON: only the surface §97 touches. DCS will not fill a concave
+-- ZONE_POLYGON: only the surface §98 touches. DCS will not fill a concave
 -- freeform, so the plugin hands the ring to MOOSE, whose ReFill triangulates.
 -- The triangulation is MOOSE's business and is not modelled here; what IS
 -- pinned is that the plugin asks for the fill at all, and with what.

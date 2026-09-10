@@ -55,7 +55,7 @@ class ConflictTheater:
             state["landmap_path"] = self.landmap_path_for_terrain_name(
                 state["terrain"].name
             )
-        # §97: a save with no borders picks up the terrain's shipped ones. That
+        # §98: a save with no borders picks up the terrain's shipped ones. That
         # covers both the save made before the feature existed and the one made
         # on a campaign that authors none -- which is 52 of the 54 campaigns on
         # real-world maps, so without this the feature reaches almost nobody

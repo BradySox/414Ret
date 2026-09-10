@@ -59,7 +59,7 @@ victory:
     - label: "Camp Bastion is lost"
       lose_cps: [Camp Bastion]
 
-# §97 bordering-nation airspace. Every nation that borders Afghanistan and is on
+# §98 bordering-nation airspace. Every nation that borders Afghanistan and is on
 # the map is drawn; alignment is derived from who holds the airfields inside each
 # border (none of these host any, so all five are neutral). Whether a neutral lets
 # you THROUGH is the separate "overflight" fact.
@@ -180,9 +180,9 @@ settings:
   # preseed is what overrides a saved default.
   plugins:
     vietnamops: true
-    # §97 runtime -- the neutral_border_defense setting does nothing without it.
+    # §98 runtime -- the neutral_border_defense setting does nothing without it.
     neutralborder: true
-  # §97: Iran, Pakistan, Turkmenistan, Uzbekistan and Tajikistan defend their
+  # §98: Iran, Pakistan, Turkmenistan, Uzbekistan and Tajikistan defend their
   # airspace below 10,000 ft. See the neutral_border_defense block above.
   neutral_border_defense: true
   squadron_start_full: true

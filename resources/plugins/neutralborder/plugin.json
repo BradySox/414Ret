@@ -1,5 +1,5 @@
 {
-    "nameInUI": "Neutral border defense (§97 runtime)",
+    "nameInUI": "Neutral border defense (§98 runtime)",
     "descriptionInUI": "Draws every country's real border on the F10 map. A country with no coalition airfield inside it stands a live SAM battery inside its own territory from mission start -- sized to how much room the country has, from an SA-3 up to an S-300 or Patriot, and placed deep enough that its envelope just covers the frontier. It sits there as a true neutral and cannot fire, because a neutral unit in DCS never can. Enter and you are warned by radio at once; stay past the engage timer or release a weapon inside the border, and the battery changes sides and engages. AI intruders are never engaged. Batteries are free, untracked event content.",
     "defaultValue": true,
     "specificOptions": [

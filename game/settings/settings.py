@@ -739,7 +739,7 @@ FEATURE_GATE_FIELDS: dict[str, list[str]] = {
         "artillery_base_harassment",  # §36
         "motorpool_enabled",  # §56
         "mission_briefing_popup",  # §58
-        "neutral_border_defense",  # §97
+        "neutral_border_defense",  # §98
     ],
     "Electronic & command warfare": [
         "c2_decapitation_effects",  # §52
@@ -763,7 +763,7 @@ FEATURE_GATE_FIELDS: dict[str, list[str]] = {
         "auto_repair_air_defenses",  # §68
     ],
     "Pilots & careers": [
-        "pilot_career_logbook",  # §97
+        "pilot_career_logbook",  # §96
     ],
     "Single-player flow": [
         "sp_pilot_mode",  # §83

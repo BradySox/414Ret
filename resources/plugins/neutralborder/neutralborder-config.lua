@@ -1,5 +1,5 @@
 ---------------------------------------------------------------------------------------------------
--- Neutral-faction border defense (§97) -- a neutral country's airspace, defended.
+-- Neutral-faction border defense (§98) -- a neutral country's airspace, defended.
 --
 -- Reads dcsRetribution.neutralBorder (emitted only when neutral_border_defense is on and the
 -- generator could build the map's zones; inert otherwise). Design + decisions:
@@ -57,7 +57,7 @@ end
 local EXIT_GRACE_S = 120 -- outside this long (pre-escalation) -> intruder state cleared
 
 local FT_TO_M = 0.3048
-local MARKUP_ID_BASE = 96000 -- §97 block; one freeform id per zone
+local MARKUP_ID_BASE = 96000 -- §98 block; one freeform id per zone
 --: The name labels sit in their own half of the block so an outline id and a
 --: label id can never collide.
 local LABEL_ID_OFFSET = 500

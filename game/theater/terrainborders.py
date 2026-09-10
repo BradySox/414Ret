@@ -1,4 +1,4 @@
-"""Shipped per-terrain border geometry (§97) — the automagic half.
+"""Shipped per-terrain border geometry (§98) — the automagic half.
 
 A campaign should not have to author the shape of its neighbours: the borders of
 a real-world map are a property of the *terrain*, identical for every campaign on

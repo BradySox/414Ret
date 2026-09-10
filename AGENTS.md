@@ -142,7 +142,7 @@ Read before touching a campaign's `.yaml`, `.miz` or build tool.
   juanjux #63** — why the baseline is Passive Defense, the `aiReactionExempt` protocol any
   plugin setting reaction-on-threat must use, why we took his head and not the merged PR,
   and the pre-registered falsifier if AI attrition rises)
-- **Neutral factions** — `414th-neutral-border-defense-notes.md` (**§97** — the engine
+- **Neutral factions** — `414th-neutral-border-defense-notes.md` (**§98** — the engine
   verdict on why a true neutral cannot fire, the opposing-coalition clone mechanism, the
   DM-locked rules incl. derived alignment (airfield-hosting decides the side), the
   overflight/refuses split, the accepted shadow-risk and its recorded fallback, the
@@ -154,7 +154,7 @@ Read before touching a campaign's `.yaml`, `.miz` or build tool.
   **corrected four errors in the research brief's from-memory list** (India on the
   Afghanistan map; no Qatar/Bahrain/Saudi on the Persian Gulf map; Belgium not Germany
   on Normandy/Channel; Saudi Arabia on the Syria map), the two rules that decide the
-  hard cases, and the four gaps between the data and §97 as built. **Armenia and
+  hard cases, and the four gaps between the data and §98 as built. **Armenia and
   Azerbaijan are not pydcs countries either** — the same hole as Turkmenistan, on the
   most-used terrain). **Answers the pre-1991 geometry blocker**: CShapes 2.0 is
   CC BY-NC-SA and historical-basemaps is GPL-3, both gated, but **GSHHG/CIA World

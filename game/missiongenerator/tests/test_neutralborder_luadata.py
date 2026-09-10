@@ -1,4 +1,4 @@
-"""Emitter contract for dcsRetribution.neutralBorder (§97)."""
+"""Emitter contract for dcsRetribution.neutralBorder (§98)."""
 
 from __future__ import annotations
 

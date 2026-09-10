@@ -1,4 +1,4 @@
-"""Neutral border defense: the standing SAM battery (§97).
+"""Neutral border defense: the standing SAM battery (§98).
 
 For each ``NeutralBorderZone`` that defends, this stands live SAM batteries
 inside the border under the **neutral country** — sized to how much room the

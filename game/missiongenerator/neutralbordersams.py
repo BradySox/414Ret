@@ -1,4 +1,4 @@
-"""Which SAM a bordering nation stands up, and how big it is (§97)."""
+"""Which SAM a bordering nation stands up, and how big it is (§98)."""
 
 from __future__ import annotations
 

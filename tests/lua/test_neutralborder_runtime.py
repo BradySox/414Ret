@@ -1,4 +1,4 @@
-"""Headless runtime checks for the neutralborder plugin (§97).
+"""Headless runtime checks for the neutralborder plugin (§98).
 
 Pins the "script errors and the feature silently never starts" invariant plus
 the behaviour contract of the border watch: a group inside the polygon below the
@@ -8,7 +8,7 @@ releases a weapon inside the border after the warning, is engaged via a hard
 AttackGroup task on the raw controller and the SAM template wakes; AI intruders
 are shadowed but never engaged; a high transit trips nothing; leaving before
 escalation stands the shadow down. The DCS AI's actual shadow/attack flying is
-in-game-only (checklist B114/B115).
+in-game-only (checklist B115/B116).
 """
 
 from __future__ import annotations

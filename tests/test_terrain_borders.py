@@ -117,21 +117,39 @@ def test_no_zone_is_a_clip_artifact(terrain: str) -> None:
 
 
 def test_an_archipelago_does_not_become_a_dozen_zones() -> None:
-    """Every surviving landmass gets its own alert flight, so Tierra del Fuego
-    needs an area floor: unfiltered, Chile alone came out as five zones, one of
-    them the 1,439 km² Cape Horn group. Real territory, uncontested airspace."""
+    """Every surviving landmass gets its own zone, so Tierra del Fuego needs an
+    area floor: unfiltered it came out as 18 zones, most of them Chilean fjord
+    islands. Real territory, uncontested airspace.
+
+    The floor is 4,000 km² on this map rather than the 500 default, and that
+    number is bounded from BOTH sides: below it Chile fragments, and above
+    4,491 it would drop West Falkland, which is the campaign's own objective.
+    Chile legitimately keeps five landmasses over the floor, three of them
+    larger than either Falkland island (measured 2026-09-10).
+    """
     zones = load_terrain_borders("Falklands")
-    assert len(zones) <= 8, "the Falklands archipelago was not floored"
+    assert len(zones) <= 10, "the Falklands archipelago was not floored"
     by_country: dict[str, int] = {}
     for entry in zones:
         by_country[entry["country"]] = by_country.get(entry["country"], 0) + 1
     for country, count in by_country.items():
-        assert count <= 4, f"{country} fragmented into {count} zones"
+        assert count <= 5, f"{country} fragmented into {count} zones"
+    assert "UK" in by_country, (
+        "the Falkland Islands themselves are undrawn -- they are their own "
+        "admin-0 feature under UK sovereignty, not part of Argentina or Chile"
+    )
 
 
 def test_afghanistans_neighbours_are_all_there() -> None:
     """India is included on measured land share (1.03 %), which the eyeball
-    misses; China's Wakhan strip is off the playable area and is not."""
+    misses.
+
+    **China was excluded on a claim the clip fix falsified.** The old note here
+    said its Wakhan strip was "off the playable area"; that was true only
+    because the clip box stopped at 73.0E while the map models land to 75.0E.
+    With the clip reaching the terrain, China has 72,759 km² of modelled land on
+    this map (measured 2026-09-10) -- more than a tenth of Afghanistan's own.
+    """
     names = {e["country"] for e in load_terrain_borders("Afghanistan")}
     assert names == {
         "Afghanistan",
@@ -141,11 +159,12 @@ def test_afghanistans_neighbours_are_all_there() -> None:
         "Uzbekistan",
         "Tajikistan",
         "India",
+        "China",
     }
 
 
 def test_syria_is_on_the_iraq_map() -> None:
-    """The Iraq map's clip reaches lng 52, and Syria's east runs to 42.4.
+    """The Iraq map's clip reaches lng 55.5, and Syria's east runs to 42.4.
 
     It was missing until 2026-08-26 -- not excluded, just never named in the
     tool's --countries list, which is a silent way to lose a border. Iraq's own

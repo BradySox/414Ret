@@ -96,8 +96,9 @@ EAST_LADDER = (S_300, SA_11, SA_3)
 WEST_LADDER = (PATRIOT, HAWK)
 
 #: Room (largest inscribed circle) a country needs before it is worth standing
-#: the next rung up. Measured over the 52 shipped zones 2026-09-07: 23 sit under
-#: 40 NM and the rest run to 186.
+#: the next rung up. Measured over the 55 shipped zones 2026-09-10, after the
+#: clip boxes were widened to reach the map's own edge: 22 sit under 40 NM and
+#: the rest run to 216.
 ROOM_FOR = {
     S_300: nautical_miles(100),
     PATRIOT: nautical_miles(100),

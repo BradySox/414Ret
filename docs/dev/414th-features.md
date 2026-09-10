@@ -9985,6 +9985,17 @@ of the other side.
   that declares its own `neutral_border_defense:` block overrides the terrain
   file **completely** — never merged. Saves already in progress pick the borders
   up on load, so no re-roll is needed.
+- **The clip box has to reach the map's own edge.** Every border is the real
+  country outline clipped to a hand-passed `--clip`, and until 2026-09-10 seven
+  of the eight boxes stopped *inside* the terrain — 1,273,689 km² of modelled
+  land with no border on it, 45.3 % of Sinai and 15.9 % of Afghanistan. Reported
+  from the F10 map ("the fill doesn't go to the edge"). Boxes are now the map's
+  own land extent plus ~1.5°, walked off the landmap's **vertices** — an XY
+  bounding box overstates it, because terrain XY is rotated against lat/lon.
+  Every map is now under 2 % undrawn except Falklands at 7.9 %, which is Chilean
+  fjord islands under a deliberate area floor. It also turned up that Kola was
+  missing the Kola Peninsula, that China has 72,759 km² on the Afghanistan map,
+  and that Persian Gulf was running with no landmap at all.
 - **Borders are real data, never hand-traced** — `tools/neutral_border_geo.py`:
   public-domain country GeoJSON → clip to the map → optional corridor cut →
   shapely simplify to a vertex budget → `Point.from_latlng` → terrain XY yaml.

@@ -58,6 +58,14 @@ from shapely.geometry import Point as ShapelyPoint, Polygon, box  # noqa: E402
 SPAWN_ALT_FT = 20000
 
 
+#: CLI terrain key -> the name ``landmap_path_for_terrain_name`` matches on.
+#: Without this, Persian Gulf silently ran with NO landmap at all: the lookup
+#: matches directory names by substring and "persiangulf" is not one, so every
+#: station on that map fell back to the polygon's own middle and the
+#: no-modelled-land filter below could not run (found 2026-09-10).
+LANDMAP_NAMES = {"persiangulf": "PersianGulf", "thechannel": "TheChannel"}
+
+
 def modelled_land(terrain_name: str) -> Any:
     """The map's actual land, in terrain XY. None if it cannot be loaded."""
     try:
@@ -65,7 +73,9 @@ def modelled_land(terrain_name: str) -> Any:
         from game.theater.landmap import load_landmap
 
         landmap = load_landmap(
-            ConflictTheater.landmap_path_for_terrain_name(terrain_name)
+            ConflictTheater.landmap_path_for_terrain_name(
+                LANDMAP_NAMES.get(terrain_name, terrain_name)
+            )
         )
         return landmap.inclusion_zones if landmap else None
     except Exception as exc:  # pragma: no cover - a tool convenience
@@ -79,11 +89,17 @@ def spawn_station(
     """Where a country with no airfield stations its alert flight, in terrain XY.
 
     The representative point of the clipped polygon, **constrained to ground the
-    map actually models**. A clip box is bigger than its terrain, so a country
-    that only clips the map's edge gets a polygon whose middle is off the map
-    entirely: measured 2026-08-27, Caucasus put Turkey's station 170 km from the
-    nearest modelled land, in neither the landmap's inclusion nor its sea zones
-    -- the same signature as a point in the Caspian, well off that terrain.
+    map actually models**. A clip box that reaches past the terrain admits a
+    country that only clips the map's edge, whose polygon middle is then off the
+    map entirely: measured 2026-08-27, Caucasus put Turkey's station 170 km from
+    the nearest modelled land, in neither the landmap's inclusion nor its sea
+    zones -- the same signature as a point in the Caspian, well off that terrain.
+
+    This line used to assert "a clip box is bigger than its terrain". It was not:
+    measured 2026-09-10, SEVEN of the eight boxes stopped inside their own map,
+    leaving 1,273,689 km2 of modelled land with no border drawn on it. The boxes
+    were widened and a later pass now drops any piece with no modelled land in
+    it, which is the other half of the same problem.
 
     Turkey is the case that matters, because it is the only one of the four with
     an airframe in any era; Armenia and Azerbaijan scramble nothing whatever
@@ -278,6 +294,33 @@ def main() -> None:
         simplified = kept
 
     land = modelled_land(args.terrain)
+
+    # Pass 3: drop a piece with no modelled land inside it. A clip box has to
+    # reach past the terrain to cover the map's edges, which then admits pieces
+    # that are entirely off-map: widening the boxes on 2026-09-10 gave Caucasus
+    # a Ukraine zone and Iraq a UAE one, neither with a square metre of ground
+    # you can fly over. A nation with no land on the map is not on the map, and
+    # drawing it puts a border in the sea.
+    if land is not None:
+        grounded = []
+        for name, piece in simplified:
+            ring_xy = to_xy(
+                terrain, [(x, y) for x, y in list(piece.exterior.coords)[:-1]]
+            )
+            try:
+                from shapely.geometry import Polygon as ShapelyPolygon
+
+                if ShapelyPolygon(ring_xy).intersection(land).is_empty:
+                    print(
+                        f"  -- {name}: no modelled land inside it, dropped",
+                        file=sys.stderr,
+                    )
+                    continue
+            except Exception:  # pragma: no cover - a tool convenience
+                pass
+            grounded.append((name, piece))
+        simplified = grounded
+
     written = 0
     seen: dict[str, int] = {}
     totals: dict[str, int] = {}

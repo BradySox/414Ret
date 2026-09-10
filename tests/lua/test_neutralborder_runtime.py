@@ -143,8 +143,8 @@ def _hails(h: DcsPluginHarness) -> list[str]:
 
 
 def _advisories(h: DcsPluginHarness) -> list[str]:
-    """The second call at warnDwellS -- the battery has been told about you."""
-    return [t for t in _texts(h) if "advised" in t]
+    """The second call at warnDwellS -- the last warning before the swap."""
+    return [t for t in _texts(h) if "tracking you" in t]
 
 
 def _sam_spawns(h: DcsPluginHarness) -> list[dict[str, Any]]:
@@ -181,7 +181,7 @@ def test_a_blue_player_is_warned_and_nothing_is_launched() -> None:
     h.advance_to(45)
 
     assert _hails(h), "no radio call on entry"
-    assert _advisories(h), "the patrol was never advised at the dwell"
+    assert _advisories(h), "the second call never came at the dwell"
     # Nothing has become hostile yet: no swap, no attack task, no SAM.
     assert _swaps(h) == [], "the patrol turned hostile before the engage dwell"
     assert _attack_tasks(h) == []
@@ -562,7 +562,7 @@ def test_the_second_call_still_waits_for_its_dwell() -> None:
     h.add_group(_intruder("Viper 1-1", 42, side=2))
     h.load_plugin_script(PLUGIN)
     h.advance_to(45)
-    assert _advisories(h), "the patrol was never advised at the dwell"
+    assert _advisories(h), "the second call never came at the dwell"
     h.assert_no_lua_errors()
 
 

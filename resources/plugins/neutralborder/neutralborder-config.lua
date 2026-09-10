@@ -535,15 +535,15 @@ local function hail(state, intruder_group)
     end
 end
 
--- The second radio call, at WARN_DWELL_S: the patrol has been told about you.
--- Nothing is launched -- it has been airborne since mission start -- and it does
--- not break its orbit, because chasing you is the thing that never worked.
+-- The second radio call, at WARN_DWELL_S. Nothing is launched or tasked: the
+-- batteries have been standing since mission start and stay neutral until the
+-- escalation swap. This call is the last warning before that.
 local function warn(state, intruder_group)
     state.warned = true
     local zone = zones[state.zone]
     if state.is_player then
         announce(intruder_group, string.format(
-            "%s AIR FORCE: Our patrol has been advised. Leave %s airspace.",
+            "%s AIR FORCE: Our air defenses are tracking you. Leave %s airspace.",
             string.upper(zone.country), zone.country))
     end
 end

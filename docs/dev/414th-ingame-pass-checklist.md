@@ -6244,19 +6244,19 @@ the SAM alone 2026-09-07. Full history in the design note.
 
 ### B116 — Neutral border: AI intruders are never engaged · §98 · ☐ UNTESTED
 
-**REWRITTEN 2026-09-07 — the card below described the scramble, which was deleted
-2026-08-29.** It told the flyer to check `shadowHoldNm` and `maxShadows`; neither
-option exists, and there are no shadow pairs to accumulate. Nothing about the
-earlier flown result survives either: the risk it recorded — the alert flight
-being shot down by the intruder's own escort — cannot happen to a standing
-patrol, which is a neutral nobody may fire on until it swaps.
+**REWRITTEN TWICE.** The 2026-09-07 rewrite dropped the scramble's
+`shadowHoldNm`/`maxShadows` language, which was right, but it then described the
+four-ship patrol — deleted the same week — and said an AI stray "gets the radio
+calls". **That is wrong and always was**: `hail` and `warn` are both gated on
+`state.is_player` (`neutralborder-config.lua`), so an AI stray draws **nothing at
+all**. Corrected 2026-09-09.
 
-**What this row now asks.** A country that refuses transit flies a four-ship
-neutral patrol inside its own border for the whole mission. An **AI** flight that
-strays across gets the radio calls and **nothing else, ever** — no coalition
-swap, no attack task, no SAM. Only a player earns those. The invariant is
-harness-covered; what needs eyes is that it holds in a real mission, and that AI
-strays happen at a believable rate rather than constantly.
+**What this row now asks.** A country that refuses transit stands SAM batteries
+inside its own border for the whole mission. An **AI** flight that strays across
+gets **no reaction of any kind** — no radio call, no coalition swap, no SAM. Only
+a player earns those. The invariant is harness-covered; what needs eyes is that it
+holds in a real mission, and that AI strays happen at a believable rate rather
+than constantly.
 
 **Setup.** Any campaign with `neutral_border_defense` on and the plugin ticked —
 Into the Hornet's Nest (Lebanon) or Enduring Resolve (Pakistan, Iran) are the
@@ -6266,10 +6266,10 @@ is B115's ladder, not this row.
 
 **Pass.**
 
-* An AI stray draws the radio calls and no reaction. The patrol keeps flying its
-  oval and its colour never changes on the F10 map.
-* No neutral SAM wakes for an AI intruder.
-* The patrol is still four aircraft, on its own side of the border, when the AI
+* An AI stray draws nothing. No radio call reaches you, and the batteries keep
+  their neutral colour on the F10 map.
+* No neutral battery goes weapons-free or alarm-red for an AI intruder.
+* Every battery the country stood is still there, still neutral, when the AI
   leaves.
 
 **Fail signatures.**

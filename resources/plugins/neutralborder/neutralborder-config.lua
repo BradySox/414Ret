@@ -132,7 +132,7 @@ for _, raw in ipairs(data.zones or {}) do
                 spawn_x = spawn_x,
                 spawn_z = spawn_z,
                 spawn_alt_m = tonumber(raw.spawnAltM) or 6000,
-                origin_label = tostring(raw.originLabel or raw.field or "border CAP"),
+                origin_label = tostring(raw.originLabel or "defended"),
                 -- Where to write the country's name: inside the polygon by
                 -- construction (shapely's representative point), which a
                 -- centroid is not on a concave country.
@@ -273,14 +273,14 @@ local function border_caption(zone)
     elseif zone.posture == "contested" then
         return "contested"
     elseif zone.enforces then
-        -- The country's name is already the line above, so a spawn-point zone's
-        -- "<country> border CAP" would say it twice.
+        -- The country's name is already the line above, so a label that repeats
+        -- it says it twice. The origin used to be an airfield and no longer is.
         local origin = zone.origin_label
         local prefix = zone.country .. " "
         if origin:sub(1, #prefix) == prefix then
             origin = origin:sub(#prefix + 1)
         end
-        return "CLOSED - alert from " .. origin
+        return "CLOSED - " .. origin
     end
     return "transit permitted"
 end

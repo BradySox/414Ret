@@ -44,6 +44,9 @@ def _config(battery: bool = True, floor_ft: str = "10000") -> dict[str, Any]:
         # from the polygon's representative point; the square's is its middle.
         "labelX": "10000",
         "labelZ": "10000",
+        # What the emitter actually sends for a defending zone. It used to name
+        # the alert field; nothing launches from one since 2026-09-09.
+        "originLabel": "surface-to-air batteries inside the border",
         # Refuses both sides: this fixture is the interception case.
         "overflightBlue": "false",
         "overflightRed": "false",
@@ -489,7 +492,10 @@ def test_each_border_is_named_on_the_map() -> None:
     h = _drawn(_config())
     texts = h.records("mapTexts")
     assert len(texts) == 1, "the border was drawn without a name"
-    assert texts[0]["text"] == "LEBANON\nCLOSED - alert from Rayak"
+    assert (
+        texts[0]["text"]
+        == "LEBANON\nCLOSED - surface-to-air batteries inside the border"
+    )
     assert texts[0]["coalition"] == -1, "both sides see the border they may cross"
     # Same hue as the enforced border, and not the cyan the §45 support orbits use.
     outline = [r for r in h.records("markups") if r["shape"] == 7][0]
@@ -522,15 +528,15 @@ def test_no_labels_when_the_draw_is_switched_off() -> None:
 
 
 def test_the_label_does_not_say_the_country_twice() -> None:
-    """A zone with no airfield labels its origin '<country> border CAP', and the
-    country's name is already the line above it."""
+    """The country's name is already the line above. The shipped label never
+    starts with it, but a campaign may author one that does."""
     cfg = _config()
     zone = cfg["neutralBorder"]["zones"][0]
     del zone["field"]
-    zone["spawnX"], zone["spawnZ"], zone["spawnAltM"] = "9000", "9000", "6096"
-    zone["originLabel"] = "Lebanon border CAP"
+    zone["spawnX"], zone["spawnZ"] = "9000", "9000"
+    zone["originLabel"] = "Lebanon air defense district"
     h = _drawn(cfg)
-    assert h.records("mapTexts")[0]["text"] == "LEBANON\nCLOSED - alert from border CAP"
+    assert h.records("mapTexts")[0]["text"] == "LEBANON\nCLOSED - air defense district"
 
 
 # -- the radio call is immediate; the interceptor is not -----------------------

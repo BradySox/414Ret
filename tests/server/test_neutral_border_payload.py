@@ -65,7 +65,9 @@ def test_border_converts_to_real_lebanese_coordinates() -> None:
     assert len(borders) == 1
     border = borders[0]
     assert border.country == "Lebanon"
-    assert border.airfield == "Rayak"
+    # The tooltip names what defends the airspace, not a field: nothing has
+    # launched from one since the patrol went (2026-09-09).
+    assert "batteries" in border.airfield
     assert border.floor_ft == 10000
 
     # One ring, no holes -- the Leaflet array-of-arrays contract.

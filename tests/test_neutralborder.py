@@ -113,7 +113,7 @@ def test_spawn_point_zone() -> None:
     assert zone.airfield is None
     assert zone.spawn == (-375979.0, 341652.0)
     assert zone.spawn_alt_ft == 22000
-    assert zone.origin_label(NEUTRAL) == "Pakistan border CAP"
+    assert zone.origin_label(NEUTRAL) == "surface-to-air batteries inside the border"
 
 
 def test_spawn_altitude_defaults() -> None:
@@ -122,10 +122,17 @@ def test_spawn_altitude_defaults() -> None:
     assert zone.spawn_alt_ft == DEFAULT_SPAWN_ALT_FT
 
 
-def test_airfield_zone_labels_by_its_field() -> None:
-    zone = NeutralBorderZone.from_yaml(_entry())
-    assert zone is not None
-    assert zone.origin_label(NEUTRAL) == "Rayak"
+def test_a_defending_zone_names_what_defends_it_not_a_field() -> None:
+    """The airfield stopped being a launch point when the patrol went, so
+    naming it in the tooltip pointed the player at the wrong place."""
+    for zone in (
+        NeutralBorderZone.from_yaml(_entry()),
+        NeutralBorderZone.from_yaml(_spawn_entry()),
+    ):
+        assert zone is not None
+        assert (
+            zone.origin_label(NEUTRAL) == "surface-to-air batteries inside the border"
+        )
 
 
 def test_malformed_spawn_is_skipped() -> None:

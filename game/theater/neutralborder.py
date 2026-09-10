@@ -479,9 +479,11 @@ class NeutralBorderZone:
             return "contested — both sides hold ground here"
         if not enforced:
             return "neutral — overflight permitted"
-        if self.airfield is not None:
-            return self.airfield
-        return f"{self.country} border CAP"
+        # Named the alert field until 2026-09-09. Nothing launches from it now
+        # -- the batteries are sited off the border polygon, and the field is
+        # only a tie-break -- so naming it told the player to watch the wrong
+        # place.
+        return "surface-to-air batteries inside the border"
 
     @classmethod
     def from_yaml(

@@ -10041,8 +10041,8 @@ of the other side.
 - **The F10 map names each border**: a two-line label at the polygon's
   representative point (shapely, so it is inside a concave country; a centroid
   is not) reading the country and what its airspace does — `friendly` /
-  `enemy-held` / `contested` / `transit permitted` / `CLOSED - alert from
-  <field>`. Drawn in the border's own hue, which keeps it distinct from §45's
+  `enemy-held` / `contested` / `transit permitted` / `CLOSED - surface-to-air
+  batteries inside the border`. Drawn in the border's own hue, which keeps it distinct from §45's
   cyan support orbits and ties the label to its line. `drawBorders` switches
   both off together.
 

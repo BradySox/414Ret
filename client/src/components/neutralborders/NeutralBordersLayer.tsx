@@ -82,7 +82,7 @@ export default function NeutralBordersLayer() {
                     border.floor_ft
                       ? `Defended below ${border.floor_ft.toLocaleString()} ft`
                       : "Closed to you at any altitude"
-                  } · alert from ${border.airfield}`
+                  } · surface-to-air batteries inside the border`
                 : border.airfield}
             </Tooltip>
           </CasedPolygon>

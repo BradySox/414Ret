@@ -158,8 +158,9 @@ class NeutralBorderJs(BaseModel):
     """
 
     country: str
-    #: Where the alert flight comes from, for the tooltip: a field name, or
-    #: "<country> border CAP" for a neutral with no airfield on the map.
+    #: What this airspace means, for the tooltip. Named the alert field until
+    #: 2026-09-09; nothing launches from one any more. Keeps its wire name so
+    #: the client contract does not move for a label change.
     airfield: str
     #: "neutral", "blue" or "red" -- who owns the airspace (the colour family).
     posture: str

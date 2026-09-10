@@ -9898,12 +9898,22 @@ The research is kept and still supplies the airframe. **Altitude floors went
 with it** — they came from its `contested` bucket, so a floor is now authored
 only and a defending country defends at any height. **A refusing neutral stands
 live SAM batteries inside its own border from mission generation** (the fighter
-patrol it used to fly was dropped 2026-09-07, DM call — scope is the SAM). The
-system is sized to the largest circle that fits inside the country: SA-3 by
-default, SA-11 above 40 NM of room, S-300 above 100, with Hawk and Patriot for
-the eleven authored western-equipped nations. **Dates are export dates, not
-in-service** — checked against the 1982 Falklands column, where in-service dates
-handed Argentina a Buk. **How many is the country's own size** (DM call
+patrol it used to fly was dropped 2026-09-07, DM call — scope is the SAM). **The era picks the tier and the country's size picks the rung within it**
+(DM call 2026-09-10). Legacy is SA-2 / SA-3 / SA-5, modern is SA-10 / SA-11,
+with Hawk, Patriot and Rapier for the twelve authored western-equipped nations.
+The size measure is the largest circle that fits inside the country: over 100 NM
+of room takes the top rung (SA-5 legacy, SA-10 or Patriot modern), 25–100 the
+middle (SA-2 or SA-11, Hawk), under 25 the bottom (SA-3, Rapier). **The top rung
+is the same band in both eras** — a country large enough for an SA-5 in 1982 is
+large enough for an SA-10 in 2004, which is the point of two tiers rather than
+two scales. Over the 55 shipped zones that is **1982: 17 SA-2, 14 Hawk, 9 SA-3,
+8 SA-5, 7 Rapier** and **2004: 17 SA-11, 10 Hawk, 9 SA-3, 8 SA-10, 7 Rapier,
+4 Patriot**. **Dates are export dates, not in-service** — checked against the
+1982 Falklands column, where in-service dates handed Argentina a Buk. **Every
+reach is the DCS launcher's own `threat_range`**; the earlier numbers were
+unsourced and disagreed with it inconsistently. **The west has no legacy
+long-range rung** because vanilla DCS models no Nike Hercules, so a large
+pre-1995 western country tops out at Hawk. **How many is the country's own size** (DM call
 2026-09-09) — roughly one per 200 NM of war-facing frontier, capped at six.
 A single site was 3.5 % of Pakistan's border on the Afghanistan map, measured
 2026-09-09 over 2,291 NM of real frontier, so crossing anywhere else met

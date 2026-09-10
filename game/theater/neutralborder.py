@@ -100,6 +100,21 @@ MAX_SAM_SITES = 6
 #: coarse enough that a 3,000 km border is a few thousand points.
 FRONTIER_STEP_M = 5000.0
 
+#: How much of a country's own room a battery may sit behind. A site at exactly
+#: the inscribed centre is ONE site with no ring left to spread the others
+#: along, which is what a system out-ranging its own country produces -- the
+#: SA-5 reaches 138 NM and every country that fields it has less room than that
+#: (measured 2026-09-10). Capping the depth keeps a ring without costing
+#: coverage: the envelope reaches the frontier whenever reach >= depth, and this
+#: only ever makes depth smaller.
+MAX_DEPTH_FRACTION = 0.6
+
+#: Two batteries closer together than this are one emplacement as far as a pilot
+#: is concerned. Deliberately NOT the system's reach: keying it to reach made
+#: spread a function of how far the missile flies, so a long-range system
+#: suppressed every site but one.
+MIN_SITE_SEPARATION_M = 25 * 1852.0
+
 #: How close to the map's own edge a frontier sample has to be before it is the
 #: clip and not a border. ``build_terrain_borders`` snaps to a 100 m grid.
 CLIP_TOLERANCE_M = 250.0
@@ -420,7 +435,7 @@ class NeutralBorderZone:
         polygon = Polygon(self.border)
         if not polygon.is_valid:
             polygon = polygon.buffer(0)
-        depth = min(reach_m, self.interior_room())
+        depth = min(reach_m, self.interior_room() * MAX_DEPTH_FRACTION)
         if depth <= 0:
             return [anchor]
         inner = polygon.buffer(-depth)
@@ -465,7 +480,7 @@ class NeutralBorderZone:
             site = on_ring(picked)
             # A narrow country folds two frontier stretches onto one ring point;
             # that is one battery covering both, not two stacked on each other.
-            if any(math.dist(site, other) < reach_m for other in sites):
+            if any(math.dist(site, other) < MIN_SITE_SEPARATION_M for other in sites):
                 continue
             sites.append(site)
         return sites or [on_ring(home)]

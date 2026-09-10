@@ -115,17 +115,56 @@ def test_the_ladder_gives_a_bigger_country_a_longer_ranged_system() -> None:
     ), f"{large.name} does not out-range {small.name}, so size buys nothing"
 
 
-def test_a_system_the_era_cannot_export_is_not_offered() -> None:
-    """Checked 2026-09-07 against the 1982 Falklands column, where in-service
-    dates rather than export dates handed Argentina a Buk."""
+def test_the_era_picks_the_tier_and_the_room_picks_the_rung() -> None:
+    """Two tiers, DM call 2026-09-10: legacy is SA-2/3/5, modern is SA-10/11.
+
+    Checked against the 1982 Falklands column, where in-service dates rather
+    than export dates once handed Argentina a Buk.
+    """
     from datetime import date
 
     from game.missiongenerator.neutralbordersams import system_for
     from game.utils import nautical_miles
 
-    room = nautical_miles(150)
-    assert system_for("Freedonia", room, date(1982, 5, 1)).name == "SA-3"
-    assert system_for("Freedonia", room, date(2004, 6, 1)).name == "S-300"
+    legacy, modern = date(1982, 5, 1), date(2004, 6, 1)
+    for room, want_legacy, want_modern in (
+        (nautical_miles(150), "SA-5", "SA-10"),
+        (nautical_miles(60), "SA-2", "SA-11"),
+        (nautical_miles(10), "SA-3", "SA-3"),
+    ):
+        assert system_for("Freedonia", room, legacy).name == want_legacy
+        assert system_for("Freedonia", room, modern).name == want_modern
+
+
+def test_no_ladder_offers_a_system_its_own_era_refuses() -> None:
+    """MODERN_FROM sits at the modern ladder's latest export for this reason.
+    A rung the date then rejects silently drops the country a tier."""
+    from datetime import date
+
+    from game.missiongenerator.neutralbordersams import (
+        MODERN_FROM,
+        EAST_MODERN,
+        WEST_MODERN,
+    )
+
+    for ladder in (EAST_MODERN, WEST_MODERN):
+        for system in ladder:
+            assert system.since <= MODERN_FROM, (
+                f"{system.name} exports from {system.since}, after the modern "
+                f"ladder starts at {MODERN_FROM}"
+            )
+
+
+def test_a_country_too_early_for_its_lightest_rung_is_not_handed_it_anyway() -> None:
+    """The fallback used to return the last rung whatever the date, which gave a
+    1965 campaign a Rapier six years before it existed."""
+    from datetime import date
+
+    from game.missiongenerator.neutralbordersams import system_for
+    from game.utils import nautical_miles
+
+    system = system_for("Israel", nautical_miles(5), date(1965, 1, 1))
+    assert system.since <= 1965, f"{system.name} did not exist in 1965"
 
 
 def test_a_western_nation_does_not_get_soviet_kit() -> None:
@@ -136,9 +175,11 @@ def test_a_western_nation_does_not_get_soviet_kit() -> None:
     from game.utils import nautical_miles
 
     day = date(2004, 6, 1)
-    assert system_for("Israel", nautical_miles(20), day).name == "Hawk"
+    assert system_for("Israel", nautical_miles(40), day).name == "Hawk"
     assert system_for("Turkey", nautical_miles(150), day).name == "Patriot"
-    assert system_for("Iran", nautical_miles(150), day).name == "S-300"
+    assert system_for("Iran", nautical_miles(150), day).name == "SA-10"
+    # The Falklands zones are UK, and Rapier is what actually defended them.
+    assert system_for("UK", nautical_miles(14), day).name == "Rapier"
 
 
 def test_the_site_stands_deep_but_still_covers_its_border() -> None:

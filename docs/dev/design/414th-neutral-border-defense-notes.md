@@ -1741,3 +1741,67 @@ and Tajikistan SA-3 → SA-11. The 2004 ladder is now 15 SA-3, 15 Hawk, 13 SA-11
 8 S-300, 4 Patriot.
 
 Nothing here has been flown either. It is on B115's card.
+
+## Two tiers, rescaled to the corrected map areas (DM call, 2026-09-10)
+
+Widening the clip boxes grew every country's measured room, so the ladder's
+thresholds were describing a map that no longer existed. The DM's call with the
+rescale: **keep tiers — legacy SAMs and modern systems — SA-2/3/5 or SA-10/11.**
+
+**The era picks the ladder; the room picks the rung on it.**
+
+| Room | Legacy (before 1995) | Modern | West legacy | West modern |
+|---|---|---|---|---|
+| 100 NM+ | SA-5 | SA-10 | *(none)* | Patriot |
+| 25–100 NM | SA-2 | SA-11 | Hawk | Hawk |
+| under 25 NM | SA-3 | SA-3 | Rapier | Rapier |
+
+Over the 55 shipped zones:
+
+- **1982** — 17 SA-2, 14 Hawk, 9 SA-3, 8 SA-5, 7 Rapier
+- **2004** — 17 SA-11, 10 Hawk, 9 SA-3, 8 SA-10, 7 Rapier, 4 Patriot
+
+**The top rung is the same band in both eras.** A country large enough for an
+SA-5 in 1982 is large enough for an SA-10 in 2004 — that is what makes them two
+tiers rather than two unrelated scales, and it is why `PATRIOT`, `S_300` and
+`SA_5` share a threshold.
+
+`MODERN_FROM` is **1995**, the modern ladder's own latest export date rather
+than a political one. Set it earlier and the ladder offers SA-11 to a year its
+`since` then refuses, which silently drops the country a tier. A test pins that
+no rung on a ladder exports after the ladder's own start.
+
+### Reach is now the DCS launcher's threat_range
+
+The old numbers were unsourced and disagreed with pydcs inconsistently: SA-3
+matched exactly at 10 NM, SA-11 read 19 against 27, S-300 40 against 65. One
+checkable rule replaces five judgement calls. Measured 2026-09-10: SA-3 10,
+SA-2 23, SA-11 27, Hawk 24, Patriot 54, SA-10 65, SA-5 138, Rapier 4.
+
+### The SA-5 forced two placement rules apart
+
+At 138 NM the SA-5 out-ranges every country that can field it, and the placement
+had two things keyed to reach that then collapsed:
+
+- **Depth** was `min(reach, room)`. When reach exceeds room that is the
+  inscribed centre exactly, which is ONE site with no ring left to spread the
+  others along. Now capped at `MAX_DEPTH_FRACTION` (0.6) of the room. It costs
+  no coverage — the envelope reaches the frontier whenever `reach >= depth`, and
+  the cap only ever makes depth smaller.
+- **The dedupe radius** was the reach itself, so a long-range system suppressed
+  every site but one. It is now a flat `MIN_SITE_SEPARATION_M` of 25 NM: two
+  batteries closer than that are one emplacement to a pilot, whatever they
+  shoot.
+
+Both were latent before — nothing in the old ladder out-ranged its own band.
+
+### Also
+
+**UK joined `WEST_EQUIPPED`.** The Falklands zones are UK, and Rapier is what
+actually defended them in 1982.
+
+**The era fallback stopped ignoring the date.** `system_for` returned
+`ladder[-1]` when nothing matched, which handed a 1965 campaign a Rapier six
+years before it existed. It now takes the lightest rung the era does allow.
+
+Not flown. On B115's card with the rest.

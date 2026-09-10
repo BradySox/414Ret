@@ -255,8 +255,8 @@ Most of this is opt-in. Full list with toggles, defaults and known limitations:
   campaign meets SA-2s, SA-3s and SA-5s, a modern one SA-10s and SA-11s, with Rapier,
   Hawk and Patriot for the nations on western kit. A small country gets a single
   short-ranged battery, a large one several long-ranged ones, spread along the stretch of
-  frontier the war is actually near, each sitting deep enough that its envelope just
-  reaches the border. Cross and it
+  frontier the war is actually near, each set back well short of what its missile
+  claims, so the border sits inside the envelope with margin rather than on its edge. Cross and it
   warns you off the radio at once. Leave and nothing happens. Stay too long or release a
   weapon inside the border, and the whole country turns hostile and engages — not just
   the site you flew past. If both sides violate the same country, it puts up a second set

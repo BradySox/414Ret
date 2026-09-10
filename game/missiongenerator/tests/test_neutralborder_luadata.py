@@ -167,6 +167,49 @@ def test_a_country_too_early_for_its_lightest_rung_is_not_handed_it_anyway() -> 
     assert system.since <= 1965, f"{system.name} did not exist in 1965"
 
 
+def test_a_battery_is_sited_inside_what_its_missile_can_really_do() -> None:
+    """DM call 2026-09-10: place conservatively.
+
+    ``reach`` is the DCS database figure and equals ``air_weapon_dist`` exactly
+    on every system -- a kinematic maximum against a target that does not
+    manoeuvre. Siting at it puts the border on the very edge of the envelope,
+    where a crossing aircraft is inside the ring and outside anything the
+    missile can catch. Placement is a fixed fraction short of it.
+    """
+    from game.missiongenerator.neutralbordersams import (
+        EAST_LEGACY,
+        EAST_MODERN,
+        WEST_LEGACY,
+        WEST_MODERN,
+    )
+
+    seen = set()
+    for ladder in (EAST_MODERN, EAST_LEGACY, WEST_MODERN, WEST_LEGACY):
+        for system in ladder:
+            if system.name in seen:
+                continue
+            seen.add(system.name)
+            assert system.placement_reach < system.reach, (
+                f"{system.name} is sited at its full database reach, which "
+                "defends the border on paper only"
+            )
+            assert (
+                system.placement_reach.meters > 0
+            ), f"{system.name} would be sited on its own frontier"
+
+
+def test_the_generator_sites_on_placement_reach_not_the_database_figure() -> None:
+    """The two are separate on purpose, so the record of what a unit claims can
+    stay sourced while the siting stays conservative."""
+    import inspect
+
+    from game.missiongenerator import neutralbordergenerator
+
+    body = inspect.getsource(neutralbordergenerator.NeutralBorderGenerator)
+    assert "system.placement_reach.meters" in body
+    assert "system.reach.meters" not in body
+
+
 def test_a_western_nation_does_not_get_soviet_kit() -> None:
     """Bloc posture gets Iraq and Russia wrong, so the west list is authored."""
     from datetime import date

@@ -1805,3 +1805,60 @@ actually defended them in 1982.
 years before it existed. It now takes the lightest rung the era does allow.
 
 Not flown. On B115's card with the rest.
+
+## Placement went conservative (DM call, 2026-09-10)
+
+The DM's reaction to sourcing `reach` from pydcs: *"these are mods"*.
+
+**They are not, and that was checked before anything moved.** `threat_range` for
+all eight systems is identical across pydcs 0.15.0, the DM's own **stock no-mod**
+export (`dcs-20260826-stock`), and the live modded export. pydcs here is stock
+from PyPI and `pydcs_extensions/` does not touch base `AirDefence`. The units
+themselves are vanilla and all eight appear in the stock export.
+
+**The instinct behind it was right about something else.** `threat_range` equals
+`air_weapon_dist` exactly on every one of them — it is the kinematic maximum
+against a target that does not manoeuvre, not a kill envelope. An S-300PS at
+120 km and a Buk at 50 km are brochure figures.
+
+That only matters through one path: `reach` decides **how deep a battery sits**.
+Sited at the database figure, the border sits on the very edge of the envelope,
+where a crossing aircraft is inside the ring and outside anything the missile can
+catch.
+
+So the two are now separate fields:
+
+| System | `reach` (database) | `placement_reach` (sited at) | old hand-picked |
+|---|---|---|---|
+| SA-3 | 10 NM | 6.0 NM | 10 NM |
+| SA-2 | 23 NM | 13.8 NM | — |
+| SA-5 | 138 NM | 82.8 NM | — |
+| SA-11 | 27 NM | 16.2 NM | 19 NM |
+| SA-10 | 65 NM | 39.0 NM | 40 NM |
+| Rapier | 4 NM | 2.4 NM | — |
+| Hawk | 24 NM | 14.4 NM | 22 NM |
+| Patriot | 54 NM | 32.4 NM | 43 NM |
+
+`PLACEMENT_FRACTION` is **0.6**. The old hand-picked set was not a consistent
+fraction of anything — SA-3 ran at 1.00 of the database figure, Hawk 0.92,
+Patriot 0.80, SA-11 0.70, S-300 0.62 — which is why it could not be defended as
+a rule. One fraction can be.
+
+Measured on Afghanistan 2004 after the change: every battery stands at exactly
+its `placement_reach` from its own frontier, leaving **26 NM of margin on an
+SA-10 and 10.8 NM on an SA-11** between where it sits and what the unit claims.
+
+**Depth changed; the count did not.** Sites are counted off war-facing frontier
+length against a flat `SITE_SPACING_M`, which never referenced reach. Nothing in
+the distribution moved.
+
+**`PLACEMENT_FRACTION` is not `MAX_DEPTH_FRACTION`**, though both are 0.6 today.
+The latter lives in `neutralborder.py` and stops a system that out-ranges its own
+country from collapsing every site onto the country's centre. They answer
+different questions and may drift apart; the constants are commented to say so.
+
+One thing to watch on the first flight: shallower siting puts batteries nearer
+the frontier, and the deep-placement rule was also what kept a swapped battery
+away from the neutral's own airfield. Nothing sits on a field today — placement
+is from the polygon, never the airfield — but a neutral whose airbase hugs its
+border is the case that would break it. On B115's card.

@@ -208,7 +208,9 @@ class NeutralBorderGenerator:
         # One battery per stretch of war-facing frontier the system can cover.
         # A single site left Pakistan's 2,291 NM border 96 % open (measured
         # 2026-09-09), which is why the count is derived rather than fixed.
-        sites = zone.sam_sites(origin, system.reach.meters, approaches, clip)
+        # placement_reach, not reach: the database figure is a kinematic
+        # maximum, and siting at it defends the border on paper only.
+        sites = zone.sam_sites(origin, system.placement_reach.meters, approaches, clip)
         sam_names = []
         for index, site in enumerate(sites, start=1):
             sam_name = f"NeutralBorder|{zone.country}|{system.name}|{index}"

@@ -9909,9 +9909,16 @@ large enough for an SA-10 in 2004, which is the point of two tiers rather than
 two scales. Over the 55 shipped zones that is **1982: 17 SA-2, 14 Hawk, 9 SA-3,
 8 SA-5, 7 Rapier** and **2004: 17 SA-11, 10 Hawk, 9 SA-3, 8 SA-10, 7 Rapier,
 4 Patriot**. **Dates are export dates, not in-service** — checked against the
-1982 Falklands column, where in-service dates handed Argentina a Buk. **Every
-reach is the DCS launcher's own `threat_range`**; the earlier numbers were
-unsourced and disagreed with it inconsistently. **The west has no legacy
+1982 Falklands column, where in-service dates handed Argentina a Buk. **Two reach figures, on purpose.** `reach` is the DCS launcher's own
+`threat_range`, sourced and confirmed against a stock no-mod export; the earlier
+hand-picked numbers were unsourced and disagreed with it inconsistently.
+`placement_reach` is **60 % of it**, and is what the siting uses (DM call
+2026-09-10). The database figure equals `air_weapon_dist` exactly on every
+system — a kinematic maximum against a target that does not manoeuvre — so a
+battery sited at it puts the border on the very edge of the envelope. Measured
+on Afghanistan 2004: an SA-10 stands 39 NM inside its frontier against a 65 NM
+claim, an SA-11 16 NM against 27. **Depth changes; the count does not** — that
+comes off frontier length, not reach. **The west has no legacy
 long-range rung** because vanilla DCS models no Nike Hercules, so a large
 pre-1995 western country tops out at Hawk. **How many is the country's own size** (DM call
 2026-09-09) — roughly one per 200 NM of war-facing frontier, capped at six.

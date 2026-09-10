@@ -8,7 +8,19 @@ from datetime import date
 from dcs.unittype import VehicleType
 from dcs.vehicles import AirDefence
 
-from game.utils import Distance, nautical_miles
+from game.utils import Distance, meters, nautical_miles
+
+#: How much of the database reach a site is placed to cover. The DCS
+#: ``threat_range`` is the kinematic maximum against a target that does not
+#: manoeuvre -- it equals ``air_weapon_dist`` exactly on every system here -- so
+#: a battery sited at the full figure defends its border on paper and not in the
+#: air. DM call 2026-09-10: place conservatively.
+#:
+#: **Unrelated to** ``neutralborder.MAX_DEPTH_FRACTION``, which happens to share
+#: the number. That one stops a system out-ranging its own country from
+#: collapsing every site onto the country's centre; this one is about what the
+#: missile really covers.
+PLACEMENT_FRACTION = 0.6
 
 
 @dataclass(frozen=True)
@@ -21,14 +33,24 @@ class SamSystem:
     #: for the Soviet systems. Checked 2026-09-07 against the 1982 Falklands
     #: column, where in-service dates handed Argentina a Buk.
     since: int
-    #: Engagement reach, used to keep the site within range of its own border.
-    #: **Every value is the DCS launcher's own ``threat_range``**, read off
-    #: pydcs 2026-09-10 -- the earlier numbers were unsourced and disagreed with
-    #: it inconsistently (SA-3 matched exactly, SA-11 read 19 against 27, S-300
-    #: 40 against 65). One checkable rule beats five judgement calls.
+    #: The DCS launcher's own ``threat_range``, read off pydcs 2026-09-10 and
+    #: confirmed against the DM's stock no-mod export -- all eight agree, and
+    #: the earlier hand-picked numbers did not (SA-3 matched exactly, SA-11 read
+    #: 19 against 27, S-300 40 against 65). This is the record of what the unit
+    #: claims; :attr:`placement_reach` is what the siting believes.
     reach: Distance
     #: Fixed composition (v1). Search radar, track radar, then launchers.
     units: tuple[type[VehicleType], ...]
+
+    @property
+    def placement_reach(self) -> Distance:
+        """How far from the frontier a battery of this system is stood.
+
+        Deliberately short of :attr:`reach`. Siting at the database maximum puts
+        the border on the very edge of the envelope, where a crossing aircraft
+        is inside the ring and outside anything the missile can actually catch.
+        """
+        return meters(self.reach.meters * PLACEMENT_FRACTION)
 
 
 # --------------------------------------------------------------------------

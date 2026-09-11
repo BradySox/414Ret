@@ -30,7 +30,8 @@ from game.missiongenerator.dtc.common import (
     SupportTrack,
     leg_altitude,
     steerpoint_elevation,
-    flot_segments,
+    red_land_boundary,
+    support_boxes,
     frequency_labels,
     is_route_waypoint,
     is_target_waypoint,
@@ -54,6 +55,10 @@ MAX_WAYPOINTS = 59
 MAX_CAP_POINTS = 9
 MAX_LINE_POINTS = 7
 MAX_FLOT_LINES = 3
+#: FAOR takes the support boxes: the SA page draws only the SELECTED CAP point's
+#: racetrack, so the tanker is invisible until you pick it, while a line set is
+#: always drawn (``SA/FAOR_FLOT.lua``: 3 lines, 7 points each).
+MAX_FAOR_LINES = 3
 MAX_MEZ_THREATS = 40
 
 #: Stock preset frequencies (MHz) for channels 1-20 of both AN/ARC-210s, from
@@ -319,7 +324,7 @@ def _build_sa(
 
     flot_lines: list[dict[str, Any]] = []
     if options.flot_and_zones:
-        for name, points in flot_segments(game)[:MAX_FLOT_LINES]:
+        for name, points in red_land_boundary(game, MAX_FLOT_LINES, MAX_LINE_POINTS):
             line_num = len(flot_lines) + 1
             flot_lines.append(
                 {
@@ -327,6 +332,19 @@ def _build_sa(
                     "num": line_num,
                     "note": name,
                     "points": _line_points("FLOT", line_num, points),
+                }
+            )
+
+    faor_lines: list[dict[str, Any]] = []
+    if options.friendly_orbits:
+        for callsign, points in support_boxes(mission_data, MAX_FAOR_LINES):
+            line_num = len(faor_lines) + 1
+            faor_lines.append(
+                {
+                    "id": f"FAOR_{line_num}",
+                    "num": line_num,
+                    "note": callsign,
+                    "points": _line_points("FAOR", line_num, points),
                 }
             )
 
@@ -350,7 +368,7 @@ def _build_sa(
     return {
         "CAP_PTS": caps,
         "CORRIDORS": [],
-        "FAOR_FLOT": {"FAOR": [], "FLOT": flot_lines},
+        "FAOR_FLOT": {"FAOR": faor_lines, "FLOT": flot_lines},
         "MEZ_THRTS": threats,
         "SETTINGS": _sa_settings(),
         "Default_CAP_Point": default_cap_point,

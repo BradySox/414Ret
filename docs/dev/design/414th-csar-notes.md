@@ -62,6 +62,32 @@ Adopted from upstream #929 commit `687cb3ee`. Three tests in `tests/test_csar.py
 screen showed now means the pre-generation branch fired, and the log line names the pilot. Before
 this fix it meant nothing at all.
 
+### The Sandy — the rescue escort, rebuilt (2026-09-11)
+
+The A-10 and the Apache can be fragged onto a survivor as **`FlightType.SANDY`**: an armed
+track centred on the pilot, covering the pickup while the helicopter works. Engineering
+detail is [414th-features.md §99](../414th-features.md#99--sandy-rescue-escort).
+
+Read this before assuming it is §15 restored. It is not. §15 was a `FlightType.SCAR` with a
+`scar` plugin, a scenario runtime and its own HTN tasks, and it was removed with the rest of
+the fork's rescue stack on 2026-08-07. What is back is the *role*, on the smallest
+architecture that can carry it: a flight plan, a task on six aircraft yamls, and a callsign.
+Nothing from the deleted feature was restored, and the eight deleted SCAR/CSAR notes stay
+deleted.
+
+Three things about it that are decisions, not defaults:
+
+- **Hand-fragged only.** Nothing in the HTN proposes a `SANDY`, so the auto-planner cannot
+  frag one whatever a squadron's auto-assignable set says; `secondary_tasks` on the six
+  airframes keeps the checkbox unticked as well. Same call as the King, for a different
+  reason: an AI King *cannot* finish the job, an AI Sandy simply would not be doing one.
+- **Capability is the yaml, not a preference.** The §77 `ESCORT_JAMMER` pattern. This is the
+  whole reason it needed a flight type instead of a CAS flight dispatched on its target —
+  a `preferred_type` would have left every CAS jet in the wing eligible.
+- **It shares nothing with the rescue flight but the target.** No handshake, no timing tie,
+  no "Sandy cleared me in". If that is ever wanted it is new work, and the place to put it
+  is the package, not the flight plan.
+
 ### The King — fixed-wing CSAR (2026-08-26)
 
 The C-130J carries an explicit `CSAR: 5` in its yaml so a player can fly the on-scene

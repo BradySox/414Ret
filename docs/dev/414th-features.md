@@ -2829,8 +2829,12 @@ was to adopt upstream's shape rather than carry two rescue systems. The `scar` p
 `scarluadata.py`, `PlanScarHunts`/`PlanScar`, the `scar_autoplan*` settings and both test
 suites are gone.
 
-`FlightType.SCAR` survives as a player-selectable air-to-ground primary. What went is the
-Sandy rescue-escort role, and before it the armor-hunt scenario it replaced.
+`FlightType.SCAR` did **not** survive: it is a `_LEGACY_FLIGHT_TYPE_VALUES` entry mapping to
+`CAS`, and this section claimed otherwise until 2026-09-11.
+
+The **Sandy rescue-escort role came back 2026-09-11 as [§99](#99--sandy-rescue-escort)**, on a
+different architecture — a flight plan and a yaml task, no plugin and no scenario runtime.
+The armor-hunt scenario this section's feature replaced is still gone and is not coming back.
 
 Two things outlived the feature: the command-post intel fog still rides the
 `scar_command_post_intel` setting (re-homed to §3 — the field keeps its `scar_` prefix so old
@@ -9918,3 +9922,96 @@ took 28 of the suite's 30 seconds. Monkeypatch the constant instead.
 - **No merge or delete in the UI.** Changing your DCS name starts a second profile, and the
   only fix is editing the JSON by hand.
 - **Red humans get profiles too.** Free, and harmless, but nothing surfaces the coalition.
+
+---
+
+## §99 — Sandy rescue escort
+
+The armed half of a rescue package: an A-10 or an Apache working the ground around a
+downed pilot while the helicopter comes in. Added 2026-09-11.
+
+The role existed as §15 and went with the whole fork rescue stack on 2026-08-07. This is
+not that feature back. §15 was a `FlightType.SCAR` with its own plugin, its own scenario
+runtime and its own auto-planner tasks. This is a flight plan, a task on six aircraft
+yamls, and a callsign.
+
+### Why it needed a flight type at all
+
+`CasFlightPlan.Builder.layout()` raises `InvalidObjectiveLocation` unless the package
+target is a `FrontLine`. A rescue package's target is a `DownedPilot`. So a CAS-tasked
+flight fragged at a survivor could not be planned — the player got "Could not create
+flight" after picking their survivor, airframe and squadron, which is the same failure the
+King had before 2026-08-26.
+
+The alternative considered was dispatching on the target instead: a CAS flight whose
+package target is a `DownedPilot` routes to a survivor plan, the way
+`FlightPlanBuilderTypes.for_flight` already routes fixed-wing CSAR to the King. Rejected
+because the airframe restriction is the point. Capability declared in the yaml `tasks:`
+block is a hard gate (the §77 `ESCORT_JAMMER` pattern); a `preferred_type` on a CAS
+proposal is a preference, and any CAS jet in the wing would have been eligible.
+
+### What runs
+
+- **`FlightType.SANDY = "Sandy"`** (`game/ato/flighttype.py`). Air-to-ground; SIDC
+  `ATTACK_STRIKE`, not `COMBAT_SEARCH_AND_RESCUE` — the map already draws the rescue helo
+  as CSAR, and the Sandy is the thing on it that shoots.
+- **`SandyFlightPlan`** (`game/ato/flightplans/sandy.py`) subclasses `CasFlightPlan` and
+  reuses `CasLayout`. Only `Builder.layout()` is replaced, so the FLOT requirement never
+  runs and everything keyed on the CAS plan keeps working — in particular
+  `CasIngressBuilder`, whose `isinstance(flight_plan, CasFlightPlan)` is what emits the
+  `EngageTargetsInZone` task. The builder subclasses `cas.Builder` for the same reason:
+  `Type[sandy.Builder]` has to satisfy `CasFlightPlan.builder_type()`'s return type.
+- **Geometry.** Ingress 5 nm out on the departure side, then a 3 nm half-length track laid
+  **across** that run-in and centred on the survivor, so the circuit crosses the pickup
+  twice instead of driving out and back. Engagement zone 5 nm, centred on the survivor.
+  Constants are hardcoded (`TRACK_HALF_LENGTH`, `ENGAGEMENT_RANGE`, `INGRESS_DISTANCE`) —
+  the flight is hand-fragged, so a player who wants a different track moves the waypoints.
+  This follows the King; it is not an oversight.
+- **Altitude** is the airframe's combat altitude through `builder.cas()`, which already
+  carries the cloud-base and Vietnam low-level-attack handling. Helicopters navigate AGL.
+- **AI behaviour** is `configure_cas` — main task CAS, ROE Open Fire, RTB winchester on
+  unguided. `game/missiongenerator/aircraft/aircraftbehavior.py`.
+- **Loadout** falls back to the airframe's CAS fit. A `Retribution Sandy` payload is
+  preferred if one is ever authored; none is.
+- **Callsign** defaults to "Sandy", numbered after any other Sandy already fragged, and is
+  offered in the per-flight picker. Like "Toxic" it is not a stock DCS callsign, so
+  `FlightGroupSpawner` registers it into the country pool around the spawn.
+
+### Capability — six airframes, all secondary
+
+`Sandy: <the airframe's own CAS weight>` in `tasks:`, and `Sandy` under `secondary_tasks:`,
+on A-10A, A-10C, A-10C_2, AH-64A, AH-64D and AH-64D_BLK_II. Nothing else in the tree
+declares it.
+
+`secondary_tasks` is what keeps the checkbox unticked by default. It is belt and braces:
+**nothing in the HTN proposes a `SANDY` flight**, so the auto-planner cannot frag one
+whatever the squadron's auto-assignable set says. That is the gate, and it is why no
+`requires_helicopter`-style property was added.
+
+The role is reachable because `DownedPilot.mission_types` yields it — that is the only
+thing that puts it in the player's mission-type dropdown at a survivor.
+
+### Tests
+
+`tests/ato/flightplans/test_sandy.py` (10): the dispatch both ways, the non-survivor
+target, the track centred on the survivor, both legs inside the engagement zone, the
+run-in not overflying the pickup, the legs crossing it, the tasking offered at a survivor,
+and the six airframes capable-but-secondary with a Viper control.
+
+Also touched: `tests/test_role_callsigns.py` (the ROLE_CALLSIGNS set) and
+`tests/test_theme_tokens.py` (every FlightType needs a task chip — `SANDY` is in `_A2G`).
+
+### Needs an in-game pass — B117
+
+Nothing headless can say whether a two-ship holding a 6 nm track at CAS altitude actually
+engages what is shooting at the pickup, or whether an Apache on the same plan behaves.
+
+### Deferred
+
+- **No auto-planning, by decision.** A Sandy is a coordination role and an AI one would
+  orbit while the helo does the work.
+- **No dedicated loadout.** The CAS fit is what an A-10 would carry anyway; an Apache's
+  is less obviously right.
+- **No link to the rescue flight.** The Sandy and the helicopter are planned independently
+  and share only the target. There is no "Sandy cleared me in" handshake, on the map or in
+  the mission.

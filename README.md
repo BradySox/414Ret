@@ -71,6 +71,9 @@ Most of this is opt-in. Full list with toggles, defaults and known limitations:
   than a pickup run. Add it to a rescue package by hand: the auto-planner never frags one,
   because DCS only lets helicopters land at an unprepared pickup site and an AI King would
   orbit a survivor it can never collect.
+- The A-10 and the Apache fly the **Sandy** rescue escort: an armed track over the survivor,
+  covering the pickup while the helicopter works. Add one to a rescue package by hand —
+  the auto-planner never frags one, because coordinating a rescue is a job for a human.
 - Two pickup styles: land and let the survivor walk aboard, or hoist them on a hover. A pilot
   down in the water is always hoisted.
 - Survivors pop smoke for AI rescue flights. Human crews get the F10 menu — list active

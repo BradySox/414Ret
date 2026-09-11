@@ -58,7 +58,7 @@ also relative to `ReferenceLatitude=38 / ReferenceLongitude=36`, not absolute.
 
 ## Outstanding rows at a glance
 
-78 rows need a live pass. Full detail is under each `###` heading below —
+79 rows need a live pass. Full detail is under each `###` heading below —
 search the row id. `☐` untested · `◐` flown but not under the conditions that
 stress it · `✗` fail signature reproduced in-game.
 
@@ -194,6 +194,7 @@ stress it · `✗` fail signature reproduced in-game.
 | B112 | The wind you set is the wind the panel shows, and the box stops at 97 kt | wind override / live weather | ☐ |
 | B113 | A pilot's logbook fills in, and the kills are the ones they got | §96 | ☐ |
 | B114 | Your lifetime logbook survives starting a new campaign | §97 | ☐ |
+| B117 | A Sandy can be fragged onto a survivor, and covers the pickup | §99 | ☐ |
 
 ---
 
@@ -6825,3 +6826,42 @@ results, and reopen it again.
   boolean and not the name; check `player_name` in `state.json`.
 - **The window is empty after a mission you definitely flew.** Either the slot was AI (you
   did not occupy it) or the jet never moved far enough to count as a sortie.
+
+### B117 — A Sandy can be fragged onto a survivor, and covers the pickup · §99 · ☐ UNTESTED
+
+**Needs a survivor on the map and one flown mission.** ~30 min.
+
+**Setup.** Any campaign with an A-10 or an Apache squadron. Get a survivor first — fly a
+turn and lose an AI aircraft, or use an existing downed pilot. Then create a **new package**
+on that survivor, add a flight, and pick **Sandy** from the mission-type list. Add the
+rescue helicopter to the same package or a separate one. Fly the Sandy.
+
+**Pass.**
+1. **Sandy is in the mission-type list** at the survivor, for the A-10 and the Apache and
+   for nothing else in the wing.
+2. **The flight plans** — no "Could not create flight" dialog — and the map shows a short
+   track sitting on the survivor, not on the front line.
+3. **The callsign defaults to Sandy**, numbered, and a second one numbers after it.
+4. **An AI Sandy engages** ground units near the pickup and does not wander off after
+   something 20 nm away.
+5. **The Apache flies the same plan at helicopter altitude**, not at 10,000 ft.
+6. **No Sandy appears in an auto-planned turn** — not in the ATO, not after passing a turn
+   with a survivor on the map.
+
+**Fail signatures, and what each means:**
+
+- **"Could not create flight" after picking the squadron.** The dispatch in
+  `FlightPlanBuilderTypes.for_flight` is not reaching `SandyBuilder`, or the target is not
+  a `DownedPilot` — the same class of bug the King had before 2026-08-26.
+- **The track is drawn along the FLOT.** The flight resolved to `CasFlightPlan`, so the
+  `SANDY` entry in the builder dict is missing or shadowed.
+- **The flight flies out and back through the survivor instead of across.** The leg axis is
+  wrong — it should be perpendicular to the run-in, and `test_the_legs_cross_the_run_in`
+  pins that headless, so this means the real `WaypointBuilder` is doing something the fake
+  one does not.
+- **A Sandy shows up in an auto-planned ATO.** Something now proposes the tasking. Nothing
+  in the HTN should; find it before shipping, because an AI Sandy is noise at best.
+- **The Apache holds 10,000 ft.** `builder.cas()` is not seeing `is_helo`, so the AGL
+  handling in `nav_path` is also suspect.
+- **Every jet in the wing offers Sandy.** The yaml `tasks:` gate is not the gate — check
+  that no derivation in `get_task_priorities` is inferring `Sandy` from `CAS`.

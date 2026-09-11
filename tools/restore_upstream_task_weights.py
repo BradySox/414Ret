@@ -65,7 +65,7 @@ KEEP_TASK_VALUES = {
 DELETE_TASKS = {"Intercept"}
 
 # Fork-only feature lanes, reported separately from other fork-only additions.
-FORK_LANES = {"TARPS", "Jamming", "Escort Jammer", "CSAR"}
+FORK_LANES = {"TARPS", "Jamming", "Escort Jammer", "CSAR", "Sandy"}
 
 TASK_LINE = re.compile(
     r"^(?P<indent>\s+)(?P<name>[A-Za-z][A-Za-z0-9 /&'.()-]*?):"

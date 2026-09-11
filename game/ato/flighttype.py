@@ -70,6 +70,10 @@ class FlightType(Enum):
     RECOVERY = "Recovery"
     TARPS = "TARPS"  # Player-flown F-14 photo recon — overflies target +2 min behind strikers
     CSAR = "CSAR"  # Pilot rescue (upstream dcs-retribution#929).
+    # The rescue escort: an armed on-scene patrol over the survivor, flown
+    # by the A-10 and the Apache. Hand-fragged only -- nothing in the HTN
+    # proposes it, and every capable airframe lists it under secondary_tasks.
+    SANDY = "Sandy"
 
     @classmethod
     def _missing_(cls, value: object) -> FlightType | None:
@@ -120,6 +124,7 @@ class FlightType(Enum):
             FlightType.AIR_ASSAULT,
             FlightType.SEAD_SWEEP,
             FlightType.ARMED_RECON,
+            FlightType.SANDY,
         }
 
     @property
@@ -184,6 +189,7 @@ class FlightType(Enum):
             FlightType.BARCAP: AirEntity.FIGHTER,
             FlightType.CAS: AirEntity.ATTACK_STRIKE,
             FlightType.CSAR: AirEntity.COMBAT_SEARCH_AND_RESCUE,
+            FlightType.SANDY: AirEntity.ATTACK_STRIKE,
             FlightType.DEAD: AirEntity.ATTACK_STRIKE,
             FlightType.ESCORT: AirEntity.ESCORT,
             FlightType.FERRY: AirEntity.UNSPECIFIED,

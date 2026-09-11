@@ -68,10 +68,11 @@ def roll_plane_altitude_offset(low: int, high: int) -> int:
 # cannot voice them (no audio for unknown names), but every display reads the role.
 _ROLE_CALLSIGN_BY_TYPE: dict[FlightType, str] = {
     FlightType.JAMMING: "Toxic",  # EC-130H/RC-130H EW C-130
+    FlightType.SANDY: "Sandy",  # A-10/AH-64 rescue escort
 }
 
 #: Every fixed role callsign, for the spawner's "is this a custom callsign?" guard.
-ROLE_CALLSIGNS: frozenset[str] = frozenset({"Toxic"})
+ROLE_CALLSIGNS: frozenset[str] = frozenset({"Toxic", "Sandy"})
 
 
 def role_callsign(flight_type: FlightType, is_helicopter: bool) -> Optional[str]:

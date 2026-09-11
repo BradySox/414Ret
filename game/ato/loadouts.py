@@ -433,6 +433,8 @@ class Loadout:
         # OCA/Aircraft falls back to BAI, which falls back to CAS.
         loadout_names[FlightType.BAI].extend(loadout_names[FlightType.CAS])
         loadout_names[FlightType.ARMED_RECON].extend(loadout_names[FlightType.CAS])
+        # The Sandy carries what it would carry on a CAS tasking.
+        loadout_names[FlightType.SANDY].extend(loadout_names[FlightType.CAS])
         loadout_names[FlightType.OCA_AIRCRAFT].extend(loadout_names[FlightType.BAI])
         # DEAD also falls back to BAI.
         loadout_names[FlightType.DEAD].extend(loadout_names[FlightType.BAI])

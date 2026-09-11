@@ -71,6 +71,9 @@ Most of this is opt-in. Full list with toggles, defaults and known limitations:
   than a pickup run. Add it to a rescue package by hand: the auto-planner never frags one,
   because DCS only lets helicopters land at an unprepared pickup site and an AI King would
   orbit a survivor it can never collect.
+- The A-10 and the Apache fly the **Sandy** rescue escort: an armed track over the survivor,
+  covering the pickup while the helicopter works. Add one to a rescue package by hand —
+  the auto-planner never frags one, because coordinating a rescue is a job for a human.
 - Two pickup styles: land and let the survivor walk aboard, or hoist them on a hover. A pilot
   down in the water is always hoisted.
 - Survivors pop smoke for AI rescue flights. Human crews get the F10 menu — list active
@@ -98,7 +101,10 @@ Most of this is opt-in. Full list with toggles, defaults and known limitations:
   first, and transits a little slower than before.
 - Native DCS data cartridges auto-load in Hornets, Vipers and F-14B(U)s: comm presets
   matching the kneeboard, route with push times, boat TACAN/ICLS/ACLS, and the SA/HSD
-  picture (FLOT, your own orbit, the tankers and AWACS, recon-confirmed SAM rings). The
+  picture (the front line, your own orbit, the tankers and AWACS, recon-confirmed SAM
+  rings). The front line is drawn as one continuous boundary with the same bulges the F10
+  map shows, not a separate straight dash per front, and the tanker and AWACS orbits are
+  drawn as boxes you can see without selecting them. The
   orbit shown is the flight's own — its patrol track, or its hold point when it flies no
   track — never another flight's station. Hornets get the bullseye designated as the
   air-to-air waypoint; Vipers get the friendly recovery fields as Destination steerpoints,

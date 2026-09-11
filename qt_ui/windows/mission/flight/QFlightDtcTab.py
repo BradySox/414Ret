@@ -93,6 +93,14 @@ _SECTIONS = (
         "ROE factor, so the friendly declarations are what stop "
         "blue-on-blue. Viper only.",
     ),
+    (
+        "Countermeasure programs",
+        "countermeasures",
+        "The CMDS manual programs and the bingo counts: MAN 1 dispenses "
+        "flares only and MAN 5 chaff only, so one button answers an IR shot "
+        "and another a radar one. The three AUTO programs and BYP keep the "
+        "jet's own values. Viper only.",
+    ),
 )
 
 

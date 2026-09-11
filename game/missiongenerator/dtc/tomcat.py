@@ -42,7 +42,8 @@ from game.missiongenerator.dtc.cartridge import DtcCartridge
 from game.missiongenerator.dtc.common import (
     SupportTrack,
     bearing_degrees,
-    flot_segments,
+    red_land_boundary,
+    support_boxes,
     is_route_waypoint,
     is_target_waypoint,
     known_enemy_threat_sites,
@@ -60,6 +61,7 @@ if TYPE_CHECKING:
     from dcs import Point
 
     from game import Game
+    from game.ato.dtcoptions import DtcOptions
     from game.ato.flightwaypoint import FlightWaypoint
     from game.missiongenerator.aircraft.flightdata import FlightData
     from game.missiongenerator.missiondata import MissionData
@@ -70,6 +72,11 @@ MAX_PLANS = 12
 MAX_WAYPOINTS = 50
 MAX_LINES = 4
 MAX_LINE_POINTS = 9
+#: The four plot lines are shared, so the boundary and the support boxes get two
+#: each. Letting the boundary size itself first leaves a theater with four fronts
+#: no room for a tanker at all.
+MAX_BOUNDARY_LINES = 2
+MAX_SUPPORT_BOXES = MAX_LINES - MAX_BOUNDARY_LINES
 #: The descriptor's ``NAV_MAX_TOTAL_REFS``. Its import path allows 50, but the
 #: constant is the authored intent, so off-route references stop at 20.
 MAX_ADDITIONAL_POINTS = 20
@@ -502,12 +509,28 @@ def _additional_points(
     return points
 
 
-def _lines(game: Game, coords: _Coords) -> list[dict[str, Any]]:
-    lines = []
-    for _name, segment in flot_segments(game)[:MAX_LINES]:
-        points = [coords.of(x, y) for x, y in segment[:MAX_LINE_POINTS]]
-        lines.append({"points": points, "closed": False})
-    return lines
+def _lines(
+    game: Game,
+    mission_data: MissionData,
+    coords: _Coords,
+    options: DtcOptions,
+) -> list[dict[str, Any]]:
+    """The boundary as an open plot line, each support orbit as a closed one."""
+    lines: list[dict[str, Any]] = []
+    if options.flot_and_zones:
+        for _name, segment in red_land_boundary(
+            game, MAX_BOUNDARY_LINES, MAX_LINE_POINTS
+        ):
+            points = [coords.of(x, y) for x, y in segment[:MAX_LINE_POINTS]]
+            lines.append({"points": points, "closed": False})
+    if options.friendly_orbits:
+        for _callsign, box in support_boxes(
+            mission_data, min(MAX_SUPPORT_BOXES, MAX_LINES - len(lines))
+        ):
+            # The plot line closes itself here, so the repeated corner is dropped.
+            points = [coords.of(x, y) for x, y in box[:-1]]
+            lines.append({"points": points, "closed": True})
+    return lines[:MAX_LINES]
 
 
 def _waypoint_elevation(waypoint: FlightWaypoint, game: Game) -> int:
@@ -577,7 +600,7 @@ def _build_nav(
         if options.route
         else []
     )
-    lines = _lines(game, coords) if options.flot_and_zones else []
+    lines = _lines(game, mission_data, coords, options)
     references = _additional_points(flight, mission_data, game, coords, off_route)
     plans[0]["lines"] = list(lines)
     plans[0]["additional_points"] = list(references)

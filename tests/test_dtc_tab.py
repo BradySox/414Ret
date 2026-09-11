@@ -80,8 +80,15 @@ def test_section_checkboxes_write_the_options() -> None:
         "destinations",
         "jdam_targets",
         "roe_table",
+        "countermeasures",
     }
-    assert all(box.isChecked() for box in by_attr.values())
+    # Every section is on by default except countermeasures, which waits on the
+    # flown CMDS check (B28).
+    defaults = DtcOptions()
+    assert {attr: box.isChecked() for attr, box in by_attr.items()} == {
+        attr: getattr(defaults, attr) for attr in by_attr
+    }
+    assert by_attr["countermeasures"].isChecked() is False
 
     by_attr["threat_rings"].setChecked(False)
     assert flight.dtc_options.threat_rings is False

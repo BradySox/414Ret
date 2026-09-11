@@ -2829,8 +2829,12 @@ was to adopt upstream's shape rather than carry two rescue systems. The `scar` p
 `scarluadata.py`, `PlanScarHunts`/`PlanScar`, the `scar_autoplan*` settings and both test
 suites are gone.
 
-`FlightType.SCAR` survives as a player-selectable air-to-ground primary. What went is the
-Sandy rescue-escort role, and before it the armor-hunt scenario it replaced.
+`FlightType.SCAR` did **not** survive: it is a `_LEGACY_FLIGHT_TYPE_VALUES` entry mapping to
+`CAS`, and this section claimed otherwise until 2026-09-11.
+
+The **Sandy rescue-escort role came back 2026-09-11 as [§99](#99--sandy-rescue-escort)**, on a
+different architecture — a flight plan and a yaml task, no plugin and no scenario runtime.
+The armor-hunt scenario this section's feature replaced is still gone and is not coming back.
 
 Two things outlived the feature: the command-post intel fog still rides the
 `scar_command_post_intel` setting (re-homed to §3 — the field keeps its `scar_` prefix so old
@@ -7282,13 +7286,55 @@ package-mates share the comm plan and SA picture):
 - **NAV_SETTINGS** (Hornet) — recovery **TACAN / ICLS / ACLS pre-tuned from the §65
   boat card** (`CarrierInfo.tacan/icls_channel/link4_freq`; a land arrival uses the
   field's `RunwayData.tacan`), FPAS home waypoint = the landing steerpoint.
-- **SA / MPD (the situational-awareness picture)** — the FLOT (same
-  `frontline_bounds` geometry as the F10 drawing; Viper: GEO_LINES sets),
+- **SA / MPD (the situational-awareness picture)** — the boundary with red land
+  (`red_land_boundary`; Viper: the GEO_LINES L1 set),
   **friendly CAP stations (BARCAP/
   TARCAP) + tanker/AEW&C orbits as CAP_PTS racetracks** (Viper: named extra
   steerpoints — the jet has no orbit element), and **enemy SAM threat rings as MEZ
   threats / THREAT_PTS** ("Custom" type; radius NM on the Hornet, meters on the
   Viper; ≤3-char NATO labels derived from DCS unit ids — `Kub`→6, `S-300PS`→10).
+- **The front line is one boundary, not a front per line (2026-09-10).** Two defects,
+  both found by reading a paid F-16C campaign's own cartridge (campaign G, which draws
+  a single 19-point 384 nm line across its theater):
+  - `flot_segments` rebuilt each front from `left_position` + heading + length, which is
+    the straight **chord**. §90 rung E bows the front, and `FrontLineBounds.polyline` is
+    the bowed trace the F10 drawing (`drawingsgenerator.py`) and the web map
+    (`server/frontlines/models.py`) both read. So the cockpit drew a ruler where the map
+    the player planned on drew a salient. `flot_segments` now returns `polyline`, which
+    fixes all four cartridges at once.
+  - Each front went on its own line set, so a theater with several fronts drew
+    disconnected 80 km stubs — a picture that cannot say which side is hostile.
+    `red_land_boundary` orders the bars (nearest-neighbour from the endpoint farthest
+    from their centroid), orients each to start nearest the last, and returns one
+    continuous trace split only as far as the display's line budget forces. The gaps
+    between bars are joined straight: nothing in the campaign model says where an
+    unopposed border runs, and a straight join cannot invent a salient.
+  - The Viper's `MAX_GEO_POINTS_PER_SET = 8` was invented. `GEO_LINES.lua:586` caps the
+    partition at 25 points with **no per-set cap**, so the boundary takes L1 whole and
+    L2-L4 are free for the zone half that nothing writes yet.
+- **Tanker and AEW&C orbits as boxes (2026-09-10).** `support_boxes` draws each
+  support orbit as a closed rectangle: the straight legs plus the 5 NM the turns
+  need at each end, aligned to the orbit's own course. The Viper takes them on
+  GEO_LINES L2-L4, the Hornet on the **FAOR lines that shipped empty every time**,
+  the Tomcat as `closed: True` plot lines, the Apache as extra TSD lines. The
+  orbits were already on the jets as points; a point is not an area, and on the
+  Hornet's SA page only the SELECTED CAP point draws its racetrack, so the gas was
+  invisible until the pilot went looking. On the Viper the 25 GEO points are shared:
+  boxes are allocated first at five each, because a box missing a corner is nonsense
+  where a boundary thinned by ten points is still a boundary.
+- **CMDS (Viper, default OFF)** — `MAN1` dispenses flares only and `MAN5` chaff only, so
+  one button answers an IR shot and another a radar one; the three AUTO programs and BYP
+  keep the module's own values, written whole because `CMDS.lua` indexes every program
+  and dispenser with no nil guard. `CMDSPrograms` carries only the two fields that file
+  reads unguarded, leaving the per-threat auto assignment at the module default.
+  **Reverses the 2026-08-18 "no CMDS section" decision on two of its three counts** —
+  campaign G's working cartridge puts the section at `data.MPD.CMDS` (settling the
+  descriptor-vs-test-file disagreement) and authors two programs away from default
+  (settling "it is a defaults file, not intelligence"). The third count stands: the F-16C
+  guide warns the CMDS MODE knob must be STBY before an MPD upload, and `AutoLoad` fires
+  on a cold jet. Hence default OFF until checklist **B28**'s CMDS check clears.
+  **The Hornet cannot take this** — its descriptor has no CMDS section at all (`ALR67`,
+  `COMM`, `DL`, `GPS WYPT`, `HARM`, `IFF`, `SA`, `TCN`, `WYPT`).
 - **Recon-fog discipline:** threat rings pass `tgo.known_for(flight.friendly)` — the
   same leaf the threat-intel kneeboard uses — so the cartridge never leaks a site the
   player's map doesn't show exactly; `map_hidden` (§50 ambush teams) is never
@@ -9877,6 +9923,8 @@ took 28 of the suite's 30 seconds. Monkeypatch the constant instead.
   only fix is editing the JSON by hand.
 - **Red humans get profiles too.** Free, and harmless, but nothing surfaces the coalition.
 
+---
+
 ## §98 — Neutral-faction border defense
 
 Every nation on the map is drawn with its real border, the map's own nation included,
@@ -10162,5 +10210,95 @@ an AI flight that clips a wall is not fired on, and only the player is.
   map parses, no neighbour overlap, each map a valid coverage. 165 in total across six
   files.
 
-**In-game passes owed: B115 and B116.** Nobody has flown the SAM design at all — B115
-was closed against the fighter patrol, which no longer exists. B116 is the AI intruder.
+**In-game passes owed: B118 and B119.** Nobody has flown the SAM design at all — B118
+was closed against the fighter patrol, which no longer exists. B119 is the AI intruder.
+## §99 — Sandy rescue escort
+
+The armed half of a rescue package: an A-10 or an Apache working the ground around a
+downed pilot while the helicopter comes in. Added 2026-09-11.
+
+The role existed as §15 and went with the whole fork rescue stack on 2026-08-07. This is
+not that feature back. §15 was a `FlightType.SCAR` with its own plugin, its own scenario
+runtime and its own auto-planner tasks. This is a flight plan, a task on six aircraft
+yamls, and a callsign.
+
+### Why it needed a flight type at all
+
+`CasFlightPlan.Builder.layout()` raises `InvalidObjectiveLocation` unless the package
+target is a `FrontLine`. A rescue package's target is a `DownedPilot`. So a CAS-tasked
+flight fragged at a survivor could not be planned — the player got "Could not create
+flight" after picking their survivor, airframe and squadron, which is the same failure the
+King had before 2026-08-26.
+
+The alternative considered was dispatching on the target instead: a CAS flight whose
+package target is a `DownedPilot` routes to a survivor plan, the way
+`FlightPlanBuilderTypes.for_flight` already routes fixed-wing CSAR to the King. Rejected
+because the airframe restriction is the point. Capability declared in the yaml `tasks:`
+block is a hard gate (the §77 `ESCORT_JAMMER` pattern); a `preferred_type` on a CAS
+proposal is a preference, and any CAS jet in the wing would have been eligible.
+
+### What runs
+
+- **`FlightType.SANDY = "Sandy"`** (`game/ato/flighttype.py`). Air-to-ground; SIDC
+  `ATTACK_STRIKE`, not `COMBAT_SEARCH_AND_RESCUE` — the map already draws the rescue helo
+  as CSAR, and the Sandy is the thing on it that shoots.
+- **`SandyFlightPlan`** (`game/ato/flightplans/sandy.py`) subclasses `CasFlightPlan` and
+  reuses `CasLayout`. Only `Builder.layout()` is replaced, so the FLOT requirement never
+  runs and everything keyed on the CAS plan keeps working — in particular
+  `CasIngressBuilder`, whose `isinstance(flight_plan, CasFlightPlan)` is what emits the
+  `EngageTargetsInZone` task. The builder subclasses `cas.Builder` for the same reason:
+  `Type[sandy.Builder]` has to satisfy `CasFlightPlan.builder_type()`'s return type.
+- **Geometry.** Ingress 5 nm out on the departure side, then a 3 nm half-length track laid
+  **across** that run-in and centred on the survivor, so the circuit crosses the pickup
+  twice instead of driving out and back. Engagement zone 5 nm, centred on the survivor.
+  Constants are hardcoded (`TRACK_HALF_LENGTH`, `ENGAGEMENT_RANGE`, `INGRESS_DISTANCE`) —
+  the flight is hand-fragged, so a player who wants a different track moves the waypoints.
+  This follows the King; it is not an oversight.
+- **Altitude** is the airframe's combat altitude through `builder.cas()`, which already
+  carries the cloud-base and Vietnam low-level-attack handling. Helicopters navigate AGL.
+- **AI behaviour** is `configure_cas` — main task CAS, ROE Open Fire, RTB winchester on
+  unguided. `game/missiongenerator/aircraft/aircraftbehavior.py`.
+- **Loadout** falls back to the airframe's CAS fit. A `Retribution Sandy` payload is
+  preferred if one is ever authored; none is.
+- **Callsign** defaults to "Sandy", numbered after any other Sandy already fragged, and is
+  offered in the per-flight picker. Like "Toxic" it is not a stock DCS callsign, so
+  `FlightGroupSpawner` registers it into the country pool around the spawn.
+
+### Capability — six airframes, all secondary
+
+`Sandy: <the airframe's own CAS weight>` in `tasks:`, and `Sandy` under `secondary_tasks:`,
+on A-10A, A-10C, A-10C_2, AH-64A, AH-64D and AH-64D_BLK_II. Nothing else in the tree
+declares it.
+
+`secondary_tasks` is what keeps the checkbox unticked by default. It is belt and braces:
+**nothing in the HTN proposes a `SANDY` flight**, so the auto-planner cannot frag one
+whatever the squadron's auto-assignable set says. That is the gate, and it is why no
+`requires_helicopter`-style property was added.
+
+The role is reachable because `DownedPilot.mission_types` yields it — that is the only
+thing that puts it in the player's mission-type dropdown at a survivor.
+
+### Tests
+
+`tests/ato/flightplans/test_sandy.py` (10): the dispatch both ways, the non-survivor
+target, the track centred on the survivor, both legs inside the engagement zone, the
+run-in not overflying the pickup, the legs crossing it, the tasking offered at a survivor,
+and the six airframes capable-but-secondary with a Viper control.
+
+Also touched: `tests/test_role_callsigns.py` (the ROLE_CALLSIGNS set) and
+`tests/test_theme_tokens.py` (every FlightType needs a task chip — `SANDY` is in `_A2G`).
+
+### Needs an in-game pass — B117
+
+Nothing headless can say whether a two-ship holding a 6 nm track at CAS altitude actually
+engages what is shooting at the pickup, or whether an Apache on the same plan behaves.
+
+### Deferred
+
+- **No auto-planning, by decision.** A Sandy is a coordination role and an AI one would
+  orbit while the helo does the work.
+- **No dedicated loadout.** The CAS fit is what an A-10 would carry anyway; an Apache's
+  is less obviously right.
+- **No link to the rescue flight.** The Sandy and the helicopter are planned independently
+  and share only the target. There is no "Sandy cleared me in" handshake, on the map or in
+  the mission.

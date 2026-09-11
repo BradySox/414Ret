@@ -110,10 +110,16 @@ REMOVED: tuple[Removed, ...] = (
         allow=("removed", "Removed:", "no longer", "historical"),
     ),
     Removed(
-        "SCAR / the Sandy rescue escort (S15)",
+        # The ROLE came back 2026-09-11 as S99 -- a flight plan, a yaml task and a
+        # callsign, nothing else -- so a bare "Sandy" on a published page is now
+        # correct and must not be flagged. What stays removed is the S15 machinery:
+        # the flight type, its plugin settings, and the surrounding rescue
+        # vocabulary that only ever described it. Do not re-add a bare Sandy here.
+        "the SCAR flight type and the S15 rescue machinery",
         "2026-08-07",
-        r"\bSandy\b|FlightType\.SCAR|Jolly Green|auto_combat_sar|snatch party"
-        r"|combat_sar_surge|combat_sar_persistent",
+        r"FlightType\.SCAR|Jolly Green|auto_combat_sar|snatch party"
+        r"|combat_sar_surge|combat_sar_persistent"
+        r"|Sandy[^.]{0,60}(scenario|auto-plann?ed|SCAR plugin)",
         allow=("removed", "no longer exists", "historical"),
     ),
     Removed(

@@ -13,6 +13,20 @@
 # changes sharing a date keep the order written here.
 
 entries:
+  - date: 2026-09-11
+    title: The A-10 and the Apache fly Sandy again
+    change: >-
+      A rescue escort is a mission type again. Create a package on a downed
+      pilot, add a flight, and pick Sandy: the A-10 and the Apache offer it and
+      nothing else does. The flight gets a short armed track centred on the
+      survivor instead of one along the front line, and defaults to the Sandy
+      callsign. Frag it by hand — the auto-planner never adds one.
+    watch: >-
+      With a survivor on the map, check Sandy is in the mission-type list for an
+      A-10 or an Apache and for no other airframe. The track should sit on the
+      pilot, not on the FLOT, and an Apache should fly it low. Pass a turn and
+      confirm no Sandy turned up in the auto-planned ATO.
+    row: B117
   - date: 2026-09-09
     title: A border country's defences scale with the country
     change: >-
@@ -29,7 +43,7 @@ entries:
       show five or six batteries on the Afghan side and none down by the Indian
       border. If it reads like an air-defence network rather than a border, say
       so.
-    row: B115
+    row: B118
   - date: 2026-09-07
     title: Border countries defend with a missile battery, not fighters
     change: >-
@@ -46,7 +60,7 @@ entries:
       Before crossing a shaded border, look for the battery -- it is emitting,
       so it should paint on your RWR and sit on the F10 map. Then decide whether
       you want to be inside its ring when the timer runs out.
-    row: B115
+    row: B118
     title: Your logbook now outlives the campaign
     change: >-
       A Pilot Logbook button on the toolbar keeps your own flying across every
@@ -102,7 +116,7 @@ entries:
       fjords in and out rather than cutting across their mouths. If the F10 map
       ever feels slow to open, the border drawing still has its own off switch
       in the plugin options.
-    row: B115
+    row: B118
   - date: 2026-08-27
     title: A border with nothing to defend it no longer says it will
     change: >-
@@ -119,7 +133,7 @@ entries:
       one. They should read as overflight permitted, not "closed to you at any
       altitude". Any country still drawn closed should be one that really does
       come up after you.
-    row: B115
+    row: B118
   - date: 2026-08-26
     title: If we do not fly from it, do not fly over it
     change: >-
@@ -136,7 +150,7 @@ entries:
       Hover a country on the map layer. If your side has an airbase inside it,
       it reads friendly; if nobody does, it is defended. It should match what
       you can see on the map with no reference to the year.
-    row: B115
+    row: B118
   - date: 2026-08-26
     title: A country you are both fighting over is grey now
     change: >-
@@ -151,7 +165,7 @@ entries:
       Open the map layer on a Kola campaign. Norway and Finland grey, Sweden
       blue, both halves of Russia red -- and nothing filled solid unless it is a
       country that is not in the war at all.
-    row: B115
+    row: B118
   - date: 2026-08-26
     title: Borders follow the coastline, and neighbours share one line
     change: >-
@@ -168,7 +182,7 @@ entries:
       On Kola, check that Norway's border follows the fjords instead of cutting
       straight across them, and that where two countries meet you see one line
       rather than two running side by side.
-    row: B115
+    row: B118
   - date: 2026-08-26
     title: The map draws the country the war is in
     change: >-
@@ -185,7 +199,7 @@ entries:
       layer. Iraq (or Iran) should now be outlined, and the only strongly shaded
       country should be one that is not in the war and refuses you transit.
       Borders already in a save keep the set they were rolled with.
-    row: B115
+    row: B118
   - date: 2026-08-25
     title: Every campaign gets its neighbours, with no setup
     change: >-
@@ -202,7 +216,7 @@ entries:
       and tick the Neutral airspace layer. On a 2006 Afghanistan campaign you
       should see Iran, Uzbekistan and India shaded (they will intercept you) and
       Pakistan, Turkmenistan and Tajikistan faint (transit permitted).
-    row: B115
+    row: B118
   - date: 2026-08-25
     title: The nations around the war are on the map
     change: >-
@@ -223,7 +237,7 @@ entries:
       Asian neighbours in faint mint you may overfly. Then cut a corner into
       Pakistan and hold -- warned in ~40 s, a MiG-21 pair on your enemy's IFF,
       and they go home if you leave promptly.
-    row: B115
+    row: B118
   - date: 2026-08-24
     title: The carrier corridor over Pakistan
     change: >-
@@ -241,7 +255,7 @@ entries:
       blocks with the gap between them. Plan a carrier sortie to Farah and see
       the direct line clip the western block; then drop a waypoint around
       30.5N 65.0E and watch it go clean.
-    row: B115
+    row: B118
   - date: 2026-08-26
     title: Apache data cartridge + the Viper's ROE tab filled in
     change: >-

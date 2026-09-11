@@ -29,8 +29,10 @@ tasks:
   BAI: 680
   CAS: 680
   OCA/Aircraft: 680
+  Sandy: 680
 secondary_tasks:
   - DEAD
+  - Sandy
 
 # Air-to-air refueling method (receiver).
 air_refuel_type: boom

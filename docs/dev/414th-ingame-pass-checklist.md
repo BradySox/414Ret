@@ -58,7 +58,7 @@ also relative to `ReferenceLatitude=38 / ReferenceLongitude=36`, not absolute.
 
 ## Outstanding rows at a glance
 
-80 rows need a live pass. Full detail is under each `###` heading below —
+82 rows need a live pass. Full detail is under each `###` heading below —
 search the row id. `☐` untested · `◐` flown but not under the conditions that
 stress it · `✗` fail signature reproduced in-game.
 
@@ -93,8 +93,8 @@ stress it · `✗` fail signature reproduced in-game.
 | B85 | A flight with an unreachable TOT flies instead of orbiting | §8 | ◐ |
 | B98 | The bullseye is the same place it was last mission | §95 | ☑ |
 | B99 | AI packages arrive inside the mission, not after it | §8 | ◐ |
-| B115 | Neutral border: warned, then the battery engages if you press | §98 | ☐ |
-| B116 | Neutral border: AI intruders are never engaged | §98 | ☐ |
+| B118 | Neutral border: warned, then the battery engages if you press | §98 | ☐ |
+| B119 | Neutral border: AI intruders are never engaged | §98 | ☐ |
 | G25 | Armed Recon package: recon drone + SEAD Viper escort + 4-ship sweep | §3 | ◐ |
 | G30 | MANTIS SHORAD link: the point defense ambushes the HARM shot | MANTIS migration | ☐ |
 | G33 | Survivor ADF beacon: the pinned 260 kHz drives a real needle | CSAR (upstream #929 + 414th pin) | ☐ |
@@ -196,6 +196,8 @@ stress it · `✗` fail signature reproduced in-game.
 | B112 | The wind you set is the wind the panel shows, and the box stops at 97 kt | wind override / live weather | ☐ |
 | B113 | A pilot's logbook fills in, and the kills are the ones they got | §96 | ☐ |
 | B114 | Your lifetime logbook survives starting a new campaign | §97 | ☐ |
+| B115 | The cockpit front line is one continuous boundary, bowed where the map is bowed | §74 / §90 | ☐ |
+| B117 | A Sandy can be fragged onto a survivor, and covers the pickup | §99 | ☐ |
 
 ---
 
@@ -6188,7 +6190,7 @@ mountain or coastal front will do.
      strength, so an 8-object swing is worth a look on Desert Trident's Jordan
      sector specifically.
 
-### B115 — Neutral border: warned, then the battery engages if you press · §98 · ☐ UNTESTED
+### B118 — Neutral border: warned, then the battery engages if you press · §98 · ☐ UNTESTED
 
 **REOPENED 2026-09-07.** This row closed on 2026-09-01 against the standing
 fighter patrol, and the patrol was dropped the same week (DM call: scope is the
@@ -6242,7 +6244,7 @@ never leaving their airspace, the swap and the SA-6 both proven), and rescoped t
 the SAM alone 2026-09-07. Full history in the design note.
 
 
-### B116 — Neutral border: AI intruders are never engaged · §98 · ☐ UNTESTED
+### B119 — Neutral border: AI intruders are never engaged · §98 · ☐ UNTESTED
 
 **REWRITTEN TWICE.** The 2026-09-07 rewrite dropped the scramble's
 `shadowHoldNm`/`maxShadows` language, which was right, but it then described the
@@ -6261,14 +6263,14 @@ than constantly.
 **Tick `engageAi` to watch the ladder run without flying it** (plugin options,
 default off, added 2026-09-10). It holds AI to the player's rules, so one
 generated turn exercises the hail, the dwell, the whole-country swap and the
-engagement. Use it to adjudicate **B115**, then untick it — this row is the
+engagement. Use it to adjudicate **B118**, then untick it — this row is the
 default behaviour and must be checked with the option **off**.
 
 **Setup.** Any campaign with `neutral_border_defense` on and the plugin ticked —
 Into the Hornet's Nest (Lebanon) or Enduring Resolve (Pakistan, Iran) are the
 worked cases. Fly a normal mission and watch the F10 map for red or blue **AI**
 crossing a shaded border. You do not need to cross one yourself; if you do, that
-is B115's ladder, not this row.
+is B118's ladder, not this row.
 
 **Pass.**
 
@@ -6938,3 +6940,91 @@ results, and reopen it again.
   boolean and not the name; check `player_name` in `state.json`.
 - **The window is empty after a mission you definitely flew.** Either the slot was AI (you
   did not occupy it) or the jet never moved far enough to count as a sortie.
+
+---
+
+### B115 — The cockpit front line is one continuous boundary, bowed where the map is bowed · §74 / §90 · ☐ UNTESTED
+
+**Built 2026-09-10** from a paid F-16C campaign's own cartridge (design note
+`414th-dtc-cartridge-notes.md`, the 2026-09-10 section). Two changes: the DTC front line
+now follows `FrontLineBounds.polyline` — the bowed trace the F10 drawing and the web map
+already read — instead of the straight chord, and several fronts are chained into one
+continuous boundary instead of one disconnected stub per line set.
+
+- **What CI cannot exercise:** whether the HSD/SA/TSD actually draws the chained trace as
+  one line, and whether the straight joins between front bars read as a border or as
+  obvious nonsense crossing ground nobody is fighting over.
+- **Setup:** any campaign with **two or more active fronts** and `front_line_salients` on
+  (Red Tide or Germany are ideal; a single-front theater proves only half of it). Generate
+  a turn with a client Viper, Hornet, F-14B(U) or AH-64D and leave the DTC tab's "Front
+  line (FLOT)" section on. Before flying, screenshot the F10 map's front-line drawing.
+- **Pass:** the cockpit line has the same shape as the F10 drawing — the salient bulges
+  the same way and to the same side — and it runs as **one** line across the theater rather
+  than several short dashes. Viper: all the points are on L1 and the HSD draws one
+  polyline. Hornet: the SA page's FLOT lines meet end to end. Apache TSD and F-14B(U) plot
+  line likewise.
+- **Fail signature:** a straight cockpit line against a bowed map line (the `polyline`
+  change did not reach that builder — check its `red_land_boundary` call); the line visibly
+  breaking into pieces with gaps (consecutive runs are not sharing their meeting vertex);
+  a join cutting a long straight diagonal across obviously rear-area ground between two
+  fronts (the gap-filling approximation is the cause and is known — judge whether it is
+  worse than the stubs were, because the alternative needs a territorial model the campaign
+  does not have); only part of the front drawn on a theater with many fronts (the point
+  budget thinned it — note how many fronts were active).
+- **The support boxes land on the same flight.** Each tanker and AEW&C orbit is now a
+  closed box: Viper GEO L2-L4, Hornet FAOR 1-3 (which shipped empty until now), Tomcat
+  closed plot lines, Apache extra TSD lines. Pass = a box sits around each orbit with its
+  radio frequency in the label, it is drawn **without selecting anything**, and the tanker
+  you join is inside its own box. Fail = an open C shape (the closing corner was dropped);
+  a box square to the map on an angled orbit (the course rotation is wrong); a box nowhere
+  near the aircraft (the orbit leg was read off the wrong waypoints — these are the WP2-WP3
+  leg, not the spawn point); or, on the Viper, a front line so thinned it is unreadable,
+  which is the deliberate trade and the thing to judge.
+- **Tied to B28:** the Viper's CMDS section also landed on 2026-09-10, **default OFF**. The
+  F-16C guide warns the CMDS MODE knob must be STBY before an MPD upload and `AutoLoad`
+  fires on a cold jet, so the check B28 already owes is: tick "Countermeasure programs" on
+  one flight, spawn, and read the CMDS page. Pass = MAN 1 dispenses flares only, MAN 5
+  chaff only, the bingo counts read 10/10 and nothing else on the page is disturbed. Fail =
+  any garbled or zeroed program, which is the erroneous-data-entry the guide warns about;
+  revert the default and record it.
+
+---
+
+### B117 — A Sandy can be fragged onto a survivor, and covers the pickup · §99 · ☐ UNTESTED
+
+**Needs a survivor on the map and one flown mission.** ~30 min.
+
+**Setup.** Any campaign with an A-10 or an Apache squadron. Get a survivor first — fly a
+turn and lose an AI aircraft, or use an existing downed pilot. Then create a **new package**
+on that survivor, add a flight, and pick **Sandy** from the mission-type list. Add the
+rescue helicopter to the same package or a separate one. Fly the Sandy.
+
+**Pass.**
+1. **Sandy is in the mission-type list** at the survivor, for the A-10 and the Apache and
+   for nothing else in the wing.
+2. **The flight plans** — no "Could not create flight" dialog — and the map shows a short
+   track sitting on the survivor, not on the front line.
+3. **The callsign defaults to Sandy**, numbered, and a second one numbers after it.
+4. **An AI Sandy engages** ground units near the pickup and does not wander off after
+   something 20 nm away.
+5. **The Apache flies the same plan at helicopter altitude**, not at 10,000 ft.
+6. **No Sandy appears in an auto-planned turn** — not in the ATO, not after passing a turn
+   with a survivor on the map.
+
+**Fail signatures, and what each means:**
+
+- **"Could not create flight" after picking the squadron.** The dispatch in
+  `FlightPlanBuilderTypes.for_flight` is not reaching `SandyBuilder`, or the target is not
+  a `DownedPilot` — the same class of bug the King had before 2026-08-26.
+- **The track is drawn along the FLOT.** The flight resolved to `CasFlightPlan`, so the
+  `SANDY` entry in the builder dict is missing or shadowed.
+- **The flight flies out and back through the survivor instead of across.** The leg axis is
+  wrong — it should be perpendicular to the run-in, and `test_the_legs_cross_the_run_in`
+  pins that headless, so this means the real `WaypointBuilder` is doing something the fake
+  one does not.
+- **A Sandy shows up in an auto-planned ATO.** Something now proposes the tasking. Nothing
+  in the HTN should; find it before shipping, because an AI Sandy is noise at best.
+- **The Apache holds 10,000 ft.** `builder.cas()` is not seeing `is_helo`, so the AGL
+  handling in `nav_path` is also suspect.
+- **Every jet in the wing offers Sandy.** The yaml `tasks:` gate is not the gate — check
+  that no derivation in `get_task_priorities` is inferring `Sandy` from `CAS`.

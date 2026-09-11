@@ -843,6 +843,13 @@ FEATURES: tuple[Feature, ...] = (
         plugin_id="neutralborder",
         settings_fields=("neutral_border_defense",),
     ),
+    Feature(
+        # The rescue escort. No settings field and no plugin: capability is the
+        # aircraft yaml's Sandy task, and the role is hand-fragged only.
+        "sandy_rescue_escort",
+        "Sandy rescue escort",
+        99,
+    ),
     # Always-on engine plugins — major 414th machinery documented in design notes
     # rather than a numbered "Features at a Glance" entry.
     Feature("mantis_iads", "MANTIS IADS engine", plugin_id="mantisiads"),

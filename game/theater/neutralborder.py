@@ -378,7 +378,7 @@ class NeutralBorderZone:
 
         The largest circle that fits inside the border, which is the honest
         measure of how much country there is. Sizes the SAM: measured over the
-        55 shipped zones 2026-09-10 it runs 5.8 NM to 216 NM. A country's room
+        63 shipped zones 2026-09-10 it runs 5.8 NM to 216 NM. A country's room
         is what the MAP models of it, so widening the clip boxes that day moved
         several rungs up -- Turkmenistan went SA-11 to S-300 on Afghanistan.
         """

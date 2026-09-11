@@ -174,7 +174,7 @@ WEST_MODERN = (PATRIOT, HAWK, RAPIER)
 WEST_LEGACY = (HAWK, RAPIER)
 
 #: Room (largest inscribed circle) a country needs before the next rung up is
-#: worth standing. Re-scaled 2026-09-10 against the 55 zones the corrected clip
+#: worth standing. Re-scaled 2026-09-10 against the 63 zones the corrected clip
 #: boxes produce, which run 5.8 NM to 216 NM. The old thresholds were set while
 #: those boxes still stopped inside the terrain, so every country measured
 #: smaller than it really is on the map.

@@ -9906,9 +9906,9 @@ of room takes the top rung (SA-5 legacy, SA-10 or Patriot modern), 25–100 the
 middle (SA-2 or SA-11, Hawk), under 25 the bottom (SA-3, Rapier). **The top rung
 is the same band in both eras** — a country large enough for an SA-5 in 1982 is
 large enough for an SA-10 in 2004, which is the point of two tiers rather than
-two scales. Over the 55 shipped zones that is **1982: 17 SA-2, 14 Hawk, 9 SA-3,
-8 SA-5, 7 Rapier** and **2004: 17 SA-11, 10 Hawk, 9 SA-3, 8 SA-10, 7 Rapier,
-4 Patriot**. **Dates are export dates, not in-service** — checked against the
+two scales. Over the 63 shipped zones that is **1982: 17 SA-2, 16 Hawk, 12 SA-3,
+10 SA-5, 8 Rapier** and **2004: 17 SA-11, 12 SA-3, 11 Hawk, 10 SA-10, 8 Rapier,
+5 Patriot**. **Dates are export dates, not in-service** — checked against the
 1982 Falklands column, where in-service dates handed Argentina a Buk. **Two reach figures, on purpose.** `reach` is the DCS launcher's own
 `threat_range`, sourced and confirmed against a stock no-mod export; the earlier
 hand-picked numbers were unsourced and disagreed with it inconsistently.
@@ -10010,9 +10010,16 @@ of the other side.
   country outline clipped to a hand-passed `--clip`, and until 2026-09-10 seven
   of the eight boxes stopped *inside* the terrain — 1,273,689 km² of modelled
   land with no border on it, 45.3 % of Sinai and 15.9 % of Afghanistan. Reported
-  from the F10 map ("the fill doesn't go to the edge"). Boxes are now the map's
-  own land extent plus ~1.5°, walked off the landmap's **vertices** — an XY
-  bounding box overstates it, because terrain XY is rotated against lat/lon.
+  from the F10 map ("the fill doesn't go to the edge"). **Neither the landmap nor
+  `terrain.bounds` is the map's extent** — both say the Afghanistan map stops at
+  28.9 °N while Enduring Resolve's own carrier sits at 24.5 °N and the F10 map
+  draws ground below it. A box derived from them clipped Pakistan, Iran and
+  India at 27.5 °N, which is what the DM photographed on 2026-09-10. The floor
+  is **what campaigns actually place**, plus margin: somebody authored a unit
+  there, so it is flyable. Only edges proven short are moved — shrinking a box
+  that was already adequate drops a country a rung, measured the same day when
+  a uniform re-derivation took Turkey on Syria from 114 NM to 97 and cost it its
+  Patriot.
   Every map is now under 2 % undrawn except Falklands at 7.9 %, which is Chilean
   fjord islands under a deliberate area floor. It also turned up that Kola was
   missing the Kola Peninsula, that China has 72,759 km² on the Afghanistan map,

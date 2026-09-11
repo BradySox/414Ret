@@ -97,9 +97,15 @@ def spawn_station(
 
     This line used to assert "a clip box is bigger than its terrain". It was not:
     measured 2026-09-10, SEVEN of the eight boxes stopped inside their own map,
-    leaving 1,273,689 km2 of modelled land with no border drawn on it. The boxes
-    were widened and a later pass now drops any piece with no modelled land in
-    it, which is the other half of the same problem.
+    leaving 1,273,689 km2 of modelled land with no border drawn on it.
+
+    **The landmap is NOT the map's extent, and neither is terrain.bounds.** Both
+    say the Afghanistan map stops at 28.9N; Enduring Resolve's own carrier sits
+    at 24.5N, and the F10 map draws ground to the coast below it. A pass that
+    dropped pieces with "no modelled land inside" was written against that wrong
+    premise and removed the same day -- it cut Turkey off the Caucasus map and
+    Iran off the Iraq map. The clip box is the only authority on what is drawn,
+    so derive it from what campaigns actually PLACE, not from either of those.
 
     Turkey is the case that matters, because it is the only one of the four with
     an airframe in any era; Armenia and Azerbaijan scramble nothing whatever
@@ -294,32 +300,6 @@ def main() -> None:
         simplified = kept
 
     land = modelled_land(args.terrain)
-
-    # Pass 3: drop a piece with no modelled land inside it. A clip box has to
-    # reach past the terrain to cover the map's edges, which then admits pieces
-    # that are entirely off-map: widening the boxes on 2026-09-10 gave Caucasus
-    # a Ukraine zone and Iraq a UAE one, neither with a square metre of ground
-    # you can fly over. A nation with no land on the map is not on the map, and
-    # drawing it puts a border in the sea.
-    if land is not None:
-        grounded = []
-        for name, piece in simplified:
-            ring_xy = to_xy(
-                terrain, [(x, y) for x, y in list(piece.exterior.coords)[:-1]]
-            )
-            try:
-                from shapely.geometry import Polygon as ShapelyPolygon
-
-                if ShapelyPolygon(ring_xy).intersection(land).is_empty:
-                    print(
-                        f"  -- {name}: no modelled land inside it, dropped",
-                        file=sys.stderr,
-                    )
-                    continue
-            except Exception:  # pragma: no cover - a tool convenience
-                pass
-            grounded.append((name, piece))
-        simplified = grounded
 
     written = 0
     seen: dict[str, int] = {}

@@ -35,6 +35,11 @@ from game.missiongenerator.dtc.cartridge import (
 )
 from game.missiongenerator.dtc.common import (
     SupportTrack,
+    flot_segments,
+    red_land_boundary,
+    support_boxes,
+    SUPPORT_BOX_POINTS,
+    SUPPORT_ORBIT_DIAMETER_M,
     steerpoint_elevation,
     dedupe_stations,
     known_enemy_threat_sites,
@@ -555,9 +560,9 @@ def test_viper_route_stops_at_the_auto_sequencing_limit() -> None:
 def test_viper_geo_lines_stay_inside_their_partition(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """GEO_LINES owns steerpoints 31-55 and the editor refuses a 26th point; a
-    fuller line source than today's 2-point fronts would otherwise run ids into
-    the pre-planned-threat partition at 56."""
+    """GEO_LINES owns steerpoints 31-55 and the editor refuses a 26th point, so
+    more front than the partition holds is thinned rather than run on into the
+    pre-planned-threat partition at 56."""
     flight, mission_data, game = _hornet_fixture()
     flight.aircraft_type = SimpleNamespace(dcs_unit_type=SimpleNamespace(id="F-16C_50"))
     segments = [
@@ -565,7 +570,7 @@ def test_viper_geo_lines_stay_inside_their_partition(
         for n in range(4)
     ]
     monkeypatch.setattr(
-        "game.missiongenerator.dtc.viper.flot_segments", lambda g: segments
+        "game.missiongenerator.dtc.common.flot_segments", lambda g: segments
     )
     data = json.loads(build_viper_cartridge(flight, mission_data, game, "V").to_json())[
         "data"
@@ -573,6 +578,13 @@ def test_viper_geo_lines_stay_inside_their_partition(
     geo = data["MPD"]["GEO_LINES"]
     assert len(geo) == 25
     assert geo[-1]["id"] == "GEO_LINES55"
+    # One continuous boundary on L1; the support boxes take the later sets, and
+    # the boundary is what gives up points for them.
+    boundary = [point for point in geo if point["L1"]]
+    assert len(boundary) == 25 - sum(
+        1 for point in geo if not point["L1"]
+    )  # every point belongs to exactly one set
+    assert all(not point["L2"] for point in boundary)
 
 
 def _viper_with_fields(fields: list[Any], divert: Optional[str] = None) -> Any:
@@ -897,22 +909,22 @@ def test_flot_populates_when_a_front_exists(monkeypatch: pytest.MonkeyPatch) -> 
         ("Front B", [(5000.0, 6000.0), (7000.0, 8000.0)]),
     ]
     monkeypatch.setattr(
-        "game.missiongenerator.dtc.hornet.flot_segments", lambda g: segments
-    )
-    monkeypatch.setattr(
-        "game.missiongenerator.dtc.viper.flot_segments", lambda g: segments
+        "game.missiongenerator.dtc.common.flot_segments", lambda g: segments
     )
 
     hornet = json.loads(
         build_hornet_cartridge(flight, mission_data, game, "H").to_json()
     )["data"]
     flot = hornet["SA"]["FAOR_FLOT"]["FLOT"]
-    assert [line["note"] for line in flot] == ["Front A", "Front B"]
+    # Two fronts, chained into one continuous boundary on one line.
+    assert [line["note"] for line in flot] == ["FLOT"]
     assert flot[0]["id"] == "FLOT_1"
     assert flot[0]["num"] == 1
     assert [(p["x"], p["y"]) for p in flot[0]["points"]] == [
         (1000.0, 2000.0),
         (3000.0, 4000.0),
+        (5000.0, 6000.0),
+        (7000.0, 8000.0),
     ]
 
     flight.aircraft_type = SimpleNamespace(dcs_unit_type=SimpleNamespace(id="F-16C_50"))
@@ -920,12 +932,17 @@ def test_flot_populates_when_a_front_exists(monkeypatch: pytest.MonkeyPatch) -> 
         build_viper_cartridge(flight, mission_data, game, "V").to_json()
     )["data"]
     geo = viper["MPD"]["GEO_LINES"]
-    # Two 2-point fronts = 4 points, tagged to consecutive HSD line sets.
-    assert len(geo) == 4
-    assert geo[0]["note"] == "Front A"
-    assert geo[0]["L1"] is True and geo[0]["L2"] is False
-    assert geo[2]["note"] == "Front B"
-    assert geo[2]["L2"] is True and geo[2]["L1"] is False
+    # Two 2-point fronts chained = 4 points, all on the one line set.
+    boundary = [point for point in geo if point["L1"]]
+    assert len(boundary) == 4
+    assert [point["note"] for point in boundary] == ["FLOT"] * 4
+    assert all(point["L2"] is False for point in boundary)
+    assert [(point["x"], point["y"]) for point in boundary] == [
+        (1000.0, 2000.0),
+        (3000.0, 4000.0),
+        (5000.0, 6000.0),
+        (7000.0, 8000.0),
+    ]
 
 
 def _track(callsign: str, cx: float, cy: float, course: float, length: float) -> Any:
@@ -1226,8 +1243,7 @@ def test_tomcat_front_line_rides_the_plot_lines(
     """Same shape as the ED-authored cartridge's plot line, open rather than
     closed because a front is a segment, not an area."""
     monkeypatch.setattr(
-        tomcat,
-        "flot_segments",
+        "game.missiongenerator.dtc.common.flot_segments",
         lambda game: [("Front", [(1000.0, 2000.0), (5000.0, 6000.0)])],
     )
     flight, mission_data, game = _tomcat_fixture()
@@ -2044,3 +2060,339 @@ def test_generator_builds_for_the_apache() -> None:
     generator.generate()
     assert len(generator.cartridges) == 1
     assert generator.cartridges[0].unit_type == "AH-64D_BLK_II"
+
+
+def _front(name: str, left: tuple[float, float], right: tuple[float, float]) -> Any:
+    """A stand-in for a theater whose conflicts() yields one bowed front."""
+    from game.missiongenerator.frontlineconflictdescription import FrontLineBounds
+    from dcs.mapping import Point
+    from dcs.terrain import Caucasus
+
+    terrain = Caucasus()
+    bounds = FrontLineBounds(
+        Point(left[0], left[1], terrain),
+        Point(right[0], right[1], terrain),
+        (0.0, 1000.0, 0.0),
+    )
+    return SimpleNamespace(name=name, bounds=bounds)
+
+
+def test_flot_segments_follow_the_bowed_front(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A salient the player planned against is the salient in the cockpit. The
+    chord this replaced stayed straight however far rung E bowed the front."""
+    fronts = [_front("Front", (0.0, 0.0), (10000.0, 0.0))]
+    game = SimpleNamespace(
+        theater=SimpleNamespace(conflicts=lambda: fronts, terrain=None)
+    )
+    monkeypatch.setattr(
+        "game.missiongenerator.frontlineconflictdescription."
+        "FrontLineConflictDescription.frontline_bounds",
+        staticmethod(lambda front_line, theater: front_line.bounds),
+    )
+    name, points = flot_segments(game)[0]  # type: ignore[arg-type]
+    assert name == "Front"
+    assert len(points) == 3
+    # The middle sample sits off the chord by its own depth.
+    assert points[1][1] != 0.0
+
+
+def test_red_land_boundary_chains_the_fronts(monkeypatch: pytest.MonkeyPatch) -> None:
+    """One continuous trace, ordered across the theater and oriented so each bar
+    starts at the end nearest the last -- a pilot reads which side is hostile
+    from a line, never from disconnected stubs."""
+    segments = [
+        # Deliberately out of order, and the middle bar runs the wrong way.
+        ("B", [(2000.0, 0.0), (3000.0, 0.0)]),
+        ("C", [(4000.0, 0.0), (5000.0, 0.0)]),
+        ("A", [(0.0, 0.0), (1000.0, 0.0)]),
+    ]
+    monkeypatch.setattr(
+        "game.missiongenerator.dtc.common.flot_segments", lambda g: segments
+    )
+    runs = red_land_boundary(None, 1, 25)  # type: ignore[arg-type]
+    assert len(runs) == 1
+    name, points = runs[0]
+    assert name == "FLOT"
+    # A boundary has no canonical direction; what matters is that it runs
+    # monotonically across the theater with every bar in place.
+    xs = [x for x, _ in points]
+    assert sorted(xs) == [0.0, 1000.0, 2000.0, 3000.0, 4000.0, 5000.0]
+    assert xs == sorted(xs) or xs == sorted(xs, reverse=True)
+
+
+def test_red_land_boundary_splits_across_the_lines_sharing_a_vertex(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A display with several short lines draws one boundary only if consecutive
+    lines meet on a shared vertex."""
+    segments = [("F", [(float(i * 100), 0.0) for i in range(9)])]
+    monkeypatch.setattr(
+        "game.missiongenerator.dtc.common.flot_segments", lambda g: segments
+    )
+    runs = red_land_boundary(None, 3, 5)  # type: ignore[arg-type]
+    assert [name for name, _ in runs] == ["FLOT 1", "FLOT 2"]
+    assert runs[0][1][-1] == runs[1][1][0]
+
+
+def test_red_land_boundary_thins_to_the_budget(monkeypatch: pytest.MonkeyPatch) -> None:
+    segments = [("F", [(float(i), 0.0) for i in range(40)])]
+    monkeypatch.setattr(
+        "game.missiongenerator.dtc.common.flot_segments", lambda g: segments
+    )
+    _, points = red_land_boundary(None, 1, 25)[0]  # type: ignore[arg-type]
+    assert len(points) == 25
+    # Both ends survive the thinning.
+    assert points[0] == (0.0, 0.0)
+    assert points[-1] == (39.0, 0.0)
+
+
+def test_viper_cmds_gives_each_dispenser_its_own_manual_program() -> None:
+    """MAN 1 answers an IR shot and MAN 5 a radar one; the AUTO programs and
+    BYP keep the module's own values."""
+    flight, mission_data, game = _hornet_fixture()
+    flight.aircraft_type = SimpleNamespace(dcs_unit_type=SimpleNamespace(id="F-16C_50"))
+    flight.dtc_options = DtcOptions(countermeasures=True)
+    data = json.loads(build_viper_cartridge(flight, mission_data, game, "V").to_json())[
+        "data"
+    ]
+    cmds = data["MPD"]["CMDS"]
+    programs = cmds["CMDSProgramSettings"]
+    assert programs["MAN1"]["Flare"]["BurstQuantity"] == 5
+    assert programs["MAN1"]["Chaff"]["BurstQuantity"] == 0
+    assert programs["MAN5"]["Chaff"]["SalvoQuantity"] == 5
+    assert programs["MAN5"]["Flare"]["BurstQuantity"] == 0
+    assert programs["AUTO2"]["Chaff"]["SalvoQuantity"] == 6
+    assert programs["BYP"]["Flare"]["BurstQuantity"] == 1
+    assert cmds["CMDSBingoSettings"]["ChaffNum"] == 10
+    # CMDS.lua reads both of these without a nil guard.
+    assert cmds["CMDSPrograms"]["delayBetweenPrograms"] == 2
+    assert cmds["CMDSPrograms"]["CMDS_Avionics_Threat_Table"] == {}
+
+
+def test_viper_cmds_is_off_by_default() -> None:
+    """The CMDS page is not written unless a planner asks: the guide's STBY
+    warning against an unattended MPD upload is unanswered (checklist B28)."""
+    flight, mission_data, game = _hornet_fixture()
+    flight.aircraft_type = SimpleNamespace(dcs_unit_type=SimpleNamespace(id="F-16C_50"))
+    data = json.loads(build_viper_cartridge(flight, mission_data, game, "V").to_json())[
+        "data"
+    ]
+    assert "CMDS" not in data["MPD"]
+
+
+def _orbit_track(callsign: str, kind: str, length_m: float) -> Any:
+    """A due-north racetrack of `length_m`, centred on the origin."""
+    from dcs.mapping import Point
+    from dcs.terrain import Caucasus
+
+    terrain = Caucasus()
+    return SupportTrack(
+        callsign=callsign,
+        kind=kind,
+        start=Point(-length_m / 2, 0.0, terrain),
+        end=Point(length_m / 2, 0.0, terrain),
+    )
+
+
+def test_support_box_is_the_racetrack_footprint(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The box encloses the straight legs AND the room the turns need, so a
+    tanker at the edge of the drawn box is still inside its own orbit."""
+    track = _orbit_track("ARCO", "TKR", 20000.0)
+    monkeypatch.setattr(
+        "game.missiongenerator.dtc.common.support_tracks", lambda data: [track]
+    )
+    ((callsign, points),) = support_boxes(None, 3)  # type: ignore[arg-type]
+    assert callsign == "ARCO"
+    assert len(points) == SUPPORT_BOX_POINTS
+    # Closed: nothing auto-closes a line set, so the first corner repeats.
+    assert points[0] == points[-1]
+    half_width = SUPPORT_ORBIT_DIAMETER_M / 2
+    xs = sorted({round(x, 3) for x, _ in points})
+    ys = sorted({round(y, 3) for _, y in points})
+    assert xs == [-(10000.0 + half_width), 10000.0 + half_width]
+    assert ys == [-half_width, half_width]
+
+
+def test_support_box_follows_the_orbit_course(monkeypatch: pytest.MonkeyPatch) -> None:
+    """An east-west orbit boxes east-west; the box is not axis-aligned by
+    accident."""
+    from dcs.mapping import Point
+    from dcs.terrain import Caucasus
+
+    terrain = Caucasus()
+    track = SupportTrack(
+        callsign="MAGIC",
+        kind="AWACS",
+        start=Point(0.0, -10000.0, terrain),
+        end=Point(0.0, 10000.0, terrain),
+    )
+    monkeypatch.setattr(
+        "game.missiongenerator.dtc.common.support_tracks", lambda data: [track]
+    )
+    ((_, points),) = support_boxes(None, 3)  # type: ignore[arg-type]
+    half_width = SUPPORT_ORBIT_DIAMETER_M / 2
+    xs = sorted({round(x, 3) for x, _ in points})
+    ys = sorted({round(y, 3) for _, y in points})
+    assert xs == [-half_width, half_width]
+    assert ys == [-(10000.0 + half_width), 10000.0 + half_width]
+
+
+def test_viper_draws_the_support_boxes_on_the_later_line_sets(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """L1 is the boundary; a tanker or AWACS box takes L2-L4."""
+    flight, mission_data, game = _hornet_fixture()
+    flight.aircraft_type = SimpleNamespace(dcs_unit_type=SimpleNamespace(id="F-16C_50"))
+    monkeypatch.setattr(
+        "game.missiongenerator.dtc.common.flot_segments",
+        lambda g: [("Front", [(0.0, 0.0), (10000.0, 0.0)])],
+    )
+    monkeypatch.setattr(
+        "game.missiongenerator.dtc.common.support_tracks",
+        lambda data: [
+            _orbit_track("ARCO", "TKR", 20000.0),
+            _orbit_track("MAGIC", "AWACS", 30000.0),
+        ],
+    )
+    data = json.loads(build_viper_cartridge(flight, mission_data, game, "V").to_json())[
+        "data"
+    ]
+    geo = data["MPD"]["GEO_LINES"]
+    assert [point["note"] for point in geo if point["L1"]] == ["FLOT", "FLOT"]
+    arco = [point for point in geo if point["L2"]]
+    magic = [point for point in geo if point["L3"]]
+    assert [point["note"] for point in arco] == ["ARCO"] * SUPPORT_BOX_POINTS
+    assert [point["note"] for point in magic] == ["MAGIC"] * SUPPORT_BOX_POINTS
+    assert (arco[0]["x"], arco[0]["y"]) == (arco[-1]["x"], arco[-1]["y"])
+    # Ids stay inside the partition and keep counting across the sets.
+    assert [point["id"] for point in geo][:3] == [
+        "GEO_LINES31",
+        "GEO_LINES32",
+        "GEO_LINES33",
+    ]
+
+
+def test_viper_boxes_take_their_points_from_the_boundary(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Three boxes cost 15 of the 25, so the boundary is thinned to 10 rather
+    than a box losing a corner."""
+    flight, mission_data, game = _hornet_fixture()
+    flight.aircraft_type = SimpleNamespace(dcs_unit_type=SimpleNamespace(id="F-16C_50"))
+    monkeypatch.setattr(
+        "game.missiongenerator.dtc.common.flot_segments",
+        lambda g: [("Front", [(float(i * 1000), 0.0) for i in range(30)])],
+    )
+    monkeypatch.setattr(
+        "game.missiongenerator.dtc.common.support_tracks",
+        lambda data: [
+            _orbit_track(name, "TKR", 20000.0) for name in ("A", "B", "C", "D")
+        ],
+    )
+    data = json.loads(build_viper_cartridge(flight, mission_data, game, "V").to_json())[
+        "data"
+    ]
+    geo = data["MPD"]["GEO_LINES"]
+    assert len(geo) == 25
+    # Boxes on L2, L3, L4 -- and the fourth orbit does not fit.
+    assert len([point for point in geo if point["L1"]]) == 10
+    for line in ("L2", "L3", "L4"):
+        assert len([point for point in geo if point[line]]) == SUPPORT_BOX_POINTS
+
+
+def test_hornet_support_boxes_ride_the_faor_lines(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """FAOR was always empty. The SA page draws only the selected CAP point own
+    racetrack, so the gas had no always-visible shape."""
+    flight, mission_data, game = _hornet_fixture()
+    monkeypatch.setattr(
+        "game.missiongenerator.dtc.common.support_tracks",
+        lambda data: [_orbit_track("ARCO", "TKR", 20000.0)],
+    )
+    data = json.loads(
+        build_hornet_cartridge(flight, mission_data, game, "H").to_json()
+    )["data"]
+    (faor,) = data["SA"]["FAOR_FLOT"]["FAOR"]
+    assert faor["id"] == "FAOR_1"
+    assert faor["num"] == 1
+    assert faor["note"] == "ARCO"
+    assert [point["id"] for point in faor["points"]] == [
+        f"FAOR_1_PT_{i}" for i in range(1, SUPPORT_BOX_POINTS + 1)
+    ]
+    assert faor["points"][0]["x"] == faor["points"][-1]["x"]
+
+
+def test_tomcat_support_box_is_a_closed_plot_line(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The plot line closes itself, so the repeated corner comes back off."""
+    monkeypatch.setattr(
+        "game.missiongenerator.dtc.common.flot_segments", lambda game: []
+    )
+    monkeypatch.setattr(
+        "game.missiongenerator.dtc.common.support_tracks",
+        lambda data: [_orbit_track("ARCO", "TKR", 20000.0)],
+    )
+    flight, mission_data, game = _tomcat_fixture()
+    data = json.loads(
+        build_tomcat_cartridge(flight, mission_data, game, "Boxes").to_json()
+    )["data"]
+    (line,) = data["NAV"][0]["lines"]
+    assert line["closed"] is True
+    assert len(line["points"]) == SUPPORT_BOX_POINTS - 1
+
+
+def test_support_boxes_are_omitted_when_orbits_are_off(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    flight, mission_data, game = _hornet_fixture()
+    flight.aircraft_type = SimpleNamespace(dcs_unit_type=SimpleNamespace(id="F-16C_50"))
+    flight.dtc_options = DtcOptions(friendly_orbits=False)
+    monkeypatch.setattr(
+        "game.missiongenerator.dtc.common.support_tracks",
+        lambda data: [_orbit_track("ARCO", "TKR", 20000.0)],
+    )
+    data = json.loads(build_viper_cartridge(flight, mission_data, game, "V").to_json())[
+        "data"
+    ]
+    assert all(point["L1"] for point in data["MPD"]["GEO_LINES"])
+
+
+def test_a_long_boundary_cannot_starve_the_support_boxes(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The Tomcat and Apache share their line slots between the two. Sizing the
+    boundary first left a theater with four fronts no room for a tanker."""
+    monkeypatch.setattr(
+        "game.missiongenerator.dtc.common.flot_segments",
+        lambda game: [
+            (f"Front {n}", [(float(n * 100000 + i * 2000), 0.0) for i in range(7)])
+            for n in range(4)
+        ],
+    )
+    monkeypatch.setattr(
+        "game.missiongenerator.dtc.common.support_tracks",
+        lambda data: [
+            _orbit_track(name, "TKR", 20000.0) for name in ("ARCO", "SHELL", "TEXACO")
+        ],
+    )
+
+    flight, mission_data, game = _tomcat_fixture()
+    tomcat_lines = json.loads(
+        build_tomcat_cartridge(flight, mission_data, game, "Both").to_json()
+    )["data"]["NAV"][0]["lines"]
+    assert len(tomcat_lines) == 4
+    assert [line["closed"] for line in tomcat_lines] == [False, False, True, True]
+
+    flight, mission_data, game = _apache_fixture()
+    apache_lines = json.loads(
+        build_apache_cartridge(flight, mission_data, game, "Both").to_json()
+    )["data"]["NAV"]["Mission_1"]["Lines"]
+    boxes = [
+        line for line in apache_lines if line["note"] in ("ARCO", "SHELL", "TEXACO")
+    ]
+    assert len(boxes) == 3
+    assert all(len(line["vertices"]) == SUPPORT_BOX_POINTS for line in boxes)

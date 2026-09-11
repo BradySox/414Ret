@@ -578,7 +578,13 @@ already excludes 64-99 on both bands.
   Dormant, not usable. Re-check after a DCS patch.
 
 ---
-### Decision: no CMDS section (2026-08-18)
+### Decision: no CMDS section (2026-08-18) — PARTLY REVERSED 2026-09-10
+
+Read the 2026-09-10 section at the end of this note first: a paid F-16C campaign's own
+cartridge settles counts 1 and 3 below. Count 2 and the STBY warning stand, which is why
+the section ships default OFF.
+
+
 
 `CMDS_defs.lua` looked like a shipped threat->countermeasure-program table worth
 mining. It is not usable as one, on three counts:
@@ -1025,3 +1031,70 @@ coordinates on an Iraq mission, a clean `dcs.log` — ED's importer accepts our 
 end to end. The cockpit is what remains.
 
 In-game pass: checklist **B91**.
+
+---
+
+## Campaign G's cartridge — what a paid campaign actually does (2026-09-10)
+
+Two cartridges out of one F-16C mission (`DTC/AT03.dtc`, `DTC/AT0224.dtc`, Kola), read
+directly. They settle three open questions and found two defects in our own output.
+
+### What it uses, and what it leaves empty
+
+| Section | Campaign G | Us |
+|---|---|---|
+| `GEO_LINES` | one continuous 19-point line, 384 nm, on L1; a closed 5-point box on L2 | was 2 points per front, one front per line set |
+| `NAV_PTS` | empty — the route stays in the miz | route 1-20 plus support anchors 21-25 |
+| `THREAT_PTS` | empty | up to 15 fogged rings |
+| `DEST` | 9 diverts with 3-character idents | same shape, same 81-99 partition |
+| `CMDS` | two authored manual programs | default OFF, same two programs |
+| `COMM` | 20 channels x 2 radios | none — and his miz `Radio` table carries the same frequencies, so the 2026-08-22 drop was right |
+| `ELINT` | 1.1 MB of RWR table | none |
+| `AutoLoad` | **absent** — the pilot loads by hand | `AutoLoad = true` |
+
+### Two things that look like levers and are not
+
+- **`ELINT.RWR` is a verbatim dump of the module default.** Diffed against
+  `CoreMods/aircraft/F-16C/DTC/ELINT/RWR/RWR_defs.lua`: the LOW table matches on all 93
+  emitters, field for field, zero differences. The DTC tool writes the whole default table
+  whenever the tab is touched. There is no authored RWR intelligence here to mine, and a
+  93-emitter table would be a DCS-version-pinned literal in our tree for no gain.
+- **`CMDSPrograms` sets every one of 93 threats to `program = 3` (AUTO 2)** at each
+  threat's own default threshold — a single blanket decision, not per-threat work. Taking
+  it would mean embedding the same 93-entry table. Left at the module default of NONE.
+
+### What it does author: two manual CMDS programs
+
+Diffed against `MPD/CMDS_defs.lua`, exactly two of the ten programs differ from stock:
+`MAN1` becomes flares only (5-flare burst, 0.5 s, one salvo) and `MAN5` chaff only
+(2-chaff burst, 5 salvos). AUTO1-3, BYP, MAN2-4 and MAN6 are the module's own values, as
+are the bingo counts. The design is one button per missile kind, which is worth copying
+and is what §74 now emits.
+
+### The defects it found in our front line
+
+`flot_segments` rebuilt the line from `left_position` + heading + length — the straight
+chord — while `FrontLineBounds.polyline` carries §90 rung E's bowed trace and is what the
+F10 drawing and the web map read. The cockpit disagreed with the map. And each front went
+on its own line set, so several fronts drew as disconnected 80 km stubs. Campaign G's line
+is the counter-example: one continuous trace, which is the only shape that tells a pilot
+which side is hostile.
+
+`red_land_boundary` is the fix. The gaps between front bars are joined straight, which is
+the one approximation that cannot invent a salient the campaign model does not claim.
+
+### The per-set cap was invented
+
+`MAX_GEO_POINTS_PER_SET = 8` had no source. `GEO_LINES.lua:586` refuses a 26th point and
+imposes **no per-set cap**, which campaign G's 19-point L1 confirms. The boundary now takes
+L1 whole; L2-L4 are free.
+
+### Still open
+
+- **The zone half.** `flot_and_zones` writes no zones on any airframe: the Hornet ships
+  `"FAOR": []` every time, and `_decimate_closed` / `_circle_outline` in `common.py` are
+  dead code. Campaign G used L2 for a closed 55x30 km working-area box, which is the
+  obvious first consumer of the three free line sets.
+- **`AutoLoad` versus the STBY warning.** Campaign G has no `AutoLoad`, so its pilot
+  chooses when to ingest and can set the CMDS knob first. Ours fires at spawn. That is the
+  whole of the surviving objection to a CMDS section and it needs checklist **B28**.

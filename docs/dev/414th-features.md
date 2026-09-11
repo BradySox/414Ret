@@ -7286,13 +7286,55 @@ package-mates share the comm plan and SA picture):
 - **NAV_SETTINGS** (Hornet) — recovery **TACAN / ICLS / ACLS pre-tuned from the §65
   boat card** (`CarrierInfo.tacan/icls_channel/link4_freq`; a land arrival uses the
   field's `RunwayData.tacan`), FPAS home waypoint = the landing steerpoint.
-- **SA / MPD (the situational-awareness picture)** — the FLOT (same
-  `frontline_bounds` geometry as the F10 drawing; Viper: GEO_LINES sets),
+- **SA / MPD (the situational-awareness picture)** — the boundary with red land
+  (`red_land_boundary`; Viper: the GEO_LINES L1 set),
   **friendly CAP stations (BARCAP/
   TARCAP) + tanker/AEW&C orbits as CAP_PTS racetracks** (Viper: named extra
   steerpoints — the jet has no orbit element), and **enemy SAM threat rings as MEZ
   threats / THREAT_PTS** ("Custom" type; radius NM on the Hornet, meters on the
   Viper; ≤3-char NATO labels derived from DCS unit ids — `Kub`→6, `S-300PS`→10).
+- **The front line is one boundary, not a front per line (2026-09-10).** Two defects,
+  both found by reading a paid F-16C campaign's own cartridge (campaign G, which draws
+  a single 19-point 384 nm line across its theater):
+  - `flot_segments` rebuilt each front from `left_position` + heading + length, which is
+    the straight **chord**. §90 rung E bows the front, and `FrontLineBounds.polyline` is
+    the bowed trace the F10 drawing (`drawingsgenerator.py`) and the web map
+    (`server/frontlines/models.py`) both read. So the cockpit drew a ruler where the map
+    the player planned on drew a salient. `flot_segments` now returns `polyline`, which
+    fixes all four cartridges at once.
+  - Each front went on its own line set, so a theater with several fronts drew
+    disconnected 80 km stubs — a picture that cannot say which side is hostile.
+    `red_land_boundary` orders the bars (nearest-neighbour from the endpoint farthest
+    from their centroid), orients each to start nearest the last, and returns one
+    continuous trace split only as far as the display's line budget forces. The gaps
+    between bars are joined straight: nothing in the campaign model says where an
+    unopposed border runs, and a straight join cannot invent a salient.
+  - The Viper's `MAX_GEO_POINTS_PER_SET = 8` was invented. `GEO_LINES.lua:586` caps the
+    partition at 25 points with **no per-set cap**, so the boundary takes L1 whole and
+    L2-L4 are free for the zone half that nothing writes yet.
+- **Tanker and AEW&C orbits as boxes (2026-09-10).** `support_boxes` draws each
+  support orbit as a closed rectangle: the straight legs plus the 5 NM the turns
+  need at each end, aligned to the orbit's own course. The Viper takes them on
+  GEO_LINES L2-L4, the Hornet on the **FAOR lines that shipped empty every time**,
+  the Tomcat as `closed: True` plot lines, the Apache as extra TSD lines. The
+  orbits were already on the jets as points; a point is not an area, and on the
+  Hornet's SA page only the SELECTED CAP point draws its racetrack, so the gas was
+  invisible until the pilot went looking. On the Viper the 25 GEO points are shared:
+  boxes are allocated first at five each, because a box missing a corner is nonsense
+  where a boundary thinned by ten points is still a boundary.
+- **CMDS (Viper, default OFF)** — `MAN1` dispenses flares only and `MAN5` chaff only, so
+  one button answers an IR shot and another a radar one; the three AUTO programs and BYP
+  keep the module's own values, written whole because `CMDS.lua` indexes every program
+  and dispenser with no nil guard. `CMDSPrograms` carries only the two fields that file
+  reads unguarded, leaving the per-threat auto assignment at the module default.
+  **Reverses the 2026-08-18 "no CMDS section" decision on two of its three counts** —
+  campaign G's working cartridge puts the section at `data.MPD.CMDS` (settling the
+  descriptor-vs-test-file disagreement) and authors two programs away from default
+  (settling "it is a defaults file, not intelligence"). The third count stands: the F-16C
+  guide warns the CMDS MODE knob must be STBY before an MPD upload, and `AutoLoad` fires
+  on a cold jet. Hence default OFF until checklist **B28**'s CMDS check clears.
+  **The Hornet cannot take this** — its descriptor has no CMDS section at all (`ALR67`,
+  `COMM`, `DL`, `GPS WYPT`, `HARM`, `IFF`, `SA`, `TCN`, `WYPT`).
 - **Recon-fog discipline:** threat rings pass `tgo.known_for(flight.friendly)` — the
   same leaf the threat-intel kneeboard uses — so the cartridge never leaks a site the
   player's map doesn't show exactly; `map_hidden` (§50 ambush teams) is never

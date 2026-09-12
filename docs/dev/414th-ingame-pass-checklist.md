@@ -58,7 +58,7 @@ also relative to `ReferenceLatitude=38 / ReferenceLongitude=36`, not absolute.
 
 ## Outstanding rows at a glance
 
-78 rows need a live pass. Full detail is under each `###` heading below —
+81 rows need a live pass. Full detail is under each `###` heading below —
 search the row id. `☐` untested · `◐` flown but not under the conditions that
 stress it · `✗` fail signature reproduced in-game.
 
@@ -193,7 +193,10 @@ stress it · `✗` fail signature reproduced in-game.
 | B111 | A package's escort holds the striker's pace instead of running ahead | §8 cruise mach | ☐ |
 | B112 | The wind you set is the wind the panel shows, and the box stops at 97 kt | wind override / live weather | ☐ |
 | B113 | A pilot's logbook fills in, and the kills are the ones they got | §96 | ☐ |
-| B115 | The Super Hornet still arms and its new cockpit options are there | CJS 2.4.5.260726 | ☐ |
+| B114 | Your lifetime logbook survives starting a new campaign | §97 | ☐ |
+| B115 | The cockpit front line is one continuous boundary, bowed where the map is bowed | §74 / §90 | ☐ |
+| B117 | A Sandy can be fragged onto a survivor, and covers the pickup | §99 | ☐ |
+| B118 | The Super Hornet still arms and its new cockpit options are there | CJS 2.4.5.260726 | ☐ |
 
 ---
 
@@ -6790,8 +6793,132 @@ destroy something on the ground, land, accept results, then reopen the same pilo
 - **The page is all zeroes on a campaign carried over from an older build.** Expected, not a
   failure — pre-§96 saves have no records to fold and the page says so.
 
+### B114 — Your lifetime logbook survives starting a new campaign · §97 · ☐ UNTESTED
 
-### B115 — The Super Hornet still arms and its new cockpit options are there · CJS 2.4.5.260726 · ☐ UNTESTED
+**Needs two campaigns and one flown mission in each.** ~50 min, or split across two sessions.
+
+**Setup.** `lifetime_pilot_profiles` on (it is by default). Open **Pilot Logbook** on the
+toolbar — with no campaign loaded, which is half the test. Fly one mission in any campaign,
+accept results, reopen it. Then start a **different** campaign, fly one mission there, accept
+results, and reopen it again.
+
+**Pass.**
+1. The button opens the window with no campaign loaded, and after the first mission your DCS
+   player name is listed.
+2. Sorties went up by one per mission flown, not by the size of your flight.
+3. After the second campaign the totals are the **sum of both**, both campaigns are named,
+   and both aircraft appear in the per-aircraft table.
+4. The flights list shows one row per mission with the right campaign, aircraft and task.
+5. Rename works, and the profile keeps accumulating under the new display name.
+6. `<Saved Games>\DCS\Retribution\pilot_profiles.json` exists and is readable JSON.
+
+**Fail signatures, and what each means:**
+
+- **The second campaign started the totals over.** The store is being written into the save,
+  or the file path is being derived per campaign. It must be one file for the whole install.
+- **A profile named "Player".** Not a failure — that is the DCS name your install is set to.
+  Rename the display name, or change your name in DCS.
+- **Sorties double-counted after accepting results twice, or after reloading and re-accepting
+  a turn.** The `Game.stable_uid()` guard is not holding. This one matters more than the
+  campaign version: there is nothing to recompute the store from, so a double count is
+  permanent.
+- **Replaying a campaign from turn 1 records nothing.** The opposite failure — the guard is
+  keyed on the campaign name rather than the game.
+- **Everyone in a multiplayer event lands in one profile.** The recorder is reporting the
+  boolean and not the name; check `player_name` in `state.json`.
+- **The window is empty after a mission you definitely flew.** Either the slot was AI (you
+  did not occupy it) or the jet never moved far enough to count as a sortie.
+
+---
+
+### B115 — The cockpit front line is one continuous boundary, bowed where the map is bowed · §74 / §90 · ☐ UNTESTED
+
+**Built 2026-09-10** from a paid F-16C campaign's own cartridge (design note
+`414th-dtc-cartridge-notes.md`, the 2026-09-10 section). Two changes: the DTC front line
+now follows `FrontLineBounds.polyline` — the bowed trace the F10 drawing and the web map
+already read — instead of the straight chord, and several fronts are chained into one
+continuous boundary instead of one disconnected stub per line set.
+
+- **What CI cannot exercise:** whether the HSD/SA/TSD actually draws the chained trace as
+  one line, and whether the straight joins between front bars read as a border or as
+  obvious nonsense crossing ground nobody is fighting over.
+- **Setup:** any campaign with **two or more active fronts** and `front_line_salients` on
+  (Red Tide or Germany are ideal; a single-front theater proves only half of it). Generate
+  a turn with a client Viper, Hornet, F-14B(U) or AH-64D and leave the DTC tab's "Front
+  line (FLOT)" section on. Before flying, screenshot the F10 map's front-line drawing.
+- **Pass:** the cockpit line has the same shape as the F10 drawing — the salient bulges
+  the same way and to the same side — and it runs as **one** line across the theater rather
+  than several short dashes. Viper: all the points are on L1 and the HSD draws one
+  polyline. Hornet: the SA page's FLOT lines meet end to end. Apache TSD and F-14B(U) plot
+  line likewise.
+- **Fail signature:** a straight cockpit line against a bowed map line (the `polyline`
+  change did not reach that builder — check its `red_land_boundary` call); the line visibly
+  breaking into pieces with gaps (consecutive runs are not sharing their meeting vertex);
+  a join cutting a long straight diagonal across obviously rear-area ground between two
+  fronts (the gap-filling approximation is the cause and is known — judge whether it is
+  worse than the stubs were, because the alternative needs a territorial model the campaign
+  does not have); only part of the front drawn on a theater with many fronts (the point
+  budget thinned it — note how many fronts were active).
+- **The support boxes land on the same flight.** Each tanker and AEW&C orbit is now a
+  closed box: Viper GEO L2-L4, Hornet FAOR 1-3 (which shipped empty until now), Tomcat
+  closed plot lines, Apache extra TSD lines. Pass = a box sits around each orbit with its
+  radio frequency in the label, it is drawn **without selecting anything**, and the tanker
+  you join is inside its own box. Fail = an open C shape (the closing corner was dropped);
+  a box square to the map on an angled orbit (the course rotation is wrong); a box nowhere
+  near the aircraft (the orbit leg was read off the wrong waypoints — these are the WP2-WP3
+  leg, not the spawn point); or, on the Viper, a front line so thinned it is unreadable,
+  which is the deliberate trade and the thing to judge.
+- **Tied to B28:** the Viper's CMDS section also landed on 2026-09-10, **default OFF**. The
+  F-16C guide warns the CMDS MODE knob must be STBY before an MPD upload and `AutoLoad`
+  fires on a cold jet, so the check B28 already owes is: tick "Countermeasure programs" on
+  one flight, spawn, and read the CMDS page. Pass = MAN 1 dispenses flares only, MAN 5
+  chaff only, the bingo counts read 10/10 and nothing else on the page is disturbed. Fail =
+  any garbled or zeroed program, which is the erroneous-data-entry the guide warns about;
+  revert the default and record it.
+
+---
+
+### B117 — A Sandy can be fragged onto a survivor, and covers the pickup · §99 · ☐ UNTESTED
+
+**Needs a survivor on the map and one flown mission.** ~30 min.
+
+**Setup.** Any campaign with an A-10 or an Apache squadron. Get a survivor first — fly a
+turn and lose an AI aircraft, or use an existing downed pilot. Then create a **new package**
+on that survivor, add a flight, and pick **Sandy** from the mission-type list. Add the
+rescue helicopter to the same package or a separate one. Fly the Sandy.
+
+**Pass.**
+1. **Sandy is in the mission-type list** at the survivor, for the A-10 and the Apache and
+   for nothing else in the wing.
+2. **The flight plans** — no "Could not create flight" dialog — and the map shows a short
+   track sitting on the survivor, not on the front line.
+3. **The callsign defaults to Sandy**, numbered, and a second one numbers after it.
+4. **An AI Sandy engages** ground units near the pickup and does not wander off after
+   something 20 nm away.
+5. **The Apache flies the same plan at helicopter altitude**, not at 10,000 ft.
+6. **No Sandy appears in an auto-planned turn** — not in the ATO, not after passing a turn
+   with a survivor on the map.
+
+**Fail signatures, and what each means:**
+
+- **"Could not create flight" after picking the squadron.** The dispatch in
+  `FlightPlanBuilderTypes.for_flight` is not reaching `SandyBuilder`, or the target is not
+  a `DownedPilot` — the same class of bug the King had before 2026-08-26.
+- **The track is drawn along the FLOT.** The flight resolved to `CasFlightPlan`, so the
+  `SANDY` entry in the builder dict is missing or shadowed.
+- **The flight flies out and back through the survivor instead of across.** The leg axis is
+  wrong — it should be perpendicular to the run-in, and `test_the_legs_cross_the_run_in`
+  pins that headless, so this means the real `WaypointBuilder` is doing something the fake
+  one does not.
+- **A Sandy shows up in an auto-planned ATO.** Something now proposes the tasking. Nothing
+  in the HTN should; find it before shipping, because an AI Sandy is noise at best.
+- **The Apache holds 10,000 ft.** `builder.cas()` is not seeing `is_helo`, so the AGL
+  handling in `nav_path` is also suspect.
+- **Every jet in the wing offers Sandy.** The yaml `tasks:` gate is not the gate — check
+  that no derivation in `get_task_priorities` is inferring `Sandy` from `CAS`.
+
+
+### B118 — The Super Hornet still arms and its new cockpit options are there · CJS 2.4.5.260726 · ☐ UNTESTED
 
 **Needs one generated mission, not a full flight.** ~10 min.
 

@@ -12,13 +12,17 @@ Sections emitted (schema mined from ``CoreMods/aircraft/F-16C/DTC``):
   steerpoints (the SA-page ask, Viper-style -- the jet has no orbit element).
   The editor caps the list at 25 and the jet auto-sequences only 1-20, so the
   route takes 1-20 and anchors 21-25.
-* ``MPD.GEO_LINES`` -- the active front lines (FLOT) as up to 4 line sets on
-  the HSD, capped at the partition's 25 points.
+* ``MPD.GEO_LINES`` -- the boundary with red land on line set L1, and a box
+  around each tanker / AEW&C orbit on L2-L4. The four sets share 25 points.
 * ``MPD.THREAT_PTS`` -- viewer-fogged enemy SAM rings ("Custom" type, radius
   in meters, <= 15).
 * ``MPD.DEST`` -- friendly recovery fields as Destination steerpoints 81-99,
   labelled with the HSD's 3-character Destination text, plus the hostile field
   the flight is working over when there is one within 10 NM of the target.
+* ``MPD.CMDS`` -- the countermeasure dispenser: MAN 1 flares only, MAN 5 chaff
+  only, everything else the module's own value. ``CMDSPrograms`` carries only
+  the two fields ``CMDS.lua`` reads without a nil guard, so the per-threat auto
+  assignment stays the jet's.
 * ``MPD.ROE`` -- the ROE tab's Air Target Data Table derived from the
   campaign's order of battle (see ``roedata``). Rows carry only
   ``{group_name, sovereignty}``: the jet's own ``make_ROE_table`` compiles
@@ -35,7 +39,9 @@ from game.missiongenerator.dtc.common import (
     SupportTrack,
     leg_altitude,
     steerpoint_elevation,
-    flot_segments,
+    red_land_boundary,
+    support_boxes,
+    SUPPORT_BOX_POINTS,
     is_route_waypoint,
     is_target_waypoint,
     known_enemy_threat_sites,
@@ -48,6 +54,7 @@ from game.missiongenerator.dtc.common import (
 
 if TYPE_CHECKING:
     from game import Game
+    from game.ato.dtcoptions import DtcOptions
     from game.ato.flightwaypoint import FlightWaypoint
     from game.missiongenerator.aircraft.flightdata import FlightData
     from game.missiongenerator.missiondata import MissionData
@@ -59,9 +66,10 @@ MAX_STEERPOINTS = 25
 #: route stops there and the support anchors take 21-25.
 MAX_ROUTE_STEERPOINTS = 20
 MAX_GEO_LINE_SETS = 4
-MAX_GEO_POINTS_PER_SET = 8
-#: GEO_LINES owns steerpoints 31-55 (editor cap 25); a 26th point would land in
-#: the pre-planned-threat partition at 56.
+#: GEO_LINES owns steerpoints 31-55 (``GEO_LINES.lua`` refuses a 26th point,
+#: which would land in the pre-planned-threat partition at 56). The 25 are
+#: shared across the four line sets with no per-set cap of their own, so the
+#: boundary takes L1 whole and L2-L4 stay free.
 MAX_GEO_POINTS = 25
 MAX_THREAT_POINTS = 15
 #: DEST owns steerpoints 81-99, and the editor refuses a 20th.
@@ -307,14 +315,331 @@ def _build_nav_pts(
     return points
 
 
-def _build_geo_lines(game: Game) -> list[dict[str, Any]]:
-    """FLOT boundaries across the HSD's four line sets."""
+#: The module's own program values (``MPD/CMDS_defs.lua``), overridden below
+#: for the two manual slots. The table is written whole because ``CMDS.lua``
+#: indexes every program and dispenser without a nil guard.
+_CMDS_PROGRAM_DEFAULTS: dict[str, dict[str, dict[str, float]]] = {
+    "MAN1": {
+        "Chaff": {
+            "BurstQuantity": 1,
+            "BurstInterval": 0.02,
+            "SalvoQuantity": 10,
+            "SalvoInterval": 1.0,
+        },
+        "Flare": {
+            "BurstQuantity": 1,
+            "BurstInterval": 0.02,
+            "SalvoQuantity": 10,
+            "SalvoInterval": 1.0,
+        },
+        "Other1": {
+            "BurstQuantity": 0,
+            "BurstInterval": 0.02,
+            "SalvoQuantity": 0,
+            "SalvoInterval": 0.5,
+        },
+        "Other2": {
+            "BurstQuantity": 0,
+            "BurstInterval": 0.02,
+            "SalvoQuantity": 0,
+            "SalvoInterval": 0.5,
+        },
+    },
+    "MAN2": {
+        "Chaff": {
+            "BurstQuantity": 1,
+            "BurstInterval": 0.02,
+            "SalvoQuantity": 10,
+            "SalvoInterval": 0.5,
+        },
+        "Flare": {
+            "BurstQuantity": 1,
+            "BurstInterval": 0.02,
+            "SalvoQuantity": 10,
+            "SalvoInterval": 0.5,
+        },
+        "Other1": {
+            "BurstQuantity": 0,
+            "BurstInterval": 0.02,
+            "SalvoQuantity": 0,
+            "SalvoInterval": 0.5,
+        },
+        "Other2": {
+            "BurstQuantity": 0,
+            "BurstInterval": 0.02,
+            "SalvoQuantity": 0,
+            "SalvoInterval": 0.5,
+        },
+    },
+    "MAN3": {
+        "Chaff": {
+            "BurstQuantity": 2,
+            "BurstInterval": 0.1,
+            "SalvoQuantity": 5,
+            "SalvoInterval": 1.0,
+        },
+        "Flare": {
+            "BurstQuantity": 2,
+            "BurstInterval": 0.1,
+            "SalvoQuantity": 5,
+            "SalvoInterval": 1.0,
+        },
+        "Other1": {
+            "BurstQuantity": 0,
+            "BurstInterval": 0.02,
+            "SalvoQuantity": 0,
+            "SalvoInterval": 0.5,
+        },
+        "Other2": {
+            "BurstQuantity": 0,
+            "BurstInterval": 0.02,
+            "SalvoQuantity": 0,
+            "SalvoInterval": 0.5,
+        },
+    },
+    "MAN4": {
+        "Chaff": {
+            "BurstQuantity": 2,
+            "BurstInterval": 0.1,
+            "SalvoQuantity": 5,
+            "SalvoInterval": 0.5,
+        },
+        "Flare": {
+            "BurstQuantity": 2,
+            "BurstInterval": 0.1,
+            "SalvoQuantity": 5,
+            "SalvoInterval": 0.5,
+        },
+        "Other1": {
+            "BurstQuantity": 0,
+            "BurstInterval": 0.02,
+            "SalvoQuantity": 0,
+            "SalvoInterval": 0.5,
+        },
+        "Other2": {
+            "BurstQuantity": 0,
+            "BurstInterval": 0.02,
+            "SalvoQuantity": 0,
+            "SalvoInterval": 0.5,
+        },
+    },
+    "MAN5": {
+        "Chaff": {
+            "BurstQuantity": 2,
+            "BurstInterval": 0.05,
+            "SalvoQuantity": 20,
+            "SalvoInterval": 0.75,
+        },
+        "Flare": {
+            "BurstQuantity": 2,
+            "BurstInterval": 0.05,
+            "SalvoQuantity": 20,
+            "SalvoInterval": 0.75,
+        },
+        "Other1": {
+            "BurstQuantity": 0,
+            "BurstInterval": 0.02,
+            "SalvoQuantity": 0,
+            "SalvoInterval": 0.5,
+        },
+        "Other2": {
+            "BurstQuantity": 0,
+            "BurstInterval": 0.02,
+            "SalvoQuantity": 0,
+            "SalvoInterval": 0.5,
+        },
+    },
+    "MAN6": {
+        "Chaff": {
+            "BurstQuantity": 1,
+            "BurstInterval": 0.02,
+            "SalvoQuantity": 1,
+            "SalvoInterval": 0.5,
+        },
+        "Flare": {
+            "BurstQuantity": 1,
+            "BurstInterval": 0.02,
+            "SalvoQuantity": 1,
+            "SalvoInterval": 0.5,
+        },
+        "Other1": {
+            "BurstQuantity": 0,
+            "BurstInterval": 0.02,
+            "SalvoQuantity": 0,
+            "SalvoInterval": 0.5,
+        },
+        "Other2": {
+            "BurstQuantity": 0,
+            "BurstInterval": 0.02,
+            "SalvoQuantity": 0,
+            "SalvoInterval": 0.5,
+        },
+    },
+    "AUTO1": {
+        "Chaff": {
+            "BurstQuantity": 1,
+            "BurstInterval": 0.02,
+            "SalvoQuantity": 4,
+            "SalvoInterval": 1.5,
+        },
+        "Flare": {
+            "BurstQuantity": 0,
+            "BurstInterval": 0.0,
+            "SalvoQuantity": 0,
+            "SalvoInterval": 0.0,
+        },
+        "Other1": {
+            "BurstQuantity": 0,
+            "BurstInterval": 0.02,
+            "SalvoQuantity": 0,
+            "SalvoInterval": 0.5,
+        },
+        "Other2": {
+            "BurstQuantity": 0,
+            "BurstInterval": 0.02,
+            "SalvoQuantity": 0,
+            "SalvoInterval": 0.5,
+        },
+    },
+    "AUTO2": {
+        "Chaff": {
+            "BurstQuantity": 1,
+            "BurstInterval": 0.02,
+            "SalvoQuantity": 6,
+            "SalvoInterval": 1.0,
+        },
+        "Flare": {
+            "BurstQuantity": 0,
+            "BurstInterval": 0.0,
+            "SalvoQuantity": 0,
+            "SalvoInterval": 0.0,
+        },
+        "Other1": {
+            "BurstQuantity": 0,
+            "BurstInterval": 0.02,
+            "SalvoQuantity": 0,
+            "SalvoInterval": 0.5,
+        },
+        "Other2": {
+            "BurstQuantity": 0,
+            "BurstInterval": 0.02,
+            "SalvoQuantity": 0,
+            "SalvoInterval": 0.5,
+        },
+    },
+    "AUTO3": {
+        "Chaff": {
+            "BurstQuantity": 1,
+            "BurstInterval": 0.02,
+            "SalvoQuantity": 8,
+            "SalvoInterval": 0.5,
+        },
+        "Flare": {
+            "BurstQuantity": 0,
+            "BurstInterval": 0.0,
+            "SalvoQuantity": 0,
+            "SalvoInterval": 0.0,
+        },
+        "Other1": {
+            "BurstQuantity": 0,
+            "BurstInterval": 0.02,
+            "SalvoQuantity": 0,
+            "SalvoInterval": 0.5,
+        },
+        "Other2": {
+            "BurstQuantity": 0,
+            "BurstInterval": 0.02,
+            "SalvoQuantity": 0,
+            "SalvoInterval": 0.5,
+        },
+    },
+    "BYP": {
+        "Chaff": {
+            "BurstQuantity": 1,
+            "BurstInterval": 0.02,
+            "SalvoQuantity": 1,
+            "SalvoInterval": 0.5,
+        },
+        "Flare": {
+            "BurstQuantity": 1,
+            "BurstInterval": 0.02,
+            "SalvoQuantity": 1,
+            "SalvoInterval": 0.5,
+        },
+        "Other1": {
+            "BurstQuantity": 0,
+            "BurstInterval": 0.02,
+            "SalvoQuantity": 0,
+            "SalvoInterval": 0.5,
+        },
+        "Other2": {
+            "BurstQuantity": 0,
+            "BurstInterval": 0.02,
+            "SalvoQuantity": 0,
+            "SalvoInterval": 0.5,
+        },
+    },
+}
+
+#: MAN 1 answers an IR shot and MAN 5 a radar one, so a pilot under fire picks
+#: the dispenser by which missile is on them rather than reprogramming in the
+#: cockpit. Single-dispenser programs, which the stock all-both values are not.
+_MAN1_FLARES = {"BurstQuantity": 5, "BurstInterval": 0.5, "SalvoQuantity": 1, "SalvoInterval": 0.0}  # fmt: skip
+_MAN5_CHAFF = {"BurstQuantity": 2, "BurstInterval": 0.1, "SalvoQuantity": 5, "SalvoInterval": 0.75}  # fmt: skip
+_NO_DISPENSE = {"BurstQuantity": 0, "BurstInterval": 0.0, "SalvoQuantity": 0, "SalvoInterval": 0.0}  # fmt: skip
+
+
+def _build_cmds() -> dict[str, Any]:
+    programs: dict[str, Any] = {
+        name: {dispenser: dict(values) for dispenser, values in program.items()}
+        for name, program in _CMDS_PROGRAM_DEFAULTS.items()
+    }
+    programs["MAN1"]["Chaff"] = dict(_NO_DISPENSE)
+    programs["MAN1"]["Flare"] = dict(_MAN1_FLARES)
+    programs["MAN5"]["Chaff"] = dict(_MAN5_CHAFF)
+    programs["MAN5"]["Flare"] = dict(_NO_DISPENSE)
+    return {
+        "CMDSBingoSettings": {
+            "ChaffNum": 10,
+            "FlaresNum": 10,
+            "Other1Num": 0,
+            "Other2Num": 0,
+            "FDBK": True,
+            "REQCTR": True,
+            "BINGO": True,
+        },
+        "CMDSProgramSettings": programs,
+        # The two fields CMDS.lua reads unguarded; the per-threat program
+        # assignment is left at the module's default of NONE.
+        "CMDSPrograms": {"CMDS_Avionics_Threat_Table": {}, "delayBetweenPrograms": 2},
+    }
+
+
+def _build_geo_lines(
+    game: Game, mission_data: MissionData, options: DtcOptions
+) -> list[dict[str, Any]]:
+    """The HSD's four line sets: the red-land boundary on L1, a tanker or AEW&C
+    box on each of L2-L4.
+
+    The 25 points are shared, so the boxes are allocated first -- each is a fixed
+    five and a box missing a corner is nonsense, where a boundary thinned by ten
+    points is still a boundary.
+    """
     line_sets: list[tuple[str, list[tuple[float, float]]]] = []
-    line_sets.extend(flot_segments(game))
+    boxes = (
+        support_boxes(mission_data, MAX_GEO_LINE_SETS - 1)
+        if options.friendly_orbits
+        else []
+    )
+    if options.flot_and_zones:
+        boundary_budget = MAX_GEO_POINTS - len(boxes) * SUPPORT_BOX_POINTS
+        if boundary_budget >= 2:
+            line_sets.extend(red_land_boundary(game, 1, boundary_budget))
+    line_sets.extend(boxes)
     geo_points: list[dict[str, Any]] = []
     for set_index, (name, points) in enumerate(line_sets[:MAX_GEO_LINE_SETS]):
         flags = {f"L{i}": i == set_index + 1 for i in range(1, 5)}
-        for x, y in points[:MAX_GEO_POINTS_PER_SET]:
+        for x, y in points:
             if len(geo_points) >= MAX_GEO_POINTS:
                 return geo_points
             number = len(geo_points) + 1
@@ -372,13 +697,14 @@ def build_viper_cartridge(
         or options.threat_rings
         or options.destinations
         or options.roe_table
+        or options.countermeasures
     ):
         data["MPD"] = {
             "terrain": terrain,
             "mirror_NAV_PTS": False,
             "NAV_PTS": _build_nav_pts(flight, mission_data, game),
             "mirror_GEO_LINES": False,
-            "GEO_LINES": _build_geo_lines(game) if options.flot_and_zones else [],
+            "GEO_LINES": _build_geo_lines(game, mission_data, options),
             "mirror_THREAT_PTS": False,
             "THREAT_PTS": (
                 _build_threat_pts(flight, game) if options.threat_rings else []
@@ -386,6 +712,8 @@ def build_viper_cartridge(
             "mirror_DEST": False,
             "DEST": _build_dest(flight, game) if options.destinations else [],
         }
+        if options.countermeasures:
+            data["MPD"]["CMDS"] = _build_cmds()
         if options.roe_table:
             data["MPD"]["ROE"] = {
                 "Settings": {"TypeSovereignty": True, "Mode4Status": True},

@@ -22,6 +22,7 @@ from .ocaaircraft import OcaAircraftFlightPlan
 from .ocarunway import OcaRunwayFlightPlan
 from .packagerefueling import PackageRefuelingFlightPlan
 from .planningerror import PlanningError
+from .sandy import SandyFlightPlan
 from .sead import SeadFlightPlan
 from .seadsweep import SeadSweepFlightPlan
 from .shiprecoverytanker import RecoveryTankerFlightPlan
@@ -80,6 +81,9 @@ class FlightPlanBuilderTypes:
             FlightType.AIR_ASSAULT: AirAssaultFlightPlan.builder_type(),
             FlightType.CSAR: CsarFlightPlan.builder_type(),
             FlightType.ARMED_RECON: ArmedReconFlightPlan.builder_type(),
+            # The rescue escort: a CAS track straddling the survivor rather than
+            # the FLOT. See game/ato/flightplans/sandy.py.
+            FlightType.SANDY: SandyFlightPlan.builder_type(),
             FlightType.RECOVERY: RecoveryTankerFlightPlan.builder_type(),
             # TARPS = strike-style target overflight, but +2 min behind the package
             # TOT for a post-strike BDA / recon pass (see TarpsFlightPlan).

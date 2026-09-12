@@ -8,7 +8,7 @@ from copy import deepcopy
 from datetime import date, datetime, time, timedelta
 from enum import Enum
 from typing import Any, List, Optional, TYPE_CHECKING, Union, cast
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from dcs.countries import (
     Switzerland,
@@ -171,6 +171,10 @@ class Game:
         # so the jittered "suspected activity" centre is deterministic but not
         # recomputable from the public TGO id. Lazily set on first use; persisted.
         self.concealment_salt: Optional[int] = None
+        # §97: a stable id for THIS game, so a lifetime pilot profile can tell a
+        # replayed campaign's turn 1 from the one already flown -- the campaign
+        # name and turn number alone cannot. Lazily set on first use; persisted.
+        self.campaign_uid: Optional[str] = None
         # NB: This is the *start* date. It is never updated.
         self.date = date(start_date.year, start_date.month, start_date.day)
         self.game_stats = GameStats()
@@ -237,6 +241,7 @@ class Game:
         state.setdefault("cruise_missile_magazines", {})
         state.setdefault("naval_magazines", {})
         state.setdefault("concealment_salt", None)
+        state.setdefault("campaign_uid", None)
         # The political-will / war-economy meters (§48/§53) were removed; strip
         # their interim per-save state so it doesn't linger as dead attributes.
         state.pop("will_history", None)
@@ -810,6 +815,19 @@ class Game:
             if conditions is not None:
                 return conditions.start_time.date()
         return self.date + timedelta(days=self.turn // 4)
+
+    def stable_uid(self) -> str:
+        """This game's id, minted on first use and kept for its lifetime.
+
+        §97 uses it to key the double-count guard on the GAME rather than the
+        campaign name, so replaying a campaign logs its sorties again instead of
+        being mistaken for the playthrough already recorded.
+        """
+        uid = getattr(self, "campaign_uid", None)
+        if not uid:
+            uid = str(uuid4())
+            self.campaign_uid = uid
+        return uid
 
     def next_unit_id(self) -> int:
         """

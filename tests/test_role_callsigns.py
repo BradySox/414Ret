@@ -1,6 +1,6 @@
-"""Role callsigns for the 414th EW package.
+"""Role callsigns for the 414th EW and rescue packages.
 
-The EW C-130 is "Toxic". It defaults a fresh flight's callsign and is offered in
+The EW C-130 is "Toxic" and the rescue escort is "Sandy". It defaults a fresh flight's callsign and is offered in
 the existing per-flight callsign picker. It is not a stock DCS callsign, so
 FlightGroupSpawner registers the chosen one into the spawn country's callsign pool
 before pydcs assigns it (pydcs ValueErrors on an unknown callsign).
@@ -25,9 +25,13 @@ from game.theater import Airfield
 def test_role_callsign_by_type_and_airframe() -> None:
     assert role_callsign(FlightType.JAMMING, is_helicopter=False) == "Toxic"
     assert role_callsign(FlightType.JAMMING, is_helicopter=True) == "Toxic"
+    # The rescue escort is "Sandy" on either airframe -- the A-10 and the
+    # Apache both fly the role.
+    assert role_callsign(FlightType.SANDY, is_helicopter=False) == "Sandy"
+    assert role_callsign(FlightType.SANDY, is_helicopter=True) == "Sandy"
     # Everything else keeps its normal callsign.
     assert role_callsign(FlightType.CAS, is_helicopter=False) is None
-    assert set(ROLE_CALLSIGNS) == {"Toxic"}
+    assert set(ROLE_CALLSIGNS) == {"Toxic", "Sandy"}
 
 
 def _spawner(callsign_name: str, category: str, pool: list[str]) -> Any:

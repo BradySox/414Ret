@@ -28,7 +28,8 @@ from typing import TYPE_CHECKING, Any
 
 from game.missiongenerator.dtc.cartridge import DtcCartridge
 from game.missiongenerator.dtc.common import (
-    flot_segments,
+    red_land_boundary,
+    support_boxes,
     is_route_waypoint,
     known_enemy_threat_sites,
     leg_speed_kmh,
@@ -40,6 +41,7 @@ from game.missiongenerator.dtc.common import (
 if TYPE_CHECKING:
     from game import Game
     from game.missiongenerator.aircraft.flightdata import FlightData
+    from game.ato.dtcoptions import DtcOptions
     from game.missiongenerator.missiondata import MissionData
 
 APACHE_UNIT_TYPE = "AH-64D_BLK_II"
@@ -52,6 +54,10 @@ MAX_TARGET_POINTS = 50
 #: style rather than guessing a per-line cap.
 MAX_LINES = 15
 MAX_LINE_VERTICES = 8
+#: Of the 15, three are held back for the support boxes so a theater with many
+#: fronts cannot spend every line on the boundary.
+MAX_SUPPORT_BOXES = 3
+MAX_BOUNDARY_LINES = MAX_LINES - MAX_SUPPORT_BOXES
 
 #: Symbol ids from the ME-saved sample: 6 = waypoint, 1 = generic target.
 _WPTHZ_SYMBOL = 6
@@ -173,9 +179,19 @@ def _build_targets(flight: FlightData, game: Game) -> list[dict[str, Any]]:
     return points
 
 
-def _build_lines(game: Game) -> list[dict[str, Any]]:
+def _build_lines(
+    game: Game, mission_data: MissionData, options: DtcOptions
+) -> list[dict[str, Any]]:
+    """The red-land boundary, then a box around each tanker / AEW&C orbit."""
     lines: list[dict[str, Any]] = []
-    for name, points in flot_segments(game)[:MAX_LINES]:
+    sets: list[tuple[str, list[tuple[float, float]]]] = []
+    if options.flot_and_zones:
+        sets.extend(red_land_boundary(game, MAX_BOUNDARY_LINES, MAX_LINE_VERTICES))
+    if options.friendly_orbits:
+        sets.extend(
+            support_boxes(mission_data, min(MAX_SUPPORT_BOXES, MAX_LINES - len(sets)))
+        )
+    for name, points in sets:
         vertices = [{"x": x, "y": y} for x, y in points[:MAX_LINE_VERTICES]]
         if len(vertices) < 2:
             continue
@@ -216,8 +232,8 @@ def build_apache_cartridge(
             mission["Routes"][0]["POINTS"] = legs
     if options.threat_rings:
         mission["Points"]["TGT"]["POINTS"] = _build_targets(flight, game)
-    if options.flot_and_zones:
-        mission["Lines"] = _build_lines(game)
+    if options.flot_and_zones or options.friendly_orbits:
+        mission["Lines"] = _build_lines(game, mission_data, options)
 
     data: dict[str, Any] = {
         "type": APACHE_UNIT_TYPE,

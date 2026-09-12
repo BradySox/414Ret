@@ -46,6 +46,11 @@ class DtcOptions:
     #: order of battle (F-16C only -- blue-only families FRIENDLY, red-only
     #: HOSTILE, shared or unflown UNKNOWN).
     roe_table: bool = True
+    #: Countermeasure dispenser programs and the bingo counts (F-16C only).
+    #: Default OFF: the F-16C guide warns the CMDS MODE knob must be STBY
+    #: before an MPD upload, and AutoLoad fires on a cold jet with the knob
+    #: elsewhere. Checklist B28 carries the flown check that would flip this.
+    countermeasures: bool = False
 
     def __setstate__(self, state: dict[str, object]) -> None:
         """A field added after a save was written unpickles to its default."""

@@ -26,3 +26,6 @@ tasks:
   CAS: 500
   Escort: 90
   OCA/Aircraft: 500
+  Sandy: 500
+secondary_tasks:
+  - Sandy

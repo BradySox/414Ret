@@ -126,6 +126,9 @@ class DownedPilot(SidcDescribable, MissionTarget):
         if not self.is_friendly(for_player):
             return
         yield FlightType.CSAR
+        # The rescue escort. Hand-fragged only: nothing in the HTN proposes it,
+        # so offering it here is what makes it selectable at all.
+        yield FlightType.SANDY
         # Escort types so escorts remain plannable for the package.
         yield FlightType.ESCORT
         yield FlightType.SEAD_ESCORT

@@ -13,6 +13,35 @@
 # changes sharing a date keep the order written here.
 
 entries:
+  - date: 2026-09-11
+    title: The A-10 and the Apache fly Sandy again
+    change: >-
+      A rescue escort is a mission type again. Create a package on a downed
+      pilot, add a flight, and pick Sandy: the A-10 and the Apache offer it and
+      nothing else does. The flight gets a short armed track centred on the
+      survivor instead of one along the front line, and defaults to the Sandy
+      callsign. Frag it by hand — the auto-planner never adds one.
+    watch: >-
+      With a survivor on the map, check Sandy is in the mission-type list for an
+      A-10 or an Apache and for no other airframe. The track should sit on the
+      pilot, not on the FLOT, and an Apache should fly it low. Pass a turn and
+      confirm no Sandy turned up in the auto-planned ATO.
+    row: B117
+  - date: 2026-09-09
+    title: Your logbook now outlives the campaign
+    change: >-
+      A Pilot Logbook button on the toolbar keeps your own flying across every
+      campaign, not just the current one: lifetime sorties, hours, kills by
+      type, a breakdown of what you actually fly, and the individual flights.
+      It opens with no campaign loaded. You are identified by your DCS player
+      name, so nothing needs setting up, and a host running an event records
+      every pilot who flew to their own profile. Kept in a file beside your
+      other Retribution settings, not in the save game.
+    watch: >-
+      Open Pilot Logbook before you load anything. After a mission, check your
+      sorties went up by one and the aircraft is right. Then start a different
+      campaign, fly one, and confirm the totals are the sum of both.
+    row: B114
   - date: 2026-09-08
     title: Pilots keep a logbook
     change: >-

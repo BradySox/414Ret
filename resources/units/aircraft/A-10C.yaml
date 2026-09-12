@@ -36,8 +36,10 @@ tasks:
   CAS: 820
   OCA/Aircraft: 820
   OCA/Runway: 380
+  Sandy: 820
 secondary_tasks:
   - DEAD
+  - Sandy
 
 # Air-to-air refueling method (receiver).
 air_refuel_type: boom

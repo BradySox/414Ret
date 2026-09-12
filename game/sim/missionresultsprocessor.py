@@ -72,6 +72,8 @@ class MissionResultsProcessor:
                 self.commit_pilot_experience()
             with logged_duration("commit_pilot_careers"):
                 self.commit_pilot_careers(debriefing)
+            with logged_duration("commit_pilot_profiles"):
+                self.commit_pilot_profiles(debriefing)
             with logged_duration("commit_front_line_losses"):
                 self.commit_front_line_losses(debriefing)
             with logged_duration("commit_motorpool_losses"):
@@ -362,6 +364,39 @@ class MissionResultsProcessor:
             for name, awards in sorted(earned.items())
             if name in blue_pilots
         ]
+
+    def commit_pilot_profiles(self, debriefing: Debriefing) -> None:
+        """§97: files this mission's human-flown sorties against lifetime profiles.
+
+        Separate from the §96 fold above and separately gated, because this one
+        writes OUTSIDE the save -- to a file that survives the campaign, so a
+        player who does not want that can turn it off and keep campaign careers.
+        """
+        from game.fourteenth.career import is_combat_sortie
+        from game.fourteenth.pilot_profile import record_mission
+
+        if not self.game.settings.lifetime_pilot_profiles:
+            return
+        records = getattr(debriefing.state_data, "sortie_records", ())
+        if not records:
+            return
+
+        def task_for(unit_name: str) -> Any:
+            flying = debriefing.unit_map.flight(unit_name)
+            if flying is None:
+                return None
+            flight_type = flying.flight.flight_type
+            name = getattr(flight_type, "value", str(flight_type))
+            return name, is_combat_sortie(flight_type)
+
+        record_mission(
+            records,
+            campaign=self.game.campaign_name or "Unnamed campaign",
+            campaign_uid=self.game.stable_uid(),
+            turn=self.game.turn,
+            day=self.game.current_day.isoformat(),
+            task_for=task_for,
+        )
 
     @staticmethod
     def commit_front_line_losses(debriefing: Debriefing) -> None:

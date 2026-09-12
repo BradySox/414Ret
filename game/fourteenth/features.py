@@ -821,6 +821,21 @@ FEATURES: tuple[Feature, ...] = (
         96,
         settings_fields=("pilot_career_logbook",),
     ),
+    Feature(
+        # The career that outlives the campaign: same §91 records, second
+        # destination, keyed by DCS player name and written outside every save.
+        "lifetime_pilot_profiles",
+        "Lifetime pilot profiles",
+        97,
+        settings_fields=("lifetime_pilot_profiles",),
+    ),
+    Feature(
+        # The rescue escort. No settings field and no plugin: capability is the
+        # aircraft yaml's Sandy task, and the role is hand-fragged only.
+        "sandy_rescue_escort",
+        "Sandy rescue escort",
+        99,
+    ),
     # Always-on engine plugins — major 414th machinery documented in design notes
     # rather than a numbered "Features at a Glance" entry.
     Feature("mantis_iads", "MANTIS IADS engine", plugin_id="mantisiads"),

@@ -29,6 +29,7 @@ _A2G = (
     "OCA_RUNWAY",
     "OCA_AIRCRAFT",
     "ARMED_RECON",
+    "SANDY",
 )
 _DEAD = ("DEAD", "SEAD_SWEEP")
 _SEAD = ("SEAD", "SEAD_ESCORT")

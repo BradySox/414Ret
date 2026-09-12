@@ -58,7 +58,7 @@ also relative to `ReferenceLatitude=38 / ReferenceLongitude=36`, not absolute.
 
 ## Outstanding rows at a glance
 
-81 rows need a live pass. Full detail is under each `###` heading below —
+82 rows need a live pass. Full detail is under each `###` heading below —
 search the row id. `☐` untested · `◐` flown but not under the conditions that
 stress it · `✗` fail signature reproduced in-game.
 
@@ -197,6 +197,7 @@ stress it · `✗` fail signature reproduced in-game.
 | B115 | The cockpit front line is one continuous boundary, bowed where the map is bowed | §74 / §90 | ☐ |
 | B117 | A Sandy can be fragged onto a survivor, and covers the pickup | §99 | ☐ |
 | B118 | The Super Hornet still arms and its new cockpit options are there | CJS 2.4.5.260726 | ☐ |
+| B119 | The King DFs the survivor, sweeps the threats, and the Sandy sees the marks | §100 | ☐ |
 
 ---
 
@@ -6961,3 +6962,43 @@ slot in; there is no need to fly it.
 - **Every Super Hornet flight is `Brutal`/`Buckshot` again, whatever the country** — the callsign
   pools reverted to the single mislabelled block, or a regen re-took the export's display-name
   keys, which pydcs cannot resolve. Guarded by `tests/fourteenth/test_super_hornet_callsigns.py`.
+
+---
+
+### B119 — The King DFs the survivor, sweeps the threats, and the Sandy sees the marks · §100 · ☐ UNTESTED
+
+**Needs a survivor on the map, a human in the King and a second human in a Sandy or helo.**
+~40 min. Closes alongside B106 and B117 in the same mission.
+
+**Setup.** Frag a C-130J-30 as CSAR by hand on a survivor and fly it. Put a second player in a
+Sandy (A-10/Apache) or the rescue helicopter on the same survivor. Note where the survivor
+actually is on the F10 map before you start (the host can use the reveal overview).
+
+**Pass.**
+1. **KING | On-Scene Commander** is on the King's F10 menu, and only the King's.
+2. **One cut gives a bearing and no mark.** The message says to take another from ≥15° around.
+3. **A second cut from 15°+ around drops a survivor mark within a couple of miles**, and the
+   text says `+/-`. Flying further round and cutting again tightens it.
+4. **Closing inside 15 nm with the survivor in view snaps it exact** — the mark reads
+   `pod contact` and sits on the pilot. Behind a ridge it stays a DF cut.
+5. **Threat sweep lists the nearby enemy ground as a class with bearing/range from the
+   survivor**, closest first, five at most, and the marks sit near but not on the units.
+6. **Pass picture to the other player puts the brief and the same marks on their F10 map**, and
+   nothing appears for an AI flight.
+
+**Fail signatures, and what each means:**
+
+- **No menu on the King.** `rescueFlights` did not carry the King with `player = "true"` —
+  check the emitted `dcsRetribution.CSAR` node — or the group had no human at the 10 s poll.
+- **The first cut already drops a mark.** `MIN_CUT_SEPARATION_DEG` is being bypassed, or the
+  King was inside pod range and the snap fired (which is correct — check the text).
+- **Pod contact never fires with the survivor in plain view.** `land.isVisible` from altitude
+  reads false in DCS; the LOS gate wants a height offset or removing.
+- **The survivor mark sits exactly on the pilot from a distance.** The noise is not applied
+  (the LCG seed is degenerate) — every cut intersects perfectly.
+- **"No survivor on the beacon" with a pilot on the map.** `Unit.getByName(unitName)` is nil
+  for a survivor DCS still shows — the unit name the emit carried does not match the spawn.
+- **Marks show for the King but not for the Sandy player.** `markToGroup` to a multi-crew
+  group only reaches some clients; fall back to `markToCoalition` for the brief.
+- **An AI Sandy changes course after a pass.** Something pushed a task. Nothing here should;
+  find it before shipping.

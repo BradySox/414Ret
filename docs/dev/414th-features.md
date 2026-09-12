@@ -10022,3 +10022,89 @@ engages what is shooting at the pickup, or whether an Apache on the same plan be
 - **No link to the rescue flight.** The Sandy and the helicopter are planned independently
   and share only the target. There is no "Sandy cleared me in" handshake, on the map or in
   the mission.
+
+---
+
+## §100 — King on-scene commander
+
+The player-flown C-130J King finds the survivor and builds a threat picture for the
+rescue. Added 2026-09-12. Runtime only — a second script in the `opscsar` plugin plus one
+new node in the Lua data.
+
+### Files
+
+- `resources/plugins/opscsar/KingOnScene.lua` — the whole runtime. Loads after
+  `OpsCSAR.lua` (second `scriptsWorkOrders` entry), touches nothing of it.
+- `game/missiongenerator/luagenerator.py` `generate_csar_data` — emits
+  `dcsRetribution.CSAR.rescueFlights`: every CSAR and SANDY flight's group name, role
+  (`king` = fixed-wing CSAR, `jolly` = helicopter CSAR, `sandy`), side, whether a human is in
+  it, and the survivor id its package was fragged for.
+- `tests/lua/dcs_stubs.lua` gained `trigger.action.markToGroup` and `land.isVisible`
+  (a switch, `Harness.losBlocked` — the harness models no terrain).
+
+### What it does
+
+Registered for a `king` entry with `player == "true"` whose group has a human in it, polled
+every 10 s. F10 → **KING | On-Scene Commander**:
+
+- **Survivor status** — name, aircraft, beacon channel, fix quality, bearing and range to the fix.
+- **Take DF cut on the beacon** — inside 80 nm, a bearing from the King to the survivor with
+  up to ±3° of error (`DF_BEARING_ERROR_DEG`). Two cuts ≥15° apart intersect into a fix; every
+  qualifying pair is intersected and averaged. The error shown is the bearing error projected
+  at the last cut's range, opened up by poor separation, tightened by `√pairs`, floored at
+  150 m. Inside 15 nm with line of sight (`POD_RANGE_M`, `land.isVisible`) the fix snaps to
+  the true position — the pod has the survivor.
+- **Threat sweep around the fix** — needs a fix and the King within 40 nm of it. Scans enemy
+  ground groups within 8 nm **of the fix, not of the true survivor** — the pod looks where the
+  King thinks the pilot is, so a bad fix gives a bad picture. Closest five, each as a class
+  (`SAM` / `MANPADS` / `AAA` / `ARMOUR` / `TROOPS` / `VEHICLES` from `Unit:hasAttribute`)
+  with bearing and range **from the fix** and a mark jittered up to 460 m.
+- **Pass picture to …** — the player-crewed `sandy` and `jolly` groups on the King's side,
+  rebuilt every tick, plus **All rescue flights**. Sends the brief (`outTextForGroup`) and the
+  survivor + threat marks (`markToGroup`) to that group, clearing what it sent before.
+- **Clear my marks.**
+
+Mark ids start at `MARK_ID_BASE = 7100000` to stay clear of the c130j ISR marks and MOOSE's.
+Randomness is a per-King LCG seeded from mission time and group id, because `math.random`
+is never seeded in the DCS mission environment.
+
+### Constraints — do not undo
+
+- **Cues only.** No laser, no designation, no `setTask`/`pushTask` on any flight. The
+  harness test asserts `controllerTasks` stays empty after a pass. The §15 divert lesson.
+- **Class and rough position, never a unit type or an exact point.** The fog rule: nothing
+  here names a site's composition. `THREAT_JITTER_M` is the floor on how rough.
+- **The fix comes from DF, not from knowing where the pilot is.** The true position is read
+  only to noise a bearing from it and to snap inside pod range with LOS.
+- **Players only.** An AI King gets no menu; an AI Sandy or helicopter is never listed.
+
+### What the King is NOT given
+
+The c130j EW/ISR menu is a separate question. `_ew_excluded_c130j_groups` denies the EW
+plugin to TRANSPORT and AIR_ASSAULT C-130Js only — a CSAR-tasked C-130J is **not** on that
+list, so a King currently gets the EW/ISR menu as well as this one, despite the Lua comment
+saying it "flies clean". Flagged 2026-09-12, not changed here.
+
+### Tests
+
+`tests/lua/test_kingonscene_runtime.py` (13): no node / AI King are no-ops; menu and welcome
+for a player King; one cut is a bearing; two cuts ≥15° apart fix within 4 km; close cuts do
+not; pod snap inside 15 nm with LOS, and not without LOS; beacon range gate; sweep needs a
+fix; class + rough + closest-first with friendlies and far groups excluded; the five cap;
+pass goes to player rescue flights only, marks land on their map, no controller task.
+`tests/test_csar.py::test_generate_csar_data_lists_the_rescue_flights_for_the_king` pins
+the emit.
+
+### Needs an in-game pass — B119
+
+Whether `land.isVisible` from a King at altitude reads as expected, whether a real DCS
+survivor unit keeps reporting a position for `Unit.getByName`, and whether `markToGroup` marks
+show for every client in a multi-crew group.
+
+### Deferred
+
+- **No authentication.** A real King authenticates the survivor by radio first. Nothing here
+  models it; the survivor is who the campaign says.
+- **No ADF tie-in.** The cockpit ADF (G33) and this DF are independent models of the same
+  beacon. They agree on the channel and nothing else.
+- **No AI vectoring**, by decision (2026-09-12).

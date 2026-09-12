@@ -88,6 +88,30 @@ Three things about it that are decisions, not defaults:
   no "Sandy cleared me in". If that is ever wanted it is new work, and the place to put it
   is the package, not the flight plan.
 
+### The King's on-scene systems (2026-09-12)
+
+The King can now do the two things the role exists for: **find the survivor** and **tell the
+rescue what is around them**. Engineering detail is
+[414th-features.md §100](../414th-features.md#100--king-on-scene-commander).
+
+Three decisions, each asked and answered on 2026-09-12:
+
+- **The fix is DF cuts, not a proximity reveal.** One cut is a bearing. Two cuts from
+  positions ≥15° apart make a fix whose error is a function of the geometry — flying an arc
+  is what tightens it. Inside 15 nm with line of sight the pod has the survivor and the fix
+  is exact. Rejected: "inside 30 nm one press drops a mark" — simpler, but it rewards nothing.
+- **Threats are a class and a rough position.** SAM / AAA / MANPADS / armour / troops, bearing
+  and range from the survivor, marks jittered ~0.25 nm. Rejected: exact type and point — it
+  reveals composition the fog would hide and makes the King a targeting pod, not a cue.
+- **Players only.** The picture goes to player-crewed Sandy and helicopter groups. Nothing is
+  pushed onto an AI flight. Rejected: vectoring AI Sandys onto the top threat — real King
+  behaviour, but a task push replaces the flight's route, which is the §15 divert lesson.
+
+It lives in the `opscsar` plugin as a second script rather than in the C-130J EW plugin,
+which refuses the King by design so it "flies clean" — except that the Python deny-list
+(`_ew_excluded_c130j_groups`) covers TRANSPORT and AIR_ASSAULT only, so a CSAR C-130J is
+*not* actually excluded. Flagged, not changed.
+
 ### The King — fixed-wing CSAR (2026-08-26)
 
 The C-130J carries an explicit `CSAR: 5` in its yaml so a player can fly the on-scene

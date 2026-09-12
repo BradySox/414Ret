@@ -13,6 +13,22 @@
 # changes sharing a date keep the order written here.
 
 entries:
+  - date: 2026-09-12
+    title: The King finds the survivor and briefs the Sandys
+    change: >-
+      Fly the C-130J as CSAR and you get a KING | On-Scene Commander menu. Take
+      DF cuts on the beacon from two different positions for a fix, close in
+      for a pod contact, sweep the ground around the fix for threats, and pass
+      the picture -- brief and map marks -- to the Sandy and the helicopter.
+      Threats come as a class and a rough position, from the survivor's point
+      of view. Nothing is pushed onto AI flights.
+    watch: >-
+      With a survivor on the map, frag a C-130J as CSAR and fly it. One cut
+      should give a bearing only; a second from 15+ degrees around should
+      drop a survivor mark within a couple of miles; closing to 15 nm should
+      snap it exact. Sweep, then pass to a Sandy and check their F10 map
+      shows the same marks.
+    row: B119
   - date: 2026-09-11
     title: The A-10 and the Apache fly Sandy again
     change: >-

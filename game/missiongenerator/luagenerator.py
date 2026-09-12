@@ -21,6 +21,7 @@ from game.missiongenerator.aircraft.waypoints.csarpickup import (
 )
 from game.missiongenerator.csargenerator import EMBARK_ZONE_RADIUS
 from game.plugins import LuaPluginManager
+from game.squadrons.downedpilot import DownedPilot
 from game.theater import TheaterGroundObject
 from game.theater.theatergroup import SceneryUnit
 from game.theater.iadsnetwork.iadsrole import IadsRole
@@ -638,6 +639,28 @@ class LuaGenerator:
                     "hoverExtraction",
                     "true" if downed.needs_hover_extraction(settings) else "false",
                 )
+
+        # 414th: the rescue flights, for the King's on-scene systems
+        # (resources/plugins/opscsar/KingOnScene.lua). A fixed-wing CSAR flight is
+        # the King, a helicopter CSAR flight the Jolly, and a SANDY is a Sandy.
+        # `player` is what lets the plugin brief only human crews, and
+        # `survivorId` ties a King to the pilot its package was fragged for.
+        rescue_object = csar_object.get_or_create_item("rescueFlights")
+        for flight in self.mission_data.flights:
+            if flight.flight_type is FlightType.CSAR:
+                role = "jolly" if flight.aircraft_type.helicopter else "king"
+            elif flight.flight_type is FlightType.SANDY:
+                role = "sandy"
+            else:
+                continue
+            target = flight.package.target
+            survivor_id = str(target.id) if isinstance(target, DownedPilot) else ""
+            record = rescue_object.add_item()
+            record.add_key_value("groupName", flight.group_name)
+            record.add_key_value("role", role)
+            record.add_key_value("side", "blue" if flight.friendly.is_blue else "red")
+            record.add_key_value("player", "true" if flight.client_units else "false")
+            record.add_key_value("survivorId", survivor_id)
 
         rescue_types = csar_object.get_or_create_item("rescueTypes")
         seen: set[str] = set()

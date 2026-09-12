@@ -163,7 +163,11 @@ Skynet and MANTIS need a DCS object handle for a node. A map building is not a `
 `Group`, so `StaticObject.getByName` / `GROUP:FindByName` never find it. The soldier is a real,
 findable object standing in for the building.
 
-### 3.2 How MANTIS consumes it
+### 3.2 How the engine consumes it
+
+> Written against the MANTIS bridge's `node_dead`. Since 2026-09-12 the consumer is the
+> Skynet bridge: a dead static answers `isExist() == false` natively, and a node the campaign
+> names in `DeadC2` is registered as a dead stand-in (`414th-skynet-return-notes.md` §5).
 
 - `iadsnetwork.py:47` `dcs_name_for_group` returns `unit.unit_name` for `COMMAND_CENTER`,
   `CONNECTION_NODE`, `POWER_SOURCE` and `EWR` roles.

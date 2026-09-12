@@ -37,9 +37,8 @@ class IadsRole(Enum):
         ``"Ewr"``, ``"CommandCenter"``, …) and are emitted verbatim into the
         Skynet Lua config. This property is the single named seam for that
         coupling: Skynet emitters reference ``role.skynet_value`` rather than
-        ``role.value`` directly, so a future MANTIS emitter can add its own
-        token mapping without disturbing the Skynet path. See
-        docs/dev/design/414th-mantis-migration-notes.md §3.1.
+        ``role.value`` directly, so another engine's emitter could add its own
+        token mapping without disturbing the Skynet path.
         """
         return self.value
 

@@ -414,7 +414,7 @@ etribution-pr`, one commit on upstream dev @ `902b77f1`, mypy/Black/full suite g
   dev-pull "fix" it back to Walleye, and do not re-propose without new evidence.
 - **#879 alarm-state adaptation** (2026-07-19 sync): upstream forces GREEN/RED on
   every TGO group via `perf_red_alert_state`; the fork removed that toggle (#231 —
-  MANTIS owns networked SAM alarm state at runtime), so the fork's
+  the IADS engine owns networked SAM alarm state at runtime), so the fork's
   `set_alarm_state` writes RED only for ships (`force_red`) and dedicated EWR
   sites, and nothing otherwise (DCS AUTO). Preserve on every dev-pull;
   `tests/missiongenerator/test_ewr_enroute_task.py` pins the fork contract.

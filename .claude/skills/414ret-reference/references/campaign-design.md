@@ -117,19 +117,19 @@ Modes: **Basic** (auto-association, no comms/power) is default. **Advanced** req
 
 **Upstream's own warning, keep it in mind for squadron use:** Skynet is a deliberately unrealistic coordination challenge for large MP groups — it breaks AI SEAD (radars stay dark, AI SEAD RTBs without kills). Enabled by default; disable for solo/small-group play. Skynet per-SAM overrides go in the Search Radar's unit.yaml under `skynet_properties`.
 
-> **414th delta — the engine is different, the authoring is not.** Skynet is **removed**;
-> **MANTIS is the sole IADS engine** and there is no `iads_engine` selector. Everything above
-> about *authoring* still applies — the `advanced_iads` flag, `iads_config` by-name networks,
-> the by-range mode, connection-node rules and the dummy-static trick are unchanged, and the
-> `IadsNetwork` / `IadsRole` / `IadsProperties` data model (with `Skynet*` back-compat aliases,
-> including `skynet_properties` in unit yamls) is what MANTIS consumes. The AI-SEAD warning is
-> a Skynet behaviour and does **not** transfer.
+> **414th delta — same engine, two bridge additions.** The fork runs upstream's Skynet
+> (it ran a MOOSE MANTIS bridge from 2026-06-24 to 2026-09-12; that is gone, and there is no
+> `iads_engine` selector). Everything above about *authoring* applies unchanged. The fork's
+> bridge adds two things: a C2 node destroyed on an earlier turn is registered as a dead
+> stand-in so the SAMs behind it stay degraded, and a ground-starting AWACS is added once it
+> spawns. The compiled build carries HDSUC and CurrentHill SAM profiles. See
+> `docs/dev/design/414th-skynet-return-notes.md`.
 >
 > Two fork conventions when laying out a new campaign's air defences:
 > - **Legacy/mobile systems** (SA-2/3/6, Hawk, generic launcher sites) — a lone site is fine;
 >   §60 already gives every SAM layout **two** guidance radars so one HARM isn't a site kill.
 > - **Strategic belts** (S-300/S-400/Patriot) — prefer **several single-radar fire units plus a
->   shared EWR** and let MANTIS net them, rather than one doubled fat site.
+>   shared EWR** and let Skynet net them, rather than one doubled fat site.
 > - **Never run both models on the same system** — that double-counts radars.
 
 ## Motorpools

@@ -156,12 +156,10 @@ class LuaGenerator:
             awacs_item.add_key_value("dcsGroupName", awacs.group_name)
             awacs_item.add_key_value("callsign", awacs.callsign)
             awacs_item.add_key_value("radio", str(awacs.freq.mhz))
-            # Coalition is needed by the MANTIS IADS bridge, which folds each
-            # AWACS into its own coalition's EWR set as an always-on wide-area
-            # sensor. It must come from here, not from inspecting the live group:
-            # a ground-starting AWACS (e.g. an A-50 that taxis out after mission
-            # start) is not yet a spawned group when the bridge builds, so a
-            # runtime coalition lookup silently dropped it. (mantis-config.lua)
+            # The Skynet bridge adds each AWACS to its own coalition's IADS as a
+            # sensor. A ground-starting AWACS is not a spawned group when the
+            # bridge builds, so the coalition has to come from here, not from a
+            # live lookup. (skynetiads-config.lua)
             awacs_item.add_key_value(
                 "coalition", "blue" if awacs.blue.is_blue else "red"
             )
@@ -291,25 +289,13 @@ class LuaGenerator:
                     aa_item.add_key_value("positionX", str(ground_object.position.x))
                     aa_item.add_key_value("positionY", str(ground_object.position.y))
 
-        # Generate IADS Lua Item. The IADS node/connection data drives MANTIS
-        # (resources/plugins/mantisiads), now the sole IADS engine (Skynet removed).
-        # The `engine` marker is retained as "mantis" for the bridge's sanity log.
+        # Generate IADS Lua Item
         iads_object = lua_data.add_item("IADS")
-        # NB: emit the marker as a nested item, not add_key_value — LuaData.serialize
-        # drops scalar key-values on an object that also has nested items.
-        iads_object.add_item("engine").set_value("mantis")
         # These should always be created even if they are empty.
         iads_object.get_or_create_item("BLUE")
         iads_object.get_or_create_item("RED")
         # Should probably do the same with all the roles... but the script is already
         # tolerant of those being empty.
-        # 414th: tally each coalition's radar SAM "shooters" (held dark until cued
-        # by MANTIS) vs. its always-on detectors (dedicated EWR sites only). A
-        # SAM-as-EWR is itself held dark and contributes no detection, so it counts
-        # as a shooter, not a detector. AWACS are folded in below. A coalition with
-        # shooters but no detector has a BLIND network whose SAMs never engage.
-        iads_shooters = {"BLUE": 0, "RED": 0}
-        iads_detectors = {"BLUE": 0, "RED": 0}
         for node in self.game.theater.iads_network.iads_nodes(self.game):
             coalition_key = "BLUE" if node.player.is_blue else "RED"
             coalition = iads_object.get_or_create_item(coalition_key)
@@ -320,44 +306,19 @@ class LuaGenerator:
                 # add additional SkynetProperties to SAM Sites
                 for property, value in node.properties.items():
                     iads_element.add_key_value(property, value)
-                iads_shooters[coalition_key] += 1
-            elif node.iads_role == IadsRole.EWR:
-                iads_detectors[coalition_key] += 1
             for role, connections in node.connections.items():
                 iads_element.add_data_array(role, connections)
 
-        # C2 nodes killed on an earlier turn. The runtime's own death test only sees
-        # this mission (a dead-spawned static, or a name in dead_events), and many C2
-        # nodes are scenery it cannot look up at all, so the campaign names them here.
+        # C2 nodes killed on an earlier turn. Skynet reads a SAM with no comms or
+        # power object as fully connected, and many C2 nodes are scenery the
+        # runtime cannot look up at all, so the campaign names them here and the
+        # bridge registers each as a dead stand-in.
         for player, dead_names in self.game.theater.iads_network.dead_c2_names(
             self.game
         ).items():
             iads_object.get_or_create_item(
                 "BLUE" if player.is_blue else "RED"
             ).add_data_array("DeadC2", dead_names)
-
-        # An AWACS is the network's only other always-on wide-area sensor; fold it
-        # into the detector tally (the MANTIS bridge folds it into the EWR set).
-        for awacs in self.mission_data.awacs:
-            iads_detectors["BLUE" if awacs.blue.is_blue else "RED"] += 1
-
-        # Warn (at generation time, while it can still be fixed) about a coalition
-        # that fields radar SAMs but has NO always-on detection feeding them. Under
-        # MANTIS every SAM is held dark until cued, so detection rides solely on
-        # dedicated EWR sites + AWACS; a coalition with neither is blind and its
-        # SAMs never engage (they stay GREEN). Common cause: a campaign with no EWR
-        # preset locations / a faction with no EWR ForceGroup, and no AWACS fragged.
-        for side in ("BLUE", "RED"):
-            if iads_shooters[side] > 0 and iads_detectors[side] == 0:
-                logging.warning(
-                    "IADS: %s fields %d radar SAM group(s) but has NO always-on "
-                    "detection source (dedicated EWR or AWACS). Under MANTIS every SAM "
-                    "is held dark until cued, so this network is BLIND -- its SAMs will "
-                    "never engage. Add an EWR site or an AWACS for %s.",
-                    side,
-                    iads_shooters[side],
-                    side,
-                )
 
         # 414th QRA forward defense: bound each dispatcher to the airspace over its own
         # bases + its own side of the front, so a widened scramble radius lets rear

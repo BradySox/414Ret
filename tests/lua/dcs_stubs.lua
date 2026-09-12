@@ -792,6 +792,9 @@ StaticObject = {
 
 function Harness.addStatic(spec)
     staticsByName[spec.name] = {
+        getName = function()
+            return spec.name
+        end,
         isExist = function(self)
             return not self.destroyed and spec.exists ~= false
         end,

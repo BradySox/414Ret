@@ -107,7 +107,7 @@ structural, not a fluke:
 1. **Vanilla groups (SLUG's case)** carry no alarm-state option, so they run DCS's
    default **ALARM STATE AUTO — which never goes weapons-hot for a *weapon* object**.
    Only aircraft trip the auto-wake; the site's radars stay cold as missiles fly past.
-2. **MANTIS-managed SAMs** are EMCON-dark and wake off MOOSE `Detection`, which scans
+2. **Engine-managed SAMs** (MANTIS at the time; Skynet since 2026-09-12) are dark and wake off the engine's detection, which scans
    **units** — a weapon object is invisible to it, so a managed site is equally blind.
 3. **The SHORAD link's** wake watch (`SHORAD.Harms`/`SHORAD.Mavs` in MOOSE) lists ARMs
    and Mavericks — **no `BGM_109`, no Kalibr** (MOOSE's `SEAD.HarmData` *does* carry

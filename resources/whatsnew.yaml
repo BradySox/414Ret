@@ -14,6 +14,22 @@
 
 entries:
   - date: 2026-09-12
+    title: Enemy air defences run on Skynet again
+    change: >-
+      The MANTIS IADS engine is gone and the fork is back on upstream's Skynet,
+      with profiles for the High Digit SAMs Ultimate Compilation and the
+      CurrentHill SAM packs compiled in. Two things are ours on top: a comms,
+      power or command node you destroyed stays destroyed on later turns, and a
+      ground-starting AWACS joins the net once it is airborne. The plugin's
+      options are upstream's (mobile-SAM shoot-and-scoot, go-live ranges, the
+      F10 status menu); the MANTIS options page is gone.
+    watch: >-
+      On ingress the red radars should be dark until an EWR or AWACS has you,
+      then come up; a HARM shot should make the targeted site go dark. In
+      dcs.log look for "Skynet-IADS plugin - creating red IADS" and no "can not
+      handle" line naming a site. A crash to desktop in a busy IADS mission is
+      the one thing to report immediately.
+    row: G42
     title: The King finds the survivor and briefs the Sandys
     change: >-
       Fly the C-130J as CSAR and you get a KING | On-Scene Commander menu. Take

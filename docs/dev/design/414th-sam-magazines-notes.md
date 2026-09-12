@@ -69,6 +69,10 @@ Osa 6…) are DCS facts we re-derive from our own export path, not values we cop
 
 ## 4. The MANTIS seam — verified clean
 
+> **Re-verify under Skynet before building** (engine changed 2026-09-12). Skynet re-asserts
+> ROE on its own sites, so a `WEAPON_HOLD` clamp is not left alone the way it was under
+> MANTIS; the seam needs a fresh read of `skynet-iads-compiled.lua`.
+
 The worry was that MANTIS would un-clamp a dry site when it wakes it. Verified against the
 bundled `Moose.lua`: in our configuration (`useEmOnOff = false`,
 `resources/plugins/mantisiads/mantis-config.lua`), MANTIS start state and every wake/sleep

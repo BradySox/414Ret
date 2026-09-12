@@ -50,7 +50,7 @@ Blue/Red Commander roles are sensor-fogged.
   their zones — your raid will get met by whatever is already airborne.
 - The player scramble cue (PLAYER_ALERT) is deliberately task-blind and may still cue a
   human alert flight against your raid — **[observe on the pass]**.
-- **A GM-spawned SAM fights alone**: vanilla DCS AI, radar always-on, no MANTIS
+- **A GM-spawned SAM fights alone**: vanilla DCS AI, radar always-on, no IADS
   EMCON/C2 coupling, no §7 datalink hiding, no campaign-map threat ring, absent from §74
   DTC cartridges. It is a pop-up trap, not an IADS node — good drama, but don't expect
   authored-SAM behavior, and don't "fix" it by touching MANTIS prefixes (see the
@@ -68,7 +68,7 @@ deliberately accept the fight:
 - Combat SAR actors — survivor, snatch teams, rescue helos mid-pickup (the snatch race
   is ROE-hold *by design*; making them shoot breaks the capture mechanic);
 - TIC frontline firefight groups; CTLD sticks;
-- anything MANTIS owns (SAM/EWR sites — alarm state/emissions are its to command);
+- anything the IADS engine owns (SAM/EWR sites — alarm state/emissions are its to command);
 - dispatcher fighters (QRA/CAP AI).
 
 ### Seams and switches

@@ -211,7 +211,7 @@ class TheaterConfiguration(QtWidgets.QWizardPage):
         mapSettingsLayout.addWidget(self.invertMap, 0, 1)
         self.advanced_iads = QtWidgets.QCheckBox()
         self.registerField("advanced_iads", self.advanced_iads)
-        self.iads_label = QtWidgets.QLabel("Advanced IADS (MANTIS)")
+        self.iads_label = QtWidgets.QLabel("Advanced IADS (Skynet)")
         mapSettingsLayout.addWidget(self.iads_label, 1, 0)
         mapSettingsLayout.addWidget(self.advanced_iads, 1, 1)
         mapSettingsGroup.setLayout(mapSettingsLayout)
@@ -339,7 +339,7 @@ class TheaterConfiguration(QtWidgets.QWizardPage):
                 )
             else:
                 self.advanced_iads.setToolTip(
-                    "Networked air defenses driven by the MANTIS IADS engine: SAM "
+                    "Networked air defenses driven by the Skynet IADS engine: SAM "
                     "sites hold dark until cued by EWR/AWACS, and killing a base's "
                     "C2/comms/power degrades its net."
                 )

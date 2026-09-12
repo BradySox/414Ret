@@ -49,7 +49,7 @@ pins the safety-critical invariants (grace periods, exclusion lists, one-shot la
 an in-game pass exercises only incidentally.
 
 Loading the real `Moose.lua` is explicitly out of scope for this slice (its `DATABASE` init
-scans a live mission world); plugins that lean on deep MOOSE state (tars, mantisiads) need
+scans a live mission world); plugins that lean on deep MOOSE or engine state (tars, the former mantisiads, skynetiads) need
 either a fatter facade or targeted extraction before they can ride the harness.
 
 ## Extending it

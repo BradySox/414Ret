@@ -100,7 +100,7 @@ setting off costs nothing at runtime.
 
 | Plugin | Default | What it does |
 |---|---|---|
-| `mantisiads` | on | MOOSE **MANTIS** — the sole IADS engine. SAM/EWR networking, emissions control, engagement tuning, EWR shoot-and-scoot. Skynet was removed; see [IADS Engine: MANTIS](IADS-Engine-MANTIS). |
+| `skynetiads` | on | **Skynet-IADS** (upstream's) — SAM/EWR networking, HARM defence, point defence, mobile-SAM shoot-and-scoot, the advanced comms/power/command graph. The fork's build adds HDSUC and CurrentHill SAM profiles; see [IADS Engine: Skynet](IADS-Engine-Skynet). |
 | `c130j` | on | Turns the player C-130J into an EC-130H Compass Call (jamming) and RC-130H Rivet Joint (ISR/ELINT) platform — `FlightType.JAMMING`. Supersedes the retired generic `ewrj`. |
 | `growler` | on | Escort jamming for the EA-18G and EA-6B: non-stacking spoof bubbles and SAM weapons-hold pulses. Inert unless an escort-jammer flight exists. |
 | `gpsjamming` | on | GPS denial — satellite-guided weapons released inside the bubble land long. Inert unless a live GPS-jamming group is on the map. |
@@ -127,7 +127,7 @@ setting off costs nothing at runtime.
 
 | Plugin | Default | What it does |
 |---|---|---|
-| `opscsar` | on | **Combat SAR** — spawns downed pilots and runs the rescue via MOOSE `Ops.CSAR`. See [Combat SAR](Combat-SAR). |
+| `opscsar` | on | **Combat SAR** — spawns downed pilots and runs the rescue via MOOSE `Ops.CSAR`, and carries the King's on-scene systems (`KingOnScene.lua`: DF cuts on the beacon, the threat sweep, the picture passed to the Sandy and the helo). See [Combat SAR](Combat-SAR). |
 | `intercept` | on | Per-squadron QRA intercept reserve feeding the MOOSE `AI_A2A_DISPATCHER`. |
 | `redscramble` | on | Host tool: an F10 menu to scramble red interceptors. Inert unless the setting is on. |
 | `briefing` | on | The mission-start briefing card each pilot sees when they slot in. |

@@ -4,7 +4,7 @@
 **Date:** 2026-06-24
 **Parent:** [`414th-framework-consolidation-notes.md`](414th-framework-consolidation-notes.md)
 **Related:** CLAUDE.md §17 (auto-planner unpredictability), [`turnless.md`](turnless.md),
-[`414th-mantis-migration-notes.md`](414th-mantis-migration-notes.md).
+the MANTIS migration note (deleted 2026-09-12; see [`414th-skynet-return-notes.md`](414th-skynet-return-notes.md)).
 
 ## One correction up front
 
@@ -42,7 +42,7 @@ These execute runtime behavior inside a mission — exactly the Lua side of the 
 **complement** Retribution and carry zero conflict with the Python brain. Several are already in
 flight:
 
-- `MANTIS` — IADS engine (in progress, [`414th-mantis-migration-notes.md`](414th-mantis-migration-notes.md)).
+- `MANTIS` — IADS engine 2026-06 to 2026-09-12, then reversed to Skynet ([`414th-skynet-return-notes.md`](414th-skynet-return-notes.md)).
 - `CTLD` — logistics (scoped, [`414th-ctld-mantis-style-port-scope.md`](414th-ctld-mantis-style-port-scope.md)).
 - `ATIS` — already shipping as the `MooseAtis` plugin.
 - `INTEL` — already underpins the `bigeye` EWR (the EWRS successor).

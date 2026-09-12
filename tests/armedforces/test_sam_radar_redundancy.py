@@ -100,7 +100,7 @@ def test_sam_layout_fields_two_guidance_radars(layout_name: str, slot: str) -> N
 # limitation on GUIDANCE_RADAR_SLOTS.
 #
 # Deliberate single-radar layouts are the regiment-by-authoring pattern (several
-# single-radar battalions + a shared EWR, netted by MANTIS) for strategic belts;
+# single-radar battalions + a shared EWR, netted by the IADS) for strategic belts;
 # they are single on purpose, not a redundancy gap. The convention is to name
 # such a layout with "Single Radar" -- that is the documented, self-describing
 # escape hatch this guard honors (a deliberate single that is NOT named that way

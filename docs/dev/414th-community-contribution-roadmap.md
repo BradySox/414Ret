@@ -215,7 +215,7 @@ The original five (SCAR/TARS/TIC/QRA/C-130J) plus, from §29–§73:
 | §61 host red scramble | Medium | host/event tool |
 | §72 carrier deck decorations | Medium/High | B25 pass owed |
 | §21 Combat SAR family (+ §15 Sandy, MIA/POW) | High | the biggest single loop; carve after the G-row queue drains |
-| MANTIS IADS engine + bridge | **Very high** | the fork's flagship runtime; needs an upstream Lua champion — propose after a track record of smaller Lua carves lands |
+| ~~MANTIS IADS engine + bridge~~ (removed 2026-09-12; Skynet again) | — | the fork's flagship runtime; needs an upstream Lua champion — propose after a track record of smaller Lua carves lands |
 
 ---
 

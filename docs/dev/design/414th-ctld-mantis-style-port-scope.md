@@ -4,7 +4,7 @@
 > what MIST actually does showed it is a utility library + object DB that MOOSE already provides, so
 > MIST is being retired via a **MOOSE-backed `mist` compatibility shim** (consumers untouched) instead
 > of rewriting CTLD. That sidesteps the template-model mismatch found below. **Active plan:**
-> [`414th-mist-moose-shim-notes.md`](414th-mist-moose-shim-notes.md). This doc is kept for the
+> `414th-mist-moose-shim-notes.md` (deleted 2026-09-12 with the shim; see `414th-skynet-return-notes.md`). This doc is kept for the
 > `Ops.CTLD` API research (still accurate) in case a native rewrite is ever revisited.
 
 **Status:** SHELVED — superseded by the `mist` shim. `Ops.CTLD` coverage research below remains valid.

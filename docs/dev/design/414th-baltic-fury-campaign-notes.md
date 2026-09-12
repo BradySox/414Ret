@@ -193,7 +193,7 @@ to the SAM-belt STANDARD:
 `oca_..._min_aircraft_count: 40`), `war_economy` + `fuel_air_readiness`, `red_intent`,
 `c2_decapitation_effects`, `campaign_phases`, `convoy_ambush`,
 `artillery_base_harassment` (reach 42 km), `enemy_comms_jamming`, `host_red_scramble` (gated to
-"Flash"). Plugins pinned: `mantisiads`, `convoyambush`, `commsjam`,
+"Flash"). Plugins pinned: `skynetiads` (was `mantisiads` until 2026-09-12), `convoyambush`, `commsjam`,
 `redscramble`, `vietnamops`, `combatsar`. **Mods:** `f22_raptor`, `fa_18efg`, `fa18ef_tanker`,
 `usamilitaryassetspack`, `high_digit_sams`, `russianmilitaryassetspack`.
 

@@ -110,11 +110,12 @@ Read before touching a campaign's `.yaml`, `.miz` or build tool.
 
 ### System notes — `docs/dev/design/`
 
-- **IADS / air defense** — `414th-mantis-iads-HANDOFF.md` (**start here**),
-  `-migration-notes`, `-vs-skynet-iads-parity`, `414th-sam-site-realism-notes.md`,
+- **IADS / air defense** — `414th-skynet-return-notes.md` (**start here** — Skynet is the
+  engine again as of 2026-09-12; the MANTIS bridge, its three notes and the MIST shim are
+  gone), `414th-sam-site-realism-notes.md`,
   `414th-air-defense-planning-notes.md`, `414th-qra-player-manning-notes.md`,
   `414th-sam-magazines-notes.md` (**scoping only, nothing built** — cross-turn SAM missile
-  stock on the §81 architecture; the MANTIS/ROE seam is verified clean and the off-mission
+  stock on the §81 architecture; the IADS/ROE seam is verified clean and the off-mission
   drain hook found, so it is buildable on a decision)
 - **EW / ISR / comms** — `414th-c130-ew-isr-notes.md`,
   `414th-gps-jamming-notes.md`,
@@ -204,7 +205,7 @@ Read before touching a campaign's `.yaml`, `.miz` or build tool.
   install folder not matching the theatre id, and **Pagan sitting in the sea zone**.
   No campaign authored, so it is not reachable from the New Game wizard yet)
 - **Framework / tooling** — `414th-framework-consolidation-notes.md`,
-  `414th-mist-moose-shim-notes.md` (**the shim that retired MIST**),
+  `414th-skynet-return-notes.md` (**MIST is upstream's again; the shim is gone, 2026-09-12**),
   `414th-moose-ops-opportunity-map.md`, `414th-lua-plugin-harness-notes.md`
 - **Structure / debt** — `414th-doc-mass-notes.md` — the 2026-08-19 trim of
   `414th-features.md` (104.3k → 95.8k words, all 91 sections and every §N anchor intact):
@@ -290,7 +291,7 @@ into the hard-constraints list or the surviving design note *before* deleting.
 | Campaign engine | Python 3.11 (`game/`). Python library catalog (bookmark, reference-only — nothing to adopt now; browse if a new library is ever needed): https://github.com/vinta/awesome-python |
 | UI | PyQt (`qt_ui/`) + React/Leaflet client (`client/`) — client NOT type-checked in CI |
 | Mission scripting | **Lua 5.1** sandbox plugins (`resources/plugins/`) — no `os`/`io`, no `goto`, definition order matters |
-| In-mission framework | **MOOSE** (bundled `Moose.lua`; some plugins vendor classes verbatim) — the standard. **MIST is RETIRED** (MIST → MOOSE consolidation complete, 2026-06-25): `base/plugin.json`'s `"mist"` work-order now loads `resources/plugins/base/mist_moose_shim.lua` — a vanilla-DCS shim implementing the 44 `mist.*` symbols the consumers (CTLD, SCAR, intercept glue, core `dcs_retribution.lua`, and the upstream land/water relocate scripts) actually call, so `mist_4_5_126.lua` no longer loads. **When merging upstream Lua, grep it for `mist.` — a symbol the shim lacks dies at runtime, not in CI** (the 2026-07-05 sync needed a new `mist.getGroupData` for `land_relocate.lua`/`water_relocate.lua`, checklist U1; the 2026-07-10 sync's escort-leash fix needed `mist.DBs.groupsById` — the rule keeps catching real ones). The old `mist_4_5_126.lua` file was **deleted 2026-07-10** (the final cleanup — the shim flew clean across campaigns, checklist G7); rollback = restore it from git history and re-point `plugin.json`'s `"mist"` work-order at it. Do NOT re-point the work-order without reason. See `414th-mist-moose-shim-notes.md`. MOOSE API docs (bookmark): https://flightcontrol-master.github.io/MOOSE_DOCS_DEVELOP/Documentation/index.html |
+| In-mission framework | **MOOSE** (bundled `Moose.lua`; some plugins vendor classes verbatim) — the standard. **MIST is upstream's `mist_4_5_126.lua` again** (2026-09-12): the 2026-07 MIST → MOOSE shim went with the MANTIS bridge, so `base/plugin.json` is upstream's work-order list plus the fork's `sortie_recorder.lua`. Consumers (CTLD, intercept glue, `dcs_retribution.lua`, the relocate scripts, Skynet) call real MIST; a merged upstream Lua file that calls `mist.*` needs no shim work. See `414th-skynet-return-notes.md`. MOOSE API docs (bookmark): https://flightcontrol-master.github.io/MOOSE_DOCS_DEVELOP/Documentation/index.html |
 | Units / mission format | pydcs; CurrentHill mod packs in `pydcs_extensions/` |
 | CI gates | Black + mypy + pytest + **Lua syntax gate** (`lua-lint.yml`, blocking) + advisory luacheck |
 | Release | PyInstaller → rolling `latest` pre-release on GitHub |
@@ -380,8 +381,10 @@ source of truth is the registry `game/fourteenth/features.py` (regenerate with
 These cost a mission or a crash to learn. Each is recorded in full in the features doc or the
 linked design note.
 
-- **Never toggle SAM radar emissions.** `enableEmission(false)` caused crashes. Suppression is
-  ROE `WEAPON_HOLD` only. Applies to §51, §63, §77 and the C-130 script.
+- **Never toggle SAM radar emissions from a plugin.** `enableEmission(false)` caused crashes in
+  the C-130 line. Suppression is ROE `WEAPON_HOLD` only. Applies to §51, §63, §77 and the
+  C-130 script. Skynet's own go-live/go-dark is that same call, made by the engine on its
+  own cadence; upstream has flown it for years. Row G42 watches for a recurrence.
 - **Never restore the per-base backstop EWR** (§1). DCS has no non-colliding ground unit — the
   mast sat on taxiways and broke AI taxi routing. Detection is the IADS network alone; a side
   with no EWR losing GCI is by design.
@@ -492,6 +495,7 @@ linked design note.
 97. **Lifetime pilot profiles** — your own flying kept across every campaign, not just the current one: totals, a breakdown per aircraft, and the individual flights. Identified by DCS player name, so it needs no setup and a multiplayer host records every pilot who flew. Stored outside the save, which is what lets it outlive a campaign.
 98. **Neutral-faction border defense** — every nation on the map is drawn with its real border, the map's own nation included: alignment derived from who holds the airfields inside it, counted per country (both sides holding it = contested grey, claimed by neither QRA; a country in the war is outline-only; red-aligned airspace joins §1's QRA accept zones), and a country not in the war defends (overflight is derived from the same airbases: you may cross what you fly from, and what both sides fly from) — it stands live SAM batteries inside its border from mission start, in two tiers -- the era picks legacy (SA-2/3/5) or modern (SA-10/11, plus Hawk/Patriot/Rapier for the western-equipped list) and the country's room picks the rung, the top band being the same in both eras -- and counted off it too (~1 per 200 NM of war-facing frontier, capped at 6, map clip and far-from-the-war stretches unmanned), each placed well short of what its missile claims, so the frontier sits inside the envelope with margin rather than on its edge, visible before you cross, and hailing you on entry; press, and the WHOLE country turns hostile in place on your enemy's coalition and engages. Both sides violating one country gets a second set. Countries DCS does not model (Turkmenistan, Uzbekistan, Tajikistan, Armenia, Azerbaijan) borrow a neighbour's units rather than being dropped. Players only; AI is never engaged, unless the `engageAi` plugin option is ticked -- a testing override, default off, that holds AI to the same ladder. The fighter patrol was dropped 2026-09-07 -- scope is the SAM.
 99. **Sandy rescue escort** — an armed escort that works the ground around a downed pilot while the helicopter comes in: a track centred on the survivor, flown by the A-10 and the Apache. Hand-fragged only — the auto-planner never adds one.
+100. **King on-scene commander** — the player-flown C-130J King finds the survivor by DF cuts on the beacon (two cuts far enough apart make a fix; inside pod range with line of sight it snaps exact), sweeps the ground around the fix for threats reported as a class and a rough position, and passes the picture — text and map marks — to the player-crewed Sandy and helicopter. Cues only: it never lases, and nothing is pushed onto an AI flight.
 
 ### Retired, removed or shelved — do not restore
 
@@ -524,7 +528,8 @@ Kept numbered so old notes and saves stay readable. Details and rationale in the
 | 84 | Old-stock loadout attrition | Removed 2026-08-06 |
 
 Also removed: the blank-start campaign maker (2026-08-02), the SOF capture economy (2026-07-01),
-and the Skynet IADS engine (MANTIS is the sole engine).
+and the MOOSE MANTIS IADS bridge with its MIST shim (2026-06 to 2026-09-12; Skynet and
+upstream's MIST are back — see `414th-skynet-return-notes.md`).
 
 ## Repo & Branch Layout
 
@@ -620,7 +625,7 @@ this repo, PR metadata or commit messages; the DM holds the link.
   conclusion as our hard constraint. And measured Dog Ear detection is 23.4 km against 1L13's
   200.6 km, which confirms Ramius007's objection that closed #887.
 
-Full assessment, including the SAM-magazine and radar-sweep ideas MANTIS lacks, is in
+Full assessment, including the SAM-magazine and radar-sweep ideas Skynet lacks, is in
 [414th-mist-author-repos-notes.md](docs/dev/design/414th-mist-author-repos-notes.md).
 
 **He reverted one of ours and was right**: his #40 backed out the support-orbit port because
@@ -952,9 +957,9 @@ aircraft. Do NOT "resync" this block from upstream until they fix it.
     right fix (defeats the single-HARM kill). Place them as normal; nothing extra to do.
   - **Strategic belts** (S-300 / S-400 / SA-10/20/21, Patriot, the long-range LORAD systems) — prefer
     the **regiment-by-authoring** pattern: place **several single-radar fire units + a shared EWR/
-    acquisition site** on the CP and let MANTIS net them into one IADS, rather than one doubled fat
+    acquisition site** on the CP and let Skynet net them into one IADS, rather than one doubled fat
     site. That is the historically faithful survivability model (kill one battalion's radar, the
-    regiment fights on) and it's what the engine + MANTIS already represent when you place multiple
+    regiment fights on) and it's what the engine + Skynet already represent when you place multiple
     sites.
   - **Guardrail — never double-count radars.** §60 doubling and a regiment layout both add engagement
     radars. If a future engine "regiment" construct ever lands for a strategic system, revert §60's

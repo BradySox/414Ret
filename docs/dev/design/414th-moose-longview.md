@@ -33,7 +33,7 @@ Performance/hygiene modules are a third, orthogonal bucket: they touch neither b
 | **Cargo / logistics** | `CTLD` `CTLD_CARGO` `CTLD_HERCULES` `DYNAMICCARGO` `CARGO_*` `WAREHOUSE` `STORAGE` `AMMOTRUCK` | troop/crate/supply |
 | **CSAR / rescue** | `CSAR` `RESCUEHELO` `AICSAR` | downed-pilot recovery |
 | **Ground combat** | `SUPPRESSION` `ARTY` `SHORAD` `SEAD` `MOVEMENT` | frontline behavior |
-| **Air defense** | `MANTIS` `SHORAD` | IADS (MANTIS is ours now) |
+| **Air defense** | `MANTIS` `SHORAD` | IADS (ran MANTIS 2026-06 to 2026-09; Skynet again) |
 | **Naval / carrier** | `AIRBOSS` `RECOVERYTANKER` `NAVYGROUP` `FLEET` `FLOTILLA` | carrier ops |
 | **Comms / sound** | `MSRS` `MSRSQUEUE` `ATIS` `RADIO*` `SRS*` `RANGE` | speech/ATIS/range |
 | **Hygiene / perf** | `TIRESIAS` `CLEANUP_AIRBASE` `PROFILER` | FPS + runway upkeep |
@@ -45,7 +45,7 @@ Retribution is **already deep into MOOSE**, not starting fresh:
 
 | Adopted | Where | Notes |
 |---|---|---|
-| `MANTIS` | `mantisiads` | our default IADS engine |
+| `MANTIS` | ~~`mantisiads`~~ | was the IADS engine 2026-06-24 to 2026-09-12; Skynet again |
 | `CTLD` / `CTLD_CARGO` | `ctld` | logistics/sling-load |
 | `AI_A2A_DISPATCHER` | `intercept` | QRA/GCI (upstream PR #782) |
 | `INTEL` / `INTEL_DLINK` | `bigeye`, MANTIS | EWR + IADS detection |

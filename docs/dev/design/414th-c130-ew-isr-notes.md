@@ -33,6 +33,10 @@ mission scripting.
 
 ## IADS engine interaction (MANTIS / Skynet)
 
+> **2026-09-12:** Skynet is the engine again and the MANTIS bridge is gone
+> (`414th-skynet-return-notes.md`). The Skynet paragraph below is the live one; the MANTIS
+> paragraph is kept as the record of why the helpers only ever touch ROE.
+
 The jamming model suppresses a RED SAM by holding its group **ROE** (`WEAPON_HOLD`)
 and lifts the jam by returning ROE to `OPEN_FIRE`. All of these writes are
 funnelled through two helpers in the script — `suppressSAMRoe()` /

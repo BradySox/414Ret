@@ -24,7 +24,7 @@ description: >
 miz: operation_baltic_fury.miz
 performance: 2
 # Advanced (networked) IADS: red SAM bases carry co-located Command Center + Comms + Generator
-# statics (in the .miz). MANTIS range mode wires each base's SAMs to its nearby comms (<15nm) /
+# statics (in the .miz). Skynet range mode wires each base's SAMs to its nearby comms (<15nm) /
 # power (<35nm) / command center -> destroyable per-base C2 cells. The three strategic S-400
 # hubs (Copenhagen / Rostock / Szczecin) are authored as multi-battalion regiments + a shared
 # EWR (§60 doubling reverted for those, per the SAM-belt STANDARD); the forward MERAD screen
@@ -170,8 +170,8 @@ settings:
   # weapons they deny are 1997+, so a Cold War laydown (Red Tide) can never field this.
   gps_jamming: true
   plugins:
-    # advanced_iads (top-level) is this laydown's centerpiece; mantisiads owns its whole runtime.
-    mantisiads: true
+    # advanced_iads (top-level) is this laydown's centerpiece; skynetiads owns its whole runtime.
+    skynetiads: true
     # §61 host scramble, §36/artillery harassment.
     # (§50's ambush spring is authored as native DCS triggers -- no plugin.)
     redscramble: true
@@ -185,7 +185,7 @@ settings:
 #     RWR covers and no HARM homes on, so a jammer standing alone would be invisible to the
 #     tools a pilot hunts emitters with -- findable only by recon, never prosecutable by SEAD.
 #     Sharing the site with the early-warning radar gives it a real always-on emitter to be
-#     found by (MANTIS never holds an EWR dark). Killing the jammer truck stops the jamming;
+#     found by (the IADS never holds an EWR dark). Killing the jammer truck stops the jamming;
 #     killing the radar blinds the site without stopping it. Both are worth a bomb.
 #
 #     The jamming sites are their OWN markers (GPSJAM-1/2, added by

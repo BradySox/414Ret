@@ -233,7 +233,7 @@ Four upstream fixes the fork's QRA had drifted behind, ported with the fork coup
   captures — so the wide-area EWR half of QRA detection matched **zero** groups and the
   dispatchers were detecting on the paren-free `QRA_Backstop_*` base EWRs **only**.
   `intercept-config.lua` now escapes the `detection_prefixes` list with the same `gsub` the
-  fork already proved in `mantis-config.lua`'s `escape_prefix` (everything except `-`, which
+  fork already proved in the (since removed) MANTIS bridge's `escape_prefix` (everything except `-`, which
   Moose's own gsub handles). This expanded real detection from base-local backstops to the
   whole IADS EWR network — fold verifying it into the A5 forward-defense fly. Pinned in
   `tests/lua/test_intercept_filter.py` (the plugin's chunk-return test hook + a recording
@@ -344,26 +344,24 @@ only); the burn-through model intentionally RAISES jam probability with distance
 jamming has flat altitude-independent range; the missile-spoof curve is intentionally steep
 at close range. Don't "fix" these.
 
-**IADS-engine compatibility (MANTIS / Skynet):** every SAM-state write the jammer makes is
+**IADS-engine compatibility:** every SAM-state write the jammer makes is
 funnelled through two helpers — `suppressSAMRoe()` / `restoreSAMRoe()` — which touch **only**
-the group ROE (`WEAPON_HOLD` to jam, `OPEN_FIRE` to un-jam) and never `ALARM_STATE`. The
-script makes **no `mist.*` calls**, so the MIST → MOOSE consolidation doesn't affect it.
-Under **MANTIS** (default engine) SAMs are driven purely via `ALARM_STATE` and MANTIS never
-writes ROE, so the jam composes cleanly (a MANTIS-live radar still won't fire while held) and
-the C-130J's `OPEN_FIRE` restore is the only thing that lifts the hold. Under **Skynet** the
-engine re-asserts ROE itself, so the writes stay self-healing. The one regression to avoid is
-adding any `ALARM_STATE`/emission write to the jammer — that would fight MANTIS' EMCON. See
-the design note's "IADS engine interaction" section.
+the group ROE (`WEAPON_HOLD` to jam, `OPEN_FIRE` to un-jam) and never `ALARM_STATE` or
+emissions. The script makes **no `mist.*` calls**. Under **Skynet** (the engine again since
+2026-09-12) the engine re-asserts ROE itself, so the writes stay self-healing; under the
+2026-06 to 2026-09 MANTIS bridge the `OPEN_FIRE` restore was the only thing that lifted the
+hold. The one regression to avoid is adding any `ALARM_STATE`/emission write to the jammer —
+that fights whichever engine owns the radar. See the design note's "IADS engine interaction"
+section.
 
-**`perf_red_alert_state` removed (2026-06-27):** because the IADS engine (MANTIS/Skynet) sets each
+**`perf_red_alert_state` removed (2026-06-27):** because the IADS engine sets each
 networked SAM's `ALARM_STATE` at runtime, the legacy global "SAM starts in red alert mode" toggle
-only fought the engine — it wrote `OptAlarmState(RED/GREEN)` at spawn, which MANTIS immediately
+only fought the engine — it wrote `OptAlarmState(RED/GREEN)` at spawn, which the engine immediately
 overrode (the log even shows `Setting SAM Start States`), so flipping it changed nothing for
 networked SAMs and confused players (it looked like the SAMs ignored "red alert"). The setting and
 both its writers (`tgogenerator.set_alarm_state`, `flotgenerator`) are removed; **non-IADS** ground
 groups (frontline armor, ships, autonomous SHORAD, any unmatched SAM) now fall to DCS `AUTO`. Old
-saves drop the field via `_migrate_legacy_settings`. See
-`docs/dev/design/414th-mantis-migration-notes.md` §11.
+saves drop the field via `_migrate_legacy_settings`.
 
 ---
 
@@ -2798,8 +2796,7 @@ part that rots, so it was checked line by line rather than inferred from names:
 
 | Plugin | Dependants | Master | Why it is inert |
 |---|---|---|---|
-| `mantisiads` | `shoradTime`, `shoradRadiusNm`, `shoradActDistanceNm` | `shoradLink` | all three are read inside `if shoradLink and SHORAD and #pd_names > 0` |
-| `mantisiads` | `commsLossGoesDark`, `c2PollInterval` | `enableC2Degradation` | both are only reached through `setup_c2`, called under that gate |
+| ~~`mantisiads`~~ | (five options) | | gone with the MANTIS bridge, 2026-09-12; Skynet's options declare no dependencies |
 | `ctld` | `jtacsmoke`, `fc3LaserCode` | `autolase` | not even read unless `autolase` is true |
 | `cruisemissiles` | `defenderWakeRadiusNm`, `defenderWakeExtraS` | `defenderWake` | used only past `if not DEFENDER_WAKE then return` |
 | `airboss` | `useUH60mod`, `rescueDuration`, `rescueZoneRadius` | `enableRescueHelo` | used only inside `AddRescueHelo` (lines 67–204) |
@@ -3611,7 +3608,7 @@ we are overlooking") landed a second IA pass on both surfaces:
   columns. The wizard is now Intro → Theater (world) → Factions → Mods → Campaign options → Finish.
 - **Legacy sweep**: the Intro "Vietnam" card no longer advertises the deleted Khe Sanh campaign
   (now 1968 Yankee Station / Velvet Thunder / Red Flag 81-2); "Advanced IADS **(WIP)**" is relabeled
-  **(MANTIS)** with a real tooltip (it has been the flown default engine since June); the
+  **(Skynet)** with a real tooltip (the label read MANTIS from June to 2026-09-12); the
   Campaign-options subtitle no longer tells players to overwrite `Default.zip` (the save path writes
   `Default.json`); `TIME_PERIODS` is chronologically sorted (the stranded "Gulf War – Fall [1990]"
   and the unsorted scenario tail fixed) with the default selected **by name** instead of positional
@@ -4710,10 +4707,12 @@ All unit data was read from the **installed mod's own Database lua files** (laun
 - **Factions**: modern Russia/redfor get S-400 + V4 + Pantsir-SM + Nebo EWRs; russia_1980 gets the S-300PT;
   france_2005 gets SAMP/T; 70s-80s Middle-East/NK reds get SA-7/7b and Vietnam-era + Cold-War reds the
   P-37 Bar Lock (which also closes the
-  "red faction has zero EWR units" MANTIS blind-net gap for 16 period factions); insurgents get the ERO
+  "red faction has zero EWR units" blind-net gap for 16 period factions); insurgents get the ERO
   technicals.
-- **MANTIS needs no changes**: the 414th bridge already bands every SAM by Retribution's own emitted threat
-  range (overriding MANTIS's `SamData` unit-name scan), so the new units classify correctly from the pydcs
+- **Skynet profiles (since 2026-09-12)**: the S-400 / S-300V4 / SAMP/T / Pantsir-SM `samTypesDB` entries
+  ride in the vendored compiled build, taken from upstream #956 (our #851 work). Under the 2026-06 to
+  2026-09 MANTIS bridge the sites were banded by Retribution's own emitted threat
+  range instead, so the new units classified correctly from the pydcs
   threat ranges.
 - **Bug fixed in passing**: `Faction.remove_vehicle` matches the DCS unit type **id**, but the pre-existing
   HDS strips passed display *names* — so `SAM SA-14 Strela-3 manpad`/`SA-24`/`Polyana-D4M1` were silently
@@ -4741,7 +4740,7 @@ All unit data was read from the **installed mod's own Database lua files** (laun
 
 ### Gotchas / deferred
 
-- **In-game pass DONE (checklist N1).** Spawn/engagement of the new sites (S-400/V4/SAMP-T), MANTIS
+- **In-game pass DONE (checklist N1, under MANTIS).** Spawn/engagement of the new sites (S-400/V4/SAMP-T), MANTIS
   banding of the 300+ km launchers, and SA-7 infantry launches can't be exercised headless. (Per squadron
   call, the SA-7/7b are NOT wired into the 4 Vietnam factions — they keep only the P-37; the manpads stay
   on syria_1973/1982, iraq_1991, north_korea_2000, iran_1988 and remain available to custom factions.)
@@ -5565,7 +5564,7 @@ with §21 on 2026-08-07. In git history at
 
 **The campaign-layer complement to §51.** §51 gave the IADS **comms** node a runtime voice; this gives
 its **command center** sibling a *turn-model* consequence. A command center
-(`category == "commandcenter"`, `IadsRole.COMMAND_CENTER`) had gameplay only inside MANTIS's runtime
+(`category == "commandcenter"`, `IadsRole.COMMAND_CENTER`) had gameplay only inside the IADS engine's runtime
 SAM-autonomy graph — killing it made SAMs go autonomous, but red's **planning** was untouched, so
 "bomb the enemy HQ" was a strike checkbox, not a strategic move. Now a side's auto-planner quality is
 coupled to its own command-network health.
@@ -5614,7 +5613,7 @@ The effect lands on the *enemy's* next turn, so the player is told the strike wo
 
 ### Gotchas / deferred
 
-- **The runtime half was silently dead until 2026-08-19, and §52 was masking it.** MANTIS's
+- **The runtime half was silently dead until 2026-08-19, and §52 was masking it.** The engine's
   C2 layer degrades SAMs whose comms/power node dies and decapitates a coalition that loses
   every command centre — but `IadsNetwork.iads_nodes` dropped any node or connection whose
   units were all dead, so from the *next* turn the dependency was simply absent from the
@@ -6024,7 +6023,7 @@ TGO groups (`VehicleGroupGroundObject` — base garrisons, FOB garrisons, deploy
 holding at least one alive vehicle, minus any `concealed` / `map_hidden` TGO — that set is exactly
 the COIN / convoy-ambush **scripted movers** (cells, HVT convoys, VBIEDs, ambush teams), whose
 `mist.goRoute` routes a sleeping controller would silently kill. Excluded by construction: the
-air-defense network (`aa`/`ewr` — MANTIS owns it, and toggling SAM state at runtime has crash
+air-defense network (`aa`/`ewr` — the IADS engine owns it, and toggling SAM state at runtime has crash
 history), theater/coastal `missile` sites (the §49 movers), ships, `motorpool` (already inert), and
 building TGOs. FLOT units, convoys and Combat-SAR spawns are not TGOs, so the TGO walk can never
 touch them. No node is emitted when the setting is off or nothing is eligible, so such missions
@@ -6063,7 +6062,7 @@ Gated `perf_ground_ai_sleep` (Mission Generation → Performance, default **OFF*
 saved-default-off lesson). Wake radius, poll cadence and grace are plugin options. **Not preseeded
 in Red Tide** (feature-locked); flip the setting for the next MP event. **Needs an in-game pass**
 (checklist B11): that a slept garrison actually costs less (server frame/CPU on a dense mission),
-wakes seamlessly on approach, and that MANTIS/TIC/convoys/movers are visibly untouched.
+wakes seamlessly on approach, and that the IADS/TIC/convoys/movers are visibly untouched.
 
 ### AAA gun sites (`perf_aaa_site_sleep`, added 2026-07-19)
 
@@ -6096,8 +6095,8 @@ empty ramp — so neither local scenery density nor the GPU, but global sim load
   moment it opens fire, are unchanged; only the frame time moves. Vietnam-era guns report 5 km
   (KS-19 reports 0); a Gepard (15 km), a Tor (25 km) and every search/track radar (35–300 km) sit
   above the line and keep thinking. An unmeasurable unit fails safe — assumed to see, kept awake.
-* **Engine ownership.** MANTIS *writes* to `MANTIS_MANAGED_ROLES` (`SAM`, `SAM_AS_EWR`,
-  `POINT_DEFENSE` — alarm state, EMCON hold, the SHORAD link), so a switched-off controller would
+* **Engine ownership.** The IADS engine *writes* to `IADS_MANAGED_ROLES` (`SAM`, `SAM_AS_EWR`,
+  `POINT_DEFENSE` — alarm state, emissions, point defence), so a switched-off controller would
   fight the IADS engine; those never sleep however short-sighted their guns. It only *reads*
   detection from the rest, which is why an **EWR-role** gun site is eligible — and that is the case
   carrying the win, since `GroupTask.AAA` maps to `IadsRole.EWR`.
@@ -6112,7 +6111,7 @@ correctly keeps the Tor and Gepard groups awake and sleeps the short-range guns.
 
 Tests: the `TestAaaSiteSleep` class in `tests/missiongenerator/test_aisleepluadata.py` (threshold
 boundary either side, one far-seeing member vetoing its group, unknown range failing safe, `ewr`
-never eligible, each MANTIS-driven role refused, EWR-role sites accepted, concealed still skipped,
+never eligible, each engine-driven role refused, EWR-role sites accepted, concealed still skipped,
 both toggles, and the §49 category regression guard). **Needs an in-game pass** (checklist B11, AAA
 bullet): that a Vietnam mission's frame time actually recovers, and that the flak belts still open
 up on the same pass they always did.
@@ -6190,7 +6189,7 @@ tension recorded there: §60 and a future regiment model both add radars, so **d
 if the regiment model ever lands for a strategic system, revert §60's doubling for it.
 
 **In-game pass DONE** (checklist B12): that a site with one dead track radar actually keeps
-engaging in DCS (the second TR picks up guidance), that MANTIS treats the site as alive/degraded
+engaging in DCS (the second TR picks up guidance), that the IADS engine treats the site as alive/degraded
 correctly, and that AI SEAD flights re-target the second radar. NEW game required (layouts are
 baked into the campaign at generation).
 
@@ -6401,7 +6400,7 @@ ever wakes for a cruise raid on its own — see the B16 observed gap below): eve
 sets the opposing side's ground AD groups within `defenderWakeRadiusNm` (8 NM) of the
 aimpoint to alarm-state RED (alarm state only — `enableEmission` untouched, the
 crash-history constraint) for ~the missile flight time + `defenderWakeExtraS` (300 s),
-then restores AUTO; a MANTIS-managed site keeps its own EMCON loop. Unflown — the B16
+then restores AUTO; an engine-managed site keeps its own emissions loop. Unflown — the B16
 re-fly is the arbiter of whether an awake SA-15 then actually kills Tomahawks.
 
 **Eligibility** is the curated `LACM_SHIP_DCS_IDS` set in `game/fourteenth/cruise_raids.py`
@@ -6473,7 +6472,7 @@ debrief row "6 fired, 10 remaining" → the save's `cruise_missile_magazines` de
 SHORAD-intercept half FAILED):** the target's point defense — 2 alive SA-15s 250 m from
 the impact — sat idle through the whole salvo (user-watched). Code-confirmed root cause:
 the group ran vanilla on DCS's default ALARM STATE AUTO, which never goes weapons-hot
-for a *weapon* object; the managed paths are equally blind (MANTIS EMCON wakes off MOOSE
+for a *weapon* object; the managed paths are equally blind (under the MANTIS bridge, EMCON woke off MOOSE
 `Detection`, which scans units, never weapons; the SHORAD link's `SHORAD.Harms`/`Mavs`
 wake lists carry no BGM_109/Kalibr). **Closed same day by the defender launch wake**
 (see the contract paragraph above; details + re-fly criteria in
@@ -7910,8 +7909,8 @@ orders preference (Growler 800 > Prowler 790). Loadout resolves "Retribution Esc
 first, falling back to the SEAD Escort fit. Blue-only.
 
 **Runtime effects (`resources/plugins/growler/growler-config.lua`) — ROE only.** Radar
-emissions are never toggled; `enableEmission` crashed DCS in the C-130 line, and MANTIS owns
-alarm/EMCON state.
+emissions are never toggled; `enableEmission` crashed DCS in the C-130 line, and the IADS engine owns
+alarm/emissions state.
 
 - **Defensive bubble.** A radar-guided missile closing on the jammer or any protected package
   member rolls once per second against a **distance-banded spoof chance centred on the
@@ -7965,7 +7964,7 @@ flight (group name, side, player flag) and the package group names it protects
 Growler and an AI Prowler are emitted identically and the plugin drives whatever group it names
 by name + geometry, with no EA-18G-specific code path (the "make it work with AI Prowlers" ask
 was already true once a Prowler is emitted). The plugin drives the scripted effects **ROE only**
-(emissions are NEVER toggled — the C-130 crash lesson; MANTIS alarm/EMCON state untouched): a
+(emissions are NEVER toggled — the C-130 crash lesson; the engine's alarm/emissions state untouched): a
 **defensive missile-spoof bubble** (Matador bands 500 m/85% → 7 km/15% × the global
 `defensivePower` option, per-second roll, min-travel guard so a spoof can't kill the launcher,
 friendly missiles never touched, silent `weapon:destroy()`) covering the jammer *and* every
@@ -8781,7 +8780,7 @@ sites in roughly one game in five. **Only the jammer is granted now**, and its
 `ElectronicWarfare` class is referenced by no layout, so it can never be faction-filled anywhere.
 
 **Task = EarlyWarningRadar**, because `IadsRole.for_task` maps it to `EWR`, the one air-defence
-role MANTIS never holds dark under EMCON. A site tasked MERAD/LORAD/SHORAD would be held dark
+role the IADS engine never holds dark. A site tasked MERAD/LORAD/SHORAD would be held dark
 until cued, so it would be off the RWR and un-HARM-able for most of the mission — exactly what
 the radar is there to prevent. The site consequently also contributes to its side's IADS
 detection, which reads correctly (it *is* a radar site).
@@ -9609,7 +9608,7 @@ engine; nothing is inferred from geometry.
 
 This is a doctrine change, not a bug fix. A flight facing a missile whose target the engine
 will not resolve — the re-check runs once at 1 s and then gives up — flies straight instead
-of breaking. Against the fork's SAM density (§41 belts, §60 radar redundancy, MANTIS) that
+of breaking. Against the fork's SAM density (§41 belts, §60 radar redundancy, the IADS net) that
 can raise AI attrition. The plugin toggle is the whole gate: off restores stock DCS
 behaviour with no other change.
 
@@ -10217,8 +10216,8 @@ an AI flight that clips a wall is not fired on, and only the player is.
   map parses, no neighbour overlap, each map a valid coverage. 165 in total across six
   files.
 
-**In-game passes owed: B118 and B119.** Nobody has flown the SAM design at all — B118
-was closed against the fighter patrol, which no longer exists. B119 is the AI intruder.
+**In-game passes owed: B120 and B121.** Nobody has flown the SAM design at all — B120
+was closed against the fighter patrol, which no longer exists. B121 is the AI intruder.
 ## §99 — Sandy rescue escort
 
 The armed half of a rescue package: an A-10 or an Apache working the ground around a
@@ -10309,3 +10308,89 @@ engages what is shooting at the pickup, or whether an Apache on the same plan be
 - **No link to the rescue flight.** The Sandy and the helicopter are planned independently
   and share only the target. There is no "Sandy cleared me in" handshake, on the map or in
   the mission.
+
+---
+
+## §100 — King on-scene commander
+
+The player-flown C-130J King finds the survivor and builds a threat picture for the
+rescue. Added 2026-09-12. Runtime only — a second script in the `opscsar` plugin plus one
+new node in the Lua data.
+
+### Files
+
+- `resources/plugins/opscsar/KingOnScene.lua` — the whole runtime. Loads after
+  `OpsCSAR.lua` (second `scriptsWorkOrders` entry), touches nothing of it.
+- `game/missiongenerator/luagenerator.py` `generate_csar_data` — emits
+  `dcsRetribution.CSAR.rescueFlights`: every CSAR and SANDY flight's group name, role
+  (`king` = fixed-wing CSAR, `jolly` = helicopter CSAR, `sandy`), side, whether a human is in
+  it, and the survivor id its package was fragged for.
+- `tests/lua/dcs_stubs.lua` gained `trigger.action.markToGroup` and `land.isVisible`
+  (a switch, `Harness.losBlocked` — the harness models no terrain).
+
+### What it does
+
+Registered for a `king` entry with `player == "true"` whose group has a human in it, polled
+every 10 s. F10 → **KING | On-Scene Commander**:
+
+- **Survivor status** — name, aircraft, beacon channel, fix quality, bearing and range to the fix.
+- **Take DF cut on the beacon** — inside 80 nm, a bearing from the King to the survivor with
+  up to ±3° of error (`DF_BEARING_ERROR_DEG`). Two cuts ≥15° apart intersect into a fix; every
+  qualifying pair is intersected and averaged. The error shown is the bearing error projected
+  at the last cut's range, opened up by poor separation, tightened by `√pairs`, floored at
+  150 m. Inside 15 nm with line of sight (`POD_RANGE_M`, `land.isVisible`) the fix snaps to
+  the true position — the pod has the survivor.
+- **Threat sweep around the fix** — needs a fix and the King within 40 nm of it. Scans enemy
+  ground groups within 8 nm **of the fix, not of the true survivor** — the pod looks where the
+  King thinks the pilot is, so a bad fix gives a bad picture. Closest five, each as a class
+  (`SAM` / `MANPADS` / `AAA` / `ARMOUR` / `TROOPS` / `VEHICLES` from `Unit:hasAttribute`)
+  with bearing and range **from the fix** and a mark jittered up to 460 m.
+- **Pass picture to …** — the player-crewed `sandy` and `jolly` groups on the King's side,
+  rebuilt every tick, plus **All rescue flights**. Sends the brief (`outTextForGroup`) and the
+  survivor + threat marks (`markToGroup`) to that group, clearing what it sent before.
+- **Clear my marks.**
+
+Mark ids start at `MARK_ID_BASE = 7100000` to stay clear of the c130j ISR marks and MOOSE's.
+Randomness is a per-King LCG seeded from mission time and group id, because `math.random`
+is never seeded in the DCS mission environment.
+
+### Constraints — do not undo
+
+- **Cues only.** No laser, no designation, no `setTask`/`pushTask` on any flight. The
+  harness test asserts `controllerTasks` stays empty after a pass. The §15 divert lesson.
+- **Class and rough position, never a unit type or an exact point.** The fog rule: nothing
+  here names a site's composition. `THREAT_JITTER_M` is the floor on how rough.
+- **The fix comes from DF, not from knowing where the pilot is.** The true position is read
+  only to noise a bearing from it and to snap inside pod range with LOS.
+- **Players only.** An AI King gets no menu; an AI Sandy or helicopter is never listed.
+
+### What the King is NOT given — one or the other (DM call 2026-09-12)
+
+A CSAR-tasked C-130J flies this menu and **not** the c130j EW/ISR menu; a JAMMING C-130J
+flies EW/ISR and not this. `_ew_excluded_c130j_groups` now lists `FlightType.CSAR` with
+TRANSPORT and AIR_ASSAULT, which is what the Lua comment ("Combat SAR King flies clean")
+always claimed and the Python never did. Found and fixed the same day.
+
+### Tests
+
+`tests/lua/test_kingonscene_runtime.py` (13): no node / AI King are no-ops; menu and welcome
+for a player King; one cut is a bearing; two cuts ≥15° apart fix within 4 km; close cuts do
+not; pod snap inside 15 nm with LOS, and not without LOS; beacon range gate; sweep needs a
+fix; class + rough + closest-first with friendlies and far groups excluded; the five cap;
+pass goes to player rescue flights only, marks land on their map, no controller task.
+`tests/test_csar.py::test_generate_csar_data_lists_the_rescue_flights_for_the_king` pins
+the emit.
+
+### Needs an in-game pass — B119
+
+Whether `land.isVisible` from a King at altitude reads as expected, whether a real DCS
+survivor unit keeps reporting a position for `Unit.getByName`, and whether `markToGroup` marks
+show for every client in a multi-crew group.
+
+### Deferred
+
+- **No authentication.** A real King authenticates the survivor by radio first. Nothing here
+  models it; the survivor is who the campaign says.
+- **No ADF tie-in.** The cockpit ADF (G33) and this DF are independent models of the same
+  beacon. They agree on the channel and nothing else.
+- **No AI vectoring**, by decision (2026-09-12).

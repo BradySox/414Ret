@@ -8,6 +8,10 @@
         {
             "file": "OpsCSAR.lua",
             "mnemonic": "opscsar"
+        },
+        {
+            "file": "KingOnScene.lua",
+            "mnemonic": "kingonscene"
         }
     ],
     "configurationWorkOrders": [],

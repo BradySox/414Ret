@@ -111,5 +111,6 @@ pass checklist `§N` is unregistered, or this table drifts.
 | §97 | Lifetime pilot profiles | — | `lifetime_pilot_profiles` |
 | §98 | Neutral-faction border defense | `neutralborder` | `neutral_border_defense` |
 | §99 | Sandy rescue escort | — | — |
-| — | MANTIS IADS engine | `mantisiads` | — |
+| §100 | King on-scene commander | `opscsar` | — |
+| — | Skynet IADS engine | `skynetiads` | — |
 | — | Splash Damage (414th tuned) | `splashdamage3` | — |

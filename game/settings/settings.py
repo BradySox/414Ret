@@ -145,11 +145,10 @@ class DefaultPlayerLaserCode(Enum):
 
 
 class IadsEngine(Enum):
-    """Save-compat stub. The Skynet IADS engine was removed (MANTIS is now the only
-    engine), but the retired ``iads_engine`` setting persisted this enum in older
-    campaign saves. The enum is kept *solely* so those saves still unpickle; the
-    orphan value is then dropped by ``_migrate_legacy_settings``. No setting reads
-    it. Safe to delete once no saved campaign predates the removal."""
+    """Save-compat stub. The 2026-06 engine selector persisted this enum in
+    campaign saves; the enum is kept *solely* so those saves still unpickle, and
+    ``_migrate_legacy_settings`` then drops the orphan value. Skynet is the only
+    engine again (2026-09-12) and no setting reads this."""
 
     SKYNET = "skynet"
     MANTIS = "mantis"
@@ -3691,7 +3690,7 @@ class Settings:
             "its own sensor envelope: what it contributes to the IADS picture, and "
             "when it opens fire, are unchanged. Search and track radars, dedicated "
             "early-warning sites, longer-sighted guns such as the Gepard, and every "
-            "SAM or point defense MANTIS actively drives are never touched. A sleeping "
+            "SAM or point defense Skynet actively drives are never touched. A sleeping "
             "gun site also stops radiating, so an anti-radiation shooter has nothing "
             "to home on and the SEAD half of a package goes home loaded. Turn this on "
             "only if a gun-heavy mission is stuttering and nothing is fragged at those "
@@ -3975,14 +3974,14 @@ class Settings:
             "nevatim_parking_fix",
             "only_player_takeoff",
             "generate_dtc",
-            # Removed once MANTIS/Skynet became the SAM-emissions owner: the IADS
-            # engine sets each networked SAM's alarm state at runtime, so a global
-            # "SAM starts in red alert" toggle just fought the engine. Non-IADS
-            # groups now fall to DCS AUTO. See 414th-mantis-migration-notes.md.
+            # Removed once the IADS engine became the SAM-emissions owner: it sets
+            # each networked SAM's alarm state at runtime, so a global "SAM starts
+            # in red alert" toggle just fought the engine. Non-IADS groups now fall
+            # to DCS AUTO.
             "perf_red_alert_state",
-            # The IADS-engine selector was removed when Skynet was dropped and MANTIS
-            # became the sole engine. Drop the persisted value (the IadsEngine stub
-            # only exists so the old enum still unpickles before this pop).
+            # The 2026-06 IADS-engine selector. Skynet is the only engine again;
+            # drop the persisted value (the IadsEngine stub only exists so the old
+            # enum still unpickles before this pop).
             "iads_engine",
             # Consolidated into the single airbase+roadbase ground-start truck
             # toggles (value already merged above).

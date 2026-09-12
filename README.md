@@ -74,6 +74,12 @@ Most of this is opt-in. Full list with toggles, defaults and known limitations:
 - The A-10 and the Apache fly the **Sandy** rescue escort: an armed track over the survivor,
   covering the pickup while the helicopter works. Add one to a rescue package by hand —
   the auto-planner never frags one, because coordinating a rescue is a job for a human.
+- Flying the King, you find the survivor yourself: an F10 menu takes **DF cuts** on the
+  beacon, two cuts from different positions make a fix, and inside pod range with line of
+  sight the fix snaps exact. A **threat sweep** around the fix reports what is near the pilot
+  as a class and a rough position — SAM, AAA, MANPADS, armour, troops — and **Pass picture**
+  puts the brief and the marks on the Sandy's and the helicopter's own F10 map. The King
+  cues; it never lases, and AI flights are never re-tasked.
 - Two pickup styles: land and let the survivor walk aboard, or hoist them on a hover. A pilot
   down in the water is always hoisted.
 - Survivors pop smoke for AI rescue flights. Human crews get the F10 menu — list active

@@ -31,7 +31,7 @@ value read out of DCS is a fact and a fact is not his to license; his compiled f
 If we ever want a file wholesale, ask him — he is reachable and has answered questions in
 public for a decade.
 
-**Already handled by accident.** Retiring MIST (2026-07-10, `414th-mist-moose-shim-notes.md`)
+**Already handled by accident.** Retiring MIST (2026-07-10, the since-deleted shim note; MIST is back as of 2026-09-12)
 deleted the only GPL-3 file in the tree. That was done for maintenance reasons; it was also
 the right licence call.
 
@@ -184,8 +184,8 @@ times. It manages radar state entirely through ROE and tasking, exactly as our c
 requires (§51, §63, §77, the C-130 script). The most experienced IADS scripter in DCS reached
 the same conclusion independently. Do not re-litigate that constraint.
 
-**Not a MANTIS replacement.** MANTIS is bundled in MOOSE, is the sole engine here by decision
-(`414th-mantis-iads-HANDOFF.md`), and our bridge already carries point defence, SEAD-evasion
+**Not an engine replacement.** (Written when MANTIS was the engine; Skynet is, since 2026-09-12.) MANTIS is bundled in MOOSE, was the sole engine here by decision
+(the MANTIS handoff note, deleted 2026-09-12), and our bridge already carries point defence, SEAD-evasion
 scoot, EWR grouping, band caps and the AWACS fold-in. The script is MIST-dependent and
 unlicensed. Take the ideas and the numbers; leave the code.
 

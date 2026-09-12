@@ -335,9 +335,10 @@ from pydcs_extensions import usamilitaryassetspack as usamap
     usamap.CH_THAAD_ANTPY2,
 ```
 
-**414th:** the MANTIS IADS engine needs no per-mod change (it bands SAMs by the emitted
-threat range, not a unit-name scan), but the radar db entries still matter — HARM/SEAD
-targeting and ship-radar classification read them.
+**414th:** a modded radar SAM also needs a Skynet profile (`samTypesDB` in the fork's compiled
+`skynet-iads-compiled.lua`) or it fights alone as vanilla AI; the HDSUC and CurrentHill packs
+are already covered. The radar db entries matter too — HARM/SEAD targeting and ship-radar
+classification read them.
 
 ## Step 9: Add icons for the UI (optional)
 

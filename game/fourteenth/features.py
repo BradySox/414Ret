@@ -850,9 +850,17 @@ FEATURES: tuple[Feature, ...] = (
         "Sandy rescue escort",
         99,
     ),
+    Feature(
+        # The King's on-scene systems. Lives in the always-on opscsar plugin as
+        # a second script, so no toggle of its own to forget.
+        "king_on_scene",
+        "King on-scene commander",
+        100,
+        plugin_id="opscsar",
+    ),
     # Always-on engine plugins — major 414th machinery documented in design notes
     # rather than a numbered "Features at a Glance" entry.
-    Feature("mantis_iads", "MANTIS IADS engine", plugin_id="mantisiads"),
+    Feature("skynet_iads", "Skynet IADS engine", plugin_id="skynetiads"),
     Feature("splash_damage", "Splash Damage (414th tuned)", plugin_id="splashdamage3"),
 )
 

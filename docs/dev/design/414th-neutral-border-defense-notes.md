@@ -2,7 +2,7 @@
 
 **Status: BUILT 2026-08-24 (§98).** Scope locked in a DM Q&A session the same day; every
 decision below is a DM call from that session. Read this before editing or re-litigating
-any of it. Features doc §98 carries the file list; B118 passed 2026-09-01, B119 owed.
+any of it. Features doc §98 carries the file list; B120 passed 2026-09-01, B121 owed.
 
 ## The patrol is gone: scope is the SAM (DM call, 2026-09-07)
 
@@ -62,7 +62,7 @@ nearest-target retarget loop and its 20 s timer, the `AttackGroup` task, and
 analogue. The second-battery rule for a country violated by both sides survives
 unchanged, because a battery can only be on one coalition either.
 
-**Not yet flown.** B118 was closed against the patrol and that evidence does not
+**Not yet flown.** B120 was closed against the patrol and that evidence does not
 transfer; both §98 rows are owed again.
 
 ## What it is now
@@ -103,8 +103,8 @@ true, then the dated sections for why.
   (the type Russia offered Lebanon in 2008), 10,000 ft floor, SA-6 on. Desert Storm + Iran
   was investigated and rejected on the evidence: the DS corridor is H-3 to Baghdad (west)
   and the map's only Iranian field is Kharg, far south -- the border would never trip.
-- **The player ladder is verified in DCS** (test 25, 2026-09-01; checklist B118). The Lua
-  harness cannot exercise DCS AI, so B119 -- an AI intruder -- is still owed.
+- **The player ladder is verified in DCS** (test 25, 2026-09-01; checklist B120). The Lua
+  harness cannot exercise DCS AI, so B121 -- an AI intruder -- is still owed.
 
 ## Engine verdict (investigated 2026-08-24 — do not re-investigate)
 
@@ -442,7 +442,7 @@ Cyprus combined).
 
 The first mission with §98 live produced one clean pass and three defects, two of
 them measured off the Tacview rather than reported. All three are fixed, and
-the fixes were later confirmed in DCS by test 25 (B118, 2026-09-01).
+the fixes were later confirmed in DCS by test 25 (B120, 2026-09-01).
 
 **It worked at all.** `6 border zone(s) drawn, 6 defended`, and against a blue
 F-15E BAI package Iran launched a shadow on the opposing coalition and stood it
@@ -724,7 +724,7 @@ and shipped as `labelX`/`labelZ`; verified on all 8 zones of a Syria campaign.
 
 **Not verified in DCS**: whether `trigger.action.textToAll` renders the `\n` as
 two lines. If it does not, the label will read as one run-on line — cosmetic,
-and on the B118 fail-signature list.
+and on the B120 fail-signature list.
 
 ## A faint line is not a quiet line (2026-08-26)
 
@@ -793,7 +793,7 @@ ask about — the answer is that it is deliberate, not an oversight.
 
 **Gate unchanged** (`neutral_border_defense` + plugin): "automagic" means no yaml
 needed, not default-on. **Flipping the default is now a live call** — the note
-said it waits for B118/B119, and B118 closed 2026-09-01.
+said it waits for B120/B121, and B120 closed 2026-09-01.
 
 ## Audit, 2026-08-27 — two defects the gates could not see
 
@@ -943,7 +943,7 @@ one would go stale exactly then, which is the bug the derivation exists to
 avoid. Two tests pin that passing the posture gives the same answer as deriving
 it, across all four postures and both sides.
 
-### The checklist rows collided with main's -- seven times, and the FEATURE NUMBER twice
+### The checklist rows collided with main's -- eight times, and the FEATURE NUMBER twice
 
 This PR added its in-game rows as **B100/B101**, and `main` already owned both
 (the DCS parking rework, and the F-4E Shrike row). Renumbering to **B106/B107**
@@ -987,6 +987,14 @@ which is the only reliable discriminator: the id alone cannot tell you whose row
 it is. A binary in the tree also matched the id grep -- filter to text files or
 the sweep dies mid-run with a `UnicodeDecodeError`, having already written some
 files and not others.
+
+**The eighth, 2026-09-12, took both rows at once.** Main merged the CJS Super
+Hornet update (#1010) with **B118** and the King on-scene commander (#1013, §100)
+with **B119** -- the exact pair this PR had moved to the day before. CI caught
+B118 first; B119 only surfaced when the King merge landed on top. The §98 rows
+are **B120/B121** now. Main's two rows were excluded by their own text
+(`Super Hornet`, `King`), and the collision history above keeps the old ids
+because it is history.
 
 **The §96 -> §97 sweep over-reached, and four of its edits survived the
 correction.** Renaming this feature away from §96 caught main's own career
@@ -1527,7 +1535,7 @@ matters. Everything else is fitted at 10 or more.
 - **The patrol fired back** — two `P_73` and one `P_27P`. The WVR fit is doing
   what the numbers call was meant to buy, against four AIM-120C-armed Vipers.
 
-Not evidenced here: an AI intruder (B119), and the radio calls, which are not
+Not evidenced here: an AI intruder (B121), and the radio calls, which are not
 logged — the DM confirmed those in test 19.
 
 ### Numbers, not better missiles (DM call, 2026-08-29)
@@ -1586,11 +1594,11 @@ and it closes the trap for whoever later relaxes one of those gates.
 
 ## In-game passes
 
-**B118 — the player ladder — CLOSED 2026-09-01** (test 25, Syria). Five four-ship
+**B120 — the player ladder — CLOSED 2026-09-01** (test 25, Syria). Five four-ship
 patrols, 23 of 24 aircraft never leaving their own airspace, the swap, the SAM
 and the return fire all measured in one session.
 
-**B119 is still owed**: an AI intruder, shadowed and never engaged, plus the
+**B121 is still owed**: an AI intruder, shadowed and never engaged, plus the
 accepted-risk watch — how often the intruder's own side kills the shadower
 before escalation. Setup and fail signature are on that checklist row.
 
@@ -1673,7 +1681,7 @@ country cannot sit on two coalitions in one mission.
 
 ### Owed
 
-B118 and B119 were already open against the SAM design. Nothing here has been
+B120 and B121 were already open against the SAM design. Nothing here has been
 flown either. The specific thing to look for on the first pass is whether several
 batteries in one country read as a border or as clutter — the count was chosen
 off measurement, not off a flight.
@@ -1757,7 +1765,7 @@ several rungs moved up: Turkmenistan SA-11 → S-300 on Afghanistan, Uzbekistan
 and Tajikistan SA-3 → SA-11. The 2004 ladder is now 15 SA-3, 15 Hawk, 13 SA-11,
 8 S-300, 4 Patriot.
 
-Nothing here has been flown either. It is on B118's card.
+Nothing here has been flown either. It is on B120's card.
 
 ## Two tiers, rescaled to the corrected map areas (DM call, 2026-09-10)
 
@@ -1821,7 +1829,7 @@ actually defended them in 1982.
 `ladder[-1]` when nothing matched, which handed a 1965 campaign a Rapier six
 years before it existed. It now takes the lightest rung the era does allow.
 
-Not flown. On B118's card with the rest.
+Not flown. On B120's card with the rest.
 
 ## Placement went conservative (DM call, 2026-09-10)
 
@@ -1878,7 +1886,7 @@ One thing to watch on the first flight: shallower siting puts batteries nearer
 the frontier, and the deep-placement rule was also what kept a swapped battery
 away from the neutral's own airfield. Nothing sits on a field today — placement
 is from the polygon, never the airfield — but a neutral whose airbase hugs its
-border is the case that would break it. On B118's card.
+border is the case that would break it. On B120's card.
 
 ## `engageAi` — the testing override (DM call, 2026-09-10)
 
@@ -1964,5 +1972,5 @@ vertices 7,093 → 7,166** — nearly all coverage, almost no cost.
 
 ### Owed
 
-Nothing here has been flown either. The check is the same one B118 already
+Nothing here has been flown either. The check is the same one B120 already
 carries: open the F10 map before you cross and look at where the fill stops.

@@ -188,7 +188,9 @@ def _declared_dependencies() -> list[tuple[str, str, Any]]:
 
 def test_the_tree_actually_declares_dependencies() -> None:
     """Guards against the feature being wired up but never used."""
-    assert len(_declared_dependencies()) >= 13
+    # 8 since 2026-09-12: the MANTIS bridge's five went with it (Skynet's own
+    # options declare none).
+    assert len(_declared_dependencies()) >= 8
 
 
 def test_a_master_is_never_itself_a_dependant() -> None:

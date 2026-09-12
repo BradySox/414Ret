@@ -21,9 +21,8 @@ class IadsProperties:
     Named generically (not ``Skynet*``) because these properties describe
     IADS behaviour that any engine can consume — the field names happen to
     match Skynet's API today, but the concept (HARM defence, go-live range,
-    autonomous behaviour, …) is engine-agnostic. See
-    docs/dev/design/414th-mantis-migration-notes.md §3.2 for the mapping to
-    MANTIS. ``SkynetProperties`` remains as a backwards-compatible alias.
+    autonomous behaviour, …) is engine-agnostic. ``SkynetProperties`` remains
+    as a backwards-compatible alias.
     """
 
     can_engage_harm: Optional[str] = None
@@ -62,8 +61,7 @@ class IadsProperties:
 
 
 #: Backwards-compatible alias. Prefer ``IadsProperties`` in new code; this name
-#: is retained so existing imports and references keep working during the
-#: Skynet -> MANTIS engine migration.
+#: is retained so existing imports and references keep working.
 SkynetProperties = IadsProperties
 
 
@@ -157,8 +155,7 @@ class GroundUnitType(UnitType[Type[VehicleType]]):
         """Engine-agnostic accessor for this unit's IADS tuning.
 
         Aliases the persisted ``skynet_properties`` field under a neutral name so
-        new IADS-engine code (e.g. the MANTIS bridge) does not reference Skynet
-        by name. See docs/dev/design/414th-mantis-migration-notes.md §3.2.
+        engine-agnostic code does not reference Skynet by name.
         """
         return self.skynet_properties
 

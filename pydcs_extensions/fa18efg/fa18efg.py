@@ -3596,7 +3596,7 @@ class FA_18E(PlaneType):
     }
 
     callnames: Dict[str, List[str]] = {
-        "USA": [
+        "AUS": [
             "Brutal",
             "Buckshot",
             "Cannon",
@@ -3613,7 +3613,64 @@ class FA_18E(PlaneType):
             "Sonic",
             "Sword",
             "Wolf",
-        ]
+        ],
+        "AUSAF": [
+            "Red55",
+        ],
+        "USA": [
+            "Hornet",
+            "Squid",
+            "Ragin",
+            "Roman",
+            "Sting",
+            "Jury",
+            "Joker",
+            "Ram",
+            "Hawk",
+            "Devil",
+            "Check",
+            "Snake",
+            "Beef",
+            "Blackjack",
+            "Convict",
+            "Lion",
+            "Mysty",
+            "Snoopy",
+            "Thunder",
+            "Wasp",
+            "Felix",
+            "Rhino",
+            "Sandman",
+            "Shakka",
+            "Spider",
+            "Thunder",
+            "Wildcat",
+            "Dealer",
+            "Dagger",
+            "Gypsy",
+            "Outlaw",
+            "Vampire",
+            "Viking",
+            "Voodoo",
+            "Shark",
+            "Mako",
+            "Bear",
+            "Vader",
+        ],
+        "KWT": [
+            "Hornet",
+            "Squid",
+            "Roman",
+            "Sting",
+            "Ragin",
+            "Jury",
+            "Joker",
+            "Ram",
+            "Hawk",
+            "Devil",
+            "Check",
+            "Snake",
+        ],
     }
 
     property_defaults: Dict[str, Any] = {
@@ -3939,14 +3996,21 @@ class FA_18E(PlaneType):
         "CJS_LABEL_CORE_VER": UnitPropertyDescription(
             identifier="CJS_LABEL_CORE_VER",
             control="label",
-            label="CJS PKG Revision: 04.19.2026",
+            label="CJS PKG Version: 2.4.5.260726",
             player_only=False,
+            x_lbl=100,
+        ),
+        "CJS_LABEL_CKPT_VER": UnitPropertyDescription(
+            identifier="CJS_LABEL_CKPT_VER",
+            control="label",
+            label="ED  CPT Version: 2.9.28.26283",
+            player_only=True,
             x_lbl=100,
         ),
         "CJS_LABEL_ECHO_VER": UnitPropertyDescription(
             identifier="CJS_LABEL_ECHO_VER",
             control="label",
-            label="F/A-18E Revision: 04.19.2026",
+            label="F/A-18E Revision: 07.26.2026",
             player_only=False,
             x_lbl=100,
         ),
@@ -7132,7 +7196,7 @@ class FA_18F(PlaneType):
     }
 
     callnames: Dict[str, List[str]] = {
-        "USA": [
+        "AUS": [
             "Brutal",
             "Buckshot",
             "Cannon",
@@ -7149,13 +7213,71 @@ class FA_18F(PlaneType):
             "Sonic",
             "Sword",
             "Wolf",
-        ]
+        ],
+        "AUSAF": [
+            "Red55",
+        ],
+        "USA": [
+            "Hornet",
+            "Squid",
+            "Ragin",
+            "Roman",
+            "Sting",
+            "Jury",
+            "Joker",
+            "Ram",
+            "Hawk",
+            "Devil",
+            "Check",
+            "Snake",
+            "Beef",
+            "Blackjack",
+            "Convict",
+            "Lion",
+            "Mysty",
+            "Snoopy",
+            "Thunder",
+            "Wasp",
+            "Felix",
+            "Rhino",
+            "Sandman",
+            "Shakka",
+            "Spider",
+            "Thunder",
+            "Wildcat",
+            "Dealer",
+            "Dagger",
+            "Gypsy",
+            "Outlaw",
+            "Vampire",
+            "Viking",
+            "Voodoo",
+            "Shark",
+            "Mako",
+            "Bear",
+            "Vader",
+        ],
+        "KWT": [
+            "Hornet",
+            "Squid",
+            "Roman",
+            "Sting",
+            "Ragin",
+            "Jury",
+            "Joker",
+            "Ram",
+            "Hawk",
+            "Devil",
+            "Check",
+            "Snake",
+        ],
     }
 
     property_defaults: Dict[str, Any] = {
         "SoloFlight": 0,
         "AIRCRAFT_ID_SEQ": 0,
         "CJS_PARAM_BLOCK": 1,
+        "CJS_PARAM_WSO_PIT": 0,
         "CJS_PARAM_DEMO": 0,
         "CJS_PARAM_USAFLAG": 0,
         "HelmetMountedDevice": 1,
@@ -7216,6 +7338,13 @@ class FA_18F(PlaneType):
             class Values:
                 Block_III___Cosmetic = 0
                 Block_II____Cosmetic = 1
+
+        class CJS_PARAM_WSO_PIT:
+            id = "CJS_PARAM_WSO_PIT"
+
+            class Values:
+                Advanced_Crew_Station = 0
+                Legacy_Crew_Station = 1
 
         class CJS_PARAM_DEMO:
             id = "CJS_PARAM_DEMO"
@@ -7486,14 +7615,21 @@ class FA_18F(PlaneType):
         "CJS_LABEL_CORE_VER": UnitPropertyDescription(
             identifier="CJS_LABEL_CORE_VER",
             control="label",
-            label="CJS PKG Revision: 04.19.2026",
+            label="CJS PKG Version: 2.4.5.260726",
             player_only=False,
+            x_lbl=100,
+        ),
+        "CJS_LABEL_CKPT_VER": UnitPropertyDescription(
+            identifier="CJS_LABEL_CKPT_VER",
+            control="label",
+            label="ED  CPT Version: 2.9.28.26283",
+            player_only=True,
             x_lbl=100,
         ),
         "CJS_LABEL_FOXT_VER": UnitPropertyDescription(
             identifier="CJS_LABEL_FOXT_VER",
             control="label",
-            label="F/A-18F Revision: 04.19.2026",
+            label="F/A-18F Revision: 07.26.2026",
             player_only=False,
             x_lbl=100,
         ),
@@ -7550,6 +7686,18 @@ class FA_18F(PlaneType):
             values={
                 0: "Block III - Cosmetic",
                 1: "Block II  - Cosmetic",
+            },
+        ),
+        "CJS_PARAM_WSO_PIT": UnitPropertyDescription(
+            identifier="CJS_PARAM_WSO_PIT",
+            control="comboList",
+            label="WSO Cockpit Type (Visual Only)",
+            player_only=False,
+            default=0,
+            w_ctrl=150,
+            values={
+                0: "Advanced Crew Station",
+                1: "Legacy Crew Station",
             },
         ),
         "CJS_PARAM_DEMO": UnitPropertyDescription(
@@ -10694,7 +10842,7 @@ class EA_18G(PlaneType):
     }
 
     callnames: Dict[str, List[str]] = {
-        "USA": [
+        "AUS": [
             "Brutal",
             "Buckshot",
             "Cannon",
@@ -10711,7 +10859,64 @@ class EA_18G(PlaneType):
             "Sonic",
             "Sword",
             "Wolf",
-        ]
+        ],
+        "AUSAF": [
+            "Red55",
+        ],
+        "USA": [
+            "Hornet",
+            "Squid",
+            "Ragin",
+            "Roman",
+            "Sting",
+            "Jury",
+            "Joker",
+            "Ram",
+            "Hawk",
+            "Devil",
+            "Check",
+            "Snake",
+            "Beef",
+            "Blackjack",
+            "Convict",
+            "Lion",
+            "Mysty",
+            "Snoopy",
+            "Thunder",
+            "Wasp",
+            "Felix",
+            "Rhino",
+            "Sandman",
+            "Shakka",
+            "Spider",
+            "Thunder",
+            "Wildcat",
+            "Dealer",
+            "Dagger",
+            "Gypsy",
+            "Outlaw",
+            "Vampire",
+            "Viking",
+            "Voodoo",
+            "Shark",
+            "Mako",
+            "Bear",
+            "Vader",
+        ],
+        "KWT": [
+            "Hornet",
+            "Squid",
+            "Roman",
+            "Sting",
+            "Ragin",
+            "Jury",
+            "Joker",
+            "Ram",
+            "Hawk",
+            "Devil",
+            "Check",
+            "Snake",
+        ],
     }
 
     property_defaults: Dict[str, Any] = {
@@ -10784,7 +10989,6 @@ class EA_18G(PlaneType):
 
             class Values:
                 None_ = 0
-                Installed = 1
 
         class CJS_PARAM_USAFLAG:
             id = "CJS_PARAM_USAFLAG"
@@ -11048,14 +11252,21 @@ class EA_18G(PlaneType):
         "CJS_LABEL_CORE_VER": UnitPropertyDescription(
             identifier="CJS_LABEL_CORE_VER",
             control="label",
-            label="CJS PKG Revision: 04.19.2026",
+            label="CJS PKG Version: 2.4.5.260726",
             player_only=False,
+            x_lbl=100,
+        ),
+        "CJS_LABEL_CKPT_VER": UnitPropertyDescription(
+            identifier="CJS_LABEL_CKPT_VER",
+            control="label",
+            label="ED  CPT Version: 2.9.28.26283",
+            player_only=True,
             x_lbl=100,
         ),
         "CJS_LABEL_GAMM_VER": UnitPropertyDescription(
             identifier="CJS_LABEL_GAMM_VER",
             control="label",
-            label="E/A-18G Revision: 04.19.2026",
+            label="E/A-18G Revision: 07.26.2026",
             player_only=False,
             x_lbl=100,
         ),
@@ -11123,7 +11334,6 @@ class EA_18G(PlaneType):
             w_ctrl=150,
             values={
                 0: "None",
-                1: "Installed",
             },
         ),
         "CJS_PARAM_USAFLAG": UnitPropertyDescription(
@@ -14320,7 +14530,7 @@ class FA_18ET(PlaneType):
     }
 
     callnames: Dict[str, List[str]] = {
-        "USA": [
+        "AUS": [
             "Brutal",
             "Buckshot",
             "Cannon",
@@ -14337,7 +14547,64 @@ class FA_18ET(PlaneType):
             "Sonic",
             "Sword",
             "Wolf",
-        ]
+        ],
+        "AUSAF": [
+            "Red55",
+        ],
+        "USA": [
+            "Hornet",
+            "Squid",
+            "Ragin",
+            "Roman",
+            "Sting",
+            "Jury",
+            "Joker",
+            "Ram",
+            "Hawk",
+            "Devil",
+            "Check",
+            "Snake",
+            "Beef",
+            "Blackjack",
+            "Convict",
+            "Lion",
+            "Mysty",
+            "Snoopy",
+            "Thunder",
+            "Wasp",
+            "Felix",
+            "Rhino",
+            "Sandman",
+            "Shakka",
+            "Spider",
+            "Thunder",
+            "Wildcat",
+            "Dealer",
+            "Dagger",
+            "Gypsy",
+            "Outlaw",
+            "Vampire",
+            "Viking",
+            "Voodoo",
+            "Shark",
+            "Mako",
+            "Bear",
+            "Vader",
+        ],
+        "KWT": [
+            "Hornet",
+            "Squid",
+            "Roman",
+            "Sting",
+            "Ragin",
+            "Jury",
+            "Joker",
+            "Ram",
+            "Hawk",
+            "Devil",
+            "Check",
+            "Snake",
+        ],
     }
 
     property_defaults: Dict[str, Any] = {
@@ -14517,14 +14784,14 @@ class FA_18ET(PlaneType):
         "CJS_LABEL_CORE_VER": UnitPropertyDescription(
             identifier="CJS_LABEL_CORE_VER",
             control="label",
-            label="CJS PKG Revision: 04.19.2026",
+            label="CJS PKG Version: 2.4.5.260726",
             player_only=False,
             x_lbl=100,
         ),
         "CJS_LABEL_TNKE_VER": UnitPropertyDescription(
             identifier="CJS_LABEL_TNKE_VER",
             control="label",
-            label="K/A-18E Revision: 11.21.2025",
+            label="K/A-18E Revision: 07.12.2026",
             player_only=False,
             x_lbl=100,
         ),
@@ -14866,7 +15133,7 @@ class FA_18FT(PlaneType):
     }
 
     callnames: Dict[str, List[str]] = {
-        "USA": [
+        "AUS": [
             "Brutal",
             "Buckshot",
             "Cannon",
@@ -14883,7 +15150,64 @@ class FA_18FT(PlaneType):
             "Sonic",
             "Sword",
             "Wolf",
-        ]
+        ],
+        "AUSAF": [
+            "Red55",
+        ],
+        "USA": [
+            "Hornet",
+            "Squid",
+            "Ragin",
+            "Roman",
+            "Sting",
+            "Jury",
+            "Joker",
+            "Ram",
+            "Hawk",
+            "Devil",
+            "Check",
+            "Snake",
+            "Beef",
+            "Blackjack",
+            "Convict",
+            "Lion",
+            "Mysty",
+            "Snoopy",
+            "Thunder",
+            "Wasp",
+            "Felix",
+            "Rhino",
+            "Sandman",
+            "Shakka",
+            "Spider",
+            "Thunder",
+            "Wildcat",
+            "Dealer",
+            "Dagger",
+            "Gypsy",
+            "Outlaw",
+            "Vampire",
+            "Viking",
+            "Voodoo",
+            "Shark",
+            "Mako",
+            "Bear",
+            "Vader",
+        ],
+        "KWT": [
+            "Hornet",
+            "Squid",
+            "Roman",
+            "Sting",
+            "Ragin",
+            "Jury",
+            "Joker",
+            "Ram",
+            "Hawk",
+            "Devil",
+            "Check",
+            "Snake",
+        ],
     }
 
     property_defaults: Dict[str, Any] = {
@@ -15074,14 +15398,14 @@ class FA_18FT(PlaneType):
         "CJS_LABEL_CORE_VER": UnitPropertyDescription(
             identifier="CJS_LABEL_CORE_VER",
             control="label",
-            label="CJS PKG Revision: 04.19.2026",
+            label="CJS PKG Version: 2.4.5.260726",
             player_only=False,
             x_lbl=100,
         ),
         "CJS_LABEL_TNKF_VER": UnitPropertyDescription(
             identifier="CJS_LABEL_TNKF_VER",
             control="label",
-            label="K/A-18F Revision: 11.21.2025",
+            label="K/A-18F Revision: 07.12.2026",
             player_only=False,
             x_lbl=100,
         ),

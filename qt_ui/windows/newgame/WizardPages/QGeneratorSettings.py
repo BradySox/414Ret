@@ -70,9 +70,9 @@ class GeneratorOptions(QtWidgets.QWizardPage):
 
         aircraft_pairs = [
             ("A-4E-C Skyhawk (v2.3.0)", self.a4_skyhawk),
-            ("CJS FA-18E/F/G Super Hornet (v2.4.5.260501.RC1)", self.fa_18efg),
+            ("CJS FA-18E/F/G Super Hornet (v2.4.5.260726)", self.fa_18efg),
             (
-                "CJS FA-18E/F Super Hornet Tanker (v2.4.5.260501.RC1)",
+                "CJS FA-18E/F Super Hornet Tanker (v2.4.5.260726)",
                 self.fa18ef_tanker,
             ),
             ("EA-6B Prowler (VSN AI, v2.9.4)", self.ea6b_prowler),

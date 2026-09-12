@@ -129,6 +129,43 @@ def test_replaying_a_campaign_records_its_sorties_again(tmp_path: Path) -> None:
     assert load_profiles(path)["Viper"].sorties == 2
 
 
+def test_a_pilot_who_reslotted_logs_both_sorties(tmp_path: Path) -> None:
+    # Ejected, took a second jet: two units, one player, one mission. The guard
+    # is decided before the fold, so the second record is a sortie and not a
+    # replay of the first -- and re-running the same mission still adds nothing.
+    path = _file(tmp_path)
+    records = [
+        _record("Enfield 1-1", ejected=True),
+        _record("Enfield 2-1", unit_type="F-16C_50"),
+    ]
+    _fold(path, records)
+    _fold(path, records)
+
+    profile = load_profiles(path)["Viper"]
+    assert profile.sorties == 2
+    assert profile.ejections == 1
+    assert [entry.aircraft for entry in profile.log] == ["F-16C_50", "FA-18C_hornet"]
+    assert profile.logged_missions == [mission_id("game-a", 1)]
+
+
+def test_a_failed_write_leaves_the_old_store_intact(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # Append-only with nothing to re-derive it from: a write that dies halfway
+    # must not take the file with it, and must not leave its temp file behind.
+    path = _file(tmp_path)
+    _fold(path, [_record()])
+    before = path.read_text(encoding="utf-8")
+
+    def refuse(self: Path, target: Any) -> Any:
+        raise OSError("disk full")
+
+    monkeypatch.setattr(Path, "replace", refuse)
+    assert save_profiles(load_profiles(path), path) is False
+    assert path.read_text(encoding="utf-8") == before
+    assert not list(tmp_path.glob(".*.tmp"))
+
+
 def test_a_pilot_who_joined_late_still_logs_that_mission(tmp_path: Path) -> None:
     # The guard is per profile, not per store.
     path = _file(tmp_path)

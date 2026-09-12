@@ -9885,8 +9885,15 @@ only a boolean. It now records the name, and a profile is keyed on it.
   mints a uuid on first use (lazily set, persisted, `__setstate__`-defaulted, so old saves
   need no migration). Keying on campaign name plus turn would make a replay's turn 1
   indistinguishable from the playthrough already recorded, and silently drop it.
-- **The guard is per profile, not per store.** A pilot who joined the event late has not
-  logged that mission even though everyone else has.
+- **The guard is per profile, not per store, and decided before the fold.** A pilot who
+  joined the event late has not logged that mission even though everyone else has. A pilot
+  who ejected and took a second slot flew two sorties in it and logs both: only a profile
+  that already had the mission on file when the fold began is skipped. The first version
+  appended the guard id after the first record, so the second slot read as a replay
+  (2026-09-11 audit).
+- **The store is written atomically.** Encoded first, written to a sibling temp file,
+  flushed to disk, then moved over the old file. The first version wrote in place, and a
+  crash mid-write would have truncated every career at once (2026-09-11 audit).
 - **The first human on a slot keeps the sortie.** A mid-mission handoff has no more claim on
   it than the pilot who took it off, and crediting whoever held the seat at the last sweep
   would hand a whole flight to someone who flew the last ten minutes.

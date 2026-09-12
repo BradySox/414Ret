@@ -58,7 +58,7 @@ also relative to `ReferenceLatitude=38 / ReferenceLongitude=36`, not absolute.
 
 ## Outstanding rows at a glance
 
-80 rows need a live pass. Full detail is under each `###` heading below —
+81 rows need a live pass. Full detail is under each `###` heading below —
 search the row id. `☐` untested · `◐` flown but not under the conditions that
 stress it · `✗` fail signature reproduced in-game.
 
@@ -196,6 +196,7 @@ stress it · `✗` fail signature reproduced in-game.
 | B114 | Your lifetime logbook survives starting a new campaign | §97 | ☐ |
 | B115 | The cockpit front line is one continuous boundary, bowed where the map is bowed | §74 / §90 | ☐ |
 | B117 | A Sandy can be fragged onto a survivor, and covers the pickup | §99 | ☐ |
+| B118 | The Super Hornet still arms and its new cockpit options are there | CJS 2.4.5.260726 | ☐ |
 
 ---
 
@@ -6915,3 +6916,48 @@ rescue helicopter to the same package or a separate one. Fly the Sandy.
   handling in `nav_path` is also suspect.
 - **Every jet in the wing offers Sandy.** The yaml `tasks:` gate is not the gate — check
   that no derivation in `get_task_priorities` is inferring `Sandy` from `CAS`.
+
+
+### B118 — The Super Hornet still arms and its new cockpit options are there · CJS 2.4.5.260726 · ☐ UNTESTED
+
+**Needs one generated mission, not a full flight.** ~10 min.
+
+**Why this row exists.** The 2.4.5.260726 update was verified against a fresh pydcs export:
+702 declared stores, their names, weights and every pylon's weapon list are identical to
+260501.RC1, so nothing about the loadouts should move. What CI cannot exercise is whether the
+mod still accepts the fits we write into the `.miz`, and whether the two changed properties
+reach the cockpit.
+
+**Setup.** Any campaign fielding the CJS Super Hornet — Marianas 2027 or Baltic Fury both do.
+Take a player F/A-18F and a player E/A-18G if the campaign has one. Generate the mission and
+slot in; there is no need to fly it.
+
+**Pass.**
+1. **The jets spawn with the loadout the payload tab showed** — in particular a Strike Rhino
+   carrying 2× GBU-31(V)4/B on the midboards and 2× GBU-32(V)2/B on the outboards, which is
+   the fit the Navy-case work put there.
+2. **`WSO Cockpit Type (Visual Only)`** appears in the F/A-18F's properties in the payload
+   tab, offering *Advanced Crew Station* (the default) and *Legacy Crew Station*, and the
+   back seat matches the one selected.
+3. **The E/A-18G's `Demo` property offers only `None`.** CJS retired its `Installed` value;
+   a Growler still offering it means the extension did not take the update.
+4. **The mods page in New Game reads `v2.4.5.260726`** for both the Super Hornet and the
+   Super Hornet Tanker entries.
+5. **A US Super Hornet flight is called `Hornet`, `Squid`, `Ragin`, `Roman`, `Sting` or
+   similar** — not `Brutal`, `Buckshot` or `Cannon`, which are the mod's *Australian* pool and
+   were what every US jet drew from before this update. An Australian squadron should get the
+   Brutal/Buckshot names, and a CJTF squadron may draw from any of the four nations' pools.
+
+**Fail signatures.**
+- **`Weapon not found` or an empty pylon in the ME/mission** for any store a Retribution fit
+  names — the declared weapon set moved after all and the export needs re-taking.
+- **A tanker variant kills mission generation** with `RuntimeError: Datalink network not
+  supported for aircraft with id 'FA-18ET'`. The export declares `networked_datalink = True`
+  for FA-18ET/FA-18FT and the fork deliberately overrides it to `False`, because pydcs has no
+  datalink entry for those ids. If this fires, the override was lost in a regen — it is
+  guarded by `tests/fourteenth/test_super_hornet_datalink.py`.
+- **The F/A-18F has no WSO option**, or the E/A-18G still lists `Installed` — the property
+  blocks did not update.
+- **Every Super Hornet flight is `Brutal`/`Buckshot` again, whatever the country** — the callsign
+  pools reverted to the single mislabelled block, or a regen re-took the export's display-name
+  keys, which pydcs cannot resolve. Guarded by `tests/fourteenth/test_super_hornet_callsigns.py`.

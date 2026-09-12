@@ -23,7 +23,7 @@ performance: 2
 # Center + Comms tower M + GeneratorF statics (in the .miz; the ADOC at Baghdad, sector
 # operations centers at Al-Taquddum / Kirkuk / Al-Kut, comms/power relays at every
 # other red base incl. Qadessiya/H-2/Balad/Mosul) plus a P-37/1L13 EWR chain with a
-# forward station at Qadessiya facing the H-3 front. With no iads_config, MANTIS wires
+# forward station at Qadessiya facing the H-3 front. With no iads_config, Skynet wires
 # each base's SAMs to its nearby comms (<15nm) / power (<35nm) / command center by
 # range -> destroyable per-base C2 cells, the Red Tide pattern. Decapitating the C2
 # (the F-117's war) degrades the whole net -- and feeds the s52 preseed below.

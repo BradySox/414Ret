@@ -24,7 +24,7 @@ This module is the campaign side of §63:
 
 The missiles themselves are real DCS weapons from a real, tracked ship TGO:
 kills record natively at debrief (no phantom spawns, no debrief-schema change),
-MANTIS point defense gets to intercept them, and sinking the shooter ends the
+Skynet point defense gets to intercept them, and sinking the shooter ends the
 raids. Symmetric — red Kalibr ships raid blue the same way.
 
 Gated ``cruise_missile_strikes`` (master: magazines + the plugin's F10

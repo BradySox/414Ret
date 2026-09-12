@@ -22,7 +22,7 @@ description:
 miz: red_tide.miz
 performance: 2
 # Advanced (networked) IADS: red SAM bases carry co-located Command Center + Comms tower M
-# + GeneratorF statics (in the .miz). With no iads_config, MANTIS wires each base's SAMs to
+# + GeneratorF statics (in the .miz). With no iads_config, Skynet wires each base's SAMs to
 # its nearby comms (<15nm) / power (<35nm) / command center by range -> destroyable per-base
 # C2 cells. Range mode is the deliberate fit here (per-base auto-wiring scales with the
 # laydown). By-name iads_config IS possible in principle -- a marker-spawned site's
@@ -251,11 +251,11 @@ settings:
   # trigger rules at generation.)
   plugins:
     vietnamops: true
-    # advanced_iads (line 33) is this laydown's centerpiece, and mantisiads owns its entire
-    # runtime -- MANTIS ships inside the bundled MOOSE, so this plugin is the only consumer
-    # of the emitted IADS table. Off, the IADS command unit is skipped at generation AND the
-    # auto-planner drops IADS buildings as strike targets outright.
-    mantisiads: true
+    # advanced_iads (line 33) is this laydown's centerpiece, and skynetiads owns its entire
+    # runtime: the plugin is the only consumer of the emitted IADS table. Off, the IADS
+    # command unit is skipped at generation AND the auto-planner drops IADS buildings as
+    # strike targets outright.
+    skynetiads: true
     # ... and the redscramble plugin for the §61 host scramble menu preseeded above.
     redscramble: true
     # §61 host-menu gate: the host's DCS name runs "<flight> 1-x | Flash" with a

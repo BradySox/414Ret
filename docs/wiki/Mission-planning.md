@@ -123,8 +123,8 @@ Every task below uses the same fields:
 - **Player technique** — how a human flies it well.
 - **AI limitations** — what to expect when the AI flies it.
 - **IADS notes** — behaviour changes under the runtime IADS engine, where relevant
-  (air-defence tasks). 414Ret runs **MANTIS** for every campaign (the sole engine; Skynet was
-  removed). It shuts radars down reactively, so a HARM is less likely to score an emitter kill —
+  (air-defence tasks). 414Ret runs **Skynet** for every campaign, as upstream does. It shuts
+  radars down reactively, so a HARM is less likely to score an emitter kill —
   see [Air-Defense-and-the-Air-War](Air-Defense-and-the-Air-War).
 
 ### Air-to-Air

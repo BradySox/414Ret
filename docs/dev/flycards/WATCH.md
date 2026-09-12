@@ -53,7 +53,7 @@ At your split point, look behind you. **Free — it is the flight you were flyin
 **Where:** `Saved Games/DCS/Logs/dcs.log` after any flight, one grep. **~1 min.**
 
 - **Pass:** `grep -c "EVENTMETA data for event ID" dcs.log` returns 0, and every plugin still
-  prints its startup banner (CTLD, CSAR, MANTIS, TIC).
+  prints its startup banner (CTLD, CSAR, Skynet, TIC).
 - **Fail:** thousands of them still — the `414Ret patch` in the vendored `Moose.lua` was lost,
   most likely to a bundle bump. A *different* unknown event id means DCS added another event.
 - **Why it's here:** it fired 6,807 times in one 7-minute mission and 11,861 in an archived

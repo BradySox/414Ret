@@ -838,7 +838,7 @@ FEATURES: tuple[Feature, ...] = (
     ),
     # Always-on engine plugins — major 414th machinery documented in design notes
     # rather than a numbered "Features at a Glance" entry.
-    Feature("mantis_iads", "MANTIS IADS engine", plugin_id="mantisiads"),
+    Feature("skynet_iads", "Skynet IADS engine", plugin_id="skynetiads"),
     Feature("splash_damage", "Splash Damage (414th tuned)", plugin_id="splashdamage3"),
 )
 

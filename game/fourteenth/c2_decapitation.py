@@ -2,7 +2,7 @@
 
 The IADS **command center** is a TGO the model already tracks (`category ==
 "commandcenter"`, `IadsRole.COMMAND_CENTER`), but its only gameplay was inside
-MANTIS's runtime SAM-autonomy graph -- nothing coupled it to the campaign's
+Skynet's runtime SAM-autonomy graph -- nothing coupled it to the campaign's
 *planning*. So "bomb the enemy HQ" was a strike checkbox, not a strategic move.
 
 This couples a side's **auto-planner quality to its own command-network health**:
@@ -31,7 +31,7 @@ if TYPE_CHECKING:
     from game.theater import ConflictTheater, Player
 
 #: The TGO category that is the command network. Deliberately ONLY the command
-#: centers -- comms/power nodes are MANTIS's runtime SAM concern (Feature B),
+#: centers -- comms/power nodes are Skynet's runtime SAM concern (Feature B),
 #: never the planning coupling.
 C2_CATEGORY = "commandcenter"
 

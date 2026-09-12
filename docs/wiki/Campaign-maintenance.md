@@ -69,7 +69,7 @@ the per-campaign design notes.
   sites) place as single sites — their layouts already carry two guidance radars.
   Strategic belts (S-300/S-400, Patriot, the long-range systems) prefer the
   regiment-by-authoring pattern: several single-radar fire units plus a shared EWR,
-  netted by MANTIS. Never stack both redundancy models on the same system.
+  netted by Skynet. Never stack both redundancy models on the same system.
 * **Know the miz's source of truth.** A *generated* campaign miz
   (`tools/build_*_miz.py`) is edited in the generator and re-run — never hand-edit the
   output. A *decorate-a-base* campaign (hand-positioned in the Mission Editor) is the

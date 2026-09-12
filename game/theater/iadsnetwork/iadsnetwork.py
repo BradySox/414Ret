@@ -33,7 +33,7 @@ class IadsNode:
 
     Engine-agnostic by name: it carries the DCS group/unit name, owning player,
     IADS role, per-unit properties, and the connection graph. The Skynet
-    emitter consumes it today; the MANTIS emitter will consume the same shape.
+    emitter consumes it today; any other engine's emitter would consume the same shape.
     ``SkynetNode`` remains as a backwards-compatible alias.
     """
 
@@ -128,7 +128,7 @@ class IadsNetwork:
         """Export every live, in-range IADS node with its connection graph.
 
         Engine-agnostic: the returned :class:`IadsNode` list is the single
-        source the mission Lua emitters (Skynet today, MANTIS later) build from.
+        source the mission Lua emitter (Skynet) builds from.
         Connection keys use ``IadsRole.skynet_value`` because the current Lua
         consumer is Skynet; that is the one named seam to revisit per engine.
         """

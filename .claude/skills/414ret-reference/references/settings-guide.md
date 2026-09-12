@@ -24,10 +24,11 @@ ON by default: **base** (mandatory), **CTLD** (needed for Air Assault/airlift zo
 
 Skynet trade-off (upstream's own framing): fixes DCS SAM crudeness (networked tracks, radar discipline vs HARMs, engagement logic, performance) but is a large-MP coordination challenge that degrades AI SEAD. Solo/small group → consider turning it off despite the default.
 
-> **414th deltas — this section is upstream's and is materially out of date for the fork:**
-> - **Skynet is REMOVED.** MANTIS is the sole IADS engine; there is no engine selector.
-> - **MIST is retired** behind a 51-symbol compat shim. Grep merged upstream Lua for `mist.`
->   — a missing symbol dies at runtime, not in CI.
+> **414th deltas:**
+> - **Skynet is the engine** (a MOOSE MANTIS bridge ran from 2026-06-24 to 2026-09-12 and
+>   was removed). There is no engine selector.
+> - **MIST is upstream's `mist_4_5_126.lua`** again; the 2026-07 compat shim went with the
+>   MANTIS bridge.
 > - The fork ships **~30 plugins**, most of them its own, each gated by a matching setting.
 >   **An unticked plugin silently kills its setting** — campaigns must preseed both.
 > - `ewrj`, Flight Control ATC and DCS Dismounts are **retired**; Splash Damage is a locked,

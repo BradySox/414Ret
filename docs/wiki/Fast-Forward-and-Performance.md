@@ -67,10 +67,8 @@ Large campaigns can stress CPU and GPU. These options trade detail for framerate
 
 ### Fork note: IADS engine
 
-Upstream's performance IADS is Skynet. This fork runs the **MANTIS** IADS engine instead —
-Skynet was removed, and older saves migrate automatically. Functionally it serves the same role
-— managing SAM activation and networking — so the performance guidance above still applies. See
-[IADS Engine: MANTIS](IADS-Engine-MANTIS) for detail.
+This fork runs the same Skynet IADS as upstream, so the performance guidance above applies
+as written. See [IADS Engine: Skynet](IADS-Engine-Skynet) for detail.
 
 ## Squadron MP event loadout (host checklist)
 

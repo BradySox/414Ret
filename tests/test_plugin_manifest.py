@@ -34,7 +34,7 @@ RETIRED_PLUGINS = {
     "flightcontrol",  # half-baked MOOSE FLIGHTCONTROL ATC (§13, retired)
     "scar",  # in-mission armor-hunt SCAR scenario (#266, rescue rework)
     "scramble",  # old ramp-scramble QRA -> replaced by the intercept reserve
-    "skynetiads",  # Skynet IADS engine -> MANTIS is the sole engine (#246)
+    "mantisiads",  # MOOSE MANTIS IADS bridge (2026-06 to 2026-09) -> Skynet is back
     "splashdamage",  # superseded by the tuned splashdamage3 build
     "splashdamage2",  # superseded by the tuned splashdamage3 build
 }

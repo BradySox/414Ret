@@ -203,7 +203,7 @@ unknown/blank on most jets, and the practical choice is to borrow an existing
 **The vanilla route (chosen).** Pair the jammer with a real emitter instead: an
 optional `GPS Jammer 0` slot on the **`Early-Warning Radar` layout** plus the
 `GPS Jamming Site (Red)`/`(Blue)` presets. An EWR is the right partner
-specifically because **MANTIS never holds an EWR dark** — detection rides on
+specifically because **the IADS engine never holds an EWR dark** — detection rides on
 dedicated EWR sites and AWACS — so the site is *always* emitting. It paints
 RWRs, takes HARMs, and SEAD services it like any other radar, with zero mod and
 zero integrity-check exposure.

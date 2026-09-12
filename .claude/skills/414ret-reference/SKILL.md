@@ -203,8 +203,8 @@ first, marked "(Recommended)", each with its trade-off.
 | Base | upstream `dcs-retribution/dev`; `main` here is the consolidated 414th build |
 | Feature registry | `game/fourteenth/features.py` — every numbered §N feature, its setting and plugin. **Register every new feature there**; a test fails CI if it drifts |
 | Fork feature layer | `game/fourteenth/` — turn-model features, hooked from `finish_turn` / `initialize_turn` / `plan_missions` |
-| IADS engine | **MANTIS only.** Skynet is *removed* — the plugin, the selector and the dual-engine wiring are gone. The shared `IadsNetwork` data model stays |
-| Framework | **MOOSE.** MIST is retired behind a compat shim (`base/plugin.json`) |
+| IADS engine | **Skynet** (upstream's), with two bridge additions: dead C2 stand-ins and a deferred AWACS add. The MOOSE MANTIS bridge ran 2026-06-24 to 2026-09-12 and is removed; there is no selector |
+| Framework | **MOOSE** for the fork's plugins; **MIST** is upstream's `mist_4_5_126.lua` again (the compat shim went with the MANTIS bridge) |
 | Custom flight types | `TARPS` (photo-recon; finds hidden enemy command posts — the `recon` plugin was removed 2026-08-20) · `JAMMING` (C-130J standoff EW) · `SCAR` (repurposed into the CSAR "Sandy" rescue escort — the armour-hunt scenario is deleted) · `COMBAT_SAR` · `ESCORT_JAMMER` |
 | CI gates | `lint.yml` (black whole-tree + mypy game/tests) · `test.yml` (pytest incl. 3 out-of-tree dirs) · `lua-lint.yml` (blocking syntax gate) · `414th-latest.yml` (rolling pre-release) |
 | Release | rolling `latest` pre-release is *the* release; pinned tags are `v<X.Y.Z>-414th`. **Never `git push --tags`** |

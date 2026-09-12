@@ -7,7 +7,7 @@ sites, ships and building TGOs are never eligible; and the concealed/map-hidden 
 controller would kill) is skipped. Gated by ``perf_ground_ai_sleep``.
 
 ``perf_aaa_site_sleep`` opens a second, narrower door for short-range gun sites --
-the AAA-doctrine perf sink -- guarded by sensor reach and MANTIS ownership. Those
+the AAA-doctrine perf sink -- guarded by sensor reach and IADS ownership. Those
 guards are what the second half of this file pins.
 """
 
@@ -177,15 +177,15 @@ class TestAaaSiteSleep:
         ewr = _tgo("ewr", "0206 | EWR", [_gun()])
         assert _groups(_game([ewr], aaa=True)) == []
 
-    def test_roles_mantis_drives_are_never_slept(self) -> None:
-        """MANTIS writes alarm state / EMCON to these; a switched-off controller
+    def test_roles_the_iads_drives_are_never_slept(self) -> None:
+        """Skynet writes alarm state / emissions to these; a switched-off controller
         would fight it, however short-sighted the guns are."""
         for role in (IadsRole.SAM, IadsRole.SAM_AS_EWR, IadsRole.POINT_DEFENSE):
             site = _tgo("aa", f"0207 | {role.value}", [_gun()], iads_role=role)
             assert _groups(_game([site], aaa=True)) == [], role
 
     def test_ewr_role_gun_site_is_eligible(self) -> None:
-        """MANTIS only *reads* detection from EWR-role nodes, and a 5 km gun has
+        """Skynet only *reads* detection from EWR-role nodes, and a 5 km gun has
         nothing to contribute at the wake radius -- this is the case that carries
         the win on an AAA-doctrine campaign."""
         site = _tgo("aa", "0208 | Flak belt", [_gun()], iads_role=IadsRole.EWR)

@@ -31,7 +31,7 @@ distinct message immediately above it. In the reference session, 7,569 written l
 | `EVENT00000.onEvent((WARNING: Could not get EVENTMETA data for event ID=61 ...))` | vendored `Moose.lua` | **Fixed 2026-08-29.** 6,807 occurrences in the reference session (11,861 in an archived Germany Cold War log). See `414th-framework-consolidation-notes.md`, *Local patches to the vendored `Moose.lua`*. |
 | `OnBeforeArrived: unit is stuck; retrying move without roads` | §9 TIC | **Open.** 846 in 7 minutes, correlated with the ANTIFREEZE cluster. Diagnostic added 2026-08-29 (name + per-unit count); behaviour unchanged pending a re-fly. See `414th-tic-dynamic-fronts-notes.md`. |
 | `ERROR EDCORE: Can't open file '...UnitPayloads//_retribution_backups'` | §73 | **Fixed 2026-08-29** — the backup store moved to `Retribution/PayloadBackups`. |
-| `DCSRetribution\|MANTIS-IADS plugin - ... resolved N/N SAM` | MANTIS | Health check, not an error. A non-zero *name match failed* count means those SAMs run vanilla with no EMCON. |
+| `DCSRetribution\|MANTIS-IADS plugin - ... resolved N/N SAM` | MANTIS (bridge removed 2026-09-12; a current log shows `Skynet-IADS plugin` lines instead) | Health check, not an error. A non-zero *name match failed* count means those SAMs run vanilla with no EMCON. |
 | `WARNING WORLD: ModelTimeQuantizer: ANTIFREEZE ENABLED` | DCS, but load-driven | Frame the sim could not deliver on time. Cluster it against the scripting stream — that is how the TIC correlation above was found. |
 
 ## Method

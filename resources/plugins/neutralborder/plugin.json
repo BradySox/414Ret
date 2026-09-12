@@ -1,0 +1,45 @@
+{
+    "nameInUI": "Neutral border defense (§98 runtime)",
+    "descriptionInUI": "Draws every country's real border on the F10 map. A country with no coalition airfield inside it stands live SAM batteries inside its own territory from mission start -- what it fields comes off the era and how much room it has -- legacy countries field SA-2, SA-3 or SA-5, modern ones SA-10 or SA-11, with Rapier, Hawk and Patriot for the western-equipped nations -- and how many comes off the room too, spread along the stretch of frontier the war is near and each placed well short of what its missile claims, so the border sits inside the envelope with margin rather than on its edge. They sit there as true neutrals and cannot fire, because a neutral unit in DCS never can. Enter and you are warned by radio at once; stay past the engage timer or release a weapon inside the border, and the whole country changes sides and engages. AI intruders are never engaged, unless you tick the testing option below -- a player has to fly a whole profile to trip a border once, where AI flights stray across on their own several times a mission. Batteries are free, untracked event content.",
+    "defaultValue": true,
+    "specificOptions": [
+        {
+            "nameInUI": "Seconds inside the border before the second radio call",
+            "mnemonic": "warnDwellS",
+            "defaultValue": 30,
+            "minimumValue": 10,
+            "maximumValue": 300
+        },
+        {
+            "nameInUI": "Seconds inside the border before a player is engaged",
+            "mnemonic": "engageDwellS",
+            "defaultValue": 180,
+            "minimumValue": 60,
+            "maximumValue": 900
+        },
+        {
+            "nameInUI": "Seconds between border scans",
+            "mnemonic": "scanIntervalS",
+            "defaultValue": 10,
+            "minimumValue": 5,
+            "maximumValue": 60
+        },
+        {
+            "nameInUI": "Draw each neutral border on the F10 map",
+            "mnemonic": "drawBorders",
+            "defaultValue": true
+        },
+        {
+            "nameInUI": "Engage AI intruders too (testing only)",
+            "mnemonic": "engageAi",
+            "defaultValue": false
+        }
+    ],
+    "scriptsWorkOrders": [],
+    "configurationWorkOrders": [
+        {
+            "file": "neutralborder-config.lua",
+            "mnemonic": "neutralborder-config"
+        }
+    ]
+}

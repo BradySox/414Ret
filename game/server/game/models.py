@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
+from dcs.mapping import Point
 from pydantic import BaseModel
 
 from game.server.controlpoints.models import ControlPointJs
@@ -9,7 +10,7 @@ from game.server.downedpilots.models import DownedPilotJs
 from game.server.flights.models import FlightJs
 from game.server.frontlines.models import FrontLineJs
 from game.server.iadsnetwork.models import IadsNetworkJs
-from game.server.leaflet import LeafletPoint
+from game.server.leaflet import LeafletPoint, LeafletPoly
 from game.server.mapzones.models import (
     ThreatZoneContainerJs,
     UnculledZoneJs,
@@ -142,6 +143,70 @@ class CampaignStatusJs(BaseModel):
         )
 
 
+class NeutralBorderJs(BaseModel):
+    """§98: one neutral country's defended airspace, for the planning map.
+
+    The DCS F10 map draws this at runtime, but by then you are already in the
+    cockpit -- the border has to be visible while you are *planning* the route,
+    which is the only time you can choose to route around it. Emitted only when
+    ``neutral_border_defense`` is on and the theater carries zones (the
+    supply-nodes pattern); empty otherwise, which hides the layer. Borders ship
+    per terrain, so that is every real-world map, authored or not.
+
+    Not fogged: a national border is public knowledge, and the whole point is
+    that the player can see the line they are choosing to cross.
+    """
+
+    country: str
+    #: What this airspace means, for the tooltip. Named the alert field until
+    #: 2026-09-09; nothing launches from one any more. Keeps its wire name so
+    #: the client contract does not move for a label change.
+    airfield: str
+    #: "neutral", "blue" or "red" -- who owns the airspace (the colour family).
+    posture: str
+    #: Whether BLUE may transit — the map is drawn from the player's side.
+    overflight: bool
+    #: Altitude below which BLUE is intercepted, or None for any altitude. A
+    #: floor means "high transit is tolerated"; a closed country grants none.
+    floor_ft: Optional[int]
+    #: The border ring as a Leaflet polygon (array-of-arrays, one ring, no holes).
+    border: LeafletPoly
+
+    @staticmethod
+    def all_in_game(game: Game) -> list[NeutralBorderJs]:
+        if not getattr(game.settings, "neutral_border_defense", False):
+            return []
+        from game.theater.neutralborder import NEUTRAL
+
+        zones = getattr(game.theater, "neutral_border_zones", [])
+        borders = []
+        for zone in zones:
+            posture = zone.posture_in(game.theater)
+            permits_blue = zone.permits(game.theater, True, posture)
+            # A border only bites if the country can actually put a fighter up.
+            # The generator degrades a neutral that cannot defend to
+            # drawn-and-toothless, and this map has to agree with the mission it
+            # is planning -- it once drew Cyprus and Armenia "closed to you at
+            # any altitude" over a mission that let you fly straight through.
+            if posture == NEUTRAL and not zone.can_defend(game.current_day):
+                permits_blue = True
+            ring = [
+                LeafletPoint.from_latlng(Point(x, y, game.theater.terrain).latlng())
+                for x, y in zone.border
+            ]
+            borders.append(
+                NeutralBorderJs(
+                    country=zone.country,
+                    airfield=zone.origin_label(posture, enforced=not permits_blue),
+                    posture=posture,
+                    overflight=permits_blue,
+                    floor_ft=zone.floor_for(game.theater, True),
+                    border=[ring],
+                )
+            )
+        return borders
+
+
 class GameJs(BaseModel):
     control_points: list[ControlPointJs]
     tgos: list[TgoJs]
@@ -157,6 +222,8 @@ class GameJs(BaseModel):
     map_zones: MapZonesJs
     # Campaign-status ribbon: turn/date/campaign (+ §75 victory rows when configured).
     campaign_status: CampaignStatusJs
+    # country. Empty unless neutral_border_defense is on, which hides the layer.
+    neutral_borders: list[NeutralBorderJs]
 
     class Config:
         title = "Game"
@@ -165,6 +232,7 @@ class GameJs(BaseModel):
     def from_game(game: Game) -> GameJs:
         return GameJs(
             campaign_status=CampaignStatusJs.from_game(game),
+            neutral_borders=NeutralBorderJs.all_in_game(game),
             control_points=ControlPointJs.all_in_game(game),
             tgos=TgoJs.all_in_game(game),
             downed_pilots=DownedPilotJs.all_in_game(game),

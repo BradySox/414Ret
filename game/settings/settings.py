@@ -594,6 +594,7 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                     "ambient_supply_convoys",
                     "convoy_ambush",
                     "mission_briefing_popup",
+                    "neutral_border_defense",
                 ],
             ),
             (
@@ -738,6 +739,7 @@ FEATURE_GATE_FIELDS: dict[str, list[str]] = {
         "artillery_base_harassment",  # §36
         "motorpool_enabled",  # §56
         "mission_briefing_popup",  # §58
+        "neutral_border_defense",  # §98
     ],
     "Electronic & command warfare": [
         "c2_decapitation_effects",  # §52
@@ -3206,6 +3208,36 @@ class Settings:
             "prefix); empty shows it to every BLUE client. "
             "Spawned bandits are free and untracked by design -- killing them "
             "changes nothing at the turn boundary; they are event content only."
+        ),
+    )
+    neutral_border_defense: bool = boolean_option(
+        "Neutral-faction border defense",
+        page=MISSION_GENERATION_PAGE,
+        section=GENERAL_SECTION,
+        default=False,
+        detail=(
+            "Every nation on the map is drawn with its real border, and one "
+            "that is not in the war defends its own airspace with surface-to-"
+            "air batteries. They stand inside the border from the moment the "
+            "mission starts, so you can find them before you cross. Both what "
+            "it fields and how many scale with the country, and what it fields "
+            "also follows the era: a legacy campaign sees SA-2, SA-3 and SA-5, "
+            "a modern one SA-10 and SA-11, with Rapier, Hawk and Patriot for "
+            "the nations that field western kit. A small country gets a single "
+            "short-ranged battery, a large one several long-ranged ones, "
+            "spread along the stretch of frontier the war is near, each set "
+            "back well short of what its missile claims, so the border sits "
+            "inside the envelope with margin. Enter and it "
+            "warns you by radio at once. Stay past the engage timer or release "
+            "a weapon inside the border, and the whole country changes sides "
+            "and engages -- not just the site you flew past. Whose airspace it "
+            "is, and whether it lets you through, are read from who holds the "
+            "airfields inside it. AI intruders are never engaged, and the "
+            "auto-planner ignores the borders entirely. Needs the 'Neutral "
+            "border defense' LUA plugin ticked. Borders ship with the eight "
+            "real-world terrains, so no campaign has to author anything; a "
+            "campaign may still author its own. Batteries are free, untracked "
+            "event content."
         ),
     )
     civilian_air_traffic: bool = boolean_option(

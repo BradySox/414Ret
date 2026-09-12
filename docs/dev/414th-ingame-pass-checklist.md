@@ -58,7 +58,7 @@ also relative to `ReferenceLatitude=38 / ReferenceLongitude=36`, not absolute.
 
 ## Outstanding rows at a glance
 
-82 rows need a live pass. Full detail is under each `###` heading below —
+84 rows need a live pass. Full detail is under each `###` heading below —
 search the row id. `☐` untested · `◐` flown but not under the conditions that
 stress it · `✗` fail signature reproduced in-game.
 
@@ -93,6 +93,8 @@ stress it · `✗` fail signature reproduced in-game.
 | B85 | A flight with an unreachable TOT flies instead of orbiting | §8 | ◐ |
 | B98 | The bullseye is the same place it was last mission | §95 | ☑ |
 | B99 | AI packages arrive inside the mission, not after it | §8 | ◐ |
+| B120 | Neutral border: warned, then the battery engages if you press | §98 | ☐ |
+| B121 | Neutral border: AI intruders are never engaged | §98 | ☐ |
 | G25 | Armed Recon package: recon drone + SEAD Viper escort + 4-ship sweep | §3 | ◐ |
 | G30 | Skynet point defence: the paired SHORAD answers the HARM shot | Skynet return | ☐ |
 | G42 | Skynet is the engine again: sites dark until cued, HARM defence, no `enableEmission` crash | Skynet return | ☐ |
@@ -6232,6 +6234,117 @@ mountain or coastal front will do.
   4. **The front line between two affected bases jumps** — ownership feeds base
      strength, so an 8-object swing is worth a look on Desert Trident's Jordan
      sector specifically.
+
+### B120 — Neutral border: warned, then the battery engages if you press · §98 · ☐ UNTESTED
+
+**REOPENED 2026-09-07.** This row closed on 2026-09-01 against the standing
+fighter patrol, and the patrol was dropped the same week (DM call: scope is the
+SAM). None of that evidence transfers — there is no aircraft in the feature any
+more.
+
+**What defends now.** Live SAM batteries, neutral and on the map from `t=0`,
+sized to the country (SA-3 or Hawk for a small one, S-300 or Patriot for a large
+one) and **counted off it too** — roughly one per 200 NM of war-facing frontier,
+capped at six, spread along the stretch of border the war is near, each deep
+enough that its envelope just reaches the frontier. A single battery covered
+3.5 % of Pakistan's border on the Afghanistan map, which is why there are now
+several (2026-09-09).
+
+**Setup.** Any campaign with `neutral_border_defense` on and the plugin ticked.
+Into the Hornet's Nest (Lebanon) is the worked case.
+
+**Pass.**
+
+* The battery is **findable before you cross** — it is emitting, so it paints on
+  RWR and shows on the F10 map as a neutral ground group. This is the whole
+  premise; if there is nothing there until you trip it, the feature failed.
+* Cross and you are hailed at once, then warned again at the dwell.
+* Stay past the engage timer, or drop something inside the border, and the
+  battery **changes coalition and shoots at you**.
+* Its envelope actually reaches the border you crossed — you should not be able
+  to loiter just inside the frontier untouched.
+* **A large country has several, and they are spread out** — on Afghanistan,
+  Pakistan should show 5-6 and Uzbekistan 1. Look at the F10 map before you fly.
+* **The whole country escalates.** After you are declared hostile, the batteries
+  elsewhere along that border are hostile too — fly at a second one and it should
+  engage without a fresh warning.
+
+**Fail signatures.**
+
+* Nothing on the map inside a shaded border at mission start.
+* The battery swaps and never fires — check it went weapons-free and alarm-red.
+* The neutral country's **airbase changes hands** when the battery swaps. Deep
+  placement is supposed to prevent that; if it happens, the site was on a field.
+* A country smaller than its system's reach (Bahrain, the two Persian Gulf
+  slivers) shooting well outside its own border. Known and accepted, but record
+  how far.
+* **Clutter.** The count was picked off measurement, not off a flight: ~17 sites
+  on an Afghanistan campaign, ~68 vehicles. If the RWR or the F10 map reads as an
+  authored IADS rather than a border, say so and the spacing goes up.
+* Two batteries stacked on top of each other, or one outside the border.
+
+**History:** built 2026-08-24 as a scramble, rebuilt 2026-08-29 as a standing
+four-ship patrol, closed 2026-09-01 on test 25 (five patrols, 23 of 24 aircraft
+never leaving their airspace, the swap and the SA-6 both proven), and rescoped to
+the SAM alone 2026-09-07. Full history in the design note.
+
+
+### B121 — Neutral border: AI intruders are never engaged · §98 · ☐ UNTESTED
+
+**REWRITTEN TWICE.** The 2026-09-07 rewrite dropped the scramble's
+`shadowHoldNm`/`maxShadows` language, which was right, but it then described the
+four-ship patrol — deleted the same week — and said an AI stray "gets the radio
+calls". **That is wrong and always was**: `hail` and `warn` are both gated on
+`state.is_player` (`neutralborder-config.lua`), so an AI stray draws **nothing at
+all**. Corrected 2026-09-09.
+
+**What this row now asks.** A country that refuses transit stands SAM batteries
+inside its own border for the whole mission. An **AI** flight that strays across
+gets **no reaction of any kind** — no radio call, no coalition swap, no SAM. Only
+a player earns those. The invariant is harness-covered; what needs eyes is that it
+holds in a real mission, and that AI strays happen at a believable rate rather
+than constantly.
+
+**Tick `engageAi` to watch the ladder run without flying it** (plugin options,
+default off, added 2026-09-10). It holds AI to the player's rules, so one
+generated turn exercises the hail, the dwell, the whole-country swap and the
+engagement. Use it to adjudicate **B120**, then untick it — this row is the
+default behaviour and must be checked with the option **off**.
+
+**Setup.** Any campaign with `neutral_border_defense` on and the plugin ticked —
+Into the Hornet's Nest (Lebanon) or Enduring Resolve (Pakistan, Iran) are the
+worked cases. Fly a normal mission and watch the F10 map for red or blue **AI**
+crossing a shaded border. You do not need to cross one yourself; if you do, that
+is B120's ladder, not this row.
+
+**Pass.**
+
+* An AI stray draws nothing. No radio call reaches you, and the batteries keep
+  their neutral colour on the F10 map.
+* No neutral battery goes weapons-free or alarm-red for an AI intruder.
+* Every battery the country stood is still there, still neutral, when the AI
+  leaves.
+
+**Fail signatures.**
+
+* The patrol turns hostile — its F10 colour flips to a coalition — with no player
+  inside the border. That is the players-only gate leaking.
+* A neutral SAM fires on an AI flight.
+* AI strays on every mission. That is a campaign-authoring problem, not a defect:
+  the border sits on the AI's routes, and the author should raise the altitude
+  floor or accept the theatre.
+* The patrol chases the AI out of its own airspace. It should not move.
+
+**Also record, because nothing else will:** whether a patrol on a **contested or
+already-aligned** country ever appears. It should not — only an uninvolved
+country that refuses transit gets one.
+
+**History:** built 2026-08-24 on the DM call that everyone trips the border and
+only players are ever engaged. Flown 2026-08-28 against the scramble: the
+never-engaged half held, and the alert pair was killed by the intruder's BARCAP
+in all four cases — the finding that helped kill the scramble. Superseded by the
+standing patrol; see the design note.
+
 
 ### B99 — AI packages arrive inside the mission, not after it · §8 · ◐ PARTIAL
 

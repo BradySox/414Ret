@@ -11,7 +11,7 @@ override):
 
 * **The ARM-intercept point defense exists** — the SA-15 Tor (and the SA-19
   Tunguska) were added so the S-300 regiments' point-defense escorts can
-  actually engage an inbound HARM (the MANTIS SHORAD link, checklist G30).
+  actually engage an inbound HARM (Skynet point defence, checklist G30).
   Without the Tor, red's SHORAD roster is IR-only (SA-9/13) + the Osa, none
   of which DCS tasks against missiles -- the G30 mechanic would be a no-op
   for red. A roster edit that drops the Tor fails here.
@@ -82,6 +82,6 @@ def test_red_tide_fields_the_arm_intercept_point_defense() -> None:
     air_defense = _faction()["air_defense_units"]
     assert "SA-15 Tor" in air_defense, (
         "the Tor is red's only SHORAD DCS tasks against missiles - without it "
-        "the MANTIS SHORAD link (G30) cannot intercept HARMs on Red Tide"
+        "Skynet point defence (G30) cannot intercept HARMs on Red Tide"
     )
     assert "SA-19 Grison (2K22 Tunguska)" in air_defense

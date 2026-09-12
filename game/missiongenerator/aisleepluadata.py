@@ -40,8 +40,8 @@ thinking. Two independent guards make the gun sites safe to switch off:
   envelope -- what it feeds the IADS picture, and when it opens fire, are unchanged.
   A Gepard (15 km) and every real search/track radar (35-300 km) sit above the line
   and keep thinking.
-* **Engine ownership.** MANTIS *writes* to the roles in ``MANTIS_MANAGED_ROLES``
-  (alarm state, EMCON hold), so a switched-off controller would fight the IADS
+* **Engine ownership.** Skynet *writes* to the roles in ``IADS_MANAGED_ROLES``
+  (alarm state, emissions), so a switched-off controller would fight the IADS
   engine; those never sleep. It only *reads* detection from the rest, which is why
   an EWR-role gun site is eligible while a SAM or a point defense never is.
 
@@ -77,9 +77,10 @@ AIR_DEFENSE_SLEEPABLE_CATEGORIES = frozenset({"aa"})
 #: (15 km) and every search/track radar (35-300 km) are above the line.
 AAA_SLEEP_MAX_DETECTION: Distance = meters(10_000)
 
-#: Roles MANTIS actively drives (alarm state / EMCON hold). A sleeping controller
-#: would fight it, so these never sleep however short-sighted their units are.
-MANTIS_MANAGED_ROLES = frozenset(
+#: Roles the IADS engine actively drives (alarm state / emissions). A sleeping
+#: controller would fight it, so these never sleep however short-sighted their
+#: units are.
+IADS_MANAGED_ROLES = frozenset(
     {IadsRole.SAM, IadsRole.SAM_AS_EWR, IadsRole.POINT_DEFENSE}
 )
 
@@ -142,11 +143,11 @@ def _sleepable_group_names(tgo: Any, include_air_defense: bool) -> list[str]:
 def _air_defense_group_may_sleep(group: Any) -> bool:
     """Whether switching this gun group off can change nothing but the frame time.
 
-    Both guards must hold: MANTIS must not be driving the group, and every alive
+    Both guards must hold: Skynet must not be driving the group, and every alive
     unit must be too short-sighted to have seen anything at the wake radius anyway.
     See the module docstring for the reasoning behind each.
     """
-    if getattr(group, "iads_role", IadsRole.NO_BEHAVIOR) in MANTIS_MANAGED_ROLES:
+    if getattr(group, "iads_role", IadsRole.NO_BEHAVIOR) in IADS_MANAGED_ROLES:
         return False
     for unit in getattr(group, "units", []):
         if not getattr(unit, "alive", False):

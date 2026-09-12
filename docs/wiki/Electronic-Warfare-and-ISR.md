@@ -152,5 +152,5 @@ scripted menu, and AI SEAD/DEAD flights get no generic jamming waypoint actions.
 
 - [Mission planning](Mission-planning)
 - [Air Defense and the Air War](Air-Defense-and-the-Air-War)
-- [IADS Engine: MANTIS](IADS-Engine-MANTIS)
+- [IADS Engine: Skynet](IADS-Engine-Skynet)
 - [Fog of War and Reconnaissance](Fog-of-War-and-Reconnaissance)

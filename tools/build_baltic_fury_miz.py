@@ -313,7 +313,7 @@ def add_gps_jamming_markers() -> None:
     discard the DM's laydown. Idempotent: re-running adds nothing.
 
     They are EWR-band markers because the `GPS Jamming Site (Red)` preset is
-    EarlyWarningRadar-tasked -- the one air-defence role MANTIS never holds dark,
+    EarlyWarningRadar-tasked -- the one air-defence role the IADS never holds dark,
     which is what keeps the site's radar emitting (on RWR, and HARM-able) for the
     whole mission. Names are explicit, not counter-derived, so they can never
     renumber an existing marker.

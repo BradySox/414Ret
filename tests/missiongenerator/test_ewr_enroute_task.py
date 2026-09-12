@@ -6,7 +6,7 @@ makes the corresponding assertion below fail: these tests pin the EWR-only
 behaviour and prove non-EWR groups are left alone.
 
 Fork divergence from upstream #879: the fork removed the perf_red_alert_state
-toggle (#231 — networked SAM alarm state is owned by the MANTIS IADS engine at
+toggle (#231 — networked SAM alarm state is owned by the Skynet IADS engine at
 runtime), so a non-EWR, non-ship group gets NO alarm option at all (DCS AUTO)
 rather than upstream's GREEN. Only ships (force_red) and dedicated EWR sites are
 forced RED at generation.

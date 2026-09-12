@@ -24,10 +24,16 @@ def test_land_relocate_registered_in_base_plugin() -> None:
 
 
 def test_land_relocate_loaded_after_mist() -> None:
-    # The fork loads the MIST compat shim (mist_moose_shim.lua) in place of the
-    # retired mist_4_5_126.lua; the relocate script must still come after it.
     files = _base_work_order_files()
-    assert files.index("land_relocate.lua") > files.index("mist_moose_shim.lua")
+    assert files.index("land_relocate.lua") > files.index("mist_4_5_126.lua")
+
+
+def test_base_plugin_loads_real_mist_not_the_retired_shim() -> None:
+    # The 2026-07 MIST->MOOSE shim was retired with the MANTIS bridge (2026-09-12);
+    # upstream's mist_4_5_126.lua is back as the one MIST the consumers load.
+    files = _base_work_order_files()
+    assert "mist_4_5_126.lua" in files
+    assert "mist_moose_shim.lua" not in files
 
 
 def test_land_relocate_injected_as_doscriptfile() -> None:

@@ -2,7 +2,7 @@
 
 The Vietnam Ops suite (docs/dev/design/414th-vietnam-ops-notes.md) adds opt-in
 period mechanics that run inside the generated .miz via the ``vietnamops`` plugin.
-Following the MANTIS pattern, Python emits a data table and the Lua side executes the
+Following the IADS pattern, Python emits a data table and the Lua side executes the
 behavior. Each sub-feature is emitted **only when its Settings toggle is on**, so the
 plugin gates purely on data presence (an absent node = feature off).
 

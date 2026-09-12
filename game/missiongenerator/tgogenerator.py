@@ -399,11 +399,11 @@ class GroundObjectGenerator:
                         # Special handling for scenery objects: never culled.
                         self.add_trigger_zone_for_scenery(unit)
                         if (
-                            self.game.settings.plugin_option("mantisiads")
+                            self.game.settings.plugin_option("skynetiads")
                             and isinstance(group, IadsGroundGroup)
                             and group.iads_role.participate
                         ):
-                            # Generate a unit the IADS engine (MANTIS) can control
+                            # Generate a unit which can be controlled by skynet
                             self.generate_iads_command_unit(unit)
                     elif not culled:
                         # Create a static group for each static unit
@@ -657,19 +657,19 @@ class GroundObjectGenerator:
         # EWR radars need the DCS "EWR" enroute task to actively scan and report
         # contacts to their coalition. Without it they sit inert (upstream #879).
         # Applied only to dedicated EWR sites (not SAM-as-EWR groups, whose alarm
-        # state MANTIS manages by role), so it complements the IADS engine rather
-        # than fighting it: MANTIS reads EWR detections and does not manage the
+        # state Skynet manages by role), so it complements the IADS engine rather
+        # than fighting it: Skynet reads EWR detections and does not manage the
         # task list. (The matching RED alarm state is forced in set_alarm_state.)
         if isinstance(self.ground_object, EwrGroundObject):
             group.points[0].tasks.append(EWR())
 
     def set_alarm_state(self, group: MovingGroup[Any], force_red: bool = False) -> None:
         # The fork removed the legacy perf_red_alert_state toggle (#231): networked
-        # SAM alarm state is owned by the IADS engine (MANTIS EMCON) at runtime and
+        # SAM alarm state is owned by the IADS engine (Skynet) at runtime and
         # every other group stays on DCS AUTO. Only two cases force RED at
         # generation: ships (force_red — fleets always defend rather than sit
         # passive, upstream #868) and dedicated EWR sites (a passive radar would
-        # defeat the EWR() enroute task, upstream #879 — MANTIS reads EWR
+        # defeat the EWR() enroute task, upstream #879 — Skynet reads EWR
         # detections and never re-states them). Everything else: no option written.
         if force_red or isinstance(self.ground_object, EwrGroundObject):
             group.points[0].tasks.append(OptAlarmState(2))

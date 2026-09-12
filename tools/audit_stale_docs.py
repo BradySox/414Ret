@@ -98,9 +98,26 @@ class Removed:
 
 REMOVED: tuple[Removed, ...] = (
     Removed(
-        # S49. Deliberately NOT a bare "shoot and scoot": MANTIS displaces its
-        # own SAMs and EWRs, and two live wiki pages say so in those words. Only
-        # theatre-missile / SCUD / PLARF phrasing belongs here.
+        # The MOOSE MANTIS IADS bridge and the MIST shim, 2026-06 to 2026-09-12.
+        # Skynet and upstream's MIST are back; a page that says MANTIS is the
+        # engine, or that Skynet was removed, is wrong.
+        "the MANTIS IADS bridge and the MIST shim",
+        "2026-09-12",
+        r"\bmantisiads\b|IADS-Engine-MANTIS|mist_moose_shim|MANTIS (is|as) the (sole |only )?(IADS )?engine"
+        r"|Skynet was removed|Skynet is removed|MANTIS IADS engine|the MANTIS IADS|runs the \*\*MANTIS\*\*",
+        allow=(
+            "removed",
+            "Removed:",
+            "no longer",
+            "historical",
+            "2026-06",
+            "went with",
+        ),
+    ),
+    Removed(
+        # S49. Deliberately NOT a bare "shoot and scoot": Skynet's mobile-SAM
+        # options displace SAMs, and two live wiki pages say so in those words.
+        # Only theatre-missile / SCUD / PLARF phrasing belongs here.
         "mobile missile relocation, the SCUD hunt (S49)",
         "2026-08-29",
         r"mobile_missile_relocation|\bmobilemissiles\b"
@@ -230,12 +247,6 @@ REMOVED: tuple[Removed, ...] = (
         "2026-07-10",
         r"mist_4_5_126|\bMIST\b",
         allow=("retired", "removed", "shim", "MIST→MOOSE", "MIST-to-MOOSE"),
-    ),
-    Removed(
-        "the Skynet IADS engine",
-        "2026-06",
-        r"[Ss]kynet",
-        allow=("removed", "retired", "sole IADS engine", "What happened to"),
     ),
     Removed(
         "Pretense",

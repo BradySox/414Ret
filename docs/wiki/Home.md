@@ -32,7 +32,7 @@ and quality-of-life work on top of upstream.
 
 - [Air Defense and the Air War](Air-Defense-and-the-Air-War) — BARCAP, QRA, SEAD, support orbits,
   carrier ops.
-- [IADS Engine: MANTIS](IADS-Engine-MANTIS) — the runtime air-defence brain.
+- [IADS Engine: Skynet](IADS-Engine-Skynet) — the runtime air-defence brain.
 - [Fog of War and Reconnaissance](Fog-of-War-and-Reconnaissance) — intel fog, hidden command posts,
   TARPS, approximate targeting.
 - [Electronic Warfare and ISR](Electronic-Warfare-and-ISR) — the C-130J JAMMING platform.

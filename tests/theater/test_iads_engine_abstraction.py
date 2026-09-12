@@ -1,9 +1,7 @@
-"""IADS-engine abstraction seams introduced for the Skynet -> MANTIS migration.
+"""IADS-engine abstraction seams (introduced for the 2026-06 MANTIS detour).
 
 These guard the engine-agnostic renames and the single named Skynet
-serialization seam, so the Skynet Lua output stays byte-identical while new
-MANTIS code can avoid referencing Skynet by name. See
-docs/dev/design/414th-mantis-migration-notes.md (§3) and the parity matrix.
+serialization seam, so the Skynet Lua output stays byte-identical.
 """
 
 from types import SimpleNamespace
@@ -112,8 +110,7 @@ def test_iads_node_dcs_name_uses_unit_name_for_ewr() -> None:
 # the dependency with it, so the degradation lasted exactly one mission: from the
 # next turn the SAMs behind a bombed power station came back fully operational,
 # and killing every command centre restored perfect command instead of removing
-# it. Found in juanjux/dcs-retribution#97 against Skynet; the same hole was live
-# here against MANTIS.
+# it. Found in juanjux/dcs-retribution#97 against Skynet.
 
 
 def _c2_group(

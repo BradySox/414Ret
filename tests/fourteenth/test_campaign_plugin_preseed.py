@@ -58,16 +58,16 @@ def test_red_tide_preseeds_the_redscramble_plugin_for_the_host_menu() -> None:
     assert settings["plugins"]["redscramble.hostPlayers"] == "Flash"
 
 
-def test_red_tide_preseeds_the_mantisiads_plugin_for_advanced_iads() -> None:
+def test_red_tide_preseeds_the_skynetiads_plugin_for_advanced_iads() -> None:
     # advanced_iads is a campaign-level key, NOT a setting -- so it is read from the
     # document root while the plugin pin lives under settings.plugins.
     with open(RED_TIDE, encoding="utf-8") as f:
         campaign = yaml.safe_load(f)
     assert campaign["advanced_iads"] is True
-    # mantisiads owns that whole runtime -- MANTIS ships inside the bundled MOOSE, so
-    # the plugin is the only consumer of the emitted IADS table. Off, generation skips
-    # the IADS command unit AND the auto-planner drops IADS buildings as strike targets.
-    assert campaign["settings"]["plugins"]["mantisiads"] is True
+    # skynetiads owns that whole runtime: the plugin is the only consumer of the
+    # emitted IADS table. Off, generation skips the IADS command unit AND the
+    # auto-planner drops IADS buildings as strike targets.
+    assert campaign["settings"]["plugins"]["skynetiads"] is True
 
 
 def test_red_tide_enables_convoy_ambushes_without_a_plugin() -> None:

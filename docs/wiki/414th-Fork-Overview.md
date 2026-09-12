@@ -72,8 +72,9 @@ Full detail: [Fog of War and Reconnaissance](Fog-of-War-and-Reconnaissance).
 - **SAM batteries field two guidance radars**, so one HARM no longer kills a site.
 - Optional per-side **auto-planner unpredictability** varies which offensive targets the enemy
   services first.
-- Enemy air defences run on the **MANTIS** IADS engine — the sole engine (Skynet was removed;
-  older saves migrate automatically).
+- Enemy air defences run on **Skynet-IADS**, the same engine as upstream, with two fork
+  additions: a C2 node you destroyed stays destroyed on later turns, and a ground-starting
+  AWACS joins the net once it is airborne.
 
 Full detail: [Air Defense and the Air War](Air-Defense-and-the-Air-War).
 

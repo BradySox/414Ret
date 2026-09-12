@@ -88,13 +88,14 @@ stress it · `✗` fail signature reproduced in-game.
 | G19 | TARPS recon birds fly the recon leg (RF-101B / RA-5C / Su-24MR) | §3 | ◐ |
 | G39 | Engaging a site reveals it completely; recon does not | §3 | ☑ |
 | G40 | TARPS recon finds a hidden enemy command post | §3 | ☐ |
-| G41 | A bombed power station keeps its SAMs down on the NEXT turn | MANTIS C2 | ☐ |
+| G41 | A bombed power station keeps its SAMs down on the NEXT turn | Skynet bridge, DeadC2 | ☐ |
 | B84 | Front-line groups move and return fire instead of holding | §8 | ☑ |
 | B85 | A flight with an unreachable TOT flies instead of orbiting | §8 | ◐ |
 | B98 | The bullseye is the same place it was last mission | §95 | ☑ |
 | B99 | AI packages arrive inside the mission, not after it | §8 | ◐ |
 | G25 | Armed Recon package: recon drone + SEAD Viper escort + 4-ship sweep | §3 | ◐ |
-| G30 | MANTIS SHORAD link: the point defense ambushes the HARM shot | MANTIS migration | ☐ |
+| G30 | Skynet point defence: the paired SHORAD answers the HARM shot | Skynet return | ☐ |
+| G42 | Skynet is the engine again: sites dark until cued, HARM defence, no `enableEmission` crash | Skynet return | ☐ |
 | G33 | Survivor ADF beacon: the pinned 260 kHz drives a real needle | CSAR (upstream #929 + 414th pin) | ☐ |
 | G34 | AI landing pickup: touchdown, embark, and the rescue reported back | CSAR | ☑ |
 | G35 | AI hover hoist completes and releases the flight, including over water | CSAR | ☑ |
@@ -139,7 +140,7 @@ stress it · `✗` fail signature reproduced in-game.
 | T4 | DCS 2.9.28 Iraq map pass: dam destructibility + the ED airfield fixes | Desert Storm / Inherent Resolve | ☑ |
 | T5 | Marianas "Second Island Chain (2027)" campaign plays | Marianas 2027 campaign | ☑ |
 | T6 | The survival clock leaves exactly one flyable rescue window | CSAR | ☑ |
-| U1 | Water/land relocate scripts run on the MIST shim | base plugin | ☑ |
+| U1 | Water/land relocate scripts run on the MIST shim | base plugin | ✅ |
 | B45 | GPS jamming (satellite-guided weapons go long) | §86 | ☐ |
 | B52 | Escort-jammer distribution + the one-SEAD-flavour escort set | §77 | ◐ |
 | B49 | Carrier recovery-phase deck dressing | §72 | ✅ |
@@ -164,7 +165,7 @@ stress it · `✗` fail signature reproduced in-game.
 | B78 | The escorts let go of a package the player is leading | planner shape | ☐ |
 | B79 | Ground-level waypoints read the field's elevation | §8 | ☐ |
 | B80 | String plugin options can actually be edited | §14 | ☐ |
-| B81 | SEAD-evasion scoot distance is a campaign setting | MANTIS | ☐ |
+| B81 | SEAD-evasion scoot distance is a campaign setting | MANTIS | ✅ |
 | B82 | The AWACS orbits at a field it can actually fly from | planner shape | ☑ |
 | B88 | Tankers orbit at their own base, and each carrier gets one | planner shape | ☑ |
 | B83 | ATMOS-X live weather: the turn flies a real observation | ATMOS-X live weather | ☑ |
@@ -1411,6 +1412,9 @@ flight test. See features doc §12. The pass description below is kept for readi
 
 ### G6 — MANTIS IADS engine (phase 1: core networking) · MANTIS migration · ☑ VERIFIED
 
+> **Superseded 2026-09-12.** The MANTIS bridge is removed; Skynet is the engine again
+> (`414th-skynet-return-notes.md`). Kept as the record of what was flown. The live row is **G42**.
+
 **History:** 2026-06-25
 - **Verified (2026-06-25, in-game, zone-node map):** the C2-regression re-fly passed — red SAM
   radars came up on RWR at start (no spurious decapitation from the scenery-node `node_dead`
@@ -1480,6 +1484,8 @@ flight test. See features doc §12. The pass description below is kept for readi
   toggle the group.
 
 ### G7 — MIST → MOOSE shim (`mist_moose_shim.lua`) · MIST retirement · ☑ VERIFIED
+
+> **Superseded 2026-09-12.** The shim is deleted and upstream's `mist_4_5_126.lua` loads again.
 
 **History:** 2026-06-25 (GermanyCW)
 - **Result (2026-06-25):** PASSED. With `base/plugin.json` loading the shim instead of
@@ -1821,6 +1827,9 @@ flight test. See features doc §12. The pass description below is kept for readi
 
 ### G14 — C-130J jamming vs MANTIS IADS (no EMCON interference) · §2 / MANTIS migration · ☑ VERIFIED
 
+> **Superseded 2026-09-12.** Under Skynet the engine re-asserts ROE itself, so the jammer's
+> `WEAPON_HOLD` / `OPEN_FIRE` writes are self-healing (the pre-June state, flown in G4).
+
 **History:** 2026-06-28, audience in-game pass — EW jamming works, no MANTIS EMCON interference
 - **Invariant verified by reading 2026-06-26:** the "must never happen" failure mode (an
   `ALARM_STATE`/emission write creeping into the jammer) is structurally precluded.
@@ -1847,6 +1856,9 @@ flight test. See features doc §12. The pass description below is kept for readi
   `restoreSAMRoe` are still ROE-only).
 
 ### G15 — MANTIS SAM range/band override (SEAD) · §2 / MANTIS migration · ☑ VERIFIED
+
+> **Superseded 2026-09-12.** Skynet classifies sites from its own `samTypesDB`; the band
+> override went with the bridge. Coverage of that database is audited in the return note §4.
 
 **History:** 2026-06-27 (GermanyCW — bands + detection + engagement; HARM-evasion sub-check & AWACS-less caveat below remain to watch)
 - **VERIFIED (2026-06-27, post AWACS-fold fix):** re-fly over the Haina SAMs **drew fire**. `dcs.log`
@@ -2483,7 +2495,11 @@ target is actually enough reach in a real laydown, and whether the message lands
 - **Pass:** run 1 — the snatch party spawns and captures despite zero rescue assets (dcs.log shows "capture race only", the MAYDAY reads "no rescue assets available"), the POW + comms jam fire. Run 2 — the debrief spares the pilot (roster shows **MIA**, SITREP shows "MIA: <name> — evading near <CP> (downed this turn)"), the next mission re-spawns the survivor at the same spot with red smoke + the EVADER message, and the on-demand AI rescue (if re-enabled) or a player package can still recover him; a deep evader left alone converts to POW within a turn or two (message "Evader captured"), a near-front one keeps evading.
 - **Fail signature:** dcs.log still shows "no rescue helos/template; skipping" (the old bail; stale plugin) or "dcsRetribution.CombatSAR not present" (the emitter early-return resurfaced); no snatch with force-capture on (G20 regression); the un-rescued pilot dies at debrief with the toggle on (the `_combat_sar_mia_unit_ids` sparing / `combat_sar_survivors` state never written — check state.json); no re-spawn next mission (`persistentSurvivors` missing from the miz's CombatSAR node); the same evader duplicated in the ledger (turn_downed reset); an evader stranded MIA forever after toggling the setting off mid-campaign (the always-resolve contract broke); a capture roll that never fires even 40 NM deep (`resolve_downed_pilots` not hooked in `finish_turn`).
 
-### G30 — MANTIS SHORAD link: the point defense ambushes the HARM shot · MANTIS migration · ☐ UNTESTED
+### G30 — Skynet point defence: the paired SHORAD answers the HARM shot · Skynet return · ☐ UNTESTED
+
+> **Re-pointed 2026-09-12.** The MANTIS `AddShorad` link is gone. Skynet pairs each site's
+> `PD` groups to it natively (`addPointDefence`, from the same emitted arrays) and wakes them
+> when a HARM is detected against the parent. Same pass criterion; the history below is MANTIS's.
 
 **2026-08-22, test 14 — armed, no wake observed.** `Retribution-RED-IADS SHORAD link armed:
 1 point-defense group(s) held dark, waking 600s on HARM/Maverick` (blue: 3). No wake event
@@ -4258,7 +4274,9 @@ the numbers here means re-reconciling them on every future phase. Left alone.
 
 ## U. Upstream-sync runtime adoptions
 
-### U1 — Water/land relocate scripts run on the MIST shim · base plugin · ☑ VERIFIED
+### U1 — Water/land relocate scripts run on the MIST shim · base plugin · ✅ CLOSED
+
+> **Closed 2026-09-12.** The shim is deleted; the scripts run on upstream's MIST as they do upstream.
 
 **History:** 2026-08-21, DM pass `sead-escort-waypoint-bug-548af6` — "all of these are good") (was ☐ UNTESTED, adopted from upstream 2026-07-05 with the upstream/dev merge; upstream #767/#838 run on full MIST — the fork's shim needed a new `mist.getGroupData` (43rd symbol), contract pinned in `tests/lua/test_mist_shim_getgroupdata.py`
 - **Headless adjudication:** both scripts parse on Lua 5.1, register after `mist_moose_shim.lua` in the base
@@ -5352,7 +5370,10 @@ exact DCS type name is not something to retype, and a typo silently meant no FAC
   4. **New Game aborts on a plugin load error.** The new guard fires when a shipped
      `defaultValue` is outside its `choices`. That is the guard working — fix the json.
 
-### B81 — SEAD-evasion scoot distance is a campaign setting · MANTIS · ☐ UNTESTED
+### B81 — SEAD-evasion scoot distance is a campaign setting · MANTIS · ✅ CLOSED
+
+> **Closed 2026-09-12.** The setting was a MANTIS plugin option and went with the bridge.
+> Skynet's shoot-and-scoot distances are its own `actMobile*` options, unchanged from upstream.
 
 **History:** built 2026-08-18, off the test 8 measurements.
 
@@ -5422,7 +5443,29 @@ Play a turn on a **front-less** campaign whose AWACS is not at the field nearest
      field. Working as written; note the campaign, because it is the trade above biting.
   3. **A fronted campaign changes.** It should not — only the front-less branch moved.
 
-### G41 — A bombed power station keeps its SAMs down on the NEXT turn · MANTIS C2 · ☐ UNTESTED
+### G42 — Skynet is the engine again · Skynet return · ☐ UNTESTED
+
+**Built 2026-09-12** (`414th-skynet-return-notes.md`). The MANTIS bridge and the MIST shim are
+gone; upstream's Skynet and MIST are back, with the HDSUC profiles from #956 and the CurrentHill
+profiles from HFXLegion's fork compiled in.
+- **What CI cannot exercise:** the engine itself. The harness pins only the bridge's two
+  additions (dead C2 stand-ins, the deferred AWACS add).
+- **Setup:** any campaign with a red radar-SAM belt and an EWR (Red Tide is the reference).
+  Watch `dcs.log` for `Skynet-IADS plugin - creating red IADS` and the per-site `ADDED:` lines.
+- **Pass:** red SAM radars are dark on ingress and come up when an EWR or AWACS has you;
+  a HARM shot makes the targeted site go dark; a site with a profile in the database engages
+  (an `SAM site that Skynet IADS can not handle` line names one that does not); the mission
+  runs its full length with no crash.
+- **Fail signature:** every red radar radiating from T0 (the bridge did not run, or
+  `createRedIADS` is off); a DCS crash-to-desktop in a mission with a busy IADS (the
+  `enableEmission` concern from the C-130 line — record the log and stop, do not tune around it);
+  a modded site named as unhandled (add its profile to the compiled build).
+
+### G41 — A bombed power station keeps its SAMs down on the NEXT turn · Skynet bridge, DeadC2 · ☐ UNTESTED
+
+> **Re-pointed 2026-09-12.** The Python fix (dead C2 nodes stay in the graph) is unchanged. The
+> runtime half is now the Skynet bridge's dead stand-in (`414th-skynet-return-notes.md` §5,
+> harness-pinned in `tests/lua/test_skynet_bridge.py`). Same pass criterion.
 
 **History:** built 2026-08-19. The C2 layer worked for exactly one mission and nobody
 noticed, because the mission it worked on is the one you fly right after the strike.

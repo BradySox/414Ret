@@ -114,7 +114,11 @@ than "build a blackout system":
   with the grid (data/YAML, not code), and optionally cut **night airfield lighting** at the struck
   field (a generation/runtime lighting toggle — verify DCS exposes it before committing).
 
-### The MANTIS-ownership boundary (the c130j lesson, verbatim)
+### The engine-ownership boundary (the c130j lesson, verbatim)
+
+> Written against the MANTIS bridge; the boundary is the same under Skynet (2026-09-12),
+> which additionally re-asserts ROE itself. Comms/power/command degradation is native to
+> Skynet, plus the fork's dead stand-ins (`414th-skynet-return-notes.md` §5).
 
 Power/emissions live on the **`ALARM_STATE` / `EmOnOff` / `SetAIOff` axis, which MANTIS owns**
 (`c130j_mission_systems.lua:646` — the EW plugin touches ONLY ROE and never writes ALARM_STATE for

@@ -793,7 +793,9 @@ class LuaGenerator:
         alone (its eligibility check is purely ``getTypeName() == "C-130J-30"``), so it
         would bolt the EW/ISR menu and behavior onto any other C-130J-30 role. A
         **TRANSPORT** airlifter and an **AIR_ASSAULT** paradrop bird must fly clean
-        (both fly the CTLD troop/cargo menus, not the EW station). Rather than skip
+        (both fly the CTLD troop/cargo menus, not the EW station), and so must a
+        **CSAR** King, which flies the on-scene menu instead (KingOnScene.lua) --
+        one or the other, never both (DM call 2026-09-12). Rather than skip
         the whole EW plugin for the mission -- which also stripped EW from a
         legitimate **JAMMING** C-130J-30 flying alongside -- we hand the plugin a
         per-group deny-list (emitted as ``dcsRetribution.EwExcludedGroups``) so it
@@ -803,6 +805,7 @@ class LuaGenerator:
         non_ew = (
             FlightType.TRANSPORT,
             FlightType.AIR_ASSAULT,
+            FlightType.CSAR,
         )
         c130j = AircraftType.named("C-130J-30")
         return [

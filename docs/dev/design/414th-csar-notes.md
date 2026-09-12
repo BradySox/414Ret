@@ -107,10 +107,10 @@ Three decisions, each asked and answered on 2026-09-12:
   pushed onto an AI flight. Rejected: vectoring AI Sandys onto the top threat — real King
   behaviour, but a task push replaces the flight's route, which is the §15 divert lesson.
 
-It lives in the `opscsar` plugin as a second script rather than in the C-130J EW plugin,
-which refuses the King by design so it "flies clean" — except that the Python deny-list
-(`_ew_excluded_c130j_groups`) covers TRANSPORT and AIR_ASSAULT only, so a CSAR C-130J is
-*not* actually excluded. Flagged, not changed.
+It lives in the `opscsar` plugin as a second script rather than in the C-130J EW plugin.
+**One or the other** (DM call 2026-09-12): a CSAR C-130J gets the on-scene menu and is on
+the EW plugin's deny-list; a JAMMING C-130J gets EW/ISR and no on-scene menu. The Python
+deny-list had never actually listed CSAR, whatever the Lua comment said; it does now.
 
 ### The King — fixed-wing CSAR (2026-08-26)
 

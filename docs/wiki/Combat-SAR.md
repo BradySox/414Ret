@@ -38,6 +38,27 @@ Add it by hand: right-click the survivor, add the rescue helicopter, then add a 
 with the C-130J-30 on the CSAR task. The auto-planner will not frag one, because an AI King
 would orbit a survivor it can never collect.
 
+Flown by a human, the King gets an F10 menu, **KING | On-Scene Commander**:
+
+- **Take DF cut on the beacon** — a bearing to the survivor, inside 80 nm. Two cuts from
+  positions at least 15° apart make a fix, marked on the map with its error; more cuts and
+  closer range tighten it. Inside 15 nm with the survivor in view, the fix snaps exact.
+- **Threat sweep around the fix** — the closest five enemy ground groups within 8 nm of the
+  fix, each as a class (SAM, AAA, MANPADS, armour, troops) with bearing and range from the
+  survivor, marked roughly. Never a unit type, never an exact point.
+- **Pass picture to …** — sends the brief and the same marks to a player-crewed Sandy or
+  rescue helicopter, or to all of them. AI flights are never re-tasked.
+
+One or the other: a C-130J tasked CSAR gets this menu and not the EW/ISR one; tasked JAMMING
+it gets EW/ISR and not this.
+
+### The Sandy
+
+The **A-10** and the **AH-64** fly the Sandy rescue escort: an armed track centred on the
+survivor, covering the pickup while the helicopter works. Add it by hand — right-click the
+survivor, add a flight, pick **Sandy**. Nothing else in the wing offers it, and the
+auto-planner never adds one.
+
 ---
 
 ## How a rescue works, step by step

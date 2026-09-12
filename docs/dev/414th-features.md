@@ -10078,12 +10078,12 @@ is never seeded in the DCS mission environment.
   only to noise a bearing from it and to snap inside pod range with LOS.
 - **Players only.** An AI King gets no menu; an AI Sandy or helicopter is never listed.
 
-### What the King is NOT given
+### What the King is NOT given — one or the other (DM call 2026-09-12)
 
-The c130j EW/ISR menu is a separate question. `_ew_excluded_c130j_groups` denies the EW
-plugin to TRANSPORT and AIR_ASSAULT C-130Js only — a CSAR-tasked C-130J is **not** on that
-list, so a King currently gets the EW/ISR menu as well as this one, despite the Lua comment
-saying it "flies clean". Flagged 2026-09-12, not changed here.
+A CSAR-tasked C-130J flies this menu and **not** the c130j EW/ISR menu; a JAMMING C-130J
+flies EW/ISR and not this. `_ew_excluded_c130j_groups` now lists `FlightType.CSAR` with
+TRANSPORT and AIR_ASSAULT, which is what the Lua comment ("Combat SAR King flies clean")
+always claimed and the Python never did. Found and fixed the same day.
 
 ### Tests
 

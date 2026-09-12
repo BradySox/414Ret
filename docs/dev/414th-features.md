@@ -9931,6 +9931,293 @@ took 28 of the suite's 30 seconds. Monkeypatch the constant instead.
 
 ---
 
+## §98 — Neutral-faction border defense
+
+Every nation on the map is drawn with its real border, the map's own nation included,
+and what each one does about an intruder follows from two facts. **Alignment is
+derived, never authored** — a nation hosting a RED or BLUE airfield is aligned with
+that team, one hosting **both** is `contested` (the battlefield: grey, never enforcing,
+claimed by neither side's QRA), and one hosting neither is the neutral. Counted over
+every zone of the same country, not per polygon: Russia is two zones on Kola, and
+per-piece counting drew Karelia — the largest zone on the map — as an uninvolved
+neutral that intercepts you, in a campaign where Russia is the enemy. `posture:`
+overrides. **Overflight is derived from the same airbases** (DM call, 2026-08-26) — a
+country you fly from has let you in, one both sides use has let both in, and one
+with no coalition base inside it has invited nobody and defends. `overflight:`
+overrides. The dated posture table used to answer this and was dropped as the
+source: it made consent a fact about the calendar rather than about the campaign
+in front of you, reading Sweden and Finland `closed` in 1983 while both sides
+flew combat sorties off their runways, and it cannot see a base change hands.
+The research is kept and still supplies the airframe. **Altitude floors went
+with it** — they came from its `contested` bucket, so a floor is now authored
+only and a defending country defends at any height. **A refusing neutral stands
+live SAM batteries inside its own border from mission generation** (the fighter
+patrol it used to fly was dropped 2026-09-07, DM call — scope is the SAM). **The era picks the tier and the country's size picks the rung within it**
+(DM call 2026-09-10). Legacy is SA-2 / SA-3 / SA-5, modern is SA-10 / SA-11,
+with Hawk, Patriot and Rapier for the twelve authored western-equipped nations.
+The size measure is the largest circle that fits inside the country: over 100 NM
+of room takes the top rung (SA-5 legacy, SA-10 or Patriot modern), 25–100 the
+middle (SA-2 or SA-11, Hawk), under 25 the bottom (SA-3, Rapier). **The top rung
+is the same band in both eras** — a country large enough for an SA-5 in 1982 is
+large enough for an SA-10 in 2004, which is the point of two tiers rather than
+two scales. Over the 63 shipped zones that is **1982: 17 SA-2, 16 Hawk, 12 SA-3,
+10 SA-5, 8 Rapier** and **2004: 17 SA-11, 12 SA-3, 11 Hawk, 10 SA-10, 8 Rapier,
+5 Patriot**. **Dates are export dates, not in-service** — checked against the
+1982 Falklands column, where in-service dates handed Argentina a Buk. **Two reach figures, on purpose.** `reach` is the DCS launcher's own
+`threat_range`, sourced and confirmed against a stock no-mod export; the earlier
+hand-picked numbers were unsourced and disagreed with it inconsistently.
+`placement_reach` is **60 % of it**, and is what the siting uses (DM call
+2026-09-10). The database figure equals `air_weapon_dist` exactly on every
+system — a kinematic maximum against a target that does not manoeuvre — so a
+battery sited at it puts the border on the very edge of the envelope. Measured
+on Afghanistan 2004: an SA-10 stands 39 NM inside its frontier against a 65 NM
+claim, an SA-11 16 NM against 27. **Depth changes; the count does not** — that
+comes off frontier length, not reach. **The west has no legacy
+long-range rung** because vanilla DCS models no Nike Hercules, so a large
+pre-1995 western country tops out at Hawk. **How many is the country's own size** (DM call
+2026-09-09) — roughly one per 200 NM of war-facing frontier, capped at six.
+A single site was 3.5 % of Pakistan's border on the Afghanistan map, measured
+2026-09-09 over 2,291 NM of real frontier, so crossing anywhere else met
+nothing. Only the war-facing stretch is manned: a frontier more than 250 NM from
+every airbase in the campaign is one no sortie reaches, and the map's own clip
+edge is not a frontier at all. Each site sits at exactly `min(reach, room)` from
+the border so its envelope just covers it: a first cut that only capped depth
+left Iran's Persian Gulf battery 175 NM inside, defending nothing. Deep
+placement also means no site is on an airfield, so the escalation swap cannot
+hand the neutral's airbase to a belligerent. They are visible before you cross,
+which is the deterrent the scramble never managed (three flown attempts, all too
+slow or too far). Cross and it hails you at once, and warns again at dwell;
+neither call launches anything. A player who stays past the engage timer,
+releases a weapon inside, or fires on a battery turns **the whole country**
+hostile in place — every one of its sites `GROUP:Respawn`s onto the intruder's
+opposing coalition, the only way a "neutral" can legally fire in DCS. Swapping
+only the nearest would leave the rest of the border a neutral you could keep
+crossing after being declared hostile. Both sides violating one country clones
+the whole set for the second intruder rather than re-swapping. **AI intruders
+earn nothing at all** — no radio call, no escalation — unless the `engageAi`
+plugin option is ticked, which holds them to the same ladder. That is a testing
+override and ships off: a player has to fly a whole profile to trip a border
+once, where AI flights stray across on their own several times a mission, so it
+is the only practical way to exercise the ladder without flying it.
+A red-aligned nation gets no §98 battery:
+its polygon joins §1's QRA accept zones, so the enemy's existing interceptors defend
+it. A contested country — both sides holding airfields inside it — is enforced by
+nobody and claimed by neither QRA. A neutral with no station point at all is drawn
+toothless; `can_defend` is asked by the generator **and** by the web map, which used
+to disagree with it on 14 of the shipped zones and draw Cyprus closed over a mission
+you could fly through. **DCS models no Turkmenistan, Uzbekistan, Tajikistan, Armenia
+or Azerbaijan**, and those five zones used to be dropped from the mission outright —
+border undrawn, airspace unenforced. They now borrow a neighbour's units (DM call
+2026-09-09): the group is still named for the real country, the radio call still says
+it, and the plugin rewrites `CountryID` on escalation anyway, so the stand-in supplies
+skins and nothing else. It falls through when its first choice is already a
+belligerent, which Russia is on the Caucasus map.
+Colours: red / blue / contested grey / neutral mint, shading = enforcement. Design +
+the session's decisions: `docs/dev/design/414th-neutral-border-defense-notes.md`
+(incl. the DECIDED-not-built automagic direction and the national-postures research
+brief).
+
+### The engine verdict, in one line
+
+A true-neutral unit cannot be made to fire (hostility gates weapons release, not
+tasking; no runtime coalition move exists), so the batteries stand as neutrals and are
+respawned in place under the intruder's *opposing* country on escalation
+(`GROUP:Respawn` with a rewritten `CountryID`/`CoalitionID`). No attack task is set
+and none is wanted: a SAM acquires and engages whatever enters its envelope once it is
+weapons-free. Only the second-intruder case clones
+(`SPAWN:InitCountry`/`InitCoalition`), because a battery already swapped is an *ally*
+of the other side.
+
+### Shape
+
+- **Python** — `game/theater/neutralborder.py` (`NeutralBorderZone`, the campaign yaml
+  contract), parsed by `MizCampaignLoader.add_neutral_border_zones` onto
+  `ConflictTheater.neutral_border_zones` (persisted; `__setstate__` defaults it for old
+  saves). `NeutralBorderGenerator` builds, per zone, live SAM batteries under the
+  neutral country, sized and sited from the border polygon (`neutralbordersams.py`
+  holds the ladder; `NeutralBorderZone.interior_room` / `.sam_sites` do the geometry,
+  and the generator hands the latter the campaign's control points and the union of
+  every zone so it can tell war-facing frontier from map clip), and records them on
+  `MissionData.neutral_border_zones`;
+  `neutralborderluadata.py` serializes that to `dcsRetribution.neutralBorder`.
+- **Lua** — `resources/plugins/neutralborder/neutralborder-config.lua`: border scan
+  (bbox + ray-cast point-in-polygon on terrain XY), per-group dwell, the hail → warn
+  → escalate ladder, the whole-country coalition swap, exit-grace stand-down, and the
+  F10 border draw
+  (default on — the §86 invisible-bubble lesson). **DCS will not fill a concave
+  freeform** — it draws the outline and drops the fill, and a national border is
+  about as concave as a shape gets, so every zone first flew as a bare line. The
+  fill is MOOSE's `ZONE_POLYGON_BASE:ReFill` triangulation (its own
+  single-freeform path is dead-coded behind `if false then`, which is the
+  corroboration); the plugin keeps a one-freeform outline on top for the dash
+  pattern, and no longer repeats vertex one.
+- **A campaign needs to author nothing.** Borders ship per terrain in
+  `resources/borders/<terrain>.yaml` (Afghanistan, Syria, Caucasus, Iraq, Kola,
+  Persian Gulf, Sinai, Falklands — Nevada and the Marianas are all-US and
+  correctly have none; GermanyCW is blocked on pre-1991 geometry), built by
+  `tools/build_terrain_borders.py`; only the airframe
+  resolves from `national_postures.yaml` against the campaign's date. A campaign
+  that declares its own `neutral_border_defense:` block overrides the terrain
+  file **completely** — never merged. Saves already in progress pick the borders
+  up on load, so no re-roll is needed.
+- **The clip box has to reach the map's own edge.** Every border is the real
+  country outline clipped to a hand-passed `--clip`, and until 2026-09-10 seven
+  of the eight boxes stopped *inside* the terrain — 1,273,689 km² of modelled
+  land with no border on it, 45.3 % of Sinai and 15.9 % of Afghanistan. Reported
+  from the F10 map ("the fill doesn't go to the edge"). **Neither the landmap nor
+  `terrain.bounds` is the map's extent** — both say the Afghanistan map stops at
+  28.9 °N while Enduring Resolve's own carrier sits at 24.5 °N and the F10 map
+  draws ground below it. A box derived from them clipped Pakistan, Iran and
+  India at 27.5 °N, which is what the DM photographed on 2026-09-10. The floor
+  is **what campaigns actually place**, plus margin: somebody authored a unit
+  there, so it is flyable. Only edges proven short are moved — shrinking a box
+  that was already adequate drops a country a rung, measured the same day when
+  a uniform re-derivation took Turkey on Syria from 114 NM to 97 and cost it its
+  Patriot.
+  Every map is now under 2 % undrawn except Falklands at 7.9 %, which is Chilean
+  fjord islands under a deliberate area floor. It also turned up that Kola was
+  missing the Kola Peninsula, that China has 72,759 km² on the Afghanistan map,
+  and that Persian Gulf was running with no landmap at all.
+- **Borders are real data, never hand-traced** — `tools/neutral_border_geo.py`:
+  public-domain country GeoJSON → clip to the map → optional corridor cut →
+  shapely simplify to a vertex budget → `Point.from_latlng` → terrain XY yaml.
+  Real-world-georeferenced maps only; fictional-overlay campaigns are out of
+  scope (DM call, 2026-08-24). **Always `--clip`** — a country's real outline is
+  mostly off any one DCS map, and un-clipped the vertex budget is spent on
+  coastline nobody can fly to.
+- **The whole map is simplified as one polygon coverage**, not country by
+  country, so a frontier two countries share is simplified once and drawn once.
+  Independently-simplified neighbours weaved: their lines coincided 35-65 % of
+  the time (Russia/Norway on Kola at 7 %) with overlaps to 12.8 % of the smaller
+  country. `set_precision` to a 100 m grid → union + `polygonize` into faces →
+  `shapely.coverage_simplify`. Overlaps are now **0 on every map** and 7 of 8 are
+  a valid coverage; Falklands carries a 12.5 m² degenerate touch in Tierra del
+  Fuego, asserted as a known exception. The budget (`--max-vertices`, 96) binds
+  the worst ring on the map and is a target, not a guarantee — a landlocked
+  country whose every edge is shared has a floor (Armenia ~98). It came out
+  better on every axis: Norway's shape error 14.7 % → 7 %, Afghanistan 454 → 255
+  vertices and 446 → 247 F10 markup shapes.
+- **A zone declares a field OR a point, and either one is only an anchor now.**
+  Most maps carry the neutral's own airbase (Syria has Rayak); some carry none
+  at all, since the DCS Afghanistan map has 26 airfields and **every one is
+  inside Afghanistan**. Those zones declare `spawn: [x, y]` instead of
+  `airfield:`; the yaml requires exactly one, and both or neither skips the
+  zone. Since the patrol went, neither is a launch point — the batteries are
+  placed from the polygon, and the anchor only breaks ties and names the origin
+  in the tooltip. That is also why `--auto-spawn` putting each piece's station
+  at its own `representative_point()` no longer matters: seven shipped stations
+  sat within 10 NM of their own frontier and India's within 0.6, and nothing is
+  sited off them any more.
+- ~~**The origin names the flight; a 25 NM stand-off decides where it comes up.**~~
+  **REMOVED 2026-08-29 with the scramble** — the patrol is airborne from mission
+  start, so nothing comes up on demand and there is no stand-off to pick. Kept
+  because the measurement is why the scramble was abandoned. Measured on the
+  first flown test (2026-08-25, Tacview): Iran's origin is the
+  middle of its clipped polygon, so the pair spawned 224 NM behind an F-15E,
+  closed to 127 NM in twelve minutes and gave up — a MiG-29A has ~80 kt on a
+  cruising Strike Eagle, and *every* launch on a country that size was that
+  launch. Inside 25 NM the origin is used as it stands, so a small country still
+  scrambles off its own runway; beyond it, the flight comes up 25 NM from the
+  intruder on the line toward the origin. 25 NM is ~3 min at the shadow's speed,
+  which is the engage dwell. A concave border that puts that line outside the
+  country falls back to the origin.
+- **Every country on the map is drawn, the map's own nation included.** The host
+  was excluded until 2026-08-26, which deleted Russia from Kola, Iran from the
+  Persian Gulf, Georgia from the Caucasus, Egypt from Sinai and Iraq from Iraq —
+  and left the war itself as the one region with no line on it. What a country's
+  airspace means is decided at run time from who holds the control points inside
+  it, so the geometry leaves none out. Syria was separately missing from the Iraq
+  map: never excluded, just never named in `--countries`.
+- **`--corridor-lon` cuts a lane**, splitting one country into the two walls of
+  a flight corridor. See the Afghanistan reference below.
+
+- **The F10 map names each border**: a two-line label at the polygon's
+  representative point (shapely, so it is inside a concave country; a centroid
+  is not) reading the country and what its airspace does — `friendly` /
+  `enemy-held` / `contested` / `transit permitted` / `CLOSED - surface-to-air
+  batteries inside the border`. Drawn in the border's own hue, which keeps it distinct from §45's
+  cyan support orbits and ties the label to its line. `drawBorders` switches
+  both off together.
+
+### The planning map
+
+The DCS F10 map draws the border at mission start, but by then the route is
+flown. The decision the feature asks for — cut the corner or go around — is made
+in the planner, so the border is also a **"Neutral airspace" layer** on the web
+map (`client/src/components/neutralborders/`), fed by the `/game` payload like
+the minefields layer and empty (a no-op) unless the feature is on. It is drawn
+in APP-6 neutral green with a long boundary dash, tooltipped with the altitude
+floor and the alert field, and listed in the map legend. **Never fogged** — a
+national border is public knowledge, and seeing the line is the point. The
+DCS-side markup uses the same green; amber was the first choice and was moved
+because amber is already SUSPECTED on the planner map.
+
+### Rules fixed by DM call (2026-08-24)
+
+- ~~Single-flight ladder~~ **superseded 2026-09-07** — the patrol is gone and its
+  shadow risk with it. The recorded fallback it named, the in-place coalition-swap
+  respawn, is what shipped.
+- The **country** escalates, not the site: every battery it stands swaps together
+  (DM call 2026-09-09, with the count rework).
+- Everyone trips the border; only players are ever engaged. The planner stays blind —
+  no navmesh hazard (do not reopen the §6 revert).
+- In-mission only: nothing persists past the debrief. Spawns are free, untracked event
+  content (the §61 precedent).
+- Escalation is ROE + tasking only. Never `enableEmission` (hard constraint).
+
+### Reference implementations
+
+**Into the Hornet's Nest (Syria) — the derived-alignment case.** Lebanon was authored
+as the neutral and the derivation rule corrected us: Beirut sits inside its border
+hosting four red squadrons, so it resolves **red-aligned** — drawn in the enemy
+family, covered by red's QRA accept zone, and its authored aircraft/SAM fields are
+inert. The zone's yaml is kept as-is (the border is the context the DM wanted drawn);
+the campaign's §98 *interception* showcase is Enduring Resolve, not this.
+
+**Enduring Resolve (Afghanistan) — the corridor case.** The OEF "boulevard": the
+carrier sits at 24.5°N 65.0°E in the Arabian Sea, and everything it launches has to
+come north across Pakistan to reach Helmand and Kandahar. Pakistan's zone is cut into
+two walls with a **~225 km lane** between them (`--corridor-lon 64.0 66.3`), and Iran
+is the western no-go. Measured on the authored polygons: the direct carrier routes to
+Kandahar, Bastion, Bost, Dwyer and Tarinkot all thread the lane clean, while the direct
+line to **Farah** (62.2°E) crosses Pakistan — the dogleg up the corridor and then west
+is clear. That is the constraint the campaign exists to create, and it is real
+geometry, not a scripted scold.
+
+Three zones, all point-spawned. ~~**Only Pakistan and Iran are modelled**, and the
+northern border is left undefended rather than mislabelled; do not "fix" this by
+substituting Kazakhstan or Russia.~~ **OVERRULED 2026-09-09 (DM call).** DCS still has
+no Turkmenistan, Uzbekistan or Tajikistan, but leaving them out was not costing the
+campaign a label — it was dropping the zone entirely, so four of the eight zones on the
+map had no border drawn and no airspace enforced, against the standing rule that every
+bordering nation appears. They now stand their batteries under a neighbour's flag
+(`COUNTRY_STAND_INS`), chosen for kit. The group keeps the real country's name and so
+does the radio call, and the plugin rewrites `CountryID` on escalation anyway.
+
+Because AI intruders are never engaged, a lane this tight costs the campaign nothing:
+an AI flight that clips a wall is not fired on, and only the player is.
+
+### Files & tests
+
+- `game/theater/neutralborder.py` · `game/campaignloader/mizcampaignloader.py` ·
+  `game/missiongenerator/neutralbordergenerator.py` · `neutralborderluadata.py` ·
+  `game/settings/settings.py` (`neutral_border_defense`) ·
+  `resources/plugins/neutralborder/` · `tools/neutral_border_geo.py`.
+- `tests/lua/test_neutralborder_runtime.py` — 30 harness tests on real Lua 5.1: the
+  hail on entry and the second call at dwell, dwell escalation, weapon-release
+  escalation, AI-never-engaged, every battery in a country swapping on one escalation,
+  the second set when both sides violate, a zone with no battery never claiming to
+  defend, the exit stand-down, the triangulated F10 fill and the map labels.
+  `tests/test_neutralborder.py` — alignment derivation, airbase-derived consent,
+  overrides, malformed yaml skipped rather than raised.
+  `game/missiongenerator/tests/test_neutralborder_luadata.py` — the emitter contract,
+  the SAM ladder, and the placement invariants (reach ring, count from frontier
+  length, the cap, war-facing only). `tests/test_terrain_borders.py` — every shipped
+  map parses, no neighbour overlap, each map a valid coverage. 165 in total across six
+  files.
+
+**In-game passes owed: B120 and B121.** Nobody has flown the SAM design at all — B120
+was closed against the fighter patrol, which no longer exists. B121 is the AI intruder.
 ## §99 — Sandy rescue escort
 
 The armed half of a rescue package: an A-10 or an Apache working the ground around a

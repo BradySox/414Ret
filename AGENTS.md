@@ -143,6 +143,25 @@ Read before touching a campaign's `.yaml`, `.miz` or build tool.
   juanjux #63** — why the baseline is Passive Defense, the `aiReactionExempt` protocol any
   plugin setting reaction-on-threat must use, why we took his head and not the merged PR,
   and the pre-registered falsifier if AI attrition rises)
+- **Neutral factions** — `414th-neutral-border-defense-notes.md` (**§98** — the engine
+  verdict on why a true neutral cannot fire, the opposing-coalition clone mechanism, the
+  DM-locked rules incl. derived alignment (airfield-hosting decides the side), the
+  overflight/refuses split, the accepted shadow-risk and its recorded fallback, the
+  real-data border pipeline, and the DECIDED-not-built automagic direction;
+  fictional-overlay campaigns are out of scope),
+  `414th-national-postures-notes.md` (**RESEARCHED 2026-08-25, data drafted, nothing
+  wired** — `resources/borders/national_postures.yaml`: 47 countries, 244 dated posture
+  ranges, both blocs, five buckets. Also the measured country-per-map table that
+  **corrected four errors in the research brief's from-memory list** (India on the
+  Afghanistan map; no Qatar/Bahrain/Saudi on the Persian Gulf map; Belgium not Germany
+  on Normandy/Channel; Saudi Arabia on the Syria map), the two rules that decide the
+  hard cases, and the four gaps between the data and §98 as built. **Armenia and
+  Azerbaijan are not pydcs countries either** — the same hole as Turkmenistan, on the
+  most-used terrain). **Answers the pre-1991 geometry blocker**: CShapes 2.0 is
+  CC BY-NC-SA and historical-basemaps is GPL-3, both gated, but **GSHHG/CIA World
+  Data Bank II is LGPL over US-Government public domain** and its 1972-77 vintage
+  covers every boundary the fork needs — the work is assembling its line segments
+  into polygons, not finding data
 - **Strike targets / BDA** — `414th-scenery-kill-tracking-notes.md` (why some scenery strike
   targets never register as killed; the M4 IADS stand-in; the proxy unit that was built and
   reverted, and the position matcher measured to have no input. **The reported failure was never
@@ -474,6 +493,7 @@ linked design note.
 95. **Pinned bullseye** — one bullseye for the campaign instead of a new one every turn, never anchored on a ship or an off-map spawn; the kneeboard names the place it sits on and flags the rare turn it moves.
 96. **Player career logbook** — a permanent record per pilot: sorties, combat sorties, hours airborne, air/ground/naval kills, ejections, rank and awards, folded from what the mission actually recorded. Ranks and awards are data, not code. A record, never a reward — nothing here unlocks an aircraft or gates a mission.
 97. **Lifetime pilot profiles** — your own flying kept across every campaign, not just the current one: totals, a breakdown per aircraft, and the individual flights. Identified by DCS player name, so it needs no setup and a multiplayer host records every pilot who flew. Stored outside the save, which is what lets it outlive a campaign.
+98. **Neutral-faction border defense** — every nation on the map is drawn with its real border, the map's own nation included: alignment derived from who holds the airfields inside it, counted per country (both sides holding it = contested grey, claimed by neither QRA; a country in the war is outline-only; red-aligned airspace joins §1's QRA accept zones), and a country not in the war defends (overflight is derived from the same airbases: you may cross what you fly from, and what both sides fly from) — it stands live SAM batteries inside its border from mission start, in two tiers -- the era picks legacy (SA-2/3/5) or modern (SA-10/11, plus Hawk/Patriot/Rapier for the western-equipped list) and the country's room picks the rung, the top band being the same in both eras -- and counted off it too (~1 per 200 NM of war-facing frontier, capped at 6, map clip and far-from-the-war stretches unmanned), each placed well short of what its missile claims, so the frontier sits inside the envelope with margin rather than on its edge, visible before you cross, and hailing you on entry; press, and the WHOLE country turns hostile in place on your enemy's coalition and engages. Both sides violating one country gets a second set. Countries DCS does not model (Turkmenistan, Uzbekistan, Tajikistan, Armenia, Azerbaijan) borrow a neighbour's units rather than being dropped. Players only; AI is never engaged, unless the `engageAi` plugin option is ticked -- a testing override, default off, that holds AI to the same ladder. The fighter patrol was dropped 2026-09-07 -- scope is the SAM.
 99. **Sandy rescue escort** — an armed escort that works the ground around a downed pilot while the helicopter comes in: a track centred on the survivor, flown by the A-10 and the Apache. Hand-fragged only — the auto-planner never adds one.
 100. **King on-scene commander** — the player-flown C-130J King finds the survivor by DF cuts on the beacon (two cuts far enough apart make a fix; inside pod range with line of sight it snaps exact), sweeps the ground around the fix for threats reported as a class and a rough position, and passes the picture — text and map marks — to the player-crewed Sandy and helicopter. Cues only: it never lases, and nothing is pushed onto an AI flight.
 

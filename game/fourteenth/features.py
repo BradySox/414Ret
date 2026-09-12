@@ -830,6 +830,20 @@ FEATURES: tuple[Feature, ...] = (
         settings_fields=("lifetime_pilot_profiles",),
     ),
     Feature(
+        # §98 neutral-faction border defense: every nation on the map drawn with
+        # its real border (tools/build_terrain_borders.py; shipped per terrain, no
+        # campaign authoring needed). One with no coalition airfield inside it
+        # stands a live SAM battery from mission start, neutral until a player
+        # presses. Batteries are untracked event content (the §61 precedent); the
+        # planner never learns the borders (no navmesh hazard — do not reopen the
+        # §6 revert).
+        "neutral_border_defense",
+        "Neutral-faction border defense",
+        98,
+        plugin_id="neutralborder",
+        settings_fields=("neutral_border_defense",),
+    ),
+    Feature(
         # The rescue escort. No settings field and no plugin: capability is the
         # aircraft yaml's Sandy task, and the role is hand-fragged only.
         "sandy_rescue_escort",

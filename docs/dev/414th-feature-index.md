@@ -109,6 +109,7 @@ pass checklist `§N` is unregistered, or this table drifts.
 | §95 | Pinned bullseye | — | — |
 | §96 | Pilot career logbook | — | `pilot_career_logbook` |
 | §97 | Lifetime pilot profiles | — | `lifetime_pilot_profiles` |
+| §98 | Neutral-faction border defense | `neutralborder` | `neutral_border_defense` |
 | §99 | Sandy rescue escort | — | — |
 | §100 | King on-scene commander | `opscsar` | — |
 | — | Skynet IADS engine | `skynetiads` | — |

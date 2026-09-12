@@ -256,6 +256,29 @@ Most of this is opt-in. Full list with toggles, defaults and known limitations:
   you memorize on turn 3 is still good on turn 30, and it is never planted on a ship or
   an off-map field. On the rare turn the front carries it far enough that it has to
   move, the same line reads **MOVED THIS TURN**.
+- **Neutral countries defend their borders.** Every nation on the map is drawn with its
+  real border, on any campaign, with nothing to author — including the one the war is
+  being fought in. Which side a country is on comes from who holds the airfields inside
+  it, so it flips by itself when a base changes hands. A country that is *not* in the war
+  and refuses you transit is the one that defends: it stands surface-to-air batteries
+  inside its own border from the moment the mission starts, so you can find them before
+  you cross rather than finding the border by tripping it. Both what it fields and how
+  much of it scale with the country, and what it fields follows the era as well: a legacy
+  campaign meets SA-2s, SA-3s and SA-5s, a modern one SA-10s and SA-11s, with Rapier,
+  Hawk and Patriot for the nations on western kit. A small country gets a single
+  short-ranged battery, a large one several long-ranged ones, spread along the stretch of
+  frontier the war is actually near, each set back well short of what its missile
+  claims, so the border sits inside the envelope with margin rather than on its edge. Cross and it
+  warns you off the radio at once. Leave and nothing happens. Stay too long or release a
+  weapon inside the border, and the whole country turns hostile and engages — not just
+  the site you flew past. If both sides violate the same country, it puts up a second set
+  for the other one.
+  Whether a country lets you through is read off the map, not off the calendar: you may
+  cross what your side flies from, and what both sides fly from; a country neither of you
+  is based in has invited nobody. Altitude buys you nothing unless the campaign says so.
+  AI flights that stray are never fired on (a plugin option holds them to the same rules, for testing), and
+  the auto-planner does not route around the border, so it is your corner to cut or not.
+  The same borders are drawn on the planning map and the F10 map. Off by default.
 - **Pilots keep a logbook.** Every pilot carries a permanent record: sorties, combat sorties,
   hours airborne, air, ground and naval kills, ejections, a rank and awards. Open it with the
   **Logbook** button in the squadron dialog. The numbers come from what the mission recorded,

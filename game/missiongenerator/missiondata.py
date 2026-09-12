@@ -11,6 +11,7 @@ from game.dcs.aircrafttype import AircraftType
 from game.dcs.groundunittype import GroundUnitType
 from game.missiongenerator.aircraft.flightdata import FlightData
 from game.missiongenerator.interceptluadata import InterceptEntry, PlayerAlertEntry
+from game.missiongenerator.neutralborderluadata import NeutralBorderLuaZone
 from game.missiongenerator.redscrambleluadata import RedScrambleTemplate
 from game.runways import RunwayData
 
@@ -184,6 +185,10 @@ class MissionData:
     # menu (§61). Populated by AircraftGenerator.spawn_red_scramble_templates
     # when host_red_scramble is on; the redscramble plugin clones them on demand.
     red_scramble_templates: list[RedScrambleTemplate] = field(default_factory=list)
+    # Neutral border-defense zones the generator actually built templates for
+    # (§98). Populated by NeutralBorderGenerator; the emitter serializes these
+    # verbatim, so a zone that failed to build simply never reaches the Lua.
+    neutral_border_zones: list[NeutralBorderLuaZone] = field(default_factory=list)
     #: Late-activated infantry template group names Ops.CSAR is constructed with,
     #: keyed by coalition ("blue"/"red"). Empty when CSAR is disabled.
     csar_pilot_templates: dict[str, str] = field(default_factory=dict)

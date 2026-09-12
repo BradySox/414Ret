@@ -1,0 +1,587 @@
+"""Bordering-nation airspace (§98).
+
+A campaign yaml lists the countries that border the war, each with a border
+polygon, though in practice every shipped border comes from the terrain files
+that ``tools/build_terrain_borders.py`` generates. **Every
+bordering nation should be represented** (DM call, 2026-08-24): drawing only the
+dangerous ones tells the player where not to go but never where they *may* go,
+which reads as "the rest of the map is unmodelled" rather than "this one is
+fine".
+
+**Alignment is derived, not authored** (DM call, 2026-08-24): *a nation hosting
+a RED or BLUE airfield is aligned with that team; a nation hosting neither is
+the neutral.* The campaign already knows who owns what, so asking the yaml to
+repeat it only creates something that can go stale -- and deriving it means a
+country flips the turn its field changes hands. ``posture:`` overrides the
+derivation for the case base-ownership gets wrong.
+
+The four postures and what each means to a pilot:
+
+* ``neutral`` -- genuinely out of the war: no coalition holds an airfield
+  inside it. It defends its airspace -- it stands SAM batteries inside its own
+  border from mission start, as many as its size and its war-facing frontier
+  call for, hails you on entry, and turns every one of them hostile in place on
+  a player who presses. A neutral with no station point at all is drawn and
+  toothless, on the map as well as in the mission.
+* ``blue`` -- hosts your side's fields. Overflight is allowed; the border is
+  drawn and nothing enforces it.
+* ``red`` -- hosts the enemy's fields. Not a third party, so it gets no §98
+  flight of its own; instead its polygon is handed to **§1's QRA dispatcher as
+  a RED accept zone**, so the enemy's existing alert fighters defend it. One
+  interception system over that ground, not two.
+* ``contested`` -- both sides hold airfields inside it. Neither side's claim is
+  the truth about it, so §98 never enforces it and neither side's QRA claims
+  it.
+
+**Whether a country lets you through is derived from the same airfields** (DM
+call, 2026-08-26): a country you fly from has plainly let you in, one both
+sides fly from lets both through, and one you have no presence in has not. The
+dated posture table used to answer this and no longer does -- it made consent a
+fact about the calendar rather than about the campaign in front of you. It
+survives as the source of each country's era-correct airframe, which nothing
+else can supply. ``overflight:`` still overrides outright.
+
+Only ``neutral`` zones need an origin, because only they spawn anything. A
+nation DCS does not model -- Turkmenistan, Uzbekistan, Tajikistan, Armenia,
+Azerbaijan -- borrows a neighbour's units to stand its batteries
+(``NeutralBorderGenerator.COUNTRY_STAND_INS``); it is never dropped.
+
+Parsed at campaign load by ``MizCampaignLoader`` and persisted on
+``ConflictTheater.neutral_border_zones``; consumed each turn by
+``NeutralBorderGenerator`` + ``neutralborderluadata``. The planner never reads
+these -- the border is a runtime (Lua) rule only, by design.
+"""
+
+from __future__ import annotations
+
+import logging
+import math
+from dataclasses import dataclass, field
+from collections.abc import Sequence
+from typing import Any, Optional
+
+#: Air-spawn altitude for a point-spawned alert flight when the campaign does
+#: not say. A standing CAP, not a scramble -- high enough to be a credible
+#: intercept and clear of Afghanistan's terrain.
+DEFAULT_SPAWN_ALT_FT = 20000
+
+#: No coalition airfield inside it: out of the war, and it defends itself.
+NEUTRAL = "neutral"
+#: Hosts BLUE airfields -- a blue host, not a third party.
+BLUE_ALIGNED = "blue"
+#: Hosts RED airfields.
+RED_ALIGNED = "red"
+#: Both sides hold airfields inside this country: it is the battlefield, and
+#: neither side is the truth about it. Measured on Able Archer 83, where Norway
+#: -- the NATO host -- drew as enemy-red because the Soviets held two of its
+#: three fields, and Finland the same. §98 never enforces a contested country;
+#: nor does either side's QRA claim it, because the claim would be a lie.
+CONTESTED_ALIGNED = "contested"
+
+#: How far from the war a stretch of frontier can be before nobody will ever
+#: cross it. The fork's longest campaigns fly 250-400 NM to target (Anatolian
+#: Reach), so a border further than this from every airbase in the campaign is
+#: not one anyone reaches, and a battery there defends nobody.
+WAR_REACH_M = 250 * 1852.0
+
+#: Roughly one battery per this much war-facing frontier. This is a deterrent
+#: spread, not a wall: tiling at 2x the system's own reach would put an SA-3
+#: every 20 NM and hand a mid-sized country thirty sites. Flat rather than
+#: reach-derived so a country's count reads off its SIZE, which is what the DM
+#: asked for -- how far each one shoots is already the ladder's job.
+SITE_SPACING_M = 200 * 1852.0
+
+#: Ceiling on batteries in one country, whatever its size. Each is 4-5 emitting
+#: vehicles, and a border thicker than this stops reading as a deterrent and
+#: starts reading as an IADS the campaign never authored.
+MAX_SAM_SITES = 6
+
+#: Frontier sampling resolution. Fine enough to find the war-facing stretch,
+#: coarse enough that a 3,000 km border is a few thousand points.
+FRONTIER_STEP_M = 5000.0
+
+#: How much of a country's own room a battery may sit behind. A site at exactly
+#: the inscribed centre is ONE site with no ring left to spread the others
+#: along, which is what a system out-ranging its own country produces -- the
+#: SA-5 reaches 138 NM and every country that fields it has less room than that
+#: (measured 2026-09-10). Capping the depth keeps a ring without costing
+#: coverage: the envelope reaches the frontier whenever reach >= depth, and this
+#: only ever makes depth smaller.
+MAX_DEPTH_FRACTION = 0.6
+
+#: Two batteries closer together than this are one emplacement as far as a pilot
+#: is concerned. Deliberately NOT the system's reach: keying it to reach made
+#: spread a function of how far the missile flies, so a long-range system
+#: suppressed every site but one.
+MIN_SITE_SEPARATION_M = 25 * 1852.0
+
+#: How close to the map's own edge a frontier sample has to be before it is the
+#: clip and not a border. ``build_terrain_borders`` snaps to a 100 m grid.
+CLIP_TOLERANCE_M = 250.0
+
+
+def war_region(war_points: Sequence[tuple[float, float]]) -> Any:
+    """The ground close enough to the campaign to be flown over.
+
+    Built once per mission and handed to every zone: buffering a few hundred
+    control points is far more expensive than placing the batteries, and doing
+    it per country made generation slower than the naive distance test it
+    replaced (measured 2026-09-09).
+    """
+    from shapely.geometry import MultiPoint, Point as ShapelyPoint
+    from shapely.prepared import prep
+
+    if not war_points:
+        return None
+    cloud = MultiPoint([ShapelyPoint(point) for point in war_points])
+    return prep(cloud.buffer(WAR_REACH_M))
+
+
+def map_edge(borders: Sequence[Sequence[tuple[float, float]]]) -> Any:
+    """The terrain's own clip boundary, which is not a frontier and gets no battery.
+
+    Every shipped border is clipped to the map, so a country's polygon carries
+    map edge and real frontier in one ring with nothing to tell them apart. The
+    union of every zone has only the edge on its outside.
+    """
+    from shapely.geometry import Polygon
+    from shapely.ops import unary_union
+    from shapely.prepared import prep
+
+    polygons = []
+    for border in borders:
+        if len(border) < 3:
+            continue
+        polygon = Polygon(border)
+        if not polygon.is_valid:
+            polygon = polygon.buffer(0)
+        polygons.append(polygon)
+    if not polygons:
+        return None
+    try:
+        return prep(unary_union(polygons).boundary.buffer(CLIP_TOLERANCE_M))
+    except Exception:
+        logging.warning("Neutral border: could not union the zones.", exc_info=True)
+        return None
+
+
+POSTURES = (NEUTRAL, BLUE_ALIGNED, RED_ALIGNED, CONTESTED_ALIGNED)
+
+
+@dataclass(frozen=True)
+class NeutralBorderZone:
+    """One bordering country's airspace and what happens if you enter it."""
+
+    #: Display name. A ``neutral`` zone spawns units, so its name must also be a
+    #: pydcs country; an aligned zone spawns nothing and any name works.
+    country: str
+    #: pydcs plane id for the alert fighters (vanilla only). Neutral only.
+    aircraft: str | None = None
+    #: Altitude below which a crossing trips, or None for any altitude.
+    #: **A floor is not a universal rule** (DM call, 2026-08-25): it means "high
+    #: transit is tolerated", which is a judgement no fact on the map supports,
+    #: so it is authored only -- it used to come from the posture table's
+    #: `contested` bucket and went with it. None is the normal case, and it
+    #: means no sanctuary at any height.
+    floor_ft: Optional[int] = None
+    #: An SA-6 point-defense battery, cloned on player escalation only.
+    #: **Defaults on.** It was authored-only until 2026-08-28, and the terrain
+    #: files that are now the only source of borders never set it -- so no
+    #: shipped campaign could produce a SAM at all, while the setting text and
+    #: the plugin description both promised one. Flown that day: escalation
+    #: fired correctly and nothing woke, because the template was never built.
+    #: A campaign may still turn it off per zone.
+    sam: bool = True
+    #: Map airfield the alert flight air-spawns overhead. Any airfield on the
+    #: terrain works -- it does not need to be a campaign control point.
+    airfield: str | None = None
+    #: Terrain XY the alert flight air-spawns at, for a neutral with no airfield
+    #: on the map. Mutually exclusive with ``airfield``.
+    spawn: tuple[float, float] | None = None
+    #: Air-spawn altitude for ``spawn`` (ignored for an airfield zone).
+    spawn_alt_ft: int = DEFAULT_SPAWN_ALT_FT
+    #: Author override for the derived alignment, or None to derive it.
+    posture_override: str | None = None
+    #: Author override for transit consent, or None to derive it from the
+    #: airfields inside the border (see ``permits``). Resolved per side, so a
+    #: country may be open to one bloc and closed to the other.
+    overflight_override: Optional[bool] = None
+    #: Border polygon as terrain XY pairs (pydcs Point.x/.y = DCS x/z), closed
+    #: implicitly (last vertex connects to first).
+    border: list[tuple[float, float]] = field(default_factory=list)
+    #: Came from resources/borders/<terrain>.yaml rather than the campaign.
+    #: Set after construction, never parsed -- a terrain list is a cache of a
+    #: shipped file, so a save carrying one is refreshed on load instead of
+    #: freezing whatever shipped the day it was made. A campaign's own zones are
+    #: campaign state and are never touched.
+    from_terrain: bool = False
+
+    def label_point(self) -> Optional[tuple[float, float]]:
+        """Where the F10 map should write this country's name.
+
+        The polygon's representative point, not its centroid: a country is
+        usually concave (Norway spectacularly so) and a centroid lands in the
+        sea or in the neighbour. shapely guarantees this one is inside.
+        """
+        from shapely.geometry import Polygon
+
+        if len(self.border) < 3:
+            return None
+        try:
+            point = Polygon(self.border).buffer(0).representative_point()
+        except Exception:
+            return None
+        return (float(point.x), float(point.y))
+
+    def posture_in(self, theater: Any) -> str:
+        """This country's alignment: who owns the airfields inside its border.
+
+        Counted over every zone of the same country, not this polygon alone: a
+        country clipped into pieces is still one country. Russia is two zones on
+        the Kola map, and per-piece counting drew Karelia -- 116,420 km2, the
+        largest zone on the map -- as an uninvolved neutral that intercepts you,
+        in a campaign where Russia is the enemy.
+
+        Both sides holding airfields makes it contested, not one side's. It is
+        the battlefield, and calling it red because red holds one more field
+        than blue reports the front line as though it were allegiance.
+        """
+        if self.posture_override is not None:
+            return self.posture_override
+        blue, red = self.country_control_points(theater)
+        if blue and red:
+            return CONTESTED_ALIGNED
+        if blue == 0 and red == 0:
+            return NEUTRAL
+        return BLUE_ALIGNED if blue else RED_ALIGNED
+
+    def country_control_points(self, theater: Any) -> tuple[int, int]:
+        """(blue, red) counts over every zone this country has on the map."""
+        siblings = [
+            zone
+            for zone in getattr(theater, "neutral_border_zones", [])
+            if zone.country == self.country
+        ]
+        if self not in siblings:
+            siblings.append(self)
+        blue = red = 0
+        for zone in siblings:
+            zone_blue, zone_red = zone.control_points_in(theater)
+            blue += zone_blue
+            red += zone_red
+        return (blue, red)
+
+    def control_points_in(self, theater: Any) -> tuple[int, int]:
+        """(blue, red) control-point counts inside this border."""
+        from shapely.geometry import Point as ShapelyPoint, Polygon
+
+        if len(self.border) < 3:
+            return (0, 0)
+        polygon = Polygon(self.border)
+        blue = red = 0
+        for cp in getattr(theater, "controlpoints", []):
+            # An off-map spawn is not territory; it sits at a map edge and would
+            # falsely align whichever country the edge happens to run through.
+            if type(cp).__name__ == "OffMapSpawn":
+                continue
+            position = getattr(cp, "position", None)
+            if position is None:
+                continue
+            if not polygon.contains(ShapelyPoint(position.x, position.y)):
+                continue
+            captured = getattr(cp, "captured", None)
+            if captured is None:
+                continue
+            if getattr(captured, "is_blue", False):
+                blue += 1
+            elif getattr(captured, "is_red", False):
+                red += 1
+        return (blue, red)
+
+    def permits(self, theater: Any, is_blue: bool, posture: str | None = None) -> bool:
+        """Does this country let that side's aircraft transit?
+
+        **Derived from the airbases inside its border** (DM call, 2026-08-26),
+        the same fact that decides alignment: a country you fly from is a
+        country that has let you in, and one you have no presence in has not.
+        A country both sides operate from lets both through, because it plainly
+        already does.
+
+        The dated posture table used to answer this. It was dropped as the
+        source because it made consent a fact about the calendar rather than
+        about the campaign in front of you -- it read Sweden and Finland
+        `closed` in 1983 while both sides flew combat sorties off their
+        runways, and it cannot see a base changing hands. The research is kept
+        (`resources/borders/national_postures.yaml`) and still picks each
+        country's era-correct airframe, which nothing else can supply.
+
+        A campaign's ``overflight:`` still wins outright.
+
+        ``posture`` lets a caller that has already derived it hand it in.
+        Deriving it means walking every zone on the map and testing every
+        control point against a polygon, and the two natural callers both ask
+        for the posture and the consent together -- so without this the map
+        pays for it twice per zone and the generator three times. It is a
+        parameter and deliberately NOT a cached field: the whole value of
+        deriving posture is that a country flips the turn its airfield changes
+        hands, and a stored one would go stale exactly then.
+        """
+        if self.overflight_override is not None:
+            return self.overflight_override
+        if posture is None:
+            posture = self.posture_in(theater)
+        if posture == CONTESTED_ALIGNED:
+            return True
+        if posture == NEUTRAL:
+            return False
+        return posture == (BLUE_ALIGNED if is_blue else RED_ALIGNED)
+
+    def floor_for(self, theater: Any, is_blue: bool) -> Optional[int]:
+        """Altitude below which a crossing trips, or None for any altitude.
+
+        Authored only. A floor means "high transit is tolerated", which is a
+        judgement no fact on the map supports -- it used to come from the
+        posture table's `contested` bucket, and went with it.
+        """
+        return self.floor_ft
+
+    def enforces_against(self, theater: Any, is_blue: bool) -> bool:
+        """True when this border intercepts that side's aircraft.
+
+        Only an uninvolved country does: one that hosts a side is handled by
+        that side's QRA, one both sides use has already let them both in, and a
+        country with nothing inside its border is nobody's business but its own.
+        """
+        posture = self.posture_in(theater)
+        return posture == NEUTRAL and not self.permits(theater, is_blue, posture)
+
+    def can_defend(self, day: Any) -> bool:
+        """Could this country actually stand a battery, on this date?
+
+        Since the patrol was dropped 2026-09-07 this asks only for a position:
+        a SAM needs no airframe and no runway. **That widens the feature** --
+        the 14 zones that were drawn and toothless as fighter bases (DCS models
+        no Turkmenistan; Cyprus, Armenia and Azerbaijan had no entry in the
+        dated table) now defend, because every one of them has a station point.
+
+        Asked here rather than in each consumer because the generator and the
+        planning map both need it and used to answer it separately: the map drew
+        Cyprus as "closed to you at any altitude" over a mission you could fly
+        straight through. Promising an interception the mission cannot deliver
+        is worse than drawing no line at all.
+        """
+        del day  # era no longer gates this; the SAM ladder handles it
+        return self.airfield is not None or self.spawn is not None
+
+    def interior_room(self) -> float:
+        """Metres from the deepest interior point to the nearest frontier.
+
+        The largest circle that fits inside the border, which is the honest
+        measure of how much country there is. Sizes the SAM: measured over the
+        63 shipped zones 2026-09-10 it runs 5.8 NM to 216 NM. A country's room
+        is what the MAP models of it, so widening the clip boxes that day moved
+        several rungs up -- Turkmenistan went SA-11 to S-300 on Afghanistan.
+        """
+        from shapely.geometry import Polygon
+
+        if len(self.border) < 3:
+            return 0.0
+        polygon = Polygon(self.border)
+        if not polygon.is_valid:
+            polygon = polygon.buffer(0)
+        low, high = 0.0, 400_000.0
+        for _ in range(24):
+            middle = (low + high) / 2
+            if polygon.buffer(-middle).is_empty:
+                high = middle
+            else:
+                low = middle
+        return low
+
+    def sam_sites(
+        self,
+        anchor: tuple[float, float],
+        reach_m: float,
+        approaches: Any = None,
+        clip: Any = None,
+        cap: int = MAX_SAM_SITES,
+    ) -> list[tuple[float, float]]:
+        """Where this country's batteries stand, spread along the frontier that matters.
+
+        The count comes off the country's own size. Measured 2026-09-09,
+        Pakistan on the Afghanistan map has 2,291 NM of real frontier, so the
+        single site this used to place covered 3.5 % of it and the rest was open
+        -- which is the whole reason a country now stands several.
+
+        Only the war-facing stretch is manned. ``approaches`` -- from
+        :func:`war_region` -- is the ground within :data:`WAR_REACH_M` of an
+        airbase in the campaign; frontier outside it is frontier no sortie
+        reaches, and a battery there is units and RWR clutter spent on nobody.
+        ``clip`` -- from :func:`map_edge` -- drops the map's own boundary, which
+        is not a frontier at all: crossing it means leaving the terrain.
+        Both are prepared geometries the CALLER builds once, because buffering a
+        campaign's whole control-point list costs more than the placement does.
+
+        Depth is capped at the system's own reach, so each envelope still
+        touches the frontier it defends, and a site off the neutral's airfield
+        is one DCS cannot auto-capture the airbase through when the battery
+        swaps coalition. Ties break toward ``anchor``.
+        """
+        from shapely.geometry import Point as ShapelyPoint, Polygon
+        from shapely.ops import nearest_points
+
+        if len(self.border) < 3:
+            return [anchor]
+        polygon = Polygon(self.border)
+        if not polygon.is_valid:
+            polygon = polygon.buffer(0)
+        depth = min(reach_m, self.interior_room() * MAX_DEPTH_FRACTION)
+        if depth <= 0:
+            return [anchor]
+        inner = polygon.buffer(-depth)
+        if inner.is_empty:
+            return [anchor]
+        # Onto the RING at that depth, not merely inside it. A site further in
+        # than its own reach defends nothing: measured 2026-09-07, Iran's
+        # Persian Gulf station sits 175 NM from the frontier and an S-300
+        # reaches 40, so "at most this deep" left the border uncovered.
+        ring = inner.exterior if hasattr(inner, "exterior") else inner.boundary
+        home = ShapelyPoint(anchor)
+
+        def on_ring(point: Any) -> tuple[float, float]:
+            moved = nearest_points(ring, point)[0]
+            return (moved.x, moved.y)
+
+        frontier = polygon.exterior
+        steps = max(int(frontier.length // FRONTIER_STEP_M), 1)
+        # In frontier order, which is what lets the picks below be spread along
+        # the border rather than clustered at whichever end is nearest the war.
+        samples = [
+            frontier.interpolate(index * FRONTIER_STEP_M) for index in range(steps)
+        ]
+        if clip is not None:
+            samples = [p for p in samples if not clip.contains(p)]
+
+        if approaches is None:
+            facing = list(samples)
+        else:
+            facing = [p for p in samples if approaches.contains(p)]
+        if not facing:
+            # It still defends, so it still puts something up -- at the point on
+            # its frontier closest to its authored origin.
+            nearest = min(samples, key=home.distance, default=None)
+            return [on_ring(nearest if nearest is not None else home)]
+
+        wanted = round(len(facing) * FRONTIER_STEP_M / SITE_SPACING_M)
+        count = max(1, min(cap, wanted))
+        sites: list[tuple[float, float]] = []
+        for index in range(count):
+            picked = facing[int((index + 0.5) * len(facing) / count)]
+            site = on_ring(picked)
+            # A narrow country folds two frontier stretches onto one ring point;
+            # that is one battery covering both, not two stacked on each other.
+            if any(math.dist(site, other) < MIN_SITE_SEPARATION_M for other in sites):
+                continue
+            sites.append(site)
+        return sites or [on_ring(home)]
+
+    def origin_label(self, posture: str, enforced: bool = True) -> str:
+        """What the map tooltip calls this border's meaning."""
+        if posture == BLUE_ALIGNED:
+            return "friendly — overflight permitted"
+        if posture == RED_ALIGNED:
+            return "enemy-aligned"
+        if posture == CONTESTED_ALIGNED:
+            return "contested — both sides hold ground here"
+        if not enforced:
+            return "neutral — overflight permitted"
+        # Named the alert field until 2026-09-09. Nothing launches from it now
+        # -- the batteries are sited off the border polygon, and the field is
+        # only a tie-break -- so naming it told the player to watch the wrong
+        # place.
+        return "surface-to-air batteries inside the border"
+
+    @classmethod
+    def from_yaml(
+        cls, data: dict[str, Any], from_terrain: bool = False
+    ) -> "NeutralBorderZone | None":
+        """Build a zone from one ``neutral_border_defense:`` yaml entry.
+
+        Returns None (with a log line) on a malformed entry rather than raising:
+        a bad campaign block must cost the feature, never the campaign.
+
+        ``aircraft`` and an origin are validated whenever they are present or
+        the zone could derive to ``neutral`` -- which is any zone without an
+        override pinning it to a coalition. A blue/red-pinned zone may omit
+        them, since it will never spawn.
+        """
+        try:
+            country = str(data["country"])
+            border_raw = data.get("border", [])
+            border = [(float(x), float(y)) for x, y in border_raw]
+            if len(border) < 3:
+                logging.warning(
+                    "neutral_border_defense entry for %s: border needs 3+ "
+                    "vertices — skipped",
+                    country,
+                )
+                return None
+
+            override = data.get("posture")
+            if override is not None:
+                override = str(override).lower()
+                if override not in POSTURES:
+                    logging.warning(
+                        "neutral_border_defense entry for %s: posture must be one "
+                        "of %s — skipped",
+                        country,
+                        "/".join(POSTURES),
+                    )
+                    return None
+
+            airfield = data.get("airfield")
+            spawn_raw = data.get("spawn")
+            aircraft = data.get("aircraft")
+            overflight = data.get("overflight")
+            if overflight is not None:
+                overflight = bool(overflight)
+
+            # Naming BOTH origins is a real authoring error and still refused.
+            # Naming NEITHER is not: whether this zone ever needs one depends on
+            # its alignment and the posture table, neither of which exists at
+            # parse time -- and requiring them here would defeat the point of a
+            # campaign being able to list a country and its border, nothing
+            # else. A zone that turns out to need an origin it lacks is skipped
+            # by the generator, with a log line naming the country.
+            if airfield is not None and spawn_raw is not None:
+                logging.warning(
+                    "neutral_border_defense entry for %s: name 'airfield' or "
+                    "'spawn', not both — skipped",
+                    country,
+                )
+                return None
+
+            spawn = None
+            if spawn_raw is not None:
+                spawn = (float(spawn_raw[0]), float(spawn_raw[1]))
+
+            return cls(
+                country=country,
+                aircraft=str(aircraft) if aircraft is not None else None,
+                floor_ft=(
+                    int(data["floor_ft"]) if data.get("floor_ft") is not None else None
+                ),
+                sam=bool(data.get("sam", True)),
+                airfield=str(airfield) if airfield is not None else None,
+                spawn=spawn,
+                spawn_alt_ft=int(data.get("spawn_alt_ft", DEFAULT_SPAWN_ALT_FT)),
+                posture_override=override,
+                overflight_override=overflight,
+                border=border,
+                from_terrain=from_terrain,
+            )
+        except (KeyError, TypeError, ValueError, IndexError):
+            logging.warning(
+                "neutral_border_defense entry malformed — skipped", exc_info=True
+            )
+            return None

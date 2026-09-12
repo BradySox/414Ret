@@ -629,6 +629,14 @@ export type CampaignStatus = {
   hvt_name?: string | null;
   hvt_turns_left?: number | null;
 };
+export type NeutralBorder = {
+  country: string;
+  airfield: string;
+  posture: string;
+  overflight: boolean;
+  floor_ft?: number | null;
+  border: LatLng[][];
+};
 export type Game = {
   control_points: ControlPoint[];
   tgos: Tgo[];
@@ -643,6 +651,7 @@ export type Game = {
   unculled_zones: UnculledZone[];
   map_zones: MapZones;
   campaign_status?: CampaignStatus | null;
+  neutral_borders?: NeutralBorder[];
 };
 export type MapZones = {
   inclusion: LatLng[][][];

@@ -1900,3 +1900,69 @@ def test_generate_csar_data_serializes_and_evaluates() -> None:
     # derivation. MOOSE ships no capacity for it either, so it MUST be whitelisted
     # or a King could not board a survivor at all.
     assert "C-130J-30" in rescue_ids
+
+
+def test_generate_csar_data_lists_the_rescue_flights_for_the_king() -> None:
+    """The King's on-scene systems (KingOnScene.lua) need to know who is flying
+    the rescue: which group is the King, which the helicopter, which the Sandy,
+    whether a human is in it, and which survivor the package was fragged for."""
+    import lupa
+
+    from game.ato.flighttype import FlightType
+    from game.missiongenerator.luagenerator import LuaData, LuaGenerator
+    from game.missiongenerator.missiondata import MissionData
+    from game.theater.player import Player
+
+    game = MagicMock()
+    game.settings.csar_enabled = True
+    game.settings.csar_enabled_red = False
+    game.settings.csar_rescue_ai_pilots = True
+    game.settings.csar_require_open_doors = False
+    game.settings.csar_player_hover_height = 20
+    game.settings.csar_player_hover_distance = 10
+    game.settings.csar_hover_extraction = True
+    game.blue.player = Player.BLUE
+    game.blue.downed_pilots = []
+    game.blue.faction.country.id = 2
+    game.red.player = Player.RED
+    game.red.downed_pilots = []
+    game.red.faction.country.id = 0
+    downed = _standalone_downed()
+
+    def flight(
+        group: str, task: FlightType, helicopter: bool, clients: int, target: Any
+    ) -> Any:
+        return SimpleNamespace(
+            group_name=group,
+            flight_type=task,
+            aircraft_type=SimpleNamespace(helicopter=helicopter),
+            client_units=[object()] * clients,
+            friendly=Player.BLUE,
+            package=SimpleNamespace(target=target),
+        )
+
+    mission_data = MissionData()
+    mission_data.csar_pilot_templates = {"blue": "CSAR_PILOT_BLUE"}
+    mission_data.flights = [
+        flight("King 1", FlightType.CSAR, False, 1, downed),
+        flight("Jolly 1", FlightType.CSAR, True, 0, downed),
+        flight("Sandy 1", FlightType.SANDY, False, 2, downed),
+        flight("Enfield 1", FlightType.CAS, False, 1, downed),  # not a rescue role
+    ]
+    generator = LuaGenerator.__new__(LuaGenerator)
+    generator.game = game
+    generator.mission_data = mission_data
+
+    lua_data = LuaData("dcsRetribution")
+    generator.generate_csar_data(lua_data)
+    runtime = lupa.LuaRuntime()
+    runtime.execute(lua_data.serialize())
+    flights = runtime.globals().dcsRetribution.CSAR.rescueFlights
+    rows = {flights[i].groupName: flights[i] for i in range(1, len(flights) + 1)}
+
+    assert set(rows) == {"King 1", "Jolly 1", "Sandy 1"}
+    assert rows["King 1"].role == "king" and rows["King 1"].player == "true"
+    assert rows["Jolly 1"].role == "jolly" and rows["Jolly 1"].player == "false"
+    assert rows["Sandy 1"].role == "sandy"
+    assert rows["King 1"].survivorId == str(downed.id)
+    assert rows["King 1"].side == "blue"

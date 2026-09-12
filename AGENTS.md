@@ -475,6 +475,7 @@ linked design note.
 96. **Player career logbook** — a permanent record per pilot: sorties, combat sorties, hours airborne, air/ground/naval kills, ejections, rank and awards, folded from what the mission actually recorded. Ranks and awards are data, not code. A record, never a reward — nothing here unlocks an aircraft or gates a mission.
 97. **Lifetime pilot profiles** — your own flying kept across every campaign, not just the current one: totals, a breakdown per aircraft, and the individual flights. Identified by DCS player name, so it needs no setup and a multiplayer host records every pilot who flew. Stored outside the save, which is what lets it outlive a campaign.
 99. **Sandy rescue escort** — an armed escort that works the ground around a downed pilot while the helicopter comes in: a track centred on the survivor, flown by the A-10 and the Apache. Hand-fragged only — the auto-planner never adds one.
+100. **King on-scene commander** — the player-flown C-130J King finds the survivor by DF cuts on the beacon (two cuts far enough apart make a fix; inside pod range with line of sight it snaps exact), sweeps the ground around the fix for threats reported as a class and a rough position, and passes the picture — text and map marks — to the player-crewed Sandy and helicopter. Cues only: it never lases, and nothing is pushed onto an AI flight.
 
 ### Retired, removed or shelved — do not restore
 

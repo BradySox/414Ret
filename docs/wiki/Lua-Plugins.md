@@ -127,7 +127,7 @@ setting off costs nothing at runtime.
 
 | Plugin | Default | What it does |
 |---|---|---|
-| `opscsar` | on | **Combat SAR** — spawns downed pilots and runs the rescue via MOOSE `Ops.CSAR`. See [Combat SAR](Combat-SAR). |
+| `opscsar` | on | **Combat SAR** — spawns downed pilots and runs the rescue via MOOSE `Ops.CSAR`, and carries the King's on-scene systems (`KingOnScene.lua`: DF cuts on the beacon, the threat sweep, the picture passed to the Sandy and the helo). See [Combat SAR](Combat-SAR). |
 | `intercept` | on | Per-squadron QRA intercept reserve feeding the MOOSE `AI_A2A_DISPATCHER`. |
 | `redscramble` | on | Host tool: an F10 menu to scramble red interceptors. Inert unless the setting is on. |
 | `briefing` | on | The mission-start briefing card each pilot sees when they slot in. |

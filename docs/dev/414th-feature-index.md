@@ -110,5 +110,6 @@ pass checklist `§N` is unregistered, or this table drifts.
 | §96 | Pilot career logbook | — | `pilot_career_logbook` |
 | §97 | Lifetime pilot profiles | — | `lifetime_pilot_profiles` |
 | §99 | Sandy rescue escort | — | — |
+| §100 | King on-scene commander | `opscsar` | — |
 | — | Skynet IADS engine | `skynetiads` | — |
 | — | Splash Damage (414th tuned) | `splashdamage3` | — |

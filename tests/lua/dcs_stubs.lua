@@ -472,6 +472,11 @@ land = {
     getHeight = function(_)
         return Harness.terrainHeight
     end,
+    -- No terrain is modelled: everything sees everything unless a test sets
+    -- Harness.losBlocked, which blocks every line of sight at once.
+    isVisible = function(_, _)
+        return not Harness.losBlocked
+    end,
     getIP = function(_, _, _)
         return nil
     end,
@@ -734,6 +739,18 @@ trigger = {
                 y = point.y,
                 z = point.z,
                 side = side,
+                t = Harness.now,
+            })
+        end,
+        markToGroup = function(id, text, point, groupId, readOnly, message)
+            table.insert(Harness.records.marks, {
+                id = id,
+                text = tostring(text),
+                x = point.x,
+                y = point.y,
+                z = point.z,
+                groupId = groupId,
+                readOnly = readOnly,
                 t = Harness.now,
             })
         end,

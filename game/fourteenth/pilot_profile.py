@@ -29,6 +29,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 from dataclasses import dataclass, field
 from typing import Any, Iterable, Optional, Sequence, TYPE_CHECKING
 
@@ -311,13 +312,33 @@ def save_profiles(
         "profiles": {key: profile.as_dict() for key, profile in profiles.items()},
     }
     try:
-        target.write_text(
-            json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8"
-        )
+        _write_store(target, payload)
     except (OSError, ValueError):
         logging.exception("Could not write the pilot profile store at %s", target)
         return False
     return True
+
+
+def _write_store(target: Any, payload: dict[str, Any]) -> None:
+    """Writes the store so a crash mid-write cannot cost the file.
+
+    Append-only with nothing to re-derive it from, so a truncated write is every
+    pilot's career gone. Encoded first, written to a sibling temp file, flushed
+    to disk, then moved over the old store -- the save-game write's shape.
+    """
+    text = json.dumps(payload, indent=2, ensure_ascii=False)
+    temporary = target.with_name(f".{target.name}.tmp")
+    try:
+        with open(temporary, "w", encoding="utf-8") as store:
+            store.write(text)
+            store.flush()
+            os.fsync(store.fileno())
+        temporary.replace(target)
+    finally:
+        try:
+            temporary.unlink(missing_ok=True)
+        except OSError:
+            pass
 
 
 def rename_profile(key: str, display_name: str) -> bool:
@@ -387,17 +408,22 @@ def record_mission(
 
     profiles = load_profiles(path)
     mid = mission_id(campaign_uid, turn)
+    # Decided before anything is folded, and per profile: a pilot who joined the
+    # event late has not logged this mission even though everyone else has, and
+    # a pilot who ejected and took a second slot flew two sorties in it. Only a
+    # profile that had the mission on file when this call began is skipped.
+    already_logged = {
+        key for key, profile in profiles.items() if mid in profile.logged_missions
+    }
     dirty = False
 
     for record in candidates:
+        if record.player_name in already_logged:
+            continue
         profile = profiles.get(record.player_name)
         if profile is None:
             profile = PilotProfile(key=record.player_name)
             profiles[record.player_name] = profile
-        # The guard is per profile: a pilot who joined the event late has not
-        # logged this mission even though everyone else has.
-        if mid in profile.logged_missions:
-            continue
         try:
             resolved = task_for(record.unit)
         except Exception:
@@ -417,8 +443,9 @@ def record_mission(
             ejected=record.ejected,
         )
         _fold_one(profile, record, entry, combat)
-        profile.logged_missions.append(mid)
-        del profile.logged_missions[:-MAX_LOGGED_MISSIONS]
+        if mid not in profile.logged_missions:
+            profile.logged_missions.append(mid)
+            del profile.logged_missions[:-MAX_LOGGED_MISSIONS]
         filed[record.player_name] = filed.get(record.player_name, 0) + 1
         dirty = True
 

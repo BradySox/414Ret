@@ -26,11 +26,17 @@ class ArmedReconIngressBuilder(PydcsWaypointBuilder):
             target.position
             for target in getattr(flight_plan.layout, "targets", []) or []
         ] or [flight_plan.tot_waypoint.position]
-        radius = int(
-            nautical_miles(
-                self.flight.coalition.game.settings.armed_recon_engagement_range_distance
-            ).meters
-        )
+        # The plan widens the zone past the doctrine range when the standoff has
+        # pushed the search point out to the rim (armedrecon.search_zone_radius).
+        zone_radius = getattr(flight_plan, "search_zone_radius", None)
+        if zone_radius is not None:
+            radius = int(zone_radius().meters)
+        else:
+            radius = int(
+                nautical_miles(
+                    self.flight.coalition.game.settings.armed_recon_engagement_range_distance
+                ).meters
+            )
         for position in positions:
             waypoint.add_task(
                 ControlledTask(

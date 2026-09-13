@@ -4285,6 +4285,16 @@ toward the corridor where the convoys actually drive) and the distance to the in
 sync math is untouched (`travel_time_to_target` already measures to the package target, not the fly-over
 point). Tests: the standoff cases in `tests/test_armed_recon_planning.py`.
 
+**The hunt zone widens when the standoff hits the cap (2026-09-13).** Test 30 put three Hornet
+Armed Recon flights on the AUROCHS AAA site: the KS-19 reads 20 km in pydcs, so the standoff was
+capped at the 10 NM zone radius, the fly-over point sat 10 NM from the target, and the 10 NM zone
+centred on it put the guns 80 m outside the rim. All three flights overflew the point, found no
+ground unit in their zone, and went home without a shot. `ArmedReconFlightPlan.search_zone_radius`
+(a pure function `search_zone_radius` in `armedrecon.py`) now returns the doctrine range or the
+search point's distance from the target plus `SEARCH_ZONE_MARGIN` (2 NM), whichever is larger;
+`armedreconingress.py` and the UI ring both read it. The standoff itself is unchanged, so any target
+whose longest ring is 8 NM or more gets a 12 NM zone. In-game pass owed: **B123**.
+
 ### Files & tests
 
 | Area | Path |

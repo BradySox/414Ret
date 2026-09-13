@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Type
 
+from dcs import Point
+
 from .formationattack import (
     FormationAttackBuilder,
     FormationAttackFlightPlan,
@@ -23,6 +25,23 @@ MIN_SEARCH_STANDOFF = nautical_miles(5)
 #: Extra margin past the target area's longest ground-based threat ring.
 SEARCH_STANDOFF_BUFFER = nautical_miles(2)
 
+#: How far past the target the hunt zone reaches when the standoff has pushed the
+#: search point out to the zone's own radius. Test 30 (2026-09-13): a KS-19 site
+#: reads 20 km, the standoff capped at the 10 NM zone radius, and the guns sat 80 m
+#: outside the zone -- three Hornet flights overflew the point and went home.
+SEARCH_ZONE_MARGIN = nautical_miles(2)
+
+
+def search_zone_radius(
+    engagement_range: Distance, target_position: Point, search_points: list[Point]
+) -> Distance:
+    """The hunt-zone radius: the doctrine range, widened so the target stays inside."""
+    reach = max(
+        (meters(target_position.distance_to_point(p)) for p in search_points),
+        default=meters(0),
+    )
+    return max(engagement_range, reach + SEARCH_ZONE_MARGIN)
+
 
 class ArmedReconFlightPlan(
     FormationAttackFlightPlan, UiZoneDisplay, TacticalOverlayDisplay
@@ -31,15 +50,22 @@ class ArmedReconFlightPlan(
     def builder_type() -> Type[Builder]:
         return Builder
 
+    def search_zone_radius(self) -> Distance:
+        return search_zone_radius(
+            nautical_miles(
+                self.flight.coalition.game.settings.armed_recon_engagement_range_distance
+            ),
+            self.package.target.position,
+            [waypoint.position for waypoint in self.layout.targets],
+        )
+
     def ui_zone(self) -> UiZone:
         # One engagement ring over the search area: armed recon hunts targets of
         # opportunity anywhere within the engagement range of the target area, not
         # down a single road.
         return UiZone(
             [waypoint.position for waypoint in self.layout.targets],
-            nautical_miles(
-                self.flight.coalition.game.settings.armed_recon_engagement_range_distance
-            ),
+            self.search_zone_radius(),
         )
 
     def tactical_overlay(self) -> TacticalOverlay:

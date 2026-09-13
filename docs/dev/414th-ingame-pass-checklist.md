@@ -58,7 +58,7 @@ also relative to `ReferenceLatitude=38 / ReferenceLongitude=36`, not absolute.
 
 ## Outstanding rows at a glance
 
-85 rows need a live pass. Full detail is under each `###` heading below —
+86 rows need a live pass. Full detail is under each `###` heading below —
 search the row id. `☐` untested · `◐` flown but not under the conditions that
 stress it · `✗` fail signature reproduced in-game.
 
@@ -96,6 +96,7 @@ stress it · `✗` fail signature reproduced in-game.
 | B120 | Neutral border: warned, then the battery engages if you press | §98 | ☐ |
 | B121 | Neutral border: AI intruders are never engaged | §98 | ☐ |
 | B122 | A survivor lands where his own chute came down, not where another crew's did | CSAR (#929 adoption) | ☐ |
+| B123 | An Armed Recon flight engages a gun-defended target instead of overflying the search point | §35 | ☐ |
 | G25 | Armed Recon package: recon drone + SEAD Viper escort + 4-ship sweep | §3 | ◐ |
 | G30 | Skynet point defence: the paired SHORAD answers the HARM shot | Skynet return | ☐ |
 | G42 | Skynet is the engine again: sites dark until cued, HARM defence, no `enableEmission` crash | Skynet return | ☐ |
@@ -6453,6 +6454,35 @@ dropped (`landing_ejection_for` in `dcs_retribution.lua`, pinned by
   2. **A land ejection with no `landed` at all** — the landing fired more than 20 km from the
      ejection record, or never fired; the survivor stays at the ejection point, which is also
      what a water landing has always done.
+
+### B123 — An Armed Recon flight engages a gun-defended target instead of overflying the search point · §35 · ☐ UNTESTED
+
+**History:** found 2026-09-13 on test 30 (Persian Gulf — Scenic Route turn 1). Three Hornet
+Armed Recon flights were fragged on the AUROCHS AAA site (KS-19 100 mm, 20 km ring in pydcs).
+The standoff rule pushed the fly-over point out to the 10 NM cap, and the 10 NM
+`EngageTargetsInZone` centred on that point left the guns 80 m outside the rim. Each flight
+flew to the point at 20,000 ft, 14–15 km short of the guns, found nothing in its zone, and
+turned for the split: zero shots from twelve Mavericks-armed Hornets. Fixed the same day:
+`search_zone_radius` grows the zone to the search point's distance plus 2 NM whenever that
+exceeds the doctrine range, so the target always sits inside (`armedrecon.py`,
+`armedreconingress.py`; `tests/test_armed_recon_planning.py`).
+
+- **What CI cannot exercise:** that DCS's AI prosecutes a unit that is inside the zone but
+  outside the fly-over point's own detection reach, and that the Hornets' Mavericks can be
+  employed from the standoff without the flight pressing into the guns.
+- **Setup:** frag Armed Recon on an AAA- or SAM-defended site (Scenic Route's AUROCHS, or any
+  FOB with a SA-13/KS-19 garrison). Watch the flight from the F10 map. ~40 min at
+  acceleration.
+- **Pass:** the map's search ring covers the site with margin; the flight closes past the
+  fly-over point and employs against units at the site, and the sortie record carries shots.
+- **Fail signatures:**
+  1. **The flight overflies the point and turns home with nothing fired** — either the zone is
+     still short (dump the `.miz` and measure the `EngageTargetsInZone` centre against the site)
+     or the AI will not enter the ring for a target it cannot see; in the second case the
+     answer is a lower search altitude, not a bigger zone.
+  2. **The flight presses into the guns and dies** — the standoff was the point; the zone is now
+     wide enough to draw the AI in. Compare losses against the pre-fix 0-shot outcome before
+     calling that worse.
 
 ### B99 — AI packages arrive inside the mission, not after it · §8 · ◐ PARTIAL
 

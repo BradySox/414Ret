@@ -27,6 +27,8 @@ from dcs.terrain import Caucasus
 from game.ato.flightplans.armedrecon import (
     Builder,
     MIN_SEARCH_STANDOFF,
+    SEARCH_ZONE_MARGIN,
+    search_zone_radius,
     SEARCH_STANDOFF_BUFFER,
 )
 from game.ato.flighttype import FlightType
@@ -216,6 +218,34 @@ def test_search_point_standoff_is_capped_at_the_hunt_zone_radius() -> None:
     builder._stand_off_search_point(cast(Any, layout))
 
     assert _moved_distance(layout) == pytest.approx(nautical_miles(10).meters)
+
+
+def test_hunt_zone_widens_to_keep_a_capped_standoff_target_inside() -> None:
+    # Test 30: a KS-19 site reads 20 km, so the standoff capped at the 10 NM zone
+    # radius and the guns sat on the rim -- outside it, by the layout's spread.
+    builder, layout = _standoff_builder(
+        _fob([meters(20_000)]), Point(0, 100_000, _TERRAIN), zone_nm=10
+    )
+    builder._stand_off_search_point(cast(Any, layout))
+    assert _moved_distance(layout) == pytest.approx(nautical_miles(10).meters)
+
+    radius = search_zone_radius(
+        nautical_miles(10), _TARGET_POS, [layout.targets[0].position]
+    )
+    assert radius.meters == pytest.approx(
+        (nautical_miles(10) + SEARCH_ZONE_MARGIN).meters
+    )
+    assert radius > meters(_moved_distance(layout))
+
+
+def test_hunt_zone_keeps_the_doctrine_range_when_the_target_is_well_inside() -> None:
+    builder, layout = _standoff_builder(_fob([]), Point(0, 100_000, _TERRAIN))
+    builder._stand_off_search_point(cast(Any, layout))
+
+    radius = search_zone_radius(
+        nautical_miles(10), _TARGET_POS, [layout.targets[0].position]
+    )
+    assert radius.meters == pytest.approx(nautical_miles(10).meters)
 
 
 def test_search_point_standoff_never_overshoots_the_ingress_point() -> None:

@@ -513,9 +513,10 @@ def _lines(
     game: Game,
     mission_data: MissionData,
     coords: _Coords,
-    options: DtcOptions,
+    flight: FlightData,
 ) -> list[dict[str, Any]]:
-    """The boundary as an open plot line, each support orbit as a closed one."""
+    """The boundary as an open plot line, each usable tanker orbit as a closed one."""
+    options = flight.dtc_options
     lines: list[dict[str, Any]] = []
     if options.flot_and_zones:
         for _name, segment in red_land_boundary(
@@ -525,7 +526,7 @@ def _lines(
             lines.append({"points": points, "closed": False})
     if options.friendly_orbits:
         for _callsign, box in support_boxes(
-            mission_data, min(MAX_SUPPORT_BOXES, MAX_LINES - len(lines))
+            mission_data, min(MAX_SUPPORT_BOXES, MAX_LINES - len(lines)), flight
         ):
             # The plot line closes itself here, so the repeated corner is dropped.
             points = [coords.of(x, y) for x, y in box[:-1]]
@@ -600,7 +601,7 @@ def _build_nav(
         if options.route
         else []
     )
-    lines = _lines(game, mission_data, coords, options)
+    lines = _lines(game, mission_data, coords, flight)
     references = _additional_points(flight, mission_data, game, coords, off_route)
     plans[0]["lines"] = list(lines)
     plans[0]["additional_points"] = list(references)

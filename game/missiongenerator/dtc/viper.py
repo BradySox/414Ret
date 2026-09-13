@@ -13,7 +13,7 @@ Sections emitted (schema mined from ``CoreMods/aircraft/F-16C/DTC``):
   The editor caps the list at 25 and the jet auto-sequences only 1-20, so the
   route takes 1-20 and anchors 21-25.
 * ``MPD.GEO_LINES`` -- the boundary with red land on line set L1, and a box
-  around each tanker / AEW&C orbit on L2-L4. The four sets share 25 points.
+  around each tanker this jet can use on L2-L4, nearest first. The four sets share 25 points.
 * ``MPD.THREAT_PTS`` -- viewer-fogged enemy SAM rings ("Custom" type, radius
   in meters, <= 15).
 * ``MPD.DEST`` -- friendly recovery fields as Destination steerpoints 81-99,
@@ -54,7 +54,6 @@ from game.missiongenerator.dtc.common import (
 
 if TYPE_CHECKING:
     from game import Game
-    from game.ato.dtcoptions import DtcOptions
     from game.ato.flightwaypoint import FlightWaypoint
     from game.missiongenerator.aircraft.flightdata import FlightData
     from game.missiongenerator.missiondata import MissionData
@@ -616,7 +615,7 @@ def _build_cmds() -> dict[str, Any]:
 
 
 def _build_geo_lines(
-    game: Game, mission_data: MissionData, options: DtcOptions
+    game: Game, mission_data: MissionData, flight: FlightData
 ) -> list[dict[str, Any]]:
     """The HSD's four line sets: the red-land boundary on L1, a tanker or AEW&C
     box on each of L2-L4.
@@ -625,9 +624,10 @@ def _build_geo_lines(
     five and a box missing a corner is nonsense, where a boundary thinned by ten
     points is still a boundary.
     """
+    options = flight.dtc_options
     line_sets: list[tuple[str, list[tuple[float, float]]]] = []
     boxes = (
-        support_boxes(mission_data, MAX_GEO_LINE_SETS - 1)
+        support_boxes(mission_data, MAX_GEO_LINE_SETS - 1, flight)
         if options.friendly_orbits
         else []
     )
@@ -704,7 +704,7 @@ def build_viper_cartridge(
             "mirror_NAV_PTS": False,
             "NAV_PTS": _build_nav_pts(flight, mission_data, game),
             "mirror_GEO_LINES": False,
-            "GEO_LINES": _build_geo_lines(game, mission_data, options),
+            "GEO_LINES": _build_geo_lines(game, mission_data, flight),
             "mirror_THREAT_PTS": False,
             "THREAT_PTS": (
                 _build_threat_pts(flight, game) if options.threat_rings else []

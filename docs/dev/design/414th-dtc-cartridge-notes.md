@@ -203,22 +203,17 @@ only the DEST partition draws an airfield. A red, non-naval control point within
 cap can never squeeze it out. Not a recovery option — it is kept out of the divert
 slot on purpose.
 
-## pydcs seams (fork-side until upstream lands)
+## pydcs seams — DELETED 2026-09-13 (the fork reflects upstream)
 
-pydcs (pin `dcs-retribution/pydcs@b0fc06a`) knows neither piece; neither does
-root pydcs (checked 2026-07-19). Fork-side seams in
-`game/missiongenerator/dtc/cartridge.py`:
-
-1. `install_flying_unit_dtc_serialization()` — one idempotent wrap of
-   `FlyingUnit.dict` emitting `d["DTC"]` for units carrying the
-   `retribution_dtc` attribute. Byte-identical for every other unit.
-2. `append_cartridges_to_miz()` — plain zip append of the `DTC/*.dtc` entries
-   after `Mission.save` (runs before the §66 archive copy, so archives carry the
-   cartridges).
-
-The clean first-class version (unit attrs + `load_from_dict` round-trip + a
-`Mission`-level cartridge dict written/read in save/load) is PR'd to
-`dcs-retribution/pydcs`; when merged and the pin moves, delete the seams here.
+The fork's pydcs pin is `BradySox/pydcs@0e871c2`: the 2.9.29 surgical branch with
+[dcs-retribution/pydcs#39](https://github.com/dcs-retribution/pydcs/pull/39)
+cherry-picked on top, so `Mission.add_dtc_cartridge` / `FlyingUnit.add_dtc_cartridge`
+exist here exactly as in the upstream carve. `cartridge.py` is the model only;
+`generator.py` calls the pydcs API; the post-`Mission.save` zip append is gone, and
+because pydcs writes `DTC/*.dtc` inside `save` the §66 archive copy carries the
+cartridges by construction. The `FlyingUnit.dict` wrap and the append lived here
+from 2026-07-19 to 2026-09-13 (`git show 78085dfd7:game/missiongenerator/dtc/cartridge.py`).
+**When #39 merges upstream, re-pin to upstream's SHA and drop the cherry-pick.**
 
 **The Retribution-side carve is open: [dcs-retribution#966](https://github.com/dcs-retribution/dcs-retribution/pull/966)
 (draft, 2026-09-12, DM exception to the PR freeze).** Hornet and Viper only, the
@@ -663,7 +658,7 @@ the descriptors.
 
 | Data | Reaches the jet without a cartridge? | What the cartridge adds |
 |---|---|---|
-| Radio presets on channels | **Yes** — upstream's channel allocator writes every client unit's `Radio` table (`FlightData.assign_channel` → `unit.set_radio_channel_preset`, driven by `game/radio/channels.py`) | Hornet: ≤5-char channel **names**. Viper: **nothing** — its schema has no name field, so `COMM` is a pure mirror |
+| Radio presets on channels | **Yes** — upstream's channel allocator writes every client unit's `Radio` table (`FlightData.assign_channel` → `unit.set_radio_channel_preset`, driven by `game/radio/channels.py`) | Nothing, since 2026-09-13. The Viper's schema has no name field; the Hornet's ≤5-char names were the only add, cut when the fork was aligned to #966 |
 | The route as steerpoints | **Yes** — the miz flight plan | Hornet: names, per-leg ETA/speed, the target flag. Viper: TOS and leg speed inline, TGT/IP sub-types. Tomcat: nothing (plan 1 is the ME route; plan 2 repeats it with TOTs) |
 | Recovery TACAN / ICLS / ACLS | No | Hornet `NAV_SETTINGS` |
 | A/A waypoint on the bullseye, FPAS home | No | Hornet `NAV_SETTINGS` |
@@ -679,17 +674,21 @@ the descriptors.
 - **The cartridge is an overlay, never load-bearing.** With `dtc_data_cartridges`
   off — or the cartridge rejected by the jet — radios and route are exactly
   upstream's. That is the revert path, and it costs nothing to exercise.
-- **The mirrors must stay mirrors.** The Hornet `COMM` section overwrites the
-  whole channel table, so it has to carry the allocator's frequencies to add its
-  names; emitting names alone would blank the presets. The same holds for the
-  route sections. A disagreement between the miz and the cartridge is a bug in
+- **The mirrors must stay mirrors.** A route section overwrites the whole route,
+  so it has to carry the miz's route to add its ETAs and sub-types; emitting the
+  additions alone would blank it. (The Hornet `COMM` section worked the same way
+  while it existed.) A disagreement between the miz and the cartridge is a bug in
   the cartridge.
 - **The Viper `COMM` section was the one genuinely redundant piece** — identical
   to the unit's `Radio` table, key for key. **Dropped 2026-08-22 on the DM's call.**
   The Viper's presets come from the miz; `viper.py` emits no `COMM` at all, and the
   tab's comms switch is documented as Hornet-only (on the Tomcat it carries TIS).
   If a future Viper schema ever adds channel names, re-add the section as a mirror
-  plus names, the way the Hornet's works.
+  plus names, the way the Hornet's worked.
+- **The Hornet `COMM` section followed 2026-09-13.** Its names were the only add,
+  and the DM's rule for the upstream carve — ship nothing the miz already delivers —
+  applies fork-side too: the fork reflects #966 rather than carrying a second
+  shape. `DtcOptions.comms` survives for the Tomcat's TIS list.
 - This is also why the Super Hornets lost their cartridge: with no `SA`, the
   whole file was the first two rows of this table.
 
@@ -1120,3 +1119,15 @@ L1 whole; L2-L4 are free.
 - **`AutoLoad` versus the STBY warning.** Campaign G has no `AutoLoad`, so its pilot
   chooses when to ingest and can set the CMDS knob first. Ours fires at spawn. That is the
   whole of the surviving objection to a CMDS section and it needs checklist **B28**.
+
+## One FAOR line draws, so it is the tanker (2026-09-13)
+
+The DM's first look at the boxes on the Hornet SA page (B115): **one** box, and it was
+the AWACS. So the FAOR partition behaves like `CAP_PTS` — only the selected line
+(`Default_FAOR_Line = 1`) is drawn — and "a line set is always drawn" was the 09-10
+section's guess, now falsified for the Hornet. Since one box is what the pilot gets,
+`usable_tanker_tracks` makes it the right one: `REFUELING` orbits only, filtered by
+`AircraftType.can_refuel_from` (a Hornet sees probe tankers, a Viper boom tankers),
+ordered by distance from the flight's target, and the AWACS gets no box on any
+airframe. Every builder passes its flight to `support_boxes`; without one (the
+geometry tests) it still boxes every support orbit.

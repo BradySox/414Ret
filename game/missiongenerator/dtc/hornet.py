@@ -2,10 +2,9 @@
 
 Sections emitted (schema mined from ``CoreMods/aircraft/FA-18C/DTC``):
 
-* ``COMM`` -- COMM1/COMM2 preset tables **mirroring the channel numbers the
-  radio allocator already wrote into the unit** (so the kneeboard, the Radio
-  table, and the DTC agree), each with a <=5-char name; unassigned channels
-  keep the module's stock defaults.
+* No ``COMM`` (dropped 2026-09-13 to match the upstream carve): the presets
+  already reach the jet through the ``Radio`` table the radio allocator writes
+  into the unit; the cartridge adds only what the miz cannot carry.
 * ``WYPT`` -- the flight's waypoints as named steerpoints + the Route 1
   sequence with per-leg altitude/speed/ETA, and ``NAV_SETTINGS`` that auto-tune
   the recovery TACAN / ICLS / ACLS (the §65 boat card, closing the loop) and
@@ -32,7 +31,6 @@ from game.missiongenerator.dtc.common import (
     steerpoint_elevation,
     red_land_boundary,
     support_boxes,
-    frequency_labels,
     is_route_waypoint,
     is_target_waypoint,
     known_enemy_threat_sites,
@@ -55,65 +53,14 @@ MAX_WAYPOINTS = 59
 MAX_CAP_POINTS = 9
 MAX_LINE_POINTS = 7
 MAX_FLOT_LINES = 3
-#: FAOR takes the support boxes: the SA page draws only the SELECTED CAP point's
-#: racetrack, so the tanker is invisible until you pick it, while a line set is
-#: always drawn (``SA/FAOR_FLOT.lua``: 3 lines, 7 points each).
+#: FAOR takes the tanker boxes: the SA page draws only the SELECTED CAP point's
+#: racetrack, so the tanker is invisible until you pick it. Only FAOR line 1
+#: draws too (flown 2026-09-13), so it is the nearest usable tanker.
 MAX_FAOR_LINES = 3
 MAX_MEZ_THREATS = 40
 
-#: Stock preset frequencies (MHz) for channels 1-20 of both AN/ARC-210s, from
-#: the module's COMM1/COMM2 defaults -- kept for channels we don't assign.
-_DEFAULT_CHANNEL_FREQS = [
-    305.0, 264.0, 265.0, 256.0, 254.0, 250.0, 270.0, 257.0, 255.0, 262.0,
-    259.0, 268.0, 269.0, 260.0, 263.0, 261.0, 267.0, 251.0, 253.0, 266.0,
-]  # fmt: skip
-
 #: CAP racetrack orbit diameter (the ME default, 5 NM).
 _CAP_ORBIT_DIAMETER_M = 5 * 1852.0
-
-
-def _default_comm_table(radio_index: int) -> dict[str, Any]:
-    """The module's stock channel table for COMM1/COMM2 (identical freqs)."""
-    del radio_index  # both ARC-210s ship the same defaults
-    table: dict[str, Any] = {"Guard": False}
-    for i, freq in enumerate(_DEFAULT_CHANNEL_FREQS, start=1):
-        table[f"Channel_{i}"] = {
-            "frequency": freq,
-            "modulation": 0,
-            "name": f"CH {i}",
-        }
-    table["Channel_G"] = {"frequency": 243.0, "modulation": 0, "name": "GUARD"}
-    table["Channel_M"] = {"frequency": 305.0, "modulation": 0, "name": "MAN"}
-    table["Channel_C"] = {"frequency": 30.0, "modulation": 1, "name": "CUE"}
-    table["Channel_S"] = {"frequency": 156.05, "modulation": 1, "name": "MAR"}
-    return table
-
-
-def _build_comm(flight: FlightData, mission_data: MissionData) -> dict[str, Any]:
-    comm1 = _default_comm_table(1)
-    comm2 = _default_comm_table(2)
-    tables = {1: comm1, 2: comm2}
-    labels = frequency_labels(flight, mission_data)
-    for frequency, assignments in flight.frequency_to_channel_map.items():
-        label = labels.get(frequency, "")
-        for assignment in assignments:
-            table = tables.get(assignment.radio_id)
-            if table is None or not 1 <= assignment.channel <= 20:
-                continue
-            entry: dict[str, Any] = {
-                "frequency": frequency.mhz,
-                # VHF-FM band frequencies are FM; everything Retribution
-                # assigns above 88 MHz is AM.
-                "modulation": 1 if frequency.mhz < 88.0 else 0,
-                "name": label or f"CH {assignment.channel}",
-            }
-            table[f"Channel_{assignment.channel}"] = entry
-    return {
-        "COMM1": comm1,
-        "COMM2": comm2,
-        "mirror_COMM1": False,
-        "mirror_COMM2": False,
-    }
 
 
 def _oa_defaults(index: int) -> dict[str, Any]:
@@ -241,7 +188,13 @@ def _build_nav_settings(
     sortie. We point it at the bullseye we already emit rather than the jet's
     stock slot 59, which our routes never reach.
     """
-    tacan = carrier.tacan if carrier is not None else flight.arrival.tacan
+    # A land start tunes the departure field's TACAN when it has one (DM ask
+    # 2026-09-13); a boat recovery keeps the boat's card; else the arrival's.
+    tacan = (
+        carrier.tacan
+        if carrier is not None
+        else flight.departure.tacan or flight.arrival.tacan
+    )
     icls = carrier.icls_channel if carrier is not None else flight.arrival.icls
     acls_freq = (
         carrier.link4_freq.mhz
@@ -337,7 +290,7 @@ def _build_sa(
 
     faor_lines: list[dict[str, Any]] = []
     if options.friendly_orbits:
-        for callsign, points in support_boxes(mission_data, MAX_FAOR_LINES):
+        for callsign, points in support_boxes(mission_data, MAX_FAOR_LINES, flight):
             line_num = len(faor_lines) + 1
             faor_lines.append(
                 {
@@ -422,8 +375,6 @@ def build_hornet_cartridge(
     }
     # A section the planner turned off is omitted entirely so the jet's own
     # defaults stand (the §74 Edit Flight DTC tab).
-    if options.comms:
-        data["COMM"] = _build_comm(flight, mission_data)
     if options.route or options.nav_aids:
         carrier = _find_carrier(flight, mission_data)
         data["WYPT"] = _build_wypt(flight, game, carrier)
@@ -432,7 +383,3 @@ def build_hornet_cartridge(
     return DtcCartridge(
         name=name, unit_type=HORNET_UNIT_TYPE, terrain=terrain, data=data
     )
-
-
-#: The section keys a cartridge can carry; used to spot an empty one.
-CARTRIDGE_SECTIONS = ("COMM", "WYPT", "SA")

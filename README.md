@@ -105,12 +105,12 @@ Most of this is opt-in. Full list with toggles, defaults and known limitations:
   the strikers they are escorting instead of running ahead. Cruise speed is set per airframe
   where one has been measured rather than assumed the same for every jet; the F/A-18C is the
   first, and transits a little slower than before.
-- Native DCS data cartridges auto-load in Hornets, Vipers and F-14B(U)s: comm presets
-  matching the kneeboard, route with push times, boat TACAN/ICLS/ACLS, and the SA/HSD
+- Native DCS data cartridges auto-load in Hornets, Vipers and F-14B(U)s: route with push
+  times, boat TACAN/ICLS/ACLS, and the SA/HSD
   picture (the front line, your own orbit, the tankers and AWACS, recon-confirmed SAM
   rings). The front line is drawn as one continuous boundary with the same bulges the F10
-  map shows, not a separate straight dash per front, and the tanker and AWACS orbits are
-  drawn as boxes you can see without selecting them. The
+  map shows, not a separate straight dash per front, and the tanker you can actually take
+  gas from is drawn as a box you can see without selecting it. The
   orbit shown is the flight's own — its patrol track, or its hold point when it flies no
   track — never another flight's station. Hornets get the bullseye designated as the
   air-to-air waypoint; Vipers get the friendly recovery fields as Destination steerpoints,

@@ -41,7 +41,6 @@ from game.missiongenerator.dtc.common import (
 if TYPE_CHECKING:
     from game import Game
     from game.missiongenerator.aircraft.flightdata import FlightData
-    from game.ato.dtcoptions import DtcOptions
     from game.missiongenerator.missiondata import MissionData
 
 APACHE_UNIT_TYPE = "AH-64D_BLK_II"
@@ -180,16 +179,19 @@ def _build_targets(flight: FlightData, game: Game) -> list[dict[str, Any]]:
 
 
 def _build_lines(
-    game: Game, mission_data: MissionData, options: DtcOptions
+    game: Game, mission_data: MissionData, flight: FlightData
 ) -> list[dict[str, Any]]:
-    """The red-land boundary, then a box around each tanker / AEW&C orbit."""
+    """The red-land boundary, then a box around each tanker this aircraft can use."""
+    options = flight.dtc_options
     lines: list[dict[str, Any]] = []
     sets: list[tuple[str, list[tuple[float, float]]]] = []
     if options.flot_and_zones:
         sets.extend(red_land_boundary(game, MAX_BOUNDARY_LINES, MAX_LINE_VERTICES))
     if options.friendly_orbits:
         sets.extend(
-            support_boxes(mission_data, min(MAX_SUPPORT_BOXES, MAX_LINES - len(sets)))
+            support_boxes(
+                mission_data, min(MAX_SUPPORT_BOXES, MAX_LINES - len(sets)), flight
+            )
         )
     for name, points in sets:
         vertices = [{"x": x, "y": y} for x, y in points[:MAX_LINE_VERTICES]]
@@ -233,7 +235,7 @@ def build_apache_cartridge(
     if options.threat_rings:
         mission["Points"]["TGT"]["POINTS"] = _build_targets(flight, game)
     if options.flot_and_zones or options.friendly_orbits:
-        mission["Lines"] = _build_lines(game, mission_data, options)
+        mission["Lines"] = _build_lines(game, mission_data, flight)
 
     data: dict[str, Any] = {
         "type": APACHE_UNIT_TYPE,

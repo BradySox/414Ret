@@ -3161,7 +3161,7 @@ class Settings:
         detail=(
             "Embed a native DCS Data Transfer Cartridge for every blue client "
             "Hornet, Viper and F-14B(U) flight and auto-load it at spawn. "
-            "Hornet: named COMM presets matching the kneeboard, the route with "
+            "Hornet: the route with "
             "push times, recovery TACAN/ICLS/ACLS, the bullseye as the A/A "
             "waypoint, and the SA page -- front line, your own orbit, the "
             "tankers and AWACS, the known enemy SAM rings. Viper: the route with "

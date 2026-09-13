@@ -791,6 +791,12 @@ jets. See §62.
 - **CJS Super Hornet bullet — CLOSED 2026-08-22 (feature removed).** The Super Hornets no longer take a cartridge: their descriptor has no SA table, and the comm presets and route already reach them through the miz. Nothing to check.
 - **FLOWN 2026-08-19, session `dtc-work-retrospective-c1328a` — the Viper HSD picture is confirmed good.** Screenshot from the cockpit shows the route line drawn through its steerpoints with a triangle at the target, and the Destination steerpoints rendering as white 3-character labels (`FOB`, `FO2`, `FO3`, `FO4`, `SHA`, `GHA`, `KOB`, `BAG`) — so `MPD.DEST` loads, the labels fit, and the collision suffix works. The DM's verdict on the Viper and Hornet cartridge changes together: "good and confirmed they look great". **Still owed on this row:** the Zulu push-time check below (that fix landed after this flight, so it needs a regenerated mission) and the Viper CMDS check. The Hornet A/A waypoint was confirmed separately the same day — see its bullet. **Looked at and left alone (DM call, same day):** several bases named `FOB <x>` reduce to the same first three characters, so they read `FOB`/`FO2`/`FO3`/`FO4` rather than naming the place. The labels are unique and correct and the full name rides the `note` field, so this is not worth a naming heuristic. Do not re-raise it.
 - **Push times read Zulu (added 2026-08-19, the reported TOT defect):** this is the one to check first on any DTC flight. On a client Hornet or Viper, the cartridge's steerpoint ETA/TOS must match the jet's own clock — Hornet: the TOT on the HSI/DATA page against Zulu time in the bottom left of the HUD; Viper: the CRUS TOS DED page, where desired TOS sits beside System Time and the required ground speed should read sane rather than pegged. Cross-check against the kneeboard: the Hornet-family kneeboards already print Zulu (`utc_kneeboard`), so those two should now agree exactly. Both jets' cards now carry **both** clocks (`utc_kneeboard`), so the Zulu figure and the cockpit should agree exactly while the local figure still matches a non-Zulu wingman's card. **Check the flight-plan table, not just the BLUF** — until 2026-08-20 only the BLUF's TOT converted, and the two blocks on the same page read a whole map offset apart. Tables stack Zulu under local, the BLUF and the package TOT parenthesise it, and the tanker/AWACS cells indent it under the TOT. A Hornet or Viper card showing a bare `15:12:14` anywhere means the annotation stopped reaching that block again. Fail signature: ETA/TOS off by a whole number of hours equal to the map's offset (the conversion regressed or was applied twice — Caucasus +4, Syria +3, Marianas +10, Nevada −8); a required ground speed pegged at max or the TOS field blank (negative/invalid TOS, meaning the value landed behind the jet's clock).
+- **Hornet COMM section dropped (2026-09-13, the fork reflects upstream #966):** the
+  F/A-18C cartridge no longer carries COMM1/COMM2; the presets come from the mission's
+  own Radio table, which is the same frequencies on the same channels, without the
+  callsign names. Expected: the mission frequencies on the kneeboard's channel numbers
+  with the jet's stock channel names. Fail signature: empty or default presets. The
+  named-preset half of the Pass line above is history.
 - **Viper COMM section dropped (2026-08-22):** the F-16C cartridge no longer carries
   COMM1/COMM2; the presets come from the mission's own Radio table, which is the same
   data. Expected: no change in the cockpit. Fail signature: empty or default presets
@@ -7016,11 +7022,13 @@ continuous boundary instead of one disconnected stub per line set.
   worse than the stubs were, because the alternative needs a territorial model the campaign
   does not have); only part of the front drawn on a theater with many fronts (the point
   budget thinned it — note how many fronts were active).
-- **The support boxes land on the same flight.** Each tanker and AEW&C orbit is now a
-  closed box: Viper GEO L2-L4, Hornet FAOR 1-3 (which shipped empty until now), Tomcat
-  closed plot lines, Apache extra TSD lines. Pass = a box sits around each orbit with its
-  radio frequency in the label, it is drawn **without selecting anything**, and the tanker
-  you join is inside its own box. Fail = an open C shape (the closing corner was dropped);
+- **The support boxes land on the same flight — and the Hornet half is now PARTIAL
+  (2026-09-13, DM screenshot):** the SA page drew **one** box, FAOR line 1, and it was the
+  AWACS. So only FAOR 1 displays (the selected line, like the CAP point), and the boxes are
+  now the tankers this jet can refuel from, nearest to its target first — no AWACS box on
+  any airframe. Re-check: the one box on the Hornet is your tanker; Viper GEO L2-L4, Tomcat
+  closed plot lines and Apache TSD lines carry the usable tankers only. Pass = the box sits
+  around the tanker you join, drawn **without selecting anything**. Fail = an open C shape (the closing corner was dropped);
   a box square to the map on an angled orbit (the course rotation is wrong); a box nowhere
   near the aircraft (the orbit leg was read off the wrong waypoints — these are the WP2-WP3
   leg, not the spawn point); or, on the Viper, a front line so thinned it is unreadable,

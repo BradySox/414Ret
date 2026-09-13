@@ -15,7 +15,7 @@ import math
 import re
 from dataclasses import dataclass
 from datetime import datetime, timezone as tz
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from dcs import Point
 
@@ -27,7 +27,6 @@ if TYPE_CHECKING:
     from game.ato.flightwaypoint import FlightWaypoint
     from game.missiongenerator.aircraft.flightdata import FlightData
     from game.missiongenerator.missiondata import MissionData
-    from game.radio.radios import RadioFrequency
     from game.theater.player import Player
 
 #: Route-sequence default speed the ME uses when a leg speed is unknown (km/h).
@@ -220,9 +219,12 @@ class SupportTrack:
     """One friendly racetrack: a CAP station or a tanker/AEW&C orbit."""
 
     callsign: str
-    kind: str  # "CAP" | "TKR" | "AWACS"
+    kind: str  # "CAP" | "TKR" | "AWACS" | "HOLD"
     start: Point
     end: Point
+    #: The orbiting flight's AircraftType, so a tanker box can be offered only
+    #: to jets that can take gas from it. None on a stand-in.
+    aircraft_type: Any = None
 
     @property
     def center(self) -> tuple[float, float]:
@@ -313,6 +315,7 @@ def _tracks_of_types(
                 kind=kind_by_type[flight.flight_type],
                 start=start,
                 end=end,
+                aircraft_type=flight.aircraft_type,
             )
         )
     return tracks
@@ -396,17 +399,57 @@ SUPPORT_ORBIT_DIAMETER_M = 5 * 1852.0
 SUPPORT_BOX_POINTS = 5
 
 
+def _reference_point(flight: FlightData) -> Optional[Point]:
+    """The flight's target, else its last waypoint -- what "nearest" is measured from."""
+    for waypoint in flight.waypoints:
+        if is_target_waypoint(waypoint):
+            return waypoint.position
+    return flight.waypoints[-1].position if flight.waypoints else None
+
+
+def usable_tanker_tracks(
+    flight: FlightData, mission_data: MissionData
+) -> list[SupportTrack]:
+    """The tankers this flight can take gas from, nearest to its target first.
+
+    Flown 2026-09-13: the Hornet's SA page draws ONE FAOR line -- the selected
+    one, like its CAP point -- and it was the AWACS. So line 1 has to be the
+    tanker that matters: a boom jet has no use for a probe tanker's box, and no
+    jet has a use for the AWACS's.
+    """
+    tankers = []
+    for track in support_tracks(mission_data):
+        if track.kind != "TKR":
+            continue
+        if (
+            track.aircraft_type is not None
+            and not flight.aircraft_type.can_refuel_from(track.aircraft_type)
+        ):
+            continue
+        tankers.append(track)
+    reference = _reference_point(flight)
+    if reference is not None:
+        tankers.sort(key=lambda t: math.dist(t.center, (reference.x, reference.y)))
+    return tankers
+
+
 def support_boxes(
-    mission_data: MissionData, max_boxes: int
+    mission_data: MissionData, max_boxes: int, flight: Optional[FlightData] = None
 ) -> list[tuple[str, list[tuple[float, float]]]]:
-    """Each tanker and AEW&C orbit as a closed box, (callsign, 5 points).
+    """Each usable tanker orbit as a closed box, (callsign, 5 points).
 
     The orbits already ride the jets as points, but a point is not an area: on
     the Hornet's SA page only the SELECTED CAP point draws its racetrack, so the
-    gas is invisible until you go looking for it. A line set is always drawn.
+    gas is invisible until you go looking for it. With ``flight`` given the
+    boxes are :func:`usable_tanker_tracks`; without it, every support orbit.
     """
     boxes: list[tuple[str, list[tuple[float, float]]]] = []
-    for track in support_tracks(mission_data)[:max_boxes]:
+    tracks = (
+        usable_tanker_tracks(flight, mission_data)
+        if flight is not None
+        else support_tracks(mission_data)
+    )
+    for track in tracks[:max_boxes]:
         half_width = SUPPORT_ORBIT_DIAMETER_M / 2
         half_length = track.length_m / 2 + half_width
         course = math.radians(track.course)
@@ -634,30 +677,3 @@ def known_enemy_threat_sites(game: Game, viewer: Player) -> list[ThreatSite]:
             )
     sites.sort(key=lambda site: site.range_m, reverse=True)
     return sites
-
-
-def frequency_labels(
-    flight: FlightData, mission_data: MissionData
-) -> dict[RadioFrequency, str]:
-    """A short label for every mission frequency the channel allocator may
-    have preset -- the DTC's value-add over the bare channel table."""
-    labels: dict[RadioFrequency, str] = {}
-
-    def put(freq: Optional[RadioFrequency], label: str) -> None:
-        if freq is not None and freq not in labels:
-            labels[freq] = sanitize_short_name(label)
-
-    put(flight.intra_flight_channel, short_callsign(flight.callsign))
-    for awacs in mission_data.awacs:
-        put(awacs.freq, short_callsign(awacs.callsign))
-    for tanker in mission_data.tankers:
-        put(tanker.freq, short_callsign(tanker.callsign))
-    for jtac in mission_data.jtacs:
-        put(jtac.freq, "JTAC")
-    put(flight.package.frequency, "PKG")
-    put(flight.departure.atc, "DEP")
-    if flight.arrival != flight.departure:
-        put(flight.arrival.atc, "ARR")
-    if flight.divert is not None:
-        put(flight.divert.atc, "DVT")
-    return labels

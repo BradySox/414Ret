@@ -23,6 +23,9 @@ watch pointing at RETIRED `B42`.)*
   drifting downrange.
 - **Fail:** a group well off station, or stopped dead.
 - **Why it's here:** §87 anchors the ovals; whether they hold over a long mission is a look.
+- **Test 30 (2026-09-13, Persian Gulf):** both authored ship groups measured off the ACMI —
+  15–22 km sailed for 2–2.5 km of drift over 59 min, eight or more headings each. Fourth
+  campaign in a row. Closing the row is a DM call; see B48.
 
 ### 2 · The day's flying is reported back, and the numbers are believable — `B70`
 
@@ -60,6 +63,10 @@ At your split point, look behind you. **Free — it is the flight you were flyin
 - **Why it's here:** it fired 6,807 times in one 7-minute mission and 11,861 in an archived
   Germany Cold War log; the first fix (2026-08-29) keyed the wrong event and failed on
   2026-09-13 with ~10,300 more. It cannot be exercised headlessly — the harness never raises it.
+- **Test 30 (2026-09-13, Persian Gulf) did not reach it:** the `.miz` was generated at 12:50 and
+  `main` took the guard at 13:23, so the flown `Moose.lua` still had only the #997 rows
+  (1,282 occurrences, no TIC on the map). Check the main checkout's reflog against the
+  archive stamp before reading a count as a verdict.
 
 ---
 

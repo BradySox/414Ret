@@ -498,6 +498,7 @@ world = {
         S_EVENT_BIRTH = 15,
         S_EVENT_EJECTION = 6,
         S_EVENT_LAND = 4,
+        S_EVENT_LANDING_AFTER_EJECTION = 31,
     },
     addEventHandler = function(handler)
         table.insert(eventHandlers, handler)

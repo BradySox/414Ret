@@ -32,6 +32,7 @@ Adoption log:
 |---|---|---|
 | 2026-08-07 | head `9f7d5edc` | The whole feature (414Ret#805). Two defects found by reading and fixed on the way in: the survivor beacon named a file that exists nowhere in the tree, and the pickup waypoint briefed a hover above MOOSE's winch ceiling. |
 | 2026-08-17 | commit `82b3ab10` | Phase 5, in full. See below. |
+| 2026-09-13 | head `12e340f7` | **Nothing taken; a defect found on test 30 and fixed fork-side.** The landing-after-ejection handler refined "the most recent ejection without a landing". DCS fires one landing per crew member, so a two-seat crew's second touchdown was written onto another survivor: an AV-8B pilot down in the Strait of Hormuz was recorded 170 km away beside an F-4E's crash. Now `landing_ejection_for` takes the nearest open ejection within 20 km and drops a landing that matches nothing (`tests/lua/test_dcs_retribution_runtime.py`). #929's head carries the same loop — report it on the thread (inventory item 38). Checklist B122. |
 | 2026-08-30 | commit `687cb3ee` | The AI-rescue fallback guard. We carried the bug byte-identically. **Not taken:** commit `2abd88e8`, which surfaces this turn's captures in the debrief — a feature, not a defect, and it lands on `debriefing.py` / `QDebriefingWindow.py` where §4 and §29 live. |
 
 ### The AI-rescue fallback credited flights the mission had already answered (2026-08-30)

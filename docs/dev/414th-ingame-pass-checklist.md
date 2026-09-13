@@ -58,7 +58,7 @@ also relative to `ReferenceLatitude=38 / ReferenceLongitude=36`, not absolute.
 
 ## Outstanding rows at a glance
 
-84 rows need a live pass. Full detail is under each `###` heading below —
+87 rows need a live pass. Full detail is under each `###` heading below —
 search the row id. `☐` untested · `◐` flown but not under the conditions that
 stress it · `✗` fail signature reproduced in-game.
 
@@ -95,6 +95,9 @@ stress it · `✗` fail signature reproduced in-game.
 | B99 | AI packages arrive inside the mission, not after it | §8 | ◐ |
 | B120 | Neutral border: warned, then the battery engages if you press | §98 | ☐ |
 | B121 | Neutral border: AI intruders are never engaged | §98 | ☐ |
+| B122 | A survivor lands where his own chute came down, not where another crew's did | CSAR (#929 adoption) | ☐ |
+| B123 | An Armed Recon flight engages a gun-defended target instead of overflying the search point | §35 | ☐ |
+| B124 | A hand-fragged Harrier DEAD opens the New Flight dialog on the DEAD preset, not a stock Snakeye fit | New Flight dialog | ☐ |
 | G25 | Armed Recon package: recon drone + SEAD Viper escort + 4-ship sweep | §3 | ◐ |
 | G30 | Skynet point defence: the paired SHORAD answers the HARM shot | Skynet return | ☐ |
 | G42 | Skynet is the engine again: sites dark until cued, HARM defence, no `enableEmission` crash | Skynet return | ☐ |
@@ -909,6 +912,15 @@ circle would obviously be fake. Nothing to fly. See features doc §79 and §3.
 
 ### B39 — Cross-turn naval magazines · §81 · ◐ PARTIAL
 
+**2026-09-13, test 30** (Persian Gulf — Scenic Route turn 1) — the plugin armed on groups
+that were not in the mission. `NAVALMAGAZINES|: 0061 | MONSTER (Naval Two Ship) released
+weapons-free` (then SHOEBILL and HORNBILL) logged between +153 s and +228 s, but the `.miz`
+holds only the six blue ship groups; the three red groups exist in the campaign and were not
+generated (culling is the likely reason; the save was not captured). `naval_group_magazines`
+lists every live naval group rather than every spawned one, so the release is a no-op on a
+name `Group.getByName` cannot find. Harmless this turn. When the plugin is next touched, skip
+groups the mission does not hold, so the log describes what the mission did.
+
 **2026-08-29, test 24** (Caucasus — Iron Gate turn 1, 72 min, `Tacview-20260829-162330`, DCS 2.9.29.27278) — **release and stagger work; the salvo cap is still unexercised.**
 `NAVALMAGAZINES|: armed -- 2 naval group(s), stagger true (120s-900s), metered true, salvo cap 6`,
 then the carrier released weapons-free at +137 s and the escort at +951 s, so the stagger is real
@@ -967,6 +979,21 @@ stops at 6, and logs the cap.
 
 
 ### B63 — A destroyed strike target is recorded in the campaign · §8 · ☐ UNTESTED
+
+**2026-09-13, test 30** (Persian Gulf — Scenic Route turn 1, DCS 2.9.29.27468) — **not
+exercisable here, and a pattern to read before the next attempt.** The campaign has no
+scenery objectives (`RETRIBUTION_SCENERY_ZONES` is absent from the `.miz`), so cause 2 cannot
+fire. But `state.json` carries 12 scenery ids in `kill_events` (buildings flattened by the four
+Harriers going in and by SA-15 missiles) and **zero** entries in `destroyed_objects_positions`,
+which the `S_EVENT_DEAD` handler fills for any scenery death whether or not a zone exists.
+The same asymmetry holds in tests 26, 27 and 29 (32 / 32 / 1 scenery kills against 0 / 0 / 0
+scenery deaths), all on 2.9.29.27468, while test 24 on 2.9.29.27278 recorded 282 scenery
+deaths and 96 positions. No script error in any of those logs. Read: on the current DCS build
+a scenery kill raises `S_EVENT_KILL` and not `S_EVENT_DEAD`. If that holds, the #957 matcher
+never runs, and a destroyed building renders intact on the next turn because the destruction
+zone is fed from the same list. Check on the next scenery strike: with the building flattened,
+grep the log for `Objective destroyed`; if it is absent, the credit has to move to the
+`S_EVENT_KILL` branch (target category SCENERY).
 
 **History:** opened 2026-08-16 from the user's flown report ("Bombs hit and destroyed the target but it was not tracked in retribution"), session `c86c58dd`. **Root cause found and fixed the same day — it was never the scenery-tracking path.** The player aborted a ~100-second run of the turn-2 mission; DCS wrote `state.json` with `mission_ended`, `PollDebriefingFileThread` consumed it, logged "Mission end detected; stopping poll" at 14:05:24 and broke out permanently (its only staleness guard is an mtime newer than the `.miz`, which an aborted run of that same `.miz` satisfies). The real 49-minute sortie followed; at 14:58:41 the turn committed that two-minute snapshot. Three Tuapse dock buildings (`TARANTULA`) were destroyed and recorded by zone name in the final `state.json`, and stood untouched in the save. Rebuilding a `Debriefing` from that same file credits all three and committing it flips them dead — which is what proves the snapshot, not the matching, was at fault. Fixed in `game/finaldebriefing.py` (the commit re-reads `state.json`); `tests/test_final_debriefing.py`; forensics in `414th-scenery-kill-tracking-notes.md` §0.
 
@@ -4595,6 +4622,15 @@ are cut*.
 
 ### B48 — Naval station-keeping racetracks · §87 · ◐ PARTIAL
 
+**2026-09-13, test 30** (Persian Gulf — Scenic Route turn 1, `Tacview-20260913-125128`, 59 min
+of sim, DCS 2.9.29.27468) — **holds up, fourth campaign, both authored ship groups.**
+ALBATROSS (Ticonderoga + Perry) sailed 14.9 / 20.9 km for 2.5 / 1.9 km of net drift.
+DIREWOLF (Burke + Ticonderoga) sailed 14.6 / 22.1 km for 2.5 / 1.9 km. Both groups turned
+through eight or more headings, which is the oval. The CVN-71 and LHA-1 groups ran 36–41 km
+straight on 300° under §88, excluded by design. The red navy (MONSTER, SHOEBILL, HORNBILL)
+was not in the `.miz` at all — see B39 — so nothing is known about red this turn. Nothing in
+this row names what is still owed after four campaigns; closing it is a DM call.
+
 **2026-08-29, test 24** (Caucasus — Iron Gate turn 1, 72 min, `Tacview-20260829-162330`, DCS 2.9.29.27278) — **not exercised; do not read the drift as a failure.** This campaign
 has **zero ship TGOs** — the only naval object is the CVN-73 carrier control point, which §87
 deliberately excludes (carriers keep `steam_into_wind`). The carrier and its escorts do travel
@@ -5165,6 +5201,20 @@ actually are.
 > weighting. That row needs a lopsided pair.
 ### B70 — Sortie records reach the campaign · §91 · ◐ PARTIAL
 
+**2026-09-13, test 30** (Persian Gulf — Scenic Route turn 1, no player, 59 min of sim) — **the
+two-point question is answered by the recorder's own code, and the numbers are believable.**
+134 records: 26 moved, 108 sat. A record whose aircraft never moves keeps two rows by design:
+`sample_unit` overwrites the tail of a stationary run (`STATIONARY_M`), so every parked
+squadron jet and every group that never taxied shows `first=30 last=3510` with two samples.
+That is the test-14 and test-24 "stub", and it is correct, not a lost track. The 26 that moved
+match the Tacview flight for flight. Shots 0 / hits 0 is right: no aircraft fired all mission
+(20 SA-15 missiles from ground units, nothing from the air). Two shapes to know when reading a
+SITREP: an AI group whose lead dies re-keys under the next unit (GIBBON Escort 23 shows
+5.5 min under Pilot #2 after 52 min under Pilot #1), and a group DCS activates late still gets
+a record from t=30 because `coalition.getGroups` returns it before activation. WATCH slot 2's
+fail signature 1 ("idle ramp jets counted as flights") is therefore decided on the campaign
+side, by counting records that moved rather than records.
+
 **2026-08-29, test 24** (Caucasus — Iron Gate turn 1, 72 min, `Tacview-20260829-162330`, DCS 2.9.29.27278) — **the test-14 defect reproduces on a second campaign and terrain.** 206
 flights recorded. The player's own record is again complete and correct (52 track points, fuel
 1.177 → 0.000, 7 shots / 2 hits, `ejected: true` matching the ejection event). But **122 of 206
@@ -5453,6 +5503,17 @@ Play a turn on a **front-less** campaign whose AWACS is not at the field nearest
   3. **A fronted campaign changes.** It should not — only the front-less branch moved.
 
 ### G42 — Skynet is the engine again · Skynet return · ☐ UNTESTED
+
+**2026-09-13, test 30** (Persian Gulf — Scenic Route turn 1, the first flight on the Skynet
+return, build `78085dfd7`) — **loads and runs; one name defect.** Skynet `baron-branch
+16.05.2023` started, built both nets, took the Kish A-50 as an early-warning radar, and no
+`enableEmission` fault appears in 25 wall-minutes. The blue net's EWR list names both
+flat-tops and Skynet rejected them: `SKYNET: you have added an EW Radar that does not exist
+... 0156 | CVN-71 Theodore Roosevelt` and `0159 | LHA-1 Tarawa`. The unit in the `.miz` is
+`CVN-71 Theodore Roosevelt` in group `0156 | GIBBON (Carrier)`, so the emitted name matches
+neither. Ship radars never join the blue net until the IADS node's name for a ship is the unit
+name. Not the crash class this row guards against; the sites-dark and HARM halves were not
+exercised (no SEAD flown, no player).
 
 **Built 2026-09-12** (`414th-skynet-return-notes.md`). The MANTIS bridge and the MIST shim are
 gone; upstream's Skynet and MIST are back, with the HDSUC profiles from #956 and the CurrentHill
@@ -6243,6 +6304,9 @@ mountain or coastal front will do.
 
 ### B120 — Neutral border: warned, then the battery engages if you press · §98 · ☐ UNTESTED
 
+**2026-09-13, test 30** — not exercised: the mission had no player slot and `engageAi` was
+off. The batteries were up for the whole mission (see B121).
+
 **REOPENED 2026-09-07.** This row closed on 2026-09-01 against the standing
 fighter patrol, and the patrol was dropped the same week (DM call: scope is the
 SAM). None of that evidence transfers — there is no aircraft in the feature any
@@ -6296,6 +6360,18 @@ the SAM alone 2026-09-07. Full history in the design note.
 
 
 ### B121 — Neutral border: AI intruders are never engaged · §98 · ☐ UNTESTED
+
+**2026-09-13, test 30** (Persian Gulf — Scenic Route turn 1, `Tacview-20260913-125128`, no
+player, DCS 2.9.29.27468, `engageAi=false`) — **consistent, not closed.** Twelve batteries
+stood from t=0 across the UAE (3 Hawk), Oman (2 Hawk, 1 Rapier), Saudi Arabia (2 Patriot),
+Qatar (SA-3) and Pakistan (SA-11, SA-3); every one was still there and still neutral at
+mission end, and no neutral weapon was fired all mission (the two neutral-coloured objects at
+t=1540 were an AV-8B's ordnance cooking off at its crash site). The log reads `9 border
+zone(s) drawn, 7 defended; warn 30s, engage 180s`, and no hail or warn line fired, which is the
+AI-only expectation. What the capture cannot show is whether an AI flight actually crossed a
+border: the closest approach was the Kish A-50 at 47.6 km from the second UAE Hawk and
+50.8 km from the Oman Rapier, and without the drawn polygon in hand that is not a crossing.
+Needs a map look on a turn with a red or blue AI flight visibly inside a shaded border.
 
 **REWRITTEN TWICE.** The 2026-09-07 rewrite dropped the scramble's
 `shadowHoldNm`/`maxShadows` language, which was right, but it then described the
@@ -6352,7 +6428,105 @@ in all four cases — the finding that helped kill the scramble. Superseded by t
 standing patrol; see the design note.
 
 
+### B122 — A survivor lands where his own chute came down, not where another crew's did · CSAR (#929 adoption) · ☐ UNTESTED
+
+**History:** found 2026-09-13 on test 30 (Persian Gulf — Scenic Route turn 1). `state.json`
+recorded AUROCHS DEAD Pilot #4 (AV-8B, down in the Strait of Hormuz at x=−60040 z=159481 per
+the CSAR beacon line) as `landed` at x=110389 z=−76 — 170 km away, 200 m from where the
+GIBBON Escort F-4E crashed. DCS raises one `S_EVENT_LANDING_AFTER_EJECTION` per crew member;
+the handler wrote the Phantom's second landing onto the most recent open ejection, which was
+the Harrier's. Upstream #929 (head `12e340f7`) carries the same loop. Fixed the same day: a
+landing is matched to the nearest open ejection within 20 km and one that matches nothing is
+dropped (`landing_ejection_for` in `dcs_retribution.lua`, pinned by
+`tests/lua/test_dcs_retribution_runtime.py`).
+
+- **What CI cannot exercise:** that DCS's landing event arrives one per crew member as the
+  harness assumes, and that a chute from a high ejection stays inside 20 km of the ejection
+  point.
+- **Setup:** a mission where a two-seat aircraft (F-4E, F-14, Su-24) and a single-seat one both
+  go down over land, the two-seater last. An AI-only Scenic Route turn reproduces the shape;
+  ~1 h at acceleration.
+- **Pass:** every `ejection_events` entry's `landed` position is within a few km of its own
+  unit's ejection point, and the next turn's map puts each survivor where he came down.
+- **Fail signatures:**
+  1. **A survivor 100+ km from his aircraft's loss** — the match reached the wrong ejection;
+     compare the `state.json` positions with the `_AddBeaconToGroup ... Position` lines in
+     `dcs.log`.
+  2. **A land ejection with no `landed` at all** — the landing fired more than 20 km from the
+     ejection record, or never fired; the survivor stays at the ejection point, which is also
+     what a water landing has always done.
+
+### B123 — An Armed Recon flight engages a gun-defended target instead of overflying the search point · §35 · ☐ UNTESTED
+
+**History:** found 2026-09-13 on test 30 (Persian Gulf — Scenic Route turn 1). Three Hornet
+Armed Recon flights were fragged on the AUROCHS AAA site (KS-19 100 mm, 20 km ring in pydcs).
+The standoff rule pushed the fly-over point out to the 10 NM cap, and the 10 NM
+`EngageTargetsInZone` centred on that point left the guns 80 m outside the rim. Each flight
+flew to the point at 20,000 ft, 14–15 km short of the guns, found nothing in its zone, and
+turned for the split: zero shots from twelve Mavericks-armed Hornets. Fixed the same day:
+`search_zone_radius` grows the zone to the search point's distance plus 2 NM whenever that
+exceeds the doctrine range, so the target always sits inside (`armedrecon.py`,
+`armedreconingress.py`; `tests/test_armed_recon_planning.py`).
+
+- **What CI cannot exercise:** that DCS's AI prosecutes a unit that is inside the zone but
+  outside the fly-over point's own detection reach, and that the Hornets' Mavericks can be
+  employed from the standoff without the flight pressing into the guns.
+- **Setup:** frag Armed Recon on an AAA- or SAM-defended site (Scenic Route's AUROCHS, or any
+  FOB with a SA-13/KS-19 garrison). Watch the flight from the F10 map. ~40 min at
+  acceleration.
+- **Pass:** the map's search ring covers the site with margin; the flight closes past the
+  fly-over point and employs against units at the site, and the sortie record carries shots.
+- **Fail signatures:**
+  1. **The flight overflies the point and turns home with nothing fired** — either the zone is
+     still short (dump the `.miz` and measure the `EngageTargetsInZone` centre against the site)
+     or the AI will not enter the ring for a target it cannot see; in the second case the
+     answer is a lower search altitude, not a bigger zone.
+  2. **The flight presses into the guns and dies** — the standoff was the point; the zone is now
+     wide enough to draw the AI in. Compare losses against the pre-fix 0-shot outcome before
+     calling that worse.
+
+### B124 — A hand-fragged Harrier DEAD opens the New Flight dialog on the DEAD preset, not a stock Snakeye fit · New Flight dialog · ☐ UNTESTED
+
+**History:** found 2026-09-13 on test 30 (Persian Gulf — Scenic Route turn 1). The AUROCHS
+package was hand-created (`POST /qt/create-package/tgo/...` at 12:41 and 12:43, after New Game
+at 12:40 and Pass Turn at 12:41). Its four-ship AV-8B DEAD flew DCS's stock
+`Interdiction (H-L-L-H): AIM-9Mx2, Mk-82SEx8, Jammer Pod, GAU-12`, and both archived
+generations (12:46, 12:50) already carried it. The DM did not pick that fit. Everything on
+the generation side was checked and clears: `Loadout.default_for_task_and_aircraft(DEAD,
+AV8BNA)` resolves `Retribution DEAD` (2 Sidearm, 4 AGM-65F, Litening) with the app's payload
+directories; all three weapons predate 2005 and the faction has no year overrides; no
+Harrier file exists in `Saved Games/DCS/MissionEditor/UnitPayloads`, no weapon injection,
+no pinned §73 default; no name chain for any task reaches a stock preset; the configurator
+writes `member.loadout` verbatim. The one surface that lists stock presets and writes the
+combo's selection onto every member is `QFlightCreator.create_flight`
+(`member.loadout = self.current_loadout()`), and `on_task_changed` does not refresh the
+loadout combo, so a task change that leaves the aircraft selection in place keeps whatever
+the combo showed before. Index 0 of the Harrier's list is `H-L-H: Mk-82SEx6, GAU-12`, not
+the flown fit, so a stale index 0 does not explain it either. What the Harriers flew with
+decided the mission: Snakeye is a low-level delivery, so the AI let down to 68 m at the
+ingress point and ran 80 km on the deck into three SA-15 batteries; all four were lost
+without releasing.
+
+- **Setup:** on any campaign with a Harrier squadron, right-click an AAA site, Create
+  Package, add a flight, set the task to DEAD and the aircraft to the AV-8B. ~1 min, no
+  flying. Try it both ways: DEAD first then aircraft, and aircraft first then DEAD.
+- **Pass:** the loadout combo reads `Retribution DEAD` before Create is pressed, in both
+  orders, and the created flight's payload tab shows Sidearms and Mavericks.
+- **Fail signatures:**
+  1. **The combo shows a DCS stock name** — note which task was selected when the dialog
+     opened and the order of clicks; that is the repro, and the fix is a loadout re-init in
+     `on_task_changed`.
+  2. **The combo reads `Retribution DEAD` but the created flight carries something else** —
+     the write path, not the dialog; dump the flight from the save before generating.
+
 ### B99 — AI packages arrive inside the mission, not after it · §8 · ◐ PARTIAL
+
+**2026-09-13, test 30** (Persian Gulf — Scenic Route turn 1, no player, 59 min of sim) — 26
+flights moved; every blue package was airborne inside the first ten minutes, the AV-8B DEAD
+reached its target at t≈1530 and the Hornet Armed Recon flights were over theirs at
+t≈1700–1920. The second half still had the BARCAPs, both AEW&Cs, both tankers and the Armed
+Recon flights up. No package was timed past the end. Same shape as test 24; the TOT spread
+itself still needs the app's ATO.
 
 **2026-08-29, test 24** (Caucasus — Iron Gate turn 1, 72 min, `Tacview-20260829-162330`, DCS 2.9.29.27278) — **the defect this fixed does not recur; the spread question is
 half-answered.** Of 206 recorded flights, 154 got airborne, and **none first went airborne in the
@@ -6450,6 +6624,23 @@ exercised by any test here.
   bite in the air, that decision reopens.
 
 ### B100 — The ramp still holds the squadrons authored against it · DCS 2026-08-26 parking rework · ◐ PARTIAL
+
+**2026-09-13, test 30** (Persian Gulf — Scenic Route turn 1, `Tacview-20260913-125128`, 59 min
+of sim, DCS 2.9.29.27468, build `78085dfd7`) — **generation clean; nine fragged red jets never
+taxied at Bandar Abbas Intl.** Three of GIBBON Anti-ship 20's four Fencers (stands F02–F04),
+all four of GIBBON Anti-ship 21 (F13–F16) and both Bandar-e-Jask BARCAP 24 F-4Es (J05–J06,
+activated t=292) sat hot on their stands to mission end. The lead on F01 taxied and flew, the
+QRA F-4Es on J07–J12 flew, and BARCAP 18 (J01–J02) and 19 (J03–J04, activated t=3100) never
+moved either. No stand is double-booked in the `.miz` (102 parked units, 0 collisions by
+airport and number), nothing red or blue sits within 2.5 km of the F row, and `retribution.log`
+carries no parking line. The pattern is the one recorded for this campaign family in July
+(Fencers "spawned on deck, never taxied"), now on a land field. What decides it: whether
+pydcs's Bandar Abbas stand list (Persian Gulf export 2025-11-30) still matches the ramp that
+2.9.29.27468 lays down — the stand-list dump in `414th-dcs-update-2026-08-26-notes.md` §9 is
+the tool. Consequence this turn: the anti-ship package against CVN-71 launched with one
+striker, its four F-4E escorts orbited 185 km short of the boat for 50 minutes, and one flamed
+out on final at Havadarya (7.4 km out, 300 m, wingman already on the ground) and its crew
+ejected.
 
 **2026-08-29, test 24** (Caucasus — Iron Gate turn 1, DCS 2.9.29.27278) — **generation passes;
 the parking rework is NOT implicated.** Every squadron on both sides came up with the aircraft its
@@ -6720,6 +6911,14 @@ through and going home.
   move the waypoints.
 
 ### B107 — The log stops repeating a MOOSE event error thousands of times · vendored `Moose.lua` · ☐ UNTESTED
+
+**2026-09-13, test 30** (Persian Gulf — Scenic Route turn 1, 59 min of sim at ~2.4×
+acceleration, no player slot, DCS 2.9.29.27468, build `78085dfd7`) — **not exercised: the
+flown build predates #1016.** The `.miz` was generated at 12:50 and `main` was fast-forwarded
+to `1a981f5e4` at 13:23 (the main checkout's reflog). Its `Moose.lua` carries the #997 rows at
+line 7245 and no `Event.id ~= 61` guard. The warning fired 1,282 times in 25 wall-minutes with
+no TIC formation on the map, rising from 6/min at mission start to 109/min under acceleration,
+so the event is not TIC-specific. Re-fly on a mission generated after 13:23 on 2026-09-13.
 
 **2026-09-13** (Iraq, ~25 min, FA-18C, DCS 2.9.29.27468, build `78085dfd7`) — **the fail
 signature occurred on the first build that carried #997: ~10,300 occurrences in 20 minutes**

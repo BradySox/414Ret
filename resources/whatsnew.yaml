@@ -14,6 +14,21 @@
 
 entries:
   - date: 2026-09-13
+    title: Armed Recon reaches a gun-defended target
+    change: >-
+      The Armed Recon search point stands off a target by its own threat
+      ring, and against a site whose guns reach 8 NM or more the standoff
+      landed on the edge of the 10 NM hunt zone, so the target sat just
+      outside it and the flight went home without a shot. The hunt zone now
+      grows to keep the target inside with 2 NM to spare; the standoff itself
+      is unchanged.
+    watch: >-
+      Frag Armed Recon on an AAA or SAM-defended site and watch the AI: it
+      should prosecute units at the site instead of overflying the search
+      point and turning for home. On the map the search ring should cover
+      the target with room to spare.
+    row: B123
+  - date: 2026-09-13
     title: Neutral countries are shaded all the way to their border
     change: >-
       A large closed country could show its full outline on the F10 map but

@@ -464,6 +464,20 @@ def test_the_border_is_filled_by_triangles_not_by_the_freeform() -> None:
     assert outlines[0]["fill"] is not None and outlines[0]["fill"][3] == 0.0
 
 
+def test_a_shipped_fill_ring_is_filled_instead_of_the_border() -> None:
+    """Thinning the border in Lua crossed Saudi Arabia's ring on the Persian
+    Gulf map, and MOOSE stops filling at a crossing. The generator now ships a
+    ring that cannot cross; the outline still carries every border vertex."""
+    cfg = _config()
+    cfg["neutralBorder"]["zones"][0]["fill"] = SQUARE[:3]
+    h = _drawn(cfg)
+    fills = h.records("zoneFills")
+    assert len(fills) == 1
+    assert len(fills[0]["points"]) == 3
+    outline = [r for r in h.records("markups") if r["shape"] == 7][0]
+    assert len(outline["points"]) == len(SQUARE)
+
+
 def test_the_outline_does_not_repeat_its_first_vertex() -> None:
     """DCS closes a freeform itself. Repeating vertex one adds a zero-length
     edge, which is the other half of why the fill never rendered."""

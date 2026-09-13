@@ -348,3 +348,98 @@ def test_a_country_with_an_origin_can_defend_without_an_airframe() -> None:
     day = date(2004, 6, 1)
     assert NeutralBorderZone(country="Turkmenistan", spawn=(0.0, 0.0)).can_defend(day)
     assert not NeutralBorderZone(country="Nowhere").can_defend(day)
+
+
+def _moose_fill_area(ring: list[tuple[float, float]]) -> float:
+    """Area MOOSE's ZONE_POLYGON_BASE:_Triangulate would fill, ported as-is.
+
+    It ear-clips and gives up at the first ring it cannot split, which is what
+    left most of Saudi Arabia unshaded on the Persian Gulf map.
+    """
+
+    def cross(a: Any, b: Any, c: Any) -> float:
+        return float((b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]))
+
+    def contains(tri: tuple[Any, Any, Any], p: Any) -> bool:
+        d = (
+            cross(tri[0], tri[1], p),
+            cross(tri[1], tri[2], p),
+            cross(tri[2], tri[0], p),
+        )
+        return not (min(d) < 0 < max(d))
+
+    points = [tuple(p) for p in ring]
+    signed = sum(
+        (points[(i + 1) % len(points)][0] - points[i][0])
+        * (points[(i + 1) % len(points)][1] + points[i][1])
+        for i in range(len(points))
+    )
+    if signed < 0:
+        points.reverse()
+    shape = list(range(len(points)))
+    area = 0.0
+    while len(shape) > 3:
+        for i in range(len(shape)):
+            a, b, c = (points[shape[(i + k) % len(shape)]] for k in range(3))
+            corners = {
+                shape[i],
+                shape[(i + 1) % len(shape)],
+                shape[(i + 2) % len(shape)],
+            }
+            if cross(a, b, c) >= 0:
+                continue
+            if any(j not in corners and contains((a, b, c), points[j]) for j in shape):
+                continue
+            if any(
+                j not in corners and contains((a, b, c), points[j])
+                for j in range(len(points))
+            ):
+                continue
+            area += abs(cross(a, b, c)) / 2
+            del shape[(i + 1) % len(shape)]
+            break
+        else:
+            return area
+    a, b, c = (points[j] for j in shape)
+    return area + abs(cross(a, b, c)) / 2
+
+
+def test_every_shipped_border_fills_on_the_f10_map() -> None:
+    """Thinning every Nth vertex crossed Saudi Arabia's ring on the Persian
+    Gulf map and MOOSE filled 18.7 % of it; nine of 63 zones were under 95 %."""
+    from pathlib import Path
+
+    import yaml
+    from shapely.geometry import Polygon
+
+    from game.missiongenerator.neutralborderluadata import FILL_MAX_VERTS, fill_ring
+
+    short = []
+    for path in sorted(Path("resources/borders").glob("*.yaml")):
+        data = yaml.safe_load(path.read_text(encoding="utf-8"))
+        if not isinstance(data, dict) or "zones" not in data:
+            continue
+        for zone in data["zones"]:
+            border = [tuple(v) for v in zone["border"]]
+            ring = fill_ring(border)
+            assert len(ring) <= FILL_MAX_VERTS
+            assert Polygon(ring).is_valid, f"{path.stem} {zone['country']}"
+            cover = _moose_fill_area(ring) / Polygon(border).area
+            if cover < 0.95:
+                short.append(f"{path.stem} {zone['country']} {cover:.1%}")
+    assert not short, short
+
+
+def test_a_detailed_border_ships_its_own_fill_ring() -> None:
+    import math
+
+    ring = [
+        (
+            20000.0 * math.cos(2 * math.pi * i / 200),
+            20000.0 * math.sin(2 * math.pi * i / 200),
+        )
+        for i in range(200)
+    ]
+    detailed = NeutralBorderLuaZone(country="Iran", border=ring)
+    assert "fill" in _emit(True, [detailed])
+    assert "fill" not in _emit(True, [_zone()])

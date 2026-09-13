@@ -269,6 +269,28 @@ local function is_player_despawn(name)
     return left_at ~= nil and (timer.getTime() - left_at) <= PLAYER_LEAVE_GRACE_S
 end
 
+-- A parachute landing belongs to the nearest ejection still waiting for one, and
+-- only within this far of it. Recency is not identity: a two-seat crew lands
+-- twice, and the second touchdown used to be written onto whichever other
+-- survivor had no landing yet -- test 30 (2026-09-13) put an AV-8B pilot
+-- 170 km away at an F-4E's crash site.
+LANDING_MATCH_M = 20000
+
+function landing_ejection_for(x, z)
+    local best, best_distance = nil, nil
+    for _, ej in ipairs(ejection_events) do
+        if not ej.landed and ej.x ~= nil and ej.z ~= nil then
+            local dx, dz = ej.x - x, ej.z - z
+            local distance = math.sqrt(dx * dx + dz * dz)
+            if distance <= LANDING_MATCH_M
+                    and (best_distance == nil or distance < best_distance) then
+                best, best_distance = ej, distance
+            end
+        end
+    end
+    return best
+end
+
 local function onEvent(event)
     -- Track player seat-leaves and ejections first so the loss handlers below can
     -- tell a despawn (player left, survived) from a real shootdown.
@@ -379,16 +401,12 @@ local function onEvent(event)
     if event.id == world.event.S_EVENT_LANDING_AFTER_EJECTION and event.initiator then
         local posOk, position = pcall(function() return event.initiator:getPoint() end)
         if posOk and position then
-            -- Refine the most recent ejection that has no landing position yet.
-            for i = #ejection_events, 1, -1 do
-                local ej = ejection_events[i]
-                if not ej.landed then
-                    ej.x = position.x
-                    ej.z = position.z
-                    ej.landed = true
-                    dirty_state = true
-                    break
-                end
+            local ej = landing_ejection_for(position.x, position.z)
+            if ej then
+                ej.x = position.x
+                ej.z = position.z
+                ej.landed = true
+                dirty_state = true
             end
         end
     end

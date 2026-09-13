@@ -3011,6 +3011,19 @@ an **open PR, not merged** — the fork re-adopts its phases by hand (Phase 5 la
 2026-08-17). Read the adoption log in `414th-csar-notes.md` before touching anything here,
 especially the hover height.
 
+### A landing belongs to the nearest open ejection (2026-09-13)
+
+`dcs_retribution.lua` records an ejection with the aircraft's position and refines it when
+`S_EVENT_LANDING_AFTER_EJECTION` arrives. That event carries no unit name and fires once per
+crew member. The adopted #929 code matched it to the most recent ejection without a landing,
+so a two-seat crew's second touchdown was written onto whichever other survivor had none:
+test 30 recorded an AV-8B pilot down in the Strait of Hormuz as landed 170 km away at an
+F-4E's crash site, which is where the campaign would have placed him. `landing_ejection_for`
+now takes the nearest open ejection within `LANDING_MATCH_M` (20 km) and drops a landing
+that matches nothing. Pinned by `tests/lua/test_dcs_retribution_runtime.py`, which is also
+the first harness coverage of the base script. In-game pass owed: **B122**. Upstream #929
+carries the same loop; inventory item 38.
+
 ### The King — fixed-wing CSAR (2026-08-26)
 
 The C-130J's yaml `CSAR: 5` made the "King" on-scene commander plannable, and

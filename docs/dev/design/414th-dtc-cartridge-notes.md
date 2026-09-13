@@ -220,6 +220,16 @@ The clean first-class version (unit attrs + `load_from_dict` round-trip + a
 `Mission`-level cartridge dict written/read in save/load) is PR'd to
 `dcs-retribution/pydcs`; when merged and the pin moves, delete the seams here.
 
+**The Retribution-side carve is open: [dcs-retribution#966](https://github.com/dcs-retribution/dcs-retribution/pull/966)
+(draft, 2026-09-12, DM exception to the PR freeze).** Hornet and Viper only, the
+B28-verified content only, and **only what the miz cannot already deliver** (DM
+rule 2026-09-13): the Hornet COMM presets and an airfield-elevation table were
+built and then cut on that rule, so upstream steerpoints read 0 — stated in the
+PR as the known gap. The Tomcat, the ROE table, the tanker/AWACS boxes, the
+chained boundary and CMDS wait on B91/B104/B115. It uses pydcs #39's seams (pin
+at the PR-branch SHA, which pip resolves through GitHub's PR refs). Work in the
+isolated worktree `..\retribution-pr-dtc`, which has its own venv on the #39 pin.
+
 ## Open items
 
 - **B28 in-game pass** — the one genuine unknown is AutoLoad on the §64 spawn
@@ -484,8 +494,20 @@ kneeboard already uses for QFE (`field_elevation_for_airport`). So
 `nearest_field_elevation()` picks the closest airfield *with a record* — boats and
 FOBs have none and never answer, so a coastal target is not pulled to sea level
 by the carrier — and returns 0 only when no field on the map has one. Exact on a
-flat map, within the field's valley elsewhere, closer than 0 everywhere. Fork-only:
-upstream has no airfield elevation data, so the held carve keeps 0.
+flat map, within the field's valley elsewhere, closer than 0 everywhere.
+
+**Upstream does not get the estimate (2026-09-13).** A compact table
+(airport id → metres AMSL per terrain, extracted from
+`resources/airport_imagery/*.json` and filtered to the 692 airports the pinned
+pydcs knows; seven terrains `land.getHeight`, the rest OSM/DEM) was built for
+the carve (#966) and then **cut on the DM's minimal-carve rule** — ship only
+what the miz cannot already deliver, and a data file upstream would have to
+own is not that. The carve writes 0 and says so. The F-16C manual's DTC chapter
+(read the same day) confirms the fork's reading: the DTC *Manager* defaults a
+new point's elevation to the terrain at ADD time and stores it; nothing
+re-derives it on upload, so a generator must write one. The extraction script
+lives in the 2026-09-12 session scratchpad; rebuild it from this paragraph if
+upstream ever wants the table.
 
 **Still an estimate.** The exact route, if a pod slaved to a hilltop target still
 aims short, is a DCS-side dump: the GUI-environment `Terrain.GetHeight(x, y)` the

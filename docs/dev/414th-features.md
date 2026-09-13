@@ -10053,7 +10053,13 @@ of the other side.
   fill is MOOSE's `ZONE_POLYGON_BASE:ReFill` triangulation (its own
   single-freeform path is dead-coded behind `if false then`, which is the
   corroboration); the plugin keeps a one-freeform outline on top for the dash
-  pattern, and no longer repeats vertex one.
+  pattern, and no longer repeats vertex one. **The fill ring must not cross
+  itself** — MOOSE ear-clips and stops at the first ring it cannot split. The
+  plugin's every-Nth-vertex thinning crossed Saudi Arabia on the Persian Gulf
+  map (18.7 % filled) and left 9 of 63 zones under 95 %. The emitter now ships
+  a `fill` ring for any border over 96 vertices, thinned by shapely's
+  topology-preserving simplify (`fill_ring`, `neutralborderluadata.py`); every
+  shipped zone fills >= 98 %, pinned against a port of MOOSE's triangulation.
 - **A campaign needs to author nothing.** Borders ship per terrain in
   `resources/borders/<terrain>.yaml` (Afghanistan, Syria, Caucasus, Iraq, Kola,
   Persian Gulf, Sinai, Falklands — Nevada and the Marianas are all-US and

@@ -50,6 +50,10 @@ local ENGAGE_AI = false
 --: ship at full resolution and only the fill is thinned to this, which keeps
 --: the F10 cost where it was while the outline gets every point. At 5% alpha
 --: under a precise outline the thinning is not visible.
+--:
+--: The generator ships a pre-thinned `fill` ring for any border over this. The
+--: stride below is only the fallback: an every-Nth ring can cross itself, and
+--: MOOSE stops filling at the crossing (Saudi Arabia on the Persian Gulf, 18.7 %).
 local FILL_MAX_VERTS = 96
 
 if dcsRetribution.plugins and dcsRetribution.plugins.neutralborder then
@@ -95,6 +99,13 @@ for _, raw in ipairs(data.zones or {}) do
                 if not maxx or x > maxx then maxx = x end
                 if not minz or z < minz then minz = z end
                 if not maxz or z > maxz then maxz = z end
+            end
+        end
+        local fill = {}
+        for _, v in ipairs(raw.fill or {}) do
+            local x, z = tonumber(v.x), tonumber(v.y)
+            if x and z then
+                fill[#fill + 1] = { x = x, z = z }
             end
         end
         -- A zone launches from a FIELD or from a POINT. Afghanistan's neighbours
@@ -156,6 +167,7 @@ for _, raw in ipairs(data.zones or {}) do
                 red_country = tonumber(raw.redCountryId),
                 blue_country = tonumber(raw.blueCountryId),
                 verts = verts,
+                fill = fill,
                 bbox = { minx = minx, maxx = maxx, minz = minz, maxz = maxz },
                 -- runtime
                 swapped = false, -- the battery has been made hostile and stays so
@@ -320,14 +332,18 @@ local function draw_borders()
         pcall(function()
             -- Even stride, first vertex always kept, so the thinned ring still
             -- closes on itself and keeps the shape's extremes.
-            local n = #zone.verts
+            local ring = zone.verts
+            if #zone.fill >= 3 then
+                ring = zone.fill
+            end
+            local n = #ring
             local stride = 1
             if n > FILL_MAX_VERTS then
                 stride = math.ceil(n / FILL_MAX_VERTS)
             end
             local pts = {}
             for i = 1, n, stride do
-                local v = zone.verts[i]
+                local v = ring[i]
                 pts[#pts + 1] = { x = v.x, y = v.z }
             end
             if #pts < 3 then

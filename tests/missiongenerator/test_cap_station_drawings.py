@@ -32,6 +32,8 @@ def _patrol_flight(
         return SimpleNamespace(
             waypoint_type=waypoint_type,
             position=mapping.Point(xy[0], xy[1], mission.terrain),
+            alt=SimpleNamespace(meters=6096.0),
+            alt_type="BARO",
         )
 
     return SimpleNamespace(

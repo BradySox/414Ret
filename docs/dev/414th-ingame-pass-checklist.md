@@ -58,7 +58,7 @@ also relative to `ReferenceLatitude=38 / ReferenceLongitude=36`, not absolute.
 
 ## Outstanding rows at a glance
 
-86 rows need a live pass. Full detail is under each `###` heading below —
+87 rows need a live pass. Full detail is under each `###` heading below —
 search the row id. `☐` untested · `◐` flown but not under the conditions that
 stress it · `✗` fail signature reproduced in-game.
 
@@ -97,6 +97,7 @@ stress it · `✗` fail signature reproduced in-game.
 | B121 | Neutral border: AI intruders are never engaged | §98 | ☐ |
 | B122 | A survivor lands where his own chute came down, not where another crew's did | CSAR (#929 adoption) | ☐ |
 | B123 | An Armed Recon flight engages a gun-defended target instead of overflying the search point | §35 | ☐ |
+| B124 | A hand-fragged Harrier DEAD opens the New Flight dialog on the DEAD preset, not a stock Snakeye fit | New Flight dialog | ☐ |
 | G25 | Armed Recon package: recon drone + SEAD Viper escort + 4-ship sweep | §3 | ◐ |
 | G30 | Skynet point defence: the paired SHORAD answers the HARM shot | Skynet return | ☐ |
 | G42 | Skynet is the engine again: sites dark until cued, HARM defence, no `enableEmission` crash | Skynet return | ☐ |
@@ -6483,6 +6484,40 @@ exceeds the doctrine range, so the target always sits inside (`armedrecon.py`,
   2. **The flight presses into the guns and dies** — the standoff was the point; the zone is now
      wide enough to draw the AI in. Compare losses against the pre-fix 0-shot outcome before
      calling that worse.
+
+### B124 — A hand-fragged Harrier DEAD opens the New Flight dialog on the DEAD preset, not a stock Snakeye fit · New Flight dialog · ☐ UNTESTED
+
+**History:** found 2026-09-13 on test 30 (Persian Gulf — Scenic Route turn 1). The AUROCHS
+package was hand-created (`POST /qt/create-package/tgo/...` at 12:41 and 12:43, after New Game
+at 12:40 and Pass Turn at 12:41). Its four-ship AV-8B DEAD flew DCS's stock
+`Interdiction (H-L-L-H): AIM-9Mx2, Mk-82SEx8, Jammer Pod, GAU-12`, and both archived
+generations (12:46, 12:50) already carried it. The DM did not pick that fit. Everything on
+the generation side was checked and clears: `Loadout.default_for_task_and_aircraft(DEAD,
+AV8BNA)` resolves `Retribution DEAD` (2 Sidearm, 4 AGM-65F, Litening) with the app's payload
+directories; all three weapons predate 2005 and the faction has no year overrides; no
+Harrier file exists in `Saved Games/DCS/MissionEditor/UnitPayloads`, no weapon injection,
+no pinned §73 default; no name chain for any task reaches a stock preset; the configurator
+writes `member.loadout` verbatim. The one surface that lists stock presets and writes the
+combo's selection onto every member is `QFlightCreator.create_flight`
+(`member.loadout = self.current_loadout()`), and `on_task_changed` does not refresh the
+loadout combo, so a task change that leaves the aircraft selection in place keeps whatever
+the combo showed before. Index 0 of the Harrier's list is `H-L-H: Mk-82SEx6, GAU-12`, not
+the flown fit, so a stale index 0 does not explain it either. What the Harriers flew with
+decided the mission: Snakeye is a low-level delivery, so the AI let down to 68 m at the
+ingress point and ran 80 km on the deck into three SA-15 batteries; all four were lost
+without releasing.
+
+- **Setup:** on any campaign with a Harrier squadron, right-click an AAA site, Create
+  Package, add a flight, set the task to DEAD and the aircraft to the AV-8B. ~1 min, no
+  flying. Try it both ways: DEAD first then aircraft, and aircraft first then DEAD.
+- **Pass:** the loadout combo reads `Retribution DEAD` before Create is pressed, in both
+  orders, and the created flight's payload tab shows Sidearms and Mavericks.
+- **Fail signatures:**
+  1. **The combo shows a DCS stock name** — note which task was selected when the dialog
+     opened and the order of clicks; that is the repro, and the fix is a loadout re-init in
+     `on_task_changed`.
+  2. **The combo reads `Retribution DEAD` but the created flight carries something else** —
+     the write path, not the dialog; dump the flight from the save before generating.
 
 ### B99 — AI packages arrive inside the mission, not after it · §8 · ◐ PARTIAL
 

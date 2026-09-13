@@ -7242,9 +7242,9 @@ Side="I",
 Event="OnEventWeaponDrop",
 Text="S_EVENT_WEAPON_DROP"
 },
--- 414Ret patch (event 61 spam): upstream MOOSE declares UnitTaskComplete in EVENTS
--- but has no _EVENTMETA row for it, so onEvent drops the event and logs an error.
--- DCS fires it ~14/s with TIC running: 6,807 log lines in one 8-minute mission.
+-- 414Ret patch (task-complete rows): upstream declares UnitTaskComplete/UnitTaskStage
+-- in EVENTS with no _EVENTMETA rows. Added 2026-08-29 as the event-61 fix, which they
+-- are not (ids 49/50). Kept as upstream-shaped rows; the event-61 guard is in onEvent.
 [EVENTS.UnitTaskComplete]={
 Order=1,
 Side="I",
@@ -7886,7 +7886,12 @@ else
 self:T({EventMeta.Text,Event})
 end
 else
+-- 414Ret patch (event 61 spam): DCS 2.9.29 raises an undocumented event 61 on every
+-- controller option change; TIC's ROE cycling makes that ~10/s. Mirrors the guard in
+-- upstream develop's Event.lua; drop it once the bundle is bumped past that commit.
+if Event.id~=61 then
 self:E(string.format("WARNING: Could not get EVENTMETA data for event ID=%d! Is this an unknown/new DCS event?",tostring(Event.id)))
+end
 end
 Event=nil
 end

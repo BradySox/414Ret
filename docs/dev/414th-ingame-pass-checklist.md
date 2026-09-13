@@ -5838,6 +5838,15 @@ Then fly one: F-14B(U) client flight on a campaign that fields it
 
 ### B90 — A steerpoint's elevation is the ground under it · §74 · ◐ PARTIAL
 
+**2026-09-13, flown (Caucasus, Flight 105 F-16C, DED read)** — **the cockpit read
+arrived and failed the en-route half.** STPT 1 (the hold, planned 22,000 ft) read
+**ELEV 131 FT** — the nearest field's elevation, which is what the cartridge had in
+`alt` (`routeAltitude` was 22,000 ft). So the DED shows `alt`, not `routeAltitude`,
+and the 08-22 reading below was wrong. Fixed the same day: `alt` now carries the
+planned altitude on an en-route point and the ground estimate on a ground-marked
+one, both fields the same number. **Still PARTIAL** — the fix is unflown. Next
+Viper: STPT 1's ELEV should read the kneeboard's Alt for that row.
+
 **2026-08-29, test 24** (Caucasus — Iron Gate turn 1, 72 min, `Tacview-20260829-162330`, DCS 2.9.29.27278) — **the generation half is verified; the cockpit read is still
 owed.** In the Hornet cartridge (`Retribution Ford 6 FA-18C_hornet.dtc`) the two fields the fix
 split apart are both populated and different: `NAV_PTS[].alt` matches `nearest_field_elevation()`
@@ -5860,12 +5869,14 @@ recovery point, not a target. Still needs a DED/DTC-panel read to close.
 
 Fly a Viper or Hornet on a regenerated mission and read the steerpoint pages.
 
-- **Pass:** on the Viper's DED STPT page, a target steerpoint's ELEV reads the
-  nearest airfield's elevation rather than 0, and an en-route steerpoint's ELEV
-  reads the altitude you planned to fly. (The DED shows `routeAltitude`; the ME
-  DTC panel's "Elevation" box shows the other field, `alt` — both now carry the
-  estimate. Flown 2026-08-22: the first fix landed in `alt` only and the DED still
-  read 0.)
+- **Pass:** on the Viper's DED STPT page, an en-route steerpoint's ELEV reads the
+  altitude the kneeboard plans for that row (a hold at 22,000 ft reads 22000), and
+  a target steerpoint's ELEV reads the nearest airfield's elevation rather than 0.
+  On the Hornet the HSI WYPT data shows the same numbers. (The DED shows the
+  point's `alt`, flown 2026-09-13; `routeAltitude` is the DTC Manager's planning
+  copy and is shown nowhere in the jet.)
+- **Fail:** an en-route ELEV at field elevation (the 2026-09-13 defect), or 0 on
+  a target.
 - **Estimated, not exact (2026-08-22):** a target steerpoint's elevation is now the
   nearest airfield's, because that is the only height data the campaign carries.
   The DM's generated Viper cartridge had every steerpoint but the landing at 0

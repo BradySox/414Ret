@@ -14,6 +14,20 @@
 
 entries:
   - date: 2026-09-13
+    title: Viper and Hornet steerpoints read their planned altitude again
+    change: >-
+      The cartridge was writing the ground elevation into every steerpoint,
+      so a Viper's DED STPT page read ELEV 131 on a hold point planned at
+      22,000 ft. The steerpoint now carries the altitude the kneeboard plans
+      for that row, and a target or CAS point carries the ground under it,
+      the same as the mission-editor route always gave the jet.
+    watch: >-
+      In a Viper, step the DED STPT page through the route: each transit
+      point's ELEV should match the kneeboard's Alt column, and the target's
+      should be the local field elevation, not 0. Hornet: the same on the
+      HSI WYPT data.
+    row: B90
+  - date: 2026-09-13
     title: Armed Recon reaches a gun-defended target
     change: >-
       The Armed Recon search point stands off a target by its own threat

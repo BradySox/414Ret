@@ -38,7 +38,7 @@ from game.missiongenerator.dtc.roedata import build_atdt
 from game.missiongenerator.dtc.common import (
     SupportTrack,
     leg_altitude,
-    steerpoint_elevation,
+    nearest_field_elevation,
     red_land_boundary,
     support_boxes,
     SUPPORT_BOX_POINTS,
@@ -104,8 +104,7 @@ def _steerpoint(
     name: str,
     x: float,
     y: float,
-    elevation_m: float,
-    route_alt_m: float,
+    altitude_m: float,
     altitude_type: int,
     on_route: bool,
     speed_kmh: float,
@@ -120,9 +119,9 @@ def _steerpoint(
         "note": name,
         "x": x,
         "y": y,
-        # The ground under the point, not the height to fly it at. ED fills this
-        # from terrain (NAV_PTS.lua) and defaults a missing one to 2000 m.
-        "alt": elevation_m,
+        # The DED's ELEV (flown 2026-09-13); routeAltitude below is the DTC
+        # Manager's planning copy of the same number.
+        "alt": altitude_m,
         "altitudeType": altitude_type,
         "R1": on_route,
         "R2": False,
@@ -132,7 +131,7 @@ def _steerpoint(
         "TOS": tos,
         "isTOSEnabled": tos_enabled,
         "FIX_Time": tos_enabled,
-        "routeAltitude": route_alt_m,
+        "routeAltitude": altitude_m,
         "isOAP_1": False,
         "idOA1": f"OA1{number}",
         "idOA1_Line": f"OA1{number}Line",
@@ -264,15 +263,14 @@ def _build_nav_pts(
             break
         number = len(points) + 1
         on_route = is_route_waypoint(waypoint)
-        route_alt_m, altitude_type = leg_altitude(waypoint, game)
+        altitude_m, altitude_type = leg_altitude(waypoint, game)
         points.append(
             _steerpoint(
                 number,
                 waypoint_display_name(waypoint.display_name or waypoint.name),
                 waypoint.position.x,
                 waypoint.position.y,
-                steerpoint_elevation(waypoint, game),
-                route_alt_m,
+                altitude_m,
                 altitude_type,
                 on_route,
                 leg_speed_kmh(prev_route_wp if on_route else None, waypoint),
@@ -301,8 +299,7 @@ def _build_nav_pts(
                     _anchor_name(track),
                     x,
                     y,
-                    0.0,  # elevation: an orbit anchor has no ground of its own
-                    0.0,  # route altitude: not a leg the jet is sequenced through
+                    track.altitude_m,
                     1,
                     False,
                     463.0,
@@ -669,7 +666,7 @@ def _build_threat_pts(flight: FlightData, game: Game) -> list[dict[str, Any]]:
                 "threatName": "Custom",
                 "radius": site.range_m,
                 "alt": _CUSTOM_THREAT_ALT,
-                "elev": 0,
+                "elev": nearest_field_elevation(game, site.x, site.y),
                 "text": site.label,
                 "ring": True,
                 "def_num": 1,

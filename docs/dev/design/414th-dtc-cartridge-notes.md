@@ -479,8 +479,11 @@ Reported from the cockpit: the DEAD steerpoint does not sit at 0 AGL, it sits at
   since §74 shipped.
 
 Split into `steerpoint_elevation()` (the point's ground) and `leg_altitude()` (what
-to fly, with `altitudeType`). Only takeoff and landing know their own ground — B79
-plans the field's elevation onto them.
+to fly, with `altitudeType`) on 2026-08-20, and **folded back into one number on
+2026-09-13** once the cockpit read arrived — see "The DED reads `alt`" below. What
+survives of this section is the ground estimate itself, used for ground-marked
+points. Only takeoff and landing know their own ground — B79 plans the field's
+elevation onto them.
 
 **Everything else takes the nearest airfield's elevation (2026-08-22, DM call).**
 A generated Viper cartridge showed every steerpoint but the landing at 0, and the
@@ -510,28 +513,65 @@ mission editor itself uses, sampled on a grid per terrain the way the pydcs expo
 is run — not the SRTM-sampled table that was built and reverted on 2026-08-20.
 Checklist B90.
 
-### The DED reads `routeAltitude`, and nothing honours the AGL tag (2026-08-22)
+### The DED reads `alt`, and the point carries what the miz would have (2026-09-13)
 
-The nearest-field fix above landed in `alt`, and the DM's next Viper still read
-**ELEV 0 on the DED** for the DEAD steerpoint. The ME's NAV PTS panel shows `alt`
-("Elevation ft MSL"; "Terrain ft" is computed live from the map and never stored),
-but **the jet's steerpoint ELEV is `routeAltitude`** — the same number the Routes
-panel edits. We were writing the ground-marked target as `routeAltitude = 0,
-altitudeType = 2`, mirroring the miz route's "0 AGL", and the jet showed exactly
-that: 0.
+**Flown evidence, Caucasus, Flight 105 F-16C, 2026-09-13.** The cartridge the
+jet loaded (`DTC/Retribution Flight 105 F-16C_50.dtc` in the generated miz)
+carried STPT 1 (the hold) as `alt` 131 ft, `routeAltitude` 22,000 ft. The DED
+STPT page read **ELEV 131 FT**. So the cockpit's steerpoint elevation is the
+point's `alt`; `routeAltitude` is the DTC Manager's planning number (the NAV RTE
+tab's leg Altitude, which feeds its Mach and ETA maths — F-16C guide p314) and is
+shown nowhere in the jet.
 
-`altitudeType` is decorative. In `MPD/NAV_Routes.lua` the editor's
-`transformAltitude()` is `return val_3` — switching AGL/MSL changes the tag and
-nothing else — and its own Mach calculation tests `route.alt_type`, a key that
-does not exist, so even the editor never adds terrain to an AGL value. So every
-altitude is now written **MSL with `altitudeType = 1`**: a ground-marked point's
-altitude is the ground estimate itself, and an AGL-planned leg (low-level and
-helicopter profiles) is converted with the same estimate. The .miz route keeps its
-own 0 AGL, which DCS does resolve.
+**This falsifies the 2026-08-22 reading** that stood here ("the jet's steerpoint
+ELEV is `routeAltitude`"). That flight read ELEV 0 on a DEAD target with `alt`
+carrying the estimate and `routeAltitude` written as 0 AGL — both fields were
+changed the same day and the read was never repeated, so the two explanations
+were never separated. The 08-22 conclusion was inferred, not observed; today's
+was observed with the two fields different. Two consequences of the wrong
+reading were shipped for three weeks: every en-route steerpoint carried the
+nearest field's elevation in `alt` (the ELEV 131 above, on a 22,000 ft leg), and
+the checklist's B90 pass criterion described the wrong field.
+
+**The rule now.** The point's `alt` is what the .miz route would have given the
+jet, which is what the DED showed before the cartridge existed: the planned
+altitude on an en-route point, the ground under a ground-marked one (targets,
+CAS boundaries, flyovers — the miz puts those at 0 AGL for a client flight).
+`routeAltitude` (Viper) and `NAV_ROUTE[].alt` (Hornet) carry the same number.
+One function, `steerpoint_altitude()`; `leg_altitude()` is that plus the
+`altitudeType`, always 1. The Tomcat's one field and the Apache's take the same
+rule, so `_waypoint_elevation()` lost its special case.
+
+**ED's DTC Manager would not do this**, and that is a UI default, not the jet's
+convention: it fills a *clicked* point's Elevation from the terrain because it
+knows nothing else about the point (guide p302, p307, p309). The jet's own route
+load, which every pre-DTC mission used, fills ELEV from the waypoint altitude.
+The mirror follows the route, not the click.
+
+**Nothing honours the AGL tag** (unchanged from 08-22). In `MPD/NAV_Routes.lua`
+the editor's `transformAltitude()` is `return val_3`, and its Mach calculation
+tests `route.alt_type`, a key that does not exist. So every altitude is written
+MSL with `altitudeType = 1`: a ground-marked point's altitude is the ground
+estimate itself, and an AGL-planned leg (low-level and helicopter profiles) is
+converted with the same estimate. The .miz route keeps its own 0 AGL, which DCS
+does resolve.
+
+**The Hornet clamps.** `WYPT_NAV.lua` limits a waypoint elevation to
+-2,000..25,000 ft while `ROUTE_SEQ.lua` allows the route entry 80,000 ft, so a
+leg above 25,000 ft writes 25,000 into the point and its real number into the
+route. Whether the jet itself would take a higher point elevation is unknown;
+the editor's own range is the only spec.
+
+**Also fixed alongside:** the Viper's orbit anchors (STPT 21-25) carried
+`alt = 0` and read ELEV 0; they now carry the orbit's planned altitude
+(`SupportTrack.altitude_m`). Threat points' `elev` was 0; it is the ground
+estimate.
 
 **The .miz was never wrong.** Read out of a flown mission:
 `DEAD on KATYDID` is `alt = 0, alt_type = "RADIO"`, which is DCS's own encoding for
-0 AGL. Upstream has no DTC at all, so this whole class of defect is fork-only.
+0 AGL. Upstream has no DTC at all, so this whole class of defect is fork-only
+until #966 merges — the carve takes the same rule (planned altitude on en-route
+points; 0 on ground-marked and AGL points, stated as its known gap).
 
 ### The Hornet half: the guide has no DTC chapter
 

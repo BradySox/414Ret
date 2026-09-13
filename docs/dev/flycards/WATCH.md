@@ -68,6 +68,18 @@ At your split point, look behind you. **Free — it is the flight you were flyin
   (1,282 occurrences, no TIC on the map). Check the main checkout's reflog against the
   archive stamp before reading a count as a verdict.
 
+### 5 · A Viper steerpoint's ELEV is the altitude you planned — `B90`
+
+**Where:** the DED STPT page, stepped through the route, any Viper (Hornet: HSI WYPT
+data). **~1 min.**
+
+- **Pass:** each transit point's ELEV matches the kneeboard's Alt for that row; the
+  target's ELEV is the local field elevation, not 0.
+- **Fail:** transit points at field elevation (the 2026-09-13 defect), or a target at 0.
+- **Why it's here:** the cockpit read on 2026-09-13 showed ELEV 131 on a 22,000 ft hold and
+  falsified a three-week-old assumption about which field the jet displays. Fixed the same
+  day, unflown since.
+
 ---
 
 ## Parking lot (pull one when a slot frees)

@@ -52,7 +52,6 @@ from game.missiongenerator.dtc.common import (
     own_orbit_track,
     sanitize_short_name,
     seconds_of_day,
-    steerpoint_elevation,
     support_tracks,
     waypoint_display_name,
 )
@@ -535,19 +534,10 @@ def _lines(
 
 
 def _waypoint_elevation(waypoint: FlightWaypoint, game: Game) -> int:
-    """Feet for the waypoint's single altitude field, which is not the Hornet's.
-
-    The Tomcat waypoint has one number where the other jets have two (ground
-    under the point, and the height to fly the leg), so it cannot carry both.
-    The authored cartridge fills it the way this does: the field's own elevation
-    at the ends of the route, the planned altitude in between. A ground-marked
-    point keeps 0, which is what it is planned at.
-    """
-    ground = steerpoint_elevation(waypoint, game)
-    if ground:
-        return _feet(ground)
-    altitude_m, _ = leg_altitude(waypoint, game)
-    return _feet(altitude_m)
+    """Feet for the waypoint's single altitude field: the planned altitude in
+    between, the field's own elevation at the ends of the route, the ground on
+    a ground-marked point -- the way the authored cartridge fills it."""
+    return _feet(leg_altitude(waypoint, game)[0])
 
 
 def _route_waypoint(
@@ -693,7 +683,7 @@ def _jdam_target(
                 "name": _point_name(waypoint),
                 # Metres here, unlike NAV's feet: the descriptor stores the raw
                 # getAltitude() and converts only for display.
-                "elev": _whole(steerpoint_elevation(waypoint, game)),
+                "elev": _whole(leg_altitude(waypoint, game)[0]),
                 "attack_heading": (
                     round(bearing_degrees(ingress.position, waypoint.position), 1)
                     % 360.0

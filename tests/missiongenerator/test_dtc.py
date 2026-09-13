@@ -36,7 +36,7 @@ from game.missiongenerator.dtc.common import (
     support_boxes,
     SUPPORT_BOX_POINTS,
     SUPPORT_ORBIT_DIAMETER_M,
-    steerpoint_elevation,
+    steerpoint_altitude,
     dedupe_stations,
     known_enemy_threat_sites,
     sanitize_short_name,
@@ -683,17 +683,13 @@ def test_viper_destinations_stop_at_the_partition_end() -> None:
     assert dest[-1]["id"] == "DEST99"
 
 
-def test_a_steerpoints_alt_is_its_ground_not_its_leg_altitude() -> None:
-    """``alt`` on a point is the ground under it; the leg altitude is a separate
-    field. ED's own editors fill the first from terrain -- ``alt = getAltitude(x, y)``
-    in the Viper's ``NAV_PTS.lua`` and the Hornet's ``WYPT_NAV.lua`` -- and resolve
-    the second against terrain when it is AGL (``tmpAlt + getAltitude(x, y)``,
-    Hornet ``ROUTE_SEQ.lua``).
-
-    We wrote the leg altitude into both until 2026-08-20, so a nav point at 22,000 ft
-    told the jet the ground under it was at 22,000 ft, and a target told it the
-    ground was at sea level. Reported from the cockpit as the target steerpoint
-    sitting at 0 MSL rather than 0 AGL.
+def test_a_steerpoints_alt_is_the_altitude_the_miz_gives_the_jet() -> None:
+    """The point's ``alt`` is what the cockpit shows (a Viper flown 2026-09-13
+    with ``alt`` 131 ft / ``routeAltitude`` 22,000 ft read ELEV 131), and without
+    a cartridge the jet takes it from the mission-editor waypoint altitude. So an
+    en-route point carries its planned altitude and a ground-marked one the
+    ground, the same in both fields. Writing the ground estimate into ``alt``
+    (2026-08-20 to 2026-09-13) put every transit steerpoint at field elevation.
     """
     takeoff = _waypoint("TAKEOFF", FlightWaypointType.TAKEOFF, 0, 0, 0, None)
     nav = _waypoint("NAV", FlightWaypointType.NAV, 10000, 0, 6705, None)
@@ -711,13 +707,13 @@ def test_a_steerpoints_alt_is_its_ground_not_its_leg_altitude() -> None:
     )["data"]
     nav_pts = hornet["WYPT"]["NAV_PTS"]
     route = hornet["WYPT"]["NAV_ROUTE"][0]
-    # Nav point: ground unknown, so 0 -- never the 6705 m it is flown at.
-    assert nav_pts[0]["alt"] == 0
+    # Nav point: the 6705 m it is flown at, in both fields.
+    assert nav_pts[0]["alt"] == 6705
     assert route["STPT1"]["alt"] == 6705 and route["STPT1"]["altitudeType"] == 1
-    # Target: still 0, and the leg is the .miz's 0 AGL.
+    # Target: ground-marked, and this game has no field with an elevation: 0.
     assert nav_pts[1]["alt"] == 0
     assert route["STPT2"]["alt"] == 0 and route["STPT2"]["altitudeType"] == 1
-    # Landing: the one point whose planned altitude IS its ground (B79).
+    # Landing: the field's own elevation (B79).
     assert nav_pts[2]["alt"] == 58
 
     flight.aircraft_type = _aircraft("F-16C_50")
@@ -725,10 +721,27 @@ def test_a_steerpoints_alt_is_its_ground_not_its_leg_altitude() -> None:
         build_viper_cartridge(flight, mission_data, game, "Test F-16C").to_json()
     )["data"]
     steerpoints = viper["MPD"]["NAV_PTS"]
-    assert steerpoints[0]["alt"] == 0 and steerpoints[0]["routeAltitude"] == 6705
+    assert steerpoints[0]["alt"] == 6705 and steerpoints[0]["routeAltitude"] == 6705
     assert steerpoints[1]["alt"] == 0 and steerpoints[1]["routeAltitude"] == 0
     assert steerpoints[1]["altitudeType"] == 1
     assert steerpoints[2]["alt"] == 58
+
+
+def test_the_hornets_waypoint_elevation_stays_inside_the_editors_range() -> None:
+    """WYPT_NAV.lua clamps a waypoint elevation to -2000..25000 ft; the route
+    entry (ROUTE_SEQ.lua) allows 80,000 ft, so a high leg keeps its number
+    there."""
+    takeoff = _waypoint("TAKEOFF", FlightWaypointType.TAKEOFF, 0, 0, 0, None)
+    high = _waypoint("NAV", FlightWaypointType.NAV, 10000, 0, 9144, None)
+    land = _waypoint("LANDING", FlightWaypointType.LANDING_POINT, 0, 0, 0, None)
+    flight = _flight(waypoints=[takeoff, high, land])
+    hornet = json.loads(
+        build_hornet_cartridge(
+            flight, _mission_data([flight]), _game(), "Cap"
+        ).to_json()
+    )["data"]["WYPT"]
+    assert hornet["NAV_PTS"][0]["alt"] == pytest.approx(25000 * 0.3048)
+    assert hornet["NAV_ROUTE"][0]["STPT1"]["alt"] == 9144
 
 
 def test_unit_dict_and_miz_round_trip(tmp_path: Path) -> None:
@@ -1339,7 +1352,7 @@ def test_tomcat_elevations_use_each_sections_own_unit(
 ) -> None:
     """NAV writes metersToFeet(getAltitude(...)); JDAM stores the raw metres and
     converts only for display. Mixing them is a 3.28x error."""
-    monkeypatch.setattr(tomcat, "steerpoint_elevation", lambda waypoint, game: 100.0)
+    monkeypatch.setattr(tomcat, "leg_altitude", lambda waypoint, game: (100.0, 1))
     flight, mission_data, game = _tomcat_fixture()
     data = json.loads(
         build_tomcat_cartridge(flight, mission_data, game, "Units").to_json()
@@ -1349,9 +1362,9 @@ def test_tomcat_elevations_use_each_sections_own_unit(
 
 
 def test_tomcat_waypoints_carry_the_altitude_their_one_field_expects() -> None:
-    """The Tomcat waypoint has a single altitude field where the Hornet has two,
-    so it takes the field elevation at the route's ends and the planned altitude
-    in between -- the way the authored cartridge fills it."""
+    """The Tomcat waypoint has a single altitude field, filled the way the
+    authored cartridge fills it: the field elevation at the route's ends, the
+    planned altitude in between, the ground on a ground-marked point."""
     flight, mission_data, game = _tomcat_fixture()
     route = json.loads(
         build_tomcat_cartridge(flight, mission_data, game, "Alt").to_json()
@@ -1497,11 +1510,12 @@ def _field_cp(name: str, x: float, y: float, airport_id: str) -> Any:
     return cp
 
 
-def test_en_route_elevation_is_the_nearest_fields(
+def test_a_ground_marked_point_reads_the_nearest_fields_elevation(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """The campaign's only height data is per airfield, so a steerpoint reads
-    the nearest one's: an estimate, but closer than 0 everywhere."""
+    """The campaign's only height data is per airfield, so a ground-marked
+    point reads the nearest one's: an estimate, but closer than 0 everywhere.
+    An en-route point keeps the altitude it is planned at."""
     from game.missiongenerator.kneeboard_recon import airport_imagery
 
     known = {"kutaisi": 45.0, "senaki": 12.0, "sukhumi": None}
@@ -1520,16 +1534,20 @@ def test_en_route_elevation_is_the_nearest_fields(
         ]
     )
     hold = _waypoint("HOLD", FlightWaypointType.LOITER, 1000, 1000, 6000, None)
+    low = _waypoint(
+        "LOW", FlightWaypointType.NAV, 1000, 1000, 150, None, alt_type="RADIO"
+    )
     target = _waypoint(
         "TGT", FlightWaypointType.TARGET_POINT, 62000, 84000, 0, None, targets=[1]
     )
     landing = _waypoint("LAND", FlightWaypointType.LANDING_POINT, 0, 0, 33.5, None)
-    assert steerpoint_elevation(hold, game) == 45.0
-    assert steerpoint_elevation(target, game) == 12.0
+    assert steerpoint_altitude(hold, game) == 6000.0
+    assert steerpoint_altitude(low, game) == 195.0
+    assert steerpoint_altitude(target, game) == 12.0
     # The fields themselves keep their own exact number.
-    assert steerpoint_elevation(landing, game) == 33.5
+    assert steerpoint_altitude(landing, game) == 33.5
     # No field with a record anywhere: the honest 0.
-    assert steerpoint_elevation(hold, _game(controlpoints=[_sam_cp()])) == 0.0
+    assert steerpoint_altitude(target, _game(controlpoints=[_sam_cp()])) == 0.0
 
 
 def test_an_ingress_carrying_the_target_list_is_still_an_ip() -> None:
@@ -1562,10 +1580,9 @@ def test_an_ingress_carrying_the_target_list_is_still_an_ip() -> None:
 def test_a_ground_marked_target_carries_the_ground_as_its_altitude(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """The Viper's DED shows routeAltitude as the steerpoint ELEV, and nothing
-    honours the AGL tag (the editor's transformAltitude is a no-op). A target
-    written as "0 AGL" read ELEV 0 in the jet; it now carries the ground
-    estimate in MSL, and an AGL-planned leg is converted the same way."""
+    """Nothing honours the AGL tag (the editor's transformAltitude is a no-op),
+    so a ground-marked target carries the ground estimate in MSL in both
+    fields, and an AGL-planned leg is converted the same way."""
     from game.missiongenerator.kneeboard_recon import airport_imagery
 
     monkeypatch.setattr(

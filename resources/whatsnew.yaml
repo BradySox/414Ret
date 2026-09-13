@@ -13,6 +13,32 @@
 # changes sharing a date keep the order written here.
 
 entries:
+  - date: 2026-09-13
+    title: Hornet radio presets come from the mission, not the cartridge
+    change: >-
+      The F/A-18C data cartridge no longer carries COMM1/COMM2. The mission's
+      own radio table already loads the same channels into the jet; the
+      cartridge only ever added short channel names. The Viper dropped its
+      COMM section in August for the same reason. Route, recovery aids, the
+      A/A waypoint and the SA page are unchanged.
+    watch: >-
+      Slot into a Hornet and page through COMM1/COMM2: the mission
+      frequencies are there on the same channel numbers as the kneeboard comm
+      plan, with the jet's stock channel names instead of callsign labels.
+    row: B28
+  - date: 2026-09-13
+    title: The cartridge boxes your tanker, not the AWACS
+    change: >-
+      The Hornet's SA page draws only one of the cartridge's FAOR lines, and it
+      was the AWACS box. The boxes are now the tankers your jet can actually
+      refuel from -- probe or boom -- nearest to your target first, on the
+      Hornet, Viper, F-14B(U) and Apache alike. The AWACS orbit is still a
+      point; it just has no box.
+    watch: >-
+      Slot into a Hornet and look at the SA page: the one box should sit
+      around the tanker briefed for you. A Viper with a probe-only tanker on
+      the ATO should draw no box for it.
+    row: B115
   - date: 2026-09-12
     title: Enemy air defences run on Skynet again
     change: >-

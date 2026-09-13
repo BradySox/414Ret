@@ -2,8 +2,8 @@
 
 Builds one cartridge **per blue client flight** of a DTC-capable airframe
 (FA-18C, F-16C, F-14B(U) and AH-64D BLK.II), binds it to the flight's client units with
-``AutoLoad``, and appends the JSON files to the saved miz. Per-flight rather than per-type because each flight flies its
-own route -- a package's four Hornet flights get four cartridges, each loading
+``AutoLoad``; pydcs writes the JSON files into the miz on save. Per-flight
+rather than per-type because each flight flies its own route -- a package's four Hornet flights get four cartridges, each loading
 its own steerpoints while sharing the mission comm plan and SA picture.
 
 Best-effort by design: a failure building one flight's cartridge skips that
@@ -18,11 +18,7 @@ from typing import TYPE_CHECKING, Callable, Optional
 
 from dcs.mission import Mission
 
-from game.missiongenerator.dtc.cartridge import (
-    DtcCartridge,
-    append_cartridges_to_miz,
-    attach_cartridge_to_unit,
-)
+from game.missiongenerator.dtc.cartridge import DtcCartridge
 from game.missiongenerator.dtc.apache import APACHE_UNIT_TYPE, build_apache_cartridge
 from game.missiongenerator.dtc.hornet import HORNET_UNIT_TYPE, build_hornet_cartridge
 from game.missiongenerator.dtc.tomcat import (
@@ -32,8 +28,6 @@ from game.missiongenerator.dtc.tomcat import (
 from game.missiongenerator.dtc.viper import VIPER_UNIT_TYPE, build_viper_cartridge
 
 if TYPE_CHECKING:
-    from pathlib import Path
-
     from game import Game
     from game.missiongenerator.aircraft.flightdata import FlightData
     from game.missiongenerator.missiondata import MissionData
@@ -98,8 +92,9 @@ class DtcGenerator:
         cartridge = builder(flight, self.mission_data, self.game, name)
         if cartridge is None:
             return
+        self.mission.add_dtc_cartridge(cartridge.name, cartridge.to_json())
         for unit in clients:
-            attach_cartridge_to_unit(unit, cartridge.name)
+            unit.add_dtc_cartridge(cartridge.name)
         self.cartridges.append(cartridge)
         used_names.add(cartridge.name)
 
@@ -113,7 +108,3 @@ class DtcGenerator:
             name = f"{base} {suffix}"
             suffix += 1
         return name
-
-    def append_to_miz(self, miz_path: Path) -> None:
-        """Append the built cartridges to the saved miz (call after save)."""
-        append_cartridges_to_miz(miz_path, self.cartridges)

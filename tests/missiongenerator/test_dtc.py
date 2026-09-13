@@ -3,8 +3,8 @@
 Locks the cartridge JSON shapes against the format mined from the DCS ME's own
 DTC editor (``CoreMods/aircraft/<type>/DTC``) + a working MP mission: the
 ``DTC/<name>.dtc`` files, the per-unit ``DTC.Cartridges``/``AutoLoad`` block,
-channel-number mirroring of the radio allocator, ETA/TOS as seconds since
-midnight, SA/HSD elements, and the recon-fog discipline on threat rings.
+ETA/TOS as seconds since midnight, SA/HSD elements, and the recon-fog
+discipline on threat rings.
 """
 
 from __future__ import annotations
@@ -28,11 +28,7 @@ from game.ato.flighttype import FlightType
 from game.ato.flightwaypoint import GROUND_MARKED_WAYPOINTS
 from game.ato.flightwaypointtype import FlightWaypointType
 from game.missiongenerator.dtc import DtcGenerator
-from game.missiongenerator.dtc.cartridge import (
-    DtcCartridge,
-    append_cartridges_to_miz,
-    attach_cartridge_to_unit,
-)
+from game.missiongenerator.dtc.cartridge import DtcCartridge
 from game.missiongenerator.dtc.common import (
     SupportTrack,
     flot_segments,
@@ -85,6 +81,38 @@ class Pt:
     def latlng(self) -> Any:
         # DCS x is north, y is east.
         return SimpleNamespace(lat=self.x / DEG_M, lng=self.y / DEG_M)
+
+
+class _FakeUnit:
+    """A client unit: records the pydcs DTC binding calls."""
+
+    def __init__(self) -> None:
+        self.dtc_cartridges: list[dict[str, Any]] = []
+        self.dtc_autoload = False
+
+    def add_dtc_cartridge(
+        self, name: str, default: bool = True, autoload: bool = True
+    ) -> None:
+        self.dtc_cartridges.append({"name": name, "default": default})
+        self.dtc_autoload = autoload
+
+
+class _FakeMission:
+    """The mission seam the generator writes cartridges into."""
+
+    def __init__(self) -> None:
+        self.dtc_cartridges: dict[str, str] = {}
+
+    def add_dtc_cartridge(self, name: str, content: str) -> None:
+        self.dtc_cartridges[name] = content
+
+
+def _aircraft(dcs_id: str) -> Any:
+    """An AircraftType stand-in that can take gas from any tanker."""
+    return SimpleNamespace(
+        dcs_unit_type=SimpleNamespace(id=dcs_id),
+        can_refuel_from=lambda tanker: True,
+    )
 
 
 def _waypoint(
@@ -152,8 +180,8 @@ def _flight(
         group_name=f"{callsign} group",
         callsign=callsign,
         friendly=SimpleNamespace(is_blue=blue),
-        client_units=[SimpleNamespace() for _ in range(clients)],
-        aircraft_type=SimpleNamespace(dcs_unit_type=SimpleNamespace(id=dcs_id)),
+        client_units=[_FakeUnit() for _ in range(clients)],
+        aircraft_type=_aircraft(dcs_id),
         flight_type=flight_type,
         waypoints=waypoints or [],
         intra_flight_channel=intra,
@@ -197,10 +225,7 @@ def _mission_data(flights: list[Any], carriers: Optional[list[Any]] = None) -> A
 
 
 def _coalition(squadron_ids: Optional[list[str]] = None) -> Any:
-    squadrons = [
-        SimpleNamespace(aircraft=SimpleNamespace(dcs_unit_type=SimpleNamespace(id=i)))
-        for i in (squadron_ids or [])
-    ]
+    squadrons = [SimpleNamespace(aircraft=_aircraft(i)) for i in (squadron_ids or [])]
     return SimpleNamespace(
         air_wing=SimpleNamespace(iter_squadrons=lambda: iter(squadrons))
     )
@@ -350,10 +375,6 @@ def _hornet_fixture() -> tuple[Any, Any, Any]:
             icls=None,
         ),
     )
-    flight.frequency_to_channel_map = {
-        flight.intra_flight_channel: [SimpleNamespace(radio_id=2, channel=1)],
-        awacs_freq: [SimpleNamespace(radio_id=1, channel=2)],
-    }
     mission_data = _mission_data(
         [
             flight,
@@ -410,21 +431,8 @@ def test_hornet_cartridge_shape() -> None:
     assert nav_settings["ACLS"] == {"Frequency": 336.4, "OnOff": True}
     assert nav_settings["Home_Waypoint"] == {"FPAS_HOME_WP": 2}
 
-    # COMM: allocator channels mirrored with names; defaults elsewhere.
-    comm1 = data["COMM"]["COMM1"]
-    comm2 = data["COMM"]["COMM2"]
-    assert comm2["Channel_1"] == {
-        "frequency": 258.5,
-        "modulation": 0,
-        "name": "WIZAR",
-    }
-    assert comm1["Channel_2"] == {
-        "frequency": 251.0,
-        "modulation": 0,
-        "name": "OVERL",
-    }
-    assert comm1["Channel_3"]["name"] == "CH 3"  # untouched default
-    assert data["COMM"]["mirror_COMM1"] is False
+    # No COMM section: the presets reach the jet through the miz.
+    assert "COMM" not in data
 
     # SA: the tanker racetrack, the SAM ring, styles visible. The COLT CAP
     # station is another flight's and stays off the page; this strike plan
@@ -464,6 +472,28 @@ def test_hornet_designates_the_bullseye_as_the_aa_waypoint() -> None:
     assert f"STPT{bulls}" not in data["WYPT"]["NAV_ROUTE"][0]
 
 
+def test_hornet_land_start_tunes_the_departure_fields_tacan() -> None:
+    """A Hornet leaving an airbase gets that field's TACAN; the arrival's only
+    when the departure has none. A boat recovery keeps the boat's card."""
+    flight, mission_data, game = _hornet_fixture()
+    mission_data.carriers = []
+    flight.departure = _runway("Kutaisi", 259.0)
+    flight.departure.tacan = SimpleNamespace(number=44, band=SimpleNamespace(value="X"))
+    flight.arrival = _runway("Senaki", 259.0)
+    flight.arrival.tacan = SimpleNamespace(number=31, band=SimpleNamespace(value="X"))
+    data = json.loads(
+        build_hornet_cartridge(flight, mission_data, game, "Land").to_json()
+    )["data"]
+    assert data["WYPT"]["NAV_SETTINGS"]["TACAN"]["Channel"] == 44
+    assert data["WYPT"]["NAV_SETTINGS"]["TACAN"]["OnOff"] is True
+
+    flight.departure.tacan = None
+    data = json.loads(
+        build_hornet_cartridge(flight, mission_data, game, "Land").to_json()
+    )["data"]
+    assert data["WYPT"]["NAV_SETTINGS"]["TACAN"]["Channel"] == 31
+
+
 def test_hornet_aa_waypoint_stays_off_without_a_bullseye() -> None:
     """No bullseye in the plan means nothing to designate; leave the jet's own
     slot 59 selected and switched off rather than pointing at empty space."""
@@ -479,7 +509,7 @@ def test_hornet_aa_waypoint_stays_off_without_a_bullseye() -> None:
 
 def test_viper_cartridge_shape() -> None:
     flight, mission_data, game = _hornet_fixture()
-    flight.aircraft_type = SimpleNamespace(dcs_unit_type=SimpleNamespace(id="F-16C_50"))
+    flight.aircraft_type = _aircraft("F-16C_50")
     cartridge = build_viper_cartridge(flight, mission_data, game, "Test F-16C")
     data = json.loads(cartridge.to_json())["data"]
 
@@ -511,7 +541,7 @@ def test_viper_marks_the_target_and_the_run_in() -> None:
     """The HSD draws STPT as a circle, IP as a square and TGT as a triangle
     (EA guide p202), so the ingress and the target read at a glance."""
     flight, mission_data, game = _hornet_fixture()
-    flight.aircraft_type = SimpleNamespace(dcs_unit_type=SimpleNamespace(id="F-16C_50"))
+    flight.aircraft_type = _aircraft("F-16C_50")
     flight.waypoints = [
         _waypoint("TAKEOFF", FlightWaypointType.TAKEOFF, 0, 0, 0, None),
         _waypoint("IP", FlightWaypointType.INGRESS_STRIKE, 100, 100, 3000, None),
@@ -541,7 +571,7 @@ def test_viper_route_stops_at_the_auto_sequencing_limit() -> None:
     route would silently stop advancing itself past 20, and the support anchors
     must still land in the 21-25 tail rather than being dropped."""
     flight, mission_data, game = _hornet_fixture()
-    flight.aircraft_type = SimpleNamespace(dcs_unit_type=SimpleNamespace(id="F-16C_50"))
+    flight.aircraft_type = _aircraft("F-16C_50")
     flight.waypoints = [
         _waypoint("TAKEOFF", FlightWaypointType.TAKEOFF, 0, 0, 0, None)
     ] + [
@@ -564,7 +594,7 @@ def test_viper_geo_lines_stay_inside_their_partition(
     more front than the partition holds is thinned rather than run on into the
     pre-planned-threat partition at 56."""
     flight, mission_data, game = _hornet_fixture()
-    flight.aircraft_type = SimpleNamespace(dcs_unit_type=SimpleNamespace(id="F-16C_50"))
+    flight.aircraft_type = _aircraft("F-16C_50")
     segments = [
         (f"Front {n}", [(float(n * 1000 + i), float(i)) for i in range(8)])
         for n in range(4)
@@ -589,7 +619,7 @@ def test_viper_geo_lines_stay_inside_their_partition(
 
 def _viper_with_fields(fields: list[Any], divert: Optional[str] = None) -> Any:
     flight, mission_data, game = _hornet_fixture()
-    flight.aircraft_type = SimpleNamespace(dcs_unit_type=SimpleNamespace(id="F-16C_50"))
+    flight.aircraft_type = _aircraft("F-16C_50")
     game.theater.controlpoints = fields
     if divert is not None:
         flight.divert = _runway(divert)
@@ -690,7 +720,7 @@ def test_a_steerpoints_alt_is_its_ground_not_its_leg_altitude() -> None:
     # Landing: the one point whose planned altitude IS its ground (B79).
     assert nav_pts[2]["alt"] == 58
 
-    flight.aircraft_type = SimpleNamespace(dcs_unit_type=SimpleNamespace(id="F-16C_50"))
+    flight.aircraft_type = _aircraft("F-16C_50")
     viper = json.loads(
         build_viper_cartridge(flight, mission_data, game, "Test F-16C").to_json()
     )["data"]
@@ -712,44 +742,44 @@ def test_unit_dict_and_miz_round_trip(tmp_path: Path) -> None:
         altitude=6000,
         group_size=2,
     )
-    attach_cartridge_to_unit(group.units[0], "Test FA-18C")
-
-    lead = group.units[0].dict()
-    wing = group.units[1].dict()
-    assert lead["DTC"] == {
-        "Cartridges": [{"default": True, "name": "Test FA-18C"}],
-        "AutoLoad": True,
-    }
-    assert "DTC" not in wing
-
-    miz = tmp_path / "dtc_test.miz"
-    mission.save(str(miz))
     cartridge = DtcCartridge(
         name="Test FA-18C",
         unit_type="FA-18C_hornet",
         terrain="Caucasus",
         data={"COMM": {}, "type": "FA-18C_hornet"},
     )
-    append_cartridges_to_miz(miz, [cartridge])
+    mission.add_dtc_cartridge(cartridge.name, cartridge.to_json())
+    group.units[0].add_dtc_cartridge(cartridge.name)
 
+    lead = group.units[0].dict()
+    wing = group.units[1].dict()
+    assert lead["DTC"] == {
+        "Cartridges": {1: {"default": True, "name": "Test FA-18C"}},
+        "AutoLoad": True,
+    }
+    assert "DTC" not in wing
+
+    miz = tmp_path / "dtc_test.miz"
+    mission.save(str(miz))
     with zipfile.ZipFile(miz) as zf:
-        raw = zf.read("DTC/Test FA-18C.dtc")
-        payload = json.loads(raw)
+        payload = json.loads(zf.read("DTC/Test FA-18C.dtc"))
         assert payload["name"] == "Test FA-18C"
         mission_lua = zf.read("mission").decode("utf-8")
         assert '"AutoLoad"' in mission_lua
-        assert '"Cartridges"' in mission_lua
         assert "Test FA-18C" in mission_lua
 
-    # A miz carrying DTC data must still load cleanly (campaign mizzes may be
-    # authored with cartridges; pydcs ignores the extra unit key + zip entry).
+    # The binding and the file both survive a load.
     reloaded = Mission(Caucasus())
     reloaded.load_file(str(miz))
+    assert "Test FA-18C" in reloaded.dtc_cartridges
+    unit = reloaded.country("USA").plane_group[0].units[0]
+    assert unit.dtc_cartridges == [{"name": "Test FA-18C", "default": True}]
+    assert unit.dtc_autoload
 
 
 def _generator(game: Any, flights: list[Any]) -> DtcGenerator:
     return DtcGenerator(
-        SimpleNamespace(),  # type: ignore[arg-type]
+        _FakeMission(),  # type: ignore[arg-type]
         game,
         _mission_data(flights),
     )
@@ -874,7 +904,7 @@ def test_hornet_sections_are_omitted_when_off() -> None:
 
 def test_viper_sections_are_omitted_when_off() -> None:
     flight, mission_data, game = _hornet_fixture()
-    flight.aircraft_type = SimpleNamespace(dcs_unit_type=SimpleNamespace(id="F-16C_50"))
+    flight.aircraft_type = _aircraft("F-16C_50")
     flight.dtc_options = DtcOptions(comms=False, route=False, destinations=False)
     cartridge = build_viper_cartridge(flight, mission_data, game, "Anchors Only")
     data = json.loads(cartridge.to_json())["data"]
@@ -927,7 +957,7 @@ def test_flot_populates_when_a_front_exists(monkeypatch: pytest.MonkeyPatch) -> 
         (7000.0, 8000.0),
     ]
 
-    flight.aircraft_type = SimpleNamespace(dcs_unit_type=SimpleNamespace(id="F-16C_50"))
+    flight.aircraft_type = _aircraft("F-16C_50")
     viper = json.loads(
         build_viper_cartridge(flight, mission_data, game, "V").to_json()
     )["data"]
@@ -1044,16 +1074,14 @@ def test_a_flight_without_an_orbit_gets_a_track_at_its_hold() -> None:
 def test_the_hold_stand_in_reaches_the_viper_and_tomcat_too() -> None:
     flight, mission_data, game = _hornet_fixture()
     _with_hold(flight)
-    flight.aircraft_type = SimpleNamespace(dcs_unit_type=SimpleNamespace(id="F-16C_50"))
+    flight.aircraft_type = _aircraft("F-16C_50")
     nav_pts = json.loads(
         build_viper_cartridge(flight, mission_data, game, "Hold").to_json()
     )["data"]["MPD"]["NAV_PTS"]
     # The route takes 1-3 (hold, target, landing); the anchors follow.
     assert [p["note"] for p in nav_pts[3:]] == ["HOLD WIZAR", "TKR ARCO"]
 
-    flight.aircraft_type = SimpleNamespace(
-        dcs_unit_type=SimpleNamespace(id=TOMCAT_UNIT_TYPE)
-    )
+    flight.aircraft_type = _aircraft(TOMCAT_UNIT_TYPE)
     points = json.loads(
         build_tomcat_cartridge(flight, mission_data, game, "Hold").to_json()
     )["data"]["NAV"][0]["additional_points"]
@@ -1064,7 +1092,7 @@ def test_viper_dest_paints_the_enemy_field_being_worked_over() -> None:
     """An OCA Viper wants the target field on the HSD, and only the DEST
     partition draws an airfield: it lands right after the briefed divert."""
     flight, mission_data, game = _hornet_fixture()
-    flight.aircraft_type = SimpleNamespace(dcs_unit_type=SimpleNamespace(id="F-16C_50"))
+    flight.aircraft_type = _aircraft("F-16C_50")
     flight.divert = _runway("Batumi")
     # The target is at (60000, 80000); the red field sits 5 km from it.
     game.theater.controlpoints = [
@@ -1100,7 +1128,7 @@ def test_generator_skips_a_builder_that_returns_none(
     generator = _generator(_game(), [flight])
     generator.generate()
     assert generator.cartridges == []
-    assert not hasattr(flight.client_units[0], "retribution_dtc")
+    assert flight.client_units[0].dtc_cartridges == []
 
 
 def test_super_hornets_take_no_cartridge() -> None:
@@ -1112,9 +1140,7 @@ def test_super_hornets_take_no_cartridge() -> None:
 
 def _tomcat_fixture() -> tuple[Any, Any, Any]:
     flight, mission_data, game = _hornet_fixture()
-    flight.aircraft_type = SimpleNamespace(
-        dcs_unit_type=SimpleNamespace(id=TOMCAT_UNIT_TYPE)
-    )
+    flight.aircraft_type = _aircraft(TOMCAT_UNIT_TYPE)
     flight.callsign = "Dodge 1"
     flight.waypoints = [
         _waypoint(
@@ -1461,7 +1487,8 @@ def test_tomcat_flight_gets_a_cartridge_bound_to_its_clients() -> None:
     assert len(generator.cartridges) == 1
     cartridge = generator.cartridges[0]
     assert cartridge.unit_type == TOMCAT_UNIT_TYPE
-    assert getattr(flight.client_units[0], "retribution_dtc")["AutoLoad"] is True
+    assert flight.client_units[0].dtc_autoload is True
+    assert flight.client_units[0].dtc_cartridges[0]["name"] == cartridge.name
 
 
 def _field_cp(name: str, x: float, y: float, airport_id: str) -> Any:
@@ -1525,7 +1552,7 @@ def test_an_ingress_carrying_the_target_list_is_still_an_ip() -> None:
     assert route["STPT1"]["TGT"] is False
     assert route["STPT2"]["TGT"] is True
 
-    flight.aircraft_type = SimpleNamespace(dcs_unit_type=SimpleNamespace(id="F-16C_50"))
+    flight.aircraft_type = _aircraft("F-16C_50")
     nav_pts = json.loads(
         build_viper_cartridge(flight, mission_data, game, "IP").to_json()
     )["data"]["MPD"]["NAV_PTS"]
@@ -1546,7 +1573,7 @@ def test_a_ground_marked_target_carries_the_ground_as_its_altitude(
     )
     flight, mission_data, game = _hornet_fixture()
     game.theater.controlpoints = [_field_cp("Kirkuk", 0, 0, "kirkuk")]
-    flight.aircraft_type = SimpleNamespace(dcs_unit_type=SimpleNamespace(id="F-16C_50"))
+    flight.aircraft_type = _aircraft("F-16C_50")
     flight.waypoints = [
         _waypoint("TAKEOFF", FlightWaypointType.TAKEOFF, 0, 0, 0, None),
         _waypoint(
@@ -2150,7 +2177,7 @@ def test_viper_cmds_gives_each_dispenser_its_own_manual_program() -> None:
     """MAN 1 answers an IR shot and MAN 5 a radar one; the AUTO programs and
     BYP keep the module's own values."""
     flight, mission_data, game = _hornet_fixture()
-    flight.aircraft_type = SimpleNamespace(dcs_unit_type=SimpleNamespace(id="F-16C_50"))
+    flight.aircraft_type = _aircraft("F-16C_50")
     flight.dtc_options = DtcOptions(countermeasures=True)
     data = json.loads(build_viper_cartridge(flight, mission_data, game, "V").to_json())[
         "data"
@@ -2173,7 +2200,7 @@ def test_viper_cmds_is_off_by_default() -> None:
     """The CMDS page is not written unless a planner asks: the guide's STBY
     warning against an unattended MPD upload is unanswered (checklist B28)."""
     flight, mission_data, game = _hornet_fixture()
-    flight.aircraft_type = SimpleNamespace(dcs_unit_type=SimpleNamespace(id="F-16C_50"))
+    flight.aircraft_type = _aircraft("F-16C_50")
     data = json.loads(build_viper_cartridge(flight, mission_data, game, "V").to_json())[
         "data"
     ]
@@ -2242,9 +2269,10 @@ def test_support_box_follows_the_orbit_course(monkeypatch: pytest.MonkeyPatch) -
 def test_viper_draws_the_support_boxes_on_the_later_line_sets(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """L1 is the boundary; a tanker or AWACS box takes L2-L4."""
+    """L1 is the boundary; a usable tanker's box takes L2-L4. The AWACS gets
+    no box on any airframe."""
     flight, mission_data, game = _hornet_fixture()
-    flight.aircraft_type = SimpleNamespace(dcs_unit_type=SimpleNamespace(id="F-16C_50"))
+    flight.aircraft_type = _aircraft("F-16C_50")
     monkeypatch.setattr(
         "game.missiongenerator.dtc.common.flot_segments",
         lambda g: [("Front", [(0.0, 0.0), (10000.0, 0.0)])],
@@ -2262,9 +2290,8 @@ def test_viper_draws_the_support_boxes_on_the_later_line_sets(
     geo = data["MPD"]["GEO_LINES"]
     assert [point["note"] for point in geo if point["L1"]] == ["FLOT", "FLOT"]
     arco = [point for point in geo if point["L2"]]
-    magic = [point for point in geo if point["L3"]]
     assert [point["note"] for point in arco] == ["ARCO"] * SUPPORT_BOX_POINTS
-    assert [point["note"] for point in magic] == ["MAGIC"] * SUPPORT_BOX_POINTS
+    assert not [point for point in geo if point["L3"]]
     assert (arco[0]["x"], arco[0]["y"]) == (arco[-1]["x"], arco[-1]["y"])
     # Ids stay inside the partition and keep counting across the sets.
     assert [point["id"] for point in geo][:3] == [
@@ -2280,7 +2307,7 @@ def test_viper_boxes_take_their_points_from_the_boundary(
     """Three boxes cost 15 of the 25, so the boundary is thinned to 10 rather
     than a box losing a corner."""
     flight, mission_data, game = _hornet_fixture()
-    flight.aircraft_type = SimpleNamespace(dcs_unit_type=SimpleNamespace(id="F-16C_50"))
+    flight.aircraft_type = _aircraft("F-16C_50")
     monkeypatch.setattr(
         "game.missiongenerator.dtc.common.flot_segments",
         lambda g: [("Front", [(float(i * 1000), 0.0) for i in range(30)])],
@@ -2325,6 +2352,38 @@ def test_hornet_support_boxes_ride_the_faor_lines(
     assert faor["points"][0]["x"] == faor["points"][-1]["x"]
 
 
+def test_faor_carries_only_the_tankers_this_jet_can_use() -> None:
+    """Flown 2026-09-13: the SA page draws one FAOR line and it was the AWACS.
+    So the boxes are the tankers the jet can refuel from, nearest to the target
+    first, and the AWACS never gets one."""
+    flight, mission_data, game = _hornet_fixture()
+    # The target sits at (60000, 80000).
+    far_probe = _support_flight(
+        FlightType.REFUELING, "Arco 1", Pt(-100000, 0), Pt(-80000, 0)
+    )
+    near_probe = _support_flight(
+        FlightType.REFUELING, "Shell 1", Pt(40000, 60000), Pt(60000, 60000)
+    )
+    boom = _support_flight(
+        FlightType.REFUELING, "Texaco 1", Pt(50000, 70000), Pt(70000, 70000)
+    )
+    awacs = _support_flight(
+        FlightType.AEWC, "Magic 1", Pt(55000, 75000), Pt(75000, 75000)
+    )
+    for tanker in (far_probe, near_probe):
+        tanker.aircraft_type.probe = True
+    boom.aircraft_type.probe = False
+    flight.aircraft_type.can_refuel_from = lambda tanker: getattr(
+        tanker, "probe", False
+    )
+    mission_data.flights = [flight, far_probe, boom, awacs, near_probe]
+
+    faor = json.loads(
+        build_hornet_cartridge(flight, mission_data, game, "Gas").to_json()
+    )["data"]["SA"]["FAOR_FLOT"]["FAOR"]
+    assert [line["note"] for line in faor] == ["SHELL", "ARCO"]
+
+
 def test_tomcat_support_box_is_a_closed_plot_line(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -2349,7 +2408,7 @@ def test_support_boxes_are_omitted_when_orbits_are_off(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     flight, mission_data, game = _hornet_fixture()
-    flight.aircraft_type = SimpleNamespace(dcs_unit_type=SimpleNamespace(id="F-16C_50"))
+    flight.aircraft_type = _aircraft("F-16C_50")
     flight.dtc_options = DtcOptions(friendly_orbits=False)
     monkeypatch.setattr(
         "game.missiongenerator.dtc.common.support_tracks",

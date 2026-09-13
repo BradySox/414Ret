@@ -172,9 +172,8 @@ class MissionGenerator:
         # client Hornets/Vipers so the jets spawn with comms, steerpoints, and
         # the SA picture pre-loaded. Best-effort -- a failure here never blocks
         # the mission (the miz without cartridges is the pre-feature miz).
-        dtc_generator = DtcGenerator(self.mission, self.game, self.mission_data)
         try:
-            dtc_generator.generate()
+            DtcGenerator(self.mission, self.game, self.mission_data).generate()
         except Exception:
             logging.exception("DTC: cartridge generation failed; mission unaffected")
 
@@ -188,10 +187,6 @@ class MissionGenerator:
         output.parent.mkdir(parents=True, exist_ok=True)
         logging.info("MIZ generation: saving mission to %s", output)
         self.mission.save(output)
-        try:
-            dtc_generator.append_to_miz(output)
-        except Exception:
-            logging.exception("DTC: appending cartridges failed; mission unaffected")
 
         logging.info("MIZ generation: complete")
 

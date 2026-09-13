@@ -7270,14 +7270,13 @@ mechanism byte-for-byte.
 **What's in a cartridge** (per **blue client flight** — each flight gets its own route;
 package-mates share the comm plan and SA picture):
 
-- **COMM** (Hornet only) — COMM1/COMM2 preset tables that **mirror the channel
-  numbers the radio allocator already wrote** into the unit `Radio` table
-  (`FlightData.frequency_to_channel_map`), so the kneeboard, the ME radio page, and
-  the DTC agree — the DTC adds ≤5-char **names** (flight callsign, `MAGIC`, `ARCO`,
-  `DEP`/`ARR`/`DVT`, `PKG`, `JTAC`). Unassigned channels keep the module defaults.
-  **The Viper emits no COMM section** (dropped 2026-08-22): its channel schema has no
-  name field, so the section could only mirror the `Radio` table the miz already
-  carries. The Viper's presets come from the mission itself.
+- **COMM** — **neither jet carries one.** The radio allocator already writes every
+  client unit's `Radio` table (`FlightData.assign_channel`), so a COMM section could
+  only mirror it. The Viper's was dropped 2026-08-22 (its schema has no name field);
+  the Hornet's — the same frequencies plus ≤5-char names — was dropped 2026-09-13 so
+  the fork reflects the upstream carve ([#966](https://github.com/dcs-retribution/dcs-retribution/pull/966))
+  and ships nothing the miz already delivers (DM rule). The `comms` switch survives
+  for the F-14B(U)'s TIS list only.
 - **WYPT / MPD.NAV_PTS** — the flight's waypoints as named steerpoints (ASCII-folded
   display names), the Hornet Route-1 sequence with per-leg altitude/speed (km/h) and
   **ETA in absolute seconds-since-midnight** (the Viper carries TOS inline), the
@@ -7321,6 +7320,11 @@ package-mates share the comm plan and SA picture):
   invisible until the pilot went looking. On the Viper the 25 GEO points are shared:
   boxes are allocated first at five each, because a box missing a corner is nonsense
   where a boundary thinned by ten points is still a boundary.
+  **Only the tankers this jet can use, nearest first (2026-09-13).** Flown: the
+  Hornet draws one FAOR line — the selected one, like its CAP point — and it was the
+  AWACS. `support_boxes` now takes the flight and boxes only the `REFUELING` orbits its
+  `AircraftType.can_refuel_from` admits, ordered by distance from the flight's target
+  (`usable_tanker_tracks`); the AWACS gets no box on any airframe.
 - **CMDS (Viper, default OFF)** — `MAN1` dispenses flares only and `MAN5` chaff only, so
   one button answers an IR shot and another a radar one; the three AUTO programs and BYP
   keep the module's own values, written whole because `CMDS.lua` indexes every program
@@ -7495,11 +7499,10 @@ client flight carries `Flight.dtc_options` (`game/ato/dtcoptions.py` — pickled
 the save, `__setstate__`-defaulted so old saves behave pre-feature): a **tri-state
 master** (follow the campaign setting / always / never for this flight — the
 per-flight override beats the global toggle in both directions) plus **six section
-switches** — comm presets, route steerpoints + push times, recovery aids
+switches** — the F-14B(U)'s TIS list, route steerpoints + push times, recovery aids
 (TACAN/ICLS/ACLS + FPAS home), the front line (FLOT), friendly CAP/tanker/AWACS
 orbits, and the enemy SAM rings. A section that is off is **omitted from the
-cartridge entirely** (the jet's own defaults stand — e.g. comms off leaves a pilot's
-hand-set presets alone); all sections off builds no cartridge at all. The Edit
+cartridge entirely** (the jet's own defaults stand); all sections off builds no cartridge at all. The Edit
 Flight dialog grows a **DTC tab** (`qt_ui/windows/mission/flight/QFlightDtcTab.py`,
 added in `QFlightPlanner` only for airframes in `CARTRIDGE_BUILDERS`) whose combo +
 checkboxes write the options live; the contents group greys whenever the resolved

@@ -567,7 +567,7 @@ FEATURES: tuple[Feature, ...] = (
         # §74 native DTC pre-population (game/missiongenerator/dtc/): one JSON
         # cartridge per blue client flight embedded at DTC/<name>.dtc in the miz
         # + the per-unit DTC.Cartridges/AutoLoad block, so the jet spawns with
-        # named comms, steerpoints + push times, recovery TACAN/ICLS/ACLS, and
+        # steerpoints + push times, recovery TACAN/ICLS/ACLS, and
         # the SA/HSD picture (FLOT, CAP + tanker/AWACS orbits, viewer-fogged SAM
         # rings) already loaded -- zero pilot action, MP-distributed with the
         # mission download. The F-14B(U) takes the same seam with its own

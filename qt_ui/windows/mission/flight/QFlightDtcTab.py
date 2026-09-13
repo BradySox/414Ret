@@ -23,12 +23,11 @@ from game.ato.flight import Flight
 #: (label, DtcOptions field, tooltip) for the section checkboxes.
 _SECTIONS = (
     (
-        "Comm presets (named channels)",
+        "TIS send-to list (F-14B(U))",
         "comms",
-        "COMM1/COMM2 presets on the same channel numbers as the kneeboard "
-        "comm plan, with short names (flight, AWACS, tankers, ATC). Hornet "
-        "only -- the Viper's presets come from the mission itself. On the "
-        "F-14B(U) this switch carries the TIS send-to list instead.",
+        "The package's flights on the Tomcat's TIS send-to list. F-14B(U) "
+        "only: the Hornet's and Viper's radio presets come from the mission "
+        "itself, so neither cartridge carries a comm section.",
     ),
     (
         "Route steerpoints + push times",
@@ -116,7 +115,7 @@ class QFlightDtcTab(QFrame):
 
         intro = QLabel(
             "This flight's native DCS data cartridge auto-loads at spawn: "
-            "comms, route, recovery aids, the SA picture, the Viper's ROE "
+            "route, recovery aids, the SA picture, the Viper's ROE "
             "table and, on the F-14B(U), "
             "pre-planned JDAM points -- straight into the jet, and multiplayer "
             "clients get it with the mission download. Radio presets and the "

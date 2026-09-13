@@ -6715,6 +6715,16 @@ through and going home.
 
 ### B107 — The log stops repeating a MOOSE event error thousands of times · vendored `Moose.lua` · ☐ UNTESTED
 
+**2026-09-13** (Iraq, ~25 min, FA-18C, DCS 2.9.29.27468, build `78085dfd7`) — **the fail
+signature occurred on the first build that carried #997: ~10,300 occurrences in 20 minutes**
+(108 written, 10,222 collapsed by DCS's dedup). The flown `.miz` was unpacked and its
+`Moose.lua` carries the `414Ret patch` rows, so the patch was present and inert: it keyed
+`UnitTaskComplete` (id 49), and 61 is a new 2.9.29 event upstream MOOSE describes as
+"something like option changed". Re-fixed the same day with upstream's `if Event.id ~= 61`
+guard in `EVENT:onEvent`. **Re-fly on a build after 2026-09-13.** The same log had 29
+`ANTIFREEZE` stalls at an irregular cadence with 35 TIC formations and 895 units; the spam
+is a symptom of TIC's option churn, not the cause of the stalls.
+
 **2026-08-29, test 24** (Caucasus — Iron Gate turn 1, 72 min, `Tacview-20260829-162330`, DCS 2.9.29.27278) — **could not be tested: the flown build predates the fix.** The `.miz`
 was generated at 16:22:11, four seconds before the merge that brought #997 onto the branch at
 16:22:15, so its bundled `Moose.lua` carries the two `civilian_traffic` patches but not the
@@ -6723,11 +6733,11 @@ mission alone suppressed **63,338** copies of `EVENT.onEvent ... Could not get E
 event ID=61`, plus 18,106 messages lost to buffer overflow, against 18,338 written lines. A second
 terrain confirming the diagnosis. Re-fly on a build that contains #997.
 
-MOOSE's `EVENTS` enum declares `UnitTaskComplete` but `_EVENTMETA` had no row for
-it, so `EVENT:onEvent` dropped DCS's task-complete event and logged an error every
-time it fired — 6,807 times in one 7-minute Afghanistan turn, 11,861 in an archived
-Germany Cold War log. A `_EVENTMETA` row was added. Nothing here is testable
-headlessly: the harness fakes the DCS sandbox and never raises event 61.
+DCS 2.9.29 raises an undocumented event 61 on every controller option change, and
+MOOSE's `EVENT:onEvent` logged an error for each one — 6,807 times in one 7-minute
+Afghanistan turn, 11,861 in an archived Germany Cold War log. The else-branch now skips
+id 61, as upstream develop does. Nothing here is testable headlessly: the harness fakes
+the DCS sandbox and never raises event 61.
 
 **Setup.** Zero. Fly anything, then open `Saved Games/DCS/Logs/dcs.log`. ~1 min.
 
@@ -6737,8 +6747,9 @@ banners as before.
 
 **Fail signatures, and what each means:**
 
-- **Still thousands of `event ID=61`** — the patch was lost. Grep `Moose.lua` for
-  `414Ret patch`; a bundle bump drops it silently. See
+- **Still thousands of `event ID=61`** — the guard was lost. Grep `Moose.lua` for
+  `414Ret patch (event 61 spam)`; a bundle bump drops it silently, and the `.miz` must be
+  generated after the fix (unpack it and grep). See
   `docs/dev/design/414th-framework-consolidation-notes.md`.
 - **A *different* unknown event ID now spams** — DCS added another event MOOSE does
   not carry. Same fix, one more row.

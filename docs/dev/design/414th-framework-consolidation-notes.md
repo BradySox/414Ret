@@ -187,19 +187,25 @@ only when the target is a `local` a plugin cannot reach.
 | Patch | Why it is in the bundle | Removal trigger |
 |---|---|---|
 | `civilian_traffic crash guard` (2 sites) | Orphan RAT spawns crashed the sim | Upstream fixes the orphan case |
-| `event 61 spam` | `_EVENTMETA` is a `local`; no plugin can reach it | Upstream adds the row |
+| `event 61 spam` | `EVENT:onEvent` is bundle code; upstream develop already carries the same guard | The bundle is bumped past upstream's `if Event.id ~= 61` guard |
 
-### `event 61 spam` (2026-08-29)
+### `event 61 spam` (2026-08-29, re-fixed 2026-09-13)
 
-MOOSE's `EVENTS` enum declares `UnitTaskComplete=world.event.S_EVENT_UNIT_TASK_COMPLETE`
-but `_EVENTMETA` has no row for it. `EVENT:onEvent` is `if EventMeta then <dispatch>
-else self:E(...) end`, so DCS's task-complete event is **dropped, not just logged**.
+**The 2026-08-29 fix was inert.** It assumed event 61 was `S_EVENT_UNIT_TASK_COMPLETE`
+and added `_EVENTMETA` rows for `UnitTaskComplete` and `UnitTaskStage`. Those are ids 49
+and 50 (Hoggit's `world.event` table; `S_EVENT_MAX` was 61 before 2.9.29). The first
+flight on a build carrying the rows (2026-09-13, Iraq, DCS 2.9.29.27468) logged the line
+~10,300 times in 20 minutes, with the patched bundle confirmed inside the flown `.miz`.
 
-Measured on a 2026-08-29 Afghanistan turn (7-minute flight, 35 TIC formations): **6,807
-occurrences** — 816 written plus 5,991 collapsed by DCS's log dedup, about 59 % of the
-whole `dcs.log` when taken with the two TIC pathing lines. An archived Germany Cold War
-log has 11,861. The fix is one `_EVENTMETA` row copied from the shape of its neighbours.
+**What 61 is.** A new DCS 2.9.29 event that upstream MOOSE develop guards with
+`if Event.id ~= 61 then` and the comment "seems to have no real data to be useable,
+something like option changed". Its rate matches TIC's `Controller:setOption` churn
+(~10-15/s on an active front), which is also what `debrief.log` records as
+`group change option`. It is raised by our own ROE cycling and carries nothing.
 
-Nothing in this tree handles task-complete, so the win is log volume, not behaviour.
-`EVENTS.UnitTaskComplete` is guarded `or -1` upstream, so the row is safe on a DCS build
-that does not define the event.
+**The fix now** is that same guard in `EVENT:onEvent`'s else-branch, marked
+`-- 414Ret patch (event 61 spam)`. The 49/50 rows stay: they are upstream-shaped and
+harmless, and their comment now says what they are. Log volume only; no behaviour changes.
+
+Measured before the fix: 6,807 occurrences on a 7-minute Afghanistan turn, 11,861 in an
+archived Germany Cold War log, 63,338 suppressed copies on a 72-minute Iron Gate turn.

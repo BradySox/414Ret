@@ -54,10 +54,12 @@ At your split point, look behind you. **Free — it is the flight you were flyin
 
 - **Pass:** `grep -c "EVENTMETA data for event ID" dcs.log` returns 0, and every plugin still
   prints its startup banner (CTLD, CSAR, Skynet, TIC).
-- **Fail:** thousands of them still — the `414Ret patch` in the vendored `Moose.lua` was lost,
-  most likely to a bundle bump. A *different* unknown event id means DCS added another event.
+- **Fail:** thousands of them still — the `414Ret patch (event 61 spam)` guard in the vendored
+  `Moose.lua` was lost, or the `.miz` predates 2026-09-13. A *different* unknown event id means
+  DCS added another event.
 - **Why it's here:** it fired 6,807 times in one 7-minute mission and 11,861 in an archived
-  Germany Cold War log, and it cannot be exercised headlessly — the harness never raises it.
+  Germany Cold War log; the first fix (2026-08-29) keyed the wrong event and failed on
+  2026-09-13 with ~10,300 more. It cannot be exercised headlessly — the harness never raises it.
 
 ---
 

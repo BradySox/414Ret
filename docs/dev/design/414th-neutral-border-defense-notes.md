@@ -1974,3 +1974,47 @@ vertices 7,093 → 7,166** — nearly all coverage, almost no cost.
 
 Nothing here has been flown either. The check is the same one B120 already
 carries: open the F10 map before you cross and look at where the fill stops.
+
+## Most of Saudi Arabia was unshaded, because the thinned fill crossed itself (2026-09-13)
+
+Reported from the F10 map on the Persian Gulf: Saudi Arabia's outline was
+complete, but its fill was a diagonal wedge between Qatar and the UAE.
+
+**Cause.** The plugin thinned any border over `FILL_MAX_VERTS = 96` by keeping
+every Nth vertex. Saudi Arabia has 115, so every second one went, and the
+thinned ring crossed itself near the western clip edge. MOOSE's
+`ZONE_POLYGON_BASE:_Triangulate` ear-clips, and when no ear is left it stops —
+it does not fail, so nothing logs.
+
+**Measured** with a port of MOOSE's triangulation over all 63 shipped zones:
+
+| Zone | Filled |
+|---|---|
+| Persian Gulf — Saudi Arabia | 18.7 % |
+| Afghanistan — India | 37.2 % |
+| Iraq — Turkey | 43.3 % |
+| Sinai — Egypt | 57.7 % |
+| Syria — Turkey | 61.8 % |
+| Kola — Russia | 63.0 % |
+| Caucasus — Ukraine | 77.1 % |
+| Kola — Norway | 90.1 % |
+| Afghanistan — Iran | 94.3 % |
+
+Four of the nine rings crossed. The other five were valid and MOOSE still
+stalled on them, so a validity check alone would not have been enough.
+
+**Fix.** The emitter ships a `fill` ring for any border over 96 vertices,
+thinned with shapely's topology-preserving simplify, which cannot cross.
+Lowest zone after: 98.2 % (Falklands — Chile). The plugin keeps the stride as
+a fallback for a border that arrives without a `fill` ring.
+
+**Cost.** Fill vertices per map go from 314–594 to 310–642, +8–16 %. The
+simplify spends its budget where the shape bends instead of evenly.
+
+**Guard.** `test_every_shipped_border_fills_on_the_f10_map` runs the MOOSE port
+over every shipped zone and fails under 95 %. It fails on the old stride.
+
+### Owed
+
+Not flown. The check is B120's F10-map look before crossing: every closed
+country should be shaded to its outline.

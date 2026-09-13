@@ -29,6 +29,18 @@ entries:
       the target with room to spare.
     row: B123
   - date: 2026-09-13
+    title: Neutral countries are shaded all the way to their border
+    change: >-
+      A large closed country could show its full outline on the F10 map but
+      only a sliver of shading -- Saudi Arabia on the Persian Gulf map was
+      under a fifth shaded. Nine countries across the maps were affected; all
+      of them now shade to the outline.
+    watch: >-
+      Open the F10 map on the Persian Gulf and look at Saudi Arabia: the pink
+      wash should fill the whole country, not a diagonal strip between Qatar
+      and the UAE.
+    row: B120
+  - date: 2026-09-13
     title: Hornet radio presets come from the mission, not the cartridge
     change: >-
       The F/A-18C data cartridge no longer carries COMM1/COMM2. The mission's

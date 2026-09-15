@@ -194,6 +194,9 @@ Read before touching a campaign's `.yaml`, `.miz` or build tool.
   diff**, 2026-08-09: every divergence classified by gate and default; read before
   reverting or carving planner behavior)
 - **Cockpit / data** — `414th-dtc-cartridge-notes.md`, `414th-weapon-dates-proposal.md`,
+  `414th-dynamic-spawn-templates-notes.md` (**scoping only, nothing built** — DCS's
+  Dyn.SPAWN Template checkbox as the hook for giving a dynamic-slot jet a package's
+  route, radios and loadout; gated on the three answers row `B125` collects),
   `414th-startup-times-notes.md` (**where a `startup_minutes:` value may come from** — read
   before adding one; unsourced numbers are the failure mode),
   `414th-loadout-integrity-audit-notes.md`

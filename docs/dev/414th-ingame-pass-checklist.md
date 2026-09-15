@@ -58,7 +58,7 @@ also relative to `ReferenceLatitude=38 / ReferenceLongitude=36`, not absolute.
 
 ## Outstanding rows at a glance
 
-87 rows need a live pass. Full detail is under each `###` heading below —
+88 rows need a live pass. Full detail is under each `###` heading below —
 search the row id. `☐` untested · `◐` flown but not under the conditions that
 stress it · `✗` fail signature reproduced in-game.
 
@@ -98,6 +98,7 @@ stress it · `✗` fail signature reproduced in-game.
 | B122 | A survivor lands where his own chute came down, not where another crew's did | CSAR (#929 adoption) | ☐ |
 | B123 | An Armed Recon flight engages a gun-defended target instead of overflying the search point | §35 | ☐ |
 | B124 | A hand-fragged Harrier DEAD opens the New Flight dialog on the DEAD preset, not a stock Snakeye fit | New Flight dialog | ☐ |
+| B125 | A dynamic-slot jet spawns with the template's route, radios and loadout | dynamic spawn templates (scoping) | ☐ |
 | G25 | Armed Recon package: recon drone + SEAD Viper escort + 4-ship sweep | §3 | ◐ |
 | G30 | Skynet point defence: the paired SHORAD answers the HARM shot | Skynet return | ☐ |
 | G42 | Skynet is the engine again: sites dark until cued, HARM defence, no `enableEmission` crash | Skynet return | ☐ |
@@ -7387,3 +7388,31 @@ actually is on the F10 map before you start (the host can use the reveal overvie
   group only reaches some clients; fall back to `markToCoalition` for the brief.
 - **An AI Sandy changes course after a pass.** Something pushed a task. Nothing here should;
   find it before shipping.
+
+### B125 — A dynamic-slot jet spawns with the template's route, radios and loadout · dynamic spawn templates (scoping) · ☐ UNTESTED
+
+**History:** opened 2026-09-15 as the gate on
+[`414th-dynamic-spawn-templates-notes.md`](design/414th-dynamic-spawn-templates-notes.md).
+Nothing is built. DCS's mission editor has a **Dyn.SPAWN Template** checkbox on a
+Player-skill aircraft group; it writes `dynSpawnTemplate = true` on the group and
+`linkDynTempl = <groupId>` on the airbase's warehouse entry for that aircraft type. What the
+template carries into the spawned jet beyond loadout is unverified from the session box, and
+so is whether the template group stays in the slot list. Both decide the build's shape.
+**2026-09-15, DM:** the second is answered. A group ticked as a template stays in the slot
+list, so the build marks the real flight and needs no clone. Route carry and `wsType` remain.
+
+- **Setup:** any miz with one Player Hornet group at a field that has dynamic spawn on. Give
+  the group three or four waypoints, a non-default radio preset table and a non-stock
+  payload. Tick **Dyn.SPAWN Template** on it, save, and open the mission. ~10 min.
+- **Pass:** a dynamic Hornet spawned at that field shows the template's waypoints on the
+  kneeboard and the HSI, the template's presets in the radio, and the template's payload.
+- **Record, whichever way it goes:**
+  1. Route carried: yes / no.
+  2. ~~The original Player group still in the slot list after ticking the box~~ — yes,
+     answered 2026-09-15.
+  3. In the saved miz's `warehouses` file, whether the field's Hornet entry gained a
+     `wsType` table next to `linkDynTempl`.
+- **Fail signatures:** the dynamic jet spawns with the stock loadout and no route (the link
+  did not take: check `linkDynTempl` in the saved `warehouses` file points at the group's
+  id); or the original slot vanished from the slot list (the template is consumed, so the
+  build must clone).

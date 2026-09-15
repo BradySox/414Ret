@@ -136,17 +136,7 @@ def is_target_waypoint(waypoint: FlightWaypoint) -> bool:
     return "TARGET" in waypoint.waypoint_type.name
 
 
-#: Waypoint types whose planned altitude IS the ground under them: B79 writes the
-#: field's own elevation AMSL onto takeoff and landing. DIVERT is excluded because
-#: an off-map one is an exit vector planned at cruise, and the two are not
-#: separable here.
-_FIELD_ELEVATION_WAYPOINTS = (
-    FlightWaypointType.TAKEOFF,
-    FlightWaypointType.LANDING_POINT,
-)
-
-
-def nearest_field_elevation(game: Game, position: Point) -> float:
+def nearest_field_elevation(game: Game, x: float, y: float) -> float:
     """The elevation of the nearest airfield with a known one, metres AMSL.
 
     The only height data the campaign carries. Exact on a flat map, within the
@@ -168,50 +158,41 @@ def nearest_field_elevation(game: Game, position: Point) -> float:
         elevation = field_elevation_for_airport(game.theater.terrain, airport)
         if elevation is None:
             continue
-        distance = cp.position.distance_to_point(position)
+        distance = math.hypot(cp.position.x - x, cp.position.y - y)
         if distance < best_distance:
             best, best_distance = elevation, distance
     return best if best is not None else 0.0
 
 
-def steerpoint_elevation(waypoint: FlightWaypoint, game: Game) -> float:
-    """The ground elevation under a steerpoint, in metres AMSL.
+def steerpoint_altitude(waypoint: FlightWaypoint, game: Game) -> float:
+    """The steerpoint's altitude in metres MSL: what the .miz route gives the jet.
 
-    This is NOT the altitude to fly -- that is ``leg_altitude`` below, and the two
-    are separate fields in both jets. ED's own editors fill this one from the
-    terrain (``alt = getAltitude(x, y)`` in the Viper's ``NAV_PTS.lua`` and the
-    Hornet's ``WYPT_NAV.lua``), and the Viper's loader defaults a missing one to
-    2000 m, so it has to be written and it has to be an elevation.
-
-    Takeoff and landing know their ground exactly. Everything else takes the
-    nearest airfield's, which is an estimate -- see ``nearest_field_elevation``.
+    Both jets carry two altitude fields, the point's ``alt`` and the route
+    leg's (``routeAltitude`` / ``NAV_ROUTE[].alt``), and the cockpit shows the
+    first: a Viper flown 2026-09-13 with ``alt`` 131 ft and ``routeAltitude``
+    22,000 ft read ELEV 131 on the DED. Without a cartridge the jet takes ELEV
+    from the mission-editor waypoint altitude, so the mirror carries the same
+    number: the planned altitude on an en-route point, the ground under a
+    ground-marked one (the .miz puts those at 0 AGL for a client flight).
+    Nothing honours an AGL tag on the point, so an AGL plan is converted with
+    the nearest field's elevation. Design note: 414th-dtc-cartridge-notes.md.
     """
-    if waypoint.waypoint_type in _FIELD_ELEVATION_WAYPOINTS:
-        return waypoint.alt.meters if waypoint.alt_type == "BARO" else 0.0
-    return nearest_field_elevation(game, waypoint.position)
+    if waypoint.marks_ground_for_player:
+        return nearest_field_elevation(game, waypoint.position.x, waypoint.position.y)
+    if waypoint.alt_type == "RADIO":
+        return waypoint.alt.meters + nearest_field_elevation(
+            game, waypoint.position.x, waypoint.position.y
+        )
+    return waypoint.alt.meters
 
 
 def leg_altitude(waypoint: FlightWaypoint, game: Game) -> tuple[float, int]:
-    """The steerpoint's altitude, in metres MSL + DTC altitudeType (always 1).
+    """``steerpoint_altitude`` with the DTC ``altitudeType``, always 1 (MSL)."""
+    return steerpoint_altitude(waypoint, game), 1
 
-    Goes in the Viper's ``routeAltitude`` and the Hornet's ``NAV_ROUTE`` entry,
-    never in the point's own ``alt``. **This is the number the Viper's DED shows
-    as the steerpoint ELEV** (flown 2026-08-22), and nothing honours the AGL
-    tag: the editor's ``transformAltitude`` is a no-op and its own Mach calc
-    tests a key that does not exist, so a ground-marked target written as
-    "0 AGL" read ELEV 0 in the jet. Every altitude is therefore written MSL.
 
-    A ground-marked waypoint (target areas, CAS FLOT boundaries, flyovers) is on
-    the deck for a client flight in the .miz, so its altitude IS the ground --
-    the nearest field's estimate, the only height data there is. An AGL plan
-    elsewhere (a low-level or helicopter profile) is converted with the same
-    estimate.
-    """
-    if waypoint.marks_ground_for_player:
-        return nearest_field_elevation(game, waypoint.position), 1
-    if waypoint.alt_type == "RADIO":
-        return waypoint.alt.meters + nearest_field_elevation(game, waypoint.position), 1
-    return waypoint.alt.meters, 1
+def _altitude_msl(waypoint: FlightWaypoint) -> float:
+    return waypoint.alt.meters if waypoint.alt_type == "BARO" else 0.0
 
 
 @dataclass(frozen=True)
@@ -225,6 +206,8 @@ class SupportTrack:
     #: The orbiting flight's AircraftType, so a tanker box can be offered only
     #: to jets that can take gas from it. None on a stand-in.
     aircraft_type: Any = None
+    #: The orbit's planned altitude, metres MSL (0 when the plan is AGL).
+    altitude_m: float = 0.0
 
     @property
     def center(self) -> tuple[float, float]:
@@ -316,6 +299,7 @@ def _tracks_of_types(
                 start=start,
                 end=end,
                 aircraft_type=flight.aircraft_type,
+                altitude_m=_orbit_altitude(flight),
             )
         )
     return tracks
@@ -325,6 +309,13 @@ def _tracks_of_types(
 #: preference order: the hold point is where the flight actually orbits while
 #: it waits, the join point is the next best fix.
 _HOLD_WAYPOINTS = (FlightWaypointType.LOITER, FlightWaypointType.JOIN)
+
+
+def _orbit_altitude(flight: FlightData) -> float:
+    for waypoint in flight.waypoints:
+        if waypoint.waypoint_type == FlightWaypointType.PATROL_TRACK:
+            return _altitude_msl(waypoint)
+    return 0.0
 
 
 def own_orbit_track(flight: FlightData) -> Optional[SupportTrack]:
@@ -338,13 +329,23 @@ def own_orbit_track(flight: FlightData) -> Optional[SupportTrack]:
     start, end = racetrack_ends(flight)
     callsign = short_callsign(flight.callsign)
     if start is not None and end is not None:
-        return SupportTrack(callsign=callsign, kind="CAP", start=start, end=end)
+        return SupportTrack(
+            callsign=callsign,
+            kind="CAP",
+            start=start,
+            end=end,
+            altitude_m=_orbit_altitude(flight),
+        )
     for waypoint_type in _HOLD_WAYPOINTS:
         for waypoint in flight.waypoints:
             if waypoint.waypoint_type == waypoint_type:
                 position = waypoint.position
                 return SupportTrack(
-                    callsign=callsign, kind="HOLD", start=position, end=position
+                    callsign=callsign,
+                    kind="HOLD",
+                    start=position,
+                    end=position,
+                    altitude_m=_altitude_msl(waypoint),
                 )
     return None
 

@@ -34,7 +34,7 @@ from game.missiongenerator.dtc.common import (
     known_enemy_threat_sites,
     leg_speed_kmh,
     seconds_of_day,
-    steerpoint_elevation,
+    steerpoint_altitude,
     waypoint_display_name,
 )
 
@@ -115,7 +115,7 @@ def _build_waypoints(flight: FlightData, game: Game) -> list[dict[str, Any]]:
                 waypoint_display_name(waypoint.display_name or waypoint.name),
                 waypoint.position.x,
                 waypoint.position.y,
-                steerpoint_elevation(waypoint, game),
+                steerpoint_altitude(waypoint, game),
             )
         )
     return points

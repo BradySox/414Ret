@@ -28,7 +28,6 @@ from game.missiongenerator.dtc.cartridge import DtcCartridge
 from game.missiongenerator.dtc.common import (
     SupportTrack,
     leg_altitude,
-    steerpoint_elevation,
     red_land_boundary,
     support_boxes,
     is_route_waypoint,
@@ -95,6 +94,12 @@ def _nav_settings_defaults(home_wypt: int) -> dict[str, Any]:
     }
 
 
+#: WYPT_NAV.lua's own limits on a waypoint's elevation. The route entry's cap
+#: is 80,000 ft (ROUTE_SEQ.lua), so a leg above 25,000 ft keeps its number there.
+_WYPT_ALT_MIN_M = -2000 * 0.3048
+_WYPT_ALT_MAX_M = 25000 * 0.3048
+
+
 def _build_wypt(
     flight: FlightData, game: Game, carrier: Optional[CarrierInfo]
 ) -> dict[str, Any]:
@@ -120,9 +125,9 @@ def _build_wypt(
             "note": "",
             "x": waypoint.position.x,
             "y": waypoint.position.y,
-            # The ground under the point, not the height to fly it at. ED fills
-            # this from terrain (WYPT_NAV.lua); the leg altitude rides NAV_ROUTE.
-            "alt": steerpoint_elevation(waypoint, game),
+            # The HSI's waypoint elevation, the same number the miz route gives
+            # the jet; NAV_ROUTE below carries the DTC Manager's planning copy.
+            "alt": min(max(route_alt_m, _WYPT_ALT_MIN_M), _WYPT_ALT_MAX_M),
             "altitudeType": altitude_type,
             "velocityType": 3,
             "R1": on_route,

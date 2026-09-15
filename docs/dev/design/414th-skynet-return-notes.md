@@ -154,7 +154,7 @@ The planner-side answer is recorded as row 8 of
 net order. The DM took the minimal shape the same day: `DegradeIads` offers detectors before
 opportunistic SAMs, the reactive tier is unchanged, and the full coverage-query rule stays
 recorded and unbuilt. Do not tune `adjustGoLiveRange` for this without a fresh call, and do
-not plan the escort as bait. In-game row: B125.
+not plan the escort as bait. In-game row: B126.
 
 Also seen: `0002 | OKAPI (SAM)`, an SA-11 site regenerated as four launchers after losing its
 search radar and command post on turn 1, is rejected by `setupElements` (no search radar) and

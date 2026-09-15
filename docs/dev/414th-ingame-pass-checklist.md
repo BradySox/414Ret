@@ -66,7 +66,7 @@ Shahed-136s and 3 SCUDs shot down, for no air-to-air losses; red SAMs killed 12 
 SA-11, 1 SA-15), five of them one DEAD package that never fired — see G42. Rows moved: **B107
 VERIFIED**, **B122 PARTIAL**; evidence added to B48, B70, B99, B97, G42, G30, B39, B111, B121,
 B17, B32. One planner change came out of it: detectors before opportunistic SAMs in
-`DegradeIads` (doctrine row 8, minimal shape); its flown pass is **B125**.
+`DegradeIads` (doctrine row 8, minimal shape); its flown pass is **B126**.
 
 | Row | Why test 32 could not answer it |
 |---|---|
@@ -121,7 +121,7 @@ stress it · `✗` fail signature reproduced in-game.
 | B122 | A survivor lands where his own chute came down, not where another crew's did | CSAR (#929 adoption) | ◐ |
 | B123 | An Armed Recon flight engages a gun-defended target instead of overflying the search point | §35 | ☐ |
 | B124 | A hand-fragged Harrier DEAD opens the New Flight dialog on the DEAD preset, not a stock Snakeye fit | New Flight dialog | ☐ |
-| B125 | An AI DEAD gets its shot: the EWR is fragged first, and the site it covered is live the turn after | doctrine row 8 | ☐ |
+| B126 | An AI DEAD gets its shot: the EWR is fragged first, and the site it covered is live the turn after | doctrine row 8 | ☐ |
 | G25 | Armed Recon package: recon drone + SEAD Viper escort + 4-ship sweep | §3 | ◐ |
 | G30 | Skynet point defence: the paired SHORAD answers the HARM shot | Skynet return | ☐ |
 | G42 | Skynet is the engine again: sites dark until cued, HARM defence, no `enableEmission` crash | Skynet return | ☐ |
@@ -2461,7 +2461,7 @@ target is actually enough reach in a real laydown, and whether the message lands
   regressed or the auto-planner reached it (see the scoping note; the planner path is a
   known, unfixed leak).
 
-### B125 — An AI DEAD gets its shot: the EWR is fragged first, and the site it covered is live the turn after · doctrine row 8 · ☐ UNTESTED
+### B126 — An AI DEAD gets its shot: the EWR is fragged first, and the site it covered is live the turn after · doctrine row 8 · ☐ UNTESTED
 
 **History:** built 2026-09-15 off test 32, minimal shape of doctrine-mining row 8. `DegradeIads`
 offers the detector tier before the opportunistic LORAD/MERAD tier; the reactive tier (a SAM

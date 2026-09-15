@@ -7398,6 +7398,8 @@ Player-skill aircraft group; it writes `dynSpawnTemplate = true` on the group an
 `linkDynTempl = <groupId>` on the airbase's warehouse entry for that aircraft type. What the
 template carries into the spawned jet beyond loadout is unverified from the session box, and
 so is whether the template group stays in the slot list. Both decide the build's shape.
+**2026-09-15, DM:** the second is answered. A group ticked as a template stays in the slot
+list, so the build marks the real flight and needs no clone. Route carry and `wsType` remain.
 
 - **Setup:** any miz with one Player Hornet group at a field that has dynamic spawn on. Give
   the group three or four waypoints, a non-default radio preset table and a non-stock
@@ -7406,7 +7408,8 @@ so is whether the template group stays in the slot list. Both decide the build's
   kneeboard and the HSI, the template's presets in the radio, and the template's payload.
 - **Record, whichever way it goes:**
   1. Route carried: yes / no.
-  2. The original Player group still in the slot list after ticking the box: yes / no.
+  2. ~~The original Player group still in the slot list after ticking the box~~ — yes,
+     answered 2026-09-15.
   3. In the saved miz's `warehouses` file, whether the field's Hornet entry gained a
      `wsType` table next to `linkDynTempl`.
 - **Fail signatures:** the dynamic jet spawns with the stock loadout and no route (the link

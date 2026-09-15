@@ -43,9 +43,9 @@ Python only. No plugin, no Lua.
 1. **Pick one donor flight per airbase and aircraft type.** Prefer a player-crewed flight
    of that type at that base. If none, synthesize a BARCAP over the field so the jet gets
    the base's comm card and a sane orbit.
-2. **Clone the donor's group** into a template group: same payload, route, radios,
-   properties, marked `dynSpawnTemplate`. The real pre-fragged slot is untouched. Whether
-   the clone is needed at all is §4's second question.
+2. **Mark the donor's own group** `dynSpawnTemplate`. No clone: the DM confirmed
+   2026-09-15 that a template group stays in the slot list, so the pre-fragged slot still
+   flies as itself and also seeds the dynamic spawns of its type at that field.
 3. **Write the airbase link** into the warehouse entry the generator already emits.
 4. **Gate on `dynamic_slots`.** Nothing changes for a game with it off.
 5. **pydcs:** a `dyn_spawn_template` field on `FlyingGroup.dict()` and a per-type
@@ -65,11 +65,12 @@ on `docs/dev/flycards/LOCAL.md` carry the procedure.
 
 1. **Does the route carry?** Loadout and radios almost certainly do. If waypoints do not,
    the build shrinks to comms and loadout and the donor choice barely matters.
-2. **Does marking a group as a template hide it from the slot list?** If yes, the clone
-   in §3 step 2 is mandatory. If no, mark the real flight and skip the clone.
+2. **Does marking a group as a template hide it from the slot list?** **Answered
+   2026-09-15 (DM, in the editor): no.** The template group is still slottable. §3 step 2
+   marks the real flight and there is no clone.
 3. **Does DCS need the `wsType` id in the warehouse entry?** The editor writes a four-int
    `wsType` next to `linkDynTempl`. pydcs carries no such id for aircraft. If DCS matches
    on the key name alone, the entry is cheap. If it needs `wsType`, that is a data table
    to build first.
 
-Write the three answers into this note. They decide which of §3's steps survive.
+Questions 1 and 3 are still open. Write their answers here; they decide the rest of §3.

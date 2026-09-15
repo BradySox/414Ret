@@ -2890,8 +2890,11 @@ defensive threat response.
   deterministic planner, so existing campaigns and tests are unchanged.
 - **Wired into the opportunistic compound tasks only**: `AttackBuildings` (strike),
   `AttackShips` (anti-ship), `AttackAirInfrastructure` (OCA), `AttackBattlePositions` (BAI),
-  and the **non-threatening** tiers of `DegradeIads` (opportunistic DEAD / detector
-  suppression). The reactive `DegradeIads` tier (`state.threatening_air_defenses` — SAMs
+  and the **non-threatening** tiers of `DegradeIads` (detector suppression first, then
+  opportunistic DEAD — detectors lead since 2026-09-15, because a Skynet-held SAM stays dark
+  until its target is in the kill zone and AI fires HARMs only at an emitter, so the EWR
+  covering a site has to die before an AI DEAD at that site can shoot; test 32, doctrine
+  note row 8, `tests/test_dead_net_order.py`). The reactive `DegradeIads` tier (`state.threatening_air_defenses` — SAMs
   actually threatening a planned target) is left strictly deterministic on purpose, as are
   BARCAP wave scheduling, escort sizing, and the QRA dispatcher. Variety never delays a
   threat response.

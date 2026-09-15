@@ -56,6 +56,29 @@ test 24 shows a count that is too high.
 a Russian T-90 records as `Coalition: Allies` with `Color: Red`. Use `Color`. Object positions are
 also relative to `ReferenceLatitude=38 / ReferenceLongitude=36`, not absolute.
 
+## Test 32 — what it reached, and what it could not (2026-09-15)
+
+Persian Gulf — WRL Operation Noisy Cricket Redux turn 2, no player slot (watched from the
+spectator seat at acceleration), 2 h 14 min of sim in 46 wall-minutes, `Tacview-20260915-174631`,
+DCS 2.9.29.27468, build `fd04b4a66` (the `.miz` was generated at 17:42; `main` took #1020 at
+18:34). The fight: blue 13 air-to-air kills (10 AIM-54, one each AIM-7, AIM-9, AIM-120) plus 15
+Shahed-136s and 3 SCUDs shot down, for no air-to-air losses; red SAMs killed 12 blue jets (11
+SA-11, 1 SA-15), five of them one DEAD package that never fired — see G42. Rows moved: **B107
+VERIFIED**, **B122 PARTIAL**; evidence added to B48, B70, B99, B97, G42, G30, B39, B111, B121,
+B17, B32. One planner change came out of it: detectors before opportunistic SAMs in
+`DegradeIads` (doctrine row 8, minimal shape); its flown pass is **B125**.
+
+| Row | Why test 32 could not answer it |
+|---|---|
+| B120, G36, H14, B106, B117, B119 | No player slot, so nothing that needs a human happened |
+| B121 | No AI flight crossed a neutral border in 2 h 14 min; the polygons were read out of the `.miz` and checked |
+| G30 | Skynet paired one red point defence (POODLE) and no HARM was fired at its parent |
+| B108, B103 | No front line on this map, so no TIC formation |
+| B63 | 16 scenery objectives known, none struck |
+| C9 | Only two flights recovered to CVN-71, 90 s apart |
+| B111 | No Hornet striker; the measurement is recorded in the row |
+| B32 | Three Silkworm groups stood; no blue ship came in range |
+
 ## Outstanding rows at a glance
 
 87 rows need a live pass. Full detail is under each `###` heading below —
@@ -95,9 +118,10 @@ stress it · `✗` fail signature reproduced in-game.
 | B99 | AI packages arrive inside the mission, not after it | §8 | ◐ |
 | B120 | Neutral border: warned, then the battery engages if you press | §98 | ☐ |
 | B121 | Neutral border: AI intruders are never engaged | §98 | ☐ |
-| B122 | A survivor lands where his own chute came down, not where another crew's did | CSAR (#929 adoption) | ☐ |
+| B122 | A survivor lands where his own chute came down, not where another crew's did | CSAR (#929 adoption) | ◐ |
 | B123 | An Armed Recon flight engages a gun-defended target instead of overflying the search point | §35 | ☐ |
 | B124 | A hand-fragged Harrier DEAD opens the New Flight dialog on the DEAD preset, not a stock Snakeye fit | New Flight dialog | ☐ |
+| B125 | An AI DEAD gets its shot: the EWR is fragged first, and the site it covered is live the turn after | doctrine row 8 | ☐ |
 | G25 | Armed Recon package: recon drone + SEAD Viper escort + 4-ship sweep | §3 | ◐ |
 | G30 | Skynet point defence: the paired SHORAD answers the HARM shot | Skynet return | ☐ |
 | G42 | Skynet is the engine again: sites dark until cued, HARM defence, no `enableEmission` crash | Skynet return | ☐ |
@@ -192,7 +216,7 @@ stress it · `✗` fail signature reproduced in-game.
 | B104 | The Viper's ROE tab declares the campaign's own sides | §74 | ☐ |
 | B105 | The Apache's cartridge loads: route, targets and the front line on the TSD | §74 | ☐ |
 | B106 | The C-130J King can be fragged into a rescue, and holds an orbit clear of the threat | CSAR | ☐ |
-| B107 | The log stops repeating a MOOSE event error thousands of times | vendored `Moose.lua` | ☐ |
+| B107 | The log stops repeating a MOOSE event error thousands of times | vendored `Moose.lua` | ☑ |
 | B108 | A stuck TIC unit names itself, and the retries are spread not concentrated | §9 TIC | ☐ |
 | B109 | Payload backups leave `UnitPayloads` and the launch error stops | §73 | ☐ |
 | B110 | A SEAD jet's steerpoints are the site's emitters, and the card's STPT numbers match | §5 / §3 | ☐ |
@@ -669,6 +693,8 @@ jets. See §62.
 
 ### B17 — Carrier deck spawn policy (six-pack last resort + MP slot timing) · §64 · ◐ PARTIAL
 
+**2026-09-15, test 32** — six Hornets (three BARCAP pairs), the E-2D and the A-6E tanker were on CVN-71 at T0; all six Hornets were assigned catapults and airborne inside the first four minutes, none stuck. No Tomcat on the deck, and the build predates #1020.
+
 > **Test 9 flown 2026-08-18** (Syria `operation_desert_trident`, `Tacview-20260818-214946` + `dcs.log` + `state.json` + the generated `.miz`) — **the six-pack was never needed on a genuinely full deck.** Read off
 > the generated `.miz`: **24 deck spawns on CVN-72** (8 BARCAP + 16 SWIFT BAI) plus 8 on
 > LHA-1 Tarawa, **all 32 `TakeOffParkingHot`**, with `carrier_deck_decorations` on. The DM's
@@ -845,6 +871,8 @@ jets. See §62.
 
 ### B32 — Sea-supply convoys + coastal anti-ship engagement · §78 · ☐ UNTESTED
 
+**2026-09-15, test 32** — three Silkworm coastal groups (DOG, PELICAN, DEER) stood on the red coast; no blue ship came within their range and none fired. A HARM killed DOG's search radar. Not exercised.
+
 **2026-08-21, DM call — the coastal shoot-and-scoot is dead, this row is not.**
 `coastal_missile_relocation` (§49's coastal opt-in) was removed: "it doesn't work and was
 proven." The vanilla Silkworm battery is a fixed emplacement — `hy_launcher` and
@@ -912,6 +940,8 @@ circle would obviously be fake. Nothing to fly. See features doc §79 and §3.
 - **Fail signature:** still four identical hulls (the faction genuinely fields one hull of that class — check its roster before suspecting code; or the layout's slot declares explicit `unit_types:`); a speedboat/submarine/second carrier inside a surface screen (the family restriction regressed); ships colliding or drifting apart under way (mixed hull lengths against layout positions authored for Burkes — a template-spacing problem, fixable in the layout `.miz`); a carrier objective whose flagship resolves to an escort (`find_carrier_unit` takes `groups[0].units[0]` — the carrier slot must stay single-unit); or a SAM site / armor group suddenly fielding mixed types (mixing leaked past `NavalLayout`).
 
 ### B39 — Cross-turn naval magazines · §81 · ◐ PARTIAL
+
+**2026-09-15, test 32** (Persian Gulf — WRL Operation Noisy Cricket Redux turn 2, no player slot, 2 h 14 min of sim at acceleration, `Tacview-20260915-174631`, DCS 2.9.29.27468, build `fd04b4a66`) — the test-30 shape again: `0132 | TARANTULA (Naval Two Ship)` released weapons-free at +118 s with 12 rounds in the magazine table, and is not in the `.miz`; MOSQUITO is. Six groups released between +66 s and +326 s, 52 s apart. No anti-ship shot all mission; `naval_magazines_state` empty.
 
 **2026-09-13, test 30** (Persian Gulf — Scenic Route turn 1) — the plugin armed on groups
 that were not in the mission. `NAVALMAGAZINES|: 0061 | MONSTER (Naval Two Ship) released
@@ -2431,6 +2461,30 @@ target is actually enough reach in a real laydown, and whether the message lands
   regressed or the auto-planner reached it (see the scoping note; the planner path is a
   known, unfixed leak).
 
+### B125 — An AI DEAD gets its shot: the EWR is fragged first, and the site it covered is live the turn after · doctrine row 8 · ☐ UNTESTED
+
+**History:** built 2026-09-15 off test 32, minimal shape of doctrine-mining row 8. `DegradeIads`
+offers the detector tier before the opportunistic LORAD/MERAD tier; the reactive tier (a SAM
+threatening a planned strike) is unchanged. Skynet holds a netted site dark until its target is
+in the kill zone, and DCS AI fires a HARM only at an emitter, so on test 32 a DEAD four-ship at a
+dark SA-11 died without a shot while the same fit at a lit SA-11 killed two launchers. Once the
+EWR covering a site is dead, Skynet runs the site autonomous and live from T0.
+
+- **What CI cannot exercise:** that a site whose covering EWR died last turn is actually live at
+  mission start, and that the AI DEAD then fires at it. The ordering is pinned by
+  `tests/test_dead_net_order.py`; the runtime half is Skynet's.
+- **Setup:** any campaign with a red EWR covering a radar SAM the planner wants (Red Tide's rear
+  hubs, or this Persian Gulf save). Generate a turn with an AI DEAD or two and read the ATO.
+- **Pass:** the ATO's opportunistic DEAD targets name the EWR before the SAM it covers. On the
+  turn after the EWR dies, the SAM it covered is radiating from mission start (RWR nail on
+  ingress, no `SKYNET` go-live wait) and the AI DEAD at it fires.
+- **Fail signatures:**
+  1. **The EWR is fragged but the SAM still sits dark next turn** — another parent still covers
+     it (a SAM-as-EWR, an AWACS), or the site still has C2, comms and power; that is the full
+     rule's territory, not a defect here.
+  2. **A DEAD at a SAM that threatens a planned strike still dies without a shot** — expected;
+     the reactive tier was left alone on purpose.
+
 ### G25 — Armed Recon package: recon drone + SEAD Viper escort + 4-ship sweep · §3 · ◐ PARTIAL
 
 **History:** drone-in-package + TARPS-vs-CP + the convoy hunt VERIFIED in a 2026-07-06 flown session; the auto-planner 4-ship + SEAD-escort composition and the post-standoff AI hunt still owed
@@ -2533,6 +2587,8 @@ target is actually enough reach in a real laydown, and whether the message lands
 - **Fail signature:** dcs.log still shows "no rescue helos/template; skipping" (the old bail; stale plugin) or "dcsRetribution.CombatSAR not present" (the emitter early-return resurfaced); no snatch with force-capture on (G20 regression); the un-rescued pilot dies at debrief with the toggle on (the `_combat_sar_mia_unit_ids` sparing / `combat_sar_survivors` state never written — check state.json); no re-spawn next mission (`persistentSurvivors` missing from the miz's CombatSAR node); the same evader duplicated in the ledger (turn_downed reset); an evader stranded MIA forever after toggling the setting off mid-campaign (the always-resolve contract broke); a capture roll that never fires even 40 NM deep (`resolve_downed_pilots` not hooked in `finish_turn`).
 
 ### G30 — Skynet point defence: the paired SHORAD answers the HARM shot · Skynet return · ☐ UNTESTED
+
+**2026-09-15, test 32** (Persian Gulf — WRL Operation Noisy Cricket Redux turn 2, no player slot, 2 h 14 min of sim at acceleration, `Tacview-20260915-174631`, DCS 2.9.29.27468, build `fd04b4a66`) — **not exercised through Skynet; the intercept itself is proven.** Skynet paired one red point defence, `0114 | POODLE (PD)`, and no HARM was fired at its parent, so it never woke. Five of the eight HARMs were still intercepted by SA-15 Tors in the coastal Silkworm groups and the airfield SHORAD groups (terminal 38–95 m from a 9M330, same second), under native DCS AI; the other three hit LEOPARD's two launchers and DOG's Silkworm search radar. The row still needs a shot at a site whose PD Skynet holds dark.
 
 > **Re-pointed 2026-09-12.** The MANTIS `AddShorad` link is gone. Skynet pairs each site's
 > `PD` groups to it natively (`addPointDefence`, from the same emitted arrays) and wakes them
@@ -4623,6 +4679,8 @@ are cut*.
 
 ### B48 — Naval station-keeping racetracks · §87 · ◐ PARTIAL
 
+**2026-09-15, test 32** (Persian Gulf — WRL Operation Noisy Cricket Redux turn 2, no player slot, 2 h 14 min of sim at acceleration, `Tacview-20260915-174631`, DCS 2.9.29.27468, build `fd04b4a66`) — **first red evidence, on a mod hull.** MOSQUITO, the two Iranian FACs from the CurrentHill pack, sailed 13.5–14.0 km inside a 5.3 km box over 134 min on the 5-waypoint 15.9 km oval the `.miz` gives them, at a 10 kt commanded speed. CVN-71, LHA-1 and their six Burkes ran 62–84 km on the 2-waypoint 100 km route, §88 by design. The second red group, TARANTULA, was armed by the magazine plugin but is not in the `.miz` (see B39).
+
 **2026-09-13, test 30** (Persian Gulf — Scenic Route turn 1, `Tacview-20260913-125128`, 59 min
 of sim, DCS 2.9.29.27468) — **holds up, fourth campaign, both authored ship groups.**
 ALBATROSS (Ticonderoga + Perry) sailed 14.9 / 20.9 km for 2.5 / 1.9 km of net drift.
@@ -5202,6 +5260,8 @@ actually are.
 > weighting. That row needs a lopsided pair.
 ### B70 — Sortie records reach the campaign · §91 · ◐ PARTIAL
 
+**2026-09-15, test 32** (Persian Gulf — WRL Operation Noisy Cricket Redux turn 2, no player slot, 2 h 14 min of sim at acceleration, `Tacview-20260915-174631`, DCS 2.9.29.27468, build `fd04b4a66`) — **92 records, and the numbers reconcile with the recording.** Blue records claim 28 air kills; the recording shows 14 red aircraft and 13 Shahed-136s shot down by fighters, and the drones count as air kills, so 27 against 28 is the recorder and Tacview reading the same fight. The eight HARM shots sit on the four WEKA DEAD Vipers at two each. `state.json` is 672 KB. Three shapes to read a SITREP with: a wingman that never became the group's anchor carries `first_seen −1`, no track and only its events (`game/sortierecord.py` folds that to a 0 s duration); parked alert jets, the late-activated §61 templates and the Abu Musa Su-25Ts all get the two-sample stub; and the last sample of a jet that landed and shut down reads `fuel 0` (MUSK Strike, WOLFHOUND, MARLIN SEAD), which is DCS after shutdown, not a leak.
+
 **2026-09-13, test 30** (Persian Gulf — Scenic Route turn 1, no player, 59 min of sim) — **the
 two-point question is answered by the recorder's own code, and the numbers are believable.**
 134 records: 26 moved, 108 sat. A record whose aircraft never moves keeps two rows by design:
@@ -5504,6 +5564,8 @@ Play a turn on a **front-less** campaign whose AWACS is not at the field nearest
   3. **A fronted campaign changes.** It should not — only the front-less branch moved.
 
 ### G42 — Skynet is the engine again · Skynet return · ☐ UNTESTED
+
+**2026-09-15, test 32** (Persian Gulf — WRL Operation Noisy Cricket Redux turn 2, no player slot, 2 h 14 min of sim at acceleration, `Tacview-20260915-174631`, DCS 2.9.29.27468, build `fd04b4a66`) — **ran the full 2 h 14 min, no crash, no `enableEmission` fault; two findings.** Both nets built, and the test-30 flat-top EWR rejection did not recur. **(1) A mauled site comes back outside the net.** `0002 | OKAPI (SAM)` was rejected as a site Skynet cannot handle: it is an SA-11 site regenerated as four launchers after losing its search radar and command post on turn 1, so `setupElements` finds no search radar, it is cleaned up, and it fights as plain DCS AI, radiating from T0. Its eight launches killed three Al Minhad BARCAP Tomcats 60–64 km from the nearest intact site. Any radar SAM that loses its search radar will come back this way. **(2) The sites-dark half works, and it costs AI DEAD flights their shots.** KIWI DEAD (four F-16CM with AGM-88C and AGM-65G) flew at a Skynet-held SA-11 that stayed dark until they were inside 30 km; it then fired ten, the Vipers fired nothing, and all four plus the Mirage escort were lost. WEKA DEAD, same fit, flew at LEOPARD, an SA-11 that had already lit up to shoot the SEAD escort Hornets ahead of it; the Vipers put eight HARMs on it, killed two launchers, and came home. DCS AI only shoots a HARM at an emitter, and a Skynet site emits only once its target is inside the envelope, so an AI DEAD flight against a disciplined site never gets a shot off. Whether that is the accepted trade of the return, a `goLiveRange` setting, or a planner rule (no AI DEAD against a Skynet-held site without something lighting it first) is a DM call.
 
 **2026-09-13, test 30** (Persian Gulf — Scenic Route turn 1, the first flight on the Skynet
 return, build `78085dfd7`) — **loads and runs; one name defect.** Skynet `baron-branch
@@ -6124,6 +6186,8 @@ mission-generation question.
   that is enough to contest the pass, and whether Kobuleti's transit leaves useful fuel.
 ### B97 — One salvo, and only the targeted flight breaks · §94 · ◐ PARTIAL
 
+**2026-09-15, test 32** (Persian Gulf — WRL Operation Noisy Cricket Redux turn 2, no player slot, 2 h 14 min of sim at acceleration, `Tacview-20260915-174631`, DCS 2.9.29.27468, build `fd04b4a66`, DEBUG off) — **the population metric repeats; one package did not react at all.** `AIReaction| Smart Threat Reaction loaded` is in the log. Across 53 red SAM launches (32 SA-11, 20 SA-15, 1 SA-5) with 6–16 blue aircraft inside 60 km, the number turning more than 90° within 60 s was median 1, mean 1.21, maximum 5 — test 24's shape. The exception is KIWI: the SA-11 site fired eight missiles at the DEAD four-ship and its Mirage escort between t=4425 and t=4507, none of the five turned more than 90°, and all five died (t=4471–4541). With DEBUG off there is no way to tell a tag that never landed from an `AttackGroup` run that ignored `EVADE_FIRE`. Loss count for the falsifier: 12 blue AI to SAMs this turn (11 SA-11, 1 SA-15), none to red fighters. Re-fly with DEBUG; see G42 for why the DEAD flight was in the envelope at all.
+
 **2026-08-29, test 24** (Caucasus — Iron Gate turn 1, 72 min, `Tacview-20260829-162330`, DCS 2.9.29.27278) — **strong supporting evidence; one setting short of closing.**
 `AIReaction| Smart Threat Reaction loaded (DEBUG=false)` is in the log, so fail signature 1 (the
 plugin never loaded) is ruled out. Across **83 red SAM launches**, each with 13–14 blue aircraft
@@ -6316,6 +6380,8 @@ mountain or coastal front will do.
 
 ### B120 — Neutral border: warned, then the battery engages if you press · §98 · ☐ UNTESTED
 
+**2026-09-15, test 32** — not exercised: no player slot, `engageAi` off.
+
 **2026-09-13, test 30** — not exercised: the mission had no player slot and `engageAi` was
 off. The batteries were up for the whole mission (see B121).
 
@@ -6372,6 +6438,8 @@ the SAM alone 2026-09-07. Full history in the design note.
 
 
 ### B121 — Neutral border: AI intruders are never engaged · §98 · ☐ UNTESTED
+
+**2026-09-15, test 32** (Persian Gulf — WRL Operation Noisy Cricket Redux turn 2, no player slot, 2 h 14 min of sim at acceleration, `Tacview-20260915-174631`, DCS 2.9.29.27468, build `fd04b4a66`, `engageAi` off) — **consistent, still not closed, and the polygon question is answered this time.** The zone table was read out of the flown `.miz` (Pakistan ×2, Saudi Arabia and Qatar neutral; UAE and Oman blue; Iran red) and every aircraft track in the recording was tested against it: no blue or red aircraft sample was inside a neutral country at any point in 2 h 14 min, and the neutral batteries (Saudi Patriot, Qatar SA-3, Pakistan SA-11 and SA-3) fired nothing. No stray happened, so the row cannot move; it needs a turn where one does.
 
 **2026-09-13, test 30** (Persian Gulf — Scenic Route turn 1, `Tacview-20260913-125128`, no
 player, DCS 2.9.29.27468, `engageAi=false`) — **consistent, not closed.** Twelve batteries
@@ -6440,7 +6508,9 @@ in all four cases — the finding that helped kill the scramble. Superseded by t
 standing patrol; see the design note.
 
 
-### B122 — A survivor lands where his own chute came down, not where another crew's did · CSAR (#929 adoption) · ☐ UNTESTED
+### B122 — A survivor lands where his own chute came down, not where another crew's did · CSAR (#929 adoption) · ◐ PARTIAL
+
+**2026-09-15, test 32** (Persian Gulf — WRL Operation Noisy Cricket Redux turn 2, no player slot, 2 h 14 min of sim at acceleration, `Tacview-20260915-174631`, DCS 2.9.29.27468, build `fd04b4a66`) — **the matcher held on 13 ejections; the two-seater-over-land case did not occur.** One ejection came down on land: the Bandar Abbas F-5E at t≈2996, whose chute the recording tracks from 3,990 m to touchdown at x=−63788 z=−57751, 4,478 m from its ejection point. `state.json` records exactly that touchdown as `landed`, and the next-nearest open ejection was 46 km away. The other 12 (three Iranian intercept pairs, five blue Hornets and Tomcats, the Khasab F-14B crew) went into the water and kept their ejection point, and nothing was written onto another crew's record. The F-14B pair ejected last, over the sea, so the land two-seater case the setup asks for was not produced, and the next-turn map was not checked (the save was not captured). **A shape to know:** MOOSE CSAR spawns the in-mission survivor at the *ejection* point (`csarUsePara` is false), so the F-5E pilot's beacon sat at x=−59382 z=−56953 while the campaign will place him at the touchdown 4.5 km away. A high land ejection drifts that far.
 
 **History:** found 2026-09-13 on test 30 (Persian Gulf — Scenic Route turn 1). `state.json`
 recorded AUROCHS DEAD Pilot #4 (AV-8B, down in the Strait of Hormuz at x=−60040 z=159481 per
@@ -6532,6 +6602,8 @@ without releasing.
      the write path, not the dialog; dump the flight from the save before generating.
 
 ### B99 — AI packages arrive inside the mission, not after it · §8 · ◐ PARTIAL
+
+**2026-09-15, test 32** (Persian Gulf — WRL Operation Noisy Cricket Redux turn 2, no player slot, 2 h 14 min of sim at acceleration, `Tacview-20260915-174631`, DCS 2.9.29.27468, build `fd04b4a66`) — same shape. Five packages with TOTs from 15:44 to 16:16 on a 15:00 start (MUSK, WOLFHOUND, WEKA, MARLIN, KIWI); all five were airborne between t=967 and t=2633 and over their targets by t≈4600. The second half of the 2 h 14 min still had three BARCAP waves, both Hawkeyes and both tankers up, and a red F-5E pair launched at t=6536. Nothing was timed past the end. The cycle length itself still needs the app.
 
 **2026-09-13, test 30** (Persian Gulf — Scenic Route turn 1, no player, 59 min of sim) — 26
 flights moved; every blue package was airborne inside the first ten minutes, the AV-8B DEAD
@@ -6922,7 +6994,9 @@ through and going home.
   `distance_to_threat + THREAT_BUFFER` is genuinely that far. Working as designed;
   move the waypoints.
 
-### B107 — The log stops repeating a MOOSE event error thousands of times · vendored `Moose.lua` · ☐ UNTESTED
+### B107 — The log stops repeating a MOOSE event error thousands of times · vendored `Moose.lua` · ☑ VERIFIED (2026-09-15, test 32)
+
+**2026-09-15, test 32** (Persian Gulf — WRL Operation Noisy Cricket Redux turn 2, no player slot, 2 h 14 min of sim at acceleration, `Tacview-20260915-174631`, DCS 2.9.29.27468, build `fd04b4a66`) — **the guard holds.** The flown `.miz` was unpacked and its `Moose.lua` carries the `414Ret patch (event 61 spam)` row; `grep -c "EVENTMETA data for event ID" dcs.log` returns 0 over 46 wall-minutes, against 1,282 on test 30 and ~10,300 on the 09-13 Iraq turn. CTLD, CSAR (both sides), Skynet and the threat-reaction plugin printed their banners; no TIC was on this map. The whole log holds one MOOSE error: AIRBOSS `_GetWire` compares a number with nil when an AI aircraft lands on the LHA (`Moose.lua` line 64544 chains `~=` with `or`, which is always true, so the Tarawa path looks up wires it does not have). It fired once, for the rescue helo, and skips only that landing's `_RecoveredElement`. The 90 `ANTIFREEZE` stalls came under time acceleration and are not a signal.
 
 **2026-09-13, test 30** (Persian Gulf — Scenic Route turn 1, 59 min of sim at ~2.4×
 acceleration, no player slot, DCS 2.9.29.27468, build `78085dfd7`) — **not exercised: the
@@ -7071,6 +7145,8 @@ on that emitter.
   the full roster failed; `targets[0]` anchors the flight plan's timing math, so this
   would show up as a planning error rather than a quiet miss.
 ### B111 — A package's escort holds the striker's pace instead of running ahead · §8 cruise mach · ☐ UNTESTED
+
+**2026-09-15, test 32** (Persian Gulf — WRL Operation Noisy Cricket Redux turn 2, no player slot, 2 h 14 min of sim at acceleration, `Tacview-20260915-174631`, DCS 2.9.29.27468, build `fd04b4a66`, no Hornet striker, so the row does not move) — **first measurement, off the recording.** Join→ingress leg, ground speed and altitude: WEKA SEAD Escort (F/A-18C: AGM-88C, 2×GBU-38, AAQ-28, centreline tank) 548–566 kt at 22,000 ft against WEKA DEAD (F-16CM: AGM-88C, AGM-65G, HTS, ALQ-184) 577–590 kt at 22,000; MARLIN SEAD Escort (same Hornet fit) 393–440 kt at 22,000 against MARLIN Strike (F-16CM, GBU-31) 412–494; MUSK SEAD Escort 449–459 kt at 19,000–20,000 against MUSK Strike 436–441 at 19,000 and MUSK Escort (clean F-16CM) 442–475. The Hornet escort read 20–50 kt slower than its Viper striker on two legs and matched on the third; no escort ran ahead. Wind aloft is unknown, so these are ground speeds, not Mach.
 
 **Live for Hornet packages, a measurement row for everything else.** The mechanism landed
 2026-09-01 with **one authored airframe, the F/A-18C at M0.78**. A package pairing a Hornet

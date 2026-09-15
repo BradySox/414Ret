@@ -26,6 +26,8 @@ watch pointing at RETIRED `B42`.)*
 - **Test 30 (2026-09-13, Persian Gulf):** both authored ship groups measured off the ACMI —
   15–22 km sailed for 2–2.5 km of drift over 59 min, eight or more headings each. Fourth
   campaign in a row. Closing the row is a DM call; see B48.
+- **Test 32 (2026-09-15, Persian Gulf):** first red group measured — the two Iranian FACs
+  held a 5.3 km box for 134 min on their oval. Still a DM call.
 
 ### 2 · The day's flying is reported back, and the numbers are believable — `B70`
 
@@ -38,6 +40,9 @@ watch pointing at RETIRED `B42`.)*
 - **Why it's here:** both defects were fixed on 2026-08-20 against test 12's own save and the
   fix has not been seen on a fresh mission. This is the cheapest row on the board — it closes
   from a mission you already flew.
+- **Test 32 (2026-09-15, Persian Gulf, no player):** 92 records, 28 claimed air kills against
+  27 in the recording (Shahed drones count), hits never above shots, `state.json` 672 KB. The
+  file side passes; the SITREP itself was not opened.
 
 ### 3 · The escorts leave you at the split instead of following you home — `B78`
 
@@ -51,22 +56,13 @@ At your split point, look behind you. **Free — it is the flight you were flyin
   opposite failure, fixed again 2026-08-21. Neither shape has been flown since. Both failures
   are visible from the cockpit without looking anything up.
 
-### 4 · The log is no longer 60 % one MOOSE error — `B107`
+### 4 · A ground-level waypoint sits at the field's elevation — `B79`
 
-**Where:** `Saved Games/DCS/Logs/dcs.log` after any flight, one grep. **~1 min.**
+**Where:** the flight editor, any flight, ~30 s. App-side.
 
-- **Pass:** `grep -c "EVENTMETA data for event ID" dcs.log` returns 0, and every plugin still
-  prints its startup banner (CTLD, CSAR, Skynet, TIC).
-- **Fail:** thousands of them still — the `414Ret patch (event 61 spam)` guard in the vendored
-  `Moose.lua` was lost, or the `.miz` predates 2026-09-13. A *different* unknown event id means
-  DCS added another event.
-- **Why it's here:** it fired 6,807 times in one 7-minute mission and 11,861 in an archived
-  Germany Cold War log; the first fix (2026-08-29) keyed the wrong event and failed on
-  2026-09-13 with ~10,300 more. It cannot be exercised headlessly — the harness never raises it.
-- **Test 30 (2026-09-13, Persian Gulf) did not reach it:** the `.miz` was generated at 12:50 and
-  `main` took the guard at 13:23, so the flown `Moose.lua` still had only the #997 rows
-  (1,282 occurrences, no TIC on the map). Check the main checkout's reflog against the
-  archive stamp before reading a count as a verdict.
+- **Pass:** a waypoint the plan puts on the ground reads the field's elevation, not sea level.
+- **Fail:** a takeoff, landing or divert point at 0 ft on a field that is not at sea level.
+- **Why it's here:** pulled from the parking lot 2026-09-15 when `B107` closed on test 32.
 
 ### 5 · A Viper steerpoint's ELEV is the altitude you planned — `B90`
 
@@ -86,12 +82,11 @@ data). **~1 min.**
 
 | Row | Watch for | Note |
 |---|---|---|
-| `B79` | A ground-level waypoint sits at the field's elevation, not at sea level | App-side, ~30 s in the flight editor |
 | `B77` | The ramp time you are given matches the airframe you are starting | App-side; a Tomcat and a Viper should not get the same allowance |
 | `B54` | The planner behaviour bar actually switches the suite | Settings UI, ~1 min |
 | `B108` | A stuck TIC unit names itself in the log, and the retries spread across many units | Same log, same read as slot 5; the distribution is the actual question |
 | `B109` | `_retribution_backups` is gone from `UnitPayloads` and the launch error with it | App-side; set one default loadout first, then restart DCS |
-| `B111` | F10 ground speed **and altitude** for a striker and its escort, after the join | A measurement, not yet a pass/fail — it is what unblocks authoring `cruise_mach:`. Record the loadout with each number |
+| `B111` | F10 ground speed **and altitude** for a striker and its escort, after the join | First numbers recorded off test 32's recording (three Hornet-escort / Viper-striker legs); see the row. A measurement, not yet a pass/fail — it is what unblocks authoring `cruise_mach:`. Record the loadout with each number |
 
 Closed and dropped items, with the reasoning: [`ARCHIVE.md`](ARCHIVE.md).
 Contrived-condition tests live on [`LOCAL.md`](LOCAL.md).

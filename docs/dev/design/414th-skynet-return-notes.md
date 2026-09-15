@@ -132,3 +132,31 @@ These cost missions to learn and still hold, or hold in a changed form:
   is still right.
 - **The MOOSE plugins are untouched.** Rolling back MOOSE was put to the DM and declined; it is
   not a diff reducer.
+
+## Flown 2026-09-15 (test 32) — AI DEAD against a netted site
+
+Two identical DEAD four-ships met two SA-11 sites on one AI-only Persian Gulf turn.
+
+- WEKA's target had already lit up on the SEAD escort Hornets ahead of it. The Vipers fired
+  eight HARMs, killed two launchers, and came home. The two Hornets died lighting it.
+- KIWI's target stayed dark until the Vipers were inside 30 km, then fired ten. All four
+  Vipers and the Mirage escort died. Not one shot was fired back.
+
+The mechanism, read from the compiled Skynet: a netted site's default is
+`GO_LIVE_WHEN_IN_KILL_ZONE` (line 3040), and DCS AI fires a HARM only at an emitter. A site is
+live from T0 only when it is autonomous (`setToCorrectAutonomousState`): no covering EWR or
+SAM-as-EWR in detection range with power and comms, no usable command centre, or no active
+connection node. The sites-dark half of G42 works exactly as designed and it costs every AI
+DEAD flight its shot.
+
+The planner-side answer is recorded as row 8 of
+[414th-planner-doctrine-mining-notes.md](414th-planner-doctrine-mining-notes.md): AI DEAD in
+net order. The DM took the minimal shape the same day: `DegradeIads` offers detectors before
+opportunistic SAMs, the reactive tier is unchanged, and the full coverage-query rule stays
+recorded and unbuilt. Do not tune `adjustGoLiveRange` for this without a fresh call, and do
+not plan the escort as bait. In-game row: B125.
+
+Also seen: `0002 | OKAPI (SAM)`, an SA-11 site regenerated as four launchers after losing its
+search radar and command post on turn 1, is rejected by `setupElements` (no search radar) and
+fights as plain DCS AI, radiating from T0. Its eight launches killed three BARCAP Tomcats. Any
+radar SAM that loses its search radar comes back this way; it is outside the net and HARM-able.

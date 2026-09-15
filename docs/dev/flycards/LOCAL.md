@@ -86,6 +86,25 @@ minute, then relaunch and fly it properly.** Destroy the target, land, accept th
   scenery, so it could never be credited at all — was fixed 2026-08-30 from upstream #957 and
   is why the target must sit in clutter: an isolated zone would have passed before the fix too.
 
+### 3 · A dynamic-slot jet inherits a template's route and radios — `B125`
+
+**Why this is a card and not a code change.** The DM wants a dynamic-slot jet to carry a
+package's waypoints and comm card instead of spawning blank. DCS's **Dyn.SPAWN Template**
+checkbox looks like the hook, but two things are unverified and each changes the build:
+whether the route actually carries, and whether the warehouse entry needs `wsType`. (A
+third, whether ticking the box removes the template from the slot list, was answered
+2026-09-15: it does not.) Scoping in
+[`414th-dynamic-spawn-templates-notes.md`](../design/414th-dynamic-spawn-templates-notes.md).
+
+**Try:** any miz, one Player Hornet group at a field with dynamic spawn on. Give it a few
+waypoints, a non-default preset table and a non-stock payload. Tick **Dyn.SPAWN Template**,
+save, run it, and take a dynamic Hornet at that field. **~10 min.**
+
+- **Record:** route carried yes/no; whether the saved `warehouses` file gained a `wsType`
+  table next to `linkDynTempl`.
+- **Pass criterion:** none. This card produces three answers, not a verdict. Write them into
+  §4 of the note and the build follows from them. Two answers left.
+
 ## Done
 
 ### 3 · A downed pilot turns up MIA, then evades — `G29` — **OFF THE CARD 2026-08-20**

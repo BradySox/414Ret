@@ -521,6 +521,7 @@ class WaypointGenerator:
             delay = timedelta()
 
         placement_delay = self.needs_deck_placement_delay()
+        placement = self.deck_placement_delay()
 
         if self.should_delay_flight() or (
             placement_delay and not self.flight.client_count
@@ -531,7 +532,7 @@ class WaypointGenerator:
                 # the six-pack, but never activate a carrier group at exactly
                 # t=0 or it joins the mission-start deck fill anyway.
                 if placement_delay:
-                    delay = max(delay, timedelta(seconds=1))
+                    delay = max(delay, placement)
                 self.set_activation_time(delay)
             elif self.flight.start_type is StartType.COLD:
                 # Setting the start time causes the AI to wait until the
@@ -544,11 +545,11 @@ class WaypointGenerator:
                     # deck fill; activating it a second late keeps it clear of
                     # the six-pack while the StartCommand above still holds the
                     # AI to the planned push time.
-                    self.set_activation_time(timedelta(seconds=1))
+                    self.set_activation_time(placement)
         elif placement_delay:
             # No startup hold owed, but the group must still spawn a second
             # late to stay clear of the six-pack.
-            self.set_activation_time(timedelta(seconds=1))
+            self.set_activation_time(placement)
 
         # And setting *our* waypoint TOT causes the takeoff time to show up in
         # the player's kneeboard.
@@ -577,6 +578,18 @@ class WaypointGenerator:
         if not self.flight.client_count:
             return True
         return self.settings.carrier_deck_policy is CarrierDeckPolicy.LAST_RESORT
+
+    def deck_placement_delay(self) -> timedelta:
+        """How long after mission start a deck spawn is held for placement.
+
+        DCS hands out deck spots in spawn order, and the port-quarter pair is
+        the first it offers a Tomcat once the six-pack is closed (§64). Tomcats
+        spawn a second behind every other carrier group so the smaller jets
+        hold those two spots first; the DM does not want a Tomcat there.
+        """
+        if self.flight.unit_type.dcs_unit_type.id.startswith("F-14"):
+            return timedelta(seconds=2)
+        return timedelta(seconds=1)
 
     def set_activation_time(self, delay: timedelta) -> None:
         # Note: Late activation causes the waypoint TOTs to look *weird* in the

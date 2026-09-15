@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
@@ -38,6 +39,10 @@ from .csargenerator import CsarGenerator
 from .drawingsgenerator import DrawingsGenerator
 from game.weather.atmosxliveweather import LiveWeather, apply_weather
 from .dtc import DtcGenerator
+from .dynamicspawntemplates import (
+    DynamicSpawnTemplateGenerator,
+    WarehousesByControlPoint,
+)
 from .environmentgenerator import EnvironmentGenerator
 from .flotgenerator import FlotGenerator
 from .forcedoptionsgenerator import ForcedOptionsGenerator
@@ -479,6 +484,7 @@ class MissionGenerator:
 
     def generate_warehouses(self) -> None:
         settings = self.game.settings
+        warehouses_by_control_point: WarehousesByControlPoint = defaultdict(list)
         for tmu in self.unit_map.theater_objects.values():
             if (
                 tmu.theater_unit.is_ship
@@ -502,6 +508,8 @@ class MissionGenerator:
                 if tmu.theater_unit.is_ship or tmu.dcs_unit.category == "Heliports":  # type: ignore
                     warehouse["dynamicSpawn"] = settings.dynamic_slots
                     warehouse["allowHotStart"] = settings.dynamic_slots_hot
+                    control_point = tmu.theater_unit.ground_object.control_point
+                    warehouses_by_control_point[control_point.id].append(warehouse)
                 self.mission.warehouses.warehouses[tmu.dcs_unit.id] = warehouse
 
         # configure dynamic spawn, hot start of DS & dynamic cargo for airfields
@@ -509,3 +517,8 @@ class MissionGenerator:
             ap.dynamic_spawn = settings.dynamic_slots
             ap.allow_hot_start = settings.dynamic_slots_hot
             ap.dynamic_cargo = settings.dynamic_cargo
+
+        # §101: link each base's dynamic spawns to a player flight of the type.
+        DynamicSpawnTemplateGenerator(
+            self.mission, self.game, warehouses_by_control_point
+        ).generate()

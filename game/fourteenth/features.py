@@ -858,6 +858,15 @@ FEATURES: tuple[Feature, ...] = (
         100,
         plugin_id="opscsar",
     ),
+    Feature(
+        # Python only: the miz marks one client flight per base and type as
+        # DCS's Dyn.SPAWN Template and writes the warehouse link. Gated on
+        # dynamic_slots as well; off there means nothing is written.
+        "dynamic_spawn_templates",
+        "Dynamic spawn templates",
+        101,
+        settings_fields=("dynamic_slots_templates",),
+    ),
     # Always-on engine plugins — major 414th machinery documented in design notes
     # rather than a numbered "Features at a Glance" entry.
     Feature("skynet_iads", "Skynet IADS engine", plugin_id="skynetiads"),

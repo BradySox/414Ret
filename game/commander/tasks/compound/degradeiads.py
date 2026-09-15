@@ -33,12 +33,15 @@ class DegradeIads(CompoundTask[TheaterState]):
             - x.max_threat_range().meters,
         )
 
-        # Opportunistic tiers: which non-threatening SAM / detector to chip away
+        # Opportunistic tiers: which non-threatening detector / SAM to chip away
         # at is varied so red's offensive DEAD isn't identical every turn.
-        for air_defense in shuffled_by_priority(prioritized_air_defenses, state):
-            yield [self.plan_against(air_defense)]
+        # Detectors go first. A Skynet site stays dark until its target is in the
+        # kill zone, and AI only fires HARMs at an emitter; once the EWR covering it
+        # is dead the site runs autonomous and live. Test 32, doctrine note row 8.
         for detector in shuffled_by_priority(state.detecting_air_defenses, state):
             yield [self.plan_against(detector)]
+        for air_defense in shuffled_by_priority(prioritized_air_defenses, state):
+            yield [self.plan_against(air_defense)]
 
     @staticmethod
     def plan_against(

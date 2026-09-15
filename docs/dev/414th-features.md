@@ -6573,6 +6573,23 @@ start; WARM/RUNWAY/air starts take the existing full-delay late activation (taxi
 takeoff / push time). The ten-minute rule survives (a short hold still spawns at
 mission start), and AI flights and true MP missions are byte-identical.
 
+**Tomcats spawn a second behind the rest of the deck (2026-09-14, DM call):** the DM
+does not want an F-14 on the port-quarter pair — the two spots at the stern's port corner,
+by the radome (the Supercarrier guide's spots 7 and 8, p100; ship-frame (−84.5, −34) and
+(−96.5, −34) in `KNOWN_PARKING_SPOTS`). DCS hands out deck spots in spawn order, and the
+fork's own Tacview measurements record that pair as the first spots an F-14 is offered once
+the six-pack is closed (§72's spot table), while a Hornet's order runs through the
+by-the-island pair first and then the port quarter. So `deck_placement_delay()` holds the
+F-14 family (`dcs_unit_type.id` starting `F-14` — every Heatblur variant, the export
+A-95, the AI-only A and the B(U)) to a **2 s** activation where every other carrier
+group takes 1 s: by the time a Tomcat spawns, the Hornets that spawned at 1 s already hold
+those two spots, and the Tomcat is placed further along its own order. Best effort, not a
+fence: it needs at least four non-Tomcat jets spawning on the same boat at mission start
+(the by-the-island pair fills first), and a Tomcat activating at its push time later in
+the mission takes whatever is free then, port quarter included. `SIXPACK_FIRST` client
+Tomcats still spawn with the mission-start fill, where they take the six-pack, not the
+port quarter. Tests: the `*_tomcat_*` cases in `test_carrier_deck_policy.py`.
+
 **Wiring**: `waypointgenerator.set_takeoff_time` split into the hold delay (the
 WaitingForStart remaining) and `needs_deck_placement_delay()` (carrier COLD/WARM ground
 starts; AI always, clients per policy); `should_activate_late` exempts client carrier

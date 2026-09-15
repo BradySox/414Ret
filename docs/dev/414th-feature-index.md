@@ -112,5 +112,6 @@ pass checklist `§N` is unregistered, or this table drifts.
 | §98 | Neutral-faction border defense | `neutralborder` | `neutral_border_defense` |
 | §99 | Sandy rescue escort | — | — |
 | §100 | King on-scene commander | `opscsar` | — |
+| §101 | Dynamic spawn templates | — | `dynamic_slots_templates` |
 | — | Skynet IADS engine | `skynetiads` | — |
 | — | Splash Damage (414th tuned) | `splashdamage3` | — |

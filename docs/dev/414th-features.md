@@ -10427,3 +10427,64 @@ show for every client in a multi-crew group.
 - **No ADF tie-in.** The cockpit ADF (G33) and this DF are independent models of the same
   beacon. They agree on the channel and nothing else.
 - **No AI vectoring**, by decision (2026-09-12).
+## §101 — Dynamic spawn templates
+
+A pilot who takes a DCS dynamic slot instead of a fragged one gets a blank jet: stock
+loadout, no route, no radio presets, no properties. Added 2026-09-15. At each base, one
+player flight of each aircraft type is marked as DCS's **Dyn.SPAWN Template** and the
+base's warehouse entry is linked to it, so the dynamic jet is built from that flight.
+Design note: [`414th-dynamic-spawn-templates-notes.md`](design/414th-dynamic-spawn-templates-notes.md).
+
+### Files
+
+- `game/missiongenerator/dynamicspawntemplates.py` — `DynamicSpawnTemplateGenerator`.
+  Called at the end of `MissionGenerator.generate_warehouses`, after the air units exist
+  and the ship/heliport warehouses are emitted (it needs both).
+- `game/settings/settings.py` — `dynamic_slots_templates` (default on, enabled under
+  `dynamic_slots`).
+- `requirements.txt` — the pydcs pin moved to `BradySox/pydcs` `dyn-spawn-template`
+  (`beb37634`), one commit on the DTC pin: `FlyingGroup.dyn_spawn_template`, emitted as
+  `dynSpawnTemplate = true` only when set. **A pin bump: reinstall the venv.**
+- `tests/missiongenerator/test_dynamic_spawn_templates.py`.
+
+### What it does
+
+- **Donor:** one **client** flight per (departure control point, DCS type id), over both
+  coalitions' ATOs. A ground start beats an in-flight start; otherwise ATO order wins.
+- **Mark:** the donor's own group gets `dynSpawnTemplate = true`. No clone — a template
+  group stays in the slot list (DM, in the editor, 2026-09-15), so the fragged slot still
+  flies as itself.
+- **Link:** an airfield's goes on the pydcs `Airport.aircrafts` table
+  (`planes`/`helicopters` by type id); a carrier's or FARP's goes on every ship/heliport
+  warehouse of the control point. Entry shape is the editor's default
+  (`initialAmount = 100`, `unlimited = false`) plus `linkDynTempl`; no `wsType`.
+- Types with no client flight at a base stay blank, as before. Off with `dynamic_slots`.
+
+### Constraints — do not undo
+
+- **AI flights are never templates.** The editor clears the flag on a non-player group
+  (`me_aircraft.lua:1251`); an AI donor is an untested shape.
+- **Emit the group flag only when set.** Every other miz must serialize byte-identical
+  across the pin bump.
+
+### Tests
+
+`tests/missiongenerator/test_dynamic_spawn_templates.py` — both keys reach the miz text
+under the airport's id, the donor choice (ground start over air start, first in ATO
+order), both gates, the helicopter category, the carrier warehouse path, and a flight
+whose group is missing is skipped.
+
+### Needs an in-game pass — B125
+
+What the install's Lua could answer is in the design note §4. Two things only a fly
+answers: whether the route and radio presets carry (the slot-select dialog reads loadout,
+properties and livery off the template and hands the rest to native code), and whether the
+warehouse entry needs `wsType` (the editor's own loader fills it from the database when it
+is absent; the sim's loader is native).
+
+### Deferred
+
+- A synthesized donor (a BARCAP over the field) for types with no client flight at the
+  base — needs a planned flight, and it would have to be a client slot too.
+- The dynamic jet is still invisible to the campaign (no loss, no §58 card, no §74
+  cartridge). Separate and larger.

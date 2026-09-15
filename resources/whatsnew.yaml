@@ -13,6 +13,22 @@
 # changes sharing a date keep the order written here.
 
 entries:
+  - date: 2026-09-15
+    title: A dynamic slot inherits a player flight instead of spawning blank
+    change: >-
+      With dynamic slots on, each base's dynamic spawns of a type are now
+      built from a player flight of that type already fragged there (DCS's
+      own Dyn.SPAWN Template). The fragged flight still flies as itself. A
+      type with no player flight at the base still spawns blank, and the
+      template's times on target go stale. Its own toggle sits under the
+      dynamic slots setting.
+    watch: >-
+      Join a mission late and take a dynamic jet of a type a player package
+      flies from the same base. It should carry that flight's loadout and
+      properties for certain; check whether the route is on the HSI and
+      the comm card is in the radio presets, and say which. A stock jet
+      with no route means the link did not take.
+    row: B125
   - date: 2026-09-13
     title: Viper and Hornet steerpoints read their planned altitude again
     change: >-

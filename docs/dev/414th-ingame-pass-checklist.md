@@ -121,7 +121,7 @@ stress it · `✗` fail signature reproduced in-game.
 | B122 | A survivor lands where his own chute came down, not where another crew's did | CSAR (#929 adoption) | ◐ |
 | B123 | An Armed Recon flight engages a gun-defended target instead of overflying the search point | §35 | ☐ |
 | B124 | A hand-fragged Harrier DEAD opens the New Flight dialog on the DEAD preset, not a stock Snakeye fit | New Flight dialog | ☐ |
-| B125 | A dynamic-slot jet spawns with the template's route, radios and loadout | dynamic spawn templates (scoping) | ☐ |
+| B125 | A dynamic-slot jet spawns with the template's route, radios and loadout | §101 | ☐ |
 | B126 | An AI DEAD gets its shot: the EWR is fragged first, and the site it covered is live the turn after | doctrine row 8 | ☐ |
 | G25 | Armed Recon package: recon drone + SEAD Viper escort + 4-ship sweep | §3 | ◐ |
 | G30 | Skynet point defence: the paired SHORAD answers the HARM shot | Skynet return | ☐ |
@@ -7466,30 +7466,34 @@ actually is on the F10 map before you start (the host can use the reveal overvie
 - **An AI Sandy changes course after a pass.** Something pushed a task. Nothing here should;
   find it before shipping.
 
-### B125 — A dynamic-slot jet spawns with the template's route, radios and loadout · dynamic spawn templates (scoping) · ☐ UNTESTED
+### B125 — A dynamic-slot jet spawns with the template's route, radios and loadout · §101 · ☐ UNTESTED
 
 **History:** opened 2026-09-15 as the gate on
-[`414th-dynamic-spawn-templates-notes.md`](design/414th-dynamic-spawn-templates-notes.md).
-Nothing is built. DCS's mission editor has a **Dyn.SPAWN Template** checkbox on a
-Player-skill aircraft group; it writes `dynSpawnTemplate = true` on the group and
-`linkDynTempl = <groupId>` on the airbase's warehouse entry for that aircraft type. What the
-template carries into the spawned jet beyond loadout is unverified from the session box, and
-so is whether the template group stays in the slot list. Both decide the build's shape.
-**2026-09-15, DM:** the second is answered. A group ticked as a template stays in the slot
-list, so the build marks the real flight and needs no clone. Route carry and `wsType` remain.
+[`414th-dynamic-spawn-templates-notes.md`](design/414th-dynamic-spawn-templates-notes.md);
+**built the same day** (§101) on what the install's Lua could answer, so this row now flies
+the generated mission, not a hand-made one. The generator marks one client flight per base
+and type as DCS's **Dyn.SPAWN Template** (`dynSpawnTemplate = true` on the group) and links
+the base's warehouse entry to it (`linkDynTempl = <groupId>`). The slot-select dialog reads
+loadout, properties and livery off the template and hands the rest to native code, so
+route and radio carry are open. The entry carries no `wsType`; the editor fills one in when
+absent, the sim's loader is native, so that is open too. **2026-09-15, DM:** a template
+group stays in the slot list, so the real flight is marked and there is no clone.
 
-- **Setup:** any miz with one Player Hornet group at a field that has dynamic spawn on. Give
-  the group three or four waypoints, a non-default radio preset table and a non-stock
-  payload. Tick **Dyn.SPAWN Template** on it, save, and open the mission. ~10 min.
-- **Pass:** a dynamic Hornet spawned at that field shows the template's waypoints on the
-  kneeboard and the HSI, the template's presets in the radio, and the template's payload.
+- **Setup:** any campaign with **Enable dynamic player slots** on and a player Hornet
+  package fragged from a field or the boat. Generate the turn. Optional, 1 min: open the
+  miz's `warehouses` file and confirm the field's `FA-18C_hornet` entry has
+  `linkDynTempl` pointing at the fragged group's id. Open the mission and take a
+  **dynamic** Hornet at that base, not the fragged slot. ~10 min.
+- **Pass:** the dynamic jet carries the fragged flight's payload and properties (certain),
+  and its waypoints on the HSI and its presets in the radio (the open half). The fragged
+  slot is still in the slot list and still flies as itself.
 - **Record, whichever way it goes:**
-  1. Route carried: yes / no.
-  2. ~~The original Player group still in the slot list after ticking the box~~ — yes,
-     answered 2026-09-15.
-  3. In the saved miz's `warehouses` file, whether the field's Hornet entry gained a
-     `wsType` table next to `linkDynTempl`.
-- **Fail signatures:** the dynamic jet spawns with the stock loadout and no route (the link
-  did not take: check `linkDynTempl` in the saved `warehouses` file points at the group's
-  id); or the original slot vanished from the slot list (the template is consumed, so the
-  build must clone).
+  1. Route carried: yes / no. Radio presets carried: yes / no.
+  2. Whether the dynamic list at that base offered the type at all (a missing type is the
+     `wsType` signature — see below).
+- **Fail signatures:** the dynamic jet spawns stock at a base whose `warehouses` entry
+  carries the link (the sim needs `wsType`: build the id table before anything else); the
+  type is missing from the dynamic list at that base only when the link is present (same
+  cause); the fragged slot vanished from the slot list (the template is consumed after all,
+  so the build must clone). A jet with the payload but no route is not a fail — it is
+  answer 1 and shrinks the feature to loadout and properties.

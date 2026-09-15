@@ -194,9 +194,11 @@ Read before touching a campaign's `.yaml`, `.miz` or build tool.
   diff**, 2026-08-09: every divergence classified by gate and default; read before
   reverting or carving planner behavior)
 - **Cockpit / data** — `414th-dtc-cartridge-notes.md`, `414th-weapon-dates-proposal.md`,
-  `414th-dynamic-spawn-templates-notes.md` (**scoping only, nothing built** — DCS's
-  Dyn.SPAWN Template checkbox as the hook for giving a dynamic-slot jet a package's
-  route, radios and loadout; gated on the three answers row `B125` collects),
+  `414th-dynamic-spawn-templates-notes.md` (**§101, BUILT 2026-09-15, not flown** — one
+  client flight per base and type is marked as DCS's Dyn.SPAWN Template and the warehouse
+  link written, so a dynamic-slot jet inherits that flight; the editor's own Lua reads
+  loadout, properties and livery off the template, but route carry and the missing `wsType`
+  are decided in native code — row `B125` owns both),
   `414th-startup-times-notes.md` (**where a `startup_minutes:` value may come from** — read
   before adding one; unsourced numbers are the failure mode),
   `414th-loadout-integrity-audit-notes.md`
@@ -499,6 +501,7 @@ linked design note.
 98. **Neutral-faction border defense** — every nation on the map is drawn with its real border, the map's own nation included: alignment derived from who holds the airfields inside it, counted per country (both sides holding it = contested grey, claimed by neither QRA; a country in the war is outline-only; red-aligned airspace joins §1's QRA accept zones), and a country not in the war defends (overflight is derived from the same airbases: you may cross what you fly from, and what both sides fly from) — it stands live SAM batteries inside its border from mission start, in two tiers -- the era picks legacy (SA-2/3/5) or modern (SA-10/11, plus Hawk/Patriot/Rapier for the western-equipped list) and the country's room picks the rung, the top band being the same in both eras -- and counted off it too (~1 per 200 NM of war-facing frontier, capped at 6, map clip and far-from-the-war stretches unmanned), each placed well short of what its missile claims, so the frontier sits inside the envelope with margin rather than on its edge, visible before you cross, and hailing you on entry; press, and the WHOLE country turns hostile in place on your enemy's coalition and engages. Both sides violating one country gets a second set. Countries DCS does not model (Turkmenistan, Uzbekistan, Tajikistan, Armenia, Azerbaijan) borrow a neighbour's units rather than being dropped. Players only; AI is never engaged, unless the `engageAi` plugin option is ticked -- a testing override, default off, that holds AI to the same ladder. The fighter patrol was dropped 2026-09-07 -- scope is the SAM.
 99. **Sandy rescue escort** — an armed escort that works the ground around a downed pilot while the helicopter comes in: a track centred on the survivor, flown by the A-10 and the Apache. Hand-fragged only — the auto-planner never adds one.
 100. **King on-scene commander** — the player-flown C-130J King finds the survivor by DF cuts on the beacon (two cuts far enough apart make a fix; inside pod range with line of sight it snaps exact), sweeps the ground around the fix for threats reported as a class and a rough position, and passes the picture — text and map marks — to the player-crewed Sandy and helicopter. Cues only: it never lases, and nothing is pushed onto an AI flight.
+101. **Dynamic spawn templates** — a pilot who takes a DCS dynamic slot no longer gets a blank jet: at each base, one player flight of each type is marked as DCS's Dyn.SPAWN Template and the warehouse link written, so the dynamic jet is built from that flight (loadout, properties and livery for certain; route and radio presets are decided in native code and are what row B125 flies). Client flights only, no clone, and the fragged slot still flies as itself. Types with no player flight at the base stay blank. Off with `dynamic_slots`, and its own toggle beneath it.
 
 ### Retired, removed or shelved — do not restore
 

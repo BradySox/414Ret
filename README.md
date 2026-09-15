@@ -295,6 +295,13 @@ Most of this is opt-in. Full list with toggles, defaults and known limitations:
   up, and a host running a squadron event records every pilot who flew, each to their own
   profile. It is kept in a file beside your other Retribution settings rather than in the
   save game, which is what lets it survive starting over.
+- **A dynamic slot is not a blank jet.** With DCS dynamic slots on, each base's dynamic
+  spawns of a type are built from a player flight of that type already fragged there, so
+  a pilot who joins late and takes a dynamic Hornet gets that flight's loadout and
+  properties, and its route and comm card if DCS carries them (not yet flown). The fragged
+  flight still flies as itself. A type with no player flight at the base still spawns
+  blank, and the times on target are the template's, so they go stale. Its own toggle
+  sits under the dynamic slots setting.
 - Also: strikeable motor pool depots, a host F10 menu to scramble bandits.
 
 ---

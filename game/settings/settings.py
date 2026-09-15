@@ -527,6 +527,7 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                 [
                     "dynamic_slots",
                     "dynamic_slots_hot",
+                    "dynamic_slots_templates",
                     "dynamic_cargo",
                     "carrier_deck_policy",
                     "untasked_opfor_client_slots",
@@ -792,6 +793,7 @@ FEATURE_GATE_FIELDS: dict[str, list[str]] = {
     ],
     "Host & event tools": [
         "host_red_scramble",  # §61
+        "dynamic_slots_templates",  # §101
     ],
     "Performance": [
         "perf_ground_ai_sleep",  # §59
@@ -3077,6 +3079,21 @@ class Settings:
         enabled_when="dynamic_slots",
         default=True,
         detail=("Enables hot start for dynamic slots."),
+    )
+    dynamic_slots_templates: bool = boolean_option(
+        "Dynamic slots inherit a player flight's route and radios",
+        MISSION_GENERATOR_PAGE,
+        GAMEPLAY_SECTION,
+        enabled_when="dynamic_slots",
+        default=True,
+        detail=(
+            "A dynamic-slot jet spawns blank: stock loadout, no route, no radio "
+            "presets. With this on, each base's dynamic spawns of a type are built "
+            "from a player flight of that type already fragged there (DCS's "
+            "Dyn.SPAWN Template), so the jet carries that flight's waypoints, comm "
+            "card, loadout and properties. Types with no player flight at the base "
+            "still spawn blank. Times on target are the template's and go stale."
+        ),
     )
     dynamic_cargo: bool = boolean_option(
         "Enable DCS dynamic cargo",

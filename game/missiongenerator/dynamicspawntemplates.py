@@ -64,6 +64,7 @@ class DynamicSpawnTemplateGenerator:
         self.links: dict[tuple[UUID, str], int] = {}
 
     def generate(self) -> None:
+        self._clear_stale_links()
         settings = self.game.settings
         if not (settings.dynamic_slots and settings.dynamic_slots_templates):
             return
@@ -85,6 +86,24 @@ class DynamicSpawnTemplateGenerator:
             for aircrafts in targets:
                 aircrafts.setdefault(category, {})[type_id] = template_entry(group.id)
             self.links[(cp_id, type_id)] = group.id
+
+    def _clear_stale_links(self) -> None:
+        """Drop every link a previous generation wrote onto the terrain's airports.
+
+        The pydcs Airport objects belong to the campaign's terrain and outlive a
+        single generation, so a link written for a flight the player then deleted
+        stayed on the field and pointed at whatever group next took that id: on
+        test 33 Akrotiri's F-16C entry named a red H-6J group.
+        """
+        for airport in self.mission.terrain.airports.values():
+            for category, entries in list(airport.aircrafts.items()):
+                if not isinstance(entries, dict):
+                    continue
+                for type_id, entry in list(entries.items()):
+                    if isinstance(entry, dict) and "linkDynTempl" in entry:
+                        del entries[type_id]
+                if not entries:
+                    del airport.aircrafts[category]
 
     def _donors(self) -> dict[tuple[UUID, str], Flight]:
         """One client flight per (base, type). A ground start beats an air start

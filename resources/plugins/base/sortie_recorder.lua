@@ -47,6 +47,9 @@ local anchors = {}
 -- -- 68% of a 1.18 MB state.json. Kept OUT of the record so nothing new is
 -- serialized.
 local parked = {}
+-- unit name -> true for every unit coalition.getPlayers lists; refreshed each
+-- sweep (see refresh_humans below). Declared here because sample_unit reads it.
+local humans = {}
 
 local function safe(unit, method)
     if not unit then
@@ -101,6 +104,15 @@ local function record_for(unit)
     end
     local record = sortie_records.flights[unit_name]
     if record then
+        -- A human the sweep could not name (test 33) is named by the first event
+        -- that carries getPlayerName, so the sortie still reaches a profile.
+        if record.player_name == "" then
+            local crew = safe(unit, "getPlayerName")
+            if crew ~= nil then
+                record.player = true
+                record.player_name = crew
+            end
+        end
         return record
     end
     -- Only aircraft belong in a per-FLIGHT record; the AAA and armour that shot
@@ -152,6 +164,9 @@ local function sample_unit(unit, now)
     record.last_seen = now
     -- Re-read each sweep: a slot can be taken by a human mid-mission.
     local crew = safe(unit, "getPlayerName")
+    if crew == nil and humans[unit_name] then
+        record.player = true
+    end
     if crew ~= nil then
         record.player = true
         if record.player_name == nil or record.player_name == "" then
@@ -227,14 +242,49 @@ local function prune_pending(now)
     end
 end
 
+-- unit name -> true for every unit coalition.getPlayers lists, refreshed each
+-- sweep. Test 33 (2026-09-15, a listen host with two humans in one Viper
+-- group): the remote pilot's unit answered getPlayerName inside the shot and
+-- hit events but not inside this sweep, so he was treated as the AI wingman
+-- behind the host's anchor and finished with no track at all -- and no lifetime
+-- profile, because the fold needs a track. getPlayers is the server's own list.
+-- (`humans` itself is declared above sample_unit, which reads it.)
+local function refresh_humans()
+    humans = {}
+    for _, side in pairs({ coalition.side.RED, coalition.side.BLUE }) do
+        local ok, players = pcall(function()
+            return coalition.getPlayers(side)
+        end)
+        if ok and players then
+            for _, unit in pairs(players) do
+                local unit_name = safe(unit, "getName")
+                if unit_name then
+                    humans[unit_name] = true
+                end
+            end
+        end
+    end
+end
+
+local function is_human(unit, unit_name)
+    if safe(unit, "getPlayerName") ~= nil then
+        return true
+    end
+    if unit_name and humans[unit_name] then
+        return true
+    end
+    local record = unit_name and sortie_records.flights[unit_name]
+    return record ~= nil and record.player == true
+end
+
 -- Whether this unit's position is worth sampling. Humans always; for AI, the
 -- first jet of the group still alive, held until it dies rather than read off a
 -- fixed index.
 local function should_sample(unit, group_has_anchor)
-    if safe(unit, "getPlayerName") ~= nil then
+    local unit_name = safe(unit, "getName")
+    if is_human(unit, unit_name) then
         return true
     end
-    local unit_name = safe(unit, "getName")
     if not unit_name then
         return false
     end
@@ -252,6 +302,7 @@ end
 function sortie_recorder_sample()
     local now = timer.getTime()
     prune_pending(now)
+    refresh_humans()
     for _, side in pairs({ coalition.side.RED, coalition.side.BLUE }) do
         for _, category in pairs({ Group.Category.AIRPLANE, Group.Category.HELICOPTER }) do
             local ok, groups = pcall(function()

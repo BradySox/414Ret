@@ -9380,6 +9380,14 @@ the guard.
 
 ## §91 — Per-flight sortie records
 
+**Humans on a multiplayer host (2026-09-15, test 33).** The sweep found the host's own
+jet by `getPlayerName` and missed the remote pilot in the same group, whose unit answered
+that call only inside shot and hit events; he was filed as the AI wingman behind the
+host's anchor and finished with no track. The sweep now refreshes a set of human unit
+names from `coalition.getPlayers` each pass, treats a record already marked `player` as
+human, and lets the first named event fill in a name the sweep could not read.
+`tests/lua/test_sortie_recorder_runtime.py` models the case; row B70 owns the fly.
+
 **Design note:** [414th-retribution-long-view.md](design/414th-retribution-long-view.md) seam 1.
 
 ### What was wrong
@@ -9960,6 +9968,10 @@ only a boolean. It now records the name, and a profile is keyed on it.
 - **No setup.** The first mission you fly creates your profile.
 - **A host records everyone.** In a squadron event all eight humans get their own profile
   rather than collapsing into one, which the "one local profile" alternative would have done.
+  **Test 33 (2026-09-15) found the one case this missed:** a second human in the host's own
+  group answered `getPlayerName` in the shot events but not in the recorder's sweep, so he
+  had no track and the fold skipped him. The recorder now also reads `coalition.getPlayers`
+  (§91). Unflown since.
 - **The key never moves.** Renaming sets a `display_name`; renaming the key would orphan the
   career from the seat that feeds it.
 
@@ -10495,6 +10507,13 @@ loadout, no route, no radio presets, no properties. Added 2026-09-15. At each ba
 player flight of each aircraft type is marked as DCS's **Dyn.SPAWN Template** and the
 base's warehouse entry is linked to it, so the dynamic jet is built from that flight.
 Design note: [`414th-dynamic-spawn-templates-notes.md`](design/414th-dynamic-spawn-templates-notes.md).
+
+**Links are cleared before they are written (2026-09-15, test 33).** The pydcs `Airport`
+objects belong to the campaign's terrain and outlive one generation, so a link written for
+a flight the player then deleted stayed on the field: Akrotiri's F-16C entry pointed at a
+red H-6J group three generations later. `_clear_stale_links` drops every `linkDynTempl`
+entry on every airport first, feature on or off. Ship and heliport warehouses are rebuilt
+each generation and need nothing.
 
 ### Files
 

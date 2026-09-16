@@ -573,7 +573,7 @@ class FlightPlanBuilder:
     #: jet's route as steerpoints (so the nav system carries them), but they are
     #: not flown legs of the plan. The chained ETA past the landing point reads
     #: "when you would get there if you kept flying after landing" -- noise -- so
-    #: their Time/GSPD cells stay blank, matching the Fuel column's treatment.
+    #: their Time/GS/Mach cells stay blank, matching the Fuel column's treatment.
     REFERENCE_WAYPOINT_TYPES = (
         FlightWaypointType.DIVERT,
         FlightWaypointType.BULLSEYE,
@@ -593,12 +593,15 @@ class FlightPlanBuilder:
         self.last_waypoint: Optional[FlightWaypoint] = None
         self.units = units
         # The plan's on-station speed for a racetrack flight; the racetrack-end
-        # row shows it in the GSPD cell, where distance / schedule-time would
+        # row shows it in the GS cell, where distance / schedule-time would
         # divide the track length by the whole on-station dwell.
         self.patrol_speed = patrol_speed
-        # Per-waypoint (planned - min) fuel margins; constant across the route by
-        # construction, so the page reports min() once as the RTB margin call-out.
+        # Per-waypoint (planned - min) fuel margins. Constant up to a tanker and
+        # constant again after it, so min() is the unrefuelled RTB margin and the
+        # rows from the REFUEL waypoint on carry the with-tanker figure.
         self.fuel_margins: List[float] = []
+        self.tanked_margins: List[float] = []
+        self.refuel_seen = False
         # On-station planned minutes and fuel burn, captured from the racetrack
         # rows for the endurance call-out ("fuel supports ~N min on station").
         self.patrol_dwell: Optional[datetime.timedelta] = None
@@ -634,6 +637,7 @@ class FlightPlanBuilder:
             "0",
             self._waypoint_distance(self.target_points[0].waypoint),
             self._ground_speed(self.target_points[0].waypoint),
+            self._mach(self.target_points[0].waypoint, meters(0)),
             self._format_time(self.target_points[0].waypoint.tot),
             self._format_departure_time(self.target_points[0].waypoint.departure_time),
             self._format_fuel(self.target_points[0].waypoint),
@@ -661,6 +665,8 @@ class FlightPlanBuilder:
             waypoint.waypoint.waypoint_type
             in FlightPlanBuilder.REFERENCE_WAYPOINT_TYPES
         )
+        if waypoint.waypoint.waypoint_type is FlightWaypointType.REFUEL:
+            self.refuel_seen = True
         row = [
             str(waypoint.number),
             KneeboardPageWriter.wrap_line(
@@ -670,6 +676,7 @@ class FlightPlanBuilder:
             self._format_alt(alt),
             self._waypoint_distance(waypoint.waypoint),
             "" if is_reference else self._ground_speed(waypoint.waypoint),
+            "" if is_reference else self._mach(waypoint.waypoint, alt),
             "" if is_reference else self._format_time(waypoint.waypoint.tot),
             (
                 ""
@@ -712,39 +719,48 @@ class FlightPlanBuilder:
         return f"{self.units.distance_long(distance):.1f}"
 
     def _ground_speed(self, waypoint: FlightWaypoint) -> str:
+        speed = self._leg_speed(waypoint)
+        if speed is None:
+            return "-"
+        return f"{self.units.speed(speed):.0f}"
+
+    def _mach(self, waypoint: FlightWaypoint, alt: Distance) -> str:
+        """The GS cell's speed as a Mach number at the row's altitude, still air."""
+        speed = self._leg_speed(waypoint)
+        if speed is None:
+            return "-"
+        return f"{speed.mach(alt):.2f}"
+
+    def _leg_speed(self, waypoint: FlightWaypoint) -> Optional[Speed]:
         if waypoint.waypoint_type is FlightWaypointType.PATROL:
             # The racetrack-end row: its schedule time is the on-station dwell
             # (the flight laps the track until push), so distance / time would
             # print the track length over the whole patrol -- a nonsense figure
             # like 19 kt. Show the speed actually flown on station instead.
-            if self.patrol_speed is None:
-                return "-"
-            return f"{self.units.speed(self.patrol_speed):.0f}"
+            return self.patrol_speed
 
         if self.last_waypoint is None:
-            return "-"
+            return None
 
         if waypoint.tot is None:
-            return "-"
+            return None
 
         if self.last_waypoint.departure_time is not None:
             last_time = self.last_waypoint.departure_time
         elif self.last_waypoint.tot is not None:
             last_time = self.last_waypoint.tot
         else:
-            return "-"
+            return None
 
         if (waypoint.tot - last_time).total_seconds() <= 0.0:
             # A zero or negative leg time (drifted structural vs chained clocks,
             # degenerate manual timing) has no meaningful ground speed.
-            return "-"
+            return None
 
-        speed = mps(
+        return mps(
             self.last_waypoint.position.distance_to_point(waypoint.position)
             / (waypoint.tot - last_time).total_seconds()
         )
-
-        return f"{self.units.speed(speed):.0f}"
 
     def _format_fuel(self, waypoint: FlightWaypoint) -> str:
         """The fuel ladder folded into the flight plan: planned fuel remaining.
@@ -759,7 +775,10 @@ class FlightPlanBuilder:
             return ""
         if waypoint.fuel_planned is None:
             return "-"
-        self.fuel_margins.append(waypoint.fuel_planned - waypoint.min_fuel)
+        margin = waypoint.fuel_planned - waypoint.min_fuel
+        self.fuel_margins.append(margin)
+        if self.refuel_seen:
+            self.tanked_margins.append(margin)
         return f"{self.units.mass(pounds(waypoint.fuel_planned)):.0f}"
 
     def _record_patrol(self, start: FlightWaypoint, end: FlightWaypoint) -> None:
@@ -784,9 +803,11 @@ class FlightPlanBuilder:
     def fuel_margin_line(self) -> Optional[str]:
         """The one-line RTB margin call-out for the flight plan, or None.
 
-        (Planned - min) is constant across the route by construction (start fuel -
-        total burn - reserve), so the worst case is reported once instead of
-        printing Min and Margin columns that repeat the same number every row.
+        (Planned - min) is constant up to a tanker (start fuel - total burn -
+        reserve: the unrefuelled margin) and constant again after it, so the
+        worst case is reported once instead of printing Min and Margin columns
+        that repeat the same number every row. A planned tanker pass never
+        raises this figure; tanker_line carries the with-tanker number.
         """
         if not self.fuel_margins:
             return None
@@ -801,6 +822,25 @@ class FlightPlanBuilder:
         return (
             f"RTB margin -{amount} {uom} — short of getting home as planned; "
             "tank or divert."
+        )
+
+    def tanker_line(self) -> Optional[str]:
+        """The with-tanker margin, only when the sortie depends on the pass.
+
+        Same rule as the Payload tab's fuel brief: a refuel waypoint means a
+        tanker is planned, never that the gas was taken, so the with-tanker
+        figure is printed only when the jet does not get home without it.
+        """
+        if not self.fuel_margins or not self.tanked_margins:
+            return None
+        dry = min(self.fuel_margins)
+        tanked = min(self.tanked_margins)
+        if dry >= 0 or tanked < 0:
+            return None
+        amount = f"{self.units.mass(pounds(tanked)):.0f}"
+        return (
+            f"Does not get home without the tanker: +{amount} "
+            f"{self.units.mass_uom} with the planned pass."
         )
 
     def patrol_endurance_line(self) -> Optional[str]:
@@ -1046,13 +1086,18 @@ class BriefingPage(KneeboardPage):
         # The fuel ladder rides in the flight plan: a Fuel column (planned remaining
         # at each RTB steerpoint) + a one-line RTB margin call-out, instead of a
         # separate near-empty Fuel Ladder page.
-        headers = ["#", "Action", "Alt", "Dist", "GSPD", "Time", "Departure", "Fuel"]
+        # Nine columns sit 12 px inside the page at the worst case (a "10-13"
+        # target block, a 25-char action, a supersonic leg, a Zulu+local time);
+        # tabulate pads every header by two, so the short GS / M / Dep headers are
+        # what pays for the Mach column. Pinned by test_flightplan_table_width.
+        headers = ["#", "Action", "Alt", "Dist", "GS", "M", "Time", "Dep", "Fuel"]
         uom_row = [
             "",
             "",
             units.distance_short_uom,
             units.distance_long_uom,
             units.speed_uom,
+            "Mach",
             "",
             "",
             units.mass_uom,
@@ -1079,6 +1124,10 @@ class BriefingPage(KneeboardPage):
                 wrap=True,
                 fill=None if surplus else writer.col_caution,
             )
+
+        tanker_line = flight_plan_builder.tanker_line()
+        if tanker_line is not None:
+            writer.text(tanker_line, wrap=True, fill=writer.col_caution)
 
         endurance_line = flight_plan_builder.patrol_endurance_line()
         if endurance_line is not None:

@@ -34,8 +34,8 @@ def _waypoint() -> Any:
 
 
 def test_flight_plan_always_carries_the_fuel_column() -> None:
-    # 8 columns: #, Action, Alt, Dist, GSPD, Time, Departure, Fuel. The standalone
+    # 9 columns: #, Action, Alt, Dist, GS, M, Time, Dep, Fuel. The standalone
     # Fuel Ladder page is retired; the ladder rides in the flight plan.
     builder = FlightPlanBuilder(_units())
     builder.add_waypoint(0, _waypoint())
-    assert len(builder.rows[0]) == 8
+    assert len(builder.rows[0]) == 9

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from datetime import timedelta
+from types import SimpleNamespace
 from typing import Any, cast
 
 import pytest
@@ -65,6 +67,39 @@ def test_uses_package_formation_speed_at_target_when_available(
     speed = plan.speed_between_waypoints(target_waypoint, target_waypoint)
 
     assert speed == formation_speed
+
+
+def _leg(name: str, kind: FlightWaypointType, north_nm: float) -> FlightWaypoint:
+    return FlightWaypoint(name, kind, Point(0, north_nm * 1852, Caucasus()))
+
+
+def test_the_leg_out_of_the_target_carries_the_time_over_it() -> None:
+    # The locked split time charges 45 s per target point. The forward chain
+    # that times every waypoint after the split sums total_time_between_waypoints
+    # leg by leg, so the same dwell has to ride the last-target -> split leg or
+    # the chain runs ahead of the split by the whole dwell (measured: a 4-target
+    # DEAD timed its refuel 27 s before its split).
+    plan = _FormationAttackUnderTest(
+        formation_speed=knots(400), fallback_speed=knots(500)
+    )
+    targets = [_leg(f"T{i}", FlightWaypointType.TARGET_POINT, 0.0) for i in range(3)]
+    split = _leg("SPLIT", FlightWaypointType.SPLIT, 10.0)
+    join = _leg("JOIN", FlightWaypointType.JOIN, -10.0)
+    plan.layout = cast(
+        Any,
+        SimpleNamespace(
+            hold=None, ingress=join, join=join, split=split, targets=targets
+        ),
+    )
+
+    between_targets = plan.total_time_between_waypoints(targets[0], targets[1])
+    out_of_target = plan.total_time_between_waypoints(targets[-1], split)
+
+    assert between_targets == timedelta(0)
+    # 10 nm at 400 kt with the 5% pad, plus 3 x 45 s over the target.
+    travel = timedelta(hours=10 / 400 * 1.05)
+    assert out_of_target == travel + timedelta(minutes=2.25)
+    assert plan.time_at_target == timedelta(minutes=2.25)
 
 
 def test_falls_back_to_flight_speed_when_package_has_no_formation_speed(

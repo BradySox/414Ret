@@ -38,12 +38,16 @@ before the flight plan:
   lines, capture risk climbs the deeper you went down, rescue tracks your last known position.
 
 The flight plan below it carries a **Fuel** column — planned fuel remaining at each steerpoint —
-and a one-line **RTB margin** call-out, amber when the margin goes negative. A patrol flight also
+and a one-line **RTB margin** call-out, amber when the margin goes negative. That margin is the
+unrefuelled figure: a tanker on the route never raises it, and the same rule sets the Bingo number
+and the Payload tab's fuel plan, so the three agree. When the sortie only gets home with the
+planned tanker pass, a second amber line says so and gives the with-tanker figure. A patrol flight also
 gets an **on-station endurance** line ("On station 45 min planned; fuel supports ~50 min before
 bingo"), because the planned dwell is doctrine and the gas is the real answer.
 
-Reference steerpoints (divert, bullseye) print no Time/GSPD — a chained ETA past the landing point
-is noise, not information.
+Each leg's speed prints twice: **GS** (ground speed, knots or km/h by airframe) and **M** (the same
+speed as a Mach number at that row's altitude, still air). Reference steerpoints (divert, bullseye)
+print no Time/GS/Mach — a chained ETA past the landing point is noise, not information.
 
 ![The Mission Info kneeboard page: a BLUF block listing task, code words, jam-backup channel, air and SAM threats, loadout and the SAR drill, above the airfield table and a flight plan whose right-hand column shows planned fuel at each steerpoint](https://raw.githubusercontent.com/BradySox/414Ret/main/docs/wiki/img/kneeboard-mission-info-bluf.png)
 

@@ -510,10 +510,22 @@ by the hold dwell, but custom/manually-timed plans can still degenerate). On the
 the DEAD package re-plans at 422 kt (the AV-8B — the slowest *real* member), the hold dwell
 returns positive (~4:35), every row is monotonic, and the Hornets land 21 minutes earlier
 with the package TOT untouched. Follow-up same day ("why are we giving times for bullseye"):
-the kneeboard's **divert/bullseye reference rows drop Time/Departure/GSPD entirely**
+the kneeboard's **divert/bullseye reference rows drop Time/Departure/GS/Mach entirely**
 (`FlightPlanBuilder.REFERENCE_WAYPOINT_TYPES`) — they ride the jet's route as steerpoints,
 but the chained ETA past the landing point is by construction "when you'd get there if you
 kept flying after landing", and the Fuel column already blanked exactly these rows.
+**The split ran on a different clock from everything after it (fixed 2026-09-15).** The
+locked `split_time` charges 45 s per target point over the target; the forward chain that
+times every non-structural waypoint after it (refuel, RTB legs, landing) summed
+`total_time_between_waypoints` per leg and never charged that dwell, so the chain ran ahead
+of the split by the whole dwell. Measured on a 4-target Syria DEAD: split locked 20:14:13,
+refuel chained 20:13:46 — the tanker ETA 27 s before the jet leaves the target; on the card
+that is one slow leg (the split row swallows the dwell) followed by one impossible one (the
+next row hands it back — the 771 kt / Mach 1.25 leg on a flown F-16 card). Fixed the way
+`PatrollingFlightPlan` charges its on-station time: `FormationAttackFlightPlan.
+total_time_between_waypoints` adds `time_at_target` on the leg into `layout.split`, and
+`split_time` is now that same sum, so the two clocks agree by construction
+(`tests/ato/flightplans/test_formationattack.py`).
 (`game/ato/package.py`, `game/ato/flightplans/formation.py`,
 `game/ato/flightplans/formationattack.py`, `game/missiongenerator/kneeboard.py`; tests
 `tests/ato/flightplans/test_formationattack.py` +
@@ -1036,6 +1048,15 @@ data several times; a single-home-per-datum pass fixes it, each change condition
   page was enabled; since 2026-07-05 the ladder is **folded into the flight plan** (see the fuel
   ladder block below), so there is one home by construction — a `Fuel` column + a one-line RTB
   margin call-out on Mission Info, and no separate page.
+- **The flight plan's speed reads in Mach too (2026-09-15).** Each leg row carries `GS` (the
+  derived ground speed in the airframe's unit) and `M` (that speed via `Speed.mach()` at the
+  row's printed altitude, so a ground-marked row reads at sea level; still air, no wind). The
+  racetrack-end row converts the patrol speed; reference rows and dashed legs stay blank/dashed.
+  The ninth column fit only because tabulate pads every header by two characters: `GSPD` →
+  `GS` and `Departure` → `Dep` bought it, and the worst-case row now sits 12 px inside the
+  page (`tests/missiongenerator/test_flightplan_table_width.py` pins that; a wrap here would
+  double every long steerpoint name). `FlightPlanBuilder._leg_speed` is the one derivation
+  both cells read.
 - The **Friendly Packages** list moved out of the bottom of Mission Info to its own
   `FriendlyPackagesPage` (still two-column + paginating), so the list isn't split across Mission
   Info and a near-empty spill page; the package targets **map** stays as the spatial complement.
@@ -2027,6 +2048,26 @@ defect that reached a build, most of them found by flying.
   flight that carries plenty and crosses a real tanker still gets a waypoint; what it no longer
   gets is a phantom one, or a margin that counts gas it never takes. Tests
   `tests/ato/test_tanker_availability.py`, `tests/fourteenth/test_fuel_brief.py`.
+  3. **The other two faces still credited the tanker (fixed 2026-09-15).** The rule above
+     landed on the Payload-tab brief only. The kneeboard ladder's min-fuel walk reset to
+     `min_safe` at the REFUEL waypoint, so its "RTB margin" was the spare *at the tanker*
+     labelled "to get home" (measured on the Syria turn-2 F-16 DEAD: card **+1,920 lb**
+     against the brief's **+1,124 lb** for the same sortie), and `BingoEstimator` counted a
+     REFUEL waypoint as a fuel source, so bingo shrank to the fuel to reach the tanker. Both
+     now follow the brief: the minimum is always the fuel home unrefuelled
+     (`_estimate_min_fuel_for` no longer resets), bingo is to the recovery field only, and the
+     kneeboard prints the with-tanker figure as its own amber line only when the sortie
+     depends on it (`FlightPlanBuilder.tanker_line`, "Does not get home without the tanker:
+     +N lb with the planned pass").
+  4. **The brief counted a pass generation would drop, at a point no tanker orbits (fixed
+     2026-09-15).** It walked the planner's waypoints as-is, so a boom receiver with only a
+     probe tanker flying still read "1 tanker pass planned", and the legs were burned to the
+     75 %-of-the-way geometric point. `refuelrendezvous.planned_tankers` builds the same
+     tanker set from the ATO's REFUELING flights that generation registers as `TankerInfo`,
+     and `fuel_brief._as_generated` resolves each REFUEL waypoint through the same
+     `refuel_rendezvous` — dropped when no tanker can serve the jet, moved onto the orbit
+     otherwise (a copy; the plan's own waypoint is untouched). All three faces now agree on
+     the save: brief **+1,120 lb**, ladder **+1,120 lb**, bingo 4,000 lb to the field.
 - **The refuel waypoint pointed at a place no tanker was (fixed 2026-08-17).** The
   follow-on to the gate above, and the reason the surviving waypoints sat where they did.
   The planner puts the refuel point at 75 % of the home-to-join leg (`RefuelZoneGeometry`)

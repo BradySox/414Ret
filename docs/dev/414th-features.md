@@ -510,7 +510,7 @@ by the hold dwell, but custom/manually-timed plans can still degenerate). On the
 the DEAD package re-plans at 422 kt (the AV-8B — the slowest *real* member), the hold dwell
 returns positive (~4:35), every row is monotonic, and the Hornets land 21 minutes earlier
 with the package TOT untouched. Follow-up same day ("why are we giving times for bullseye"):
-the kneeboard's **divert/bullseye reference rows drop Time/Departure/GSPD entirely**
+the kneeboard's **divert/bullseye reference rows drop Time/Departure/GS/Mach entirely**
 (`FlightPlanBuilder.REFERENCE_WAYPOINT_TYPES`) — they ride the jet's route as steerpoints,
 but the chained ETA past the landing point is by construction "when you'd get there if you
 kept flying after landing", and the Fuel column already blanked exactly these rows.
@@ -1036,6 +1036,15 @@ data several times; a single-home-per-datum pass fixes it, each change condition
   page was enabled; since 2026-07-05 the ladder is **folded into the flight plan** (see the fuel
   ladder block below), so there is one home by construction — a `Fuel` column + a one-line RTB
   margin call-out on Mission Info, and no separate page.
+- **The flight plan's speed reads in Mach too (2026-09-15).** Each leg row carries `GS` (the
+  derived ground speed in the airframe's unit) and `M` (that speed via `Speed.mach()` at the
+  row's printed altitude, so a ground-marked row reads at sea level; still air, no wind). The
+  racetrack-end row converts the patrol speed; reference rows and dashed legs stay blank/dashed.
+  The ninth column fit only because tabulate pads every header by two characters: `GSPD` →
+  `GS` and `Departure` → `Dep` bought it, and the worst-case row now sits 12 px inside the
+  page (`tests/missiongenerator/test_flightplan_table_width.py` pins that; a wrap here would
+  double every long steerpoint name). `FlightPlanBuilder._leg_speed` is the one derivation
+  both cells read.
 - The **Friendly Packages** list moved out of the bottom of Mission Info to its own
   `FriendlyPackagesPage` (still two-column + paginating), so the list isn't split across Mission
   Info and a near-empty spill page; the package targets **map** stays as the spatial complement.

@@ -30,8 +30,8 @@ from game.missiongenerator.kneeboard import (
 )
 from game.utils import NauticalUnits, feet
 
-TIME_COLUMN = 5
-DEPARTURE_COLUMN = 6
+TIME_COLUMN = 6
+DEPARTURE_COLUMN = 7
 
 #: The reported case: Persian Gulf, whose info.yaml pins timezone +4.
 GULF = datetime.timezone(datetime.timedelta(hours=4))

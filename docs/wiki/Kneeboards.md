@@ -42,8 +42,9 @@ and a one-line **RTB margin** call-out, amber when the margin goes negative. A p
 gets an **on-station endurance** line ("On station 45 min planned; fuel supports ~50 min before
 bingo"), because the planned dwell is doctrine and the gas is the real answer.
 
-Reference steerpoints (divert, bullseye) print no Time/GSPD — a chained ETA past the landing point
-is noise, not information.
+Each leg's speed prints twice: **GS** (ground speed, knots or km/h by airframe) and **M** (the same
+speed as a Mach number at that row's altitude, still air). Reference steerpoints (divert, bullseye)
+print no Time/GS/Mach — a chained ETA past the landing point is noise, not information.
 
 ![The Mission Info kneeboard page: a BLUF block listing task, code words, jam-backup channel, air and SAM threats, loadout and the SAR drill, above the airfield table and a flight plan whose right-hand column shows planned fuel at each steerpoint](https://raw.githubusercontent.com/BradySox/414Ret/main/docs/wiki/img/kneeboard-mission-info-bluf.png)
 

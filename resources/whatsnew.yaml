@@ -14,6 +14,19 @@
 
 entries:
   - date: 2026-09-15
+    title: The kneeboard flight plan shows each leg's Mach number
+    change: >-
+      The Mission Info flight plan now prints the leg speed twice: GS in
+      knots as before, and M, the same speed as a Mach number at that row's
+      altitude in still air. The racetrack row converts the patrol speed.
+      To make room, the Departure column header is now Dep.
+    watch: >-
+      Read a cruise leg's M against the HUD Mach once established at the
+      planned altitude. It should agree to a few hundredths with no wind;
+      a headwind or tailwind moves it, since the card's figure is ground
+      speed. A long steerpoint name wrapping onto two lines means the
+      column did not fit.
+  - date: 2026-09-15
     title: A dynamic slot inherits a player flight instead of spawning blank
     change: >-
       With dynamic slots on, each base's dynamic spawns of a type are now

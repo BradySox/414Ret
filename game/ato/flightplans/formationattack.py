@@ -110,21 +110,32 @@ class FormationAttackFlightPlan(FormationFlightPlan, ABC):
         return self.ingress_time - travel_time
 
     @property
+    def time_at_target(self) -> timedelta:
+        """Time the package spends over the target: 45 s per target point."""
+        return timedelta(minutes=0.75 * len(self.layout.targets))
+
+    def total_time_between_waypoints(
+        self, a: FlightWaypoint, b: FlightWaypoint
+    ) -> timedelta:
+        # The leg out of the target carries the time spent over it. The forward
+        # chain (refuel, RTB and landing ETAs, the kneeboard clock) sums this per
+        # leg; without it the chain ran ahead of the locked split by the whole
+        # dwell -- a 4-target DEAD put the tanker ETA 27 s before the split.
+        total = super().total_time_between_waypoints(a, b)
+        if b is self.layout.split:
+            return total + self.time_at_target
+        return total
+
+    @property
     def split_time(self) -> datetime:
         travel_time_ingress = self.total_time_between_waypoints(
             self.layout.ingress, self.target_area_waypoint
         )
+        # Carries time_at_target: see total_time_between_waypoints.
         travel_time_egress = self.total_time_between_waypoints(
             self.target_area_waypoint, self.layout.split
         )
-        minutes_at_target = 0.75 * len(self.layout.targets)
-        timedelta_at_target = timedelta(minutes=minutes_at_target)
-        return (
-            self.ingress_time
-            + travel_time_ingress
-            + timedelta_at_target
-            + travel_time_egress
-        )
+        return self.ingress_time + travel_time_ingress + travel_time_egress
 
     @property
     def ingress_time(self) -> datetime:

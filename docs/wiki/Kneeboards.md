@@ -38,7 +38,10 @@ before the flight plan:
   lines, capture risk climbs the deeper you went down, rescue tracks your last known position.
 
 The flight plan below it carries a **Fuel** column — planned fuel remaining at each steerpoint —
-and a one-line **RTB margin** call-out, amber when the margin goes negative. A patrol flight also
+and a one-line **RTB margin** call-out, amber when the margin goes negative. That margin is the
+unrefuelled figure: a tanker on the route never raises it, and the same rule sets the Bingo number
+and the Payload tab's fuel plan, so the three agree. When the sortie only gets home with the
+planned tanker pass, a second amber line says so and gives the with-tanker figure. A patrol flight also
 gets an **on-station endurance** line ("On station 45 min planned; fuel supports ~50 min before
 bingo"), because the planned dwell is doctrine and the gas is the real answer.
 

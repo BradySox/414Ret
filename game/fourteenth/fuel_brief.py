@@ -16,15 +16,21 @@ counts the tanks on the loadout being shown, matching the tanker decision.
 
 from __future__ import annotations
 
+import copy
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Optional
 
 from game.ato.flightwaypointtype import FlightWaypointType
 from game.fourteenth.range_fuel import external_fuel_lbs, is_fuel_tank
+from game.missiongenerator.refuelrendezvous import (
+    planned_tankers,
+    refuel_rendezvous,
+)
 from game.utils import KG_TO_LBS
 
 if TYPE_CHECKING:
     from game.ato.flight import Flight
+    from game.ato.flightwaypoint import FlightWaypoint
     from game.ato.loadouts import Loadout
 
 
@@ -94,7 +100,7 @@ def fuel_brief_for(
     flight_plan = getattr(flight, "flight_plan", None)
     if flight_plan is None:
         return None
-    waypoints = list(flight_plan.waypoints)
+    waypoints = _as_generated(flight, list(flight_plan.waypoints))
     if len(waypoints) < 2:
         return None
 
@@ -150,6 +156,35 @@ def fuel_brief_for(
         dry_margin_lbs=dry - consumption.min_safe,
         estimated=measured is None,
     )
+
+
+def _as_generated(
+    flight: Flight, waypoints: list[FlightWaypoint]
+) -> list[FlightWaypoint]:
+    """The route as the mission generator will write it.
+
+    The planner emits a REFUEL waypoint whenever the coalition owns a tanker
+    squadron and places it by geometry alone; generation resolves it onto a
+    tanker that can serve the jet and drops it when none can. The brief walks
+    that route, or it counts a pass the kneeboard will not show and burns the
+    legs to a point no tanker orbits.
+    """
+    tankers = planned_tankers(flight)
+    if tankers is None:
+        return waypoints
+    resolved = []
+    for waypoint in waypoints:
+        if waypoint.waypoint_type is FlightWaypointType.REFUEL:
+            rendezvous = refuel_rendezvous(
+                flight.unit_type, flight.blue.is_blue, waypoint.position, tankers
+            )
+            if rendezvous is None:
+                continue
+            if rendezvous is not waypoint.position:
+                waypoint = copy.copy(waypoint)
+                waypoint.position = rendezvous
+        resolved.append(waypoint)
+    return resolved
 
 
 def fuel_brief_text(brief: Optional[FuelBrief]) -> str:

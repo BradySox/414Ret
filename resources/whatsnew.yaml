@@ -14,6 +14,33 @@
 
 entries:
   - date: 2026-09-15
+    title: One fuel story on the kneeboard, the Bingo number and the Payload tab
+    change: >-
+      A planned tanker pass no longer counts as gas taken anywhere. The
+      kneeboard RTB margin is the unrefuelled figure, as the Payload tab's
+      fuel plan already was, and Bingo is the fuel to the recovery field, not
+      to the tanker. When the sortie only gets home with the pass, the
+      kneeboard says so on its own amber line with the with-tanker figure.
+      The Payload tab also counts a pass only when a tanker that can serve
+      the jet is actually flying, and burns the legs to that tanker's orbit.
+    watch: >-
+      Open the Payload tab for a jet with a REFUEL steerpoint and compare its
+      RTB margin with the kneeboard's. They should match to the pound. A jet
+      that can only take a boom should show no tanker pass when only a
+      probe tanker is up, and the kneeboard should have no REFUEL row.
+  - date: 2026-09-15
+    title: The split steerpoint is on the same clock as the legs after it
+    change: >-
+      The split time charged 45 seconds per target point over the target, and
+      the refuel, RTB and landing times did not, so those ran early by the
+      whole dwell. On the card that read as one slow leg into the split and
+      one impossible leg out of it, and the tanker ETA could land before the
+      split. The leg out of the target now carries the dwell on both clocks.
+    watch: >-
+      On a strike or DEAD card, the leg after SPLIT should read near cruise
+      speed, not 700 kt plus, and the REFUEL time should be after the SPLIT
+      time. The jet's own steerpoint ETAs should agree with the card.
+  - date: 2026-09-15
     title: The kneeboard flight plan shows each leg's Mach number
     change: >-
       The Mission Info flight plan now prints the leg speed twice: GS in

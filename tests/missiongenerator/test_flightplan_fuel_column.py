@@ -104,6 +104,34 @@ def test_negative_margin_warns_to_tank_or_divert() -> None:
     assert "tank or divert" in line
 
 
+def test_tanker_line_only_when_the_sortie_depends_on_the_pass() -> None:
+    # The minimum never resets at the tanker, so the margin line reads the
+    # unrefuelled figure; the with-tanker number is a second line, printed only
+    # when the jet does not get home without it -- the Payload tab's rule.
+    dependent = [
+        _wp("Takeoff", 5000, 6000),
+        _wp("Refuel", 9000, 3000, FlightWaypointType.REFUEL),
+        _wp("Land", 8000, 2000, FlightWaypointType.LANDING_POINT),
+    ]
+    builder = _build(dependent)
+    margin = builder.fuel_margin_line()
+    assert margin is not None and "RTB margin -1000 lb" in margin
+    assert builder.tanker_line() == (
+        "Does not get home without the tanker: +6000 lb with the planned pass."
+    )
+
+    # Gets home on its own: the with-tanker figure is noise.
+    healthy = [
+        _wp("Takeoff", 8000, 6000),
+        _wp("Refuel", 9000, 3000, FlightWaypointType.REFUEL),
+        _wp("Land", 8000, 2000, FlightWaypointType.LANDING_POINT),
+    ]
+    assert _build(healthy).tanker_line() is None
+
+    # No tanker on the route: nothing to say.
+    assert _build(_LADDER).tanker_line() is None
+
+
 def test_no_fuel_data_yields_no_margin_line() -> None:
     # An airframe with no fuel estimate at all: dashes/blanks, no call-out.
     no_data = [_wp("Takeoff", None, None), _wp("Land", None, None)]

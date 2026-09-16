@@ -596,9 +596,12 @@ class FlightPlanBuilder:
         # row shows it in the GS cell, where distance / schedule-time would
         # divide the track length by the whole on-station dwell.
         self.patrol_speed = patrol_speed
-        # Per-waypoint (planned - min) fuel margins; constant across the route by
-        # construction, so the page reports min() once as the RTB margin call-out.
+        # Per-waypoint (planned - min) fuel margins. Constant up to a tanker and
+        # constant again after it, so min() is the unrefuelled RTB margin and the
+        # rows from the REFUEL waypoint on carry the with-tanker figure.
         self.fuel_margins: List[float] = []
+        self.tanked_margins: List[float] = []
+        self.refuel_seen = False
         # On-station planned minutes and fuel burn, captured from the racetrack
         # rows for the endurance call-out ("fuel supports ~N min on station").
         self.patrol_dwell: Optional[datetime.timedelta] = None
@@ -662,6 +665,8 @@ class FlightPlanBuilder:
             waypoint.waypoint.waypoint_type
             in FlightPlanBuilder.REFERENCE_WAYPOINT_TYPES
         )
+        if waypoint.waypoint.waypoint_type is FlightWaypointType.REFUEL:
+            self.refuel_seen = True
         row = [
             str(waypoint.number),
             KneeboardPageWriter.wrap_line(
@@ -770,7 +775,10 @@ class FlightPlanBuilder:
             return ""
         if waypoint.fuel_planned is None:
             return "-"
-        self.fuel_margins.append(waypoint.fuel_planned - waypoint.min_fuel)
+        margin = waypoint.fuel_planned - waypoint.min_fuel
+        self.fuel_margins.append(margin)
+        if self.refuel_seen:
+            self.tanked_margins.append(margin)
         return f"{self.units.mass(pounds(waypoint.fuel_planned)):.0f}"
 
     def _record_patrol(self, start: FlightWaypoint, end: FlightWaypoint) -> None:
@@ -795,9 +803,11 @@ class FlightPlanBuilder:
     def fuel_margin_line(self) -> Optional[str]:
         """The one-line RTB margin call-out for the flight plan, or None.
 
-        (Planned - min) is constant across the route by construction (start fuel -
-        total burn - reserve), so the worst case is reported once instead of
-        printing Min and Margin columns that repeat the same number every row.
+        (Planned - min) is constant up to a tanker (start fuel - total burn -
+        reserve: the unrefuelled margin) and constant again after it, so the
+        worst case is reported once instead of printing Min and Margin columns
+        that repeat the same number every row. A planned tanker pass never
+        raises this figure; tanker_line carries the with-tanker number.
         """
         if not self.fuel_margins:
             return None
@@ -812,6 +822,25 @@ class FlightPlanBuilder:
         return (
             f"RTB margin -{amount} {uom} — short of getting home as planned; "
             "tank or divert."
+        )
+
+    def tanker_line(self) -> Optional[str]:
+        """The with-tanker margin, only when the sortie depends on the pass.
+
+        Same rule as the Payload tab's fuel brief: a refuel waypoint means a
+        tanker is planned, never that the gas was taken, so the with-tanker
+        figure is printed only when the jet does not get home without it.
+        """
+        if not self.fuel_margins or not self.tanked_margins:
+            return None
+        dry = min(self.fuel_margins)
+        tanked = min(self.tanked_margins)
+        if dry >= 0 or tanked < 0:
+            return None
+        amount = f"{self.units.mass(pounds(tanked)):.0f}"
+        return (
+            f"Does not get home without the tanker: +{amount} "
+            f"{self.units.mass_uom} with the planned pass."
         )
 
     def patrol_endurance_line(self) -> Optional[str]:
@@ -1095,6 +1124,10 @@ class BriefingPage(KneeboardPage):
                 wrap=True,
                 fill=None if surplus else writer.col_caution,
             )
+
+        tanker_line = flight_plan_builder.tanker_line()
+        if tanker_line is not None:
+            writer.text(tanker_line, wrap=True, fill=writer.col_caution)
 
         endurance_line = flight_plan_builder.patrol_endurance_line()
         if endurance_line is not None:

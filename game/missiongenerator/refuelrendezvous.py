@@ -16,13 +16,69 @@ Rationale and the flown evidence live in
 
 from __future__ import annotations
 
-from typing import Iterable, Optional, TYPE_CHECKING
+from dataclasses import dataclass
+from typing import Iterable, Optional, TYPE_CHECKING, Union
 
 if TYPE_CHECKING:
     from dcs import Point
 
+    from game.ato.flight import Flight
     from game.dcs.aircrafttype import AircraftType
     from game.missiongenerator.missiondata import TankerInfo
+    from game.theater.player import Player
+
+
+@dataclass(frozen=True)
+class PlannedTanker:
+    """A tanker the ATO will fly, in the shape ``refuel_rendezvous`` reads.
+
+    The generation-time ``TankerInfo`` is built from the same flights once they
+    are in the .miz; this is the plan-time view of that set, so the Payload
+    tab's fuel brief answers "is there a tanker for this jet" the way the
+    kneeboard will.
+    """
+
+    blue: "Player"
+    aircraft_type: "AircraftType"
+    orbit_start: Optional["Point"]
+    orbit_end: Optional["Point"]
+    recovery: bool
+
+
+TankerLike = Union["TankerInfo", PlannedTanker]
+
+
+def planned_tankers(flight: "Flight") -> Optional[list[PlannedTanker]]:
+    """Every tanker on the flight's coalition ATO.
+
+    None when there is no ATO to read (lightweight test doubles), which callers
+    treat as "leave the planned point alone".
+    """
+    from game.ato.flighttype import FlightType
+    from game.ato.flightplans.shiprecoverytanker import RecoveryTankerFlightPlan
+
+    ato = getattr(getattr(flight, "coalition", None), "ato", None)
+    if ato is None:
+        return None
+    tankers = []
+    for package in ato.packages:
+        for candidate in package.flights:
+            if candidate.flight_type is not FlightType.REFUELING:
+                continue
+            plan = getattr(candidate, "flight_plan", None)
+            layout = getattr(plan, "layout", None)
+            start = getattr(layout, "patrol_start", None)
+            end = getattr(layout, "patrol_end", None)
+            tankers.append(
+                PlannedTanker(
+                    blue=candidate.blue,
+                    aircraft_type=candidate.unit_type,
+                    orbit_start=start.position if start is not None else None,
+                    orbit_end=end.position if end is not None else None,
+                    recovery=isinstance(plan, RecoveryTankerFlightPlan),
+                )
+            )
+    return tankers
 
 
 def nearest_point_on_leg(target: "Point", start: "Point", end: "Point") -> "Point":
@@ -46,7 +102,7 @@ def refuel_rendezvous(
     receiver: "AircraftType",
     receiver_is_blue: bool,
     planned: "Point",
-    tankers: Iterable["TankerInfo"],
+    tankers: Iterable[TankerLike],
 ) -> Optional["Point"]:
     """The orbit point to send ``receiver`` to, or None if no tanker can serve it.
 
@@ -75,7 +131,7 @@ def refuel_rendezvous(
 
 
 def _serves(
-    tanker: "TankerInfo", receiver: "AircraftType", receiver_is_blue: bool
+    tanker: TankerLike, receiver: "AircraftType", receiver_is_blue: bool
 ) -> bool:
     side = getattr(tanker, "blue", None)
     if side is not None and bool(getattr(side, "is_blue", side)) != receiver_is_blue:

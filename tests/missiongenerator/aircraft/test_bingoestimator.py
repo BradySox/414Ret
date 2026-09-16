@@ -51,7 +51,11 @@ def test_fuel_consumption_based_bingo_estimator(
     assert estimator.estimate_joker() == estimator.estimate_bingo() + 1000
 
 
-def test_fuel_consumption_bingo_credits_a_tanker(terrain: Terrain) -> None:
+def test_fuel_consumption_bingo_ignores_a_tanker(terrain: Terrain) -> None:
+    # A planned tanker pass is not gas taken. Bingo is the number the pilot
+    # turns home on if the tanker is not there, so a REFUEL waypoint on the
+    # egress must not shorten the distance the deepest point has to cover. This
+    # is the rule the kneeboard ladder and the Payload-tab fuel brief follow.
     consumption = FuelConsumption(
         100, 50, 10, 25, 1000
     )  # cruise 10 lb/nm, reserve 1000
@@ -60,10 +64,7 @@ def test_fuel_consumption_bingo_credits_a_tanker(terrain: Terrain) -> None:
         return FlightWaypoint("", kind, Point(0, nautical_miles(d).meters, terrain))
 
     home = Point(0, 0, terrain)
-    # Out to 100 nm, recovering at the field with nothing else on the route.
     without_tanker = [wp(0), wp(100), wp(0, FlightWaypointType.LANDING_POINT)]
-    # Same depth, but a tanker 10 nm from the field on the egress: the deepest point now
-    # only has to reach the tanker (90 nm), not the field (100 nm).
     with_tanker = [
         wp(0),
         wp(100),
@@ -74,5 +75,4 @@ def test_fuel_consumption_bingo_credits_a_tanker(terrain: Terrain) -> None:
     refueled = BingoEstimator(consumption, home, None, with_tanker)
 
     assert base.estimate_bingo() == 2000  # 100 nm * 10 lb + 1000 reserve
-    assert refueled.estimate_bingo() == 1900  # 90 nm to the tanker * 10 + 1000
-    assert refueled.estimate_bingo() < base.estimate_bingo()
+    assert refueled.estimate_bingo() == base.estimate_bingo()

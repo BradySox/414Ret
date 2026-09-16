@@ -14,15 +14,21 @@ from typing import Any, Optional
 
 import pytest
 
+from dcs import Point
+from dcs.terrain import Caucasus
+
 from game import persistency
+from game.ato.flighttype import FlightType
 from game.ato.flightwaypointtype import FlightWaypointType
 from game.ato.loadouts import Loadout
 from game.data.weapons import Weapon
 from game.dcs.aircrafttype import FuelConsumption
 from game.fourteenth.fuel_brief import FuelBrief, fuel_brief_for, fuel_brief_text
+from game.theater.player import Player
 from game.utils import KG_TO_LBS
 
 VIPER_TANK_370 = "{F376DBEE-4CAE-41BA-ADD9-B2910AC95DEC}"
+TERRAIN = Caucasus()
 
 _FUEL = FuelConsumption(taxi=200, climb=30.0, cruise=10.0, combat=16.0, min_safe=1500)
 _INTERNAL_KG = 10000.0 / KG_TO_LBS  # 10,000 lbs internal
@@ -38,6 +44,30 @@ def _wp(kind: FlightWaypointType = FlightWaypointType.NAV) -> Any:
     return SimpleNamespace(waypoint_type=kind)
 
 
+def _at(x: float, y: float) -> Point:
+    return Point(x, y, TERRAIN)
+
+
+def _tanker(aircraft_type: Any, start: Point, end: Point) -> Any:
+    return SimpleNamespace(
+        flight_type=FlightType.REFUELING,
+        blue=Player.BLUE,
+        unit_type=aircraft_type,
+        flight_plan=SimpleNamespace(
+            layout=SimpleNamespace(
+                patrol_start=SimpleNamespace(position=start),
+                patrol_end=SimpleNamespace(position=end),
+            )
+        ),
+    )
+
+
+def _ato_with(*tankers: Any) -> Any:
+    return SimpleNamespace(
+        ato=SimpleNamespace(packages=[SimpleNamespace(flights=list(tankers))])
+    )
+
+
 def _flight(
     waypoints: list[Any],
     *,
@@ -45,14 +75,19 @@ def _flight(
     members: Optional[list[Any]] = None,
     measured: FuelConsumption | None = _FUEL,
     estimated: FuelConsumption | None = None,
+    coalition: Any = None,
+    can_refuel_from: Any = None,
 ) -> Any:
     return SimpleNamespace(
         unit_type=SimpleNamespace(
             fuel_consumption=measured,
             estimated_fuel_consumption=estimated,
             max_fuel=_INTERNAL_KG,
+            can_refuel_from=can_refuel_from or (lambda tanker: True),
         ),
         fuel=_INTERNAL_KG,
+        blue=Player.BLUE,
+        coalition=coalition,
         iter_members=lambda: iter(members or ()),
         flight_plan=SimpleNamespace(
             waypoints=waypoints,
@@ -99,6 +134,62 @@ def test_refuel_waypoint_tops_off_and_counts_a_pass() -> None:
     assert brief.refuel_passes == 1
     # Topped off at the tanker, one leg home: 10000 - 1000 - 1500 reserve.
     assert brief.margin_lbs == pytest.approx(10000 - 1000 - 1500)
+
+
+def test_a_pass_no_tanker_can_fly_is_not_counted() -> None:
+    # The planner adds the REFUEL waypoint whenever the coalition owns a tanker
+    # squadron; generation drops it when no tanker on the ATO can serve the jet
+    # (none flying, or a probe-only tanker for a boom receiver). The brief has to
+    # walk the same route as the kneeboard, so no pass and no top-off here.
+    boom_only = object()
+    probe_tanker = _tanker(boom_only, _at(0, 0), _at(0, 10000))
+    refuel = _wp(FlightWaypointType.REFUEL)
+    refuel.position = _at(0, 5000)
+    flight = _flight(
+        [
+            _wp(FlightWaypointType.TAKEOFF),
+            refuel,
+            _wp(FlightWaypointType.LANDING_POINT),
+        ],
+        coalition=_ato_with(probe_tanker),
+        can_refuel_from=lambda tanker: tanker is not boom_only,
+    )
+
+    brief = fuel_brief_for(flight)
+
+    assert brief is not None
+    assert brief.refuel_passes == 0
+    assert brief.margin_lbs == pytest.approx(brief.dry_margin_lbs)
+
+
+def test_a_pass_is_walked_to_the_tanker_orbit() -> None:
+    # A tanker that can serve the jet moves the waypoint onto its orbit, the way
+    # generation does, so the legs are burned to where the tanker really is.
+    tanker = _tanker(object(), _at(0, 0), _at(0, 10000))
+    refuel = _wp(FlightWaypointType.REFUEL)
+    refuel.position = _at(3000, 5000)  # 3 km abeam the orbit's midpoint
+    walked: list[Any] = []
+
+    def leg(a: Any, b: Any, consumption: Any = None) -> float:
+        walked.append(b)
+        return 1000.0
+
+    flight = _flight(
+        [
+            _wp(FlightWaypointType.TAKEOFF),
+            refuel,
+            _wp(FlightWaypointType.LANDING_POINT),
+        ],
+        coalition=_ato_with(tanker),
+    )
+    flight.flight_plan.fuel_consumption_between_points = leg
+
+    brief = fuel_brief_for(flight)
+
+    assert brief is not None
+    assert brief.refuel_passes == 1
+    assert walked[0].position == _at(0, 5000)
+    assert refuel.position == _at(3000, 5000), "the plan's own waypoint is untouched"
 
 
 def test_walk_stops_at_the_landing_point() -> None:

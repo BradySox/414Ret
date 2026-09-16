@@ -101,6 +101,10 @@ identical frag on this save, so B126 stays untested.
 | B48 | Only the carrier group was inside the host's recording bubble |
 | B126 | Both orderings frag the same targets on this save |
 
+Also measured after the DM's verdicts on 2026-09-16: the escorts of the 1,200 km MAVERICK
+package released at the split (B78) and then ran dry — the F-15C ejected at 0.04 fuel, the
+Hornets diverted to a Lebanese field at 0.08, the Viper on tanks came home with 0.72. See B78.
+
 ## Outstanding rows at a glance
 
 84 rows need a live pass. Full detail is under each `###` heading below —
@@ -5389,7 +5393,9 @@ Fly any mission with several AI packages up, then read the next turn's SITREP.
 
 ### B78 — The escorts let go of a package the player is leading · planner shape · ☑ VERIFIED (2026-09-16, DM, test 33)
 
-**2026-09-16, DM verdict in chat (session `9148a88a`)** — **VERIFIED.** "B78 is good and proven in the multiplayer test" — test 33, the DM leading the MAVERICK Viper strike with an F-15C escort and a Hornet SEAD escort on a listen host: the escorts held through the ingress and let go at the split. Neither fail shape (formating home, or breaking off at the join) occurred. Off the WATCH card.
+**2026-09-16, DM verdict in chat (session `9148a88a`)** — **VERIFIED.** "B78 is good and proven in the multiplayer test" — test 33, the DM leading the MAVERICK Viper strike with an F-15C escort and a Hornet SEAD escort on a listen host. Measured off the recording afterwards: from the join at t≈1800 to the split at t≈4500 the three escorts stayed 0.2–9 km off the DM's jet through the target run, then at t=4800 they were 82–125 km away and by t=5100 160–200 km, while the DM recovered at Ramat David. Neither fail shape (formating home, or breaking off at the join) occurred. Off the WATCH card.
+
+**What the same measurement also showed, which is not this row:** the escorts did not reach their own recovery. The package's route was 1,036–1,296 km. The F-15C (internal fuel only, no tanks fitted, a `REFUEL` waypoint after the split that AI does not fly) ran from 0.61 at t=3600 to 0.04 at t=4920 and its lead ejected near Wujah Al Hajar; the Hornets (one centreline tank) landed at Rene Mouawad with 0.08, a Lebanese field that is not a control point in this campaign, on DCS's own bingo divert. The DM's Viper, on external tanks, came home with 0.72. This is the §46 revert's accepted consequence (re-convergence work order C: tanker tasking is upstream's, nothing fits tanks; do not re-litigate), recorded here as the first measured instance on a long-range package.
 
 **History:** built 2026-08-18, from test 7 (Sinai turn 1, `retribution_nextturn.miz` +
 its Tacview and `state.json`).

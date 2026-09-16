@@ -12,6 +12,10 @@ The live card stays short. This is where its history lives.
 
 | Closed | Item | Row(s) | Verdict |
 |---|---|---|---|
+| 2026-09-16 | A ground-level waypoint sits at the field's elevation | `B79` | ☑ **VERIFIED** on the audit: every routed flight in six generated missions carries the field elevation, and the DED reads it (B90). |
+| 2026-09-16 | `_retribution_backups` is gone and the launch error with it | `B109` | ☑ **VERIFIED** on the audit: nine launches without the line, the folder migrated on the DM's install. |
+| 2026-09-16 | AI packages arrive inside the mission | `B99` | ☑ **VERIFIED** on the audit: the row's own tool on the two live saves, 0 of 59 late. |
+| 2026-09-16 | Carrier recovery stagger, Tomcat modex, jammer distribution, escort jamming runtime | `C9` `B15` `B52` `B31` | ☑ **VERIFIED** on the audit (C9 on the DM's call). None was a card item; recorded here so the closure is findable. |
 | 2026-09-16 | Ships hold station instead of sliding off it | `B48` | ☑ **VERIFIED** on the DM's call after five campaigns measured off the ACMI (tests 9, 24, 30, 32 and the Baltic Fury watch), red included. |
 | 2026-09-16 | The escorts leave you at the split instead of following you home | `B78` | ☑ **VERIFIED** — "proven in the multiplayer test" (test 33, the DM leading a Viper strike with two escorts). |
 | 2026-09-16 | A Viper steerpoint's ELEV is the altitude you planned | `B90` | ☑ **VERIFIED** — "B90 is good", flown since #1019. |

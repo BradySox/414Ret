@@ -105,9 +105,40 @@ Also measured after the DM's verdicts on 2026-09-16: the escorts of the 1,200 km
 package released at the split (B78) and then ran dry — the F-15C ejected at 0.04 fuel, the
 Hornets diverted to a Lebanese field at 0.08, the Viper on tanks came home with 0.72. See B78.
 
+### 2026-09-16 — the line-by-line audit of every open row against tests 1–33
+
+Every open row was read against the 33 captures on the desk (`dcs.log`, `.miz`, `state.json`,
+Tacview where it exists), the seven saves on the machine, and the plugin sources. Verdicts are
+under each row with a `2026-09-16, line-by-line audit` paragraph. What moved:
+
+| Row | Verdict | Decided by |
+|---|---|---|
+| B79 | ☑ VERIFIED | 232 takeoff/landing points on six mizzes match the field elevation; only ramp-parked one-point groups read 0 |
+| B99 | ☑ VERIFIED | `measure_tot_past_mission_window.py` on `91526` and `CSAR`: 59 packages, 0 late; tests 24/30/32 |
+| B109 | ☑ VERIFIED | the launch error is absent from nine launches since test 25; the folder migrated on the DM's install |
+| C9 | ☑ VERIFIED | DM call; no recurrence in 30 recordings |
+| B15 | ☑ VERIFIED | Tomcat liveries in the miz: CAG bird once, line jets cycling (Iron Gate, test 24, Scenic Route) |
+| B52 | ☑ VERIFIED | test 17's jammers on threat-gated strike packages; no both-flavour package on 16 mizzes |
+| B31 | ☑ VERIFIED | 323 hold pulses and 14 spoofs logged across four missions; player F10 toggle unflown |
+| G33 | ◐ PARTIAL | briefed survivors key 260 kHz; in-mission ejections take MOOSE's random channel |
+| G42 | ◐ PARTIAL | LEOPARD fought through two HARM flights on test 32 |
+| B104 | ◐ PARTIAL | test 33's cartridge carries the correct 48-row ATDT |
+| B115 | ◐ PARTIAL | one L1 polyline of 12 points, single-front campaign |
+| B111 | ◐ PARTIAL | the authored Hornet value reaches the jet; nothing else authored |
+| B108 | ◐ PARTIAL | zero stuck retries in four post-fix missions |
+| B121 | ◐ PARTIAL | no AI stray in three missions; batteries never moved |
+| P7 | ◐ PARTIAL | Inherent Resolve played to turn 2 and a full turn captured with the COIN feed live |
+| B124 | ✗ REGRESSED | reproduced headless: a hand-fragged DEAD opens on `Retribution BARCAP` when the date gate drops the DEAD preset |
+| S5 | ✗ REGRESSED | three of fifteen columns parked for the whole mission (tests 17, 28, 31) |
+
+Every other open row carries a paragraph saying what was checked and why the captures cannot
+move it. Three plugins log nothing when they work (`aisleep` on a wake, `gpsjamming` on a
+degraded weapon, `neutralborder` on an AI stray by design), which is why B11, B45 and B121 have
+no evidence either way after 33 missions.
+
 ## Outstanding rows at a glance
 
-84 rows need a live pass. Full detail is under each `###` heading below —
+77 rows need a live pass. Full detail is under each `###` heading below —
 search the row id. `☐` untested · `◐` flown but not under the conditions that
 stress it · `✗` fail signature reproduced in-game.
 
@@ -115,7 +146,7 @@ stress it · `✗` fail signature reproduced in-game.
 |---|---|---|---|
 | B6 | Command-center decapitation degrades enemy planning | §52 | ☐ |
 | B11 | Ground AI sleep: distant garrisons stop thinking, wake on approach | §59 | ☐ |
-| B15 | Squadron-sequenced board numbers: the Tomcat's livery is its modex | §62 | ◐ |
+| B15 | Squadron-sequenced board numbers: the Tomcat's livery is its modex | §62 | ☑ |
 | B17 | Carrier deck spawn policy (six-pack last resort + MP slot timing) | §64 | ◐ |
 | B19 | Weather-aware auto-planning | §67 | ☐ |
 | B20 | Adaptive procurement: SAM repair + price-weighted choice | §68 | ☐ |
@@ -124,7 +155,7 @@ stress it · `✗` fail signature reproduced in-game.
 | B23 | Red comms net: audible + DF-able enemy C2 | §70 | ⊘ |
 | B28 | Native DTC data pre-population (F/A-18C + F-16C) | §74 | ☑ |
 | B29 | Custom victory conditions (VICTORY chip + alternate endings) | §75 | ◐ |
-| B31 | Escort jamming (Growler / Prowler + growler plugin) | §77 | ◐ |
+| B31 | Escort jamming (Growler / Prowler + growler plugin) | §77 | ☑ |
 | B32 | Sea-supply convoys + coastal anti-ship engagement | §78 | ☐ |
 | B35 | Air-defense class rows are filters of the "Air defences" master | §19 | ☑ |
 | B39 | Cross-turn naval magazines | §81 | ◐ |
@@ -132,7 +163,7 @@ stress it · `✗` fail signature reproduced in-game.
 | B64 | The datalink era gate: the SA page populates when it should | datalink | ☑ |
 | B50 | The auto-planner never picks the King for a rescue | CSAR | ☑ |
 | B51 | The rescue package is not planned into threat it cannot survive | CSAR | ☑ |
-| C9 | Carrier-recovery stagger (same-boat package landings spaced) | §8 | ◐ |
+| C9 | Carrier-recovery stagger (same-boat package landings spaced) | §8 | ☑ |
 | G2 | Recon BDA bridge (one plugin, player + AI) | §12 | ✅ |
 | G19 | TARPS recon birds fly the recon leg (RF-101B / RA-5C / Su-24MR) | §3 | ◐ |
 | G39 | Engaging a site reveals it completely; recon does not | §3 | ☑ |
@@ -141,18 +172,18 @@ stress it · `✗` fail signature reproduced in-game.
 | B84 | Front-line groups move and return fire instead of holding | §8 | ☑ |
 | B85 | A flight with an unreachable TOT flies instead of orbiting | §8 | ◐ |
 | B98 | The bullseye is the same place it was last mission | §95 | ☑ |
-| B99 | AI packages arrive inside the mission, not after it | §8 | ◐ |
+| B99 | AI packages arrive inside the mission, not after it | §8 | ☑ |
 | B120 | Neutral border: warned, then the battery engages if you press | §98 | ☐ |
-| B121 | Neutral border: AI intruders are never engaged | §98 | ☐ |
+| B121 | Neutral border: AI intruders are never engaged | §98 | ◐ |
 | B122 | A survivor lands where his own chute came down, not where another crew's did | CSAR (#929 adoption) | ◐ |
 | B123 | An Armed Recon flight engages a gun-defended target instead of overflying the search point | §35 | ☐ |
-| B124 | A hand-fragged Harrier DEAD opens the New Flight dialog on the DEAD preset, not a stock Snakeye fit | New Flight dialog | ☐ |
+| B124 | A hand-fragged Harrier DEAD opens the New Flight dialog on the DEAD preset, not a stock Snakeye fit | New Flight dialog | ✗ |
 | B125 | A dynamic-slot jet spawns with the template's route, radios and loadout | §101 | ☐ |
 | B126 | An AI DEAD gets its shot: the EWR is fragged first, and the site it covered is live the turn after | doctrine row 8 | ☐ |
 | G25 | Armed Recon package: recon drone + SEAD Viper escort + 4-ship sweep | §3 | ◐ |
 | G30 | Skynet point defence: the paired SHORAD answers the HARM shot | Skynet return | ☐ |
-| G42 | Skynet is the engine again: sites dark until cued, HARM defence, no `enableEmission` crash | Skynet return | ☐ |
-| G33 | Survivor ADF beacon: the pinned 260 kHz drives a real needle | CSAR (upstream #929 + 414th pin) | ☐ |
+| G42 | Skynet is the engine again: sites dark until cued, HARM defence, no `enableEmission` crash | Skynet return | ◐ |
+| G33 | Survivor ADF beacon: the pinned 260 kHz drives a real needle | CSAR (upstream #929 + 414th pin) | ◐ |
 | G34 | AI landing pickup: touchdown, embark, and the rescue reported back | CSAR | ☑ |
 | G35 | AI hover hoist completes and releases the flight, including over water | CSAR | ☑ |
 | G36 | Player rescue end to end: F10 menu, the hoist at the briefed height, delivery, roster | CSAR | ☐ |
@@ -181,14 +212,14 @@ stress it · `✗` fail signature reproduced in-game.
 | P4 | COIN roadside IEDs: sweep the trail or pay | COIN | ◐ |
 | P5 | COIN high-value targets: hunt the leadership | COIN | ◐ |
 | P6 | COIN dispersed cells: patrol the countryside | COIN C4 | ☐ |
-| P7 | Iraq "Operation Inherent Resolve" (Mosul) COIN campaign plays | Iraq COIN campaign | ☐ |
+| P7 | Iraq "Operation Inherent Resolve" (Mosul) COIN campaign plays | Iraq COIN campaign | ◐ |
 | P8 | COIN in-mission liveliness: cell movers + insurgent indirect fire on the FOBs | COIN | ☐ |
 | O2 | Downed-pilot map overlays: both coalitions, the fog, and the countdown | CSAR | ☑ |
 | Q3 | Bulk waypoint altitude moves every flown leg | §4 (flight altitude editing) | ☑ |
 | S1 | Route-aware fuel-tank planning (fuel-first) | §46 | ✅ |
 | S3 | Friendly convoy ambush (a chance, never telegraphed) | §50 | ◐ |
 | S4 | Enemy comms jamming: capture the intel, then the C2 belt steps on the radios | §51 | ⊘ |
-| S5 | Ambient supply convoys: both sides' roads have randomized traffic | §50 | ◐ |
+| S5 | Ambient supply convoys: both sides' roads have randomized traffic | §50 | ✗ |
 | S6 | Tanker fragged for a no-`fuel:`-block airframe on a long sortie | §46 | ✅ |
 | S7 | Measured fuel data adopted from DCS Liberation drives tanker + bingo for 12 airframes | §46 | ☐ |
 | T1 | Continuous clock marches + weather evolves across turns | §47 | ☑ |
@@ -198,7 +229,7 @@ stress it · `✗` fail signature reproduced in-game.
 | T6 | The survival clock leaves exactly one flyable rescue window | CSAR | ☑ |
 | U1 | Water/land relocate scripts run on the MIST shim | base plugin | ✅ |
 | B45 | GPS jamming (satellite-guided weapons go long) | §86 | ☐ |
-| B52 | Escort-jammer distribution + the one-SEAD-flavour escort set | §77 | ◐ |
+| B52 | Escort-jammer distribution + the one-SEAD-flavour escort set | §77 | ☑ |
 | B49 | Carrier recovery-phase deck dressing | §72 | ✅ |
 | B48 | Naval station-keeping racetracks | §87 | ☑ |
 | B53 | AI flights no longer push early for a tanker stop they never fly | §46 | ✅ |
@@ -219,7 +250,7 @@ stress it · `✗` fail signature reproduced in-game.
 | B76 | A mixed boom/probe wing gets a tanker of each | U15 reinstated | ☑ |
 | B77 | A player's ramp allowance matches the airframe | #214 startup times | ☐ |
 | B78 | The escorts let go of a package the player is leading | planner shape | ☑ |
-| B79 | Ground-level waypoints read the field's elevation | §8 | ☐ |
+| B79 | Ground-level waypoints read the field's elevation | §8 | ☑ |
 | B80 | String plugin options can actually be edited | §14 | ☐ |
 | B81 | SEAD-evasion scoot distance is a campaign setting | MANTIS | ✅ |
 | B82 | The AWACS orbits at a field it can actually fly from | planner shape | ☑ |
@@ -240,18 +271,18 @@ stress it · `✗` fail signature reproduced in-game.
 | B101 | The F-4E's Shrike and gun pod are still on the jet | §71 | ☐ |
 | B102 | A low ingress against an SA-2/SA-3 belt is still flyable | DCS 2026-08-26 SAM guidance | ☐ |
 | B103 | BMP-3s in a firefight still fire like armour, not infantry | §9 TIC | ☐ |
-| B104 | The Viper's ROE tab declares the campaign's own sides | §74 | ☐ |
+| B104 | The Viper's ROE tab declares the campaign's own sides | §74 | ◐ |
 | B105 | The Apache's cartridge loads: route, targets and the front line on the TSD | §74 | ☐ |
 | B106 | The C-130J King can be fragged into a rescue, and holds an orbit clear of the threat | CSAR | ☐ |
 | B107 | The log stops repeating a MOOSE event error thousands of times | vendored `Moose.lua` | ☑ |
-| B108 | A stuck TIC unit names itself, and the retries are spread not concentrated | §9 TIC | ☐ |
-| B109 | Payload backups leave `UnitPayloads` and the launch error stops | §73 | ☐ |
+| B108 | A stuck TIC unit names itself, and the retries are spread not concentrated | §9 TIC | ◐ |
+| B109 | Payload backups leave `UnitPayloads` and the launch error stops | §73 | ☑ |
 | B110 | A SEAD jet's steerpoints are the site's emitters, and the card's STPT numbers match | §5 / §3 | ☐ |
-| B111 | A package's escort holds the striker's pace instead of running ahead | §8 cruise mach | ☐ |
+| B111 | A package's escort holds the striker's pace instead of running ahead | §8 cruise mach | ◐ |
 | B112 | The wind you set is the wind the panel shows, and the box stops at 97 kt | wind override / live weather | ☐ |
 | B113 | A pilot's logbook fills in, and the kills are the ones they got | §96 | ◐ |
 | B114 | Your lifetime logbook survives starting a new campaign | §97 | ◐ |
-| B115 | The cockpit front line is one continuous boundary, bowed where the map is bowed | §74 / §90 | ☐ |
+| B115 | The cockpit front line is one continuous boundary, bowed where the map is bowed | §74 / §90 | ◐ |
 | B117 | A Sandy can be fragged onto a survivor, and covers the pickup | §99 | ☐ |
 | B118 | The Super Hornet still arms and its new cockpit options are there | CJS 2.4.5.260726 | ☐ |
 | B119 | The King DFs the survivor, sweeps the threats, and the Sandy sees the marks | §100 | ☐ |
@@ -524,6 +555,8 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
 
 ### B6 — Command-center decapitation degrades enemy planning · §52 · ☐ UNTESTED
 
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **not exercised.** `c2_decapitation_effects` has been on in every campaign since test 1 (all seven saves read True except `Maybe 414`), but no save carries a dead command centre, so the effect has never had a chance to show. Needs a struck HQ and the turns after it.
+
 **History:** built 2026-07-06, **A2 package throttle added 2026-07-17**; the health fraction, the linear unpredictability bonus, the off/intact/C2-less no-ops, the shuffler coupling, the SITREP line, and the A2 cap math + HTN-root gating are unit-tested in `tests/fourteenth/test_c2_decapitation.py` + `tests/test_planner_unpredictability.py` + `tests/test_sitrep.py` — whether red's *played* target selection visibly loosens and its offensive tempo visibly thins after its HQs are bombed needs a multi-turn campaign
 - **What CI cannot exercise:** whether a red side that has lost its command centers actually plans a visibly different/less-repetitive set of opportunistic offensive targets turn-over-turn (the shuffle is proven; the *felt* effect on a real ATO is not), whether its offensive package count visibly thins after heavy decapitation (the A2 throttle: red's ATO should carry fewer strike/BAI/OCA packages but keep planning BARCAP/defense and never drop to zero offense), and whether the SITREP band reads the enemy C2 status correctly across turns.
 - **Setup:** **Germany — Red Tide** is now the reference case — its advanced_iads laydown fields a 9-node red command-center network and **preseeds `c2_decapitation_effects: true`** (2026-07-07), so a NEW Red Tide game exercises this directly. Play a few turns noting red's offensive targets, then bomb red's command center(s) and play a few more.
@@ -619,6 +652,8 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
 
 ### B11 — Ground AI sleep: distant garrisons stop thinking, wake on approach · §59 · ☐ UNTESTED
 
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **not dropped, and never observed doing its job.** The `aisleep` plugin and `perf_ground_ai_sleep` are both still in the tree. The plugin armed in every mission of tests 1–16 (Vectron's Claw, Caucasus 1995, Desert Trident, Sinai, Noisy Cricket; `AISLEEP|: managing N garrison group(s)`, up to 8 loads in test 7) because the DM's August campaigns carried the setting on (`test 1`, `brady` and the 13th-test saves all read `perf_ground_ai_sleep = True`); it has not armed since test 17 because the September campaigns carry it off (the `91526`, `CSAR` and `Maybe 414` saves all read False). The plugin logs only at arming and on a poll error, so a wake has never been visible in any log and never will be until a wake line exists. Nothing in 33 captures can move this row; to close it, turn the setting on in the current campaign and add a `AISLEEP|: woke <group>` line first, or the flight proves nothing either way.
+
 **2026-08-22, test 14 — armed, never observed waking.** `AISLEEP|: managing 53 garrison group(s),
 wake radius 15 NM, poll 30s` on both loads, then **no wake line for the rest of the mission**,
 including a player BAI run onto TURTLE. Not a fail: the plugin may only log at arming. Before
@@ -657,7 +692,9 @@ wake look identical here, which is the "prefer a loud failure" rule biting.
 - **Pass:** only your slot sees the menu (a squadmate confirms theirs is clean); within seconds of the press the announce card appears and 2 armed bandits appear over/at the chosen base (log: `REDSCRAMBLE|: spawned ...`); they turn toward the nearest airborne blue fighters, commit, and shoot; the EMERGENCY press launches from the base nearest the airborne players; a second press spawns a fresh flight; killing them all ends it (no respawn) and nothing changes at the turn boundary.
 - **Fail signature:** no menu for the named host (fragment mismatch — the match is a case-insensitive substring of the in-game name, so check the tag really appears in it; or the node wasn't emitted — check the setting + `REDSCRAMBLE|` arm line); everyone sees the menu despite a configured name (option didn't reach the miz — the §36 plugin-preseed lesson); a non-host sees the menu (their name contains the tag — pick a more distinctive fragment); bandits spawn stalled/diving (InitSpeedKnots didn't take — QRA history); bandits spawn then orbit ignoring the players (`AttackGroup` via `setTask` rejected — re-scope the vector push to a Mission-route task, the §15 combatsar lesson); a spawn press does nothing with `spawn failed` in the log on hot/runway mode (ramp congestion — use the default air mode); red QRA dispatcher errors right after a clone (alias collision with the `Intercept|` templates — rename).
 
-### B15 — Squadron-sequenced Hornet/Tomcat board numbers · §62 · ◐ PARTIAL
+### B15 — Squadron-sequenced Hornet/Tomcat board numbers · §62 · ☑ VERIFIED (2026-09-16, audit)
+
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **VERIFIED: the Tomcat half is proven in the generated missions, three campaigns.** VF-103 on Iron Gate (the 08-23 turn and test 24): the squadron's first jet of the mission wears `aa100` (the CAG bird) once, and the line jets cycle `aa101`, `aa103`, `aa105` across the Escort pairs and TARPS singletons, so every pair shows two different painted numbers. VF-143 on Scenic Route (test 30): the CAG livery on the first BARCAP lead, then the two low-vis liveries alternating, which is the two-livery case the row predicts. A squadron whose DCS livery set has one entry (the VMF-29 line on Iron Gate's F-14B, VF-142 on Noisy Cricket, Iran's F-14A) paints one number on every jet, which no allocator can change. The livery is the paint, so a different `livery_id` in the miz is a different number in the F2 view. The Hornet half was confirmed visually 2026-07-16.
 
 **2026-08-23 — the Tomcat half was falsified and this row is re-opened.** No F-14 livery
 declares a board-number material, so DCS paints nothing on a Tomcat; its visible modex is the
@@ -720,6 +757,8 @@ jets. See §62.
 
 ### B17 — Carrier deck spawn policy (six-pack last resort + MP slot timing) · §64 · ◐ PARTIAL
 
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **partial, one more data point.** Test 32's six CVN-71 BARCAP Hornets activate at 1 s (the LAST_RESORT trick) and all launched; the Tomcat 2-s rule from #1020 has not generated yet (no carrier Tomcats since 09-14: test 33's CVN-62 flew Hornets only). Six-pack overflow and MP slot timing still unobserved.
+
 **2026-09-15, test 32** — six Hornets (three BARCAP pairs), the E-2D and the A-6E tanker were on CVN-71 at T0; all six Hornets were assigned catapults and airborne inside the first four minutes, none stuck. No Tomcat on the deck, and the build predates #1020.
 
 > **Test 9 flown 2026-08-18** (Syria `operation_desert_trident`, `Tacview-20260818-214946` + `dcs.log` + `state.json` + the generated `.miz`) — **the six-pack was never needed on a genuinely full deck.** Read off
@@ -765,6 +804,8 @@ jets. See §62.
 
 ### B19 — Weather-aware auto-planning · §67 · ☐ UNTESTED
 
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **not decidable from the captures.** Three turns ran on a Raining preset (tests 6 and 7 on Desert Trident and Sinai, test 20 on Afghanistan), but the ATO is not in a capture and the recon-suppression clause has no control: Desert Trident's clear-sky test 9 planned no recon flight either (the campaign fielded none), and the September campaigns carry `auto_add_tarps_recon` off. Needs the app open on a rain turn.
+
 **History:** built 2026-07-17; the sky classifiers, the recon-suppression gate, the storm demotion's order preservation + factory-name lock, and the HTN integration are unit-tested in `tests/fourteenth/test_weather_planning.py` + `tests/test_armed_recon_planning.py` — whether a real stormy turn's ATO visibly reads different is app-level
 - **What CI cannot exercise:** a real campaign turn whose §47 weather rolled Raining/Thunderstorm producing an ATO with no auto-added TARPS/drone recon flights (rain+storm) and the CAS/BAI/interdiction packages planned after the strike/OCA/IADS ones (storm only) — and a clear-sky turn reading exactly like pre-feature.
 - **Setup:** any campaign with `weather_aware_planning` ON (default). Ride turns until the SITREP/briefing weather shows rain or a storm (or force it by re-rolling turns); open the ATO.
@@ -772,6 +813,8 @@ jets. See §62.
 - **Fail signature:** recon birds fragged into a thunderstorm (the gate didn't reach `_maybe_plan_tarps_recon` — check `recon_suppressed` reads the right game); CAS vanishes entirely in a storm (demotion should reorder, never remove — check `demote_weather_hostile_methods` keeps the set); a clear-sky ATO differs with the setting toggled (the no-op contract broke); a crash on an old save without conditions (the getattr guards).
 
 ### B20 — Adaptive procurement: SAM repair + price-weighted choice · §68 · ☐ UNTESTED
+
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **not exercised in any capture.** `auto_repair_air_defenses` has been on in every save since test 1, so red has been rebuilding sites all along, but the effect is a turn-over-turn map read the app must show; a mission capture holds only the site as it was at generation. Needs a struck site watched across two or three turns in the app.
 
 **History:** built 2026-07-17; the posture/phase budget-split coupling was REMOVED 2026-07-21; the repair's gate/cap/priority/budget/exclusions/wreck-cleanup and the weighted-choice gate are unit-tested in `tests/fourteenth/test_adaptive_procurement.py` — the felt economy needs a multi-turn campaign
 - **What CI cannot exercise:** red visibly rebuilding a struck SAM site over following turns (`auto_repair_air_defenses` ON): launchers/radar coming back alive at the same site a couple of units per turn, the site's threat ring re-growing, no duplicate wreck models under the repaired units.
@@ -876,6 +919,8 @@ jets. See §62.
 
 ### B29 — Custom victory conditions (VICTORY chip + alternate endings) · §75 · ◐ PARTIAL
 
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **app-side; both knobs are 0 in every save**, so no alternate ending has ever been configured. Nothing for a capture to show.
+
 **History:** 2026-08-05, user pass `units-runway-generation-bf755e` — "shows in the UI": the **render half is confirmed**, i.e. the green VICTORY chip + the live-value condition checklist draw on the web ribbon, which needed the CI client rebuild to be exercised at all. **Still owed = the ending itself** — no shipped campaign authors a `victory:` block, so the chip has only ever been shown against the two generic knobs; drive `alternate_victory_domination` or `alternate_victory_attrition` to an actual met condition and confirm the war ENDS, announces once via the `victory_announced` latch, and reports through the SITREP digest rather than the stock territory default) (was ☐ UNTESTED, built 2026-07-19 off the Discord thread — Ramius007's victory CPs/domination + Starfire's HVT-destruction/strength-attrition/air-denial asks; the whole condition engine, the AND-within-entry semantics, loss precedence, the no-vacuous-win guards, the announce latch, and the real `check_win_loss` branch order are unit-tested in `tests/fourteenth/test_victory.py` (30 tests), and the client block passed tsc + the full jest suite locally — but the app render and a knob-driven ending end-to-end are app-only
 - **What CI cannot exercise:** the ribbon VICTORY chip + expander block actually rendering (the client is not CI-type-checked; needs the CI client rebuild to even ship), the Qt settings page showing the new "Victory conditions" section, the Victory!/Defeat! dialog firing off a knob-met condition on a real game, and the SITREP band line on the next turn's kneeboard.
 - **Setup (app pass, no DCS needed):** any small campaign. Set Campaign Management → Victory conditions → "Domination victory" to a value just above your current base share (the expander shows the live percentage). Play or skip turns until a capture crosses the threshold. Separately: load any campaign with the knobs at 0 and confirm no VICTORY chip renders anywhere.
@@ -886,17 +931,17 @@ jets. See §62.
 
 **History:** 2026-08-11, user pass `civilian-traffic-stalling-1f2eba` — "Confirmed working, the AI drop works and the troop capture/land in the correct area". **Both legs are now proven.** The AI leg was chased with in-plugin diagnostics after a first flight where an AI C-130 overflew its zone without releasing: the mission-file side was ruled out (paradrop flag, target zone, preload all correct, `ASSAULT` waypoint 0 m from the zone centre at 304.8 m RADIO), and the instrumented re-fly showed the gates progressing cleanly — plan armed for all 4 units → `reads as on the ground` → preload → release. The DCS-native capture event fired at FOB Nawa with a blue `Soldier M4 GRG` as initiator, so the dropped stick genuinely took the objective. **Three defects the flight exposed, all fixed in [#834](https://github.com/BradySox/414Ret/pull/834):** the diagnostic throttle compared whole messages so the live-distance `inbound` line logged every poll (thousands of lines under time acceleration); `ctld.checkAIStatus` re-loaded any empty AI transport parked in a pickup zone every 2 s, so a spent C-130 announced "loaded troops" to the whole coalition forever; and fixed-wing assaults fragged two-ship when one paradrops the entire stick. **Still open, tracked separately:** the capture did not commit to the campaign — `state.json` carried `…||2||FOB Nawa` and replaying it through the parser yields the correct `BaseCaptureEvent`, but the live `commit_captures` ran empty, apparently against a stale debriefing from a hung session. Watch for that on the next pass) (was ◐ PARTIAL 2026-08-05, user pass `units-runway-generation-bf755e` — "Human it works, have not tested AI"; was ☐ UNTESTED, built 2026-07-19 off the "add paratroopers via CTLD" ask; the planner gate + both layout shapes are unit-tested in `tests/ato/flightplans/test_airassault.py`, and the whole Lua runtime — player jump via the stock Unload menu, descent-delayed ground spawn at the velocity-projected point, the 3,000 ft player ceiling, ground/helo fall-through to stock CTLD, the AI one-shot zone release, and the late-activation preload retry — is harness-pinned in `tests/lua/test_ctld_paradrop.py` (9 cases). What no test can model is the DCS AI actually flying the run-in and the dropped infantry behaving
 
-### B31 — Escort jamming (Growler / Prowler + growler plugin) · §77 · ◐ PARTIAL
+### B31 — Escort jamming (Growler / Prowler + growler plugin) · §77 · ☑ VERIFIED (2026-09-16, audit)
+
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **VERIFIED for the AI runtime, from four missions' logs; the player F10 toggle is the one thing not flown.** Vectron's Claw (tests 1, 2 and 10) and Sinai (test 7) carried `GROWLER|: armed -- N escort jammer(s)` and then the plugin doing its job: 323 `holding down <site> for N s` pulses across SAM, SHORAD, PD, radar-AAA and armor groups carrying a track radar (the eligibility rule is any group with a `SAM TR` unit, so a Shilka or Tunguska inside an armor group is a legitimate target), and 14 `spoofed <missile> (best bubble <jammer>, pk N)` lines, the defensive bubble taking radar missiles off the package. Every jammer flight in every miz is an EA-18G or EA-6B (test 17's Prowlers armed but had nothing in range). The recovery window is visible as the pulses re-arming after their hold. Not seen: a human in the jammer seat turning it on from F10. The old MANTIS alarm-state fail signature no longer applies.
 
 **History:** built 2026-07-21 as graduated tiers, then reduced to dedicated-jammers-only per user call — "only Growlers and Prowlers, no Harriers or anything else with a jammer"; the graduated tiers + the escort_jamming_loose setting are removed. The planner role, the Growler+Prowler-only roster (the two airframes that declare the Escort Jammer task), and the whole Lua policy — grace, spoof bubble, WEAPON_HOLD pulse + OPEN_FIRE restore, radar-SAM-only eligibility, friendly-fire guard, player-off + F10 menu — are pinned in tests/fourteenth/test_escort_jammer.py + tests/missiongenerator/test_growlerluadata.py + tests/lua/test_growler_runtime.py (incl. an AI-Prowler-pulses-a-SAM case). PASS: an **AI Growler** (fa_18efg mod on) rides a strike package into a radar-SAM ring and a radar missile aimed at a package member disappears mid-flight without an explosion at the launcher (defensive bubble) AND the SAM visibly checks fire in pulses (offensive); repeat with an **AI Prowler** (ea6b mod on) and confirm identical behavior — the plugin is airframe-agnostic; a player jammer sees the F10 "Growler jamming" menu and jamming stays dark until toggled ON; no Harrier/Hornet/Viper/Tomcat/A-10 is ever fragged as an escort jammer. FAIL signatures: any non-Growler/Prowler airframe fragged as an escort jammer (roster gate broken), an AI Prowler that never jams while a Growler does (airframe-specific code path crept in), a SAM never firing at all (hold stuck — restore path broken), the jammer orbiting away from the package (escort plan regression), a friendly missile vanishing (guard broken), or MANTIS alarm-state weirdness near the pulsed site. **Balance:** effects don't stack — a missile faces the single strongest bubble (rolled once, deterministically pinned that a 2nd identical jammer doesn't raise the spoof rate), a suppressed SAM gets a mandatory recoverySec shoot-back window before any jammer can re-hold it (pinned via the hold→release→hold cycle), and a per-side max_escort_jammers cap (default 4, 0=off) counts ATO jammers in can_plan_escort. PASS additions: fly a mass of jammers into a dense IADS and confirm the SAMs still fire in windows (not permanently dead) and every missile isn't spoofed; confirm no more than max_escort_jammers jammer flights are fragged in a turn. FAIL additions: SAMs permanently silent under many jammers (recovery window broken), near-100% missile spoof under overlapping bubbles (stacking not fixed), or more than the cap fragged
 
 **2026-08-16 flights (session `c86c58dd`, two Caucasus turns; Tacview + dcs.log + state.json + the flown save) — PARTIAL: airframes and tasking confirmed, the jamming effect is not provable from a Tacview.** Both recordings carry a full Growler presence flying the right taskings — turn 1 had **14 EA-18G airframes** across `Escort Jammer`, `SEAD Escort` and `SEAD Sweep` packages, turn 2 had 12. They generate, launch and hold station (most flew 35–51 km of track over 70+ minutes, i.e. an orbit; TARANTULA's Escort Jammer pair transited 231 km and left station at T+56 m). What a Tacview cannot show is the spoof bubble itself — no emitter state is recorded — so the non-stacking bubbles and the SAM weapons-hold pulses still need a watched pass with `dcs.log` open.
-- **What CI cannot exercise:** whether the AI C-130J actually descends to and overflies the 1,000 ft AGL assault waypoint (vs. cutting the corner at the IP or refusing the descent over terrain); whether the preloaded stick survives the §64 delayed/uncontrolled spawn paths in a real miz; the paradropped infantry marching to the zone centre and contributing to base capture; and the feel of the descent delay (46 s from 1,000 ft).
-- **Setup:** any campaign with a blue C-130J-30 squadron (`secondary: any` covers most). Plan an **Air Assault** package on a nearby enemy FOB/airfield with an AI C-130J flight (helo squadrons out of range or set the flight manually); fly anything nearby to watch. Separately, fly the C-130J-30 yourself on the same tasking: spawn (troops preload ~t+5 s — "Check Cargo" should list ~24), fly to the zone, and use **CTLD → Troop Transport → Unload / Extract Troops** while airborne below 3,000 ft AGL.
-- **Pass:** the AI transport descends toward the target, the coalition gets "paradropped troops from C-130J-30" as it crosses the zone, and the troop group appears on the ground ≤90 s later, marching toward the CP; the player unload while airborne jumps the stick the same way (cargo cleared immediately, troops spawn behind you after the descent), while the same menu on the ground still does a normal CTLD unload; above 3,000 ft AGL the jump is refused with the "Too high to paradrop" message and the troops stay aboard; a helo air assault flown alongside behaves exactly as before (lands at the drop-off zone, no paradrop messages).
-- **Fail signature:** the AI C-130 orbits/overflies with no drop message (release loop never saw it in the zone — check `dcs.log` for `CTLD paradrop - AI check failed`, or the preload never fired and "Check Cargo" is empty — the retry gave up or the unit name drifted); a drop message with no troops ever appearing (the landing pcall errored — `CTLD paradrop - landing failed` in the log); troops spawning INSTANTLY under a fast-moving aircraft miles from the zone (descent delay/projection broken); the player's grounded unload paradropping (the `inAir` gate inverted); paratroopers standing still after landing (wpZone ordering broke — they should march to the zone centre or nearest enemy); the C-130J gaining the EW/ISR F10 menu on a transport/assault tasking (the EW deny-list regressed).
 
 ### B32 — Sea-supply convoys + coastal anti-ship engagement · §78 · ☐ UNTESTED
+
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **never exercised, and it cannot be on any campaign flown so far.** Silkworm batteries stood in two missions (Noisy Cricket, tests 12 and 32: six groups each) and no blue ship came within their reach either time; no other capture had a coastal battery at all. No cargo-ship group exists in any of the 26 readable mizzes, so no sea transfer has ever been generated in a test, with `cargo_ship_convoys` on in every save. The row needs a campaign with a shipping lane inside a red battery's range and a ground transfer ordered across it; none of the flown campaigns has that geometry.
 
 **2026-09-15, test 32** — three Silkworm coastal groups (DOG, PELICAN, DEER) stood on the red coast; no blue ship came within their range and none fired. A HARM killed DOG's search radar. Not exercised.
 
@@ -967,6 +1012,8 @@ circle would obviously be fake. Nothing to fly. See features doc §79 and §3.
 - **Fail signature:** still four identical hulls (the faction genuinely fields one hull of that class — check its roster before suspecting code; or the layout's slot declares explicit `unit_types:`); a speedboat/submarine/second carrier inside a surface screen (the family restriction regressed); ships colliding or drifting apart under way (mixed hull lengths against layout positions authored for Burkes — a template-spacing problem, fixable in the layout `.miz`); a carrier objective whose flagship resolves to an escort (`find_carrier_unit` takes `groups[0].units[0]` — the carrier slot must stay single-unit); or a SAM site / armor group suddenly fielding mixed types (mixing leaked past `NavalLayout`).
 
 ### B39 — Cross-turn naval magazines · §81 · ◐ PARTIAL
+
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **unchanged.** Every mission since test 11 released on schedule and fired no anti-ship missile, so the salvo cap has still not been exercised; Vectron's Claw turn 3 remains the mission that would.
 
 **2026-09-15, test 33** (Syria — Operation Peace Spring turn 2, multiplayer listen host with two humans in the MAVERICK Viper strike, 93 min, `Tacview-20260915-205127-DCS-Host`, DCS 2.9.29.27468, build `611eedfcd`; the turn-3 save `91526.retribution` is the auto-planner's own frag on the same build) — BABIRUSA (red, Naval Two Ship) released at +318 s, the Forrestal group at +708 s and +1098 s; no anti-ship shot all mission, `naval_magazines_state` empty. Same shape as tests 24, 30 and 32.
 
@@ -1344,7 +1391,9 @@ Needs a flight to confirm the fix end to end. The cheap version deliberately rep
 - **Pass:** the generated miz shows helo transit waypoints at the *cruise* AGL (500 ft default, not 100-200) with "TERRAIN" points every ≤5 NM on long legs, and air-start helo units carry `alt_type=RADIO`; in-game, the assault Mi-8s cross the Harz and deliver their troops (the H FRG 12-style clean run becomes the norm), no helo CFITs into ridge lines, racetrack orbits fly normally, human helo flights see no extra waypoints.
 - **Fail signature:** a helo still flies a straight low line into a ridge between anchors (DCS not honoring the RADIO re-anchoring — would need tighter spacing); formation escorts breaking at the inserted points; DCS rejecting the route at start (a locked-speed/time conflict from the inserted points — they are emitted unlocked, so this would be an engine surprise); an air-started helo spawning at 500 m MSL below terrain (the unit stamp not honored).
 
-### C9 — Carrier-recovery stagger (same-boat package landings spaced) · §8 · ◐ PARTIAL
+### C9 — Carrier-recovery stagger (same-boat package landings spaced) · §8 · ☑ VERIFIED (2026-09-16, audit)
+
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **VERIFIED on the DM's call ("c9 seems fine").** The record agrees: one midair ever (Scenic Route turn 3, 2026-07-16, the sortie that built the stagger), none in the 30 recordings since, two Caucasus recoveries in test 16 arriving in two groups 1.8 min apart, and the row's own recurrence signature (unexplained AI losses at the boat) absent from every debrief. The 5-minute spacing itself was never read off an ATO; the DM's call stands on the absence of the failure it exists to prevent.
 
 **Setup card:** [flycards/REGRESSED-SWEEP.md](flycards/REGRESSED-SWEEP.md) — one Starfire campaign (`operation_desert_trident`) clears this alongside C9 and B48.
 
@@ -2105,6 +2154,8 @@ flight test. See features doc §12. The pass description below is kept for readi
 
 ### G19 — TARPS recon birds fly the recon leg (RF-101B / RA-5C / Su-24MR) · §3 · ◐ PARTIAL
 
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **not exercised.** The captures carry TARPS flights only on the F-14B(U) (Anatolian Reach, Iron Gate) and the RQ-1A (Inherent Resolve); no RF-101B, RA-5C or Su-24MR was ever fragged, because no Vietnam campaign and no Russia-2020 recon turn was flown. Unchanged.
+
 **Re-scoped 2026-08-21, executing the 2026-08-18 banner.** TARPS reveals nothing any more
 (§3's rework: a site is revealed by engaging it), and the §12 recon engine that turned an
 overflight into a capture was removed 2026-08-20 along with the `airecon` plugin, its
@@ -2465,6 +2516,8 @@ cycle and whether the fog still reads as fog when every site carries an exact ma
 
 ### G40 — TARPS recon finds a hidden enemy command post · §3 · ☐ UNTESTED
 
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **not decidable from the captures.** TARPS flights flew on tests 17, 18, 24 and Iron Gate, but the reveal happens at debrief in the campaign and none of those turns' next saves were kept. Stays with the LOCAL card's KA-99 measurement.
+
 **History:** built 2026-08-18 alongside the recon rework, to close the hole it opened —
 a hidden command post has no marker, so engagement (the only other reveal) cannot reach
 it, and the auto-planner was the sole remaining path. The geometry, the radius, the
@@ -2496,6 +2549,8 @@ target is actually enough reach in a real laydown, and whether the message lands
 
 ### B126 — An AI DEAD gets its shot: the EWR is fragged first, and the site it covered is live the turn after · doctrine row 8 · ☐ UNTESTED
 
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **unchanged: no turn in the captures follows an EWR kill.** Test 32's WEKA shot at LEOPARD is the closest thing seen (a lit site, lit because the SEAD escort ahead of it drew fire), which is the row's second fail signature working as intended, not the ordering. Needs the turn after an EWR dies.
+
 **2026-09-15, headless check on the DM's CSAR save (Persian Gulf, turn 5) — the ordering is inert on this campaign.** Blue re-planned in memory on the merged code produced the same three DEAD packages as the save (KIWI, SNAIL, FRINGEHEAD), all from the reactive tier: 24 red SAMs sit in `threatening_air_defenses`, since a site counts as threatening once its ring touches any planned route, and that tier spends every DEAD squadron before the detector tier is reached. The detector tier would not have helped either: the eight red EWRs run 162–216 nm, so each red site is covered by two to six of them plus one to four big SAMs acting as EW (KIWI: five EWRs and three SAMs), and Skynet needs every parent gone before a site goes autonomous. Killing EWRs stacks, as the DM said. The only cuttable node on this map is the command-centre pair (SLOTH, TURTLE): `isCommandCenterUsable` is false once both are dead, and then every red site goes autonomous and live (the vanilla default; only 21 CurrentHill unit yamls set `autonomous_behaviour`). No planner task prefers command centres today. Left as is, on the DM's call; nothing further built.
 
 **History:** built 2026-09-15 off test 32, minimal shape of doctrine-mining row 8. `DegradeIads`
@@ -2521,6 +2576,8 @@ EWR covering a site is dead, Skynet runs the site autonomous and live from T0.
      the reactive tier was left alone on purpose.
 
 ### G25 — Armed Recon package: recon drone + SEAD Viper escort + 4-ship sweep · §3 · ◐ PARTIAL
+
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **the drone and the SEAD escort are seen; the fixed 4-ship is not what the planner builds now.** Inherent Resolve test 17: `Tikrit Armed Recon` and `Bayji Armed Recon` are each a Mirage 2000C pair plus an RQ-1A TARPS singleton, and the auto-planned Armed Recon flights on Anatolian Reach, Iron Gate (twice) and Desert Trident are pairs too, each with a SEAD Escort where a radar SAM sits on the route. The only four-ship Armed Recon flights in any capture are the DM's hand-built AUROCHS package on test 30. The 4-ship primary in this row's text predates the 2026-08-09 planner re-convergence and reads as stale; re-check the proposer before treating the pair as a fail.
 
 **History:** drone-in-package + TARPS-vs-CP + the convoy hunt VERIFIED in a 2026-07-06 flown session; the auto-planner 4-ship + SEAD-escort composition and the post-standoff AI hunt still owed
 - **Flown evidence (2026-07-06, Inherent Resolve turn 1, session `jovial-gates-574c9c`, Tacview + dcs.log):**
@@ -2623,6 +2680,8 @@ EWR covering a site is dead, Skynet runs the site autonomous and live from T0.
 
 ### G30 — Skynet point defence: the paired SHORAD answers the HARM shot · Skynet return · ☐ UNTESTED
 
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **not exercised through Skynet in any capture.** Test 32 is the only Skynet mission with HARM shots (8), and none was fired at a site with a paired point defence (POODLE never woke). The MANTIS-era test 14 evidence is now irrelevant. Needs a deliberate HARM at a site whose `(PD)` group Skynet holds dark.
+
 **2026-09-15, test 32** (Persian Gulf — WRL Operation Noisy Cricket Redux turn 2, no player slot, 2 h 14 min of sim at acceleration, `Tacview-20260915-174631`, DCS 2.9.29.27468, build `fd04b4a66`) — **not exercised through Skynet; the intercept itself is proven.** Skynet paired one red point defence, `0114 | POODLE (PD)`, and no HARM was fired at its parent, so it never woke. Five of the eight HARMs were still intercepted by SA-15 Tors in the coastal Silkworm groups and the airfield SHORAD groups (terminal 38–95 m from a 9M330, same second), under native DCS AI; the other three hit LEOPARD's two launchers and DOG's Silkworm search radar. The row still needs a shot at a site whose PD Skynet holds dark.
 
 > **Re-pointed 2026-09-12.** The MANTIS `AddShorad` link is gone. Skynet pairs each site's
@@ -2665,7 +2724,9 @@ either way — the row needs a shot deliberately taken at a site that has point 
 
 ---
 
-### G33 — Survivor ADF beacon: the pinned 260 kHz drives a real needle · CSAR (upstream #929 + 414th pin) · ☐ UNTESTED
+### G33 — Survivor ADF beacon: the pinned 260 kHz drives a real needle · CSAR (upstream #929 + 414th pin) · ◐ PARTIAL
+
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **the log half is proven for briefed survivors and exposes a gap for the rest; the needle is still unflown.** Every survivor Retribution places at mission start keys 260 kHz: tests 2, 11, 16 and 32 carry `Added Radio Beacon 260000 Hertz` for the uuid-named groups (ten of them on test 32). But a pilot who ejects **during** the mission is registered by MOOSE's own `CSAR:_AddCsar`, which the pin does not reach, so he keys a random channel from the stock pool: test 33's two blue survivors got 620 and 820 kHz, test 24's eighteen blue beacons (including the DM's own `Flash` at 300 kHz) never touched 260, and the red side is random everywhere. The kneeboard's 260 is therefore right for the rescue it briefs and wrong for a same-mission pickup, which the MAYDAY call still announces. A one-line fix would set the instance's `FreeVHFFrequencies` pool to the pinned channel so MOOSE's own draw returns it; not built in this audit. The row still needs an ADF set in a cockpit.
 
 **History:** adopted 2026-08-07. `tests/missiongenerator/test_csarbeacon.py` pins 260 kHz to MOOSE's 10 kHz grid, inside its 200–999 kHz band, clear of every navaid `UTILS.GenerateVHFrequencies` skips, and receivable by all three ADF sets; `tests/test_plugin_resource_files.py` proves the tone ships. Whether DCS produces a carrier a needle can home is cockpit-only
 - **What it is:** MOOSE `Ops.CSAR` beacons each survivor with a looped `trigger.action.radioTransmission` in the NDB band. Stock MOOSE draws a **random** channel per survivor, which cannot be briefed because the kneeboard renders before the mission runs — so the fork pins one channel for the whole mission (`game/missiongenerator/csarbeacon.py` → `luagenerator` emits `beaconHz` → `OpsCSAR.lua` substitutes it for the random draw) and the kneeboard SAR line carries it.
@@ -2691,6 +2752,8 @@ either way — the row needs a shot deliberately taken at a site that has point 
 - **Fail signature:** the helo arrives and **orbits forever without hoisting** — the hover task was rejected or the 30 s timer never armed; the flight never RTBs and the mission ends with the survivor still down. The helo **hovers at a wildly wrong height over water** — the surface reference resolved to the seabed. The helo hoists but then **flies its original route as if nothing happened**, never delivering — `popTask` restored the wrong task. A hung hover also burns the airframe: it will run itself out of fuel.
 
 ### G36 — Player rescue end to end: F10 menu, the hoist at the briefed height, delivery, roster · CSAR · ☐ UNTESTED
+
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **no human has flown a rescue helicopter in any capture** (players flew Vipers, Hornets and the King seat). Unchanged.
 
 **History:** adopted 2026-08-07; **this is the only path a human actually flies**, and it is gated by MOOSE's own winch logic rather than the fork's script. `tests/missiongenerator/test_csar_hover_altitude.py` guards the altitude contract
 - **What CI cannot exercise:** the whole player experience — the F10 menu appearing on the right group, "List Active CSAR" (this adoption's LARS) reading correctly, the winch actually starting, the survivor riding home, and the rescue crediting when you land.
@@ -2925,6 +2988,8 @@ either way — the row needs a shot deliberately taken at a site that has point 
 
 ### H14 — The kneeboard SAR line is accurate, and the rescue crew gets a usable card · CSAR · ☐ UNTESTED
 
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **not exercised.** Test 33's Viper kneeboard (eight pages, read off the miz) carries no SAR line because no survivor was on the map at generation; no capture had a CSAR package with a kneeboard to read. Unchanged.
+
 **History:** the beacon number is unit-tested and the SAR line renders; the page fit and the rescue crew's own card are visual
 - **What CI cannot exercise:** whether the SAR line fits its page on a busy theatre, whether the briefed beacon channel matches what the survivor actually transmits, and what the **CSAR crew's own** kneeboard says — every other kneeboard row is about what the *other* flights are told.
 - **Setup:** generate a mission on a busy campaign with a live survivor and a CSAR package. Read the SAR line on an ordinary striker's card, then read the CSAR flight's own card. ~10 min, no flying.
@@ -2932,6 +2997,8 @@ either way — the row needs a shot deliberately taken at a site that has point 
 - **Fail signature:** the SAR line overflows or truncates on a busy page; the briefed channel does not match the transmitted one (the pin fell back to MOOSE's random draw — see G33); the CSAR crew's card carries no beacon at all. **Also worth knowing:** the SAR line is printed on **every** flight's card including dynamic-slot aircraft, whose pilots can never go MIA and can never have a beacon — so a dynamic-slot pilot is briefed a rescue that structurally cannot come. That is a real mismatch, not a rendering bug, and if it bothers the squadron the fix is in the card, not the plugin.
 
 ### H15 — Offline recon pages: imagery under the symbology, or none at all · §22 · ☐ UNTESTED
+
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **the offline path was never taken.** Every recon page in the captures is the online Esri render (test 33's DEPARTURE, RECON OVERVIEW and RECON DETAIL pages all carry the Esri attribution and the imagery sits under the markers correctly), so the raster fallback this row exists for has not been exercised. Needs a generation with the network blocked.
 
 **Raised in value 2026-08-26.** These pages are the whole of recon candidate C, and the TARPS bird now gets them too (C.1). `generate_target_recon_kneeboard` cannot come off default-off until this row and H16 are flown, so this is the gate on the feature, not a cosmetic check.
 
@@ -2942,6 +3009,8 @@ either way — the row needs a shot deliberately taken at a site that has point 
 - **Fail signature:** imagery that is a vertical smear of one pixel row (the raster was georeferenced by `terrain.bounds` again); markers floating tens of km off the coastline they should follow (the coverage rect drifted — re-run `test_gif_georef.py`); a Cyprus page showing open water under an airbase (the `unrendered` hole stopped being consulted); a blank or crashed page where the landmap fallback should have drawn (the refusal path returned None all the way up instead of falling through).
 
 ### H16 — Package Targets Map: terrain behind the packages, and it lines up · §22 · ☐ UNTESTED
+
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **the page renders on a real turn; the terrain backdrop is not there.** Test 33's Package Targets Map (page 7 of the Viper deck) shows every package and field on a flat tan landmap with the coastline and grid, correctly placed (Akrotiri, CVN-62, Ramat David, MAVERICK, the front), with no imagery behind it. Syria is inside the shipped raster's coverage per the row's own history, so either the padded extent fell outside `COVERAGE` or the raster path was not taken; the row's fail signature ("a flat tan fill where the raster should have reached") is what is on the page. Not adjudicated further; check the extent before calling it.
 
 **History:** added 2026-08-22. The page drew a flat tan fill with a coastline; it now draws the shipped theater raster where `gif_georef` says it reaches. The swap had been tried and reverted in `7cc256f5c` (#945) because the georeference was broken — that is fixed, so it is made. Rendered on real Syria and Caucasus coordinates during development and it looked right; this row is the check on a real generated turn.
 - **What CI cannot exercise:** whether the imagery reads as a useful orientation map at whatever extent a real turn's packages happen to produce, and whether the labels stay legible over photographic terrain rather than a flat fill. Both are judgements about a picture.
@@ -3159,6 +3228,8 @@ be settled from a recording instead of the cockpit. It can, across all six recor
   unknown-name degrade failed).
 
 ### H10 — Shared-airframe kneeboard index · §27 · ☐ UNTESTED
+
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **not exercised.** No capture has two client flights of one airframe (every test with players had exactly one client flight), so the index page never had a reason to exist. Unchanged.
 
 **History:** standalone page again since the 2026-07-13 back-to-upstream rework; condition not met in the 2026-06-28 pass
 - **Not exercised (2026-06-28, audience pass — user confirmed the condition wasn't set up):** the mission did **not** have 2+ client flights of the same airframe, so the index had nothing to render — no observation either way, **not** a fail.
@@ -3501,6 +3572,8 @@ be settled from a recording instead of the cockpit. It can, across all six recor
 
 ### L5 — New-Game "Vietnam" card · Vietnam mode P2 shell · ◐ PARTIAL
 
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **app-side; no capture can show the New Game wizard.** Unchanged.
+
 **History:** verified 2026-06-28, but **re-plumbed 2026-07-26** onto upstream #908's filter framework — the era filter runs through a different code path now and needs a re-check
 - **⚠️ Re-verify (2026-07-26 sync):** upstream #908 added version/map/performance filters + sort to the
   same Theater page, so the fork **dropped its bespoke era plumbing and adopted theirs**. The era is
@@ -3528,6 +3601,8 @@ be settled from a recording instead of the cockpit. It can, across all six recor
   arriving on the Theater page.
 
 ### L6 — Convoy interdiction (Steel Tiger) · §35 · ◐ PARTIAL
+
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **no Vietnam campaign in the 33 captures.** The July flown evidence stands as written. Unchanged.
 
 **History:** 2026-07-02 flown Trail 2 session `wonderful-chatterjee`: the reworked real-convoy runtime leg PASSED — `Convoy 001` (2× PT-76 + Grad-URAL, real force-model units) drove the trail road, the player Armed Recon Phantoms found it and killed all 3 with Mk-82 Snakeyes (Tacview removals t=3195/3609/3610); still owed = the debrief leg — next-turn processing must record the loss as `enemy_convoy` so the units never arrive. ⚠ blocked on the REAL server-side `state.json` — the dedicated host wrote it to its **TEMP fallback**: `dcs.log` says "The state.json file will be created in TEMP : (C:\Users\admin.dcs\AppData\Local\Temp\state.json)" (no `RETRIBUTION_EXPORT_DIR` set on the server + the client installPath doesn't exist there); the local `Missions\state.json` the user first pulled is a stale Jun-20 file from a different campaign. Fetch the TEMP file to process the turn, and set `RETRIBUTION_EXPORT_DIR` on the server for a stable path going forward
 - **Sizing/variety rework (2026-07-03), re-opens the runtime leg.** Player feedback off the above flight
@@ -3617,6 +3692,8 @@ be settled from a recording instead of the cockpit. It can, across all six recor
 
 ### L8 — Airbase harassment (rocket/mortar siege) · §36 · ◐ PARTIAL
 
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **the generic artillery mode armed in many captures, the Vietnam siege in none.** `Airbase harassment armed for N field(s)` appears on tests 1–33 wherever a front was inside the reach (Iron Gate, Inherent Resolve with 4 fields, Afghanistan, Hornet's Nest); the impacts leave no Tacview object, so the visual confirm this row has owed since July is still owed. No Vietnam campaign was flown. Unchanged.
+
 **History:** 2026-07-01 flown Yankee Station session `intelligent-dubinsky`: armed for 4 fields, user saw the "Incoming — standoff fire on …" cue in-mission → the barrage loop fires past the grace period; the impacts themselves + the player-spawn-field exclusion not yet visually confirmed. 2026-07-02 Trail 2 session `wonderful-chatterjee`: armed for 3 red fields (Sukhumi/Gudauta/Senaki) with all 5 blue player fields excluded in the emitted data, zero errors across a 90-min mission — the Python-side exclusion held by construction; the visual impact confirm still owed
 - **Headless adjudication:** `game/missiongenerator/tests/test_vietnamops_luadata.py` locks the emitter — a
   forward, occupied airfield/FARP is emitted; a rear / neutral / carrier / off / no-front field yields no node;
@@ -3667,6 +3744,8 @@ be settled from a recording instead of the cockpit. It can, across all six recor
   side, which no human can see on Red Tide).
 
 ### L9 — Super Gaggle hilltop resupply · §37 · ◐ PARTIAL
+
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **no Vietnam campaign in the captures.** Unchanged.
 
 **History:** 2026-07-01 `intelligent-dubinsky` runtime run PASSED; **2026-07-02 Trail 2 session `wonderful-chatterjee`: second clean run — both CH-53Es closed to 140 m of FOB Khe Sanh at t≈306, returned, landed and shut down; BOTH F-4E suppressors (`SuperGaggle-T1-Sandy-1/-2`) were shot down (t=973 — its wreck also killed a friendly soldier — and t=2897), so the loss-accounting leg is finally armed**: after the turn is processed with the real server `state.json`, the next-turn debrief must charge 2 F-4E airframes to the suppressor squadron and 0 CH-53s — that check is what remains
 - **Launch-delay rework (2026-07-03), re-opens the runtime leg.** The flown pass above found the whole
@@ -3740,6 +3819,8 @@ be settled from a recording instead of the cockpit. It can, across all six recor
   the mark cadence is far too frequent (smoke spam) or never fires.
 
 ### L11 — Snake and nape (napalm CAS) · §39 · ◐ PARTIAL
+
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **no Vietnam campaign in the captures.** Unchanged.
 
 **History:** **player leg VERIFIED** 2026-07-02 flown Trail 2 session `wonderful-chatterjee`: 4 real player Snakeye deliveries, zero plugin errors, and the user confirmed the split exactly matched the gate — Toxic's two in-gate passes (≈119 m and ≈111 m AGL at 153/274 m/s vs the 152 m / 93 m/s gate) bloomed the fire walls ("it was awesome"), Bulldog's two above-ceiling passes (≈213 m and ≈177 m AGL) correctly drew none. Still owed = the **AI leg**: an AI CAS/BAI flight pressing to the §P1c 500 ft deck and tripping the release gate itself
 - **Detonation-anchored (2026-07-02 rework — this row tests the NEW trigger):** fire now keys off a **real
@@ -3839,6 +3920,8 @@ be settled from a recording instead of the cockpit. It can, across all six recor
 
 ### M6 — Red tempo: turn-windowed trail surge, ground-offensive pulse (campaign layer W6, rehomed 2026-07-21) · campaign layer · ☐ UNTESTED
 
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **no capture spans a `red_tempo:` window.** Unchanged.
+
 **History:** built 2026-07-01, rehomed 2026-07-21 to a top-level turn-windowed `red_tempo:` schedule — last-window-wins by `from_turn`, authored on 6 campaigns; parse/window/stance/convoy-surge all unit-tested, the multi-turn campaign feel needs a played arc. The `resolve_regen` lever was dropped 2026-07-21 with the will economy.
 - **Headless adjudication:** the `red_tempo:` parse, the ground-offensive window math, the raise-only
   stance pulse, the end-to-end convoy surge (second column + doubled skim),
@@ -3898,6 +3981,8 @@ be settled from a recording instead of the cockpit. It can, across all six recor
 
 ### O1 — Local DCS chart base layer renders + aligns · §42 · ☐ UNTESTED
 
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **app-side; no capture can show the map layers panel.** Unchanged.
+
 **History:** built 2026-07-01; routes test-covered, tiles generated locally; needs an in-app pass + the CI client rebuild
 - **What CI covers:** the `/map-tiles` listing/serving routes (meta parse, malformed-meta skip, 404s,
   traversal guard) are unit-tested, and the tiler ran clean over Flappie's Caucasus GeoTIFF. What CI cannot
@@ -3919,6 +4004,8 @@ be settled from a recording instead of the cockpit. It can, across all six recor
 ---
 
 ### P1 — COIN Enduring Resolve: the living insurgency in play · COIN C-series · ☐ UNTESTED
+
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **the Afghanistan captures did not run COIN.** Tests 20–23 (Afghanistan, 08-28 and 08-29) registered no IED, HVT, cell or cache group and printed no `COIN|` line at all; only Vietnam Ops harassment armed. Whether those games were Enduring Resolve with the plugin unticked (the §36 lesson) or another Afghanistan campaign is not recorded; either way nothing here was exercised. Inherent Resolve (test 17) did run the stack, see P7.
 
 **History:** built 2026-07-02; the whole stack headless-verified on the real campaign — regen/revival, cache throttle to the 0.25 floor, will profile, 3-phase arc — the played feel needs a campaign
 - **Headless adjudication:** the campaign loads through the real `GameGenerator` pipeline (probe 2026-07-02):
@@ -3971,6 +4058,8 @@ be settled from a recording instead of the cockpit. It can, across all six recor
 
 ### P3 — COIN re-infiltration: the insurgency retakes ground · COIN C1.5 · ☐ UNTESTED
 
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **not exercised; see P1.** Unchanged.
+
 **History:** built 2026-07-03; the staged pipeline / eligibility / conservation bound / stage machine / flip + will handoff are fully unit-tested with fakes, and the campaign preseed + module wiring are headless-verified — the real TGO spawn + engine capture flip + the played feel need a campaign
 - **Fiction-kit note (2026-07-04):** the infiltration cell now shares the P4/P5/P6 unit retype (`_spawn_cell` → `cell_unit_types`) — an armed technical + infantry rather than the faction front-line armor. First-fly should confirm the seeded cell reads as an insurgent element.
 - **What CI cannot exercise:** the real `ForceGroup.generate` spawn of a red cell/cache near a blue/neutral target (attached to the source stronghold, per the allegiance constraint), the engine-native `ControlPoint.capture` flip, and the reparent of the seeded cell+cache onto the flipped CP. The design note itself flags this as in-play-only (timers need tuning against real Shattered Dagger geometry).
@@ -3982,6 +4071,8 @@ be settled from a recording instead of the cockpit. It can, across all six recor
 
 ### P4 — COIN roadside IEDs: sweep the trail or pay · COIN · ◐ PARTIAL
 
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **not exercised; see P1.** No IED or VBIED group was generated in any capture (the `SVBIED` names in tests 21–23 are map trigger zones, not units). Unchanged.
+
 **History:** 2026-07-04, user pass — "good but needs reworked"; **REWORK APPLIED 2026-07-04** in two parts: fiction-kit retype + IED-vs-mobile-VBIED variety with an in-mission suicide-vehicle drive (see the two rework bullets); **REWORKED AGAIN 2026-07-05** — the static variant is now a static-object emplacement + security team (third rework bullet) — needs a re-fly to confirm the static emplacement reads right AND the VBIED variant drives at a friendly base and is interceptable) (was ☐ UNTESTED, built 2026-07-03; the fuse state machine / clear-vs-detonate / concurrent cap / road-nearest-the-front placement / mandate feed are fully unit-tested with fakes, and the campaign preseed + red-red ratline are verified — the real emplacement spawn + recon-fog visibility + played feel need a campaign
 - **Rework (2026-07-04) — fiction-appropriate unit kit.** The COIN objects were generated as trimmed FRONT_LINE force groups with only the *map symbol* overridden, so the metal underneath was the faction's armor (a BMP-1 wearing an IED icon on a conventional faction; a plain technical on Toyota). `spawn_red_ground_at` now takes a `unit_types` list and `_retype_units` (`game/fourteenth/coin.py`) re-points the trimmed units' DCS *types* (+ names) to kit drawn from the red faction's own roster: an **IED = a lone soft supply truck** (`ied_unit_types`), an **HVT = a leader's jeep + a 2-rifle escort** (`hvt_unit_types`), a **cell = an armed technical + infantry** (`cell_unit_types`). On the Enduring Resolve Toyota Al Gaib faction that resolves to Ural-375 / UAZ-469 + 2× Insurgent AK-74 / DShK gun-truck + Insurgent AK-74 (verified headless). Selection reads only the faction's resolved roster (never a hardcoded, possibly-unregistered id) and no-ops to the old generated group if the faction can't fill the roles. Covered by `tests/fourteenth/test_coin_units.py`. **Re-fly = confirm the IED now reads as a suspicious truck (not a combat vehicle) and is still findable+killable.**
 - **Rework (2026-07-04, part 2) — static IED vs mobile suicide VBIED + in-mission movement.** Each plant now deterministically alternates a **static roadside IED** (buried, `FUSE_TURNS` 3) and a **mobile VBIED** — a suicide vehicle that drives for the nearest friendly base (`_nearest_blue_cp`) on a shorter `VBIED_FUSE_TURNS` (2). Same fuse→detonation→`ied_detonations`→mandate consequence; distinct "intercept it before it arrives" / "VBIED reached {base}" messaging (`game/fourteenth/coin_ied.py`, tested in `test_coin_ied.py`). The **driving** is COIN's first Lua runtime: `game/missiongenerator/coinluadata.py` emits each mobile VBIED's DCS group name + target base as `dcsRetribution.coin.vbieds`, and the new `resources/plugins/coin/` plugin routes it via `mist.goRoute` (`tests/missiongenerator/test_coinluadata.py` + `tests/lua/test_coin_runtime.py`). **Movement only** — kill it en route and it's recorded natively as intercepted; let it reach the turn end and the fuse resolves against the mandate. **Re-fly (Lua, cockpit-only) = watch a VBIED actually drive toward a friendly field, kill one before it arrives (see "intercepted"), and let one run (see the mandate hit); confirm a static IED sits still.**
@@ -3992,6 +4083,8 @@ be settled from a recording instead of the cockpit. It can, across all six recor
 - **Fail signature:** IEDs render **blue** (allegiance bug — must attach to the red stronghold); none appear (no red-red `convoy_routes` — the ratline didn't build, or the faction has no FRONT_LINE group); the emplacement is fully visible with no recon fog (TGO fog not applying); a detonation doesn't move the mandate (`blue_ied_detonation` weight 0 / `consume_ied_detonations` not wired); IEDs pile onto one road (the used-road de-dup broke); the count runs away past the cap.
 
 ### P5 — COIN high-value targets: hunt the leadership · COIN · ◐ PARTIAL
+
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **one data point.** Inherent Resolve test 17 surfaced a named HVT (`Mullah Nasir`) and the auto-planner fragged a BAI package on him with a SEAD Escort and a jammer; whether he moved, whether he died and what the mandate did are not in the capture. The stale ROE-zone signature stands corrected by the 08-21 note.
 
 **⚠️ Stale reference (2026-08-21 audit):** a fail signature below blames "the ROE zones
 aren't covering him". §40's ROE zones were removed 2026-07-21 — there are no zones to cover
@@ -4008,6 +4101,8 @@ the HVT feature itself, not a zone-overlap one.
 
 ### P6 — COIN dispersed cells: patrol the countryside · COIN C4 · ☐ UNTESTED
 
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **not exercised; see P1.** Unchanged.
+
 **History:** built 2026-07-03; the seed/attrite/coalesce state machine, one-cell-per-stronghold spread, the open-field placement gate, and the coalesce-revives-a-dead-cache hook are fully unit-tested with fakes, and the campaign preseed + wiring are verified — the real field spawn + recon-fog + the played feel need a campaign
 - **Fiction-kit note (2026-07-04):** the field cell now shares the P4/P5 unit retype — `cell_unit_types` re-points it to an **armed technical + infantry** (a DShK gun-truck + Insurgent AK-74 on Toyota Al Gaib) instead of the faction front-line armor. First-fly should confirm the cell reads as an insurgent fire team, not an armor group.
 - **What CI cannot exercise:** the real `ForceGroup.generate` spawn of a 2-unit red cell out in the open field (on the stronghold→coalition line, ≥ 12 km from every CP), whether it reads as a recon-fogged Armed-Recon/CAS target you can find by patrolling, and the coalesce's cache-revival actually re-opening C1 regen in the *next* mission.
@@ -4015,7 +4110,9 @@ the HVT feature itself, not a zone-overlap one.
 - **Pass:** up to 3 recon-fogged cells sit out in the countryside (one per stronghold, not stacked, ≥ ~12 km off every base); killing one is ordinary attrition and denies the resupply; leaving one ~3 turns coalesces it into its home stronghold and brings a **dead ammo cache back online** ("a supply cache is back in operation") — visibly re-opening that stronghold's C1 regeneration next turn; a stronghold with no dead cache instead gets a small garrison reinforce (bounded by its anchor) or the cell just "melts in"; cells reseed to the cap each turn.
 - **Fail signature:** cells render **blue** (allegiance bug); cells spawn on top of a base (< 12 km — the open-field gate broke) or all stack at one spot (the one-per-stronghold spread broke); no recon fog; the coalesce doesn't revive the cache (the cache-revival path not firing / anchor read wrong); a coalesce grows a stronghold **past** its turn-0 anchor (the militia-revive cap broke — must never exceed `tgo_cap`); cells never appear (no red↔blue geometry, or the faction has no FRONT_LINE group).
 
-### P7 — Iraq "Operation Inherent Resolve" (Mosul) COIN campaign plays · Iraq COIN campaign · ☐ UNTESTED
+### P7 — Iraq "Operation Inherent Resolve" (Mosul) COIN campaign plays · Iraq COIN campaign · ◐ PARTIAL
+
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **the campaign loads and plays; the COIN feed fired in the one captured mission.** Inherent Resolve was played to turn 2 by 2026-08-21 (the 13th-test `autosave.retribution`, Iraq) and test 17 (2026-08-25) is a full turn of it: the drone wing is fragged (two RQ-1A TARPS singletons on Tikrit and Bayji, three MQ-9 BAI flights), a named HVT surfaced and the auto-planner built a package on him (`HVT Mullah Nasir BAI` with a SEAD Escort and an EA-6B jammer), four `Convoy ambush` zones were authored, Vietnam Ops harassment armed for 4 fields, and `COIN|: in-mission liveliness armed`. Not seen: the Mosul/Old City CDE boxes on the map, the front moving, and whether the FOB furnishing reads right, which are app and multi-turn observations. The stale preseed names in the setup stand corrected by the 08-21 note.
 
 **⚠️ Stale setup (2026-08-21 audit), two items.** The preseed list below names
 `vietnam_political_will` and `campaign_phases`; both settings were removed 2026-07-21 (§48/§40)
@@ -4033,6 +4130,8 @@ engaged. The rest of the campaign check stands.
 - **Fail signature:** campaign hidden from New Game (version gate) or errors on load; a FOB/airfield in water or off-map; a squadron fragged from a dropped/red field (Qayyarah id 6, Erbil id 4); the front never forms (Balad↔Tikrit route missing) or captures a base by sweep; the crust never fills (faction SAM presets dropped) so SEAD has nothing; red strongholds still read barebones (furnishing not applied); the will meters/phases don't move; the ISIS spawns read as US armor (fiction-kit retype not applied).
 
 ### P8 — COIN in-mission liveliness: cell movers + insurgent indirect fire on the FOBs · COIN · ☐ UNTESTED
+
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **the plugin armed on Inherent Resolve test 17 (`COIN|: in-mission liveliness armed`); movers and barrages were not measured.** Nothing on Afghanistan (P1). Unchanged.
 
 **History:** built 2026-07-05, the "systems feel static" part 3; the emitter shapes/gates/player-field exclusion and the Lua grace + double-guard + mover routing are covered in `tests/missiongenerator/test_coinluadata.py` + `tests/lua/test_coin_runtime.py` — the real DCS driving, the barrage look/feel, and whether the pressure reads need a campaign
 - **90-minute mover pacing (2026-07-05, user rule — "sometimes it takes guys a long time to get up in the air"):** the one-way drives (VBIED, infiltrator creep) are **paced** so arrival lands no earlier than `minJourneyS` (default 5,400 s / 90 min) after mission start — every repath recomputes speed = remaining distance / remaining window, capped at the configured speed, floored at a 5 km/h crawl; past the window the configured speed applies. Continuous pacing, not a proximity trigger (the user rejected range-based starts as "lazy and not immersive"). Loop movers (HVT patrol, cell wander) never end, so they already comply. Harness-pinned (`test_coin_runtime.py` pacing tests). **Pass addition:** a VBIED spawned at mission start is still on the road (interceptable) at T+60–80 min, visibly driving the whole time. **Fail:** a VBIED parked at its target base inside the first hour, or a mover teleport-sprinting after the window flips over.
@@ -4202,6 +4301,8 @@ engaged. The rest of the campaign check stands.
 
 ### S3 — Friendly convoy ambush (a chance, never telegraphed) · §50 · ◐ PARTIAL
 
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **the native triggers are authored and the spring is still blocked by S5.** `Convoy ambush N` zones exist in four captures (test 8: 3, test 17: 4, tests 19 and 20: 1 each). On test 17 both blue columns the teams were keyed to never moved (S5), so nothing could enter a zone. Unchanged until S5 is fixed.
+
 **History:** 2026-07-06 flown Inherent Resolve session `jovial-gates-574c9c`: the whole chain up to the spring VERIFIED — but the spring itself was blocked by the S5 parked-blue-convoy bug
 - **2026-07-11 flown Red Tide M1 (`csar-snatch-toggle-question-dfdb7a`): quiet mission — inconclusive
   by design.** The blue column (`Convoy 001`, M-113/VAB ×6) drove its full 61 km corridor untouched and
@@ -4248,7 +4349,9 @@ save drop stays, because that pop IS the cleanup for old saves.
 - **Pass:** radios stay clean while no capture has happened (dormant, `dcs.log` "COMMSJAM|: intel gate armed … dormant until an aircrew capture"); on a capture, an "AIRCREW CAPTURED — assume the comms plan is compromised" cue fires and static bursts begin ~2 min later (the exploitation delay) on the briefed intra-flight/AWACS channels (worse closer to red's C2 belt); with a POW held, the NEXT mission opens with the "COMMS COMPROMISED: enemy interrogation of captured aircrew" cue and jams from the grace; freeing the POW (or the 4-turn clock expiring) returns clean missions; GUARD 243.0, ATC and the JAM BACKUP channel always stay clean; switching to the backup escapes the noise; striking the emitting comms mast/command bunker stops the bursts and (once all emitted nodes are dead) cues "comms jamming has ceased".
 - **Fail signature:** jamming before any capture with the intel gate on (`captureOnly` flag not emitted/read); no jamming ever after a confirmed capture (the `combat_sar_captures` global name/shape drifted between the combatsar and commsjam plugins — check both, and that a CombatSAR node was emitted at all: no blue rescue helo = no capture race); the POW leg opens clean (`pending_pow_recoveries` not read — check `plan_comms_jam`); no static ever plays on a jammed channel (sound file missing from the miz — check `commsjam-noise.wav` landed in `l10n/DEFAULT`, or radioTransmission Hz/modulation wrong); static on GUARD/ATC/the backup (the Python positive-list broken); continuous unbroken noise on every channel at once (duty cycle/rotation broken — check `burstSec`/`intervalSec`/`maxFreqsPerBurst` plugin options); jamming continues after the node is confirmed destroyed (death detection — the static `" object"` suffix or the `dead_events` ledger path); a `COMMSJAM|: setup error` in dcs.log; bursts before the startup grace.
 
-### S5 — Ambient supply convoys: both sides' roads have randomized traffic · §50 · ◐ PARTIAL
+### S5 — Ambient supply convoys: both sides' roads have randomized traffic · §50 · ✗ REGRESSED (2026-09-16, audit)
+
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **REGRESSED: columns still park, and not only blue.** Every capture with convoys was measured off the recording (path length per unit over the mission). Drove: red on Vectron's Claw, Iron Gate (three columns, 5–46 km), Hornet's Nest, Caucasus 2026, Noisy Cricket (85 km) and Peace Spring (57 km); blue on Hornet's Nest (test 28, 12.7 km) and Noisy Cricket (test 32, 4 km). **Parked for the whole mission:** both blue columns on Inherent Resolve test 17 (Convoy 003, LAV-25/Bradley/HMMWV/MLRS/MRAP, and Convoy 004, M1A2/M6, each with a 5–7 point on-road route in the miz), the blue column on Caucasus 2026 test 31 (eight T-64BV, 41 min), and red Convoy 002 on Hornet's Nest test 28 (ten vehicles, 22 min). The 2026-07-07 distinct-road fix did not remove the failure, and the Inherent Resolve re-fly this row was waiting for reproduced it. Three of fifteen columns across seven missions; mixed tracked/wheeled columns dominate the parked set but the T-64 column is single-type, so that lead is not the whole story. This also blocks S3 (test 17's four ambush zones were keyed to the two parked blue columns).
 
 **History:** post-fix flown evidence on Red Tide is clean — 2026-07-11 M1 `csar-snatch-toggle-question-dfdb7a`: BOTH sides' columns drove their full corridors end-to-end (blue `Convoy 001` M-113/VAB 61 km, red `Convoy 002` BTR-80/Grad 65 km, one real transfer per corridor, ~125 min); the original fail signature was Inherent-Resolve-specific (the Baghdad mega-column), so promoting fully off this row still needs the IR re-fly where it actually failed. Was ✗ REGRESSED: 2026-07-06 flown Inherent Resolve session `jovial-gates-574c9c` — red's ambient columns drove their roads, but the BLUE column sat PARKED at its Baghdad spawn for the entire 52-minute mission, the "columns don't drive" fail signature, blue-side
 - **2026-07-09 Red Tide test: convoys DROVE fine here** (Tacview: 62 ground units moved >2 km, top columns 23–26 km, BOTH NATO and Soviet). So the parked-convoy bug is **not** universal — it may be Inherent-Resolve-specific (a coalesced/oversized transfer on a shared corridor — the S5 distinct-road fix). NOTE: ambient convoys are native `coalition.transfers` groups with a real `.miz` route, **not** the `mist.goRoute` movers, so the SCUD/COIN 2-WP fix (S2) does NOT touch this. Re-check on Inherent Resolve after the distinct-corridor sampling.
@@ -4300,6 +4403,8 @@ save drop stays, because that pop IS the cleanup for old saves.
 - ⚠️ **The estimate itself moved the same day:** the combat bucket's cruise constant went **520 → 700 NM**, re-derived once the twelve adoptions took the calibration set from 2 references to 9. Unmeasured combat jets now estimate **~25% lower burn** than when this row was written (a Fulcrum 14.3 → 10.6 ppm, a Flanker 39.9 → 29.6). That directly moves this row's threshold: **a tanker that used to be fragged for a mid-length sortie may no longer be.** Both fail signatures below still apply, but "tankers appearing on short hops" is now the *less* likely half — watch harder for the other one (a long sortie fragged with no tanker). The constant is deliberately conservative rather than best-fitting, and two CI invariants stop it being tuned optimistic; the reasoning is in `AircraftType.estimated_fuel_consumption`'s docstring. Helicopters and heavies are unaffected.
 
 ### S7 — Measured fuel data adopted from DCS Liberation drives tanker + bingo for 12 airframes · §46 · ☐ UNTESTED
+
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **not decidable from a capture.** The measured `fuel:` blocks drive the kneeboard readouts only since §46's revert; whether the ladder reads plausibly against the cockpit gauge is a cockpit observation nobody has reported. Unchanged.
 
 **History:** adopted 2026-08-07 from the DCS Liberation research pass — twelve `fuel:` blocks copied verbatim for A-10A/A-10C/A-10C_2/A-4E-C/AV8BNA/F-100D/the four F-14 marks/F-15C/F-4E-45MC, fanning out to 16 variants; measured coverage 22 → 40 aircraft types. All 16 pinned in `tests/dcs/test_estimated_fuel_consumption.py`
 - **What CI cannot exercise:** the numbers are now *correct on paper* — what no test can say is whether the resulting sortie flies. Adopting a block promotes these twelve out of the kneeboard-only estimate fallback and onto measured `unit_type.fuel_consumption`, which drives **tanker tasking** (`formationattack`) and the **in-flight fuel sim** (`inflight.py`). That is the intended design ("a real `fuel:` block always wins"), but it is a behavior change for twelve airframes landing at once.
@@ -4562,6 +4667,8 @@ bunker / Predator GCS). Kills record as ordinary ground losses.
 
 ### B45 — GPS jamming (satellite-guided weapons go long) · §86 · ☐ UNTESTED
 
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **armed once, never exercised, and the runtime is silent when it works.** The plugin armed on Vectron's Claw (tests 1 and 2, 2 sites) and Caucasus 2026 (test 31, BUTTERFLY: two `GPS_Spoofer_Red` and a Tunguska); no blue GPS-guided weapon was released in any of the three recordings. The plugin logs its arming and nothing on a degraded weapon, so even a JDAM that went long would leave no line; add one before the next attempt or the flight can only be judged off Tacview impact points.
+
 **History:** built 2026-08-04
 
 **Setup:** Operation Baltic Fury preseeds this — two jamming sites at `GPSJAM-1` (Copenhagen
@@ -4636,7 +4743,9 @@ and confirm the launchers now **cost money** (Scud-B 40, Iskander-M 70, CJ-10 75
 - A missile site the AI can no longer afford to rebuild, or an economy visibly distorted by the new
   prices (they are ~135 for a full SCUD battery against ~230 for an S-300 site).
 
-### B52 — Escort-jammer distribution + the one-SEAD-flavour escort set · §77 · ◐ PARTIAL
+### B52 — Escort-jammer distribution + the one-SEAD-flavour escort set · §77 · ☑ VERIFIED (2026-09-16, audit)
+
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **VERIFIED: the distribution half is settled by the only post-fix mission with a jammer wing, and the escort-set rules hold on 16 mizzes.** Test 17 (Inherent Resolve, 2026-08-25, four days after the fix) fragged both EA-6B Escort Jammer pairs onto strike-type packages that carried a threat-gated SEAD Escort (TAURUS BAI and the HVT Mullah Nasir BAI), none onto anything helo-led, and the wing's `max_escort_jammers` cap of 4 was spent there rather than on transports. Across tests 17–33 no package carries both a SEAD Escort and a SEAD Sweep, front-line CAS still gets its own SEAD Sweep (Iron Gate twice, Caucasus 2026, Peace Spring), and DEAD packages take a SEAD Escort only. Not seen: a DEAD package on a jammer-fielding wing (test 17 planned none), which is the cap's territory. The one-SEAD-flavour half was the DM's 2026-08-21 verdict.
 
 **2026-08-21, DM pass `sead-escort-waypoint-bug-548af6` — the ONE-SEAD-FLAVOUR half is good.**
 The jammer-distribution half (does the auto-planner put a Growler on the right package) is
@@ -4866,6 +4975,8 @@ Fly it and tank as briefed.
 budget arithmetic is unit-tested; the arrival time is a mission.
 
 ### B54 — Planner behavior bar switches the suite in the settings UI · re-convergence · ☐ UNTESTED
+
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **app-side; no capture can show the settings page.** Unchanged, on the WATCH card.
 
 **History:** built 2026-08-09, app pass not flight.
 **2026-08-20 app pass: FAILED, root-caused and fixed the same day.** The bar never
@@ -5098,6 +5209,8 @@ stay in the area ~10 minutes.
 
 ### B61 — Task-role degrade: mismatched-role AI flights still fly their mission · §8 · ☐ UNTESTED
 
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **not decidable from a capture** (the degrade warning is in the app log, which no test folder holds). Unchanged.
+
 **History:** built 2026-08-16, session `c86c58dd`.
 
 > `configure_task` no longer raises when an AI flight's tasking maps to a pydcs task the
@@ -5131,6 +5244,8 @@ leg in Tacview/F10.
 
 
 ### B65 — Reinforcement follows the supply lines · §90 rung A · ◐ PARTIAL
+
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **unchanged;** the multi-turn half needs the app, and no capture is a second turn of the same road cut.
 
 **2026-08-29, test 24** (Caucasus — Iron Gate turn 1, 72 min, `Tacview-20260829-162330`, DCS 2.9.29.27278) — **the tiering does bite in a real campaign.** With
 `supply_gated_reinforcement` on, blue's Kutaisi reads **AIRLIFTED** while Batumi, Kobuleti, Turkey
@@ -5169,6 +5284,8 @@ front base and the rear — Red Tide's Fulda corridor is the reference.
 ---
 
 ### B66 — Attacking costs more than defending · §90 rung B · ☐ UNTESTED
+
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **not decidable from a capture.** Unchanged.
 
 **History:** built 2026-08-17, session `629c250f`.
 
@@ -5298,6 +5415,8 @@ actually are.
 > result, so nothing is misbehaving, but an even fight cannot demonstrate the armour
 > weighting. That row needs a lopsided pair.
 ### B70 — Sortie records reach the campaign · §91 · ◐ PARTIAL
+
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **unchanged;** the two-humans-in-one-group re-fly is still owed. On the WATCH card.
 
 **2026-09-15, test 33** (Syria — Operation Peace Spring turn 2, multiplayer listen host with two humans in the MAVERICK Viper strike, 93 min, `Tacview-20260915-205127-DCS-Host`, DCS 2.9.29.27468, build `611eedfcd`; the turn-3 save `91526.retribution` is the auto-planner's own frag on the same build) — **136 records; the host's own record is complete and the second human's is empty.** `King 1 | Flash`: 297 samples, 4 shots, 3 hits, 92.5 min, folded into both logbooks. `SMR|Maj Redneck|90-824`, in the same Viper group: `player: true` and his name from the shot events, 4 shots, 3 hits, 1 air kill, but `first_seen −1` and no track — the sweep never sampled him. The harness already passes four humans in one group, so this is a live-DCS difference: his unit answered `getPlayerName` inside the shot and hit events but not inside the sweep's `group:getUnits()` walk, and with the host holding the group's anchor he was treated as the AI wingman. Consequence: `record_mission` needs a track, so he got no lifetime profile (B114). Fixed the same day: the sweep now also takes `coalition.getPlayers` as the list of humans and treats a record already marked `player` as human, and the first event that carries the name fills it in (`tests/lua/test_sortie_recorder_runtime.py`). Re-fly with two humans in one group. Everything else reconciles: 16 blue air kills in the recording (14 AIM-120, 2 AIM-9) against the records' claims, and both §61 bandits are among them.
 
@@ -5451,7 +5570,9 @@ Lead a package that has an escort or escort jammer on it and fly the whole profi
   4. **The escort jammer keeps a SAM in weapons-hold long after the strike.** §77 pulses only
      while the jammer is within 40 NM — an unreleased escort parks it there. Read with B31.
 
-### B79 — Ground-level waypoints read the field's elevation · §8 · ☐ UNTESTED
+### B79 — Ground-level waypoints read the field's elevation · §8 · ☑ VERIFIED (2026-09-16, audit)
+
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **VERIFIED off six generated missions, both coalitions.** Every routed flight in tests 24, 26, 30, 31, 32 and 33 carries its takeoff and landing points at the field's elevation from `resources/airport_imagery` (Beslan 524 m, Tbilisi-Lochini 480 m, Mineralnye Vody 320 m, Kerman 1,751 m, Gaziantep 699 m, Damascus 612 m, Incirlik 48 m, Ramat David 41 m, all within 5 m), 232 waypoints checked against the table. The only zeros left are the one-point parked-ramp groups (the untasked squadron jets and the QRA templates, which never fly) and the neutral civilian traffic, which never enter `WaypointGenerator`, exactly the row's third fail signature. The AI landed on those fields in every recording (test 24: 26 landings; test 33: 19). The cockpit half is the DM's B90 verdict: the DED reads the field's elevation on the Viper's steerpoints. Off the WATCH card.
 
 **History:** built 2026-08-18, from test 7. Upstream-inherited, not a fork regression:
 `WaypointBuilder.land()` is byte-identical to `upstream/dev`.
@@ -5500,6 +5621,8 @@ Fly any sortie off a field that is not at sea level and read the waypoint list.
 > Read this row with **Q3**.
 
 ### B80 — String plugin options can actually be edited · §14 · ☐ UNTESTED
+
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **app-side.** Unchanged.
 
 **History:** built 2026-08-18. An app check, not a flight.
 
@@ -5608,7 +5731,9 @@ Play a turn on a **front-less** campaign whose AWACS is not at the field nearest
      field. Working as written; note the campaign, because it is the trade above biting.
   3. **A fronted campaign changes.** It should not — only the front-less branch moved.
 
-### G42 — Skynet is the engine again · Skynet return · ☐ UNTESTED
+### G42 — Skynet is the engine again · Skynet return · ◐ PARTIAL
+
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **three of the four pass clauses seen; the HARM clause was measured and did not happen.** Loads and runs to full length with no `enableEmission` fault on tests 30, 32 and 33 (25 min, 2 h 14 min, 93 min). Sites dark until cued (KIWI's SA-11 held fire until the DEAD four-ship was inside 30 km). Unhandled sites named (OKAPI, WATERBUCK). The one site that took HARMs, LEOPARD (SA-11, test 32), did **not** go dark: WEKA fired two AGM-88 at t=4157 and t=4165, LEOPARD launched at t=4165, 4170, 4177 and 4197 while the HARMs were in the air, lost two launchers at t=4250 and t=4256, and launched again at t=4294 and t=4305. Skynet's HARM defence is a per-site detection roll, so one site is not a verdict, but on the only measurable case the site fought through the shot rather than shutting down. Recorded, not tuned; the HARM clause stays open.
 
 **2026-09-15, test 33** (Syria — Operation Peace Spring turn 2, multiplayer listen host with two humans in the MAVERICK Viper strike, 93 min, `Tacview-20260915-205127-DCS-Host`, DCS 2.9.29.27468, build `611eedfcd`; the turn-3 save `91526.retribution` is the auto-planner's own frag on the same build) — 93 min, no crash, no `enableEmission` fault. One rejection: `0092 | WATERBUCK (PD)` is a point-defence group Skynet cannot classify; its parent SA-10 was still fragged and the turn-3 auto-planner still targets it.
 
@@ -5642,6 +5767,8 @@ profiles from HFXLegion's fork compiled in.
   a modded site named as unhandled (add its profile to the compiled build).
 
 ### G41 — A bombed power station keeps its SAMs down on the NEXT turn · Skynet bridge, DeadC2 · ☐ UNTESTED
+
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **not exercised, and the row's log lines are MANTIS's.** No save on the machine carries a dead command centre, comms node or power station (`dead_c2_names` is empty on `91526`, `CSAR`, `Maybe 414`, `test 1` and the three August saves; the only damaged node anywhere is the ARGALI EWR in the Vectron's Claw turn-3 save, 3 of 5 units dead), so the next-turn half has never had a turn to run on. The `MANTIS C2 - power '<name>' lost` line in the pass criterion no longer exists; the runtime half now announces itself as `DCSRetribution|Skynet-IADS plugin - <name> is destroyed; registering a dead stand-in` at mission start, and the `DeadC2` array is what `luagenerator.py` emits from `dead_c2_names`. Read those two, not the MANTIS line, when a strike on a C2 node finally lands.
 
 > **Re-pointed 2026-09-12.** The Python fix (dead C2 nodes stay in the graph) is unchanged. The
 > runtime half is now the Skynet bridge's dead stand-in (`414th-skynet-return-notes.md` §5,
@@ -5698,6 +5825,8 @@ until the *enemy's* CAS TOT.
 
 ### B85 — A flight with an unreachable TOT flies instead of orbiting · §8 · ◐ PARTIAL
 
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **unchanged;** tests 26–33 carry no negative `stopCondition.time` either (the miz scan), the in-game release still unobserved.
+
 **2026-08-29, test 24** (Caucasus — Iron Gate turn 1, 72 min, `Tacview-20260829-162330`, DCS 2.9.29.27278) — **the `.miz` check this row names comes back clean.** The
 generated mission carries 50 `stopCondition.time` values, minimum 0.0, maximum 9361.0, and
 **none negative** — the exact artefact the row says to look for. The in-game half (a held flight
@@ -5753,6 +5882,8 @@ Play a turn on a wing with both a land tanker base and a carrier.
 
 ### B71 — Several survivors come out on one lift · CSAR (#929 Phase 5) · ☐ UNTESTED
 
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **not exercised.** Clustered ejections happened (test 32's F-14B crew, test 33's Damascus pair) but the next turns' packages were not captured. Unchanged.
+
 **History:** adopted 2026-08-17 from upstream `82b3ab10`. Never flown.
 - **What it is:** survivors within `csar_cluster_radius` (default 1000 m) are collected by one rescue flight instead of one flight each. The planner takes the whole cluster off the board when it frags the package, the survivors' embark zone stretches to reach the furthest member, and OpsCSAR.lua rebuilds the cluster at runtime so a mate who was already killed or collected is not credited.
 - **What CI cannot exercise:** whether the other survivors actually *walk* to the landing zone. The stretched `EmbarkToTransport` radius is the only thing making them move, and DCS infantry pathing over 1 km of broken ground is not something a unit test can speak to. The hoist half has the opposite risk: it credits the whole cluster on one winch cycle regardless of where they are standing.
@@ -5770,6 +5901,8 @@ Play a turn on a wing with both a land tanker base and a carrier.
 - **Fail signature:** a rescue package fragged for a pilot sitting 8 nm from his own runway. Or the opposite and worse: no CSAR packages appear anywhere all campaign, because every ejection is inside somebody's 15 nm circle.
 
 ### B73 — Taking a base frees the prisoners held there · CSAR (#929 Phase 5) · ☐ UNTESTED
+
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **not exercised.** No capture spans a base capture with a prisoner held there. Unchanged.
 
 **History:** adopted 2026-08-17 from upstream `82b3ab10`. Never flown.
 - **What it is:** a captured pilot is held at a specific control point (`Pilot.held_at`, persisted). Capturing that base releases them into recovery and back to their squadron. Losing a base does not free anyone, and a base taken by the side already holding the prisoners changes nothing.
@@ -5843,6 +5976,8 @@ turn on a wing with a small dedicated-jammer squadron and read the ATO before fl
 - **Fail signature:** two tankers of the *same* method, which means the unconstrained first flight and the constrained second one picked the same squadron — the constraint is not reaching `best_squadron_for`. Or two tankers stacked on one racetrack, which means the orbit slot is not being applied. Or the package gone entirely in the negative case, which means the extra flight is not actually optional.
 
 ### B77 — A player's ramp allowance matches the airframe · #214 startup times · ☐ UNTESTED
+
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **not decidable from a capture** (the allowance is read off the briefing card). Unchanged, on the WATCH card.
 
 **History:** built 2026-08-17 against upstream issue #214, open since 2023. Never flown.
 - **What it is:** `startup_minutes:` on an aircraft yaml overrides the campaign-wide `player_startup_time` for player cold starts. Four airframes carry a sourced value — F-16C 4, F-15E/F-15ESE 3, F-4E 9 — every other airframe falls back to the 10-minute setting, and AI flights keep their flat 2 minutes. Derivations are in `docs/dev/design/414th-startup-times-notes.md`.
@@ -6151,6 +6286,8 @@ from a fresh New Game, not a save** — a save never took this path.
 
 ### B96 — Iron Gate's fields fill without an aircraft losing its stand · Iron Gate · ◐ PARTIAL
 
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **unchanged;** Iron Gate turn 2 (test 26, 09-07) generated clean with no parking line at all, and the Mineralnye Vody spawner from test 24 did not recur.
+
 **2026-08-29, test 24** (Caucasus — Iron Gate turn 1, 72 min, `Tacview-20260829-162330`, DCS 2.9.29.27278) — **Batumi answered, and a red field failed instead.** Batumi, the
 field this row said to look at first, generated with **9 F-15C on 10 stands** and fits. But
 `Mineralnye Vody: No parking place for 'Su-24M'` appears **4 times** in the log — that base is
@@ -6235,6 +6372,8 @@ mission-generation question.
   that is enough to contest the pass, and whether Kobuleti's transit leaves useful fuel.
 ### B97 — One salvo, and only the targeted flight breaks · §94 · ◐ PARTIAL
 
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **unchanged;** no capture since test 32 had `DEBUG` on. The population metric is the same shape on test 33 (no red SAM salvo turned more than a handful of jets).
+
 **2026-09-15, test 32** (Persian Gulf — WRL Operation Noisy Cricket Redux turn 2, no player slot, 2 h 14 min of sim at acceleration, `Tacview-20260915-174631`, DCS 2.9.29.27468, build `fd04b4a66`, DEBUG off) — **the population metric repeats; one package did not react at all.** `AIReaction| Smart Threat Reaction loaded` is in the log. Across 53 red SAM launches (32 SA-11, 20 SA-15, 1 SA-5) with 6–16 blue aircraft inside 60 km, the number turning more than 90° within 60 s was median 1, mean 1.21, maximum 5 — test 24's shape. The exception is KIWI: the SA-11 site fired eight missiles at the DEAD four-ship and its Mirage escort between t=4425 and t=4507, none of the five turned more than 90°, and all five died (t=4471–4541). With DEBUG off there is no way to tell a tag that never landed from an `AttackGroup` run that ignored `EVADE_FIRE`. Loss count for the falsifier: 12 blue AI to SAMs this turn (11 SA-11, 1 SA-15), none to red fighters. Re-fly with DEBUG; see G42 for why the DEAD flight was in the envelope at all.
 
 **2026-08-29, test 24** (Caucasus — Iron Gate turn 1, 72 min, `Tacview-20260829-162330`, DCS 2.9.29.27278) — **strong supporting evidence; one setting short of closing.**
@@ -6277,6 +6416,8 @@ ship-targeted shots are dropped at the event. If a naval battle floods the scree
 
 ### B94 — Editing a faction mid-campaign reaches the buy menus · juanjux #953 · ☐ UNTESTED
 
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **app-side.** Unchanged.
+
 **History:** ported 2026-08-23 from juanjux's upstream #953, after verifying all three
 defects live here. See [414th-juanjux-fork-watch-notes.md](design/414th-juanjux-fork-watch-notes.md).
 
@@ -6300,6 +6441,8 @@ and whether the `in_use` refusal catches a unit that is deployed but flown by no
 - **Free while you are there:** the aircraft/unit/ship/preset combo boxes should read
   alphabetically. They used to be ordered by internal DCS id.
 ### B95 — Saving the air wing keeps both coalitions · air wing config · ☐ UNTESTED
+
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **app-side.** Unchanged.
 
 **History:** reported by the DM 2026-08-23, with the file it happened to — `Northen
 russia.yaml` held the blue wing, a Red-tab save replaced it, and there was nothing in
@@ -6327,6 +6470,8 @@ right in the file and never reach the game.
 - **Legacy check, free:** load one of the DM's existing files (`Northen russia red.yaml`,
   no `coalitions:` key) with the Red tab open. It must load exactly as it did before.
 ### B92 — A rescued marker belongs to the base it sits next to · campaign loading · ☐ UNTESTED
+
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **not decidable from a capture** (the placement warning is in the app log). The Desert Trident captures (tests 6, 9, 14–16) predate the 08-22 fix. Unchanged.
 
 **History:** built 2026-08-22, from the DM's own `test.retribution` on
 `operation_desert_trident` — the placement warning listed seven groups on King
@@ -6429,6 +6574,8 @@ mountain or coastal front will do.
 
 ### B120 — Neutral border: warned, then the battery engages if you press · §98 · ☐ UNTESTED
 
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **never exercised.** Across all 30 logs the `neutralborder` plugin printed only its arming line; no hail, no warn, no swap. Players flew on tests 24, 28, 29, 31 and 33 (Iron Gate, Into the Hornet's Nest twice, Caucasus 2026, Peace Spring) and never crossed a shaded border; `engageAi` was off on every mission. This row needs one deliberate crossing by a human, or one AI-only turn with `engageAi` ticked.
+
 **2026-09-15, test 32** — not exercised: no player slot, `engageAi` off.
 
 **2026-09-13, test 30** — not exercised: the mission had no player slot and `engageAi` was
@@ -6486,7 +6633,9 @@ never leaving their airspace, the swap and the SA-6 both proven), and rescoped t
 the SAM alone 2026-09-07. Full history in the design note.
 
 
-### B121 — Neutral border: AI intruders are never engaged · §98 · ☐ UNTESTED
+### B121 — Neutral border: AI intruders are never engaged · §98 · ◐ PARTIAL
+
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **the rate half is answered, the reaction half is unreachable until a stray happens.** Three AI-only or player missions on two maps (tests 30, 32, 33) put 12, 11 and 3 neutral batteries on the map for the whole mission, none fired, none changed colour, and in test 32 every aircraft track was tested against the polygons: no AI aircraft was ever inside a neutral country. Strays are rare, which is the fail signature the row was worried about in reverse. The never-engaged invariant stays harness-pinned; the field half closes on the first mission where an AI flight visibly crosses a shaded border and nothing happens.
 
 **2026-09-15, test 33** (Syria — Operation Peace Spring turn 2, multiplayer listen host with two humans in the MAVERICK Viper strike, 93 min, `Tacview-20260915-205127-DCS-Host`, DCS 2.9.29.27468, build `611eedfcd`; the turn-3 save `91526.retribution` is the auto-planner's own frag on the same build) — `8 border zone(s) drawn, 3 defended; warn 30s, engage 180s`; no hail or warn line in 93 min with two humans and 30 blue AI aircraft up. Not exercised beyond that; tracks were not tested against the polygons this time.
 
@@ -6561,6 +6710,8 @@ standing patrol; see the design note.
 
 ### B122 — A survivor lands where his own chute came down, not where another crew's did · CSAR (#929 adoption) · ◐ PARTIAL
 
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **unchanged;** the per-crew match is still not built and no capture since test 33 exists.
+
 **2026-09-15, test 33** (Syria — Operation Peace Spring turn 2, multiplayer listen host with two humans in the MAVERICK Viper strike, 93 min, `Tacview-20260915-205127-DCS-Host`, DCS 2.9.29.27468, build `611eedfcd`; the turn-3 save `91526.retribution` is the auto-planner's own frag on the same build) — **19 land ejections all matched, one of them probably to the wrong crew.** Every land ejection got `landed: true` and the recording confirms the touchdowns it covers to the metre (three Abu al-Duhur intercept chutes, the MiG-29 at 9.4 km of drift from 5 km, the civilian crews, the MAVERICK Escort Eagle at 33 m). The `HOSTILE SCRAMBLE MiG-21bis #001-01` record is the exception: its recorded touchdown is 19.4 km from the nearest ejection point of any crew and further from its own, when every measured chute drifted under 10 km. The two §61 MiG-21s and the two HS25 Mirages went down within minutes and within 20 km of each other near Damascus, which is exactly where the nearest-open-ejection rule can wire one crew's landing onto another's record; the recording's bubble did not reach those chutes to prove it. A per-crew match would settle it: DCS's ejection event carries the pilot object as `event.target`, and the landing event's `initiator` is that same object, so keying on its id instead of on distance needs no geometry at all. Not built.
 
 **2026-09-15, test 32** (Persian Gulf — WRL Operation Noisy Cricket Redux turn 2, no player slot, 2 h 14 min of sim at acceleration, `Tacview-20260915-174631`, DCS 2.9.29.27468, build `fd04b4a66`) — **the matcher held on 13 ejections; the two-seater-over-land case did not occur.** One ejection came down on land: the Bandar Abbas F-5E at t≈2996, whose chute the recording tracks from 3,990 m to touchdown at x=−63788 z=−57751, 4,478 m from its ejection point. `state.json` records exactly that touchdown as `landed`, and the next-nearest open ejection was 46 km away. The other 12 (three Iranian intercept pairs, five blue Hornets and Tomcats, the Khasab F-14B crew) went into the water and kept their ejection point, and nothing was written onto another crew's record. The F-14B pair ejected last, over the sea, so the land two-seater case the setup asks for was not produced, and the next-turn map was not checked (the save was not captured). **A shape to know:** MOOSE CSAR spawns the in-mission survivor at the *ejection* point (`csarUsePara` is false), so the F-5E pilot's beacon sat at x=−59382 z=−56953 while the campaign will place him at the touchdown 4.5 km away. A high land ejection drifts that far.
@@ -6593,6 +6744,8 @@ dropped (`landing_ejection_for` in `dcs_retribution.lua`, pinned by
 
 ### B123 — An Armed Recon flight engages a gun-defended target instead of overflying the search point · §35 · ☐ UNTESTED
 
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **not exercised since the fix.** Tests 31–33 fragged no Armed Recon flight at all; test 30 is the pre-fix failure. Unchanged.
+
 **History:** found 2026-09-13 on test 30 (Persian Gulf — Scenic Route turn 1). Three Hornet
 Armed Recon flights were fragged on the AUROCHS AAA site (KS-19 100 mm, 20 km ring in pydcs).
 The standoff rule pushed the fly-over point out to the 10 NM cap, and the 10 NM
@@ -6620,7 +6773,9 @@ exceeds the doctrine range, so the target always sits inside (`armedrecon.py`,
      wide enough to draw the AI in. Compare losses against the pre-fix 0-shot outcome before
      calling that worse.
 
-### B124 — A hand-fragged Harrier DEAD opens the New Flight dialog on the DEAD preset, not a stock Snakeye fit · New Flight dialog · ☐ UNTESTED
+### B124 — A hand-fragged Harrier DEAD opens the New Flight dialog on the DEAD preset, not a stock Snakeye fit · New Flight dialog · ✗ REGRESSED (2026-09-16, audit)
+
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **reproduced headless, and the mechanism is wider than the Harrier.** The New Flight dialog was driven offscreen on the DM's Scenic Route save (`CSAR.retribution`, turn 5) against a red SAM site with DEAD pre-selected: the aircraft combo offered the F/A-18C and the loadout combo opened on **`Retribution BARCAP`**. The dialog fills the combo from `Loadout.iter_for_aircraft` and then looks for the task's default names (`Retribution DEAD (XW)`, `Retribution DEAD`, `Liberation DEAD`, `DEAD`, then the BAI and CAS names); on this 2005 campaign none of them is in the Hornet's list (the payload file carries `Retribution DEAD`, so the date gate dropped it), the lookup finds nothing, and the combo stays on its first entry, which `create_flight` writes onto every member. That is the test-30 Harrier shape with a different first entry. The fix is in the dialog: when no default name is listed, fall back to the planner's `default_for_task_and_aircraft` (which resolved `Retribution DEAD` for the AV-8B on the same campaign) instead of index 0. Not built in this audit.
 
 **History:** found 2026-09-13 on test 30 (Persian Gulf — Scenic Route turn 1). The AUROCHS
 package was hand-created (`POST /qt/create-package/tgo/...` at 12:41 and 12:43, after New Game
@@ -6654,7 +6809,9 @@ without releasing.
   2. **The combo reads `Retribution DEAD` but the created flight carries something else** —
      the write path, not the dialog; dump the flight from the save before generating.
 
-### B99 — AI packages arrive inside the mission, not after it · §8 · ◐ PARTIAL
+### B99 — AI packages arrive inside the mission, not after it · §8 · ☑ VERIFIED (2026-09-16, audit)
+
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **VERIFIED with the row's own instrument on the two live saves, and by three flown missions.** `tools/measure_tot_past_mission_window.py` re-planned two turns each of `91526.retribution` (Peace Spring) and `CSAR.retribution` (Scenic Route): 59 spread-scheduled packages, 0 late, maximum effective offset 34–62 min of a 100-min window, which is the "roughly half the window" the row asks for. Flown: tests 24, 30 and 32 timed nothing past the end and kept the second half of the mission populated (BARCAP waves, both AEW&Cs, both tankers up at 2 h on test 32). Fail signature 1 (several packages sharing one end-of-cycle TOT) did not appear in any of them.
 
 **2026-09-15, test 32** (Persian Gulf — WRL Operation Noisy Cricket Redux turn 2, no player slot, 2 h 14 min of sim at acceleration, `Tacview-20260915-174631`, DCS 2.9.29.27468, build `fd04b4a66`) — same shape. Five packages with TOTs from 15:44 to 16:16 on a 15:00 start (MUSK, WOLFHOUND, WEKA, MARLIN, KIWI); all five were airborne between t=967 and t=2633 and over their targets by t≈4600. The second half of the 2 h 14 min still had three BARCAP waves, both Hawkeyes and both tankers up, and a red F-5E pair launched at t=6536. Nothing was timed past the end. The cycle length itself still needs the app.
 
@@ -6762,6 +6919,8 @@ exercised by any test here.
 
 ### B100 — The ramp still holds the squadrons authored against it · DCS 2026-08-26 parking rework · ◐ PARTIAL
 
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **unchanged;** Noisy Cricket test 32's only routed group out of Bandar Abbas (the F-5E pair) taxied and flew, and the sixteen F-4Es there were untasked ramp jets, so it neither reproduces nor clears test 30's nine stuck Fencers. The large-aircraft clause still waits on the pydcs re-export.
+
 **2026-09-13, test 30** (Persian Gulf — Scenic Route turn 1, `Tacview-20260913-125128`, 59 min
 of sim, DCS 2.9.29.27468, build `78085dfd7`) — **generation clean; nine fragged red jets never
 taxied at Bandar Abbas Intl.** Three of GIBBON Anti-ship 20's four Fencers (stands F02–F04),
@@ -6836,6 +6995,8 @@ the fact that the routing code was rewritten is not evidence the constraint laps
 
 ### B101 — The F-4E's Shrike and gun pod are still on the jet · §71 · ☐ UNTESTED
 
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **one data point on the new build, on the A model.** Anatolian Reach test 18 (2.9.29.27278, 2026-08-26) fielded an F-4E-45MC SEAD Escort with `{LAU_34_AGM_45A_SWA}` on stations 3 and 11 and the recording holds two AGM-45A launches. No AGM-45B, no SUU-23 and no AGM-78 fit was generated in any capture, so the two halves this row is about (the B-model clsid collision and the pod migration) remain unexercised; the OVGME pack rebase is still the gate.
+
 **Both halves are confirmed against the updated install (2.9.29.27278) and both fixes
 are IN** -- the pydcs pin moved to `bfdbb4d` the same day and the extension was trimmed
 to match. Full detail in
@@ -6886,6 +7047,8 @@ SUU-23 work — see the note's §2.4 before turning it back on.
 
 ### B102 — A low ingress against an SA-2/SA-3 belt is still flyable · DCS 2026-08-26 SAM guidance · ☐ UNTESTED
 
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **not exercised;** no capture flew a low ingress against an SA-2/SA-3 belt on the new guidance. Unchanged.
+
 SA-2's V755 and SA-3's 5V27 gained the missing K-method of guidance (half-lead, elevated
 by a constant) specifically for low-level targets, and the SA-8's 9M33 moved to a new
 CFD-derived flight model with CLOS guidance enabled. Nothing in this tree changes —
@@ -6917,6 +7080,8 @@ patch. That only matters where a campaign fields both Patriot and mobile theatre
 missiles — Desert Storm — and nobody has looked at it.
 
 ### B103 — BMP-3s in a firefight still fire like armour, not infantry · §9 TIC · ☐ UNTESTED
+
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **the units were in the fight, the rate was not measurable.** BMP-3 groups stood on the live front on Iron Gate (tests 24 and 26, two groups each) and Caucasus 2026 (test 31, six groups) after the 08-26 patch; a recording does not carry ground gunfire per round, so salvo rate needs eyes. Unchanged; parked on the WATCH lot.
 
 DCS 2.9.29 folded the CurrentHill pack into core. `CHAP_BMP3.lua` keeps the vanilla id
 `BMP-3` but renames its DisplayName to `IFV BMP-3 [CH]`. TIC keys its per-unit profile
@@ -6953,7 +7118,9 @@ audible and visible from the cockpit.
 Nothing catches the next DisplayName rename, which is the general risk this row stands
 for.
 
-### B104 — The Viper's ROE tab declares the campaign's own sides · §74 · ☐ UNTESTED
+### B104 — The Viper's ROE tab declares the campaign's own sides · §74 · ◐ PARTIAL
+
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **the cartridge is right in the flown mission; the tab itself is unread.** Test 33's miz carries `DTC/Retribution Rattler 1 F-16C_50.dtc` with the 48-row ATDT and `TypeSovereignty` on. Checked against the blue and red rosters in the same miz: A-6, A-10, B-1, C-130, E-2, F-15, F-16, F/A-18 and KC-135 read FRIENDLY; Il-76, Il-78, MiG-21/23/29, Mirage F1, Su-24/25, Tu-16 (the H-6J) and Tu-22 read HOSTILE; the E-3, F-4, F-5, F-14, AV-8B, Su-27 and the rest that neither side flies read UNKNOWN. That is the derivation the row describes, on a real campaign. What remains is the DM opening the ROE tab on the MMC page and seeing the same table.
 
 The cartridge now carries `MPD.ROE`: the 48-row Air Target Data Table with
 sovereignty derived from the campaign's order of battle (blue-only families
@@ -6985,6 +7152,8 @@ check the campaign) reads UNKNOWN. In the air, a friendly type the FCR types out
 
 ### B105 — The Apache's cartridge loads: route, targets and the front line on the TSD · §74 · ☐ UNTESTED
 
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **no client Apache in any capture.** Unchanged.
+
 `apache.py` is the fourth §74 builder: WPTHZ waypoints W01.., the ALPHA route in
 the editor's own leg shape, fogged SAM sites as TGT points, the FLOT as TSD
 lines. Partitions the planner computes nothing for are omitted or ship as the
@@ -7013,6 +7182,8 @@ jet's setup regressed (radios still tune, weapons page sane).
   regression, not a DTC one (`known_enemy_threat_sites` gates on `known_for`).
 
 ### B106 — The C-130J King can be fragged into a rescue, and holds an orbit clear of the threat · CSAR · ☐ UNTESTED
+
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **no hand-fragged King in any capture** (the DM's DCS name `King 1 | Flash` is a name, not the flight). Unchanged.
 
 A hand-fragged fixed-wing CSAR flight now builds `KingFlightPlan` (an on-scene
 racetrack) instead of raising "CSAR is only usable by helicopters". Nothing about
@@ -7102,7 +7273,9 @@ banners as before.
 - **MOOSE plugins stop starting** — the row broke the table. Revert the nine lines;
   the spam is cosmetic and not worth a dead plugin.
 
-### B108 — A stuck TIC unit names itself, and the retries are spread not concentrated · §9 TIC · ☐ UNTESTED
+### B108 — A stuck TIC unit names itself, and the retries are spread not concentrated · §9 TIC · ◐ PARTIAL
+
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **measured: no stuck retry at all since the fix.** The anonymous line fired 629, 487, 509 and 90 times in tests 1–2, 17, 21 and 24 (all on the pre-fix TIC copy). In the four post-fix missions with a live front and TIC running (tests 25, 26, 31 and 33: Syria 2024, Iron Gate turn 2, Caucasus 2026, Peace Spring) the named line never fired, because nothing got stuck. So the distribution question has no data, the storm is gone from the logs, and the pass line has not yet been seen printed. Stays on the WATCH card for the first mission that produces one.
 
 **2026-09-15, test 33** (Syria — Operation Peace Spring turn 2, multiplayer listen host with two humans in the MAVERICK Viper strike, 93 min, `Tacview-20260915-205127-DCS-Host`, DCS 2.9.29.27468, build `611eedfcd`; the turn-3 save `91526.retribution` is the auto-planner's own frag on the same build) — no stuck-unit line in 93 min of a live front, so nothing to adjudicate. Two things the same log does show: 51 `MIST|getGroupData ... TIC:unit|... not found in MIST database` errors in one second at mission start, one per TIC unit, before MIST's database has seen the groups TIC just spawned (the fight went on, so it is noise until shown otherwise); and DCS's multiplayer event logger echoing every controller option change TIC makes, 66,000 lines in 93 min.
 
@@ -7132,7 +7305,9 @@ the unit. Record which, in `414th-tic-dynamic-fronts-notes.md`.
 - **`ANTIFREEZE ENABLED` still clusters on the retry peak** — the correlation holds
   and this is a framerate problem, not just log noise. That escalates the row.
 
-### B109 — Payload backups leave `UnitPayloads` and the launch error stops · §73 · ☐ UNTESTED
+### B109 — Payload backups leave `UnitPayloads` and the launch error stops · §73 · ☑ VERIFIED (2026-09-16, audit)
+
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **VERIFIED.** The launch error `Can't open file '...UnitPayloads//_retribution_backups'` appears exactly twice in every log through test 24 (2026-08-29) and zero times in the nine launches since (tests 25–33). On the DM's install `MissionEditor\UnitPayloads\_retribution_backups` no longer exists and `Retribution\PayloadBackups` holds the migrated files (AH-64D, B-52H, the four Tomcat marks, the Strike Eagle, the Viper), dated 08-17 to 08-29. Off the parking lot.
 
 **2026-08-29, test 24** (Caucasus — Iron Gate turn 1, 72 min, `Tacview-20260829-162330`, DCS 2.9.29.27278) — **could not be tested: the flown build predates the fix** (see B107).
 The old signature is still present and still exactly twice per DCS launch: `Can't open file
@@ -7164,6 +7339,8 @@ returns nothing on the next launch.
 ---
 
 ### B110 — A SEAD jet's steerpoints are the site's emitters, and the card's STPT numbers match · §5 / §3 · ☐ UNTESTED
+
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **not exercised.** Tests 30–33 fragged SEAD Escorts and DEADs but no SEAD-tasked flight, so no target-point list was generated to check. Unchanged.
 
 A SEAD flight used to get one `TARGET_POINT` per *unit* at the objective. Against an
 SA-2 that is thirteen steerpoints, six of them the layout's Logistics/Fuel/AAA slots:
@@ -7201,7 +7378,9 @@ on that emitter.
 - **A site with no emitters gets no steerpoints at all** — the `sead_targets` fallback to
   the full roster failed; `targets[0]` anchors the flight plan's timing math, so this
   would show up as a planning error rather than a quiet miss.
-### B111 — A package's escort holds the striker's pace instead of running ahead · §8 cruise mach · ☐ UNTESTED
+### B111 — A package's escort holds the striker's pace instead of running ahead · §8 cruise mach · ◐ PARTIAL
+
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **the authored value demonstrably reaches the jet; the row cannot pass until more airframes carry one.** Test 32's three Hornet-escort legs read 20–50 kt slower than their Viper strikers at the same altitude, which is M0.78 against M0.85 and exactly what one authored airframe among unauthored ones produces. Test 33's package (Viper striker, Eagle and Hornet escorts) has the same shape. The pass criterion (escort within ~15 kt of the striker) is reachable only once the F-16C, F-15C and the rest have `cruise_mach:` values; the measurements are the input to that authoring, which is why this row now sits on the WATCH card as a reading, not a verdict.
 
 **2026-09-15, test 32** (Persian Gulf — WRL Operation Noisy Cricket Redux turn 2, no player slot, 2 h 14 min of sim at acceleration, `Tacview-20260915-174631`, DCS 2.9.29.27468, build `fd04b4a66`, no Hornet striker, so the row does not move) — **first measurement, off the recording.** Join→ingress leg, ground speed and altitude: WEKA SEAD Escort (F/A-18C: AGM-88C, 2×GBU-38, AAQ-28, centreline tank) 548–566 kt at 22,000 ft against WEKA DEAD (F-16CM: AGM-88C, AGM-65G, HTS, ALQ-184) 577–590 kt at 22,000; MARLIN SEAD Escort (same Hornet fit) 393–440 kt at 22,000 against MARLIN Strike (F-16CM, GBU-31) 412–494; MUSK SEAD Escort 449–459 kt at 19,000–20,000 against MUSK Strike 436–441 at 19,000 and MUSK Escort (clean F-16CM) 442–475. The Hornet escort read 20–50 kt slower than its Viper striker on two legs and matched on the third; no escort ran ahead. Wind aloft is unknown, so these are ground speeds, not Mach.
 
@@ -7242,6 +7421,8 @@ Design note: [design/414th-cruise-mach-notes.md](design/414th-cruise-mach-notes.
 
 ### B112 — The wind you set is the wind the panel shows, and the box stops at 97 kt · wind override / live weather · ☐ UNTESTED
 
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **app-side.** Unchanged.
+
 **An app pass, not a flight.** Nothing here needs DCS running; it is all in the Retribution
 window. ~3 min.
 
@@ -7274,6 +7455,8 @@ instead. If you ever do see a kneeboard wind above 97 kt on a live-weather turn,
 is lying and this row fails.
 
 ### B113 — A pilot's logbook fills in, and the kills are the ones they got · §96 · ◐ PARTIAL
+
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **unchanged;** the second-human fix is unflown since test 33.
 
 **2026-09-15, test 33** (Syria — Operation Peace Spring turn 2, multiplayer listen host with two humans in the MAVERICK Viper strike, 93 min, `Tacview-20260915-205127-DCS-Host`, DCS 2.9.29.27468, build `611eedfcd`; the turn-3 save `91526.retribution` is the auto-planner's own frag on the same build) — **the host's logbook is right; the second human got nothing.** The player seat Flash flew (335 Squadron) reads sorties 1, combat 1, 92.5 min, 4 shots, 3 hits, `first_sortie` — items 1, 2 and 4 hold, and item 5 holds too: every AI pilot who flew has a sortie, the Eagle lead his three kills and `first_blood`. Item 3 is a wash: Flash's targets were the four Tabqa scenery objectives, which are not units and count as no kill in any column. The second human's seat has nothing at all, for the reason in B70 (his record carried no track); fixed there, unflown since.
 
@@ -7315,6 +7498,8 @@ destroy something on the ground, land, accept results, then reopen the same pilo
 
 ### B114 — Your lifetime logbook survives starting a new campaign · §97 · ◐ PARTIAL
 
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **unchanged;** the second-campaign half is still owed.
+
 **2026-09-15, test 33** (Syria — Operation Peace Spring turn 2, multiplayer listen host with two humans in the MAVERICK Viper strike, 93 min, `Tacview-20260915-205127-DCS-Host`, DCS 2.9.29.27468, build `611eedfcd`; the turn-3 save `91526.retribution` is the auto-planner's own frag on the same build) — **the store works, with two shapes to know.** `pilot_profiles.json` holds `King 1 | Flash` with this sortie (92.5 min, 4 shots, 3 hits, task Strike, campaign and turn named) and two older profiles from other campaigns, so the file outlives a campaign as designed. First shape: the key is the DCS name, so a renamed pilot starts a new profile — `Flash` (5 sorties, three campaigns) and `King 1 | Flash` are two people to the store. Second: the host did NOT record everyone this time — `SMR|Maj Redneck|90-824` flew and shot and has no profile, because the fold requires a record that moved and his had no track (B70). Fixed in the recorder, unflown since; the second-campaign half of this row is still owed.
 
 **Needs two campaigns and one flown mission in each.** ~50 min, or split across two sessions.
@@ -7353,7 +7538,9 @@ results, and reopen it again.
 
 ---
 
-### B115 — The cockpit front line is one continuous boundary, bowed where the map is bowed · §74 / §90 · ☐ UNTESTED
+### B115 — The cockpit front line is one continuous boundary, bowed where the map is bowed · §74 / §90 · ◐ PARTIAL
+
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **the cartridge carries one continuous L1 front line; the shape and the cockpit draw are unverified.** Test 33's Viper cartridge holds `GEO_LINES` with 12 `FLOT` points, all on L1, and `DEST` with the four usable fields. Peace Spring has a single front (Ramat David/Damascus), so this proves the single-line half only; the chaining of several fronts and the salient shape against the F10 drawing need a two-front campaign and a screenshot pair, as the setup says.
 
 **Built 2026-09-10** from a paid F-16C campaign's own cartridge (design note
 `414th-dtc-cartridge-notes.md`, the 2026-09-10 section). Two changes: the DTC front line
@@ -7404,6 +7591,8 @@ continuous boundary instead of one disconnected stub per line set.
 
 ### B117 — A Sandy can be fragged onto a survivor, and covers the pickup · §99 · ☐ UNTESTED
 
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **no Sandy fragged in any capture.** Unchanged.
+
 **Needs a survivor on the map and one flown mission.** ~30 min.
 
 **Setup.** Any campaign with an A-10 or an Apache squadron. Get a survivor first — fly a
@@ -7443,6 +7632,8 @@ rescue helicopter to the same package or a separate one. Fly the Sandy.
 
 
 ### B118 — The Super Hornet still arms and its new cockpit options are there · CJS 2.4.5.260726 · ☐ UNTESTED
+
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **not exercised.** No capture fields the CJS Super Hornet (no Marianas 2027 or Baltic Fury turn was flown). Unchanged.
 
 **Needs one generated mission, not a full flight.** ~10 min.
 
@@ -7490,6 +7681,8 @@ slot in; there is no need to fly it.
 
 ### B119 — The King DFs the survivor, sweeps the threats, and the Sandy sees the marks · §100 · ☐ UNTESTED
 
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **no King flown in any capture.** Unchanged.
+
 **Needs a survivor on the map, a human in the King and a second human in a Sandy or helo.**
 ~40 min. Closes alongside B106 and B117 in the same mission.
 
@@ -7527,6 +7720,8 @@ actually is on the F10 map before you start (the host can use the reveal overvie
   find it before shipping.
 
 ### B125 — A dynamic-slot jet spawns with the template's route, radios and loadout · §101 · ☐ UNTESTED
+
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **unchanged;** test 33 is the only capture with a template flagged (`MAVERICK Strike`, links 141 and the stale 162 the fix now clears) and both humans took the fragged slots. On the LOCAL card.
 
 **2026-09-15, test 33** (Syria — Operation Peace Spring turn 2, multiplayer listen host with two humans in the MAVERICK Viper strike, 93 min, `Tacview-20260915-205127-DCS-Host`, DCS 2.9.29.27468, build `611eedfcd`; the turn-3 save `91526.retribution` is the auto-planner's own frag on the same build) — **not exercised, and a generator defect found and fixed.** Both humans took the fragged MAVERICK slots (units 405 and 406, static client units), so no dynamic jet was spawned and the pass criterion was not touched. The `.miz` itself: `MAVERICK Strike|31|8` (group 141) is flagged and Ramat David's F-16C entry links 141 — correct. But Akrotiri's F-16C entry links group **162, a red H-6J Badger**. The archive shows why: the 20:40 generation had a second client flight, `LLAMA DEAD` at Akrotiri, linked as 162; the DM removed it and regenerated at 20:43 and 20:49, and the link stayed, because the pydcs `Airport` objects belong to the campaign's terrain and outlive a generation. Fixed the same day: the generator clears every `linkDynTempl` entry on every airport before writing (`_clear_stale_links`, pinned by `tests/missiongenerator/test_dynamic_spawn_templates.py`). What a stale link does to a dynamic spawn in DCS is unknown and no longer reachable.
 

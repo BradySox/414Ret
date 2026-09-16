@@ -47,13 +47,16 @@ watch pointing at RETIRED `B42`.)*
 - **Fail:** the bar moves and nothing beneath it changes.
 - **Why it's here:** pulled from the parking lot 2026-09-16 when `B78` closed on the DM's call.
 
-### 4 · A ground-level waypoint sits at the field's elevation — `B79`
+### 4 · A striker and its escort hold one pace after the join — `B111`
 
-**Where:** the flight editor, any flight, ~30 s. App-side.
+**Where:** F10 after the join, before the ingress: ground speed **and altitude** for the
+striker and each escort. **~5 min**, on a flight you were flying anyway.
 
-- **Pass:** a waypoint the plan puts on the ground reads the field's elevation, not sea level.
-- **Fail:** a takeoff, landing or divert point at 0 ft on a field that is not at sea level.
-- **Why it's here:** pulled from the parking lot 2026-09-15 when `B107` closed on test 32.
+- **Pass:** the escort reads within ~15 kt of its striker at the same altitude.
+- **Fail:** a 20–50 kt gap, which is what test 32 measured and what one authored airframe
+  (the Hornet at M0.78) among unauthored ones produces. Record the loadout with each number;
+  the readings are what unblocks `cruise_mach:` for the other airframes.
+- **Why it's here:** pulled from the parking lot 2026-09-16 when `B79` closed on the audit.
 
 ### 5 · A stuck TIC unit names itself, and the retries are spread — `B108`
 
@@ -71,8 +74,9 @@ watch pointing at RETIRED `B42`.)*
 
 | Row | Watch for | Note |
 |---|---|---|
-| `B109` | `_retribution_backups` is gone from `UnitPayloads` and the launch error with it | App-side; set one default loadout first, then restart DCS |
-| `B111` | F10 ground speed **and altitude** for a striker and its escort, after the join | First numbers recorded off test 32's recording (three Hornet-escort / Viper-striker legs); see the row. A measurement, not yet a pass/fail — it is what unblocks authoring `cruise_mach:`. Record the loadout with each number |
+| `B121` | An AI flight visibly inside a shaded neutral border, and nothing happens | F10 map on any campaign with `neutral_border_defense` on; no stray in three missions so far |
+| `B103` | A BMP-3 group in a front fight firing single aimed shots, slower than the BTRs beside it | Iron Gate and Caucasus 2026 field them on the front; the rate is not in a recording |
+| `G42` | A HARM shot at a Skynet site, and whether the site goes dark or fights through | Any SEAD fly with the RWR open; LEOPARD fought through on test 32 |
 
 Closed and dropped items, with the reasoning: [`ARCHIVE.md`](ARCHIVE.md).
 Contrived-condition tests live on [`LOCAL.md`](LOCAL.md).

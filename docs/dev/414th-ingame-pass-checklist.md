@@ -103,7 +103,7 @@ identical frag on this save, so B126 stays untested.
 
 ## Outstanding rows at a glance
 
-88 rows need a live pass. Full detail is under each `###` heading below —
+84 rows need a live pass. Full detail is under each `###` heading below —
 search the row id. `☐` untested · `◐` flown but not under the conditions that
 stress it · `✗` fail signature reproduced in-game.
 
@@ -124,7 +124,7 @@ stress it · `✗` fail signature reproduced in-game.
 | B32 | Sea-supply convoys + coastal anti-ship engagement | §78 | ☐ |
 | B35 | Air-defense class rows are filters of the "Air defences" master | §19 | ☑ |
 | B39 | Cross-turn naval magazines | §81 | ◐ |
-| B63 | A destroyed strike target is recorded in the campaign | §8 | ◐ |
+| B63 | A destroyed strike target is recorded in the campaign | §8 | ☑ |
 | B64 | The datalink era gate: the SA page populates when it should | datalink | ☑ |
 | B50 | The auto-planner never picks the King for a rescue | CSAR | ☑ |
 | B51 | The rescue package is not planned into threat it cannot survive | CSAR | ☑ |
@@ -196,7 +196,7 @@ stress it · `✗` fail signature reproduced in-game.
 | B45 | GPS jamming (satellite-guided weapons go long) | §86 | ☐ |
 | B52 | Escort-jammer distribution + the one-SEAD-flavour escort set | §77 | ◐ |
 | B49 | Carrier recovery-phase deck dressing | §72 | ✅ |
-| B48 | Naval station-keeping racetracks | §87 | ◐ |
+| B48 | Naval station-keeping racetracks | §87 | ☑ |
 | B53 | AI flights no longer push early for a tanker stop they never fly | §46 | ✅ |
 | B54 | Planner behavior bar switches the suite in the settings UI | re-convergence | ☐ |
 | B55 | Carrier steams for wind down the angled deck | §88 | ☑ |
@@ -214,7 +214,7 @@ stress it · `✗` fail signature reproduced in-game.
 | B75 | The ATO stops spending its escorts on the wrong packages | planner shape | ☑ |
 | B76 | A mixed boom/probe wing gets a tanker of each | U15 reinstated | ☑ |
 | B77 | A player's ramp allowance matches the airframe | #214 startup times | ☐ |
-| B78 | The escorts let go of a package the player is leading | planner shape | ☐ |
+| B78 | The escorts let go of a package the player is leading | planner shape | ☑ |
 | B79 | Ground-level waypoints read the field's elevation | §8 | ☐ |
 | B80 | String plugin options can actually be edited | §14 | ☐ |
 | B81 | SEAD-evasion scoot distance is a campaign setting | MANTIS | ✅ |
@@ -224,7 +224,7 @@ stress it · `✗` fail signature reproduced in-game.
 | B86 | Retribution survives DCS taking over the GPU (Qt 6.8) | app / Qt | ☑ |
 | B87 | A stand-off shooter starts its run at its own launch range | §8 | ☑ |
 | B89 | Region priorities: the CP-dialog control shifts the ATO | §93 | ☑ |
-| B90 | A steerpoint's elevation is the ground under it | §74 | ◐ |
+| B90 | A steerpoint's elevation is the ground under it | §74 | ☑ |
 | B91 | The F-14B(U) spawns with its cartridge loaded | §74 | ☑ |
 | B92 | A rescued marker belongs to the base it sits next to | campaign loading | ☐ |
 | B93 | The front line sits on ground the armour can hold | §90 | ☑ |
@@ -1034,7 +1034,9 @@ stops at 6, and logs the cap.
 - **Fail signature:** every group releasing in the same second (the even spread regressed, or `releaseMaxS` ≤ `releaseMinS`); ships that **never** open fire at all (the release ROE option isn't reaching the naval controller — try the literal `ROE_ID`/`ROE_WEAPON_FREE` values, or DCS wants `AI.Option.Naval` specifically); **a winchester or pre-release ship sitting passive while aircraft attack it** (the load-bearing unknown resolved badly — the honest options are to accept it or to abandon N1's hold, since per-weapon ROE does not exist); magazines never depleting despite launches (the fired weapon's `typeName` doesn't match `ASHM_WEAPON_PATTERNS` — read the real name out of `dcs.log`/Tacview and extend the pattern list, but **never** with a land-attack family); a magazine that debits *twice* per shot or moves at generation time (the §63 double-count or the regeneration-safety rule broke); or §63 cruise-missile raids suddenly costing anti-ship stock (a land-attack family leaked into the pattern list).
 
 
-### B63 — A destroyed strike target is recorded in the campaign · §8 · ◐ PARTIAL
+### B63 — A destroyed strike target is recorded in the campaign · §8 · ☑ VERIFIED (2026-09-16, DM, test 33)
+
+**2026-09-16, DM verdict in chat (session `9148a88a`)** — **VERIFIED.** "B63 should have been proven last night with the save, and test I gave you" — and it was: test 33's log carries the `Scenery objectives` line and four `Objective destroyed` lines for the Tabqa Dam objectives, and the turn-3 save carries all four dead, which is the whole thing the row exists to check. The quit-and-relaunch reproduction of cause 1 is not owed separately; the snapshot fix has a unit test and the ordinary path is what the DM flies. Off the LOCAL card.
 
 **2026-09-15, test 33** (Syria — Operation Peace Spring turn 2, multiplayer listen host with two humans in the MAVERICK Viper strike, 93 min, `Tacview-20260915-205127-DCS-Host`, DCS 2.9.29.27468, build `611eedfcd`; the turn-3 save `91526.retribution` is the auto-planner's own frag on the same build) — **cause 2 verified end to end; cause 1 not exercised.** The log carries `Scenery objectives: 128 known, 0 already destroyed, match radius 30 m` at start, then four `Objective destroyed` lines at 01:46:24 for the MAVERICK package's Tabqa Dam objectives (Control at 1 m from the hit, Visitor Centre, Power Station and Engineering at 28–29 m), all four the package's own targets, under the players' six JDAMs. The turn-3 save carries all four units `alive=False`. No `state.json on disk carries` warning in `retribution.log`, because nobody quit and relaunched; that half still needs the LOCAL card's contrived run. Also answers the 27468 question this row raised on test 30: a JDAM'd building does raise `S_EVENT_DEAD` on this build; the 3,887 numeric ids in `unit_lost_events` are the front line's clutter, which raises KILL and not DEAD, and the app logged them as untracked.
 
@@ -4706,7 +4708,9 @@ anything there now, so this is a note, not a task. See
 [414th-carrier-deck-decor-notes.md](design/414th-carrier-deck-decor-notes.md), *The phase tiers
 are cut*.
 
-### B48 — Naval station-keeping racetracks · §87 · ◐ PARTIAL
+### B48 — Naval station-keeping racetracks · §87 · ☑ VERIFIED (2026-09-16, DM)
+
+**2026-09-16, DM verdict in chat (session `9148a88a`)** — **VERIFIED.** "B48 should have been checked already vs the last 10 tests that include ships." The record agrees: five campaigns measured off the ACMI (Marianas 2027, Baltic Fury, Syria Desert Trident, Persian Gulf Scenic Route, Persian Gulf Noisy Cricket), every authored non-carrier group on its oval, red included on test 32, and the carrier groups excluded by §88 as designed. Closed on the DM's call; off the WATCH card.
 
 **2026-09-15, test 33** (Syria — Operation Peace Spring turn 2, multiplayer listen host with two humans in the MAVERICK Viper strike, 93 min, `Tacview-20260915-205127-DCS-Host`, DCS 2.9.29.27468, build `611eedfcd`; the turn-3 save `91526.retribution` is the auto-planner's own frag on the same build) — only the Forrestal group is in the recording: 48–60 km straight under §88, by design. The red BABIRUSA pair was outside the host's recording bubble.
 
@@ -5383,7 +5387,9 @@ Fly any mission with several AI packages up, then read the next turn's SITREP.
 >
 > **Re-fly criterion:** the next turn's SITREP sortie count should be close to the number of packages that flew, not to the theatre's aircraft count, and `state.json` should be a few hundred KB rather than over a megabyte.
 
-### B78 — The escorts let go of a package the player is leading · planner shape · ☐ UNTESTED
+### B78 — The escorts let go of a package the player is leading · planner shape · ☑ VERIFIED (2026-09-16, DM, test 33)
+
+**2026-09-16, DM verdict in chat (session `9148a88a`)** — **VERIFIED.** "B78 is good and proven in the multiplayer test" — test 33, the DM leading the MAVERICK Viper strike with an F-15C escort and a Hornet SEAD escort on a listen host: the escorts held through the ingress and let go at the split. Neither fail shape (formating home, or breaking off at the join) occurred. Off the WATCH card.
 
 **History:** built 2026-08-18, from test 7 (Sinai turn 1, `retribution_nextturn.miz` +
 its Tacview and `state.json`).
@@ -5934,7 +5940,9 @@ Then fly one: F-14B(U) client flight on a campaign that fields it
 - **Watch for:** whether the reference points' elevation being 0 matters in the
   cockpit. That is B90's open half, and this is a second place to observe it.
 
-### B90 — A steerpoint's elevation is the ground under it · §74 · ◐ PARTIAL
+### B90 — A steerpoint's elevation is the ground under it · §74 · ☑ VERIFIED (2026-09-16, DM)
+
+**2026-09-16, DM verdict in chat (session `9148a88a`)** — **VERIFIED.** "B90 is good" — the Viper's DED STPT page reads the planned altitude on the transit points, flown by the DM since the 2026-09-13 fix (#1019). Off the WATCH card.
 
 **2026-09-13, flown (Caucasus, Flight 105 F-16C, DED read)** — **the cockpit read
 arrived and failed the en-route half.** STPT 1 (the hold, planned 22,000 ft) read

@@ -2464,6 +2464,8 @@ target is actually enough reach in a real laydown, and whether the message lands
 
 ### B126 — An AI DEAD gets its shot: the EWR is fragged first, and the site it covered is live the turn after · doctrine row 8 · ☐ UNTESTED
 
+**2026-09-15, headless check on the DM's CSAR save (Persian Gulf, turn 5) — the ordering is inert on this campaign.** Blue re-planned in memory on the merged code produced the same three DEAD packages as the save (KIWI, SNAIL, FRINGEHEAD), all from the reactive tier: 24 red SAMs sit in `threatening_air_defenses`, since a site counts as threatening once its ring touches any planned route, and that tier spends every DEAD squadron before the detector tier is reached. The detector tier would not have helped either: the eight red EWRs run 162–216 nm, so each red site is covered by two to six of them plus one to four big SAMs acting as EW (KIWI: five EWRs and three SAMs), and Skynet needs every parent gone before a site goes autonomous. Killing EWRs stacks, as the DM said. The only cuttable node on this map is the command-centre pair (SLOTH, TURTLE): `isCommandCenterUsable` is false once both are dead, and then every red site goes autonomous and live (the vanilla default; only 21 CurrentHill unit yamls set `autonomous_behaviour`). No planner task prefers command centres today. Left as is, on the DM's call; nothing further built.
+
 **History:** built 2026-09-15 off test 32, minimal shape of doctrine-mining row 8. `DegradeIads`
 offers the detector tier before the opportunistic LORAD/MERAD tier; the reactive tier (a SAM
 threatening a planned strike) is unchanged. Skynet holds a netted site dark until its target is

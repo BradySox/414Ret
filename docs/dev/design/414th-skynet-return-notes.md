@@ -156,6 +156,12 @@ opportunistic SAMs, the reactive tier is unchanged, and the full coverage-query 
 recorded and unbuilt. Do not tune `adjustGoLiveRange` for this without a fresh call, and do
 not plan the escort as bait. In-game row: B126.
 
+Checked on the CSAR save the same evening: inert there. Every blue DEAD comes from the reactive
+tier, and each red site has 2–6 covering EWRs at 162–216 nm plus 1–4 SAM-as-EWR parents, so no
+EWR-first ordering cuts the net. What does cut it is the command-centre pair: with both dead
+`isCommandCenterUsable` is false and every site goes autonomous, which for vanilla units means
+live from T0. That is the lever a future rule would use, and it is not built.
+
 Also seen: `0002 | OKAPI (SAM)`, an SA-11 site regenerated as four launchers after losing its
 search radar and command post on turn 1, is rejected by `setupElements` (no search radar) and
 fights as plain DCS AI, radiating from T0. Its eight launches killed three BARCAP Tomcats. Any

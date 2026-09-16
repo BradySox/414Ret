@@ -118,6 +118,49 @@ def test_every_human_in_one_group_gets_its_own_track() -> None:
     assert all(record["group"] == "Enfield 1-1" for record in flights.values())
 
 
+def test_a_human_the_sweep_cannot_name_is_still_sampled() -> None:
+    """Test 33 (2026-09-15): on a listen host the remote pilot's unit answered
+    getPlayerName inside shot and hit events but not inside the sweep, so he was
+    filed as the AI wingman behind the host's anchor and got no track. The
+    server's own coalition.getPlayers list is the fallback, and the first event
+    that does carry the name fills it in."""
+    harness = DcsPluginHarness()
+    _load(harness)
+    harness.add_group(
+        _flight(
+            "Enfield 1-1",
+            2,
+            [_unit("Enfield 1-1-1", playerName="Host"), _unit("Enfield 1-1-2")],
+        )
+    )
+    # The remote pilot: listed by coalition.getPlayers, nameless to the sweep.
+    harness.lua.execute("""
+        local remote = Unit.getByName("Enfield 1-1-2")
+        local real = coalition.getPlayers
+        coalition.getPlayers = function(side)
+            local players = real(side)
+            if side == coalition.side.BLUE then table.insert(players, remote) end
+            return players
+        end
+        """)
+
+    _sample(harness)
+    _sample(harness)
+
+    flights = _records(harness)
+    remote = flights["Enfield 1-1-2"]
+    assert remote["player"] is True
+    assert remote["first_seen"] >= 0
+    assert len(remote["track"]) >= 1
+
+    # The shot event carries the name the sweep could not read.
+    harness.lua.execute('Unit.getByName("Enfield 1-1-2").playerName = "Remote"')
+    harness.lua.eval("sortie_recorder_on_shot")(
+        harness.lua.eval('Unit.getByName("Enfield 1-1-2")'), _weapon(harness, "AIM-120")
+    )
+    assert _records(harness)["Enfield 1-1-2"]["player_name"] == "Remote"
+
+
 def test_humans_and_ai_in_the_same_group_are_both_covered() -> None:
     harness = DcsPluginHarness()
     _load(harness)

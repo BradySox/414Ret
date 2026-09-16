@@ -106,6 +106,35 @@ def test_airfield_link_marks_the_client_flight() -> None:
     assert f'["{FA_18C_hornet.id}"]' in warehouses
 
 
+def test_a_deleted_flights_link_does_not_survive_the_next_generation() -> None:
+    """Test 33 (2026-09-15): the terrain's Airport objects outlive one generation,
+    so a link written for a flight the player then removed stayed on the field and
+    pointed at whatever group next took that id -- a red H-6J at Akrotiri."""
+    mission = make_mission()
+    kutaisi = mission.terrain.airports["Kutaisi"]
+    group = make_group(mission, kutaisi)
+    cp = FakeControlPoint(kutaisi)
+    DynamicSpawnTemplateGenerator(
+        mission, make_game([make_flight(group, cp)]), {}
+    ).generate()
+    assert FA_18C_hornet.id in kutaisi.aircrafts["planes"]
+
+    # The next generation reuses the same terrain and has no client flight there.
+    regenerated = Mission(mission.terrain)
+    DynamicSpawnTemplateGenerator(regenerated, make_game([]), {}).generate()
+    assert "planes" not in kutaisi.aircrafts
+    assert "linkDynTempl" not in str(regenerated.warehouses)
+
+    # Turning the feature off clears a stale link too.
+    DynamicSpawnTemplateGenerator(
+        mission, make_game([make_flight(group, cp)]), {}
+    ).generate()
+    DynamicSpawnTemplateGenerator(
+        Mission(mission.terrain), make_game([], templates=False), {}
+    ).generate()
+    assert "planes" not in kutaisi.aircrafts
+
+
 def test_untouched_group_serializes_without_the_flag() -> None:
     mission = make_mission()
     group = make_group(mission, mission.terrain.airports["Kutaisi"])

@@ -79,6 +79,28 @@ B17, B32. One planner change came out of it: detectors before opportunistic SAMs
 | B111 | No Hornet striker; the measurement is recorded in the row |
 | B32 | Three Silkworm groups stood; no blue ship came in range |
 
+## Test 33 — what it reached, and what it could not (2026-09-15)
+
+Syria — Operation Peace Spring turn 2, a multiplayer listen host with two humans in the
+MAVERICK Viper strike package, 93 min, `Tacview-20260915-205127-DCS-Host`, DCS 2.9.29.27468,
+build `611eedfcd`. The turn-3 save (`91526.retribution`) is the auto-planner's untouched frag
+on the same build. The fight: blue 16 air-to-air kills for one F-15C lost to an R-73 and one
+more Eagle down late; the players flattened all four Tabqa Dam objectives. Rows moved: **B63,
+B113, B114 PARTIAL**; evidence on B70, B107, B122, B125, G42, B121, B108, B39, B48. Two
+defects found and fixed the same day: a stale dynamic-spawn template link (B125) and a second
+human in one group going unsampled by the recorder (B70, B113, B114). The turn-3 save also
+re-ran the #1023 question: red fragged DEADs at two blue EWRs, but the old ordering gives the
+identical frag on this save, so B126 stays untested.
+
+| Row | Why test 33 could not answer it |
+|---|---|
+| B125 | Both humans took the fragged slots, so no dynamic jet was spawned |
+| B120 | Nobody crossed a neutral border |
+| B108 | No stuck-unit line; the log's bulk is DCS's own event echo, not a TIC retry |
+| B63 cause 1 | Nobody quit and relaunched, so the snapshot warning had no reason to fire |
+| B48 | Only the carrier group was inside the host's recording bubble |
+| B126 | Both orderings frag the same targets on this save |
+
 ## Outstanding rows at a glance
 
 88 rows need a live pass. Full detail is under each `###` heading below —
@@ -102,7 +124,7 @@ stress it · `✗` fail signature reproduced in-game.
 | B32 | Sea-supply convoys + coastal anti-ship engagement | §78 | ☐ |
 | B35 | Air-defense class rows are filters of the "Air defences" master | §19 | ☑ |
 | B39 | Cross-turn naval magazines | §81 | ◐ |
-| B63 | A destroyed strike target is recorded in the campaign | §8 | ☐ |
+| B63 | A destroyed strike target is recorded in the campaign | §8 | ◐ |
 | B64 | The datalink era gate: the SA page populates when it should | datalink | ☑ |
 | B50 | The auto-planner never picks the King for a rescue | CSAR | ☑ |
 | B51 | The rescue package is not planned into threat it cannot survive | CSAR | ☑ |
@@ -223,8 +245,8 @@ stress it · `✗` fail signature reproduced in-game.
 | B110 | A SEAD jet's steerpoints are the site's emitters, and the card's STPT numbers match | §5 / §3 | ☐ |
 | B111 | A package's escort holds the striker's pace instead of running ahead | §8 cruise mach | ☐ |
 | B112 | The wind you set is the wind the panel shows, and the box stops at 97 kt | wind override / live weather | ☐ |
-| B113 | A pilot's logbook fills in, and the kills are the ones they got | §96 | ☐ |
-| B114 | Your lifetime logbook survives starting a new campaign | §97 | ☐ |
+| B113 | A pilot's logbook fills in, and the kills are the ones they got | §96 | ◐ |
+| B114 | Your lifetime logbook survives starting a new campaign | §97 | ◐ |
 | B115 | The cockpit front line is one continuous boundary, bowed where the map is bowed | §74 / §90 | ☐ |
 | B117 | A Sandy can be fragged onto a survivor, and covers the pickup | §99 | ☐ |
 | B118 | The Super Hornet still arms and its new cockpit options are there | CJS 2.4.5.260726 | ☐ |
@@ -942,6 +964,8 @@ circle would obviously be fake. Nothing to fly. See features doc §79 and §3.
 
 ### B39 — Cross-turn naval magazines · §81 · ◐ PARTIAL
 
+**2026-09-15, test 33** (Syria — Operation Peace Spring turn 2, multiplayer listen host with two humans in the MAVERICK Viper strike, 93 min, `Tacview-20260915-205127-DCS-Host`, DCS 2.9.29.27468, build `611eedfcd`; the turn-3 save `91526.retribution` is the auto-planner's own frag on the same build) — BABIRUSA (red, Naval Two Ship) released at +318 s, the Forrestal group at +708 s and +1098 s; no anti-ship shot all mission, `naval_magazines_state` empty. Same shape as tests 24, 30 and 32.
+
 **2026-09-15, test 32** (Persian Gulf — WRL Operation Noisy Cricket Redux turn 2, no player slot, 2 h 14 min of sim at acceleration, `Tacview-20260915-174631`, DCS 2.9.29.27468, build `fd04b4a66`) — the test-30 shape again: `0132 | TARANTULA (Naval Two Ship)` released weapons-free at +118 s with 12 rounds in the magazine table, and is not in the `.miz`; MOSQUITO is. Six groups released between +66 s and +326 s, 52 s apart. No anti-ship shot all mission; `naval_magazines_state` empty.
 
 **2026-09-13, test 30** (Persian Gulf — Scenic Route turn 1) — the plugin armed on groups
@@ -1010,7 +1034,9 @@ stops at 6, and logs the cap.
 - **Fail signature:** every group releasing in the same second (the even spread regressed, or `releaseMaxS` ≤ `releaseMinS`); ships that **never** open fire at all (the release ROE option isn't reaching the naval controller — try the literal `ROE_ID`/`ROE_WEAPON_FREE` values, or DCS wants `AI.Option.Naval` specifically); **a winchester or pre-release ship sitting passive while aircraft attack it** (the load-bearing unknown resolved badly — the honest options are to accept it or to abandon N1's hold, since per-weapon ROE does not exist); magazines never depleting despite launches (the fired weapon's `typeName` doesn't match `ASHM_WEAPON_PATTERNS` — read the real name out of `dcs.log`/Tacview and extend the pattern list, but **never** with a land-attack family); a magazine that debits *twice* per shot or moves at generation time (the §63 double-count or the regeneration-safety rule broke); or §63 cruise-missile raids suddenly costing anti-ship stock (a land-attack family leaked into the pattern list).
 
 
-### B63 — A destroyed strike target is recorded in the campaign · §8 · ☐ UNTESTED
+### B63 — A destroyed strike target is recorded in the campaign · §8 · ◐ PARTIAL
+
+**2026-09-15, test 33** (Syria — Operation Peace Spring turn 2, multiplayer listen host with two humans in the MAVERICK Viper strike, 93 min, `Tacview-20260915-205127-DCS-Host`, DCS 2.9.29.27468, build `611eedfcd`; the turn-3 save `91526.retribution` is the auto-planner's own frag on the same build) — **cause 2 verified end to end; cause 1 not exercised.** The log carries `Scenery objectives: 128 known, 0 already destroyed, match radius 30 m` at start, then four `Objective destroyed` lines at 01:46:24 for the MAVERICK package's Tabqa Dam objectives (Control at 1 m from the hit, Visitor Centre, Power Station and Engineering at 28–29 m), all four the package's own targets, under the players' six JDAMs. The turn-3 save carries all four units `alive=False`. No `state.json on disk carries` warning in `retribution.log`, because nobody quit and relaunched; that half still needs the LOCAL card's contrived run. Also answers the 27468 question this row raised on test 30: a JDAM'd building does raise `S_EVENT_DEAD` on this build; the 3,887 numeric ids in `unit_lost_events` are the front line's clutter, which raises KILL and not DEAD, and the app logged them as untracked.
 
 **2026-09-13, test 30** (Persian Gulf — Scenic Route turn 1, DCS 2.9.29.27468) — **not
 exercisable here, and a pattern to read before the next attempt.** The campaign has no
@@ -4682,6 +4708,8 @@ are cut*.
 
 ### B48 — Naval station-keeping racetracks · §87 · ◐ PARTIAL
 
+**2026-09-15, test 33** (Syria — Operation Peace Spring turn 2, multiplayer listen host with two humans in the MAVERICK Viper strike, 93 min, `Tacview-20260915-205127-DCS-Host`, DCS 2.9.29.27468, build `611eedfcd`; the turn-3 save `91526.retribution` is the auto-planner's own frag on the same build) — only the Forrestal group is in the recording: 48–60 km straight under §88, by design. The red BABIRUSA pair was outside the host's recording bubble.
+
 **2026-09-15, test 32** (Persian Gulf — WRL Operation Noisy Cricket Redux turn 2, no player slot, 2 h 14 min of sim at acceleration, `Tacview-20260915-174631`, DCS 2.9.29.27468, build `fd04b4a66`) — **first red evidence, on a mod hull.** MOSQUITO, the two Iranian FACs from the CurrentHill pack, sailed 13.5–14.0 km inside a 5.3 km box over 134 min on the 5-waypoint 15.9 km oval the `.miz` gives them, at a 10 kt commanded speed. CVN-71, LHA-1 and their six Burkes ran 62–84 km on the 2-waypoint 100 km route, §88 by design. The second red group, TARANTULA, was armed by the magazine plugin but is not in the `.miz` (see B39).
 
 **2026-09-13, test 30** (Persian Gulf — Scenic Route turn 1, `Tacview-20260913-125128`, 59 min
@@ -5263,6 +5291,8 @@ actually are.
 > weighting. That row needs a lopsided pair.
 ### B70 — Sortie records reach the campaign · §91 · ◐ PARTIAL
 
+**2026-09-15, test 33** (Syria — Operation Peace Spring turn 2, multiplayer listen host with two humans in the MAVERICK Viper strike, 93 min, `Tacview-20260915-205127-DCS-Host`, DCS 2.9.29.27468, build `611eedfcd`; the turn-3 save `91526.retribution` is the auto-planner's own frag on the same build) — **136 records; the host's own record is complete and the second human's is empty.** `King 1 | Flash`: 297 samples, 4 shots, 3 hits, 92.5 min, folded into both logbooks. `SMR|Maj Redneck|90-824`, in the same Viper group: `player: true` and his name from the shot events, 4 shots, 3 hits, 1 air kill, but `first_seen −1` and no track — the sweep never sampled him. The harness already passes four humans in one group, so this is a live-DCS difference: his unit answered `getPlayerName` inside the shot and hit events but not inside the sweep's `group:getUnits()` walk, and with the host holding the group's anchor he was treated as the AI wingman. Consequence: `record_mission` needs a track, so he got no lifetime profile (B114). Fixed the same day: the sweep now also takes `coalition.getPlayers` as the list of humans and treats a record already marked `player` as human, and the first event that carries the name fills it in (`tests/lua/test_sortie_recorder_runtime.py`). Re-fly with two humans in one group. Everything else reconciles: 16 blue air kills in the recording (14 AIM-120, 2 AIM-9) against the records' claims, and both §61 bandits are among them.
+
 **2026-09-15, test 32** (Persian Gulf — WRL Operation Noisy Cricket Redux turn 2, no player slot, 2 h 14 min of sim at acceleration, `Tacview-20260915-174631`, DCS 2.9.29.27468, build `fd04b4a66`) — **92 records, and the numbers reconcile with the recording.** Blue records claim 28 air kills; the recording shows 14 red aircraft and 13 Shahed-136s shot down by fighters, and the drones count as air kills, so 27 against 28 is the recorder and Tacview reading the same fight. The eight HARM shots sit on the four WEKA DEAD Vipers at two each. `state.json` is 672 KB. Three shapes to read a SITREP with: a wingman that never became the group's anchor carries `first_seen −1`, no track and only its events (`game/sortierecord.py` folds that to a 0 s duration); parked alert jets, the late-activated §61 templates and the Abu Musa Su-25Ts all get the two-sample stub; and the last sample of a jet that landed and shut down reads `fuel 0` (MUSK Strike, WOLFHOUND, MARLIN SEAD), which is DCS after shutdown, not a leak.
 
 **2026-09-13, test 30** (Persian Gulf — Scenic Route turn 1, no player, 59 min of sim) — **the
@@ -5567,6 +5597,8 @@ Play a turn on a **front-less** campaign whose AWACS is not at the field nearest
   3. **A fronted campaign changes.** It should not — only the front-less branch moved.
 
 ### G42 — Skynet is the engine again · Skynet return · ☐ UNTESTED
+
+**2026-09-15, test 33** (Syria — Operation Peace Spring turn 2, multiplayer listen host with two humans in the MAVERICK Viper strike, 93 min, `Tacview-20260915-205127-DCS-Host`, DCS 2.9.29.27468, build `611eedfcd`; the turn-3 save `91526.retribution` is the auto-planner's own frag on the same build) — 93 min, no crash, no `enableEmission` fault. One rejection: `0092 | WATERBUCK (PD)` is a point-defence group Skynet cannot classify; its parent SA-10 was still fragged and the turn-3 auto-planner still targets it.
 
 **2026-09-15, test 32** (Persian Gulf — WRL Operation Noisy Cricket Redux turn 2, no player slot, 2 h 14 min of sim at acceleration, `Tacview-20260915-174631`, DCS 2.9.29.27468, build `fd04b4a66`) — **ran the full 2 h 14 min, no crash, no `enableEmission` fault; two findings.** Both nets built, and the test-30 flat-top EWR rejection did not recur. **(1) A mauled site comes back outside the net.** `0002 | OKAPI (SAM)` was rejected as a site Skynet cannot handle: it is an SA-11 site regenerated as four launchers after losing its search radar and command post on turn 1, so `setupElements` finds no search radar, it is cleaned up, and it fights as plain DCS AI, radiating from T0. Its eight launches killed three Al Minhad BARCAP Tomcats 60–64 km from the nearest intact site. Any radar SAM that loses its search radar will come back this way. **(2) The sites-dark half works, and it costs AI DEAD flights their shots.** KIWI DEAD (four F-16CM with AGM-88C and AGM-65G) flew at a Skynet-held SA-11 that stayed dark until they were inside 30 km; it then fired ten, the Vipers fired nothing, and all four plus the Mirage escort were lost. WEKA DEAD, same fit, flew at LEOPARD, an SA-11 that had already lit up to shoot the SEAD escort Hornets ahead of it; the Vipers put eight HARMs on it, killed two launchers, and came home. DCS AI only shoots a HARM at an emitter, and a Skynet site emits only once its target is inside the envelope, so an AI DEAD flight against a disciplined site never gets a shot off. Whether that is the accepted trade of the return, a `goLiveRange` setting, or a planner rule (no AI DEAD against a Skynet-held site without something lighting it first) is a DM call.
 
@@ -6442,6 +6474,8 @@ the SAM alone 2026-09-07. Full history in the design note.
 
 ### B121 — Neutral border: AI intruders are never engaged · §98 · ☐ UNTESTED
 
+**2026-09-15, test 33** (Syria — Operation Peace Spring turn 2, multiplayer listen host with two humans in the MAVERICK Viper strike, 93 min, `Tacview-20260915-205127-DCS-Host`, DCS 2.9.29.27468, build `611eedfcd`; the turn-3 save `91526.retribution` is the auto-planner's own frag on the same build) — `8 border zone(s) drawn, 3 defended; warn 30s, engage 180s`; no hail or warn line in 93 min with two humans and 30 blue AI aircraft up. Not exercised beyond that; tracks were not tested against the polygons this time.
+
 **2026-09-15, test 32** (Persian Gulf — WRL Operation Noisy Cricket Redux turn 2, no player slot, 2 h 14 min of sim at acceleration, `Tacview-20260915-174631`, DCS 2.9.29.27468, build `fd04b4a66`, `engageAi` off) — **consistent, still not closed, and the polygon question is answered this time.** The zone table was read out of the flown `.miz` (Pakistan ×2, Saudi Arabia and Qatar neutral; UAE and Oman blue; Iran red) and every aircraft track in the recording was tested against it: no blue or red aircraft sample was inside a neutral country at any point in 2 h 14 min, and the neutral batteries (Saudi Patriot, Qatar SA-3, Pakistan SA-11 and SA-3) fired nothing. No stray happened, so the row cannot move; it needs a turn where one does.
 
 **2026-09-13, test 30** (Persian Gulf — Scenic Route turn 1, `Tacview-20260913-125128`, no
@@ -6512,6 +6546,8 @@ standing patrol; see the design note.
 
 
 ### B122 — A survivor lands where his own chute came down, not where another crew's did · CSAR (#929 adoption) · ◐ PARTIAL
+
+**2026-09-15, test 33** (Syria — Operation Peace Spring turn 2, multiplayer listen host with two humans in the MAVERICK Viper strike, 93 min, `Tacview-20260915-205127-DCS-Host`, DCS 2.9.29.27468, build `611eedfcd`; the turn-3 save `91526.retribution` is the auto-planner's own frag on the same build) — **19 land ejections all matched, one of them probably to the wrong crew.** Every land ejection got `landed: true` and the recording confirms the touchdowns it covers to the metre (three Abu al-Duhur intercept chutes, the MiG-29 at 9.4 km of drift from 5 km, the civilian crews, the MAVERICK Escort Eagle at 33 m). The `HOSTILE SCRAMBLE MiG-21bis #001-01` record is the exception: its recorded touchdown is 19.4 km from the nearest ejection point of any crew and further from its own, when every measured chute drifted under 10 km. The two §61 MiG-21s and the two HS25 Mirages went down within minutes and within 20 km of each other near Damascus, which is exactly where the nearest-open-ejection rule can wire one crew's landing onto another's record; the recording's bubble did not reach those chutes to prove it. A per-crew match would settle it: DCS's ejection event carries the pilot object as `event.target`, and the landing event's `initiator` is that same object, so keying on its id instead of on distance needs no geometry at all. Not built.
 
 **2026-09-15, test 32** (Persian Gulf — WRL Operation Noisy Cricket Redux turn 2, no player slot, 2 h 14 min of sim at acceleration, `Tacview-20260915-174631`, DCS 2.9.29.27468, build `fd04b4a66`) — **the matcher held on 13 ejections; the two-seater-over-land case did not occur.** One ejection came down on land: the Bandar Abbas F-5E at t≈2996, whose chute the recording tracks from 3,990 m to touchdown at x=−63788 z=−57751, 4,478 m from its ejection point. `state.json` records exactly that touchdown as `landed`, and the next-nearest open ejection was 46 km away. The other 12 (three Iranian intercept pairs, five blue Hornets and Tomcats, the Khasab F-14B crew) went into the water and kept their ejection point, and nothing was written onto another crew's record. The F-14B pair ejected last, over the sea, so the land two-seater case the setup asks for was not produced, and the next-turn map was not checked (the save was not captured). **A shape to know:** MOOSE CSAR spawns the in-mission survivor at the *ejection* point (`csarUsePara` is false), so the F-5E pilot's beacon sat at x=−59382 z=−56953 while the campaign will place him at the touchdown 4.5 km away. A high land ejection drifts that far.
 
@@ -6999,6 +7035,8 @@ through and going home.
 
 ### B107 — The log stops repeating a MOOSE event error thousands of times · vendored `Moose.lua` · ☑ VERIFIED (2026-09-15, test 32)
 
+**2026-09-15, test 33** (Syria, a 93-minute multiplayer host with a front line and TIC) — holds on the second build: `EVENTMETA` 0. The log is 19 MB anyway, and 66,000 of its 80,000 lines are DCS's own `event:type=group change option` echo of the same TIC option churn, written by the sim's multiplayer event logger, not by MOOSE; see the log-noise note.
+
 **2026-09-15, test 32** (Persian Gulf — WRL Operation Noisy Cricket Redux turn 2, no player slot, 2 h 14 min of sim at acceleration, `Tacview-20260915-174631`, DCS 2.9.29.27468, build `fd04b4a66`) — **the guard holds.** The flown `.miz` was unpacked and its `Moose.lua` carries the `414Ret patch (event 61 spam)` row; `grep -c "EVENTMETA data for event ID" dcs.log` returns 0 over 46 wall-minutes, against 1,282 on test 30 and ~10,300 on the 09-13 Iraq turn. CTLD, CSAR (both sides), Skynet and the threat-reaction plugin printed their banners; no TIC was on this map. The whole log holds one MOOSE error: AIRBOSS `_GetWire` compares a number with nil when an AI aircraft lands on the LHA (`Moose.lua` line 64544 chains `~=` with `or`, which is always true, so the Tarawa path looks up wires it does not have). It fired once, for the rescue helo, and skips only that landing's `_RecoveredElement`. The 90 `ANTIFREEZE` stalls came under time acceleration and are not a signal.
 
 **2026-09-13, test 30** (Persian Gulf — Scenic Route turn 1, 59 min of sim at ~2.4×
@@ -7051,6 +7089,8 @@ banners as before.
   the spam is cosmetic and not worth a dead plugin.
 
 ### B108 — A stuck TIC unit names itself, and the retries are spread not concentrated · §9 TIC · ☐ UNTESTED
+
+**2026-09-15, test 33** (Syria — Operation Peace Spring turn 2, multiplayer listen host with two humans in the MAVERICK Viper strike, 93 min, `Tacview-20260915-205127-DCS-Host`, DCS 2.9.29.27468, build `611eedfcd`; the turn-3 save `91526.retribution` is the auto-planner's own frag on the same build) — no stuck-unit line in 93 min of a live front, so nothing to adjudicate. Two things the same log does show: 51 `MIST|getGroupData ... TIC:unit|... not found in MIST database` errors in one second at mission start, one per TIC unit, before MIST's database has seen the groups TIC just spawned (the fight went on, so it is noise until shown otherwise); and DCS's multiplayer event logger echoing every controller option change TIC makes, 66,000 lines in 93 min.
 
 **2026-08-29, test 24** (Caucasus — Iron Gate turn 1, 72 min, `Tacview-20260829-162330`, DCS 2.9.29.27278) — **could not be tested: the flown build predates the fix** (see B107
 for the four-second miss). The bundled `TIC_v1.1.lua` is the 2026-08-26 copy.
@@ -7219,7 +7259,9 @@ at 8,000 m, which is a jet stream you cannot arrange. It is pinned by
 instead. If you ever do see a kneeboard wind above 97 kt on a live-weather turn, that test
 is lying and this row fails.
 
-### B113 — A pilot's logbook fills in, and the kills are the ones they got · §96 · ☐ UNTESTED
+### B113 — A pilot's logbook fills in, and the kills are the ones they got · §96 · ◐ PARTIAL
+
+**2026-09-15, test 33** (Syria — Operation Peace Spring turn 2, multiplayer listen host with two humans in the MAVERICK Viper strike, 93 min, `Tacview-20260915-205127-DCS-Host`, DCS 2.9.29.27468, build `611eedfcd`; the turn-3 save `91526.retribution` is the auto-planner's own frag on the same build) — **the host's logbook is right; the second human got nothing.** The player seat Flash flew (335 Squadron) reads sorties 1, combat 1, 92.5 min, 4 shots, 3 hits, `first_sortie` — items 1, 2 and 4 hold, and item 5 holds too: every AI pilot who flew has a sortie, the Eagle lead his three kills and `first_blood`. Item 3 is a wash: Flash's targets were the four Tabqa scenery objectives, which are not units and count as no kill in any column. The second human's seat has nothing at all, for the reason in B70 (his record carried no track); fixed there, unflown since.
 
 **Needs one flown mission.** ~25 min including the flight.
 
@@ -7257,7 +7299,9 @@ destroy something on the ground, land, accept results, then reopen the same pilo
 - **The page is all zeroes on a campaign carried over from an older build.** Expected, not a
   failure — pre-§96 saves have no records to fold and the page says so.
 
-### B114 — Your lifetime logbook survives starting a new campaign · §97 · ☐ UNTESTED
+### B114 — Your lifetime logbook survives starting a new campaign · §97 · ◐ PARTIAL
+
+**2026-09-15, test 33** (Syria — Operation Peace Spring turn 2, multiplayer listen host with two humans in the MAVERICK Viper strike, 93 min, `Tacview-20260915-205127-DCS-Host`, DCS 2.9.29.27468, build `611eedfcd`; the turn-3 save `91526.retribution` is the auto-planner's own frag on the same build) — **the store works, with two shapes to know.** `pilot_profiles.json` holds `King 1 | Flash` with this sortie (92.5 min, 4 shots, 3 hits, task Strike, campaign and turn named) and two older profiles from other campaigns, so the file outlives a campaign as designed. First shape: the key is the DCS name, so a renamed pilot starts a new profile — `Flash` (5 sorties, three campaigns) and `King 1 | Flash` are two people to the store. Second: the host did NOT record everyone this time — `SMR|Maj Redneck|90-824` flew and shot and has no profile, because the fold requires a record that moved and his had no track (B70). Fixed in the recorder, unflown since; the second-campaign half of this row is still owed.
 
 **Needs two campaigns and one flown mission in each.** ~50 min, or split across two sessions.
 
@@ -7469,6 +7513,8 @@ actually is on the F10 map before you start (the host can use the reveal overvie
   find it before shipping.
 
 ### B125 — A dynamic-slot jet spawns with the template's route, radios and loadout · §101 · ☐ UNTESTED
+
+**2026-09-15, test 33** (Syria — Operation Peace Spring turn 2, multiplayer listen host with two humans in the MAVERICK Viper strike, 93 min, `Tacview-20260915-205127-DCS-Host`, DCS 2.9.29.27468, build `611eedfcd`; the turn-3 save `91526.retribution` is the auto-planner's own frag on the same build) — **not exercised, and a generator defect found and fixed.** Both humans took the fragged MAVERICK slots (units 405 and 406, static client units), so no dynamic jet was spawned and the pass criterion was not touched. The `.miz` itself: `MAVERICK Strike|31|8` (group 141) is flagged and Ramat David's F-16C entry links 141 — correct. But Akrotiri's F-16C entry links group **162, a red H-6J Badger**. The archive shows why: the 20:40 generation had a second client flight, `LLAMA DEAD` at Akrotiri, linked as 162; the DM removed it and regenerated at 20:43 and 20:49, and the link stayed, because the pydcs `Airport` objects belong to the campaign's terrain and outlive a generation. Fixed the same day: the generator clears every `linkDynTempl` entry on every airport before writing (`_clear_stale_links`, pinned by `tests/missiongenerator/test_dynamic_spawn_templates.py`). What a stale link does to a dynamic spawn in DCS is unknown and no longer reachable.
 
 **History:** opened 2026-09-15 as the gate on
 [`414th-dynamic-spawn-templates-notes.md`](design/414th-dynamic-spawn-templates-notes.md);

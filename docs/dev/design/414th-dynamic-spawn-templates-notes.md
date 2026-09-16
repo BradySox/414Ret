@@ -90,3 +90,13 @@ in-game.
    present in the file — that is the one B125 records.
 
 Write the in-game answers to 1 and 3 here.
+
+## Flown 2026-09-15 (test 33) — a stale link
+
+Both humans took the fragged slots, so the template was not exercised. The `.miz` carried
+Ramat David's link to the flagged MAVERICK group and a second link at Akrotiri to group
+162, a red H-6J. The 20:40 generation had a client `LLAMA DEAD` flight at Akrotiri; it was
+removed and the turn regenerated twice, and the link survived on the terrain's `Airport`
+object, which pydcs shares across generations. The generator now clears every
+`linkDynTempl` entry on every airport before it writes. Row B125 still owes the dynamic
+spawn itself.

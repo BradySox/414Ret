@@ -185,6 +185,15 @@ hand-ported. Upstream's cluster-credit loop went onto the takeoff path only; the
 `"embarked on"` sites detect each survivor vanishing individually and already credit mates on
 their own.
 
+**The pin reached only half the survivors until 2026-09-16.** `register_with_ops_csar` (the
+plugin's path for pilots Retribution places at mission start) used `beaconHz` directly, but a
+pilot who ejects during the mission is registered by MOOSE's own `CSAR:_AddCsar`, which draws
+from its random pool: the 2026-09-16 audit found test 33's two blue survivors on 620 and 820 kHz
+and test 24's eighteen blue beacons never on 260, while every pre-placed survivor keyed 260. The
+plugin now overrides `_GenerateADFFrequency` on each Ops.CSAR instance to return the pinned
+channel, so both paths agree with the kneeboard. Guarded by
+`tests/test_plugin_resource_files.py::test_the_csar_beacon_pin_reaches_in_mission_ejections`.
+
 ## The point (the user's vision, locked 2026-06-27)
 
 > "I want the system to work where it's auto-fragged for AI to go pick up AIs and players can

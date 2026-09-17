@@ -189,6 +189,15 @@ local function opscsar_main()
         -- Point it at the tone this plugin actually ships (see plugin.json's
         -- otherResourceFiles, which is what puts it in l10n/DEFAULT/).
         my.radioSound = "csar-beacon.wav"
+        -- 414th: a pilot who ejects in-mission is registered by MOOSE's own _AddCsar,
+        -- which draws his channel from the random pool and never sees beacon_hz
+        -- (test 33: two blue survivors on 620 and 820 kHz against a kneeboard
+        -- briefing 260). Overriding the draw pins every survivor to the one channel.
+        if beacon_hz ~= 0 then
+            my._GenerateADFFrequency = function()
+                return beacon_hz
+            end
+        end
         my.enableForAI = cfg.rescueAI == "true"
         -- Survivors wait for the cabin door before boarding or getting out. Only
         -- affects crewed rescues; the AI paths don't go through Ops.CSAR at all.

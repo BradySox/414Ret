@@ -105,6 +105,21 @@ Also measured after the DM's verdicts on 2026-09-16: the escorts of the 1,200 km
 package released at the split (B78) and then ran dry — the F-15C ejected at 0.04 fuel, the
 Hornets diverted to a Lebanese field at 0.08, the Viper on tanks came home with 0.72. See B78.
 
+### 2026-09-16 — test 34: Yankee Station turn 1 on the halved laydown
+
+Caucasus, 1968 Yankee Station turn 1, 62 min, no player, `Tacview-20260916-204511`, DCS
+2.9.29.27468. The DM's report was "Maykop is stuck": four groups there (two Phantom pairs,
+four B-52s) activated between t=1334 and t=1733 and never moved. The read is under **L8**:
+the Vietnam airbase harassment barrage lands on Maykop and Sochi-Adler and DCS holds every
+fixed-wing launch there for the rest of the mission; the same signature is in tests 24, 31
+and 33. Rows moved: **L8 REGRESSED**, notes on B96, B100 and G33 (all nine blue beacons on
+260 kHz, in-mission ejections included).
+
+| Row | Why test 34 could not answer it |
+|---|---|
+| B100 | Nothing at Maykop was a stand problem; the ramp was shelled |
+| B11, B45 | Setting off / no GPS weapon released |
+
 ### 2026-09-16 — the line-by-line audit of every open row against tests 1–33
 
 Every open row was read against the 33 captures on the desk (`dcs.log`, `.miz`, `state.json`,
@@ -202,7 +217,7 @@ stress it · `✗` fail signature reproduced in-game.
 | K2 | Campaign SITREP band on its own kneeboard page | §29 | ☑ |
 | L5 | New-Game "Vietnam" card | Vietnam mode P2 shell | ◐ |
 | L6 | Convoy interdiction (Steel Tiger) | §35 | ◐ |
-| L8 | Airbase harassment (rocket/mortar siege) | §36 | ◐ |
+| L8 | Airbase harassment (rocket/mortar siege) | §36 | ✗ |
 | L9 | Super Gaggle hilltop resupply | §37 | ◐ |
 | L11 | Snake and nape (napalm CAS) | §39 | ◐ |
 | M6 | Red tempo: turn-windowed trail surge, ground-offensive pulse (campaign layer W6, rehomed 2026-07-21) | campaign layer | ☐ |
@@ -2726,6 +2741,8 @@ either way — the row needs a shot deliberately taken at a site that has point 
 
 ### G33 — Survivor ADF beacon: the pinned 260 kHz drives a real needle · CSAR (upstream #929 + 414th pin) · ◐ PARTIAL
 
+**2026-09-16, test 34** (Caucasus — 1968 Yankee Station turn 1 on the halved laydown, 62 min, no player, `Tacview-20260916-204511`, DCS 2.9.29.27468) — **the log half is fully proven now: nine blue beacons, nine on 260 kHz, in-mission ejections included** (LORIKEET BAI's two Skyhawk crews at t≈31 and 34 min among them), on a build carrying the in-mission pin. The needle in a cockpit is the one thing left.
+
 **2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **the log half is proven for briefed survivors and exposes a gap for the rest; the needle is still unflown.** Every survivor Retribution places at mission start keys 260 kHz: tests 2, 11, 16 and 32 carry `Added Radio Beacon 260000 Hertz` for the uuid-named groups (ten of them on test 32). But a pilot who ejects **during** the mission is registered by MOOSE's own `CSAR:_AddCsar`, which the pin does not reach, so he keys a random channel from the stock pool: test 33's two blue survivors got 620 and 820 kHz, test 24's eighteen blue beacons (including the DM's own `Flash` at 300 kHz) never touched 260, and the red side is random everywhere. The kneeboard's 260 is therefore right for the rescue it briefs and wrong for a same-mission pickup, which the MAYDAY call still announces. **Fixed the same day:** the plugin now overrides `_GenerateADFFrequency` on each Ops.CSAR instance to return the pinned channel, so MOOSE's own `_AddCsar` path keys 260 kHz too (`tests/test_plugin_resource_files.py` guards the override). Re-check on the next mission with an in-mission ejection: every `Added Radio Beacon` line on the blue side should read 260000. The row still needs an ADF set in a cockpit.
 
 **History:** adopted 2026-08-07. `tests/missiongenerator/test_csarbeacon.py` pins 260 kHz to MOOSE's 10 kHz grid, inside its 200–999 kHz band, clear of every navaid `UTILS.GenerateVHFrequencies` skips, and receivable by all three ADF sets; `tests/test_plugin_resource_files.py` proves the tone ships. Whether DCS produces a carrier a needle can home is cockpit-only
@@ -3692,7 +3709,9 @@ be settled from a recording instead of the cockpit. It can, across all six recor
   `useOpenNewSupplyRoutePackageDialogMutation` hook or the `contextmenu` handler is wrong); a JS error in the
   client console; the dialog opens on the wrong CP. Needs the CI client rebuild (hand-edited generated API).
 
-### L8 — Airbase harassment (rocket/mortar siege) · §36 · ◐ PARTIAL
+### L8 — Airbase harassment (rocket/mortar siege) · §36 · ✗ REGRESSED (2026-09-16, test 34)
+
+**2026-09-16, test 34** (Caucasus — 1968 Yankee Station turn 1 on the halved laydown, 62 min, no player, `Tacview-20260916-204511`, DCS 2.9.29.27468) — **the barrage freezes every AI fixed-wing launch at the field it lands on, for the rest of the mission.** Harassment armed for 8 fields, Maykop-Khanskaya and Sochi-Adler among them (the Vietnam siege reach is theatre-wide, and with no player nothing was excluded). At Maykop the Phantom pair that activated at t=341 taxied and flew; CATFISH BAI (t=1334), ALBATROSS Strike (three B-52s, t=1385), ALBATROSS Escort (t=1466) and PUFFIN Strike (t=1733) activated hot and never moved a metre in the 33–40 minutes left. At Sochi-Adler the two groups activated before t=200 flew and the two after (ANTELOPE BAI at t=553, the OV-10 CAS at t=727) sat. Mineralnye Vody and Krymsk, not in the list, launched everything (t=653, 1280, 1295, 1599). The first barrage lands at grace 300 s plus 120–360 s, which is exactly where the taxiing stops. Nothing else was near either ramp: no ground unit within 3 km, no weapon object (the barrage leaves none, as this row already notes). The same shape holds in every earlier mission with harassment armed: test 33 (Damascus harassed: the H-6J strike at t=1369 and the CAS at t=2680 sat, while Tiyas launched flights at t=5064), test 24 (Batumi harassed: both F-15C BARCAPs at t=1080 and 1136 sat, Tbilisi's t=72–319 flights got out before the grace) and test 31 (Anapa harassed: the t=629 package sat, the t=161–168 ones flew). Helicopters at harassed fields still lift (Gudauta's Mi-8 BAI at t=924, test 34): they need no taxi clearance, which points at DCS holding ground traffic on a field under attack and the four-minute cadence never letting it clear. Ten fixed-wing groups across four missions, zero counter-examples. This is the feature's cost, not its cue: on Yankee Station it grounds the Ubon wing and the Da Nang wing after the first ten minutes. Fix is a design call (shell only fields with no planned fixed-wing departures, or make the barrage visual), not made in this read.
 
 **2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **the generic artillery mode armed in many captures, the Vietnam siege in none.** `Airbase harassment armed for N field(s)` appears on tests 1–33 wherever a front was inside the reach (Iron Gate, Inherent Resolve with 4 fields, Afghanistan, Hornet's Nest); the impacts leave no Tacview object, so the visual confirm this row has owed since July is still owed. No Vietnam campaign was flown. Unchanged.
 
@@ -6292,6 +6311,8 @@ from a fresh New Game, not a save** — a save never took this path.
 
 ### B96 — Iron Gate's fields fill without an aircraft losing its stand · Iron Gate · ◐ PARTIAL
 
+**2026-09-16, test 34** (Caucasus — 1968 Yankee Station turn 1 on the halved laydown, 62 min, no player, `Tacview-20260916-204511`, DCS 2.9.29.27468) — **one more Iron Gate data point, and it is L8's.** Test 24's two Batumi F-15C BARCAPs (activated t=1080 and 1136) never moved, and Batumi was one of the five fields the artillery harassment armed for that mission. Not a stand problem; see L8.
+
 **2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **unchanged;** Iron Gate turn 2 (test 26, 09-07) generated clean with no parking line at all, and the Mineralnye Vody spawner from test 24 did not recur.
 
 **2026-08-29, test 24** (Caucasus — Iron Gate turn 1, 72 min, `Tacview-20260829-162330`, DCS 2.9.29.27278) — **Batumi answered, and a red field failed instead.** Batumi, the
@@ -6926,6 +6947,8 @@ exercised by any test here.
   bite in the air, that decision reopens.
 
 ### B100 — The ramp still holds the squadrons authored against it · DCS 2026-08-26 parking rework · ◐ PARTIAL
+
+**2026-09-16, test 34** (Caucasus — 1968 Yankee Station turn 1 on the halved laydown, 62 min, no player, `Tacview-20260916-204511`, DCS 2.9.29.27468) — **the test-30 Fencers are not the harassment case.** Test 30's mission carried no harassment node at all (the only capture with stuck jets that did not), so Bandar Abbas's nine hot jets that never taxied keep their own cause. Everywhere else a stuck ramp coincides with a harassed field; see L8.
 
 **2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **unchanged;** Noisy Cricket test 32's only routed group out of Bandar Abbas (the F-5E pair) taxied and flew, and the sixteen F-4Es there were untasked ramp jets, so it neither reproduces nor clears test 30's nine stuck Fencers. The large-aircraft clause still waits on the pydcs re-export.
 

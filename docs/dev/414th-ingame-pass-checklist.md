@@ -3602,6 +3602,8 @@ be settled from a recording instead of the cockpit. It can, across all six recor
 
 ### L6 — Convoy interdiction (Steel Tiger) · §35 · ◐ PARTIAL
 
+**2026-09-16, headless read of the DM's Yankee Station turn-1 save (`Vietnam tes.retribution`, 60-min mission)** — **the trail convoys are planned.** Red's pending transfers are two 15-vehicle columns on distinct roads (FOB Tchepone → Gudauta: ZSU-57-2, T-55A, PT-76, ZU-23 trucks; FOB Ky Son → Sukhumi: ASU-85, PT-76, ZU-23 trucks, T-55A), which is `MAX_CONVOY_UNITS` 10 × the turn-1 `trail_surge` 1.5 under `BASE_MAX_CONVOYS` 2. The planner did not frag Armed Recon onto either corridor by name (its 13 Armed Recon flights sit on FOBs and airfields); the runtime and debrief legs are still the flown part.
+
 **2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **no Vietnam campaign in the 33 captures.** The July flown evidence stands as written. Unchanged.
 
 **History:** 2026-07-02 flown Trail 2 session `wonderful-chatterjee`: the reworked real-convoy runtime leg PASSED — `Convoy 001` (2× PT-76 + Grad-URAL, real force-model units) drove the trail road, the player Armed Recon Phantoms found it and killed all 3 with Mk-82 Snakeyes (Tacview removals t=3195/3609/3610); still owed = the debrief leg — next-turn processing must record the loss as `enemy_convoy` so the units never arrive. ⚠ blocked on the REAL server-side `state.json` — the dedicated host wrote it to its **TEMP fallback**: `dcs.log` says "The state.json file will be created in TEMP : (C:\Users\admin.dcs\AppData\Local\Temp\state.json)" (no `RETRIBUTION_EXPORT_DIR` set on the server + the client installPath doesn't exist there); the local `Missions\state.json` the user first pulled is a stale Jun-20 file from a different campaign. Fetch the TEMP file to process the turn, and set `RETRIBUTION_EXPORT_DIR` on the server for a stable path going forward
@@ -3744,6 +3746,8 @@ be settled from a recording instead of the cockpit. It can, across all six recor
   side, which no human can see on Red Tide).
 
 ### L9 — Super Gaggle hilltop resupply · §37 · ◐ PARTIAL
+
+**2026-09-16, headless read of the DM's Yankee Station turn-1 save (`Vietnam tes.retribution`, 60-min mission)** — **the gaggle is committed at turn 1.** `super_gaggle_commitment` names FOB Khe Sanh as the outpost, launches from 12 km south-west of it, and commits two UH-1H (`SuperGaggle-T1-Helo-1/2`) with two F-4E-45MC suppressors (`SuperGaggle-T1-Sandy-1/2`), drawn from real squadrons. The 600-s launch delay, the run and the loss charge-back remain the flown part.
 
 **2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **no Vietnam campaign in the captures.** Unchanged.
 
@@ -3919,6 +3923,8 @@ be settled from a recording instead of the cockpit. It can, across all six recor
   (interceptluadata.py), `AMBUSH_DISENGAGE_NM` / `AMBUSH_FUEL_THRESHOLD` (intercept-config.lua).
 
 ### M6 — Red tempo: turn-windowed trail surge, ground-offensive pulse (campaign layer W6, rehomed 2026-07-21) · campaign layer · ☐ UNTESTED
+
+**2026-09-16, headless read of the DM's Yankee Station turn-1 save (`Vietnam tes.retribution`, 60-min mission)** — **the turn-1 window is live.** Yankee Station's `red_tempo` reads Rolling Thunder from turn 1 (`trail_surge` 1.5), the Bombing Halt from turn 8 (2.0) and Linebacker from turn 11 (`ground_offensive` 3); `trail_surge_multiplier` returns 1.5 and `ground_offensive_active` False on this save, and the two 15-vehicle trail columns are the surge applied (see L6). The multi-turn feel is still the flown part.
 
 **2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **no capture spans a `red_tempo:` window.** Unchanged.
 
@@ -6810,6 +6816,8 @@ without releasing.
      the write path, not the dialog; dump the flight from the save before generating.
 
 ### B99 — AI packages arrive inside the mission, not after it · §8 · ☑ VERIFIED (2026-09-16, audit)
+
+**2026-09-16, headless read of the DM's Yankee Station turn-1 save (`Vietnam tes.retribution`, 60-min mission)** — **a residual on this campaign.** The row's tool over two re-planned turns: 72 spread-scheduled packages, 15 timed past the 60-minute window, of which 10 are unavoidable (transit longer than the window: Hueys from Khe Sanh to Ban Dong at 2 h, carrier Intruders and Maykop Phantoms to the trail) and **5 BAI packages are avoidably late by a median 3–4 min, worst 8–10 min**, which is past the ±5 min jitter the row accepts. 6.9 % sits between the tool's own thresholds (defect at 10 %, row dies under 5 %). The save's own ATO has TOTs at 13:01, 13:02, 13:08, 13:13, 13:18, 13:27 and 14:04 against a 13:00 end. The bigger lever is the 60-minute mission on a map whose transits run 50 min; the smaller one is the BAI overshoot, recorded here and not tuned.
 
 **2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **VERIFIED with the row's own instrument on the two live saves, and by three flown missions.** `tools/measure_tot_past_mission_window.py` re-planned two turns each of `91526.retribution` (Peace Spring) and `CSAR.retribution` (Scenic Route): 59 spread-scheduled packages, 0 late, maximum effective offset 34–62 min of a 100-min window, which is the "roughly half the window" the row asks for. Flown: tests 24, 30 and 32 timed nothing past the end and kept the second half of the mission populated (BARCAP waves, both AEW&Cs, both tankers up at 2 h on test 32). Fail signature 1 (several packages sharing one end-of-cycle TOT) did not appear in any of them.
 

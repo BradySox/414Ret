@@ -63,7 +63,31 @@ analysis department on either side of track. **~20 min.**
   — note which was recording. The pilot can now run either (`hold Store Release`), so
   this no longer needs a human RIO.
 
-### 2 · A target you destroyed stays destroyed next turn — `B63`
+### 3 · A dynamic-slot jet inherits a template's route and radios — `B125`
+
+**Why this is a card.** §101 is built (2026-09-15): the generator marks one player flight
+per base and type as DCS's **Dyn.SPAWN Template** and links the base to it. What the
+install's Lua could answer is answered; two things are decided in native code and only a
+fly settles them: whether the route and radio presets carry, and whether the warehouse
+entry needs `wsType`. Design note:
+[`414th-dynamic-spawn-templates-notes.md`](../design/414th-dynamic-spawn-templates-notes.md).
+
+**Try:** any campaign with **Enable dynamic player slots** on and a player Hornet package
+fragged from a field. Generate the turn, open the mission, and take a **dynamic** Hornet at
+that field instead of the fragged slot. **~10 min.**
+
+- **Record:** route carried yes/no; radio presets carried yes/no; whether the dynamic list
+  at that base offered the Hornet at all.
+- **Pass criterion:** the payload and properties are the fragged flight's, and the fragged
+  slot is still in the list. Route and radios are the two answers; write them into §4 of
+  the note. A missing type in the dynamic list is the `wsType` fail signature.
+
+## Done
+
+### 2 · A target you destroyed stays destroyed next turn — `B63` — **CLOSED 2026-09-16**
+
+Closed on the DM's call from test 33: four Tabqa Dam objectives credited by the matcher
+(1–29 m) and dead in the next turn's save. The quit-and-relaunch reproduction is not owed.
 
 **Try:** frag a strike on a **map-scenery** target (a port, factory or terminal drawn as white
 zones — not a spawned static). **Pick one sitting in clutter** — a dockside or built-up
@@ -85,27 +109,6 @@ minute, then relaunch and fly it properly.** Destroy the target, land, accept th
   sortie never does by accident. The second — an objective sharing its zone with indestructible
   scenery, so it could never be credited at all — was fixed 2026-08-30 from upstream #957 and
   is why the target must sit in clutter: an isolated zone would have passed before the fix too.
-
-### 3 · A dynamic-slot jet inherits a template's route and radios — `B125`
-
-**Why this is a card.** §101 is built (2026-09-15): the generator marks one player flight
-per base and type as DCS's **Dyn.SPAWN Template** and links the base to it. What the
-install's Lua could answer is answered; two things are decided in native code and only a
-fly settles them: whether the route and radio presets carry, and whether the warehouse
-entry needs `wsType`. Design note:
-[`414th-dynamic-spawn-templates-notes.md`](../design/414th-dynamic-spawn-templates-notes.md).
-
-**Try:** any campaign with **Enable dynamic player slots** on and a player Hornet package
-fragged from a field. Generate the turn, open the mission, and take a **dynamic** Hornet at
-that field instead of the fragged slot. **~10 min.**
-
-- **Record:** route carried yes/no; radio presets carried yes/no; whether the dynamic list
-  at that base offered the Hornet at all.
-- **Pass criterion:** the payload and properties are the fragged flight's, and the fragged
-  slot is still in the list. Route and radios are the two answers; write them into §4 of
-  the note. A missing type in the dynamic list is the `wsType` fail signature.
-
-## Done
 
 ### 3 · A downed pilot turns up MIA, then evades — `G29` — **OFF THE CARD 2026-08-20**
 

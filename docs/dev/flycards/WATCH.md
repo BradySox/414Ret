@@ -15,19 +15,13 @@ next from the parking lot.
 cleared — both entries named rows that had already closed, `Q3` VERIFIED and the loadout
 watch pointing at RETIRED `B42`.)*
 
-### 1 · Ships hold station instead of sliding off it — `B48`
+### 1 · The ramp time you are given matches the airframe you are starting — `B77`
 
-**Where:** the F10 map, any naval group, twice ten minutes apart. **~1 min.**
+**Where:** the mission-start briefing card and the kneeboard, any flight. **~1 min.** App-side.
 
-- **Pass:** each group is still on its assigned station, walking a racetrack rather than
-  drifting downrange.
-- **Fail:** a group well off station, or stopped dead.
-- **Why it's here:** §87 anchors the ovals; whether they hold over a long mission is a look.
-- **Test 30 (2026-09-13, Persian Gulf):** both authored ship groups measured off the ACMI —
-  15–22 km sailed for 2–2.5 km of drift over 59 min, eight or more headings each. Fourth
-  campaign in a row. Closing the row is a DM call; see B48.
-- **Test 32 (2026-09-15, Persian Gulf):** first red group measured — the two Iranian FACs
-  held a 5.3 km box for 134 min on their oval. Still a DM call.
+- **Pass:** a Tomcat and a Viper starting cold get different allowances, each the airframe's own.
+- **Fail:** every airframe gets the same number.
+- **Why it's here:** pulled from the parking lot 2026-09-16 when `B48` closed on the DM's call.
 
 ### 2 · The day's flying is reported back, and the numbers are believable — `B70`
 
@@ -44,37 +38,35 @@ watch pointing at RETIRED `B42`.)*
   27 in the recording (Shahed drones count), hits never above shots, `state.json` 672 KB. The
   file side passes; the SITREP itself was not opened.
 
-### 3 · The escorts leave you at the split instead of following you home — `B78`
+### 3 · The planner behaviour bar actually switches the suite — `B54`
 
-**Try:** lead a package that has an escort or escort jammer on it and fly the whole profile.
-At your split point, look behind you. **Free — it is the flight you were flying.**
+**Where:** the settings UI, Campaign Doctrine. **~1 min.** App-side.
 
-- **Pass:** the escorts break off at the split and route to their own recovery field.
-- **Fail:** they formate on you all the way home (the release never fired), **or** they break
-  off at the *join* on the way in and call their own split index on the radio.
-- **Why it's here:** the release fix landed 2026-08-18 and its first version reproduced the
-  opposite failure, fixed again 2026-08-21. Neither shape has been flown since. Both failures
-  are visible from the cockpit without looking anything up.
+- **Pass:** moving the bar changes the planner options underneath it, and a turn planned after
+  the change reads differently from one planned before.
+- **Fail:** the bar moves and nothing beneath it changes.
+- **Why it's here:** pulled from the parking lot 2026-09-16 when `B78` closed on the DM's call.
 
-### 4 · A ground-level waypoint sits at the field's elevation — `B79`
+### 4 · A striker and its escort hold one pace after the join — `B111`
 
-**Where:** the flight editor, any flight, ~30 s. App-side.
+**Where:** F10 after the join, before the ingress: ground speed **and altitude** for the
+striker and each escort. **~5 min**, on a flight you were flying anyway.
 
-- **Pass:** a waypoint the plan puts on the ground reads the field's elevation, not sea level.
-- **Fail:** a takeoff, landing or divert point at 0 ft on a field that is not at sea level.
-- **Why it's here:** pulled from the parking lot 2026-09-15 when `B107` closed on test 32.
+- **Pass:** the escort reads within ~15 kt of its striker at the same altitude.
+- **Fail:** a 20–50 kt gap, which is what test 32 measured and what one authored airframe
+  (the Hornet at M0.78) among unauthored ones produces. Record the loadout with each number;
+  the readings are what unblocks `cruise_mach:` for the other airframes.
+- **Why it's here:** pulled from the parking lot 2026-09-16 when `B79` closed on the audit.
 
-### 5 · A Viper steerpoint's ELEV is the altitude you planned — `B90`
+### 5 · A stuck TIC unit names itself, and the retries are spread — `B108`
 
-**Where:** the DED STPT page, stepped through the route, any Viper (Hornet: HSI WYPT
-data). **~1 min.**
+**Where:** `dcs.log` after any mission with a front line, one grep for `stuck`. **~1 min.**
 
-- **Pass:** each transit point's ELEV matches the kneeboard's Alt for that row; the
-  target's ELEV is the local field elevation, not 0.
-- **Fail:** transit points at field elevation (the 2026-09-13 defect), or a target at 0.
-- **Why it's here:** the cockpit read on 2026-09-13 showed ELEV 131 on a 22,000 ft hold and
-  falsified a three-week-old assumption about which field the jet displays. Fixed the same
-  day, unflown since.
+- **Pass:** each stuck line names its unit, and the retries are spread across many units
+  rather than one unit retrying hundreds of times.
+- **Fail:** unnamed stuck lines, or one unit holding most of the count.
+- **Why it's here:** pulled from the parking lot 2026-09-16 when `B90` closed on the DM's call.
+  Test 33 had a live front and no stuck line at all, so it is still unflown.
 
 ---
 
@@ -82,11 +74,9 @@ data). **~1 min.**
 
 | Row | Watch for | Note |
 |---|---|---|
-| `B77` | The ramp time you are given matches the airframe you are starting | App-side; a Tomcat and a Viper should not get the same allowance |
-| `B54` | The planner behaviour bar actually switches the suite | Settings UI, ~1 min |
-| `B108` | A stuck TIC unit names itself in the log, and the retries spread across many units | Same log, same read as slot 5; the distribution is the actual question |
-| `B109` | `_retribution_backups` is gone from `UnitPayloads` and the launch error with it | App-side; set one default loadout first, then restart DCS |
-| `B111` | F10 ground speed **and altitude** for a striker and its escort, after the join | First numbers recorded off test 32's recording (three Hornet-escort / Viper-striker legs); see the row. A measurement, not yet a pass/fail — it is what unblocks authoring `cruise_mach:`. Record the loadout with each number |
+| `B121` | An AI flight visibly inside a shaded neutral border, and nothing happens | F10 map on any campaign with `neutral_border_defense` on; no stray in three missions so far |
+| `B103` | A BMP-3 group in a front fight firing single aimed shots, slower than the BTRs beside it | Iron Gate and Caucasus 2026 field them on the front; the rate is not in a recording |
+| `G42` | A HARM shot at a Skynet site, and whether the site goes dark or fights through | Any SEAD fly with the RWR open; LEOPARD fought through on test 32 |
 
 Closed and dropped items, with the reasoning: [`ARCHIVE.md`](ARCHIVE.md).
 Contrived-condition tests live on [`LOCAL.md`](LOCAL.md).

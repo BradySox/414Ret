@@ -35,7 +35,7 @@ were flying off anyway.
 **B49 is off this card — CLOSED 2026-08-20.** The recovery-phase deck dressing it covered was
 removed along with the launch-phase E-2C and the `deckdecor` plugin.
 
-### C9 — carrier-recovery stagger · ◐ PARTIAL · free, same recovery
+### C9 — carrier-recovery stagger · ☑ VERIFIED 2026-09-16 (DM call) · nothing left to fly here
 
 - **Pass:** arrivals reach the overhead **one package at a time** — no two packages' flights
   co-altitude within ~1 NM in Tacview.

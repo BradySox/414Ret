@@ -12,6 +12,13 @@ The live card stays short. This is where its history lives.
 
 | Closed | Item | Row(s) | Verdict |
 |---|---|---|---|
+| 2026-09-16 | A ground-level waypoint sits at the field's elevation | `B79` | ☑ **VERIFIED** on the audit: every routed flight in six generated missions carries the field elevation, and the DED reads it (B90). |
+| 2026-09-16 | `_retribution_backups` is gone and the launch error with it | `B109` | ☑ **VERIFIED** on the audit: nine launches without the line, the folder migrated on the DM's install. |
+| 2026-09-16 | AI packages arrive inside the mission | `B99` | ☑ **VERIFIED** on the audit: the row's own tool on the two live saves, 0 of 59 late. |
+| 2026-09-16 | Carrier recovery stagger, Tomcat modex, jammer distribution, escort jamming runtime | `C9` `B15` `B52` `B31` | ☑ **VERIFIED** on the audit (C9 on the DM's call). None was a card item; recorded here so the closure is findable. |
+| 2026-09-16 | Ships hold station instead of sliding off it | `B48` | ☑ **VERIFIED** on the DM's call after five campaigns measured off the ACMI (tests 9, 24, 30, 32 and the Baltic Fury watch), red included. |
+| 2026-09-16 | The escorts leave you at the split instead of following you home | `B78` | ☑ **VERIFIED** — "proven in the multiplayer test" (test 33, the DM leading a Viper strike with two escorts). |
+| 2026-09-16 | A Viper steerpoint's ELEV is the altitude you planned | `B90` | ☑ **VERIFIED** — "B90 is good", flown since #1019. |
 | 2026-09-15 | The log is no longer 60 % one MOOSE error | `B107` | ☑ **VERIFIED** on test 32: 0 occurrences in 46 wall-minutes with the `414Ret patch (event 61 spam)` guard confirmed in the flown `.miz`; 1,282 on test 30 without it. Every plugin banner still printed. |
 | 2026-08-18 | The ATO talks on the AWACS frequency | `B59` | **Feature removed, not verified.** DM call: "the AI already uses the radio" — the synthesized net duplicated chatter DCS produces on its own. It armed 48 scheduled calls on the 2026-08-17 mission and whether any played was never established; that question is now moot. |
 | 2026-08-17 | The boat is steaming down the angled deck, not the bow | `B55` | ☑ **VERIFIED, computed from the flown `.miz`.** CVN-72 on BRC 249 at 17.7 kt against a wind from 220 at 8 kt gives 25.0 kt of relative wind 8.9° off the port bow — down a ~9° angled deck, and 25 kt is exactly the §88 target. LHA-1 steams 220, bow-into-wind, correct for a deck with no angle. **Recorded a day late**, which is why the card kept asking. |

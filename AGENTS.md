@@ -395,7 +395,9 @@ linked design note.
   with no EWR losing GCI is by design. Second instance 2026-09-16 (test 35, Long Road to H3):
   upstream's own Incirlik EWR marker sits on the south-west taxiway and the DM had to hand-move
   it before anything would taxi. Any authored ground object inside a field's runway strip or
-  apron does this, not only the fork's mast.
+  apron does this, not only the fork's mast. New Game now logs `Airfield clearance:` for every
+  ground object inside a runway band (300 m, 1.6 km) or 80 m of a stand
+  (`game/theater/airfieldclearance.py`); it warns, it never moves a marker.
 - **Never restore the generic `ewrj` fighter-pod jammer** (§2). Superseded by the C-130J
   platform.
 - **The C-130J cues; it never lases or designates.** It carries no targeting sensor in DCS,

@@ -134,6 +134,15 @@ its centreline, on the south-west taxiway, and it was blocking taxi. That is the
 class on an upstream campaign, and it puts Al Qusayr's armor (293 m off its runway) in the same
 band. Three blue in-mission ejections keyed 260 kHz (G33).
 
+**Both fixes landed the same night.** The campaign file now carries the Incirlik EWR marker
+915 m off the centreline (was 265), Al Qusayr's armor 1,029 m off (was 329) and Gaziantep's
+EWR 900 m off (was 38 m: that marker sat on the runway itself, which the guard found). A New
+Game guard (`game/theater/airfieldclearance.py`) logs `Airfield clearance:` for every ground
+object inside a 300 m band along a runway (1.6 km each way) or within 80 m of a stand, warn only. Run on this
+campaign it also names a Tunguska at Bassel Al-Assad (301 m), Aleppo (317 m) and Tabqa
+(160 m) and Tabqa's armor (264 m); those fields launched in test 35, so the band's edge is a
+watch, not a verdict. NEW game required for the marker moves.
+
 | Row | Why test 35 could not answer it |
 |---|---|
 | B120, B121 | No player; no neutral-border event |

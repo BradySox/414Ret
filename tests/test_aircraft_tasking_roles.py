@@ -127,6 +127,13 @@ def test_stock_c130_migrates_to_the_player_module(tmp_path: Path) -> None:
         ("B-1B Lancer", False),
         ("B-52H Stratofortress", False),
         ("Tu-160 Blackjack", False),
+        # Helicopters are not derived either: Armed Recon targets control points and
+        # supply corridors theatre-wide, and a transport Huey was being fragged to hunt
+        # a FOB two hours away at 200 ft (Yankee Station turn 1, 2026-09-16). A helo
+        # only sweeps if its yaml authors `Armed Recon:` itself.
+        ("UH-1H Iroquois", False),
+        ("AH-1W SuperCobra", False),
+        ("Mi-8MTV2 Hip", False),
     ],
 )
 def test_armed_recon_excludes_strategic_bombers(
@@ -134,9 +141,12 @@ def test_armed_recon_excludes_strategic_bombers(
 ) -> None:
     aircraft = _aircraft(tmp_path, variant_id)
     assert aircraft.capable_of(FlightType.ARMED_RECON) is armed_recon_capable
-    # Removing the self-hunt lane leaves the bomber's called-coordinate lanes intact.
+    # Removing the self-hunt lane leaves the called-coordinate lanes intact: Strike for
+    # the bombers, CAS/BAI at the front for the helicopters.
     if not armed_recon_capable:
-        assert aircraft.capable_of(FlightType.STRIKE)
+        assert aircraft.capable_of(FlightType.STRIKE) or aircraft.capable_of(
+            FlightType.CAS
+        )
 
 
 @pytest.mark.parametrize(

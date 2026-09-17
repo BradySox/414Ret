@@ -369,7 +369,15 @@ class AircraftType(UnitType[Type[FlyingType]]):
         # value get_task_priorities() already derived, below). They never author Armed
         # Recon in `tasks:`, so dropping it is safe.
         is_heavy_bomber = self.dcs_unit_type.id in HEAVY_BOMBER_DCS_IDS
-        if FlightType.ARMED_RECON not in self.task_priorities and not is_heavy_bomber:
+        # Helicopters are not derived either: Armed Recon targets control points and
+        # supply corridors theatre-wide, and a Huey hunting a FOB two hours away at
+        # 200 ft is what that produced (Yankee Station, 2026-09-16, DM call). A helo
+        # that should sweep must author `Armed Recon:` itself.
+        if (
+            FlightType.ARMED_RECON not in self.task_priorities
+            and not is_heavy_bomber
+            and not self.helicopter
+        ):
             if (value := self.task_priorities.get(FlightType.CAS)) or (
                 value := self.task_priorities.get(FlightType.BAI)
             ):
@@ -920,7 +928,10 @@ class AircraftType(UnitType[Type[FlyingType]]):
             and FlightType.SEAD in task_priorities
         ):
             task_priorities[FlightType.SEAD_SWEEP] = task_priorities[FlightType.SEAD]
-        if FlightType.ARMED_RECON not in task_priorities:
+        if (
+            FlightType.ARMED_RECON not in task_priorities
+            and data.get("class") != "Helicopter"
+        ):
             if FlightType.CAS in task_priorities:
                 task_priorities[FlightType.ARMED_RECON] = task_priorities[
                     FlightType.CAS

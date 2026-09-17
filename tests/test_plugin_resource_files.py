@@ -108,3 +108,21 @@ def test_the_csar_survivor_beacon_ships_its_tone() -> None:
         f"OpsCSAR.lua assigns radioSound = beacon.ogg ({reverted}), which ships with "
         "nothing in this tree, so the survivor beacon would be silent."
     )
+
+
+def test_the_csar_beacon_pin_reaches_in_mission_ejections() -> None:
+    """A pilot who ejects during the mission is registered by MOOSE's own
+    ``CSAR:_AddCsar``, which draws the channel from its random pool and never sees
+    ``beaconHz``. Test 33 put its two blue survivors on 620 and 820 kHz while the
+    kneeboard briefed 260. The plugin must override the instance's draw so every
+    survivor keys the pinned channel, not only the ones placed at mission start.
+    """
+    lua = (PLUGINS / "opscsar" / "OpsCSAR.lua").read_text(encoding="utf-8")
+    code = [line for line in lua.splitlines() if not line.lstrip().startswith("--")]
+    assert any(
+        re.search(r"\._GenerateADFFrequency\s*=\s*function", line) for line in code
+    ), (
+        "OpsCSAR.lua no longer overrides _GenerateADFFrequency on the Ops.CSAR "
+        "instance, so an in-mission ejection keys a random channel instead of the "
+        "briefed 260 kHz."
+    )

@@ -161,45 +161,41 @@ settings:
 # Mission Restrictions
   labels: "Dot Only"
 
-# Order of battle (2026-07-03 balance pass -- trimmed to ~116 BLUE / ~40 RED, a ~3:1 ratio).
-# The theater split mirrors 1968: the Navy owns the coastal route packages from Yankee Station,
-# the Air Force crosses the ridge from the Thailand fields, and the in-country wing at Da Nang
-# works the DMZ. No SEAD squadrons -- the Vietnam doctrine drops SEAD from the tasking whitelist
-# (Iron Hand rides the strike packages), so a SEAD primary would never fly. Sizes are roughly
-# halved from the original consolidated OOB: blue keeps every base's identity + feature coverage
-# (the Arc Light B-52 cells, one 8-jet Alpha Strike squadron, both carrier wings, TARPS, the
-# Super Gaggle + Combat SAR helos) without the turkey-shoot mass; red keeps a credible GCI-ambush
-# MiG force (~26) plus a light trail/front helo presence. Every base now fits its parking so
-# squadron_start_full fields the whole wing.
+# Order of battle (2026-07-03 balance pass trimmed to ~116 BLUE / ~40 RED; the 2026-09-16
+# halving took blue to 61 on the DM's call -- the turn-1 ATO was unplayable at 116, with 31
+# blue packages in a 60-minute mission). The theater split mirrors 1968: the Navy owns the
+# coastal route packages from Yankee Station, the Air Force crosses the ridge from the Thailand
+# fields, and the in-country wing at Da Nang works the DMZ. No SEAD squadrons -- the Vietnam
+# doctrine drops SEAD from the tasking whitelist (Iron Hand rides the strike packages), so a
+# SEAD primary would never fly. Blue keeps every base's identity and feature coverage (one Arc
+# Light B-52 cell, a 4-jet Alpha Strike squadron, both carrier decks with one support pair
+# between them, TARPS singletons, the Super Gaggle + Combat SAR helos); red keeps a credible
+# GCI-ambush MiG force (~26) plus a light trail/front helo presence. Every base fits its parking
+# so squadron_start_full fields the whole wing.
 squadrons:
     # US NAVY -- CV-61 Ranger (Yankee Station): the BARCAP + interdiction + recon deck
     Naval-1:
-        - primary: AEW&C
-          aircraft:
-            - VAW-122 #Steeljaws - E-2 Hawkeye
-          size: 2
-        - primary: Refueling
-          aircraft:
-            - A-6E Tanker
-          size: 2
+        # 2026-09-16 halving (DM call, the turn-1 ATO was unplayable at 116 blue airframes):
+        # Forrestal (Naval-2) carries the one E-2 and the one tanker for both decks -- the
+        # carriers sit a few miles apart on Yankee Station.
         - primary: BARCAP
           secondary: air-to-air
           aircraft:
             - F-8E Crusader
-          size: 6
+          size: 2
         - primary: BAI
           # Steel Tiger tilt: Ranger's Skyhawks fly armed recon / BAI on the trail convoys;
           # Forrestal (Naval-2) carries the A-6E strike arm.
           secondary: air-to-ground
           aircraft:
             - A-4E Skyhawk
-          size: 4
+          size: 2
         - primary: TARPS
           # Unarmed photo bird, TARPS only -- no secondary (the old air-to-ground
           # alias is what put recon birds on Armed Recon/Strike, G19).
           aircraft:
             - RA-5C Vigilante
-          size: 2
+          size: 1
 
     # US NAVY -- CV-59 Forrestal (Yankee Station): the strike deck
     Naval-2:
@@ -215,22 +211,22 @@ squadrons:
           secondary: air-to-air
           aircraft:
             - F-8E Crusader
-          size: 4
+          size: 2
         - primary: Strike
           secondary: air-to-ground
           aircraft:
             - A-6E Intruder
-          size: 6
+          size: 4
         - primary: BAI
           secondary: air-to-ground
           aircraft:
             - A-6E Intruder
-          size: 4
+          size: 2
         - primary: CAS
           secondary: air-to-ground
           aircraft:
             - A-4E Skyhawk
-          size: 4
+          size: 2
 
     # Da Nang (Sochi-Adler): the in-country wing on the DMZ
     Sochi-Adler:
@@ -238,35 +234,35 @@ squadrons:
           secondary: air-to-air
           aircraft:
             - F-4E-45MC Phantom II
-          size: 6
+          size: 2
         - primary: CAS
           secondary: air-to-ground
           aircraft:
             - A-1H Skyraider
-          size: 4
+          size: 2
         - primary: BAI
           # Steel Tiger tilt: Skyraiders working the trail by day, alongside the CAS arm
           # holding the DMZ.
           secondary: air-to-ground
           aircraft:
             - A-1H Skyraider
-          size: 4
+          size: 2
         - primary: CAS
           secondary: air-to-ground
           aircraft:
             - OV-10A Bronco
-          size: 4
+          size: 2
         - primary: TARPS
           # Unarmed photo bird, TARPS only -- no secondary (see RA-5C note).
           aircraft:
             - RF-101B Voodoo
-          size: 2
+          size: 1
         - primary: Transport
-          # The Combat SAR "King" C-130 + theater lift fly from the DMZ field.
+          # The Combat SAR "King" C-130 flies from the DMZ field (player-flown).
           secondary: any
           aircraft:
             - C-130J-30
-          size: 2
+          size: 1
         - primary: Air Assault
           secondary: any
           aircraft:
@@ -299,73 +295,60 @@ squadrons:
           # College Eye: the land-based EC-121 radar picture alongside the carriers' E-2s.
           aircraft:
             - EC-121D Warning Star
-          size: 2
+          size: 1
         - primary: Refueling
           aircraft:
             - KC-135 Stratotanker
-          size: 2
-        - primary: BARCAP
-          secondary: air-to-air
-          aircraft:
-            - F-5E Tiger II
-          size: 4
+          size: 1
         - primary: Transport
           secondary: any
           aircraft:
             - CH-47D
           size: 2
 
-    # Ubon RTAFB (Maykop): Phantoms over the ridge + BOTH Arc Light B-52 cells. The Guam
-    # (Andersen) off-map spawn was dropped in the 2026-07-03 pass and its 43d SW cell rehomed
-    # here alongside the 307th (U-Tapao), so all 8 Arc Light B-52s now fly from one theater base.
+    # Ubon RTAFB (Maykop): Phantoms over the ridge + ONE Arc Light B-52 cell. The Guam
+    # (Andersen) off-map spawn was dropped in the 2026-07-03 pass; the 43d SW cell it carried
+    # was cut in the 2026-09-16 halving, so the 307th (U-Tapao) is the whole Arc Light arm.
     Maykop-Khanskaya:
-        - primary: Refueling
-          aircraft:
-            - KC-130
-          size: 2
         - primary: Escort
           secondary: air-to-air
           aircraft:
             - F-4E-45MC Phantom II
-          size: 6
+          size: 4
         - primary: Strike
           secondary: air-to-ground
           aircraft:
             - F-4E-45MC Phantom II
-          size: 4
+          size: 2
         - primary: Strike
           aircraft:
             - 307th Strategic Wing #B-52H Stratofortress (U-Tapao)
           size: 4
-        - primary: Strike
-          aircraft:
-            - 43d Strategic Wing #B-52H Stratofortress (ex-Guam Arc Light cell)
-          size: 4
 
-    # Takhli / Korat RTAFB (Mineralnye Vody): the Thud run into RP VI from the NW. Keeps the
-    # 8-jet strike squadron the Alpha Strike fan needs.
+    # Takhli / Korat RTAFB (Mineralnye Vody): the Thud run into RP VI from the NW. The
+    # 8-jet Alpha Strike squadron went to 4 in the 2026-09-16 halving.
     Mineralnye Vody:
         - primary: Strike
           secondary: air-to-ground
           aircraft:
             - F-100D Super Sabre
-          size: 8
+          size: 4
         - primary: Escort
           secondary: air-to-air
           aircraft:
             - F-4E-45MC Phantom II
-          size: 4
+          size: 2
         - primary: BAI
           secondary: air-to-ground
           aircraft:
             - F-100D Super Sabre
-          size: 4
+          size: 2
         - primary: Refueling
           # Rehomed from the dropped Guam off-map spawn -- organic gas for the Takhli
           # Thud strike run.
           aircraft:
             - KC-135 Stratotanker
-          size: 2
+          size: 1
 
     # --- North Vietnam (GCI-ambush air arm: ~26 MiGs, defensive MiGCAP only) ---
 

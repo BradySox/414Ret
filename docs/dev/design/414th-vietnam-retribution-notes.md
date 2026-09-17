@@ -28,6 +28,21 @@ P2 (shell/preset) + P3 (behaviour taskings) outstanding.
 
 ## Implementation progress
 
+- **2026-09-16 — Yankee Station blue laydown halved, and helicopters off Armed Recon (DM
+  calls, from a headless read of the DM's turn-1 save).** 116 blue airframes produced 31 blue
+  packages against a 60-minute mission, 15 of 36 timed past its end; the DM called it
+  unplayable. `1968_Yankee_Station.yaml` blue is now **61**: Forrestal carries the one E-2 and
+  the one tanker for both decks, the 43d SW Arc Light cell is gone (the 307th is the whole
+  arm), the Takhli Alpha Strike squadron is 4 not 8, the photo birds are singletons, Saigon
+  lost its F-5E squadron and Ubon its KC-130, and every attack squadron sits at a pair or two.
+  Red is untouched. The same read showed transport Hueys and a Cobra fragged on Armed Recon
+  against FOBs two hours away at 200 ft, and red Mi-8s sweeping a blue airfield: the
+  CAS/BAI → Armed Recon derivation in `AircraftType` now skips helicopters (both derivation
+  sites), so a helo sweeps only if its yaml authors `Armed Recon:` itself. The earlier line
+  below saying red helo squadrons "legitimately fly CAS/Armed Recon at the front" is
+  superseded: CAS and BAI at the front, yes; Armed Recon, no. Guard:
+  `tests/test_aircraft_tasking_roles.py::test_armed_recon_excludes_strategic_bombers` (now
+  also the three helicopters).
 - **P0 — content tags — DONE.** The 3 Vietnam campaigns (`khe_sanh_niagara`, `1968_Yankee_Station`,
   `operation_velvet_thunder`) carry `era: vietnam`; `Campaign.era` reads it
   (`game/campaignloader/campaign.py`). Guard: `tests/test_vietnam_content.py::test_vietnam_campaigns_tagged_era_vietnam`.
@@ -214,7 +229,7 @@ machinery that already exists.
   proposing it. `VIETNAM_AIR_DEFENSE_DOCTRINE.tasking_whitelist` now additionally drops
   `AIR_ASSAULT` (`VIETNAM_AIR_DEFENSE_DROPPED_TASKINGS`/`VIETNAM_AIR_DEFENSE_TASKING_WHITELIST`) —
   a mass/insertion mission a GCI-only ambush force never flew. BAI/CAS/Strike/Armed Recon stay
-  whitelisted (red *helo* squadrons legitimately fly CAS/Armed Recon at the front, and
+  whitelisted (red *helo* squadrons legitimately fly CAS at the front -- Armed Recon no longer derives for helicopters as of 2026-09-16, see the top of this list -- and
   Armed-Recon-vs-CP is generic engine behaviour shared by every doctrine, not unique to this
   split). Tests: `test_air_defense_doctrine_differs_only_in_the_offensive_levers` (now also
   resets `tasking_whitelist` in the rebadge and asserts `AIR_ASSAULT` is red-disallowed/

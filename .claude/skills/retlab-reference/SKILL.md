@@ -24,7 +24,7 @@ GitHub work always involves three separate places. Name which one you mean, ever
 |---|---|---|
 | **Upstream** | `github.com/dcs-retribution/dcs-retribution` | The official project. Brady doesn't own it. Changes get there only by pull request (a formal "please accept my change" submission). |
 | **The fork (RetLab)** | `github.com/BradySox/RetLab` | Brady's own copy on GitHub. He can push anything here freely. Built on upstream's `dev` branch. |
-| **The local checkout** | `C:\Users\brady\Desktop\retlab-Joint-Fighter-Group\RetLab` | The folder on Brady's PC where editing actually happens. Changes here are invisible to GitHub until pushed. |
+| **The local checkout** | `C:\Users\brady\Desktop\414th-Joint-Fighter-Group\414Ret` | The folder on Brady's PC where editing actually happens. Changes here are invisible to GitHub until pushed. |
 
 Work flows: edit **local** → push to **fork** → (if contributing back) open a PR from the PR
 fork to **upstream `dev`**.
@@ -208,7 +208,7 @@ first, marked "(Recommended)", each with its trade-off.
 | Custom flight types | `TARPS` (photo-recon; finds hidden enemy command posts — the `recon` plugin was removed 2026-08-20) · `JAMMING` (C-130J standoff EW) · `SCAR` (repurposed into the CSAR "Sandy" rescue escort — the armour-hunt scenario is deleted) · `COMBAT_SAR` · `ESCORT_JAMMER` |
 | CI gates | `lint.yml` (black whole-tree + mypy game/tests) · `test.yml` (pytest incl. 3 out-of-tree dirs) · `lua-lint.yml` (blocking syntax gate) · `retlab-latest.yml` (rolling pre-release) |
 | Release | rolling `latest` pre-release is *the* release; pinned tags are `v<X.Y.Z>-retlab`. **Never `git push --tags`** |
-| Squadron script stack | separate repo: `tyfoultz/retlab-Joint-Fighter-Group`, `bradys-changes` branch |
+| Squadron script stack | separate repo: `tyfoultz/414th-Joint-Fighter-Group`, `bradys-changes` branch |
 
 **Removed — do not restore** (each was deliberate, with save-compat tombstones): the DTC v1
 export, Flight Control ATC, the drop-spawn cheat, the compact kneeboard deck + cover page +
@@ -255,8 +255,8 @@ with the fork's deltas annotated.
 
 | What | Path |
 |---|---|
-| Retribution local checkout | `C:\Users\brady\Desktop\retlab-Joint-Fighter-Group\RetLab` |
-| Squadron scripts/missions repo | `C:\Users\brady\Desktop\retlab-Joint-Fighter-Group` |
+| Retribution local checkout | `C:\Users\brady\Desktop\414th-Joint-Fighter-Group\414Ret` |
+| Squadron scripts/missions repo | `C:\Users\brady\Desktop\414th-Joint-Fighter-Group` |
 | DCS install | `E:\DCS World` |
 | DCS manuals | `E:\DCS World\Doc` |
 | Campaign inspiration goldmine | `E:\DCS World\Mods\campaigns` |

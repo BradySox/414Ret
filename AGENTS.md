@@ -83,7 +83,7 @@ feature — each carries the design rationale, the flown-test findings, and the 
 | [flycards/WATCH.md](docs/dev/flycards/WATCH.md) | The standing opportunistic watch list — rows to adjudicate on any flight. |
 | [flycards/LOCAL.md](docs/dev/flycards/LOCAL.md) | The rolling local test card for contrived conditions. |
 | [retlab-early-systems-decision-ledger.md](docs/dev/retlab-early-systems-decision-ledger.md) | The 2026-07-18 deep-audit verdicts on the early-systems core, with self-play evidence. |
-| ~~retlab-feature-debt-register.md~~ | **DELETED 2026-08-25** — the Aug-1 wave it planned is long spent, and it was still triaging §21 CSAR, §53/§54 and §46, all since removed. Its own header said to archive it once that wave was processed. In git history: `git show bb8d019c6:docs/dev/retlab-feature-debt-register.md`. The live successors are the checklist and `docs/dev/flycards/`. |
+| ~~414th-feature-debt-register.md~~ | **DELETED 2026-08-25** — the Aug-1 wave it planned is long spent, and it was still triaging §21 CSAR, §53/§54 and §46, all since removed. Its own header said to archive it once that wave was processed. In git history: `git show bb8d019c6:docs/dev/414th-feature-debt-register.md`. The live successors are the checklist and `docs/dev/flycards/`. |
 | [retlab-upstreaming-inventory.md](docs/dev/retlab-upstreaming-inventory.md) | The upstreaming queue, priority-ordered, with readiness marks. Also carries the **upstream issue ledger** — the standing triage of upstream's open issues, first swept 2026-08-20. |
 | [retlab-community-contribution-roadmap.md](docs/dev/retlab-community-contribution-roadmap.md) | The long view: community-value × carve-difficulty across every feature. |
 | [retlab-retribution-long-view.md](docs/dev/design/retlab-retribution-long-view.md) | Structural read of the engine (2026-08-17): what Retribution is, measured, and the seven seams that follow. **1 (mission→campaign reporting) and 4 (the front line) are BUILT** as §91 and §90; **2 (the intel model) and 5 (time between turns) are accepted, not started**; 3 is analysis only; 6 is scoped in its own note. **Seam 7 (the enemy) is DROPPED** — three framings, three Phase 0s, no observable defect found; read §8 and [retlab-red-brain-phase0-notes.md](docs/dev/design/retlab-red-brain-phase0-notes.md) before proposing anything about red, because §55 tried the obvious shape and the analytic route has now failed three times. |
@@ -120,7 +120,7 @@ Read before touching a campaign's `.yaml`, `.miz` or build tool.
 - **EW / ISR / comms** — `retlab-c130-ew-isr-notes.md`,
   `retlab-gps-jamming-notes.md`,
   `retlab-iads-c2-consequences-notes.md`
-- **Recon** — `retlab-tars-recon-notes.md`, `retlab-recon-role-scoping-notes.md`
+- **Recon** — `414th-tars-recon-notes.md`, `retlab-recon-role-scoping-notes.md`
   (**scoping only, nothing built** — what job recon gets now that engaging a site is the
   only reveal; also records the command-post hole the rework opened)
 - **CSAR** — `retlab-csar-notes.md` (**the one CSAR doc**; supersedes the eight earlier
@@ -187,7 +187,7 @@ Read before touching a campaign's `.yaml`, `.miz` or build tool.
   `retlab-substrate-HANDOFF.md` (**start here to continue the substrate work** — repo state,
   the local-only queue incl. the B65–B68 and B89 passes, R1's opening moves, reserved
   decisions, and this line's traps),
-  `retlab-airwar-planner-consolidation-notes.md`,
+  `414th-airwar-planner-consolidation-notes.md`,
   `retlab-aircraft-task-rebalance-rubric.md`, `retlab-victory-conditions-notes.md`,
   `retlab-wing-growth-notes.md`, `retlab-single-player-loop-notes.md`,
   `retlab-autoplanner-upstream-divergence-audit.md` (**the full fork-vs-upstream planner
@@ -257,15 +257,19 @@ described a feature that had already been removed, so they were a grep tax with 
 the whole point of the file was to tell you not to read it. **They are in git history —
 `git show 5db34150f:docs/dev/design/<name>` — and that is the only place they should be.**
 
+**Their names keep the pre-rebrand `414th-` prefix on purpose.** Every one was deleted
+while the tree still carried it, so that is the only name the history has — a `retlab-`
+path resolves to nothing at those SHAs.
+
 | Notes | What they described | Feature removed |
 |---|---|---|
-| the eight `retlab-scar-*` / `retlab-combat-sar-*` notes | the fork’s own CSAR and the Sandy escort | §21/§15, 2026-08-07 |
-| the three `retlab-campaign-phases-*` notes | the phase classifier and ROE zone layer | §40, 2026-07-21 |
-| `retlab-vietnam-political-will-roe-notes.md`, `retlab-will-generalization-notes.md`, `retlab-war-economy-notes.md` | the will and war economies | §48/§53/§54, 2026-07-21 |
-| `retlab-red-intent-notes.md` | Red Intent adaptive posture | §55, 2026-07-21 |
-| `retlab-tars-recon-notes.md` | the MOOSE Ops.TARS recon engine | cut 2026-08-05; its `recon` successor removed 2026-08-20 (§12) |
-| `retlab-airwar-planner-consolidation-notes.md` | the planner consolidation | reverted 2026-08-09 |
-| `retlab-khe-sanh-campaign-notes.md` | the standalone Khe Sanh campaign | merged into Yankee Station |
+| the eight `414th-scar-*` / `414th-combat-sar-*` notes | the fork’s own CSAR and the Sandy escort | §21/§15, 2026-08-07 |
+| the three `414th-campaign-phases-*` notes | the phase classifier and ROE zone layer | §40, 2026-07-21 |
+| `414th-vietnam-political-will-roe-notes.md`, `414th-will-generalization-notes.md`, `414th-war-economy-notes.md` | the will and war economies | §48/§53/§54, 2026-07-21 |
+| `414th-red-intent-notes.md` | Red Intent adaptive posture | §55, 2026-07-21 |
+| `414th-tars-recon-notes.md` | the MOOSE Ops.TARS recon engine | cut 2026-08-05; its `recon` successor removed 2026-08-20 (§12) |
+| `414th-airwar-planner-consolidation-notes.md` | the planner consolidation | reverted 2026-08-09 |
+| `414th-khe-sanh-campaign-notes.md` | the standalone Khe Sanh campaign | merged into Yankee Station |
 
 **Do not re-add a note here when you remove a feature.** Banner-instead-of-delete is what
 produced these: a removal writes a banner, the banner is never revisited, and the file
@@ -403,7 +407,7 @@ linked design note.
 - **The C-130J cues; it never lases or designates.** It carries no targeting sensor in DCS,
   so any laser work stays with the strike aircraft. Retribution also has no FAC(A) task
   type — §38 does the marking job through Vietnam Ops, not as a taskable role. (Lifted out
-  of `retlab-scar-task-spec.md` before that note was deleted 2026-08-20; it was the one
+  of `414th-scar-task-spec.md` before that note was deleted 2026-08-20; it was the one
   constraint in the 18 recorded nowhere else.)
 - **Never unify §77 escort jamming with the C-130's standoff model.** §77 strengthens as the
   jammer closes; the C-130's burn-through weakens. Both are intentional and opposite.
@@ -552,8 +556,9 @@ upstream's MIST are back — see `retlab-skynet-return-notes.md`).
 - This repo (`BradySox/RetLab`) `main` = the consolidated, most-up-to-date RetLab build.
 - Upstream is `dcs-retribution/dcs-retribution`; RetLab's PR fork is
   `BradySox/dcs-retribution`.
-- RetLab's primary "all features" working branch in the dev checkout is
-  `retlab-all-features`; `main` here = that + the Iran pack + a Black/mypy lint pass.
+- RetLab's primary "all features" working branch in the dev checkout is still named
+  `414th-all-features` (a local branch; the rebrand could not rename it). `main` here =
+  that + the Iran pack + a Black/mypy lint pass.
 
 ### DCS Liberation — the grandparent project, still alive (WATCH, established 2026-08-07)
 
@@ -727,7 +732,7 @@ stages cuts that to 1–2 real hunks each.)
 
 **⛔ UPSTREAM PR FREEZE — STILL IN FORCE, CONFIRMED BY THE DM 2026-08-05 ("its not lifted yet. Beta branch soon"):** dcs-retribution is accepting **no NEW PRs until their next beta release**; **updating existing PRs is fine** (merging current upstream into an open PR branch, pushing review fixes, and re-requesting review are all allowed and were exercised on all 13 open PRs on 2026-08-05). **Do NOT infer the lift from upstream activity** — that mistake was made twice: the 2026-07-26 sync read 12 weekend commits as "the release the freeze was waiting on", and the 2026-08-05 sync read another 36 commits (incl. their merge of our #889) the same way. Neither was the release. The observable facts as of 2026-08-05: **the newest published release is still v1.5.0 (2026-04-13)**, and the `test/1.6` branch was cut but its tip has not moved since **2026-07-25** while `dev` kept merging through 08-04. **Only the DM lifts this**, on word from upstream — never a `gh`/commit-activity inference. **One-off exception granted 2026-08-19** for the two-line F-16C UTC-kneeboard fix (#949), on the DM's call after the freeze was flagged to them: "This is so small and its a simple fix for a long standing bug." That is an exception for that PR, not a lift — the freeze still binds everything else on this list. **A second, broader exception was granted 2026-08-20 (DM): "forget the PR freeze if its addressing something on this list", meaning the [upstream issue ledger](docs/dev/retlab-upstreaming-inventory.md#upstream-issue-ledger).** A PR that answers an open upstream issue may be opened; a carve with no issue behind it still waits. Exercised the same day for [#950](https://github.com/dcs-retribution/dcs-retribution/pull/950) (issue #948, open) and [#951](https://github.com/dcs-retribution/dcs-retribution/pull/951) (issue #901) — **#951 was closed hours later as a duplicate of red-one1's [#902](https://github.com/dcs-retribution/dcs-retribution/pull/902), the lesson being that an issue must be checked for linked PRs via its timeline before carving; see the issue ledger's *Re-running the sweep*.** Still a scoped exception, not a lift — only the DM lifts the freeze. **A third exception was granted 2026-08-25 (DM) for the §69 SEAD-window carve, [#955](https://github.com/dcs-retribution/dcs-retribution/pull/955)**, opened as a draft. It answers no open upstream issue — all 60 were checked that day — so the issue-ledger exception did not cover it and it was put to the DM as a call, which is the pattern to repeat: check the issues, and if none match, ask rather than infer. Also a scoped exception, not a lift. **A fourth exception was granted 2026-09-12 (DM, via the question widget) for the §74 DTC carve, [#966](https://github.com/dcs-retribution/dcs-retribution/pull/966)**, opened as a draft with every freeze indicator unchanged (v1.5.0 still the newest release, `test/1.6` tip still 2026-07-25, no DTC issue upstream) and trimmed 2026-09-13 to what the miz cannot already deliver. Also a scoped exception, not a lift. Holds until it lifts: the pydcs exporter-hardening PR candidate, the `Retribution Fighter sweep` payload-casing fix from the 07-26 sync, and the two 2026-08-17 answers to open upstream issues — **inventory item 28** (theater tanker per refuel method, upstream #243) and **item 29** (per-airframe startup times, upstream #214, in the shape the maintainer asked for twice). **Inventory item 30 is NOT held**: it is a defect report on upstream's own open PR #929, so it is a thread comment rather than a new PR — and it wants doing before #929 merges. **#896 is NOT on this list** — it is an *existing* open PR (never a draft; the earlier "un-draft #896" note was wrong): Druss99's 07-31 request-changes was answered in full the same day (`6dea2efa`, operator tables dropped), a re-review is **already pending on him**, and the standing `CHANGES_REQUESTED` decision is just the stale flag from that review, which clears only when he submits a new one. Nothing is owed on it. **The post-mod-update queue COMPLETED 2026-07-20 evening** (re-dump run; every export file parsed clean on the hardened exporter): extensions verified 386/386 pre-migration, **HDS unchanged** (the re-carve draft's numbers hold), and the update wave surfaced the real story — **ED has integrated CurrentHill units into base DCS** (`CoreMods/tech/Currenthill Assets Pack`, the `CHAP_*` ids; pydcs pin + 21 fork CHAP yamls already carry them) while the CH 1.5.0 packs renamed their remaining ids to `CH_`/dropped the ED-integrated ones. The fork migrated: Sweden 30 id renames + UK Type45/SkySabre + Ukraine BTR-4/MiG-29MU2/Su-24MU (extension ids + yaml filenames + LvS-103/Sky-Sabre layout refs + eject strings — **the layout-refs half of that claim was FALSE and was fixed 2026-08-08**: all 20 `unit_types` entries across the four `LvS-103*.yaml` layouts still named the pre-1.5.0 ids, so `unit_type_from_name` returned None, `GroupLayoutMapping.from_dict` dropped them silently, the mandatory groups emptied, and every LvS-103 site raised `LayoutException` — measured: Sweden 2020 went from 7 usable LORAD layouts to 5, losing its only national long-range SAM. Sky Sabre's launcher slot named the pydcs *class* `CH_SkySabreLN` instead of the id `CH_SkySabre` and only survived on its `Launcher` class fallback, generating the wrong launcher. Both now locked by `tests/test_layout_unit_types.py`), 6 vanilla-superseded registrations retired (both Ukraine tanks, Scimitar/Scorpion re-pointed in blufor_current to the vanilla CHAP variants), and the **Ukraine pack was discovered double-nested in Saved Games (never loaded — fixed)**; its units export-verify on the next natural dump. The wave's adoption audit lives in [docs/dev/retlab-ch-wave-adoption-backlog.md](docs/dev/retlab-ch-wave-adoption-backlog.md): ~98 % already adopted (the extensions had tracked newer pack versions all along; every new AD system rides a factioned preset group) — **2 units genuinely open** (TigerUHT yaml, the B-21 faction call). The 2 Project 22160 hulls **closed 2026-08-23**, wired into four Russia faction naval lists by fork PR [RetLab#955](https://github.com/BradySox/RetLab/pull/955) (`58c2f22c9`) -- not to be confused with upstream #955 named above, a different PR in a different repo. The backlog doc was corrected 2026-08-25.
 
-Carved out of this work, against `dcs-retribution/dcs-retribution` (all authored by `BradySox` — the renamed `BradySox` account):
+Carved out of this work, against `dcs-retribution/dcs-retribution` (all authored by `BradySox`):
 
 - **Open (awaiting review) — re-verified with `gh` 2026-08-30, 9 PRs, plus #966 opened 2026-09-12:** #966 (draft) · #950 (draft) · #925 (draft) · #920 · #896 · #884 · #881 · #874 · #872 · #792 · #788. **#886 is MERGED** (2026-08-28) and #955 is closed — see the 08-30 refresh above. Everything else the ledger once listed here is closed; see **Closed on review** below.
   - [#966](https://github.com/dcs-retribution/dcs-retribution/pull/966) native DTC data cartridges for the F/A-18C and F-16C (**draft**, opened 2026-09-12 on dev @ `49e8067f`; head `7f6ac9aa` after the 09-13 trim and the same-day steerpoint-altitude correction: the DED shows the point's `alt`, so en-route points carry their planned altitude and only deck points read 0) — §74's generic core on pydcs #39's seams (inventory item 34). Route + recovery aids + A/A waypoint + SA/HSD picture; **no COMM presets and no elevation table** — cut on the DM's rule that a carve ships only what the miz cannot already deliver, so steerpoints read 0 and the PR says so. **Gated on pydcs [#39](https://github.com/dcs-retribution/pydcs/pull/39)** (zero reviews since 2026-08-22); the pin is the PR-branch SHA, which pip resolves through GitHub's PR refs. Black / `mypy game` / `mypy tests` / pytest 484 green. Work in the isolated worktree `..\retribution-pr-dtc` (own venv on the #39 pin).
@@ -772,7 +777,7 @@ Carved out of this work, against `dcs-retribution/dcs-retribution` (all authored
 - **Closed, superseded (the 2025-11-27 + 2026-06-09→11 early carve attempts; no action owed):** #621, #622 (the initial uploads) · #774/#776 (final-waypoint crash, superseded by #788) · #775/#777 (AWACS orbit flip) · #778/#781/#783 (SCRAMBLE/scramble-logic flight types — the retired ramp-scramble line, see §1) · #779/#780 (C-130J JAMMING, §2) · #845/#846 (folded into #847).
 - **Era-gate payload options — DONE (opened 2026-06-27 as #843):** the combined **"era-gate payload-editor options"** PR = JHMCS property gating (§24) **+** a redo of the withdrawn #786 AAQ-33 pod fix. Self-contained, no RetLab deps, builds on the upstream `restrict_weapons_by_date` toggle; Black/mypy/pytest validated locally before push. See upstreaming-inventory item 11.
 
-**Crowded upstream zones — do NOT carve into these without coordinating** (active non-retlab PRs):
+**Crowded upstream zones — do NOT carve into these without coordinating** (active non-RetLab PRs):
 - ~~Planning revamps — prokop7 #676 BARCAP, #674 SEAD/DEAD, #678 BAI, #677 attack-infra.~~
   **ZONE CLEARED 2026-08-15** — [#674](https://github.com/dcs-retribution/dcs-retribution/pull/674),
   [#676](https://github.com/dcs-retribution/dcs-retribution/pull/676) and

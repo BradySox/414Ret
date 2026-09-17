@@ -124,7 +124,7 @@ Full detail: [Air Defense and the Air War](Air-Defense-and-the-Air-War).
 - Missile batteries generate with a support park in the faction's own kit.
 - Carrier comms match the hull, Navy jets wear sequential squadron modexes, and the deck carries
   dressing placed clear of every spot and catapult.
-- Civilian traffic and the retlab-tuned Splash Damage 3 build.
+- Civilian traffic and the RetLab-tuned Splash Damage 3 build.
 
 ---
 

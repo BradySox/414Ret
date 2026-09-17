@@ -848,7 +848,7 @@ squadron now references such a def, with `aircraft_type:` kept as a fallback air
 
 **Livery IDs are folder/zip basenames** under the DCS install (`Bazar/Liveries`, `CoreMods`,
 `Mods`) — each was checked against a real folder, *not guessed*. RetLab custom liveries
-live in `Saved Games\DCS\Liveries` (per-user, squadron-distributed); a non-retlab player who
+live in `Saved Games\DCS\Liveries` (per-user, squadron-distributed); a player outside the squadron who
 lacks the pack falls back to the airframe default for those names (cosmetic only).
 
 **480th SEAD-Sweep gap (fixed 2026-06-27).** A liveries-folder audit of the live build found

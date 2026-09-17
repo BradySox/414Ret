@@ -1,8 +1,8 @@
 # Skynet is the IADS engine again — the MANTIS detour, closed
 
 **Date:** 2026-09-12 (DM call)
-**Replaces:** `retlab-mantis-iads-HANDOFF.md`, `retlab-mantis-migration-notes.md`,
-`retlab-mantis-vs-skynet-iads-parity.md`, `retlab-mist-moose-shim-notes.md` — all four deleted
+**Replaces:** `414th-mantis-iads-HANDOFF.md`, `414th-mantis-migration-notes.md`,
+`414th-mantis-vs-skynet-iads-parity.md`, `414th-mist-moose-shim-notes.md` — all four deleted
 in the same change. `git show <this commit>^:docs/dev/design/<name>` recovers them.
 **In-game pass:** checklist row G42.
 

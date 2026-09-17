@@ -23,7 +23,7 @@ country on, that year") is real, and a future feature may want it. It is just no
 proposing anything that re-wires these ranges to a decision.
 
 Supersedes the handoff brief, deleted in the same change and recoverable with
-`git show 6b7b4f8bf:docs/dev/design/retlab-national-postures-brief.md`.
+`git show 6b7b4f8bf:docs/dev/design/414th-national-postures-brief.md`.
 Read [`retlab-neutral-border-defense-notes.md`](retlab-neutral-border-defense-notes.md) first —
 this note only covers the data.
 

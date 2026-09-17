@@ -2711,7 +2711,7 @@ longer existed — and to produce that N it scanned every RED ground and ship un
 mission. The six LUA Plugins settings rows tuned only that scan.
 
 The MOOSE Ops.TARS engine this section originally described was cut on 2026-08-05
-(`7eb247659`). Its design note `retlab-tars-recon-notes.md` was deleted 2026-08-20 with the
+(`7eb247659`). Its design note `414th-tars-recon-notes.md` was deleted 2026-08-20 with the
 17 other dead notes, recoverable from git before `5db34150f`.
 
 Removed:
@@ -2742,7 +2742,7 @@ ledger.
 
 **History.** The MOOSE Ops.TARS engine this section used to describe was cut 2026-08-05
 (`7eb247659`), together with the AI-side `airecon` plugin, and replaced by the single `recon`
-plugin removed here. `docs/dev/design/retlab-tars-recon-notes.md` documents that implementation —
+plugin removed here. `docs/dev/design/414th-tars-recon-notes.md` documents that implementation —
 historical only, do not author against it. In-game pass G2 was ☑ VERIFIED 2026-06-24 under the
 MOOSE engine and is closed.
 
@@ -4649,7 +4649,7 @@ weapon-tracking pattern), no per-mission data:
 `PlanNextAction`), the ROE **restricted zones / free-fire zones / target-release** layer with its
 `.miz` + web + kneeboard surfaces, the campaign-status phase ribbon, and the authored
 Rolling Thunder → Linebacker II arcs are all gone. The shared `PlanNextAction._offensive_order` seam
-the classifier used to drive stays for §52/§67/§68. Do not restore. The three `retlab-campaign-phases-*` design notes were deleted 2026-08-20, recoverable from git before `5db34150f`.
+the classifier used to drive stays for §52/§67/§68. Do not restore. The three `414th-campaign-phases-*` design notes were deleted 2026-08-20, recoverable from git before `5db34150f`.
 
 ### Red tempo (survives — rehomed 2026-07-21)
 
@@ -5224,7 +5224,7 @@ per-turn will feeds/ledger, and the Vietnam campaign-layer **W1 (political will)
 ending) + W2b (static front)** pieces (`game/retlab/{political_will,static_front}.py` deleted). The
 Vietnam **W5 GCI ambush** and **W6 red tempo** survive (W6 lost only its `resolve_regen` lever); §21
 POWs now always run a turn-countdown clock, never an indefinite will-coupled hold. Do not restore. The design notes
-`retlab-vietnam-political-will-roe-notes.md` and `retlab-will-generalization-notes.md` were deleted 2026-08-20, recoverable from git before `5db34150f`.
+`414th-vietnam-political-will-roe-notes.md` and `414th-will-generalization-notes.md` were deleted 2026-08-20, recoverable from git before `5db34150f`.
 
 ## §49 — Mobile missile relocation (the SCUD hunt) — REMOVED (2026-08-29)
 
@@ -5556,7 +5556,7 @@ Constraints kept out of the deleted design note:
 
 The intel gate that made jamming conditional on a captured aircrew's comms plan died earlier,
 with §21 on 2026-08-07. In git history at
-`git show c08b85de2:docs/dev/design/retlab-comms-jam-notes.md`.
+`git show c08b85de2:docs/dev/design/414th-comms-jam-notes.md`.
 
 ## §52 — Command-center decapitation degrades enemy planning
 
@@ -5649,7 +5649,7 @@ The effect lands on the *enemy's* next turn, so the player is told the strike wo
 ## §53 — War economy — REMOVED (2026-07-21)
 
 Removed with §48 and §54 in the economy drop. Do not restore.
-`retlab-war-economy-notes.md` was deleted 2026-08-20, recoverable from git before `5db34150f`.
+`414th-war-economy-notes.md` was deleted 2026-08-20, recoverable from git before `5db34150f`.
 
 ## §54 — Munitions availability — REMOVED (2026-07-21)
 
@@ -5667,7 +5667,7 @@ the obvious shape and it did not survive contact. Seam 7 of
 (geofffranks, "Strikeable motorpool depots", closes upstream #655). Cherry-picked onto the fork
 verbatim (4 commits, Geoff retained as author) plus one fork-adaptation commit; the Pretense hunk was
 dropped because the fork has no Pretense. This is an *upstream-authored* capability given a RetLab §N
-so it rides the same registry/checklist discipline as the fork's own features — not a retlab-original.
+so it rides the same registry/checklist discipline as the fork's own features — not a RetLab-original.
 
 ### What it does
 
@@ -5887,7 +5887,7 @@ units** and the losses recorded natively. That is the "never spawn phantom units
 it still binds §35, §37 and §50.
 
 Both settings are swept as obsolete keys, so an old save loads. In git history at
-`git show c08b85de2:docs/dev/design/retlab-minefields-notes.md`.
+`git show c08b85de2:docs/dev/design/414th-minefields-notes.md`.
 
 ## §58 — Mission-start briefing popup
 
@@ -6882,7 +6882,7 @@ Constraints kept out of the deleted design note:
 - **Windows recur with silence between**, so a net reads as traffic rather than a beacon.
   A continuous carrier is a homing beacon, which is a different (and easier) game.
 
-In git history at `git show c08b85de2:docs/dev/design/retlab-comint-notes.md`.
+In git history at `git show c08b85de2:docs/dev/design/414th-comint-notes.md`.
 
 ## §71 — Expanded F-4E Weapons Pack (AGM-78/-88 Weasel fits)
 
@@ -9135,7 +9135,7 @@ What survived the removal, and must not be reverted with it: the scheduler's `sp
 and `_spread_arrival` are **B99** work, not §89's — only the `followon_window_minutes` term
 was removed from the ceiling.
 
-In git history at `git show c08b85de2:docs/dev/design/retlab-living-battlespace-notes.md`.
+In git history at `git show c08b85de2:docs/dev/design/414th-living-battlespace-notes.md`.
 
 ## §90 — Front-line model: supply, assault cost, force weight, terrain, salients
 

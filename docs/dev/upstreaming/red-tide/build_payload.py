@@ -3,7 +3,7 @@
 Builds docs/dev/upstreaming/red-tide/payload/ from the fork's shipped campaign:
 
 - red_tide.yaml     -- fork yaml with the fork-only YAML supply_routes/shipping_lanes
-                       removed (baked into the miz instead), the four retlab-identity
+                       removed (baked into the miz instead), the four squadron-identity
                        squadron names swapped for existing upstream squadron defs,
                        the transport re-typed to the vanilla C-130, and the enemy
                        faction re-pointed at the new Russia 1988.

@@ -287,7 +287,7 @@ etribution-pr`. **Still gated on pydcs [#39](https://github.com/dcs-retribution/
   to `""`); also populated for 8 bundled upstream plugins so the field is demonstrated.
 - **Files:** `game/plugins/luaplugin.py` + `qt_ui/windows/settings/plugins.py` + 8
   `resources/plugins/*/plugin.json`. No RetLab deps; the cheapest community win in the repo.
-- **Carve note:** the fork's `splashdamage3` description is retlab-specific (pinned build) —
+- **Carve note:** the fork's `splashdamage3` description is RetLab-specific (pinned build) —
   intentionally **not** carried to upstream.
 
 ### 11. Era-gate payload-editor options (JHMCS §24 + AAQ-33 redo) — 🔵 IN REVIEW (pushed as PR #843, 2026-06-27)

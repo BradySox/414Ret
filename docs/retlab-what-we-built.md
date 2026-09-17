@@ -74,7 +74,7 @@ each one, flown and signed off before it's called done.
 ## Good enough to give back
 
 The clearest measure of the work's quality: **most of it isn't actually
-retlab-specific.** We recently went feature-by-feature and found that the large majority
+RetLab-specific.** We recently went feature-by-feature and found that the large majority
 are *generic capabilities* the whole Retribution community would benefit from — only a
 thin layer (our campaigns, our faction, our ballistics tuning, our doctrine settings) is
 truly squadron-only. We've already started contributing fixes back upstream, and have a

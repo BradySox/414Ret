@@ -125,7 +125,7 @@ pilot whose entire sortie is imagery was the only member of the package flying
 without the target card. Its aimpoint list doubles as the shot list.
 
 One line plus its contract test. The contract test's docstring cited a
-"Spec design doc table" in `retlab-tars-recon-notes.md`, **deleted 2026-08-20 (#922)** —
+"Spec design doc table" in `414th-tars-recon-notes.md`, **deleted 2026-08-20 (#922)** —
 a dead citation, now replaced with the rule stated in place and a pointer here.
 
 **Why this became worth doing on 2026-08-26.** The DCS patch reworked TARPS: a
@@ -301,5 +301,5 @@ the two genuinely disagreed was a bug, now fixed. Recon's job stays A + C.1.
 
 - [retlab-features.md §3](../retlab-features.md) — the reveal rule this has to live under
 - [retlab-features.md §12](../retlab-features.md) — the recon engine, removed 2026-08-20
-- `retlab-tars-recon-notes.md` — deleted 2026-08-20, recoverable from git before
+- `414th-tars-recon-notes.md` — deleted 2026-08-20, recoverable from git before
   `5db34150f`. Do not author against

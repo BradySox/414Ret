@@ -42,7 +42,7 @@ The campaign `Doc/` PDFs split into two kinds:
 ## 1. Kneeboard design → feeds **H3/H4**
 
 > **Local reference set** (not in the repo — extracted from the commercial `.miz`, kept local):
-> `C:\Users\brady\Desktop\retlab-Joint-Fighter-Group\kneeboard-references\<campaign>\` —
+> `C:\Users\brady\Desktop\414th-Joint-Fighter-Group\kneeboard-references\<campaign>\` —
 > **1,215 unique** full-res kneeboard cards across the 11 campaigns, deduped, each campaign with a
 > browsable `_contact_sheet.png`. Use these as the styling reference when building generator cards.
 

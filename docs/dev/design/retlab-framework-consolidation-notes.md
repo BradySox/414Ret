@@ -3,7 +3,7 @@
 **Status:** historical (2026-09-12). Phase 1 (Skynet → MANTIS) and the MIST shim were REVERSED
 on the DM's call — see `retlab-skynet-return-notes.md`. The rest of this note is the record of
 the plan as it stood. Was: strategy / proposal (not started). Phase 1 (Skynet → MANTIS) is in progress under
-`retlab-mantis-migration-notes.md` (deleted 2026-09-12; see [`retlab-skynet-return-notes.md`](retlab-skynet-return-notes.md)).
+`414th-mantis-migration-notes.md` (deleted 2026-09-12; see [`retlab-skynet-return-notes.md`](retlab-skynet-return-notes.md)).
 **Date:** 2026-06-24
 
 ## Thesis
@@ -119,7 +119,7 @@ artifact retires MIST everywhere; consumers stay byte-for-byte unchanged (no beh
 capture/CSAR cannot break**); the `Ops.CTLD` template-model mismatch never arises. This makes the old
 "CTLD is the gate, batch everything at the end" sequencing moot.
 
-**Active plan (reversed 2026-09-12; note deleted):** `retlab-mist-moose-shim-notes.md` (surface, tier
+**Active plan (reversed 2026-09-12; note deleted):** `414th-mist-moose-shim-notes.md` (surface, tier
 breakdown, the DB-from-`_DATABASE` keystone, rollout). The `Ops.CTLD` port is **shelved**
 ([`retlab-ctld-mantis-style-port-scope.md`](retlab-ctld-mantis-style-port-scope.md)).
 

@@ -643,7 +643,7 @@ The eight earlier CSAR/SCAR notes this document replaced were deleted 2026-08-20
 carried a banner pointing here since 2026-07-03, and the feature they described was
 itself deleted on 2026-08-07, so they were two removals out of date.
 
-`retlab-combat-sar-spec.md` · `retlab-combat-sar-normal-task-notes.md` ·
-`retlab-scar-rescue-rework-notes.md` · `retlab-scar-task-spec.md` ·
-`retlab-scar-commander-sme-questions.md` · `retlab-scar-phase2-sof-plan.md` ·
-`retlab-scar-HANDOFF.md` · `retlab-scar-king-fac-notes.md`
+`414th-combat-sar-spec.md` · `414th-combat-sar-normal-task-notes.md` ·
+`414th-scar-rescue-rework-notes.md` · `414th-scar-task-spec.md` ·
+`414th-scar-commander-sme-questions.md` · `414th-scar-phase2-sof-plan.md` ·
+`414th-scar-HANDOFF.md` · `414th-scar-king-fac-notes.md`
